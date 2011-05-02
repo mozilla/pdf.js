@@ -553,42 +553,47 @@ var Linearization = (function () {
     };
 })();
 
-var linearization;
-function getLinearization() {
-    if (linearization)
-	return linearization;
-    return linearization = new Linearization(stream);
-}
-
-function isLinearized() {
-    return stream.length && getLinearization().length == stream.length;
-}
-
-var stream;
-
-// Find the header, remove leading garbage and setup the stream
-// starting from the header.
-function checkHeader(arrayBuffer) {
-    const headerSearchSize = 1024;
-
-    stream = new Uint8Array(arrayBuffer);
-    var skip = 0;
-    var header = "%PDF-";
-    while (skip < headerSearchSize) {
-        for (var i = 0; i < header.length; ++i)
-            if (stream[skip+i] != header.charCodeAt(i))
-                break;
-
-        // Found the header, trim off any garbage before it.
-        if (i == header.length) {
-            stream = new Uint8Array(arrayBuffer, skip);
-            return;
-        }
+var PDFDoc = (function () {
+    function constructor(arrayBuffer) {
+        this.setup(arrayBuffer);
     }
 
-    // May not be a PDF file, continue anyway.
-}
+    constructor.prototype = {
+        getLinearization: function() {
+            var linearization = this.linearization;
+            if (!linearization)
+                return this.linearization = new Linearization(this.stream);
+            return linearization;
+        },
+        isLinearized: function() {
+            var length = this.stream.length;
+            return length && this.getLinearization().length == length;
+        },
+        // Find the header, remove leading garbage and setup the stream
+        // starting from the header.
+        checkHeader: function(arrayBuffer) {
+            const headerSearchSize = 1024;
 
-function setup(arrayBuffer, ownerPassword, userPassword) {
-    var ub = checkHeader(arrayBuffer);
-}
+            var stream = new Uint8Array(arrayBuffer);
+            var skip = 0;
+            var header = "%PDF-";
+            while (skip < headerSearchSize) {
+                for (var i = 0; i < header.length; ++i)
+                    if (this.stream[skip+i] != header.charCodeAt(i))
+                        break;
+                
+                // Found the header, trim off any garbage before it.
+                if (i == header.length) {
+                    this.stream = new Uint8Array(arrayBuffer, skip);
+                    return;
+                }
+            }
+
+            // May not be a PDF file, continue anyway.
+            this.stream = stream;
+        },
+        setup: function(arrayBuffer, ownerPassword, userPassword) {
+            this.checkHeader(arrayBuffer);
+        }
+    };
+})();
