@@ -117,13 +117,13 @@ var Lexer = (function() {
         },
         getChar: function() {
             var ch = this.lookChar();
-            this.pos++:
+            this.pos++;
             return ch;
         },
-        putBack(): function() {
+        putBack: function() {
             this.pos--;
         },
-        skipChar(): function() {
+        skipChar: function() {
             this.pos++;
         },
         getNumber: function(ch) {
@@ -386,7 +386,7 @@ var Parser = (function() {
         refill: function() {
             this.buf1 = lexer.getObj();
             this.buf2 = lexer.getObj();
-        }
+        },
         shift: function() {
             if (this.inlineImg > 0) {
                 if (this.inlineImg < 2) {
@@ -496,7 +496,7 @@ var Linearization = (function () {
     }
 
     constructor.prototype = {
-        function getInt(name) {
+        getInt: function(name) {
             var linDict = this.linDict;
             var obj;
             if (!linDict.isDict() &&
@@ -507,7 +507,7 @@ var Linearization = (function () {
             error("'" + name + "' field in linearization table is invalid");
             return 0;
         },
-        function getHint(index) {
+        getHint: function(index) {
             var linDict = this.linDict;
             var obj1, obj2;
             if (linDict.isDict() &&
