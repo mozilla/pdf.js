@@ -53,12 +53,10 @@ var Obj = (function() {
         }
     }
 
-    Object.freeze(constructor.trueObj = new constructor(constructor.Bool, true));
-    Object.freeze(constructor.falseObj = new constructor(constructor.Bool, false));
-    Object.freeze(constructor.nullObj = new constructor(constructor.Null));
-    Object.freeze(constructor.errorObj = new constructor(constructor.Error));
-    Object.freeze(constructor.prototype);
-    Object.freeze(constructor);
+    constructor.trueObj = new constructor(constructor.Bool, true);
+    constructor.falseObj = new constructor(constructor.Bool, false);
+    constructor.nullObj = new constructor(constructor.Null);
+    constructor.errorObj = new constructor(constructor.Error);
 
     return constructor;
 })();
@@ -369,8 +367,6 @@ var Lexer = (function() {
         }
     };
 
-    Object.freeze(constructor.prototype);
-    Object.freeze(constructor);
     return constructor;
 })();
 
@@ -474,9 +470,6 @@ var Parser = (function() {
             return new Obj(Obj.Error);
         }
     };
-
-    Object.freeze(constructor.prototype);
-    Object.freeze(constructor);
 
     return constructor;
 })();
