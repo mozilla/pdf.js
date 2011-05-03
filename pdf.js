@@ -33,7 +33,7 @@ var Stream = (function() {
         lookChar: function() {
             var bytes = this.bytes;
             if (this.pos >= bytes.length)
-                return EOF;
+                return;
             return String.fromCharCode(bytes[this.pos]);
         },
         getChar: function() {
@@ -52,8 +52,6 @@ var Stream = (function() {
             this.pos -= delta;
         }
     };
-
-    constructor.EOF = -1;
 
     return constructor;
 });
@@ -189,7 +187,7 @@ var Lexer = (function() {
             var stream = this.stream;
             do {
                 switch (ch = stream.getChar()) {
-                case EOF:
+                case undefined:
                     this.error("Unterminated string");
                     done = true;
                     break;
@@ -206,6 +204,10 @@ var Lexer = (function() {
                     break;
                 case '\\':
                     switch (ch = stream.getChar()) {
+                    case undefined:
+                        this.error("Unterminated string");
+                        done = true;
+                        break;
                     case 'n':
                         str += '\n';
                         break;
@@ -248,10 +250,6 @@ var Lexer = (function() {
                         break;
                     case '\n':
                         break;
-                    case EOF:
-                        this.error("Unterminated string");
-                        done = true;
-                        break;
                     default:
                         str += ch;
                         break;
@@ -269,7 +267,7 @@ var Lexer = (function() {
         getName: function(ch) {
             var str = "";
             var stream = this.stream;
-            while ((ch = stream.lookChar()) != EOF && !specialChars[ch.toCharCode()]) {
+            while (!!(ch = stream.lookChar()) && !specialChars[ch.toCharCode()]) {
                 stream.getChar();
                 if (ch == "#") {
                     ch = stream.lookChar();
@@ -299,7 +297,7 @@ var Lexer = (function() {
                 ch = stream.getChar();
                 if (ch == '>') {
                     break;
-                } else if (ch == EOF) {
+                } else if (!ch) {
                     this.error("Unterminated hex string");
                     break;
                 } else if (specialChars[ch.toCharCode()] != 1) {
@@ -320,7 +318,7 @@ var Lexer = (function() {
             var stream = this.stream;
             while (true) {
                 var ch;
-                if ((ch = stream.getChar()) == EOF)
+                if (!(ch = stream.getChar()))
                     return new Obj(Object.EOF);
                 if (comment) {
                     if (ch == '\r' || ch == '\n')
@@ -372,7 +370,7 @@ var Lexer = (function() {
 
             // command
             var str = ch;
-            while ((ch = stream.lookChar()) != EOF && !specialChars[ch.toCharCode()]) {
+            while (!!(ch = stream.lookChar()) && !specialChars[ch.toCharCode()]) {
                 stream.getChar();
                 if (str.length == 128) {
                     error("Command token too long");
