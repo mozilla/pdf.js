@@ -558,16 +558,37 @@ var PDFDoc = (function () {
         this.setup(arrayBuffer);
     }
 
+    function ShadowGetter(obj, name, value) {
+        Object.defineProperty(obj, name, {
+            value: value,
+            configurable: false,
+            writable: false,
+            enumerable: true
+        });
+    }
+
     constructor.prototype = {
-        getLinearization: function() {
-            var linearization = this.linearization;
-            if (!linearization)
-                return this.linearization = new Linearization(this.stream);
+        get linearization() {
+            var length = this.stream.length;
+            var linearization = false;
+            if (length) {
+                linearization = new Linearization(this.stream);
+                if (linearization.length != length)
+                    linearization = false;
+            }
+            ShadowGetter(this, "linearization", linearization);
             return linearization;
         },
-        isLinearized: function() {
-            var length = this.stream.length;
-            return length && this.getLinearization().length == length;
+        get startXRef() {
+            var startXRef;
+            var linearization = this.linearization;
+            if (linearization) {
+                // TODO
+            } else {
+                // TODO
+            }
+            ShadowGetter(this, "startXRef", startXRef);
+            return startXRef;
         },
         // Find the header, remove leading garbage and setup the stream
         // starting from the header.
