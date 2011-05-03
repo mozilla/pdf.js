@@ -20,6 +20,44 @@ var HashMap = (function() {
     return constructor;
 })();
 
+var Stream = (function() {
+    function constructor(arrayBuffer) {
+        this.bytes = Uint8Array(arrayBuffer);
+        this.pos = 0;
+    }
+
+    constructor.prototype = {
+        reset: function() {
+            this.pos = 0;
+        },
+        lookChar: function() {
+            var bytes = this.bytes;
+            if (this.pos >= bytes.length)
+                return EOF;
+            return String.fromCharCode(bytes[this.pos]);
+        },
+        getChar: function() {
+            var ch = this.lookChar();
+            this.pos++;
+            return ch;
+        },
+        putBack: function() {
+            this.pos--;
+        },
+        skipChar: function() {
+            this.pos++;
+        },
+        moveStart: function(delta) {
+            this.bytes = Uint8Array(arrayBuffer, delta);
+            this.pos -= delta;
+        }
+    };
+
+    constructor.EOF = -1;
+
+    return constructor;
+});
+
 var Obj = (function() {
     function constructor(type, value) {
         this.type = type;
@@ -62,11 +100,8 @@ var Obj = (function() {
 })();
 
 var Lexer = (function() {
-    const EOF = -1;
-
-    function constructor(bytes) {
-        this.bytes = bytes;
-        this.pos = 0;
+    function constructor(stream) {
+        this.stream = stream;
     }
 
     // A '1' in this array means the character is white space.  A '1' or
@@ -106,29 +141,14 @@ var Lexer = (function() {
 
     constructor.prototype = {
         error: function(msg) {
-        },
-        lookChar: function() {
-            var bytes = this.bytes;
-            if (this.pos >= bytes.length)
-                return EOF;
-            return String.fromCharCode(bytes[this.pos]);
-        },
-        getChar: function() {
-            var ch = this.lookChar();
-            this.pos++;
-            return ch;
-        },
-        putBack: function() {
-            this.pos--;
-        },
-        skipChar: function() {
-            this.pos++;
+            // TODO
         },
         getNumber: function(ch) {
             var floating = false;
             var str = ch;
+            var stream = this.stream;
             do {
-                ch = this.getChar();
+                ch = stream.getChar();
                 if (ch == "." && !floating) {
                     str += ch;
                     floating = true;
@@ -142,7 +162,7 @@ var Lexer = (function() {
                     floating = true;
                 } else {
                     // put back the last character, it doesn't belong to us
-                    this.putBack();
+                    stream.putBack();
                     break;
                 }
             } while (true);
@@ -166,8 +186,9 @@ var Lexer = (function() {
             var numParent = 1;
             var done = false;
             var str = ch;
+            var stream = this.stream;
             do {
-                switch (ch = this.getChar()) {
+                switch (ch = stream.getChar()) {
                 case EOF:
                     this.error("Unterminated string");
                     done = true;
@@ -184,7 +205,7 @@ var Lexer = (function() {
                     }
                     break;
                 case '\\':
-                    switch (ch = this.getChar()) {
+                    switch (ch = stream.getChar()) {
                     case 'n':
                         str += '\n';
                         break;
@@ -208,23 +229,22 @@ var Lexer = (function() {
                     case '0': case '1': case '2': case '3':
                     case '4': case '5': case '6': case '7':
                         var x = ch - '0';
-                        ch = this.lookChar();
+                        ch = stream.lookChar();
                         if (ch >= '0' && ch <= '7') {
                             this.getChar();
                             x = (x << 3) + (x - '0');
-                            ch = this.lookChar();
+                            ch = stream.lookChar();
                             if (ch >= '0' && ch <= '7') {
-                                getChar();
+                                stream.getChar();
                                 x = (x << 3) + (x - '0');
                             }
                         }
                         str += String.fromCharCode(x);
                         break;
                     case '\r':
-                        ch = this.lookChar();
-                        if (ch == '\n') {
-                            this.getChar();
-                        }
+                        ch = stream.lookChar();
+                        if (ch == '\n')
+                            stream.getChar();
                         break;
                     case '\n':
                         break;
@@ -248,14 +268,15 @@ var Lexer = (function() {
         },
         getName: function(ch) {
             var str = "";
-            while ((ch = this.lookChar()) != EOF && !specialChars[ch.toCharCode()]) {
-                this.getChar();
+            var stream = this.stream;
+            while ((ch = stream.lookChar()) != EOF && !specialChars[ch.toCharCode()]) {
+                stream.getChar();
                 if (ch == "#") {
-                    ch = this.lookChar();
+                    ch = stream.lookChar();
                     var x = ToHexDigit(ch);
                     if (x != -1) {
-                        this.getChar();
-                        var x2 = ToHexDigit(this.getChar());
+                        stream.getChar();
+                        var x2 = ToHexDigit(stream.getChar());
                         if (x2 == -1)
                             this.error("Illegal digit in hex char in name");
                         str += String.fromCharCode((x << 4) | x2);
@@ -273,8 +294,9 @@ var Lexer = (function() {
         },
         getHexString: function(ch) {
             var str = "";
+            var stream = this.stream;
             while (1) {
-                ch = this.getChar();
+                ch = stream.getChar();
                 if (ch == '>') {
                     break;
                 } else if (ch == EOF) {
@@ -295,9 +317,10 @@ var Lexer = (function() {
         getObj: function() {
             // skip whitespace and comments
             var comment = false;
+            var stream = this.stream;
             while (true) {
                 var ch;
-                if ((ch = this.getChar()) == EOF)
+                if ((ch = stream.getChar()) == EOF)
                     return new Obj(Object.EOF);
                 if (comment) {
                     if (ch == '\r' || ch == '\n')
@@ -325,18 +348,18 @@ var Lexer = (function() {
 	            return new Obj(Obj.Cmd, ch);
             // hex string or dict punctuation
             case '<':
-	            ch = this.lookChar();
+	            ch = stream.lookChar();
                 if (ch == '<') {
                     // dict punctuation
-                    this.getChar();
+                    stream.getChar();
                     return new Obj(Obj.Cmd, ch);
                 }
 	            return this.getHexString(ch);
             // dict punctuation
             case '>':
-	            ch = this.lookChar();
+	            ch = stream.lookChar();
 	            if (ch == '>') {
-                    this.getChar();
+                    stream.getChar();
                     return new Obj(Obj.Cmd, ch);
                 }
 	        // fall through
@@ -349,8 +372,8 @@ var Lexer = (function() {
 
             // command
             var str = ch;
-            while ((ch = this.lookChar()) != EOF && !specialChars[ch.toCharCode()]) {
-                getChar();
+            while ((ch = stream.lookChar()) != EOF && !specialChars[ch.toCharCode()]) {
+                stream.getChar();
                 if (str.length == 128) {
                     error("Command token too long");
                     break;
@@ -475,8 +498,8 @@ var Parser = (function() {
 })();
     
 var Linearization = (function () {
-    function constructor(bytes) {
-        this.parser = new Parser(new Lexer(bytes), false);
+    function constructor(stream) {
+        this.parser = new Parser(new Lexer(stream), false);
         var obj1 = this.parser.getObj();
         var obj2 = this.parser.getObj();
         var obj3 = this.parser.getObj();
@@ -547,8 +570,8 @@ var Linearization = (function () {
 })();
 
 var PDFDoc = (function () {
-    function constructor(arrayBuffer) {
-        this.setup(arrayBuffer);
+    function constructor(stream) {
+        this.setup(stream);
     }
 
     constructor.prototype = {
@@ -576,20 +599,23 @@ var PDFDoc = (function () {
         },
         // Find the header, remove leading garbage and setup the stream
         // starting from the header.
-        checkHeader: function(arrayBuffer) {
+        checkHeader: function(stream) {
             const headerSearchSize = 1024;
 
-            var stream = new Uint8Array(arrayBuffer);
+            stream.reset();
+
             var skip = 0;
             var header = "%PDF-";
             while (skip < headerSearchSize) {
-                for (var i = 0; i < header.length; ++i)
-                    if (this.stream[skip+i] != header.charCodeAt(i))
+                stream.setPos(skip);
+                for (var i = 0; i < header.length; ++i) {
+                    if (stream.getChar() != header.charCodeAt(i))
                         break;
+                }
                 
                 // Found the header, trim off any garbage before it.
                 if (i == header.length) {
-                    this.stream = new Uint8Array(arrayBuffer, skip);
+                    stream.moveStart(skip);
                     return;
                 }
             }
