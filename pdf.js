@@ -92,11 +92,24 @@ var Obj = (function() {
             return this.value.get(key);
         }
     }
+    constructor.prototype.lowerToJS = function() {
+        if (this.isInt() || this.isReal() || this.isString()
+            || this.isName() || this.isBool() || this.isNone()) {
+            return this.value;
+        } else if (this.isNull()) {
+            return null;
+        } else if (this.isArray()) {
+            return this.value.map(function (e) e.lowerToJS());
+        } else {
+            return undefined;
+        }
+    }
 
     constructor.trueObj = new constructor(constructor.Bool, true);
     constructor.falseObj = new constructor(constructor.Bool, false);
     constructor.nullObj = new constructor(constructor.Null);
     constructor.errorObj = new constructor(constructor.Error);
+    constructor.eofObj = new constructor(constructor.EOF);
 
     return constructor;
 })();
@@ -662,7 +675,8 @@ var Interpreter = (function() {
 
         dispatch: function(cmdObj, args) {
             var fnName = this.getAndCheckCmd(cmdObj, args);
-            this.gfx[fnName].apply(this.gfx, args.map(function(o) o.value));
+            this.gfx[fnName].apply(this.gfx,
+                                   args.map(function(o) o.lowerToJS()));
         },
         getAndCheckCmd: function(cmdObj, args) {
             const CMD_TABLE = {
@@ -941,7 +955,7 @@ function runEchoTests() {
     function name(n)    { return new Obj(Obj.Name, n); }
     function int(i)     { return new Obj(Obj.Int, i); }
     function string(s)  { return new Obj(Obj.String, s); }
-    function eof()      { return new Obj(Obj.EOF); }
+    function eof()      { return Obj.eofObj; }
     function array(a)   { return new Obj(Obj.Array, a); }
     function real(r)    { return new Obj(Obj.Real, r); }
 
