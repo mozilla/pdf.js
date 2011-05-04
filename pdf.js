@@ -658,22 +658,60 @@ var Interpreter = (function() {
         },
 
         dispatch: function(cmdObj, args) {
-            this.getAndCheckCmd(cmdObj, args).apply(
-                this, args.map(function(o) o.value));
+            var fnName = this.getAndCheckCmd(cmdObj, args);
+            this.gfx[fnName].apply(this.gfx, args.map(function(o) o.value));
         },
         getAndCheckCmd: function(cmdObj, args) {
             const CMD_TABLE = {
-                // Text commands
+                // Graphics state
+                "w" : { fn: "setLineWidth",
+                        params: [ "Num" ] },
+                "d" : { fn: "setDash",
+                        params: [ "Array", "Num" ] },
+                "q" : { fn: "save",
+                        params: [ ] },
+                "Q" : { fn: "restore",
+                        params: [ ] },
+                // Path
+                "m" : { fn: "moveTo",
+                        params: [ "Num", "Num" ] },
+                "l" : { fn: "lineTo",
+                        params: [ "Num", "Num" ] },
+                "c" : { fn: "curveTo",
+                        params: [ "Num", "Num", "Num", "Num", "Num", "Num" ] },
+                "re": { fn: "rectangle",
+                        params: [ "Num", "Num", "Num", "Num" ] },
+                "S" : { fn: "stroke",
+                        params: [ ] },
+                "B" : { fn: "fillStroke",
+                        params: [ ] },
+                "b" : { fn: "closeFillStroke",
+                        params: [ ] },
+                // Clipping
+                // Text
                 "BT": { fn: "beginText",
                         params: [ ] },
                 "ET": { fn: "endText", 
                         params: [ ] },
-                "Td": { fn: "moveText",
-                        params: [ "Num", "Num" ] },
                 "Tf": { fn: "setFont",
                         params: [ "Name", "Num" ] },
+                "Td": { fn: "moveText",
+                        params: [ "Num", "Num" ] },
                 "Tj": { fn: "showText",
                         params: [ "String" ] },
+                // Type3 fonts
+                // Color
+                "g" : { fn: "setFillGray",
+                        params: [ "Num" ] },
+                "RG": { fn: "setStrokeRGBColor",
+                        params: [ "Num", "Num", "Num" ] },
+                "rg": { fn: "setFillRGBColor",
+                        params: [ "Num", "Num", "Num" ] },
+                // Shading
+                // Images
+                // XObjects
+                // Marked content
+                // Compatibility
             };
 
             var cmdName = cmdObj.value
@@ -684,29 +722,14 @@ var Interpreter = (function() {
                 this.error("Wrong arguments for command '"+ cmdName +"'");
             }
 
-            return this[cmd.fn];
+            return cmd.fn;
         },
         typeCheck: function(cmd, args) {
             return true;
         },
-
-        // Text commands
-        beginText: function() {
-            this.gfx.beginText();
+        error: function(what) {
+            throw new Error(what);
         },
-        endText: function() {
-            this.gfx.endText();
-        },
-        moveText: function(x, y) {
-            this.gfx.moveText(x, y);
-        },
-        setFont: function(font, size) {
-            // lookup font
-            this.gfx.setFont(font, size);
-        },
-        showText: function(text) {
-            this.gfx.showText(text);
-        }
     };
 
     return constructor;
@@ -721,6 +744,12 @@ var EchoGraphics = (function() {
 
     constructor.prototype = {
         // Graphics state
+        setLineWidth: function(width) {
+            this.printdentln(width +" w");
+        },
+        setDash: function(dashArray, dashPhase) {
+            this.printdentln(""+ dashArray +" "+ dashPhase +" d");
+        },
         save: function() {
             this.printdentln("q");
         },
@@ -728,10 +757,41 @@ var EchoGraphics = (function() {
             this.printdentln("Q");
         },
 
+        // Path
+        moveTo: function(x, y) {
+            this.printdentln(""+ x +" "+ y +" m");
+        },
+        lineTo: function(x, y) {
+            this.printdentln(""+ x +" "+ y +" l");
+        },
+        curveTo: function(x1, y1, x2, y2, x3, y3) {
+            this.printdentln(""+ x1 +" "+ y1 +
+                             " "+ x2 +" "+ y2 +
+                             " "+ x3 +" "+ y3 + " c");
+        },
+        rectangle: function(x, y, width, height) {
+            this.printdentln(""+ x +" "+ y + " "+ width +" "+ height +" re");
+        },
+        stroke: function() {
+            this.printdentln("S");
+        },
+        fillStroke: function() {
+            this.printdentln("B");
+        },
+        closeFillStroke: function() {
+            this.printdentln("b");
+        },
+
+        // Clipping
+
         // Text
         beginText: function() {
             this.printdentln("BT");
             this.indent();
+        },
+        endText: function() {
+            this.dedent();
+            this.printdentln("ET");
         },
         setFont: function(font, sizePt) {
             this.printdentln("/"+ font +" "+ sizePt +" Tf");
@@ -742,10 +802,25 @@ var EchoGraphics = (function() {
         showText: function(text) {
             this.printdentln("( "+ text +" ) Tj");
         },
-        endText: function() {
-            this.dedent();
-            this.printdentln("ET");
+
+        // Type3 fonts
+
+        // Color
+        setFillGray: function(gray) {
+            this.printdentln(""+ gray +" g");
         },
+        setStrokeRGBColor: function(r, g, b) {
+            this.printdentln(""+ r +" "+ g +" "+ b +" RG");
+        },
+        setFillRGBColor: function(r, g, b) {
+            this.printdentln(""+ r +" "+ g +" "+ b +" rg");
+        },
+
+        // Shading
+        // Images
+        // XObjects
+        // Marked content
+        // Compatibility
 
         // Output state
         print: function(str) {
@@ -818,6 +893,7 @@ var CanvasGraphics = (function() {
     }
 
     constructor.prototype = {
+        // Graphics state
         save: function() {
             this.ctx.save();
             this.stateStack.push(this.current);
@@ -858,6 +934,8 @@ function runEchoTests() {
     function int(i)     { return new Obj(Obj.Int, i); }
     function string(s)  { return new Obj(Obj.String, s); }
     function eof()      { return new Obj(Obj.EOF); }
+    function array(a)   { return new Obj(Obj.Array, a); }
+    function real(r)    { return new Obj(Obj.Real, r); }
 
     var tests = [
         { name: "Hello world",
@@ -867,6 +945,33 @@ function runEchoTests() {
               int(100), int(100), cmd("Td"),
               string("Hello World"), cmd("Tj"),
               cmd("ET"),
+              eof()
+          ]
+        },
+        { name: "Simple graphics",
+          objs: [
+              int(150), int(250), cmd("m"),
+              int(150), int(350), cmd("l"),
+              cmd("S"),
+
+              int(4), cmd("w"),
+              array([int(4), int(6)]), int(0), cmd("d"),
+              int(150), int(250), cmd("m"),
+              int(400), int(250), cmd("l"),
+              cmd("S"),
+              array([]), int(0), cmd("d"),
+              int(1), cmd("w"),
+
+              real(1.0), real(0.0), real(0.0), cmd("RG"),
+              real(0.5), real(0.75), real(1.0), cmd("rg"),
+              int(200), int(300), int(50), int(75), cmd("re"),
+              cmd("B"),
+
+              real(0.5), real(0.1), real(0.2), cmd("RG"),
+              real(0.7), cmd("g"),
+              int(300), int(300), cmd("m"),
+              int(300), int(400), int(400), int(400), int(400), int(300), cmd("c"),
+              cmd("b"),
               eof()
           ]
         },
