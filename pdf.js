@@ -82,6 +82,9 @@ var Obj = (function() {
             });
     }
 
+    constructor.prototype.isNum = function(value) {
+        return this.isInt(value) || this.isReal(value);
+    }
     constructor.prototype.lookup = function(key) {
         function lookup(key) {
             if (!(this.value.contains(key)))
@@ -718,13 +721,18 @@ var Interpreter = (function() {
             var cmd = CMD_TABLE[cmdName];
             if (!cmd) {
                 this.error("Unknown command '"+ cmdName +"'");
-            } else if (!this.typeCheck(cmd, args)) {
+            } else if (!this.typeCheck(cmd.params, args)) {
                 this.error("Wrong arguments for command '"+ cmdName +"'");
             }
 
             return cmd.fn;
         },
-        typeCheck: function(cmd, args) {
+        typeCheck: function(params, args) {
+            if (params.length != args.length)
+                return false;
+            for (var i = 0; i < params.length; ++i)
+                if (!args[i]["is"+ params[i]]())
+                    return false;
             return true;
         },
         error: function(what) {
