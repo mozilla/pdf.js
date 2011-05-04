@@ -72,11 +72,12 @@ var Obj = (function() {
                 ];
 
     for (var i = 0; i < types.length; ++i) {
-        var typeName = types[i];
-        constructor[typeName] = i;
+        let type = i;
+        var typeName = types[type];
+        constructor[typeName] = type;
         constructor.prototype["is" + typeName] =
             (function (value) {
-                return this.type == i &&
+                return this.type == type &&
                        (typeof value == "undefined" || value == this.value);
             });
     }
@@ -626,3 +627,262 @@ var PDFDoc = (function () {
         }
     };
 })();
+
+var Interpreter = (function() {
+    function constructor(xref, resources, catalog, graphics) {
+        this.xref = xref;
+        this.resStack = [ resources ];
+        this.catalog = catalog;
+        this.gfx = graphics;
+    }
+
+    const MAX_ARGS = 33;
+
+    constructor.prototype = {
+        interpret: function(obj) {
+            return this.interpretHelper(new Parser(new Lexer(obj), true));
+        },
+        interpretHelper: function(parser) {
+            var args = [ ];
+            var obj;
+            while (!((obj = parser.getObj()).isEOF())) {
+                if (obj.isCmd()) {
+                    this.dispatch(obj, args);
+                    args = [ ]; // yuck
+                } else if (MAX_ARGS == args.length) {
+                    this.error("Too many arguments");
+                } else {
+                    args.push(obj);
+                }
+            }
+        },
+
+        dispatch: function(cmdObj, args) {
+            this.getAndCheckCmd(cmdObj, args).apply(
+                this, args.map(function(o) o.value));
+        },
+        getAndCheckCmd: function(cmdObj, args) {
+            const CMD_TABLE = {
+                // Text commands
+                "BT": { fn: "beginText",
+                        params: [ ] },
+                "ET": { fn: "endText", 
+                        params: [ ] },
+                "Td": { fn: "moveText",
+                        params: [ "Num", "Num" ] },
+                "Tf": { fn: "setFont",
+                        params: [ "Name", "Num" ] },
+                "Tj": { fn: "showText",
+                        params: [ "String" ] },
+            };
+
+            var cmdName = cmdObj.value
+            var cmd = CMD_TABLE[cmdName];
+            if (!cmd) {
+                this.error("Unknown command '"+ cmdName +"'");
+            } else if (!this.typeCheck(cmd, args)) {
+                this.error("Wrong arguments for command '"+ cmdName +"'");
+            }
+
+            return this[cmd.fn];
+        },
+        typeCheck: function(cmd, args) {
+            return true;
+        },
+
+        // Text commands
+        beginText: function() {
+            this.gfx.beginText();
+        },
+        endText: function() {
+            this.gfx.endText();
+        },
+        moveText: function(x, y) {
+            this.gfx.moveText(x, y);
+        },
+        setFont: function(font, size) {
+            // lookup font
+            this.gfx.setFont(font, size);
+        },
+        showText: function(text) {
+            this.gfx.showText(text);
+        }
+    };
+
+    return constructor;
+})();
+
+var EchoGraphics = (function() {
+    function constructor() {
+        this.out = "";
+        this.indentation = 0;
+        this.indentationStr = "";
+    }
+
+    constructor.prototype = {
+        // Graphics state
+        save: function() {
+            this.printdentln("q");
+        },
+        restore: function() {
+            this.printdentln("Q");
+        },
+
+        // Text
+        beginText: function() {
+            this.printdentln("BT");
+            this.indent();
+        },
+        setFont: function(font, sizePt) {
+            this.printdentln("/"+ font +" "+ sizePt +" Tf");
+        },
+        moveText: function (x, y) {
+            this.printdentln(""+ x +" "+ y +" Td");
+        },
+        showText: function(text) {
+            this.printdentln("( "+ text +" ) Tj");
+        },
+        endText: function() {
+            this.dedent();
+            this.printdentln("ET");
+        },
+
+        // Output state
+        print: function(str) {
+            this.out += str;
+        },
+        println: function(str) {
+            this.print(str);
+            this.out += "\n";
+        },
+        printdentln: function(str) {
+            this.print(this.indentationStr);
+            this.println(str);
+        },
+        indent: function() {
+            this.indentation += 2;
+            this.indentationStr += "  ";
+        },
+        dedent: function() {
+            this.indentation -= 2;
+            this.indentationStr = this.indentationStr.slice(0, -2);
+        },
+    };
+
+    return constructor;
+})();
+
+var CanvasGraphicsState = (function() {
+    function constructor(canvasCtx, hdpi, vdpi, pageBox) {
+        // XXX canvas2d context has much of this; need to fill in what
+        // canvas state doesn't store.  
+        this.ctx = canvasCtx;
+
+        // Page state
+        this.hdpi = hdpi
+        this.vdpi = vdpi
+        // ...
+        // Fill state
+        // ...
+        // Stroke state
+        // ...
+        // Line state
+        // ...
+        // Text state
+        // ...
+        // Current path
+        // ...
+        // Transforms
+        // ...
+        // Clipping
+        // ...
+    }
+
+    constructor.prototype = {
+        // Coordinate transforms
+        // ...
+        // CTM mutators
+        // ...
+        // Path mutators
+        // ...
+    };
+
+    return constructor;
+})();
+
+var CanvasGraphics = (function() {
+    function constructor(canvasCtx, hdpi, vdpi, pageBox) {
+        this.ctx = canvasCtx;
+        this.current = new CanvasGraphicsState(this.ctx, hdpi, vdpi, pageBox);
+        this.stateStack = [ ];
+    }
+
+    constructor.prototype = {
+        save: function() {
+            this.ctx.save();
+            this.stateStack.push(this.current);
+            // ????
+            this.current = new CanvasGraphicsState(this.ctx,
+                                                   hdpi, vdpi, pageBox);
+        },
+        restore: function() {
+            this.current = this.stateStack.pop();
+            this.ctx.restore();
+        },
+    };
+
+    return constructor;
+})();
+
+//var PostscriptGraphics
+//var SVGGraphics
+
+// XXX temporary testing code
+var MockParser = (function() {
+    function constructor(objs) {
+        this.objs = objs;
+    }
+
+    constructor.prototype = {
+        getObj: function() {
+            return this.objs.shift();
+        }
+    };
+
+    return constructor;
+})();
+
+function runEchoTests() {
+    function cmd(c)     { return new Obj(Obj.Cmd, c); }
+    function name(n)    { return new Obj(Obj.Name, n); }
+    function int(i)     { return new Obj(Obj.Int, i); }
+    function string(s)  { return new Obj(Obj.String, s); }
+    function eof()      { return new Obj(Obj.EOF); }
+
+    var tests = [
+        { name: "Hello world",
+          objs: [
+              cmd("BT"),
+              name("F1"), int(24), cmd("Tf"),
+              int(100), int(100), cmd("Td"),
+              string("Hello World"), cmd("Tj"),
+              cmd("ET"),
+              eof()
+          ]
+        },
+    ];
+
+    tests.forEach(function(test) {
+        putstr("Running echo test '"+ test.name +"'... ");
+
+        var output = "";
+        var gfx = new EchoGraphics(output);
+        var i = new Interpreter(null, null, null, gfx);
+        i.interpretHelper(new MockParser(test.objs));
+
+        print("done.  Output:");
+        print(gfx.out);
+    });
+}
+
+runEchoTests();
