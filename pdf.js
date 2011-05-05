@@ -653,6 +653,57 @@ var Interpreter = (function() {
     }
 
     const MAX_ARGS = 33;
+    const CMD_TABLE = {
+        // Graphics state
+        "w" : { fn: "setLineWidth",
+                params: [ "Num" ] },
+        "d" : { fn: "setDash",
+                params: [ "Array", "Num" ] },
+        "q" : { fn: "save",
+                params: [ ] },
+        "Q" : { fn: "restore",
+                params: [ ] },
+        // Path
+        "m" : { fn: "moveTo",
+                params: [ "Num", "Num" ] },
+        "l" : { fn: "lineTo",
+                params: [ "Num", "Num" ] },
+        "c" : { fn: "curveTo",
+                params: [ "Num", "Num", "Num", "Num", "Num", "Num" ] },
+        "re": { fn: "rectangle",
+                params: [ "Num", "Num", "Num", "Num" ] },
+        "S" : { fn: "stroke",
+                params: [ ] },
+        "B" : { fn: "fillStroke",
+                params: [ ] },
+        "b" : { fn: "closeFillStroke",
+                params: [ ] },
+        // Clipping
+        // Text
+        "BT": { fn: "beginText",
+                params: [ ] },
+        "ET": { fn: "endText", 
+                params: [ ] },
+        "Tf": { fn: "setFont",
+                params: [ "Name", "Num" ] },
+        "Td": { fn: "moveText",
+                params: [ "Num", "Num" ] },
+        "Tj": { fn: "showText",
+                params: [ "String" ] },
+        // Type3 fonts
+        // Color
+        "g" : { fn: "setFillGray",
+                params: [ "Num" ] },
+        "RG": { fn: "setStrokeRGBColor",
+                params: [ "Num", "Num", "Num" ] },
+        "rg": { fn: "setFillRGBColor",
+                params: [ "Num", "Num", "Num" ] },
+        // Shading
+        // Images
+        // XObjects
+        // Marked content
+        // Compatibility
+    };
 
     constructor.prototype = {
         interpret: function(obj) {
@@ -681,58 +732,6 @@ var Interpreter = (function() {
                                    args.map(function(o) o.lowerToJS()));
         },
         getAndCheckCmd: function(cmdObj, args) {
-            const CMD_TABLE = {
-                // Graphics state
-                "w" : { fn: "setLineWidth",
-                        params: [ "Num" ] },
-                "d" : { fn: "setDash",
-                        params: [ "Array", "Num" ] },
-                "q" : { fn: "save",
-                        params: [ ] },
-                "Q" : { fn: "restore",
-                        params: [ ] },
-                // Path
-                "m" : { fn: "moveTo",
-                        params: [ "Num", "Num" ] },
-                "l" : { fn: "lineTo",
-                        params: [ "Num", "Num" ] },
-                "c" : { fn: "curveTo",
-                        params: [ "Num", "Num", "Num", "Num", "Num", "Num" ] },
-                "re": { fn: "rectangle",
-                        params: [ "Num", "Num", "Num", "Num" ] },
-                "S" : { fn: "stroke",
-                        params: [ ] },
-                "B" : { fn: "fillStroke",
-                        params: [ ] },
-                "b" : { fn: "closeFillStroke",
-                        params: [ ] },
-                // Clipping
-                // Text
-                "BT": { fn: "beginText",
-                        params: [ ] },
-                "ET": { fn: "endText", 
-                        params: [ ] },
-                "Tf": { fn: "setFont",
-                        params: [ "Name", "Num" ] },
-                "Td": { fn: "moveText",
-                        params: [ "Num", "Num" ] },
-                "Tj": { fn: "showText",
-                        params: [ "String" ] },
-                // Type3 fonts
-                // Color
-                "g" : { fn: "setFillGray",
-                        params: [ "Num" ] },
-                "RG": { fn: "setStrokeRGBColor",
-                        params: [ "Num", "Num", "Num" ] },
-                "rg": { fn: "setFillRGBColor",
-                        params: [ "Num", "Num", "Num" ] },
-                // Shading
-                // Images
-                // XObjects
-                // Marked content
-                // Compatibility
-            };
-
             var cmdName = cmdObj.value
             var cmd = CMD_TABLE[cmdName];
             if (!cmd) {
