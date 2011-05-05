@@ -43,6 +43,19 @@ function prevPage() {
     pageNum = (pageNum - 1 + numPages) % numPages;
     displayPage(pageNum);
 }
+
+function profile() {
+    const NUM_TRIALS = 10000;
+    var start = Date.now();
+    for (var i = 0; i < NUM_TRIALS; ++i)
+        displayPage(pageNum);
+    var end = Date.now();
+    var elapsed = (end - start);
+
+    alert("Drawing current page "+ NUM_TRIALS +" times took "+
+          (elapsed / 1000.0) +" seconds, "+
+          "~"+ (elapsed / NUM_TRIALS) +" ms/draw (totally unscientific)");
+}
   </script>
 </head>
 
@@ -51,6 +64,7 @@ function prevPage() {
     <button onclick="prevPage();">Previous</button>
     <input type="text" id="pageNumber" value="0"></input>
     <button onclick="nextPage();">Next</button>
+    <button onclick="profile();">Profile</button>
   <div id="viewer">
     <!-- Canvas dimensions must be specified in CSS pixels.  CSS pixels
       -- are always 96 dpi.  These dimensions are 8.5x11in at 96dpi. -->
