@@ -721,7 +721,7 @@ var Interpreter = (function() {
             while (!((obj = parser.getObj()).isEOF())) {
                 if (obj.isCmd()) {
                     this.dispatch(obj, args);
-                    args = [ ]; // yuck
+                    args.length = 0;
                 } else if (MAX_ARGS == args.length) {
                     this.error("Too many arguments");
                 } else {
