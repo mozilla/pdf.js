@@ -817,8 +817,8 @@ var EchoGraphics = (function() {
             this.dedent();
             this.printdentln("ET");
         },
-        setFont: function(font, sizePt) {
-            this.printdentln("/"+ font +" "+ sizePt +" Tf");
+        setFont: function(font, size) {
+            this.printdentln("/"+ font +" "+ size +" Tf");
         },
         moveText: function (x, y) {
             this.printdentln(""+ x +" "+ y +" Td");
@@ -963,7 +963,25 @@ var CanvasGraphics = (function() {
         },
 
         // Clipping
+
         // Text
+        beginText: function() {
+
+        },
+        endText: function() {
+
+        },
+        setFont: function(font, size) {
+            // NYI
+            this.ctx.font = size +'px Helvetica';
+        },
+        moveText: function (x, y) {
+            this.moveTo(x, y);
+        },
+        showText: function(text) {
+            this.ctx.fillText(text, 100, 100);
+        },
+
         // Type3 fonts
 
         // Color
@@ -1001,7 +1019,7 @@ try {
 
 var MockParser = (function() {
     function constructor(objs) {
-        this.objs = objs;
+        this.objs = objs.slice(0);
     }
 
     constructor.prototype = {
