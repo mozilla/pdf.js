@@ -22,15 +22,15 @@ function load() {
 }
 
 function displayPage(number) {
-    var page = tests[number].objs;
+    var page = tests[number];
     pageDisplay.value = number;
 
     var ctx = canvas.getContext("2d");
     ctx.save();
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     var gfx = new CanvasGraphics(ctx, 96.0, 96.0, null);
-    var interp = new Interpreter(null, null, null, gfx);
-    interp.interpretHelper(new MockParser(page));
+    var interp = new Interpreter(null, page.res, null, gfx);
+    interp.interpretHelper(new MockParser(page.objs));
     ctx.restore();
 }
 

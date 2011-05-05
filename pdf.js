@@ -647,7 +647,7 @@ var PDFDoc = (function () {
 var Interpreter = (function() {
     function constructor(xref, resources, catalog, graphics) {
         this.xref = xref;
-        this.resStack = [ resources ];
+        this.res = resources;
         this.catalog = catalog;
         this.gfx = graphics;
     }
@@ -724,7 +724,7 @@ var Interpreter = (function() {
             } },
         Tf: { params: [ "Name", "Num" ],
               op: function(args) {
-                var font = args[0]  // XXX look up
+                var font = this.res.Font[args[0]];
                 this.gfx.setFont(font, args[1]);
             } },
         Td: { params: [ "Num", "Num" ],
@@ -867,7 +867,7 @@ var EchoGraphics = (function() {
             this.printdentln("ET");
         },
         setFont: function(font, size) {
-            this.printdentln("/"+ font +" "+ size +" Tf");
+            this.printdentln("/"+ font.Name +" "+ size +" Tf");
         },
         moveText: function (x, y) {
             this.printdentln(""+ x +" "+ y +" Td");
@@ -1029,8 +1029,7 @@ var CanvasGraphics = (function() {
 
         },
         setFont: function(font, size) {
-            // NYI
-            this.ctx.font = size +'px Helvetica';
+            this.ctx.font = size +'px '+ font.BaseFont;
         },
         moveText: function (x, y) {
             this.moveTo(x, y);
@@ -1098,6 +1097,17 @@ function real(r)    { return new Obj(Obj.Real, r); }
 
 var tests = [
     { name: "Hello world",
+      res: {
+          // XXX not structured correctly
+          Font: {
+              F1: { Type: "Font",
+                    Subtype: "Type1",
+                    Name: "F1",
+                    BaseFont: "Georgia",
+                    Encoding: "MacRomanEncoding"
+              },
+          }
+      },
       objs: [
           cmd("BT"),
           name("F1"), int(24), cmd("Tf"),
@@ -1108,6 +1118,7 @@ var tests = [
           ]
     },
     { name: "Simple graphics",
+      res: { },
       objs: [
           int(150), int(250), cmd("m"),
           int(150), int(350), cmd("l"),
@@ -1135,6 +1146,7 @@ var tests = [
       ]
     },
     { name: "Heart",
+      res: { },
       objs: [
           cmd("q"),
           real(0.9), real(0.0), real(0.0), cmd("rg"),
@@ -1151,6 +1163,7 @@ var tests = [
       ]
     },
     { name: "Rectangle",
+      res: { },
       objs: [
           int(1), int(0), int(0), int(1), int(80), int(80), cmd("cm"),
           int(0), int(72), cmd("m"),
@@ -1171,7 +1184,7 @@ function runEchoTests() {
 
         var output = "";
         var gfx = new EchoGraphics(output);
-        var i = new Interpreter(null, null, null, gfx);
+        var i = new Interpreter(null, test.res, null, gfx);
         i.interpretHelper(new MockParser(test.objs));
 
         print("done.  Output:");
