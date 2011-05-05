@@ -663,6 +663,8 @@ var Interpreter = (function() {
                 params: [ ] },
         "Q" : { fn: "restore",
                 params: [ ] },
+        "cm": { fn: "transform",
+                params: [ "Num", "Num", "Num", "Num", "Num", "Num" ] },
         // Path
         "m" : { fn: "moveTo",
                 params: [ "Num", "Num" ] },
@@ -670,9 +672,13 @@ var Interpreter = (function() {
                 params: [ "Num", "Num" ] },
         "c" : { fn: "curveTo",
                 params: [ "Num", "Num", "Num", "Num", "Num", "Num" ] },
+        "h" : { fn: "closePath",
+                params: [ ] },
         "re": { fn: "rectangle",
                 params: [ "Num", "Num", "Num", "Num" ] },
         "S" : { fn: "stroke",
+                params: [ ] },
+        "f" : { fn: "fill",
                 params: [ ] },
         "B" : { fn: "fillStroke",
                 params: [ ] },
@@ -779,6 +785,10 @@ var EchoGraphics = (function() {
         restore: function() {
             this.printdentln("Q");
         },
+        transform: function(a, b, c, d, e, f) {
+            this.printdentln(""+ a +" "+ b +" "+ c +
+                             " "+d +" "+ e +" "+ f + " cm");
+        },
 
         // Path
         moveTo: function(x, y) {
@@ -792,11 +802,17 @@ var EchoGraphics = (function() {
                              " "+ x2 +" "+ y2 +
                              " "+ x3 +" "+ y3 + " c");
         },
+        closePath: function() {
+            this.printdentln("h");
+        },
         rectangle: function(x, y, width, height) {
             this.printdentln(""+ x +" "+ y + " "+ width +" "+ height +" re");
         },
         stroke: function() {
             this.printdentln("S");
+        },
+        fill: function() {
+            this.printdentln("f");
         },
         fillStroke: function() {
             this.printdentln("B");
@@ -925,14 +941,15 @@ var CanvasGraphics = (function() {
         },
         save: function() {
             this.ctx.save();
-            this.stateStack.push(this.current);
-            // ????
-            this.current = new CanvasGraphicsState(this.ctx,
-                                                   hdpi, vdpi, pageBox);
+            //this.stateStack.push(this.current);
+            //this.current = new CanvasGraphicsState(this.ctx, hdpi, vdpi, pageBox);
         },
         restore: function() {
-            this.current = this.stateStack.pop();
+            //this.current = this.stateStack.pop();
             this.ctx.restore();
+        },
+        transform: function(a, b, c, d, e, f) {
+            this.ctx.transform(a, b, c, d, e, f);
         },
 
         // Path
@@ -945,11 +962,18 @@ var CanvasGraphics = (function() {
         curveTo: function(x1, y1, x2, y2, x3, y3) {
             this.ctx.bezierCurveTo(x1, y1, x2, y2, x3, y3);
         },
+        closePath: function() {
+            this.ctx.closePath();
+        },
         rectangle: function(x, y, width, height) {
             this.ctx.rect(x, y, width, height);
         },
         stroke: function() {
             this.ctx.stroke();
+            this.consumePath();
+        },
+        fill: function() {
+            this.ctx.fill();
             this.consumePath();
         },
         fillStroke: function() {
@@ -1076,8 +1100,37 @@ var tests = [
           eof()
       ]
     },
+    { name: "Heart",
+      objs: [
+          cmd("q"),
+          real(0.9), real(0.0), real(0.0), cmd("rg"),
+          int(75), int(40), cmd("m"),
+          int(75), int(37), int(70), int(25), int(50), int(25), cmd("c"),
+          int(20), int(25), int(20), real(62.5), int(20), real(62.5), cmd("c"),
+          int(20), int(80), int(40), int(102), int(75), int(120), cmd("c"),
+          int(110), int(102), int(130), int(80), int(130), real(62.5), cmd("c"),
+          int(130), real(62.5), int(130), int(25), int(100), int(25), cmd("c"),
+          int(85), int(25), int(75), int(37), int(75), int(40), cmd("c"),
+          cmd("f"),
+          cmd("Q"),
+          eof()
+      ]
+    },
+    { name: "Rectangle",
+      objs: [
+          int(1), int(0), int(0), int(1), int(80), int(80), cmd("cm"),
+          int(0), int(72), cmd("m"),
+          int(72), int(0), cmd("l"),
+          int(0), int(-72), cmd("l"),
+          int(-72), int(0), cmd("l"),
+          int(4), cmd("w"),
+          cmd("h"), cmd("S"),
+          eof()
+     ]
+    },
 ];
 
+    
 function runEchoTests() {
     tests.forEach(function(test) {
         putstr("Running echo test '"+ test.name +"'... ");
