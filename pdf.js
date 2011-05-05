@@ -655,55 +655,100 @@ var Interpreter = (function() {
     const MAX_ARGS = 33;
     const CMD_TABLE = {
         // Graphics state
-        "w" : { fn: "setLineWidth",
-                params: [ "Num" ] },
-        "d" : { fn: "setDash",
-                params: [ "Array", "Num" ] },
-        "q" : { fn: "save",
-                params: [ ] },
-        "Q" : { fn: "restore",
-                params: [ ] },
-        "cm": { fn: "transform",
-                params: [ "Num", "Num", "Num", "Num", "Num", "Num" ] },
+        w : { params: [ "Num" ],
+              op: function(args) {
+                this.gfx.setLineWidth(args[0]);
+            } },
+        d : { params: [ "Array", "Num" ],
+              op: function(args) {
+                this.gfx.setDash(args[0], args[1]);
+            } },
+        q : { params: [ ],
+              op: function(args) {
+                this.gfx.save();
+            } },
+        Q : { params: [ ],
+              op: function(args) {
+                this.gfx.restore();
+            } },
+        cm: { params: [ "Num", "Num", "Num", "Num", "Num", "Num" ],
+              op: function(args) {
+                this.gfx.transform(args[0], args[1], args[2], args[3], args[4], args[5]);
+            } },
         // Path
-        "m" : { fn: "moveTo",
-                params: [ "Num", "Num" ] },
-        "l" : { fn: "lineTo",
-                params: [ "Num", "Num" ] },
-        "c" : { fn: "curveTo",
-                params: [ "Num", "Num", "Num", "Num", "Num", "Num" ] },
-        "h" : { fn: "closePath",
-                params: [ ] },
-        "re": { fn: "rectangle",
-                params: [ "Num", "Num", "Num", "Num" ] },
-        "S" : { fn: "stroke",
-                params: [ ] },
-        "f" : { fn: "fill",
-                params: [ ] },
-        "B" : { fn: "fillStroke",
-                params: [ ] },
-        "b" : { fn: "closeFillStroke",
-                params: [ ] },
+        m : { params: [ "Num", "Num" ],
+              op: function(args) {
+                this.gfx.moveTo(args[0], args[1]);
+            } },
+        l : { params: [ "Num", "Num" ],
+              op: function(args) {
+                this.gfx.lineTo(args[0], args[1]);
+            } },
+        c : { params: [ "Num", "Num", "Num", "Num", "Num", "Num" ],
+              op: function(args) {
+                this.gfx.curveTo(args[0], args[1], args[2], args[3], args[4], args[5]);
+            } },
+        h : { params: [ ],
+              op: function(args) {
+                this.gfx.closePath();
+            } },
+        re: { params: [ "Num", "Num", "Num", "Num" ],
+              op: function(args) {
+                this.gfx.rectangle(args[0], args[1], args[2], args[3]);
+            } },
+        S : { params: [ ],
+              op: function(args) {
+                this.gfx.stroke();
+            } },
+        f : { params: [ ],
+              op: function(args) {
+                this.gfx.fill();
+            } },
+        B : { params: [ ],
+              op: function(args) {
+                this.gfx.fillStroke();
+            } },
+        b : { params: [ ],
+              op: function(args) {
+                this.gfx.closeFillStroke();
+            } },
         // Clipping
         // Text
-        "BT": { fn: "beginText",
-                params: [ ] },
-        "ET": { fn: "endText", 
-                params: [ ] },
-        "Tf": { fn: "setFont",
-                params: [ "Name", "Num" ] },
-        "Td": { fn: "moveText",
-                params: [ "Num", "Num" ] },
-        "Tj": { fn: "showText",
-                params: [ "String" ] },
+        BT: { params: [ ],
+              op: function(args) {
+                this.gfx.beginText();
+            } },
+        ET: { params: [ ],
+              op: function(args) {
+                this.gfx.endText();
+            } },
+        Tf: { params: [ "Name", "Num" ],
+              op: function(args) {
+                var font = args[0]  // XXX look up
+                this.gfx.setFont(font, args[1]);
+            } },
+        Td: { params: [ "Num", "Num" ],
+              op: function(args) {
+                this.gfx.moveText(args[0], args[1]);
+            } },
+        Tj: { params: [ "String" ],
+              op: function(args) {
+                this.gfx.showText(args[0]);
+            } },
         // Type3 fonts
         // Color
-        "g" : { fn: "setFillGray",
-                params: [ "Num" ] },
-        "RG": { fn: "setStrokeRGBColor",
-                params: [ "Num", "Num", "Num" ] },
-        "rg": { fn: "setFillRGBColor",
-                params: [ "Num", "Num", "Num" ] },
+        g : { params: [ "Num" ],
+              op: function(args) {
+                this.gfx.setFillGray(args[0]);
+            } },
+        RG: { params: [ "Num", "Num", "Num" ],
+              op: function(args) {
+                this.gfx.setStrokeRGBColor(args[0], args[1], args[2]);
+            } },
+        rg: { params: [ "Num", "Num", "Num" ],
+              op: function(args) {
+                this.gfx.setFillRGBColor(args[0], args[1], args[2]);
+            } },
         // Shading
         // Images
         // XObjects
@@ -720,7 +765,15 @@ var Interpreter = (function() {
             var obj;
             while (!((obj = parser.getObj()).isEOF())) {
                 if (obj.isCmd()) {
-                    this.dispatch(obj, args);
+                    var cmd = obj.value;
+                    if (!(cmd in CMD_TABLE))
+                        this.error("Unknown command '"+ cmd +"'");
+
+                    var op = CMD_TABLE[cmd];
+                    if (!this.typeCheck(op.params, args))
+                        this.error("Wrong arguments for command '"+ cmd +"'");
+
+                    op.op.call(this, args.map(function (a) a.lowerToJS()));
                     args.length = 0;
                 } else if (MAX_ARGS == args.length) {
                     this.error("Too many arguments");
@@ -728,25 +781,6 @@ var Interpreter = (function() {
                     args.push(obj);
                 }
             }
-        },
-
-        dispatch: function(cmdObj, args) {
-            var fnName = this.getAndCheckCmd(cmdObj, args);
-            if (!(fnName in this.gfx))
-                this.error("Unimplemented function '"+ fnName +"'");
-            this.gfx[fnName].apply(this.gfx,
-                                   args.map(function(o) o.lowerToJS()));
-        },
-        getAndCheckCmd: function(cmdObj, args) {
-            var cmdName = cmdObj.value
-            var cmd = CMD_TABLE[cmdName];
-            if (!cmd) {
-                this.error("Unknown command '"+ cmdName +"'");
-            } else if (!this.typeCheck(cmd.params, args)) {
-                this.error("Wrong arguments for command '"+ cmdName +"'");
-            }
-
-            return cmd.fn;
         },
         typeCheck: function(params, args) {
             if (params.length != args.length)
