@@ -920,48 +920,23 @@ var EchoGraphics = (function() {
     return constructor;
 })();
 
-var CanvasGraphicsState = (function() {
-    function constructor(canvasCtx, hdpi, vdpi, pageBox) {
-        // XXX canvas2d context has much of this; need to fill in what
-        // canvas state doesn't store.  
-        this.ctx = canvasCtx;
-
-        // Page state
-        this.hdpi = hdpi
-        this.vdpi = vdpi
-        // ...
-        // Fill state
-        // ...
-        // Stroke state
-        // ...
-        // Line state
-        // ...
-        // Text state
-        // ...
-        // Current path
-        // ...
-        // Transforms
-        // ...
-        // Clipping
-        // ...
+// <canvas> contexts store most of the state we need natively.
+// However, PDF needs a bit more state, which we store here.
+var CanvasExtraState = (function() {
+    function constructor() {
+        // Current text position (in text coordinates)
+        this.lineX = 0.0;
+        this.lineY = 0.0;
     }
-
     constructor.prototype = {
-        // Coordinate transforms
-        // ...
-        // CTM mutators
-        // ...
-        // Path mutators
-        // ...
     };
-
     return constructor;
 })();
 
 var CanvasGraphics = (function() {
     function constructor(canvasCtx, hdpi, vdpi, pageBox) {
         this.ctx = canvasCtx;
-        this.current = new CanvasGraphicsState(this.ctx, hdpi, vdpi, pageBox);
+        this.current = new CanvasExtraState();
         this.stateStack = [ ];
     }
 
@@ -975,11 +950,11 @@ var CanvasGraphics = (function() {
         },
         save: function() {
             this.ctx.save();
-            //this.stateStack.push(this.current);
-            //this.current = new CanvasGraphicsState(this.ctx, hdpi, vdpi, pageBox);
+            this.stateStack.push(this.current);
+            this.current = new CanvasExtraState();
         },
         restore: function() {
-            //this.current = this.stateStack.pop();
+            this.current = this.stateStack.pop();
             this.ctx.restore();
         },
         transform: function(a, b, c, d, e, f) {
@@ -1032,10 +1007,11 @@ var CanvasGraphics = (function() {
             this.ctx.font = size +'px '+ font.BaseFont;
         },
         moveText: function (x, y) {
-            this.moveTo(x, y);
+            this.current.lineX = x;
+            this.current.lineY = y;
         },
         showText: function(text) {
-            this.ctx.fillText(text, 100, 100);
+            this.ctx.fillText(text, this.current.lineX, this.current.lineY);
         },
 
         // Type3 fonts
