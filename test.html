@@ -1,0 +1,44 @@
+<html>
+<head>
+  <title>Simple pdf.js page viewer</title>
+  <script type="application/javascript;version=1.8"
+          src="pdf.js"></script>
+  <style type"text/css">
+#viewer {
+  padding: 5px;
+  border: 5px solid black;
+  width: 8.5in;
+  height: 11in;
+}
+  </style>
+
+  <script type="application/javascript;version=1.8">
+var canvas;
+function load() {
+    canvas = document.getElementById("canvas");
+    displayPage();
+}
+
+function displayPage() {
+    var page = tests[1].objs;
+
+    var gfx = new CanvasGraphics(canvas.getContext("2d"), 96.0, 96.0, null);
+    var interp = new Interpreter(null, null, null, gfx);
+    interp.interpretHelper(new MockParser(page));
+}
+  </script>
+</head>
+
+<body onload="load();">
+  <div>
+    <button>Previous</button>
+    <input type="text" id="pageNumber" value="0"></input>
+    <button>Next</button>
+  <div id="viewer">
+    <!-- Canvas dimensions must be specified in CSS pixels.  CSS pixels
+      -- are always 96 dpi.  These dimensions are 8.5x11in at 96dpi. -->
+    <canvas id="canvas" width="816" height="1056"></canvas>
+  </div>
+</body>
+
+</html>

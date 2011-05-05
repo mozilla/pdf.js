@@ -675,6 +675,8 @@ var Interpreter = (function() {
 
         dispatch: function(cmdObj, args) {
             var fnName = this.getAndCheckCmd(cmdObj, args);
+            if (!(fnName in this.gfx))
+                this.error("Unimplemented function '"+ fnName +"'");
             this.gfx[fnName].apply(this.gfx,
                                    args.map(function(o) o.lowerToJS()));
         },
@@ -916,6 +918,12 @@ var CanvasGraphics = (function() {
 
     constructor.prototype = {
         // Graphics state
+        setLineWidth: function(width) {
+            this.ctx.lineWidth = width;
+        },
+        setDash: function(dashArray, dashPhase) {
+            // NYI
+        },
         save: function() {
             this.ctx.save();
             this.stateStack.push(this.current);
@@ -927,6 +935,55 @@ var CanvasGraphics = (function() {
             this.current = this.stateStack.pop();
             this.ctx.restore();
         },
+
+        // Path
+        moveTo: function(x, y) {
+            this.ctx.moveTo(x, y);
+        },
+        lineTo: function(x, y) {
+            this.ctx.lineTo(x, y);
+        },
+        curveTo: function(x1, y1, x2, y2, x3, y3) {
+            this.ctx.bezierCurveTo(x1, y1, x2, y2, x3, y3);
+        },
+        rectangle: function(x, y, width, height) {
+            this.ctx.rect(x, y, width, height);
+        },
+        stroke: function() {
+            this.ctx.stroke();
+            this.consumePath();
+        },
+        fillStroke: function() {
+            this.ctx.fill();
+            this.ctx.stroke();
+            this.consumePath();
+        },
+        closeFillStroke: function() {
+            return this.fillStroke();
+        },
+
+        // Clipping
+        // Text
+        // Type3 fonts
+
+        // Color
+        setFillGray: function(gray) {
+            this.setFillRGBColor(gray, gray, gray);
+        },
+        setStrokeRGBColor: function(r, g, b) {
+            this.ctx.strokeStyle = this.makeCssRgb(r, g, b);
+        },
+        setFillRGBColor: function(r, g, b) {
+            this.ctx.fillStyle = this.makeCssRgb(r, g, b);
+        },
+
+        consumePath: function() {
+            this.ctx.beginPath();
+        },
+        makeCssRgb: function(r, g, b) {
+            var ri = (255 * r) | 0, gi = (255 * g) | 0, bi = (255 * b) | 0;
+            return "rgb("+ ri +","+ gi +","+ bi +")";
+        },
     };
 
     return constructor;
@@ -936,6 +993,12 @@ var CanvasGraphics = (function() {
 //var SVGGraphics
 
 // XXX temporary testing code
+var inJSShell = false;
+try {
+    putstr("");
+    inJSShell = true;
+} catch (e) { }
+
 var MockParser = (function() {
     function constructor(objs) {
         this.objs = objs;
@@ -950,55 +1013,55 @@ var MockParser = (function() {
     return constructor;
 })();
 
+function cmd(c)     { return new Obj(Obj.Cmd, c); }
+function name(n)    { return new Obj(Obj.Name, n); }
+function int(i)     { return new Obj(Obj.Int, i); }
+function string(s)  { return new Obj(Obj.String, s); }
+function eof()      { return Obj.eofObj; }
+function array(a)   { return new Obj(Obj.Array, a); }
+function real(r)    { return new Obj(Obj.Real, r); }
+
+var tests = [
+    { name: "Hello world",
+      objs: [
+          cmd("BT"),
+          name("F1"), int(24), cmd("Tf"),
+          int(100), int(100), cmd("Td"),
+          string("Hello World"), cmd("Tj"),
+          cmd("ET"),
+          eof()
+          ]
+    },
+    { name: "Simple graphics",
+      objs: [
+          int(150), int(250), cmd("m"),
+          int(150), int(350), cmd("l"),
+          cmd("S"),
+
+          int(4), cmd("w"),
+          array([int(4), int(6)]), int(0), cmd("d"),
+          int(150), int(250), cmd("m"),
+          int(400), int(250), cmd("l"),
+          cmd("S"),
+          array([]), int(0), cmd("d"),
+          int(1), cmd("w"),
+
+          real(1.0), real(0.0), real(0.0), cmd("RG"),
+          real(0.5), real(0.75), real(1.0), cmd("rg"),
+          int(200), int(300), int(50), int(75), cmd("re"),
+          cmd("B"),
+
+          real(0.5), real(0.1), real(0.2), cmd("RG"),
+          real(0.7), cmd("g"),
+          int(300), int(300), cmd("m"),
+          int(300), int(400), int(400), int(400), int(400), int(300), cmd("c"),
+          cmd("b"),
+          eof()
+      ]
+    },
+];
+
 function runEchoTests() {
-    function cmd(c)     { return new Obj(Obj.Cmd, c); }
-    function name(n)    { return new Obj(Obj.Name, n); }
-    function int(i)     { return new Obj(Obj.Int, i); }
-    function string(s)  { return new Obj(Obj.String, s); }
-    function eof()      { return Obj.eofObj; }
-    function array(a)   { return new Obj(Obj.Array, a); }
-    function real(r)    { return new Obj(Obj.Real, r); }
-
-    var tests = [
-        { name: "Hello world",
-          objs: [
-              cmd("BT"),
-              name("F1"), int(24), cmd("Tf"),
-              int(100), int(100), cmd("Td"),
-              string("Hello World"), cmd("Tj"),
-              cmd("ET"),
-              eof()
-          ]
-        },
-        { name: "Simple graphics",
-          objs: [
-              int(150), int(250), cmd("m"),
-              int(150), int(350), cmd("l"),
-              cmd("S"),
-
-              int(4), cmd("w"),
-              array([int(4), int(6)]), int(0), cmd("d"),
-              int(150), int(250), cmd("m"),
-              int(400), int(250), cmd("l"),
-              cmd("S"),
-              array([]), int(0), cmd("d"),
-              int(1), cmd("w"),
-
-              real(1.0), real(0.0), real(0.0), cmd("RG"),
-              real(0.5), real(0.75), real(1.0), cmd("rg"),
-              int(200), int(300), int(50), int(75), cmd("re"),
-              cmd("B"),
-
-              real(0.5), real(0.1), real(0.2), cmd("RG"),
-              real(0.7), cmd("g"),
-              int(300), int(300), cmd("m"),
-              int(300), int(400), int(400), int(400), int(400), int(300), cmd("c"),
-              cmd("b"),
-              eof()
-          ]
-        },
-    ];
-
     tests.forEach(function(test) {
         putstr("Running echo test '"+ test.name +"'... ");
 
@@ -1012,4 +1075,5 @@ function runEchoTests() {
     });
 }
 
-runEchoTests();
+if (inJSShell)
+    runEchoTests();
