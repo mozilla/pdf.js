@@ -27,6 +27,9 @@ var Stream = (function() {
     }
 
     constructor.prototype = {
+        get length() {
+            return this.bytes.length;
+        },
         reset: function() {
             this.pos = 0;
         },
@@ -39,7 +42,7 @@ var Stream = (function() {
         getChar: function() {
             var ch = this.lookChar();
             this.pos++;
-            return ch;
+            return String.fromCharCode(ch);
         },
         putBack: function() {
             this.pos--;
@@ -47,9 +50,26 @@ var Stream = (function() {
         skipChar: function() {
             this.pos++;
         },
-        moveStart: function(delta) {
-            this.bytes = Uint8Array(arrayBuffer, delta);
-            this.pos -= delta;
+        skip: function(n) {
+            this.pos += n;
+        },
+        moveStart: function() {
+            this.bytes = Uint8Array(bytes, pos);
+            this.pos = 0;
+        },
+        find: function(str, limit, backwards) {
+            var length = this.bytes.length;
+            var pos = this.pos;
+            var str = "";
+            if (pos + limit > length)
+                limit = length - pos;
+            for (var n = 0; n < limit; ++n)
+                str += this.getChar();
+            var index = backwards ? str.lastIndexOf(str) : str.indexOf(str);
+            if (index == -1)
+                return false; /* not found */
+            this.pos += index;
+            return true; /* found */
         }
     };
 
@@ -598,41 +618,49 @@ var PDFDoc = (function () {
                 if (linearization.length != length)
                     linearization = false;
             }
-            // shadow the prototype getter
+            // shadow the prototype getter with a data property
             return this.linearization = linearization;
         },
         get startXRef() {
-            var startXRef;
+            var startXRef = 0;
             var linearization = this.linearization;
             if (linearization) {
-                // TODO
+                // Find end of first obj.
+                stream.reset();
+                if (stream.find("endobj", 1024))
+                    startXRef = stream.pos + 6;
             } else {
-                // TODO
+                // Find startxref at the end of the file.
+                var start = stream.length - 1024;
+                if (start < 0)
+                    start = 0;
+                stream.pos = start;
+                if (stream.find("startxref", 1024, true)) {
+                    stream.skip(9);
+                    var ch;
+                    while ((ch = stream.getChar()) == " " || ch == "\t")
+                        ;
+                    var str = "";
+                    while ((ch - "0") <= 9) {
+                        str += ch;
+                        ch = stream.getChar();
+                    }
+                    startXRef = parseNumber(str);
+                    if (isNaN(startXRef))
+                        startXRef = 0;
+                }
             }
-            // shadow the prototype getter
+            // shadow the prototype getter with a data property
             return this.startXRef = startXRef;
         },
         // Find the header, remove leading garbage and setup the stream
         // starting from the header.
         checkHeader: function(stream) {
-            const headerSearchSize = 1024;
-
             stream.reset();
-
-            var skip = 0;
-            var header = "%PDF-";
-            while (skip < headerSearchSize) {
-                stream.setPos(skip);
-                for (var i = 0; i < header.length; ++i) {
-                    if (stream.getChar() != header.charCodeAt(i))
-                        break;
-                }
-                
+            if (stream.find("%PDF-", 1024)) {
                 // Found the header, trim off any garbage before it.
-                if (i == header.length) {
-                    stream.moveStart(skip);
-                    return;
-                }
+                stream.moveStart();
+                return;
             }
 
             // May not be a PDF file, continue anyway.
