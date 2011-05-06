@@ -42,7 +42,7 @@ var Stream = (function() {
         getChar: function() {
             var ch = this.lookChar();
             this.pos++;
-            return String.fromCharCode(ch);
+            return ch;
         },
         putBack: function() {
             this.pos--;
@@ -54,10 +54,10 @@ var Stream = (function() {
             this.pos += n;
         },
         moveStart: function() {
-            this.bytes = Uint8Array(bytes, pos);
+            this.bytes = Uint8Array(this.bytes, this.pos);
             this.pos = 0;
         },
-        find: function(str, limit, backwards) {
+        find: function(needle, limit, backwards) {
             var length = this.bytes.length;
             var pos = this.pos;
             var str = "";
@@ -65,7 +65,8 @@ var Stream = (function() {
                 limit = length - pos;
             for (var n = 0; n < limit; ++n)
                 str += this.getChar();
-            var index = backwards ? str.lastIndexOf(str) : str.indexOf(str);
+            this.pos = pos;
+            var index = backwards ? str.lastIndexOf(needle) : str.indexOf(needle);
             if (index == -1)
                 return false; /* not found */
             this.pos += index;
@@ -74,7 +75,7 @@ var Stream = (function() {
     };
 
     return constructor;
-});
+})();
 
 var Obj = (function() {
     function constructor(type, value) {
@@ -201,7 +202,7 @@ var Lexer = (function() {
                     break;
                 }
             } while (true);
-            var value = parseNumber(str);
+            var value = parseFloat(str);
             if (isNaN(value))
                 return Obj.errorObj;
             if (floating) {
@@ -304,7 +305,7 @@ var Lexer = (function() {
         getName: function(ch) {
             var str = "";
             var stream = this.stream;
-            while (!!(ch = stream.lookChar()) && !specialChars[ch.toCharCode()]) {
+            while (!!(ch = stream.lookChar()) && !specialChars[ch.charCodeAt(0)]) {
                 stream.getChar();
                 if (ch == "#") {
                     ch = stream.lookChar();
@@ -353,8 +354,8 @@ var Lexer = (function() {
             // skip whitespace and comments
             var comment = false;
             var stream = this.stream;
+            var ch;
             while (true) {
-                var ch;
                 if (!(ch = stream.getChar()))
                     return new Obj(Object.EOF);
                 if (comment) {
@@ -362,13 +363,13 @@ var Lexer = (function() {
                         comment = false;
                 } else if (ch == '%') {
                     comment = true;
-                } else if (specialChars[ch.chatCodeAt(0)] != 1) {
+                } else if (specialChars[ch.charCodeAt(0)] != 1) {
                     break;
                 }
             }
             
             // start reading token
-            switch (c) {
+            switch (ch) {
             case '0': case '1': case '2': case '3': case '4':
             case '5': case '6': case '7': case '8': case '9':
             case '+': case '-': case '.':
@@ -407,7 +408,7 @@ var Lexer = (function() {
 
             // command
             var str = ch;
-            while (!!(ch = stream.lookChar()) && !specialChars[ch.toCharCode()]) {
+            while (!!(ch = stream.lookChar()) && !specialChars[ch.charCodeAt(0)]) {
                 stream.getChar();
                 if (str.length == 128) {
                     error("Command token too long");
@@ -438,8 +439,8 @@ var Parser = (function() {
 
     constructor.prototype = {
         refill: function() {
-            this.buf1 = lexer.getObj();
-            this.buf2 = lexer.getObj();
+            this.buf1 = this.lexer.getObj();
+            this.buf2 = this.lexer.getObj();
         },
         shift: function() {
             if (this.inlineImg > 0) {
@@ -539,8 +540,8 @@ var Linearization = (function () {
         var obj2 = this.parser.getObj();
         var obj3 = this.parser.getObj();
         this.linDict = this.parser.getObj();
-        if (obj1.isInt() && obj2.isInt() && obj3.isCmd("obj") && linDict.isDict()) {
-            var obj = linDict.lookup("Linearized");
+        if (obj1.isInt() && obj2.isInt() && obj3.isCmd("obj") && this.linDict.isDict()) {
+            var obj = this.linDict.lookup("Linearized");
             if (!(obj.isNum() && obj.value > 0))
                 this.linDict = Obj.nullObj;
         }
@@ -550,7 +551,7 @@ var Linearization = (function () {
         getInt: function(name) {
             var linDict = this.linDict;
             var obj;
-            if (!linDict.isDict() &&
+            if (linDict.isDict() &&
                 (obj = linDict.lookup(name)).isInt() &&
                 obj.value > 0) {
                 return length;
@@ -572,6 +573,8 @@ var Linearization = (function () {
             return 0;
         },
         get length() {
+            if (!this.linDict.isDict())
+                return 0;
             return this.getInt("L");
         },
         get hintsOffset() {
@@ -602,11 +605,14 @@ var Linearization = (function () {
             return this.getInt("P");
         }
     };
+
+    return constructor;
 })();
 
 var PDFDoc = (function () {
     function constructor(stream) {
-        this.setup(stream);
+        this.stream = stream;
+        this.setup();
     }
 
     constructor.prototype = {
@@ -622,6 +628,7 @@ var PDFDoc = (function () {
             return this.linearization = linearization;
         },
         get startXRef() {
+            var stream = this.stream;
             var startXRef = 0;
             var linearization = this.linearization;
             if (linearization) {
@@ -645,7 +652,7 @@ var PDFDoc = (function () {
                         str += ch;
                         ch = stream.getChar();
                     }
-                    startXRef = parseNumber(str);
+                    startXRef = parseInt(str);
                     if (isNaN(startXRef))
                         startXRef = 0;
                 }
@@ -655,7 +662,8 @@ var PDFDoc = (function () {
         },
         // Find the header, remove leading garbage and setup the stream
         // starting from the header.
-        checkHeader: function(stream) {
+        checkHeader: function() {
+            var stream = this.stream;
             stream.reset();
             if (stream.find("%PDF-", 1024)) {
                 // Found the header, trim off any garbage before it.
@@ -664,12 +672,14 @@ var PDFDoc = (function () {
             }
 
             // May not be a PDF file, continue anyway.
-            this.stream = stream;
         },
         setup: function(arrayBuffer, ownerPassword, userPassword) {
             this.checkHeader(arrayBuffer);
+            print(this.startXRef);
         }
     };
+
+    return constructor;
 })();
 
 var Interpreter = (function() {
@@ -1225,6 +1235,8 @@ function runEchoTests() {
 }
 
 function runParseTests() {
+    var data = snarf("simple_graphics.pdf", "binary");
+    var pdf = new PDFDoc(new Stream(data));
 }
 
 if ("arguments" in this) {
