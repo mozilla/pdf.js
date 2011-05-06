@@ -1101,13 +1101,6 @@ var CanvasGraphics = (function() {
 //var PostscriptGraphics
 //var SVGGraphics
 
-// XXX temporary testing code
-var inJSShell = false;
-try {
-    putstr("");
-    inJSShell = true;
-} catch (e) { }
-
 var MockParser = (function() {
     function constructor(objs) {
         this.objs = objs.slice(0);
@@ -1231,5 +1224,17 @@ function runEchoTests() {
     });
 }
 
-if (inJSShell)
-    runEchoTests();
+function runParseTests() {
+}
+
+if ("arguments" in this) {
+    const cmds = {
+        "-e": runEchoTests,
+        "-p": runParseTests
+    }
+    for (n in arguments) {
+        var fn = cmds[arguments[n]];
+        if (fn)
+            fn();
+    }
+}
