@@ -4,11 +4,19 @@
   <script type="application/javascript;version=1.8"
           src="pdf.js"></script>
   <style type"text/css">
+body {
+  margin: 6px;
+  padding: 0px;
+  background-color: #c0bdb7;
+}
 #viewer {
-  padding: 5px;
-  border: 5px solid black;
+  margin: auto;
+  border: 1px solid black;
   width: 8.5in;
   height: 11in;
+}
+#pageNumber {
+  text-align: right;
 }
   </style>
 
@@ -26,10 +34,14 @@ function displayPage(number) {
     pageDisplay.value = number;
 
     var ctx = canvas.getContext("2d");
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.save();
+    ctx.fillStyle = "rgb(255, 255, 255)";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.restore();
+
     var gfx = new CanvasGraphics(ctx);
     var interp = new Interpreter(null, page.res, null, gfx);
-    interp.interpretHelper(new MockParser(page.objs));
+    interp.interpretHelper(page.mediaBox, new MockParser(page.objs));
 }
 
 function nextPage() {
@@ -60,8 +72,8 @@ function profile() {
 <body onload="load();">
   <div>
     <button onclick="prevPage();">Previous</button>
-    <input type="text" id="pageNumber" value="0"></input>
     <button onclick="nextPage();">Next</button>
+    <input type="text" id="pageNumber" value="0" size="5"></input>
     <button onclick="profile();">Profile</button>
   <div id="viewer">
     <!-- Canvas dimensions must be specified in CSS pixels.  CSS pixels

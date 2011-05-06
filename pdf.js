@@ -760,8 +760,10 @@ var Interpreter = (function() {
         interpret: function(obj) {
             return this.interpretHelper(new Parser(new Lexer(obj), true));
         },
-        interpretHelper: function(parser) {
-            this.gfx.beginDrawing();
+        interpretHelper: function(mediaBox, parser) {
+            this.gfx.beginDrawing({ x: mediaBox[0], y: mediaBox[1],
+                                    width: mediaBox[2] - mediaBox[0],
+                                    height: mediaBox[3] - mediaBox[1] });
 
             var args = [ ];
             var obj;
@@ -810,9 +812,12 @@ var EchoGraphics = (function() {
     }
 
     constructor.prototype = {
-        beginDrawing: function () {
+        beginDrawing: function(mediaBox) {
+            this.printdentln("/MediaBox ["+
+                             mediaBox.x +" "+ mediaBox.y +" "+
+                             mediaBox.width +" "+ mediaBox.height +" ]");
         },
-        endDrawing: function () {
+        endDrawing: function() {
         },
 
         // Graphics state
@@ -950,10 +955,11 @@ var CanvasGraphics = (function() {
     }
 
     constructor.prototype = {
-        beginDrawing: function () {
+        beginDrawing: function(mediaBox) {
+            var cw = this.ctx.canvas.width, ch = this.ctx.canvas.height;
             this.ctx.save();
-            this.ctx.scale(1, -1);
-            this.ctx.translate(0, -this.ctx.canvas.height);
+            this.ctx.scale(cw / mediaBox.width, -ch / mediaBox.height);
+            this.ctx.translate(0, -mediaBox.height);
         },
         endDrawing: function () {
             this.ctx.restore();
@@ -1103,11 +1109,12 @@ var tests = [
               F1: { Type: "Font",
                     Subtype: "Type1",
                     Name: "F1",
-                    BaseFont: "Georgia",
+                    BaseFont: "Helvetica",
                     Encoding: "MacRomanEncoding"
               },
           }
       },
+      mediaBox: [ 0, 0, 612, 792 ],
       objs: [
           cmd("BT"),
           name("F1"), int(24), cmd("Tf"),
@@ -1115,10 +1122,11 @@ var tests = [
           string("Hello World"), cmd("Tj"),
           cmd("ET"),
           eof()
-          ]
+      ]
     },
     { name: "Simple graphics",
       res: { },
+      mediaBox: [ 0, 0, 612, 792 ],
       objs: [
           int(150), int(250), cmd("m"),
           int(150), int(350), cmd("l"),
@@ -1147,6 +1155,7 @@ var tests = [
     },
     { name: "Heart",
       res: { },
+      mediaBox: [ 0, 0, 612, 792 ],
       objs: [
           cmd("q"),
           real(0.9), real(0.0), real(0.0), cmd("rg"),
@@ -1164,6 +1173,7 @@ var tests = [
     },
     { name: "Rectangle",
       res: { },
+      mediaBox: [ 0, 0, 612, 792 ],
       objs: [
           int(1), int(0), int(0), int(1), int(80), int(80), cmd("cm"),
           int(0), int(72), cmd("m"),
@@ -1173,7 +1183,7 @@ var tests = [
           int(4), cmd("w"),
           cmd("h"), cmd("S"),
           eof()
-     ]
+      ]
     },
 ];
 
@@ -1185,7 +1195,7 @@ function runEchoTests() {
         var output = "";
         var gfx = new EchoGraphics(output);
         var i = new Interpreter(null, test.res, null, gfx);
-        i.interpretHelper(new MockParser(test.objs));
+        i.interpretHelper(test.mediaBox, new MockParser(test.objs));
 
         print("done.  Output:");
         print(gfx.out);
