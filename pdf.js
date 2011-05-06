@@ -611,9 +611,36 @@ var Linearization = (function () {
 
 var XRef = (function () {
     function constructor(stream, startXRef, mainXRefEntriesOffset) {
+        this.readXRef(stream, startXRef);
     }
 
     constructor.prototype = {
+        readXRefTable: function(parser) {
+            this.ok = true;
+            return true;
+        },
+        readXRefStream: function(parser) {
+            this.ok = true;
+            return true;
+        },
+        readXRef: function(stream, startXRef) {
+            stream.pos = startXRef;
+            var parser = new Parser(new Lexer(stream), false);
+            var obj = parser.getObj();
+            // parse an old-style xref table
+            if (obj.isCmd("xref"))
+                return this.readXRefTable(parser);
+            // parse an xref stream
+            if (obj.isInt()) {
+                if (!parser.getObj().isInt() ||
+                    !parser.getObj().isCmd("obj") ||
+                    !(obj = parser.getObj()).isStream()) {
+                    return false;
+                }
+                return this.readXRefStream(obj.value);
+            }
+            return false;
+        }
     };
 
     return constructor;
@@ -691,8 +718,8 @@ var PDFDoc = (function () {
 
             // May not be a PDF file, continue anyway.
         },
-        setup: function(arrayBuffer, ownerPassword, userPassword) {
-            this.checkHeader(arrayBuffer);
+        setup: function(ownerPassword, userPassword) {
+            this.checkHeader();
             this.xref = new XRef(this.stream,
                                  this.startXRef,
                                  this.mainXRefEntriesOffset);
