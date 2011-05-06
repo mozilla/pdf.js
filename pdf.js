@@ -609,6 +609,16 @@ var Linearization = (function () {
     return constructor;
 })();
 
+var XRef = (function () {
+    function constructor(stream, startXRef, mainXRefEntriesOffset) {
+    }
+
+    constructor.prototype = {
+    };
+
+    return constructor;
+})();
+
 var PDFDoc = (function () {
     function constructor(stream) {
         this.stream = stream;
@@ -660,6 +670,14 @@ var PDFDoc = (function () {
             // shadow the prototype getter with a data property
             return this.startXRef = startXRef;
         },
+        get mainXRefEntriesOffset() {
+            var mainXRefEntriesOffset = 0;
+            var linearization = this.linearization;
+            if (linearization)
+                mainXRefEntriesOffset = linearization.mainXRefEntriesOffset;
+            // shadow the prototype getter with a data property
+            return this.mainXRefEntriesOffset = mainXRefEntriesOffset;
+        },
         // Find the header, remove leading garbage and setup the stream
         // starting from the header.
         checkHeader: function() {
@@ -675,7 +693,10 @@ var PDFDoc = (function () {
         },
         setup: function(arrayBuffer, ownerPassword, userPassword) {
             this.checkHeader(arrayBuffer);
-            print(this.startXRef);
+            this.xref = new XRef(this.stream,
+                                 this.startXRef,
+                                 this.mainXRefEntriesOffset);
+            this.ok = this.xref.ok;
         }
     };
 
