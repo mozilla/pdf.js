@@ -92,14 +92,14 @@ var Obj = (function() {
                 ];
 
     for (var i = 0; i < types.length; ++i) {
-        let type = i;
-        var typeName = types[type];
-        constructor[typeName] = type;
+        var typeName = types[i];
+        constructor[typeName] = i;
         constructor.prototype["is" + typeName] =
-            (function (value) {
-                return this.type == type &&
+            (function is(value) {
+                return this.type == is.type &&
                        (typeof value == "undefined" || value == this.value);
             });
+        constructor.prototype["is" + typeName].type = i;
     }
 
     constructor.prototype.isNum = function(value) {
@@ -119,7 +119,7 @@ var Obj = (function() {
         } else if (this.isNull()) {
             return null;
         } else if (this.isArray()) {
-            return this.value.map(function (e) e.lowerToJS());
+            return this.value.map(function (e) { return e.lowerToJS(); });
         } else {
             return undefined;
         }
@@ -788,7 +788,11 @@ var Interpreter = (function() {
         interpret: function(obj) {
             return this.interpretHelper(new Parser(new Lexer(obj), true));
         },
-        interpretHelper: function(parser) {
+        interpretHelper: function(mediaBox, parser) {
+            this.gfx.beginDrawing({ x: mediaBox[0], y: mediaBox[1],
+                                    width: mediaBox[2] - mediaBox[0],
+                                    height: mediaBox[3] - mediaBox[1] });
+
             var args = [ ];
             var obj;
             while (!((obj = parser.getObj()).isEOF())) {
@@ -801,7 +805,8 @@ var Interpreter = (function() {
                     if (!this.typeCheck(op.params, args))
                         this.error("Wrong arguments for command '"+ cmd +"'");
 
-                    op.op.call(this, args.map(function (a) a.lowerToJS()));
+                    op.op.call(this,
+                               args.map(function (a) { return a.lowerToJS() }));
                     args.length = 0;
                 } else if (MAX_ARGS == args.length) {
                     this.error("Too many arguments");
@@ -809,6 +814,8 @@ var Interpreter = (function() {
                     args.push(obj);
                 }
             }
+
+            this.gfx.endDrawing();
         },
         typeCheck: function(params, args) {
             if (params.length != args.length)
@@ -834,6 +841,14 @@ var EchoGraphics = (function() {
     }
 
     constructor.prototype = {
+        beginDrawing: function(mediaBox) {
+            this.printdentln("/MediaBox ["+
+                             mediaBox.x +" "+ mediaBox.y +" "+
+                             mediaBox.width +" "+ mediaBox.height +" ]");
+        },
+        endDrawing: function() {
+        },
+
         // Graphics state
         setLineWidth: function(width) {
             this.printdentln(width +" w");
@@ -962,13 +977,23 @@ var CanvasExtraState = (function() {
 })();
 
 var CanvasGraphics = (function() {
-    function constructor(canvasCtx, hdpi, vdpi, pageBox) {
+    function constructor(canvasCtx) {
         this.ctx = canvasCtx;
         this.current = new CanvasExtraState();
         this.stateStack = [ ];
     }
 
     constructor.prototype = {
+        beginDrawing: function(mediaBox) {
+            var cw = this.ctx.canvas.width, ch = this.ctx.canvas.height;
+            this.ctx.save();
+            this.ctx.scale(cw / mediaBox.width, -ch / mediaBox.height);
+            this.ctx.translate(0, -mediaBox.height);
+        },
+        endDrawing: function () {
+            this.ctx.restore();
+        },
+
         // Graphics state
         setLineWidth: function(width) {
             this.ctx.lineWidth = width;
@@ -1039,7 +1064,13 @@ var CanvasGraphics = (function() {
             this.current.lineY = y;
         },
         showText: function(text) {
+            this.ctx.save();
+            this.ctx.translate(0, 2 * this.current.lineY);
+            this.ctx.scale(1, -1);
+
             this.ctx.fillText(text, this.current.lineX, this.current.lineY);
+
+            this.ctx.restore();
         },
 
         // Type3 fonts
@@ -1107,11 +1138,12 @@ var tests = [
               F1: { Type: "Font",
                     Subtype: "Type1",
                     Name: "F1",
-                    BaseFont: "Georgia",
+                    BaseFont: "Helvetica",
                     Encoding: "MacRomanEncoding"
               },
           }
       },
+      mediaBox: [ 0, 0, 612, 792 ],
       objs: [
           cmd("BT"),
           name("F1"), int(24), cmd("Tf"),
@@ -1119,10 +1151,11 @@ var tests = [
           string("Hello World"), cmd("Tj"),
           cmd("ET"),
           eof()
-          ]
+      ]
     },
     { name: "Simple graphics",
       res: { },
+      mediaBox: [ 0, 0, 612, 792 ],
       objs: [
           int(150), int(250), cmd("m"),
           int(150), int(350), cmd("l"),
@@ -1151,6 +1184,7 @@ var tests = [
     },
     { name: "Heart",
       res: { },
+      mediaBox: [ 0, 0, 612, 792 ],
       objs: [
           cmd("q"),
           real(0.9), real(0.0), real(0.0), cmd("rg"),
@@ -1168,6 +1202,7 @@ var tests = [
     },
     { name: "Rectangle",
       res: { },
+      mediaBox: [ 0, 0, 612, 792 ],
       objs: [
           int(1), int(0), int(0), int(1), int(80), int(80), cmd("cm"),
           int(0), int(72), cmd("m"),
@@ -1177,7 +1212,7 @@ var tests = [
           int(4), cmd("w"),
           cmd("h"), cmd("S"),
           eof()
-     ]
+      ]
     },
 ];
 
@@ -1189,7 +1224,7 @@ function runEchoTests() {
         var output = "";
         var gfx = new EchoGraphics(output);
         var i = new Interpreter(null, test.res, null, gfx);
-        i.interpretHelper(new MockParser(test.objs));
+        i.interpretHelper(test.mediaBox, new MockParser(test.objs));
 
         print("done.  Output:");
         print(gfx.out);
