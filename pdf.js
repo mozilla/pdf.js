@@ -72,14 +72,14 @@ var Obj = (function() {
                 ];
 
     for (var i = 0; i < types.length; ++i) {
-        let type = i;
-        var typeName = types[type];
-        constructor[typeName] = type;
+        var typeName = types[i];
+        constructor[typeName] = i;
         constructor.prototype["is" + typeName] =
-            (function (value) {
-                return this.type == type &&
+            (function is(value) {
+                return this.type == is.type &&
                        (typeof value == "undefined" || value == this.value);
             });
+        constructor.prototype["is" + typeName].type = i;
     }
 
     constructor.prototype.isNum = function(value) {
@@ -99,7 +99,7 @@ var Obj = (function() {
         } else if (this.isNull()) {
             return null;
         } else if (this.isArray()) {
-            return this.value.map(function (e) e.lowerToJS());
+            return this.value.map(function (e) { return e.lowerToJS(); });
         } else {
             return undefined;
         }
@@ -777,7 +777,8 @@ var Interpreter = (function() {
                     if (!this.typeCheck(op.params, args))
                         this.error("Wrong arguments for command '"+ cmd +"'");
 
-                    op.op.call(this, args.map(function (a) a.lowerToJS()));
+                    op.op.call(this,
+                               args.map(function (a) { return a.lowerToJS() }));
                     args.length = 0;
                 } else if (MAX_ARGS == args.length) {
                     this.error("Too many arguments");
