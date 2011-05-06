@@ -178,6 +178,7 @@ var Lexer = (function() {
     constructor.prototype = {
         error: function(msg) {
             // TODO
+            print(msg);
         },
         getNumber: function(ch) {
             var floating = false;
@@ -611,15 +612,57 @@ var Linearization = (function () {
 
 var XRef = (function () {
     function constructor(stream, startXRef, mainXRefEntriesOffset) {
+        this.entries = [];
         this.readXRef(stream, startXRef);
     }
 
     constructor.prototype = {
         readXRefTable: function(parser) {
+            while (true) {
+                var obj;
+                if ((obj = parser.getObj()).isCmd("trailer"))
+                    break;
+                if (!obj.isInt())
+                    return false;
+                var first = obj.value;
+                if (!(obj = parser.getObj()).isInt())
+                    return false;
+                var n = obj.value;
+                if (first < 0 || n < 0 || (first + n) != ((first + n) | 0))
+                    return false;
+                for (var i = first; i < first + n; ++i) {
+                    var entry = {};
+                    if (!(obj = parser.getObj()).isInt())
+                        return false;
+                    entry.offset = obj.value;
+                    if (!(obj = parser.getObj()).isInt())
+                        return false;
+                    entry.gen = obj.value;
+                    obj = parser.getObj();
+                    if (obj.isCmd("n")) {
+                        entry.uncompressed = true;
+                    } else if (obj.isCmd("f")) {
+                        entry.free = true;
+                    } else {
+                        return false;
+                    }
+                    if (!this.entries[i]) {
+                        // In some buggy PDF files the xref table claims to start at 1
+                        // instead of 0.
+                        if (i == 1 && first == 1 &&
+                            entry.offset == 0 && entry.gen == 65535 && entry.free) {
+                            i = first = 0;
+                        }
+                        this.entries[i] = entry;
+                    }
+                }
+            }
+            // read the trailer dictionary
             this.ok = true;
             return true;
         },
         readXRefStream: function(parser) {
+            // TODO
             this.ok = true;
             return true;
         },
@@ -715,7 +758,6 @@ var PDFDoc = (function () {
                 stream.moveStart();
                 return;
             }
-
             // May not be a PDF file, continue anyway.
         },
         setup: function(ownerPassword, userPassword) {
