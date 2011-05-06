@@ -761,6 +761,8 @@ var Interpreter = (function() {
             return this.interpretHelper(new Parser(new Lexer(obj), true));
         },
         interpretHelper: function(parser) {
+            this.gfx.beginDrawing();
+
             var args = [ ];
             var obj;
             while (!((obj = parser.getObj()).isEOF())) {
@@ -781,6 +783,8 @@ var Interpreter = (function() {
                     args.push(obj);
                 }
             }
+
+            this.gfx.endDrawing();
         },
         typeCheck: function(params, args) {
             if (params.length != args.length)
@@ -806,6 +810,11 @@ var EchoGraphics = (function() {
     }
 
     constructor.prototype = {
+        beginDrawing: function () {
+        },
+        endDrawing: function () {
+        },
+
         // Graphics state
         setLineWidth: function(width) {
             this.printdentln(width +" w");
@@ -934,13 +943,22 @@ var CanvasExtraState = (function() {
 })();
 
 var CanvasGraphics = (function() {
-    function constructor(canvasCtx, hdpi, vdpi, pageBox) {
+    function constructor(canvasCtx) {
         this.ctx = canvasCtx;
         this.current = new CanvasExtraState();
         this.stateStack = [ ];
     }
 
     constructor.prototype = {
+        beginDrawing: function () {
+            this.ctx.save();
+            this.ctx.scale(1, -1);
+            this.ctx.translate(0, -this.ctx.canvas.height);
+        },
+        endDrawing: function () {
+            this.ctx.restore();
+        },
+
         // Graphics state
         setLineWidth: function(width) {
             this.ctx.lineWidth = width;
@@ -1011,7 +1029,13 @@ var CanvasGraphics = (function() {
             this.current.lineY = y;
         },
         showText: function(text) {
+            this.ctx.save();
+            this.ctx.translate(0, 2 * this.current.lineY);
+            this.ctx.scale(1, -1);
+
             this.ctx.fillText(text, this.current.lineX, this.current.lineY);
+
+            this.ctx.restore();
         },
 
         // Type3 fonts
