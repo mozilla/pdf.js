@@ -417,7 +417,7 @@ var Lexer = (function() {
                 if (ch == '<') {
                     // dict punctuation
                     stream.getChar();
-                    return new Cmd(ch);
+                    return new Cmd("<<");
                 }
 	            return this.getHexString(ch);
             // dict punctuation
@@ -425,7 +425,7 @@ var Lexer = (function() {
 	            ch = stream.lookChar();
 	            if (ch == '>') {
                     stream.getChar();
-                    return new Cmd(ch);
+                    return new Cmd(">>");
                 }
 	        // fall through
             case ')':
@@ -494,6 +494,7 @@ var Parser = (function() {
                 this.refill();
 
             if (IsCmd(this.buf1, "[")) { // array
+                this.shift();
                 var array = [];
                 while (!IsCmd(this.buf1, "]") && !IsEOF(this.buf1))
                     array.push(this.getObj());
@@ -509,7 +510,7 @@ var Parser = (function() {
                         error("Dictionary key must be a name object");
                         shift();
                     } else {
-                        var key = buf1;
+                        var key = this.buf1.name;
                         this.shift();
                         if (IsEOF(this.buf1) || IsError(this.buf1))
                             break;
@@ -570,7 +571,7 @@ var Linearization = (function () {
         var obj3 = this.parser.getObj();
         this.linDict = this.parser.getObj();
         if (IsInt(obj1) && IsInt(obj2) && IsCmd(obj3, "obj") && IsDict(this.linDict)) {
-            var obj = this.linDict.lookup("Linearized");
+            var obj = this.linDict.get("Linearized");
             if (!(IsNum(obj) && obj > 0))
                 this.linDict = null;
         }
@@ -581,9 +582,9 @@ var Linearization = (function () {
             var linDict = this.linDict;
             var obj;
             if (IsDict(linDict) &&
-                IsInt(obj = linDict.lookup(name)) &&
+                IsInt(obj = linDict.get(name)) &&
                 obj > 0) {
-                return length;
+                return obj;
             }
             error("'" + name + "' field in linearization table is invalid");
             return 0;
@@ -592,7 +593,7 @@ var Linearization = (function () {
             var linDict = this.linDict;
             var obj1, obj2;
             if (IsDict(linDict) &&
-                IsArray(obj1 = linDict.lookup("H")) &&
+                IsArray(obj1 = linDict.get("H")) &&
                 obj1.length >= 2 &&
                 IsInt(obj2 = obj1[index]) &&
                 obj2 > 0) {
@@ -1282,7 +1283,8 @@ function runEchoTests() {
 }
 
 function runParseTests() {
-    var data = snarf("simple_graphics.pdf", "binary");
+    //var data = snarf("simple_graphics.pdf", "binary");
+    var data = snarf("/tmp/pdf_reference_1-7.pdf", "binary");
     var pdf = new PDFDoc(new Stream(data));
 }
 
