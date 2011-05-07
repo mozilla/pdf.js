@@ -808,111 +808,9 @@ var Interpreter = (function() {
         this.gfx = graphics;
     }
 
-    const MAX_ARGS = 33;
-    const CMD_TABLE = {
-        // Graphics state
-        w : { params: [ "Num" ],
-              op: function(args) {
-                this.gfx.setLineWidth(args[0]);
-            } },
-        d : { params: [ "Array", "Num" ],
-              op: function(args) {
-                this.gfx.setDash(args[0], args[1]);
-            } },
-        q : { params: [ ],
-              op: function(args) {
-                this.gfx.save();
-            } },
-        Q : { params: [ ],
-              op: function(args) {
-                this.gfx.restore();
-            } },
-        cm: { params: [ "Num", "Num", "Num", "Num", "Num", "Num" ],
-              op: function(args) {
-                this.gfx.transform(args[0], args[1], args[2], args[3], args[4], args[5]);
-            } },
-        // Path
-        m : { params: [ "Num", "Num" ],
-              op: function(args) {
-                this.gfx.moveTo(args[0], args[1]);
-            } },
-        l : { params: [ "Num", "Num" ],
-              op: function(args) {
-                this.gfx.lineTo(args[0], args[1]);
-            } },
-        c : { params: [ "Num", "Num", "Num", "Num", "Num", "Num" ],
-              op: function(args) {
-                this.gfx.curveTo(args[0], args[1], args[2], args[3], args[4], args[5]);
-            } },
-        h : { params: [ ],
-              op: function(args) {
-                this.gfx.closePath();
-            } },
-        re: { params: [ "Num", "Num", "Num", "Num" ],
-              op: function(args) {
-                this.gfx.rectangle(args[0], args[1], args[2], args[3]);
-            } },
-        S : { params: [ ],
-              op: function(args) {
-                this.gfx.stroke();
-            } },
-        f : { params: [ ],
-              op: function(args) {
-                this.gfx.fill();
-            } },
-        B : { params: [ ],
-              op: function(args) {
-                this.gfx.fillStroke();
-            } },
-        b : { params: [ ],
-              op: function(args) {
-                this.gfx.closeFillStroke();
-            } },
-        // Clipping
-        // Text
-        BT: { params: [ ],
-              op: function(args) {
-                this.gfx.beginText();
-            } },
-        ET: { params: [ ],
-              op: function(args) {
-                this.gfx.endText();
-            } },
-        Tf: { params: [ "Name", "Num" ],
-              op: function(args) {
-                var font = this.res.Font[args[0]];
-                this.gfx.setFont(font, args[1]);
-            } },
-        Td: { params: [ "Num", "Num" ],
-              op: function(args) {
-                this.gfx.moveText(args[0], args[1]);
-            } },
-        Tj: { params: [ "String" ],
-              op: function(args) {
-                this.gfx.showText(args[0]);
-            } },
-        // Type3 fonts
-        // Color
-        g : { params: [ "Num" ],
-              op: function(args) {
-                this.gfx.setFillGray(args[0]);
-            } },
-        RG: { params: [ "Num", "Num", "Num" ],
-              op: function(args) {
-                this.gfx.setStrokeRGBColor(args[0], args[1], args[2]);
-            } },
-        rg: { params: [ "Num", "Num", "Num" ],
-              op: function(args) {
-                this.gfx.setFillRGBColor(args[0], args[1], args[2]);
-            } },
-        // Shading
-        // Images
-        // XObjects
-        // Marked content
-        // Compatibility
-    };
-
     constructor.prototype = {
+        compile: function(parser) {
+        },
         interpret: function(obj) {
             return this.interpretHelper(new Parser(new Lexer(obj), true));
         },
@@ -920,37 +818,25 @@ var Interpreter = (function() {
             this.gfx.beginDrawing({ x: mediaBox[0], y: mediaBox[1],
                                     width: mediaBox[2] - mediaBox[0],
                                     height: mediaBox[3] - mediaBox[1] });
-
-            var args = [ ];
+            var args = [];
+            var gfx = this.gfx;
             var obj;
             while (!IsEOF(obj = parser.getObj())) {
                 if (IsCmd(obj)) {
                     var cmd = obj.cmd;
-                    if (!(cmd in CMD_TABLE))
-                        this.error("Unknown command '"+ cmd +"'");
-
-                    var op = CMD_TABLE[cmd];
-                    //if (!this.typeCheck(op.params, args))
-                    //this.error("Wrong arguments for command '"+ cmd +"'");
-
-                    op.op.call(this, args);
+                    var fn = gfx[cmd];
+                    if (fn && cmd[0] != "$") {
+                        if (fn.length != args.length)
+                            this.error("Invalid number of arguments '" + cmd + "'");
+                        fn.apply(gfx, args);
+                    } else
+                        this.error("Unknown command '" + cmd + "'");
                     args.length = 0;
-                } else if (MAX_ARGS == args.length) {
-                    this.error("Too many arguments");
                 } else {
-                    args.push(IsName(obj) ? obj.name : obj);
+                    args.push(obj);
                 }
             }
-
             this.gfx.endDrawing();
-        },
-        typeCheck: function(params, args) {
-            if (params.length != args.length)
-                return false;
-            for (var i = 0; i < params.length; ++i)
-                if (!args[i]["is"+ params[i]]())
-                    return false;
-            return true;
         },
         error: function(what) {
             throw new Error(what);
@@ -977,85 +863,85 @@ var EchoGraphics = (function() {
         },
 
         // Graphics state
-        setLineWidth: function(width) {
+        w: function(width) { // setLineWidth
             this.printdentln(width +" w");
         },
-        setDash: function(dashArray, dashPhase) {
+        d: function(dashArray, dashPhase) { // setDash
             this.printdentln(""+ dashArray +" "+ dashPhase +" d");
         },
-        save: function() {
+        q: function() { // save
             this.printdentln("q");
         },
-        restore: function() {
+        Q: function() { // restore
             this.printdentln("Q");
         },
-        transform: function(a, b, c, d, e, f) {
+        cm: function(a, b, c, d, e, f) { // transform
             this.printdentln(""+ a +" "+ b +" "+ c +
                              " "+d +" "+ e +" "+ f + " cm");
         },
 
         // Path
-        moveTo: function(x, y) {
+        m: function(x, y) { // moveTo
             this.printdentln(""+ x +" "+ y +" m");
         },
-        lineTo: function(x, y) {
+        l: function(x, y) { // lineTo
             this.printdentln(""+ x +" "+ y +" l");
         },
-        curveTo: function(x1, y1, x2, y2, x3, y3) {
+        c: function(x1, y1, x2, y2, x3, y3) { // curvoTo
             this.printdentln(""+ x1 +" "+ y1 +
                              " "+ x2 +" "+ y2 +
                              " "+ x3 +" "+ y3 + " c");
         },
-        closePath: function() {
+        h: function() { // closePath
             this.printdentln("h");
         },
-        rectangle: function(x, y, width, height) {
+        re: function(x, y, width, height) { // rectangle
             this.printdentln(""+ x +" "+ y + " "+ width +" "+ height +" re");
         },
-        stroke: function() {
+        S: function() { // stroke
             this.printdentln("S");
         },
-        fill: function() {
+        f: function() { // fill
             this.printdentln("f");
         },
-        fillStroke: function() {
+        B: function() { // fillStroke
             this.printdentln("B");
         },
-        closeFillStroke: function() {
+        b: function() { // closeFillStroke
             this.printdentln("b");
         },
 
         // Clipping
 
         // Text
-        beginText: function() {
+        BT: function() { // beginText
             this.printdentln("BT");
             this.indent();
         },
-        endText: function() {
+        ET: function() { // endText
             this.dedent();
             this.printdentln("ET");
         },
-        setFont: function(font, size) {
-            this.printdentln("/"+ font.Name +" "+ size +" Tf");
+        Tf: function(font, size) { // setFont
+            this.printdentln("/"+ font.name +" "+ size +" Tf");
         },
-        moveText: function (x, y) {
+        Td: function (x, y) { // moveText
             this.printdentln(""+ x +" "+ y +" Td");
         },
-        showText: function(text) {
+        Tj: function(text) { // showText
             this.printdentln("( "+ text +" ) Tj");
         },
 
         // Type3 fonts
 
         // Color
-        setFillGray: function(gray) {
+        g: function(gray) { // setFillGray
             this.printdentln(""+ gray +" g");
         },
-        setStrokeRGBColor: function(r, g, b) {
+        RG: function(r, g, b) { // setStrokeRGBColor
             this.printdentln(""+ r +" "+ g +" "+ b +" RG");
         },
-        setFillRGBColor: function(r, g, b) {
+        rg: function(r, g, b) { // setFillRGBColor
             this.printdentln(""+ r +" "+ g +" "+ b +" rg");
         },
 
@@ -1122,75 +1008,75 @@ var CanvasGraphics = (function() {
         },
 
         // Graphics state
-        setLineWidth: function(width) {
+        w: function(width) { // setLineWidth
             this.ctx.lineWidth = width;
         },
-        setDash: function(dashArray, dashPhase) {
-            // NYI
+        d: function(dashArray, dashPhase) { // setDash
+            // TODO
         },
-        save: function() {
+        q: function() { // save
             this.ctx.save();
             this.stateStack.push(this.current);
             this.current = new CanvasExtraState();
         },
-        restore: function() {
+        Q: function() { // restore
             this.current = this.stateStack.pop();
             this.ctx.restore();
         },
-        transform: function(a, b, c, d, e, f) {
+        cm: function(a, b, c, d, e, f) { // transform
             this.ctx.transform(a, b, c, d, e, f);
         },
 
         // Path
-        moveTo: function(x, y) {
+        m: function(x, y) { // moveTo
             this.ctx.moveTo(x, y);
         },
-        lineTo: function(x, y) {
+        l: function(x, y) { // lineTo
             this.ctx.lineTo(x, y);
         },
-        curveTo: function(x1, y1, x2, y2, x3, y3) {
+        c: function(x1, y1, x2, y2, x3, y3) { // curveTo
             this.ctx.bezierCurveTo(x1, y1, x2, y2, x3, y3);
         },
-        closePath: function() {
+        h: function() { // closePath
             this.ctx.closePath();
         },
-        rectangle: function(x, y, width, height) {
+        re: function(x, y, width, height) { // rectangle
             this.ctx.rect(x, y, width, height);
         },
-        stroke: function() {
+        S: function() { // stroke
             this.ctx.stroke();
-            this.consumePath();
+            this.$consumePath();
         },
-        fill: function() {
+        f: function() { // fill
             this.ctx.fill();
-            this.consumePath();
+            this.$consumePath();
         },
-        fillStroke: function() {
+        B: function() { // fillStroke
             this.ctx.fill();
             this.ctx.stroke();
-            this.consumePath();
+            this.$consumePath();
         },
-        closeFillStroke: function() {
-            return this.fillStroke();
+        b: function() { // closeFillStroke
+            return this.B(); // fillStroke
         },
 
         // Clipping
 
         // Text
-        beginText: function() {
-
+        BT: function() { // beginText
+            // TODO
         },
-        endText: function() {
-
+        ET: function() { // endText
+            // TODO
         },
-        setFont: function(font, size) {
+        Tf: function(font, size) { // setFont
             this.ctx.font = size +'px '+ font.BaseFont;
         },
-        moveText: function (x, y) {
+        Td: function (x, y) { // moveText
             this.current.lineX = x;
             this.current.lineY = y;
         },
-        showText: function(text) {
+        Tj: function(text) { // showText
             this.ctx.save();
             this.ctx.translate(0, 2 * this.current.lineY);
             this.ctx.scale(1, -1);
@@ -1203,20 +1089,22 @@ var CanvasGraphics = (function() {
         // Type3 fonts
 
         // Color
-        setFillGray: function(gray) {
-            this.setFillRGBColor(gray, gray, gray);
+        g: function(gray) { // setFillGray
+            this.rg(gray, gray, gray); // setFillRGBColor
         },
-        setStrokeRGBColor: function(r, g, b) {
-            this.ctx.strokeStyle = this.makeCssRgb(r, g, b);
+        RG: function(r, g, b) { // setStrokeRGBColor
+            this.ctx.strokeStyle = this.$makeCssRgb(r, g, b);
         },
-        setFillRGBColor: function(r, g, b) {
-            this.ctx.fillStyle = this.makeCssRgb(r, g, b);
+        rg: function(r, g, b) { // setFillRGBColor
+            this.ctx.fillStyle = this.$makeCssRgb(r, g, b);
         },
 
-        consumePath: function() {
+        // Helper functions that are not allowed to be called directly.
+
+        $consumePath: function() {
             this.ctx.beginPath();
         },
-        makeCssRgb: function(r, g, b) {
+        $makeCssRgb: function(r, g, b) {
             var ri = (255 * r) | 0, gi = (255 * g) | 0, bi = (255 * b) | 0;
             return "rgb("+ ri +","+ gi +","+ bi +")";
         },
