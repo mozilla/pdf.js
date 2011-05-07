@@ -22,6 +22,8 @@ var Stream = (function() {
         },
         getChar: function() {
             var ch = this.lookChar();
+            if (!ch)
+                return ch;
             this.pos++;
             return ch;
         },
@@ -367,10 +369,10 @@ var Lexer = (function() {
                 } else if (!ch) {
                     this.error("Unterminated hex string");
                     break;
-                } else if (specialChars[ch.toCharCode()] != 1) {
+                } else if (specialChars[ch.charCodeAt(0)] != 1) {
                     var x, x2;
                     if (((x = ToHexDigit(ch)) == -1) ||
-                        ((x2 = ToHexDigit(this.getChar())) == -1)) {
+                        ((x2 = ToHexDigit(stream.getChar())) == -1)) {
                         error("Illegal character in hex string");
                         break;
                     }
@@ -452,6 +454,19 @@ var Lexer = (function() {
             if (str == "null")
                 return null;
             return new Cmd(str);
+        },
+        skipToNextLine: function() {
+            var stream = this.stream;
+            while (true) {
+                var ch = stream.getChar();
+                if (!ch || ch == "\n")
+                    return;
+                if (ch == "\r") {
+                    if ((ch = stream.lookChar()) == "\n")
+                        stream.getChar();
+                    return;
+                }
+            }
         }
     };
 
@@ -523,7 +538,7 @@ var Parser = (function() {
                 // stream objects are not allowed inside content streams or
                 // object streams
                 if (this.allowStreams && IsCmd(this.buf2, "stream")) {
-                    return this.makeStream();
+                    return this.makeStream(dict);
                 } else {
                     this.shift();
                 }
@@ -554,8 +569,23 @@ var Parser = (function() {
             // TODO
             return obj;
         },
-        makeStream: function() {
+        makeStream: function(dict) {
+            var lexer = this.lexer;
+            var stream = lexer.stream;
+
+            // get stream start position
+            lexer.skipToNextLine();
+            var pos = stream.pos;
+            
+            // get length
+            var length;
+            if (!IsInt(length = dict.get("Length"))) {
+                error("Bad 'Length' attribute in stream");
+                lenght = 0;
+            }
+
             // TODO
+            
             return Error;
         }
     };
@@ -641,14 +671,16 @@ var Linearization = (function () {
 
 var XRef = (function () {
     function constructor(stream, startXRef, mainXRefEntriesOffset) {
+        this.stream = stream;
         this.entries = [];
-        this.readXRef(stream, startXRef);
+        this.xrefstms = {};
+        this.readXRef(startXRef);
     }
 
     constructor.prototype = {
         readXRefTable: function(parser) {
+            var obj;
             while (true) {
-                var obj;
                 if (IsCmd(obj = parser.getObj(), "trailer"))
                     break;
                 if (!IsInt(obj))
@@ -686,18 +718,49 @@ var XRef = (function () {
                     }
                 }
             }
+
             // read the trailer dictionary
-            this.ok = true;
-            return true;
+            var dict;
+            if (!IsDict(dict = parser.getObj()))
+                return false;
+
+            // get the 'Prev' pointer
+            var more = false;
+            obj = dict.get("Prev");
+            if (IsInt(obj)) {
+                this.prev = obj;
+                more = true;
+            } else if (IsRef(obj)) {
+                // certain buggy PDF generators generate "/Prev NNN 0 R" instead
+                // of "/Prev NNN"
+                this.prev = obj.num;
+                more = true;
+            }
+            if (!this.trailer)
+                this.trailer = dict;
+
+            // check for 'XRefStm' key
+            if (IsInt(obj = dict.get("XRefStm"))) {
+                var pos = obj;
+                if (pos in this.xrefstms)
+                    return false;
+                this.xrefstms[pos] = 1; // avoid infinite recursion
+                this.readXRef(pos);
+            } else {
+                this.ok = true;
+            }
+
+            return more;
         },
         readXRefStream: function(parser) {
             // TODO
             this.ok = true;
             return true;
         },
-        readXRef: function(stream, startXRef) {
+        readXRef: function(startXRef) {
+            var stream = this.stream;
             stream.pos = startXRef;
-            var parser = new Parser(new Lexer(stream), false);
+            var parser = new Parser(new Lexer(stream), true);
             var obj = parser.getObj();
             // parse an old-style xref table
             if (IsCmd(obj, "xref"))
@@ -876,6 +939,8 @@ var Interpreter = (function() {
                         this.error("Unknown command '" + cmd + "'");
                     args.length = 0;
                 } else {
+                    if (args.length > 33)
+                        this.error("Too many arguments '" + cmd + "'");
                     args.push(obj);
                 }
             }
