@@ -54,8 +54,42 @@ var Stream = (function() {
                 return false; /* not found */
             this.pos += index;
             return true; /* found */
+        },
+        asString: function() {
+            var str = "";
+            var ch;
+            while (!!(ch = this.getChar()))
+                str += ch;
+            return str;
+        },
+        makeSubStream: function(pos, length) {
+            return new Stream(new Uint8Array(this.bytes, pos, length));
         }
     };
+
+    return constructor;
+})();
+
+var StringStream = (function () {
+    function constructor(str) {
+        var length = str.length;
+        var bytes = new Uint8Array(length);
+        for (var n = 0; n < length; ++n)
+            bytes[n] = str.charCodeAt(n);
+        this.Stream(bytes);
+    }
+
+    constructor.prototype = Stream.prototype;
+
+    return constructor;
+})();
+
+var DecryptStream = (function () {
+    function constructor(str, fileKey, encAlgorithm, keyLength) {
+        // TODO
+    }
+
+    constructor.prototype = Stream.prototype;
 
     return constructor;
 })();
@@ -373,7 +407,7 @@ var Lexer = (function() {
                     var x, x2;
                     if (((x = ToHexDigit(ch)) == -1) ||
                         ((x2 = ToHexDigit(stream.getChar())) == -1)) {
-                        error("Illegal character in hex string");
+                        this.error("Illegal character in hex string");
                         break;
                     }
                     str += String.fromCharCode((x << 4) | x2);
@@ -442,7 +476,7 @@ var Lexer = (function() {
             while (!!(ch = stream.lookChar()) && !specialChars[ch.charCodeAt(0)]) {
                 stream.getChar();
                 if (str.length == 128) {
-                    error("Command token too long");
+                    this.error("Command token too long");
                     break;
                 }
                 str += ch;
@@ -522,7 +556,7 @@ var Parser = (function() {
                 var dict = new Dict();
                 while (!IsCmd(this.buf1, ">>") && !IsEOF(this.buf1)) {
                     if (!IsName(this.buf1)) {
-                        error("Dictionary key must be a name object");
+                        this.error("Dictionary key must be a name object");
                         shift();
                     } else {
                         var key = this.buf1.name;
@@ -533,7 +567,7 @@ var Parser = (function() {
                     }
                 }
                 if (IsEOF(this.buf1))
-                    error("End of file inside dictionary");
+                    this.error("End of file inside dictionary");
 
                 // stream objects are not allowed inside content streams or
                 // object streams
@@ -555,18 +589,21 @@ var Parser = (function() {
                 }
                 return num;
             } else if (IsString(this.buf1)) { // string
-                var str = this.decrypt(this.buf1);
+                var str = this.buf1;
                 this.shift();
+                if (this.fileKey) {
+                    var decrypt = new DecryptStream(new StringStream(str),
+                                                    this.fileKey,
+                                                    this.encAlgorithm,
+                                                    this.keyLength);
+                    str = decrypt.asString();
+                }
                 return str;
             }
 	
             // simple object
             var obj = this.buf1;
             this.shift();
-            return obj;
-        },
-        decrypt: function(obj) {
-            // TODO
             return obj;
         },
         makeStream: function(dict) {
@@ -580,13 +617,51 @@ var Parser = (function() {
             // get length
             var length;
             if (!IsInt(length = dict.get("Length"))) {
-                error("Bad 'Length' attribute in stream");
+                this.error("Bad 'Length' attribute in stream");
                 lenght = 0;
             }
 
+            // skip over the stream data
+            stream.pos = pos + length;
+            this.shift(); // '>>'
+            this.shift(); // 'stream'
+            if (!IsCmd(this.buf1, "endstream"))
+                this.error("Missing 'endstream'");
+            this.shift();
+
+            stream = stream.makeSubStream(pos, length);
+            if (this.fileKey) {
+                stream = new DecryptStream(stream,
+                                           this.fileKey,
+                                           this.encAlgorithm,
+                                           this.keyLength);
+            }
+            return this.filter(stream, dict);
+        },
+        filter: function(stream, dict) {
+            var filter = dict.get("Filter") || dict.get("F");
+            var params = dict.get("DecodeParms") || dict.get("DP");
+            if (IsName(filter))
+                return this.makeFilter(stream, filter.name, params);
+            if (IsArray(filter)) {
+                var filterArray = filter;
+                var paramsArray = params;
+                for (filter in filterArray) {
+                    if (!IsName(filter))
+                        this.error("Bad filter name");
+                    else {
+                        params = null;
+                        if (IsArray(paramsArray) && (i in paramsArray))
+                            params = paramsArray[i];
+                        stream = this.makeFilter(stream, filter.name, params);
+                    }
+                }
+            }
+            return stream;
+        },
+        makeFilter: function(stream, name, params) {
             // TODO
-            
-            return Error;
+            return stream;
         }
     };
 
@@ -616,7 +691,7 @@ var Linearization = (function () {
                 obj > 0) {
                 return obj;
             }
-            error("'" + name + "' field in linearization table is invalid");
+            this.error("'" + name + "' field in linearization table is invalid");
             return 0;
         },
         getHint: function(index) {
