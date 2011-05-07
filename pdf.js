@@ -1,25 +1,6 @@
 /* -*- Mode: Java; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- /
 /* vim: set shiftwidth=4 tabstop=8 autoindent cindent expandtab: */
 
-var HashMap = (function() {
-    function constructor() {
-    }
-
-    constructor.prototype = {
-        get: function(key) {
-            return this["$" + key];
-        },
-        set: function(key, value) {
-            this["$" + key] = value;
-        },
-        contains: function(key) {
-            return ("$" + key) in this;
-        }
-    };
-
-    return constructor;
-})();
-
 var Stream = (function() {
     function constructor(arrayBuffer) {
         this.bytes = Uint8Array(arrayBuffer);
@@ -77,63 +58,120 @@ var Stream = (function() {
     return constructor;
 })();
 
-var Obj = (function() {
-    function constructor(type, value) {
-        this.type = type;
-        this.value = value;
+var Name = (function() {
+    function constructor(name) {
+        this.name = name;
     }
 
     constructor.prototype = {
     };
 
-    var types = [
-                 "Bool", "Int", "Real", "String", "Name", "Null",
-                 "Array", "Dict", "Stream", "Ref",
-                 "Cmd", "Error", "EOF", "None"
-                ];
+    return constructor;
+})();
 
-    for (var i = 0; i < types.length; ++i) {
-        var typeName = types[i];
-        constructor[typeName] = i;
-        constructor.prototype["is" + typeName] =
-            (function is(value) {
-                return this.type == is.type &&
-                       (typeof value == "undefined" || value == this.value);
-            });
-        constructor.prototype["is" + typeName].type = i;
+var Cmd = (function() {
+    function constructor(cmd) {
+        this.cmd = cmd;
     }
 
-    constructor.prototype.isNum = function(value) {
-        return this.isInt(value) || this.isReal(value);
-    }
-    constructor.prototype.lookup = function(key) {
-        function lookup(key) {
-            if (!(this.value.contains(key)))
-                return Obj.nullObj;
-            return this.value.get(key);
-        }
-    }
-    constructor.prototype.lowerToJS = function() {
-        if (this.isInt() || this.isReal() || this.isString()
-            || this.isName() || this.isBool() || this.isNone()) {
-            return this.value;
-        } else if (this.isNull()) {
-            return null;
-        } else if (this.isArray()) {
-            return this.value.map(function (e) { return e.lowerToJS(); });
-        } else {
-            return undefined;
-        }
-    }
-
-    constructor.trueObj = new constructor(constructor.Bool, true);
-    constructor.falseObj = new constructor(constructor.Bool, false);
-    constructor.nullObj = new constructor(constructor.Null);
-    constructor.errorObj = new constructor(constructor.Error);
-    constructor.eofObj = new constructor(constructor.EOF);
+    constructor.prototype = {
+    };
 
     return constructor;
 })();
+
+var Dict = (function() {
+    function constructor() {
+    }
+
+    constructor.prototype = {
+        get: function(key) {
+            return this["$" + key];
+        },
+        set: function(key, value) {
+            this["$" + key] = value;
+        },
+        contains: function(key) {
+            return ("$" + key) in this;
+        }
+    };
+
+    return constructor;
+})();
+
+var Ref = (function() {
+    function constructor(num, ref) {
+        this.num = num;
+        this.ref = ref;
+    }
+
+    constructor.prototype = {
+    };
+
+    return constructor;
+})();
+
+function IsBool(v) {
+    return typeof v == "boolean";
+}
+
+function IsInt(v) {
+    return typeof v == "number" && ((v|0) == v);
+}
+
+function IsNum(v) {
+    return typeof v == "number";
+}
+
+function IsString(v) {
+    return typeof v == "string";
+}
+
+function IsNull(v) {
+    return v == null;
+}
+
+function IsName(v) {
+    return v instanceof Name;
+}
+
+function IsCmd(v, cmd) {
+    return v instanceof Cmd && (!cmd || v.cmd == cmd);
+}
+
+function IsDict(v) {
+    return v instanceof Dict;
+}
+
+function IsArray(v) {
+    return v instanceof Array;
+}
+
+function IsStream(v) {
+    return v instanceof Stream;
+}
+
+function IsRef(v) {
+    return v instanceof Ref;
+}
+
+var EOF = {};
+
+function IsEOF(v) {
+    return v == EOF;
+}
+
+var Error = {};
+
+function IsError(v) {
+    return v == Error;
+}
+
+var None = {};
+
+function IsNone(v) {
+    return v == None;
+}
 
 var Lexer = (function() {
     function constructor(stream) {
@@ -205,18 +243,8 @@ var Lexer = (function() {
             } while (true);
             var value = parseFloat(str);
             if (isNaN(value))
-                return Obj.errorObj;
-            if (floating) {
-                type = Obj.Floating;
-            } else {
-                if (value >= MIN_INT && value <= MAX_INT)
-                    type = Obj.Int;
-                else if (value >= MAX_UINT && value <= MAX_UINT)
-                    type = Obj.Uint;
-                else
-                    return Obj.errorObj;
-            }
-            return new Obj(type, value);
+                return Error;
+            return value;
         },
         getString: function(ch) {
             var n = 0;
@@ -300,8 +328,8 @@ var Lexer = (function() {
                 }
             } while (!done);
             if (!str.length)
-                return new Obj(Obj.EOF);
-            return new Obj(Obj.String, str);
+                return EOF;
+            return str;
         },
         getName: function(ch) {
             var str = "";
@@ -327,7 +355,7 @@ var Lexer = (function() {
             }
             if (str.length > 128)
                 this.error("Warning: name token is longer than allowed by the specification");
-            return new Obj(Obj.Name, str);
+            return new Name(str);
         },
         getHexString: function(ch) {
             var str = "";
@@ -349,7 +377,7 @@ var Lexer = (function() {
                     str += String.fromCharCode((x << 4) | x2);
                 }
             }
-            return new Obj(Obj.String, str);
+            return str;
         },
         getObj: function() {
             // skip whitespace and comments
@@ -358,7 +386,7 @@ var Lexer = (function() {
             var ch;
             while (true) {
                 if (!(ch = stream.getChar()))
-                    return new Obj(Object.EOF);
+                    return EOF;
                 if (comment) {
                     if (ch == '\r' || ch == '\n')
                         comment = false;
@@ -382,14 +410,14 @@ var Lexer = (function() {
             // array punctuation
             case '[':
             case ']':
-	            return new Obj(Obj.Cmd, ch);
+                return new Cmd(ch);
             // hex string or dict punctuation
             case '<':
 	            ch = stream.lookChar();
                 if (ch == '<') {
                     // dict punctuation
                     stream.getChar();
-                    return new Obj(Obj.Cmd, ch);
+                    return new Cmd(ch);
                 }
 	            return this.getHexString(ch);
             // dict punctuation
@@ -397,14 +425,14 @@ var Lexer = (function() {
 	            ch = stream.lookChar();
 	            if (ch == '>') {
                     stream.getChar();
-                    return new Obj(Obj.Cmd, ch);
+                    return new Cmd(ch);
                 }
 	        // fall through
             case ')':
             case '{':
             case '}':
                 this.error("Illegal character");
-	            return Obj.errorObj;
+                return Error;
             }
 
             // command
@@ -418,12 +446,12 @@ var Lexer = (function() {
                 str += ch;
             }
             if (str == "true")
-                return Obj.trueObj;
+                return true;
             if (str == "false")
-                return Obj.falseObj;
+                return false;
             if (str == "null")
-                return Obj.nullObj;
-            return new Obj(Obj.Cmd, str);
+                return null;
+            return new Cmd(str);
         }
     };
 
@@ -452,68 +480,68 @@ var Parser = (function() {
                     // of a dictionary, we need to reset
                     this.inlineImg = 0;
                 }
-            } else if (this.buf2.isCmd("ID")) {
+            } else if (IsCmd(this.buf2, "ID")) {
                 this.lexer.skipChar();		// skip char after 'ID' command
                 this.inlineImg = 1;
             }
             this.buf1 = this.buf2;
             // don't buffer inline image data
-            this.buf2 = (this.inlineImg > 0) ? Obj.nullObj : this.lexer.getObj();
+            this.buf2 = (this.inlineImg > 0) ? null : this.lexer.getObj();
         },
         getObj: function() {
             // refill buffer after inline image data
             if (this.inlineImg == 2)
                 this.refill();
 
-            if (this.buf1.isCmd("[")) { // array
-                var obj = new Obj(Obj.Array, []);
-                while (!this.buf1.isCmd("]") && !this.buf1.isEOF())
-                    obj.value.push(this.getObj());
-                if (this.buf1.isEOF())
+            if (IsCmd(this.buf1, "[")) { // array
+                var array = [];
+                while (!IsCmd(this.buf1, "]") && !IsEOF(this.buf1))
+                    array.push(this.getObj());
+                if (IsEOF(this.buf1))
                     this.error("End of file inside array");
                 this.shift();
-                return obj;
-            } else if (this.buf1.isCmd("<<")) { // dictionary or stream
+                return array;
+            } else if (IsCmd(this.buf1, "<<")) { // dictionary or stream
                 this.shift();
-                var obj = new Obj(Obj.Dict, new HashMap());
-                while (!this.buf1.isCmd(">>") && !this.buf1.isEOF()) {
-                    if (!this.buf1.isName()) {
+                var dict = new Dict();
+                while (!IsCmd(this.buf1, ">>") && !IsEOF(this.buf1)) {
+                    if (!IsName(this.buf1)) {
                         error("Dictionary key must be a name object");
                         shift();
                     } else {
-                        var key = buf1.value;
+                        var key = buf1;
                         this.shift();
-                        if (this.buf1.isEOF() || this.buf1.isError())
+                        if (IsEOF(this.buf1) || IsError(this.buf1))
                             break;
-                        obj.value.set(key, this.getObj());
+                        dict.set(key, this.getObj());
                     }
                 }
-                if (this.buf1.isEOF())
+                if (IsEOF(this.buf1))
                     error("End of file inside dictionary");
 
                 // stream objects are not allowed inside content streams or
                 // object streams
-                if (this.allowStreams && this.buf2.isCmd("stream")) {
+                if (this.allowStreams && IsCmd(this.buf2, "stream")) {
                     return this.makeStream();
                 } else {
                     this.shift();
                 }
-                return obj;
+                return dict;
 
-            } else if (this.buf1.isInt()) { // indirect reference or integer
-                var num = this.buf1.value;
+            } else if (IsInt(this.buf1)) { // indirect reference or integer
+                var num = this.buf1;
                 this.shift();
-                if (this.buf1.isInt() && this.buf2.isCmd("R")) {
-                    var obj = new Obj(Obj.Ref, [num, this.buf1.value]);
+                if (IsInt(this.buf1) && IsCmd(this.buf2, "R")) {
+                    var ref = new Ref(num, this.buf1);
                     this.shift();
                     this.shift();
-                    return obj;
+                    return ref;
                 }
-                return new Obj(Obj.Int, num);
-            } else if (this.buf1.isString()) { // string
-                var obj = this.decrypt(this.buf1);
+                return num;
+            } else if (IsString(this.buf1)) { // string
+                var str = this.decrypt(this.buf1);
                 this.shift();
-                return obj;
+                return str;
             }
 	
             // simple object
@@ -527,7 +555,7 @@ var Parser = (function() {
         },
         makeStream: function() {
             // TODO
-            return new Obj(Obj.Error);
+            return Error;
         }
     };
 
@@ -541,10 +569,10 @@ var Linearization = (function () {
         var obj2 = this.parser.getObj();
         var obj3 = this.parser.getObj();
         this.linDict = this.parser.getObj();
-        if (obj1.isInt() && obj2.isInt() && obj3.isCmd("obj") && this.linDict.isDict()) {
+        if (IsInt(obj1) && IsInt(obj2) && IsCmd(obj3, "obj") && IsDict(this.linDict)) {
             var obj = this.linDict.lookup("Linearized");
-            if (!(obj.isNum() && obj.value > 0))
-                this.linDict = Obj.nullObj;
+            if (!(IsNum(obj) && obj > 0))
+                this.linDict = null;
         }
     }
 
@@ -552,9 +580,9 @@ var Linearization = (function () {
         getInt: function(name) {
             var linDict = this.linDict;
             var obj;
-            if (linDict.isDict() &&
-                (obj = linDict.lookup(name)).isInt() &&
-                obj.value > 0) {
+            if (IsDict(linDict) &&
+                IsInt(obj = linDict.lookup(name)) &&
+                obj > 0) {
                 return length;
             }
             error("'" + name + "' field in linearization table is invalid");
@@ -563,18 +591,18 @@ var Linearization = (function () {
         getHint: function(index) {
             var linDict = this.linDict;
             var obj1, obj2;
-            if (linDict.isDict() &&
-                (obj1 = linDict.lookup("H")).isArray() &&
-                obj1.value.length >= 2 &&
-                (obj2 = obj1.value[index]).isInt() &&
-                obj2.value > 0) {
-                return obj2.value;
+            if (IsDict(linDict) &&
+                IsArray(obj1 = linDict.lookup("H")) &&
+                obj1.length >= 2 &&
+                IsInt(obj2 = obj1[index]) &&
+                obj2 > 0) {
+                return obj2;
             }
             this.error("Hints table in linearization table is invalid");
             return 0;
         },
         get length() {
-            if (!this.linDict.isDict())
+            if (!IsDict(this.linDict))
                 return 0;
             return this.getInt("L");
         },
@@ -620,28 +648,28 @@ var XRef = (function () {
         readXRefTable: function(parser) {
             while (true) {
                 var obj;
-                if ((obj = parser.getObj()).isCmd("trailer"))
+                if (IsCmd(obj = parser.getObj(), "trailer"))
                     break;
-                if (!obj.isInt())
+                if (!IsInt(obj))
                     return false;
-                var first = obj.value;
-                if (!(obj = parser.getObj()).isInt())
+                var first = obj;
+                if (!IsInt(obj = parser.getObj()))
                     return false;
-                var n = obj.value;
+                var n = obj;
                 if (first < 0 || n < 0 || (first + n) != ((first + n) | 0))
                     return false;
                 for (var i = first; i < first + n; ++i) {
                     var entry = {};
-                    if (!(obj = parser.getObj()).isInt())
+                    if (!IsInt(obj = parser.getObj()))
                         return false;
-                    entry.offset = obj.value;
-                    if (!(obj = parser.getObj()).isInt())
+                    entry.offset = obj;
+                    if (!IsInt(obj = parser.getObj()))
                         return false;
-                    entry.gen = obj.value;
+                    entry.gen = obj;
                     obj = parser.getObj();
-                    if (obj.isCmd("n")) {
+                    if (IsCmd(obj, "n")) {
                         entry.uncompressed = true;
-                    } else if (obj.isCmd("f")) {
+                    } else if (IsCmd(obj, "f")) {
                         entry.free = true;
                     } else {
                         return false;
@@ -671,16 +699,16 @@ var XRef = (function () {
             var parser = new Parser(new Lexer(stream), false);
             var obj = parser.getObj();
             // parse an old-style xref table
-            if (obj.isCmd("xref"))
+            if (IsCmd(obj, "xref"))
                 return this.readXRefTable(parser);
             // parse an xref stream
-            if (obj.isInt()) {
-                if (!parser.getObj().isInt() ||
-                    !parser.getObj().isCmd("obj") ||
-                    !(obj = parser.getObj()).isStream()) {
+            if (IsInt(obj)) {
+                if (!IsInt(parser.getObj()) ||
+                    !IsCmd(parser.getObj(), "obj") ||
+                    !IsStream(obj = parser.getObj())) {
                     return false;
                 }
-                return this.readXRefStream(obj.value);
+                return this.readXRefStream(obj);
             }
             return false;
         }
@@ -895,23 +923,22 @@ var Interpreter = (function() {
 
             var args = [ ];
             var obj;
-            while (!((obj = parser.getObj()).isEOF())) {
-                if (obj.isCmd()) {
-                    var cmd = obj.value;
+            while (!IsEOF(obj = parser.getObj())) {
+                if (IsCmd(obj)) {
+                    var cmd = obj.cmd;
                     if (!(cmd in CMD_TABLE))
                         this.error("Unknown command '"+ cmd +"'");
 
                     var op = CMD_TABLE[cmd];
-                    if (!this.typeCheck(op.params, args))
-                        this.error("Wrong arguments for command '"+ cmd +"'");
+                    //if (!this.typeCheck(op.params, args))
+                    //this.error("Wrong arguments for command '"+ cmd +"'");
 
-                    op.op.call(this,
-                               args.map(function (a) { return a.lowerToJS() }));
+                    op.op.call(this, args);
                     args.length = 0;
                 } else if (MAX_ARGS == args.length) {
                     this.error("Too many arguments");
                 } else {
-                    args.push(obj);
+                    args.push(IsName(obj) ? obj.name : obj);
                 }
             }
 
@@ -1215,13 +1242,13 @@ var MockParser = (function() {
     return constructor;
 })();
 
-function cmd(c)     { return new Obj(Obj.Cmd, c); }
-function name(n)    { return new Obj(Obj.Name, n); }
-function int(i)     { return new Obj(Obj.Int, i); }
-function string(s)  { return new Obj(Obj.String, s); }
-function eof()      { return Obj.eofObj; }
-function array(a)   { return new Obj(Obj.Array, a); }
-function real(r)    { return new Obj(Obj.Real, r); }
+function cmd(c)     { return new Cmd(c); }
+function name(n)    { return new Name(n); }
+function int(i)     { return i; }
+function string(s)  { return s; }
+function eof()      { return EOF; }
+function array(a)   { return a; }
+function real(r)    { return r; }
 
 var tests = [
     { name: "Hello world",
