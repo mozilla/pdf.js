@@ -70,7 +70,7 @@ var Stream = (function() {
     return constructor;
 })();
 
-var StringStream = (function () {
+var StringStream = (function() {
     function constructor(str) {
         var length = str.length;
         var bytes = new Uint8Array(length);
@@ -84,7 +84,15 @@ var StringStream = (function () {
     return constructor;
 })();
 
-var DecryptStream = (function () {
+var FlateStream = (function() {
+    const codeLenCodeMap = [16, 17, 18, 0, 8, 7, 9, 6, 10, 5,
+                            11, 4, 12, 3, 13, 2, 14, 1, 15];
+
+    function constructor(str, pred, columns, colors, bits) {
+    }
+})();
+
+var DecryptStream = (function() {
     function constructor(str, fileKey, encAlgorithm, keyLength) {
         // TODO
     }
@@ -212,6 +220,10 @@ function IsNone(v) {
 var Lexer = (function() {
     function constructor(stream) {
         this.stream = stream;
+    }
+
+    constructor.isSpace = function(ch) {
+        return ch == " " || ch == "\t";
     }
 
     // A '1' in this array means the character is white space.  A '1' or
@@ -660,6 +672,8 @@ var Parser = (function() {
             return stream;
         },
         makeFilter: function(stream, name, params) {
+            print(name);
+            print(uneval(params));
             // TODO
             return stream;
         }
@@ -668,7 +682,7 @@ var Parser = (function() {
     return constructor;
 })();
     
-var Linearization = (function () {
+var Linearization = (function() {
     function constructor(stream) {
         this.parser = new Parser(new Lexer(stream), false);
         var obj1 = this.parser.getObj();
@@ -744,7 +758,7 @@ var Linearization = (function () {
     return constructor;
 })();
 
-var XRef = (function () {
+var XRef = (function() {
     function constructor(stream, startXRef, mainXRefEntriesOffset) {
         this.stream = stream;
         this.entries = [];
@@ -856,7 +870,7 @@ var XRef = (function () {
     return constructor;
 })();
 
-var PDFDoc = (function () {
+var PDFDoc = (function() {
     function constructor(stream) {
         this.stream = stream;
         this.setup();
@@ -892,7 +906,7 @@ var PDFDoc = (function () {
                 if (stream.find("startxref", 1024, true)) {
                     stream.skip(9);
                     var ch;
-                    while ((ch = stream.getChar()) == " " || ch == "\t")
+                    while (Lexer.isSpace(ch = stream.getChar()))
                         ;
                     var str = "";
                     while ((ch - "0") <= 9) {
@@ -1186,7 +1200,7 @@ var CanvasGraphics = (function() {
             this.ctx.scale(cw / mediaBox.width, -ch / mediaBox.height);
             this.ctx.translate(0, -mediaBox.height);
         },
-        endDrawing: function () {
+        endDrawing: function() {
             this.ctx.restore();
         },
 
