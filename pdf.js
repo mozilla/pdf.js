@@ -5,6 +5,7 @@ var Stream = (function() {
     function constructor(arrayBuffer) {
         this.bytes = Uint8Array(arrayBuffer);
         this.pos = 0;
+        this.start = 0;
     }
 
     constructor.prototype = {
@@ -12,7 +13,7 @@ var Stream = (function() {
             return this.bytes.length;
         },
         reset: function() {
-            this.pos = 0;
+            this.pos = this.start;
         },
         lookChar: function() {
             var bytes = this.bytes;
@@ -37,8 +38,7 @@ var Stream = (function() {
             this.pos += n;
         },
         moveStart: function() {
-            this.bytes = Uint8Array(this.bytes, this.pos);
-            this.pos = 0;
+            this.start = this.pos;
         },
         find: function(needle, limit, backwards) {
             var length = this.bytes.length;
