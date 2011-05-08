@@ -126,17 +126,15 @@ var Cmd = (function() {
 
 var Dict = (function() {
     function constructor() {
+        this.map = Object.create(null);
     }
 
     constructor.prototype = {
         get: function(key) {
-            return this["$" + key];
+            return this.map[key];
         },
         set: function(key, value) {
-            this["$" + key] = value;
-        },
-        contains: function(key) {
-            return ("$" + key) in this;
+            this.map[key] = value;
         }
     };
 
