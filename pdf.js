@@ -271,7 +271,7 @@ var Lexer = (function() {
             var str = ch;
             var stream = this.stream;
             do {
-                ch = stream.getChar();
+                ch = stream.lookChar();
                 if (ch == "." && !floating) {
                     str += ch;
                     floating = true;
@@ -284,10 +284,10 @@ var Lexer = (function() {
                 } else if (ch == "e" || ch == "E") {
                     floating = true;
                 } else {
-                    // put back the last character, it doesn't belong to us
-                    stream.putBack();
+                    // the last character doesn't belong to us
                     break;
                 }
+                stream.getChar();
             } while (true);
             var value = parseFloat(str);
             if (isNaN(value))
