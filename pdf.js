@@ -1000,6 +1000,7 @@ var Interpreter = (function() {
         this.map = {
             // Graphics state
             w: gfx.setLineWidth,
+            J: gfx.setLineCap,
             d: gfx.setDash,
             q: gfx.save,
             Q: gfx.restore,
@@ -1104,6 +1105,9 @@ var EchoGraphics = (function() {
         // Graphics state
         setLineWidth: function(width) {
             this.printdentln(width +" w");
+        },
+        setLineCap: function(style) {
+            this.printdentln(style +" J");
         },
         setDash: function(dashArray, dashPhase) {
             this.printdentln(""+ dashArray +" "+ dashPhase +" d");
@@ -1242,6 +1246,8 @@ var CanvasGraphics = (function() {
         this.stateStack = [ ];
     }
 
+    var LINE_CAP_STYLES = [ "butt", "round", "square" ];
+
     constructor.prototype = {
         beginDrawing: function(mediaBox) {
             var cw = this.ctx.canvas.width, ch = this.ctx.canvas.height;
@@ -1256,6 +1262,9 @@ var CanvasGraphics = (function() {
         // Graphics state
         setLineWidth: function(width) {
             this.ctx.lineWidth = width;
+        },
+        setLineCap: function(style) {
+            this.ctx.lineCap = LINE_CAP_STYLES[style];
         },
         setDash: function(dashArray, dashPhase) {
             // TODO
@@ -1510,6 +1519,30 @@ var tests = [
           cmd("ET"),
           eof()
       ]
+    },
+    { name: "Line cap",
+      res: { },
+      mediaBox: [ 0, 0, 612, 792 ],
+      objs: [
+          int(5), cmd("w"),
+
+          int(0), cmd("J"),         // butt cap
+          int(100), int(692), cmd("m"),
+          int(200), int(692), cmd("l"),
+          cmd("S"),
+
+          int(1), cmd("J"),         // round cap
+          int(100), int(686), cmd("m"),
+          int(200), int(686), cmd("l"),
+          cmd("S"),
+
+          int(2), cmd("J"),         // projecting square cap
+          int(100), int(680), cmd("m"),
+          int(200), int(680), cmd("l"),
+          cmd("S"),
+
+          eof()
+      ],
     },
 ];
 
