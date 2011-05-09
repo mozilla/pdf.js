@@ -1015,6 +1015,7 @@ var Interpreter = (function() {
             },
             Td: gfx.moveText,
             Tj: gfx.showText,
+            TJ: gfx.showSpacedText,
 
             // Type3 fonts
 
@@ -1157,6 +1158,9 @@ var EchoGraphics = (function() {
         showText: function(text) {
             this.printdentln("( "+ text +" ) Tj");
         },
+        showSpacedText: function(arr) {
+            this.printdentln(""+ arr +" TJ");
+        },
 
         // Type3 fonts
 
@@ -1206,7 +1210,11 @@ var EchoGraphics = (function() {
 // However, PDF needs a bit more state, which we store here.
 var CanvasExtraState = (function() {
     function constructor() {
-        // Current text position (in text coordinates)
+        this.fontSize = 0.0;
+        // Current point (in user coordinates)
+        this.curX = 0.0;
+        this.curY = 0.0;
+        // Start of text line (in text coordinates)
         this.lineX = 0.0;
         this.lineY = 0.0;
     }
@@ -1296,20 +1304,37 @@ var CanvasGraphics = (function() {
             // TODO
         },
         setFont: function(font, size) {
-            this.ctx.font = size +'px '+ font.BaseFont;
+            this.current.fontSize = size;
+            this.ctx.font = this.current.fontSize +'px '+ font.BaseFont;
         },
         moveText: function (x, y) {
-            this.current.lineX = x;
-            this.current.lineY = y;
+            this.current.lineX += x;
+            this.current.lineY += y;
+            // XXX transform
+            this.current.curX = this.current.lineX;
+            this.current.curY = this.current.lineY;
         },
         showText: function(text) {
             this.ctx.save();
-            this.ctx.translate(0, 2 * this.current.lineY);
+            this.ctx.translate(0, 2 * this.current.curY);
             this.ctx.scale(1, -1);
 
-            this.ctx.fillText(text, this.current.lineX, this.current.lineY);
+            this.ctx.fillText(text, this.current.curX, this.current.curY);
+            this.current.curX += this.ctx.measureText(text).width;
 
             this.ctx.restore();
+        },
+        showSpacedText: function(arr) {
+            for (var i = 0; i < arr.length; ++i) {
+                var e = arr[i];
+                if (IsNum(e)) {
+                    this.current.curX -= e * 0.001 * this.current.fontSize;
+                } else if (IsString(e)) {
+                    this.showText(e);
+                } else {
+                    this.error("Unexpected element in TJ array");
+                }
+            }
         },
 
         // Type3 fonts
@@ -1445,6 +1470,32 @@ var tests = [
           int(-72), int(0), cmd("l"),
           int(4), cmd("w"),
           cmd("h"), cmd("S"),
+          eof()
+      ]
+    },
+    { name: "TJ",
+      res: {
+          // XXX not structured correctly
+          Font: {
+              F1: { Type: "Font",
+                    Subtype: "Type1",
+                    Name: "F1",
+                    BaseFont: "Georgia",
+                    Encoding: "MacRomanEncoding"
+              },
+          }
+      },
+      mediaBox: [ 0, 0, 612, 792 ],
+      objs: [
+          cmd("BT"),
+          name("F1"), real(17.9328), cmd("Tf"),
+
+          real(80.5159), real(700.6706), cmd("Td"),
+          [ string("Trace-based Just-in-Time") ], cmd("TJ"),
+
+          int(0), int(-18), cmd("Td"),
+          [ string("T"), int(74), string("race-based"), int(-250), string("J"), int(15), string("ust-in-T"), int(18), string("ime") ], cmd("TJ"),
+          cmd("ET"),
           eof()
       ]
     },
