@@ -15,6 +15,12 @@ var Stream = (function() {
         reset: function() {
             this.pos = this.start;
         },
+        getByte: function() {
+            var bytes = this.bytes;
+            if (this.pos >= bytes.length)
+                return;
+            return bytes[this.pos++];
+        },
         lookChar: function() {
             var bytes = this.bytes;
             if (this.pos >= bytes.length)
@@ -111,11 +117,13 @@ var Buffer = (function() {
 })();
 
 var FlateStream = (function() {
-    const codeLenCodeMap = [16, 17, 18, 0, 8, 7, 9, 6, 10, 5,
-                            11, 4, 12, 3, 13, 2, 14, 1, 15];
-
-    function constructor(str, pred, columns, colors, bits) {
+    function constructor() {
     }
+
+    constructor.prototype = {
+    };
+
+    return constructor;
 })();
 
 var DecryptStream = (function() {
@@ -168,9 +176,9 @@ var Dict = (function() {
 })();
 
 var Ref = (function() {
-    function constructor(num, ref) {
+    function constructor(num, gen) {
         this.num = num;
-        this.ref = ref;
+        this.gen = gen;
     }
 
     constructor.prototype = {
@@ -789,6 +797,11 @@ var XRef = (function() {
         this.entries = [];
         this.xrefstms = {};
         this.readXRef(startXRef);
+
+        // get the root dictionary (catalog) object
+        var ref = this.trailerDict.get("Root");
+        this.rootNum = ref.num;
+        this.rootGen = ref.gen;
     }
 
     constructor.prototype = {
@@ -850,8 +863,7 @@ var XRef = (function() {
                 this.prev = obj.num;
                 more = true;
             }
-            if (!this.trailer)
-                this.trailer = dict;
+            this.trailerDict = dict;
 
             // check for 'XRefStm' key
             if (IsInt(obj = dict.get("XRefStm"))) {
@@ -1463,7 +1475,7 @@ function runEchoTests() {
 
 function runParseTests() {
     //var data = snarf("simple_graphics.pdf", "binary");
-    var data = snarf("/tmp/pdf_reference_1-7.pdf", "binary");
+    var data = snarf("/tmp/paper.pdf", "binary");
     var pdf = new PDFDoc(new Stream(data));
 }
 
