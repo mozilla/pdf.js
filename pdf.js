@@ -984,6 +984,7 @@ var Interpreter = (function() {
         this.res = resources;
         this.catalog = catalog;
         this.gfx = gfx;
+        var env = this;
         this.map = {
             // Graphics state
             w: gfx.setLineWidth,
@@ -1008,7 +1009,10 @@ var Interpreter = (function() {
             // Text
             BT: gfx.beginText,
             ET: gfx.endText,
-            Tf: gfx.setFont,
+            Tf: function(fontRef, size) {
+                var font = env.res.Font[fontRef.name]
+                gfx.setFont(font, size);
+            },
             Td: gfx.moveText,
             Tj: gfx.showText,
 
