@@ -84,6 +84,32 @@ var StringStream = (function() {
     return constructor;
 })();
 
+var Buffer = (function() {
+    function constructor(length) {
+        this.bytes = new Uint8Array(length ? length : 4096);
+        this.pos = 0;
+    }
+
+    constructor.prototype = {
+        putByte: function(b) {
+            var bytes = this.bytes;
+            var length = bytes.length;
+            if (this.pos >= length) {
+                var newBytes = new Uint8Array(length * 2);
+                for (var n = 0; n < length; ++n)
+                    newBytes[n] = bytes[n];
+                bytes = newBytes;
+            }
+            bytes[this.pos++] = b;
+        },
+        asStream: function() {
+            return new Stream(this.bytes);
+        }
+    }
+
+    return constructor;
+})();
+
 var FlateStream = (function() {
     const codeLenCodeMap = [16, 17, 18, 0, 8, 7, 9, 6, 10, 5,
                             11, 4, 12, 3, 13, 2, 14, 1, 15];
@@ -671,7 +697,8 @@ var Parser = (function() {
         },
         makeFilter: function(stream, name, params) {
             print(name);
-            print(uneval(params));
+            for (i in params.map)
+                print(i + ": " + params.map[i]);
             // TODO
             return stream;
         }
