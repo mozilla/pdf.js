@@ -1003,6 +1003,8 @@ var Interpreter = (function() {
             J: gfx.setLineCap,
             j: gfx.setLineJoin,
             d: gfx.setDash,
+            ri: gfx.setRenderingIntent,
+            i: gfx.setFlatness,
             q: gfx.save,
             Q: gfx.restore,
             cm: gfx.transform,
@@ -1017,6 +1019,7 @@ var Interpreter = (function() {
             f: gfx.fill,
             B: gfx.fillStroke,
             b: gfx.closeFillStroke,
+            n: gfx.endPath,
 
             // Clipping
 
@@ -1028,12 +1031,17 @@ var Interpreter = (function() {
                 gfx.setFont(font, size);
             },
             Td: gfx.moveText,
+            Tm: gfx.setTextMatrix,
             Tj: gfx.showText,
             TJ: gfx.showSpacedText,
 
             // Type3 fonts
 
             // Color
+            CS: gfx.setStrokeColorSpace,
+            cs: gfx.setFillColorSpace,
+            SC: gfx.setStrokeColor,
+            sc: gfx.setFillColor,
             g: gfx.setFillGray,
             RG: gfx.setStrokeRGBColor,
             rg: gfx.setFillRGBColor,
@@ -1041,6 +1049,8 @@ var Interpreter = (function() {
             // Shading
             // Images
             // XObjects
+            Do: gfx.paintXObject,
+
             // Marked content
             // Compatibility
         };
@@ -1064,11 +1074,10 @@ var Interpreter = (function() {
                 if (IsCmd(obj)) {
                     var cmd = obj.cmd;
                     var fn = map[cmd];
-                    if (fn) {
-                        if (fn.length != args.length)
-                            this.error("Invalid number of arguments '" + cmd + "'");
+                    if (fn)
+                        // TODO figure out how to type-check vararg functions
                         fn.apply(gfx, args);
-                    } else
+                    else
                         this.error("Unknown command '" + cmd + "'");
                     args.length = 0;
                 } else {
@@ -1116,6 +1125,12 @@ var EchoGraphics = (function() {
         setDash: function(dashArray, dashPhase) {
             this.printdentln(""+ dashArray +" "+ dashPhase +" d");
         },
+        setRenderingIntent: function(intent) {
+            this.printdentln("/"+ intent.name + " ri");
+        },
+        setFlatness: function(flatness) {
+            this.printdentln(""+ flatness +" i");
+        },
         save: function() {
             this.printdentln("q");
         },
@@ -1157,6 +1172,9 @@ var EchoGraphics = (function() {
         closeFillStroke: function() {
             this.printdentln("b");
         },
+        endPath: function() {
+            this.printdentln("n");
+        },
 
         // Clipping
 
@@ -1175,6 +1193,10 @@ var EchoGraphics = (function() {
         moveText: function (x, y) {
             this.printdentln(""+ x +" "+ y +" Td");
         },
+        setTextMatrix: function(a, b, c, d, e, f) {
+            this.printdentln(""+ a +" "+ b +" "+ c +
+                             " "+d +" "+ e +" "+ f + " Tm");
+        },
         showText: function(text) {
             this.printdentln("( "+ text +" ) Tj");
         },
@@ -1185,6 +1207,24 @@ var EchoGraphics = (function() {
         // Type3 fonts
 
         // Color
+        setStrokeColorSpace: function(space) {
+            this.printdentln("/"+ space.name +" CS");
+        },
+        setFillColorSpace: function(space) {
+            this.printdentln("/"+ space.name +" cs");
+        },
+        setStrokeColor: function(/*...*/) {
+            this.printdent("");
+            for (var i = 0; i < arguments.length; ++i)
+                this.print(""+ arguments[i] +" ");
+            this.printdentln("SC");
+        },
+        setFillColor: function(/*...*/) {
+            this.printdent("");
+            for (var i = 0; i < arguments.length; ++i)
+                this.print(""+ arguments[i] +" ");
+            this.printdentln("sc");
+        },
         setFillGray: function(gray) {
             this.printdentln(""+ gray +" g");
         },
@@ -1198,6 +1238,10 @@ var EchoGraphics = (function() {
         // Shading
         // Images
         // XObjects
+        paintXObject: function(obj) {
+            this.printdentln("/"+ obj.name +" Do");
+        },
+
         // Marked content
         // Compatibility
 
@@ -1209,9 +1253,13 @@ var EchoGraphics = (function() {
             this.print(str);
             this.out += "\n";
         },
-        printdentln: function(str) {
+        printdent: function(str) {
             this.print(this.indentationStr);
-            this.println(str);
+            this.print(str);
+        },
+        printdentln: function(str) {
+            this.printdent(str);
+            this.println("");
         },
         indent: function() {
             this.indentation += 2;
@@ -1277,6 +1325,12 @@ var CanvasGraphics = (function() {
         setDash: function(dashArray, dashPhase) {
             // TODO
         },
+        setRenderingIntent: function(intent) {
+            // TODO
+        },
+        setFlatness: function(flatness) {
+            // TODO
+        },
         save: function() {
             this.ctx.save();
             this.stateStack.push(this.current);
@@ -1322,6 +1376,9 @@ var CanvasGraphics = (function() {
         closeFillStroke: function() {
             return this.fillStroke();
         },
+        endPath: function() {
+            this.consumePath();
+        },
 
         // Clipping
 
@@ -1339,9 +1396,12 @@ var CanvasGraphics = (function() {
         moveText: function (x, y) {
             this.current.lineX += x;
             this.current.lineY += y;
-            // XXX transform
+            // TODO transform
             this.current.curX = this.current.lineX;
             this.current.curY = this.current.lineY;
+        },
+        setTextMatrix: function(a, b, c, d, e, f) {
+            // TODO
         },
         showText: function(text) {
             this.ctx.save();
@@ -1369,6 +1429,18 @@ var CanvasGraphics = (function() {
         // Type3 fonts
 
         // Color
+        setStrokeColorSpace: function(space) {
+            // TODO
+        },
+        setFillColorSpace: function(space) {
+            // TODO
+        },
+        setStrokeColor: function(/*...*/) {
+            // TODO
+        },
+        setFillColor: function(/*...*/) {
+            // TODO
+        },
         setFillGray: function(gray) {
             this.setFillRGBColor(gray, gray, gray);
         },
@@ -1378,6 +1450,12 @@ var CanvasGraphics = (function() {
         setFillRGBColor: function(r, g, b) {
             this.ctx.fillStyle = this.makeCssRgb(r, g, b);
         },
+
+        // XObjects
+        paintXObject: function(obj) {
+            // TODO
+        },
+
 
         // Helper functions
 
@@ -1499,6 +1577,13 @@ var tests = [
           int(-72), int(0), cmd("l"),
           int(4), cmd("w"),
           cmd("h"), cmd("S"),
+          int(100), int(72), cmd("m"),
+          int(172), int(0), cmd("l"),
+          int(100), int(-72), cmd("l"),
+          int(-172), int(0), cmd("l"),
+          int(4), cmd("w"),
+          cmd("n"),
+          cmd("S"),
           eof()
       ]
     },
@@ -1578,6 +1663,21 @@ var tests = [
 
           eof()
       ],
+    },
+    { name: "NYI",              // check that NYI commands are no-ops
+      res: { },
+      mediaBox: [ 0, 0, 612, 792 ],
+      objs: [
+          name("Perceptual"), cmd("ri"),
+          int(2), cmd("i"),
+          int(1), int(0), int(0), int(1), int(80), int(80), cmd("Tm"),
+          name("DeviceRGB"), cmd("CS"),
+          name("DeviceGray"), cmd("cs"),
+          int(1), int(0), int(0), cmd("SC"),
+          int(1), cmd("sc"),
+          name("object"), cmd("Do"),
+          eof()
+     ],
     },
 ];
 
