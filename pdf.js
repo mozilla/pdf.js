@@ -39,12 +39,10 @@ var Stream = (function() {
             this.pos++;
             return ch;
         },
-        skipChar: function() {
-            this.pos++;
-        },
         skip: function(n) {
-            while (n-- > 0)
-                this.skipChar();
+            if (!n)
+                n = 1;
+            this.pos += n;
         },
         moveStart: function() {
             this.start = this.pos;
@@ -1119,7 +1117,7 @@ var Parser = (function() {
                     this.inlineImg = 0;
                 }
             } else if (IsCmd(this.buf2, "ID")) {
-                this.lexer.skipChar();		// skip char after 'ID' command
+                this.lexer.skip(); // skip char after 'ID' command
                 this.inlineImg = 1;
             }
             this.buf1 = this.buf2;
