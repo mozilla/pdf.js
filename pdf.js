@@ -1592,6 +1592,7 @@ var Interpreter = (function() {
             re: gfx.rectangle,
             S: gfx.stroke,
             f: gfx.fill,
+            "f*": gfx.eoFill,
             B: gfx.fillStroke,
             b: gfx.closeFillStroke,
             n: gfx.endPath,
@@ -1739,6 +1740,9 @@ var EchoGraphics = (function() {
         },
         fill: function() {
             this.printdentln("f");
+        },
+        eoFill: function() {
+            this.printdentln("f*");
         },
         fillStroke: function() {
             this.printdentln("B");
@@ -1950,6 +1954,10 @@ var CanvasGraphics = (function() {
         fill: function() {
             this.ctx.fill();
             this.consumePath();
+        },
+        eoFill: function() {
+            // TODO: <canvas> needs to support even-odd winding rule
+            this.fill();
         },
         fillStroke: function() {
             this.ctx.fill();
