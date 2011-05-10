@@ -1597,6 +1597,8 @@ var Interpreter = (function() {
             n: gfx.endPath,
 
             // Clipping
+            W: gfx.clip,
+            "W*": gfx.eoClip,
 
             // Text
             BT: gfx.beginText,
@@ -1749,6 +1751,12 @@ var EchoGraphics = (function() {
         },
 
         // Clipping
+        clip: function() {
+            this.printdentln("W");
+        },
+        eoClip: function() {
+            this.printdentln("W*");
+        },
 
         // Text
         beginText: function() {
@@ -1868,10 +1876,13 @@ var CanvasGraphics = (function() {
         this.ctx = canvasCtx;
         this.current = new CanvasExtraState();
         this.stateStack = [ ];
+        this.pendingClip = null;
     }
 
     var LINE_CAP_STYLES = [ "butt", "round", "square" ];
     var LINE_JOIN_STYLES = [ "miter", "round", "bevel" ];
+    var NORMAL_CLIP = {};
+    var EO_CLIP = {};
 
     constructor.prototype = {
         beginDrawing: function(mediaBox) {
@@ -1953,6 +1964,12 @@ var CanvasGraphics = (function() {
         },
 
         // Clipping
+        clip: function() {
+            this.pendingClip = NORMAL_CLIP;
+        },
+        eoClip: function() {
+            this.pendingClip = EO_CLIP;
+        },
 
         // Text
         beginText: function() {
@@ -2028,10 +2045,14 @@ var CanvasGraphics = (function() {
             // TODO
         },
 
-
         // Helper functions
 
         consumePath: function() {
+            if (this.pendingClip) {
+                // TODO: <canvas> needs to support even-odd winding rule
+                this.ctx.clip();
+                this.pendingClip = null;
+            }
             this.ctx.beginPath();
         },
         makeCssRgb: function(r, g, b) {
@@ -2149,13 +2170,6 @@ var tests = [
           int(-72), int(0), cmd("l"),
           int(4), cmd("w"),
           cmd("h"), cmd("S"),
-          int(100), int(72), cmd("m"),
-          int(172), int(0), cmd("l"),
-          int(100), int(-72), cmd("l"),
-          int(-172), int(0), cmd("l"),
-          int(4), cmd("w"),
-          cmd("n"),
-          cmd("S"),
           eof()
       ]
     },
@@ -2250,6 +2264,28 @@ var tests = [
           name("object"), cmd("Do"),
           eof()
      ],
+    },
+    { name: "Broken heart",
+      res: { },
+      mediaBox: [ 0, 0, 612, 792 ],
+      objs: [
+          cmd("q"),
+          int(20), int(20), int(60), int(60), cmd("re"),
+          int(60), int(60), int(60), int(60), cmd("re"),
+          cmd("W"), cmd("n"),
+
+          real(0.9), real(0.0), real(0.0), cmd("rg"),
+          int(75), int(40), cmd("m"),
+          int(75), int(37), int(70), int(25), int(50), int(25), cmd("c"),
+          int(20), int(25), int(20), real(62.5), int(20), real(62.5), cmd("c"),
+          int(20), int(80), int(40), int(102), int(75), int(120), cmd("c"),
+          int(110), int(102), int(130), int(80), int(130), real(62.5), cmd("c"),
+          int(130), real(62.5), int(130), int(25), int(100), int(25), cmd("c"),
+          int(85), int(25), int(75), int(37), int(75), int(40), cmd("c"),
+          cmd("f"),
+          cmd("Q"),
+          eof()
+      ]
     },
 ];
 
