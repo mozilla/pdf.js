@@ -39,14 +39,12 @@ var Stream = (function() {
             this.pos++;
             return ch;
         },
-        putBack: function() {
-            this.pos--;
-        },
         skipChar: function() {
             this.pos++;
         },
         skip: function(n) {
-            this.pos += n;
+            while (n-- > 0)
+                this.skipChar();
         },
         moveStart: function() {
             this.start = this.pos;
