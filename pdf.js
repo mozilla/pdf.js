@@ -49,21 +49,6 @@ var Stream = (function() {
         moveStart: function() {
             this.start = this.pos;
         },
-        find: function(needle, limit, backwards) {
-            var length = this.bytes.length;
-            var pos = this.pos;
-            var str = "";
-            if (pos + limit > length)
-                limit = length - pos;
-            for (var n = 0; n < limit; ++n)
-                str += this.getChar();
-            this.pos = pos;
-            var index = backwards ? str.lastIndexOf(needle) : str.indexOf(needle);
-            if (index == -1)
-                return false; /* not found */
-            this.pos += index;
-            return true; /* found */
-        },
         asString: function() {
             var str = "";
             var ch;
@@ -1480,6 +1465,22 @@ var PDFDoc = (function() {
         this.setup();
     }
 
+    function find(stream, needle, limit, backwards) {
+        var length = stream.length;
+        var pos = stream.pos;
+        var str = "";
+        if (pos + limit > length)
+            limit = length - pos;
+        for (var n = 0; n < limit; ++n)
+            str += stream.getChar();
+        stream.pos = pos;
+        var index = backwards ? str.lastIndexOf(needle) : str.indexOf(needle);
+        if (index == -1)
+            return false; /* not found */
+        stream.pos += index;
+        return true; /* found */
+    }
+
     constructor.prototype = {
         get linearization() {
             var length = this.stream.length;
@@ -1499,7 +1500,7 @@ var PDFDoc = (function() {
             if (linearization) {
                 // Find end of first obj.
                 stream.reset();
-                if (stream.find("endobj", 1024))
+                if (find(stream, "endobj", 1024))
                     startXRef = stream.pos + 6;
             } else {
                 // Find startxref at the end of the file.
@@ -1507,7 +1508,7 @@ var PDFDoc = (function() {
                 if (start < 0)
                     start = 0;
                 stream.pos = start;
-                if (stream.find("startxref", 1024, true)) {
+                if (find(stream, "startxref", 1024, true)) {
                     stream.skip(9);
                     var ch;
                     while (Lexer.isSpace(ch = stream.getChar()))
@@ -1538,7 +1539,7 @@ var PDFDoc = (function() {
         checkHeader: function() {
             var stream = this.stream;
             stream.reset();
-            if (stream.find("%PDF-", 1024)) {
+            if (find(stream, "%PDF-", 1024)) {
                 // Found the header, trim off any garbage before it.
                 stream.moveStart();
                 return;
