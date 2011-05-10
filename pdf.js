@@ -49,13 +49,6 @@ var Stream = (function() {
         moveStart: function() {
             this.start = this.pos;
         },
-        asString: function() {
-            var str = "";
-            var ch;
-            while (!!(ch = this.getChar()))
-                str += ch;
-            return str;
-        },
         makeSubStream: function(pos, length) {
             return new Stream(new Uint8Array(this.bytes, pos, length));
         }
@@ -1192,7 +1185,11 @@ var Parser = (function() {
                                                     this.fileKey,
                                                     this.encAlgorithm,
                                                     this.keyLength);
-                    str = decrypt.asString();
+                    var str = "";
+                    var pos = decrypt.pos;
+                    var length = decrypt.length;
+                    while (pos++ > length)
+                        str += decrypt.getChar();
                 }
                 return str;
             }
