@@ -1,6 +1,17 @@
 /* -*- Mode: Java; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- /
 /* vim: set shiftwidth=4 tabstop=8 autoindent cindent expandtab: */
 
+function warn(msg) {
+    if (console && console.log)
+        console.log(msg);
+    if (print)
+        print(msg);
+}
+
+function error(msg) {
+    throw new Error(msg);
+}
+
 var Stream = (function() {
     function constructor(arrayBuffer) {
         this.bytes = Uint8Array(arrayBuffer);
@@ -90,37 +101,611 @@ var StringStream = (function() {
     return constructor;
 })();
 
-var Buffer = (function() {
-    function constructor(length) {
-        this.bytes = new Uint8Array(length ? length : 4096);
-        this.pos = 0;
-    }
-
-    constructor.prototype = {
-        putByte: function(b) {
-            var bytes = this.bytes;
-            var length = bytes.length;
-            if (this.pos >= length) {
-                var newBytes = new Uint8Array(length * 2);
-                for (var n = 0; n < length; ++n)
-                    newBytes[n] = bytes[n];
-                bytes = newBytes;
-            }
-            bytes[this.pos++] = b;
-        },
-        asStream: function() {
-            return new Stream(this.bytes);
-        }
-    }
-
-    return constructor;
-})();
-
 var FlateStream = (function() {
+    const codeMap = [
+        16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15
+    ];
+
+    const lengthDecode = [
+        [0,   3],
+        [0,   4],
+        [0,   5],
+        [0,   6],
+        [0,   7],
+        [0,   8],
+        [0,   9],
+        [0,  10],
+        [1,  11],
+        [1,  13],
+        [1,  15],
+        [1,  17],
+        [2,  19],
+        [2,  23],
+        [2,  27],
+        [2,  31],
+        [3,  35],
+        [3,  43],
+        [3,  51],
+        [3,  59],
+        [4,  67],
+        [4,  83],
+        [4,  99],
+        [4, 115],
+        [5, 131],
+        [5, 163],
+        [5, 195],
+        [5, 227],
+        [0, 258],
+        [0, 258],
+        [0, 258]
+    ];
+
+    const fixedLitCodeTabCodes = [
+        [7, 0x0100],
+        [8, 0x0050],
+        [8, 0x0010],
+        [8, 0x0118],
+        [7, 0x0110],
+        [8, 0x0070],
+        [8, 0x0030],
+        [9, 0x00c0],
+        [7, 0x0108],
+        [8, 0x0060],
+        [8, 0x0020],
+        [9, 0x00a0],
+        [8, 0x0000],
+        [8, 0x0080],
+        [8, 0x0040],
+        [9, 0x00e0],
+        [7, 0x0104],
+        [8, 0x0058],
+        [8, 0x0018],
+        [9, 0x0090],
+        [7, 0x0114],
+        [8, 0x0078],
+        [8, 0x0038],
+        [9, 0x00d0],
+        [7, 0x010c],
+        [8, 0x0068],
+        [8, 0x0028],
+        [9, 0x00b0],
+        [8, 0x0008],
+        [8, 0x0088],
+        [8, 0x0048],
+        [9, 0x00f0],
+        [7, 0x0102],
+        [8, 0x0054],
+        [8, 0x0014],
+        [8, 0x011c],
+        [7, 0x0112],
+        [8, 0x0074],
+        [8, 0x0034],
+        [9, 0x00c8],
+        [7, 0x010a],
+        [8, 0x0064],
+        [8, 0x0024],
+        [9, 0x00a8],
+        [8, 0x0004],
+        [8, 0x0084],
+        [8, 0x0044],
+        [9, 0x00e8],
+        [7, 0x0106],
+        [8, 0x005c],
+        [8, 0x001c],
+        [9, 0x0098],
+        [7, 0x0116],
+        [8, 0x007c],
+        [8, 0x003c],
+        [9, 0x00d8],
+        [7, 0x010e],
+        [8, 0x006c],
+        [8, 0x002c],
+        [9, 0x00b8],
+        [8, 0x000c],
+        [8, 0x008c],
+        [8, 0x004c],
+        [9, 0x00f8],
+        [7, 0x0101],
+        [8, 0x0052],
+        [8, 0x0012],
+        [8, 0x011a],
+        [7, 0x0111],
+        [8, 0x0072],
+        [8, 0x0032],
+        [9, 0x00c4],
+        [7, 0x0109],
+        [8, 0x0062],
+        [8, 0x0022],
+        [9, 0x00a4],
+        [8, 0x0002],
+        [8, 0x0082],
+        [8, 0x0042],
+        [9, 0x00e4],
+        [7, 0x0105],
+        [8, 0x005a],
+        [8, 0x001a],
+        [9, 0x0094],
+        [7, 0x0115],
+        [8, 0x007a],
+        [8, 0x003a],
+        [9, 0x00d4],
+        [7, 0x010d],
+        [8, 0x006a],
+        [8, 0x002a],
+        [9, 0x00b4],
+        [8, 0x000a],
+        [8, 0x008a],
+        [8, 0x004a],
+        [9, 0x00f4],
+        [7, 0x0103],
+        [8, 0x0056],
+        [8, 0x0016],
+        [8, 0x011e],
+        [7, 0x0113],
+        [8, 0x0076],
+        [8, 0x0036],
+        [9, 0x00cc],
+        [7, 0x010b],
+        [8, 0x0066],
+        [8, 0x0026],
+        [9, 0x00ac],
+        [8, 0x0006],
+        [8, 0x0086],
+        [8, 0x0046],
+        [9, 0x00ec],
+        [7, 0x0107],
+        [8, 0x005e],
+        [8, 0x001e],
+        [9, 0x009c],
+        [7, 0x0117],
+        [8, 0x007e],
+        [8, 0x003e],
+        [9, 0x00dc],
+        [7, 0x010f],
+        [8, 0x006e],
+        [8, 0x002e],
+        [9, 0x00bc],
+        [8, 0x000e],
+        [8, 0x008e],
+        [8, 0x004e],
+        [9, 0x00fc],
+        [7, 0x0100],
+        [8, 0x0051],
+        [8, 0x0011],
+        [8, 0x0119],
+        [7, 0x0110],
+        [8, 0x0071],
+        [8, 0x0031],
+        [9, 0x00c2],
+        [7, 0x0108],
+        [8, 0x0061],
+        [8, 0x0021],
+        [9, 0x00a2],
+        [8, 0x0001],
+        [8, 0x0081],
+        [8, 0x0041],
+        [9, 0x00e2],
+        [7, 0x0104],
+        [8, 0x0059],
+        [8, 0x0019],
+        [9, 0x0092],
+        [7, 0x0114],
+        [8, 0x0079],
+        [8, 0x0039],
+        [9, 0x00d2],
+        [7, 0x010c],
+        [8, 0x0069],
+        [8, 0x0029],
+        [9, 0x00b2],
+        [8, 0x0009],
+        [8, 0x0089],
+        [8, 0x0049],
+        [9, 0x00f2],
+        [7, 0x0102],
+        [8, 0x0055],
+        [8, 0x0015],
+        [8, 0x011d],
+        [7, 0x0112],
+        [8, 0x0075],
+        [8, 0x0035],
+        [9, 0x00ca],
+        [7, 0x010a],
+        [8, 0x0065],
+        [8, 0x0025],
+        [9, 0x00aa],
+        [8, 0x0005],
+        [8, 0x0085],
+        [8, 0x0045],
+        [9, 0x00ea],
+        [7, 0x0106],
+        [8, 0x005d],
+        [8, 0x001d],
+        [9, 0x009a],
+        [7, 0x0116],
+        [8, 0x007d],
+        [8, 0x003d],
+        [9, 0x00da],
+        [7, 0x010e],
+        [8, 0x006d],
+        [8, 0x002d],
+        [9, 0x00ba],
+        [8, 0x000d],
+        [8, 0x008d],
+        [8, 0x004d],
+        [9, 0x00fa],
+        [7, 0x0101],
+        [8, 0x0053],
+        [8, 0x0013],
+        [8, 0x011b],
+        [7, 0x0111],
+        [8, 0x0073],
+        [8, 0x0033],
+        [9, 0x00c6],
+        [7, 0x0109],
+        [8, 0x0063],
+        [8, 0x0023],
+        [9, 0x00a6],
+        [8, 0x0003],
+        [8, 0x0083],
+        [8, 0x0043],
+        [9, 0x00e6],
+        [7, 0x0105],
+        [8, 0x005b],
+        [8, 0x001b],
+        [9, 0x0096],
+        [7, 0x0115],
+        [8, 0x007b],
+        [8, 0x003b],
+        [9, 0x00d6],
+        [7, 0x010d],
+        [8, 0x006b],
+        [8, 0x002b],
+        [9, 0x00b6],
+        [8, 0x000b],
+        [8, 0x008b],
+        [8, 0x004b],
+        [9, 0x00f6],
+        [7, 0x0103],
+        [8, 0x0057],
+        [8, 0x0017],
+        [8, 0x011f],
+        [7, 0x0113],
+        [8, 0x0077],
+        [8, 0x0037],
+        [9, 0x00ce],
+        [7, 0x010b],
+        [8, 0x0067],
+        [8, 0x0027],
+        [9, 0x00ae],
+        [8, 0x0007],
+        [8, 0x0087],
+        [8, 0x0047],
+        [9, 0x00ee],
+        [7, 0x0107],
+        [8, 0x005f],
+        [8, 0x001f],
+        [9, 0x009e],
+        [7, 0x0117],
+        [8, 0x007f],
+        [8, 0x003f],
+        [9, 0x00de],
+        [7, 0x010f],
+        [8, 0x006f],
+        [8, 0x002f],
+        [9, 0x00be],
+        [8, 0x000f],
+        [8, 0x008f],
+        [8, 0x004f],
+        [9, 0x00fe],
+        [7, 0x0100],
+        [8, 0x0050],
+        [8, 0x0010],
+        [8, 0x0118],
+        [7, 0x0110],
+        [8, 0x0070],
+        [8, 0x0030],
+        [9, 0x00c1],
+        [7, 0x0108],
+        [8, 0x0060],
+        [8, 0x0020],
+        [9, 0x00a1],
+        [8, 0x0000],
+        [8, 0x0080],
+        [8, 0x0040],
+        [9, 0x00e1],
+        [7, 0x0104],
+        [8, 0x0058],
+        [8, 0x0018],
+        [9, 0x0091],
+        [7, 0x0114],
+        [8, 0x0078],
+        [8, 0x0038],
+        [9, 0x00d1],
+        [7, 0x010c],
+        [8, 0x0068],
+        [8, 0x0028],
+        [9, 0x00b1],
+        [8, 0x0008],
+        [8, 0x0088],
+        [8, 0x0048],
+        [9, 0x00f1],
+        [7, 0x0102],
+        [8, 0x0054],
+        [8, 0x0014],
+        [8, 0x011c],
+        [7, 0x0112],
+        [8, 0x0074],
+        [8, 0x0034],
+        [9, 0x00c9],
+        [7, 0x010a],
+        [8, 0x0064],
+        [8, 0x0024],
+        [9, 0x00a9],
+        [8, 0x0004],
+        [8, 0x0084],
+        [8, 0x0044],
+        [9, 0x00e9],
+        [7, 0x0106],
+        [8, 0x005c],
+        [8, 0x001c],
+        [9, 0x0099],
+        [7, 0x0116],
+        [8, 0x007c],
+        [8, 0x003c],
+        [9, 0x00d9],
+        [7, 0x010e],
+        [8, 0x006c],
+        [8, 0x002c],
+        [9, 0x00b9],
+        [8, 0x000c],
+        [8, 0x008c],
+        [8, 0x004c],
+        [9, 0x00f9],
+        [7, 0x0101],
+        [8, 0x0052],
+        [8, 0x0012],
+        [8, 0x011a],
+        [7, 0x0111],
+        [8, 0x0072],
+        [8, 0x0032],
+        [9, 0x00c5],
+        [7, 0x0109],
+        [8, 0x0062],
+        [8, 0x0022],
+        [9, 0x00a5],
+        [8, 0x0002],
+        [8, 0x0082],
+        [8, 0x0042],
+        [9, 0x00e5],
+        [7, 0x0105],
+        [8, 0x005a],
+        [8, 0x001a],
+        [9, 0x0095],
+        [7, 0x0115],
+        [8, 0x007a],
+        [8, 0x003a],
+        [9, 0x00d5],
+        [7, 0x010d],
+        [8, 0x006a],
+        [8, 0x002a],
+        [9, 0x00b5],
+        [8, 0x000a],
+        [8, 0x008a],
+        [8, 0x004a],
+        [9, 0x00f5],
+        [7, 0x0103],
+        [8, 0x0056],
+        [8, 0x0016],
+        [8, 0x011e],
+        [7, 0x0113],
+        [8, 0x0076],
+        [8, 0x0036],
+        [9, 0x00cd],
+        [7, 0x010b],
+        [8, 0x0066],
+        [8, 0x0026],
+        [9, 0x00ad],
+        [8, 0x0006],
+        [8, 0x0086],
+        [8, 0x0046],
+        [9, 0x00ed],
+        [7, 0x0107],
+        [8, 0x005e],
+        [8, 0x001e],
+        [9, 0x009d],
+        [7, 0x0117],
+        [8, 0x007e],
+        [8, 0x003e],
+        [9, 0x00dd],
+        [7, 0x010f],
+        [8, 0x006e],
+        [8, 0x002e],
+        [9, 0x00bd],
+        [8, 0x000e],
+        [8, 0x008e],
+        [8, 0x004e],
+        [9, 0x00fd],
+        [7, 0x0100],
+        [8, 0x0051],
+        [8, 0x0011],
+        [8, 0x0119],
+        [7, 0x0110],
+        [8, 0x0071],
+        [8, 0x0031],
+        [9, 0x00c3],
+        [7, 0x0108],
+        [8, 0x0061],
+        [8, 0x0021],
+        [9, 0x00a3],
+        [8, 0x0001],
+        [8, 0x0081],
+        [8, 0x0041],
+        [9, 0x00e3],
+        [7, 0x0104],
+        [8, 0x0059],
+        [8, 0x0019],
+        [9, 0x0093],
+        [7, 0x0114],
+        [8, 0x0079],
+        [8, 0x0039],
+        [9, 0x00d3],
+        [7, 0x010c],
+        [8, 0x0069],
+        [8, 0x0029],
+        [9, 0x00b3],
+        [8, 0x0009],
+        [8, 0x0089],
+        [8, 0x0049],
+        [9, 0x00f3],
+        [7, 0x0102],
+        [8, 0x0055],
+        [8, 0x0015],
+        [8, 0x011d],
+        [7, 0x0112],
+        [8, 0x0075],
+        [8, 0x0035],
+        [9, 0x00cb],
+        [7, 0x010a],
+        [8, 0x0065],
+        [8, 0x0025],
+        [9, 0x00ab],
+        [8, 0x0005],
+        [8, 0x0085],
+        [8, 0x0045],
+        [9, 0x00eb],
+        [7, 0x0106],
+        [8, 0x005d],
+        [8, 0x001d],
+        [9, 0x009b],
+        [7, 0x0116],
+        [8, 0x007d],
+        [8, 0x003d],
+        [9, 0x00db],
+        [7, 0x010e],
+        [8, 0x006d],
+        [8, 0x002d],
+        [9, 0x00bb],
+        [8, 0x000d],
+        [8, 0x008d],
+        [8, 0x004d],
+        [9, 0x00fb],
+        [7, 0x0101],
+        [8, 0x0053],
+        [8, 0x0013],
+        [8, 0x011b],
+        [7, 0x0111],
+        [8, 0x0073],
+        [8, 0x0033],
+        [9, 0x00c7],
+        [7, 0x0109],
+        [8, 0x0063],
+        [8, 0x0023],
+        [9, 0x00a7],
+        [8, 0x0003],
+        [8, 0x0083],
+        [8, 0x0043],
+        [9, 0x00e7],
+        [7, 0x0105],
+        [8, 0x005b],
+        [8, 0x001b],
+        [9, 0x0097],
+        [7, 0x0115],
+        [8, 0x007b],
+        [8, 0x003b],
+        [9, 0x00d7],
+        [7, 0x010d],
+        [8, 0x006b],
+        [8, 0x002b],
+        [9, 0x00b7],
+        [8, 0x000b],
+        [8, 0x008b],
+        [8, 0x004b],
+        [9, 0x00f7],
+        [7, 0x0103],
+        [8, 0x0057],
+        [8, 0x0017],
+        [8, 0x011f],
+        [7, 0x0113],
+        [8, 0x0077],
+        [8, 0x0037],
+        [9, 0x00cf],
+        [7, 0x010b],
+        [8, 0x0067],
+        [8, 0x0027],
+        [9, 0x00af],
+        [8, 0x0007],
+        [8, 0x0087],
+        [8, 0x0047],
+        [9, 0x00ef],
+        [7, 0x0107],
+        [8, 0x005f],
+        [8, 0x001f],
+        [9, 0x009f],
+        [7, 0x0117],
+        [8, 0x007f],
+        [8, 0x003f],
+        [9, 0x00df],
+        [7, 0x010f],
+        [8, 0x006f],
+        [8, 0x002f],
+        [9, 0x00bf],
+        [8, 0x000f],
+        [8, 0x008f],
+        [8, 0x004f],
+        [9, 0x00ff]
+    ];
+
+    const fixedLitCodeTab = [
+        fixedLitCodeTabCodes, 9
+    ];
+    
+    const fixedDistCodeTabCodes = [
+        [5, 0x0000],
+        [5, 0x0010],
+        [5, 0x0008],
+        [5, 0x0018],
+        [5, 0x0004],
+        [5, 0x0014],
+        [5, 0x000c],
+        [5, 0x001c],
+        [5, 0x0002],
+        [5, 0x0012],
+        [5, 0x000a],
+        [5, 0x001a],
+        [5, 0x0006],
+        [5, 0x0016],
+        [5, 0x000e],
+        [0, 0x0000],
+        [5, 0x0001],
+        [5, 0x0011],
+        [5, 0x0009],
+        [5, 0x0019],
+        [5, 0x0005],
+        [5, 0x0015],
+        [5, 0x000d],
+        [5, 0x001d],
+        [5, 0x0003],
+        [5, 0x0013],
+        [5, 0x000b],
+        [5, 0x001b],
+        [5, 0x0007],
+        [5, 0x0017],
+        [5, 0x000f],
+        [0, 0x0000]
+    ];
+
+    const fixedDistCodeTab = [
+        fixedDistCodeTabCodes, 5
+    ];
+
     function constructor() {
+        this.codeSize = 0;
     }
 
     constructor.prototype = {
+        getBits: function(bits) {
+            var codeSize = this.codeSize;
+        }
     };
 
     return constructor;
@@ -237,12 +822,6 @@ function IsEOF(v) {
     return v == EOF;
 }
 
-var Error = {};
-
-function IsError(v) {
-    return v == Error;
-}
-
 var None = {};
 
 function IsNone(v) {
@@ -294,10 +873,6 @@ var Lexer = (function() {
     }
 
     constructor.prototype = {
-        error: function(msg) {
-            // TODO
-            print(msg);
-        },
         getNumber: function(ch) {
             var floating = false;
             var str = ch;
@@ -310,7 +885,7 @@ var Lexer = (function() {
                 } else if (ch == "-") {
                     // ignore minus signs in the middle of numbers to match
                     // Adobe's behavior
-                    this.error("Badly formated number");
+                    warn("Badly formated number");
                 } else if (ch >= "0" && ch <= "9") {
                     str += ch;
                 } else if (ch == "e" || ch == "E") {
@@ -323,7 +898,7 @@ var Lexer = (function() {
             } while (true);
             var value = parseFloat(str);
             if (isNaN(value))
-                return Error;
+                error("Invalid floating point number");
             return value;
         },
         getString: function(ch) {
@@ -335,7 +910,7 @@ var Lexer = (function() {
             do {
                 switch (ch = stream.getChar()) {
                 case undefined:
-                    this.error("Unterminated string");
+                    warn("Unterminated string");
                     done = true;
                     break;
                 case '(':
@@ -352,7 +927,7 @@ var Lexer = (function() {
                 case '\\':
                     switch (ch = stream.getChar()) {
                     case undefined:
-                        this.error("Unterminated string");
+                        warn("Unterminated string");
                         done = true;
                         break;
                     case 'n':
@@ -423,7 +998,7 @@ var Lexer = (function() {
                         stream.getChar();
                         var x2 = ToHexDigit(stream.getChar());
                         if (x2 == -1)
-                            this.error("Illegal digit in hex char in name");
+                            error("Illegal digit in hex char in name");
                         str += String.fromCharCode((x << 4) | x2);
                     } else {
                         str += "#";
@@ -434,7 +1009,7 @@ var Lexer = (function() {
                 }
             }
             if (str.length > 128)
-                this.error("Warning: name token is longer than allowed by the specification");
+                error("Warning: name token is longer than allowed by the specification");
             return new Name(str);
         },
         getHexString: function(ch) {
@@ -445,13 +1020,13 @@ var Lexer = (function() {
                 if (ch == '>') {
                     break;
                 } else if (!ch) {
-                    this.error("Unterminated hex string");
+                    warn("Unterminated hex string");
                     break;
                 } else if (specialChars[ch.charCodeAt(0)] != 1) {
                     var x, x2;
                     if (((x = ToHexDigit(ch)) == -1) ||
                         ((x2 = ToHexDigit(stream.getChar())) == -1)) {
-                        this.error("Illegal character in hex string");
+                        error("Illegal character in hex string");
                         break;
                     }
                     str += String.fromCharCode((x << 4) | x2);
@@ -511,7 +1086,7 @@ var Lexer = (function() {
             case ')':
             case '{':
             case '}':
-                this.error("Illegal character");
+                error("Illegal character");
                 return Error;
             }
 
@@ -520,7 +1095,7 @@ var Lexer = (function() {
             while (!!(ch = stream.lookChar()) && !specialChars[ch.charCodeAt(0)]) {
                 stream.getChar();
                 if (str.length == 128) {
-                    this.error("Command token too long");
+                    error("Command token too long");
                     break;
                 }
                 str += ch;
@@ -592,7 +1167,7 @@ var Parser = (function() {
                 while (!IsCmd(this.buf1, "]") && !IsEOF(this.buf1))
                     array.push(this.getObj());
                 if (IsEOF(this.buf1))
-                    this.error("End of file inside array");
+                    error("End of file inside array");
                 this.shift();
                 return array;
             } else if (IsCmd(this.buf1, "<<")) { // dictionary or stream
@@ -600,18 +1175,18 @@ var Parser = (function() {
                 var dict = new Dict();
                 while (!IsCmd(this.buf1, ">>") && !IsEOF(this.buf1)) {
                     if (!IsName(this.buf1)) {
-                        this.error("Dictionary key must be a name object");
+                        error("Dictionary key must be a name object");
                         shift();
                     } else {
                         var key = this.buf1.name;
                         this.shift();
-                        if (IsEOF(this.buf1) || IsError(this.buf1))
+                        if (IsEOF(this.buf1))
                             break;
                         dict.set(key, this.getObj());
                     }
                 }
                 if (IsEOF(this.buf1))
-                    this.error("End of file inside dictionary");
+                    error("End of file inside dictionary");
 
                 // stream objects are not allowed inside content streams or
                 // object streams
@@ -661,7 +1236,7 @@ var Parser = (function() {
             // get length
             var length;
             if (!IsInt(length = dict.get("Length"))) {
-                this.error("Bad 'Length' attribute in stream");
+                error("Bad 'Length' attribute in stream");
                 lenght = 0;
             }
 
@@ -670,7 +1245,7 @@ var Parser = (function() {
             this.shift(); // '>>'
             this.shift(); // 'stream'
             if (!IsCmd(this.buf1, "endstream"))
-                this.error("Missing 'endstream'");
+                error("Missing 'endstream'");
             this.shift();
 
             stream = stream.makeSubStream(pos, length);
@@ -692,7 +1267,7 @@ var Parser = (function() {
                 var paramsArray = params;
                 for (filter in filterArray) {
                     if (!IsName(filter))
-                        this.error("Bad filter name");
+                        error("Bad filter name");
                     else {
                         params = null;
                         if (IsArray(paramsArray) && (i in paramsArray))
@@ -738,7 +1313,7 @@ var Linearization = (function() {
                 obj > 0) {
                 return obj;
             }
-            this.error("'" + name + "' field in linearization table is invalid");
+            error("'" + name + "' field in linearization table is invalid");
             return 0;
         },
         getHint: function(index) {
@@ -751,7 +1326,7 @@ var Linearization = (function() {
                 obj2 > 0) {
                 return obj2;
             }
-            this.error("Hints table in linearization table is invalid");
+            error("Hints table in linearization table is invalid");
             return 0;
         },
         get length() {
@@ -1078,19 +1653,16 @@ var Interpreter = (function() {
                         // TODO figure out how to type-check vararg functions
                         fn.apply(gfx, args);
                     else
-                        this.error("Unknown command '" + cmd + "'");
+                        error("Unknown command '" + cmd + "'");
                     args.length = 0;
                 } else {
                     if (args.length > 33)
-                        this.error("Too many arguments '" + cmd + "'");
+                        error("Too many arguments '" + cmd + "'");
                     args.push(obj);
                 }
             }
             this.gfx.endDrawing();
-        },
-        error: function(what) {
-            throw new Error(what);
-        },
+        }
     };
 
     return constructor;
@@ -1421,7 +1993,7 @@ var CanvasGraphics = (function() {
                 } else if (IsString(e)) {
                     this.showText(e);
                 } else {
-                    this.error("Unexpected element in TJ array");
+                    error("Unexpected element in TJ array");
                 }
             }
         },
