@@ -1566,6 +1566,8 @@ var Interpreter = (function() {
             J: gfx.setLineCap,
             j: gfx.setLineJoin,
             d: gfx.setDash,
+            ri: gfx.setRenderingIntent,
+            i: gfx.setFlatness,
             q: gfx.save,
             Q: gfx.restore,
             cm: gfx.transform,
@@ -1578,10 +1580,14 @@ var Interpreter = (function() {
             re: gfx.rectangle,
             S: gfx.stroke,
             f: gfx.fill,
+            "f*": gfx.eoFill,
             B: gfx.fillStroke,
             b: gfx.closeFillStroke,
+            n: gfx.endPath,
 
             // Clipping
+            W: gfx.clip,
+            "W*": gfx.eoClip,
 
             // Text
             BT: gfx.beginText,
@@ -1591,19 +1597,30 @@ var Interpreter = (function() {
                 gfx.setFont(font, size);
             },
             Td: gfx.moveText,
+            Tm: gfx.setTextMatrix,
             Tj: gfx.showText,
             TJ: gfx.showSpacedText,
 
             // Type3 fonts
 
             // Color
+            CS: gfx.setStrokeColorSpace,
+            cs: gfx.setFillColorSpace,
+            SC: gfx.setStrokeColor,
+            SCN: gfx.setStrokeColorN,
+            sc: gfx.setFillColor,
+            scn: gfx.setFillColorN,
             g: gfx.setFillGray,
             RG: gfx.setStrokeRGBColor,
             rg: gfx.setFillRGBColor,
 
             // Shading
+            sh: gfx.shadingFill,
+
             // Images
             // XObjects
+            Do: gfx.paintXObject,
+
             // Marked content
             // Compatibility
         };
@@ -1627,11 +1644,10 @@ var Interpreter = (function() {
                 if (IsCmd(obj)) {
                     var cmd = obj.cmd;
                     var fn = map[cmd];
-                    if (fn) {
-                        if (fn.length != args.length)
-                            error("Invalid number of arguments '" + cmd + "'");
+                    if (fn)
+                        // TODO figure out how to type-check vararg functions
                         fn.apply(gfx, args);
-                    } else
+                    else
                         error("Unknown command '" + cmd + "'");
                     args.length = 0;
                 } else {
@@ -1676,6 +1692,12 @@ var EchoGraphics = (function() {
         setDash: function(dashArray, dashPhase) {
             this.printdentln(""+ dashArray +" "+ dashPhase +" d");
         },
+        setRenderingIntent: function(intent) {
+            this.printdentln("/"+ intent.name + " ri");
+        },
+        setFlatness: function(flatness) {
+            this.printdentln(""+ flatness +" i");
+        },
         save: function() {
             this.printdentln("q");
         },
@@ -1711,14 +1733,26 @@ var EchoGraphics = (function() {
         fill: function() {
             this.printdentln("f");
         },
+        eoFill: function() {
+            this.printdentln("f*");
+        },
         fillStroke: function() {
             this.printdentln("B");
         },
         closeFillStroke: function() {
             this.printdentln("b");
         },
+        endPath: function() {
+            this.printdentln("n");
+        },
 
         // Clipping
+        clip: function() {
+            this.printdentln("W");
+        },
+        eoClip: function() {
+            this.printdentln("W*");
+        },
 
         // Text
         beginText: function() {
@@ -1735,6 +1769,10 @@ var EchoGraphics = (function() {
         moveText: function (x, y) {
             this.printdentln(""+ x +" "+ y +" Td");
         },
+        setTextMatrix: function(a, b, c, d, e, f) {
+            this.printdentln(""+ a +" "+ b +" "+ c +
+                             " "+d +" "+ e +" "+ f + " Tm");
+        },
         showText: function(text) {
             this.printdentln("( "+ text +" ) Tj");
         },
@@ -1745,6 +1783,36 @@ var EchoGraphics = (function() {
         // Type3 fonts
 
         // Color
+        setStrokeColorSpace: function(space) {
+            this.printdentln("/"+ space.name +" CS");
+        },
+        setFillColorSpace: function(space) {
+            this.printdentln("/"+ space.name +" cs");
+        },
+        setStrokeColor: function(/*...*/) {
+            this.printdent("");
+            for (var i = 0; i < arguments.length; ++i)
+                this.print(""+ arguments[i] +" ");
+            this.printdentln("SC");
+        },
+        setStrokeColorN: function(/*...*/) {
+            this.printdent("");
+            for (var i = 0; i < arguments.length; ++i)
+                this.print(""+ arguments[i] +" ");
+            this.printdentln("SCN");
+        },
+        setFillColor: function(/*...*/) {
+            this.printdent("");
+            for (var i = 0; i < arguments.length; ++i)
+                this.print(""+ arguments[i] +" ");
+            this.printdentln("sc");
+        },
+        setFillColorN: function(/*...*/) {
+            this.printdent("");
+            for (var i = 0; i < arguments.length; ++i)
+                this.print(""+ arguments[i] +" ");
+            this.printdentln("scn");
+        },
         setFillGray: function(gray) {
             this.printdentln(""+ gray +" g");
         },
@@ -1756,8 +1824,16 @@ var EchoGraphics = (function() {
         },
 
         // Shading
+        shadingFill: function(entry) {
+            this.printdentln("/"+ entry.name +" sh");
+        },
+
         // Images
         // XObjects
+        paintXObject: function(obj) {
+            this.printdentln("/"+ obj.name +" Do");
+        },
+
         // Marked content
         // Compatibility
 
@@ -1769,9 +1845,13 @@ var EchoGraphics = (function() {
             this.print(str);
             this.out += "\n";
         },
-        printdentln: function(str) {
+        printdent: function(str) {
             this.print(this.indentationStr);
-            this.println(str);
+            this.print(str);
+        },
+        printdentln: function(str) {
+            this.printdent(str);
+            this.println("");
         },
         indent: function() {
             this.indentation += 2;
@@ -1808,10 +1888,13 @@ var CanvasGraphics = (function() {
         this.ctx = canvasCtx;
         this.current = new CanvasExtraState();
         this.stateStack = [ ];
+        this.pendingClip = null;
     }
 
     var LINE_CAP_STYLES = [ "butt", "round", "square" ];
     var LINE_JOIN_STYLES = [ "miter", "round", "bevel" ];
+    var NORMAL_CLIP = {};
+    var EO_CLIP = {};
 
     constructor.prototype = {
         beginDrawing: function(mediaBox) {
@@ -1835,6 +1918,12 @@ var CanvasGraphics = (function() {
             this.ctx.lineJoin = LINE_JOIN_STYLES[style];
         },
         setDash: function(dashArray, dashPhase) {
+            // TODO
+        },
+        setRenderingIntent: function(intent) {
+            // TODO
+        },
+        setFlatness: function(flatness) {
             // TODO
         },
         save: function() {
@@ -1874,6 +1963,10 @@ var CanvasGraphics = (function() {
             this.ctx.fill();
             this.consumePath();
         },
+        eoFill: function() {
+            // TODO: <canvas> needs to support even-odd winding rule
+            this.fill();
+        },
         fillStroke: function() {
             this.ctx.fill();
             this.ctx.stroke();
@@ -1882,8 +1975,17 @@ var CanvasGraphics = (function() {
         closeFillStroke: function() {
             return this.fillStroke();
         },
+        endPath: function() {
+            this.consumePath();
+        },
 
         // Clipping
+        clip: function() {
+            this.pendingClip = NORMAL_CLIP;
+        },
+        eoClip: function() {
+            this.pendingClip = EO_CLIP;
+        },
 
         // Text
         beginText: function() {
@@ -1899,9 +2001,12 @@ var CanvasGraphics = (function() {
         moveText: function (x, y) {
             this.current.lineX += x;
             this.current.lineY += y;
-            // XXX transform
+            // TODO transform
             this.current.curX = this.current.lineX;
             this.current.curY = this.current.lineY;
+        },
+        setTextMatrix: function(a, b, c, d, e, f) {
+            // TODO
         },
         showText: function(text) {
             this.ctx.save();
@@ -1929,6 +2034,24 @@ var CanvasGraphics = (function() {
         // Type3 fonts
 
         // Color
+        setStrokeColorSpace: function(space) {
+            // TODO
+        },
+        setFillColorSpace: function(space) {
+            // TODO
+        },
+        setStrokeColor: function(/*...*/) {
+            // TODO
+        },
+        setStrokeColorN: function(/*...*/) {
+            // TODO
+        },
+        setFillColor: function(/*...*/) {
+            // TODO
+        },
+        setFillColorN: function(/*...*/) {
+            // TODO
+        },
         setFillGray: function(gray) {
             this.setFillRGBColor(gray, gray, gray);
         },
@@ -1939,9 +2062,24 @@ var CanvasGraphics = (function() {
             this.ctx.fillStyle = this.makeCssRgb(r, g, b);
         },
 
+        // Shading
+        shadingFill: function(entry) {
+            // TODO
+        },
+
+        // XObjects
+        paintXObject: function(obj) {
+            // TODO
+        },
+
         // Helper functions
 
         consumePath: function() {
+            if (this.pendingClip) {
+                // TODO: <canvas> needs to support even-odd winding rule
+                this.ctx.clip();
+                this.pendingClip = null;
+            }
             this.ctx.beginPath();
         },
         makeCssRgb: function(r, g, b) {
@@ -2138,6 +2276,46 @@ var tests = [
 
           eof()
       ],
+    },
+    { name: "NYI",              // check that NYI commands are no-ops
+      res: { },
+      mediaBox: [ 0, 0, 612, 792 ],
+      objs: [
+          name("Perceptual"), cmd("ri"),
+          int(2), cmd("i"),
+          int(1), int(0), int(0), int(1), int(80), int(80), cmd("Tm"),
+          name("DeviceRGB"), cmd("CS"),
+          name("DeviceGray"), cmd("cs"),
+          int(1), int(0), int(0), cmd("SC"),
+          int(1), int(0), int(0), cmd("SCN"),
+          int(1), cmd("sc"),
+          int(1), cmd("scn"),
+          name("object"), cmd("Do"),
+          name("shading"), cmd("sh"),
+          eof()
+     ],
+    },
+    { name: "Broken heart",
+      res: { },
+      mediaBox: [ 0, 0, 612, 792 ],
+      objs: [
+          cmd("q"),
+          int(20), int(20), int(60), int(60), cmd("re"),
+          int(60), int(60), int(60), int(60), cmd("re"),
+          cmd("W"), cmd("n"),
+
+          real(0.9), real(0.0), real(0.0), cmd("rg"),
+          int(75), int(40), cmd("m"),
+          int(75), int(37), int(70), int(25), int(50), int(25), cmd("c"),
+          int(20), int(25), int(20), real(62.5), int(20), real(62.5), cmd("c"),
+          int(20), int(80), int(40), int(102), int(75), int(120), cmd("c"),
+          int(110), int(102), int(130), int(80), int(130), real(62.5), cmd("c"),
+          int(130), real(62.5), int(130), int(25), int(100), int(25), cmd("c"),
+          int(85), int(25), int(75), int(37), int(75), int(40), cmd("c"),
+          cmd("f"),
+          cmd("Q"),
+          eof()
+      ]
     },
 ];
 
