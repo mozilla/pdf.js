@@ -1,6 +1,17 @@
 /* -*- Mode: Java; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- /
 /* vim: set shiftwidth=4 tabstop=8 autoindent cindent expandtab: */
 
+function warn(msg) {
+    if (console && console.log)
+        console.log(msg);
+    if (print)
+        print(msg);
+}
+
+function error(msg) {
+    throw new Error(msg);
+}
+
 var Stream = (function() {
     function constructor(arrayBuffer) {
         this.bytes = Uint8Array(arrayBuffer);
@@ -98,11 +109,11 @@ var FlateStream = (function() {
     const lengthDecode = [
         [0,   3],
         [0,   4],
-        [0,   5},
-        [0,   6},
-        [0,   7},
-        [0,   8},
-        [0,   9},
+        [0,   5],
+        [0,   6],
+        [0,   7],
+        [0,   8],
+        [0,   9],
         [0,  10],
         [1,  11],
         [1,  13],
@@ -811,12 +822,6 @@ function IsEOF(v) {
     return v == EOF;
 }
 
-var Error = {};
-
-function IsError(v) {
-    return v == Error;
-}
-
 var None = {};
 
 function IsNone(v) {
@@ -868,10 +873,6 @@ var Lexer = (function() {
     }
 
     constructor.prototype = {
-        error: function(msg) {
-            // TODO
-            print(msg);
-        },
         getNumber: function(ch) {
             var floating = false;
             var str = ch;
@@ -884,7 +885,7 @@ var Lexer = (function() {
                 } else if (ch == "-") {
                     // ignore minus signs in the middle of numbers to match
                     // Adobe's behavior
-                    this.error("Badly formated number");
+                    warn("Badly formated number");
                 } else if (ch >= "0" && ch <= "9") {
                     str += ch;
                 } else if (ch == "e" || ch == "E") {
@@ -897,7 +898,7 @@ var Lexer = (function() {
             } while (true);
             var value = parseFloat(str);
             if (isNaN(value))
-                return Error;
+                error("Invalid floating point number");
             return value;
         },
         getString: function(ch) {
@@ -909,7 +910,7 @@ var Lexer = (function() {
             do {
                 switch (ch = stream.getChar()) {
                 case undefined:
-                    this.error("Unterminated string");
+                    warn("Unterminated string");
                     done = true;
                     break;
                 case '(':
@@ -926,7 +927,7 @@ var Lexer = (function() {
                 case '\\':
                     switch (ch = stream.getChar()) {
                     case undefined:
-                        this.error("Unterminated string");
+                        warn("Unterminated string");
                         done = true;
                         break;
                     case 'n':
@@ -997,7 +998,7 @@ var Lexer = (function() {
                         stream.getChar();
                         var x2 = ToHexDigit(stream.getChar());
                         if (x2 == -1)
-                            this.error("Illegal digit in hex char in name");
+                            error("Illegal digit in hex char in name");
                         str += String.fromCharCode((x << 4) | x2);
                     } else {
                         str += "#";
@@ -1008,7 +1009,7 @@ var Lexer = (function() {
                 }
             }
             if (str.length > 128)
-                this.error("Warning: name token is longer than allowed by the specification");
+                error("Warning: name token is longer than allowed by the specification");
             return new Name(str);
         },
         getHexString: function(ch) {
@@ -1019,13 +1020,13 @@ var Lexer = (function() {
                 if (ch == '>') {
                     break;
                 } else if (!ch) {
-                    this.error("Unterminated hex string");
+                    warn("Unterminated hex string");
                     break;
                 } else if (specialChars[ch.charCodeAt(0)] != 1) {
                     var x, x2;
                     if (((x = ToHexDigit(ch)) == -1) ||
                         ((x2 = ToHexDigit(stream.getChar())) == -1)) {
-                        this.error("Illegal character in hex string");
+                        error("Illegal character in hex string");
                         break;
                     }
                     str += String.fromCharCode((x << 4) | x2);
@@ -1085,7 +1086,7 @@ var Lexer = (function() {
             case ')':
             case '{':
             case '}':
-                this.error("Illegal character");
+                error("Illegal character");
                 return Error;
             }
 
@@ -1094,7 +1095,7 @@ var Lexer = (function() {
             while (!!(ch = stream.lookChar()) && !specialChars[ch.charCodeAt(0)]) {
                 stream.getChar();
                 if (str.length == 128) {
-                    this.error("Command token too long");
+                    error("Command token too long");
                     break;
                 }
                 str += ch;
@@ -1166,7 +1167,7 @@ var Parser = (function() {
                 while (!IsCmd(this.buf1, "]") && !IsEOF(this.buf1))
                     array.push(this.getObj());
                 if (IsEOF(this.buf1))
-                    this.error("End of file inside array");
+                    error("End of file inside array");
                 this.shift();
                 return array;
             } else if (IsCmd(this.buf1, "<<")) { // dictionary or stream
@@ -1174,18 +1175,18 @@ var Parser = (function() {
                 var dict = new Dict();
                 while (!IsCmd(this.buf1, ">>") && !IsEOF(this.buf1)) {
                     if (!IsName(this.buf1)) {
-                        this.error("Dictionary key must be a name object");
+                        error("Dictionary key must be a name object");
                         shift();
                     } else {
                         var key = this.buf1.name;
                         this.shift();
-                        if (IsEOF(this.buf1) || IsError(this.buf1))
+                        if (IsEOF(this.buf1))
                             break;
                         dict.set(key, this.getObj());
                     }
                 }
                 if (IsEOF(this.buf1))
-                    this.error("End of file inside dictionary");
+                    error("End of file inside dictionary");
 
                 // stream objects are not allowed inside content streams or
                 // object streams
@@ -1235,7 +1236,7 @@ var Parser = (function() {
             // get length
             var length;
             if (!IsInt(length = dict.get("Length"))) {
-                this.error("Bad 'Length' attribute in stream");
+                error("Bad 'Length' attribute in stream");
                 lenght = 0;
             }
 
@@ -1244,7 +1245,7 @@ var Parser = (function() {
             this.shift(); // '>>'
             this.shift(); // 'stream'
             if (!IsCmd(this.buf1, "endstream"))
-                this.error("Missing 'endstream'");
+                error("Missing 'endstream'");
             this.shift();
 
             stream = stream.makeSubStream(pos, length);
@@ -1266,7 +1267,7 @@ var Parser = (function() {
                 var paramsArray = params;
                 for (filter in filterArray) {
                     if (!IsName(filter))
-                        this.error("Bad filter name");
+                        error("Bad filter name");
                     else {
                         params = null;
                         if (IsArray(paramsArray) && (i in paramsArray))
@@ -1312,7 +1313,7 @@ var Linearization = (function() {
                 obj > 0) {
                 return obj;
             }
-            this.error("'" + name + "' field in linearization table is invalid");
+            error("'" + name + "' field in linearization table is invalid");
             return 0;
         },
         getHint: function(index) {
@@ -1325,7 +1326,7 @@ var Linearization = (function() {
                 obj2 > 0) {
                 return obj2;
             }
-            this.error("Hints table in linearization table is invalid");
+            error("Hints table in linearization table is invalid");
             return 0;
         },
         get length() {
@@ -1640,22 +1641,19 @@ var Interpreter = (function() {
                     var fn = map[cmd];
                     if (fn) {
                         if (fn.length != args.length)
-                            this.error("Invalid number of arguments '" + cmd + "'");
+                            error("Invalid number of arguments '" + cmd + "'");
                         fn.apply(gfx, args);
                     } else
-                        this.error("Unknown command '" + cmd + "'");
+                        error("Unknown command '" + cmd + "'");
                     args.length = 0;
                 } else {
                     if (args.length > 33)
-                        this.error("Too many arguments '" + cmd + "'");
+                        error("Too many arguments '" + cmd + "'");
                     args.push(obj);
                 }
             }
             this.gfx.endDrawing();
-        },
-        error: function(what) {
-            throw new Error(what);
-        },
+        }
     };
 
     return constructor;
@@ -1935,7 +1933,7 @@ var CanvasGraphics = (function() {
                 } else if (IsString(e)) {
                     this.showText(e);
                 } else {
-                    this.error("Unexpected element in TJ array");
+                    error("Unexpected element in TJ array");
                 }
             }
         },
