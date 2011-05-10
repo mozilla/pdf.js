@@ -1625,6 +1625,8 @@ var Interpreter = (function() {
             rg: gfx.setFillRGBColor,
 
             // Shading
+            sh: gfx.shadingFill,
+
             // Images
             // XObjects
             Do: gfx.paintXObject,
@@ -1820,6 +1822,10 @@ var EchoGraphics = (function() {
         },
 
         // Shading
+        shadingFill: function(entry) {
+            this.printdentln("/"+ entry.name +" sh");
+        },
+
         // Images
         // XObjects
         paintXObject: function(obj) {
@@ -2048,6 +2054,11 @@ var CanvasGraphics = (function() {
             this.ctx.fillStyle = this.makeCssRgb(r, g, b);
         },
 
+        // Shading
+        shadingFill: function(entry) {
+            // TODO
+        },
+
         // XObjects
         paintXObject: function(obj) {
             // TODO
@@ -2270,6 +2281,7 @@ var tests = [
           int(1), int(0), int(0), cmd("SC"),
           int(1), cmd("sc"),
           name("object"), cmd("Do"),
+          name("shading"), cmd("sh"),
           eof()
      ],
     },
