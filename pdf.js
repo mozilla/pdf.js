@@ -1574,6 +1574,8 @@ var Interpreter = (function() {
         this.map = {
             // Graphics state
             w: gfx.setLineWidth,
+            J: gfx.setLineCap,
+            j: gfx.setLineJoin,
             d: gfx.setDash,
             q: gfx.save,
             Q: gfx.restore,
@@ -1601,6 +1603,7 @@ var Interpreter = (function() {
             },
             Td: gfx.moveText,
             Tj: gfx.showText,
+            TJ: gfx.showSpacedText,
 
             // Type3 fonts
 
@@ -1678,6 +1681,12 @@ var EchoGraphics = (function() {
         setLineWidth: function(width) {
             this.printdentln(width +" w");
         },
+        setLineCap: function(style) {
+            this.printdentln(style +" J");
+        },
+        setLineJoin: function(style) {
+            this.printdentln(style +" j");
+        },
         setDash: function(dashArray, dashPhase) {
             this.printdentln(""+ dashArray +" "+ dashPhase +" d");
         },
@@ -1743,6 +1752,9 @@ var EchoGraphics = (function() {
         showText: function(text) {
             this.printdentln("( "+ text +" ) Tj");
         },
+        showSpacedText: function(arr) {
+            this.printdentln(""+ arr +" TJ");
+        },
 
         // Type3 fonts
 
@@ -1792,7 +1804,11 @@ var EchoGraphics = (function() {
 // However, PDF needs a bit more state, which we store here.
 var CanvasExtraState = (function() {
     function constructor() {
-        // Current text position (in text coordinates)
+        this.fontSize = 0.0;
+        // Current point (in user coordinates)
+        this.curX = 0.0;
+        this.curY = 0.0;
+        // Start of text line (in text coordinates)
         this.lineX = 0.0;
         this.lineY = 0.0;
     }
@@ -1808,6 +1824,9 @@ var CanvasGraphics = (function() {
         this.stateStack = [ ];
     }
 
+    var LINE_CAP_STYLES = [ "butt", "round", "square" ];
+    var LINE_JOIN_STYLES = [ "miter", "round", "bevel" ];
+
     constructor.prototype = {
         beginDrawing: function(mediaBox) {
             var cw = this.ctx.canvas.width, ch = this.ctx.canvas.height;
@@ -1822,6 +1841,12 @@ var CanvasGraphics = (function() {
         // Graphics state
         setLineWidth: function(width) {
             this.ctx.lineWidth = width;
+        },
+        setLineCap: function(style) {
+            this.ctx.lineCap = LINE_CAP_STYLES[style];
+        },
+        setLineJoin: function(style) {
+            this.ctx.lineJoin = LINE_JOIN_STYLES[style];
         },
         setDash: function(dashArray, dashPhase) {
             // TODO
@@ -1882,20 +1907,37 @@ var CanvasGraphics = (function() {
             // TODO
         },
         setFont: function(font, size) {
-            this.ctx.font = size +'px '+ font.BaseFont;
+            this.current.fontSize = size;
+            this.ctx.font = this.current.fontSize +'px '+ font.BaseFont;
         },
         moveText: function (x, y) {
-            this.current.lineX = x;
-            this.current.lineY = y;
+            this.current.lineX += x;
+            this.current.lineY += y;
+            // XXX transform
+            this.current.curX = this.current.lineX;
+            this.current.curY = this.current.lineY;
         },
         showText: function(text) {
             this.ctx.save();
-            this.ctx.translate(0, 2 * this.current.lineY);
+            this.ctx.translate(0, 2 * this.current.curY);
             this.ctx.scale(1, -1);
 
-            this.ctx.fillText(text, this.current.lineX, this.current.lineY);
+            this.ctx.fillText(text, this.current.curX, this.current.curY);
+            this.current.curX += this.ctx.measureText(text).width;
 
             this.ctx.restore();
+        },
+        showSpacedText: function(arr) {
+            for (var i = 0; i < arr.length; ++i) {
+                var e = arr[i];
+                if (IsNum(e)) {
+                    this.current.curX -= e * 0.001 * this.current.fontSize;
+                } else if (IsString(e)) {
+                    this.showText(e);
+                } else {
+                    this.error("Unexpected element in TJ array");
+                }
+            }
         },
 
         // Type3 fonts
@@ -2033,6 +2075,83 @@ var tests = [
           cmd("h"), cmd("S"),
           eof()
       ]
+    },
+    { name: "TJ",
+      res: {
+          // XXX not structured correctly
+          Font: {
+              F1: { Type: "Font",
+                    Subtype: "Type1",
+                    Name: "F1",
+                    BaseFont: "Georgia",
+                    Encoding: "MacRomanEncoding"
+              },
+          }
+      },
+      mediaBox: [ 0, 0, 612, 792 ],
+      objs: [
+          cmd("BT"),
+          name("F1"), real(17.9328), cmd("Tf"),
+
+          real(80.5159), real(700.6706), cmd("Td"),
+          [ string("Trace-based Just-in-Time") ], cmd("TJ"),
+
+          int(0), int(-18), cmd("Td"),
+          [ string("T"), int(74), string("race-based"), int(-250), string("J"), int(15), string("ust-in-T"), int(18), string("ime") ], cmd("TJ"),
+          cmd("ET"),
+          eof()
+      ]
+    },
+    { name: "Line cap",
+      res: { },
+      mediaBox: [ 0, 0, 612, 792 ],
+      objs: [
+          int(5), cmd("w"),
+
+          int(0), cmd("J"),         // butt cap
+          int(100), int(692), cmd("m"),
+          int(200), int(692), cmd("l"),
+          cmd("S"),
+
+          int(1), cmd("J"),         // round cap
+          int(100), int(686), cmd("m"),
+          int(200), int(686), cmd("l"),
+          cmd("S"),
+
+          int(2), cmd("J"),         // projecting square cap
+          int(100), int(680), cmd("m"),
+          int(200), int(680), cmd("l"),
+          cmd("S"),
+
+          eof()
+      ],
+    },
+    { name: "Line join",
+      res: { },
+      mediaBox: [ 0, 0, 612, 792 ],
+      objs: [
+          int(20), cmd("w"),
+
+          int(0), cmd("j"),         // miter join
+          int(100), int(692), cmd("m"),
+          int(150), int(642), cmd("l"),
+          int(200), int(692), cmd("l"),
+          cmd("S"),
+
+          int(1), cmd("j"),         // round join
+          int(250), int(692), cmd("m"),
+          int(300), int(642), cmd("l"),
+          int(350), int(692), cmd("l"),
+          cmd("S"),
+
+          int(2), cmd("j"),         // bevel join
+          int(400), int(692), cmd("m"),
+          int(450), int(642), cmd("l"),
+          int(500), int(692), cmd("l"),
+          cmd("S"),
+
+          eof()
+      ],
     },
 ];
 
