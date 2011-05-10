@@ -26,12 +26,6 @@ var Stream = (function() {
         reset: function() {
             this.pos = this.start;
         },
-        getByte: function() {
-            var bytes = this.bytes;
-            if (this.pos >= bytes.length)
-                return;
-            return bytes[this.pos++];
-        },
         lookChar: function() {
             var bytes = this.bytes;
             if (this.pos >= bytes.length)
