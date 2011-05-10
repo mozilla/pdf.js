@@ -1619,7 +1619,9 @@ var Interpreter = (function() {
             CS: gfx.setStrokeColorSpace,
             cs: gfx.setFillColorSpace,
             SC: gfx.setStrokeColor,
+            SCN: gfx.setStrokeColorN,
             sc: gfx.setFillColor,
+            scn: gfx.setFillColorN,
             g: gfx.setFillGray,
             RG: gfx.setStrokeRGBColor,
             rg: gfx.setFillRGBColor,
@@ -1805,11 +1807,23 @@ var EchoGraphics = (function() {
                 this.print(""+ arguments[i] +" ");
             this.printdentln("SC");
         },
+        setStrokeColorN: function(/*...*/) {
+            this.printdent("");
+            for (var i = 0; i < arguments.length; ++i)
+                this.print(""+ arguments[i] +" ");
+            this.printdentln("SCN");
+        },
         setFillColor: function(/*...*/) {
             this.printdent("");
             for (var i = 0; i < arguments.length; ++i)
                 this.print(""+ arguments[i] +" ");
             this.printdentln("sc");
+        },
+        setFillColorN: function(/*...*/) {
+            this.printdent("");
+            for (var i = 0; i < arguments.length; ++i)
+                this.print(""+ arguments[i] +" ");
+            this.printdentln("scn");
         },
         setFillGray: function(gray) {
             this.printdentln(""+ gray +" g");
@@ -2041,7 +2055,13 @@ var CanvasGraphics = (function() {
         setStrokeColor: function(/*...*/) {
             // TODO
         },
+        setStrokeColorN: function(/*...*/) {
+            // TODO
+        },
         setFillColor: function(/*...*/) {
+            // TODO
+        },
+        setFillColorN: function(/*...*/) {
             // TODO
         },
         setFillGray: function(gray) {
@@ -2279,7 +2299,9 @@ var tests = [
           name("DeviceRGB"), cmd("CS"),
           name("DeviceGray"), cmd("cs"),
           int(1), int(0), int(0), cmd("SC"),
+          int(1), int(0), int(0), cmd("SCN"),
           int(1), cmd("sc"),
+          int(1), cmd("scn"),
           name("object"), cmd("Do"),
           name("shading"), cmd("sh"),
           eof()
