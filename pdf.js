@@ -1001,6 +1001,7 @@ var Interpreter = (function() {
             // Graphics state
             w: gfx.setLineWidth,
             J: gfx.setLineCap,
+            j: gfx.setLineJoin,
             d: gfx.setDash,
             q: gfx.save,
             Q: gfx.restore,
@@ -1108,6 +1109,9 @@ var EchoGraphics = (function() {
         },
         setLineCap: function(style) {
             this.printdentln(style +" J");
+        },
+        setLineJoin: function(style) {
+            this.printdentln(style +" j");
         },
         setDash: function(dashArray, dashPhase) {
             this.printdentln(""+ dashArray +" "+ dashPhase +" d");
@@ -1247,6 +1251,7 @@ var CanvasGraphics = (function() {
     }
 
     var LINE_CAP_STYLES = [ "butt", "round", "square" ];
+    var LINE_JOIN_STYLES = [ "miter", "round", "bevel" ];
 
     constructor.prototype = {
         beginDrawing: function(mediaBox) {
@@ -1265,6 +1270,9 @@ var CanvasGraphics = (function() {
         },
         setLineCap: function(style) {
             this.ctx.lineCap = LINE_CAP_STYLES[style];
+        },
+        setLineJoin: function(style) {
+            this.ctx.lineJoin = LINE_JOIN_STYLES[style];
         },
         setDash: function(dashArray, dashPhase) {
             // TODO
@@ -1539,6 +1547,33 @@ var tests = [
           int(2), cmd("J"),         // projecting square cap
           int(100), int(680), cmd("m"),
           int(200), int(680), cmd("l"),
+          cmd("S"),
+
+          eof()
+      ],
+    },
+    { name: "Line join",
+      res: { },
+      mediaBox: [ 0, 0, 612, 792 ],
+      objs: [
+          int(20), cmd("w"),
+
+          int(0), cmd("j"),         // miter join
+          int(100), int(692), cmd("m"),
+          int(150), int(642), cmd("l"),
+          int(200), int(692), cmd("l"),
+          cmd("S"),
+
+          int(1), cmd("j"),         // round join
+          int(250), int(692), cmd("m"),
+          int(300), int(642), cmd("l"),
+          int(350), int(692), cmd("l"),
+          cmd("S"),
+
+          int(2), cmd("j"),         // bevel join
+          int(400), int(692), cmd("m"),
+          int(450), int(642), cmd("l"),
+          int(500), int(692), cmd("l"),
           cmd("S"),
 
           eof()
