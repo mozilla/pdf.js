@@ -862,7 +862,7 @@ var Lexer = (function() {
                     // the last character doesn't belong to us
                     break;
                 }
-                stream.getChar();
+                stream.skip();
             } while (true);
             var value = parseFloat(str);
             if (isNaN(value))
@@ -923,11 +923,11 @@ var Lexer = (function() {
                         var x = ch - '0';
                         ch = stream.lookChar();
                         if (ch >= '0' && ch <= '7') {
-                            this.getChar();
+                            this.skip();
                             x = (x << 3) + (x - '0');
                             ch = stream.lookChar();
                             if (ch >= '0' && ch <= '7') {
-                                stream.getChar();
+                                stream.skip();
                                 x = (x << 3) + (x - '0');
                             }
                         }
@@ -936,7 +936,7 @@ var Lexer = (function() {
                     case '\r':
                         ch = stream.lookChar();
                         if (ch == '\n')
-                            stream.getChar();
+                            stream.skip();
                         break;
                     case '\n':
                         break;
@@ -958,12 +958,12 @@ var Lexer = (function() {
             var str = "";
             var stream = this.stream;
             while (!!(ch = stream.lookChar()) && !specialChars[ch.charCodeAt(0)]) {
-                stream.getChar();
+                stream.skip();
                 if (ch == "#") {
                     ch = stream.lookChar();
                     var x = ToHexDigit(ch);
                     if (x != -1) {
-                        stream.getChar();
+                        stream.skip();
                         var x2 = ToHexDigit(stream.getChar());
                         if (x2 == -1)
                             error("Illegal digit in hex char in name");
@@ -1039,7 +1039,7 @@ var Lexer = (function() {
 	            ch = stream.lookChar();
                 if (ch == '<') {
                     // dict punctuation
-                    stream.getChar();
+                    stream.skip();
                     return new Cmd("<<");
                 }
 	            return this.getHexString(ch);
@@ -1047,7 +1047,7 @@ var Lexer = (function() {
             case '>':
 	            ch = stream.lookChar();
 	            if (ch == '>') {
-                    stream.getChar();
+                    stream.skip();
                     return new Cmd(">>");
                 }
 	        // fall through
@@ -1061,7 +1061,7 @@ var Lexer = (function() {
             // command
             var str = ch;
             while (!!(ch = stream.lookChar()) && !specialChars[ch.charCodeAt(0)]) {
-                stream.getChar();
+                stream.skip();
                 if (str.length == 128) {
                     error("Command token too long");
                     break;
@@ -1084,7 +1084,7 @@ var Lexer = (function() {
                     return;
                 if (ch == "\r") {
                     if ((ch = stream.lookChar()) == "\n")
-                        stream.getChar();
+                        stream.skip();
                     return;
                 }
             }
