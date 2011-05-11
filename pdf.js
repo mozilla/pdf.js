@@ -117,6 +117,39 @@ var FlateStream = (function() {
         [0, 258]
     ];
 
+    const distDecode = [
+        [0,      1],
+        [0,      2],
+        [0,      3],
+        [0,      4],
+        [1,      5],
+        [1,      7],
+        [2,      9],
+        [2,     13],
+        [3,     17],
+        [3,     25],
+        [4,     33],
+        [4,     49],
+        [5,     65],
+        [5,     97],
+        [6,    129],
+        [6,    193],
+        [7,    257],
+        [7,    385],
+        [8,    513],
+        [8,    769],
+        [9,   1025],
+        [9,   1537],
+        [10,  2049],
+        [10,  3073],
+        [11,  4097],
+        [11,  6145],
+        [12,  8193],
+        [12, 12289],
+        [13, 16385],
+        [13, 24577]
+    ];
+
     const fixedLitCodeTab = [[
         [7, 0x0100],
         [8, 0x0050],
@@ -778,7 +811,7 @@ var FlateStream = (function() {
             var size = 1 << maxLen;
             var codes = new Array(size);
             for (var len = 1, code = 0, skip = 2;
-                 len < maxLen;
+                 len <= maxLen;
                  ++len, code <<= 1, skip <<= 1) {
                 for (var val = 0; val < n; ++val) {
                     if (lengths[val] == len) {
@@ -854,8 +887,6 @@ var FlateStream = (function() {
                 var i = 0;
                 while (i < numCodeLenCodes)
                     codeLenCodeLengths[codeLenCodeMap[i++]] = this.getBits(3);
-                while (i < codeLenCodeMap.length)
-                    codeLenCodeLengths[i++] = 0;
                 var codeLenCodeTab = this.generateHuffmanTable(codeLenCodeLengths);
 
                 // built the literal and distance code tables
@@ -864,18 +895,18 @@ var FlateStream = (function() {
                 var codes = numLitCodes + numDistCodes;
                 var codeLengths = new Array(codes);
                 while (i < codes) {
-                    function repeat(array, i, len, offset, what) {
-                        var repeat = this.getBits(len) + offset;
+                    function repeat(stream, array, i, len, offset, what) {
+                        var repeat = stream.getBits(len) + offset;
                         while (repeat-- > 0)
                             array[i++] = what;
                     }
                     var code = this.getCode(codeLenCodeTab);
                     if (code == 16) {
-                        repeat(codeLengths, i, 2, 3, len);
+                        repeat(this, codeLengths, i, 2, 3, len);
                     } else if (code == 17) {
-                        repeat(codeLengths, i, 3, 3, len = 0);
+                        repeat(this, codeLengths, i, 3, 3, len = 0);
                     } else if (code == 18) {
-                        repeat(codeLengths, i, 7, 11, len = 0);
+                        repeat(this, codeLengths, i, 7, 11, len = 0);
                     } else {
                         codeLengths[i++] = len = code;
                     }
