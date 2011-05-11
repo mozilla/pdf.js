@@ -665,6 +665,7 @@ var FlateStream = (function() {
     ], 5];
 
     function constructor() {
+        this.reset();
     }
 
     constructor.prototype = {
@@ -684,6 +685,7 @@ var FlateStream = (function() {
             this.eof = false;
             this.codeSize = 0;
             this.codeBuf = 0;
+            this.pos = 0;
         },
         getBits: function(bits) {
             var stream = this.stream;
@@ -701,6 +703,27 @@ var FlateStream = (function() {
             this.codeSize = codeSize -= bits;
             return b;
         },
+        getCode: function(table) {
+            var codes = table.codes;
+            var maxLen = table.maxLen;
+            var codeSize = this.codeSize;
+            var codeBuf = this.codeBuf;
+            while (codeSize < maxlen) {
+                var b;
+                if ((b = stream.getByte()) == -1)
+                    error("Bad encoding in flate stream");
+                codeBuf |= (b << codeSize);
+                codeSize += 8;
+            }
+            var code = table.codes[codeBuf & ((1 << table.maxLen) - 1)];
+            var codeLen = code[0];
+            var codeVal = code[1];
+            if (codeSize == 0|| codeSize < codeLen || codeLen == 0)
+                error("Bad encoding in flate stream");
+            this.codeBuf = (codeBuf >> codeLen);
+            this.codeLen = (codeLen - codeLen);
+            return codeVal;
+        },
         ensureBuffer: function(requested, copy) {
             var buffer = this.buffer;
             var current = buffer ? buffer.byteLength : 0;
@@ -716,6 +739,30 @@ var FlateStream = (function() {
             }
             return this.buffer = buffer2;
         },
+        lookChar: function() {
+            var bufferLength = this.bufferLength;
+            var bufferPos = this.bufferPos;
+            if (bufferLength == bufferPos) {
+                if (this.eof)
+                    return;
+                this.readBlock();
+            }
+            return String.fromChar(this.buffer[bufferPos]);
+        },
+        getChar: function() {
+            var ch = this.lookChar();
+            if (!ch)
+                return;
+            this.pos++;
+            this.bufferPos++;
+            return ch;
+        },
+        skip: function(n) {
+            if (!n)
+                n = 1;
+            while (n-- > 0)
+                this.getChar();
+        }
         generateHuffmanTable: function(lengths) {
             var n = lengths.length;
 
@@ -753,27 +800,6 @@ var FlateStream = (function() {
 
             return { codes: codes, maxLen: maxLen };
         },
-        getCode: function(table) {
-            var codes = table.codes;
-            var maxLen = table.maxLen;
-            var codeSize = this.codeSize;
-            var codeBuf = this.codeBuf;
-            while (codeSize < maxlen) {
-                var b;
-                if ((b = stream.getByte()) == -1)
-                    error("Bad encoding in flate stream");
-                codeBuf |= (b << codeSize);
-                codeSize += 8;
-            }
-            var code = table.codes[codeBuf & ((1 << table.maxLen) - 1)];
-            var codeLen = code[0];
-            var codeVal = code[1];
-            if (codeSize == 0|| codeSize < codeLen || codeLen == 0)
-                error("Bad encoding in flate stream");
-            this.codeBuf = (codeBuf >> codeLen);
-            this.codeLen = (codeLen - codeLen);
-            return codeVal;
-        },
         readBlock: function() {
             var stream = this.stream;
 
@@ -801,6 +827,7 @@ var FlateStream = (function() {
                     error("Bad uncompressed block length in flate stream");
                 var buffer = this.ensureBuffer(blockLen);
                 this.bufferLength = blockLen;
+                this.bufferPos = 0;
                 for (var n = 0; n < blockLen; ++n) {
                     if ((b = stream.getByte()) == -1) {
                         this.eof = true;
@@ -864,6 +891,7 @@ var FlateStream = (function() {
                 var code1 = this.getCode(litCodeTable);
                 if (code1 == 256) {
                     this.bufferLength = pos;
+                    this.bufferPos = 0;
                     return;
                 }
                 if (code1 < 256) {
