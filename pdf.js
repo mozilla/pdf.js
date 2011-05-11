@@ -1589,12 +1589,11 @@ var XRef = (function() {
         this.readXRef(startXRef);
 
         // get the root dictionary (catalog) object
-        var ref = this.trailerDict.get("Root");
-        this.rootNum = ref.num;
-        this.rootGen = ref.gen;
+        if (!IsRef(this.root = this.trailerDict.get("Root")))
+            error("Invalid root reference");
 
-        // set the xref for the trailer dictionary
-        this.trailerDict.xref = this;
+        // prepare the XRef cache
+        this.cache = Object.create(null);
     }
 
     constructor.prototype = {
@@ -1697,8 +1696,13 @@ var XRef = (function() {
                 error("reading an XRef stream not implemented yet");
             return e;
         },
-        fetch: function(num, gen) {
-            var e = this.getEntry(num);
+        fetch: function(ref) {
+            var num = ref.num;
+            var e = this.cache[num];
+            if (e)
+                return e;
+            e = this.getEntry(num);
+            var gen = ref.gen;
             if (e.uncompressed) {
                 if (e.gen != gen)
                     throw("inconsistent generation in XRef");
@@ -1721,11 +1725,12 @@ var XRef = (function() {
                     }
                     error("bad XRef entry");
                 }
-                return parser.getObj();
+                return this.cache[num] = parser.getObj();
             }
+            error("compressed entry");
         },
         getCatalogObj: function() {
-            return this.fetch(this.rootNum, this.rootGen);
+            return this.fetch(this.root);
         }
     };
 
@@ -1735,13 +1740,30 @@ var XRef = (function() {
 var Catalog = (function() {
     function constructor(xref) {
         this.xref = xref;
-        var dict = xref.getCatalogObj();
-        if (!IsDict(dict))
-            error("bad catalog");
-        this.catDict = dict;
+        var obj = xref.getCatalogObj();
+        if (!IsDict(obj))
+            error("catalog object is not a dictionary");
+        this.catDict = obj;
     }
 
     constructor.prototype = {
+        get pagesDict() {
+            var obj = this.catDict.get("Pages");
+            if (!IsRef(obj))
+                error("invalid top-level pages reference");
+            var obj = this.xref.fetch(obj);
+            if (!IsDict(obj))
+                error("invalid top-level pages dictionary");
+            // shadow the prototype getter
+            return this.pagesDict = obj;
+        },
+        get numPages() {
+            obj = this.pagesDict.get("Count");
+            if (!IsInt(obj))
+                error("page count in top level pages object is not an integer");
+            // shadow the prototype getter
+            return this.numPages = obj;
+        }
     };
 
     return constructor;
@@ -1840,6 +1862,18 @@ var PDFDoc = (function() {
                                  this.startXRef,
                                  this.mainXRefEntriesOffset);
             this.catalog = new Catalog(this.xref);
+        },
+        get numPages() {
+            var linearization = this.linearization;
+            var num = linearization
+                      ? linearization.numPages
+                      : this.catalog.numPages;
+            // overwrite the prototype getter
+            return this.numPages = num;
+        },
+        getPage: function(page) {
+            print(this.numPages);
+            // TODO
         }
     };
 
@@ -2631,6 +2665,7 @@ function runParseTests() {
     //var data = snarf("simple_graphics.pdf", "binary");
     var data = snarf("/tmp/paper.pdf", "binary");
     var pdf = new PDFDoc(new Stream(data));
+    pdf.getPage(1);
 }
 
 if ("arguments" in this) {
