@@ -26,6 +26,12 @@ var Stream = (function() {
         reset: function() {
             this.pos = this.start;
         },
+        getByte: function() {
+            var bytes = this.bytes;
+            if (this.pos >= bytes.length)
+                return -1;
+            return bytes[this.pos++];
+        },
         lookChar: function() {
             var bytes = this.bytes;
             if (this.pos >= bytes.length)
@@ -70,7 +76,7 @@ var StringStream = (function() {
 })();
 
 var FlateStream = (function() {
-    const codeMap = [
+    const codeLenCodeMap = [
         16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15
     ];
 
@@ -108,7 +114,7 @@ var FlateStream = (function() {
         [0, 258]
     ];
 
-    const fixedLitCodeTabCodes = [
+    const fixedLitCodeTab = [[
         [7, 0x0100],
         [8, 0x0050],
         [8, 0x0010],
@@ -621,13 +627,9 @@ var FlateStream = (function() {
         [8, 0x008f],
         [8, 0x004f],
         [9, 0x00ff]
-    ];
+    ], 9];
 
-    const fixedLitCodeTab = [
-        fixedLitCodeTabCodes, 9
-    ];
-    
-    const fixedDistCodeTabCodes = [
+    const fixedDistCodeTab = [[
         [5, 0x0000],
         [5, 0x0010],
         [5, 0x0008],
@@ -660,19 +662,229 @@ var FlateStream = (function() {
         [5, 0x0017],
         [5, 0x000f],
         [0, 0x0000]
-    ];
-
-    const fixedDistCodeTab = [
-        fixedDistCodeTabCodes, 5
-    ];
+    ], 5];
 
     function constructor() {
-        this.codeSize = 0;
     }
 
     constructor.prototype = {
+        reset: function() {
+            stream.reset();
+            this.eof = true;
+            var cmf = stream.getByte();
+            var flg = stream.getByte();
+            if (cmf == -1 || flg == -1)
+                return;
+            if ((cmd & 0x0f) != 0x08)
+                error("Unknown compression method in flate stream");
+            if ((((cmf << 8) + flg) % 31) != 0)
+                error("Bad FCHECK in flate stream");
+            if (flg & 0x20)
+                error("FDICT bit set in flate stream");
+            this.eof = false;
+            this.codeSize = 0;
+            this.codeBuf = 0;
+        },
         getBits: function(bits) {
+            var stream = this.stream;
             var codeSize = this.codeSize;
+            var codeBuf = this.codeBuf;
+            var b;
+            while (codeSize < bits) {
+                if ((b = stream.getByte()) == -1)
+                    error("Bad encoding in flate stream");
+                codeBuf |= b << codeSize;
+                codeSize += 8;
+            }
+            b = codeBuf & ((1 << bits) - 1);
+            this.codeBuf = codeBuf >> bits;
+            this.codeSize = codeSize -= bits;
+            return b;
+        },
+        ensureBuffer: function(requested, copy) {
+            var buffer = this.buffer;
+            var current = buffer ? buffer.byteLength : 0;
+            if (current < requested)
+                return buffer;
+            var size = 512;
+            while (size < requested)
+                size <<= 1;
+            var buffer2 = new Uint8Array(size);
+            if (copy) {
+                for (var i = 0; i < current; ++i)
+                    buffer2[i] = buffer[i];
+            }
+            return this.buffer = buffer2;
+        },
+        generateHuffmanTable: function(lengths) {
+            var n = lengths.length;
+
+            // find max code length
+            var maxLen = 0;
+            for (var i = 0; i < n; ++i) {
+                if (lengths[i] > maxLen)
+                    maxLen = lengths[i];
+            }
+
+            // build the table
+            var size = 1 << max;
+            var codes = new Array(size);
+            for (var len = 1, code = 0, skip = 2;
+                 len < maxLen;
+                 ++len, code <<= 1, skip <<= 1) {
+                for (var val = 0; val < n; ++val) {
+                    if (lengths[val] == len) {
+                        // bit-reverse the code
+                        var code2 = 0;
+                        var t = code;
+                        for (var i = 0; i < len; ++i) {
+                            code2 = (code2 << 1) | (t & 1);
+                            t >>= 1;
+                        }
+
+                        // fill the table entries
+                        for (var i = code2; i < size; i += skip)
+                            codes[i] = [len, val];
+
+                        ++code;
+                    }
+                }
+            }
+
+            return { codes: codes, maxLen: maxLen };
+        },
+        getCode: function(table) {
+            var codes = table.codes;
+            var maxLen = table.maxLen;
+            var codeSize = this.codeSize;
+            var codeBuf = this.codeBuf;
+            while (codeSize < maxlen) {
+                var b;
+                if ((b = stream.getByte()) == -1)
+                    error("Bad encoding in flate stream");
+                codeBuf |= (b << codeSize);
+                codeSize += 8;
+            }
+            var code = table.codes[codeBuf & ((1 << table.maxLen) - 1)];
+            var codeLen = code[0];
+            var codeVal = code[1];
+            if (codeSize == 0|| codeSize < codeLen || codeLen == 0)
+                error("Bad encoding in flate stream");
+            this.codeBuf = (codeBuf >> codeLen);
+            this.codeLen = (codeLen - codeLen);
+            return codeVal;
+        },
+        readBlock: function() {
+            var stream = this.stream;
+
+            // read block header
+            var hdr = this.getBits(3);
+            if (hdr & 1)
+                this.eof = true;
+            hdr >>= 1;
+
+            var b;
+            if (hdr == 0) { // uncompressed block
+                if ((b = stream.getByte()) == -1)
+                    error("Bad block header in flate stream");
+                var blockLen = b;
+                if ((b = stream.getByte()) == -1)
+                    error("Bad block header in flate stream");
+                blockLen |= (b << 8);
+                if ((b = stream.getByte()) == -1)
+                    error("Bad block header in flate stream");
+                var check = b;
+                if ((b = stream.getByte()) == -1)
+                    error("Bad block header in flate stream");
+                check |= (b << 8);
+                if (check != (~this.blockLen & 0xffff))
+                    error("Bad uncompressed block length in flate stream");
+                var buffer = this.ensureBuffer(blockLen);
+                this.bufferLength = blockLen;
+                for (var n = 0; n < blockLen; ++n) {
+                    if ((b = stream.getByte()) == -1) {
+                        this.eof = true;
+                        break;
+                    }
+                    buffer[n] = b;
+                }
+                return;
+            }
+
+            var litCodeTable;
+            var distCodeTable;
+            if (hdr == 1) { // compressed block, fixed codes
+                litCodeTable = fixedLitCodeTab;
+                distCodeTable = fixedDistCodeTab;
+            } else if (hdr == 2) { // compressed block, dynamic codes
+                var numLitCodes = this.getBits(5) + 257;
+                var numDistCodes = this.getBits(5) + 1;
+                var numCodeLenCodes = this.getBits(4) + 4;
+
+                // build the code lengths code table
+                var codeLenCodeLengths = Array(codeLenCodeMap.length);
+                var i = 0;
+                while (i < numCodeLenCodes)
+                    codeLenCodeLengths[codeLenCodeMap[i++]] = this.getBits(3);
+                while (i < codeLenCodeMap.length)
+                    codeLenCodeLengths[i++] = 0;
+                var codeLenCodeTab = this.generateHuffmanTable(codeLenCodeLengths);
+
+                // built the literal and distance code tables
+                var len = 0;
+                var i = 0;
+                var codes = numLitCodes + numDistCodes;
+                var codeLengths = new Array(codes);
+                while (i < codes) {
+                    function repeat(array, i, len, offset, what) {
+                        var repeat = this.getBits(len) + offset;
+                        while (repeat-- > 0)
+                            array[i++] = what;
+                    }
+                    var code = this.getCode(codeLenCodeTab);
+                    if (code == 16) {
+                        repeat(codeLengths, i, 2, 3, len);
+                    } else if (code == 17) {
+                        repeat(codeLengths, i, 3, 3, len = 0);
+                    } else if (code == 18) {
+                        repeat(codeLengths, i, 7, 11, len = 0);
+                    } else {
+                        codeLenths[i++] = len = code;
+                    }
+                }
+
+                litCodeTable = this.generateHuffmanTable(codeLengths.slice(0, numLitCodes));
+                distCodeTable = this.generateHuffmanTable(codeLengths.slice(numDistCodes, codes));
+            } else {
+                error("Unknown block type in flate stream");
+            }
+
+            var pos = 0;
+            while (true) {
+                var code1 = this.getCode(litCodeTable);
+                if (code1 == 256) {
+                    this.bufferLength = pos;
+                    return;
+                }
+                if (code1 < 256) {
+                    var buffer = this.ensureBuffer(pos + 1);
+                    buffer[pos++] = code1;
+                } else {
+                    code1 -= 257;
+                    var code2 = lengthDecode[code1][0];
+                    if (code2 > 0)
+                        code2 = this.getBits(code2);
+                    var len = lengthDecode[code1][1] + code2;
+                    code1 = this.getCode(distCodeTable);
+                    code2 = distDecode[code1][0];
+                    if (code2 > 0)
+                        code2 = this.getBits(code2);
+                    var dist = distDecode[code1][1] + code2;
+                    var buffer = this.ensureBuffer(pos + len);
+                    for (var k = 0; k < len; ++k, ++pos)
+                        buffer[pos] = buffer[pos - dist];
+                }
+            }
         }
     };
 
