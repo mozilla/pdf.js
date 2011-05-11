@@ -963,6 +963,9 @@ var Dict = (function() {
         get: function(key) {
             return this.map[key];
         },
+        has: function(key) {
+            return key in this.map;
+        },
         set: function(key, value) {
             this.map[key] = value;
         }
@@ -1011,8 +1014,8 @@ function IsCmd(v, cmd) {
     return v instanceof Cmd && (!cmd || v.cmd == cmd);
 }
 
-function IsDict(v) {
-    return v instanceof Dict;
+function IsDict(v, type) {
+    return v instanceof Dict && (!type || v.get("Type").name == type);
 }
 
 function IsArray(v) {
@@ -1495,8 +1498,8 @@ var Parser = (function() {
         },
         makeFilter: function(stream, name, params) {
             print(name);
-            for (i in params.map)
-                print(i + ": " + params.map[i]);
+            if (params)
+                error("filter params not supported yet");
             // TODO
             return stream;
         }
@@ -1707,7 +1710,7 @@ var XRef = (function() {
                 if (e.gen != gen)
                     throw("inconsistent generation in XRef");
                 var stream = this.stream.makeSubStream(e.offset);
-                var parser = new Parser(new Lexer(stream));
+                var parser = new Parser(new Lexer(stream), true);
                 var obj1 = parser.getObj();
                 var obj2 = parser.getObj();
                 var obj3 = parser.getObj();
@@ -1737,6 +1740,27 @@ var XRef = (function() {
     return constructor;
 })();
 
+var Page = (function() {
+    function constructor(xref, pageNumber, pageDict) {
+        this.xref = xref;
+        this.pageNumber = pageNumber;
+        this.pageDict = pageDict;
+    }
+
+    constructor.prototype = {
+        get contents() {
+            var obj = this.pageDict.get("Contents");
+            if (IsRef(obj))
+                obj = this.xref.fetch(obj);
+            if (!(IsArray(obj) || IsStream(obj)))
+                error("invalid page contents object");
+            return this.contents = obj;
+        }
+    };
+
+    return constructor;
+})();
+
 var Catalog = (function() {
     function constructor(xref) {
         this.xref = xref;
@@ -1747,7 +1771,7 @@ var Catalog = (function() {
     }
 
     constructor.prototype = {
-        get pagesDict() {
+        get toplevelPagesDict() {
             var obj = this.catDict.get("Pages");
             if (!IsRef(obj))
                 error("invalid top-level pages reference");
@@ -1755,14 +1779,41 @@ var Catalog = (function() {
             if (!IsDict(obj))
                 error("invalid top-level pages dictionary");
             // shadow the prototype getter
-            return this.pagesDict = obj;
+            return this.toplevelPagesDict = obj;
         },
         get numPages() {
-            obj = this.pagesDict.get("Count");
+            obj = this.toplevelPagesDict.get("Count");
             if (!IsInt(obj))
                 error("page count in top level pages object is not an integer");
             // shadow the prototype getter
             return this.numPages = obj;
+        },
+        traverseKids: function(pagesDict) {
+            var pageCache = this.pageCache;
+            var kids = pagesDict.get("Kids");
+            if (!IsArray(kids))
+                error("page dictionary kids object is not an array");
+            for (var i = 0; i < kids.length; ++i) {
+                var kid = kids[i];
+                if (!IsRef(kid))
+                    error("page dictionary kid is not a reference");
+                var obj = this.xref.fetch(kid);
+                if (IsDict(obj, "Page") || (IsDict(obj) && !obj.has("Kids"))) {
+                    pageCache.push(new Page(this.xref, pageCache.length, obj));
+                } else if (IsDict(obj)) { // must be a child page dictionary
+                    this.traverseKids(obj);
+                } else {
+                    error("page dictionary kid reference points to wrong type of object");
+                }
+            }
+        },
+        getPage: function(n) {
+            var pageCache = this.pageCache;
+            if (!pageCache) {
+                pageCache = this.pageCache = [];
+                this.traverseKids(this.toplevelPagesDict);
+            }
+            return this.pageCache[n];
         }
     };
 
@@ -1871,9 +1922,12 @@ var PDFDoc = (function() {
             // overwrite the prototype getter
             return this.numPages = num;
         },
-        getPage: function(page) {
-            print(this.numPages);
-            // TODO
+        getPage: function(n) {
+            var linearization = this.linearization;
+            if (linearization) {
+                error("linearized page access not implemented");
+            }
+            return this.catalog.getPage(n);
         }
     };
 
@@ -2665,7 +2719,8 @@ function runParseTests() {
     //var data = snarf("simple_graphics.pdf", "binary");
     var data = snarf("/tmp/paper.pdf", "binary");
     var pdf = new PDFDoc(new Stream(data));
-    pdf.getPage(1);
+    var page = pdf.getPage(1);
+    var contents = page.contents;
 }
 
 if ("arguments" in this) {
