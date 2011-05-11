@@ -23,9 +23,6 @@ var Stream = (function() {
         get length() {
             return this.bytes.length;
         },
-        reset: function() {
-            this.pos = this.start;
-        },
         getByte: function() {
             var bytes = this.bytes;
             if (this.pos >= bytes.length)
@@ -49,6 +46,9 @@ var Stream = (function() {
             if (!n)
                 n = 1;
             this.pos += n;
+        },
+        reset: function() {
+            this.pos = this.start;
         },
         moveStart: function() {
             this.start = this.pos;
@@ -667,29 +667,26 @@ var FlateStream = (function() {
         [0, 0x0000]
     ], 5];
 
-    function constructor() {
-        this.reset();
+    function constructor(stream) {
+        this.stream = stream;
+        this.eof = true;
+        var cmf = stream.getByte();
+        var flg = stream.getByte();
+        if (cmf == -1 || flg == -1)
+            error("Invalid header in flate stream");
+        if ((cmf & 0x0f) != 0x08)
+            error("Unknown compression method in flate stream");
+        if ((((cmf << 8) + flg) % 31) != 0)
+            error("Bad FCHECK in flate stream");
+        if (flg & 0x20)
+            error("FDICT bit set in flate stream");
+        this.eof = false;
+        this.codeSize = 0;
+        this.codeBuf = 0;
+        this.pos = 0;
     }
 
     constructor.prototype = {
-        reset: function() {
-            stream.reset();
-            this.eof = true;
-            var cmf = stream.getByte();
-            var flg = stream.getByte();
-            if (cmf == -1 || flg == -1)
-                return;
-            if ((cmd & 0x0f) != 0x08)
-                error("Unknown compression method in flate stream");
-            if ((((cmf << 8) + flg) % 31) != 0)
-                error("Bad FCHECK in flate stream");
-            if (flg & 0x20)
-                error("FDICT bit set in flate stream");
-            this.eof = false;
-            this.codeSize = 0;
-            this.codeBuf = 0;
-            this.pos = 0;
-        },
         getBits: function(bits) {
             var stream = this.stream;
             var codeSize = this.codeSize;
@@ -707,18 +704,19 @@ var FlateStream = (function() {
             return b;
         },
         getCode: function(table) {
-            var codes = table.codes;
-            var maxLen = table.maxLen;
+            var codes = table[0];
+            var maxLen = table[1];
             var codeSize = this.codeSize;
             var codeBuf = this.codeBuf;
-            while (codeSize < maxlen) {
+            var stream = this.stream;
+            while (codeSize < maxLen) {
                 var b;
                 if ((b = stream.getByte()) == -1)
                     error("Bad encoding in flate stream");
                 codeBuf |= (b << codeSize);
                 codeSize += 8;
             }
-            var code = table.codes[codeBuf & ((1 << table.maxLen) - 1)];
+            var code = codes[codeBuf & ((1 << maxLen) - 1)];
             var codeLen = code[0];
             var codeVal = code[1];
             if (codeSize == 0|| codeSize < codeLen || codeLen == 0)
@@ -777,7 +775,7 @@ var FlateStream = (function() {
             }
 
             // build the table
-            var size = 1 << max;
+            var size = 1 << maxLen;
             var codes = new Array(size);
             for (var len = 1, code = 0, skip = 2;
                  len < maxLen;
@@ -801,7 +799,7 @@ var FlateStream = (function() {
                 }
             }
 
-            return { codes: codes, maxLen: maxLen };
+            return [codes, maxLen];
         },
         readBlock: function() {
             var stream = this.stream;
@@ -879,7 +877,7 @@ var FlateStream = (function() {
                     } else if (code == 18) {
                         repeat(codeLengths, i, 7, 11, len = 0);
                     } else {
-                        codeLenths[i++] = len = code;
+                        codeLengths[i++] = len = code;
                     }
                 }
 
@@ -1023,7 +1021,7 @@ function IsArray(v) {
 }
 
 function IsStream(v) {
-    return v instanceof Stream;
+    return typeof v == "object" && "getChar" in v;
 }
 
 function IsRef(v) {
@@ -1497,10 +1495,13 @@ var Parser = (function() {
             return stream;
         },
         makeFilter: function(stream, name, params) {
-            print(name);
-            if (params)
-                error("filter params not supported yet");
-            // TODO
+            if (name == "FlateDecode" || name == "Fl") {
+                if (params)
+                    error("params not supported yet for FlateDecode");
+                return new FlateStream(stream);
+            } else {
+                error("filter '" + name + "' not supported yet");
+            }
             return stream;
         }
     };
@@ -2721,6 +2722,8 @@ function runParseTests() {
     var pdf = new PDFDoc(new Stream(data));
     var page = pdf.getPage(1);
     var contents = page.contents;
+    for (var i = 0; i < 100; ++i)
+        print(contents.getChar());
 }
 
 if ("arguments" in this) {
