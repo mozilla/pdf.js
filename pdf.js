@@ -762,7 +762,7 @@ var FlateStream = (function() {
                 n = 1;
             while (n-- > 0)
                 this.getChar();
-        }
+        },
         generateHuffmanTable: function(lengths) {
             var n = lengths.length;
 
@@ -1589,6 +1589,9 @@ var XRef = (function() {
         var ref = this.trailerDict.get("Root");
         this.rootNum = ref.num;
         this.rootGen = ref.gen;
+
+        // set the xref for the trailer dictionary
+        this.trailerDict.xref = this;
     }
 
     constructor.prototype = {
@@ -1598,20 +1601,20 @@ var XRef = (function() {
                 if (IsCmd(obj = parser.getObj(), "trailer"))
                     break;
                 if (!IsInt(obj))
-                    return false;
+                    error("Invalid XRef table");
                 var first = obj;
                 if (!IsInt(obj = parser.getObj()))
-                    return false;
+                    error("Invalid XRef table");
                 var n = obj;
                 if (first < 0 || n < 0 || (first + n) != ((first + n) | 0))
-                    return false;
+                    error("Invalid XRef table");
                 for (var i = first; i < first + n; ++i) {
                     var entry = {};
                     if (!IsInt(obj = parser.getObj()))
-                        return false;
+                        error("Invalid XRef table");
                     entry.offset = obj;
                     if (!IsInt(obj = parser.getObj()))
-                        return false;
+                        error("Invalid XRef table");
                     entry.gen = obj;
                     obj = parser.getObj();
                     if (IsCmd(obj, "n")) {
@@ -1619,7 +1622,7 @@ var XRef = (function() {
                     } else if (IsCmd(obj, "f")) {
                         entry.free = true;
                     } else {
-                        return false;
+                        error("Invalid XRef table");
                     }
                     if (!this.entries[i]) {
                         // In some buggy PDF files the xref table claims to start at 1
@@ -1636,7 +1639,7 @@ var XRef = (function() {
             // read the trailer dictionary
             var dict;
             if (!IsDict(dict = parser.getObj()))
-                return false;
+                error("Invalid XRef table");
 
             // get the 'Prev' pointer
             var more = false;
@@ -1656,19 +1659,15 @@ var XRef = (function() {
             if (IsInt(obj = dict.get("XRefStm"))) {
                 var pos = obj;
                 if (pos in this.xrefstms)
-                    return false;
+                    error("Invalid XRef table");
                 this.xrefstms[pos] = 1; // avoid infinite recursion
                 this.readXRef(pos);
-            } else {
-                this.ok = true;
             }
 
             return more;
         },
         readXRefStream: function(parser) {
-            // TODO
-            this.ok = true;
-            return true;
+            error("Invalid XRef stream");
         },
         readXRef: function(startXRef) {
             var stream = this.stream;
@@ -1683,11 +1682,11 @@ var XRef = (function() {
                 if (!IsInt(parser.getObj()) ||
                     !IsCmd(parser.getObj(), "obj") ||
                     !IsStream(obj = parser.getObj())) {
-                    return false;
+                    error("Invalid XRef stream");
                 }
                 return this.readXRefStream(obj);
             }
-            return false;
+            error("Invalid XRef");
         }
     };
 
@@ -1786,7 +1785,6 @@ var PDFDoc = (function() {
             this.xref = new XRef(this.stream,
                                  this.startXRef,
                                  this.mainXRefEntriesOffset);
-            this.ok = this.xref.ok;
         }
     };
 
