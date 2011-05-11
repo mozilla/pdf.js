@@ -54,7 +54,10 @@ var Stream = (function() {
             this.start = this.pos;
         },
         makeSubStream: function(pos, length) {
-            return new Stream(new Uint8Array(this.bytes, pos, length));
+            var buffer = this.bytes.buffer;
+            if (length)
+                return new Stream(new Uint8Array(buffer, pos, length));
+            return new Stream(new Uint8Array(buffer, pos));
         }
     };
 
@@ -1687,7 +1690,58 @@ var XRef = (function() {
                 return this.readXRefStream(obj);
             }
             error("Invalid XRef");
+        },
+        getEntry: function(i) {
+            var e = this.entries[i];
+            if (e.free)
+                error("reading an XRef stream not implemented yet");
+            return e;
+        },
+        fetch: function(num, gen) {
+            var e = this.getEntry(num);
+            if (e.uncompressed) {
+                if (e.gen != gen)
+                    throw("inconsistent generation in XRef");
+                var stream = this.stream.makeSubStream(e.offset);
+                var parser = new Parser(new Lexer(stream));
+                var obj1 = parser.getObj();
+                var obj2 = parser.getObj();
+                var obj3 = parser.getObj();
+                if (!IsInt(obj1) || obj1 != num ||
+                    !IsInt(obj2) || obj2 != gen ||
+                    !IsCmd(obj3)) {
+                    error("bad XRef entry");
+                }
+                if (!IsCmd(obj3, "obj")) {
+                    // some bad pdfs use "obj1234" and really mean 1234
+                    if (obj3.cmd.indexOf("obj") == 0) {
+                        var num = parseInt(obj3.cmd.substring(3));
+                        if (!isNaN(num))
+                            return num;
+                    }
+                    error("bad XRef entry");
+                }
+                return parser.getObj();
+            }
+        },
+        getCatalogObj: function() {
+            return this.fetch(this.rootNum, this.rootGen);
         }
+    };
+
+    return constructor;
+})();
+
+var Catalog = (function() {
+    function constructor(xref) {
+        this.xref = xref;
+        var dict = xref.getCatalogObj();
+        if (!IsDict(dict))
+            error("bad catalog");
+        this.catDict = dict;
+    }
+
+    constructor.prototype = {
     };
 
     return constructor;
@@ -1785,6 +1839,7 @@ var PDFDoc = (function() {
             this.xref = new XRef(this.stream,
                                  this.startXRef,
                                  this.mainXRefEntriesOffset);
+            this.catalog = new Catalog(this.xref);
         }
     };
 
