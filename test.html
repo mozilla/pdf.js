@@ -52,8 +52,7 @@ function displayPage(num) {
     ctx.restore();
 
     var gfx = new CanvasGraphics(ctx);
-    var interp = new Interpreter(gfx);
-    interp.interpret(page);
+    page.display(gfx);
 }
 
 function nextPage() {

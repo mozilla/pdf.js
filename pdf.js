@@ -1797,18 +1797,38 @@ var Page = (function() {
                                     ? obj
                                     : null);
         },
-        display: function(start, process) {
+        display: function(gfx) {
             var xref = this.xref;
             var contents = xref.fetchIfRef(this.contents);
             var resources = xref.fetchIfRef(this.resources);
             var mediaBox = xref.fetchIfRef(this.mediaBox);
             if (!IsStream(contents) || !IsDict(resources))
                 error("invalid page contents or resources");
-            start(resources, mediaBox);
+            gfx.resources = resources;
+            gfx.beginDrawing({ x: mediaBox[0], y: mediaBox[1],
+                               width: mediaBox[2] - mediaBox[0],
+                               height: mediaBox[3] - mediaBox[1] });
+            var args = [];
+            var map = gfx.map;
             var parser = new Parser(new Lexer(contents), false);
             var obj;
-            while (!IsEOF(obj = parser.getObj()))
-                process(obj);
+            while (!IsEOF(obj = parser.getObj())) {
+                if (IsCmd(obj)) {
+                    var cmd = obj.cmd;
+                    var fn = map[cmd];
+                    if (fn)
+                        // TODO figure out how to type-check vararg functions
+                        fn.apply(gfx, args);
+                    else
+                        error("Unknown command '" + cmd + "'");
+                    args.length = 0;
+                } else {
+                    if (args.length > 33)
+                        error("Too many arguments '" + cmd + "'");
+                    args.push(obj);
+                }
+            }
+            gfx.endDrawing();
         }
     };
 
@@ -1988,312 +2008,6 @@ var PDFDoc = (function() {
     return constructor;
 })();
 
-var Interpreter = (function() {
-    function constructor(gfx) {
-        this.gfx = gfx;
-        this.map = {
-            // Graphics state
-            w: gfx.setLineWidth,
-            J: gfx.setLineCap,
-            j: gfx.setLineJoin,
-            d: gfx.setDash,
-            ri: gfx.setRenderingIntent,
-            i: gfx.setFlatness,
-            q: gfx.save,
-            Q: gfx.restore,
-            cm: gfx.transform,
-
-            // Path
-            m: gfx.moveTo,
-            l: gfx.lineTo,
-            c: gfx.curveTo,
-            h: gfx.closePath,
-            re: gfx.rectangle,
-            S: gfx.stroke,
-            f: gfx.fill,
-            "f*": gfx.eoFill,
-            B: gfx.fillStroke,
-            b: gfx.closeFillStroke,
-            n: gfx.endPath,
-
-            // Clipping
-            W: gfx.clip,
-            "W*": gfx.eoClip,
-
-            // Text
-            BT: gfx.beginText,
-            ET: gfx.endText,
-            Tf: gfx.setFont,
-            Td: gfx.moveText,
-            Tm: gfx.setTextMatrix,
-            Tj: gfx.showText,
-            TJ: gfx.showSpacedText,
-
-            // Type3 fonts
-
-            // Color
-            CS: gfx.setStrokeColorSpace,
-            cs: gfx.setFillColorSpace,
-            SC: gfx.setStrokeColor,
-            SCN: gfx.setStrokeColorN,
-            sc: gfx.setFillColor,
-            scn: gfx.setFillColorN,
-            g: gfx.setFillGray,
-            RG: gfx.setStrokeRGBColor,
-            rg: gfx.setFillRGBColor,
-
-            // Shading
-            sh: gfx.shadingFill,
-
-            // Images
-            // XObjects
-            Do: gfx.paintXObject,
-
-            // Marked content
-            // Compatibility
-        };
-    }
-
-    constructor.prototype = {
-        interpret: function(page) {
-            var gfx = this.gfx;
-            var map = this.map;
-            var args = [];
-            page.display(
-                function(resources, mediaBox) {
-                    gfx.resources = resources;
-                    gfx.beginDrawing({ x: mediaBox[0], y: mediaBox[1],
-                                       width: mediaBox[2] - mediaBox[0],
-                                       height: mediaBox[3] - mediaBox[1] });
-                },
-                function(obj) {
-                    if (IsCmd(obj)) {
-                        var cmd = obj.cmd;
-                        var fn = map[cmd];
-                        if (fn)
-                            // TODO figure out how to type-check vararg functions
-                            fn.apply(gfx, args);
-                        else
-                            error("Unknown command '" + cmd + "'");
-                        args.length = 0;
-                    } else {
-                        if (args.length > 33)
-                            error("Too many arguments '" + cmd + "'");
-                        args.push(obj);
-                    }
-                }
-            );
-            this.gfx.endDrawing();
-        }
-    };
-
-    return constructor;
-})();
-
-var EchoGraphics = (function() {
-    function constructor() {
-        this.out = "";
-        this.indentation = 0;
-        this.indentationStr = "";
-    }
-
-    constructor.prototype = {
-        beginDrawing: function(mediaBox) {
-            this.printdentln("/MediaBox ["+
-                             mediaBox.x +" "+ mediaBox.y +" "+
-                             mediaBox.width +" "+ mediaBox.height +" ]");
-        },
-        endDrawing: function() {
-        },
-
-        // Graphics state
-        setLineWidth: function(width) {
-            this.printdentln(width +" w");
-        },
-        setLineCap: function(style) {
-            this.printdentln(style +" J");
-        },
-        setLineJoin: function(style) {
-            this.printdentln(style +" j");
-        },
-        setDash: function(dashArray, dashPhase) {
-            this.printdentln(""+ dashArray +" "+ dashPhase +" d");
-        },
-        setRenderingIntent: function(intent) {
-            this.printdentln("/"+ intent.name + " ri");
-        },
-        setFlatness: function(flatness) {
-            this.printdentln(""+ flatness +" i");
-        },
-        save: function() {
-            this.printdentln("q");
-        },
-        restore: function() {
-            this.printdentln("Q");
-        },
-        transform: function(a, b, c, d, e, f) {
-            this.printdentln(""+ a +" "+ b +" "+ c +
-                             " "+d +" "+ e +" "+ f + " cm");
-        },
-
-        // Path
-        moveTo: function(x, y) {
-            this.printdentln(""+ x +" "+ y +" m");
-        },
-        lineTo: function(x, y) {
-            this.printdentln(""+ x +" "+ y +" l");
-        },
-        curveTo: function(x1, y1, x2, y2, x3, y3) {
-            this.printdentln(""+ x1 +" "+ y1 +
-                             " "+ x2 +" "+ y2 +
-                             " "+ x3 +" "+ y3 + " c");
-        },
-        closePath: function() {
-            this.printdentln("h");
-        },
-        rectangle: function(x, y, width, height) {
-            this.printdentln(""+ x +" "+ y + " "+ width +" "+ height +" re");
-        },
-        stroke: function() {
-            this.printdentln("S");
-        },
-        fill: function() {
-            this.printdentln("f");
-        },
-        eoFill: function() {
-            this.printdentln("f*");
-        },
-        fillStroke: function() {
-            this.printdentln("B");
-        },
-        closeFillStroke: function() {
-            this.printdentln("b");
-        },
-        endPath: function() {
-            this.printdentln("n");
-        },
-
-        // Clipping
-        clip: function() {
-            this.printdentln("W");
-        },
-        eoClip: function() {
-            this.printdentln("W*");
-        },
-
-        // Text
-        beginText: function() {
-            this.printdentln("BT");
-            this.indent();
-        },
-        endText: function() {
-            this.dedent();
-            this.printdentln("ET");
-        },
-        setFont: function(fontRef, size) {
-            var font = this.resources.get("Font").get(fontRef.name);
-            this.printdentln("/"+ font.name +" "+ size +" Tf");
-        },
-        moveText: function (x, y) {
-            this.printdentln(""+ x +" "+ y +" Td");
-        },
-        setTextMatrix: function(a, b, c, d, e, f) {
-            this.printdentln(""+ a +" "+ b +" "+ c +
-                             " "+d +" "+ e +" "+ f + " Tm");
-        },
-        showText: function(text) {
-            this.printdentln("( "+ text +" ) Tj");
-        },
-        showSpacedText: function(arr) {
-            this.printdentln(""+ arr +" TJ");
-        },
-
-        // Type3 fonts
-
-        // Color
-        setStrokeColorSpace: function(space) {
-            this.printdentln("/"+ space.name +" CS");
-        },
-        setFillColorSpace: function(space) {
-            this.printdentln("/"+ space.name +" cs");
-        },
-        setStrokeColor: function(/*...*/) {
-            this.printdent("");
-            for (var i = 0; i < arguments.length; ++i)
-                this.print(""+ arguments[i] +" ");
-            this.printdentln("SC");
-        },
-        setStrokeColorN: function(/*...*/) {
-            this.printdent("");
-            for (var i = 0; i < arguments.length; ++i)
-                this.print(""+ arguments[i] +" ");
-            this.printdentln("SCN");
-        },
-        setFillColor: function(/*...*/) {
-            this.printdent("");
-            for (var i = 0; i < arguments.length; ++i)
-                this.print(""+ arguments[i] +" ");
-            this.printdentln("sc");
-        },
-        setFillColorN: function(/*...*/) {
-            this.printdent("");
-            for (var i = 0; i < arguments.length; ++i)
-                this.print(""+ arguments[i] +" ");
-            this.printdentln("scn");
-        },
-        setFillGray: function(gray) {
-            this.printdentln(""+ gray +" g");
-        },
-        setStrokeRGBColor: function(r, g, b) {
-            this.printdentln(""+ r +" "+ g +" "+ b +" RG");
-        },
-        setFillRGBColor: function(r, g, b) {
-            this.printdentln(""+ r +" "+ g +" "+ b +" rg");
-        },
-
-        // Shading
-        shadingFill: function(entry) {
-            this.printdentln("/"+ entry.name +" sh");
-        },
-
-        // Images
-        // XObjects
-        paintXObject: function(obj) {
-            this.printdentln("/"+ obj.name +" Do");
-        },
-
-        // Marked content
-        // Compatibility
-
-        // Output state
-        print: function(str) {
-            this.out += str;
-        },
-        println: function(str) {
-            this.print(str);
-            this.out += "\n";
-        },
-        printdent: function(str) {
-            this.print(this.indentationStr);
-            this.print(str);
-        },
-        printdentln: function(str) {
-            this.printdent(str);
-            this.println("");
-        },
-        indent: function() {
-            this.indentation += 2;
-            this.indentationStr += "  ";
-        },
-        dedent: function() {
-            this.indentation -= 2;
-            this.indentationStr = this.indentationStr.slice(0, -2);
-        },
-    };
-
-    return constructor;
-})();
-
 // <canvas> contexts store most of the state we need natively.
 // However, PDF needs a bit more state, which we store here.
 var CanvasExtraState = (function() {
@@ -2317,6 +2031,67 @@ var CanvasGraphics = (function() {
         this.current = new CanvasExtraState();
         this.stateStack = [ ];
         this.pendingClip = null;
+        this.map = {
+            // Graphics state
+            w: this.setLineWidth,
+            J: this.setLineCap,
+            j: this.setLineJoin,
+            d: this.setDash,
+            ri: this.setRenderingIntent,
+            i: this.setFlatness,
+            q: this.save,
+            Q: this.restore,
+            cm: this.transform,
+
+            // Path
+            m: this.moveTo,
+            l: this.lineTo,
+            c: this.curveTo,
+            h: this.closePath,
+            re: this.rectangle,
+            S: this.stroke,
+            f: this.fill,
+            "f*": this.eoFill,
+            B: this.fillStroke,
+            b: this.closeFillStroke,
+            n: this.endPath,
+
+            // Clipping
+            W: this.clip,
+            "W*": this.eoClip,
+
+            // Text
+            BT: this.beginText,
+            ET: this.endText,
+            Tf: this.setFont,
+            Td: this.moveText,
+            Tm: this.setTextMatrix,
+            Tj: this.showText,
+            TJ: this.showSpacedText,
+
+            // Type3 fonts
+
+            // Color
+            CS: this.setStrokeColorSpace,
+            cs: this.setFillColorSpace,
+            SC: this.setStrokeColor,
+            SCN: this.setStrokeColorN,
+            sc: this.setFillColor,
+            scn: this.setFillColorN,
+            g: this.setFillGray,
+            RG: this.setStrokeRGBColor,
+            rg: this.setFillRGBColor,
+
+            // Shading
+            sh: this.shadingFill,
+
+            // Images
+            // XObjects
+            Do: this.paintXObject,
+
+            // Marked content
+            // Compatibility
+        };
     }
 
     var LINE_CAP_STYLES = [ "butt", "round", "square" ];
@@ -2525,7 +2300,7 @@ function runParseTests() {
     var data = snarf("/tmp/paper.pdf", "binary");
     var pdf = new PDFDoc(new Stream(data));
     var page = pdf.getPage(1);
-    page.display();
+    //page.display();
 }
 
 if ("arguments" in this) {
