@@ -1144,11 +1144,11 @@ var Lexer = (function() {
                 error("Invalid floating point number");
             return value;
         },
-        getString: function(ch) {
+        getString: function() {
             var n = 0;
             var numParen = 1;
             var done = false;
-            var str = ch;
+            var str = "";
             var stream = this.stream;
             do {
                 switch (ch = stream.getChar()) {
@@ -1302,7 +1302,7 @@ var Lexer = (function() {
             case '+': case '-': case '.':
                 return this.getNumber(ch);
             case '(':
-                return this.getString(ch);
+                return this.getString();
             case '/':
 	            return this.getName(ch);
             // array punctuation
