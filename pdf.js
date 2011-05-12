@@ -1739,8 +1739,12 @@ var XRef = (function() {
         fetch: function(ref) {
             var num = ref.num;
             var e = this.cache[num];
-            if (e)
+            if (e) {
+                // The stream might be in use elsewhere, so clone it.
+                if (IsStream(e))
+                    e = e.makeSubStream(0);
                 return e;
+            }
             e = this.getEntry(num);
             var gen = ref.gen;
             if (e.uncompressed) {
@@ -1810,7 +1814,6 @@ var Page = (function() {
                                height: mediaBox[3] - mediaBox[1] });
             var args = [];
             var map = gfx.map;
-            contents.reset();   // TODO support multiple display()s
             var parser = new Parser(new Lexer(contents), false);
             var obj;
             while (!IsEOF(obj = parser.getObj())) {
