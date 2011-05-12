@@ -1731,6 +1731,11 @@ var XRef = (function() {
                 error("reading an XRef stream not implemented yet");
             return e;
         },
+        fetchIfRef: function(obj) {
+            if (!IsRef(obj))
+                return obj;
+            return this.fetch(obj);
+        },
         fetch: function(ref) {
             var num = ref.num;
             var e = this.cache[num];
@@ -1781,18 +1786,10 @@ var Page = (function() {
 
     constructor.prototype = {
         get contents() {
-            var obj = this.pageDict.get("Contents");
-            if (IsRef(obj))
-                obj = this.xref.fetch(obj);
-            if (!IsStream(obj))
-                error("invalid page contents object");
-            return this.contents = obj;
+            return this.contents = this.pageDict.get("Contents");
         },
-        get resources() { 
-           var obj = this.pageDict.get("Resources");
-           if (IsRef(obj))
-               obj = this.xref.fetch(obj);
-           return this.resources = (IsDict(obj) ? obj : null);
+        get resources() {
+            return this.resources = this.pageDict.get("Resources");
         },
         get mediaBox() {
             var obj = this.pageDict.get("MediaBox");
@@ -1800,13 +1797,18 @@ var Page = (function() {
                                     ? obj
                                     : null);
         },
-        display: function() {
-            var stream = this.contents;
-            var parser = new Parser(new Lexer(stream), false);
+        display: function(start, process) {
+            var xref = this.xref;
+            var contents = xref.fetchIfRef(this.contents);
+            var resources = xref.fetchIfRef(this.resources);
+            var mediaBox = xref.fetchIfRef(this.mediaBox);
+            if (!IsStream(contents) || !IsDict(resources))
+                error("invalid page contents or resources");
+            start(resources, mediaBox);
+            var parser = new Parser(new Lexer(contents), false);
             var obj;
-            while (!IsEOF(obj = parser.getObj())) {
-                print(uneval(obj));
-            }
+            while (!IsEOF(obj = parser.getObj()))
+                process(obj);
         }
     };
 
@@ -1987,12 +1989,8 @@ var PDFDoc = (function() {
 })();
 
 var Interpreter = (function() {
-    function constructor(xref, resources, catalog, gfx) {
-        this.xref = xref;
-        this.res = resources;
-        this.catalog = catalog;
+    function constructor(gfx) {
         this.gfx = gfx;
-        var env = this;
         this.map = {
             // Graphics state
             w: gfx.setLineWidth,
@@ -2025,11 +2023,7 @@ var Interpreter = (function() {
             // Text
             BT: gfx.beginText,
             ET: gfx.endText,
-            Tf: function(fontRef, size) {
-                var font = env.res.get("Font").get(fontRef.name);
-                //alert(uneval(font));
-                gfx.setFont(font, size);
-            },
+            Tf: gfx.setFont,
             Td: gfx.moveText,
             Tm: gfx.setTextMatrix,
             Tj: gfx.showText,
@@ -2061,35 +2055,34 @@ var Interpreter = (function() {
     }
 
     constructor.prototype = {
-        compile: function(parser) {
-        },
-        interpret: function(obj) {
-            return this.interpretHelper(new Parser(new Lexer(obj), true));
-        },
-        interpretHelper: function(mediaBox, parser) {
-            this.gfx.beginDrawing({ x: mediaBox[0], y: mediaBox[1],
-                                    width: mediaBox[2] - mediaBox[0],
-                                    height: mediaBox[3] - mediaBox[1] });
-            var args = [];
+        interpret: function(page) {
             var gfx = this.gfx;
             var map = this.map;
-            var obj;
-            while (!IsEOF(obj = parser.getObj())) {
-                if (IsCmd(obj)) {
-                    var cmd = obj.cmd;
-                    var fn = map[cmd];
-                    if (fn)
-                        // TODO figure out how to type-check vararg functions
-                        fn.apply(gfx, args);
-                    else
-                        error("Unknown command '" + cmd + "'");
-                    args.length = 0;
-                } else {
-                    if (args.length > 33)
-                        error("Too many arguments '" + cmd + "'");
-                    args.push(obj);
+            var args = [];
+            page.display(
+                function(resources, mediaBox) {
+                    gfx.resources = resources;
+                    gfx.beginDrawing({ x: mediaBox[0], y: mediaBox[1],
+                                       width: mediaBox[2] - mediaBox[0],
+                                       height: mediaBox[3] - mediaBox[1] });
+                },
+                function(obj) {
+                    if (IsCmd(obj)) {
+                        var cmd = obj.cmd;
+                        var fn = map[cmd];
+                        if (fn)
+                            // TODO figure out how to type-check vararg functions
+                            fn.apply(gfx, args);
+                        else
+                            error("Unknown command '" + cmd + "'");
+                        args.length = 0;
+                    } else {
+                        if (args.length > 33)
+                            error("Too many arguments '" + cmd + "'");
+                        args.push(obj);
+                    }
                 }
-            }
+            );
             this.gfx.endDrawing();
         }
     };
@@ -2197,7 +2190,8 @@ var EchoGraphics = (function() {
             this.dedent();
             this.printdentln("ET");
         },
-        setFont: function(font, size) {
+        setFont: function(fontRef, size) {
+            var font = this.resources.get("Font").get(fontRef.name);
             this.printdentln("/"+ font.name +" "+ size +" Tf");
         },
         moveText: function (x, y) {
@@ -2428,7 +2422,8 @@ var CanvasGraphics = (function() {
         endText: function() {
             // TODO
         },
-        setFont: function(font, size) {
+        setFont: function(fontRef, size) {
+            var font = this.resources.get("Font").get(fontRef.name);
             this.current.fontSize = size;
             this.ctx.font = this.current.fontSize +'px '+ font.BaseFont;
         },
@@ -2524,20 +2519,6 @@ var CanvasGraphics = (function() {
 
     return constructor;
 })();
-
-function runEchoTests() {
-    tests.forEach(function(test) {
-        putstr("Running echo test '"+ test.name +"'... ");
-
-        var output = "";
-        var gfx = new EchoGraphics(output);
-        var i = new Interpreter(null, test.res, null, gfx);
-        i.interpretHelper(test.mediaBox, new MockParser(test.objs));
-
-        print("done.  Output:");
-        print(gfx.out);
-    });
-}
 
 function runParseTests() {
     //var data = snarf("simple_graphics.pdf", "binary");

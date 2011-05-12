@@ -52,10 +52,8 @@ function displayPage(num) {
     ctx.restore();
 
     var gfx = new CanvasGraphics(ctx);
-    var interp = new Interpreter(null, page.resources, null, gfx);
-    var stream = page.contents;
-    var parser = new Parser(new Lexer(stream), false);
-    interp.interpretHelper(page.mediaBox, parser);
+    var interp = new Interpreter(gfx);
+    interp.interpret(page);
 }
 
 function nextPage() {
