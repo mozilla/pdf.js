@@ -1788,6 +1788,18 @@ var Page = (function() {
                 error("invalid page contents object");
             return this.contents = obj;
         },
+        get resources() { 
+           var obj = this.pageDict.get("Resources");
+           if (IsRef(obj))
+               obj = this.xref.fetch(obj);
+           return this.resources = (IsDict(obj) ? obj : null);
+        },
+        get mediaBox() {
+            var obj = this.pageDict.get("MediaBox");
+            return this.mediaBox = ((IsArray(obj) && obj.length == 4)
+                                    ? obj
+                                    : null);
+        },
         display: function() {
             var stream = this.contents;
             var parser = new Parser(new Lexer(stream), false);
@@ -1853,7 +1865,7 @@ var Catalog = (function() {
                 pageCache = this.pageCache = [];
                 this.traverseKids(this.toplevelPagesDict);
             }
-            return this.pageCache[n];
+            return this.pageCache[n-1];
         }
     };
 
@@ -2014,7 +2026,8 @@ var Interpreter = (function() {
             BT: gfx.beginText,
             ET: gfx.endText,
             Tf: function(fontRef, size) {
-                var font = env.res.Font[fontRef.name]
+                var font = env.res.get("Font").get(fontRef.name);
+                //alert(uneval(font));
                 gfx.setFont(font, size);
             },
             Td: gfx.moveText,
@@ -2512,235 +2525,6 @@ var CanvasGraphics = (function() {
     return constructor;
 })();
 
-//var PostscriptGraphics
-//var SVGGraphics
-
-var MockParser = (function() {
-    function constructor(objs) {
-        this.objs = objs.slice(0);
-    }
-
-    constructor.prototype = {
-        getObj: function() {
-            return this.objs.shift();
-        }
-    };
-
-    return constructor;
-})();
-
-function cmd(c)     { return new Cmd(c); }
-function name(n)    { return new Name(n); }
-function int(i)     { return i; }
-function string(s)  { return s; }
-function eof()      { return EOF; }
-function array(a)   { return a; }
-function real(r)    { return r; }
-
-var tests = [
-    { name: "Hello world",
-      res: {
-          // XXX not structured correctly
-          Font: {
-              F1: { Type: "Font",
-                    Subtype: "Type1",
-                    Name: "F1",
-                    BaseFont: "Helvetica",
-                    Encoding: "MacRomanEncoding"
-              },
-          }
-      },
-      mediaBox: [ 0, 0, 612, 792 ],
-      objs: [
-          cmd("BT"),
-          name("F1"), int(24), cmd("Tf"),
-          int(100), int(100), cmd("Td"),
-          string("Hello World"), cmd("Tj"),
-          cmd("ET"),
-          eof()
-      ]
-    },
-    { name: "Simple graphics",
-      res: { },
-      mediaBox: [ 0, 0, 612, 792 ],
-      objs: [
-          int(150), int(250), cmd("m"),
-          int(150), int(350), cmd("l"),
-          cmd("S"),
-
-          int(4), cmd("w"),
-          array([int(4), int(6)]), int(0), cmd("d"),
-          int(150), int(250), cmd("m"),
-          int(400), int(250), cmd("l"),
-          cmd("S"),
-          array([]), int(0), cmd("d"),
-          int(1), cmd("w"),
-
-          real(1.0), real(0.0), real(0.0), cmd("RG"),
-          real(0.5), real(0.75), real(1.0), cmd("rg"),
-          int(200), int(300), int(50), int(75), cmd("re"),
-          cmd("B"),
-
-          real(0.5), real(0.1), real(0.2), cmd("RG"),
-          real(0.7), cmd("g"),
-          int(300), int(300), cmd("m"),
-          int(300), int(400), int(400), int(400), int(400), int(300), cmd("c"),
-          cmd("b"),
-          eof()
-      ]
-    },
-    { name: "Heart",
-      res: { },
-      mediaBox: [ 0, 0, 612, 792 ],
-      objs: [
-          cmd("q"),
-          real(0.9), real(0.0), real(0.0), cmd("rg"),
-          int(75), int(40), cmd("m"),
-          int(75), int(37), int(70), int(25), int(50), int(25), cmd("c"),
-          int(20), int(25), int(20), real(62.5), int(20), real(62.5), cmd("c"),
-          int(20), int(80), int(40), int(102), int(75), int(120), cmd("c"),
-          int(110), int(102), int(130), int(80), int(130), real(62.5), cmd("c"),
-          int(130), real(62.5), int(130), int(25), int(100), int(25), cmd("c"),
-          int(85), int(25), int(75), int(37), int(75), int(40), cmd("c"),
-          cmd("f"),
-          cmd("Q"),
-          eof()
-      ]
-    },
-    { name: "Rectangle",
-      res: { },
-      mediaBox: [ 0, 0, 612, 792 ],
-      objs: [
-          int(1), int(0), int(0), int(1), int(80), int(80), cmd("cm"),
-          int(0), int(72), cmd("m"),
-          int(72), int(0), cmd("l"),
-          int(0), int(-72), cmd("l"),
-          int(-72), int(0), cmd("l"),
-          int(4), cmd("w"),
-          cmd("h"), cmd("S"),
-          eof()
-      ]
-    },
-    { name: "TJ",
-      res: {
-          // XXX not structured correctly
-          Font: {
-              F1: { Type: "Font",
-                    Subtype: "Type1",
-                    Name: "F1",
-                    BaseFont: "Georgia",
-                    Encoding: "MacRomanEncoding"
-              },
-          }
-      },
-      mediaBox: [ 0, 0, 612, 792 ],
-      objs: [
-          cmd("BT"),
-          name("F1"), real(17.9328), cmd("Tf"),
-
-          real(80.5159), real(700.6706), cmd("Td"),
-          [ string("Trace-based Just-in-Time") ], cmd("TJ"),
-
-          int(0), int(-18), cmd("Td"),
-          [ string("T"), int(74), string("race-based"), int(-250), string("J"), int(15), string("ust-in-T"), int(18), string("ime") ], cmd("TJ"),
-          cmd("ET"),
-          eof()
-      ]
-    },
-    { name: "Line cap",
-      res: { },
-      mediaBox: [ 0, 0, 612, 792 ],
-      objs: [
-          int(5), cmd("w"),
-
-          int(0), cmd("J"),         // butt cap
-          int(100), int(692), cmd("m"),
-          int(200), int(692), cmd("l"),
-          cmd("S"),
-
-          int(1), cmd("J"),         // round cap
-          int(100), int(686), cmd("m"),
-          int(200), int(686), cmd("l"),
-          cmd("S"),
-
-          int(2), cmd("J"),         // projecting square cap
-          int(100), int(680), cmd("m"),
-          int(200), int(680), cmd("l"),
-          cmd("S"),
-
-          eof()
-      ],
-    },
-    { name: "Line join",
-      res: { },
-      mediaBox: [ 0, 0, 612, 792 ],
-      objs: [
-          int(20), cmd("w"),
-
-          int(0), cmd("j"),         // miter join
-          int(100), int(692), cmd("m"),
-          int(150), int(642), cmd("l"),
-          int(200), int(692), cmd("l"),
-          cmd("S"),
-
-          int(1), cmd("j"),         // round join
-          int(250), int(692), cmd("m"),
-          int(300), int(642), cmd("l"),
-          int(350), int(692), cmd("l"),
-          cmd("S"),
-
-          int(2), cmd("j"),         // bevel join
-          int(400), int(692), cmd("m"),
-          int(450), int(642), cmd("l"),
-          int(500), int(692), cmd("l"),
-          cmd("S"),
-
-          eof()
-      ],
-    },
-    { name: "NYI",              // check that NYI commands are no-ops
-      res: { },
-      mediaBox: [ 0, 0, 612, 792 ],
-      objs: [
-          name("Perceptual"), cmd("ri"),
-          int(2), cmd("i"),
-          int(1), int(0), int(0), int(1), int(80), int(80), cmd("Tm"),
-          name("DeviceRGB"), cmd("CS"),
-          name("DeviceGray"), cmd("cs"),
-          int(1), int(0), int(0), cmd("SC"),
-          int(1), int(0), int(0), cmd("SCN"),
-          int(1), cmd("sc"),
-          int(1), cmd("scn"),
-          name("object"), cmd("Do"),
-          name("shading"), cmd("sh"),
-          eof()
-     ],
-    },
-    { name: "Broken heart",
-      res: { },
-      mediaBox: [ 0, 0, 612, 792 ],
-      objs: [
-          cmd("q"),
-          int(20), int(20), int(60), int(60), cmd("re"),
-          int(60), int(60), int(60), int(60), cmd("re"),
-          cmd("W"), cmd("n"),
-
-          real(0.9), real(0.0), real(0.0), cmd("rg"),
-          int(75), int(40), cmd("m"),
-          int(75), int(37), int(70), int(25), int(50), int(25), cmd("c"),
-          int(20), int(25), int(20), real(62.5), int(20), real(62.5), cmd("c"),
-          int(20), int(80), int(40), int(102), int(75), int(120), cmd("c"),
-          int(110), int(102), int(130), int(80), int(130), real(62.5), cmd("c"),
-          int(130), real(62.5), int(130), int(25), int(100), int(25), cmd("c"),
-          int(85), int(25), int(75), int(37), int(75), int(40), cmd("c"),
-          cmd("f"),
-          cmd("Q"),
-          eof()
-      ]
-    },
-];
-
-    
 function runEchoTests() {
     tests.forEach(function(test) {
         putstr("Running echo test '"+ test.name +"'... ");

@@ -20,18 +20,30 @@ body {
 }
   </style>
 
-  <script type="text/javascript">
+<script type="text/javascript">
 var canvas, numPages, pageDisplay, pageNum;
 function load() {
     canvas = document.getElementById("canvas");
     pageDisplay = document.getElementById("pageNumber");
-    numPages = tests.length;
-    displayPage(pageNum = 0);
+
+    req = new XMLHttpRequest();
+    req.open("GET", "uncompressed.tracemonkey-pldi-09.pdf");
+    req.onreadystatechange = xhrstate;
+    req.send(null);
 }
 
-function displayPage(number) {
-    var page = tests[number];
-    pageDisplay.value = number;
+function xhrstate() {
+    if (req.readyState == 4 && req.status == 200) {
+        var data = req.mozResponseArrayBuffer;
+        pdf = new PDFDoc(new Stream(data));
+        numPages = pdf.numPages;
+        displayPage(1);
+    }
+}
+
+function displayPage(num) {
+    var page = pdf.getPage(pageNum = num);
+    pageDisplay.value = num;
 
     var ctx = canvas.getContext("2d");
     ctx.save();
@@ -40,17 +52,21 @@ function displayPage(number) {
     ctx.restore();
 
     var gfx = new CanvasGraphics(ctx);
-    var interp = new Interpreter(null, page.res, null, gfx);
-    interp.interpretHelper(page.mediaBox, new MockParser(page.objs));
+    var interp = new Interpreter(null, page.resources, null, gfx);
+    var stream = page.contents;
+    var parser = new Parser(new Lexer(stream), false);
+    interp.interpretHelper(page.mediaBox, parser);
 }
 
 function nextPage() {
-    pageNum = (pageNum + 1) % numPages;
+    if (pageNum < numPages)
+        ++pageNum;
     displayPage(pageNum);
 }
 
 function prevPage() {
-    pageNum = (pageNum - 1 + numPages) % numPages;
+    if (pageNum > 0)
+        --pageNum;
     displayPage(pageNum);
 }
 
