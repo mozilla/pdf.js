@@ -29,12 +29,13 @@ function load() {
 
     req = new XMLHttpRequest();
     req.open("GET", "uncompressed.tracemonkey-pldi-09.pdf");
+    req.expected = 0; // 200 for HTTP
     req.onreadystatechange = xhrstate;
     req.send(null);
 }
 
 function xhrstate() {
-    if (req.readyState == 4 && (req.status == 200 || req.status == 0)) {
+    if (req.readyState == 4 && req.status == req.expected) {
         var data = req.mozResponseArrayBuffer;
         pdf = new PDFDoc(new Stream(data));
         numPages = pdf.numPages;
