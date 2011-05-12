@@ -29,6 +29,7 @@ function load() {
 
     req = new XMLHttpRequest();
     req.open("GET", "uncompressed.tracemonkey-pldi-09.pdf");
+    req.mozResponseType = "arraybuffer";
     req.expected = 0; // 200 for HTTP
     req.onreadystatechange = xhrstate;
     req.send(null);
@@ -36,7 +37,7 @@ function load() {
 
 function xhrstate() {
     if (req.readyState == 4 && req.status == req.expected) {
-        var data = req.mozResponseArrayBuffer;
+        var data = req.mozResponseArrayBuffer || req.mozResponse;
         pdf = new PDFDoc(new Stream(data));
         numPages = pdf.numPages;
         displayPage(1);

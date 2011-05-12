@@ -2300,16 +2300,16 @@ var CanvasGraphics = (function() {
 })();
 
 function runParseTests() {
-    //var data = snarf("simple_graphics.pdf", "binary");
-    var data = snarf("/tmp/paper.pdf", "binary");
+    var data = snarf("paper.pdf", "binary");
     var pdf = new PDFDoc(new Stream(data));
     var page = pdf.getPage(1);
-    //page.display();
+    page.display({
+        beginDrawing: function() {}
+    });
 }
 
 if ("arguments" in this) {
     const cmds = {
-        "-e": runEchoTests,
         "-p": runParseTests
     }
     for (n in arguments) {
