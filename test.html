@@ -34,7 +34,7 @@ function load() {
 }
 
 function xhrstate() {
-    if (req.readyState == 4 && req.status == 200) {
+    if (req.readyState == 4 && (req.status == 200 || req.status == 0)) {
         var data = req.mozResponseArrayBuffer;
         pdf = new PDFDoc(new Stream(data));
         numPages = pdf.numPages;
