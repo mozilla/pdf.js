@@ -1810,6 +1810,7 @@ var Page = (function() {
                                height: mediaBox[3] - mediaBox[1] });
             var args = [];
             var map = gfx.map;
+            contents.reset();   // TODO support multiple display()s
             var parser = new Parser(new Lexer(contents), false);
             var obj;
             while (!IsEOF(obj = parser.getObj())) {
