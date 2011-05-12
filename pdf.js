@@ -1146,7 +1146,7 @@ var Lexer = (function() {
         },
         getString: function(ch) {
             var n = 0;
-            var numParent = 1;
+            var numParen = 1;
             var done = false;
             var str = ch;
             var stream = this.stream;
@@ -1198,7 +1198,7 @@ var Lexer = (function() {
                         var x = ch - '0';
                         ch = stream.lookChar();
                         if (ch >= '0' && ch <= '7') {
-                            this.skip();
+                            stream.skip();
                             x = (x << 3) + (x - '0');
                             ch = stream.lookChar();
                             if (ch >= '0' && ch <= '7') {
@@ -1784,9 +1784,17 @@ var Page = (function() {
             var obj = this.pageDict.get("Contents");
             if (IsRef(obj))
                 obj = this.xref.fetch(obj);
-            if (!(IsArray(obj) || IsStream(obj)))
+            if (!IsStream(obj))
                 error("invalid page contents object");
             return this.contents = obj;
+        },
+        display: function() {
+            var stream = this.contents;
+            var parser = new Parser(new Lexer(stream), false);
+            var obj;
+            while (!IsEOF(obj = parser.getObj())) {
+                print(uneval(obj));
+            }
         }
     };
 
@@ -2752,9 +2760,7 @@ function runParseTests() {
     var data = snarf("/tmp/paper.pdf", "binary");
     var pdf = new PDFDoc(new Stream(data));
     var page = pdf.getPage(1);
-    var contents = page.contents;
-    for (var i = 0; i < 100; ++i)
-        print(contents.getChar());
+    page.display();
 }
 
 if ("arguments" in this) {
