@@ -25,6 +25,7 @@ var canvas, numPages, pageDisplay, pageNum;
 function load() {
     canvas = document.getElementById("canvas");
     pageDisplay = document.getElementById("pageNumber");
+    timeDisplay = document.getElementById("time");
 
     req = new XMLHttpRequest();
     req.open("GET", "uncompressed.tracemonkey-pldi-09.pdf");
@@ -52,7 +53,9 @@ function displayPage(num) {
     ctx.restore();
 
     var gfx = new CanvasGraphics(ctx);
+    var start = Date.now();
     page.display(gfx);
+    timeDisplay.innerHTML = (Date.now() - start) + "ms";
 }
 
 function nextPage() {
@@ -66,19 +69,6 @@ function prevPage() {
         --pageNum;
     displayPage(pageNum);
 }
-
-function profile() {
-    const NUM_TRIALS = 10000;
-    var start = Date.now();
-    for (var i = 0; i < NUM_TRIALS; ++i)
-        displayPage(pageNum);
-    var end = Date.now();
-    var elapsed = (end - start);
-
-    alert("Drawing current page "+ NUM_TRIALS +" times took "+
-          (elapsed / 1000.0) +" seconds, "+
-          "~"+ (elapsed / NUM_TRIALS) +" ms/draw (totally unscientific)");
-}
   </script>
 </head>
 
@@ -87,7 +77,7 @@ function profile() {
     <button onclick="prevPage();">Previous</button>
     <button onclick="nextPage();">Next</button>
     <input type="text" id="pageNumber" value="0" size="5"></input>
-    <button onclick="profile();">Profile</button>
+    Time to render: <span id="time"></span>
   <div id="viewer">
     <!-- Canvas dimensions must be specified in CSS pixels.  CSS pixels
       -- are always 96 dpi.  These dimensions are 8.5x11in at 96dpi. -->
