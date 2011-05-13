@@ -45,9 +45,13 @@ function xhrstate() {
 }
 
 function displayPage(num) {
-    var start = Date.now();
-    var page = pdf.getPage(pageNum = num);
     pageDisplay.value = num;
+
+    var t0 = Date.now();
+
+    var page = pdf.getPage(pageNum = num);
+
+    var t1 = Date.now();
 
     var ctx = canvas.getContext("2d");
     ctx.save();
@@ -57,7 +61,10 @@ function displayPage(num) {
 
     var gfx = new CanvasGraphics(ctx);
     page.display(gfx);
-    timeDisplay.innerHTML = (Date.now() - start) + "ms";
+
+    var t2 = Date.now();
+
+    timeDisplay.innerHTML = (t1 - t0) + "/" + (t2 - t1) + " ms";
 }
 
 function nextPage() {
