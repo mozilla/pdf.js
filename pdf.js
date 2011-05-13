@@ -1795,16 +1795,16 @@ var Page = (function() {
 
     constructor.prototype = {
         get contents() {
-            return this.contents = this.pageDict.get("Contents");
+            return shadow(this, "contents", this.pageDict.get("Contents"));
         },
         get resources() {
-            return this.resources = this.pageDict.get("Resources");
+            return shadow(this, "resources", this.pageDict.get("Resources"));
         },
         get mediaBox() {
             var obj = this.pageDict.get("MediaBox");
-            return this.mediaBox = ((IsArray(obj) && obj.length == 4)
-                                    ? obj
-                                    : null);
+            return shadow(this, "mediaBox", ((IsArray(obj) && obj.length == 4)
+                                             ? obj
+                                             : null));
         },
         display: function(gfx) {
             var xref = this.xref;
