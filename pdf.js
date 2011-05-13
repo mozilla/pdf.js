@@ -2002,8 +2002,8 @@ var PDFDoc = (function() {
             var num = linearization
                       ? linearization.numPages
                       : this.catalog.numPages;
-            // overwrite the prototype getter
-            return this.numPages = num;
+            // shadow the prototype getter
+            return shadow(this, "numPages", num);
         },
         getPage: function(n) {
             var linearization = this.linearization;
