@@ -12,9 +12,14 @@ function error(msg) {
     throw new Error(msg);
 }
 
+function shadow(obj, prop, value) {
+    Object.defineProperty(obj, prop, { value: value, enumerable: true });
+    return value;
+}
+
 var Stream = (function() {
     function constructor(arrayBuffer) {
-        this.bytes = Uint8Array(arrayBuffer);
+        this.bytes = new Uint8Array(arrayBuffer);
         this.pos = 0;
         this.start = 0;
     }
@@ -1857,14 +1862,14 @@ var Catalog = (function() {
             if (!IsDict(obj))
                 error("invalid top-level pages dictionary");
             // shadow the prototype getter
-            return this.toplevelPagesDict = obj;
+            return shadow(this, "toplevelPagesDict", obj);
         },
         get numPages() {
             obj = this.toplevelPagesDict.get("Count");
             if (!IsInt(obj))
                 error("page count in top level pages object is not an integer");
             // shadow the prototype getter
-            return this.numPages = obj;
+            return shadow(this, "num", obj);
         },
         traverseKids: function(pagesDict) {
             var pageCache = this.pageCache;
@@ -1930,7 +1935,7 @@ var PDFDoc = (function() {
                     linearization = false;
             }
             // shadow the prototype getter with a data property
-            return this.linearization = linearization;
+            return shadow(this, "linearization", linearization);
         },
         get startXRef() {
             var stream = this.stream;
@@ -1963,7 +1968,7 @@ var PDFDoc = (function() {
                 }
             }
             // shadow the prototype getter with a data property
-            return this.startXRef = startXRef;
+            return shadow(this, "startXRef", startXRef);
         },
         get mainXRefEntriesOffset() {
             var mainXRefEntriesOffset = 0;
@@ -1971,7 +1976,7 @@ var PDFDoc = (function() {
             if (linearization)
                 mainXRefEntriesOffset = linearization.mainXRefEntriesOffset;
             // shadow the prototype getter with a data property
-            return this.mainXRefEntriesOffset = mainXRefEntriesOffset;
+            return shadow(this, "mainXRefEntriesOffset", mainXRefEntriesOffset);
         },
         // Find the header, remove leading garbage and setup the stream
         // starting from the header.
