@@ -1199,11 +1199,11 @@ var Lexer = (function() {
                         ch = stream.lookChar();
                         if (ch >= '0' && ch <= '7') {
                             stream.skip();
-                            x = (x << 3) + (x - '0');
+                            x = (x << 3) + (ch - '0');
                             ch = stream.lookChar();
                             if (ch >= '0' && ch <= '7') {
                                 stream.skip();
-                                x = (x << 3) + (x - '0');
+                                x = (x << 3) + (ch - '0');
                             }
                         }
                         str += String.fromCharCode(x);
