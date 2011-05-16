@@ -1,6 +1,5 @@
 /* -*- Mode: Java; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- /
 /* vim: set shiftwidth=4 tabstop=8 autoindent cindent expandtab: */
-
 function warn(msg) {
     if (console && console.log)
         console.log(msg);
@@ -18,10 +17,11 @@ function shadow(obj, prop, value) {
 }
 
 var Stream = (function() {
-    function constructor(arrayBuffer) {
+    function constructor(arrayBuffer, dict) {
         this.bytes = new Uint8Array(arrayBuffer);
         this.pos = 0;
         this.start = 0;
+        this.dict = dict;
     }
 
     constructor.prototype = {
@@ -58,11 +58,11 @@ var Stream = (function() {
         moveStart: function() {
             this.start = this.pos;
         },
-        makeSubStream: function(pos, length) {
+        makeSubStream: function(pos, length, dict) {
             var buffer = this.bytes.buffer;
             if (length)
-                return new Stream(new Uint8Array(buffer, pos, length));
-            return new Stream(new Uint8Array(buffer, pos));
+                return new Stream(new Uint8Array(buffer, pos, length), dict);
+            return new Stream(new Uint8Array(buffer, pos), dict);
         }
     };
 
@@ -1196,7 +1196,7 @@ var Lexer = (function() {
                     case '\\':
                     case '(':
                     case ')':
-                        str += c;
+                        str += ch;
                         break;
                     case '0': case '1': case '2': case '3':
                     case '4': case '5': case '6': case '7':
@@ -1500,7 +1500,7 @@ var Parser = (function() {
                 error("Missing 'endstream'");
             this.shift();
 
-            stream = stream.makeSubStream(pos, length);
+            stream = stream.makeSubStream(pos, length, dict);
             if (this.fileKey) {
                 stream = new DecryptStream(stream,
                                            this.fileKey,
@@ -1813,30 +1813,11 @@ var Page = (function() {
             var mediaBox = xref.fetchIfRef(this.mediaBox);
             if (!IsStream(contents) || !IsDict(resources))
                 error("invalid page contents or resources");
-            gfx.resources = resources;
             gfx.beginDrawing({ x: mediaBox[0], y: mediaBox[1],
                                width: mediaBox[2] - mediaBox[0],
                                height: mediaBox[3] - mediaBox[1] });
-            var args = [];
-            var map = gfx.map;
-            var parser = new Parser(new Lexer(contents), false);
-            var obj;
-            while (!IsEOF(obj = parser.getObj())) {
-                if (IsCmd(obj)) {
-                    var cmd = obj.cmd;
-                    var fn = map[cmd];
-                    if (fn)
-                        // TODO figure out how to type-check vararg functions
-                        fn.apply(gfx, args);
-                    else
-                        error("Unknown command '" + cmd + "'");
-                    args.length = 0;
-                } else {
-                    if (args.length > 33)
-                        error("Too many arguments '" + cmd + "'");
-                    args.push(obj);
-                }
-            }
+            gfx.interpret(new Parser(new Lexer(contents), false),
+                          xref, resources);
             gfx.endDrawing();
         }
     };
@@ -2040,6 +2021,8 @@ var CanvasGraphics = (function() {
         this.current = new CanvasExtraState();
         this.stateStack = [ ];
         this.pendingClip = null;
+        this.res = null;
+        this.xobjs = null;
         this.map = {
             // Graphics state
             w: this.setLineWidth,
@@ -2115,6 +2098,38 @@ var CanvasGraphics = (function() {
             this.ctx.scale(cw / mediaBox.width, -ch / mediaBox.height);
             this.ctx.translate(0, -mediaBox.height);
         },
+
+        interpret: function(parser, xref, resources) {
+            var savedXref = this.xref, savedRes = this.res, savedXobjs = this.xobjs;
+            this.xref = xref;
+            this.res = resources || new Dict();
+            this.xobjs = this.res.get("XObject") || new Dict();
+
+            var args = [];
+            var map = this.map;
+            var obj;
+            while (!IsEOF(obj = parser.getObj())) {
+                if (IsCmd(obj)) {
+                    var cmd = obj.cmd;
+                    var fn = map[cmd];
+                    if (fn)
+                        // TODO figure out how to type-check vararg functions
+                        fn.apply(this, args);
+                    else
+                        error("Unknown command '" + cmd + "'");
+                    args.length = 0;
+                } else {
+                    if (args.length > 33)
+                        error("Too many arguments '" + cmd + "'");
+                    args.push(obj);
+                }
+            }
+
+            this.xobjs = savedXobjs;
+            this.res = savedRes;
+            this.xref = savedXref;
+        },
+
         endDrawing: function() {
             this.ctx.restore();
         },
@@ -2144,8 +2159,11 @@ var CanvasGraphics = (function() {
             this.current = new CanvasExtraState();
         },
         restore: function() {
-            this.current = this.stateStack.pop();
-            this.ctx.restore();
+            var prev = this.stateStack.pop();
+            if (prev) {
+                this.current = prev;
+                this.ctx.restore();
+            }
         },
         transform: function(a, b, c, d, e, f) {
             this.ctx.transform(a, b, c, d, e, f);
@@ -2207,7 +2225,9 @@ var CanvasGraphics = (function() {
             // TODO
         },
         setFont: function(fontRef, size) {
-            var font = this.resources.get("Font").get(fontRef.name);
+            var font = this.res.get("Font").get(fontRef.name);
+            if (!font)
+                return;
             this.current.fontSize = size;
             this.ctx.font = this.current.fontSize +'px '+ font.BaseFont;
         },
@@ -2282,7 +2302,15 @@ var CanvasGraphics = (function() {
 
         // XObjects
         paintXObject: function(obj) {
-            // TODO
+            var xobj = this.xobjs.get(obj.name);
+            if (!xobj)
+                return;
+            xobj = this.xref.fetchIfRef(xobj);
+            if (!IsStream(xobj))
+                error("XObject should be a stream");
+
+            this.interpret(new Parser(new Lexer(xobj), false),
+                           this.xref, xobj.dict.get("Resources"));
         },
 
         // Helper functions
