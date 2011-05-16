@@ -1,5 +1,6 @@
 /* -*- Mode: Java; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- /
 /* vim: set shiftwidth=4 tabstop=8 autoindent cindent expandtab: */
+
 function warn(msg) {
     if (console && console.log)
         console.log(msg);
@@ -9,6 +10,18 @@ function warn(msg) {
 
 function error(msg) {
     throw new Error(msg);
+}
+
+function assert(cond, msg) {
+    if (!cond)
+        error(msg);
+}
+
+// In a well-formed PDF, |cond| holds.  If it doesn't, subsequent
+// behavior is undefined.
+function assertWellFormed(cond, msg) {
+    if (!cond)
+        error("Malformed PDF: "+ msg);
 }
 
 function shadow(obj, prop, value) {
@@ -1811,8 +1824,8 @@ var Page = (function() {
             var contents = xref.fetchIfRef(this.contents);
             var resources = xref.fetchIfRef(this.resources);
             var mediaBox = xref.fetchIfRef(this.mediaBox);
-            if (!IsStream(contents) || !IsDict(resources))
-                error("invalid page contents or resources");
+            assertWellFormed(IsStream(contents) && IsDict(resources),
+                             "invalid page contents or resources");
             gfx.beginDrawing({ x: mediaBox[0], y: mediaBox[1],
                                width: mediaBox[2] - mediaBox[0],
                                height: mediaBox[3] - mediaBox[1] });
@@ -1829,45 +1842,42 @@ var Catalog = (function() {
     function constructor(xref) {
         this.xref = xref;
         var obj = xref.getCatalogObj();
-        if (!IsDict(obj))
-            error("catalog object is not a dictionary");
+        assertWellFormed(IsDict(obj), "catalog object is not a dictionary");
         this.catDict = obj;
     }
 
     constructor.prototype = {
         get toplevelPagesDict() {
             var obj = this.catDict.get("Pages");
-            if (!IsRef(obj))
-                error("invalid top-level pages reference");
+            assertWellFormed(IsRef(obj), "invalid top-level pages reference");
             var obj = this.xref.fetch(obj);
-            if (!IsDict(obj))
-                error("invalid top-level pages dictionary");
+            assertWellFormed(IsDict(obj), "invalid top-level pages dictionary");
             // shadow the prototype getter
             return shadow(this, "toplevelPagesDict", obj);
         },
         get numPages() {
             obj = this.toplevelPagesDict.get("Count");
-            if (!IsInt(obj))
-                error("page count in top level pages object is not an integer");
+            assertWellFormed(IsInt(obj),
+                             "page count in top level pages object is not an integer");
             // shadow the prototype getter
             return shadow(this, "num", obj);
         },
         traverseKids: function(pagesDict) {
             var pageCache = this.pageCache;
             var kids = pagesDict.get("Kids");
-            if (!IsArray(kids))
-                error("page dictionary kids object is not an array");
+            assertWellFormed(IsArray(kids),
+                             "page dictionary kids object is not an array");
             for (var i = 0; i < kids.length; ++i) {
                 var kid = kids[i];
-                if (!IsRef(kid))
-                    error("page dictionary kid is not a reference");
+                assertWellFormed(IsRef(kid),
+                                 "page dictionary kid is not a reference");
                 var obj = this.xref.fetch(kid);
                 if (IsDict(obj, "Page") || (IsDict(obj) && !obj.has("Kids"))) {
                     pageCache.push(new Page(this.xref, pageCache.length, obj));
-                } else if (IsDict(obj)) { // must be a child page dictionary
+                } else { // must be a child page dictionary
+                    assertWellFormed(IsDict(obj),
+                                     "page dictionary kid reference points to wrong type of object");           
                     this.traverseKids(obj);
-                } else {
-                    error("page dictionary kid reference points to wrong type of object");
                 }
             }
         },
@@ -1988,9 +1998,7 @@ var PDFDoc = (function() {
         },
         getPage: function(n) {
             var linearization = this.linearization;
-            if (linearization) {
-                error("linearized page access not implemented");
-            }
+            assert(!linearization, "linearized page access not implemented");
             return this.catalog.getPage(n);
         }
     };
@@ -2112,15 +2120,13 @@ var CanvasGraphics = (function() {
                 if (IsCmd(obj)) {
                     var cmd = obj.cmd;
                     var fn = map[cmd];
-                    if (fn)
-                        // TODO figure out how to type-check vararg functions
-                        fn.apply(this, args);
-                    else
-                        error("Unknown command '" + cmd + "'");
+                    assertWellFormed(fn, "Unknown command '" + cmd + "'");
+                    // TODO figure out how to type-check vararg functions
+                    fn.apply(this, args);
+
                     args.length = 0;
                 } else {
-                    if (args.length > 33)
-                        error("Too many arguments '" + cmd + "'");
+                    assertWellFormed(args.length <= 33, "Too many arguments");
                     args.push(obj);
                 }
             }
@@ -2256,10 +2262,10 @@ var CanvasGraphics = (function() {
                 var e = arr[i];
                 if (IsNum(e)) {
                     this.current.curX -= e * 0.001 * this.current.fontSize;
-                } else if (IsString(e)) {
-                    this.showText(e);
                 } else {
-                    error("Unexpected element in TJ array");
+                    assertWellFormed(IsString(e),
+                                     "TJ array element isn't string or num");
+                    this.showText(e);
                 }
             }
         },
@@ -2306,8 +2312,7 @@ var CanvasGraphics = (function() {
             if (!xobj)
                 return;
             xobj = this.xref.fetchIfRef(xobj);
-            if (!IsStream(xobj))
-                error("XObject should be a stream");
+            assertWellFormed(IsStream(xobj), "XObject should be a stream");
 
             this.interpret(new Parser(new Lexer(xobj), false),
                            this.xref, xobj.dict.get("Resources"));
