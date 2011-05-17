@@ -1,15 +1,32 @@
 /* -*- Mode: Java; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- /
 /* vim: set shiftwidth=4 tabstop=8 autoindent cindent expandtab: */
 
-function warn(msg) {
+var ERRORS = 0, WARNINGS = 1, TODOS = 5;
+var verbosity = WARNINGS;
+
+function log(msg) {
     if (console && console.log)
         console.log(msg);
-    if (print)
+    else if (print)
         print(msg);
+}
+
+function warn(msg) {
+    if (verbosity >= WARNINGS)
+        log("Warning: "+ msg);
 }
 
 function error(msg) {
     throw new Error(msg);
+}
+
+function TODO(what) {
+    if (verbosity >= TODOS)
+        log("TODO: "+ what);
+}
+
+function malformed(msg) {
+    error("Malformed PDF: "+ msg);
 }
 
 function assert(cond, msg) {
@@ -21,7 +38,7 @@ function assert(cond, msg) {
 // behavior is undefined.
 function assertWellFormed(cond, msg) {
     if (!cond)
-        error("Malformed PDF: "+ msg);
+        malformed(msg);
 }
 
 function shadow(obj, prop, value) {
@@ -2006,11 +2023,14 @@ var PDFDoc = (function() {
     return constructor;
 })();
 
+var IDENTITY_MATRIX = [ 1, 0, 0, 1, 0, 0 ];
+
 // <canvas> contexts store most of the state we need natively.
 // However, PDF needs a bit more state, which we store here.
 var CanvasExtraState = (function() {
     function constructor() {
         this.fontSize = 0.0;
+        this.textMatrix = IDENTITY_MATRIX;
         // Current point (in user coordinates)
         this.curX = 0.0;
         this.curY = 0.0;
@@ -2039,6 +2059,7 @@ var CanvasGraphics = (function() {
             d: this.setDash,
             ri: this.setRenderingIntent,
             i: this.setFlatness,
+            gs: this.setGState,
             q: this.save,
             Q: this.restore,
             cm: this.transform,
@@ -2078,6 +2099,7 @@ var CanvasGraphics = (function() {
             SCN: this.setStrokeColorN,
             sc: this.setFillColor,
             scn: this.setFillColorN,
+            G: this.setStrokeGray,
             g: this.setFillGray,
             RG: this.setStrokeRGBColor,
             rg: this.setFillRGBColor,
@@ -2151,13 +2173,16 @@ var CanvasGraphics = (function() {
             this.ctx.lineJoin = LINE_JOIN_STYLES[style];
         },
         setDash: function(dashArray, dashPhase) {
-            // TODO
+            TODO("set dash");
         },
         setRenderingIntent: function(intent) {
-            // TODO
+            TODO("set rendering intent");
         },
         setFlatness: function(flatness) {
-            // TODO
+            TODO("set flatness");
+        },
+        setGState: function(dictName) {
+            TODO("set graphics state from dict");
         },
         save: function() {
             this.ctx.save();
@@ -2200,7 +2225,7 @@ var CanvasGraphics = (function() {
             this.consumePath();
         },
         eoFill: function() {
-            // TODO: <canvas> needs to support even-odd winding rule
+            TODO("even-odd fill");
             this.fill();
         },
         fillStroke: function() {
@@ -2225,10 +2250,9 @@ var CanvasGraphics = (function() {
 
         // Text
         beginText: function() {
-            // TODO
+            this.current.textMatrix = IDENTITY_MATRIX;
         },
         endText: function() {
-            // TODO
         },
         setFont: function(fontRef, size) {
             var font = this.res.get("Font").get(fontRef.name);
@@ -2245,12 +2269,13 @@ var CanvasGraphics = (function() {
             this.current.curY = this.current.lineY;
         },
         setTextMatrix: function(a, b, c, d, e, f) {
-            // TODO
+            this.current.textMatrix = [ a, b, c, d, e, f ];
         },
         showText: function(text) {
             this.ctx.save();
             this.ctx.translate(0, 2 * this.current.curY);
             this.ctx.scale(1, -1);
+            this.ctx.transform.apply(this.ctx, this.current.textMatrix);
 
             this.ctx.fillText(text, this.current.curX, this.current.curY);
             this.current.curX += this.ctx.measureText(text).width;
@@ -2262,10 +2287,10 @@ var CanvasGraphics = (function() {
                 var e = arr[i];
                 if (IsNum(e)) {
                     this.current.curX -= e * 0.001 * this.current.fontSize;
-                } else {
-                    assertWellFormed(IsString(e),
-                                     "TJ array element isn't string or num");
+                } else if (IsString(e)) {
                     this.showText(e);
+                } else {
+                    malformed("TJ array element "+ e +" isn't string or num");
                 }
             }
         },
@@ -2274,22 +2299,37 @@ var CanvasGraphics = (function() {
 
         // Color
         setStrokeColorSpace: function(space) {
-            // TODO
+            // TODO real impl
         },
         setFillColorSpace: function(space) {
-            // TODO
+            // TODO real impl
         },
         setStrokeColor: function(/*...*/) {
-            // TODO
+            // TODO real impl
+            if (1 === arguments.length) {
+                this.setStrokeGray.apply(this, arguments);
+            } else if (3 === arguments.length) {
+                this.setStrokeRGBColor.apply(this, arguments);
+            }
         },
         setStrokeColorN: function(/*...*/) {
-            // TODO
+            // TODO real impl
+            this.setStrokeColor.apply(this, arguments);
         },
         setFillColor: function(/*...*/) {
-            // TODO
+            // TODO real impl
+            if (1 === arguments.length) {
+                this.setFillGray.apply(this, arguments);
+            } else if (3 === arguments.length) {
+                this.setFillRGBColor.apply(this, arguments);
+            }
         },
         setFillColorN: function(/*...*/) {
-            // TODO
+            // TODO real impl
+            this.setFillColor.apply(this, arguments);
+        },
+        setStrokeGray: function(gray) {
+            this.setStrokeRGBColor(gray, gray, gray);
         },
         setFillGray: function(gray) {
             this.setFillRGBColor(gray, gray, gray);
@@ -2303,7 +2343,7 @@ var CanvasGraphics = (function() {
 
         // Shading
         shadingFill: function(entry) {
-            // TODO
+            TODO("shading fill");
         },
 
         // XObjects
@@ -2313,16 +2353,45 @@ var CanvasGraphics = (function() {
                 return;
             xobj = this.xref.fetchIfRef(xobj);
             assertWellFormed(IsStream(xobj), "XObject should be a stream");
+            var type = xobj.dict.get("Subtype");
+            assertWellFormed(IsName(type), "XObject should have a Name subtype");
+            if ("Image" == type.name) {
+                TODO("Image XObjects");
+            } else if ("Form" == type.name) {
+                this.paintFormXObject(xobj);
+            } else if ("PS" == type.name) {
+                warn("(deprecated) PostScript XObjects are not supported");
+            } else {
+                malformed("Unknown XObject subtype "+ type.name);
+            }
+        },
 
-            this.interpret(new Parser(new Lexer(xobj), false),
-                           this.xref, xobj.dict.get("Resources"));
+        paintFormXObject: function(form) {
+            this.save();
+
+            var matrix = form.dict.get("Matrix");
+            if (matrix && IsArray(matrix) && 6 == matrix.length)
+                this.transform.apply(this, matrix);
+
+            var bbox = form.dict.get("BBox");
+            if (bbox && IsArray(bbox) && 4 == bbox.length) {
+                this.rectangle.apply(this, bbox);
+                this.clip();
+                this.endPath();
+            }
+
+            this.interpret(new Parser(new Lexer(form), false),
+                           this.xref, form.dict.get("Resources"));
+
+            this.restore();
         },
 
         // Helper functions
 
         consumePath: function() {
             if (this.pendingClip) {
-                // TODO: <canvas> needs to support even-odd winding rule
+                if (this.pendingClip == EO_CLIP)
+                    TODO("even-odd clipping");
                 this.ctx.clip();
                 this.pendingClip = null;
             }

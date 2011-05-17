@@ -81,6 +81,11 @@ function prevPage() {
         --pageNum;
     displayPage(pageNum);
 }
+function gotoPage(num) {
+    if (0 <= num && num <= numPages)
+        pageNum = num;
+    displayPage(pageNum);
+}
   </script>
 </head>
 
@@ -88,7 +93,8 @@ function prevPage() {
   <div>
     <button onclick="prevPage();">Previous</button>
     <button onclick="nextPage();">Next</button>
-    <input type="text" id="pageNumber" value="1" size="5"></input>
+    <input type="text" id="pageNumber" onchange="gotoPage(this.value);"
+           value="1" size="5"></input>
     Time to render: <span id="time"></span>
   <div id="viewer">
     <!-- Canvas dimensions must be specified in CSS pixels.  CSS pixels
