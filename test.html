@@ -24,6 +24,7 @@ body {
 var canvas, numPages, pageDisplay, pageNum;
 function load() {
     canvas = document.getElementById("canvas");
+    canvas.mozOpaque = true;
     pageDisplay = document.getElementById("pageNumber");
     timeDisplay = document.getElementById("time");
 
