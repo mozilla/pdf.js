@@ -1,15 +1,44 @@
 /* -*- Mode: Java; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- /
 /* vim: set shiftwidth=4 tabstop=8 autoindent cindent expandtab: */
 
-function warn(msg) {
+var ERRORS = 0, WARNINGS = 1, TODOS = 5;
+var verbosity = WARNINGS;
+
+function log(msg) {
     if (console && console.log)
         console.log(msg);
-    if (print)
+    else if (print)
         print(msg);
+}
+
+function warn(msg) {
+    if (verbosity >= WARNINGS)
+        log("Warning: "+ msg);
 }
 
 function error(msg) {
     throw new Error(msg);
+}
+
+function TODO(what) {
+    if (verbosity >= TODOS)
+        log("TODO: "+ what);
+}
+
+function malformed(msg) {
+    error("Malformed PDF: "+ msg);
+}
+
+function assert(cond, msg) {
+    if (!cond)
+        error(msg);
+}
+
+// In a well-formed PDF, |cond| holds.  If it doesn't, subsequent
+// behavior is undefined.
+function assertWellFormed(cond, msg) {
+    if (!cond)
+        malformed(msg);
 }
 
 function shadow(obj, prop, value) {
@@ -18,10 +47,11 @@ function shadow(obj, prop, value) {
 }
 
 var Stream = (function() {
-    function constructor(arrayBuffer) {
+    function constructor(arrayBuffer, dict) {
         this.bytes = new Uint8Array(arrayBuffer);
         this.pos = 0;
         this.start = 0;
+        this.dict = dict;
     }
 
     constructor.prototype = {
@@ -58,11 +88,11 @@ var Stream = (function() {
         moveStart: function() {
             this.start = this.pos;
         },
-        makeSubStream: function(pos, length) {
+        makeSubStream: function(pos, length, dict) {
             var buffer = this.bytes.buffer;
             if (length)
-                return new Stream(new Uint8Array(buffer, pos, length));
-            return new Stream(new Uint8Array(buffer, pos));
+                return new Stream(new Uint8Array(buffer, pos, length), dict);
+            return new Stream(new Uint8Array(buffer, pos), dict);
         }
     };
 
@@ -1196,7 +1226,7 @@ var Lexer = (function() {
                     case '\\':
                     case '(':
                     case ')':
-                        str += c;
+                        str += ch;
                         break;
                     case '0': case '1': case '2': case '3':
                     case '4': case '5': case '6': case '7':
@@ -1500,7 +1530,7 @@ var Parser = (function() {
                 error("Missing 'endstream'");
             this.shift();
 
-            stream = stream.makeSubStream(pos, length);
+            stream = stream.makeSubStream(pos, length, dict);
             if (this.fileKey) {
                 stream = new DecryptStream(stream,
                                            this.fileKey,
@@ -1811,32 +1841,13 @@ var Page = (function() {
             var contents = xref.fetchIfRef(this.contents);
             var resources = xref.fetchIfRef(this.resources);
             var mediaBox = xref.fetchIfRef(this.mediaBox);
-            if (!IsStream(contents) || !IsDict(resources))
-                error("invalid page contents or resources");
-            gfx.resources = resources;
+            assertWellFormed(IsStream(contents) && IsDict(resources),
+                             "invalid page contents or resources");
             gfx.beginDrawing({ x: mediaBox[0], y: mediaBox[1],
                                width: mediaBox[2] - mediaBox[0],
                                height: mediaBox[3] - mediaBox[1] });
-            var args = [];
-            var map = gfx.map;
-            var parser = new Parser(new Lexer(contents), false);
-            var obj;
-            while (!IsEOF(obj = parser.getObj())) {
-                if (IsCmd(obj)) {
-                    var cmd = obj.cmd;
-                    var fn = map[cmd];
-                    if (fn)
-                        // TODO figure out how to type-check vararg functions
-                        fn.apply(gfx, args);
-                    else
-                        error("Unknown command '" + cmd + "'");
-                    args.length = 0;
-                } else {
-                    if (args.length > 33)
-                        error("Too many arguments '" + cmd + "'");
-                    args.push(obj);
-                }
-            }
+            gfx.interpret(new Parser(new Lexer(contents), false),
+                          xref, resources);
             gfx.endDrawing();
         }
     };
@@ -1848,45 +1859,42 @@ var Catalog = (function() {
     function constructor(xref) {
         this.xref = xref;
         var obj = xref.getCatalogObj();
-        if (!IsDict(obj))
-            error("catalog object is not a dictionary");
+        assertWellFormed(IsDict(obj), "catalog object is not a dictionary");
         this.catDict = obj;
     }
 
     constructor.prototype = {
         get toplevelPagesDict() {
             var obj = this.catDict.get("Pages");
-            if (!IsRef(obj))
-                error("invalid top-level pages reference");
+            assertWellFormed(IsRef(obj), "invalid top-level pages reference");
             var obj = this.xref.fetch(obj);
-            if (!IsDict(obj))
-                error("invalid top-level pages dictionary");
+            assertWellFormed(IsDict(obj), "invalid top-level pages dictionary");
             // shadow the prototype getter
             return shadow(this, "toplevelPagesDict", obj);
         },
         get numPages() {
             obj = this.toplevelPagesDict.get("Count");
-            if (!IsInt(obj))
-                error("page count in top level pages object is not an integer");
+            assertWellFormed(IsInt(obj),
+                             "page count in top level pages object is not an integer");
             // shadow the prototype getter
             return shadow(this, "num", obj);
         },
         traverseKids: function(pagesDict) {
             var pageCache = this.pageCache;
             var kids = pagesDict.get("Kids");
-            if (!IsArray(kids))
-                error("page dictionary kids object is not an array");
+            assertWellFormed(IsArray(kids),
+                             "page dictionary kids object is not an array");
             for (var i = 0; i < kids.length; ++i) {
                 var kid = kids[i];
-                if (!IsRef(kid))
-                    error("page dictionary kid is not a reference");
+                assertWellFormed(IsRef(kid),
+                                 "page dictionary kid is not a reference");
                 var obj = this.xref.fetch(kid);
                 if (IsDict(obj, "Page") || (IsDict(obj) && !obj.has("Kids"))) {
                     pageCache.push(new Page(this.xref, pageCache.length, obj));
-                } else if (IsDict(obj)) { // must be a child page dictionary
+                } else { // must be a child page dictionary
+                    assertWellFormed(IsDict(obj),
+                                     "page dictionary kid reference points to wrong type of object");           
                     this.traverseKids(obj);
-                } else {
-                    error("page dictionary kid reference points to wrong type of object");
                 }
             }
         },
@@ -2007,9 +2015,7 @@ var PDFDoc = (function() {
         },
         getPage: function(n) {
             var linearization = this.linearization;
-            if (linearization) {
-                error("linearized page access not implemented");
-            }
+            assert(!linearization, "linearized page access not implemented");
             return this.catalog.getPage(n);
         }
     };
@@ -2017,11 +2023,14 @@ var PDFDoc = (function() {
     return constructor;
 })();
 
+var IDENTITY_MATRIX = [ 1, 0, 0, 1, 0, 0 ];
+
 // <canvas> contexts store most of the state we need natively.
 // However, PDF needs a bit more state, which we store here.
 var CanvasExtraState = (function() {
     function constructor() {
         this.fontSize = 0.0;
+        this.textMatrix = IDENTITY_MATRIX;
         // Current point (in user coordinates)
         this.curX = 0.0;
         this.curY = 0.0;
@@ -2040,6 +2049,8 @@ var CanvasGraphics = (function() {
         this.current = new CanvasExtraState();
         this.stateStack = [ ];
         this.pendingClip = null;
+        this.res = null;
+        this.xobjs = null;
         this.map = {
             // Graphics state
             w: this.setLineWidth,
@@ -2048,6 +2059,7 @@ var CanvasGraphics = (function() {
             d: this.setDash,
             ri: this.setRenderingIntent,
             i: this.setFlatness,
+            gs: this.setGState,
             q: this.save,
             Q: this.restore,
             cm: this.transform,
@@ -2087,6 +2099,7 @@ var CanvasGraphics = (function() {
             SCN: this.setStrokeColorN,
             sc: this.setFillColor,
             scn: this.setFillColorN,
+            G: this.setStrokeGray,
             g: this.setFillGray,
             RG: this.setStrokeRGBColor,
             rg: this.setFillRGBColor,
@@ -2115,6 +2128,36 @@ var CanvasGraphics = (function() {
             this.ctx.scale(cw / mediaBox.width, -ch / mediaBox.height);
             this.ctx.translate(0, -mediaBox.height);
         },
+
+        interpret: function(parser, xref, resources) {
+            var savedXref = this.xref, savedRes = this.res, savedXobjs = this.xobjs;
+            this.xref = xref;
+            this.res = resources || new Dict();
+            this.xobjs = this.res.get("XObject") || new Dict();
+
+            var args = [];
+            var map = this.map;
+            var obj;
+            while (!IsEOF(obj = parser.getObj())) {
+                if (IsCmd(obj)) {
+                    var cmd = obj.cmd;
+                    var fn = map[cmd];
+                    assertWellFormed(fn, "Unknown command '" + cmd + "'");
+                    // TODO figure out how to type-check vararg functions
+                    fn.apply(this, args);
+
+                    args.length = 0;
+                } else {
+                    assertWellFormed(args.length <= 33, "Too many arguments");
+                    args.push(obj);
+                }
+            }
+
+            this.xobjs = savedXobjs;
+            this.res = savedRes;
+            this.xref = savedXref;
+        },
+
         endDrawing: function() {
             this.ctx.restore();
         },
@@ -2130,13 +2173,16 @@ var CanvasGraphics = (function() {
             this.ctx.lineJoin = LINE_JOIN_STYLES[style];
         },
         setDash: function(dashArray, dashPhase) {
-            // TODO
+            TODO("set dash");
         },
         setRenderingIntent: function(intent) {
-            // TODO
+            TODO("set rendering intent");
         },
         setFlatness: function(flatness) {
-            // TODO
+            TODO("set flatness");
+        },
+        setGState: function(dictName) {
+            TODO("set graphics state from dict");
         },
         save: function() {
             this.ctx.save();
@@ -2144,8 +2190,11 @@ var CanvasGraphics = (function() {
             this.current = new CanvasExtraState();
         },
         restore: function() {
-            this.current = this.stateStack.pop();
-            this.ctx.restore();
+            var prev = this.stateStack.pop();
+            if (prev) {
+                this.current = prev;
+                this.ctx.restore();
+            }
         },
         transform: function(a, b, c, d, e, f) {
             this.ctx.transform(a, b, c, d, e, f);
@@ -2176,7 +2225,7 @@ var CanvasGraphics = (function() {
             this.consumePath();
         },
         eoFill: function() {
-            // TODO: <canvas> needs to support even-odd winding rule
+            TODO("even-odd fill");
             this.fill();
         },
         fillStroke: function() {
@@ -2201,13 +2250,14 @@ var CanvasGraphics = (function() {
 
         // Text
         beginText: function() {
-            // TODO
+            this.current.textMatrix = IDENTITY_MATRIX;
         },
         endText: function() {
-            // TODO
         },
         setFont: function(fontRef, size) {
-            var font = this.resources.get("Font").get(fontRef.name);
+            var font = this.res.get("Font").get(fontRef.name);
+            if (!font)
+                return;
             this.current.fontSize = size;
             this.ctx.font = this.current.fontSize +'px '+ font.BaseFont;
         },
@@ -2219,12 +2269,13 @@ var CanvasGraphics = (function() {
             this.current.curY = this.current.lineY;
         },
         setTextMatrix: function(a, b, c, d, e, f) {
-            // TODO
+            this.current.textMatrix = [ a, b, c, d, e, f ];
         },
         showText: function(text) {
             this.ctx.save();
             this.ctx.translate(0, 2 * this.current.curY);
             this.ctx.scale(1, -1);
+            this.ctx.transform.apply(this.ctx, this.current.textMatrix);
 
             this.ctx.fillText(text, this.current.curX, this.current.curY);
             this.current.curX += this.ctx.measureText(text).width;
@@ -2239,7 +2290,7 @@ var CanvasGraphics = (function() {
                 } else if (IsString(e)) {
                     this.showText(e);
                 } else {
-                    error("Unexpected element in TJ array");
+                    malformed("TJ array element "+ e +" isn't string or num");
                 }
             }
         },
@@ -2248,22 +2299,37 @@ var CanvasGraphics = (function() {
 
         // Color
         setStrokeColorSpace: function(space) {
-            // TODO
+            // TODO real impl
         },
         setFillColorSpace: function(space) {
-            // TODO
+            // TODO real impl
         },
         setStrokeColor: function(/*...*/) {
-            // TODO
+            // TODO real impl
+            if (1 === arguments.length) {
+                this.setStrokeGray.apply(this, arguments);
+            } else if (3 === arguments.length) {
+                this.setStrokeRGBColor.apply(this, arguments);
+            }
         },
         setStrokeColorN: function(/*...*/) {
-            // TODO
+            // TODO real impl
+            this.setStrokeColor.apply(this, arguments);
         },
         setFillColor: function(/*...*/) {
-            // TODO
+            // TODO real impl
+            if (1 === arguments.length) {
+                this.setFillGray.apply(this, arguments);
+            } else if (3 === arguments.length) {
+                this.setFillRGBColor.apply(this, arguments);
+            }
         },
         setFillColorN: function(/*...*/) {
-            // TODO
+            // TODO real impl
+            this.setFillColor.apply(this, arguments);
+        },
+        setStrokeGray: function(gray) {
+            this.setStrokeRGBColor(gray, gray, gray);
         },
         setFillGray: function(gray) {
             this.setFillRGBColor(gray, gray, gray);
@@ -2277,19 +2343,55 @@ var CanvasGraphics = (function() {
 
         // Shading
         shadingFill: function(entry) {
-            // TODO
+            TODO("shading fill");
         },
 
         // XObjects
         paintXObject: function(obj) {
-            // TODO
+            var xobj = this.xobjs.get(obj.name);
+            if (!xobj)
+                return;
+            xobj = this.xref.fetchIfRef(xobj);
+            assertWellFormed(IsStream(xobj), "XObject should be a stream");
+            var type = xobj.dict.get("Subtype");
+            assertWellFormed(IsName(type), "XObject should have a Name subtype");
+            if ("Image" == type.name) {
+                TODO("Image XObjects");
+            } else if ("Form" == type.name) {
+                this.paintFormXObject(xobj);
+            } else if ("PS" == type.name) {
+                warn("(deprecated) PostScript XObjects are not supported");
+            } else {
+                malformed("Unknown XObject subtype "+ type.name);
+            }
+        },
+
+        paintFormXObject: function(form) {
+            this.save();
+
+            var matrix = form.dict.get("Matrix");
+            if (matrix && IsArray(matrix) && 6 == matrix.length)
+                this.transform.apply(this, matrix);
+
+            var bbox = form.dict.get("BBox");
+            if (bbox && IsArray(bbox) && 4 == bbox.length) {
+                this.rectangle.apply(this, bbox);
+                this.clip();
+                this.endPath();
+            }
+
+            this.interpret(new Parser(new Lexer(form), false),
+                           this.xref, form.dict.get("Resources"));
+
+            this.restore();
         },
 
         // Helper functions
 
         consumePath: function() {
             if (this.pendingClip) {
-                // TODO: <canvas> needs to support even-odd winding rule
+                if (this.pendingClip == EO_CLIP)
+                    TODO("even-odd clipping");
                 this.ctx.clip();
                 this.pendingClip = null;
             }
