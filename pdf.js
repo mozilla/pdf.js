@@ -2116,10 +2116,10 @@ var CanvasGraphics = (function() {
         };
     }
 
-    var LINE_CAP_STYLES = [ "butt", "round", "square" ];
-    var LINE_JOIN_STYLES = [ "miter", "round", "bevel" ];
-    var NORMAL_CLIP = {};
-    var EO_CLIP = {};
+    const LINE_CAP_STYLES = [ "butt", "round", "square" ];
+    const LINE_JOIN_STYLES = [ "miter", "round", "bevel" ];
+    const NORMAL_CLIP = {};
+    const EO_CLIP = {};
 
     constructor.prototype = {
         beginDrawing: function(mediaBox) {
