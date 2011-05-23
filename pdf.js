@@ -2032,8 +2032,8 @@ var CanvasExtraState = (function() {
         this.fontSize = 0.0;
         this.textMatrix = IDENTITY_MATRIX;
         // Current point (in user coordinates)
-        this.curX = 0.0;
-        this.curY = 0.0;
+        this.x = 0.0;
+        this.y = 0.0;
         // Start of text line (in text coordinates)
         this.lineX = 0.0;
         this.lineY = 0.0;
@@ -2251,6 +2251,8 @@ var CanvasGraphics = (function() {
         // Text
         beginText: function() {
             this.current.textMatrix = IDENTITY_MATRIX;
+            this.current.x = this.current.lineX = 0;
+            this.current.y = this.current.lineY = 0;
         },
         endText: function() {
         },
@@ -2262,23 +2264,30 @@ var CanvasGraphics = (function() {
             this.ctx.font = this.current.fontSize +'px '+ font.BaseFont;
         },
         moveText: function (x, y) {
-            this.current.lineX += x;
-            this.current.lineY += y;
-            // TODO transform
-            this.current.curX = this.current.lineX;
-            this.current.curY = this.current.lineY;
+            this.current.x = this.current.lineX += x;
+            this.current.y = this.current.lineY += y;
         },
         setTextMatrix: function(a, b, c, d, e, f) {
             this.current.textMatrix = [ a, b, c, d, e, f ];
+            this.current.x = this.current.lineX = 0;
+            this.current.y = this.current.lineY = 0;
         },
         showText: function(text) {
+
+
+            if (text == "Figur") {
+                console.log("  Tm: "+ this.current.textMatrix);
+                console.log("  cx/cy: "+ this.current.x +"/"+ this.current.y);
+            }
+
+
             this.ctx.save();
-            this.ctx.translate(0, 2 * this.current.curY);
+            this.ctx.translate(0, 2 * this.current.y);
             this.ctx.scale(1, -1);
             this.ctx.transform.apply(this.ctx, this.current.textMatrix);
 
-            this.ctx.fillText(text, this.current.curX, this.current.curY);
-            this.current.curX += this.ctx.measureText(text).width;
+            this.ctx.fillText(text, this.current.x, this.current.y);
+            this.current.x += this.ctx.measureText(text).width;
 
             this.ctx.restore();
         },
@@ -2286,7 +2295,7 @@ var CanvasGraphics = (function() {
             for (var i = 0; i < arr.length; ++i) {
                 var e = arr[i];
                 if (IsNum(e)) {
-                    this.current.curX -= e * 0.001 * this.current.fontSize;
+                    this.current.x -= e * 0.001 * this.current.fontSize;
                 } else if (IsString(e)) {
                     this.showText(e);
                 } else {
