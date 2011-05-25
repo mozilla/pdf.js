@@ -1777,7 +1777,7 @@ var XRef = (function() {
             if (e) {
                 // The stream might be in use elsewhere, so clone it.
                 if (IsStream(e))
-                    e = e.makeSubStream(0);
+                    e = e.makeSubStream(e.start, e.length, e.dict);
                 return e;
             }
             e = this.getEntry(num);
@@ -2261,7 +2261,8 @@ var CanvasGraphics = (function() {
             if (!font)
                 return;
             this.current.fontSize = size;
-            this.ctx.font = this.current.fontSize +'px '+ font.BaseFont;
+            TODO("using hard-coded font for testing");
+            this.ctx.font = this.current.fontSize +'px "Nimbus Roman No9 L"';
         },
         moveText: function (x, y) {
             this.current.x = this.current.lineX += x;
@@ -2273,14 +2274,6 @@ var CanvasGraphics = (function() {
             this.current.y = this.current.lineY = 0;
         },
         showText: function(text) {
-
-
-            if (text == "Figur") {
-                console.log("  Tm: "+ this.current.textMatrix);
-                console.log("  cx/cy: "+ this.current.x +"/"+ this.current.y);
-            }
-
-
             this.ctx.save();
             this.ctx.translate(0, 2 * this.current.y);
             this.ctx.scale(1, -1);
