@@ -9,6 +9,19 @@ body {
   padding: 0px;
   background-color: #c0bdb7;
 }
+#controls {
+  border-bottom: 1px solid black;
+  position:fixed;
+  left: 0px; top: 0px;
+  width: 100%;
+  padding: 7px;
+  background-color: rgb(242, 240, 238);
+}
+span#info {
+  float: right;
+  font: 14px sans-serif;
+  margin-right: 10px;
+}
 #viewer {
   margin: auto;
   border: 1px solid black;
@@ -26,10 +39,14 @@ function load() {
     canvas = document.getElementById("canvas");
     canvas.mozOpaque = true;
     pageDisplay = document.getElementById("pageNumber");
-    timeDisplay = document.getElementById("time");
+    infoDisplay = document.getElementById("info");
+    open("uncompressed.tracemonkey-pldi-09.pdf");
+}
 
+function open(url) {
+    document.title = url;
     req = new XMLHttpRequest();
-    req.open("GET", "uncompressed.tracemonkey-pldi-09.pdf");
+    req.open("GET", url);
     req.mozResponseType = req.responseType = "arraybuffer";
     req.expected = (document.URL.indexOf("file:") == 0) ? 0 : 200;
     req.onreadystatechange = xhrstate;
@@ -68,7 +85,7 @@ function displayPage(num) {
 
     var t2 = Date.now();
 
-    timeDisplay.innerHTML = (t1 - t0) + "/" + (t2 - t1) + " ms";
+    infoDisplay.innerHTML = "Time to render: "+ (t1 - t0) + "/" + (t2 - t1) + " ms";
 }
 
 function nextPage() {
@@ -91,12 +108,13 @@ function gotoPage(num) {
 </head>
 
 <body onload="load();">
-  <div>
+  <div id="controls">
     <button onclick="prevPage();">Previous</button>
     <button onclick="nextPage();">Next</button>
     <input type="text" id="pageNumber" onchange="gotoPage(this.value);"
-           value="1" size="5"></input>
-    Time to render: <span id="time"></span>
+           value="1" size="4"></input>
+    <span id="info"></span>
+  </div>
   <div id="viewer">
     <!-- Canvas dimensions must be specified in CSS pixels.  CSS pixels
       -- are always 96 dpi.  These dimensions are 8.5x11in at 96dpi. -->
