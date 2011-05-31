@@ -1032,6 +1032,12 @@ var Dict = (function() {
         },
         set: function(key, value) {
             this.map[key] = value;
+        },
+        toString: function() {
+          var keys = [];
+          for (var key in this.map)
+            keys.push(key);
+          return "Dict with " + keys.length + " keys: " + keys;
         }
     };
 
@@ -1360,10 +1366,11 @@ var Lexer = (function() {
                     stream.skip();
                     return new Cmd(">>");
                 }
+            case "{":
+            case "}":
+              return new Cmd(ch);
 	        // fall through
             case ')':
-            case '{':
-            case '}':
                 error("Illegal character");
                 return Error;
             }
@@ -2258,11 +2265,34 @@ var CanvasGraphics = (function() {
         },
         setFont: function(fontRef, size) {
             var font = this.res.get("Font").get(fontRef.name);
+            font = this.xref.fetchIfRef(font);
             if (!font)
                 return;
+
+            var fontName = "Nimbus Roman No9 L";
+            var subtype = font.get("Subtype").name;
+            switch (subtype) {
+              case "Type1":
+                var fontDescriptor = font.get("FontDescriptor");
+                if (fontDescriptor.num) {
+                  var fontDescriptor = this.xref.fetchIfRef(fontDescriptor);
+                  var fontFile = this.xref.fetchIfRef(fontDescriptor.get("FontFile"));
+                  font = new Type1Font(fontDescriptor.get("FontName").name, fontFile);
+                }
+                break;
+
+              case "Type3":
+                TODO("support Type3 font");
+                break;
+
+              default:
+                error("Unsupported font type: " + subtype);
+                break;
+            }
+
             this.current.fontSize = size;
             TODO("using hard-coded font for testing");
-            this.ctx.font = this.current.fontSize +'px "Nimbus Roman No9 L"';
+            this.ctx.font = this.current.fontSize +'px "' + fontName + '"';
         },
         moveText: function (x, y) {
             this.current.x = this.current.lineX += x;
