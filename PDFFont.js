@@ -20,10 +20,9 @@ var Type1Parser = function(aAsciiStream, aBinaryStream) {
 
   function decrypt(aStream, aKey, aDiscardNumber) {
     var r = aKey, c1 = 52845, c2 = 22719;
-
     var decryptedString = [];
-    var value = null;
 
+    var value = "";
     var count = aStream.length;
     for (var i = 0; i < count; i++) {
       value = aStream.getByte();
@@ -31,6 +30,108 @@ var Type1Parser = function(aAsciiStream, aBinaryStream) {
       r = ((value + r) * c1 + c2) & ((1 << 16) - 1);
     }
     return decryptedString.slice(aDiscardNumber);
+  }
+
+  /*
+   * CharStrings are encoded following the the CharString Encoding sequence
+   * describe in Chapter 6 of the "Adobe Type1 Font Format" specification.
+   * The value in a byte indicates a command, a number, or subsequent bytes
+   * that are to be interpreted in a special way.
+   *
+   * CharString Number Encoding:
+   *  A CharString byte containing the values from 32 through 255 inclusive
+   *  indicate an integer. These values are decoded in four ranges.
+   * 
+   * 1. A CharString byte containing a value, v, between 32 and 246 inclusive,
+   * indicate the integer v - 139. Thus, the integer values from -107 through
+   * 107 inclusive may be encoded in single byte.
+   *
+   * 2. A CharString byte containing a value, v, between 247 and 250 inclusive,
+   * indicates an integer involving the next byte, w, according to the formula:
+   * [(v - 247) x 256] + w + 108
+   *
+   * 3. A CharString byte containing a value, v, between 251 and 254 inclusive,
+   * indicates an integer involving the next byte, w, according to the formula:
+   * -[(v - 251) * 256] - w - 108
+   * 
+   * 4. A CharString containing the value 255 indicates that the next 4 bytes
+   * are a two complement signed integer. The first of these bytes contains the
+   * highest order bits, the second byte contains the next higher order bits
+   * and the fourth byte contain the lowest order bits.
+   *
+   *
+   * CharString Command Encoding:
+   *  CharStrings commands are encoded in 1 or 2 bytes.
+   *
+   *  Single byte commands are encoded in 1 byte that contains a value between
+   *  0 and 31 inclusive.
+   *  If a command byte contains the value 12, then the value in the next byte
+   *  indicates a command. This "escape" mechanism allows many extra commands
+   * to be encoded and this encoding technique helps to minimize the length of
+   * the charStrings.
+   */
+  function decodeCharString(aStream) {
+    var charString = [];
+    var cmd = {
+      "1": "hstem",
+      "3": "vstem",
+      "4": "vmoveto",
+      "5": "rlineto",
+      "6": "hlineto",
+      "7": "vlineto",
+      "8": "rrcurveto",
+      "9": "closepath",
+      "10": "callsubr",
+      "11": "return",
+      "12": {
+        "0": "dotsection",
+        "1": "vstem3",
+        "3": "hstem3",
+        "6": "seac",
+        "7": "sbw",
+        "12": "div",
+        "16": "callothersubr",
+        "17": "pop",
+        "33": "setcurrentpoint"
+      },
+      "13": "hsbw",
+      "14": "endchar",
+      "21": "rmoveto",
+      "22": "hmoveto",
+      "30": "vhcurveto",
+      "31": "hcurveto"
+    }
+
+    var value = "";
+    var count = aStream.length;
+    for (var i = 0; i < count; i++) {
+      value = aStream.getByte();
+      
+      if (value < 0) {
+        continue;
+      } else if (value < 32) {
+        if (value == 12) {
+          value = cmd["12"][aStream.getByte()];
+          count++;
+        } else {
+          value = cmd[value];
+        }
+      } else if (value <= 246) {
+        value = parseInt(value) - 139;
+      } else if (value <= 250) {
+        value = ((value - 247) * 256) + parseInt(aStream.getByte()) + 108;
+        count++;
+      } else if (value <= 254) {
+        value = -((value - 251) * 256) - parseInt(aStream.getByte()) - 108;
+        count++;
+      } else {
+        error("Two complement signed integers are ignored for the moment");
+      }
+
+      charString.push(value);
+    }
+  
+    return charString;    
   }
 
   /*
@@ -63,7 +164,7 @@ var Type1Parser = function(aAsciiStream, aBinaryStream) {
    };
 
    // Flag indicating if the topmost operand of the operandStack is an array
-   var operandIsArray = false;
+   var operandIsArray = 0;
 
   /*
    * The dictionary stack holds only dictionary objects. The current set of
@@ -113,23 +214,31 @@ var Type1Parser = function(aAsciiStream, aBinaryStream) {
    */
   var executionStack = [];
 
+
+  /*
+   * Parse a font file from the first segment to the last assuming the eexec
+   * block is binary data.
+   * 
+   * The method thrown an error if it encounters an unknown token.
+   */
   this.getObj = function() {
     var obj = lexer.getObj();
 
-    if (operandIsArray && !IsCmd(obj, "}") && !IsCmd(obj, "]")) {
+    if (operandIsArray && !IsCmd(obj, "{") && !IsCmd(obj, "[") && 
+                          !IsCmd(obj, "}") && !IsCmd(obj, "]")) {
       operandStack.peek().push(obj);
       this.getObj();
     } else if (IsCmd(obj, "{") || IsCmd(obj, "[")) {
       dump("Start Array: " + obj);
       operandStack.push([]);
-      operandIsArray = true;
+      operandIsArray++;
       this.getObj();
     } else if (IsCmd(obj, "}") || IsCmd(obj, "]")) {
       dump("End Array: " + obj);
-      operandIsArray = false;
+      operandIsArray--;
       this.getObj();
     } else if (IsBool(obj) || IsInt(obj) || IsNum(obj) || IsString(obj)) {
-      dump("Value: " + obj);
+      //dump("Value: " + obj);
       operandStack.push(obj);
       this.getObj();
     } else if (IsCmd(obj, "dup")) {
@@ -145,11 +254,11 @@ var Type1Parser = function(aAsciiStream, aBinaryStream) {
       operandStack.push(systemDict);
       this.getObj();
     } else if (IsCmd(obj, "readonly") || IsCmd(obj, "executeonly") ||
-               IsCmd(obj, "currentfile")) {
+               IsCmd(obj, "currentfile") || IsCmd(obj, "NP")) {
       // Do nothing for the moment
       this.getObj();
     } else if (IsName(obj)) {
-      dump("Name: " + obj.name);
+      //dump("Name: " + obj.name);
       operandStack.push(obj.name);
       this.getObj();
     } else if (IsCmd(obj, "dict")) {
@@ -191,20 +300,32 @@ var Type1Parser = function(aAsciiStream, aBinaryStream) {
       var size = operandStack.pop();
       var key = operandStack.pop();
 
-      var stream = lexer.stream.makeSubStream(lexer.stream.pos, size);
+      // Add '1' because of the space separator, this is dirty
+      var stream = lexer.stream.makeSubStream(lexer.stream.pos + 1, size);
+      lexer.stream.skip(size + 1);
+
       var charString = decrypt(stream, kCharStringsEncryptionKey, 4).join("");
+      var charStream = new StringStream(charString);
 
       // XXX do we want to store that on the top dictionary or somewhere else
-      dictionaryStack.peek().set(key, new StringStream(charString));
-      log (new StringStream(charString));
+      dictionaryStack.peek().set(key, charStream);
+
+      var decodedCharString = decodeCharString(charStream);
+      log(decodedCharString);
+
       this.getObj();
     } else if (IsCmd(obj, "LenIV")) {
       error("LenIV: argh! we need to modify the length of discard characters for charStrings");
-    } else {
-      dump("Getting an unknow token, adding it to the stack just in case");
-      dump(obj);
-      operandStack.push(obj);
+    } else if (IsCmd(obj, "closefile")) {
+      // End of binary data;
+    } else if (IsCmd(obj, "StandardEncoding")) {
+      // For some reason the value is considered as a command, maybe it is
+      // because of the uppercae 'S'
+      operandStack.push(obj.cmd);
       this.getObj();
+    } else {
+      dump(obj);
+      error("Unknow token while parsing font");
     }
 
     return operandStack.peek();
@@ -215,22 +336,11 @@ var hack = false;
 
 var Type1Font = function(aFontName, aFontFile) {
   // All Type1 font program should begin with the comment %!
-  var validHeader = aFontFile.getByte() == 0x25 && aFontFile.getByte() == 0x21;
-  if (!validHeader)
+  if (aFontFile.getByte() != 0x25 || aFontFile.getByte() != 0x21)
     error("Invalid file header");
-
-  var programType = "PS-AdobeFont";
-  for (var i = 0; i < programType.length; i++)
-    aFontFile.getChar();
-
-  // Ignore the '-' separator
-  aFontFile.getChar();
-
-  var version = parseFloat(aFontFile.getChar() + aFontFile.getChar() + aFontFile.getChar());
 
   if (!hack) {
     log(aFontName);
-    log("Version is: " + version);
 
     var ASCIIStream = aFontFile.makeSubStream(0, aFontFile.dict.get("Length1"), aFontFile.dict);
     var binaryStream = aFontFile.makeSubStream(aFontFile.dict.get("Length1"), aFontFile.dict.get("Length2"), aFontFile.dict);
