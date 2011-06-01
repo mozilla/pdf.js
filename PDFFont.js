@@ -155,7 +155,17 @@ var Type1Parser = function(aAsciiStream, aBinaryStream) {
     },
 
     peek: function() {
+      if (!this.length)
+        return null;
       return this.__innerStack__[this.__innerStack__.length - 1];
+    },
+
+    toString: function() {
+      log("=== Start Dumping operandStack ===");
+      var str = [];
+      for (var i = 0; i < this.__innerStack__.length; i++)
+        log(this.__innerStack__[i]);
+      log("=== End Dumping operandStack ===");
     },
 
     get length() {
@@ -194,7 +204,13 @@ var Type1Parser = function(aAsciiStream, aBinaryStream) {
     },
 
     peek: function() {
+      if (!this.length)
+        return null;
       return this.__innerStack__[this.__innerStack__.length - 1];
+    },
+
+    get: function(aIndex) {
+      return this.__innerStack__[aIndex];
     },
 
     get length() {
@@ -212,7 +228,42 @@ var Type1Parser = function(aAsciiStream, aBinaryStream) {
    * object off the execution stack and resumes executing the suspended object
    * beneath it.
    */
-  var executionStack = [];
+  var executionStack = {
+    __innerStack__: [],
+
+    push: function(aProcedure) {
+      this.__innerStack__.push(aProcedure);
+    },
+
+    pop: function() {
+      return this.__innerStack__.pop();
+    },
+
+    peek: function() {
+      if (!this.length)
+        return null;
+      return this.__innerStack__[this.__innerStack__.length - 1];
+    },
+
+    get: function(aIndex) {
+      return this.__innerStack__[aIndex];
+    },
+
+    get length() {
+      return this.__innerStack__.length;
+    }
+  }
+
+  function nextInStack() {
+    var currentProcedure = executionStack.peek();
+    if (currentProcedure) {
+      var command = currentProcedure.shift();
+      if (!currentProcedure.length)
+        executionStack.pop();
+    }
+
+    return lexer.getObj();
+  }
 
 
   /*
@@ -222,28 +273,64 @@ var Type1Parser = function(aAsciiStream, aBinaryStream) {
    * The method thrown an error if it encounters an unknown token.
    */
   this.getObj = function() {
-    var obj = lexer.getObj();
+    var obj = nextInStack();
 
     if (operandIsArray && !IsCmd(obj, "{") && !IsCmd(obj, "[") && 
                           !IsCmd(obj, "}") && !IsCmd(obj, "]")) {
+      dump("Adding: " + obj);
       operandStack.peek().push(obj);
       this.getObj();
     } else if (IsCmd(obj, "{") || IsCmd(obj, "[")) {
-      dump("Start Array: " + obj);
-      operandStack.push([]);
+      dump("Start" + (obj.cmd == "{" ? " Executable " : " ") + "Array");
+      operandIsArray ? operandStack.peek().push([]) : operandStack.push([]);
       operandIsArray++;
       this.getObj();
     } else if (IsCmd(obj, "}") || IsCmd(obj, "]")) {
-      dump("End Array: " + obj);
+      dump("End" + (obj.cmd == "}" ? " Executable " : " ") + "Array");
       operandIsArray--;
       this.getObj();
+    } else if (IsCmd(obj, "if")) {
+      log("if");
+      var procedure = operandStack.pop();
+      var bool = operandStack.pop();
+      if (!IsBool(bool)) {
+        executionStack.push(bool);
+        log(".....");
+        this.getObj();
+      }
+      log(bool);
+      if (bool)
+        executionStack.push(procedure);
+  
+      this.getObj();
+    } else if (IsCmd(obj, "ifelse")) {
+      log("ifelse");
+      var procedure1 = operandStack.pop();
+      var procedure2 = operandStack.pop();
+      var bool = !!operandStack.pop();
+      operandStack.push(bool ? procedure1 : procedure2);
+      this.getObj();
     } else if (IsBool(obj) || IsInt(obj) || IsNum(obj) || IsString(obj)) {
-      //dump("Value: " + obj);
+      dump("Value: " + obj);
       operandStack.push(obj);
       this.getObj();
     } else if (IsCmd(obj, "dup")) {
       dump("Duplicate");
       operandStack.push(operandStack.peek());
+      this.getObj();
+    } else if (IsCmd(obj, "put") || IsCmd(obj, "NP")) {
+      operandStack.toString();
+
+      var data = operandStack.pop();
+      var indexOrKey = operandStack.pop();
+      var object = operandStack.pop();
+      log(object);
+      log("put " + data + " in " + obj + "[" + indexOrKey + "]");
+
+      if (object.set)
+        object.set(indexOrKey, data);
+      else
+        object[indexOrKey] = data;
       this.getObj();
     } else if (IsCmd(obj, "currentdict")) {
       dump("currentdict");
@@ -254,12 +341,17 @@ var Type1Parser = function(aAsciiStream, aBinaryStream) {
       operandStack.push(systemDict);
       this.getObj();
     } else if (IsCmd(obj, "readonly") || IsCmd(obj, "executeonly") ||
-               IsCmd(obj, "currentfile") || IsCmd(obj, "NP")) {
+               IsCmd(obj, "noaccess") || IsCmd(obj, "currentfile")) {
       // Do nothing for the moment
       this.getObj();
     } else if (IsName(obj)) {
       //dump("Name: " + obj.name);
       operandStack.push(obj.name);
+      this.getObj();
+    } else if (IsCmd(obj, "array")) {
+      var size = operandStack.pop();
+      var array = new Array(size);
+      operandStack.push(array);
       this.getObj();
     } else if (IsCmd(obj, "dict")) {
       dump("Dict: " + obj);
@@ -275,10 +367,10 @@ var Type1Parser = function(aAsciiStream, aBinaryStream) {
       dump("Ending a dictionary");
       dictionaryStack.pop();
       this.getObj();
-    } else if (IsCmd(obj, "def")) {
+    } else if (IsCmd(obj, "def") || IsCmd(obj, "ND")) {
       var value = operandStack.pop();
       var key = operandStack.pop();
-      dump("def: " + key + " = " + value);
+      log("def: " + key + " = " + value);
       dictionaryStack.peek().set(key, value);
       this.getObj();
     } else if (IsCmd(obj, "eexec")) {
@@ -292,8 +384,7 @@ var Type1Parser = function(aAsciiStream, aBinaryStream) {
       dump("known");
       var name = operandStack.pop();
       var dict = operandStack.pop();
-      // returns dict.hasKey(name);
-
+      operandStack.push(!!dict.get(name));
       this.getObj();
     } else if (IsCmd(obj, "RD")) {
       dump("RD");
@@ -311,21 +402,50 @@ var Type1Parser = function(aAsciiStream, aBinaryStream) {
       dictionaryStack.peek().set(key, charStream);
 
       var decodedCharString = decodeCharString(charStream);
-      log(decodedCharString);
+      dump(decodedCharString);
 
       this.getObj();
     } else if (IsCmd(obj, "LenIV")) {
       error("LenIV: argh! we need to modify the length of discard characters for charStrings");
     } else if (IsCmd(obj, "closefile")) {
       // End of binary data;
+    } else if (IsCmd(obj, "index")) {
+      var operands = [];
+      var size = operandStack.pop();
+      for (var i = 0; i < size; i++)
+        operands.push(operandStack.pop());
+
+      var newOperand = operandStack.peek();
+
+      for (var i = 0; i < operands.length; i++)
+        operandStack.push(operands.pop());
+
+      operandStack.push(newOperand);
+      this.getObj();
     } else if (IsCmd(obj, "StandardEncoding")) {
       // For some reason the value is considered as a command, maybe it is
       // because of the uppercae 'S'
       operandStack.push(obj.cmd);
       this.getObj();
     } else {
-      dump(obj);
-      error("Unknow token while parsing font");
+      var command = null;
+      if (IsCmd(obj)) {
+        for (var i = 0; i < dictionaryStack.length; i++) {
+          command = dictionaryStack.get(i).get(obj.cmd);
+          if (command)
+            break;
+        }
+      }
+
+      if (command) {
+        // XXX add the command to the execution stack
+        this.getObj();
+      } else {
+        log("operandStack: " + operandStack);
+        log("dictionaryStack: " + dictionaryStack);
+        dump(obj);
+        error("Unknow token while parsing font");
+      }
     }
 
     return operandStack.peek();
