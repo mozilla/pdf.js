@@ -2024,6 +2024,8 @@ var IDENTITY_MATRIX = [ 1, 0, 0, 1, 0, 0 ];
 // However, PDF needs a bit more state, which we store here.
 var CanvasExtraState = (function() {
     function constructor() {
+        // Are soft masks and alpha values shapes or opacities?
+        this.alphaIsShape = false;
         this.fontSize = 0.0;
         this.textMatrix = IDENTITY_MATRIX;
         // Current point (in user coordinates)
@@ -2358,12 +2360,7 @@ var CanvasGraphics = (function() {
             var type = xobj.dict.get("Subtype");
             assertWellFormed(IsName(type), "XObject should have a Name subtype");
             if ("Image" == type.name) {
-                var magic = "";
-                for (var i = 0; i < 8; ++i)
-                    magic += xobj.bytes[i].toString(16) +" ";
-                console.log("Image magic bytes: "+ magic);
-
-                TODO("Image XObjects");
+                this.paintImageXObject(xobj);
             } else if ("Form" == type.name) {
                 this.paintFormXObject(xobj);
             } else if ("PS" == type.name) {
@@ -2389,6 +2386,40 @@ var CanvasGraphics = (function() {
 
             this.interpret(new Parser(new Lexer(form), false),
                            this.xref, form.dict.get("Resources"));
+
+            this.restore();
+        },
+
+        paintImageXObject: function(image) {
+            this.save();
+
+            // TODO cache rendered images?
+            var w = image.dict.get("Width");
+            var h = image.dict.get("Height");
+            var tmpCanvas = document.createElement("canvas");
+            tmpCanvas.height = w;
+            tmpCanvas.width = h;
+            var tmpCtx = tmpCanvas.getContext("2d");
+            var imgData = tmpCtx.getImageData(0, 0, w, h);
+            var pixels = imgData.data;
+
+            var alpha = 25;
+            if (image.dict.has("SMask"))
+                // Specifies either a shape or opacity mask to be
+                // applied to the image samples
+                TODO("SMask");
+
+            for (var i = 0; i < 4 * w * h; ++i) {
+                // TODO blend if SMask is a mask image
+                if (3 === i % 4) {
+                    pixels[i] = alpha;
+                } else {
+                    pixels[i] = image.getChar();
+                }
+            }
+            tmpCtx.putImageData(imgData, 0, 0);
+
+            this.ctx.drawImage(tmpCanvas, 0, 0);
 
             this.restore();
         },
