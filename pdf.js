@@ -2129,6 +2129,7 @@ var CanvasGraphics = (function() {
             this.xref = xref;
             this.res = resources || new Dict();
             this.xobjs = this.res.get("XObject") || new Dict();
+            this.xobjs = this.xref.fetchIfRef(this.xobjs);
 
             var args = [];
             var map = this.map;
@@ -2252,7 +2253,11 @@ var CanvasGraphics = (function() {
         endText: function() {
         },
         setFont: function(fontRef, size) {
-            var font = this.res.get("Font").get(fontRef.name);
+            var fontRes = this.res.get("Font");
+            if (!fontRes)
+                return;
+            fontRes = this.xref.fetchIfRef(fontRes);
+            var font = fontRes.get(fontRef.name);
             if (!font)
                 return;
             this.current.fontSize = size;
@@ -2353,6 +2358,11 @@ var CanvasGraphics = (function() {
             var type = xobj.dict.get("Subtype");
             assertWellFormed(IsName(type), "XObject should have a Name subtype");
             if ("Image" == type.name) {
+                var magic = "";
+                for (var i = 0; i < 8; ++i)
+                    magic += xobj.bytes[i].toString(16) +" ";
+                console.log("Image magic bytes: "+ magic);
+
                 TODO("Image XObjects");
             } else if ("Form" == type.name) {
                 this.paintFormXObject(xobj);
