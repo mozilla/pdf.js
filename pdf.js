@@ -51,20 +51,23 @@ var Stream = (function() {
         this.bytes = new Uint8Array(arrayBuffer);
         this.start = start || 0;
         this.pos = this.start;
-        this.length = (start + length) || arrayBuffer.byteLength;
+        this.end = (start + length) || arrayBuffer.byteLength;
         this.dict = dict;
     }
 
     constructor.prototype = {
+        get length() {
+            return this.end - this.start;
+        },
         getByte: function() {
             var bytes = this.bytes;
-            if (this.pos >= this.length)
+            if (this.pos >= this.end)
                 return -1;
             return bytes[this.pos++];
         },
         lookChar: function() {
             var bytes = this.bytes;
-            if (this.pos >= this.length)
+            if (this.pos >= this.end)
                 return;
             return String.fromCharCode(bytes[this.pos]);
         },
@@ -1913,11 +1916,11 @@ var PDFDoc = (function() {
     }
 
     function find(stream, needle, limit, backwards) {
-        var length = stream.length;
         var pos = stream.pos;
+        var end = stream.end;
         var str = "";
-        if (pos + limit > length)
-            limit = length - pos;
+        if (pos + limit > end)
+            limit = end - pos;
         for (var n = 0; n < limit; ++n)
             str += stream.getChar();
         stream.pos = pos;
@@ -1951,7 +1954,7 @@ var PDFDoc = (function() {
                     startXRef = stream.pos + 6;
             } else {
                 // Find startxref at the end of the file.
-                var start = stream.length - 1024;
+                var start = stream.end - 1024;
                 if (start < 0)
                     start = 0;
                 stream.pos = start;
