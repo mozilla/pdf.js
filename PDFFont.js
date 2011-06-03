@@ -16,6 +16,24 @@ var Type1Parser = function(aAsciiStream, aBinaryStream) {
   };
 
   /*
+   * Parse a whole Type1 font stream (from the first segment to the last)
+   * assuming the 'eexec' block is binary data and fill up the 'Fonts'
+   * dictionary with the font informations.
+   */
+  var self = this;
+  this.parse = function() {
+    if (!debug) {
+      while (!processNextToken()) {};
+    } else {
+      // debug mode is used to debug postcript processing
+      setTimeout(function() {
+        if (!processNextToken())
+          self.parse();
+      }, 0);
+    }
+  }
+
+  /*
    * Decrypt a Sequence of Ciphertext Bytes to Produce the Original Sequence
    * of Plaintext Bytes. The function took a key as a parameter which can be
    * for decrypting the eexec block of for decoding charStrings.
@@ -24,6 +42,7 @@ var Type1Parser = function(aAsciiStream, aBinaryStream) {
   var kCharStringsEncryptionKey = 4330;
 
   function decrypt(aStream, aKey, aDiscardNumber) {
+    var start = Date.now();
     var r = aKey, c1 = 52845, c2 = 22719;
     var decryptedString = [];
 
@@ -34,6 +53,8 @@ var Type1Parser = function(aAsciiStream, aBinaryStream) {
       decryptedString[i] = String.fromCharCode(value ^ (r >> 8));
       r = ((value + r) * c1 + c2) & ((1 << 16) - 1);
     }
+    var end = Date.now();
+    dump("Time to decrypt string of length " + count + " is " + (end - start));
     return decryptedString.slice(aDiscardNumber);
   }
 
@@ -75,37 +96,39 @@ var Type1Parser = function(aAsciiStream, aBinaryStream) {
    * to be encoded and this encoding technique helps to minimize the length of
    * the charStrings.
    */
+  var charStringDictionary = {
+    "1": "hstem",
+    "3": "vstem",
+    "4": "vmoveto",
+    "5": "rlineto",
+    "6": "hlineto",
+    "7": "vlineto",
+    "8": "rrcurveto",
+    "9": "closepath",
+    "10": "callsubr",
+    "11": "return",
+    "12": {
+      "0": "dotsection",
+      "1": "vstem3",
+      "3": "hstem3",
+      "6": "seac",
+      "7": "sbw",
+      "12": "div",
+      "16": "callothersubr",
+      "17": "pop",
+      "33": "setcurrentpoint"
+    },
+    "13": "hsbw",
+    "14": "endchar",
+    "21": "rmoveto",
+    "22": "hmoveto",
+    "30": "vhcurveto",
+    "31": "hcurveto"
+  };
+
   function decodeCharString(aStream) {
+    var start = Date.now();
     var charString = [];
-    var cmd = {
-      "1": "hstem",
-      "3": "vstem",
-      "4": "vmoveto",
-      "5": "rlineto",
-      "6": "hlineto",
-      "7": "vlineto",
-      "8": "rrcurveto",
-      "9": "closepath",
-      "10": "callsubr",
-      "11": "return",
-      "12": {
-        "0": "dotsection",
-        "1": "vstem3",
-        "3": "hstem3",
-        "6": "seac",
-        "7": "sbw",
-        "12": "div",
-        "16": "callothersubr",
-        "17": "pop",
-        "33": "setcurrentpoint"
-      },
-      "13": "hsbw",
-      "14": "endchar",
-      "21": "rmoveto",
-      "22": "hmoveto",
-      "30": "vhcurveto",
-      "31": "hcurveto"
-    }
 
     var value = "";
     var count = aStream.length;
@@ -116,10 +139,10 @@ var Type1Parser = function(aAsciiStream, aBinaryStream) {
         continue;
       } else if (value < 32) {
         if (value == 12) {
-          value = cmd["12"][aStream.getByte()];
+          value = charStringDictionary["12"][aStream.getByte()];
           count++;
         } else {
-          value = cmd[value];
+          value = charStringDictionary[value];
         }
       } else if (value <= 246) {
         value = parseInt(value) - 139;
@@ -136,6 +159,8 @@ var Type1Parser = function(aAsciiStream, aBinaryStream) {
       charString.push(value);
     }
 
+    var end = Date.now();
+    dump("Time to decode charString of length " + count + " is " + (end - start));
     return charString;
   }
 
@@ -259,6 +284,9 @@ var Type1Parser = function(aAsciiStream, aBinaryStream) {
     }
   };
 
+  /*
+   * Return the next token in the execution stack
+   */
   function nextInStack() {
     var currentProcedure = executionStack.peek();
     if (currentProcedure) {
@@ -271,20 +299,15 @@ var Type1Parser = function(aAsciiStream, aBinaryStream) {
     return lexer.getObj();
   };
 
-  var self = this;
-  function parseNext() {
-    setTimeout(function() {
-      self.getObj();
-    }, 0);
-  };
 
   /*
-   * Parse a font file from the first segment to the last assuming the eexec
-   * block is binary data.
+   * Get the next token from the executionStack and process it.
+   * Actually the function does not process the third segment of a Type1 font
+   * and end on 'closefile'.
    *
    * The method thrown an error if it encounters an unknown token.
    */
-  this.getObj = function() {
+  function processNextToken() {
     var obj = nextInStack();
     if (operandIsArray && !IsCmd(obj, "{") && !IsCmd(obj, "[") &&
                           !IsCmd(obj, "]") && !IsCmd(obj, "}")) {
@@ -294,15 +317,12 @@ var Type1Parser = function(aAsciiStream, aBinaryStream) {
         currentArray = currentArray[currentArray.length - 1];
 
       currentArray.push(obj);
-      return parseNext();
     } else if (IsBool(obj) || IsInt(obj) || IsNum(obj) || IsString(obj)) {
       dump("Value: " + obj);
       operandStack.push(obj);
-      return parseNext();
     } else if (IsName(obj)) {
       dump("Name: " + obj.name);
       operandStack.push(obj.name);
-      return parseNext();
     } else if (IsCmd(obj)) {
       var command = obj.cmd;
       dump(command);
@@ -475,7 +495,7 @@ var Type1Parser = function(aAsciiStream, aBinaryStream) {
 
         case "closefile":
           var file = operandStack.pop();
-          return;
+          return true;
           break;
 
         case "index":
@@ -543,48 +563,36 @@ var Type1Parser = function(aAsciiStream, aBinaryStream) {
           }
           break;
       }
-
-      return parseNext();
     } else if (obj){
       dump("unknow: " + obj);
       operandStack.push(obj);
-      return parseNext();
     }
+
+    return false;
   }
 };
 
-var hack = false;
+
+var hack = true;
 
 var Type1Font = function(aFontName, aFontFile) {
   // All Type1 font program should begin with the comment %!
   if (aFontFile.getByte() != 0x25 || aFontFile.getByte() != 0x21)
     error("Invalid file header");
 
-  if (!hack) {
-    log(aFontName);
+  if (hack) {
+    var start = Date.now();
 
     var ASCIIStream = aFontFile.makeSubStream(0, aFontFile.dict.get("Length1"), aFontFile.dict);
     var binaryStream = aFontFile.makeSubStream(aFontFile.dict.get("Length1"), aFontFile.dict.get("Length2"), aFontFile.dict);
 
     this.parser = new Type1Parser(ASCIIStream, binaryStream);
+    this.parser.parse();
 
-    this.parser.getObj();
-    hack = true;
+    var end = Date.now();
+    dump("Time to parse font is:" + (end - start));
+    
+    hack = false;
   }
-
-
-  this.info = {};
-  this.name = aFontName;
-  this.encoding = [];
-  this.paintType = 0;
-  this.fontType = 0;
-  this.fontMatrix = [];
-  this.fontBBox = [];
-  this.uniqueID = 0;
-  this.metrics = {};
-  this.strokeWidth = 0.0;
-  this.private = {};
-  this.charStrings = {}
-  this.FID = 0;
 };
 

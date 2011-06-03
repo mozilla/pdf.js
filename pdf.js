@@ -1002,6 +1002,9 @@ var Name = (function() {
     }
 
     constructor.prototype = {
+      toString: function() {
+        return this.name;
+      }
     };
 
     return constructor;
@@ -1013,6 +1016,9 @@ var Cmd = (function() {
     }
 
     constructor.prototype = {
+      toString: function() {
+        return this.cmd;
+      }
     };
 
     return constructor;
