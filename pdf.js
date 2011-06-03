@@ -2291,6 +2291,10 @@ var CanvasGraphics = (function() {
                 TODO("support Type3 font");
                 break;
 
+              case "TrueType":
+                TODO("implement TrueType support");
+                break;
+
               default:
                 error("Unsupported font type: " + subtype);
                 break;

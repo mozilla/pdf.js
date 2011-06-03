@@ -153,7 +153,11 @@ var Type1Parser = function(aAsciiStream, aBinaryStream) {
         value = -((value - 251) * 256) - parseInt(aStream.getByte()) - 108;
         count++;
       } else {
-        error("Two complement signed integers are ignored for the moment");
+        var byte = aStream.getByte();
+        var high = (byte >> 1);
+        value = (byte - high) * 16777216 + aStream.getByte() * 65536 +
+                aStream.getByte() * 256 *  + aStream.getByte();
+        count += 4;
       }
 
       charString.push(value);
@@ -372,6 +376,17 @@ var Type1Parser = function(aAsciiStream, aBinaryStream) {
           executionStack.push(bool ? procedure2 : procedure1);
           break;
 
+        case "for":
+          var procedure = operandStack.pop();
+          var limit = operandStack.pop();
+          var increment = operandStack.pop();
+          var initial = operandStack.pop();
+          for (var i = 0; i < limit; i += increment) {
+            operandStack.push(i);
+            executionStack.push(procedure.slice());
+          }
+          break;
+
         case "dup":
           dump("duplicate: " + operandStack.peek());
           operandStack.push(operandStack.peek());
@@ -459,6 +474,12 @@ var Type1Parser = function(aAsciiStream, aBinaryStream) {
         case "def":
           var value = operandStack.pop();
           var key = operandStack.pop();
+
+          if (key == "FontName" && Fonts.get(value)) {
+            // The font has already be decoded, stop!
+            return true;
+          }
+
           dump("def: " + key + " = " + value);
           dictionaryStack.peek().set(key, value);
           break;
@@ -573,26 +594,20 @@ var Type1Parser = function(aAsciiStream, aBinaryStream) {
 };
 
 
-var hack = true;
-
 var Type1Font = function(aFontName, aFontFile) {
   // All Type1 font program should begin with the comment %!
   if (aFontFile.getByte() != 0x25 || aFontFile.getByte() != 0x21)
     error("Invalid file header");
 
-  if (hack) {
-    var start = Date.now();
+  var start = Date.now();
 
-    var ASCIIStream = aFontFile.makeSubStream(0, aFontFile.dict.get("Length1"), aFontFile.dict);
-    var binaryStream = aFontFile.makeSubStream(aFontFile.dict.get("Length1"), aFontFile.dict.get("Length2"), aFontFile.dict);
+  var ASCIIStream = aFontFile.makeSubStream(0, aFontFile.dict.get("Length1"), aFontFile.dict);
+  var binaryStream = aFontFile.makeSubStream(aFontFile.dict.get("Length1"), aFontFile.dict.get("Length2"), aFontFile.dict);
 
-    this.parser = new Type1Parser(ASCIIStream, binaryStream);
-    this.parser.parse();
+  this.parser = new Type1Parser(ASCIIStream, binaryStream);
+  this.parser.parse();
 
-    var end = Date.now();
-    dump("Time to parse font is:" + (end - start));
-    
-    hack = false;
-  }
+  var end = Date.now();
+  dump("Time to parse font is:" + (end - start));
 };
 
