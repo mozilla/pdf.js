@@ -1,11 +1,14 @@
 
-var Font = new Dict();
+/*
+ * This dictionary hold the decoded fonts
+ */
+var Fonts = new Dict();
 
 var Type1Parser = function(aAsciiStream, aBinaryStream) {
   var lexer = new Lexer(aAsciiStream);
 
   // Turn on this flag for additional debugging logs
-  var debug = true;
+  var debug = false;
 
   var dump = function(aData) {
     if (debug)
@@ -350,7 +353,7 @@ var Type1Parser = function(aAsciiStream, aBinaryStream) {
           break;
 
         case "dup":
-          //log("duplicate: " + operandStack.peek());
+          dump("duplicate: " + operandStack.peek());
           operandStack.push(operandStack.peek());
           break;
 
@@ -389,10 +392,6 @@ var Type1Parser = function(aAsciiStream, aBinaryStream) {
         case "get":
           var indexOrKey = operandStack.pop();
           var object = operandStack.pop();
-          log("==============");
-          operandStack.toString();
-          log(dictionaryStack.__innerStack__);
-          log(object + "::" + indexOrKey);
           var data = object.get ? object.get(indexOrKey) : object[indexOrKey];
           dump("get " + obj + "[" + indexOrKey + "]: " + data);
           operandStack.push(data);
@@ -448,7 +447,7 @@ var Type1Parser = function(aAsciiStream, aBinaryStream) {
           var font = operandStack.pop();
           var key = operandStack.pop();
           dump("definefont " + font + " with key: " + key);
-          Font.set(key, font);
+          Fonts.set(key, font);
           break;
 
         case "known":
@@ -547,7 +546,7 @@ var Type1Parser = function(aAsciiStream, aBinaryStream) {
 
       return parseNext();
     } else if (obj){
-      log (obj);
+      dump("unknow: " + obj);
       operandStack.push(obj);
       return parseNext();
     }
