@@ -1,9 +1,11 @@
 
+var Font = new Dict();
+
 var Type1Parser = function(aAsciiStream, aBinaryStream) {
   var lexer = new Lexer(aAsciiStream);
 
   // Turn on this flag for additional debugging logs
-  var debug = false;
+  var debug = true;
 
   var dump = function(aData) {
     if (debug)
@@ -106,7 +108,7 @@ var Type1Parser = function(aAsciiStream, aBinaryStream) {
     var count = aStream.length;
     for (var i = 0; i < count; i++) {
       value = aStream.getByte();
-      
+
       if (value < 0) {
         continue;
       } else if (value < 32) {
@@ -130,8 +132,8 @@ var Type1Parser = function(aAsciiStream, aBinaryStream) {
 
       charString.push(value);
     }
-  
-    return charString;    
+
+    return charString;
   }
 
   /*
@@ -190,7 +192,7 @@ var Type1Parser = function(aAsciiStream, aBinaryStream) {
       userDict   = new Dict();
 
   var dictionaryStack = {
-    __innerStack__: [systemDict, globalDict],
+    __innerStack__: [systemDict, globalDict, userDict],
 
     push: function(aDictionary) {
       this.__innerStack__.push(aDictionary);
@@ -216,7 +218,7 @@ var Type1Parser = function(aAsciiStream, aBinaryStream) {
     get length() {
       return this.__innerStack__.length;
     }
-  }
+  };
 
   /*
    * The execution stack holds executable objects (mainly procedures and files)
@@ -252,7 +254,7 @@ var Type1Parser = function(aAsciiStream, aBinaryStream) {
     get length() {
       return this.__innerStack__.length;
     }
-  }
+  };
 
   function nextInStack() {
     var currentProcedure = executionStack.peek();
@@ -260,195 +262,295 @@ var Type1Parser = function(aAsciiStream, aBinaryStream) {
       var command = currentProcedure.shift();
       if (!currentProcedure.length)
         executionStack.pop();
+      return command;
     }
 
     return lexer.getObj();
-  }
+  };
 
+  var self = this;
+  function parseNext() {
+    setTimeout(function() {
+      self.getObj();
+    }, 0);
+  };
 
   /*
    * Parse a font file from the first segment to the last assuming the eexec
    * block is binary data.
-   * 
+   *
    * The method thrown an error if it encounters an unknown token.
    */
   this.getObj = function() {
     var obj = nextInStack();
+    if (operandIsArray && !IsCmd(obj, "{") && !IsCmd(obj, "[") &&
+                          !IsCmd(obj, "]") && !IsCmd(obj, "}")) {
+      dump("Adding an object: " + obj +" to array " + operandIsArray);
+      var currentArray = operandStack.peek();
+      for (var i = 1; i < operandIsArray; i++)
+        currentArray = currentArray[currentArray.length - 1];
 
-    if (operandIsArray && !IsCmd(obj, "{") && !IsCmd(obj, "[") && 
-                          !IsCmd(obj, "}") && !IsCmd(obj, "]")) {
-      dump("Adding: " + obj);
-      operandStack.peek().push(obj);
-      this.getObj();
-    } else if (IsCmd(obj, "{") || IsCmd(obj, "[")) {
-      dump("Start" + (obj.cmd == "{" ? " Executable " : " ") + "Array");
-      operandIsArray ? operandStack.peek().push([]) : operandStack.push([]);
-      operandIsArray++;
-      this.getObj();
-    } else if (IsCmd(obj, "}") || IsCmd(obj, "]")) {
-      dump("End" + (obj.cmd == "}" ? " Executable " : " ") + "Array");
-      operandIsArray--;
-      this.getObj();
-    } else if (IsCmd(obj, "if")) {
-      log("if");
-      var procedure = operandStack.pop();
-      var bool = operandStack.pop();
-      if (!IsBool(bool)) {
-        executionStack.push(bool);
-        log(".....");
-        this.getObj();
-      }
-      log(bool);
-      if (bool)
-        executionStack.push(procedure);
-  
-      this.getObj();
-    } else if (IsCmd(obj, "ifelse")) {
-      log("ifelse");
-      var procedure1 = operandStack.pop();
-      var procedure2 = operandStack.pop();
-      var bool = !!operandStack.pop();
-      operandStack.push(bool ? procedure1 : procedure2);
-      this.getObj();
+      currentArray.push(obj);
+      return parseNext();
     } else if (IsBool(obj) || IsInt(obj) || IsNum(obj) || IsString(obj)) {
       dump("Value: " + obj);
       operandStack.push(obj);
-      this.getObj();
-    } else if (IsCmd(obj, "dup")) {
-      dump("Duplicate");
-      operandStack.push(operandStack.peek());
-      this.getObj();
-    } else if (IsCmd(obj, "put") || IsCmd(obj, "NP")) {
-      operandStack.toString();
-
-      var data = operandStack.pop();
-      var indexOrKey = operandStack.pop();
-      var object = operandStack.pop();
-      log(object);
-      log("put " + data + " in " + obj + "[" + indexOrKey + "]");
-
-      if (object.set)
-        object.set(indexOrKey, data);
-      else
-        object[indexOrKey] = data;
-      this.getObj();
-    } else if (IsCmd(obj, "currentdict")) {
-      dump("currentdict");
-      operandStack.push(dictionaryStack.peek());
-      this.getObj();
-    } else if (IsCmd(obj, "systemdict")) {
-      dump("systemdict");
-      operandStack.push(systemDict);
-      this.getObj();
-    } else if (IsCmd(obj, "readonly") || IsCmd(obj, "executeonly") ||
-               IsCmd(obj, "noaccess") || IsCmd(obj, "currentfile")) {
-      // Do nothing for the moment
-      this.getObj();
+      return parseNext();
     } else if (IsName(obj)) {
-      //dump("Name: " + obj.name);
+      dump("Name: " + obj.name);
       operandStack.push(obj.name);
-      this.getObj();
-    } else if (IsCmd(obj, "array")) {
-      var size = operandStack.pop();
-      var array = new Array(size);
-      operandStack.push(array);
-      this.getObj();
-    } else if (IsCmd(obj, "dict")) {
-      dump("Dict: " + obj);
-      var size = operandStack.pop();
-      var dict = new Dict(size);
-      operandStack.push(dict);
-      this.getObj();
-    } else if (IsCmd(obj, "begin")) {
-      dump("begin a dictionary");
-      dictionaryStack.push(operandStack.pop());
-      this.getObj();
-    } else if (IsCmd(obj, "end")) {
-      dump("Ending a dictionary");
-      dictionaryStack.pop();
-      this.getObj();
-    } else if (IsCmd(obj, "def") || IsCmd(obj, "ND")) {
-      var value = operandStack.pop();
-      var key = operandStack.pop();
-      log("def: " + key + " = " + value);
-      dictionaryStack.peek().set(key, value);
-      this.getObj();
-    } else if (IsCmd(obj, "eexec")) {
-      // All the first segment data has been read, decrypt the second segment
-      // and start interpreting it in order to decode it
-      var eexecString = decrypt(aBinaryStream, kEexecEncryptionKey, 4).join("");
-      lexer = new Lexer(new StringStream(eexecString));
+      return parseNext();
+    } else if (IsCmd(obj)) {
+      var command = obj.cmd;
+      dump(command);
 
-      this.getObj();
-    } else if (IsCmd(obj, "known")) {
-      dump("known");
-      var name = operandStack.pop();
-      var dict = operandStack.pop();
-      operandStack.push(!!dict.get(name));
-      this.getObj();
-    } else if (IsCmd(obj, "RD")) {
-      dump("RD");
-      var size = operandStack.pop();
-      var key = operandStack.pop();
+      switch (command) {
+        case "[":
+        case "{":
+          dump("Start" + (command == "{" ? " Executable " : " ") + "Array");
+          operandIsArray++;
+          var currentArray = operandStack;
+          for (var i = 1; i < operandIsArray; i++)
+            if (currentArray.peek)
+              currentArray = currentArray.peek();
+            else
+              currentArray = currentArray[currentArray.length - 1];
+          currentArray.push([]);
+          break;
 
-      // Add '1' because of the space separator, this is dirty
-      var stream = lexer.stream.makeSubStream(lexer.stream.pos + 1, size);
-      lexer.stream.skip(size + 1);
+        case "]":
+        case "}":
+          var currentArray = operandStack.peek();
+          for (var i = 1; i < operandIsArray; i++)
+            currentArray = currentArray[currentArray.length - 1];
+          dump("End" + (command == "}" ? " Executable " : " ") + "Array: " + currentArray.join(" "));
+          operandIsArray--;
+          break;
 
-      var charString = decrypt(stream, kCharStringsEncryptionKey, 4).join("");
-      var charStream = new StringStream(charString);
+        case "if":
+          var procedure = operandStack.pop();
+          var bool = operandStack.pop();
+          if (!IsBool(bool)) {
+            dump("if: " + bool);
+            // we need to execute things, let be dirty
+            executionStack.push(bool);
+          } else {
+            dump("if ( " + bool + " ) { " + procedure + " }");
+            if (bool)
+              executionStack.push(procedure);
+          }
+          break;
 
-      // XXX do we want to store that on the top dictionary or somewhere else
-      dictionaryStack.peek().set(key, charStream);
+        case "ifelse":
+          var procedure1 = operandStack.pop();
+          var procedure2 = operandStack.pop();
+          var bool = !!operandStack.pop();
+          dump("if ( " + bool + " ) { " + procedure2 + " } else { " + procedure1 + " }");
+          executionStack.push(bool ? procedure2 : procedure1);
+          break;
 
-      var decodedCharString = decodeCharString(charStream);
-      dump(decodedCharString);
+        case "dup":
+          //log("duplicate: " + operandStack.peek());
+          operandStack.push(operandStack.peek());
+          break;
 
-      this.getObj();
-    } else if (IsCmd(obj, "LenIV")) {
-      error("LenIV: argh! we need to modify the length of discard characters for charStrings");
-    } else if (IsCmd(obj, "closefile")) {
-      // End of binary data;
-    } else if (IsCmd(obj, "index")) {
-      var operands = [];
-      var size = operandStack.pop();
-      for (var i = 0; i < size; i++)
-        operands.push(operandStack.pop());
+        case "mark":
+          operandStack.push("mark");
+          break;
 
-      var newOperand = operandStack.peek();
+        case "cleartomark":
+          var command = "";
+          do {
+            command = operandStack.pop();
+          } while (command != "mark");
+          break;
 
-      for (var i = 0; i < operands.length; i++)
-        operandStack.push(operands.pop());
+        case "put":
+          var data = operandStack.pop();
+          var indexOrKey = operandStack.pop();
+          var object = operandStack.pop();
+          //dump("put " + data + " in " + object + "[" + indexOrKey + "]");
+          object.set ? object.set(indexOrKey, data)
+                     : object[indexOrKey] = data;
 
-      operandStack.push(newOperand);
-      this.getObj();
-    } else if (IsCmd(obj, "StandardEncoding")) {
-      // For some reason the value is considered as a command, maybe it is
-      // because of the uppercae 'S'
-      operandStack.push(obj.cmd);
-      this.getObj();
-    } else {
-      var command = null;
-      if (IsCmd(obj)) {
-        for (var i = 0; i < dictionaryStack.length; i++) {
-          command = dictionaryStack.get(i).get(obj.cmd);
-          if (command)
-            break;
-        }
+          break;
+
+        case "pop":
+          operandStack.pop();
+          break;
+
+        case "exch":
+          var operand1 = operandStack.pop();
+          var operand2 = operandStack.pop();
+          operandStack.push(operand1);
+          operandStack.push(operand2);
+          break;
+
+        case "get":
+          var indexOrKey = operandStack.pop();
+          var object = operandStack.pop();
+          log("==============");
+          operandStack.toString();
+          log(dictionaryStack.__innerStack__);
+          log(object + "::" + indexOrKey);
+          var data = object.get ? object.get(indexOrKey) : object[indexOrKey];
+          dump("get " + obj + "[" + indexOrKey + "]: " + data);
+          operandStack.push(data);
+          break;
+
+        case "currentdict":
+          var dict = dictionaryStack.peek();
+          operandStack.push(dict);
+          break;
+
+        case "systemdict":
+          operandStack.push(systemDict);
+          break;
+
+        case "readonly":
+        case "executeonly":
+        case "noaccess":
+          // Do nothing for the moment
+          break;
+
+        case "currentfile":
+          operandStack.push("currentfile");
+          break;
+
+        case "array":
+          var size = operandStack.pop();
+          var array = new Array(size);
+          operandStack.push(array);
+          break;
+
+        case "dict":
+          var size = operandStack.pop();
+          var dict = new Dict(size);
+          operandStack.push(dict);
+          break;
+
+        case "begin":
+          dictionaryStack.push(operandStack.pop());
+          break;
+
+        case "end":
+          dictionaryStack.pop();
+          break;
+
+        case "def":
+          var value = operandStack.pop();
+          var key = operandStack.pop();
+          dump("def: " + key + " = " + value);
+          dictionaryStack.peek().set(key, value);
+          break;
+
+        case "definefont":
+          var font = operandStack.pop();
+          var key = operandStack.pop();
+          dump("definefont " + font + " with key: " + key);
+          Font.set(key, font);
+          break;
+
+        case "known":
+          var name = operandStack.pop();
+          var dict = operandStack.pop();
+          var data = !!dict.get(name);
+          dump("known: " + data + " :: " + name + " in dict: " + dict);
+          operandStack.push(data);
+          break;
+
+        case "exec":
+          executionStack.push(operandStack.pop());
+          break;
+
+        case "eexec":
+          // All the first segment data has been read, decrypt the second segment
+          // and start interpreting it in order to decode it
+          var eexecString = decrypt(aBinaryStream, kEexecEncryptionKey, 4).join("");
+          lexer = new Lexer(new StringStream(eexecString));
+          break;
+
+        case "LenIV":
+          error("LenIV: argh! we need to modify the length of discard characters for charStrings");
+          break;
+
+        case "closefile":
+          var file = operandStack.pop();
+          return;
+          break;
+
+        case "index":
+          var operands = [];
+          var size = operandStack.pop();
+          for (var i = 0; i < size; i++)
+            operands.push(operandStack.pop());
+
+          var newOperand = operandStack.peek();
+
+          for (var i = 0; i < operands.length; i++)
+            operandStack.push(operands.pop());
+
+          operandStack.push(newOperand);
+          break;
+
+        case "string":
+          var size = operandStack.pop();
+          var str = (new Array(size + 1)).join(" ");
+          operandStack.push(str);
+          break;
+
+        case "readstring":
+          var str = operandStack.pop();
+          var size = str.length;
+
+          var file = operandStack.pop();
+
+          // Add '1' because of the space separator, this is dirty
+          var stream = lexer.stream.makeSubStream(lexer.stream.pos + 1, size);
+          lexer.stream.skip(size + 1);
+
+          var charString = decrypt(stream, kCharStringsEncryptionKey, 4).join("");
+          var charStream = new StringStream(charString);
+          var decodedCharString = decodeCharString(charStream);
+          dump("decodedCharString: " + decodedCharString);
+          operandStack.push(decodedCharString);
+          // boolean indicating if the operation is a success or not
+          operandStack.push(true);
+          break;
+
+        case "StandardEncoding":
+          // For some reason the value is considered as a command, maybe it is
+          // because of the uppercase 'S'
+          operandStack.push(obj.cmd);
+          break;
+
+        default:
+          var command = null;
+          if (IsCmd(obj)) {
+            for (var i = 0; i < dictionaryStack.length; i++) {
+              if (command = dictionaryStack.get(i).get(obj.cmd)) {
+                dump("found in dictionnary for " + obj.cmd + " command: " + command);
+                executionStack.push(command.slice());
+                break;
+              }
+            }
+          }
+
+          if (!command) {
+            log("operandStack: " + operandStack);
+            log("dictionaryStack: " + dictionaryStack);
+            log(obj);
+            error("Unknow command while parsing font");
+          }
+          break;
       }
 
-      if (command) {
-        // XXX add the command to the execution stack
-        this.getObj();
-      } else {
-        log("operandStack: " + operandStack);
-        log("dictionaryStack: " + dictionaryStack);
-        dump(obj);
-        error("Unknow token while parsing font");
-      }
+      return parseNext();
+    } else if (obj){
+      log (obj);
+      operandStack.push(obj);
+      return parseNext();
     }
-
-    return operandStack.peek();
   }
 };
 
@@ -467,8 +569,7 @@ var Type1Font = function(aFontName, aFontFile) {
 
     this.parser = new Type1Parser(ASCIIStream, binaryStream);
 
-    var fontDictionary = this.parser.getObj();
-    log(fontDictionary + "\t" + "fontInfo: " + fontDictionary.get("FontInfo"));
+    this.parser.getObj();
     hack = true;
   }
 
