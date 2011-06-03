@@ -1402,9 +1402,10 @@ var Lexer = (function() {
 })();
 
 var Parser = (function() {
-    function constructor(lexer, allowStreams) {
+    function constructor(lexer, allowStreams, xref) {
         this.lexer = lexer;
         this.allowStreams = allowStreams;
+        this.xref = xref;
         this.inlineImg = 0;
         this.refill();
     }
@@ -1513,8 +1514,11 @@ var Parser = (function() {
             var pos = stream.pos;
             
             // get length
-            var length;
-            if (!IsInt(length = dict.get("Length"))) {
+            var length = dict.get("Length");
+            var xref = this.xref;
+            if (xref)
+                length = xref.fetchIfRef(length);
+            if (!IsInt(length)) {
                 error("Bad 'Length' attribute in stream");
                 lenght = 0;
             }
@@ -1783,7 +1787,7 @@ var XRef = (function() {
                 if (e.gen != gen)
                     throw("inconsistent generation in XRef");
                 var stream = this.stream.makeSubStream(e.offset);
-                var parser = new Parser(new Lexer(stream), true);
+                var parser = new Parser(new Lexer(stream), true, this);
                 var obj1 = parser.getObj();
                 var obj2 = parser.getObj();
                 var obj3 = parser.getObj();
