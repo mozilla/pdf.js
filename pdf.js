@@ -124,38 +124,13 @@ var FlateStream = (function() {
         0x00102, 0x00102, 0x00102
     ]);
 
-    const distDecode = [
-        [0,      1],
-        [0,      2],
-        [0,      3],
-        [0,      4],
-        [1,      5],
-        [1,      7],
-        [2,      9],
-        [2,     13],
-        [3,     17],
-        [3,     25],
-        [4,     33],
-        [4,     49],
-        [5,     65],
-        [5,     97],
-        [6,    129],
-        [6,    193],
-        [7,    257],
-        [7,    385],
-        [8,    513],
-        [8,    769],
-        [9,   1025],
-        [9,   1537],
-        [10,  2049],
-        [10,  3073],
-        [11,  4097],
-        [11,  6145],
-        [12,  8193],
-        [12, 12289],
-        [13, 16385],
-        [13, 24577]
-    ];
+    const distDecode = new Uint32Array([
+        0x00001, 0x00002, 0x00003, 0x00004, 0x10005, 0x10007, 0x20009,
+        0x2000d, 0x30011, 0x30019, 0x40021, 0x40031, 0x50041, 0x50061,
+        0x60081, 0x600c1, 0x70101, 0x70181, 0x80201, 0x80301, 0x90401,
+        0x90601, 0xa0801, 0xa0c01, 0xb1001, 0xb1801, 0xc2001, 0xc3001,
+        0xd4001, 0xd6001
+    ]);
 
     const fixedLitCodeTab = [[
         [7, 0x0100],
@@ -944,10 +919,11 @@ var FlateStream = (function() {
                         code2 = this.getBits(code2);
                     var len = (code1 & 0xffff) + code2;
                     code1 = this.getCode(distCodeTable);
-                    code2 = distDecode[code1][0];
+                    code1 = distDecode[code1];
+                    code2 = code1 >> 16;
                     if (code2 > 0)
                         code2 = this.getBits(code2);
-                    var dist = distDecode[code1][1] + code2;
+                    var dist = (code1 & 0xffff) + code2;
                     var buffer = this.ensureBuffer(pos + len);
                     for (var k = 0; k < len; ++k, ++pos)
                         buffer[pos] = buffer[pos - dist];
