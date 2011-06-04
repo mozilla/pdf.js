@@ -735,6 +735,7 @@ var FlateStream = (function() {
 
     function constructor(stream) {
         this.stream = stream;
+        this.dict = stream.dict;
         this.eof = true;
         var cmf = stream.getByte();
         var flg = stream.getByte();
