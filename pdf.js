@@ -116,39 +116,13 @@ var FlateStream = (function() {
         16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15
     ]);
 
-    const lengthDecode = [
-        [0,   3],
-        [0,   4],
-        [0,   5],
-        [0,   6],
-        [0,   7],
-        [0,   8],
-        [0,   9],
-        [0,  10],
-        [1,  11],
-        [1,  13],
-        [1,  15],
-        [1,  17],
-        [2,  19],
-        [2,  23],
-        [2,  27],
-        [2,  31],
-        [3,  35],
-        [3,  43],
-        [3,  51],
-        [3,  59],
-        [4,  67],
-        [4,  83],
-        [4,  99],
-        [4, 115],
-        [5, 131],
-        [5, 163],
-        [5, 195],
-        [5, 227],
-        [0, 258],
-        [0, 258],
-        [0, 258]
-    ];
+    const lengthDecode = new Uint32Array([
+        0x00003, 0x00004, 0x00005, 0x00006, 0x00007, 0x00008, 0x00009,
+        0x0000a, 0x1000b, 0x1000d, 0x1000f, 0x10011, 0x20013, 0x20017,
+        0x2001b, 0x2001f, 0x30023, 0x3002b, 0x30033, 0x3003b, 0x40043,
+        0x40053, 0x40063, 0x40073, 0x50083, 0x500a3, 0x500c3, 0x500e3,
+        0x00102, 0x00102, 0x00102
+    ]);
 
     const distDecode = [
         [0,      1],
@@ -964,10 +938,11 @@ var FlateStream = (function() {
                     buffer[pos++] = code1;
                 } else {
                     code1 -= 257;
-                    var code2 = lengthDecode[code1][0];
+                    code1 = lengthDecode[code1];
+                    var code2 = code1 >> 16;
                     if (code2 > 0)
                         code2 = this.getBits(code2);
-                    var len = lengthDecode[code1][1] + code2;
+                    var len = (code1 & 0xffff) + code2;
                     code1 = this.getCode(distCodeTable);
                     code2 = distDecode[code1][0];
                     if (code2 > 0)
