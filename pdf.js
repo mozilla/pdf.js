@@ -2229,8 +2229,9 @@ var CanvasGraphics = (function() {
             this.consumePath();
         },
         eoFill: function() {
-            TODO("even-odd fill");
+            var savedFillRule = this.setEOFillRule();
             this.fill();
+            this.restoreFillRule(savedFillRule);
         },
         fillStroke: function() {
             this.ctx.fill();
@@ -2434,10 +2435,15 @@ var CanvasGraphics = (function() {
 
         consumePath: function() {
             if (this.pendingClip) {
+                var savedFillRule = null;
                 if (this.pendingClip == EO_CLIP)
-                    TODO("even-odd clipping");
+                    savedFillRule = this.setEOFillRule();
+
                 this.ctx.clip();
+
                 this.pendingClip = null;
+                if (savedFillRule !== null)
+                    this.restoreFillRule(savedFillRule);
             }
             this.ctx.beginPath();
         },
@@ -2445,6 +2451,17 @@ var CanvasGraphics = (function() {
             var ri = (255 * r) | 0, gi = (255 * g) | 0, bi = (255 * b) | 0;
             return "rgb("+ ri +","+ gi +","+ bi +")";
         },
+        // We generally keep the canvas context set for
+        // nonzero-winding, and just set evenodd for the operations
+        // that need them.
+        setEOFillRule: function() {
+            var savedFillRule = this.ctx.mozFillRule;
+            this.ctx.mozFillRule = "evenodd";
+            return savedFillRule;
+        },
+        restoreFillRule: function(rule) {
+            this.ctx.mozFillRule = rule;
+        }
     };
 
     return constructor;
