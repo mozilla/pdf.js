@@ -1888,8 +1888,21 @@ var CanvasGraphics = (function() {
             this.save();
 
             // TODO cache rendered images?
-            var w = image.dict.get("Width");
-            var h = image.dict.get("Height");
+
+            var dict = image.dict;
+            var w = dict.get("Width") || dict.get("W");
+            var h = dict.get("Height") || dict.get("H");
+
+            if (w < 1 || h < 1)
+                error("Invalid image width or height");
+
+            var interpolate = dict.get("Interpolate") || dict.get("I");
+            if (!IsBool(interpolate))
+                interpolate = false;
+            var imageMask = dict.get("ImageMask") || dict.get("IM");
+            if (!IsBool(imageMask))
+                imageMask = false;
+
             var tmpCanvas = document.createElement("canvas");
             tmpCanvas.width = w;
             tmpCanvas.height = h;
