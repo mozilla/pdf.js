@@ -1262,12 +1262,9 @@ var XRef = (function() {
         fetch: function(ref) {
             var num = ref.num;
             var e = this.cache[num];
-            if (e) {
-                // The stream might be in use elsewhere, so clone it.
-                if (IsStream(e))
-                    e = e.makeSubStream(e.start, e.length, e.dict);
+            if (e)
                 return e;
-            }
+
             e = this.getEntry(num);
             var gen = ref.gen;
             if (e.uncompressed) {
@@ -1292,7 +1289,11 @@ var XRef = (function() {
                     }
                     error("bad XRef entry");
                 }
-                return this.cache[num] = parser.getObj();
+                e = parser.getObj();
+                // Don't cache streams since they are mutable.
+                if (!IsStream(e))
+                    this.cache[num] = e;
+                return e;
             }
             error("compressed entry");
         },
