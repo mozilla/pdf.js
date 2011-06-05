@@ -1904,6 +1904,21 @@ var CanvasGraphics = (function() {
             if (!IsBool(imageMask))
                 imageMask = false;
 
+            // JPX/JPEG2000 streams directly contain bits per component
+            // and color space mode information.
+            var bitsPerComponent = image.bitsPerComponent;
+            var csMode = image.csMode;
+
+            if (!bitsPerComponent) {
+                bitsPerComponent = dict.get("BitsPerComponent") || dict.get("BPC");
+                if (!bitsPerComponent) {
+                    if (imageMask)
+                        bitsPerComponent = 1;
+                    else
+                        error("Bits per component missing in image");
+                }
+            }
+
             var tmpCanvas = document.createElement("canvas");
             tmpCanvas.width = w;
             tmpCanvas.height = h;
