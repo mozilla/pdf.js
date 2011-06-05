@@ -1151,7 +1151,7 @@ var XRef = (function() {
             error("Invalid root reference");
 
         // prepare the XRef cache
-        this.cache = Object.create(null);
+        this.cache = [];
     }
 
     constructor.prototype = {
