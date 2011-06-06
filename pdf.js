@@ -1926,17 +1926,39 @@ var CanvasGraphics = (function() {
             var pixels = imgData.data;
 
             var alpha = 25;
-            if (image.dict.has("SMask"))
+            if (image.dict.has("SMask")) {
+                var smask = image.dict.get("SMask");
+                smask = this.xref.fetchIfRef(smask);
                 // Specifies either a shape or opacity mask to be
                 // applied to the image samples
                 TODO("SMask");
+            }
 
-            for (var i = 0; i < 4 * w * h; ++i) {
-                // TODO blend if SMask is a mask image
-                if (3 === i % 4) {
-                    pixels[i] = alpha;
-                } else {
-                    pixels[i] = image.getChar();
+            if (smask) {
+                var smaskDict = smask.dict;
+                if (!smaskDict)
+                    error("No dictionary for smask");
+                var smaskBitsPerComponent = smaskDict.get("BitsPerComponent") || smaskDict.get("BPC");
+                if (!smaskBitsPerComponent)
+                    error("Bad BPC for smask");
+                var max = (1 << bitsPerComponent) - 1;
+
+                var matte = smaskDict.get("Matte");
+                if (matte) {
+                    TODO(matte);
+                }
+
+                for (var i = 0; i < 4 * w * h; ++i) {
+                    pixels[i] = image.getChar() * smask.getChar() / max;
+                }
+            } else {
+                for (var i = 0; i < 4 * w * h; ++i) {
+                    // TODO blend if SMask is a mask image
+                    if (3 === i % 4) {
+                        pixels[i] = alpha;
+                    } else {
+                        pixels[i] = image.getChar();
+                    }
                 }
             }
             tmpCtx.putImageData(imgData, 0, 0);
