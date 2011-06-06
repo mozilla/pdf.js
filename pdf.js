@@ -220,7 +220,6 @@ var FlateStream = (function() {
     function constructor(stream) {
         this.stream = stream;
         this.dict = stream.dict;
-        this.eof = true;
         var cmf = stream.getByte();
         var flg = stream.getByte();
         if (cmf == -1 || flg == -1)
@@ -235,6 +234,8 @@ var FlateStream = (function() {
         this.codeSize = 0;
         this.codeBuf = 0;
         this.pos = 0;
+        this.bufferPos = 0;
+        this.bufferLength = 0;
     }
 
     constructor.prototype = {
@@ -296,7 +297,6 @@ var FlateStream = (function() {
                 if (this.eof)
                     return;
                 this.readBlock();
-                bufferPos = this.bufferPos;
             }
             return String.fromCharCode(this.buffer[bufferPos]);
         },
@@ -376,10 +376,10 @@ var FlateStream = (function() {
                 check |= (b << 8);
                 if (check != (~this.blockLen & 0xffff))
                     error("Bad uncompressed block length in flate stream");
-                var buffer = this.ensureBuffer(blockLen);
-                this.bufferLength = blockLen;
-                this.bufferPos = 0;
-                for (var n = 0; n < blockLen; ++n) {
+                var bufferLength = this.bufferLength;
+                var buffer = this.ensureBuffer(bufferLength + blockLen);
+                this.bufferLength = bufferLength + blockLen;
+                for (var n = bufferLength; n < blockLen; ++n) {
                     if ((b = stream.getByte()) == -1) {
                         this.eof = true;
                         break;
@@ -435,12 +435,13 @@ var FlateStream = (function() {
                 error("Unknown block type in flate stream");
             }
 
-            var pos = 0;
+            var pos = this.bufferLength;
             while (true) {
                 var code1 = this.getCode(litCodeTable);
                 if (code1 == 256) {
                     this.bufferLength = pos;
-                    this.bufferPos = 0;
+                    //logBuffer(this.buffer, 0, pos);
+                    //log(pos);
                     return;
                 }
                 if (code1 < 256) {
