@@ -440,8 +440,6 @@ var FlateStream = (function() {
                 var code1 = this.getCode(litCodeTable);
                 if (code1 == 256) {
                     this.bufferLength = pos;
-                    //logBuffer(this.buffer, 0, pos);
-                    //log(pos);
                     return;
                 }
                 if (code1 < 256) {
