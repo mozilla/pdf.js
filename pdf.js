@@ -510,6 +510,9 @@ var Dict = (function() {
         get: function(key) {
             return this.map[key];
         },
+        get2: function(key1, key2) {
+            return this.get(key1) || this.get(key2);
+        },
         has: function(key) {
             return key in this.map;
         },
@@ -1027,8 +1030,8 @@ var Parser = (function() {
             return this.filter(stream, dict);
         },
         filter: function(stream, dict) {
-            var filter = dict.get("Filter") || dict.get("F");
-            var params = dict.get("DecodeParms") || dict.get("DP");
+            var filter = dict.get2("Filter", "F");
+            var params = dict.get2("DecodeParms", "DP");
             if (IsName(filter))
                 return this.makeFilter(stream, filter.name, params);
             if (IsArray(filter)) {
@@ -1890,16 +1893,16 @@ var CanvasGraphics = (function() {
             // TODO cache rendered images?
 
             var dict = image.dict;
-            var w = dict.get("Width") || dict.get("W");
-            var h = dict.get("Height") || dict.get("H");
+            var w = dict.get2("Width", "W");
+            var h = dict.get2("Height", "H");
 
             if (w < 1 || h < 1)
                 error("Invalid image width or height");
 
-            var interpolate = dict.get("Interpolate") || dict.get("I");
+            var interpolate = dict.get2("Interpolate", "I");
             if (!IsBool(interpolate))
                 interpolate = false;
-            var imageMask = dict.get("ImageMask") || dict.get("IM");
+            var imageMask = dict.get2("ImageMask", "IM");
             if (!IsBool(imageMask))
                 imageMask = false;
 
@@ -1909,7 +1912,7 @@ var CanvasGraphics = (function() {
             var csMode = image.csMode;
 
             if (!bitsPerComponent) {
-                bitsPerComponent = dict.get("BitsPerComponent") || dict.get("BPC");
+                bitsPerComponent = dict.get("BitsPerComponent", "BPC");
                 if (!bitsPerComponent) {
                     if (imageMask)
                         bitsPerComponent = 1;
@@ -1938,7 +1941,7 @@ var CanvasGraphics = (function() {
                 var smaskDict = smask.dict;
                 if (!smaskDict)
                     error("No dictionary for smask");
-                var smaskBitsPerComponent = smaskDict.get("BitsPerComponent") || smaskDict.get("BPC");
+                var smaskBitsPerComponent = smaskDict.get2("BitsPerComponent", "BPC");
                 if (!smaskBitsPerComponent)
                     error("Bad BPC for smask");
                 var max = (1 << bitsPerComponent) - 1;
