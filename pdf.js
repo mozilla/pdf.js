@@ -2292,7 +2292,14 @@ var CanvasGraphics = (function() {
                 break;
 
               case "TrueType":
-                TODO("implement TrueType support");
+                var fontDescriptor = font.get("FontDescriptor");
+                if (fontDescriptor.num) {
+                  var fontDescriptor = this.xref.fetchIfRef(fontDescriptor);
+                  var fontFile = this.xref.fetchIfRef(fontDescriptor.get("FontFile2"));
+                  fontName = fontDescriptor.get("FontName").name;
+                  fontName = fontName.replace("+", ""); // no + are allowed in the font name
+                  font = new TrueTypeFont(fontName, fontFile);
+                }
                 break;
 
               default:

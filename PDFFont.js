@@ -4,6 +4,32 @@
  */
 var Fonts = new Dict();
 
+
+var Base64Encoder = {
+  encode: function(aData) {
+    var str = [];
+    var count = aData.length;
+    for (var i = 0; i < count; i++)
+      str.push(aData.getChar());
+
+    return window.btoa(str.join(""));
+  }
+};
+
+
+var TrueTypeFont = function(aFontName, aFontFile) {
+  if (Fonts.get(aFontName))
+    return;
+
+  //log("Loading a TrueType font: " + aFontName);
+  var fontData = Base64Encoder.encode(aFontFile);
+  Fonts.set(aFontName, fontData);
+
+  // Add the css rule
+  var url = "url(data:font/ttf;base64," + fontData + ");";
+  document.styleSheets[0].insertRule("@font-face { font-family: '" + aFontName + "'; src: " + url + " }", 0);
+};
+
 var Type1Parser = function(aAsciiStream, aBinaryStream) {
   var lexer = new Lexer(aAsciiStream);
 
@@ -608,6 +634,6 @@ var Type1Font = function(aFontName, aFontFile) {
   this.parser.parse();
 
   var end = Date.now();
-  dump("Time to parse font is:" + (end - start));
+  //log("Time to parse font is:" + (end - start));
 };
 
