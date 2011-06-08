@@ -664,7 +664,7 @@ var Type1Font = function(aFontName, aFontFile) {
 
 /**************************************************************************/
 
-function decodeType2DictData(aString, aDictionary, aHack) {
+function decodeType2DictData(aString, aDictionary, aHack, aUseRealNumber) {
   var data = [];
 
   var value = "";
@@ -672,8 +672,6 @@ function decodeType2DictData(aString, aDictionary, aHack) {
   for (var i = 0; i < count; i) {
     value = aString[i++];
     if (value <= 0) {
-      data.push(value);
-      continue;
     } else if (value == 28) {
       value = aString[i++] << 8 | aString[i++];
     } else if (value == 29) {
@@ -681,22 +679,72 @@ function decodeType2DictData(aString, aDictionary, aHack) {
               aString[i++] << 16 |
               aString[i++] << 8  |
               aString[i++];
+    } else if (aUseRealNumber && value == 30) {
+      value = "";
+      var done = false;
+      while (!done) {
+        var byte = aString[i++];
+        var nibbles = [parseInt(byte / 16), parseInt(byte % 16)];
+        for (var j = 0; j < nibbles.length; j++) {
+          var nibble = nibbles[j];
+          dump(nibble + "\n");
+          switch (nibble) {
+            case 0x0:
+            case 0x1:
+            case 0x2:
+            case 0x3:
+            case 0x4:
+            case 0x5:
+            case 0x6:
+            case 0x7:
+            case 0x8:
+            case 0x9:
+              value += nibble;
+              break;
+            case 0xA:
+              value += ".";
+              break;
+            case 0xB:
+              value += "E";
+              break;
+            case 0xC:
+              value += "E-";
+              break;
+            case 0xD:
+              break;
+            case 0xE:
+            value += "-";
+              break;
+            case 0xF:
+              done = true;
+              break;
+            default:
+              error(nibble + " is unssuported");
+              break;
+          }
+        }
+      };
+      value = parseFloat(value);
     } else if (value < 32) {
-      var oldValue = value;
       if (value == 12) {
         value = aDictionary["12"][aString[i++]];
-      } else {
+      } else if (aDictionary[value]) {
         value = aDictionary[value];
+      } else {
+        error(value + " is an invalid command number");
       }
-      if (!value)
-        throw new Error("This command number does not match anything : " + oldValue);
       value = aHack ? value.name : value;
     } else if (value <= 246) {
       value = parseInt(value) - 139;
     } else if (value <= 250) {
-      value = ((value - 247) * 256) + parseInt(aString[i++]) + 108;
+      value = ((value - 247) * 256) + aString[i++] + 108;
     } else if (value <= 254) {
-      value = -((value - 251) * 256) - parseInt(aString[i++]) - 108;
+      value = -((value - 251) * 256) - aString[i++] - 108;
+    } else if (value == 255) {
+      var byte = aString[i++];
+      var high = (byte >> 1);
+      value = (byte - high) << 24 | aString[i++] << 16 |
+               aString[i++] << 8 | aString[i];
     } else {
       throw new Error("Value should not be 255");
     }
@@ -780,8 +828,8 @@ var Type2Parser = function(aFilePath) {
             break;
           case "number number":
             font.set(token.name, {
-              size: stack.pop(),
-              offset: stack.pop()
+              offset: stack.pop(),
+              size: stack.pop()
             });
             break;
           case "boolean":
@@ -859,16 +907,19 @@ var Type2Parser = function(aFilePath) {
     for (var i = 0; i < count; i++)
       parseAsToken(topDict[i], CFFDictOps);
 
+    var topDictOffset = aStream.pos;
+
     for (var p in font.map)
       dump(p + "::" + font.get(p));
 
-    // Read the Subr Index
+    // Read the Global Subr Index that comes just after the Strings Index
+    // (cf. "The Compact Font Format Specification" Chapter 16)
     dump("Reading Subr Index");
     var subrs = readIndex(aStream);
 
     // Read CharStrings Index
-    dump("Read CharStrings Index");
     var charStringsOffset = font.get("CharStrings");
+    dump("Read CharStrings Index (offset: " + charStringsOffset + ")");
     aStream.pos = charStringsOffset;
     var charStrings = readIndex(aStream, true);
 
@@ -885,8 +936,16 @@ var Type2Parser = function(aFilePath) {
       var charset = readCharset(aStream, charStrings);
     }
 
-    // Read Encoding data
-    log("Reading encoding data");
+    // Reading Private Dict
+    var private = font.get("Private");
+    log("Reading Private Dict (offset: " + private.offset + " size: " + private.size + ")");
+    aStream.pos = private.offset;
+
+    var privateDict = [];
+    for (var i = 0; i < private.size; i++)
+      privateDict.push(aStream.getByte());
+    log(privateDict);
+    log(decodeType2DictData(privateDict, CFFDictPrivate, true, true));
   }
 };
 

@@ -697,3 +697,79 @@ var CFFDictCommands = {
   }
 };
 
+var CFFDictPrivate = {
+  "6": {
+    name: "BluesValues",
+    operand: "delta"
+  },
+  "7": {
+    name: "OtherBlues",
+    operand: "delta"
+  },
+  "8": {
+    name: "FamilyBlues",
+    operand: "delta"
+  },
+  "9": {
+    name: "FamilyOtherBlues",
+    operand: "delta"
+  },
+  "10": {
+    name: "StdHW",
+    operand: null
+  },
+  "11": {
+    name: "StdVW",
+    operand: null
+  },
+  "12": {
+    "9": {
+      name: "BlueScale",
+      operand: 0.039625
+    },
+    "10": {
+      name: "BlueShift",
+      operand: 7
+    },
+    "11": {
+      name: "BlueFuzz",
+      operand: 1
+    },
+    "12": {
+      name: "StemSnapH",
+      operand: "delta"
+    },
+    "13": {
+      name: "StemSnapV",
+      operand: "delta"
+    },
+    "14": {
+      name: "ForceBold",
+      operand: "boolean"
+    },
+    "17": {
+      name: "LanguageGroup",
+      operand: 0
+    },
+    "18": {
+      name: "ExpansionFactor",
+      operand: 0.06
+    },
+    "19": {
+      name: "initialRandomSeed",
+      operand: 0
+    }
+  },
+  "19": {
+    name: "Subrs",
+    operand: null
+  },
+  "20": {
+    name: "defaultWidthX",
+    operand: 0
+  },
+  "21": {
+    name: "nominalWidthX",
+    operand: 0
+  }
+};
