@@ -65,6 +65,17 @@ var Stream = (function() {
                 return -1;
             return bytes[this.pos++];
         },
+        getBytes: function(length) {
+            var bytes = this.bytes;
+            var pos = this.pos;
+            var end = this.end;
+            if (pos + length > end)
+                length = end - pos;
+            
+            var n = 0;
+            var buf = new Uint8Array(bytes, pos, length);
+            return buf;
+        },
         lookChar: function() {
             var bytes = this.bytes;
             if (this.pos >= this.end)
@@ -233,7 +244,7 @@ var FlateStream = (function() {
         this.eof = false;
         this.codeSize = 0;
         this.codeBuf = 0;
-        this.pos = 0;
+        
         this.bufferPos = 0;
         this.bufferLength = 0;
     }
@@ -290,6 +301,27 @@ var FlateStream = (function() {
                 buffer2[i] = buffer[i];
             return this.buffer = buffer2;
         },
+        getByte: function() {
+            var bufferLength = this.bufferLength;
+            var bufferPos = this.bufferPos;
+            if (bufferLength == bufferPos) {
+                if (this.eof)
+                    return;
+                this.readBlock();
+            }
+            return this.buffer[this.bufferPos++];
+        },
+        getBytes: function(length) {
+            var bufferPos = this.bufferPos;
+
+            while (!this.eof && this.bufferLength < bufferPos + length)
+                this.readBlock();
+
+            if (length > bufferLength - bufferPos)
+                length = bufferLength - bufferPos;
+
+            return new Uint8Array(this.buffer, bufferPos, length);
+        },
         lookChar: function() {
             var bufferLength = this.bufferLength;
             var bufferPos = this.bufferPos;
@@ -304,7 +336,6 @@ var FlateStream = (function() {
             var ch = this.lookChar();
             if (!ch)
                 return;
-            this.pos++;
             this.bufferPos++;
             return ch;
         },
