@@ -5,6 +5,7 @@ var ERRORS = 0, WARNINGS = 1, TODOS = 5;
 var verbosity = WARNINGS;
 
 function log(msg) {
+    msg = msg.toString ? msg.toString() : msg;
     if (console && console.log)
         console.log(msg);
     else if (print)
@@ -78,7 +79,7 @@ var Stream = (function() {
             return ch;
         },
         skip: function(n) {
-            if (!n)
+            if (!n && !IsNum(n))
                 n = 1;
             this.pos += n;
         },
@@ -2279,6 +2280,7 @@ var CanvasGraphics = (function() {
             var subtype = font.get("Subtype").name;
             switch (subtype) {
               case "Type1":
+                break;
                 var fontDescriptor = font.get("FontDescriptor");
                 if (fontDescriptor.num) {
                   var fontDescriptor = this.xref.fetchIfRef(fontDescriptor);
@@ -2292,6 +2294,7 @@ var CanvasGraphics = (function() {
                 break;
 
               case "TrueType":
+                break;
                 var fontDescriptor = font.get("FontDescriptor");
                 if (fontDescriptor.num) {
                   var fontDescriptor = this.xref.fetchIfRef(fontDescriptor);

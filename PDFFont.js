@@ -17,6 +17,8 @@ var Base64Encoder = {
 };
 
 
+
+
 var TrueTypeFont = function(aFontName, aFontFile) {
   if (Fonts.get(aFontName))
     return;
@@ -29,6 +31,7 @@ var TrueTypeFont = function(aFontName, aFontFile) {
   var url = "url(data:font/ttf;base64," + fontData + ");";
   document.styleSheets[0].insertRule("@font-face { font-family: '" + aFontName + "'; src: " + url + " }", 0);
 };
+
 
 var Type1Parser = function(aAsciiStream, aBinaryStream) {
   var lexer = new Lexer(aAsciiStream);
@@ -211,6 +214,8 @@ var Type1Parser = function(aAsciiStream, aBinaryStream) {
     },
 
     pop: function() {
+      if (!this.length)
+        throw new Error("stackunderflow");
       return this.__innerStack__.pop();
     },
 
@@ -220,10 +225,10 @@ var Type1Parser = function(aAsciiStream, aBinaryStream) {
       return this.__innerStack__[this.__innerStack__.length - 1];
     },
 
-    toString: function() {
+    dump: function() {
       log("=== Start Dumping operandStack ===");
       var str = [];
-      for (var i = 0; i < this.__innerStack__.length; i++)
+      for (var i = 0; i < this.length; i++)
         log(this.__innerStack__[i]);
       log("=== End Dumping operandStack ===");
     },
@@ -257,7 +262,7 @@ var Type1Parser = function(aAsciiStream, aBinaryStream) {
     },
 
     pop: function() {
-      if (this.__innerStack__.length == 2)
+      if (this.__innerStack__.length == 3)
         return null;
 
       return this.__innerStack__.pop();
@@ -275,7 +280,15 @@ var Type1Parser = function(aAsciiStream, aBinaryStream) {
 
     get length() {
       return this.__innerStack__.length;
-    }
+    },
+
+    dump: function() {
+      log("=== Start Dumping dictionaryStack ===");
+      var str = [];
+      for (var i = 0; i < this.length; i++)
+        log(this.__innerStack__[i]);
+      log("=== End Dumping dictionaryStack ===");
+    },
   };
 
   /*
@@ -433,10 +446,9 @@ var Type1Parser = function(aAsciiStream, aBinaryStream) {
           var data = operandStack.pop();
           var indexOrKey = operandStack.pop();
           var object = operandStack.pop();
-          //dump("put " + data + " in " + object + "[" + indexOrKey + "]");
+          dump("put " + data + " in " + object + "[" + indexOrKey + "]");
           object.set ? object.set(indexOrKey, data)
                      : object[indexOrKey] = data;
-
           break;
 
         case "pop":
@@ -454,7 +466,7 @@ var Type1Parser = function(aAsciiStream, aBinaryStream) {
           var indexOrKey = operandStack.pop();
           var object = operandStack.pop();
           var data = object.get ? object.get(indexOrKey) : object[indexOrKey];
-          dump("get " + obj + "[" + indexOrKey + "]: " + data);
+          dump("get " + object + "[" + indexOrKey + "]: " + data);
           operandStack.push(data);
           break;
 
@@ -501,6 +513,8 @@ var Type1Parser = function(aAsciiStream, aBinaryStream) {
           var value = operandStack.pop();
           var key = operandStack.pop();
 
+          // XXX we don't want to do that here but for some reasons the names
+          // are different between what is declared and the FontName directive
           if (key == "FontName" && Fonts.get(value)) {
             // The font has already be decoded, stop!
             return true;
@@ -515,6 +529,7 @@ var Type1Parser = function(aAsciiStream, aBinaryStream) {
           var key = operandStack.pop();
           dump("definefont " + font + " with key: " + key);
           Fonts.set(key, font);
+          operandStack.push(font);
           break;
 
         case "known":
@@ -532,7 +547,9 @@ var Type1Parser = function(aAsciiStream, aBinaryStream) {
         case "eexec":
           // All the first segment data has been read, decrypt the second segment
           // and start interpreting it in order to decode it
+          var file = operandStack.pop();
           var eexecString = decrypt(aBinaryStream, kEexecEncryptionKey, 4).join("");
+          dump(eexecString);
           lexer = new Lexer(new StringStream(eexecString));
           break;
 
@@ -553,7 +570,7 @@ var Type1Parser = function(aAsciiStream, aBinaryStream) {
 
           var newOperand = operandStack.peek();
 
-          for (var i = 0; i < operands.length; i++)
+          while (operands.length)
             operandStack.push(operands.pop());
 
           operandStack.push(newOperand);
@@ -620,11 +637,14 @@ var Type1Parser = function(aAsciiStream, aBinaryStream) {
 };
 
 
+var type1hack = false;
 var Type1Font = function(aFontName, aFontFile) {
   // All Type1 font program should begin with the comment %!
   if (aFontFile.getByte() != 0x25 || aFontFile.getByte() != 0x21)
     error("Invalid file header");
 
+  if (!type1hack) {
+    type1hack= true;
   var start = Date.now();
 
   var ASCIIStream = aFontFile.makeSubStream(0, aFontFile.dict.get("Length1"), aFontFile.dict);
@@ -635,5 +655,248 @@ var Type1Font = function(aFontName, aFontFile) {
 
   var end = Date.now();
   //log("Time to parse font is:" + (end - start));
+
+  this.convert();
+  }
 };
+
+var hack = false;
+Type1Font.prototype = {
+  convert: function() {
+    var fontName = "TACTGM+NimbusRomNo9L-Medi";
+    var fontData = null;
+    for (var font in Fonts.map) {
+      if (font == fontName) {
+        fontData = Fonts.get(font);
+        break;
+      }
+    }
+
+    if (!fontData || hack)
+      return;
+    hack = true;
+
+    var t1Only = [
+      "callothersubr",
+      "closepath",
+      "dotsection",
+      "hsbw",
+      "hstem3",
+      "pop",
+      "sbw",
+      "seac",
+      "setcurrentpoint",
+      "vstem3"
+    ];
+
+    /*
+     * The sequence and form of a Type 2 charstring program may be
+     * represented as:
+     * w? {hs* vs* cm* hm* mt subpath}? {mt subpath}* endchar
+     *
+     */
+    var t2CharStrings = new Dict();
+
+    var t1CharStrings = fontData.get("CharStrings");
+    for (var key in t1CharStrings.map) {
+      var font = t1CharStrings.get(key);
+      var t2font = [];
+
+      for (var i = 0; i < font.length; i++) {
+        var token = font[i];
+        switch (token) {
+          case "hsbw":
+            var width = t2font.pop();
+            var leftSidebearingPoint = t2font.pop();
+            font.push(width);
+            break;
+          default:
+            if (t1Only.indexOf(token) != -1) {
+              log(token + " need convert!\n");
+              throw new Error("Type1 Only token");
+            }
+            t2font.push(token);
+            break;
+        }
+      }
+      log(key + "::" + t1CharStrings.get(key));
+      log("type2::" + t2font);
+    }
+  }
+};
+
+function decodeType2DictData(aString, aDictionary) {
+  var data = [];
+
+  var value = "";
+  var count = aString.length;
+  for (var i = 0; i < count; i) {
+    value = aString[i++];
+
+    if (value < 0) {
+      continue;
+    } else if (value == 28) {
+      value = aString[i++] << 8 | aString[i++];
+    } else if (value == 29) {
+      value = aString[i++] << 24 |
+              aString[i++] << 16 |
+              aString[i++] << 8  |
+              aString[i++];
+    } else if (value < 32) {
+      if (value == 12) {
+        value = aDictionary["12"][aString[i++]];
+      } else {
+        value = aDictionary[value];
+      }
+    } else if (value <= 246) {
+      value = parseInt(value) - 139;
+    } else if (value <= 250) {
+      value = ((value - 247) * 256) + parseInt(aString[i++]) + 108;
+    } else if (value <= 254) {
+      value = -((value - 251) * 256) - parseInt(aString[i++]) - 108;
+    } else {
+      throw new Error("Value should not be 255");
+    }
+
+    data.push(value);
+  }
+
+  return data;
+}
+
+var Type2Parser = function(aFilePath) {
+  var font = new Dict();
+
+  // Turn on this flag for additional debugging logs
+  var debug = true;
+
+  function dump(aStr) {
+    if (debug)
+      log(aStr);
+  };
+
+  function readIndex(aStream, aIsByte) {
+    var count = aStream.getByte() + aStream.getByte();
+    var offsize = aStream.getByte();
+    var offsets = [];
+    for (var i = 0; i < count + 1; i++) {
+      var offset = 0;
+      for (var j = 0; j < offsize; j++) {
+        // XXX need to do some better code here
+        var byte = aStream.getByte();
+        offset += byte;
+      }
+      offsets.push(offset);
+    }
+
+    dump("Found " + count + " objects at offsets :" + offsets + " (offsize: " + offsize + ")");
+    var dataOffset = aStream.pos;
+    var objects = [];
+    for (var i = 0; i < count; i++) {
+      var offset = offsets[i];
+      aStream.pos = dataOffset + offset - 1;
+
+      var data = [];
+      var length = offsets[i + 1] - 1;
+      for (var j = offset - 1; j < length; j++)
+        data.push(aIsByte ? aStream.getByte() : aStream.getChar());
+      dump("object at offset " + offset + " is: " + data);
+      objects.push(data);
+    }
+    return objects;
+  };
+
+  function parseAsToken(aArray) {
+    var objects = [];
+
+    var count = aArray.length;
+    for (var i = 0; i < count; i++) {
+      var decoded = decodeType2DictData(aArray[i], CFFDictOps);
+
+      var stack = [];
+      var count = decoded.length;
+      for (var i = 0; i < count; i++) {
+        var token = decoded[i];
+        if (IsNum(token)) {
+          stack.push(token);
+        } else {
+          switch (token.operand) {
+            case "SID":
+              font.set(token.name, CFFStrings[stack.pop()]);
+              break;
+            case "number number":
+              font.set(token.name, {
+                size: stack.pop(),
+                offset: stack.pop()
+              });
+              break;
+            case "boolean":
+              font.set(token.name, stack.pop());
+              break;
+            case "delta":
+              font.set(token.name, stack.pop());
+              break;
+            default:
+              if (token.operand && token.operand.length) {
+                var array = [];
+                for (var j = 0; j < token.operand.length; j++)
+                  array.push(stack.pop());
+                font.set(token.name, array);
+              } else {
+                font.set(token.name, stack.pop());
+              }
+              break;
+          }
+        }
+      }
+    }
+
+    return objects;
+  };
+
+  this.parse = function(aStream) {
+    font.set("major", aStream.getByte());
+    font.set("minor", aStream.getByte());
+    font.set("hdrSize", aStream.getByte());
+    font.set("offsize", aStream.getByte());
+
+    // Move the cursor after the header
+    aStream.skip(font.get("hdrSize") - aStream.pos);
+
+    // Read the NAME Index
+    dump("Reading Index: Names");
+    font.set("Names", readIndex(aStream));
+    dump(font.get("Names"));
+
+    // Read the Top Dict Index
+    dump("Reading Index: TopDict");
+    var topDict = readIndex(aStream, true);
+
+    // Read the String Index
+    dump("Reading Index: Strings");
+    var strings = readIndex(aStream);
+
+    // Fill up the Strings dictionary with the new unique strings
+    for (var i = 0; i < strings.length; i++)
+      CFFStrings.push(strings[i].join(""));
+
+    // Parse the TopDict operator
+    parseAsToken(topDict);
+
+    for (var p in font.map) {
+      log(p + "::" + font.get(p));
+    }
+  }
+};
+
+// 
+var xhr = new XMLHttpRequest();
+xhr.open("GET", "titi.cff", false);
+xhr.mozResponseType = xhr.responseType = "arraybuffer";
+xhr.expected = (document.URL.indexOf("file:") == 0) ? 0 : 200;
+xhr.send(null);
+var cffData = xhr.mozResponseArrayBuffer || xhr.mozResponse ||
+              xhr.responseArrayBuffer || xhr.response;
+var cff = new Type2Parser("titi.cff");
+cff.parse(new Stream(cffData));
 
