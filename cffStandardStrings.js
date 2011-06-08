@@ -65,7 +65,7 @@ var CFFStrings = [
   "asciicircum",
   "underscore",
   "quoteleft",
-  "95 asciitilde",
+  "a",
   "b",
   "c",
   "d",
@@ -550,3 +550,150 @@ var CFFDictOps = {
     name: "nominalWidthX"
   }
 };
+
+var CFFDictCommands = {
+  "1": {
+    name: "hstem"
+  },
+  "3": {
+    name: "vstem"
+  },
+  "4": {
+    name: "vmoveto"
+  },
+  "5": {
+    name: "rlineto"
+  },
+  "6": {
+    name: "hlineto"
+  },
+  "7": {
+    name: "vlineto"
+  },
+  "8": {
+    name: "rrcurveto"
+  },
+  "10": {
+    name: "callsubr"
+  },
+  "11": {
+    name: "return"
+  },
+  "12": {
+    "3": {
+      name: "and"
+    },
+    "4": {
+      name: "or"
+    },
+    "5": {
+      name: "not"
+    },
+    "9": {
+      name: "abs"
+    },
+    "10": {
+      name: "add"
+    },
+    "11": {
+      name: "div"
+    },
+    "12": {
+      name: "sub"
+    },
+    "14": {
+      name: "neg"
+    },
+    "15": {
+      name: "eq"
+    },
+    "18": {
+      name: "drop"
+    },
+    "20": {
+      name: "put"
+    },
+    "21": {
+      name: "get"
+    },
+    "22": {
+      name: "ifelse"
+    },
+    "23": {
+      name: "random"
+    },
+    "24": {
+      name: "mul"
+    },
+    "26": {
+      name: "sqrt"
+    },
+    "27": {
+      name: "dup"
+    },
+    "28": {
+      name: "exch"
+    },
+    "29": {
+      name: "index"
+    },
+    "30": {
+      name: "roll"
+    },
+    "34": {
+      name: "hflex"
+    },
+    "35": {
+      name: "flex"
+    },
+    "36": {
+      name: "hflex1"
+    },
+    "37": {
+      name: "flex1"
+    }
+  },
+  "14": {
+    name: "endchar"
+  },
+  "18": {
+    name: "hstemhm"
+  },
+  "19": {
+    name: "hintmask"
+  },
+  "20": {
+    name: "cntrmask"
+  },
+  "21": {
+    name: "rmoveto"
+  },
+  "22": {
+    name: "hmoveto"
+  },
+  "23": {
+    name: "vstemhm"
+  },
+  "24": {
+    name: "rcurveline"
+  },
+  "25": {
+    name: "rlivecurve"
+  },
+  "26": {
+    name: "vvcurveto"
+  },
+  "27": {
+    name: "hhcurveto"
+  },
+  "29": {
+    name: "callgsubr"
+  },
+  "30": {
+    name: "vhcurveto"
+  },
+  "31": {
+    name: "hvcurveto"
+  }
+};
+

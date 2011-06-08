@@ -660,80 +660,19 @@ var Type1Font = function(aFontName, aFontFile) {
   }
 };
 
-var hack = false;
-Type1Font.prototype = {
-  convert: function() {
-    var fontName = "TACTGM+NimbusRomNo9L-Medi";
-    var fontData = null;
-    for (var font in Fonts.map) {
-      if (font == fontName) {
-        fontData = Fonts.get(font);
-        break;
-      }
-    }
 
-    if (!fontData || hack)
-      return;
-    hack = true;
 
-    var t1Only = [
-      "callothersubr",
-      "closepath",
-      "dotsection",
-      "hsbw",
-      "hstem3",
-      "pop",
-      "sbw",
-      "seac",
-      "setcurrentpoint",
-      "vstem3"
-    ];
+/**************************************************************************/
 
-    /*
-     * The sequence and form of a Type 2 charstring program may be
-     * represented as:
-     * w? {hs* vs* cm* hm* mt subpath}? {mt subpath}* endchar
-     *
-     */
-    var t2CharStrings = new Dict();
-
-    var t1CharStrings = fontData.get("CharStrings");
-    for (var key in t1CharStrings.map) {
-      var font = t1CharStrings.get(key);
-      var t2font = [];
-
-      for (var i = 0; i < font.length; i++) {
-        var token = font[i];
-        switch (token) {
-          case "hsbw":
-            var width = t2font.pop();
-            var leftSidebearingPoint = t2font.pop();
-            font.push(width);
-            break;
-          default:
-            if (t1Only.indexOf(token) != -1) {
-              log(token + " need convert!\n");
-              throw new Error("Type1 Only token");
-            }
-            t2font.push(token);
-            break;
-        }
-      }
-      log(key + "::" + t1CharStrings.get(key));
-      log("type2::" + t2font);
-    }
-  }
-};
-
-function decodeType2DictData(aString, aDictionary) {
+function decodeType2DictData(aString, aDictionary, aHack) {
   var data = [];
 
   var value = "";
   var count = aString.length;
   for (var i = 0; i < count; i) {
     value = aString[i++];
-
-    if (value < 0) {
+    if (value <= 0) {
+      data.push(value);
       continue;
     } else if (value == 28) {
       value = aString[i++] << 8 | aString[i++];
@@ -743,11 +682,15 @@ function decodeType2DictData(aString, aDictionary) {
               aString[i++] << 8  |
               aString[i++];
     } else if (value < 32) {
+      var oldValue = value;
       if (value == 12) {
         value = aDictionary["12"][aString[i++]];
       } else {
         value = aDictionary[value];
       }
+      if (!value)
+        throw new Error("This command number does not match anything : " + oldValue);
+      value = aHack ? value.name : value;
     } else if (value <= 246) {
       value = parseInt(value) - 139;
     } else if (value <= 250) {
@@ -776,15 +719,30 @@ var Type2Parser = function(aFilePath) {
   };
 
   function readIndex(aStream, aIsByte) {
-    var count = aStream.getByte() + aStream.getByte();
+    var count = aStream.getByte() << 8 | aStream.getByte();
     var offsize = aStream.getByte();
     var offsets = [];
     for (var i = 0; i < count + 1; i++) {
-      var offset = 0;
-      for (var j = 0; j < offsize; j++) {
-        // XXX need to do some better code here
-        var byte = aStream.getByte();
-        offset += byte;
+      switch (offsize) {
+        case 0:
+          offset = 0;
+          break;
+        case 1:
+          offset = aStream.getByte();
+          break;
+        case 2:
+          offset = aStream.getByte() << 8 | aStream.getByte();
+          break;
+        case 3:
+          offset = aStream.getByte() << 16 | aStream.getByte() << 8 |
+                   aStream.getByte();
+          break;
+        case 4:
+          offset = aStream.getByte() << 24 | aStream.getByte() << 16 |
+                   aStream.getByte() << 8 | aStream.getByte();
+          break;
+        default:
+          throw new Error("Unsupported offsize: " + offsize);
       }
       offsets.push(offset);
     }
@@ -800,58 +758,73 @@ var Type2Parser = function(aFilePath) {
       var length = offsets[i + 1] - 1;
       for (var j = offset - 1; j < length; j++)
         data.push(aIsByte ? aStream.getByte() : aStream.getChar());
-      dump("object at offset " + offset + " is: " + data);
+      //dump("object at offset " + offset + " is: " + data);
       objects.push(data);
     }
     return objects;
   };
 
-  function parseAsToken(aArray) {
-    var objects = [];
+  function parseAsToken(aString, aDict) {
+    var decoded = decodeType2DictData(aString, aDict);
 
-    var count = aArray.length;
+    var stack = [];
+    var count = decoded.length;
     for (var i = 0; i < count; i++) {
-      var decoded = decodeType2DictData(aArray[i], CFFDictOps);
-
-      var stack = [];
-      var count = decoded.length;
-      for (var i = 0; i < count; i++) {
-        var token = decoded[i];
-        if (IsNum(token)) {
-          stack.push(token);
-        } else {
-          switch (token.operand) {
-            case "SID":
-              font.set(token.name, CFFStrings[stack.pop()]);
-              break;
-            case "number number":
-              font.set(token.name, {
-                size: stack.pop(),
-                offset: stack.pop()
-              });
-              break;
-            case "boolean":
+      var token = decoded[i];
+      if (IsNum(token)) {
+        stack.push(token);
+      } else {
+        switch (token.operand) {
+          case "SID":
+            font.set(token.name, CFFStrings[stack.pop()]);
+            break;
+          case "number number":
+            font.set(token.name, {
+              size: stack.pop(),
+              offset: stack.pop()
+            });
+            break;
+          case "boolean":
+            font.set(token.name, stack.pop());
+            break;
+          case "delta":
+            font.set(token.name, stack.pop());
+            break;
+          default:
+            if (token.operand && token.operand.length) {
+              var array = [];
+              for (var j = 0; j < token.operand.length; j++)
+                array.push(stack.pop());
+              font.set(token.name, array);
+            } else {
               font.set(token.name, stack.pop());
-              break;
-            case "delta":
-              font.set(token.name, stack.pop());
-              break;
-            default:
-              if (token.operand && token.operand.length) {
-                var array = [];
-                for (var j = 0; j < token.operand.length; j++)
-                  array.push(stack.pop());
-                font.set(token.name, array);
-              } else {
-                font.set(token.name, stack.pop());
-              }
-              break;
-          }
+            }
+            break;
         }
       }
     }
+  };
 
-    return objects;
+
+  function readCharset(aStream, aCharStrings) {
+    var charset = {};
+
+    var format = aStream.getByte();
+    if (format == 0) {
+      var count = aCharStrings.length - 1;
+      charset[".notdef"] = decodeType2DictData(aCharStrings[0], CFFDictCommands, true);
+      for (var i = 1; i < count + 1; i++) {
+        var sid = aStream.getByte() << 8 | aStream.getByte();
+        var charString = decodeType2DictData(aCharStrings[i], CFFDictCommands, true);
+        charset[CFFStrings[sid]] = charString;
+        log(CFFStrings[sid] + "::" + charString);
+      }
+    } else if (format == 1) {
+      throw new Error("Format 1 charset are not supported");
+    } else {
+      throw new Error("Invalid charset format");
+    }
+    return charset;
   };
 
   this.parse = function(aStream) {
@@ -881,15 +854,44 @@ var Type2Parser = function(aFilePath) {
       CFFStrings.push(strings[i].join(""));
 
     // Parse the TopDict operator
-    parseAsToken(topDict);
+    var objects = [];
+    var count = topDict.length;
+    for (var i = 0; i < count; i++)
+      parseAsToken(topDict[i], CFFDictOps);
 
-    for (var p in font.map) {
-      log(p + "::" + font.get(p));
+    for (var p in font.map)
+      dump(p + "::" + font.get(p));
+
+    // Read the Subr Index
+    dump("Reading Subr Index");
+    var subrs = readIndex(aStream);
+
+    // Read CharStrings Index
+    dump("Read CharStrings Index");
+    var charStringsOffset = font.get("CharStrings");
+    aStream.pos = charStringsOffset;
+    var charStrings = readIndex(aStream, true);
+
+
+    var charsetEntry = font.get("charset");
+    if (charsetEntry == 0) {
+      throw new Error("Need to support CFFISOAdobeCharset");
+    } else if (charsetEntry == 1) {
+      throw new Error("Need to support CFFExpert");
+    } else if (charsetEntry == 2) {
+      throw new Error("Need to support CFFExpertSubsetCharset");
+    } else {
+      aStream.pos = charsetEntry;
+      var charset = readCharset(aStream, charStrings);
     }
+
+    // Read Encoding data
+    log("Reading encoding data");
   }
 };
 
-// 
+
+// XXX
 var xhr = new XMLHttpRequest();
 xhr.open("GET", "titi.cff", false);
 xhr.mozResponseType = xhr.responseType = "arraybuffer";
