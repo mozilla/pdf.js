@@ -78,6 +78,15 @@ var Stream = (function() {
             this.pos++;
             return ch;
         },
+        snarf: function(dest) {
+            var bytes = this.bytes;
+            var pos = this.pos;
+            var end = this.end;
+            var n = 0;
+            while (pos < end)
+                dest[n++] = bytes[pos++];
+            this.pos = this.end;
+        },
         skip: function(n) {
             if (!n)
                 n = 1;
@@ -307,6 +316,20 @@ var FlateStream = (function() {
             this.pos++;
             this.bufferPos++;
             return ch;
+        },
+        snarf: function(dest) {
+            // copy the leftover data in the buffer into dest
+            var bufferLength = this.bufferLength;
+            var bufferPos = this.bufferPos;
+            var n = 0;
+            while (bufferPos < bufferLength)
+                dest[n++] = this.buffer[bufferPos++];
+            // now use dest as our buffer and fill it
+            this.buffer = dest;
+            while (!this.eof)
+                this.readBlock();
+            // update stream position
+            this.pos = n;
         },
         skip: function(n) {
             if (!n)
@@ -1928,6 +1951,9 @@ var CanvasGraphics = (function() {
             var imgData = tmpCtx.getImageData(0, 0, w, h);
             var pixels = imgData.data;
 
+            // Read in image data
+            image.snarf(pixels);
+
             var alpha = 25;
             if (image.dict.has("SMask")) {
                 var smask = image.dict.get("SMask");
@@ -1951,18 +1977,19 @@ var CanvasGraphics = (function() {
                     TODO(matte);
                 }
 
-                for (var i = 0; i < 4 * w * h; ++i) {
-                    pixels[i] = image.getChar() * smask.getChar() / max;
-                }
+                // read in mask data
+                var mask = new Uint8Array(4 * w * h);
+                smask.snarf(mask);
+
+                // and blend images with it
+                var stop = 4 * w * h;
+                for (var i = 0; i < stop; ++i)
+                    pixels[i] = pixels[i] * mask[i] / max;
             } else {
-                for (var i = 0; i < 4 * w * h; ++i) {
-                    // TODO blend if SMask is a mask image
-                    if (3 === i % 4) {
-                        pixels[i] = alpha;
-                    } else {
-                        pixels[i] = image.getChar();
-                    }
-                }
+                // TODO blend if SMask is a mask image
+                var stop = 4 * w * h;
+                for (var i = 3; i < stop; i += 4)
+                    pixels[i] = alpha;
             }
             tmpCtx.putImageData(imgData, 0, 0);
 
