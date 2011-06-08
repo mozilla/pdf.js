@@ -322,7 +322,9 @@ var FlateStream = (function() {
             var bufferLength = this.bufferLength;
             var bufferPos = this.bufferPos;
             var n = 0;
-            while (bufferPos < bufferLength)
+            // entire front of stream needs to be copied over since flate
+            // looksback when decoding
+            while (0 < bufferLength)
                 dest[n++] = this.buffer[bufferPos++];
             // now use dest as our buffer and fill it
             this.buffer = dest;
