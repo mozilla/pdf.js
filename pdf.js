@@ -1585,7 +1585,7 @@ var PDFDoc = (function() {
     return constructor;
 })();
 
-var IDENTITY_MATRIX = [ 1, 0, 0, 1, 0, 0 ];
+const IDENTITY_MATRIX = [ 1, 0, 0, 1, 0, 0 ];
 
 // <canvas> contexts store most of the state we need natively.
 // However, PDF needs a bit more state, which we store here.
@@ -2230,23 +2230,3 @@ var ColorSpace = (function() {
 
     return constructor;
 })();
-
-function runParseTests() {
-    var data = snarf("paper.pdf", "binary");
-    var pdf = new PDFDoc(new Stream(data));
-    var page = pdf.getPage(1);
-    page.display({
-        beginDrawing: function() {}
-    });
-}
-
-if ("arguments" in this) {
-    const cmds = {
-        "-p": runParseTests
-    }
-    for (n in arguments) {
-        var fn = cmds[arguments[n]];
-        if (fn)
-            fn();
-    }
-}
