@@ -329,7 +329,7 @@ var FlateStream = (function() {
         getBytes: function(length) {
             var pos = this.bufferPos;
 
-            while (!this.eof && this.bufferLength < bufferPos + length)
+            while (!this.eof && this.bufferLength < pos + length)
                 this.readBlock();
 
             var end = pos + length;
