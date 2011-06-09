@@ -1897,6 +1897,17 @@ var CanvasGraphics = (function() {
                 return;
             xobj = this.xref.fetchIfRef(xobj);
             assertWellFormed(IsStream(xobj), "XObject should be a stream");
+            
+            var oc = xobj.dict.get("OC");
+            if (oc) {
+                TODO("oc for xobject");
+            }
+            
+            var opi = xobj.dict.get("OPI");
+            if (opi) {
+                TODO("opi for xobject");
+            }
+
             var type = xobj.dict.get("Subtype");
             assertWellFormed(IsName(type), "XObject should have a Name subtype");
             if ("Image" == type.name) {
@@ -1932,7 +1943,6 @@ var CanvasGraphics = (function() {
 
         paintImageXObject: function(image, inline) {
             this.save();
-            this.ctx.scale(.0066,.02);
             if (image.getParams) {
                 // JPX/JPEG2000 streams directly contain bits per component
                 // and color space mode information.
@@ -1945,6 +1955,9 @@ var CanvasGraphics = (function() {
             var dict = image.dict;
             var w = dict.get("Width") || dict.get("W");
             var h = dict.get("Height") || dict.get("H");
+            
+            // scale the image to the unit square
+            this.ctx.scale(1/w, 1/h);
            
             if (!IsNum(w) || !IsNum(h) || w < 1 || h < 1)
                 error("Invalid image width or height");
