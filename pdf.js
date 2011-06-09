@@ -65,16 +65,19 @@ var Stream = (function() {
                 return -1;
             return bytes[this.pos++];
         },
+        // returns subarray of original buffer
+        // should only be read
         getBytes: function(length) {
             var bytes = this.bytes;
             var pos = this.pos;
-            var end = this.end;
-            if (pos + length > end)
-                length = end - pos;
+            var end = pos + length;
+            var strEnd = this.end;
+            if (end > strEnd)
+                end = strEnd;
             
             var n = 0;
             var buf = new Uint8Array(length);
-            while (n < length)
+            while (pos < end)
                 buf[n++] = bytes[pos++]
             this.pos = pos;
             return buf;
@@ -315,20 +318,23 @@ var FlateStream = (function() {
             return this.buffer[this.bufferPos++];
         },
         getBytes: function(length) {
-            var bufferPos = this.bufferPos;
+            var pos = this.bufferPos;
 
             while (!this.eof && this.bufferLength < bufferPos + length)
                 this.readBlock();
 
-            if (length > bufferLength - bufferPos)
-                length = bufferLength - bufferPos;
+            var end = pos + length;
+            var bufEnd = this.bufferLength;
+
+            if (end > bufEnd)
+                end = bufEnd;
 
             var buffer = this.buffer;
             var retBuffer = new Uint8Array(length);
             var n = 0;
-            while (n < length)
-                retBuffer[n++] = buffer[bufferPos++];
-            this.bufferPos = bufferPos;
+            while (pos < end)
+                retBuffer[n++] = buffer[pos++];
+            this.bufferPos = pos;
             return retBuffer;
         },
         lookChar: function() {
