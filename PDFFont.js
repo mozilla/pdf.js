@@ -1,8 +1,14 @@
-
-/*
- * This dictionary hold the decoded fonts
+/**
+ * This dictionary holds decoded fonts data.
  */
 var Fonts = new Dict();
+
+/**
+ * This simple object keep a trace of the fonts that have already been decoded
+ * by storing a map between the name given by the PDF and the name gather from
+ * the font (aka the PostScript code of the font itself for Type1 font).
+ */
+var _Fonts = {};
 
 
 var Base64Encoder = {
@@ -16,12 +22,10 @@ var Base64Encoder = {
   }
 };
 
-
-
-
 var TrueTypeFont = function(aFontName, aFontFile) {
-  if (Fonts.get(aFontName))
+  if (_Fonts[aFontName])
     return;
+  _Fonts[aFontName] = true;
 
   //log("Loading a TrueType font: " + aFontName);
   var fontData = Base64Encoder.encode(aFontFile);
@@ -36,7 +40,16 @@ var TrueTypeFont = function(aFontName, aFontFile) {
 
 
 var Type1Parser = function(aAsciiStream, aBinaryStream) {
-  var lexer = new Lexer(aAsciiStream);
+  if (IsStream(aAsciiStream)) {
+    var lexer = new Lexer(aAsciiStream);
+  } else {
+    var lexer = {
+      __data__: aAsciiStream.slice(),
+      getObj: function() {
+        return this.__data__.shift();
+      }
+    }
+  }
 
   // Turn on this flag for additional debugging logs
   var debug = false;
@@ -45,6 +58,11 @@ var Type1Parser = function(aAsciiStream, aBinaryStream) {
     if (debug)
       log(aData);
   };
+
+  // Hold the fontName as declared inside the /FontName postscript directive
+  // XXX This is a hack but at the moment I need it to map the name declared
+  // in the PDF and the name in the PS code.
+  var fontName = "";
 
   /*
    * Parse a whole Type1 font stream (from the first segment to the last)
@@ -55,6 +73,7 @@ var Type1Parser = function(aAsciiStream, aBinaryStream) {
   this.parse = function() {
     if (!debug) {
       while (!processNextToken()) {};
+      return fontName;
     } else {
       // debug mode is used to debug postcript processing
       setTimeout(function() {
@@ -62,7 +81,7 @@ var Type1Parser = function(aAsciiStream, aBinaryStream) {
           self.parse();
       }, 0);
     }
-  }
+  };
 
   /*
    * Decrypt a Sequence of Ciphertext Bytes to Produce the Original Sequence
@@ -87,7 +106,7 @@ var Type1Parser = function(aAsciiStream, aBinaryStream) {
     var end = Date.now();
     dump("Time to decrypt string of length " + count + " is " + (end - start));
     return decryptedString.slice(aDiscardNumber);
-  }
+  };
 
   /*
    * CharStrings are encoded following the the CharString Encoding sequence
@@ -98,7 +117,7 @@ var Type1Parser = function(aAsciiStream, aBinaryStream) {
    * CharString Number Encoding:
    *  A CharString byte containing the values from 32 through 255 inclusive
    *  indicate an integer. These values are decoded in four ranges.
-   * 
+   *
    * 1. A CharString byte containing a value, v, between 32 and 246 inclusive,
    * indicate the integer v - 139. Thus, the integer values from -107 through
    * 107 inclusive may be encoded in single byte.
@@ -110,7 +129,7 @@ var Type1Parser = function(aAsciiStream, aBinaryStream) {
    * 3. A CharString byte containing a value, v, between 251 and 254 inclusive,
    * indicates an integer involving the next byte, w, according to the formula:
    * -[(v - 251) * 256] - w - 108
-   * 
+   *
    * 4. A CharString containing the value 255 indicates that the next 4 bytes
    * are a two complement signed integer. The first of these bytes contains the
    * highest order bits, the second byte contains the next higher order bits
@@ -157,7 +176,6 @@ var Type1Parser = function(aAsciiStream, aBinaryStream) {
     "31": "hcurveto"
   };
 
-  // XXX Is count++ the right thing to do? Is it not i++?
   function decodeCharString(aStream) {
     var start = Date.now();
     var charString = [];
@@ -167,12 +185,10 @@ var Type1Parser = function(aAsciiStream, aBinaryStream) {
     for (var i = 0; i < count; i++) {
       value = aStream.getByte();
 
-      if (value < 0) {
-        continue;
-      } else if (value < 32) {
+      if (value < 32) {
         if (value == 12) {
           value = charStringDictionary["12"][aStream.getByte()];
-          count++;
+          i++;
         } else {
           value = charStringDictionary[value];
         }
@@ -180,16 +196,16 @@ var Type1Parser = function(aAsciiStream, aBinaryStream) {
         value = parseInt(value) - 139;
       } else if (value <= 250) {
         value = ((value - 247) * 256) + parseInt(aStream.getByte()) + 108;
-        count++;
+        i++;
       } else if (value <= 254) {
         value = -((value - 251) * 256) - parseInt(aStream.getByte()) - 108;
-        count++;
+        i++;
       } else {
         var byte = aStream.getByte();
         var high = (byte >> 1);
         value = (byte - high) << 24 | aStream.getByte() << 16 |
                 aStream.getByte() << 8 | aStream.getByte();
-        count += 4;
+        i += 4;
       }
 
       charString.push(value);
@@ -226,6 +242,10 @@ var Type1Parser = function(aAsciiStream, aBinaryStream) {
       if (!this.length)
         return null;
       return this.__innerStack__[this.__innerStack__.length - 1];
+    },
+
+    get: function(aIndex) {
+      return this.__innerStack__[aIndex];
     },
 
     dump: function() {
@@ -344,7 +364,6 @@ var Type1Parser = function(aAsciiStream, aBinaryStream) {
 
     return lexer.getObj();
   };
-
 
   /*
    * Get the next token from the executionStack and process it.
@@ -531,7 +550,11 @@ var Type1Parser = function(aAsciiStream, aBinaryStream) {
           var font = operandStack.pop();
           var key = operandStack.pop();
           dump("definefont " + font + " with key: " + key);
+
+          // The key will be the identifier to recognize this font
+          fontName = key;
           Fonts.set(key, font);
+
           operandStack.push(font);
           break;
 
@@ -600,6 +623,7 @@ var Type1Parser = function(aAsciiStream, aBinaryStream) {
           var decodedCharString = decodeCharString(charStream);
           dump("decodedCharString: " + decodedCharString);
           operandStack.push(decodedCharString);
+
           // boolean indicating if the operation is a success or not
           operandStack.push(true);
           break;
@@ -630,36 +654,305 @@ var Type1Parser = function(aAsciiStream, aBinaryStream) {
           }
           break;
       }
-    } else if (obj){
+    } else if (obj) {
       dump("unknow: " + obj);
       operandStack.push(obj);
+    } else { // The End!
+      operandStack.dump();
+      return true;
     }
 
     return false;
+  }
+
+  function aggregateCommand(aCommand) {
+    var command = aCommand;
+    switch (command) {
+      case "hstem":
+      case "vstem":
+        break;
+
+      case "rrcurveto":
+        var stack = [operandStack.pop(), operandStack.pop(),
+                     operandStack.pop(), operandStack.pop(),
+                     operandStack.pop(), operandStack.pop()];
+        var next = true;
+        while (next) {
+          var op = operandStack.peek();
+          if (op == "rrcurveto") {
+            operandStack.pop();
+            stack.push(operandStack.pop());
+            stack.push(operandStack.pop());
+            stack.push(operandStack.pop());
+            stack.push(operandStack.pop());
+            stack.push(operandStack.pop());
+            stack.push(operandStack.pop());
+          } else {
+            next = false;
+          }
+        }
+        break;
+
+      case "hlineto":
+      case "vlineto":
+        var last = command;
+        var stack = [operandStack.pop()];
+        var next = true;
+        while (next) {
+          var op = operandStack.peek();
+          if (op == "vlineto" && last == "hlineto") {
+            operandStack.pop();
+            stack.push(operandStack.pop());
+          } else if (op == "hlineto" && last == "vlineto") {
+            operandStack.pop();
+            stack.push(operandStack.pop());
+          } else if (op == "rlineto" && command == "hlineto") {
+            operandStack.pop();
+            var x = stack.pop();
+            operandStack.push(0);
+            operandStack.push(x);
+            command = "rlineto";
+          } else if (op == "rlineto" && command == "vlineto") {
+            operandStack.pop();
+            operandStack.push(0);
+            command = "rlineto";
+          } else {
+            next = false;
+          }
+          last = op;
+        }
+        break;
+
+      case "rlineto":
+        var stack = [operandStack.pop(), operandStack.pop()];
+        var next = true;
+        while (next) {
+          var op = operandStack.peek();
+          if (op == "rlineto") {
+            operandStack.pop();
+            stack.push(operandStack.pop());
+            stack.push(operandStack.pop());
+          } else if (op == "hlineto") {
+            operandStack.pop();
+            stack.push(0);
+            stack.push(operandStack.pop());
+          } else if (op == "vlineto") {
+            operandStack.pop();
+            stack.push(operandStack.pop());
+            stack.push(0);
+          } else {
+            next= false;
+          }
+        }
+        break;
+    }
+
+    while (stack.length)
+      operandStack.push(stack.pop());
+    operandStack.push(command);
+  };
+
+
+  /*
+   * Flatten the commands by interpreting the postscript code and replacing
+   * every 'callsubr', 'callothersubr' by the real commands.
+   * At the moment OtherSubrs are not fully supported and only otherSubrs 0-4
+   * as descrived in 'Using Subroutines' of 'Adobe Type 1 Font Format',
+   * chapter 8.
+   */
+  this.flattenCharstring = function(aCharString, aDefaultWidth, aNominalWidth, aSubrs) {
+    var leftSidebearing = 0;
+    var lastPoint = 0;
+    while (true) {
+      var obj = nextInStack();
+      if (IsBool(obj) || IsInt(obj) || IsNum(obj)) {
+        dump("Value: " + obj);
+        operandStack.push(obj);
+      } else if (IsString(obj)) {
+        dump("String: " + obj);
+        switch (obj) {
+          case "hsbw":
+            var charWidthVector = operandStack.pop();
+            leftSidebearing = operandStack.pop();
+
+            if (charWidthVector != aDefaultWidth)
+              operandStack.push(charWidthVector - aNominalWidth);
+            break;
+
+          case "setcurrentpoint":
+          case "dotsection":
+          case "seac":
+          case "sbw":
+            error(obj + " parsing is not implemented (yet)");
+            break;
+
+          case "vstem3":
+            operandStack.push("vstem");
+            break;
+
+          case "vstem":
+            log(obj + " is not converted (yet?)");
+            operandStack.push("vstem");
+            break;
+
+          case "closepath":
+          case "return":
+            break;
+
+          case "hlineto":
+          case "vlineto":
+          case "rlineto":
+          case "rrcurveto":
+            aggregateCommand(obj);
+            break;
+
+          case "rmoveto":
+            var dy = operandStack.pop();
+            var dx = operandStack.pop();
+
+            if (leftSidebearing) {
+              dx += leftSidebearing;
+              leftSidebearing = 0;
+            }
+
+            operandStack.push(dx);
+            operandStack.push(dy);
+            operandStack.push("rmoveto");
+            break;
+
+          case "hstem":
+          case "hstem3":
+            var dy = operandStack.pop();
+            var y = operandStack.pop();
+            if (operandStack.peek() == "hstem" ||
+                operandStack.peek() == "hstem3")
+              operandStack.pop();
+
+            operandStack.push(y - lastPoint);
+            lastPoint = y + dy;
+
+            operandStack.push(dy);
+            operandStack.push("hstem");
+            break;
+
+          case "callsubr":
+            var index = operandStack.pop();
+            executionStack.push(aSubrs[index].slice());
+            break;
+
+          case "callothersubr":
+            log("callothersubr");
+            // XXX need to be improved
+            var index = operandStack.pop();
+            var count = operandStack.pop();
+            var data = operandStack.pop();
+            operandStack.push(3);
+            operandStack.push("callothersubr");
+            break;
+          case "endchar":
+            operandStack.push("endchar");
+            return operandStack.__innerStack__.slice();
+          case "pop":
+            operandStack.pop();
+            break;
+          default:
+            operandStack.push(obj);
+            break;
+        }
+      }
+    }
   }
 };
 
 
 var type1hack = false;
 var Type1Font = function(aFontName, aFontFile) {
+  if (_Fonts[aFontName])
+    return;
+  _Fonts[aFontName] = true;
+
   // All Type1 font program should begin with the comment %!
   if (aFontFile.getByte() != 0x25 || aFontFile.getByte() != 0x21)
     error("Invalid file header");
 
   if (!type1hack) {
-    type1hack= true;
-  var start = Date.now();
+    type1hack = true;
+    var start = Date.now();
 
-  var ASCIIStream = aFontFile.makeSubStream(0, aFontFile.dict.get("Length1"), aFontFile.dict);
-  var binaryStream = aFontFile.makeSubStream(aFontFile.dict.get("Length1"), aFontFile.dict.get("Length2"), aFontFile.dict);
+    var ASCIIStream = aFontFile.makeSubStream(0, aFontFile.dict.get("Length1"), aFontFile.dict);
+    var binaryStream = aFontFile.makeSubStream(aFontFile.dict.get("Length1"), aFontFile.dict.get("Length2"), aFontFile.dict);
 
-  this.parser = new Type1Parser(ASCIIStream, binaryStream);
-  this.parser.parse();
+    this.parser = new Type1Parser(ASCIIStream, binaryStream);
+    var fontName = this.parser.parse();
+    this.convertToOTF(fontName);
+  }
+};
 
-  var end = Date.now();
-  //log("Time to parse font is:" + (end - start));
+Type1Font.prototype = {
+  convertToOTF: function(aFontName) {
+    var font = Fonts.get(aFontName);
 
-  this.convert();
+    var private = font.get("Private");
+    var subrs = private.get("Subrs");
+    var otherSubrs = private.get("OtherSubrs");
+    var charstrings = font.get("CharStrings")
+
+    // Try to get the most used glyph width
+    var widths = {};
+    for (var glyph in charstrings.map) {
+      var glyphData = charstrings.get(glyph);
+      var glyphWidth = glyphData[1];
+      if (widths[glyphWidth])
+        widths[glyphWidth]++;
+      else
+        widths[glyphWidth] = 1;
+    }
+
+    var defaultWidth = 0;
+    var used = 0;
+    for (var width in widths) {
+      if (widths[width] > used) {
+        defaultWidth = width;
+        used = widths[width];
+      }
+    }
+    log("defaultWidth to used: " + defaultWidth);
+
+    var maxNegDistance = 0;
+    var maxPosDistance = 0;
+    for (var width in widths) {
+      var diff = width - defaultWidth;
+      if (diff < 0 && diff < maxNegDistance) {
+        maxNegDistance = diff;
+      } else if (diff > 0 && diff > maxPosDistance) {
+        maxPosDistance = diff;
+      }
+    }
+
+    var nominalWidth = parseInt(defaultWidth) + (parseInt(maxPosDistance) + parseInt(maxNegDistance)) / 2;
+    log("nominalWidth to used: " + nominalWidth);
+    log("Hack nonimal:" + (nominalWidth = 615));
+
+    for (var glyph in charstrings.map) {
+      if (glyph == ".notdef")
+        continue;
+
+      var glyphData = charstrings.get(glyph);
+      var parser = new Type1Parser(glyphData);
+      log("=================================== " + glyph + " ==============================");
+      log(charstrings.get(glyph));
+      log(parser.flattenCharstring("A", defaultWidth, nominalWidth, subrs));
+      log(validationData[glyph]);
+    }
+
+
+    /*
+    log(charStrings.get("A"));
+    log(newCharStrings.get("A"));
+    log(validationData["A"]);
+    */
+    var end = Date.now();
+    //log("Time to parse font is:" + (end - start));
   }
 };
 
@@ -1016,6 +1309,7 @@ var Type2Parser = function(aFilePath) {
 
 
 // XXX
+/*
 var xhr = new XMLHttpRequest();
 xhr.open("GET", "titi.cff", false);
 xhr.mozResponseType = xhr.responseType = "arraybuffer";
@@ -1025,4 +1319,4 @@ var cffData = xhr.mozResponseArrayBuffer || xhr.mozResponse ||
               xhr.responseArrayBuffer || xhr.response;
 var cff = new Type2Parser("titi.cff");
 cff.parse(new Stream(cffData));
-
+*/

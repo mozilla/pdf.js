@@ -2280,9 +2280,9 @@ var CanvasGraphics = (function() {
             var subtype = font.get("Subtype").name;
             switch (subtype) {
               case "Type1":
-                break;
                 var fontDescriptor = font.get("FontDescriptor");
                 if (fontDescriptor.num) {
+                  // XXX fetchIfRef looks expensive
                   var fontDescriptor = this.xref.fetchIfRef(fontDescriptor);
                   var fontFile = this.xref.fetchIfRef(fontDescriptor.get("FontFile"));
                   font = new Type1Font(fontDescriptor.get("FontName").name, fontFile);
