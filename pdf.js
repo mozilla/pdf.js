@@ -73,7 +73,10 @@ var Stream = (function() {
                 length = end - pos;
             
             var n = 0;
-            var buf = new Uint8Array(bytes, pos, length);
+            var buf = new Uint8Array(length);
+            while (n < length)
+                buf[n++] = bytes[pos++]
+            this.pos = pos;
             return buf;
         },
         lookChar: function() {
@@ -320,7 +323,13 @@ var FlateStream = (function() {
             if (length > bufferLength - bufferPos)
                 length = bufferLength - bufferPos;
 
-            return new Uint8Array(this.buffer, bufferPos, length);
+            var buffer = this.buffer;
+            var retBuffer = new Uint8Array(length);
+            var n = 0;
+            while (n < length)
+                retBuffer[n++] = buffer[bufferPos++];
+            this.bufferPos = bufferPos;
+            return retBuffer;
         },
         lookChar: function() {
             var bufferLength = this.bufferLength;
