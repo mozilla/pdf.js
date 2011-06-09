@@ -368,6 +368,7 @@ var FlateStream = (function() {
             var bufferLength = this.bufferLength;
             var bufferPos = this.bufferPos;
             var n = 0;
+            
             // entire front of stream needs to be copied over since flate
             // looksback when decoding
             while (0 < bufferLength)
@@ -2141,7 +2142,6 @@ var CanvasGraphics = (function() {
                         error("unhandled amount of components per pixel: " + numComps);
                     }
                 }
->>>>>>> 496a6374c1ac04e
             }
             tmpCtx.putImageData(imgData, 0, 0);
             this.ctx.drawImage(tmpCanvas, 0, 0);
