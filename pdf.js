@@ -65,6 +65,23 @@ var Stream = (function() {
                 return -1;
             return bytes[this.pos++];
         },
+        // returns subarray of original buffer
+        // should only be read
+        getBytes: function(length) {
+            var bytes = this.bytes;
+            var pos = this.pos;
+            var end = pos + length;
+            var strEnd = this.end;
+            if (end > strEnd)
+                end = strEnd;
+            
+            var n = 0;
+            var buf = new Uint8Array(length);
+            while (pos < end)
+                buf[n++] = bytes[pos++]
+            this.pos = pos;
+            return buf;
+        },
         lookChar: function() {
             var bytes = this.bytes;
             if (this.pos >= this.end)
@@ -242,7 +259,7 @@ var FlateStream = (function() {
         this.eof = false;
         this.codeSize = 0;
         this.codeBuf = 0;
-        this.pos = 0;
+        
         this.bufferPos = 0;
         this.bufferLength = 0;
     }
@@ -299,6 +316,36 @@ var FlateStream = (function() {
                 buffer2[i] = buffer[i];
             return this.buffer = buffer2;
         },
+        getByte: function() {
+            var bufferLength = this.bufferLength;
+            var bufferPos = this.bufferPos;
+            if (bufferLength == bufferPos) {
+                if (this.eof)
+                    return;
+                this.readBlock();
+            }
+            return this.buffer[this.bufferPos++];
+        },
+        getBytes: function(length) {
+            var pos = this.bufferPos;
+
+            while (!this.eof && this.bufferLength < bufferPos + length)
+                this.readBlock();
+
+            var end = pos + length;
+            var bufEnd = this.bufferLength;
+
+            if (end > bufEnd)
+                end = bufEnd;
+
+            var buffer = this.buffer;
+            var retBuffer = new Uint8Array(length);
+            var n = 0;
+            while (pos < end)
+                retBuffer[n++] = buffer[pos++];
+            this.bufferPos = pos;
+            return retBuffer;
+        },
         lookChar: function() {
             var bufferLength = this.bufferLength;
             var bufferPos = this.bufferPos;
@@ -313,7 +360,6 @@ var FlateStream = (function() {
             var ch = this.lookChar();
             if (!ch)
                 return;
-            this.pos++;
             this.bufferPos++;
             return ch;
         },
@@ -1879,10 +1925,21 @@ var CanvasGraphics = (function() {
                 return;
             xobj = this.xref.fetchIfRef(xobj);
             assertWellFormed(IsStream(xobj), "XObject should be a stream");
+            
+            var oc = xobj.dict.get("OC");
+            if (oc) {
+                TODO("oc for xobject");
+            }
+            
+            var opi = xobj.dict.get("OPI");
+            if (opi) {
+                TODO("opi for xobject");
+            }
+
             var type = xobj.dict.get("Subtype");
             assertWellFormed(IsName(type), "XObject should have a Name subtype");
             if ("Image" == type.name) {
-                this.paintImageXObject(xobj);
+                this.paintImageXObject(xobj, false);
             } else if ("Form" == type.name) {
                 this.paintFormXObject(xobj);
             } else if ("PS" == type.name) {
@@ -1912,9 +1969,15 @@ var CanvasGraphics = (function() {
             this.restore();
         },
 
-        paintImageXObject: function(image) {
+        paintImageXObject: function(image, inline) {
             this.save();
-
+            if (image.getParams) {
+                // JPX/JPEG2000 streams directly contain bits per component
+                // and color space mode information.
+                TODO("get params from actual stream");
+                // var bits = ...
+                // var colorspace = ...
+            }
             // TODO cache rendered images?
 
             var dict = image.dict;
@@ -1923,6 +1986,9 @@ var CanvasGraphics = (function() {
 
             if (w < 1 || h < 1)
                 error("Invalid image width or height");
+            
+            // scale the image to the unit square
+            this.ctx.scale(1/w, 1/h);
 
             var interpolate = dict.get2("Interpolate", "I");
             if (!IsBool(interpolate))
@@ -1931,11 +1997,7 @@ var CanvasGraphics = (function() {
             if (!IsBool(imageMask))
                 imageMask = false;
 
-            // JPX/JPEG2000 streams directly contain bits per component
-            // and color space mode information.
             var bitsPerComponent = image.bitsPerComponent;
-            var csMode = image.csMode;
-
             if (!bitsPerComponent) {
                 bitsPerComponent = dict.get("BitsPerComponent", "BPC");
                 if (!bitsPerComponent) {
@@ -1946,57 +2008,143 @@ var CanvasGraphics = (function() {
                 }
             }
 
+            if (bitsPerComponent !== 8)
+                error("Unsupported bpc");
+
+            var xref = this.xref;
+            var colorSpaces = this.colorSpaces;
+
+            if (imageMask) {
+                error("support image masks");
+            }
+
+            // actual image
+            var csStream = dict.get("ColorSpace") || dict.get("CS");
+            csStream = xref.fetchIfRef(csStream);
+            if (IsName(csStream) && inline) 
+                csStream = colorSpaces.get(csStream);
+            
+            var colorSpace = new ColorSpace(xref, csStream);
+
+            var decode = dict.get("Decode") || dict.get("D");
+
+            TODO("create color map");
+            
+            var mask = image.dict.get("Mask");
+            mask = this.xref.fetchIfRef(mask);
+            var smask = image.dict.get("SMask");
+            smask = this.xref.fetchIfRef(smask);
+
+            if (IsStream(smask)) {
+                if (inline)
+                    error("cannot combine smask and inlining");
+
+                var maskDict = smask.dict;
+                var maskW = maskDict.get("Width") || maskDict.get("W");
+                var maskH = maskDict.get("Height") || maskDict.get("H");
+                if (!IsNum(maskW) || !IsNum(maskH) || maskW < 1 || maskH < 1)
+                    error("Invalid image width or height");
+                if (maskW !== w || maskH !== h)
+                    error("Invalid image width or height");
+
+                var maskInterpolate = maskDict.get("Interpolate") || maskDict.get("I");
+                if (!IsBool(maskInterpolate))
+                    maskInterpolate = false;
+
+                var maskBPC = maskDict.get("BitsPerComponent") 
+                    || maskDict.get("BPC");
+                if (!maskBPC)
+                    error("Invalid image mask bpc");
+            
+                var maskCsStream = maskDict.get("ColorSpace") 
+                    || maskDict.get("CS");
+                maskCsStream = xref.fetchIfRef(maskCsStream);
+                //if (IsName(maskCsStream)) 
+                //    maskCsStream = colorSpaces.get(maskCsStream);
+            
+                var maskColorSpace = new ColorSpace(xref, maskCsStream);
+                if (maskColorSpace.mode !== "DeviceGray")
+                    error("Invalid color space for smask");
+
+                var maskDecode = maskDict.get("Decode") || maskDict.get("D");
+                if (maskDecode)
+                    TODO("Handle mask decode");
+                // handle matte object 
+            } else {
+                smask = null;
+            }
+
             var tmpCanvas = document.createElement("canvas");
             tmpCanvas.width = w;
             tmpCanvas.height = h;
+//            tmpCanvas.mozOpaque = false;
+            var ctx = this.ctx;
             var tmpCtx = tmpCanvas.getContext("2d");
+            tmpCtx.fillStyle = "rgb(255, 255, 255)";
+            tmpCtx.fillRect(0, 0, w, h);
             var imgData = tmpCtx.getImageData(0, 0, w, h);
             var pixels = imgData.data;
-
-            // Read in image data
-            image.snarf(pixels);
-
-            var alpha = 25;
-            if (image.dict.has("SMask")) {
-                var smask = image.dict.get("SMask");
-                smask = this.xref.fetchIfRef(smask);
-                // Specifies either a shape or opacity mask to be
-                // applied to the image samples
-                TODO("SMask");
-            }
-
+            
             if (smask) {
-                var smaskDict = smask.dict;
-                if (!smaskDict)
-                    error("No dictionary for smask");
-                var smaskBitsPerComponent = smaskDict.get2("BitsPerComponent", "BPC");
-                if (!smaskBitsPerComponent)
-                    error("Bad BPC for smask");
-                var max = (1 << bitsPerComponent) - 1;
+                if (maskColorSpace.numComps != 1)
+                    error("Incorrect number of components in smask");
+                
+                var numComps = colorSpace.numComps;
+                // factor in bits per component
+                var imgArray = image.getBytes(numComps * w * h);
+                var imgIdx = 0;
 
-                var matte = smaskDict.get("Matte");
-                if (matte) {
-                    TODO(matte);
+                var smArray = smask.getBytes(w * h);
+                var smIdx = 0;
+               
+                // hoist out loop end
+                for (var i = 0; i < 4 * w * h; i+=4) {
+                    var alpha = smArray[smIdx++];
+                    var alphaComp = (1 << maskBPC) - 1 - alpha;
+
+                    switch (numComps) {
+                    case 1:
+                        var p = imgArray[imageIdx++]*alpha;
+                        pixels[i] = (p + pixels[i]*alphaComp) >> maskBPC;
+                        pixels[i+1] = (p + pixels[i+1]*alphaComp) >> maskBPC;
+                        pixels[i+2] = (p + pixels[i+2]*alphaComp) >> maskBPC;
+                        pixels[i+3] = 255;
+                        break;
+                    case 3:
+                        pixels[i] = imgArray[imgIdx++]; //*alpha) >> maskBPC;
+                        pixels[i+1] = imgArray[imgIdx++];//*alpha) >> maskBPC;
+                        pixels[i+2] = imgArray[imgIdx++];//*alpha) >> maskBPC;
+                        pixels[i+3] = alpha;
+                        break;
+                    default:
+                        error("unhandled amount of components per pixel: " + numComps);
+                    }
                 }
-
-                // read in mask data
-                var mask = new Uint8Array(4 * w * h);
-                smask.snarf(mask);
-
-                // and blend images with it
-                var stop = 4 * w * h;
-                for (var i = 0; i < stop; ++i)
-                    pixels[i] = pixels[i] * mask[i] / max;
             } else {
-                // TODO blend if SMask is a mask image
-                var stop = 4 * w * h;
-                for (var i = 3; i < stop; i += 4)
-                    pixels[i] = alpha;
+                var numComps = colorSpace.numComps;
+                for (var i = 0; i < 4 * w * h; i+=4) {
+                    switch (numComps) {
+                    case 1:
+                        var t = image.getByte();
+                        pixels[i] = t;
+                        pixels[i+1] = t;
+                        pixels[i+2] = t;
+                        pixels[i+3] = 255;
+                        break;
+                    case 3:
+                        pixels[i] = image.getByte();
+                        pixels[i+1] = image.getByte();
+                        pixels[i+2] = image.getByte();
+                        pixels[i+3] = 255;
+                        break;
+                    default:
+                        error("unhandled amount of components per pixel: " + numComps);
+                    }
+                }
+>>>>>>> 496a6374c1ac04e
             }
             tmpCtx.putImageData(imgData, 0, 0);
-
             this.ctx.drawImage(tmpCanvas, 0, 0);
-
             this.restore();
         },
 
@@ -2031,6 +2179,53 @@ var CanvasGraphics = (function() {
         restoreFillRule: function(rule) {
             this.ctx.mozFillRule = rule;
         }
+    };
+
+    return constructor;
+})();
+
+var ColorSpace = (function() {
+    function constructor(xref, cs) {
+        if (IsName(cs)) {
+            var mode = cs.name;
+            this.mode = mode;
+            switch(mode) {
+            case "DeviceGray":
+            case "G":
+                this.numComps = 1;
+                break;
+            }
+            TODO("fill in color space constructor");
+        } else if (IsArray(cs)) {
+            var mode = cs[0].name;
+            this.mode = mode;
+            
+            var stream = cs[1];
+            stream = xref.fetchIfRef(stream);
+
+            switch (mode) {
+            case "DeviceGray":
+            case "G":
+                this.stream = stream;
+                this.dict = stream.dict;
+                this.numComps = 1;
+                break;
+            case "ICCBased":
+                var dict = stream.dict;
+                
+                this.stream = stream;
+                this.dict = dict;
+                this.numComps = dict.get("N");
+                break;
+            default:
+                error("unrecognized color space object");
+            }
+        } else {
+            error("unrecognized color space object");
+        }
+    };
+    
+    constructor.prototype = {
     };
 
     return constructor;
