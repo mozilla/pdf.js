@@ -22,9 +22,8 @@ function readCharset(aStream, aCharstrings) {
     var count = aCharstrings.length - 1;
     for (var i = 1; i < count + 1; i++) {
       var sid = aStream.getByte() << 8 | aStream.getByte();
-      log(sid);
       charset[CFFStrings[sid]] = readCharstringEncoding(aCharstrings[i]);
-      log(CFFStrings[sid] + "::" + charset[CFFStrings[sid]]);
+      //log(CFFStrings[sid] + "::" + charset[CFFStrings[sid]]);
     }
   } else if (format == 1) {
     error("Charset Range are not supported");
@@ -218,7 +217,7 @@ var Type2Parser = function(aFilePath) {
   var font = new Dict();
 
   // Turn on this flag for additional debugging logs
-  var debug = true;
+  var debug = false;
 
   function dump(aStr) {
     if (debug)
@@ -227,7 +226,6 @@ var Type2Parser = function(aFilePath) {
 
   function parseAsToken(aString, aMap) {
     var decoded = readFontDictData(aString, aMap);
-    log(decoded);
 
     var stack = [];
     var count = decoded.length;

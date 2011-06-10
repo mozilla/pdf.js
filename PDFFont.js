@@ -202,7 +202,7 @@ var Type1Parser = function(aAsciiStream, aBinaryStream) {
     "21": "rmoveto",
     "22": "hmoveto",
     "30": "vhcurveto",
-    "31": "hcurveto"
+    "31": "hvcurveto"
   };
 
   function decodeCharString(aStream) {
@@ -914,7 +914,7 @@ Type1Font.prototype = {
 
     //Top Dict Index
     var topDictIndex = [
-      0x00, 0x01, 0x01, 0x01, 0x29,
+      0x00, 0x01, 0x01, 0x01, 0x2A,
       248, 27, 0, // version
       248, 28, 1, // Notice
       248, 29, 2, // FullName
@@ -922,9 +922,9 @@ Type1Font.prototype = {
       248, 20, 4, // Weigth
       82, 251, 98, 250, 105, 249, 72, 5, // FontBBox
       248, 136, 15, // charset (offset: 500)
-      28, 0, 0, 16,   // Encoding (offset: 600)
-      248, 236, 17,  // CharStrings
-      28, 0, 55, 28, 15, 160, 18 // Private (offset: 4000)
+      28, 0, 0, 16,   // Encoding
+      28, 7, 208, 17,  // CharStrings (offset: 2000)
+      28, 0, 55, 28, 39, 16, 18 // Private (offset: 10000)
     ];
     cff.set(topDictIndex, currentOffset);
     currentOffset += topDictIndex.length;
@@ -956,32 +956,74 @@ Type1Font.prototype = {
     cff.set(empty, currentOffset);
     currentOffset += empty.length;
 
-    //Declare the letter 'C'
+    //Declare the letters
     var charset = [
-      0x00, 0x00, 0x42
+      0x00
     ];
+    var limit = 30;
+    for (var glyph in charstrings.map) {
+      if (!limit--)
+        break;
+      var index = CFFStrings.indexOf(glyph);
+      var bytes = integerToBytes(index, 2);
+      charset.push(bytes[0]);
+      charset.push(bytes[1]);
+    }
     cff.set(charset, currentOffset);
     currentOffset += charset.length;
 
     // Fill the space between this and the charstrings data by '1'
-    var empty = new Array(600 - currentOffset);
+    var empty = new Array(2000 - currentOffset);
     for (var i = 0; i < empty.length; i++)
       empty[i] = 0x01;
     cff.set(empty, currentOffset);
     currentOffset += empty.length;
 
 
+    var getNumFor = {
+      "hstem": 1,
+      "vstem": 3,
+      "vmoveto": 4,
+      "rlineto": 5,
+      "hlineto": 6,
+      "vlineto": 7,
+      "rrcurveto": 8,
+      "endchar": 14,
+      "rmoveto": 21,
+      "vhcurveto": 30,
+      "hvcurveto": 31,
+    };
+
     // Encode the glyph and add it to the FUX
-    var charStringsIndex = [
-      0x00, 0x02, 0x01, 0x01, 0x03, 0x05,
-      0x40, 0x0E,
-      0xAF, 0x0E
-    ];
-    cff.set(charStringsIndex, currentOffset);
+    var r = [[0x40, 0xEA]];
+    var limit = 30;
+    for (var glyph in glyphs) {
+      if (!limit--)
+        break;
+      var data = glyphs[glyph].slice();
+      var charstring = [];
+      for (var i = 0; i < data.length; i++) {
+        var c = data[i];
+        if (!IsNum(c)) {
+          var token = getNumFor[c];
+          if (!token)
+            error(c);
+          charstring.push(token);
+        } else {
+          var bytes = encodeNumber(c);
+          for (var j = 0; j < bytes.length; j++)
+            charstring.push(bytes[j]);
+        }
+      }
+      r.push(charstring);
+    }
+
+    var charStringsIndex = this.createCFFIndexHeader(r, true);
+    cff.set(charStringsIndex.join(" ").split(" "), currentOffset);
     currentOffset += charStringsIndex.length;
 
     // Fill the space between this and the private dict data by '1'
-    var empty = new Array(4000 - currentOffset);
+    var empty = new Array(10000 - currentOffset);
     for (var i = 0; i < empty.length; i++)
       empty[i] = 0x01;
     cff.set(empty, currentOffset);
@@ -1018,6 +1060,7 @@ Type1Font.prototype = {
 
     var file = new Uint8Array(cff, 0, currentOffset);
     var parser = new Type2Parser();
+    log("parse");
     parser.parse(new Stream(file));
 
     var file64 = Base64Encoder.encode(file);
@@ -1064,6 +1107,8 @@ Type1Font.prototype = {
 
 function integerToBytes(aValue, aBytesCount) {
   var bytes = [];
+  for (var i = 0; i < aBytesCount; i++)
+    bytes[i] = 0x00;
 
   do {
     bytes[--aBytesCount] = (aValue & 0xFF);
@@ -1106,4 +1151,5 @@ function encodeNumber(aValue) {
   } else {
     error("Value: " + aValue + " is not allowed");
   }
-}
+};
+
