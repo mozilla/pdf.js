@@ -611,7 +611,7 @@ var Type1Parser = function(aAsciiStream, aBinaryStream) {
    * as descrived in 'Using Subroutines' of 'Adobe Type 1 Font Format',
    * chapter 8.
    */
-  this.flattenCharstring = function(aCharstring, aDefaultWidth, aNominalWidth, aSubrs) {
+  this.flattenCharstring = function(aCharstring, aDefaultWidth, aSubrs) {
     operandStack.clear();
     executionStack.clear();
     executionStack.push(aCharstring);
@@ -631,7 +631,21 @@ var Type1Parser = function(aAsciiStream, aBinaryStream) {
             leftSidebearing = operandStack.pop();
 
             if (charWidthVector != aDefaultWidth)
-              operandStack.push(charWidthVector - aNominalWidth);
+              operandStack.push(charWidthVector - aDefaultWidth);
+            break;
+
+          case "rmoveto":
+            var dy = operandStack.pop();
+            var dx = operandStack.pop();
+
+            if (leftSidebearing) {
+              dx += leftSidebearing;
+              leftSidebearing = 0;
+            }
+
+            operandStack.push(dx);
+            operandStack.push(dy);
+            operandStack.push("rmoveto");
             break;
 
           case "setcurrentpoint":
@@ -654,21 +668,6 @@ var Type1Parser = function(aAsciiStream, aBinaryStream) {
           case "hstem3":
             operandStack.push("hstem");
             break;
-
-          case "rmoveto":
-            var dy = operandStack.pop();
-            var dx = operandStack.pop();
-
-            if (leftSidebearing) {
-              dx += leftSidebearing;
-              leftSidebearing = 0;
-            }
-
-            operandStack.push(dx);
-            operandStack.push(dy);
-            operandStack.push("rmoveto");
-            break;
-
 
           case "callsubr":
             var index = operandStack.pop();
@@ -723,14 +722,16 @@ var Type1Font = function(aFontName, aFontFile) {
 
     this.parser = new Type1Parser(ASCIIStream, binaryStream);
     var fontName = this.parser.parse();
-    this.convertToOTF(fontName);
+    var font = Fonts.get(fontName);
+    this.convertToOTF(this.convertToCFF(font), font);
+
     var end = Date.now();
     log("Time to parse font is:" + (end - start));
   }
 };
 
 Type1Font.prototype = {
-  getDefaultWidths: function(aCharstrings) {
+  getDefaultWidth: function(aCharstrings) {
     var defaultWidth = 0;
     var defaultUsedCount = 0;
 
@@ -746,24 +747,8 @@ Type1Font.prototype = {
 
       widths[width] = usedCount;
     }
-    defaultWidth = parseInt(defaultWidth);
-
-    var maxNegDistance = 0, maxPosDistance = 0;
-    for (var width in widths) {
-      var diff = width - defaultWidth;
-      if (diff < 0 && diff < maxNegDistance) {
-        maxNegDistance = diff;
-      } else if (diff > 0 && diff > maxPosDistance) {
-        maxPosDistance = diff;
-      }
-    }
-
-    return {
-      default: defaultWidth,
-      nominal: defaultWidth + (maxPosDistance + maxNegDistance) / 2
-    };
+    return parseInt(defaultWidth);
   },
-
 
   createCFFIndexHeader: function(aObjects, aIsByte) {
     var data = [];
@@ -845,26 +830,26 @@ Type1Font.prototype = {
     }
   },
 
-  convertToOTF: function(aFontName) {
-    var font = Fonts.get(aFontName);
-
-    var charstrings = font.get("CharStrings")
-    var defaultWidths = this.getDefaultWidths(charstrings);
-    var defaultWidth = defaultWidths.default;
-    var nominalWidth = defaultWidths.nominal;
+  convertToCFF: function(aFont) {
+    var charstrings = aFont.get("CharStrings")
+    var defaultWidth = this.getDefaultWidth(charstrings);
 
     log("defaultWidth to used: " + defaultWidth);
-    log("nominalWidth to used: " + nominalWidth);
-    log("Hack nonimal:" + (nominalWidth = 615));
 
+    var charstringsCount = 0;
+    var charstringsDataLength = 0;
 
     var glyphs = {};
-    var subrs = font.get("Private").get("Subrs");
+    var subrs = aFont.get("Private").get("Subrs");
     var parser = new Type1Parser();
     for (var glyph in charstrings.map) {
       var charstring = charstrings.get(glyph);
-      glyphs[glyph]  = parser.flattenCharstring(charstring, defaultWidth, nominalWidth, subrs);
+      glyphs[glyph]  = parser.flattenCharstring(charstring, defaultWidth, subrs);
+      charstringsCount++;
+      charstringsDataLength += glyphs[glyph].length;
     }
+
+    log("There is " + charstringsCount + " glyphs (size: " + charstringsDataLength + ")");
 
     // Create a CFF font data
     var cff = new Uint8Array(20000);
@@ -876,7 +861,7 @@ Type1Font.prototype = {
     cff.set(header);
 
     // Names Index
-    var nameIndex = this.createCFFIndexHeader([aFontName]);
+    var nameIndex = this.createCFFIndexHeader([aFont.get("FontName")]);
     cff.set(nameIndex, currentOffset);
     currentOffset += nameIndex.length;
 
@@ -995,7 +980,7 @@ Type1Font.prototype = {
     // Private Data
     var privateData = [
       248, 136, 20,
-      248, 251, 21,
+      248, 136, 21,
       119, 159, 248, 97, 159, 247, 87, 159, 6,
       30, 10, 3, 150, 37, 255, 12, 9,
       139, 12, 10,
@@ -1023,10 +1008,12 @@ Type1Font.prototype = {
 
 
     log("==================== debug ====================");
+    /*
     log("== parse");
     var file = new Uint8Array(cff, 0, currentOffset);
     var parser = new Type2Parser();
     parser.parse(new Stream(file));
+    */
 
     var data = [];
     for (var i = 0; i < currentOffset; i++)
@@ -1034,6 +1021,11 @@ Type1Font.prototype = {
 
     log("== write to file");
     writeToFile(data, "/tmp/pdf.js.cff");
+
+    return data;
+  },
+
+  convertToOTF: function(aData, aFont) {
   }
 };
 
