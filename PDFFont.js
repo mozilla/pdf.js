@@ -755,6 +755,9 @@ Type1Font.prototype = {
 
     // First 2 bytes contains the number of objects contained into this index
     var count = aObjects.length;
+    if (count ==0)
+      return [0x00, 0x00, 0x00];
+
     var bytes = this.integerToBytes(count, 2);
     for (var i = 0; i < bytes.length; i++)
       data.push(bytes[i]);
@@ -777,7 +780,7 @@ Type1Font.prototype = {
 
     for (var i =0; i < count; i++) {
       for (var j = 0; j < aObjects[i].length; j++)
-        data.push(aIsByte ? aObjects[i][j] : aObjects[i][j].charCodeAt(0));
+        data.push(aIsByte ? aObjects[i][j] : aObjects[i].charCodeAt(j));
     }
     return data;
   },
@@ -797,33 +800,20 @@ Type1Font.prototype = {
 
   encodeNumber: function(aValue) {
     var x = 0;
-    if (aValue >= -107 && aValue <= 107) {
-      return [aValue + 139];
-    } else if (aValue >= 108 && aValue <= 1131) {
-      x = aValue - 108;
-      return [
-        this.integerToBytes(x / 256 + 247, 1),
-        x % 256
-      ];
-    } else if (aValue >= -1131 && aValue <= -108) {
-      x = Math.abs(aValue) - 108;
-      return [
-        this.integerToBytes(x / 256 + 251, 1),
-        x % 256
-      ];
-    } else if (aValue >= -32768 && aValue <= 32767) {
+    // XXX we don't really care about Type2 optimization here...
+    if (aValue >= -32768 && aValue <= 32767) {
       return [
         28,
-        integerToBytes(aValue >> 8, 1),
-        integerToBytes(aValue, 1)
+        this.integerToBytes(aValue >> 8, 1),
+        this.integerToBytes(aValue, 1)
       ];
     } else if (aValue >= (-2147483647-1) && aValue <= 2147483647) {
       return [
         0xFF,
-        integerToBytes(aValue >> 24, 1),
-        integerToBytes(aValue >> 16, 1),
-        integerToBytes(aValue >> 8, 1),
-        integerToBytes(aValue, 1)
+        this.integerToBytes(aValue >> 24, 1),
+        this.integerToBytes(aValue >> 16, 1),
+        this.integerToBytes(aValue >> 8, 1),
+        this.integerToBytes(aValue, 1)
       ];
     } else {
       error("Value: " + aValue + " is not allowed");
@@ -834,11 +824,8 @@ Type1Font.prototype = {
     var charstrings = aFont.get("CharStrings")
     var defaultWidth = this.getDefaultWidth(charstrings);
 
-    log("defaultWidth to used: " + defaultWidth);
-
     var charstringsCount = 0;
     var charstringsDataLength = 0;
-
     var glyphs = {};
     var subrs = aFont.get("Private").get("Subrs");
     var parser = new Type1Parser();
@@ -848,7 +835,6 @@ Type1Font.prototype = {
       charstringsCount++;
       charstringsDataLength += glyphs[glyph].length;
     }
-
     log("There is " + charstringsCount + " glyphs (size: " + charstringsDataLength + ")");
 
     // Create a CFF font data
@@ -865,71 +851,33 @@ Type1Font.prototype = {
     cff.set(nameIndex, currentOffset);
     currentOffset += nameIndex.length;
 
-    //Top Dict Index
-    var topDictIndex = [
-      0x00, 0x01, 0x01, 0x01, 0x2A,
-      248, 27, 0, // version
-      248, 28, 1, // Notice
-      248, 29, 2, // FullName
-      248, 30, 3, // FamilyName
-      248, 20, 4, // Weigth
-      82, 251, 98, 250, 105, 249, 72, 5, // FontBBox
-      248, 136, 15, // charset (offset: 500)
-      28, 0, 0, 16,   // Encoding
-      28, 7, 208, 17,  // CharStrings (offset: 2000)
-      28, 0, 55, 28, 39, 16, 18 // Private (offset: 10000)
-    ];
-    cff.set(topDictIndex, currentOffset);
-    currentOffset += topDictIndex.length;
+    // Calculate strings before writing the TopDICT index in order
+    // to calculate correct relative offsets for storing 'charset'
+    // and 'charstrings' data
+    var fontInfo = aFont.get("FontInfo");
+    var version = fontInfo.get("version");
+    var notice = fontInfo.get("Notice");
+    var fullName = fontInfo.get("FullName");
+    var familyName = fontInfo.get("FamilyName");
+    var weight = fontInfo.get("Weight");
+    var strings = [version, notice, fullName,
+                   familyName, weight];
+    var stringsIndex = this.createCFFIndexHeader(strings);
+    var stringsDataLength = stringsIndex.length;
 
-    // Strings Index
-    var stringsIndex = [
-      0x00, 0x04, 0x01,
-      0x01, 0x05, 0x06, 0x07, 0x08,
-      0x31, 0x2E, 0x030, 0x35, // 1.05
-      0x2B, // +
-      0x28, // (
-      0x29  // )
-    ];
-    cff.set(stringsIndex, currentOffset);
-    currentOffset += stringsIndex.length;
+    // Create the global subroutines index
+    var globalSubrsIndex = this.createCFFIndexHeader([]);
 
-
-    // Global Subrs Index
-    var globalSubrsIndex = [
-      0x00, 0x00, 0x00
-    ];
-    cff.set(globalSubrsIndex, currentOffset);
-    currentOffset += globalSubrsIndex.length;
-
-    // Fill the space between this and the charset by '1'
-    var empty = new Array(500 - currentOffset);
-    for (var i = 0; i < empty.length; i++)
-      empty[i] = 0x01;
-    cff.set(empty, currentOffset);
-    currentOffset += empty.length;
-
-    //Declare the letters
-    var charset = [
-      0x00
-    ];
-    for (var glyph in charstrings.map) {
+    // Fill the charset header (first byte is the encoding)
+    var charset = [0x00];
+    for (var glyph in glyphs) {
       var index = CFFStrings.indexOf(glyph);
       var bytes = this.integerToBytes(index, 2);
       charset.push(bytes[0]);
       charset.push(bytes[1]);
     }
-    cff.set(charset, currentOffset);
-    currentOffset += charset.length;
 
-    // Fill the space between this and the charstrings data by '1'
-    var empty = new Array(2000 - currentOffset);
-    for (var i = 0; i < empty.length; i++)
-      empty[i] = 0x01;
-    cff.set(empty, currentOffset);
-    currentOffset += empty.length;
-
-
+    // Convert charstrings
     var getNumFor = {
       "hstem": 1,
       "vstem": 3,
@@ -966,16 +914,64 @@ Type1Font.prototype = {
       r.push(charstring);
     }
 
-    var charStringsIndex = this.createCFFIndexHeader(r, true);
-    cff.set(charStringsIndex.join(" ").split(" "), currentOffset);
-    currentOffset += charStringsIndex.length;
+    var charstringsIndex = this.createCFFIndexHeader(r, true);
+    charstringsIndex = charstringsIndex.join(" ").split(" "); // XXX why?
 
-    // Fill the space between this and the private dict data by '1'
-    var empty = new Array(10000 - currentOffset);
-    for (var i = 0; i < empty.length; i++)
-      empty[i] = 0x01;
-    cff.set(empty, currentOffset);
-    currentOffset += empty.length;
+
+    var fontBBox = aFont.get("FontBBox");
+
+    //Top Dict Index
+    var topDictIndex = [
+      0x00, 0x01, 0x01, 0x01, 0x30,
+      248, 27, 0, // version
+      248, 28, 1, // Notice
+      248, 29, 2, // FullName
+      248, 30, 3, // FamilyName
+      248, 31, 4, // Weight
+    ];
+
+    for (var i = 0; i < fontBBox.length; i++)
+      topDictIndex = topDictIndex.concat(this.encodeNumber(fontBBox[i]));
+    topDictIndex.push(5) // FontBBox;
+
+    var charsetOffset = currentOffset +
+                        (topDictIndex.length + (4 + 4 + 4 + 7)) +
+                        stringsIndex.length +
+                        globalSubrsIndex.length;
+    topDictIndex = topDictIndex.concat(this.encodeNumber(charsetOffset));
+    topDictIndex.push(15); // charset
+
+    topDictIndex = topDictIndex.concat([28, 0, 0, 16]) // Encoding
+
+    var charstringsOffset = charsetOffset + (charstringsCount * 2) + 1;
+    topDictIndex = topDictIndex.concat(this.encodeNumber(charstringsOffset));
+    topDictIndex.push(17); // charstrings
+
+    topDictIndex = topDictIndex.concat([28, 0, 55])
+    var privateOffset = charstringsOffset + charstringsIndex.length;
+    topDictIndex = topDictIndex.concat(this.encodeNumber(privateOffset));
+    topDictIndex.push(18); // Private
+    topDictIndex = topDictIndex.join(" ").split(" ");
+
+    // Top Dict Index
+    cff.set(topDictIndex, currentOffset);
+    currentOffset += topDictIndex.length;
+
+    // Strings Index
+    cff.set(stringsIndex, currentOffset);
+    currentOffset += stringsIndex.length;
+
+    // Global Subrs Index
+    cff.set(globalSubrsIndex, currentOffset);
+    currentOffset += globalSubrsIndex.length;
+
+    // Charset Index
+    cff.set(charset, currentOffset);
+    currentOffset += charset.length;
+
+    // Fill charstrings data
+    cff.set(charstringsIndex, currentOffset);
+    currentOffset += charstringsIndex.length;
 
     // Private Data
     var privateData = [

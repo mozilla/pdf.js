@@ -277,16 +277,17 @@ var Type2Parser = function(aFilePath) {
     // Read the NAME Index
     dump("Reading Index: Names");
     font.set("Names", readFontIndexData(aStream));
+    log("Names: " + font.get("Names"));
 
     // Read the Top Dict Index
     dump("Reading Index: TopDict");
     var topDict = readFontIndexData(aStream, true);
-    log(topDict);
+    log("TopDict: " + topDict);
 
     // Read the String Index
     dump("Reading Index: Strings");
     var strings = readFontIndexData(aStream);
-    log(strings);
+    log("strings: " + strings);
 
     // Fill up the Strings dictionary with the new unique strings
     for (var i = 0; i < strings.length; i++)
