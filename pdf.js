@@ -1561,6 +1561,7 @@ var CanvasExtraState = (function() {
         this.alphaIsShape = false;
         this.fontSize = 0.0;
         this.textMatrix = IDENTITY_MATRIX;
+        this.leading = 0.0;
         // Current point (in user coordinates)
         this.x = 0.0;
         this.y = 0.0;
@@ -1614,9 +1615,11 @@ var CanvasGraphics = (function() {
             // Text
             BT: this.beginText,
             ET: this.endText,
+            TL: this.setLeading,
             Tf: this.setFont,
             Td: this.moveText,
             Tm: this.setTextMatrix,
+            "T*": this.nextLine,
             Tj: this.showText,
             TJ: this.showSpacedText,
 
@@ -1788,6 +1791,9 @@ var CanvasGraphics = (function() {
         },
         endText: function() {
         },
+        setLeading: function(leading) {
+            this.current.leading = leading;
+        },
         setFont: function(fontRef, size) {
             var fontRes = this.res.get("Font");
             if (!fontRes)
@@ -1808,6 +1814,9 @@ var CanvasGraphics = (function() {
             this.current.textMatrix = [ a, b, c, d, e, f ];
             this.current.x = this.current.lineX = 0;
             this.current.y = this.current.lineY = 0;
+        },
+        nextLine: function() {
+            this.moveText(0, this.current.leading);
         },
         showText: function(text) {
             this.ctx.save();
