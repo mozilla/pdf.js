@@ -729,24 +729,18 @@ var Type1Parser = function(aAsciiStream, aBinaryStream) {
             error(obj + " parsing is not implemented (yet)");
             break;
 
-          case "vstem3":
-            operandStack.push("vstem");
-            break;
-
-          case "vstem":
-            //log(obj + " is not converted (yet?)");
-            operandStack.push("vstem");
-            break;
-
           case "closepath":
           case "return":
             break;
 
-          case "hlineto":
-          case "vlineto":
-          case "rlineto":
-          case "rrcurveto":
-            aggregateCommand(obj);
+          case "vstem3":
+          case "vstem":
+            operandStack.push("vstem");
+            break;
+
+          case "hstem":
+          case "hstem3":
+            operandStack.push("hstem");
             break;
 
           case "rmoveto":
@@ -763,20 +757,6 @@ var Type1Parser = function(aAsciiStream, aBinaryStream) {
             operandStack.push("rmoveto");
             break;
 
-          case "hstem":
-          case "hstem3":
-            var dy = operandStack.pop();
-            var y = operandStack.pop();
-            if (operandStack.peek() == "hstem" ||
-                operandStack.peek() == "hstem3")
-              operandStack.pop();
-
-            operandStack.push(y - lastPoint);
-            lastPoint = y + dy;
-
-            operandStack.push(dy);
-            operandStack.push("hstem");
-            break;
 
           case "callsubr":
             var index = operandStack.pop();
@@ -960,10 +940,7 @@ Type1Font.prototype = {
     var charset = [
       0x00
     ];
-    var limit = 30;
     for (var glyph in charstrings.map) {
-      if (!limit--)
-        break;
       var index = CFFStrings.indexOf(glyph);
       var bytes = integerToBytes(index, 2);
       charset.push(bytes[0]);
@@ -990,16 +967,14 @@ Type1Font.prototype = {
       "rrcurveto": 8,
       "endchar": 14,
       "rmoveto": 21,
+      "hmoveto": 22,
       "vhcurveto": 30,
       "hvcurveto": 31,
     };
 
     // Encode the glyph and add it to the FUX
     var r = [[0x40, 0xEA]];
-    var limit = 30;
     for (var glyph in glyphs) {
-      if (!limit--)
-        break;
       var data = glyphs[glyph].slice();
       var charstring = [];
       for (var i = 0; i < data.length; i++) {
@@ -1060,16 +1035,18 @@ Type1Font.prototype = {
 
     var file = new Uint8Array(cff, 0, currentOffset);
     var parser = new Type2Parser();
-    log("parse");
-    parser.parse(new Stream(file));
 
-    var file64 = Base64Encoder.encode(file);
-    console.log(file64);
+
+    log("==================== debug ====================");
+    log("== parse");
+    parser.parse(new Stream(file));
 
     var data = [];
     for (var i = 0; i < currentOffset; i++)
       data.push(cff[i]);
-    log(data);
+
+    log("== write to file");
+    writeToFile(data, "/tmp/pdf.js.cff");
   },
 
   createCFFIndexHeader: function(aObjects, aIsByte) {

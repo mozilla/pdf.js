@@ -349,3 +349,26 @@ var cffData = xhr.mozResponseArrayBuffer || xhr.mozResponse ||
               xhr.responseArrayBuffer || xhr.response;
 var cff = new Type2Parser("titi.cff");
 //cff.parse(new Stream(cffData));
+
+
+/**
+ * Write to a file (works only on Firefox in privilege mode");
+ */
+ function writeToFile(aBytes, aFilePath) {
+  netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
+  var Cc = Components.classes,
+      Ci = Components.interfaces;
+  var file  = Cc['@mozilla.org/file/local;1'].createInstance(Ci.nsILocalFile);
+  file.initWithPath(aFilePath);
+
+  var stream = Cc["@mozilla.org/network/file-output-stream;1"]
+                 .createInstance(Ci.nsIFileOutputStream);
+  stream.init(file, 0x04 | 0x08 | 0x20, 0600, 0);
+
+ var bos = Cc["@mozilla.org/binaryoutputstream;1"]
+             .createInstance(Ci.nsIBinaryOutputStream);
+  bos.setOutputStream(stream);
+  bos.writeByteArray(aBytes, aBytes.length);
+  stream.close();
+ };
+
