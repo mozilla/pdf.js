@@ -247,7 +247,7 @@ var FlateStream = (function() {
         this.codeSize = 0;
         this.codeBuf = 0;
         
-        this.bufferPos = 0;
+        this.pos = 0;
         this.bufferLength = 0;
     }
 
@@ -305,16 +305,16 @@ var FlateStream = (function() {
         },
         getByte: function() {
             var bufferLength = this.bufferLength;
-            var bufferPos = this.bufferPos;
-            if (bufferLength == bufferPos) {
+            var pos = this.pos;
+            if (bufferLength == pos) {
                 if (this.eof)
                     return;
                 this.readBlock();
             }
-            return this.buffer[this.bufferPos++];
+            return this.buffer[this.pos++];
         },
         getBytes: function(length) {
-            var pos = this.bufferPos;
+            var pos = this.pos;
 
             while (!this.eof && this.bufferLength < pos + length)
                 this.readBlock();
@@ -325,24 +325,24 @@ var FlateStream = (function() {
             if (end > bufEnd)
                 end = bufEnd;
 
-            this.bufferPos = end;
+            this.pos = end;
             return this.buffer.subarray(pos, end)
         },
         lookChar: function() {
             var bufferLength = this.bufferLength;
-            var bufferPos = this.bufferPos;
-            if (bufferLength == bufferPos) {
+            var pos = this.pos;
+            if (bufferLength == pos) {
                 if (this.eof)
                     return;
                 this.readBlock();
             }
-            return String.fromCharCode(this.buffer[bufferPos]);
+            return String.fromCharCode(this.buffer[pos]);
         },
         getChar: function() {
             var ch = this.lookChar();
             if (!ch)
                 return;
-            this.bufferPos++;
+            this.pos++;
             return ch;
         },
         skip: function(n) {
@@ -2069,7 +2069,7 @@ var CanvasGraphics = (function() {
                 var length = 4 * w * h;
                 switch (numComps) {
                 case 1:
-                    for (var i = 0; i < length; i+=4) {
+                    for (var i = 0; i < length; i += 4) {
                         var p = imgArray[imageIdx++];
                         pixels[i] = p;
                         pixels[i+1] = p;
@@ -2078,7 +2078,7 @@ var CanvasGraphics = (function() {
                     }
                     break;
                 case 3:
-                    for (var i = 0; i < length; i+=4) {
+                    for (var i = 0; i < length; i += 4) {
                         pixels[i] = imgArray[imgIdx++];
                         pixels[i+1] = imgArray[imgIdx++];
                         pixels[i+2] = imgArray[imgIdx++];
@@ -2096,7 +2096,7 @@ var CanvasGraphics = (function() {
                 var length = 4 * w * h;
                 switch (numComps) {
                 case 1:
-                    for (var i = 0; i < length; i+=4) {
+                    for (var i = 0; i < length; i += 4) {
                         var p = imgArray[imageIdx++];
                         pixels[i] = p;
                         pixels[i+1] = p;
@@ -2105,7 +2105,7 @@ var CanvasGraphics = (function() {
                     }
                     break;
                 case 3:
-                    for (var i = 0; i < length; i+=4) {
+                    for (var i = 0; i < length; i += 4) {
                         pixels[i] = imgArray[imgIdx++];
                         pixels[i+1] = imgArray[imgIdx++];
                         pixels[i+2] = imgArray[imgIdx++];
