@@ -104,10 +104,14 @@ var Stream = (function() {
                 dest[n++] = bytes[pos++];
             this.pos = this.end;
         },
-        skip: function(n) {
-            if (!n)
-                n = 1;
-            this.pos += n;
+        skip: function() {
+            this.pos += 1;
+        },
+        skipN: function(n) {
+            this.pos += n;       
+        },
+        back: function() {
+            this.pos -= 1;
         },
         reset: function() {
             this.pos = this.start;
@@ -319,7 +323,7 @@ var FlateStream = (function() {
         getByte: function() {
             var bufferLength = this.bufferLength;
             var bufferPos = this.bufferPos;
-            if (bufferLength == bufferPos) {
+            if (bufferLength <= bufferPos) {
                 if (this.eof)
                     return;
                 this.readBlock();
@@ -349,7 +353,7 @@ var FlateStream = (function() {
         lookChar: function() {
             var bufferLength = this.bufferLength;
             var bufferPos = this.bufferPos;
-            if (bufferLength == bufferPos) {
+            if (bufferLength <= bufferPos) {
                 if (this.eof)
                     return;
                 this.readBlock();
@@ -380,11 +384,16 @@ var FlateStream = (function() {
             // update stream position
             this.pos = n;
         },
-        skip: function(n) {
-            if (!n)
-                n = 1;
-            while (n-- > 0)
-                this.getChar();
+        skip: function() {
+            this.bufferPos++;
+            //this.getByte();
+        },
+        skipN: function(n) {
+            this.bufferPos += n;
+            //this.getBytes(n);
+        },
+        back: function() {
+            this.bufferPos--;
         },
         generateHuffmanTable: function(lengths) {
             var n = lengths.length;
@@ -609,19 +618,19 @@ var Ref = (function() {
 })();
 
 function IsBool(v) {
-    return typeof v == "boolean";
+    return typeof v === "boolean";
 }
 
 function IsInt(v) {
-    return typeof v == "number" && ((v|0) == v);
+    return typeof v === "number" && ((v|0) === v);
 }
 
 function IsNum(v) {
-    return typeof v == "number";
+    return typeof v === "number";
 }
 
 function IsString(v) {
-    return typeof v == "string";
+    return typeof v === "string";
 }
 
 function IsNull(v) {
@@ -633,11 +642,11 @@ function IsName(v) {
 }
 
 function IsCmd(v, cmd) {
-    return v instanceof Cmd && (!cmd || v.cmd == cmd);
+    return v instanceof Cmd && (!cmd || v.cmd === cmd);
 }
 
 function IsDict(v, type) {
-    return v instanceof Dict && (!type || v.get("Type").name == type);
+    return v instanceof Dict && (!type || v.get("Type").name === type);
 }
 
 function IsArray(v) {
@@ -655,13 +664,13 @@ function IsRef(v) {
 var EOF = {};
 
 function IsEOF(v) {
-    return v == EOF;
+    return v === EOF;
 }
 
 var None = {};
 
 function IsNone(v) {
-    return v == None;
+    return v === None;
 }
 
 var Lexer = (function() {
@@ -714,23 +723,24 @@ var Lexer = (function() {
             var str = ch;
             var stream = this.stream;
             do {
-                ch = stream.lookChar();
-                if (ch == "." && !floating) {
+                ch = stream.getChar();
+                if (ch === "." && !floating) {
                     str += ch;
                     floating = true;
-                } else if (ch == "-") {
+                } else if (ch === "-") {
                     // ignore minus signs in the middle of numbers to match
                     // Adobe's behavior
                     warn("Badly formated number");
                 } else if (ch >= "0" && ch <= "9") {
                     str += ch;
-                } else if (ch == "e" || ch == "E") {
+                } else if (ch === "e" || ch === "E") {
                     floating = true;
                 } else {
                     // the last character doesn't belong to us
+                    stream.back();
                     break;
                 }
-                stream.skip();
+                //stream.skip();
             } while (true);
             var value = parseFloat(str);
             if (isNaN(value))
@@ -1524,7 +1534,7 @@ var PDFDoc = (function() {
                     start = 0;
                 stream.pos = start;
                 if (find(stream, "startxref", 1024, true)) {
-                    stream.skip(9);
+                    stream.skipN(9);
                     var ch;
                     while (Lexer.isSpace(ch = stream.getChar()))
                         ;
