@@ -75,12 +75,8 @@ var Stream = (function() {
             if (end > strEnd)
                 end = strEnd;
             
-            var n = 0;
-            var buf = new Uint8Array(length);
-            while (pos < end)
-                buf[n++] = bytes[pos++]
-            this.pos = pos;
-            return buf;
+            this.pos = end;
+            return bytes.subarray(pos, end);
         },
         lookChar: function() {
             var bytes = this.bytes;
@@ -94,15 +90,6 @@ var Stream = (function() {
                 return ch;
             this.pos++;
             return ch;
-        },
-        snarf: function(dest) {
-            var bytes = this.bytes;
-            var pos = this.pos;
-            var end = this.end;
-            var n = 0;
-            while (pos < end)
-                dest[n++] = bytes[pos++];
-            this.pos = this.end;
         },
         skip: function(n) {
             if (!n)
@@ -338,13 +325,8 @@ var FlateStream = (function() {
             if (end > bufEnd)
                 end = bufEnd;
 
-            var buffer = this.buffer;
-            var retBuffer = new Uint8Array(length);
-            var n = 0;
-            while (pos < end)
-                retBuffer[n++] = buffer[pos++];
-            this.bufferPos = pos;
-            return retBuffer;
+            this.bufferPos = end;
+            return this.buffer.subarray(pos, end)
         },
         lookChar: function() {
             var bufferLength = this.bufferLength;
@@ -362,23 +344,6 @@ var FlateStream = (function() {
                 return;
             this.bufferPos++;
             return ch;
-        },
-        snarf: function(dest) {
-            // copy the leftover data in the buffer into dest
-            var bufferLength = this.bufferLength;
-            var bufferPos = this.bufferPos;
-            var n = 0;
-            
-            // entire front of stream needs to be copied over since flate
-            // looksback when decoding
-            while (0 < bufferLength)
-                dest[n++] = this.buffer[bufferPos++];
-            // now use dest as our buffer and fill it
-            this.buffer = dest;
-            while (!this.eof)
-                this.readBlock();
-            // update stream position
-            this.pos = n;
         },
         skip: function(n) {
             if (!n)
@@ -1081,7 +1046,7 @@ var Parser = (function() {
                 length = xref.fetchIfRef(length);
             if (!IsInt(length)) {
                 error("Bad 'Length' attribute in stream");
-                lenght = 0;
+                length = 0;
             }
 
             // skip over the stream data
@@ -2000,7 +1965,7 @@ var CanvasGraphics = (function() {
 
             var bitsPerComponent = image.bitsPerComponent;
             if (!bitsPerComponent) {
-                bitsPerComponent = dict.get("BitsPerComponent", "BPC");
+                bitsPerComponent = dict.get2("BitsPerComponent", "BPC");
                 if (!bitsPerComponent) {
                     if (imageMask)
                         bitsPerComponent = 1;
@@ -2020,14 +1985,14 @@ var CanvasGraphics = (function() {
             }
 
             // actual image
-            var csStream = dict.get("ColorSpace") || dict.get("CS");
+            var csStream = dict.get2("ColorSpace", "CS");
             csStream = xref.fetchIfRef(csStream);
             if (IsName(csStream) && inline) 
                 csStream = colorSpaces.get(csStream);
             
             var colorSpace = new ColorSpace(xref, csStream);
 
-            var decode = dict.get("Decode") || dict.get("D");
+            var decode = dict.get2("Decode", "D");
 
             TODO("create color map");
             
@@ -2041,33 +2006,28 @@ var CanvasGraphics = (function() {
                     error("cannot combine smask and inlining");
 
                 var maskDict = smask.dict;
-                var maskW = maskDict.get("Width") || maskDict.get("W");
-                var maskH = maskDict.get("Height") || maskDict.get("H");
+                var maskW = maskDict.get2("Width", "W");
+                var maskH = maskDict.get2("Height", "H");
                 if (!IsNum(maskW) || !IsNum(maskH) || maskW < 1 || maskH < 1)
                     error("Invalid image width or height");
                 if (maskW !== w || maskH !== h)
                     error("Invalid image width or height");
 
-                var maskInterpolate = maskDict.get("Interpolate") || maskDict.get("I");
+                var maskInterpolate = maskDict.get2("Interpolate", "I");
                 if (!IsBool(maskInterpolate))
                     maskInterpolate = false;
 
-                var maskBPC = maskDict.get("BitsPerComponent") 
-                    || maskDict.get("BPC");
+                var maskBPC = maskDict.get2("BitsPerComponent", "BPC");
                 if (!maskBPC)
                     error("Invalid image mask bpc");
             
-                var maskCsStream = maskDict.get("ColorSpace") 
-                    || maskDict.get("CS");
+                var maskCsStream = maskDict.get2("ColorSpace", "CS");
                 maskCsStream = xref.fetchIfRef(maskCsStream);
-                //if (IsName(maskCsStream)) 
-                //    maskCsStream = colorSpaces.get(maskCsStream);
-            
                 var maskColorSpace = new ColorSpace(xref, maskCsStream);
                 if (maskColorSpace.mode !== "DeviceGray")
                     error("Invalid color space for smask");
 
-                var maskDecode = maskDict.get("Decode") || maskDict.get("D");
+                var maskDecode = maskDict.get2("Decode", "D");
                 if (maskDecode)
                     TODO("Handle mask decode");
                 // handle matte object 
@@ -2078,7 +2038,6 @@ var CanvasGraphics = (function() {
             var tmpCanvas = document.createElement("canvas");
             tmpCanvas.width = w;
             tmpCanvas.height = h;
-//            tmpCanvas.mozOpaque = false;
             var ctx = this.ctx;
             var tmpCtx = tmpCanvas.getContext("2d");
             tmpCtx.fillStyle = "rgb(255, 255, 255)";
@@ -2086,61 +2045,68 @@ var CanvasGraphics = (function() {
             var imgData = tmpCtx.getImageData(0, 0, w, h);
             var pixels = imgData.data;
             
+            if (bitsPerComponent != 8)
+                error("unhandled number of bits per component"); 
+            
             if (smask) {
                 if (maskColorSpace.numComps != 1)
                     error("Incorrect number of components in smask");
                 
                 var numComps = colorSpace.numComps;
-                // factor in bits per component
                 var imgArray = image.getBytes(numComps * w * h);
                 var imgIdx = 0;
 
                 var smArray = smask.getBytes(w * h);
                 var smIdx = 0;
                
-                // hoist out loop end
-                for (var i = 0; i < 4 * w * h; i+=4) {
-                    var alpha = smArray[smIdx++];
-                    var alphaComp = (1 << maskBPC) - 1 - alpha;
-
-                    switch (numComps) {
-                    case 1:
-                        var p = imgArray[imageIdx++]*alpha;
-                        pixels[i] = (p + pixels[i]*alphaComp) >> maskBPC;
-                        pixels[i+1] = (p + pixels[i+1]*alphaComp) >> maskBPC;
-                        pixels[i+2] = (p + pixels[i+2]*alphaComp) >> maskBPC;
-                        pixels[i+3] = 255;
-                        break;
-                    case 3:
-                        pixels[i] = imgArray[imgIdx++]; //*alpha) >> maskBPC;
-                        pixels[i+1] = imgArray[imgIdx++];//*alpha) >> maskBPC;
-                        pixels[i+2] = imgArray[imgIdx++];//*alpha) >> maskBPC;
-                        pixels[i+3] = alpha;
-                        break;
-                    default:
-                        error("unhandled amount of components per pixel: " + numComps);
+                var length = 4 * w * h;
+                switch (numComps) {
+                case 1:
+                    for (var i = 0; i < length; i+=4) {
+                        var p = imgArray[imageIdx++];
+                        pixels[i] = p;
+                        pixels[i+1] = p;
+                        pixels[i+2] = p;
+                        pixels[i+3] = smArray[smIdx++];
                     }
+                    break;
+                case 3:
+                    for (var i = 0; i < length; i+=4) {
+                        pixels[i] = imgArray[imgIdx++];
+                        pixels[i+1] = imgArray[imgIdx++];
+                        pixels[i+2] = imgArray[imgIdx++];
+                        pixels[i+3] = smArray[smIdx++];
+                    }
+                    break;
+                default:
+                    error("unhandled amount of components per pixel: " + numComps);
                 }
             } else {
                 var numComps = colorSpace.numComps;
-                for (var i = 0; i < 4 * w * h; i+=4) {
-                    switch (numComps) {
-                    case 1:
-                        var t = image.getByte();
-                        pixels[i] = t;
-                        pixels[i+1] = t;
-                        pixels[i+2] = t;
+                var imgArray = image.getBytes(numComps * w * h);
+                var imgIdx = 0;
+               
+                var length = 4 * w * h;
+                switch (numComps) {
+                case 1:
+                    for (var i = 0; i < length; i+=4) {
+                        var p = imgArray[imageIdx++];
+                        pixels[i] = p;
+                        pixels[i+1] = p;
+                        pixels[i+2] = p;
                         pixels[i+3] = 255;
-                        break;
-                    case 3:
-                        pixels[i] = image.getByte();
-                        pixels[i+1] = image.getByte();
-                        pixels[i+2] = image.getByte();
-                        pixels[i+3] = 255;
-                        break;
-                    default:
-                        error("unhandled amount of components per pixel: " + numComps);
                     }
+                    break;
+                case 3:
+                    for (var i = 0; i < length; i+=4) {
+                        pixels[i] = imgArray[imgIdx++];
+                        pixels[i+1] = imgArray[imgIdx++];
+                        pixels[i+2] = imgArray[imgIdx++];
+                        pixels[i+3] = 255;
+                    }
+                    break;
+                default:
+                    error("unhandled amount of components per pixel: " + numComps);
                 }
             }
             tmpCtx.putImageData(imgData, 0, 0);
