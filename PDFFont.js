@@ -11,6 +11,47 @@ var Fonts = new Dict();
 var _Fonts = {};
 
 
+var Stack = function() {
+  var innerStack = [];
+
+  this.push = function(aOperand) {
+    innerStack.push(aOperand);
+  };
+
+  this.pop = function() {
+    if (!this.count())
+      throw new Error("stackunderflow");
+    return innerStack.pop();
+  };
+
+  this.peek = function() {
+    if (!this.count())
+      return null;
+    return innerStack[innerStack.length - 1];
+  };
+
+  this.get = function(aIndex) {
+    return innerStack[aIndex];
+  };
+
+  this.clear = function() {
+    innerStack = [];
+  };
+
+  this.count = function() {
+    return innerStack.length;
+  };
+
+  this.dump = function() {
+    for (var i = 0; i < this.length; i++)
+      log(innerStack[i]);
+  };
+
+  this.clone = function() {
+    return innerStack.slice();
+  };
+};
+
 var Base64Encoder = {
   encode: function(aData) {
     var str = [];
@@ -36,20 +77,8 @@ var TrueTypeFont = function(aFontName, aFontFile) {
   document.styleSheets[0].insertRule("@font-face { font-family: '" + aFontName + "'; src: " + url + " }", 0);
 };
 
-
-
-
 var Type1Parser = function(aAsciiStream, aBinaryStream) {
-  if (IsStream(aAsciiStream)) {
-    var lexer = new Lexer(aAsciiStream);
-  } else {
-    var lexer = {
-      __data__: aAsciiStream.slice(),
-      getObj: function() {
-        return this.__data__.shift();
-      }
-    }
-  }
+  var lexer = aAsciiStream ? new Lexer(aAsciiStream) : null;
 
   // Turn on this flag for additional debugging logs
   var debug = false;
@@ -225,41 +254,7 @@ var Type1Parser = function(aAsciiStream, aBinaryStream) {
    * operator returns one or more results, it does so by pushing them on the
    * operand stack.
    */
-   var operandStack = {
-    __innerStack__: [],
-
-    push: function(aOperand) {
-      this.__innerStack__.push(aOperand);
-    },
-
-    pop: function() {
-      if (!this.length)
-        throw new Error("stackunderflow");
-      return this.__innerStack__.pop();
-    },
-
-    peek: function() {
-      if (!this.length)
-        return null;
-      return this.__innerStack__[this.__innerStack__.length - 1];
-    },
-
-    get: function(aIndex) {
-      return this.__innerStack__[aIndex];
-    },
-
-    dump: function() {
-      log("=== Start Dumping operandStack ===");
-      var str = [];
-      for (var i = 0; i < this.length; i++)
-        log(this.__innerStack__[i]);
-      log("=== End Dumping operandStack ===");
-    },
-
-    get length() {
-      return this.__innerStack__.length;
-    }
-   };
+   var operandStack = new Stack();
 
    // Flag indicating if the topmost operand of the operandStack is an array
    var operandIsArray = 0;
@@ -277,42 +272,10 @@ var Type1Parser = function(aAsciiStream, aBinaryStream) {
       globalDict = new Dict(),
       userDict   = new Dict();
 
-  var dictionaryStack = {
-    __innerStack__: [systemDict, globalDict, userDict],
-
-    push: function(aDictionary) {
-      this.__innerStack__.push(aDictionary);
-    },
-
-    pop: function() {
-      if (this.__innerStack__.length == 3)
-        return null;
-
-      return this.__innerStack__.pop();
-    },
-
-    peek: function() {
-      if (!this.length)
-        return null;
-      return this.__innerStack__[this.__innerStack__.length - 1];
-    },
-
-    get: function(aIndex) {
-      return this.__innerStack__[aIndex];
-    },
-
-    get length() {
-      return this.__innerStack__.length;
-    },
-
-    dump: function() {
-      log("=== Start Dumping dictionaryStack ===");
-      var str = [];
-      for (var i = 0; i < this.length; i++)
-        log(this.__innerStack__[i]);
-      log("=== End Dumping dictionaryStack ===");
-    },
-  };
+  var dictionaryStack = new Stack();
+  dictionaryStack.push(systemDict);
+  dictionaryStack.push(globalDict);
+  dictionaryStack.push(userDict);
 
   /*
    * The execution stack holds executable objects (mainly procedures and files)
@@ -324,31 +287,7 @@ var Type1Parser = function(aAsciiStream, aBinaryStream) {
    * object off the execution stack and resumes executing the suspended object
    * beneath it.
    */
-  var executionStack = {
-    __innerStack__: [],
-
-    push: function(aProcedure) {
-      this.__innerStack__.push(aProcedure);
-    },
-
-    pop: function() {
-      return this.__innerStack__.pop();
-    },
-
-    peek: function() {
-      if (!this.length)
-        return null;
-      return this.__innerStack__[this.__innerStack__.length - 1];
-    },
-
-    get: function(aIndex) {
-      return this.__innerStack__[aIndex];
-    },
-
-    get length() {
-      return this.__innerStack__.length;
-    }
-  };
+  var executionStack = new Stack();
 
   /*
    * Return the next token in the execution stack
@@ -637,7 +576,7 @@ var Type1Parser = function(aAsciiStream, aBinaryStream) {
         default:
           var command = null;
           if (IsCmd(obj)) {
-            for (var i = 0; i < dictionaryStack.length; i++) {
+            for (var i = 0; i < dictionaryStack.count(); i++) {
               if (command = dictionaryStack.get(i).get(obj.cmd)) {
                 dump("found in dictionnary for " + obj.cmd + " command: " + command);
                 executionStack.push(command.slice());
@@ -760,7 +699,11 @@ var Type1Parser = function(aAsciiStream, aBinaryStream) {
    * as descrived in 'Using Subroutines' of 'Adobe Type 1 Font Format',
    * chapter 8.
    */
-  this.flattenCharstring = function(aCharString, aDefaultWidth, aNominalWidth, aSubrs) {
+  this.flattenCharstring = function(aCharstring, aDefaultWidth, aNominalWidth, aSubrs) {
+    operandStack.clear();
+    executionStack.clear();
+    executionStack.push(aCharstring);
+
     var leftSidebearing = 0;
     var lastPoint = 0;
     while (true) {
@@ -791,7 +734,7 @@ var Type1Parser = function(aAsciiStream, aBinaryStream) {
             break;
 
           case "vstem":
-            log(obj + " is not converted (yet?)");
+            //log(obj + " is not converted (yet?)");
             operandStack.push("vstem");
             break;
 
@@ -841,20 +784,24 @@ var Type1Parser = function(aAsciiStream, aBinaryStream) {
             break;
 
           case "callothersubr":
-            log("callothersubr");
             // XXX need to be improved
             var index = operandStack.pop();
             var count = operandStack.pop();
             var data = operandStack.pop();
+            if (index != 3)
+              log("callothersubr for index: " + index);
             operandStack.push(3);
             operandStack.push("callothersubr");
             break;
+
           case "endchar":
             operandStack.push("endchar");
-            return operandStack.__innerStack__.slice();
+            return operandStack.clone();
+
           case "pop":
             operandStack.pop();
             break;
+
           default:
             operandStack.push(obj);
             break;
@@ -885,41 +832,31 @@ var Type1Font = function(aFontName, aFontFile) {
     this.parser = new Type1Parser(ASCIIStream, binaryStream);
     var fontName = this.parser.parse();
     this.convertToOTF(fontName);
+    var end = Date.now();
+    log("Time to parse font is:" + (end - start));
   }
 };
 
 Type1Font.prototype = {
-  convertToOTF: function(aFontName) {
-    var font = Fonts.get(aFontName);
-
-    var private = font.get("Private");
-    var subrs = private.get("Subrs");
-    var otherSubrs = private.get("OtherSubrs");
-    var charstrings = font.get("CharStrings")
-
-    // Try to get the most used glyph width
-    var widths = {};
-    for (var glyph in charstrings.map) {
-      var glyphData = charstrings.get(glyph);
-      var glyphWidth = glyphData[1];
-      if (widths[glyphWidth])
-        widths[glyphWidth]++;
-      else
-        widths[glyphWidth] = 1;
-    }
-
+  getDefaultWidths: function(aCharstrings) {
     var defaultWidth = 0;
-    var used = 0;
-    for (var width in widths) {
-      if (widths[width] > used) {
-        defaultWidth = width;
-        used = widths[width];
-      }
-    }
-    log("defaultWidth to used: " + defaultWidth);
+    var defaultUsedCount = 0;
 
-    var maxNegDistance = 0;
-    var maxPosDistance = 0;
+    var widths = {};
+    for (var glyph in aCharstrings.map) {
+      var width = aCharstrings.get(glyph)[1];
+      var usedCount = (widths[width] || 0) + 1;
+
+      if (usedCount > defaultUsedCount) {
+        defaultUsedCount = usedCount;
+        defaultWidth = width;
+      }
+
+      widths[width] = usedCount;
+    }
+    defaultWidth = parseInt(defaultWidth);
+
+    var maxNegDistance = 0, maxPosDistance = 0;
     for (var width in widths) {
       var diff = width - defaultWidth;
       if (diff < 0 && diff < maxNegDistance) {
@@ -929,394 +866,37 @@ Type1Font.prototype = {
       }
     }
 
-    var nominalWidth = parseInt(defaultWidth) + (parseInt(maxPosDistance) + parseInt(maxNegDistance)) / 2;
+    return {
+      default: defaultWidth,
+      nominal: defaultWidth + (maxPosDistance + maxNegDistance) / 2
+    };
+  },
+
+  convertToOTF: function(aFontName) {
+    var font = Fonts.get(aFontName);
+
+    var charstrings = font.get("CharStrings")
+    var defaultWidths = this.getDefaultWidths(charstrings);
+    var defaultWidth = defaultWidths.default;
+    var nominalWidth = defaultWidths.nominal;
+
+    log("defaultWidth to used: " + defaultWidth);
     log("nominalWidth to used: " + nominalWidth);
     log("Hack nonimal:" + (nominalWidth = 615));
 
+
+    var glyphs = {};
+    var subrs = font.get("Private").get("Subrs");
+    var parser = new Type1Parser();
     for (var glyph in charstrings.map) {
-      if (glyph == ".notdef")
-        continue;
+      var charstring = charstrings.get(glyph);
+      glyphs[glyph]  = parser.flattenCharstring(charstring, defaultWidth, nominalWidth, subrs);
 
-      var glyphData = charstrings.get(glyph);
-      var parser = new Type1Parser(glyphData);
-      log("=================================== " + glyph + " ==============================");
-      log(charstrings.get(glyph));
-      log(parser.flattenCharstring("A", defaultWidth, nominalWidth, subrs));
-      log(validationData[glyph]);
+      //log("=================================== " + glyph + " ==============================");
+      //log(charstrings.get(glyph));
+      //log(flattenedCharstring);
+      //log(validationData[glyph]);
     }
-
-
-    /*
-    log(charStrings.get("A"));
-    log(newCharStrings.get("A"));
-    log(validationData["A"]);
-    */
-    var end = Date.now();
-    //log("Time to parse font is:" + (end - start));
   }
 };
 
-
-
-
-
-
-
-
-
-
-
-
-
-/**
- * The Type2 reader code below is only used for debugging purpose since Type2
- * is only a CharString format and is never used directly as a Font file.
- *
- * So the code here is useful for dumping the data content of a .cff file in
- * order to investigate the similarity between a Type1 CharString and a Type2
- * CharString.
- */
-
-
-/**
- * Build a charset by assigning the glyph name and the human readable form
- * of the glyph data.
- */
-function readCharset(aStream, aCharstrings) {
-  var charset = {};
-
-  var format = aStream.getByte();
-  if (format == 0) {
-    charset[".notdef"] = readCharstringEncoding(aCharstrings[0]);
-
-    var count = aCharstrings.length - 1;
-    for (var i = 1; i < count + 1; i++) {
-      var sid = aStream.getByte() << 8 | aStream.getByte();
-      charset[CFFStrings[sid]] = readCharstringEncoding(aCharstrings[i]);
-      log(CFFStrings[sid] + "::" + charset[CFFStrings[sid]]);
-    }
-  } else if (format == 1) {
-    error("Charset Range are not supported");
-  } else {
-    error("Invalid charset format");
-  }
-
-  return charset;
-};
-
-/**
- * Take a Type2 binary charstring as input and transform it to a human
- * readable representation as specified by the 'The Type 2 Charstring Format',
- * chapter 3.1.
- */
-function readCharstringEncoding(aString) {
-  var charstringTokens = [];
-
-  var count = aString.length;
-  for (var i = 0; i < count; ) {
-    var value = aString[i++];
-    var token = null;
-
-    if (value < 0) {
-      continue;
-    } else if (value <= 11) {
-      token = CFFEncodingMap[value];
-    } else if (value == 12) {
-      token = CFFEncodingMap[value][aString[i++]];
-    } else if (value <= 18) {
-      token = CFFEncodingMap[value];
-    } else if (value <= 20) {
-      var mask = aString[i++];
-      token = CFFEncodingMap[value];
-    } else if (value <= 27) {
-      token = CFFEncodingMap[value];
-    } else if (value == 28) {
-      token = aString[i++] << 8 | aString[i++];
-    } else if (value <= 31) {
-      token = CFFEncodingMap[value];
-    } else if (value < 247) {
-      token = parseInt(value) - 139;
-    } else if (value < 251) {
-      token = ((value - 247) * 256) + aString[i++] + 108;
-    } else if (value < 255) {
-      token = -((value - 251) * 256) - aString[i++] - 108;
-    } else {// value == 255
-      token = aString[i++] << 24 | aString[i++] << 16 |
-              aString[i++] << 8 | aString[i];
-    }
-
-    charstringTokens.push(token);
-  }
-
-  return charstringTokens;
-};
-
-
-/**
- * Take a binary DICT Data as input and transform it into a human readable
- * form as specified by 'The Compact Font Format Specification', chapter 5.
- */
-function readFontDictData(aString, aMap) {
-  var fontDictDataTokens = [];
-
-  var count = aString.length;
-  for (var i = 0; i < count; i) {
-    var value = aString[i++];
-    var token = null;
-
-    if (value == 12) {
-      token = aMap[value][aString[i++]];
-    } else if (value == 28) {
-      token = aString[i++] << 8 | aString[i++];
-    } else if (value == 29) {
-      token = aString[i++] << 24 |
-              aString[i++] << 16 |
-              aString[i++] << 8  |
-              aString[i++];
-    } else if (value == 30) {
-      token = "";
-      var parsed = false;
-      while (!parsed) {
-        var byte = aString[i++];
-
-        var nibbles = [parseInt(byte / 16), parseInt(byte % 16)];
-        for (var j = 0; j < nibbles.length; j++) {
-          var nibble = nibbles[j];
-          switch (nibble) {
-            case 0xA:
-              token += ".";
-              break;
-            case 0xB:
-              token += "E";
-              break;
-            case 0xC:
-              token += "E-";
-              break;
-            case 0xD:
-              break;
-            case 0xE:
-              token += "-";
-              break;
-            case 0xF:
-              parsed = true;
-              break;
-            default:
-              token += nibble;
-              break;
-          }
-        }
-      };
-      token = parseFloat(token);
-    } else if (value <= 31) {
-      token = aMap[value];
-    } else if (value <= 246) {
-      token = parseInt(value) - 139;
-    } else if (value <= 250) {
-      token = ((value - 247) * 256) + aString[i++] + 108;
-    } else if (value <= 254) {
-      token = -((value - 251) * 256) - aString[i++] - 108;
-    } else if (value == 255) {
-      error("255 is not a valid DICT command");
-    }
-
-    fontDictDataTokens.push(token);
-  }
-
-  return fontDictDataTokens;
-};
-
-
-/**
- * Take a stream as input and return an array of objects.
- * In CFF an INDEX is a structure with the following format:
- *  {
- *    count: 2 bytes (Number of objects stored in INDEX),
- *    offsize: 1 byte (Offset array element size),
- *    offset: [count + 1] bytes (Offsets array),
- *    data: - (Objects data)
- *  }
- *
- *  More explanation are given in the 'CFF Font Format Specification',
- *  chapter 5.
- */
-function readFontIndexData(aStream, aIsByte) {
-  var count = aStream.getByte() << 8 | aStream.getByte();
-  var offsize = aStream.getByte();
-
-  function getNextOffset() {
-    switch (offsize) {
-      case 0:
-        return 0;
-      case 1:
-        return aStream.getByte();
-      case 2:
-        return aStream.getByte() << 8 | aStream.getByte();
-      case 3:
-        return aStream.getByte() << 16 | aStream.getByte() << 8 |
-               aStream.getByte();
-      case 4:
-      return aStream.getByte() << 24 | aStream.getByte() << 16 |
-             aStream.getByte() << 8 | aStream.getByte();
-    }
-  };
-
-  var offsets = [];
-  for (var i = 0; i < count + 1; i++)
-    offsets.push(getNextOffset());
-
-  log("Found " + count + " objects at offsets :" + offsets + " (offsize: " + offsize + ")");
-
-  // Now extract the objects
-  var relativeOffset = aStream.pos;
-  var objects = [];
-  for (var i = 0; i < count; i++) {
-    var offset = offsets[i];
-    aStream.pos = relativeOffset + offset - 1;
-
-    var data = [];
-    var length = offsets[i + 1] - 1;
-    for (var j = offset - 1; j < length; j++)
-      data.push(aIsByte ? aStream.getByte() : aStream.getChar());
-    objects.push(data);
-  }
-
-  return objects;
-};
-
-var Type2Parser = function(aFilePath) {
-  var font = new Dict();
-
-  // Turn on this flag for additional debugging logs
-  var debug = true;
-
-  function dump(aStr) {
-    if (debug)
-      log(aStr);
-  };
-
-  function parseAsToken(aString, aMap) {
-    var decoded = readFontDictData(aString, aMap);
-    log(decoded);
-
-    var stack = [];
-    var count = decoded.length;
-    for (var i = 0; i < count; i++) {
-      var token = decoded[i];
-      if (IsNum(token)) {
-        stack.push(token);
-      } else {
-        switch (token.operand) {
-          case "SID":
-            font.set(token.name, CFFStrings[stack.pop()]);
-            break;
-          case "number number":
-            font.set(token.name, {
-              offset: stack.pop(),
-              size: stack.pop()
-            });
-            break;
-          case "boolean":
-            font.set(token.name, stack.pop());
-            break;
-          case "delta":
-            font.set(token.name, stack.pop());
-            break;
-          default:
-            if (token.operand && token.operand.length) {
-              var array = [];
-              for (var j = 0; j < token.operand.length; j++)
-                array.push(stack.pop());
-              font.set(token.name, array);
-            } else {
-              font.set(token.name, stack.pop());
-            }
-            break;
-        }
-      }
-    }
-  };
-
-  this.parse = function(aStream) {
-    font.set("major", aStream.getByte());
-    font.set("minor", aStream.getByte());
-    font.set("hdrSize", aStream.getByte());
-    font.set("offsize", aStream.getByte());
-
-    // Move the cursor after the header
-    aStream.skip(font.get("hdrSize") - aStream.pos);
-
-    // Read the NAME Index
-    dump("Reading Index: Names");
-    font.set("Names", readFontIndexData(aStream));
-
-    // Read the Top Dict Index
-    dump("Reading Index: TopDict");
-    var topDict = readFontIndexData(aStream, true);
-
-    // Read the String Index
-    dump("Reading Index: Strings");
-    var strings = readFontIndexData(aStream);
-
-    // Fill up the Strings dictionary with the new unique strings
-    for (var i = 0; i < strings.length; i++)
-      CFFStrings.push(strings[i].join(""));
-
-    // Parse the TopDict operator
-    var objects = [];
-    var count = topDict.length;
-    for (var i = 0; i < count; i++)
-      parseAsToken(topDict[i], CFFDictDataMap);
-
-    // Read the Global Subr Index that comes just after the Strings Index
-    // (cf. "The Compact Font Format Specification" Chapter 16)
-    dump("Reading Global Subr Index");
-    var subrs = readFontIndexData(aStream);
-
-    // Reading Private Dict
-    var private = font.get("Private");
-    log("Reading Private Dict (offset: " + private.offset + " size: " + private.size + ")");
-    aStream.pos = private.offset;
-
-    var privateDict = [];
-    for (var i = 0; i < private.size; i++)
-      privateDict.push(aStream.getByte());
-    parseAsToken(privateDict, CFFDictPrivateDataMap);
-
-    for (var p in font.map)
-      dump(p + "::" + font.get(p));
-
-    // Read CharStrings Index
-    var charStringsOffset = font.get("CharStrings");
-    dump("Read CharStrings Index (offset: " + charStringsOffset + ")");
-    aStream.pos = charStringsOffset;
-    var charStrings = readFontIndexData(aStream, true);
-
-
-    var charsetEntry = font.get("charset");
-    if (charsetEntry == 0) {
-      throw new Error("Need to support CFFISOAdobeCharset");
-    } else if (charsetEntry == 1) {
-      throw new Error("Need to support CFFExpert");
-    } else if (charsetEntry == 2) {
-      throw new Error("Need to support CFFExpertSubsetCharset");
-    } else {
-      aStream.pos = charsetEntry;
-      var charset = readCharset(aStream, charStrings);
-    }
-
-  }
-};
-
-
-// XXX
-/*
-var xhr = new XMLHttpRequest();
-xhr.open("GET", "titi.cff", false);
-xhr.mozResponseType = xhr.responseType = "arraybuffer";
-xhr.expected = (document.URL.indexOf("file:") == 0) ? 0 : 200;
-xhr.send(null);
-var cffData = xhr.mozResponseArrayBuffer || xhr.mozResponse ||
-              xhr.responseArrayBuffer || xhr.response;
-var cff = new Type2Parser("titi.cff");
-cff.parse(new Stream(cffData));
-*/
