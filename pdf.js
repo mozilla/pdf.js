@@ -603,6 +603,27 @@ function IsRef(v) {
     return v instanceof Ref;
 }
 
+function IsFunction(v) {
+    var fnDict;
+    if (typeof v != "object")
+        return false;
+    else if (IsDict(v))
+        fnDict = v;
+    else if (IsStream(v))
+        fnDict = v.dict;
+    else
+        return false;
+    return fnDict.has("FunctionType");
+}
+
+function IsFunctionDict(v) {
+    return IsFunction(v) && IsDict(v);
+}
+
+function IsFunctionStream(v) {
+    return IsFunction(v) && IsStream(v);
+}
+
 var EOF = {};
 
 function IsEOF(v) {
@@ -1875,8 +1896,83 @@ var CanvasGraphics = (function() {
         },
 
         // Shading
-        shadingFill: function(entry) {
-            TODO("shading fill");
+        shadingFill: function(entryRef) {
+            var shadingRes = this.res.get("Shading");
+            if (!shadingRes)
+                return;
+            shadingRes = this.xref.fetchIfRef(shadingRes);
+            var shading = shadingRes.get(entryRef.name);
+            if (!shading)
+                return;
+            shading = this.xref.fetchIfRef(shading);
+            if (!shading)
+                return;
+
+            this.save();
+
+            var bbox = shading.get("BBox");
+            if (bbox && IsArray(bbox) && 4 == bbox.length) {
+                this.rectangle.apply(this, bbox);
+                this.clip();
+                this.endPath();
+            }
+
+            TODO("shading-fill color space");
+
+            var type = shading.get("ShadingType");
+            switch (type) {
+            case 1:
+                this.fillFunctionShading(shading);
+                break;
+            case 2:
+                this.fillAxialShading(shading);
+                break;
+            case 3:
+                this.fillRadialShading(shading);
+                break;
+            case 4: case 5: case 6: case 7:
+                TODO("shading fill type "+ type);
+            default:
+                malformed("Unknown shading type "+ type);
+            }
+
+            this.restore();
+        },
+        fillAxialShading: function(sh) {
+            var coordsArr = sh.get("Coords");
+            var x0 = coordsArr[0], y0 = coordsArr[1],
+                x1 = coordsArr[2], y1 = coordsArr[3];
+
+            var t0 = 0.0, t1 = 1.0;
+            if (sh.has("Domain")) {
+                var domainArr = sh.get("Domain");
+                t0 = domainArr[0], t1 = domainArr[1];
+            }
+
+            var extendStart = false, extendEnd = false;
+            if (sh.has("Extend")) {
+                var extendArr = sh.get("Extend");
+                extendStart = extendArr[0], extendEnd = extendArr[1];
+            }
+
+            var fn = sh.get("Function");
+            fn = this.xref.fetchIfRef(fn);
+/*
+            console.log("x0: "+ x0, "y0: "+ y0, "x1: "+ x1, "y1: "+ y1);
+            console.log("size: "+ fn.dict.get("Size"));
+            console.log("BPS: "+ fn.dict.get("BitsPerSample"));
+            console.log(fn.dict.get("Encode"));
+            console.log(fn.dict.get("Range"));
+            console.log(fn.dict.get("Decode"));
+*/
+            var gradient = this.ctx.createLinearGradient(x0, y0, x1, y1);
+
+            gradient.addColorStop(0, 'rgb(0,0,255)');
+            gradient.addColorStop(1, 'rgb(0,255,0)');
+
+            this.ctx.fillStyle = gradient;
+            this.ctx.fill();
+            this.consumePath();
         },
 
         // XObjects
