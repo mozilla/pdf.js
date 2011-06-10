@@ -52,8 +52,8 @@ function load() {
     pageDisplay = document.getElementById("pageNumber");
     infoDisplay = document.getElementById("info");
     pageNum = parseInt(queryParams().page) || 1;
-//    open("compressed.tracemonkey-pldi-09.pdf");
-    open("compressed.canvas.pdf");
+    fileName = queryParams().file || "compressed.tracemonkey-pldi-09.pdf";
+    open(fileName);
 }
 
 function open(url) {
