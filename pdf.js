@@ -1953,8 +1953,9 @@ var CanvasGraphics = (function() {
             if (w < 1 || h < 1)
                 error("Invalid image width or height");
             
+            var ctx = this.ctx;
             // scale the image to the unit square
-            this.ctx.scale(1/w, 1/h);
+            ctx.scale(1/w, 1/h);
 
             var interpolate = dict.get2("Interpolate", "I");
             if (!IsBool(interpolate))
@@ -1997,9 +1998,9 @@ var CanvasGraphics = (function() {
             TODO("create color map");
             
             var mask = image.dict.get("Mask");
-            mask = this.xref.fetchIfRef(mask);
+            mask = xref.fetchIfRef(mask);
             var smask = image.dict.get("SMask");
-            smask = this.xref.fetchIfRef(smask);
+            smask = xref.fetchIfRef(smask);
 
             if (IsStream(smask)) {
                 if (inline)
@@ -2038,10 +2039,7 @@ var CanvasGraphics = (function() {
             var tmpCanvas = document.createElement("canvas");
             tmpCanvas.width = w;
             tmpCanvas.height = h;
-            var ctx = this.ctx;
             var tmpCtx = tmpCanvas.getContext("2d");
-            tmpCtx.fillStyle = "rgb(255, 255, 255)";
-            tmpCtx.fillRect(0, 0, w, h);
             var imgData = tmpCtx.getImageData(0, 0, w, h);
             var pixels = imgData.data;
             
@@ -2110,7 +2108,7 @@ var CanvasGraphics = (function() {
                 }
             }
             tmpCtx.putImageData(imgData, 0, 0);
-            this.ctx.drawImage(tmpCanvas, 0, 0);
+            ctx.drawImage(tmpCanvas, 0, 0);
             this.restore();
         },
 
