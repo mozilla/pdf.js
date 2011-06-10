@@ -604,94 +604,6 @@ var Type1Parser = function(aAsciiStream, aBinaryStream) {
     return false;
   }
 
-  function aggregateCommand(aCommand) {
-    var command = aCommand;
-    switch (command) {
-      case "hstem":
-      case "vstem":
-        break;
-
-      case "rrcurveto":
-        var stack = [operandStack.pop(), operandStack.pop(),
-                     operandStack.pop(), operandStack.pop(),
-                     operandStack.pop(), operandStack.pop()];
-        var next = true;
-        while (next) {
-          var op = operandStack.peek();
-          if (op == "rrcurveto") {
-            operandStack.pop();
-            stack.push(operandStack.pop());
-            stack.push(operandStack.pop());
-            stack.push(operandStack.pop());
-            stack.push(operandStack.pop());
-            stack.push(operandStack.pop());
-            stack.push(operandStack.pop());
-          } else {
-            next = false;
-          }
-        }
-        break;
-
-      case "hlineto":
-      case "vlineto":
-        var last = command;
-        var stack = [operandStack.pop()];
-        var next = true;
-        while (next) {
-          var op = operandStack.peek();
-          if (op == "vlineto" && last == "hlineto") {
-            operandStack.pop();
-            stack.push(operandStack.pop());
-          } else if (op == "hlineto" && last == "vlineto") {
-            operandStack.pop();
-            stack.push(operandStack.pop());
-          } else if (op == "rlineto" && command == "hlineto") {
-            operandStack.pop();
-            var x = stack.pop();
-            operandStack.push(0);
-            operandStack.push(x);
-            command = "rlineto";
-          } else if (op == "rlineto" && command == "vlineto") {
-            operandStack.pop();
-            operandStack.push(0);
-            command = "rlineto";
-          } else {
-            next = false;
-          }
-          last = op;
-        }
-        break;
-
-      case "rlineto":
-        var stack = [operandStack.pop(), operandStack.pop()];
-        var next = true;
-        while (next) {
-          var op = operandStack.peek();
-          if (op == "rlineto") {
-            operandStack.pop();
-            stack.push(operandStack.pop());
-            stack.push(operandStack.pop());
-          } else if (op == "hlineto") {
-            operandStack.pop();
-            stack.push(0);
-            stack.push(operandStack.pop());
-          } else if (op == "vlineto") {
-            operandStack.pop();
-            stack.push(operandStack.pop());
-            stack.push(0);
-          } else {
-            next= false;
-          }
-        }
-        break;
-    }
-
-    while (stack.length)
-      operandStack.push(stack.pop());
-    operandStack.push(command);
-  };
-
-
   /*
    * Flatten the commands by interpreting the postscript code and replacing
    * every 'callsubr', 'callothersubr' by the real commands.
@@ -852,6 +764,87 @@ Type1Font.prototype = {
     };
   },
 
+
+  createCFFIndexHeader: function(aObjects, aIsByte) {
+    var data = [];
+
+    // First 2 bytes contains the number of objects contained into this index
+    var count = aObjects.length;
+    var bytes = this.integerToBytes(count, 2);
+    for (var i = 0; i < bytes.length; i++)
+      data.push(bytes[i]);
+
+    // Next byte contains the offset size use to reference object in the file
+    // Actually we're using 0x04 to be sure to be able to store everything
+    // without thinking of it while coding.
+    data.push(0x04);
+
+    // Add another offset after this one because we need a new offset
+    var relativeOffset = 1;
+    for (var i = 0; i < count + 1; i++) {
+      var bytes = this.integerToBytes(relativeOffset, 4);
+      for (var j = 0; j < bytes.length; j++)
+        data.push(bytes[j]);
+
+      if (aObjects[i])
+        relativeOffset += aObjects[i].length;
+    }
+
+    for (var i =0; i < count; i++) {
+      for (var j = 0; j < aObjects[i].length; j++)
+        data.push(aIsByte ? aObjects[i][j] : aObjects[i][j].charCodeAt(0));
+    }
+    return data;
+  },
+
+  integerToBytes: function(aValue, aBytesCount) {
+    var bytes = [];
+    for (var i = 0; i < aBytesCount; i++)
+      bytes[i] = 0x00;
+
+    do {
+      bytes[--aBytesCount] = (aValue & 0xFF);
+      aValue = aValue >> 8;
+    } while (aBytesCount && aValue > 0);
+
+    return bytes;
+  },
+
+  encodeNumber: function(aValue) {
+    var x = 0;
+    if (aValue >= -107 && aValue <= 107) {
+      return [aValue + 139];
+    } else if (aValue >= 108 && aValue <= 1131) {
+      x = aValue - 108;
+      return [
+        this.integerToBytes(x / 256 + 247, 1),
+        x % 256
+      ];
+    } else if (aValue >= -1131 && aValue <= -108) {
+      x = Math.abs(aValue) - 108;
+      return [
+        this.integerToBytes(x / 256 + 251, 1),
+        x % 256
+      ];
+    } else if (aValue >= -32768 && aValue <= 32767) {
+      return [
+        28,
+        integerToBytes(aValue >> 8, 1),
+        integerToBytes(aValue, 1)
+      ];
+    } else if (aValue >= (-2147483647-1) && aValue <= 2147483647) {
+      return [
+        0xFF,
+        integerToBytes(aValue >> 24, 1),
+        integerToBytes(aValue >> 16, 1),
+        integerToBytes(aValue >> 8, 1),
+        integerToBytes(aValue, 1)
+      ];
+    } else {
+      error("Value: " + aValue + " is not allowed");
+    }
+  },
+
   convertToOTF: function(aFontName) {
     var font = Fonts.get(aFontName);
 
@@ -871,11 +864,6 @@ Type1Font.prototype = {
     for (var glyph in charstrings.map) {
       var charstring = charstrings.get(glyph);
       glyphs[glyph]  = parser.flattenCharstring(charstring, defaultWidth, nominalWidth, subrs);
-
-      //log("=================================== " + glyph + " ==============================");
-      //log(charstrings.get(glyph));
-      //log(flattenedCharstring);
-      //log(validationData[glyph]);
     }
 
     // Create a CFF font data
@@ -942,7 +930,7 @@ Type1Font.prototype = {
     ];
     for (var glyph in charstrings.map) {
       var index = CFFStrings.indexOf(glyph);
-      var bytes = integerToBytes(index, 2);
+      var bytes = this.integerToBytes(index, 2);
       charset.push(bytes[0]);
       charset.push(bytes[1]);
     }
@@ -985,7 +973,7 @@ Type1Font.prototype = {
             error(c);
           charstring.push(token);
         } else {
-          var bytes = encodeNumber(c);
+          var bytes = this.encodeNumber(c);
           for (var j = 0; j < bytes.length; j++)
             charstring.push(bytes[j]);
         }
@@ -1033,12 +1021,11 @@ Type1Font.prototype = {
     cff.set(shit, currentOffset);
     currentOffset += shit.length;
 
-    var file = new Uint8Array(cff, 0, currentOffset);
-    var parser = new Type2Parser();
-
 
     log("==================== debug ====================");
     log("== parse");
+    var file = new Uint8Array(cff, 0, currentOffset);
+    var parser = new Type2Parser();
     parser.parse(new Stream(file));
 
     var data = [];
@@ -1047,86 +1034,6 @@ Type1Font.prototype = {
 
     log("== write to file");
     writeToFile(data, "/tmp/pdf.js.cff");
-  },
-
-  createCFFIndexHeader: function(aObjects, aIsByte) {
-    var data = [];
-
-    // First 2 bytes contains the number of objects contained into this index
-    var count = aObjects.length;
-    var bytes = integerToBytes(count, 2);
-    for (var i = 0; i < bytes.length; i++)
-      data.push(bytes[i]);
-
-    // Next byte contains the offset size use to reference object in the file
-    // Actually we're using 0x04 to be sure to be able to store everything
-    // without thinking of it while coding.
-    data.push(0x04);
-
-    // Add another offset after this one because we need a new offset
-    var relativeOffset = 1;
-    for (var i = 0; i < count + 1; i++) {
-      var bytes = integerToBytes(relativeOffset, 4);
-      for (var j = 0; j < bytes.length; j++)
-        data.push(bytes[j]);
-
-      if (aObjects[i])
-        relativeOffset += aObjects[i].length;
-    }
-
-    for (var i =0; i < count; i++) {
-      for (var j = 0; j < aObjects[i].length; j++)
-        data.push(aIsByte ? aObjects[i][j] : aObjects[i][j].charCodeAt(0));
-    }
-    return data;
-  }
-};
-
-function integerToBytes(aValue, aBytesCount) {
-  var bytes = [];
-  for (var i = 0; i < aBytesCount; i++)
-    bytes[i] = 0x00;
-
-  do {
-    bytes[--aBytesCount] = (aValue & 0xFF);
-    aValue = aValue >> 8;
-  } while (aBytesCount && aValue > 0);
-
-  return bytes;
-};
-
-function encodeNumber(aValue) {
-  var x = 0;
-  if (aValue >= -107 && aValue <= 107) {
-    return [aValue + 139];
-  } else if (aValue >= 108 && aValue <= 1131) {
-    x = aValue - 108;
-    return [
-      integerToBytes(x / 256 + 247, 1),
-      x % 256
-    ];
-  } else if (aValue >= -1131 && aValue <= -108) {
-    x = Math.abs(aValue) - 108;
-    return [
-      integerToBytes(x / 256 + 251, 1),
-      x % 256
-    ];
-  } else if (aValue >= -32768 && aValue <= 32767) {
-    return [
-      28,
-      integerToBytes(aValue >> 8, 1),
-      integerToBytes(aValue, 1)
-    ];
-  } else if (aValue >= (-2147483647-1) && aValue <= 2147483647) {
-    return [
-      0xFF,
-      integerToBytes(aValue >> 24, 1),
-      integerToBytes(aValue >> 16, 1),
-      integerToBytes(aValue >> 8, 1),
-      integerToBytes(aValue, 1)
-    ];
-  } else {
-    error("Value: " + aValue + " is not allowed");
   }
 };
 
