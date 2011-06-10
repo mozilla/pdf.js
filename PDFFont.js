@@ -57,7 +57,7 @@ var Base64Encoder = {
     var str = [];
     var count = aData.length;
     for (var i = 0; i < count; i++)
-      str.push(aData.getChar());
+      str.push(aData.getChar ? aData.getChar : String.fromCharCode(aData[i]));
 
     return window.btoa(str.join(""));
   }
@@ -897,6 +897,213 @@ Type1Font.prototype = {
       //log(flattenedCharstring);
       //log(validationData[glyph]);
     }
+
+    // Create a CFF font data
+    var cff = new Uint8Array(20000);
+    var currentOffset = 0;
+
+    // Font header (major version, minor version, header size, offset size)
+    var header = [0x01, 0x00, 0x04, 0x04];
+    currentOffset += header.length;
+    cff.set(header);
+
+    // Names Index
+    var nameIndex = this.createCFFIndexHeader([aFontName]);
+    cff.set(nameIndex, currentOffset);
+    currentOffset += nameIndex.length;
+
+    //Top Dict Index
+    var topDictIndex = [
+      0x00, 0x01, 0x01, 0x01, 0x29,
+      248, 27, 0, // version
+      248, 28, 1, // Notice
+      248, 29, 2, // FullName
+      248, 30, 3, // FamilyName
+      248, 20, 4, // Weigth
+      82, 251, 98, 250, 105, 249, 72, 5, // FontBBox
+      248, 136, 15, // charset (offset: 500)
+      28, 0, 0, 16,   // Encoding (offset: 600)
+      248, 236, 17,  // CharStrings
+      28, 0, 55, 28, 15, 160, 18 // Private (offset: 4000)
+    ];
+    cff.set(topDictIndex, currentOffset);
+    currentOffset += topDictIndex.length;
+
+    // Strings Index
+    var stringsIndex = [
+      0x00, 0x04, 0x01,
+      0x01, 0x05, 0x06, 0x07, 0x08,
+      0x31, 0x2E, 0x030, 0x35, // 1.05
+      0x2B, // +
+      0x28, // (
+      0x29  // )
+    ];
+    cff.set(stringsIndex, currentOffset);
+    currentOffset += stringsIndex.length;
+
+
+    // Global Subrs Index
+    var globalSubrsIndex = [
+      0x00, 0x00, 0x00
+    ];
+    cff.set(globalSubrsIndex, currentOffset);
+    currentOffset += globalSubrsIndex.length;
+
+    // Fill the space between this and the charset by '1'
+    var empty = new Array(500 - currentOffset);
+    for (var i = 0; i < empty.length; i++)
+      empty[i] = 0x01;
+    cff.set(empty, currentOffset);
+    currentOffset += empty.length;
+
+    //Declare the letter 'C'
+    var charset = [
+      0x00, 0x00, 0x42
+    ];
+    cff.set(charset, currentOffset);
+    currentOffset += charset.length;
+
+    // Fill the space between this and the charstrings data by '1'
+    var empty = new Array(600 - currentOffset);
+    for (var i = 0; i < empty.length; i++)
+      empty[i] = 0x01;
+    cff.set(empty, currentOffset);
+    currentOffset += empty.length;
+
+
+    // Encode the glyph and add it to the FUX
+    var charStringsIndex = [
+      0x00, 0x02, 0x01, 0x01, 0x03, 0x05,
+      0x40, 0x0E,
+      0xAF, 0x0E
+    ];
+    cff.set(charStringsIndex, currentOffset);
+    currentOffset += charStringsIndex.length;
+
+    // Fill the space between this and the private dict data by '1'
+    var empty = new Array(4000 - currentOffset);
+    for (var i = 0; i < empty.length; i++)
+      empty[i] = 0x01;
+    cff.set(empty, currentOffset);
+    currentOffset += empty.length;
+
+    // Private Data
+    var privateData = [
+      248, 136, 20,
+      248, 251, 21,
+      119, 159, 248, 97, 159, 247, 87, 159, 6,
+      30, 10, 3, 150, 37, 255, 12, 9,
+      139, 12, 10,
+      172, 10,
+      172, 150, 143, 146, 150, 146, 12, 12,
+      247, 32, 11,
+      247, 10, 161, 147, 154, 150, 143, 12, 13,
+      139, 12, 14,
+      28, 0, 55, 19
+    ];
+    cff.set(privateData, currentOffset);
+    currentOffset += privateData.length;
+
+    // Dump shit at the end of the file
+    var shit = [
+      0x00, 0x01, 0x01, 0x01,
+      0x13, 0x5D, 0x65, 0x64,
+      0x5E, 0x5B, 0xAF, 0x66,
+      0xBA, 0xBB, 0xB1, 0xB0,
+      0xB9, 0xBA, 0x65, 0xB2,
+      0x5C, 0x1F, 0x0B
+    ];
+    cff.set(shit, currentOffset);
+    currentOffset += shit.length;
+
+    var file = new Uint8Array(cff, 0, currentOffset);
+    var parser = new Type2Parser();
+    parser.parse(new Stream(file));
+
+    var file64 = Base64Encoder.encode(file);
+    console.log(file64);
+
+    var data = [];
+    for (var i = 0; i < currentOffset; i++)
+      data.push(cff[i]);
+    log(data);
+  },
+
+  createCFFIndexHeader: function(aObjects, aIsByte) {
+    var data = [];
+
+    // First 2 bytes contains the number of objects contained into this index
+    var count = aObjects.length;
+    var bytes = integerToBytes(count, 2);
+    for (var i = 0; i < bytes.length; i++)
+      data.push(bytes[i]);
+
+    // Next byte contains the offset size use to reference object in the file
+    // Actually we're using 0x04 to be sure to be able to store everything
+    // without thinking of it while coding.
+    data.push(0x04);
+
+    // Add another offset after this one because we need a new offset
+    var relativeOffset = 1;
+    for (var i = 0; i < count + 1; i++) {
+      var bytes = integerToBytes(relativeOffset, 4);
+      for (var j = 0; j < bytes.length; j++)
+        data.push(bytes[j]);
+
+      if (aObjects[i])
+        relativeOffset += aObjects[i].length;
+    }
+
+    for (var i =0; i < count; i++) {
+      for (var j = 0; j < aObjects[i].length; j++)
+        data.push(aIsByte ? aObjects[i][j] : aObjects[i][j].charCodeAt(0));
+    }
+    return data;
   }
 };
 
+function integerToBytes(aValue, aBytesCount) {
+  var bytes = [];
+
+  do {
+    bytes[--aBytesCount] = (aValue & 0xFF);
+    aValue = aValue >> 8;
+  } while (aBytesCount && aValue > 0);
+
+  return bytes;
+};
+
+function encodeNumber(aValue) {
+  var x = 0;
+  if (aValue >= -107 && aValue <= 107) {
+    return [aValue + 139];
+  } else if (aValue >= 108 && aValue <= 1131) {
+    x = aValue - 108;
+    return [
+      integerToBytes(x / 256 + 247, 1),
+      x % 256
+    ];
+  } else if (aValue >= -1131 && aValue <= -108) {
+    x = Math.abs(aValue) - 108;
+    return [
+      integerToBytes(x / 256 + 251, 1),
+      x % 256
+    ];
+  } else if (aValue >= -32768 && aValue <= 32767) {
+    return [
+      28,
+      integerToBytes(aValue >> 8, 1),
+      integerToBytes(aValue, 1)
+    ];
+  } else if (aValue >= (-2147483647-1) && aValue <= 2147483647) {
+    return [
+      0xFF,
+      integerToBytes(aValue >> 24, 1),
+      integerToBytes(aValue >> 16, 1),
+      integerToBytes(aValue >> 8, 1),
+      integerToBytes(aValue, 1)
+    ];
+  } else {
+    error("Value: " + aValue + " is not allowed");
+  }
+}

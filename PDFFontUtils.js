@@ -22,6 +22,7 @@ function readCharset(aStream, aCharstrings) {
     var count = aCharstrings.length - 1;
     for (var i = 1; i < count + 1; i++) {
       var sid = aStream.getByte() << 8 | aStream.getByte();
+      log(sid);
       charset[CFFStrings[sid]] = readCharstringEncoding(aCharstrings[i]);
       log(CFFStrings[sid] + "::" + charset[CFFStrings[sid]]);
     }
@@ -282,10 +283,12 @@ var Type2Parser = function(aFilePath) {
     // Read the Top Dict Index
     dump("Reading Index: TopDict");
     var topDict = readFontIndexData(aStream, true);
+    log(topDict);
 
     // Read the String Index
     dump("Reading Index: Strings");
     var strings = readFontIndexData(aStream);
+    log(strings);
 
     // Fill up the Strings dictionary with the new unique strings
     for (var i = 0; i < strings.length; i++)
@@ -310,6 +313,7 @@ var Type2Parser = function(aFilePath) {
     var privateDict = [];
     for (var i = 0; i < private.size; i++)
       privateDict.push(aStream.getByte());
+    dump("private:" + privateDict);
     parseAsToken(privateDict, CFFDictPrivateDataMap);
 
     for (var p in font.map)
@@ -321,25 +325,23 @@ var Type2Parser = function(aFilePath) {
     aStream.pos = charStringsOffset;
     var charStrings = readFontIndexData(aStream, true);
 
-
+    // Read Charset
+    dump("Read Charset for " + charStrings.length + " glyphs");
     var charsetEntry = font.get("charset");
     if (charsetEntry == 0) {
-      throw new Error("Need to support CFFISOAdobeCharset");
+      error("Need to support CFFISOAdobeCharset");
     } else if (charsetEntry == 1) {
-      throw new Error("Need to support CFFExpert");
+      error("Need to support CFFExpert");
     } else if (charsetEntry == 2) {
-      throw new Error("Need to support CFFExpertSubsetCharset");
+      error("Need to support CFFExpertSubsetCharset");
     } else {
       aStream.pos = charsetEntry;
       var charset = readCharset(aStream, charStrings);
     }
-
   }
 };
 
 
-// XXX
-/*
 var xhr = new XMLHttpRequest();
 xhr.open("GET", "titi.cff", false);
 xhr.mozResponseType = xhr.responseType = "arraybuffer";
@@ -348,5 +350,4 @@ xhr.send(null);
 var cffData = xhr.mozResponseArrayBuffer || xhr.mozResponse ||
               xhr.responseArrayBuffer || xhr.response;
 var cff = new Type2Parser("titi.cff");
-cff.parse(new Stream(cffData));
-*/
+//cff.parse(new Stream(cffData));
