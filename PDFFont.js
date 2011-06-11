@@ -798,6 +798,13 @@ Type1Font.prototype = {
     return bytes;
   },
 
+  bytesToInteger: function(aBytesArray) {
+    var value = 0;
+    for (var i = 0; i < aBytesArray.length; i++)
+      value = (value << 8) + aBytesArray[i];
+    return value;
+  },
+
   encodeNumber: function(aValue) {
     var x = 0;
     // XXX we don't really care about Type2 optimization here...
@@ -835,7 +842,7 @@ Type1Font.prototype = {
       charstringsCount++;
       charstringsDataLength += glyphs[glyph].length;
     }
-    log("There is " + charstringsCount + " glyphs (size: " + charstringsDataLength + ")");
+    //log("There is " + charstringsCount + " glyphs (size: " + charstringsDataLength + ")");
 
     // Create a CFF font data
     var cff = new Uint8Array(20000);
@@ -1021,7 +1028,242 @@ Type1Font.prototype = {
     return data;
   },
 
+
+  createOpenTypeHeader: function(aNumTables) {
+    // sfnt version (4 bytes)
+    var version = [0x4F, 0x54, 0x54, 0X4F];
+
+    // numTables (2 bytes)
+    var numTables = aNumTables;
+
+    // searchRange (2bytes)
+    // XXX oh man this is dirty, there's probably something obvious to do to
+    // quickly get the maximum power of 2 value...
+    var maxPower = 0;
+    var value = numTables;
+    while (value >= 2) {
+      value /= 2;
+      maxPower++;
+    }
+
+    value = 2;
+    for (var i = 1; i < maxPower; i++)
+      value *= 2;
+    var searchRange = value * 16;
+
+    // entrySelector (2 bytes)
+    var entrySelector = Math.log(value) / Math.log(2);
+
+    // rangeShift (2 bytes)
+    var rangeShift = numTables * 16 - searchRange;
+
+    return [].concat(version,
+                     this.integerToBytes(numTables, 2),
+                     this.integerToBytes(searchRange, 2),
+                     this.integerToBytes(entrySelector, 2),
+                     this.integerToBytes(rangeShift, 2));
+  },
+
+  createTableEntry: function(aTag, aOffset, aData) {
+    // tag
+    var tag = [
+      aTag.charCodeAt(0),
+      aTag.charCodeAt(1),
+      aTag.charCodeAt(2),
+      aTag.charCodeAt(3)
+    ];
+
+    // offset
+    var offset = aOffset;
+
+    // length
+    var length = aData.length;
+
+    // checksum
+    var checksum = this.bytesToInteger(tag) + offset + length;
+
+    return [].concat(tag,
+                    this.integerToBytes(checksum, 4),
+                    this.integerToBytes(offset, 4),
+                    this.integerToBytes(length, 4));
+  },
+
   convertToOTF: function(aData, aFont) {
+    var otf = new Uint8Array(20000);
+    var currentOffset = 0;
+
+    var header = this.createOpenTypeHeader(9);
+    otf.set(header, currentOffset);
+    currentOffset += header.length;
+
+    var tablesLength = 9 * 16;
+    var virtualOffset = tablesLength + currentOffset;
+    var tableEntry = this.createTableEntry("CFF ", tablesLength + currentOffset, aData);
+    otf.set(tableEntry, currentOffset);
+    currentOffset += tableEntry.length;
+
+    virtualOffset += aData.length;
+
+    var OS2 = [
+      0x00, 0x03, // version
+      0x02, 0x24, // xAvgCharWidth
+      0x01, 0xF4, // usWeightClass
+      0x00, 0x05, // usWidthClass
+      0x00, 0x00, // fstype
+      0x02, 0x8A, // ySubscriptXSize
+      0x02, 0xBB, // ySubscriptYSize
+      0x00, 0x00, // ySubscriptXOffset
+      0x00, 0x8C, // ySubscriptYOffset
+      0x02, 0x8A, // ySuperScriptXSize
+      0x02, 0xBB, // ySuperScriptYSize
+      0x00, 0x00, // ySuperScriptXOffset
+      0x01, 0xDF, // ySuperScriptYOffset
+      0x00, 0x31, // yStrikeOutSize
+      0x01, 0x02, // yStrikeOutPosition
+      0x00, 0x00, // sFamilyClass
+      0x02, 0x00, 0x06, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // Panose
+      0x00, 0x00, 0x00, 0x01, // ulUnicodeRange1 (Bits 0-31)
+      0x00, 0x00, 0x00, 0x00, // ulUnicodeRange2 (Bits 32-63)
+      0x00, 0x00, 0x00, 0x00, // ulUnicodeRange3 (Bits 64-95)
+      0x00, 0x00, 0x00, 0x00, // ulUnicodeRange4 (Bits 96-127)
+      0x47, 0x49, 0x60, 0x20, // achVendID
+      0x00, 0x20, // fsSelection
+      0x00, 0x2D, // usFirstCharIndex
+      0x00, 0x7A, // usLastCharIndex
+      0x03, // sTypoAscender
+      0x20, // sTypeDescender
+      0x00, 0x38, // sTypoLineGap
+      0x00, 0x5A, // usWinAscent
+      0x02, 0xB4, // usWinDescent
+      0x00, 0xCE, 0x00, 0x00, // ulCodePageRange1 (Bits 0-31)
+      0x00, 0x01, 0x00, 0x00, // ulCodePageRange2 (Bits 32-63)
+      0x00, // sxHeight
+      0x00, // sCapHeight
+      0x01, // usDefaultChar
+      0xCD, // usBreakChar
+      0x02  // usMaxContext
+    ];
+
+    var tableEntry = this.createTableEntry("OS/2", virtualOffset, OS2);
+    otf.set(tableEntry, currentOffset);
+    currentOffset += tableEntry.length;
+    virtualOffset += OS2.length;
+
+    var cmap = [
+      0x00, 0x00, // version
+      0x00, 0x00 // numTables
+    ];
+
+    var tableEntry = this.createTableEntry("cmap", virtualOffset, cmap);
+    //otf.set(tableEntry, currentOffset);
+    currentOffset += tableEntry.length;
+    virtualOffset += cmap.length;
+
+
+    var name = [
+      0x00, 0x00, // format
+      0x00, 0x00, // Number of names Record
+      0x00, 0x00 // Storage
+    ];
+
+    var tableEntry = this.createTableEntry("name", virtualOffset, name);
+    otf.set(tableEntry, currentOffset);
+    currentOffset += tableEntry.length;
+    virtualOffset += name.length;
+
+
+    var hmtx = [
+      0x01, 0xF4, 0x00,
+      0x00
+    ];
+    var tableEntry = this.createTableEntry("hmtx", virtualOffset, hmtx);
+    otf.set(tableEntry, currentOffset);
+    currentOffset += tableEntry.length;
+    virtualOffset += hmtx.length;
+
+    var maxp = [
+      0x00, 0x00, 0x50, 0x00, // Version number
+      0x00, 0x01 // Nums of glyphs
+    ];
+    var tableEntry = this.createTableEntry("maxp", virtualOffset, maxp);
+    otf.set(tableEntry, currentOffset);
+    currentOffset += tableEntry.length;
+    virtualOffset += maxp.length;
+
+    var head = [
+      0x00, 0x01, 0x00, 0x00, // Version number
+      0x00, 0x00, 0x50, 0x00, // fontRevision
+      0x00, 0x00, 0x00, 0x00, // checksumAdjustement
+      0x5F, 0x0F, 0x3C, 0xF5, // magicNumber
+      0x00, 0x00, // Flags
+      0x00, 0x00, // unitsPerEM
+      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // created
+      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // modified
+      0x00, 0x00, // xMin
+      0x00, 0x00, // yMin
+      0x00, 0x00, // xMax
+      0x00, 0x00, // yMax
+      0x00, 0x00, // macStyle
+      0x00, 0x00, // lowestRecPPEM
+      0x00, 0x00, // fontDirectionHint
+      0x00, 0x00, // indexToLocFormat
+      0x00, 0x00 // glyphDataFormat
+    ];
+    var tableEntry = this.createTableEntry("head", virtualOffset, head);
+    otf.set(tableEntry, currentOffset);
+    currentOffset += tableEntry.length;
+    virtualOffset += head.length;
+
+
+    var hhea = [
+      0x00, 0x01, 0x00, 0x00, // Version number
+      0x00, 0x00, // Typographic Ascent
+      0x00, 0x00, // Typographic Descent
+      0x00, 0x00, // Line Gap
+      0x01, 0xF4, // advanceWidthMax
+      0x00, 0x00, // minLeftSidebearing
+      0x00, 0x00, // minRightSidebearing
+      0x00, 0x00, // xMaxExtent
+      0x00, 0x00, // caretSlopeRise
+      0x00, 0x00, // caretOffset
+      0x00, 0x00, // -reserved-
+      0x00, 0x00, // -reserved-
+      0x00, 0x00, // -reserved-
+      0x00, 0x00, // -reserved-
+      0x00, 0x00, // metricDataFormat
+      0x00, 0x01 // numberOfHMetrics
+    ];
+    var tableEntry = this.createTableEntry("hhea", virtualOffset, hhea);
+    otf.set(tableEntry, currentOffset);
+    currentOffset += tableEntry.length;
+    virtualOffset += hhea.length;
+
+
+    var post = [
+      0x00, 0x03, 0x00, 0x00, // Version number
+      0x00, 0x00, 0x01, 0x00, // italicAngle
+      0x00, 0x00, // underlinePosition
+      0x00, 0x00, // underlineThickness
+      0x00, 0x00, 0x00, 0x01, // isFixedPitch
+      0x00, 0x00, 0x00, 0x00, // minMemType42
+      0x00, 0x00, 0x00, 0x00, // maxMemType42
+      0x00, 0x00, 0x00, 0x00, // minMemType1
+      0x00, 0x00, 0x00, 0x00  // maxMemType1
+    ];
+    var tableEntry = this.createTableEntry("post", virtualOffset, post);
+    otf.set(tableEntry, currentOffset);
+    currentOffset += tableEntry.length;
+    virtualOffset += post.length;
+
+    // Set the CFF data
+    otf.set(aData, currentOffset);
+    currentOffset += aData.length;
+
+    var data = [];
+    for (var i = 0; i < currentOffset; i++)
+      data.push(otf[i]);
+
+    writeToFile(data, "/tmp/pdf.js.otf");
   }
 };
 
