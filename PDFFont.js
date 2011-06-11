@@ -1175,18 +1175,32 @@ Type1Font.prototype = {
     virtualOffset += OS2.length;
 
     /** CMAP */
+    var charstrings = this.getOrderedCharStrings(aFont);
 
     var cmap = [
       0x00, 0x00, // version
       0x00, 0x01, // numTables
-      0x00, 0x03, // platformID
+      0x00, 0x01, // platformID
       0x00, 0x00, // encodingID
-      0x00, 0x00, 0x00, 0x00, //offset
-      0x00, 0x00, // format
-      0x00, 0x40, // length
-      0x00, 0x00, // language
-      0x45, 0x46, 0x00, 0x45
+      0x00, 0x00, 0x00, 0x0C, //offset
+      0x00, 0x00,
+      0x01, 0x06,
+      0x00, 0x00
     ];
+
+    var data = [];
+    for (var i = 0; i < 262; i++) {
+      data.push(0x00);
+    }
+
+    for (var i = 0; i < charstrings.length; i++) {
+      var pos = GlyphsUnicode[charstrings[i].glyph];
+      var b1 = parseInt("0x" + pos[0] + pos[1]);
+      var b2 = parseInt("0x" + pos[2] + pos[3]);
+      var pos = this.bytesToInteger([b1, b2]);
+      data[pos] = i + 1;
+    }
+    cmap = cmap.concat(data);
 
     var tableEntry = this.createTableEntry("cmap", virtualOffset, cmap);
     otf.set(tableEntry, currentOffset);
@@ -1222,7 +1236,6 @@ Type1Font.prototype = {
 
 
     /** HHEA */
-    var charstrings = this.getOrderedCharStrings(aFont);
 
     var hhea = [
       0x00, 0x01, 0x00, 0x00, // Version number
@@ -1253,7 +1266,6 @@ Type1Font.prototype = {
     var hmtx = [0x01, 0xF4, 0x00, 0x00];
     for (var i = 0; i < charstrings.length; i++) {
       var charstring = charstrings[i].charstring;
-      log(charstrings[i].glyph + " " + charstring[1] + " :: " + charstring);
       var width = this.integerToBytes(charstring[1], 2);
       var lsb = this.integerToBytes(charstring[0], 2);
       hmtx = hmtx.concat(width, lsb);
