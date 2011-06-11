@@ -1124,7 +1124,7 @@ Type1Font.prototype = {
 
     var baseOffset = numTables * (4 * 4) + currentOffset;
     var virtualOffset = baseOffset;
-    var tableEntry = this.createTableEntry("CFF ", baseOffset, aData);
+    var tableEntry = this.createTableEntry("CFF ", virtualOffset, aData);
     otf.set(tableEntry, currentOffset);
     currentOffset += tableEntry.length;
     virtualOffset += aData.length;
@@ -1192,7 +1192,6 @@ Type1Font.prototype = {
     otf.set(tableEntry, currentOffset);
     currentOffset += tableEntry.length;
     virtualOffset += cmap.length;
-    log(currentOffset + "::" + virtualOffset);
 
 
     /** HEAD */
@@ -1223,6 +1222,7 @@ Type1Font.prototype = {
 
 
     /** HHEA */
+    var charstrings = this.getOrderedCharStrings(aFont);
 
     var hhea = [
       0x00, 0x01, 0x00, 0x00, // Version number
@@ -1240,9 +1240,9 @@ Type1Font.prototype = {
       0x00, 0x00, // -reserved-
       0x00, 0x00, // -reserved-
       0x00, 0x00, // -reserved-
-      0x00, 0x00, // metricDataFormat
-      0x00, 0x01 // numberOfHMetrics
+      0x00, 0x00 // metricDataFormat
     ];
+    hhea = hhea.concat(this.encodeNumber(charstrings.length, 2)); // numberOfHMetrics
     var tableEntry = this.createTableEntry("hhea", virtualOffset, hhea);
     otf.set(tableEntry, currentOffset);
     currentOffset += tableEntry.length;
@@ -1250,16 +1250,13 @@ Type1Font.prototype = {
 
     /** HMTX */
 
-    var charstrings = this.getOrderedCharStrings(aFont);
     var hmtx = [0x01, 0xF4, 0x00, 0x00];
     for (var i = 0; i < charstrings.length; i++) {
       var charstring = charstrings[i].charstring;
+      log(charstrings[i].glyph + " " + charstring[1] + " :: " + charstring);
       var width = this.integerToBytes(charstring[1], 2);
       var lsb = this.integerToBytes(charstring[0], 2);
-      hmtx.push(width[0]);
-      hmtx.push(width[1]);
-      hmtx.push(lsb[0]);
-      hmtx.push(lsb[1]);
+      hmtx = hmtx.concat(width, lsb);
     }
 
     var tableEntry = this.createTableEntry("hmtx", virtualOffset, hmtx);
@@ -1315,12 +1312,13 @@ Type1Font.prototype = {
     otf.set(aData, currentOffset);
     currentOffset += aData.length;
 
-    var tables = [OS2, cmap, hmtx, head, hhea, maxp, name, post];
+    var tables = [OS2, cmap, head, hhea, hmtx, maxp, name, post];
     for (var i = 0; i < tables.length; i++) {
       var table = tables[i];
       otf.set(table, currentOffset);
       currentOffset += table.length;
     }
+    log(currentOffset + "::" + virtualOffset + "\n");
 
     var data = [];
     for (var i = 0; i < currentOffset; i++)
