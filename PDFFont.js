@@ -736,8 +736,8 @@ Type1Font.prototype = {
     var defaultUsedCount = 0;
 
     var widths = {};
-    for (var glyph in aCharstrings.map) {
-      var width = aCharstrings.get(glyph)[1];
+    for (var i = 0; i < aCharstrings.length; i++) {
+      var width = aCharstrings[i].charstring[1];
       var usedCount = (widths[width] || 0) + 1;
 
       if (usedCount > defaultUsedCount) {
@@ -827,20 +827,45 @@ Type1Font.prototype = {
     }
   },
 
+  getOrderedCharStrings: function(aFont) {
+    var dict = aFont.get("CharStrings")
+    var charstrings = [];
+    for (var glyph in dict.map) {
+      charstrings.push({
+        glyph: glyph,
+        charstring: dict.map[glyph].slice()
+      });
+    }
+
+    charstrings.sort(function(a, b) {
+      return CFFStrings.indexOf(a.glyph) > CFFStrings.indexOf(b.glyph);
+    });
+    charstrings.shift();
+
+    return charstrings;
+  },
+
   convertToCFF: function(aFont) {
-    var charstrings = aFont.get("CharStrings")
+    var charstrings = this.getOrderedCharStrings(aFont);
     var defaultWidth = this.getDefaultWidth(charstrings);
 
     var charstringsCount = 0;
     var charstringsDataLength = 0;
-    var glyphs = {};
+    var glyphs = [];
+    var glyphsChecker = {};
     var subrs = aFont.get("Private").get("Subrs");
     var parser = new Type1Parser();
-    for (var glyph in charstrings.map) {
-      var charstring = charstrings.get(glyph);
-      glyphs[glyph]  = parser.flattenCharstring(charstring, defaultWidth, subrs);
+    for (var i = 0; i < charstrings.length; i++) {
+      var charstring = charstrings[i].charstring;
+      var glyph = charstrings[i].glyph;
+      if (glyphsChecker[glyph])
+        error("glyphs already exists!");
+      glyphsChecker[glyph] = true;
+
+      var flattened = parser.flattenCharstring(charstring, defaultWidth, subrs);
+      glyphs.push(flattened);
       charstringsCount++;
-      charstringsDataLength += glyphs[glyph].length;
+      charstringsDataLength += flattened.length;
     }
     //log("There is " + charstringsCount + " glyphs (size: " + charstringsDataLength + ")");
 
@@ -877,8 +902,8 @@ Type1Font.prototype = {
 
     // Fill the charset header (first byte is the encoding)
     var charset = [0x00];
-    for (var glyph in glyphs) {
-      var index = CFFStrings.indexOf(glyph);
+    for (var i = 0; i < glyphs.length; i++) {
+      var index = CFFStrings.indexOf(charstrings[i].glyph);
       var bytes = this.integerToBytes(index, 2);
       charset.push(bytes[0]);
       charset.push(bytes[1]);
@@ -902,11 +927,11 @@ Type1Font.prototype = {
 
     // Encode the glyph and add it to the FUX
     var r = [[0x40, 0xEA]];
-    for (var glyph in glyphs) {
-      var data = glyphs[glyph].slice();
+    for (var i = 0; i < glyphs.length; i++) {
+      var data = glyphs[i].slice();
       var charstring = [];
-      for (var i = 0; i < data.length; i++) {
-        var c = data[i];
+      for (var j = 0; j < data.length; j++) {
+        var c = data[j];
         if (!IsNum(c)) {
           var token = getNumFor[c];
           if (!token)
@@ -914,8 +939,8 @@ Type1Font.prototype = {
           charstring.push(token);
         } else {
           var bytes = this.encodeNumber(c);
-          for (var j = 0; j < bytes.length; j++)
-            charstring.push(bytes[j]);
+          for (var k = 0; k < bytes.length; k++)
+            charstring.push(bytes[k]);
         }
       }
       r.push(charstring);
@@ -1092,16 +1117,16 @@ Type1Font.prototype = {
     var otf = new Uint8Array(20000);
     var currentOffset = 0;
 
-    var header = this.createOpenTypeHeader(9);
+    var numTables = 9;
+    var header = this.createOpenTypeHeader(numTables);
     otf.set(header, currentOffset);
     currentOffset += header.length;
 
-    var tablesLength = 9 * 16;
-    var virtualOffset = tablesLength + currentOffset;
-    var tableEntry = this.createTableEntry("CFF ", tablesLength + currentOffset, aData);
+    var baseOffset = numTables * (4 * 4) + currentOffset;
+    var virtualOffset = baseOffset;
+    var tableEntry = this.createTableEntry("CFF ", baseOffset, aData);
     otf.set(tableEntry, currentOffset);
     currentOffset += tableEntry.length;
-
     virtualOffset += aData.length;
 
     var OS2 = [
@@ -1130,18 +1155,18 @@ Type1Font.prototype = {
       0x00, 0x20, // fsSelection
       0x00, 0x2D, // usFirstCharIndex
       0x00, 0x7A, // usLastCharIndex
-      0x03, // sTypoAscender
-      0x20, // sTypeDescender
+      0x00, 0x03, // sTypoAscender
+      0x00, 0x20, // sTypeDescender
       0x00, 0x38, // sTypoLineGap
       0x00, 0x5A, // usWinAscent
       0x02, 0xB4, // usWinDescent
       0x00, 0xCE, 0x00, 0x00, // ulCodePageRange1 (Bits 0-31)
       0x00, 0x01, 0x00, 0x00, // ulCodePageRange2 (Bits 32-63)
-      0x00, // sxHeight
-      0x00, // sCapHeight
-      0x01, // usDefaultChar
-      0xCD, // usBreakChar
-      0x02  // usMaxContext
+      0x00, 0x00, // sxHeight
+      0x00, 0x00, // sCapHeight
+      0x00, 0x01, // usDefaultChar
+      0x00, 0xCD, // usBreakChar
+      0x00, 0x02  // usMaxContext
     ];
 
     var tableEntry = this.createTableEntry("OS/2", virtualOffset, OS2);
@@ -1149,46 +1174,28 @@ Type1Font.prototype = {
     currentOffset += tableEntry.length;
     virtualOffset += OS2.length;
 
+    /** CMAP */
+
     var cmap = [
       0x00, 0x00, // version
-      0x00, 0x00 // numTables
+      0x00, 0x01, // numTables
+      0x00, 0x03, // platformID
+      0x00, 0x00, // encodingID
+      0x00, 0x00, 0x00, 0x00, //offset
+      0x00, 0x00, // format
+      0x00, 0x40, // length
+      0x00, 0x00, // language
+      0x45, 0x46, 0x00, 0x45
     ];
 
     var tableEntry = this.createTableEntry("cmap", virtualOffset, cmap);
-    //otf.set(tableEntry, currentOffset);
+    otf.set(tableEntry, currentOffset);
     currentOffset += tableEntry.length;
     virtualOffset += cmap.length;
+    log(currentOffset + "::" + virtualOffset);
 
 
-    var name = [
-      0x00, 0x00, // format
-      0x00, 0x00, // Number of names Record
-      0x00, 0x00 // Storage
-    ];
-
-    var tableEntry = this.createTableEntry("name", virtualOffset, name);
-    otf.set(tableEntry, currentOffset);
-    currentOffset += tableEntry.length;
-    virtualOffset += name.length;
-
-
-    var hmtx = [
-      0x01, 0xF4, 0x00,
-      0x00
-    ];
-    var tableEntry = this.createTableEntry("hmtx", virtualOffset, hmtx);
-    otf.set(tableEntry, currentOffset);
-    currentOffset += tableEntry.length;
-    virtualOffset += hmtx.length;
-
-    var maxp = [
-      0x00, 0x00, 0x50, 0x00, // Version number
-      0x00, 0x01 // Nums of glyphs
-    ];
-    var tableEntry = this.createTableEntry("maxp", virtualOffset, maxp);
-    otf.set(tableEntry, currentOffset);
-    currentOffset += tableEntry.length;
-    virtualOffset += maxp.length;
+    /** HEAD */
 
     var head = [
       0x00, 0x01, 0x00, 0x00, // Version number
@@ -1215,16 +1222,19 @@ Type1Font.prototype = {
     virtualOffset += head.length;
 
 
+    /** HHEA */
+
     var hhea = [
       0x00, 0x01, 0x00, 0x00, // Version number
       0x00, 0x00, // Typographic Ascent
       0x00, 0x00, // Typographic Descent
       0x00, 0x00, // Line Gap
-      0x01, 0xF4, // advanceWidthMax
+      0xFF, 0xFF, // advanceWidthMax
       0x00, 0x00, // minLeftSidebearing
       0x00, 0x00, // minRightSidebearing
       0x00, 0x00, // xMaxExtent
       0x00, 0x00, // caretSlopeRise
+      0x00, 0x00, // caretSlopeRun
       0x00, 0x00, // caretOffset
       0x00, 0x00, // -reserved-
       0x00, 0x00, // -reserved-
@@ -1238,6 +1248,52 @@ Type1Font.prototype = {
     currentOffset += tableEntry.length;
     virtualOffset += hhea.length;
 
+    /** HMTX */
+
+    var charstrings = this.getOrderedCharStrings(aFont);
+    var hmtx = [0x01, 0xF4, 0x00, 0x00];
+    for (var i = 0; i < charstrings.length; i++) {
+      var charstring = charstrings[i].charstring;
+      var width = this.integerToBytes(charstring[1], 2);
+      var lsb = this.integerToBytes(charstring[0], 2);
+      hmtx.push(width[0]);
+      hmtx.push(width[1]);
+      hmtx.push(lsb[0]);
+      hmtx.push(lsb[1]);
+    }
+
+    var tableEntry = this.createTableEntry("hmtx", virtualOffset, hmtx);
+    otf.set(tableEntry, currentOffset);
+    currentOffset += tableEntry.length;
+    virtualOffset += hmtx.length;
+
+
+    /** MAXP */
+
+    var maxp = [
+      0x00, 0x00, 0x50, 0x00, // Version number
+    ].concat(this.integerToBytes(charstrings.length, 2)); // Num of glyphs
+
+    var tableEntry = this.createTableEntry("maxp", virtualOffset, maxp);
+    otf.set(tableEntry, currentOffset);
+    currentOffset += tableEntry.length;
+    virtualOffset += maxp.length;
+
+
+    /** NAME */
+
+    var name = [
+      0x00, 0x00, // format
+      0x00, 0x00, // Number of names Record
+      0x00, 0x00 // Storage
+    ];
+    var tableEntry = this.createTableEntry("name", virtualOffset, name);
+    otf.set(tableEntry, currentOffset);
+    currentOffset += tableEntry.length;
+    virtualOffset += name.length;
+
+
+    /** POST */
 
     var post = [
       0x00, 0x03, 0x00, 0x00, // Version number
@@ -1258,6 +1314,13 @@ Type1Font.prototype = {
     // Set the CFF data
     otf.set(aData, currentOffset);
     currentOffset += aData.length;
+
+    var tables = [OS2, cmap, hmtx, head, hhea, maxp, name, post];
+    for (var i = 0; i < tables.length; i++) {
+      var table = tables[i];
+      otf.set(table, currentOffset);
+      currentOffset += table.length;
+    }
 
     var data = [];
     for (var i = 0; i < currentOffset; i++)
