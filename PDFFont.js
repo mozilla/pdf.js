@@ -926,7 +926,7 @@ Type1Font.prototype = {
     };
 
     // Encode the glyph and add it to the FUX
-    var r = [[0x40, 0xEA]];
+    var r = [[0x40, 0x0E]];
     for (var i = 0; i < glyphs.length; i++) {
       var data = glyphs[i].slice();
       var charstring = [];
@@ -1102,6 +1102,10 @@ Type1Font.prototype = {
     var offset = aOffset;
 
     // length
+    // Per spec tables must be 4-bytes align so add some 0x00 if needed
+    while (aData.length & 3)
+      aData.push(0x00);
+
     var length = aData.length;
 
     // checksum
@@ -1216,7 +1220,7 @@ Type1Font.prototype = {
       0x00, 0x00, 0x00, 0x00, // checksumAdjustement
       0x5F, 0x0F, 0x3C, 0xF5, // magicNumber
       0x00, 0x00, // Flags
-      0x00, 0x00, // unitsPerEM
+      0x00, 0x40, // unitsPerEM (>= 16 && <=16384)
       0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // created
       0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // modified
       0x00, 0x00, // xMin
@@ -1255,7 +1259,9 @@ Type1Font.prototype = {
       0x00, 0x00, // -reserved-
       0x00, 0x00 // metricDataFormat
     ];
-    hhea = hhea.concat(this.encodeNumber(charstrings.length, 2)); // numberOfHMetrics
+    hhea = hhea.concat(this.integerToBytes(charstrings.length, 2)); // numberOfHMetrics
+    log(hhea);
+
     var tableEntry = this.createTableEntry("hhea", virtualOffset, hhea);
     otf.set(tableEntry, currentOffset);
     currentOffset += tableEntry.length;
