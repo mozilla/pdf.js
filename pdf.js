@@ -2278,37 +2278,14 @@ var CanvasGraphics = (function() {
 
             var fontName = "";
             var subtype = font.get("Subtype").name;
-            switch (subtype) {
-              case "Type1":
-                var fontDescriptor = font.get("FontDescriptor");
-                if (fontDescriptor.num) {
-                  // XXX fetchIfRef looks expensive
-                  var fontDescriptor = this.xref.fetchIfRef(fontDescriptor);
-                  var fontFile = this.xref.fetchIfRef(fontDescriptor.get("FontFile"));
-                  fontName = fontDescriptor.get("FontName").name;
-                  fontName = fontName.replace("+", ""); // no + are allowed in the font name
-                  font = new Type1Font(fontName, fontFile);
-                }
-                break;
-
-              case "Type3":
-                TODO("support Type3 font");
-                break;
-
-              case "TrueType":
-                var fontDescriptor = font.get("FontDescriptor");
-                if (fontDescriptor.num) {
-                  var fontDescriptor = this.xref.fetchIfRef(fontDescriptor);
-                  var fontFile = this.xref.fetchIfRef(fontDescriptor.get("FontFile2"));
-                  fontName = fontDescriptor.get("FontName").name;
-                  fontName = fontName.replace("+", ""); // no + are allowed in the font name
-                  font = new TrueTypeFont(fontName, fontFile);
-                }
-                break;
-
-              default:
-                error("Unsupported font type: " + subtype);
-                break;
+            var fontDescriptor = font.get("FontDescriptor");
+            if (fontDescriptor.num) {
+                var fontDescriptor = this.xref.fetchIfRef(fontDescriptor);
+                var fontFile = this.xref.fetchIfRef(fontDescriptor.get("FontFile"));
+                if (!fontFile)
+                  fontFile = this.xref.fetchIfRef(fontDescriptor.get("FontFile2"));
+                fontName = fontDescriptor.get("FontName").name.replace("+", " ");
+                new Font(fontName, fontFile, subtype);
             }
 
             this.current.fontSize = size;

@@ -1,19 +1,86 @@
 /* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- /
 /* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
 
+/**
+ * Hold a map of decoded fonts and of the standard fourteen Type1 fonts and
+ * their acronyms.
+ * TODO Add the standard fourteen Type1 fonts list by default
+ *      http://cgit.freedesktop.org/poppler/poppler/tree/poppler/GfxFont.cc#n65
+ */
+var Fonts = {};
+
+
+/**
+ * 'Font' is the class the outside world should use, it encapsulate all the font
+ * decoding logics whatever type it is (assuming the font type is supported).
+ *
+ * For example to read a Type1 font and to attach it to the document:
+ *   var type1Font = new Font("MyFontName", binaryData, "Type1");
+ *   type1Font.bind();
+ *
+ * As an improvment the last parameter can be replaced by an automatic guess
+ * of the font type based on the first byte of the file.
+ */
+var Font = function(aFontName, aFontFile, aFontType) {
+  this.name = aFontName;
+
+  // If the font has already been decoded simply return
+  if (Fonts[aFontName]) {
+    this.font = Fonts[aFontName];
+    return;
+  }
+
+  switch (aFontType) {
+    case "Type1":
+      this.mimetype = "font/otf";
+      this.font = new Type1(aFontName, aFontFile);
+      break;
+    case "TrueType":
+      this.mimetype = "font/ttf";
+      this.font = new TrueType(aFontName, aFontFile);
+      break;
+    default:
+      error("Font " + aFontType + " is not supported");
+      break;
+  }
+
+  Fonts[aFontName] = this.font;
+  this.bind();
+};
+
+Font.prototype = {
+  name: null,
+  font: null,
+  mimetype: null,
+
+  bind: function() {
+    var data = this.font.data;
+
+    // Compute the binary data to base 64
+    var str = [];
+    var count = data.length;
+    for (var i = 0; i < count; i++)
+      str.push(data.getChar ? data.getChar()
+                            : String.fromCharCode(data[i]));
+
+    var dataBase64 = window.btoa(str.join(""));
+
+    // Add the @font-face rule to the document
+    var url = "url(data:" + this.mimetype + ";base64," + dataBase64 + ");";
+    var rule = "@font-face { font-family:'" + this.name + "';src:" + url + "}";
+    var styleSheet = document.styleSheets[0];
+    styleSheet.insertRule(rule, styleSheet.length);
+  }
+};
+
+/** Implementation dirty logic starts here */
+
 var kMaxFontFileSize = 100000;
 
 /**
  * This dictionary holds decoded fonts data.
  */
-var Fonts = new Dict();
-
-/**
- * This simple object keep a trace of the fonts that have already been decoded
- * by storing a map between the name given by the PDF and the name gather from
- * the font (aka the PostScript code of the font itself for Type1 font).
- */
-var _Fonts = {};
+var PSFonts = new Dict();
 
 
 var Stack = function() {
@@ -57,27 +124,7 @@ var Stack = function() {
   };
 };
 
-var Base64Encoder = {
-  encode: function(aFontName, aData) {
-    var str = [];
-    var count = aData.length;
-    for (var i = 0; i < count; i++)
-      str.push(aData.getChar ? aData.getChar() : String.fromCharCode(aData[i]));
-
-    // Add the css rule to the document
-    var fontData = window.btoa(str.join(""));
-    var url = "url(data:font/otf;base64," + fontData + ");";
-    document.styleSheets[0].insertRule("@font-face { font-family: '" + aFontName + "'; src: " + url + " }", 0);
-
-    return fontData;
-  }
-};
-
-var TrueTypeFont = function(aFontName, aFontFile) {
-  if (_Fonts[aFontName])
-    return;
-  _Fonts[aFontName] = true;
-
+var TrueType = function(aFontName, aFontFile) {
   var debug = true;
   function dump(aMsg) {
     if (debug)
@@ -85,8 +132,7 @@ var TrueTypeFont = function(aFontName, aFontFile) {
   }
 
   dump("Loading a TrueType font: " + aFontName);
-  var fontData = Base64Encoder.encode(aFontName, aFontFile);
-  Fonts.set(aFontName, fontData);
+  this.data = aFontFile;
 };
 
 var Type1Parser = function(aAsciiStream, aBinaryStream) {
@@ -485,14 +531,6 @@ var Type1Parser = function(aAsciiStream, aBinaryStream) {
         case "def":
           var value = operandStack.pop();
           var key = operandStack.pop();
-
-          // XXX we don't want to do that here but for some reasons the names
-          // are different between what is declared and the FontName directive
-          if (key == "FontName" && Fonts.get(value)) {
-            // The font has already be decoded, stop!
-            return true;
-          }
-
           dump("def: " + key + " = " + value);
           dictionaryStack.peek().set(key, value);
           break;
@@ -504,7 +542,7 @@ var Type1Parser = function(aAsciiStream, aBinaryStream) {
 
           // The key will be the identifier to recognize this font
           fontName = key;
-          Fonts.set(key, font);
+          PSFonts.set(key, font);
 
           operandStack.push(font);
           break;
@@ -722,11 +760,7 @@ var Type1Parser = function(aAsciiStream, aBinaryStream) {
 
 
 var fontCount = 0;
-var Type1Font = function(aFontName, aFontFile) {
-  if (_Fonts[aFontName])
-    return;
-  _Fonts[aFontName] = true;
-
+var Type1 = function(aFontName, aFontFile) {
   // All Type1 font program should begin with the comment %!
   if (aFontFile.getByte() != 0x25 || aFontFile.getByte() != 0x21)
     error("Invalid file header");
@@ -740,17 +774,14 @@ var Type1Font = function(aFontName, aFontFile) {
 
     this.parser = new Type1Parser(ASCIIStream, binaryStream);
     var fontName = this.parser.parse();
-    var font = Fonts.get(fontName);
-    var fontData = this.convertToOTF(this.convertToCFF(font), font);
-    fontData = Base64Encoder.encode(aFontName, fontData);
-    Fonts.set(aFontName, fontData);
-
+    var font = PSFonts.get(fontName);
+    this.data = this.convertToOTF(this.convertToCFF(font), font);
     var end = Date.now();
     log("Time to parse font is:" + (end - start));
   }
 };
 
-Type1Font.prototype = {
+Type1.prototype = {
   getDefaultWidth: function(aCharstrings) {
     var defaultWidth = 0;
     var defaultUsedCount = 0;
@@ -1104,11 +1135,6 @@ Type1Font.prototype = {
     value = 2;
     for (var i = 1; i < maxPower; i++)
       value *= 2;
-
-    if (fontCount == 5) {
-      log ("mp2: " + aNumber + "::" + value);
-    }
-
     return value;
   },
 
@@ -1480,7 +1506,7 @@ Type1Font.prototype = {
     for (var i = 0; i < currentOffset; i++)
       fontData.push(otf[i]);
 
-    writeToFile(fontData, "/tmp/pdf.js." + fontCount + ".otf");
+    //writeToFile(fontData, "/tmp/pdf.js." + fontCount + ".otf");
     return fontData;
   }
 };
