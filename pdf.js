@@ -2286,6 +2286,7 @@ var CanvasGraphics = (function() {
                   var fontDescriptor = this.xref.fetchIfRef(fontDescriptor);
                   var fontFile = this.xref.fetchIfRef(fontDescriptor.get("FontFile"));
                   fontName = fontDescriptor.get("FontName").name;
+                  fontName = fontName.replace("+", ""); // no + are allowed in the font name
                   font = new Type1Font(fontName, fontFile);
                 }
                 break;
@@ -2295,7 +2296,6 @@ var CanvasGraphics = (function() {
                 break;
 
               case "TrueType":
-                break;
                 var fontDescriptor = font.get("FontDescriptor");
                 if (fontDescriptor.num) {
                   var fontDescriptor = this.xref.fetchIfRef(fontDescriptor);

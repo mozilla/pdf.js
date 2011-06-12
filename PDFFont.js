@@ -60,7 +60,7 @@ var Base64Encoder = {
     var str = [];
     var count = aData.length;
     for (var i = 0; i < count; i++)
-      str.push(aData.getChar ? aData.getChar : String.fromCharCode(aData[i]));
+      str.push(aData.getChar ? aData.getChar() : String.fromCharCode(aData[i]));
 
     return window.btoa(str.join(""));
   }
@@ -71,7 +71,7 @@ var TrueTypeFont = function(aFontName, aFontFile) {
     return;
   _Fonts[aFontName] = true;
 
-  var debug = false;
+  var debug = true;
   function dump(aMsg) {
     if (debug)
       log(aMsg);
