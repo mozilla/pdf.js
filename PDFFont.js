@@ -929,7 +929,7 @@ Type1Font.prototype = {
     var familyName = fontInfo.get("FamilyName");
     var weight = fontInfo.get("Weight");
     var strings = [version, notice, fullName,
-                   familyName, weight];
+                   familyName, weight, "asteriskmath"];
     var stringsIndex = this.createCFFIndexHeader(strings);
     var stringsDataLength = stringsIndex.length;
 
@@ -940,6 +940,8 @@ Type1Font.prototype = {
     var charset = [0x00];
     for (var i = 0; i < glyphs.length; i++) {
       var index = CFFStrings.indexOf(charstrings[i].glyph);
+      if (index == -1)
+        index = CFFStrings.length + strings.indexOf(glyph);
       var bytes = this.integerToBytes(index, 2);
       charset.push(bytes[0]);
       charset.push(bytes[1]);
@@ -1102,6 +1104,10 @@ Type1Font.prototype = {
     value = 2;
     for (var i = 1; i < maxPower; i++)
       value *= 2;
+
+    if (fontCount == 5) {
+      log ("mp2: " + aNumber + "::" + value);
+    }
 
     return value;
   },
@@ -1474,7 +1480,7 @@ Type1Font.prototype = {
     for (var i = 0; i < currentOffset; i++)
       fontData.push(otf[i]);
 
-    //writeToFile(fontData, "/tmp/pdf.js." + fontCount + ".otf");
+    writeToFile(fontData, "/tmp/pdf.js." + fontCount + ".otf");
     return fontData;
   }
 };

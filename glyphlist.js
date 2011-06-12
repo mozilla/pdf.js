@@ -4279,5 +4279,11 @@ var GlyphsUnicode = {
   zretroflexhook: "0290",
   zstroke: "01B6",
   zuhiragana: "305A",
-  zukatakana: "30BA",
+  zukatakana: "30BA"
 };
+
+// Add missing glyphs from the original Adobe's list
+GlyphsUnicode["angbracketleft"] = "3008";
+GlyphsUnicode["angbracketright"] = "3009";
+GlyphsUnicode["circlecopyrt"] = "00A9";
+
