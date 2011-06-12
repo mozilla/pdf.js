@@ -721,7 +721,7 @@ var Type1Parser = function(aAsciiStream, aBinaryStream) {
 };
 
 
-var type1hack = false;
+var fontCount = 0;
 var Type1Font = function(aFontName, aFontFile) {
   if (_Fonts[aFontName])
     return;
@@ -731,8 +731,8 @@ var Type1Font = function(aFontName, aFontFile) {
   if (aFontFile.getByte() != 0x25 || aFontFile.getByte() != 0x21)
     error("Invalid file header");
 
-  if (!type1hack || true) {
-    type1hack = true;
+  if (!fontCount || true) {
+    fontCount++;
     var start = Date.now();
 
     var ASCIIStream = aFontFile.makeSubStream(0, aFontFile.dict.get("Length1"), aFontFile.dict);
@@ -851,17 +851,27 @@ Type1Font.prototype = {
     var dict = aFont.get("CharStrings")
     var charstrings = [];
     for (var glyph in dict.map) {
+      var unicode = GlyphsUnicode[glyph];
+      if (!unicode) {
+        if (glyph != ".notdef")
+          warn(glyph + " does not have an entry in the glyphs unicode dictionary");
+        continue;
+      }
+
+      var b1 = parseInt("0x" + unicode[0] + unicode[1]);
+      var b2 = parseInt("0x" + unicode[2] + unicode[3]);
+      unicode = this.bytesToInteger([b1, b2]);
+
       charstrings.push({
         glyph: glyph,
+        unicode: unicode,
         charstring: dict.map[glyph].slice()
       });
     }
 
     charstrings.sort(function(a, b) {
-      return CFFStrings.indexOf(a.glyph) > CFFStrings.indexOf(b.glyph);
+      return a.unicode > b.unicode;
     });
-    charstrings.shift();
-
     return charstrings;
   },
 
@@ -1071,14 +1081,14 @@ Type1Font.prototype = {
     //var parser = new Type2Parser();
     //parser.parse(new Stream(file));
 
-    var data = [];
+    var fontData = [];
     for (var i = 0; i < currentOffset; i++)
-      data.push(cff[i]);
+      fontData.push(cff[i]);
 
     //log("== write to file");
-    //writeToFile(data, "/tmp/pdf.js.cff");
+    //writeToFile(fontData, "/tmp/pdf.js." + fontCount + ".cff");
 
-    return data;
+    return fontData;
   },
 
   getMaxPower2: function(aNumber) {
@@ -1228,36 +1238,14 @@ Type1Font.prototype = {
         data.push(0x00);
       }
 
-      for (var i = 0; i < charstrings.length; i++) {
-        var glyph = charstrings[i].glyph;
-        if (glyph == ".notdef")
-          continue;
-
-        var pos = GlyphsUnicode[glyph];
-        if (!pos)
-          error(charstrings[i].glyph + " does not have an entry in the glyphs table");
-        var b1 = parseInt("0x" + pos[0] + pos[1]);
-        var b2 = parseInt("0x" + pos[2] + pos[3]);
-        var num = this.bytesToInteger([b1, b2]);
-        data[num] = i + 1;
-      }
+      for (var i = 0; i < charstrings.length; i++)
+        data[charstrings[i].unicode] = i + 1;
       cmap = cmap.concat(data);
     }
     else {
       var data = new Array(1000);
-      for (var i = 0; i < charstrings.length; i++) {
-        var glyph = charstrings[i].glyph;
-        if (glyph == ".notdef")
-          continue;
-
-        var pos = GlyphsUnicode[glyph];
-        if (!pos)
-          error(charstrings[i].glyph + " does not have an entry in the glyphs table");
-        var b1 = parseInt("0x" + pos[0] + pos[1]);
-        var b2 = parseInt("0x" + pos[2] + pos[3]);
-        var num = this.bytesToInteger([b1, b2]);
-        data[num] = i + 1;
-      }
+      for (var i = 0; i < charstrings.length; i++)
+        data[charstrings[i].unicode] = i + 1;
 
       var ranges = [];
       var range = [];
@@ -1266,7 +1254,10 @@ Type1Font.prototype = {
         if (char) {
           range.push(i);
         } else if (range.length) {
-          //log("create a new range of " + range.length + " chars width min: " + range[0] + " to max: " + range[range.length - 1]);
+          if (0) {
+            log("create a new range of " + range.length + " chars width min: " + range[0] + " to max: " + range[range.length - 1]);
+            log("range content is: " + range);
+          }
           ranges.push(range.slice());
           range = [];
         }
@@ -1286,7 +1277,6 @@ Type1Font.prototype = {
       cmap = cmap.concat(this.integerToBytes(rangeShift, 2));
 
       // End characters code with an additional 0xFFFF to finish the array
-      var endCodes = [];
       for (var i = 0; i < ranges.length; i++) {
         var range = ranges[i];
         cmap = cmap.concat(this.integerToBytes(range[range.length - 1], 2));
@@ -1303,25 +1293,20 @@ Type1Font.prototype = {
       };
       cmap = cmap.concat([0xFF, 0xFF]);
 
-
       // Fill idDelta
-      var idDelta = [];
       var delta = 0;
-      var p = 1;
+      var p = 0;
       for (var i = 0; i < ranges.length; i++) {
         var range = ranges[i];
         var start = range[0];
-        var end = range[range.length - 1];
-        var diff = end - start;
-        var delta = -(start - p);
+        var delta = ((start - 1) - p) % 65536;
 
-        var value = this.integerToBytes(-delta, 2);
+        var value = this.integerToBytes(delta, 2);
         value[0] ^= 0xFF;
         value[1] ^= 0xFF;
         value[1] += 1;
-
         cmap = cmap.concat([value[0], value[1]]);
-        delta -= range.length;
+
         p += range.length;
       };
       cmap = cmap.concat([0x00, 0x01]);
@@ -1333,7 +1318,6 @@ Type1Font.prototype = {
         cmap = cmap.concat([0x00, 0x00]);
       };
       cmap = cmap.concat([0x00, 0x00]);
-
 
       var cmapHeader = [
         0x00, 0x00, // version
@@ -1349,9 +1333,8 @@ Type1Font.prototype = {
       // Fill up data!
       for (var i = 0; i < ranges.length; i++) {
         var range = ranges[i];
-        for (var j = 0; j < range.length; j++) {
+        for (var j = 0; j < range.length; j++)
           cmap = cmap.concat(range[j]);
-        }
       };
       cmap = cmapHeader.concat(cmap);
     }
@@ -1491,7 +1474,7 @@ Type1Font.prototype = {
     for (var i = 0; i < currentOffset; i++)
       fontData.push(otf[i]);
 
-    writeToFile(fontData, "/tmp/pdf.js.otf");
+    //writeToFile(fontData, "/tmp/pdf.js." + fontCount + ".otf");
     return fontData;
   }
 };
