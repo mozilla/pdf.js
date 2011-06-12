@@ -2276,7 +2276,7 @@ var CanvasGraphics = (function() {
             if (!font)
                 return;
 
-            var fontName = "Nimbus Roman No9 L";
+            var fontName = "";
             var subtype = font.get("Subtype").name;
             switch (subtype) {
               case "Type1":
@@ -2285,7 +2285,8 @@ var CanvasGraphics = (function() {
                   // XXX fetchIfRef looks expensive
                   var fontDescriptor = this.xref.fetchIfRef(fontDescriptor);
                   var fontFile = this.xref.fetchIfRef(fontDescriptor.get("FontFile"));
-                  font = new Type1Font(fontDescriptor.get("FontName").name, fontFile);
+                  fontName = fontDescriptor.get("FontName").name;
+                  font = new Type1Font(fontName, fontFile);
                 }
                 break;
 

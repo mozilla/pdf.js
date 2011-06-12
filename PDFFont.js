@@ -1,3 +1,6 @@
+
+var kMaxFontFileSize = 100000;
+
 /**
  * This dictionary holds decoded fonts data.
  */
@@ -68,7 +71,13 @@ var TrueTypeFont = function(aFontName, aFontFile) {
     return;
   _Fonts[aFontName] = true;
 
-  //log("Loading a TrueType font: " + aFontName);
+  var debug = false;
+  function dump(aMsg) {
+    if (debug)
+      log(aMsg);
+  }
+
+  dump("Loading a TrueType font: " + aFontName);
   var fontData = Base64Encoder.encode(aFontFile);
   Fonts.set(aFontName, fontData);
 
@@ -648,6 +657,12 @@ var Type1Parser = function(aAsciiStream, aBinaryStream) {
             operandStack.push("rmoveto");
             break;
 
+          case "div":
+            var num2 = operandStack.pop();
+            var num1 = operandStack.pop();
+            operandStack.push(num2 / num1);
+            break;
+
           case "setcurrentpoint":
           case "dotsection":
           case "seac":
@@ -680,7 +695,7 @@ var Type1Parser = function(aAsciiStream, aBinaryStream) {
             var count = operandStack.pop();
             var data = operandStack.pop();
             if (index != 3)
-              log("callothersubr for index: " + index);
+              dump("callothersubr for index: " + index);
             operandStack.push(3);
             operandStack.push("callothersubr");
             break;
@@ -713,7 +728,7 @@ var Type1Font = function(aFontName, aFontFile) {
   if (aFontFile.getByte() != 0x25 || aFontFile.getByte() != 0x21)
     error("Invalid file header");
 
-  if (!type1hack) {
+  if (!type1hack || true) {
     type1hack = true;
     var start = Date.now();
 
@@ -723,7 +738,13 @@ var Type1Font = function(aFontName, aFontFile) {
     this.parser = new Type1Parser(ASCIIStream, binaryStream);
     var fontName = this.parser.parse();
     var font = Fonts.get(fontName);
-    this.convertToOTF(this.convertToCFF(font), font);
+    var fontData = this.convertToOTF(this.convertToCFF(font), font);
+    fontData = Base64Encoder.encode(fontData);
+    Fonts.set(aFontName, fontData);
+
+    // Add the css rule
+    var url = "url(data:font/otf;base64," + fontData + ");";
+    document.styleSheets[0].insertRule("@font-face { font-family: '" + aFontName + "'; src: " + url + " }", 0);
 
     var end = Date.now();
     log("Time to parse font is:" + (end - start));
@@ -846,6 +867,12 @@ Type1Font.prototype = {
   },
 
   convertToCFF: function(aFont) {
+    var debug = false;
+    function dump(aMsg) {
+      if (debug)
+        log(aMsg);
+    };
+
     var charstrings = this.getOrderedCharStrings(aFont);
     var defaultWidth = this.getDefaultWidth(charstrings);
 
@@ -856,7 +883,7 @@ Type1Font.prototype = {
     var subrs = aFont.get("Private").get("Subrs");
     var parser = new Type1Parser();
     for (var i = 0; i < charstrings.length; i++) {
-      var charstring = charstrings[i].charstring;
+      var charstring = charstrings[i].charstring.slice();
       var glyph = charstrings[i].glyph;
       if (glyphsChecker[glyph])
         error("glyphs already exists!");
@@ -867,10 +894,10 @@ Type1Font.prototype = {
       charstringsCount++;
       charstringsDataLength += flattened.length;
     }
-    //log("There is " + charstringsCount + " glyphs (size: " + charstringsDataLength + ")");
+    dump("There is " + charstringsCount + " glyphs (size: " + charstringsDataLength + ")");
 
     // Create a CFF font data
-    var cff = new Uint8Array(20000);
+    var cff = new Uint8Array(kMaxFontFileSize);
     var currentOffset = 0;
 
     // Font header (major version, minor version, header size, offset size)
@@ -938,7 +965,12 @@ Type1Font.prototype = {
             error(c);
           charstring.push(token);
         } else {
-          var bytes = this.encodeNumber(c);
+          try {
+            var bytes = this.encodeNumber(c);
+          } catch(e) {
+            log("Glyph " + i + " has a wrong value: " + c + " in charstring: " + data);
+            log("the default value is glyph " + charstrings[i].glyph + " and is supposed to be: " + charstrings[i].charstring);
+          }
           for (var k = 0; k < bytes.length; k++)
             charstring.push(bytes[k]);
         }
@@ -1035,20 +1067,17 @@ Type1Font.prototype = {
     currentOffset += shit.length;
 
 
-    log("==================== debug ====================");
-    /*
-    log("== parse");
-    var file = new Uint8Array(cff, 0, currentOffset);
-    var parser = new Type2Parser();
-    parser.parse(new Stream(file));
-    */
+    dump("==================== debug ====================");
+    //var file = new Uint8Array(cff, 0, currentOffset);
+    //var parser = new Type2Parser();
+    //parser.parse(new Stream(file));
 
     var data = [];
     for (var i = 0; i < currentOffset; i++)
       data.push(cff[i]);
 
-    log("== write to file");
-    writeToFile(data, "/tmp/pdf.js.cff");
+    //log("== write to file");
+    //writeToFile(data, "/tmp/pdf.js.cff");
 
     return data;
   },
@@ -1118,7 +1147,7 @@ Type1Font.prototype = {
   },
 
   convertToOTF: function(aData, aFont) {
-    var otf = new Uint8Array(20000);
+    var otf = new Uint8Array(kMaxFontFileSize);
     var currentOffset = 0;
 
     var numTables = 9;
@@ -1198,11 +1227,17 @@ Type1Font.prototype = {
     }
 
     for (var i = 0; i < charstrings.length; i++) {
-      var pos = GlyphsUnicode[charstrings[i].glyph];
+      var glyph = charstrings[i].glyph;
+      if (glyph == ".notdef")
+        continue;
+
+      var pos = GlyphsUnicode[glyph];
+      if (!pos)
+        error(charstrings[i].glyph + " does not have an entry in the glyphs table");
       var b1 = parseInt("0x" + pos[0] + pos[1]);
       var b2 = parseInt("0x" + pos[2] + pos[3]);
-      var pos = this.bytesToInteger([b1, b2]);
-      data[pos] = i + 1;
+      var num = this.bytesToInteger([b1, b2]);
+      data[num] = i + 1;
     }
     cmap = cmap.concat(data);
 
@@ -1260,7 +1295,6 @@ Type1Font.prototype = {
       0x00, 0x00 // metricDataFormat
     ];
     hhea = hhea.concat(this.integerToBytes(charstrings.length, 2)); // numberOfHMetrics
-    log(hhea);
 
     var tableEntry = this.createTableEntry("hhea", virtualOffset, hhea);
     otf.set(tableEntry, currentOffset);
@@ -1336,13 +1370,13 @@ Type1Font.prototype = {
       otf.set(table, currentOffset);
       currentOffset += table.length;
     }
-    log(currentOffset + "::" + virtualOffset + "\n");
 
-    var data = [];
+    var fontData = [];
     for (var i = 0; i < currentOffset; i++)
-      data.push(otf[i]);
+      fontData.push(otf[i]);
 
-    writeToFile(data, "/tmp/pdf.js.otf");
+    //writeToFile(data, "/tmp/pdf.js.otf");
+    return fontData;
   }
 };
 
