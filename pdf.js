@@ -1971,14 +1971,7 @@ var CanvasGraphics = (function() {
 
             var fn = sh.get("Function");
             fn = this.xref.fetchIfRef(fn);
-/*
-            console.log("x0: "+ x0, "y0: "+ y0, "x1: "+ x1, "y1: "+ y1);
-            console.log("size: "+ fn.dict.get("Size"));
-            console.log("BPS: "+ fn.dict.get("BitsPerSample"));
-            console.log(fn.dict.get("Encode"));
-            console.log(fn.dict.get("Range"));
-            console.log(fn.dict.get("Decode"));
-*/
+
             var gradient = this.ctx.createLinearGradient(x0, y0, x1, y1);
 
             gradient.addColorStop(0, 'rgb(0,0,255)');
