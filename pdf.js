@@ -48,24 +48,26 @@ function shadow(obj, prop, value) {
 }
 
 var Stream = (function() {
-    function constructor(arrayBuffer, start, length, dict) {
+    function constructor(arrayBuffer, dict) {
         this.bytes = new Uint8Array(arrayBuffer);
-        this.start = start || 0;
-        this.pos = this.start;
-        this.length = (start + length) || arrayBuffer.byteLength;
+        this.pos = 0;
+        this.start = 0;
         this.dict = dict;
     }
 
     constructor.prototype = {
+        get length() {
+            return this.bytes.length;
+        },
         getByte: function() {
             var bytes = this.bytes;
-            if (this.pos >= this.length)
+            if (this.pos >= bytes.length)
                 return -1;
             return bytes[this.pos++];
         },
         lookChar: function() {
             var bytes = this.bytes;
-            if (this.pos >= this.length)
+            if (this.pos >= bytes.length)
                 return;
             return String.fromCharCode(bytes[this.pos]);
         },
@@ -87,8 +89,11 @@ var Stream = (function() {
         moveStart: function() {
             this.start = this.pos;
         },
-        makeSubStream: function(start, length, dict) {
-            return new Stream(this.bytes.buffer, start, length, dict);
+        makeSubStream: function(pos, length, dict) {
+            var buffer = this.bytes.buffer;
+            if (length)
+                return new Stream(new Uint8Array(buffer, pos, length), dict);
+            return new Stream(new Uint8Array(buffer, pos), dict);
         }
     };
 
