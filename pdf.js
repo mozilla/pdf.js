@@ -1848,7 +1848,6 @@ var CanvasGraphics = (function() {
             }
 
             this.current.fontSize = size;
-            TODO("using hard-coded font for testing");
             this.ctx.font = this.current.fontSize +'px "' + fontName + '"';
         },
         moveText: function (x, y) {
