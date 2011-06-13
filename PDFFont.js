@@ -238,15 +238,15 @@ Font.prototype = {
     var otf = new Uint8Array(kMaxFontFileSize);
 
     // Required Tables
-    var CFF = aFont.data,
-        OS2 = [],
-        cmap = [],
-        head = [],
-        hhea = [],
-        hmtx = [],
-        maxp = [],
-        name = [],
-        post = [];
+    var CFF = aFont.data, // PostScript Font Program
+        OS2 = [],         // OS/2 and Windows Specific metrics
+        cmap = [],        // Character to glyphs mapping
+        head = [],        // Font eader
+        hhea = [],        // Horizontal header
+        hmtx = [],        // Horizontal metrics
+        maxp = [],        // Maximum profile
+        name = [],        // Naming tables
+        post = [];        // PostScript informations
     var tables = [CFF, OS2, cmap, head, hhea, hmtx, maxp, name, post];
 
     // The offsets object holds at the same time a representation of where
@@ -323,9 +323,9 @@ Font.prototype = {
       0x00, 0x00, 0x00, 0x00, // checksumAdjustement
       0x5F, 0x0F, 0x3C, 0xF5, // magicNumber
       0x00, 0x00, // Flags
-      0x03, 0xE8, // unitsPerEM (>= 16 && <=16384)
-      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // created
-      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // modified
+      0x03, 0xE8, // unitsPerEM (defaulting to 1000)
+      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // creation date
+      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // modifification date
       0x00, 0x00, // xMin
       0x00, 0x00, // yMin
       0x00, 0x00, // xMax
@@ -334,7 +334,7 @@ Font.prototype = {
       0x00, 0x00, // lowestRecPPEM
       0x00, 0x00, // fontDirectionHint
       0x00, 0x00, // indexToLocFormat
-      0x00, 0x00 // glyphDataFormat
+      0x00, 0x00  // glyphDataFormat
     ];
     this._createTableEntry(otf, offsets, "head", head);
 
@@ -405,7 +405,7 @@ Font.prototype = {
     ];
     this._createTableEntry(otf, offsets, "post", post);
 
-    // Once all the table entry are written, this is time to dump the data!
+    // Once all the table entries header are written, dump the data!
     var tables = [CFF, OS2, cmap, head, hhea, hmtx, maxp, name, post];
     for (var i = 0; i < tables.length; i++) {
       var table = tables[i];
