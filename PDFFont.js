@@ -41,6 +41,7 @@ var Font = function(aFontName, aFontFile, aFontType) {
     return;
   }
 
+  var start = Date.now();
   switch (aFontType) {
     case "Type1":
       // All Type1 font program should begin with the comment %!
@@ -64,6 +65,7 @@ var Font = function(aFontName, aFontFile, aFontType) {
       warn("Font " + aFontType + " is not supported");
       break;
   }
+  var end = Date.now();
 
   // Attach the font to the document
   this.bind();
@@ -417,7 +419,7 @@ Font.prototype = {
     for (var i = 0; i < offsets.currentOffset; i++)
       fontData.push(otf[i]);
 
-    writeToFile(fontData, "/tmp/pdf.js." + fontCount + ".otf");
+    //writeToFile(fontData, "/tmp/pdf.js." + fontCount + ".otf");
     return fontData;
   }
 };
@@ -477,8 +479,8 @@ var TrueType = function(aFontName, aFontFile) {
 var PSFonts = new Dict();
 
 
-var Stack = function() {
-  var innerStack = [];
+var Stack = function(aStackSize) {
+  var innerStack = new Array(aStackSize || 0);
 
   this.push = function(aOperand) {
     innerStack.push(aOperand);
@@ -695,7 +697,7 @@ var Type1Parser = function(aAsciiStream, aBinaryStream) {
    * operator returns one or more results, it does so by pushing them on the
    * operand stack.
    */
-   var operandStack = new Stack();
+   var operandStack = new Stack(40);
 
    // Flag indicating if the topmost operand of the operandStack is an array
    var operandIsArray = 0;
@@ -1156,7 +1158,7 @@ var CFF = function(aFontName, aFontFile) {
     this.font = PSFonts.get(fontName);
     this.data = this.convertToCFF(this.font);
     var end = Date.now();
-    log("Time to parse font is:" + (end - start));
+    //log("Time to parse font is:" + (end - start));
   }
 };
 
@@ -1392,7 +1394,7 @@ CFF.prototype = {
       248, 28, 1, // Notice
       248, 29, 2, // FullName
       248, 30, 3, // FamilyName
-      248, 31, 4, // Weight
+      248, 31, 4  // Weight
     ];
 
     for (var i = 0; i < fontBBox.length; i++)

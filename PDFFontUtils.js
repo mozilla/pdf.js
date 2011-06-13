@@ -4,7 +4,7 @@
  *
  * So the code here is useful for dumping the data content of a .cff file in
  * order to investigate the similarity between a Type1 CharString and a Type2
- * CharString.
+ * CharString or to understand the structure of the CFF format.
  */
 
 
@@ -216,6 +216,14 @@ function readFontIndexData(aStream, aIsByte) {
 var Type2Parser = function(aFilePath) {
   var font = new Dict();
 
+  var xhr = new XMLHttpRequest();
+  xhr.open("GET", aFilePath, false);
+  xhr.mozResponseType = xhr.responseType = "arraybuffer";
+  xhr.expected = (document.URL.indexOf("file:") == 0) ? 0 : 200;
+  xhr.send(null);
+  this.data = new Stream(xhr.mozResponseArrayBuffer || xhr.mozResponse ||
+                         xhr.responseArrayBuffer || xhr.response);
+
   // Turn on this flag for additional debugging logs
   var debug = false;
 
@@ -340,22 +348,16 @@ var Type2Parser = function(aFilePath) {
   }
 };
 
-
-var xhr = new XMLHttpRequest();
-xhr.open("GET", "titi.cff", false);
-xhr.mozResponseType = xhr.responseType = "arraybuffer";
-xhr.expected = (document.URL.indexOf("file:") == 0) ? 0 : 200;
-xhr.send(null);
-var cffData = xhr.mozResponseArrayBuffer || xhr.mozResponse ||
-              xhr.responseArrayBuffer || xhr.response;
-var cff = new Type2Parser("titi.cff");
-//cff.parse(new Stream(cffData));
+/*
+var cff = new Type2Parser("test.cff");
+cff.parse();
+*/
 
 
 /**
  * Write to a file (works only on Firefox in privilege mode");
  */
- function writeToFile(aBytes, aFilePath) {
+function writeToFile(aBytes, aFilePath) {
   netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
   var Cc = Components.classes,
       Ci = Components.interfaces;
@@ -366,10 +368,10 @@ var cff = new Type2Parser("titi.cff");
                  .createInstance(Ci.nsIFileOutputStream);
   stream.init(file, 0x04 | 0x08 | 0x20, 0600, 0);
 
- var bos = Cc["@mozilla.org/binaryoutputstream;1"]
-             .createInstance(Ci.nsIBinaryOutputStream);
+  var bos = Cc["@mozilla.org/binaryoutputstream;1"]
+              .createInstance(Ci.nsIBinaryOutputStream);
   bos.setOutputStream(stream);
   bos.writeByteArray(aBytes, aBytes.length);
   stream.close();
- };
+};
 
