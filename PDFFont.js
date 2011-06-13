@@ -6,6 +6,11 @@
  */
 var kMaxFontFileSize = 40000;
 
+/**
+ * Maximum number of glyphs per font.
+*/
+var kMaxGlyphsCount = 1024;
+
 
 /**
  * Hold a map of decoded fonts and of the standard fourteen Type1 fonts and
@@ -143,27 +148,21 @@ Font.prototype = {
   },
 
   _createCMAPTable: function font_createCMAPTable(aGlyphs) {
-    var data = new Array(1000);
+    var characters = new Array(kMaxGlyphsCount);
     for (var i = 0; i < aGlyphs.length; i++)
-      data[aGlyphs[i].unicode] = i + 1;
+      characters[aGlyphs[i].unicode] = i + 1;
 
     // Separate the glyphs into continuous range of codes, aka segment.
     var ranges = [];
     var range = [];
-    for (var i = 0; i < data.length; i++) {
-      var char = data[i];
-      if (char) {
+    for (var i = 0; i < characters.length; i++) {
+      if (characters[i]) {
         range.push(i);
       } else if (range.length) {
-        if (0) {
-          log("create a new range of " + range.length + " chars width min: " + range[0] + " to max: " + range[range.length - 1]);
-          log("range content is: " + range);
-        }
         ranges.push(range.slice());
         range = [];
       }
     }
-
 
     // The size in bytes of the header is equal to the size of the
     // different fields * length of a short + (size of the 4 parallels arrays
