@@ -20,7 +20,6 @@ var kMaxGlyphsCount = 1024;
  */
 var Fonts = {};
 
-
 /**
  * 'Font' is the class the outside world should use, it encapsulate all the font
  * decoding logics whatever type it is (assuming the font type is supported).
@@ -44,10 +43,6 @@ var Font = function(aFontName, aFontFile, aFontType) {
   var start = Date.now();
   switch (aFontType) {
     case "Type1":
-      // All Type1 font program should begin with the comment %!
-      if (aFontFile.getByte() != 0x25 || aFontFile.getByte() != 0x21)
-        error("Invalid file header");
-
       var cff = new CFF(aFontName, aFontFile);
       this.mimetype = "font/otf";
 
@@ -569,7 +564,7 @@ var Type1Parser = function(aAsciiStream, aBinaryStream) {
     var decryptedString = [];
 
     var value = "";
-    var count = aStream.length;
+    var count = aStream.length - aStream.start;
     for (var i = 0; i < count; i++) {
       value = aStream.getByte();
       decryptedString[i] = String.fromCharCode(value ^ (r >> 8));
@@ -949,7 +944,6 @@ var Type1Parser = function(aAsciiStream, aBinaryStream) {
           // and start interpreting it in order to decode it
           var file = operandStack.pop();
           var eexecString = decrypt(aBinaryStream, kEexecEncryptionKey, 4).join("");
-          dump(eexecString);
           lexer = new Lexer(new StringStream(eexecString));
           break;
 
@@ -989,13 +983,12 @@ var Type1Parser = function(aAsciiStream, aBinaryStream) {
           var file = operandStack.pop();
 
           // Add '1' because of the space separator, this is dirty
-          var stream = lexer.stream.makeSubStream(lexer.stream.pos + 1, size);
+          var stream = lexer.stream.makeSubStream(lexer.stream.start + lexer.stream.pos + 1, size);
           lexer.stream.skip(size + 1);
 
           var charString = decrypt(stream, kCharStringsEncryptionKey, 4).join("");
           var charStream = new StringStream(charString);
           var decodedCharString = decodeCharString(charStream);
-          dump("decodedCharString: " + decodedCharString);
           operandStack.push(decodedCharString);
 
           // boolean indicating if the operation is a success or not
@@ -1144,22 +1137,21 @@ var Type1Parser = function(aAsciiStream, aBinaryStream) {
 };
 
 
-var fontCount = 0;
 var CFF = function(aFontName, aFontFile) {
-  if (!fontCount || true) {
-    fontCount++;
-    var start = Date.now();
+  var start = Date.now();
 
-    var ASCIIStream = aFontFile.makeSubStream(0, aFontFile.dict.get("Length1"), aFontFile.dict);
-    var binaryStream = aFontFile.makeSubStream(aFontFile.dict.get("Length1"), aFontFile.dict.get("Length2"), aFontFile.dict);
+  var length1 = aFontFile.dict.get("Length1");
+  var length2 = aFontFile.dict.get("Length2");
+  var pos = aFontFile.pos;
+  var ASCIIStream = aFontFile.makeSubStream(pos, length1, aFontFile.dict);
+  var binaryStream = aFontFile.makeSubStream(pos + length1, length2, aFontFile.dict);
 
-    this.parser = new Type1Parser(ASCIIStream, binaryStream);
-    var fontName = this.parser.parse();
-    this.font = PSFonts.get(fontName);
-    this.data = this.convertToCFF(this.font);
-    var end = Date.now();
-    //log("Time to parse font is:" + (end - start));
-  }
+  this.parser = new Type1Parser(ASCIIStream, binaryStream);
+  var fontName = this.parser.parse();
+  this.font = PSFonts.get(fontName);
+  this.data = this.convertToCFF(this.font);
+  var end = Date.now();
+  //log("Time to parse font is:" + (end - start));
 };
 
 CFF.prototype = {
