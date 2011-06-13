@@ -1142,9 +1142,9 @@ var CFF = function(aFontName, aFontFile) {
 
   var length1 = aFontFile.dict.get("Length1");
   var length2 = aFontFile.dict.get("Length2");
-  var pos = aFontFile.pos;
-  var ASCIIStream = aFontFile.makeSubStream(pos, length1, aFontFile.dict);
-  var binaryStream = aFontFile.makeSubStream(pos + length1, length2, aFontFile.dict);
+
+  var ASCIIStream = new Stream(aFontFile.getBytes(length1));
+  var binaryStream = new Stream(aFontFile.getBytes(length2));
 
   this.parser = new Type1Parser(ASCIIStream, binaryStream);
   var fontName = this.parser.parse();
