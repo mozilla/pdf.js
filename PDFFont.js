@@ -564,7 +564,7 @@ var Type1Parser = function(aAsciiStream, aBinaryStream) {
     var decryptedString = [];
 
     var value = "";
-    var count = aStream.length - aStream.start;
+    var count = aStream.length;
     for (var i = 0; i < count; i++) {
       value = aStream.getByte();
       decryptedString[i] = String.fromCharCode(value ^ (r >> 8));

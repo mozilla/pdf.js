@@ -52,20 +52,36 @@ var Stream = (function() {
         this.bytes = new Uint8Array(arrayBuffer);
         this.start = start || 0;
         this.pos = this.start;
-        this.length = (start + length) || arrayBuffer.byteLength;
+        this.end = (start + length) || arrayBuffer.byteLength;
         this.dict = dict;
     }
 
     constructor.prototype = {
+        get length() {
+            return this.end - this.start;
+        },
         getByte: function() {
             var bytes = this.bytes;
-            if (this.pos >= this.length)
+            if (this.pos >= this.end)
                 return -1;
             return bytes[this.pos++];
         },
+        // returns subarray of original buffer
+        // should only be read
+        getBytes: function(length) {
+            var bytes = this.bytes;
+            var pos = this.pos;
+            var end = pos + length;
+            var strEnd = this.end;
+            if (end > strEnd)
+                end = strEnd;
+            
+            this.pos = end;
+            return bytes.subarray(pos, end);
+        },
         lookChar: function() {
             var bytes = this.bytes;
-            if (this.pos >= this.length)
+            if (this.pos >= this.end)
                 return;
             return String.fromCharCode(bytes[this.pos]);
         },
@@ -110,630 +126,114 @@ var StringStream = (function() {
 })();
 
 var FlateStream = (function() {
-    const codeLenCodeMap = [
+    const codeLenCodeMap = new Uint32Array([
         16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15
-    ];
+    ]);
 
-    const lengthDecode = [
-        [0,   3],
-        [0,   4],
-        [0,   5],
-        [0,   6],
-        [0,   7],
-        [0,   8],
-        [0,   9],
-        [0,  10],
-        [1,  11],
-        [1,  13],
-        [1,  15],
-        [1,  17],
-        [2,  19],
-        [2,  23],
-        [2,  27],
-        [2,  31],
-        [3,  35],
-        [3,  43],
-        [3,  51],
-        [3,  59],
-        [4,  67],
-        [4,  83],
-        [4,  99],
-        [4, 115],
-        [5, 131],
-        [5, 163],
-        [5, 195],
-        [5, 227],
-        [0, 258],
-        [0, 258],
-        [0, 258]
-    ];
+    const lengthDecode = new Uint32Array([
+        0x00003, 0x00004, 0x00005, 0x00006, 0x00007, 0x00008, 0x00009,
+        0x0000a, 0x1000b, 0x1000d, 0x1000f, 0x10011, 0x20013, 0x20017,
+        0x2001b, 0x2001f, 0x30023, 0x3002b, 0x30033, 0x3003b, 0x40043,
+        0x40053, 0x40063, 0x40073, 0x50083, 0x500a3, 0x500c3, 0x500e3,
+        0x00102, 0x00102, 0x00102
+    ]);
 
-    const distDecode = [
-        [0,      1],
-        [0,      2],
-        [0,      3],
-        [0,      4],
-        [1,      5],
-        [1,      7],
-        [2,      9],
-        [2,     13],
-        [3,     17],
-        [3,     25],
-        [4,     33],
-        [4,     49],
-        [5,     65],
-        [5,     97],
-        [6,    129],
-        [6,    193],
-        [7,    257],
-        [7,    385],
-        [8,    513],
-        [8,    769],
-        [9,   1025],
-        [9,   1537],
-        [10,  2049],
-        [10,  3073],
-        [11,  4097],
-        [11,  6145],
-        [12,  8193],
-        [12, 12289],
-        [13, 16385],
-        [13, 24577]
-    ];
+    const distDecode = new Uint32Array([
+        0x00001, 0x00002, 0x00003, 0x00004, 0x10005, 0x10007, 0x20009,
+        0x2000d, 0x30011, 0x30019, 0x40021, 0x40031, 0x50041, 0x50061,
+        0x60081, 0x600c1, 0x70101, 0x70181, 0x80201, 0x80301, 0x90401,
+        0x90601, 0xa0801, 0xa0c01, 0xb1001, 0xb1801, 0xc2001, 0xc3001,
+        0xd4001, 0xd6001
+    ]);
 
-    const fixedLitCodeTab = [[
-        [7, 0x0100],
-        [8, 0x0050],
-        [8, 0x0010],
-        [8, 0x0118],
-        [7, 0x0110],
-        [8, 0x0070],
-        [8, 0x0030],
-        [9, 0x00c0],
-        [7, 0x0108],
-        [8, 0x0060],
-        [8, 0x0020],
-        [9, 0x00a0],
-        [8, 0x0000],
-        [8, 0x0080],
-        [8, 0x0040],
-        [9, 0x00e0],
-        [7, 0x0104],
-        [8, 0x0058],
-        [8, 0x0018],
-        [9, 0x0090],
-        [7, 0x0114],
-        [8, 0x0078],
-        [8, 0x0038],
-        [9, 0x00d0],
-        [7, 0x010c],
-        [8, 0x0068],
-        [8, 0x0028],
-        [9, 0x00b0],
-        [8, 0x0008],
-        [8, 0x0088],
-        [8, 0x0048],
-        [9, 0x00f0],
-        [7, 0x0102],
-        [8, 0x0054],
-        [8, 0x0014],
-        [8, 0x011c],
-        [7, 0x0112],
-        [8, 0x0074],
-        [8, 0x0034],
-        [9, 0x00c8],
-        [7, 0x010a],
-        [8, 0x0064],
-        [8, 0x0024],
-        [9, 0x00a8],
-        [8, 0x0004],
-        [8, 0x0084],
-        [8, 0x0044],
-        [9, 0x00e8],
-        [7, 0x0106],
-        [8, 0x005c],
-        [8, 0x001c],
-        [9, 0x0098],
-        [7, 0x0116],
-        [8, 0x007c],
-        [8, 0x003c],
-        [9, 0x00d8],
-        [7, 0x010e],
-        [8, 0x006c],
-        [8, 0x002c],
-        [9, 0x00b8],
-        [8, 0x000c],
-        [8, 0x008c],
-        [8, 0x004c],
-        [9, 0x00f8],
-        [7, 0x0101],
-        [8, 0x0052],
-        [8, 0x0012],
-        [8, 0x011a],
-        [7, 0x0111],
-        [8, 0x0072],
-        [8, 0x0032],
-        [9, 0x00c4],
-        [7, 0x0109],
-        [8, 0x0062],
-        [8, 0x0022],
-        [9, 0x00a4],
-        [8, 0x0002],
-        [8, 0x0082],
-        [8, 0x0042],
-        [9, 0x00e4],
-        [7, 0x0105],
-        [8, 0x005a],
-        [8, 0x001a],
-        [9, 0x0094],
-        [7, 0x0115],
-        [8, 0x007a],
-        [8, 0x003a],
-        [9, 0x00d4],
-        [7, 0x010d],
-        [8, 0x006a],
-        [8, 0x002a],
-        [9, 0x00b4],
-        [8, 0x000a],
-        [8, 0x008a],
-        [8, 0x004a],
-        [9, 0x00f4],
-        [7, 0x0103],
-        [8, 0x0056],
-        [8, 0x0016],
-        [8, 0x011e],
-        [7, 0x0113],
-        [8, 0x0076],
-        [8, 0x0036],
-        [9, 0x00cc],
-        [7, 0x010b],
-        [8, 0x0066],
-        [8, 0x0026],
-        [9, 0x00ac],
-        [8, 0x0006],
-        [8, 0x0086],
-        [8, 0x0046],
-        [9, 0x00ec],
-        [7, 0x0107],
-        [8, 0x005e],
-        [8, 0x001e],
-        [9, 0x009c],
-        [7, 0x0117],
-        [8, 0x007e],
-        [8, 0x003e],
-        [9, 0x00dc],
-        [7, 0x010f],
-        [8, 0x006e],
-        [8, 0x002e],
-        [9, 0x00bc],
-        [8, 0x000e],
-        [8, 0x008e],
-        [8, 0x004e],
-        [9, 0x00fc],
-        [7, 0x0100],
-        [8, 0x0051],
-        [8, 0x0011],
-        [8, 0x0119],
-        [7, 0x0110],
-        [8, 0x0071],
-        [8, 0x0031],
-        [9, 0x00c2],
-        [7, 0x0108],
-        [8, 0x0061],
-        [8, 0x0021],
-        [9, 0x00a2],
-        [8, 0x0001],
-        [8, 0x0081],
-        [8, 0x0041],
-        [9, 0x00e2],
-        [7, 0x0104],
-        [8, 0x0059],
-        [8, 0x0019],
-        [9, 0x0092],
-        [7, 0x0114],
-        [8, 0x0079],
-        [8, 0x0039],
-        [9, 0x00d2],
-        [7, 0x010c],
-        [8, 0x0069],
-        [8, 0x0029],
-        [9, 0x00b2],
-        [8, 0x0009],
-        [8, 0x0089],
-        [8, 0x0049],
-        [9, 0x00f2],
-        [7, 0x0102],
-        [8, 0x0055],
-        [8, 0x0015],
-        [8, 0x011d],
-        [7, 0x0112],
-        [8, 0x0075],
-        [8, 0x0035],
-        [9, 0x00ca],
-        [7, 0x010a],
-        [8, 0x0065],
-        [8, 0x0025],
-        [9, 0x00aa],
-        [8, 0x0005],
-        [8, 0x0085],
-        [8, 0x0045],
-        [9, 0x00ea],
-        [7, 0x0106],
-        [8, 0x005d],
-        [8, 0x001d],
-        [9, 0x009a],
-        [7, 0x0116],
-        [8, 0x007d],
-        [8, 0x003d],
-        [9, 0x00da],
-        [7, 0x010e],
-        [8, 0x006d],
-        [8, 0x002d],
-        [9, 0x00ba],
-        [8, 0x000d],
-        [8, 0x008d],
-        [8, 0x004d],
-        [9, 0x00fa],
-        [7, 0x0101],
-        [8, 0x0053],
-        [8, 0x0013],
-        [8, 0x011b],
-        [7, 0x0111],
-        [8, 0x0073],
-        [8, 0x0033],
-        [9, 0x00c6],
-        [7, 0x0109],
-        [8, 0x0063],
-        [8, 0x0023],
-        [9, 0x00a6],
-        [8, 0x0003],
-        [8, 0x0083],
-        [8, 0x0043],
-        [9, 0x00e6],
-        [7, 0x0105],
-        [8, 0x005b],
-        [8, 0x001b],
-        [9, 0x0096],
-        [7, 0x0115],
-        [8, 0x007b],
-        [8, 0x003b],
-        [9, 0x00d6],
-        [7, 0x010d],
-        [8, 0x006b],
-        [8, 0x002b],
-        [9, 0x00b6],
-        [8, 0x000b],
-        [8, 0x008b],
-        [8, 0x004b],
-        [9, 0x00f6],
-        [7, 0x0103],
-        [8, 0x0057],
-        [8, 0x0017],
-        [8, 0x011f],
-        [7, 0x0113],
-        [8, 0x0077],
-        [8, 0x0037],
-        [9, 0x00ce],
-        [7, 0x010b],
-        [8, 0x0067],
-        [8, 0x0027],
-        [9, 0x00ae],
-        [8, 0x0007],
-        [8, 0x0087],
-        [8, 0x0047],
-        [9, 0x00ee],
-        [7, 0x0107],
-        [8, 0x005f],
-        [8, 0x001f],
-        [9, 0x009e],
-        [7, 0x0117],
-        [8, 0x007f],
-        [8, 0x003f],
-        [9, 0x00de],
-        [7, 0x010f],
-        [8, 0x006f],
-        [8, 0x002f],
-        [9, 0x00be],
-        [8, 0x000f],
-        [8, 0x008f],
-        [8, 0x004f],
-        [9, 0x00fe],
-        [7, 0x0100],
-        [8, 0x0050],
-        [8, 0x0010],
-        [8, 0x0118],
-        [7, 0x0110],
-        [8, 0x0070],
-        [8, 0x0030],
-        [9, 0x00c1],
-        [7, 0x0108],
-        [8, 0x0060],
-        [8, 0x0020],
-        [9, 0x00a1],
-        [8, 0x0000],
-        [8, 0x0080],
-        [8, 0x0040],
-        [9, 0x00e1],
-        [7, 0x0104],
-        [8, 0x0058],
-        [8, 0x0018],
-        [9, 0x0091],
-        [7, 0x0114],
-        [8, 0x0078],
-        [8, 0x0038],
-        [9, 0x00d1],
-        [7, 0x010c],
-        [8, 0x0068],
-        [8, 0x0028],
-        [9, 0x00b1],
-        [8, 0x0008],
-        [8, 0x0088],
-        [8, 0x0048],
-        [9, 0x00f1],
-        [7, 0x0102],
-        [8, 0x0054],
-        [8, 0x0014],
-        [8, 0x011c],
-        [7, 0x0112],
-        [8, 0x0074],
-        [8, 0x0034],
-        [9, 0x00c9],
-        [7, 0x010a],
-        [8, 0x0064],
-        [8, 0x0024],
-        [9, 0x00a9],
-        [8, 0x0004],
-        [8, 0x0084],
-        [8, 0x0044],
-        [9, 0x00e9],
-        [7, 0x0106],
-        [8, 0x005c],
-        [8, 0x001c],
-        [9, 0x0099],
-        [7, 0x0116],
-        [8, 0x007c],
-        [8, 0x003c],
-        [9, 0x00d9],
-        [7, 0x010e],
-        [8, 0x006c],
-        [8, 0x002c],
-        [9, 0x00b9],
-        [8, 0x000c],
-        [8, 0x008c],
-        [8, 0x004c],
-        [9, 0x00f9],
-        [7, 0x0101],
-        [8, 0x0052],
-        [8, 0x0012],
-        [8, 0x011a],
-        [7, 0x0111],
-        [8, 0x0072],
-        [8, 0x0032],
-        [9, 0x00c5],
-        [7, 0x0109],
-        [8, 0x0062],
-        [8, 0x0022],
-        [9, 0x00a5],
-        [8, 0x0002],
-        [8, 0x0082],
-        [8, 0x0042],
-        [9, 0x00e5],
-        [7, 0x0105],
-        [8, 0x005a],
-        [8, 0x001a],
-        [9, 0x0095],
-        [7, 0x0115],
-        [8, 0x007a],
-        [8, 0x003a],
-        [9, 0x00d5],
-        [7, 0x010d],
-        [8, 0x006a],
-        [8, 0x002a],
-        [9, 0x00b5],
-        [8, 0x000a],
-        [8, 0x008a],
-        [8, 0x004a],
-        [9, 0x00f5],
-        [7, 0x0103],
-        [8, 0x0056],
-        [8, 0x0016],
-        [8, 0x011e],
-        [7, 0x0113],
-        [8, 0x0076],
-        [8, 0x0036],
-        [9, 0x00cd],
-        [7, 0x010b],
-        [8, 0x0066],
-        [8, 0x0026],
-        [9, 0x00ad],
-        [8, 0x0006],
-        [8, 0x0086],
-        [8, 0x0046],
-        [9, 0x00ed],
-        [7, 0x0107],
-        [8, 0x005e],
-        [8, 0x001e],
-        [9, 0x009d],
-        [7, 0x0117],
-        [8, 0x007e],
-        [8, 0x003e],
-        [9, 0x00dd],
-        [7, 0x010f],
-        [8, 0x006e],
-        [8, 0x002e],
-        [9, 0x00bd],
-        [8, 0x000e],
-        [8, 0x008e],
-        [8, 0x004e],
-        [9, 0x00fd],
-        [7, 0x0100],
-        [8, 0x0051],
-        [8, 0x0011],
-        [8, 0x0119],
-        [7, 0x0110],
-        [8, 0x0071],
-        [8, 0x0031],
-        [9, 0x00c3],
-        [7, 0x0108],
-        [8, 0x0061],
-        [8, 0x0021],
-        [9, 0x00a3],
-        [8, 0x0001],
-        [8, 0x0081],
-        [8, 0x0041],
-        [9, 0x00e3],
-        [7, 0x0104],
-        [8, 0x0059],
-        [8, 0x0019],
-        [9, 0x0093],
-        [7, 0x0114],
-        [8, 0x0079],
-        [8, 0x0039],
-        [9, 0x00d3],
-        [7, 0x010c],
-        [8, 0x0069],
-        [8, 0x0029],
-        [9, 0x00b3],
-        [8, 0x0009],
-        [8, 0x0089],
-        [8, 0x0049],
-        [9, 0x00f3],
-        [7, 0x0102],
-        [8, 0x0055],
-        [8, 0x0015],
-        [8, 0x011d],
-        [7, 0x0112],
-        [8, 0x0075],
-        [8, 0x0035],
-        [9, 0x00cb],
-        [7, 0x010a],
-        [8, 0x0065],
-        [8, 0x0025],
-        [9, 0x00ab],
-        [8, 0x0005],
-        [8, 0x0085],
-        [8, 0x0045],
-        [9, 0x00eb],
-        [7, 0x0106],
-        [8, 0x005d],
-        [8, 0x001d],
-        [9, 0x009b],
-        [7, 0x0116],
-        [8, 0x007d],
-        [8, 0x003d],
-        [9, 0x00db],
-        [7, 0x010e],
-        [8, 0x006d],
-        [8, 0x002d],
-        [9, 0x00bb],
-        [8, 0x000d],
-        [8, 0x008d],
-        [8, 0x004d],
-        [9, 0x00fb],
-        [7, 0x0101],
-        [8, 0x0053],
-        [8, 0x0013],
-        [8, 0x011b],
-        [7, 0x0111],
-        [8, 0x0073],
-        [8, 0x0033],
-        [9, 0x00c7],
-        [7, 0x0109],
-        [8, 0x0063],
-        [8, 0x0023],
-        [9, 0x00a7],
-        [8, 0x0003],
-        [8, 0x0083],
-        [8, 0x0043],
-        [9, 0x00e7],
-        [7, 0x0105],
-        [8, 0x005b],
-        [8, 0x001b],
-        [9, 0x0097],
-        [7, 0x0115],
-        [8, 0x007b],
-        [8, 0x003b],
-        [9, 0x00d7],
-        [7, 0x010d],
-        [8, 0x006b],
-        [8, 0x002b],
-        [9, 0x00b7],
-        [8, 0x000b],
-        [8, 0x008b],
-        [8, 0x004b],
-        [9, 0x00f7],
-        [7, 0x0103],
-        [8, 0x0057],
-        [8, 0x0017],
-        [8, 0x011f],
-        [7, 0x0113],
-        [8, 0x0077],
-        [8, 0x0037],
-        [9, 0x00cf],
-        [7, 0x010b],
-        [8, 0x0067],
-        [8, 0x0027],
-        [9, 0x00af],
-        [8, 0x0007],
-        [8, 0x0087],
-        [8, 0x0047],
-        [9, 0x00ef],
-        [7, 0x0107],
-        [8, 0x005f],
-        [8, 0x001f],
-        [9, 0x009f],
-        [7, 0x0117],
-        [8, 0x007f],
-        [8, 0x003f],
-        [9, 0x00df],
-        [7, 0x010f],
-        [8, 0x006f],
-        [8, 0x002f],
-        [9, 0x00bf],
-        [8, 0x000f],
-        [8, 0x008f],
-        [8, 0x004f],
-        [9, 0x00ff]
-    ], 9];
+    const fixedLitCodeTab = [new Uint32Array([
+        0x70100, 0x80050, 0x80010, 0x80118, 0x70110, 0x80070, 0x80030,
+        0x900c0, 0x70108, 0x80060, 0x80020, 0x900a0, 0x80000, 0x80080,
+        0x80040, 0x900e0, 0x70104, 0x80058, 0x80018, 0x90090, 0x70114,
+        0x80078, 0x80038, 0x900d0, 0x7010c, 0x80068, 0x80028, 0x900b0,
+        0x80008, 0x80088, 0x80048, 0x900f0, 0x70102, 0x80054, 0x80014,
+        0x8011c, 0x70112, 0x80074, 0x80034, 0x900c8, 0x7010a, 0x80064,
+        0x80024, 0x900a8, 0x80004, 0x80084, 0x80044, 0x900e8, 0x70106,
+        0x8005c, 0x8001c, 0x90098, 0x70116, 0x8007c, 0x8003c, 0x900d8,
+        0x7010e, 0x8006c, 0x8002c, 0x900b8, 0x8000c, 0x8008c, 0x8004c,
+        0x900f8, 0x70101, 0x80052, 0x80012, 0x8011a, 0x70111, 0x80072,
+        0x80032, 0x900c4, 0x70109, 0x80062, 0x80022, 0x900a4, 0x80002,
+        0x80082, 0x80042, 0x900e4, 0x70105, 0x8005a, 0x8001a, 0x90094,
+        0x70115, 0x8007a, 0x8003a, 0x900d4, 0x7010d, 0x8006a, 0x8002a,
+        0x900b4, 0x8000a, 0x8008a, 0x8004a, 0x900f4, 0x70103, 0x80056,
+        0x80016, 0x8011e, 0x70113, 0x80076, 0x80036, 0x900cc, 0x7010b,
+        0x80066, 0x80026, 0x900ac, 0x80006, 0x80086, 0x80046, 0x900ec,
+        0x70107, 0x8005e, 0x8001e, 0x9009c, 0x70117, 0x8007e, 0x8003e,
+        0x900dc, 0x7010f, 0x8006e, 0x8002e, 0x900bc, 0x8000e, 0x8008e,
+        0x8004e, 0x900fc, 0x70100, 0x80051, 0x80011, 0x80119, 0x70110,
+        0x80071, 0x80031, 0x900c2, 0x70108, 0x80061, 0x80021, 0x900a2,
+        0x80001, 0x80081, 0x80041, 0x900e2, 0x70104, 0x80059, 0x80019,
+        0x90092, 0x70114, 0x80079, 0x80039, 0x900d2, 0x7010c, 0x80069,
+        0x80029, 0x900b2, 0x80009, 0x80089, 0x80049, 0x900f2, 0x70102,
+        0x80055, 0x80015, 0x8011d, 0x70112, 0x80075, 0x80035, 0x900ca,
+        0x7010a, 0x80065, 0x80025, 0x900aa, 0x80005, 0x80085, 0x80045,
+        0x900ea, 0x70106, 0x8005d, 0x8001d, 0x9009a, 0x70116, 0x8007d,
+        0x8003d, 0x900da, 0x7010e, 0x8006d, 0x8002d, 0x900ba, 0x8000d,
+        0x8008d, 0x8004d, 0x900fa, 0x70101, 0x80053, 0x80013, 0x8011b,
+        0x70111, 0x80073, 0x80033, 0x900c6, 0x70109, 0x80063, 0x80023,
+        0x900a6, 0x80003, 0x80083, 0x80043, 0x900e6, 0x70105, 0x8005b,
+        0x8001b, 0x90096, 0x70115, 0x8007b, 0x8003b, 0x900d6, 0x7010d,
+        0x8006b, 0x8002b, 0x900b6, 0x8000b, 0x8008b, 0x8004b, 0x900f6,
+        0x70103, 0x80057, 0x80017, 0x8011f, 0x70113, 0x80077, 0x80037,
+        0x900ce, 0x7010b, 0x80067, 0x80027, 0x900ae, 0x80007, 0x80087,
+        0x80047, 0x900ee, 0x70107, 0x8005f, 0x8001f, 0x9009e, 0x70117,
+        0x8007f, 0x8003f, 0x900de, 0x7010f, 0x8006f, 0x8002f, 0x900be,
+        0x8000f, 0x8008f, 0x8004f, 0x900fe, 0x70100, 0x80050, 0x80010,
+        0x80118, 0x70110, 0x80070, 0x80030, 0x900c1, 0x70108, 0x80060,
+        0x80020, 0x900a1, 0x80000, 0x80080, 0x80040, 0x900e1, 0x70104,
+        0x80058, 0x80018, 0x90091, 0x70114, 0x80078, 0x80038, 0x900d1,
+        0x7010c, 0x80068, 0x80028, 0x900b1, 0x80008, 0x80088, 0x80048,
+        0x900f1, 0x70102, 0x80054, 0x80014, 0x8011c, 0x70112, 0x80074,
+        0x80034, 0x900c9, 0x7010a, 0x80064, 0x80024, 0x900a9, 0x80004,
+        0x80084, 0x80044, 0x900e9, 0x70106, 0x8005c, 0x8001c, 0x90099,
+        0x70116, 0x8007c, 0x8003c, 0x900d9, 0x7010e, 0x8006c, 0x8002c,
+        0x900b9, 0x8000c, 0x8008c, 0x8004c, 0x900f9, 0x70101, 0x80052,
+        0x80012, 0x8011a, 0x70111, 0x80072, 0x80032, 0x900c5, 0x70109,
+        0x80062, 0x80022, 0x900a5, 0x80002, 0x80082, 0x80042, 0x900e5,
+        0x70105, 0x8005a, 0x8001a, 0x90095, 0x70115, 0x8007a, 0x8003a,
+        0x900d5, 0x7010d, 0x8006a, 0x8002a, 0x900b5, 0x8000a, 0x8008a,
+        0x8004a, 0x900f5, 0x70103, 0x80056, 0x80016, 0x8011e, 0x70113,
+        0x80076, 0x80036, 0x900cd, 0x7010b, 0x80066, 0x80026, 0x900ad,
+        0x80006, 0x80086, 0x80046, 0x900ed, 0x70107, 0x8005e, 0x8001e,
+        0x9009d, 0x70117, 0x8007e, 0x8003e, 0x900dd, 0x7010f, 0x8006e,
+        0x8002e, 0x900bd, 0x8000e, 0x8008e, 0x8004e, 0x900fd, 0x70100,
+        0x80051, 0x80011, 0x80119, 0x70110, 0x80071, 0x80031, 0x900c3,
+        0x70108, 0x80061, 0x80021, 0x900a3, 0x80001, 0x80081, 0x80041,
+        0x900e3, 0x70104, 0x80059, 0x80019, 0x90093, 0x70114, 0x80079,
+        0x80039, 0x900d3, 0x7010c, 0x80069, 0x80029, 0x900b3, 0x80009,
+        0x80089, 0x80049, 0x900f3, 0x70102, 0x80055, 0x80015, 0x8011d,
+        0x70112, 0x80075, 0x80035, 0x900cb, 0x7010a, 0x80065, 0x80025,
+        0x900ab, 0x80005, 0x80085, 0x80045, 0x900eb, 0x70106, 0x8005d,
+        0x8001d, 0x9009b, 0x70116, 0x8007d, 0x8003d, 0x900db, 0x7010e,
+        0x8006d, 0x8002d, 0x900bb, 0x8000d, 0x8008d, 0x8004d, 0x900fb,
+        0x70101, 0x80053, 0x80013, 0x8011b, 0x70111, 0x80073, 0x80033,
+        0x900c7, 0x70109, 0x80063, 0x80023, 0x900a7, 0x80003, 0x80083,
+        0x80043, 0x900e7, 0x70105, 0x8005b, 0x8001b, 0x90097, 0x70115,
+        0x8007b, 0x8003b, 0x900d7, 0x7010d, 0x8006b, 0x8002b, 0x900b7,
+        0x8000b, 0x8008b, 0x8004b, 0x900f7, 0x70103, 0x80057, 0x80017,
+        0x8011f, 0x70113, 0x80077, 0x80037, 0x900cf, 0x7010b, 0x80067,
+        0x80027, 0x900af, 0x80007, 0x80087, 0x80047, 0x900ef, 0x70107,
+        0x8005f, 0x8001f, 0x9009f, 0x70117, 0x8007f, 0x8003f, 0x900df,
+        0x7010f, 0x8006f, 0x8002f, 0x900bf, 0x8000f, 0x8008f, 0x8004f,
+        0x900ff
+    ]), 9];
 
-    const fixedDistCodeTab = [[
-        [5, 0x0000],
-        [5, 0x0010],
-        [5, 0x0008],
-        [5, 0x0018],
-        [5, 0x0004],
-        [5, 0x0014],
-        [5, 0x000c],
-        [5, 0x001c],
-        [5, 0x0002],
-        [5, 0x0012],
-        [5, 0x000a],
-        [5, 0x001a],
-        [5, 0x0006],
-        [5, 0x0016],
-        [5, 0x000e],
-        [0, 0x0000],
-        [5, 0x0001],
-        [5, 0x0011],
-        [5, 0x0009],
-        [5, 0x0019],
-        [5, 0x0005],
-        [5, 0x0015],
-        [5, 0x000d],
-        [5, 0x001d],
-        [5, 0x0003],
-        [5, 0x0013],
-        [5, 0x000b],
-        [5, 0x001b],
-        [5, 0x0007],
-        [5, 0x0017],
-        [5, 0x000f],
-        [0, 0x0000]
-    ], 5];
+    const fixedDistCodeTab = [new Uint32Array([
+        0x50000, 0x50010, 0x50008, 0x50018, 0x50004, 0x50014, 0x5000c,
+        0x5001c, 0x50002, 0x50012, 0x5000a, 0x5001a, 0x50006, 0x50016,
+        0x5000e, 0x00000, 0x50001, 0x50011, 0x50009, 0x50019, 0x50005,
+        0x50015, 0x5000d, 0x5001d, 0x50003, 0x50013, 0x5000b, 0x5001b,
+        0x50007, 0x50017, 0x5000f, 0x00000
+    ]), 5];
 
     function constructor(stream) {
         this.stream = stream;
-        this.eof = true;
+        this.dict = stream.dict;
         var cmf = stream.getByte();
         var flg = stream.getByte();
         if (cmf == -1 || flg == -1)
@@ -747,7 +247,9 @@ var FlateStream = (function() {
         this.eof = false;
         this.codeSize = 0;
         this.codeBuf = 0;
+        
         this.pos = 0;
+        this.bufferLength = 0;
     }
 
     constructor.prototype = {
@@ -781,45 +283,67 @@ var FlateStream = (function() {
                 codeSize += 8;
             }
             var code = codes[codeBuf & ((1 << maxLen) - 1)];
-            var codeLen = code[0];
-            var codeVal = code[1];
+            var codeLen = code >> 16;
+            var codeVal = code & 0xffff;
             if (codeSize == 0|| codeSize < codeLen || codeLen == 0)
                 error("Bad encoding in flate stream");
             this.codeBuf = (codeBuf >> codeLen);
-            this.codeLen = (codeLen - codeLen);
+            this.codeSize = (codeSize - codeLen);
             return codeVal;
         },
-        ensureBuffer: function(requested, copy) {
+        ensureBuffer: function(requested) {
             var buffer = this.buffer;
             var current = buffer ? buffer.byteLength : 0;
-            if (current < requested)
+            if (requested < current)
                 return buffer;
             var size = 512;
             while (size < requested)
                 size <<= 1;
             var buffer2 = new Uint8Array(size);
-            if (copy) {
-                for (var i = 0; i < current; ++i)
-                    buffer2[i] = buffer[i];
-            }
+            for (var i = 0; i < current; ++i)
+                buffer2[i] = buffer[i];
             return this.buffer = buffer2;
         },
-        lookChar: function() {
+        getByte: function() {
             var bufferLength = this.bufferLength;
-            var bufferPos = this.bufferPos;
-            if (bufferLength == bufferPos) {
+            var pos = this.pos;
+            if (bufferLength == pos) {
                 if (this.eof)
                     return;
                 this.readBlock();
             }
-            return String.fromChar(this.buffer[bufferPos]);
+            return this.buffer[this.pos++];
+        },
+        getBytes: function(length) {
+            var pos = this.pos;
+
+            while (!this.eof && this.bufferLength < pos + length)
+                this.readBlock();
+
+            var end = pos + length;
+            var bufEnd = this.bufferLength;
+
+            if (end > bufEnd)
+                end = bufEnd;
+
+            this.pos = end;
+            return this.buffer.subarray(pos, end)
+        },
+        lookChar: function() {
+            var bufferLength = this.bufferLength;
+            var pos = this.pos;
+            if (bufferLength == pos) {
+                if (this.eof)
+                    return;
+                this.readBlock();
+            }
+            return String.fromCharCode(this.buffer[pos]);
         },
         getChar: function() {
             var ch = this.lookChar();
             if (!ch)
                 return;
             this.pos++;
-            this.bufferPos++;
             return ch;
         },
         skip: function(n) {
@@ -840,7 +364,7 @@ var FlateStream = (function() {
 
             // build the table
             var size = 1 << maxLen;
-            var codes = new Array(size);
+            var codes = new Uint32Array(size);
             for (var len = 1, code = 0, skip = 2;
                  len <= maxLen;
                  ++len, code <<= 1, skip <<= 1) {
@@ -856,7 +380,7 @@ var FlateStream = (function() {
 
                         // fill the table entries
                         for (var i = code2; i < size; i += skip)
-                            codes[i] = [len, val];
+                            codes[i] = (len << 16) | val;
 
                         ++code;
                     }
@@ -890,10 +414,10 @@ var FlateStream = (function() {
                 check |= (b << 8);
                 if (check != (~this.blockLen & 0xffff))
                     error("Bad uncompressed block length in flate stream");
-                var buffer = this.ensureBuffer(blockLen);
-                this.bufferLength = blockLen;
-                this.bufferPos = 0;
-                for (var n = 0; n < blockLen; ++n) {
+                var bufferLength = this.bufferLength;
+                var buffer = this.ensureBuffer(bufferLength + blockLen);
+                this.bufferLength = bufferLength + blockLen;
+                for (var n = bufferLength; n < blockLen; ++n) {
                     if ((b = stream.getByte()) == -1) {
                         this.eof = true;
                         break;
@@ -920,41 +444,40 @@ var FlateStream = (function() {
                     codeLenCodeLengths[codeLenCodeMap[i++]] = this.getBits(3);
                 var codeLenCodeTab = this.generateHuffmanTable(codeLenCodeLengths);
 
-                // built the literal and distance code tables
+                // build the literal and distance code tables
                 var len = 0;
                 var i = 0;
                 var codes = numLitCodes + numDistCodes;
                 var codeLengths = new Array(codes);
                 while (i < codes) {
-                    function repeat(stream, array, i, len, offset, what) {
+                    function repeat(stream, array, len, offset, what) {
                         var repeat = stream.getBits(len) + offset;
                         while (repeat-- > 0)
                             array[i++] = what;
                     }
                     var code = this.getCode(codeLenCodeTab);
                     if (code == 16) {
-                        repeat(this, codeLengths, i, 2, 3, len);
+                        repeat(this, codeLengths, 2, 3, len);
                     } else if (code == 17) {
-                        repeat(this, codeLengths, i, 3, 3, len = 0);
+                        repeat(this, codeLengths, 3, 3, len = 0);
                     } else if (code == 18) {
-                        repeat(this, codeLengths, i, 7, 11, len = 0);
+                        repeat(this, codeLengths, 7, 11, len = 0);
                     } else {
                         codeLengths[i++] = len = code;
                     }
                 }
 
                 litCodeTable = this.generateHuffmanTable(codeLengths.slice(0, numLitCodes));
-                distCodeTable = this.generateHuffmanTable(codeLengths.slice(numDistCodes, codes));
+                distCodeTable = this.generateHuffmanTable(codeLengths.slice(numLitCodes, codes));
             } else {
                 error("Unknown block type in flate stream");
             }
 
-            var pos = 0;
+            var pos = this.bufferLength;
             while (true) {
                 var code1 = this.getCode(litCodeTable);
                 if (code1 == 256) {
                     this.bufferLength = pos;
-                    this.bufferPos = 0;
                     return;
                 }
                 if (code1 < 256) {
@@ -962,15 +485,17 @@ var FlateStream = (function() {
                     buffer[pos++] = code1;
                 } else {
                     code1 -= 257;
-                    var code2 = lengthDecode[code1][0];
+                    code1 = lengthDecode[code1];
+                    var code2 = code1 >> 16;
                     if (code2 > 0)
                         code2 = this.getBits(code2);
-                    var len = lengthDecode[code1][1] + code2;
+                    var len = (code1 & 0xffff) + code2;
                     code1 = this.getCode(distCodeTable);
-                    code2 = distDecode[code1][0];
+                    code1 = distDecode[code1];
+                    code2 = code1 >> 16;
                     if (code2 > 0)
                         code2 = this.getBits(code2);
-                    var dist = distDecode[code1][1] + code2;
+                    var dist = (code1 & 0xffff) + code2;
                     var buffer = this.ensureBuffer(pos + len);
                     for (var k = 0; k < len; ++k, ++pos)
                         buffer[pos] = buffer[pos - dist];
@@ -1028,6 +553,9 @@ var Dict = (function() {
     constructor.prototype = {
         get: function(key) {
             return this.map[key];
+        },
+        get2: function(key1, key2) {
+            return this.get(key1) || this.get(key2);
         },
         has: function(key) {
             return key in this.map;
@@ -1100,6 +628,27 @@ function IsStream(v) {
 
 function IsRef(v) {
     return v instanceof Ref;
+}
+
+function IsFunction(v) {
+    var fnDict;
+    if (typeof v != "object")
+        return false;
+    else if (IsDict(v))
+        fnDict = v;
+    else if (IsStream(v))
+        fnDict = v.dict;
+    else
+        return false;
+    return fnDict.has("FunctionType");
+}
+
+function IsFunctionDict(v) {
+    return IsFunction(v) && IsDict(v);
+}
+
+function IsFunctionStream(v) {
+    return IsFunction(v) && IsStream(v);
 }
 
 var EOF = {};
@@ -1414,9 +963,10 @@ var Lexer = (function() {
 })();
 
 var Parser = (function() {
-    function constructor(lexer, allowStreams) {
+    function constructor(lexer, allowStreams, xref) {
         this.lexer = lexer;
         this.allowStreams = allowStreams;
+        this.xref = xref;
         this.inlineImg = 0;
         this.refill();
     }
@@ -1525,10 +1075,13 @@ var Parser = (function() {
             var pos = stream.pos;
             
             // get length
-            var length;
-            if (!IsInt(length = dict.get("Length"))) {
+            var length = dict.get("Length");
+            var xref = this.xref;
+            if (xref)
+                length = xref.fetchIfRef(length);
+            if (!IsInt(length)) {
                 error("Bad 'Length' attribute in stream");
-                lenght = 0;
+                length = 0;
             }
 
             // skip over the stream data
@@ -1549,8 +1102,8 @@ var Parser = (function() {
             return this.filter(stream, dict);
         },
         filter: function(stream, dict) {
-            var filter = dict.get("Filter") || dict.get("F");
-            var params = dict.get("DecodeParms") || dict.get("DP");
+            var filter = dict.get2("Filter", "F");
+            var params = dict.get2("DecodeParms", "DP");
             if (IsName(filter))
                 return this.makeFilter(stream, filter.name, params);
             if (IsArray(filter)) {
@@ -1672,7 +1225,7 @@ var XRef = (function() {
             error("Invalid root reference");
 
         // prepare the XRef cache
-        this.cache = Object.create(null);
+        this.cache = [];
     }
 
     constructor.prototype = {
@@ -1783,19 +1336,16 @@ var XRef = (function() {
         fetch: function(ref) {
             var num = ref.num;
             var e = this.cache[num];
-            if (e) {
-                // The stream might be in use elsewhere, so clone it.
-                if (IsStream(e))
-                    e = e.makeSubStream(e.start, e.length, e.dict);
+            if (e)
                 return e;
-            }
+
             e = this.getEntry(num);
             var gen = ref.gen;
             if (e.uncompressed) {
                 if (e.gen != gen)
                     throw("inconsistent generation in XRef");
                 var stream = this.stream.makeSubStream(e.offset);
-                var parser = new Parser(new Lexer(stream), true);
+                var parser = new Parser(new Lexer(stream), true, this);
                 var obj1 = parser.getObj();
                 var obj2 = parser.getObj();
                 var obj3 = parser.getObj();
@@ -1813,7 +1363,11 @@ var XRef = (function() {
                     }
                     error("bad XRef entry");
                 }
-                return this.cache[num] = parser.getObj();
+                e = parser.getObj();
+                // Don't cache streams since they are mutable.
+                if (!IsStream(e))
+                    this.cache[num] = e;
+                return e;
             }
             error("compressed entry");
         },
@@ -1927,11 +1481,11 @@ var PDFDoc = (function() {
     }
 
     function find(stream, needle, limit, backwards) {
-        var length = stream.length;
         var pos = stream.pos;
+        var end = stream.end;
         var str = "";
-        if (pos + limit > length)
-            limit = length - pos;
+        if (pos + limit > end)
+            limit = end - pos;
         for (var n = 0; n < limit; ++n)
             str += stream.getChar();
         stream.pos = pos;
@@ -1965,7 +1519,7 @@ var PDFDoc = (function() {
                     startXRef = stream.pos + 6;
             } else {
                 // Find startxref at the end of the file.
-                var start = stream.length - 1024;
+                var start = stream.end - 1024;
                 if (start < 0)
                     start = 0;
                 stream.pos = start;
@@ -2032,14 +1586,17 @@ var PDFDoc = (function() {
     return constructor;
 })();
 
-var IDENTITY_MATRIX = [ 1, 0, 0, 1, 0, 0 ];
+const IDENTITY_MATRIX = [ 1, 0, 0, 1, 0, 0 ];
 
 // <canvas> contexts store most of the state we need natively.
 // However, PDF needs a bit more state, which we store here.
 var CanvasExtraState = (function() {
     function constructor() {
+        // Are soft masks and alpha values shapes or opacities?
+        this.alphaIsShape = false;
         this.fontSize = 0.0;
         this.textMatrix = IDENTITY_MATRIX;
+        this.leading = 0.0;
         // Current point (in user coordinates)
         this.x = 0.0;
         this.y = 0.0;
@@ -2093,9 +1650,11 @@ var CanvasGraphics = (function() {
             // Text
             BT: this.beginText,
             ET: this.endText,
+            TL: this.setLeading,
             Tf: this.setFont,
             Td: this.moveText,
             Tm: this.setTextMatrix,
+            "T*": this.nextLine,
             Tj: this.showText,
             TJ: this.showSpacedText,
 
@@ -2143,6 +1702,7 @@ var CanvasGraphics = (function() {
             this.xref = xref;
             this.res = resources || new Dict();
             this.xobjs = this.res.get("XObject") || new Dict();
+            this.xobjs = this.xref.fetchIfRef(this.xobjs);
 
             var args = [];
             var map = this.map;
@@ -2234,8 +1794,9 @@ var CanvasGraphics = (function() {
             this.consumePath();
         },
         eoFill: function() {
-            TODO("even-odd fill");
+            var savedFillRule = this.setEOFillRule();
             this.fill();
+            this.restoreFillRule(savedFillRule);
         },
         fillStroke: function() {
             this.ctx.fill();
@@ -2264,6 +1825,9 @@ var CanvasGraphics = (function() {
             this.current.y = this.current.lineY = 0;
         },
         endText: function() {
+        },
+        setLeading: function(leading) {
+            this.current.leading = leading;
         },
         setFont: function(fontRef, size) {
             var font = this.res.get("Font").get(fontRef.name);
@@ -2295,6 +1859,9 @@ var CanvasGraphics = (function() {
             this.current.textMatrix = [ a, b, c, d, e, f ];
             this.current.x = this.current.lineX = 0;
             this.current.y = this.current.lineY = 0;
+        },
+        nextLine: function() {
+            this.moveText(0, this.current.leading);
         },
         showText: function(text) {
             this.ctx.save();
@@ -2367,8 +1934,76 @@ var CanvasGraphics = (function() {
         },
 
         // Shading
-        shadingFill: function(entry) {
-            TODO("shading fill");
+        shadingFill: function(entryRef) {
+            var shadingRes = this.res.get("Shading");
+            if (!shadingRes)
+                return;
+            shadingRes = this.xref.fetchIfRef(shadingRes);
+            var shading = shadingRes.get(entryRef.name);
+            if (!shading)
+                return;
+            shading = this.xref.fetchIfRef(shading);
+            if (!shading)
+                return;
+
+            this.save();
+
+            var bbox = shading.get("BBox");
+            if (bbox && IsArray(bbox) && 4 == bbox.length) {
+                this.rectangle.apply(this, bbox);
+                this.clip();
+                this.endPath();
+            }
+
+            TODO("shading-fill color space");
+
+            var type = shading.get("ShadingType");
+            switch (type) {
+            case 1:
+                this.fillFunctionShading(shading);
+                break;
+            case 2:
+                this.fillAxialShading(shading);
+                break;
+            case 3:
+                this.fillRadialShading(shading);
+                break;
+            case 4: case 5: case 6: case 7:
+                TODO("shading fill type "+ type);
+            default:
+                malformed("Unknown shading type "+ type);
+            }
+
+            this.restore();
+        },
+        fillAxialShading: function(sh) {
+            var coordsArr = sh.get("Coords");
+            var x0 = coordsArr[0], y0 = coordsArr[1],
+                x1 = coordsArr[2], y1 = coordsArr[3];
+
+            var t0 = 0.0, t1 = 1.0;
+            if (sh.has("Domain")) {
+                var domainArr = sh.get("Domain");
+                t0 = domainArr[0], t1 = domainArr[1];
+            }
+
+            var extendStart = false, extendEnd = false;
+            if (sh.has("Extend")) {
+                var extendArr = sh.get("Extend");
+                extendStart = extendArr[0], extendEnd = extendArr[1];
+            }
+
+            var fn = sh.get("Function");
+            fn = this.xref.fetchIfRef(fn);
+
+            var gradient = this.ctx.createLinearGradient(x0, y0, x1, y1);
+
+            gradient.addColorStop(0, 'rgb(0,0,255)');
+            gradient.addColorStop(1, 'rgb(0,255,0)');
+
+            this.ctx.fillStyle = gradient;
+            this.ctx.fill();
+            this.consumePath();
         },
 
         // XObjects
@@ -2378,10 +2013,21 @@ var CanvasGraphics = (function() {
                 return;
             xobj = this.xref.fetchIfRef(xobj);
             assertWellFormed(IsStream(xobj), "XObject should be a stream");
+            
+            var oc = xobj.dict.get("OC");
+            if (oc) {
+                TODO("oc for xobject");
+            }
+            
+            var opi = xobj.dict.get("OPI");
+            if (opi) {
+                TODO("opi for xobject");
+            }
+
             var type = xobj.dict.get("Subtype");
             assertWellFormed(IsName(type), "XObject should have a Name subtype");
             if ("Image" == type.name) {
-                TODO("Image XObjects");
+                this.paintImageXObject(xobj, false);
             } else if ("Form" == type.name) {
                 this.paintFormXObject(xobj);
             } else if ("PS" == type.name) {
@@ -2411,14 +2057,196 @@ var CanvasGraphics = (function() {
             this.restore();
         },
 
+        paintImageXObject: function(image, inline) {
+            this.save();
+            if (image.getParams) {
+                // JPX/JPEG2000 streams directly contain bits per component
+                // and color space mode information.
+                TODO("get params from actual stream");
+                // var bits = ...
+                // var colorspace = ...
+            }
+            // TODO cache rendered images?
+
+            var dict = image.dict;
+            var w = dict.get2("Width", "W");
+            var h = dict.get2("Height", "H");
+
+            if (w < 1 || h < 1)
+                error("Invalid image width or height");
+            
+            var ctx = this.ctx;
+            // scale the image to the unit square
+            ctx.scale(1/w, 1/h);
+
+            var interpolate = dict.get2("Interpolate", "I");
+            if (!IsBool(interpolate))
+                interpolate = false;
+            var imageMask = dict.get2("ImageMask", "IM");
+            if (!IsBool(imageMask))
+                imageMask = false;
+
+            var bitsPerComponent = image.bitsPerComponent;
+            if (!bitsPerComponent) {
+                bitsPerComponent = dict.get2("BitsPerComponent", "BPC");
+                if (!bitsPerComponent) {
+                    if (imageMask)
+                        bitsPerComponent = 1;
+                    else
+                        error("Bits per component missing in image");
+                }
+            }
+
+            if (bitsPerComponent !== 8)
+                error("Unsupported bpc");
+
+            var xref = this.xref;
+            var colorSpaces = this.colorSpaces;
+
+            if (imageMask) {
+                error("support image masks");
+            }
+
+            // actual image
+            var csStream = dict.get2("ColorSpace", "CS");
+            csStream = xref.fetchIfRef(csStream);
+            if (IsName(csStream) && inline) 
+                csStream = colorSpaces.get(csStream);
+            
+            var colorSpace = new ColorSpace(xref, csStream);
+
+            var decode = dict.get2("Decode", "D");
+
+            TODO("create color map");
+            
+            var mask = image.dict.get("Mask");
+            mask = xref.fetchIfRef(mask);
+            var smask = image.dict.get("SMask");
+            smask = xref.fetchIfRef(smask);
+
+            if (IsStream(smask)) {
+                if (inline)
+                    error("cannot combine smask and inlining");
+
+                var maskDict = smask.dict;
+                var maskW = maskDict.get2("Width", "W");
+                var maskH = maskDict.get2("Height", "H");
+                if (!IsNum(maskW) || !IsNum(maskH) || maskW < 1 || maskH < 1)
+                    error("Invalid image width or height");
+                if (maskW !== w || maskH !== h)
+                    error("Invalid image width or height");
+
+                var maskInterpolate = maskDict.get2("Interpolate", "I");
+                if (!IsBool(maskInterpolate))
+                    maskInterpolate = false;
+
+                var maskBPC = maskDict.get2("BitsPerComponent", "BPC");
+                if (!maskBPC)
+                    error("Invalid image mask bpc");
+            
+                var maskCsStream = maskDict.get2("ColorSpace", "CS");
+                maskCsStream = xref.fetchIfRef(maskCsStream);
+                var maskColorSpace = new ColorSpace(xref, maskCsStream);
+                if (maskColorSpace.mode !== "DeviceGray")
+                    error("Invalid color space for smask");
+
+                var maskDecode = maskDict.get2("Decode", "D");
+                if (maskDecode)
+                    TODO("Handle mask decode");
+                // handle matte object 
+            } else {
+                smask = null;
+            }
+
+            var tmpCanvas = document.createElement("canvas");
+            tmpCanvas.width = w;
+            tmpCanvas.height = h;
+            var tmpCtx = tmpCanvas.getContext("2d");
+            var imgData = tmpCtx.getImageData(0, 0, w, h);
+            var pixels = imgData.data;
+            
+            if (bitsPerComponent != 8)
+                error("unhandled number of bits per component"); 
+            
+            if (smask) {
+                if (maskColorSpace.numComps != 1)
+                    error("Incorrect number of components in smask");
+                
+                var numComps = colorSpace.numComps;
+                var imgArray = image.getBytes(numComps * w * h);
+                var imgIdx = 0;
+
+                var smArray = smask.getBytes(w * h);
+                var smIdx = 0;
+               
+                var length = 4 * w * h;
+                switch (numComps) {
+                case 1:
+                    for (var i = 0; i < length; i += 4) {
+                        var p = imgArray[imageIdx++];
+                        pixels[i] = p;
+                        pixels[i+1] = p;
+                        pixels[i+2] = p;
+                        pixels[i+3] = smArray[smIdx++];
+                    }
+                    break;
+                case 3:
+                    for (var i = 0; i < length; i += 4) {
+                        pixels[i] = imgArray[imgIdx++];
+                        pixels[i+1] = imgArray[imgIdx++];
+                        pixels[i+2] = imgArray[imgIdx++];
+                        pixels[i+3] = smArray[smIdx++];
+                    }
+                    break;
+                default:
+                    error("unhandled amount of components per pixel: " + numComps);
+                }
+            } else {
+                var numComps = colorSpace.numComps;
+                var imgArray = image.getBytes(numComps * w * h);
+                var imgIdx = 0;
+               
+                var length = 4 * w * h;
+                switch (numComps) {
+                case 1:
+                    for (var i = 0; i < length; i += 4) {
+                        var p = imgArray[imageIdx++];
+                        pixels[i] = p;
+                        pixels[i+1] = p;
+                        pixels[i+2] = p;
+                        pixels[i+3] = 255;
+                    }
+                    break;
+                case 3:
+                    for (var i = 0; i < length; i += 4) {
+                        pixels[i] = imgArray[imgIdx++];
+                        pixels[i+1] = imgArray[imgIdx++];
+                        pixels[i+2] = imgArray[imgIdx++];
+                        pixels[i+3] = 255;
+                    }
+                    break;
+                default:
+                    error("unhandled amount of components per pixel: " + numComps);
+                }
+            }
+            tmpCtx.putImageData(imgData, 0, 0);
+            ctx.drawImage(tmpCanvas, 0, 0);
+            this.restore();
+        },
+
         // Helper functions
 
         consumePath: function() {
             if (this.pendingClip) {
+                var savedFillRule = null;
                 if (this.pendingClip == EO_CLIP)
-                    TODO("even-odd clipping");
+                    savedFillRule = this.setEOFillRule();
+
                 this.ctx.clip();
+
                 this.pendingClip = null;
+                if (savedFillRule !== null)
+                    this.restoreFillRule(savedFillRule);
             }
             this.ctx.beginPath();
         },
@@ -2426,27 +2254,65 @@ var CanvasGraphics = (function() {
             var ri = (255 * r) | 0, gi = (255 * g) | 0, bi = (255 * b) | 0;
             return "rgb("+ ri +","+ gi +","+ bi +")";
         },
+        // We generally keep the canvas context set for
+        // nonzero-winding, and just set evenodd for the operations
+        // that need them.
+        setEOFillRule: function() {
+            var savedFillRule = this.ctx.mozFillRule;
+            this.ctx.mozFillRule = "evenodd";
+            return savedFillRule;
+        },
+        restoreFillRule: function(rule) {
+            this.ctx.mozFillRule = rule;
+        }
     };
 
     return constructor;
 })();
 
-function runParseTests() {
-    var data = snarf("paper.pdf", "binary");
-    var pdf = new PDFDoc(new Stream(data));
-    var page = pdf.getPage(1);
-    page.display({
-        beginDrawing: function() {}
-    });
-}
+var ColorSpace = (function() {
+    function constructor(xref, cs) {
+        if (IsName(cs)) {
+            var mode = cs.name;
+            this.mode = mode;
+            switch(mode) {
+            case "DeviceGray":
+            case "G":
+                this.numComps = 1;
+                break;
+            }
+            TODO("fill in color space constructor");
+        } else if (IsArray(cs)) {
+            var mode = cs[0].name;
+            this.mode = mode;
+            
+            var stream = cs[1];
+            stream = xref.fetchIfRef(stream);
 
-if ("arguments" in this) {
-    const cmds = {
-        "-p": runParseTests
-    }
-    for (n in arguments) {
-        var fn = cmds[arguments[n]];
-        if (fn)
-            fn();
-    }
-}
+            switch (mode) {
+            case "DeviceGray":
+            case "G":
+                this.stream = stream;
+                this.dict = stream.dict;
+                this.numComps = 1;
+                break;
+            case "ICCBased":
+                var dict = stream.dict;
+                
+                this.stream = stream;
+                this.dict = dict;
+                this.numComps = dict.get("N");
+                break;
+            default:
+                error("unrecognized color space object");
+            }
+        } else {
+            error("unrecognized color space object");
+        }
+    };
+    
+    constructor.prototype = {
+    };
+
+    return constructor;
+})();
