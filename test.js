@@ -5,8 +5,22 @@ var pdfDocument, canvas, pageDisplay, pageNum;
 function load() {
     canvas = document.getElementById("canvas");
     canvas.mozOpaque = true;
-    open("uncompressed.tracemonkey-pldi-09.pdf");
+    pageNum = parseInt(queryParams().page) || 1;
+    fileName = queryParams().file || "compressed.tracemonkey-pldi-09.pdf";
+    open(fileName);
 }
+
+function queryParams() {
+    var qs = window.location.search.substring(1);
+    var kvs = qs.split("&");
+    var params = { };
+    for (var i = 0; i < kvs.length; ++i) {
+        var kv = kvs[i].split("=");
+        params[unescape(kv[0])] = unescape(kv[1]);
+    }
+    return params;
+}
+
 
 function open(url) {
     document.title = url;
@@ -19,10 +33,18 @@ function open(url) {
         var data = req.mozResponseArrayBuffer || req.mozResponse ||
                    req.responseArrayBuffer || req.response;
         pdfDocument = new PDFDoc(new Stream(data));
-        displayPage(1);
+        numPages = pdfDocument.numPages;
+        document.getElementById("numPages").innerHTML = numPages.toString();
+        goToPage(pageNum);
       }
     };
     req.send(null);
+}
+
+function gotoPage(num) {
+    if (0 <= num && num <= numPages)
+        pageNum = num;
+    displayPage(pageNum);
 }
 
 function displayPage(num) {
@@ -59,7 +81,7 @@ function prevPage() {
       displayPage(--pageNum);
 }
 
-function gotoPage(num) {
+function goToPage(num) {
   if (0 <= num && num <= numPages)
     displayPage(pageNum = num);
 }
