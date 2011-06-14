@@ -135,25 +135,25 @@ Font.prototype = {
     canvas.setAttribute("heigth", 70);
     document.body.appendChild(canvas);
 
-    // Get the first character of the font
+    // Retrieve font charset
+    var charset = null;
     var page = pdfDocument.getPage(pageNum);
     var xref = page.xref;
-    var resources = xref.fetchIfRef(page.resources);
-    var fontResource = resources.get("Font");
-    var charset = "";
-    for (var id in fontResource.map) {
-      var res = xref.fetch(fontResource.get(id));
-      var descriptor = xref.fetch(res.get("FontDescriptor"));
+
+    var fonts = page.fonts;
+    fonts.forEach(function(fontKey, fontData) {
+      var descriptor = xref.fetch(fontData.get("FontDescriptor"));
       var name = descriptor.get("FontName").toString();
       var font = Fonts[name.replace("+", "_")];
       if (font && font.loading && name == fontName.replace("_", "+")) {
-        charset = descriptor.get("CharSet").split("/");
-        break;
+        charset = descriptor.get("CharSet");
+        charset = charset ? charset.split("/") : null;
+        return;
       }
-    }
+    });
 
-    // Warn if the charset is not found, this is likely a bug!
-    var testCharset = charset;
+    // Warn if the charset is not found, this is likely 
+    var testCharset = charset || [];
     if (!charset) {
       warn("No charset found for: " + fontName);
     } else {
@@ -1358,26 +1358,26 @@ CFF.prototype = {
   },
 
   getOrderedCharStrings: function(aFont) {
-    var dict = aFont.get("CharStrings")
     var charstrings = [];
-    for (var glyph in dict.map) {
+
+    var glyphs = aFont.get("CharStrings")
+    glyphs.forEach(function(glyph, glyphData) {
       var unicode = GlyphsUnicode[glyph];
       if (!unicode) {
         if (glyph != ".notdef")
           warn(glyph + " does not have an entry in the glyphs unicode dictionary");
-        continue;
+      } else {
+        var b1 = parseInt("0x" + unicode[0] + unicode[1]);
+        var b2 = parseInt("0x" + unicode[2] + unicode[3]);
+        unicode = FontsUtils.bytesToInteger([b1, b2]);
+
+        charstrings.push({
+          glyph: glyph,
+          unicode: unicode,
+          charstring: glyphData.slice()
+        });
       }
-
-      var b1 = parseInt("0x" + unicode[0] + unicode[1]);
-      var b2 = parseInt("0x" + unicode[2] + unicode[3]);
-      unicode = FontsUtils.bytesToInteger([b1, b2]);
-
-      charstrings.push({
-        glyph: glyph,
-        unicode: unicode,
-        charstring: dict.map[glyph].slice()
-      });
-    }
+    });
 
     charstrings.sort(function(a, b) {
       return a.unicode > b.unicode;
