@@ -563,6 +563,10 @@ var Dict = (function() {
         set: function(key, value) {
             this.map[key] = value;
         },
+        forEach: function(aCallback) {
+          for (var key in this.map)
+            aCallback(key, this.map[key]);
+        },
         toString: function() {
           var keys = [];
           for (var key in this.map)
@@ -1404,16 +1408,30 @@ var Page = (function() {
         },
         get fonts() {
             var xref = this.xref;
-            var fonts = [];
-
             var resources = xref.fetchIfRef(this.resources);
-            var fontResource = resources.get("Font");
-            for (var id in fontResource.map) {
-              var res = xref.fetch(fontResource.get(id));
-              var descriptor = xref.fetch(res.get("FontDescriptor"));
-              fonts.push(descriptor.get("FontName").toString());
+            var fontsDict = new Dict();
+
+            // Get the fonts use on the page
+            var fontResources = resources.get("Font");
+            fontResources.forEach(function(fontKey, fontData) {
+              fontsDict.set(fontKey, xref.fetch(fontData))
+            });
+
+            // Get the fonts use on xobjects of the page if any
+            var xobjs = xref.fetchIfRef(resources.get("XObject"));
+            if (xobjs) {
+              xobjs.forEach(function(key, xobj) {
+                xobj = xref.fetchIfRef(xobj);
+                assertWellFormed(IsStream(xobj), "XObject should be a stream");
+  
+                var xobjFonts = xobj.dict.get("Resources").get("Font");
+                xobjFonts.forEach(function(fontKey, fontData) {
+                  fontsDict.set(fontKey, xref.fetch(fontData))
+                });
+              });
             }
-            return shadow(this, "fonts", fonts);
+
+            return shadow(this, "fonts", fontsDict);
         },
         display: function(gfx) {
             var xref = this.xref;

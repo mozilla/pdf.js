@@ -76,47 +76,37 @@ function displayPage(num) {
     // of the page to be fully loaded before loading the page
     var fontsReady = true;
     var fonts = page.fonts;
-    for (var i = 0; i < fonts.length; i++) {
-      var fontName = fonts[i].replace("+", "_");
-      var font = Fonts[fontName];
-      if (!font) {
-        // load the new font
-        var xref = page.xref;
-        var resources = xref.fetchIfRef(page.resources);
-        var fontResource = resources.get("Font");
-        for (var id in fontResource.map) {
-          var res = xref.fetch(fontResource.get(id));
-          var descriptor = xref.fetch(res.get("FontDescriptor"));
-          var name = descriptor.get("FontName").toString();
-          if (name == fontName.replace("_", "+")) {
-            var subtype = res.get("Subtype").name;
-            var fontFile = page.xref.fetchIfRef(descriptor.get("FontFile"));
-            if (!fontFile)
-              fontFile = page.xref.fetchIfRef(descriptor.get("FontFile2"));
+    var xref = page.xref;
+    fonts.forEach(function(fontKey, fontDict) {
+        var descriptor = xref.fetch(fontDict.get("FontDescriptor"));
+        var fontName = descriptor.get("FontName").name;
+        fontName = fontName.replace("+", "_");
 
-            // Generate the custom cmap of the font
-            var encoding = xref.fetch(res.get("Encoding"));
-            var differences = encoding.get("Differences");
+        // Check if the font has been loaded or is still loading
+        var font = Fonts[fontName];
+        if (!font) {
+            var fontFile = xref.fetchIfRef(descriptor.get2("FontFile", "FontFile2"));
+            // Generate the custom cmap of the font if needed
             var encodingMap = {};
-            var index = 0;
-            for (var j = 0; j < differences.length; j++) {
-              var data = differences[j];
-              if (IsNum(data))
-                index = data;
-              else
-                encodingMap[index++] = data;
+            if (fontDict.has("Encoding")) {
+              var encoding = xref.fetchIfRef(fontDict.get("Encoding"));
+              if (IsDict(encoding)) {
+                var differences = encoding.get("Differences");
+                var index = 0;
+                for (var j = 0; j < differences.length; j++) {
+                  var data = differences[j];
+                  IsNum(data) ? index = data : encodingMap[index++] = data;
+                }
+              }
             }
 
+            var subtype = fontDict.get("Subtype").name;
             new Font(fontName, fontFile, encodingMap, subtype);
-            fontsReady = false;
-            break;
-          }
+            return fontsReady = false;
+        } else if (font.loading) {
+            return fontsReady = false;
         }
-      } else if (font.loading) {
-        fontsReady = false;
-        break;
-      }
-    }
+      });
 
     // If everything is ready do not delayed the page loading any more
     if (fontsReady)

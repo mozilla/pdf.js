@@ -580,7 +580,20 @@ var FontsUtils = {
  * and valid in the point of view of the sanitizer.
  */
 var TrueType = function(aFile) {
+  var header = this._readOpenTypeHeader(aFile);
   this.data = aFile;
+};
+
+TrueType.prototype = {
+  _readOpenTypeHeader: function(aFile) {
+    return {
+      version: aFile.getBytes(4),
+      numTables: FontsUtils.bytesToInteger(aFile.getBytes(2)),
+      searchRange: FontsUtils.bytesToInteger(aFile.getBytes(2)),
+      entrySelector: FontsUtils.bytesToInteger(aFile.getBytes(2)),
+      rangeShift: FontsUtils.bytesToInteger(aFile.getBytes(2))
+    }
+  }
 };
 
 /**
