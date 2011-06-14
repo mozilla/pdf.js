@@ -21,7 +21,6 @@ function queryParams() {
     return params;
 }
 
-
 function open(url) {
     document.title = url;
     req = new XMLHttpRequest();
@@ -54,21 +53,59 @@ function displayPage(num) {
 
     var page = pdfDocument.getPage(pageNum = num);
 
-    var t1 = Date.now();
+    function display() {
+      var t1 = Date.now();
+      var ctx = canvas.getContext("2d");
+      ctx.save();
+      ctx.fillStyle = "rgb(255, 255, 255)";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.restore();
 
-    var ctx = canvas.getContext("2d");
-    ctx.save();
-    ctx.fillStyle = "rgb(255, 255, 255)";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.restore();
+      var gfx = new CanvasGraphics(ctx);
+      page.display(gfx);
 
-    var gfx = new CanvasGraphics(ctx);
-    page.display(gfx);
+      var t2 = Date.now();
+      var infoDisplay = document.getElementById("info");
+      infoDisplay.innerHTML = "Time to render: "+ (t1 - t0) + "/" + (t2 - t1) + " ms";
+    }
 
-    var t2 = Date.now();
+    // Loading a font via data uri is asynchronous, so wait for all font
+    // of the page to be fully loaded before loading the page
+    var fontsReady = true;
+    var fonts = page.fonts;
+    for (var i = 0; i < fonts.length; i++) {
+      var fontName = fonts[i].replace("+", "_");
+      var font = Fonts[fontName];
+      if (!font) {
+        // load the new font
+        var xref = page.xref;
+        var resources = xref.fetchIfRef(page.resources);
+        var fontResource = resources.get("Font");
+        for (var id in fontResource.map) {
+          var res = xref.fetch(fontResource.get(id));
+          var descriptor = xref.fetch(res.get("FontDescriptor"));
+          var name = descriptor.get("FontName").toString();
+          if (name == fontName.replace("_", "+")) {
+            var subtype = res.get("Subtype").name;
+            var fontFile = page.xref.fetchIfRef(descriptor.get("FontFile"));
+            if (!fontFile)
+              fontFile = page.xref.fetchIfRef(descriptor.get("FontFile2"));
+            new Font(fontName, fontFile, subtype);
+            fontsReady = false;
+            break;
+          }
+        }
+      } else if (font.loading) {
+        fontsReady = false;
+        break;
+      }
+    }
 
-    var infoDisplay = document.getElementById("info");
-    infoDisplay.innerHTML = "Time to render: "+ (t1 - t0) + "/" + (t2 - t1) + " ms";
+    // If everything is ready do not delayed the page loading any more
+    if (fontsReady)
+      display();
+    else
+      setTimeout(displayPage, 150, num);
 }
 
 function nextPage() {
