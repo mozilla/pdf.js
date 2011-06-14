@@ -11,6 +11,16 @@ var kMaxFontFileSize = 40000;
 */
 var kMaxGlyphsCount = 1024;
 
+/**
+ * Maximum time to wait for a font to be loaded by @font-face
+ */
+var kMaxWaitForFontFace = 2000;
+
+ /*
+  * Useful for debugging when you want to certains operations depending on how
+  * many fonts are loaded.
+  */
+var fontCount = 0;
 
 /**
  * Hold a map of decoded fonts and of the standard fourteen Type1 fonts and
@@ -36,9 +46,10 @@ var Font = function(aFontName, aFontFile, aFontType) {
 
   // If the font has already been decoded simply return
   if (Fonts[aFontName]) {
-    this.font = Fonts[aFontName];
+    this.font = Fonts[aFontName].data;
     return;
   }
+  fontCount++;
 
   var start = Date.now();
   switch (aFontType) {
@@ -62,10 +73,13 @@ var Font = function(aFontName, aFontFile, aFontType) {
   }
   var end = Date.now();
 
+  Fonts[aFontName] = {
+    data: this.font,
+    loading: true
+  }
+
   // Attach the font to the document
   this.bind();
-
-  Fonts[aFontName] = this.font;
 };
 
 Font.prototype = {
@@ -84,10 +98,90 @@ Font.prototype = {
                             : String.fromCharCode(data[i]));
 
     var dataBase64 = window.btoa(str.join(""));
+    var fontName = this.name;
+
+    /** Hack begin */
+
+    // Actually there is not event when a font has finished downloading so
+    // the following tons of code are a dirty hack to 'guess' when a font is
+    // ready
+    var debug = false;
+
+    var canvas = document.createElement("canvas");
+    var style = "position:absolute; left: " + 
+                (debug ? (100 * fontCount) : "-200") + "px; top: -200px;";
+    canvas.setAttribute("style", style);
+    canvas.setAttribute("width", 100);
+    canvas.setAttribute("heigth", 100);
+    document.body.appendChild(canvas);
+
+    // Get the first character of the font
+    var page = pdfDocument.getPage(pageNum);
+    var xref = page.xref;
+    var resources = xref.fetchIfRef(page.resources);
+    var fontResource = resources.get("Font");
+    var charset = "";
+    for (var id in fontResource.map) {
+      var res = xref.fetch(fontResource.get(id));
+      var descriptor = xref.fetch(res.get("FontDescriptor"));
+      var name = descriptor.get("FontName").toString();
+      var font = Fonts[name.replace("+", "_")]; 
+      if (font && font.loading && name == fontName.replace("_", "+")) {
+        charset = descriptor.get("CharSet").split("/");
+        break;
+      }
+    }
+
+    // Warn if the charset is not found, this is likely a bug!
+    var testCharset = charset;
+    if (!charset) {
+      warn("No charset found for: " + fontName);
+    } else {
+      // if the charset is too small make it repeat a few times
+      var count = 30;
+      while (count-- && testCharset.length <= 30)
+        testCharset = testCharset.concat(charset.slice());
+    }
+
+    // Get the font size canvas think it will be
+    var ctx = canvas.getContext("2d");
+    var testString = "";
+    for (var i = 0; i < testCharset.length; i++) {
+      var unicode = new Number("0x" + GlyphsUnicode[testCharset[i]]);
+      if (!unicode)
+        error("Unicode for " + testCharset[i] + " is has not been found in the glyphs list");
+      testString += String.fromCharCode(unicode);
+    }
+    ctx.font = "20px " + fontName + ", Symbol";
+    var textWidth = ctx.mozMeasureText(testString);
+
+    if (debug)
+      ctx.fillText(testString, 20, 20);
+
+    var start = Date.now();
+    var interval = window.setInterval(function(self) {
+      ctx.font = "20px " + fontName + ", Symbol";
+
+      // For some reasons the font has not loaded, so mark it loaded for the
+      // page to proceed but cry
+      if ((Date.now() - start) >= kMaxWaitForFontFace) {
+        window.clearInterval(interval);
+        Fonts[fontName].loading = false;
+        warn("Is " + fontName + " for charset: " + charset + " loaded?");
+      } else if (textWidth != ctx.mozMeasureText(testString)) {
+        window.clearInterval(interval);
+        Fonts[fontName].loading = false;
+      }
+
+      if (debug)
+        ctx.fillText(testString, 20, 60);
+    }, 150, this);
+
+    /** Hack end */
 
     // Add the @font-face rule to the document
     var url = "url(data:" + this.mimetype + ";base64," + dataBase64 + ");";
-    var rule = "@font-face { font-family:'" + this.name + "';src:" + url + "}";
+    var rule = "@font-face { font-family:'" + fontName + "';src:" + url + "}";
     var styleSheet = document.styleSheets[0];
     styleSheet.insertRule(rule, styleSheet.length);
   },
@@ -472,7 +566,6 @@ var TrueType = function(aFontName, aFontFile) {
  * This dictionary holds decoded fonts data.
  */
 var PSFonts = new Dict();
-
 
 var Stack = function(aStackSize) {
   var innerStack = new Array(aStackSize || 0);
@@ -1135,7 +1228,6 @@ var Type1Parser = function(aAsciiStream, aBinaryStream) {
     }
   }
 };
-
 
 var CFF = function(aFontName, aFontFile) {
   var start = Date.now();

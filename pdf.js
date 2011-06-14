@@ -1399,6 +1399,19 @@ var Page = (function() {
                                              ? obj
                                              : null));
         },
+        get fonts() {
+            var xref = this.xref;
+            var fonts = [];
+
+            var resources = xref.fetchIfRef(this.resources);
+            var fontResource = resources.get("Font");
+            for (var id in fontResource.map) {
+              var res = xref.fetch(fontResource.get(id));
+              var descriptor = xref.fetch(res.get("FontDescriptor"));
+              fonts.push(descriptor.get("FontName").toString());
+            }
+            return shadow(this, "fonts", fonts);
+        },
         display: function(gfx) {
             var xref = this.xref;
             var contents = xref.fetchIfRef(this.contents);
@@ -1843,7 +1856,7 @@ var CanvasGraphics = (function() {
                 var fontFile = this.xref.fetchIfRef(fontDescriptor.get("FontFile"));
                 if (!fontFile)
                   fontFile = this.xref.fetchIfRef(fontDescriptor.get("FontFile2"));
-                fontName = fontDescriptor.get("FontName").name.replace("+", " ");
+                fontName = fontDescriptor.get("FontName").name.replace("+", "_");
                 new Font(fontName, fontFile, subtype);
             }
 
