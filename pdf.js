@@ -1961,7 +1961,9 @@ var CanvasGraphics = (function() {
         },
 
         fillAxialShading: function(sh) {
-            var cds = sh.get("Coords");
+            var coordsArr = sh.get("Coords");
+            var x0 = coordsArr[0], y0 = coordsArr[1],
+                x1 = coordsArr[2], y1 = coordsArr[3];
             
             var t0 = 0.0, t1 = 1.0;
             if (sh.has("Domain")) {
@@ -1981,17 +1983,14 @@ var CanvasGraphics = (function() {
                 error("No support for array of functions");
             else if (!IsFunction(fnObj))
                 error("Invalid function");
-            fn = new Function(this.xref, fnObj);
+            fn = new PDFFunction(this.xref, fnObj);
 
-            var gradient = this.ctx.createLinearGradient(cds[0], cds[1], cds[2], cds[3]);
+            var gradient = this.ctx.createLinearGradient(x0, y0, x1, y1);
             var step = (t1 - t0) / 10;
             
             for (var i = t0; i <= t1; i += step) {
                 var c = fn.func([i]);
-                var clength = c.length;
-                for (var j = 0; j < clength; ++j)
-                    c[j] = Math.round(c[j] * 255);
-                gradient.addColorStop(i, "rgb("+c[0] + "," + c[1] + "," + c[2] + ")");
+                gradient.addColorStop(i, this.makeCssRgb.apply(this,c));
             }
 
             this.ctx.fillStyle = gradient;
@@ -2311,7 +2310,7 @@ var ColorSpace = (function() {
     return constructor;
 })();
 
-var Function = (function() {
+var PDFFunction = (function() {
     function constructor(xref, fn) {
         var dict = fn.dict;
         if (!dict)
