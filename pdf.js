@@ -799,7 +799,7 @@ var Lexer = (function() {
                             }
                         }
 
-                        x = Fonts.getUnicodeFor(x);
+                        x = Fonts.unicodeFromCode(x);
                         str += String.fromCharCode(x);
                         break;
                     case '\r':
@@ -815,7 +815,8 @@ var Lexer = (function() {
                     }
                     break;
                 default:
-                    str += ch;
+                    var unicode = Fonts.unicodeFromCode(ch.charCodeAt(0));
+                    str += String.fromCharCode(unicode);
                     break;
                 }
             } while (!done);
