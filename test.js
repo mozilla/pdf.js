@@ -1,7 +1,7 @@
 /* -*- Mode: Java; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- /
 /* vim: set shiftwidth=4 tabstop=8 autoindent cindent expandtab: */
 
-var pdfDocument, canvas, pageDisplay, pageNum;
+var pdfDocument, canvas, pageDisplay, pageNum, pageTimeout;
 function load() {
     canvas = document.getElementById("canvas");
     canvas.mozOpaque = true;
@@ -47,6 +47,9 @@ function gotoPage(num) {
 }
 
 function displayPage(num) {
+    if (pageNum != num)
+      window.clearTimeout(pageTimeout);
+
     document.getElementById("pageNumber").value = num;
 
     var t0 = Date.now();
@@ -104,8 +107,11 @@ function displayPage(num) {
     // If everything is ready do not delayed the page loading any more
     if (fontsReady)
       display();
-    else
-      setTimeout(displayPage, 150, num);
+    else {
+      // FIXME Relying on an event seems much more cleaner here instead
+      // of a setTimeout...
+      pageTimeout = window.setTimeout(displayPage, 150, num);
+    }
 }
 
 function nextPage() {
