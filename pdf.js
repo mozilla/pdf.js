@@ -1911,9 +1911,6 @@ var CanvasGraphics = (function() {
 
         // Shading
         shadingFill: function(entryRef) {
-            if (!this.current.bbox)
-                TODO("bbox");
-
             var shadingRes = this.res.get("Shading");
             if (!shadingRes)
                 return;
@@ -1965,8 +1962,7 @@ var CanvasGraphics = (function() {
 
         fillAxialShading: function(sh) {
             var cds = sh.get("Coords");
-
-
+            
             var t0 = 0.0, t1 = 1.0;
             if (sh.has("Domain")) {
                 var domainArr = sh.get("Domain");
@@ -1981,8 +1977,10 @@ var CanvasGraphics = (function() {
             }
             var fnObj = sh.get("Function");
             fnObj = this.xref.fetchIfRef(fnObj);
-            if (!IsFunction(fnObj))
-                error("invalid function");
+            if (IsArray(fnObj))
+                error("No support for array of functions");
+            else if (!IsFunction(fnObj))
+                error("Invalid function");
             fn = new Function(this.xref, fnObj);
 
             var gradient = this.ctx.createLinearGradient(cds[0], cds[1], cds[2], cds[3]);
