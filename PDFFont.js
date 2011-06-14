@@ -38,10 +38,14 @@ var Fonts = {
     this._active = this[aFontName];
   },
 
-  getUnicodeFor: function fonts_getUnicodeFor(aCode) {
-    var glyph = this._active.encoding[aCode];
-    var unicode = "0x" + GlyphsUnicode[glyph];
-    return unicode || aCode;
+  unicodeFromCode: function fonts_unicodeFromCode(aCode) {
+    var active = this._active;
+    if (!active)
+      return aCode;
+
+    var difference = active.encoding[aCode];
+    var unicode = GlyphsUnicode[difference];
+    return unicode ? "0x" + unicode : aCode;
   }
 };
 
