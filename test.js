@@ -93,7 +93,21 @@ function displayPage(num) {
             var fontFile = page.xref.fetchIfRef(descriptor.get("FontFile"));
             if (!fontFile)
               fontFile = page.xref.fetchIfRef(descriptor.get("FontFile2"));
-            new Font(fontName, fontFile, subtype);
+
+            // Generate the custom cmap of the font
+            var encoding = xref.fetch(res.get("Encoding"));
+            var differences = encoding.get("Differences");
+            var encodingMap = {};
+            var index = 0;
+            for (var j = 0; j < differences.length; j++) {
+              var data = differences[j];
+              if (IsNum(data))
+                index = data;
+              else
+                encodingMap[index++] = data;
+            }
+
+            new Font(fontName, fontFile, encodingMap, subtype);
             fontsReady = false;
             break;
           }

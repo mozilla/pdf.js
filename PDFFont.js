@@ -9,7 +9,7 @@ var kMaxFontFileSize = 40000;
 /**
  * Maximum number of glyphs per font.
 */
-var kMaxGlyphsCount = 1024;
+var kMaxGlyphsCount = 65526;
 
 /**
  * Maximum time to wait for a font to be loaded by @font-face
@@ -28,33 +28,48 @@ var fontCount = 0;
  * TODO Add the standard fourteen Type1 fonts list by default
  *      http://cgit.freedesktop.org/poppler/poppler/tree/poppler/GfxFont.cc#n65
  */
-var Fonts = {};
+var Fonts = {
+  _active: null,
+  get active() {
+    return this._active;
+  },
+
+  set active(aFontName) {
+    this._active = this[aFontName];
+  },
+
+  getUnicodeFor: function fonts_getUnicodeFor(aCode) {
+    var glyph = this._active.encoding[aCode];
+    var unicode = "0x" + GlyphsUnicode[glyph];
+    return unicode || aCode;
+  }
+};
 
 /**
  * 'Font' is the class the outside world should use, it encapsulate all the font
  * decoding logics whatever type it is (assuming the font type is supported).
  *
  * For example to read a Type1 font and to attach it to the document:
- *   var type1Font = new Font("MyFontName", binaryData, "Type1");
+ *   var type1Font = new Font("MyFontName", binaryData, aFontEncoding, "Type1");
  *   type1Font.bind();
  *
  * As an improvment the last parameter can be replaced by an automatic guess
  * of the font type based on the first byte of the file.
  */
-var Font = function(aFontName, aFontFile, aFontType) {
-  this.name = aFontName;
+var Font = function(aName, aFile, aEncoding, aType) {
+  this.name = aName;
 
   // If the font has already been decoded simply return
-  if (Fonts[aFontName]) {
-    this.font = Fonts[aFontName].data;
+  if (Fonts[aName]) {
+    this.font = Fonts[aName].data;
     return;
   }
   fontCount++;
 
   var start = Date.now();
-  switch (aFontType) {
+  switch (aType) {
     case "Type1":
-      var cff = new CFF(aFontName, aFontFile);
+      var cff = new CFF(aFile);
       this.mimetype = "font/otf";
 
       // Wrap the CFF data inside an OTF font file
@@ -63,18 +78,19 @@ var Font = function(aFontName, aFontFile, aFontType) {
 
     case "TrueType":
       this.mimetype = "font/ttf";
-      var ttf = new TrueType(aFontName, aFontFile);
+      var ttf = new TrueType(aFile);
       this.font = ttf.data;
       break;
 
     default:
-      warn("Font " + aFontType + " is not supported");
+      warn("Font " + aType + " is not supported");
       break;
   }
   var end = Date.now();
 
-  Fonts[aFontName] = {
+  Fonts[aName] = {
     data: this.font,
+    encoding: aEncoding,
     loading: true
   }
 
@@ -108,11 +124,11 @@ Font.prototype = {
     var debug = false;
 
     var canvas = document.createElement("canvas");
-    var style = "position:absolute; left: " + 
-                (debug ? (100 * fontCount) : "-200") + "px; top: -200px;";
+    var style = "position:absolute; top: " + 
+                (debug ? (80 * fontCount) : "-200") + "px; left: 100px;";
     canvas.setAttribute("style", style);
     canvas.setAttribute("width", 100);
-    canvas.setAttribute("heigth", 100);
+    canvas.setAttribute("heigth", 70);
     document.body.appendChild(canvas);
 
     // Get the first character of the font
@@ -125,7 +141,7 @@ Font.prototype = {
       var res = xref.fetch(fontResource.get(id));
       var descriptor = xref.fetch(res.get("FontDescriptor"));
       var name = descriptor.get("FontName").toString();
-      var font = Fonts[name.replace("+", "_")]; 
+      var font = Fonts[name.replace("+", "_")];
       if (font && font.loading && name == fontName.replace("_", "+")) {
         charset = descriptor.get("CharSet").split("/");
         break;
@@ -174,7 +190,7 @@ Font.prototype = {
       }
 
       if (debug)
-        ctx.fillText(testString, 20, 60);
+        ctx.fillText(testString, 20, 50);
     }, 150, this);
 
     /** Hack end */
@@ -246,8 +262,9 @@ Font.prototype = {
 
   _createCMAPTable: function font_createCMAPTable(aGlyphs) {
     var characters = new Array(kMaxGlyphsCount);
-    for (var i = 0; i < aGlyphs.length; i++)
+    for (var i = 0; i < aGlyphs.length; i++) {
       characters[aGlyphs[i].unicode] = i + 1;
+    }
 
     // Separate the glyphs into continuous range of codes, aka segment.
     var ranges = [];
@@ -377,10 +394,10 @@ Font.prototype = {
       0x01, 0x02, // yStrikeOutPosition
       0x00, 0x00, // sFamilyClass
       0x02, 0x00, 0x06, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // Panose
-      0x00, 0x00, 0x00, 0x01, // ulUnicodeRange1 (Bits 0-31)
-      0x00, 0x00, 0x00, 0x00, // ulUnicodeRange2 (Bits 32-63)
-      0x00, 0x00, 0x00, 0x00, // ulUnicodeRange3 (Bits 64-95)
-      0x00, 0x00, 0x00, 0x00, // ulUnicodeRange4 (Bits 96-127)
+      0xFF, 0xFF, 0xFF, 0xFF, // ulUnicodeRange1 (Bits 0-31)
+      0xFF, 0xFF, 0xFF, 0xFF, // ulUnicodeRange1 (Bits 32-63)
+      0xFF, 0xFF, 0xFF, 0xFF, // ulUnicodeRange1 (Bits 64-95)
+      0xFF, 0xFF, 0xFF, 0xFF, // ulUnicodeRange1 (Bits 96-127)
       0x2A, 0x32, 0x31, 0x2A, // achVendID
       0x00, 0x20, // fsSelection
       0x00, 0x2D, // usFirstCharIndex
@@ -558,8 +575,8 @@ var FontsUtils = {
  * (near?) future this class will rewrite the font to ensure it is well formed
  * and valid in the point of view of the sanitizer.
  */
-var TrueType = function(aFontName, aFontFile) {
-  this.data = aFontFile;
+var TrueType = function(aFile) {
+  this.data = aFile;
 };
 
 /**
@@ -1229,7 +1246,7 @@ var Type1Parser = function(aAsciiStream, aBinaryStream) {
   }
 };
 
-var CFF = function(aFontName, aFontFile) {
+var CFF = function(aFontFile) {
   var start = Date.now();
 
   var length1 = aFontFile.dict.get("Length1");
@@ -1405,7 +1422,7 @@ CFF.prototype = {
     var familyName = fontInfo.get("FamilyName");
     var weight = fontInfo.get("Weight");
     var strings = [version, notice, fullName,
-                   familyName, weight, "asteriskmath"];
+                   familyName, weight];
     var stringsIndex = this.createCFFIndexHeader(strings);
     var stringsDataLength = stringsIndex.length;
 

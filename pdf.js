@@ -798,6 +798,8 @@ var Lexer = (function() {
                                 x = (x << 3) + (ch - '0');
                             }
                         }
+
+                        x = Fonts.getUnicodeFor(x);
                         str += String.fromCharCode(x);
                         break;
                     case '\r':
@@ -1849,15 +1851,11 @@ var CanvasGraphics = (function() {
                 return;
 
             var fontName = "";
-            var subtype = font.get("Subtype").name;
             var fontDescriptor = font.get("FontDescriptor");
             if (fontDescriptor.num) {
                 var fontDescriptor = this.xref.fetchIfRef(fontDescriptor);
-                var fontFile = this.xref.fetchIfRef(fontDescriptor.get("FontFile"));
-                if (!fontFile)
-                  fontFile = this.xref.fetchIfRef(fontDescriptor.get("FontFile2"));
                 fontName = fontDescriptor.get("FontName").name.replace("+", "_");
-                new Font(fontName, fontFile, subtype);
+                Fonts.active = fontName;
             }
 
             this.current.fontSize = size;
