@@ -1385,6 +1385,14 @@ var Page = (function() {
                                              ? obj
                                              : null));
         },
+        compile: function(gfx, fonts) {
+            if (!this.code) {
+                var xref = this.xref;
+                var content = xref.fetchIfRef(this.content);
+                var resources = xref.fetchIfRef(this.resources);
+                this.code = gfx.compile(content, xref, resources, fonts);
+            }
+        },
         display: function(gfx) {
             var xref = this.xref;
             var content = xref.fetchIfRef(this.content);
@@ -1395,8 +1403,6 @@ var Page = (function() {
             gfx.beginDrawing({ x: mediaBox[0], y: mediaBox[1],
                                width: mediaBox[2] - mediaBox[0],
                                height: mediaBox[3] - mediaBox[1] });
-            if (!this.code)
-                this.code = gfx.compile(content, xref, resources);
             gfx.execute(this.code, xref, resources);
             gfx.endDrawing();
         }
@@ -1701,7 +1707,7 @@ var CanvasGraphics = (function() {
             this.xref = savedXref;
         },
 
-        compile: function(stream, xref, resources) {
+        compile: function(stream, xref, resources, fonts) {
             var xobjs = xref.fetchIfRef(resources.get("XObject")) || new Dict();
 
             var parser = new Parser(new Lexer(stream), false);
@@ -1739,7 +1745,10 @@ var CanvasGraphics = (function() {
                             assertWellFormed(IsName(type), "XObject should have a Name subtype");
 
                             if ("Form" == type.name) {
-                                args[0].code = this.compile(xobj, xref, xobj.dict.get("Resources"));
+                                args[0].code = this.compile(xobj,
+                                                            xref,
+                                                            xobj.dict.get("Resources"),
+                                                            fonts);
                             }
                         }
                     } else if (cmd == "Tf") { // eagerly collect all fonts
@@ -1748,8 +1757,14 @@ var CanvasGraphics = (function() {
                             fontRes = xref.fetchIfRef(fontRes);
                             var font = xref.fetchIfRef(fontRes.get(args[0].name));
                             assertWellFormed(IsDict(font));
-                            if (!font.translated)
+                            if (!font.translated) {
                                 font.translated = this.translateFont(font);
+                                if (fonts && font.translated) {
+                                    // keep track of each font we translated so the caller can
+                                    // load them asynchronously before calling display on a page
+                                    fonts.push(font.translated);
+                                }
+                            }
                         }
                     }
 
