@@ -581,17 +581,246 @@ var FontsUtils = {
  */
 var TrueType = function(aFile) {
   var header = this._readOpenTypeHeader(aFile);
-  this.data = aFile;
+  var numTables = header.numTables;
+
+  // Check that required tables are present
+  var requiredTables = [
+    "OS/2",
+    "cmap",
+    "head",
+    "hhea",
+    "hmtx",
+    "maxp",
+    "name",
+    "post"
+  ];
+
+  var tables = [];
+  for (var i = 0; i < numTables; i++) {
+    var table = this._readTableEntry(aFile);
+    var index = requiredTables.indexOf(table.tag);
+    if (index != -1)
+      requiredTables.splice(index, 1);
+
+    tables.push(table);
+  }
+  tables.sort(function(a, b) {
+    return a.tag > b.tag;
+  });
+
+  // If any tables are still in the array this means some required tables are
+  // missing, which means that we need to rebuild the font in order to pass
+  // the sanitizer.
+  if (requiredTables.length && requiredTables[0] == "OS/2") {
+    OS2 = [
+      0x00, 0x03, // version
+      0x02, 0x24, // xAvgCharWidth
+      0x01, 0xF4, // usWeightClass
+      0x00, 0x05, // usWidthClass
+      0x00, 0x00, // fstype
+      0x02, 0x8A, // ySubscriptXSize
+      0x02, 0xBB, // ySubscriptYSize
+      0x00, 0x00, // ySubscriptXOffset
+      0x00, 0x8C, // ySubscriptYOffset
+      0x02, 0x8A, // ySuperScriptXSize
+      0x02, 0xBB, // ySuperScriptYSize
+      0x00, 0x00, // ySuperScriptXOffset
+      0x01, 0xDF, // ySuperScriptYOffset
+      0x00, 0x31, // yStrikeOutSize
+      0x01, 0x02, // yStrikeOutPosition
+      0x00, 0x00, // sFamilyClass
+      0x02, 0x00, 0x06, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // Panose
+      0xFF, 0xFF, 0xFF, 0xFF, // ulUnicodeRange1 (Bits 0-31)
+      0xFF, 0xFF, 0xFF, 0xFF, // ulUnicodeRange1 (Bits 32-63)
+      0xFF, 0xFF, 0xFF, 0xFF, // ulUnicodeRange1 (Bits 64-95)
+      0xFF, 0xFF, 0xFF, 0xFF, // ulUnicodeRange1 (Bits 96-127)
+      0x2A, 0x32, 0x31, 0x2A, // achVendID
+      0x00, 0x20, // fsSelection
+      0x00, 0x2D, // usFirstCharIndex
+      0x00, 0x7A, // usLastCharIndex
+      0x00, 0x03, // sTypoAscender
+      0x00, 0x20, // sTypeDescender
+      0x00, 0x38, // sTypoLineGap
+      0x00, 0x5A, // usWinAscent
+      0x02, 0xB4, // usWinDescent
+      0x00, 0xCE, 0x00, 0x00, // ulCodePageRange1 (Bits 0-31)
+      0x00, 0x01, 0x00, 0x00, // ulCodePageRange2 (Bits 32-63)
+      0x00, 0x00, // sxHeight
+      0x00, 0x00, // sCapHeight
+      0x00, 0x01, // usDefaultChar
+      0x00, 0xCD, // usBreakChar
+      0x00, 0x02  // usMaxContext
+    ];
+
+    // Create a new file to hold the new version of our truetype with a new
+    // header and new offsets
+    var stream = aFile.stream || aFile;
+    var ttf = new Uint8Array(stream.length + 16 + OS2.length);
+
+    // The new numbers of tables will be the last one plus the num of missing
+    // tables
+    var numTables = header.numTables + 1;
+
+    // The offsets object holds at the same time a representation of where
+    // to write the table entry information about a table and another offset
+    // representing the offset where to draw the actual data of a particular
+    // table
+    var offsets = {
+      currentOffset: 0,
+      virtualOffset: numTables * (4 * 4)
+    };
+
+    // Write the sfnt header with one more table
+    this._createOpenTypeHeader(ttf, offsets, numTables);
+
+    // Insert the missing table
+    tables.unshift({
+      tag: "OS/2",
+      data: OS2
+    });
+
+    // rewrite the tables but tweak offsets
+    for (var i = 0; i < tables.length; i++) {
+      var table = tables[i];
+      var data = [];
+
+      var tableData = table.data;
+      for (var j = 0; j < tableData.length; j++)
+        data.push(tableData[j]);
+      this._createTableEntry(ttf, offsets, table.tag, data);
+    }
+
+    // Add the table datas
+    for (var i = 0; i < tables.length; i++) {
+      var table = tables[i];
+      var tableData = table.data;
+      ttf.set(tableData, offsets.currentOffset);
+      offsets.currentOffset += tableData.length;
+
+      if (0) {
+        var data = [];
+        for (var j = 0; j < tableData.length; j++)
+          d.push(tableData[j]);
+        log("data for table: " + table.tag + ": " + data);
+      }
+
+      // 4-byte aligned data
+      while (offsets.currentOffset & 3)
+        offsets.currentOffset++;
+    }
+
+    var fontData = [];
+    for (var i = 0; i < ttf.length; i++)
+      fontData.push(ttf[i]);
+
+    this.data = ttf;
+    //writeToFile(fontData, "/tmp/pdf.js." + fontCount + ".ttf");
+    return;
+  } else if (requiredTables.lenght) {
+    error("Table " + requiredTables[0] + " is missing from the TruType font");
+  } else {
+    this.data = aFile;
+  }
 };
 
 TrueType.prototype = {
-  _readOpenTypeHeader: function(aFile) {
+  _createOpenTypeHeader: function tt_createOpenTypeHeader(aFile, aOffsets, aNumTables) {
+    // sfnt version (4 bytes)
+    // XXX if we want to merge this function and the one from the Font class
+    // XXX this need to be adapted
+    var version = [0x00, 0x01, 0x00, 0X00];
+
+    // numTables (2 bytes)
+    var numTables = aNumTables;
+
+    // searchRange (2 bytes)
+    var tablesMaxPower2 = FontsUtils.getMaxPower2(numTables);
+    var searchRange = tablesMaxPower2 * 16;
+
+    // entrySelector (2 bytes)
+    var entrySelector = Math.log(tablesMaxPower2) / Math.log(2);
+
+    // rangeShift (2 bytes)
+    var rangeShift = numTables * 16 - searchRange;
+
+    var header = [].concat(version,
+                           FontsUtils.integerToBytes(numTables, 2),
+                           FontsUtils.integerToBytes(searchRange, 2),
+                           FontsUtils.integerToBytes(entrySelector, 2),
+                           FontsUtils.integerToBytes(rangeShift, 2));
+    aFile.set(header, aOffsets.currentOffset);
+    aOffsets.currentOffset += header.length;
+    aOffsets.virtualOffset += header.length;
+  },
+
+  _createTableEntry: function font_createTableEntry(aFile, aOffsets, aTag, aData) {
+    // tag
+    var tag = [
+      aTag.charCodeAt(0),
+      aTag.charCodeAt(1),
+      aTag.charCodeAt(2),
+      aTag.charCodeAt(3)
+    ];
+
+    // Per spec tables must be 4-bytes align so add some 0x00 if needed
+    while (aData.length & 3)
+      aData.push(0x00);
+
+    while (aOffsets.virtualOffset & 3)
+      aOffsets.virtualOffset++;
+
+    // offset
+    var offset = aOffsets.virtualOffset;
+
+    // length
+    var length = aData.length;
+
+    // checksum
+    var checksum = FontsUtils.bytesToInteger(tag) + offset + length;
+
+    var tableEntry = [].concat(tag,
+                               FontsUtils.integerToBytes(checksum, 4),
+                               FontsUtils.integerToBytes(offset, 4),
+                               FontsUtils.integerToBytes(length, 4));
+    aFile.set(tableEntry, aOffsets.currentOffset);
+    aOffsets.currentOffset += tableEntry.length;
+    aOffsets.virtualOffset += aData.length;
+  },
+
+  _readOpenTypeHeader: function tt_readOpenTypeHeader(aFile) {
     return {
       version: aFile.getBytes(4),
       numTables: FontsUtils.bytesToInteger(aFile.getBytes(2)),
       searchRange: FontsUtils.bytesToInteger(aFile.getBytes(2)),
       entrySelector: FontsUtils.bytesToInteger(aFile.getBytes(2)),
       rangeShift: FontsUtils.bytesToInteger(aFile.getBytes(2))
+    }
+  },
+
+  _readTableEntry: function tt_readTableEntry(aFile) {
+    // tag
+    var tag = aFile.getBytes(4);
+    tag = String.fromCharCode(tag[0]) +
+          String.fromCharCode(tag[1]) +
+          String.fromCharCode(tag[2]) +
+          String.fromCharCode(tag[3]);
+
+    var checksum = FontsUtils.bytesToInteger(aFile.getBytes(4));
+    var offset = FontsUtils.bytesToInteger(aFile.getBytes(4));
+    var length = FontsUtils.bytesToInteger(aFile.getBytes(4));
+
+    // Read the table associated data
+    var currentPosition = aFile.pos;
+    aFile.pos = aFile.start + offset;
+    var data = aFile.getBytes(length);
+    aFile.pos = currentPosition;
+
+    return {
+      tag: tag,
+      checksum: checksum,
+      length: offset,
+      offset: length,
+      data: data
     }
   }
 };
