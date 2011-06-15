@@ -617,6 +617,19 @@ function IsRef(v) {
     return v instanceof Ref;
 }
 
+function IsPDFFunction(v) {
+    var fnDict;
+    if (typeof v != "object")
+        return false;
+    else if (IsDict(v))
+        fnDict = v;
+    else if (IsStream(v))
+        fnDict = v.dict;
+    else
+        return false;
+    return fnDict.has("FunctionType");
+}
+
 var EOF = {};
 
 function IsEOF(v) {
@@ -2055,16 +2068,16 @@ var CanvasGraphics = (function() {
 
         // Shading
         shadingFill: function(entryRef) {
-            var shadingRes = this.res.get("Shading");
+            var xref = this.xref;
+            var res = this.res;
+            
+            var shadingRes = xref.fetchIfRef(res.get("Shading"));
             if (!shadingRes)
-                return;
-            shadingRes = this.xref.fetchIfRef(shadingRes);
-            var shading = shadingRes.get(entryRef.name);
+                error("No shading resource found");
+
+            var shading = xref.fetchIfRef(shadingRes.get(entryRef.name));
             if (!shading)
-                return;
-            shading = this.xref.fetchIfRef(shading);
-            if (!shading)
-                return;
+                error("No shading object found");
 
             this.save();
 
@@ -2075,32 +2088,30 @@ var CanvasGraphics = (function() {
                 this.endPath();
             }
 
+            var cs = shading.get2("ColorSpace", "CS");
             TODO("shading-fill color space");
 
-            var type = shading.get("ShadingType");
-            switch (type) {
-            case 1:
-                this.fillFunctionShading(shading);
-                break;
-            case 2:
-                this.fillAxialShading(shading);
-                break;
-            case 3:
-                this.fillRadialShading(shading);
-                break;
-            case 4: case 5: case 6: case 7:
-                TODO("shading fill type "+ type);
-            default:
-                malformed("Unknown shading type "+ type);
-            }
+            var background = shading.get("Background");
+            if (background)
+                TODO("handle background colors");
+
+            const types = [null, this.fillFunctionShading,
+                  this.fillAxialShading, this.fillRadialShading];
+            
+            var typeNum = shading.get("ShadingType");
+            var fillFn = types[typeNum];
+            if (!fillFn) 
+                error("Unknown type of shading");
+            fillFn.apply(this, [shading]);
 
             this.restore();
         },
+
         fillAxialShading: function(sh) {
             var coordsArr = sh.get("Coords");
             var x0 = coordsArr[0], y0 = coordsArr[1],
                 x1 = coordsArr[2], y1 = coordsArr[3];
-
+            
             var t0 = 0.0, t1 = 1.0;
             if (sh.has("Domain")) {
                 var domainArr = sh.get("Domain");
@@ -2111,19 +2122,30 @@ var CanvasGraphics = (function() {
             if (sh.has("Extend")) {
                 var extendArr = sh.get("Extend");
                 extendStart = extendArr[0], extendEnd = extendArr[1];
+                TODO("Support extend");
             }
-
-            var fn = sh.get("Function");
-            fn = this.xref.fetchIfRef(fn);
+            var fnObj = sh.get("Function");
+            fnObj = this.xref.fetchIfRef(fnObj);
+            if (IsArray(fnObj))
+                error("No support for array of functions");
+            else if (!IsPDFFunction(fnObj))
+                error("Invalid function");
+            fn = new PDFFunction(this.xref, fnObj);
 
             var gradient = this.ctx.createLinearGradient(x0, y0, x1, y1);
-
-            gradient.addColorStop(0, 'rgb(0,0,255)');
-            gradient.addColorStop(1, 'rgb(0,255,0)');
+            var step = (t1 - t0) / 10;
+            
+            for (var i = t0; i <= t1; i += step) {
+                var c = fn.func([i]);
+                gradient.addColorStop(i, this.makeCssRgb.apply(this, c));
+            }
 
             this.ctx.fillStyle = gradient;
-            this.ctx.fill();
-            this.consumePath();
+            
+            // HACK to draw the gradient onto an infinite rectangle.
+            // PDF gradients are drawn across the entire image while
+            // Canvas only allows gradients to be drawn in a rectangle
+            this.ctx.fillRect(-1e10, -1e10, 2e10, 2e10);
         },
 
         // Images
@@ -2467,6 +2489,157 @@ var ColorSpace = (function() {
     };
     
     constructor.prototype = {
+    };
+
+    return constructor;
+})();
+
+var PDFFunction = (function() {
+    function constructor(xref, fn) {
+        var dict = fn.dict;
+        if (!dict)
+           dict = fn;
+
+        const types = [this.constructSampled, null,
+                this.constructInterpolated, this.constructStiched,
+                this.constructPostScript];
+        
+        var typeNum = dict.get("FunctionType");
+        var typeFn = types[typeNum];
+        if (!typeFn) 
+            error("Unknown type of function");
+
+        typeFn.apply(this, [fn, dict]);
+    };
+
+    constructor.prototype = {
+        constructSampled: function(str, dict) {
+            var domain = dict.get("Domain");
+            var range = dict.get("Range");
+
+            if (!domain || !range)
+                error("No domain or range");
+        
+            var inputSize = domain.length / 2;
+            var outputSize = range.length / 2;
+
+            if (inputSize != 1)
+                error("No support for multi-variable inputs to functions");
+
+            var size = dict.get("Size");
+            var bps = dict.get("BitsPerSample");
+            var order = dict.get("Order");
+            if (!order)
+                order = 1;
+            if (order !== 1)
+                error ("No support for cubic spline interpolation");
+            
+            var encode = dict.get("Encode");
+            if (!encode) {
+                encode = [];
+                for (var i = 0; i < inputSize; ++i) {
+                    encode.push(0);
+                    encode.push(size[i] - 1);
+                }
+            }
+            var decode = dict.get("Decode");
+            if (!decode)
+                decode = range;
+
+            var samples = this.getSampleArray(size, outputSize, bps, str);
+
+            this.func = function(args) {
+                var clip = function(v, min, max) {
+                    if (v > max)
+                        v = max;
+                    else if (v < min)
+                        v = min
+                    return v;
+                }
+
+                if (inputSize != args.length)
+                    error("Incorrect number of arguments");
+
+                for (var i = 0; i < inputSize; i++) {
+                    var i2 = i * 2;
+                    
+                    // clip to the domain
+                    var v = clip(args[i], domain[i2], domain[i2 + 1]);
+
+                    // encode
+                    v = encode[i2] + ((v - domain[i2]) * 
+                            (encode[i2 + 1] - encode[i2]) / 
+                            (domain[i2 + 1] - domain[i2]));
+                    
+                    // clip to the size
+                    args[i] = clip(v, 0, size[i] - 1);
+                }
+
+                // interpolate to table
+                TODO("Multi-dimensional interpolation");
+                var floor = Math.floor(args[0]);
+                var ceil = Math.ceil(args[0]);
+                var scale = args[0] - floor;
+
+                floor *= outputSize;
+                ceil *= outputSize;
+
+                var output = [];
+                for (var i = 0; i < outputSize; ++i) {
+                    if (ceil == floor) {
+                        var v = samples[ceil + i];
+                    } else {
+                        var low = samples[floor + i];
+                        var high = samples[ceil + i];
+                        var v = low * scale + high * (1 - scale);
+                    }
+                    
+                    var i2 = i * 2;
+                    // decode
+                    v = decode[i2] + (v * (decode[i2 + 1] - decode[i2]) / 
+                            ((1 << bps) - 1));
+                    
+                    // clip to the domain
+                    output.push(clip(v, range[i2], range[i2 + 1]));
+                }
+
+                return output;
+            }
+        },
+        getSampleArray: function(size, outputSize, bps, str) {
+            var length = 1;
+            for (var i = 0; i < size.length; i++)
+                length *= size[i];
+            length *= outputSize;
+
+            var array = [];
+            var codeSize = 0;
+            var codeBuf = 0;
+
+            var strBytes = str.getBytes((length * bps + 7) / 8);
+            var strIdx = 0;
+            for (var i = 0; i < length; i++) {
+                var b;
+                while (codeSize < bps) {
+                    codeBuf <<= 8;
+                    codeBuf |= strBytes[strIdx++];
+                    codeSize += 8;
+                }
+                codeSize -= bps
+                array.push(codeBuf >> codeSize);
+                codeBuf &= (1 << codeSize) - 1;
+            }
+            return array;
+        },
+        constructInterpolated: function() {
+            error("unhandled type of function");
+        },    
+        constructStiched: function() {
+            error("unhandled type of function");
+        },    
+        constructPostScript: function() {
+            error("unhandled type of function");
+        }
     };
 
     return constructor;
