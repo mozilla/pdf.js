@@ -131,12 +131,20 @@ Font.prototype = {
     // ready
     var debug = false;
 
+    if (debug) {
+      var name = document.createElement("font");
+      name.setAttribute("style", "position: absolute; left: 20px; top: " +
+                                 (100 * fontCount + 60) + "px");
+      name.innerHTML = fontName;
+      document.body.appendChild(name);
+    }
+
     var canvas = document.createElement("canvas");
-    var style = "border: 1px solid black; position:absolute; top: " + 
-                (debug ? (80 * fontCount) : "-200") + "px; left: 100px;";
+    var style = "border: 1px solid black; position:absolute; top: " +
+                (debug ? (100 * fontCount) : "-200") + "px; left: 2px; width: 340px; height: 100px";
     canvas.setAttribute("style", style);
-    canvas.setAttribute("width", 100);
-    canvas.setAttribute("heigth", 70);
+    canvas.setAttribute("width", 340);
+    canvas.setAttribute("heigth", 100);
     document.body.appendChild(canvas);
 
     // Retrieve font charset
@@ -146,16 +154,21 @@ Font.prototype = {
     while (count-- && charset.length <= 30)
      charset = charset.concat(charset.slice());
 
-    // Get the font size canvas think it will be
+    // Get the font size canvas think it will be for 'spaces'
     var ctx = canvas.getContext("2d");
-    var testString = "";
-    for (var i = 0; i < charset.length; i++) {
-      var unicode = new Number("0x" + GlyphsUnicode[charset[i]]);
-      if (!unicode)
-        error("Unicode for " + charset[i] + " is has not been found in the glyphs list");
-      testString += String.fromCharCode(unicode);
+    var testString = "     ";
+
+    // When debugging use the characters provided by the charsets to visually
+    // see what's happening
+    if (debug) {
+      for (var i = 0; i < charset.length; i++) {
+        var unicode = new Number("0x" + GlyphsUnicode[charset[i]]);
+        if (!unicode)
+          error("Unicode for " + charset[i] + " is has not been found in the glyphs list");
+        testString += String.fromCharCode(unicode);
+      }
     }
-    ctx.font = "20px " + fontName + ", Symbol";
+    ctx.font = "bold italic 20px " + fontName + ", Symbol, Arial";
     var textWidth = ctx.mozMeasureText(testString);
 
     if (debug)
@@ -163,7 +176,7 @@ Font.prototype = {
 
     var start = Date.now();
     var interval = window.setInterval(function(self) {
-      ctx.font = "20px " + fontName + ", Symbol";
+      ctx.font = "bold italic 20px " + fontName + ", Symbol, Arial";
 
       // For some reasons the font has not loaded, so mark it loaded for the
       // page to proceed but cry
