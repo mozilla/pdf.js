@@ -1096,9 +1096,9 @@ var Type1Parser = function() {
         token = "";
         glyph = "";
 
-        while ((c = eexecString[++i]) != 0x20 && i < count)
+        while ((c = eexecString[++i]) != 0x20)
           glyph += String.fromCharCode(c);
-      } else if (c == 0x2F && eexecString[i+1] == 0x53 && !inGlyphs && !inSubrs) {
+      } else if (!inSubrs && !inGlyphs && c == 0x2F && eexecString[i+1] == 0x53) {
         while ((c = eexecString[++i]) != 0x20) {};
         inSubrs = true;
       } else if (c == 0x20) {
@@ -1127,7 +1127,9 @@ var Type1Parser = function() {
    * chapter 8.
    */
   this.flattenCharstring = function(aCharstring, aSubrs) {
+    var operandStackIndex = 0;
     operandStack.clear();
+
     executionStack.clear();
     executionStack.push(aCharstring.slice());
 
@@ -1135,48 +1137,13 @@ var Type1Parser = function() {
     var lastPoint = 0;
     while (true) {
       var obj = nextInStack();
-      if (IsBool(obj) || IsInt(obj) || IsNum(obj)) {
-        dump("Value: " + obj);
+      if (IsInt(obj) || IsBool(obj)) {
         operandStack.push(obj);
-      } else if (IsString(obj)) {
-        dump("String: " + obj);
+      } else {
         switch (obj) {
-          case "hsbw":
-            var charWidthVector = operandStack.pop();
-            var leftSidebearing = operandStack.pop();
-            operandStack.push(charWidthVector);
-
-            if (leftSidebearing) {
-              operandStack.push(leftSidebearing);
-              operandStack.push("hmoveto");
-            }
-            break;
-
-          case "div":
-            var num2 = operandStack.pop();
-            var num1 = operandStack.pop();
-            operandStack.push(num2 / num1);
-            break;
-
-          case "setcurrentpoint":
-          case "dotsection":
-          case "seac":
-          case "sbw":
-            error(obj + " parsing is not implemented (yet)");
-            break;
-
-          case "closepath":
-          case "return":
-            break;
-
           case "vstem3":
-          case "vstem":
-            operandStack.push("vstem");
-            break;
-
-          case "hstem":
           case "hstem3":
-            operandStack.push("hstem");
+            operandStack.push(obj.slice(0, 5));
             break;
 
           case "callsubr":
@@ -1196,12 +1163,40 @@ var Type1Parser = function() {
             operandStack.push("callothersubr");
             break;
 
+          case "div":
+            var num2 = operandStack.pop();
+            var num1 = operandStack.pop();
+            operandStack.push(num2 / num1);
+            break;
+
+          case "pop":
+            operandStack.pop();
+            break;
+
+          case "closepath":
+          case "return":
+            break;
+
+          case "hsbw":
+            var charWidthVector = operandStack.pop();
+            var leftSidebearing = operandStack.pop();
+            operandStack.push(charWidthVector);
+
+            if (leftSidebearing) {
+              operandStack.push(leftSidebearing);
+              operandStack.push("hmoveto");
+            }
+            break;
+
           case "endchar":
             operandStack.push("endchar");
             return operandStack.clone();
 
-          case "pop":
-            operandStack.pop();
+          case "setcurrentpoint":
+          case "dotsection":
+          case "seac":
+          case "sbw":
+            error(obj + " parsing is not implemented (yet)");
             break;
 
           default:
@@ -1214,8 +1209,6 @@ var Type1Parser = function() {
 };
 
 var CFF = function(aFontName, aFontBBox, aFontFile) {
-  var start = Date.now();
-
   // Get the data block containing glyphs and subrs informations
   var length1 = aFontFile.dict.get("Length1");
   var length2 = aFontFile.dict.get("Length2");
@@ -1223,6 +1216,7 @@ var CFF = function(aFontName, aFontBBox, aFontFile) {
   var eexecBlock = aFontFile.getBytes(length2);
 
   // Extract informations from it
+  var start = Date.now();
   var parser = new Type1Parser();
   var fontInfo = parser.extractFontInfo(eexecBlock);
   fontInfo.name = aFontName;
