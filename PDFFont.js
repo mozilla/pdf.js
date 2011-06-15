@@ -1375,10 +1375,10 @@ var Type1Parser = function(aAsciiStream, aBinaryStream) {
    * as descrived in 'Using Subroutines' of 'Adobe Type 1 Font Format',
    * chapter 8.
    */
-  this.flattenCharstring = function(aCharstring, aDefaultWidth, aSubrs) {
+  this.flattenCharstring = function(aCharstring, aSubrs) {
     operandStack.clear();
     executionStack.clear();
-    executionStack.push(aCharstring);
+    executionStack.push(aCharstring.slice());
 
     var leftSidebearing = 0;
     var lastPoint = 0;
@@ -1392,24 +1392,13 @@ var Type1Parser = function(aAsciiStream, aBinaryStream) {
         switch (obj) {
           case "hsbw":
             var charWidthVector = operandStack.pop();
-            leftSidebearing = operandStack.pop();
-
-            if (charWidthVector != aDefaultWidth)
-              operandStack.push(charWidthVector - aDefaultWidth);
-            break;
-
-          case "rmoveto":
-            var dy = operandStack.pop();
-            var dx = operandStack.pop();
+            var leftSidebearing = operandStack.pop();
+            operandStack.push(charWidthVector);
 
             if (leftSidebearing) {
-              dx += leftSidebearing;
-              leftSidebearing = 0;
+              operandStack.push(leftSidebearing);
+              operandStack.push("hmoveto");
             }
-
-            operandStack.push(dx);
-            operandStack.push(dy);
-            operandStack.push("rmoveto");
             break;
 
           case "div":
@@ -1445,12 +1434,13 @@ var Type1Parser = function(aAsciiStream, aBinaryStream) {
             break;
 
           case "callothersubr":
-            // XXX need to be improved
             var index = operandStack.pop();
             var count = operandStack.pop();
             var data = operandStack.pop();
+            // XXX The callothersubr needs to support at least the 3 defaults
+            // otherSubrs of the spec
             if (index != 3)
-              dump("callothersubr for index: " + index);
+              error("callothersubr for index: " + index);
             operandStack.push(3);
             operandStack.push("callothersubr");
             break;
@@ -1490,25 +1480,6 @@ var CFF = function(aFontFile) {
 };
 
 CFF.prototype = {
-  getDefaultWidth: function(aCharstrings) {
-    var defaultWidth = 0;
-    var defaultUsedCount = 0;
-
-    var widths = {};
-    for (var i = 0; i < aCharstrings.length; i++) {
-      var width = aCharstrings[i].charstring[1];
-      var usedCount = (widths[width] || 0) + 1;
-
-      if (usedCount > defaultUsedCount) {
-        defaultUsedCount = usedCount;
-        defaultWidth = width;
-      }
-
-      widths[width] = usedCount;
-    }
-    return parseInt(defaultWidth);
-  },
-
   createCFFIndexHeader: function(aObjects, aIsByte) {
     var data = [];
 
@@ -1602,7 +1573,6 @@ CFF.prototype = {
     };
 
     var charstrings = this.getOrderedCharStrings(aFont);
-    var defaultWidth = this.getDefaultWidth(charstrings);
 
     var charstringsCount = 0;
     var charstringsDataLength = 0;
@@ -1617,7 +1587,7 @@ CFF.prototype = {
         error("glyphs already exists!");
       glyphsChecker[glyph] = true;
 
-      var flattened = parser.flattenCharstring(charstring, defaultWidth, subrs);
+      var flattened = parser.flattenCharstring(charstring, subrs);
       glyphs.push(flattened);
       charstringsCount++;
       charstringsDataLength += flattened.length;
@@ -1712,8 +1682,6 @@ CFF.prototype = {
     charstringsIndex = charstringsIndex.join(" ").split(" "); // XXX why?
 
 
-    var fontBBox = aFont.get("FontBBox");
-
     //Top Dict Index
     var topDictIndex = [
       0x00, 0x01, 0x01, 0x01, 0x30,
@@ -1724,6 +1692,7 @@ CFF.prototype = {
       248, 31, 4  // Weight
     ];
 
+    var fontBBox = aFont.get("FontBBox");
     for (var i = 0; i < fontBBox.length; i++)
       topDictIndex = topDictIndex.concat(this.encodeNumber(fontBBox[i]));
     topDictIndex.push(5) // FontBBox;
@@ -1768,19 +1737,22 @@ CFF.prototype = {
     currentOffset += charstringsIndex.length;
 
     // Private Data
-    var privateData = [
-      248, 136, 20,
-      248, 136, 21,
+    var defaultWidth = this.encodeNumber(0);
+    var privateData = [].concat(
+      defaultWidth, [20],
+      defaultWidth, [21],
+      [
       119, 159, 248, 97, 159, 247, 87, 159, 6,
       30, 10, 3, 150, 37, 255, 12, 9,
-      139, 12, 10,
-      172, 10,
+      139, 12,
+      10, 172, 10,
       172, 150, 143, 146, 150, 146, 12, 12,
       247, 32, 11,
       247, 10, 161, 147, 154, 150, 143, 12, 13,
       139, 12, 14,
       28, 0, 55, 19
-    ];
+    ]);
+    privateData = privateData.join(" ").split(" ");
     cff.set(privateData, currentOffset);
     currentOffset += privateData.length;
 
