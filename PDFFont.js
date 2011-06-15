@@ -126,7 +126,7 @@ Font.prototype = {
     // Actually there is not event when a font has finished downloading so
     // the following tons of code are a dirty hack to 'guess' when a font is
     // ready
-    var debug = true;
+    var debug = false;
 
     var canvas = document.createElement("canvas");
     var style = "border: 1px solid black; position:absolute; top: " + 
