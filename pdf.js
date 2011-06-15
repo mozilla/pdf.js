@@ -617,7 +617,7 @@ function IsRef(v) {
     return v instanceof Ref;
 }
 
-function IsFunction(v) {
+function IsPDFFunction(v) {
     var fnDict;
     if (typeof v != "object")
         return false;
@@ -1911,18 +1911,16 @@ var CanvasGraphics = (function() {
 
         // Shading
         shadingFill: function(entryRef) {
-            var shadingRes = this.res.get("Shading");
-            if (!shadingRes)
-                return;
-
             var xref = this.xref;
-            shadingRes = xref.fetchIfRef(shadingRes);
-            var shading = shadingRes.get(entryRef.name);
+            var res = this.res;
+            
+            var shadingRes = xref.fetchIfRef(res.get("Shading"));
+            if (!shadingRes)
+                error("No shading resource found");
+
+            var shading = xref.fetchIfRef(shadingRes.get(entryRef.name));
             if (!shading)
-                return;
-            shading = xref.fetchIfRef(shading);
-            if (!shading)
-                return;
+                error("No shading object found");
 
             this.save();
 
@@ -1940,22 +1938,14 @@ var CanvasGraphics = (function() {
             if (background)
                 TODO("handle background colors");
 
-            var type = shading.get("ShadingType");
-            switch (type) {
-            case 1:
-                this.fillFunctionShading(shading);
-                break;
-            case 2:
-                this.fillAxialShading(shading);
-                break;
-            case 3:
-                this.fillRadialShading(shading);
-                break;
-            case 4: case 5: case 6: case 7:
-                TODO("shading fill type "+ type);
-            default:
-                malformed("Unknown shading type "+ type);
-            }
+            const types = [null, this.fillFunctionShading,
+                  this.fillAxialShading, this.fillRadialShading];
+            
+            var typeNum = shading.get("ShadingType");
+            var fillFn = types[typeNum];
+            if (!fillFn) 
+                error("Unknown type of shading");
+            fillFn.apply(this, [shading]);
 
             this.restore();
         },
@@ -1981,7 +1971,7 @@ var CanvasGraphics = (function() {
             fnObj = this.xref.fetchIfRef(fnObj);
             if (IsArray(fnObj))
                 error("No support for array of functions");
-            else if (!IsFunction(fnObj))
+            else if (!IsPDFFunction(fnObj))
                 error("Invalid function");
             fn = new PDFFunction(this.xref, fnObj);
 
@@ -1990,12 +1980,14 @@ var CanvasGraphics = (function() {
             
             for (var i = t0; i <= t1; i += step) {
                 var c = fn.func([i]);
-                gradient.addColorStop(i, this.makeCssRgb.apply(this,c));
+                gradient.addColorStop(i, this.makeCssRgb.apply(this, c));
             }
 
             this.ctx.fillStyle = gradient;
             
-            // HACK to draw the gradient onto an infinite rectangle
+            // HACK to draw the gradient onto an infinite rectangle.
+            // PDF gradients are drawn across the entire image while
+            // Canvas only allows gradients to be drawn in a rectangle
             this.ctx.fillRect(-1e10, -1e10, 2e10, 2e10);
         },
 
@@ -2316,24 +2308,16 @@ var PDFFunction = (function() {
         if (!dict)
            dict = fn;
 
-        var type = dict.get("FunctionType");
-
-        switch(type) {
-        case 0:
-            this.constructSampled(fn, dict);
-            break;
-        case 2:
-            this.constructInterpolated();
-            break;
-        case 3:
-            this.constructStiched();
-            break;
-        case 4:
-            this.constructPostScript();
-            break;
-        default:
+        const types = [this.constructSampled, null,
+                this.constructInterpolated, this.constructStiched,
+                this.constructPostScript];
+        
+        var typeNum = dict.get("FunctionType");
+        var typeFn = types[typeNum];
+        if (!typeFn) 
             error("Unknown type of function");
-        }
+
+        typeFn.apply(this, [fn, dict]);
     };
 
     constructor.prototype = {
