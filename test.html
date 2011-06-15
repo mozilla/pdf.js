@@ -95,6 +95,13 @@ function displayPage(num) {
     ctx.restore();
 
     var gfx = new CanvasGraphics(ctx);
+
+    // page.compile will collect all fonts for us, once we have loaded them
+    // we can trigger the actual page rendering with page.display
+    var fonts = [];
+    page.compile(gfx, fonts);
+
+    // This should be called when font loading is complete
     page.display(gfx);
 
     var t2 = Date.now();
