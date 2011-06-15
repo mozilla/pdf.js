@@ -1683,8 +1683,8 @@ var CanvasGraphics = (function() {
     const EO_CLIP = {};
 
     constructor.prototype = {
-        translateFont: function(fontDict) {
-            return fontDict;
+        translateFont: function(fontDict, xref, resources) {
+            return "translated";
         },
 
         beginDrawing: function(mediaBox) {
@@ -1758,7 +1758,7 @@ var CanvasGraphics = (function() {
                             var font = xref.fetchIfRef(fontRes.get(args[0].name));
                             assertWellFormed(IsDict(font));
                             if (!font.translated) {
-                                font.translated = this.translateFont(font);
+                                font.translated = this.translateFont(font, xref, resources);
                                 if (fonts && font.translated) {
                                     // keep track of each font we translated so the caller can
                                     // load them asynchronously before calling display on a page
