@@ -40,7 +40,7 @@ var Fonts = {
 
   unicodeFromCode: function fonts_unicodeFromCode(aCode) {
     var active = this._active;
-    if (!active)
+    if (!active || !active.encoding)
       return aCode;
 
     var difference = active.encoding[aCode];
@@ -60,7 +60,7 @@ var Fonts = {
  * As an improvment the last parameter can be replaced by an automatic guess
  * of the font type based on the first byte of the file.
  */
-var Font = function(aName, aFile, aEncoding, aType) {
+var Font = function(aName, aFile, aEncoding, aCharset, aType) {
   this.name = aName;
 
   // If the font has already been decoded simply return
@@ -95,6 +95,7 @@ var Font = function(aName, aFile, aEncoding, aType) {
   Fonts[aName] = {
     data: this.font,
     encoding: aEncoding,
+    charset: aCharset ? aCharset.slice() : null,
     loading: true
   }
 
@@ -125,10 +126,10 @@ Font.prototype = {
     // Actually there is not event when a font has finished downloading so
     // the following tons of code are a dirty hack to 'guess' when a font is
     // ready
-    var debug = false;
+    var debug = true;
 
     var canvas = document.createElement("canvas");
-    var style = "position:absolute; top: " + 
+    var style = "border: 1px solid black; position:absolute; top: " + 
                 (debug ? (80 * fontCount) : "-200") + "px; left: 100px;";
     canvas.setAttribute("style", style);
     canvas.setAttribute("width", 100);
@@ -136,40 +137,19 @@ Font.prototype = {
     document.body.appendChild(canvas);
 
     // Retrieve font charset
-    var charset = null;
-    var page = pdfDocument.getPage(pageNum);
-    var xref = page.xref;
-
-    var fonts = page.fonts;
-    fonts.forEach(function(fontKey, fontData) {
-      var descriptor = xref.fetch(fontData.get("FontDescriptor"));
-      var name = descriptor.get("FontName").toString();
-      var font = Fonts[name.replace("+", "_")];
-      if (font && font.loading && name == fontName.replace("_", "+")) {
-        charset = descriptor.get("CharSet");
-        charset = charset ? charset.split("/") : null;
-        return;
-      }
-    });
-
-    // Warn if the charset is not found, this is likely 
-    var testCharset = charset || [];
-    if (!charset) {
-      warn("No charset found for: " + fontName);
-    } else {
-      // if the charset is too small make it repeat a few times
-      var count = 30;
-      while (count-- && testCharset.length <= 30)
-        testCharset = testCharset.concat(charset.slice());
-    }
+    var charset = Fonts[fontName].charset || [];
+    // if the charset is too small make it repeat a few times
+    var count = 30;
+    while (count-- && charset.length <= 30)
+     charset = charset.concat(charset.slice());
 
     // Get the font size canvas think it will be
     var ctx = canvas.getContext("2d");
     var testString = "";
-    for (var i = 0; i < testCharset.length; i++) {
-      var unicode = new Number("0x" + GlyphsUnicode[testCharset[i]]);
+    for (var i = 0; i < charset.length; i++) {
+      var unicode = new Number("0x" + GlyphsUnicode[charset[i]]);
       if (!unicode)
-        error("Unicode for " + testCharset[i] + " is has not been found in the glyphs list");
+        error("Unicode for " + charset[i] + " is has not been found in the glyphs list");
       testString += String.fromCharCode(unicode);
     }
     ctx.font = "20px " + fontName + ", Symbol";

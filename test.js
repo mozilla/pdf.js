@@ -93,17 +93,34 @@ function displayPage(num) {
             if (fontDict.has("Encoding")) {
               var encoding = xref.fetchIfRef(fontDict.get("Encoding"));
               if (IsDict(encoding)) {
+
+                // Build an map between codes and glyphs
                 var differences = encoding.get("Differences");
                 var index = 0;
                 for (var j = 0; j < differences.length; j++) {
                   var data = differences[j];
                   IsNum(data) ? index = data : encodingMap[index++] = data;
                 }
+
+                // Get the font charset
+                var charset = descriptor.get("CharSet").split("/");
+
+              } else if (IsName(encoding)) {
+                var encoding = Encodings[encoding];
+                var widths = xref.fetchIfRef(fontDict.get("Widths"));
+                var firstchar = xref.fetchIfRef(fontDict.get("FirstChar"));
+
+                var charset = [];
+                for (var j = 0; j < widths.length; j++) {
+                  var index = widths[j];
+                  if (index)
+                    charset.push(encoding[j + firstchar]);
+                }
               }
             }
 
             var subtype = fontDict.get("Subtype").name;
-            new Font(fontName, fontFile, encodingMap, subtype);
+            new Font(fontName, fontFile, encodingMap, charset, subtype);
             return fontsReady = false;
         } else if (font.loading) {
             return fontsReady = false;
