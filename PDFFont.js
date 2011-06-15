@@ -14,7 +14,7 @@ var kMaxGlyphsCount = 65526;
 /**
  * Maximum time to wait for a font to be loaded by @font-face
  */
-var kMaxWaitForFontFace = 2000;
+var kMaxWaitForFontFace = 1000;
 
  /*
   * Useful for debugging when you want to certains operations depending on how
@@ -59,8 +59,11 @@ var Fonts = {
  *
  * As an improvment the last parameter can be replaced by an automatic guess
  * of the font type based on the first byte of the file.
+ *
+ * XXX There is now too many parameters, this should be turned into an
+ * object containing all the required informations about the font
  */
-var Font = function(aName, aFile, aEncoding, aCharset, aType) {
+var Font = function(aName, aFile, aEncoding, aCharset, aBBox, aType) {
   this.name = aName;
 
   // If the font has already been decoded simply return
@@ -73,7 +76,7 @@ var Font = function(aName, aFile, aEncoding, aCharset, aType) {
   var start = Date.now();
   switch (aType) {
     case "Type1":
-      var cff = new CFF(aFile);
+      var cff = new CFF(aName, aBBox, aFile);
       this.mimetype = "font/otf";
 
       // Wrap the CFF data inside an OTF font file
@@ -175,7 +178,7 @@ Font.prototype = {
 
       if (debug)
         ctx.fillText(testString, 20, 50);
-    }, 150, this);
+    }, 20, this);
 
     /** Hack end */
 
@@ -402,7 +405,7 @@ Font.prototype = {
     this._createTableEntry(otf, offsets, "OS/2", OS2);
 
     //XXX Getting charstrings here seems wrong since this is another CFF glue
-    var charstrings = aFont.getOrderedCharStrings(aFont.font);
+    var charstrings = aFont.getOrderedCharStrings(aFont.glyphs);
 
     /** CMAP */
     cmap = this._createCMAPTable(charstrings);
@@ -851,39 +854,13 @@ var Stack = function(aStackSize) {
   };
 };
 
-var Type1Parser = function(aAsciiStream, aBinaryStream) {
-  var lexer = aAsciiStream ? new Lexer(aAsciiStream) : null;
-
+var Type1Parser = function() {
   // Turn on this flag for additional debugging logs
   var debug = false;
 
   var dump = function(aData) {
     if (debug)
       log(aData);
-  };
-
-  // Hold the fontName as declared inside the /FontName postscript directive
-  // XXX This is a hack but at the moment I need it to map the name declared
-  // in the PDF and the name in the PS code.
-  var fontName = "";
-
-  /*
-   * Parse a whole Type1 font stream (from the first segment to the last)
-   * assuming the 'eexec' block is binary data and fill up the 'Fonts'
-   * dictionary with the font informations.
-   */
-  var self = this;
-  this.parse = function() {
-    if (!debug) {
-      while (!processNextToken()) {};
-      return fontName;
-    } else {
-      // debug mode is used to debug postcript processing
-      setTimeout(function() {
-        if (!processNextToken())
-          self.parse();
-      }, 0);
-    }
   };
 
   /*
@@ -894,7 +871,7 @@ var Type1Parser = function(aAsciiStream, aBinaryStream) {
   var kEexecEncryptionKey = 55665;
   var kCharStringsEncryptionKey = 4330;
 
-  function decrypt(aStream, aKey, aDiscardNumber) {
+  function decrypt(aStream, aKey, aDiscardNumber, aByteArray) {
     var start = Date.now();
     var r = aKey, c1 = 52845, c2 = 22719;
     var decryptedString = [];
@@ -903,7 +880,10 @@ var Type1Parser = function(aAsciiStream, aBinaryStream) {
     var count = aStream.length;
     for (var i = 0; i < count; i++) {
       value = aStream.getByte();
-      decryptedString[i] = String.fromCharCode(value ^ (r >> 8));
+      if (aByteArray)
+        decryptedString[i] = value ^ (r >> 8);
+      else
+        decryptedString[i] = String.fromCharCode(value ^ (r >> 8));
       r = ((value + r) * c1 + c2) & ((1 << 16) - 1);
     }
     var end = Date.now();
@@ -1017,7 +997,7 @@ var Type1Parser = function(aAsciiStream, aBinaryStream) {
     var end = Date.now();
     dump("Time to decode charString of length " + count + " is " + (end - start));
     return charString;
-  }
+  };
 
   /*
    * The operand stack holds arbitrary PostScript objects that are the operands
@@ -1068,305 +1048,76 @@ var Type1Parser = function(aAsciiStream, aBinaryStream) {
    */
   function nextInStack() {
     var currentProcedure = executionStack.peek();
-    if (currentProcedure) {
-      var command = currentProcedure.shift();
-      if (!currentProcedure.length)
-        executionStack.pop();
-      return command;
-    }
-
-    return lexer.getObj();
+    var command = currentProcedure.shift();
+    if (!currentProcedure.length)
+      executionStack.pop();
+    return command;
   };
 
-  /*
-   * Get the next token from the executionStack and process it.
-   * Actually the function does not process the third segment of a Type1 font
-   * and end on 'closefile'.
-   *
-   * The method thrown an error if it encounters an unknown token.
+  /**
+   * Returns an object containing a Subrs array and a CharStrings array
+   * extracted from and eexec encrypted block of data
    */
-  function processNextToken() {
-    var obj = nextInStack();
-    if (operandIsArray && !IsCmd(obj, "{") && !IsCmd(obj, "[") &&
-                          !IsCmd(obj, "]") && !IsCmd(obj, "}")) {
-      dump("Adding an object: " + obj +" to array " + operandIsArray);
-      var currentArray = operandStack.peek();
-      for (var i = 1; i < operandIsArray; i++)
-        currentArray = currentArray[currentArray.length - 1];
+  this.extractFontInfo = function(aStream) {
+    var eexecString = decrypt(new Stream(aStream), kEexecEncryptionKey, 4, true);
+    var subrs = [],  glyphs = [];
+    var inSubrs = inGlyphs = false;
+    var glyph = "";
 
-      currentArray.push(obj);
-    } else if (IsBool(obj) || IsInt(obj) || IsNum(obj) || IsString(obj)) {
-      dump("Value: " + obj);
-      operandStack.push(obj);
-    } else if (IsName(obj)) {
-      dump("Name: " + obj.name);
-      operandStack.push(obj.name);
-    } else if (IsCmd(obj)) {
-      var command = obj.cmd;
-      dump(command);
+    var token = "";
+    var index = 0;
+    var length = 0;
 
-      switch (command) {
-        case "[":
-        case "{":
-          dump("Start" + (command == "{" ? " Executable " : " ") + "Array");
-          operandIsArray++;
-          var currentArray = operandStack;
-          for (var i = 1; i < operandIsArray; i++)
-            if (currentArray.peek)
-              currentArray = currentArray.peek();
-            else
-              currentArray = currentArray[currentArray.length - 1];
-          currentArray.push([]);
-          break;
+    var count = eexecString.length;
+    var c = "";
+    for (var i = 0; i < count; i++) {
+      var c = eexecString[i];
 
-        case "]":
-        case "}":
-          var currentArray = operandStack.peek();
-          for (var i = 1; i < operandIsArray; i++)
-            currentArray = currentArray[currentArray.length - 1];
-          dump("End" + (command == "}" ? " Executable " : " ") + "Array: " + currentArray.join(" "));
-          operandIsArray--;
-          break;
+      if (inSubrs && c == 0x52) {
+        length = parseInt(length);
+        var stream = new Stream(eexecString.slice(i + 3, i + 3 + length));
+        var encodedSubr = decrypt(stream, kCharStringsEncryptionKey, 4).join("");
+        var subr = decodeCharString(new StringStream(encodedSubr));
 
-        case "if":
-          var procedure = operandStack.pop();
-          var bool = operandStack.pop();
-          if (!IsBool(bool)) {
-            dump("if: " + bool);
-            // we need to execute things, let be dirty
-            executionStack.push(bool);
-          } else {
-            dump("if ( " + bool + " ) { " + procedure + " }");
-            if (bool)
-              executionStack.push(procedure);
-          }
-          break;
+        subrs.push(subr);
+        i += 3 + length;
+      } else if (inGlyphs && c == 0x52) {
+        length = parseInt(length);
+        var stream = new Stream(eexecString.slice(i + 3, i + 3 + length));
+        var encodedCharstring = decrypt(stream, kCharStringsEncryptionKey, 4).join("");
+        var subr = decodeCharString(new StringStream(encodedCharstring));
 
-        case "ifelse":
-          var procedure1 = operandStack.pop();
-          var procedure2 = operandStack.pop();
-          var bool = !!operandStack.pop();
-          dump("if ( " + bool + " ) { " + procedure2 + " } else { " + procedure1 + " }");
-          executionStack.push(bool ? procedure2 : procedure1);
-          break;
+        glyphs.push({
+            glyph: glyph,
+            data: subr
+        });
+        i += 3 + length;
+      } else if (inGlyphs && c == 0x2F) {
+        token = "";
+        glyph = "";
 
-        case "for":
-          var procedure = operandStack.pop();
-          var limit = operandStack.pop();
-          var increment = operandStack.pop();
-          var initial = operandStack.pop();
-          for (var i = 0; i < limit; i += increment) {
-            operandStack.push(i);
-            executionStack.push(procedure.slice());
-          }
-          break;
-
-        case "dup":
-          dump("duplicate: " + operandStack.peek());
-          operandStack.push(operandStack.peek());
-          break;
-
-        case "mark":
-          operandStack.push("mark");
-          break;
-
-        case "cleartomark":
-          var command = "";
-          do {
-            command = operandStack.pop();
-          } while (command != "mark");
-          break;
-
-        case "put":
-          var data = operandStack.pop();
-          var indexOrKey = operandStack.pop();
-          var object = operandStack.pop();
-          dump("put " + data + " in " + object + "[" + indexOrKey + "]");
-          object.set ? object.set(indexOrKey, data)
-                     : object[indexOrKey] = data;
-          break;
-
-        case "pop":
-          operandStack.pop();
-          break;
-
-        case "exch":
-          var operand1 = operandStack.pop();
-          var operand2 = operandStack.pop();
-          operandStack.push(operand1);
-          operandStack.push(operand2);
-          break;
-
-        case "get":
-          var indexOrKey = operandStack.pop();
-          var object = operandStack.pop();
-          var data = object.get ? object.get(indexOrKey) : object[indexOrKey];
-          dump("get " + object + "[" + indexOrKey + "]: " + data);
-          operandStack.push(data);
-          break;
-
-        case "currentdict":
-          var dict = dictionaryStack.peek();
-          operandStack.push(dict);
-          break;
-
-        case "systemdict":
-          operandStack.push(systemDict);
-          break;
-
-        case "readonly":
-        case "executeonly":
-        case "noaccess":
-          // Do nothing for the moment
-          break;
-
-        case "currentfile":
-          operandStack.push("currentfile");
-          break;
-
-        case "array":
-          var size = operandStack.pop();
-          var array = new Array(size);
-          operandStack.push(array);
-          break;
-
-        case "dict":
-          var size = operandStack.pop();
-          var dict = new Dict(size);
-          operandStack.push(dict);
-          break;
-
-        case "begin":
-          dictionaryStack.push(operandStack.pop());
-          break;
-
-        case "end":
-          dictionaryStack.pop();
-          break;
-
-        case "def":
-          var value = operandStack.pop();
-          var key = operandStack.pop();
-          dump("def: " + key + " = " + value);
-          dictionaryStack.peek().set(key, value);
-          break;
-
-        case "definefont":
-          var font = operandStack.pop();
-          var key = operandStack.pop();
-          dump("definefont " + font + " with key: " + key);
-
-          // The key will be the identifier to recognize this font
-          fontName = key;
-          PSFonts.set(key, font);
-
-          operandStack.push(font);
-          break;
-
-        case "known":
-          var name = operandStack.pop();
-          var dict = operandStack.pop();
-          var data = !!dict.get(name);
-          dump("known: " + data + " :: " + name + " in dict: " + dict);
-          operandStack.push(data);
-          break;
-
-        case "exec":
-          executionStack.push(operandStack.pop());
-          break;
-
-        case "eexec":
-          // All the first segment data has been read, decrypt the second segment
-          // and start interpreting it in order to decode it
-          var file = operandStack.pop();
-          var eexecString = decrypt(aBinaryStream, kEexecEncryptionKey, 4).join("");
-          lexer = new Lexer(new StringStream(eexecString));
-          break;
-
-        case "LenIV":
-          error("LenIV: argh! we need to modify the length of discard characters for charStrings");
-          break;
-
-        case "closefile":
-          var file = operandStack.pop();
-          return true;
-          break;
-
-        case "index":
-          var operands = [];
-          var size = operandStack.pop();
-          for (var i = 0; i < size; i++)
-            operands.push(operandStack.pop());
-
-          var newOperand = operandStack.peek();
-
-          while (operands.length)
-            operandStack.push(operands.pop());
-
-          operandStack.push(newOperand);
-          break;
-
-        case "string":
-          var size = operandStack.pop();
-          var str = (new Array(size + 1)).join(" ");
-          operandStack.push(str);
-          break;
-
-        case "readstring":
-          var str = operandStack.pop();
-          var size = str.length;
-
-          var file = operandStack.pop();
-
-          // Add '1' because of the space separator, this is dirty
-          var stream = lexer.stream.makeSubStream(lexer.stream.start + lexer.stream.pos + 1, size);
-          lexer.stream.skip(size + 1);
-
-          var charString = decrypt(stream, kCharStringsEncryptionKey, 4).join("");
-          var charStream = new StringStream(charString);
-          var decodedCharString = decodeCharString(charStream);
-          operandStack.push(decodedCharString);
-
-          // boolean indicating if the operation is a success or not
-          operandStack.push(true);
-          break;
-
-        case "StandardEncoding":
-          // For some reason the value is considered as a command, maybe it is
-          // because of the uppercase 'S'
-          operandStack.push(obj.cmd);
-          break;
-
-        default:
-          var command = null;
-          if (IsCmd(obj)) {
-            for (var i = 0; i < dictionaryStack.count(); i++) {
-              if (command = dictionaryStack.get(i).get(obj.cmd)) {
-                dump("found in dictionnary for " + obj.cmd + " command: " + command);
-                executionStack.push(command.slice());
-                break;
-              }
-            }
-          }
-
-          if (!command) {
-            log("operandStack: " + operandStack);
-            log("dictionaryStack: " + dictionaryStack);
-            log(obj);
-            error("Unknow command while parsing font");
-          }
-          break;
+        while ((c = eexecString[++i]) != 0x20 && i < count)
+          glyph += String.fromCharCode(c);
+      } else if (c == 0x2F && eexecString[i+1] == 0x53 && !inGlyphs && !inSubrs) {
+        while ((c = eexecString[++i]) != 0x20) {};
+        inSubrs = true;
+      } else if (c == 0x20) {
+        index = length;
+        length = token;
+        token = "";
+      } else if (c == 0x2F && eexecString[i+1] == 0x43 && eexecString[i+2] == 0x68) {
+        while ((c = eexecString[++i]) != 0x20) {};
+        inSubrs = false;
+        inGlyphs = true;
+      } else {
+        token += String.fromCharCode(c);
       }
-    } else if (obj) {
-      dump("unknow: " + obj);
-      operandStack.push(obj);
-    } else { // The End!
-      operandStack.dump();
-      return true;
     }
-
-    return false;
-  }
+    return {
+      subrs: subrs,
+      charstrings: glyphs
+    }
+  };
 
   /*
    * Flatten the commands by interpreting the postscript code and replacing
@@ -1462,19 +1213,25 @@ var Type1Parser = function(aAsciiStream, aBinaryStream) {
   }
 };
 
-var CFF = function(aFontFile) {
+var CFF = function(aFontName, aFontBBox, aFontFile) {
   var start = Date.now();
 
+  // Get the data block containing glyphs and subrs informations
   var length1 = aFontFile.dict.get("Length1");
   var length2 = aFontFile.dict.get("Length2");
+  aFontFile.skip(length1);
+  var eexecBlock = aFontFile.getBytes(length2);
 
-  var ASCIIStream = new Stream(aFontFile.getBytes(length1));
-  var binaryStream = new Stream(aFontFile.getBytes(length2));
+  // Extract informations from it
+  var parser = new Type1Parser();
+  var fontInfo = parser.extractFontInfo(eexecBlock);
+  fontInfo.name = aFontName;
+  fontInfo.bbox = aFontBBox;
 
-  this.parser = new Type1Parser(ASCIIStream, binaryStream);
-  var fontName = this.parser.parse();
-  this.font = PSFonts.get(fontName);
-  this.data = this.convertToCFF(this.font);
+  // XXX
+  this.glyphs = fontInfo.charstrings;
+
+  this.data = this.convertToCFF(fontInfo);
   var end = Date.now();
   //log("Time to parse font is:" + (end - start));
 };
@@ -1537,11 +1294,11 @@ CFF.prototype = {
     }
   },
 
-  getOrderedCharStrings: function(aFont) {
+  getOrderedCharStrings: function(aGlyphs) {
     var charstrings = [];
 
-    var glyphs = aFont.get("CharStrings")
-    glyphs.forEach(function(glyph, glyphData) {
+    for (var i = 0; i < aGlyphs.length; i++) {
+      var glyph = aGlyphs[i].glyph;
       var unicode = GlyphsUnicode[glyph];
       if (!unicode) {
         if (glyph != ".notdef")
@@ -1554,10 +1311,10 @@ CFF.prototype = {
         charstrings.push({
           glyph: glyph,
           unicode: unicode,
-          charstring: glyphData.slice()
+          charstring: aGlyphs[i].data.slice()
         });
       }
-    });
+    };
 
     charstrings.sort(function(a, b) {
       return a.unicode > b.unicode;
@@ -1565,20 +1322,20 @@ CFF.prototype = {
     return charstrings;
   },
 
-  convertToCFF: function(aFont) {
+  convertToCFF: function(aFontInfo) {
     var debug = false;
     function dump(aMsg) {
       if (debug)
         log(aMsg);
     };
 
-    var charstrings = this.getOrderedCharStrings(aFont);
+    var charstrings = this.getOrderedCharStrings(aFontInfo.charstrings);
 
     var charstringsCount = 0;
     var charstringsDataLength = 0;
     var glyphs = [];
     var glyphsChecker = {};
-    var subrs = aFont.get("Private").get("Subrs");
+    var subrs = aFontInfo.subrs;
     var parser = new Type1Parser();
     for (var i = 0; i < charstrings.length; i++) {
       var charstring = charstrings[i].charstring.slice();
@@ -1604,19 +1361,18 @@ CFF.prototype = {
     cff.set(header);
 
     // Names Index
-    var nameIndex = this.createCFFIndexHeader([aFont.get("FontName")]);
+    var nameIndex = this.createCFFIndexHeader([aFontInfo.name]);
     cff.set(nameIndex, currentOffset);
     currentOffset += nameIndex.length;
 
     // Calculate strings before writing the TopDICT index in order
     // to calculate correct relative offsets for storing 'charset'
     // and 'charstrings' data
-    var fontInfo = aFont.get("FontInfo");
-    var version = fontInfo.get("version");
-    var notice = fontInfo.get("Notice");
-    var fullName = fontInfo.get("FullName");
-    var familyName = fontInfo.get("FamilyName");
-    var weight = fontInfo.get("Weight");
+    var version = "";
+    var notice = "";
+    var fullName = "";
+    var familyName = "";
+    var weight = "";
     var strings = [version, notice, fullName,
                    familyName, weight];
     var stringsIndex = this.createCFFIndexHeader(strings);
@@ -1692,7 +1448,7 @@ CFF.prototype = {
       248, 31, 4  // Weight
     ];
 
-    var fontBBox = aFont.get("FontBBox");
+    var fontBBox = aFontInfo.bbox;
     for (var i = 0; i < fontBBox.length; i++)
       topDictIndex = topDictIndex.concat(this.encodeNumber(fontBBox[i]));
     topDictIndex.push(5) // FontBBox;

@@ -119,8 +119,10 @@ function displayPage(num) {
               }
             }
 
+            var fontBBox = descriptor.get("FontBBox");
+
             var subtype = fontDict.get("Subtype").name;
-            new Font(fontName, fontFile, encodingMap, charset, subtype);
+            new Font(fontName, fontFile, encodingMap, charset, fontBBox, subtype);
             return fontsReady = false;
         } else if (font.loading) {
             return fontsReady = false;
