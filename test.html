@@ -101,12 +101,14 @@ function displayPage(num) {
     var fonts = [];
     page.compile(gfx, fonts);
 
+    var t2 = Date.now();
+
     // This should be called when font loading is complete
     page.display(gfx);
 
-    var t2 = Date.now();
+    var t3 = Date.now();
 
-    infoDisplay.innerHTML = "Time to render: "+ (t1 - t0) + "/" + (t2 - t1) + " ms";
+    infoDisplay.innerHTML = "Time to load/compile/render: "+ (t1 - t0) + "/" + (t2 - t1) + "/" + (t3 - t2) + " ms";
 }
 
 function nextPage() {
