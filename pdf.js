@@ -1596,6 +1596,7 @@ var CanvasGraphics = (function() {
             w: "setLineWidth",
             J: "setLineCap",
             j: "setLineJoin",
+            M: "setMiterLimit",
             d: "setDash",
             ri: "setRenderingIntent",
             i: "setFlatness",
@@ -1608,13 +1609,18 @@ var CanvasGraphics = (function() {
             m: "moveTo",
             l: "lineTo",
             c: "curveTo",
+            v: "curveTo2",
+            y: "curveTo3",
             h: "closePath",
             re: "rectangle",
             S: "stroke",
+            s: "closeStroke",
             f: "fill",
             "f*": "eoFill",
             B: "fillStroke",
+            "B*": "eoFillStroke",
             b: "closeFillStroke",
+            "b*": "closeEOFillStroke",
             n: "endPath",
 
             // Clipping
@@ -1624,15 +1630,25 @@ var CanvasGraphics = (function() {
             // Text
             BT: "beginText",
             ET: "endText",
+            Tc: "setCharSpacing",
+            Tw: "setWordSpacing",
+            Tz: "setHScale",
             TL: "setLeading",
             Tf: "setFont",
+            Tr: "setTextRenderingMode",
+            Ts: "setTextRise",
             Td: "moveText",
+            TD: "setLeadingMoveText",
             Tm: "setTextMatrix",
             "T*": "nextLine",
             Tj: "showText",
             TJ: "showSpacedText",
+            "'": "nextLineShowText",
+            '"': "nextLineSetSpacingShowText",
 
             // Type3 fonts
+            d0: "setCharWidth",
+            d1: "setCharWidthAndBounds",
 
             // Color
             CS: "setStrokeColorSpace",
@@ -1645,16 +1661,28 @@ var CanvasGraphics = (function() {
             g: "setFillGray",
             RG: "setStrokeRGBColor",
             rg: "setFillRGBColor",
+            K: "setStrokeCMYKColor",
+            k: "setFillCMYKColor",
 
             // Shading
             sh: "shadingFill",
 
             // Images
+            BI: "beginInlineImage",
+
             // XObjects
             Do: "paintXObject",
 
             // Marked content
+            MP: "markPoint",
+            DP: "markPointProps",
+            BMC: "beginMarkedContent",
+            BDC: "beginMarkedContentProps",
+            EMC: "endMarkedContent",
+
             // Compatibility
+            BX: "beginCompat",
+            EX: "endCompat",
         };
     }
 
@@ -1780,6 +1808,9 @@ var CanvasGraphics = (function() {
         setLineJoin: function(style) {
             this.ctx.lineJoin = LINE_JOIN_STYLES[style];
         },
+        setMiterLimit: function(limit) {
+            this.ctx.miterLimit = limit;
+        },
         setDash: function(dashArray, dashPhase) {
             TODO("set dash");
         },
@@ -1818,6 +1849,12 @@ var CanvasGraphics = (function() {
         curveTo: function(x1, y1, x2, y2, x3, y3) {
             this.ctx.bezierCurveTo(x1, y1, x2, y2, x3, y3);
         },
+        curveTo2: function(x2, y2, x3, y3) {
+            TODO("'v' operator: need current point in gfx context");
+        },
+        curveTo3: function(x1, y1, x3, y3) {
+            this.curveTo(x1, y1, x3, y3, x3, y3);
+        },
         closePath: function() {
             this.ctx.closePath();
         },
@@ -1827,6 +1864,10 @@ var CanvasGraphics = (function() {
         stroke: function() {
             this.ctx.stroke();
             this.consumePath();
+        },
+        closeStroke: function() {
+            this.closePath();
+            this.stroke();
         },
         fill: function() {
             this.ctx.fill();
@@ -1842,8 +1883,18 @@ var CanvasGraphics = (function() {
             this.ctx.stroke();
             this.consumePath();
         },
+        eoFillStroke: function() {
+            var savedFillRule = this.setEOFillRule();
+            this.fillStroke();
+            this.restoreFillRule(savedFillRule);
+        },
         closeFillStroke: function() {
             return this.fillStroke();
+        },
+        closeEOFillStroke: function() {
+            var savedFillRule = this.setEOFillRule();
+            this.fillStroke();
+            this.restoreFillRule(savedFillRule);
         },
         endPath: function() {
             this.consumePath();
@@ -1865,6 +1916,15 @@ var CanvasGraphics = (function() {
         },
         endText: function() {
         },
+        setCharSpacing: function(spacing) {
+            TODO("character (glyph?) spacing");
+        },
+        setWordSpacing: function(spacing) {
+            TODO("word spacing");
+        },
+        setHSpacing: function(scale) {
+            TODO("horizontal text scale");
+        },
         setLeading: function(leading) {
             this.current.leading = leading;
         },
@@ -1880,9 +1940,19 @@ var CanvasGraphics = (function() {
             TODO("using hard-coded font for testing");
             this.ctx.font = this.current.fontSize +'px "Nimbus Roman No9 L"';
         },
+        setTextRenderingMode: function(mode) {
+            TODO("text rendering mode");
+        },
+        setTextRise: function(rise) {
+            TODO("text rise");
+        },
         moveText: function (x, y) {
             this.current.x = this.current.lineX += x;
             this.current.y = this.current.lineY += y;
+        },
+        setLeadingMoveText: function(x, y) {
+            this.setLeading(-y);
+            this.moveText(x, y);
         },
         setTextMatrix: function(a, b, c, d, e, f) {
             this.current.textMatrix = [ a, b, c, d, e, f ];
@@ -1915,8 +1985,23 @@ var CanvasGraphics = (function() {
                 }
             }
         },
+        nextLineShowText: function(text) {
+            this.nextLine();
+            this.showText(text);
+        },
+        nextLineSetSpacingShowText: function(wordSpacing, charSpacing, text) {
+            this.setWordSpacing(wordSpacing);
+            this.setCharSpacing(charSpacing);
+            this.nextLineShowText(text);
+        },
 
         // Type3 fonts
+        setCharWidth: function(xWidth, yWidth) {
+            TODO("type 3 fonts ('d0' operator)");
+        },
+        setCharWidthAndBounds: function(xWidth, yWidth, llx, lly, urx, ury) {
+            TODO("type 3 fonts ('d1' operator)");
+        },
 
         // Color
         setStrokeColorSpace: function(space) {
@@ -1960,6 +2045,12 @@ var CanvasGraphics = (function() {
         },
         setFillRGBColor: function(r, g, b) {
             this.ctx.fillStyle = this.makeCssRgb(r, g, b);
+        },
+        setStrokeCMYKColor: function(c, m, y, k) {
+            TODO("CMYK space");
+        },
+        setFillCMYKColor: function(c, m, y, k) {
+            TODO("CMYK space");
         },
 
         // Shading
@@ -2033,6 +2124,15 @@ var CanvasGraphics = (function() {
             this.ctx.fillStyle = gradient;
             this.ctx.fill();
             this.consumePath();
+        },
+
+        // Images
+        beginInlineImage: function() {
+            TODO("inline images");
+            error("(Stream will not be parsed properly, bailing now)");
+            // Like an inline stream:
+            //  - key/value pairs up to Cmd(ID)
+            //  - then image data up to Cmd(EI)
         },
 
         // XObjects
@@ -2260,6 +2360,33 @@ var CanvasGraphics = (function() {
             tmpCtx.putImageData(imgData, 0, 0);
             ctx.drawImage(tmpCanvas, 0, 0);
             this.restore();
+        },
+
+        // Marked content
+
+        markPoint: function(tag) {
+            TODO("Marked content");
+        },
+        markPointProps: function(tag, properties) {
+            TODO("Marked content");
+        },
+        beginMarkedContent: function(tag) {
+            TODO("Marked content");
+        },
+        beginMarkedContentProps: function(tag, properties) {
+            TODO("Marked content");
+        },
+        endMarkedContent: function() {
+            TODO("Marked content");
+        },
+
+        // Compatibility
+
+        beginCompat: function() {
+            TODO("ignore undefined operators (should we do that anyway?)");
+        },
+        endCompat: function() {
+            TODO("stop ignoring undefined operators");
         },
 
         // Helper functions
