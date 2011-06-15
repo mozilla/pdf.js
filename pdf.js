@@ -1684,7 +1684,7 @@ var CanvasGraphics = (function() {
 
         execute: function(stream, xref, resources) {
             if (!stream.execute)
-                this.compile(stream, xref, resources);
+                stream.execute = this.compile(stream, xref, resources);
 
             var savedXref = this.xref, savedRes = this.res, savedXobjs = this.xobjs;
             this.xref = xref;
@@ -1692,7 +1692,7 @@ var CanvasGraphics = (function() {
             this.xobjs = this.res.get("XObject") || new Dict();
             this.xobjs = this.xref.fetchIfRef(this.xobjs);
 
-            stream.execute(this, stream.objpool);
+            stream.execute(this);
 
             this.xobjs = savedXobjs;
             this.res = savedRes;
@@ -1724,7 +1724,7 @@ var CanvasGraphics = (function() {
                     assertWellFormed(fn, "Unknown command '" + cmd + "'");
                     // TODO figure out how to type-check vararg functions
 
-                    src += "gfx.";
+                    src += "this.";
                     src += fn;
                     src += "(";
                     src += args.map(emitArg).join(",");
@@ -1739,8 +1739,8 @@ var CanvasGraphics = (function() {
 
             src += "}";
 
-            stream.execute = new Function("gfx", "objpool", src);
-            stream.objpool = objpool;
+            var fn = new Function("objpool", src);
+            return function (gfx) { fn.call(gfx, objpool); };
         },
 
         endDrawing: function() {
