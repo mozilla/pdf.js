@@ -1395,8 +1395,7 @@ var Page = (function() {
             gfx.beginDrawing({ x: mediaBox[0], y: mediaBox[1],
                                width: mediaBox[2] - mediaBox[0],
                                height: mediaBox[3] - mediaBox[1] });
-            gfx.interpret(new Parser(new Lexer(contents), false),
-                          xref, resources);
+            gfx.execute(contents, xref, resources);
             gfx.endDrawing();
         }
     };
@@ -1605,65 +1604,65 @@ var CanvasGraphics = (function() {
         this.xobjs = null;
         this.map = {
             // Graphics state
-            w: this.setLineWidth,
-            J: this.setLineCap,
-            j: this.setLineJoin,
-            d: this.setDash,
-            ri: this.setRenderingIntent,
-            i: this.setFlatness,
-            gs: this.setGState,
-            q: this.save,
-            Q: this.restore,
-            cm: this.transform,
+            w: "setLineWidth",
+            J: "setLineCap",
+            j: "setLineJoin",
+            d: "setDash",
+            ri: "setRenderingIntent",
+            i: "setFlatness",
+            gs: "setGState",
+            q: "save",
+            Q: "restore",
+            cm: "transform",
 
             // Path
-            m: this.moveTo,
-            l: this.lineTo,
-            c: this.curveTo,
-            h: this.closePath,
-            re: this.rectangle,
-            S: this.stroke,
-            f: this.fill,
-            "f*": this.eoFill,
-            B: this.fillStroke,
-            b: this.closeFillStroke,
-            n: this.endPath,
+            m: "moveTo",
+            l: "lineTo",
+            c: "curveTo",
+            h: "closePath",
+            re: "rectangle",
+            S: "stroke",
+            f: "fill",
+            "f*": "eoFill",
+            B: "fillStroke",
+            b: "closeFillStroke",
+            n: "endPath",
 
             // Clipping
-            W: this.clip,
-            "W*": this.eoClip,
+            W: "clip",
+            "W*": "eoClip",
 
             // Text
-            BT: this.beginText,
-            ET: this.endText,
-            TL: this.setLeading,
-            Tf: this.setFont,
-            Td: this.moveText,
-            Tm: this.setTextMatrix,
-            "T*": this.nextLine,
-            Tj: this.showText,
-            TJ: this.showSpacedText,
+            BT: "beginText",
+            ET: "endText",
+            TL: "setLeading",
+            Tf: "setFont",
+            Td: "moveText",
+            Tm: "setTextMatrix",
+            "T*": "nextLine",
+            Tj: "showText",
+            TJ: "showSpacedText",
 
             // Type3 fonts
 
             // Color
-            CS: this.setStrokeColorSpace,
-            cs: this.setFillColorSpace,
-            SC: this.setStrokeColor,
-            SCN: this.setStrokeColorN,
-            sc: this.setFillColor,
-            scn: this.setFillColorN,
-            G: this.setStrokeGray,
-            g: this.setFillGray,
-            RG: this.setStrokeRGBColor,
-            rg: this.setFillRGBColor,
+            CS: "setStrokeColorSpace",
+            cs: "setFillColorSpace",
+            SC: "setStrokeColor",
+            SCN: "setStrokeColorN",
+            sc: "setFillColor",
+            scn: "setFillColorN",
+            G: "setStrokeGray",
+            g: "setFillGray",
+            RG: "setStrokeRGBColor",
+            rg: "setFillRGBColor",
 
             // Shading
-            sh: this.shadingFill,
+            sh: "shadingFill",
 
             // Images
             // XObjects
-            Do: this.paintXObject,
+            Do: "paintXObject",
 
             // Marked content
             // Compatibility
@@ -1683,12 +1682,37 @@ var CanvasGraphics = (function() {
             this.ctx.translate(0, -mediaBox.height);
         },
 
-        interpret: function(parser, xref, resources) {
+        execute: function(stream, xref, resources) {
+            if (!stream.execute)
+                this.compile(stream, xref, resources);
+
             var savedXref = this.xref, savedRes = this.res, savedXobjs = this.xobjs;
             this.xref = xref;
             this.res = resources || new Dict();
             this.xobjs = this.res.get("XObject") || new Dict();
             this.xobjs = this.xref.fetchIfRef(this.xobjs);
+
+            stream.execute(this, stream.objpool);
+
+            this.xobjs = savedXobjs;
+            this.res = savedRes;
+            this.xref = savedXref;
+        },
+
+        compile: function(stream, xref, resources) {
+            var parser = new Parser(new Lexer(stream), false);
+            var objpool = [];
+
+            function emitArg(arg) {
+                if (typeof arg == "object" || typeof arg == "string") {
+                    var index = objpool.length;
+                    objpool[index] = arg;
+                    return "objpool[" + index + "]";
+                }
+                return arg;
+            }
+
+            var src = "{\n";
 
             var args = [];
             var map = this.map;
@@ -1699,7 +1723,12 @@ var CanvasGraphics = (function() {
                     var fn = map[cmd];
                     assertWellFormed(fn, "Unknown command '" + cmd + "'");
                     // TODO figure out how to type-check vararg functions
-                    fn.apply(this, args);
+
+                    src += "gfx.";
+                    src += fn;
+                    src += "(";
+                    src += args.map(emitArg).join(",");
+                    src += ");\n";
 
                     args.length = 0;
                 } else {
@@ -1708,9 +1737,10 @@ var CanvasGraphics = (function() {
                 }
             }
 
-            this.xobjs = savedXobjs;
-            this.res = savedRes;
-            this.xref = savedXref;
+            src += "}";
+
+            stream.execute = new Function("gfx", "objpool", src);
+            stream.objpool = objpool;
         },
 
         endDrawing: function() {
@@ -2026,9 +2056,7 @@ var CanvasGraphics = (function() {
                 this.clip();
                 this.endPath();
             }
-
-            this.interpret(new Parser(new Lexer(form), false),
-                           this.xref, form.dict.get("Resources"));
+            this.execute(form, this.xref, form.dict.get("Resources"));
 
             this.restore();
         },
