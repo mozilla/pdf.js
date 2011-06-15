@@ -590,7 +590,7 @@ function IsString(v) {
 }
 
 function IsNull(v) {
-    return v == null;
+    return v === null;
 }
 
 function IsName(v) {
@@ -628,14 +628,6 @@ function IsPDFFunction(v) {
     else
         return false;
     return fnDict.has("FunctionType");
-}
-
-function IsFunctionDict(v) {
-    return IsFunction(v) && IsDict(v);
-}
-
-function IsFunctionStream(v) {
-    return IsFunction(v) && IsStream(v);
 }
 
 var EOF = {};
@@ -841,10 +833,12 @@ var Lexer = (function() {
                 ch = stream.getChar();
                 if (ch == '>') {
                     break;
-                } else if (!ch) {
+                }
+                if (!ch) {
                     warn("Unterminated hex string");
                     break;
-                } else if (specialChars[ch.charCodeAt(0)] != 1) {
+                }
+                if (specialChars[ch.charCodeAt(0)] != 1) {
                     var x, x2;
                     if (((x = ToHexDigit(ch)) == -1) ||
                         ((x2 = ToHexDigit(stream.getChar())) == -1)) {
@@ -1373,8 +1367,8 @@ var Page = (function() {
     }
 
     constructor.prototype = {
-        get contents() {
-            return shadow(this, "contents", this.pageDict.get("Contents"));
+        get content() {
+            return shadow(this, "content", this.pageDict.get("Contents"));
         },
         get resources() {
             return shadow(this, "resources", this.pageDict.get("Resources"));
@@ -1385,18 +1379,25 @@ var Page = (function() {
                                              ? obj
                                              : null));
         },
+        compile: function(gfx, fonts) {
+            if (!this.code) {
+                var xref = this.xref;
+                var content = xref.fetchIfRef(this.content);
+                var resources = xref.fetchIfRef(this.resources);
+                this.code = gfx.compile(content, xref, resources, fonts);
+            }
+        },
         display: function(gfx) {
             var xref = this.xref;
-            var contents = xref.fetchIfRef(this.contents);
+            var content = xref.fetchIfRef(this.content);
             var resources = xref.fetchIfRef(this.resources);
             var mediaBox = xref.fetchIfRef(this.mediaBox);
-            assertWellFormed(IsStream(contents) && IsDict(resources),
-                             "invalid page contents or resources");
+            assertWellFormed(IsStream(content) && IsDict(resources),
+                             "invalid page content or resources");
             gfx.beginDrawing({ x: mediaBox[0], y: mediaBox[1],
                                width: mediaBox[2] - mediaBox[0],
                                height: mediaBox[3] - mediaBox[1] });
-            gfx.interpret(new Parser(new Lexer(contents), false),
-                          xref, resources);
+            gfx.execute(this.code, xref, resources);
             gfx.endDrawing();
         }
     };
@@ -1605,65 +1606,65 @@ var CanvasGraphics = (function() {
         this.xobjs = null;
         this.map = {
             // Graphics state
-            w: this.setLineWidth,
-            J: this.setLineCap,
-            j: this.setLineJoin,
-            d: this.setDash,
-            ri: this.setRenderingIntent,
-            i: this.setFlatness,
-            gs: this.setGState,
-            q: this.save,
-            Q: this.restore,
-            cm: this.transform,
+            w: "setLineWidth",
+            J: "setLineCap",
+            j: "setLineJoin",
+            d: "setDash",
+            ri: "setRenderingIntent",
+            i: "setFlatness",
+            gs: "setGState",
+            q: "save",
+            Q: "restore",
+            cm: "transform",
 
             // Path
-            m: this.moveTo,
-            l: this.lineTo,
-            c: this.curveTo,
-            h: this.closePath,
-            re: this.rectangle,
-            S: this.stroke,
-            f: this.fill,
-            "f*": this.eoFill,
-            B: this.fillStroke,
-            b: this.closeFillStroke,
-            n: this.endPath,
+            m: "moveTo",
+            l: "lineTo",
+            c: "curveTo",
+            h: "closePath",
+            re: "rectangle",
+            S: "stroke",
+            f: "fill",
+            "f*": "eoFill",
+            B: "fillStroke",
+            b: "closeFillStroke",
+            n: "endPath",
 
             // Clipping
-            W: this.clip,
-            "W*": this.eoClip,
+            W: "clip",
+            "W*": "eoClip",
 
             // Text
-            BT: this.beginText,
-            ET: this.endText,
-            TL: this.setLeading,
-            Tf: this.setFont,
-            Td: this.moveText,
-            Tm: this.setTextMatrix,
-            "T*": this.nextLine,
-            Tj: this.showText,
-            TJ: this.showSpacedText,
+            BT: "beginText",
+            ET: "endText",
+            TL: "setLeading",
+            Tf: "setFont",
+            Td: "moveText",
+            Tm: "setTextMatrix",
+            "T*": "nextLine",
+            Tj: "showText",
+            TJ: "showSpacedText",
 
             // Type3 fonts
 
             // Color
-            CS: this.setStrokeColorSpace,
-            cs: this.setFillColorSpace,
-            SC: this.setStrokeColor,
-            SCN: this.setStrokeColorN,
-            sc: this.setFillColor,
-            scn: this.setFillColorN,
-            G: this.setStrokeGray,
-            g: this.setFillGray,
-            RG: this.setStrokeRGBColor,
-            rg: this.setFillRGBColor,
+            CS: "setStrokeColorSpace",
+            cs: "setFillColorSpace",
+            SC: "setStrokeColor",
+            SCN: "setStrokeColorN",
+            sc: "setFillColor",
+            scn: "setFillColorN",
+            G: "setStrokeGray",
+            g: "setFillGray",
+            RG: "setStrokeRGBColor",
+            rg: "setFillRGBColor",
 
             // Shading
-            sh: this.shadingFill,
+            sh: "shadingFill",
 
             // Images
             // XObjects
-            Do: this.paintXObject,
+            Do: "paintXObject",
 
             // Marked content
             // Compatibility
@@ -1676,6 +1677,10 @@ var CanvasGraphics = (function() {
     const EO_CLIP = {};
 
     constructor.prototype = {
+        translateFont: function(fontDict, xref, resources) {
+            return "translated";
+        },
+
         beginDrawing: function(mediaBox) {
             var cw = this.ctx.canvas.width, ch = this.ctx.canvas.height;
             this.ctx.save();
@@ -1683,12 +1688,35 @@ var CanvasGraphics = (function() {
             this.ctx.translate(0, -mediaBox.height);
         },
 
-        interpret: function(parser, xref, resources) {
+        execute: function(code, xref, resources) {
             var savedXref = this.xref, savedRes = this.res, savedXobjs = this.xobjs;
             this.xref = xref;
             this.res = resources || new Dict();
-            this.xobjs = this.res.get("XObject") || new Dict();
-            this.xobjs = this.xref.fetchIfRef(this.xobjs);
+            this.xobjs = xref.fetchIfRef(this.res.get("XObject")) || new Dict();
+
+            code(this);
+
+            this.xobjs = savedXobjs;
+            this.res = savedRes;
+            this.xref = savedXref;
+        },
+
+        compile: function(stream, xref, resources, fonts) {
+            var xobjs = xref.fetchIfRef(resources.get("XObject")) || new Dict();
+
+            var parser = new Parser(new Lexer(stream), false);
+            var objpool = [];
+
+            function emitArg(arg) {
+                if (typeof arg == "object" || typeof arg == "string") {
+                    var index = objpool.length;
+                    objpool[index] = arg;
+                    return "objpool[" + index + "]";
+                }
+                return arg;
+            }
+
+            var src = "";
 
             var args = [];
             var map = this.map;
@@ -1699,7 +1727,46 @@ var CanvasGraphics = (function() {
                     var fn = map[cmd];
                     assertWellFormed(fn, "Unknown command '" + cmd + "'");
                     // TODO figure out how to type-check vararg functions
-                    fn.apply(this, args);
+
+                    if (cmd == "Do" && !args[0].code) { // eagerly compile XForm objects
+                        var name = args[0].name;
+                        var xobj = xobjs.get(name);
+                        if (xobj) {
+                            xobj = xref.fetchIfRef(xobj);
+                            assertWellFormed(IsStream(xobj), "XObject should be a stream");
+
+                            var type = xobj.dict.get("Subtype");
+                            assertWellFormed(IsName(type), "XObject should have a Name subtype");
+
+                            if ("Form" == type.name) {
+                                args[0].code = this.compile(xobj,
+                                                            xref,
+                                                            xobj.dict.get("Resources"),
+                                                            fonts);
+                            }
+                        }
+                    } else if (cmd == "Tf") { // eagerly collect all fonts
+                        var fontRes = resources.get("Font");
+                        if (fontRes) {
+                            fontRes = xref.fetchIfRef(fontRes);
+                            var font = xref.fetchIfRef(fontRes.get(args[0].name));
+                            assertWellFormed(IsDict(font));
+                            if (!font.translated) {
+                                font.translated = this.translateFont(font, xref, resources);
+                                if (fonts && font.translated) {
+                                    // keep track of each font we translated so the caller can
+                                    // load them asynchronously before calling display on a page
+                                    fonts.push(font.translated);
+                                }
+                            }
+                        }
+                    }
+
+                    src += "this.";
+                    src += fn;
+                    src += "(";
+                    src += args.map(emitArg).join(",");
+                    src += ");\n";
 
                     args.length = 0;
                 } else {
@@ -1708,9 +1775,8 @@ var CanvasGraphics = (function() {
                 }
             }
 
-            this.xobjs = savedXobjs;
-            this.res = savedRes;
-            this.xref = savedXref;
+            var fn = Function("objpool", src);
+            return function (gfx) { fn.call(gfx, objpool); };
         },
 
         endDrawing: function() {
@@ -2012,9 +2078,9 @@ var CanvasGraphics = (function() {
             var type = xobj.dict.get("Subtype");
             assertWellFormed(IsName(type), "XObject should have a Name subtype");
             if ("Image" == type.name) {
-                this.paintImageXObject(xobj, false);
+                this.paintImageXObject(obj, xobj, false);
             } else if ("Form" == type.name) {
-                this.paintFormXObject(xobj);
+                this.paintFormXObject(obj, xobj);
             } else if ("PS" == type.name) {
                 warn("(deprecated) PostScript XObjects are not supported");
             } else {
@@ -2022,27 +2088,26 @@ var CanvasGraphics = (function() {
             }
         },
 
-        paintFormXObject: function(form) {
+        paintFormXObject: function(ref, stream) {
             this.save();
 
-            var matrix = form.dict.get("Matrix");
+            var matrix = stream.dict.get("Matrix");
             if (matrix && IsArray(matrix) && 6 == matrix.length)
                 this.transform.apply(this, matrix);
 
-            var bbox = form.dict.get("BBox");
+            var bbox = stream.dict.get("BBox");
             if (bbox && IsArray(bbox) && 4 == bbox.length) {
                 this.rectangle.apply(this, bbox);
                 this.clip();
                 this.endPath();
             }
 
-            this.interpret(new Parser(new Lexer(form), false),
-                           this.xref, form.dict.get("Resources"));
+            this.execute(ref.code, this.xref, stream.dict.get("Resources"));
 
             this.restore();
         },
 
-        paintImageXObject: function(image, inline) {
+        paintImageXObject: function(ref, image, inline) {
             this.save();
             if (image.getParams) {
                 // JPX/JPEG2000 streams directly contain bits per component

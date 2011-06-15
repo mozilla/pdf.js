@@ -95,11 +95,20 @@ function displayPage(num) {
     ctx.restore();
 
     var gfx = new CanvasGraphics(ctx);
-    page.display(gfx);
+
+    // page.compile will collect all fonts for us, once we have loaded them
+    // we can trigger the actual page rendering with page.display
+    var fonts = [];
+    page.compile(gfx, fonts);
 
     var t2 = Date.now();
 
-    infoDisplay.innerHTML = "Time to render: "+ (t1 - t0) + "/" + (t2 - t1) + " ms";
+    // This should be called when font loading is complete
+    page.display(gfx);
+
+    var t3 = Date.now();
+
+    infoDisplay.innerHTML = "Time to load/compile/render: "+ (t1 - t0) + "/" + (t2 - t1) + "/" + (t3 - t2) + " ms";
 }
 
 function nextPage() {
