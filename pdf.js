@@ -1689,8 +1689,7 @@ var CanvasGraphics = (function() {
             var savedXref = this.xref, savedRes = this.res, savedXobjs = this.xobjs;
             this.xref = xref;
             this.res = resources || new Dict();
-            this.xobjs = this.res.get("XObject") || new Dict();
-            this.xobjs = this.xref.fetchIfRef(this.xobjs);
+            this.xobjs = xref.fetchIfRef(this.res.get("XObject")) || new Dict();
 
             stream.execute(this);
 
@@ -1700,6 +1699,8 @@ var CanvasGraphics = (function() {
         },
 
         compile: function(stream, xref, resources) {
+            var xobjs = xref.fetchIfRef(resources.get("XObject")) || new Dict();
+
             var parser = new Parser(new Lexer(stream), false);
             var objpool = [];
 
@@ -1723,6 +1724,22 @@ var CanvasGraphics = (function() {
                     var fn = map[cmd];
                     assertWellFormed(fn, "Unknown command '" + cmd + "'");
                     // TODO figure out how to type-check vararg functions
+
+                    if (cmd == "Do") { // eagerly compile XForm objects
+                        var name = args[0].name;
+                        var xobj = xobjs.get(name);
+                        if (xobj) {
+                            xobj = xref.fetchIfRef(xobj);
+                            assertWellFormed(IsStream(xobj), "XObject should be a stream");
+
+                            var type = xobj.dict.get("Subtype");
+                            assertWellFormed(IsName(type), "XObject should have a Name subtype");
+
+                            if ("Form" == type.name) {
+                                this.compile(xobj, xref, xobj.dict.get("Resources"));
+                            }
+                        }
+                    }
 
                     src += "this.";
                     src += fn;
