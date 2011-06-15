@@ -1373,8 +1373,8 @@ var Page = (function() {
     }
 
     constructor.prototype = {
-        get contents() {
-            return shadow(this, "contents", this.pageDict.get("Contents"));
+        get content() {
+            return shadow(this, "content", this.pageDict.get("Contents"));
         },
         get resources() {
             return shadow(this, "resources", this.pageDict.get("Resources"));
@@ -1387,16 +1387,16 @@ var Page = (function() {
         },
         display: function(gfx) {
             var xref = this.xref;
-            var contents = xref.fetchIfRef(this.contents);
+            var content = xref.fetchIfRef(this.content);
             var resources = xref.fetchIfRef(this.resources);
             var mediaBox = xref.fetchIfRef(this.mediaBox);
-            assertWellFormed(IsStream(contents) && IsDict(resources),
-                             "invalid page contents or resources");
+            assertWellFormed(IsStream(content) && IsDict(resources),
+                             "invalid page content or resources");
             gfx.beginDrawing({ x: mediaBox[0], y: mediaBox[1],
                                width: mediaBox[2] - mediaBox[0],
                                height: mediaBox[3] - mediaBox[1] });
             if (!this.code)
-                this.code = gfx.compile(contents, xref, resources);
+                this.code = gfx.compile(content, xref, resources);
             gfx.execute(this.code, xref, resources);
             gfx.endDrawing();
         }
