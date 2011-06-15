@@ -85,7 +85,9 @@ function displayPage(num) {
         // Check if the font has been loaded or is still loading
         var font = Fonts[fontName];
         if (!font) {
-            var fontFile = xref.fetchIfRef(descriptor.get2("FontFile", "FontFile2"));
+            var fontFile = descriptor.get2("FontFile", "FontFile2");
+            fontFile = xref.fetchIfRef(fontFile);
+
             // Generate the custom cmap of the font if needed
             var encodingMap = {};
             if (fontDict.has("Encoding")) {

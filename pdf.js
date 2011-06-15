@@ -52,7 +52,7 @@ var Stream = (function() {
         this.bytes = new Uint8Array(arrayBuffer);
         this.start = start || 0;
         this.pos = this.start;
-        this.end = (start + length) || arrayBuffer.byteLength;
+        this.end = (start + length) || this.bytes.byteLength;
         this.dict = dict;
     }
 
@@ -1411,11 +1411,13 @@ var Page = (function() {
             var resources = xref.fetchIfRef(this.resources);
             var fontsDict = new Dict();
 
-            // Get the fonts use on the page
+            // Get the fonts use on the page if any
             var fontResources = resources.get("Font");
-            fontResources.forEach(function(fontKey, fontData) {
-              fontsDict.set(fontKey, xref.fetch(fontData))
-            });
+            if (IsDict(fontResources)) {
+              fontResources.forEach(function(fontKey, fontData) {
+                fontsDict.set(fontKey, xref.fetch(fontData))
+              });
+            }
 
             // Get the fonts use on xobjects of the page if any
             var xobjs = xref.fetchIfRef(resources.get("XObject"));
@@ -1864,7 +1866,11 @@ var CanvasGraphics = (function() {
             this.current.leading = leading;
         },
         setFont: function(fontRef, size) {
-            var font = this.res.get("Font").get(fontRef.name);
+            var font = this.res.get("Font");
+            if (!IsDict(font))
+              return;
+
+            font = font.get(fontRef.name);
             font = this.xref.fetchIfRef(font);
             if (!font)
                 return;
