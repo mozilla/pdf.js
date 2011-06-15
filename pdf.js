@@ -1395,7 +1395,9 @@ var Page = (function() {
             gfx.beginDrawing({ x: mediaBox[0], y: mediaBox[1],
                                width: mediaBox[2] - mediaBox[0],
                                height: mediaBox[3] - mediaBox[1] });
-            gfx.execute(contents, xref, resources);
+            if (!this.code)
+                this.code = gfx.compile(contents, xref, resources);
+            gfx.execute(this.code, xref, resources);
             gfx.endDrawing();
         }
     };
@@ -1682,16 +1684,13 @@ var CanvasGraphics = (function() {
             this.ctx.translate(0, -mediaBox.height);
         },
 
-        execute: function(stream, xref, resources) {
-            if (!stream.execute)
-                stream.execute = this.compile(stream, xref, resources);
-
+        execute: function(code, xref, resources) {
             var savedXref = this.xref, savedRes = this.res, savedXobjs = this.xobjs;
             this.xref = xref;
             this.res = resources || new Dict();
             this.xobjs = xref.fetchIfRef(this.res.get("XObject")) || new Dict();
 
-            stream.execute(this);
+            code(this);
 
             this.xobjs = savedXobjs;
             this.res = savedRes;
@@ -1699,6 +1698,7 @@ var CanvasGraphics = (function() {
         },
 
         compile: function(stream, xref, resources) {
+            console.log("compiling");
             var xobjs = xref.fetchIfRef(resources.get("XObject")) || new Dict();
 
             var parser = new Parser(new Lexer(stream), false);
@@ -1725,7 +1725,7 @@ var CanvasGraphics = (function() {
                     assertWellFormed(fn, "Unknown command '" + cmd + "'");
                     // TODO figure out how to type-check vararg functions
 
-                    if (cmd == "Do") { // eagerly compile XForm objects
+                    if (cmd == "Do" && !args[0].code) { // eagerly compile XForm objects
                         var name = args[0].name;
                         var xobj = xobjs.get(name);
                         if (xobj) {
@@ -1736,7 +1736,7 @@ var CanvasGraphics = (function() {
                             assertWellFormed(IsName(type), "XObject should have a Name subtype");
 
                             if ("Form" == type.name) {
-                                this.compile(xobj, xref, xobj.dict.get("Resources"));
+                                args[0].code = this.compile(xobj, xref, xobj.dict.get("Resources"));
                             }
                         }
                     }
@@ -2050,9 +2050,9 @@ var CanvasGraphics = (function() {
             var type = xobj.dict.get("Subtype");
             assertWellFormed(IsName(type), "XObject should have a Name subtype");
             if ("Image" == type.name) {
-                this.paintImageXObject(xobj, false);
+                this.paintImageXObject(obj, xobj, false);
             } else if ("Form" == type.name) {
-                this.paintFormXObject(xobj);
+                this.paintFormXObject(obj, xobj);
             } else if ("PS" == type.name) {
                 warn("(deprecated) PostScript XObjects are not supported");
             } else {
@@ -2060,25 +2060,26 @@ var CanvasGraphics = (function() {
             }
         },
 
-        paintFormXObject: function(form) {
+        paintFormXObject: function(ref, stream) {
             this.save();
 
-            var matrix = form.dict.get("Matrix");
+            var matrix = stream.dict.get("Matrix");
             if (matrix && IsArray(matrix) && 6 == matrix.length)
                 this.transform.apply(this, matrix);
 
-            var bbox = form.dict.get("BBox");
+            var bbox = stream.dict.get("BBox");
             if (bbox && IsArray(bbox) && 4 == bbox.length) {
                 this.rectangle.apply(this, bbox);
                 this.clip();
                 this.endPath();
             }
-            this.execute(form, this.xref, form.dict.get("Resources"));
+
+            this.execute(ref.code, this.xref, stream.dict.get("Resources"));
 
             this.restore();
         },
 
-        paintImageXObject: function(image, inline) {
+        paintImageXObject: function(ref, image, inline) {
             this.save();
             if (image.getParams) {
                 // JPX/JPEG2000 streams directly contain bits per component
