@@ -590,7 +590,7 @@ function IsString(v) {
 }
 
 function IsNull(v) {
-    return v == null;
+    return v === null;
 }
 
 function IsName(v) {
@@ -615,27 +615,6 @@ function IsStream(v) {
 
 function IsRef(v) {
     return v instanceof Ref;
-}
-
-function IsFunction(v) {
-    var fnDict;
-    if (typeof v != "object")
-        return false;
-    else if (IsDict(v))
-        fnDict = v;
-    else if (IsStream(v))
-        fnDict = v.dict;
-    else
-        return false;
-    return fnDict.has("FunctionType");
-}
-
-function IsFunctionDict(v) {
-    return IsFunction(v) && IsDict(v);
-}
-
-function IsFunctionStream(v) {
-    return IsFunction(v) && IsStream(v);
 }
 
 var EOF = {};
@@ -841,10 +820,12 @@ var Lexer = (function() {
                 ch = stream.getChar();
                 if (ch == '>') {
                     break;
-                } else if (!ch) {
+                }
+                if (!ch) {
                     warn("Unterminated hex string");
                     break;
-                } else if (specialChars[ch.charCodeAt(0)] != 1) {
+                }
+                if (specialChars[ch.charCodeAt(0)] != 1) {
                     var x, x2;
                     if (((x = ToHexDigit(ch)) == -1) ||
                         ((x2 = ToHexDigit(stream.getChar())) == -1)) {
@@ -1722,7 +1703,7 @@ var CanvasGraphics = (function() {
                 return arg;
             }
 
-            var src = "{\n";
+            var src = "";
 
             var args = [];
             var map = this.map;
@@ -1781,9 +1762,7 @@ var CanvasGraphics = (function() {
                 }
             }
 
-            src += "}";
-
-            var fn = new Function("objpool", src);
+            var fn = Function("objpool", src);
             return function (gfx) { fn.call(gfx, objpool); };
         },
 
