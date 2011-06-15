@@ -1825,7 +1825,8 @@ var CanvasGraphics = (function() {
             this.ctx.miterLimit = limit;
         },
         setDash: function(dashArray, dashPhase) {
-            TODO("set dash");
+            this.ctx.mozDash = dashArray;
+            this.ctx.mozDashOffset = dashPhase;
         },
         setRenderingIntent: function(intent) {
             TODO("set rendering intent");
