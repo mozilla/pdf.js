@@ -1677,6 +1677,10 @@ var CanvasGraphics = (function() {
     const EO_CLIP = {};
 
     constructor.prototype = {
+        translateFont: function(fontDict) {
+            return fontDict;
+        },
+
         beginDrawing: function(mediaBox) {
             var cw = this.ctx.canvas.width, ch = this.ctx.canvas.height;
             this.ctx.save();
@@ -1698,7 +1702,6 @@ var CanvasGraphics = (function() {
         },
 
         compile: function(stream, xref, resources) {
-            console.log("compiling");
             var xobjs = xref.fetchIfRef(resources.get("XObject")) || new Dict();
 
             var parser = new Parser(new Lexer(stream), false);
@@ -1738,6 +1741,15 @@ var CanvasGraphics = (function() {
                             if ("Form" == type.name) {
                                 args[0].code = this.compile(xobj, xref, xobj.dict.get("Resources"));
                             }
+                        }
+                    } else if (cmd == "Tf") { // eagerly collect all fonts
+                        var fontRes = resources.get("Font");
+                        if (fontRes) {
+                            fontRes = xref.fetchIfRef(fontRes);
+                            var font = xref.fetchIfRef(fontRes.get(args[0].name));
+                            assertWellFormed(IsDict(font));
+                            if (!font.translated)
+                                font.translated = this.translateFont(font);
                         }
                     }
 
