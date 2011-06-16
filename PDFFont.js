@@ -31,7 +31,7 @@ var fontCount = 0;
 var Fonts = {
   _active: null,
   get active() {
-    return this._active || { encoding: {} };
+    return this._active || { encoding: [] };
   },
 
   set active(aName) {
