@@ -1,7 +1,7 @@
 /* -*- Mode: Java; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- /
 /* vim: set shiftwidth=4 tabstop=8 autoindent cindent expandtab: */
 
-var pdfDocument, canvas, pageDisplay, pageNum, pageTimeout;
+var pdfDocument, canvas, pageDisplay, pageNum, pageInterval;
 function load() {
     canvas = document.getElementById("canvas");
     canvas.mozOpaque = true;
@@ -48,7 +48,7 @@ function gotoPage(num) {
 
 function displayPage(num) {
     if (pageNum != num)
-      window.clearTimeout(pageTimeout);
+      window.clearTimeout(pageInterval);
 
     document.getElementById("pageNumber").value = num;
 
@@ -57,7 +57,6 @@ function displayPage(num) {
     var page = pdfDocument.getPage(pageNum = num);
 
     var t1 = Date.now();
-
     var ctx = canvas.getContext("2d");
     ctx.save();
     ctx.fillStyle = "rgb(255, 255, 255)";
@@ -73,17 +72,21 @@ function displayPage(num) {
     page.compile(gfx, fonts);
     var t2 = Date.now();
 
-    var interval = setInterval(function() {
+    // FIXME This need to be replaced by an event
+    pageInterval = setInterval(function() {
         for (var i = 0; i < fonts.length; i++) {
             if (fonts[i].loading)
                 return;
         }
-
-        page.display(gfx);
         var t3 = Date.now();
+
+        clearInterval(pageInterval);
+        page.display(gfx);
+
+        var t4 = Date.now();
+
         var infoDisplay = document.getElementById("info");
-        infoDisplay.innerHTML = "Time to load/compile/render: "+ (t1 - t0) + "/" + (t2 - t1) + "/" + (t3 - t2) + " ms";
-        clearInterval(interval);
+        infoDisplay.innerHTML = "Time to load/compile/fonts/render: "+ (t1 - t0) + "/" + (t2 - t1) + "/" + (t3 - t2) + "/" + (t4 - t3) + " ms";
     }, 10);
 }
 

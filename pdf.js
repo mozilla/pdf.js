@@ -795,7 +795,6 @@ var Lexer = (function() {
                             }
                         }
 
-                        x = Fonts.unicodeFromCode(x);
                         str += String.fromCharCode(x);
                         break;
                     case '\r':
@@ -811,8 +810,7 @@ var Lexer = (function() {
                     }
                     break;
                 default:
-                    var unicode = Fonts.unicodeFromCode(ch.charCodeAt(0));
-                    str += String.fromCharCode(unicode);
+                    str += ch;
                     break;
                 }
             } while (!done);
@@ -1730,7 +1728,7 @@ var CanvasGraphics = (function() {
             var descriptor = xref.fetch(fontDict.get("FontDescriptor"));
             var fontName = descriptor.get("FontName").name;
             fontName = fontName.replace("+", "_");
-            
+
             var font = Fonts[fontName];
             if (!font) {
                 var fontFile = descriptor.get2("FontFile", "FontFile2");
@@ -1760,7 +1758,7 @@ var CanvasGraphics = (function() {
                       for (var j = 0; j < widths.length; j++) {
                           var index = widths[j];
                           if (index)
-                          charset.push(encoding[j + firstchar]);
+                              charset.push(encoding[j + firstchar]);
                       }
                   }
               }
@@ -2054,7 +2052,12 @@ var CanvasGraphics = (function() {
             this.ctx.scale(1, -1);
             this.ctx.transform.apply(this.ctx, this.current.textMatrix);
 
-            this.ctx.fillText(text, this.current.x, this.current.y);
+            // Replace characters code by glyphs code
+            var glyphs = [];
+            for (var i = 0; i < text.length; i++)
+              glyphs[i] = String.fromCharCode(Fonts.unicodeFromCode(text[i].charCodeAt(0)));
+
+            this.ctx.fillText(glyphs.join(""), this.current.x, this.current.y);
             this.current.x += this.ctx.measureText(text).width;
 
             this.ctx.restore();
