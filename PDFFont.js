@@ -16,10 +16,10 @@ var kMaxGlyphsCount = 65526;
  */
 var kMaxWaitForFontFace = 1000;
 
- /*
-  * Useful for debugging when you want to certains operations depending on how
-  * many fonts are loaded.
-  */
+/**
+ * Useful for debugging when you want to certains operations depending on how
+ * many fonts are loaded.
+ */
 var fontCount = 0;
 
 /**
@@ -55,7 +55,7 @@ var Fonts = {
  * As an improvment the last parameter can be replaced by an automatic guess
  * of the font type based on the first byte of the file.
  *
- * XXX There is now too many parameters, this should be turned into an
+ * FIXME There is now too many parameters, this should be turned into an
  * object containing all the required informations about the font
  */
 var Font = function(aName, aFile, aEncoding, aCharset, aBBox, aType) {
@@ -110,6 +110,15 @@ var Font = function(aName, aFile, aEncoding, aCharset, aBBox, aType) {
   this.bind();
 };
 
+
+/**
+ * A bunch of the OpenType code is duplicate between this class and the
+ * TrueType code, this is intentional and will merge in a future version
+ * where all the code relative to OpenType will probably have its own
+ * class and will take decision without the Fonts consent.
+ * But at the moment it allows to develop around the TrueType rewriting
+ * on the fly without messing up with the 'regular' Type1 to OTF conversion.
+ */
 Font.prototype = {
   name: null,
   font: null,
@@ -477,7 +486,6 @@ Font.prototype = {
     /** HMTX */
     hmtx = [0x01, 0xF4, 0x00, 0x00];
     for (var i = 0; i < charstrings.length; i++) {
-      // XXX this can easily broke
       var charstring = charstrings[i].charstring;
       var width = FontsUtils.integerToBytes(charstring[1], 2);
       var lsb = FontsUtils.integerToBytes(charstring[0], 2);
@@ -503,7 +511,7 @@ Font.prototype = {
     this._createTableEntry(otf, offsets, "name", name);
 
     /** POST */
-    // XXX get those info from the Font dict!
+    // FIXME Get those informations from the FontInfo structure
     post = [
       0x00, 0x03, 0x00, 0x00, // Version number
       0x00, 0x00, 0x01, 0x00, // italicAngle
@@ -528,13 +536,15 @@ Font.prototype = {
     var fontData = [];
     for (var i = 0; i < offsets.currentOffset; i++)
       fontData.push(otf[i]);
-
-    //writeToFile(fontData, "/tmp/pdf.js." + fontCount + ".otf");
     return fontData;
   }
 };
 
 
+/**
+ * FontsUtils is a static class dedicated to hold codes that are not related
+ * to fonts in particular and needs to be share between them.
+ */
 var FontsUtils = {
   integerToBytes: function fu_integerToBytes(aValue, aBytesCount) {
     var bytes = [];
@@ -549,7 +559,7 @@ var FontsUtils = {
     return bytes;
   },
 
-  bytesToInteger: function(aBytesArray) {
+  bytesToInteger: function fu_bytesToInteger(aBytesArray) {
     var value = 0;
     for (var i = 0; i < aBytesArray.length; i++)
       value = (value << 8) + aBytesArray[i];
@@ -575,9 +585,14 @@ var FontsUtils = {
 /** Implementation dirty logic starts here */
 
 /**
- * At the moment TrueType is just a stub that does mostly nothing but in a
- * (near?) future this class will rewrite the font to ensure it is well formed
- * and valid in the point of view of the sanitizer.
+ * The TrueType class verify that the ttf embedded inside the PDF is correct in
+ * the point of view of the OTS sanitizer and rewrite it on the fly otherwise.
+ *
+ * At the moment the rewiting only support rewriting missing 'OS/2' table.
+ * This class is unused at the moment since the 'cmap' table of the test 
+ * document is not missing but use and old version of the 'cmap' table that
+ * is deprecated and  not supported by the sanitizer...
+ *
  */
 var TrueType = function(aFile) {
   var header = this._readOpenTypeHeader(aFile);
@@ -604,6 +619,8 @@ var TrueType = function(aFile) {
 
     tables.push(table);
   }
+
+  // Tables needs to be written by ascendant alphabetic order
   tables.sort(function(a, b) {
     return a.tag > b.tag;
   });
@@ -714,7 +731,6 @@ var TrueType = function(aFile) {
       fontData.push(ttf[i]);
 
     this.data = ttf;
-    //writeToFile(fontData, "/tmp/pdf.js." + fontCount + ".ttf");
     return;
   } else if (requiredTables.lenght) {
     error("Table " + requiredTables[0] + " is missing from the TruType font");
@@ -824,6 +840,7 @@ TrueType.prototype = {
     }
   }
 };
+
 
 /**
  * This dictionary holds decoded fonts data.
@@ -954,19 +971,58 @@ var Type1Parser = function() {
     "6": "hlineto",
     "7": "vlineto",
     "8": "rrcurveto",
-    "9": "closepath",
+
+    // closepath is a Type1 command that do not take argument and is useless
+    // in Type2 and it can simply be ignored.
+    "9": null, // closepath
+
     "10": "callsubr",
+
+    // return is normally used inside sub-routines to tells to the execution
+    // flow that it can be back to normal.
+    // During the translation process Type1 charstrings will be flattened and
+    // sub-routines will be embedded directly into the charstring directly, so
+    // this can be ignored safely.
     "11": "return",
+
     "12": {
-      "0": "dotsection",
-      "1": "vstem3",
-      "3": "hstem3",
-      "6": "seac",
-      "7": "sbw",
+      // dotsection is a Type1 command to specify some hinting feature for dots
+      // that do not take a parameter and it can safely be ignored for Type2.
+      "0": null, // dotsection
+
+      // [vh]stem3 are Type1 only and Type2 supports [vh]stem with multiple
+      // parameters, so instead of returning [vh]stem3 take a shortcut and
+      // return [vhstem] instead.
+      "1": "vstem",
+      "2": "hstem",
+
+      // Type1 only command with command not (yet) built-in ,throw an error
+      "6": -1, // seac
+      "7": -1, //sbw
+
       "12": "div",
+
+      // callothersubr is a mechanism to make calls on the postscript
+      // interpreter.
+      // TODO When decodeCharstring encounter such a command it should
+      //      directly do:
+      //        - pop the previous charstring[] command into 'index'
+      //        - pop the previous charstring[] command and ignore it, it is
+      //          normally the number of element to push on the stack before
+      //          the command but since everything will be pushed on the stack
+      //          by the PS interpreter when it will read them that is safe to
+      //          ignore this command
+      //        - push the content of the OtherSubrs[index] inside charstring[]
       "16": "callothersubr",
+
       "17": "pop",
-      "33": "setcurrentpoint"
+
+      // setcurrentpoint sets the current point to x, y without performing a
+      // moveto (this is a one shot positionning command). This is used only
+      // with the return of an OtherSubrs call.
+      // TODO Implement the OtherSubrs charstring embedding and replace this
+      //      call by a no-op, like 2 'pop' commands for example.
+      "33": null, //setcurrentpoint
     },
     "13": "hsbw",
     "14": "endchar",
@@ -986,12 +1042,27 @@ var Type1Parser = function() {
       value = aStream.getByte();
 
       if (value < 32) {
+        var command = null;
         if (value == 12) {
-          value = charStringDictionary["12"][aStream.getByte()];
+          var escape = aStream.getByte();
+          command = charStringDictionary["12"][escape];
           i++;
         } else {
-          value = charStringDictionary[value];
+          command = charStringDictionary[value];
         }
+
+        // Some charstring commands are meaningless in Type2 and will return
+        // a null, let's just ignored them
+        if (!command && i < count)
+          continue;
+        else if (!command)
+          break;
+        else if (command == -1) {
+          log("decodeCharstring: " + charString);
+          error("Support for Type1 command " + value + " (" + escape + ") is not implemented");
+        }
+
+        value = command;
       } else if (value <= 246) {
         value = parseInt(value) - 139;
       } else if (value <= 250) {
@@ -1140,7 +1211,7 @@ var Type1Parser = function() {
    * Flatten the commands by interpreting the postscript code and replacing
    * every 'callsubr', 'callothersubr' by the real commands.
    * At the moment OtherSubrs are not fully supported and only otherSubrs 0-4
-   * as descrived in 'Using Subroutines' of 'Adobe Type 1 Font Format',
+   * as described in 'Using Subroutines' of 'Adobe Type 1 Font Format',
    * chapter 8.
    */
   this.flattenCharstring = function(aCharstring, aSubrs) {
@@ -1156,11 +1227,6 @@ var Type1Parser = function() {
         operandStack.push(obj);
       } else {
         switch (obj) {
-          case "vstem3":
-          case "hstem3":
-            operandStack.push(obj.slice(0, 5));
-            break;
-
           case "callsubr":
             var index = operandStack.pop();
             executionStack.push(aSubrs[index].slice());
@@ -1188,7 +1254,6 @@ var Type1Parser = function() {
             operandStack.pop();
             break;
 
-          case "closepath":
           case "return":
             break;
 
@@ -1206,13 +1271,6 @@ var Type1Parser = function() {
           case "endchar":
             operandStack.push("endchar");
             return operandStack.clone();
-
-          case "setcurrentpoint":
-          case "dotsection":
-          case "seac":
-          case "sbw":
-            error(obj + " parsing is not implemented (yet)");
-            break;
 
           default:
             operandStack.push(obj);
@@ -1345,6 +1403,20 @@ CFF.prototype = {
     var glyphs = [];
     var glyphsChecker = {};
     var subrs = aFontInfo.subrs;
+
+    // FIXME This code is actually the only reason the dummy PS Interpreter
+    //       called Type1Parser continue to lives, basically the goal here is
+    //       to embed the OtherSubrs/Subrs into the charstring directly.
+    //       But since Type2 charstrings use a bias to index Subrs and can
+    //       theorically store twice the number of Type1 we could directly
+    //       save the OtherSubrs and Subrs in the Type2 table for Subrs
+    //       and avoid this 'flattening' slow method.
+    //
+    //       The other thinds done by this method is splitting the initial
+    //       'width lsb hswb' command of Type1 to something similar in Type2
+    //       that is: 'width dx moveto' but this can be done in the
+    //       decodeCharstring method directly (maybe one day it will be called
+    //       translateCharstring?)
     var parser = new Type1Parser();
     for (var i = 0; i < charstrings.length; i++) {
       var charstring = charstrings[i].charstring.slice();
@@ -1417,7 +1489,11 @@ CFF.prototype = {
       "hvcurveto": 31,
     };
 
-    // Encode the glyph and add it to the FUX
+    // FIXME Concatenating array with this algorithm (O²) is expensive and
+    //       can be avoided if the voodoo's dance of charstrings decoding
+    //       encoding is left for dead. Actually charstrings command number
+    //       are converted to a string and then back to a number with the
+    //       next few lines of code...
     var r = [[0x40, 0x0E]];
     for (var i = 0; i < glyphs.length; i++) {
       var data = glyphs[i].slice();
@@ -1427,7 +1503,7 @@ CFF.prototype = {
         if (!IsNum(c)) {
           var token = getNumFor[c];
           if (!token)
-            error(c);
+            error("Token " + c + " is not recognized in charstring " + data);
           charstring.push(token);
         } else {
           try {
@@ -1444,7 +1520,6 @@ CFF.prototype = {
 
     var charstringsIndex = this.createCFFIndexHeader(r, true);
     charstringsIndex = charstringsIndex.join(" ").split(" "); // XXX why?
-
 
     //Top Dict Index
     var topDictIndex = [
@@ -1480,25 +1555,17 @@ CFF.prototype = {
     topDictIndex.push(18); // Private
     topDictIndex = topDictIndex.join(" ").split(" ");
 
-    // Top Dict Index
-    cff.set(topDictIndex, currentOffset);
-    currentOffset += topDictIndex.length;
+    var indexes = [
+      topDictIndex, stringsIndex,
+      globalSubrsIndex, charset,
+      charstringsIndex
+    ];
 
-    // Strings Index
-    cff.set(stringsIndex, currentOffset);
-    currentOffset += stringsIndex.length;
-
-    // Global Subrs Index
-    cff.set(globalSubrsIndex, currentOffset);
-    currentOffset += globalSubrsIndex.length;
-
-    // Charset Index
-    cff.set(charset, currentOffset);
-    currentOffset += charset.length;
-
-    // Fill charstrings data
-    cff.set(charstringsIndex, currentOffset);
-    currentOffset += charstringsIndex.length;
+    for (var i = 0; i < indexes.length; i++) {
+      var index = indexes[i];
+      cff.set(index, currentOffset);
+      currentOffset += index.length;
+    }
 
     // Private Data
     var defaultWidth = this.encodeNumber(0);
@@ -1532,18 +1599,9 @@ CFF.prototype = {
     cff.set(shit, currentOffset);
     currentOffset += shit.length;
 
-
-    dump("==================== debug ====================");
-    //var file = new Uint8Array(cff, 0, currentOffset);
-    //var parser = new Type2Parser();
-    //parser.parse(new Stream(file));
-
     var fontData = [];
     for (var i = 0; i < currentOffset; i++)
       fontData.push(cff[i]);
-
-    //log("== write to file");
-    //writeToFile(fontData, "/tmp/pdf.js." + fontCount + ".cff");
 
     return fontData;
   }

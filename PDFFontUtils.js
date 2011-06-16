@@ -349,13 +349,26 @@ var Type2Parser = function(aFilePath) {
 };
 
 /*
-var cff = new Type2Parser("test.cff");
-cff.parse();
-*/
+ * To try the Type2 decoder on a local file in the current directory:
+ *
+ *  var cff = new Type2Parser("file.cff");
+ *  cff.parse(this.data);
+ *
+ * To try the Type2 decoder on a custom built CFF array:
+ *
+ *  var file = new Uint8Array(cffFileArray, 0, cffFileSize);
+ *  var parser = new Type2Parser();
+ *  parser.parse(new Stream(file));
+ *
+ */
 
 
 /**
- * Write to a file (works only on Firefox in privilege mode");
+ * Write to a file to the disk (works only on Firefox in privilege mode)
+ * but this is useful for dumping a font file to the disk and check with
+ * fontforge or the ots program what's wrong with the file.
+ *
+ * writeToFile(fontData, "/tmp/pdf.js." + fontCount + ".cff");
  */
 function writeToFile(aBytes, aFilePath) {
   netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
