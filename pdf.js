@@ -1590,8 +1590,38 @@ var CanvasExtraState = (function() {
         // Start of text line (in text coordinates)
         this.lineX = 0.0;
         this.lineY = 0.0;
+
+        this.transMatrix = IDENTITY_MATRIX;
     }
     constructor.prototype = {
+        applyTransform: function(point) {
+            var m = this.transMatrix
+            var x = point[0] * m[0] + point[1] * m[2] + m[4];
+            var y = point[0] * m[1] + point[1] * m[3] + m[5];
+            return [x,y];
+        },
+        concatTransform: function(m) {
+            var tm = this.transMatrix;
+
+            var a = m[0] * tm[0] + m[1] * tm[2];
+            var b = m[0] * tm[1] + m[1] * tm[3];
+            var c = m[2] * tm[0] + m[3] * tm[2];
+            var d = m[2] * tm[1] + m[3] * tm[3];
+            var e = m[4] * tm[0] + m[5] * tm[2] + tm[4];
+            var f = m[4] * tm[1] + m[5] * tm[3] + tm[5];
+            this.transMatrix = [a, b, c, d, e, f]
+        },
+        getInvTransform: function(matrix) {
+            var m = this.transMatrix;
+            var det = 1 / (m[0] * m[3] - m[1] * m[2]);
+            var a = m[3] * det;
+            var b = -m[1] * det;
+            var c = -m[2] * det;
+            var d = m[0] * det;
+            var e = (m[2] * m[5] - m[3] * m[4]) * det;
+            var f = (m[1] * m[4] - m[0] * m[5]) * det;
+            return [a, b, c, d, e, f]
+        }
     };
     return constructor;
 })();
@@ -1851,6 +1881,7 @@ var CanvasGraphics = (function() {
         },
         transform: function(a, b, c, d, e, f) {
             this.ctx.transform(a, b, c, d, e, f);
+            this.current.concatTransform([a,b,c,d,e,f]);
         },
 
         // Path
@@ -2023,6 +2054,11 @@ var CanvasGraphics = (function() {
         },
         setFillColorSpace: function(space) {
             // TODO real impl
+            if (space.name === "Pattern") {
+                this.colorspace = "Pattern";
+            } else {
+                this.colorspace = null;
+            }
         },
         setStrokeColor: function(/*...*/) {
             // TODO real impl
@@ -2046,7 +2082,104 @@ var CanvasGraphics = (function() {
         },
         setFillColorN: function(/*...*/) {
             // TODO real impl
-            this.setFillColor.apply(this, arguments);
+            var args = arguments;
+            if (this.colorspace == "Pattern") {
+                var patternName = args[0];
+                if (IsName(patternName)) {
+                    var xref = this.xref;
+                    var patternRes = xref.fetchIfRef(this.res.get("Pattern"));
+                    if (!patternRes)
+                        error("Unable to find pattern resource");
+
+                    var pattern = xref.fetchIfRef(patternRes.get(patternName.name));
+                    
+                    var type = pattern.dict.get("PatternType");
+                    if (type === 1) {
+                        this.tilingFill(pattern);
+                    } else {
+                        error("Unhandled pattern type");
+                    }
+                }
+            } else {
+                // TODO real impl
+                this.setFillColor.apply(this, arguments);
+            }
+        },
+        tilingFill: function(pattern) {
+            this.save();
+            var dict = pattern.dict;
+
+            var paintType = dict.get("PaintType");
+            if (paintType == 2) {
+                error("Unsupported paint type");
+            } else {
+                // should go to default for color space
+                this.ctx.fillStyle = this.makeCssRgb(1, 1, 1);
+                this.ctx.strokeStyle = this.makeCssRgb(0, 0, 0);
+            }
+
+            // not sure what to do with this
+            var tilingType = dict.get("TilingType");
+
+            var tempExtra = new CanvasExtraState();
+            var matrix = dict.get("Matrix");
+            if (matrix && IsArray(matrix) && 6 == matrix.length)
+                tempExtra.transMatrix = matrix;
+
+            var bbox = dict.get("BBox");
+            var x0 = bbox[0], y0 = bbox[1], x1 = bbox[2], y1 = bbox[3];
+
+            var xstep = dict.get("XStep");
+            var ystep = dict.get("YStep");
+
+            // top left corner should correspond to the top left of the bbox
+            var topLeft = tempExtra.applyTransform([x0,y0]);
+            // we want the canvas to be as large as the step size
+            var botRight = tempExtra.applyTransform([x0 + xstep, y0 + ystep]);
+            
+            var tmpCanvas = document.createElement("canvas");
+            tmpCanvas.width = Math.ceil(botRight[0] - topLeft[0]);
+            tmpCanvas.height = Math.ceil(botRight[1] - topLeft[1]);
+          
+            // set the new canvas element context as the graphics context
+            var tmpCtx = tmpCanvas.getContext("2d");
+            var oldCtx = this.ctx;
+            this.ctx = tmpCtx;
+
+            // normalize matrix transform so each step
+            // takes up the entire tmpCanvas
+            if (matrix[1] === 0 && matrix[2] === 0) {
+                matrix[0] = tmpCanvas.width / xstep;
+                matrix[3] = tmpCanvas.height / ystep;
+                tempExtra.transMatrix = matrix;
+                topLeft = tempExtra.applyTransform([x0,y0]);
+            }
+
+            // move the top left corner of bounding box to [0,0]
+            tempExtra.transMatrix = [1, 0, 0, 1, -topLeft[0], -topLeft[1]];
+            tempExtra.concatTransform(matrix);
+            matrix = tempExtra.transMatrix;
+
+            this.transform.apply(this, matrix);
+            
+            if (bbox && IsArray(bbox) && 4 == bbox.length) {
+                this.rectangle.apply(this, bbox);
+                this.clip();
+                this.endPath();
+            }
+
+            var xref = this.xref;
+            var res = xref.fetchIfRef(dict.get("Resources"));
+            if (!pattern.code)
+                pattern.code = this.compile(pattern, xref, res, []);
+            this.execute(pattern.code, xref, res);
+           
+            // set the old context
+            this.ctx = oldCtx;
+            this.restore();
+
+            var pattern = this.ctx.createPattern(tmpCanvas, "repeat");
+            this.ctx.fillStyle = pattern;
         },
         setStrokeGray: function(gray) {
             this.setStrokeRGBColor(gray, gray, gray);
