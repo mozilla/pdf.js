@@ -2134,6 +2134,10 @@ var CanvasGraphics = (function() {
             fn = new PDFFunction(this.xref, fnObj);
 
             var gradient = this.ctx.createLinearGradient(x0, y0, x1, y1);
+            
+            // 10 samples seems good enough for now, but probably won't work
+            // if there are sharp color changes. Ideally, we could see the 
+            // current image size and base the # samples on that.
             var step = (t1 - t0) / 10;
             
             for (var i = t0; i <= t1; i += step) {
@@ -2146,6 +2150,8 @@ var CanvasGraphics = (function() {
             // HACK to draw the gradient onto an infinite rectangle.
             // PDF gradients are drawn across the entire image while
             // Canvas only allows gradients to be drawn in a rectangle
+            // Also, larger numbers seem to cause overflow which causes
+            // nothing to be drawn.
             this.ctx.fillRect(-1e10, -1e10, 2e10, 2e10);
         },
 
