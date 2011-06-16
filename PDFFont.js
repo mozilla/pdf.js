@@ -31,7 +31,7 @@ var fontCount = 0;
 var Fonts = {
   _active: null,
   get active() {
-    return this._active;
+    return this._active || { encoding: {} };
   },
 
   set active(aFontName) {
@@ -39,12 +39,7 @@ var Fonts = {
   },
 
   unicodeFromCode: function fonts_unicodeFromCode(aCode) {
-    var active = this._active;
-    if (!active || !active.encoding)
-      return aCode;
-
-    var difference = active.encoding[aCode];
-    var unicode = GlyphsUnicode[difference];
+    var unicode = GlyphsUnicode[this.active.encoding[aCode]];
     return unicode ? "0x" + unicode : aCode;
   }
 };
@@ -84,6 +79,15 @@ var Font = function(aName, aFile, aEncoding, aCharset, aBBox, aType) {
       break;
 
     case "TrueType":
+      return Fonts[aName] = {
+        data: null,
+        encoding: {},
+        charset: null,
+        loading: false
+      };
+
+      // TrueType is disabled for the moment since the sanitizer prevent it
+      // from loading
       this.mimetype = "font/ttf";
       var ttf = new TrueType(aFile);
       this.font = ttf.data;
@@ -1140,9 +1144,7 @@ var Type1Parser = function() {
    * chapter 8.
    */
   this.flattenCharstring = function(aCharstring, aSubrs) {
-    var operandStackIndex = 0;
     operandStack.clear();
-
     executionStack.clear();
     executionStack.push(aCharstring.slice());
 
@@ -1434,8 +1436,7 @@ CFF.prototype = {
             log("Glyph " + i + " has a wrong value: " + c + " in charstring: " + data);
             log("the default value is glyph " + charstrings[i].glyph + " and is supposed to be: " + charstrings[i].charstring);
           }
-          for (var k = 0; k < bytes.length; k++)
-            charstring.push(bytes[k]);
+          charstring = charstring.concat(bytes);
         }
       }
       r.push(charstring);
@@ -1503,7 +1504,7 @@ CFF.prototype = {
     var defaultWidth = this.encodeNumber(0);
     var privateData = [].concat(
       defaultWidth, [20],
-      defaultWidth, [21],
+      [139, 21], // nominalWidth
       [
       119, 159, 248, 97, 159, 247, 87, 159, 6,
       30, 10, 3, 150, 37, 255, 12, 9,
