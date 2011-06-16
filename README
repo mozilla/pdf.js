@@ -1,3 +1,12 @@
 pdf.js is a technology demonstrator prototype to explore whether the HTML5
 platform is complete enough to faithfully and efficiently render the ISO
 32000-1:2008 Portable Document Format (PDF) without native code assistance.
+
+You can read more about pdf.js here:
+
+http://andreasgal.com/2011/06/15/pdf-js/
+http://blog.mozilla.com/cjones/2011/06/15/overview-of-pdf-js-guts/
+
+Or follow us on twitter: @pdfjs
+
+http://twitter.com/#!/pdfjs
