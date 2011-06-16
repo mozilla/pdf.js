@@ -607,7 +607,7 @@ function IsString(v) {
 }
 
 function IsNull(v) {
-    return v == null;
+    return v === null;
 }
 
 function IsName(v) {
@@ -634,7 +634,7 @@ function IsRef(v) {
     return v instanceof Ref;
 }
 
-function IsFunction(v) {
+function IsPDFFunction(v) {
     var fnDict;
     if (typeof v != "object")
         return false;
@@ -645,14 +645,6 @@ function IsFunction(v) {
     else
         return false;
     return fnDict.has("FunctionType");
-}
-
-function IsFunctionDict(v) {
-    return IsFunction(v) && IsDict(v);
-}
-
-function IsFunctionStream(v) {
-    return IsFunction(v) && IsStream(v);
 }
 
 var EOF = {};
@@ -861,10 +853,12 @@ var Lexer = (function() {
                 ch = stream.getChar();
                 if (ch == '>') {
                     break;
-                } else if (!ch) {
+                }
+                if (!ch) {
                     warn("Unterminated hex string");
                     break;
-                } else if (specialChars[ch.charCodeAt(0)] != 1) {
+                }
+                if (specialChars[ch.charCodeAt(0)] != 1) {
                     var x, x2;
                     if (((x = ToHexDigit(ch)) == -1) ||
                         ((x2 = ToHexDigit(stream.getChar())) == -1)) {
@@ -1394,8 +1388,8 @@ var Page = (function() {
     }
 
     constructor.prototype = {
-        get contents() {
-            return shadow(this, "contents", this.pageDict.get("Contents"));
+        get content() {
+            return shadow(this, "content", this.pageDict.get("Contents"));
         },
         get resources() {
             return shadow(this, "resources", this.pageDict.get("Resources"));
@@ -1406,47 +1400,25 @@ var Page = (function() {
                                              ? obj
                                              : null));
         },
-        get fonts() {
-            var xref = this.xref;
-            var resources = xref.fetchIfRef(this.resources);
-            var fontsDict = new Dict();
-
-            // Get the fonts use on the page if any
-            var fontResources = resources.get("Font");
-            if (IsDict(fontResources)) {
-              fontResources.forEach(function(fontKey, fontData) {
-                fontsDict.set(fontKey, xref.fetch(fontData))
-              });
+        compile: function(gfx, fonts) {
+            if (!this.code) {
+                var xref = this.xref;
+                var content = xref.fetchIfRef(this.content);
+                var resources = xref.fetchIfRef(this.resources);
+                this.code = gfx.compile(content, xref, resources, fonts);
             }
-
-            // Get the fonts use on xobjects of the page if any
-            var xobjs = xref.fetchIfRef(resources.get("XObject"));
-            if (xobjs) {
-              xobjs.forEach(function(key, xobj) {
-                xobj = xref.fetchIfRef(xobj);
-                assertWellFormed(IsStream(xobj), "XObject should be a stream");
-  
-                var xobjFonts = xobj.dict.get("Resources").get("Font");
-                xobjFonts.forEach(function(fontKey, fontData) {
-                  fontsDict.set(fontKey, xref.fetch(fontData))
-                });
-              });
-            }
-
-            return shadow(this, "fonts", fontsDict);
         },
         display: function(gfx) {
             var xref = this.xref;
-            var contents = xref.fetchIfRef(this.contents);
+            var content = xref.fetchIfRef(this.content);
             var resources = xref.fetchIfRef(this.resources);
             var mediaBox = xref.fetchIfRef(this.mediaBox);
-            assertWellFormed(IsStream(contents) && IsDict(resources),
-                             "invalid page contents or resources");
+            assertWellFormed(IsStream(content) && IsDict(resources),
+                             "invalid page content or resources");
             gfx.beginDrawing({ x: mediaBox[0], y: mediaBox[1],
                                width: mediaBox[2] - mediaBox[0],
                                height: mediaBox[3] - mediaBox[1] });
-            gfx.interpret(new Parser(new Lexer(contents), false),
-                          xref, resources);
+            gfx.execute(this.code, xref, resources);
             gfx.endDrawing();
         }
     };
@@ -1655,68 +1627,96 @@ var CanvasGraphics = (function() {
         this.xobjs = null;
         this.map = {
             // Graphics state
-            w: this.setLineWidth,
-            J: this.setLineCap,
-            j: this.setLineJoin,
-            d: this.setDash,
-            ri: this.setRenderingIntent,
-            i: this.setFlatness,
-            gs: this.setGState,
-            q: this.save,
-            Q: this.restore,
-            cm: this.transform,
+            w: "setLineWidth",
+            J: "setLineCap",
+            j: "setLineJoin",
+            M: "setMiterLimit",
+            d: "setDash",
+            ri: "setRenderingIntent",
+            i: "setFlatness",
+            gs: "setGState",
+            q: "save",
+            Q: "restore",
+            cm: "transform",
 
             // Path
-            m: this.moveTo,
-            l: this.lineTo,
-            c: this.curveTo,
-            h: this.closePath,
-            re: this.rectangle,
-            S: this.stroke,
-            f: this.fill,
-            "f*": this.eoFill,
-            B: this.fillStroke,
-            b: this.closeFillStroke,
-            n: this.endPath,
+            m: "moveTo",
+            l: "lineTo",
+            c: "curveTo",
+            v: "curveTo2",
+            y: "curveTo3",
+            h: "closePath",
+            re: "rectangle",
+            S: "stroke",
+            s: "closeStroke",
+            f: "fill",
+            "f*": "eoFill",
+            B: "fillStroke",
+            "B*": "eoFillStroke",
+            b: "closeFillStroke",
+            "b*": "closeEOFillStroke",
+            n: "endPath",
 
             // Clipping
-            W: this.clip,
-            "W*": this.eoClip,
+            W: "clip",
+            "W*": "eoClip",
 
             // Text
-            BT: this.beginText,
-            ET: this.endText,
-            TL: this.setLeading,
-            Tf: this.setFont,
-            Td: this.moveText,
-            Tm: this.setTextMatrix,
-            "T*": this.nextLine,
-            Tj: this.showText,
-            TJ: this.showSpacedText,
+            BT: "beginText",
+            ET: "endText",
+            Tc: "setCharSpacing",
+            Tw: "setWordSpacing",
+            Tz: "setHScale",
+            TL: "setLeading",
+            Tf: "setFont",
+            Tr: "setTextRenderingMode",
+            Ts: "setTextRise",
+            Td: "moveText",
+            TD: "setLeadingMoveText",
+            Tm: "setTextMatrix",
+            "T*": "nextLine",
+            Tj: "showText",
+            TJ: "showSpacedText",
+            "'": "nextLineShowText",
+            '"': "nextLineSetSpacingShowText",
 
             // Type3 fonts
+            d0: "setCharWidth",
+            d1: "setCharWidthAndBounds",
 
             // Color
-            CS: this.setStrokeColorSpace,
-            cs: this.setFillColorSpace,
-            SC: this.setStrokeColor,
-            SCN: this.setStrokeColorN,
-            sc: this.setFillColor,
-            scn: this.setFillColorN,
-            G: this.setStrokeGray,
-            g: this.setFillGray,
-            RG: this.setStrokeRGBColor,
-            rg: this.setFillRGBColor,
+            CS: "setStrokeColorSpace",
+            cs: "setFillColorSpace",
+            SC: "setStrokeColor",
+            SCN: "setStrokeColorN",
+            sc: "setFillColor",
+            scn: "setFillColorN",
+            G: "setStrokeGray",
+            g: "setFillGray",
+            RG: "setStrokeRGBColor",
+            rg: "setFillRGBColor",
+            K: "setStrokeCMYKColor",
+            k: "setFillCMYKColor",
 
             // Shading
-            sh: this.shadingFill,
+            sh: "shadingFill",
 
             // Images
+            BI: "beginInlineImage",
+
             // XObjects
-            Do: this.paintXObject,
+            Do: "paintXObject",
 
             // Marked content
+            MP: "markPoint",
+            DP: "markPointProps",
+            BMC: "beginMarkedContent",
+            BDC: "beginMarkedContentProps",
+            EMC: "endMarkedContent",
+
             // Compatibility
+            BX: "beginCompat",
+            EX: "endCompat",
         };
     }
 
@@ -1726,6 +1726,52 @@ var CanvasGraphics = (function() {
     const EO_CLIP = {};
 
     constructor.prototype = {
+        translateFont: function(fontDict, xref, resources) {
+            var descriptor = xref.fetch(fontDict.get("FontDescriptor"));
+            var fontName = descriptor.get("FontName").name;
+            fontName = fontName.replace("+", "_");
+            
+            var font = Fonts[fontName];
+            if (!font) {
+                var fontFile = descriptor.get2("FontFile", "FontFile2");
+                fontFile = xref.fetchIfRef(fontFile);
+
+                // Generate the custom cmap of the font if needed
+                var encodingMap = {};
+                if (fontDict.has("Encoding")) {
+                  var encoding = xref.fetchIfRef(fontDict.get("Encoding"));
+                  if (IsDict(encoding)) {
+                      // Build an map between codes and glyphs
+                      var differences = encoding.get("Differences");
+                      var index = 0;
+                      for (var j = 0; j < differences.length; j++) {
+                          var data = differences[j];
+                          IsNum(data) ? index = data : encodingMap[index++] = data;
+                      }
+
+                      // Get the font charset
+                      var charset = descriptor.get("CharSet").split("/");
+                  } else if (IsName(encoding)) {
+                      var encoding = Encodings[encoding];
+                      var widths = xref.fetchIfRef(fontDict.get("Widths"));
+                      var firstchar = xref.fetchIfRef(fontDict.get("FirstChar"));
+
+                      var charset = [];
+                      for (var j = 0; j < widths.length; j++) {
+                          var index = widths[j];
+                          if (index)
+                          charset.push(encoding[j + firstchar]);
+                      }
+                  }
+              }
+
+              var fontBBox = descriptor.get("FontBBox");
+              var subtype = fontDict.get("Subtype").name;
+              new Font(fontName, fontFile, encodingMap, charset, fontBBox, subtype);
+          }
+          return Fonts[fontName];
+        },
+
         beginDrawing: function(mediaBox) {
             var cw = this.ctx.canvas.width, ch = this.ctx.canvas.height;
             this.ctx.save();
@@ -1733,12 +1779,35 @@ var CanvasGraphics = (function() {
             this.ctx.translate(0, -mediaBox.height);
         },
 
-        interpret: function(parser, xref, resources) {
+        execute: function(code, xref, resources) {
             var savedXref = this.xref, savedRes = this.res, savedXobjs = this.xobjs;
             this.xref = xref;
             this.res = resources || new Dict();
-            this.xobjs = this.res.get("XObject") || new Dict();
-            this.xobjs = this.xref.fetchIfRef(this.xobjs);
+            this.xobjs = xref.fetchIfRef(this.res.get("XObject")) || new Dict();
+
+            code(this);
+
+            this.xobjs = savedXobjs;
+            this.res = savedRes;
+            this.xref = savedXref;
+        },
+
+        compile: function(stream, xref, resources, fonts) {
+            var xobjs = xref.fetchIfRef(resources.get("XObject")) || new Dict();
+
+            var parser = new Parser(new Lexer(stream), false);
+            var objpool = [];
+
+            function emitArg(arg) {
+                if (typeof arg == "object" || typeof arg == "string") {
+                    var index = objpool.length;
+                    objpool[index] = arg;
+                    return "objpool[" + index + "]";
+                }
+                return arg;
+            }
+
+            var src = "";
 
             var args = [];
             var map = this.map;
@@ -1749,7 +1818,46 @@ var CanvasGraphics = (function() {
                     var fn = map[cmd];
                     assertWellFormed(fn, "Unknown command '" + cmd + "'");
                     // TODO figure out how to type-check vararg functions
-                    fn.apply(this, args);
+
+                    if (cmd == "Do" && !args[0].code) { // eagerly compile XForm objects
+                        var name = args[0].name;
+                        var xobj = xobjs.get(name);
+                        if (xobj) {
+                            xobj = xref.fetchIfRef(xobj);
+                            assertWellFormed(IsStream(xobj), "XObject should be a stream");
+
+                            var type = xobj.dict.get("Subtype");
+                            assertWellFormed(IsName(type), "XObject should have a Name subtype");
+
+                            if ("Form" == type.name) {
+                                args[0].code = this.compile(xobj,
+                                                            xref,
+                                                            xobj.dict.get("Resources"),
+                                                            fonts);
+                            }
+                        }
+                    } else if (cmd == "Tf") { // eagerly collect all fonts
+                        var fontRes = resources.get("Font");
+                        if (fontRes) {
+                            fontRes = xref.fetchIfRef(fontRes);
+                            var font = xref.fetchIfRef(fontRes.get(args[0].name));
+                            assertWellFormed(IsDict(font));
+                            if (!font.translated) {
+                                font.translated = this.translateFont(font, xref, resources);
+                                if (fonts && font.translated) {
+                                    // keep track of each font we translated so the caller can
+                                    // load them asynchronously before calling display on a page
+                                    fonts.push(font.translated);
+                                }
+                            }
+                        }
+                    }
+
+                    src += "this.";
+                    src += fn;
+                    src += "(";
+                    src += args.map(emitArg).join(",");
+                    src += ");\n";
 
                     args.length = 0;
                 } else {
@@ -1758,9 +1866,8 @@ var CanvasGraphics = (function() {
                 }
             }
 
-            this.xobjs = savedXobjs;
-            this.res = savedRes;
-            this.xref = savedXref;
+            var fn = Function("objpool", src);
+            return function (gfx) { fn.call(gfx, objpool); };
         },
 
         endDrawing: function() {
@@ -1777,8 +1884,12 @@ var CanvasGraphics = (function() {
         setLineJoin: function(style) {
             this.ctx.lineJoin = LINE_JOIN_STYLES[style];
         },
+        setMiterLimit: function(limit) {
+            this.ctx.miterLimit = limit;
+        },
         setDash: function(dashArray, dashPhase) {
-            TODO("set dash");
+            this.ctx.mozDash = dashArray;
+            this.ctx.mozDashOffset = dashPhase;
         },
         setRenderingIntent: function(intent) {
             TODO("set rendering intent");
@@ -1815,6 +1926,12 @@ var CanvasGraphics = (function() {
         curveTo: function(x1, y1, x2, y2, x3, y3) {
             this.ctx.bezierCurveTo(x1, y1, x2, y2, x3, y3);
         },
+        curveTo2: function(x2, y2, x3, y3) {
+            TODO("'v' operator: need current point in gfx context");
+        },
+        curveTo3: function(x1, y1, x3, y3) {
+            this.curveTo(x1, y1, x3, y3, x3, y3);
+        },
         closePath: function() {
             this.ctx.closePath();
         },
@@ -1824,6 +1941,10 @@ var CanvasGraphics = (function() {
         stroke: function() {
             this.ctx.stroke();
             this.consumePath();
+        },
+        closeStroke: function() {
+            this.closePath();
+            this.stroke();
         },
         fill: function() {
             this.ctx.fill();
@@ -1839,8 +1960,18 @@ var CanvasGraphics = (function() {
             this.ctx.stroke();
             this.consumePath();
         },
+        eoFillStroke: function() {
+            var savedFillRule = this.setEOFillRule();
+            this.fillStroke();
+            this.restoreFillRule(savedFillRule);
+        },
         closeFillStroke: function() {
             return this.fillStroke();
+        },
+        closeEOFillStroke: function() {
+            var savedFillRule = this.setEOFillRule();
+            this.fillStroke();
+            this.restoreFillRule(savedFillRule);
         },
         endPath: function() {
             this.consumePath();
@@ -1861,6 +1992,15 @@ var CanvasGraphics = (function() {
             this.current.y = this.current.lineY = 0;
         },
         endText: function() {
+        },
+        setCharSpacing: function(spacing) {
+            TODO("character (glyph?) spacing");
+        },
+        setWordSpacing: function(spacing) {
+            TODO("word spacing");
+        },
+        setHSpacing: function(scale) {
+            TODO("horizontal text scale");
         },
         setLeading: function(leading) {
             this.current.leading = leading;
@@ -1886,9 +2026,19 @@ var CanvasGraphics = (function() {
             this.current.fontSize = size;
             this.ctx.font = this.current.fontSize +'px "' + fontName + '"';
         },
+        setTextRenderingMode: function(mode) {
+            TODO("text rendering mode");
+        },
+        setTextRise: function(rise) {
+            TODO("text rise");
+        },
         moveText: function (x, y) {
             this.current.x = this.current.lineX += x;
             this.current.y = this.current.lineY += y;
+        },
+        setLeadingMoveText: function(x, y) {
+            this.setLeading(-y);
+            this.moveText(x, y);
         },
         setTextMatrix: function(a, b, c, d, e, f) {
             this.current.textMatrix = [ a, b, c, d, e, f ];
@@ -1921,8 +2071,23 @@ var CanvasGraphics = (function() {
                 }
             }
         },
+        nextLineShowText: function(text) {
+            this.nextLine();
+            this.showText(text);
+        },
+        nextLineSetSpacingShowText: function(wordSpacing, charSpacing, text) {
+            this.setWordSpacing(wordSpacing);
+            this.setCharSpacing(charSpacing);
+            this.nextLineShowText(text);
+        },
 
         // Type3 fonts
+        setCharWidth: function(xWidth, yWidth) {
+            TODO("type 3 fonts ('d0' operator)");
+        },
+        setCharWidthAndBounds: function(xWidth, yWidth, llx, lly, urx, ury) {
+            TODO("type 3 fonts ('d1' operator)");
+        },
 
         // Color
         setStrokeColorSpace: function(space) {
@@ -1967,19 +2132,25 @@ var CanvasGraphics = (function() {
         setFillRGBColor: function(r, g, b) {
             this.ctx.fillStyle = this.makeCssRgb(r, g, b);
         },
+        setStrokeCMYKColor: function(c, m, y, k) {
+            TODO("CMYK space");
+        },
+        setFillCMYKColor: function(c, m, y, k) {
+            TODO("CMYK space");
+        },
 
         // Shading
         shadingFill: function(entryRef) {
-            var shadingRes = this.res.get("Shading");
+            var xref = this.xref;
+            var res = this.res;
+            
+            var shadingRes = xref.fetchIfRef(res.get("Shading"));
             if (!shadingRes)
-                return;
-            shadingRes = this.xref.fetchIfRef(shadingRes);
-            var shading = shadingRes.get(entryRef.name);
+                error("No shading resource found");
+
+            var shading = xref.fetchIfRef(shadingRes.get(entryRef.name));
             if (!shading)
-                return;
-            shading = this.xref.fetchIfRef(shading);
-            if (!shading)
-                return;
+                error("No shading object found");
 
             this.save();
 
@@ -1990,32 +2161,30 @@ var CanvasGraphics = (function() {
                 this.endPath();
             }
 
+            var cs = shading.get2("ColorSpace", "CS");
             TODO("shading-fill color space");
 
-            var type = shading.get("ShadingType");
-            switch (type) {
-            case 1:
-                this.fillFunctionShading(shading);
-                break;
-            case 2:
-                this.fillAxialShading(shading);
-                break;
-            case 3:
-                this.fillRadialShading(shading);
-                break;
-            case 4: case 5: case 6: case 7:
-                TODO("shading fill type "+ type);
-            default:
-                malformed("Unknown shading type "+ type);
-            }
+            var background = shading.get("Background");
+            if (background)
+                TODO("handle background colors");
+
+            const types = [null, this.fillFunctionShading,
+                  this.fillAxialShading, this.fillRadialShading];
+            
+            var typeNum = shading.get("ShadingType");
+            var fillFn = types[typeNum];
+            if (!fillFn) 
+                error("Unknown type of shading");
+            fillFn.apply(this, [shading]);
 
             this.restore();
         },
+
         fillAxialShading: function(sh) {
             var coordsArr = sh.get("Coords");
             var x0 = coordsArr[0], y0 = coordsArr[1],
                 x1 = coordsArr[2], y1 = coordsArr[3];
-
+            
             var t0 = 0.0, t1 = 1.0;
             if (sh.has("Domain")) {
                 var domainArr = sh.get("Domain");
@@ -2026,19 +2195,39 @@ var CanvasGraphics = (function() {
             if (sh.has("Extend")) {
                 var extendArr = sh.get("Extend");
                 extendStart = extendArr[0], extendEnd = extendArr[1];
+                TODO("Support extend");
             }
-
-            var fn = sh.get("Function");
-            fn = this.xref.fetchIfRef(fn);
+            var fnObj = sh.get("Function");
+            fnObj = this.xref.fetchIfRef(fnObj);
+            if (IsArray(fnObj))
+                error("No support for array of functions");
+            else if (!IsPDFFunction(fnObj))
+                error("Invalid function");
+            fn = new PDFFunction(this.xref, fnObj);
 
             var gradient = this.ctx.createLinearGradient(x0, y0, x1, y1);
-
-            gradient.addColorStop(0, 'rgb(0,0,255)');
-            gradient.addColorStop(1, 'rgb(0,255,0)');
+            var step = (t1 - t0) / 10;
+            
+            for (var i = t0; i <= t1; i += step) {
+                var c = fn.func([i]);
+                gradient.addColorStop(i, this.makeCssRgb.apply(this, c));
+            }
 
             this.ctx.fillStyle = gradient;
-            this.ctx.fill();
-            this.consumePath();
+            
+            // HACK to draw the gradient onto an infinite rectangle.
+            // PDF gradients are drawn across the entire image while
+            // Canvas only allows gradients to be drawn in a rectangle
+            this.ctx.fillRect(-1e10, -1e10, 2e10, 2e10);
+        },
+
+        // Images
+        beginInlineImage: function() {
+            TODO("inline images");
+            error("(Stream will not be parsed properly, bailing now)");
+            // Like an inline stream:
+            //  - key/value pairs up to Cmd(ID)
+            //  - then image data up to Cmd(EI)
         },
 
         // XObjects
@@ -2062,9 +2251,9 @@ var CanvasGraphics = (function() {
             var type = xobj.dict.get("Subtype");
             assertWellFormed(IsName(type), "XObject should have a Name subtype");
             if ("Image" == type.name) {
-                this.paintImageXObject(xobj, false);
+                this.paintImageXObject(obj, xobj, false);
             } else if ("Form" == type.name) {
-                this.paintFormXObject(xobj);
+                this.paintFormXObject(obj, xobj);
             } else if ("PS" == type.name) {
                 warn("(deprecated) PostScript XObjects are not supported");
             } else {
@@ -2072,27 +2261,26 @@ var CanvasGraphics = (function() {
             }
         },
 
-        paintFormXObject: function(form) {
+        paintFormXObject: function(ref, stream) {
             this.save();
 
-            var matrix = form.dict.get("Matrix");
+            var matrix = stream.dict.get("Matrix");
             if (matrix && IsArray(matrix) && 6 == matrix.length)
                 this.transform.apply(this, matrix);
 
-            var bbox = form.dict.get("BBox");
+            var bbox = stream.dict.get("BBox");
             if (bbox && IsArray(bbox) && 4 == bbox.length) {
                 this.rectangle.apply(this, bbox);
                 this.clip();
                 this.endPath();
             }
 
-            this.interpret(new Parser(new Lexer(form), false),
-                           this.xref, form.dict.get("Resources"));
+            this.execute(ref.code, this.xref, stream.dict.get("Resources"));
 
             this.restore();
         },
 
-        paintImageXObject: function(image, inline) {
+        paintImageXObject: function(ref, image, inline) {
             this.save();
             if (image.getParams) {
                 // JPX/JPEG2000 streams directly contain bits per component
@@ -2269,6 +2457,33 @@ var CanvasGraphics = (function() {
             this.restore();
         },
 
+        // Marked content
+
+        markPoint: function(tag) {
+            TODO("Marked content");
+        },
+        markPointProps: function(tag, properties) {
+            TODO("Marked content");
+        },
+        beginMarkedContent: function(tag) {
+            TODO("Marked content");
+        },
+        beginMarkedContentProps: function(tag, properties) {
+            TODO("Marked content");
+        },
+        endMarkedContent: function() {
+            TODO("Marked content");
+        },
+
+        // Compatibility
+
+        beginCompat: function() {
+            TODO("ignore undefined operators (should we do that anyway?)");
+        },
+        endCompat: function() {
+            TODO("stop ignoring undefined operators");
+        },
+
         // Helper functions
 
         consumePath: function() {
@@ -2347,6 +2562,157 @@ var ColorSpace = (function() {
     };
     
     constructor.prototype = {
+    };
+
+    return constructor;
+})();
+
+var PDFFunction = (function() {
+    function constructor(xref, fn) {
+        var dict = fn.dict;
+        if (!dict)
+           dict = fn;
+
+        const types = [this.constructSampled, null,
+                this.constructInterpolated, this.constructStiched,
+                this.constructPostScript];
+        
+        var typeNum = dict.get("FunctionType");
+        var typeFn = types[typeNum];
+        if (!typeFn) 
+            error("Unknown type of function");
+
+        typeFn.apply(this, [fn, dict]);
+    };
+
+    constructor.prototype = {
+        constructSampled: function(str, dict) {
+            var domain = dict.get("Domain");
+            var range = dict.get("Range");
+
+            if (!domain || !range)
+                error("No domain or range");
+        
+            var inputSize = domain.length / 2;
+            var outputSize = range.length / 2;
+
+            if (inputSize != 1)
+                error("No support for multi-variable inputs to functions");
+
+            var size = dict.get("Size");
+            var bps = dict.get("BitsPerSample");
+            var order = dict.get("Order");
+            if (!order)
+                order = 1;
+            if (order !== 1)
+                error ("No support for cubic spline interpolation");
+            
+            var encode = dict.get("Encode");
+            if (!encode) {
+                encode = [];
+                for (var i = 0; i < inputSize; ++i) {
+                    encode.push(0);
+                    encode.push(size[i] - 1);
+                }
+            }
+            var decode = dict.get("Decode");
+            if (!decode)
+                decode = range;
+
+            var samples = this.getSampleArray(size, outputSize, bps, str);
+
+            this.func = function(args) {
+                var clip = function(v, min, max) {
+                    if (v > max)
+                        v = max;
+                    else if (v < min)
+                        v = min
+                    return v;
+                }
+
+                if (inputSize != args.length)
+                    error("Incorrect number of arguments");
+
+                for (var i = 0; i < inputSize; i++) {
+                    var i2 = i * 2;
+                    
+                    // clip to the domain
+                    var v = clip(args[i], domain[i2], domain[i2 + 1]);
+
+                    // encode
+                    v = encode[i2] + ((v - domain[i2]) * 
+                            (encode[i2 + 1] - encode[i2]) / 
+                            (domain[i2 + 1] - domain[i2]));
+                    
+                    // clip to the size
+                    args[i] = clip(v, 0, size[i] - 1);
+                }
+
+                // interpolate to table
+                TODO("Multi-dimensional interpolation");
+                var floor = Math.floor(args[0]);
+                var ceil = Math.ceil(args[0]);
+                var scale = args[0] - floor;
+
+                floor *= outputSize;
+                ceil *= outputSize;
+
+                var output = [];
+                for (var i = 0; i < outputSize; ++i) {
+                    if (ceil == floor) {
+                        var v = samples[ceil + i];
+                    } else {
+                        var low = samples[floor + i];
+                        var high = samples[ceil + i];
+                        var v = low * scale + high * (1 - scale);
+                    }
+                    
+                    var i2 = i * 2;
+                    // decode
+                    v = decode[i2] + (v * (decode[i2 + 1] - decode[i2]) / 
+                            ((1 << bps) - 1));
+                    
+                    // clip to the domain
+                    output.push(clip(v, range[i2], range[i2 + 1]));
+                }
+
+                return output;
+            }
+        },
+        getSampleArray: function(size, outputSize, bps, str) {
+            var length = 1;
+            for (var i = 0; i < size.length; i++)
+                length *= size[i];
+            length *= outputSize;
+
+            var array = [];
+            var codeSize = 0;
+            var codeBuf = 0;
+
+            var strBytes = str.getBytes((length * bps + 7) / 8);
+            var strIdx = 0;
+            for (var i = 0; i < length; i++) {
+                var b;
+                while (codeSize < bps) {
+                    codeBuf <<= 8;
+                    codeBuf |= strBytes[strIdx++];
+                    codeSize += 8;
+                }
+                codeSize -= bps
+                array.push(codeBuf >> codeSize);
+                codeBuf &= (1 << codeSize) - 1;
+            }
+            return array;
+        },
+        constructInterpolated: function() {
+            error("unhandled type of function");
+        },    
+        constructStiched: function() {
+            error("unhandled type of function");
+        },    
+        constructPostScript: function() {
+            error("unhandled type of function");
+        }
     };
 
     return constructor;

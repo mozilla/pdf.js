@@ -34,8 +34,8 @@ var Fonts = {
     return this._active || { encoding: {} };
   },
 
-  set active(aFontName) {
-    this._active = this[aFontName];
+  set active(aName) {
+    this._active = this[aName];
   },
 
   unicodeFromCode: function fonts_unicodeFromCode(aCode) {

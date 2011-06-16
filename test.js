@@ -56,87 +56,35 @@ function displayPage(num) {
 
     var page = pdfDocument.getPage(pageNum = num);
 
-    function display() {
-      var t1 = Date.now();
-      var ctx = canvas.getContext("2d");
-      ctx.save();
-      ctx.fillStyle = "rgb(255, 255, 255)";
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      ctx.restore();
+    var t1 = Date.now();
 
-      var gfx = new CanvasGraphics(ctx);
-      page.display(gfx);
+    var ctx = canvas.getContext("2d");
+    ctx.save();
+    ctx.fillStyle = "rgb(255, 255, 255)";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.restore();
 
-      var t2 = Date.now();
-      var infoDisplay = document.getElementById("info");
-      infoDisplay.innerHTML = "Time to render: "+ (t1 - t0) + "/" + (t2 - t1) + " ms";
-    }
+    var gfx = new CanvasGraphics(ctx);
 
-    // Loading a font via data uri is asynchronous, so wait for all font
-    // of the page to be fully loaded before loading the page
-    var fontsReady = true;
-    var fonts = page.fonts;
-    var xref = page.xref;
-    fonts.forEach(function(fontKey, fontDict) {
-        var descriptor = xref.fetch(fontDict.get("FontDescriptor"));
-        var fontName = descriptor.get("FontName").name;
-        fontName = fontName.replace("+", "_");
+    // page.compile will collect all fonts for us, once we have loaded them
+    // we can trigger the actual page rendering with page.display
+    var fonts = [];
+    
+    page.compile(gfx, fonts);
+    var t2 = Date.now();
 
-        // Check if the font has been loaded or is still loading
-        var font = Fonts[fontName];
-        if (!font) {
-            var fontFile = descriptor.get2("FontFile", "FontFile2");
-            fontFile = xref.fetchIfRef(fontFile);
-
-            // Generate the custom cmap of the font if needed
-            var encodingMap = {};
-            if (fontDict.has("Encoding")) {
-              var encoding = xref.fetchIfRef(fontDict.get("Encoding"));
-              if (IsDict(encoding)) {
-
-                // Build an map between codes and glyphs
-                var differences = encoding.get("Differences");
-                var index = 0;
-                for (var j = 0; j < differences.length; j++) {
-                  var data = differences[j];
-                  IsNum(data) ? index = data : encodingMap[index++] = data;
-                }
-
-                // Get the font charset
-                var charset = descriptor.get("CharSet").split("/");
-
-              } else if (IsName(encoding)) {
-                var encoding = Encodings[encoding];
-                var widths = xref.fetchIfRef(fontDict.get("Widths"));
-                var firstchar = xref.fetchIfRef(fontDict.get("FirstChar"));
-
-                var charset = [];
-                for (var j = 0; j < widths.length; j++) {
-                  var index = widths[j];
-                  if (index)
-                    charset.push(encoding[j + firstchar]);
-                }
-              }
-            }
-
-            var fontBBox = descriptor.get("FontBBox");
-
-            var subtype = fontDict.get("Subtype").name;
-            new Font(fontName, fontFile, encodingMap, charset, fontBBox, subtype);
-            return fontsReady = false;
-        } else if (font.loading) {
-            return fontsReady = false;
+    var interval = setInterval(function() {
+        for (var i = 0; i < fonts.length; i++) {
+            if (fonts[i].loading)
+                return;
         }
-      });
 
-    // If everything is ready do not delayed the page loading any more
-    if (fontsReady)
-      display();
-    else {
-      // FIXME Relying on an event seems much more cleaner here instead
-      // of a setTimeout...
-      pageTimeout = window.setTimeout(displayPage, 150, num);
-    }
+        page.display(gfx);
+        var t3 = Date.now();
+        var infoDisplay = document.getElementById("info");
+        infoDisplay.innerHTML = "Time to load/compile/render: "+ (t1 - t0) + "/" + (t2 - t1) + "/" + (t3 - t2) + " ms";
+        clearInterval(interval);
+    }, 10);
 }
 
 function nextPage() {
