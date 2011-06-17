@@ -40,7 +40,7 @@ var Fonts = {
 
   unicodeFromCode: function fonts_unicodeFromCode(aCode) {
     var unicode = GlyphsUnicode[this.active.encoding[aCode]];
-    return unicode ? unicode : aCode;
+    return unicode ? "0x" + unicode : aCode;
   }
 };
 
