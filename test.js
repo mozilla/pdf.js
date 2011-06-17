@@ -50,8 +50,7 @@ function gotoPage(num) {
 }
 
 function displayPage(num) {
-    if (pageNum != num)
-      window.clearTimeout(pageInterval);
+    window.clearInterval(pageInterval);
 
     document.getElementById("pageNumber").value = num;
 
@@ -94,7 +93,7 @@ function displayPage(num) {
         if (Fonts[font.name].loading)
           return;
       }
-      clearInterval(pageInterval);
+      window.clearInterval(pageInterval);
 
       var t3 = Date.now();
 
