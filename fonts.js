@@ -40,7 +40,7 @@ var Fonts = {
 
   unicodeFromCode: function fonts_unicodeFromCode(aCode) {
     var unicode = GlyphsUnicode[this.active.encoding[aCode]];
-    return unicode ? "0x" + unicode : aCode;
+    return unicode ? unicode : aCode;
   }
 };
 
@@ -175,7 +175,7 @@ Font.prototype = {
     // see what's happening
     if (debug) {
       for (var i = 0; i < charset.length; i++) {
-        var unicode = new Number("0x" + GlyphsUnicode[charset[i]]);
+        var unicode = GlyphsUnicode[charset[i]];
         if (!unicode)
           error("Unicode for " + charset[i] + " is has not been found in the glyphs list");
         testString += String.fromCharCode(unicode);
@@ -1183,10 +1183,6 @@ CFF.prototype = {
         if (glyph != ".notdef")
           warn(glyph + " does not have an entry in the glyphs unicode dictionary");
       } else {
-        var b1 = parseInt("0x" + unicode[0] + unicode[1]);
-        var b2 = parseInt("0x" + unicode[2] + unicode[3]);
-        unicode = FontsUtils.bytesToInteger([b1, b2]);
-
         charstrings.push({
           glyph: glyph,
           unicode: unicode,
