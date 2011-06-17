@@ -1900,8 +1900,10 @@ var CanvasGraphics = (function() {
     constructor.prototype = {
         translateFont: function(fontDict, xref, resources) {
             var descriptor = xref.fetch(fontDict.get("FontDescriptor"));
-            var fontName = descriptor.get("FontName").name;
-            fontName = fontName.replace("+", "_");
+
+            var fontName = descriptor.get("FontName");
+            assertWellFormed(IsName(fontName), "invalid font name");
+            fontName = fontName.name.replace("+", "_");
 
             var fontFile = descriptor.get2("FontFile", "FontFile2");
             if (!fontFile)
@@ -1923,17 +1925,16 @@ var CanvasGraphics = (function() {
 
                     // Get the font charset if any
                     var charset = descriptor.get("CharSet");
-                    if (charset)
-                      charset = charset.split("/");
+                    assertWellFormed(IsString(charset), "invalid charset");
 
+                    charset = charset.split("/");
                 } else if (IsName(encoding)) {
-                    var encoding = Encodings[encoding];
+                    var encoding = Encodings[encoding.name];
                     if (!encoding)
                         error("Unknown encoding");
 
                     var widths = xref.fetchIfRef(fontDict.get("Widths"));
                     var firstChar = xref.fetchIfRef(fontDict.get("FirstChar"));
-                    alert(firstchar);
                     assertWellFormed(IsArray(widths) && IsInteger(firstChar),
                                      "invalid Widths or FirstChar");
                     var charset = [];
@@ -1953,8 +1954,8 @@ var CanvasGraphics = (function() {
 
             return {
                 name: fontName,
-              file: fontFile,
-              properties: properties
+                file: fontFile,
+                properties: properties
             }
         },
 
