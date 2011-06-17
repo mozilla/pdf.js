@@ -1223,31 +1223,25 @@ CFF.prototype = {
     "hvcurveto": 31,
   },
 
-  flattenCharstring: function(aCharstring, aSubrs) {
+  flattenCharstring: function(aGlyph, aCharstring, aSubrs) {
     var original = aCharstring.slice();
     var i = 0;
     while (true) {
       var obj = aCharstring[i];
+      if (obj == null)
+        return [];
+
       if (obj.charAt) {
         switch (obj) {
           case "callsubr":
-            if (aCharstring[i - 1] == 351) {
-              log(original);
-              log(aCharstring);
-              error("...");
-              aCharstring.splice(i - 1, 2);
-              continue;
-            }
-
             var subr = aSubrs[aCharstring[i - 1]].slice();
             if (subr.length > 1) {
-              subr = this.flattenCharstring(subr, aSubrs);
+              subr = this.flattenCharstring(aGlyph, subr, aSubrs);
               subr.pop();
               aCharstring.splice(i - 1, 2, subr);
-            }
-            else
+            } else {
               aCharstring.splice(i - 1, 2);
-
+            }
             i -= 1;
             break;
 
@@ -1262,8 +1256,8 @@ CFF.prototype = {
               error("callothersubr for index: " + index + " (" + aCharstring + ")");
 
             if (!data) {
-              aCharstring.splice(i - 2, 3, "pop", 3);
-              i -= 2;
+              aCharstring.splice(i - 2, 4, "pop", 3);
+              i -= 3;
             } else {
               // 5 to remove the arguments, the callothersubr call and the pop command
               aCharstring.splice(i - 3, 5, 3);
@@ -1279,7 +1273,10 @@ CFF.prototype = {
             break;
 
           case "pop":
-            aCharstring.splice(i - 2, 2);
+            if (i)
+              aCharstring.splice(i - 2, 2);
+            else
+              aCharstring.splice(i - 1, 1);
             i -= 1;
             break;
 
@@ -1287,7 +1284,11 @@ CFF.prototype = {
           case "hsbw":
             var charWidthVector = aCharstring[i - 1];
             var leftSidebearing = aCharstring[i - 2];
-            aCharstring.splice(i - 2, 3, charWidthVector, leftSidebearing, "hmoveto");
+
+            if (leftSidebearing)
+              aCharstring.splice(i - 2, 3, charWidthVector, leftSidebearing, "hmoveto");
+            else
+              aCharstring.splice(i - 2, 3, charWidthVector);
             break;
 
           case "endchar":
@@ -1345,7 +1346,7 @@ CFF.prototype = {
       var charstring = charstrings[i].charstring.slice();
       var glyph = charstrings[i].glyph;
 
-      var flattened = this.flattenCharstring(charstring, aFontInfo.subrs);
+      var flattened = this.flattenCharstring(glyph, charstring, aFontInfo.subrs);
       glyphs.push(flattened);
       charstringsCount++;
       charstringsDataLength += flattened.length;
