@@ -5,6 +5,7 @@ var ERRORS = 0, WARNINGS = 1, TODOS = 5;
 var verbosity = WARNINGS;
 
 function log(msg) {
+    msg = msg.toString ? msg.toString() : msg;
     if (console && console.log)
         console.log(msg);
     else if (print)
@@ -51,7 +52,7 @@ var Stream = (function() {
         this.bytes = new Uint8Array(arrayBuffer);
         this.start = start || 0;
         this.pos = this.start;
-        this.end = (start + length) || arrayBuffer.byteLength;
+        this.end = (start + length) || this.bytes.byteLength;
         this.dict = dict;
     }
 
@@ -92,7 +93,7 @@ var Stream = (function() {
             return ch;
         },
         skip: function(n) {
-            if (!n)
+            if (!n && !IsNum(n))
                 n = 1;
             this.pos += n;
         },
@@ -696,6 +697,9 @@ var Name = (function() {
     }
 
     constructor.prototype = {
+      toString: function() {
+        return this.name;
+      }
     };
 
     return constructor;
@@ -707,6 +711,9 @@ var Cmd = (function() {
     }
 
     constructor.prototype = {
+      toString: function() {
+        return this.cmd;
+      }
     };
 
     return constructor;
@@ -729,6 +736,16 @@ var Dict = (function() {
         },
         set: function(key, value) {
             this.map[key] = value;
+        },
+        forEach: function(aCallback) {
+          for (var key in this.map)
+            aCallback(key, this.map[key]);
+        },
+        toString: function() {
+          var keys = [];
+          for (var key in this.map)
+            keys.push(key);
+          return "Dict with " + keys.length + " keys: " + keys;
         }
     };
 
@@ -951,6 +968,7 @@ var Lexer = (function() {
                                 x = (x << 3) + (ch - '0');
                             }
                         }
+
                         str += String.fromCharCode(x);
                         break;
                     case '\r':
@@ -1072,10 +1090,11 @@ var Lexer = (function() {
                     stream.skip();
                     return new Cmd(">>");
                 }
+            case "{":
+            case "}":
+              return new Cmd(ch);
 	        // fall through
             case ')':
-            case '{':
-            case '}':
                 error("Illegal character");
                 return Error;
             }
@@ -1880,7 +1899,49 @@ var CanvasGraphics = (function() {
 
     constructor.prototype = {
         translateFont: function(fontDict, xref, resources) {
-            return "translated";
+            var descriptor = xref.fetch(fontDict.get("FontDescriptor"));
+            var fontName = descriptor.get("FontName").name;
+            fontName = fontName.replace("+", "_");
+
+            var font = Fonts[fontName];
+            if (!font) {
+                var fontFile = descriptor.get2("FontFile", "FontFile2");
+                fontFile = xref.fetchIfRef(fontFile);
+
+                // Generate the custom cmap of the font if needed
+                var encodingMap = {};
+                if (fontDict.has("Encoding")) {
+                  var encoding = xref.fetchIfRef(fontDict.get("Encoding"));
+                  if (IsDict(encoding)) {
+                      // Build an map between codes and glyphs
+                      var differences = encoding.get("Differences");
+                      var index = 0;
+                      for (var j = 0; j < differences.length; j++) {
+                          var data = differences[j];
+                          IsNum(data) ? index = data : encodingMap[index++] = data;
+                      }
+
+                      // Get the font charset
+                      var charset = descriptor.get("CharSet").split("/");
+                  } else if (IsName(encoding)) {
+                      var encoding = Encodings[encoding];
+                      var widths = xref.fetchIfRef(fontDict.get("Widths"));
+                      var firstchar = xref.fetchIfRef(fontDict.get("FirstChar"));
+
+                      var charset = [];
+                      for (var j = 0; j < widths.length; j++) {
+                          var index = widths[j];
+                          if (index)
+                              charset.push(encoding[j + firstchar]);
+                      }
+                  }
+              }
+
+              var fontBBox = descriptor.get("FontBBox");
+              var subtype = fontDict.get("Subtype").name;
+              new Font(fontName, fontFile, encodingMap, charset, fontBBox, subtype);
+          }
+          return Fonts[fontName];
         },
 
         beginDrawing: function(mediaBox) {
@@ -2117,16 +2178,25 @@ var CanvasGraphics = (function() {
             this.current.leading = leading;
         },
         setFont: function(fontRef, size) {
-            var fontRes = this.res.get("Font");
-            if (!fontRes)
-                return;
-            fontRes = this.xref.fetchIfRef(fontRes);
-            var font = fontRes.get(fontRef.name);
+            var font = this.res.get("Font");
+            if (!IsDict(font))
+              return;
+
+            font = font.get(fontRef.name);
+            font = this.xref.fetchIfRef(font);
             if (!font)
                 return;
+
+            var fontName = "";
+            var fontDescriptor = font.get("FontDescriptor");
+            if (fontDescriptor.num) {
+                var fontDescriptor = this.xref.fetchIfRef(fontDescriptor);
+                fontName = fontDescriptor.get("FontName").name.replace("+", "_");
+                Fonts.active = fontName;
+            }
+
             this.current.fontSize = size;
-            TODO("using hard-coded font for testing");
-            this.ctx.font = this.current.fontSize +'px "Nimbus Roman No9 L"';
+            this.ctx.font = this.current.fontSize +'px "' + fontName + '"';
         },
         setTextRenderingMode: function(mode) {
             TODO("text rendering mode");
@@ -2156,7 +2226,12 @@ var CanvasGraphics = (function() {
             this.ctx.scale(1, -1);
             this.ctx.transform.apply(this.ctx, this.current.textMatrix);
 
-            this.ctx.fillText(text, this.current.x, this.current.y);
+            // Replace characters code by glyphs code
+            var glyphs = [];
+            for (var i = 0; i < text.length; i++)
+              glyphs[i] = String.fromCharCode(Fonts.unicodeFromCode(text[i].charCodeAt(0)));
+
+            this.ctx.fillText(glyphs.join(""), this.current.x, this.current.y);
             this.current.x += this.ctx.measureText(text).width;
 
             this.ctx.restore();
