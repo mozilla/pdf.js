@@ -1173,24 +1173,13 @@ CFF.prototype = {
     return data;
   },
 
-  encodeNumber: function(aValue, aIsCharstring) {
+  encodeNumber: function(aValue) {
     var x = 0;
-    if (aIsCharstring && aValue >= -107 && aValue <= 107) {
-      return [aValue + 139];
-    } else if (aValue >= -32768 && aValue <= 32767) {
-      return [
-        28,
-        FontsUtils.integerToBytes(aValue >> 8, 1),
-        FontsUtils.integerToBytes(aValue, 1)
-      ];
+    if (aValue >= -32768 && aValue <= 32767) {
+      return [ 28, aValue >> 8, aValue ];
     } else if (aValue >= (-2147483647-1) && aValue <= 2147483647) {
       return [
-        0xFF,
-        FontsUtils.integerToBytes(aValue >> 24, 1),
-        FontsUtils.integerToBytes(aValue >> 16, 1),
-        FontsUtils.integerToBytes(aValue >> 8, 1),
-        FontsUtils.integerToBytes(aValue, 1)
-      ];
+        0xFF, aValue >> 24, Value >> 16, aValue >> 8, aValue ];
     } else {
       error("Value: " + aValue + " is not allowed");
     }
@@ -1227,7 +1216,7 @@ CFF.prototype = {
   /*
    * Flatten the commands by interpreting the postscript code and replacing
    * every 'callsubr', 'callothersubr' by the real commands.
-   * 
+   *
    * TODO This function also do a string to command number transformation
    * that can probably be avoided if the Type1 decodeCharstring code is smarter
    */
@@ -1310,11 +1299,8 @@ CFF.prototype = {
             for (var j = 0; j < aCharstring.length; j++) {
               var command = aCharstring[j];
               if (parseFloat(command) == command) {
-                var number = this.encodeNumber(command, true);
-                aCharstring.splice(j, 1);
-                for (var k = 0; k < number.length; k++)
-                  aCharstring.splice(j + k, 0, number[k]);
-                j+= number.length - 1;
+                aCharstring.splice(j, 1, 28, command >> 8, command);
+                j+= 2;
               } else if (command.charAt) {
                 var command = this.commandsMap[command];
                 if (IsArray(command)) {
