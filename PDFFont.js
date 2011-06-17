@@ -990,32 +990,30 @@ var Type1Parser = function() {
     "31": "hvcurveto"
   };
 
-  function decodeCharString(aStream) {
-    var start = Date.now();
+  function decodeCharString(aArray) {
     var charString = [];
 
     var value = "";
-    var count = aStream.length;
+    var count = aArray.length;
     for (var i = 0; i < count; i++) {
-      value = aStream.getByte();
+      value = parseInt(aArray[i]);
 
       if (value < 32) {
         var command = null;
         if (value == 12) {
-          var escape = aStream.getByte();
+          var escape = aArray[++i];
           command = charStringDictionary["12"][escape];
-          i++;
         } else {
           command = charStringDictionary[value];
         }
 
         // Some charstring commands are meaningless in Type2 and will return
         // a null, let's just ignored them
-        if (!command && i < count)
+        if (!command && i < count) {
           continue;
-        else if (!command)
+        } else if (!command) {
           break;
-        else if (command == -1) {
+        } else if (command == -1) {
           log("decodeCharstring: " + charString);
           error("Support for Type1 command " + value + " (" + escape + ") is not implemented");
         }
@@ -1024,24 +1022,19 @@ var Type1Parser = function() {
       } else if (value <= 246) {
         value = parseInt(value) - 139;
       } else if (value <= 250) {
-        value = ((value - 247) * 256) + parseInt(aStream.getByte()) + 108;
-        i++;
+        value = ((value - 247) * 256) + parseInt(aArray[++i]) + 108;
       } else if (value <= 254) {
-        value = -((value - 251) * 256) - parseInt(aStream.getByte()) - 108;
-        i++;
+        value = -((value - 251) * 256) - parseInt(aArray[++i]) - 108;
       } else {
-        var byte = aStream.getByte();
+        var byte = aArray[++i];
         var high = (byte >> 1);
-        value = (byte - high) << 24 | aStream.getByte() << 16 |
-                aStream.getByte() << 8 | aStream.getByte();
-        i += 4;
+        value = (byte - high) << 24 | aArray[++i] << 16 |
+                aArray[++i] << 8 | aArray[++i];
       }
 
       charString.push(value);
     }
 
-    var end = Date.now();
-    dump("Time to decode charString of length " + count + " is " + (end - start));
     return charString;
   };
 
@@ -1067,16 +1060,16 @@ var Type1Parser = function() {
       if (inSubrs && c == 0x52) {
         length = parseInt(length);
         var data = eexecString.slice(i + 3, i + 3 + length);
-        var encodedSubr = decrypt(data, kCharStringsEncryptionKey, 4).join("");
-        var subr = decodeCharString(new StringStream(encodedSubr));
+        var encodedSubr = decrypt(data, kCharStringsEncryptionKey, 4, true);
+        var subr = decodeCharString(encodedSubr);
 
         subrs.push(subr);
         i += 3 + length;
       } else if (inGlyphs && c == 0x52) {
         length = parseInt(length);
         var data = eexecString.slice(i + 3, i + 3 + length);
-        var encodedCharstring = decrypt(data, kCharStringsEncryptionKey, 4).join("");
-        var subr = decodeCharString(new StringStream(encodedCharstring));
+        var encodedCharstring = decrypt(data, kCharStringsEncryptionKey, 4, true);
+        var subr = decodeCharString(encodedCharstring);
 
         glyphs.push({
             glyph: glyph,
@@ -1125,12 +1118,11 @@ var CFF = function(aFontName, aFontBBox, aFontFile) {
   fontInfo.name = aFontName;
   fontInfo.bbox = aFontBBox;
 
-  // XXX
+  // XXX This hold the glyph data as if, this should be improved
   this.glyphs = fontInfo.charstrings;
 
   this.data = this.convertToCFF(fontInfo);
   var end = Date.now();
-  //log("Time to parse font is:" + (end - start));
 };
 
 CFF.prototype = {
@@ -1232,13 +1224,22 @@ CFF.prototype = {
   },
 
   flattenCharstring: function(aCharstring, aSubrs) {
+    var original = aCharstring.slice();
     var i = 0;
     while (true) {
       var obj = aCharstring[i];
       if (obj.charAt) {
         switch (obj) {
           case "callsubr":
-            var subr = aSubrs[aCharstring[i- 1]].slice();
+            if (aCharstring[i - 1] == 351) {
+              log(original);
+              log(aCharstring);
+              error("...");
+              aCharstring.splice(i - 1, 2);
+              continue;
+            }
+
+            var subr = aSubrs[aCharstring[i - 1]].slice();
             if (subr.length > 1) {
               subr = this.flattenCharstring(subr, aSubrs);
               subr.pop();
