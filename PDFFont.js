@@ -274,15 +274,15 @@ Font.prototype = {
   },
 
   _createCMAPTable: function font_createCMAPTable(aGlyphs) {
-    var characters = new Array(kMaxGlyphsCount);
-    for (var i = 0; i < aGlyphs.length; i++) {
+    var characters = new Uint16Array(kMaxGlyphsCount);
+    for (var i = 0; i < aGlyphs.length; i++)
       characters[aGlyphs[i].unicode] = i + 1;
-    }
 
     // Separate the glyphs into continuous range of codes, aka segment.
     var ranges = [];
     var range = [];
-    for (var i = 0; i < characters.length; i++) {
+    var count = characters.length;
+    for (var i = 0; i < count; i++) {
       if (characters[i]) {
         range.push(i);
       } else if (range.length) {
@@ -548,22 +548,18 @@ Font.prototype = {
 var FontsUtils = {
   _bytesArray: new Uint8Array(4),
   integerToBytes: function fu_integerToBytes(aValue, aBytesCount) {
-    // If we want only one byte, take a fast path
+    var bytes = this._bytesArray;
+
     if (aBytesCount == 1) {
-      this._bytesArray.set([aValue]);
-      return this._bytesArray[0];
+      bytes.set([aValue]);
+      return bytes[0];
+    } else if (aBytesCount == 2) {
+      bytes.set([aValue >> 8, aValue]);
+      return [bytes[0], bytes[1]];
+    } else if (aBytesCount == 4) {
+      bytes.set([aValue >> 24, aValue >> 16, aValue >> 8, aValue]);
+      return [bytes[0], bytes[1], bytes[2], bytes[3]];
     }
-
-    var bytes = [];
-    for (var i = 0; i < aBytesCount; i++)
-      bytes[i] = 0x00;
-
-    do {
-      bytes[--aBytesCount] = (aValue & 0xFF);
-      aValue = aValue >> 8;
-    } while (aBytesCount && aValue > 0);
-
-    return bytes;
   },
 
   bytesToInteger: function fu_bytesToInteger(aBytesArray) {
@@ -875,7 +871,7 @@ var Type1Parser = function() {
     var value = "";
     var count = aStream.length;
     for (var i = 0; i < count; i++) {
-      value = aStream.getByte();
+      value = aStream[i];
       if (aByteArray)
         decryptedString[i] = value ^ (r >> 8);
       else
@@ -1054,7 +1050,7 @@ var Type1Parser = function() {
    * extracted from and eexec encrypted block of data
    */
   this.extractFontInfo = function(aStream) {
-    var eexecString = decrypt(new Stream(aStream), kEexecEncryptionKey, 4, true);
+    var eexecString = decrypt(aStream, kEexecEncryptionKey, 4, true);
     var subrs = [],  glyphs = [];
     var inSubrs = inGlyphs = false;
     var glyph = "";
@@ -1070,16 +1066,16 @@ var Type1Parser = function() {
 
       if (inSubrs && c == 0x52) {
         length = parseInt(length);
-        var stream = new Stream(eexecString.slice(i + 3, i + 3 + length));
-        var encodedSubr = decrypt(stream, kCharStringsEncryptionKey, 4).join("");
+        var data = eexecString.slice(i + 3, i + 3 + length);
+        var encodedSubr = decrypt(data, kCharStringsEncryptionKey, 4).join("");
         var subr = decodeCharString(new StringStream(encodedSubr));
 
         subrs.push(subr);
         i += 3 + length;
       } else if (inGlyphs && c == 0x52) {
         length = parseInt(length);
-        var stream = new Stream(eexecString.slice(i + 3, i + 3 + length));
-        var encodedCharstring = decrypt(stream, kCharStringsEncryptionKey, 4).join("");
+        var data = eexecString.slice(i + 3, i + 3 + length);
+        var encodedCharstring = decrypt(data, kCharStringsEncryptionKey, 4).join("");
         var subr = decodeCharString(new StringStream(encodedCharstring));
 
         glyphs.push({
