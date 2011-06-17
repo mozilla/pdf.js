@@ -2,11 +2,14 @@
 /* vim: set shiftwidth=4 tabstop=8 autoindent cindent expandtab: */
 
 var pdfDocument, canvas, pageDisplay, pageNum, pageInterval;
-function load() {
+function load(userInput) {
     canvas = document.getElementById("canvas");
     canvas.mozOpaque = true;
     pageNum = parseInt(queryParams().page) || 1;
-    fileName = queryParams().file || "compressed.tracemonkey-pldi-09.pdf";
+    fileName = userInput;
+    if (!userInput) {
+      fileName = queryParams().file || "compressed.tracemonkey-pldi-09.pdf";
+    }
     open(fileName);
 }
 
@@ -68,9 +71,16 @@ function displayPage(num) {
     // page.compile will collect all fonts for us, once we have loaded them
     // we can trigger the actual page rendering with page.display
     var fonts = [];
-    
     page.compile(gfx, fonts);
     var t2 = Date.now();
+
+    var interval = 0;
+    for (var i = 0; i < fonts.length; i++) {
+      if (fonts[i].loading) {
+        interval = 10;
+        break;
+      }
+    };
 
     // FIXME This need to be replaced by an event
     pageInterval = setInterval(function() {
@@ -87,7 +97,7 @@ function displayPage(num) {
 
         var infoDisplay = document.getElementById("info");
         infoDisplay.innerHTML = "Time to load/compile/fonts/render: "+ (t1 - t0) + "/" + (t2 - t1) + "/" + (t3 - t2) + "/" + (t4 - t3) + " ms";
-    }, 10);
+    }, interval);
 }
 
 function nextPage() {
