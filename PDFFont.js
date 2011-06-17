@@ -188,7 +188,7 @@ Font.prototype = {
       ctx.fillText(testString, 20, 20);
 
     var start = Date.now();
-    var interval = window.setInterval(function(self) {
+    var interval = window.setInterval(function canvasInterval(self) {
       ctx.font = "bold italic 20px " + fontName + ", Symbol, Arial";
 
       // For some reasons the font has not loaded, so mark it loaded for the
@@ -1250,7 +1250,7 @@ CFF.prototype = {
     var i = 0;
     while (true) {
       var obj = aCharstring[i];
-      if (IsString(obj)) {
+      if (obj.charAt) {
         switch (obj) {
           case "callsubr":
             var subr = aSubrs[aCharstring[i- 1]].slice();
@@ -1309,13 +1309,13 @@ CFF.prototype = {
             // CharString is ready to be re-encode to commands number at this point
             for (var j = 0; j < aCharstring.length; j++) {
               var command = aCharstring[j];
-              if (IsNum(command)) {
+              if (parseFloat(command) == command) {
                 var number = this.encodeNumber(command, true);
                 aCharstring.splice(j, 1);
                 for (var k = 0; k < number.length; k++)
                   aCharstring.splice(j + k, 0, number[k]);
                 j+= number.length - 1;
-              } else if (IsString(command)) {
+              } else if (command.charAt) {
                 var command = this.commandsMap[command];
                 if (IsArray(command)) {
                   aCharstring.splice(j - 1, 1, command[0], command[1]);
@@ -1323,7 +1323,7 @@ CFF.prototype = {
                 } else {
                   aCharstring[j] = command;
                 }
-              } else if (IsArray(command)) {
+              } else {
                 aCharstring.splice(j, 1);
 
                 // command has already been translated, just add them to the
@@ -1331,8 +1331,6 @@ CFF.prototype = {
                 for (var k = 0; k < command.length; k++)
                   aCharstring.splice(j + k, 0, command[k]);
                 j+= command.length - 1;
-              } else { // what else?
-                error("Error while flattening the Type1 charstring: " + aCharstring);
               }
             }
             return aCharstring;
