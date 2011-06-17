@@ -232,23 +232,6 @@ var FlateStream = (function() {
     ]), 5];
 
     function constructor(stream, params) {
-        if (IsDict(params)) {
-            var predType = params.get("Predictor");
-            if (predType && predType > 1) {
-                var colors = params.get("Colors");
-                if (!colors)
-                    colors = 1;
-                var bpc = params.get("BitsPerComponent");
-                if (!bpc)
-                    bpc = 8;
-                var cols = params.get("Columns");
-                if (!cols)
-                    cols = 1;
-
-                this.pred = new FilterPredictor(this, predType, cols,      
-                        colors, bpc);
-            }
-        }
         this.stream = stream;
         this.dict = stream.dict;
         var cmf = stream.getByte();
@@ -1297,9 +1280,25 @@ var Parser = (function() {
         },
         makeFilter: function(stream, name, params) {
             if (name == "FlateDecode" || name == "Fl") {
-                if (params)
-                    error("params not supported yet for FlateDecode");
-                return new FlateStream(stream);
+                var flateStr = new FlateStream(stream);
+                if (IsDict(params)) {
+                    var predType = params.get("Predictor");
+                    if (predType && predType > 1) {
+                        var colors = params.get("Colors");
+                        if (!colors)
+                            colors = 1;
+                        var bpc = params.get("BitsPerComponent");
+                        if (!bpc)
+                            bpc = 8;
+                        var cols = params.get("Columns");
+                        if (!cols)
+                            cols = 1;
+
+                        flateStr = new FilterPredictor(flateStr, predType, cols,      
+                                colors, bpc);
+                    }
+                }
+                return flateStr;
             } else {
                 error("filter '" + name + "' not supported yet");
             }
