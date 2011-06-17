@@ -1235,7 +1235,7 @@ CFF.prototype = {
           case "div":
             var num2 = aCharstring[i - 1];
             var num1 = aCharstring[i - 2];
-            aCharstring.splice(i - 2, 3, num2 / num1);
+            aCharstring.splice(i - 2, 3, num1 / num2);
             i -= 2;
             break;
 
@@ -1354,7 +1354,6 @@ CFF.prototype = {
     }
 
     var charstringsIndex = this.createCFFIndexHeader([[0x40, 0x0E]].concat(glyphs), true);
-    charstringsIndex = charstringsIndex.join(" ").split(" "); // XXX why?
 
     //Top Dict Index
     var topDictIndex = [
@@ -1388,7 +1387,6 @@ CFF.prototype = {
     var privateOffset = charstringsOffset + charstringsIndex.length;
     topDictIndex = topDictIndex.concat(this.encodeNumber(privateOffset));
     topDictIndex.push(18); // Private
-    topDictIndex = topDictIndex.join(" ").split(" ");
 
     var indexes = [
       topDictIndex, stringsIndex,
@@ -1418,7 +1416,6 @@ CFF.prototype = {
       139, 12, 14,
       28, 0, 55, 19
     ]);
-    privateData = privateData.join(" ").split(" ");
     cff.set(privateData, currentOffset);
     currentOffset += privateData.length;
 
