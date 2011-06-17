@@ -316,9 +316,8 @@ var FlateStream = (function() {
             return this.buffer = buffer2;
         },
         getByte: function() {
-            var bufferLength = this.bufferLength;
             var pos = this.pos;
-            if (bufferLength == pos) {
+            while (this.bufferLength <= pos) {
                 if (this.eof)
                     return;
                 this.readBlock();
@@ -341,9 +340,8 @@ var FlateStream = (function() {
             return this.buffer.subarray(pos, end)
         },
         lookChar: function() {
-            var bufferLength = this.bufferLength;
             var pos = this.pos;
-            if (bufferLength == pos) {
+            while (this.bufferLength <= pos) {
                 if (this.eof)
                     return;
                 this.readBlock();
@@ -352,16 +350,15 @@ var FlateStream = (function() {
         },
         getChar: function() {
             var ch = this.lookChar();
-            if (!ch)
-                return;
+            // shouldnt matter what the position is if we get past the eof
+            // so no need to check if ch is undefined
             this.pos++;
             return ch;
         },
         skip: function(n) {
             if (!n)
                 n = 1;
-            while (n-- > 0)
-                this.getChar();
+            this.pos += n;    
         },
         generateHuffmanTable: function(lengths) {
             var n = lengths.length;
