@@ -310,7 +310,8 @@ var Type2Parser = function(aFilePath) {
     // Read the Global Subr Index that comes just after the Strings Index
     // (cf. "The Compact Font Format Specification" Chapter 16)
     dump("Reading Global Subr Index");
-    var subrs = readFontIndexData(aStream);
+    var subrs = readFontIndexData(aStream, true);
+    dump(subrs);
 
     // Reading Private Dict
     var private = font.get("Private");

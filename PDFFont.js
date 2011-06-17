@@ -546,7 +546,14 @@ Font.prototype = {
  * to fonts in particular and needs to be share between them.
  */
 var FontsUtils = {
+  _bytesArray: new Uint8Array(4),
   integerToBytes: function fu_integerToBytes(aValue, aBytesCount) {
+    // If we want only one byte, take a fast path
+    if (aBytesCount == 1) {
+      this._bytesArray.set([aValue]);
+      return this._bytesArray[0];
+    }
+
     var bytes = [];
     for (var i = 0; i < aBytesCount; i++)
       bytes[i] = 0x00;
@@ -1087,61 +1094,6 @@ var Type1Parser = function() {
     return charString;
   };
 
-  /*
-   * The operand stack holds arbitrary PostScript objects that are the operands
-   * and results of PostScript operators being executed. The interpreter pushes
-   * objects on the operand stack when it encounters them as literal data in a
-   * program being executed. When an operator requires one or more operands, it
-   * obtains them by popping them off the top of the operand stack. When an
-   * operator returns one or more results, it does so by pushing them on the
-   * operand stack.
-   */
-   var operandStack = new Stack(40);
-
-   // Flag indicating if the topmost operand of the operandStack is an array
-   var operandIsArray = 0;
-
-  /*
-   * The dictionary stack holds only dictionary objects. The current set of
-   * dictionaries on the dictionary stack defines the environment for all
-   * implicit name searches, such as those that occur when the interpreter
-   * encounters an executable name. The role of the dictionary stack is
-   * introduced in Section 3.3, “Data Types and Objects,” and is further
-   * explained in Section 3.5, “Execution.” of the PostScript Language
-   * Reference.
-   */
-  var systemDict = new Dict(),
-      globalDict = new Dict(),
-      userDict   = new Dict();
-
-  var dictionaryStack = new Stack();
-  dictionaryStack.push(systemDict);
-  dictionaryStack.push(globalDict);
-  dictionaryStack.push(userDict);
-
-  /*
-   * The execution stack holds executable objects (mainly procedures and files)
-   * that are in intermediate stages of execution. At any point in the
-   * execution of a PostScript program, this stack represents the program’s
-   * call stack. Whenever the interpreter suspends execution of an object to
-   * execute some other object, it pushes the new object on the execution
-   * stack. When the interpreter finishes executing an object, it pops that
-   * object off the execution stack and resumes executing the suspended object
-   * beneath it.
-   */
-  var executionStack = new Stack();
-
-  /*
-   * Return the next token in the execution stack
-   */
-  function nextInStack() {
-    var currentProcedure = executionStack.peek();
-    var command = currentProcedure.shift();
-    if (!currentProcedure.length)
-      executionStack.pop();
-    return command;
-  };
-
   /**
    * Returns an object containing a Subrs array and a CharStrings array
    * extracted from and eexec encrypted block of data
@@ -1205,79 +1157,6 @@ var Type1Parser = function() {
       subrs: subrs,
       charstrings: glyphs
     }
-  };
-
-  /*
-   * Flatten the commands by interpreting the postscript code and replacing
-   * every 'callsubr', 'callothersubr' by the real commands.
-   * At the moment OtherSubrs are not fully supported and only otherSubrs 0-4
-   * as described in 'Using Subroutines' of 'Adobe Type 1 Font Format',
-   * chapter 8.
-   */
-  this.flattenCharstring = function(aCharstring, aSubrs) {
-    operandStack.clear();
-    executionStack.clear();
-    executionStack.push(aCharstring.slice());
-
-    var leftSidebearing = 0;
-    var lastPoint = 0;
-    while (true) {
-      var obj = nextInStack();
-      if (IsInt(obj) || IsBool(obj)) {
-        operandStack.push(obj);
-      } else {
-        switch (obj) {
-          case "callsubr":
-            var index = operandStack.pop();
-            executionStack.push(aSubrs[index].slice());
-            break;
-
-          case "callothersubr":
-            var index = operandStack.pop();
-            var count = operandStack.pop();
-            var data = operandStack.pop();
-            // XXX The callothersubr needs to support at least the 3 defaults
-            // otherSubrs of the spec
-            if (index != 3)
-              error("callothersubr for index: " + index);
-            operandStack.push(3);
-            operandStack.push("callothersubr");
-            break;
-
-          case "div":
-            var num2 = operandStack.pop();
-            var num1 = operandStack.pop();
-            operandStack.push(num2 / num1);
-            break;
-
-          case "pop":
-            operandStack.pop();
-            break;
-
-          case "return":
-            break;
-
-          case "hsbw":
-            var charWidthVector = operandStack.pop();
-            var leftSidebearing = operandStack.pop();
-            operandStack.push(charWidthVector);
-
-            if (leftSidebearing) {
-              operandStack.push(leftSidebearing);
-              operandStack.push("hmoveto");
-            }
-            break;
-
-          case "endchar":
-            operandStack.push("endchar");
-            return operandStack.clone();
-
-          default:
-            operandStack.push(obj);
-            break;
-        }
-      }
-    }
   }
 };
 
@@ -1339,10 +1218,11 @@ CFF.prototype = {
     return data;
   },
 
-  encodeNumber: function(aValue) {
+  encodeNumber: function(aValue, aIsCharstring) {
     var x = 0;
-    // XXX we don't really care about Type2 optimization here...
-    if (aValue >= -32768 && aValue <= 32767) {
+    if (aIsCharstring && aValue >= -107 && aValue <= 107) {
+      return [aValue + 139];
+    } else if (aValue >= -32768 && aValue <= 32767) {
       return [
         28,
         FontsUtils.integerToBytes(aValue >> 8, 1),
@@ -1389,6 +1269,128 @@ CFF.prototype = {
     return charstrings;
   },
 
+  /*
+   * Flatten the commands by interpreting the postscript code and replacing
+   * every 'callsubr', 'callothersubr' by the real commands.
+   * 
+   * TODO This function also do a string to command number transformation
+   * that can probably be avoided if the Type1 decodeCharstring code is smarter
+   */
+  commandsMap: {
+    "hstem": 1,
+    "vstem": 3,
+    "vmoveto": 4,
+    "rlineto": 5,
+    "hlineto": 6,
+    "vlineto": 7,
+    "rrcurveto": 8,
+    "endchar": 14,
+    "rmoveto": 21,
+    "hmoveto": 22,
+    "vhcurveto": 30,
+    "hvcurveto": 31,
+  },
+
+  flattenCharstring: function(aCharstring, aSubrs) {
+    var i = 0;
+    while (true) {
+      var obj = aCharstring[i];
+      if (IsString(obj)) {
+        switch (obj) {
+          case "callsubr":
+            var subr = aSubrs[aCharstring[i- 1]].slice();
+            if (subr.length > 1) {
+              subr = this.flattenCharstring(subr, aSubrs);
+              subr.pop();
+              aCharstring.splice(i - 1, 2, subr);
+            }
+            else
+              aCharstring.splice(i - 1, 2);
+
+            i -= 1;
+            break;
+
+          case "callothersubr":
+            var index = aCharstring[i - 1];
+            var count = aCharstring[i - 2];
+            var data = aCharstring[i - 3];
+
+            // XXX The callothersubr needs to support at least the 3 defaults
+            // otherSubrs of the spec
+            if (index != 3)
+              error("callothersubr for index: " + index + " (" + aCharstring + ")");
+
+            if (!data) {
+              aCharstring.splice(i - 2, 3, "pop", 3);
+              i -= 2;
+            } else {
+              // 5 to remove the arguments, the callothersubr call and the pop command
+              aCharstring.splice(i - 3, 5, 3);
+              i -= 3;
+            }
+            break;
+
+          case "div":
+            var num2 = aCharstring[i - 1];
+            var num1 = aCharstring[i - 2];
+            aCharstring.splice(i - 2, 3, num2 / num1);
+            i -= 2;
+            break;
+
+          case "pop":
+            aCharstring.splice(i - 2, 2);
+            i -= 1;
+            break;
+
+
+          case "hsbw":
+            var charWidthVector = aCharstring[i - 1];
+            var leftSidebearing = aCharstring[i - 2];
+            aCharstring.splice(i - 2, 3, charWidthVector, leftSidebearing, "hmoveto");
+            break;
+
+          case "endchar":
+          case "return":
+            // CharString is ready to be re-encode to commands number at this point
+            for (var j = 0; j < aCharstring.length; j++) {
+              var command = aCharstring[j];
+              if (IsNum(command)) {
+                var number = this.encodeNumber(command, true);
+                aCharstring.splice(j, 1);
+                for (var k = 0; k < number.length; k++)
+                  aCharstring.splice(j + k, 0, number[k]);
+                j+= number.length - 1;
+              } else if (IsString(command)) {
+                var command = this.commandsMap[command];
+                if (IsArray(command)) {
+                  aCharstring.splice(j - 1, 1, command[0], command[1]);
+                  j += 1;
+                } else {
+                  aCharstring[j] = command;
+                }
+              } else if (IsArray(command)) {
+                aCharstring.splice(j, 1);
+
+                // command has already been translated, just add them to the
+                // charstring directly
+                for (var k = 0; k < command.length; k++)
+                  aCharstring.splice(j + k, 0, command[k]);
+                j+= command.length - 1;
+              } else { // what else?
+                error("Error while flattening the Type1 charstring: " + aCharstring);
+              }
+            }
+            return aCharstring;
+
+          default:
+            break;
+        }
+      }
+      i++;
+    }
+    error("failing with i = " + i + " in charstring:" + aCharstring + "(" + aCharstring.length + ")");
+  },
+
   convertToCFF: function(aFontInfo) {
     var debug = false;
     function dump(aMsg) {
@@ -1398,39 +1400,24 @@ CFF.prototype = {
 
     var charstrings = this.getOrderedCharStrings(aFontInfo.charstrings);
 
+    // Starts the conversion of the Type1 charstrings to Type2
+    var start = Date.now();
     var charstringsCount = 0;
     var charstringsDataLength = 0;
     var glyphs = [];
-    var glyphsChecker = {};
-    var subrs = aFontInfo.subrs;
-
-    // FIXME This code is actually the only reason the dummy PS Interpreter
-    //       called Type1Parser continue to lives, basically the goal here is
-    //       to embed the OtherSubrs/Subrs into the charstring directly.
-    //       But since Type2 charstrings use a bias to index Subrs and can
-    //       theorically store twice the number of Type1 we could directly
-    //       save the OtherSubrs and Subrs in the Type2 table for Subrs
-    //       and avoid this 'flattening' slow method.
-    //
-    //       The other thinds done by this method is splitting the initial
-    //       'width lsb hswb' command of Type1 to something similar in Type2
-    //       that is: 'width dx moveto' but this can be done in the
-    //       decodeCharstring method directly (maybe one day it will be called
-    //       translateCharstring?)
-    var parser = new Type1Parser();
     for (var i = 0; i < charstrings.length; i++) {
       var charstring = charstrings[i].charstring.slice();
       var glyph = charstrings[i].glyph;
-      if (glyphsChecker[glyph])
-        error("glyphs already exists!");
-      glyphsChecker[glyph] = true;
 
-      var flattened = parser.flattenCharstring(charstring, subrs);
+      var flattened = this.flattenCharstring(charstring, aFontInfo.subrs);
       glyphs.push(flattened);
       charstringsCount++;
       charstringsDataLength += flattened.length;
     }
+
+    var end = Date.now();
     dump("There is " + charstringsCount + " glyphs (size: " + charstringsDataLength + ")");
+    dump("Time to flatten the strings is : " + (end -start));
 
     // Create a CFF font data
     var cff = new Uint8Array(kMaxFontFileSize);
@@ -1473,52 +1460,7 @@ CFF.prototype = {
       charset.push(bytes[1]);
     }
 
-    // Convert charstrings
-    var getNumFor = {
-      "hstem": 1,
-      "vstem": 3,
-      "vmoveto": 4,
-      "rlineto": 5,
-      "hlineto": 6,
-      "vlineto": 7,
-      "rrcurveto": 8,
-      "endchar": 14,
-      "rmoveto": 21,
-      "hmoveto": 22,
-      "vhcurveto": 30,
-      "hvcurveto": 31,
-    };
-
-    // FIXME Concatenating array with this algorithm (O²) is expensive and
-    //       can be avoided if the voodoo's dance of charstrings decoding
-    //       encoding is left for dead. Actually charstrings command number
-    //       are converted to a string and then back to a number with the
-    //       next few lines of code...
-    var r = [[0x40, 0x0E]];
-    for (var i = 0; i < glyphs.length; i++) {
-      var data = glyphs[i].slice();
-      var charstring = [];
-      for (var j = 0; j < data.length; j++) {
-        var c = data[j];
-        if (!IsNum(c)) {
-          var token = getNumFor[c];
-          if (!token)
-            error("Token " + c + " is not recognized in charstring " + data);
-          charstring.push(token);
-        } else {
-          try {
-            var bytes = this.encodeNumber(c);
-          } catch(e) {
-            log("Glyph " + i + " has a wrong value: " + c + " in charstring: " + data);
-            log("the default value is glyph " + charstrings[i].glyph + " and is supposed to be: " + charstrings[i].charstring);
-          }
-          charstring = charstring.concat(bytes);
-        }
-      }
-      r.push(charstring);
-    }
-
-    var charstringsIndex = this.createCFFIndexHeader(r, true);
+    var charstringsIndex = this.createCFFIndexHeader([[0x40, 0x0E]].concat(glyphs), true);
     charstringsIndex = charstringsIndex.join(" ").split(" "); // XXX why?
 
     //Top Dict Index
