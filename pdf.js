@@ -18,6 +18,7 @@ function warn(msg) {
 }
 
 function error(msg) {
+    console.trace();
     throw new Error(msg);
 }
 
@@ -231,7 +232,7 @@ var FlateStream = (function() {
         0x50007, 0x50017, 0x5000f, 0x00000
     ]), 5];
 
-    function constructor(stream, params) {
+    function constructor(stream) {
         this.stream = stream;
         this.dict = stream.dict;
         var cmf = stream.getByte();
@@ -510,6 +511,8 @@ var FlateStream = (function() {
 var FilterPredictor = (function() {
     function constructor(str, type, width, colors, bits) {
         this.str = str;
+        this.dict = str.dict;
+
         this.type = type;
         this.width = width;
         this.colors = colors;
@@ -536,11 +539,17 @@ var FilterPredictor = (function() {
                 if(!this.getNextLine())
                     return;
             }
-            return this.prevLine[this.prevIdx];
+            return this.prevLine[this.prevIdx++];
+        },
+        getBytes: function(length) {
+            var buf = new Uint8Array(length);
+            for (var i = 0; i < length; ++i)
+                buf[i] = this.getByte();
+            return buf;
         },
         getNextLine: function() {
             if (this.type >= 10) {
-                var curType = this.str.getRawByte();
+                var curType = this.str.getByte();
                 if (!curType)
                     return;
                 curType += 10;
@@ -550,7 +559,7 @@ var FilterPredictor = (function() {
 
             var line = [];
             for (var i = 0; i < this.rowBytes - this.pixBytes; i++)
-                line.push(this.str.getRawByte());
+                line.push(this.str.getByte());
 
             var pixBytes = this.pixBytes;
             var rowBytes = this.rowBytes;
@@ -560,62 +569,62 @@ var FilterPredictor = (function() {
             for (var i = 0, ii = pixBytes + 1; i < ii; ++i)
                 upLeftBuf.push(0);
             
-            for (var i = pixBytes, ii = rowBybtes; i < ii; ++i) {
+            for (var i = pixBytes, ii = rowBytes; i < ii; ++i) {
                 for (var j = pixBytes; j > 0; --j) {
                     upLeftBuf[j] = upLeftBuf[j - 1];
-                    upLeftBuf[0] = prevLine[i];
+                }
+                upLeftBuf[0] = prevLine[i];
 
-                    var c = line[i - pixBytes];
-                    if (!c) {
-                        if (i > pixBytes)
-                            break;
-                        return;
-                    }
-                    switch (curType) {
-                    case 11:
-                        prevLine[i] = prevLine[i - pixBytes] + c;
+                var c = line[i - pixBytes];
+                if (c == undefined) {
+                    if (i > pixBytes)
                         break;
-                    case 12:
-                        prevLine[i] = prevLine[i] + c;
-                        break;
-                    case 13:
-                        prevLine[i] = ((prevLine[i - pixBytes] 
-                                    + prevLine[i]) >> 1) + c;
-                        break;
-                    case 14:
-                        var left = prevLine[i - pixBytes];
-                        var up = prevLine[i];
-                        var upLeft = upLeftBuf[pixBytes];
-                        var p = left + up - upLeft;
+                    return;
+                }
+                switch (curType) {
+                case 11:
+                    prevLine[i] = prevLine[i - pixBytes] + c;
+                    break;
+                case 12:
+                    prevLine[i] = prevLine[i] + c;
+                    break;
+                case 13:
+                    prevLine[i] = ((prevLine[i - pixBytes] 
+                                + prevLine[i]) >> 1) + c;
+                    break;
+                case 14:
+                    var left = prevLine[i - pixBytes];
+                    var up = prevLine[i];
+                    var upLeft = upLeftBuf[pixBytes];
+                    var p = left + up - upLeft;
 
-                        var pa = p - left;
-                        if (pa < 0)
-                            pa = -pa;
-                        var pb = p - up;
-                        if (pb < 0)
+                    var pa = p - left;
+                    if (pa < 0)
+                        pa = -pa;
+                    var pb = p - up;
+                    if (pb < 0)
                         pb = -pb;
-                        var pc = p - upLeft;
-                        if (pc < 0)
-                            pc = -pc;
+                    var pc = p - upLeft;
+                    if (pc < 0)
+                        pc = -pc;
 
-                        if (pa <= pb && pa <= pc)
-                            prevLine[i] = left + c;
-                        else if (pb <= pc)
-                            prevLine[i] = up + c;
-                        else
-                            prevLine[i] = upLeft + c;
-                        break;
-                    case 10:
-                    default:
-                        prevLine[i] = c;
-                        break;
-                    }
+                    if (pa <= pb && pa <= pc)
+                        prevLine[i] = left + c;
+                    else if (pb <= pc)
+                        prevLine[i] = up + c;
+                    else
+                        prevLine[i] = upLeft + c;
+                    break;
+                case 10:
+                default:
+                    prevLine[i] = c;
+                    break;
                 }
             }
             var bits = this.bits;
             var colors = this.colors;
 
-            if (curPred === 2) {
+            if (curType === 2) {
                 if (bits === 1) {
                     var inbuf = prevLine[pixBytes - 1];
                     for (var i = pixBytes; i < rowBytes; i+= 8) {
@@ -656,7 +665,7 @@ var FilterPredictor = (function() {
                     }
                 }
             }
-            prevIdx = pixBytes;
+            this.prevIdx = pixBytes;
             return true;
         }
     };
@@ -680,9 +689,9 @@ var Name = (function() {
     }
 
     constructor.prototype = {
-      toString: function() {
-        return this.name;
-      }
+        toString: function() {
+                      return this.name;
+                  }
     };
 
     return constructor;
@@ -694,9 +703,9 @@ var Cmd = (function() {
     }
 
     constructor.prototype = {
-      toString: function() {
-        return this.cmd;
-      }
+        toString: function() {
+                      return this.cmd;
+                  }
     };
 
     return constructor;
@@ -709,18 +718,18 @@ var Dict = (function() {
 
     constructor.prototype = {
         get: function(key) {
-            return this.map[key];
-        },
-        get2: function(key1, key2) {
-            return this.get(key1) || this.get(key2);
-        },
-        has: function(key) {
-            return key in this.map;
-        },
-        set: function(key, value) {
-            this.map[key] = value;
-        },
-        forEach: function(aCallback) {
+                 return this.map[key];
+             },
+    get2: function(key1, key2) {
+              return this.get(key1) || this.get(key2);
+          },
+    has: function(key) {
+             return key in this.map;
+         },
+    set: function(key, value) {
+             this.map[key] = value;
+         },
+    forEach: function(aCallback) {
           for (var key in this.map)
             aCallback(key, this.map[key]);
         },
@@ -784,7 +793,7 @@ function IsArray(v) {
 }
 
 function IsStream(v) {
-    return typeof v == "object" && "getChar" in v;
+    return typeof v == "object" && "getByte" in v;
 }
 
 function IsRef(v) {
@@ -1294,6 +1303,7 @@ var Parser = (function() {
                         if (!cols)
                             cols = 1;
 
+                        log("Predictor being used");
                         flateStr = new FilterPredictor(flateStr, predType, cols,      
                                 colors, bpc);
                     }
@@ -2529,7 +2539,7 @@ var CanvasGraphics = (function() {
             var smask = image.dict.get("SMask");
             smask = xref.fetchIfRef(smask);
 
-            if (IsStream(smask)) {
+            if (smask) {
                 if (inline)
                     error("cannot combine smask and inlining");
 
@@ -2559,8 +2569,6 @@ var CanvasGraphics = (function() {
                 if (maskDecode)
                     TODO("Handle mask decode");
                 // handle matte object 
-            } else {
-                smask = null;
             }
 
             var tmpCanvas = document.createElement("canvas");
@@ -2573,7 +2581,7 @@ var CanvasGraphics = (function() {
             if (bitsPerComponent != 8)
                 error("unhandled number of bits per component"); 
             
-            if (smask) {
+            if (false && smask) {
                 if (maskColorSpace.numComps != 1)
                     error("Incorrect number of components in smask");
                 
@@ -2711,6 +2719,8 @@ var ColorSpace = (function() {
             case "DeviceGray":
             case "G":
                 this.numComps = 1;
+            case "DeviceRGB":
+                this.numComps = 3;
                 break;
             }
             TODO("fill in color space constructor");
