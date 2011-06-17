@@ -1,0 +1,35 @@
+/* -*- Mode: Java; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- /
+/* vim: set shiftwidth=4 tabstop=8 autoindent cindent expandtab: */
+
+body {
+    margin: 6px;
+    padding: 0px;
+    background-color: #c0bdb7;
+}
+
+#controls {
+    position:fixed;
+    left: 0px;
+    top: 0px;
+    width: 100%;
+    padding: 7px;
+    border-bottom: 1px solid black;
+    background-color: rgb(242, 240, 238);
+}
+
+span#info {
+    float: right;
+    font: 14px sans-serif;
+    margin-right: 10px;
+}
+
+#viewer {
+    margin: auto;
+    border: 1px solid black;
+    width: 12.75in;
+    height: 16.5in;
+}
+
+#pageNumber {
+    text-align: right;
+}
