@@ -46,13 +46,16 @@ function queryParams() {
 }
 
 var canvas, numPages, pageDisplay, pageNum;
-function load() {
+function load(userInput) {
     canvas = document.getElementById("canvas");
     canvas.mozOpaque = true;
     pageDisplay = document.getElementById("pageNumber");
     infoDisplay = document.getElementById("info");
     pageNum = parseInt(queryParams().page) || 1;
-    fileName = queryParams().file || "compressed.tracemonkey-pldi-09.pdf";
+    fileName = userInput;
+    if(!userInput){
+        fileName = queryParams().file || "compressed.tracemonkey-pldi-09.pdf";
+    }
     open(fileName);
 }
 
@@ -132,6 +135,9 @@ function gotoPage(num) {
 
 <body onload="load();">
   <div id="controls">
+    <input type="file" style="float: right; margin: auto 32px;" onChange="load(this.value.toString());"></input>
+    <!-- This only opens supported PDFs from the source path...
+      -- Can we use JSONP to overcome the same-origin restrictions? -->
     <button onclick="prevPage();">Previous</button>
     <button onclick="nextPage();">Next</button>
     <input type="text" id="pageNumber" onchange="gotoPage(this.value);"
