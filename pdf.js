@@ -1737,6 +1737,7 @@ var CanvasGraphics = (function() {
                 // Generate the custom cmap of the font if needed
                 var encodingMap = {};
                 if (fontDict.has("Encoding")) {
+
                   var encoding = xref.fetchIfRef(fontDict.get("Encoding"));
                   if (IsDict(encoding)) {
                       // Build an map between codes and glyphs
@@ -1749,6 +1750,7 @@ var CanvasGraphics = (function() {
 
                       // Get the font charset
                       var charset = descriptor.get("CharSet").split("/");
+
                   } else if (IsName(encoding)) {
                       var encoding = Encodings[encoding];
                       var widths = xref.fetchIfRef(fontDict.get("Widths"));
@@ -1757,15 +1759,20 @@ var CanvasGraphics = (function() {
                       var charset = [];
                       for (var j = 0; j < widths.length; j++) {
                           var index = widths[j];
-                          if (index)
-                              charset.push(encoding[j + firstchar]);
+                          if (!index)
+                            continue;
+                          charset.push(encoding[j + firstchar]);
                       }
                   }
               }
 
-              var fontBBox = descriptor.get("FontBBox");
-              var subtype = fontDict.get("Subtype").name;
-              new Font(fontName, fontFile, encodingMap, charset, fontBBox, subtype);
+              var properties = {
+                type: fontDict.get("Subtype").name,
+                encoding: encodingMap,
+                charset: charset,
+                bbox: descriptor.get("FontBBox")
+              };
+              new Font(fontName, fontFile, properties);
           }
           return Fonts[fontName];
         },
