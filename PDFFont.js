@@ -589,8 +589,6 @@ var FontsUtils = {
 };
 
 
-/** Implementation dirty logic starts here */
-
 /**
  * The TrueType class verify that the ttf embedded inside the PDF is correct in
  * the point of view of the OTS sanitizer and rewrite it on the fly otherwise.
@@ -852,49 +850,6 @@ TrueType.prototype = {
 /**
  * This dictionary holds decoded fonts data.
  */
-var PSFonts = new Dict();
-
-var Stack = function(aStackSize) {
-  var innerStack = new Array(aStackSize || 0);
-
-  this.push = function(aOperand) {
-    innerStack.push(aOperand);
-  };
-
-  this.pop = function() {
-    if (!this.count())
-      throw new Error("stackunderflow");
-    return innerStack.pop();
-  };
-
-  this.peek = function() {
-    if (!this.count())
-      return null;
-    return innerStack[innerStack.length - 1];
-  };
-
-  this.get = function(aIndex) {
-    return innerStack[aIndex];
-  };
-
-  this.clear = function() {
-    innerStack = [];
-  };
-
-  this.count = function() {
-    return innerStack.length;
-  };
-
-  this.dump = function() {
-    for (var i = 0; i < this.length; i++)
-      log(innerStack[i]);
-  };
-
-  this.clone = function() {
-    return innerStack.slice();
-  };
-};
-
 var Type1Parser = function() {
   // Turn on this flag for additional debugging logs
   var debug = false;
