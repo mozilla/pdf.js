@@ -1931,12 +1931,12 @@ var CanvasGraphics = (function() {
                 } else if (IsName(encoding)) {
                     var encoding = Encodings[encoding.name];
                     if (!encoding)
-                        error("Unknown encoding");
+                        error("Unknown font encoding");
 
                     var widths = xref.fetchIfRef(fontDict.get("Widths"));
                     var firstChar = xref.fetchIfRef(fontDict.get("FirstChar"));
                     assertWellFormed(IsArray(widths) && IsInteger(firstChar),
-                                     "invalid Widths or FirstChar");
+                                     "invalid font Widths or FirstChar");
                     var charset = [];
                     for (var j = 0; j < widths.length; j++) {
                         if (widths[j])
@@ -1945,11 +1945,16 @@ var CanvasGraphics = (function() {
                 }
             }
 
+            var subType = fontDict.get("Subtype");
+            var bbox = descriptor.get("FontBBox");
+            assertWellFormed(IsName(subType) && IsArray(bbox),
+                             "invalid font Subtype or FontBBox");
+
             var properties = {
-                type: fontDict.get("Subtype").name,
+                type: subType.name,
                 encoding: encodingMap,
                 charset: charset,
-                bbox: descriptor.get("FontBBox")
+                bbox: bbox
             };
 
             return {
