@@ -1729,52 +1729,57 @@ var CanvasGraphics = (function() {
             var fontName = descriptor.get("FontName").name;
             fontName = fontName.replace("+", "_");
 
-            var font = Fonts[fontName];
-            if (!font) {
-                var fontFile = descriptor.get2("FontFile", "FontFile2");
-                fontFile = xref.fetchIfRef(fontFile);
+            var fontFile = descriptor.get2("FontFile", "FontFile2");
+            if (!fontFile)
+              errort("FontFile not found for font: " + fontName);
+            fontFile = xref.fetchIfRef(fontFile);
 
-                // Generate the custom cmap of the font if needed
-                var encodingMap = {};
-                if (fontDict.has("Encoding")) {
+            // Generate the custom cmap of the font if needed
+            var encodingMap = {};
+            if (fontDict.has("Encoding")) {
+                var encoding = xref.fetchIfRef(fontDict.get("Encoding"));
+                if (IsDict(encoding)) {
+                    // Build an map between codes and glyphs
+                    var differences = encoding.get("Differences");
+                    var index = 0;
+                    for (var j = 0; j < differences.length; j++) {
+                        var data = differences[j];
+                        IsNum(data) ? index = data : encodingMap[index++] = data;
+                    }
 
-                  var encoding = xref.fetchIfRef(fontDict.get("Encoding"));
-                  if (IsDict(encoding)) {
-                      // Build an map between codes and glyphs
-                      var differences = encoding.get("Differences");
-                      var index = 0;
-                      for (var j = 0; j < differences.length; j++) {
-                          var data = differences[j];
-                          IsNum(data) ? index = data : encodingMap[index++] = data;
-                      }
+                    // Get the font charset if any
+                    var charset = descriptor.get("CharSet");
+                    if (charset)
+                      charset = charset.split("/");
 
-                      // Get the font charset
-                      var charset = descriptor.get("CharSet").split("/");
+                } else if (IsName(encoding)) {
+                    var encoding = Encodings[encoding];
+                    var widths = xref.fetchIfRef(fontDict.get("Widths"));
+                    var firstchar = xref.fetchIfRef(fontDict.get("FirstChar"));
 
-                  } else if (IsName(encoding)) {
-                      var encoding = Encodings[encoding];
-                      var widths = xref.fetchIfRef(fontDict.get("Widths"));
-                      var firstchar = xref.fetchIfRef(fontDict.get("FirstChar"));
+                    var charset = [];
+                    for (var j = 0; j < widths.length; j++) {
+                        var index = widths[j];
+                        if (!index)
+                          continue;
 
-                      var charset = [];
-                      for (var j = 0; j < widths.length; j++) {
-                          var index = widths[j];
-                          if (!index)
-                            continue;
-                          charset.push(encoding[j + firstchar]);
-                      }
-                  }
-              }
+                        charset.push(encoding[j + firstchar]);
+                    }
+                }
+            }
 
-              var properties = {
+            var properties = {
                 type: fontDict.get("Subtype").name,
                 encoding: encodingMap,
                 charset: charset,
                 bbox: descriptor.get("FontBBox")
-              };
-              new Font(fontName, fontFile, properties);
-          }
-          return Fonts[fontName];
+            };
+
+            return {
+                name: fontName,
+              file: fontFile,
+              properties: properties
+            }
         },
 
         beginDrawing: function(mediaBox) {
