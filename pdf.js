@@ -73,7 +73,7 @@ var Stream = (function() {
             var pos = this.pos;
             var end = pos + length;
             var strEnd = this.end;
-            if (end > strEnd)
+            if (!end || end > strEnd)
                 end = strEnd;
             
             this.pos = end;
@@ -232,10 +232,12 @@ var FlateStream = (function() {
     ]), 5];
 
     function constructor(stream) {
-        this.stream = stream;
+        var bytes = stream.getBytes();
+        var bytesIdx = 0;
+
         this.dict = stream.dict;
-        var cmf = stream.getByte();
-        var flg = stream.getByte();
+        var cmf = bytes[bytesIdx++];
+        var flg = bytes[bytesIdx++];
         if (cmf == -1 || flg == -1)
             error("Invalid header in flate stream");
         if ((cmf & 0x0f) != 0x08)
@@ -244,6 +246,9 @@ var FlateStream = (function() {
             error("Bad FCHECK in flate stream");
         if (flg & 0x20)
             error("FDICT bit set in flate stream");
+
+        this.bytes = bytes;
+        this.bytesIdx = bytesIdx;
         this.eof = false;
         this.codeSize = 0;
         this.codeBuf = 0;
@@ -254,12 +259,14 @@ var FlateStream = (function() {
 
     constructor.prototype = {
         getBits: function(bits) {
-            var stream = this.stream;
             var codeSize = this.codeSize;
             var codeBuf = this.codeBuf;
+            var bytes = this.bytes;
+            var bytesIdx = this.bytesIdx;
+
             var b;
             while (codeSize < bits) {
-                if ((b = stream.getByte()) == -1)
+                if ((b = bytes[bytesIdx++]) == undefined)
                     error("Bad encoding in flate stream");
                 codeBuf |= b << codeSize;
                 codeSize += 8;
@@ -267,6 +274,7 @@ var FlateStream = (function() {
             b = codeBuf & ((1 << bits) - 1);
             this.codeBuf = codeBuf >> bits;
             this.codeSize = codeSize -= bits;
+            this.bytesIdx = bytesIdx;
             return b;
         },
         getCode: function(table) {
@@ -274,10 +282,12 @@ var FlateStream = (function() {
             var maxLen = table[1];
             var codeSize = this.codeSize;
             var codeBuf = this.codeBuf;
-            var stream = this.stream;
+            var bytes = this.bytes;
+            var bytesIdx = this.bytesIdx;
+
             while (codeSize < maxLen) {
                 var b;
-                if ((b = stream.getByte()) == -1)
+                if ((b = bytes[bytesIdx++]) == undefined)
                     error("Bad encoding in flate stream");
                 codeBuf |= (b << codeSize);
                 codeSize += 8;
@@ -289,6 +299,7 @@ var FlateStream = (function() {
                 error("Bad encoding in flate stream");
             this.codeBuf = (codeBuf >> codeLen);
             this.codeSize = (codeSize - codeLen);
+            this.bytesIdx = bytesIdx;
             return codeVal;
         },
         ensureBuffer: function(requested) {
@@ -390,7 +401,8 @@ var FlateStream = (function() {
             return [codes, maxLen];
         },
         readBlock: function() {
-            var stream = this.stream;
+            var bytes = this.bytes;
+            var bytesIdx = this.bytesIdx;
 
             // read block header
             var hdr = this.getBits(3);
@@ -400,16 +412,16 @@ var FlateStream = (function() {
 
             var b;
             if (hdr == 0) { // uncompressed block
-                if ((b = stream.getByte()) == -1)
+                if ((b = bytes[bytesIdx++]) == undefined)
                     error("Bad block header in flate stream");
                 var blockLen = b;
-                if ((b = stream.getByte()) == -1)
+                if ((b = bytes[bytesIdx++]) == undefined)
                     error("Bad block header in flate stream");
                 blockLen |= (b << 8);
-                if ((b = stream.getByte()) == -1)
+                if ((b = bytes[bytesIdx++]) == undefined)
                     error("Bad block header in flate stream");
                 var check = b;
-                if ((b = stream.getByte()) == -1)
+                if ((b = bytes[bytesIdx++]) == undefined)
                     error("Bad block header in flate stream");
                 check |= (b << 8);
                 if (check != (~this.blockLen & 0xffff))
@@ -418,7 +430,7 @@ var FlateStream = (function() {
                 var buffer = this.ensureBuffer(bufferLength + blockLen);
                 this.bufferLength = bufferLength + blockLen;
                 for (var n = bufferLength; n < blockLen; ++n) {
-                    if ((b = stream.getByte()) == -1) {
+                    if ((b = bytes[bytesIdx++]) == undefined) {
                         this.eof = true;
                         break;
                     }
