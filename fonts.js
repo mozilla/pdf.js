@@ -31,7 +31,7 @@ var fontCount = 0;
 var Fonts = {
   _active: null,
   get active() {
-    return this._active || { encoding: [] };
+    return this._active;
   },
 
   set active(aName) {
@@ -39,8 +39,11 @@ var Fonts = {
   },
 
   unicodeFromCode: function fonts_unicodeFromCode(aCode) {
-    var unicode = GlyphsUnicode[this.active.encoding[aCode]];
-    return unicode ? unicode : aCode;
+    var active = this._active;
+    if (!active || !active.properties.encoding)
+      return aCode;
+
+    return GlyphsUnicode[active.properties.encoding[aCode]];
   }
 };
 
@@ -49,16 +52,10 @@ var Fonts = {
  * decoding logics whatever type it is (assuming the font type is supported).
  *
  * For example to read a Type1 font and to attach it to the document:
- *   var type1Font = new Font("MyFontName", binaryData, aFontEncoding, "Type1");
+ *   var type1Font = new Font("MyFontName", binaryFile, propertiesObject);
  *   type1Font.bind();
- *
- * As an improvment the last parameter can be replaced by an automatic guess
- * of the font type based on the first byte of the file.
- *
- * FIXME There is now too many parameters, this should be turned into an
- * object containing all the required informations about the font
  */
-var Font = function(aName, aFile, aEncoding, aCharset, aBBox, aType) {
+var Font = function(aName, aFile, aProperties) {
   this.name = aName;
 
   // If the font has already been decoded simply return
@@ -68,41 +65,40 @@ var Font = function(aName, aFile, aEncoding, aCharset, aBBox, aType) {
   }
   fontCount++;
 
-  var start = Date.now();
-  switch (aType) {
+  switch (aProperties.type) {
     case "Type1":
-      var cff = new CFF(aName, aBBox, aFile);
+      var cff = new CFF(aName, aFile, aProperties);
       this.mimetype = "font/otf";
 
       // Wrap the CFF data inside an OTF font file
-      this.font = this.cover(cff);
+      this.font = this.cover(cff, aProperties);
       break;
 
     case "TrueType":
+      // TrueType is disabled for the moment since the sanitizer prevent it
+      // from loading because of an overdated cmap table
       return Fonts[aName] = {
         data: null,
-        encoding: {},
-        charset: null,
+        properties: {
+          encoding: {},
+          charset: null
+        },
         loading: false
       };
 
-      // TrueType is disabled for the moment since the sanitizer prevent it
-      // from loading
       this.mimetype = "font/ttf";
       var ttf = new TrueType(aFile);
       this.font = ttf.data;
       break;
 
     default:
-      warn("Font " + aType + " is not supported");
+      warn("Font " + aProperties.type + " is not supported");
       break;
   }
-  var end = Date.now();
 
   Fonts[aName] = {
     data: this.font,
-    encoding: aEncoding,
-    charset: aCharset ? aCharset.slice() : null,
+    properties: aProperties,
     loading: true
   }
 
@@ -204,7 +200,7 @@ Font.prototype = {
 
       if (debug)
         ctx.fillText(testString, 20, 50);
-    }, 20, this);
+    }, 50, this);
 
     /** Hack end */
 
@@ -355,7 +351,7 @@ Font.prototype = {
                        idDeltas, idRangeOffsets, glyphsIdsArray);
   },
 
-  cover: function font_cover(aFont) {
+  cover: function font_cover(aFont, aProperties) {
     var otf = new Uint8Array(kMaxFontFileSize);
 
     // Required Tables
@@ -431,7 +427,7 @@ Font.prototype = {
     this._createTableEntry(otf, offsets, "OS/2", OS2);
 
     //XXX Getting charstrings here seems wrong since this is another CFF glue
-    var charstrings = aFont.getOrderedCharStrings(aFont.glyphs);
+    var charstrings = aFont.getOrderedCharStrings(aProperties.glyphs);
 
     /** CMAP */
     cmap = this._createCMAPTable(charstrings);
@@ -715,21 +711,10 @@ var TrueType = function(aFile) {
       ttf.set(tableData, offsets.currentOffset);
       offsets.currentOffset += tableData.length;
 
-      if (0) {
-        var data = [];
-        for (var j = 0; j < tableData.length; j++)
-          d.push(tableData[j]);
-        log("data for table: " + table.tag + ": " + data);
-      }
-
       // 4-byte aligned data
       while (offsets.currentOffset & 3)
         offsets.currentOffset++;
     }
-
-    var fontData = [];
-    for (var i = 0; i < ttf.length; i++)
-      fontData.push(ttf[i]);
 
     this.data = ttf;
     return;
@@ -844,17 +829,11 @@ TrueType.prototype = {
 
 
 /**
- * This dictionary holds decoded fonts data.
+ * Type1Parser encapsulate the needed code for parsing a Type1 font
+ * program.
+ * Some of its logic depends on the Type2 charstrings structure.
  */
 var Type1Parser = function() {
-  // Turn on this flag for additional debugging logs
-  var debug = false;
-
-  var dump = function(aData) {
-    if (debug)
-      log(aData);
-  };
-
   /*
    * Decrypt a Sequence of Ciphertext Bytes to Produce the Original Sequence
    * of Plaintext Bytes. The function took a key as a parameter which can be
@@ -863,8 +842,7 @@ var Type1Parser = function() {
   var kEexecEncryptionKey = 55665;
   var kCharStringsEncryptionKey = 4330;
 
-  function decrypt(aStream, aKey, aDiscardNumber, aByteArray) {
-    var start = Date.now();
+  function decrypt(aStream, aKey, aDiscardNumber) {
     var r = aKey, c1 = 52845, c2 = 22719;
     var decryptedString = [];
 
@@ -872,14 +850,9 @@ var Type1Parser = function() {
     var count = aStream.length;
     for (var i = 0; i < count; i++) {
       value = aStream[i];
-      if (aByteArray)
-        decryptedString[i] = value ^ (r >> 8);
-      else
-        decryptedString[i] = String.fromCharCode(value ^ (r >> 8));
+      decryptedString[i] = value ^ (r >> 8);
       r = ((value + r) * c1 + c2) & ((1 << 16) - 1);
     }
-    var end = Date.now();
-    dump("Time to decrypt string of length " + count + " is " + (end - start));
     return decryptedString.slice(aDiscardNumber);
   };
 
@@ -1014,8 +987,7 @@ var Type1Parser = function() {
         } else if (!command) {
           break;
         } else if (command == -1) {
-          log("decodeCharstring: " + charString);
-          error("Support for Type1 command " + value + " (" + escape + ") is not implemented");
+          error("Support for Type1 command " + value + " (" + escape + ") is not implemented in charstring: " + charString);
         }
 
         value = command;
@@ -1042,8 +1014,8 @@ var Type1Parser = function() {
    * Returns an object containing a Subrs array and a CharStrings array
    * extracted from and eexec encrypted block of data
    */
-  this.extractFontInfo = function(aStream) {
-    var eexecString = decrypt(aStream, kEexecEncryptionKey, 4, true);
+  this.extractFontProgram = function t1_extractFontProgram(aStream) {
+    var eexecString = decrypt(aStream, kEexecEncryptionKey, 4);
     var subrs = [],  glyphs = [];
     var inSubrs = inGlyphs = false;
     var glyph = "";
@@ -1052,15 +1024,15 @@ var Type1Parser = function() {
     var index = 0;
     var length = 0;
 
-    var count = eexecString.length;
     var c = "";
+    var count = eexecString.length;
     for (var i = 0; i < count; i++) {
       var c = eexecString[i];
 
       if (inSubrs && c == 0x52) {
         length = parseInt(length);
         var data = eexecString.slice(i + 3, i + 3 + length);
-        var encodedSubr = decrypt(data, kCharStringsEncryptionKey, 4, true);
+        var encodedSubr = decrypt(data, kCharStringsEncryptionKey, 4);
         var subr = decodeCharString(encodedSubr);
 
         subrs.push(subr);
@@ -1068,7 +1040,7 @@ var Type1Parser = function() {
       } else if (inGlyphs && c == 0x52) {
         length = parseInt(length);
         var data = eexecString.slice(i + 3, i + 3 + length);
-        var encodedCharstring = decrypt(data, kCharStringsEncryptionKey, 4, true);
+        var encodedCharstring = decrypt(data, kCharStringsEncryptionKey, 4);
         var subr = decodeCharString(encodedCharstring);
 
         glyphs.push({
@@ -1104,36 +1076,95 @@ var Type1Parser = function() {
   }
 };
 
-var CFF = function(aFontName, aFontBBox, aFontFile) {
+const CFFStrings = [
+  ".notdef","space","exclam","quotedbl","numbersign","dollar","percent","ampersand",
+  "quoteright","parenleft","parenright","asterisk","plus","comma","hyphen","period",
+  "slash","zero","one","two","three","four","five","six","seven","eight","nine",
+  "colon","semicolon","less","equal","greater","question","at","A","B","C","D","E",
+  "F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y",
+  "Z","bracketleft","backslash","bracketright","asciicircum","underscore",
+  "quoteleft","a","b","c","d","e","f","g","h","i","j","k","l","m","n","o","p","q",
+  "r","s","t","u","v","w","x","y","z","braceleft","bar","braceright","asciitilde",
+  "exclamdown","cent","sterling","fraction","yen","florin","section","currency",
+  "quotesingle","quotedblleft","guillemotleft","guilsinglleft","guilsinglright",
+  "fi","fl","endash","dagger","daggerdbl","periodcentered","paragraph","bullet",
+  "quotesinglbase","quotedblbase","quotedblright","guillemotright","ellipsis",
+  "perthousand","questiondown","grave","acute","circumflex","tilde","macron",
+  "breve","dotaccent","dieresis","ring","cedilla","hungarumlaut","ogonek","caron",
+  "emdash","AE","ordfeminine","Lslash","Oslash","OE","ordmasculine","ae","dotlessi",
+  "lslash","oslash","oe","germandbls","onesuperior","logicalnot","mu","trademark",
+  "Eth","onehalf","plusminus","Thorn","onequarter","divide","brokenbar","degree",
+  "thorn","threequarters","twosuperior","registered","minus","eth","multiply",
+  "threesuperior","copyright","Aacute","Acircumflex","Adieresis","Agrave","Aring",
+  "Atilde","Ccedilla","Eacute","Ecircumflex","Edieresis","Egrave","Iacute",
+  "Icircumflex","Idieresis","Igrave","Ntilde","Oacute","Ocircumflex","Odieresis",
+  "Ograve","Otilde","Scaron","Uacute","Ucircumflex","Udieresis","Ugrave","Yacute",
+  "Ydieresis","Zcaron","aacute","acircumflex","adieresis","agrave","aring","atilde",
+  "ccedilla","eacute","ecircumflex","edieresis","egrave","iacute","icircumflex",
+  "idieresis","igrave","ntilde","oacute","ocircumflex","odieresis","ograve",
+  "otilde","scaron","uacute","ucircumflex","udieresis","ugrave","yacute",
+  "ydieresis","zcaron","exclamsmall","Hungarumlautsmall","dollaroldstyle",
+  "dollarsuperior","ampersandsmall","Acutesmall","parenleftsuperior",
+  "parenrightsuperior","266 ff","onedotenleader","zerooldstyle","oneoldstyle",
+  "twooldstyle","threeoldstyle","fouroldstyle","fiveoldstyle","sixoldstyle",
+  "sevenoldstyle","eightoldstyle","nineoldstyle","commasuperior",
+  "threequartersemdash","periodsuperior","questionsmall","asuperior","bsuperior",
+  "centsuperior","dsuperior","esuperior","isuperior","lsuperior","msuperior",
+  "nsuperior","osuperior","rsuperior","ssuperior","tsuperior","ff","ffi","ffl",
+  "parenleftinferior","parenrightinferior","Circumflexsmall","hyphensuperior",
+  "Gravesmall","Asmall","Bsmall","Csmall","Dsmall","Esmall","Fsmall","Gsmall",
+  "Hsmall","Ismall","Jsmall","Ksmall","Lsmall","Msmall","Nsmall","Osmall","Psmall",
+  "Qsmall","Rsmall","Ssmall","Tsmall","Usmall","Vsmall","Wsmall","Xsmall","Ysmall",
+  "Zsmall","colonmonetary","onefitted","rupiah","Tildesmall","exclamdownsmall",
+  "centoldstyle","Lslashsmall","Scaronsmall","Zcaronsmall","Dieresissmall",
+  "Brevesmall","Caronsmall","Dotaccentsmall","Macronsmall","figuredash",
+  "hypheninferior","Ogoneksmall","Ringsmall","Cedillasmall","questiondownsmall",
+  "oneeighth","threeeighths","fiveeighths","seveneighths","onethird","twothirds",
+  "zerosuperior","foursuperior","fivesuperior","sixsuperior","sevensuperior",
+  "eightsuperior","ninesuperior","zeroinferior","oneinferior","twoinferior",
+  "threeinferior","fourinferior","fiveinferior","sixinferior","seveninferior",
+  "eightinferior","nineinferior","centinferior","dollarinferior","periodinferior",
+  "commainferior","Agravesmall","Aacutesmall","Acircumflexsmall","Atildesmall",
+  "Adieresissmall","Aringsmall","AEsmall","Ccedillasmall","Egravesmall",
+  "Eacutesmall","Ecircumflexsmall","Edieresissmall","Igravesmall","Iacutesmall",
+  "Icircumflexsmall","Idieresissmall","Ethsmall","Ntildesmall","Ogravesmall",
+  "Oacutesmall","Ocircumflexsmall","Otildesmall","Odieresissmall","OEsmall",
+  "Oslashsmall","Ugravesmall","Uacutesmall","Ucircumflexsmall","Udieresissmall",
+  "Yacutesmall","Thornsmall","Ydieresissmall","001.000","001.001","001.002",
+  "001.003","Black","Bold","Book","Light","Medium","Regular","Roman","Semibold"
+];
+
+/**
+ * Take a Type1 file as input and wrap it into a Compact Font Format (CFF)
+ * wrapping Type2 charstrings.
+ */
+var CFF = function(aName, aFile, aProperties) {
   // Get the data block containing glyphs and subrs informations
-  var length1 = aFontFile.dict.get("Length1");
-  var length2 = aFontFile.dict.get("Length2");
-  aFontFile.skip(length1);
-  var eexecBlock = aFontFile.getBytes(length2);
+  var length1 = aFile.dict.get("Length1");
+  var length2 = aFile.dict.get("Length2");
+  aFile.skip(length1);
+  var eexecBlock = aFile.getBytes(length2);
 
-  // Extract informations from it
-  var start = Date.now();
+  // Decrypt the data blocks and retrieve the informations from it
   var parser = new Type1Parser();
-  var fontInfo = parser.extractFontInfo(eexecBlock);
-  fontInfo.name = aFontName;
-  fontInfo.bbox = aFontBBox;
+  var fontInfo = parser.extractFontProgram(eexecBlock);
 
-  // XXX This hold the glyph data as if, this should be improved
-  this.glyphs = fontInfo.charstrings;
-
-  this.data = this.convertToCFF(fontInfo);
-  var end = Date.now();
+  aProperties.subrs = fontInfo.subrs;
+  aProperties.glyphs = fontInfo.charstrings;
+  this.data = this.wrap(aName, aProperties);
 };
 
 CFF.prototype = {
   createCFFIndexHeader: function(aObjects, aIsByte) {
-    var data = [];
-
     // First 2 bytes contains the number of objects contained into this index
     var count = aObjects.length;
-    if (count ==0)
+
+    // If there is no object, just create an array saying that with another
+    // offset byte.
+    if (count == 0)
       return [0x00, 0x00, 0x00];
 
+    var data = [];
     var bytes = FontsUtils.integerToBytes(count, 2);
     for (var i = 0; i < bytes.length; i++)
       data.push(bytes[i]);
@@ -1164,10 +1195,9 @@ CFF.prototype = {
   encodeNumber: function(aValue) {
     var x = 0;
     if (aValue >= -32768 && aValue <= 32767) {
-      return [ 28, aValue >> 8, aValue ];
+      return [ 28, aValue >> 8, aValue & 0xFF ];
     } else if (aValue >= (-2147483647-1) && aValue <= 2147483647) {
-      return [
-        0xFF, aValue >> 24, Value >> 16, aValue >> 8, aValue ];
+      return [ 0xFF, aValue >> 24, Value >> 16, aValue >> 8, aValue & 0xFF ];
     } else {
       error("Value: " + aValue + " is not allowed");
     }
@@ -1220,7 +1250,6 @@ CFF.prototype = {
   },
 
   flattenCharstring: function(aGlyph, aCharstring, aSubrs) {
-    var original = aCharstring.slice();
     var i = 0;
     while (true) {
       var obj = aCharstring[i];
@@ -1324,17 +1353,10 @@ CFF.prototype = {
     error("failing with i = " + i + " in charstring:" + aCharstring + "(" + aCharstring.length + ")");
   },
 
-  convertToCFF: function(aFontInfo) {
-    var debug = false;
-    function dump(aMsg) {
-      if (debug)
-        log(aMsg);
-    };
-
-    var charstrings = this.getOrderedCharStrings(aFontInfo.charstrings);
+  wrap: function(aName, aProperties) {
+    var charstrings = this.getOrderedCharStrings(aProperties.glyphs);
 
     // Starts the conversion of the Type1 charstrings to Type2
-    var start = Date.now();
     var charstringsCount = 0;
     var charstringsDataLength = 0;
     var glyphs = [];
@@ -1342,15 +1364,11 @@ CFF.prototype = {
       var charstring = charstrings[i].charstring.slice();
       var glyph = charstrings[i].glyph;
 
-      var flattened = this.flattenCharstring(glyph, charstring, aFontInfo.subrs);
+      var flattened = this.flattenCharstring(glyph, charstring, aProperties.subrs);
       glyphs.push(flattened);
       charstringsCount++;
       charstringsDataLength += flattened.length;
     }
-
-    var end = Date.now();
-    dump("There is " + charstringsCount + " glyphs (size: " + charstringsDataLength + ")");
-    dump("Time to flatten the strings is : " + (end -start));
 
     // Create a CFF font data
     var cff = new Uint8Array(kMaxFontFileSize);
@@ -1362,7 +1380,7 @@ CFF.prototype = {
     cff.set(header);
 
     // Names Index
-    var nameIndex = this.createCFFIndexHeader([aFontInfo.name]);
+    var nameIndex = this.createCFFIndexHeader([aName]);
     cff.set(nameIndex, currentOffset);
     currentOffset += nameIndex.length;
 
@@ -1406,7 +1424,7 @@ CFF.prototype = {
       248, 31, 4  // Weight
     ];
 
-    var fontBBox = aFontInfo.bbox;
+    var fontBBox = aProperties.bbox;
     for (var i = 0; i < fontBBox.length; i++)
       topDictIndex = topDictIndex.concat(this.encodeNumber(fontBBox[i]));
     topDictIndex.push(5) // FontBBox;
