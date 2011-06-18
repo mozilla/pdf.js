@@ -58,8 +58,8 @@ var Fonts = {
     for (var i = 0; i < chars.length; ++i) {
       var ch = chars.charCodeAt(i);
       var uc = encoding[ch];
-      if (typeof uc != "number") // we didn't convert the glyph yet
-        uc = encoding[ch] = GlyphsUnicode[uc];
+      if (uc instanceof Name) // we didn't convert the glyph yet
+        uc = encoding[ch] = GlyphsUnicode[uc.name];
       ret += String.fromCharCode(uc);
     }
 
