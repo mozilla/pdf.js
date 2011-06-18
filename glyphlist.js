@@ -4282,8 +4282,8 @@ var GlyphsUnicode = {
   zukatakana: 0x30BA
 };
 
-// Add missing glyphs from the original Adobe's list
-GlyphsUnicode["angbracketleft"] = 0x3008;
-GlyphsUnicode["angbracketright"] = 0x3009;
-GlyphsUnicode["circlecopyrt"] = 0x00A9;
+// Add missing glyphs from the Adobe's original list
+GlyphsUnicode.angbracketleft = 0x3008;
+GlyphsUnicode.angbracketright = 0x3009;
+GlyphsUnicode.circlecopyrt = 0x00A9;
 
