@@ -30,6 +30,7 @@ var fontCount = 0;
  */
 var Fonts = {
   _active: null,
+
   get active() {
     return this._active;
   },
@@ -38,12 +39,34 @@ var Fonts = {
     this._active = this[aName];
   },
 
-  unicodeFromCode: function fonts_unicodeFromCode(aCode) {
+  chars2Unicode: function(chars) {
     var active = this._active;
-    if (!active || !active.properties.encoding)
-      return aCode;
+    if (!active)
+      return chars;
 
-    return GlyphsUnicode[active.properties.encoding[aCode]];
+    // if we translated this string before, just grab it from the cache
+    var ret = active.cache[chars];
+    if (ret)
+      return ret;
+
+    // translate the string using the font's encoding
+    var encoding = active.properties.encoding;
+    if (!encoding)
+      return chars;
+
+    var ret = "";
+    for (var i = 0; i < chars.length; ++i) {
+      var ch = chars.charCodeAt(i);
+      var uc = encoding[ch];
+      if (typeof uc != "number") // we didn't convert the glyph yet
+        uc = encoding[ch] = GlyphsUnicode[uc];
+      ret += String.fromCharCode(uc);
+    }
+
+    // enter the translated string into the cache
+    active.cache[chars] = ret;
+
+    return ret;
   }
 };
 
@@ -83,7 +106,8 @@ var Font = function(aName, aFile, aProperties) {
           encoding: {},
           charset: null
         },
-        loading: false
+        loading: false,
+        cache: Object.create(null)
       };
 
       this.mimetype = "font/ttf";
@@ -99,7 +123,8 @@ var Font = function(aName, aFile, aProperties) {
   Fonts[aName] = {
     data: this.font,
     properties: aProperties,
-    loading: true
+    loading: true,
+    cache: Object.create(null)
   }
 
   // Attach the font to the document
