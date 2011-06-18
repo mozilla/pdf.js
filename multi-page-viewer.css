@@ -2,6 +2,7 @@
 /* vim: set shiftwidth=4 tabstop=8 autoindent cindent expandtab: */
 
 body {
+    background-color: #929292;
     font-family: 'Lucida Grande', 'Lucida Sans Unicode', Helvetica, Arial, Verdana, sans-serif;
     margin: 0px;
     padding: 0px;
@@ -15,6 +16,10 @@ canvas {
 
 span {
     font-size: 0.8em;
+}
+
+.control {
+    margin: 0px 20px 0px 0px;
 }
 
 .page {
@@ -43,8 +48,6 @@ span {
 }
 
 #viewer {
-    background-color: #929292;
     margin: 32px 0px 0px;
     padding: 8px 0px;
-    width: 100%;
 }
