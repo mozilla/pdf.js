@@ -2110,11 +2110,10 @@ var CanvasGraphics = (function() {
         },
         setFillColorSpace: function(space) {
             // TODO real impl
-            if (space.name === "Pattern") {
+            if (space.name === "Pattern")
                 this.colorspace = "Pattern";
-            } else {
+            else
                 this.colorspace = null;
-            }
         },
         setStrokeColor: function(/*...*/) {
             // TODO real impl
@@ -2150,11 +2149,10 @@ var CanvasGraphics = (function() {
                     var pattern = xref.fetchIfRef(patternRes.get(patternName.name));
                     
                     var type = pattern.dict.get("PatternType");
-                    if (type === 1) {
+                    if (type === 1)
                         this.tilingFill(pattern);
-                    } else {
+                    else
                         error("Unhandled pattern type");
-                    }
                 }
             } else {
                 // TODO real impl
@@ -2218,7 +2216,7 @@ var CanvasGraphics = (function() {
             this.ctx = tmpCtx;
 
             // normalize transform matrix so each step
-            // takes up the entire tmpCanvas (no white borders)
+            // takes up the entire tmpCanvas (need to remove white borders)
             if (matrix[1] === 0 && matrix[2] === 0) {
                 matrix[0] = tmpCanvas.width / xstep;
                 matrix[3] = tmpCanvas.height / ystep;
