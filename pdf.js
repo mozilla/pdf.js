@@ -2184,8 +2184,9 @@ var CanvasGraphics = (function() {
                 error("Unsupported paint type");
             } else {
                 // should go to default for color space
-                this.ctx.fillStyle = this.makeCssRgb(1, 1, 1);
-                this.ctx.strokeStyle = this.makeCssRgb(0, 0, 0);
+                var ctx = this.ctx;
+                ctx.fillStyle = this.makeCssRgb(1, 1, 1);
+                ctx.strokeStyle = this.makeCssRgb(0, 0, 0);
             }
 
             // not sure what to do with this
