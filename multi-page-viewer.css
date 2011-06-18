@@ -1,0 +1,50 @@
+/* -*- Mode: Java; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- /
+/* vim: set shiftwidth=4 tabstop=8 autoindent cindent expandtab: */
+
+body {
+    font-family: 'Lucida Grande', 'Lucida Sans Unicode', Helvetica, Arial, Verdana, sans-serif;
+    margin: 0px;
+    padding: 0px;
+}
+
+canvas {
+    box-shadow: 0px 4px 10px #000;
+    -moz-box-shadow: 0px 4px 10px #000;
+    -webkit-box-shadow: 0px 4px 10px #000;
+}
+
+span {
+    font-size: 0.8em;
+}
+
+.page {
+    width: 816px;
+    height: 1056px;
+    margin: 10px auto;
+}
+
+#controls {
+    background-color: #eee;
+    border-bottom: 1px solid #666;
+    padding: 4px 0px 0px 10px;
+    position:fixed;
+    left: 0px;
+    top: 0px;
+    height: 28px;
+    width: 100%;
+    box-shadow: 0px 2px 8px #000;
+    -moz-box-shadow: 0px 2px 8px #000;
+    -webkit-box-shadow: 0px 2px 8px #000;
+}
+
+#pageNumber {
+    margin: 0px 0px 0px 10px;
+    text-align: right;
+}
+
+#viewer {
+    background-color: #929292;
+    margin: 32px 0px 0px;
+    padding: 8px 0px;
+    width: 100%;
+}
