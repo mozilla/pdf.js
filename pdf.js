@@ -519,8 +519,9 @@ var FilterPredictor = (function() {
         this.bits = bits;
         
         this.nVals = width * colors;
-        this.pixBytes = (colors * bits + 7) >> 3;
-        var rowBytes = (width * colors * bits + 7) >> 3;
+        var pixBytes = (colors * bits + 7) >> 3;
+        this.pixBytes = pixBytes;
+        var rowBytes = ((width * colors * bits + 7) >> 3) + pixBytes;
         this.rowBytes = rowBytes;
 
         if (width < 0 || colors < 0 || bits < 0 ||bits > 16)
@@ -569,7 +570,7 @@ var FilterPredictor = (function() {
             for (var i = 0, ii = pixBytes + 1; i < ii; ++i)
                 upLeftBuf.push(0);
             
-            for (var i = pixBytes, ii = rowBytes; i < ii; ++i) {
+            for (var i = pixBytes, ii = rowBytes + pixBytes + 1; i < ii; ++i) {
                 for (var j = pixBytes; j > 0; --j) {
                     upLeftBuf[j] = upLeftBuf[j - 1];
                 }
@@ -2118,7 +2119,7 @@ var CanvasGraphics = (function() {
 
                     var widths = xref.fetchIfRef(fontDict.get("Widths"));
                     var firstChar = xref.fetchIfRef(fontDict.get("FirstChar"));
-                    assertWellFormed(IsArray(widths) && IsInteger(firstChar),
+                    assertWellFormed(IsArray(widths) && IsInt(firstChar),
                                      "invalid font Widths or FirstChar");
                     var charset = [];
                     for (var j = 0; j < widths.length; j++) {
@@ -2775,9 +2776,9 @@ var CanvasGraphics = (function() {
             if (bitsPerComponent != 8)
                 error("unhandled number of bits per component"); 
             
-            if (false && smask) {
-                if (maskColorSpace.numComps != 1)
-                    error("Incorrect number of components in smask");
+            if (smask) {
+                //if (maskColorSpace.numComps != 1)
+                //    error("Incorrect number of components in smask");
                 
                 var numComps = colorSpace.numComps;
                 var imgArray = image.getBytes(numComps * w * h);
