@@ -74,30 +74,43 @@ function displayPage(num) {
     page.compile(gfx, fonts);
     var t2 = Date.now();
 
-    var interval = 0;
-    for (var i = 0; i < fonts.length; i++) {
-      if (fonts[i].loading) {
-        interval = 10;
-        break;
+    var fontsReady = true;
+
+    // Inspect fonts and translate the missing one
+    var count = fonts.length;
+    for (var i = 0; i < count; i++) {
+      var font = fonts[i];
+      if (Fonts[font.name]) {
+        fontsReady = fontsReady && !Fonts[font.name].loading;
+        continue;
       }
+
+      new Font(font.name, font.file, font.properties);
+      fontsReady = false;
+    }
+
+    function delayLoadFont() {
+      for (var i = 0; i < count; i++) {
+        if (Fonts[font.name].loading)
+          return;
+      }
+      clearInterval(pageInterval);
+
+      var t3 = Date.now();
+
+      page.display(gfx);
+
+      var t4 = Date.now();
+
+      var infoDisplay = document.getElementById("info");
+      infoDisplay.innerHTML = "Time to load/compile/fonts/render: "+ (t1 - t0) + "/" + (t2 - t1) + "/" + (t3 - t2) + "/" + (t4 - t3) + " ms";
     };
 
-    // FIXME This need to be replaced by an event
-    pageInterval = setInterval(function() {
-        for (var i = 0; i < fonts.length; i++) {
-            if (fonts[i].loading)
-                return;
-        }
-        var t3 = Date.now();
-
-        clearInterval(pageInterval);
-        page.display(gfx);
-
-        var t4 = Date.now();
-
-        var infoDisplay = document.getElementById("info");
-        infoDisplay.innerHTML = "Time to load/compile/fonts/render: "+ (t1 - t0) + "/" + (t2 - t1) + "/" + (t3 - t2) + "/" + (t4 - t3) + " ms";
-    }, interval);
+    if (fontsReady) {
+      delayLoadFont();
+    } else {
+      pageInterval = setInterval(delayLoadFont, 10);
+    }
 }
 
 function nextPage() {
