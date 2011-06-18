@@ -1935,7 +1935,7 @@ var CanvasGraphics = (function() {
 
                     var widths = xref.fetchIfRef(fontDict.get("Widths"));
                     var firstChar = xref.fetchIfRef(fontDict.get("FirstChar"));
-                    assertWellFormed(IsArray(widths) && IsInteger(firstChar),
+                    assertWellFormed(IsArray(widths) && IsInt(firstChar),
                                      "invalid font Widths or FirstChar");
                     var charset = [];
                     for (var j = 0; j < widths.length; j++) {
