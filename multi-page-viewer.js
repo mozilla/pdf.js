@@ -48,7 +48,9 @@ var PDFViewer = {
     
         var div = document.createElement('div');
         div.id = 'pageContainer' + num;
-        div.className = 'page';    
+        div.className = 'page';
+        div.style.width = PDFViewer.pageWidth() + 'px';
+        div.style.height = PDFViewer.pageHeight() + 'px';
         
         PDFViewer.element.appendChild(anchor);
         PDFViewer.element.appendChild(div);
@@ -76,8 +78,8 @@ var PDFViewer = {
 
                 // Canvas dimensions must be specified in CSS pixels. CSS pixels
                 // are always 96 dpi. These dimensions are 8.5in x 11in at 96dpi.
-                canvas.width = 816;
-                canvas.height = 1056;
+                canvas.width = PDFViewer.pageWidth();
+                canvas.height = PDFViewer.pageHeight();
 
                 var ctx = canvas.getContext('2d');
                 ctx.save();
@@ -91,15 +93,67 @@ var PDFViewer = {
                 // page.compile will collect all fonts for us, once we have loaded them
                 // we can trigger the actual page rendering with page.display
                 page.compile(gfx, fonts);
-            
-                // This should be called when font loading is complete
-                page.display(gfx);
                 
+                var fontsReady = true;
+                
+                // Inspect fonts and translate the missing one
+                var fontCount = fonts.length;
+                
+                for (var i = 0; i < fontCount; i++) {
+                    var font = fonts[i];
+                    
+                    if (Fonts[font.name]) {
+                        fontsReady = fontsReady && !Fonts[font.name].loading;
+                        continue;
+                    }
+
+                    new Font(font.name, font.file, font.properties);
+                    
+                    fontsReady = false;
+                }
+
+                var pageInterval;
+                var delayLoadFont = function() {
+                    for (var i = 0; i < fontCount; i++) {
+                        if (Fonts[font.name].loading) {
+                            return;
+                        }
+                    }
+                    
+                    clearInterval(pageInterval);
+
+                    PDFViewer.drawPage(num);
+                }
+
+                if (!fontsReady) {
+                    pageInterval = setInterval(delayLoadFont, 10);
+                    return;
+                }
+
+                page.display(gfx);
                 div.appendChild(canvas);
             }
         }
     },
-  
+
+    changeScale: function(num) {
+        while (PDFViewer.element.childNodes.length > 0) {
+            PDFViewer.element.removeChild(PDFViewer.element.firstChild);
+        }
+
+        PDFViewer.scale = num / 100;
+
+        if (PDFViewer.pdf) {
+            for (var i = 1; i <= PDFViewer.numberOfPages; i++) {
+                PDFViewer.createPage(i);
+            }
+
+            if (PDFViewer.numberOfPages > 0) {
+                PDFViewer.drawPage(1);
+            }
+        }
+    },
+
     goToPage: function(num) {
         if (0 <= num && num <= PDFViewer.numberOfPages) {
             PDFViewer.pageNumber = num;
@@ -225,7 +279,13 @@ window.onload = function() {
     var nextPageButton = document.getElementById('nextPageButton');
     nextPageButton.onclick = PDFViewer.goToNextPage;
 
+    var scaleInput = document.getElementById('scale');
+    scaleInput.onchange = function(evt) {
+        PDFViewer.changeScale(this.value);
+    };
+
     PDFViewer.pageNumber = parseInt(PDFViewer.queryParams.page) || PDFViewer.pageNumber;
+    PDFViewer.scale = parseInt(scaleInput.value) / 100 || 1.0;
     PDFViewer.open(PDFViewer.queryParams.file || PDFViewer.url);
 
     window.onscroll = function(evt) {
