@@ -1609,38 +1609,8 @@ var CanvasExtraState = (function() {
         // Start of text line (in text coordinates)
         this.lineX = 0.0;
         this.lineY = 0.0;
-
-        this.transMatrix = IDENTITY_MATRIX;
     }
     constructor.prototype = {
-        applyTransform: function(point) {
-            var m = this.transMatrix
-            var x = point[0] * m[0] + point[1] * m[2] + m[4];
-            var y = point[0] * m[1] + point[1] * m[3] + m[5];
-            return [x,y];
-        },
-        concatTransform: function(m) {
-            var tm = this.transMatrix;
-
-            var a = m[0] * tm[0] + m[1] * tm[2];
-            var b = m[0] * tm[1] + m[1] * tm[3];
-            var c = m[2] * tm[0] + m[3] * tm[2];
-            var d = m[2] * tm[1] + m[3] * tm[3];
-            var e = m[4] * tm[0] + m[5] * tm[2] + tm[4];
-            var f = m[4] * tm[1] + m[5] * tm[3] + tm[5];
-            this.transMatrix = [a, b, c, d, e, f]
-        },
-        getInvTransform: function(matrix) {
-            var m = this.transMatrix;
-            var det = 1 / (m[0] * m[3] - m[1] * m[2]);
-            var a = m[3] * det;
-            var b = -m[1] * det;
-            var c = -m[2] * det;
-            var d = m[0] * det;
-            var e = (m[2] * m[5] - m[3] * m[4]) * det;
-            var f = (m[1] * m[4] - m[0] * m[5]) * det;
-            return [a, b, c, d, e, f]
-        }
     };
     return constructor;
 })();
@@ -1942,7 +1912,6 @@ var CanvasGraphics = (function() {
         },
         transform: function(a, b, c, d, e, f) {
             this.ctx.transform(a, b, c, d, e, f);
-            this.current.concatTransform([a,b,c,d,e,f]);
         },
 
         // Path
@@ -2181,6 +2150,22 @@ var CanvasGraphics = (function() {
             }
         },
         tilingFill: function(pattern) {
+            function applyMatrix(point, m) {
+                var x = point[0] * m[0] + point[1] * m[2] + m[4];
+                var y = point[0] * m[1] + point[1] * m[3] + m[5];
+                return [x,y];
+            };
+
+            function multiply(m, tm) {
+                var a = m[0] * tm[0] + m[1] * tm[2];
+                var b = m[0] * tm[1] + m[1] * tm[3];
+                var c = m[2] * tm[0] + m[3] * tm[2];
+                var d = m[2] * tm[1] + m[3] * tm[3];
+                var e = m[4] * tm[0] + m[5] * tm[2] + tm[4];
+                var f = m[4] * tm[1] + m[5] * tm[3] + tm[5];
+                return [a, b, c, d, e, f]
+            };
+
             this.save();
             var dict = pattern.dict;
 
@@ -2196,10 +2181,9 @@ var CanvasGraphics = (function() {
             // not sure what to do with this
             var tilingType = dict.get("TilingType");
 
-            var tempExtra = new CanvasExtraState();
             var matrix = dict.get("Matrix");
-            if (matrix && IsArray(matrix) && 6 == matrix.length)
-                tempExtra.transMatrix = matrix;
+            if (!matrix)
+                matrix = [1, 0, 0, 1, 0, 0];
 
             var bbox = dict.get("BBox");
             var x0 = bbox[0], y0 = bbox[1], x1 = bbox[2], y1 = bbox[3];
@@ -2208,9 +2192,9 @@ var CanvasGraphics = (function() {
             var ystep = dict.get("YStep");
 
             // top left corner should correspond to the top left of the bbox
-            var topLeft = tempExtra.applyTransform([x0,y0]);
+            var topLeft = applyMatrix([x0,y0], matrix);
             // we want the canvas to be as large as the step size
-            var botRight = tempExtra.applyTransform([x0 + xstep, y0 + ystep]);
+            var botRight = applyMatrix([x0 + xstep, y0 + ystep], matrix);
             
             var tmpCanvas = document.createElement("canvas");
             tmpCanvas.width = Math.ceil(botRight[0] - topLeft[0]);
@@ -2221,20 +2205,17 @@ var CanvasGraphics = (function() {
             var oldCtx = this.ctx;
             this.ctx = tmpCtx;
 
-            // normalize matrix transform so each step
-            // takes up the entire tmpCanvas
+            // normalize transform matrix so each step
+            // takes up the entire tmpCanvas (no white borders)
             if (matrix[1] === 0 && matrix[2] === 0) {
                 matrix[0] = tmpCanvas.width / xstep;
                 matrix[3] = tmpCanvas.height / ystep;
-                tempExtra.transMatrix = matrix;
-                topLeft = tempExtra.applyTransform([x0,y0]);
+                topLeft = applyMatrix([x0,y0], matrix);
             }
 
             // move the top left corner of bounding box to [0,0]
-            tempExtra.transMatrix = [1, 0, 0, 1, -topLeft[0], -topLeft[1]];
-            tempExtra.concatTransform(matrix);
-            matrix = tempExtra.transMatrix;
-
+            matrix = multiply(matrix, [1, 0, 0, 1, -topLeft[0], -topLeft[1]]);
+            
             this.transform.apply(this, matrix);
             
             if (bbox && IsArray(bbox) && 4 == bbox.length) {
@@ -2253,6 +2234,7 @@ var CanvasGraphics = (function() {
             this.ctx = oldCtx;
             this.restore();
 
+            warn("Inverse pattern is painted");
             var pattern = this.ctx.createPattern(tmpCanvas, "repeat");
             this.ctx.fillStyle = pattern;
         },
