@@ -5,7 +5,6 @@ var ERRORS = 0, WARNINGS = 1, TODOS = 5;
 var verbosity = WARNINGS;
 
 function log(msg) {
-    msg = msg.toString ? msg.toString() : msg;
     if (console && console.log)
         console.log(msg);
     else if (print)
@@ -523,9 +522,6 @@ var Name = (function() {
     }
 
     constructor.prototype = {
-      toString: function() {
-        return this.name;
-      }
     };
 
     return constructor;
@@ -537,9 +533,6 @@ var Cmd = (function() {
     }
 
     constructor.prototype = {
-      toString: function() {
-        return this.cmd;
-      }
     };
 
     return constructor;
@@ -566,12 +559,6 @@ var Dict = (function() {
         forEach: function(aCallback) {
           for (var key in this.map)
             aCallback(key, this.map[key]);
-        },
-        toString: function() {
-          var keys = [];
-          for (var key in this.map)
-            keys.push(key);
-          return "Dict with " + keys.length + " keys: " + keys;
         }
     };
 
