@@ -2245,13 +2245,7 @@ var CanvasGraphics = (function() {
             this.ctx.translate(0, 2 * this.current.y);
             this.ctx.scale(1, -1);
             this.ctx.transform.apply(this.ctx, this.current.textMatrix);
-
-            // Replace characters code by glyphs code
-            var glyphs = [];
-            for (var i = 0; i < text.length; i++)
-              glyphs[i] = String.fromCharCode(Fonts.unicodeFromCode(text[i].charCodeAt(0)));
-
-            this.ctx.fillText(glyphs.join(""), this.current.x, this.current.y);
+            this.ctx.fillText(Fonts.chars2Unicode(text), this.current.x, this.current.y);
             this.current.x += this.ctx.measureText(text).width;
 
             this.ctx.restore();
