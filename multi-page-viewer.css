@@ -171,6 +171,7 @@ span {
 
 #scaleComboBoxList > ul > li:hover {
     background-color: #09f;
+    color: #fff;
 }
 
 #pageNumber, #scale {
