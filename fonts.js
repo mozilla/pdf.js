@@ -94,7 +94,7 @@ var Font = function(aName, aFile, aProperties) {
       this.mimetype = "font/otf";
 
       // Wrap the CFF data inside an OTF font file
-      this.font = this.cover(cff, aProperties);
+      this.font = this.cover(aName, cff, aProperties);
       break;
 
     case "TrueType":
@@ -376,7 +376,61 @@ Font.prototype = {
                        idDeltas, idRangeOffsets, glyphsIdsArray);
   },
 
-  cover: function font_cover(aFont, aProperties) {
+  _createNameTable: function font_createNameTable(aName) {
+    var names = [
+      "See original licence", // Copyright
+      aName,                  // Font family
+      "undefined",            // Font subfamily (font weight)
+      "uniqueID",             // Unique ID
+      aName,                  // Full font name
+      "0.1",                  // Version
+      "undefined",            // Postscript name
+      "undefined",            // Trademark
+      "undefined",            // Manufacturer
+      "undefined"             // Designer
+    ];
+
+    name = [
+      0x00, 0x00, // format
+      0x00, 0x0A, // Number of names Record
+      0x00, 0x7E  // Storage
+    ];
+
+    // Build the name records field
+    var strOffset = 0;
+    for (var i = 0; i < names.length; i++) {
+      var str = names[i];
+
+      var nameRecord = [
+        0x00, 0x01, // platform ID
+        0x00, 0x00, // encoding ID
+        0x00, 0x00, // language ID
+        0x00, 0x00 // name ID
+      ];
+
+      nameRecord = nameRecord.concat(
+        FontsUtils.integerToBytes(str.length, 2),
+        FontsUtils.integerToBytes(strOffset, 2)
+      );
+      name = name.concat(nameRecord);
+
+      strOffset += str.length;
+    }
+
+    // Add the name records data
+    for (var i = 0; i < names.length; i++) {
+      var str = names[i];
+      var strBytes = [];
+      for (var j = 0; j < str.length; j++) {
+        strBytes.push(str.charCodeAt(j));
+      }
+      name = name.concat(strBytes);
+    }
+
+    return name;
+  },
+
+  cover: function font_cover(aName, aFont, aProperties) {
     var otf = new Uint8Array(kMaxFontFileSize);
 
     // Required Tables
@@ -524,11 +578,7 @@ Font.prototype = {
     this._createTableEntry(otf, offsets, "maxp", maxp);
 
     /** NAME */
-    name = [
-      0x00, 0x00, // format
-      0x00, 0x00, // Number of names Record
-      0x00, 0x00  // Storage
-    ];
+    var name = this._createNameTable(aName);
     this._createTableEntry(otf, offsets, "name", name);
 
     /** POST */
