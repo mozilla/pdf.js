@@ -101,7 +101,7 @@ var Font = function(aName, aFile, aProperties) {
 
     case "TrueType":
       this.mimetype = "font/opentype";
-      var ttf = new TrueType(aFile);
+      var ttf = new TrueType(aName, aFile, aProperties);
       this.font = ttf.data;
       break;
 
@@ -656,7 +656,7 @@ var FontsUtils = {
  * is deprecated and  not supported by the sanitizer...
  *
  */
-var TrueType = function(aFile) {
+var TrueType = function(aName, aFile, aProperties) {
   var header = this._readOpenTypeHeader(aFile);
   var numTables = header.numTables;
 
@@ -681,11 +681,6 @@ var TrueType = function(aFile) {
 
     tables.push(table);
   }
-
-  // Tables needs to be written by ascendant alphabetic order
-  tables.sort(function(a, b) {
-    return a.tag > b.tag;
-  });
 
   // If any tables are still in the array this means some required tables are
   // missing, which means that we need to rebuild the font in order to pass
@@ -756,6 +751,31 @@ var TrueType = function(aFile) {
     tables.unshift({
       tag: "OS/2",
       data: OS2
+    });
+
+    // If the font is missing a OS/2 table it's could be an old mac font
+    // without a 3-1-4 Unicode BMP table, so let's rewrite it.
+    var charset = aProperties.charset;
+    var glyphs = [];
+    for (var i = 0; i < charset.length; i++) {
+      glyphs.push({
+          unicode: GlyphsUnicode[aProperties.encoding[charset[i]]]
+      });
+    }
+
+    // Replace the old CMAP table
+    var cmap = this._createCMAPTable(glyphs);
+    for (var i = 0; i < tables.length; i++) {
+      var table = tables[i];
+      if (table.tag == "cmap") {
+        table.data = cmap;
+        break;
+      }
+    }
+
+    // Tables needs to be written by ascendant alphabetic order
+    tables.sort(function(a, b) {
+      return a.tag > b.tag;
     });
 
     // rewrite the tables but tweak offsets
@@ -893,6 +913,88 @@ TrueType.prototype = {
       offset: length,
       data: data
     }
+  },
+
+  _createCMAPTable: function font_createCMAPTable(aGlyphs) {
+    var characters = new Uint16Array(kMaxGlyphsCount);
+    for (var i = 0; i < aGlyphs.length; i++)
+      characters[aGlyphs[i].unicode] = i + 1;
+
+    // Separate the glyphs into continuous range of codes, aka segment.
+    var ranges = [];
+    var range = [];
+    var count = characters.length;
+    for (var i = 0; i < count; i++) {
+      if (characters[i]) {
+        range.push(i);
+      } else if (range.length) {
+        ranges.push(range.slice());
+        range = [];
+      }
+    }
+
+    // The size in bytes of the header is equal to the size of the
+    // different fields * length of a short + (size of the 4 parallels arrays
+    // describing segments * length of a short).
+    var headerSize = (12 * 2 + (ranges.length * 4 * 2));
+
+    var segCount = ranges.length + 1;
+    var segCount2 = segCount * 2;
+    var searchRange = FontsUtils.getMaxPower2(segCount) * 2;
+    var searchEntry = Math.log(segCount) / Math.log(2);
+    var rangeShift = 2 * segCount - searchRange;
+    var cmap = [].concat(
+      [
+        0x00, 0x00, // version
+        0x00, 0x01, // numTables
+        0x00, 0x03, // platformID
+        0x00, 0x01, // encodingID
+        0x00, 0x00, 0x00, 0x0C, // start of the table record
+        0x00, 0x04  // format
+      ],
+      FontsUtils.integerToBytes(headerSize, 2), // length
+      [0x00, 0x00], // language
+      FontsUtils.integerToBytes(segCount2, 2),
+      FontsUtils.integerToBytes(searchRange, 2),
+      FontsUtils.integerToBytes(searchEntry, 2),
+      FontsUtils.integerToBytes(rangeShift, 2)
+    );
+
+    // Fill up the 4 parallel arrays describing the segments.
+    var startCount = [];
+    var endCount = [];
+    var idDeltas = [];
+    var idRangeOffsets = [];
+    var glyphsIdsArray = [];
+    var bias = 0;
+    for (var i = 0; i < segCount - 1; i++) {
+      var range = ranges[i];
+      var start = FontsUtils.integerToBytes(range[0], 2);
+      var end = FontsUtils.integerToBytes(range[range.length - 1], 2);
+
+      var delta = FontsUtils.integerToBytes(((range[0] - 1) - bias) % 65536, 2);
+      bias += range.length;
+
+      // deltas are signed shorts
+      delta[0] ^= 0xFF;
+      delta[1] ^= 0xFF;
+      delta[1] += 1;
+
+      startCount.push(start[0], start[1]);
+      endCount.push(end[0], end[1]);
+      idDeltas.push(delta[0], delta[1]);
+      idRangeOffsets.push(0x00, 0x00);
+
+      for (var j = 0; j < range.length; j++)
+        glyphsIdsArray.push(range[j]);
+    }
+    startCount.push(0xFF, 0xFF);
+    endCount.push(0xFF, 0xFF);
+    idDeltas.push(0x00, 0x01);
+    idRangeOffsets.push(0x00, 0x00);
+
+    return cmap.concat(endCount, [0x00, 0x00], startCount,
+                       idDeltas, idRangeOffsets, glyphsIdsArray);
   }
 };
 
