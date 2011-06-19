@@ -1,5 +1,10 @@
+/* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- /
+/* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
+
+"use strict";
+
 var CFFStrings = [
-  ".notdef", 
+  ".notdef",
   "space",
   "exclam",
   "quotedbl",
@@ -490,7 +495,7 @@ var CFFDictDataMap = {
   },
   "10": {
     name: "StdHW"
-  }, 
+  },
   "11": {
     name: "StdVW"
   },
@@ -597,7 +602,7 @@ var CFFDictDataMap = {
   },
   "18": {
     name: "Private",
-    operand: "number number" 
+    operand: "number number"
   },
   "19": {
     name: "Subrs"
