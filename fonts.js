@@ -101,7 +101,7 @@ var Font = (function () {
       this.mimetype = "font/otf";
 
       // Wrap the CFF data inside an OTF font file
-      this.font = this.cover(cff, aProperties);
+      this.font = this.convert(cff, aProperties);
       break;
 
     case "TrueType":
@@ -323,7 +323,7 @@ var Font = (function () {
                          idDeltas, idRangeOffsets, glyphsIdsArray);
     },
 
-    cover: function font_cover(aFont, aProperties) {
+    convert: function font_convert(aFont, aProperties) {
       var otf = new Uint8Array(kMaxFontFileSize);
 
       function createOpenTypeHeader(aFile, aOffsets, aNumTables) {
