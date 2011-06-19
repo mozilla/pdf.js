@@ -326,29 +326,39 @@ var Font = (function () {
     convert: function font_convert(aFont, aProperties) {
       var otf = new Uint8Array(kMaxFontFileSize);
 
-      function createOpenTypeHeader(aFile, aOffsets, aNumTables) {
+      function s2a(s) {
+        var a = [];
+        for (var i = 0; i < s.length; ++i)
+          a[i] = s.charCodeAt(i);
+        return a;
+      }
+
+      function createOpenTypeHeader(aFile, aOffsets, numTables) {
+        var header = "";
+
+        function WriteHeader16(value) {
+          header += String.fromCharCode(value >> 8);
+          header += String.fromCharCode(value & 0xff);
+        }
+
         // sfnt version (4 bytes)
-        var version = [0x4F, 0x54, 0x54, 0X4F];
+        header += "\x4F\x54\x54\x4F";
 
         // numTables (2 bytes)
-        var numTables = aNumTables;
+        WriteHeader16(numTables);
 
         // searchRange (2 bytes)
         var tablesMaxPower2 = FontsUtils.getMaxPower2(numTables);
         var searchRange = tablesMaxPower2 * 16;
+        WriteHeader16(searchRange);
 
         // entrySelector (2 bytes)
-        var entrySelector = Math.log(tablesMaxPower2) / Math.log(2);
+        WriteHeader16(Math.log(tablesMaxPower2) / Math.log(2));
 
         // rangeShift (2 bytes)
-        var rangeShift = numTables * 16 - searchRange;
+        WriteHeader16(numTables * 16 - searchRange);
 
-        var header = [].concat(version,
-                               FontsUtils.integerToBytes(numTables, 2),
-                               FontsUtils.integerToBytes(searchRange, 2),
-                               FontsUtils.integerToBytes(entrySelector, 2),
-                               FontsUtils.integerToBytes(rangeShift, 2));
-        aFile.set(header, aOffsets.currentOffset);
+        aFile.set(s2a(header), aOffsets.currentOffset);
         aOffsets.currentOffset += header.length;
         aOffsets.virtualOffset += header.length;
       }
