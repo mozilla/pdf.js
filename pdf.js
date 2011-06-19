@@ -1,6 +1,8 @@
 /* -*- Mode: Java; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- /
 /* vim: set shiftwidth=4 tabstop=8 autoindent cindent expandtab: */
 
+"use strict";
+
 var ERRORS = 0, WARNINGS = 1, TODOS = 5;
 var verbosity = WARNINGS;
 
@@ -246,7 +248,7 @@ var FlateStream = (function() {
         this.eof = false;
         this.codeSize = 0;
         this.codeBuf = 0;
-        
+
         this.pos = 0;
         this.bufferLength = 0;
     }
@@ -432,6 +434,11 @@ var FlateStream = (function() {
                 litCodeTable = fixedLitCodeTab;
                 distCodeTable = fixedDistCodeTab;
             } else if (hdr == 2) { // compressed block, dynamic codes
+                var repeat = function repeat(stream, array, len, offset, what) {
+                  var repeat = stream.getBits(len) + offset;
+                    while (repeat-- > 0)
+                      array[i++] = what;
+                }
                 var numLitCodes = this.getBits(5) + 257;
                 var numDistCodes = this.getBits(5) + 1;
                 var numCodeLenCodes = this.getBits(4) + 4;
@@ -449,11 +456,6 @@ var FlateStream = (function() {
                 var codes = numLitCodes + numDistCodes;
                 var codeLengths = new Array(codes);
                 while (i < codes) {
-                    function repeat(stream, array, len, offset, what) {
-                        var repeat = stream.getBits(len) + offset;
-                        while (repeat-- > 0)
-                            array[i++] = what;
-                    }
                     var code = this.getCode(codeLenCodeTab);
                     if (code == 16) {
                         repeat(this, codeLengths, 2, 3, len);
@@ -725,6 +727,7 @@ var Lexer = (function() {
             var done = false;
             var str = "";
             var stream = this.stream;
+            var ch = null;
             do {
                 switch (ch = stream.getChar()) {
                 case undefined:
@@ -1429,7 +1432,7 @@ var Catalog = (function() {
             return shadow(this, "toplevelPagesDict", obj);
         },
         get numPages() {
-            obj = this.toplevelPagesDict.get("Count");
+            var obj = this.toplevelPagesDict.get("Count");
             assertWellFormed(IsInt(obj),
                              "page count in top level pages object is not an integer");
             // shadow the prototype getter

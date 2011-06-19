@@ -7,6 +7,7 @@
  * CharString or to understand the structure of the CFF format.
  */
 
+"use strict";
 
 /**
  * Build a charset by assigning the glyph name and the human readable form
