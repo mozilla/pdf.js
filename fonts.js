@@ -1,6 +1,8 @@
 /* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- /
 /* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
 
+"use strict";
+
 /**
  * Maximum file size of the font.
  */
@@ -1042,7 +1044,8 @@ var Type1Parser = function() {
   this.extractFontProgram = function t1_extractFontProgram(aStream) {
     var eexecString = decrypt(aStream, kEexecEncryptionKey, 4);
     var subrs = [],  glyphs = [];
-    var inSubrs = inGlyphs = false;
+    var inGlyphs = false;
+    var inSubrs = false;
     var glyph = "";
 
     var token = "";
