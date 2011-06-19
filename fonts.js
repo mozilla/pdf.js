@@ -241,88 +241,6 @@ var Font = (function () {
       styleSheet.insertRule(rule, styleSheet.length);
     },
 
-    _createCMAPTable: function font_createCMAPTable(aGlyphs) {
-      var characters = new Uint16Array(kMaxGlyphsCount);
-      for (var i = 0; i < aGlyphs.length; i++)
-        characters[aGlyphs[i].unicode] = i + 1;
-
-      // Separate the glyphs into continuous range of codes, aka segment.
-      var ranges = [];
-      var range = [];
-      var count = characters.length;
-      for (var i = 0; i < count; i++) {
-        if (characters[i]) {
-          range.push(i);
-        } else if (range.length) {
-          ranges.push(range.slice());
-          range = [];
-        }
-      }
-
-      // The size in bytes of the header is equal to the size of the
-      // different fields * length of a short + (size of the 4 parallels arrays
-      // describing segments * length of a short).
-      var headerSize = (12 * 2 + (ranges.length * 4 * 2));
-
-      var segCount = ranges.length + 1;
-      var segCount2 = segCount * 2;
-      var searchRange = FontsUtils.getMaxPower2(segCount) * 2;
-      var searchEntry = Math.log(segCount) / Math.log(2);
-      var rangeShift = 2 * segCount - searchRange;
-      var cmap = [].concat(
-                           [
-                            0x00, 0x00, // version
-                            0x00, 0x01, // numTables
-                            0x00, 0x03, // platformID
-                            0x00, 0x01, // encodingID
-                            0x00, 0x00, 0x00, 0x0C, // start of the table record
-                            0x00, 0x04  // format
-                            ],
-                           FontsUtils.integerToBytes(headerSize, 2), // length
-                           [0x00, 0x00], // language
-                           FontsUtils.integerToBytes(segCount2, 2),
-                           FontsUtils.integerToBytes(searchRange, 2),
-                           FontsUtils.integerToBytes(searchEntry, 2),
-                           FontsUtils.integerToBytes(rangeShift, 2)
-                           );
-
-      // Fill up the 4 parallel arrays describing the segments.
-      var startCount = [];
-      var endCount = [];
-      var idDeltas = [];
-      var idRangeOffsets = [];
-      var glyphsIdsArray = [];
-      var bias = 0;
-      for (var i = 0; i < segCount - 1; i++) {
-        var range = ranges[i];
-        var start = FontsUtils.integerToBytes(range[0], 2);
-        var end = FontsUtils.integerToBytes(range[range.length - 1], 2);
-
-        var delta = FontsUtils.integerToBytes(((range[0] - 1) - bias) % 65536, 2);
-        bias += range.length;
-
-        // deltas are signed shorts
-        delta[0] ^= 0xFF;
-        delta[1] ^= 0xFF;
-        delta[1] += 1;
-
-        startCount.push(start[0], start[1]);
-        endCount.push(end[0], end[1]);
-        idDeltas.push(delta[0], delta[1]);
-        idRangeOffsets.push(0x00, 0x00);
-
-        for (var j = 0; j < range.length; j++)
-          glyphsIdsArray.push(range[j]);
-      }
-      startCount.push(0xFF, 0xFF);
-      endCount.push(0xFF, 0xFF);
-      idDeltas.push(0x00, 0x01);
-      idRangeOffsets.push(0x00, 0x00);
-
-      return cmap.concat(endCount, [0x00, 0x00], startCount,
-                         idDeltas, idRangeOffsets, glyphsIdsArray);
-    },
-
     convert: function font_convert(aFont, aProperties) {
       var otf = new Uint8Array(kMaxFontFileSize);
 
@@ -391,6 +309,88 @@ var Font = (function () {
         aFile.set(tableEntry, aOffsets.currentOffset);
         aOffsets.currentOffset += tableEntry.length;
         aOffsets.virtualOffset += aData.length;
+      }
+      
+      function createCMAPTable(aGlyphs) {
+        var characters = new Uint16Array(kMaxGlyphsCount);
+        for (var i = 0; i < aGlyphs.length; i++)
+          characters[aGlyphs[i].unicode] = i + 1;
+
+        // Separate the glyphs into continuous range of codes, aka segment.
+        var ranges = [];
+        var range = [];
+        var count = characters.length;
+        for (var i = 0; i < count; i++) {
+          if (characters[i]) {
+            range.push(i);
+          } else if (range.length) {
+            ranges.push(range.slice());
+            range = [];
+          }
+        }
+
+        // The size in bytes of the header is equal to the size of the
+        // different fields * length of a short + (size of the 4 parallels arrays
+        // describing segments * length of a short).
+        var headerSize = (12 * 2 + (ranges.length * 4 * 2));
+
+        var segCount = ranges.length + 1;
+        var segCount2 = segCount * 2;
+        var searchRange = FontsUtils.getMaxPower2(segCount) * 2;
+        var searchEntry = Math.log(segCount) / Math.log(2);
+        var rangeShift = 2 * segCount - searchRange;
+        var cmap = [].concat(
+                             [
+                              0x00, 0x00, // version
+                              0x00, 0x01, // numTables
+                              0x00, 0x03, // platformID
+                              0x00, 0x01, // encodingID
+                              0x00, 0x00, 0x00, 0x0C, // start of the table record
+                              0x00, 0x04  // format
+                              ],
+                             FontsUtils.integerToBytes(headerSize, 2), // length
+                             [0x00, 0x00], // language
+                             FontsUtils.integerToBytes(segCount2, 2),
+                             FontsUtils.integerToBytes(searchRange, 2),
+                             FontsUtils.integerToBytes(searchEntry, 2),
+                             FontsUtils.integerToBytes(rangeShift, 2)
+                             );
+
+        // Fill up the 4 parallel arrays describing the segments.
+        var startCount = [];
+        var endCount = [];
+        var idDeltas = [];
+        var idRangeOffsets = [];
+        var glyphsIdsArray = [];
+        var bias = 0;
+        for (var i = 0; i < segCount - 1; i++) {
+          var range = ranges[i];
+          var start = FontsUtils.integerToBytes(range[0], 2);
+          var end = FontsUtils.integerToBytes(range[range.length - 1], 2);
+
+          var delta = FontsUtils.integerToBytes(((range[0] - 1) - bias) % 65536, 2);
+          bias += range.length;
+
+          // deltas are signed shorts
+          delta[0] ^= 0xFF;
+          delta[1] ^= 0xFF;
+          delta[1] += 1;
+
+          startCount.push(start[0], start[1]);
+          endCount.push(end[0], end[1]);
+          idDeltas.push(delta[0], delta[1]);
+          idRangeOffsets.push(0x00, 0x00);
+
+          for (var j = 0; j < range.length; j++)
+            glyphsIdsArray.push(range[j]);
+        }
+        startCount.push(0xFF, 0xFF);
+        endCount.push(0xFF, 0xFF);
+        idDeltas.push(0x00, 0x01);
+        idRangeOffsets.push(0x00, 0x00);
+
+        return cmap.concat(endCount, [0x00, 0x00], startCount,
+                           idDeltas, idRangeOffsets, glyphsIdsArray);
       }
 
       // Required Tables
@@ -469,7 +469,7 @@ var Font = (function () {
       var charstrings = aFont.getOrderedCharStrings(aProperties.glyphs);
 
       /** CMAP */
-      cmap = this._createCMAPTable(charstrings);
+      cmap = createCMAPTable(charstrings);
       createTableEntry(otf, offsets, "cmap", cmap);
 
       /** HEAD */
