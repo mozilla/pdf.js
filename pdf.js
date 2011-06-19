@@ -1,6 +1,8 @@
 /* -*- Mode: Java; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- /
 /* vim: set shiftwidth=4 tabstop=8 autoindent cindent expandtab: */
 
+"use strict";
+
 var ERRORS = 0, WARNINGS = 1, TODOS = 5;
 var verbosity = WARNINGS;
 
@@ -389,6 +391,12 @@ var FlateStream = (function() {
             return [codes, maxLen];
         },
         readBlock: function() {
+            function repeat(stream, array, len, offset, what) {
+                var repeat = stream.getBits(len) + offset;
+                while (repeat-- > 0)
+                    array[i++] = what;
+            }
+
             var stream = this.stream;
 
             // read block header
@@ -449,11 +457,6 @@ var FlateStream = (function() {
                 var codes = numLitCodes + numDistCodes;
                 var codeLengths = new Array(codes);
                 while (i < codes) {
-                    function repeat(stream, array, len, offset, what) {
-                        var repeat = stream.getBits(len) + offset;
-                        while (repeat-- > 0)
-                            array[i++] = what;
-                    }
                     var code = this.getCode(codeLenCodeTab);
                     if (code == 16) {
                         repeat(this, codeLengths, 2, 3, len);
@@ -813,6 +816,7 @@ var Lexer = (function() {
             var done = false;
             var str = "";
             var stream = this.stream;
+            var ch;
             do {
                 switch (ch = stream.getChar()) {
                 case undefined:
@@ -1573,7 +1577,7 @@ var Catalog = (function() {
             return shadow(this, "toplevelPagesDict", obj);
         },
         get numPages() {
-            obj = this.toplevelPagesDict.get("Count");
+            var obj = this.toplevelPagesDict.get("Count");
             assertWellFormed(IsInt(obj),
                              "page count in top level pages object is not an integer");
             // shadow the prototype getter
@@ -2527,7 +2531,7 @@ var CanvasGraphics = (function() {
                 error("No support for array of functions");
             else if (!IsPDFFunction(fnObj))
                 error("Invalid function");
-            fn = new PDFFunction(this.xref, fnObj);
+            var fn = new PDFFunction(this.xref, fnObj);
 
             var gradient = this.ctx.createLinearGradient(x0, y0, x1, y1);
             var step = (t1 - t0) / 10;
