@@ -2384,7 +2384,7 @@ var CanvasGraphics = (function() {
                 error("No support for array of functions");
             else if (!IsPDFFunction(fnObj))
                 error("Invalid function");
-            fn = new PDFFunction(this.xref, fnObj);
+            var fn = new PDFFunction(this.xref, fnObj);
 
             var gradient = this.ctx.createLinearGradient(x0, y0, x1, y1);
             var step = (t1 - t0) / 10;
