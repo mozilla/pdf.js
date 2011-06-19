@@ -84,17 +84,18 @@ var Fonts = {
  *   var type1Font = new Font("MyFontName", binaryFile, propertiesObject);
  *   type1Font.bind();
  */
-var Font = function(aName, aFile, aProperties) {
-  this.name = aName;
+var Font = (function () {
+  var constructor = function(aName, aFile, aProperties) {
+    this.name = aName;
 
-  // If the font has already been decoded simply return it
-  if (Fonts[aName]) {
-    this.font = Fonts[aName].data;
-    return;
-  }
-  fontCount++;
+    // If the font has already been decoded simply return it
+    if (Fonts[aName]) {
+      this.font = Fonts[aName].data;
+      return;
+    }
+    fontCount++;
 
-  switch (aProperties.type) {
+    switch (aProperties.type) {
     case "Type1":
       var cff = new CFF(aName, aFile, aProperties);
       this.mimetype = "font/otf";
@@ -124,448 +125,450 @@ var Font = function(aName, aFile, aProperties) {
     default:
       warn("Font " + aProperties.type + " is not supported");
       break;
-  }
-
-  Fonts[aName] = {
-    data: this.font,
-    properties: aProperties,
-    loading: true,
-    cache: Object.create(null)
-  }
-
-  // Attach the font to the document
-  this.bind();
-};
-
-
-/**
- * A bunch of the OpenType code is duplicate between this class and the
- * TrueType code, this is intentional and will merge in a future version
- * where all the code relative to OpenType will probably have its own
- * class and will take decision without the Fonts consent.
- * But at the moment it allows to develop around the TrueType rewriting
- * on the fly without messing up with the 'regular' Type1 to OTF conversion.
- */
-Font.prototype = {
-  name: null,
-  font: null,
-  mimetype: null,
-
-  bind: function font_bind() {
-    var data = this.font;
-
-    // Get the base64 encoding of the binary font data
-    var str = "";
-    var length = data.length;
-    for (var i = 0; i < length; ++i)
-      str += String.fromCharCode(data[i]);
-
-    var dataBase64 = window.btoa(str);
-    var fontName = this.name;
-
-    /** Hack begin */
-
-    // Actually there is not event when a font has finished downloading so
-    // the following tons of code are a dirty hack to 'guess' when a font is
-    // ready
-    var debug = false;
-
-    if (debug) {
-      var name = document.createElement("font");
-      name.setAttribute("style", "position: absolute; left: 20px; top: " +
-                                 (100 * fontCount + 60) + "px");
-      name.innerHTML = fontName;
-      document.body.appendChild(name);
     }
 
-    var canvas = document.createElement("canvas");
-    var style = "border: 1px solid black; position:absolute; top: " +
-                (debug ? (100 * fontCount) : "-200") + "px; left: 2px; width: 340px; height: 100px";
-    canvas.setAttribute("style", style);
-    canvas.setAttribute("width", 340);
-    canvas.setAttribute("heigth", 100);
-    document.body.appendChild(canvas);
+    Fonts[aName] = {
+      data: this.font,
+      properties: aProperties,
+      loading: true,
+      cache: Object.create(null)
+    }
 
-    // Retrieve font charset
-    var charset = Fonts[fontName].charset || [];
-    // if the charset is too small make it repeat a few times
-    var count = 30;
-    while (count-- && charset.length <= 30)
-     charset = charset.concat(charset.slice());
+    // Attach the font to the document
+    this.bind();
+  };
 
-    // Get the font size canvas think it will be for 'spaces'
-    var ctx = canvas.getContext("2d");
-    var testString = "     ";
 
-    // When debugging use the characters provided by the charsets to visually
-    // see what's happening
-    if (debug) {
-      for (var i = 0; i < charset.length; i++) {
-        var unicode = GlyphsUnicode[charset[i]];
-        if (!unicode)
-          error("Unicode for " + charset[i] + " is has not been found in the glyphs list");
-        testString += String.fromCharCode(unicode);
+  /**
+   * A bunch of the OpenType code is duplicate between this class and the
+   * TrueType code, this is intentional and will merge in a future version
+   * where all the code relative to OpenType will probably have its own
+   * class and will take decision without the Fonts consent.
+   * But at the moment it allows to develop around the TrueType rewriting
+   * on the fly without messing up with the 'regular' Type1 to OTF conversion.
+   */
+  constructor.prototype = {
+    name: null,
+    font: null,
+    mimetype: null,
+
+    bind: function font_bind() {
+      var data = this.font;
+
+      // Get the base64 encoding of the binary font data
+      var str = "";
+      var length = data.length;
+      for (var i = 0; i < length; ++i)
+        str += String.fromCharCode(data[i]);
+
+      var dataBase64 = window.btoa(str);
+      var fontName = this.name;
+
+      /** Hack begin */
+
+      // Actually there is not event when a font has finished downloading so
+      // the following tons of code are a dirty hack to 'guess' when a font is
+      // ready
+      var debug = false;
+
+      if (debug) {
+        var name = document.createElement("font");
+        name.setAttribute("style", "position: absolute; left: 20px; top: " +
+                          (100 * fontCount + 60) + "px");
+        name.innerHTML = fontName;
+        document.body.appendChild(name);
       }
-    }
-    ctx.font = "bold italic 20px " + fontName + ", Symbol, Arial";
-    var textWidth = ctx.measureText(testString).width;
 
-    if (debug)
-      ctx.fillText(testString, 20, 20);
+      var canvas = document.createElement("canvas");
+      var style = "border: 1px solid black; position:absolute; top: " +
+                   (debug ? (100 * fontCount) : "-200") + "px; left: 2px; width: 340px; height: 100px";
+      canvas.setAttribute("style", style);
+      canvas.setAttribute("width", 340);
+      canvas.setAttribute("heigth", 100);
+      document.body.appendChild(canvas);
 
-    var start = Date.now();
-    var interval = window.setInterval(function canvasInterval(self) {
+      // Retrieve font charset
+      var charset = Fonts[fontName].charset || [];
+      // if the charset is too small make it repeat a few times
+      var count = 30;
+      while (count-- && charset.length <= 30)
+        charset = charset.concat(charset.slice());
+
+      // Get the font size canvas think it will be for 'spaces'
+      var ctx = canvas.getContext("2d");
+      var testString = "     ";
+
+      // When debugging use the characters provided by the charsets to visually
+      // see what's happening
+      if (debug) {
+        for (var i = 0; i < charset.length; i++) {
+          var unicode = GlyphsUnicode[charset[i]];
+          if (!unicode)
+            error("Unicode for " + charset[i] + " is has not been found in the glyphs list");
+          testString += String.fromCharCode(unicode);
+        }
+      }
       ctx.font = "bold italic 20px " + fontName + ", Symbol, Arial";
-
-      // For some reasons the font has not loaded, so mark it loaded for the
-      // page to proceed but cry
-      if ((Date.now() - start) >= kMaxWaitForFontFace) {
-        window.clearInterval(interval);
-        Fonts[fontName].loading = false;
-        warn("Is " + fontName + " for charset: " + charset + " loaded?");
-      } else if (textWidth != ctx.measureText(testString).width) {
-        window.clearInterval(interval);
-        Fonts[fontName].loading = false;
-      }
+      var textWidth = ctx.measureText(testString).width;
 
       if (debug)
-        ctx.fillText(testString, 20, 50);
-    }, 50, this);
+        ctx.fillText(testString, 20, 20);
 
-    /** Hack end */
+      var start = Date.now();
+      var interval = window.setInterval(function canvasInterval(self) {
+          ctx.font = "bold italic 20px " + fontName + ", Symbol, Arial";
 
-    // Add the @font-face rule to the document
-    var url = "url(data:" + this.mimetype + ";base64," + dataBase64 + ");";
-    var rule = "@font-face { font-family:'" + fontName + "';src:" + url + "}";
-    var styleSheet = document.styleSheets[0];
-    styleSheet.insertRule(rule, styleSheet.length);
-  },
+          // For some reasons the font has not loaded, so mark it loaded for the
+          // page to proceed but cry
+          if ((Date.now() - start) >= kMaxWaitForFontFace) {
+            window.clearInterval(interval);
+            Fonts[fontName].loading = false;
+            warn("Is " + fontName + " for charset: " + charset + " loaded?");
+          } else if (textWidth != ctx.measureText(testString).width) {
+            window.clearInterval(interval);
+            Fonts[fontName].loading = false;
+          }
 
-  _createOpenTypeHeader: function font_createOpenTypeHeader(aFile, aOffsets, aNumTables) {
-    // sfnt version (4 bytes)
-    var version = [0x4F, 0x54, 0x54, 0X4F];
+          if (debug)
+            ctx.fillText(testString, 20, 50);
+        }, 50, this);
 
-    // numTables (2 bytes)
-    var numTables = aNumTables;
+      /** Hack end */
 
-    // searchRange (2 bytes)
-    var tablesMaxPower2 = FontsUtils.getMaxPower2(numTables);
-    var searchRange = tablesMaxPower2 * 16;
+      // Add the @font-face rule to the document
+      var url = "url(data:" + this.mimetype + ";base64," + dataBase64 + ");";
+      var rule = "@font-face { font-family:'" + fontName + "';src:" + url + "}";
+      var styleSheet = document.styleSheets[0];
+      styleSheet.insertRule(rule, styleSheet.length);
+    },
 
-    // entrySelector (2 bytes)
-    var entrySelector = Math.log(tablesMaxPower2) / Math.log(2);
+    _createOpenTypeHeader: function font_createOpenTypeHeader(aFile, aOffsets, aNumTables) {
+      // sfnt version (4 bytes)
+      var version = [0x4F, 0x54, 0x54, 0X4F];
 
-    // rangeShift (2 bytes)
-    var rangeShift = numTables * 16 - searchRange;
+      // numTables (2 bytes)
+      var numTables = aNumTables;
 
-    var header = [].concat(version,
-                           FontsUtils.integerToBytes(numTables, 2),
-                           FontsUtils.integerToBytes(searchRange, 2),
-                           FontsUtils.integerToBytes(entrySelector, 2),
-                           FontsUtils.integerToBytes(rangeShift, 2));
-    aFile.set(header, aOffsets.currentOffset);
-    aOffsets.currentOffset += header.length;
-    aOffsets.virtualOffset += header.length;
-  },
+      // searchRange (2 bytes)
+      var tablesMaxPower2 = FontsUtils.getMaxPower2(numTables);
+      var searchRange = tablesMaxPower2 * 16;
 
-  _createTableEntry: function font_createTableEntry(aFile, aOffsets, aTag, aData) {
-    // tag
-    var tag = [
-      aTag.charCodeAt(0),
-      aTag.charCodeAt(1),
-      aTag.charCodeAt(2),
-      aTag.charCodeAt(3)
-    ];
+      // entrySelector (2 bytes)
+      var entrySelector = Math.log(tablesMaxPower2) / Math.log(2);
 
-    // offset
-    var offset = aOffsets.virtualOffset;
+      // rangeShift (2 bytes)
+      var rangeShift = numTables * 16 - searchRange;
 
-    // Per spec tables must be 4-bytes align so add some 0x00 if needed
-    while (aData.length & 3)
-      aData.push(0x00);
+      var header = [].concat(version,
+                             FontsUtils.integerToBytes(numTables, 2),
+                             FontsUtils.integerToBytes(searchRange, 2),
+                             FontsUtils.integerToBytes(entrySelector, 2),
+                             FontsUtils.integerToBytes(rangeShift, 2));
+      aFile.set(header, aOffsets.currentOffset);
+      aOffsets.currentOffset += header.length;
+      aOffsets.virtualOffset += header.length;
+    },
 
-    // length
-    var length = aData.length;
+    _createTableEntry: function font_createTableEntry(aFile, aOffsets, aTag, aData) {
+      // tag
+      var tag = [
+                 aTag.charCodeAt(0),
+                 aTag.charCodeAt(1),
+                 aTag.charCodeAt(2),
+                 aTag.charCodeAt(3)
+                 ];
 
-    // checksum
-    var checksum = FontsUtils.bytesToInteger(tag) + offset + length;
+      // offset
+      var offset = aOffsets.virtualOffset;
 
-    var tableEntry = [].concat(tag,
-                               FontsUtils.integerToBytes(checksum, 4),
-                               FontsUtils.integerToBytes(offset, 4),
-                               FontsUtils.integerToBytes(length, 4));
-    aFile.set(tableEntry, aOffsets.currentOffset);
-    aOffsets.currentOffset += tableEntry.length;
-    aOffsets.virtualOffset += aData.length;
-  },
+      // Per spec tables must be 4-bytes align so add some 0x00 if needed
+      while (aData.length & 3)
+        aData.push(0x00);
 
-  _createCMAPTable: function font_createCMAPTable(aGlyphs) {
-    var characters = new Uint16Array(kMaxGlyphsCount);
-    for (var i = 0; i < aGlyphs.length; i++)
-      characters[aGlyphs[i].unicode] = i + 1;
+      // length
+      var length = aData.length;
 
-    // Separate the glyphs into continuous range of codes, aka segment.
-    var ranges = [];
-    var range = [];
-    var count = characters.length;
-    for (var i = 0; i < count; i++) {
-      if (characters[i]) {
-        range.push(i);
-      } else if (range.length) {
-        ranges.push(range.slice());
-        range = [];
+      // checksum
+      var checksum = FontsUtils.bytesToInteger(tag) + offset + length;
+
+      var tableEntry = [].concat(tag,
+                                 FontsUtils.integerToBytes(checksum, 4),
+                                 FontsUtils.integerToBytes(offset, 4),
+                                 FontsUtils.integerToBytes(length, 4));
+      aFile.set(tableEntry, aOffsets.currentOffset);
+      aOffsets.currentOffset += tableEntry.length;
+      aOffsets.virtualOffset += aData.length;
+    },
+
+    _createCMAPTable: function font_createCMAPTable(aGlyphs) {
+      var characters = new Uint16Array(kMaxGlyphsCount);
+      for (var i = 0; i < aGlyphs.length; i++)
+        characters[aGlyphs[i].unicode] = i + 1;
+
+      // Separate the glyphs into continuous range of codes, aka segment.
+      var ranges = [];
+      var range = [];
+      var count = characters.length;
+      for (var i = 0; i < count; i++) {
+        if (characters[i]) {
+          range.push(i);
+        } else if (range.length) {
+          ranges.push(range.slice());
+          range = [];
+        }
       }
-    }
 
-    // The size in bytes of the header is equal to the size of the
-    // different fields * length of a short + (size of the 4 parallels arrays
-    // describing segments * length of a short).
-    var headerSize = (12 * 2 + (ranges.length * 4 * 2));
+      // The size in bytes of the header is equal to the size of the
+      // different fields * length of a short + (size of the 4 parallels arrays
+      // describing segments * length of a short).
+      var headerSize = (12 * 2 + (ranges.length * 4 * 2));
 
-    var segCount = ranges.length + 1;
-    var segCount2 = segCount * 2;
-    var searchRange = FontsUtils.getMaxPower2(segCount) * 2;
-    var searchEntry = Math.log(segCount) / Math.log(2);
-    var rangeShift = 2 * segCount - searchRange;
-    var cmap = [].concat(
-      [
-        0x00, 0x00, // version
-        0x00, 0x01, // numTables
-        0x00, 0x03, // platformID
-        0x00, 0x01, // encodingID
-        0x00, 0x00, 0x00, 0x0C, // start of the table record
-        0x00, 0x04  // format
-      ],
-      FontsUtils.integerToBytes(headerSize, 2), // length
-      [0x00, 0x00], // language
-      FontsUtils.integerToBytes(segCount2, 2),
-      FontsUtils.integerToBytes(searchRange, 2),
-      FontsUtils.integerToBytes(searchEntry, 2),
-      FontsUtils.integerToBytes(rangeShift, 2)
-    );
+      var segCount = ranges.length + 1;
+      var segCount2 = segCount * 2;
+      var searchRange = FontsUtils.getMaxPower2(segCount) * 2;
+      var searchEntry = Math.log(segCount) / Math.log(2);
+      var rangeShift = 2 * segCount - searchRange;
+      var cmap = [].concat(
+                           [
+                            0x00, 0x00, // version
+                            0x00, 0x01, // numTables
+                            0x00, 0x03, // platformID
+                            0x00, 0x01, // encodingID
+                            0x00, 0x00, 0x00, 0x0C, // start of the table record
+                            0x00, 0x04  // format
+                            ],
+                           FontsUtils.integerToBytes(headerSize, 2), // length
+                           [0x00, 0x00], // language
+                           FontsUtils.integerToBytes(segCount2, 2),
+                           FontsUtils.integerToBytes(searchRange, 2),
+                           FontsUtils.integerToBytes(searchEntry, 2),
+                           FontsUtils.integerToBytes(rangeShift, 2)
+                           );
 
-    // Fill up the 4 parallel arrays describing the segments.
-    var startCount = [];
-    var endCount = [];
-    var idDeltas = [];
-    var idRangeOffsets = [];
-    var glyphsIdsArray = [];
-    var bias = 0;
-    for (var i = 0; i < segCount - 1; i++) {
-      var range = ranges[i];
-      var start = FontsUtils.integerToBytes(range[0], 2);
-      var end = FontsUtils.integerToBytes(range[range.length - 1], 2);
+      // Fill up the 4 parallel arrays describing the segments.
+      var startCount = [];
+      var endCount = [];
+      var idDeltas = [];
+      var idRangeOffsets = [];
+      var glyphsIdsArray = [];
+      var bias = 0;
+      for (var i = 0; i < segCount - 1; i++) {
+        var range = ranges[i];
+        var start = FontsUtils.integerToBytes(range[0], 2);
+        var end = FontsUtils.integerToBytes(range[range.length - 1], 2);
 
-      var delta = FontsUtils.integerToBytes(((range[0] - 1) - bias) % 65536, 2);
-      bias += range.length;
+        var delta = FontsUtils.integerToBytes(((range[0] - 1) - bias) % 65536, 2);
+        bias += range.length;
 
-      // deltas are signed shorts
-      delta[0] ^= 0xFF;
-      delta[1] ^= 0xFF;
-      delta[1] += 1;
+        // deltas are signed shorts
+        delta[0] ^= 0xFF;
+        delta[1] ^= 0xFF;
+        delta[1] += 1;
 
-      startCount.push(start[0], start[1]);
-      endCount.push(end[0], end[1]);
-      idDeltas.push(delta[0], delta[1]);
+        startCount.push(start[0], start[1]);
+        endCount.push(end[0], end[1]);
+        idDeltas.push(delta[0], delta[1]);
+        idRangeOffsets.push(0x00, 0x00);
+
+        for (var j = 0; j < range.length; j++)
+          glyphsIdsArray.push(range[j]);
+      }
+      startCount.push(0xFF, 0xFF);
+      endCount.push(0xFF, 0xFF);
+      idDeltas.push(0x00, 0x01);
       idRangeOffsets.push(0x00, 0x00);
 
-      for (var j = 0; j < range.length; j++)
-        glyphsIdsArray.push(range[j]);
+      return cmap.concat(endCount, [0x00, 0x00], startCount,
+                         idDeltas, idRangeOffsets, glyphsIdsArray);
+    },
+
+    cover: function font_cover(aFont, aProperties) {
+      var otf = new Uint8Array(kMaxFontFileSize);
+
+      // Required Tables
+      var CFF = aFont.data, // PostScript Font Program
+      OS2 = [],         // OS/2 and Windows Specific metrics
+      cmap = [],        // Character to glyphs mapping
+      head = [],        // Font eader
+      hhea = [],        // Horizontal header
+      hmtx = [],        // Horizontal metrics
+      maxp = [],        // Maximum profile
+      name = [],        // Naming tables
+      post = [];        // PostScript informations
+      var tables = [CFF, OS2, cmap, head, hhea, hmtx, maxp, name, post];
+
+      // The offsets object holds at the same time a representation of where
+      // to write the table entry information about a table and another offset
+      // representing the offset where to draw the actual data of a particular
+      // table
+      var offsets = {
+        currentOffset: 0,
+        virtualOffset: tables.length * (4 * 4)
+      };
+
+      // For files with only one font the offset table is the first thing of the
+      // file
+      this._createOpenTypeHeader(otf, offsets, tables.length);
+
+      // XXX It is probable that in a future we want to get rid of this glue
+      // between the CFF and the OTF format in order to be able to embed TrueType
+      // data.
+      this._createTableEntry(otf, offsets, "CFF ", CFF);
+
+      /** OS/2 */
+      OS2 = [
+             0x00, 0x03, // version
+             0x02, 0x24, // xAvgCharWidth
+             0x01, 0xF4, // usWeightClass
+             0x00, 0x05, // usWidthClass
+             0x00, 0x00, // fstype
+             0x02, 0x8A, // ySubscriptXSize
+             0x02, 0xBB, // ySubscriptYSize
+             0x00, 0x00, // ySubscriptXOffset
+             0x00, 0x8C, // ySubscriptYOffset
+             0x02, 0x8A, // ySuperScriptXSize
+             0x02, 0xBB, // ySuperScriptYSize
+             0x00, 0x00, // ySuperScriptXOffset
+             0x01, 0xDF, // ySuperScriptYOffset
+             0x00, 0x31, // yStrikeOutSize
+             0x01, 0x02, // yStrikeOutPosition
+             0x00, 0x00, // sFamilyClass
+             0x02, 0x00, 0x06, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // Panose
+             0xFF, 0xFF, 0xFF, 0xFF, // ulUnicodeRange1 (Bits 0-31)
+             0xFF, 0xFF, 0xFF, 0xFF, // ulUnicodeRange1 (Bits 32-63)
+             0xFF, 0xFF, 0xFF, 0xFF, // ulUnicodeRange1 (Bits 64-95)
+             0xFF, 0xFF, 0xFF, 0xFF, // ulUnicodeRange1 (Bits 96-127)
+             0x2A, 0x32, 0x31, 0x2A, // achVendID
+             0x00, 0x20, // fsSelection
+             0x00, 0x2D, // usFirstCharIndex
+             0x00, 0x7A, // usLastCharIndex
+             0x00, 0x03, // sTypoAscender
+             0x00, 0x20, // sTypeDescender
+             0x00, 0x38, // sTypoLineGap
+             0x00, 0x5A, // usWinAscent
+             0x02, 0xB4, // usWinDescent
+             0x00, 0xCE, 0x00, 0x00, // ulCodePageRange1 (Bits 0-31)
+             0x00, 0x01, 0x00, 0x00, // ulCodePageRange2 (Bits 32-63)
+             0x00, 0x00, // sxHeight
+             0x00, 0x00, // sCapHeight
+             0x00, 0x01, // usDefaultChar
+             0x00, 0xCD, // usBreakChar
+             0x00, 0x02  // usMaxContext
+             ];
+      this._createTableEntry(otf, offsets, "OS/2", OS2);
+
+      //XXX Getting charstrings here seems wrong since this is another CFF glue
+      var charstrings = aFont.getOrderedCharStrings(aProperties.glyphs);
+
+      /** CMAP */
+      cmap = this._createCMAPTable(charstrings);
+      this._createTableEntry(otf, offsets, "cmap", cmap);
+
+      /** HEAD */
+      head = [
+              0x00, 0x01, 0x00, 0x00, // Version number
+              0x00, 0x00, 0x50, 0x00, // fontRevision
+              0x00, 0x00, 0x00, 0x00, // checksumAdjustement
+              0x5F, 0x0F, 0x3C, 0xF5, // magicNumber
+              0x00, 0x00, // Flags
+              0x03, 0xE8, // unitsPerEM (defaulting to 1000)
+              0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // creation date
+              0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // modifification date
+              0x00, 0x00, // xMin
+              0x00, 0x00, // yMin
+              0x00, 0x00, // xMax
+              0x00, 0x00, // yMax
+              0x00, 0x00, // macStyle
+              0x00, 0x00, // lowestRecPPEM
+              0x00, 0x00, // fontDirectionHint
+              0x00, 0x00, // indexToLocFormat
+              0x00, 0x00  // glyphDataFormat
+              ];
+      this._createTableEntry(otf, offsets, "head", head);
+
+      /** HHEA */
+      hhea = [].concat(
+                       [
+                        0x00, 0x01, 0x00, 0x00, // Version number
+                        0x00, 0x00, // Typographic Ascent
+                        0x00, 0x00, // Typographic Descent
+                        0x00, 0x00, // Line Gap
+                        0xFF, 0xFF, // advanceWidthMax
+                        0x00, 0x00, // minLeftSidebearing
+                        0x00, 0x00, // minRightSidebearing
+                        0x00, 0x00, // xMaxExtent
+                        0x00, 0x00, // caretSlopeRise
+                        0x00, 0x00, // caretSlopeRun
+                        0x00, 0x00, // caretOffset
+                        0x00, 0x00, // -reserved-
+                        0x00, 0x00, // -reserved-
+                        0x00, 0x00, // -reserved-
+                        0x00, 0x00, // -reserved-
+                        0x00, 0x00 // metricDataFormat
+                        ],
+                       FontsUtils.integerToBytes(charstrings.length, 2) // numberOfHMetrics
+                       );
+      this._createTableEntry(otf, offsets, "hhea", hhea);
+
+      /** HMTX */
+      hmtx = [0x01, 0xF4, 0x00, 0x00];
+      for (var i = 0; i < charstrings.length; i++) {
+        var charstring = charstrings[i].charstring;
+        var width = FontsUtils.integerToBytes(charstring[1], 2);
+        var lsb = FontsUtils.integerToBytes(charstring[0], 2);
+        hmtx = hmtx.concat(width, lsb);
+      }
+      this._createTableEntry(otf, offsets, "hmtx", hmtx);
+
+      /** MAXP */
+      maxp = [].concat(
+                       [
+                        0x00, 0x00, 0x50, 0x00, // Version number
+                        ],
+                       FontsUtils.integerToBytes(charstrings.length + 1, 2) // Num of glyphs (+1 to pass the sanitizer...)
+                       );
+      this._createTableEntry(otf, offsets, "maxp", maxp);
+
+      /** NAME */
+      name = [
+              0x00, 0x00, // format
+              0x00, 0x00, // Number of names Record
+              0x00, 0x00  // Storage
+              ];
+      this._createTableEntry(otf, offsets, "name", name);
+
+      /** POST */
+      // FIXME Get those informations from the FontInfo structure
+      post = [
+              0x00, 0x03, 0x00, 0x00, // Version number
+              0x00, 0x00, 0x01, 0x00, // italicAngle
+              0x00, 0x00, // underlinePosition
+              0x00, 0x00, // underlineThickness
+              0x00, 0x00, 0x00, 0x00, // isFixedPitch
+              0x00, 0x00, 0x00, 0x00, // minMemType42
+              0x00, 0x00, 0x00, 0x00, // maxMemType42
+              0x00, 0x00, 0x00, 0x00, // minMemType1
+              0x00, 0x00, 0x00, 0x00  // maxMemType1
+              ];
+      this._createTableEntry(otf, offsets, "post", post);
+
+      // Once all the table entries header are written, dump the data!
+      var tables = [CFF, OS2, cmap, head, hhea, hmtx, maxp, name, post];
+      for (var i = 0; i < tables.length; i++) {
+        var table = tables[i];
+        otf.set(table, offsets.currentOffset);
+        offsets.currentOffset += table.length;
+      }
+
+      var fontData = [];
+      for (var i = 0; i < offsets.currentOffset; i++)
+        fontData.push(otf[i]);
+      return fontData;
     }
-    startCount.push(0xFF, 0xFF);
-    endCount.push(0xFF, 0xFF);
-    idDeltas.push(0x00, 0x01);
-    idRangeOffsets.push(0x00, 0x00);
+  };
 
-    return cmap.concat(endCount, [0x00, 0x00], startCount,
-                       idDeltas, idRangeOffsets, glyphsIdsArray);
-  },
-
-  cover: function font_cover(aFont, aProperties) {
-    var otf = new Uint8Array(kMaxFontFileSize);
-
-    // Required Tables
-    var CFF = aFont.data, // PostScript Font Program
-        OS2 = [],         // OS/2 and Windows Specific metrics
-        cmap = [],        // Character to glyphs mapping
-        head = [],        // Font eader
-        hhea = [],        // Horizontal header
-        hmtx = [],        // Horizontal metrics
-        maxp = [],        // Maximum profile
-        name = [],        // Naming tables
-        post = [];        // PostScript informations
-    var tables = [CFF, OS2, cmap, head, hhea, hmtx, maxp, name, post];
-
-    // The offsets object holds at the same time a representation of where
-    // to write the table entry information about a table and another offset
-    // representing the offset where to draw the actual data of a particular
-    // table
-    var offsets = {
-      currentOffset: 0,
-      virtualOffset: tables.length * (4 * 4)
-    };
-
-    // For files with only one font the offset table is the first thing of the
-    // file
-    this._createOpenTypeHeader(otf, offsets, tables.length);
-
-    // XXX It is probable that in a future we want to get rid of this glue
-    // between the CFF and the OTF format in order to be able to embed TrueType
-    // data.
-    this._createTableEntry(otf, offsets, "CFF ", CFF);
-
-    /** OS/2 */
-    OS2 = [
-      0x00, 0x03, // version
-      0x02, 0x24, // xAvgCharWidth
-      0x01, 0xF4, // usWeightClass
-      0x00, 0x05, // usWidthClass
-      0x00, 0x00, // fstype
-      0x02, 0x8A, // ySubscriptXSize
-      0x02, 0xBB, // ySubscriptYSize
-      0x00, 0x00, // ySubscriptXOffset
-      0x00, 0x8C, // ySubscriptYOffset
-      0x02, 0x8A, // ySuperScriptXSize
-      0x02, 0xBB, // ySuperScriptYSize
-      0x00, 0x00, // ySuperScriptXOffset
-      0x01, 0xDF, // ySuperScriptYOffset
-      0x00, 0x31, // yStrikeOutSize
-      0x01, 0x02, // yStrikeOutPosition
-      0x00, 0x00, // sFamilyClass
-      0x02, 0x00, 0x06, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // Panose
-      0xFF, 0xFF, 0xFF, 0xFF, // ulUnicodeRange1 (Bits 0-31)
-      0xFF, 0xFF, 0xFF, 0xFF, // ulUnicodeRange1 (Bits 32-63)
-      0xFF, 0xFF, 0xFF, 0xFF, // ulUnicodeRange1 (Bits 64-95)
-      0xFF, 0xFF, 0xFF, 0xFF, // ulUnicodeRange1 (Bits 96-127)
-      0x2A, 0x32, 0x31, 0x2A, // achVendID
-      0x00, 0x20, // fsSelection
-      0x00, 0x2D, // usFirstCharIndex
-      0x00, 0x7A, // usLastCharIndex
-      0x00, 0x03, // sTypoAscender
-      0x00, 0x20, // sTypeDescender
-      0x00, 0x38, // sTypoLineGap
-      0x00, 0x5A, // usWinAscent
-      0x02, 0xB4, // usWinDescent
-      0x00, 0xCE, 0x00, 0x00, // ulCodePageRange1 (Bits 0-31)
-      0x00, 0x01, 0x00, 0x00, // ulCodePageRange2 (Bits 32-63)
-      0x00, 0x00, // sxHeight
-      0x00, 0x00, // sCapHeight
-      0x00, 0x01, // usDefaultChar
-      0x00, 0xCD, // usBreakChar
-      0x00, 0x02  // usMaxContext
-    ];
-    this._createTableEntry(otf, offsets, "OS/2", OS2);
-
-    //XXX Getting charstrings here seems wrong since this is another CFF glue
-    var charstrings = aFont.getOrderedCharStrings(aProperties.glyphs);
-
-    /** CMAP */
-    cmap = this._createCMAPTable(charstrings);
-    this._createTableEntry(otf, offsets, "cmap", cmap);
-
-    /** HEAD */
-    head = [
-      0x00, 0x01, 0x00, 0x00, // Version number
-      0x00, 0x00, 0x50, 0x00, // fontRevision
-      0x00, 0x00, 0x00, 0x00, // checksumAdjustement
-      0x5F, 0x0F, 0x3C, 0xF5, // magicNumber
-      0x00, 0x00, // Flags
-      0x03, 0xE8, // unitsPerEM (defaulting to 1000)
-      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // creation date
-      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // modifification date
-      0x00, 0x00, // xMin
-      0x00, 0x00, // yMin
-      0x00, 0x00, // xMax
-      0x00, 0x00, // yMax
-      0x00, 0x00, // macStyle
-      0x00, 0x00, // lowestRecPPEM
-      0x00, 0x00, // fontDirectionHint
-      0x00, 0x00, // indexToLocFormat
-      0x00, 0x00  // glyphDataFormat
-    ];
-    this._createTableEntry(otf, offsets, "head", head);
-
-    /** HHEA */
-    hhea = [].concat(
-      [
-        0x00, 0x01, 0x00, 0x00, // Version number
-        0x00, 0x00, // Typographic Ascent
-        0x00, 0x00, // Typographic Descent
-        0x00, 0x00, // Line Gap
-        0xFF, 0xFF, // advanceWidthMax
-        0x00, 0x00, // minLeftSidebearing
-        0x00, 0x00, // minRightSidebearing
-        0x00, 0x00, // xMaxExtent
-        0x00, 0x00, // caretSlopeRise
-        0x00, 0x00, // caretSlopeRun
-        0x00, 0x00, // caretOffset
-        0x00, 0x00, // -reserved-
-        0x00, 0x00, // -reserved-
-        0x00, 0x00, // -reserved-
-        0x00, 0x00, // -reserved-
-        0x00, 0x00 // metricDataFormat
-      ],
-      FontsUtils.integerToBytes(charstrings.length, 2) // numberOfHMetrics
-    );
-    this._createTableEntry(otf, offsets, "hhea", hhea);
-
-    /** HMTX */
-    hmtx = [0x01, 0xF4, 0x00, 0x00];
-    for (var i = 0; i < charstrings.length; i++) {
-      var charstring = charstrings[i].charstring;
-      var width = FontsUtils.integerToBytes(charstring[1], 2);
-      var lsb = FontsUtils.integerToBytes(charstring[0], 2);
-      hmtx = hmtx.concat(width, lsb);
-    }
-    this._createTableEntry(otf, offsets, "hmtx", hmtx);
-
-    /** MAXP */
-    maxp = [].concat(
-      [
-        0x00, 0x00, 0x50, 0x00, // Version number
-      ],
-      FontsUtils.integerToBytes(charstrings.length + 1, 2) // Num of glyphs (+1 to pass the sanitizer...)
-    );
-    this._createTableEntry(otf, offsets, "maxp", maxp);
-
-    /** NAME */
-    name = [
-      0x00, 0x00, // format
-      0x00, 0x00, // Number of names Record
-      0x00, 0x00  // Storage
-    ];
-    this._createTableEntry(otf, offsets, "name", name);
-
-    /** POST */
-    // FIXME Get those informations from the FontInfo structure
-    post = [
-      0x00, 0x03, 0x00, 0x00, // Version number
-      0x00, 0x00, 0x01, 0x00, // italicAngle
-      0x00, 0x00, // underlinePosition
-      0x00, 0x00, // underlineThickness
-      0x00, 0x00, 0x00, 0x00, // isFixedPitch
-      0x00, 0x00, 0x00, 0x00, // minMemType42
-      0x00, 0x00, 0x00, 0x00, // maxMemType42
-      0x00, 0x00, 0x00, 0x00, // minMemType1
-      0x00, 0x00, 0x00, 0x00  // maxMemType1
-    ];
-    this._createTableEntry(otf, offsets, "post", post);
-
-    // Once all the table entries header are written, dump the data!
-    var tables = [CFF, OS2, cmap, head, hhea, hmtx, maxp, name, post];
-    for (var i = 0; i < tables.length; i++) {
-      var table = tables[i];
-      otf.set(table, offsets.currentOffset);
-      offsets.currentOffset += table.length;
-    }
-
-    var fontData = [];
-    for (var i = 0; i < offsets.currentOffset; i++)
-      fontData.push(otf[i]);
-    return fontData;
-  }
-};
-
+  return constructor;
+})();
 
 /**
  * FontsUtils is a static class dedicated to hold codes that are not related
