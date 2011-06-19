@@ -1738,6 +1738,7 @@ var CanvasExtraState = (function() {
         this.fontSize = 0.0;
         this.textMatrix = IDENTITY_MATRIX;
         this.leading = 0.0;
+        this.colorSpace = "DeviceRGB";
         // Current point (in user coordinates)
         this.x = 0.0;
         this.y = 0.0;
@@ -2424,9 +2425,9 @@ var CanvasGraphics = (function() {
         setFillColorSpace: function(space) {
             // TODO real impl
             if (space.name === "Pattern")
-                this.colorspace = "Pattern";
+                this.current.colorSpace = "Pattern";
             else
-                this.colorspace = null;
+                this.current.colorSpace = "DeviceRGB";
         },
         setStrokeColor: function(/*...*/) {
             // TODO real impl
@@ -2451,7 +2452,7 @@ var CanvasGraphics = (function() {
         setFillColorN: function(/*...*/) {
             // TODO real impl
             var args = arguments;
-            if (this.colorspace == "Pattern") {
+            if (this.current.colorSpace == "Pattern") {
                 var patternName = args[0];
                 if (IsName(patternName)) {
                     var xref = this.xref;
@@ -2502,12 +2503,9 @@ var CanvasGraphics = (function() {
                 ctx.strokeStyle = this.makeCssRgb(0, 0, 0);
             }
 
-            // not sure what to do with this
-            var tilingType = dict.get("TilingType");
+            TODO("TilingType");
 
-            var matrix = dict.get("Matrix");
-            if (!matrix)
-                matrix = [1, 0, 0, 1, 0, 0];
+            var matrix = dict.get("Matrix") || IDENTITY_MATRIX;
 
             var bbox = dict.get("BBox");
             var x0 = bbox[0], y0 = bbox[1], x1 = bbox[2], y1 = bbox[3];
@@ -2526,7 +2524,7 @@ var CanvasGraphics = (function() {
           
             // set the new canvas element context as the graphics context
             var tmpCtx = tmpCanvas.getContext("2d");
-            var oldCtx = this.ctx;
+            var savedCtx = this.ctx;
             this.ctx = tmpCtx;
 
             // normalize transform matrix so each step
@@ -2554,11 +2552,10 @@ var CanvasGraphics = (function() {
                 pattern.code = this.compile(pattern, xref, res, []);
             this.execute(pattern.code, xref, res);
            
-            // set the old context
-            this.ctx = oldCtx;
+            this.ctx = savedCtx;
             this.restore();
 
-            warn("Inverse pattern is painted");
+            TODO("Inverse pattern is painted");
             var pattern = this.ctx.createPattern(tmpCanvas, "repeat");
             this.ctx.fillStyle = pattern;
         },
@@ -2650,8 +2647,8 @@ var CanvasGraphics = (function() {
             var gradient = this.ctx.createLinearGradient(x0, y0, x1, y1);
             
             // 10 samples seems good enough for now, but probably won't work
-            // if there are sharp color changes. Ideally, we could see the 
-            // current image size and base the # samples on that.
+            // if there are sharp color changes. Ideally, we would implement
+            // the spec faithfully and add lossless optimizations.
             var step = (t1 - t0) / 10;
             
             for (var i = t0; i <= t1; i += step) {
@@ -2664,7 +2661,10 @@ var CanvasGraphics = (function() {
             // HACK to draw the gradient onto an infinite rectangle.
             // PDF gradients are drawn across the entire image while
             // Canvas only allows gradients to be drawn in a rectangle
-            // Also, larger numbers seem to cause overflow which causes
+            // The following bug should allow us to remove this.
+            // https://bugzilla.mozilla.org/show_bug.cgi?id=664884
+            // 
+            // Also, larg numbers seem to cause overflow which causes
             // nothing to be drawn.
             this.ctx.fillRect(-1e10, -1e10, 2e10, 2e10);
         },
