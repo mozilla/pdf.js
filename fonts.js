@@ -62,6 +62,10 @@ var Fonts = {
       var uc = encoding[ch];
       if (uc instanceof Name) // we didn't convert the glyph yet
         uc = encoding[ch] = GlyphsUnicode[uc.name];
+      if (uc > 0xffff) { // handle surrogate pairs
+        ret += String.fromCharCode(uc & 0xffff);
+        uc >>= 16;
+      }
       ret += String.fromCharCode(uc);
     }
 
@@ -83,7 +87,7 @@ var Fonts = {
 var Font = function(aName, aFile, aProperties) {
   this.name = aName;
 
-  // If the font has already been decoded simply return
+  // If the font has already been decoded simply return it
   if (Fonts[aName]) {
     this.font = Fonts[aName].data;
     return;
