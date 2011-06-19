@@ -1,0 +1,123 @@
+/* -*- Mode: Java; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- /
+/* vim: set shiftwidth=4 tabstop=8 autoindent cindent expandtab: */
+
+body {
+    background-color: #929292;
+    font-family: 'Lucida Grande', 'Lucida Sans Unicode', Helvetica, Arial, Verdana, sans-serif;
+    margin: 0px;
+    padding: 0px;
+}
+
+canvas {
+    box-shadow: 0px 4px 10px #000;
+    -moz-box-shadow: 0px 4px 10px #000;
+    -webkit-box-shadow: 0px 4px 10px #000;
+}
+
+span {
+    font-size: 0.8em;
+}
+
+.control {
+    display: inline-block;
+    float: left;
+    margin: 0px 20px 0px 0px;
+    padding: 0px 4px 0px 0px;
+}
+
+.control > input {
+    float: left;
+    margin: 0px 2px 0px 0px;
+}
+
+.control > span {
+    cursor: default;
+    float: left;
+    height: 18px;
+    margin: 5px 2px 0px;
+    padding: 0px;
+    user-select: none;
+    -moz-user-select: none;
+    -webkit-user-select: none;
+}
+
+.control .label {
+    clear: both;
+    float: left;
+    font-size: 0.65em;
+    margin: 2px 0px 0px;
+    position: relative;
+    text-align: center;
+    width: 100%;
+}
+
+.page {
+    width: 816px;
+    height: 1056px;
+    margin: 10px auto;
+}
+
+#controls {
+    background-color: #eee;
+    border-bottom: 1px solid #666;
+    padding: 4px 0px 0px 8px;
+    position:fixed;
+    left: 0px;
+    top: 0px;
+    height: 40px;
+    width: 100%;
+    box-shadow: 0px 2px 8px #000;
+    -moz-box-shadow: 0px 2px 8px #000;
+    -webkit-box-shadow: 0px 2px 8px #000;
+}
+
+#controls input {
+    user-select: text;
+    -moz-user-select: text;
+    -webkit-user-select: text;
+}
+
+#previousPageButton {
+    background: url('images/buttons.png') no-repeat 0px -23px;
+    cursor: pointer;
+    display: inline-block;
+    float: left;
+    margin: 0px;
+    width: 28px;
+    height: 23px;
+}
+
+#previousPageButton.down {
+    background: url('images/buttons.png') no-repeat 0px -46px;
+}
+
+#previousPageButton.disabled {
+    background: url('images/buttons.png') no-repeat 0px 0px;
+}
+
+#nextPageButton {
+    background: url('images/buttons.png') no-repeat -28px -23px;
+    cursor: pointer;
+    display: inline-block;
+    float: left;
+    margin: 0px;
+    width: 28px;
+    height: 23px;
+}
+
+#nextPageButton.down {
+    background: url('images/buttons.png') no-repeat -28px -46px;
+}
+
+#nextPageButton.disabled {
+    background: url('images/buttons.png') no-repeat -28px 0px;
+}
+
+#pageNumber, #scale {
+    text-align: right;
+}
+
+#viewer {
+    margin: 44px 0px 0px;
+    padding: 8px 0px;
+}
