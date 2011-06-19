@@ -1608,6 +1608,9 @@ var CanvasExtraState = (function() {
 const Encodings = {
   get ExpertEncoding() {
     return shadow(this, "ExpertEncoding", [
+      null, null, null, null, null, null, null, null, null, null, null,
+      null, null, null, null, null, null, null, null, null, null, null,
+      null, null, null, null, null, null, null, null, null, null, 
       "space","exclamsmall","Hungarumlautsmall",,"dollaroldstyle","dollarsuperior",
       "ampersandsmall","Acutesmall","parenleftsuperior","parenrightsuperior",
       "twodotenleader","onedotenleader","comma","hyphen","period","fraction",
@@ -1643,6 +1646,9 @@ const Encodings = {
   },
   get MacExpertEncoding() {
     return shadow(this, "MacExpertEncoding", [
+      null, null, null, null, null, null, null, null, null, null, null,
+      null, null, null, null, null, null, null, null, null, null, null,
+      null, null, null, null, null, null, null, null, null, null, 
       "space","exclamsmall","Hungarumlautsmall","centoldstyle","dollaroldstyle",
       "dollarsuperior","ampersandsmall","Acutesmall","parenleftsuperior",
       "parenrightsuperior","twodotenleader","onedotenleader","comma","hyphen","period",
@@ -1677,6 +1683,9 @@ const Encodings = {
   },
   get MacRomanEncoding() {
     return shadow(this, "MacRomanEncoding", [
+      null, null, null, null, null, null, null, null, null, null, null,
+      null, null, null, null, null, null, null, null, null, null, null,
+      null, null, null, null, null, null, null, null, null, null, 
       "space","exclam","quotedbl","numbersign","dollar","percent","ampersand",
       "quotesingle","parenleft","parenright","asterisk","plus","comma","hyphen",
       "period","slash","zero","one","two","three","four","five","six","seven","eight",
@@ -1707,6 +1716,9 @@ const Encodings = {
   },
   get StandardEncoding() {
     return shadow(this, "StandardEncoding", [
+      null, null, null, null, null, null, null, null, null, null, null,
+      null, null, null, null, null, null, null, null, null, null, null,
+      null, null, null, null, null, null, null, null, null, null, 
       "space","exclam","quotedbl","numbersign","dollar","percent","ampersand",
       "quoteright","parenleft","parenright","asterisk","plus","comma","hyphen","period",
       "slash","zero","one","two","three","four","five","six","seven","eight","nine",
@@ -1727,6 +1739,9 @@ const Encodings = {
   },
   get WinAnsiEncoding() {
     return shadow(this, "WinAnsiEncoding", [
+      null, null, null, null, null, null, null, null, null, null, null,
+      null, null, null, null, null, null, null, null, null, null, null,
+      null, null, null, null, null, null, null, null, null, null, 
       "space","exclam","quotedbl","numbersign","dollar","percent","ampersand",
       "quotesingle","parenleft","parenright","asterisk","plus","comma","hyphen",
       "period","slash","zero","one","two","three","four","five","six","seven","eight",
@@ -1758,6 +1773,9 @@ const Encodings = {
   },
   get zapfDingbatsEncoding() {
     return shadow(this, "zapfDingbatsEncoding", [
+      null, null, null, null, null, null, null, null, null, null, null,
+      null, null, null, null, null, null, null, null, null, null, null,
+      null, null, null, null, null, null, null, null, null, null, 
       "space","a1","a2","a202","a3","a4","a5","a119","a118","a117","a11","a12","a13",
       "a14","a15","a16","a105","a17","a18","a19","a20","a21","a22","a23","a24","a25",
       "a26","a27","a28","a6","a7","a8","a9","a10","a29","a30","a31","a32","a33","a34",
@@ -1934,6 +1952,7 @@ var CanvasGraphics = (function() {
                     var widths = xref.fetchIfRef(fontDict.get("Widths"));
                     assertWellFormed(IsArray(widths) && IsInt(firstChar),
                                      "invalid font Widths or FirstChar");
+
                     for (var j = 0; j < widths.length; j++) {
                         if (widths[j])
                             charset.push(encoding[j + firstChar]);
