@@ -1902,6 +1902,7 @@ var CanvasGraphics = (function() {
 
             // Generate the custom cmap of the font if needed
             var encodingMap = {};
+            var charset = [];
             if (fontDict.has("Encoding")) {
                 var encoding = xref.fetchIfRef(fontDict.get("Encoding"));
                 if (IsDict(encoding)) {
@@ -1923,16 +1924,23 @@ var CanvasGraphics = (function() {
                     if (!encoding)
                         error("Unknown font encoding");
 
-                    var widths = xref.fetchIfRef(fontDict.get("Widths"));
                     var firstChar = xref.fetchIfRef(fontDict.get("FirstChar"));
+
+                    var index = 0;
+                    for (var j = 0; j < encoding.length; j++) {
+                        encodingMap[firstChar + index++] = GlyphsUnicode[encoding[j]];
+                    }
+
+                    var widths = xref.fetchIfRef(fontDict.get("Widths"));
                     assertWellFormed(IsArray(widths) && IsInt(firstChar),
                                      "invalid font Widths or FirstChar");
-                    var charset = [];
                     for (var j = 0; j < widths.length; j++) {
                         if (widths[j])
                             charset.push(encoding[j + firstChar]);
                     }
                 }
+            } else if (fontDict.has("ToUnicode")) {
+              TODO("ToUnicode stream translation not implemented");
             }
 
             var subType = fontDict.get("Subtype");
