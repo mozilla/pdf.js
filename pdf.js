@@ -48,7 +48,7 @@ function shadow(obj, prop, value) {
 
 var Stream = (function() {
     function constructor(arrayBuffer, start, length, dict) {
-        this.bytes = new Uint8Array(arrayBuffer);
+        this.bytes = Uint8Array(arrayBuffer);
         this.start = start || 0;
         this.pos = this.start;
         this.end = (start + length) || this.bytes.byteLength;
@@ -113,7 +113,7 @@ var Stream = (function() {
 var StringStream = (function() {
     function constructor(str) {
         var length = str.length;
-        var bytes = new Uint8Array(length);
+        var bytes = Uint8Array(length);
         for (var n = 0; n < length; ++n)
             bytes[n] = str.charCodeAt(n);
         Stream.call(this, bytes);
@@ -125,11 +125,11 @@ var StringStream = (function() {
 })();
 
 var FlateStream = (function() {
-    const codeLenCodeMap = new Uint32Array([
+    const codeLenCodeMap = Uint32Array([
         16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15
     ]);
 
-    const lengthDecode = new Uint32Array([
+    const lengthDecode = Uint32Array([
         0x00003, 0x00004, 0x00005, 0x00006, 0x00007, 0x00008, 0x00009,
         0x0000a, 0x1000b, 0x1000d, 0x1000f, 0x10011, 0x20013, 0x20017,
         0x2001b, 0x2001f, 0x30023, 0x3002b, 0x30033, 0x3003b, 0x40043,
@@ -137,7 +137,7 @@ var FlateStream = (function() {
         0x00102, 0x00102, 0x00102
     ]);
 
-    const distDecode = new Uint32Array([
+    const distDecode = Uint32Array([
         0x00001, 0x00002, 0x00003, 0x00004, 0x10005, 0x10007, 0x20009,
         0x2000d, 0x30011, 0x30019, 0x40021, 0x40031, 0x50041, 0x50061,
         0x60081, 0x600c1, 0x70101, 0x70181, 0x80201, 0x80301, 0x90401,
@@ -145,7 +145,7 @@ var FlateStream = (function() {
         0xd4001, 0xd6001
     ]);
 
-    const fixedLitCodeTab = [new Uint32Array([
+    const fixedLitCodeTab = [Uint32Array([
         0x70100, 0x80050, 0x80010, 0x80118, 0x70110, 0x80070, 0x80030,
         0x900c0, 0x70108, 0x80060, 0x80020, 0x900a0, 0x80000, 0x80080,
         0x80040, 0x900e0, 0x70104, 0x80058, 0x80018, 0x90090, 0x70114,
@@ -222,7 +222,7 @@ var FlateStream = (function() {
         0x900ff
     ]), 9];
 
-    const fixedDistCodeTab = [new Uint32Array([
+    const fixedDistCodeTab = [Uint32Array([
         0x50000, 0x50010, 0x50008, 0x50018, 0x50004, 0x50014, 0x5000c,
         0x5001c, 0x50002, 0x50012, 0x5000a, 0x5001a, 0x50006, 0x50016,
         0x5000e, 0x00000, 0x50001, 0x50011, 0x50009, 0x50019, 0x50005,
@@ -298,7 +298,7 @@ var FlateStream = (function() {
             var size = 512;
             while (size < requested)
                 size <<= 1;
-            var buffer2 = new Uint8Array(size);
+            var buffer2 = Uint8Array(size);
             for (var i = 0; i < current; ++i)
                 buffer2[i] = buffer[i];
             return this.buffer = buffer2;
@@ -363,7 +363,7 @@ var FlateStream = (function() {
 
             // build the table
             var size = 1 << maxLen;
-            var codes = new Uint32Array(size);
+            var codes = Uint32Array(size);
             for (var len = 1, code = 0, skip = 2;
                  len <= maxLen;
                  ++len, code <<= 1, skip <<= 1) {
