@@ -308,7 +308,7 @@ var FlateStream = (function() {
         getByte: function() {
             var bufferLength = this.bufferLength;
             var pos = this.pos;
-            if (bufferLength == pos) {
+            if (bufferLength <= pos) {
                 if (this.eof)
                     return;
                 this.readBlock();
@@ -333,7 +333,7 @@ var FlateStream = (function() {
         lookChar: function() {
             var bufferLength = this.bufferLength;
             var pos = this.pos;
-            if (bufferLength == pos) {
+            if (bufferLength <= pos) {
                 if (this.eof)
                     return;
                 this.readBlock();
@@ -599,7 +599,7 @@ var PredictorStream = (function() {
 
 var DecryptStream = (function() {
     function constructor(str, fileKey, encAlgorithm, keyLength) {
-        // TODO
+        TODO("decrypt stream is not implemented");
     }
 
     constructor.prototype = Stream.prototype;
@@ -1475,11 +1475,12 @@ var XRef = (function() {
 
             e = this.getEntry(num);
             var gen = ref.gen;
+            var stream, parser;
             if (e.uncompressed) {
                 if (e.gen != gen)
                     throw("inconsistent generation in XRef");
-                var stream = this.stream.makeSubStream(e.offset);
-                var parser = new Parser(new Lexer(stream), true, this);
+                stream = this.stream.makeSubStream(e.offset);
+                parser = new Parser(new Lexer(stream), true, this);
                 var obj1 = parser.getObj();
                 var obj2 = parser.getObj();
                 var obj3 = parser.getObj();
@@ -1503,7 +1504,39 @@ var XRef = (function() {
                     this.cache[num] = e;
                 return e;
             }
-            error("compressed entry");
+            // compressed entry
+            stream = this.fetch({num:e.offset, gen:0});
+            if (!IsStream(stream))
+                error("bad ObjStm stream");
+            var first = stream.parameters.get("First");
+            var n = stream.parameters.get("N");
+            if (!IsInt(first) || !IsInt(n)) {
+                error("invalid first and n parameters for ObjStm stream");
+            }
+            parser = new Parser(new Lexer(stream), false);
+            var i, entries = [], nums = [];
+            // read the object numbers to populate cache
+            for (i = 0; i < n; ++i) {
+                var num = parser.getObj();
+                if (!IsInt(num)) {
+                    error("invalid object number in the ObjStm stream");
+                }
+                nums.push(num);
+                var offset = parser.getObj();
+                if (!IsInt(offset)) {
+                    error("invalid object offset in the ObjStm stream");
+                }
+            }
+            // read stream objects for cache
+            for (i = 0; i < n; ++i) {
+                entries.push(parser.getObj());
+                this.cache[nums[i]] = entries[i];
+            }
+            e = entries[e.gen];
+            if (!e) {
+                error("bad XRef entry for compressed object");
+            }
+            return e;
         },
         getCatalogObj: function() {
             return this.fetch(this.root);
@@ -1534,20 +1567,39 @@ var Page = (function() {
                                              : null));
         },
         compile: function(gfx, fonts) {
-            if (!this.code) {
-                var xref = this.xref;
-                var content = xref.fetchIfRef(this.content);
-                var resources = xref.fetchIfRef(this.resources);
-                this.code = gfx.compile(content, xref, resources, fonts);
+            if (this.code) {
+                // content was compiled
+                return;
             }
+            var xref = this.xref;
+            var content;
+            var resources = xref.fetchIfRef(this.resources);
+            if (!IsArray(this.content)) {
+                // content is not an array, shortcut
+                content = xref.fetchIfRef(this.content);
+                this.code = gfx.compile(content, xref, resources, fonts);
+                return;
+            }
+            // the content is an array, compiling all items
+            var i, n = this.content.length, compiledItems = [];
+            for (i = 0; i < n; ++i) {
+                content = xref.fetchIfRef(this.content[i]);
+                compiledItems.push(gfx.compile(content, xref, resources, fonts));
+            }
+            // creating the function that executes all compiled items
+            this.code = function(gfx) {
+                var i, n = compiledItems.length;
+                for (i = 0; i < n; ++i) {
+                    compiledItems[i](gfx);
+                }
+            };
         },
         display: function(gfx) {
+            assert(this.code instanceof Function, "page content must be compiled first");
             var xref = this.xref;
-            var content = xref.fetchIfRef(this.content);
             var resources = xref.fetchIfRef(this.resources);
             var mediaBox = xref.fetchIfRef(this.mediaBox);
-            assertWellFormed(IsStream(content) && IsDict(resources),
-                             "invalid page content or resources");
+            assertWellFormed(IsDict(resources), "invalid page resources");
             gfx.beginDrawing({ x: mediaBox[0], y: mediaBox[1],
                                width: mediaBox[2] - mediaBox[0],
                                height: mediaBox[3] - mediaBox[1] });
