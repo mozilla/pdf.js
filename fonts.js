@@ -203,7 +203,7 @@ Font.prototype = {
       }
     }
     ctx.font = "bold italic 20px " + fontName + ", Symbol, Arial";
-    var textWidth = ctx.mozMeasureText(testString);
+    var textWidth = ctx.measureText(testString).width;
 
     if (debug)
       ctx.fillText(testString, 20, 20);
@@ -218,7 +218,7 @@ Font.prototype = {
         window.clearInterval(interval);
         Fonts[fontName].loading = false;
         warn("Is " + fontName + " for charset: " + charset + " loaded?");
-      } else if (textWidth != ctx.mozMeasureText(testString)) {
+      } else if (textWidth != ctx.measureText(testString).width) {
         window.clearInterval(interval);
         Fonts[fontName].loading = false;
       }
