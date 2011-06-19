@@ -1,3 +1,5 @@
+"use strict";
+
 var GlyphsUnicode = {
   A: 0x0041,
   AE: 0x00C6,
