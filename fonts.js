@@ -138,6 +138,63 @@ var Font = (function () {
     this.bind();
   };
 
+  function createOpenTypeHeader(aFile, aOffsets, aNumTables) {
+    // sfnt version (4 bytes)
+    var version = [0x4F, 0x54, 0x54, 0X4F];
+
+    // numTables (2 bytes)
+    var numTables = aNumTables;
+
+    // searchRange (2 bytes)
+    var tablesMaxPower2 = FontsUtils.getMaxPower2(numTables);
+    var searchRange = tablesMaxPower2 * 16;
+
+    // entrySelector (2 bytes)
+    var entrySelector = Math.log(tablesMaxPower2) / Math.log(2);
+
+    // rangeShift (2 bytes)
+    var rangeShift = numTables * 16 - searchRange;
+
+    var header = [].concat(version,
+                           FontsUtils.integerToBytes(numTables, 2),
+                           FontsUtils.integerToBytes(searchRange, 2),
+                           FontsUtils.integerToBytes(entrySelector, 2),
+                           FontsUtils.integerToBytes(rangeShift, 2));
+    aFile.set(header, aOffsets.currentOffset);
+    aOffsets.currentOffset += header.length;
+    aOffsets.virtualOffset += header.length;
+  }
+
+  function createTableEntry(aFile, aOffsets, aTag, aData) {
+    // tag
+    var tag = [
+               aTag.charCodeAt(0),
+               aTag.charCodeAt(1),
+               aTag.charCodeAt(2),
+               aTag.charCodeAt(3)
+               ];
+
+    // offset
+    var offset = aOffsets.virtualOffset;
+
+    // Per spec tables must be 4-bytes align so add some 0x00 if needed
+    while (aData.length & 3)
+      aData.push(0x00);
+
+    // length
+    var length = aData.length;
+
+    // checksum
+    var checksum = FontsUtils.bytesToInteger(tag) + offset + length;
+
+    var tableEntry = [].concat(tag,
+                               FontsUtils.integerToBytes(checksum, 4),
+                               FontsUtils.integerToBytes(offset, 4),
+                               FontsUtils.integerToBytes(length, 4));
+    aFile.set(tableEntry, aOffsets.currentOffset);
+    aOffsets.currentOffset += tableEntry.length;
+    aOffsets.virtualOffset += aData.length;
+  }
 
   /**
    * A bunch of the OpenType code is duplicate between this class and the
@@ -240,64 +297,6 @@ var Font = (function () {
       var rule = "@font-face { font-family:'" + fontName + "';src:" + url + "}";
       var styleSheet = document.styleSheets[0];
       styleSheet.insertRule(rule, styleSheet.length);
-    },
-
-    _createOpenTypeHeader: function font_createOpenTypeHeader(aFile, aOffsets, aNumTables) {
-      // sfnt version (4 bytes)
-      var version = [0x4F, 0x54, 0x54, 0X4F];
-
-      // numTables (2 bytes)
-      var numTables = aNumTables;
-
-      // searchRange (2 bytes)
-      var tablesMaxPower2 = FontsUtils.getMaxPower2(numTables);
-      var searchRange = tablesMaxPower2 * 16;
-
-      // entrySelector (2 bytes)
-      var entrySelector = Math.log(tablesMaxPower2) / Math.log(2);
-
-      // rangeShift (2 bytes)
-      var rangeShift = numTables * 16 - searchRange;
-
-      var header = [].concat(version,
-                             FontsUtils.integerToBytes(numTables, 2),
-                             FontsUtils.integerToBytes(searchRange, 2),
-                             FontsUtils.integerToBytes(entrySelector, 2),
-                             FontsUtils.integerToBytes(rangeShift, 2));
-      aFile.set(header, aOffsets.currentOffset);
-      aOffsets.currentOffset += header.length;
-      aOffsets.virtualOffset += header.length;
-    },
-
-    _createTableEntry: function font_createTableEntry(aFile, aOffsets, aTag, aData) {
-      // tag
-      var tag = [
-                 aTag.charCodeAt(0),
-                 aTag.charCodeAt(1),
-                 aTag.charCodeAt(2),
-                 aTag.charCodeAt(3)
-                 ];
-
-      // offset
-      var offset = aOffsets.virtualOffset;
-
-      // Per spec tables must be 4-bytes align so add some 0x00 if needed
-      while (aData.length & 3)
-        aData.push(0x00);
-
-      // length
-      var length = aData.length;
-
-      // checksum
-      var checksum = FontsUtils.bytesToInteger(tag) + offset + length;
-
-      var tableEntry = [].concat(tag,
-                                 FontsUtils.integerToBytes(checksum, 4),
-                                 FontsUtils.integerToBytes(offset, 4),
-                                 FontsUtils.integerToBytes(length, 4));
-      aFile.set(tableEntry, aOffsets.currentOffset);
-      aOffsets.currentOffset += tableEntry.length;
-      aOffsets.virtualOffset += aData.length;
     },
 
     _createCMAPTable: function font_createCMAPTable(aGlyphs) {
@@ -408,12 +407,12 @@ var Font = (function () {
 
       // For files with only one font the offset table is the first thing of the
       // file
-      this._createOpenTypeHeader(otf, offsets, tables.length);
+      createOpenTypeHeader(otf, offsets, tables.length);
 
       // XXX It is probable that in a future we want to get rid of this glue
       // between the CFF and the OTF format in order to be able to embed TrueType
       // data.
-      this._createTableEntry(otf, offsets, "CFF ", CFF);
+      createTableEntry(otf, offsets, "CFF ", CFF);
 
       /** OS/2 */
       OS2 = [
@@ -455,14 +454,14 @@ var Font = (function () {
              0x00, 0xCD, // usBreakChar
              0x00, 0x02  // usMaxContext
              ];
-      this._createTableEntry(otf, offsets, "OS/2", OS2);
+      createTableEntry(otf, offsets, "OS/2", OS2);
 
       //XXX Getting charstrings here seems wrong since this is another CFF glue
       var charstrings = aFont.getOrderedCharStrings(aProperties.glyphs);
 
       /** CMAP */
       cmap = this._createCMAPTable(charstrings);
-      this._createTableEntry(otf, offsets, "cmap", cmap);
+      createTableEntry(otf, offsets, "cmap", cmap);
 
       /** HEAD */
       head = [
@@ -484,7 +483,7 @@ var Font = (function () {
               0x00, 0x00, // indexToLocFormat
               0x00, 0x00  // glyphDataFormat
               ];
-      this._createTableEntry(otf, offsets, "head", head);
+      createTableEntry(otf, offsets, "head", head);
 
       /** HHEA */
       hhea = [].concat(
@@ -508,7 +507,7 @@ var Font = (function () {
                         ],
                        FontsUtils.integerToBytes(charstrings.length, 2) // numberOfHMetrics
                        );
-      this._createTableEntry(otf, offsets, "hhea", hhea);
+      createTableEntry(otf, offsets, "hhea", hhea);
 
       /** HMTX */
       hmtx = [0x01, 0xF4, 0x00, 0x00];
@@ -518,7 +517,7 @@ var Font = (function () {
         var lsb = FontsUtils.integerToBytes(charstring[0], 2);
         hmtx = hmtx.concat(width, lsb);
       }
-      this._createTableEntry(otf, offsets, "hmtx", hmtx);
+      createTableEntry(otf, offsets, "hmtx", hmtx);
 
       /** MAXP */
       maxp = [].concat(
@@ -527,7 +526,7 @@ var Font = (function () {
                         ],
                        FontsUtils.integerToBytes(charstrings.length + 1, 2) // Num of glyphs (+1 to pass the sanitizer...)
                        );
-      this._createTableEntry(otf, offsets, "maxp", maxp);
+      createTableEntry(otf, offsets, "maxp", maxp);
 
       /** NAME */
       name = [
@@ -535,7 +534,7 @@ var Font = (function () {
               0x00, 0x00, // Number of names Record
               0x00, 0x00  // Storage
               ];
-      this._createTableEntry(otf, offsets, "name", name);
+      createTableEntry(otf, offsets, "name", name);
 
       /** POST */
       // FIXME Get those informations from the FontInfo structure
@@ -550,7 +549,7 @@ var Font = (function () {
               0x00, 0x00, 0x00, 0x00, // minMemType1
               0x00, 0x00, 0x00, 0x00  // maxMemType1
               ];
-      this._createTableEntry(otf, offsets, "post", post);
+      createTableEntry(otf, offsets, "post", post);
 
       // Once all the table entries header are written, dump the data!
       var tables = [CFF, OS2, cmap, head, hhea, hmtx, maxp, name, post];
