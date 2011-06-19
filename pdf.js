@@ -1912,9 +1912,11 @@ var CanvasGraphics = (function() {
 
                     // Get the font charset if any
                     var charset = descriptor.get("CharSet");
-                    assertWellFormed(IsString(charset), "invalid charset");
+                    if (charset) {
+                        assertWellFormed(IsString(charset), "invalid charset");
 
-                    charset = charset.split("/");
+                        charset = charset.split("/");
+                    }
                 } else if (IsName(encoding)) {
                     var encoding = Encodings[encoding.name];
                     if (!encoding)
