@@ -113,6 +113,66 @@ span {
     background: url('images/buttons.png') no-repeat -28px 0px;
 }
 
+#scaleComboBoxInput {
+    background: url('images/combobox.png') no-repeat 0px -23px;
+    display: inline-block;
+    float: left;
+    margin: 0px;
+    width: 35px;
+    height: 23px;
+}
+
+#scaleComboBoxInput input {
+    background: none;
+    border: 0px;
+    margin: 3px 2px 0px;
+    width: 31px;
+}
+
+#scaleComboBoxButton {
+    background: url('images/combobox.png') no-repeat -41px -23px;
+    cursor: pointer;
+    display: inline-block;
+    float: left;
+    margin: 0px;
+    width: 21px;
+    height: 23px;
+}
+
+#scaleComboBoxButton.down {
+    background: url('images/combobox.png') no-repeat -41px -46px;
+}
+
+#scaleComboBoxButton.disabled {
+    background: url('images/combobox.png') no-repeat -41px 0px;
+}
+
+#scaleComboBoxList {
+    background-color: #fff;
+    border: 1px solid #666;
+    clear: both;
+    position: relative;
+    display: none;
+    top: -20px;
+    width: 48px;
+}
+
+#scaleComboBoxList > ul {
+    list-style: none;
+    padding: 0px;
+    margin: 0px;
+}
+
+#scaleComboBoxList > ul > li {
+    display: inline-block;
+    cursor: pointer;
+    width: 100%;
+}
+
+#scaleComboBoxList > ul > li:hover {
+    background-color: #09f;
+}
+
 #pageNumber, #scale {
     text-align: right;
 }
