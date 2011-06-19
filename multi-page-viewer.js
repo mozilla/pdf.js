@@ -1,14 +1,17 @@
 /* -*- Mode: Java; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- /
 /* vim: set shiftwidth=4 tabstop=8 autoindent cindent expandtab: */
 
+"use strict";
+
 var PDFViewer = {
     queryParams: {},
 
     element: null,
 
-    pageNumberInput: null,
     previousPageButton: null,
     nextPageButton: null,
+    pageNumberInput: null,
+    scaleInput: null,
     
     willJumpToPage: false,
 
@@ -156,6 +159,8 @@ var PDFViewer = {
                 PDFViewer.drawPage(1);
             }
         }
+
+        PDFViewer.scaleInput.value = Math.floor(PDFViewer.scale * 100) + '%';
     },
 
     goToPage: function(num) {
@@ -315,13 +320,40 @@ window.onload = function() {
         this.className = (this.className.indexOf('disabled') !== -1) ? 'disabled' : '';
     };
 
-    var scaleInput = document.getElementById('scale');
-    scaleInput.onchange = function(evt) {
-        PDFViewer.changeScale(this.value);
+    PDFViewer.scaleInput = document.getElementById('scale');
+    PDFViewer.scaleInput.buttonElement = document.getElementById('scaleComboBoxButton');
+    PDFViewer.scaleInput.buttonElement.listElement = document.getElementById('scaleComboBoxList');
+    PDFViewer.scaleInput.onchange = function(evt) {
+        PDFViewer.changeScale(parseInt(this.value));
     };
 
+    PDFViewer.scaleInput.buttonElement.onclick = function(evt) {
+        this.listElement.style.display = (this.listElement.style.display === 'block') ? 'none' : 'block';
+    };
+    PDFViewer.scaleInput.buttonElement.onmousedown = function(evt) {
+        if (this.className.indexOf('disabled') === -1) {
+            this.className = 'down';
+        }
+    };
+    PDFViewer.scaleInput.buttonElement.onmouseup = function(evt) {
+        this.className = (this.className.indexOf('disabled') !== -1) ? 'disabled' : '';
+    };
+    PDFViewer.scaleInput.buttonElement.onmouseout = function(evt) {
+        this.className = (this.className.indexOf('disabled') !== -1) ? 'disabled' : '';
+    };
+    
+    var listItems = PDFViewer.scaleInput.buttonElement.listElement.getElementsByTagName('LI');
+
+    for (var i = 0; i < listItems.length; i++) {
+        var listItem = listItems[i];
+        listItem.onclick = function(evt) {
+            PDFViewer.changeScale(parseInt(this.innerHTML));
+            PDFViewer.scaleInput.buttonElement.listElement.style.display = 'none';
+        };
+    }
+
     PDFViewer.pageNumber = parseInt(PDFViewer.queryParams.page) || PDFViewer.pageNumber;
-    PDFViewer.scale = parseInt(scaleInput.value) / 100 || 1.0;
+    PDFViewer.scale = parseInt(PDFViewer.scaleInput.value) / 100 || 1.0;
     PDFViewer.open(PDFViewer.queryParams.file || PDFViewer.url);
 
     window.onscroll = function(evt) {        
