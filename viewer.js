@@ -1,12 +1,14 @@
 /* -*- Mode: Java; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- /
 /* vim: set shiftwidth=4 tabstop=8 autoindent cindent expandtab: */
 
-var pdfDocument, canvas, pageDisplay, pageNum, pageInterval;
+"use strict";
+
+var pdfDocument, canvas, numPages, pageDisplay, pageNum, pageInterval;
 function load(userInput) {
     canvas = document.getElementById("canvas");
     canvas.mozOpaque = true;
     pageNum = parseInt(queryParams().page) || 1;
-    fileName = userInput;
+    var fileName = userInput;
     if (!userInput) {
       fileName = queryParams().file || "compressed.tracemonkey-pldi-09.pdf";
     }
@@ -26,7 +28,7 @@ function queryParams() {
 
 function open(url) {
     document.title = url;
-    req = new XMLHttpRequest();
+    var req = new XMLHttpRequest();
     req.open("GET", url);
     req.mozResponseType = req.responseType = "arraybuffer";
     req.expected = (document.URL.indexOf("file:") == 0) ? 0 : 200;
