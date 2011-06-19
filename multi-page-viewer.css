@@ -19,7 +19,35 @@ span {
 }
 
 .control {
+    display: inline-block;
+    float: left;
     margin: 0px 20px 0px 0px;
+    padding: 0px 4px 0px 0px;
+}
+
+.control > input {
+    float: left;
+    margin: 0px 2px 0px 0px;
+}
+
+.control > span {
+    float: left;
+    height: 18px;
+    margin: 5px 2px 0px;
+    padding: 0px;
+    user-select: none;
+    -moz-user-select: none;
+    -webkit-user-select: none;
+}
+
+.control .label {
+    clear: both;
+    float: left;
+    font-size: 0.65em;
+    margin: 2px 0px 0px;
+    position: relative;
+    text-align: center;
+    width: 100%;
 }
 
 .page {
@@ -31,23 +59,64 @@ span {
 #controls {
     background-color: #eee;
     border-bottom: 1px solid #666;
-    padding: 4px 0px 0px 10px;
+    padding: 4px 0px 0px 8px;
     position:fixed;
     left: 0px;
     top: 0px;
-    height: 28px;
+    height: 40px;
     width: 100%;
     box-shadow: 0px 2px 8px #000;
     -moz-box-shadow: 0px 2px 8px #000;
     -webkit-box-shadow: 0px 2px 8px #000;
 }
 
-#pageNumber {
-    margin: 0px 0px 0px 10px;
+#controls input {
+    user-select: text;
+    -moz-user-select: text;
+    -webkit-user-select: text;
+}
+
+#previousPageButton {
+    background: url('images/buttons.png') no-repeat 0px -23px;
+    cursor: pointer;
+    display: inline-block;
+    float: left;
+    margin: 0px;
+    width: 28px;
+    height: 23px;
+}
+
+#previousPageButton.down {
+    background: url('images/buttons.png') no-repeat 0px -46px;
+}
+
+#previousPageButton.disabled {
+    background: url('images/buttons.png') no-repeat 0px 0px;
+}
+
+#nextPageButton {
+    background: url('images/buttons.png') no-repeat -28px -23px;
+    cursor: pointer;
+    display: inline-block;
+    float: left;
+    margin: 0px;
+    width: 28px;
+    height: 23px;
+}
+
+#nextPageButton.down {
+    background: url('images/buttons.png') no-repeat -28px -46px;
+}
+
+#nextPageButton.disabled {
+    background: url('images/buttons.png') no-repeat -28px 0px;
+}
+
+#pageNumber, #scale {
     text-align: right;
 }
 
 #viewer {
-    margin: 32px 0px 0px;
+    margin: 44px 0px 0px;
     padding: 8px 0px;
 }
