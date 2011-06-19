@@ -138,64 +138,6 @@ var Font = (function () {
     this.bind();
   };
 
-  function createOpenTypeHeader(aFile, aOffsets, aNumTables) {
-    // sfnt version (4 bytes)
-    var version = [0x4F, 0x54, 0x54, 0X4F];
-
-    // numTables (2 bytes)
-    var numTables = aNumTables;
-
-    // searchRange (2 bytes)
-    var tablesMaxPower2 = FontsUtils.getMaxPower2(numTables);
-    var searchRange = tablesMaxPower2 * 16;
-
-    // entrySelector (2 bytes)
-    var entrySelector = Math.log(tablesMaxPower2) / Math.log(2);
-
-    // rangeShift (2 bytes)
-    var rangeShift = numTables * 16 - searchRange;
-
-    var header = [].concat(version,
-                           FontsUtils.integerToBytes(numTables, 2),
-                           FontsUtils.integerToBytes(searchRange, 2),
-                           FontsUtils.integerToBytes(entrySelector, 2),
-                           FontsUtils.integerToBytes(rangeShift, 2));
-    aFile.set(header, aOffsets.currentOffset);
-    aOffsets.currentOffset += header.length;
-    aOffsets.virtualOffset += header.length;
-  }
-
-  function createTableEntry(aFile, aOffsets, aTag, aData) {
-    // tag
-    var tag = [
-               aTag.charCodeAt(0),
-               aTag.charCodeAt(1),
-               aTag.charCodeAt(2),
-               aTag.charCodeAt(3)
-               ];
-
-    // offset
-    var offset = aOffsets.virtualOffset;
-
-    // Per spec tables must be 4-bytes align so add some 0x00 if needed
-    while (aData.length & 3)
-      aData.push(0x00);
-
-    // length
-    var length = aData.length;
-
-    // checksum
-    var checksum = FontsUtils.bytesToInteger(tag) + offset + length;
-
-    var tableEntry = [].concat(tag,
-                               FontsUtils.integerToBytes(checksum, 4),
-                               FontsUtils.integerToBytes(offset, 4),
-                               FontsUtils.integerToBytes(length, 4));
-    aFile.set(tableEntry, aOffsets.currentOffset);
-    aOffsets.currentOffset += tableEntry.length;
-    aOffsets.virtualOffset += aData.length;
-  }
-
   /**
    * A bunch of the OpenType code is duplicate between this class and the
    * TrueType code, this is intentional and will merge in a future version
@@ -383,6 +325,64 @@ var Font = (function () {
 
     cover: function font_cover(aFont, aProperties) {
       var otf = new Uint8Array(kMaxFontFileSize);
+
+      function createOpenTypeHeader(aFile, aOffsets, aNumTables) {
+        // sfnt version (4 bytes)
+        var version = [0x4F, 0x54, 0x54, 0X4F];
+
+        // numTables (2 bytes)
+        var numTables = aNumTables;
+
+        // searchRange (2 bytes)
+        var tablesMaxPower2 = FontsUtils.getMaxPower2(numTables);
+        var searchRange = tablesMaxPower2 * 16;
+
+        // entrySelector (2 bytes)
+        var entrySelector = Math.log(tablesMaxPower2) / Math.log(2);
+
+        // rangeShift (2 bytes)
+        var rangeShift = numTables * 16 - searchRange;
+
+        var header = [].concat(version,
+                               FontsUtils.integerToBytes(numTables, 2),
+                               FontsUtils.integerToBytes(searchRange, 2),
+                               FontsUtils.integerToBytes(entrySelector, 2),
+                               FontsUtils.integerToBytes(rangeShift, 2));
+        aFile.set(header, aOffsets.currentOffset);
+        aOffsets.currentOffset += header.length;
+        aOffsets.virtualOffset += header.length;
+      }
+
+      function createTableEntry(aFile, aOffsets, aTag, aData) {
+        // tag
+        var tag = [
+                   aTag.charCodeAt(0),
+                   aTag.charCodeAt(1),
+                   aTag.charCodeAt(2),
+                   aTag.charCodeAt(3)
+                   ];
+
+        // offset
+        var offset = aOffsets.virtualOffset;
+
+        // Per spec tables must be 4-bytes align so add some 0x00 if needed
+        while (aData.length & 3)
+          aData.push(0x00);
+
+        // length
+        var length = aData.length;
+
+        // checksum
+        var checksum = FontsUtils.bytesToInteger(tag) + offset + length;
+
+        var tableEntry = [].concat(tag,
+                                   FontsUtils.integerToBytes(checksum, 4),
+                                   FontsUtils.integerToBytes(offset, 4),
+                                   FontsUtils.integerToBytes(length, 4));
+        aFile.set(tableEntry, aOffsets.currentOffset);
+        aOffsets.currentOffset += tableEntry.length;
+        aOffsets.virtualOffset += aData.length;
+      }
 
       // Required Tables
       var CFF = aFont.data, // PostScript Font Program
