@@ -93,7 +93,7 @@ var Font = function(aName, aFile, aProperties) {
   switch (aProperties.type) {
     case "Type1":
       var cff = new CFF(aName, aFile, aProperties);
-      this.mimetype = "font/otf";
+      this.mimetype = "font/opentype";
 
       // Wrap the CFF data inside an OTF font file
       this.font = this.cover(aName, cff, aProperties);
@@ -112,7 +112,7 @@ var Font = function(aName, aFile, aProperties) {
         cache: Object.create(null)
       };
 
-      this.mimetype = "font/ttf";
+      this.mimetype = "font/opentype";
       var ttf = new TrueType(aFile);
       this.font = ttf.data;
       break;
@@ -392,7 +392,7 @@ Font.prototype = {
       "undefined"             // Designer
     ];
 
-    name = [
+    var name = [
       0x00, 0x00, // format
       0x00, 0x0A, // Number of names Record
       0x00, 0x7E  // Storage
@@ -703,7 +703,7 @@ var TrueType = function(aFile) {
   // missing, which means that we need to rebuild the font in order to pass
   // the sanitizer.
   if (requiredTables.length && requiredTables[0] == "OS/2") {
-    OS2 = [
+    var OS2 = [
       0x00, 0x03, // version
       0x02, 0x24, // xAvgCharWidth
       0x01, 0xF4, // usWeightClass
@@ -793,10 +793,14 @@ var TrueType = function(aFile) {
         offsets.currentOffset++;
     }
 
-    this.data = ttf;
+    var fontData = [];
+    for (var i = 0; i < offsets.currentOffset; i++)
+      fontData.push(ttf[i]);
+
+    this.data = fontData;
     return;
   } else if (requiredTables.lenght) {
-    error("Table " + requiredTables[0] + " is missing from the TruType font");
+    error("Table " + requiredTables[0] + " is missing from the TrueType font");
   } else {
     this.data = aFile;
   }
