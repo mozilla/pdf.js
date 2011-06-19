@@ -154,14 +154,13 @@ Font.prototype = {
   bind: function font_bind() {
     var data = this.font;
 
-    // Compute the binary data to base 64
-    var str = [];
-    var count = data.length;
-    for (var i = 0; i < count; i++)
-      str.push(data.getChar ? data.getChar()
-                            : String.fromCharCode(data[i]));
+    // Get the base64 encoding of the binary font data
+    var str = "";
+    var length = data.length;
+    for (var i = 0; i < length; ++i)
+      str += String.fromCharCode(data[i]);
 
-    var dataBase64 = window.btoa(str.join(""));
+    var dataBase64 = window.btoa(str);
     var fontName = this.name;
 
     /** Hack begin */
@@ -752,7 +751,7 @@ var TrueType = function(aFile) {
   } else if (requiredTables.lenght) {
     error("Table " + requiredTables[0] + " is missing from the TruType font");
   } else {
-    this.data = aFile;
+    this.data = aFile.getBytes();
   }
 };
 
