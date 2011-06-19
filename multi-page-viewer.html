@@ -11,18 +11,19 @@
 <body>
     <div id="controls">
         <span class="control">
-            <button id="previousPageButton">Previous</button>
-            <button id="nextPageButton">Next</button>
+            <span id="previousPageButton"></span><span id="nextPageButton"></span>
+            <span class="label">Previous/Next</span>
         </span>
         <span class="control">
             <input type="text" id="pageNumber" value="1" size="2"/>
             <span>/</span>
             <span id="numPages">--</span>
+            <span class="label">Page Number</span>
         </span>
         <span class="control">
-            <span>Zoom</span>
             <input type="text" id="scale" value="100" size="2"/>
             <span>%</span>
+            <span class="label">Zoom</span>
         </span>
     </div>
     <div id="viewer"></div>
