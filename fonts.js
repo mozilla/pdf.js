@@ -333,30 +333,29 @@ var Font = (function () {
         return a;
       }
 
+      function s16(value) {
+        return String.fromCharCode(value >> 8) + String.fromCharCode(value & 0xff);
+      }
+
       function createOpenTypeHeader(aFile, aOffsets, numTables) {
         var header = "";
-
-        function WriteHeader16(value) {
-          header += String.fromCharCode(value >> 8);
-          header += String.fromCharCode(value & 0xff);
-        }
 
         // sfnt version (4 bytes)
         header += "\x4F\x54\x54\x4F";
 
         // numTables (2 bytes)
-        WriteHeader16(numTables);
+        header += s16(numTables);
 
         // searchRange (2 bytes)
         var tablesMaxPower2 = FontsUtils.getMaxPower2(numTables);
         var searchRange = tablesMaxPower2 * 16;
-        WriteHeader16(searchRange);
+        header += s16(searchRange);
 
         // entrySelector (2 bytes)
-        WriteHeader16(Math.log(tablesMaxPower2) / Math.log(2));
+        header += s16(Math.log(tablesMaxPower2) / Math.log(2));
 
         // rangeShift (2 bytes)
-        WriteHeader16(numTables * 16 - searchRange);
+        header += s16(numTables * 16 - searchRange);
 
         aFile.set(s2a(header), aOffsets.currentOffset);
         aOffsets.currentOffset += header.length;
@@ -425,45 +424,45 @@ var Font = (function () {
       createTableEntry(otf, offsets, "CFF ", CFF);
 
       /** OS/2 */
-      OS2 = [
-             0x00, 0x03, // version
-             0x02, 0x24, // xAvgCharWidth
-             0x01, 0xF4, // usWeightClass
-             0x00, 0x05, // usWidthClass
-             0x00, 0x00, // fstype
-             0x02, 0x8A, // ySubscriptXSize
-             0x02, 0xBB, // ySubscriptYSize
-             0x00, 0x00, // ySubscriptXOffset
-             0x00, 0x8C, // ySubscriptYOffset
-             0x02, 0x8A, // ySuperScriptXSize
-             0x02, 0xBB, // ySuperScriptYSize
-             0x00, 0x00, // ySuperScriptXOffset
-             0x01, 0xDF, // ySuperScriptYOffset
-             0x00, 0x31, // yStrikeOutSize
-             0x01, 0x02, // yStrikeOutPosition
-             0x00, 0x00, // sFamilyClass
-             0x02, 0x00, 0x06, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // Panose
-             0xFF, 0xFF, 0xFF, 0xFF, // ulUnicodeRange1 (Bits 0-31)
-             0xFF, 0xFF, 0xFF, 0xFF, // ulUnicodeRange1 (Bits 32-63)
-             0xFF, 0xFF, 0xFF, 0xFF, // ulUnicodeRange1 (Bits 64-95)
-             0xFF, 0xFF, 0xFF, 0xFF, // ulUnicodeRange1 (Bits 96-127)
-             0x2A, 0x32, 0x31, 0x2A, // achVendID
-             0x00, 0x20, // fsSelection
-             0x00, 0x2D, // usFirstCharIndex
-             0x00, 0x7A, // usLastCharIndex
-             0x00, 0x03, // sTypoAscender
-             0x00, 0x20, // sTypeDescender
-             0x00, 0x38, // sTypoLineGap
-             0x00, 0x5A, // usWinAscent
-             0x02, 0xB4, // usWinDescent
-             0x00, 0xCE, 0x00, 0x00, // ulCodePageRange1 (Bits 0-31)
-             0x00, 0x01, 0x00, 0x00, // ulCodePageRange2 (Bits 32-63)
-             0x00, 0x00, // sxHeight
-             0x00, 0x00, // sCapHeight
-             0x00, 0x01, // usDefaultChar
-             0x00, 0xCD, // usBreakChar
-             0x00, 0x02  // usMaxContext
-             ];
+      OS2 = s2a(
+            "\x00\x03" + // version
+            "\x02\x24" + // xAvgCharWidth
+            "\x01\xF4" + // usWeightClass
+            "\x00\x05" + // usWidthClass
+            "\x00\x00" + // fstype
+            "\x02\x8A" + // ySubscriptXSize
+            "\x02\xBB" + // ySubscriptYSize
+            "\x00\x00" + // ySubscriptXOffset
+            "\x00\x8C" + // ySubscriptYOffset
+            "\x02\x8A" + // ySuperScriptXSize
+            "\x02\xBB" + // ySuperScriptYSize
+            "\x00\x00" + // ySuperScriptXOffset
+            "\x01\xDF" + // ySuperScriptYOffset
+            "\x00\x31" + // yStrikeOutSize
+            "\x01\x02" + // yStrikeOutPosition
+            "\x00\x00" + // sFamilyClass
+            "\x02\x00\x06\x03\x00\x00\x00\x00\x00\x00" + // Panose
+            "\xFF\xFF\xFF\xFF" + // ulUnicodeRange1 (Bits 0-31)
+            "\xFF\xFF\xFF\xFF" + // ulUnicodeRange1 (Bits 32-63)
+            "\xFF\xFF\xFF\xFF" + // ulUnicodeRange1 (Bits 64-95)
+            "\xFF\xFF\xFF\xFF" + // ulUnicodeRange1 (Bits 96-127)
+            "\x2A\x32\x31\x2A" + // achVendID
+            "\x00\x20" + // fsSelection
+            "\x00\x2D" + // usFirstCharIndex
+            "\x00\x7A" + // usLastCharIndex
+            "\x00\x03" + // sTypoAscender
+            "\x00\x20" + // sTypeDescender
+            "\x00\x38" + // sTypoLineGap
+            "\x00\x5A" + // usWinAscent
+            "\x02\xB4" + // usWinDescent
+            "\x00\xCE\x00\x00" + // ulCodePageRange1 (Bits 0-31)
+            "\x00\x01\x00\x00" + // ulCodePageRange2 (Bits 32-63)
+            "\x00\x00" + // sxHeight
+            "\x00\x00" + // sCapHeight
+            "\x00\x01" + // usDefaultChar
+            "\x00\xCD" + // usBreakChar
+            "\x00\x02"   // usMaxContext
+      );
       createTableEntry(otf, offsets, "OS/2", OS2);
 
       //XXX Getting charstrings here seems wrong since this is another CFF glue
@@ -474,49 +473,47 @@ var Font = (function () {
       createTableEntry(otf, offsets, "cmap", cmap);
 
       /** HEAD */
-      head = [
-              0x00, 0x01, 0x00, 0x00, // Version number
-              0x00, 0x00, 0x50, 0x00, // fontRevision
-              0x00, 0x00, 0x00, 0x00, // checksumAdjustement
-              0x5F, 0x0F, 0x3C, 0xF5, // magicNumber
-              0x00, 0x00, // Flags
-              0x03, 0xE8, // unitsPerEM (defaulting to 1000)
-              0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // creation date
-              0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // modifification date
-              0x00, 0x00, // xMin
-              0x00, 0x00, // yMin
-              0x00, 0x00, // xMax
-              0x00, 0x00, // yMax
-              0x00, 0x00, // macStyle
-              0x00, 0x00, // lowestRecPPEM
-              0x00, 0x00, // fontDirectionHint
-              0x00, 0x00, // indexToLocFormat
-              0x00, 0x00  // glyphDataFormat
-              ];
+      head = s2a(
+              "\x00\x01\x00\x00" + // Version number
+              "\x00\x00\x50\x00" + // fontRevision
+              "\x00\x00\x00\x00" + // checksumAdjustement
+              "\x5F\x0F\x3C\xF5" + // magicNumber
+              "\x00\x00" + // Flags
+              "\x03\xE8" + // unitsPerEM (defaulting to 1000)
+              "\x00\x00\x00\x00\x00\x00\x00\x00" + // creation date
+              "\x00\x00\x00\x00\x00\x00\x00\x00" + // modifification date
+              "\x00\x00" + // xMin
+              "\x00\x00" + // yMin
+              "\x00\x00" + // xMax
+              "\x00\x00" + // yMax
+              "\x00\x00" + // macStyle
+              "\x00\x00" + // lowestRecPPEM
+              "\x00\x00" + // fontDirectionHint
+              "\x00\x00" + // indexToLocFormat
+              "\x00\x00"   // glyphDataFormat
+      );
       createTableEntry(otf, offsets, "head", head);
 
       /** HHEA */
-      hhea = [].concat(
-                       [
-                        0x00, 0x01, 0x00, 0x00, // Version number
-                        0x00, 0x00, // Typographic Ascent
-                        0x00, 0x00, // Typographic Descent
-                        0x00, 0x00, // Line Gap
-                        0xFF, 0xFF, // advanceWidthMax
-                        0x00, 0x00, // minLeftSidebearing
-                        0x00, 0x00, // minRightSidebearing
-                        0x00, 0x00, // xMaxExtent
-                        0x00, 0x00, // caretSlopeRise
-                        0x00, 0x00, // caretSlopeRun
-                        0x00, 0x00, // caretOffset
-                        0x00, 0x00, // -reserved-
-                        0x00, 0x00, // -reserved-
-                        0x00, 0x00, // -reserved-
-                        0x00, 0x00, // -reserved-
-                        0x00, 0x00 // metricDataFormat
-                        ],
-                       FontsUtils.integerToBytes(charstrings.length, 2) // numberOfHMetrics
-                       );
+      hhea = s2a(
+                 "\x00\x01\x00\x00" + // Version number
+                 "\x00\x00" + // Typographic Ascent
+                 "\x00\x00" + // Typographic Descent
+                 "\x00\x00" + // Line Gap
+                 "\xFF\xFF" + // advanceWidthMax
+                 "\x00\x00" + // minLeftSidebearing
+                 "\x00\x00" + // minRightSidebearing
+                 "\x00\x00" + // xMaxExtent
+                 "\x00\x00" + // caretSlopeRise
+                 "\x00\x00" + // caretSlopeRun
+                 "\x00\x00" + // caretOffset
+                 "\x00\x00" + // -reserved-
+                 "\x00\x00" + // -reserved-
+                 "\x00\x00" + // -reserved-
+                 "\x00\x00" + // -reserved-
+                 "\x00\x00" + // metricDataFormat
+                 s16(charstrings.length)
+      );
       createTableEntry(otf, offsets, "hhea", hhea);
 
       /** HMTX */
@@ -548,17 +545,17 @@ var Font = (function () {
 
       /** POST */
       // FIXME Get those informations from the FontInfo structure
-      post = [
-              0x00, 0x03, 0x00, 0x00, // Version number
-              0x00, 0x00, 0x01, 0x00, // italicAngle
-              0x00, 0x00, // underlinePosition
-              0x00, 0x00, // underlineThickness
-              0x00, 0x00, 0x00, 0x00, // isFixedPitch
-              0x00, 0x00, 0x00, 0x00, // minMemType42
-              0x00, 0x00, 0x00, 0x00, // maxMemType42
-              0x00, 0x00, 0x00, 0x00, // minMemType1
-              0x00, 0x00, 0x00, 0x00  // maxMemType1
-              ];
+      post = s2a(
+              "\x00\x03\x00\x00" + // Version number
+              "\x00\x00\x01\x00" + // italicAngle
+              "\x00\x00" + // underlinePosition
+              "\x00\x00" + // underlineThickness
+              "\x00\x00\x00\x00" + // isFixedPitch
+              "\x00\x00\x00\x00" + // minMemType42
+              "\x00\x00\x00\x00" + // maxMemType42
+              "\x00\x00\x00\x00" + // minMemType1
+              "\x00\x00\x00\x00" // maxMemType1
+      );
       createTableEntry(otf, offsets, "post", post);
 
       // Once all the table entries header are written, dump the data!
