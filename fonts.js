@@ -100,18 +100,6 @@ var Font = function(aName, aFile, aProperties) {
       break;
 
     case "TrueType":
-      // TrueType is disabled for the moment since the sanitizer prevent it
-      // from loading because of an overdated cmap table
-      return Fonts[aName] = {
-        data: null,
-        properties: {
-          encoding: {},
-          charset: null
-        },
-        loading: false,
-        cache: Object.create(null)
-      };
-
       this.mimetype = "font/opentype";
       var ttf = new TrueType(aFile);
       this.font = ttf.data;
@@ -184,7 +172,7 @@ Font.prototype = {
     document.body.appendChild(canvas);
 
     // Retrieve font charset
-    var charset = Fonts[fontName].charset || [];
+    var charset = Fonts[fontName].properties.charset || [];
     // if the charset is too small make it repeat a few times
     var count = 30;
     while (count-- && charset.length <= 30)
@@ -205,7 +193,7 @@ Font.prototype = {
       }
     }
     ctx.font = "bold italic 20px " + fontName + ", Symbol, Arial";
-    var textWidth = ctx.measureText(testString);
+    var textWidth = ctx.measureText(testString).width;
 
     if (debug)
       ctx.fillText(testString, 20, 20);
@@ -220,7 +208,7 @@ Font.prototype = {
         window.clearInterval(interval);
         Fonts[fontName].loading = false;
         warn("Is " + fontName + " for charset: " + charset + " loaded?");
-      } else if (textWidth != ctx.measureText(testString)) {
+      } else if (textWidth != ctx.measureText(testString).width) {
         window.clearInterval(interval);
         Fonts[fontName].loading = false;
       }
