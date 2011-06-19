@@ -1,11 +1,12 @@
 /* -*- Mode: Java; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- /
 /* vim: set shiftwidth=4 tabstop=8 autoindent cindent expandtab: */
 
+"use strict";
+
 var ERRORS = 0, WARNINGS = 1, TODOS = 5;
 var verbosity = WARNINGS;
 
 function log(msg) {
-    msg = msg.toString ? msg.toString() : msg;
     if (console && console.log)
         console.log(msg);
     else if (print)
@@ -390,6 +391,12 @@ var FlateStream = (function() {
             return [codes, maxLen];
         },
         readBlock: function() {
+            function repeat(stream, array, len, offset, what) {
+                var repeat = stream.getBits(len) + offset;
+                while (repeat-- > 0)
+                    array[i++] = what;
+            }
+
             var stream = this.stream;
 
             // read block header
@@ -450,11 +457,6 @@ var FlateStream = (function() {
                 var codes = numLitCodes + numDistCodes;
                 var codeLengths = new Array(codes);
                 while (i < codes) {
-                    function repeat(stream, array, len, offset, what) {
-                        var repeat = stream.getBits(len) + offset;
-                        while (repeat-- > 0)
-                            array[i++] = what;
-                    }
                     var code = this.getCode(codeLenCodeTab);
                     if (code == 16) {
                         repeat(this, codeLengths, 2, 3, len);
@@ -507,6 +509,94 @@ var FlateStream = (function() {
     return constructor;
 })();
 
+var PredictorStream = (function() {
+    function constructor(stream, params) {
+        this.stream = stream;
+        this.predictor = params.get("Predictor") || 1;
+        if (this.predictor <= 1) {
+            return stream; // no prediction
+        }
+        if (params.has("EarlyChange")) {
+            error("EarlyChange predictor parameter is not supported");
+        }
+        this.colors = params.get("Colors") || 1;
+        this.bitsPerComponent = params.get("BitsPerComponent") || 8;
+        this.columns = params.get("Columns") || 1;
+        if (this.colors !== 1 || this.bitsPerComponent !== 8) {
+            error("Multi-color and multi-byte predictors are not supported");
+        }
+        if (this.predictor < 10 || this.predictor > 15) {
+            error("Unsupported predictor");
+        }
+        this.currentRow = new Uint8Array(this.columns);
+        this.pos = 0;
+        this.bufferLength = 0;
+    }
+
+    constructor.prototype = {
+        readRow : function() {
+            var lastRow = this.currentRow;
+            var predictor = this.stream.getByte();
+            var currentRow = this.stream.getBytes(this.columns), i;
+            switch (predictor) {
+            default:
+                error("Unsupported predictor");
+                break;
+            case 0:
+                break;
+            case 2:
+                for (i = 0; i < currentRow.length; ++i) {
+                  currentRow[i] = (lastRow[i] + currentRow[i]) & 0xFF;
+                }
+                break;
+            }
+            this.pos = 0;
+            this.bufferLength = currentRow.length;
+            this.currentRow = currentRow;
+        },
+        getByte : function() {
+            if (this.pos >= this.bufferLength) {
+               this.readRow();
+            }
+            return this.currentRow[this.pos++];
+        },
+        getBytes : function(n) {
+            var i, bytes;
+            bytes = new Uint8Array(n);
+            for (i = 0; i < n; ++i) {
+              if (this.pos >= this.bufferLength) {
+                this.readRow();
+              }
+              bytes[i] = this.currentRow[this.pos++];
+            }
+            return bytes;
+        },
+        getChar : function() {
+            return String.formCharCode(this.getByte());
+        },
+        lookChar : function() {
+            if (this.pos >= this.bufferLength) {
+               this.readRow();
+            }
+            return String.formCharCode(this.currentRow[this.pos]);
+        },
+        skip : function(n) {
+            var i;
+            if (!n) {
+                n = 1;
+            }
+            while (n > this.bufferLength - this.pos) {
+                n -= this.bufferLength - this.pos;
+                this.readRow();
+                if (this.bufferLength === 0) break;
+            }
+            this.pos += n;
+        }
+    };
+
+    return constructor;
+})();
+
 var DecryptStream = (function() {
     function constructor(str, fileKey, encAlgorithm, keyLength) {
         // TODO
@@ -523,9 +613,6 @@ var Name = (function() {
     }
 
     constructor.prototype = {
-      toString: function() {
-        return this.name;
-      }
     };
 
     return constructor;
@@ -537,9 +624,6 @@ var Cmd = (function() {
     }
 
     constructor.prototype = {
-      toString: function() {
-        return this.cmd;
-      }
     };
 
     return constructor;
@@ -566,12 +650,6 @@ var Dict = (function() {
         forEach: function(aCallback) {
           for (var key in this.map)
             aCallback(key, this.map[key]);
-        },
-        toString: function() {
-          var keys = [];
-          for (var key in this.map)
-            keys.push(key);
-          return "Dict with " + keys.length + " keys: " + keys;
         }
     };
 
@@ -738,6 +816,7 @@ var Lexer = (function() {
             var done = false;
             var str = "";
             var stream = this.stream;
+            var ch;
             do {
                 switch (ch = stream.getChar()) {
                 case undefined:
@@ -1098,7 +1177,9 @@ var Parser = (function() {
                                            this.encAlgorithm,
                                            this.keyLength);
             }
-            return this.filter(stream, dict);
+            stream = this.filter(stream, dict);
+            stream.parameters = dict; 
+            return stream;
         },
         filter: function(stream, dict) {
             var filter = dict.get2("Filter", "F");
@@ -1123,8 +1204,9 @@ var Parser = (function() {
         },
         makeFilter: function(stream, name, params) {
             if (name == "FlateDecode" || name == "Fl") {
-                if (params)
-                    error("params not supported yet for FlateDecode");
+                if (params) {
+                    return new PredictorStream(new FlateStream(stream), params);
+                }
                 return new FlateStream(stream);
             } else {
                 error("filter '" + name + "' not supported yet");
@@ -1217,10 +1299,10 @@ var XRef = (function() {
         this.stream = stream;
         this.entries = [];
         this.xrefstms = {};
-        this.readXRef(startXRef);
+        var trailerDict = this.readXRef(startXRef);
 
         // get the root dictionary (catalog) object
-        if (!IsRef(this.root = this.trailerDict.get("Root")))
+        if (!IsRef(this.root = trailerDict.get("Root")))
             error("Invalid root reference");
 
         // prepare the XRef cache
@@ -1275,18 +1357,18 @@ var XRef = (function() {
                 error("Invalid XRef table");
 
             // get the 'Prev' pointer
-            var more = false;
+            var prev;
             obj = dict.get("Prev");
             if (IsInt(obj)) {
-                this.prev = obj;
-                more = true;
+                prev = obj;
             } else if (IsRef(obj)) {
                 // certain buggy PDF generators generate "/Prev NNN 0 R" instead
                 // of "/Prev NNN"
-                this.prev = obj.num;
-                more = true;
+                prev = obj.num;
             }
-            this.trailerDict = dict;
+            if (prev) {
+              this.readXRef(prev);
+            }
 
             // check for 'XRefStm' key
             if (IsInt(obj = dict.get("XRefStm"))) {
@@ -1296,11 +1378,64 @@ var XRef = (function() {
                 this.xrefstms[pos] = 1; // avoid infinite recursion
                 this.readXRef(pos);
             }
-
-            return more;
+            return dict;
         },
-        readXRefStream: function(parser) {
-            error("Invalid XRef stream");
+        readXRefStream: function(stream) {
+            var streamParameters = stream.parameters;
+            var length = streamParameters.get("Length");
+            var byteWidths = streamParameters.get("W");
+            var range = streamParameters.get("Index");
+            if (!range) {
+                range = [0, streamParameters.get("Size")];
+            }
+            var i, j;
+            while (range.length > 0) {
+                var first = range[0], n = range[1];
+                if (!IsInt(first) || !IsInt(n)) {
+                    error("Invalid XRef range fields");
+                }
+                var typeFieldWidth = byteWidths[0], offsetFieldWidth = byteWidths[1], generationFieldWidth = byteWidths[2];
+                if (!IsInt(typeFieldWidth) || !IsInt(offsetFieldWidth) || !IsInt(generationFieldWidth)) {
+                    error("Invalid XRef entry fields length");
+                }
+                for (i = 0; i < n; ++i) {
+                    var type = 0, offset = 0, generation = 0;
+                    for (j = 0; j < typeFieldWidth; ++j) {
+                       type = (type << 8) | stream.getByte();
+                    }
+                    for (j = 0; j < offsetFieldWidth; ++j) {
+                       offset = (offset << 8) | stream.getByte();
+                    }
+                    for (j = 0; j < generationFieldWidth; ++j) {
+                       generation = (generation << 8) | stream.getByte();
+                    }
+                    var entry = { offset: offset, gen: generation };
+                    if (typeFieldWidth > 0) {
+                        switch (type) {
+                        case 0:
+                           entry.free = true;
+                           break;
+                        case 1:
+                           entry.uncompressed = true;
+                           break;
+                        case 2:
+                           break;
+                        default:
+                           error("Invalid XRef entry type");
+                           break;
+                        }
+                    }
+                    if (!this.entries[first + i]) {
+                        this.entries[first + i] = entry;
+                    }
+                }
+                range.splice(0, 2);
+            }
+            var prev = streamParameters.get("Prev");
+            if (IsInt(prev)) {
+                this.readXRef(prev);
+            }
+            return streamParameters;
         },
         readXRef: function(startXRef) {
             var stream = this.stream;
@@ -1442,7 +1577,7 @@ var Catalog = (function() {
             return shadow(this, "toplevelPagesDict", obj);
         },
         get numPages() {
-            obj = this.toplevelPagesDict.get("Count");
+            var obj = this.toplevelPagesDict.get("Count");
             assertWellFormed(IsInt(obj),
                              "page count in top level pages object is not an integer");
             // shadow the prototype getter
@@ -1584,7 +1719,7 @@ var PDFDoc = (function() {
         },
         getPage: function(n) {
             var linearization = this.linearization;
-            assert(!linearization, "linearized page access not implemented");
+            // assert(!linearization, "linearized page access not implemented");
             return this.catalog.getPage(n);
         }
     };
@@ -1925,9 +2060,11 @@ var CanvasGraphics = (function() {
 
                     // Get the font charset if any
                     var charset = descriptor.get("CharSet");
-                    assertWellFormed(IsString(charset), "invalid charset");
+                    if (charset) {
+                        assertWellFormed(IsString(charset), "invalid charset");
 
-                    charset = charset.split("/");
+                        charset = charset.split("/");
+                    }
                 } else if (IsName(encoding)) {
                     var encoding = Encodings[encoding.name];
                     if (!encoding)
@@ -1935,7 +2072,7 @@ var CanvasGraphics = (function() {
 
                     var widths = xref.fetchIfRef(fontDict.get("Widths"));
                     var firstChar = xref.fetchIfRef(fontDict.get("FirstChar"));
-                    assertWellFormed(IsArray(widths) && IsInteger(firstChar),
+                    assertWellFormed(IsArray(widths) && IsInt(firstChar),
                                      "invalid font Widths or FirstChar");
                     var charset = [];
                     for (var j = 0; j < widths.length; j++) {
@@ -2245,13 +2382,7 @@ var CanvasGraphics = (function() {
             this.ctx.translate(0, 2 * this.current.y);
             this.ctx.scale(1, -1);
             this.ctx.transform.apply(this.ctx, this.current.textMatrix);
-
-            // Replace characters code by glyphs code
-            var glyphs = [];
-            for (var i = 0; i < text.length; i++)
-              glyphs[i] = String.fromCharCode(Fonts.unicodeFromCode(text[i].charCodeAt(0)));
-
-            this.ctx.fillText(glyphs.join(""), this.current.x, this.current.y);
+            this.ctx.fillText(Fonts.chars2Unicode(text), this.current.x, this.current.y);
             this.current.x += this.ctx.measureText(text).width;
 
             this.ctx.restore();
@@ -2400,7 +2531,7 @@ var CanvasGraphics = (function() {
                 error("No support for array of functions");
             else if (!IsPDFFunction(fnObj))
                 error("Invalid function");
-            fn = new PDFFunction(this.xref, fnObj);
+            var fn = new PDFFunction(this.xref, fnObj);
 
             var gradient = this.ctx.createLinearGradient(x0, y0, x1, y1);
             
