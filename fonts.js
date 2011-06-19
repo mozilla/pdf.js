@@ -82,6 +82,7 @@ var Fonts = {
  */
 var Font = function(aName, aFile, aProperties) {
   this.name = aName;
+  this.encoding = aProperties.encoding;
 
   // If the font has already been decoded simply return
   if (Fonts[aName]) {
@@ -134,6 +135,7 @@ Font.prototype = {
   name: null,
   font: null,
   mimetype: null,
+  encoding: null,
 
   bind: function font_bind() {
     var data = this.font;
@@ -185,10 +187,11 @@ Font.prototype = {
     // When debugging use the characters provided by the charsets to visually
     // see what's happening
     if (debug) {
+      var encoding = this.encoding;
       for (var i = 0; i < charset.length; i++) {
         var unicode = GlyphsUnicode[charset[i]];
         if (!unicode)
-          error("Unicode for " + charset[i] + " is has not been found in the glyphs list");
+          continue;
         testString += String.fromCharCode(unicode);
       }
     }
@@ -672,12 +675,18 @@ var TrueType = function(aName, aFile, aProperties) {
     "post"
   ];
 
+  var originalCMAP = null;
+
   var tables = [];
   for (var i = 0; i < numTables; i++) {
     var table = this._readTableEntry(aFile);
     var index = requiredTables.indexOf(table.tag);
-    if (index != -1)
+    if (index != -1) {
+      if (table.tag == "cmap")
+        originalCMAP = table;
+
       requiredTables.splice(index, 1);
+    }
 
     tables.push(table);
   }
@@ -726,10 +735,25 @@ var TrueType = function(aName, aFile, aProperties) {
       0x00, 0x02  // usMaxContext
     ];
 
+    // If the font is missing a OS/2 table it's could be an old mac font
+    // without a 3-1-4 Unicode BMP table, so let's rewrite it.
+    var charset = aProperties.charset;
+    var glyphs = [];
+    for (var i = 0; i < charset.length; i++) {
+      glyphs.push({
+          unicode: GlyphsUnicode[charset[i]]
+      });
+    }
+
+    // Replace the old CMAP table
+    var rewrittedCMAP = this._createCMAPTable(glyphs);
+    var cmapDelta = rewrittedCMAP.length - originalCMAP.data.length;
+    originalCMAP.data = rewrittedCMAP;
+
     // Create a new file to hold the new version of our truetype with a new
     // header and new offsets
     var stream = aFile.stream || aFile;
-    var ttf = new Uint8Array(stream.length + 16 + OS2.length);
+    var ttf = new Uint8Array(stream.length + 16 + OS2.length + cmapDelta);
 
     // The new numbers of tables will be the last one plus the num of missing
     // tables
@@ -753,25 +777,6 @@ var TrueType = function(aName, aFile, aProperties) {
       data: OS2
     });
 
-    // If the font is missing a OS/2 table it's could be an old mac font
-    // without a 3-1-4 Unicode BMP table, so let's rewrite it.
-    var charset = aProperties.charset;
-    var glyphs = [];
-    for (var i = 0; i < charset.length; i++) {
-      glyphs.push({
-          unicode: GlyphsUnicode[aProperties.encoding[charset[i]]]
-      });
-    }
-
-    // Replace the old CMAP table
-    var cmap = this._createCMAPTable(glyphs);
-    for (var i = 0; i < tables.length; i++) {
-      var table = tables[i];
-      if (table.tag == "cmap") {
-        table.data = cmap;
-        break;
-      }
-    }
 
     // Tables needs to be written by ascendant alphabetic order
     tables.sort(function(a, b) {

@@ -1928,7 +1928,7 @@ var CanvasGraphics = (function() {
 
                     var index = 0;
                     for (var j = 0; j < encoding.length; j++) {
-                        encodingMap[firstChar + index++] = GlyphsUnicode[encoding[j]];
+                        encodingMap[index++] = GlyphsUnicode[encoding[j]];
                     }
 
                     var widths = xref.fetchIfRef(fontDict.get("Widths"));
