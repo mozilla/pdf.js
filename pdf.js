@@ -48,6 +48,14 @@ function shadow(obj, prop, value) {
     return value;
 }
 
+function bytesToString(bytes) {
+    var str = "";
+    var length = bytes.length;
+    for (var n = 0; n < length; ++n)
+        str += String.fromCharCode(bytes[n]);
+    return str;
+}
+
 var Stream = (function() {
     function constructor(arrayBuffer, start, length, dict) {
         this.bytes = Uint8Array(arrayBuffer);
@@ -518,26 +526,20 @@ var FlateStream = (function() {
     return constructor;
 })();
 
+// A JpegStream can't be read directly. We use the platform to render the underlying
+// JPEG data for us.
 var JpegStream = (function() {
     function constructor(bytes, dict) {
-        // TODO per poppler, some images may have "junk" before that need to be removed
-        this.bytes = bytes;
+        // TODO: per poppler, some images may have "junk" before that need to be removed
         this.dict = dict;
 
         // create DOM image
-        var buffer = "", i, n = bytes.length;
-        for (i = 0; i < n; ++i) {
-            buffer += String.fromCharCode(bytes[i]);
-        }
         var img = new Image();
-        img.src = "data:image/jpeg;base64," + window.btoa(buffer);
+        img.src = "data:image/jpeg;base64," + window.btoa(bytesToString(bytes));
         this.domImage = img;
     }
 
     constructor.prototype = {
-        getChar: function() {
-            TODO("read direct pixels data");
-        },
         getImage: function() {
             return this.domImage;
         }
@@ -2441,7 +2443,7 @@ var CanvasGraphics = (function() {
                 Fonts.active = fontName;
             }
             if (!fontName) {
-                // fontDescriptor is not available, fallback to default font (TODO ?)
+                // TODO: fontDescriptor is not available, fallback to default font
                 this.current.fontSize = size;
                 this.ctx.font = this.current.fontSize + 'px sans-serif';
                 return;
@@ -2854,10 +2856,13 @@ var CanvasGraphics = (function() {
             // scale the image to the unit square
             ctx.scale(1/w, -1/h);
 
-            if (image instanceof JpegStream) {
+            // If the platform can render the image format directly, the
+            // stream has a getImage property which directly returns a
+            // suitable DOM Image object.
+            if (image.getImage) {
                 var domImage = image.getImage();
                 ctx.drawImage(domImage, 0, 0, domImage.width, domImage.height,
-                    0, -h, w, h);
+                              0, -h, w, h);
                 this.restore();
                 return;
             }
