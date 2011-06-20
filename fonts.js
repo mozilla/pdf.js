@@ -368,23 +368,21 @@ var Font = (function () {
         var bias = 0;
         for (var i = 0; i < segCount - 1; i++) {
           var range = ranges[i];
-          var start = FontsUtils.integerToBytes(range[0], 2);
-          var end = FontsUtils.integerToBytes(range[1], 2);
+          var start = range[0];
+          var end = range[1];
+          var delta = (((start - 1) - bias) ^ 0xffff) + 1;
+          bias += (end - start + 1);
 
-          var delta = FontsUtils.integerToBytes(((range[0] - 1) - bias) % 65536, 2);
-          bias += (range[1] - range[0] + 1);
-
-          // deltas are signed shorts
-          delta[0] ^= 0xFF;
-          delta[1] ^= 0xFF;
-          delta[1] += 1;
+          var start = FontsUtils.integerToBytes(start, 2);
+          var end = FontsUtils.integerToBytes(end, 2);
+          var delta = FontsUtils.integerToBytes(delta, 2);
 
           startCount.push(start[0], start[1]);
           endCount.push(end[0], end[1]);
           idDeltas.push(delta[0], delta[1]);
           idRangeOffsets.push(0x00, 0x00);
 
-          for (var j = range[0]; j <= range[1]; j++)
+          for (var j = start; j <= end; j++)
             glyphsIdsArray.push(j);
         }
         startCount.push(0xFF, 0xFF);
