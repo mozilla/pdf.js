@@ -1900,9 +1900,16 @@ var CanvasGraphics = (function() {
                 error("FontFile not found for font: " + fontName);
             fontFile = xref.fetchIfRef(fontFile);
 
+            // Fonts with an embedded cmap but without any assignment in
+            // it are not yet supported, so ask the fonts loader to ignore
+            // them to not pay a stupid one sec latence.
+            var ignoreFont = true;
+
             var encodingMap = {};
             var charset = [];
             if (fontDict.has("Encoding")) {
+                ignoreFont = false;
+
                 var encoding = xref.fetchIfRef(fontDict.get("Encoding"));
                 if (IsDict(encoding)) {
                     // Build a map between codes and glyphs
@@ -1960,8 +1967,9 @@ var CanvasGraphics = (function() {
                             error("useCMap is not implemented");
                             break;
 
-                          case "begincodespacerange":
                           case "beginbfrange":
+                            ignoreFont = false;
+                          case "begincodespacerange":
                             token = "";
                             tokens = [];
                             break;
@@ -2002,7 +2010,7 @@ var CanvasGraphics = (function() {
                     }
                   }
                }
-            } 
+            }
 
             var subType = fontDict.get("Subtype");
             var bbox = descriptor.get("FontBBox");
@@ -2013,7 +2021,8 @@ var CanvasGraphics = (function() {
                 type: subType.name,
                 encoding: encodingMap,
                 charset: charset,
-                bbox: bbox
+                bbox: bbox,
+                ignore: ignoreFont
             };
 
             return {
@@ -2275,7 +2284,7 @@ var CanvasGraphics = (function() {
             }
 
             this.current.fontSize = size;
-            this.ctx.font = this.current.fontSize +'px "' + fontName + '"';
+            this.ctx.font = this.current.fontSize +'px "' + fontName + '", Symbol';
         },
         setTextRenderingMode: function(mode) {
             TODO("text rendering mode");
