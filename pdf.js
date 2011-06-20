@@ -1385,31 +1385,25 @@ var XRef = (function() {
             var length = streamParameters.get("Length");
             var byteWidths = streamParameters.get("W");
             var range = streamParameters.get("Index");
-            if (!range) {
+            if (!range)
                 range = [0, streamParameters.get("Size")];
-            }
             var i, j;
             while (range.length > 0) {
                 var first = range[0], n = range[1];
-                if (!IsInt(first) || !IsInt(n)) {
+                if (!IsInt(first) || !IsInt(n))
                     error("Invalid XRef range fields");
-                }
                 var typeFieldWidth = byteWidths[0], offsetFieldWidth = byteWidths[1], generationFieldWidth = byteWidths[2];
-                if (!IsInt(typeFieldWidth) || !IsInt(offsetFieldWidth) || !IsInt(generationFieldWidth)) {
+                if (!IsInt(typeFieldWidth) || !IsInt(offsetFieldWidth) || !IsInt(generationFieldWidth))
                     error("Invalid XRef entry fields length");
-                }
                 for (i = 0; i < n; ++i) {
                     var type = 0, offset = 0, generation = 0;
-                    for (j = 0; j < typeFieldWidth; ++j) {
+                    for (j = 0; j < typeFieldWidth; ++j)
                        type = (type << 8) | stream.getByte();
-                    }
-                    for (j = 0; j < offsetFieldWidth; ++j) {
+                    for (j = 0; j < offsetFieldWidth; ++j)
                        offset = (offset << 8) | stream.getByte();
-                    }
-                    for (j = 0; j < generationFieldWidth; ++j) {
+                    for (j = 0; j < generationFieldWidth; ++j)
                        generation = (generation << 8) | stream.getByte();
-                    }
-                    var entry = { offset: offset, gen: generation };
+                    var entry = new Ref(offset, generation);
                     if (typeFieldWidth > 0) {
                         switch (type) {
                         case 0:
@@ -1425,16 +1419,14 @@ var XRef = (function() {
                            break;
                         }
                     }
-                    if (!this.entries[first + i]) {
+                    if (!this.entries[first + i])
                         this.entries[first + i] = entry;
-                    }
                 }
                 range.splice(0, 2);
             }
             var prev = streamParameters.get("Prev");
-            if (IsInt(prev)) {
+            if (IsInt(prev))
                 this.readXRef(prev);
-            }
             return streamParameters;
         },
         readXRef: function(startXRef) {
@@ -1505,7 +1497,7 @@ var XRef = (function() {
                 return e;
             }
             // compressed entry
-            stream = this.fetch({num:e.offset, gen:0});
+            stream = this.fetch(new Ref(e.offset, 0));
             if (!IsStream(stream))
                 error("bad ObjStm stream");
             var first = stream.parameters.get("First");
