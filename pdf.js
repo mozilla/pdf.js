@@ -267,7 +267,7 @@ var FlateStream = (function() {
 
             var b;
             while (codeSize < bits) {
-                if ((b = bytes[bytesPos++]) == undefined)
+                if (typeof (b = bytes[bytesPos++]) == "undefined")
                     error("Bad encoding in flate stream");
                 codeBuf |= b << codeSize;
                 codeSize += 8;
