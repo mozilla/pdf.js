@@ -247,7 +247,12 @@ var Font = (function () {
       }
 
       function s16(value) {
-        return String.fromCharCode(value >> 8) + String.fromCharCode(value & 0xff);
+        return String.fromCharCode((value >> 8) & 0xff) + String.fromCharCode(value & 0xff);
+      }
+
+      function s32(value) {
+        return String.fromCharCode((value >> 24) & 0xff) + String.fromCharCode((value >> 16) & 0xff) +
+               String.fromCharCode((value >> 8) & 0xff) + String.fromCharCode(value & 0xff);
       }
 
       function createOpenTypeHeader(aFile, aOffsets, numTables) {
@@ -276,18 +281,10 @@ var Font = (function () {
       }
 
       function createTableEntry(aFile, aOffsets, aTag, aData) {
-        // tag
-        var tag = [
-                   aTag.charCodeAt(0),
-                   aTag.charCodeAt(1),
-                   aTag.charCodeAt(2),
-                   aTag.charCodeAt(3)
-                   ];
-
         // offset
         var offset = aOffsets.virtualOffset;
 
-        // Per spec tables must be 4-bytes align so add some 0x00 if needed
+        // Per spec tables must be 4-bytes align so add padding as needed
         while (aData.length & 3)
           aData.push(0x00);
 
@@ -295,12 +292,15 @@ var Font = (function () {
         var length = aData.length;
 
         // checksum
-        var checksum = FontsUtils.bytesToInteger(tag) + offset + length;
+        var checksum = aTag.charCodeAt(0) +
+                       aTag.charCodeAt(1) +
+                       aTag.charCodeAt(2) + 
+                       aTag.charCodeAt(3) + 
+                       offset +
+                       length;
 
-        var tableEntry = [].concat(tag,
-                                   FontsUtils.integerToBytes(checksum, 4),
-                                   FontsUtils.integerToBytes(offset, 4),
-                                   FontsUtils.integerToBytes(length, 4));
+        var tableEntry = aTag + s32(checksum) + s32(offset) + s32(length);
+        tableEntry = s2a(tableEntry);
         aFile.set(tableEntry, aOffsets.currentOffset);
         aOffsets.currentOffset += tableEntry.length;
         aOffsets.virtualOffset += aData.length;
@@ -409,7 +409,7 @@ var Font = (function () {
       // file
       createOpenTypeHeader(otf, offsets, tables.length);
 
-      // XXX It is probable that in a future we want to get rid of this glue
+      // TODO: It is probable that in a future we want to get rid of this glue
       // between the CFF and the OTF format in order to be able to embed TrueType
       // data.
       createTableEntry(otf, offsets, "CFF ", CFF);
@@ -508,45 +508,41 @@ var Font = (function () {
       createTableEntry(otf, offsets, "hhea", hhea);
 
       /** HMTX */
-      hmtx = [0x01, 0xF4, 0x00, 0x00];
+      hmtx = "\x01\xF4\x00\x00";
       for (var i = 0; i < charstrings.length; i++) {
         var charstring = charstrings[i].charstring;
-        var width = FontsUtils.integerToBytes(charstring[1], 2);
-        var lsb = FontsUtils.integerToBytes(charstring[0], 2);
-        hmtx = hmtx.concat(width, lsb);
+        var width = charstring[1];
+        var lsb = charstring[0];
+        hmtx += s16(width) + s16(lsb);
       }
+      hmtx = s2a(hmtx);
       createTableEntry(otf, offsets, "hmtx", hmtx);
 
       /** MAXP */
-      maxp = [].concat(
-                       [
-                        0x00, 0x00, 0x50, 0x00, // Version number
-                        ],
-                       FontsUtils.integerToBytes(charstrings.length + 1, 2) // Num of glyphs (+1 to pass the sanitizer...)
-                       );
+      maxp = "\x00\x00\x50\x00" + // Version number
+             s16(charstrings.length + 1); // Num of glyphs (+1 to pass the sanitizer...)
+      maxp = s2a(maxp);
       createTableEntry(otf, offsets, "maxp", maxp);
 
       /** NAME */
-      name = [
-              0x00, 0x00, // format
-              0x00, 0x00, // Number of names Record
-              0x00, 0x00  // Storage
-              ];
+      name = "\x00\x00" + // Format
+             "\x00\x00" + // Number of name records
+             "\x00\x00"; // Storage
+      name = s2a(name);
       createTableEntry(otf, offsets, "name", name);
 
       /** POST */
-      // FIXME Get those informations from the FontInfo structure
-      post = s2a(
-              "\x00\x03\x00\x00" + // Version number
-              "\x00\x00\x01\x00" + // italicAngle
-              "\x00\x00" + // underlinePosition
-              "\x00\x00" + // underlineThickness
-              "\x00\x00\x00\x00" + // isFixedPitch
-              "\x00\x00\x00\x00" + // minMemType42
-              "\x00\x00\x00\x00" + // maxMemType42
-              "\x00\x00\x00\x00" + // minMemType1
-              "\x00\x00\x00\x00" // maxMemType1
-      );
+      // TODO: get those informations from the FontInfo structure
+      post = "\x00\x03\x00\x00" + // Version number
+             "\x00\x00\x01\x00" + // italicAngle
+             "\x00\x00" + // underlinePosition
+             "\x00\x00" + // underlineThickness
+             "\x00\x00\x00\x00" + // isFixedPitch
+             "\x00\x00\x00\x00" + // minMemType42
+             "\x00\x00\x00\x00" + // maxMemType42
+             "\x00\x00\x00\x00" + // minMemType1
+             "\x00\x00\x00\x00";  // maxMemType1
+      post = s2a(post);
       createTableEntry(otf, offsets, "post", post);
 
       // Once all the table entries header are written, dump the data!
