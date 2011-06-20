@@ -315,14 +315,16 @@ var Font = (function () {
           codes.push(String.fromCharCode(glyphs[n].unicode))
         codes.sort();
 
+        // Split the sorted codes into ranges.
         var ranges = [];
         for (var n = 0; n < length; ) {
-          var range = [];
-          do {
-            var current = codes[n++].charCodeAt(0);
-            range.push(current);
-          } while (n < length && current + 1 == codes[n].charCodeAt(0));
-          ranges.push(range);
+          var start = codes[n++].charCodeAt(0);
+          var end = start;
+          while (n < length && end + 1 == codes[n].charCodeAt(0)) {
+            ++end;
+            ++n;
+          }
+          ranges.push([start, end]);
         }
         return ranges;
       }
@@ -367,10 +369,10 @@ var Font = (function () {
         for (var i = 0; i < segCount - 1; i++) {
           var range = ranges[i];
           var start = FontsUtils.integerToBytes(range[0], 2);
-          var end = FontsUtils.integerToBytes(range[range.length - 1], 2);
+          var end = FontsUtils.integerToBytes(range[1], 2);
 
           var delta = FontsUtils.integerToBytes(((range[0] - 1) - bias) % 65536, 2);
-          bias += range.length;
+          bias += (range[1] - range[0] + 1);
 
           // deltas are signed shorts
           delta[0] ^= 0xFF;
@@ -382,8 +384,8 @@ var Font = (function () {
           idDeltas.push(delta[0], delta[1]);
           idRangeOffsets.push(0x00, 0x00);
 
-          for (var j = 0; j < range.length; j++)
-            glyphsIdsArray.push(range[j]);
+          for (var j = range[0]; j <= range[1]; j++)
+            glyphsIdsArray.push(j);
         }
         startCount.push(0xFF, 0xFF);
         endCount.push(0xFF, 0xFF);
