@@ -1738,7 +1738,7 @@ var CanvasExtraState = (function() {
         this.fontSize = 0.0;
         this.textMatrix = IDENTITY_MATRIX;
         this.leading = 0.0;
-        this.colorSpace = "DeviceRGB";
+        this.colorSpace = null;
         // Current point (in user coordinates)
         this.x = 0.0;
         this.y = 0.0;
@@ -2454,9 +2454,17 @@ var CanvasGraphics = (function() {
         },
         setFillColorN: function(/*...*/) {
             // TODO real impl
-            var args = arguments;
+            var colorSpace = this.current.colorSpace;
+            if (!colorSpace) {
+                var stateStack = this.stateStack;
+                var i = stateStack.length - 1;
+                while (!colorSpace && i >= 0) {
+                    colorSpace = stateStack[i--].colorSpace;
+                }
+            }
+
             if (this.current.colorSpace == "Pattern") {
-                var patternName = args[0];
+                var patternName = arguments[0];
                 if (IsName(patternName)) {
                     var xref = this.xref;
                     var patternRes = xref.fetchIfRef(this.res.get("Pattern"));
