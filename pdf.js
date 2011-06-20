@@ -2034,7 +2034,7 @@ var CanvasGraphics = (function() {
     const EO_CLIP = {};
 
     // Used for tiling patterns
-    const PAINT_TYPE = [null, "colored", "uncolored"];
+    const PAINT_TYPE_COLORED = 1, PAINT_TYPE_UNCOLORED = 2;
 
     constructor.prototype = {
         translateFont: function(fontDict, xref, resources) {
@@ -2506,12 +2506,15 @@ var CanvasGraphics = (function() {
             var dict = pattern.dict;
             var ctx = this.ctx;
 
-            var paintType = PAINT_TYPE[dict.get("PaintType")];
-            if (paintType == "colored") {
+            var paintType = dict.get("PaintType");
+            switch (paintType) {
+            case PAINT_TYPE_COLORED:
                 // should go to default for color space
                 ctx.fillStyle = this.makeCssRgb(1, 1, 1);
                 ctx.strokeStyle = this.makeCssRgb(0, 0, 0);
-            } else {
+                break;
+            case PAINT_TYPE_UNCOLORED:
+            default:
                 error("Unsupported paint type");
             }
 
