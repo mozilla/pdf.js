@@ -694,7 +694,7 @@ var TrueType = function(aName, aFile, aProperties) {
   // If any tables are still in the array this means some required tables are
   // missing, which means that we need to rebuild the font in order to pass
   // the sanitizer.
-  if (requiredTables.length && requiredTables[0] == "OS/2") {
+  if (requiredTables.length == 1 && requiredTables[0] == "OS/2") {
     var OS2 = [
       0x00, 0x03, // version
       0x02, 0x24, // xAvgCharWidth
@@ -812,11 +812,10 @@ var TrueType = function(aName, aFile, aProperties) {
 
     this.data = fontData;
     return;
-  } else if (requiredTables.lenght) {
-    error("Table " + requiredTables[0] + " is missing from the TrueType font");
-  } else {
-    this.data = aFile;
+  } else if (requiredTables.length) {
+    warn("Missing " + requiredTables + " in the TrueType font");
   }
+  this.data = aFile;
 };
 
 TrueType.prototype = {
