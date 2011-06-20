@@ -1607,10 +1607,7 @@ var CanvasExtraState = (function() {
 
 const Encodings = {
   get ExpertEncoding() {
-    return shadow(this, "ExpertEncoding", [
-      null, null, null, null, null, null, null, null, null, null, null,
-      null, null, null, null, null, null, null, null, null, null, null,
-      null, null, null, null, null, null, null, null, null, null, 
+    return shadow(this, "ExpertEncoding", [ ,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
       "space","exclamsmall","Hungarumlautsmall",,"dollaroldstyle","dollarsuperior",
       "ampersandsmall","Acutesmall","parenleftsuperior","parenrightsuperior",
       "twodotenleader","onedotenleader","comma","hyphen","period","fraction",
@@ -1645,10 +1642,7 @@ const Encodings = {
     ]);
   },
   get MacExpertEncoding() {
-    return shadow(this, "MacExpertEncoding", [
-      null, null, null, null, null, null, null, null, null, null, null,
-      null, null, null, null, null, null, null, null, null, null, null,
-      null, null, null, null, null, null, null, null, null, null, 
+    return shadow(this, "MacExpertEncoding", [ ,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
       "space","exclamsmall","Hungarumlautsmall","centoldstyle","dollaroldstyle",
       "dollarsuperior","ampersandsmall","Acutesmall","parenleftsuperior",
       "parenrightsuperior","twodotenleader","onedotenleader","comma","hyphen","period",
@@ -1682,10 +1676,7 @@ const Encodings = {
     ]);
   },
   get MacRomanEncoding() {
-    return shadow(this, "MacRomanEncoding", [
-      null, null, null, null, null, null, null, null, null, null, null,
-      null, null, null, null, null, null, null, null, null, null, null,
-      null, null, null, null, null, null, null, null, null, null, 
+    return shadow(this, "MacRomanEncoding", [ ,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
       "space","exclam","quotedbl","numbersign","dollar","percent","ampersand",
       "quotesingle","parenleft","parenright","asterisk","plus","comma","hyphen",
       "period","slash","zero","one","two","three","four","five","six","seven","eight",
@@ -1715,10 +1706,7 @@ const Encodings = {
     ]);
   },
   get StandardEncoding() {
-    return shadow(this, "StandardEncoding", [
-      null, null, null, null, null, null, null, null, null, null, null,
-      null, null, null, null, null, null, null, null, null, null, null,
-      null, null, null, null, null, null, null, null, null, null, 
+    return shadow(this, "StandardEncoding", [ ,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
       "space","exclam","quotedbl","numbersign","dollar","percent","ampersand",
       "quoteright","parenleft","parenright","asterisk","plus","comma","hyphen","period",
       "slash","zero","one","two","three","four","five","six","seven","eight","nine",
@@ -1738,10 +1726,7 @@ const Encodings = {
     ]);
   },
   get WinAnsiEncoding() {
-    return shadow(this, "WinAnsiEncoding", [
-      null, null, null, null, null, null, null, null, null, null, null,
-      null, null, null, null, null, null, null, null, null, null, null,
-      null, null, null, null, null, null, null, null, null, null, 
+    return shadow(this, "WinAnsiEncoding", [ ,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
       "space","exclam","quotedbl","numbersign","dollar","percent","ampersand",
       "quotesingle","parenleft","parenright","asterisk","plus","comma","hyphen",
       "period","slash","zero","one","two","three","four","five","six","seven","eight",
@@ -1772,10 +1757,7 @@ const Encodings = {
     ]);
   },
   get zapfDingbatsEncoding() {
-    return shadow(this, "zapfDingbatsEncoding", [
-      null, null, null, null, null, null, null, null, null, null, null,
-      null, null, null, null, null, null, null, null, null, null, null,
-      null, null, null, null, null, null, null, null, null, null, 
+    return shadow(this, "zapfDingbatsEncoding", [ ,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
       "space","a1","a2","a202","a3","a4","a5","a119","a118","a117","a11","a12","a13",
       "a14","a15","a16","a105","a17","a18","a19","a20","a21","a22","a23","a24","a25",
       "a26","a27","a28","a6","a7","a8","a9","a10","a29","a30","a31","a32","a33","a34",
@@ -1918,13 +1900,12 @@ var CanvasGraphics = (function() {
                 error("FontFile not found for font: " + fontName);
             fontFile = xref.fetchIfRef(fontFile);
 
-            // Generate the custom cmap of the font if needed
             var encodingMap = {};
             var charset = [];
             if (fontDict.has("Encoding")) {
                 var encoding = xref.fetchIfRef(fontDict.get("Encoding"));
                 if (IsDict(encoding)) {
-                    // Build an map between codes and glyphs
+                    // Build a map between codes and glyphs
                     var differences = encoding.get("Differences");
                     var index = 0;
                     for (var j = 0; j < differences.length; j++) {
@@ -1960,9 +1941,13 @@ var CanvasGraphics = (function() {
             } else if (fontDict.has("ToUnicode")) {
                 var cmapObj = xref.fetchIfRef(fontDict.get("ToUnicode"));
                 if (IsName(cmapObj)) {
-                    error("ToUnicode basic cmap translation not implemented");
-                    encodingMap = {};
+                    error("ToUnicode file cmap translation not implemented");
                 } else if (IsStream(cmapObj)) {
+                    var encoding = Encodings["WinAnsiEncoding"];
+                    var firstChar = xref.fetchIfRef(fontDict.get("FirstChar"));
+                    for (var i = firstChar; i < encoding.length; i++)
+                        encodingMap[i] = new Name(encoding[i]);
+
                     var tokens = [];
                     var token = "";
 
@@ -1992,8 +1977,8 @@ var CanvasGraphics = (function() {
                               var code = parseInt("0x" + tokens[j+2]);
 
                               for (var k = startRange; k <= endRange; k++) {
-                                encodingMap[k] = code;
-                                charset.push(code++);
+                                encodingMap[k] = GlyphsUnicode[encoding[code]];
+                                charset.push(encoding[code++]);
                               }
                             }
                             break;
