@@ -9,11 +9,6 @@
 var kMaxFontFileSize = 40000;
 
 /**
- * Maximum number of glyphs per font.
-*/
-var kMaxGlyphsCount = 65526;
-
-/**
  * Maximum time to wait for a font to be loaded by @font-face
  */
 var kMaxWaitForFontFace = 1000;
@@ -310,24 +305,30 @@ var Font = (function () {
         aOffsets.currentOffset += tableEntry.length;
         aOffsets.virtualOffset += aData.length;
       }
-      
-      function createCMAPTable(aGlyphs) {
-        var characters = new Uint16Array(kMaxGlyphsCount);
-        for (var i = 0; i < aGlyphs.length; i++)
-          characters[aGlyphs[i].unicode] = i + 1;
 
-        // Separate the glyphs into continuous range of codes, aka segment.
+      function getRanges(glyphs) {
+        // Array.sort() sorts by characters, not numerically, so convert to an
+        // array of characters.
+        var codes = [];
+        var length = glyphs.length;
+        for (var n = 0; n < length; ++n)
+          codes.push(String.fromCharCode(glyphs[n].unicode))
+        codes.sort();
+
         var ranges = [];
-        var range = [];
-        var count = characters.length;
-        for (var i = 0; i < count; i++) {
-          if (characters[i]) {
-            range.push(i);
-          } else if (range.length) {
-            ranges.push(range.slice());
-            range = [];
-          }
+        for (var n = 0; n < length; ) {
+          var range = [];
+          do {
+            var current = codes[n++].charCodeAt(0);
+            range.push(current);
+          } while (n < length && current + 1 == codes[n].charCodeAt(0));
+          ranges.push(range);
         }
+        return ranges;
+      }
+
+      function createCMAPTable(aGlyphs) {
+        var ranges = getRanges(aGlyphs);
 
         // The size in bytes of the header is equal to the size of the
         // different fields * length of a short + (size of the 4 parallels arrays
