@@ -23,6 +23,7 @@ var kMaxWaitForFontFace = 1000;
  * many fonts are loaded.
  */
 var fontCount = 0;
+var fontName  = "";
 
 /**
  * Hold a map of decoded fonts and of the standard fourteen Type1 fonts and
@@ -38,6 +39,7 @@ var Fonts = {
   },
 
   set active(aName) {
+    fontName = aName;
     this._active = this[aName];
   },
 
@@ -694,7 +696,7 @@ var TrueType = function(aName, aFile, aProperties) {
   // If any tables are still in the array this means some required tables are
   // missing, which means that we need to rebuild the font in order to pass
   // the sanitizer.
-  if (requiredTables.length == 1 && requiredTables[0] == "OS/2") {
+  if (requiredTables.length && requiredTables[0] == "OS/2") {
     var OS2 = [
       0x00, 0x03, // version
       0x02, 0x24, // xAvgCharWidth
@@ -747,13 +749,43 @@ var TrueType = function(aName, aFile, aProperties) {
 
     // Replace the old CMAP table
     var rewrittedCMAP = this._createCMAPTable(glyphs);
-    var cmapDelta = rewrittedCMAP.length - originalCMAP.data.length;
+    var offsetDelta = rewrittedCMAP.length - originalCMAP.data.length;
     originalCMAP.data = rewrittedCMAP;
+
+    // Rewrite the 'post' table if needed
+    var postTable = null;
+    for (var i = 0; i < tables.length; i++) {
+      var table = tables[i];
+      if (table.tag == "post") {
+        postTable = table;
+        break;
+      }
+    }
+
+    if (!postTable) {
+      var post = [
+        0x00, 0x03, 0x00, 0x00, // Version number
+        0x00, 0x00, 0x01, 0x00, // italicAngle
+        0x00, 0x00, // underlinePosition
+        0x00, 0x00, // underlineThickness
+        0x00, 0x00, 0x00, 0x00, // isFixedPitch
+        0x00, 0x00, 0x00, 0x00, // minMemType42
+        0x00, 0x00, 0x00, 0x00, // maxMemType42
+        0x00, 0x00, 0x00, 0x00, // minMemType1
+        0x00, 0x00, 0x00, 0x00  // maxMemType1
+      ];
+
+      offsetDelta += post.length;
+      tables.unshift({
+        tag: "post",
+        data: post
+      });
+    }
 
     // Create a new file to hold the new version of our truetype with a new
     // header and new offsets
     var stream = aFile.stream || aFile;
-    var ttf = new Uint8Array(stream.length + 16 + OS2.length + cmapDelta);
+    var ttf = new Uint8Array(stream.length + 1024);
 
     // The new numbers of tables will be the last one plus the num of missing
     // tables
