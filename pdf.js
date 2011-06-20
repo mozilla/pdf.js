@@ -288,7 +288,7 @@ var FlateStream = (function() {
 
             while (codeSize < maxLen) {
                 var b;
-                if ((b = bytes[bytesPos++]) == undefined)
+                if (typeof (b = bytes[bytesPos++]) == "undefined")
                     error("Bad encoding in flate stream");
                 codeBuf |= (b << codeSize);
                 codeSize += 8;
@@ -416,16 +416,16 @@ var FlateStream = (function() {
 
             var b;
             if (hdr == 0) { // uncompressed block
-                if ((b = bytes[bytesPos++]) == undefined)
+                if (typeof (b = bytes[bytesPos++]) == "undefined")
                     error("Bad block header in flate stream");
                 var blockLen = b;
-                if ((b = bytes[bytesPos++]) == undefined)
+                if (typeof (b = bytes[bytesPos++]) == "undefined")
                     error("Bad block header in flate stream");
                 blockLen |= (b << 8);
-                if ((b = bytes[bytesPos++]) == undefined)
+                if (typeof (b = bytes[bytesPos++]) == "undefined")
                     error("Bad block header in flate stream");
                 var check = b;
-                if ((b = bytes[bytesPos++]) == undefined)
+                if (typeof (b = bytes[bytesPos++]) == "undefined")
                     error("Bad block header in flate stream");
                 check |= (b << 8);
                 if (check != (~this.blockLen & 0xffff))
@@ -434,7 +434,7 @@ var FlateStream = (function() {
                 var buffer = this.ensureBuffer(bufferLength + blockLen);
                 this.bufferLength = bufferLength + blockLen;
                 for (var n = bufferLength; n < blockLen; ++n) {
-                    if ((b = bytes[bytesPos++]) == undefined) {
+                    if (typeof (b = bytes[bytesPos++]) == "undefined") {
                         this.eof = true;
                         break;
                     }
