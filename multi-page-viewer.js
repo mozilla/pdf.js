@@ -12,7 +12,7 @@ var PDFViewer = {
     nextPageButton: null,
     pageNumberInput: null,
     scaleInput: null,
-    
+
     willJumpToPage: false,
 
     pdf: null,
@@ -30,17 +30,17 @@ var PDFViewer = {
     pageHeight: function() {
         return 1056 * PDFViewer.scale;
     },
-    
+
     lastPagesDrawn: [],
-    
-    visiblePages: function() {  
-        var pageHeight = PDFViewer.pageHeight() + 20; // Add 20 for the margins.      
+
+    visiblePages: function() {
+        var pageHeight = PDFViewer.pageHeight() + 20; // Add 20 for the margins.
         var windowTop = window.pageYOffset;
         var windowBottom = window.pageYOffset + window.innerHeight;
         var pageStartIndex = Math.floor(windowTop / pageHeight);
         var pageStopIndex = Math.ceil(windowBottom / pageHeight);
 
-        var pages = [];  
+        var pages = [];
 
         for (var i = pageStartIndex; i <= pageStopIndex; i++) {
             pages.push(i + 1);
@@ -48,24 +48,24 @@ var PDFViewer = {
 
         return pages;
     },
-  
+
     createPage: function(num) {
         var anchor = document.createElement('a');
         anchor.name = '' + num;
-    
+
         var div = document.createElement('div');
         div.id = 'pageContainer' + num;
         div.className = 'page';
         div.style.width = PDFViewer.pageWidth() + 'px';
         div.style.height = PDFViewer.pageHeight() + 'px';
-        
+
         PDFViewer.element.appendChild(anchor);
         PDFViewer.element.appendChild(div);
     },
-    
+
     removePage: function(num) {
         var div = document.getElementById('pageContainer' + num);
-        
+
         if (div && div.hasChildNodes()) {
             while (div.childNodes.length > 0) {
                 div.removeChild(div.firstChild);
@@ -77,7 +77,7 @@ var PDFViewer = {
         if (PDFViewer.pdf) {
             var page = PDFViewer.pdf.getPage(num);
             var div = document.getElementById('pageContainer' + num);
-            
+
             if (div && !div.hasChildNodes()) {
                 var canvas = document.createElement('canvas');
                 canvas.id = 'page' + num;
@@ -96,26 +96,26 @@ var PDFViewer = {
 
                 var gfx = new CanvasGraphics(ctx);
                 var fonts = [];
-        
+
                 // page.compile will collect all fonts for us, once we have loaded them
                 // we can trigger the actual page rendering with page.display
                 page.compile(gfx, fonts);
-                
+
                 var fontsReady = true;
-                
+
                 // Inspect fonts and translate the missing one
                 var fontCount = fonts.length;
-                
+
                 for (var i = 0; i < fontCount; i++) {
                     var font = fonts[i];
-                    
+
                     if (Fonts[font.name]) {
                         fontsReady = fontsReady && !Fonts[font.name].loading;
                         continue;
                     }
 
                     new Font(font.name, font.file, font.properties);
-                    
+
                     fontsReady = false;
                 }
 
@@ -126,9 +126,8 @@ var PDFViewer = {
                             return;
                         }
                     }
-                    
-                    clearInterval(pageInterval);
 
+                    clearInterval(pageInterval);
                     PDFViewer.drawPage(num);
                 }
 
@@ -177,28 +176,28 @@ var PDFViewer = {
                 'disabled' : '';
         }
     },
-  
+
     goToPreviousPage: function() {
         if (PDFViewer.pageNumber > 1) {
             PDFViewer.goToPage(--PDFViewer.pageNumber);
         }
     },
-  
+
     goToNextPage: function() {
         if (PDFViewer.pageNumber < PDFViewer.numberOfPages) {
             PDFViewer.goToPage(++PDFViewer.pageNumber);
         }
     },
-  
+
     open: function(url) {
         PDFViewer.url = url;
         document.title = url;
-    
+
         var req = new XMLHttpRequest();
         req.open('GET', url);
         req.mozResponseType = req.responseType = 'arraybuffer';
         req.expected = (document.URL.indexOf('file:') === 0) ? 0 : 200;
-    
+
         req.onreadystatechange = function() {
             if (req.readyState === 4 && req.status === req.expected) {
                 var data = req.mozResponseArrayBuffer ||
@@ -209,7 +208,7 @@ var PDFViewer = {
                 PDFViewer.pdf = new PDFDoc(new Stream(data));
                 PDFViewer.numberOfPages = PDFViewer.pdf.numPages;
                 document.getElementById('numPages').innerHTML = PDFViewer.numberOfPages.toString();
-          
+
                 for (var i = 1; i <= PDFViewer.numberOfPages; i++) {
                     PDFViewer.createPage(i);
                 }
@@ -219,7 +218,7 @@ var PDFViewer = {
                 }
             }
         };
-    
+
         req.send(null);
     }
 };
@@ -235,7 +234,7 @@ window.onload = function() {
             var kv = kvs[i].split('=');
             params[unescape(kv[0])] = unescape(kv[1]);
         }
-        
+
         return params;
     }();
 
@@ -250,7 +249,7 @@ window.onload = function() {
             PDFViewer.goToNextPage();
             this.select();
         }
-        
+
         // Down arrow key.
         else if (charCode === 40) {
             PDFViewer.goToPreviousPage();
@@ -280,7 +279,7 @@ window.onload = function() {
         ) {
             PDFViewer.goToPage(this.value);
         }
-        
+
         this.focus();
     };
 
@@ -301,7 +300,7 @@ window.onload = function() {
     PDFViewer.previousPageButton.onmouseout = function(evt) {
         this.className = (this.className.indexOf('disabled') !== -1) ? 'disabled' : '';
     };
-    
+
     PDFViewer.nextPageButton = document.getElementById('nextPageButton');
     PDFViewer.nextPageButton.onclick = function(evt) {
         if (this.className.indexOf('disabled') === -1) {
@@ -341,7 +340,7 @@ window.onload = function() {
     PDFViewer.scaleInput.buttonElement.onmouseout = function(evt) {
         this.className = (this.className.indexOf('disabled') !== -1) ? 'disabled' : '';
     };
-    
+
     var listItems = PDFViewer.scaleInput.buttonElement.listElement.getElementsByTagName('LI');
 
     for (var i = 0; i < listItems.length; i++) {
@@ -356,14 +355,14 @@ window.onload = function() {
     PDFViewer.scale = parseInt(PDFViewer.scaleInput.value) / 100 || 1.0;
     PDFViewer.open(PDFViewer.queryParams.file || PDFViewer.url);
 
-    window.onscroll = function(evt) {        
+    window.onscroll = function(evt) {
         var lastPagesDrawn = PDFViewer.lastPagesDrawn;
         var visiblePages = PDFViewer.visiblePages();
-        
+
         var pagesToDraw = [];
         var pagesToKeep = [];
         var pagesToRemove = [];
-        
+
         var i;
 
         // Determine which visible pages were not previously drawn.
@@ -383,9 +382,9 @@ window.onload = function() {
                 PDFViewer.removePage(lastPagesDrawn[i]);
             }
         }
-        
+
         PDFViewer.lastPagesDrawn = pagesToDraw.concat(pagesToKeep);
-        
+
         // Update the page number input with the current page number.
         if (!PDFViewer.willJumpToPage && visiblePages.length > 0) {
             PDFViewer.pageNumber = PDFViewer.pageNumberInput.value = visiblePages[0];

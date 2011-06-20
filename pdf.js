@@ -76,7 +76,7 @@ var Stream = (function() {
             var strEnd = this.end;
             if (end > strEnd)
                 end = strEnd;
-            
+
             this.pos = end;
             return bytes.subarray(pos, end);
         },
@@ -248,7 +248,7 @@ var FlateStream = (function() {
         this.eof = false;
         this.codeSize = 0;
         this.codeBuf = 0;
-        
+
         this.pos = 0;
         this.bufferLength = 0;
     }
@@ -964,7 +964,7 @@ var Lexer = (function() {
                     break;
                 }
             }
-            
+
             // start reading token
             switch (ch) {
             case '0': case '1': case '2': case '3': case '4':
@@ -1151,7 +1151,7 @@ var Parser = (function() {
             // get stream start position
             lexer.skipToNextLine();
             var pos = stream.pos;
-            
+
             // get length
             var length = dict.get("Length");
             var xref = this.xref;
@@ -1178,7 +1178,7 @@ var Parser = (function() {
                                            this.keyLength);
             }
             stream = this.filter(stream, dict);
-            stream.parameters = dict; 
+            stream.parameters = dict;
             return stream;
         },
         filter: function(stream, dict) {
@@ -1217,7 +1217,7 @@ var Parser = (function() {
 
     return constructor;
 })();
-    
+
 var Linearization = (function() {
     function constructor(stream) {
         this.parser = new Parser(new Lexer(stream), false);
@@ -1569,7 +1569,7 @@ var Page = (function() {
             if (!IsArray(this.content)) {
                 // content is not an array, shortcut
                 content = xref.fetchIfRef(this.content);
-                this.code = gfx.compile(content, xref, resources, fonts);
+                this.code = [ gfx.compile(content, xref, resources, fonts) ];
                 return;
             }
             // the content is an array, compiling all items
@@ -1578,16 +1578,9 @@ var Page = (function() {
                 content = xref.fetchIfRef(this.content[i]);
                 compiledItems.push(gfx.compile(content, xref, resources, fonts));
             }
-            // creating the function that executes all compiled items
-            this.code = function(gfx) {
-                var i, n = compiledItems.length;
-                for (i = 0; i < n; ++i) {
-                    compiledItems[i](gfx);
-                }
-            };
+            this.code = compiledItems;
         },
         display: function(gfx) {
-            assert(this.code instanceof Function, "page content must be compiled first");
             var xref = this.xref;
             var resources = xref.fetchIfRef(this.resources);
             var mediaBox = xref.fetchIfRef(this.mediaBox);
@@ -1596,7 +1589,6 @@ var Page = (function() {
                                width: mediaBox[2] - mediaBox[0],
                                height: mediaBox[3] - mediaBox[1] });
             gfx.execute(this.code, xref, resources);
-            gfx.endDrawing();
         }
     };
 
@@ -1641,7 +1633,7 @@ var Catalog = (function() {
                     pageCache.push(new Page(this.xref, pageCache.length, obj));
                 } else { // must be a child page dictionary
                     assertWellFormed(IsDict(obj),
-                                     "page dictionary kid reference points to wrong type of object");           
+                                     "page dictionary kid reference points to wrong type of object");
                     this.traverseKids(obj);
                 }
             }
@@ -1976,6 +1968,10 @@ var CanvasGraphics = (function() {
         this.pendingClip = null;
         this.res = null;
         this.xobjs = null;
+        this.execState = [];
+        this.execCurrentState = null;
+        this.execCounter = 0;
+        this.execMax = 100;
         this.map = {
             // Graphics state
             w: "setLineWidth",
@@ -2152,17 +2148,100 @@ var CanvasGraphics = (function() {
             this.ctx.translate(0, -mediaBox.height);
         },
 
-        execute: function(code, xref, resources) {
-            var savedXref = this.xref, savedRes = this.res, savedXobjs = this.xobjs;
-            this.xref = xref;
-            this.res = resources || new Dict();
-            this.xobjs = xref.fetchIfRef(this.res.get("XObject")) || new Dict();
+        execute: function(code, xref, resources, resume) {
+            const map = this.map;
+            var state;
 
-            code(this);
+            if (resume) {
+                state = this.execCurrentState;
+            } else {
+                this.execState.push(this.execCurrentState);
 
-            this.xobjs = savedXobjs;
-            this.res = savedRes;
-            this.xref = savedXref;
+                this.xref = xref;
+                this.res = resources || new Dict();
+                this.xobjs = xref.fetchIfRef(this.res.get("XObject")) || new Dict();
+
+                // Make sure `code` has the structure we expect.
+                if (!Array.isArray(code[0][0])) {
+                    code = [code];
+                }
+
+                var state = this.execCurrentState = {
+                    xref: this.xref,
+                    xobjs: this.xobjs,
+                    res: this.res,
+                    code: code,
+                    i: 0,
+                    n: 0,
+                };
+            }
+
+            var actions, action;
+            for (var i = state.i; i < code.length; i++) {
+                var actions = code[i];
+                for (var n = state.n; n < actions.length; n++) {
+                    action = actions[n];
+                    this[map[action[0]]].apply(this, action[1]);
+
+                    // Check if we hit the execution border.
+                    if (this.execCounter++ > this.execMax) {
+                        // Save internal execution state.
+                        state.i = i;
+                        state.n = n + 1;
+
+                        // We have to save the current state here, as the following
+                        // can happen:
+                        // Assume this function was executed by another function
+                        // like `paintFormXObject`, that itself was called
+                        // from `execute` again. `paintFromXObject` calls a
+                        // `this.restore()`.
+                        //
+                        // [00]: execute
+                        // [01]: -> paintFromXObject()
+                        // [02]:    this.save();     // saves state `bar`
+                        // [03]:    -> execute()
+                        // [04]:       "hit limit!"
+                        // [05]:       this.save();  // saves state `foo`
+                        // [06]     <- return
+                        // [07]:    this.restore();  // restors state `foo`!
+                        // [08]: <- return
+                        // [09]: "hit limimt!"
+                        // [10]: this.save();        // saves state `foo`
+                        // [11]: <- return
+                        //
+                        // `this.resume` calls `this.restore()` again, which
+                        // sets the state `foo` and all is good :)
+                        this.save();
+
+                        // Shedule resume timer, but only if there isn't one yet!
+                        if (!this.resumeTimer)
+                            this.resumeTimer = setTimeout(this.resumeExecution.bind(this), 0);
+
+                        return;
+                    }
+                }
+            }
+
+            // Restore the former state;
+            this.execCurrentState = state = this.execState.pop();
+            if (state) {
+                this.xobjs = state.xobjs;
+                this.res = state.res;
+                this.xref = state.xref;
+                this.code = state.code;
+
+                this.resumeTimer = setTimeout(this.resumeExecution.bind(this), 0);
+            } else {
+                this.endDrawing();
+            }
+        },
+
+        resumeExecution: function() {
+            var state = this.execCurrentState;
+            this.restore();
+            this.execCounter = 0;
+            this.resumeTimer = null;
+            this.execute(state.code, state.xref, state.res, true);
         },
 
         compile: function(stream, xref, resources, fonts) {
@@ -2180,11 +2259,10 @@ var CanvasGraphics = (function() {
                 return arg;
             }
 
-            var src = "";
-
             var args = [];
             var map = this.map;
             var obj;
+            var actions = [];
             while (!IsEOF(obj = parser.getObj())) {
                 if (IsCmd(obj)) {
                     var cmd = obj.cmd;
@@ -2226,21 +2304,17 @@ var CanvasGraphics = (function() {
                         }
                     }
 
-                    src += "this.";
-                    src += fn;
-                    src += "(";
-                    src += args.map(emitArg).join(",");
-                    src += ");\n";
+                    var action = [cmd, args];
+                    actions.push(action);
 
-                    args.length = 0;
+                    // create new array.
+                    args = [];
                 } else {
                     assertWellFormed(args.length <= 33, "Too many arguments");
                     args.push(obj);
                 }
             }
-
-            var fn = Function("objpool", src);
-            return function (gfx) { fn.call(gfx, objpool); };
+            return actions;
         },
 
         endDrawing: function() {
@@ -2515,7 +2589,7 @@ var CanvasGraphics = (function() {
         shadingFill: function(entryRef) {
             var xref = this.xref;
             var res = this.res;
-            
+
             var shadingRes = xref.fetchIfRef(res.get("Shading"));
             if (!shadingRes)
                 error("No shading resource found");
@@ -2542,10 +2616,10 @@ var CanvasGraphics = (function() {
 
             const types = [null, this.fillFunctionShading,
                   this.fillAxialShading, this.fillRadialShading];
-            
+
             var typeNum = shading.get("ShadingType");
             var fillFn = types[typeNum];
-            if (!fillFn) 
+            if (!fillFn)
                 error("Unknown type of shading");
             fillFn.apply(this, [shading]);
 
@@ -2556,7 +2630,7 @@ var CanvasGraphics = (function() {
             var coordsArr = sh.get("Coords");
             var x0 = coordsArr[0], y0 = coordsArr[1],
                 x1 = coordsArr[2], y1 = coordsArr[3];
-            
+
             var t0 = 0.0, t1 = 1.0;
             if (sh.has("Domain")) {
                 var domainArr = sh.get("Domain");
@@ -2579,14 +2653,14 @@ var CanvasGraphics = (function() {
 
             var gradient = this.ctx.createLinearGradient(x0, y0, x1, y1);
             var step = (t1 - t0) / 10;
-            
+
             for (var i = t0; i <= t1; i += step) {
                 var c = fn.func([i]);
                 gradient.addColorStop(i, this.makeCssRgb.apply(this, c));
             }
 
             this.ctx.fillStyle = gradient;
-            
+
             // HACK to draw the gradient onto an infinite rectangle.
             // PDF gradients are drawn across the entire image while
             // Canvas only allows gradients to be drawn in a rectangle
@@ -2609,12 +2683,12 @@ var CanvasGraphics = (function() {
                 return;
             xobj = this.xref.fetchIfRef(xobj);
             assertWellFormed(IsStream(xobj), "XObject should be a stream");
-            
+
             var oc = xobj.dict.get("OC");
             if (oc) {
                 TODO("oc for xobject");
             }
-            
+
             var opi = xobj.dict.get("OPI");
             if (opi) {
                 TODO("opi for xobject");
@@ -2669,7 +2743,7 @@ var CanvasGraphics = (function() {
 
             if (w < 1 || h < 1)
                 error("Invalid image width or height");
-            
+
             var ctx = this.ctx;
             // scale the image to the unit square
             ctx.scale(1/w, 1/h);
@@ -2705,15 +2779,15 @@ var CanvasGraphics = (function() {
             // actual image
             var csStream = dict.get2("ColorSpace", "CS");
             csStream = xref.fetchIfRef(csStream);
-            if (IsName(csStream) && inline) 
+            if (IsName(csStream) && inline)
                 csStream = colorSpaces.get(csStream);
-            
+
             var colorSpace = new ColorSpace(xref, csStream);
 
             var decode = dict.get2("Decode", "D");
 
             TODO("create color map");
-            
+
             var mask = image.dict.get("Mask");
             mask = xref.fetchIfRef(mask);
             var smask = image.dict.get("SMask");
@@ -2738,7 +2812,7 @@ var CanvasGraphics = (function() {
                 var maskBPC = maskDict.get2("BitsPerComponent", "BPC");
                 if (!maskBPC)
                     error("Invalid image mask bpc");
-            
+
                 var maskCsStream = maskDict.get2("ColorSpace", "CS");
                 maskCsStream = xref.fetchIfRef(maskCsStream);
                 var maskColorSpace = new ColorSpace(xref, maskCsStream);
@@ -2748,7 +2822,7 @@ var CanvasGraphics = (function() {
                 var maskDecode = maskDict.get2("Decode", "D");
                 if (maskDecode)
                     TODO("Handle mask decode");
-                // handle matte object 
+                // handle matte object
             } else {
                 smask = null;
             }
@@ -2759,21 +2833,21 @@ var CanvasGraphics = (function() {
             var tmpCtx = tmpCanvas.getContext("2d");
             var imgData = tmpCtx.getImageData(0, 0, w, h);
             var pixels = imgData.data;
-            
+
             if (bitsPerComponent != 8)
-                error("unhandled number of bits per component"); 
-            
+                error("unhandled number of bits per component");
+
             if (smask) {
                 if (maskColorSpace.numComps != 1)
                     error("Incorrect number of components in smask");
-                
+
                 var numComps = colorSpace.numComps;
                 var imgArray = image.getBytes(numComps * w * h);
                 var imgIdx = 0;
 
                 var smArray = smask.getBytes(w * h);
                 var smIdx = 0;
-               
+
                 var length = 4 * w * h;
                 switch (numComps) {
                 case 1:
@@ -2800,7 +2874,7 @@ var CanvasGraphics = (function() {
                 var numComps = colorSpace.numComps;
                 var imgArray = image.getBytes(numComps * w * h);
                 var imgIdx = 0;
-               
+
                 var length = 4 * w * h;
                 switch (numComps) {
                 case 1:
@@ -2907,7 +2981,7 @@ var ColorSpace = (function() {
         } else if (IsArray(cs)) {
             var mode = cs[0].name;
             this.mode = mode;
-            
+
             var stream = cs[1];
             stream = xref.fetchIfRef(stream);
 
@@ -2920,7 +2994,7 @@ var ColorSpace = (function() {
                 break;
             case "ICCBased":
                 var dict = stream.dict;
-                
+
                 this.stream = stream;
                 this.dict = dict;
                 this.numComps = dict.get("N");
@@ -2932,7 +3006,7 @@ var ColorSpace = (function() {
             error("unrecognized color space object");
         }
     };
-    
+
     constructor.prototype = {
     };
 
@@ -2948,10 +3022,10 @@ var PDFFunction = (function() {
         const types = [this.constructSampled, null,
                 this.constructInterpolated, this.constructStiched,
                 this.constructPostScript];
-        
+
         var typeNum = dict.get("FunctionType");
         var typeFn = types[typeNum];
-        if (!typeFn) 
+        if (!typeFn)
             error("Unknown type of function");
 
         typeFn.apply(this, [fn, dict]);
@@ -2964,7 +3038,7 @@ var PDFFunction = (function() {
 
             if (!domain || !range)
                 error("No domain or range");
-        
+
             var inputSize = domain.length / 2;
             var outputSize = range.length / 2;
 
@@ -2978,7 +3052,7 @@ var PDFFunction = (function() {
                 order = 1;
             if (order !== 1)
                 error ("No support for cubic spline interpolation");
-            
+
             var encode = dict.get("Encode");
             if (!encode) {
                 encode = [];
@@ -3007,15 +3081,15 @@ var PDFFunction = (function() {
 
                 for (var i = 0; i < inputSize; i++) {
                     var i2 = i * 2;
-                    
+
                     // clip to the domain
                     var v = clip(args[i], domain[i2], domain[i2 + 1]);
 
                     // encode
-                    v = encode[i2] + ((v - domain[i2]) * 
-                            (encode[i2 + 1] - encode[i2]) / 
+                    v = encode[i2] + ((v - domain[i2]) *
+                            (encode[i2 + 1] - encode[i2]) /
                             (domain[i2 + 1] - domain[i2]));
-                    
+
                     // clip to the size
                     args[i] = clip(v, 0, size[i] - 1);
                 }
@@ -3038,12 +3112,12 @@ var PDFFunction = (function() {
                         var high = samples[ceil + i];
                         var v = low * scale + high * (1 - scale);
                     }
-                    
+
                     var i2 = i * 2;
                     // decode
-                    v = decode[i2] + (v * (decode[i2 + 1] - decode[i2]) / 
+                    v = decode[i2] + (v * (decode[i2 + 1] - decode[i2]) /
                             ((1 << bps) - 1));
-                    
+
                     // clip to the domain
                     output.push(clip(v, range[i2], range[i2 + 1]));
                 }
@@ -3078,10 +3152,10 @@ var PDFFunction = (function() {
         },
         constructInterpolated: function() {
             error("unhandled type of function");
-        },    
+        },
         constructStiched: function() {
             error("unhandled type of function");
-        },    
+        },
         constructPostScript: function() {
             error("unhandled type of function");
         }
