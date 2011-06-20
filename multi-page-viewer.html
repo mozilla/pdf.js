@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>pdf.js Multi-Page Viewer</title>
+<link rel="stylesheet" href="multi-page-viewer.css" type="text/css" media="screen" charset="utf-8"/>
+<script type="text/javascript" src="pdf.js"></script>
+<script type="text/javascript" src="fonts.js"></script>
+<script type="text/javascript" src="glyphlist.js"></script>
+<script type="text/javascript" src="multi-page-viewer.js"></script>
+</head>
+<body>
+    <div id="controls">
+        <span class="control">
+            <span id="previousPageButton"></span><span id="nextPageButton"></span>
+            <span class="label">Previous/Next</span>
+        </span>
+        <span class="control">
+            <input type="text" id="pageNumber" value="1" size="2"/>
+            <span>/</span>
+            <span id="numPages">--</span>
+            <span class="label">Page Number</span>
+        </span>
+        <span class="control">
+            <input type="text" id="scale" value="100" size="2"/>
+            <span>%</span>
+            <span class="label">Zoom</span>
+        </span>
+    </div>
+    <div id="viewer"></div>
+</body>
+</html>
