@@ -342,22 +342,20 @@ var Font = (function () {
         var searchRange = FontsUtils.getMaxPower2(segCount) * 2;
         var searchEntry = Math.log(segCount) / Math.log(2);
         var rangeShift = 2 * segCount - searchRange;
-        var cmap = [].concat(
-                             [
-                              0x00, 0x00, // version
-                              0x00, 0x01, // numTables
-                              0x00, 0x03, // platformID
-                              0x00, 0x01, // encodingID
-                              0x00, 0x00, 0x00, 0x0C, // start of the table record
-                              0x00, 0x04  // format
-                              ],
-                             FontsUtils.integerToBytes(headerSize, 2), // length
-                             [0x00, 0x00], // language
-                             FontsUtils.integerToBytes(segCount2, 2),
-                             FontsUtils.integerToBytes(searchRange, 2),
-                             FontsUtils.integerToBytes(searchEntry, 2),
-                             FontsUtils.integerToBytes(rangeShift, 2)
-                             );
+
+        var cmap = "\x00\x00" + // version
+                   "\x00\x01" + // numTables
+                   "\x00\x03" + // platformID
+                   "\x00\x01" + // encodingID
+                   "\x00\x00\x00\x0C" + // start of the table record
+                   "\x00\x04" + // format
+                   s16(headerSize) + // length
+                   "\x00\x00" + // languages
+                   s16(segCount2) +
+                   s16(searchRange) +
+                   s16(searchEntry) +
+                   s16(rangeShift);
+        cmap = s2a(cmap);
 
         // Fill up the 4 parallel arrays describing the segments.
         var startCount = [];
