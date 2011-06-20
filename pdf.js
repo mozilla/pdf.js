@@ -74,7 +74,7 @@ var Stream = (function() {
             var pos = this.pos;
             var end = pos + length;
             var strEnd = this.end;
-            if (end > strEnd)
+            if (!end || end > strEnd)
                 end = strEnd;
             
             this.pos = end;
@@ -233,10 +233,12 @@ var FlateStream = (function() {
     ]), 5];
 
     function constructor(stream) {
-        this.stream = stream;
+        var bytes = stream.getBytes();
+        var bytesPos = 0;
+
         this.dict = stream.dict;
-        var cmf = stream.getByte();
-        var flg = stream.getByte();
+        var cmf = bytes[bytesPos++];
+        var flg = bytes[bytesPos++];
         if (cmf == -1 || flg == -1)
             error("Invalid header in flate stream");
         if ((cmf & 0x0f) != 0x08)
@@ -245,6 +247,9 @@ var FlateStream = (function() {
             error("Bad FCHECK in flate stream");
         if (flg & 0x20)
             error("FDICT bit set in flate stream");
+
+        this.bytes = bytes;
+        this.bytesPos = bytesPos;
         this.eof = false;
         this.codeSize = 0;
         this.codeBuf = 0;
@@ -255,12 +260,14 @@ var FlateStream = (function() {
 
     constructor.prototype = {
         getBits: function(bits) {
-            var stream = this.stream;
             var codeSize = this.codeSize;
             var codeBuf = this.codeBuf;
+            var bytes = this.bytes;
+            var bytesPos = this.bytesPos;
+
             var b;
             while (codeSize < bits) {
-                if ((b = stream.getByte()) == -1)
+                if (typeof (b = bytes[bytesPos++]) == "undefined")
                     error("Bad encoding in flate stream");
                 codeBuf |= b << codeSize;
                 codeSize += 8;
@@ -268,6 +275,7 @@ var FlateStream = (function() {
             b = codeBuf & ((1 << bits) - 1);
             this.codeBuf = codeBuf >> bits;
             this.codeSize = codeSize -= bits;
+            this.bytesPos = bytesPos;
             return b;
         },
         getCode: function(table) {
@@ -275,10 +283,12 @@ var FlateStream = (function() {
             var maxLen = table[1];
             var codeSize = this.codeSize;
             var codeBuf = this.codeBuf;
-            var stream = this.stream;
+            var bytes = this.bytes;
+            var bytesPos = this.bytesPos;
+
             while (codeSize < maxLen) {
                 var b;
-                if ((b = stream.getByte()) == -1)
+                if (typeof (b = bytes[bytesPos++]) == "undefined")
                     error("Bad encoding in flate stream");
                 codeBuf |= (b << codeSize);
                 codeSize += 8;
@@ -290,6 +300,7 @@ var FlateStream = (function() {
                 error("Bad encoding in flate stream");
             this.codeBuf = (codeBuf >> codeLen);
             this.codeSize = (codeSize - codeLen);
+            this.bytesPos = bytesPos;
             return codeVal;
         },
         ensureBuffer: function(requested) {
@@ -306,9 +317,8 @@ var FlateStream = (function() {
             return this.buffer = buffer2;
         },
         getByte: function() {
-            var bufferLength = this.bufferLength;
             var pos = this.pos;
-            if (bufferLength <= pos) {
+            while (this.bufferLength <= pos) {
                 if (this.eof)
                     return;
                 this.readBlock();
@@ -331,9 +341,8 @@ var FlateStream = (function() {
             return this.buffer.subarray(pos, end)
         },
         lookChar: function() {
-            var bufferLength = this.bufferLength;
             var pos = this.pos;
-            if (bufferLength <= pos) {
+            while (this.bufferLength <= pos) {
                 if (this.eof)
                     return;
                 this.readBlock();
@@ -342,16 +351,15 @@ var FlateStream = (function() {
         },
         getChar: function() {
             var ch = this.lookChar();
-            if (!ch)
-                return;
+            // shouldnt matter what the position is if we get past the eof
+            // so no need to check if ch is undefined
             this.pos++;
             return ch;
         },
         skip: function(n) {
             if (!n)
                 n = 1;
-            while (n-- > 0)
-                this.getChar();
+            this.pos += n;    
         },
         generateHuffmanTable: function(lengths) {
             var n = lengths.length;
@@ -397,7 +405,8 @@ var FlateStream = (function() {
                     array[i++] = what;
             }
 
-            var stream = this.stream;
+            var bytes = this.bytes;
+            var bytesPos = this.bytesPos;
 
             // read block header
             var hdr = this.getBits(3);
@@ -407,16 +416,16 @@ var FlateStream = (function() {
 
             var b;
             if (hdr == 0) { // uncompressed block
-                if ((b = stream.getByte()) == -1)
+                if (typeof (b = bytes[bytesPos++]) == "undefined")
                     error("Bad block header in flate stream");
                 var blockLen = b;
-                if ((b = stream.getByte()) == -1)
+                if (typeof (b = bytes[bytesPos++]) == "undefined")
                     error("Bad block header in flate stream");
                 blockLen |= (b << 8);
-                if ((b = stream.getByte()) == -1)
+                if (typeof (b = bytes[bytesPos++]) == "undefined")
                     error("Bad block header in flate stream");
                 var check = b;
-                if ((b = stream.getByte()) == -1)
+                if (typeof (b = bytes[bytesPos++]) == "undefined")
                     error("Bad block header in flate stream");
                 check |= (b << 8);
                 if (check != (~this.blockLen & 0xffff))
@@ -425,7 +434,7 @@ var FlateStream = (function() {
                 var buffer = this.ensureBuffer(bufferLength + blockLen);
                 this.bufferLength = bufferLength + blockLen;
                 for (var n = bufferLength; n < blockLen; ++n) {
-                    if ((b = stream.getByte()) == -1) {
+                    if (typeof (b = bytes[bytesPos++]) == "undefined") {
                         this.eof = true;
                         break;
                     }
