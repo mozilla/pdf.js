@@ -1,0 +1,17 @@
+[
+    {  "id": "tracemonkey-==",
+       "file": "tests/tracemonkey.pdf",
+       "rounds": 1,
+       "type": "=="
+    },
+    {  "id": "tracemonkey-fbf",
+       "file": "tests/tracemonkey.pdf",
+       "rounds": 2,
+       "type": "fbf"
+    },
+    {  "id": "html5-canvas-cheat-sheet-load",
+       "file": "tests/canvas.pdf",
+       "rounds": 1,
+       "type": "load"
+    }
+]
