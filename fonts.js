@@ -332,11 +332,7 @@ var Font = (function () {
       function createCMAPTable(aGlyphs) {
         var ranges = getRanges(aGlyphs);
 
-        // The size in bytes of the header is equal to the size of the
-        // different fields * length of a short + (size of the 4 parallels arrays
-        // describing segments * length of a short).
         var headerSize = (12 * 2 + (ranges.length * 4 * 2));
-
         var segCount = ranges.length + 1;
         var segCount2 = segCount * 2;
         var searchRange = FontsUtils.getMaxPower2(segCount) * 2;
@@ -355,14 +351,13 @@ var Font = (function () {
                    s16(searchRange) +
                    s16(searchEntry) +
                    s16(rangeShift);
-        cmap = s2a(cmap);
 
         // Fill up the 4 parallel arrays describing the segments.
-        var startCount = [];
-        var endCount = [];
-        var idDeltas = [];
-        var idRangeOffsets = [];
-        var glyphsIdsArray = [];
+        var startCount = "";
+        var endCount = "";
+        var idDeltas = "";
+        var idRangeOffsets = "";
+        var glyphsIds = "";
         var bias = 0;
         for (var i = 0; i < segCount - 1; i++) {
           var range = ranges[i];
@@ -371,25 +366,22 @@ var Font = (function () {
           var delta = (((start - 1) - bias) ^ 0xffff) + 1;
           bias += (end - start + 1);
 
-          var start = FontsUtils.integerToBytes(start, 2);
-          var end = FontsUtils.integerToBytes(end, 2);
-          var delta = FontsUtils.integerToBytes(delta, 2);
-
-          startCount.push(start[0], start[1]);
-          endCount.push(end[0], end[1]);
-          idDeltas.push(delta[0], delta[1]);
-          idRangeOffsets.push(0x00, 0x00);
+          startCount += s16(start);
+          endCount += s16(end);
+          idDeltas += s16(delta);
+          idRangeOffsets += s16(0);
 
           for (var j = start; j <= end; j++)
-            glyphsIdsArray.push(j);
+            glyphsIds += String.fromCharCode(j);
         }
-        startCount.push(0xFF, 0xFF);
-        endCount.push(0xFF, 0xFF);
-        idDeltas.push(0x00, 0x01);
-        idRangeOffsets.push(0x00, 0x00);
 
-        return cmap.concat(endCount, [0x00, 0x00], startCount,
-                           idDeltas, idRangeOffsets, glyphsIdsArray);
+        startCount += "\xFF\xFF";
+        endCount += "\xFF\xFF";
+        idDeltas += "\x00\x01";
+        idRangeOffsets += "\x00\x00";
+
+        return s2a(cmap + endCount + "\x00\x00" + startCount +
+                   idDeltas + idRangeOffsets + glyphsIds);
       }
 
       // Required Tables
