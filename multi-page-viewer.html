@@ -21,9 +21,18 @@
             <span class="label">Page Number</span>
         </span>
         <span class="control">
-            <input type="text" id="scale" value="100" size="2"/>
-            <span>%</span>
+            <span id="scaleComboBoxInput"><input type="text" id="scale" value="100%" size="2"/></span><span id="scaleComboBoxButton"></span>
             <span class="label">Zoom</span>
+            <div id="scaleComboBoxList">
+                <ul>
+                    <li>50%</li>
+                    <li>75%</li>
+                    <li>100%</li>
+                    <li>125%</li>
+                    <li>150%</li>
+                    <li>200%</li>
+                </ul>
+            </div>
         </span>
     </div>
     <div id="viewer"></div>
