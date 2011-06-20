@@ -1942,13 +1942,12 @@ var CanvasGraphics = (function() {
                     if (!encoding)
                         error("Unknown font encoding");
 
-                    var firstChar = xref.fetchIfRef(fontDict.get("FirstChar"));
-
                     var index = 0;
                     for (var j = 0; j < encoding.length; j++) {
                         encodingMap[index++] = GlyphsUnicode[encoding[j]];
                     }
 
+                    var firstChar = xref.fetchIfRef(fontDict.get("FirstChar"));
                     var widths = xref.fetchIfRef(fontDict.get("Widths"));
                     assertWellFormed(IsArray(widths) && IsInt(firstChar),
                                      "invalid font Widths or FirstChar");
@@ -1959,8 +1958,66 @@ var CanvasGraphics = (function() {
                     }
                 }
             } else if (fontDict.has("ToUnicode")) {
-              TODO("ToUnicode stream translation not implemented");
-            }
+                var cmapObj = xref.fetchIfRef(fontDict.get("ToUnicode"));
+                if (IsName(cmapObj)) {
+                    error("ToUnicode basic cmap translation not implemented");
+                    encodingMap = {};
+                } else if (IsStream(cmapObj)) {
+                    var tokens = [];
+                    var token = "";
+
+                    var cmap = cmapObj.getBytes(cmapObj.length);
+                    for (var i =0; i < cmap.length; i++) {
+                      var byte = cmap[i];
+                      if (byte == 0x20 || byte == 0x0A || byte == 0x3C || byte == 0x3E) {
+                        switch (token) {
+                          case "useCMap":
+                            error("useCMap is not implemented");
+                            break;
+
+                          case "begincodespacerange":
+                          case "beginbfrange":
+                            token = "";
+                            tokens = [];
+                            break;
+
+                          case "endcodespacerange":
+                            TODO("Support CMap ranges");
+                            break;
+
+                          case "endbfrange":
+                            for (var j = 0; j < tokens.length; j+=3) {
+                              var startRange = parseInt("0x" + tokens[j]);
+                              var endRange = parseInt("0x" + tokens[j+1]);
+                              var code = parseInt("0x" + tokens[j+2]);
+
+                              for (var k = startRange; k <= endRange; k++) {
+                                encodingMap[k] = code;
+                                charset.push(code++);
+                              }
+                            }
+                            break;
+
+                          case "beginfbchar":
+                          case "endfbchar":
+                            error("fbchar parsing is not implemented");
+                            break;
+
+                          default:
+                            if (token.length) {
+                              tokens.push(token);
+                              token = "";
+                            }
+                            break;
+                        }
+                    } else if (byte == 0x5B || byte == 0x5D) {
+                        error("CMAP list parsing is not implemented");
+                    } else {
+                        token += String.fromCharCode(byte);
+                    }
+                  }
+               }
+            } 
 
             var subType = fontDict.get("Subtype");
             var bbox = descriptor.get("FontBBox");
