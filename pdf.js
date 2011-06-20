@@ -687,13 +687,13 @@ var PredictorStream = (function() {
         this.colors = params.get("Colors") || 1;
         this.bitsPerComponent = params.get("BitsPerComponent") || 8;
         this.columns = params.get("Columns") || 1;
-        if (this.colors !== 1 || this.bitsPerComponent !== 8) {
-            error("Multi-color and multi-byte predictors are not supported");
+        if (this.bitsPerComponent !== 8) {
+            error("Multi-byte predictors are not supported");
         }
         if (this.predictor < 10 || this.predictor > 15) {
             error("Unsupported predictor");
         }
-        this.currentRow = new Uint8Array(this.columns);
+        this.currentRow = new Uint8Array(this.columns * this.colors);
         this.pos = 0;
         this.bufferLength = 0;
     }
@@ -701,17 +701,31 @@ var PredictorStream = (function() {
     constructor.prototype = {
         readRow : function() {
             var lastRow = this.currentRow;
+            var colors = this.colors;
             var predictor = this.stream.getByte();
-            var currentRow = this.stream.getBytes(this.columns), i;
+            var currentRow = this.stream.getBytes(this.columns * colors), i;
             switch (predictor) {
             default:
                 error("Unsupported predictor");
                 break;
             case 0:
                 break;
+            case 1:
+                for (i = colors; i < currentRow.length; ++i) {
+                  currentRow[i] = (currentRow[i - colors] + currentRow[i]) & 0xFF;
+                }
+                break;
             case 2:
                 for (i = 0; i < currentRow.length; ++i) {
                   currentRow[i] = (lastRow[i] + currentRow[i]) & 0xFF;
+                }
+                break;
+            case 3:
+                for (i = 0; i < color; ++i) {
+                  currentRow[i] = ((lastRow[i] >> 1) + currentRow[i]) & 0xFF;
+                }
+                for (; i < currentRow.length; ++i) {
+                  currentRow[i] = (((lastRow[i] + currentRow[i]) >> 1) + currentRow[i]) & 0xFF;
                 }
                 break;
             }
