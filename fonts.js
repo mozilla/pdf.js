@@ -26,6 +26,12 @@ var fontCount = 0;
 var fontName  = "";
 
 /**
+ * If for some reason one want to debug without fonts activated, it just need
+ * to turn this pref to true/false.
+ */
+var kDisableFonts = false;
+
+/**
  * Hold a map of decoded fonts and of the standard fourteen Type1 fonts and
  * their acronyms.
  * TODO Add the standard fourteen Type1 fonts list by default
@@ -92,6 +98,16 @@ var Font = function(aName, aFile, aProperties) {
     return;
   }
   fontCount++;
+
+  if (aProperties.ignore || kDisableFonts) {
+    Fonts[aName] = {
+      data: aFile,
+      loading: false,
+      properties: {},
+      cache: Object.create(null)
+    }
+    return;
+  }
 
   switch (aProperties.type) {
     case "Type1":
@@ -203,19 +219,21 @@ Font.prototype = {
     if (debug)
       ctx.fillText(testString, 20, 20);
 
-    var start = Date.now();
     var interval = window.setInterval(function canvasInterval(self) {
+      this.start = this.start || Date.now();
       ctx.font = "bold italic 20px " + fontName + ", Symbol, Arial";
 
       // For some reasons the font has not loaded, so mark it loaded for the
       // page to proceed but cry
-      if ((Date.now() - start) >= kMaxWaitForFontFace) {
+      if ((Date.now() - this.start) >= kMaxWaitForFontFace) {
         window.clearInterval(interval);
         Fonts[fontName].loading = false;
         warn("Is " + fontName + " for charset: " + charset + " loaded?");
+        this.start = 0;
       } else if (textWidth != ctx.measureText(testString).width) {
         window.clearInterval(interval);
         Fonts[fontName].loading = false;
+        this.start = 0;
       }
 
       if (debug)
@@ -747,9 +765,12 @@ var TrueType = function(aName, aFile, aProperties) {
       });
     }
 
+
+    var offsetDelta = 0;
+
     // Replace the old CMAP table
     var rewrittedCMAP = this._createCMAPTable(glyphs);
-    var offsetDelta = rewrittedCMAP.length - originalCMAP.data.length;
+    offsetDelta = rewrittedCMAP.length - originalCMAP.data.length;
     originalCMAP.data = rewrittedCMAP;
 
     // Rewrite the 'post' table if needed
