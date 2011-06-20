@@ -2033,6 +2033,9 @@ var CanvasGraphics = (function() {
     const NORMAL_CLIP = {};
     const EO_CLIP = {};
 
+    // Used for tiling patterns
+    const PAINT_TYPE = [null, "colored", "uncolored"];
+
     constructor.prototype = {
         translateFont: function(fontDict, xref, resources) {
             var descriptor = xref.fetch(fontDict.get("FontDescriptor"));
@@ -2461,12 +2464,13 @@ var CanvasGraphics = (function() {
                         error("Unable to find pattern resource");
 
                     var pattern = xref.fetchIfRef(patternRes.get(patternName.name));
-                    
-                    var type = pattern.dict.get("PatternType");
-                    if (type === 1)
-                        this.tilingFill(pattern);
-                    else
+                   
+                    const types = [null, this.tilingFill];
+                    var typeNum = pattern.dict.get("PatternType");
+                    var patternFn = types[typeNum];
+                    if (!patternFn)
                         error("Unhandled pattern type");
+                    patternFn.call(this, pattern);
                 }
             } else {
                 // TODO real impl
@@ -2492,15 +2496,15 @@ var CanvasGraphics = (function() {
 
             this.save();
             var dict = pattern.dict;
+            var ctx = this.ctx;
 
-            var paintType = dict.get("PaintType");
-            if (paintType == 2) {
-                error("Unsupported paint type");
-            } else {
+            var paintType = PAINT_TYPE[dict.get("PaintType")];
+            if (paintType == "colored") {
                 // should go to default for color space
-                var ctx = this.ctx;
                 ctx.fillStyle = this.makeCssRgb(1, 1, 1);
                 ctx.strokeStyle = this.makeCssRgb(0, 0, 0);
+            } else {
+                error("Unsupported paint type");
             }
 
             TODO("TilingType");
@@ -2524,7 +2528,7 @@ var CanvasGraphics = (function() {
           
             // set the new canvas element context as the graphics context
             var tmpCtx = tmpCanvas.getContext("2d");
-            var savedCtx = this.ctx;
+            var savedCtx = ctx;
             this.ctx = tmpCtx;
 
             // normalize transform matrix so each step
@@ -2663,9 +2667,6 @@ var CanvasGraphics = (function() {
             // Canvas only allows gradients to be drawn in a rectangle
             // The following bug should allow us to remove this.
             // https://bugzilla.mozilla.org/show_bug.cgi?id=664884
-            // 
-            // Also, larg numbers seem to cause overflow which causes
-            // nothing to be drawn.
             this.ctx.fillRect(-1e10, -1e10, 2e10, 2e10);
         },
 
