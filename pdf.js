@@ -509,9 +509,38 @@ var FlateStream = (function() {
     return constructor;
 })();
 
+var JpegStream = (function() {
+    function constructor(bytes, dict) {
+        // TODO per poppler, some images may have "junk" before that need to be removed
+        this.bytes = bytes;
+        this.dict = dict;
+
+        // create DOM image
+        var buffer = "", i, n = bytes.length;
+        for (i = 0; i < n; ++i) {
+            buffer += String.fromCharCode(bytes[i]);
+        }
+        var img = new Image();
+        img.src = "data:image/jpeg;base64," + window.btoa(buffer);
+        this.domImage = img;
+    }
+
+    constructor.prototype = {
+        getChar: function() {
+            TODO("read direct pixels data");
+        },
+        getImage: function() {
+            return this.domImage;
+        }
+    };
+
+    return constructor;
+})();
+
 var PredictorStream = (function() {
     function constructor(stream, params) {
         this.stream = stream;
+        this.dict = stream.dict;
         this.predictor = params.get("Predictor") || 1;
         if (this.predictor <= 1) {
             return stream; // no prediction
@@ -1177,15 +1206,15 @@ var Parser = (function() {
                                            this.encAlgorithm,
                                            this.keyLength);
             }
-            stream = this.filter(stream, dict);
+            stream = this.filter(stream, dict, length);
             stream.parameters = dict; 
             return stream;
         },
-        filter: function(stream, dict) {
+        filter: function(stream, dict, length) {
             var filter = dict.get2("Filter", "F");
             var params = dict.get2("DecodeParms", "DP");
             if (IsName(filter))
-                return this.makeFilter(stream, filter.name, params);
+                return this.makeFilter(stream, filter.name, length, params);
             if (IsArray(filter)) {
                 var filterArray = filter;
                 var paramsArray = params;
@@ -1196,18 +1225,21 @@ var Parser = (function() {
                         params = null;
                         if (IsArray(paramsArray) && (i in paramsArray))
                             params = paramsArray[i];
-                        stream = this.makeFilter(stream, filter.name, params);
+                        stream = this.makeFilter(stream, filter.name, length, params);
                     }
                 }
             }
             return stream;
         },
-        makeFilter: function(stream, name, params) {
+        makeFilter: function(stream, name, length, params) {
             if (name == "FlateDecode" || name == "Fl") {
                 if (params) {
                     return new PredictorStream(new FlateStream(stream), params);
                 }
                 return new FlateStream(stream);
+            } else if (name == "DCTDecode") {
+                var bytes = stream.getBytes(length);
+                return new JpegStream(bytes, stream.dict);
             } else {
                 error("filter '" + name + "' not supported yet");
             }
@@ -2398,10 +2430,16 @@ var CanvasGraphics = (function() {
 
             var fontName = "";
             var fontDescriptor = font.get("FontDescriptor");
-            if (fontDescriptor.num) {
+            if (fontDescriptor && fontDescriptor.num) {
                 var fontDescriptor = this.xref.fetchIfRef(fontDescriptor);
                 fontName = fontDescriptor.get("FontName").name.replace("+", "_");
                 Fonts.active = fontName;
+            }
+            if (!fontName) {
+                // fontDescriptor is not available, fallback to default font (TODO ?)
+                this.current.fontSize = size;
+                this.ctx.font = this.current.fontSize + 'px sans-serif';
+                return;
             }
 
             this.current.fontSize = size;
@@ -2431,9 +2469,9 @@ var CanvasGraphics = (function() {
         },
         showText: function(text) {
             this.ctx.save();
-            this.ctx.translate(0, 2 * this.current.y);
-            this.ctx.scale(1, -1);
             this.ctx.transform.apply(this.ctx, this.current.textMatrix);
+            this.ctx.scale(1, -1);
+            this.ctx.translate(0, -2 * this.current.y);
             this.ctx.fillText(Fonts.chars2Unicode(text), this.current.x, this.current.y);
             this.current.x += this.ctx.measureText(text).width;
 
@@ -2679,8 +2717,17 @@ var CanvasGraphics = (function() {
                 error("Invalid image width or height");
             
             var ctx = this.ctx;
+
             // scale the image to the unit square
-            ctx.scale(1/w, 1/h);
+            ctx.scale(1/w, -1/h);
+
+            if (image instanceof JpegStream) {
+                var domImage = image.getImage();
+                ctx.drawImage(domImage, 0, 0, domImage.width, domImage.height,
+                    0, -h, w, h);
+                this.restore();
+                return;
+            }
 
             var interpolate = dict.get2("Interpolate", "I");
             if (!IsBool(interpolate))
@@ -2786,7 +2833,7 @@ var CanvasGraphics = (function() {
                 switch (numComps) {
                 case 1:
                     for (var i = 0; i < length; i += 4) {
-                        var p = imgArray[imageIdx++];
+                        var p = imgArray[imgIdx++];
                         pixels[i] = p;
                         pixels[i+1] = p;
                         pixels[i+2] = p;
@@ -2813,7 +2860,7 @@ var CanvasGraphics = (function() {
                 switch (numComps) {
                 case 1:
                     for (var i = 0; i < length; i += 4) {
-                        var p = imgArray[imageIdx++];
+                        var p = imgArray[imgIdx++];
                         pixels[i] = p;
                         pixels[i+1] = p;
                         pixels[i+2] = p;
@@ -2833,7 +2880,7 @@ var CanvasGraphics = (function() {
                 }
             }
             tmpCtx.putImageData(imgData, 0, 0);
-            ctx.drawImage(tmpCanvas, 0, 0);
+            ctx.drawImage(tmpCanvas, 0, -h);
             this.restore();
         },
 
