@@ -80,11 +80,12 @@ var Stream = (function() {
         getBytes: function(length) {
             var bytes = this.bytes;
             var pos = this.pos;
+
             var end = pos + length;
             var strEnd = this.end;
             if (!end || end > strEnd)
                 end = strEnd;
-            
+
             this.pos = end;
             return bytes.subarray(pos, end);
         },
@@ -261,7 +262,7 @@ var FlateStream = (function() {
         this.eof = false;
         this.codeSize = 0;
         this.codeBuf = 0;
-        
+
         this.pos = 0;
         this.bufferLength = 0;
     }
@@ -367,7 +368,7 @@ var FlateStream = (function() {
         skip: function(n) {
             if (!n)
                 n = 1;
-            this.pos += n;    
+            this.pos += n;
         },
         generateHuffmanTable: function(lengths) {
             var n = lengths.length;
@@ -545,6 +546,9 @@ var JpegStream = (function() {
 
         getImage: function() {
             return this.domImage;
+        },
+        getChar: function() {
+            error("internal error: getChar is not valid on JpegStream");
         }
     };
 
@@ -1329,7 +1333,7 @@ var Parser = (function() {
                                            this.keyLength);
             }
             stream = this.filter(stream, dict, length);
-            stream.parameters = dict; 
+            stream.parameters = dict;
             return stream;
         },
         filter: function(stream, dict, length) {
@@ -1340,7 +1344,8 @@ var Parser = (function() {
             if (IsArray(filter)) {
                 var filterArray = filter;
                 var paramsArray = params;
-                for (filter in filterArray) {
+                for (var i = 0, ii = filter.length; i < ii; ++i) {
+                    filter = filter[i];
                     if (!IsName(filter))
                         error("Bad filter name");
                     else {
@@ -1521,7 +1526,7 @@ var XRef = (function() {
                 prev = obj.num;
             }
             if (prev) {
-              this.readXRef(prev);
+                this.readXRef(prev);
             }
 
             // check for 'XRefStm' key
@@ -1532,6 +1537,7 @@ var XRef = (function() {
                 this.xrefstms[pos] = 1; // avoid infinite recursion
                 this.readXRef(pos);
             }
+
             return dict;
         },
         readXRefStream: function(stream) {
@@ -1552,26 +1558,29 @@ var XRef = (function() {
                 for (i = 0; i < n; ++i) {
                     var type = 0, offset = 0, generation = 0;
                     for (j = 0; j < typeFieldWidth; ++j)
-                       type = (type << 8) | stream.getByte();
+                        type = (type << 8) | stream.getByte();
+                    // if type field is absent, its default value = 1
+                    if (typeFieldWidth == 0)
+                        type = 1;
                     for (j = 0; j < offsetFieldWidth; ++j)
-                       offset = (offset << 8) | stream.getByte();
+                        offset = (offset << 8) | stream.getByte();
                     for (j = 0; j < generationFieldWidth; ++j)
-                       generation = (generation << 8) | stream.getByte();
-                    var entry = new Ref(offset, generation);
-                    if (typeFieldWidth > 0) {
-                        switch (type) {
-                        case 0:
-                           entry.free = true;
-                           break;
-                        case 1:
-                           entry.uncompressed = true;
-                           break;
-                        case 2:
-                           break;
-                        default:
-                           error("Invalid XRef entry type");
-                           break;
-                        }
+                        generation = (generation << 8) | stream.getByte();
+                    var entry = {}
+                    entry.offset = offset;
+                    entry.gen = generation;
+                    switch (type) {
+                    case 0:
+                        entry.free = true;
+                        break;
+                    case 1:
+                        entry.uncompressed = true;
+                        break;
+                    case 2:
+                        break;
+                    default:
+                        error("Invalid XRef entry type");
+                        break;
                     }
                     if (!this.entries[first + i])
                         this.entries[first + i] = entry;
@@ -1650,6 +1659,7 @@ var XRef = (function() {
                     this.cache[num] = e;
                 return e;
             }
+
             // compressed entry
             stream = this.fetch(new Ref(e.offset, 0));
             if (!IsStream(stream))
@@ -1717,6 +1727,7 @@ var Page = (function() {
                 // content was compiled
                 return;
             }
+
             var xref = this.xref;
             var content;
             var resources = xref.fetchIfRef(this.resources);
@@ -1951,7 +1962,7 @@ var CanvasExtraState = (function() {
 
 const Encodings = {
   get ExpertEncoding() {
-    return shadow(this, "ExpertEncoding", [
+    return shadow(this, "ExpertEncoding", [ ,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
       "space","exclamsmall","Hungarumlautsmall",,"dollaroldstyle","dollarsuperior",
       "ampersandsmall","Acutesmall","parenleftsuperior","parenrightsuperior",
       "twodotenleader","onedotenleader","comma","hyphen","period","fraction",
@@ -1986,7 +1997,7 @@ const Encodings = {
     ]);
   },
   get MacExpertEncoding() {
-    return shadow(this, "MacExpertEncoding", [
+    return shadow(this, "MacExpertEncoding", [ ,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
       "space","exclamsmall","Hungarumlautsmall","centoldstyle","dollaroldstyle",
       "dollarsuperior","ampersandsmall","Acutesmall","parenleftsuperior",
       "parenrightsuperior","twodotenleader","onedotenleader","comma","hyphen","period",
@@ -2020,7 +2031,7 @@ const Encodings = {
     ]);
   },
   get MacRomanEncoding() {
-    return shadow(this, "MacRomanEncoding", [
+    return shadow(this, "MacRomanEncoding", [ ,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
       "space","exclam","quotedbl","numbersign","dollar","percent","ampersand",
       "quotesingle","parenleft","parenright","asterisk","plus","comma","hyphen",
       "period","slash","zero","one","two","three","four","five","six","seven","eight",
@@ -2050,7 +2061,7 @@ const Encodings = {
     ]);
   },
   get StandardEncoding() {
-    return shadow(this, "StandardEncoding", [
+    return shadow(this, "StandardEncoding", [ ,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
       "space","exclam","quotedbl","numbersign","dollar","percent","ampersand",
       "quoteright","parenleft","parenright","asterisk","plus","comma","hyphen","period",
       "slash","zero","one","two","three","four","five","six","seven","eight","nine",
@@ -2070,7 +2081,7 @@ const Encodings = {
     ]);
   },
   get WinAnsiEncoding() {
-    return shadow(this, "WinAnsiEncoding", [
+    return shadow(this, "WinAnsiEncoding", [ ,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
       "space","exclam","quotedbl","numbersign","dollar","percent","ampersand",
       "quotesingle","parenleft","parenright","asterisk","plus","comma","hyphen",
       "period","slash","zero","one","two","three","four","five","six","seven","eight",
@@ -2101,7 +2112,7 @@ const Encodings = {
     ]);
   },
   get zapfDingbatsEncoding() {
-    return shadow(this, "zapfDingbatsEncoding", [
+    return shadow(this, "zapfDingbatsEncoding", [ ,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
       "space","a1","a2","a202","a3","a4","a5","a119","a118","a117","a11","a12","a13",
       "a14","a15","a16","a105","a17","a18","a19","a20","a21","a22","a23","a24","a25",
       "a26","a27","a28","a6","a7","a8","a9","a10","a29","a30","a31","a32","a33","a34",
@@ -2247,12 +2258,19 @@ var CanvasGraphics = (function() {
                 error("FontFile not found for font: " + fontName);
             fontFile = xref.fetchIfRef(fontFile);
 
-            // Generate the custom cmap of the font if needed
+            // Fonts with an embedded cmap but without any assignment in
+            // it are not yet supported, so ask the fonts loader to ignore
+            // them to not pay a stupid one sec latence.
+            var ignoreFont = true;
+
             var encodingMap = {};
+            var charset = [];
             if (fontDict.has("Encoding")) {
+                ignoreFont = false;
+
                 var encoding = xref.fetchIfRef(fontDict.get("Encoding"));
                 if (IsDict(encoding)) {
-                    // Build an map between codes and glyphs
+                    // Build a map between codes and glyphs
                     var differences = encoding.get("Differences");
                     var index = 0;
                     for (var j = 0; j < differences.length; j++) {
@@ -2262,26 +2280,96 @@ var CanvasGraphics = (function() {
 
                     // Get the font charset if any
                     var charset = descriptor.get("CharSet");
-                    if (charset) {
+                    if (charset)
                         assertWellFormed(IsString(charset), "invalid charset");
 
-                        charset = charset.split("/");
-                    }
+                    charset = charset.split("/");
                 } else if (IsName(encoding)) {
                     var encoding = Encodings[encoding.name];
                     if (!encoding)
                         error("Unknown font encoding");
 
-                    var widths = xref.fetchIfRef(fontDict.get("Widths"));
+                    var index = 0;
+                    for (var j = 0; j < encoding.length; j++) {
+                        encodingMap[index++] = GlyphsUnicode[encoding[j]];
+                    }
+
                     var firstChar = xref.fetchIfRef(fontDict.get("FirstChar"));
+                    var widths = xref.fetchIfRef(fontDict.get("Widths"));
                     assertWellFormed(IsArray(widths) && IsInt(firstChar),
                                      "invalid font Widths or FirstChar");
-                    var charset = [];
+
                     for (var j = 0; j < widths.length; j++) {
                         if (widths[j])
                             charset.push(encoding[j + firstChar]);
                     }
                 }
+            } else if (fontDict.has("ToUnicode")) {
+                var cmapObj = xref.fetchIfRef(fontDict.get("ToUnicode"));
+                if (IsName(cmapObj)) {
+                    error("ToUnicode file cmap translation not implemented");
+                } else if (IsStream(cmapObj)) {
+                    var encoding = Encodings["WinAnsiEncoding"];
+                    var firstChar = xref.fetchIfRef(fontDict.get("FirstChar"));
+                    for (var i = firstChar; i < encoding.length; i++)
+                        encodingMap[i] = new Name(encoding[i]);
+
+                    var tokens = [];
+                    var token = "";
+
+                    var buffer = cmapObj.ensureBuffer ? cmapObj.ensureBuffer() : cmapObj;
+                    var cmap = cmapObj.getBytes(buffer.byteLength);
+                    for (var i =0; i < cmap.length; i++) {
+                      var byte = cmap[i];
+                      if (byte == 0x20 || byte == 0x0A || byte == 0x3C || byte == 0x3E) {
+                        switch (token) {
+                          case "useCMap":
+                            error("useCMap is not implemented");
+                            break;
+
+                          case "beginbfrange":
+                            ignoreFont = false;
+                          case "begincodespacerange":
+                            token = "";
+                            tokens = [];
+                            break;
+
+                          case "endcodespacerange":
+                            TODO("Support CMap ranges");
+                            break;
+
+                          case "endbfrange":
+                            for (var j = 0; j < tokens.length; j+=3) {
+                              var startRange = parseInt("0x" + tokens[j]);
+                              var endRange = parseInt("0x" + tokens[j+1]);
+                              var code = parseInt("0x" + tokens[j+2]);
+
+                              for (var k = startRange; k <= endRange; k++) {
+                                encodingMap[k] = GlyphsUnicode[encoding[code]];
+                                charset.push(encoding[code++]);
+                              }
+                            }
+                            break;
+
+                          case "beginfbchar":
+                          case "endfbchar":
+                            error("fbchar parsing is not implemented");
+                            break;
+
+                          default:
+                            if (token.length) {
+                              tokens.push(token);
+                              token = "";
+                            }
+                            break;
+                        }
+                    } else if (byte == 0x5B || byte == 0x5D) {
+                        error("CMAP list parsing is not implemented");
+                    } else {
+                        token += String.fromCharCode(byte);
+                    }
+                  }
+               }
             }
 
             var subType = fontDict.get("Subtype");
@@ -2293,7 +2381,8 @@ var CanvasGraphics = (function() {
                 type: subType.name,
                 encoding: encodingMap,
                 charset: charset,
-                bbox: bbox
+                bbox: bbox,
+                ignore: ignoreFont
             };
 
             return {
@@ -2553,6 +2642,7 @@ var CanvasGraphics = (function() {
                 fontName = fontDescriptor.get("FontName").name.replace("+", "_");
                 Fonts.active = fontName;
             }
+
             if (!fontName) {
                 // TODO: fontDescriptor is not available, fallback to default font
                 this.current.fontSize = size;
@@ -2590,7 +2680,7 @@ var CanvasGraphics = (function() {
             this.ctx.transform.apply(this.ctx, this.current.textMatrix);
             this.ctx.scale(1, -1);
             this.ctx.translate(0, -2 * this.current.y);
-            this.ctx.fillText(Fonts.chars2Unicode(text), this.current.x, this.current.y);
+            this.ctx.fillText(Fonts.charsToUnicode(text), this.current.x, this.current.y);
             this.current.x += this.ctx.measureText(text).width;
 
             this.ctx.restore();
@@ -2676,7 +2766,7 @@ var CanvasGraphics = (function() {
                         error("Unable to find pattern resource");
 
                     var pattern = xref.fetchIfRef(patternRes.get(patternName.name));
-                   
+
                     const types = [null, this.tilingFill];
                     var typeNum = pattern.dict.get("PatternType");
                     var patternFn = types[typeNum];
@@ -2736,11 +2826,11 @@ var CanvasGraphics = (function() {
             var topLeft = applyMatrix([x0,y0], matrix);
             // we want the canvas to be as large as the step size
             var botRight = applyMatrix([x0 + xstep, y0 + ystep], matrix);
-            
+
             var tmpCanvas = document.createElement("canvas");
             tmpCanvas.width = Math.ceil(botRight[0] - topLeft[0]);
             tmpCanvas.height = Math.ceil(botRight[1] - topLeft[1]);
-          
+
             // set the new canvas element context as the graphics context
             var tmpCtx = tmpCanvas.getContext("2d");
             var savedCtx = ctx;
@@ -2756,9 +2846,9 @@ var CanvasGraphics = (function() {
 
             // move the top left corner of bounding box to [0,0]
             matrix = multiply(matrix, [1, 0, 0, 1, -topLeft[0], -topLeft[1]]);
-            
+
             this.transform.apply(this, matrix);
-            
+
             if (bbox && IsArray(bbox) && 4 == bbox.length) {
                 this.rectangle.apply(this, bbox);
                 this.clip();
@@ -2770,7 +2860,7 @@ var CanvasGraphics = (function() {
             if (!pattern.code)
                 pattern.code = this.compile(pattern, xref, res, []);
             this.execute(pattern.code, xref, res);
-           
+
             this.ctx = savedCtx;
             this.restore();
 
@@ -2864,19 +2954,19 @@ var CanvasGraphics = (function() {
             var fn = new PDFFunction(this.xref, fnObj);
 
             var gradient = this.ctx.createLinearGradient(x0, y0, x1, y1);
-            
+
             // 10 samples seems good enough for now, but probably won't work
             // if there are sharp color changes. Ideally, we would implement
             // the spec faithfully and add lossless optimizations.
             var step = (t1 - t0) / 10;
-            
+
             for (var i = t0; i <= t1; i += step) {
                 var c = fn.func([i]);
                 gradient.addColorStop(i, this.makeCssRgb.apply(this, c));
             }
 
             this.ctx.fillStyle = gradient;
-            
+
             // HACK to draw the gradient onto an infinite rectangle.
             // PDF gradients are drawn across the entire image while
             // Canvas only allows gradients to be drawn in a rectangle
@@ -2961,9 +3051,8 @@ var CanvasGraphics = (function() {
 
             if (w < 1 || h < 1)
                 error("Invalid image width or height");
-            
-            var ctx = this.ctx;
 
+            var ctx = this.ctx;
             // scale the image to the unit square
             ctx.scale(1/w, -1/h);
 
