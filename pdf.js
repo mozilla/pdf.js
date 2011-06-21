@@ -766,16 +766,38 @@ var Ascii85Stream = (function() {
             return this.buffer[this.pos++];
         },
         getBytes: function(n) {
-            var i, bytes;
-            bytes = new Uint8Array(n);
-            for (i = 0; i < n; ++i) {
-              if (this.pos >= this.bufferLength)
-                this.readBlock();
-              if (this.eof)
-                break;
-              bytes[i] = this.buffer[this.pos++];
+            if (n) {
+                var i, bytes;
+                bytes = new Uint8Array(n);
+                for (i = 0; i < n; ++i) {
+                    if (this.pos >= this.bufferLength)
+                        this.readBlock();
+                    if (this.eof)
+                        break;
+                    bytes[i] = this.buffer[this.pos++];
+                }
+                return bytes;
+            } else {
+                var length = 0;
+                var size = 1 << 8;
+                var bytes = new Uint8Array(size);
+                while (true) {
+                    if (this.pos >= this.bufferLength)
+                        this.readBlock();
+                    if (this.eof)
+                        break;
+                    if (length == size) {
+                        var oldSize = size;
+                        size <<= 1;
+                        var oldBytes = bytes;
+                        bytes = new Uint8Array(size);
+                        for (var i = 0; i < oldSize; ++i)
+                            bytes[i] = oldBytes[i];
+                    }
+                    bytes[length++] = this.buffer[this.pos++];
+                }
+                return bytes.subarray(0, length);
             }
-            return bytes;
         },
         getChar : function() {
             return String.fromCharCode(this.getByte());
@@ -1441,8 +1463,8 @@ var Parser = (function() {
             if (IsArray(filter)) {
                 var filterArray = filter;
                 var paramsArray = params;
-                for (var i = 0, ii = filter.length; i < ii; ++i) {
-                    filter = filter[i];
+                for (var i = 0, ii = filterArray.length; i < ii; ++i) {
+                    filter = filterArray[i];
                     if (!IsName(filter))
                         error("Bad filter name");
                     else {
