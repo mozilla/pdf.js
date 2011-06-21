@@ -42,11 +42,17 @@ function CanvasProxy(width, height) {
         "stroke",
         "clip",
         "measureText",
-        "isPointInPath"
+        "isPointInPath",
+
+        "$setCurrentX",
+        "$addCurrentX",
+        "$saveCurrentX",
+        "$restoreCurrentX",
+        "$showText"
     ];
     function buildFuncCall(name) {
         return function() {
-            console.log("funcCall", name)
+            // console.log("funcCall", name)
             stack.push([name, Array.prototype.slice.call(arguments)]);
         }
     }
@@ -103,6 +109,8 @@ function CanvasProxy(width, height) {
 }
 
 CanvasProxy.prototype.flush = function() {
+    // postMessage("log");
+    // postMessage(JSON.stringify([this.$stack.length]));
     postMessage("canvas_proxy_stack");
     postMessage(JSON.stringify(this.$stack));
     this.$stack.length = 0;

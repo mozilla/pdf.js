@@ -11,11 +11,63 @@ var myWorker = new Worker('worker.js');
 const WAIT = 0;
 const CANVAS_PROXY_STACK = 1;
 const LOG = 2;
+const FONT = 3;
+
+var currentX = 0;
+var currentXStack = [];
+var special = {
+    "$setCurrentX": function(value) {
+        currentX = value;
+    },
+
+    "$addCurrentX": function(value) {
+        currentX += value;
+    },
+
+    "$saveCurrentX": function() {
+        currentXStack.push(currentX);
+    },
+
+    "$restoreCurrentX": function() {
+        currentX = currentXStack.pop();
+    },
+
+    "$showText": function(y, text) {
+        console.log(text, currentX, y, this.measureText(text).width);
+
+        this.translate(currentX, -1 * y);
+        this.fillText(text, 0, 0);
+        currentX += this.measureText(text).width;
+    }
+}
+
+function renderProxyCanvas(stack) {
+    // for (var i = 0; i < stack.length; i++) {
+    for (var i = 0; i < 1000; i++) {
+        var opp = stack[i];
+        if (opp[0] == "$") {
+            // console.log("set property", opp[1], opp[2]);
+            if (opp[1] == "font") {
+                ctx[opp[1]] = opp[2];
+                // console.log("font", opp[2]);
+            } else {
+                ctx[opp[1]] = opp[2];
+            }
+
+        } else if (opp[0] in special) {
+            // console.log("sepcial", opp[0], opp[1])
+            special[opp[0]].apply(ctx, opp[1]);
+        } else {
+            // console.log("execute", opp[0], opp[1]);
+            ctx[opp[0]].apply(ctx, opp[1]);
+        }
+    }
+}
 
 var onMessageState = WAIT;
 myWorker.onmessage = function(event) {
     var data = event.data;
-    console.log("onMessageRaw", data);
+    // console.log("onMessageRaw", data);
     switch (onMessageState) {
         case WAIT:
             if (typeof data != "string") {
@@ -28,9 +80,29 @@ myWorker.onmessage = function(event) {
                 case "canvas_proxy_stack":
                     onMessageState = CANVAS_PROXY_STACK;
                     return;
+                case "font":
+                    onMessageState = FONT;
+                    return;
                 default:
                     throw "unkown state: " + data
             }
+            break;
+
+        case FONT:
+            data = JSON.parse(data);
+            var base64 = window.btoa(data.str);
+
+            // Add the @font-face rule to the document
+            var url = "url(data:" + data.mimetype + ";base64," + base64 + ");";
+            var rule = "@font-face { font-family:'" + data.fontName + "';src:" + url + "}";
+            var styleSheet = document.styleSheets[0];
+
+            // ONCE you uncomment this, there is no font painted at all :(
+            // styleSheet.insertRule(rule, styleSheet.length);
+
+            console.log("added font", data.fontName);
+            // console.log(rule);
+            onMessageState = WAIT;
             break;
 
         case LOG:
@@ -40,17 +112,14 @@ myWorker.onmessage = function(event) {
 
         case CANVAS_PROXY_STACK:
             var stack = JSON.parse(data);
-            for (var i = 0; i < stack.length; i++) {
-                var opp = stack[i];
-                if (opp[0] == "$") {
-                    console.log("set property", opp[1], opp[2]);
-                    ctx[opp[1]] = opp[2];
-                } else {
-                    console.log("execute", opp[0], opp[1]);
-                    ctx[opp[0]].apply(ctx, opp[1]);
-                }
-            }
+            console.log("canvas stack", stack.length)
+            // console.log(stack.length);
             onMessageState = WAIT;
+            // return;
+
+            setTimeout(function() {
+                renderProxyCanvas(stack);
+            }, 2000);
             break;
     }
 }
@@ -75,6 +144,10 @@ function open(url) {
 
 window.onload = function() {
     var ctx = window.ctx = document.getElementById("canvas").getContext("2d");
+    ctx.save();
+    ctx.fillStyle = "rgb(255, 255, 255)";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.restore();
     // for (var name in ctx) {
     //     if (!(ctx[name] instanceof Function)) {
     //         console.log('"' + name + '": "' + ctx[name] + '",');

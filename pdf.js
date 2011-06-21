@@ -2674,12 +2674,18 @@ var CanvasGraphics = (function() {
         },
         save: function() {
             this.ctx.save();
+            if (this.ctx.$saveCurrentX) {
+                this.ctx.$saveCurrentX();
+            }
             this.stateStack.push(this.current);
             this.current = new CanvasExtraState();
         },
         restore: function() {
             var prev = this.stateStack.pop();
             if (prev) {
+                if (this.ctx.$restoreCurrentX) {
+                    this.ctx.$restoreCurrentX();
+                }
                 this.current = prev;
                 this.ctx.restore();
             }
@@ -2760,6 +2766,9 @@ var CanvasGraphics = (function() {
         // Text
         beginText: function() {
             this.current.textMatrix = IDENTITY_MATRIX;
+            if (this.ctx.$setCurrentX) {
+                this.ctx.$setCurrentX(0)
+            }
             this.current.x = this.current.lineX = 0;
             this.current.y = this.current.lineY = 0;
         },
@@ -2814,6 +2823,9 @@ var CanvasGraphics = (function() {
         moveText: function (x, y) {
             this.current.x = this.current.lineX += x;
             this.current.y = this.current.lineY += y;
+            if (this.ctx.$setCurrentX) {
+                this.ctx.$setCurrentX(this.current.x)
+            }
         },
         setLeadingMoveText: function(x, y) {
             this.setLeading(-y);
@@ -2821,6 +2833,10 @@ var CanvasGraphics = (function() {
         },
         setTextMatrix: function(a, b, c, d, e, f) {
             this.current.textMatrix = [ a, b, c, d, e, f ];
+
+            if (this.ctx.$setCurrentX) {
+                this.$setCurrentX(0)
+            }
             this.current.x = this.current.lineX = 0;
             this.current.y = this.current.lineY = 0;
         },
@@ -2831,11 +2847,15 @@ var CanvasGraphics = (function() {
             this.ctx.save();
             this.ctx.transform.apply(this.ctx, this.current.textMatrix);
             this.ctx.scale(1, -1);
-            this.ctx.translate(0, -2 * this.current.y);
 
-            text = Fonts.charsToUnicode(text);
-            this.ctx.fillText(text, this.current.x, this.current.y);
-            this.current.x += this.ctx.measureText(text).width;
+            if (this.ctx.$showText) {
+                this.ctx.$showText(this.current.y, Fonts.charsToUnicode(text));
+            } else {
+                console.log(text, this.current.x);
+                text = Fonts.charsToUnicode(text);
+                this.ctx.fillText(text, 0, 0);
+                this.current.x += this.ctx.measureText(text).width;
+            }
 
             this.ctx.restore();
         },
@@ -2843,7 +2863,11 @@ var CanvasGraphics = (function() {
             for (var i = 0; i < arr.length; ++i) {
                 var e = arr[i];
                 if (IsNum(e)) {
-                    this.current.x -= e * 0.001 * this.current.fontSize;
+                    if (this.ctx.$addCurrentX) {
+                        this.ctx.$addCurrentX(-e * 0.001 * this.current.fontSize)
+                    } else {
+                        this.current.x -= e * 0.001 * this.current.fontSize;
+                    }
                 } else if (IsString(e)) {
                     this.showText(e);
                 } else {
