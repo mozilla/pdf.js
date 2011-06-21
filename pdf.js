@@ -542,6 +542,9 @@ var JpegStream = (function() {
     constructor.prototype = {
         getImage: function() {
             return this.domImage;
+        },
+        getChar: function() {
+            error("internal error: getChar is not valid on JpegStream");
         }
     };
 
