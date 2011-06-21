@@ -2277,7 +2277,10 @@ var CanvasGraphics = (function() {
         this.pendingClip = null;
         this.res = null;
         this.xobjs = null;
-        this.map = {
+    }
+
+    constructor.prototype = {
+        map: {
             // Graphics state
             w: "setLineWidth",
             J: "setLineCap",
@@ -2634,7 +2637,9 @@ var CanvasGraphics = (function() {
             }
 
             var fn = Function("objpool", src);
-            return function (gfx) { fn.call(gfx, objpool); };
+            var ret = function (gfx) { fn.call(gfx, objpool); };
+            ret.src = src;
+            return ret;
         },
 
         endDrawing: function() {
@@ -3041,6 +3046,7 @@ var CanvasGraphics = (function() {
         shadingFill: function(entryRef) {
             var xref = this.xref;
             var res = this.res;
+
             var shadingRes = xref.fetchIfRef(res.get("Shading"));
             if (!shadingRes)
                 error("No shading resource found");
@@ -3468,6 +3474,7 @@ var ColorSpace = (function() {
                 break;
             case "ICCBased":
                 var dict = stream.dict;
+
                 this.stream = stream;
                 this.dict = dict;
                 this.numComps = dict.get("N");
@@ -3574,6 +3581,7 @@ var PDFFunction = (function() {
                     v = encode[i2] + ((v - domain[i2]) *
                                       (encode[i2 + 1] - encode[i2]) /
                                       (domain[i2 + 1] - domain[i2]));
+
                     // clip to the size
                     args[i] = clip(v, 0, size[i] - 1);
                 }
@@ -3601,6 +3609,7 @@ var PDFFunction = (function() {
                     // decode
                     v = decode[i2] + (v * (decode[i2 + 1] - decode[i2]) /
                                       ((1 << bps) - 1));
+
                     // clip to the domain
                     output.push(clip(v, range[i2], range[i2 + 1]));
                 }

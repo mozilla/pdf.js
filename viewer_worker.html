@@ -1,0 +1,110 @@
+<html>
+    <head>
+        <title>Simple pdf.js page viewer worker</title>
+<script>
+var myWorker = new Worker('worker.js');
+
+// var array = new Uint8Array(2);
+// array[0] = 1;
+// array[1] = 300;
+//
+const WAIT = 0;
+const CANVAS_PROXY_STACK = 1;
+const LOG = 2;
+
+var onMessageState = WAIT;
+myWorker.onmessage = function(event) {
+    var data = event.data;
+    console.log("onMessageRaw", data);
+    switch (onMessageState) {
+        case WAIT:
+            if (typeof data != "string") {
+                throw "expecting to get an string";
+            }
+            switch (data) {
+                case "log":
+                    onMessageState = LOG;
+                    return;
+                case "canvas_proxy_stack":
+                    onMessageState = CANVAS_PROXY_STACK;
+                    return;
+                default:
+                    throw "unkown state: " + data
+            }
+            break;
+
+        case LOG:
+            console.log.apply(console, JSON.parse(data));
+            onMessageState = WAIT;
+            break;
+
+        case CANVAS_PROXY_STACK:
+            var stack = JSON.parse(data);
+            for (var i = 0; i < stack.length; i++) {
+                var opp = stack[i];
+                if (opp[0] == "$") {
+                    console.log("set property", opp[1], opp[2]);
+                    ctx[opp[1]] = opp[2];
+                } else {
+                    console.log("execute", opp[0], opp[1]);
+                    ctx[opp[0]].apply(ctx, opp[1]);
+                }
+            }
+            onMessageState = WAIT;
+            break;
+    }
+}
+//
+// myWorker.postMessage(array);
+
+function open(url) {
+    document.title = url;
+    var req = new XMLHttpRequest();
+    req.open("GET", url);
+    req.mozResponseType = req.responseType = "arraybuffer";
+    req.expected = (document.URL.indexOf("file:") == 0) ? 0 : 200;
+    req.onreadystatechange = function() {
+      if (req.readyState == 4 && req.status == req.expected) {
+        var data = req.mozResponseArrayBuffer || req.mozResponse ||
+                   req.responseArrayBuffer || req.response;
+        myWorker.postMessage(data);
+      }
+    };
+    req.send(null);
+}
+
+window.onload = function() {
+    var ctx = window.ctx = document.getElementById("canvas").getContext("2d");
+    // for (var name in ctx) {
+    //     if (!(ctx[name] instanceof Function)) {
+    //         console.log('"' + name + '": "' + ctx[name] + '",');
+    //     }
+    // }
+    open("compressed.tracemonkey-pldi-09.pdf");
+}
+</script>
+        <link rel="stylesheet" href="viewer.css"></link>
+  </head>
+
+  <body>
+    <div id="controls">
+    <input type="file" style="float: right; margin: auto 32px;" onChange="load(this.value.toString());"></input>
+    <!-- This only opens supported PDFs from the source path...
+      -- Can we use JSONP to overcome the same-origin restrictions? -->
+      <button onclick="prevPage();">Previous</button>
+      <button onclick="nextPage();">Next</button>
+      <input type="text" id="pageNumber" onchange="gotoPage(this.value);"
+             value="1" size="4"></input>
+      <span id="numPages">--</span>
+      <span id="info"></span>
+    </div>
+
+    <div id="viewer">
+      <!-- Canvas dimensions must be specified in CSS pixels.  CSS pixels
+           are always 96 dpi.  816x1056 is 8.5x11in at 96dpi. -->
+      <!-- We're rendering here at 1.5x scale. -->
+      <canvas id="canvas" width="1224" height="1584"></canvas>
+    </div>
+  </body>
+</html>
+
