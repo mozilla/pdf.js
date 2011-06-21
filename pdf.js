@@ -2199,8 +2199,13 @@ var CanvasGraphics = (function() {
                     var tokens = [];
                     var token = "";
 
-                    var buffer = cmapObj.ensureBuffer ? cmapObj.ensureBuffer() : cmapObj;
-                    var cmap = cmapObj.getBytes(buffer.byteLength);
+                    var length = cmapObj.length;
+                    if (cmapObj instanceof FlateStream) {
+                      cmapObj.readBlock();
+                      length = cmapObj.bufferLength;
+                    }
+
+                    var cmap = cmapObj.getBytes(length);
                     for (var i =0; i < cmap.length; i++) {
                       var byte = cmap[i];
                       if (byte == 0x20 || byte == 0x0A || byte == 0x3C || byte == 0x3E) {
