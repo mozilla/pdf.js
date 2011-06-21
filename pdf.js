@@ -540,10 +540,6 @@ var JpegStream = (function() {
     }
 
     constructor.prototype = {
-        // Needed to pass IsStream test
-        getChar: function() {
-        },
-
         getImage: function() {
             return this.domImage;
         },
