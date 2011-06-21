@@ -65,45 +65,47 @@ var Stream = (function() {
         this.dict = dict;
     }
 
+    // required methods for a stream. if a particular stream does not
+    // implement these, an error should be thrown
     constructor.prototype = {
         get length() {
             return this.end - this.start;
         },
-        getByte: function() {
-            var bytes = this.bytes;
+        lookByte: function() {
             if (this.pos >= this.end)
-                return -1;
-            return bytes[this.pos++];
+                return;
+            return this.bytes[this.pos];
+        },
+        getByte: function() {
+            if (this.pos >= this.end)
+                return;
+            return this.bytes[this.pos++];
         },
         // returns subarray of original buffer
         // should only be read
         getBytes: function(length) {
             var bytes = this.bytes;
             var pos = this.pos;
+            var strEnd = this.end;
+
+            if (!length)
+                return bytes.subarray(pos, strEnd);
 
             var end = pos + length;
-            var strEnd = this.end;
-            if (!end || end > strEnd)
+            if (end > strEnd)
                 end = strEnd;
 
             this.pos = end;
             return bytes.subarray(pos, end);
         },
         lookChar: function() {
-            var bytes = this.bytes;
-            if (this.pos >= this.end)
-                return;
-            return String.fromCharCode(bytes[this.pos]);
+            return String.fromCharCode(this.lookByte());
         },
         getChar: function() {
-            var ch = this.lookChar();
-            if (!ch)
-                return ch;
-            this.pos++;
-            return ch;
+            return String.fromCharCode(this.getByte());
         },
         skip: function(n) {
-            if (!n && !IsNum(n))
+            if (!n)
                 n = 1;
             this.pos += n;
         },
