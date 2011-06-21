@@ -554,12 +554,12 @@ var JpegStream = (function() {
 var PredictorStream = (function() {
     function constructor(stream, params) {
         var predictor = this.predictor = params.get("Predictor") || 1;
-    
+
         if (predictor <= 1)
             return stream; // no prediction
         if (predictor !== 2 && (predictor < 10 || predictor > 15))
             error("Unsupported predictor");
-        
+
         if (predictor === 2)
             this.readRow = this.readRowTiff;
         else
@@ -573,7 +573,7 @@ var PredictorStream = (function() {
         var colors = this.colors = params.get("Colors") || 1;
         var bits = this.bits = params.get("BitsPerComponent") || 8;
         var columns = this.columns = params.get("Columns") || 1;
-        
+
         var pixBytes = this.pixBytes = (colors * bits + 7) >> 3;
         // add an extra pixByte to represent the pixel left of column 0
         var rowBytes = this.rowBytes = ((columns * colors * bits + 7) >> 3) + pixBytes;
@@ -783,16 +783,6 @@ var Dict = (function() {
         },
         get2: function(key1, key2) {
             return this.get(key1) || this.get(key2);
-        },
-        getOrInherit: function(key, xref) {
-            var obj = this.map[key];
-            var dict = this;
-            while (!obj && dict) {
-                dict = xref.fetchIfRef(dict.get("Parent"));
-                if (dict)
-                    obj = dict.get(key);
-            }
-            return obj;
         },
         has: function(key) {
             return key in this.map;
@@ -1116,7 +1106,7 @@ var Lexer = (function() {
                     break;
                 }
             }
-            
+
             // start reading token
             switch (ch) {
             case '0': case '1': case '2': case '3': case '4':
@@ -1290,7 +1280,7 @@ var Parser = (function() {
                 }
                 return str;
             }
-	
+
             // simple object
             var obj = this.buf1;
             this.shift();
@@ -1303,7 +1293,7 @@ var Parser = (function() {
             // get stream start position
             lexer.skipToNextLine();
             var pos = stream.pos;
-            
+
             // get length
             var length = dict.get("Length");
             var xref = this.xref;
@@ -1373,7 +1363,7 @@ var Parser = (function() {
 
     return constructor;
 })();
-    
+
 var Linearization = (function() {
     function constructor(stream) {
         this.parser = new Parser(new Lexer(stream), false);
@@ -1707,15 +1697,28 @@ var Page = (function() {
     }
 
     constructor.prototype = {
+        getPageProp: function(key) {
+            return this.pageDict.get(key);
+        },
+        inheritPageProp: function(key) {
+            var dict = this.pageDict;
+            var obj = dict.get(key);
+            while (!obj) {
+                dict = this.xref.fetchIfRef(dict.get("Parent"));
+                if (!dict)
+                    break;
+                obj = dict.get(key);
+            }
+            return obj;
+        },
         get content() {
-            return shadow(this, "content", this.pageDict.get("Contents"));
+            return shadow(this, "content", this.getPageProp("Contents"));
         },
         get resources() {
-            return shadow(this, "resources", 
-                          this.pageDict.getOrInherit("Resources", this.xref));
+            return shadow(this, "resources", this.inheritPageProp("Resources"));
         },
         get mediaBox() {
-            var obj = this.pageDict.getOrInherit("MediaBox", this.xref);
+            var obj = this.inheritPageProp("MediaBox");
             return shadow(this, "mediaBox", ((IsArray(obj) && obj.length == 4)
                                              ? obj
                                              : null));
@@ -1804,7 +1807,7 @@ var Catalog = (function() {
                     pageCache.push(new Page(this.xref, pageCache.length, obj));
                 } else { // must be a child page dictionary
                     assertWellFormed(IsDict(obj),
-                                     "page dictionary kid reference points to wrong type of object");           
+                                     "page dictionary kid reference points to wrong type of object");
                     this.traverseKids(obj);
                 }
             }
@@ -2890,7 +2893,6 @@ var CanvasGraphics = (function() {
         shadingFill: function(entryRef) {
             var xref = this.xref;
             var res = this.res;
-            
             var shadingRes = xref.fetchIfRef(res.get("Shading"));
             if (!shadingRes)
                 error("No shading resource found");
@@ -2915,12 +2917,14 @@ var CanvasGraphics = (function() {
             if (background)
                 TODO("handle background colors");
 
-            const types = [null, this.fillFunctionShading,
-                  this.fillAxialShading, this.fillRadialShading];
-            
+            const types = [null,
+                           this.fillFunctionShading,
+                           this.fillAxialShading,
+                           this.fillRadialShading];
+
             var typeNum = shading.get("ShadingType");
             var fillFn = types[typeNum];
-            if (!fillFn) 
+            if (!fillFn)
                 error("Unknown type of shading");
             fillFn.apply(this, [shading]);
 
@@ -2931,7 +2935,7 @@ var CanvasGraphics = (function() {
             var coordsArr = sh.get("Coords");
             var x0 = coordsArr[0], y0 = coordsArr[1],
                 x1 = coordsArr[2], y1 = coordsArr[3];
-            
+
             var t0 = 0.0, t1 = 1.0;
             if (sh.has("Domain")) {
                 var domainArr = sh.get("Domain");
@@ -2990,12 +2994,12 @@ var CanvasGraphics = (function() {
                 return;
             xobj = this.xref.fetchIfRef(xobj);
             assertWellFormed(IsStream(xobj), "XObject should be a stream");
-            
+
             var oc = xobj.dict.get("OC");
             if (oc) {
                 TODO("oc for xobject");
             }
-            
+
             var opi = xobj.dict.get("OPI");
             if (opi) {
                 TODO("opi for xobject");
@@ -3097,15 +3101,14 @@ var CanvasGraphics = (function() {
             // actual image
             var csStream = dict.get2("ColorSpace", "CS");
             csStream = xref.fetchIfRef(csStream);
-            if (IsName(csStream) && inline) 
+            if (IsName(csStream) && inline)
                 csStream = colorSpaces.get(csStream);
-            
-            var colorSpace = new ColorSpace(xref, csStream);
 
+            var colorSpace = new ColorSpace(xref, csStream);
             var decode = dict.get2("Decode", "D");
 
             TODO("create color map");
-            
+
             var mask = image.dict.get("Mask");
             mask = xref.fetchIfRef(mask);
             var smask = image.dict.get("SMask");
@@ -3130,7 +3133,7 @@ var CanvasGraphics = (function() {
                 var maskBPC = maskDict.get2("BitsPerComponent", "BPC");
                 if (!maskBPC)
                     error("Invalid image mask bpc");
-            
+
                 var maskCsStream = maskDict.get2("ColorSpace", "CS");
                 maskCsStream = xref.fetchIfRef(maskCsStream);
                 var maskColorSpace = new ColorSpace(xref, maskCsStream);
@@ -3140,7 +3143,7 @@ var CanvasGraphics = (function() {
                 var maskDecode = maskDict.get2("Decode", "D");
                 if (maskDecode)
                     TODO("Handle mask decode");
-                // handle matte object 
+                // handle matte object
             }
 
             var tmpCanvas = document.createElement("canvas");
@@ -3149,21 +3152,21 @@ var CanvasGraphics = (function() {
             var tmpCtx = tmpCanvas.getContext("2d");
             var imgData = tmpCtx.getImageData(0, 0, w, h);
             var pixels = imgData.data;
-            
+
             if (bitsPerComponent != 8)
-                error("unhandled number of bits per component"); 
-            
+                error("unhandled number of bits per component");
+
             if (smask) {
                 if (maskColorSpace.numComps != 1)
                     error("Incorrect number of components in smask");
-                
+
                 var numComps = colorSpace.numComps;
                 var imgArray = image.getBytes(numComps * w * h);
                 var imgIdx = 0;
 
                 var smArray = smask.getBytes(w * h);
                 var smIdx = 0;
-               
+
                 var length = 4 * w * h;
                 switch (numComps) {
                 case 1:
@@ -3190,7 +3193,7 @@ var CanvasGraphics = (function() {
                 var numComps = colorSpace.numComps;
                 var imgArray = image.getBytes(numComps * w * h);
                 var imgIdx = 0;
-               
+
                 var length = 4 * w * h;
                 switch (numComps) {
                 case 1:
@@ -3300,7 +3303,7 @@ var ColorSpace = (function() {
         } else if (IsArray(cs)) {
             var mode = cs[0].name;
             this.mode = mode;
-            
+
             var stream = cs[1];
             stream = xref.fetchIfRef(stream);
 
@@ -3313,7 +3316,6 @@ var ColorSpace = (function() {
                 break;
             case "ICCBased":
                 var dict = stream.dict;
-                
                 this.stream = stream;
                 this.dict = dict;
                 this.numComps = dict.get("N");
@@ -3325,7 +3327,7 @@ var ColorSpace = (function() {
             error("unrecognized color space object");
         }
     };
-    
+
     constructor.prototype = {
     };
 
@@ -3338,13 +3340,15 @@ var PDFFunction = (function() {
         if (!dict)
            dict = fn;
 
-        const types = [this.constructSampled, null,
-                this.constructInterpolated, this.constructStiched,
-                this.constructPostScript];
-        
+        const types = [this.constructSampled,
+                       null,
+                       this.constructInterpolated,
+                       this.constructStiched,
+                       this.constructPostScript];
+
         var typeNum = dict.get("FunctionType");
         var typeFn = types[typeNum];
-        if (!typeFn) 
+        if (!typeFn)
             error("Unknown type of function");
 
         typeFn.apply(this, [fn, dict]);
@@ -3357,7 +3361,7 @@ var PDFFunction = (function() {
 
             if (!domain || !range)
                 error("No domain or range");
-        
+
             var inputSize = domain.length / 2;
             var outputSize = range.length / 2;
 
@@ -3371,7 +3375,7 @@ var PDFFunction = (function() {
                 order = 1;
             if (order !== 1)
                 error ("No support for cubic spline interpolation");
-            
+
             var encode = dict.get("Encode");
             if (!encode) {
                 encode = [];
@@ -3400,15 +3404,14 @@ var PDFFunction = (function() {
 
                 for (var i = 0; i < inputSize; i++) {
                     var i2 = i * 2;
-                    
+
                     // clip to the domain
                     var v = clip(args[i], domain[i2], domain[i2 + 1]);
 
                     // encode
-                    v = encode[i2] + ((v - domain[i2]) * 
-                            (encode[i2 + 1] - encode[i2]) / 
-                            (domain[i2 + 1] - domain[i2]));
-                    
+                    v = encode[i2] + ((v - domain[i2]) *
+                                      (encode[i2 + 1] - encode[i2]) /
+                                      (domain[i2 + 1] - domain[i2]));
                     // clip to the size
                     args[i] = clip(v, 0, size[i] - 1);
                 }
@@ -3431,12 +3434,11 @@ var PDFFunction = (function() {
                         var high = samples[ceil + i];
                         var v = low * scale + high * (1 - scale);
                     }
-                    
+
                     var i2 = i * 2;
                     // decode
-                    v = decode[i2] + (v * (decode[i2 + 1] - decode[i2]) / 
-                            ((1 << bps) - 1));
-                    
+                    v = decode[i2] + (v * (decode[i2 + 1] - decode[i2]) /
+                                      ((1 << bps) - 1));
                     // clip to the domain
                     output.push(clip(v, range[i2], range[i2 + 1]));
                 }
@@ -3471,10 +3473,10 @@ var PDFFunction = (function() {
         },
         constructInterpolated: function() {
             error("unhandled type of function");
-        },    
+        },
         constructStiched: function() {
             error("unhandled type of function");
-        },    
+        },
         constructPostScript: function() {
             error("unhandled type of function");
         }
