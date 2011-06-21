@@ -2532,7 +2532,7 @@ var CanvasGraphics = (function() {
             }
 
             this.current.fontSize = size;
-            this.ctx.font = this.current.fontSize +'px "' + fontName + '", Symbol';
+            this.ctx.font = this.current.fontSize +'px "' + fontName + '"';
         },
         setTextRenderingMode: function(mode) {
             TODO("text rendering mode");
@@ -2720,7 +2720,7 @@ var CanvasGraphics = (function() {
             // normalize transform matrix so each step
             // takes up the entire tmpCanvas (need to remove white borders)
             if (matrix[1] === 0 && matrix[2] === 0) {
-               matrix[0] = tmpCanvas.width / xstep;
+                matrix[0] = tmpCanvas.width / xstep;
                 matrix[3] = tmpCanvas.height / ystep;
                 topLeft = applyMatrix([x0,y0], matrix);
             }
