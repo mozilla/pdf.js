@@ -2267,10 +2267,10 @@ var CanvasGraphics = (function() {
 
                     // Get the font charset if any
                     var charset = descriptor.get("CharSet");
-                    if (charset)
+                    if (charset) {
                         assertWellFormed(IsString(charset), "invalid charset");
-
-                    charset = charset.split("/");
+                        charset = charset.split("/");
+                    }
                 } else if (IsName(encoding)) {
                     var encoding = Encodings[encoding.name];
                     if (!encoding)
