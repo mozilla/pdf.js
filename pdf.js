@@ -19,7 +19,6 @@ function warn(msg) {
 }
 
 function error(msg) {
-    console.trace();
     throw new Error(msg);
 }
 
@@ -540,10 +539,9 @@ var JpegStream = (function() {
     }
 
     constructor.prototype = {
-        getByte: function() {
-            // dummy method to pass IsStream test
-            error("shouldnt be called");
-        },
+        getChar: function() {
+                 },
+
         getImage: function() {
             return this.domImage;
         }
@@ -653,7 +651,6 @@ var PredictorStream = (function() {
 
             var predictor = this.stream.getByte();
             var rawBytes = this.stream.getBytes(rowBytes - pixBytes);
-            var i;
 
             switch (predictor) {
             case 0:
@@ -667,7 +664,7 @@ var PredictorStream = (function() {
                     currentRow[i] = (currentRow[i] + rawBytes[j]) & 0xFF;
                 break;
             case 3:
-                for (i = pixBytes, j = 0; i < rowBytes; ++i, ++j)
+                for (var i = pixBytes, j = 0; i < rowBytes; ++i, ++j)
                     currentRow[i] = (((currentRow[i] + currentRow[i - pixBytes])
                                 >> 1) + rawBytes[j]) & 0xFF;
                 break;
@@ -767,9 +764,6 @@ var Name = (function() {
     }
 
     constructor.prototype = {
-        toString: function() {
-                      return this.name;
-                  }
     };
 
     return constructor;
@@ -781,9 +775,6 @@ var Cmd = (function() {
     }
 
     constructor.prototype = {
-        toString: function() {
-                      return this.cmd;
-                  }
     };
 
     return constructor;
@@ -796,23 +787,22 @@ var Dict = (function() {
 
     constructor.prototype = {
         get: function(key) {
-                 return this.map[key];
-             },
-    get2: function(key1, key2) {
-              return this.get(key1) || this.get(key2);
-          },
-    has: function(key) {
-             return key in this.map;
-         },
-    set: function(key, value) {
-             this.map[key] = value;
-         },
-    forEach: function(aCallback) {
-          for (var key in this.map)
-            aCallback(key, this.map[key]);
+            return this.map[key];
+        },
+        get2: function(key1, key2) {
+            return this.get(key1) || this.get(key2);
+        },
+        has: function(key) {
+            return key in this.map;
+        },
+        set: function(key, value) {
+            this.map[key] = value;
+        },
+        forEach: function(aCallback) {
+            for (var key in this.map)
+                aCallback(key, this.map[key]);
         }
     };
-
     return constructor;
 })();
 
@@ -865,7 +855,7 @@ function IsArray(v) {
 }
 
 function IsStream(v) {
-    return typeof v == "object" && "getByte" in v;
+    return typeof v == "object" && "getChar" in v;
 }
 
 function IsRef(v) {
@@ -1364,27 +1354,6 @@ var Parser = (function() {
         },
         makeFilter: function(stream, name, length, params) {
             if (name == "FlateDecode" || name == "Fl") {
-/*                var flateStr = new FlateStream(stream);
-                if (IsDict(params)) {
-                    var predType = params.get("Predictor");
-                    if (predType && predType > 1) {
-                        var colors = params.get("Colors");
-                        if (!colors)
-                            colors = 1;
-                        var bpc = params.get("BitsPerComponent");
-                        if (!bpc)
-                            bpc = 8;
-                        var cols = params.get("Columns");
-                        if (!cols)
-                            cols = 1;
-
-                        log("Predictor being used");
-                        flateStr = new FilterPredictor(flateStr, predType, cols,      
-                                colors, bpc);
-                    }
-                }
-                return flateStr;
-*/              
                 if (params) {
                     return new PredictorStream(new FlateStream(stream), params);
                 }
@@ -3096,8 +3065,8 @@ var CanvasGraphics = (function() {
                 error("unhandled number of bits per component"); 
             
             if (smask) {
-                //if (maskColorSpace.numComps != 1)
-                //    error("Incorrect number of components in smask");
+                if (maskColorSpace.numComps != 1)
+                    error("Incorrect number of components in smask");
                 
                 var numComps = colorSpace.numComps;
                 var imgArray = image.getBytes(numComps * w * h);
