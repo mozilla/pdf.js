@@ -88,7 +88,7 @@ var Fonts = {
  *   type1Font.bind();
  */
 var Font = (function () {
-  var constructor = function(aName, aFile, aProperties) {
+  var constructor = function font_constructor(aName, aFile, aProperties) {
     this.name = aName;
     this.encoding = aProperties.encoding;
 
@@ -833,7 +833,7 @@ var TrueType = function(aName, aFile, aProperties) {
     });
 
     // Tables needs to be written by ascendant alphabetic order
-    tables.sort(function(a, b) {
+    tables.sort(function tables_sort(a, b) {
       return a.tag > b.tag;
     });
 
@@ -1452,7 +1452,7 @@ CFF.prototype = {
       }
     };
 
-    charstrings.sort(function(a, b) {
+    charstrings.sort(function charstrings_sort(a, b) {
       return a.unicode > b.unicode;
     });
     return charstrings;
@@ -1480,7 +1480,7 @@ CFF.prototype = {
     "hvcurveto": 31,
   },
 
-  flattenCharstring: function(aGlyph, aCharstring, aSubrs) {
+  flattenCharstring: function flattenCharstring(aGlyph, aCharstring, aSubrs) {
     var i = 0;
     while (true) {
       var obj = aCharstring[i];
@@ -1584,7 +1584,7 @@ CFF.prototype = {
     error("failing with i = " + i + " in charstring:" + aCharstring + "(" + aCharstring.length + ")");
   },
 
-  wrap: function(aName, aProperties) {
+  wrap: function wrap(aName, aProperties) {
     var charstrings = this.getOrderedCharStrings(aProperties.glyphs);
 
     // Starts the conversion of the Type1 charstrings to Type2
