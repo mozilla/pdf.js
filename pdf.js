@@ -1444,26 +1444,29 @@ var XRef = (function() {
                 for (i = 0; i < n; ++i) {
                     var type = 0, offset = 0, generation = 0;
                     for (j = 0; j < typeFieldWidth; ++j)
-                       type = (type << 8) | stream.getByte();
+                        type = (type << 8) | stream.getByte();
+                    // if type field is absent, its default value = 1
+                    if (typeFieldWidth == 0)
+                        type = 1;
                     for (j = 0; j < offsetFieldWidth; ++j)
-                       offset = (offset << 8) | stream.getByte();
+                        offset = (offset << 8) | stream.getByte();
                     for (j = 0; j < generationFieldWidth; ++j)
-                       generation = (generation << 8) | stream.getByte();
-                    var entry = new Ref(offset, generation);
-                    if (typeFieldWidth > 0) {
-                        switch (type) {
-                        case 0:
-                           entry.free = true;
-                           break;
-                        case 1:
-                           entry.uncompressed = true;
-                           break;
-                        case 2:
-                           break;
-                        default:
-                           error("Invalid XRef entry type");
-                           break;
-                        }
+                        generation = (generation << 8) | stream.getByte();
+                    var entry = {}
+                    entry.offset = offset;
+                    entry.gen = generation;
+                    switch (type) {
+                    case 0:
+                        entry.free = true;
+                        break;
+                    case 1:
+                        entry.uncompressed = true;
+                        break;
+                    case 2:
+                        break;
+                    default:
+                        error("Invalid XRef entry type");
+                        break;
                     }
                     if (!this.entries[first + i])
                         this.entries[first + i] = entry;
