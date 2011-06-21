@@ -40,6 +40,7 @@ var canvas = new CanvasProxy(1224, 1584);
 // canvas.flush();
 log("test");
 
+var pageInterval;
 onmessage = function(event) {
     var data = event.data;
     var pdfDocument = new PDFDoc(new Stream(data));
@@ -59,36 +60,39 @@ onmessage = function(event) {
 
     //
     var fontsReady = true;
-        // Inspect fonts and translate the missing one
-        var count = fonts.length;
-        for (var i = 0; i < count; i++) {
-          var font = fonts[i];
-          if (Fonts[font.name]) {
-            fontsReady = fontsReady && !Fonts[font.name].loading;
-            continue;
-          }
+    // Inspect fonts and translate the missing one
+    var count = fonts.length;
+    for (var i = 0; i < count; i++) {
+      var font = fonts[i];
+      if (Fonts[font.name]) {
+        fontsReady = fontsReady && !Fonts[font.name].loading;
+        continue;
+      }
 
-          new Font(font.name, font.file, font.properties);
-          fontsReady = false;
-        }
+      new Font(font.name, font.file, font.properties);
+      fontsReady = false;
+    }
 
-        function delayLoadFont() {
-          for (var i = 0; i < count; i++) {
-            if (Fonts[font.name].loading)
-              return;
-          }
-          clearInterval(pageInterval);
-          page.display(gfx);
+    // function delayLoadFont() {
+    //   for (var i = 0; i < count; i++) {
+    //     if (Fonts[font.name].loading)
+    //       return;
+    //   }
+    //   clearInterval(pageInterval);
+    //   page.display(gfx);
+    //
+    //   log("flush");
+    //   canvas.flush();
+    // };
 
-          canvas.flush();
-        };
+    // if (fontsReady) {
+    //   delayLoadFont();
+    // } else {
+    //   pageInterval = setInterval(delayLoadFont, 10);
+    // }
 
-        if (fontsReady) {
-          delayLoadFont();
-        } else {
-          pageInterval = setInterval(delayLoadFont, 10);
-        }
-        postMessage(page.code.src);
+    page.display(gfx);
+    canvas.flush();
 }
 
 // function open(url) {
