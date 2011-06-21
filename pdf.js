@@ -539,8 +539,9 @@ var JpegStream = (function() {
     }
 
     constructor.prototype = {
+        // Needed to pass IsStream test
         getChar: function() {
-                 },
+        },
 
         getImage: function() {
             return this.domImage;
@@ -3022,7 +3023,7 @@ var CanvasGraphics = (function() {
             var smask = image.dict.get("SMask");
             smask = xref.fetchIfRef(smask);
 
-            if (smask) {
+            if (IsStream(smask)) {
                 if (inline)
                     error("cannot combine smask and inlining");
 
