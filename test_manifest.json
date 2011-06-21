@@ -1,8 +1,8 @@
 [
-    {  "id": "tracemonkey-==",
+    {  "id": "tracemonkey-eq",
        "file": "tests/tracemonkey.pdf",
        "rounds": 1,
-       "type": "=="
+       "type": "eq"
     },
     {  "id": "tracemonkey-fbf",
        "file": "tests/tracemonkey.pdf",
