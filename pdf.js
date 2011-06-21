@@ -49,6 +49,14 @@ function shadow(obj, prop, value) {
     return value;
 }
 
+function bytesToString(bytes) {
+    var str = "";
+    var length = bytes.length;
+    for (var n = 0; n < length; ++n)
+        str += String.fromCharCode(bytes[n]);
+    return str;
+}
+
 var Stream = (function() {
     function constructor(arrayBuffer, start, length, dict) {
         this.bytes = Uint8Array(arrayBuffer);
@@ -75,7 +83,7 @@ var Stream = (function() {
             var pos = this.pos;
             var end = pos + length;
             var strEnd = this.end;
-            if (end > strEnd)
+            if (!end || end > strEnd)
                 end = strEnd;
             
             this.pos = end;
@@ -234,10 +242,12 @@ var FlateStream = (function() {
     ]), 5];
 
     function constructor(stream) {
-        this.stream = stream;
+        var bytes = stream.getBytes();
+        var bytesPos = 0;
+
         this.dict = stream.dict;
-        var cmf = stream.getByte();
-        var flg = stream.getByte();
+        var cmf = bytes[bytesPos++];
+        var flg = bytes[bytesPos++];
         if (cmf == -1 || flg == -1)
             error("Invalid header in flate stream");
         if ((cmf & 0x0f) != 0x08)
@@ -246,6 +256,9 @@ var FlateStream = (function() {
             error("Bad FCHECK in flate stream");
         if (flg & 0x20)
             error("FDICT bit set in flate stream");
+
+        this.bytes = bytes;
+        this.bytesPos = bytesPos;
         this.eof = false;
         this.codeSize = 0;
         this.codeBuf = 0;
@@ -256,12 +269,14 @@ var FlateStream = (function() {
 
     constructor.prototype = {
         getBits: function(bits) {
-            var stream = this.stream;
             var codeSize = this.codeSize;
             var codeBuf = this.codeBuf;
+            var bytes = this.bytes;
+            var bytesPos = this.bytesPos;
+
             var b;
             while (codeSize < bits) {
-                if ((b = stream.getByte()) == -1)
+                if (typeof (b = bytes[bytesPos++]) == "undefined")
                     error("Bad encoding in flate stream");
                 codeBuf |= b << codeSize;
                 codeSize += 8;
@@ -269,6 +284,7 @@ var FlateStream = (function() {
             b = codeBuf & ((1 << bits) - 1);
             this.codeBuf = codeBuf >> bits;
             this.codeSize = codeSize -= bits;
+            this.bytesPos = bytesPos;
             return b;
         },
         getCode: function(table) {
@@ -276,10 +292,12 @@ var FlateStream = (function() {
             var maxLen = table[1];
             var codeSize = this.codeSize;
             var codeBuf = this.codeBuf;
-            var stream = this.stream;
+            var bytes = this.bytes;
+            var bytesPos = this.bytesPos;
+
             while (codeSize < maxLen) {
                 var b;
-                if ((b = stream.getByte()) == -1)
+                if (typeof (b = bytes[bytesPos++]) == "undefined")
                     error("Bad encoding in flate stream");
                 codeBuf |= (b << codeSize);
                 codeSize += 8;
@@ -291,6 +309,7 @@ var FlateStream = (function() {
                 error("Bad encoding in flate stream");
             this.codeBuf = (codeBuf >> codeLen);
             this.codeSize = (codeSize - codeLen);
+            this.bytesPos = bytesPos;
             return codeVal;
         },
         ensureBuffer: function(requested) {
@@ -307,9 +326,8 @@ var FlateStream = (function() {
             return this.buffer = buffer2;
         },
         getByte: function() {
-            var bufferLength = this.bufferLength;
             var pos = this.pos;
-            if (bufferLength <= pos) {
+            while (this.bufferLength <= pos) {
                 if (this.eof)
                     return;
                 this.readBlock();
@@ -332,9 +350,8 @@ var FlateStream = (function() {
             return this.buffer.subarray(pos, end)
         },
         lookChar: function() {
-            var bufferLength = this.bufferLength;
             var pos = this.pos;
-            if (bufferLength <= pos) {
+            while (this.bufferLength <= pos) {
                 if (this.eof)
                     return;
                 this.readBlock();
@@ -343,16 +360,15 @@ var FlateStream = (function() {
         },
         getChar: function() {
             var ch = this.lookChar();
-            if (!ch)
-                return;
+            // shouldnt matter what the position is if we get past the eof
+            // so no need to check if ch is undefined
             this.pos++;
             return ch;
         },
         skip: function(n) {
             if (!n)
                 n = 1;
-            while (n-- > 0)
-                this.getChar();
+            this.pos += n;    
         },
         generateHuffmanTable: function(lengths) {
             var n = lengths.length;
@@ -398,7 +414,8 @@ var FlateStream = (function() {
                     array[i++] = what;
             }
 
-            var stream = this.stream;
+            var bytes = this.bytes;
+            var bytesPos = this.bytesPos;
 
             // read block header
             var hdr = this.getBits(3);
@@ -408,16 +425,16 @@ var FlateStream = (function() {
 
             var b;
             if (hdr == 0) { // uncompressed block
-                if ((b = stream.getByte()) == -1)
+                if (typeof (b = bytes[bytesPos++]) == "undefined")
                     error("Bad block header in flate stream");
                 var blockLen = b;
-                if ((b = stream.getByte()) == -1)
+                if (typeof (b = bytes[bytesPos++]) == "undefined")
                     error("Bad block header in flate stream");
                 blockLen |= (b << 8);
-                if ((b = stream.getByte()) == -1)
+                if (typeof (b = bytes[bytesPos++]) == "undefined")
                     error("Bad block header in flate stream");
                 var check = b;
-                if ((b = stream.getByte()) == -1)
+                if (typeof (b = bytes[bytesPos++]) == "undefined")
                     error("Bad block header in flate stream");
                 check |= (b << 8);
                 if (check != (~this.blockLen & 0xffff))
@@ -426,7 +443,7 @@ var FlateStream = (function() {
                 var buffer = this.ensureBuffer(bufferLength + blockLen);
                 this.bufferLength = bufferLength + blockLen;
                 for (var n = bufferLength; n < blockLen; ++n) {
-                    if ((b = stream.getByte()) == -1) {
+                    if (typeof (b = bytes[bytesPos++]) == "undefined") {
                         this.eof = true;
                         break;
                     }
@@ -509,7 +526,7 @@ var FlateStream = (function() {
 
     return constructor;
 })();
-
+/*
 var FilterPredictor = (function() {
     function constructor(str, type, width, colors, bits) {
         this.str = str;
@@ -674,59 +691,108 @@ var FilterPredictor = (function() {
     };
     return constructor;
 })();
-var PredictorStream = (function() {
-    function constructor(stream, params) {
-        this.stream = stream;
-        this.predictor = params.get("Predictor") || 1;
-        if (this.predictor <= 1) {
-            return stream; // no prediction
-        }
-        if (params.has("EarlyChange")) {
-            error("EarlyChange predictor parameter is not supported");
-        }
-        this.colors = params.get("Colors") || 1;
-        this.bitsPerComponent = params.get("BitsPerComponent") || 8;
-        this.columns = params.get("Columns") || 1;
-        if (this.bitsPerComponent !== 8) {
-            error("Multi-byte predictors are not supported");
-        }
-        if (this.predictor < 10 || this.predictor > 15) {
-            error("Unsupported predictor");
-        }
-        this.currentRow = new Uint8Array(this.columns * this.colors);
-        this.pos = 0;
-        this.bufferLength = 0;
+*/
+// A JpegStream can't be read directly. We use the platform to render the underlying
+// JPEG data for us.
+var JpegStream = (function() {
+    function constructor(bytes, dict) {
+        // TODO: per poppler, some images may have "junk" before that need to be removed
+        this.dict = dict;
+
+        // create DOM image
+        var img = new Image();
+        img.src = "data:image/jpeg;base64," + window.btoa(bytesToString(bytes));
+        this.domImage = img;
     }
 
     constructor.prototype = {
-        readRow : function() {
-            var lastRow = this.currentRow;
-            var colors = this.colors;
+        getByte: function() {
+            // dummy method to pass IsStream test
+            error("shouldnt be called");
+        },
+        getImage: function() {
+            return this.domImage;
+        }
+    };
+
+    return constructor;
+})();
+
+var PredictorStream = (function() {
+    function constructor(stream, params) {
+        var predictor = params.get("Predictor") || 1;
+        this.predictor = predictor;
+    
+        if (predictor <= 1)
+            return stream; // no prediction
+        if (predictor !== 2 && (predictor < 10 || predictor > 15))
+            error("Unsupported predictor");
+        
+        if (predictor === 2)
+            this.readRow = this.readRowTiff;
+        else
+            this.readRow = this.readRowPng;
+
+        this.stream = stream;
+        this.dict = stream.dict;
+        if (params.has("EarlyChange")) {
+            error("EarlyChange predictor parameter is not supported");
+        }
+        var colors = params.get("Colors") || 1;
+        this.colors = colors;
+        var bits = params.get("BitsPerComponent") || 8;
+        this.bits = bits;
+        var columns = params.get("Columns") || 1;
+        this.columns = columns;
+        
+        var pixBytes = (colors * bits + 7) >> 3;
+        this.pixBytes = pixBytes;
+        // add an extra pixByte to represent the pixel left column 0
+        var rowBytes = ((columns * colors * bits + 7) >> 3) + pixBytes;
+        this.rowBytes = rowBytes;
+
+        this.currentRow = new Uint8Array(rowBytes);
+        this.pos = rowBytes;
+    }
+
+    constructor.prototype = {
+        readRowTiff : function() {
+        },
+        readRowPng : function() {
+            // swap the buffers
+            var currentRow = this.currentRow;
+
+            var rowBytes = this.rowBytes;
+            var pixBytes = this.pixBytes;
+
             var predictor = this.stream.getByte();
-            var currentRow = this.stream.getBytes(this.columns * colors), i;
+            var rawBytes = this.stream.getBytes(rowBytes - pixBytes);
+            var i;
+
             switch (predictor) {
-            default:
-                error("Unsupported predictor");
-                break;
             case 0:
                 break;
             case 1:
-                for (i = colors; i < currentRow.length; ++i) {
-                  currentRow[i] = (currentRow[i - colors] + currentRow[i]) & 0xFF;
-                }
+                for (i = pixBytes; i < rowBytes; ++i)
+                  currentRow[i] = (currentRow[i - pixBytes] + rawBytes[i]) & 0xFF;
                 break;
             case 2:
-                for (i = 0; i < currentRow.length; ++i) {
-                  currentRow[i] = (lastRow[i] + currentRow[i]) & 0xFF;
-                }
+                for (i = pixBytes; i < rowBytes; ++i)
+                  currentRow[i] = (currentRow[i] + rawBytes[i]) & 0xFF;
                 break;
             case 3:
-                for (i = 0; i < color; ++i) {
-                  currentRow[i] = ((lastRow[i] >> 1) + currentRow[i]) & 0xFF;
+                for (i = pixBytes; i < rowBytes; ++i)
+                  currentRow[i] = (((currentRow[i] + currentRow[i - pixBytes])
+                              >> 1) + rawBytes[i]) & 0xFF;
+                break;
+            case 4:
+                for (i = pixBytes; i < rowBytes; ++i) {
+                    var left = currentRow[i - pixBytes];
+                    var up = currentRow[i];
+                    var upLeft = 
                 }
-                for (; i < currentRow.length; ++i) {
-                  currentRow[i] = (((lastRow[i] + currentRow[i]) >> 1) + currentRow[i]) & 0xFF;
-                }
+            default:
+                error("Unsupported predictor");
                 break;
             }
             this.pos = 0;
@@ -1362,15 +1428,15 @@ var Parser = (function() {
                                            this.encAlgorithm,
                                            this.keyLength);
             }
-            stream = this.filter(stream, dict);
+            stream = this.filter(stream, dict, length);
             stream.parameters = dict; 
             return stream;
         },
-        filter: function(stream, dict) {
+        filter: function(stream, dict, length) {
             var filter = dict.get2("Filter", "F");
             var params = dict.get2("DecodeParms", "DP");
             if (IsName(filter))
-                return this.makeFilter(stream, filter.name, params);
+                return this.makeFilter(stream, filter.name, length, params);
             if (IsArray(filter)) {
                 var filterArray = filter;
                 var paramsArray = params;
@@ -1381,15 +1447,15 @@ var Parser = (function() {
                         params = null;
                         if (IsArray(paramsArray) && (i in paramsArray))
                             params = paramsArray[i];
-                        stream = this.makeFilter(stream, filter.name, params);
+                        stream = this.makeFilter(stream, filter.name, length, params);
                     }
                 }
             }
             return stream;
         },
-        makeFilter: function(stream, name, params) {
+        makeFilter: function(stream, name, length, params) {
             if (name == "FlateDecode" || name == "Fl") {
-                var flateStr = new FlateStream(stream);
+/*                var flateStr = new FlateStream(stream);
                 if (IsDict(params)) {
                     var predType = params.get("Predictor");
                     if (predType && predType > 1) {
@@ -1409,12 +1475,14 @@ var Parser = (function() {
                     }
                 }
                 return flateStr;
-                /*
+*/              
                 if (params) {
                     return new PredictorStream(new FlateStream(stream), params);
                 }
                 return new FlateStream(stream);
-            */
+            } else if (name == "DCTDecode") {
+                var bytes = stream.getBytes(length);
+                return new JpegStream(bytes, stream.dict);
             } else {
                 error("filter '" + name + "' not supported yet");
             }
@@ -1989,6 +2057,7 @@ var CanvasExtraState = (function() {
         this.fontSize = 0.0;
         this.textMatrix = IDENTITY_MATRIX;
         this.leading = 0.0;
+        this.colorSpace = null;
         // Current point (in user coordinates)
         this.x = 0.0;
         this.y = 0.0;
@@ -2282,6 +2351,9 @@ var CanvasGraphics = (function() {
     const LINE_JOIN_STYLES = [ "miter", "round", "bevel" ];
     const NORMAL_CLIP = {};
     const EO_CLIP = {};
+
+    // Used for tiling patterns
+    const PAINT_TYPE_COLORED = 1, PAINT_TYPE_UNCOLORED = 2;
 
     constructor.prototype = {
         translateFont: function(fontDict, xref, resources) {
@@ -2597,10 +2669,16 @@ var CanvasGraphics = (function() {
 
             var fontName = "";
             var fontDescriptor = font.get("FontDescriptor");
-            if (fontDescriptor.num) {
+            if (fontDescriptor && fontDescriptor.num) {
                 var fontDescriptor = this.xref.fetchIfRef(fontDescriptor);
                 fontName = fontDescriptor.get("FontName").name.replace("+", "_");
                 Fonts.active = fontName;
+            }
+            if (!fontName) {
+                // TODO: fontDescriptor is not available, fallback to default font
+                this.current.fontSize = size;
+                this.ctx.font = this.current.fontSize + 'px sans-serif';
+                return;
             }
 
             this.current.fontSize = size;
@@ -2630,9 +2708,9 @@ var CanvasGraphics = (function() {
         },
         showText: function(text) {
             this.ctx.save();
-            this.ctx.translate(0, 2 * this.current.y);
-            this.ctx.scale(1, -1);
             this.ctx.transform.apply(this.ctx, this.current.textMatrix);
+            this.ctx.scale(1, -1);
+            this.ctx.translate(0, -2 * this.current.y);
             this.ctx.fillText(Fonts.chars2Unicode(text), this.current.x, this.current.y);
             this.current.x += this.ctx.measureText(text).width;
 
@@ -2674,6 +2752,10 @@ var CanvasGraphics = (function() {
         },
         setFillColorSpace: function(space) {
             // TODO real impl
+            if (space.name === "Pattern")
+                this.current.colorSpace = "Pattern";
+            else
+                this.current.colorSpace = "DeviceRGB";
         },
         setStrokeColor: function(/*...*/) {
             // TODO real impl
@@ -2697,7 +2779,125 @@ var CanvasGraphics = (function() {
         },
         setFillColorN: function(/*...*/) {
             // TODO real impl
-            this.setFillColor.apply(this, arguments);
+            var colorSpace = this.current.colorSpace;
+            if (!colorSpace) {
+                var stateStack = this.stateStack;
+                var i = stateStack.length - 1;
+                while (!colorSpace && i >= 0) {
+                    colorSpace = stateStack[i--].colorSpace;
+                }
+            }
+
+            if (this.current.colorSpace == "Pattern") {
+                var patternName = arguments[0];
+                if (IsName(patternName)) {
+                    var xref = this.xref;
+                    var patternRes = xref.fetchIfRef(this.res.get("Pattern"));
+                    if (!patternRes)
+                        error("Unable to find pattern resource");
+
+                    var pattern = xref.fetchIfRef(patternRes.get(patternName.name));
+                   
+                    const types = [null, this.tilingFill];
+                    var typeNum = pattern.dict.get("PatternType");
+                    var patternFn = types[typeNum];
+                    if (!patternFn)
+                        error("Unhandled pattern type");
+                    patternFn.call(this, pattern);
+                }
+            } else {
+                // TODO real impl
+                this.setFillColor.apply(this, arguments);
+            }
+        },
+        tilingFill: function(pattern) {
+            function applyMatrix(point, m) {
+                var x = point[0] * m[0] + point[1] * m[2] + m[4];
+                var y = point[0] * m[1] + point[1] * m[3] + m[5];
+                return [x,y];
+            };
+
+            function multiply(m, tm) {
+                var a = m[0] * tm[0] + m[1] * tm[2];
+                var b = m[0] * tm[1] + m[1] * tm[3];
+                var c = m[2] * tm[0] + m[3] * tm[2];
+                var d = m[2] * tm[1] + m[3] * tm[3];
+                var e = m[4] * tm[0] + m[5] * tm[2] + tm[4];
+                var f = m[4] * tm[1] + m[5] * tm[3] + tm[5];
+                return [a, b, c, d, e, f]
+            };
+
+            this.save();
+            var dict = pattern.dict;
+            var ctx = this.ctx;
+
+            var paintType = dict.get("PaintType");
+            switch (paintType) {
+            case PAINT_TYPE_COLORED:
+                // should go to default for color space
+                ctx.fillStyle = this.makeCssRgb(1, 1, 1);
+                ctx.strokeStyle = this.makeCssRgb(0, 0, 0);
+                break;
+            case PAINT_TYPE_UNCOLORED:
+            default:
+                error("Unsupported paint type");
+            }
+
+            TODO("TilingType");
+
+            var matrix = dict.get("Matrix") || IDENTITY_MATRIX;
+
+            var bbox = dict.get("BBox");
+            var x0 = bbox[0], y0 = bbox[1], x1 = bbox[2], y1 = bbox[3];
+
+            var xstep = dict.get("XStep");
+            var ystep = dict.get("YStep");
+
+            // top left corner should correspond to the top left of the bbox
+            var topLeft = applyMatrix([x0,y0], matrix);
+            // we want the canvas to be as large as the step size
+            var botRight = applyMatrix([x0 + xstep, y0 + ystep], matrix);
+            
+            var tmpCanvas = document.createElement("canvas");
+            tmpCanvas.width = Math.ceil(botRight[0] - topLeft[0]);
+            tmpCanvas.height = Math.ceil(botRight[1] - topLeft[1]);
+          
+            // set the new canvas element context as the graphics context
+            var tmpCtx = tmpCanvas.getContext("2d");
+            var savedCtx = ctx;
+            this.ctx = tmpCtx;
+
+            // normalize transform matrix so each step
+            // takes up the entire tmpCanvas (need to remove white borders)
+            if (matrix[1] === 0 && matrix[2] === 0) {
+                matrix[0] = tmpCanvas.width / xstep;
+                matrix[3] = tmpCanvas.height / ystep;
+                topLeft = applyMatrix([x0,y0], matrix);
+            }
+
+            // move the top left corner of bounding box to [0,0]
+            matrix = multiply(matrix, [1, 0, 0, 1, -topLeft[0], -topLeft[1]]);
+            
+            this.transform.apply(this, matrix);
+            
+            if (bbox && IsArray(bbox) && 4 == bbox.length) {
+                this.rectangle.apply(this, bbox);
+                this.clip();
+                this.endPath();
+            }
+
+            var xref = this.xref;
+            var res = xref.fetchIfRef(dict.get("Resources"));
+            if (!pattern.code)
+                pattern.code = this.compile(pattern, xref, res, []);
+            this.execute(pattern.code, xref, res);
+           
+            this.ctx = savedCtx;
+            this.restore();
+
+            TODO("Inverse pattern is painted");
+            var pattern = this.ctx.createPattern(tmpCanvas, "repeat");
+            this.ctx.fillStyle = pattern;
         },
         setStrokeGray: function(gray) {
             this.setStrokeRGBColor(gray, gray, gray);
@@ -2787,8 +2987,8 @@ var CanvasGraphics = (function() {
             var gradient = this.ctx.createLinearGradient(x0, y0, x1, y1);
             
             // 10 samples seems good enough for now, but probably won't work
-            // if there are sharp color changes. Ideally, we could see the 
-            // current image size and base the # samples on that.
+            // if there are sharp color changes. Ideally, we would implement
+            // the spec faithfully and add lossless optimizations.
             var step = (t1 - t0) / 10;
             
             for (var i = t0; i <= t1; i += step) {
@@ -2801,8 +3001,8 @@ var CanvasGraphics = (function() {
             // HACK to draw the gradient onto an infinite rectangle.
             // PDF gradients are drawn across the entire image while
             // Canvas only allows gradients to be drawn in a rectangle
-            // Also, larger numbers seem to cause overflow which causes
-            // nothing to be drawn.
+            // The following bug should allow us to remove this.
+            // https://bugzilla.mozilla.org/show_bug.cgi?id=664884
             this.ctx.fillRect(-1e10, -1e10, 2e10, 2e10);
         },
 
@@ -2884,8 +3084,20 @@ var CanvasGraphics = (function() {
                 error("Invalid image width or height");
             
             var ctx = this.ctx;
+
             // scale the image to the unit square
-            ctx.scale(1/w, 1/h);
+            ctx.scale(1/w, -1/h);
+
+            // If the platform can render the image format directly, the
+            // stream has a getImage property which directly returns a
+            // suitable DOM Image object.
+            if (image.getImage) {
+                var domImage = image.getImage();
+                ctx.drawImage(domImage, 0, 0, domImage.width, domImage.height,
+                              0, -h, w, h);
+                this.restore();
+                return;
+            }
 
             var interpolate = dict.get2("Interpolate", "I");
             if (!IsBool(interpolate))
@@ -2989,7 +3201,7 @@ var CanvasGraphics = (function() {
                 switch (numComps) {
                 case 1:
                     for (var i = 0; i < length; i += 4) {
-                        var p = imgArray[imageIdx++];
+                        var p = imgArray[imgIdx++];
                         pixels[i] = p;
                         pixels[i+1] = p;
                         pixels[i+2] = p;
@@ -3016,7 +3228,7 @@ var CanvasGraphics = (function() {
                 switch (numComps) {
                 case 1:
                     for (var i = 0; i < length; i += 4) {
-                        var p = imgArray[imageIdx++];
+                        var p = imgArray[imgIdx++];
                         pixels[i] = p;
                         pixels[i+1] = p;
                         pixels[i+2] = p;
@@ -3036,7 +3248,7 @@ var CanvasGraphics = (function() {
                 }
             }
             tmpCtx.putImageData(imgData, 0, 0);
-            ctx.drawImage(tmpCanvas, 0, 0);
+            ctx.drawImage(tmpCanvas, 0, -h);
             this.restore();
         },
 
