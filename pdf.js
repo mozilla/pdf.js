@@ -784,6 +784,16 @@ var Dict = (function() {
         get2: function(key1, key2) {
             return this.get(key1) || this.get(key2);
         },
+        getOrInherit: function(key, xref) {
+            var obj = this.map[key];
+            var dict = this;
+            while (!obj && dict) {
+                dict = xref.fetchIfRef(dict.get("Parent"));
+                if (dict)
+                    obj = dict.get(key);
+            }
+            return obj;
+        },
         has: function(key) {
             return key in this.map;
         },
@@ -1701,10 +1711,11 @@ var Page = (function() {
             return shadow(this, "content", this.pageDict.get("Contents"));
         },
         get resources() {
-            return shadow(this, "resources", this.pageDict.get("Resources"));
+            return shadow(this, "resources", 
+                    this.pageDict.getOrInherit("Resources", this.xref));
         },
         get mediaBox() {
-            var obj = this.pageDict.get("MediaBox");
+            var obj = this.pageDict.getOrInherit("MediaBox", this.xref);
             return shadow(this, "mediaBox", ((IsArray(obj) && obj.length == 4)
                                              ? obj
                                              : null));
@@ -2154,6 +2165,7 @@ var CanvasGraphics = (function() {
             S: "stroke",
             s: "closeStroke",
             f: "fill",
+            F: "fill",
             "f*": "eoFill",
             B: "fillStroke",
             "B*": "eoFillStroke",
