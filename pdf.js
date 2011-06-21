@@ -750,6 +750,116 @@ var DecryptStream = (function() {
     return constructor;
 })();
 
+var Ascii85Stream = (function() {
+    function constructor(str) {
+        this.str = str;
+        this.dict = str.dict;
+        this.eof = false;
+        this.pos = 0;
+        this.bufferLength = 0;
+        this.buffer = new Uint8Array(4);
+    }
+    constructor.prototype = {
+        getByte: function() {
+            if (this.pos >= this.bufferLength)
+               this.readBlock();
+            return this.buffer[this.pos++];
+        },
+        getBytes: function(n) {
+            var i, bytes;
+            bytes = new Uint8Array(n);
+            for (i = 0; i < n; ++i) {
+              if (this.pos >= this.bufferLength)
+                this.readBlock();
+              if (this.eof)
+                break;
+              bytes[i] = this.buffer[this.pos++];
+            }
+            return bytes;
+        },
+        getChar : function() {
+            return String.fromCharCode(this.getByte());
+        },
+        lookChar : function() {
+            if (this.pos >= this.bufferLength)
+               this.readRow();
+            return String.fromCharCode(this.currentRow[this.pos]);
+        },
+        skip : function(n) {
+            var i;
+            if (!n) {
+                n = 1;
+            }
+            while (n > this.bufferLength - this.pos) {
+                n -= this.bufferLength - this.pos;
+                this.readBlock();
+                if (this.bufferLength === 0) break;
+            }
+            this.pos += n;
+        },
+        readBlock: function() {
+            if (this.eof) {
+                this.bufferLength = 0;
+                this.buffer = [];
+                this.pos = 0;
+                return;
+            }
+
+            const tildaCode = "~".charCodeAt(0);
+            const zCode = "z".charCodeAt(0);
+            var str = this.str;
+
+            var c = str.getByte();
+            while (Lexer.isSpace(String.fromCharCode(c)))
+                c = str.getByte();
+            if (!c || c === tildaCode) {
+                this.eof = true;
+                return;
+            } 
+
+            var buffer = this.buffer;
+            // special code for z
+            if (c == zCode) {
+                buffer[0] = 0;
+                buffer[1] = 0;
+                buffer[2] = 0;
+                buffer[3] = 0;
+                this.bufferLength = 4;
+            } else {
+                var input = new Uint8Array(5);
+                input[0] = c;
+                for (var i = 1; i < 5; ++i){
+                    c = str.getByte();
+                    while (Lexer.isSpace(String.fromCharCode(c)))
+                        c = str.getByte();
+
+                    input[i] = c;
+                    
+                    if (!c || c == tildaCode)
+                        break;
+                }
+                this.bufferLength = i - 1;
+                // partial ending;
+                if (i < 5) {
+                    for (++i; i < 5; ++i)
+                        input[i] = 0x21 + 84;
+                    this.eof = true;
+                }
+                var t = 0;
+                for (var i = 0; i < 5; ++i)
+                    t = t * 85 + (input[i] - 0x21);
+                
+                for (var i = 3; i >= 0; --i){
+                    buffer[i] = t & 0xFF;
+                    t >>= 8;
+                }
+            }
+        }
+    };
+
+    return constructor;
+})();
+
 var Name = (function() {
     function constructor(name) {
         this.name = name;
@@ -1354,6 +1464,8 @@ var Parser = (function() {
             } else if (name == "DCTDecode") {
                 var bytes = stream.getBytes(length);
                 return new JpegStream(bytes, stream.dict);
+            } else if (name == "ASCII85Decode") {
+                return new Ascii85Stream(stream);
             } else {
                 error("filter '" + name + "' not supported yet");
             }
