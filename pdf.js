@@ -784,6 +784,9 @@ var Dict = (function() {
         get2: function(key1, key2) {
             return this.get(key1) || this.get(key2);
         },
+        get3: function(key1, key2, key3) {
+            return this.get(key1) || this.get(key2) || this.get(key3);
+        },
         has: function(key) {
             return key in this.map;
         },
@@ -2255,7 +2258,7 @@ var CanvasGraphics = (function() {
             assertWellFormed(IsName(fontName), "invalid font name");
             fontName = fontName.name.replace("+", "_");
 
-            var fontFile = descriptor.get2("FontFile", "FontFile2");
+            var fontFile = descriptor.get3("FontFile", "FontFile2", "FontFile3");
             if (!fontFile)
                 error("FontFile not found for font: " + fontName);
             fontFile = xref.fetchIfRef(fontFile);
