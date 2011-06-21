@@ -80,6 +80,7 @@ var Stream = (function() {
         getBytes: function(length) {
             var bytes = this.bytes;
             var pos = this.pos;
+
             var end = pos + length;
             var strEnd = this.end;
             if (!end || end > strEnd)
@@ -2198,7 +2199,7 @@ var CanvasGraphics = (function() {
                     var tokens = [];
                     var token = "";
 
-                    var buffer = cmapObj.ensureBuffer();
+                    var buffer = cmapObj.ensureBuffer ? cmapObj.ensureBuffer() : cmapObj;
                     var cmap = cmapObj.getBytes(buffer.byteLength);
                     for (var i =0; i < cmap.length; i++) {
                       var byte = cmap[i];
