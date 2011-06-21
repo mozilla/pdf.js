@@ -752,14 +752,66 @@ var PredictorStream = (function() {
         this.rowBytes = rowBytes;
 
         this.currentRow = new Uint8Array(rowBytes);
+        this.bufferLength = rowBytes;
         this.pos = rowBytes;
     }
 
     constructor.prototype = {
         readRowTiff : function() {
+            var currentRow = this.currentRow;
+            var rowBytes = this.rowBytes;
+            var pixBytes = this.pixBytes;
+            var bits = this.bits;
+            var colors = this.colors;
+
+            var rawBytes = this.stream.getBytes(rowBytes - pixBytes);
+
+            if (bits === 1) {
+                var inbuf = 0;
+                for (var i = pixBytes, j = 0; i < rowBytes; ++i, ++j) {
+                    var c = rawBytes[j];
+                    inBuf = (inBuf << 8) | c;
+                    // bitwise addition is exclusive or
+                    // first shift inBuf and then add
+                    currentRow[i] = (c ^ (inBuf >> colors)) & 0xFF;
+                    // truncate inBuf (assumes colors < 16)
+                    inBuf &= 0xFFFF;
+                }
+            } else if (bits === 8) {
+                for (var i = pixBytes, j = 0; i < rowBytes; ++i, ++j)
+                    currentRow[i] = currentRow[i - colors] + rawBytes[j];
+            } else {
+                var compArray = new Uint8Array(colors + 1);
+                var bitMask = (1 << bits) - 1;
+                var inbuf = 0, outbut = 0;
+                var inbits = 0, outbits = 0;
+                var j = 0, k = pixBytes;
+                var columns = this.columns;
+                for (var i = 0; i < columns; ++i) {
+                    for (var kk = 0; kk < colors; ++kk) {
+                        if (inbits < bits) {
+                            inbuf = (inbuf << 8) | (rawBytes[j++] & 0xFF);
+                            inbits += 8;
+                        }
+                        compArray[kk] = (compArray[kk] + (inbuf >> 
+                                    (inbits - bits))) & bitMask;
+                        inbits -= bits;
+                        outbuf = (outbuf << bits) | compArray[kk];
+                        outbits += bits;
+                        if (outbits >= 8) {
+                            currentRow[k++] = (outbuf >> (outbits - 8)) & 0xFF;
+                            outbits -= 8;
+                        }
+                    }
+                }
+                if (outbits > 0) {
+                    currentRow[k++] = (outbuf << (8 - outbits)) +
+                        (inbuf & ((1 << (8 - outbits)) - 1))
+                }
+            }
+            this.pos = pixBytes;
         },
         readRowPng : function() {
-            // swap the buffers
             var currentRow = this.currentRow;
 
             var rowBytes = this.rowBytes;
@@ -773,31 +825,56 @@ var PredictorStream = (function() {
             case 0:
                 break;
             case 1:
-                for (i = pixBytes; i < rowBytes; ++i)
-                  currentRow[i] = (currentRow[i - pixBytes] + rawBytes[i]) & 0xFF;
+                // set the first pixel
+                for (var i = pixBytes, j = 0; i < rowBytes; ++i, ++j)
+                    currentRow[i] = (currentRow[i - pixBytes] + rawBytes[j]) & 0xFF;
                 break;
             case 2:
-                for (i = pixBytes; i < rowBytes; ++i)
-                  currentRow[i] = (currentRow[i] + rawBytes[i]) & 0xFF;
+                for (var i = pixBytes, j = 0; i < rowBytes; ++i, ++j)
+                    currentRow[i] = (currentRow[i] + rawBytes[j]) & 0xFF;
                 break;
             case 3:
-                for (i = pixBytes; i < rowBytes; ++i)
-                  currentRow[i] = (((currentRow[i] + currentRow[i - pixBytes])
-                              >> 1) + rawBytes[i]) & 0xFF;
+                // set the first pixel
+                for (i = pixBytes, j = 0; i < rowBytes; ++i, ++j)
+                    currentRow[i] = (((currentRow[i] + currentRow[i - pixBytes])
+                                >> 1) + rawBytes[j]) & 0xFF;
                 break;
             case 4:
-                for (i = pixBytes; i < rowBytes; ++i) {
+                // we need to save the up left pixels values. the simplest way
+                // is to create a new buffer
+                var lastRow = currentRow;
+                var currentRow = new Uint8Array(rowBytes);
+                for (var i = pixBytes, j = 0; i < rowBytes; ++i, ++j) {
+                    var up = lastRow[i];
+                    var upLeft = lastRow[i - pixBytes];
                     var left = currentRow[i - pixBytes];
-                    var up = currentRow[i];
-                    var upLeft = 
+                    var p = left + up - upLeft;
+
+                    var pa = p - left;
+                    if (pa < 0)
+                        pa = -pa;
+                    var pb = p - up;
+                    if (pb < 0)
+                        pb = -pb;
+                    var pc = p - upLeft;
+                    if (pc < 0)
+                        pc = -pc;
+
+                    var c = rawBytes[j];
+                    if (pa <= pb && pa <= pc)
+                        currentRow[i] = left + c;
+                    else if (pb <= pc)
+                        currentRow[i] = up + c;
+                    else
+                        currentRow[i] = upLeft + c;
+                    break;
+                    this.currentRow = currentRow;
                 }
             default:
                 error("Unsupported predictor");
                 break;
             }
-            this.pos = 0;
-            this.bufferLength = currentRow.length;
-            this.currentRow = currentRow;
+            this.pos = pixBytes;
         },
         getByte : function() {
             if (this.pos >= this.bufferLength) {
