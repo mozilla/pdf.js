@@ -1229,7 +1229,8 @@ var Parser = (function() {
             if (IsArray(filter)) {
                 var filterArray = filter;
                 var paramsArray = params;
-                for (filter in filterArray) {
+                for (var i = 0, ii = filter.length; i < ii; ++i) {
+                    filter = filter[i];
                     if (!IsName(filter))
                         error("Bad filter name");
                     else {
