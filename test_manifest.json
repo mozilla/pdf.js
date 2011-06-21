@@ -13,5 +13,11 @@
        "file": "tests/canvas.pdf",
        "rounds": 1,
        "type": "load"
+    },
+    {  "id": "pdfspec-load",
+       "file": "tests/pdf.pdf",
+       "link": true,
+       "rounds": 1,
+       "type": "load"
     }
 ]

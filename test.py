@@ -1,4 +1,4 @@
-import json, os, sys, subprocess
+import json, os, sys, subprocess, urllib2
 from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
 from urlparse import urlparse
 
@@ -82,6 +82,8 @@ class PDFTestHandler(BaseHTTPRequestHandler):
 
         if result['taskDone']:
             check(State.manifest[id], taskResults, browser)
+            # Please oh please GC this ...
+            del State.taskResults[browser][id]
             State.remaining -= 1
 
         State.done = (0 == State.remaining)
@@ -99,6 +101,23 @@ def set_up(manifestFile):
     mf = open(manifestFile)
     manifestList = json.load(mf)
     mf.close()
+
+    for item in manifestList:
+        f, isLink = item['file'], item.get('link', False)
+        if isLink and not os.access(f, os.R_OK):
+            linkFile = open(f +'.link')
+            link = linkFile.read()
+            linkFile.close()
+
+            sys.stdout.write('Downloading '+ link +' to '+ f +' ...')
+            sys.stdout.flush()
+            response = urllib2.urlopen(link)
+
+            out = open(f, 'w')
+            out.write(response.read())
+            out.close()
+
+            print 'done'
 
     for b in testBrowsers:
         State.taskResults[b] = { }
@@ -168,8 +187,6 @@ def checkEq(task, results, browser):
     if passed:
         print 'TEST-PASS | eq test', task['id'], '| in', browser
 
-
-printed = [False]
 
 def checkFBF(task, results, browser):
     round0, round1 = results[0], results[1]
