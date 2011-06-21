@@ -1712,7 +1712,7 @@ var Page = (function() {
         },
         get resources() {
             return shadow(this, "resources", 
-                    this.pageDict.getOrInherit("Resources", this.xref));
+                          this.pageDict.getOrInherit("Resources", this.xref));
         },
         get mediaBox() {
             var obj = this.pageDict.getOrInherit("MediaBox", this.xref);
