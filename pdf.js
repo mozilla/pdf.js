@@ -553,8 +553,7 @@ var JpegStream = (function() {
 
 var PredictorStream = (function() {
     function constructor(stream, params) {
-        var predictor = params.get("Predictor") || 1;
-        this.predictor = predictor;
+        var predictor = this.predictor = params.get("Predictor") || 1;
     
         if (predictor <= 1)
             return stream; // no prediction
@@ -571,18 +570,13 @@ var PredictorStream = (function() {
         if (params.has("EarlyChange")) {
             error("EarlyChange predictor parameter is not supported");
         }
-        var colors = params.get("Colors") || 1;
-        this.colors = colors;
-        var bits = params.get("BitsPerComponent") || 8;
-        this.bits = bits;
-        var columns = params.get("Columns") || 1;
-        this.columns = columns;
+        var colors = this.colors = params.get("Colors") || 1;
+        var bits = this.bits = params.get("BitsPerComponent") || 8;
+        var columns = this.columns = params.get("Columns") || 1;
         
-        var pixBytes = (colors * bits + 7) >> 3;
-        this.pixBytes = pixBytes;
+        var pixBytes = this.pixBytes = (colors * bits + 7) >> 3;
         // add an extra pixByte to represent the pixel left of column 0
-        var rowBytes = ((columns * colors * bits + 7) >> 3) + pixBytes;
-        this.rowBytes = rowBytes;
+        var rowBytes = this.rowBytes = ((columns * colors * bits + 7) >> 3) + pixBytes;
 
         this.currentRow = new Uint8Array(rowBytes);
         this.bufferLength = rowBytes;
@@ -626,8 +620,8 @@ var PredictorStream = (function() {
                             inbuf = (inbuf << 8) | (rawBytes[j++] & 0xFF);
                             inbits += 8;
                         }
-                        compArray[kk] = (compArray[kk] + (inbuf >> 
-                                    (inbits - bits))) & bitMask;
+                        compArray[kk] = (compArray[kk] +
+                                         (inbuf >> (inbits - bits))) & bitMask;
                         inbits -= bits;
                         outbuf = (outbuf << bits) | compArray[kk];
                         outbits += bits;
@@ -639,7 +633,7 @@ var PredictorStream = (function() {
                 }
                 if (outbits > 0) {
                     currentRow[k++] = (outbuf << (8 - outbits)) +
-                        (inbuf & ((1 << (8 - outbits)) - 1))
+                                      (inbuf & ((1 << (8 - outbits)) - 1))
                 }
             }
             this.pos = pixBytes;
@@ -707,18 +701,16 @@ var PredictorStream = (function() {
             this.pos = pixBytes;
         },
         getByte : function() {
-            if (this.pos >= this.bufferLength) {
+            if (this.pos >= this.bufferLength)
                this.readRow();
-            }
             return this.currentRow[this.pos++];
         },
         getBytes : function(n) {
             var i, bytes;
             bytes = new Uint8Array(n);
             for (i = 0; i < n; ++i) {
-              if (this.pos >= this.bufferLength) {
+              if (this.pos >= this.bufferLength)
                 this.readRow();
-              }
               bytes[i] = this.currentRow[this.pos++];
             }
             return bytes;
@@ -727,9 +719,8 @@ var PredictorStream = (function() {
             return String.formCharCode(this.getByte());
         },
         lookChar : function() {
-            if (this.pos >= this.bufferLength) {
+            if (this.pos >= this.bufferLength)
                this.readRow();
-            }
             return String.formCharCode(this.currentRow[this.pos]);
         },
         skip : function(n) {
@@ -3288,6 +3279,7 @@ var ColorSpace = (function() {
             case "DeviceGray":
             case "G":
                 this.numComps = 1;
+                break;
             case "DeviceRGB":
                 this.numComps = 3;
                 break;
