@@ -2624,7 +2624,7 @@ var CanvasGraphics = (function() {
         setWordSpacing: function(spacing) {
             TODO("word spacing");
         },
-        setHSpacing: function(scale) {
+        setHScale: function(scale) {
             TODO("horizontal text scale");
         },
         setLeading: function(leading) {
