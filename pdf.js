@@ -526,172 +526,6 @@ var FlateStream = (function() {
 
     return constructor;
 })();
-/*
-var FilterPredictor = (function() {
-    function constructor(str, type, width, colors, bits) {
-        this.str = str;
-        this.dict = str.dict;
-
-        this.type = type;
-        this.width = width;
-        this.colors = colors;
-        this.bits = bits;
-        
-        this.nVals = width * colors;
-        var pixBytes = (colors * bits + 7) >> 3;
-        this.pixBytes = pixBytes;
-        var rowBytes = ((width * colors * bits + 7) >> 3) + pixBytes;
-        this.rowBytes = rowBytes;
-
-        if (width < 0 || colors < 0 || bits < 0 ||bits > 16)
-            error("Invalid predictor");
-        
-        var prevLine = [];
-        for (var i = 0; i < rowBytes; ++i)
-            prevLine.push(0);
-        this.prevLine = prevLine;
-        this.prevIdx = rowBytes;
-    }
-
-    constructor.prototype = {
-        getByte: function() {
-            if (this.prevIdx >= this.rowBytes) {
-                if(!this.getNextLine())
-                    return;
-            }
-            return this.prevLine[this.prevIdx++];
-        },
-        getBytes: function(length) {
-            var buf = new Uint8Array(length);
-            for (var i = 0; i < length; ++i)
-                buf[i] = this.getByte();
-            return buf;
-        },
-        getNextLine: function() {
-            if (this.type >= 10) {
-                var curType = this.str.getByte();
-                if (!curType)
-                    return;
-                curType += 10;
-            } else {
-                var curType = this.type;
-            }
-
-            var line = [];
-            for (var i = 0; i < this.rowBytes - this.pixBytes; i++)
-                line.push(this.str.getByte());
-
-            var pixBytes = this.pixBytes;
-            var rowBytes = this.rowBytes;
-            var prevLine = this.prevLine;
-
-            var upLeftBuf = [];
-            for (var i = 0, ii = pixBytes + 1; i < ii; ++i)
-                upLeftBuf.push(0);
-            
-            for (var i = pixBytes, ii = rowBytes + pixBytes + 1; i < ii; ++i) {
-                for (var j = pixBytes; j > 0; --j) {
-                    upLeftBuf[j] = upLeftBuf[j - 1];
-                }
-                upLeftBuf[0] = prevLine[i];
-
-                var c = line[i - pixBytes];
-                if (c == undefined) {
-                    if (i > pixBytes)
-                        break;
-                    return;
-                }
-                switch (curType) {
-                case 11:
-                    prevLine[i] = prevLine[i - pixBytes] + c;
-                    break;
-                case 12:
-                    prevLine[i] = prevLine[i] + c;
-                    break;
-                case 13:
-                    prevLine[i] = ((prevLine[i - pixBytes] 
-                                + prevLine[i]) >> 1) + c;
-                    break;
-                case 14:
-                    var left = prevLine[i - pixBytes];
-                    var up = prevLine[i];
-                    var upLeft = upLeftBuf[pixBytes];
-                    var p = left + up - upLeft;
-
-                    var pa = p - left;
-                    if (pa < 0)
-                        pa = -pa;
-                    var pb = p - up;
-                    if (pb < 0)
-                        pb = -pb;
-                    var pc = p - upLeft;
-                    if (pc < 0)
-                        pc = -pc;
-
-                    if (pa <= pb && pa <= pc)
-                        prevLine[i] = left + c;
-                    else if (pb <= pc)
-                        prevLine[i] = up + c;
-                    else
-                        prevLine[i] = upLeft + c;
-                    break;
-                case 10:
-                default:
-                    prevLine[i] = c;
-                    break;
-                }
-            }
-            var bits = this.bits;
-            var colors = this.colors;
-
-            if (curType === 2) {
-                if (bits === 1) {
-                    var inbuf = prevLine[pixBytes - 1];
-                    for (var i = pixBytes; i < rowBytes; i+= 8) {
-                        inBuf = (inBuf << 8) | prevLine[i];
-                        prevLine[i] ^= inBuf >> colors; 
-                    }
-                } else if (bits === 8) {
-                    for (var i = pixBytes; i < rowBytes; ++i)
-                        prevLine[i] += prevLine[i - colors];
-                } else {
-                    for (var i = 0, ii = colors + 1; i < ii; ++i)
-                        upLeftBuf[i] = 0;
-                    var bitMask = (1 << bits) - 1;
-                    var inbuf = 0, outbut = 0;
-                    var inbits = 0, outbits = 0;
-                    var j = pixBytes, k = pixBytes;
-                    var width = this.width;
-                    for (var i = 0; i < width; ++i) {
-                        for (var kk = 0; kk < colors; ++kk) {
-                            if (inbits < bits) {
-                                inbuf = (inbuf << 8) | (prevLine[j++] & 255);
-                                inbits += 8;
-                            }
-                            upLeftBuf[kk] = (upLeftBuf[kk] + (inbuf >> 
-                                        (inbits - bits))) & bitMask;
-                            inbits -= bits;
-                            outbuf = (outbuf << bits) | upLeftBuf[kk];
-                            outbits += bits;
-                            if (outbits >= 8) {
-                                prevLine[k++] = (outbuf >> (outbits - 8));
-                                outbits -= 8;
-                            }
-                        }
-                    }
-                    if (outbits > 0) {
-                        prevLine[k++] = (outbuf << (8 - outbits)) +
-                            (inbuf & ((1 << (8 - outbits)) - 1))
-                    }
-                }
-            }
-            this.prevIdx = pixBytes;
-            return true;
-        }
-    };
-    return constructor;
-})();
-*/
 // A JpegStream can't be read directly. We use the platform to render the underlying
 // JPEG data for us.
 var JpegStream = (function() {
@@ -747,7 +581,7 @@ var PredictorStream = (function() {
         
         var pixBytes = (colors * bits + 7) >> 3;
         this.pixBytes = pixBytes;
-        // add an extra pixByte to represent the pixel left column 0
+        // add an extra pixByte to represent the pixel left of column 0
         var rowBytes = ((columns * colors * bits + 7) >> 3) + pixBytes;
         this.rowBytes = rowBytes;
 
@@ -825,7 +659,6 @@ var PredictorStream = (function() {
             case 0:
                 break;
             case 1:
-                // set the first pixel
                 for (var i = pixBytes, j = 0; i < rowBytes; ++i, ++j)
                     currentRow[i] = (currentRow[i - pixBytes] + rawBytes[j]) & 0xFF;
                 break;
@@ -834,7 +667,6 @@ var PredictorStream = (function() {
                     currentRow[i] = (currentRow[i] + rawBytes[j]) & 0xFF;
                 break;
             case 3:
-                // set the first pixel
                 for (i = pixBytes, j = 0; i < rowBytes; ++i, ++j)
                     currentRow[i] = (((currentRow[i] + currentRow[i - pixBytes])
                                 >> 1) + rawBytes[j]) & 0xFF;
