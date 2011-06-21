@@ -103,7 +103,7 @@ var Font = (function () {
 
     // If the font is to be ignored, register it like an already loaded font
     // to avoid the cost of waiting for it be be loaded by the platform.
-    if (properties.ignore || properties.type == "TrueType" || kDisableFonts) {
+    if (properties.ignore || kDisableFonts) {
       Fonts[name] = {
         data: file,
         loading: false,
@@ -368,11 +368,11 @@ var Font = (function () {
         var length = FontsUtils.bytesToInteger(file.getBytes(4));
 
         // Read the table associated data
-        var currentPosition = file.pos;
-        file.pos = file.start + offset;
-
+        var previousPosition = file.pos;
+        file.pos = file.start ? file.start : 0;
+        file.skip(offset);
         var data = file.getBytes(length);
-        file.pos = currentPosition;
+        file.pos = previousPosition;
 
         return {
           tag: tag,
