@@ -27,7 +27,30 @@ span {
 
 .control > input {
     float: left;
+    border: 1px solid #4d4d4d;
+    height: 20px;
+    padding: 0px;
     margin: 0px 2px 0px 0px;
+    border-radius: 4px;
+    -moz-border-radius: 4px;
+    -webkit-border-radius: 4px;
+    box-shadow: 0px 1px 0px rgba(255, 255, 255, 0.25);
+    -moz-box-shadow: 0px 1px 0px rgba(255, 255, 255, 0.25);
+    -webkit-box-shadow: 0px 1px 0px rgba(255, 255, 255, 0.25);
+}
+
+.control > select {
+    float: left;
+    border: 1px solid #4d4d4d;
+    height: 22px;
+    padding: 2px 0px 0px;
+    margin: 0px 0px 1px;
+    border-radius: 4px;
+    -moz-border-radius: 4px;
+    -webkit-border-radius: 4px;
+    box-shadow: 0px 1px 0px rgba(255, 255, 255, 0.25);
+    -moz-box-shadow: 0px 1px 0px rgba(255, 255, 255, 0.25);
+    -webkit-box-shadow: 0px 1px 0px rgba(255, 255, 255, 0.25);
 }
 
 .control > span {
@@ -61,7 +84,7 @@ span {
     background-color: #eee;
     border-bottom: 1px solid #666;
     padding: 4px 0px 0px 8px;
-    position:fixed;
+    position: fixed;
     left: 0px;
     top: 0px;
     height: 40px;
@@ -79,7 +102,7 @@ span {
 
 #previousPageButton {
     background: url('images/buttons.png') no-repeat 0px -23px;
-    cursor: pointer;
+    cursor: default;
     display: inline-block;
     float: left;
     margin: 0px;
@@ -97,7 +120,7 @@ span {
 
 #nextPageButton {
     background: url('images/buttons.png') no-repeat -28px -23px;
-    cursor: pointer;
+    cursor: default;
     display: inline-block;
     float: left;
     margin: 0px;
@@ -113,69 +136,59 @@ span {
     background: url('images/buttons.png') no-repeat -28px 0px;
 }
 
-#scaleComboBoxInput {
-    background: url('images/combobox.png') no-repeat 0px -23px;
+#openFileButton {
+    background: url('images/buttons.png') no-repeat -56px -23px;
+    cursor: default;
     display: inline-block;
     float: left;
-    margin: 0px;
-    width: 35px;
+    margin: 0px 0px 0px 3px;
+    width: 29px;
     height: 23px;
 }
 
-#scaleComboBoxInput input {
-    background: none;
-    border: 0px;
-    margin: 3px 2px 0px;
-    width: 31px;
+#openFileButton.down {
+    background: url('images/buttons.png') no-repeat -56px -46px;
 }
 
-#scaleComboBoxButton {
-    background: url('images/combobox.png') no-repeat -41px -23px;
-    cursor: pointer;
-    display: inline-block;
-    float: left;
-    margin: 0px;
-    width: 21px;
-    height: 23px;
+#openFileButton.disabled {
+    background: url('images/buttons.png') no-repeat -56px 0px;
 }
 
-#scaleComboBoxButton.down {
-    background: url('images/combobox.png') no-repeat -41px -46px;
-}
-
-#scaleComboBoxButton.disabled {
-    background: url('images/combobox.png') no-repeat -41px 0px;
-}
-
-#scaleComboBoxList {
-    background-color: #fff;
-    border: 1px solid #666;
-    clear: both;
-    position: relative;
+#fileInput {
     display: none;
-    top: -20px;
-    width: 48px;
 }
 
-#scaleComboBoxList > ul {
-    list-style: none;
-    padding: 0px;
-    margin: 0px;
-}
-
-#scaleComboBoxList > ul > li {
-    display: inline-block;
-    cursor: pointer;
-    width: 100%;
-}
-
-#scaleComboBoxList > ul > li:hover {
-    background-color: #09f;
-    color: #fff;
-}
-
-#pageNumber, #scale {
+#pageNumber {
     text-align: right;
+}
+
+#sidebar {
+    background-color: rgba(0, 0, 0, 0.8);
+    position: fixed;
+    width: 150px;
+    top: 62px;
+    bottom: 18px;
+    border-top-right-radius: 8px;
+    border-bottom-right-radius: 8px;
+    -moz-border-radius-topright: 8px;
+    -moz-border-radius-bottomright: 8px;
+    -webkit-border-top-right-radius: 8px;
+    -webkit-border-bottom-right-radius: 8px;
+}
+
+#sidebarScrollView {
+    position: absolute;
+    overflow: hidden;
+    overflow-y: auto;
+    top: 40px;
+    right: 10px;
+    bottom: 10px;
+    left: 10px;
+}
+
+#sidebarContentView {
+    height: auto;
+    width: 100px;
 }
 
 #viewer {
