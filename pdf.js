@@ -2362,7 +2362,7 @@ var CanvasGraphics = (function() {
             // Fonts with an embedded cmap but without any assignment in
             // it are not yet supported, so ask the fonts loader to ignore
             // them to not pay a stupid one sec latence.
-            var ignoreFont = true;
+            var ignoreFont = false;
 
             var encodingMap = {};
             var charset = [];
@@ -2406,20 +2406,24 @@ var CanvasGraphics = (function() {
                     }
                 }
             } else if (fontDict.has("ToUnicode")) {
+                encodingMap = {empty: true};
                 var cmapObj = xref.fetchIfRef(fontDict.get("ToUnicode"));
                 if (IsName(cmapObj)) {
                     error("ToUnicode file cmap translation not implemented");
                 } else if (IsStream(cmapObj)) {
                     var encoding = Encodings["WinAnsiEncoding"];
                     var firstChar = xref.fetchIfRef(fontDict.get("FirstChar"));
-                    for (var i = firstChar; i < encoding.length; i++)
-                        encodingMap[i] = new Name(encoding[i]);
 
                     var tokens = [];
                     var token = "";
 
-                    var buffer = cmapObj.ensureBuffer ? cmapObj.ensureBuffer() : cmapObj;
-                    var cmap = cmapObj.getBytes(buffer.byteLength);
+                    var length = cmapObj.length;
+                    if (cmapObj instanceof FlateStream) {
+                      cmapObj.readBlock();
+                      length = cmapObj.bufferLength;
+                    }
+
+                    var cmap = cmapObj.getBytes(length);
                     for (var i =0; i < cmap.length; i++) {
                       var byte = cmap[i];
                       if (byte == 0x20 || byte == 0x0A || byte == 0x3C || byte == 0x3E) {
@@ -2446,8 +2450,10 @@ var CanvasGraphics = (function() {
                               var code = parseInt("0x" + tokens[j+2]);
 
                               for (var k = startRange; k <= endRange; k++) {
-                                encodingMap[k] = GlyphsUnicode[encoding[code]];
-                                charset.push(encoding[code++]);
+                                // The encoding mapping table will be filled
+                                // later during the building phase
+                                //encodingMap[k] = GlyphsUnicode[encoding[code]];
+                                charset.push(encoding[code++] || ".notdef");
                               }
                             }
                             break;
@@ -2752,7 +2758,7 @@ var CanvasGraphics = (function() {
             }
 
             this.current.fontSize = size;
-            this.ctx.font = this.current.fontSize +'px "' + fontName + '"';
+            this.ctx.font = this.current.fontSize +'px "' + fontName + '", Symbol';
         },
         setTextRenderingMode: function(mode) {
             TODO("text rendering mode");
