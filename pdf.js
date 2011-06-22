@@ -2143,7 +2143,7 @@ var CanvasGraphics = (function() {
             // Fonts with an embedded cmap but without any assignment in
             // it are not yet supported, so ask the fonts loader to ignore
             // them to not pay a stupid one sec latence.
-            var ignoreFont = true;
+            var ignoreFont = false;
 
             var encodingMap = {};
             var charset = [];
@@ -2187,6 +2187,7 @@ var CanvasGraphics = (function() {
                     }
                 }
             } else if (fontDict.has("ToUnicode")) {
+                encodingMap = {empty: true};
                 var cmapObj = xref.fetchIfRef(fontDict.get("ToUnicode"));
                 if (IsName(cmapObj)) {
                     error("ToUnicode file cmap translation not implemented");
@@ -2230,7 +2231,9 @@ var CanvasGraphics = (function() {
                               var code = parseInt("0x" + tokens[j+2]);
 
                               for (var k = startRange; k <= endRange; k++) {
-                                encodingMap[k] = GlyphsUnicode[encoding[code]];
+                                // The encoding mapping table will be filled
+                                // later during the building phase
+                                //encodingMap[k] = GlyphsUnicode[encoding[code]];
                                 charset.push(encoding[code++]);
                               }
                             }
