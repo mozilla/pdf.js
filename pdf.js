@@ -2193,8 +2193,6 @@ var CanvasGraphics = (function() {
                 } else if (IsStream(cmapObj)) {
                     var encoding = Encodings["WinAnsiEncoding"];
                     var firstChar = xref.fetchIfRef(fontDict.get("FirstChar"));
-                    for (var i = firstChar; i < encoding.length; i++)
-                        encodingMap[i] = new Name(encoding[i]);
 
                     var tokens = [];
                     var token = "";
@@ -2538,7 +2536,7 @@ var CanvasGraphics = (function() {
             }
 
             this.current.fontSize = size;
-            this.ctx.font = this.current.fontSize +'px "' + fontName + '"';
+            this.ctx.font = this.current.fontSize +'px "' + fontName + '", Symbol';
         },
         setTextRenderingMode: function(mode) {
             TODO("text rendering mode");
