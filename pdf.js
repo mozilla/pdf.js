@@ -61,7 +61,7 @@ var Stream = (function() {
         this.bytes = Uint8Array(arrayBuffer);
         this.start = start || 0;
         this.pos = this.start;
-        this.end = (start + length) || this.bytes.byteLength;
+        this.end = (start + length) || this.bytes.length;
         this.dict = dict;
     }
 
@@ -516,33 +516,41 @@ var FlateStream = (function() {
             error("Unknown block type in flate stream");
         }
 
+        var buffer = this.buffer;
+        var limit = buffer ? buffer.length : 0;
         var pos = this.bufferLength;
         while (true) {
             var code1 = this.getCode(litCodeTable);
+            if (code1 < 256) {
+                if (pos + 1 >= limit) {
+                    buffer = this.ensureBuffer(pos + 1);
+                    limit = buffer.length;
+                }
+                buffer[pos++] = code1;
+                continue;
+            }
             if (code1 == 256) {
                 this.bufferLength = pos;
                 return;
             }
-            if (code1 < 256) {
-                var buffer = this.ensureBuffer(pos + 1);
-                buffer[pos++] = code1;
-            } else {
-                code1 -= 257;
-                code1 = lengthDecode[code1];
-                var code2 = code1 >> 16;
-                if (code2 > 0)
-                    code2 = this.getBits(code2);
-                var len = (code1 & 0xffff) + code2;
-                code1 = this.getCode(distCodeTable);
-                code1 = distDecode[code1];
-                code2 = code1 >> 16;
-                if (code2 > 0)
-                    code2 = this.getBits(code2);
-                var dist = (code1 & 0xffff) + code2;
-                var buffer = this.ensureBuffer(pos + len);
-                for (var k = 0; k < len; ++k, ++pos)
-                    buffer[pos] = buffer[pos - dist];
+            code1 -= 257;
+            code1 = lengthDecode[code1];
+            var code2 = code1 >> 16;
+            if (code2 > 0)
+                code2 = this.getBits(code2);
+            var len = (code1 & 0xffff) + code2;
+            code1 = this.getCode(distCodeTable);
+            code1 = distDecode[code1];
+            code2 = code1 >> 16;
+            if (code2 > 0)
+                code2 = this.getBits(code2);
+            var dist = (code1 & 0xffff) + code2;
+            if (pos + len >= limit) {
+                buffer = this.ensureBuffer(pos + len);
+                limit = buffer.length;
             }
+            for (var k = 0; k < len; ++k, ++pos)
+                buffer[pos] = buffer[pos - dist];
         }
     };
 
