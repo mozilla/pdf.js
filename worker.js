@@ -48,7 +48,7 @@ onmessage = function(event) {
 
     tic();
     // Let's try to render the first page...
-    var page = pdfDocument.getPage(1);
+    var page = pdfDocument.getPage(8);
 
     // page.compile will collect all fonts for us, once we have loaded them
     // we can trigger the actual page rendering with page.display

@@ -844,13 +844,9 @@ var Font = (function () {
           postMessage("font");
           postMessage(JSON.stringify({
               str: str,
-              mimetype: this.mimetype,
               fontName: fontName,
+              mimetype: this.mimetype
           }));
-
-          setTimeout(function() {
-            Fonts[fontName].loading = false;
-          }, kMaxWaitForFontFace);
       } else {
           var base64 = window.btoa(str);
 
