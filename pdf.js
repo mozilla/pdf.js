@@ -774,20 +774,57 @@ var Ascii85Stream = (function() {
             return this.buffer = buffer2;
         },
         getByte: function() {
-            while (this.pos >= this.bufferLength)
-               this.readBlock();
+            var pos = this.pos;
+            while (this.bufferLength <= pos) {
+                if (this.eof)
+                    return;
+                this.readBlock();
+            }
             return this.buffer[this.pos++];
         },
-        getBytes: function(n) {
-            if (n) {
-                while (this.bufferLength < n || !this.eof)
+       getBytes: function(length) {
+            var pos = this.pos;
+
+            this.ensureBuffer(pos + length);
+            if (length) {
+                while (!this.eof && this.bufferLength < pos + length)
                     this.readBlock();
-                return this.buffer.subarray(0, n);
+
+                var end = pos + length;
+                var bufEnd = this.bufferLength;
+
+                if (end > bufEnd)
+                    end = bufEnd;
             } else {
-                while (!this.eof)
+                while(!this.eof)
                     this.readBlock();
-                return this.buffer;
+                var end = this.bufferLength;
             }
+            this.pos = end;
+            return this.buffer.subarray(pos, end)
+        },
+        lookChar: function() {
+            var pos = this.pos;
+            while (this.bufferLength <= pos) {
+                if (this.eof)
+                    return;
+                this.readBlock();
+            }
+            return String.fromCharCode(this.buffer[this.pos]);
+        },
+        getChar: function() {
+            var pos = this.pos;
+            while (this.bufferLength <= pos) {
+                if (this.eof)
+                    return;
+                this.readBlock();
+            }
+            return String.fromCharCode(this.buffer[this.pos++]);
+        },
+        skip: function(n) {
+            if (!n)
+                n = 1;
+            this.pos += n;
         },
         readBlock: function() {
             const tildaCode = "~".charCodeAt(0);
@@ -840,7 +877,7 @@ var Ascii85Stream = (function() {
                     t = t * 85 + (input[i] - 0x21);
                 
                 for (var i = 3; i >= 0; --i){
-                    buffer[bufferLength++] = t & 0xFF;
+                    buffer[bufferLength + i] = t & 0xFF;
                     t >>= 8;
                 }
             }
@@ -1712,6 +1749,8 @@ var XRef = (function() {
             return this.fetch(obj);
         },
         fetch: function(ref) {
+            if (!ref)
+                console.trace();
             var num = ref.num;
             var e = this.cache[num];
             if (e)
