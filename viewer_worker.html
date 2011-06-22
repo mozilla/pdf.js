@@ -13,7 +13,8 @@ function toc(msg) {
 }
 
 var myWorker = new Worker('worker.js');
-var images = {};
+var imagesList = {};
+var canvasList = {};
 var gradient;
 
 var currentX = 0;
@@ -41,27 +42,40 @@ var special = {
         currentX += this.measureText(text).width;
     },
 
-    "$drawCanvas": function(data, x, y, width, height) {
+    "$putImageData": function(imageData, x, y) {
         // Ugly: getImageData is called here only to get an object of the right
         // shape - we are not interessted in the data, as we set it the line
         // afterwards to something custome.
         // Can we do better here?
-        var imgData = ctx.getImageData(0, 0, width, height);
-        imgData.data = data;
-        ctx.putImageData(imgData, x, y);
+        var imgData = this.getImageData(0, 0, imageData.width, imageData.height);
+        imgData.data = imageData.data;
+        this.putImageData(imgData, x, y);
     },
 
     "$drawImage": function(id, x, y, sx, sy, swidth, sheight) {
-        var image = images[id];
+        var image = imagesList[id];
         if (!image) {
             throw "Image not found";
         }
-        ctx.drawImage(image, x, y, image.width, image.height,
+        this.drawImage(image, x, y, image.width, image.height,
             sx, sy, swidth, sheight);
     },
 
+    "$drawCanvas": function(id, x, y, sx, sy, swidth, sheight) {
+        var canvas = canvasList[id];
+        if (!canvas) {
+            throw "Canvas not found";
+        }
+        if (sheight != null) {
+            this.drawImage(canvas, x, y, canvas.width, canvas.height,
+                sx, sy, swidth, sheight);
+        } else {
+            this.drawImage(canvas, x, y, canvas.width, canvas.height);
+        }
+    },
+
     "$createLinearGradient": function(x0, y0, x1, y1) {
-        gradient = ctx.createLinearGradient(x0, y0, x1, y1);
+        gradient = this.createLinearGradient(x0, y0, x1, y1);
     },
 
     "$addColorStop": function(i, rgba) {
@@ -69,16 +83,17 @@ var special = {
     },
 
     "$fillStyleGradient": function() {
-        ctx.fillStyle = gradient;
+        this.fillStyle = gradient;
     },
 
     "$strokeStyleGradient": function() {
-        ctx.strokeStyle = gradient;
+        this.strokeStyle = gradient;
     }
 }
 
 var gStack;
-function renderProxyCanvas(stack) {
+function renderProxyCanvas(canvas, stack) {
+    var ctx = canvas.getContext("2d");
     for (var i = 0; i < stack.length; i++) {
     // for (var i = 0; i < 1000; i++) {
         var opp = stack[i];
@@ -135,7 +150,7 @@ myWorker.onmessage = function(event) {
         case JPEG_STREAM:
             var img = new Image();
             img.src = "data:image/jpeg;base64," + window.btoa(data.str);
-            images[data.id] = img;
+            imagesList[data.id] = img;
             console.log("got image", data.id)
             break;
 
@@ -171,16 +186,25 @@ myWorker.onmessage = function(event) {
             break;
 
         case CANVAS_PROXY_STACK:
-            var stack = data;
+            var id = data.id;
+            var stack = data.stack;
             gStack = stack;
-            console.log("canvas stack size", stack.length)
+
+            // Check if there is already a canvas with the given id. If not,
+            // create a new canvas.
+            if (!canvasList[id]) {
+                var newCanvas = document.createElement("canvas");
+                newCanvas.width = data.width;
+                newCanvas.height = data.height;
+                canvasList[id] = newCanvas;
+            }
 
             // There might be fonts that need to get loaded. Shedule the
             // rendering at the end of the event queue ensures this.
             setTimeout(function() {
-                tic();
-                renderProxyCanvas(stack);
-                toc("canvas rendering")
+                if (id == 0) tic();
+                renderProxyCanvas(canvasList[id], stack);
+                if (id == 0) toc("canvas rendering")
             }, 0);
             onMessageState = WAIT;
             break;
@@ -234,6 +258,7 @@ function prevPage() {
 window.onload = function() {
     window.canvas = document.getElementById("canvas");
     window.ctx = canvas.getContext("2d");
+    canvasList[0] = window.canvas;
     open("compressed.tracemonkey-pldi-09.pdf");
 }
 </script>

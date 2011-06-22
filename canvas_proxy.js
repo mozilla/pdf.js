@@ -1,23 +1,23 @@
-var ImageCanvasProxyCounter = 0;
-function ImageCanvasProxy(width, height) {
-    this.id = ImageCanvasProxyCounter++;
-    this.width = width;
-    this.height = height;
-
-    // Using `Uint8ClampedArray` seems to be the type of ImageData - at least
-    // Firebug tells me so.
-    this.imgData = {
-        data: Uint8ClampedArray(width * height * 4)
-    };
-}
-
-ImageCanvasProxy.prototype.putImageData = function(imgData) {
-    // this.ctx.putImageData(imgData, 0, 0);
-}
-
-ImageCanvasProxy.prototype.getCanvas = function() {
-    return this;
-}
+// var ImageCanvasProxyCounter = 0;
+// function ImageCanvasProxy(width, height) {
+//     this.id = ImageCanvasProxyCounter++;
+//     this.width = width;
+//     this.height = height;
+//
+//     // Using `Uint8ClampedArray` seems to be the type of ImageData - at least
+//     // Firebug tells me so.
+//     this.imgData = {
+//         data: Uint8ClampedArray(width * height * 4)
+//     };
+// }
+//
+// ImageCanvasProxy.prototype.putImageData = function(imgData) {
+//     // this.ctx.putImageData(imgData, 0, 0);
+// }
+//
+// ImageCanvasProxy.prototype.getCanvas = function() {
+//     return this;
+// }
 
 var JpegStreamProxyCounter = 0;
 // WebWorker Proxy for JpegStream.
@@ -61,7 +61,10 @@ function GradientProxy(stack, x0, y0, x1, y1) {
     }
 }
 
+var canvasProxyCounter = 0;
 function CanvasProxy(width, height) {
+    this.id = canvasProxyCounter++;
+
     var stack = this.$stack = [];
 
     // Dummy context exposed.
@@ -73,12 +76,15 @@ function CanvasProxy(width, height) {
         return ctx;
     }
 
+    this.getCanvas = function() {
+        return this;
+    }
+
     // Expose only the minimum of the canvas object - there is no dom to do
     // more here.
-    ctx.canvas = {
-        width: width,
-        height: height
-    }
+    this.width = width;
+    this.height = height;
+    ctx.canvas = this;
 
     var ctxFunc = [
         "createRadialGradient",
@@ -127,9 +133,23 @@ function CanvasProxy(width, height) {
         return new GradientProxy(stack, x0, y0, x1, y1);
     }
 
+    ctx.getImageData = function(x, y, w, h) {
+        return {
+            width: w,
+            height: h,
+            data: Uint8ClampedArray(w * h * 4)
+        };
+    }
+
+    ctx.putImageData = function(data, x, y, width, height) {
+        stack.push(["$putImageData", [data, x, y, width, height]]);
+    }
+
     ctx.drawImage = function(image, x, y, width, height, sx, sy, swidth, sheight) {
-        if (image instanceof ImageCanvasProxy) {
-            stack.push(["$drawCanvas", [image.imgData, x, y, image.width, image.height]]);
+        if (image instanceof CanvasProxy) {
+            // Send the image/CanvasProxy to the main thread.
+            image.flush();
+            stack.push(["$drawCanvas", [image.id, x, y, sx, sy, swidth, sheight]]);
         } else if(image instanceof JpegStreamProxy) {
             stack.push(["$drawImage", [image.id, x, y, sx, sy, swidth, sheight]])
         } else {
@@ -214,6 +234,11 @@ function CanvasProxy(width, height) {
 
 CanvasProxy.prototype.flush = function() {
     postMessage("canvas_proxy_stack");
-    postMessage(this.$stack);
+    postMessage({
+        id:     this.id,
+        stack:  this.$stack,
+        width:  this.width,
+        height: this.height
+    });
     this.$stack.length = 0;
 }
