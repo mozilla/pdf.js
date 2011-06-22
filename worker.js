@@ -41,6 +41,7 @@ var canvas = new CanvasProxy(1224, 1584);
 log("test");
 
 var pageInterval;
+
 onmessage = function(event) {
     var data = event.data;
     var pdfDocument = new PDFDoc(new Stream(data));
@@ -48,48 +49,16 @@ onmessage = function(event) {
 
     tic();
     // Let's try to render the first page...
-    var page = pdfDocument.getPage(8);
+    var page = pdfDocument.getPage(2);
 
     // page.compile will collect all fonts for us, once we have loaded them
     // we can trigger the actual page rendering with page.display
     var fonts = [];
 
-    var gfx = new CanvasGraphics(canvas);
+    var gfx = new CanvasGraphics(canvas, ImageCanvasProxy);
     page.compile(gfx, fonts);
     toc("compiled page");
 
-    //
-    var fontsReady = true;
-    // Inspect fonts and translate the missing one
-    var count = fonts.length;
-    for (var i = 0; i < count; i++) {
-      var font = fonts[i];
-      if (Fonts[font.name]) {
-        fontsReady = fontsReady && !Fonts[font.name].loading;
-        continue;
-      }
-
-      new Font(font.name, font.file, font.properties);
-      fontsReady = false;
-    }
-
-    // function delayLoadFont() {
-    //   for (var i = 0; i < count; i++) {
-    //     if (Fonts[font.name].loading)
-    //       return;
-    //   }
-    //   clearInterval(pageInterval);
-    //   page.display(gfx);
-    //
-    //   log("flush");
-    //   canvas.flush();
-    // };
-
-    // if (fontsReady) {
-    //   delayLoadFont();
-    // } else {
-    //   pageInterval = setInterval(delayLoadFont, 10);
-    // }
 
     page.display(gfx);
     canvas.flush();

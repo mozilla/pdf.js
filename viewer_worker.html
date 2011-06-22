@@ -4,11 +4,6 @@
 <script>
 var myWorker = new Worker('worker.js');
 
-// var array = new Uint8Array(2);
-// array[0] = 1;
-// array[1] = 300;
-//
-
 var currentX = 0;
 var currentXStack = [];
 var special = {
@@ -34,6 +29,16 @@ var special = {
         this.translate(currentX, -1 * y);
         this.fillText(text, 0, 0);
         currentX += this.measureText(text).width;
+    },
+
+    "$drawCanvas": function(data, x, y, width, height) {
+        // Ugly: getImageData is called here only to get an object of the right
+        // shape - we are not interessted in the data, as we set it the line
+        // afterwards to something custome.
+        // Can we do better here?
+        var imgData = ctx.getImageData(0, 0, width, height);
+        imgData.data = data;
+        ctx.putImageData(imgData, x, y);
     }
 }
 
