@@ -427,39 +427,37 @@ var Font = (function () {
             var firstCode = FontsUtils.bytesToInteger(font.getBytes(2));
             var entryCount = FontsUtils.bytesToInteger(font.getBytes(2));
 
-            // Since Format 6 is a dense array, check for gaps in the indexes
-            // to fill them later if needed
-            var gaps = [];
-            for (var j = 1; j <= entryCount; j++)
-              gaps.push(j);
-
-            var encoding = properties.encoding;
             var glyphs = [];
+            var min = 0xffff, max = 0;
             for (var j = 0; j < entryCount; j++) {
               var charcode = FontsUtils.bytesToInteger(font.getBytes(2));
-              var index = gaps.indexOf(charcode);
-              if (index != -1)
-                gaps.splice(index, 1);
+              glyphs.push(charcode);
 
-              glyphs.push({unicode: charcode + firstCode});
+              if (charcode < min)
+                min = charcode;
+              if (charcode > max)
+                max = charcode;
             }
 
-            while (gaps.length)
-              glyphs.push({unicode: gaps.pop() + firstCode });
-
-            var ranges = getRanges(glyphs);
-
-            var pos = firstCode;
-            var bias = 1;
-            for (var j = 0; j < ranges.length; j++) {
-              var range = ranges[j];
-              var start = range[0];
-              var end = range[1];
-              for (var k = start; k < end; k++) {
-                encoding[pos] = glyphs[pos - firstCode].unicode;
-                pos++;
-              }
+            // Since Format 6 is a dense array, check for gaps
+            for (var j = min; j < max; j++) {
+              if (glyphs.indexOf(j) == -1)
+                glyphs.push(j);
             }
+
+            for (var j = 0; j < glyphs.length; j++)
+              glyphs[j] = { unicode: glyphs[j] + firstCode };
+
+            var ranges= getRanges(glyphs);
+            assert(ranges.length == 1, "Got " + ranges.length + " ranges in a dense array");
+
+            var encoding = properties.encoding;
+            var denseRange = ranges[0];
+            var start = denseRange[0];
+            var end = denseRange[1];
+            var index = firstCode;
+            for (var j = start; j <= end; j++)
+              encoding[index++] = glyphs[j - firstCode - 1].unicode;
             cmap.data = createCMapTable(glyphs);
           }
         }
