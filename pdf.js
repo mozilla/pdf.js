@@ -71,11 +71,6 @@ var Stream = (function() {
         get length() {
             return this.end - this.start;
         },
-        lookByte: function() {
-            if (this.pos >= this.end)
-                return;
-            return this.bytes[this.pos];
-        },
         getByte: function() {
             if (this.pos >= this.end)
                 return;
@@ -99,10 +94,14 @@ var Stream = (function() {
             return bytes.subarray(pos, end);
         },
         lookChar: function() {
-            return String.fromCharCode(this.lookByte());
+            if (this.pos >= this.end)
+                return;
+            return String.fromCharCode(this.bytes[this.pos]);
         },
         getChar: function() {
-            return String.fromCharCode(this.getByte());
+            if (this.pos >= this.end)
+                return;
+            return String.fromCharCode(this.bytes[this.pos++]);
         },
         skip: function(n) {
             if (!n)
@@ -136,6 +135,84 @@ var StringStream = (function() {
 
     return constructor;
 })();
+
+// super class for the decoding streams
+var DecodeStream = (function() {
+    function constructor() {
+        this.pos = 0;
+        this.bufferLength = 0;
+        this.eof = false;
+        this.buffer = null;
+    }
+    
+    constructor.prototype = {
+        ensureBuffer: function(requested) {
+            var buffer = this.buffer;
+            var current = buffer ? buffer.byteLength : 0;
+            if (requested < current)
+                return buffer;
+            var size = 512;
+            while (size < requested)
+                size <<= 1;
+            var buffer2 = Uint8Array(size);
+            for (var i = 0; i < current; ++i)
+                buffer2[i] = buffer[i];
+            return this.buffer = buffer2;
+        },
+        getByte: function() {
+            var pos = this.pos;
+            while (this.bufferLength <= pos) {
+                if (this.eof)
+                    return;
+                this.readBlock();
+            }
+            return this.buffer[this.pos++];
+        },
+        getBytes: function(length) {
+            var pos = this.pos;
+
+            this.ensureBuffer(pos + length);
+            while (!this.eof && this.bufferLength < pos + length)
+                this.readBlock();
+
+            var end = pos + length;
+            var bufEnd = this.bufferLength;
+
+            if (end > bufEnd)
+                end = bufEnd;
+
+            this.pos = end;
+            return this.buffer.subarray(pos, end)
+        },
+        lookChar: function() {
+            var pos = this.pos;
+            while (this.bufferLength <= pos) {
+                if (this.eof)
+                    return;
+                this.readBlock();
+            }
+            return String.fromCharCode(this.buffer[this.pos]);
+        },
+        getChar: function() {
+            var pos = this.pos;
+            while (this.bufferLength <= pos) {
+                if (this.eof)
+                    return;
+                this.readBlock();
+            }
+            return String.fromCharCode(this.buffer[this.pos++]);
+        },
+        skip: function(n) {
+            if (!n)
+                n = 1;
+            this.pos += n;
+        }
+    };
+
+    return constructor;
+})();
+
+
 
 var FlateStream = (function() {
     const codeLenCodeMap = Uint32Array([
@@ -261,12 +338,11 @@ var FlateStream = (function() {
 
         this.bytes = bytes;
         this.bytesPos = bytesPos;
-        this.eof = false;
+
         this.codeSize = 0;
         this.codeBuf = 0;
-
-        this.pos = 0;
-        this.bufferLength = 0;
+        
+        DecodeStream.call(this);
     }
 
     constructor.prototype = {
@@ -313,64 +389,6 @@ var FlateStream = (function() {
             this.codeSize = (codeSize - codeLen);
             this.bytesPos = bytesPos;
             return codeVal;
-        },
-        ensureBuffer: function(requested) {
-            var buffer = this.buffer;
-            var current = buffer ? buffer.byteLength : 0;
-            if (requested < current)
-                return buffer;
-            var size = 512;
-            while (size < requested)
-                size <<= 1;
-            var buffer2 = Uint8Array(size);
-            for (var i = 0; i < current; ++i)
-                buffer2[i] = buffer[i];
-            return this.buffer = buffer2;
-        },
-        getByte: function() {
-            var pos = this.pos;
-            while (this.bufferLength <= pos) {
-                if (this.eof)
-                    return;
-                this.readBlock();
-            }
-            return this.buffer[this.pos++];
-        },
-        getBytes: function(length) {
-            var pos = this.pos;
-
-            while (!this.eof && this.bufferLength < pos + length)
-                this.readBlock();
-
-            var end = pos + length;
-            var bufEnd = this.bufferLength;
-
-            if (end > bufEnd)
-                end = bufEnd;
-
-            this.pos = end;
-            return this.buffer.subarray(pos, end)
-        },
-        lookChar: function() {
-            var pos = this.pos;
-            while (this.bufferLength <= pos) {
-                if (this.eof)
-                    return;
-                this.readBlock();
-            }
-            return String.fromCharCode(this.buffer[pos]);
-        },
-        getChar: function() {
-            var ch = this.lookChar();
-            // shouldnt matter what the position is if we get past the eof
-            // so no need to check if ch is undefined
-            this.pos++;
-            return ch;
-        },
-        skip: function(n) {
-            if (!n)
-                n = 1;
-            this.pos += n;
         },
         generateHuffmanTable: function(lengths) {
             var n = lengths.length;
@@ -489,8 +507,10 @@ var FlateStream = (function() {
                     }
                 }
 
-                litCodeTable = this.generateHuffmanTable(codeLengths.slice(0, numLitCodes));
-                distCodeTable = this.generateHuffmanTable(codeLengths.slice(numLitCodes, codes));
+                litCodeTable = this.generateHuffmanTable(
+                        codeLengths.slice(0, numLitCodes));
+                distCodeTable = this.generateHuffmanTable(
+                        codeLengths.slice(numLitCodes, codes));
             } else {
                 error("Unknown block type in flate stream");
             }
@@ -526,8 +546,199 @@ var FlateStream = (function() {
         }
     };
 
+    var thisPrototype = constructor.prototype;
+    var superPrototype = DecodeStream.prototype;
+    for (var i in superPrototype) {
+        if (!thisPrototype[i])
+            thisPrototype[i] = superPrototype[i];
+    }
+
     return constructor;
 })();
+
+var PredictorStream = (function() {
+    function constructor(stream, params) {
+        var predictor = this.predictor = params.get("Predictor") || 1;
+
+        if (predictor <= 1)
+            return stream; // no prediction
+        if (predictor !== 2 && (predictor < 10 || predictor > 15))
+            error("Unsupported predictor");
+
+        if (predictor === 2)
+            this.readBlock = this.readBlockTiff;
+        else
+            this.readBlock = this.readBlockPng;
+
+        this.stream = stream;
+        this.dict = stream.dict;
+        if (params.has("EarlyChange")) {
+            error("EarlyChange predictor parameter is not supported");
+        }
+        var colors = this.colors = params.get("Colors") || 1;
+        var bits = this.bits = params.get("BitsPerComponent") || 8;
+        var columns = this.columns = params.get("Columns") || 1;
+
+        var pixBytes = this.pixBytes = (colors * bits + 7) >> 3;
+        // add an extra pixByte to represent the pixel left of column 0
+        var rowBytes = this.rowBytes = (columns * colors * bits + 7) >> 3;
+        
+        DecodeStream.call(this);
+    }
+
+    constructor.prototype = {
+        readBlockTiff : function() {
+            var buffer = this.buffer;
+            var pos = this.pos;
+
+            var rowBytes = this.rowBytes;
+            var pixBytes = this.pixBytes;
+
+
+            var buffer = this.buffer;
+            var bufferLength = this.bufferLength;
+            this.ensureBuffer(bufferLength + rowBytes);
+            var currentRow = buffer.subarray(bufferLength, bufferLength + rowBytes);
+            
+            var bits = this.bits;
+            var colors = this.colors;
+
+            var rawBytes = this.stream.getBytes(rowBytes);
+            
+            if (bits === 1) {
+                var inbuf = 0;
+                for (var i = 0; i < rowBytes; ++i) {
+                    var c = rawBytes[i];
+                    inBuf = (inBuf << 8) | c;
+                    // bitwise addition is exclusive or
+                    // first shift inBuf and then add
+                    currentRow[i] = (c ^ (inBuf >> colors)) & 0xFF;
+                    // truncate inBuf (assumes colors < 16)
+                    inBuf &= 0xFFFF;
+                }
+            } else if (bits === 8) {
+                for (var i = 0; i < colors; ++i)
+                    currentRow[i] = rawBytes[i];
+                for (; i < rowBytes; ++i)
+                    currentRow[i] = currentRow[i - colors] + rawBytes[i];
+            } else {
+                var compArray = new Uint8Array(colors + 1);
+                var bitMask = (1 << bits) - 1;
+                var inbuf = 0, outbut = 0;
+                var inbits = 0, outbits = 0;
+                var j = 0, k = 0;
+                var columns = this.columns;
+                for (var i = 0; i < columns; ++i) {
+                    for (var kk = 0; kk < colors; ++kk) {
+                        if (inbits < bits) {
+                            inbuf = (inbuf << 8) | (rawBytes[j++] & 0xFF);
+                            inbits += 8;
+                        }
+                        compArray[kk] = (compArray[kk] +
+                                         (inbuf >> (inbits - bits))) & bitMask;
+                        inbits -= bits;
+                        outbuf = (outbuf << bits) | compArray[kk];
+                        outbits += bits;
+                        if (outbits >= 8) {
+                            currentRow[k++] = (outbuf >> (outbits - 8)) & 0xFF;
+                            outbits -= 8;
+                        }
+                    }
+                }
+                if (outbits > 0) {
+                    currentRow[k++] = (outbuf << (8 - outbits)) +
+                                      (inbuf & ((1 << (8 - outbits)) - 1))
+                }
+            }
+            this.bufferLength += rowBytes;
+        },
+        readBlockPng : function() {
+            var buffer = this.buffer;
+            var pos = this.pos;
+
+            var rowBytes = this.rowBytes;
+            var pixBytes = this.pixBytes;
+
+            var predictor = this.stream.getByte();
+            var rawBytes = this.stream.getBytes(rowBytes);
+
+            var buffer = this.buffer;
+            var bufferLength = this.bufferLength;
+            this.ensureBuffer(bufferLength + pixBytes);
+            
+            var currentRow = buffer.subarray(bufferLength, bufferLength + rowBytes);
+            var prevRow = buffer.subarray(bufferLength - rowBytes, bufferLength);
+            if (prevRow.length == 0)
+                prevRow = currentRow;
+
+            switch (predictor) {
+            case 0:
+                break;
+            case 1:
+                for (var i = 0; i < pixBytes; ++i)
+                    currentRow[i] = rawBytes[i];
+                for (; i < rowBytes; ++i)
+                    currentRow[i] = (currentRow[i - pixBytes] + rawBytes[i]) & 0xFF;
+                break;
+            case 2:
+                for (var i = 0; i < rowBytes; ++i)
+                    currentRow[i] = (prevRow[i] + rawBytes[i]) & 0xFF;
+                break;
+            case 3:
+                for (var i = 0; i < pixBytes; ++i)
+                    currentRow[i] = (prevRow[i] >> 1) + rawBytes[i];
+                for (; i < rowBytes; ++i)
+                    currentRow[i] = (((prevRow[i] + currentRow[i - pixBytes])
+                                >> 1) + rawBytes[i]) & 0xFF;
+                break;
+            case 4:
+                // we need to save the up left pixels values. the simplest way
+                // is to create a new buffer
+                for (var i = 0; i < pixBytes; ++i)
+                    currentRow[i] = rawBytes[i];
+                for (; i < rowBytes; ++i) {
+                    var up = prevRow[i];
+                    var upLeft = lastRow[i - pixBytes];
+                    var left = currentRow[i - pixBytes];
+                    var p = left + up - upLeft;
+
+                    var pa = p - left;
+                    if (pa < 0)
+                        pa = -pa;
+                    var pb = p - up;
+                    if (pb < 0)
+                        pb = -pb;
+                    var pc = p - upLeft;
+                    if (pc < 0)
+                        pc = -pc;
+
+                    var c = rawBytes[i];
+                    if (pa <= pb && pa <= pc)
+                        currentRow[i] = left + c;
+                    else if (pb <= pc)
+                        currentRow[i] = up + c;
+                    else
+                        currentRow[i] = upLeft + c;
+                    break;
+                }
+            default:
+                error("Unsupported predictor");
+                break;
+            }
+            this.bufferLength += rowBytes;
+        },
+    };
+    
+    var thisPrototype = constructor.prototype;
+    var superPrototype = DecodeStream.prototype;
+    for (var i in superPrototype) {
+        if (!thisPrototype[i])
+            thisPrototype[i] = superPrototype[i];
+    }
+
+    return constructor;
+})();
+
 // A JpegStream can't be read directly. We use the platform to render the underlying
 // JPEG data for us.
 var JpegStream = (function() {
@@ -552,196 +763,6 @@ var JpegStream = (function() {
 
     return constructor;
 })();
-
-var PredictorStream = (function() {
-    function constructor(stream, params) {
-        var predictor = this.predictor = params.get("Predictor") || 1;
-
-        if (predictor <= 1)
-            return stream; // no prediction
-        if (predictor !== 2 && (predictor < 10 || predictor > 15))
-            error("Unsupported predictor");
-
-        if (predictor === 2)
-            this.readRow = this.readRowTiff;
-        else
-            this.readRow = this.readRowPng;
-
-        this.stream = stream;
-        this.dict = stream.dict;
-        if (params.has("EarlyChange")) {
-            error("EarlyChange predictor parameter is not supported");
-        }
-        var colors = this.colors = params.get("Colors") || 1;
-        var bits = this.bits = params.get("BitsPerComponent") || 8;
-        var columns = this.columns = params.get("Columns") || 1;
-
-        var pixBytes = this.pixBytes = (colors * bits + 7) >> 3;
-        // add an extra pixByte to represent the pixel left of column 0
-        var rowBytes = this.rowBytes = ((columns * colors * bits + 7) >> 3) + pixBytes;
-
-        this.currentRow = new Uint8Array(rowBytes);
-        this.bufferLength = rowBytes;
-        this.pos = rowBytes;
-    }
-
-    constructor.prototype = {
-        readRowTiff : function() {
-            var currentRow = this.currentRow;
-            var rowBytes = this.rowBytes;
-            var pixBytes = this.pixBytes;
-            var bits = this.bits;
-            var colors = this.colors;
-
-            var rawBytes = this.stream.getBytes(rowBytes - pixBytes);
-
-            if (bits === 1) {
-                var inbuf = 0;
-                for (var i = pixBytes, j = 0; i < rowBytes; ++i, ++j) {
-                    var c = rawBytes[j];
-                    inBuf = (inBuf << 8) | c;
-                    // bitwise addition is exclusive or
-                    // first shift inBuf and then add
-                    currentRow[i] = (c ^ (inBuf >> colors)) & 0xFF;
-                    // truncate inBuf (assumes colors < 16)
-                    inBuf &= 0xFFFF;
-                }
-            } else if (bits === 8) {
-                for (var i = pixBytes, j = 0; i < rowBytes; ++i, ++j)
-                    currentRow[i] = currentRow[i - colors] + rawBytes[j];
-            } else {
-                var compArray = new Uint8Array(colors + 1);
-                var bitMask = (1 << bits) - 1;
-                var inbuf = 0, outbut = 0;
-                var inbits = 0, outbits = 0;
-                var j = 0, k = pixBytes;
-                var columns = this.columns;
-                for (var i = 0; i < columns; ++i) {
-                    for (var kk = 0; kk < colors; ++kk) {
-                        if (inbits < bits) {
-                            inbuf = (inbuf << 8) | (rawBytes[j++] & 0xFF);
-                            inbits += 8;
-                        }
-                        compArray[kk] = (compArray[kk] +
-                                         (inbuf >> (inbits - bits))) & bitMask;
-                        inbits -= bits;
-                        outbuf = (outbuf << bits) | compArray[kk];
-                        outbits += bits;
-                        if (outbits >= 8) {
-                            currentRow[k++] = (outbuf >> (outbits - 8)) & 0xFF;
-                            outbits -= 8;
-                        }
-                    }
-                }
-                if (outbits > 0) {
-                    currentRow[k++] = (outbuf << (8 - outbits)) +
-                                      (inbuf & ((1 << (8 - outbits)) - 1))
-                }
-            }
-            this.pos = pixBytes;
-        },
-        readRowPng : function() {
-            var currentRow = this.currentRow;
-
-            var rowBytes = this.rowBytes;
-            var pixBytes = this.pixBytes;
-
-            var predictor = this.stream.getByte();
-            var rawBytes = this.stream.getBytes(rowBytes - pixBytes);
-
-            switch (predictor) {
-            case 0:
-                break;
-            case 1:
-                for (var i = pixBytes, j = 0; i < rowBytes; ++i, ++j)
-                    currentRow[i] = (currentRow[i - pixBytes] + rawBytes[j]) & 0xFF;
-                break;
-            case 2:
-                for (var i = pixBytes, j = 0; i < rowBytes; ++i, ++j)
-                    currentRow[i] = (currentRow[i] + rawBytes[j]) & 0xFF;
-                break;
-            case 3:
-                for (var i = pixBytes, j = 0; i < rowBytes; ++i, ++j)
-                    currentRow[i] = (((currentRow[i] + currentRow[i - pixBytes])
-                                >> 1) + rawBytes[j]) & 0xFF;
-                break;
-            case 4:
-                // we need to save the up left pixels values. the simplest way
-                // is to create a new buffer
-                var lastRow = currentRow;
-                var currentRow = new Uint8Array(rowBytes);
-                for (var i = pixBytes, j = 0; i < rowBytes; ++i, ++j) {
-                    var up = lastRow[i];
-                    var upLeft = lastRow[i - pixBytes];
-                    var left = currentRow[i - pixBytes];
-                    var p = left + up - upLeft;
-
-                    var pa = p - left;
-                    if (pa < 0)
-                        pa = -pa;
-                    var pb = p - up;
-                    if (pb < 0)
-                        pb = -pb;
-                    var pc = p - upLeft;
-                    if (pc < 0)
-                        pc = -pc;
-
-                    var c = rawBytes[j];
-                    if (pa <= pb && pa <= pc)
-                        currentRow[i] = left + c;
-                    else if (pb <= pc)
-                        currentRow[i] = up + c;
-                    else
-                        currentRow[i] = upLeft + c;
-                    break;
-                    this.currentRow = currentRow;
-                }
-            default:
-                error("Unsupported predictor");
-                break;
-            }
-            this.pos = pixBytes;
-        },
-        getByte : function() {
-            if (this.pos >= this.bufferLength)
-               this.readRow();
-            return this.currentRow[this.pos++];
-        },
-        getBytes : function(n) {
-            var i, bytes;
-            bytes = new Uint8Array(n);
-            for (i = 0; i < n; ++i) {
-              if (this.pos >= this.bufferLength)
-                this.readRow();
-              bytes[i] = this.currentRow[this.pos++];
-            }
-            return bytes;
-        },
-        getChar : function() {
-            return String.formCharCode(this.getByte());
-        },
-        lookChar : function() {
-            if (this.pos >= this.bufferLength)
-               this.readRow();
-            return String.formCharCode(this.currentRow[this.pos]);
-        },
-        skip : function(n) {
-            var i;
-            if (!n) {
-                n = 1;
-            }
-            while (n > this.bufferLength - this.pos) {
-                n -= this.bufferLength - this.pos;
-                this.readRow();
-                if (this.bufferLength === 0) break;
-            }
-            this.pos += n;
-        }
-    };
-
-    return constructor;
-})();
-
 var DecryptStream = (function() {
     function constructor(str, fileKey, encAlgorithm, keyLength) {
         TODO("decrypt stream is not implemented");
