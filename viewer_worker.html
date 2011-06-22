@@ -44,12 +44,17 @@ var special = {
     },
 
     "$putImageData": function(imageData, x, y) {
-        // Ugly: getImageData is called here only to get an object of the right
-        // shape - we are not interessted in the data, as we set it the line
-        // afterwards to something custome.
-        // Can we do better here?
         var imgData = this.getImageData(0, 0, imageData.width, imageData.height);
-        imgData.data = imageData.data;
+
+        // Store the .data property to avaid property lookups.
+        var imageRealData = imageData.data;
+        var imgRealData = imgData.data;
+
+        // Copy over the imageData.
+        var len = imageRealData.length;
+        while (len--)
+            imgRealData[len] = imageRealData[len]
+
         this.putImageData(imgData, x, y);
     },
 
@@ -262,7 +267,7 @@ function open(url) {
         var data = req.mozResponseArrayBuffer || req.mozResponse ||
                    req.responseArrayBuffer || req.response;
         myWorker.postMessage(data);
-        showPage("13");
+        showPage("2");
       }
     };
     req.send(null);
