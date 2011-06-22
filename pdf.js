@@ -2273,14 +2273,7 @@ function ScratchCanvas(width, height) {
     var canvas = document.createElement("canvas");
     canvas.width = width;
     canvas.height = height;
-
-    this.getContext = function(kind) {
-        return canvas.getContext(kind);
-    }
-
-    this.getCanvas = function() {
-        return canvas;
-    }
+    return canvas;
 }
 
 var CanvasGraphics = (function() {
@@ -3021,10 +3014,10 @@ var CanvasGraphics = (function() {
             // we want the canvas to be as large as the step size
             var botRight = applyMatrix([x0 + xstep, y0 + ystep], matrix);
 
-            var tmpCanvas = document.createElement("canvas");
-            tmpCanvas.width = Math.ceil(botRight[0] - topLeft[0]);
-            tmpCanvas.height = Math.ceil(botRight[1] - topLeft[1]);
-            console.log("tilingFill", tmpCanvas.width, tmpCanvas.height);
+            var tmpCanvas = new this.ScratchCanvas(
+                Math.ceil(botRight[0] - topLeft[0]),    // WIDTH
+                Math.ceil(botRight[1] - topLeft[1])     // HEIGHT
+            );
 
             // set the new canvas element context as the graphics context
             var tmpCtx = tmpCanvas.getContext("2d");
@@ -3265,7 +3258,6 @@ var CanvasGraphics = (function() {
                 ctx.drawImage(domImage, 0, 0, domImage.width, domImage.height,
                               0, -h, w, h);
                 this.restore();
-                console.log("drawImage");
                 return;
             }
 
@@ -3415,7 +3407,7 @@ var CanvasGraphics = (function() {
                 }
             }
             tmpCtx.putImageData(imgData, 0, 0);
-            ctx.drawImage(tmpCanvas.getCanvas(), 0, -h);
+            ctx.drawImage(tmpCanvas, 0, -h);
             this.restore();
         },
 

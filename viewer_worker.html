@@ -15,6 +15,7 @@ function toc(msg) {
 var myWorker = new Worker('worker.js');
 var imagesList = {};
 var canvasList = {};
+var patternList = {};
 var gradient;
 
 var currentX = 0;
@@ -78,6 +79,14 @@ var special = {
         gradient = this.createLinearGradient(x0, y0, x1, y1);
     },
 
+    "$createPatternFromCanvas": function(patternId, canvasId, kind) {
+        var canvas = canvasList[canvasId];
+        if (!canvas) {
+            throw "Canvas not found";
+        }
+        patternList[patternId] = this.createPattern(canvas, kind);
+    },
+
     "$addColorStop": function(i, rgba) {
         gradient.addColorStop(i, rgba);
     },
@@ -86,8 +95,24 @@ var special = {
         this.fillStyle = gradient;
     },
 
+    "$fillStylePattern": function(id) {
+        var pattern = patternList[id];
+        if (!pattern) {
+            throw "Pattern not found";
+        }
+        this.fillStyle = pattern;
+    },
+
     "$strokeStyleGradient": function() {
         this.strokeStyle = gradient;
+    },
+
+    "$strokeStylePattern": function(id) {
+        var pattern = patternList[id];
+        if (!pattern) {
+            throw "Pattern not found";
+        }
+        this.strokeStyle = pattern;
     }
 }
 
@@ -237,7 +262,7 @@ function open(url) {
         var data = req.mozResponseArrayBuffer || req.mozResponse ||
                    req.responseArrayBuffer || req.response;
         myWorker.postMessage(data);
-        showPage("11");
+        showPage("13");
       }
     };
     req.send(null);
