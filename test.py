@@ -1,7 +1,10 @@
-import json, os, sys, subprocess
+import json, os, sys, subprocess, urllib2
 from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
+from urlparse import urlparse
 
 ANAL = True
+DEFAULT_MANIFEST_FILE = 'test_manifest.json'
+REFDIR = 'ref'
 VERBOSE = False
 
 MIMEs = {
@@ -34,8 +37,11 @@ class PDFTestHandler(BaseHTTPRequestHandler):
             BaseHTTPRequestHandler.log_request(code, size)
 
     def do_GET(self):
+        url = urlparse(self.path)
+        # Ignore query string
+        path, _ = url.path, url.query
         cwd = os.getcwd()
-        path = os.path.abspath(os.path.realpath(cwd + os.sep + self.path))
+        path = os.path.abspath(os.path.realpath(cwd + os.sep + path))
         cwd = os.path.abspath(cwd)
         prefix = os.path.commonprefix(( path, cwd ))
         _, ext = os.path.splitext(path)
@@ -69,19 +75,21 @@ class PDFTestHandler(BaseHTTPRequestHandler):
         self.end_headers()
 
         result = json.loads(self.rfile.read(numBytes))
-        browser = 'firefox4'
-        id, failure, round, page, snapshot = result['id'], result['failure'], result['round'], result['page'], result['snapshot']
+        browser, id, failure, round, page, snapshot = result['browser'], result['id'], result['failure'], result['round'], result['page'], result['snapshot']
         taskResults = State.taskResults[browser][id]
-        taskResults[round][page - 1] = Result(snapshot, failure)
+        taskResults[round].append(Result(snapshot, failure))
+        assert len(taskResults[round]) == page
 
         if result['taskDone']:
             check(State.manifest[id], taskResults, browser)
+            # Please oh please GC this ...
+            del State.taskResults[browser][id]
             State.remaining -= 1
 
         State.done = (0 == State.remaining)
             
 
-def set_up():
+def set_up(manifestFile):
     # Only serve files from a pdf.js clone
     assert not ANAL or os.path.isfile('pdf.js') and os.path.isdir('.git')
 
@@ -90,9 +98,26 @@ def set_up():
 #'chrome12', 'chrome13', 'firefox5', 'firefox6','opera11' ):
                      if os.access(b, os.R_OK | os.X_OK) ]
 
-    mf = open('test_manifest.json')
+    mf = open(manifestFile)
     manifestList = json.load(mf)
     mf.close()
+
+    for item in manifestList:
+        f, isLink = item['file'], item.get('link', False)
+        if isLink and not os.access(f, os.R_OK):
+            linkFile = open(f +'.link')
+            link = linkFile.read()
+            linkFile.close()
+
+            sys.stdout.write('Downloading '+ link +' to '+ f +' ...')
+            sys.stdout.flush()
+            response = urllib2.urlopen(link)
+
+            out = open(f, 'w')
+            out.write(response.read())
+            out.close()
+
+            print 'done'
 
     for b in testBrowsers:
         State.taskResults[b] = { }
@@ -101,15 +126,16 @@ def set_up():
             State.manifest[id] = item
             taskResults = [ ]
             for r in xrange(rounds):
-                taskResults.append([ None ] * 100)
+                taskResults.append([ ])
             State.taskResults[b][id] = taskResults
 
     State.remaining = len(manifestList)
 
     for b in testBrowsers:
         print 'Launching', b
+        qs = 'browser='+ b +'&manifestFile='+ manifestFile
         subprocess.Popen(( os.path.abspath(os.path.realpath(b)),
-                           'http://localhost:8080/test_slave.html' ))
+                           'http://localhost:8080/test_slave.html?'+ qs))
 
 
 def check(task, results, browser):
@@ -129,7 +155,7 @@ def check(task, results, browser):
         return
 
     kind = task['type']
-    if '==' == kind:
+    if 'eq' == kind:
         checkEq(task, results, browser)
     elif 'fbf' == kind:
         checkFBF(task, results, browser)
@@ -140,23 +166,42 @@ def check(task, results, browser):
 
 
 def checkEq(task, results, browser):
-    print '  !!! [TODO: == tests] !!!'
-    print 'TEST-PASS | == test', task['id'], '| in', browser
+    pfx = os.path.join(REFDIR, sys.platform, browser, task['id'])
+    results = results[0]
 
+    passed = True
+    for page in xrange(len(results)):
+        ref = None
+        try:
+            path = os.path.join(pfx, str(page + 1))
+            f = open(path)
+            ref = f.read()
+            f.close()
+        except IOError, ioe:
+            continue
 
-printed = [False]
+        snapshot = results[page]
+        if ref != snapshot:
+            print 'TEST-UNEXPECTED-FAIL | eq', task['id'], '| in', browser, '| rendering of page', page + 1, '!= reference rendering'
+            passed = False
+    if passed:
+        print 'TEST-PASS | eq test', task['id'], '| in', browser
+
 
 def checkFBF(task, results, browser):
     round0, round1 = results[0], results[1]
     assert len(round0) == len(round1)
 
+    passed = True
     for page in xrange(len(round1)):
         r0Page, r1Page = round0[page], round1[page]
         if r0Page is None:
             break
         if r0Page.snapshot != r1Page.snapshot:
             print 'TEST-UNEXPECTED-FAIL | forward-back-forward test', task['id'], '| in', browser, '| first rendering of page', page + 1, '!= second'
-    print 'TEST-PASS | forward-back-forward test', task['id'], '| in', browser
+            passed = False
+    if passed:
+        print 'TEST-PASS | forward-back-forward test', task['id'], '| in', browser
 
 
 def checkLoad(task, results, browser):
@@ -165,11 +210,12 @@ def checkLoad(task, results, browser):
     print 'TEST-PASS | load test', task['id'], '| in', browser
 
 
-def main():
-    set_up()
+def main(args):
+    manifestFile = args[0] if len(args) == 1 else DEFAULT_MANIFEST_FILE
+    set_up(manifestFile)
     server = HTTPServer(('127.0.0.1', 8080), PDFTestHandler)
     while not State.done:
         server.handle_request()
 
 if __name__ == '__main__':
-    main()
+    main(sys.argv[1:])
