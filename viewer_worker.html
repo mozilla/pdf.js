@@ -8,10 +8,6 @@ var myWorker = new Worker('worker.js');
 // array[0] = 1;
 // array[1] = 300;
 //
-const WAIT = 0;
-const CANVAS_PROXY_STACK = 1;
-const LOG = 2;
-const FONT = 3;
 
 var currentX = 0;
 var currentXStack = [];
@@ -33,7 +29,7 @@ var special = {
     },
 
     "$showText": function(y, text) {
-        console.log(text, currentX, y, this.measureText(text).width);
+        // console.log(text, currentX, y, this.measureText(text).width);
 
         this.translate(currentX, -1 * y);
         this.fillText(text, 0, 0);
@@ -41,14 +37,16 @@ var special = {
     }
 }
 
+var gStack;
 function renderProxyCanvas(stack) {
-    // for (var i = 0; i < stack.length; i++) {
-    for (var i = 0; i < 1000; i++) {
+    for (var i = 0; i < stack.length; i++) {
+    // for (var i = 0; i < 1000; i++) {
         var opp = stack[i];
         if (opp[0] == "$") {
             // console.log("set property", opp[1], opp[2]);
             if (opp[1] == "font") {
                 ctx[opp[1]] = opp[2];
+                // ctx.font = "10px 'Verdana Bold Italic'";
                 // console.log("font", opp[2]);
             } else {
                 ctx[opp[1]] = opp[2];
@@ -64,7 +62,15 @@ function renderProxyCanvas(stack) {
     }
 }
 
+const WAIT = 0;
+const CANVAS_PROXY_STACK = 1;
+const LOG = 2;
+const FONT = 3;
+
 var onMessageState = WAIT;
+var fontStr = null;
+var first = true;
+var intervals = [];
 myWorker.onmessage = function(event) {
     var data = event.data;
     // console.log("onMessageRaw", data);
@@ -96,12 +102,15 @@ myWorker.onmessage = function(event) {
             var url = "url(data:" + data.mimetype + ";base64," + base64 + ");";
             var rule = "@font-face { font-family:'" + data.fontName + "';src:" + url + "}";
             var styleSheet = document.styleSheets[0];
+            styleSheet.insertRule(rule, styleSheet.length);
 
-            // ONCE you uncomment this, there is no font painted at all :(
-            // styleSheet.insertRule(rule, styleSheet.length);
+            // *HACK*: this makes the font get loaded on the page. WTF? We
+            // really have to set the fonts a few time...
+            var interval = setInterval(function() {
+                ctx.font = "bold italic 20px " + data.fontName + ", Symbol, Arial";
+            }, 10);
+            intervals.push(interval);
 
-            console.log("added font", data.fontName);
-            // console.log(rule);
             onMessageState = WAIT;
             break;
 
@@ -112,14 +121,18 @@ myWorker.onmessage = function(event) {
 
         case CANVAS_PROXY_STACK:
             var stack = JSON.parse(data);
+            gStack = stack;
             console.log("canvas stack", stack.length)
-            // console.log(stack.length);
-            onMessageState = WAIT;
-            // return;
 
+            // Shedule a timeout. Hoping the fonts are loaded after 100ms.
             setTimeout(function() {
+                // Remove all setIntervals to make the font load.
+                intervals.forEach(function(inter) {
+                    clearInterval(inter);
+                });
                 renderProxyCanvas(stack);
-            }, 2000);
+            }, 100);
+            onMessageState = WAIT;
             break;
     }
 }

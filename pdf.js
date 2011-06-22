@@ -2835,7 +2835,7 @@ var CanvasGraphics = (function() {
             this.current.textMatrix = [ a, b, c, d, e, f ];
 
             if (this.ctx.$setCurrentX) {
-                this.$setCurrentX(0)
+                this.ctx.$setCurrentX(0)
             }
             this.current.x = this.current.lineX = 0;
             this.current.y = this.current.lineY = 0;
@@ -2851,9 +2851,9 @@ var CanvasGraphics = (function() {
             if (this.ctx.$showText) {
                 this.ctx.$showText(this.current.y, Fonts.charsToUnicode(text));
             } else {
-                console.log(text, this.current.x);
                 text = Fonts.charsToUnicode(text);
-                this.ctx.fillText(text, 0, 0);
+                this.ctx.translate(this.current.x, -1 * this.current.y);
+                this.ctx.fillText(Fonts.charsToUnicode(text), 0, 0);
                 this.current.x += this.ctx.measureText(text).width;
             }
 
