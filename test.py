@@ -1,17 +1,40 @@
-import json, os, sys, subprocess, urllib2
+import json, platform, os, sys, subprocess, urllib, urllib2
 from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
+from optparse import OptionParser
 from urlparse import urlparse
 
+USAGE_EXAMPLE = "%prog"
+
+ANAL = True
+DEFAULT_MANIFEST_FILE = 'test_manifest.json'
+DEFAULT_BROWSER_MANIFEST_FILE = 'browser_manifest.json'
+REFDIR = 'ref'
+TMPDIR = 'tmp'
+VERBOSE = False
+
+class TestOptions(OptionParser):
+    def __init__(self, **kwargs):
+        OptionParser.__init__(self, **kwargs)
+        self.add_option("-m", "--masterMode", action="store_true", dest="masterMode",
+                        help="Run the script in master mode.", default=False)
+        self.add_option("--manifestFile", action="store", type="string", dest="manifestFile",
+                        help="A JSON file in the form of test_manifest.json (the default).")
+        self.add_option("--browserManifestFile", action="store", type="string",
+                        dest="browserManifestFile",
+                        help="A JSON file in the form of browser_manifest.json (the default).",
+                        default=DEFAULT_BROWSER_MANIFEST_FILE)
+        self.set_usage(USAGE_EXAMPLE)
+
+    def verifyOptions(self, options):
+        if options.masterMode and options.manifestFile:
+            self.error("--masterMode and --manifestFile must not be specified at the same time.")
+        options.manifestFile = DEFAULT_MANIFEST_FILE
+        return options
+        
 def prompt(question):
     '''Return True iff the user answered "yes" to |question|.'''
     inp = raw_input(question +' [yes/no] > ')
     return inp == 'yes'
-
-ANAL = True
-DEFAULT_MANIFEST_FILE = 'test_manifest.json'
-REFDIR = 'ref'
-TMPDIR = 'tmp'
-VERBOSE = False
 
 MIMEs = {
     '.css': 'text/css',
@@ -100,13 +123,34 @@ class PDFTestHandler(BaseHTTPRequestHandler):
 
         State.done = (0 == State.remaining)
 
+# this just does Firefox for now
+class BrowserCommand():
+    def __init__(self, browserRecord):
+        print browserRecord
+        self.name = browserRecord["name"]
+        self.path = browserRecord["path"]
+        self.type = browserRecord["type"]
 
-def setUp(manifestFile, masterMode):
+        if platform.system() == "Darwin" and self.path.endswith(".app"):
+            self._fixupMacPath()
+
+        if not os.path.exists(self.path):
+            throw("Path to browser '%s' does not exist." % self.path)
+
+    def _fixupMacPath(self):
+        self.path = self.path + "/Contents/MacOS/firefox-bin"
+
+def makeBrowserCommands(browserManifestFile):
+    with open(browserManifestFile) as bmf:
+        browsers = [BrowserCommand(browser) for browser in json.load(bmf)]
+    return browsers
+
+def setUp(options):
     # Only serve files from a pdf.js clone
     assert not ANAL or os.path.isfile('pdf.js') and os.path.isdir('.git')
 
-    State.masterMode = masterMode
-    if masterMode and os.path.isdir(TMPDIR):
+    State.masterMode = options.masterMode
+    if options.masterMode and os.path.isdir(TMPDIR):
         print 'Temporary snapshot dir tmp/ is still around.'
         print 'tmp/ can be removed if it has nothing you need.'
         if prompt('SHOULD THIS SCRIPT REMOVE tmp/?  THINK CAREFULLY'):
@@ -114,14 +158,10 @@ def setUp(manifestFile, masterMode):
 
     assert not os.path.isdir(TMPDIR)
 
-    testBrowsers = [ b for b in
-                     ( 'firefox5', )
-#'chrome12', 'chrome13', 'firefox4', 'firefox6','opera11' ):
-                     if os.access(b, os.R_OK | os.X_OK) ]
+    testBrowsers = makeBrowserCommands(options.browserManifestFile)
 
-    mf = open(manifestFile)
-    manifestList = json.load(mf)
-    mf.close()
+    with open(options.manifestFile) as mf:
+        manifestList = json.load(mf)
 
     for item in manifestList:
         f, isLink = item['file'], item.get('link', False)
@@ -140,22 +180,26 @@ def setUp(manifestFile, masterMode):
 
             print 'done'
 
+    print testBrowsers
+
     for b in testBrowsers:
-        State.taskResults[b] = { }
+        State.taskResults[b.name] = { }
         for item in manifestList:
             id, rounds = item['id'], int(item['rounds'])
             State.manifest[id] = item
             taskResults = [ ]
             for r in xrange(rounds):
                 taskResults.append([ ])
-            State.taskResults[b][id] = taskResults
+            State.taskResults[b.name][id] = taskResults
 
     State.remaining = len(manifestList)
 
+    
+
     for b in testBrowsers:
-        print 'Launching', b
-        qs = 'browser='+ b +'&manifestFile='+ manifestFile
-        subprocess.Popen(( os.path.abspath(os.path.realpath(b)),
+        print 'Launching', b.name
+        qs = 'browser='+ urllib.quote(b.name) +'&manifestFile='+ urllib.quote(options.manifestFile)
+        subprocess.Popen(( os.path.abspath(os.path.realpath(b.path)),
                            'http://localhost:8080/test_slave.html?'+ qs))
 
 
@@ -285,14 +329,14 @@ def processResults():
                 print 'done'
 
 
-def main(args):
-    masterMode = False
-    manifestFile = DEFAULT_MANIFEST_FILE
-    if len(args) == 1:
-        masterMode = (args[0] == '-m')
-        manifestFile = args[0] if not masterMode else manifestFile
+def main():
+    optionParser = TestOptions()
+    options, args = optionParser.parse_args()
+    options = optionParser.verifyOptions(options)
+    if options == None:
+        sys.exit(1)
 
-    setUp(manifestFile, masterMode)
+    setUp(options)
 
     server = HTTPServer(('127.0.0.1', 8080), PDFTestHandler)
     while not State.done:
@@ -301,4 +345,4 @@ def main(args):
     processResults()
 
 if __name__ == '__main__':
-    main(sys.argv[1:])
+    main()
