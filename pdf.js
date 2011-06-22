@@ -3419,8 +3419,18 @@ var ColorSpace = (function() {
                 this.dict = dict;
                 this.numComps = dict.get("N");
                 break;
+            case "Indexed":
+                this.stream = stream;
+                this.dict = stream.dict;
+                var base = cs[1];
+                var hival = cs[2];
+                assertWellFormed(0 <= hival && hival <= 255, "hival in range");
+                var lookupTable = cs[3];
+                TODO("implement 'Indexed' color space");
+                this.numComps = 3; // HACK
+                break;
             default:
-                error("unrecognized color space object");
+                error("unrecognized color space object '"+ mode +"'");
             }
         } else {
             error("unrecognized color space object");
