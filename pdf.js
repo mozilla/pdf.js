@@ -2867,7 +2867,7 @@ var CanvasGraphics = (function() {
             this.ctx.scale(1, -1);
 
             if (this.ctx.$showText) {
-                this.ctx.$showText(this.current.y, Fonts.charsToUnicode(text));
+                this.ctx.$showText(this.current.y, text, Fonts.charsToUnicode(text));
             } else {
                 text = Fonts.charsToUnicode(text);
                 this.ctx.translate(this.current.x, -1 * this.current.y);
@@ -3423,7 +3423,6 @@ var CanvasGraphics = (function() {
                     TODO("Images with "+ numComps + " components per pixel");
                 }
             }
-            console.log("paintImageXObject", w, h);
             tmpCanvas.putImageData(imgData, 0, 0);
             ctx.drawImage(tmpCanvas.getCanvas(), 0, -h);
             this.restore();

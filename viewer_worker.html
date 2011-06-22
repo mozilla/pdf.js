@@ -2,6 +2,16 @@
     <head>
         <title>Simple pdf.js page viewer worker</title>
 <script>
+
+var timer = null
+function tic() {
+    timer = Date.now();
+}
+
+function toc(msg) {
+    console.log(msg + ": " + (Date.now() - timer) + "ms");
+}
+
 var myWorker = new Worker('worker.js');
 
 var currentX = 0;
@@ -23,11 +33,9 @@ var special = {
         currentX = currentXStack.pop();
     },
 
-    "$showText": function(y, text) {
-        // console.log(text, currentX, y, this.measureText(text).width);
-
+    "$showText": function(y, text, uniText) {
         this.translate(currentX, -1 * y);
-        this.fillText(text, 0, 0);
+        this.fillText(uniText, 0, 0);
         currentX += this.measureText(text).width;
     },
 
@@ -48,20 +56,10 @@ function renderProxyCanvas(stack) {
     // for (var i = 0; i < 1000; i++) {
         var opp = stack[i];
         if (opp[0] == "$") {
-            // console.log("set property", opp[1], opp[2]);
-            if (opp[1] == "font") {
-                ctx[opp[1]] = opp[2];
-                // ctx.font = "10px 'Verdana Bold Italic'";
-                // console.log("font", opp[2]);
-            } else {
-                ctx[opp[1]] = opp[2];
-            }
-
+            ctx[opp[1]] = opp[2];
         } else if (opp[0] in special) {
-            // console.log("sepcial", opp[0], opp[1])
             special[opp[0]].apply(ctx, opp[1]);
         } else {
-            // console.log("execute", opp[0], opp[1]);
             ctx[opp[0]].apply(ctx, opp[1]);
         }
     }
@@ -71,6 +69,7 @@ const WAIT = 0;
 const CANVAS_PROXY_STACK = 1;
 const LOG = 2;
 const FONT = 3;
+const PDF_NUM_PAGE = 4;
 
 var onMessageState = WAIT;
 var fontStr = null;
@@ -85,6 +84,9 @@ myWorker.onmessage = function(event) {
                 throw "expecting to get an string";
             }
             switch (data) {
+                case "pdf_num_page":
+                    onMessageState = PDF_NUM_PAGE;
+                    return;
                 case "log":
                     onMessageState = LOG;
                     return;
@@ -97,6 +99,13 @@ myWorker.onmessage = function(event) {
                 default:
                     throw "unkown state: " + data
             }
+            break;
+
+        case PDF_NUM_PAGE:
+            console.log(data);
+            maxPages = parseInt(data);
+            document.getElementById("numPages").innerHTML = "/" + data;
+            onMessageState = WAIT;
             break;
 
         case FONT:
@@ -115,6 +124,7 @@ myWorker.onmessage = function(event) {
                 ctx.font = "bold italic 20px " + data.fontName + ", Symbol, Arial";
             }, 10);
             intervals.push(interval);
+            console.log("setup font", data.fontName);
 
             onMessageState = WAIT;
             break;
@@ -127,7 +137,7 @@ myWorker.onmessage = function(event) {
         case CANVAS_PROXY_STACK:
             var stack = JSON.parse(data);
             gStack = stack;
-            console.log("canvas stack", stack.length)
+            console.log("canvas stack size", stack.length)
 
             // Shedule a timeout. Hoping the fonts are loaded after 100ms.
             setTimeout(function() {
@@ -135,7 +145,9 @@ myWorker.onmessage = function(event) {
                 intervals.forEach(function(inter) {
                     clearInterval(inter);
                 });
+                tic();
                 renderProxyCanvas(stack);
+                toc("canvas rendering")
             }, 100);
             onMessageState = WAIT;
             break;
@@ -143,6 +155,19 @@ myWorker.onmessage = function(event) {
 }
 //
 // myWorker.postMessage(array);
+
+var currentPage = 1;
+var maxPages = 1;
+function showPage(num) {
+    ctx.save();
+    ctx.fillStyle = "rgb(255, 255, 255)";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.restore();
+    console.log("worker: page=" + num)
+    document.getElementById('pageNumber').value = num;
+    currentPage = parseInt(num);
+    myWorker.postMessage(num);
+}
 
 function open(url) {
     document.title = url;
@@ -155,22 +180,27 @@ function open(url) {
         var data = req.mozResponseArrayBuffer || req.mozResponse ||
                    req.responseArrayBuffer || req.response;
         myWorker.postMessage(data);
+        showPage("1");
       }
     };
     req.send(null);
 }
 
+function nextPage() {
+    if (currentPage == maxPages) return;
+    currentPage++;
+    showPage(currentPage);
+}
+
+function prevPage() {
+    if (currentPage == 0) return;
+    currentPage--;
+    showPage(currentPage);
+}
+
 window.onload = function() {
-    var ctx = window.ctx = document.getElementById("canvas").getContext("2d");
-    ctx.save();
-    ctx.fillStyle = "rgb(255, 255, 255)";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.restore();
-    // for (var name in ctx) {
-    //     if (!(ctx[name] instanceof Function)) {
-    //         console.log('"' + name + '": "' + ctx[name] + '",');
-    //     }
-    // }
+    window.canvas = document.getElementById("canvas");
+    window.ctx = canvas.getContext("2d");
     open("compressed.tracemonkey-pldi-09.pdf");
 }
 </script>
@@ -184,7 +214,7 @@ window.onload = function() {
       -- Can we use JSONP to overcome the same-origin restrictions? -->
       <button onclick="prevPage();">Previous</button>
       <button onclick="nextPage();">Next</button>
-      <input type="text" id="pageNumber" onchange="gotoPage(this.value);"
+      <input type="text" id="pageNumber" onchange="showPage(this.value);"
              value="1" size="4"></input>
       <span id="numPages">--</span>
       <span id="info"></span>
