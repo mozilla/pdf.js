@@ -61,6 +61,20 @@ function GradientProxy(stack, x0, y0, x1, y1) {
     }
 }
 
+var patternProxyCounter = 0;
+function PatternProxy(stack, object, kind) {
+    this.id = patternProxyCounter++;
+
+    if (!(object instanceof CanvasProxy) ) {
+        throw "unkown type to createPattern";
+    }
+    // Flush the object here to ensure it's available on the main thread.
+    // TODO: Make some kind of dependency management, such that the object
+    // gets flushed only if needed.
+    object.flush();
+    stack.push(["$createPatternFromCanvas", [this.id, object.id, kind]]);
+}
+
 var canvasProxyCounter = 0;
 function CanvasProxy(width, height) {
     this.id = canvasProxyCounter++;
@@ -74,10 +88,6 @@ function CanvasProxy(width, height) {
             throw "CanvasProxy can only provide a 2d context.";
         }
         return ctx;
-    }
-
-    this.getCanvas = function() {
-        return this;
     }
 
     // Expose only the minimum of the canvas object - there is no dom to do
@@ -105,7 +115,7 @@ function CanvasProxy(width, height) {
         "transform",
         "setTransform",
         // "createLinearGradient",
-        "createPattern",
+        // "createPattern",
         "clearRect",
         "fillRect",
         "strokeRect",
@@ -128,6 +138,10 @@ function CanvasProxy(width, height) {
         "$restoreCurrentX",
         "$showText"
     ];
+
+    ctx.createPattern = function(object, kind) {
+        return new PatternProxy(stack, object, kind);
+    }
 
     ctx.createLinearGradient = function(x0, y0, x1, y1) {
         return new GradientProxy(stack, x0, y0, x1, y1);
@@ -219,6 +233,8 @@ function CanvasProxy(width, height) {
                 return function(value) {
                     if (value instanceof GradientProxy) {
                         stack.push(["$" + name + "Gradient"]);
+                    } else if (value instanceof PatternProxy) {
+                        stack.push(["$" + name + "Pattern", [value.id]]);
                     } else {
                         stack.push(["$", name, value]);
                         return ctx["$" + name] = value;
