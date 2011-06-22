@@ -3290,7 +3290,7 @@ var CanvasGraphics = (function() {
                     }
                     break;
                 default:
-                    error("unhandled amount of components per pixel: " + numComps);
+                    TODO("Images with "+ numComps + " components per pixel");
                 }
             } else {
                 var numComps = colorSpace.numComps;
@@ -3317,7 +3317,7 @@ var CanvasGraphics = (function() {
                     }
                     break;
                 default:
-                    error("unhandled amount of components per pixel: " + numComps);
+                    TODO("Images with "+ numComps + " components per pixel");
                 }
             }
             tmpCtx.putImageData(imgData, 0, 0);
