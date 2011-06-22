@@ -2,9 +2,15 @@ import json, os, sys, subprocess, urllib2
 from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
 from urlparse import urlparse
 
+def prompt(question):
+    '''Return True iff the user answered "yes" to |question|.'''
+    inp = raw_input(question +' [yes/no] > ')
+    return inp == 'yes'
+
 ANAL = True
 DEFAULT_MANIFEST_FILE = 'test_manifest.json'
 REFDIR = 'ref'
+TMPDIR = 'tmp'
 VERBOSE = False
 
 MIMEs = {
@@ -23,6 +29,12 @@ class State:
     remaining = 0
     results = { }
     done = False
+    masterMode = False
+    numErrors = 0
+    numEqFailures = 0
+    numEqNoSnapshot = 0
+    numFBFFailures = 0
+    numLoadFailures = 0
 
 class Result:
     def __init__(self, snapshot, failure):
@@ -89,13 +101,22 @@ class PDFTestHandler(BaseHTTPRequestHandler):
         State.done = (0 == State.remaining)
 
 
-def set_up(manifestFile):
+def setUp(manifestFile, masterMode):
     # Only serve files from a pdf.js clone
     assert not ANAL or os.path.isfile('pdf.js') and os.path.isdir('.git')
 
+    State.masterMode = masterMode
+    if masterMode and os.path.isdir(TMPDIR):
+        print 'Temporary snapshot dir tmp/ is still around.'
+        print 'tmp/ can be removed if it has nothing you need.'
+        if prompt('SHOULD THIS SCRIPT REMOVE tmp/?  THINK CAREFULLY'):
+            subprocess.call(( 'rm', '-rf', 'tmp' ))
+
+    assert not os.path.isdir(TMPDIR)
+
     testBrowsers = [ b for b in
-                     ( 'firefox4', )
-#'chrome12', 'chrome13', 'firefox5', 'firefox6','opera11' ):
+                     ( 'firefox5', )
+#'chrome12', 'chrome13', 'firefox4', 'firefox6','opera11' ):
                      if os.access(b, os.R_OK | os.X_OK) ]
 
     mf = open(manifestFile)
@@ -149,6 +170,7 @@ def check(task, results, browser):
             failure = pageResult.failure
             if failure:
                 failed = True
+                State.numErrors += 1
                 print 'TEST-UNEXPECTED-FAIL | test failed', task['id'], '| in', browser, '| page', p + 1, 'round', r, '|', failure
 
     if failed:
@@ -171,19 +193,36 @@ def checkEq(task, results, browser):
 
     passed = True
     for page in xrange(len(results)):
+        snapshot = results[page].snapshot
         ref = None
-        try:
-            path = os.path.join(pfx, str(page + 1))
+        eq = True
+
+        path = os.path.join(pfx, str(page + 1))
+        if not os.access(path, os.R_OK):
+            print 'WARNING: no reference snapshot', path
+            State.numEqNoSnapshot += 1
+        else:
             f = open(path)
             ref = f.read()
             f.close()
-        except IOError, ioe:
-            continue
 
-        snapshot = results[page]
-        if ref != snapshot:
-            print 'TEST-UNEXPECTED-FAIL | eq', task['id'], '| in', browser, '| rendering of page', page + 1, '!= reference rendering'
-            passed = False
+            eq = (ref == snapshot)
+            if not eq:
+                print 'TEST-UNEXPECTED-FAIL | eq', task['id'], '| in', browser, '| rendering of page', page + 1, '!= reference rendering'
+                passed = False
+                State.numEqFailures += 1
+
+        if State.masterMode and (ref is None or not eq):
+            tmpTaskDir = os.path.join(TMPDIR, sys.platform, browser, task['id'])
+            try:
+                os.makedirs(tmpTaskDir)
+            except OSError, e:
+                pass
+
+            of = open(os.path.join(tmpTaskDir, str(page + 1)), 'w')
+            of.write(snapshot)
+            of.close()
+
     if passed:
         print 'TEST-PASS | eq test', task['id'], '| in', browser
 
@@ -200,6 +239,7 @@ def checkFBF(task, results, browser):
         if r0Page.snapshot != r1Page.snapshot:
             print 'TEST-UNEXPECTED-FAIL | forward-back-forward test', task['id'], '| in', browser, '| first rendering of page', page + 1, '!= second'
             passed = False
+            State.numFBFFailures += 1
     if passed:
         print 'TEST-PASS | forward-back-forward test', task['id'], '| in', browser
 
@@ -210,12 +250,54 @@ def checkLoad(task, results, browser):
     print 'TEST-PASS | load test', task['id'], '| in', browser
 
 
+def processResults():
+    print ''
+    numErrors, numEqFailures, numEqNoSnapshot, numFBFFailures = State.numErrors, State.numEqFailures, State.numEqNoSnapshot, State.numFBFFailures
+    numFatalFailures = (numErrors + numFBFFailures)
+    if 0 == numEqFailures and 0 == numFatalFailures:
+        print 'All tests passed.'
+    else:
+        print 'OHNOES!  Some tests failed!'
+        if 0 < numErrors:
+            print '  errors:', numErrors
+        if 0 < numEqFailures:
+            print '  different ref/snapshot:', numEqFailures
+        if 0 < numFBFFailures:
+            print '  different first/second rendering:', numFBFFailures
+
+    if State.masterMode and (0 < numEqFailures or 0 < numEqNoSnapshot):
+        print "Some eq tests failed or didn't have snapshots."
+        print 'Checking to see if master references can be updated...'
+        if 0 < numFatalFailures:
+            print '  No.  Some non-eq tests failed.'
+        else:
+            '  Yes!  The references in tmp/ can be synced with ref/.'
+            if not prompt('Would you like to update the master copy in ref/?'):
+                print '  OK, not updating.'
+            else:
+                sys.stdout.write('  Updating ... ')
+
+                # XXX unclear what to do on errors here ...
+                # NB: do *NOT* pass --delete to rsync.  That breaks this
+                # entire scheme.
+                subprocess.check_call(( 'rsync', '-arv', 'tmp/', 'ref/' ))
+
+                print 'done'
+
+
 def main(args):
-    manifestFile = args[0] if len(args) == 1 else DEFAULT_MANIFEST_FILE
-    set_up(manifestFile)
+    masterMode = False
+    if len(args) == 1:
+        masterMode = (args[0] == '-m')
+        manifestFile = args[0] if not masterMode else DEFAULT_MANIFEST_FILE
+
+    setUp(manifestFile, masterMode)
+
     server = HTTPServer(('127.0.0.1', 8080), PDFTestHandler)
     while not State.done:
         server.handle_request()
+
+    processResults()
 
 if __name__ == '__main__':
     main(sys.argv[1:])
