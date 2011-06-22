@@ -171,15 +171,22 @@ var DecodeStream = (function() {
         getBytes: function(length) {
             var pos = this.pos;
 
-            this.ensureBuffer(pos + length);
-            while (!this.eof && this.bufferLength < pos + length)
-                this.readBlock();
+            if (length) {
+                this.ensureBuffer(pos + length);
+                var end = pos + length;
 
-            var end = pos + length;
-            var bufEnd = this.bufferLength;
+                while (!this.eof && this.bufferLength < end)
+                    this.readBlock();
 
-            if (end > bufEnd)
-                end = bufEnd;
+                var bufEnd = this.bufferLength;
+                if (end > bufEnd)
+                    end = bufEnd;
+            } else {
+                while (!this.eof)
+                    this.readBlock();
+
+                var end = this.bufferLength;
+            }
 
             this.pos = end;
             return this.buffer.subarray(pos, end)
@@ -763,6 +770,76 @@ var DecryptStream = (function() {
     }
 
     constructor.prototype = Stream.prototype;
+
+    return constructor;
+})();
+
+var Ascii85Stream = (function() {
+    function constructor(str) {
+        this.str = str;
+        this.dict = str.dict;
+        this.input = new Uint8Array(5);
+        
+        DecodeStream.call(this);
+    }
+
+    constructor.prototype = Object.create(DecodeStream.prototype);
+    constructor.prototype.readBlock = function() {
+        const tildaCode = "~".charCodeAt(0);
+        const zCode = "z".charCodeAt(0);
+        var str = this.str;
+
+        var c = str.getByte();
+        while (Lexer.isSpace(String.fromCharCode(c)))
+            c = str.getByte();
+
+        if (!c || c === tildaCode) {
+            this.eof = true;
+            return;
+        } 
+
+        var bufferLength = this.bufferLength;
+
+        // special code for z
+        if (c == zCode) {
+            this.ensureBuffer(bufferLength + 4);
+            var buffer = this.buffer;
+            for (var i = 0; i < 4; ++i)
+                buffer[bufferLength + i] = 0;
+            this.bufferLength += 4;
+        } else {
+            var input = this.input;
+            input[0] = c;
+            for (var i = 1; i < 5; ++i){
+                c = str.getByte();
+                while (Lexer.isSpace(String.fromCharCode(c)))
+                    c = str.getByte();
+
+                input[i] = c;
+
+                if (!c || c == tildaCode)
+                    break;
+            }
+            this.ensureBuffer(bufferLength + i - 1);
+            var buffer = this.buffer;
+            this.bufferLength += i - 1;
+
+            // partial ending;
+            if (i < 5) {
+                for (; i < 5; ++i)
+                    input[i] = 0x21 + 84;
+                this.eof = true;
+            }
+            var t = 0;
+            for (var i = 0; i < 5; ++i)
+                t = t * 85 + (input[i] - 0x21);
+
+            for (var i = 3; i >= 0; --i){
+                buffer[bufferLength + i] = t & 0xFF;
+                t >>= 8;
+            }
+        }
+    };
 
     return constructor;
 })();
@@ -1351,8 +1428,8 @@ var Parser = (function() {
             if (IsArray(filter)) {
                 var filterArray = filter;
                 var paramsArray = params;
-                for (var i = 0, ii = filter.length; i < ii; ++i) {
-                    filter = filter[i];
+                for (var i = 0, ii = filterArray.length; i < ii; ++i) {
+                    filter = filterArray[i];
                     if (!IsName(filter))
                         error("Bad filter name");
                     else {
@@ -1374,6 +1451,8 @@ var Parser = (function() {
             } else if (name == "DCTDecode") {
                 var bytes = stream.getBytes(length);
                 return new JpegStream(bytes, stream.dict);
+            } else if (name == "ASCII85Decode") {
+                return new Ascii85Stream(stream);
             } else {
                 error("filter '" + name + "' not supported yet");
             }
