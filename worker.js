@@ -18,11 +18,6 @@ importScripts("glyphlist.js")
 // Use the JpegStreamProxy proxy.
 JpegStream = JpegStreamProxy;
 
-// var array = new Uint8Array(2);
-// array[0] = 1;
-// array[1] = 300;
-// postMessage(array);
-
 var timer = null;
 function tic() {
     timer = Date.now();
@@ -33,15 +28,8 @@ function toc(msg) {
     timer = null;
 }
 
-
+// Create the WebWorkerProxyCanvas.
 var canvas = new CanvasProxy(1224, 1584);
-// canvas.moveTo(0, 10);
-// canvas.lineTo(0, 20);
-// canvas.lineTo(500, 500);
-// canvas.flush();
-// canvas.stroke();
-// canvas.flush();
-log("test");
 
 var pageInterval;
 var pdfDocument = null;
@@ -61,7 +49,7 @@ onmessage = function(event) {
         // page.compile will collect all fonts for us, once we have loaded them
         // we can trigger the actual page rendering with page.display
         var fonts = [];
-        var gfx = new CanvasGraphics(canvas, ImageCanvasProxy);
+        var gfx = new CanvasGraphics(canvas.getContext("2d"), ImageCanvasProxy);
         page.compile(gfx, fonts);
 
         // Inspect fonts and translate the missing one.

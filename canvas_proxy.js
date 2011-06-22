@@ -64,9 +64,18 @@ function GradientProxy(stack, x0, y0, x1, y1) {
 function CanvasProxy(width, height) {
     var stack = this.$stack = [];
 
+    // Dummy context exposed.
+    var ctx = {};
+    this.getContext = function(type) {
+        if (type != "2d") {
+            throw "CanvasProxy can only provide a 2d context.";
+        }
+        return ctx;
+    }
+
     // Expose only the minimum of the canvas object - there is no dom to do
     // more here.
-    this.canvas = {
+    ctx.canvas = {
         width: width,
         height: height
     }
@@ -114,11 +123,11 @@ function CanvasProxy(width, height) {
         "$showText"
     ];
 
-    this.createLinearGradient = function(x0, y0, x1, y1) {
+    ctx.createLinearGradient = function(x0, y0, x1, y1) {
         return new GradientProxy(stack, x0, y0, x1, y1);
     }
 
-    this.drawImage = function(image, x, y, width, height, sx, sy, swidth, sheight) {
+    ctx.drawImage = function(image, x, y, width, height, sx, sy, swidth, sheight) {
         if (image instanceof ImageCanvasProxy) {
             stack.push(["$drawCanvas", [image.imgData, x, y, image.width, image.height]]);
         } else if(image instanceof JpegStreamProxy) {
@@ -137,7 +146,7 @@ function CanvasProxy(width, height) {
     var name;
     for (var i = 0; i < ctxFunc.length; i++) {
         name = ctxFunc[i];
-        this[name] = buildFuncCall(name);
+        ctx[name] = buildFuncCall(name);
     }
 
     var ctxProp = {
@@ -168,20 +177,20 @@ function CanvasProxy(width, height) {
 
     function buildGetter(name) {
         return function() {
-            return this["$" + name];
+            return ctx["$" + name];
         }
     }
 
     function buildSetter(name) {
         return function(value) {
             stack.push(["$", name, value]);
-            return this["$" + name] = value;
+            return ctx["$" + name] = value;
         }
     }
 
     for (var name in ctxProp) {
-        this["$" + name] = ctxProp[name];
-        this.__defineGetter__(name, buildGetter(name));
+        ctx["$" + name] = ctxProp[name];
+        ctx.__defineGetter__(name, buildGetter(name));
 
         // Special treatment for `fillStyle` and `strokeStyle`: The passed style
         // might be a gradient. Need to check for that.
@@ -192,13 +201,13 @@ function CanvasProxy(width, height) {
                         stack.push(["$" + name + "Gradient"]);
                     } else {
                         stack.push(["$", name, value]);
-                        return this["$" + name] = value;
+                        return ctx["$" + name] = value;
                     }
                 }
             }
-            this.__defineSetter__(name, buildSetterStyle(name));
+            ctx.__defineSetter__(name, buildSetterStyle(name));
         } else {
-            this.__defineSetter__(name, buildSetter(name));
+            ctx.__defineSetter__(name, buildSetter(name));
         }
     }
 }
