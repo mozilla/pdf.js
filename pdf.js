@@ -2867,13 +2867,14 @@ var CanvasGraphics = (function() {
                         error("Unable to find pattern resource");
 
                     var pattern = xref.fetchIfRef(patternRes.get(patternName.name));
-
-                    const types = [null, this.tilingFill];
-                    var typeNum = pattern.dict.get("PatternType");
+                    var patternDict = IsStream(pattern) ? pattern.dict : pattern;
+                    const types = [null, this.tilingFill,
+                                   function() { TODO("Shading Patterns"); }];
+                    var typeNum = patternDict.get("PatternType");
                     var patternFn = types[typeNum];
                     if (!patternFn)
                         error("Unhandled pattern type");
-                    patternFn.call(this, pattern);
+                    patternFn.call(this, pattern, patternDict);
                 }
             } else {
                 // TODO real impl
