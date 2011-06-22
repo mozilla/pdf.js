@@ -387,9 +387,9 @@ var FlateStream = (function() {
         if (codeSize == 0|| codeSize < codeLen || codeLen == 0)
             error("Bad encoding in flate stream");
         this.codeBuf = (codeBuf >> codeLen);
-            this.codeSize = (codeSize - codeLen);
-            this.bytesPos = bytesPos;
-            return codeVal;
+        this.codeSize = (codeSize - codeLen);
+        this.bytesPos = bytesPos;
+        return codeVal;
     };
     constructor.prototype.generateHuffmanTable = function(lengths) {
         var n = lengths.length;
