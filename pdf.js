@@ -171,15 +171,22 @@ var DecodeStream = (function() {
         getBytes: function(length) {
             var pos = this.pos;
 
-            this.ensureBuffer(pos + length);
-            while (!this.eof && this.bufferLength < pos + length)
-                this.readBlock();
+            if (length) {
+                this.ensureBuffer(pos + length);
+                var end = pos + length;
 
-            var end = pos + length;
-            var bufEnd = this.bufferLength;
+                while (!this.eof && this.bufferLength < end)
+                    this.readBlock();
 
-            if (end > bufEnd)
-                end = bufEnd;
+                var bufEnd = this.bufferLength;
+                if (end > bufEnd)
+                    end = bufEnd;
+            } else {
+                while (!this.eof)
+                    this.readBlock();
+
+                var end = this.bufferLength;
+            }
 
             this.pos = end;
             return this.buffer.subarray(pos, end)
@@ -763,132 +770,64 @@ var Ascii85Stream = (function() {
     function constructor(str) {
         this.str = str;
         this.dict = str.dict;
-        this.eof = false;
-        this.pos = 0;
-        this.bufferLength = 0;
-        this.buffer = null;
+        
+        DecodeStream.call(this);
     }
-    constructor.prototype = {
-        ensureBuffer: function(requested) {
+
+    constructor.prototype = Object.create(DecodeStream.prototype);
+    constructor.prototype.readBlock = function() {
+        const tildaCode = "~".charCodeAt(0);
+        const zCode = "z".charCodeAt(0);
+        var str = this.str;
+
+        var c = str.getByte();
+        while (Lexer.isSpace(String.fromCharCode(c)))
+            c = str.getByte();
+
+        if (!c || c === tildaCode) {
+            this.eof = true;
+            return;
+        } 
+
+        var bufferLength = this.bufferLength;
+
+        // special code for z
+        if (c == zCode) {
+            this.ensureBuffer(bufferLength + 4);
             var buffer = this.buffer;
-            var current = buffer ? buffer.byteLength : 0;
-            if (requested < current)
-                return buffer;
-            var size = 512;
-            while (size < requested)
-                size <<= 1;
-            var buffer2 = Uint8Array(size);
-            for (var i = 0; i < current; ++i)
-                buffer2[i] = buffer[i];
-            return this.buffer = buffer2;
-        },
-        getByte: function() {
-            var pos = this.pos;
-            while (this.bufferLength <= pos) {
-                if (this.eof)
-                    return;
-                this.readBlock();
-            }
-            return this.buffer[this.pos++];
-        },
-       getBytes: function(length) {
-            var pos = this.pos;
-
-            this.ensureBuffer(pos + length);
-            if (length) {
-                while (!this.eof && this.bufferLength < pos + length)
-                    this.readBlock();
-
-                var end = pos + length;
-                var bufEnd = this.bufferLength;
-
-                if (end > bufEnd)
-                    end = bufEnd;
-            } else {
-                while(!this.eof)
-                    this.readBlock();
-                var end = this.bufferLength;
-            }
-            this.pos = end;
-            return this.buffer.subarray(pos, end)
-        },
-        lookChar: function() {
-            var pos = this.pos;
-            while (this.bufferLength <= pos) {
-                if (this.eof)
-                    return;
-                this.readBlock();
-            }
-            return String.fromCharCode(this.buffer[this.pos]);
-        },
-        getChar: function() {
-            var pos = this.pos;
-            while (this.bufferLength <= pos) {
-                if (this.eof)
-                    return;
-                this.readBlock();
-            }
-            return String.fromCharCode(this.buffer[this.pos++]);
-        },
-        skip: function(n) {
-            if (!n)
-                n = 1;
-            this.pos += n;
-        },
-        readBlock: function() {
-            const tildaCode = "~".charCodeAt(0);
-            const zCode = "z".charCodeAt(0);
-            var str = this.str;
-
-            var c = str.getByte();
-            while (Lexer.isSpace(String.fromCharCode(c)))
+            for (var i = 0; i < 4; ++i)
+                buffer[bufferLength + i] = 0;
+            this.bufferLength += 4;
+        } else {
+            var input = new Uint8Array(5);
+            input[0] = c;
+            for (var i = 1; i < 5; ++i){
                 c = str.getByte();
-            if (!c || c === tildaCode) {
-                this.eof = true;
-                return;
-            } 
-
-            var bufferLength = this.bufferLength;
-
-            // special code for z
-            if (c == zCode) {
-                this.ensureBuffer(bufferLength + 4);
-                var buffer = this.buffer;
-                buffer[bufferLength++] = 0;
-                buffer[bufferLength++] = 0;
-                buffer[bufferLength++] = 0;
-                buffer[bufferLength++] = 0;
-                this.bufferLength += 4;
-            } else {
-                var input = new Uint8Array(5);
-                input[0] = c;
-                for (var i = 1; i < 5; ++i){
+                while (Lexer.isSpace(String.fromCharCode(c)))
                     c = str.getByte();
-                    while (Lexer.isSpace(String.fromCharCode(c)))
-                        c = str.getByte();
 
-                    input[i] = c;
-                    
-                    if (!c || c == tildaCode)
-                        break;
-                }
-                this.ensureBuffer(bufferLength + i - 1);
-                var buffer = this.buffer;
-                this.bufferLength += i - 1;
-                // partial ending;
-                if (i < 5) {
-                    for (++i; i < 5; ++i)
-                        input[i] = 0x21 + 84;
-                    this.eof = true;
-                }
-                var t = 0;
-                for (var i = 0; i < 5; ++i)
-                    t = t * 85 + (input[i] - 0x21);
-                
-                for (var i = 3; i >= 0; --i){
-                    buffer[bufferLength + i] = t & 0xFF;
-                    t >>= 8;
-                }
+                input[i] = c;
+
+                if (!c || c == tildaCode)
+                    break;
+            }
+            this.ensureBuffer(bufferLength + i - 1);
+            var buffer = this.buffer;
+            this.bufferLength += i - 1;
+
+            // partial ending;
+            if (i < 5) {
+                for (; i < 5; ++i)
+                    input[i] = 0x21 + 84;
+                this.eof = true;
+            }
+            var t = 0;
+            for (var i = 0; i < 5; ++i)
+                t = t * 85 + (input[i] - 0x21);
+
+            for (var i = 3; i >= 0; --i){
+                buffer[bufferLength + i] = t & 0xFF;
+                t >>= 8;
             }
         }
     };
@@ -2402,6 +2341,7 @@ var CanvasGraphics = (function() {
 
     constructor.prototype = {
         translateFont: function(fontDict, xref, resources) {
+            return;
             var descriptor = xref.fetch(fontDict.get("FontDescriptor"));
 
             var fontName = descriptor.get("FontName");
