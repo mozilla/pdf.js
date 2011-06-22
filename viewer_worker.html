@@ -118,12 +118,10 @@ myWorker.onmessage = function(event) {
             var styleSheet = document.styleSheets[0];
             styleSheet.insertRule(rule, styleSheet.length);
 
-            // *HACK*: this makes the font get loaded on the page. WTF? We
-            // really have to set the fonts a few time...
-            var interval = setInterval(function() {
-                ctx.font = "bold italic 20px " + data.fontName + ", Symbol, Arial";
-            }, 10);
-            intervals.push(interval);
+            // Just adding the font-face to the DOM doesn't make it load. It
+            // seems it's loaded once Gecko notices it's used. Therefore,
+            // add a div on the page using the loaded font.
+            document.getElementById("fonts").innerHTML += "<div style='font-family:" + data.fontName + "'>j</div>";
             console.log("setup font", data.fontName);
 
             onMessageState = WAIT;
@@ -139,16 +137,13 @@ myWorker.onmessage = function(event) {
             gStack = stack;
             console.log("canvas stack size", stack.length)
 
-            // Shedule a timeout. Hoping the fonts are loaded after 100ms.
+            // There might be fonts that need to get loaded. Shedule the
+            // rendering at the end of the event queue ensures this.
             setTimeout(function() {
-                // Remove all setIntervals to make the font load.
-                intervals.forEach(function(inter) {
-                    clearInterval(inter);
-                });
                 tic();
                 renderProxyCanvas(stack);
                 toc("canvas rendering")
-            }, 100);
+            }, 0);
             onMessageState = WAIT;
             break;
     }
@@ -208,6 +203,7 @@ window.onload = function() {
   </head>
 
   <body>
+    <div id="fonts" style="position: absolute;display:block;z-index:-1;"></div>
     <div id="controls">
     <input type="file" style="float: right; margin: auto 32px;" onChange="load(this.value.toString());"></input>
     <!-- This only opens supported PDFs from the source path...
