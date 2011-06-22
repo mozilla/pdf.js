@@ -1700,8 +1700,6 @@ var XRef = (function() {
             return this.fetch(obj);
         },
         fetch: function(ref) {
-            if (!ref)
-                console.trace();
             var num = ref.num;
             var e = this.cache[num];
             if (e)
@@ -2341,7 +2339,6 @@ var CanvasGraphics = (function() {
 
     constructor.prototype = {
         translateFont: function(fontDict, xref, resources) {
-            return;
             var descriptor = xref.fetch(fontDict.get("FontDescriptor"));
 
             var fontName = descriptor.get("FontName");
