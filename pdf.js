@@ -770,6 +770,7 @@ var Ascii85Stream = (function() {
     function constructor(str) {
         this.str = str;
         this.dict = str.dict;
+        this.input = new Uint8Array(5);
         
         DecodeStream.call(this);
     }
@@ -799,7 +800,7 @@ var Ascii85Stream = (function() {
                 buffer[bufferLength + i] = 0;
             this.bufferLength += 4;
         } else {
-            var input = new Uint8Array(5);
+            var input = this.input;
             input[0] = c;
             for (var i = 1; i < 5; ++i){
                 c = str.getByte();
