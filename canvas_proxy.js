@@ -51,6 +51,16 @@ var JpegStreamProxy = (function() {
     return constructor;
 })();
 
+// Really simple GradientProxy. There is currently only one active gradient at
+// the time, meaning you can't create a gradient, create a second one and then
+// use the first one again. As this isn't used in pdf.js right now, it's okay.
+function GradientProxy(stack, x0, y0, x1, y1) {
+    stack.push(["$createLinearGradient", [x0, y0, x1, y1]]);
+    this.addColorStop = function(i, rgba) {
+        stack.push(["$addColorStop", [i, rgba]]);
+    }
+}
+
 function CanvasProxy(width, height) {
     var stack = this.$stack = [];
 
@@ -79,7 +89,7 @@ function CanvasProxy(width, height) {
         "translate",
         "transform",
         "setTransform",
-        "createLinearGradient",
+        // "createLinearGradient",
         "createPattern",
         "clearRect",
         "fillRect",
@@ -103,6 +113,10 @@ function CanvasProxy(width, height) {
         "$restoreCurrentX",
         "$showText"
     ];
+
+    this.createLinearGradient = function(x0, y0, x1, y1) {
+        return new GradientProxy(stack, x0, y0, x1, y1);
+    }
 
     this.drawImage = function(image, x, y, width, height, sx, sy, swidth, sheight) {
         if (image instanceof ImageCanvasProxy) {
@@ -168,7 +182,24 @@ function CanvasProxy(width, height) {
     for (var name in ctxProp) {
         this["$" + name] = ctxProp[name];
         this.__defineGetter__(name, buildGetter(name));
-        this.__defineSetter__(name, buildSetter(name));
+
+        // Special treatment for `fillStyle` and `strokeStyle`: The passed style
+        // might be a gradient. Need to check for that.
+        if (name == "fillStyle" || name == "strokeStyle") {
+            function buildSetterStyle(name) {
+                return function(value) {
+                    if (value instanceof GradientProxy) {
+                        stack.push(["$" + name + "Gradient"]);
+                    } else {
+                        stack.push(["$", name, value]);
+                        return this["$" + name] = value;
+                    }
+                }
+            }
+            this.__defineSetter__(name, buildSetterStyle(name));
+        } else {
+            this.__defineSetter__(name, buildSetter(name));
+        }
     }
 }
 
