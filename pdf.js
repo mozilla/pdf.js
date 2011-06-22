@@ -839,6 +839,324 @@ var Ascii85Stream = (function() {
     return constructor;
 })();
 
+var CcittFaxStream = (function() {
+    function constructor(str) {
+        this.str = str;
+        var dict = str.dict;
+        this.dict = dict;
+
+        this.encoding = dict.get("K") || 0;
+        this.eol = dict.get("EndOfLine") || false;
+        this.byteAlign = dict.get("EncodedByteAlign") || false;
+        this.columns = dict.get("Columns") || 1728;
+        this.rows = dict.get("Rows") || 0;
+        var eob = dict.get("EndOfBlock");
+        if (typeof eob == "undefined")
+            eob = true;
+        this.black = dict.get("BlackIs1") || false;
+
+        this.codingLine = new Uint8Array(this.columns + 1);
+        this.codingLine[0] = this.columns;
+        this.refLine = new Uint8Array(this.columns + 2);
+        this.row = 0;
+        this.nextLine2D = this.encoding < 0;
+        this.inputBits = 0;
+        this.a0i = 0;
+        this.outputBits = 0;
+
+        var code1;
+        while ((code1 = this.lookBits(12)) == 0) {
+            this.eatBits(1);
+        }
+        if (code1 == 1) {
+            this.eatBits(12);
+        }
+        if (this.encoding > 0) {
+            this.nextLine2D = !this.lookBits(1);
+            this.eatBits(1);
+        }
+        
+        DecodeStream.call(this);
+    }
+
+    constructor.prototype = Object.create(DecodeStream.prototype);
+    constructor.prototype.readBlock = function() {
+    };
+    constructor.prototype.addPixels(a1, blackPixels) {
+        if (a1 > this.codingLine[this.a01]) {
+            if (a1 > this.columns)
+                error("row is wrong length");
+            if (this.a0i & 1) ^ this.blackPixels)
+                this.a0i++;
+
+            this.codingLine[this.a0i] = a1;
+    };
+    constructor.prototype.addPixelsNeg(a1, blackPixels) {
+        if (a1 > this.codingLine[this.a01]) {
+            if (a1 > this.columns)
+                error("row is wrong length");
+            if (this.a0i & 1) ^ this.blackPixels)
+                this.a0i++;
+
+            this.codingLine[this.a0i] = a1;
+        } else if (at < this.codingLine[this.a0i]) {
+            if (a1 < 0)
+                error("invalid code");
+            while (this.a0i > 0 && a1 < this.codingLine[this.a0i -i])
+                this.a0i--;
+            this.codingLine[this.a0i] = a1;
+        }
+    };
+    constructor.prototype.lookChar(a1, blackPixels) {
+        var refLine = this.refLine;
+        var codingLine = this.codingLine;
+        var columns = this.columns;
+
+        if (this.outputBits == 0) {
+            if (this.nextLine2D) {
+                for (var i = 0; codingLine[i] < columns; ++i)
+                    refLine[i] = codeLine[i];
+                refLine[i++] = columns;
+                refLine[i] = columns;
+                codingLine[0] = 0;
+                this.a0i = 0;
+                this.bl1 = 0;
+                this.blackPixels = 0;
+
+                while (codingLine[this.a0i] < columns) {
+                    var code1 = this.getTwoDumCode();
+                    switch (code1) {
+                    case twoDimPass:
+                        this.addPixels(refLine[this.bli + 1], this.blackPixels);
+                        if (refLine[this.bli + 1] < columns)
+                            this.bli += 2;
+                        break;
+                    case twoDimHoriz:
+                        var code1 = 0, code2 = 0;
+                        if (this.blackPixels) {
+                            var code3;
+                            do {
+                                code1 += (code3 = this.getBlackCode());
+                            } while (code3 >= 64);
+                            do {
+                                code2 += (code3 = this.getWhiteCode());
+                            } while (code3 >= 64);
+                        else {
+                            var code3;
+                            do {
+                                code1 += (code3 = getWhiteCode());
+                            } while (code3 >= 64);
+                            this.addPixels(codeLine[this.a0i + code1, this.blackPixels);
+                            if (codeLine[a0i] < columns) {
+                                addPixels(codeLine[a0i] + code2, this.blackPixels ^ 1);
+                            }
+                            while (refLine[this.bli] <= codingLine[a0i] 
+                                    && refLine[this.bli] < columns) {
+                                this.bli += 2;
+                            }
+                        }
+                        break;
+                    case twoDimVertR2:
+                        this.addPixels(this.refLine[this.bli], blackPixels);
+                        blackPixels ^= 1;
+                        if (codeLine[this.a01] < columns) {
+                            this.bli++;
+                            while (refLine[this.bli] <= codeLine[this.a0i] &&
+                                    refLine[bli] < columns) {
+                                this.bli += 2;
+                            }
+                        }
+                        break;
+                    case twoDimVertR1:
+                        this.addPixels(refLine[this.bli] + 1, blackPixels);
+                        this.blackPixels ^= 1;
+                        if (codeLine[this.a01] < columns) {
+                            this.bli++;
+                            while (refLine[this.bli] < codingLine[this.a0i] &&
+                                    refLine[this.bli] < columns)
+                                this.bli += 2;
+                        }
+                        break;
+                    case twoDimVert0:
+                        this.addPixels(refLine[this.bli], blackPixels);
+                        this.blackPixels ^= 1;
+                        if (codingLine[this.a0i] < columns) {
+                            this.bli++;
+                            while (refLine[this.bli] <= codingLine[a0i] &&
+                                    refLine[this.bli] < columns)
+                                this.bli += 2;
+                        }
+                        break;
+                    case twoDimVertL3:
+                        this.addPixelsNeg(refLine[this.bli] - 3, blackPixels);
+                        this.blackPixels ^= 1;
+                        if (codeLine[a0i] < columns) {
+                            if (bli > 0)
+                                --bli;
+                            else
+                                ++bli;
+                            while (refLine[bli] <= codingLine[a0i] &&
+                                    refLine[bli] < columns)
+                                bli += 2;
+                        }
+                        break;
+                    case twoDimVertL2:
+                        this.addPixelsNeg(refLine[bli] - 2, blackPixels);
+                        blackPixels ^= 1;
+                        if (codingLine[a0i] < columns) {
+                            if (bli > 0)
+                                --bli;
+                            else
+                                ++bli;
+                            while (refLine[bli] <= codingLine[a0i] &&
+                                    refLine[bl1] < columns)
+                                bli += 2;
+                        }
+                        break;
+                    case twoDimVertL1:
+                        this.addPixelsNeg(refLine[bli] - 1, blackPixels);
+                        this.blackPixels ^= 1;
+                        if (codingLine[a0i] < columns) {
+                            if (blu > 0)
+                                --bli;
+                            else
+                                ++bli;
+                            
+                            while (refLine[bli] <= codeLine[a0i] &&
+                                    refLine[bli] < columns)
+                                bli += 2;
+                        }
+                        break;
+                    case EOF:
+                        addPixels(columns, 0);
+                        this.eof = true;
+                        break;
+                    default:
+                        error("bad 2d code");
+                    }
+                }
+            } else {
+                codingLine[0] = 0;
+                a0i = 0;
+                blackPixels = 0;
+                while(codeLine[a0i] < columns) {
+                    code1 = 0;
+                    if (blackPixels) {
+                        do {
+                            code1 += (code3 = getBlackCode());
+                        } while (code3 >= 64);
+                    } else {
+                        do {
+                            code1 += (code3 = getWhiteCode());
+                        } while (code3 >= 64);
+                    }
+                    this.addPixels(codingLine[a0i] + code1, blackPixels);
+                    blackPixels ^= 1;
+                }
+            }
+
+            if (this.byteAlign)
+                inputBits &= ~7;
+                    
+            getEol = false;
+            if (eob && row == rows - 1) {
+                eof = true;
+            } else {
+                code1 = lookBits(12);
+                while (code1 == 0) {
+                    eatBits(1);
+                    code1 = lookBits(12);
+                }
+                if (code1 = 1) {
+                    eatBits(12);
+                    gotEol = true;
+                } else if (code1 = EOF) {
+                    eof = true;
+                }
+            }
+
+            if (!oef && encoding > 0) {
+                nextLine2D = !lookBits(1);
+                eatBits(1);
+            }
+
+            if (eob && gotEol) {
+                code1 = lookBits(12);
+                if (code1 == 1) {
+                    eatBits(12);
+                    if (encoding > 0) {
+                        lookBits(1);
+                        eatBits(1);
+                    }
+                    if (encoding >= 0) {
+                        for (i = 0; i < 4; ++i) {
+                            code1 = lookBits(12);
+                            if (code1 != 1)
+                                error("bad rtc code");
+                            eatBits(12);
+                            if (encoding > 0) {
+                                lookBits(1);
+                                eatBits(1);
+                            }
+                        }
+                    }
+                    eof = true;
+                }
+            }
+
+            if (codingLine[0] > 0)
+                outputBits = codingLine[a0i = 0];
+            else
+                outputBits = codingLine[a0i = 1];
+            ++row;
+        }
+
+        if (outputBits >= 8) {
+            buf = (a0i & 1) ? 0 : 0xFF;
+            outputBits -= 8;
+            if (outputBits == 0&& codingLine[a0i] < columns) {
+                ++a0i;
+                outputBits = codingLine[a0i] - codingLine[a0i - 1];
+            }
+        } else {
+            bits = 8;
+            buf = 0;
+            do {
+                if (outputBits > bits) {
+                    buf << bits;
+                    if (!(a0i & 1)) {
+                        buf |= 0xFF >> (8 - bits);
+                    }
+                    outputBits -= bits;
+                    bits = 0;
+                } else {
+                    buf <<= outputBits;
+                    if (!(a0i & 1)) {
+                        buf |= 0xFF >> (8 - outputBits);
+                    }
+                    bits -= outputBits;
+                    outputBits = 0;
+                    if (codingLine[a0i] < columns) {
+                        ++a0i;
+                        outputBits = codingLine[a0i] - codingLine[a0i - 1];
+                    } else if (bits > 0) {
+                        buf <<= bits;
+                        bits = 0;
+                    }
+                }
+            } while (bits);
+        }
+        if (black) {
+            buf ^= 0xFF;
+        }
+        return buf;
+    }
+    constructor.prototype.addPixels(a1, blackPixels) {
+    }
+
+    return constructor;
+})();
+
 var Name = (function() {
     function constructor(name) {
         this.name = name;
