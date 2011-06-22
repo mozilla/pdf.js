@@ -603,10 +603,8 @@ var PredictorStream = (function() {
         var rowBytes = this.rowBytes;
         var pixBytes = this.pixBytes;
 
-
-        var buffer = this.buffer;
         var bufferLength = this.bufferLength;
-        this.ensureBuffer(bufferLength + rowBytes);
+        var buffer this.ensureBuffer(bufferLength + rowBytes);
         var currentRow = buffer.subarray(bufferLength, bufferLength + rowBytes);
 
         var bits = this.bits;
@@ -672,8 +670,7 @@ var PredictorStream = (function() {
         var rawBytes = this.stream.getBytes(rowBytes);
 
         var bufferLength = this.bufferLength;
-        this.ensureBuffer(bufferLength + pixBytes);
-        var buffer = this.buffer;
+        var buffer = this.ensureBuffer(bufferLength + pixBytes);
 
         var currentRow = buffer.subarray(bufferLength, bufferLength + rowBytes);
         var prevRow = buffer.subarray(bufferLength - rowBytes, bufferLength);
@@ -802,8 +799,7 @@ var Ascii85Stream = (function() {
 
         // special code for z
         if (c == zCode) {
-            this.ensureBuffer(bufferLength + 4);
-            var buffer = this.buffer;
+            var buffer = this.ensureBuffer(bufferLength + 4);
             for (var i = 0; i < 4; ++i)
                 buffer[bufferLength + i] = 0;
             this.bufferLength += 4;
@@ -820,8 +816,7 @@ var Ascii85Stream = (function() {
                 if (!c || c == tildaCode)
                     break;
             }
-            this.ensureBuffer(bufferLength + i - 1);
-            var buffer = this.buffer;
+            var buffer = this.ensureBuffer(bufferLength + i - 1);
             this.bufferLength += i - 1;
 
             // partial ending;
