@@ -2269,21 +2269,18 @@ var Encodings = {
   }
 };
 
-function ImageCanvas(width, height) {
-    var tmpCanvas = this.canvas = document.createElement("canvas");
-    tmpCanvas.width = width;
-    tmpCanvas.height = height;
+function ScratchCanvas(width, height) {
+    var canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
 
-    this.ctx = tmpCanvas.getContext("2d");
-    this.imgData = this.ctx.getImageData(0, 0, width, height);
-}
+    this.getContext = function(kind) {
+        return canvas.getContext(kind);
+    }
 
-ImageCanvas.prototype.putImageData = function(imgData) {
-    this.ctx.putImageData(imgData, 0, 0);
-}
-
-ImageCanvas.prototype.getCanvas = function() {
-    return this.canvas;
+    this.getCanvas = function() {
+        return canvas;
+    }
 }
 
 var CanvasGraphics = (function() {
@@ -2294,7 +2291,7 @@ var CanvasGraphics = (function() {
         this.pendingClip = null;
         this.res = null;
         this.xobjs = null;
-        this.ImageCanvas = imageCanvas || ImageCanvas;
+        this.ScratchCanvas = imageCanvas || ScratchCanvas;
     }
 
     constructor.prototype = {
@@ -3348,15 +3345,9 @@ var CanvasGraphics = (function() {
                 // handle matte object
             }
 
-            var tmpCanvas = new this.ImageCanvas(w, h);
-            // var tmpCanvas = document.createElement("canvas");
-            // tmpCanvas.width = w;
-            // tmpCanvas.height = h;
-            //
-            // var tmpCtx = tmpCanvas.getContext("2d");
-            // var imgData = tmpCtx.getImageData(0, 0, w, h);
-            // var pixels = imgData.data;
-            var imgData = tmpCanvas.imgData;
+            var tmpCanvas = new this.ScratchCanvas(w, h);
+            var tmpCtx = tmpCanvas.getContext("2d");
+            var imgData = tmpCtx.getImageData(0, 0, w, h);
             var pixels = imgData.data;
 
             if (bitsPerComponent != 8)
@@ -3423,7 +3414,7 @@ var CanvasGraphics = (function() {
                     TODO("Images with "+ numComps + " components per pixel");
                 }
             }
-            tmpCanvas.putImageData(imgData, 0, 0);
+            tmpCtx.putImageData(imgData, 0, 0);
             ctx.drawImage(tmpCanvas.getCanvas(), 0, -h);
             this.restore();
         },
