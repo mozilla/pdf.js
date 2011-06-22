@@ -84,7 +84,7 @@ span {
     background-color: #eee;
     border-bottom: 1px solid #666;
     padding: 4px 0px 0px 8px;
-    position:fixed;
+    position: fixed;
     left: 0px;
     top: 0px;
     height: 40px;
@@ -136,8 +136,59 @@ span {
     background: url('images/buttons.png') no-repeat -28px 0px;
 }
 
+#openFileButton {
+    background: url('images/buttons.png') no-repeat -56px -23px;
+    cursor: default;
+    display: inline-block;
+    float: left;
+    margin: 0px 0px 0px 3px;
+    width: 29px;
+    height: 23px;
+}
+
+#openFileButton.down {
+    background: url('images/buttons.png') no-repeat -56px -46px;
+}
+
+#openFileButton.disabled {
+    background: url('images/buttons.png') no-repeat -56px 0px;
+}
+
+#fileInput {
+    display: none;
+}
+
 #pageNumber {
     text-align: right;
+}
+
+#sidebar {
+    background-color: rgba(0, 0, 0, 0.8);
+    position: fixed;
+    width: 150px;
+    top: 62px;
+    bottom: 18px;
+    border-top-right-radius: 8px;
+    border-bottom-right-radius: 8px;
+    -moz-border-radius-topright: 8px;
+    -moz-border-radius-bottomright: 8px;
+    -webkit-border-top-right-radius: 8px;
+    -webkit-border-bottom-right-radius: 8px;
+}
+
+#sidebarScrollView {
+    position: absolute;
+    overflow: hidden;
+    overflow-y: auto;
+    top: 40px;
+    right: 10px;
+    bottom: 10px;
+    left: 10px;
+}
+
+#sidebarContentView {
+    height: auto;
+    width: 100px;
 }
 
 #viewer {
