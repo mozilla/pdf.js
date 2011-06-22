@@ -15,6 +15,9 @@ importScripts("pdf.js");
 importScripts("fonts.js");
 importScripts("glyphlist.js")
 
+// Use the JpegStreamProxy proxy.
+JpegStream = JpegStreamProxy;
+
 // var array = new Uint8Array(2);
 // array[0] = 1;
 // array[1] = 300;
