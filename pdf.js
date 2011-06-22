@@ -2269,14 +2269,32 @@ var Encodings = {
   }
 };
 
+function ImageCanvas(width, height) {
+    var tmpCanvas = this.canvas = document.createElement("canvas");
+    tmpCanvas.width = width;
+    tmpCanvas.height = height;
+
+    this.ctx = tmpCanvas.getContext("2d");
+    this.imgData = this.ctx.getImageData(0, 0, width, height);
+}
+
+ImageCanvas.prototype.putImageData = function(imgData) {
+    this.ctx.putImageData(imgData, 0, 0);
+}
+
+ImageCanvas.prototype.getCanvas = function() {
+    return this.canvas;
+}
+
 var CanvasGraphics = (function() {
-    function constructor(canvasCtx) {
+    function constructor(canvasCtx, imageCanvas) {
         this.ctx = canvasCtx;
         this.current = new CanvasExtraState();
         this.stateStack = [ ];
         this.pendingClip = null;
         this.res = null;
         this.xobjs = null;
+        this.ImageCanvas = imageCanvas || ImageCanvas;
     }
 
     constructor.prototype = {
@@ -3009,6 +3027,7 @@ var CanvasGraphics = (function() {
             var tmpCanvas = document.createElement("canvas");
             tmpCanvas.width = Math.ceil(botRight[0] - topLeft[0]);
             tmpCanvas.height = Math.ceil(botRight[1] - topLeft[1]);
+            console.log("tilingFill", tmpCanvas.width, tmpCanvas.height);
 
             // set the new canvas element context as the graphics context
             var tmpCtx = tmpCanvas.getContext("2d");
@@ -3249,6 +3268,7 @@ var CanvasGraphics = (function() {
                 ctx.drawImage(domImage, 0, 0, domImage.width, domImage.height,
                               0, -h, w, h);
                 this.restore();
+                console.log("drawImage");
                 return;
             }
 
@@ -3328,11 +3348,15 @@ var CanvasGraphics = (function() {
                 // handle matte object
             }
 
-            var tmpCanvas = document.createElement("canvas");
-            tmpCanvas.width = w;
-            tmpCanvas.height = h;
-            var tmpCtx = tmpCanvas.getContext("2d");
-            var imgData = tmpCtx.getImageData(0, 0, w, h);
+            var tmpCanvas = new this.ImageCanvas(w, h);
+            // var tmpCanvas = document.createElement("canvas");
+            // tmpCanvas.width = w;
+            // tmpCanvas.height = h;
+            //
+            // var tmpCtx = tmpCanvas.getContext("2d");
+            // var imgData = tmpCtx.getImageData(0, 0, w, h);
+            // var pixels = imgData.data;
+            var imgData = tmpCanvas.imgData;
             var pixels = imgData.data;
 
             if (bitsPerComponent != 8)
@@ -3399,8 +3423,9 @@ var CanvasGraphics = (function() {
                     TODO("Images with "+ numComps + " components per pixel");
                 }
             }
-            tmpCtx.putImageData(imgData, 0, 0);
-            ctx.drawImage(tmpCanvas, 0, -h);
+            console.log("paintImageXObject", w, h);
+            tmpCanvas.putImageData(imgData, 0, 0);
+            ctx.drawImage(tmpCanvas.getCanvas(), 0, -h);
             this.restore();
         },
 

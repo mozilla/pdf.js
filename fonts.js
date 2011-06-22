@@ -855,8 +855,6 @@ var Font = (function () {
           var rule = "@font-face { font-family:'" + fontName + "';src:" + url + "}";
           var styleSheet = document.styleSheets[0];
           styleSheet.insertRule(rule, styleSheet.length);
-          console.log("added font", fontName);
-          console.log(rule);
       }
     }
   };
