@@ -427,18 +427,39 @@ var Font = (function () {
             var firstCode = FontsUtils.bytesToInteger(font.getBytes(2));
             var entryCount = FontsUtils.bytesToInteger(font.getBytes(2));
 
+            // Since Format 6 is a dense array, check for gaps in the indexes
+            // to fill them later if needed
+            var gaps = [];
+            for (var j = 1; j <= entryCount; j++)
+              gaps.push(j);
+
             var encoding = properties.encoding;
             var glyphs = [];
             for (var j = 0; j < entryCount; j++) {
               var charcode = FontsUtils.bytesToInteger(font.getBytes(2));
-              glyphs.push({unicode: charcode + firstCode });
+              var index = gaps.indexOf(charcode);
+              if (index != -1)
+                gaps.splice(index, 1);
+
+              glyphs.push({unicode: charcode + firstCode});
             }
 
+            while (gaps.length)
+              glyphs.push({unicode: gaps.pop() + firstCode });
+
             var ranges = getRanges(glyphs);
-            var denseRange = ranges[0];
-            var pos = 0;
-            for (var j = denseRange[0]; j <= denseRange[1]; j++)
-              encoding[j - 1] = glyphs[pos++].unicode;
+
+            var pos = firstCode;
+            var bias = 1;
+            for (var j = 0; j < ranges.length; j++) {
+              var range = ranges[j];
+              var start = range[0];
+              var end = range[1];
+              for (var k = start; k < end; k++) {
+                encoding[pos] = glyphs[pos - firstCode].unicode;
+                pos++;
+              }
+            }
             cmap.data = createCMapTable(glyphs);
           }
         }
