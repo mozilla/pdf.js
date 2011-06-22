@@ -14,9 +14,9 @@ function CanvasProxy(width, height) {
         "arc",
         "fillText",
         "strokeText",
-        "drawImage",
-        "getImageData",
-        "putImageData",
+        // "drawImage",
+        // "getImageData",
+        // "putImageData",
         "createImageData",
         "drawWindow",
         "save",
@@ -50,6 +50,7 @@ function CanvasProxy(width, height) {
         "$restoreCurrentX",
         "$showText"
     ];
+
     function buildFuncCall(name) {
         return function() {
             // console.log("funcCall", name)
