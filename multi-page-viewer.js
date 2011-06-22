@@ -12,6 +12,7 @@ var PDFViewer = {
     nextPageButton: null,
     pageNumberInput: null,
     scaleSelect: null,
+    fileInput: null,
     
     willJumpToPage: false,
 
@@ -215,7 +216,7 @@ var PDFViewer = {
         }
     },
   
-    open: function(url) {
+    openURL: function(url) {
         PDFViewer.url = url;
         document.title = url;
     
@@ -231,26 +232,35 @@ var PDFViewer = {
                     req.responseArrayBuffer ||
                     req.response;
 
-                PDFViewer.pdf = new PDFDoc(new Stream(data));
-                PDFViewer.numberOfPages = PDFViewer.pdf.numPages;
-                document.getElementById('numPages').innerHTML = PDFViewer.numberOfPages.toString();
-          
-                for (var i = 1; i <= PDFViewer.numberOfPages; i++) {
-                    PDFViewer.createPage(i);
-                }
-
-                if (PDFViewer.numberOfPages > 0) {
-                    PDFViewer.drawPage(1);
-                }
-                
-                PDFViewer.previousPageButton.className = (PDFViewer.pageNumber === 1) ?
-                     'disabled' : '';
-                 PDFViewer.nextPageButton.className = (PDFViewer.pageNumber === PDFViewer.numberOfPages) ?
-                     'disabled' : '';
+                PDFViewer.readPDF(data);
             }
         };
     
         req.send(null);
+    },
+    
+    readPDF: function(data) {
+        while (PDFViewer.element.hasChildNodes()) {
+            PDFViewer.element.removeChild(PDFViewer.element.firstChild);
+        }
+        
+        PDFViewer.pdf = new PDFDoc(new Stream(data));
+        PDFViewer.numberOfPages = PDFViewer.pdf.numPages;
+        document.getElementById('numPages').innerHTML = PDFViewer.numberOfPages.toString();
+  
+        for (var i = 1; i <= PDFViewer.numberOfPages; i++) {
+            PDFViewer.createPage(i);
+        }
+
+        if (PDFViewer.numberOfPages > 0) {
+            PDFViewer.drawPage(1);
+            document.location.hash = 1;
+        }
+        
+        PDFViewer.previousPageButton.className = (PDFViewer.pageNumber === 1) ?
+             'disabled' : '';
+         PDFViewer.nextPageButton.className = (PDFViewer.pageNumber === PDFViewer.numberOfPages) ?
+             'disabled' : '';
     }
 };
 
@@ -354,11 +364,63 @@ window.onload = function() {
     PDFViewer.scaleSelect.onchange = function(evt) {
         PDFViewer.changeScale(parseInt(this.value));
     };
+    
+    if (window.File && window.FileReader && window.FileList && window.Blob) {
+        var openFileButton = document.getElementById('openFileButton');
+        openFileButton.onclick = function(evt) {
+            if (this.className.indexOf('disabled') === -1) {
+                PDFViewer.fileInput.click();
+            }
+        };
+        openFileButton.onmousedown = function(evt) {
+            if (this.className.indexOf('disabled') === -1) {
+                this.className = 'down';
+            }
+        };
+        openFileButton.onmouseup = function(evt) {
+            this.className = (this.className.indexOf('disabled') !== -1) ? 'disabled' : '';
+        };
+        openFileButton.onmouseout = function(evt) {
+            this.className = (this.className.indexOf('disabled') !== -1) ? 'disabled' : '';
+        };
+        
+        PDFViewer.fileInput = document.getElementById('fileInput');
+        PDFViewer.fileInput.onchange = function(evt) {
+            var files = evt.target.files;
+            
+            if (files.length > 0) {
+                var file = files[0];
+                var fileReader = new FileReader();
+                
+                document.title = file.name;
+                
+                // Read the local file into a Uint8Array.
+                fileReader.onload = function(evt) {
+                    var data = evt.target.result;
+                    var buffer = new ArrayBuffer(data.length);
+                    var uint8Array = new Uint8Array(buffer);
+                    
+                    for (var i = 0; i < data.length; i++) {
+                        uint8Array[i] = data.charCodeAt(i);
+                    }
+                    
+                    PDFViewer.readPDF(uint8Array);
+                };
+                
+                // Read as a binary string since "readAsArrayBuffer" is not yet
+                // implemented in Firefox.
+                fileReader.readAsBinaryString(file);
+            }
+        };
+        PDFViewer.fileInput.value = null;
+    } else {
+        document.getElementById('fileWrapper').style.display = 'none';
+    }
 
     PDFViewer.pageNumber = parseInt(PDFViewer.queryParams.page) || PDFViewer.pageNumber;
     PDFViewer.scale = parseInt(PDFViewer.scaleSelect.value) / 100 || 1.0;
     
-    PDFViewer.open(PDFViewer.queryParams.file || PDFViewer.url);
+    PDFViewer.openURL(PDFViewer.queryParams.file || PDFViewer.url);
 
     window.onscroll = function(evt) {        
         var lastPagesDrawn = PDFViewer.lastPagesDrawn;
