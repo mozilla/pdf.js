@@ -1,3 +1,24 @@
+var ImageCanvasProxyCounter = 0;
+function ImageCanvasProxy(width, height) {
+    this.id = ImageCanvasProxyCounter++;
+    this.width = width;
+    this.height = height;
+
+    // Using `Uint8ClampedArray` seems to be the type of ImageData - at least
+    // Firebug tells me so.
+    this.imgData = {
+        data: Uint8ClampedArray(width * height * 4)
+    };
+}
+
+ImageCanvasProxy.prototype.putImageData = function(imgData) {
+    // this.ctx.putImageData(imgData, 0, 0);
+}
+
+ImageCanvasProxy.prototype.getCanvas = function() {
+    return this;
+}
+
 function CanvasProxy(width, height) {
     var stack = this.$stack = [];
 
@@ -50,6 +71,14 @@ function CanvasProxy(width, height) {
         "$restoreCurrentX",
         "$showText"
     ];
+
+    this.drawImage = function(canvas, x, y) {
+        if (canvas instanceof ImageCanvasProxy) {
+            stack.push(["$drawCanvas", [canvas.imgData, x, y, canvas.width, canvas.height]]);
+        } else {
+            throw "unkown type to drawImage";
+        }
+    }
 
     function buildFuncCall(name) {
         return function() {
