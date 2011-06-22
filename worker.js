@@ -49,7 +49,7 @@ onmessage = function(event) {
         // page.compile will collect all fonts for us, once we have loaded them
         // we can trigger the actual page rendering with page.display
         var fonts = [];
-        var gfx = new CanvasGraphics(canvas.getContext("2d"), ImageCanvasProxy);
+        var gfx = new CanvasGraphics(canvas.getContext("2d"), CanvasProxy);
         page.compile(gfx, fonts);
 
         // Inspect fonts and translate the missing one.
