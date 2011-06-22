@@ -13,6 +13,7 @@ function toc(msg) {
 }
 
 var myWorker = new Worker('worker.js');
+var images = {};
 
 var currentX = 0;
 var currentXStack = [];
@@ -47,6 +48,15 @@ var special = {
         var imgData = ctx.getImageData(0, 0, width, height);
         imgData.data = data;
         ctx.putImageData(imgData, x, y);
+    },
+
+    "$drawImage": function(id, x, y, sx, sy, swidth, sheight) {
+        var image = images[id];
+        if (!image) {
+            throw "Image not found";
+        }
+        ctx.drawImage(image, x, y, image.width, image.height,
+            sx, sy, swidth, sheight);
     }
 }
 
@@ -70,6 +80,7 @@ const CANVAS_PROXY_STACK = 1;
 const LOG = 2;
 const FONT = 3;
 const PDF_NUM_PAGE = 4;
+const JPEG_STREAM = 5;
 
 var onMessageState = WAIT;
 var fontStr = null;
@@ -96,9 +107,19 @@ myWorker.onmessage = function(event) {
                 case "font":
                     onMessageState = FONT;
                     return;
+                case "jpeg_stream":
+                    onMessageState = JPEG_STREAM;
+                    return;
                 default:
                     throw "unkown state: " + data
             }
+            break;
+
+        case JPEG_STREAM:
+            var img = new Image();
+            img.src = "data:image/jpeg;base64," + window.btoa(data.str);
+            images[data.id] = img;
+            console.log("got image", data.id)
             break;
 
         case PDF_NUM_PAGE:
@@ -133,7 +154,7 @@ myWorker.onmessage = function(event) {
             break;
 
         case CANVAS_PROXY_STACK:
-            var stack = JSON.parse(data);
+            var stack = data;
             gStack = stack;
             console.log("canvas stack size", stack.length)
 
@@ -188,7 +209,7 @@ function nextPage() {
 }
 
 function prevPage() {
-    if (currentPage == 0) return;
+    if (currentPage == 1) return;
     currentPage--;
     showPage(currentPage);
 }

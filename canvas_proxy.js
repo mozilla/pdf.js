@@ -19,6 +19,38 @@ ImageCanvasProxy.prototype.getCanvas = function() {
     return this;
 }
 
+var JpegStreamProxyCounter = 0;
+// WebWorker Proxy for JpegStream.
+var JpegStreamProxy = (function() {
+    function constructor(bytes, dict) {
+        this.id = JpegStreamProxyCounter++;
+        this.dict = dict;
+
+        // create DOM image.
+        postMessage("jpeg_stream");
+        postMessage({
+            id:  this.id,
+            str: bytesToString(bytes)
+        });
+
+        // var img = new Image();
+        // img.src = "data:image/jpeg;base64," + window.btoa(bytesToString(bytes));
+        // this.domImage = img;
+    }
+
+    constructor.prototype = {
+        getImage: function() {
+            return this;
+            // return this.domImage;
+        },
+        getChar: function() {
+            error("internal error: getChar is not valid on JpegStream");
+        }
+    };
+
+    return constructor;
+})();
+
 function CanvasProxy(width, height) {
     var stack = this.$stack = [];
 
@@ -72,9 +104,11 @@ function CanvasProxy(width, height) {
         "$showText"
     ];
 
-    this.drawImage = function(canvas, x, y) {
-        if (canvas instanceof ImageCanvasProxy) {
-            stack.push(["$drawCanvas", [canvas.imgData, x, y, canvas.width, canvas.height]]);
+    this.drawImage = function(image, x, y, width, height, sx, sy, swidth, sheight) {
+        if (image instanceof ImageCanvasProxy) {
+            stack.push(["$drawCanvas", [image.imgData, x, y, image.width, image.height]]);
+        } else if(image instanceof JpegStreamProxy) {
+            stack.push(["$drawImage", [image.id, x, y, sx, sy, swidth, sheight]])
         } else {
             throw "unkown type to drawImage";
         }
@@ -139,9 +173,7 @@ function CanvasProxy(width, height) {
 }
 
 CanvasProxy.prototype.flush = function() {
-    // postMessage("log");
-    // postMessage(JSON.stringify([this.$stack.length]));
     postMessage("canvas_proxy_stack");
-    postMessage(JSON.stringify(this.$stack));
+    postMessage(this.$stack);
     this.$stack.length = 0;
 }
