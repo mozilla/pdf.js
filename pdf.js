@@ -2234,7 +2234,7 @@ var CanvasGraphics = (function() {
                                 // The encoding mapping table will be filled
                                 // later during the building phase
                                 //encodingMap[k] = GlyphsUnicode[encoding[code]];
-                                charset.push(encoding[code++]);
+                                charset.push(encoding[code++] || ".notdef");
                               }
                             }
                             break;
