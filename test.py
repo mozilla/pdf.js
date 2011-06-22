@@ -87,7 +87,7 @@ class PDFTestHandler(BaseHTTPRequestHandler):
             State.remaining -= 1
 
         State.done = (0 == State.remaining)
-            
+
 
 def set_up(manifestFile):
     # Only serve files from a pdf.js clone

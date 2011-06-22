@@ -83,14 +83,13 @@ function nextPage() {
   failure = '';
   log("    drawing page "+ currentTask.pageNum +"...");
 
-  currentPage = pdfDoc.getPage(currentTask.pageNum);
-
   var ctx = canvas.getContext("2d");
   clear(ctx);
 
   var fonts = [];
   var gfx = new CanvasGraphics(ctx);
   try {
+    currentPage = pdfDoc.getPage(currentTask.pageNum);
     currentPage.compile(gfx, fonts);
   } catch(e) {
     failure = 'compile: '+ e.toString();
