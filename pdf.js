@@ -3024,7 +3024,7 @@ var CanvasGraphics = (function() {
             var typeNum = shading.get("ShadingType");
             var fillFn = types[typeNum];
             if (!fillFn)
-                error("Unknown type of shading");
+                error("Unknown or NYI type of shading '"+ typeNum +"'");
             fillFn.apply(this, [shading]);
 
             this.restore();
@@ -3075,6 +3075,10 @@ var CanvasGraphics = (function() {
             // The following bug should allow us to remove this.
             // https://bugzilla.mozilla.org/show_bug.cgi?id=664884
             this.ctx.fillRect(-1e10, -1e10, 2e10, 2e10);
+        },
+
+        fillRadialShading: function(sh) {
+            TODO("radial shading");
         },
 
         // Images
