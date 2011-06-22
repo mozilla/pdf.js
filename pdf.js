@@ -757,76 +757,39 @@ var Ascii85Stream = (function() {
         this.eof = false;
         this.pos = 0;
         this.bufferLength = 0;
-        this.buffer = new Uint8Array(4);
+        this.buffer = null;
     }
     constructor.prototype = {
+        ensureBuffer: function(requested) {
+            var buffer = this.buffer;
+            var current = buffer ? buffer.byteLength : 0;
+            if (requested < current)
+                return buffer;
+            var size = 512;
+            while (size < requested)
+                size <<= 1;
+            var buffer2 = Uint8Array(size);
+            for (var i = 0; i < current; ++i)
+                buffer2[i] = buffer[i];
+            return this.buffer = buffer2;
+        },
         getByte: function() {
-            if (this.pos >= this.bufferLength)
+            while (this.pos >= this.bufferLength)
                this.readBlock();
             return this.buffer[this.pos++];
         },
         getBytes: function(n) {
             if (n) {
-                var i, bytes;
-                bytes = new Uint8Array(n);
-                for (i = 0; i < n; ++i) {
-                    if (this.pos >= this.bufferLength)
-                        this.readBlock();
-                    if (this.eof)
-                        break;
-                    bytes[i] = this.buffer[this.pos++];
-                }
-                return bytes;
+                while (this.bufferLength < n || !this.eof)
+                    this.readBlock();
+                return this.buffer.subarray(0, n);
             } else {
-                var length = 0;
-                var size = 1 << 8;
-                var bytes = new Uint8Array(size);
-                while (true) {
-                    if (this.pos >= this.bufferLength)
-                        this.readBlock();
-                    if (this.eof)
-                        break;
-                    if (length == size) {
-                        var oldSize = size;
-                        size <<= 1;
-                        var oldBytes = bytes;
-                        bytes = new Uint8Array(size);
-                        for (var i = 0; i < oldSize; ++i)
-                            bytes[i] = oldBytes[i];
-                    }
-                    bytes[length++] = this.buffer[this.pos++];
-                }
-                return bytes.subarray(0, length);
+                while (!this.eof)
+                    this.readBlock();
+                return this.buffer;
             }
-        },
-        getChar : function() {
-            return String.fromCharCode(this.getByte());
-        },
-        lookChar : function() {
-            if (this.pos >= this.bufferLength)
-               this.readRow();
-            return String.fromCharCode(this.currentRow[this.pos]);
-        },
-        skip : function(n) {
-            var i;
-            if (!n) {
-                n = 1;
-            }
-            while (n > this.bufferLength - this.pos) {
-                n -= this.bufferLength - this.pos;
-                this.readBlock();
-                if (this.bufferLength === 0) break;
-            }
-            this.pos += n;
         },
         readBlock: function() {
-            if (this.eof) {
-                this.bufferLength = 0;
-                this.buffer = [];
-                this.pos = 0;
-                return;
-            }
-
             const tildaCode = "~".charCodeAt(0);
             const zCode = "z".charCodeAt(0);
             var str = this.str;
@@ -839,14 +802,17 @@ var Ascii85Stream = (function() {
                 return;
             } 
 
-            var buffer = this.buffer;
+            var bufferLength = this.bufferLength;
+
             // special code for z
             if (c == zCode) {
-                buffer[0] = 0;
-                buffer[1] = 0;
-                buffer[2] = 0;
-                buffer[3] = 0;
-                this.bufferLength = 4;
+                this.ensureBuffer(bufferLength + 4);
+                var buffer = this.buffer;
+                buffer[bufferLength++] = 0;
+                buffer[bufferLength++] = 0;
+                buffer[bufferLength++] = 0;
+                buffer[bufferLength++] = 0;
+                this.bufferLength += 4;
             } else {
                 var input = new Uint8Array(5);
                 input[0] = c;
@@ -860,7 +826,9 @@ var Ascii85Stream = (function() {
                     if (!c || c == tildaCode)
                         break;
                 }
-                this.bufferLength = i - 1;
+                this.ensureBuffer(bufferLength + i - 1);
+                var buffer = this.buffer;
+                this.bufferLength += i - 1;
                 // partial ending;
                 if (i < 5) {
                     for (++i; i < 5; ++i)
@@ -872,7 +840,7 @@ var Ascii85Stream = (function() {
                     t = t * 85 + (input[i] - 0x21);
                 
                 for (var i = 3; i >= 0; --i){
-                    buffer[i] = t & 0xFF;
+                    buffer[bufferLength++] = t & 0xFF;
                     t >>= 8;
                 }
             }
