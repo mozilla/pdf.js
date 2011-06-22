@@ -2343,7 +2343,12 @@ var CanvasGraphics = (function() {
 
     constructor.prototype = {
         translateFont: function(fontDict, xref, resources) {
-            var descriptor = xref.fetch(fontDict.get("FontDescriptor"));
+            var fd = fontDict.get("FontDescriptor");
+            if (!fd)
+                // XXX deprecated "special treatment" for standard
+                // fonts?  What do we need to do here?
+                return;
+            var descriptor = xref.fetch(fd);
 
             var fontName = descriptor.get("FontName");
             assertWellFormed(IsName(fontName), "invalid font name");

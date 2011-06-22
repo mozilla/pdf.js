@@ -287,9 +287,10 @@ def processResults():
 
 def main(args):
     masterMode = False
+    manifestFile = DEFAULT_MANIFEST_FILE
     if len(args) == 1:
         masterMode = (args[0] == '-m')
-        manifestFile = args[0] if not masterMode else DEFAULT_MANIFEST_FILE
+        manifestFile = args[0] if not masterMode else manifestFile
 
     setUp(manifestFile, masterMode)
 
