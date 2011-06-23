@@ -174,7 +174,10 @@ function WorkerPDFDoc(canvas) {
       // seems it's loaded once Gecko notices it's used. Therefore,
       // add a div on the page using the loaded font.
       var div = document.createElement("div");
-      document.getElementById("fonts").innerHTML += "<div style='font-family:" + data.fontName + "'>j</div>";
+      var style = 'font-family:"' + data.fontName + 
+        '";position: absolute;top:-99999;left:-99999;z-index:-99999';
+      div.setAttribute("style", style);
+      document.body.appendChild(div);
     },
 
     "jpeg_stream": function(data) {

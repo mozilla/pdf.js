@@ -786,9 +786,9 @@ var Font = (function () {
           styleSheet.insertRule(rule, styleSheet.length);
 
           var div = document.createElement("div");
-          div.innerHTML += "<div style='font-family:" +
-            fontName +
-            ";'>j</div>";
+          var style = 'font-family:"' + fontName + 
+            '";position: absolute;top:-99999;left:-99999;z-index:-99999';
+          div.setAttribute("style", style);
           document.body.appendChild(div);
 
           Fonts[fontName].loading = true;
