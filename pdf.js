@@ -2384,9 +2384,8 @@ var CanvasGraphics = (function() {
                         error("Unknown font encoding");
 
                     var index = 0;
-                    for (var j = 0; j < encoding.length; j++) {
+                    for (var j = 0; j < encoding.length; j++)
                         encodingMap[index++] = GlyphsUnicode[encoding[j]];
-                    }
 
                     var firstChar = xref.fetchIfRef(fontDict.get("FirstChar"));
                     var widths = xref.fetchIfRef(fontDict.get("Widths"));
@@ -2472,15 +2471,19 @@ var CanvasGraphics = (function() {
             }
 
             var subType = fontDict.get("Subtype");
-            var bbox = descriptor.get("FontBBox");
-            assertWellFormed(IsName(subType) && IsArray(bbox),
-                             "invalid font Subtype or FontBBox");
+            assertWellFormed(IsName(subType), "invalid font Subtype");
 
             var properties = {
                 type: subType.name,
                 encoding: encodingMap,
                 charset: charset,
-                bbox: bbox
+                bbox: descriptor.get("FontBBox"),
+                ascent: descriptor.get("Ascent"),
+                descent: descriptor.get("Descent"),
+                xHeight: descriptor.get("XHeight"),
+                capHeight: descriptor.get("CapHeight"),
+                flags: descriptor.get("Flags"),
+                italicAngle: descriptor.get("ItalicAngle")
             };
 
             return {

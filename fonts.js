@@ -297,7 +297,7 @@ var Font = (function () {
                          idDeltas + idRangeOffsets + glyphsIds);
   };
 
-  function createOS2Table() {
+  function createOS2Table(properties) {
     return "\x00\x03" + // version
            "\x02\x24" + // xAvgCharWidth
            "\x01\xF4" + // usWeightClass
@@ -326,29 +326,29 @@ var Font = (function () {
            "\x00\x03" + // sTypoAscender
            "\x00\x20" + // sTypeDescender
            "\x00\x38" + // sTypoLineGap
-           "\x00\x5A" + // usWinAscent
-           "\x02\xB4" + // usWinDescent
-          "\x00\xCE\x00\x00" + // ulCodePageRange1 (Bits 0-31)
-          "\x00\x01\x00\x00" + // ulCodePageRange2 (Bits 32-63)
-          "\x00\x00" + // sxHeight
-          "\x00\x00" + // sCapHeight
-          "\x00\x01" + // usDefaultChar
-          "\x00\xCD" + // usBreakChar
-          "\x00\x02";   // usMaxContext
+           string16(properties.ascent)  + // usWinAscent
+           string16(properties.descent) + // usWinDescent
+           "\x00\xCE\x00\x00" + // ulCodePageRange1 (Bits 0-31)
+           "\x00\x01\x00\x00" + // ulCodePageRange2 (Bits 32-63)
+           string16(properties.xHeight)   + // sxHeight
+           string16(properties.capHeight) + // sCapHeight
+           "\x00\x01" + // usDefaultChar
+           "\x00\xCD" + // usBreakChar
+           "\x00\x02";  // usMaxContext
   };
 
-  function createPostTable() {
+  function createPostTable(properties) {
     TODO("Fill with real values from the font dict");
 
-    return "\x00\x03\x00\x00" + // Version number
-           "\x00\x00\x01\x00" + // italicAngle
-           "\x00\x00"         + // underlinePosition
-           "\x00\x00"         + // underlineThickness
-           "\x00\x00\x00\x00" + // isFixedPitch
-           "\x00\x00\x00\x00" + // minMemType42
-           "\x00\x00\x00\x00" + // maxMemType42
-           "\x00\x00\x00\x00" + // minMemType1
-           "\x00\x00\x00\x00";  // maxMemType1
+    return "\x00\x03\x00\x00"               + // Version number
+           string32(properties.italicAngle) + // italicAngle
+           "\x00\x00"                       + // underlinePosition
+           "\x00\x00"                       + // underlineThickness
+           "\x00\x00\x00\x00"               + // isFixedPitch
+           "\x00\x00\x00\x00"               + // minMemType42
+           "\x00\x00\x00\x00"               + // maxMemType42
+           "\x00\x00\x00\x00"               + // minMemType1
+           "\x00\x00\x00\x00";                // maxMemType1
   };
 
   constructor.prototype = {
@@ -412,6 +412,7 @@ var Font = (function () {
               (format == 6 && numTables == 1 && !properties.encoding.empty)) {
             // Format 0 alone is not allowed by the sanitizer so let's rewrite
             // that to a 3-1-4 Unicode BMP table
+            TODO("Use an other source of informations than charset here, it is not reliable");
             var charset = properties.charset;
             var glyphs = [];
             for (var j = 0; j < charset.length; j++) {
@@ -517,7 +518,7 @@ var Font = (function () {
         // Insert the missing table
         tables.push({
           tag: "OS/2",
-          data: stringToArray(createOS2Table())
+          data: stringToArray(createOS2Table(properties))
         });
 
         // Replace the old CMAP table with a shiny new one
@@ -527,7 +528,7 @@ var Font = (function () {
         if (!post) {
           tables.push({
             tag: "post",
-            data: stringToArray(createPostTable())
+            data: stringToArray(createPostTable(properties))
           });
         }
 
@@ -643,14 +644,12 @@ var Font = (function () {
       createTableEntry(otf, offsets, "CFF ", CFF);
 
       /** OS/2 */
-      OS2 = stringToArray(createOS2Table());
+      OS2 = stringToArray(createOS2Table(properties));
       createTableEntry(otf, offsets, "OS/2", OS2);
 
-      //XXX Getting charstrings here seems wrong since this is another CFF glue
-      var charstrings = font.getOrderedCharStrings(properties.glyphs);
-
       /** CMAP */
-      cmap = createCMapTable(charstrings);
+      var charstrings = font.charstrings;
+      cmap = createCMapTable(font.charstrings);
       createTableEntry(otf, offsets, "cmap", cmap);
 
       /** HEAD */
@@ -719,7 +718,7 @@ var Font = (function () {
       createTableEntry(otf, offsets, "name", name);
 
       /** POST */
-      post = stringToArray(createPostTable());
+      post = stringToArray(createPostTable(properties));
       createTableEntry(otf, offsets, "post", post);
 
       // Once all the table entries header are written, dump the data!
@@ -1187,6 +1186,8 @@ var CFFStrings = [
   "001.003","Black","Bold","Book","Light","Medium","Regular","Roman","Semibold"
 ];
 
+var type1Parser = new Type1Parser();
+
 var CFF = function(name, file, properties) {
   // Get the data block containing glyphs and subrs informations
   var length1 = file.dict.get("Length1");
@@ -1194,13 +1195,11 @@ var CFF = function(name, file, properties) {
   file.skip(length1);
   var eexecBlock = file.getBytes(length2);
 
-  // Decrypt the data blocks and retrieve the informations from it
-  var parser = new Type1Parser();
-  var fontInfo = parser.extractFontProgram(eexecBlock);
+  // Decrypt the data blocks and retrieve it's content
+  var data = type1Parser.extractFontProgram(eexecBlock);
 
-  properties.subrs = fontInfo.subrs;
-  properties.glyphs = fontInfo.charstrings;
-  this.data = this.wrap(name, properties);
+  this.charstrings = this.getOrderedCharStrings(data.charstrings);
+  this.data = this.wrap(name, this.charstrings, data.subrs, properties);
 };
 
 CFF.prototype = {
@@ -1265,7 +1264,7 @@ CFF.prototype = {
         charstrings.push({
           glyph: glyph,
           unicode: unicode,
-          charstring: glyphs[i].data.slice()
+          charstring: glyphs[i].data
         });
       }
     };
@@ -1308,7 +1307,7 @@ CFF.prototype = {
       if (obj.charAt) {
         switch (obj) {
           case "callsubr":
-            var subr = subrs[charstring[i - 1]].slice();
+            var subr = subrs[charstring[i - 1]];
             if (subr.length > 1) {
               subr = this.flattenCharstring(glyph, subr, subrs);
               subr.pop();
@@ -1402,18 +1401,16 @@ CFF.prototype = {
     error("failing with i = " + i + " in charstring:" + charstring + "(" + charstring.length + ")");
   },
 
-  wrap: function wrap(name, properties) {
-    var charstrings = this.getOrderedCharStrings(properties.glyphs);
-
+  wrap: function wrap(name, charstrings, subrs, properties) {
     // Starts the conversion of the Type1 charstrings to Type2
     var charstringsCount = 0;
     var charstringsDataLength = 0;
     var glyphs = [];
     for (var i = 0; i < charstrings.length; i++) {
-      var charstring = charstrings[i].charstring.slice();
+      var charstring = charstrings[i].charstring;
       var glyph = charstrings[i].glyph;
 
-      var flattened = this.flattenCharstring(glyph, charstring, properties.subrs);
+      var flattened = this.flattenCharstring(glyph, charstring, subrs);
       glyphs.push(flattened);
       charstringsCount++;
       charstringsDataLength += flattened.length;
