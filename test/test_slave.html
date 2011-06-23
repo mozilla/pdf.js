@@ -1,9 +1,9 @@
 <html>
 <head>
   <title>pdf.js test slave</title>
-  <script type="text/javascript" src="pdf.js"></script>
-  <script type="text/javascript" src="fonts.js"></script>
-  <script type="text/javascript" src="glyphlist.js"></script>
+  <script type="text/javascript" src="/pdf.js"></script>
+  <script type="text/javascript" src="/fonts.js"></script>
+  <script type="text/javascript" src="/glyphlist.js"></script>
   <script type="application/javascript">
 var browser, canvas, currentTask, currentTaskIdx, failure, manifest, pdfDoc, stdout;
 
@@ -137,7 +137,7 @@ function sendTaskResult(snapshot) {
 
   var r = new XMLHttpRequest();
   // (The POST URI is ignored atm.)
-  r.open("POST", "submit_task_results", false);
+  r.open("POST", "/submit_task_results", false);
   r.setRequestHeader("Content-Type", "application/json");
   // XXX async
   r.send(JSON.stringify(result));

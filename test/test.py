@@ -5,6 +5,9 @@ from urlparse import urlparse
 
 USAGE_EXAMPLE = "%prog"
 
+# The local web server uses the git repo as the document root.
+DOC_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__),".."))
+
 ANAL = True
 DEFAULT_MANIFEST_FILE = 'test_manifest.json'
 DEFAULT_BROWSER_MANIFEST_FILE = 'browser_manifest.json'
@@ -73,15 +76,14 @@ class PDFTestHandler(BaseHTTPRequestHandler):
 
     def do_GET(self):
         url = urlparse(self.path)
+        print "GET",url
         # Ignore query string
         path, _ = url.path, url.query
-        cwd = os.getcwd()
-        path = os.path.abspath(os.path.realpath(cwd + os.sep + path))
-        cwd = os.path.abspath(cwd)
-        prefix = os.path.commonprefix(( path, cwd ))
+        path = os.path.abspath(os.path.realpath(DOC_ROOT + os.sep + path))
+        prefix = os.path.commonprefix(( path, DOC_ROOT ))
         _, ext = os.path.splitext(path)
 
-        if not (prefix == cwd
+        if not (prefix == DOC_ROOT
                 and os.path.isfile(path) 
                 and ext in MIMEs):
             self.send_error(404)
@@ -146,7 +148,7 @@ def makeBrowserCommands(browserManifestFile):
 
 def setUp(options):
     # Only serve files from a pdf.js clone
-    assert not ANAL or os.path.isfile('pdf.js') and os.path.isdir('.git')
+    assert not ANAL or os.path.isfile('../pdf.js') and os.path.isdir('../.git')
 
     State.masterMode = options.masterMode
     if options.masterMode and os.path.isdir(TMPDIR):
@@ -191,13 +193,11 @@ def setUp(options):
 
     State.remaining = len(manifestList)
 
-    
-
     for b in testBrowsers:
         print 'Launching', b.name
         qs = 'browser='+ urllib.quote(b.name) +'&manifestFile='+ urllib.quote(options.manifestFile)
         subprocess.Popen(( os.path.abspath(os.path.realpath(b.path)),
-                           'http://localhost:8080/test_slave.html?'+ qs))
+                           'http://localhost:8080/test/test_slave.html?'+ qs))
 
 
 def check(task, results, browser):
