@@ -1315,7 +1315,7 @@ var CCITTFaxStream = (function() {
 
         this.codingLine = new Uint8Array(this.columns + 1);
         this.codingLine[0] = this.columns;
-        this.a0i = 0;
+        this.codingPos = 0;
 
         this.refLine = new Uint8Array(this.columns + 2);
         this.row = 0;
@@ -1342,52 +1342,60 @@ var CCITTFaxStream = (function() {
 
     constructor.prototype = Object.create(DecodeStream.prototype);
     constructor.prototype.readBlock = function() {
-    };
-    constructor.prototype.addPixels(a1, blackPixels) {
-        var codingLine = this.codingLine;
-        var a0i = this.a0i;
+        while (!this.eof) {
+            var c = this.lookChar();
+            this.buf = EOF;
+            if (this.bufferLength <= this.pos) 
+                this.ensureBuffer(this.pos + 1);
 
-        if (a1 > codingLine[a0i]) {
+            this.buffer[this.pos++] = c;
+        }
+    };
+    constructor.prototype.addPixels = function(a1, blackPixels) {
+        var codingLine = this.codingLine;
+        var codingPos = this.codingPos;
+
+        if (a1 > codingLine[codingPos]) {
             if (a1 > this.columns)
                 error("row is wrong length");
-            if (a0i & 1) ^ blackPixels) {
-                ++a0i;
-                this.a0i = a0i;
+            if ((codingPos & 1) ^ blackPixels) {
+                ++codingPos;
+                this.codingPos = codingPos;
             }
 
-            codingLine[a0i] = a1;
+            codingLine[codingPos] = a1;
         }
     };
-    constructor.prototype.addPixelsNeg(a1, blackPixels) {
+    constructor.prototype.addPixelsNeg = function(a1, blackPixels) {
         var codingLine = this.codingLine;
-        var a0i = this.a0i;
+        var codingPos = this.codingPos;
 
-        if (a1 > codingLine[a0i]) {
+        if (a1 > codingLine[codingPos]) {
             if (a1 > this.columns)
                 error("row is wrong length");
-            if (a0i & 1) ^ blackPixels)
-                ++a0i;
+            if ((codingPos & 1) ^ blackPixels)
+                ++codingPos;
 
-            codingLine[a0i] = a1;
-        } else if (a1 < codingLine[a0i]) {
+            codingLine[codingPos] = a1;
+        } else if (a1 < codingLine[codingPos]) {
             if (a1 < 0)
                 error("invalid code");
-            while (a0i > 0 && a1 < codingLine[a0i - 1])
-                --a0i;
-            this.codingLine[a0i] = a1;
+            while (codingPos > 0 && a1 < codingLine[codingPos - 1])
+                --codingPos;
+            this.codingLine[codingPos] = a1;
         }
 
-        this.a0i = a0i;
+        this.codingPos = codingPos;
     };
-    constructor.prototype.lookChar() {
+    constructor.prototype.lookChar = function() {
         var refLine = this.refLine;
         var codingLine = this.codingLine;
         var columns = this.columns;
 
         var outputBits = this.outputBits;
-        var a0i = this.a0i;
+        var codingPos = this.codingPos;
 
-        var b1i, blackPixels, bits;
+        var refPos, blackPixels, bits;
 
         if (this.buf != EOF)
             return buf;
@@ -1403,18 +1411,18 @@ var CCITTFaxStream = (function() {
                 refLine[i++] = columns;
                 refLine[i] = columns;
                 codingLine[0] = 0;
-                a0i = 0;
-                bl1 = 0;
+                codingPos = 0;
+                refPos = 0;
                 blackPixels = 0;
 
-                while (codingLine[a0i] < columns) {
+                while (codingLine[codingPos] < columns) {
                     var code1 = this.getTwoDumCode();
                     switch (code1) {
                     case twoDimPass:
-                        this.addPixels(refLine[b1i + 1], blackPixels);
-                        a0i = this.a0i;
-                        if (refLine[bli + 1] < columns)
-                            bli += 2;
+                        this.addPixels(refLine[refPos + 1], blackPixels);
+                        codingPos = this.codingPos;
+                        if (refLine[refPos + 1] < columns)
+                            refPos += 2;
                         break;
                     case twoDimHoriz:
                         var code1 = 0, code2 = 0;
@@ -1426,7 +1434,7 @@ var CCITTFaxStream = (function() {
                             do {
                                 code2 += (code3 = this.getWhiteCode());
                             } while (code3 >= 64);
-                        else {
+                        } else {
                             var code3;
                             do {
                                 code1 += (code3 = this.getWhiteCode());
@@ -1435,105 +1443,105 @@ var CCITTFaxStream = (function() {
                                 code2 += (code3 = this.getBlackCode());
                             } while (code3 >= 64);
                         }
-                        this.addPixels(codingLine[a0i] + code1, blackPixels);
-                        a0i = this.a0i;
-                        if (codingLine[a0i] < columns) {
-                            this.addPixels(codeLine[a0i] + code2,
+                        this.addPixels(codingLine[codingPos] + code1, blackPixels);
+                        codingPos = this.codingPos;
+                        if (codingLine[codingPos] < columns) {
+                            this.addPixels(codeLine[codingPos] + code2,
                                     blackPixels ^ 1);
-                            a0i = this.a0i;
+                            codingPos = this.codingPos;
                         }
-                        while (refLine[b1i] <= codingLine[a0i] 
-                                && refLine[bli] < columns) {
-                            bli += 2;
+                        while (refLine[refPos] <= codingLine[codingPos] 
+                                && refLine[refPos] < columns) {
+                            refPos += 2;
                         }    
                         break;
                     case twoDimVertR3:
-                        this.addPixels(refLine[b1i] + 3, blackPixels);
-                        a0i = this.a0i;
+                        this.addPixels(refLine[refPos] + 3, blackPixels);
+                        codingPos = this.codingPos;
                         blackPixels ^= 1;
-                        if (codingLine[a0i] < columns) {
-                            ++b1i;
-                            while (refLine[b1i] <= codingLine[a0i] &&
-                                    refLine[b1i] < columns)
-                                b1i += 2;
+                        if (codingLine[codingPos] < columns) {
+                            ++refPos;
+                            while (refLine[refPos] <= codingLine[codingPos] &&
+                                    refLine[refPos] < columns)
+                                refPos += 2;
                         }
                         break;
                     case twoDimVertR2:
-                        this.addPixels(refLine[b1i] + 2, blackPixels);
-                        a0i = this.a0i;
+                        this.addPixels(refLine[refPos] + 2, blackPixels);
+                        codingPos = this.codingPos;
                         blackPixels ^= 1;
-                        if (codingLine[a01] < columns) {
-                            ++bli;
-                            while (refLine[bli] <= codingLine[a0i] &&
-                                    refLine[bli] < columns) {
-                                bli += 2;
+                        if (codingLine[codingPos] < columns) {
+                            ++refPos;
+                            while (refLine[refPos] <= codingLine[codingPos] &&
+                                    refLine[refPos] < columns) {
+                                refPos += 2;
                             }
                         }
                         break;
                     case twoDimVertR1:
-                        this.addPixels(refLine[bli] + 1, blackPixels);
-                        a0i = this.a0i;
+                        this.addPixels(refLine[refPos] + 1, blackPixels);
+                        codingPos = this.codingPos;
                         blackPixels ^= 1;
-                        if (codingLine[a01] < columns) {
-                            ++bli;
-                            while (refLine[bli] < codingLine[a0i] &&
-                                    refLine[bli] < columns)
-                                this.bli += 2;
+                        if (codingLine[codingPos] < columns) {
+                            ++refPos;
+                            while (refLine[refPos] < codingLine[codingPos] &&
+                                    refLine[refPos] < columns)
+                                refPos += 2;
                         }
                         break;
                     case twoDimVert0:
-                        this.addPixels(refLine[bli], blackPixels);
-                        a0i = this.a0i;
+                        this.addPixels(refLine[refPos], blackPixels);
+                        codingPos = this.codingPos;
                         blackPixels ^= 1;
-                        if (codingLine[a0i] < columns) {
-                            ++bli;
-                            while (refLine[bli] <= codingLine[a0i] &&
-                                    refLine[bli] < columns)
-                                bli += 2;
+                        if (codingLine[codingPos] < columns) {
+                            ++refPos;
+                            while (refLine[refPos] <= codingLine[codingPos] &&
+                                    refLine[refPos] < columns)
+                                refPos += 2;
                         }
                         break;
                     case twoDimVertL3:
-                        this.addPixelsNeg(refLine[bli] - 3, blackPixels);
-                        a0i = this.a0i;
+                        this.addPixelsNeg(refLine[refPos] - 3, blackPixels);
+                        codingPos = this.codingPos;
                         blackPixels ^= 1;
-                        if (codeLine[a0i] < columns) {
-                            if (bli > 0)
-                                --bli;
+                        if (codeLine[codingPos] < columns) {
+                            if (refPos > 0)
+                                --refPos;
                             else
-                                ++bli;
-                            while (refLine[b1i] <= codingLine[a0i] &&
-                                    refLine[b1i] < columns)
-                                bli += 2;
+                                ++refPos;
+                            while (refLine[refPos] <= codingLine[codingPos] &&
+                                    refLine[refPos] < columns)
+                                refPos += 2;
                         }
                         break;
                     case twoDimVertL2:
-                        this.addPixelsNeg(refLine[b1i] - 2, blackPixels);
-                        a0i = this.a0i;
+                        this.addPixelsNeg(refLine[refPos] - 2, blackPixels);
+                        codingPos = this.codingPos;
                         blackPixels ^= 1;
-                        if (codingLine[a0i] < columns) {
-                            if (b1i > 0)
-                                --b1i;
+                        if (codingLine[codingPos] < columns) {
+                            if (refPos > 0)
+                                --refPos;
                             else
-                                ++bli;
-                            while (refLine[b1i] <= codingLine[a0i] &&
+                                ++refPos;
+                            while (refLine[refPos] <= codingLine[codingPos] &&
                                     refLine[b11] < columns)
-                                b1i += 2;
+                                refPos += 2;
                         }
                         break;
 
 ///////// STOPPED HERE
                     case twoDimVertL1:
-                        this.addPixelsNeg(refLine[bli] - 1, blackPixels);
+                        this.addPixelsNeg(refLine[refPos] - 1, blackPixels);
                         this.blackPixels ^= 1;
-                        if (codingLine[a0i] < columns) {
-                            if (blu > 0)
-                                --bli;
+                        if (codingLine[codingPos] < columns) {
+                            if (refPos > 0)
+                                --refPos;
                             else
-                                ++bli;
+                                ++refPos;
                             
-                            while (refLine[bli] <= codeLine[a0i] &&
-                                    refLine[bli] < columns)
-                                bli += 2;
+                            while (refLine[refPos] <= codeLine[codingPos] &&
+                                    refLine[refPos] < columns)
+                                refPos += 2;
                         }
                         break;
                     case EOF:
@@ -1546,9 +1554,9 @@ var CCITTFaxStream = (function() {
                 }
             } else {
                 codingLine[0] = 0;
-                a0i = 0;
+                codingPos = 0;
                 blackPixels = 0;
-                while(codeLine[a0i] < columns) {
+                while(codeLine[codingPos] < columns) {
                     code1 = 0;
                     if (blackPixels) {
                         do {
@@ -1559,7 +1567,7 @@ var CCITTFaxStream = (function() {
                             code1 += (code3 = getWhiteCode());
                         } while (code3 >= 64);
                     }
-                    this.addPixels(codingLine[a0i] + code1, blackPixels);
+                    this.addPixels(codingLine[codingPos] + code1, blackPixels);
                     blackPixels ^= 1;
                 }
             }
@@ -1574,7 +1582,7 @@ var CCITTFaxStream = (function() {
                 code1 = lookBits(12);
                 while (code1 == 0) {
                     eatBits(1);
-                    code1 = lookBits(12);
+                    code1 = this.lookBits(12);
                 }
                 if (code1 = 1) {
                     eatBits(12);
@@ -1585,27 +1593,27 @@ var CCITTFaxStream = (function() {
             }
 
             if (!oef && encoding > 0) {
-                nextLine2D = !lookBits(1);
+                nextLine2D = !this.lookBits(1);
                 eatBits(1);
             }
 
             if (eob && gotEol) {
-                code1 = lookBits(12);
+                code1 = this.lookBits(12);
                 if (code1 == 1) {
                     eatBits(12);
                     if (encoding > 0) {
-                        lookBits(1);
-                        eatBits(1);
+                        this.lookBits(1);
+                        this.eatBits(1);
                     }
                     if (encoding >= 0) {
                         for (i = 0; i < 4; ++i) {
-                            code1 = lookBits(12);
+                            code1 = this.lookBits(12);
                             if (code1 != 1)
                                 error("bad rtc code");
                             eatBits(12);
                             if (encoding > 0) {
-                                lookBits(1);
-                                eatBits(1);
+                                this.lookBits(1);
+                                this.eatBits(1);
                             }
                         }
                     }
@@ -1614,18 +1622,18 @@ var CCITTFaxStream = (function() {
             }
 
             if (codingLine[0] > 0)
-                outputBits = codingLine[a0i = 0];
+                outputBits = codingLine[codingPos = 0];
             else
-                outputBits = codingLine[a0i = 1];
+                outputBits = codingLine[codingPos = 1];
             ++row;
         }
 
         if (outputBits >= 8) {
-            buf = (a0i & 1) ? 0 : 0xFF;
+            buf = (codingPos & 1) ? 0 : 0xFF;
             outputBits -= 8;
-            if (outputBits == 0&& codingLine[a0i] < columns) {
-                ++a0i;
-                outputBits = codingLine[a0i] - codingLine[a0i - 1];
+            if (outputBits == 0&& codingLine[codingPos] < columns) {
+                ++codingPos;
+                outputBits = codingLine[codingPos] - codingLine[codingPos - 1];
             }
         } else {
             bits = 8;
@@ -1633,21 +1641,21 @@ var CCITTFaxStream = (function() {
             do {
                 if (outputBits > bits) {
                     buf << bits;
-                    if (!(a0i & 1)) {
+                    if (!(codingPos & 1)) {
                         buf |= 0xFF >> (8 - bits);
                     }
                     outputBits -= bits;
                     bits = 0;
                 } else {
                     buf <<= outputBits;
-                    if (!(a0i & 1)) {
+                    if (!(codingPos & 1)) {
                         buf |= 0xFF >> (8 - outputBits);
                     }
                     bits -= outputBits;
                     outputBits = 0;
-                    if (codingLine[a0i] < columns) {
-                        ++a0i;
-                        outputBits = codingLine[a0i] - codingLine[a0i - 1];
+                    if (codingLine[codingPos] < columns) {
+                        ++codingPos;
+                        outputBits = codingLine[codingPos] - codingLine[codingPos - 1];
                     } else if (bits > 0) {
                         buf <<= bits;
                         bits = 0;
@@ -1659,8 +1667,8 @@ var CCITTFaxStream = (function() {
             buf ^= 0xFF;
         }
         return buf;
-    }
-    constructor.prototype.getTwoDimCode() {
+    };
+    constructor.prototype.getTwoDimCode = function() {
         var code = 0;
         var p;
         if (this.eoblock) {
@@ -1686,7 +1694,7 @@ var CCITTFaxStream = (function() {
         error("Bad two dim code");
     };
 
-    constructor.prototype.getWhiteCode() {
+    constructor.prototype.getWhiteCode = function() {
         var code = 0;
         var p;
         var n;
@@ -1726,14 +1734,14 @@ var CCITTFaxStream = (function() {
                     code <<= 12 - n;
                 p = whiteTable1[code];
                 if (p[0] == n) {
-                    eatBits(n);
+                    this.eatBits(n);
                     return p[1];
                 }
             }
         }
         error("bad white code");
     };
-    constructor.prototype.getBlackCode() {
+    constructor.prototype.getBlackCode = function() {
         var code, p, n;
         if (this.eoblock) {
             code = this.lookBits(13);
@@ -1793,7 +1801,7 @@ var CCITTFaxStream = (function() {
         }
         error("bad black code");
     };
-    constructor.prototype.lookBits(n) {
+    constructor.prototype.lookBits = function(n) {
         var c;
         while (inputBits < n) {
             if (typeof (c = str.getByte()) == "undefined") {
@@ -1806,7 +1814,7 @@ var CCITTFaxStream = (function() {
         }
         return (inputBuf >> (inputBits - n)) & (0xFFFF >> (16 - n));
     };
-    constructor.prototype.eatBits(n) {
+    constructor.prototype.eatBits = function(n) {
         if ((inputBits -= n) < 0)
             inputBits = 0;
     }
