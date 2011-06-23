@@ -14,6 +14,7 @@ window.onload = function() {
     pdfDoc.onChangePage = function(numPage) {
         document.getElementById("pageNumber").value = numPage;
     }
+    // pdfDoc.open("canvas.pdf", function() {
     pdfDoc.open("compressed.tracemonkey-pldi-09.pdf", function() {
         document.getElementById("numPages").innerHTML = "/" + pdfDoc.numPages;
     })
