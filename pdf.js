@@ -220,6 +220,43 @@ var DecodeStream = (function() {
 })();
 
 
+var FakeStream = (function() {
+    function constructor(stream) {
+        this.dict = stream.dict;
+        DecodeStream.call(this);
+    };
+
+    constructor.prototype = Object.create(DecodeStream.prototype);
+    constructor.prototype.readBlock = function() {
+        var bufferLength = this.bufferLength;
+        bufferLength += 1024;
+        var buffer = this.ensureBuffer(bufferLength);
+        this.bufferLength = bufferLength;
+    };
+    constructor.prototype.getBytes = function(length) {
+        var pos = this.pos;
+
+        if (length) {
+            this.ensureBuffer(pos + length);
+            var end = pos + length;
+
+            while (!this.eof && this.bufferLength < end)
+                this.readBlock();
+
+            var bufEnd = this.bufferLength;
+            if (end > bufEnd)
+                end = bufEnd;
+        } else {
+            this.eof = true;
+            var end = this.bufferLength;
+        }
+
+        this.pos = end;
+        return this.buffer.subarray(pos, end)
+    };
+
+    return constructor;
+})();
 
 var FlateStream = (function() {
     var codeLenCodeMap = new Uint32Array([
@@ -597,9 +634,6 @@ var PredictorStream = (function() {
     constructor.prototype = Object.create(DecodeStream.prototype);
 
     constructor.prototype.readBlockTiff = function() {
-        var buffer = this.buffer;
-        var pos = this.pos;
-
         var rowBytes = this.rowBytes;
         var pixBytes = this.pixBytes;
 
@@ -660,9 +694,6 @@ var PredictorStream = (function() {
         this.bufferLength += rowBytes;
     };
     constructor.prototype.readBlockPng = function() {
-        var buffer = this.buffer;
-        var pos = this.pos;
-
         var rowBytes = this.rowBytes;
         var pixBytes = this.pixBytes;
 
@@ -1448,6 +1479,9 @@ var Parser = (function() {
                 return new JpegStream(bytes, stream.dict);
             } else if (name == "ASCII85Decode") {
                 return new Ascii85Stream(stream);
+            } else if (name == "CCITTFaxDecode") {
+                TODO("implement fax stream");
+                return new FakeStream(stream);
             } else {
                 error("filter '" + name + "' not supported yet");
             }
