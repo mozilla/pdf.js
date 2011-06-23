@@ -1,0 +1,46 @@
+<html>
+    <head>
+        <title>Simple pdf.js page worker viewer</title>
+        <script type="text/javascript" src="worker_client.js"></script>
+<script>
+
+
+var pdfDoc;
+window.onload = function() {
+    window.canvas = document.getElementById("canvas");
+    window.ctx = canvas.getContext("2d");
+
+    pdfDoc = new WorkerPDFDoc(window.canvas);
+    pdfDoc.onChangePage = function(numPage) {
+        document.getElementById("pageNumber").value = numPage;
+    }
+    // pdfDoc.open("canvas.pdf", function() {
+    pdfDoc.open("compressed.tracemonkey-pldi-09.pdf", function() {
+        document.getElementById("numPages").innerHTML = "/" + pdfDoc.numPages;
+    })
+}
+</script>
+        <link rel="stylesheet" href="viewer.css"></link>
+  </head>
+  <body>
+    <div id="controls">
+    <input type="file" style="float: right; margin: auto 32px;" onChange="load(this.value.toString());"></input>
+    <!-- This only opens supported PDFs from the source path...
+      -- Can we use JSONP to overcome the same-origin restrictions? -->
+      <button onclick="pdfDoc.prevPage();">Previous</button>
+      <button onclick="pdfDoc.nextPage();">Next</button>
+      <input type="text" id="pageNumber" onchange="pdfDoc.showPage(this.value);"
+             value="1" size="4"></input>
+      <span id="numPages">--</span>
+      <span id="info"></span>
+    </div>
+
+    <div id="viewer">
+      <!-- Canvas dimensions must be specified in CSS pixels.  CSS pixels
+           are always 96 dpi.  816x1056 is 8.5x11in at 96dpi. -->
+      <!-- We're rendering here at 1.5x scale. -->
+      <canvas id="canvas" width="1224" height="1584"></canvas>
+    </div>
+  </body>
+</html>
+
