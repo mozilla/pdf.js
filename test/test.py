@@ -159,7 +159,10 @@ class BrowserCommand():
         shutil.rmtree(self.tempDir)
 
     def start(self, url):
-        cmds = [self.path, "-foreground", "-no-remote", "-profile", self.profileDir, url]
+        cmds = [self.path]
+        if platform.system() == "Darwin":
+            cmds.append("-foreground")
+        cmds.extend(["-no-remote", "-profile", self.profileDir, url])
         subprocess.call(cmds)
 
 def makeBrowserCommands(browserManifestFile):
