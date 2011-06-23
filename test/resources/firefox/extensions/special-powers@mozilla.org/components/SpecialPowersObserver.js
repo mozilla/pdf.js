@@ -1,0 +1,1 @@
+/Users/sayrer/dev/mozilla-central/testing/mochitest/specialpowers/components/SpecialPowersObserver.js

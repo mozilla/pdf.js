@@ -31,3 +31,4 @@ user_pref("security.warn_viewing_mixed", false);
 user_pref("app.update.enabled", false);
 user_pref("browser.panorama.experienced_first_run", true); // Assume experienced
 user_pref("dom.w3c_touch_events.enabled", true);
+user_pref("extensions.checkCompatibility", false);
