@@ -15,8 +15,10 @@ function toc(msg) {
 
 function log() {
   var args = Array.prototype.slice.call(arguments);
-  postMessage("log");
-  postMessage(JSON.stringify(args))
+  postMessage({
+    action: "log",
+    args: args
+  });
 }
 
 var console = {
@@ -42,8 +44,10 @@ onmessage = function(event) {
   // If there is no pdfDocument yet, then the sent data is the PDFDocument.
   if (!pdfDocument) {
     pdfDocument = new PDFDoc(new Stream(data));
-    postMessage("pdf_num_page");
-    postMessage(pdfDocument.numPages)
+    postMessage({
+      action: "pdf_num_pages",
+      data: pdfDocument.numPages
+    });
     return;
   }
   // User requested to render a certain page.

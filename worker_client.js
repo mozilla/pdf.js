@@ -15,7 +15,7 @@ function WorkerPDFDoc(canvas) {
 
   this.ctx = canvas.getContext("2d");
   this.canvas = canvas;
-  this.worker = new Worker('worker.js');
+  this.worker = new Worker('pdf_worker.js');
 
   this.numPage = 1;
   this.numPages = null;
@@ -147,90 +147,44 @@ function WorkerPDFDoc(canvas) {
   }
 
   /**
-  * onMessage state machine.
+  * Functions to handle data sent by the WebWorker.
   */
-  const WAIT = 0;
-  const CANVAS_PROXY_CMD_QUEUE = 1;
-  const LOG = 2;
-  const FONT = 3;
-  const PDF_NUM_PAGE = 4;
-  const JPEG_STREAM = 5;
+  var actionHandler = {
+    "log": function(data) {
+      console.log.apply(console, data);
+    },
+    
+    "pdf_num_pages": function(data) {
+      this.numPages = parseInt(data);
+      if (this.loadCallback) {
+        this.loadCallback();
+      }
+    },
+    
+    "font": function(data) {
+      var base64 = window.btoa(data.raw);
 
-  var onMessageState = WAIT;
-  this.worker.onmessage = function(event) {
-    var data = event.data;
-    // console.log("onMessageRaw", data);
-    switch (onMessageState) {
-      case WAIT:
-        if (typeof data != "string") {
-          throw "expecting to get an string";
-        }
-        switch (data) {
-          case "pdf_num_page":
-            onMessageState = PDF_NUM_PAGE;
-            return;
+      // Add the @font-face rule to the document
+      var url = "url(data:" + data.mimetype + ";base64," + base64 + ");";
+      var rule = "@font-face { font-family:'" + data.fontName + "';src:" + url + "}";
+      var styleSheet = document.styleSheets[0];
+      styleSheet.insertRule(rule, styleSheet.length);
 
-          case "log":
-            onMessageState = LOG;
-            return;
+      // Just adding the font-face to the DOM doesn't make it load. It
+      // seems it's loaded once Gecko notices it's used. Therefore,
+      // add a div on the page using the loaded font.
+      var div = document.createElement("div");
+      document.getElementById("fonts").innerHTML += "<div style='font-family:" + data.fontName + "'>j</div>";
+    },
 
-          case "canvas_proxy_cmd_queue":
-            onMessageState = CANVAS_PROXY_CMD_QUEUE;
-            return;
-
-          case "font":
-            onMessageState = FONT;
-            return;
-
-          case "jpeg_stream":
-            onMessageState = JPEG_STREAM;
-            return;
-
-          default:
-            throw "unkown state: " + data
-        }
-      break;
-
-      case JPEG_STREAM:
-        var img = new Image();
-        img.src = "data:image/jpeg;base64," + window.btoa(data.str);
-        imagesList[data.id] = img;
-        console.log("got image", data.id)
-      break;
-
-      case PDF_NUM_PAGE:
-        this.numPages = parseInt(data);
-        if (this.loadCallback) {
-          this.loadCallback();
-        }
-        onMessageState = WAIT;
-      break;
-
-      case FONT:
-        data = JSON.parse(data);
-        var base64 = window.btoa(data.str);
-
-        // Add the @font-face rule to the document
-        var url = "url(data:" + data.mimetype + ";base64," + base64 + ");";
-        var rule = "@font-face { font-family:'" + data.fontName + "';src:" + url + "}";
-        var styleSheet = document.styleSheets[0];
-        styleSheet.insertRule(rule, styleSheet.length);
-
-        // Just adding the font-face to the DOM doesn't make it load. It
-        // seems it's loaded once Gecko notices it's used. Therefore,
-        // add a div on the page using the loaded font.
-        var div = document.createElement("div");
-        document.getElementById("fonts").innerHTML += "<div style='font-family:" + data.fontName + "'>j</div>";
-
-        onMessageState = WAIT;
-      break;
-
-      case LOG:
-        console.log.apply(console, JSON.parse(data));
-        onMessageState = WAIT;
-      break;
-
-      case CANVAS_PROXY_CMD_QUEUE:
+    "jpeg_stream": function(data) {
+      var img = new Image();
+      img.src = "data:image/jpeg;base64," + window.btoa(data);
+      imagesList[data.id] = img;
+      console.log("got image", data.id)
+    },
+    
+    "canvas_proxy_cmd_queue": function(data) {
         var id = data.id;
         var cmdQueue = data.cmdQueue;
 
@@ -250,13 +204,21 @@ function WorkerPDFDoc(canvas) {
           renderProxyCanvas(canvasList[id], cmdQueue);
           if (id == 0) toc("canvas rendering")
         }, 0);
-        onMessageState = WAIT;
-      break;
     }
-  }.bind(this);
+  }
+
+  // List to the WebWorker for data and call actionHandler on it.
+  this.worker.onmessage = function(event) {
+    var data = event.data;
+    if (data.action in actionHandler) {
+      actionHandler[data.action].call(this, data.data);
+    } else {
+      throw "Unkown action from worker: " + data.action;
+    }
+  }
 }
 
-  WorkerPDFDoc.prototype.open = function(url, callback) {
+WorkerPDFDoc.prototype.open = function(url, callback) {
   var req = new XMLHttpRequest();
   req.open("GET", url);
   req.mozResponseType = req.responseType = "arraybuffer";

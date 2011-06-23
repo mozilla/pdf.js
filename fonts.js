@@ -768,12 +768,14 @@ var Font = (function () {
       // Insert the font-face css on the page. In a web worker, this needs to
       // be forwareded on the main thread.
       if (typeof window == "undefined") {
-          postMessage("font");
-          postMessage(JSON.stringify({
-              str: str,
+          postMessage({
+            action: "font",
+            data: {
+              raw: str,
               fontName: fontName,
               mimetype: this.mimetype
-          }));
+            }
+          });
       } else {
           var base64 = window.btoa(str);
 
