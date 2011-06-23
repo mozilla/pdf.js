@@ -11,7 +11,6 @@ DOC_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__),".."))
 
 ANAL = True
 DEFAULT_MANIFEST_FILE = 'test_manifest.json'
-DEFAULT_BROWSER_MANIFEST_FILE = 'browser_manifest.json'
 EQLOG_FILE = 'eq.log'
 REFDIR = 'ref'
 TMPDIR = 'tmp'
@@ -24,10 +23,11 @@ class TestOptions(OptionParser):
                         help="Run the script in master mode.", default=False)
         self.add_option("--manifestFile", action="store", type="string", dest="manifestFile",
                         help="A JSON file in the form of test_manifest.json (the default).")
+        self.add_option("-b", "--browser", action="store", type="string", dest="browser",
+                        help="The path to a single browser (right now, only Firefox is supported).")
         self.add_option("--browserManifestFile", action="store", type="string",
                         dest="browserManifestFile",
-                        help="A JSON file in the form of browser_manifest.json (the default).",
-                        default=DEFAULT_BROWSER_MANIFEST_FILE)
+                        help="A JSON file in the form of those found in resources/browser_manifests")
         self.set_usage(USAGE_EXAMPLE)
 
     def verifyOptions(self, options):
@@ -35,6 +35,8 @@ class TestOptions(OptionParser):
             self.error("--masterMode and --manifestFile must not be specified at the same time.")
         if not options.manifestFile:
             options.manifestFile = DEFAULT_MANIFEST_FILE
+        if options.browser and options.browserManifestFile:
+            print "Warning: ignoring browser argument since manifest file was also supplied"
         return options
         
 def prompt(question):
@@ -136,16 +138,15 @@ class BrowserCommand():
     def __init__(self, browserRecord):
         self.name = browserRecord["name"]
         self.path = browserRecord["path"]
-        self.type = browserRecord["type"]
 
-        if platform.system() == "Darwin" and self.path.endswith(".app"):
+        if platform.system() == "Darwin" and (self.path.endswith(".app") or self.path.endswith(".app/")):
             self._fixupMacPath()
 
         if not os.path.exists(self.path):
             throw("Path to browser '%s' does not exist." % self.path)
 
     def _fixupMacPath(self):
-        self.path = self.path + "/Contents/MacOS/firefox-bin"
+        self.path = os.path.join(self.path, "Contents", "MacOS", "firefox-bin")
 
     def setup(self):
         self.tempDir = tempfile.mkdtemp()
@@ -158,7 +159,7 @@ class BrowserCommand():
         shutil.rmtree(self.tempDir)
 
     def start(self, url):
-        cmds = [self.path, "-no-remote", "-profile", self.profileDir, url]
+        cmds = [self.path, "-foreground", "-no-remote", "-profile", self.profileDir, url]
         subprocess.call(cmds)
 
 def makeBrowserCommands(browserManifestFile):
@@ -179,8 +180,14 @@ def setUp(options):
 
     assert not os.path.isdir(TMPDIR)
 
-    testBrowsers = makeBrowserCommands(options.browserManifestFile)
-
+    testBrowsers = []
+    if options.browserManifestFile:
+        testBrowsers = makeBrowserCommands(options.browserManifestFile)
+    elif options.browser:
+        testBrowsers = [BrowserCommand({"path":options.browser, "name":"firefox"})] 
+    else:
+        print "No test browsers found. Use --browserManifest or --browser args."
+              
     with open(options.manifestFile) as mf:
         manifestList = json.load(mf)
 
