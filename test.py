@@ -126,7 +126,6 @@ class PDFTestHandler(BaseHTTPRequestHandler):
 # this just does Firefox for now
 class BrowserCommand():
     def __init__(self, browserRecord):
-        print browserRecord
         self.name = browserRecord["name"]
         self.path = browserRecord["path"]
         self.type = browserRecord["type"]
@@ -179,8 +178,6 @@ def setUp(options):
             out.close()
 
             print 'done'
-
-    print testBrowsers
 
     for b in testBrowsers:
         State.taskResults[b.name] = { }
