@@ -17,7 +17,7 @@ VERBOSE = False
 MIMEs = {
     '.css': 'text/css',
     '.html': 'text/html',
-    '.js': 'application/json',
+    '.js': 'application/javascript',
     '.json': 'application/json',
     '.pdf': 'application/pdf',
     '.xhtml': 'application/xhtml+xml',

@@ -58,7 +58,7 @@ function bytesToString(bytes) {
 
 var Stream = (function() {
     function constructor(arrayBuffer, start, length, dict) {
-        this.bytes = Uint8Array(arrayBuffer);
+        this.bytes = new Uint8Array(arrayBuffer);
         this.start = start || 0;
         this.pos = this.start;
         this.end = (start + length) || this.bytes.length;
@@ -125,7 +125,7 @@ var Stream = (function() {
 var StringStream = (function() {
     function constructor(str) {
         var length = str.length;
-        var bytes = Uint8Array(length);
+        var bytes = new Uint8Array(length);
         for (var n = 0; n < length; ++n)
             bytes[n] = str.charCodeAt(n);
         Stream.call(this, bytes);
@@ -154,7 +154,7 @@ var DecodeStream = (function() {
             var size = 512;
             while (size < requested)
                 size <<= 1;
-            var buffer2 = Uint8Array(size);
+            var buffer2 = new Uint8Array(size);
             for (var i = 0; i < current; ++i)
                 buffer2[i] = buffer[i];
             return this.buffer = buffer2;
@@ -222,11 +222,11 @@ var DecodeStream = (function() {
 
 
 var FlateStream = (function() {
-    const codeLenCodeMap = Uint32Array([
+    var codeLenCodeMap = new Uint32Array([
         16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15
     ]);
 
-    const lengthDecode = Uint32Array([
+    var lengthDecode = new Uint32Array([
         0x00003, 0x00004, 0x00005, 0x00006, 0x00007, 0x00008, 0x00009,
         0x0000a, 0x1000b, 0x1000d, 0x1000f, 0x10011, 0x20013, 0x20017,
         0x2001b, 0x2001f, 0x30023, 0x3002b, 0x30033, 0x3003b, 0x40043,
@@ -234,7 +234,7 @@ var FlateStream = (function() {
         0x00102, 0x00102, 0x00102
     ]);
 
-    const distDecode = Uint32Array([
+    var distDecode = new Uint32Array([
         0x00001, 0x00002, 0x00003, 0x00004, 0x10005, 0x10007, 0x20009,
         0x2000d, 0x30011, 0x30019, 0x40021, 0x40031, 0x50041, 0x50061,
         0x60081, 0x600c1, 0x70101, 0x70181, 0x80201, 0x80301, 0x90401,
@@ -242,7 +242,7 @@ var FlateStream = (function() {
         0xd4001, 0xd6001
     ]);
 
-    const fixedLitCodeTab = [Uint32Array([
+    var fixedLitCodeTab = [new Uint32Array([
         0x70100, 0x80050, 0x80010, 0x80118, 0x70110, 0x80070, 0x80030,
         0x900c0, 0x70108, 0x80060, 0x80020, 0x900a0, 0x80000, 0x80080,
         0x80040, 0x900e0, 0x70104, 0x80058, 0x80018, 0x90090, 0x70114,
@@ -319,7 +319,7 @@ var FlateStream = (function() {
         0x900ff
     ]), 9];
 
-    const fixedDistCodeTab = [Uint32Array([
+    var fixedDistCodeTab = [new Uint32Array([
         0x50000, 0x50010, 0x50008, 0x50018, 0x50004, 0x50014, 0x5000c,
         0x5001c, 0x50002, 0x50012, 0x5000a, 0x5001a, 0x50006, 0x50016,
         0x5000e, 0x00000, 0x50001, 0x50011, 0x50009, 0x50019, 0x50005,
@@ -410,7 +410,7 @@ var FlateStream = (function() {
 
         // build the table
         var size = 1 << maxLen;
-        var codes = Uint32Array(size);
+        var codes = new Uint32Array(size);
         for (var len = 1, code = 0, skip = 2;
                 len <= maxLen;
                 ++len, code <<= 1, skip <<= 1) {
@@ -782,8 +782,8 @@ var Ascii85Stream = (function() {
 
     constructor.prototype = Object.create(DecodeStream.prototype);
     constructor.prototype.readBlock = function() {
-        const tildaCode = "~".charCodeAt(0);
-        const zCode = "z".charCodeAt(0);
+        var tildaCode = "~".charCodeAt(0);
+        var zCode = "z".charCodeAt(0);
         var str = this.str;
 
         var c = str.getByte();
@@ -1001,10 +1001,10 @@ var Lexer = (function() {
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0    // fx
     ];
 
-    const MIN_INT = (1<<31) | 0;
-    const MAX_INT = (MIN_INT - 1) | 0;
-    const MIN_UINT = 0;
-    const MAX_UINT = ((1<<30) * 4) - 1;
+    var MIN_INT = (1<<31) | 0;
+    var MAX_INT = (MIN_INT - 1) | 0;
+    var MIN_UINT = 0;
+    var MAX_UINT = ((1<<30) * 4) - 1;
 
     function ToHexDigit(ch) {
         if (ch >= "0" && ch <= "9")
@@ -2031,7 +2031,7 @@ var PDFDoc = (function() {
     return constructor;
 })();
 
-const IDENTITY_MATRIX = [ 1, 0, 0, 1, 0, 0 ];
+var IDENTITY_MATRIX = [ 1, 0, 0, 1, 0, 0 ];
 
 // <canvas> contexts store most of the state we need natively.
 // However, PDF needs a bit more state, which we store here.
@@ -2055,7 +2055,7 @@ var CanvasExtraState = (function() {
     return constructor;
 })();
 
-const Encodings = {
+var Encodings = {
   get ExpertEncoding() {
     return shadow(this, "ExpertEncoding", [ ,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
       "space","exclamsmall","Hungarumlautsmall",,"dollaroldstyle","dollarsuperior",
@@ -2333,13 +2333,13 @@ var CanvasGraphics = (function() {
         };
     }
 
-    const LINE_CAP_STYLES = [ "butt", "round", "square" ];
-    const LINE_JOIN_STYLES = [ "miter", "round", "bevel" ];
-    const NORMAL_CLIP = {};
-    const EO_CLIP = {};
+    var LINE_CAP_STYLES = [ "butt", "round", "square" ];
+    var LINE_JOIN_STYLES = [ "miter", "round", "bevel" ];
+    var NORMAL_CLIP = {};
+    var EO_CLIP = {};
 
     // Used for tiling patterns
-    const PAINT_TYPE_COLORED = 1, PAINT_TYPE_UNCOLORED = 2;
+    var PAINT_TYPE_COLORED = 1, PAINT_TYPE_UNCOLORED = 2;
 
     constructor.prototype = {
         translateFont: function(fontDict, xref, resources) {
@@ -2874,7 +2874,7 @@ var CanvasGraphics = (function() {
 
                     var pattern = xref.fetchIfRef(patternRes.get(patternName.name));
                     var patternDict = IsStream(pattern) ? pattern.dict : pattern;
-                    const types = [null, this.tilingFill,
+                    var types = [null, this.tilingFill,
                                    function() { TODO("Shading Patterns"); }];
                     var typeNum = patternDict.get("PatternType");
                     var patternFn = types[typeNum];
@@ -3023,7 +3023,7 @@ var CanvasGraphics = (function() {
             if (background)
                 TODO("handle background colors");
 
-            const types = [null,
+            var types = [null,
                            this.fillFunctionShading,
                            this.fillAxialShading,
                            this.fillRadialShading];
@@ -3460,7 +3460,7 @@ var PDFFunction = (function() {
         if (!dict)
            dict = fn;
 
-        const types = [this.constructSampled,
+        var types = [this.constructSampled,
                        null,
                        this.constructInterpolated,
                        this.constructStiched,
