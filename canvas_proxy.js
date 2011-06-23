@@ -11,10 +11,9 @@ var JpegStreamProxy = (function() {
     this.dict = dict;
 
     // Tell the main thread to create an image.
-    postMessage("jpeg_stream");
     postMessage({
-      id:  this.id,
-      str: bytesToString(bytes)
+      action: jpeg_stream,
+      data:   bytesToString(bytes)
     });
   }
 
@@ -235,12 +234,14 @@ function CanvasProxy(width, height) {
 * resets the cmdQueue.
 */
 CanvasProxy.prototype.flush = function() {
-  postMessage("canvas_proxy_cmd_queue");
   postMessage({
-    id:         this.id,
-    cmdQueue:   this.cmdQueue,
-    width:      this.width,
-    height:     this.height
+    action: "canvas_proxy_cmd_queue",
+    data: {
+      id:         this.id,
+      cmdQueue:   this.cmdQueue,
+      width:      this.width,
+      height:     this.height
+    }
   });
   this.cmdQueue.length = 0;
 }
