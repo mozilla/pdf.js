@@ -309,12 +309,6 @@ def main(args):
         masterMode = (args[0] == '-m')
         manifestFile = args[0] if not masterMode else manifestFile
 
-
-
-    masterMode = True
-
-
-
     setUp(manifestFile, masterMode)
 
     server = HTTPServer(('127.0.0.1', 8080), PDFTestHandler)
