@@ -1,5 +1,6 @@
-import json, platform, os, sys, subprocess, urllib, urllib2
+import json, platform, os, shutil, sys, subprocess, tempfile, threading, urllib, urllib2
 from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
+import SocketServer
 from optparse import OptionParser
 from urlparse import urlparse
 
@@ -69,8 +70,11 @@ class Result:
         self.snapshot = snapshot
         self.failure = failure
 
+class TestServer(SocketServer.TCPServer):
+    allow_reuse_address = True
 
 class PDFTestHandler(BaseHTTPRequestHandler):
+
     # Disable annoying noise by default
     def log_request(code=0, size=0):
         if VERBOSE:
@@ -78,7 +82,6 @@ class PDFTestHandler(BaseHTTPRequestHandler):
 
     def do_GET(self):
         url = urlparse(self.path)
-        print "GET",url
         # Ignore query string
         path, _ = url.path, url.query
         path = os.path.abspath(os.path.realpath(DOC_ROOT + os.sep + path))
@@ -143,6 +146,19 @@ class BrowserCommand():
     def _fixupMacPath(self):
         self.path = self.path + "/Contents/MacOS/firefox-bin"
 
+    def setup(self):
+        self.tempDir = tempfile.mkdtemp()
+        self.profileDir = os.path.join(self.tempDir, "profile")
+        shutil.copytree(os.path.join(DOC_ROOT, "test", "resources", "firefox"),
+                        self.profileDir)
+
+    def teardown(self):
+        shutil.rmtree(self.tempDir)
+
+    def start(self, url):
+        cmds = [self.path, "-no-remote", "-profile", self.profileDir, url]
+        subprocess.call(cmds)
+
 def makeBrowserCommands(browserManifestFile):
     with open(browserManifestFile) as bmf:
         browsers = [BrowserCommand(browser) for browser in json.load(bmf)]
@@ -196,11 +212,13 @@ def setUp(options):
     State.remaining = len(testBrowsers) * len(manifestList)
 
     for b in testBrowsers:
-        print 'Launching', b.name
-        qs = 'browser='+ urllib.quote(b.name) +'&manifestFile='+ urllib.quote(options.manifestFile)
-        subprocess.Popen(( os.path.abspath(os.path.realpath(b.path)),
-                           'http://localhost:8080/test/test_slave.html?'+ qs))
-
+        try:
+            b.setup()
+            print 'Launching', b.name
+            qs = 'browser='+ urllib.quote(b.name) +'&manifestFile='+ urllib.quote(options.manifestFile)
+            b.start('http://localhost:8080/test/test_slave.html?'+ qs)
+        finally:
+            b.teardown()
 
 def check(task, results, browser):
     failed = False
@@ -350,12 +368,12 @@ def main():
     if options == None:
         sys.exit(1)
 
+    httpd = TestServer(('127.0.0.1', 8080), PDFTestHandler)
+    httpd_thread = threading.Thread(target=httpd.serve_forever)
+    httpd_thread.setDaemon(True)
+    httpd_thread.start()
+
     setUp(options)
-
-    server = HTTPServer(('127.0.0.1', 8080), PDFTestHandler)
-    while not State.done:
-        server.handle_request()
-
     processResults()
 
 if __name__ == '__main__':
