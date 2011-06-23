@@ -517,7 +517,7 @@ var Font = (function () {
         // Insert the missing table
         tables.push({
           tag: "OS/2",
-          data: stringToArray(createOS2Table)
+          data: stringToArray(createOS2Table())
         });
 
         // Replace the old CMAP table with a shiny new one
@@ -643,7 +643,7 @@ var Font = (function () {
       createTableEntry(otf, offsets, "CFF ", CFF);
 
       /** OS/2 */
-      OS2 = createOS2Table();
+      OS2 = stringToArray(createOS2Table());
       createTableEntry(otf, offsets, "OS/2", OS2);
 
       //XXX Getting charstrings here seems wrong since this is another CFF glue
