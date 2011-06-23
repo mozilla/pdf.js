@@ -3,15 +3,23 @@
 
 "use strict";
 
+if (typeof console.time == "undefined") {
+  var consoleTimer = {};
+  console.time = function(name) {
+    consoleTimer[name] = Date.now();
+  };
+  
+  console.timeEnd = function(name) {
+    var time = consoleTimer[name];
+    if (time == null) {
+      throw "Unkown timer name " + name;
+    }
+    this.log("Timer:", name, Date.now() - time);
+  };
+}
+
 function WorkerPDFDoc(canvas) {
   var timer = null
-  function tic() {
-    timer = Date.now();
-  }
-
-  function toc(msg) {
-    console.log(msg + ": " + (Date.now() - timer) + "ms");
-  }
 
   this.ctx = canvas.getContext("2d");
   this.canvas = canvas;
@@ -203,7 +211,7 @@ function WorkerPDFDoc(canvas) {
         // rendering at the end of the event queue ensures this.
         setTimeout(function() {
           if (id == 0) {
-            tic();
+            console.time("canvas rendering");
             var ctx = this.ctx;
             ctx.save();
             ctx.fillStyle = "rgb(255, 255, 255)";
@@ -211,7 +219,7 @@ function WorkerPDFDoc(canvas) {
             ctx.restore();
           }
           renderProxyCanvas(canvasList[id], cmdQueue);
-          if (id == 0) toc("canvas rendering")
+          if (id == 0) console.timeEnd("canvas rendering")
         }, 0, this);
     }
   }
