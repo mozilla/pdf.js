@@ -10,7 +10,7 @@ function load(userInput) {
     pageNum = parseInt(queryParams().page) || 1;
     var fileName = userInput;
     if (!userInput) {
-      fileName = "canvas.pdf";
+      fileName = queryParams().file || "compressed.tracemonkey-pldi-09.pdf";
     }
     open(fileName);
 }
