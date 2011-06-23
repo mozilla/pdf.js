@@ -103,7 +103,7 @@ var Font = (function () {
 
     // If the font is to be ignored, register it like an already loaded font
     // to avoid the cost of waiting for it be be loaded by the platform.
-    if (properties.ignore || properties.type == "TrueType" || kDisableFonts) {
+    if (properties.ignore || kDisableFonts) {
       Fonts[name] = {
         data: file,
         loading: false,
@@ -242,7 +242,7 @@ var Font = (function () {
     return ranges;
   };
 
-  function createCMAPTable(glyphs) {
+  function createCMapTable(glyphs) {
     var ranges = getRanges(glyphs);
 
     var headerSize = (12 * 2 + (ranges.length * 4 * 2));
@@ -274,7 +274,7 @@ var Font = (function () {
     var bias = 0;
     for (var i = 0; i < segCount - 1; i++) {
       var range = ranges[i];
-       var start = range[0];
+      var start = range[0];
       var end = range[1];
       var delta = (((start - 1) - bias) ^ 0xffff) + 1;
       bias += (end - start + 1);
@@ -284,8 +284,8 @@ var Font = (function () {
       idDeltas += string16(delta);
       idRangeOffsets += string16(0);
 
-      for (var j = start; j <= end; j++)
-        glyphsIds += String.fromCharCode(j);
+      for (var j = 0; j < range.length; j++)
+        glyphsIds += String.fromCharCode(range[j]);
     }
 
     startCount += "\xFF\xFF";
@@ -368,11 +368,11 @@ var Font = (function () {
         var length = FontsUtils.bytesToInteger(file.getBytes(4));
 
         // Read the table associated data
-        var currentPosition = file.pos;
-        file.pos = file.start + offset;
-
+        var previousPosition = file.pos;
+        file.pos = file.start ? file.start : 0;
+        file.skip(offset);
         var data = file.getBytes(length);
-        file.pos = currentPosition;
+        file.pos = previousPosition;
 
         return {
           tag: tag,
@@ -390,6 +390,76 @@ var Font = (function () {
           searchRange: FontsUtils.bytesToInteger(ttf.getBytes(2)),
           entrySelector: FontsUtils.bytesToInteger(ttf.getBytes(2)),
           rangeShift: FontsUtils.bytesToInteger(ttf.getBytes(2))
+        }
+      };
+
+      function replaceCMapTable(cmap, font, properties) {
+        var version = FontsUtils.bytesToInteger(font.getBytes(2));
+        var numTables = FontsUtils.bytesToInteger(font.getBytes(2));
+
+        for (var i = 0; i < numTables; i++) {
+          var platformID = FontsUtils.bytesToInteger(font.getBytes(2));
+          var encodingID = FontsUtils.bytesToInteger(font.getBytes(2));
+          var offset = FontsUtils.bytesToInteger(font.getBytes(4));
+          var format = FontsUtils.bytesToInteger(font.getBytes(2));
+          var length = FontsUtils.bytesToInteger(font.getBytes(2));
+          var language = FontsUtils.bytesToInteger(font.getBytes(2));
+
+          if ((format == 0 && numTables == 1) || 
+              (format == 6 && numTables == 1 && !properties.encoding.empty)) {
+            // Format 0 alone is not allowed by the sanitizer so let's rewrite
+            // that to a 3-1-4 Unicode BMP table
+            var charset = properties.charset;
+            var glyphs = [];
+            for (var j = 0; j < charset.length; j++) {
+              glyphs.push({
+                unicode: GlyphsUnicode[charset[j]] || 0
+              });
+            }
+
+            cmap.data = createCMapTable(glyphs);
+          } else if (format == 6 && numTables == 1) {
+            // Format 6 is a 2-bytes dense mapping, which means the font data
+            // lives glue together even if they are pretty far in the unicode
+            // table. (This looks weird, so I can have missed something), this
+            // works on Linux but seems to fails on Mac so let's rewrite the
+            // cmap table to a 3-1-4 style
+            var firstCode = FontsUtils.bytesToInteger(font.getBytes(2));
+            var entryCount = FontsUtils.bytesToInteger(font.getBytes(2));
+
+            var glyphs = [];
+            var min = 0xffff, max = 0;
+            for (var j = 0; j < entryCount; j++) {
+              var charcode = FontsUtils.bytesToInteger(font.getBytes(2));
+              glyphs.push(charcode);
+
+              if (charcode < min)
+                min = charcode;
+              if (charcode > max)
+                max = charcode;
+            }
+
+            // Since Format 6 is a dense array, check for gaps
+            for (var j = min; j < max; j++) {
+              if (glyphs.indexOf(j) == -1)
+                glyphs.push(j);
+            }
+
+            for (var j = 0; j < glyphs.length; j++)
+              glyphs[j] = { unicode: glyphs[j] + firstCode };
+
+            var ranges= getRanges(glyphs);
+            assert(ranges.length == 1, "Got " + ranges.length + " ranges in a dense array");
+
+            var encoding = properties.encoding;
+            var denseRange = ranges[0];
+            var start = denseRange[0];
+            var end = denseRange[1];
+            var index = firstCode;
+            for (var j = start; j <= end; j++)
+              encoding[index++] = glyphs[j - firstCode - 1].unicode;
+            cmap.data = createCMapTable(glyphs);
+          }
         }
       };
 
@@ -425,7 +495,7 @@ var Font = (function () {
       if (requiredTables.length && requiredTables[0] == "OS/2") {
         // Create a new file to hold the new version of our truetype with a new
         // header and new offsets
-        var ttf = Uint8Array(kMaxFontFileSize);
+        var ttf = new Uint8Array(kMaxFontFileSize);
 
         // The offsets object holds at the same time a representation of where
         // to write the table entry information about a table and another offset
@@ -448,18 +518,8 @@ var Font = (function () {
           data: OS2
         });
 
-        // If the font is missing a OS/2 table it's could be an old mac font
-        // without a 3-1-4 Unicode BMP table, so let's rewrite it.
-        var charset = properties.charset;
-        var glyphs = [];
-        for (var i = 0; i < charset.length; i++) {
-          glyphs.push({
-            unicode: GlyphsUnicode[charset[i]]
-          });
-        }
-
         // Replace the old CMAP table with a shiny new one
-        cmap.data = createCMAPTable(glyphs);
+        replaceCMapTable(cmap, font, properties);
 
         // Rewrite the 'post' table if needed
         if (!post) {
@@ -521,7 +581,7 @@ var Font = (function () {
     },
 
     convert: function font_convert(name, font, properties) {
-      var otf = Uint8Array(kMaxFontFileSize);
+      var otf = new Uint8Array(kMaxFontFileSize);
 
       function createNameTable(name) {
         var names = [
@@ -599,7 +659,7 @@ var Font = (function () {
       var charstrings = font.getOrderedCharStrings(properties.glyphs);
 
       /** CMAP */
-      cmap = createCMAPTable(charstrings);
+      cmap = createCMapTable(charstrings);
       createTableEntry(otf, offsets, "cmap", cmap);
 
       /** HEAD */
@@ -1088,7 +1148,7 @@ var Type1Parser = function() {
  * The CFF class takes a Type1 file and wrap it into a 'Compact Font Format',
  * which itself embed Type2 charstrings.
  */
-const CFFStrings = [
+var CFFStrings = [
   ".notdef","space","exclam","quotedbl","numbersign","dollar","percent","ampersand",
   "quoteright","parenleft","parenright","asterisk","plus","comma","hyphen","period",
   "slash","zero","one","two","three","four","five","six","seven","eight","nine",
