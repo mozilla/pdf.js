@@ -1,6 +1,7 @@
 <html>
 <head>
   <title>pdf.js test slave</title>
+  <style type="text/css"></style>
   <script type="text/javascript" src="/pdf.js"></script>
   <script type="text/javascript" src="/fonts.js"></script>
   <script type="text/javascript" src="/glyphlist.js"></script>
@@ -31,7 +32,7 @@ function load() {
   stdout = document.getElementById("stdout");
 
   log("Harness thinks this browser is '"+ browser +"'\n");
-  log("Fetching manifest ...");
+  log("Fetching manifest "+ manifestFile +"...");
 
   var r = new XMLHttpRequest();
   r.open("GET", manifestFile, false);
@@ -81,38 +82,69 @@ function nextPage() {
   }
 
   failure = '';
-  log("    drawing page "+ currentTask.pageNum +"...");
+  log("    loading page "+ currentTask.pageNum +"... ");
 
   var ctx = canvas.getContext("2d");
   clear(ctx);
 
   var fonts = [];
+  var fontsReady = true;
   var gfx = new CanvasGraphics(ctx);
   try {
     currentPage = pdfDoc.getPage(currentTask.pageNum);
     currentPage.compile(gfx, fonts);
+
+    // Inspect fonts and translate the missing ones
+    var count = fonts.length;
+    for (var i = 0; i < count; ++i) {
+      var font = fonts[i];
+      if (Fonts[font.name]) {
+        fontsReady = fontsReady && !Fonts[font.name].loading;
+        continue;
+      }
+      new Font(font.name, font.file, font.properties);
+      fontsReady = false;
+    }
   } catch(e) {
     failure = 'compile: '+ e.toString();
   }
 
-  // TODO load fonts
-  setTimeout(function() {
-      if (!failure) {
-        try {
-          currentPage.display(gfx);
-        } catch(e) {
-          failure = 'render: '+ e.toString();
-        }
+  var checkFontsLoadedIntervalTimer = null;
+  function checkFontsLoaded() {
+    for (var i = 0; i < count; i++) {
+      if (Fonts[font.name].loading) {
+        return;
       }
-      currentTask.taskDone = (currentTask.pageNum == pdfDoc.numPages
-                              && (1 + currentTask.round) == currentTask.rounds);
-      sendTaskResult(canvas.toDataURL("image/png"));
-      log("done"+ (failure ? " (failed!)" : "") +"\n");
+    }
+    window.clearInterval(checkFontsLoadedIntervalTimer);
 
-      ++currentTask.pageNum, nextPage();
-    },
-    0
-  );
+    snapshotCurrentPage(gfx);
+  }
+
+  if (failure || fontsReady) {
+    snapshotCurrentPage(gfx);
+  } else {
+    checkFontsLoadedIntervalTimer = setInterval(checkFontsLoaded, 10);
+  }
+}
+
+function snapshotCurrentPage(gfx) {
+  log("done, snapshotting... ");
+
+  if (!failure) {
+    try {
+      currentPage.display(gfx);
+    } catch(e) {
+      failure = 'render: '+ e.toString();
+    }
+  }
+
+  currentTask.taskDone = (currentTask.pageNum == pdfDoc.numPages
+                          && (1 + currentTask.round) == currentTask.rounds);
+  sendTaskResult(canvas.toDataURL("image/png"));
+  log("done"+ (failure ? " (failed!)" : "") +"\n");
+
+  ++currentTask.pageNum, nextPage();
 }
 
 function done() {
