@@ -2857,7 +2857,7 @@ var CanvasGraphics = (function() {
             } else {
                 text = Fonts.charsToUnicode(text);
                 this.ctx.translate(this.current.x, -1 * this.current.y);
-                this.ctx.fillText(Fonts.charsToUnicode(text), 0, 0);
+                this.ctx.fillText(text, 0, 0);
                 this.current.x += this.ctx.measureText(text).width;
             }
 
