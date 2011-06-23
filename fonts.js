@@ -649,7 +649,7 @@ var Font = (function () {
 
       /** CMAP */
       var charstrings = font.charstrings;
-      cmap = createCMapTable(font.charstrings);
+      cmap = createCMapTable(charstrings);
       createTableEntry(otf, offsets, "cmap", cmap);
 
       /** HEAD */
@@ -1403,17 +1403,11 @@ CFF.prototype = {
 
   wrap: function wrap(name, charstrings, subrs, properties) {
     // Starts the conversion of the Type1 charstrings to Type2
-    var charstringsCount = 0;
-    var charstringsDataLength = 0;
-    var glyphs = [];
-    for (var i = 0; i < charstrings.length; i++) {
-      var charstring = charstrings[i].charstring;
-      var glyph = charstrings[i].glyph;
-
-      var flattened = this.flattenCharstring(glyph, charstring, subrs);
-      glyphs.push(flattened);
-      charstringsCount++;
-      charstringsDataLength += flattened.length;
+    var glyphs = charstrings.slice();
+	var glyphsCount = glyphs.length;
+    for (var i = 0; i < glyphs.length; i++) {
+      var charstring = glyphs[i];
+      glyphs[i] = this.flattenCharstring(charstring.glyph, charstring.charstring, subrs);
     }
 
     // Create a CFF font data
@@ -1448,10 +1442,10 @@ CFF.prototype = {
 
     // Fill the charset header (first byte is the encoding)
     var charset = [0x00];
-    for (var i = 0; i < glyphs.length; i++) {
+    for (var i = 0; i < glyphsCount; i++) {
       var index = CFFStrings.indexOf(charstrings[i].glyph);
       if (index == -1)
-        index = CFFStrings.length + strings.indexOf(glyph);
+        index = CFFStrings.length + strings.indexOf(charstrings[i].glyph);
       var bytes = FontsUtils.integerToBytes(index, 2);
       charset.push(bytes[0]);
       charset.push(bytes[1]);
@@ -1483,7 +1477,7 @@ CFF.prototype = {
 
     topDictIndex = topDictIndex.concat([28, 0, 0, 16]) // Encoding
 
-    var charstringsOffset = charsetOffset + (charstringsCount * 2) + 1;
+    var charstringsOffset = charsetOffset + (glyphsCount * 2) + 1;
     topDictIndex = topDictIndex.concat(this.encodeNumber(charstringsOffset));
     topDictIndex.push(17); // charstrings
 
