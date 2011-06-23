@@ -495,7 +495,7 @@ var Font = (function () {
       if (requiredTables.length && requiredTables[0] == "OS/2") {
         // Create a new file to hold the new version of our truetype with a new
         // header and new offsets
-        var ttf = Uint8Array(kMaxFontFileSize);
+        var ttf = new Uint8Array(kMaxFontFileSize);
 
         // The offsets object holds at the same time a representation of where
         // to write the table entry information about a table and another offset
@@ -581,7 +581,7 @@ var Font = (function () {
     },
 
     convert: function font_convert(name, font, properties) {
-      var otf = Uint8Array(kMaxFontFileSize);
+      var otf = new Uint8Array(kMaxFontFileSize);
 
       function createNameTable(name) {
         var names = [
@@ -1148,7 +1148,7 @@ var Type1Parser = function() {
  * The CFF class takes a Type1 file and wrap it into a 'Compact Font Format',
  * which itself embed Type2 charstrings.
  */
-const CFFStrings = [
+var CFFStrings = [
   ".notdef","space","exclam","quotedbl","numbersign","dollar","percent","ampersand",
   "quoteright","parenleft","parenright","asterisk","plus","comma","hyphen","period",
   "slash","zero","one","two","three","four","five","six","seven","eight","nine",
