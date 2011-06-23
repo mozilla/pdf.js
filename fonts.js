@@ -135,15 +135,28 @@ var Font = (function () {
         break;
     }
 
+    var data = this.font;
     Fonts[name] = {
-      data: this.font,
+      data: data,
       properties: properties,
       loading: true,
       cache: Object.create(null)
     }
 
-    // Attach the font to the document
-    this.bind();
+    // Convert data to a string.
+    var dataStr = "";
+    var length = data.length;
+    for (var i = 0; i < length; ++i)
+      dataStr += String.fromCharCode(data[i]);
+
+    // Attach the font to the document. If this script is runnig in a worker,
+    // call `bindWorker`, which sends stuff over to the main thread.
+    if (typeof window != "undefined") {
+      this.bindDOM(dataStr);
+    } else {
+      this.bindWorker(dataStr);
+    }
+
   };
 
   function stringToArray(str) {
@@ -755,49 +768,99 @@ var Font = (function () {
       return fontData;
     },
 
-    bind: function font_bind() {
-      var data = this.font;
+    bindWorker: function font_bind_worker(dataStr) {
+      postMessage({
+        action: "font",
+        data: {
+          raw:      dataStr,
+          fontName: this.name,
+          mimetype: this.mimetype
+        }
+      });
+    },
+
+    bindDOM: function font_bind_dom(dataStr) {
       var fontName = this.name;
 
-      // Get the base64 encoding of the binary font data
-      var str = "";
-      var length = data.length;
-      for (var i = 0; i < length; ++i)
-        str += String.fromCharCode(data[i]);
+      /** Hack begin */
+      // Actually there is not event when a font has finished downloading so
+      // the following code are a dirty hack to 'guess' when a font is ready
+      var canvas = document.createElement("canvas");
+      var style = "border: 1px solid black; position:absolute; top: " +
+                   (debug ? (100 * fontCount) : "-200") + "px; left: 2px; width: 340px; height: 100px";
+      canvas.setAttribute("style", style);
+      canvas.setAttribute("width", 340);
+      canvas.setAttribute("heigth", 100);
+      document.body.appendChild(canvas);
 
-      // Insert the font-face css on the page. In a web worker, this needs to
-      // be forwareded on the main thread.
-      if (typeof window == "undefined") {
-          postMessage({
-            action: "font",
-            data: {
-              raw: str,
-              fontName: fontName,
-              mimetype: this.mimetype
-            }
-          });
-      } else {
-          var base64 = window.btoa(str);
+      // Get the font size canvas think it will be for 'spaces'
+      var ctx = canvas.getContext("2d");
+      ctx.font = "bold italic 20px " + fontName + ", Symbol, Arial";
+      var testString = " ";
 
-          // Add the @font-face rule to the document
-          var url = "url(data:" + this.mimetype + ";base64," + base64 + ");";
-          var rule = "@font-face { font-family:'" + fontName + "';src:" + url + "}";
-          var styleSheet = document.styleSheets[0];
-          styleSheet.insertRule(rule, styleSheet.length);
+      // When debugging use the characters provided by the charsets to visually
+      // see what's happening instead of 'spaces'
+      var debug = false;
+      if (debug) {
+        var name = document.createElement("font");
+        name.setAttribute("style", "position: absolute; left: 20px; top: " +
+                          (100 * fontCount + 60) + "px");
+        name.innerHTML = fontName;
+        document.body.appendChild(name);
 
-          var div = document.createElement("div");
-          var style = 'font-family:"' + fontName + 
-            '";position: absolute;top:-99999;left:-99999;z-index:-99999';
-          div.setAttribute("style", style);
-          document.body.appendChild(div);
+        // Retrieve font charset
+        var charset = Fonts[fontName].properties.charset || [];
 
-          Fonts[fontName].loading = true;
-          window.setTimeout(function() {
-            Fonts[fontName].loading = false;
-          // Timeout of just `0`, `10` doesn't work here, but for me all values
-          // above work. Setting value to 50ms.
-          }, 50);
+        // if the charset is too small make it repeat a few times
+        var count = 30;
+        while (count-- && charset.length <= 30)
+          charset = charset.concat(charset.slice());
+
+        for (var i = 0; i < charset.length; i++) {
+          var unicode = GlyphsUnicode[charset[i]];
+          if (!unicode)
+            continue;
+          testString += String.fromCharCode(unicode);
+        }
+
+        ctx.fillText(testString, 20, 20);
       }
+
+      // Periodicaly check for the width of the testString, it will be
+      // different once the real font has loaded
+      var textWidth = ctx.measureText(testString).width;
+
+      var interval = window.setInterval(function canvasInterval(self) {
+        this.start = this.start || Date.now();
+        ctx.font = "bold italic 20px " + fontName + ", Symbol, Arial";
+
+        // For some reasons the font has not loaded, so mark it loaded for the
+        // page to proceed but cry
+        if ((Date.now() - this.start) >= kMaxWaitForFontFace) {
+          window.clearInterval(interval);
+          Fonts[fontName].loading = false;
+          warn("Is " + fontName + " for charset: " + charset + " loaded?");
+          this.start = 0;
+        } else if (textWidth != ctx.measureText(testString).width) {
+          window.clearInterval(interval);
+          Fonts[fontName].loading = false;
+          this.start = 0;
+        }
+
+        if (debug)
+          ctx.fillText(testString, 20, 50);
+      }, 30, this);
+
+      /** Hack end */
+      
+      // Convert the data string and add it to the page.
+      var base64 = window.btoa(dataStr);
+
+      // Add the @font-face rule to the document
+      var url = "url(data:" + this.mimetype + ";base64," + base64 + ");";
+      var rule = "@font-face { font-family:'" + fontName + "';src:" + url + "}";
+      var styleSheet = document.styleSheets[0];
+      styleSheet.insertRule(rule, styleSheet.length);
     }
   };
 
