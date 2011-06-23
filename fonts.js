@@ -298,56 +298,59 @@ var Font = (function () {
   };
 
   function createOS2Table() {
-    var OS2 = stringToArray(
-        "\x00\x03" + // version
-        "\x02\x24" + // xAvgCharWidth
-        "\x01\xF4" + // usWeightClass
-        "\x00\x05" + // usWidthClass
-        "\x00\x00" + // fstype
-        "\x02\x8A" + // ySubscriptXSize
-        "\x02\xBB" + // ySubscriptYSize
-        "\x00\x00" + // ySubscriptXOffset
-        "\x00\x8C" + // ySubscriptYOffset
-        "\x02\x8A" + // ySuperScriptXSize
-        "\x02\xBB" + // ySuperScriptYSize
-        "\x00\x00" + // ySuperScriptXOffset
-        "\x01\xDF" + // ySuperScriptYOffset
-        "\x00\x31" + // yStrikeOutSize
-        "\x01\x02" + // yStrikeOutPosition
-        "\x00\x00" + // sFamilyClass
-        "\x02\x00\x06\x03\x00\x00\x00\x00\x00\x00" + // Panose
-        "\xFF\xFF\xFF\xFF" + // ulUnicodeRange1 (Bits 0-31)
-        "\xFF\xFF\xFF\xFF" + // ulUnicodeRange1 (Bits 32-63)
-        "\xFF\xFF\xFF\xFF" + // ulUnicodeRange1 (Bits 64-95)
-        "\xFF\xFF\xFF\xFF" + // ulUnicodeRange1 (Bits 96-127)
-        "\x2A\x32\x31\x2A" + // achVendID
-        "\x00\x20" + // fsSelection
-        "\x00\x2D" + // usFirstCharIndex
-        "\x00\x7A" + // usLastCharIndex
-        "\x00\x03" + // sTypoAscender
-        "\x00\x20" + // sTypeDescender
-        "\x00\x38" + // sTypoLineGap
-        "\x00\x5A" + // usWinAscent
-        "\x02\xB4" + // usWinDescent
-        "\x00\xCE\x00\x00" + // ulCodePageRange1 (Bits 0-31)
-        "\x00\x01\x00\x00" + // ulCodePageRange2 (Bits 32-63)
-        "\x00\x00" + // sxHeight
-        "\x00\x00" + // sCapHeight
-        "\x00\x01" + // usDefaultChar
-        "\x00\xCD" + // usBreakChar
-        "\x00\x02"   // usMaxContext
-      );
-    return OS2;
+    return "\x00\x03" + // version
+           "\x02\x24" + // xAvgCharWidth
+           "\x01\xF4" + // usWeightClass
+           "\x00\x05" + // usWidthClass
+           "\x00\x00" + // fstype
+           "\x02\x8A" + // ySubscriptXSize
+           "\x02\xBB" + // ySubscriptYSize
+           "\x00\x00" + // ySubscriptXOffset
+           "\x00\x8C" + // ySubscriptYOffset
+           "\x02\x8A" + // ySuperScriptXSize
+           "\x02\xBB" + // ySuperScriptYSize
+           "\x00\x00" + // ySuperScriptXOffset
+           "\x01\xDF" + // ySuperScriptYOffset
+           "\x00\x31" + // yStrikeOutSize
+           "\x01\x02" + // yStrikeOutPosition
+           "\x00\x00" + // sFamilyClass
+           "\x02\x00\x06\x03\x00\x00\x00\x00\x00\x00" + // Panose
+           "\xFF\xFF\xFF\xFF" + // ulUnicodeRange1 (Bits 0-31)
+           "\xFF\xFF\xFF\xFF" + // ulUnicodeRange1 (Bits 32-63)
+           "\xFF\xFF\xFF\xFF" + // ulUnicodeRange1 (Bits 64-95)
+           "\xFF\xFF\xFF\xFF" + // ulUnicodeRange1 (Bits 96-127)
+           "\x2A\x32\x31\x2A" + // achVendID
+           "\x00\x20" + // fsSelection
+           "\x00\x2D" + // usFirstCharIndex
+           "\x00\x7A" + // usLastCharIndex
+           "\x00\x03" + // sTypoAscender
+           "\x00\x20" + // sTypeDescender
+           "\x00\x38" + // sTypoLineGap
+           "\x00\x5A" + // usWinAscent
+           "\x02\xB4" + // usWinDescent
+          "\x00\xCE\x00\x00" + // ulCodePageRange1 (Bits 0-31)
+          "\x00\x01\x00\x00" + // ulCodePageRange2 (Bits 32-63)
+          "\x00\x00" + // sxHeight
+          "\x00\x00" + // sCapHeight
+          "\x00\x01" + // usDefaultChar
+          "\x00\xCD" + // usBreakChar
+          "\x00\x02";   // usMaxContext
   };
 
-  /**
-   * A bunch of the OpenType code is duplicate between this class and the
-   * TrueType code, this is intentional and will merge in a future version
-   * where all the code relative to OpenType will probably have its own
-   * class and will take decision without the Fonts consent.
-   * But at the moment it allows to develop around the TrueType rewriting
-   * on the fly without messing up with the 'regular' Type1 to OTF conversion.
-   */
+  function createPostTable() {
+    TODO("Fill with real values from the font dict");
+
+    return "\x00\x03\x00\x00" + // Version number
+           "\x00\x00\x01\x00" + // italicAngle
+           "\x00\x00"         + // underlinePosition
+           "\x00\x00"         + // underlineThickness
+           "\x00\x00\x00\x00" + // isFixedPitch
+           "\x00\x00\x00\x00" + // minMemType42
+           "\x00\x00\x00\x00" + // maxMemType42
+           "\x00\x00\x00\x00" + // minMemType1
+           "\x00\x00\x00\x00";  // maxMemType1
+  };
+
   constructor.prototype = {
     name: null,
     font: null,
@@ -405,7 +408,7 @@ var Font = (function () {
           var length = FontsUtils.bytesToInteger(font.getBytes(2));
           var language = FontsUtils.bytesToInteger(font.getBytes(2));
 
-          if ((format == 0 && numTables == 1) || 
+          if ((format == 0 && numTables == 1) ||
               (format == 6 && numTables == 1 && !properties.encoding.empty)) {
             // Format 0 alone is not allowed by the sanitizer so let's rewrite
             // that to a 3-1-4 Unicode BMP table
@@ -512,10 +515,9 @@ var Font = (function () {
         createOpenTypeHeader("\x00\x01\x00\x00", ttf, offsets, numTables);
 
         // Insert the missing table
-        var OS2 = createOS2Table();
         tables.push({
           tag: "OS/2",
-          data: OS2
+          data: stringToArray(createOS2Table)
         });
 
         // Replace the old CMAP table with a shiny new one
@@ -523,20 +525,9 @@ var Font = (function () {
 
         // Rewrite the 'post' table if needed
         if (!post) {
-          post =
-            "\x00\x03\x00\x00" + // Version number
-            "\x00\x00\x01\x00" + // italicAngle
-            "\x00\x00" +         // underlinePosition
-            "\x00\x00" +         // underlineThickness
-            "\x00\x00\x00\x00" + // isFixedPitch
-            "\x00\x00\x00\x00" + // minMemType42
-            "\x00\x00\x00\x00" + // maxMemType42
-            "\x00\x00\x00\x00" + // minMemType1
-            "\x00\x00\x00\x00";  // maxMemType1
-
-          tables.unshift({
+          tables.push({
             tag: "post",
-            data: stringToArray(post)
+            data: stringToArray(createPostTable())
           });
         }
 
@@ -586,10 +577,10 @@ var Font = (function () {
       function createNameTable(name) {
         var names = [
           "See original licence",  // Copyright
-          name,                   // Font family
+          name,                    // Font family
           "undefined",             // Font subfamily (font weight)
           "uniqueID",              // Unique ID
-          name,                   // Full font name
+          name,                    // Full font name
           "0.1",                   // Version
           "undefined",             // Postscript name
           "undefined",             // Trademark
@@ -625,10 +616,10 @@ var Font = (function () {
 
       // Required Tables
       var CFF =
-        font.data,  // PostScript Font Program
+        font.data,   // PostScript Font Program
         OS2,         // OS/2 and Windows Specific metrics
         cmap,        // Character to glyphs mapping
-        head,        // Font eader
+        head,        // Font header
         hhea,        // Horizontal header
         hmtx,        // Horizontal metrics
         maxp,        // Maximum profile
@@ -728,17 +719,7 @@ var Font = (function () {
       createTableEntry(otf, offsets, "name", name);
 
       /** POST */
-      // TODO: get those informations from the FontInfo structure
-      post = "\x00\x03\x00\x00" + // Version number
-             "\x00\x00\x01\x00" + // italicAngle
-             "\x00\x00" + // underlinePosition
-             "\x00\x00" + // underlineThickness
-             "\x00\x00\x00\x00" + // isFixedPitch
-             "\x00\x00\x00\x00" + // minMemType42
-             "\x00\x00\x00\x00" + // maxMemType42
-             "\x00\x00\x00\x00" + // minMemType1
-             "\x00\x00\x00\x00";  // maxMemType1
-      post = stringToArray(post);
+      post = stringToArray(createPostTable());
       createTableEntry(otf, offsets, "post", post);
 
       // Once all the table entries header are written, dump the data!
@@ -1480,7 +1461,6 @@ CFF.prototype = {
     }
 
     var charstringsIndex = this.createCFFIndexHeader([[0x40, 0x0E]].concat(glyphs), true);
-    charstringsIndex = charstringsIndex.join(" ").split(" "); // XXX why?
 
     //Top Dict Index
     var topDictIndex = [
@@ -1514,7 +1494,6 @@ CFF.prototype = {
     var privateOffset = charstringsOffset + charstringsIndex.length;
     topDictIndex = topDictIndex.concat(this.encodeNumber(privateOffset));
     topDictIndex.push(18); // Private
-    topDictIndex = topDictIndex.join(" ").split(" ");
 
     var indexes = [
       topDictIndex, stringsIndex,
@@ -1544,7 +1523,6 @@ CFF.prototype = {
       139, 12, 14,
       28, 0, 55, 19
     ]);
-    privateData = privateData.join(" ").split(" ");
     cff.set(privateData, currentOffset);
     currentOffset += privateData.length;
 
