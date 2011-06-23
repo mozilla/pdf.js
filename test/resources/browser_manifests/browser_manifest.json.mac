@@ -2,11 +2,9 @@
    {
     "name":"firefox5",
     "path":"/Applications/Firefox.app",
-    "type":"firefox"
    },
    {
     "name":"firefox6",
     "path":"/Users/sayrer/firefoxen/Aurora.app",
-    "type":"firefox"
    }
 ]
