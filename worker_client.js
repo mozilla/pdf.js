@@ -71,7 +71,7 @@ function WorkerPDFDoc(canvas) {
     "$drawImage": function(id, x, y, sx, sy, swidth, sheight) {
       var image = imagesList[id];
       if (!image) {
-        throw "Image not found";
+        throw "Image not found: " + id;
       }
       this.drawImage(image, x, y, image.width, image.height,
         sx, sy, swidth, sheight);
@@ -179,9 +179,8 @@ function WorkerPDFDoc(canvas) {
 
     "jpeg_stream": function(data) {
       var img = new Image();
-      img.src = "data:image/jpeg;base64," + window.btoa(data);
+      img.src = "data:image/jpeg;base64," + window.btoa(data.raw);
       imagesList[data.id] = img;
-      console.log("got image", data.id)
     },
     
     "canvas_proxy_cmd_queue": function(data) {
