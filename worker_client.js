@@ -202,10 +202,17 @@ function WorkerPDFDoc(canvas) {
         // There might be fonts that need to get loaded. Shedule the
         // rendering at the end of the event queue ensures this.
         setTimeout(function() {
-          if (id == 0) tic();
+          if (id == 0) {
+            tic();
+            var ctx = this.ctx;
+            ctx.save();
+            ctx.fillStyle = "rgb(255, 255, 255)";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.restore();
+          }
           renderProxyCanvas(canvasList[id], cmdQueue);
           if (id == 0) toc("canvas rendering")
-        }, 0);
+        }, 0, this);
     }
   }
 
@@ -239,12 +246,6 @@ WorkerPDFDoc.prototype.open = function(url, callback) {
 }
 
 WorkerPDFDoc.prototype.showPage = function(numPage) {
-  var ctx = this.ctx;
-  ctx.save();
-  ctx.fillStyle = "rgb(255, 255, 255)";
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-  ctx.restore();
-
   this.numPage = parseInt(numPage);
   this.worker.postMessage(numPage);
   if (this.onChangePage) {
