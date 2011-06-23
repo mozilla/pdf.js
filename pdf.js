@@ -2042,7 +2042,8 @@ var CanvasExtraState = (function() {
         this.fontSize = 0.0;
         this.textMatrix = IDENTITY_MATRIX;
         this.leading = 0.0;
-        this.colorSpace = null;
+        this.fillColorSpace = null;
+        this.strokeColorSpace = null;
         // Current point (in user coordinates)
         this.x = 0.0;
         this.y = 0.0;
@@ -2823,9 +2824,9 @@ var CanvasGraphics = (function() {
         setFillColorSpace: function(space) {
             // TODO real impl
             if (space.name === "Pattern")
-                this.current.colorSpace = "Pattern";
+                this.current.fillColorSpace = "Pattern";
             else
-                this.current.colorSpace = "DeviceRGB";
+                this.current.fillColorSpace = "DeviceRGB";
         },
         setStrokeColor: function(/*...*/) {
             // TODO real impl
@@ -2849,7 +2850,7 @@ var CanvasGraphics = (function() {
         },
         setFillColorN: function(/*...*/) {
             // TODO real impl
-            var colorSpace = this.current.colorSpace;
+            var colorSpace = this.current.fillColorSpace;
             if (!colorSpace) {
                 var stateStack = this.stateStack;
                 var i = stateStack.length - 1;
@@ -2858,7 +2859,7 @@ var CanvasGraphics = (function() {
                 }
             }
 
-            if (this.current.colorSpace == "Pattern") {
+            if (this.current.fillColorSpace == "Pattern") {
                 var patternName = arguments[0];
                 if (IsName(patternName)) {
                     var xref = this.xref;
@@ -3372,6 +3373,15 @@ var CanvasGraphics = (function() {
         makeCssRgb: function(r, g, b) {
             var ri = (255 * r) | 0, gi = (255 * g) | 0, bi = (255 * b) | 0;
             return "rgb("+ ri +","+ gi +","+ bi +")";
+        },
+        getColorSpaceObj(colorSpace) {
+            if (IsName(colorSpace)) {
+                var name = colorSpace.name;
+            } else if (IsArray(colorSpace)) {
+                var name = colorSpace[0];
+            }
+        }
+
         },
         // We generally keep the canvas context set for
         // nonzero-winding, and just set evenodd for the operations
