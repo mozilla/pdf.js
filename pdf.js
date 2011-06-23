@@ -2287,6 +2287,14 @@ var CanvasGraphics = (function() {
         this.ScratchCanvas = imageCanvas || ScratchCanvas;
     }
 
+    var LINE_CAP_STYLES = [ "butt", "round", "square" ];
+    var LINE_JOIN_STYLES = [ "miter", "round", "bevel" ];
+    var NORMAL_CLIP = {};
+    var EO_CLIP = {};
+
+    // Used for tiling patterns
+    var PAINT_TYPE_COLORED = 1, PAINT_TYPE_UNCOLORED = 2;
+
     constructor.prototype = {
         map: {
             // Graphics state
@@ -2381,18 +2389,8 @@ var CanvasGraphics = (function() {
             // Compatibility
             BX: "beginCompat",
             EX: "endCompat",
-        };
-    }
-
-    var LINE_CAP_STYLES = [ "butt", "round", "square" ];
-    var LINE_JOIN_STYLES = [ "miter", "round", "bevel" ];
-    var NORMAL_CLIP = {};
-    var EO_CLIP = {};
-
-    // Used for tiling patterns
-    var PAINT_TYPE_COLORED = 1, PAINT_TYPE_UNCOLORED = 2;
-
-    constructor.prototype = {
+        },
+      
         translateFont: function(fontDict, xref, resources) {
             var fd = fontDict.get("FontDescriptor");
             if (!fd)
@@ -2855,7 +2853,7 @@ var CanvasGraphics = (function() {
             this.ctx.scale(1, -1);
 
             if (this.ctx.$showText) {
-                this.ctx.$showText(this.current.y, text, Fonts.charsToUnicode(text));
+                this.ctx.$showText(this.current.y, Fonts.charsToUnicode(text));
             } else {
                 text = Fonts.charsToUnicode(text);
                 this.ctx.translate(this.current.x, -1 * this.current.y);

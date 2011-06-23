@@ -55,9 +55,9 @@ function WorkerPDFDoc(canvas) {
       currentX = currentXStack.pop();
     },
 
-    "$showText": function(y, text, uniText) {
+    "$showText": function(y, text) {
       this.translate(currentX, -1 * y);
-      this.fillText(uniText, 0, 0);
+      this.fillText(text, 0, 0);
       currentX += this.measureText(text).width;
     },
 
