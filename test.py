@@ -117,8 +117,8 @@ def setUp(manifestFile, masterMode):
     assert not os.path.isdir(TMPDIR)
 
     testBrowsers = [ b for b in
-                     ( 'firefox5', )
-#'chrome12', 'chrome13', 'firefox4', 'firefox6','opera11' ):
+                     ( 'firefox5', 'firefox6', )
+#'chrome12', 'chrome13', 'firefox4', 'opera11' ):
                      if os.access(b, os.R_OK | os.X_OK) ]
 
     mf = open(manifestFile)
@@ -152,7 +152,7 @@ def setUp(manifestFile, masterMode):
                 taskResults.append([ ])
             State.taskResults[b][id] = taskResults
 
-    State.remaining = len(manifestList)
+    State.remaining = len(testBrowsers) * len(manifestList)
 
     for b in testBrowsers:
         print 'Launching', b

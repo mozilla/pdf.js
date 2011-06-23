@@ -220,6 +220,43 @@ var DecodeStream = (function() {
 })();
 
 
+var FakeStream = (function() {
+    function constructor(stream) {
+        this.dict = stream.dict;
+        DecodeStream.call(this);
+    };
+
+    constructor.prototype = Object.create(DecodeStream.prototype);
+    constructor.prototype.readBlock = function() {
+        var bufferLength = this.bufferLength;
+        bufferLength += 1024;
+        var buffer = this.ensureBuffer(bufferLength);
+        this.bufferLength = bufferLength;
+    };
+    constructor.prototype.getBytes = function(length) {
+        var pos = this.pos;
+
+        if (length) {
+            this.ensureBuffer(pos + length);
+            var end = pos + length;
+
+            while (!this.eof && this.bufferLength < end)
+                this.readBlock();
+
+            var bufEnd = this.bufferLength;
+            if (end > bufEnd)
+                end = bufEnd;
+        } else {
+            this.eof = true;
+            var end = this.bufferLength;
+        }
+
+        this.pos = end;
+        return this.buffer.subarray(pos, end)
+    };
+
+    return constructor;
+})();
 
 var FlateStream = (function() {
     var codeLenCodeMap = new Uint32Array([
@@ -442,17 +479,17 @@ var FlateStream = (function() {
                 array[i++] = what;
         }
 
-        var bytes = this.bytes;
-        var bytesPos = this.bytesPos;
-
         // read block header
         var hdr = this.getBits(3);
         if (hdr & 1)
             this.eof = true;
         hdr >>= 1;
 
-        var b;
         if (hdr == 0) { // uncompressed block
+            var bytes = this.bytes;
+            var bytesPos = this.bytesPos;
+            var b;
+
             if (typeof (b = bytes[bytesPos++]) == "undefined")
                 error("Bad block header in flate stream");
             var blockLen = b;
@@ -465,18 +502,24 @@ var FlateStream = (function() {
             if (typeof (b = bytes[bytesPos++]) == "undefined")
                 error("Bad block header in flate stream");
             check |= (b << 8);
-            if (check != (~this.blockLen & 0xffff))
+            if (check != (~blockLen & 0xffff))
                 error("Bad uncompressed block length in flate stream");
+
+            this.codeBuf = 0;
+            this.codeSize = 0;
+            
             var bufferLength = this.bufferLength;
             var buffer = this.ensureBuffer(bufferLength + blockLen);
-            this.bufferLength = bufferLength + blockLen;
-            for (var n = bufferLength; n < blockLen; ++n) {
+            var end = bufferLength + blockLen;
+            this.bufferLength = end;
+            for (var n = bufferLength; n < end; ++n) {
                 if (typeof (b = bytes[bytesPos++]) == "undefined") {
                     this.eof = true;
                     break;
                 }
                 buffer[n] = b;
             }
+            this.bytesPos = bytesPos;
             return;
         }
 
@@ -597,9 +640,6 @@ var PredictorStream = (function() {
     constructor.prototype = Object.create(DecodeStream.prototype);
 
     constructor.prototype.readBlockTiff = function() {
-        var buffer = this.buffer;
-        var pos = this.pos;
-
         var rowBytes = this.rowBytes;
         var pixBytes = this.pixBytes;
 
@@ -660,9 +700,6 @@ var PredictorStream = (function() {
         this.bufferLength += rowBytes;
     };
     constructor.prototype.readBlockPng = function() {
-        var buffer = this.buffer;
-        var pos = this.pos;
-
         var rowBytes = this.rowBytes;
         var pixBytes = this.pixBytes;
 
@@ -1448,6 +1485,9 @@ var Parser = (function() {
                 return new JpegStream(bytes, stream.dict);
             } else if (name == "ASCII85Decode") {
                 return new Ascii85Stream(stream);
+            } else if (name == "CCITTFaxDecode") {
+                TODO("implement fax stream");
+                return new FakeStream(stream);
             } else {
                 error("filter '" + name + "' not supported yet");
             }
