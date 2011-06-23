@@ -151,7 +151,10 @@ function done() {
   log("Done!\n");
   setTimeout(function() {
       document.body.innerHTML = "Tests are finished.  <h1>CLOSE ME!</h1>";
-      window.close();
+      if (window.SpecialPowers)
+        SpecialPowers.quitApplication();
+      else
+        window.close();
     },
     100
   );

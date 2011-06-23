@@ -33,7 +33,8 @@ class TestOptions(OptionParser):
     def verifyOptions(self, options):
         if options.masterMode and options.manifestFile:
             self.error("--masterMode and --manifestFile must not be specified at the same time.")
-        options.manifestFile = DEFAULT_MANIFEST_FILE
+        if not options.manifestFile:
+            options.manifestFile = DEFAULT_MANIFEST_FILE
         return options
         
 def prompt(question):
@@ -149,6 +150,7 @@ class BrowserCommand():
     def setup(self):
         self.tempDir = tempfile.mkdtemp()
         self.profileDir = os.path.join(self.tempDir, "profile")
+        print self.profileDir
         shutil.copytree(os.path.join(DOC_ROOT, "test", "resources", "firefox"),
                         self.profileDir)
 
