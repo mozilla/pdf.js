@@ -1,3 +1,7 @@
+/* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- /
+/* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
+
+"use strict";
 
 var JpegStreamProxyCounter = 0;
 // WebWorker Proxy for JpegStream.
@@ -29,16 +33,16 @@ var JpegStreamProxy = (function() {
 // Really simple GradientProxy. There is currently only one active gradient at
 // the time, meaning you can't create a gradient, create a second one and then
 // use the first one again. As this isn't used in pdf.js right now, it's okay.
-function GradientProxy(stack, x0, y0, x1, y1) {
-  stack.push(["$createLinearGradient", [x0, y0, x1, y1]]);
+function GradientProxy(cmdQueue, x0, y0, x1, y1) {
+  cmdQueue.push(["$createLinearGradient", [x0, y0, x1, y1]]);
   this.addColorStop = function(i, rgba) {
-    stack.push(["$addColorStop", [i, rgba]]);
+    cmdQueue.push(["$addColorStop", [i, rgba]]);
   }
 }
 
 // Really simple PatternProxy.
 var patternProxyCounter = 0;
-function PatternProxy(stack, object, kind) {
+function PatternProxy(cmdQueue, object, kind) {
   this.id = patternProxyCounter++;
 
   if (!(object instanceof CanvasProxy) ) {
@@ -49,7 +53,7 @@ function PatternProxy(stack, object, kind) {
   // TODO: Make some kind of dependency management, such that the object
   // gets flushed only if needed.
   object.flush();
-  stack.push(["$createPatternFromCanvas", [this.id, object.id, kind]]);
+  cmdQueue.push(["$createPatternFromCanvas", [this.id, object.id, kind]]);
 }
 
 var canvasProxyCounter = 0;
@@ -57,7 +61,7 @@ function CanvasProxy(width, height) {
   this.id = canvasProxyCounter++;
 
   // The `stack` holds the rendering calls and gets flushed to the main thead.
-  var stack = this.$stack = [];
+  var cmdQueue = this.cmdQueue = [];
 
   // Dummy context that gets exposed.
   var ctx = {};
@@ -119,7 +123,7 @@ function CanvasProxy(width, height) {
   function buildFuncCall(name) {
     return function() {
       // console.log("funcCall", name)
-      stack.push([name, Array.prototype.slice.call(arguments)]);
+      cmdQueue.push([name, Array.prototype.slice.call(arguments)]);
     }
   }
   var name;
@@ -131,11 +135,11 @@ function CanvasProxy(width, height) {
   // Some function calls that need more work.
 
   ctx.createPattern = function(object, kind) {
-    return new PatternProxy(stack, object, kind);
+    return new PatternProxy(cmdQueue, object, kind);
   }
 
   ctx.createLinearGradient = function(x0, y0, x1, y1) {
-    return new GradientProxy(stack, x0, y0, x1, y1);
+    return new GradientProxy(cmdQueue, x0, y0, x1, y1);
   }
 
   ctx.getImageData = function(x, y, w, h) {
@@ -147,16 +151,16 @@ function CanvasProxy(width, height) {
   }
 
   ctx.putImageData = function(data, x, y, width, height) {
-    stack.push(["$putImageData", [data, x, y, width, height]]);
+    cmdQueue.push(["$putImageData", [data, x, y, width, height]]);
   }
 
   ctx.drawImage = function(image, x, y, width, height, sx, sy, swidth, sheight) {
     if (image instanceof CanvasProxy) {
       // Send the image/CanvasProxy to the main thread.
       image.flush();
-      stack.push(["$drawCanvas", [image.id, x, y, sx, sy, swidth, sheight]]);
+      cmdQueue.push(["$drawCanvas", [image.id, x, y, sx, sy, swidth, sheight]]);
     } else if(image instanceof JpegStreamProxy) {
-      stack.push(["$drawImage", [image.id, x, y, sx, sy, swidth, sheight]])
+      cmdQueue.push(["$drawImage", [image.id, x, y, sx, sy, swidth, sheight]])
     } else {
       throw "unkown type to drawImage";
     }
@@ -192,8 +196,23 @@ function CanvasProxy(width, height) {
 
   function buildSetter(name) {
     return function(value) {
-      stack.push(["$", name, value]);
+      cmdQueue.push(["$", name, value]);
       return ctx["$" + name] = value;
+    }
+  }
+
+  // Setting the value to `stroke|fillStyle` needs special handling, as it
+  // might gets an gradient/pattern.
+  function buildSetterStyle(name) {
+    return function(value) {
+      if (value instanceof GradientProxy) {
+        cmdQueue.push(["$" + name + "Gradient"]);
+      } else if (value instanceof PatternProxy) {
+        cmdQueue.push(["$" + name + "Pattern", [value.id]]);
+      } else {
+        cmdQueue.push(["$", name, value]);
+        return ctx["$" + name] = value;
+      }
     }
   }
 
@@ -204,18 +223,6 @@ function CanvasProxy(width, height) {
     // Special treatment for `fillStyle` and `strokeStyle`: The passed style
     // might be a gradient. Need to check for that.
     if (name == "fillStyle" || name == "strokeStyle") {
-      function buildSetterStyle(name) {
-        return function(value) {
-          if (value instanceof GradientProxy) {
-            stack.push(["$" + name + "Gradient"]);
-          } else if (value instanceof PatternProxy) {
-            stack.push(["$" + name + "Pattern", [value.id]]);
-          } else {
-            stack.push(["$", name, value]);
-            return ctx["$" + name] = value;
-          }
-        }
-      }
       ctx.__defineSetter__(name, buildSetterStyle(name));
     } else {
       ctx.__defineSetter__(name, buildSetter(name));
@@ -224,16 +231,16 @@ function CanvasProxy(width, height) {
 }
 
 /**
-* Sends the current stack of the CanvasProxy over to the main thread and
-* resets the stack.
+* Sends the current cmdQueue of the CanvasProxy over to the main thread and
+* resets the cmdQueue.
 */
 CanvasProxy.prototype.flush = function() {
-  postMessage("canvas_proxy_stack");
+  postMessage("canvas_proxy_cmd_queue");
   postMessage({
-    id:     this.id,
-    stack:  this.$stack,
-    width:  this.width,
-    height: this.height
+    id:         this.id,
+    cmdQueue:   this.cmdQueue,
+    width:      this.width,
+    height:     this.height
   });
-  this.$stack.length = 0;
+  this.cmdQueue.length = 0;
 }

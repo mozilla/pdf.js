@@ -1,3 +1,6 @@
+/* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- /
+/* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
+
 "use strict";
 
 function WorkerPDFDoc(canvas) {
@@ -128,10 +131,11 @@ function WorkerPDFDoc(canvas) {
     }
   }
 
-  function renderProxyCanvas(canvas, stack) {
+  function renderProxyCanvas(canvas, cmdQueue) {
     var ctx = canvas.getContext("2d");
-    for (var i = 0; i < stack.length; i++) {
-      var opp = stack[i];
+    var cmdQueueLength = cmdQueue.length;
+    for (var i = 0; i < cmdQueueLength; i++) {
+      var opp = cmdQueue[i];
       if (opp[0] == "$") {
         ctx[opp[1]] = opp[2];
       } else if (opp[0] in ctxSpecial) {
@@ -146,7 +150,7 @@ function WorkerPDFDoc(canvas) {
   * onMessage state machine.
   */
   const WAIT = 0;
-  const CANVAS_PROXY_STACK = 1;
+  const CANVAS_PROXY_CMD_QUEUE = 1;
   const LOG = 2;
   const FONT = 3;
   const PDF_NUM_PAGE = 4;
@@ -170,8 +174,8 @@ function WorkerPDFDoc(canvas) {
             onMessageState = LOG;
             return;
 
-          case "canvas_proxy_stack":
-            onMessageState = CANVAS_PROXY_STACK;
+          case "canvas_proxy_cmd_queue":
+            onMessageState = CANVAS_PROXY_CMD_QUEUE;
             return;
 
           case "font":
@@ -215,6 +219,7 @@ function WorkerPDFDoc(canvas) {
         // Just adding the font-face to the DOM doesn't make it load. It
         // seems it's loaded once Gecko notices it's used. Therefore,
         // add a div on the page using the loaded font.
+        var div = document.createElement("div");
         document.getElementById("fonts").innerHTML += "<div style='font-family:" + data.fontName + "'>j</div>";
 
         onMessageState = WAIT;
@@ -225,9 +230,9 @@ function WorkerPDFDoc(canvas) {
         onMessageState = WAIT;
       break;
 
-      case CANVAS_PROXY_STACK:
+      case CANVAS_PROXY_CMD_QUEUE:
         var id = data.id;
-        var stack = data.stack;
+        var cmdQueue = data.cmdQueue;
 
         // Check if there is already a canvas with the given id. If not,
         // create a new canvas.
@@ -242,7 +247,7 @@ function WorkerPDFDoc(canvas) {
         // rendering at the end of the event queue ensures this.
         setTimeout(function() {
           if (id == 0) tic();
-          renderProxyCanvas(canvasList[id], stack);
+          renderProxyCanvas(canvasList[id], cmdQueue);
           if (id == 0) toc("canvas rendering")
         }, 0);
         onMessageState = WAIT;

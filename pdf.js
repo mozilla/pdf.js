@@ -2645,9 +2645,7 @@ var CanvasGraphics = (function() {
             }
 
             var fn = Function("objpool", src);
-            var ret = function (gfx) { fn.call(gfx, objpool); };
-            ret.src = src;
-            return ret;
+            return function (gfx) { fn.call(gfx, objpool); };
         },
 
         endDrawing: function() {
@@ -3015,8 +3013,8 @@ var CanvasGraphics = (function() {
             var botRight = applyMatrix([x0 + xstep, y0 + ystep], matrix);
 
             var tmpCanvas = new this.ScratchCanvas(
-                Math.ceil(botRight[0] - topLeft[0]),    // WIDTH
-                Math.ceil(botRight[1] - topLeft[1])     // HEIGHT
+                Math.ceil(botRight[0] - topLeft[0]),    // width
+                Math.ceil(botRight[1] - topLeft[1])     // height
             );
 
             // set the new canvas element context as the graphics context

@@ -759,88 +759,15 @@ var Font = (function () {
       var data = this.font;
       var fontName = this.name;
 
-      var isWorker = (typeof window == "undefined");
-      /** Hack begin */
-      if (!isWorker) {
-
-          // Actually there is not event when a font has finished downloading so
-          // the following code are a dirty hack to 'guess' when a font is ready
-          var canvas = document.createElement("canvas");
-          var style = "border: 1px solid black; position:absolute; top: " +
-                       (debug ? (100 * fontCount) : "-200") + "px; left: 2px; width: 340px; height: 100px";
-          canvas.setAttribute("style", style);
-          canvas.setAttribute("width", 340);
-          canvas.setAttribute("heigth", 100);
-          document.body.appendChild(canvas);
-
-          // Get the font size canvas think it will be for 'spaces'
-          var ctx = canvas.getContext("2d");
-          ctx.font = "bold italic 20px " + fontName + ", Symbol, Arial";
-          var testString = "   ";
-
-          // When debugging use the characters provided by the charsets to visually
-          // see what's happening instead of 'spaces'
-          var debug = false;
-          if (debug) {
-            var name = document.createElement("font");
-            name.setAttribute("style", "position: absolute; left: 20px; top: " +
-                              (100 * fontCount + 60) + "px");
-            name.innerHTML = fontName;
-            document.body.appendChild(name);
-
-            // Retrieve font charset
-            var charset = Fonts[fontName].properties.charset || [];
-
-            // if the charset is too small make it repeat a few times
-            var count = 30;
-            while (count-- && charset.length <= 30)
-              charset = charset.concat(charset.slice());
-
-            for (var i = 0; i < charset.length; i++) {
-              var unicode = GlyphsUnicode[charset[i]];
-              if (!unicode)
-                continue;
-              testString += String.fromCharCode(unicode);
-            }
-
-            ctx.fillText(testString, 20, 20);
-          }
-
-          // Periodicaly check for the width of the testString, it will be
-          // different once the real font has loaded
-          var textWidth = ctx.measureText(testString).width;
-
-          var interval = window.setInterval(function canvasInterval(self) {
-            this.start = this.start || Date.now();
-            ctx.font = "bold italic 20px " + fontName + ", Symbol, Arial";
-
-            // For some reasons the font has not loaded, so mark it loaded for the
-            // page to proceed but cry
-            if ((Date.now() - this.start) >= kMaxWaitForFontFace) {
-              window.clearInterval(interval);
-              Fonts[fontName].loading = false;
-              warn("Is " + fontName + " for charset: " + charset + " loaded?");
-              this.start = 0;
-            } else if (textWidth != ctx.measureText(testString).width) {
-              window.clearInterval(interval);
-              Fonts[fontName].loading = false;
-              this.start = 0;
-            }
-
-            if (debug)
-              ctx.fillText(testString, 20, 50);
-          }, 30, this);
-    }
-
-      /** Hack end */
-      //
       // Get the base64 encoding of the binary font data
       var str = "";
       var length = data.length;
       for (var i = 0; i < length; ++i)
         str += String.fromCharCode(data[i]);
 
-      if (isWorker) {
+      // Insert the font-face css on the page. In a web worker, this needs to
+      // be forwareded on the main thread.
+      if (typeof window == "undefined") {
           postMessage("font");
           postMessage(JSON.stringify({
               str: str,
@@ -855,6 +782,19 @@ var Font = (function () {
           var rule = "@font-face { font-family:'" + fontName + "';src:" + url + "}";
           var styleSheet = document.styleSheets[0];
           styleSheet.insertRule(rule, styleSheet.length);
+
+          var div = document.createElement("div");
+          div.innerHTML += "<div style='font-family:" +
+            fontName +
+            ";'>j</div>";
+          document.body.appendChild(div);
+
+          Fonts[fontName].loading = true;
+          window.setTimeout(function() {
+            Fonts[fontName].loading = false;
+          // Timeout of just `0`, `10` doesn't work here, but for me all values
+          // above work. Setting value to 50ms.
+          }, 50);
       }
     }
   };
