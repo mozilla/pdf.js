@@ -2787,7 +2787,9 @@ var CanvasGraphics = (function() {
             this.ctx.transform.apply(this.ctx, this.current.textMatrix);
             this.ctx.scale(1, -1);
             this.ctx.translate(0, -2 * this.current.y);
-            this.ctx.fillText(Fonts.charsToUnicode(text), this.current.x, this.current.y);
+
+            text = Fonts.charsToUnicode(text);
+            this.ctx.fillText(text, this.current.x, this.current.y);
             this.current.x += this.ctx.measureText(text).width;
 
             this.ctx.restore();
