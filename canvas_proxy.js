@@ -12,8 +12,11 @@ var JpegStreamProxy = (function() {
 
     // Tell the main thread to create an image.
     postMessage({
-      action: jpeg_stream,
-      data:   bytesToString(bytes)
+      action: "jpeg_stream",
+      data: {
+        id: this.id,
+        raw: bytesToString(bytes)
+      }
     });
   }
 
