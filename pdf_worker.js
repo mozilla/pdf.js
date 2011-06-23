@@ -3,26 +3,27 @@
 
 "use strict";
 
-var timer = null;
-function tic() {
-  timer = Date.now();
-}
-
-function toc(msg) {
-  log(msg + ": " + (Date.now() - timer) + "ms");
-  timer = null;
-}
-
-function log() {
-  var args = Array.prototype.slice.call(arguments);
-  postMessage({
-    action: "log",
-    data: args
-  });
-}
-
+var consoleTimer = {};
 var console = {
-  log: log
+  log: function log() {
+    var args = Array.prototype.slice.call(arguments);
+    postMessage({
+      action: "log",
+      data: args
+    });
+  },
+  
+  time: function(name) {
+    consoleTimer[name] = Date.now();
+  },
+  
+  timeEnd: function(name) {
+    var time = consoleTimer[name];
+    if (time == null) {
+      throw "Unkown timer name " + name;
+    }
+    this.log("Timer:", name, Date.now() - time);
+  }
 }
 
 //
@@ -52,7 +53,7 @@ onmessage = function(event) {
   }
   // User requested to render a certain page.
   else {
-    tic();
+    console.time("compile");
 
     // Let's try to render the first page...
     var page = pdfDocument.getPage(parseInt(data));
@@ -62,9 +63,9 @@ onmessage = function(event) {
     var fonts = [];
     var gfx = new CanvasGraphics(canvas.getContext("2d"), CanvasProxy);
     page.compile(gfx, fonts);
-    toc("compiled page");
+    console.timeEnd("compile");
 
-    tic()
+    console.time("fonts");
     // Inspect fonts and translate the missing one.
     var count = fonts.length;
     for (var i = 0; i < count; i++) {
@@ -77,11 +78,11 @@ onmessage = function(event) {
       // This "builds" the font and sents it over to the main thread.
       new Font(font.name, font.file, font.properties);
     }
-    toc("fonts");
+    console.timeEnd("fonts");
 
-    tic()
+    console.time("display");
     page.display(gfx);
     canvas.flush();
-    toc("displayed page");
+    console.timeEnd("display");
   }
 }
