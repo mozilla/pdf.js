@@ -17,7 +17,7 @@ function log() {
   var args = Array.prototype.slice.call(arguments);
   postMessage({
     action: "log",
-    args: args
+    data: args
   });
 }
 
@@ -62,7 +62,9 @@ onmessage = function(event) {
     var fonts = [];
     var gfx = new CanvasGraphics(canvas.getContext("2d"), CanvasProxy);
     page.compile(gfx, fonts);
+    toc("compiled page");
 
+    tic()
     // Inspect fonts and translate the missing one.
     var count = fonts.length;
     for (var i = 0; i < count; i++) {
@@ -75,7 +77,7 @@ onmessage = function(event) {
       // This "builds" the font and sents it over to the main thread.
       new Font(font.name, font.file, font.properties);
     }
-    toc("compiled page");
+    toc("fonts");
 
     tic()
     page.display(gfx);
