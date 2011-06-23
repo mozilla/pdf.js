@@ -9,6 +9,7 @@ def prompt(question):
 
 ANAL = True
 DEFAULT_MANIFEST_FILE = 'test_manifest.json'
+EQLOG_FILE = 'eq.log'
 REFDIR = 'ref'
 TMPDIR = 'tmp'
 VERBOSE = False
@@ -35,6 +36,7 @@ class State:
     numEqNoSnapshot = 0
     numFBFFailures = 0
     numLoadFailures = 0
+    eqLog = None
 
 class Result:
     def __init__(self, snapshot, failure):
@@ -190,6 +192,7 @@ def check(task, results, browser):
 def checkEq(task, results, browser):
     pfx = os.path.join(REFDIR, sys.platform, browser, task['id'])
     results = results[0]
+    taskId = task['id']
 
     passed = True
     for page in xrange(len(results)):
@@ -208,7 +211,21 @@ def checkEq(task, results, browser):
 
             eq = (ref == snapshot)
             if not eq:
-                print 'TEST-UNEXPECTED-FAIL | eq', task['id'], '| in', browser, '| rendering of page', page + 1, '!= reference rendering'
+                print 'TEST-UNEXPECTED-FAIL | eq', taskId, '| in', browser, '| rendering of page', page + 1, '!= reference rendering'
+                # XXX need to dump this always, somehow, when we have
+                # the reference repository
+                if State.masterMode:
+                    if not State.eqLog:
+                        State.eqLog = open(EQLOG_FILE, 'w')
+                    eqLog = State.eqLog
+
+                    # NB: this follows the format of Mozilla reftest
+                    # output so that we can reuse its reftest-analyzer
+                    # script
+                    print >>eqLog, 'REFTEST TEST-UNEXPECTED-FAIL |', browser +'-'+ taskId +'-page'+ str(page + 1), '| image comparison (==)'
+                    print >>eqLog, 'REFTEST   IMAGE 1 (TEST):', snapshot
+                    print >>eqLog, 'REFTEST   IMAGE 2 (REFERENCE):', ref
+
                 passed = False
                 State.numEqFailures += 1
 
@@ -291,6 +308,12 @@ def main(args):
     if len(args) == 1:
         masterMode = (args[0] == '-m')
         manifestFile = args[0] if not masterMode else manifestFile
+
+
+
+    masterMode = True
+
+
 
     setUp(manifestFile, masterMode)
 
