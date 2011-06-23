@@ -479,17 +479,17 @@ var FlateStream = (function() {
                 array[i++] = what;
         }
 
-        var bytes = this.bytes;
-        var bytesPos = this.bytesPos;
-
         // read block header
         var hdr = this.getBits(3);
         if (hdr & 1)
             this.eof = true;
         hdr >>= 1;
 
-        var b;
         if (hdr == 0) { // uncompressed block
+            var bytes = this.bytes;
+            var bytesPos = this.bytesPos;
+            var b;
+
             if (typeof (b = bytes[bytesPos++]) == "undefined")
                 error("Bad block header in flate stream");
             var blockLen = b;
@@ -502,18 +502,24 @@ var FlateStream = (function() {
             if (typeof (b = bytes[bytesPos++]) == "undefined")
                 error("Bad block header in flate stream");
             check |= (b << 8);
-            if (check != (~this.blockLen & 0xffff))
+            if (check != (~blockLen & 0xffff))
                 error("Bad uncompressed block length in flate stream");
+
+            this.codeBuf = 0;
+            this.codeSize = 0;
+            
             var bufferLength = this.bufferLength;
             var buffer = this.ensureBuffer(bufferLength + blockLen);
-            this.bufferLength = bufferLength + blockLen;
-            for (var n = bufferLength; n < blockLen; ++n) {
+            var end = bufferLength + blockLen;
+            this.bufferLength = end;
+            for (var n = bufferLength; n < end; ++n) {
                 if (typeof (b = bytes[bytesPos++]) == "undefined") {
                     this.eof = true;
                     break;
                 }
                 buffer[n] = b;
             }
+            this.bytesPos = bytesPos;
             return;
         }
 
