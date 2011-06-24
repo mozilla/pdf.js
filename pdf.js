@@ -56,6 +56,14 @@ function bytesToString(bytes) {
     return str;
 }
 
+function stringToBytes(str) {
+    var length = str.length;
+    var bytes = new Uint8Array(length);
+    for (var n = 0; n < length; ++n)
+        bytes[n] = str.charCodeAt(n) & 0xFF;
+    return bytes;
+}
+
 var Stream = (function() {
     function constructor(arrayBuffer, start, length, dict) {
         this.bytes = Uint8Array(arrayBuffer);
@@ -741,11 +749,34 @@ var PredictorStream = (function() {
 })();
 
 var DecryptStream = (function() {
-    function constructor(str, fileKey, encAlgorithm, keyLength) {
-        TODO("decrypt stream is not implemented");
+    function constructor(str, decrypt) {
+        this.str = str;
+        this.dict = str.dict;
+        this.decrypt = decrypt;
+
+        DecodeStream.call(this);
     }
 
-    constructor.prototype = Stream.prototype;
+    const chunkSize = 512;
+
+    constructor.prototype = Object.create(DecodeStream.prototype);
+    constructor.prototype.readBlock = function() {
+      var chunk = this.str.getBytes(chunkSize);
+      if (!chunk || chunk.length == 0) {
+        this.eof = true;
+        return;
+      }
+      var decrypt = this.decrypt;
+      chunk = decrypt(chunk);
+
+      var bufferLength = this.bufferLength;
+      var i, n = chunk.length;
+      var buffer = this.ensureBuffer(bufferLength + n);
+      for (i = 0; i < n; i++)
+        buffer[bufferLength++] = chunk[i];
+      this.bufferLength = n;
+      this.eof = n < chunkSize;
+    };
 
     return constructor;
 })();
@@ -919,10 +950,10 @@ var Lexer = (function() {
 
     function ToHexDigit(ch) {
         if (ch >= "0" && ch <= "9")
-            return ch - "0";
-        ch = ch.toLowerCase();
-        if (ch >= "a" && ch <= "f")
-            return ch - "a";
+            return ch.charCodeAt(0) - 48;
+        ch = ch.toUpperCase();
+        if (ch >= "A" && ch <= "F")
+            return ch.charCodeAt(0) - 55;
         return -1;
     }
 
@@ -1216,7 +1247,7 @@ var Parser = (function() {
             // don't buffer inline image data
             this.buf2 = (this.inlineImg > 0) ? null : this.lexer.getObj();
         },
-        getObj: function() {
+        getObj: function(cipherTransform) {
             // refill buffer after inline image data
             if (this.inlineImg == 2)
                 this.refill();
@@ -1242,7 +1273,7 @@ var Parser = (function() {
                         this.shift();
                         if (IsEOF(this.buf1))
                             break;
-                        dict.set(key, this.getObj());
+                        dict.set(key, this.getObj(cipherTransform));
                     }
                 }
                 if (IsEOF(this.buf1))
@@ -1251,7 +1282,7 @@ var Parser = (function() {
                 // stream objects are not allowed inside content streams or
                 // object streams
                 if (this.allowStreams && IsCmd(this.buf2, "stream")) {
-                    return this.makeStream(dict);
+                    return this.makeStream(dict, cipherTransform);
                 } else {
                     this.shift();
                 }
@@ -1270,17 +1301,8 @@ var Parser = (function() {
             } else if (IsString(this.buf1)) { // string
                 var str = this.buf1;
                 this.shift();
-                if (this.fileKey) {
-                    var decrypt = new DecryptStream(new StringStream(str),
-                                                    this.fileKey,
-                                                    this.encAlgorithm,
-                                                    this.keyLength);
-                    var str = "";
-                    var pos = decrypt.pos;
-                    var length = decrypt.length;
-                    while (pos++ > length)
-                        str += decrypt.getChar();
-                }
+                if (cipherTransform)
+                    str = cipherTransform.decryptString(str);
                 return str;
             }
 
@@ -1289,7 +1311,7 @@ var Parser = (function() {
             this.shift();
             return obj;
         },
-        makeStream: function(dict) {
+        makeStream: function(dict, cipherTransform) {
             var lexer = this.lexer;
             var stream = lexer.stream;
 
@@ -1316,12 +1338,8 @@ var Parser = (function() {
             this.shift();
 
             stream = stream.makeSubStream(pos, length, dict);
-            if (this.fileKey) {
-                stream = new DecryptStream(stream,
-                                           this.fileKey,
-                                           this.encAlgorithm,
-                                           this.keyLength);
-            }
+            if (cipherTransform)
+                stream = cipherTransform.createString(stream);
             stream = this.filter(stream, dict, length);
             stream.parameters = dict;
             return stream;
@@ -1450,12 +1468,18 @@ var XRef = (function() {
         this.xrefstms = {};
         var trailerDict = this.readXRef(startXRef);
 
+        // prepare the XRef cache
+        this.cache = [];
+
+        var encrypt = trailerDict.get("Encrypt");
+        if (encrypt) {
+            var fileId = trailerDict.get("ID");
+            this.encrypt = new CipherTransformFactory(this.fetch(encrypt), fileId[0] /*, password */);
+        }
+
         // get the root dictionary (catalog) object
         if (!IsRef(this.root = trailerDict.get("Root")))
             error("Invalid root reference");
-
-        // prepare the XRef cache
-        this.cache = [];
     }
 
     constructor.prototype = {
@@ -1643,7 +1667,7 @@ var XRef = (function() {
                     }
                     error("bad XRef entry");
                 }
-                e = parser.getObj();
+                e = parser.getObj(this.encrypt);
                 // Don't cache streams since they are mutable.
                 if (!IsStream(e))
                     this.cache[num] = e;
@@ -2462,7 +2486,7 @@ var CanvasGraphics = (function() {
                             }
                         }
                     } else if (cmd == "Tf") { // eagerly collect all fonts
-                        var fontRes = resources.get("Font");
+                        var fontRes; // = resources.get("Font");
                         if (fontRes) {
                             fontRes = xref.fetchIfRef(fontRes);
                             var font = xref.fetchIfRef(fontRes.get(args[0].name));
