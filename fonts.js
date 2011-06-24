@@ -710,11 +710,15 @@ var Font = (function () {
       createTableEntry(otf, offsets, "hhea", hhea);
 
       /** HMTX */
-      hmtx = "\x01\xF4\x00\x00";
+      /* For some reasons, probably related to how the backend handle fonts,
+      * Linux seems to ignore this file and prefer the data from the CFF itself
+      * while Windows use this data. So be careful if you hack on Linux and
+      * have to touch the 'hmtx' table
+      */
+      hmtx = "\x01\xF4\x00\x00"; // Fake .notdef
+      var width = 0, lsb = 0;
       for (var i = 0; i < charstrings.length; i++) {
-        var charstring = charstrings[i].charstring;
-        var width = charstring[1];
-        var lsb = charstring[0];
+        width = charstrings[i].charstring[0];
         hmtx += string16(width) + string16(lsb);
       }
       hmtx = stringToArray(hmtx);
@@ -1314,7 +1318,7 @@ CFF.prototype = {
     "hvcurveto": 31,
   },
 
-  flattenCharstring: function flattenCharstring(glyph, charstring, subrs) {
+  flattenCharstring: function flattenCharstring(charstring, subrs) {
     var i = 0;
     while (true) {
       var obj = charstring[i];
@@ -1326,7 +1330,7 @@ CFF.prototype = {
           case "callsubr":
             var subr = subrs[charstring[i - 1]];
             if (subr.length > 1) {
-              subr = this.flattenCharstring(glyph, subr, subrs);
+              subr = this.flattenCharstring(subr, subrs);
               subr.pop();
               charstring.splice(i - 1, 2, subr);
             } else {
@@ -1420,11 +1424,11 @@ CFF.prototype = {
 
   wrap: function wrap(name, charstrings, subrs, properties) {
     // Starts the conversion of the Type1 charstrings to Type2
-    var glyphs = charstrings.slice();
-	var glyphsCount = glyphs.length;
-    for (var i = 0; i < glyphs.length; i++) {
-      var charstring = glyphs[i];
-      glyphs[i] = this.flattenCharstring(charstring.glyph, charstring.charstring, subrs);
+    var glyphs = [];
+	  var glyphsCount = charstrings.length;
+    for (var i = 0; i < glyphsCount; i++) {
+      var charstring = charstrings[i].charstring;
+      glyphs.push(this.flattenCharstring(charstring.slice(), subrs));
     }
 
     // Create a CFF font data
