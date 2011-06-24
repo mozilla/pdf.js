@@ -104,6 +104,7 @@ var FontsLoader = {
 
       worker ? obj.bindWorker(str) : obj.bindDOM(str);
     }
+
     return ready;
   }
 };
@@ -766,63 +767,28 @@ var Font = (function () {
       return fontData;
     },
 
-    bindWorker: function font_bind_worker(dataStr) {
+    bindWorker: function font_bindWorker(data) {
       postMessage({
         action: "font",
         data: {
-          raw:      dataStr,
+          raw:      data,
           fontName: this.name,
           mimetype: this.mimetype
         }
       });
     },
 
-    bindDOM: function font_bind_dom(dataStr) {
+    bindDOM: function font_bindDom(data) {
       var fontName = this.name;
 
       /** Hack begin */
       // Actually there is not event when a font has finished downloading so
       // the following code are a dirty hack to 'guess' when a font is ready
+      // This code could go away when bug 471915 has landed
       var canvas = document.createElement("canvas");
-      var style = "border: 1px solid black; position:absolute; top: " +
-                   (debug ? (100 * fontCount) : "-200") + "px; left: 2px; width: 340px; height: 100px";
-      canvas.setAttribute("style", style);
-      canvas.setAttribute("width", 340);
-      canvas.setAttribute("heigth", 100);
-      document.body.appendChild(canvas);
-
-      // Get the font size canvas think it will be for 'spaces'
       var ctx = canvas.getContext("2d");
-      ctx.font = "bold italic 20px " + fontName + ", Symbol, Arial";
+      ctx.font = "bold italic 20px " + fontName + ", Symbol";
       var testString = " ";
-
-      // When debugging use the characters provided by the charsets to visually
-      // see what's happening instead of 'spaces'
-      var debug = false;
-      if (debug) {
-        var name = document.createElement("font");
-        name.setAttribute("style", "position: absolute; left: 20px; top: " +
-                          (100 * fontCount + 60) + "px");
-        name.innerHTML = fontName;
-        document.body.appendChild(name);
-
-        // Retrieve font charset
-        var charset = Fonts[fontName].properties.charset || [];
-
-        // if the charset is too small make it repeat a few times
-        var count = 30;
-        while (count-- && charset.length <= 30)
-          charset = charset.concat(charset.slice());
-
-        for (var i = 0; i < charset.length; i++) {
-          var unicode = GlyphsUnicode[charset[i]];
-          if (!unicode)
-            continue;
-          testString += String.fromCharCode(unicode);
-        }
-
-        ctx.fillText(testString, 20, 20);
-      }
 
       // Periodicaly check for the width of the testString, it will be
       // different once the real font has loaded
@@ -830,32 +796,26 @@ var Font = (function () {
 
       var interval = window.setInterval(function canvasInterval(self) {
         this.start = this.start || Date.now();
-        ctx.font = "bold italic 20px " + fontName + ", Symbol, Arial";
+        ctx.font = "bold italic 20px " + fontName + ", Symbol";
 
         // For some reasons the font has not loaded, so mark it loaded for the
         // page to proceed but cry
         if ((Date.now() - this.start) >= kMaxWaitForFontFace) {
           window.clearInterval(interval);
           Fonts[fontName].loading = false;
-          warn("Is " + fontName + " for charset: " + charset + " loaded?");
+          warn("Is " + fontName + " loaded?");
           this.start = 0;
         } else if (textWidth != ctx.measureText(testString).width) {
           window.clearInterval(interval);
           Fonts[fontName].loading = false;
           this.start = 0;
         }
-
-        if (debug)
-          ctx.fillText(testString, 20, 50);
       }, 30, this);
 
       /** Hack end */
-      
-      // Convert the data string and add it to the page.
-      var base64 = window.btoa(dataStr);
 
       // Add the @font-face rule to the document
-      var url = "url(data:" + this.mimetype + ";base64," + base64 + ");";
+      var url = "url(data:" + this.mimetype + ";base64," + window.btoa(data) + ");";
       var rule = "@font-face { font-family:'" + fontName + "';src:" + url + "}";
       var styleSheet = document.styleSheets[0];
       styleSheet.insertRule(rule, styleSheet.length);
