@@ -80,6 +80,35 @@ var Fonts = {
   }
 };
 
+var FontsLoader = {
+  bind: function(fonts) {
+    var worker = (typeof window == "undefined");
+    var ready = true;
+
+    for (var i = 0; i < fonts.length; i++) {
+      var font = fonts[i];
+      if (Fonts[font.name]) {
+        ready = ready && !Fonts[font.name].loading;
+        continue;
+      } else {
+        ready = false;
+      }
+
+      var obj = new Font(font.name, font.file, font.properties);
+
+      var str = "";
+      var data = Fonts[font.name].data;
+      var length = data.length;
+      for (var j = 0; j < length; j++)
+        str += String.fromCharCode(data[j]);
+
+      worker ? obj.bindWorker(str) : obj.bindDOM(str);
+    }
+    return ready;
+  }
+};
+
+
 /**
  * 'Font' is the class the outside world should use, it encapsulate all the font
  * decoding logics whatever type it is (assuming the font type is supported).
@@ -113,13 +142,14 @@ var Font = (function () {
       return;
     }
 
+    var data;
     switch (properties.type) {
       case "Type1":
         var cff = new CFF(name, file, properties);
         this.mimetype = "font/opentype";
 
         // Wrap the CFF data inside an OTF font file
-        this.font = this.convert(name, cff, properties);
+        data = this.convert(name, cff, properties);
         break;
 
       case "TrueType":
@@ -127,7 +157,7 @@ var Font = (function () {
 
         // Repair the TrueType file if it is can be damaged in the point of
         // view of the sanitizer
-        this.font = this.checkAndRepair(name, file, properties);
+        data = this.checkAndRepair(name, file, properties);
         break;
 
       default:
@@ -135,28 +165,12 @@ var Font = (function () {
         break;
     }
 
-    var data = this.font;
     Fonts[name] = {
       data: data,
       properties: properties,
       loading: true,
       cache: Object.create(null)
-    }
-
-    // Convert data to a string.
-    var dataStr = "";
-    var length = data.length;
-    for (var i = 0; i < length; ++i)
-      dataStr += String.fromCharCode(data[i]);
-
-    // Attach the font to the document. If this script is runnig in a worker,
-    // call `bindWorker`, which sends stuff over to the main thread.
-    if (typeof window != "undefined") {
-      this.bindDOM(dataStr);
-    } else {
-      this.bindWorker(dataStr);
-    }
-
+    };
   };
 
   function stringToArray(str) {
@@ -1420,6 +1434,7 @@ CFF.prototype = {
       i++;
     }
     error("failing with i = " + i + " in charstring:" + charstring + "(" + charstring.length + ")");
+    return [];
   },
 
   wrap: function wrap(name, charstrings, subrs, properties) {
