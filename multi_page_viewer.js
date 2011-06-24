@@ -3,6 +3,8 @@
 
 "use strict";
 
+var pageTimeout;
+
 var PDFViewer = {
   queryParams: {},
   
@@ -75,81 +77,45 @@ var PDFViewer = {
   },
   
   drawPage: function(num) {
-    if (!PDFViewer.pdf) {
+    if (!PDFViewer.pdf)
       return;
-    }
-    
+
     var div = document.getElementById('pageContainer' + num);
     var canvas = document.createElement('canvas');
-    
+
     if (div && !div.hasChildNodes()) {
-      div.appendChild(canvas);
-      
       var page = PDFViewer.pdf.getPage(num);
-      
+
       canvas.id = 'page' + num;
       canvas.mozOpaque = true;
-      
+
       // Canvas dimensions must be specified in CSS pixels. CSS pixels
       // are always 96 dpi. These dimensions are 8.5in x 11in at 96dpi.
       canvas.width = PDFViewer.pageWidth();
       canvas.height = PDFViewer.pageHeight();
-      
+      div.appendChild(canvas);
+
       var ctx = canvas.getContext('2d');
       ctx.save();
       ctx.fillStyle = 'rgb(255, 255, 255)';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       ctx.restore();
-      
+
       var gfx = new CanvasGraphics(ctx);
-      var fonts = [];
-      
+
       // page.compile will collect all fonts for us, once we have loaded them
       // we can trigger the actual page rendering with page.display
+      var fonts = [];
       page.compile(gfx, fonts);
-      
-      var areFontsReady = true;
-      
-      // Inspect fonts and translate the missing one
-      var fontCount = fonts.length;
-      
-      for (var i = 0; i < fontCount; i++) {
-        var font = fonts[i];
-        
-        if (Fonts[font.name]) {
-          areFontsReady = areFontsReady && !Fonts[font.name].loading;
-          continue;
+
+      var loadFont = function() {
+        if (!FontsLoader.bind(fonts)) {
+          pageTimeout = window.setTimeout(loadFont, 10);
+          return;
         }
-        
-        new Font(font.name, font.file, font.properties);
-        
-        areFontsReady = false;
+        page.display(gfx);
       }
-      
-      var pageInterval;
-      
-      var delayLoadFont = function() {
-        for (var i = 0; i < fontCount; i++) {
-          if (Fonts[font.name].loading) {
-            return;
-          }
-        }
-        
-        clearInterval(pageInterval);
-        
-        while (div.hasChildNodes()) {
-          div.removeChild(div.firstChild);
-        }
-        
-        PDFViewer.drawPage(num);
-      }
-      
-      if (!areFontsReady) {
-        pageInterval = setInterval(delayLoadFont, 10);
-        return;
-      }
-      
-      page.display(gfx);
+      loadFont();
     }
   },
   
@@ -258,7 +224,6 @@ var PDFViewer = {
 };
 
 window.onload = function() {
-  
   // Parse the URL query parameters into a cached object.
   PDFViewer.queryParams = function() {
     var qs = window.location.search.substring(1);
