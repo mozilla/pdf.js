@@ -3275,8 +3275,11 @@ var CanvasGraphics = (function() {
                 }
             }
 
-            if (bitsPerComponent !== 8)
-                error("Unsupported bpc");
+            if (bitsPerComponent !== 8) {
+                TODO("Support bpc="+ bitsPerComponent);
+                this.restore();
+                return;
+            }
 
             var xref = this.xref;
             var colorSpaces = this.colorSpaces;
