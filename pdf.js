@@ -1351,20 +1351,12 @@ var CCITTFaxStream = (function() {
 
     constructor.prototype = Object.create(DecodeStream.prototype);
     constructor.prototype.readBlock = function() {
-        var vals = [];
         while (!this.eof) {
             var c = this.lookChar();
-            vals.push(c);
             this.buf = EOF;
             this.ensureBuffer(this.bufferLength + 1);
             this.buffer[this.bufferLength++] = c;
         }
-        var all = "";
-        for (var i = 0; i < vals.length; ++i)
-            all += vals[i] + " \n";
-
-        var text = document.getElementById("text");
-        text.value = all;
     };
     constructor.prototype.addPixels = function(a1, blackPixels) {
         var codingLine = this.codingLine;
