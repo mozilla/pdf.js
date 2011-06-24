@@ -599,16 +599,16 @@ var Font = (function () {
       return font.getBytes();
     },
 
-    convert: function font_convert(name, font, properties) {
+    convert: function font_convert(fontName, font, properties) {
       var otf = new Uint8Array(kMaxFontFileSize);
 
       function createNameTable(name) {
         var names = [
           "See original licence",  // Copyright
-          name,                    // Font family
+          fontName,                // Font family
           "undefined",             // Font subfamily (font weight)
           "uniqueID",              // Unique ID
-          name,                    // Full font name
+          fontName,                // Full font name
           "0.1",                   // Version
           "undefined",             // Postscript name
           "undefined",             // Trademark
@@ -616,7 +616,7 @@ var Font = (function () {
           "undefined"              // Designer
         ];
 
-        var name =
+        var nameTable =
           "\x00\x00" + // format
           "\x00\x0A" + // Number of names Record
           "\x00\x7E";  // Storage
@@ -633,13 +633,13 @@ var Font = (function () {
             "\x00\x00" + // name ID
             string16(str.length) +
             string16(strOffset);
-          name += nameRecord;
+          nameTable += nameRecord;
 
           strOffset += str.length;
         }
 
-        name += names.join("");
-        return name;
+        nameTable += names.join("");
+        return nameTable;
       }
 
       // Required Tables
@@ -885,6 +885,9 @@ var FontsUtils = {
       bytes.set([value >> 24, value >> 16, value >> 8, value]);
       return [bytes[0], bytes[1], bytes[2], bytes[3]];
     }
+
+    error("This number of bytes " + bytesCount + " is not supported");
+    return null;
   },
 
   bytesToInteger: function fu_bytesToInteger(bytesArray) {
@@ -1238,7 +1241,7 @@ var CFF = function(name, file, properties) {
 };
 
 CFF.prototype = {
-  createCFFIndexHeader: function(objects, isByte) {
+  createCFFIndexHeader: function cff_createCFFIndexHeader(objects, isByte) {
     // First 2 bytes contains the number of objects contained into this index
     var count = objects.length;
 
@@ -1275,18 +1278,18 @@ CFF.prototype = {
     return data;
   },
 
-  encodeNumber: function(value) {
+  encodeNumber: function cff_encodeNumber(value) {
     var x = 0;
     if (value >= -32768 && value <= 32767) {
       return [ 28, value >> 8, value & 0xFF ];
     } else if (value >= (-2147483647-1) && value <= 2147483647) {
       return [ 0xFF, value >> 24, Value >> 16, value >> 8, value & 0xFF ];
-    } else {
-      error("Value: " + value + " is not allowed");
     }
+    error("Value: " + value + " is not allowed");
+    return null;
   },
 
-  getOrderedCharStrings: function(glyphs) {
+  getOrderedCharStrings: function cff_getOrderedCharStrings(glyphs) {
     var charstrings = [];
 
     for (var i = 0; i < glyphs.length; i++) {

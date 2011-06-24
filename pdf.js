@@ -71,14 +71,14 @@ var Stream = (function() {
         get length() {
             return this.end - this.start;
         },
-        getByte: function() {
+        getByte: function stream_getByte() {
             if (this.pos >= this.end)
-                return;
+                return null;
             return this.bytes[this.pos++];
         },
         // returns subarray of original buffer
         // should only be read
-        getBytes: function(length) {
+        getBytes: function stream_getBytes(length) {
             var bytes = this.bytes;
             var pos = this.pos;
             var strEnd = this.end;
@@ -93,28 +93,28 @@ var Stream = (function() {
             this.pos = end;
             return bytes.subarray(pos, end);
         },
-        lookChar: function() {
+        lookChar: function stream_lookChar() {
             if (this.pos >= this.end)
-                return;
+                return null;
             return String.fromCharCode(this.bytes[this.pos]);
         },
-        getChar: function() {
+        getChar: function stream_getChar() {
             if (this.pos >= this.end)
-                return;
+                return null;
             return String.fromCharCode(this.bytes[this.pos++]);
         },
-        skip: function(n) {
+        skip: function stream_skip(n) {
             if (!n)
                 n = 1;
             this.pos += n;
         },
-        reset: function() {
+        reset: function stream_reset() {
             this.pos = this.start;
         },
-        moveStart: function() {
+        moveStart: function stream_moveStart() {
             this.start = this.pos;
         },
-        makeSubStream: function(start, length, dict) {
+        makeSubStream: function stream_makeSubstream(start, length, dict) {
             return new Stream(this.bytes.buffer, start, length, dict);
         }
     };
@@ -146,7 +146,7 @@ var DecodeStream = (function() {
     }
     
     constructor.prototype = {
-        ensureBuffer: function(requested) {
+        ensureBuffer: function decodestream_ensureBuffer(requested) {
             var buffer = this.buffer;
             var current = buffer ? buffer.byteLength : 0;
             if (requested < current)
@@ -159,16 +159,16 @@ var DecodeStream = (function() {
                 buffer2[i] = buffer[i];
             return this.buffer = buffer2;
         },
-        getByte: function() {
+        getByte: function decodestream_getByte() {
             var pos = this.pos;
             while (this.bufferLength <= pos) {
                 if (this.eof)
-                    return;
+                    return null;
                 this.readBlock();
             }
             return this.buffer[this.pos++];
         },
-        getBytes: function(length) {
+        getBytes: function decodestream_getBytes(length) {
             var pos = this.pos;
 
             if (length) {
@@ -191,25 +191,25 @@ var DecodeStream = (function() {
             this.pos = end;
             return this.buffer.subarray(pos, end)
         },
-        lookChar: function() {
+        lookChar: function decodestream_lookChar() {
             var pos = this.pos;
             while (this.bufferLength <= pos) {
                 if (this.eof)
-                    return;
+                    return null;
                 this.readBlock();
             }
             return String.fromCharCode(this.buffer[this.pos]);
         },
-        getChar: function() {
+        getChar: function decodestream_getChar() {
             var pos = this.pos;
             while (this.bufferLength <= pos) {
                 if (this.eof)
-                    return;
+                    return null;
                 this.readBlock();
             }
             return String.fromCharCode(this.buffer[this.pos++]);
         },
-        skip: function(n) {
+        skip: function decodestream_skip(n) {
             if (!n)
                 n = 1;
             this.pos += n;
@@ -635,6 +635,7 @@ var PredictorStream = (function() {
         var rowBytes = this.rowBytes = (columns * colors * bits + 7) >> 3;
         
         DecodeStream.call(this);
+        return this;
     }
 
     constructor.prototype = Object.create(DecodeStream.prototype);
@@ -905,7 +906,9 @@ var Dict = (function() {
 
     constructor.prototype = {
         get: function(key) {
-            return this.map[key];
+            if (key in this.map)
+              return this.map[key];
+            return null;
         },
         get2: function(key1, key2) {
             return this.get(key1) || this.get(key2);
@@ -1590,7 +1593,7 @@ var XRef = (function() {
     }
 
     constructor.prototype = {
-        readXRefTable: function(parser) {
+        readXRefTable: function readXRefTable(parser) {
             var obj;
             while (true) {
                 if (IsCmd(obj = parser.getObj(), "trailer"))
@@ -1661,7 +1664,7 @@ var XRef = (function() {
 
             return dict;
         },
-        readXRefStream: function(stream) {
+        readXRefStream: function readXRefStream(stream) {
             var streamParameters = stream.parameters;
             var length = streamParameters.get("Length");
             var byteWidths = streamParameters.get("W");
@@ -1713,7 +1716,7 @@ var XRef = (function() {
                 this.readXRef(prev);
             return streamParameters;
         },
-        readXRef: function(startXRef) {
+        readXRef: function readXref(startXRef) {
             var stream = this.stream;
             stream.pos = startXRef;
             var parser = new Parser(new Lexer(stream), true);
@@ -1731,6 +1734,7 @@ var XRef = (function() {
                 return this.readXRefStream(obj);
             }
             error("Invalid XRef");
+            return null;
         },
         getEntry: function(i) {
             var e = this.entries[i];
@@ -2396,7 +2400,7 @@ var CanvasGraphics = (function() {
             if (!fd)
                 // XXX deprecated "special treatment" for standard
                 // fonts?  What do we need to do here?
-                return;
+                return null;
             var descriptor = xref.fetch(fd);
 
             var fontName = descriptor.get("FontName");
@@ -3037,7 +3041,7 @@ var CanvasGraphics = (function() {
             this.restore();
 
             TODO("Inverse pattern is painted");
-            var pattern = this.ctx.createPattern(tmpCanvas, "repeat");
+            pattern = this.ctx.createPattern(tmpCanvas, "repeat");
             this.ctx.fillStyle = pattern;
         },
         setStrokeGray: function(gray) {
