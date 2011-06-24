@@ -109,7 +109,7 @@ var PDFViewer = {
       page.compile(gfx, fonts);
 
       var loadFont = function() {
-        if (!FontsLoader.bind(fonts)) {
+        if (!FontLoader.bind(fonts)) {
           pageTimeout = window.setTimeout(loadFont, 10);
           return;
         }

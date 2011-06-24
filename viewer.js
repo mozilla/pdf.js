@@ -76,7 +76,7 @@ function displayPage(num) {
     var t2 = Date.now();
 
     function loadFont() {
-      if (!FontsLoader.bind(fonts)) {
+      if (!FontLoader.bind(fonts)) {
         pageTimeout = window.setTimeout(loadFont, 10);
         return;
       }
