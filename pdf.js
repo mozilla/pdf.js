@@ -4,7 +4,7 @@
 "use strict";
 
 var ERRORS = 0, WARNINGS = 1, TODOS = 5;
-var verbosity = WARNINGS;
+var verbosity = ERRORS;
 
 function log(msg) {
     if (console && console.log)
@@ -889,7 +889,7 @@ var CCITTFaxStream = (function() {
     const twoDimVertR3 = 7;
     const twoDimVertL3 = 8;
 
-    const twoDimTable1 = [
+    const twoDimTable = [
     [-1, -1], [-1, -1],               // 000000x
     [7, twoDimVertL3],                // 0000010
     [7, twoDimVertR3],                // 0000011
@@ -1304,33 +1304,34 @@ var CCITTFaxStream = (function() {
         [2, 2], [2, 2], [2, 2], [2, 2]
     ];
 
-    function constructor(str) {
+    function constructor(str, params) {
         this.str = str;
-        var dict = str.dict;
-        this.dict = dict;
+        this.dict = str.dict;
 
-        this.encoding = dict.get("K") || 0;
-        this.eoline = dict.get("EndOfLine") || false;
-        this.byteAlign = dict.get("EncodedByteAlign") || false;
-        this.columns = dict.get("Columns") || 1728;
-        this.rows = dict.get("Rows") || 0;
-        var eoblock = dict.get("EndOfBlock");
+        params = params || new Dict();
+
+        this.encoding = params.get("K") || 0;
+        this.eoline = params.get("EndOfLine") || false;
+        this.byteAlign = params.get("EncodedByteAlign") || false;
+        this.columns = params.get("Columns") || 1728;
+        this.rows = params.get("Rows") || 0;
+        var eoblock = params.get("EndOfBlock");
         if (typeof eoblock == "undefined")
             eoblock = true;
-        this.black = dict.get("BlackIs1") || false;
+        this.eoblock = eoblock;
+        this.black = params.get("BlackIs1") || false;
 
-        this.codingLine = new Uint8Array(this.columns + 1);
+        this.codingLine = new Uint32Array(this.columns + 1);
         this.codingLine[0] = this.columns;
         this.codingPos = 0;
 
-        this.refLine = new Uint8Array(this.columns + 2);
+        this.refLine = new Uint32Array(this.columns + 2);
         this.row = 0;
         this.nextLine2D = this.encoding < 0;
         this.inputBits = 0;
         this.inputBuf;
         this.outputBits = 0;
         this.buf = EOF;
-        this.err = false;
 
         var code1;
         while ((code1 = this.lookBits(12)) == 0) {
@@ -1352,10 +1353,8 @@ var CCITTFaxStream = (function() {
         while (!this.eof) {
             var c = this.lookChar();
             this.buf = EOF;
-            if (this.bufferLength <= this.pos) 
-                this.ensureBuffer(this.pos + 1);
-
-            this.buffer[this.pos++] = c;
+            this.ensureBuffer(this.bufferLength + 1);
+            this.buffer[this.bufferLength++] = c;
         }
     };
     constructor.prototype.addPixels = function(a1, blackPixels) {
@@ -1419,6 +1418,8 @@ var CCITTFaxStream = (function() {
             if (this.eof)
                 return;
 
+            this.err = false;
+
             if (this.nextLine2D) {
                 for (var i = 0; codingLine[i] < columns; ++i)
                     refLine[i] = codingLine[i];
@@ -1431,7 +1432,7 @@ var CCITTFaxStream = (function() {
                 blackPixels = 0;
 
                 while (codingLine[this.codingPos] < columns) {
-                    var code1 = this.getTwoDumCode();
+                    var code1 = this.getTwoDimCode();
                     switch (code1) {
                     case twoDimPass:
                         this.addPixels(refLine[refPos + 1], blackPixels);
@@ -1530,7 +1531,7 @@ var CCITTFaxStream = (function() {
                             else
                                 ++refPos;
                             while (refLine[refPos] <= codingLine[this.codingPos] &&
-                                    refLine[redPos] < columns)
+                                    refLine[refPos] < columns)
                                 refPos += 2;
                         }
                         break;
@@ -2466,7 +2467,7 @@ var Parser = (function() {
                 return new Ascii85Stream(stream);
             } else if (name == "CCITTFaxDecode") {
                 TODO("implement fax stream");
-                return new CCITTFaxStream(stream);
+                return new CCITTFaxStream(stream, params);
             } else {
                 error("filter '" + name + "' not supported yet");
             }
@@ -4272,12 +4273,14 @@ var CanvasGraphics = (function() {
                 tmpCanvas.width = w;
                 tmpCanvas.height = h;
                 var tmpCtx = tmpCanvas.getContext("2d");
+                tmpCtx.fillStyle = "#000";
+                tmpCtx.fillRect(0, 0, w, h);
                 var imgData = tmpCtx.getImageData(0, 0, w, h);
                 var pixels = imgData.data;
 
                 var mask = 128;
                 var b = 0;
-                for (var i = 0; i < length; i += 4) {
+                for (var i = 0, length = imgArray.length*8*4; i < length; i += 4) {
                     mask <<= 1;
                     if (mask >= 256) {
                         b = imgArray[imgIdx++];
@@ -4285,11 +4288,19 @@ var CanvasGraphics = (function() {
                     }
 
                     var p = b & mask;
+                    if (p > 0)
+                        p = 1;
+                    else
+                        p = 0;
                     pixels[i] = 255 * p;
                     pixels[i+1] = 255 * p;
                     pixels[i+2] = 255 * p;
                     pixels[i+3] = 255;
                 }
+
+                tmpCtx.putImageData(imgData, 0, 0);
+                ctx.drawImage(tmpCanvas, 0, -h);
+                this.restore();
                 return;
             }
 
