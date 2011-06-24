@@ -139,6 +139,7 @@ class BrowserCommand():
         self.name = browserRecord["name"]
         self.path = browserRecord["path"]
         self.tempDir = None
+        self.process = None
 
         if platform.system() == "Darwin" and (self.path.endswith(".app") or self.path.endswith(".app/")):
             self._fixupMacPath()
@@ -156,6 +157,17 @@ class BrowserCommand():
                         self.profileDir)
 
     def teardown(self):
+        # If the browser is still running, wait up to ten seconds for it to quit
+        if self.process and self.process.poll() is None:
+            checks = 0
+            while self.process.poll() is None and checks < 20:
+                checks += 1
+                time.sleep(.5)
+            # If it's still not dead, try to kill it
+            if self.process.poll() is None:
+                print "Process %s is still running. Killing." % self.name
+                self.process.kill()
+            
         if self.tempDir is not None and os.path.exists(self.tempDir):
             shutil.rmtree(self.tempDir)
 
@@ -164,7 +176,7 @@ class BrowserCommand():
         if platform.system() == "Darwin":
             cmds.append("-foreground")
         cmds.extend(["-no-remote", "-profile", self.profileDir, url])
-        subprocess.Popen(cmds)
+        self.process = subprocess.Popen(cmds)
 
 def makeBrowserCommands(browserManifestFile):
     with open(browserManifestFile) as bmf:
@@ -239,7 +251,9 @@ def teardownBrowsers(browsers):
             b.teardown()
         except:
             print "Error cleaning up after browser at ", b.path
-    
+            print "Temp dir was ", b.tempDir
+            print "Error:", sys.exc_info()[0]
+
 def check(task, results, browser):
     failed = False
     for r in xrange(len(results)):
