@@ -80,7 +80,7 @@ var Fonts = {
   }
 };
 
-var FontsLoader = {
+var FontLoader = {
   bind: function(fonts) {
     var worker = (typeof window == "undefined");
     var ready = true;
@@ -90,9 +90,9 @@ var FontsLoader = {
       if (Fonts[font.name]) {
         ready = ready && !Fonts[font.name].loading;
         continue;
-      } else {
-        ready = false;
       }
+
+      ready = false;
 
       var obj = new Font(font.name, font.file, font.properties);
 
