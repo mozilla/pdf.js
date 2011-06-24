@@ -1,11 +1,13 @@
-import json, os, sys, subprocess, urllib2
+import json, platform, os, shutil, sys, subprocess, tempfile, threading, urllib, urllib2
 from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
+import SocketServer
+from optparse import OptionParser
 from urlparse import urlparse
 
-def prompt(question):
-    '''Return True iff the user answered "yes" to |question|.'''
-    inp = raw_input(question +' [yes/no] > ')
-    return inp == 'yes'
+USAGE_EXAMPLE = "%prog"
+
+# The local web server uses the git repo as the document root.
+DOC_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__),".."))
 
 ANAL = True
 DEFAULT_MANIFEST_FILE = 'test_manifest.json'
@@ -13,6 +15,34 @@ EQLOG_FILE = 'eq.log'
 REFDIR = 'ref'
 TMPDIR = 'tmp'
 VERBOSE = False
+
+class TestOptions(OptionParser):
+    def __init__(self, **kwargs):
+        OptionParser.__init__(self, **kwargs)
+        self.add_option("-m", "--masterMode", action="store_true", dest="masterMode",
+                        help="Run the script in master mode.", default=False)
+        self.add_option("--manifestFile", action="store", type="string", dest="manifestFile",
+                        help="A JSON file in the form of test_manifest.json (the default).")
+        self.add_option("-b", "--browser", action="store", type="string", dest="browser",
+                        help="The path to a single browser (right now, only Firefox is supported).")
+        self.add_option("--browserManifestFile", action="store", type="string",
+                        dest="browserManifestFile",
+                        help="A JSON file in the form of those found in resources/browser_manifests")
+        self.set_usage(USAGE_EXAMPLE)
+
+    def verifyOptions(self, options):
+        if options.masterMode and options.manifestFile:
+            self.error("--masterMode and --manifestFile must not be specified at the same time.")
+        if not options.manifestFile:
+            options.manifestFile = DEFAULT_MANIFEST_FILE
+        if options.browser and options.browserManifestFile:
+            print "Warning: ignoring browser argument since manifest file was also supplied"
+        return options
+        
+def prompt(question):
+    '''Return True iff the user answered "yes" to |question|.'''
+    inp = raw_input(question +' [yes/no] > ')
+    return inp == 'yes'
 
 MIMEs = {
     '.css': 'text/css',
@@ -43,8 +73,11 @@ class Result:
         self.snapshot = snapshot
         self.failure = failure
 
+class TestServer(SocketServer.TCPServer):
+    allow_reuse_address = True
 
 class PDFTestHandler(BaseHTTPRequestHandler):
+
     # Disable annoying noise by default
     def log_request(code=0, size=0):
         if VERBOSE:
@@ -54,13 +87,11 @@ class PDFTestHandler(BaseHTTPRequestHandler):
         url = urlparse(self.path)
         # Ignore query string
         path, _ = url.path, url.query
-        cwd = os.getcwd()
-        path = os.path.abspath(os.path.realpath(cwd + os.sep + path))
-        cwd = os.path.abspath(cwd)
-        prefix = os.path.commonprefix(( path, cwd ))
+        path = os.path.abspath(os.path.realpath(DOC_ROOT + os.sep + path))
+        prefix = os.path.commonprefix(( path, DOC_ROOT ))
         _, ext = os.path.splitext(path)
 
-        if not (prefix == cwd
+        if not (prefix == DOC_ROOT
                 and os.path.isfile(path) 
                 and ext in MIMEs):
             self.send_error(404)
@@ -102,13 +133,49 @@ class PDFTestHandler(BaseHTTPRequestHandler):
 
         State.done = (0 == State.remaining)
 
+# this just does Firefox for now
+class BrowserCommand():
+    def __init__(self, browserRecord):
+        self.name = browserRecord["name"]
+        self.path = browserRecord["path"]
 
-def setUp(manifestFile, masterMode):
+        if platform.system() == "Darwin" and (self.path.endswith(".app") or self.path.endswith(".app/")):
+            self._fixupMacPath()
+
+        if not os.path.exists(self.path):
+            throw("Path to browser '%s' does not exist." % self.path)
+
+    def _fixupMacPath(self):
+        self.path = os.path.join(self.path, "Contents", "MacOS", "firefox-bin")
+
+    def setup(self):
+        self.tempDir = tempfile.mkdtemp()
+        self.profileDir = os.path.join(self.tempDir, "profile")
+        print self.profileDir
+        shutil.copytree(os.path.join(DOC_ROOT, "test", "resources", "firefox"),
+                        self.profileDir)
+
+    def teardown(self):
+        shutil.rmtree(self.tempDir)
+
+    def start(self, url):
+        cmds = [self.path]
+        if platform.system() == "Darwin":
+            cmds.append("-foreground")
+        cmds.extend(["-no-remote", "-profile", self.profileDir, url])
+        subprocess.call(cmds)
+
+def makeBrowserCommands(browserManifestFile):
+    with open(browserManifestFile) as bmf:
+        browsers = [BrowserCommand(browser) for browser in json.load(bmf)]
+    return browsers
+
+def setUp(options):
     # Only serve files from a pdf.js clone
-    assert not ANAL or os.path.isfile('pdf.js') and os.path.isdir('.git')
+    assert not ANAL or os.path.isfile('../pdf.js') and os.path.isdir('../.git')
 
-    State.masterMode = masterMode
-    if masterMode and os.path.isdir(TMPDIR):
+    State.masterMode = options.masterMode
+    if options.masterMode and os.path.isdir(TMPDIR):
         print 'Temporary snapshot dir tmp/ is still around.'
         print 'tmp/ can be removed if it has nothing you need.'
         if prompt('SHOULD THIS SCRIPT REMOVE tmp/?  THINK CAREFULLY'):
@@ -116,14 +183,16 @@ def setUp(manifestFile, masterMode):
 
     assert not os.path.isdir(TMPDIR)
 
-    testBrowsers = [ b for b in
-                     ( 'firefox5', 'firefox6', )
-#'chrome12', 'chrome13', 'firefox4', 'opera11' ):
-                     if os.access(b, os.R_OK | os.X_OK) ]
-
-    mf = open(manifestFile)
-    manifestList = json.load(mf)
-    mf.close()
+    testBrowsers = []
+    if options.browserManifestFile:
+        testBrowsers = makeBrowserCommands(options.browserManifestFile)
+    elif options.browser:
+        testBrowsers = [BrowserCommand({"path":options.browser, "name":"firefox"})] 
+    else:
+        print "No test browsers found. Use --browserManifest or --browser args."
+              
+    with open(options.manifestFile) as mf:
+        manifestList = json.load(mf)
 
     for item in manifestList:
         f, isLink = item['file'], item.get('link', False)
@@ -143,23 +212,25 @@ def setUp(manifestFile, masterMode):
             print 'done'
 
     for b in testBrowsers:
-        State.taskResults[b] = { }
+        State.taskResults[b.name] = { }
         for item in manifestList:
             id, rounds = item['id'], int(item['rounds'])
             State.manifest[id] = item
             taskResults = [ ]
             for r in xrange(rounds):
                 taskResults.append([ ])
-            State.taskResults[b][id] = taskResults
+            State.taskResults[b.name][id] = taskResults
 
     State.remaining = len(testBrowsers) * len(manifestList)
 
     for b in testBrowsers:
-        print 'Launching', b
-        qs = 'browser='+ b +'&manifestFile='+ manifestFile
-        subprocess.Popen(( os.path.abspath(os.path.realpath(b)),
-                           'http://localhost:8080/test_slave.html?'+ qs))
-
+        try:
+            b.setup()
+            print 'Launching', b.name
+            qs = 'browser='+ urllib.quote(b.name) +'&manifestFile='+ urllib.quote(options.manifestFile)
+            b.start('http://localhost:8080/test/test_slave.html?'+ qs)
+        finally:
+            b.teardown()
 
 def check(task, results, browser):
     failed = False
@@ -302,20 +373,20 @@ def processResults():
                 print 'done'
 
 
-def main(args):
-    masterMode = False
-    manifestFile = DEFAULT_MANIFEST_FILE
-    if len(args) == 1:
-        masterMode = (args[0] == '-m')
-        manifestFile = args[0] if not masterMode else manifestFile
+def main():
+    optionParser = TestOptions()
+    options, args = optionParser.parse_args()
+    options = optionParser.verifyOptions(options)
+    if options == None:
+        sys.exit(1)
 
-    setUp(manifestFile, masterMode)
+    httpd = TestServer(('127.0.0.1', 8080), PDFTestHandler)
+    httpd_thread = threading.Thread(target=httpd.serve_forever)
+    httpd_thread.setDaemon(True)
+    httpd_thread.start()
 
-    server = HTTPServer(('127.0.0.1', 8080), PDFTestHandler)
-    while not State.done:
-        server.handle_request()
-
+    setUp(options)
     processResults()
 
 if __name__ == '__main__':
-    main(sys.argv[1:])
+    main()

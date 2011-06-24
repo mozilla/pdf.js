@@ -1,21 +1,21 @@
 [
     {  "id": "tracemonkey-eq",
-       "file": "tests/tracemonkey.pdf",
+       "file": "pdfs/tracemonkey.pdf",
        "rounds": 1,
        "type": "eq"
     },
     {  "id": "tracemonkey-fbf",
-       "file": "tests/tracemonkey.pdf",
+       "file": "pdfs/tracemonkey.pdf",
        "rounds": 2,
        "type": "fbf"
     },
     {  "id": "html5-canvas-cheat-sheet-load",
-       "file": "tests/canvas.pdf",
+       "file": "pdfs/canvas.pdf",
        "rounds": 1,
        "type": "load"
     },
     {  "id": "pdfspec-load",
-       "file": "tests/pdf.pdf",
+       "file": "pdfs/pdf.pdf",
        "link": true,
        "rounds": 1,
        "type": "load"

@@ -479,17 +479,17 @@ var FlateStream = (function() {
                 array[i++] = what;
         }
 
-        var bytes = this.bytes;
-        var bytesPos = this.bytesPos;
-
         // read block header
         var hdr = this.getBits(3);
         if (hdr & 1)
             this.eof = true;
         hdr >>= 1;
 
-        var b;
         if (hdr == 0) { // uncompressed block
+            var bytes = this.bytes;
+            var bytesPos = this.bytesPos;
+            var b;
+
             if (typeof (b = bytes[bytesPos++]) == "undefined")
                 error("Bad block header in flate stream");
             var blockLen = b;
@@ -502,18 +502,24 @@ var FlateStream = (function() {
             if (typeof (b = bytes[bytesPos++]) == "undefined")
                 error("Bad block header in flate stream");
             check |= (b << 8);
-            if (check != (~this.blockLen & 0xffff))
+            if (check != (~blockLen & 0xffff))
                 error("Bad uncompressed block length in flate stream");
+
+            this.codeBuf = 0;
+            this.codeSize = 0;
+            
             var bufferLength = this.bufferLength;
             var buffer = this.ensureBuffer(bufferLength + blockLen);
-            this.bufferLength = bufferLength + blockLen;
-            for (var n = bufferLength; n < blockLen; ++n) {
+            var end = bufferLength + blockLen;
+            this.bufferLength = end;
+            for (var n = bufferLength; n < end; ++n) {
                 if (typeof (b = bytes[bytesPos++]) == "undefined") {
                     this.eof = true;
                     break;
                 }
                 buffer[n] = b;
             }
+            this.bytesPos = bytesPos;
             return;
         }
 
@@ -3242,15 +3248,34 @@ var Encodings = {
   }
 };
 
+function ScratchCanvas(width, height) {
+    var canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+    return canvas;
+}
+
 var CanvasGraphics = (function() {
-    function constructor(canvasCtx) {
+    function constructor(canvasCtx, imageCanvas) {
         this.ctx = canvasCtx;
         this.current = new CanvasExtraState();
         this.stateStack = [ ];
         this.pendingClip = null;
         this.res = null;
         this.xobjs = null;
-        this.map = {
+        this.ScratchCanvas = imageCanvas || ScratchCanvas;
+    }
+
+    var LINE_CAP_STYLES = [ "butt", "round", "square" ];
+    var LINE_JOIN_STYLES = [ "miter", "round", "bevel" ];
+    var NORMAL_CLIP = {};
+    var EO_CLIP = {};
+
+    // Used for tiling patterns
+    var PAINT_TYPE_COLORED = 1, PAINT_TYPE_UNCOLORED = 2;
+
+    constructor.prototype = {
+        map: {
             // Graphics state
             w: "setLineWidth",
             J: "setLineCap",
@@ -3343,18 +3368,8 @@ var CanvasGraphics = (function() {
             // Compatibility
             BX: "beginCompat",
             EX: "endCompat",
-        };
-    }
-
-    var LINE_CAP_STYLES = [ "butt", "round", "square" ];
-    var LINE_JOIN_STYLES = [ "miter", "round", "bevel" ];
-    var NORMAL_CLIP = {};
-    var EO_CLIP = {};
-
-    // Used for tiling patterns
-    var PAINT_TYPE_COLORED = 1, PAINT_TYPE_UNCOLORED = 2;
-
-    constructor.prototype = {
+        },
+      
         translateFont: function(fontDict, xref, resources) {
             var fd = fontDict.get("FontDescriptor");
             if (!fd)
@@ -3642,12 +3657,18 @@ var CanvasGraphics = (function() {
         },
         save: function() {
             this.ctx.save();
+            if (this.ctx.$saveCurrentX) {
+                this.ctx.$saveCurrentX();
+            }
             this.stateStack.push(this.current);
             this.current = new CanvasExtraState();
         },
         restore: function() {
             var prev = this.stateStack.pop();
             if (prev) {
+                if (this.ctx.$restoreCurrentX) {
+                    this.ctx.$restoreCurrentX();
+                }
                 this.current = prev;
                 this.ctx.restore();
             }
@@ -3728,6 +3749,9 @@ var CanvasGraphics = (function() {
         // Text
         beginText: function() {
             this.current.textMatrix = IDENTITY_MATRIX;
+            if (this.ctx.$setCurrentX) {
+                this.ctx.$setCurrentX(0)
+            }
             this.current.x = this.current.lineX = 0;
             this.current.y = this.current.lineY = 0;
         },
@@ -3782,6 +3806,9 @@ var CanvasGraphics = (function() {
         moveText: function (x, y) {
             this.current.x = this.current.lineX += x;
             this.current.y = this.current.lineY += y;
+            if (this.ctx.$setCurrentX) {
+                this.ctx.$setCurrentX(this.current.x)
+            }
         },
         setLeadingMoveText: function(x, y) {
             this.setLeading(-y);
@@ -3789,6 +3816,10 @@ var CanvasGraphics = (function() {
         },
         setTextMatrix: function(a, b, c, d, e, f) {
             this.current.textMatrix = [ a, b, c, d, e, f ];
+
+            if (this.ctx.$setCurrentX) {
+                this.ctx.$setCurrentX(0)
+            }
             this.current.x = this.current.lineX = 0;
             this.current.y = this.current.lineY = 0;
         },
@@ -3799,11 +3830,15 @@ var CanvasGraphics = (function() {
             this.ctx.save();
             this.ctx.transform.apply(this.ctx, this.current.textMatrix);
             this.ctx.scale(1, -1);
-            this.ctx.translate(0, -2 * this.current.y);
 
-            text = Fonts.charsToUnicode(text);
-            this.ctx.fillText(text, this.current.x, this.current.y);
-            this.current.x += this.ctx.measureText(text).width;
+            if (this.ctx.$showText) {
+                this.ctx.$showText(this.current.y, Fonts.charsToUnicode(text));
+            } else {
+                text = Fonts.charsToUnicode(text);
+                this.ctx.translate(this.current.x, -1 * this.current.y);
+                this.ctx.fillText(text, 0, 0);
+                this.current.x += this.ctx.measureText(text).width;
+            }
 
             this.ctx.restore();
         },
@@ -3811,7 +3846,11 @@ var CanvasGraphics = (function() {
             for (var i = 0; i < arr.length; ++i) {
                 var e = arr[i];
                 if (IsNum(e)) {
-                    this.current.x -= e * 0.001 * this.current.fontSize;
+                    if (this.ctx.$addCurrentX) {
+                        this.ctx.$addCurrentX(-e * 0.001 * this.current.fontSize)
+                    } else {
+                        this.current.x -= e * 0.001 * this.current.fontSize;
+                    }
                 } else if (IsString(e)) {
                     this.showText(e);
                 } else {
@@ -3950,9 +3989,10 @@ var CanvasGraphics = (function() {
             // we want the canvas to be as large as the step size
             var botRight = applyMatrix([x0 + xstep, y0 + ystep], matrix);
 
-            var tmpCanvas = document.createElement("canvas");
-            tmpCanvas.width = Math.ceil(botRight[0] - topLeft[0]);
-            tmpCanvas.height = Math.ceil(botRight[1] - topLeft[1]);
+            var tmpCanvas = new this.ScratchCanvas(
+                Math.ceil(botRight[0] - topLeft[0]),    // width
+                Math.ceil(botRight[1] - topLeft[1])     // height
+            );
 
             // set the new canvas element context as the graphics context
             var tmpCtx = tmpCanvas.getContext("2d");
@@ -4014,6 +4054,7 @@ var CanvasGraphics = (function() {
         shadingFill: function(entryRef) {
             var xref = this.xref;
             var res = this.res;
+
             var shadingRes = xref.fetchIfRef(res.get("Shading"));
             if (!shadingRes)
                 error("No shading resource found");
@@ -4310,9 +4351,7 @@ var CanvasGraphics = (function() {
                 // handle matte object
             }
 
-            var tmpCanvas = document.createElement("canvas");
-            tmpCanvas.width = w;
-            tmpCanvas.height = h;
+            var tmpCanvas = new this.ScratchCanvas(w, h);
             var tmpCtx = tmpCanvas.getContext("2d");
             var imgData = tmpCtx.getImageData(0, 0, w, h);
             var pixels = imgData.data;
@@ -4480,6 +4519,7 @@ var ColorSpace = (function() {
                 break;
             case "ICCBased":
                 var dict = stream.dict;
+
                 this.stream = stream;
                 this.dict = dict;
                 this.numComps = dict.get("N");
@@ -4586,6 +4626,7 @@ var PDFFunction = (function() {
                     v = encode[i2] + ((v - domain[i2]) *
                                       (encode[i2 + 1] - encode[i2]) /
                                       (domain[i2 + 1] - domain[i2]));
+
                     // clip to the size
                     args[i] = clip(v, 0, size[i] - 1);
                 }
@@ -4613,6 +4654,7 @@ var PDFFunction = (function() {
                     // decode
                     v = decode[i2] + (v * (decode[i2 + 1] - decode[i2]) /
                                       ((1 << bps) - 1));
+
                     // clip to the domain
                     output.push(clip(v, range[i2], range[i2 + 1]));
                 }

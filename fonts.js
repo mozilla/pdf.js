@@ -135,15 +135,28 @@ var Font = (function () {
         break;
     }
 
+    var data = this.font;
     Fonts[name] = {
-      data: this.font,
+      data: data,
       properties: properties,
       loading: true,
       cache: Object.create(null)
     }
 
-    // Attach the font to the document
-    this.bind();
+    // Convert data to a string.
+    var dataStr = "";
+    var length = data.length;
+    for (var i = 0; i < length; ++i)
+      dataStr += String.fromCharCode(data[i]);
+
+    // Attach the font to the document. If this script is runnig in a worker,
+    // call `bindWorker`, which sends stuff over to the main thread.
+    if (typeof window != "undefined") {
+      this.bindDOM(dataStr);
+    } else {
+      this.bindWorker(dataStr);
+    }
+
   };
 
   function stringToArray(str) {
@@ -755,12 +768,21 @@ var Font = (function () {
       return fontData;
     },
 
-    bind: function font_bind() {
-      var data = this.font;
+    bindWorker: function font_bind_worker(dataStr) {
+      postMessage({
+        action: "font",
+        data: {
+          raw:      dataStr,
+          fontName: this.name,
+          mimetype: this.mimetype
+        }
+      });
+    },
+
+    bindDOM: function font_bind_dom(dataStr) {
       var fontName = this.name;
 
       /** Hack begin */
-
       // Actually there is not event when a font has finished downloading so
       // the following code are a dirty hack to 'guess' when a font is ready
       var canvas = document.createElement("canvas");
@@ -774,7 +796,7 @@ var Font = (function () {
       // Get the font size canvas think it will be for 'spaces'
       var ctx = canvas.getContext("2d");
       ctx.font = "bold italic 20px " + fontName + ", Symbol, Arial";
-      var testString = "   ";
+      var testString = " ";
 
       // When debugging use the characters provided by the charsets to visually
       // see what's happening instead of 'spaces'
@@ -830,14 +852,9 @@ var Font = (function () {
       }, 30, this);
 
       /** Hack end */
-
-      // Get the base64 encoding of the binary font data
-      var str = "";
-      var length = data.length;
-      for (var i = 0; i < length; ++i)
-        str += String.fromCharCode(data[i]);
-
-      var base64 = window.btoa(str);
+      
+      // Convert the data string and add it to the page.
+      var base64 = window.btoa(dataStr);
 
       // Add the @font-face rule to the document
       var url = "url(data:" + this.mimetype + ";base64," + base64 + ");";
