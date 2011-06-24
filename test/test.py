@@ -69,9 +69,10 @@ class State:
     eqLog = None
 
 class Result:
-    def __init__(self, snapshot, failure):
+    def __init__(self, snapshot, failure, page):
         self.snapshot = snapshot
         self.failure = failure
+        self.page = page
 
 class TestServer(SocketServer.TCPServer):
     allow_reuse_address = True
@@ -122,10 +123,20 @@ class PDFTestHandler(BaseHTTPRequestHandler):
         result = json.loads(self.rfile.read(numBytes))
         browser, id, failure, round, page, snapshot = result['browser'], result['id'], result['failure'], result['round'], result['page'], result['snapshot']
         taskResults = State.taskResults[browser][id]
-        taskResults[round].append(Result(snapshot, failure))
-        assert len(taskResults[round]) == page
+        taskResults[round].append(Result(snapshot, failure, page))
 
-        if result['taskDone']:
+        def isTaskDone():
+            numPages = result["numPages"]
+            rounds = State.manifest[id]["rounds"]
+            for round in range(0,rounds):
+                if len(taskResults[round]) < numPages:
+                    return False
+            return True
+
+        if isTaskDone():
+            # sort the results since they sometimes come in out of order
+            for results in taskResults:
+                results.sort(key=lambda result: result.page)
             check(State.manifest[id], taskResults, browser)
             # Please oh please GC this ...
             del State.taskResults[browser][id]
