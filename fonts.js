@@ -718,7 +718,7 @@ var Font = (function () {
       hmtx = "\x01\xF4\x00\x00"; // Fake .notdef
       var width = 0, lsb = 0;
       for (var i = 0; i < charstrings.length; i++) {
-        width = charstrings[i].charstring[0];
+        width = charstrings[i].charstring[1];
         hmtx += string16(width) + string16(lsb);
       }
       hmtx = stringToArray(hmtx);
