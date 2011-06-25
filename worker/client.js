@@ -59,6 +59,10 @@ FontWorker.prototype = {
         this.fontsWaiting --;
       }
       
+      if (this.fontsWaiting == 0) {
+        console.timeEnd("ensureFonts");
+      }
+      
       // This timeout is necessary right now to make sure the fonts are really
       // loaded at the point the callbacks are called.
       setTimeout(function() {
@@ -68,6 +72,7 @@ FontWorker.prototype = {
           for (var i = 0; i < callbacks.length; i++) {
             callbacks[i]();
           }
+          this.fontsWaitingCallbacks.length = 0;
         }        
       }.bind(this), 100);
     }
@@ -86,7 +91,7 @@ FontWorker.prototype = {
       // hold track on as lease memory as possible.
       Fonts[font.name] = {
         properties: {
-          charset:  font.properties.charset
+          encoding:  font.properties.encoding
         },
         cache:      Object.create(null)
       };
@@ -97,9 +102,11 @@ FontWorker.prototype = {
       this.fontsWaiting++;
     }
     
+    console.time("ensureFonts");
     // If there are fonts, that need to get loaded, tell the FontWorker to get
     // started and push the callback on the waiting-callback-stack.
     if (notLoaded.length != 0) {
+      console.log("fonts -> FontWorker");
       // Send the worker the fonts to work on.
       this.worker.postMessage({
         action: "fonts",
@@ -304,6 +311,7 @@ function WorkerPDFDoc(canvas) {
         for (var i = 0; i < callbacks.length; i++) {
           callbacks[i]();
         }
+        this.waitingForFontsCallback.length = 0;
       }.bind(this));
     },
 
