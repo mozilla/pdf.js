@@ -88,43 +88,29 @@ function nextPage() {
   clear(ctx);
 
   var fonts = [];
-  var fontsReady = true;
   var gfx = new CanvasGraphics(ctx);
   try {
     currentPage = pdfDoc.getPage(currentTask.pageNum);
     currentPage.compile(gfx, fonts);
-
-    // Inspect fonts and translate the missing ones
-    var count = fonts.length;
-    for (var i = 0; i < count; ++i) {
-      var font = fonts[i];
-      if (Fonts[font.name]) {
-        fontsReady = fontsReady && !Fonts[font.name].loading;
-        continue;
-      }
-      new Font(font.name, font.file, font.properties);
-      fontsReady = false;
-    }
   } catch(e) {
     failure = 'compile: '+ e.toString();
   }
 
-  var checkFontsLoadedIntervalTimer = null;
+  var fontLoaderTimer = null;
   function checkFontsLoaded() {
-    for (var i = 0; i < count; i++) {
-      if (Fonts[font.name].loading) {
-        return;
-      }
+    if (!FontLoader.bind(fonts)) {
+      fontLoaderTimer = window.setTimeout(checkFontsLoaded, 10);
+      return;
     }
-    window.clearInterval(checkFontsLoadedIntervalTimer);
-
     snapshotCurrentPage(gfx);
   }
 
-  if (failure || fontsReady) {
+  if (failure) {
+    // Skip font loading if there was a failure, since the fonts might
+    // be in an inconsistent state.
     snapshotCurrentPage(gfx);
   } else {
-    checkFontsLoadedIntervalTimer = setInterval(checkFontsLoaded, 10);
+    checkFontsLoaded();
   }
 }
 
