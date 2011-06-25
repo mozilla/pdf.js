@@ -33,3 +33,4 @@ user_pref("browser.panorama.experienced_first_run", true); // Assume experienced
 user_pref("dom.w3c_touch_events.enabled", true);
 user_pref("extensions.checkCompatibility", false);
 user_pref("extensions.installDistroAddons", false); // prevent testpilot etc
+user_pref("browser.safebrowsing.enable", false); // prevent traffic to google servers
