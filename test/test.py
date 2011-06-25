@@ -1,4 +1,4 @@
-import json, platform, os, shutil, sys, subprocess, tempfile, threading, urllib, urllib2
+import json, platform, os, shutil, sys, subprocess, tempfile, threading, time, urllib, urllib2
 from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
 import SocketServer
 from optparse import OptionParser
@@ -51,6 +51,7 @@ MIMEs = {
     '.json': 'application/json',
     '.pdf': 'application/pdf',
     '.xhtml': 'application/xhtml+xml',
+    '.ico': 'image/x-icon'
 }
 
 class State:
@@ -69,9 +70,10 @@ class State:
     eqLog = None
 
 class Result:
-    def __init__(self, snapshot, failure):
+    def __init__(self, snapshot, failure, page):
         self.snapshot = snapshot
         self.failure = failure
+        self.page = page
 
 class TestServer(SocketServer.TCPServer):
     allow_reuse_address = True
@@ -83,6 +85,14 @@ class PDFTestHandler(BaseHTTPRequestHandler):
         if VERBOSE:
             BaseHTTPRequestHandler.log_request(code, size)
 
+    def sendFile(self, path, ext):
+        self.send_response(200)
+        self.send_header("Content-Type", MIMEs[ext])
+        self.send_header("Content-Length", os.path.getsize(path))
+        self.end_headers()
+        with open(path) as f:
+            self.wfile.write(f.read())
+
     def do_GET(self):
         url = urlparse(self.path)
         # Ignore query string
@@ -91,9 +101,14 @@ class PDFTestHandler(BaseHTTPRequestHandler):
         prefix = os.path.commonprefix(( path, DOC_ROOT ))
         _, ext = os.path.splitext(path)
 
+        if url.path == "/favicon.ico":
+            self.sendFile(os.path.join(DOC_ROOT, "test", "resources", "favicon.ico"), ext)
+            return
+
         if not (prefix == DOC_ROOT
                 and os.path.isfile(path) 
                 and ext in MIMEs):
+            print path
             self.send_error(404)
             return
 
@@ -102,14 +117,8 @@ class PDFTestHandler(BaseHTTPRequestHandler):
             self.send_error(501)
             return
 
-        self.send_response(200)
-        self.send_header("Content-Type", MIMEs[ext])
-        self.end_headers()
-
-        # Sigh, os.sendfile() plz
-        f = open(path)
-        self.wfile.write(f.read())
-        f.close()
+        self.sendFile(path, ext)
+        
 
 
     def do_POST(self):
@@ -122,10 +131,20 @@ class PDFTestHandler(BaseHTTPRequestHandler):
         result = json.loads(self.rfile.read(numBytes))
         browser, id, failure, round, page, snapshot = result['browser'], result['id'], result['failure'], result['round'], result['page'], result['snapshot']
         taskResults = State.taskResults[browser][id]
-        taskResults[round].append(Result(snapshot, failure))
-        assert len(taskResults[round]) == page
+        taskResults[round].append(Result(snapshot, failure, page))
 
-        if result['taskDone']:
+        def isTaskDone():
+            numPages = result["numPages"]
+            rounds = State.manifest[id]["rounds"]
+            for round in range(0,rounds):
+                if len(taskResults[round]) < numPages:
+                    return False
+            return True
+
+        if isTaskDone():
+            # sort the results since they sometimes come in out of order
+            for results in taskResults:
+                results.sort(key=lambda result: result.page)
             check(State.manifest[id], taskResults, browser)
             # Please oh please GC this ...
             del State.taskResults[browser][id]
@@ -138,6 +157,8 @@ class BrowserCommand():
     def __init__(self, browserRecord):
         self.name = browserRecord["name"]
         self.path = browserRecord["path"]
+        self.tempDir = None
+        self.process = None
 
         if platform.system() == "Darwin" and (self.path.endswith(".app") or self.path.endswith(".app/")):
             self._fixupMacPath()
@@ -151,19 +172,30 @@ class BrowserCommand():
     def setup(self):
         self.tempDir = tempfile.mkdtemp()
         self.profileDir = os.path.join(self.tempDir, "profile")
-        print self.profileDir
         shutil.copytree(os.path.join(DOC_ROOT, "test", "resources", "firefox"),
                         self.profileDir)
 
     def teardown(self):
-        shutil.rmtree(self.tempDir)
+        # If the browser is still running, wait up to ten seconds for it to quit
+        if self.process and self.process.poll() is None:
+            checks = 0
+            while self.process.poll() is None and checks < 20:
+                checks += 1
+                time.sleep(.5)
+            # If it's still not dead, try to kill it
+            if self.process.poll() is None:
+                print "Process %s is still running. Killing." % self.name
+                self.process.kill()
+            
+        if self.tempDir is not None and os.path.exists(self.tempDir):
+            shutil.rmtree(self.tempDir)
 
     def start(self, url):
         cmds = [self.path]
         if platform.system() == "Darwin":
             cmds.append("-foreground")
         cmds.extend(["-no-remote", "-profile", self.profileDir, url])
-        subprocess.call(cmds)
+        self.process = subprocess.Popen(cmds)
 
 def makeBrowserCommands(browserManifestFile):
     with open(browserManifestFile) as bmf:
@@ -223,14 +255,23 @@ def setUp(options):
 
     State.remaining = len(testBrowsers) * len(manifestList)
 
-    for b in testBrowsers:
+    return testBrowsers
+
+def startBrowsers(browsers, options):
+    for b in browsers:
+        b.setup()
+        print 'Launching', b.name
+        qs = 'browser='+ urllib.quote(b.name) +'&manifestFile='+ urllib.quote(options.manifestFile)
+        b.start('http://localhost:8080/test/test_slave.html?'+ qs)
+
+def teardownBrowsers(browsers):
+    for b in browsers:
         try:
-            b.setup()
-            print 'Launching', b.name
-            qs = 'browser='+ urllib.quote(b.name) +'&manifestFile='+ urllib.quote(options.manifestFile)
-            b.start('http://localhost:8080/test/test_slave.html?'+ qs)
-        finally:
             b.teardown()
+        except:
+            print "Error cleaning up after browser at ", b.path
+            print "Temp dir was ", b.tempDir
+            print "Error:", sys.exc_info()[0]
 
 def check(task, results, browser):
     failed = False
@@ -385,8 +426,14 @@ def main():
     httpd_thread.setDaemon(True)
     httpd_thread.start()
 
-    setUp(options)
-    processResults()
+    browsers = setUp(options)
+    try:
+        startBrowsers(browsers, options)
+        while not State.done:
+            time.sleep(1)
+        processResults()
+    finally:
+        teardownBrowsers(browsers)
 
 if __name__ == '__main__':
     main()
