@@ -63,7 +63,14 @@ function nextTask() {
     if (r.readyState == 4) {
       var data = r.mozResponseArrayBuffer || r.mozResponse ||
                  r.responseArrayBuffer || r.response;
-      pdfDoc = new PDFDoc(new Stream(data));
+
+      try {
+        pdfDoc = new PDFDoc(new Stream(data));
+      } catch(e) {
+        pdfDoc.numPages = 1;
+        failure = 'load PDF doc: '+ e.toString();
+      }
+
       currentTask.pageNum = 1, nextPage();
     }    
   };
