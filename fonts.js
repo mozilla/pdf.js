@@ -787,8 +787,8 @@ var Font = (function () {
       // This code could go away when bug 471915 has landed
       var canvas = document.createElement("canvas");
       var ctx = canvas.getContext("2d");
-      ctx.font = "bold italic 20px " + fontName + ", Symbol";
-      var testString = " ";
+      ctx.font = "bold italic 20px " + fontName + ", Symbol, Arial";
+      var testString = "    ";
 
       // Periodicaly check for the width of the testString, it will be
       // different once the real font has loaded
@@ -796,7 +796,7 @@ var Font = (function () {
 
       var interval = window.setInterval(function canvasInterval(self) {
         this.start = this.start || Date.now();
-        ctx.font = "bold italic 20px " + fontName + ", Symbol";
+        ctx.font = "bold italic 20px " + fontName + ", Symbol, Arial";
 
         // For some reasons the font has not loaded, so mark it loaded for the
         // page to proceed but cry
