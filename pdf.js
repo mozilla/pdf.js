@@ -716,7 +716,7 @@ var PredictorStream = (function() {
         var rawBytes = this.stream.getBytes(rowBytes);
 
         var bufferLength = this.bufferLength;
-        var buffer = this.ensureBuffer(bufferLength + pixBytes);
+        var buffer = this.ensureBuffer(bufferLength + rowBytes);
 
         var currentRow = buffer.subarray(bufferLength, bufferLength + rowBytes);
         var prevRow = buffer.subarray(bufferLength - rowBytes, bufferLength);
@@ -833,7 +833,7 @@ var DecryptStream = (function() {
       var buffer = this.ensureBuffer(bufferLength + n);
       for (i = 0; i < n; i++)
         buffer[bufferLength++] = chunk[i];
-      this.bufferLength = n;
+      this.bufferLength = bufferLength;
       this.eof = n < chunkSize;
     };
 
@@ -1468,7 +1468,7 @@ var Parser = (function() {
 
             stream = stream.makeSubStream(pos, length, dict);
             if (cipherTransform)
-                stream = cipherTransform.createString(stream);
+                stream = cipherTransform.createStream(stream);
             stream = this.filter(stream, dict, length);
             stream.parameters = dict;
             return stream;
@@ -1802,7 +1802,11 @@ var XRef = (function() {
                     }
                     error("bad XRef entry");
                 }
-                e = parser.getObj(this.encrypt);
+                if (this.encrypt) {
+                    e = parser.getObj(this.encrypt.createCipherTransform(num, gen));
+                } else {
+                    e = parser.getObj();
+                }
                 // Don't cache streams since they are mutable.
                 if (!IsStream(e))
                     this.cache[num] = e;
@@ -2629,7 +2633,7 @@ var CanvasGraphics = (function() {
                             }
                         }
                     } else if (cmd == "Tf") { // eagerly collect all fonts
-                        var fontRes; // = resources.get("Font");
+                        var fontRes = resources.get("Font");
                         if (fontRes) {
                             fontRes = xref.fetchIfRef(fontRes);
                             var font = xref.fetchIfRef(fontRes.get(args[0].name));
