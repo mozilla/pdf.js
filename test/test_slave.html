@@ -200,8 +200,7 @@ function clear(ctx) {
   ctx.restore();
 }
 
-/* Auto-scroll if the scrollbar is near the bottom, otherwise do
-nothing. */
+/* Auto-scroll if the scrollbar is near the bottom, otherwise do nothing. */
 function checkScrolling() {
   if ((stdout.scrollHeight - stdout.scrollTop) <= stdout.offsetHeight) {
      stdout.scrollTop = stdout.scrollHeight;
