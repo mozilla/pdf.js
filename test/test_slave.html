@@ -6,7 +6,7 @@
   <script type="text/javascript" src="/fonts.js"></script>
   <script type="text/javascript" src="/glyphlist.js"></script>
   <script type="application/javascript">
-var browser, canvas, currentTask, currentTaskIdx, failure, manifest, pdfDoc, stdout;
+var browser, canvas, currentTask, currentTaskIdx, failure, manifest, numPages, pdfDoc, stdout;
 
 function queryParams() {
     var qs = window.location.search.substring(1);
@@ -66,8 +66,9 @@ function nextTask() {
 
       try {
         pdfDoc = new PDFDoc(new Stream(data));
+        numPages = pdfDoc.numPages;
       } catch(e) {
-        pdfDoc.numPages = 1;
+        numPages = 1;
         failure = 'load PDF doc: '+ e.toString();
       }
 
@@ -78,7 +79,7 @@ function nextTask() {
 }
 
 function nextPage() {
-  if (currentTask.pageNum > pdfDoc.numPages) {
+  if (currentTask.pageNum > numPages) {
     if (++currentTask.round < currentTask.rounds) {
       log("  Round "+ (1 + currentTask.round) +"\n");
       currentTask.pageNum = 1;
@@ -95,8 +96,9 @@ function nextPage() {
   clear(ctx);
 
   var fonts = [];
-  var gfx = new CanvasGraphics(ctx);
+  var gfx = null;
   try {
+    gfx = new CanvasGraphics(ctx);
     currentPage = pdfDoc.getPage(currentTask.pageNum);
     currentPage.compile(gfx, fonts);
   } catch(e) {
@@ -105,9 +107,13 @@ function nextPage() {
 
   var fontLoaderTimer = null;
   function checkFontsLoaded() {
-    if (!FontLoader.bind(fonts)) {
-      fontLoaderTimer = window.setTimeout(checkFontsLoaded, 10);
-      return;
+    try {
+      if (!FontLoader.bind(fonts)) {
+        fontLoaderTimer = window.setTimeout(checkFontsLoaded, 10);
+        return;
+      }
+    } catch(e) {
+      failure = 'fonts: '+ e.toString();
     }
     snapshotCurrentPage(gfx);
   }
@@ -166,7 +172,7 @@ var inFlightRequests = 0;
 function sendTaskResult(snapshot) {
   var result = { browser: browser,
                  id: currentTask.id,
-                 numPages: pdfDoc.numPages,
+                 numPages: numPages,
                  failure: failure,
                  file: currentTask.file,
                  round: currentTask.round,
