@@ -1333,21 +1333,12 @@ CFF.prototype = {
             }
             break;
 
-          case "div":
-            var num2 = charstring[i - 1];
-            var num1 = charstring[i - 2];
-            charstring.splice(i - 2, 3, num1 / num2);
-            i -= 2;
-            break;
-
           case "hsbw":
-            var charWidthVector = charstring[i - 1];
-            var leftSidebearing = charstring[i - 2];
+            var charWidthVector = charstring[1];
+            var leftSidebearing = charstring[0];
 
-            if (leftSidebearing)
-              charstring.splice(i - 2, 3, charWidthVector, leftSidebearing, "hmoveto");
-            else
-              charstring.splice(i - 2, 3, charWidthVector);
+            charstring.splice(i, 1, leftSidebearing, "hmoveto");
+            charstring.splice(0, 1);
             break;
 
           case "endchar":
@@ -1366,14 +1357,6 @@ CFF.prototype = {
                 } else {
                   charstring[j] = command;
                 }
-              } else {
-                charstring.splice(j, 1);
-
-                // command has already been translated, just add them to the
-                // charstring directly
-                for (var k = 0; k < command.length; k++)
-                  charstring.splice(j + k, 0, command[k]);
-                j+= command.length - 1;
               }
             }
             return charstring;
