@@ -3030,10 +3030,14 @@ var CanvasGraphics = (function() {
             // we want the canvas to be as large as the step size
             var botRight = applyMatrix([x0 + xstep, y0 + ystep], matrix);
 
-            var tmpCanvas = new this.ScratchCanvas(
-                Math.ceil(botRight[0] - topLeft[0]),    // width
-                Math.ceil(botRight[1] - topLeft[1])     // height
-            );
+            var width = botRight[0] - topLeft[0];
+            var height = botRight[1] - topLeft[1];
+
+            // TODO: hack to avoid OOM, remove then pattern code is fixed
+            if (Math.abs(width) > 8192 || Math.abs(height) > 8192)
+                return false;
+
+            var tmpCanvas = new this.ScratchCanvas(width, height);
 
             // set the new canvas element context as the graphics context
             var tmpCtx = tmpCanvas.getContext("2d");
