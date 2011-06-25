@@ -708,7 +708,7 @@ var PredictorStream = (function() {
         var rawBytes = this.stream.getBytes(rowBytes);
 
         var bufferLength = this.bufferLength;
-        var buffer = this.ensureBuffer(bufferLength + pixBytes);
+        var buffer = this.ensureBuffer(bufferLength + rowBytes);
 
         var currentRow = buffer.subarray(bufferLength, bufferLength + rowBytes);
         var prevRow = buffer.subarray(bufferLength - rowBytes, bufferLength);
