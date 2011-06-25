@@ -979,7 +979,7 @@ function IsArray(v) {
 }
 
 function IsStream(v) {
-    return typeof v == "object" && "getChar" in v;
+    return typeof v == "object" && v != null && ("getChar" in v);
 }
 
 function IsRef(v) {
