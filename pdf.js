@@ -81,7 +81,7 @@ var Stream = (function() {
         },
         getByte: function stream_getByte() {
             if (this.pos >= this.end)
-                return null;
+                return;
             return this.bytes[this.pos++];
         },
         // returns subarray of original buffer
@@ -103,12 +103,12 @@ var Stream = (function() {
         },
         lookChar: function stream_lookChar() {
             if (this.pos >= this.end)
-                return null;
+                return;
             return String.fromCharCode(this.bytes[this.pos]);
         },
         getChar: function stream_getChar() {
             if (this.pos >= this.end)
-                return null;
+                return ;
             return String.fromCharCode(this.bytes[this.pos++]);
         },
         skip: function stream_skip(n) {
@@ -171,7 +171,7 @@ var DecodeStream = (function() {
             var pos = this.pos;
             while (this.bufferLength <= pos) {
                 if (this.eof)
-                    return null;
+                    return ;
                 this.readBlock();
             }
             return this.buffer[this.pos++];
@@ -203,7 +203,7 @@ var DecodeStream = (function() {
             var pos = this.pos;
             while (this.bufferLength <= pos) {
                 if (this.eof)
-                    return null;
+                    return ;
                 this.readBlock();
             }
             return String.fromCharCode(this.buffer[this.pos]);
@@ -212,7 +212,7 @@ var DecodeStream = (function() {
             var pos = this.pos;
             while (this.bufferLength <= pos) {
                 if (this.eof)
-                    return null;
+                    return ;
                 this.readBlock();
             }
             return String.fromCharCode(this.buffer[this.pos++]);
@@ -1348,7 +1348,7 @@ var CCITTFaxStream = (function() {
         this.columns = params.get("Columns") || 1728;
         this.rows = params.get("Rows") || 0;
         var eoblock = params.get("EndOfBlock");
-        if (typeof eoblock == "undefined")
+        if (eoblock == null)
             eoblock = true;
         this.eoblock = eoblock;
         this.black = params.get("BlackIs1") || false;
