@@ -5,7 +5,6 @@
 
 var ARCFourCipher = (function() {
   function constructor(key) {
-    var key = this.key;
     this.a = 0;
     this.b = 0;
     var s = new Uint8Array(256);
@@ -133,13 +132,13 @@ var CipherTransform = (function() {
   }
   constructor.prototype = {
     createStream: function (stream) {
-      var cipher = new streamCipherConstructor();
+      var cipher = new this.streamCipherConstructor();
       return new DecryptStream(stream, function(data) {
         return cipher.encryptBlock(data);
       });
     },
     decryptString: function(s) {
-      var cipher = new stringCipherConstructor();
+      var cipher = new this.stringCipherConstructor();
       var data = string2bytes(s);
       data = cipher.encryptBlock(data);
       return bytes2string(data);
@@ -240,9 +239,9 @@ var CipherTransformFactory = (function() {
   constructor.prototype = {
     createCipherTransform: function(num, gen) {
       var encryptionKey = this.encryptionKey;
-      var key = new Uint8Array(encryptionKey.length + 5), i, j, n;
-      for (j = 0, n = encryptionKey.length; j < n; ++j)
-        key[j] = encryptionKey[j];
+      var key = new Uint8Array(encryptionKey.length + 5), i, n;
+      for (i = 0, n = encryptionKey.length; i < n; ++i)
+        key[i] = encryptionKey[i];
       key[i++] = num & 0xFF;
       key[i++] = (num >> 8) & 0xFF;
       key[i++] = (num >> 16) & 0xFF;
