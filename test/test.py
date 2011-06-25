@@ -51,6 +51,7 @@ MIMEs = {
     '.json': 'application/json',
     '.pdf': 'application/pdf',
     '.xhtml': 'application/xhtml+xml',
+    '.ico': 'image/x-icon'
 }
 
 class State:
@@ -84,6 +85,14 @@ class PDFTestHandler(BaseHTTPRequestHandler):
         if VERBOSE:
             BaseHTTPRequestHandler.log_request(code, size)
 
+    def sendFile(self, path, ext):
+        self.send_response(200)
+        self.send_header("Content-Type", MIMEs[ext])
+        self.send_header("Content-Length", os.path.getsize(path))
+        self.end_headers()
+        with open(path) as f:
+            self.wfile.write(f.read())
+
     def do_GET(self):
         url = urlparse(self.path)
         # Ignore query string
@@ -92,9 +101,14 @@ class PDFTestHandler(BaseHTTPRequestHandler):
         prefix = os.path.commonprefix(( path, DOC_ROOT ))
         _, ext = os.path.splitext(path)
 
+        if url.path == "/favicon.ico":
+            self.sendFile(os.path.join(DOC_ROOT, "test", "resources", "favicon.ico"), ext)
+            return
+
         if not (prefix == DOC_ROOT
                 and os.path.isfile(path) 
                 and ext in MIMEs):
+            print path
             self.send_error(404)
             return
 
@@ -103,14 +117,8 @@ class PDFTestHandler(BaseHTTPRequestHandler):
             self.send_error(501)
             return
 
-        self.send_response(200)
-        self.send_header("Content-Type", MIMEs[ext])
-        self.end_headers()
-
-        # Sigh, os.sendfile() plz
-        f = open(path)
-        self.wfile.write(f.read())
-        f.close()
+        self.sendFile(path, ext)
+        
 
 
     def do_POST(self):
