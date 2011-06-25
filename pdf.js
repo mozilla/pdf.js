@@ -4282,6 +4282,11 @@ var CanvasGraphics = (function() {
                 var mask = 1;
                 var b = 0;
                 for (var i = 0, length = 4 * w * h; i < length; i += 4) {
+                    if (i % (4*w) == 0) {
+                        mask = 1;
+                        b = 0;
+                    }
+
                     mask >>= 1;
                     if (mask <= 0) {
                         b = imgArray[imgIdx++];
