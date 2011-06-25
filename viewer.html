@@ -5,6 +5,7 @@
 
         <script type="text/javascript" src="viewer.js"></script>
         <script type="text/javascript" src="pdf.js"></script>
+        <script type="text/javascript" src="utils/fonts_utils.js"></script>
         <script type="text/javascript" src="fonts.js"></script>
         <script type="text/javascript" src="glyphlist.js"></script>
   </head>
@@ -25,8 +26,7 @@
     <div id="viewer">
       <!-- Canvas dimensions must be specified in CSS pixels.  CSS pixels
            are always 96 dpi.  816x1056 is 8.5x11in at 96dpi. -->
-      <!-- We're rendering here at 1.5x scale. -->
-      <canvas id="canvas" width="1224" height="1584"></canvas>
+      <canvas id="canvas" width="816" height="1056" defaultwidth="816" defaultheight="1056"></canvas>
     </div>
   </body>
 </html>
