@@ -1867,7 +1867,7 @@ var CCITTFaxStream = (function() {
     constructor.prototype.lookBits = function(n) {
         var c;
         while (this.inputBits < n) {
-            if (typeof (c = this.str.getByte()) == "undefined") {
+            if ((c = this.str.getByte()) == null) {
                 if (this.inputBits == 0)
                     return EOF;
                 return (this.inputBuf << (n - this.inputBits)) 
