@@ -1,9 +1,10 @@
 <html>
 <head>
   <title>pdf.js test slave</title>
-  <script type="text/javascript" src="pdf.js"></script>
-  <script type="text/javascript" src="fonts.js"></script>
-  <script type="text/javascript" src="glyphlist.js"></script>
+  <style type="text/css"></style>
+  <script type="text/javascript" src="/pdf.js"></script>
+  <script type="text/javascript" src="/fonts.js"></script>
+  <script type="text/javascript" src="/glyphlist.js"></script>
   <script type="application/javascript">
 var browser, canvas, currentTask, currentTaskIdx, failure, manifest, pdfDoc, stdout;
 
@@ -31,7 +32,7 @@ function load() {
   stdout = document.getElementById("stdout");
 
   log("Harness thinks this browser is '"+ browser +"'\n");
-  log("Fetching manifest ...");
+  log("Fetching manifest "+ manifestFile +"...");
 
   var r = new XMLHttpRequest();
   r.open("GET", manifestFile, false);
@@ -81,9 +82,7 @@ function nextPage() {
   }
 
   failure = '';
-  log("    drawing page "+ currentTask.pageNum +"...");
-
-  currentPage = pdfDoc.getPage(currentTask.pageNum);
+  log("    loading page "+ currentTask.pageNum +"... ");
 
   var ctx = canvas.getContext("2d");
   clear(ctx);
@@ -91,45 +90,76 @@ function nextPage() {
   var fonts = [];
   var gfx = new CanvasGraphics(ctx);
   try {
+    currentPage = pdfDoc.getPage(currentTask.pageNum);
     currentPage.compile(gfx, fonts);
   } catch(e) {
     failure = 'compile: '+ e.toString();
   }
 
-  // TODO load fonts
-  setTimeout(function() {
-      if (!failure) {
-        try {
-          currentPage.display(gfx);
-        } catch(e) {
-          failure = 'render: '+ e.toString();
-        }
-      }
-      currentTask.taskDone = (currentTask.pageNum == pdfDoc.numPages
-                              && (1 + currentTask.round) == currentTask.rounds);
-      sendTaskResult(canvas.toDataURL("image/png"));
-      log("done"+ (failure ? " (failed!)" : "") +"\n");
+  var fontLoaderTimer = null;
+  function checkFontsLoaded() {
+    if (!FontLoader.bind(fonts)) {
+      fontLoaderTimer = window.setTimeout(checkFontsLoaded, 10);
+      return;
+    }
+    snapshotCurrentPage(gfx);
+  }
 
+  if (failure) {
+    // Skip font loading if there was a failure, since the fonts might
+    // be in an inconsistent state.
+    snapshotCurrentPage(gfx);
+  } else {
+    checkFontsLoaded();
+  }
+}
+
+function snapshotCurrentPage(gfx) {
+  log("done, snapshotting... ");
+
+  if (!failure) {
+    try {
+      currentPage.display(gfx);
+    } catch(e) {
+      failure = 'render: '+ e.toString();
+    }
+  }
+
+  sendTaskResult(canvas.toDataURL("image/png"));
+  log("done"+ (failure ? " (failed!)" : "") +"\n");
+
+  // Set up the next request
+  backoff = (inFlightRequests > 0) ? inFlightRequests * 10 : 0;
+  setTimeout(function() {
       ++currentTask.pageNum, nextPage();
     },
-    0
+    backoff
   );
+}
+
+function quitApp() {
+  log("Done!");
+  document.body.innerHTML = "Tests are finished.  <h1>CLOSE ME!</h1>";
+  if (window.SpecialPowers)
+    SpecialPowers.quitApplication();
+  else
+    window.close();
 }
 
 function done() {
-  log("Done!\n");
-  setTimeout(function() {
-      document.body.innerHTML = "Tests are finished.  <h1>CLOSE ME!</h1>";
-      window.close();
-    },
-    100
-  );
+  if (inFlightRequests > 0) {
+    document.getElementById("inFlightCount").innerHTML = inFlightRequests;
+    setTimeout(done, 100);
+  } else {
+    setTimeout(quitApp, 100);
+  }
 }
 
+var inFlightRequests = 0;
 function sendTaskResult(snapshot) {
   var result = { browser: browser,
                  id: currentTask.id,
-                 taskDone: currentTask.taskDone,
+                 numPages: pdfDoc.numPages,
                  failure: failure,
                  file: currentTask.file,
                  round: currentTask.round,
@@ -138,9 +168,14 @@ function sendTaskResult(snapshot) {
 
   var r = new XMLHttpRequest();
   // (The POST URI is ignored atm.)
-  r.open("POST", "submit_task_results", false);
+  r.open("POST", "/submit_task_results", true);
   r.setRequestHeader("Content-Type", "application/json");
-  // XXX async
+  r.onreadystatechange = function(e) {
+    if (r.readyState == 4) {
+      inFlightRequests--;
+    }
+  }
+  document.getElementById("inFlightCount").innerHTML = inFlightRequests++;
   r.send(JSON.stringify(result));
 }
 
@@ -160,7 +195,8 @@ function log(str) {
 </head>
 
 <body onload="load();">
-  <pre id="stdout"></pre>
+  <pre style="width:800; height:800; overflow: scroll;"id="stdout"></pre>
+  <p>Inflight requests: <span id="inFlightCount"></span></p>
 </body>
 
 </html>

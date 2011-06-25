@@ -1,0 +1,4 @@
+content specialpowers chrome/specialpowers/content/
+component {59a52458-13e0-4d93-9d85-a637344f29a1} components/SpecialPowersObserver.js
+contract @mozilla.org/special-powers-observer;1 {59a52458-13e0-4d93-9d85-a637344f29a1}
+category profile-after-change @mozilla.org/special-powers-observer;1 @mozilla.org/special-powers-observer;1
