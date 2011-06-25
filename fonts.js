@@ -976,6 +976,7 @@ var Type1Parser = function() {
       "6": -1, // seac
       "7": -1, //sbw
 
+      "11": "sub",
       "12": "div",
 
       // callothersubr is a mechanism to make calls on the postscript
@@ -1290,6 +1291,9 @@ CFF.prototype = {
     "rrcurveto": 8,
     "callsubr": 10,
     "return": 11,
+    "sub": [12, 11],
+    "div": [12, 12],
+    "pop": [1, 12, 18],
     "endchar": 14,
     "rmoveto": 21,
     "hmoveto": 22,
@@ -1323,7 +1327,7 @@ CFF.prototype = {
             // entry 3 can be replaced by {}
             if (index == 3) {
               if (!data) {
-                charstring.splice(i - 2, 4, "pop", 3);
+                charstring.splice(i - 2, 4, 3);
                 i -= 3;
               } else {
                 // 5 to remove the arguments, the callothersubr call and the pop command
@@ -1350,12 +1354,15 @@ CFF.prototype = {
                 charstring.splice(j, 1, 28, command >> 8, command);
                 j+= 2;
               } else if (command.charAt) {
-                var command = this.commandsMap[command];
-                if (IsArray(command)) {
-                  charstring.splice(j - 1, 1, command[0], command[1]);
+                var cmd = this.commandsMap[command];
+                if (!cmd)
+                  error(command);
+
+                if (IsArray(cmd)) {
+                  charstring.splice(j, 1, cmd[0], cmd[1]);
                   j += 1;
                 } else {
-                  charstring[j] = command;
+                  charstring[j] = cmd;
                 }
               }
             }
