@@ -66,62 +66,63 @@ function stringToBytes(str) {
 
 var Stream = (function() {
     function constructor(arrayBuffer, start, length, dict) {
-        this.bytes = Uint8Array(arrayBuffer);
+        this.bytes = new Uint8Array(arrayBuffer);
         this.start = start || 0;
         this.pos = this.start;
-        this.end = (start + length) || this.bytes.byteLength;
+        this.end = (start + length) || this.bytes.length;
         this.dict = dict;
     }
 
+    // required methods for a stream. if a particular stream does not
+    // implement these, an error should be thrown
     constructor.prototype = {
         get length() {
             return this.end - this.start;
         },
-        getByte: function() {
-            var bytes = this.bytes;
+        getByte: function stream_getByte() {
             if (this.pos >= this.end)
-                return -1;
-            return bytes[this.pos++];
+                return null;
+            return this.bytes[this.pos++];
         },
         // returns subarray of original buffer
         // should only be read
-        getBytes: function(length) {
+        getBytes: function stream_getBytes(length) {
             var bytes = this.bytes;
             var pos = this.pos;
+            var strEnd = this.end;
+
+            if (!length)
+                return bytes.subarray(pos, strEnd);
 
             var end = pos + length;
-            var strEnd = this.end;
-            if (!end || end > strEnd)
+            if (end > strEnd)
                 end = strEnd;
 
             this.pos = end;
             return bytes.subarray(pos, end);
         },
-        lookChar: function() {
-            var bytes = this.bytes;
+        lookChar: function stream_lookChar() {
             if (this.pos >= this.end)
-                return;
-            return String.fromCharCode(bytes[this.pos]);
+                return null;
+            return String.fromCharCode(this.bytes[this.pos]);
         },
-        getChar: function() {
-            var ch = this.lookChar();
-            if (!ch)
-                return ch;
-            this.pos++;
-            return ch;
+        getChar: function stream_getChar() {
+            if (this.pos >= this.end)
+                return null;
+            return String.fromCharCode(this.bytes[this.pos++]);
         },
-        skip: function(n) {
-            if (!n && !IsNum(n))
+        skip: function stream_skip(n) {
+            if (!n)
                 n = 1;
             this.pos += n;
         },
-        reset: function() {
+        reset: function stream_reset() {
             this.pos = this.start;
         },
-        moveStart: function() {
+        moveStart: function stream_moveStart() {
             this.start = this.pos;
         },
-        makeSubStream: function(start, length, dict) {
+        makeSubStream: function stream_makeSubstream(start, length, dict) {
             return new Stream(this.bytes.buffer, start, length, dict);
         }
     };
@@ -132,7 +133,7 @@ var Stream = (function() {
 var StringStream = (function() {
     function constructor(str) {
         var length = str.length;
-        var bytes = Uint8Array(length);
+        var bytes = new Uint8Array(length);
         for (var n = 0; n < length; ++n)
             bytes[n] = str.charCodeAt(n);
         Stream.call(this, bytes);
@@ -143,12 +144,134 @@ var StringStream = (function() {
     return constructor;
 })();
 
+// super class for the decoding streams
+var DecodeStream = (function() {
+    function constructor() {
+        this.pos = 0;
+        this.bufferLength = 0;
+        this.eof = false;
+        this.buffer = null;
+    }
+    
+    constructor.prototype = {
+        ensureBuffer: function decodestream_ensureBuffer(requested) {
+            var buffer = this.buffer;
+            var current = buffer ? buffer.byteLength : 0;
+            if (requested < current)
+                return buffer;
+            var size = 512;
+            while (size < requested)
+                size <<= 1;
+            var buffer2 = new Uint8Array(size);
+            for (var i = 0; i < current; ++i)
+                buffer2[i] = buffer[i];
+            return this.buffer = buffer2;
+        },
+        getByte: function decodestream_getByte() {
+            var pos = this.pos;
+            while (this.bufferLength <= pos) {
+                if (this.eof)
+                    return null;
+                this.readBlock();
+            }
+            return this.buffer[this.pos++];
+        },
+        getBytes: function decodestream_getBytes(length) {
+            var pos = this.pos;
+
+            if (length) {
+                this.ensureBuffer(pos + length);
+                var end = pos + length;
+
+                while (!this.eof && this.bufferLength < end)
+                    this.readBlock();
+
+                var bufEnd = this.bufferLength;
+                if (end > bufEnd)
+                    end = bufEnd;
+            } else {
+                while (!this.eof)
+                    this.readBlock();
+
+                var end = this.bufferLength;
+            }
+
+            this.pos = end;
+            return this.buffer.subarray(pos, end)
+        },
+        lookChar: function decodestream_lookChar() {
+            var pos = this.pos;
+            while (this.bufferLength <= pos) {
+                if (this.eof)
+                    return null;
+                this.readBlock();
+            }
+            return String.fromCharCode(this.buffer[this.pos]);
+        },
+        getChar: function decodestream_getChar() {
+            var pos = this.pos;
+            while (this.bufferLength <= pos) {
+                if (this.eof)
+                    return null;
+                this.readBlock();
+            }
+            return String.fromCharCode(this.buffer[this.pos++]);
+        },
+        skip: function decodestream_skip(n) {
+            if (!n)
+                n = 1;
+            this.pos += n;
+        }
+    };
+
+    return constructor;
+})();
+
+
+var FakeStream = (function() {
+    function constructor(stream) {
+        this.dict = stream.dict;
+        DecodeStream.call(this);
+    };
+
+    constructor.prototype = Object.create(DecodeStream.prototype);
+    constructor.prototype.readBlock = function() {
+        var bufferLength = this.bufferLength;
+        bufferLength += 1024;
+        var buffer = this.ensureBuffer(bufferLength);
+        this.bufferLength = bufferLength;
+    };
+    constructor.prototype.getBytes = function(length) {
+        var pos = this.pos;
+
+        if (length) {
+            this.ensureBuffer(pos + length);
+            var end = pos + length;
+
+            while (!this.eof && this.bufferLength < end)
+                this.readBlock();
+
+            var bufEnd = this.bufferLength;
+            if (end > bufEnd)
+                end = bufEnd;
+        } else {
+            this.eof = true;
+            var end = this.bufferLength;
+        }
+
+        this.pos = end;
+        return this.buffer.subarray(pos, end)
+    };
+
+    return constructor;
+})();
+
 var FlateStream = (function() {
-    const codeLenCodeMap = Uint32Array([
+    var codeLenCodeMap = new Uint32Array([
         16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15
     ]);
 
-    const lengthDecode = Uint32Array([
+    var lengthDecode = new Uint32Array([
         0x00003, 0x00004, 0x00005, 0x00006, 0x00007, 0x00008, 0x00009,
         0x0000a, 0x1000b, 0x1000d, 0x1000f, 0x10011, 0x20013, 0x20017,
         0x2001b, 0x2001f, 0x30023, 0x3002b, 0x30033, 0x3003b, 0x40043,
@@ -156,7 +279,7 @@ var FlateStream = (function() {
         0x00102, 0x00102, 0x00102
     ]);
 
-    const distDecode = Uint32Array([
+    var distDecode = new Uint32Array([
         0x00001, 0x00002, 0x00003, 0x00004, 0x10005, 0x10007, 0x20009,
         0x2000d, 0x30011, 0x30019, 0x40021, 0x40031, 0x50041, 0x50061,
         0x60081, 0x600c1, 0x70101, 0x70181, 0x80201, 0x80301, 0x90401,
@@ -164,7 +287,7 @@ var FlateStream = (function() {
         0xd4001, 0xd6001
     ]);
 
-    const fixedLitCodeTab = [Uint32Array([
+    var fixedLitCodeTab = [new Uint32Array([
         0x70100, 0x80050, 0x80010, 0x80118, 0x70110, 0x80070, 0x80030,
         0x900c0, 0x70108, 0x80060, 0x80020, 0x900a0, 0x80000, 0x80080,
         0x80040, 0x900e0, 0x70104, 0x80058, 0x80018, 0x90090, 0x70114,
@@ -241,7 +364,7 @@ var FlateStream = (function() {
         0x900ff
     ]), 9];
 
-    const fixedDistCodeTab = [Uint32Array([
+    var fixedDistCodeTab = [new Uint32Array([
         0x50000, 0x50010, 0x50008, 0x50018, 0x50004, 0x50014, 0x5000c,
         0x5001c, 0x50002, 0x50012, 0x5000a, 0x5001a, 0x50006, 0x50016,
         0x5000e, 0x00000, 0x50001, 0x50011, 0x50009, 0x50019, 0x50005,
@@ -267,273 +390,399 @@ var FlateStream = (function() {
 
         this.bytes = bytes;
         this.bytesPos = bytesPos;
-        this.eof = false;
+
         this.codeSize = 0;
         this.codeBuf = 0;
-
-        this.pos = 0;
-        this.bufferLength = 0;
+        
+        DecodeStream.call(this);
     }
 
-    constructor.prototype = {
-        getBits: function(bits) {
-            var codeSize = this.codeSize;
-            var codeBuf = this.codeBuf;
-            var bytes = this.bytes;
-            var bytesPos = this.bytesPos;
+    constructor.prototype = Object.create(DecodeStream.prototype);
 
-            var b;
-            while (codeSize < bits) {
-                if (typeof (b = bytes[bytesPos++]) == "undefined")
-                    error("Bad encoding in flate stream");
-                codeBuf |= b << codeSize;
-                codeSize += 8;
-            }
-            b = codeBuf & ((1 << bits) - 1);
-            this.codeBuf = codeBuf >> bits;
-            this.codeSize = codeSize -= bits;
-            this.bytesPos = bytesPos;
-            return b;
-        },
-        getCode: function(table) {
-            var codes = table[0];
-            var maxLen = table[1];
-            var codeSize = this.codeSize;
-            var codeBuf = this.codeBuf;
-            var bytes = this.bytes;
-            var bytesPos = this.bytesPos;
+    constructor.prototype.getBits = function(bits) {
+        var codeSize = this.codeSize;
+        var codeBuf = this.codeBuf;
+        var bytes = this.bytes;
+        var bytesPos = this.bytesPos;
 
-            while (codeSize < maxLen) {
-                var b;
-                if (typeof (b = bytes[bytesPos++]) == "undefined")
-                    error("Bad encoding in flate stream");
-                codeBuf |= (b << codeSize);
-                codeSize += 8;
-            }
-            var code = codes[codeBuf & ((1 << maxLen) - 1)];
-            var codeLen = code >> 16;
-            var codeVal = code & 0xffff;
-            if (codeSize == 0|| codeSize < codeLen || codeLen == 0)
+        var b;
+        while (codeSize < bits) {
+            if (typeof (b = bytes[bytesPos++]) == "undefined")
                 error("Bad encoding in flate stream");
-            this.codeBuf = (codeBuf >> codeLen);
-            this.codeSize = (codeSize - codeLen);
-            this.bytesPos = bytesPos;
-            return codeVal;
-        },
-        ensureBuffer: function(requested) {
-            var buffer = this.buffer;
-            var current = buffer ? buffer.byteLength : 0;
-            if (requested < current)
-                return buffer;
-            var size = 512;
-            while (size < requested)
-                size <<= 1;
-            var buffer2 = Uint8Array(size);
-            for (var i = 0; i < current; ++i)
-                buffer2[i] = buffer[i];
-            return this.buffer = buffer2;
-        },
-        getByte: function() {
-            var pos = this.pos;
-            while (this.bufferLength <= pos) {
-                if (this.eof)
-                    return;
-                this.readBlock();
-            }
-            return this.buffer[this.pos++];
-        },
-        getBytes: function(length) {
-            var pos = this.pos;
+            codeBuf |= b << codeSize;
+            codeSize += 8;
+        }
+        b = codeBuf & ((1 << bits) - 1);
+        this.codeBuf = codeBuf >> bits;
+        this.codeSize = codeSize -= bits;
+        this.bytesPos = bytesPos;
+        return b;
+    };
+    constructor.prototype.getCode = function(table) {
+        var codes = table[0];
+        var maxLen = table[1];
+        var codeSize = this.codeSize;
+        var codeBuf = this.codeBuf;
+        var bytes = this.bytes;
+        var bytesPos = this.bytesPos;
 
-            while (!this.eof && this.bufferLength < pos + length)
-                this.readBlock();
+        while (codeSize < maxLen) {
+            var b;
+            if (typeof (b = bytes[bytesPos++]) == "undefined")
+                error("Bad encoding in flate stream");
+            codeBuf |= (b << codeSize);
+            codeSize += 8;
+        }
+        var code = codes[codeBuf & ((1 << maxLen) - 1)];
+        var codeLen = code >> 16;
+        var codeVal = code & 0xffff;
+        if (codeSize == 0|| codeSize < codeLen || codeLen == 0)
+            error("Bad encoding in flate stream");
+        this.codeBuf = (codeBuf >> codeLen);
+        this.codeSize = (codeSize - codeLen);
+        this.bytesPos = bytesPos;
+        return codeVal;
+    };
+    constructor.prototype.generateHuffmanTable = function(lengths) {
+        var n = lengths.length;
 
-            var end = pos + length;
-            var bufEnd = this.bufferLength;
+        // find max code length
+        var maxLen = 0;
+        for (var i = 0; i < n; ++i) {
+            if (lengths[i] > maxLen)
+                maxLen = lengths[i];
+        }
 
-            if (end > bufEnd)
-                end = bufEnd;
-
-            this.pos = end;
-            return this.buffer.subarray(pos, end)
-        },
-        lookChar: function() {
-            var pos = this.pos;
-            while (this.bufferLength <= pos) {
-                if (this.eof)
-                    return;
-                this.readBlock();
-            }
-            return String.fromCharCode(this.buffer[pos]);
-        },
-        getChar: function() {
-            var ch = this.lookChar();
-            // shouldnt matter what the position is if we get past the eof
-            // so no need to check if ch is undefined
-            this.pos++;
-            return ch;
-        },
-        skip: function(n) {
-            if (!n)
-                n = 1;
-            this.pos += n;
-        },
-        generateHuffmanTable: function(lengths) {
-            var n = lengths.length;
-
-            // find max code length
-            var maxLen = 0;
-            for (var i = 0; i < n; ++i) {
-                if (lengths[i] > maxLen)
-                    maxLen = lengths[i];
-            }
-
-            // build the table
-            var size = 1 << maxLen;
-            var codes = Uint32Array(size);
-            for (var len = 1, code = 0, skip = 2;
-                 len <= maxLen;
-                 ++len, code <<= 1, skip <<= 1) {
-                for (var val = 0; val < n; ++val) {
-                    if (lengths[val] == len) {
-                        // bit-reverse the code
-                        var code2 = 0;
-                        var t = code;
-                        for (var i = 0; i < len; ++i) {
-                            code2 = (code2 << 1) | (t & 1);
-                            t >>= 1;
-                        }
-
-                        // fill the table entries
-                        for (var i = code2; i < size; i += skip)
-                            codes[i] = (len << 16) | val;
-
-                        ++code;
+        // build the table
+        var size = 1 << maxLen;
+        var codes = new Uint32Array(size);
+        for (var len = 1, code = 0, skip = 2;
+                len <= maxLen;
+                ++len, code <<= 1, skip <<= 1) {
+            for (var val = 0; val < n; ++val) {
+                if (lengths[val] == len) {
+                    // bit-reverse the code
+                    var code2 = 0;
+                    var t = code;
+                    for (var i = 0; i < len; ++i) {
+                        code2 = (code2 << 1) | (t & 1);
+                        t >>= 1;
                     }
+
+                    // fill the table entries
+                    for (var i = code2; i < size; i += skip)
+                        codes[i] = (len << 16) | val;
+
+                    ++code;
                 }
             }
+        }
 
-            return [codes, maxLen];
-        },
-        readBlock: function() {
-            function repeat(stream, array, len, offset, what) {
-                var repeat = stream.getBits(len) + offset;
-                while (repeat-- > 0)
-                    array[i++] = what;
-            }
+        return [codes, maxLen];
+    };
+    constructor.prototype.readBlock = function() {
+        function repeat(stream, array, len, offset, what) {
+            var repeat = stream.getBits(len) + offset;
+            while (repeat-- > 0)
+                array[i++] = what;
+        }
 
+        // read block header
+        var hdr = this.getBits(3);
+        if (hdr & 1)
+            this.eof = true;
+        hdr >>= 1;
+
+        if (hdr == 0) { // uncompressed block
             var bytes = this.bytes;
             var bytesPos = this.bytesPos;
-
-            // read block header
-            var hdr = this.getBits(3);
-            if (hdr & 1)
-                this.eof = true;
-            hdr >>= 1;
-
             var b;
-            if (hdr == 0) { // uncompressed block
-                if (typeof (b = bytes[bytesPos++]) == "undefined")
-                    error("Bad block header in flate stream");
-                var blockLen = b;
-                if (typeof (b = bytes[bytesPos++]) == "undefined")
-                    error("Bad block header in flate stream");
-                blockLen |= (b << 8);
-                if (typeof (b = bytes[bytesPos++]) == "undefined")
-                    error("Bad block header in flate stream");
-                var check = b;
-                if (typeof (b = bytes[bytesPos++]) == "undefined")
-                    error("Bad block header in flate stream");
-                check |= (b << 8);
-                if (check != (~this.blockLen & 0xffff))
-                    error("Bad uncompressed block length in flate stream");
-                var bufferLength = this.bufferLength;
-                var buffer = this.ensureBuffer(bufferLength + blockLen);
-                this.bufferLength = bufferLength + blockLen;
-                for (var n = bufferLength; n < blockLen; ++n) {
-                    if (typeof (b = bytes[bytesPos++]) == "undefined") {
-                        this.eof = true;
-                        break;
-                    }
-                    buffer[n] = b;
+
+            if (typeof (b = bytes[bytesPos++]) == "undefined")
+                error("Bad block header in flate stream");
+            var blockLen = b;
+            if (typeof (b = bytes[bytesPos++]) == "undefined")
+                error("Bad block header in flate stream");
+            blockLen |= (b << 8);
+            if (typeof (b = bytes[bytesPos++]) == "undefined")
+                error("Bad block header in flate stream");
+            var check = b;
+            if (typeof (b = bytes[bytesPos++]) == "undefined")
+                error("Bad block header in flate stream");
+            check |= (b << 8);
+            if (check != (~blockLen & 0xffff))
+                error("Bad uncompressed block length in flate stream");
+
+            this.codeBuf = 0;
+            this.codeSize = 0;
+            
+            var bufferLength = this.bufferLength;
+            var buffer = this.ensureBuffer(bufferLength + blockLen);
+            var end = bufferLength + blockLen;
+            this.bufferLength = end;
+            for (var n = bufferLength; n < end; ++n) {
+                if (typeof (b = bytes[bytesPos++]) == "undefined") {
+                    this.eof = true;
+                    break;
                 }
+                buffer[n] = b;
+            }
+            this.bytesPos = bytesPos;
+            return;
+        }
+
+        var litCodeTable;
+        var distCodeTable;
+        if (hdr == 1) { // compressed block, fixed codes
+            litCodeTable = fixedLitCodeTab;
+            distCodeTable = fixedDistCodeTab;
+        } else if (hdr == 2) { // compressed block, dynamic codes
+            var numLitCodes = this.getBits(5) + 257;
+            var numDistCodes = this.getBits(5) + 1;
+            var numCodeLenCodes = this.getBits(4) + 4;
+
+            // build the code lengths code table
+            var codeLenCodeLengths = Array(codeLenCodeMap.length);
+            var i = 0;
+            while (i < numCodeLenCodes)
+                codeLenCodeLengths[codeLenCodeMap[i++]] = this.getBits(3);
+            var codeLenCodeTab = this.generateHuffmanTable(codeLenCodeLengths);
+
+            // build the literal and distance code tables
+            var len = 0;
+            var i = 0;
+            var codes = numLitCodes + numDistCodes;
+            var codeLengths = new Array(codes);
+            while (i < codes) {
+                var code = this.getCode(codeLenCodeTab);
+                if (code == 16) {
+                    repeat(this, codeLengths, 2, 3, len);
+                } else if (code == 17) {
+                    repeat(this, codeLengths, 3, 3, len = 0);
+                } else if (code == 18) {
+                    repeat(this, codeLengths, 7, 11, len = 0);
+                } else {
+                    codeLengths[i++] = len = code;
+                }
+            }
+
+            litCodeTable =
+                this.generateHuffmanTable(codeLengths.slice(0, numLitCodes));
+            distCodeTable =
+                this.generateHuffmanTable(codeLengths.slice(numLitCodes, codes));
+        } else {
+            error("Unknown block type in flate stream");
+        }
+
+        var buffer = this.buffer;
+        var limit = buffer ? buffer.length : 0;
+        var pos = this.bufferLength;
+        while (true) {
+            var code1 = this.getCode(litCodeTable);
+            if (code1 < 256) {
+                if (pos + 1 >= limit) {
+                    buffer = this.ensureBuffer(pos + 1);
+                    limit = buffer.length;
+                }
+                buffer[pos++] = code1;
+                continue;
+            }
+            if (code1 == 256) {
+                this.bufferLength = pos;
                 return;
             }
-
-            var litCodeTable;
-            var distCodeTable;
-            if (hdr == 1) { // compressed block, fixed codes
-                litCodeTable = fixedLitCodeTab;
-                distCodeTable = fixedDistCodeTab;
-            } else if (hdr == 2) { // compressed block, dynamic codes
-                var numLitCodes = this.getBits(5) + 257;
-                var numDistCodes = this.getBits(5) + 1;
-                var numCodeLenCodes = this.getBits(4) + 4;
-
-                // build the code lengths code table
-                var codeLenCodeLengths = Array(codeLenCodeMap.length);
-                var i = 0;
-                while (i < numCodeLenCodes)
-                    codeLenCodeLengths[codeLenCodeMap[i++]] = this.getBits(3);
-                var codeLenCodeTab = this.generateHuffmanTable(codeLenCodeLengths);
-
-                // build the literal and distance code tables
-                var len = 0;
-                var i = 0;
-                var codes = numLitCodes + numDistCodes;
-                var codeLengths = new Array(codes);
-                while (i < codes) {
-                    var code = this.getCode(codeLenCodeTab);
-                    if (code == 16) {
-                        repeat(this, codeLengths, 2, 3, len);
-                    } else if (code == 17) {
-                        repeat(this, codeLengths, 3, 3, len = 0);
-                    } else if (code == 18) {
-                        repeat(this, codeLengths, 7, 11, len = 0);
-                    } else {
-                        codeLengths[i++] = len = code;
-                    }
-                }
-
-                litCodeTable = this.generateHuffmanTable(codeLengths.slice(0, numLitCodes));
-                distCodeTable = this.generateHuffmanTable(codeLengths.slice(numLitCodes, codes));
-            } else {
-                error("Unknown block type in flate stream");
+            code1 -= 257;
+            code1 = lengthDecode[code1];
+            var code2 = code1 >> 16;
+            if (code2 > 0)
+                code2 = this.getBits(code2);
+            var len = (code1 & 0xffff) + code2;
+            code1 = this.getCode(distCodeTable);
+            code1 = distDecode[code1];
+            code2 = code1 >> 16;
+            if (code2 > 0)
+                code2 = this.getBits(code2);
+            var dist = (code1 & 0xffff) + code2;
+            if (pos + len >= limit) {
+                buffer = this.ensureBuffer(pos + len);
+                limit = buffer.length;
             }
-
-            var pos = this.bufferLength;
-            while (true) {
-                var code1 = this.getCode(litCodeTable);
-                if (code1 == 256) {
-                    this.bufferLength = pos;
-                    return;
-                }
-                if (code1 < 256) {
-                    var buffer = this.ensureBuffer(pos + 1);
-                    buffer[pos++] = code1;
-                } else {
-                    code1 -= 257;
-                    code1 = lengthDecode[code1];
-                    var code2 = code1 >> 16;
-                    if (code2 > 0)
-                        code2 = this.getBits(code2);
-                    var len = (code1 & 0xffff) + code2;
-                    code1 = this.getCode(distCodeTable);
-                    code1 = distDecode[code1];
-                    code2 = code1 >> 16;
-                    if (code2 > 0)
-                        code2 = this.getBits(code2);
-                    var dist = (code1 & 0xffff) + code2;
-                    var buffer = this.ensureBuffer(pos + len);
-                    for (var k = 0; k < len; ++k, ++pos)
-                        buffer[pos] = buffer[pos - dist];
-                }
-            }
+            for (var k = 0; k < len; ++k, ++pos)
+                buffer[pos] = buffer[pos - dist];
         }
     };
 
     return constructor;
 })();
+
+var PredictorStream = (function() {
+    function constructor(stream, params) {
+        var predictor = this.predictor = params.get("Predictor") || 1;
+
+        if (predictor <= 1)
+            return stream; // no prediction
+        if (predictor !== 2 && (predictor < 10 || predictor > 15))
+            error("Unsupported predictor");
+
+        if (predictor === 2)
+            this.readBlock = this.readBlockTiff;
+        else
+            this.readBlock = this.readBlockPng;
+
+        this.stream = stream;
+        this.dict = stream.dict;
+        if (params.has("EarlyChange")) {
+            error("EarlyChange predictor parameter is not supported");
+        }
+        var colors = this.colors = params.get("Colors") || 1;
+        var bits = this.bits = params.get("BitsPerComponent") || 8;
+        var columns = this.columns = params.get("Columns") || 1;
+
+        var pixBytes = this.pixBytes = (colors * bits + 7) >> 3;
+        // add an extra pixByte to represent the pixel left of column 0
+        var rowBytes = this.rowBytes = (columns * colors * bits + 7) >> 3;
+        
+        DecodeStream.call(this);
+        return this;
+    }
+
+    constructor.prototype = Object.create(DecodeStream.prototype);
+
+    constructor.prototype.readBlockTiff = function() {
+        var rowBytes = this.rowBytes;
+        var pixBytes = this.pixBytes;
+
+        var bufferLength = this.bufferLength;
+        var buffer = this.ensureBuffer(bufferLength + rowBytes);
+        var currentRow = buffer.subarray(bufferLength, bufferLength + rowBytes);
+
+        var bits = this.bits;
+        var colors = this.colors;
+
+        var rawBytes = this.stream.getBytes(rowBytes);
+
+        if (bits === 1) {
+            var inbuf = 0;
+            for (var i = 0; i < rowBytes; ++i) {
+                var c = rawBytes[i];
+                inBuf = (inBuf << 8) | c;
+                // bitwise addition is exclusive or
+                // first shift inBuf and then add
+                currentRow[i] = (c ^ (inBuf >> colors)) & 0xFF;
+                // truncate inBuf (assumes colors < 16)
+                inBuf &= 0xFFFF;
+            }
+        } else if (bits === 8) {
+            for (var i = 0; i < colors; ++i)
+                currentRow[i] = rawBytes[i];
+            for (; i < rowBytes; ++i)
+                currentRow[i] = currentRow[i - colors] + rawBytes[i];
+        } else {
+            var compArray = new Uint8Array(colors + 1);
+            var bitMask = (1 << bits) - 1;
+            var inbuf = 0, outbut = 0;
+            var inbits = 0, outbits = 0;
+            var j = 0, k = 0;
+            var columns = this.columns;
+            for (var i = 0; i < columns; ++i) {
+                for (var kk = 0; kk < colors; ++kk) {
+                    if (inbits < bits) {
+                        inbuf = (inbuf << 8) | (rawBytes[j++] & 0xFF);
+                        inbits += 8;
+                    }
+                    compArray[kk] = (compArray[kk] +
+                            (inbuf >> (inbits - bits))) & bitMask;
+                    inbits -= bits;
+                    outbuf = (outbuf << bits) | compArray[kk];
+                    outbits += bits;
+                    if (outbits >= 8) {
+                        currentRow[k++] = (outbuf >> (outbits - 8)) & 0xFF;
+                        outbits -= 8;
+                    }
+                }
+            }
+            if (outbits > 0) {
+                currentRow[k++] = (outbuf << (8 - outbits)) +
+                    (inbuf & ((1 << (8 - outbits)) - 1))
+            }
+        }
+        this.bufferLength += rowBytes;
+    };
+    constructor.prototype.readBlockPng = function() {
+        var rowBytes = this.rowBytes;
+        var pixBytes = this.pixBytes;
+
+        var predictor = this.stream.getByte();
+        var rawBytes = this.stream.getBytes(rowBytes);
+
+        var bufferLength = this.bufferLength;
+        var buffer = this.ensureBuffer(bufferLength + pixBytes);
+
+        var currentRow = buffer.subarray(bufferLength, bufferLength + rowBytes);
+        var prevRow = buffer.subarray(bufferLength - rowBytes, bufferLength);
+        if (prevRow.length == 0)
+            prevRow = currentRow;
+
+        switch (predictor) {
+        case 0:
+            break;
+        case 1:
+            for (var i = 0; i < pixBytes; ++i)
+                currentRow[i] = rawBytes[i];
+            for (; i < rowBytes; ++i)
+                currentRow[i] = (currentRow[i - pixBytes] + rawBytes[i]) & 0xFF;
+            break;
+        case 2:
+            for (var i = 0; i < rowBytes; ++i)
+                currentRow[i] = (prevRow[i] + rawBytes[i]) & 0xFF;
+            break;
+        case 3:
+            for (var i = 0; i < pixBytes; ++i)
+                currentRow[i] = (prevRow[i] >> 1) + rawBytes[i];
+            for (; i < rowBytes; ++i)
+                currentRow[i] = (((prevRow[i] + currentRow[i - pixBytes])
+                            >> 1) + rawBytes[i]) & 0xFF;
+            break;
+        case 4:
+            // we need to save the up left pixels values. the simplest way
+            // is to create a new buffer
+            for (var i = 0; i < pixBytes; ++i)
+                currentRow[i] = rawBytes[i];
+            for (; i < rowBytes; ++i) {
+                var up = prevRow[i];
+                var upLeft = lastRow[i - pixBytes];
+                var left = currentRow[i - pixBytes];
+                var p = left + up - upLeft;
+
+                var pa = p - left;
+                if (pa < 0)
+                    pa = -pa;
+                var pb = p - up;
+                if (pb < 0)
+                    pb = -pb;
+                var pc = p - upLeft;
+                if (pc < 0)
+                    pc = -pc;
+
+                var c = rawBytes[i];
+                if (pa <= pb && pa <= pc)
+                    currentRow[i] = left + c;
+                else if (pb <= pc)
+                    currentRow[i] = up + c;
+                else
+                    currentRow[i] = upLeft + c;
+                break;
+            }
+        default:
+            error("Unsupported predictor");
+            break;
+        }
+        this.bufferLength += rowBytes;
+    };
+
+    return constructor;
+})();
+
 // A JpegStream can't be read directly. We use the platform to render the underlying
 // JPEG data for us.
 var JpegStream = (function() {
@@ -558,196 +807,6 @@ var JpegStream = (function() {
 
     return constructor;
 })();
-
-var PredictorStream = (function() {
-    function constructor(stream, params) {
-        var predictor = this.predictor = params.get("Predictor") || 1;
-
-        if (predictor <= 1)
-            return stream; // no prediction
-        if (predictor !== 2 && (predictor < 10 || predictor > 15))
-            error("Unsupported predictor");
-
-        if (predictor === 2)
-            this.readRow = this.readRowTiff;
-        else
-            this.readRow = this.readRowPng;
-
-        this.stream = stream;
-        this.dict = stream.dict;
-        if (params.has("EarlyChange")) {
-            error("EarlyChange predictor parameter is not supported");
-        }
-        var colors = this.colors = params.get("Colors") || 1;
-        var bits = this.bits = params.get("BitsPerComponent") || 8;
-        var columns = this.columns = params.get("Columns") || 1;
-
-        var pixBytes = this.pixBytes = (colors * bits + 7) >> 3;
-        // add an extra pixByte to represent the pixel left of column 0
-        var rowBytes = this.rowBytes = ((columns * colors * bits + 7) >> 3) + pixBytes;
-
-        this.currentRow = new Uint8Array(rowBytes);
-        this.bufferLength = rowBytes;
-        this.pos = rowBytes;
-    }
-
-    constructor.prototype = {
-        readRowTiff : function() {
-            var currentRow = this.currentRow;
-            var rowBytes = this.rowBytes;
-            var pixBytes = this.pixBytes;
-            var bits = this.bits;
-            var colors = this.colors;
-
-            var rawBytes = this.stream.getBytes(rowBytes - pixBytes);
-
-            if (bits === 1) {
-                var inbuf = 0;
-                for (var i = pixBytes, j = 0; i < rowBytes; ++i, ++j) {
-                    var c = rawBytes[j];
-                    inBuf = (inBuf << 8) | c;
-                    // bitwise addition is exclusive or
-                    // first shift inBuf and then add
-                    currentRow[i] = (c ^ (inBuf >> colors)) & 0xFF;
-                    // truncate inBuf (assumes colors < 16)
-                    inBuf &= 0xFFFF;
-                }
-            } else if (bits === 8) {
-                for (var i = pixBytes, j = 0; i < rowBytes; ++i, ++j)
-                    currentRow[i] = currentRow[i - colors] + rawBytes[j];
-            } else {
-                var compArray = new Uint8Array(colors + 1);
-                var bitMask = (1 << bits) - 1;
-                var inbuf = 0, outbut = 0;
-                var inbits = 0, outbits = 0;
-                var j = 0, k = pixBytes;
-                var columns = this.columns;
-                for (var i = 0; i < columns; ++i) {
-                    for (var kk = 0; kk < colors; ++kk) {
-                        if (inbits < bits) {
-                            inbuf = (inbuf << 8) | (rawBytes[j++] & 0xFF);
-                            inbits += 8;
-                        }
-                        compArray[kk] = (compArray[kk] +
-                                         (inbuf >> (inbits - bits))) & bitMask;
-                        inbits -= bits;
-                        outbuf = (outbuf << bits) | compArray[kk];
-                        outbits += bits;
-                        if (outbits >= 8) {
-                            currentRow[k++] = (outbuf >> (outbits - 8)) & 0xFF;
-                            outbits -= 8;
-                        }
-                    }
-                }
-                if (outbits > 0) {
-                    currentRow[k++] = (outbuf << (8 - outbits)) +
-                                      (inbuf & ((1 << (8 - outbits)) - 1))
-                }
-            }
-            this.pos = pixBytes;
-        },
-        readRowPng : function() {
-            var currentRow = this.currentRow;
-
-            var rowBytes = this.rowBytes;
-            var pixBytes = this.pixBytes;
-
-            var predictor = this.stream.getByte();
-            var rawBytes = this.stream.getBytes(rowBytes - pixBytes);
-
-            switch (predictor) {
-            case 0:
-                break;
-            case 1:
-                for (var i = pixBytes, j = 0; i < rowBytes; ++i, ++j)
-                    currentRow[i] = (currentRow[i - pixBytes] + rawBytes[j]) & 0xFF;
-                break;
-            case 2:
-                for (var i = pixBytes, j = 0; i < rowBytes; ++i, ++j)
-                    currentRow[i] = (currentRow[i] + rawBytes[j]) & 0xFF;
-                break;
-            case 3:
-                for (var i = pixBytes, j = 0; i < rowBytes; ++i, ++j)
-                    currentRow[i] = (((currentRow[i] + currentRow[i - pixBytes])
-                                >> 1) + rawBytes[j]) & 0xFF;
-                break;
-            case 4:
-                // we need to save the up left pixels values. the simplest way
-                // is to create a new buffer
-                var lastRow = currentRow;
-                var currentRow = new Uint8Array(rowBytes);
-                for (var i = pixBytes, j = 0; i < rowBytes; ++i, ++j) {
-                    var up = lastRow[i];
-                    var upLeft = lastRow[i - pixBytes];
-                    var left = currentRow[i - pixBytes];
-                    var p = left + up - upLeft;
-
-                    var pa = p - left;
-                    if (pa < 0)
-                        pa = -pa;
-                    var pb = p - up;
-                    if (pb < 0)
-                        pb = -pb;
-                    var pc = p - upLeft;
-                    if (pc < 0)
-                        pc = -pc;
-
-                    var c = rawBytes[j];
-                    if (pa <= pb && pa <= pc)
-                        currentRow[i] = left + c;
-                    else if (pb <= pc)
-                        currentRow[i] = up + c;
-                    else
-                        currentRow[i] = upLeft + c;
-                    break;
-                    this.currentRow = currentRow;
-                }
-            default:
-                error("Unsupported predictor");
-                break;
-            }
-            this.pos = pixBytes;
-        },
-        getByte : function() {
-            if (this.pos >= this.bufferLength)
-               this.readRow();
-            return this.currentRow[this.pos++];
-        },
-        getBytes : function(n) {
-            var i, bytes;
-            bytes = new Uint8Array(n);
-            for (i = 0; i < n; ++i) {
-              if (this.pos >= this.bufferLength)
-                this.readRow();
-              bytes[i] = this.currentRow[this.pos++];
-            }
-            return bytes;
-        },
-        getChar : function() {
-            return String.formCharCode(this.getByte());
-        },
-        lookChar : function() {
-            if (this.pos >= this.bufferLength)
-               this.readRow();
-            return String.formCharCode(this.currentRow[this.pos]);
-        },
-        skip : function(n) {
-            var i;
-            if (!n) {
-                n = 1;
-            }
-            while (n > this.bufferLength - this.pos) {
-                n -= this.bufferLength - this.pos;
-                this.readRow();
-                if (this.bufferLength === 0) break;
-            }
-            this.pos += n;
-        }
-    };
-
-    return constructor;
-})();
-
 var DecryptStream = (function() {
     function constructor(str, decrypt) {
         this.str = str;
@@ -776,6 +835,74 @@ var DecryptStream = (function() {
         buffer[bufferLength++] = chunk[i];
       this.bufferLength = n;
       this.eof = n < chunkSize;
+    };
+
+    return constructor;
+})();
+
+var Ascii85Stream = (function() {
+    function constructor(str) {
+        this.str = str;
+        this.dict = str.dict;
+        this.input = new Uint8Array(5);
+        
+        DecodeStream.call(this);
+    }
+
+    constructor.prototype = Object.create(DecodeStream.prototype);
+    constructor.prototype.readBlock = function() {
+        var tildaCode = "~".charCodeAt(0);
+        var zCode = "z".charCodeAt(0);
+        var str = this.str;
+
+        var c = str.getByte();
+        while (Lexer.isSpace(String.fromCharCode(c)))
+            c = str.getByte();
+
+        if (!c || c === tildaCode) {
+            this.eof = true;
+            return;
+        } 
+
+        var bufferLength = this.bufferLength;
+
+        // special code for z
+        if (c == zCode) {
+            var buffer = this.ensureBuffer(bufferLength + 4);
+            for (var i = 0; i < 4; ++i)
+                buffer[bufferLength + i] = 0;
+            this.bufferLength += 4;
+        } else {
+            var input = this.input;
+            input[0] = c;
+            for (var i = 1; i < 5; ++i){
+                c = str.getByte();
+                while (Lexer.isSpace(String.fromCharCode(c)))
+                    c = str.getByte();
+
+                input[i] = c;
+
+                if (!c || c == tildaCode)
+                    break;
+            }
+            var buffer = this.ensureBuffer(bufferLength + i - 1);
+            this.bufferLength += i - 1;
+
+            // partial ending;
+            if (i < 5) {
+                for (; i < 5; ++i)
+                    input[i] = 0x21 + 84;
+                this.eof = true;
+            }
+            var t = 0;
+            for (var i = 0; i < 5; ++i)
+                t = t * 85 + (input[i] - 0x21);
+
+            for (var i = 3; i >= 0; --i){
+                buffer[bufferLength + i] = t & 0xFF;
+                t >>= 8;
+            }
+        }
     };
 
     return constructor;
@@ -810,7 +937,9 @@ var Dict = (function() {
 
     constructor.prototype = {
         get: function(key) {
-            return this.map[key];
+            if (key in this.map)
+              return this.map[key];
+            return null;
         },
         get2: function(key1, key2) {
             return this.get(key1) || this.get(key2);
@@ -943,10 +1072,10 @@ var Lexer = (function() {
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0    // fx
     ];
 
-    const MIN_INT = (1<<31) | 0;
-    const MAX_INT = (MIN_INT - 1) | 0;
-    const MIN_UINT = 0;
-    const MAX_UINT = ((1<<30) * 4) - 1;
+    var MIN_INT = (1<<31) | 0;
+    var MAX_INT = (MIN_INT - 1) | 0;
+    var MIN_UINT = 0;
+    var MAX_UINT = ((1<<30) * 4) - 1;
 
     function ToHexDigit(ch) {
         if (ch >= "0" && ch <= "9")
@@ -1352,8 +1481,8 @@ var Parser = (function() {
             if (IsArray(filter)) {
                 var filterArray = filter;
                 var paramsArray = params;
-                for (var i = 0, ii = filter.length; i < ii; ++i) {
-                    filter = filter[i];
+                for (var i = 0, ii = filterArray.length; i < ii; ++i) {
+                    filter = filterArray[i];
                     if (!IsName(filter))
                         error("Bad filter name");
                     else {
@@ -1375,6 +1504,11 @@ var Parser = (function() {
             } else if (name == "DCTDecode") {
                 var bytes = stream.getBytes(length);
                 return new JpegStream(bytes, stream.dict);
+            } else if (name == "ASCII85Decode") {
+                return new Ascii85Stream(stream);
+            } else if (name == "CCITTFaxDecode") {
+                TODO("implement fax stream");
+                return new FakeStream(stream);
             } else {
                 error("filter '" + name + "' not supported yet");
             }
@@ -1483,7 +1617,7 @@ var XRef = (function() {
     }
 
     constructor.prototype = {
-        readXRefTable: function(parser) {
+        readXRefTable: function readXRefTable(parser) {
             var obj;
             while (true) {
                 if (IsCmd(obj = parser.getObj(), "trailer"))
@@ -1554,7 +1688,7 @@ var XRef = (function() {
 
             return dict;
         },
-        readXRefStream: function(stream) {
+        readXRefStream: function readXRefStream(stream) {
             var streamParameters = stream.parameters;
             var length = streamParameters.get("Length");
             var byteWidths = streamParameters.get("W");
@@ -1606,7 +1740,7 @@ var XRef = (function() {
                 this.readXRef(prev);
             return streamParameters;
         },
-        readXRef: function(startXRef) {
+        readXRef: function readXref(startXRef) {
             var stream = this.stream;
             stream.pos = startXRef;
             var parser = new Parser(new Lexer(stream), true);
@@ -1624,6 +1758,7 @@ var XRef = (function() {
                 return this.readXRefStream(obj);
             }
             error("Invalid XRef");
+            return null;
         },
         getEntry: function(i) {
             var e = this.entries[i];
@@ -1964,7 +2099,7 @@ var PDFDoc = (function() {
     return constructor;
 })();
 
-const IDENTITY_MATRIX = [ 1, 0, 0, 1, 0, 0 ];
+var IDENTITY_MATRIX = [ 1, 0, 0, 1, 0, 0 ];
 
 // <canvas> contexts store most of the state we need natively.
 // However, PDF needs a bit more state, which we store here.
@@ -1988,7 +2123,7 @@ var CanvasExtraState = (function() {
     return constructor;
 })();
 
-const Encodings = {
+var Encodings = {
   get ExpertEncoding() {
     return shadow(this, "ExpertEncoding", [ ,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
       "space","exclamsmall","Hungarumlautsmall",,"dollaroldstyle","dollarsuperior",
@@ -2162,15 +2297,34 @@ const Encodings = {
   }
 };
 
+function ScratchCanvas(width, height) {
+    var canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+    return canvas;
+}
+
 var CanvasGraphics = (function() {
-    function constructor(canvasCtx) {
+    function constructor(canvasCtx, imageCanvas) {
         this.ctx = canvasCtx;
         this.current = new CanvasExtraState();
         this.stateStack = [ ];
         this.pendingClip = null;
         this.res = null;
         this.xobjs = null;
-        this.map = {
+        this.ScratchCanvas = imageCanvas || ScratchCanvas;
+    }
+
+    var LINE_CAP_STYLES = [ "butt", "round", "square" ];
+    var LINE_JOIN_STYLES = [ "miter", "round", "bevel" ];
+    var NORMAL_CLIP = {};
+    var EO_CLIP = {};
+
+    // Used for tiling patterns
+    var PAINT_TYPE_COLORED = 1, PAINT_TYPE_UNCOLORED = 2;
+
+    constructor.prototype = {
+        map: {
             // Graphics state
             w: "setLineWidth",
             J: "setLineCap",
@@ -2263,20 +2417,15 @@ var CanvasGraphics = (function() {
             // Compatibility
             BX: "beginCompat",
             EX: "endCompat",
-        };
-    }
-
-    const LINE_CAP_STYLES = [ "butt", "round", "square" ];
-    const LINE_JOIN_STYLES = [ "miter", "round", "bevel" ];
-    const NORMAL_CLIP = {};
-    const EO_CLIP = {};
-
-    // Used for tiling patterns
-    const PAINT_TYPE_COLORED = 1, PAINT_TYPE_UNCOLORED = 2;
-
-    constructor.prototype = {
+        },
+      
         translateFont: function(fontDict, xref, resources) {
-            var descriptor = xref.fetch(fontDict.get("FontDescriptor"));
+            var fd = fontDict.get("FontDescriptor");
+            if (!fd)
+                // XXX deprecated "special treatment" for standard
+                // fonts?  What do we need to do here?
+                return null;
+            var descriptor = xref.fetch(fd);
 
             var fontName = descriptor.get("FontName");
             assertWellFormed(IsName(fontName), "invalid font name");
@@ -2287,16 +2436,9 @@ var CanvasGraphics = (function() {
                 error("FontFile not found for font: " + fontName);
             fontFile = xref.fetchIfRef(fontFile);
 
-            // Fonts with an embedded cmap but without any assignment in
-            // it are not yet supported, so ask the fonts loader to ignore
-            // them to not pay a stupid one sec latence.
-            var ignoreFont = true;
-
             var encodingMap = {};
             var charset = [];
             if (fontDict.has("Encoding")) {
-                ignoreFont = false;
-
                 var encoding = xref.fetchIfRef(fontDict.get("Encoding"));
                 if (IsDict(encoding)) {
                     // Build a map between codes and glyphs
@@ -2319,9 +2461,8 @@ var CanvasGraphics = (function() {
                         error("Unknown font encoding");
 
                     var index = 0;
-                    for (var j = 0; j < encoding.length; j++) {
+                    for (var j = 0; j < encoding.length; j++)
                         encodingMap[index++] = GlyphsUnicode[encoding[j]];
-                    }
 
                     var firstChar = xref.fetchIfRef(fontDict.get("FirstChar"));
                     var widths = xref.fetchIfRef(fontDict.get("Widths"));
@@ -2334,20 +2475,18 @@ var CanvasGraphics = (function() {
                     }
                 }
             } else if (fontDict.has("ToUnicode")) {
+                encodingMap = {empty: true};
                 var cmapObj = xref.fetchIfRef(fontDict.get("ToUnicode"));
                 if (IsName(cmapObj)) {
                     error("ToUnicode file cmap translation not implemented");
                 } else if (IsStream(cmapObj)) {
                     var encoding = Encodings["WinAnsiEncoding"];
                     var firstChar = xref.fetchIfRef(fontDict.get("FirstChar"));
-                    for (var i = firstChar; i < encoding.length; i++)
-                        encodingMap[i] = new Name(encoding[i]);
 
                     var tokens = [];
                     var token = "";
 
-                    var buffer = cmapObj.ensureBuffer ? cmapObj.ensureBuffer() : cmapObj;
-                    var cmap = cmapObj.getBytes(buffer.byteLength);
+                    var cmap = cmapObj.getBytes(cmapObj.length);
                     for (var i =0; i < cmap.length; i++) {
                       var byte = cmap[i];
                       if (byte == 0x20 || byte == 0x0A || byte == 0x3C || byte == 0x3E) {
@@ -2357,7 +2496,6 @@ var CanvasGraphics = (function() {
                             break;
 
                           case "beginbfrange":
-                            ignoreFont = false;
                           case "begincodespacerange":
                             token = "";
                             tokens = [];
@@ -2374,8 +2512,10 @@ var CanvasGraphics = (function() {
                               var code = parseInt("0x" + tokens[j+2]);
 
                               for (var k = startRange; k <= endRange; k++) {
-                                encodingMap[k] = GlyphsUnicode[encoding[code]];
-                                charset.push(encoding[code++]);
+                                // The encoding mapping table will be filled
+                                // later during the building phase
+                                //encodingMap[k] = GlyphsUnicode[encoding[code]];
+                                charset.push(encoding[code++] || ".notdef");
                               }
                             }
                             break;
@@ -2402,16 +2542,19 @@ var CanvasGraphics = (function() {
             }
 
             var subType = fontDict.get("Subtype");
-            var bbox = descriptor.get("FontBBox");
-            assertWellFormed(IsName(subType) && IsArray(bbox),
-                             "invalid font Subtype or FontBBox");
+            assertWellFormed(IsName(subType), "invalid font Subtype");
 
             var properties = {
                 type: subType.name,
                 encoding: encodingMap,
                 charset: charset,
-                bbox: bbox,
-                ignore: ignoreFont
+                bbox: descriptor.get("FontBBox"),
+                ascent: descriptor.get("Ascent"),
+                descent: descriptor.get("Descent"),
+                xHeight: descriptor.get("XHeight"),
+                capHeight: descriptor.get("CapHeight"),
+                flags: descriptor.get("Flags"),
+                italicAngle: descriptor.get("ItalicAngle")
             };
 
             return {
@@ -2551,12 +2694,18 @@ var CanvasGraphics = (function() {
         },
         save: function() {
             this.ctx.save();
+            if (this.ctx.$saveCurrentX) {
+                this.ctx.$saveCurrentX();
+            }
             this.stateStack.push(this.current);
             this.current = new CanvasExtraState();
         },
         restore: function() {
             var prev = this.stateStack.pop();
             if (prev) {
+                if (this.ctx.$restoreCurrentX) {
+                    this.ctx.$restoreCurrentX();
+                }
                 this.current = prev;
                 this.ctx.restore();
             }
@@ -2637,6 +2786,9 @@ var CanvasGraphics = (function() {
         // Text
         beginText: function() {
             this.current.textMatrix = IDENTITY_MATRIX;
+            if (this.ctx.$setCurrentX) {
+                this.ctx.$setCurrentX(0)
+            }
             this.current.x = this.current.lineX = 0;
             this.current.y = this.current.lineY = 0;
         },
@@ -2680,7 +2832,7 @@ var CanvasGraphics = (function() {
             }
 
             this.current.fontSize = size;
-            this.ctx.font = this.current.fontSize +'px "' + fontName + '"';
+            this.ctx.font = this.current.fontSize +'px "' + fontName + '", Symbol';
         },
         setTextRenderingMode: function(mode) {
             TODO("text rendering mode");
@@ -2691,6 +2843,9 @@ var CanvasGraphics = (function() {
         moveText: function (x, y) {
             this.current.x = this.current.lineX += x;
             this.current.y = this.current.lineY += y;
+            if (this.ctx.$setCurrentX) {
+                this.ctx.$setCurrentX(this.current.x)
+            }
         },
         setLeadingMoveText: function(x, y) {
             this.setLeading(-y);
@@ -2698,6 +2853,10 @@ var CanvasGraphics = (function() {
         },
         setTextMatrix: function(a, b, c, d, e, f) {
             this.current.textMatrix = [ a, b, c, d, e, f ];
+
+            if (this.ctx.$setCurrentX) {
+                this.ctx.$setCurrentX(0)
+            }
             this.current.x = this.current.lineX = 0;
             this.current.y = this.current.lineY = 0;
         },
@@ -2708,9 +2867,15 @@ var CanvasGraphics = (function() {
             this.ctx.save();
             this.ctx.transform.apply(this.ctx, this.current.textMatrix);
             this.ctx.scale(1, -1);
-            this.ctx.translate(0, -2 * this.current.y);
-            this.ctx.fillText(Fonts.charsToUnicode(text), this.current.x, this.current.y);
-            this.current.x += this.ctx.measureText(text).width;
+
+            if (this.ctx.$showText) {
+                this.ctx.$showText(this.current.y, Fonts.charsToUnicode(text));
+            } else {
+                text = Fonts.charsToUnicode(text);
+                this.ctx.translate(this.current.x, -1 * this.current.y);
+                this.ctx.fillText(text, 0, 0);
+                this.current.x += this.ctx.measureText(text).width;
+            }
 
             this.ctx.restore();
         },
@@ -2718,7 +2883,11 @@ var CanvasGraphics = (function() {
             for (var i = 0; i < arr.length; ++i) {
                 var e = arr[i];
                 if (IsNum(e)) {
-                    this.current.x -= e * 0.001 * this.current.fontSize;
+                    if (this.ctx.$addCurrentX) {
+                        this.ctx.$addCurrentX(-e * 0.001 * this.current.fontSize)
+                    } else {
+                        this.current.x -= e * 0.001 * this.current.fontSize;
+                    }
                 } else if (IsString(e)) {
                     this.showText(e);
                 } else {
@@ -2795,13 +2964,14 @@ var CanvasGraphics = (function() {
                         error("Unable to find pattern resource");
 
                     var pattern = xref.fetchIfRef(patternRes.get(patternName.name));
-
-                    const types = [null, this.tilingFill];
-                    var typeNum = pattern.dict.get("PatternType");
+                    var patternDict = IsStream(pattern) ? pattern.dict : pattern;
+                    var types = [null, this.tilingFill,
+                                   function() { TODO("Shading Patterns"); }];
+                    var typeNum = patternDict.get("PatternType");
                     var patternFn = types[typeNum];
                     if (!patternFn)
                         error("Unhandled pattern type");
-                    patternFn.call(this, pattern);
+                    patternFn.call(this, pattern, patternDict);
                 }
             } else {
                 // TODO real impl
@@ -2856,9 +3026,10 @@ var CanvasGraphics = (function() {
             // we want the canvas to be as large as the step size
             var botRight = applyMatrix([x0 + xstep, y0 + ystep], matrix);
 
-            var tmpCanvas = document.createElement("canvas");
-            tmpCanvas.width = Math.ceil(botRight[0] - topLeft[0]);
-            tmpCanvas.height = Math.ceil(botRight[1] - topLeft[1]);
+            var tmpCanvas = new this.ScratchCanvas(
+                Math.ceil(botRight[0] - topLeft[0]),    // width
+                Math.ceil(botRight[1] - topLeft[1])     // height
+            );
 
             // set the new canvas element context as the graphics context
             var tmpCtx = tmpCanvas.getContext("2d");
@@ -2894,7 +3065,7 @@ var CanvasGraphics = (function() {
             this.restore();
 
             TODO("Inverse pattern is painted");
-            var pattern = this.ctx.createPattern(tmpCanvas, "repeat");
+            pattern = this.ctx.createPattern(tmpCanvas, "repeat");
             this.ctx.fillStyle = pattern;
         },
         setStrokeGray: function(gray) {
@@ -2920,6 +3091,7 @@ var CanvasGraphics = (function() {
         shadingFill: function(entryRef) {
             var xref = this.xref;
             var res = this.res;
+
             var shadingRes = xref.fetchIfRef(res.get("Shading"));
             if (!shadingRes)
                 error("No shading resource found");
@@ -2944,7 +3116,7 @@ var CanvasGraphics = (function() {
             if (background)
                 TODO("handle background colors");
 
-            const types = [null,
+            var types = [null,
                            this.fillFunctionShading,
                            this.fillAxialShading,
                            this.fillRadialShading];
@@ -2952,7 +3124,7 @@ var CanvasGraphics = (function() {
             var typeNum = shading.get("ShadingType");
             var fillFn = types[typeNum];
             if (!fillFn)
-                error("Unknown type of shading");
+                error("Unknown or NYI type of shading '"+ typeNum +"'");
             fillFn.apply(this, [shading]);
 
             this.restore();
@@ -3003,6 +3175,10 @@ var CanvasGraphics = (function() {
             // The following bug should allow us to remove this.
             // https://bugzilla.mozilla.org/show_bug.cgi?id=664884
             this.ctx.fillRect(-1e10, -1e10, 2e10, 2e10);
+        },
+
+        fillRadialShading: function(sh) {
+            TODO("radial shading");
         },
 
         // Images
@@ -3115,8 +3291,11 @@ var CanvasGraphics = (function() {
                 }
             }
 
-            if (bitsPerComponent !== 8)
-                error("Unsupported bpc");
+            if (bitsPerComponent !== 8) {
+                TODO("Support bpc="+ bitsPerComponent);
+                this.restore();
+                return;
+            }
 
             var xref = this.xref;
             var colorSpaces = this.colorSpaces;
@@ -3173,9 +3352,7 @@ var CanvasGraphics = (function() {
                 // handle matte object
             }
 
-            var tmpCanvas = document.createElement("canvas");
-            tmpCanvas.width = w;
-            tmpCanvas.height = h;
+            var tmpCanvas = new this.ScratchCanvas(w, h);
             var tmpCtx = tmpCanvas.getContext("2d");
             var imgData = tmpCtx.getImageData(0, 0, w, h);
             var pixels = imgData.data;
@@ -3214,7 +3391,7 @@ var CanvasGraphics = (function() {
                     }
                     break;
                 default:
-                    error("unhandled amount of components per pixel: " + numComps);
+                    TODO("Images with "+ numComps + " components per pixel");
                 }
             } else {
                 var numComps = colorSpace.numComps;
@@ -3241,7 +3418,7 @@ var CanvasGraphics = (function() {
                     }
                     break;
                 default:
-                    error("unhandled amount of components per pixel: " + numComps);
+                    TODO("Images with "+ numComps + " components per pixel");
                 }
             }
             tmpCtx.putImageData(imgData, 0, 0);
@@ -3343,12 +3520,23 @@ var ColorSpace = (function() {
                 break;
             case "ICCBased":
                 var dict = stream.dict;
+
                 this.stream = stream;
                 this.dict = dict;
                 this.numComps = dict.get("N");
                 break;
+            case "Indexed":
+                this.stream = stream;
+                this.dict = stream.dict;
+                var base = cs[1];
+                var hival = cs[2];
+                assertWellFormed(0 <= hival && hival <= 255, "hival in range");
+                var lookupTable = cs[3];
+                TODO("implement 'Indexed' color space");
+                this.numComps = 3; // HACK
+                break;
             default:
-                error("unrecognized color space object");
+                error("unrecognized color space object '"+ mode +"'");
             }
         } else {
             error("unrecognized color space object");
@@ -3367,7 +3555,7 @@ var PDFFunction = (function() {
         if (!dict)
            dict = fn;
 
-        const types = [this.constructSampled,
+        var types = [this.constructSampled,
                        null,
                        this.constructInterpolated,
                        this.constructStiched,
@@ -3439,6 +3627,7 @@ var PDFFunction = (function() {
                     v = encode[i2] + ((v - domain[i2]) *
                                       (encode[i2 + 1] - encode[i2]) /
                                       (domain[i2 + 1] - domain[i2]));
+
                     // clip to the size
                     args[i] = clip(v, 0, size[i] - 1);
                 }
@@ -3466,6 +3655,7 @@ var PDFFunction = (function() {
                     // decode
                     v = decode[i2] + (v * (decode[i2 + 1] - decode[i2]) /
                                       ((1 << bps) - 1));
+
                     // clip to the domain
                     output.push(clip(v, range[i2], range[i2 + 1]));
                 }

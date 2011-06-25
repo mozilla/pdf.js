@@ -3,7 +3,7 @@
 
 "use strict";
 
-var pdfDocument, canvas, pageDisplay, pageNum, numPages, pageInterval;
+var pdfDocument, canvas, pageDisplay, pageNum, numPages, pageTimeout;
 function load(userInput) {
     canvas = document.getElementById("canvas");
     canvas.mozOpaque = true;
@@ -52,7 +52,7 @@ function gotoPage(num) {
 }
 
 function displayPage(num) {
-    window.clearInterval(pageInterval);
+    window.clearTimeout(pageTimeout);
 
     document.getElementById("pageNumber").value = num;
 
@@ -75,27 +75,11 @@ function displayPage(num) {
     page.compile(gfx, fonts);
     var t2 = Date.now();
 
-    var fontsReady = true;
-
-    // Inspect fonts and translate the missing one
-    var count = fonts.length;
-    for (var i = 0; i < count; i++) {
-      var font = fonts[i];
-      if (Fonts[font.name]) {
-        fontsReady = fontsReady && !Fonts[font.name].loading;
-        continue;
+    function loadFont() {
+      if (!FontLoader.bind(fonts)) {
+        pageTimeout = window.setTimeout(loadFont, 10);
+        return;
       }
-
-      new Font(font.name, font.file, font.properties);
-      fontsReady = false;
-    }
-
-    function delayLoadFont() {
-      for (var i = 0; i < count; i++) {
-        if (Fonts[font.name].loading)
-          return;
-      }
-      window.clearInterval(pageInterval);
 
       var t3 = Date.now();
 
@@ -106,12 +90,7 @@ function displayPage(num) {
       var infoDisplay = document.getElementById("info");
       infoDisplay.innerHTML = "Time to load/compile/fonts/render: "+ (t1 - t0) + "/" + (t2 - t1) + "/" + (t3 - t2) + "/" + (t4 - t3) + " ms";
     };
-
-    if (fontsReady) {
-      delayLoadFont();
-    } else {
-      pageInterval = setInterval(delayLoadFont, 10);
-    }
+    loadFont();
 }
 
 function nextPage() {
