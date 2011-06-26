@@ -4,7 +4,7 @@
 "use strict";
 
 var ERRORS = 0, WARNINGS = 1, TODOS = 5;
-var verbosity = ERRORS;
+var verbosity = WARNINGS;
 
 function log(msg) {
     if (console && console.log)
@@ -4273,65 +4273,8 @@ var CanvasGraphics = (function() {
                 }
             }
 
-            if (bitsPerComponent == 1) {
-                var xref = this.xref;
-                var csStream = dict.get2("ColorSpace", "CS");
-                csStream = xref.fetchIfRef(csStream);
-                if (IsName(csStream) && inline)
-                    csStream = colorSpaces.get(csStream);
-                var colorSpace = new ColorSpace(xref, csStream);
-                var numComps = colorSpace.numComps;
-                if (numComps != 1)
-                    error("worng numComps");
-
-                ctx.strokeStyle = "#090";
-                ctx.strokeRect(0 + 1, -h + 1, w / 2, h -2 );
-
-                var imgArray = image.getBytes((numComps * w * h) >> 3);
-                var imgIdx = 0;
-
-                var tmpCanvas = document.createElement("canvas");
-                tmpCanvas.width = w;
-                tmpCanvas.height = h;
-                var tmpCtx = tmpCanvas.getContext("2d");
-                tmpCtx.fillStyle = "#000";
-                tmpCtx.fillRect(0, 0, w, h);
-                var imgData = tmpCtx.getImageData(0, 0, w, h);
-                var pixels = imgData.data;
-
-                var mask = 1;
-                var b = 0;
-                for (var i = 0, length = 4 * w * h; i < length; i += 4) {
-                    if (i % (4*w) == 0) {
-                        mask = 1;
-                        b = 0;
-                    }
-
-                    mask >>= 1;
-                    if (mask <= 0) {
-                        b = imgArray[imgIdx++];
-                        mask = 128;
-                    }
-
-                    var p = b & mask;
-                    if (p > 0)
-                        p = 1;
-                    else
-                        p = 0;
-                    pixels[i] = 255 * p;
-                    pixels[i+1] = 255 * p;
-                    pixels[i+2] = 255 * p;
-                    pixels[i+3] = 255;
-                }
-
-                tmpCtx.putImageData(imgData, 0, 0);
-                ctx.drawImage(tmpCanvas, 0, -h);
-                this.restore();
-                return;
-            }
-
             if (bitsPerComponent !== 8)
-                error("Unsupported bpc");
+                TODO("Support bpc="+ bitsPerComponent);
 
             var xref = this.xref;
             var colorSpaces = this.colorSpaces;
