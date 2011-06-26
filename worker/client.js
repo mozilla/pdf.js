@@ -23,7 +23,7 @@ function WorkerPDFDoc(canvas) {
 
   this.ctx = canvas.getContext("2d");
   this.canvas = canvas;
-  this.worker = new Worker('pdf_worker.js');
+  this.worker = new Worker('worker/pdf.js');
 
   this.numPage = 1;
   this.numPages = null;

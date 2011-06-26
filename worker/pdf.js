@@ -27,10 +27,10 @@ var console = {
 }
 
 //
-importScripts("canvas_proxy.js");
-importScripts("pdf.js");
-importScripts("fonts.js");
-importScripts("glyphlist.js")
+importScripts("canvas.js");
+importScripts("../pdf.js");
+importScripts("../fonts.js");
+importScripts("../glyphlist.js")
 
 // Use the JpegStreamProxy proxy.
 JpegStream = JpegStreamProxy;
