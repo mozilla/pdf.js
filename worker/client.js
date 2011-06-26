@@ -347,7 +347,7 @@ function WorkerPDFDoc(canvas) {
 
         var renderData = function() {
           if (id == 0) {
-            console.time("canvas rendering");
+            console.time("main canvas rendering");
             var ctx = this.ctx;
             ctx.save();
             ctx.fillStyle = "rgb(255, 255, 255)";
@@ -355,7 +355,10 @@ function WorkerPDFDoc(canvas) {
             ctx.restore();
           }
           renderProxyCanvas(canvasList[id], cmdQueue);
-          if (id == 0) console.timeEnd("canvas rendering")
+          if (id == 0) {
+            console.timeEnd("main canvas rendering");
+            console.timeEnd(">>> total page display time:");
+          }
         }.bind(this);
 
         if (this.waitingForFonts) {
@@ -403,6 +406,8 @@ WorkerPDFDoc.prototype.open = function(url, callback) {
 
 WorkerPDFDoc.prototype.showPage = function(numPage) {
   this.numPage = parseInt(numPage);
+  console.log("=== start rendering page " + numPage + " ===");
+  console.time(">>> total page display time:");
   this.worker.postMessage(numPage);
   if (this.onChangePage) {
     this.onChangePage(numPage);
