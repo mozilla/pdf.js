@@ -64,8 +64,15 @@ var Fonts = {
       var unicode = encoding[charcode];
 
       // Check if the glyph has already been converted
-      if (unicode instanceof Name)
-        unicode = encoding[unicode] = GlyphsUnicode[unicode.name];
+      // if (unicode instanceof Name)
+      try {
+        if (!IsNum(unicode))
+        // if ("name" in unicode)
+          unicode = encoding[unicode] = GlyphsUnicode[unicode.name];
+        
+      } catch(e) {
+        console.log("FAIL");
+      }
 
       // Handle surrogate pairs
       if (unicode > 0xFFFF) {
@@ -165,6 +172,7 @@ var Font = (function () {
         warn("Font " + properties.type + " is not supported");
         break;
     }
+    this.data = data;
 
     Fonts[name] = {
       data: data,

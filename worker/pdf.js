@@ -27,6 +27,7 @@ var console = {
 }
 
 //
+importScripts("console.js")
 importScripts("canvas.js");
 importScripts("../pdf.js");
 importScripts("../fonts.js");
@@ -65,21 +66,14 @@ onmessage = function(event) {
     page.compile(gfx, fonts);
     console.timeEnd("compile");
 
+    // Send fonts to the main thread.
     console.time("fonts");
-    // Inspect fonts and translate the missing one.
-    var count = fonts.length;
-    for (var i = 0; i < count; i++) {
-      var font = fonts[i];
-      if (Fonts[font.name]) {
-        fontsReady = fontsReady && !Fonts[font.name].loading;
-        continue;
-      }
-
-      // This "builds" the font and sents it over to the main thread.
-      new Font(font.name, font.file, font.properties);
-    }
+    postMessage({
+      action: "fonts",
+      data:   fonts
+    });
     console.timeEnd("fonts");
-
+    
     console.time("display");
     page.display(gfx);
     canvas.flush();
