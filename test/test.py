@@ -37,6 +37,8 @@ class TestOptions(OptionParser):
             options.manifestFile = DEFAULT_MANIFEST_FILE
         if options.browser and options.browserManifestFile:
             print "Warning: ignoring browser argument since manifest file was also supplied"
+        if not options.browser and not options.browserManifestFile:
+            self.error("No test browsers found. Use --browserManifest or --browser args.")
         return options
         
 def prompt(question):
@@ -219,10 +221,9 @@ def setUp(options):
     if options.browserManifestFile:
         testBrowsers = makeBrowserCommands(options.browserManifestFile)
     elif options.browser:
-        testBrowsers = [BrowserCommand({"path":options.browser, "name":"firefox"})] 
-    else:
-        print "No test browsers found. Use --browserManifest or --browser args."
-              
+        testBrowsers = [BrowserCommand({"path":options.browser, "name":"firefox"})]
+    assert len(testBrowsers) > 0
+
     with open(options.manifestFile) as mf:
         manifestList = json.load(mf)
 
@@ -415,6 +416,7 @@ def processResults():
 
 
 def main():
+    t1 = time.time()
     optionParser = TestOptions()
     options, args = optionParser.parse_args()
     options = optionParser.verifyOptions(options)
@@ -434,6 +436,8 @@ def main():
         processResults()
     finally:
         teardownBrowsers(browsers)
+    t2 = time.time()
+    print "Runtime was", int(t2 - t1), "seconds"
 
 if __name__ == '__main__':
     main()
