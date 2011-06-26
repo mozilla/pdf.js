@@ -204,6 +204,23 @@ def makeBrowserCommands(browserManifestFile):
         browsers = [BrowserCommand(browser) for browser in json.load(bmf)]
     return browsers
 
+def downloadLinkedPDFs(manifestList):
+    for item in manifestList:
+        f, isLink = item['file'], item.get('link', False)
+        if isLink and not os.access(f, os.R_OK):
+            linkFile = open(f +'.link')
+            link = linkFile.read()
+            linkFile.close()
+
+            sys.stdout.write('Downloading '+ link +' to '+ f +' ...')
+            sys.stdout.flush()
+            response = urllib2.urlopen(link)
+
+            with open(f, 'w') as out:
+                out.write(response.read())
+
+            print 'done'
+
 def setUp(options):
     # Only serve files from a pdf.js clone
     assert not ANAL or os.path.isfile('../pdf.js') and os.path.isdir('../.git')
@@ -227,22 +244,7 @@ def setUp(options):
     with open(options.manifestFile) as mf:
         manifestList = json.load(mf)
 
-    for item in manifestList:
-        f, isLink = item['file'], item.get('link', False)
-        if isLink and not os.access(f, os.R_OK):
-            linkFile = open(f +'.link')
-            link = linkFile.read()
-            linkFile.close()
-
-            sys.stdout.write('Downloading '+ link +' to '+ f +' ...')
-            sys.stdout.flush()
-            response = urllib2.urlopen(link)
-
-            out = open(f, 'w')
-            out.write(response.read())
-            out.close()
-
-            print 'done'
+    downloadLinkedPDFs(manifestList)
 
     for b in testBrowsers:
         State.taskResults[b.name] = { }
