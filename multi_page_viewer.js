@@ -26,41 +26,53 @@ var PDFViewer = {
   
   scale: 1.0,
   
-  pageWidth: function() {
-    return 816 * PDFViewer.scale;
+  pageWidth: function(page) {
+    return page.mediaBox[2] * PDFViewer.scale;
   },
   
-  pageHeight: function() {
-    return 1056 * PDFViewer.scale;
+  pageHeight: function(page) {
+    return page.mediaBox[3] * PDFViewer.scale;
   },
   
   lastPagesDrawn: [],
   
-  visiblePages: function() {  
-    var pageHeight = PDFViewer.pageHeight() + 20; // Add 20 for the margins.      
+  visiblePages: function() {
+    const pageBottomMargin = 20;
     var windowTop = window.pageYOffset;
     var windowBottom = window.pageYOffset + window.innerHeight;
-    var pageStartIndex = Math.floor(windowTop / pageHeight);
-    var pageStopIndex = Math.ceil(windowBottom / pageHeight);
+
+    var pageHeight, page;
+    var i, n = PDFViewer.numberOfPages, currentHeight = 0;
+    for (i = 1; i <= n; i++) {
+      var page = PDFViewer.pdf.getPage(i);
+      pageHeight = PDFViewer.pageHeight(page) + pageBottomMargin;
+      if (currentHeight + pageHeight > windowTop)
+        break;
+      currentHeight += pageHeight;
+    }
     
     var pages = [];  
-    
-    for (var i = pageStartIndex; i <= pageStopIndex; i++) {
-      pages.push(i + 1);
+    for (; i <= n && currentHeight < windowBottom; i++) {
+      var page = PDFViewer.pdf.getPage(i);
+      pageHeight = PDFViewer.pageHeight(page) + pageBottomMargin;
+      currentHeight += pageHeight;
+      pages.push(i);
     }
     
     return pages;
   },
   
   createPage: function(num) {
+    var page = PDFViewer.pdf.getPage(num);
+
     var anchor = document.createElement('a');
     anchor.name = '' + num;
     
     var div = document.createElement('div');
     div.id = 'pageContainer' + num;
     div.className = 'page';
-    div.style.width = PDFViewer.pageWidth() + 'px';
-    div.style.height = PDFViewer.pageHeight() + 'px';
+    div.style.width = PDFViewer.pageWidth(page) + 'px';
+    div.style.height = PDFViewer.pageHeight(page) + 'px';
     
     PDFViewer.element.appendChild(anchor);
     PDFViewer.element.appendChild(div);
@@ -91,8 +103,8 @@ var PDFViewer = {
 
       // Canvas dimensions must be specified in CSS pixels. CSS pixels
       // are always 96 dpi. These dimensions are 8.5in x 11in at 96dpi.
-      canvas.width = PDFViewer.pageWidth();
-      canvas.height = PDFViewer.pageHeight();
+      canvas.width = PDFViewer.pageWidth(page);
+      canvas.height = PDFViewer.pageHeight(page);
       div.appendChild(canvas);
 
       var ctx = canvas.getContext('2d');
