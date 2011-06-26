@@ -980,16 +980,8 @@ var Type1Parser = function() {
       "12": "div",
 
       // callothersubr is a mechanism to make calls on the postscript
-      // interpreter.
-      // TODO When decodeCharstring encounter such a command it should
-      //      directly do:
-      //        - pop the previous charstring[] command into 'index'
-      //        - pop the previous charstring[] command and ignore it, it is
-      //          normally the number of element to push on the stack before
-      //          the command but since everything will be pushed on the stack
-      //          by the PS interpreter when it will read them that is safe to
-      //          ignore this command
-      //        - push the content of the OtherSubrs[index] inside charstring[]
+      // interpreter, this is not supported by Type2 charstring but hopefully
+      // most of the default commands can be ignored safely.
       "16": "callothersubr",
 
       "17": "pop",
@@ -1009,9 +1001,12 @@ var Type1Parser = function() {
     "31": "hvcurveto"
   };
 
-  function decodeCharString(array) {
-    var charString = [];
+  var kEscapeCommand = 12;
 
+  function decodeCharString(array) {
+    var charstring = [];
+
+    var z = 0;
     var value = "";
     var count = array.length;
     for (var i = 0; i < count; i++) {
@@ -1019,10 +1014,44 @@ var Type1Parser = function() {
 
       if (value < 32) {
         var command = null;
-        if (value == 12) {
+        if (value == kEscapeCommand) {
           var escape = array[++i];
+
+          // TODO Clean this code
+          if (escape == 16) {
+            var index = charstring.pop();
+            var argc = charstring.pop();
+            var data = charstring.pop();
+
+            // If the flex mechanishm is not used in a font program, Adobe
+            // state that that entries 0, 1 and 2 can simply be replace by
+            // {}, which means that we can simply ignore them.
+            if (index < 3) {
+              continue;
+            }
+
+            // This is the same things about hint replacement, if it is not used
+            // entry 3 can be replaced by {3}
+            if (index == 3) {
+              charstring.push(3);
+              i++;
+              continue;
+            }
+          }
+
           command = charStringDictionary["12"][escape];
         } else {
+
+          // TODO Clean this code
+          if (value == 13) {
+            var charWidthVector = charstring[1];
+            var leftSidebearing = charstring[0];
+
+            charstring.push(leftSidebearing, "hmoveto");
+            charstring.splice(0, 1);
+            continue;
+          }
+
           command = charStringDictionary[value];
         }
 
@@ -1044,16 +1073,14 @@ var Type1Parser = function() {
       } else if (value <= 254) {
         value = -((value - 251) * 256) - parseInt(array[++i]) - 108;
       } else {
-        var byte = array[++i];
-        var high = (byte >> 1);
-        value = (byte - high) << 24 | array[++i] << 16 |
-                array[++i] << 8 | array[++i];
+        value = (array[++i] & 0xff) << 24 | (array[++i] & 0xff) << 16 |
+                (array[++i] & 0xff) << 8 | (array[++i] & 0xff) << 0;
       }
 
-      charString.push(value);
+      charstring.push(value);
     }
 
-    return charString;
+    return charstring;
   };
 
   /**
@@ -1305,46 +1332,8 @@ CFF.prototype = {
     var i = 0;
     while (true) {
       var obj = charstring[i];
-      if (obj == null)
-        return [];
-
       if (obj.charAt) {
         switch (obj) {
-          case "callothersubr":
-            var index = charstring[i - 1];
-            var count = charstring[i - 2];
-            var data = charstring[i - 3];
-
-            // If the flex mechanishm is not used in a font program, Adobe
-            // state that that entries 0, 1 and 2 can simply be replace by
-            // {}, which means that we can simply ignore them.
-            if (index < 3) {
-              i -= 3;
-              continue;
-            }
-
-            // This is the same things about hint replacment, if it is not used
-            // entry 3 can be replaced by {}
-            if (index == 3) {
-              if (!data) {
-                charstring.splice(i - 2, 4, 3);
-                i -= 3;
-              } else {
-                // 5 to remove the arguments, the callothersubr call and the pop command
-                charstring.splice(i - 3, 5, 3);
-                i -= 3;
-              }
-            }
-            break;
-
-          case "hsbw":
-            var charWidthVector = charstring[1];
-            var leftSidebearing = charstring[0];
-
-            charstring.splice(i, 1, leftSidebearing, "hmoveto");
-            charstring.splice(0, 1);
-            break;
-
           case "endchar":
           case "return":
             // CharString is ready to be re-encode to commands number at this point
