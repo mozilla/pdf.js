@@ -25,5 +25,10 @@
        "link": true,
        "rounds": 1,
        "type": "load"
+    },
+    {  "id": "sizes",
+       "file": "pdfs/sizes.pdf",
+       "rounds": 1,
+       "type": "eq"
     }
 ]
