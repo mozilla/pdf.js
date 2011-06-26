@@ -132,10 +132,6 @@ var PDFViewer = {
       for (i = 1; i <= PDFViewer.numberOfPages; i++) {
         PDFViewer.createPage(i);
       }
-      
-      if (PDFViewer.numberOfPages > 0) {
-        PDFViewer.drawPage(1);
-      }
     }
     
     for (i = 0; i < PDFViewer.scaleSelect.childNodes; i++) {
@@ -153,6 +149,12 @@ var PDFViewer = {
     }
     
     PDFViewer.scaleSelect.value = Math.floor(PDFViewer.scale * 100) + '%';
+    
+    // Clear the array of the last pages drawn to force a redraw.
+    PDFViewer.lastPagesDrawn = [];
+    
+    // Jump the scroll position to the correct page.
+    PDFViewer.goToPage(PDFViewer.pageNumber);
   },
   
   goToPage: function(num) {
