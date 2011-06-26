@@ -81,7 +81,7 @@ var Stream = (function() {
         },
         getByte: function stream_getByte() {
             if (this.pos >= this.end)
-                return;
+                return null;
             return this.bytes[this.pos++];
         },
         // returns subarray of original buffer
@@ -103,12 +103,12 @@ var Stream = (function() {
         },
         lookChar: function stream_lookChar() {
             if (this.pos >= this.end)
-                return;
+                return null;
             return String.fromCharCode(this.bytes[this.pos]);
         },
         getChar: function stream_getChar() {
             if (this.pos >= this.end)
-                return ;
+                return null;
             return String.fromCharCode(this.bytes[this.pos++]);
         },
         skip: function stream_skip(n) {
@@ -171,7 +171,7 @@ var DecodeStream = (function() {
             var pos = this.pos;
             while (this.bufferLength <= pos) {
                 if (this.eof)
-                    return ;
+                    return null;
                 this.readBlock();
             }
             return this.buffer[this.pos++];
@@ -203,7 +203,7 @@ var DecodeStream = (function() {
             var pos = this.pos;
             while (this.bufferLength <= pos) {
                 if (this.eof)
-                    return ;
+                    return null;
                 this.readBlock();
             }
             return String.fromCharCode(this.buffer[this.pos]);
@@ -212,7 +212,7 @@ var DecodeStream = (function() {
             var pos = this.pos;
             while (this.bufferLength <= pos) {
                 if (this.eof)
-                    return ;
+                    return null;
                 this.readBlock();
             }
             return String.fromCharCode(this.buffer[this.pos++]);
@@ -4273,8 +4273,11 @@ var CanvasGraphics = (function() {
                 }
             }
 
-            if (bitsPerComponent !== 8)
+            if (bitsPerComponent !== 8) {
                 TODO("Support bpc="+ bitsPerComponent);
+                this.restore();
+                return;
+            }
 
             var xref = this.xref;
             var colorSpaces = this.colorSpaces;
