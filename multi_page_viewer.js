@@ -10,6 +10,8 @@ var PDFViewer = {
   
   element: null,
   
+  sidebarContentView: null,
+  
   previousPageButton: null,
   nextPageButton: null,
   pageNumberInput: null,
@@ -52,6 +54,78 @@ var PDFViewer = {
     return pages;
   },
   
+  createThumbnail: function(num) {
+    if (PDFViewer.sidebarContentView) {
+      var anchor = document.createElement('a');
+      anchor.href = '#' + num;
+    
+      var containerDiv = document.createElement('div');
+      containerDiv.id = 'thumbnailContainer' + num;
+      containerDiv.className = 'thumbnail';
+    
+      var pageNumberDiv = document.createElement('div');
+      pageNumberDiv.className = 'thumbnailPageNumber';
+      pageNumberDiv.innerHTML = '' + num;
+    
+      anchor.appendChild(containerDiv);
+      PDFViewer.sidebarContentView.appendChild(anchor);
+      PDFViewer.sidebarContentView.appendChild(pageNumberDiv);
+    }
+  },
+  
+  removeThumbnail: function(num) {
+    var div = document.getElementById('thumbnailContainer' + num);
+    
+    if (div) {
+      while (div.hasChildNodes()) {
+        div.removeChild(div.firstChild);
+      }
+    }
+  },
+  
+  drawThumbnail: function(num) {
+    if (!PDFViewer.pdf)
+      return;
+
+    var div = document.getElementById('thumbnailContainer' + num);
+    
+    if (div && !div.hasChildNodes()) {
+      var page = PDFViewer.pdf.getPage(num);
+      var canvas = document.createElement('canvas');
+      
+      canvas.id = 'thumbnail' + num;
+      canvas.mozOpaque = true;
+
+      // Canvas dimensions must be specified in CSS pixels. CSS pixels
+      // are always 96 dpi. These dimensions are 8.5in x 11in at 96dpi.
+      canvas.width = 104;
+      canvas.height = 134;
+      div.appendChild(canvas);
+
+      var ctx = canvas.getContext('2d');
+      ctx.save();
+      ctx.fillStyle = 'rgb(255, 255, 255)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.restore();
+
+      var gfx = new CanvasGraphics(ctx);
+
+      // page.compile will collect all fonts for us, once we have loaded them
+      // we can trigger the actual page rendering with page.display
+      var fonts = [];
+      page.compile(gfx, fonts);
+
+      var loadFont = function() {
+        if (!FontLoader.bind(fonts)) {
+          pageTimeout = window.setTimeout(loadFont, 10);
+          return;
+        }
+        page.display(gfx);
+      }
+      loadFont();
+    }
+  },
+  
   createPage: function(num) {
     var anchor = document.createElement('a');
     anchor.name = '' + num;
@@ -81,11 +155,11 @@ var PDFViewer = {
       return;
 
     var div = document.getElementById('pageContainer' + num);
-    var canvas = document.createElement('canvas');
-
+    
     if (div && !div.hasChildNodes()) {
       var page = PDFViewer.pdf.getPage(num);
-
+      var canvas = document.createElement('canvas');
+      
       canvas.id = 'page' + num;
       canvas.mozOpaque = true;
 
@@ -130,6 +204,7 @@ var PDFViewer = {
     
     if (PDFViewer.pdf) {
       for (i = 1; i <= PDFViewer.numberOfPages; i++) {
+        PDFViewer.createThumbnail(i);
         PDFViewer.createPage(i);
       }
     }
@@ -218,6 +293,13 @@ var PDFViewer = {
     if (PDFViewer.numberOfPages > 0) {
       PDFViewer.drawPage(1);
       document.location.hash = 1;
+      
+      setTimeout(function() {
+        for (var i = 1; i <= PDFViewer.numberOfPages; i++) {
+          PDFViewer.createThumbnail(i);
+          PDFViewer.drawThumbnail(i);
+        }
+      }, 500);
     }
     
     PDFViewer.previousPageButton.className = (PDFViewer.pageNumber === 1) ? 'disabled' : '';
@@ -241,6 +323,8 @@ window.onload = function() {
   }();
 
   PDFViewer.element = document.getElementById('viewer');
+  
+  PDFViewer.sidebarContentView = document.getElementById('sidebarContentView');
   
   PDFViewer.pageNumberInput = document.getElementById('pageNumber');
   PDFViewer.pageNumberInput.onkeydown = function(evt) {
