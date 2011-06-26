@@ -37,10 +37,18 @@ function FontWorker() {
 
 FontWorker.prototype = {
   actionHandler: {
+    "log": function(data) {
+      console.log.apply(console, data);
+    },
+    
     "fonts": function(data) {
       // console.log("got processed fonts from worker", Object.keys(data));
       for (name in data) {
-        var base64 = window.btoa(data[name]);
+        // Update the 
+        Fonts[name].properties = {
+          encoding: data[name].encoding
+        }
+        var base64 = window.btoa(data[name].str);
 
         // Add the @font-face rule to the document
         var url = "url(data:font/opentype;base64," + base64 + ");";
@@ -90,9 +98,12 @@ FontWorker.prototype = {
       // Store only the data on Fonts that is needed later on, such that we
       // hold track on as lease memory as possible.
       Fonts[font.name] = {
-        properties: {
-          encoding:  font.properties.encoding
-        },
+        // This is set later on the worker replay. For some fonts, the encoding
+        // is calculated during the conversion process happening on the worker
+        // and therefore is not available right now.
+        // properties: {
+        //   encoding:  font.properties.encoding
+        // },
         cache:      Object.create(null)
       };
 
@@ -348,8 +359,13 @@ function WorkerPDFDoc(canvas) {
         }.bind(this);
 
         if (this.waitingForFonts) {
-          console.log("want to render, but not all fonts are there", id);
-          this.waitingForFontsCallback.push(renderData);
+          if (id == 0) {
+            console.log("want to render, but not all fonts are there", id);
+            this.waitingForFontsCallback.push(renderData);
+          } else {
+            // console.log("assume canvas doesn't have fonts", id);
+            renderData();
+          }
         } else {
           renderData();
         }

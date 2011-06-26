@@ -64,15 +64,8 @@ var Fonts = {
       var unicode = encoding[charcode];
 
       // Check if the glyph has already been converted
-      // if (unicode instanceof Name)
-      try {
-        if (!IsNum(unicode))
-        // if ("name" in unicode)
+      if (!IsNum(unicode))
           unicode = encoding[unicode] = GlyphsUnicode[unicode.name];
-        
-      } catch(e) {
-        console.log("FAIL");
-      }
 
       // Handle surrogate pairs
       if (unicode > 0xFFFF) {
