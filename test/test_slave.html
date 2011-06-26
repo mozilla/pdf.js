@@ -25,9 +25,6 @@ function load() {
   manifestFile = params.manifestFile;
 
   canvas = document.createElement("canvas");
-  // 8.5x11in @ 100% ... XXX need something better here
-  canvas.width = 816;
-  canvas.height = 1056;
   canvas.mozOpaque = true;
   stdout = document.getElementById("stdout");
 
@@ -93,7 +90,6 @@ function nextPage() {
   log("    loading page "+ currentTask.pageNum +"... ");
 
   var ctx = canvas.getContext("2d");
-  clear(ctx);
 
   var fonts = [];
   var gfx = null;
@@ -103,6 +99,15 @@ function nextPage() {
     currentPage.compile(gfx, fonts);
   } catch(e) {
     failure = 'compile: '+ e.toString();
+  }
+
+  try {
+    // using mediaBox for the canvas size
+    canvas.width = currentPage.mediaBox[2];
+    canvas.height = currentPage.mediaBox[3];
+    clear(ctx);
+  } catch(e) {
+    failure = 'page setup: '+ e.toString();
   }
 
   var fontLoaderTimer = null;
@@ -193,7 +198,6 @@ function sendTaskResult(snapshot) {
 }
 
 function clear(ctx) {
-  var ctx = canvas.getContext("2d");
   ctx.save();
   ctx.fillStyle = "rgb(255, 255, 255)";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
