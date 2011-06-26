@@ -282,6 +282,10 @@ var PDFViewer = {
       PDFViewer.element.removeChild(PDFViewer.element.firstChild);
     }
     
+    while (PDFViewer.sidebarContentView.hasChildNodes()) {
+      PDFViewer.sidebarContentView.removeChild(PDFViewer.sidebarContentView.firstChild);
+    }
+    
     PDFViewer.pdf = new PDFDoc(new Stream(data));
     PDFViewer.numberOfPages = PDFViewer.pdf.numPages;
     document.getElementById('numPages').innerHTML = PDFViewer.numberOfPages.toString();
