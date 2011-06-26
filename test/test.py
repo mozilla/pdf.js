@@ -415,6 +415,7 @@ def processResults():
 
 
 def main():
+    t1 = time.time()
     optionParser = TestOptions()
     options, args = optionParser.parse_args()
     options = optionParser.verifyOptions(options)
@@ -434,6 +435,8 @@ def main():
         processResults()
     finally:
         teardownBrowsers(browsers)
+    t2 = time.time()
+    print "Runtime was", int(t2 - t1), "seconds"
 
 if __name__ == '__main__':
     main()
