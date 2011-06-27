@@ -183,14 +183,9 @@ var Font = (function () {
   };
 
   function string16(value, signed) {
-    if (signed && value < 0) {
-      value = Math.abs(value);
-      var byte = (value >> 8) & 0xff;
-      return String.fromCharCode(byte ^ 0xff) +
-             String.fromCharCode(value & 0xff);
-    } else if (signed) {
-      return String.fromCharCode((value >> 8) & 0xff) +
-             String.fromCharCode(value & 0xff);
+    if (signed) {
+      value ^= 0xffff;
+      value += 1;
     }
     return String.fromCharCode((value >> 8) & 0xff) +
            String.fromCharCode(value & 0xff);
@@ -743,8 +738,8 @@ var Font = (function () {
       var width = 0, lsb = 0;
       for (var i = 0; i < charstrings.length; i++) {
         var charstring = charstrings[i];
-        if (fontCount == 1) {
-          log(charstring.width + "::" + charstring.lsb);
+        if (fontCount == 9) {
+          log(charstring.glyph + "::" + charstring.width + "::" + charstring.lsb);
         }
         hmtx += string16(charstring.width) + string16(charstring.lsb, true);
       }
@@ -1061,7 +1056,7 @@ var Type1Parser = function() {
           if (value == 13) {
             width = charstring[1];
             lsb = charstring[0];
-            charstring.push(lsb, "hmoveto");
+            //charstring.push(lsb, "hmoveto");
             charstring.splice(0, 1);
             used = true;
             continue;
