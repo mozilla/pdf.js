@@ -189,7 +189,7 @@ var Font = (function () {
       return String.fromCharCode(byte ^ 0xff) +
              String.fromCharCode(value & 0xff);
     } else if (signed) {
-      return String.fromCharCode((value >> 7) & 0xff) +
+      return String.fromCharCode((value >> 8) & 0xff) +
              String.fromCharCode(value & 0xff);
     }
     return String.fromCharCode((value >> 8) & 0xff) +
@@ -741,8 +741,13 @@ var Font = (function () {
       */
       hmtx = "\x01\xF4\x00\x00"; // Fake .notdef
       var width = 0, lsb = 0;
-      for (var i = 0; i < charstrings.length; i++)
-        hmtx += string16(charstrings[i].width) + string16(charstrings[i].lsb);
+      for (var i = 0; i < charstrings.length; i++) {
+        var charstring = charstrings[i];
+        if (fontCount == 1) {
+          log(charstring.width + "::" + charstring.lsb);
+        }
+        hmtx += string16(charstring.width) + string16(charstring.lsb, true);
+      }
       hmtx = stringToArray(hmtx);
       createTableEntry(otf, offsets, "hmtx", hmtx);
 
@@ -1010,12 +1015,12 @@ var Type1Parser = function() {
 
   var kEscapeCommand = 12;
 
-  function decodeCharString(array) {
+  function decodeCharString(array, glyph) {
     var charstring = [];
     var lsb = 0;
     var width = 0;
+    var used = false;
 
-    var z = 0;
     var value = "";
     var count = array.length;
     for (var i = 0; i < count; i++) {
@@ -1056,24 +1061,26 @@ var Type1Parser = function() {
           if (value == 13) {
             width = charstring[1];
             lsb = charstring[0];
-            //charstring.push(lsb, "hmoveto");
+            charstring.push(lsb, "hmoveto");
             charstring.splice(0, 1);
+            used = true;
             continue;
-          } else if (0 && lsb && value == 1) { // hstem
+          } else if (!used && lsb && value == 1) { // hstem
             charstring[Gindex] += lsb;
-            lsb = 0;
-          } else if (0 && lsb && value == 22) { // hmoveto
+            used = true;
+          } else if (!used && lsb && value == 22) { // hmoveto
             error("hmoveto: " + charstring[Gindex]);
             charstring[Gindex] += lsb;
-            lsb = 0;
-          } else if (0 && lsb && value == 14) { // enchar
+            used = true;
+          } else if (!used && lsb && value == 14) { // enchar
+            log(glyph);
             var p = charstring[Gindex];
             if (IsNum(p)) {
               charstring[Gindex] += lsb;
             } else {
               charstring.splice(Gindex + 1, 0, lsb);
             }
-            lsb = 0;
+            used = true;
           }
           var Gindex = charstring.length;
 
@@ -1104,6 +1111,9 @@ var Type1Parser = function() {
 
       charstring.push(value);
     }
+
+    if (!used && lsb)
+      error("lsb has not been reported in " + fontName + " for charstring: " + charstring);
 
     return { charstring: charstring, width: width, lsb: lsb };
   };
@@ -1140,7 +1150,7 @@ var Type1Parser = function() {
         length = parseInt(length);
         var data = eexecString.slice(i + 3, i + 3 + length);
         var encodedCharstring = decrypt(data, kCharStringsEncryptionKey, 4);
-        var str = decodeCharString(encodedCharstring);
+        var str = decodeCharString(encodedCharstring, glyph);
 
         glyphs.push({
             glyph: glyph,
