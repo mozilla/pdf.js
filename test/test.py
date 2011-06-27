@@ -28,6 +28,9 @@ class TestOptions(OptionParser):
         self.add_option("--browserManifestFile", action="store", type="string",
                         dest="browserManifestFile",
                         help="A JSON file in the form of those found in resources/browser_manifests")
+        self.add_option("--reftest", action="store_true", dest="reftest",
+                        help="Automatically start reftest showing comparison test failures, if there are any.",
+                        default=False)
         self.set_usage(USAGE_EXAMPLE)
 
     def verifyOptions(self, options):
@@ -53,7 +56,8 @@ MIMEs = {
     '.json': 'application/json',
     '.pdf': 'application/pdf',
     '.xhtml': 'application/xhtml+xml',
-    '.ico': 'image/x-icon'
+    '.ico': 'image/x-icon',
+    '.log': 'text/plain'
 }
 
 class State:
@@ -120,8 +124,6 @@ class PDFTestHandler(BaseHTTPRequestHandler):
             return
 
         self.sendFile(path, ext)
-        
-
 
     def do_POST(self):
         numBytes = int(self.headers['Content-Length'])
@@ -204,6 +206,23 @@ def makeBrowserCommands(browserManifestFile):
         browsers = [BrowserCommand(browser) for browser in json.load(bmf)]
     return browsers
 
+def downloadLinkedPDFs(manifestList):
+    for item in manifestList:
+        f, isLink = item['file'], item.get('link', False)
+        if isLink and not os.access(f, os.R_OK):
+            linkFile = open(f +'.link')
+            link = linkFile.read()
+            linkFile.close()
+
+            sys.stdout.write('Downloading '+ link +' to '+ f +' ...')
+            sys.stdout.flush()
+            response = urllib2.urlopen(link)
+
+            with open(f, 'w') as out:
+                out.write(response.read())
+
+            print 'done'
+
 def setUp(options):
     # Only serve files from a pdf.js clone
     assert not ANAL or os.path.isfile('../pdf.js') and os.path.isdir('../.git')
@@ -227,22 +246,7 @@ def setUp(options):
     with open(options.manifestFile) as mf:
         manifestList = json.load(mf)
 
-    for item in manifestList:
-        f, isLink = item['file'], item.get('link', False)
-        if isLink and not os.access(f, os.R_OK):
-            linkFile = open(f +'.link')
-            link = linkFile.read()
-            linkFile.close()
-
-            sys.stdout.write('Downloading '+ link +' to '+ f +' ...')
-            sys.stdout.flush()
-            response = urllib2.urlopen(link)
-
-            out = open(f, 'w')
-            out.write(response.read())
-            out.close()
-
-            print 'done'
+    downloadLinkedPDFs(manifestList)
 
     for b in testBrowsers:
         State.taskResults[b.name] = { }
@@ -325,19 +329,17 @@ def checkEq(task, results, browser):
             eq = (ref == snapshot)
             if not eq:
                 print 'TEST-UNEXPECTED-FAIL | eq', taskId, '| in', browser, '| rendering of page', page + 1, '!= reference rendering'
-                # XXX need to dump this always, somehow, when we have
-                # the reference repository
-                if State.masterMode:
-                    if not State.eqLog:
-                        State.eqLog = open(EQLOG_FILE, 'w')
-                    eqLog = State.eqLog
 
-                    # NB: this follows the format of Mozilla reftest
-                    # output so that we can reuse its reftest-analyzer
-                    # script
-                    print >>eqLog, 'REFTEST TEST-UNEXPECTED-FAIL |', browser +'-'+ taskId +'-page'+ str(page + 1), '| image comparison (==)'
-                    print >>eqLog, 'REFTEST   IMAGE 1 (TEST):', snapshot
-                    print >>eqLog, 'REFTEST   IMAGE 2 (REFERENCE):', ref
+                if not State.eqLog:
+                    State.eqLog = open(EQLOG_FILE, 'w')
+                eqLog = State.eqLog
+
+                # NB: this follows the format of Mozilla reftest
+                # output so that we can reuse its reftest-analyzer
+                # script
+                print >>eqLog, 'REFTEST TEST-UNEXPECTED-FAIL |', browser +'-'+ taskId +'-page'+ str(page + 1), '| image comparison (==)'
+                print >>eqLog, 'REFTEST   IMAGE 1 (TEST):', snapshot
+                print >>eqLog, 'REFTEST   IMAGE 2 (REFERENCE):', ref
 
                 passed = False
                 State.numEqFailures += 1
@@ -414,6 +416,17 @@ def processResults():
 
                 print 'done'
 
+def startReftest(browser):
+    url = "http://127.0.0.1:8080/test/resources/reftest-analyzer.xhtml"
+    url += "#web=/test/eq.log"
+    try:
+        browser.setup()
+        browser.start(url)
+        print "Waiting for browser..."
+        browser.process.wait()
+    finally:
+        teardownBrowsers([browser])
+    print "Completed reftest usage."
 
 def main():
     t1 = time.time()
@@ -438,6 +451,10 @@ def main():
         teardownBrowsers(browsers)
     t2 = time.time()
     print "Runtime was", int(t2 - t1), "seconds"
+
+    if options.reftest and State.numEqFailures > 0:
+        print "\nStarting reftest harness to examine %d eq test failures." % State.numEqFailures
+        startReftest(browsers[0])
 
 if __name__ == '__main__':
     main()
