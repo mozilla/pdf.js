@@ -56,7 +56,8 @@ MIMEs = {
     '.json': 'application/json',
     '.pdf': 'application/pdf',
     '.xhtml': 'application/xhtml+xml',
-    '.ico': 'image/x-icon'
+    '.ico': 'image/x-icon',
+    '.log': 'text/plain'
 }
 
 class State:
@@ -416,9 +417,11 @@ def processResults():
                 print 'done'
 
 def startReftest(browser):
+    url = "http://127.0.0.1:8080/test/resources/reftest-analyzer.xhtml"
+    url += "#web=/test/eq.log"
     try:
         browser.setup()
-        browser.start("resources/reftest-analyzer.xhtml")
+        browser.start(url)
         print "Waiting for browser..."
         browser.process.wait()
     finally:
