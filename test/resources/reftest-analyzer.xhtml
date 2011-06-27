@@ -134,6 +134,8 @@ function load() {
   if (params.log) {
     ID("logentry").value = params.log;
     log_pasted();
+  } else if (params.web) {
+    loadFromWeb(params.web); 
   }
 }
 
@@ -185,6 +187,17 @@ function show_phase(phaseid) {
 
   if (phase == "viewer")
     ID("images").style.display = "none";
+}
+
+function loadFromWeb(url) {
+  var r = new XMLHttpRequest();
+  r.open("GET", url);
+  r.onreadystatechange = function() {
+    if (r.readyState == 4) {
+      process_log(r.response);
+    }
+  }
+  r.send(null);
 }
 
 function fileentry_changed() {
