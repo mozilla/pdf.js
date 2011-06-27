@@ -4444,80 +4444,87 @@ var PDFImage = (function() {
     };
     
     constructor.prototype = {
-        getCompFunction: function getCompFunction(bpc, width, numComps, buffer) {
+        getComponents: function getComponents(buffer) {
+            var bpc = this.bpc;
+            if (bpc == 8)
+                return buffer;
+
+            var width = this.width;
+            var height = this.height;
+            var numComps = this.numComps;
+        
+            var length = width * height;
             var bufferPos = 0;
+            var output = new Uint8Array(length);
+
             if (bpc == 1) {
                 var rowComps = width * numComps;
-                var curComp = 0;
                 var mask = 0;
                 var buf = 0;
                 
-                var getComp = function() {
-                    if (mask <= 0) {
-                        buf = buffer[bufferPos++];
-                        mask = 128;
-                    }
-
-                    var ret = buf & mask;
-                    curComp++;
-
-                    if (curComp % rowComps == 0) {
+                for (var i = 0, ii = length; i < ii; ++i) {
+                    if (i % rowComps == 0) {
                         mask = 0;
                         buf = 0;
                     } else {
                         mask >>= 1;
                     }
-                    return ret * 255;
-                }
-            } else if (bpc == 8) {
-                var getComp = function() {
-                    return buffer[bufferPos++];
+
+                    if (mask <= 0) {
+                        buf = buffer[bufferPos++];
+                        mask = 128;
+                    }
+
+                    var t = buf & mask;
+                    if (t == 0)
+                        output[i] = 0;
+                    else
+                        output[i] = 255;
                 }
             } else {
                 var rowComps = width * numComps;
-                var curComp = 0;
                 var bits = 0;
                 var buf = 0;
 
-                var getComp = function() {
+                for (var i = 0, ii = length; i < ii; ++i) {
                     while (bits < bpc) {
                         buf = (buf << 8) | buffer[bufferPos++];
                         bits += 8;
                     }
                     var remainingBits = bits - bpc;
                     var ret = buf >> remainingBits;
-                    curComp++;
                     
-                    if (curComp % rowComps == 0) {
+                    if (i % rowComps == 0) {
                         buf = 0;
                         bits = 0;
                     } else {
                         buf = buf & ((1 << remainingBits) - 1);
                         bits = remainingBits;
                     }
-                    return Math.round(255 * ret / ((1 << bpc) - 1));
+                    output[i] = Math.round(255 * ret / ((1 << bpc) - 1));
                 }
             }
-            return getComp;
+            return output;
         },
-        getOpacityFunction: function getOpacityFunction() {
+        getOpacity: function getOpacity() {
             var smask = this.smask;
+            var width = this.width;
+            var height = this.height;
+            var buf = new Uint8Array(width * height);
+            
             if (smask) {
-                var w = smask.width;
-                var h = smask.height;
-                if (w != this.width || h != this.height)
+                var sw = smask.width;
+                var sh = smask.height;
+                if (sw != this.width || sh != this.height)
                     error("smask dimensions do not match image dimensions");
                 
-                var buf = new Uint8Array(w * h);
                 smask.fillGrayBuffer(buf);
-                var bufPos = 0;
-                var opacity = function() {
-                    return buf[bufPos++];
-                }
+                return buf;
             } else {
-                var opacity = function() { return 255; }
+                for (var i = 0, ii = width * height; i < ii; ++i)
+                    buf[i] = 255;
             }
-            return opacity;
+            return buf;
         },
         fillRgbaBuffer: function fillRgbaBuffer(buffer) {
             var numComps = this.numComps;
@@ -4530,26 +4537,28 @@ var PDFImage = (function() {
             var imgArray = this.image.getBytes(height * rowBytes);
             var imgPos = 0;
             
-            var getComp = this.getCompFunction(bpc, width, numComps, imgArray)
-            var getOpacity = this.getOpacityFunction();
+            var comps = this.getComponents(imgArray);
+            var compsPos = 0;
+            var opacity = this.getOpacity();
+            var opacityPos = 0;
             var length = width * height * 4;
 
             switch (numComps) {
                 case 1:
                     for (var i = 0; i < length; i += 4) {
-                        var p = getComp();
+                        var p = comps[compsPos++];
                         buffer[i] = p;
                         buffer[i+1] = p;
                         buffer[i+2] = p;
-                        buffer[i+3] = getOpacity();
+                        buffer[i+3] = opacity[opacityPos++];
                     }
                     break;
                 case 3:
                     for (var i = 0; i < length; i += 4) {
-                        buffer[i] = getComp();
-                        buffer[i+1] = getComp();
-                        buffer[i+2] = getComp();
-                        buffer[i+3] = getOpacity();
+                        buffer[i] = comps[compsPos++];
+                        buffer[i+1] = comps[compsPos++];
+                        buffer[i+2] = comps[compsPos++];
+                        buffer[i+3] = opacity[opacityPos++];
                     }
                     break;
                 default:
@@ -4569,11 +4578,11 @@ var PDFImage = (function() {
             var rowBytes = (width * numComps * bpc + 7) >> 3;
             var imgArray = this.image.getBytes(height * rowBytes);
             
-            var getComp = this.getCompFunction(bpc, width, numComps, imgArray)
+            var comps = this.getComponents(imgArray);
             var length = width * height;
 
             for (var i = 0; i < length; ++i)
-                buffer[i] = getComp();
+                buffer[i] = comps[i];
         },
     };
     return constructor;
