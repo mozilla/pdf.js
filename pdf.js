@@ -4535,7 +4535,6 @@ var PDFImage = (function() {
             // rows start at byte boundary;
             var rowBytes = (width * numComps * bpc + 7) >> 3;
             var imgArray = this.image.getBytes(height * rowBytes);
-            var imgPos = 0;
             
             var comps = this.getComponents(imgArray);
             var compsPos = 0;
@@ -4565,7 +4564,7 @@ var PDFImage = (function() {
                     TODO("Images with "+ numComps + " components per pixel");
             }
         },
-        fillGrayBuffer: function fillGrayScaleBuffer(buffer) {
+        fillGrayBuffer: function fillGrayBuffer(buffer) {
             var numComps = this.numComps;
             if (numComps != 1)
                 error("Reading gray scale from a color image");
