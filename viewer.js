@@ -60,6 +60,10 @@ function displayPage(num) {
 
     var page = pdfDocument.getPage(pageNum = num);
 
+    // scale canvas by 2
+    canvas.width = 2 * page.mediaBox[2];
+    canvas.hieght = 2 * page.mediaBox[3];
+
     var t1 = Date.now();
     var ctx = canvas.getContext("2d");
     ctx.save();
