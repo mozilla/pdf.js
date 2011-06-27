@@ -28,6 +28,9 @@ class TestOptions(OptionParser):
         self.add_option("--browserManifestFile", action="store", type="string",
                         dest="browserManifestFile",
                         help="A JSON file in the form of those found in resources/browser_manifests")
+        self.add_option("--reftest", action="store_true", dest="reftest",
+                        help="Automatically start reftest showing comparison test failures, if there are any.",
+                        default=False)
         self.set_usage(USAGE_EXAMPLE)
 
     def verifyOptions(self, options):
@@ -120,8 +123,6 @@ class PDFTestHandler(BaseHTTPRequestHandler):
             return
 
         self.sendFile(path, ext)
-        
-
 
     def do_POST(self):
         numBytes = int(self.headers['Content-Length'])
@@ -327,19 +328,17 @@ def checkEq(task, results, browser):
             eq = (ref == snapshot)
             if not eq:
                 print 'TEST-UNEXPECTED-FAIL | eq', taskId, '| in', browser, '| rendering of page', page + 1, '!= reference rendering'
-                # XXX need to dump this always, somehow, when we have
-                # the reference repository
-                if State.masterMode:
-                    if not State.eqLog:
-                        State.eqLog = open(EQLOG_FILE, 'w')
-                    eqLog = State.eqLog
 
-                    # NB: this follows the format of Mozilla reftest
-                    # output so that we can reuse its reftest-analyzer
-                    # script
-                    print >>eqLog, 'REFTEST TEST-UNEXPECTED-FAIL |', browser +'-'+ taskId +'-page'+ str(page + 1), '| image comparison (==)'
-                    print >>eqLog, 'REFTEST   IMAGE 1 (TEST):', snapshot
-                    print >>eqLog, 'REFTEST   IMAGE 2 (REFERENCE):', ref
+                if not State.eqLog:
+                    State.eqLog = open(EQLOG_FILE, 'w')
+                eqLog = State.eqLog
+
+                # NB: this follows the format of Mozilla reftest
+                # output so that we can reuse its reftest-analyzer
+                # script
+                print >>eqLog, 'REFTEST TEST-UNEXPECTED-FAIL |', browser +'-'+ taskId +'-page'+ str(page + 1), '| image comparison (==)'
+                print >>eqLog, 'REFTEST   IMAGE 1 (TEST):', snapshot
+                print >>eqLog, 'REFTEST   IMAGE 2 (REFERENCE):', ref
 
                 passed = False
                 State.numEqFailures += 1
@@ -416,6 +415,15 @@ def processResults():
 
                 print 'done'
 
+def startReftest(browser):
+    try:
+        browser.setup()
+        browser.start("resources/reftest-analyzer.xhtml")
+        print "Waiting for browser..."
+        browser.process.wait()
+    finally:
+        teardownBrowsers([browser])
+    print "Completed reftest usage."
 
 def main():
     t1 = time.time()
@@ -440,6 +448,10 @@ def main():
         teardownBrowsers(browsers)
     t2 = time.time()
     print "Runtime was", int(t2 - t1), "seconds"
+
+    if options.reftest and State.numEqFailures > 0:
+        print "\nStarting reftest harness to examine %d eq test failures." % State.numEqFailures
+        startReftest(browsers[0])
 
 if __name__ == '__main__':
     main()
