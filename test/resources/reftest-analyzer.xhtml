@@ -1,0 +1,601 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- vim: set shiftwidth=4 tabstop=4 autoindent noexpandtab: -->
+<!-- ***** BEGIN LICENSE BLOCK *****
+   - Version: MPL 1.1/GPL 2.0/LGPL 2.1
+   -
+   - The contents of this file are subject to the Mozilla Public License Version
+   - 1.1 (the "License"); you may not use this file except in compliance with
+   - the License. You may obtain a copy of the License at
+   - http://www.mozilla.org/MPL/
+   -
+   - Software distributed under the License is distributed on an "AS IS" basis,
+   - WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+   - for the specific language governing rights and limitations under the
+   - License.
+   -
+   - The Original Code is reftest-analyzer.html.
+   -
+   - The Initial Developer of the Original Code is the Mozilla Foundation.
+   - Portions created by the Initial Developer are Copyright (C) 2008
+   - the Initial Developer. All Rights Reserved.
+   -
+   - Contributor(s):
+   -   L. David Baron <dbaron@dbaron.org>, Mozilla Corporation (original author)
+   -
+   - Alternatively, the contents of this file may be used under the terms of
+   - either the GNU General Public License Version 2 or later (the "GPL"), or
+   - the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+   - in which case the provisions of the GPL or the LGPL are applicable instead
+   - of those above. If you wish to allow use of your version of this file only
+   - under the terms of either the GPL or the LGPL, and not to allow others to
+   - use your version of this file under the terms of the MPL, indicate your
+   - decision by deleting the provisions above and replace them with the notice
+   - and other provisions required by the LGPL or the GPL. If you do not delete
+   - the provisions above, a recipient may use your version of this file under
+   - the terms of any one of the MPL, the GPL or the LGPL.
+   -
+   - ***** END LICENSE BLOCK ***** -->
+<!--
+
+Features to add:
+* make the left and right parts of the viewer independently scrollable
+* make the test list filterable
+** default to only showing unexpecteds
+* add other ways to highlight differences other than circling?
+* add zoom/pan to images
+* Add ability to load log via XMLHttpRequest (also triggered via URL param)
+* color the test list based on pass/fail and expected/unexpected/random/skip
+* ability to load multiple logs ?
+** rename them by clicking on the name and editing
+** turn the test list into a collapsing tree view
+** move log loading into popup from viewer UI
+
+-->
+<html lang="en-US" xml:lang="en-US" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <title>Reftest analyzer</title>
+  <style type="text/css"><![CDATA[
+
+  html, body { margin: 0; }
+  html { padding: 0; }
+  body { padding: 4px; }
+
+  #pixelarea, #itemlist, #images { position: absolute; }
+  #itemlist, #images { overflow: auto; }
+  #pixelarea { top: 0; left: 0; width: 320px; height: 84px; overflow: visible }
+  #itemlist { top: 84px; left: 0; width: 320px; bottom: 0; }
+  #images { top: 0; bottom: 0; left: 320px; right: 0; }
+
+  #leftpane { width: 320px; }
+  #images { position: fixed; top: 10px; left: 340px; }
+
+  form#imgcontrols { margin: 0; display: block; }
+
+  #itemlist > table { border-collapse: collapse; }
+  #itemlist > table > tbody > tr > td { border: 1px solid; padding: 1px; }
+
+  /*
+  #itemlist > table > tbody > tr.pass > td.url { background: lime; }
+  #itemlist > table > tbody > tr.fail > td.url { background: red; }
+  */
+
+  #magnification > svg { display: block; width: 84px; height: 84px; }
+
+  #pixelinfo { font: small sans-serif; position: absolute; width: 200px; left: 84px; }
+  #pixelinfo table { border-collapse: collapse; }
+  #pixelinfo table th { white-space: nowrap; text-align: left; padding: 0; }
+  #pixelinfo table td { font-family: monospace; padding: 0 0 0 0.25em; }
+
+  #pixelhint { display: inline; color: #88f; cursor: help; }
+  #pixelhint > * { display: none; position: absolute; margin: 8px 0 0 8px; padding: 4px; width: 400px; background: #ffa; color: black; box-shadow: 3px 3px 2px #888; z-index: 1; }
+  #pixelhint:hover { color: #000; }
+  #pixelhint:hover > * { display: block; }
+  #pixelhint p { margin: 0; }
+  #pixelhint p + p { margin-top: 1em; }
+
+  ]]></style>
+  <script type="text/javascript"><![CDATA[
+
+var XLINK_NS = "http://www.w3.org/1999/xlink";
+var SVG_NS = "http://www.w3.org/2000/svg";
+
+var gPhases = null;
+
+var gIDCache = {};
+
+var gMagPixPaths = [];     // 2D array of array-of-two <path> objects used in the pixel magnifier
+var gMagWidth = 5;         // number of zoomed in pixels to show horizontally
+var gMagHeight = 5;        // number of zoomed in pixels to show vertically
+var gMagZoom = 16;         // size of the zoomed in pixels
+var gImage1Data;           // ImageData object for the reference image
+var gImage2Data;           // ImageData object for the test output image
+var gFlashingPixels = [];  // array of <path> objects that should be flashed due to pixel color mismatch
+
+function ID(id) {
+  if (!(id in gIDCache))
+    gIDCache[id] = document.getElementById(id);
+  return gIDCache[id];
+}
+
+function hash_parameters() {
+  var result = { };
+  var params = window.location.hash.substr(1).split(/[&;]/);
+  for (var i = 0; i < params.length; i++) {
+    var parts = params[i].split("=");
+    result[parts[0]] = unescape(unescape(parts[1]));
+  }
+  return result;
+}
+
+function load() {
+  gPhases = [ ID("entry"), ID("loading"), ID("viewer") ];
+  build_mag();
+  var params = hash_parameters();
+  if (params.log) {
+    ID("logentry").value = params.log;
+    log_pasted();
+  } else if (params.web) {
+    loadFromWeb(params.web); 
+  }
+}
+
+function build_mag() {
+  var mag = ID("mag");
+
+  var r = document.createElementNS(SVG_NS, "rect");
+  r.setAttribute("x", gMagZoom * -gMagWidth / 2);
+  r.setAttribute("y", gMagZoom * -gMagHeight / 2);
+  r.setAttribute("width", gMagZoom * gMagWidth);
+  r.setAttribute("height", gMagZoom * gMagHeight);
+  mag.appendChild(r);
+
+  mag.setAttribute("transform", "translate(" + (gMagZoom * (gMagWidth / 2) + 1) + "," + (gMagZoom * (gMagHeight / 2) + 1) + ")");
+
+  for (var x = 0; x < gMagWidth; x++) {
+    gMagPixPaths[x] = [];
+    for (var y = 0; y < gMagHeight; y++) {
+      var p1 = document.createElementNS(SVG_NS, "path");
+      p1.setAttribute("d", "M" + ((x - gMagWidth / 2) + 1) * gMagZoom + "," + (y - gMagHeight / 2) * gMagZoom + "h" + -gMagZoom + "v" + gMagZoom);
+      p1.setAttribute("stroke", "black");
+      p1.setAttribute("stroke-width", "1px");
+      p1.setAttribute("fill", "#aaa");
+
+      var p2 = document.createElementNS(SVG_NS, "path");
+      p2.setAttribute("d", "M" + ((x - gMagWidth / 2) + 1) * gMagZoom + "," + (y - gMagHeight / 2) * gMagZoom + "v" + gMagZoom + "h" + -gMagZoom);
+      p2.setAttribute("stroke", "black");
+      p2.setAttribute("stroke-width", "1px");
+      p2.setAttribute("fill", "#888");
+
+      mag.appendChild(p1);
+      mag.appendChild(p2);
+      gMagPixPaths[x][y] = [p1, p2];
+    }
+  }
+
+  var flashedOn = false;
+  setInterval(function() {
+    flashedOn = !flashedOn;
+    flash_pixels(flashedOn);
+  }, 500);
+}
+
+function show_phase(phaseid) {
+  for (var i in gPhases) {
+    var phase = gPhases[i];
+    phase.style.display = (phase.id == phaseid) ? "" : "none";
+  }
+
+  if (phase == "viewer")
+    ID("images").style.display = "none";
+}
+
+function loadFromWeb(url) {
+  var r = new XMLHttpRequest();
+  r.open("GET", url);
+  r.onreadystatechange = function() {
+    if (r.readyState == 4) {
+      process_log(r.response);
+    }
+  }
+  r.send(null);
+}
+
+function fileentry_changed() {
+  show_phase("loading");
+  var input = ID("fileentry");
+  var files = input.files;
+  if (files.length > 0) {
+    // Only handle the first file; don't handle multiple selection.
+    // The parts of the log we care about are ASCII-only.  Since we
+    // can ignore lines we don't care about, best to read in as
+    // iso-8859-1, which guarantees we don't get decoding errors.
+    var fileReader = new FileReader();
+    fileReader.onload = function(e) {
+      var log = null;
+
+      log = e.target.result;
+      
+      if (log)
+        process_log(log);
+      else
+        show_phase("entry");
+    }
+    fileReader.readAsText(files[0], "iso-8859-1");
+  }
+  // So the user can process the same filename again (after
+  // overwriting the log), clear the value on the form input so we
+  // will always get an onchange event.
+  input.value = "";
+}
+
+function log_pasted() {
+  show_phase("loading");
+  var entry = ID("logentry");
+  var log = entry.value;
+  entry.value = "";
+  process_log(log);
+}
+
+var gTestItems;
+
+function process_log(contents) {
+  var lines = contents.split(/[\r\n]+/);
+  gTestItems = [];
+  for (var j in lines) {
+    var line = lines[j];
+    var match = line.match(/^(?:NEXT ERROR )?REFTEST (.*)$/);
+    if (!match)
+      continue;
+    line = match[1];
+    match = line.match(/^(TEST-PASS|TEST-UNEXPECTED-PASS|TEST-KNOWN-FAIL|TEST-UNEXPECTED-FAIL)(\(EXPECTED RANDOM\)|) \| ([^\|]+) \|(.*)/);
+    if (match) {
+      var state = match[1];
+      var random = match[2];
+      var url = match[3];
+                        var extra = match[4];
+      gTestItems.push(
+        {
+          pass: !state.match(/FAIL$/),
+          // only one of the following three should ever be true
+          unexpected: !!state.match(/^TEST-UNEXPECTED/),
+          random: (random == "(EXPECTED RANDOM)"),
+          skip: (extra == " (SKIP)"),
+          url: url,
+          images: []
+        });
+      continue;
+    }
+    match = line.match(/^  IMAGE[^:]*: (.*)$/);
+    if (match) {
+      var item = gTestItems[gTestItems.length - 1];
+      item.images.push(match[1]);
+    }
+  }
+
+  build_viewer();
+}
+
+function build_viewer() {
+  if (gTestItems.length == 0) {
+    show_phase("entry");
+    return;
+  }
+
+  var cell = ID("itemlist");
+  while (cell.childNodes.length > 0)
+    cell.removeChild(cell.childNodes[cell.childNodes.length - 1]);
+
+  var table = document.createElement("table");
+  var tbody = document.createElement("tbody");
+  table.appendChild(tbody);
+
+  for (var i in gTestItems) {
+    var item = gTestItems[i];
+
+    // XXX skip expected pass items until we have filtering UI
+    if (item.pass && !item.unexpected)
+      continue;
+
+    var tr = document.createElement("tr");
+    var rowclass = item.pass ? "pass" : "fail";
+    var td;
+    var text;
+
+    td = document.createElement("td");
+    text = "";
+    if (item.unexpected) { text += "!"; rowclass += " unexpected"; }
+    if (item.random) { text += "R"; rowclass += " random"; }
+    if (item.skip) { text += "S"; rowclass += " skip"; }
+    td.appendChild(document.createTextNode(text));
+    tr.appendChild(td);
+
+    td = document.createElement("td");
+    td.className = "url";
+    // Only display part of URL after "/mozilla/".
+    var match = item.url.match(/\/mozilla\/(.*)/);
+    text = document.createTextNode(match ? match[1] : item.url);
+    if (item.images.length > 0) {
+      var a = document.createElement("a");
+      a.href = "javascript:show_images(" + i + ")";
+      a.appendChild(text);
+      td.appendChild(a);
+    } else {
+      td.appendChild(text);
+    }
+    tr.appendChild(td);
+
+    tbody.appendChild(tr);
+  }
+
+  cell.appendChild(table);
+
+  show_phase("viewer");
+}
+
+function get_image_data(src, whenReady) {
+  var img = new Image();
+  img.onload = function() {
+    var canvas = document.createElement("canvas");
+    canvas.width = 800;
+    canvas.height = 1000;
+
+    var ctx = canvas.getContext("2d");
+    ctx.drawImage(img, 0, 0);
+
+    whenReady(ctx.getImageData(0, 0, 800, 1000));
+  };
+  img.src = src;
+}
+
+function show_images(i) {
+  var item = gTestItems[i];
+  var cell = ID("images");
+
+  ID("image1").style.display = "";
+  ID("image2").style.display = "none";
+  ID("diffrect").style.display = "none";
+  ID("imgcontrols").reset();
+
+  ID("image1").setAttributeNS(XLINK_NS, "xlink:href", item.images[0]);
+  // Making the href be #image1 doesn't seem to work
+  ID("feimage1").setAttributeNS(XLINK_NS, "xlink:href", item.images[0]);
+  if (item.images.length == 1) {
+    ID("imgcontrols").style.display = "none";
+  } else {
+    ID("imgcontrols").style.display = "";
+
+    ID("image2").setAttributeNS(XLINK_NS, "xlink:href", item.images[1]);
+    // Making the href be #image2 doesn't seem to work
+    ID("feimage2").setAttributeNS(XLINK_NS, "xlink:href", item.images[1]);
+  }
+
+  cell.style.display = "";
+
+  get_image_data(item.images[0], function(data) { gImage1Data = data });
+  get_image_data(item.images[1], function(data) { gImage2Data = data });
+}
+
+function show_image(i) {
+  if (i == 1) {
+    ID("image1").style.display = "";
+    ID("image2").style.display = "none";
+  } else {
+    ID("image1").style.display = "none";
+    ID("image2").style.display = "";
+  }
+}
+
+function show_differences(cb) {
+  ID("diffrect").style.display = cb.checked ? "" : "none";
+}
+
+function flash_pixels(on) {
+  var stroke = on ? "red" : "black";
+  var strokeWidth = on ? "2px" : "1px";
+  for (var i = 0; i < gFlashingPixels.length; i++) {
+    gFlashingPixels[i].setAttribute("stroke", stroke);
+    gFlashingPixels[i].setAttribute("stroke-width", strokeWidth);
+  }
+}
+
+function cursor_point(evt) {
+  var m = evt.target.getScreenCTM().inverse();
+  var p = ID("svg").createSVGPoint();
+  p.x = evt.clientX;
+  p.y = evt.clientY;
+  p = p.matrixTransform(m);
+  return { x: Math.floor(p.x), y: Math.floor(p.y) };
+}
+
+function hex2(i) {
+  return (i < 16 ? "0" : "") + i.toString(16);
+}
+
+function canvas_pixel_as_hex(data, x, y) {
+  var offset = (y * data.width + x) * 4;
+  var r = data.data[offset];
+  var g = data.data[offset + 1];
+  var b = data.data[offset + 2];
+  return "#" + hex2(r) + hex2(g) + hex2(b);
+}
+
+function hex_as_rgb(hex) {
+  return "rgb(" + [parseInt(hex.substring(1, 3), 16), parseInt(hex.substring(3, 5), 16), parseInt(hex.substring(5, 7), 16)] + ")";
+}
+
+function magnify(evt) {
+  var { x: x, y: y } = cursor_point(evt);
+  var centerPixelColor1, centerPixelColor2;
+
+  var dx_lo = -Math.floor(gMagWidth / 2);
+  var dx_hi = Math.floor(gMagWidth / 2);
+  var dy_lo = -Math.floor(gMagHeight / 2);
+  var dy_hi = Math.floor(gMagHeight / 2);
+
+  flash_pixels(false);
+  gFlashingPixels = [];
+  for (var j = dy_lo; j <= dy_hi; j++) {
+    for (var i = dx_lo; i <= dx_hi; i++) {
+      var px = x + i;
+      var py = y + j;
+      var p1 = gMagPixPaths[i + dx_hi][j + dy_hi][0];
+      var p2 = gMagPixPaths[i + dx_hi][j + dy_hi][1];
+      if (px < 0 || py < 0 || px >= 800 || py >= 1000) {
+        p1.setAttribute("fill", "#aaa");
+        p2.setAttribute("fill", "#888");
+      } else {
+        var color1 = canvas_pixel_as_hex(gImage1Data, x + i, y + j);
+        var color2 = canvas_pixel_as_hex(gImage2Data, x + i, y + j);
+        p1.setAttribute("fill", color1);
+        p2.setAttribute("fill", color2);
+        if (color1 != color2) {
+          gFlashingPixels.push(p1, p2);
+          p1.parentNode.appendChild(p1);
+          p2.parentNode.appendChild(p2);
+        }
+        if (i == 0 && j == 0) {
+          centerPixelColor1 = color1;
+          centerPixelColor2 = color2;
+        }
+      }
+    }
+  }
+  flash_pixels(true);
+  show_pixelinfo(x, y, centerPixelColor1, hex_as_rgb(centerPixelColor1), centerPixelColor2, hex_as_rgb(centerPixelColor2));
+}
+
+function show_pixelinfo(x, y, pix1rgb, pix1hex, pix2rgb, pix2hex) {
+  var pixelinfo = ID("pixelinfo");
+  ID("coords").textContent = [x, y];
+  ID("pix1hex").textContent = pix1hex;
+  ID("pix1rgb").textContent = pix1rgb;
+  ID("pix2hex").textContent = pix2hex;
+  ID("pix2rgb").textContent = pix2rgb;
+}
+
+  ]]></script>
+
+</head>
+<body onload="load()">
+
+<div id="entry">
+
+<h1>Reftest analyzer: load reftest log</h1>
+
+<p>Either paste your log into this textarea:<br />
+<textarea cols="80" rows="10" id="logentry"/><br/>
+<input type="button" value="Process pasted log" onclick="log_pasted()" /></p>
+
+<p>... or load it from a file:<br/>
+<input type="file" id="fileentry" onchange="fileentry_changed()" />
+</p>
+</div>
+
+<div id="loading" style="display:none">Loading log...</div>
+
+<div id="viewer" style="display:none">
+  <div id="pixelarea">
+    <div id="pixelinfo">
+      <table>
+        <tbody>
+          <tr><th>Pixel at:</th><td colspan="2" id="coords"/></tr>
+          <tr><th>Image 1:</th><td id="pix1rgb"></td><td id="pix1hex"></td></tr>
+          <tr><th>Image 2:</th><td id="pix2rgb"></td><td id="pix2hex"></td></tr>
+        </tbody>
+      </table>
+      <div>
+        <div id="pixelhint">★
+          <div>
+            <p>Move the mouse over the reftest image on the right to show
+            magnified pixels on the left.  The color information above is for
+            the pixel centered in the magnified view.</p>
+            <p>Image 1 is shown in the upper triangle of each pixel and Image 2
+            is shown in the lower triangle.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div id="magnification">
+      <svg xmlns="http://www.w3.org/2000/svg" width="84" height="84" shape-rendering="optimizeSpeed">
+        <g id="mag"/>
+      </svg>
+    </div>
+  </div>
+  <div id="itemlist"></div>
+  <div id="images" style="display:none">
+    <form id="imgcontrols">
+    <label><input type="radio" name="which" value="0" onchange="show_image(1)" checked="checked" />Image 1</label>
+    <label><input type="radio" name="which" value="1" onchange="show_image(2)" />Image 2</label>
+    <label><input type="checkbox" onchange="show_differences(this)" />Circle differences</label>
+    </form>
+    <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" width="800px" height="1000px" viewbox="0 0 800 1000" id="svg">
+      <defs>
+        <!-- use sRGB to avoid loss of data -->
+        <filter id="showDifferences" x="0%" y="0%" width="100%" height="100%"
+                style="color-interpolation-filters: sRGB">
+          <feImage id="feimage1" result="img1" xlink:href="#image1" />
+          <feImage id="feimage2" result="img2" xlink:href="#image2" />
+          <!-- inv1 and inv2 are the images with RGB inverted -->
+          <feComponentTransfer result="inv1" in="img1">
+            <feFuncR type="linear" slope="-1" intercept="1" />
+            <feFuncG type="linear" slope="-1" intercept="1" />
+            <feFuncB type="linear" slope="-1" intercept="1" />
+          </feComponentTransfer>
+          <feComponentTransfer result="inv2" in="img2">
+            <feFuncR type="linear" slope="-1" intercept="1" />
+            <feFuncG type="linear" slope="-1" intercept="1" />
+            <feFuncB type="linear" slope="-1" intercept="1" />
+          </feComponentTransfer>
+          <!-- w1 will have non-white pixels anywhere that img2
+               is brighter than img1, and w2 for the reverse.
+               It would be nice not to have to go through these
+               intermediate states, but feComposite
+               type="arithmetic" can't transform the RGB channels
+               and leave the alpha channel untouched. -->
+          <feComposite result="w1" in="img1" in2="inv2" operator="arithmetic" k2="1" k3="1" />
+          <feComposite result="w2" in="img2" in2="inv1" operator="arithmetic" k2="1" k3="1" />
+          <!-- c1 will have non-black pixels anywhere that img2
+               is brighter than img1, and c2 for the reverse -->
+          <feComponentTransfer result="c1" in="w1">
+            <feFuncR type="linear" slope="-1" intercept="1" />
+            <feFuncG type="linear" slope="-1" intercept="1" />
+            <feFuncB type="linear" slope="-1" intercept="1" />
+          </feComponentTransfer>
+          <feComponentTransfer result="c2" in="w2">
+            <feFuncR type="linear" slope="-1" intercept="1" />
+            <feFuncG type="linear" slope="-1" intercept="1" />
+            <feFuncB type="linear" slope="-1" intercept="1" />
+          </feComponentTransfer>
+          <!-- c will be nonblack (and fully on) for every pixel+component where there are differences -->
+          <feComposite result="c" in="c1" in2="c2" operator="arithmetic" k2="255" k3="255" />
+          <!-- a will be opaque for every pixel with differences and transparent for all others -->
+          <feColorMatrix result="a" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  1 1 1 0 0" />
+          
+          <!-- a, dilated by 4 pixels -->
+          <feMorphology result="dila4" in="a" operator="dilate" radius="4" />
+          <!-- a, dilated by 1 pixel -->
+          <feMorphology result="dila1" in="a" operator="dilate" radius="1" />
+          
+          <!-- all the pixels in the 3-pixel dilation of a but not in the 1-pixel dilation of a, to highlight the diffs -->
+          <feComposite result="highlight" in="dila4" in2="dila1" operator="out" />
+
+          <feFlood result="red" flood-color="red" />
+          <feComposite result="redhighlight" in="red" in2="highlight" operator="in" />
+          <feFlood result="black" flood-color="black" flood-opacity="0.5" />
+          <feMerge>
+            <feMergeNode in="black" />
+            <feMergeNode in="redhighlight" />
+          </feMerge>
+        </filter>
+      </defs>
+      <g onmousemove="magnify(evt)">
+        <image x="0" y="0" width="100%" height="100%" id="image1" />
+        <image x="0" y="0" width="100%" height="100%" id="image2" />
+      </g>
+      <rect id="diffrect" filter="url(#showDifferences)" pointer-events="none" x="0" y="0" width="100%" height="100%" />
+    </svg>
+  </div>
+</div>
+
+</body>
+</html>
