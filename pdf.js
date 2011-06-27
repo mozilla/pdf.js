@@ -3081,30 +3081,6 @@ var PDFDoc = (function() {
     return constructor;
 })();
 
-var IDENTITY_MATRIX = [ 1, 0, 0, 1, 0, 0 ];
-
-// <canvas> contexts store most of the state we need natively.
-// However, PDF needs a bit more state, which we store here.
-var CanvasExtraState = (function() {
-    function constructor() {
-        // Are soft masks and alpha values shapes or opacities?
-        this.alphaIsShape = false;
-        this.fontSize = 0.0;
-        this.textMatrix = IDENTITY_MATRIX;
-        this.leading = 0.0;
-        this.colorSpace = null;
-        // Current point (in user coordinates)
-        this.x = 0.0;
-        this.y = 0.0;
-        // Start of text line (in text coordinates)
-        this.lineX = 0.0;
-        this.lineY = 0.0;
-    }
-    constructor.prototype = {
-    };
-    return constructor;
-})();
-
 var Encodings = {
   get ExpertEncoding() {
     return shadow(this, "ExpertEncoding", [ ,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
@@ -3278,6 +3254,34 @@ var Encodings = {
     ]);
   }
 };
+
+var IDENTITY_MATRIX = [ 1, 0, 0, 1, 0, 0 ];
+
+// <canvas> contexts store most of the state we need natively.
+// However, PDF needs a bit more state, which we store here.
+var CanvasExtraState = (function() {
+    function constructor() {
+        // Are soft masks and alpha values shapes or opacities?
+        this.alphaIsShape = false;
+        this.fontSize = 0;
+        this.textMatrix = IDENTITY_MATRIX;
+        this.leading = 0;
+        this.colorSpace = null;
+        // Current point (in user coordinates)
+        this.x = 0;
+        this.y = 0;
+        // Start of text line (in text coordinates)
+        this.lineX = 0;
+        this.lineY = 0;
+        // Character and word spacing
+        this.charSpace = 0;
+        this.wordSpace = 0;
+        this.textHScale = 100;
+    }
+    constructor.prototype = {
+    };
+    return constructor;
+})();
 
 function ScratchCanvas(width, height) {
     var canvas = document.createElement("canvas");
@@ -3777,13 +3781,13 @@ var CanvasGraphics = (function() {
         endText: function() {
         },
         setCharSpacing: function(spacing) {
-            TODO("character (glyph?) spacing");
+            this.ctx.charSpacing = spacing;
         },
         setWordSpacing: function(spacing) {
-            TODO("word spacing");
+            this.ctx.wordSpacing = spacing;
         },
         setHScale: function(scale) {
-            TODO("horizontal text scale");
+            this.ctx.textHScale = (scale % 100) * 0.01;
         },
         setLeading: function(leading) {
             this.current.leading = leading;
@@ -3846,6 +3850,8 @@ var CanvasGraphics = (function() {
             this.moveText(0, this.current.leading);
         },
         showText: function(text) {
+            // TODO: apply charSpacing, wordSpacing, textHScale
+
             this.ctx.save();
             this.ctx.transform.apply(this.ctx, this.current.textMatrix);
             this.ctx.scale(1, -1);
@@ -4008,10 +4014,14 @@ var CanvasGraphics = (function() {
             // we want the canvas to be as large as the step size
             var botRight = applyMatrix([x0 + xstep, y0 + ystep], matrix);
 
-            var tmpCanvas = new this.ScratchCanvas(
-                Math.ceil(botRight[0] - topLeft[0]),    // width
-                Math.ceil(botRight[1] - topLeft[1])     // height
-            );
+            var width = botRight[0] - topLeft[0];
+            var height = botRight[1] - topLeft[1];
+
+            // TODO: hack to avoid OOM, remove then pattern code is fixed
+            if (Math.abs(width) > 8192 || Math.abs(height) > 8192)
+                return false;
+
+            var tmpCanvas = new this.ScratchCanvas(width, height);
 
             // set the new canvas element context as the graphics context
             var tmpCtx = tmpCanvas.getContext("2d");
