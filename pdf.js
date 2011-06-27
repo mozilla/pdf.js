@@ -4446,14 +4446,39 @@ var PDFImage = (function() {
     constructor.prototype = {
         getCompFunction: function getCompFunction(bpc, width, numComps, buffer) {
             var bufferPos = 0;
-            if (bpc == 8) {
+            if (bpc == 1) {
+                var rowComps = width * numComps;
+                var curComp = 0;
+                var mask = 0;
+                var buf = 0;
+                
+                var getComp = function() {
+                    if (mask <= 0) {
+                        buf = buffer[bufferPos++];
+                        mask = 128;
+                    }
+
+                    var ret = buf & mask;
+                    curComp++;
+
+                    if (curComp % rowComps == 0) {
+                        mask = 0;
+                        buf = 0;
+                    } else {
+                        mask >>= 1;
+                    }
+                    return ret * 255;
+                }
+            } else if (bpc == 8) {
                 var getComp = function() {
                     return buffer[bufferPos++];
                 }
             } else {
-                var rowBytes = (width * numComps * bpc + 7) >> 3;
+                var rowComps = width * numComps;
+                var curComp = 0;
                 var bits = 0;
                 var buf = 0;
+
                 var getComp = function() {
                     while (bits < bpc) {
                         buf = (buf << 8) | buffer[bufferPos++];
@@ -4461,8 +4486,9 @@ var PDFImage = (function() {
                     }
                     var remainingBits = bits - bpc;
                     var ret = buf >> remainingBits;
+                    curComp++;
                     
-                    if (bufferPos % rowBytes == 0) {
+                    if (curComp % rowComps == 0) {
                         buf = 0;
                         bits = 0;
                     } else {
