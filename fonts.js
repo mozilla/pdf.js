@@ -182,7 +182,16 @@ var Font = (function () {
     return array;
   };
 
-  function string16(value) {
+  function string16(value, signed) {
+    if (signed && value < 0) {
+      value = Math.abs(value);
+      var byte = (value >> 8) & 0xff;
+      return String.fromCharCode(byte ^ 0xff) +
+             String.fromCharCode(value & 0xff);
+    } else if (signed) {
+      return String.fromCharCode((value >> 7) & 0xff) +
+             String.fromCharCode(value & 0xff);
+    }
     return String.fromCharCode((value >> 8) & 0xff) +
            String.fromCharCode(value & 0xff);
   };
@@ -732,10 +741,8 @@ var Font = (function () {
       */
       hmtx = "\x01\xF4\x00\x00"; // Fake .notdef
       var width = 0, lsb = 0;
-      for (var i = 0; i < charstrings.length; i++) {
-        width = charstrings[i].charstring[0];
-        hmtx += string16(width) + string16(lsb);
-      }
+      for (var i = 0; i < charstrings.length; i++)
+        hmtx += string16(charstrings[i].width) + string16(charstrings[i].lsb);
       hmtx = stringToArray(hmtx);
       createTableEntry(otf, offsets, "hmtx", hmtx);
 
@@ -832,14 +839,14 @@ var Font = (function () {
  */
 var FontsUtils = {
   _bytesArray: new Uint8Array(4),
-  integerToBytes: function fu_integerToBytes(value, bytesCount) {
+  integerToBytes: function fu_integerToBytes(value, bytesCount, signed) {
     var bytes = this._bytesArray;
 
     if (bytesCount == 1) {
       bytes.set([value]);
       return bytes[0];
     } else if (bytesCount == 2) {
-      bytes.set([value >> 8, value]);
+      bytes.set([value >> 8, value & 0xff]);
       return [bytes[0], bytes[1]];
     } else if (bytesCount == 4) {
       bytes.set([value >> 24, value >> 16, value >> 8, value]);
@@ -1005,6 +1012,8 @@ var Type1Parser = function() {
 
   function decodeCharString(array) {
     var charstring = [];
+    var lsb = 0;
+    var width = 0;
 
     var z = 0;
     var value = "";
@@ -1043,14 +1052,30 @@ var Type1Parser = function() {
         } else {
 
           // TODO Clean this code
+          Gindex = Gindex || 1;
           if (value == 13) {
-            var charWidthVector = charstring[1];
-            var leftSidebearing = charstring[0];
-
-            charstring.push(leftSidebearing, "hmoveto");
+            width = charstring[1];
+            lsb = charstring[0];
+            //charstring.push(lsb, "hmoveto");
             charstring.splice(0, 1);
             continue;
+          } else if (0 && lsb && value == 1) { // hstem
+            charstring[Gindex] += lsb;
+            lsb = 0;
+          } else if (0 && lsb && value == 22) { // hmoveto
+            error("hmoveto: " + charstring[Gindex]);
+            charstring[Gindex] += lsb;
+            lsb = 0;
+          } else if (0 && lsb && value == 14) { // enchar
+            var p = charstring[Gindex];
+            if (IsNum(p)) {
+              charstring[Gindex] += lsb;
+            } else {
+              charstring.splice(Gindex + 1, 0, lsb);
+            }
+            lsb = 0;
           }
+          var Gindex = charstring.length;
 
           command = charStringDictionary[value];
         }
@@ -1080,7 +1105,7 @@ var Type1Parser = function() {
       charstring.push(value);
     }
 
-    return charstring;
+    return { charstring: charstring, width: width, lsb: lsb };
   };
 
   /**
@@ -1107,19 +1132,21 @@ var Type1Parser = function() {
         length = parseInt(length);
         var data = eexecString.slice(i + 3, i + 3 + length);
         var encodedSubr = decrypt(data, kCharStringsEncryptionKey, 4);
-        var subr = decodeCharString(encodedSubr);
+        var str = decodeCharString(encodedSubr);
 
-        subrs.push(subr);
+        subrs.push(str.charstring);
         i += 3 + length;
       } else if (inGlyphs && c == 0x52) {
         length = parseInt(length);
         var data = eexecString.slice(i + 3, i + 3 + length);
         var encodedCharstring = decrypt(data, kCharStringsEncryptionKey, 4);
-        var subr = decodeCharString(encodedCharstring);
+        var str = decodeCharString(encodedCharstring);
 
         glyphs.push({
             glyph: glyph,
-            data: subr
+            data: str.charstring,
+            lsb: str.lsb,
+            width: str.width
         });
         i += 3 + length;
       } else if (inGlyphs && c == 0x2F) {
@@ -1290,7 +1317,9 @@ CFF.prototype = {
         charstrings.push({
           glyph: glyph,
           unicode: unicode,
-          charstring: glyphs[i].data
+          charstring: glyphs[i].data,
+          width: glyphs[i].width,
+          lsb: glyphs[i].lsb
         });
       }
     };
