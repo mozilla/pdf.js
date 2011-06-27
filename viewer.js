@@ -3,11 +3,12 @@
 
 "use strict";
 
-var pdfDocument, canvas, pageDisplay, pageNum, numPages, pageTimeout;
+var pdfDocument, canvas, pageScale, pageDisplay, pageNum, numPages, pageTimeout;
 function load(userInput) {
     canvas = document.getElementById("canvas");
     canvas.mozOpaque = true;
-    pageNum = parseInt(queryParams().page) || 1;
+    pageNum = ("page" in queryParams()) ? parseInt(queryParams().page) : 1;
+    pageScale = ("scale" in queryParams()) ? parseInt(queryParams().scale) : 1.5;
     var fileName = userInput;
     if (!userInput) {
       fileName = queryParams().file || "compressed.tracemonkey-pldi-09.pdf";
@@ -59,6 +60,8 @@ function displayPage(num) {
     var t0 = Date.now();
 
     var page = pdfDocument.getPage(pageNum = num);
+    canvas.width = parseInt(canvas.getAttribute("defaultwidth")) * pageScale;
+    canvas.height = parseInt(canvas.getAttribute("defaultheight")) * pageScale;
 
     // scale canvas by 2
     canvas.width = 2 * page.mediaBox[2];

@@ -787,8 +787,8 @@ var Font = (function () {
       // This code could go away when bug 471915 has landed
       var canvas = document.createElement("canvas");
       var ctx = canvas.getContext("2d");
-      ctx.font = "bold italic 20px " + fontName + ", Symbol";
-      var testString = " ";
+      ctx.font = "bold italic 20px " + fontName + ", Symbol, Arial";
+      var testString = "    ";
 
       // Periodicaly check for the width of the testString, it will be
       // different once the real font has loaded
@@ -796,7 +796,7 @@ var Font = (function () {
 
       var interval = window.setInterval(function canvasInterval(self) {
         this.start = this.start || Date.now();
-        ctx.font = "bold italic 20px " + fontName + ", Symbol";
+        ctx.font = "bold italic 20px " + fontName + ", Symbol, Arial";
 
         // For some reasons the font has not loaded, so mark it loaded for the
         // page to proceed but cry
@@ -976,6 +976,7 @@ var Type1Parser = function() {
       "6": -1, // seac
       "7": -1, //sbw
 
+      "11": "sub",
       "12": "div",
 
       // callothersubr is a mechanism to make calls on the postscript
@@ -1288,6 +1289,11 @@ CFF.prototype = {
     "hlineto": 6,
     "vlineto": 7,
     "rrcurveto": 8,
+    "callsubr": 10,
+    "return": 11,
+    "sub": [12, 11],
+    "div": [12, 12],
+    "pop": [1, 12, 18],
     "endchar": 14,
     "rmoveto": 21,
     "hmoveto": 22,
@@ -1295,7 +1301,7 @@ CFF.prototype = {
     "hvcurveto": 31,
   },
 
-  flattenCharstring: function flattenCharstring(charstring, subrs) {
+  flattenCharstring: function flattenCharstring(charstring) {
     var i = 0;
     while (true) {
       var obj = charstring[i];
@@ -1304,62 +1310,39 @@ CFF.prototype = {
 
       if (obj.charAt) {
         switch (obj) {
-          case "callsubr":
-            var subr = subrs[charstring[i - 1]];
-            if (subr.length > 1) {
-              subr = this.flattenCharstring(subr, subrs);
-              subr.pop();
-              charstring.splice(i - 1, 2, subr);
-            } else {
-              charstring.splice(i - 1, 2);
-            }
-            i -= 1;
-            break;
-
           case "callothersubr":
             var index = charstring[i - 1];
             var count = charstring[i - 2];
             var data = charstring[i - 3];
 
-            // XXX The callothersubr needs to support at least the 3 defaults
-            // otherSubrs of the spec
-            if (index != 3)
-              error("callothersubr for index: " + index + " (" + charstring + ")");
+            // If the flex mechanishm is not used in a font program, Adobe
+            // state that that entries 0, 1 and 2 can simply be replace by
+            // {}, which means that we can simply ignore them.
+            if (index < 3) {
+              i -= 3;
+              continue;
+            }
 
-            if (!data) {
-              charstring.splice(i - 2, 4, "pop", 3);
-              i -= 3;
-            } else {
-              // 5 to remove the arguments, the callothersubr call and the pop command
-              charstring.splice(i - 3, 5, 3);
-              i -= 3;
+            // This is the same things about hint replacment, if it is not used
+            // entry 3 can be replaced by {}
+            if (index == 3) {
+              if (!data) {
+                charstring.splice(i - 2, 4, 3);
+                i -= 3;
+              } else {
+                // 5 to remove the arguments, the callothersubr call and the pop command
+                charstring.splice(i - 3, 5, 3);
+                i -= 3;
+              }
             }
             break;
 
-          case "div":
-            var num2 = charstring[i - 1];
-            var num1 = charstring[i - 2];
-            charstring.splice(i - 2, 3, num1 / num2);
-            i -= 2;
-            break;
-
-          case "pop":
-            if (i)
-              charstring.splice(i - 2, 2);
-            else
-              charstring.splice(i - 1, 1);
-            i -= 1;
-            break;
-
-
           case "hsbw":
-            var charWidthVector = charstring[i - 1];
-            var leftSidebearing = charstring[i - 2];
+            var charWidthVector = charstring[1];
+            var leftSidebearing = charstring[0];
 
-            if (leftSidebearing)
-              charstring.splice(i - 2, 3, charWidthVector, leftSidebearing, "hmoveto");
-            else
-              charstring.splice(i - 2, 3, charWidthVector);
+            charstring.splice(i, 1, leftSidebearing, "hmoveto");
+            charstring.splice(0, 1);
             break;
 
           case "endchar":
@@ -1371,21 +1354,16 @@ CFF.prototype = {
                 charstring.splice(j, 1, 28, command >> 8, command);
                 j+= 2;
               } else if (command.charAt) {
-                var command = this.commandsMap[command];
-                if (IsArray(command)) {
-                  charstring.splice(j - 1, 1, command[0], command[1]);
+                var cmd = this.commandsMap[command];
+                if (!cmd)
+                  error(command);
+
+                if (IsArray(cmd)) {
+                  charstring.splice(j, 1, cmd[0], cmd[1]);
                   j += 1;
                 } else {
-                  charstring[j] = command;
+                  charstring[j] = cmd;
                 }
-              } else {
-                charstring.splice(j, 1);
-
-                // command has already been translated, just add them to the
-                // charstring directly
-                for (var k = 0; k < command.length; k++)
-                  charstring.splice(j + k, 0, command[k]);
-                j+= command.length - 1;
               }
             }
             return charstring;
@@ -1406,7 +1384,7 @@ CFF.prototype = {
 	  var glyphsCount = charstrings.length;
     for (var i = 0; i < glyphsCount; i++) {
       var charstring = charstrings[i].charstring;
-      glyphs.push(this.flattenCharstring(charstring.slice(), subrs));
+      glyphs.push(this.flattenCharstring(charstring.slice()));
     }
 
     // Create a CFF font data
@@ -1511,22 +1489,35 @@ CFF.prototype = {
       247, 32, 11,
       247, 10, 161, 147, 154, 150, 143, 12, 13,
       139, 12, 14,
-      28, 0, 55, 19
+      28, 0, 55, 19 // Subrs offset
     ]);
     cff.set(privateData, currentOffset);
     currentOffset += privateData.length;
 
-    // Dump shit at the end of the file
-    var shit = [
-      0x00, 0x01, 0x01, 0x01,
-      0x13, 0x5D, 0x65, 0x64,
-      0x5E, 0x5B, 0xAF, 0x66,
-      0xBA, 0xBB, 0xB1, 0xB0,
-      0xB9, 0xBA, 0x65, 0xB2,
-      0x5C, 0x1F, 0x0B
-    ];
-    cff.set(shit, currentOffset);
-    currentOffset += shit.length;
+    // Local Subrs
+    var flattenedSubrs = [];
+
+    var bias = 0;
+    var subrsCount = subrs.length;
+    if (subrsCount < 1240)
+      bias = 107;
+    else if (subrsCount < 33900)
+      bias = 1131;
+    else
+      bias = 32768;
+
+    // Add a bunch of empty subrs to deal with the Type2 bias
+    for (var i = 0; i < bias; i++)
+      flattenedSubrs.push([0x0B]);
+
+    for (var i = 0; i < subrsCount; i++) {
+      var subr = subrs[i];
+      flattenedSubrs.push(this.flattenCharstring(subr));
+    }
+
+    var subrsData = this.createCFFIndexHeader(flattenedSubrs, true);
+    cff.set(subrsData, currentOffset);
+    currentOffset += subrsData.length;
 
     var fontData = [];
     for (var i = 0; i < currentOffset; i++)
