@@ -4234,23 +4234,11 @@ var CanvasGraphics = (function() {
 
         paintImageXObject: function(ref, image, inline) {
             this.save();
-            if (image.getParams) {
-                // JPX/JPEG2000 streams directly contain bits per component
-                // and color space mode information.
-                TODO("get params from actual stream");
-                // var bits = ...
-                // var colorspace = ...
-            }
-            // TODO cache rendered images?
 
+            var ctx = this.ctx;
             var dict = image.dict;
             var w = dict.get2("Width", "W");
             var h = dict.get2("Height", "H");
-
-            if (w < 1 || h < 1)
-                error("Invalid image width or height");
-
-            var ctx = this.ctx;
             // scale the image to the unit square
             ctx.scale(1/w, -1/h);
 
@@ -4265,154 +4253,15 @@ var CanvasGraphics = (function() {
                 return;
             }
 
-            var interpolate = dict.get2("Interpolate", "I");
-            if (!IsBool(interpolate))
-                interpolate = false;
-            var imageMask = dict.get2("ImageMask", "IM");
-            if (!IsBool(imageMask))
-                imageMask = false;
-
-            var bitsPerComponent = image.bitsPerComponent;
-            if (!bitsPerComponent) {
-                bitsPerComponent = dict.get2("BitsPerComponent", "BPC");
-                if (!bitsPerComponent) {
-                    if (imageMask)
-                        bitsPerComponent = 1;
-                    else
-                        error("Bits per component missing in image");
-                }
-            }
-
-            if (bitsPerComponent !== 8) {
-                TODO("Support bpc="+ bitsPerComponent);
-                this.restore();
-                return;
-            }
-
-            var xref = this.xref;
-            var colorSpaces = this.colorSpaces;
-
-            if (imageMask) {
-                error("support image masks");
-            }
-
-            // actual image
-            var csStream = dict.get2("ColorSpace", "CS");
-            csStream = xref.fetchIfRef(csStream);
-            if (IsName(csStream) && inline)
-                csStream = colorSpaces.get(csStream);
-
-            var colorSpace = new ColorSpace(xref, csStream);
-            var decode = dict.get2("Decode", "D");
-
-            TODO("create color map");
-
-            var mask = image.dict.get("Mask");
-            mask = xref.fetchIfRef(mask);
-            var smask = image.dict.get("SMask");
-            smask = xref.fetchIfRef(smask);
-
-            if (IsStream(smask)) {
-                if (inline)
-                    error("cannot combine smask and inlining");
-
-                var maskDict = smask.dict;
-                var maskW = maskDict.get2("Width", "W");
-                var maskH = maskDict.get2("Height", "H");
-                if (!IsNum(maskW) || !IsNum(maskH) || maskW < 1 || maskH < 1)
-                    error("Invalid image width or height");
-                if (maskW !== w || maskH !== h)
-                    error("Invalid image width or height");
-
-                var maskInterpolate = maskDict.get2("Interpolate", "I");
-                if (!IsBool(maskInterpolate))
-                    maskInterpolate = false;
-
-                var maskBPC = maskDict.get2("BitsPerComponent", "BPC");
-                if (!maskBPC)
-                    error("Invalid image mask bpc");
-
-                var maskCsStream = maskDict.get2("ColorSpace", "CS");
-                maskCsStream = xref.fetchIfRef(maskCsStream);
-                var maskColorSpace = new ColorSpace(xref, maskCsStream);
-                if (maskColorSpace.mode !== "DeviceGray")
-                    error("Invalid color space for smask");
-
-                var maskDecode = maskDict.get2("Decode", "D");
-                if (maskDecode)
-                    TODO("Handle mask decode");
-                // handle matte object
-            }
+            var imageObj = new PDFImage(this.xref, this.res, image, inline); 
 
             var tmpCanvas = new this.ScratchCanvas(w, h);
             var tmpCtx = tmpCanvas.getContext("2d");
             var imgData = tmpCtx.getImageData(0, 0, w, h);
             var pixels = imgData.data;
 
-            if (bitsPerComponent != 8)
-                error("unhandled number of bits per component");
-
-            if (smask) {
-                if (maskColorSpace.numComps != 1)
-                    error("Incorrect number of components in smask");
-
-                var numComps = colorSpace.numComps;
-                var imgArray = image.getBytes(numComps * w * h);
-                var imgIdx = 0;
-
-                var smArray = smask.getBytes(w * h);
-                var smIdx = 0;
-
-                var length = 4 * w * h;
-                switch (numComps) {
-                case 1:
-                    for (var i = 0; i < length; i += 4) {
-                        var p = imgArray[imgIdx++];
-                        pixels[i] = p;
-                        pixels[i+1] = p;
-                        pixels[i+2] = p;
-                        pixels[i+3] = smArray[smIdx++];
-                    }
-                    break;
-                case 3:
-                    for (var i = 0; i < length; i += 4) {
-                        pixels[i] = imgArray[imgIdx++];
-                        pixels[i+1] = imgArray[imgIdx++];
-                        pixels[i+2] = imgArray[imgIdx++];
-                        pixels[i+3] = smArray[smIdx++];
-                    }
-                    break;
-                default:
-                    TODO("Images with "+ numComps + " components per pixel");
-                }
-            } else {
-                var numComps = colorSpace.numComps;
-                var imgArray = image.getBytes(numComps * w * h);
-                var imgIdx = 0;
-
-                var length = 4 * w * h;
-                switch (numComps) {
-                case 1:
-                    for (var i = 0; i < length; i += 4) {
-                        var p = imgArray[imgIdx++];
-                        pixels[i] = p;
-                        pixels[i+1] = p;
-                        pixels[i+2] = p;
-                        pixels[i+3] = 255;
-                    }
-                    break;
-                case 3:
-                    for (var i = 0; i < length; i += 4) {
-                        pixels[i] = imgArray[imgIdx++];
-                        pixels[i+1] = imgArray[imgIdx++];
-                        pixels[i+2] = imgArray[imgIdx++];
-                        pixels[i+3] = 255;
-                    }
-                    break;
-                default:
-                    TODO("Images with "+ numComps + " components per pixel");
-                }
-            }
+            imageObj.fillRgbaBuffer(pixels);
+            
             tmpCtx.putImageData(imgData, 0, 0);
             ctx.drawImage(tmpCanvas, 0, -h);
             this.restore();
@@ -4538,6 +4387,203 @@ var ColorSpace = (function() {
     constructor.prototype = {
     };
 
+    return constructor;
+})();
+
+var PDFImage = (function() {
+    function constructor(xref, res, image, inline) {
+        this.image = image;
+        if (image.getParams) {
+            // JPX/JPEG2000 streams directly contain bits per component
+            // and color space mode information.
+            TODO("get params from actual stream");
+            // var bits = ...
+            // var colorspace = ...
+        }
+        // TODO cache rendered images?
+
+        var dict = image.dict;
+        this.width = dict.get2("Width", "W");
+        this.height = dict.get2("Height", "H");
+
+        if (this.width < 1 || this.height < 1)
+            error("Invalid image width or height");
+
+        this.interpolate = dict.get2("Interpolate", "I") || false;
+        this.imageMask = dict.get2("ImageMask", "IM") || false;
+
+        var bitsPerComponent = image.bitsPerComponent;
+        if (!bitsPerComponent) {
+            bitsPerComponent = dict.get2("BitsPerComponent", "BPC");
+            if (!bitsPerComponent) {
+                if (this.imageMask)
+                    bitsPerComponent = 1;
+                else
+                    error("Bits per component missing in image");
+            }
+        }
+        this.bpc = bitsPerComponent;
+
+        var colorSpaces = res.get("ColorSpace");
+        var csStream = xref.fetchIfRef(dict.get2("ColorSpace", "CS"));
+        if (IsName(csStream) && inline)
+            csStream = colorSpaces.get(csStream);
+        this.colorSpace = new ColorSpace(xref, csStream);
+
+        this.numComps = this.colorSpace.numComps;
+        this.decode = dict.get2("Decode", "D");
+
+        var mask = xref.fetchIfRef(image.dict.get("Mask"));
+        var smask = xref.fetchIfRef(image.dict.get("SMask"));
+
+        if (mask) {
+            TODO("masked images");
+        } else if (smask) {
+            this.smask = new PDFImage(xref, res, smask);
+        }
+    };
+    
+    constructor.prototype = {
+        getComponents: function getComponents(buffer) {
+            var bpc = this.bpc;
+            if (bpc == 8)
+                return buffer;
+
+            var width = this.width;
+            var height = this.height;
+            var numComps = this.numComps;
+        
+            var length = width * height;
+            var bufferPos = 0;
+            var output = new Uint8Array(length);
+
+            if (bpc == 1) {
+                var rowComps = width * numComps;
+                var mask = 0;
+                var buf = 0;
+                
+                for (var i = 0, ii = length; i < ii; ++i) {
+                    if (i % rowComps == 0) {
+                        mask = 0;
+                        buf = 0;
+                    } else {
+                        mask >>= 1;
+                    }
+
+                    if (mask <= 0) {
+                        buf = buffer[bufferPos++];
+                        mask = 128;
+                    }
+
+                    var t = buf & mask;
+                    if (t == 0)
+                        output[i] = 0;
+                    else
+                        output[i] = 255;
+                }
+            } else {
+                var rowComps = width * numComps;
+                var bits = 0;
+                var buf = 0;
+
+                for (var i = 0, ii = length; i < ii; ++i) {
+                    while (bits < bpc) {
+                        buf = (buf << 8) | buffer[bufferPos++];
+                        bits += 8;
+                    }
+                    var remainingBits = bits - bpc;
+                    var ret = buf >> remainingBits;
+                    
+                    if (i % rowComps == 0) {
+                        buf = 0;
+                        bits = 0;
+                    } else {
+                        buf = buf & ((1 << remainingBits) - 1);
+                        bits = remainingBits;
+                    }
+                    output[i] = Math.round(255 * ret / ((1 << bpc) - 1));
+                }
+            }
+            return output;
+        },
+        getOpacity: function getOpacity() {
+            var smask = this.smask;
+            var width = this.width;
+            var height = this.height;
+            var buf = new Uint8Array(width * height);
+            
+            if (smask) {
+                var sw = smask.width;
+                var sh = smask.height;
+                if (sw != this.width || sh != this.height)
+                    error("smask dimensions do not match image dimensions");
+                
+                smask.fillGrayBuffer(buf);
+                return buf;
+            } else {
+                for (var i = 0, ii = width * height; i < ii; ++i)
+                    buf[i] = 255;
+            }
+            return buf;
+        },
+        fillRgbaBuffer: function fillRgbaBuffer(buffer) {
+            var numComps = this.numComps;
+            var width = this.width;
+            var height = this.height;
+            var bpc = this.bpc;
+
+            // rows start at byte boundary;
+            var rowBytes = (width * numComps * bpc + 7) >> 3;
+            var imgArray = this.image.getBytes(height * rowBytes);
+            
+            var comps = this.getComponents(imgArray);
+            var compsPos = 0;
+            var opacity = this.getOpacity();
+            var opacityPos = 0;
+            var length = width * height * 4;
+
+            switch (numComps) {
+                case 1:
+                    for (var i = 0; i < length; i += 4) {
+                        var p = comps[compsPos++];
+                        buffer[i] = p;
+                        buffer[i+1] = p;
+                        buffer[i+2] = p;
+                        buffer[i+3] = opacity[opacityPos++];
+                    }
+                    break;
+                case 3:
+                    for (var i = 0; i < length; i += 4) {
+                        buffer[i] = comps[compsPos++];
+                        buffer[i+1] = comps[compsPos++];
+                        buffer[i+2] = comps[compsPos++];
+                        buffer[i+3] = opacity[opacityPos++];
+                    }
+                    break;
+                default:
+                    TODO("Images with "+ numComps + " components per pixel");
+            }
+        },
+        fillGrayBuffer: function fillGrayBuffer(buffer) {
+            var numComps = this.numComps;
+            if (numComps != 1)
+                error("Reading gray scale from a color image");
+
+            var width = this.width;
+            var height = this.height;
+            var bpc = this.bpc;
+
+            // rows start at byte boundary;
+            var rowBytes = (width * numComps * bpc + 7) >> 3;
+            var imgArray = this.image.getBytes(height * rowBytes);
+            
+            var comps = this.getComponents(imgArray);
+            var length = width * height;
+
+            for (var i = 0; i < length; ++i)
+                buffer[i] = comps[i];
+        },
+    };
     return constructor;
 })();
 
