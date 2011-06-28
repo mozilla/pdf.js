@@ -194,6 +194,8 @@ function readFontIndexData(aStream, aIsByte) {
       return aStream.getByte() << 24 | aStream.getByte() << 16 |
              aStream.getByte() << 8 | aStream.getByte();
     }
+    error(offsize + " is not a valid offset size");
+    return null;
   };
 
   var offsets = [];
@@ -320,12 +322,12 @@ var Type2Parser = function(aFilePath) {
     dump(subrs);
 
     // Reading Private Dict
-    var private = font.get("Private");
-    log("Reading Private Dict (offset: " + private.offset + " size: " + private.size + ")");
-    aStream.pos = private.offset;
+    var priv = font.get("Private");
+    log("Reading Private Dict (offset: " + priv.offset + " size: " + priv.size + ")");
+    aStream.pos = priv.offset;
 
     var privateDict = [];
-    for (var i = 0; i < private.size; i++)
+    for (var i = 0; i < priv.size; i++)
       privateDict.push(aStream.getByte());
     dump("private:" + privateDict);
     parseAsToken(privateDict, CFFDictPrivateDataMap);
@@ -386,7 +388,7 @@ function writeToFile(aBytes, aFilePath) {
 
   var stream = Cc["@mozilla.org/network/file-output-stream;1"]
                  .createInstance(Ci.nsIFileOutputStream);
-  stream.init(file, 0x04 | 0x08 | 0x20, 0600, 0);
+  stream.init(file, 0x04 | 0x08 | 0x20, 600, 0);
 
   var bos = Cc["@mozilla.org/binaryoutputstream;1"]
               .createInstance(Ci.nsIBinaryOutputStream);

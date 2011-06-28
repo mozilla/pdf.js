@@ -3,11 +3,12 @@
 
 "use strict";
 
-var pdfDocument, canvas, pageDisplay, pageNum, numPages, pageInterval;
+var pdfDocument, canvas, pageScale, pageDisplay, pageNum, numPages, pageTimeout;
 function load(userInput) {
     canvas = document.getElementById("canvas");
     canvas.mozOpaque = true;
-    pageNum = parseInt(queryParams().page) || 1;
+    pageNum = ("page" in queryParams()) ? parseInt(queryParams().page) : 1;
+    pageScale = ("scale" in queryParams()) ? parseInt(queryParams().scale) : 1.5;
     var fileName = userInput;
     if (!userInput) {
       fileName = queryParams().file || "compressed.tracemonkey-pldi-09.pdf";
@@ -52,13 +53,19 @@ function gotoPage(num) {
 }
 
 function displayPage(num) {
-    window.clearInterval(pageInterval);
+    window.clearTimeout(pageTimeout);
 
     document.getElementById("pageNumber").value = num;
 
     var t0 = Date.now();
 
     var page = pdfDocument.getPage(pageNum = num);
+    canvas.width = parseInt(canvas.getAttribute("defaultwidth")) * pageScale;
+    canvas.height = parseInt(canvas.getAttribute("defaultheight")) * pageScale;
+
+    // scale canvas by 2
+    canvas.width = 2 * page.mediaBox[2];
+    canvas.hieght = 2 * page.mediaBox[3];
 
     var t1 = Date.now();
     var ctx = canvas.getContext("2d");
@@ -75,27 +82,11 @@ function displayPage(num) {
     page.compile(gfx, fonts);
     var t2 = Date.now();
 
-    var fontsReady = true;
-
-    // Inspect fonts and translate the missing one
-    var count = fonts.length;
-    for (var i = 0; i < count; i++) {
-      var font = fonts[i];
-      if (Fonts[font.name]) {
-        fontsReady = fontsReady && !Fonts[font.name].loading;
-        continue;
+    function loadFont() {
+      if (!FontLoader.bind(fonts)) {
+        pageTimeout = window.setTimeout(loadFont, 10);
+        return;
       }
-
-      new Font(font.name, font.file, font.properties);
-      fontsReady = false;
-    }
-
-    function delayLoadFont() {
-      for (var i = 0; i < count; i++) {
-        if (Fonts[font.name].loading)
-          return;
-      }
-      window.clearInterval(pageInterval);
 
       var t3 = Date.now();
 
@@ -106,12 +97,7 @@ function displayPage(num) {
       var infoDisplay = document.getElementById("info");
       infoDisplay.innerHTML = "Time to load/compile/fonts/render: "+ (t1 - t0) + "/" + (t2 - t1) + "/" + (t3 - t2) + "/" + (t4 - t3) + " ms";
     };
-
-    if (fontsReady) {
-      delayLoadFont();
-    } else {
-      pageInterval = setInterval(delayLoadFont, 10);
-    }
+    loadFont();
 }
 
 function nextPage() {
