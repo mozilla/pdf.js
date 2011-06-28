@@ -33,6 +33,7 @@
     },
     {  "id": "openweb-cover",
        "file": "pdfs/openweb_tm-PRINT.pdf",
+       "link": true,
        "rounds": 1,
        "type": "eq"
     }
