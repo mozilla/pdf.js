@@ -103,8 +103,10 @@ function nextPage() {
 
   try {
     // using mediaBox for the canvas size
-    canvas.width = currentPage.mediaBox[2];
-    canvas.height = currentPage.mediaBox[3];
+    var wTwips = (currentPage.mediaBox[2] - currentPage.mediaBox[0]);
+    var hTwips = (currentPage.mediaBox[3] - currentPage.mediaBox[1]);
+    canvas.width = wTwips * 96.0 / 72.0;
+    canvas.height = hTwips * 96.0 / 72.0;
     clear(ctx);
   } catch(e) {
     failure = 'page setup: '+ e.toString();
