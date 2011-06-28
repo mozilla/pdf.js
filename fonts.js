@@ -26,12 +26,15 @@ var fontName  = "";
  */
 var kDisableFonts = false;
 
+
 /**
  * Hold a map of decoded fonts and of the standard fourteen Type1 fonts and
  * their acronyms.
  * TODO Add the standard fourteen Type1 fonts list by default
  *      http://cgit.freedesktop.org/poppler/poppler/tree/poppler/GfxFont.cc#n65
  */
+
+var kScalePrecision = 100;
 var Fonts = {
   _active: null,
 
@@ -39,8 +42,9 @@ var Fonts = {
     return this._active;
   },
 
-  set active(name) {
+  setActive: function fonts_setActive(name, size) {
     this._active = this[name];
+    this.ctx.font = (size * kScalePrecision) + 'px "' + name + '"';
   },
 
   charsToUnicode: function fonts_chars2Unicode(chars) {
@@ -77,6 +81,17 @@ var Fonts = {
 
     // Enter the translated string into the cache
     return active.cache[chars] = str;
+  },
+
+  get ctx() {
+    delete this.ctx;
+    var ctx = document.createElement("canvas").getContext("2d");
+    ctx.scale(1 / kScalePrecision, 1);
+    return this.ctx = ctx;
+  },
+
+  measureText: function fonts_measureText(text) {
+    return this.ctx.measureText(text).width / kScalePrecision;
   }
 };
 
@@ -1292,7 +1307,7 @@ CFF.prototype = {
       var glyph = glyphs[i];
       var unicode = GlyphsUnicode[glyph.glyph];
       if (!unicode) {
-        if (glyph != ".notdef")
+        if (glyph.glyph != ".notdef")
           warn(glyph + " does not have an entry in the glyphs unicode dictionary");
       } else {
         charstrings.push({

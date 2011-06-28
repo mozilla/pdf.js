@@ -2797,19 +2797,20 @@ var CanvasGraphics = (function() {
             if (fontDescriptor && fontDescriptor.num) {
                 var fontDescriptor = this.xref.fetchIfRef(fontDescriptor);
                 fontName = fontDescriptor.get("FontName").name.replace("+", "_");
-                Fonts.active = fontName;
+                Fonts.setActive(fontName, size);
             }
 
             if (!fontName) {
                 // TODO: fontDescriptor is not available, fallback to default font
                 this.current.fontSize = size;
                 this.ctx.font = this.current.fontSize + 'px sans-serif';
+                Fonts.setActive("sans-serif", this.current.fontSize);
                 return;
             }
 
             this.current.fontName = fontName;
             this.current.fontSize = size;
-            this.ctx.font = this.current.fontSize +'px "' + fontName + '", Symbol';
+            this.ctx.font = this.current.fontSize + 'px "' + this.current.fontName + '"';
         },
         setTextRenderingMode: function(mode) {
             TODO("text rendering mode");
@@ -2851,11 +2852,7 @@ var CanvasGraphics = (function() {
                 text = Fonts.charsToUnicode(text);
                 this.ctx.translate(this.current.x, -1 * this.current.y);
                 this.ctx.fillText(text, 0, 0);
-
-                this.ctx.scale(0.05, 1);
-                this.ctx.font = (this.current.fontSize * 20) + 'px "' + this.current.fontName + '", Symbol';
-                this.current.x += this.ctx.measureText(text).width / 20;
-                this.ctx.scale(1, 1);
+                this.current.x += Fonts.measureText(text);
             }
 
             this.ctx.restore();
