@@ -6,5 +6,9 @@
    {
     "name":"firefox6",
     "path":"/Users/sayrer/firefoxen/Aurora.app"
+   },
+   {
+    "name":"chrome14",
+    "path":"/Applications/Google Chrome.app"
    }
 ]

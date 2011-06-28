@@ -1,0 +1,10 @@
+[
+   {
+    "name":"firefox7",
+    "path":"/home/sayrer/firefoxen/nightly/firefox"
+   },
+   {
+    "name":"chrome14",
+    "path":"/opt/google/chrome/chrome"
+   }
+]
