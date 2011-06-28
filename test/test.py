@@ -125,7 +125,7 @@ class PDFTestHandler(BaseHTTPRequestHandler):
 
         self.sendFile(path, ext)
 
-    def do_POST(self):            
+    def do_POST(self):
         numBytes = int(self.headers['Content-Length'])
 
         self.send_response(200)
