@@ -182,11 +182,7 @@ var Font = (function () {
     return array;
   };
 
-  function string16(value, signed) {
-    if (signed) {
-      value ^= 0xffff;
-      value += 1;
-    }
+  function string16(value) {
     return String.fromCharCode((value >> 8) & 0xff) +
            String.fromCharCode(value & 0xff);
   };
@@ -275,6 +271,7 @@ var Font = (function () {
   };
 
   function createCMapTable(glyphs) {
+    glyphs.push({unicode: 0x000});
     var ranges = getRanges(glyphs);
 
     var headerSize = (12 * 2 + (ranges.length * 4 * 2));
@@ -308,7 +305,7 @@ var Font = (function () {
       var range = ranges[i];
       var start = range[0];
       var end = range[1];
-      var delta = (((start - 1) - bias) ^ 0xffff) + 1;
+      var delta = (((start - 1) - bias) ^ 0xffff);
       bias += (end - start + 1);
 
       startCount += string16(start);
@@ -734,21 +731,18 @@ var Font = (function () {
       * while Windows use this data. So be careful if you hack on Linux and
       * have to touch the 'hmtx' table
       */
-      hmtx = "\x01\xF4\x00\x00"; // Fake .notdef
+      hmtx = "\x00\x00\x00\x00"; // Fake .notdef
       var width = 0, lsb = 0;
       for (var i = 0; i < charstrings.length; i++) {
         var charstring = charstrings[i];
-        if (fontCount == 9) {
-          log(charstring.glyph + "::" + charstring.width + "::" + charstring.lsb);
-        }
-        hmtx += string16(charstring.width) + string16(charstring.lsb, true);
+        hmtx += string16(charstring.width) + string16(0);
       }
       hmtx = stringToArray(hmtx);
       createTableEntry(otf, offsets, "hmtx", hmtx);
 
       /** MAXP */
       maxp = "\x00\x00\x50\x00" + // Version number
-             string16(charstrings.length + 1); // Num of glyphs (+1 to pass the sanitizer...)
+             string16(charstrings.length + 1); // Num of glyphs
       maxp = stringToArray(maxp);
       createTableEntry(otf, offsets, "maxp", maxp);
 
@@ -1050,35 +1044,14 @@ var Type1Parser = function() {
 
           command = charStringDictionary["12"][escape];
         } else {
-
           // TODO Clean this code
-          Gindex = Gindex || 1;
           if (value == 13) {
             width = charstring[1];
             lsb = charstring[0];
-            //charstring.push(lsb, "hmoveto");
+            charstring.push(lsb, "hmoveto");
             charstring.splice(0, 1);
-            used = true;
             continue;
-          } else if (!used && lsb && value == 1) { // hstem
-            charstring[Gindex] += lsb;
-            used = true;
-          } else if (!used && lsb && value == 22) { // hmoveto
-            error("hmoveto: " + charstring[Gindex]);
-            charstring[Gindex] += lsb;
-            used = true;
-          } else if (!used && lsb && value == 14) { // enchar
-            log(glyph);
-            var p = charstring[Gindex];
-            if (IsNum(p)) {
-              charstring[Gindex] += lsb;
-            } else {
-              charstring.splice(Gindex + 1, 0, lsb);
-            }
-            used = true;
           }
-          var Gindex = charstring.length;
-
           command = charStringDictionary[value];
         }
 
@@ -1106,9 +1079,6 @@ var Type1Parser = function() {
 
       charstring.push(value);
     }
-
-    if (!used && lsb)
-      error("lsb has not been reported in " + fontName + " for charstring: " + charstring);
 
     return { charstring: charstring, width: width, lsb: lsb };
   };
@@ -1366,6 +1336,9 @@ CFF.prototype = {
     var i = 0;
     while (true) {
       var obj = charstring[i];
+      if (obj == undefined) {
+        error("unknow charstring command for " + i + " in " + charstring);
+      }
       if (obj.charAt) {
         switch (obj) {
           case "endchar":
@@ -1379,7 +1352,7 @@ CFF.prototype = {
               } else if (command.charAt) {
                 var cmd = this.commandsMap[command];
                 if (!cmd)
-                  error(command);
+                  error("Unknow command: " + command);
 
                 if (IsArray(cmd)) {
                   charstring.splice(j, 1, cmd[0], cmd[1]);
