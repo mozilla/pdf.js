@@ -1045,7 +1045,14 @@ var Type1Parser = function() {
         } else {
           // TODO Clean this code
           if (value == 13) {
-            width = charstring[1];
+            if (charstring.length == 2) {
+              width = charstring[1];
+            } else if (charstring.length == 4 && charstring[3] == "div") {
+              width = charstring[1] / charstring[2];
+            } else {
+              error("Unsupported hsbw format: " + charstring);
+            }
+
             lsb = charstring[0];
             charstring.push(lsb, "hmoveto");
             charstring.splice(0, 1);
