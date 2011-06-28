@@ -33,9 +33,24 @@ function FontWorker() {
       throw "Unkown action from worker: " + data.action;
     }
   }.bind(this);
+  
+  this.$handleFontLoadedCallback = this.handleFontLoadedCallback.bind(this);
 }
 
 FontWorker.prototype = {
+  handleFontLoadedCallback: function() {
+    // Decrease the number of fonts wainting to be loaded.
+    this.fontsWaiting--;
+    // If all fonts are available now, then call all the callbacks.
+    if (this.fontsWaiting == 0) {
+      var callbacks = this.fontsWaitingCallbacks;
+      for (var i = 0; i < callbacks.length; i++) {
+        callbacks[i]();
+      }
+      this.fontsWaitingCallbacks.length = 0;
+    }
+  },
+  
   actionHandler: {
     "log": function(data) {
       console.log.apply(console, data);
@@ -48,41 +63,15 @@ FontWorker.prototype = {
         Fonts[name].properties = {
           encoding: data[name].encoding
         }
-        var base64 = window.btoa(data[name].str);
-
-        // Add the @font-face rule to the document
-        var url = "url(data:font/opentype;base64," + base64 + ");";
-        var rule = "@font-face { font-family:'" + name + "';src:" + url + "}";
-        var styleSheet = document.styleSheets[0];
-        styleSheet.insertRule(rule, styleSheet.length);
-
-        // Just adding the font-face to the DOM doesn't make it load. It
-        // seems it's loaded once Gecko notices it's used. Therefore,
-        // add a div on the page using the loaded font.
-        var div = document.createElement("div");
-        var style = 'font-family:"' + name + 
-          '";position: absolute;top:-99999;left:-99999;z-index:-99999';
-        div.setAttribute("style", style);
-        document.body.appendChild(div);
-        this.fontsWaiting --;
+        
+        // Call `Font.prototype.bindDOM` to make the font get loaded on the page.
+        Font.prototype.bindDOM.call(
+          Fonts[name],
+          data[name].str,
+          // IsLoadedCallback.
+          this.$handleFontLoadedCallback
+        );
       }
-      
-      if (this.fontsWaiting == 0) {
-        console.timeEnd("ensureFonts");
-      }
-      
-      // This timeout is necessary right now to make sure the fonts are really
-      // loaded at the point the callbacks are called.
-      setTimeout(function() {
-        // If all fonts are available now, then call all the callbacks.
-        if (this.fontsWaiting == 0) {
-          var callbacks = this.fontsWaitingCallbacks;
-          for (var i = 0; i < callbacks.length; i++) {
-            callbacks[i]();
-          }
-          this.fontsWaitingCallbacks.length = 0;
-        }        
-      }.bind(this), 100);
     }
   },
 
@@ -98,6 +87,8 @@ FontWorker.prototype = {
       // Store only the data on Fonts that is needed later on, such that we
       // hold track on as lease memory as possible.
       Fonts[font.name] = {
+        name:       font.name,
+        mimetype:   font.mimetype,
         // This is set later on the worker replay. For some fonts, the encoding
         // is calculated during the conversion process happening on the worker
         // and therefore is not available right now.
