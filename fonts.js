@@ -832,7 +832,7 @@ var Font = (function () {
  */
 var FontsUtils = {
   _bytesArray: new Uint8Array(4),
-  integerToBytes: function fu_integerToBytes(value, bytesCount, signed) {
+  integerToBytes: function fu_integerToBytes(value, bytesCount) {
     var bytes = this._bytesArray;
 
     if (bytesCount == 1) {
@@ -1003,7 +1003,7 @@ var Type1Parser = function() {
 
   var kEscapeCommand = 12;
 
-  function decodeCharString(array, glyph) {
+  function decodeCharString(array) {
     var charstring = [];
     var lsb = 0;
     var width = 0;
@@ -1121,7 +1121,7 @@ var Type1Parser = function() {
         length = parseInt(length);
         var data = eexecString.slice(i + 3, i + 3 + length);
         var encodedCharstring = decrypt(data, kCharStringsEncryptionKey, 4);
-        var str = decodeCharString(encodedCharstring, glyph);
+        var str = decodeCharString(encodedCharstring);
 
         glyphs.push({
             glyph: glyph,
@@ -1289,8 +1289,8 @@ CFF.prototype = {
     var charstrings = [];
 
     for (var i = 0; i < glyphs.length; i++) {
-      var glyph = glyphs[i].glyph;
-      var unicode = GlyphsUnicode[glyph];
+      var glyph = glyphs[i];
+      var unicode = GlyphsUnicode[glyph.glyph];
       if (!unicode) {
         if (glyph != ".notdef")
           warn(glyph + " does not have an entry in the glyphs unicode dictionary");
@@ -1298,9 +1298,9 @@ CFF.prototype = {
         charstrings.push({
           glyph: glyph,
           unicode: unicode,
-          charstring: glyphs[i].data,
-          width: glyphs[i].width,
-          lsb: glyphs[i].lsb
+          charstring: glyph.data,
+          width: glyph.width,
+          lsb: glyph.lsb
         });
       }
     };
