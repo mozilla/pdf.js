@@ -271,7 +271,6 @@ var Font = (function () {
   };
 
   function createCMapTable(glyphs) {
-    glyphs.push({unicode: 0x000});
     var ranges = getRanges(glyphs);
 
     var headerSize = (12 * 2 + (ranges.length * 4 * 2));
@@ -305,7 +304,7 @@ var Font = (function () {
       var range = ranges[i];
       var start = range[0];
       var end = range[1];
-      var delta = (((start - 1) - bias) ^ 0xffff);
+      var delta = (((start - 1) - bias) ^ 0xffff) + 1;
       bias += (end - start + 1);
 
       startCount += string16(start);
@@ -721,7 +720,7 @@ var Font = (function () {
                  "\x00\x00" + // -reserved-
                  "\x00\x00" + // -reserved-
                  "\x00\x00" + // metricDataFormat
-                 string16(charstrings.length)
+                 string16(charstrings.length + 1) // Number of HMetrics
       );
       createTableEntry(otf, offsets, "hhea", hhea);
 
