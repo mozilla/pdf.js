@@ -167,7 +167,7 @@ var Font = (function () {
     }
 
     Fonts[name] = {
-      data: file,
+      data: data,
       properties: properties,
       loading: true,
       cache: Object.create(null)
