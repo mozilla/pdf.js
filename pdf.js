@@ -2807,6 +2807,7 @@ var CanvasGraphics = (function() {
                 return;
             }
 
+            this.current.fontName = fontName;
             this.current.fontSize = size;
             this.ctx.font = this.current.fontSize +'px "' + fontName + '", Symbol';
         },
@@ -2850,7 +2851,11 @@ var CanvasGraphics = (function() {
                 text = Fonts.charsToUnicode(text);
                 this.ctx.translate(this.current.x, -1 * this.current.y);
                 this.ctx.fillText(text, 0, 0);
-                this.current.x += this.ctx.measureText(text).width;
+
+                this.ctx.scale(0.05, 1);
+                this.ctx.font = (this.current.fontSize * 20) + 'px "' + this.current.fontName + '", Symbol';
+                this.current.x += this.ctx.measureText(text).width / 20;
+                this.ctx.scale(1, 1);
             }
 
             this.ctx.restore();
