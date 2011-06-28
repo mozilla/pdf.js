@@ -30,5 +30,10 @@
        "file": "pdfs/sizes.pdf",
        "rounds": 1,
        "type": "eq"
+    },
+    {  "id": "openweb-cover",
+       "file": "pdfs/openweb_tm-PRINT.pdf",
+       "rounds": 1,
+       "type": "eq"
     }
 ]

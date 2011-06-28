@@ -3918,6 +3918,8 @@ var CanvasGraphics = (function() {
                 this.setStrokeGray.apply(this, arguments);
             } else if (3 === arguments.length) {
                 this.setStrokeRGBColor.apply(this, arguments);
+            } else if (4 === arguments.length) {
+                this.setStrokeCMYKColor.apply(this, arguments);
             }
         },
         setStrokeColorN: function(/*...*/) {
@@ -3930,6 +3932,8 @@ var CanvasGraphics = (function() {
                 this.setFillGray.apply(this, arguments);
             } else if (3 === arguments.length) {
                 this.setFillRGBColor.apply(this, arguments);
+            } else if (4 === arguments.length) {
+                this.setFillCMYKColor.apply(this, arguments);
             }
         },
         setFillColorN: function(/*...*/) {
@@ -4073,10 +4077,10 @@ var CanvasGraphics = (function() {
             this.ctx.fillStyle = this.makeCssRgb(r, g, b);
         },
         setStrokeCMYKColor: function(c, m, y, k) {
-            TODO("CMYK space");
+            this.ctx.strokeStyle = this.makeCssCmyk(c, m, y, k);
         },
         setFillCMYKColor: function(c, m, y, k) {
-            TODO("CMYK space");
+            this.ctx.fillStyle = this.makeCssCmyk(c, m, y, k);
         },
 
         // Shading
@@ -4312,6 +4316,13 @@ var CanvasGraphics = (function() {
         },
         makeCssRgb: function(r, g, b) {
             var ri = (255 * r) | 0, gi = (255 * g) | 0, bi = (255 * b) | 0;
+            return "rgb("+ ri +","+ gi +","+ bi +")";
+        },
+        makeCssCmyk: function(c, m, y, k) {
+            // while waiting on CSS's cmyk()... http://www.ilkeratalay.com/colorspacesfaq.php#rgb
+            var ri = (255 * (1 - Math.min(1, c * (1 - k) + k))) | 0;
+            var gi = (255 * (1 - Math.min(1, m * (1 - k) + k))) | 0;
+            var bi = (255 * (1 - Math.min(1, y * (1 - k) + k))) | 0;
             return "rgb("+ ri +","+ gi +","+ bi +")";
         },
         // We generally keep the canvas context set for
