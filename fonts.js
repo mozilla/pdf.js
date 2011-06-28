@@ -1188,8 +1188,8 @@ var type1Parser = new Type1Parser();
 
 var CFF = function(name, file, properties) {
   // Get the data block containing glyphs and subrs informations
-  var length1 = file.dict.get("Length1") || 0;
-  var length2 = file.dict.get("Length2") || 0;
+  var length1 = file.dict.get("Length1");
+  var length2 = file.dict.get("Length2");
   file.skip(length1);
   var eexecBlock = file.getBytes(length2);
 
