@@ -60,12 +60,11 @@ function displayPage(num) {
     var t0 = Date.now();
 
     var page = pdfDocument.getPage(pageNum = num);
-    canvas.width = parseInt(canvas.getAttribute("defaultwidth")) * pageScale;
-    canvas.height = parseInt(canvas.getAttribute("defaultheight")) * pageScale;
 
-    // scale canvas by 2
-    canvas.width = 2 * page.mediaBox[2];
-    canvas.hieght = 2 * page.mediaBox[3];
+    var wTwips = (page.mediaBox[2] - page.mediaBox[0]);
+    var hTwips = (page.mediaBox[3] - page.mediaBox[1]);
+    canvas.width = pageScale * wTwips * 96.0 / 72.0;
+    canvas.height = pageScale * hTwips * 96.0 / 72.0;
 
     var t1 = Date.now();
     var ctx = canvas.getContext("2d");
@@ -79,7 +78,8 @@ function displayPage(num) {
     // page.compile will collect all fonts for us, once we have loaded them
     // we can trigger the actual page rendering with page.display
     var fonts = [];
-    page.compile(gfx, fonts);
+    var imagesLoader = new ImagesLoader();
+    page.compile(gfx, fonts, imagesLoader);
     var t2 = Date.now();
 
     function loadFont() {
@@ -96,8 +96,14 @@ function displayPage(num) {
 
       var infoDisplay = document.getElementById("info");
       infoDisplay.innerHTML = "Time to load/compile/fonts/render: "+ (t1 - t0) + "/" + (t2 - t1) + "/" + (t3 - t2) + "/" + (t4 - t3) + " ms";
-    };
-    loadFont();
+    }
+    function loadImages(callback) {
+      if (imagesLoader.loading == 0)
+        callback();
+      // waiting for images to loaded
+      imagesLoader.onLoad = callback;
+    }
+    loadImages(loadFont);
 }
 
 function nextPage() {

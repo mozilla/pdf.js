@@ -783,15 +783,40 @@ var PredictorStream = (function() {
     return constructor;
 })();
 
+var ImagesLoader = (function() {
+    function constructor() {
+        this.loading = 0;
+    }
+
+    constructor.prototype = {
+        onLoad: function() {},
+        imageLoading: function() {
+            ++this.loading;
+        },
+        imageLoaded: function() {
+            if (--this.loading == 0)
+                this.onLoad();
+        }
+    };
+
+    return constructor;
+})();
+
 // A JpegStream can't be read directly. We use the platform to render the underlying
 // JPEG data for us.
 var JpegStream = (function() {
     function constructor(bytes, dict) {
+        var self = this;
         // TODO: per poppler, some images may have "junk" before that need to be removed
         this.dict = dict;
 
         // create DOM image
         var img = new Image();
+        img.onload = function() {
+            self.loaded = true;
+            if (self.onLoad)
+                self.onLoad();
+        };
         img.src = "data:image/jpeg;base64," + window.btoa(bytesToString(bytes));
         this.domImage = img;
     }
@@ -2867,7 +2892,7 @@ var Page = (function() {
                                              ? obj
                                              : null));
         },
-        compile: function(gfx, fonts) {
+        compile: function(gfx, fonts, images) {
             if (this.code) {
                 // content was compiled
                 return;
@@ -2879,14 +2904,14 @@ var Page = (function() {
             if (!IsArray(this.content)) {
                 // content is not an array, shortcut
                 content = xref.fetchIfRef(this.content);
-                this.code = gfx.compile(content, xref, resources, fonts);
+                this.code = gfx.compile(content, xref, resources, fonts, images);
                 return;
             }
             // the content is an array, compiling all items
             var i, n = this.content.length, compiledItems = [];
             for (i = 0; i < n; ++i) {
                 content = xref.fetchIfRef(this.content[i]);
-                compiledItems.push(gfx.compile(content, xref, resources, fonts));
+                compiledItems.push(gfx.compile(content, xref, resources, fonts, images));
             }
             // creating the function that executes all compiled items
             this.code = function(gfx) {
@@ -3570,7 +3595,7 @@ var CanvasGraphics = (function() {
             this.xref = savedXref;
         },
 
-        compile: function(stream, xref, resources, fonts) {
+        compile: function(stream, xref, resources, fonts, images) {
             var xobjs = xref.fetchIfRef(resources.get("XObject")) || new Dict();
 
             var parser = new Parser(new Lexer(stream), false);
@@ -3611,7 +3636,15 @@ var CanvasGraphics = (function() {
                                 args[0].code = this.compile(xobj,
                                                             xref,
                                                             xobj.dict.get("Resources"),
-                                                            fonts);
+                                                            fonts,
+                                                            images);
+                            } else if (xobj instanceof JpegStream) {
+                                if (!xobj.loaded) {
+                                    images.imageLoading();
+                                    xobj.onLoad = function() {
+                                        images.imageLoaded();
+                                    };
+                                }
                             }
                         }
                     } else if (cmd == "Tf") { // eagerly collect all fonts

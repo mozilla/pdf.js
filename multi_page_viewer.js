@@ -29,11 +29,13 @@ var PDFViewer = {
   scale: 1.0,
   
   pageWidth: function(page) {
-    return page.mediaBox[2] * PDFViewer.scale;
+    var wTwips = (page.mediaBox[2] - page.mediaBox[0]);
+    return wTwips * PDFViewer.scale * 96.0 / 72.0;
   },
   
   pageHeight: function(page) {
-    return page.mediaBox[3] * PDFViewer.scale;
+    var hTwips = (page.mediaBox[3] - page.mediaBox[1]);
+    return hTwips * PDFViewer.scale * 96.0 / 72.0;
   },
   
   lastPagesDrawn: [],
@@ -106,10 +108,11 @@ var PDFViewer = {
       canvas.id = 'thumbnail' + num;
       canvas.mozOpaque = true;
 
-      // Canvas dimensions must be specified in CSS pixels. CSS pixels
-      // are always 96 dpi. These dimensions are 8.5in x 11in at 96dpi.
-      canvas.width = 104;
-      canvas.height = 134;
+      var pageWidth = PDFViewer.pageWidth(page);
+      var pageHeight = PDFViewer.pageHeight(page);
+      var thumbScale = Math.min(104 / pageWidth, 134 / pageHeight);
+      canvas.width = pageWidth * thumbScale;
+      canvas.height = pageHeight * thumbScale;
       div.appendChild(canvas);
 
       var ctx = canvas.getContext('2d');
@@ -123,7 +126,8 @@ var PDFViewer = {
       // page.compile will collect all fonts for us, once we have loaded them
       // we can trigger the actual page rendering with page.display
       var fonts = [];
-      page.compile(gfx, fonts);
+      var imagesLoader = new ImagesLoader();
+      page.compile(gfx, fonts, imagesLoader);
 
       var loadFont = function() {
         if (!FontLoader.bind(fonts)) {
@@ -131,8 +135,14 @@ var PDFViewer = {
           return;
         }
         page.display(gfx);
-      }
-      loadFont();
+      };
+      var loadImages = function(callback) {
+        if (imagesLoader.loading == 0)
+          callback();
+        // waiting for images to loaded
+        imagesLoader.onLoad = callback;
+      };
+      loadImages(loadFont);
     }
   },
   
@@ -175,8 +185,6 @@ var PDFViewer = {
       canvas.id = 'page' + num;
       canvas.mozOpaque = true;
 
-      // Canvas dimensions must be specified in CSS pixels. CSS pixels
-      // are always 96 dpi. These dimensions are 8.5in x 11in at 96dpi.
       canvas.width = PDFViewer.pageWidth(page);
       canvas.height = PDFViewer.pageHeight(page);
       div.appendChild(canvas);
@@ -192,7 +200,8 @@ var PDFViewer = {
       // page.compile will collect all fonts for us, once we have loaded them
       // we can trigger the actual page rendering with page.display
       var fonts = [];
-      page.compile(gfx, fonts);
+      var imagesLoader = new ImagesLoader();
+      page.compile(gfx, fonts, imagesLoader);
 
       var loadFont = function() {
         if (!FontLoader.bind(fonts)) {
@@ -201,7 +210,13 @@ var PDFViewer = {
         }
         page.display(gfx);
       }
-      loadFont();
+      var loadImages = function(callback) {
+        if (imagesLoader.loading == 0)
+          callback();
+        // waiting for images to loaded
+        imagesLoader.onLoad = callback;
+      };
+      loadImages(loadFont);
     }
   },
   
@@ -310,12 +325,14 @@ var PDFViewer = {
       PDFViewer.drawPage(1);
       document.location.hash = 1;
       
-      setTimeout(function() {
-        for (var i = 1; i <= PDFViewer.numberOfPages; i++) {
-          PDFViewer.createThumbnail(i);
-          PDFViewer.drawThumbnail(i);
-        }
-      }, 500);
+      i = 1;
+      var thumbInterval = setInterval(function() {
+        PDFViewer.createThumbnail(i);
+        PDFViewer.drawThumbnail(i);
+        ++i;
+        if (i > PDFViewer.numberOfPages)
+            clearInterval(thumbInterval);
+      }, 200);
     }
     
     PDFViewer.previousPageButton.className = (PDFViewer.pageNumber === 1) ? 'disabled' : '';
