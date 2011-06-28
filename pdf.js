@@ -3819,6 +3819,9 @@ var CanvasGraphics = (function() {
 
             this.current.fontSize = size;
             this.ctx.font = this.current.fontSize +'px "' + fontName + '", Symbol';
+            if (this.ctx.$setFont) {
+              this.ctx.$setFont(fontName);
+            }
         },
         setTextRenderingMode: function(mode) {
             TODO("text rendering mode");
