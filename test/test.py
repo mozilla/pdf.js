@@ -2,7 +2,7 @@ import json, platform, os, shutil, sys, subprocess, tempfile, threading, time, u
 from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
 import SocketServer
 from optparse import OptionParser
-from urlparse import urlparse
+from urlparse import urlparse, parse_qs
 
 USAGE_EXAMPLE = "%prog"
 
@@ -125,12 +125,17 @@ class PDFTestHandler(BaseHTTPRequestHandler):
 
         self.sendFile(path, ext)
 
-    def do_POST(self):
+    def do_POST(self):            
         numBytes = int(self.headers['Content-Length'])
 
         self.send_response(200)
         self.send_header('Content-Type', 'text/plain')
         self.end_headers()
+
+        url = urlparse(self.path)
+        if url.path == "/tellMeToQuit":
+            tellAppToQuit(url.path, url.query)
+            return
 
         result = json.loads(self.rfile.read(numBytes))
         browser, id, failure, round, page, snapshot = result['browser'], result['id'], result['failure'], result['round'], result['page'], result['snapshot']
@@ -155,6 +160,19 @@ class PDFTestHandler(BaseHTTPRequestHandler):
             State.remaining -= 1
 
         State.done = (0 == State.remaining)
+
+# Applescript hack to quit Chrome on Mac
+def tellAppToQuit(path, query):
+    if platform.system() != "Darwin":
+        return
+    d = parse_qs(query)
+    path = d['path'][0]
+    cmd = """osascript<<END
+tell application "%s"
+quit
+end tell
+END""" % path
+    os.system(cmd)
 
 class BaseBrowserCommand(object):
     def __init__(self, browserRecord):
@@ -293,6 +311,7 @@ def startBrowsers(browsers, options):
         b.setup()
         print 'Launching', b.name
         qs = 'browser='+ urllib.quote(b.name) +'&manifestFile='+ urllib.quote(options.manifestFile)
+        qs += '&path=' + b.path
         b.start('http://localhost:8080/test/test_slave.html?'+ qs)
 
 def teardownBrowsers(browsers):
