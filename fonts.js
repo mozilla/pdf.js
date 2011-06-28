@@ -64,8 +64,8 @@ var Fonts = {
       var unicode = encoding[charcode];
 
       // Check if the glyph has already been converted
-      if (unicode instanceof Name)
-        unicode = encoding[unicode] = GlyphsUnicode[unicode.name];
+      if (!IsNum(unicode))
+          unicode = encoding[unicode] = GlyphsUnicode[unicode.name];
 
       // Handle surrogate pairs
       if (unicode > 0xFFFF) {
@@ -165,6 +165,7 @@ var Font = (function () {
         warn("Font " + properties.type + " is not supported");
         break;
     }
+    this.data = data;
 
     Fonts[name] = {
       data: data,
@@ -779,8 +780,17 @@ var Font = (function () {
       });
     },
 
-    bindDOM: function font_bindDom(data) {
+    bindDOM: function font_bindDom(data, callback) {
       var fontName = this.name;
+
+      // Just adding the font-face to the DOM doesn't make it load. It
+      // seems it's loaded once Gecko notices it's used. Therefore,
+      // add a div on the page using the loaded font.
+      var div = document.createElement("div");
+      var style = 'font-family:"' + name + 
+        '";position: absolute;top:-99999;left:-99999;z-index:-99999';
+      div.setAttribute("style", style);
+      document.body.appendChild(div);
 
       /** Hack begin */
       // Actually there is not event when a font has finished downloading so
@@ -801,15 +811,19 @@ var Font = (function () {
 
         // For some reasons the font has not loaded, so mark it loaded for the
         // page to proceed but cry
-        if ((Date.now() - this.start) >= kMaxWaitForFontFace) {
-          window.clearInterval(interval);
-          Fonts[fontName].loading = false;
-          warn("Is " + fontName + " loaded?");
-          this.start = 0;
-        } else if (textWidth != ctx.measureText(testString).width) {
-          window.clearInterval(interval);
-          Fonts[fontName].loading = false;
-          this.start = 0;
+        if (textWidth == ctx.measureText(testString).width) {
+          if ((Date.now() - this.start) < kMaxWaitForFontFace) {
+            return;
+          } else {
+            warn("Is " + fontName + " loaded?");
+          }
+        }
+        
+        window.clearInterval(interval);
+        Fonts[fontName].loading = false;
+        this.start = 0;
+        if (callback) {
+          callback();
         }
       }, 30, this);
 
