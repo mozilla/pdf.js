@@ -616,43 +616,65 @@ var Font = (function () {
       var otf = new Uint8Array(kMaxFontFileSize);
 
       function createNameTable(name) {
-        var names = [
-          "See original licence",  // Copyright
-          fontName,                // Font family
-          "undefined",             // Font subfamily (font weight)
-          "uniqueID",              // Unique ID
-          fontName,                // Full font name
-          "0.1",                   // Version
-          "undefined",             // Postscript name
-          "undefined",             // Trademark
-          "undefined",             // Manufacturer
-          "undefined"              // Designer
+  	    // All the strings of the name table should be an odd number of bytes
+        if (name.length % 2)
+          name = name.slice(0, name.length - 1);
+
+        var strings = [
+          "Original licence",// 0.Copyright
+          name,                // 1.Font family
+          "Unknown",           // 2.Font subfamily (font weight)
+          "uniqueID",          // 3.Unique ID
+          name,                // 4.Full font name
+          "Version 0.11",      // 5.Version
+          "Unknown",           // 6.Postscript name
+          "Unknown",           // 7.Trademark
+          "Unknown",           // 8.Manufacturer
+          "Unknown"            // 9.Designer
         ];
 
+        var platforms = ["\x00\x01", "\x00\x03"];
+        var encodings = ["\x00\x00", "\x00\x01"];
+        var languages = ["\x00\x00", "\x04\x09"];
+
+        // Mac want 1-byte per character strings while Windows want
+        // 2-bytes per character, so duplicate the names table
+        var stringsUnicode = [];
+        var names = [strings, stringsUnicode];
+        for (var i = 0; i < strings.length; i++) {
+          var str = strings[i];
+
+          var strUnicode = "";
+          for (var j = 0; j < str.length; j++)
+            strUnicode += string16(str.charCodeAt(j));
+          stringsUnicode.push(strUnicode);
+        }
+
+        var namesRecordCount = platforms.length * names.length;
         var nameTable =
-          "\x00\x00" + // format
-          "\x00\x0A" + // Number of names Record
-          "\x00\x7E";  // Storage
+          "\x00\x00" +                           // format
+          string16(namesRecordCount) +           // Number of names Record
+          string16(namesRecordCount * 12 + 6);   // Storage
 
         // Build the name records field
         var strOffset = 0;
-        for (var i = 0; i < names.length; i++) {
-          var str = names[i];
-
-          var nameRecord =
-            "\x00\x01" + // platform ID
-            "\x00\x00" + // encoding ID
-            "\x00\x00" + // language ID
-            "\x00\x00" + // name ID
-            string16(str.length) +
-            string16(strOffset);
-          nameTable += nameRecord;
-
-          strOffset += str.length;
+        for (var i = 0; i < platforms.length; i++) {
+          var names = strings[i];
+          for (var j = 0; j < names.length; j++) {
+            var str = names[j];
+            var nameRecord =
+              platforms[i] + // platform ID
+              encodings[i] + // encoding ID
+              languages[i] + // language ID
+              string16(i) + // name ID
+              string16(str.length) +
+              string16(strOffset);
+            nameTable += nameRecord;
+            strOffset += str.length;
+          }
         }
 
-        nameTable += names.join("");
-        return nameTable;
+        return nameTable + strings.join("") + stringsUnicode.join("");
       }
 
       // Required Tables
@@ -758,7 +780,7 @@ var Font = (function () {
       createTableEntry(otf, offsets, "maxp", maxp);
 
       /** NAME */
-      name = stringToArray(createNameTable(name));
+      name = stringToArray(createNameTable(fontName));
       createTableEntry(otf, offsets, "name", name);
 
       /** POST */
