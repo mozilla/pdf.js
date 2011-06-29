@@ -3807,23 +3807,21 @@ var CanvasGraphics = (function() {
             if (fontDescriptor && fontDescriptor.num) {
                 var fontDescriptor = this.xref.fetchIfRef(fontDescriptor);
                 fontName = fontDescriptor.get("FontName").name.replace("+", "_");
-                Fonts.setActive(fontName, size);
             }
 
             if (!fontName) {
                 // TODO: fontDescriptor is not available, fallback to default font
-                this.current.fontSize = size;
-                this.ctx.font = this.current.fontSize + 'px sans-serif';
-                Fonts.setActive("sans-serif", this.current.fontSize);
-                return;
+                fontName = "sans-serif";
             }
 
             this.current.fontName = fontName;
             this.current.fontSize = size;
 
-            this.ctx.font = this.current.fontSize + 'px "' + fontName + '"';
             if (this.ctx.$setFont) {
-              this.ctx.$setFont(fontName);
+              this.ctx.$setFont(fontName, size);
+            } else {
+              this.ctx.font = size + 'px "' + fontName + '"';
+              Fonts.setActive(fontName, size);
             }
         },
         setTextRenderingMode: function(mode) {
