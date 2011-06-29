@@ -149,6 +149,7 @@ function WorkerPDFDoc(canvas) {
 
   var currentX = 0;
   var currentXStack = [];
+  var pdfToCssUnitsCoef = 96.0 / 72.0;
 
   var ctxSpecial = {
     "$setCurrentX": function(value) {
@@ -287,6 +288,13 @@ function WorkerPDFDoc(canvas) {
       }
     },
     
+    "setup_page": function(data) {
+      var size = data.split(",");
+      var canvas = this.canvas, ctx = this.ctx;
+      canvas.width = parseInt(size[0]) * pdfToCssUnitsCoef;
+      canvas.height = parseInt(size[1]) * pdfToCssUnitsCoef;
+    },
+
     "font": function(data) {
       var base64 = window.btoa(data.raw);
 
@@ -341,10 +349,10 @@ function WorkerPDFDoc(canvas) {
           if (id == 0) {
             console.time("main canvas rendering");
             var ctx = this.ctx;
-            ctx.save();
+            ctx.setTransform(1, 0, 0, 1, 0, 0);
             ctx.fillStyle = "rgb(255, 255, 255)";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
-            ctx.restore();
+            ctx.setTransform(pdfToCssUnitsCoef, 0, 0, pdfToCssUnitsCoef, 0, 0);
           }
           renderProxyCanvas(canvasList[id], cmdQueue);
           if (id == 0) {

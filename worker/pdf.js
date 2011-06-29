@@ -31,13 +31,15 @@ importScripts("console.js")
 importScripts("canvas.js");
 importScripts("../pdf.js");
 importScripts("../fonts.js");
+importScripts("../crypto.js");
 importScripts("../glyphlist.js")
+importScripts("../imagestreams.js");
 
 // Use the JpegStreamProxy proxy.
 JpegStream = JpegStreamProxy;
 
 // Create the WebWorkerProxyCanvas.
-var canvas = new CanvasProxy(1224, 1584);
+var canvas = new CanvasProxy(100, 50);
 
 // Listen for messages from the main thread.
 var pdfDocument = null;
@@ -59,11 +61,23 @@ onmessage = function(event) {
     // Let's try to render the first page...
     var page = pdfDocument.getPage(parseInt(data));
 
+    var pageWidth = page.mediaBox[2] - page.mediaBox[0];
+    var pageHeight = page.mediaBox[3] - page.mediaBox[1];
+    postMessage({
+      action: "setup_page",
+      data: pageWidth + "," + pageHeight
+    });
+
+    // Set canvas size.
+    canvas.width = pageWidth;
+    canvas.height = pageHeight;
+
     // page.compile will collect all fonts for us, once we have loaded them
     // we can trigger the actual page rendering with page.display
     var fonts = [];
+    var imagesLoader = new ImagesLoader();
     var gfx = new CanvasGraphics(canvas.getContext("2d"), CanvasProxy);
-    page.compile(gfx, fonts);
+    page.compile(gfx, fonts, imagesLoader);
     console.timeEnd("compile");
 
     // Send fonts to the main thread.

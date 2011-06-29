@@ -783,30 +783,6 @@ var PredictorStream = (function() {
     return constructor;
 })();
 
-// A JpegStream can't be read directly. We use the platform to render the underlying
-// JPEG data for us.
-var JpegStream = (function() {
-    function constructor(bytes, dict) {
-        // TODO: per poppler, some images may have "junk" before that need to be removed
-        this.dict = dict;
-
-        // create DOM image
-        var img = new Image();
-        img.src = "data:image/jpeg;base64," + window.btoa(bytesToString(bytes));
-        this.domImage = img;
-    }
-
-    constructor.prototype = {
-        getImage: function() {
-            return this.domImage;
-        },
-        getChar: function() {
-            error("internal error: getChar is not valid on JpegStream");
-        }
-    };
-
-    return constructor;
-})();
 var DecryptStream = (function() {
     function constructor(str, decrypt) {
         this.str = str;
@@ -2867,7 +2843,7 @@ var Page = (function() {
                                              ? obj
                                              : null));
         },
-        compile: function(gfx, fonts) {
+        compile: function(gfx, fonts, images) {
             if (this.code) {
                 // content was compiled
                 return;
@@ -2879,14 +2855,14 @@ var Page = (function() {
             if (!IsArray(this.content)) {
                 // content is not an array, shortcut
                 content = xref.fetchIfRef(this.content);
-                this.code = gfx.compile(content, xref, resources, fonts);
+                this.code = gfx.compile(content, xref, resources, fonts, images);
                 return;
             }
             // the content is an array, compiling all items
             var i, n = this.content.length, compiledItems = [];
             for (i = 0; i < n; ++i) {
                 content = xref.fetchIfRef(this.content[i]);
-                compiledItems.push(gfx.compile(content, xref, resources, fonts));
+                compiledItems.push(gfx.compile(content, xref, resources, fonts, images));
             }
             // creating the function that executes all compiled items
             this.code = function(gfx) {
@@ -3570,7 +3546,7 @@ var CanvasGraphics = (function() {
             this.xref = savedXref;
         },
 
-        compile: function(stream, xref, resources, fonts) {
+        compile: function(stream, xref, resources, fonts, images) {
             var xobjs = xref.fetchIfRef(resources.get("XObject")) || new Dict();
 
             var parser = new Parser(new Lexer(stream), false);
@@ -3611,7 +3587,10 @@ var CanvasGraphics = (function() {
                                 args[0].code = this.compile(xobj,
                                                             xref,
                                                             xobj.dict.get("Resources"),
-                                                            fonts);
+                                                            fonts,
+                                                            images);
+                            } else if (xobj instanceof JpegStream) {
+                                images.bind(xobj);
                             }
                         }
                     } else if (cmd == "Tf") { // eagerly collect all fonts
