@@ -3409,7 +3409,6 @@ var CanvasGraphics = (function() {
       
         translateFont: function(fontDict, xref, resources) {
             var fd = fontDict.get("FontDescriptor");
-            return;
             if (!fd)
                 // XXX deprecated "special treatment" for standard
                 // fonts?  What do we need to do here?
