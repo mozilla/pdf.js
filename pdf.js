@@ -3409,6 +3409,7 @@ var CanvasGraphics = (function() {
       
         translateFont: function(fontDict, xref, resources) {
             var fd = fontDict.get("FontDescriptor");
+            return;
             if (!fd)
                 // XXX deprecated "special treatment" for standard
                 // fonts?  What do we need to do here?
@@ -4440,18 +4441,6 @@ var ColorSpace = (function() {
                 var hiVal = cs[2];
                 var lookup = xref.fetchIfRef(cs[3]);
                 return new IndexedCS(base, hiVal, lookup);
-                 
-                    /*return new IndexedCS(stream);
-                      this.stream = stream;
-                      this.dict = stream.dict;
-                      var base = cs[1];
-                      var hival = cs[2];
-                      assertWellFormed(0 <= hival && hival <= 255, "hival in range");
-                      var lookupTable = cs[3];
-                      TODO("implement 'Indexed' color space");
-                      this.numComps = 3; // HACK
-                      break;
-                      */
             case "Lab":
             case "Seperation":
             case "DeviceN":
