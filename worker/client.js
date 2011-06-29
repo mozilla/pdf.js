@@ -250,9 +250,10 @@ function WorkerPDFDoc(canvas) {
       }
       this.strokeStyle = pattern;
     },
-    
-    "$setFont": function(name) {
-      Fonts.active = name;
+
+    "$setFont": function(name, size) {
+      this.font = size + 'px "' + name + '"';
+      Fonts.setActive(name, size);
     }
   }
 
