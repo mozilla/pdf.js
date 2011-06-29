@@ -8,7 +8,7 @@
   <script type="text/javascript" src="/glyphlist.js"></script>
   <script type="text/javascript" src="/imagestreams.js"></script>
   <script type="application/javascript">
-var browser, canvas, currentTask, currentTaskIdx, failure, manifest, numPages, pdfDoc, stdout;
+var appPath, browser, canvas, currentTask, currentTaskIdx, failure, manifest, numPages, pdfDoc, stdout;
 
 function queryParams() {
     var qs = window.location.search.substring(1);
@@ -25,12 +25,13 @@ function load() {
   var params = queryParams();
   browser = params.browser;
   manifestFile = params.manifestFile;
+  appPath = params.path;
 
   canvas = document.createElement("canvas");
   canvas.mozOpaque = true;
   stdout = document.getElementById("stdout");
 
-  log("Harness thinks this browser is '"+ browser +"'\n");
+  log("Harness thinks this browser is '"+ browser + "' with path " + appPath + "\n");
   log("Fetching manifest "+ manifestFile +"...");
 
   var r = new XMLHttpRequest();
@@ -168,13 +169,21 @@ function snapshotCurrentPage(gfx) {
   );
 }
 
+function sendQuitRequest() {
+  var r = new XMLHttpRequest();
+  r.open("POST", "/tellMeToQuit?path=" + escape(appPath), false);
+  r.send("");
+}
+
 function quitApp() {
   log("Done!");
   document.body.innerHTML = "Tests are finished.  <h1>CLOSE ME!</h1>";
-  if (window.SpecialPowers)
+  if (window.SpecialPowers) {
     SpecialPowers.quitApplication();
-  else
+  } else {
+    sendQuitRequest();
     window.close();
+  }
 }
 
 function done() {

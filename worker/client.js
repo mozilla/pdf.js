@@ -18,12 +18,124 @@ if (typeof console.time == "undefined") {
   };
 }
 
+function FontWorker() {
+  this.worker = new Worker("worker/font.js");
+  this.fontsWaiting = 0;
+  this.fontsWaitingCallbacks = [];
+
+  // Listen to the WebWorker for data and call actionHandler on it.
+  this.worker.onmessage = function(event) {
+    var data = event.data;
+    var actionHandler = this.actionHandler
+    if (data.action in actionHandler) {
+      actionHandler[data.action].call(this, data.data);
+    } else {
+      throw "Unkown action from worker: " + data.action;
+    }
+  }.bind(this);
+  
+  this.$handleFontLoadedCallback = this.handleFontLoadedCallback.bind(this);
+}
+
+FontWorker.prototype = {
+  handleFontLoadedCallback: function() {
+    // Decrease the number of fonts wainting to be loaded.
+    this.fontsWaiting--;
+    // If all fonts are available now, then call all the callbacks.
+    if (this.fontsWaiting == 0) {
+      var callbacks = this.fontsWaitingCallbacks;
+      for (var i = 0; i < callbacks.length; i++) {
+        callbacks[i]();
+      }
+      this.fontsWaitingCallbacks.length = 0;
+    }
+  },
+  
+  actionHandler: {
+    "log": function(data) {
+      console.log.apply(console, data);
+    },
+    
+    "fonts": function(data) {
+      // console.log("got processed fonts from worker", Object.keys(data));
+      for (name in data) {
+        // Update the 
+        Fonts[name].properties = {
+          encoding: data[name].encoding
+        }
+        
+        // Call `Font.prototype.bindDOM` to make the font get loaded on the page.
+        Font.prototype.bindDOM.call(
+          Fonts[name],
+          data[name].str,
+          // IsLoadedCallback.
+          this.$handleFontLoadedCallback
+        );
+      }
+    }
+  },
+
+  ensureFonts: function(data, callback) {
+    var font;
+    var notLoaded = [];
+    for (var i = 0; i < data.length; i++) {
+      font = data[i];
+      if (Fonts[font.name]) {
+        continue;
+      }
+    
+      // Store only the data on Fonts that is needed later on, such that we
+      // hold track on as lease memory as possible.
+      Fonts[font.name] = {
+        name:       font.name,
+        mimetype:   font.mimetype,
+        // This is set later on the worker replay. For some fonts, the encoding
+        // is calculated during the conversion process happening on the worker
+        // and therefore is not available right now.
+        // properties: {
+        //   encoding:  font.properties.encoding
+        // },
+        cache:      Object.create(null)
+      };
+
+      // Mark this font to be handled later.
+      notLoaded.push(font);
+      // Increate the number of fonts to wait for.
+      this.fontsWaiting++;
+    }
+    
+    console.time("ensureFonts");
+    // If there are fonts, that need to get loaded, tell the FontWorker to get
+    // started and push the callback on the waiting-callback-stack.
+    if (notLoaded.length != 0) {
+      console.log("fonts -> FontWorker");
+      // Send the worker the fonts to work on.
+      this.worker.postMessage({
+        action: "fonts",
+        data:   notLoaded
+      });
+      if (callback) {
+        this.fontsWaitingCallbacks.push(callback);
+      }
+    }
+    // All fonts are present? Well, then just call the callback if there is one.
+    else {
+      if (callback) {
+        callback();
+      }
+    }
+  },
+}
+
 function WorkerPDFDoc(canvas) {
   var timer = null
 
   this.ctx = canvas.getContext("2d");
   this.canvas = canvas;
-  this.worker = new Worker('pdf_worker.js');
+  this.worker = new Worker('worker/pdf.js');
+  this.fontWorker = new FontWorker();
+  this.waitingForFonts = false;
+  this.waitingForFontsCallback = [];
 
   this.numPage = 1;
   this.numPages = null;
@@ -57,6 +169,7 @@ function WorkerPDFDoc(canvas) {
     },
 
     "$showText": function(y, text) {
+      text = Fonts.charsToUnicode(text);
       this.translate(currentX, -1 * y);
       this.fillText(text, 0, 0);
       currentX += this.measureText(text).width;
@@ -137,6 +250,10 @@ function WorkerPDFDoc(canvas) {
         throw "Pattern not found";
       }
       this.strokeStyle = pattern;
+    },
+    
+    "$setFont": function(name) {
+      Fonts.active = name;
     }
   }
 
@@ -195,6 +312,18 @@ function WorkerPDFDoc(canvas) {
       div.setAttribute("style", style);
       document.body.appendChild(div);
     },
+    
+    "fonts": function(data) {
+      this.waitingForFonts = true;
+      this.fontWorker.ensureFonts(data, function() {
+        this.waitingForFonts = false;
+        var callbacks = this.waitingForFontsCallback;
+        for (var i = 0; i < callbacks.length; i++) {
+          callbacks[i]();
+        }
+        this.waitingForFontsCallback.length = 0;
+      }.bind(this));
+    },
 
     "jpeg_stream": function(data) {
       var img = new Image();
@@ -215,11 +344,9 @@ function WorkerPDFDoc(canvas) {
           canvasList[id] = newCanvas;
         }
 
-        // There might be fonts that need to get loaded. Shedule the
-        // rendering at the end of the event queue ensures this.
-        setTimeout(function() {
+        var renderData = function() {
           if (id == 0) {
-            console.time("canvas rendering");
+            console.time("main canvas rendering");
             var ctx = this.ctx;
             ctx.setTransform(1, 0, 0, 1, 0, 0);
             ctx.fillStyle = "rgb(255, 255, 255)";
@@ -227,20 +354,35 @@ function WorkerPDFDoc(canvas) {
             ctx.setTransform(pdfToCssUnitsCoef, 0, 0, pdfToCssUnitsCoef, 0, 0);
           }
           renderProxyCanvas(canvasList[id], cmdQueue);
-          if (id == 0) console.timeEnd("canvas rendering")
-        }, 0, this);
+          if (id == 0) {
+            console.timeEnd("main canvas rendering");
+            console.timeEnd(">>> total page display time:");
+          }
+        }.bind(this);
+
+        if (this.waitingForFonts) {
+          if (id == 0) {
+            console.log("want to render, but not all fonts are there", id);
+            this.waitingForFontsCallback.push(renderData);
+          } else {
+            // console.log("assume canvas doesn't have fonts", id);
+            renderData();
+          }
+        } else {
+          renderData();
+        }
     }
   }
 
-  // List to the WebWorker for data and call actionHandler on it.
-  this.worker.onmessage = (function(event) {
+  // Listen to the WebWorker for data and call actionHandler on it.
+  this.worker.onmessage = function(event) {
     var data = event.data;
     if (data.action in actionHandler) {
       actionHandler[data.action].call(this, data.data);
     } else {
       throw "Unkown action from worker: " + data.action;
     }
-  }).bind(this);
+  }.bind(this)
 }
 
 WorkerPDFDoc.prototype.open = function(url, callback) {
@@ -263,6 +405,8 @@ WorkerPDFDoc.prototype.open = function(url, callback) {
 
 WorkerPDFDoc.prototype.showPage = function(numPage) {
   this.numPage = parseInt(numPage);
+  console.log("=== start rendering page " + numPage + " ===");
+  console.time(">>> total page display time:");
   this.worker.postMessage(numPage);
   if (this.onChangePage) {
     this.onChangePage(numPage);

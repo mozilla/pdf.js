@@ -641,7 +641,7 @@ var PredictorStream = (function() {
         var pixBytes = this.pixBytes = (colors * bits + 7) >> 3;
         // add an extra pixByte to represent the pixel left of column 0
         var rowBytes = this.rowBytes = (columns * colors * bits + 7) >> 3;
-        
+
         DecodeStream.call(this);
         return this;
     }
@@ -792,7 +792,7 @@ var DecryptStream = (function() {
         DecodeStream.call(this);
     }
 
-    const chunkSize = 512;
+    var chunkSize = 512;
 
     constructor.prototype = Object.create(DecodeStream.prototype);
     constructor.prototype.readBlock = function() {
@@ -886,18 +886,18 @@ var Ascii85Stream = (function() {
 
 var CCITTFaxStream = (function() {
 
-    const ccittEOL = -2;
-    const twoDimPass = 0;
-    const twoDimHoriz = 1;
-    const twoDimVert0 = 2;
-    const twoDimVertR1 = 3;
-    const twoDimVertL1 = 4;
-    const twoDimVertR2 = 5;
-    const twoDimVertL2 = 6;
-    const twoDimVertR3 = 7;
-    const twoDimVertL3 = 8;
+    var ccittEOL = -2;
+    var twoDimPass = 0;
+    var twoDimHoriz = 1;
+    var twoDimVert0 = 2;
+    var twoDimVertR1 = 3;
+    var twoDimVertL1 = 4;
+    var twoDimVertR2 = 5;
+    var twoDimVertL2 = 6;
+    var twoDimVertR3 = 7;
+    var twoDimVertL3 = 8;
 
-    const twoDimTable = [
+    var twoDimTable = [
     [-1, -1], [-1, -1],               // 000000x
     [7, twoDimVertL3],                // 0000010
     [7, twoDimVertR3],                // 0000011
@@ -965,7 +965,7 @@ var CCITTFaxStream = (function() {
     [1, twoDimVert0], [1, twoDimVert0]
     ];
 
-    const whiteTable1 = [
+    var whiteTable1 = [
         [-1, -1],                 // 00000
         [12, ccittEOL],               // 00001
         [-1, -1], [-1, -1],               // 0001x
@@ -987,7 +987,7 @@ var CCITTFaxStream = (function() {
         [12, 2560]                    // 11111
     ];
 
-    const whiteTable2 = [
+    var whiteTable2 = [
         [-1, -1], [-1, -1], [-1, -1], [-1, -1],   // 0000000xx
         [8, 29], [8, 29],             // 00000010x
         [8, 30], [8, 30],             // 00000011x
@@ -1151,7 +1151,7 @@ var CCITTFaxStream = (function() {
         [4, 7], [4, 7], [4, 7], [4, 7]
     ];
     
-    const blackTable1 = [
+    var blackTable1 = [
         [-1, -1], [-1, -1],                   // 000000000000x
         [12, ccittEOL], [12, ccittEOL],           // 000000000001x
         [-1, -1], [-1, -1], [-1, -1], [-1, -1],       // 00000000001xx
@@ -1212,7 +1212,7 @@ var CCITTFaxStream = (function() {
         [10, 64], [10, 64], [10, 64], [10, 64]
     ];
 
-    const blackTable2 = [
+    var blackTable2 = [
         [8, 13], [8, 13], [8, 13], [8, 13],           // 00000100xxxx
         [8, 13], [8, 13], [8, 13], [8, 13],
         [8, 13], [8, 13], [8, 13], [8, 13],
@@ -1291,7 +1291,7 @@ var CCITTFaxStream = (function() {
         [7, 12], [7, 12], [7, 12], [7, 12]    
     ];
 
-    const blackTable3 = [
+    var blackTable3 = [
         [-1, -1], [-1, -1], [-1, -1], [-1, -1],       // 0000xx
         [6, 9],                       // 000100
         [6, 8],                       // 000101
@@ -3786,18 +3786,24 @@ var CanvasGraphics = (function() {
             if (fontDescriptor && fontDescriptor.num) {
                 var fontDescriptor = this.xref.fetchIfRef(fontDescriptor);
                 fontName = fontDescriptor.get("FontName").name.replace("+", "_");
-                Fonts.active = fontName;
+                Fonts.setActive(fontName, size);
             }
 
             if (!fontName) {
                 // TODO: fontDescriptor is not available, fallback to default font
                 this.current.fontSize = size;
                 this.ctx.font = this.current.fontSize + 'px sans-serif';
+                Fonts.setActive("sans-serif", this.current.fontSize);
                 return;
             }
 
+            this.current.fontName = fontName;
             this.current.fontSize = size;
-            this.ctx.font = this.current.fontSize +'px "' + fontName + '", Symbol';
+
+            this.ctx.font = this.current.fontSize + 'px "' + fontName + '"';
+            if (this.ctx.$setFont) {
+              this.ctx.$setFont(fontName);
+            }
         },
         setTextRenderingMode: function(mode) {
             TODO("text rendering mode");
@@ -3841,7 +3847,7 @@ var CanvasGraphics = (function() {
                 text = Fonts.charsToUnicode(text);
                 this.ctx.translate(this.current.x, -1 * this.current.y);
                 this.ctx.fillText(text, 0, 0);
-                this.current.x += this.ctx.measureText(text).width;
+                this.current.x += Fonts.measureText(text);
             }
 
             this.ctx.restore();
