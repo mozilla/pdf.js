@@ -237,13 +237,22 @@ class ChromeBrowserCommand(BaseBrowserCommand):
 
 def makeBrowserCommand(browser):
     path = browser["path"].lower()
-    name = browser["name"].lower()
-    if name.find("firefox") > -1 or path.find("firefox") > -1:
-        return FirefoxBrowserCommand(browser)
-    elif name.find("chrom") > -1 or path.find("chrom") > -1:
-        return ChromeBrowserCommand(browser)
-    else:
+    name = browser["name"]
+    if name is not None:
+        name = name.lower()
+
+    types = {"firefox": FirefoxBrowserCommand,
+             "chrome": ChromeBrowserCommand }
+    command = None
+    for key in types.keys():
+        if (name and name.find(key) > -1) or path.find(key) > -1:
+            command = types[key](browser)
+            command.name = command.name or key
+
+    if command is None:
         raise Exception("Unrecognized browser: %s" % browser)
+
+    return command 
 
 def makeBrowserCommands(browserManifestFile):
     with open(browserManifestFile) as bmf:
@@ -284,7 +293,7 @@ def setUp(options):
     if options.browserManifestFile:
         testBrowsers = makeBrowserCommands(options.browserManifestFile)
     elif options.browser:
-        testBrowsers = [BrowserCommand({"path":options.browser, "name":"firefox"})]
+        testBrowsers = [makeBrowserCommand({"path":options.browser, "name":None})]
     assert len(testBrowsers) > 0
 
     with open(options.manifestFile) as mf:
