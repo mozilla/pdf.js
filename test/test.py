@@ -248,6 +248,7 @@ def makeBrowserCommand(browser):
         if (name and name.find(key) > -1) or path.find(key) > -1:
             command = types[key](browser)
             command.name = command.name or key
+            break
 
     if command is None:
         raise Exception("Unrecognized browser: %s" % browser)
