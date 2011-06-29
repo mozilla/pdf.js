@@ -11,17 +11,17 @@ PDF reader extension powered by pdf.js.
 
 You can read more about pdf.js here:
 
-http://andreasgal.com/2011/06/15/pdf-js/
-http://blog.mozilla.com/cjones/2011/06/15/overview-of-pdf-js-guts/
+  http://andreasgal.com/2011/06/15/pdf-js/
+  http://blog.mozilla.com/cjones/2011/06/15/overview-of-pdf-js-guts/
 
 follow us on twitter: @pdfjs
 
-http://twitter.com/#!/pdfjs
+  http://twitter.com/#!/pdfjs
 
 join our mailing list:
 
-dev-pdf-js@lists.mozilla.org
+  dev-pdf-js@lists.mozilla.org
 
 and talk to us on IRC:
 
-#pdfjs on irc.mozilla.org
+  #pdfjs on irc.mozilla.org
