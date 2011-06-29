@@ -236,15 +236,15 @@ var Font = (function () {
     // offset
     var offset = offsets.virtualOffset;
 
+    // length
+    var length = data.length;
+
     // Per spec tables must be 4-bytes align so add padding as needed
     while (data.length & 3)
       data.push(0x00);
 
     while (offsets.virtualOffset & 3)
       offsets.virtualOffset++;
-
-    // length
-    var length = data.length;
 
     // checksum
     var checksum = 0;
