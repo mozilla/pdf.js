@@ -2,7 +2,7 @@ import json, platform, os, shutil, sys, subprocess, tempfile, threading, time, u
 from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
 import SocketServer
 from optparse import OptionParser
-from urlparse import urlparse
+from urlparse import urlparse, parse_qs
 
 USAGE_EXAMPLE = "%prog"
 
@@ -132,6 +132,11 @@ class PDFTestHandler(BaseHTTPRequestHandler):
         self.send_header('Content-Type', 'text/plain')
         self.end_headers()
 
+        url = urlparse(self.path)
+        if url.path == "/tellMeToQuit":
+            tellAppToQuit(url.path, url.query)
+            return
+
         result = json.loads(self.rfile.read(numBytes))
         browser, id, failure, round, page, snapshot = result['browser'], result['id'], result['failure'], result['round'], result['page'], result['snapshot']
         taskResults = State.taskResults[browser][id]
@@ -156,8 +161,20 @@ class PDFTestHandler(BaseHTTPRequestHandler):
 
         State.done = (0 == State.remaining)
 
-# this just does Firefox for now
-class BrowserCommand():
+# Applescript hack to quit Chrome on Mac
+def tellAppToQuit(path, query):
+    if platform.system() != "Darwin":
+        return
+    d = parse_qs(query)
+    path = d['path'][0]
+    cmd = """osascript<<END
+tell application "%s"
+quit
+end tell
+END""" % path
+    os.system(cmd)
+
+class BaseBrowserCommand(object):
     def __init__(self, browserRecord):
         self.name = browserRecord["name"]
         self.path = browserRecord["path"]
@@ -170,14 +187,9 @@ class BrowserCommand():
         if not os.path.exists(self.path):
             throw("Path to browser '%s' does not exist." % self.path)
 
-    def _fixupMacPath(self):
-        self.path = os.path.join(self.path, "Contents", "MacOS", "firefox-bin")
-
     def setup(self):
         self.tempDir = tempfile.mkdtemp()
         self.profileDir = os.path.join(self.tempDir, "profile")
-        shutil.copytree(os.path.join(DOC_ROOT, "test", "resources", "firefox"),
-                        self.profileDir)
 
     def teardown(self):
         # If the browser is still running, wait up to ten seconds for it to quit
@@ -195,15 +207,47 @@ class BrowserCommand():
             shutil.rmtree(self.tempDir)
 
     def start(self, url):
+        raise Exception("Can't start BaseBrowserCommand")
+
+class FirefoxBrowserCommand(BaseBrowserCommand):
+    def _fixupMacPath(self):
+        self.path = os.path.join(self.path, "Contents", "MacOS", "firefox-bin")
+
+    def setup(self):
+        super(FirefoxBrowserCommand, self).setup()
+        shutil.copytree(os.path.join(DOC_ROOT, "test", "resources", "firefox"),
+                        self.profileDir)
+
+    def start(self, url):
         cmds = [self.path]
         if platform.system() == "Darwin":
             cmds.append("-foreground")
         cmds.extend(["-no-remote", "-profile", self.profileDir, url])
         self.process = subprocess.Popen(cmds)
 
+class ChromeBrowserCommand(BaseBrowserCommand):
+    def _fixupMacPath(self):
+        self.path = os.path.join(self.path, "Contents", "MacOS", "Google Chrome")
+
+    def start(self, url):
+        cmds = [self.path]
+        cmds.extend(["--user-data-dir=%s" % self.profileDir,
+                     "--no-first-run", "--disable-sync", url])
+        self.process = subprocess.Popen(cmds)
+
+def makeBrowserCommand(browser):
+    path = browser["path"].lower()
+    name = browser["name"].lower()
+    if name.find("firefox") > -1 or path.find("firefox") > -1:
+        return FirefoxBrowserCommand(browser)
+    elif name.find("chrom") > -1 or path.find("chrom") > -1:
+        return ChromeBrowserCommand(browser)
+    else:
+        raise Exception("Unrecognized browser: %s" % browser)
+
 def makeBrowserCommands(browserManifestFile):
     with open(browserManifestFile) as bmf:
-        browsers = [BrowserCommand(browser) for browser in json.load(bmf)]
+        browsers = [makeBrowserCommand(browser) for browser in json.load(bmf)]
     return browsers
 
 def downloadLinkedPDFs(manifestList):
@@ -267,6 +311,7 @@ def startBrowsers(browsers, options):
         b.setup()
         print 'Launching', b.name
         qs = 'browser='+ urllib.quote(b.name) +'&manifestFile='+ urllib.quote(options.manifestFile)
+        qs += '&path=' + b.path
         b.start('http://localhost:8080/test/test_slave.html?'+ qs)
 
 def teardownBrowsers(browsers):
