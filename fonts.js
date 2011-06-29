@@ -360,21 +360,21 @@ var Font = (function () {
            "\xFF\xFF\xFF\xFF" + // ulUnicodeRange1 (Bits 64-95)
            "\xFF\xFF\xFF\xFF" + // ulUnicodeRange1 (Bits 96-127)
            "\x2A\x32\x31\x2A" + // achVendID
-           "\x00\x20" + // fsSelection
+           "\x00\x00" + // fsSelection
            "\x00\x2D" + // usFirstCharIndex
            "\x00\x7A" + // usLastCharIndex
-           "\x00\x03" + // sTypoAscender
-           "\x00\x20" + // sTypeDescender
-           "\x00\x38" + // sTypoLineGap
+           "\x00\x20" + // sTypoAscender
+           "\x00\x00" + // sTypeDescender
+           "\x00\x00" + // sTypoLineGap
            string16(properties.ascent)  + // usWinAscent
            string16(properties.descent) + // usWinDescent
-           "\x00\xCE\x00\x00" + // ulCodePageRange1 (Bits 0-31)
-           "\x00\x01\x00\x00" + // ulCodePageRange2 (Bits 32-63)
+           "\x00\x00\x00\x00" + // ulCodePageRange1 (Bits 0-31)
+           "\x00\x00\x00\x00" + // ulCodePageRange2 (Bits 32-63)
            string16(properties.xHeight)   + // sxHeight
            string16(properties.capHeight) + // sCapHeight
            "\x00\x01" + // usDefaultChar
            "\x00\xCD" + // usBreakChar
-           "\x00\x02";  // usMaxContext
+           "\x00\x00";  // usMaxContext
   };
 
   function createPostTable(properties) {
@@ -700,14 +700,14 @@ var Font = (function () {
               "\x5F\x0F\x3C\xF5" + // magicNumber
               "\x00\x00" + // Flags
               "\x03\xE8" + // unitsPerEM (defaulting to 1000)
-              "\x00\x00\x00\x00\x00\x00\x00\x00" + // creation date
-              "\x00\x00\x00\x00\x00\x00\x00\x00" + // modifification date
+              "\x00\x00\x00\x00\x9e\x0b\x7e\x27" + // creation date
+              "\x00\x00\x00\x00\x9e\x0b\x7e\x27" + // modifification date
               "\x00\x00" + // xMin
               "\x00\x00" + // yMin
               "\x00\x00" + // xMax
               "\x00\x00" + // yMax
               "\x00\x00" + // macStyle
-              "\x00\x00" + // lowestRecPPEM
+              "\x00\x11" + // lowestRecPPEM
               "\x00\x00" + // fontDirectionHint
               "\x00\x00" + // indexToLocFormat
               "\x00\x00"   // glyphDataFormat
@@ -717,8 +717,8 @@ var Font = (function () {
       /** HHEA */
       hhea = stringToArray(
                  "\x00\x01\x00\x00" + // Version number
-                 "\x00\x00" + // Typographic Ascent
-                 "\x00\x00" + // Typographic Descent
+                 string16(properties.ascent) + // Typographic Ascent
+                 string16(properties.descent) + // Typographic Descent
                  "\x00\x00" + // Line Gap
                  "\xFF\xFF" + // advanceWidthMax
                  "\x00\x00" + // minLeftSidebearing
@@ -797,7 +797,7 @@ var Font = (function () {
       // seems it's loaded once Gecko notices it's used. Therefore,
       // add a div on the page using the loaded font.
       var div = document.createElement("div");
-      var style = 'font-family:"' + name + 
+      var style = 'font-family:"' + name +
         '";position: absolute;top:-99999;left:-99999;z-index:-99999';
       div.setAttribute("style", style);
       document.body.appendChild(div);
@@ -828,7 +828,7 @@ var Font = (function () {
             warn("Is " + fontName + " loaded?");
           }
         }
-        
+
         window.clearInterval(interval);
         Fonts[fontName].loading = false;
         this.start = 0;
