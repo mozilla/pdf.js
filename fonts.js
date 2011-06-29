@@ -84,10 +84,9 @@ var Fonts = {
   },
 
   get ctx() {
-    delete this.ctx;
     var ctx = document.createElement("canvas").getContext("2d");
     ctx.scale(1 / kScalePrecision, 1);
-    return this.ctx = ctx;
+    return shadow(this, "ctx", ctx);
   },
 
   measureText: function fonts_measureText(text) {
