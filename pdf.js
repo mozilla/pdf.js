@@ -4396,9 +4396,6 @@ var ColorSpace = (function() {
             var mode = cs[0].name;
             this.mode = mode;
 
-            var stream = cs[1];
-            stream = xref.fetchIfRef(stream);
-
             switch (mode) {
             case "DeviceGray":
             case "G":
@@ -4413,12 +4410,13 @@ var ColorSpace = (function() {
                 return new DeviceCmykCS();
                 break;
             case "CalGray":
-                return new DeviceGrayCS(stream);
+                return new DeviceGrayCS();
                 break;
             case "CalRGB":
-                return new DeviceRgbCS(stream);
+                return new DeviceRgbCS();
                 break;
             case "ICCBased":
+                var stream = xref.fetchIfRef(cs[1]);
                 var dict = stream.dict;
                 var numComps = dict.get("N");
                 if (numComps == 1)
@@ -4430,7 +4428,13 @@ var ColorSpace = (function() {
                 break;
             case "Pattern":
                 return new PatternCS();
+                break;
             case "Indexed":
+                var base = ColorSpace.parse(cs[1], xref, res);
+                var hiVal = cs[2];
+                var lookup = xref.fetchIfRef(cs[3]);
+                return new IndexedCS(base, hiVal, lookup);
+                 
                     /*return new IndexedCS(stream);
                       this.stream = stream;
                       this.dict = stream.dict;
@@ -4465,6 +4469,62 @@ var PatternCS = (function() {
     return constructor;
 })();
 
+var IndexedCS = (function() {
+    function constructor(base, highVal, lookup) {
+        this.name = "Indexed";
+        this.numComps = 1;
+        this.defaultColor = [0];
+
+        this.base = base;
+        var baseNumComps = base.numComps;
+        this.highVal = highVal;
+
+        var length = baseNumComps * highVal;
+        var lookupArray = new Uint8Array(length);
+        if (IsStream(lookup)) {
+            var bytes = lookup.getBytes(length);
+            lookupArray.set(bytes);
+        } else if (IsString(lookup)) {
+            for (var i = 0; i < length; ++i)
+                lookupArray[i] = lookup.charCodeAt(i);
+        } else {
+            error("Unrecognized lookup table");
+        }
+        this.lookup = lookupArray;
+    }
+
+    constructor.prototype = {
+        getRgb: function graycs_getRgb(color) {
+            var lookup = this.lookup;
+            var base = this.base;
+            var numComps = base.numComps;
+            
+            var c = [];
+            for (var i = 0; i < numComps; ++i)
+                c.push(lookup[i])
+            return this.base.getRgb(c);
+        },
+        getRgbBuffer: function graycs_getRgbBuffer(input) {
+            var base = this.base;
+            var numComps = base.numComps;
+            var lookup = this.lookup;
+            var length = input.length;
+
+            var baseBuf = new Uint8Array(length * numComps);
+            var baseBufPos = 0;
+            for (var i = 0; i < length; ++i) {
+                var lookupPos = input[i];
+                for (var j = 0; j < numComps ; ++j) {
+                    baseBuf[baseBufPos++] = lookup[lookupPos + j];
+                }
+            }
+            
+            return base.getRgbBuffer(baseBuf);
+        }
+    };
+    return constructor;
+})();
+
 var DeviceGrayCS = (function() {
     function constructor() {
         this.name = "DeviceGray";
@@ -4478,7 +4538,7 @@ var DeviceGrayCS = (function() {
             return [c, c, c];
         },
         getRgbBuffer: function graycs_getRgbBuffer(input) {
-            var length = colorBuf.length;
+            var length = input.length;
             var rgbBuf = new Uint8Array(length);
             for (var i = 0, j = 0; i < length; ++i) {
                 var c = input[i];
@@ -4642,7 +4702,7 @@ var PDFImage = (function() {
                     output[i] = Math.round(255 * ret / ((1 << bpc) - 1));
                 }
             }
-            return output;
+            return this.colorSpace.getRbaBuffer(output);
         },
         getOpacity: function getOpacity() {
             var smask = this.smask;
