@@ -61,10 +61,11 @@ function displayPage(num) {
 
     var page = pdfDocument.getPage(pageNum = num);
 
-    var wTwips = (page.mediaBox[2] - page.mediaBox[0]);
-    var hTwips = (page.mediaBox[3] - page.mediaBox[1]);
-    canvas.width = pageScale * wTwips * 96.0 / 72.0;
-    canvas.height = pageScale * hTwips * 96.0 / 72.0;
+    var pdfToCssUnitsCoef = 96.0 / 72.0;
+    var pageWidth = (page.mediaBox[2] - page.mediaBox[0]);
+    var pageHeight = (page.mediaBox[3] - page.mediaBox[1]);
+    canvas.width = pageScale * pageWidth * pdfToCssUnitsCoef;
+    canvas.height = pageScale * pageHeight * pdfToCssUnitsCoef;
 
     var t1 = Date.now();
     var ctx = canvas.getContext("2d");
@@ -97,13 +98,13 @@ function displayPage(num) {
       var infoDisplay = document.getElementById("info");
       infoDisplay.innerHTML = "Time to load/compile/fonts/render: "+ (t1 - t0) + "/" + (t2 - t1) + "/" + (t3 - t2) + "/" + (t4 - t3) + " ms";
     }
-    function loadImages(callback) {
-      if (imagesLoader.loading == 0)
-        callback();
-      // waiting for images to loaded
-      imagesLoader.onLoad = callback;
+    function loadImages() {
+      imagesLoader.onLoad = function() {
+        loadFont();
+      };
+      imagesLoader.enableOnLoad();
     }
-    loadImages(loadFont);
+    loadImages();
 }
 
 function nextPage() {

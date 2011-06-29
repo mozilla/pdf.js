@@ -29,13 +29,15 @@ var PDFViewer = {
   scale: 1.0,
   
   pageWidth: function(page) {
-    var wTwips = (page.mediaBox[2] - page.mediaBox[0]);
-    return wTwips * PDFViewer.scale * 96.0 / 72.0;
+    var pdfToCssUnitsCoef = 96.0 / 72.0;
+    var width = (page.mediaBox[2] - page.mediaBox[0]);
+    return width * PDFViewer.scale * pdfToCssUnitsCoef;
   },
   
   pageHeight: function(page) {
-    var hTwips = (page.mediaBox[3] - page.mediaBox[1]);
-    return hTwips * PDFViewer.scale * 96.0 / 72.0;
+    var pdfToCssUnitsCoef = 96.0 / 72.0;
+    var height = (page.mediaBox[3] - page.mediaBox[1]);
+    return height * PDFViewer.scale * pdfToCssUnitsCoef;
   },
   
   lastPagesDrawn: [],
@@ -136,13 +138,13 @@ var PDFViewer = {
         }
         page.display(gfx);
       };
-      var loadImages = function(callback) {
-        if (imagesLoader.loading == 0)
-          callback();
-        // waiting for images to loaded
-        imagesLoader.onLoad = callback;
-      };
-      loadImages(loadFont);
+      var loadImages = function() {
+        imagesLoader.onLoad = function() {
+          loadFont();
+        };
+        imagesLoader.enableOnLoad();
+      }
+      loadImages();
     }
   },
   
@@ -210,13 +212,13 @@ var PDFViewer = {
         }
         page.display(gfx);
       }
-      var loadImages = function(callback) {
-        if (imagesLoader.loading == 0)
-          callback();
-        // waiting for images to loaded
-        imagesLoader.onLoad = callback;
-      };
-      loadImages(loadFont);
+      var loadImages = function() {
+        imagesLoader.onLoad = function() {
+          loadFont();
+        };
+        imagesLoader.enableOnLoad();
+      }
+      loadImages();
     }
   },
   
@@ -325,6 +327,7 @@ var PDFViewer = {
       PDFViewer.drawPage(1);
       document.location.hash = 1;
       
+      // slowly loading the thumbs (few per second)
       i = 1;
       var thumbInterval = setInterval(function() {
         PDFViewer.createThumbnail(i);

@@ -783,55 +783,6 @@ var PredictorStream = (function() {
     return constructor;
 })();
 
-var ImagesLoader = (function() {
-    function constructor() {
-        this.loading = 0;
-    }
-
-    constructor.prototype = {
-        onLoad: function() {},
-        imageLoading: function() {
-            ++this.loading;
-        },
-        imageLoaded: function() {
-            if (--this.loading == 0)
-                this.onLoad();
-        }
-    };
-
-    return constructor;
-})();
-
-// A JpegStream can't be read directly. We use the platform to render the underlying
-// JPEG data for us.
-var JpegStream = (function() {
-    function constructor(bytes, dict) {
-        var self = this;
-        // TODO: per poppler, some images may have "junk" before that need to be removed
-        this.dict = dict;
-
-        // create DOM image
-        var img = new Image();
-        img.onload = function() {
-            self.loaded = true;
-            if (self.onLoad)
-                self.onLoad();
-        };
-        img.src = "data:image/jpeg;base64," + window.btoa(bytesToString(bytes));
-        this.domImage = img;
-    }
-
-    constructor.prototype = {
-        getImage: function() {
-            return this.domImage;
-        },
-        getChar: function() {
-            error("internal error: getChar is not valid on JpegStream");
-        }
-    };
-
-    return constructor;
-})();
 var DecryptStream = (function() {
     function constructor(str, decrypt) {
         this.str = str;
@@ -3639,12 +3590,7 @@ var CanvasGraphics = (function() {
                                                             fonts,
                                                             images);
                             } else if (xobj instanceof JpegStream) {
-                                if (!xobj.loaded) {
-                                    images.imageLoading();
-                                    xobj.onLoad = function() {
-                                        images.imageLoaded();
-                                    };
-                                }
+                                images.bind(xobj);
                             }
                         }
                     } else if (cmd == "Tf") { // eagerly collect all fonts
