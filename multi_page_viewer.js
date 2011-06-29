@@ -10,6 +10,8 @@ var PDFViewer = {
   
   element: null,
   
+  sidebarContentView: null,
+  
   previousPageButton: null,
   nextPageButton: null,
   pageNumberInput: null,
@@ -26,41 +28,125 @@ var PDFViewer = {
   
   scale: 1.0,
   
-  pageWidth: function() {
-    return 816 * PDFViewer.scale;
+  pageWidth: function(page) {
+    return page.mediaBox[2] * PDFViewer.scale;
   },
   
-  pageHeight: function() {
-    return 1056 * PDFViewer.scale;
+  pageHeight: function(page) {
+    return page.mediaBox[3] * PDFViewer.scale;
   },
   
   lastPagesDrawn: [],
   
-  visiblePages: function() {  
-    var pageHeight = PDFViewer.pageHeight() + 20; // Add 20 for the margins.      
+  visiblePages: function() {
+    const pageBottomMargin = 20;
     var windowTop = window.pageYOffset;
     var windowBottom = window.pageYOffset + window.innerHeight;
-    var pageStartIndex = Math.floor(windowTop / pageHeight);
-    var pageStopIndex = Math.ceil(windowBottom / pageHeight);
+
+    var pageHeight, page;
+    var i, n = PDFViewer.numberOfPages, currentHeight = 0;
+    for (i = 1; i <= n; i++) {
+      var page = PDFViewer.pdf.getPage(i);
+      pageHeight = PDFViewer.pageHeight(page) + pageBottomMargin;
+      if (currentHeight + pageHeight > windowTop)
+        break;
+      currentHeight += pageHeight;
+    }
     
     var pages = [];  
-    
-    for (var i = pageStartIndex; i <= pageStopIndex; i++) {
-      pages.push(i + 1);
+    for (; i <= n && currentHeight < windowBottom; i++) {
+      var page = PDFViewer.pdf.getPage(i);
+      pageHeight = PDFViewer.pageHeight(page) + pageBottomMargin;
+      currentHeight += pageHeight;
+      pages.push(i);
     }
     
     return pages;
   },
   
+  createThumbnail: function(num) {
+    if (PDFViewer.sidebarContentView) {
+      var anchor = document.createElement('a');
+      anchor.href = '#' + num;
+    
+      var containerDiv = document.createElement('div');
+      containerDiv.id = 'thumbnailContainer' + num;
+      containerDiv.className = 'thumbnail';
+    
+      var pageNumberDiv = document.createElement('div');
+      pageNumberDiv.className = 'thumbnailPageNumber';
+      pageNumberDiv.innerHTML = '' + num;
+    
+      anchor.appendChild(containerDiv);
+      PDFViewer.sidebarContentView.appendChild(anchor);
+      PDFViewer.sidebarContentView.appendChild(pageNumberDiv);
+    }
+  },
+  
+  removeThumbnail: function(num) {
+    var div = document.getElementById('thumbnailContainer' + num);
+    
+    if (div) {
+      while (div.hasChildNodes()) {
+        div.removeChild(div.firstChild);
+      }
+    }
+  },
+  
+  drawThumbnail: function(num) {
+    if (!PDFViewer.pdf)
+      return;
+
+    var div = document.getElementById('thumbnailContainer' + num);
+    
+    if (div && !div.hasChildNodes()) {
+      var page = PDFViewer.pdf.getPage(num);
+      var canvas = document.createElement('canvas');
+      
+      canvas.id = 'thumbnail' + num;
+      canvas.mozOpaque = true;
+
+      // Canvas dimensions must be specified in CSS pixels. CSS pixels
+      // are always 96 dpi. These dimensions are 8.5in x 11in at 96dpi.
+      canvas.width = 104;
+      canvas.height = 134;
+      div.appendChild(canvas);
+
+      var ctx = canvas.getContext('2d');
+      ctx.save();
+      ctx.fillStyle = 'rgb(255, 255, 255)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.restore();
+
+      var gfx = new CanvasGraphics(ctx);
+
+      // page.compile will collect all fonts for us, once we have loaded them
+      // we can trigger the actual page rendering with page.display
+      var fonts = [];
+      page.compile(gfx, fonts);
+
+      var loadFont = function() {
+        if (!FontLoader.bind(fonts)) {
+          pageTimeout = window.setTimeout(loadFont, 10);
+          return;
+        }
+        page.display(gfx);
+      }
+      loadFont();
+    }
+  },
+  
   createPage: function(num) {
+    var page = PDFViewer.pdf.getPage(num);
+
     var anchor = document.createElement('a');
     anchor.name = '' + num;
     
     var div = document.createElement('div');
     div.id = 'pageContainer' + num;
     div.className = 'page';
-    div.style.width = PDFViewer.pageWidth() + 'px';
-    div.style.height = PDFViewer.pageHeight() + 'px';
+    div.style.width = PDFViewer.pageWidth(page) + 'px';
+    div.style.height = PDFViewer.pageHeight(page) + 'px';
     
     PDFViewer.element.appendChild(anchor);
     PDFViewer.element.appendChild(div);
@@ -81,18 +167,18 @@ var PDFViewer = {
       return;
 
     var div = document.getElementById('pageContainer' + num);
-    var canvas = document.createElement('canvas');
-
+    
     if (div && !div.hasChildNodes()) {
       var page = PDFViewer.pdf.getPage(num);
-
+      var canvas = document.createElement('canvas');
+      
       canvas.id = 'page' + num;
       canvas.mozOpaque = true;
 
       // Canvas dimensions must be specified in CSS pixels. CSS pixels
       // are always 96 dpi. These dimensions are 8.5in x 11in at 96dpi.
-      canvas.width = PDFViewer.pageWidth();
-      canvas.height = PDFViewer.pageHeight();
+      canvas.width = PDFViewer.pageWidth(page);
+      canvas.height = PDFViewer.pageHeight(page);
       div.appendChild(canvas);
 
       var ctx = canvas.getContext('2d');
@@ -109,7 +195,7 @@ var PDFViewer = {
       page.compile(gfx, fonts);
 
       var loadFont = function() {
-        if (!FontsLoader.bind(fonts)) {
+        if (!FontLoader.bind(fonts)) {
           pageTimeout = window.setTimeout(loadFont, 10);
           return;
         }
@@ -130,11 +216,8 @@ var PDFViewer = {
     
     if (PDFViewer.pdf) {
       for (i = 1; i <= PDFViewer.numberOfPages; i++) {
+        PDFViewer.createThumbnail(i);
         PDFViewer.createPage(i);
-      }
-      
-      if (PDFViewer.numberOfPages > 0) {
-        PDFViewer.drawPage(1);
       }
     }
     
@@ -153,6 +236,12 @@ var PDFViewer = {
     }
     
     PDFViewer.scaleSelect.value = Math.floor(PDFViewer.scale * 100) + '%';
+    
+    // Clear the array of the last pages drawn to force a redraw.
+    PDFViewer.lastPagesDrawn = [];
+    
+    // Jump the scroll position to the correct page.
+    PDFViewer.goToPage(PDFViewer.pageNumber);
   },
   
   goToPage: function(num) {
@@ -205,6 +294,10 @@ var PDFViewer = {
       PDFViewer.element.removeChild(PDFViewer.element.firstChild);
     }
     
+    while (PDFViewer.sidebarContentView.hasChildNodes()) {
+      PDFViewer.sidebarContentView.removeChild(PDFViewer.sidebarContentView.firstChild);
+    }
+    
     PDFViewer.pdf = new PDFDoc(new Stream(data));
     PDFViewer.numberOfPages = PDFViewer.pdf.numPages;
     document.getElementById('numPages').innerHTML = PDFViewer.numberOfPages.toString();
@@ -216,6 +309,13 @@ var PDFViewer = {
     if (PDFViewer.numberOfPages > 0) {
       PDFViewer.drawPage(1);
       document.location.hash = 1;
+      
+      setTimeout(function() {
+        for (var i = 1; i <= PDFViewer.numberOfPages; i++) {
+          PDFViewer.createThumbnail(i);
+          PDFViewer.drawThumbnail(i);
+        }
+      }, 500);
     }
     
     PDFViewer.previousPageButton.className = (PDFViewer.pageNumber === 1) ? 'disabled' : '';
@@ -239,6 +339,8 @@ window.onload = function() {
   }();
 
   PDFViewer.element = document.getElementById('viewer');
+  
+  PDFViewer.sidebarContentView = document.getElementById('sidebarContentView');
   
   PDFViewer.pageNumberInput = document.getElementById('pageNumber');
   PDFViewer.pageNumberInput.onkeydown = function(evt) {

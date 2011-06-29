@@ -32,3 +32,7 @@ user_pref("app.update.enabled", false);
 user_pref("browser.panorama.experienced_first_run", true); // Assume experienced
 user_pref("dom.w3c_touch_events.enabled", true);
 user_pref("extensions.checkCompatibility", false);
+user_pref("extensions.installDistroAddons", false); // prevent testpilot etc
+user_pref("browser.safebrowsing.enable", false); // prevent traffic to google servers
+user_pref("toolkit.telemetry.prompted", true); // prevent telemetry banner
+user_pref("toolkit.telemetry.enabled", false);

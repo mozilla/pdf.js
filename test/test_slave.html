@@ -6,7 +6,7 @@
   <script type="text/javascript" src="/fonts.js"></script>
   <script type="text/javascript" src="/glyphlist.js"></script>
   <script type="application/javascript">
-var browser, canvas, currentTask, currentTaskIdx, failure, manifest, pdfDoc, stdout;
+var appPath, browser, canvas, currentTask, currentTaskIdx, failure, manifest, numPages, pdfDoc, stdout;
 
 function queryParams() {
     var qs = window.location.search.substring(1);
@@ -23,15 +23,13 @@ function load() {
   var params = queryParams();
   browser = params.browser;
   manifestFile = params.manifestFile;
+  appPath = params.path;
 
   canvas = document.createElement("canvas");
-  // 8.5x11in @ 100% ... XXX need something better here
-  canvas.width = 816;
-  canvas.height = 1056;
   canvas.mozOpaque = true;
   stdout = document.getElementById("stdout");
 
-  log("Harness thinks this browser is '"+ browser +"'\n");
+  log("Harness thinks this browser is '"+ browser + "' with path " + appPath + "\n");
   log("Fetching manifest "+ manifestFile +"...");
 
   var r = new XMLHttpRequest();
@@ -63,7 +61,15 @@ function nextTask() {
     if (r.readyState == 4) {
       var data = r.mozResponseArrayBuffer || r.mozResponse ||
                  r.responseArrayBuffer || r.response;
-      pdfDoc = new PDFDoc(new Stream(data));
+
+      try {
+        pdfDoc = new PDFDoc(new Stream(data));
+        numPages = pdfDoc.numPages;
+      } catch(e) {
+        numPages = 1;
+        failure = 'load PDF doc: '+ e.toString();
+      }
+
       currentTask.pageNum = 1, nextPage();
     }    
   };
@@ -71,7 +77,7 @@ function nextTask() {
 }
 
 function nextPage() {
-  if (currentTask.pageNum > pdfDoc.numPages) {
+  if (currentTask.pageNum > numPages) {
     if (++currentTask.round < currentTask.rounds) {
       log("  Round "+ (1 + currentTask.round) +"\n");
       currentTask.pageNum = 1;
@@ -85,46 +91,47 @@ function nextPage() {
   log("    loading page "+ currentTask.pageNum +"... ");
 
   var ctx = canvas.getContext("2d");
-  clear(ctx);
 
   var fonts = [];
-  var fontsReady = true;
-  var gfx = new CanvasGraphics(ctx);
+  var gfx = null;
   try {
+    gfx = new CanvasGraphics(ctx);
     currentPage = pdfDoc.getPage(currentTask.pageNum);
     currentPage.compile(gfx, fonts);
-
-    // Inspect fonts and translate the missing ones
-    var count = fonts.length;
-    for (var i = 0; i < count; ++i) {
-      var font = fonts[i];
-      if (Fonts[font.name]) {
-        fontsReady = fontsReady && !Fonts[font.name].loading;
-        continue;
-      }
-      new Font(font.name, font.file, font.properties);
-      fontsReady = false;
-    }
   } catch(e) {
     failure = 'compile: '+ e.toString();
   }
 
-  var checkFontsLoadedIntervalTimer = null;
+  try {
+    // using mediaBox for the canvas size
+    var wTwips = (currentPage.mediaBox[2] - currentPage.mediaBox[0]);
+    var hTwips = (currentPage.mediaBox[3] - currentPage.mediaBox[1]);
+    canvas.width = wTwips * 96.0 / 72.0;
+    canvas.height = hTwips * 96.0 / 72.0;
+    clear(ctx);
+  } catch(e) {
+    failure = 'page setup: '+ e.toString();
+  }
+
+  var fontLoaderTimer = null;
   function checkFontsLoaded() {
-    for (var i = 0; i < count; i++) {
-      if (Fonts[font.name].loading) {
+    try {
+      if (!FontLoader.bind(fonts)) {
+        fontLoaderTimer = window.setTimeout(checkFontsLoaded, 10);
         return;
       }
+    } catch(e) {
+      failure = 'fonts: '+ e.toString();
     }
-    window.clearInterval(checkFontsLoadedIntervalTimer);
-
     snapshotCurrentPage(gfx);
   }
 
-  if (failure || fontsReady) {
+  if (failure) {
+    // Skip font loading if there was a failure, since the fonts might
+    // be in an inconsistent state.
     snapshotCurrentPage(gfx);
   } else {
-    checkFontsLoadedIntervalTimer = setInterval(checkFontsLoaded, 10);
+    checkFontsLoaded();
   }
 }
 
@@ -139,31 +146,49 @@ function snapshotCurrentPage(gfx) {
     }
   }
 
-  currentTask.taskDone = (currentTask.pageNum == pdfDoc.numPages
-                          && (1 + currentTask.round) == currentTask.rounds);
   sendTaskResult(canvas.toDataURL("image/png"));
   log("done"+ (failure ? " (failed!)" : "") +"\n");
 
-  ++currentTask.pageNum, nextPage();
-}
-
-function done() {
-  log("Done!\n");
+  // Set up the next request
+  backoff = (inFlightRequests > 0) ? inFlightRequests * 10 : 0;
   setTimeout(function() {
-      document.body.innerHTML = "Tests are finished.  <h1>CLOSE ME!</h1>";
-      if (window.SpecialPowers)
-        SpecialPowers.quitApplication();
-      else
-        window.close();
+      ++currentTask.pageNum, nextPage();
     },
-    100
+    backoff
   );
 }
 
+function sendQuitRequest() {
+  var r = new XMLHttpRequest();
+  r.open("POST", "/tellMeToQuit?path=" + escape(appPath), false);
+  r.send("");
+}
+
+function quitApp() {
+  log("Done!");
+  document.body.innerHTML = "Tests are finished.  <h1>CLOSE ME!</h1>";
+  if (window.SpecialPowers) {
+    SpecialPowers.quitApplication();
+  } else {
+    sendQuitRequest();
+    window.close();
+  }
+}
+
+function done() {
+  if (inFlightRequests > 0) {
+    document.getElementById("inFlightCount").innerHTML = inFlightRequests;
+    setTimeout(done, 100);
+  } else {
+    setTimeout(quitApp, 100);
+  }
+}
+
+var inFlightRequests = 0;
 function sendTaskResult(snapshot) {
   var result = { browser: browser,
                  id: currentTask.id,
-                 taskDone: currentTask.taskDone,
+                 numPages: numPages,
                  failure: failure,
                  file: currentTask.file,
                  round: currentTask.round,
@@ -172,29 +197,41 @@ function sendTaskResult(snapshot) {
 
   var r = new XMLHttpRequest();
   // (The POST URI is ignored atm.)
-  r.open("POST", "/submit_task_results", false);
+  r.open("POST", "/submit_task_results", true);
   r.setRequestHeader("Content-Type", "application/json");
-  // XXX async
+  r.onreadystatechange = function(e) {
+    if (r.readyState == 4) {
+      inFlightRequests--;
+    }
+  }
+  document.getElementById("inFlightCount").innerHTML = inFlightRequests++;
   r.send(JSON.stringify(result));
 }
 
 function clear(ctx) {
-  var ctx = canvas.getContext("2d");
   ctx.save();
   ctx.fillStyle = "rgb(255, 255, 255)";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
   ctx.restore();
 }
 
+/* Auto-scroll if the scrollbar is near the bottom, otherwise do nothing. */
+function checkScrolling() {
+  if ((stdout.scrollHeight - stdout.scrollTop) <= stdout.offsetHeight) {
+    stdout.scrollTop = stdout.scrollHeight;
+  }
+}
+
 function log(str) {
   stdout.innerHTML += str;
-  window.scrollTo(0, stdout.getBoundingClientRect().bottom);
+  checkScrolling();
 }
   </script>
 </head>
 
 <body onload="load();">
-  <pre id="stdout"></pre>
+  <pre style="width:800; height:800; overflow: scroll;"id="stdout"></pre>
+  <p>Inflight requests: <span id="inFlightCount"></span></p>
 </body>
 
 </html>

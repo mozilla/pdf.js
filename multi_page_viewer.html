@@ -6,6 +6,7 @@
 <link rel="stylesheet" href="multi_page_viewer.css" type="text/css" media="screen"/>
 <script type="text/javascript" src="pdf.js"></script>
 <script type="text/javascript" src="fonts.js"></script>
+<script type="text/javascript" src="crypto.js"></script>
 <script type="text/javascript" src="glyphlist.js"></script>
 <script type="text/javascript" src="multi_page_viewer.js"></script>
 </head>
@@ -39,13 +40,16 @@
       <span class="label">Open File</span>
     </span>
   </div>
-  <!--<div id="sidebar">
-    <div id="sidebarScrollView">
-      <div id="sidebarContentView">
-        
+  
+  <!-- EXPERIMENTAL: Slide-out sidebar with page thumbnails (comment-out to disable) -->
+  <div id="sidebar">
+    <div id="sidebarBox">
+      <div id="sidebarScrollView">
+        <div id="sidebarContentView"></div>
       </div>
     </div>
-  </div>-->
+  </div>
+  
   <div id="viewer"></div>
 </body>
 </html>

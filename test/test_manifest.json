@@ -14,10 +14,27 @@
        "rounds": 1,
        "type": "load"
     },
+    {  "id": "intelisa-load",
+       "file": "pdfs/intelisa.pdf",
+       "link": true,
+       "rounds": 1,
+       "type": "load"
+    },
     {  "id": "pdfspec-load",
        "file": "pdfs/pdf.pdf",
        "link": true,
        "rounds": 1,
        "type": "load"
+    },
+    {  "id": "sizes",
+       "file": "pdfs/sizes.pdf",
+       "rounds": 1,
+       "type": "eq"
+    },
+    {  "id": "openweb-cover",
+       "file": "pdfs/openweb_tm-PRINT.pdf",
+       "link": true,
+       "rounds": 1,
+       "type": "eq"
     }
 ]

@@ -56,6 +56,14 @@ function bytesToString(bytes) {
     return str;
 }
 
+function stringToBytes(str) {
+    var length = str.length;
+    var bytes = new Uint8Array(length);
+    for (var n = 0; n < length; ++n)
+        bytes[n] = str.charCodeAt(n) & 0xFF;
+    return bytes;
+}
+
 var Stream = (function() {
     function constructor(arrayBuffer, start, length, dict) {
         this.bytes = new Uint8Array(arrayBuffer);
@@ -633,7 +641,7 @@ var PredictorStream = (function() {
         var pixBytes = this.pixBytes = (colors * bits + 7) >> 3;
         // add an extra pixByte to represent the pixel left of column 0
         var rowBytes = this.rowBytes = (columns * colors * bits + 7) >> 3;
-        
+
         DecodeStream.call(this);
         return this;
     }
@@ -708,7 +716,7 @@ var PredictorStream = (function() {
         var rawBytes = this.stream.getBytes(rowBytes);
 
         var bufferLength = this.bufferLength;
-        var buffer = this.ensureBuffer(bufferLength + pixBytes);
+        var buffer = this.ensureBuffer(bufferLength + rowBytes);
 
         var currentRow = buffer.subarray(bufferLength, bufferLength + rowBytes);
         var prevRow = buffer.subarray(bufferLength - rowBytes, bufferLength);
@@ -800,11 +808,34 @@ var JpegStream = (function() {
     return constructor;
 })();
 var DecryptStream = (function() {
-    function constructor(str, fileKey, encAlgorithm, keyLength) {
-        TODO("decrypt stream is not implemented");
+    function constructor(str, decrypt) {
+        this.str = str;
+        this.dict = str.dict;
+        this.decrypt = decrypt;
+
+        DecodeStream.call(this);
     }
 
-    constructor.prototype = Stream.prototype;
+    var chunkSize = 512;
+
+    constructor.prototype = Object.create(DecodeStream.prototype);
+    constructor.prototype.readBlock = function() {
+      var chunk = this.str.getBytes(chunkSize);
+      if (!chunk || chunk.length == 0) {
+        this.eof = true;
+        return;
+      }
+      var decrypt = this.decrypt;
+      chunk = decrypt(chunk);
+
+      var bufferLength = this.bufferLength;
+      var i, n = chunk.length;
+      var buffer = this.ensureBuffer(bufferLength + n);
+      for (i = 0; i < n; i++)
+        buffer[bufferLength++] = chunk[i];
+      this.bufferLength = bufferLength;
+      this.eof = n < chunkSize;
+    };
 
     return constructor;
 })();
@@ -873,6 +904,984 @@ var Ascii85Stream = (function() {
             }
         }
     };
+
+    return constructor;
+})();
+
+var CCITTFaxStream = (function() {
+
+    var ccittEOL = -2;
+    var twoDimPass = 0;
+    var twoDimHoriz = 1;
+    var twoDimVert0 = 2;
+    var twoDimVertR1 = 3;
+    var twoDimVertL1 = 4;
+    var twoDimVertR2 = 5;
+    var twoDimVertL2 = 6;
+    var twoDimVertR3 = 7;
+    var twoDimVertL3 = 8;
+
+    var twoDimTable = [
+    [-1, -1], [-1, -1],               // 000000x
+    [7, twoDimVertL3],                // 0000010
+    [7, twoDimVertR3],                // 0000011
+    [6, twoDimVertL2], [6, twoDimVertL2], // 000010x
+    [6, twoDimVertR2], [6, twoDimVertR2], // 000011x
+    [4, twoDimPass], [4, twoDimPass],     // 0001xxx
+    [4, twoDimPass], [4, twoDimPass],
+    [4, twoDimPass], [4, twoDimPass],
+    [4, twoDimPass], [4, twoDimPass],
+    [3, twoDimHoriz], [3, twoDimHoriz],   // 001xxxx
+    [3, twoDimHoriz], [3, twoDimHoriz],
+    [3, twoDimHoriz], [3, twoDimHoriz],
+    [3, twoDimHoriz], [3, twoDimHoriz],
+    [3, twoDimHoriz], [3, twoDimHoriz],
+    [3, twoDimHoriz], [3, twoDimHoriz],
+    [3, twoDimHoriz], [3, twoDimHoriz],
+    [3, twoDimHoriz], [3, twoDimHoriz],
+    [3, twoDimVertL1], [3, twoDimVertL1], // 010xxxx
+    [3, twoDimVertL1], [3, twoDimVertL1],
+    [3, twoDimVertL1], [3, twoDimVertL1],
+    [3, twoDimVertL1], [3, twoDimVertL1],
+    [3, twoDimVertL1], [3, twoDimVertL1],
+    [3, twoDimVertL1], [3, twoDimVertL1],
+    [3, twoDimVertL1], [3, twoDimVertL1],
+    [3, twoDimVertL1], [3, twoDimVertL1],
+    [3, twoDimVertR1], [3, twoDimVertR1], // 011xxxx
+    [3, twoDimVertR1], [3, twoDimVertR1],
+    [3, twoDimVertR1], [3, twoDimVertR1],
+    [3, twoDimVertR1], [3, twoDimVertR1],
+    [3, twoDimVertR1], [3, twoDimVertR1],
+    [3, twoDimVertR1], [3, twoDimVertR1],
+    [3, twoDimVertR1], [3, twoDimVertR1],
+    [3, twoDimVertR1], [3, twoDimVertR1],
+    [1, twoDimVert0], [1, twoDimVert0],   // 1xxxxxx
+    [1, twoDimVert0], [1, twoDimVert0],
+    [1, twoDimVert0], [1, twoDimVert0],
+    [1, twoDimVert0], [1, twoDimVert0],
+    [1, twoDimVert0], [1, twoDimVert0],
+    [1, twoDimVert0], [1, twoDimVert0],
+    [1, twoDimVert0], [1, twoDimVert0],
+    [1, twoDimVert0], [1, twoDimVert0],
+    [1, twoDimVert0], [1, twoDimVert0],
+    [1, twoDimVert0], [1, twoDimVert0],
+    [1, twoDimVert0], [1, twoDimVert0],
+    [1, twoDimVert0], [1, twoDimVert0],
+    [1, twoDimVert0], [1, twoDimVert0],
+    [1, twoDimVert0], [1, twoDimVert0],
+    [1, twoDimVert0], [1, twoDimVert0],
+    [1, twoDimVert0], [1, twoDimVert0],
+    [1, twoDimVert0], [1, twoDimVert0],
+    [1, twoDimVert0], [1, twoDimVert0],
+    [1, twoDimVert0], [1, twoDimVert0],
+    [1, twoDimVert0], [1, twoDimVert0],
+    [1, twoDimVert0], [1, twoDimVert0],
+    [1, twoDimVert0], [1, twoDimVert0],
+    [1, twoDimVert0], [1, twoDimVert0],
+    [1, twoDimVert0], [1, twoDimVert0],
+    [1, twoDimVert0], [1, twoDimVert0],
+    [1, twoDimVert0], [1, twoDimVert0],
+    [1, twoDimVert0], [1, twoDimVert0],
+    [1, twoDimVert0], [1, twoDimVert0],
+    [1, twoDimVert0], [1, twoDimVert0],
+    [1, twoDimVert0], [1, twoDimVert0],
+    [1, twoDimVert0], [1, twoDimVert0],
+    [1, twoDimVert0], [1, twoDimVert0]
+    ];
+
+    var whiteTable1 = [
+        [-1, -1],                 // 00000
+        [12, ccittEOL],               // 00001
+        [-1, -1], [-1, -1],               // 0001x
+        [-1, -1], [-1, -1], [-1, -1], [-1, -1],   // 001xx
+        [-1, -1], [-1, -1], [-1, -1], [-1, -1],   // 010xx
+        [-1, -1], [-1, -1], [-1, -1], [-1, -1],   // 011xx
+        [11, 1792], [11, 1792],           // 1000x
+        [12, 1984],                   // 10010
+        [12, 2048],                   // 10011
+        [12, 2112],                   // 10100
+        [12, 2176],                   // 10101
+        [12, 2240],                   // 10110
+        [12, 2304],                   // 10111
+        [11, 1856], [11, 1856],           // 1100x
+        [11, 1920], [11, 1920],           // 1101x
+        [12, 2368],                   // 11100
+        [12, 2432],                   // 11101
+        [12, 2496],                   // 11110
+        [12, 2560]                    // 11111
+    ];
+
+    var whiteTable2 = [
+        [-1, -1], [-1, -1], [-1, -1], [-1, -1],   // 0000000xx
+        [8, 29], [8, 29],             // 00000010x
+        [8, 30], [8, 30],             // 00000011x
+        [8, 45], [8, 45],             // 00000100x
+        [8, 46], [8, 46],             // 00000101x
+        [7, 22], [7, 22], [7, 22], [7, 22],       // 0000011xx
+        [7, 23], [7, 23], [7, 23], [7, 23],       // 0000100xx
+        [8, 47], [8, 47],             // 00001010x
+        [8, 48], [8, 48],             // 00001011x
+        [6, 13], [6, 13], [6, 13], [6, 13],       // 000011xxx
+        [6, 13], [6, 13], [6, 13], [6, 13],
+        [7, 20], [7, 20], [7, 20], [7, 20],       // 0001000xx
+        [8, 33], [8, 33],             // 00010010x
+        [8, 34], [8, 34],             // 00010011x
+        [8, 35], [8, 35],             // 00010100x
+        [8, 36], [8, 36],             // 00010101x
+        [8, 37], [8, 37],             // 00010110x
+        [8, 38], [8, 38],             // 00010111x
+        [7, 19], [7, 19], [7, 19], [7, 19],       // 0001100xx
+        [8, 31], [8, 31],             // 00011010x
+        [8, 32], [8, 32],             // 00011011x
+        [6, 1], [6, 1], [6, 1], [6, 1],       // 000111xxx
+        [6, 1], [6, 1], [6, 1], [6, 1],
+        [6, 12], [6, 12], [6, 12], [6, 12],       // 001000xxx
+        [6, 12], [6, 12], [6, 12], [6, 12],
+        [8, 53], [8, 53],             // 00100100x
+        [8, 54], [8, 54],             // 00100101x
+        [7, 26], [7, 26], [7, 26], [7, 26],       // 0010011xx
+        [8, 39], [8, 39],             // 00101000x
+        [8, 40], [8, 40],             // 00101001x
+        [8, 41], [8, 41],             // 00101010x
+        [8, 42], [8, 42],             // 00101011x
+        [8, 43], [8, 43],             // 00101100x
+        [8, 44], [8, 44],             // 00101101x
+        [7, 21], [7, 21], [7, 21], [7, 21],       // 0010111xx
+        [7, 28], [7, 28], [7, 28], [7, 28],       // 0011000xx
+        [8, 61], [8, 61],             // 00110010x
+        [8, 62], [8, 62],             // 00110011x
+        [8, 63], [8, 63],             // 00110100x
+        [8, 0], [8, 0],               // 00110101x
+        [8, 320], [8, 320],               // 00110110x
+        [8, 384], [8, 384],               // 00110111x
+        [5, 10], [5, 10], [5, 10], [5, 10],       // 00111xxxx
+        [5, 10], [5, 10], [5, 10], [5, 10],
+        [5, 10], [5, 10], [5, 10], [5, 10],
+        [5, 10], [5, 10], [5, 10], [5, 10],
+        [5, 11], [5, 11], [5, 11], [5, 11],       // 01000xxxx
+        [5, 11], [5, 11], [5, 11], [5, 11],
+        [5, 11], [5, 11], [5, 11], [5, 11],
+        [5, 11], [5, 11], [5, 11], [5, 11],
+        [7, 27], [7, 27], [7, 27], [7, 27],       // 0100100xx
+        [8, 59], [8, 59],             // 01001010x
+        [8, 60], [8, 60],             // 01001011x
+        [9, 1472],                    // 010011000
+        [9, 1536],                    // 010011001
+        [9, 1600],                    // 010011010
+        [9, 1728],                    // 010011011
+        [7, 18], [7, 18], [7, 18], [7, 18],       // 0100111xx
+        [7, 24], [7, 24], [7, 24], [7, 24],       // 0101000xx
+        [8, 49], [8, 49],             // 01010010x
+        [8, 50], [8, 50],             // 01010011x
+        [8, 51], [8, 51],             // 01010100x
+        [8, 52], [8, 52],             // 01010101x
+        [7, 25], [7, 25], [7, 25], [7, 25],       // 0101011xx
+        [8, 55], [8, 55],             // 01011000x
+        [8, 56], [8, 56],             // 01011001x
+        [8, 57], [8, 57],             // 01011010x
+        [8, 58], [8, 58],             // 01011011x
+        [6, 192], [6, 192], [6, 192], [6, 192],   // 010111xxx
+        [6, 192], [6, 192], [6, 192], [6, 192],
+        [6, 1664], [6, 1664], [6, 1664], [6, 1664],   // 011000xxx
+        [6, 1664], [6, 1664], [6, 1664], [6, 1664],
+        [8, 448], [8, 448],               // 01100100x
+        [8, 512], [8, 512],               // 01100101x
+        [9, 704],                 // 011001100
+        [9, 768],                 // 011001101
+        [8, 640], [8, 640],               // 01100111x
+        [8, 576], [8, 576],               // 01101000x
+        [9, 832],                 // 011010010
+        [9, 896],                 // 011010011
+        [9, 960],                 // 011010100
+        [9, 1024],                    // 011010101
+        [9, 1088],                    // 011010110
+        [9, 1152],                    // 011010111
+        [9, 1216],                    // 011011000
+        [9, 1280],                    // 011011001
+        [9, 1344],                    // 011011010
+        [9, 1408],                    // 011011011
+        [7, 256], [7, 256], [7, 256], [7, 256],   // 0110111xx
+        [4, 2], [4, 2], [4, 2], [4, 2],       // 0111xxxxx
+        [4, 2], [4, 2], [4, 2], [4, 2],
+        [4, 2], [4, 2], [4, 2], [4, 2],
+        [4, 2], [4, 2], [4, 2], [4, 2],
+        [4, 2], [4, 2], [4, 2], [4, 2],
+        [4, 2], [4, 2], [4, 2], [4, 2],
+        [4, 2], [4, 2], [4, 2], [4, 2],
+        [4, 2], [4, 2], [4, 2], [4, 2],
+        [4, 3], [4, 3], [4, 3], [4, 3],       // 1000xxxxx
+        [4, 3], [4, 3], [4, 3], [4, 3],
+        [4, 3], [4, 3], [4, 3], [4, 3],
+        [4, 3], [4, 3], [4, 3], [4, 3],
+        [4, 3], [4, 3], [4, 3], [4, 3],
+        [4, 3], [4, 3], [4, 3], [4, 3],
+        [4, 3], [4, 3], [4, 3], [4, 3],
+        [4, 3], [4, 3], [4, 3], [4, 3],
+        [5, 128], [5, 128], [5, 128], [5, 128],   // 10010xxxx
+        [5, 128], [5, 128], [5, 128], [5, 128],
+        [5, 128], [5, 128], [5, 128], [5, 128],
+        [5, 128], [5, 128], [5, 128], [5, 128],
+        [5, 8], [5, 8], [5, 8], [5, 8],       // 10011xxxx
+        [5, 8], [5, 8], [5, 8], [5, 8],
+        [5, 8], [5, 8], [5, 8], [5, 8],
+        [5, 8], [5, 8], [5, 8], [5, 8],
+        [5, 9], [5, 9], [5, 9], [5, 9],       // 10100xxxx
+        [5, 9], [5, 9], [5, 9], [5, 9],
+        [5, 9], [5, 9], [5, 9], [5, 9],
+        [5, 9], [5, 9], [5, 9], [5, 9],
+        [6, 16], [6, 16], [6, 16], [6, 16],       // 101010xxx
+        [6, 16], [6, 16], [6, 16], [6, 16],
+        [6, 17], [6, 17], [6, 17], [6, 17],       // 101011xxx
+        [6, 17], [6, 17], [6, 17], [6, 17],
+        [4, 4], [4, 4], [4, 4], [4, 4],       // 1011xxxxx
+        [4, 4], [4, 4], [4, 4], [4, 4],
+        [4, 4], [4, 4], [4, 4], [4, 4],
+        [4, 4], [4, 4], [4, 4], [4, 4],
+        [4, 4], [4, 4], [4, 4], [4, 4],
+        [4, 4], [4, 4], [4, 4], [4, 4],
+        [4, 4], [4, 4], [4, 4], [4, 4],
+        [4, 4], [4, 4], [4, 4], [4, 4],
+        [4, 5], [4, 5], [4, 5], [4, 5],       // 1100xxxxx
+        [4, 5], [4, 5], [4, 5], [4, 5],
+        [4, 5], [4, 5], [4, 5], [4, 5],
+        [4, 5], [4, 5], [4, 5], [4, 5],
+        [4, 5], [4, 5], [4, 5], [4, 5],
+        [4, 5], [4, 5], [4, 5], [4, 5],
+        [4, 5], [4, 5], [4, 5], [4, 5],
+        [4, 5], [4, 5], [4, 5], [4, 5],
+        [6, 14], [6, 14], [6, 14], [6, 14],       // 110100xxx
+        [6, 14], [6, 14], [6, 14], [6, 14],
+        [6, 15], [6, 15], [6, 15], [6, 15],       // 110101xxx
+        [6, 15], [6, 15], [6, 15], [6, 15],
+        [5, 64], [5, 64], [5, 64], [5, 64],       // 11011xxxx
+        [5, 64], [5, 64], [5, 64], [5, 64],
+        [5, 64], [5, 64], [5, 64], [5, 64],
+        [5, 64], [5, 64], [5, 64], [5, 64],
+        [4, 6], [4, 6], [4, 6], [4, 6],       // 1110xxxxx
+        [4, 6], [4, 6], [4, 6], [4, 6],
+        [4, 6], [4, 6], [4, 6], [4, 6],
+        [4, 6], [4, 6], [4, 6], [4, 6],
+        [4, 6], [4, 6], [4, 6], [4, 6],
+        [4, 6], [4, 6], [4, 6], [4, 6],
+        [4, 6], [4, 6], [4, 6], [4, 6],
+        [4, 6], [4, 6], [4, 6], [4, 6],
+        [4, 7], [4, 7], [4, 7], [4, 7],       // 1111xxxxx
+        [4, 7], [4, 7], [4, 7], [4, 7],
+        [4, 7], [4, 7], [4, 7], [4, 7],
+        [4, 7], [4, 7], [4, 7], [4, 7],
+        [4, 7], [4, 7], [4, 7], [4, 7],
+        [4, 7], [4, 7], [4, 7], [4, 7],
+        [4, 7], [4, 7], [4, 7], [4, 7],
+        [4, 7], [4, 7], [4, 7], [4, 7]
+    ];
+    
+    var blackTable1 = [
+        [-1, -1], [-1, -1],                   // 000000000000x
+        [12, ccittEOL], [12, ccittEOL],           // 000000000001x
+        [-1, -1], [-1, -1], [-1, -1], [-1, -1],       // 00000000001xx
+        [-1, -1], [-1, -1], [-1, -1], [-1, -1],       // 00000000010xx
+        [-1, -1], [-1, -1], [-1, -1], [-1, -1],       // 00000000011xx
+        [-1, -1], [-1, -1], [-1, -1], [-1, -1],       // 00000000100xx
+        [-1, -1], [-1, -1], [-1, -1], [-1, -1],       // 00000000101xx
+        [-1, -1], [-1, -1], [-1, -1], [-1, -1],       // 00000000110xx
+        [-1, -1], [-1, -1], [-1, -1], [-1, -1],       // 00000000111xx
+        [11, 1792], [11, 1792], [11, 1792], [11, 1792],   // 00000001000xx
+        [12, 1984], [12, 1984],               // 000000010010x
+        [12, 2048], [12, 2048],               // 000000010011x
+        [12, 2112], [12, 2112],               // 000000010100x
+        [12, 2176], [12, 2176],               // 000000010101x
+        [12, 2240], [12, 2240],               // 000000010110x
+        [12, 2304], [12, 2304],               // 000000010111x
+        [11, 1856], [11, 1856], [11, 1856], [11, 1856],   // 00000001100xx
+        [11, 1920], [11, 1920], [11, 1920], [11, 1920],   // 00000001101xx
+        [12, 2368], [12, 2368],               // 000000011100x
+        [12, 2432], [12, 2432],               // 000000011101x
+        [12, 2496], [12, 2496],               // 000000011110x
+        [12, 2560], [12, 2560],               // 000000011111x
+        [10, 18], [10, 18], [10, 18], [10, 18],       // 0000001000xxx
+        [10, 18], [10, 18], [10, 18], [10, 18],
+        [12, 52], [12, 52],                   // 000000100100x
+        [13, 640],                        // 0000001001010
+        [13, 704],                        // 0000001001011
+        [13, 768],                        // 0000001001100
+        [13, 832],                        // 0000001001101
+        [12, 55], [12, 55],                   // 000000100111x
+        [12, 56], [12, 56],                   // 000000101000x
+        [13, 1280],                       // 0000001010010
+        [13, 1344],                       // 0000001010011
+        [13, 1408],                       // 0000001010100
+        [13, 1472],                       // 0000001010101
+        [12, 59], [12, 59],                   // 000000101011x
+        [12, 60], [12, 60],                   // 000000101100x
+        [13, 1536],                       // 0000001011010
+        [13, 1600],                       // 0000001011011
+        [11, 24], [11, 24], [11, 24], [11, 24],       // 00000010111xx
+        [11, 25], [11, 25], [11, 25], [11, 25],       // 00000011000xx
+        [13, 1664],                       // 0000001100100
+        [13, 1728],                       // 0000001100101
+        [12, 320], [12, 320],                 // 000000110011x
+        [12, 384], [12, 384],                 // 000000110100x
+        [12, 448], [12, 448],                 // 000000110101x
+        [13, 512],                        // 0000001101100
+        [13, 576],                        // 0000001101101
+        [12, 53], [12, 53],                   // 000000110111x
+        [12, 54], [12, 54],                   // 000000111000x
+        [13, 896],                        // 0000001110010
+        [13, 960],                        // 0000001110011
+        [13, 1024],                       // 0000001110100
+        [13, 1088],                       // 0000001110101
+        [13, 1152],                       // 0000001110110
+        [13, 1216],                       // 0000001110111
+        [10, 64], [10, 64], [10, 64], [10, 64],       // 0000001111xxx
+        [10, 64], [10, 64], [10, 64], [10, 64]
+    ];
+
+    var blackTable2 = [
+        [8, 13], [8, 13], [8, 13], [8, 13],           // 00000100xxxx
+        [8, 13], [8, 13], [8, 13], [8, 13],
+        [8, 13], [8, 13], [8, 13], [8, 13],
+        [8, 13], [8, 13], [8, 13], [8, 13],
+        [11, 23], [11, 23],                   // 00000101000x
+        [12, 50],                     // 000001010010
+        [12, 51],                     // 000001010011
+        [12, 44],                     // 000001010100
+        [12, 45],                     // 000001010101
+        [12, 46],                     // 000001010110
+        [12, 47],                     // 000001010111
+        [12, 57],                     // 000001011000
+        [12, 58],                     // 000001011001
+        [12, 61],                     // 000001011010
+        [12, 256],                        // 000001011011
+        [10, 16], [10, 16], [10, 16], [10, 16],       // 0000010111xx
+        [10, 17], [10, 17], [10, 17], [10, 17],       // 0000011000xx
+        [12, 48],                     // 000001100100
+        [12, 49],                     // 000001100101
+        [12, 62],                     // 000001100110
+        [12, 63],                     // 000001100111
+        [12, 30],                     // 000001101000
+        [12, 31],                     // 000001101001
+        [12, 32],                     // 000001101010
+        [12, 33],                     // 000001101011
+        [12, 40],                     // 000001101100
+        [12, 41],                     // 000001101101
+        [11, 22], [11, 22],                   // 00000110111x
+        [8, 14], [8, 14], [8, 14], [8, 14],           // 00000111xxxx
+        [8, 14], [8, 14], [8, 14], [8, 14],
+        [8, 14], [8, 14], [8, 14], [8, 14],
+        [8, 14], [8, 14], [8, 14], [8, 14],
+        [7, 10], [7, 10], [7, 10], [7, 10],           // 0000100xxxxx
+        [7, 10], [7, 10], [7, 10], [7, 10],
+        [7, 10], [7, 10], [7, 10], [7, 10],
+        [7, 10], [7, 10], [7, 10], [7, 10],
+        [7, 10], [7, 10], [7, 10], [7, 10],
+        [7, 10], [7, 10], [7, 10], [7, 10],
+        [7, 10], [7, 10], [7, 10], [7, 10],
+        [7, 10], [7, 10], [7, 10], [7, 10],
+        [7, 11], [7, 11], [7, 11], [7, 11],           // 0000101xxxxx
+        [7, 11], [7, 11], [7, 11], [7, 11],
+        [7, 11], [7, 11], [7, 11], [7, 11],
+        [7, 11], [7, 11], [7, 11], [7, 11],
+        [7, 11], [7, 11], [7, 11], [7, 11],
+        [7, 11], [7, 11], [7, 11], [7, 11],
+        [7, 11], [7, 11], [7, 11], [7, 11],
+        [7, 11], [7, 11], [7, 11], [7, 11],
+        [9, 15], [9, 15], [9, 15], [9, 15],           // 000011000xxx
+        [9, 15], [9, 15], [9, 15], [9, 15],
+        [12, 128],                        // 000011001000
+        [12, 192],                        // 000011001001
+        [12, 26],                     // 000011001010
+        [12, 27],                     // 000011001011
+        [12, 28],                     // 000011001100
+        [12, 29],                     // 000011001101
+        [11, 19], [11, 19],                   // 00001100111x
+        [11, 20], [11, 20],                   // 00001101000x
+        [12, 34],                     // 000011010010
+        [12, 35],                     // 000011010011
+        [12, 36],                     // 000011010100
+        [12, 37],                     // 000011010101
+        [12, 38],                     // 000011010110
+        [12, 39],                     // 000011010111
+        [11, 21], [11, 21],                   // 00001101100x
+        [12, 42],                     // 000011011010
+        [12, 43],                     // 000011011011
+        [10, 0], [10, 0], [10, 0], [10, 0],           // 0000110111xx
+        [7, 12], [7, 12], [7, 12], [7, 12],           // 0000111xxxxx
+        [7, 12], [7, 12], [7, 12], [7, 12],
+        [7, 12], [7, 12], [7, 12], [7, 12],
+        [7, 12], [7, 12], [7, 12], [7, 12],
+        [7, 12], [7, 12], [7, 12], [7, 12],
+        [7, 12], [7, 12], [7, 12], [7, 12],
+        [7, 12], [7, 12], [7, 12], [7, 12],
+        [7, 12], [7, 12], [7, 12], [7, 12]    
+    ];
+
+    var blackTable3 = [
+        [-1, -1], [-1, -1], [-1, -1], [-1, -1],       // 0000xx
+        [6, 9],                       // 000100
+        [6, 8],                       // 000101
+        [5, 7], [5, 7],                   // 00011x
+        [4, 6], [4, 6], [4, 6], [4, 6],           // 0010xx
+        [4, 5], [4, 5], [4, 5], [4, 5],           // 0011xx
+        [3, 1], [3, 1], [3, 1], [3, 1],           // 010xxx
+        [3, 1], [3, 1], [3, 1], [3, 1],
+        [3, 4], [3, 4], [3, 4], [3, 4],           // 011xxx
+        [3, 4], [3, 4], [3, 4], [3, 4],
+        [2, 3], [2, 3], [2, 3], [2, 3],           // 10xxxx
+        [2, 3], [2, 3], [2, 3], [2, 3],
+        [2, 3], [2, 3], [2, 3], [2, 3],
+        [2, 3], [2, 3], [2, 3], [2, 3],
+        [2, 2], [2, 2], [2, 2], [2, 2],           // 11xxxx
+        [2, 2], [2, 2], [2, 2], [2, 2],
+        [2, 2], [2, 2], [2, 2], [2, 2],
+        [2, 2], [2, 2], [2, 2], [2, 2]
+    ];
+
+    function constructor(str, params) {
+        this.str = str;
+        this.dict = str.dict;
+
+        params = params || new Dict();
+
+        this.encoding = params.get("K") || 0;
+        this.eoline = params.get("EndOfLine") || false;
+        this.byteAlign = params.get("EncodedByteAlign") || false;
+        this.columns = params.get("Columns") || 1728;
+        this.rows = params.get("Rows") || 0;
+        var eoblock = params.get("EndOfBlock");
+        if (eoblock == null)
+            eoblock = true;
+        this.eoblock = eoblock;
+        this.black = params.get("BlackIs1") || false;
+
+        this.codingLine = new Uint32Array(this.columns + 1);
+        this.refLine = new Uint32Array(this.columns + 2);
+        
+        this.codingLine[0] = this.columns;
+        this.codingPos = 0;
+
+        this.row = 0;
+        this.nextLine2D = this.encoding < 0;
+        this.inputBits = 0;
+        this.inputBuf;
+        this.outputBits = 0;
+        this.buf = EOF;
+
+        var code1;
+        while ((code1 = this.lookBits(12)) == 0) {
+            this.eatBits(1);
+        }
+        if (code1 == 1) {
+            this.eatBits(12);
+        }
+        if (this.encoding > 0) {
+            this.nextLine2D = !this.lookBits(1);
+            this.eatBits(1);
+        }
+        
+        DecodeStream.call(this);
+    }
+
+    constructor.prototype = Object.create(DecodeStream.prototype);
+    constructor.prototype.readBlock = function() {
+        while (!this.eof) {
+            var c = this.lookChar();
+            this.buf = EOF;
+            this.ensureBuffer(this.bufferLength + 1);
+            this.buffer[this.bufferLength++] = c;
+        }
+    };
+    constructor.prototype.addPixels = function(a1, blackPixels) {
+        var codingLine = this.codingLine;
+        var codingPos = this.codingPos;
+
+        if (a1 > codingLine[codingPos]) {
+            if (a1 > this.columns) {
+                warn("row is wrong length");
+                this.err = true;
+                a1 = this.columns;
+            }
+            if ((codingPos & 1) ^ blackPixels) {
+                ++codingPos;
+            }
+
+            codingLine[codingPos] = a1;
+        }
+        this.codingPos = codingPos;
+    };
+    constructor.prototype.addPixelsNeg = function(a1, blackPixels) {
+        var codingLine = this.codingLine;
+        var codingPos = this.codingPos;
+
+        if (a1 > codingLine[codingPos]) {
+            if (a1 > this.columns) {
+                warn("row is wrong length");
+                this.err = true;
+                a1 = this.columns;
+            }
+            if ((codingPos & 1) ^ blackPixels)
+                ++codingPos;
+
+            codingLine[codingPos] = a1;
+        } else if (a1 < codingLine[codingPos]) {
+            if (a1 < 0) {
+                warn("invalid code");
+                this.err = true;
+                a1 = 0;
+            }
+            while (codingPos > 0 && a1 < codingLine[codingPos - 1])
+                --codingPos;
+            codingLine[codingPos] = a1;
+        }
+
+        this.codingPos = codingPos;
+    };
+    constructor.prototype.lookChar = function() {
+        var refLine = this.refLine;
+        var codingLine = this.codingLine;
+        var columns = this.columns;
+
+        var refPos, blackPixels, bits;
+
+        if (this.buf != EOF)
+            return buf;
+
+        if (this.outputBits == 0) {
+            if (this.eof)
+                return;
+
+            this.err = false;
+
+            if (this.nextLine2D) {
+                for (var i = 0; codingLine[i] < columns; ++i)
+                    refLine[i] = codingLine[i];
+
+                refLine[i++] = columns;
+                refLine[i] = columns;
+                codingLine[0] = 0;
+                this.codingPos = 0;
+                refPos = 0;
+                blackPixels = 0;
+
+                while (codingLine[this.codingPos] < columns) {
+                    var code1 = this.getTwoDimCode();
+                    switch (code1) {
+                    case twoDimPass:
+                        this.addPixels(refLine[refPos + 1], blackPixels);
+                        if (refLine[refPos + 1] < columns)
+                            refPos += 2;
+                        break;
+                    case twoDimHoriz:
+                        var code1 = 0, code2 = 0;
+                        if (blackPixels) {
+                            var code3;
+                            do {
+                                code1 += (code3 = this.getBlackCode());
+                            } while (code3 >= 64);
+                            do {
+                                code2 += (code3 = this.getWhiteCode());
+                            } while (code3 >= 64);
+                        } else {
+                            var code3;
+                            do {
+                                code1 += (code3 = this.getWhiteCode());
+                            } while (code3 >= 64);
+                            do {
+                                code2 += (code3 = this.getBlackCode());
+                            } while (code3 >= 64);
+                        }
+                        this.addPixels(codingLine[this.codingPos] + code1, blackPixels);
+                        if (codingLine[this.codingPos] < columns) {
+                            this.addPixels(codingLine[this.codingPos] + code2,
+                                    blackPixels ^ 1);
+                        }
+                        while (refLine[refPos] <= codingLine[this.codingPos] 
+                                && refLine[refPos] < columns) {
+                            refPos += 2;
+                        }    
+                        break;
+                    case twoDimVertR3:
+                        this.addPixels(refLine[refPos] + 3, blackPixels);
+                        blackPixels ^= 1;
+                        if (codingLine[this.codingPos] < columns) {
+                            ++refPos;
+                            while (refLine[refPos] <= codingLine[this.codingPos] &&
+                                    refLine[refPos] < columns)
+                                refPos += 2;
+                        }
+                        break;
+                    case twoDimVertR2:
+                        this.addPixels(refLine[refPos] + 2, blackPixels);
+                        blackPixels ^= 1;
+                        if (codingLine[this.codingPos] < columns) {
+                            ++refPos;
+                            while (refLine[refPos] <= codingLine[this.codingPos] &&
+                                    refLine[refPos] < columns) {
+                                refPos += 2;
+                            }
+                        }
+                        break;
+                    case twoDimVertR1:
+                        this.addPixels(refLine[refPos] + 1, blackPixels);
+                        blackPixels ^= 1;
+                        if (codingLine[this.codingPos] < columns) {
+                            ++refPos;
+                            while (refLine[refPos] <= codingLine[this.codingPos] &&
+                                    refLine[refPos] < columns)
+                                refPos += 2;
+                        }
+                        break;
+                    case twoDimVert0:
+                        this.addPixels(refLine[refPos], blackPixels);
+                        blackPixels ^= 1;
+                        if (codingLine[this.codingPos] < columns) {
+                            ++refPos;
+                            while (refLine[refPos] <= codingLine[this.codingPos] &&
+                                    refLine[refPos] < columns)
+                                refPos += 2;
+                        }
+                        break;
+                    case twoDimVertL3:
+                        this.addPixelsNeg(refLine[refPos] - 3, blackPixels);
+                        blackPixels ^= 1;
+                        if (codingLine[this.codingPos] < columns) {
+                            if (refPos > 0)
+                                --refPos;
+                            else
+                                ++refPos;
+                            while (refLine[refPos] <= codingLine[this.codingPos] &&
+                                    refLine[refPos] < columns)
+                                refPos += 2;
+                        }
+                        break;
+                    case twoDimVertL2:
+                        this.addPixelsNeg(refLine[refPos] - 2, blackPixels);
+                        blackPixels ^= 1;
+                        if (codingLine[this.codingPos] < columns) {
+                            if (refPos > 0)
+                                --refPos;
+                            else
+                                ++refPos;
+                            while (refLine[refPos] <= codingLine[this.codingPos] &&
+                                    refLine[refPos] < columns)
+                                refPos += 2;
+                        }
+                        break;
+                    case twoDimVertL1:
+                        this.addPixelsNeg(refLine[refPos] - 1, blackPixels);
+                        blackPixels ^= 1;
+                        if (codingLine[this.codingPos] < columns) {
+                            if (refPos > 0)
+                                --refPos;
+                            else
+                                ++refPos;
+                            
+                            while (refLine[refPos] <= codingLine[this.codingPos] &&
+                                    refLine[refPos] < columns)
+                                refPos += 2;
+                        }
+                        break;
+                    case EOF:
+                        this.addPixels(columns, 0);
+                        this.eof = true;
+                        break;
+                    default:
+                        warn("bad 2d code");
+                        this.addPixels(columns, 0);
+                        this.err = true;
+                        break;
+                    }
+                }
+            } else {
+                codingLine[0] = 0;
+                this.codingPos = 0;
+                blackPixels = 0;
+                while(codingLine[this.codingPos] < columns) {
+                    code1 = 0;
+                    if (blackPixels) {
+                        do {
+                            code1 += (code3 = this.getBlackCode());
+                        } while (code3 >= 64);
+                    } else {
+                        do {
+                            code1 += (code3 = this.getWhiteCode());
+                        } while (code3 >= 64);
+                    }
+                    this.addPixels(codingLine[this.codingPos] + code1, blackPixels);
+                    blackPixels ^= 1;
+                }
+            }
+
+            if (this.byteAlign)
+                inputBits &= ~7;
+                    
+            var gotEOL = false;
+
+            if (!this.eoblock && this.row == this.rows - 1) {
+                this.eof = true;
+            } else {
+                code1 = this.lookBits(12);
+                while (code1 == 0) {
+                    this.eatBits(1);
+                    code1 = this.lookBits(12);
+                }
+                if (code1 == 1) {
+                    this.eatBits(12);
+                    gotEOL = true;
+                } else if (code1 == EOF) {
+                    this.eof = true;
+                }
+            }
+
+            if (!this.eof && this.encoding > 0) {
+                this.nextLine2D = !this.lookBits(1);
+                this.eatBits(1);
+            }
+
+            if (this.eoblock && gotEOL) {
+                code1 = this.lookBits(12);
+                if (code1 == 1) {
+                    this.eatBits(12);
+                    if (this.encoding > 0) {
+                        this.lookBits(1);
+                        this.eatBits(1);
+                    }
+                    if (this.encoding >= 0) {
+                        for (var i = 0; i < 4; ++i) {
+                            code1 = this.lookBits(12);
+                            if (code1 != 1)
+                                warning("bad rtc code");
+                            this.eatBits(12);
+                            if (this.encoding > 0) {
+                                this.lookBits(1);
+                                this.eatBits(1);
+                            }
+                        }
+                    }
+                    this.eof = true;
+                }
+            } else if (this.err && this.eoline) {
+                var code1;
+                while (true) {
+                    code1 = this.lookBits(13);
+                    if (code1 == EOF) {
+                        this.eof = true;
+                        return;
+                    }
+                    if ((code1 >> 1) == 1) {
+                        break;
+                    }
+                    this.eatBits(1);
+                }
+                this.eatBits(12);
+                if (this.encoding > 0) {
+                    this.eatBits(1);
+                    this.nextLine2D = !(code1 & 1);
+                }
+            }
+
+            if (codingLine[0] > 0)
+                this.outputBits = codingLine[this.codingPos = 0];
+            else
+                this.outputBits = codingLine[this.codingPos = 1];
+            this.row++;
+        }
+
+        if (this.outputBits >= 8) {
+            this.buf = (this.codingPos & 1) ? 0 : 0xFF;
+            this.outputBits -= 8;
+            if (this.outputBits == 0 && codingLine[this.codingPos] < columns) {
+                this.codingPos++;
+                this.outputBits = codingLine[this.codingPos] - codingLine[this.codingPos - 1];
+            }
+        } else {
+            var bits = 8;
+            this.buf = 0;
+            do {
+                if (this.outputBits > bits) {
+                    this.buf <<= bits;
+                    if (!(this.codingPos & 1)) {
+                        this.buf |= 0xFF >> (8 - bits);
+                    }
+                    this.outputBits -= bits;
+                    bits = 0;
+                } else {
+                    this.buf <<= this.outputBits;
+                    if (!(this.codingPos & 1)) {
+                        this.buf |= 0xFF >> (8 - this.outputBits);
+                    }
+                    bits -= this.outputBits;
+                    this.outputBits = 0;
+                    if (codingLine[this.codingPos] < columns) {
+                        this.codingPos++;
+                        this.outputBits = codingLine[this.codingPos] - codingLine[this.codingPos - 1];
+                    } else if (bits > 0) {
+                        this.buf <<= bits;
+                        bits = 0;
+                    }
+                }
+            } while (bits);
+        }
+        if (this.black) {
+            this.buf ^= 0xFF;
+        }
+        return this.buf;
+    };
+    constructor.prototype.getTwoDimCode = function() {
+        var code = 0;
+        var p;
+        if (this.eoblock) {
+            code = this.lookBits(7);
+            p = twoDimTable[code];
+            if (p[0] > 0) {
+                this.eatBits(p[0]);
+                return p[1];
+            }
+        } else {
+            for (var n = 1; n <= 7; ++n) {
+                code = this.lookBits(n);
+                if (n < 7) {
+                    code <<= 7 - n;
+                }
+                p = twoDimTable[code];
+                if (p[0] == n) {
+                    this.eatBits(n);
+                    return p[1];
+                }
+            }
+        }
+        warn("Bad two dim code");
+        return EOF;
+    };
+
+    constructor.prototype.getWhiteCode = function() {
+        var code = 0;
+        var p;
+        var n;
+        if (this.eoblock) {
+            code = this.lookBits(12);
+            if (code == EOF)
+                return 1;
+            
+            if ((code >> 5) == 0)
+                p = whiteTable1[code];
+            else
+                p = whiteTable2[code >> 3];
+
+            if (p[0] > 0) {
+                this.eatBits(p[0]);
+                return p[1];
+            }
+        } else {
+            for (var n = 1; n <= 9; ++n) {
+                code = this.lookBits(n);
+                if (code == EOF)
+                    return 1;
+
+                if (n < 9)
+                    code <<= 9 - n;
+                p = whiteTable2[code];
+                if (p[0] == n) {
+                    this.eatBits(n);    
+                    return p[0];
+                }
+            }
+            for (var n = 11; n <= 12; ++n) {
+                code == this.lookBits(n);
+                if (code == EOF)
+                    return 1;
+                if (n < 12) 
+                    code <<= 12 - n;
+                p = whiteTable1[code];
+                if (p[0] == n) {
+                    this.eatBits(n);
+                    return p[1];
+                }
+            }
+        }
+        warn("bad white code");
+        this.eatBits(1);
+        return 1;
+    };
+    constructor.prototype.getBlackCode = function() {
+        var code, p, n;
+        if (this.eoblock) {
+            code = this.lookBits(13);
+            if (code == EOF)
+                return 1;
+            if ((code >> 7) == 0)
+                p = blackTable1[code];
+            else if ((code >> 9) == 0 && (code >> 7) != 0)
+                p = blackTable2[(code >> 1) - 64];
+            else 
+                p = blackTable3[code >> 7];
+
+            if (p[0] > 0) {
+                this.eatBits(p[0]);
+                return p[1];
+            }
+        } else {
+            for (var n = 2; n <= 6; ++n) {
+                code = this.lookBits(n);
+                if (code == EOF)
+                    return 1;
+                if (n < 6)
+                    code <<= 6 - n;
+
+                p = blackTable3[code];
+                if (p[0] == n) {
+                    this.eatBits(n);
+                    return p[1];
+                }
+            }
+            for (var n = 7; n <= 12; ++n) {
+                code = this.lookBits(n);
+                if (code == EOF)
+                    return 1;
+                if (n < 12)
+                    code <<= 12 - n;
+                if (code >= 64) {
+                    p = blackTable2[code - 64];
+                    if (p[0] == n) {
+                        this.eatBits(n);
+                        return p[1];
+                    }
+                }
+            }
+            for (n = 10; n <= 13; ++n) {
+                code = this.lookBits(n);
+                if (code == EOF)
+                    return 1;
+                if (n < 13)
+                    code << 13 - n;
+                p = blackTable1[code];
+                if (p[0] == n) {
+                    this.eatBits(n);
+                    return p[1];
+                }
+            }
+        }
+        warn("bad black code");
+        this.eatBits(1);
+        return 1;
+    };
+    constructor.prototype.lookBits = function(n) {
+        var c;
+        while (this.inputBits < n) {
+            if ((c = this.str.getByte()) == null) {
+                if (this.inputBits == 0)
+                    return EOF;
+                return (this.inputBuf << (n - this.inputBits)) 
+                    & (0xFFFF >> (16 - n));
+            }
+            this.inputBuf = (this.inputBuf << 8) + c;
+            this.inputBits += 8;
+        }
+        return (this.inputBuf >> (this.inputBits - n)) & (0xFFFF >> (16 - n));
+    };
+    constructor.prototype.eatBits = function(n) {
+        if ((this.inputBits -= n) < 0)
+            this.inputBits = 0;
+    }
 
     return constructor;
 })();
@@ -979,7 +1988,7 @@ function IsArray(v) {
 }
 
 function IsStream(v) {
-    return typeof v == "object" && "getChar" in v;
+    return typeof v == "object" && v != null && ("getChar" in v);
 }
 
 function IsRef(v) {
@@ -1048,10 +2057,10 @@ var Lexer = (function() {
 
     function ToHexDigit(ch) {
         if (ch >= "0" && ch <= "9")
-            return ch - "0";
-        ch = ch.toLowerCase();
-        if (ch >= "a" && ch <= "f")
-            return ch - "a";
+            return ch.charCodeAt(0) - 48;
+        ch = ch.toUpperCase();
+        if (ch >= "A" && ch <= "F")
+            return ch.charCodeAt(0) - 55;
         return -1;
     }
 
@@ -1345,7 +2354,7 @@ var Parser = (function() {
             // don't buffer inline image data
             this.buf2 = (this.inlineImg > 0) ? null : this.lexer.getObj();
         },
-        getObj: function() {
+        getObj: function(cipherTransform) {
             // refill buffer after inline image data
             if (this.inlineImg == 2)
                 this.refill();
@@ -1371,7 +2380,7 @@ var Parser = (function() {
                         this.shift();
                         if (IsEOF(this.buf1))
                             break;
-                        dict.set(key, this.getObj());
+                        dict.set(key, this.getObj(cipherTransform));
                     }
                 }
                 if (IsEOF(this.buf1))
@@ -1380,7 +2389,7 @@ var Parser = (function() {
                 // stream objects are not allowed inside content streams or
                 // object streams
                 if (this.allowStreams && IsCmd(this.buf2, "stream")) {
-                    return this.makeStream(dict);
+                    return this.makeStream(dict, cipherTransform);
                 } else {
                     this.shift();
                 }
@@ -1399,17 +2408,8 @@ var Parser = (function() {
             } else if (IsString(this.buf1)) { // string
                 var str = this.buf1;
                 this.shift();
-                if (this.fileKey) {
-                    var decrypt = new DecryptStream(new StringStream(str),
-                                                    this.fileKey,
-                                                    this.encAlgorithm,
-                                                    this.keyLength);
-                    var str = "";
-                    var pos = decrypt.pos;
-                    var length = decrypt.length;
-                    while (pos++ > length)
-                        str += decrypt.getChar();
-                }
+                if (cipherTransform)
+                    str = cipherTransform.decryptString(str);
                 return str;
             }
 
@@ -1418,7 +2418,7 @@ var Parser = (function() {
             this.shift();
             return obj;
         },
-        makeStream: function(dict) {
+        makeStream: function(dict, cipherTransform) {
             var lexer = this.lexer;
             var stream = lexer.stream;
 
@@ -1445,12 +2445,8 @@ var Parser = (function() {
             this.shift();
 
             stream = stream.makeSubStream(pos, length, dict);
-            if (this.fileKey) {
-                stream = new DecryptStream(stream,
-                                           this.fileKey,
-                                           this.encAlgorithm,
-                                           this.keyLength);
-            }
+            if (cipherTransform)
+                stream = cipherTransform.createStream(stream);
             stream = this.filter(stream, dict, length);
             stream.parameters = dict;
             return stream;
@@ -1490,7 +2486,7 @@ var Parser = (function() {
                 return new Ascii85Stream(stream);
             } else if (name == "CCITTFaxDecode") {
                 TODO("implement fax stream");
-                return new FakeStream(stream);
+                return new CCITTFaxStream(stream, params);
             } else {
                 error("filter '" + name + "' not supported yet");
             }
@@ -1584,12 +2580,18 @@ var XRef = (function() {
         this.xrefstms = {};
         var trailerDict = this.readXRef(startXRef);
 
+        // prepare the XRef cache
+        this.cache = [];
+
+        var encrypt = trailerDict.get("Encrypt");
+        if (encrypt) {
+            var fileId = trailerDict.get("ID");
+            this.encrypt = new CipherTransformFactory(this.fetch(encrypt), fileId[0] /*, password */);
+        }
+
         // get the root dictionary (catalog) object
         if (!IsRef(this.root = trailerDict.get("Root")))
             error("Invalid root reference");
-
-        // prepare the XRef cache
-        this.cache = [];
     }
 
     constructor.prototype = {
@@ -1778,7 +2780,11 @@ var XRef = (function() {
                     }
                     error("bad XRef entry");
                 }
-                e = parser.getObj();
+                if (this.encrypt) {
+                    e = parser.getObj(this.encrypt.createCipherTransform(num, gen));
+                } else {
+                    e = parser.getObj();
+                }
                 // Don't cache streams since they are mutable.
                 if (!IsStream(e))
                     this.cache[num] = e;
@@ -2075,30 +3081,6 @@ var PDFDoc = (function() {
     return constructor;
 })();
 
-var IDENTITY_MATRIX = [ 1, 0, 0, 1, 0, 0 ];
-
-// <canvas> contexts store most of the state we need natively.
-// However, PDF needs a bit more state, which we store here.
-var CanvasExtraState = (function() {
-    function constructor() {
-        // Are soft masks and alpha values shapes or opacities?
-        this.alphaIsShape = false;
-        this.fontSize = 0.0;
-        this.textMatrix = IDENTITY_MATRIX;
-        this.leading = 0.0;
-        this.colorSpace = null;
-        // Current point (in user coordinates)
-        this.x = 0.0;
-        this.y = 0.0;
-        // Start of text line (in text coordinates)
-        this.lineX = 0.0;
-        this.lineY = 0.0;
-    }
-    constructor.prototype = {
-    };
-    return constructor;
-})();
-
 var Encodings = {
   get ExpertEncoding() {
     return shadow(this, "ExpertEncoding", [ ,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
@@ -2272,6 +3254,34 @@ var Encodings = {
     ]);
   }
 };
+
+var IDENTITY_MATRIX = [ 1, 0, 0, 1, 0, 0 ];
+
+// <canvas> contexts store most of the state we need natively.
+// However, PDF needs a bit more state, which we store here.
+var CanvasExtraState = (function() {
+    function constructor() {
+        // Are soft masks and alpha values shapes or opacities?
+        this.alphaIsShape = false;
+        this.fontSize = 0;
+        this.textMatrix = IDENTITY_MATRIX;
+        this.leading = 0;
+        this.colorSpace = null;
+        // Current point (in user coordinates)
+        this.x = 0;
+        this.y = 0;
+        // Start of text line (in text coordinates)
+        this.lineX = 0;
+        this.lineY = 0;
+        // Character and word spacing
+        this.charSpace = 0;
+        this.wordSpace = 0;
+        this.textHScale = 100;
+    }
+    constructor.prototype = {
+    };
+    return constructor;
+})();
 
 function ScratchCanvas(width, height) {
     var canvas = document.createElement("canvas");
@@ -2771,13 +3781,13 @@ var CanvasGraphics = (function() {
         endText: function() {
         },
         setCharSpacing: function(spacing) {
-            TODO("character (glyph?) spacing");
+            this.ctx.charSpacing = spacing;
         },
         setWordSpacing: function(spacing) {
-            TODO("word spacing");
+            this.ctx.wordSpacing = spacing;
         },
         setHScale: function(scale) {
-            TODO("horizontal text scale");
+            this.ctx.textHScale = (scale % 100) * 0.01;
         },
         setLeading: function(leading) {
             this.current.leading = leading;
@@ -2810,7 +3820,11 @@ var CanvasGraphics = (function() {
 
             this.current.fontName = fontName;
             this.current.fontSize = size;
-            this.ctx.font = this.current.fontSize + 'px "' + this.current.fontName + '"';
+
+            this.ctx.font = this.current.fontSize + 'px "' + fontName + '"';
+            if (this.ctx.$setFont) {
+              this.ctx.$setFont(fontName);
+            }
         },
         setTextRenderingMode: function(mode) {
             TODO("text rendering mode");
@@ -2842,6 +3856,8 @@ var CanvasGraphics = (function() {
             this.moveText(0, this.current.leading);
         },
         showText: function(text) {
+            // TODO: apply charSpacing, wordSpacing, textHScale
+
             this.ctx.save();
             this.ctx.transform.apply(this.ctx, this.current.textMatrix);
             this.ctx.scale(1, -1);
@@ -2908,6 +3924,8 @@ var CanvasGraphics = (function() {
                 this.setStrokeGray.apply(this, arguments);
             } else if (3 === arguments.length) {
                 this.setStrokeRGBColor.apply(this, arguments);
+            } else if (4 === arguments.length) {
+                this.setStrokeCMYKColor.apply(this, arguments);
             }
         },
         setStrokeColorN: function(/*...*/) {
@@ -2920,6 +3938,8 @@ var CanvasGraphics = (function() {
                 this.setFillGray.apply(this, arguments);
             } else if (3 === arguments.length) {
                 this.setFillRGBColor.apply(this, arguments);
+            } else if (4 === arguments.length) {
+                this.setFillCMYKColor.apply(this, arguments);
             }
         },
         setFillColorN: function(/*...*/) {
@@ -3004,10 +4024,14 @@ var CanvasGraphics = (function() {
             // we want the canvas to be as large as the step size
             var botRight = applyMatrix([x0 + xstep, y0 + ystep], matrix);
 
-            var tmpCanvas = new this.ScratchCanvas(
-                Math.ceil(botRight[0] - topLeft[0]),    // width
-                Math.ceil(botRight[1] - topLeft[1])     // height
-            );
+            var width = botRight[0] - topLeft[0];
+            var height = botRight[1] - topLeft[1];
+
+            // TODO: hack to avoid OOM, remove then pattern code is fixed
+            if (Math.abs(width) > 8192 || Math.abs(height) > 8192)
+                return false;
+
+            var tmpCanvas = new this.ScratchCanvas(width, height);
 
             // set the new canvas element context as the graphics context
             var tmpCtx = tmpCanvas.getContext("2d");
@@ -3059,10 +4083,10 @@ var CanvasGraphics = (function() {
             this.ctx.fillStyle = this.makeCssRgb(r, g, b);
         },
         setStrokeCMYKColor: function(c, m, y, k) {
-            TODO("CMYK space");
+            this.ctx.strokeStyle = this.makeCssCmyk(c, m, y, k);
         },
         setFillCMYKColor: function(c, m, y, k) {
-            TODO("CMYK space");
+            this.ctx.fillStyle = this.makeCssCmyk(c, m, y, k);
         },
 
         // Shading
@@ -3220,23 +4244,11 @@ var CanvasGraphics = (function() {
 
         paintImageXObject: function(ref, image, inline) {
             this.save();
-            if (image.getParams) {
-                // JPX/JPEG2000 streams directly contain bits per component
-                // and color space mode information.
-                TODO("get params from actual stream");
-                // var bits = ...
-                // var colorspace = ...
-            }
-            // TODO cache rendered images?
 
+            var ctx = this.ctx;
             var dict = image.dict;
             var w = dict.get2("Width", "W");
             var h = dict.get2("Height", "H");
-
-            if (w < 1 || h < 1)
-                error("Invalid image width or height");
-
-            var ctx = this.ctx;
             // scale the image to the unit square
             ctx.scale(1/w, -1/h);
 
@@ -3251,154 +4263,15 @@ var CanvasGraphics = (function() {
                 return;
             }
 
-            var interpolate = dict.get2("Interpolate", "I");
-            if (!IsBool(interpolate))
-                interpolate = false;
-            var imageMask = dict.get2("ImageMask", "IM");
-            if (!IsBool(imageMask))
-                imageMask = false;
-
-            var bitsPerComponent = image.bitsPerComponent;
-            if (!bitsPerComponent) {
-                bitsPerComponent = dict.get2("BitsPerComponent", "BPC");
-                if (!bitsPerComponent) {
-                    if (imageMask)
-                        bitsPerComponent = 1;
-                    else
-                        error("Bits per component missing in image");
-                }
-            }
-
-            if (bitsPerComponent !== 8) {
-                TODO("Support bpc="+ bitsPerComponent);
-                this.restore();
-                return;
-            }
-
-            var xref = this.xref;
-            var colorSpaces = this.colorSpaces;
-
-            if (imageMask) {
-                error("support image masks");
-            }
-
-            // actual image
-            var csStream = dict.get2("ColorSpace", "CS");
-            csStream = xref.fetchIfRef(csStream);
-            if (IsName(csStream) && inline)
-                csStream = colorSpaces.get(csStream);
-
-            var colorSpace = new ColorSpace(xref, csStream);
-            var decode = dict.get2("Decode", "D");
-
-            TODO("create color map");
-
-            var mask = image.dict.get("Mask");
-            mask = xref.fetchIfRef(mask);
-            var smask = image.dict.get("SMask");
-            smask = xref.fetchIfRef(smask);
-
-            if (IsStream(smask)) {
-                if (inline)
-                    error("cannot combine smask and inlining");
-
-                var maskDict = smask.dict;
-                var maskW = maskDict.get2("Width", "W");
-                var maskH = maskDict.get2("Height", "H");
-                if (!IsNum(maskW) || !IsNum(maskH) || maskW < 1 || maskH < 1)
-                    error("Invalid image width or height");
-                if (maskW !== w || maskH !== h)
-                    error("Invalid image width or height");
-
-                var maskInterpolate = maskDict.get2("Interpolate", "I");
-                if (!IsBool(maskInterpolate))
-                    maskInterpolate = false;
-
-                var maskBPC = maskDict.get2("BitsPerComponent", "BPC");
-                if (!maskBPC)
-                    error("Invalid image mask bpc");
-
-                var maskCsStream = maskDict.get2("ColorSpace", "CS");
-                maskCsStream = xref.fetchIfRef(maskCsStream);
-                var maskColorSpace = new ColorSpace(xref, maskCsStream);
-                if (maskColorSpace.mode !== "DeviceGray")
-                    error("Invalid color space for smask");
-
-                var maskDecode = maskDict.get2("Decode", "D");
-                if (maskDecode)
-                    TODO("Handle mask decode");
-                // handle matte object
-            }
+            var imageObj = new PDFImage(this.xref, this.res, image, inline); 
 
             var tmpCanvas = new this.ScratchCanvas(w, h);
             var tmpCtx = tmpCanvas.getContext("2d");
             var imgData = tmpCtx.getImageData(0, 0, w, h);
             var pixels = imgData.data;
 
-            if (bitsPerComponent != 8)
-                error("unhandled number of bits per component");
-
-            if (smask) {
-                if (maskColorSpace.numComps != 1)
-                    error("Incorrect number of components in smask");
-
-                var numComps = colorSpace.numComps;
-                var imgArray = image.getBytes(numComps * w * h);
-                var imgIdx = 0;
-
-                var smArray = smask.getBytes(w * h);
-                var smIdx = 0;
-
-                var length = 4 * w * h;
-                switch (numComps) {
-                case 1:
-                    for (var i = 0; i < length; i += 4) {
-                        var p = imgArray[imgIdx++];
-                        pixels[i] = p;
-                        pixels[i+1] = p;
-                        pixels[i+2] = p;
-                        pixels[i+3] = smArray[smIdx++];
-                    }
-                    break;
-                case 3:
-                    for (var i = 0; i < length; i += 4) {
-                        pixels[i] = imgArray[imgIdx++];
-                        pixels[i+1] = imgArray[imgIdx++];
-                        pixels[i+2] = imgArray[imgIdx++];
-                        pixels[i+3] = smArray[smIdx++];
-                    }
-                    break;
-                default:
-                    TODO("Images with "+ numComps + " components per pixel");
-                }
-            } else {
-                var numComps = colorSpace.numComps;
-                var imgArray = image.getBytes(numComps * w * h);
-                var imgIdx = 0;
-
-                var length = 4 * w * h;
-                switch (numComps) {
-                case 1:
-                    for (var i = 0; i < length; i += 4) {
-                        var p = imgArray[imgIdx++];
-                        pixels[i] = p;
-                        pixels[i+1] = p;
-                        pixels[i+2] = p;
-                        pixels[i+3] = 255;
-                    }
-                    break;
-                case 3:
-                    for (var i = 0; i < length; i += 4) {
-                        pixels[i] = imgArray[imgIdx++];
-                        pixels[i+1] = imgArray[imgIdx++];
-                        pixels[i+2] = imgArray[imgIdx++];
-                        pixels[i+3] = 255;
-                    }
-                    break;
-                default:
-                    TODO("Images with "+ numComps + " components per pixel");
-                }
-            }
+            imageObj.fillRgbaBuffer(pixels);
+            
             tmpCtx.putImageData(imgData, 0, 0);
             ctx.drawImage(tmpCanvas, 0, -h);
             this.restore();
@@ -3449,6 +4322,13 @@ var CanvasGraphics = (function() {
         },
         makeCssRgb: function(r, g, b) {
             var ri = (255 * r) | 0, gi = (255 * g) | 0, bi = (255 * b) | 0;
+            return "rgb("+ ri +","+ gi +","+ bi +")";
+        },
+        makeCssCmyk: function(c, m, y, k) {
+            // while waiting on CSS's cmyk()... http://www.ilkeratalay.com/colorspacesfaq.php#rgb
+            var ri = (255 * (1 - Math.min(1, c * (1 - k) + k))) | 0;
+            var gi = (255 * (1 - Math.min(1, m * (1 - k) + k))) | 0;
+            var bi = (255 * (1 - Math.min(1, y * (1 - k) + k))) | 0;
             return "rgb("+ ri +","+ gi +","+ bi +")";
         },
         // We generally keep the canvas context set for
@@ -3524,6 +4404,203 @@ var ColorSpace = (function() {
     constructor.prototype = {
     };
 
+    return constructor;
+})();
+
+var PDFImage = (function() {
+    function constructor(xref, res, image, inline) {
+        this.image = image;
+        if (image.getParams) {
+            // JPX/JPEG2000 streams directly contain bits per component
+            // and color space mode information.
+            TODO("get params from actual stream");
+            // var bits = ...
+            // var colorspace = ...
+        }
+        // TODO cache rendered images?
+
+        var dict = image.dict;
+        this.width = dict.get2("Width", "W");
+        this.height = dict.get2("Height", "H");
+
+        if (this.width < 1 || this.height < 1)
+            error("Invalid image width or height");
+
+        this.interpolate = dict.get2("Interpolate", "I") || false;
+        this.imageMask = dict.get2("ImageMask", "IM") || false;
+
+        var bitsPerComponent = image.bitsPerComponent;
+        if (!bitsPerComponent) {
+            bitsPerComponent = dict.get2("BitsPerComponent", "BPC");
+            if (!bitsPerComponent) {
+                if (this.imageMask)
+                    bitsPerComponent = 1;
+                else
+                    error("Bits per component missing in image");
+            }
+        }
+        this.bpc = bitsPerComponent;
+
+        var colorSpaces = res.get("ColorSpace");
+        var csStream = xref.fetchIfRef(dict.get2("ColorSpace", "CS"));
+        if (IsName(csStream) && inline)
+            csStream = colorSpaces.get(csStream);
+        this.colorSpace = new ColorSpace(xref, csStream);
+
+        this.numComps = this.colorSpace.numComps;
+        this.decode = dict.get2("Decode", "D");
+
+        var mask = xref.fetchIfRef(image.dict.get("Mask"));
+        var smask = xref.fetchIfRef(image.dict.get("SMask"));
+
+        if (mask) {
+            TODO("masked images");
+        } else if (smask) {
+            this.smask = new PDFImage(xref, res, smask);
+        }
+    };
+    
+    constructor.prototype = {
+        getComponents: function getComponents(buffer) {
+            var bpc = this.bpc;
+            if (bpc == 8)
+                return buffer;
+
+            var width = this.width;
+            var height = this.height;
+            var numComps = this.numComps;
+        
+            var length = width * height;
+            var bufferPos = 0;
+            var output = new Uint8Array(length);
+
+            if (bpc == 1) {
+                var rowComps = width * numComps;
+                var mask = 0;
+                var buf = 0;
+                
+                for (var i = 0, ii = length; i < ii; ++i) {
+                    if (i % rowComps == 0) {
+                        mask = 0;
+                        buf = 0;
+                    } else {
+                        mask >>= 1;
+                    }
+
+                    if (mask <= 0) {
+                        buf = buffer[bufferPos++];
+                        mask = 128;
+                    }
+
+                    var t = buf & mask;
+                    if (t == 0)
+                        output[i] = 0;
+                    else
+                        output[i] = 255;
+                }
+            } else {
+                var rowComps = width * numComps;
+                var bits = 0;
+                var buf = 0;
+
+                for (var i = 0, ii = length; i < ii; ++i) {
+                    while (bits < bpc) {
+                        buf = (buf << 8) | buffer[bufferPos++];
+                        bits += 8;
+                    }
+                    var remainingBits = bits - bpc;
+                    var ret = buf >> remainingBits;
+                    
+                    if (i % rowComps == 0) {
+                        buf = 0;
+                        bits = 0;
+                    } else {
+                        buf = buf & ((1 << remainingBits) - 1);
+                        bits = remainingBits;
+                    }
+                    output[i] = Math.round(255 * ret / ((1 << bpc) - 1));
+                }
+            }
+            return output;
+        },
+        getOpacity: function getOpacity() {
+            var smask = this.smask;
+            var width = this.width;
+            var height = this.height;
+            var buf = new Uint8Array(width * height);
+            
+            if (smask) {
+                var sw = smask.width;
+                var sh = smask.height;
+                if (sw != this.width || sh != this.height)
+                    error("smask dimensions do not match image dimensions");
+                
+                smask.fillGrayBuffer(buf);
+                return buf;
+            } else {
+                for (var i = 0, ii = width * height; i < ii; ++i)
+                    buf[i] = 255;
+            }
+            return buf;
+        },
+        fillRgbaBuffer: function fillRgbaBuffer(buffer) {
+            var numComps = this.numComps;
+            var width = this.width;
+            var height = this.height;
+            var bpc = this.bpc;
+
+            // rows start at byte boundary;
+            var rowBytes = (width * numComps * bpc + 7) >> 3;
+            var imgArray = this.image.getBytes(height * rowBytes);
+            
+            var comps = this.getComponents(imgArray);
+            var compsPos = 0;
+            var opacity = this.getOpacity();
+            var opacityPos = 0;
+            var length = width * height * 4;
+
+            switch (numComps) {
+                case 1:
+                    for (var i = 0; i < length; i += 4) {
+                        var p = comps[compsPos++];
+                        buffer[i] = p;
+                        buffer[i+1] = p;
+                        buffer[i+2] = p;
+                        buffer[i+3] = opacity[opacityPos++];
+                    }
+                    break;
+                case 3:
+                    for (var i = 0; i < length; i += 4) {
+                        buffer[i] = comps[compsPos++];
+                        buffer[i+1] = comps[compsPos++];
+                        buffer[i+2] = comps[compsPos++];
+                        buffer[i+3] = opacity[opacityPos++];
+                    }
+                    break;
+                default:
+                    TODO("Images with "+ numComps + " components per pixel");
+            }
+        },
+        fillGrayBuffer: function fillGrayBuffer(buffer) {
+            var numComps = this.numComps;
+            if (numComps != 1)
+                error("Reading gray scale from a color image");
+
+            var width = this.width;
+            var height = this.height;
+            var bpc = this.bpc;
+
+            // rows start at byte boundary;
+            var rowBytes = (width * numComps * bpc + 7) >> 3;
+            var imgArray = this.image.getBytes(height * rowBytes);
+            
+            var comps = this.getComponents(imgArray);
+            var length = width * height;
+
+            for (var i = 0; i < length; ++i)
+                buffer[i] = comps[i];
+        },
+    };
     return constructor;
 })();
 

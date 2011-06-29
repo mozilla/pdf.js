@@ -74,6 +74,20 @@ span {
   width: 100%;
 }
 
+.thumbnailPageNumber {
+  color: #fff;
+  font-size: 0.55em;
+  text-align: right;
+  margin: -6px 2px 6px 0px;
+  width: 102px;
+}
+
+.thumbnail {
+  width: 104px;
+  height: 134px;
+  margin: 0px auto 10px;
+}
+
 .page {
   width: 816px;
   height: 1056px;
@@ -163,27 +177,46 @@ span {
 }
 
 #sidebar {
-  background-color: rgba(0, 0, 0, 0.8);
   position: fixed;
-  width: 150px;
+  width: 200px;
   top: 62px;
   bottom: 18px;
+  left: -170px;
+  transition: left 0.25s ease-in-out 1s;
+  -moz-transition: left 0.25s ease-in-out 1s;
+  -webkit-transition: left 0.25s ease-in-out 1s;
+}
+
+#sidebar:hover {
+  left: 0px;
+  transition: left 0.25s ease-in-out 0s;
+  -moz-transition: left 0.25s ease-in-out 0s;
+  -webkit-transition: left 0.25s ease-in-out 0s;
+}
+
+#sidebarBox {
+  background-color: rgba(0, 0, 0, 0.7);
+  width: 150px;
+  height: 100%;
   border-top-right-radius: 8px;
   border-bottom-right-radius: 8px;
   -moz-border-radius-topright: 8px;
   -moz-border-radius-bottomright: 8px;
   -webkit-border-top-right-radius: 8px;
   -webkit-border-bottom-right-radius: 8px;
+  box-shadow: 0px 2px 8px #000;
+  -moz-box-shadow: 0px 2px 8px #000;
+  -webkit-box-shadow: 0px 2px 8px #000;
 }
 
 #sidebarScrollView {
   position: absolute;
   overflow: hidden;
   overflow-y: auto;
-  top: 40px;
-  right: 10px;
+  top: 10px;
   bottom: 10px;
   left: 10px;
+  width: 130px;
 }
 
 #sidebarContentView {
