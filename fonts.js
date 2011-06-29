@@ -247,12 +247,9 @@ var Font = (function () {
     var length = data.length;
 
     // checksum
-    var checksum = tag.charCodeAt(0) +
-                   tag.charCodeAt(1) +
-                   tag.charCodeAt(2) +
-                   tag.charCodeAt(3) +
-                   offset +
-                   length;
+    var checksum = 0;
+    for (var i = 0; i < length; i+=4)
+      checksum += FontsUtils.bytesToInteger([data[i], data[i+1], data[i+2], data[i+3]]);
 
     var tableEntry = tag + string32(checksum) + string32(offset) + string32(length);
     tableEntry = stringToArray(tableEntry);
