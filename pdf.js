@@ -641,7 +641,7 @@ var PredictorStream = (function() {
         var pixBytes = this.pixBytes = (colors * bits + 7) >> 3;
         // add an extra pixByte to represent the pixel left of column 0
         var rowBytes = this.rowBytes = (columns * colors * bits + 7) >> 3;
-        
+
         DecodeStream.call(this);
         return this;
     }
@@ -3807,18 +3807,21 @@ var CanvasGraphics = (function() {
             if (fontDescriptor && fontDescriptor.num) {
                 var fontDescriptor = this.xref.fetchIfRef(fontDescriptor);
                 fontName = fontDescriptor.get("FontName").name.replace("+", "_");
-                Fonts.active = fontName;
+                Fonts.setActive(fontName, size);
             }
 
             if (!fontName) {
                 // TODO: fontDescriptor is not available, fallback to default font
                 this.current.fontSize = size;
                 this.ctx.font = this.current.fontSize + 'px sans-serif';
+                Fonts.setActive("sans-serif", this.current.fontSize);
                 return;
             }
 
+            this.current.fontName = fontName;
             this.current.fontSize = size;
-            this.ctx.font = this.current.fontSize +'px "' + fontName + '", Symbol';
+
+            this.ctx.font = this.current.fontSize + 'px "' + fontName + '"';
             if (this.ctx.$setFont) {
               this.ctx.$setFont(fontName);
             }
@@ -3865,7 +3868,7 @@ var CanvasGraphics = (function() {
                 text = Fonts.charsToUnicode(text);
                 this.ctx.translate(this.current.x, -1 * this.current.y);
                 this.ctx.fillText(text, 0, 0);
-                this.current.x += this.ctx.measureText(text).width;
+                this.current.x += Fonts.measureText(text);
             }
 
             this.ctx.restore();

@@ -26,12 +26,15 @@ var fontName  = "";
  */
 var kDisableFonts = false;
 
+
 /**
  * Hold a map of decoded fonts and of the standard fourteen Type1 fonts and
  * their acronyms.
  * TODO Add the standard fourteen Type1 fonts list by default
  *      http://cgit.freedesktop.org/poppler/poppler/tree/poppler/GfxFont.cc#n65
  */
+
+var kScalePrecision = 40;
 var Fonts = {
   _active: null,
 
@@ -39,8 +42,9 @@ var Fonts = {
     return this._active;
   },
 
-  set active(name) {
+  setActive: function fonts_setActive(name, size) {
     this._active = this[name];
+    this.ctx.font = (size * kScalePrecision) + 'px "' + name + '"';
   },
 
   charsToUnicode: function fonts_chars2Unicode(chars) {
@@ -77,6 +81,16 @@ var Fonts = {
 
     // Enter the translated string into the cache
     return active.cache[chars] = str;
+  },
+
+  get ctx() {
+    var ctx = document.createElement("canvas").getContext("2d");
+    ctx.scale(1 / kScalePrecision, 1);
+    return shadow(this, "ctx", ctx);
+  },
+
+  measureText: function fonts_measureText(text) {
+    return this.ctx.measureText(text).width / kScalePrecision;
   }
 };
 
@@ -426,7 +440,6 @@ var Font = (function () {
       };
 
       function replaceCMapTable(cmap, font, properties) {
-        font.pos = cmap.length;
         var version = FontsUtils.bytesToInteger(font.getBytes(2));
         var numTables = FontsUtils.bytesToInteger(font.getBytes(2));
 
@@ -722,7 +735,7 @@ var Font = (function () {
                  "\x00\x00" + // -reserved-
                  "\x00\x00" + // -reserved-
                  "\x00\x00" + // metricDataFormat
-                 string16(charstrings.length)
+                 string16(charstrings.length + 1) // Number of HMetrics
       );
       createTableEntry(otf, offsets, "hhea", hhea);
 
@@ -732,18 +745,18 @@ var Font = (function () {
       * while Windows use this data. So be careful if you hack on Linux and
       * have to touch the 'hmtx' table
       */
-      hmtx = "\x01\xF4\x00\x00"; // Fake .notdef
+      hmtx = "\x00\x00\x00\x00"; // Fake .notdef
       var width = 0, lsb = 0;
       for (var i = 0; i < charstrings.length; i++) {
-        width = charstrings[i].charstring[1];
-        hmtx += string16(width) + string16(lsb);
+        var charstring = charstrings[i];
+        hmtx += string16(charstring.width) + string16(0);
       }
       hmtx = stringToArray(hmtx);
       createTableEntry(otf, offsets, "hmtx", hmtx);
 
       /** MAXP */
       maxp = "\x00\x00\x50\x00" + // Version number
-             string16(charstrings.length + 1); // Num of glyphs (+1 to pass the sanitizer...)
+             string16(charstrings.length + 1); // Num of glyphs
       maxp = stringToArray(maxp);
       createTableEntry(otf, offsets, "maxp", maxp);
 
@@ -854,7 +867,7 @@ var FontsUtils = {
       bytes.set([value]);
       return bytes[0];
     } else if (bytesCount == 2) {
-      bytes.set([value >> 8, value]);
+      bytes.set([value >> 8, value & 0xff]);
       return [bytes[0], bytes[1]];
     } else if (bytesCount == 4) {
       bytes.set([value >> 24, value >> 16, value >> 8, value]);
@@ -995,16 +1008,8 @@ var Type1Parser = function() {
       "12": "div",
 
       // callothersubr is a mechanism to make calls on the postscript
-      // interpreter.
-      // TODO When decodeCharstring encounter such a command it should
-      //      directly do:
-      //        - pop the previous charstring[] command into 'index'
-      //        - pop the previous charstring[] command and ignore it, it is
-      //          normally the number of element to push on the stack before
-      //          the command but since everything will be pushed on the stack
-      //          by the PS interpreter when it will read them that is safe to
-      //          ignore this command
-      //        - push the content of the OtherSubrs[index] inside charstring[]
+      // interpreter, this is not supported by Type2 charstring but hopefully
+      // most of the default commands can be ignored safely.
       "16": "callothersubr",
 
       "17": "pop",
@@ -1024,8 +1029,13 @@ var Type1Parser = function() {
     "31": "hvcurveto"
   };
 
+  var kEscapeCommand = 12;
+
   function decodeCharString(array) {
-    var charString = [];
+    var charstring = [];
+    var lsb = 0;
+    var width = 0;
+    var used = false;
 
     var value = "";
     var count = array.length;
@@ -1034,10 +1044,48 @@ var Type1Parser = function() {
 
       if (value < 32) {
         var command = null;
-        if (value == 12) {
+        if (value == kEscapeCommand) {
           var escape = array[++i];
+
+          // TODO Clean this code
+          if (escape == 16) {
+            var index = charstring.pop();
+            var argc = charstring.pop();
+            var data = charstring.pop();
+
+            // If the flex mechanishm is not used in a font program, Adobe
+            // state that that entries 0, 1 and 2 can simply be replace by
+            // {}, which means that we can simply ignore them.
+            if (index < 3) {
+              continue;
+            }
+
+            // This is the same things about hint replacement, if it is not used
+            // entry 3 can be replaced by {3}
+            if (index == 3) {
+              charstring.push(3);
+              i++;
+              continue;
+            }
+          }
+
           command = charStringDictionary["12"][escape];
         } else {
+          // TODO Clean this code
+          if (value == 13) {
+            if (charstring.length == 2) {
+              width = charstring[1];
+            } else if (charstring.length == 4 && charstring[3] == "div") {
+              width = charstring[1] / charstring[2];
+            } else {
+              error("Unsupported hsbw format: " + charstring);
+            }
+
+            lsb = charstring[0];
+            charstring.push(lsb, "hmoveto");
+            charstring.splice(0, 1);
+            continue;
+          }
           command = charStringDictionary[value];
         }
 
@@ -1059,16 +1107,14 @@ var Type1Parser = function() {
       } else if (value <= 254) {
         value = -((value - 251) * 256) - parseInt(array[++i]) - 108;
       } else {
-        var byte = array[++i];
-        var high = (byte >> 1);
-        value = (byte - high) << 24 | array[++i] << 16 |
-                array[++i] << 8 | array[++i];
+        value = (array[++i] & 0xff) << 24 | (array[++i] & 0xff) << 16 |
+                (array[++i] & 0xff) << 8 | (array[++i] & 0xff) << 0;
       }
 
-      charString.push(value);
+      charstring.push(value);
     }
 
-    return charString;
+    return { charstring: charstring, width: width, lsb: lsb };
   };
 
   /**
@@ -1095,19 +1141,21 @@ var Type1Parser = function() {
         length = parseInt(length);
         var data = eexecString.slice(i + 3, i + 3 + length);
         var encodedSubr = decrypt(data, kCharStringsEncryptionKey, 4);
-        var subr = decodeCharString(encodedSubr);
+        var str = decodeCharString(encodedSubr);
 
-        subrs.push(subr);
+        subrs.push(str.charstring);
         i += 3 + length;
       } else if (inGlyphs && c == 0x52) {
         length = parseInt(length);
         var data = eexecString.slice(i + 3, i + 3 + length);
         var encodedCharstring = decrypt(data, kCharStringsEncryptionKey, 4);
-        var subr = decodeCharString(encodedCharstring);
+        var str = decodeCharString(encodedCharstring);
 
         glyphs.push({
             glyph: glyph,
-            data: subr
+            data: str.charstring,
+            lsb: str.lsb,
+            width: str.width
         });
         i += 3 + length;
       } else if (inGlyphs && c == 0x2F) {
@@ -1269,16 +1317,18 @@ CFF.prototype = {
     var charstrings = [];
 
     for (var i = 0; i < glyphs.length; i++) {
-      var glyph = glyphs[i].glyph;
-      var unicode = GlyphsUnicode[glyph];
+      var glyph = glyphs[i];
+      var unicode = GlyphsUnicode[glyph.glyph];
       if (!unicode) {
-        if (glyph != ".notdef")
+        if (glyph.glyph != ".notdef")
           warn(glyph + " does not have an entry in the glyphs unicode dictionary");
       } else {
         charstrings.push({
           glyph: glyph,
           unicode: unicode,
-          charstring: glyphs[i].data
+          charstring: glyph.data,
+          width: glyph.width,
+          lsb: glyph.lsb
         });
       }
     };
@@ -1320,46 +1370,11 @@ CFF.prototype = {
     var i = 0;
     while (true) {
       var obj = charstring[i];
-      if (obj == null)
-        return [];
-
+      if (obj == undefined) {
+        error("unknow charstring command for " + i + " in " + charstring);
+      }
       if (obj.charAt) {
         switch (obj) {
-          case "callothersubr":
-            var index = charstring[i - 1];
-            var count = charstring[i - 2];
-            var data = charstring[i - 3];
-
-            // If the flex mechanishm is not used in a font program, Adobe
-            // state that that entries 0, 1 and 2 can simply be replace by
-            // {}, which means that we can simply ignore them.
-            if (index < 3) {
-              i -= 3;
-              continue;
-            }
-
-            // This is the same things about hint replacment, if it is not used
-            // entry 3 can be replaced by {}
-            if (index == 3) {
-              if (!data) {
-                charstring.splice(i - 2, 4, 3);
-                i -= 3;
-              } else {
-                // 5 to remove the arguments, the callothersubr call and the pop command
-                charstring.splice(i - 3, 5, 3);
-                i -= 3;
-              }
-            }
-            break;
-
-          case "hsbw":
-            var charWidthVector = charstring[1];
-            var leftSidebearing = charstring[0];
-
-            charstring.splice(i, 1, leftSidebearing, "hmoveto");
-            charstring.splice(0, 1);
-            break;
-
           case "endchar":
           case "return":
             // CharString is ready to be re-encode to commands number at this point
@@ -1371,7 +1386,7 @@ CFF.prototype = {
               } else if (command.charAt) {
                 var cmd = this.commandsMap[command];
                 if (!cmd)
-                  error(command);
+                  error("Unknow command: " + command);
 
                 if (IsArray(cmd)) {
                   charstring.splice(j, 1, cmd[0], cmd[1]);
