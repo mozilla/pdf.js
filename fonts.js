@@ -299,7 +299,6 @@ var Font = (function () {
 
         // Wrap the CFF data inside an OTF font file
         data = this.convert(name, cff, properties);
-        writeToFile(data, "/tmp/file." + fontName + "-" + fontCount + ".otf");
         break;
 
       case "TrueType":

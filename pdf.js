@@ -3543,7 +3543,8 @@ var CanvasGraphics = (function() {
                 xHeight: descriptor.get("XHeight"),
                 capHeight: descriptor.get("CapHeight"),
                 flags: descriptor.get("Flags"),
-                italicAngle: descriptor.get("ItalicAngle")
+                italicAngle: descriptor.get("ItalicAngle"),
+                fixedPitch: false
             };
 
             return {
