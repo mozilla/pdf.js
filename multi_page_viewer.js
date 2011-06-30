@@ -125,14 +125,7 @@ var PDFViewer = {
       var fonts = [];
       page.compile(gfx, fonts);
 
-      var loadFont = function() {
-        if (!FontLoader.bind(fonts)) {
-          pageTimeout = window.setTimeout(loadFont, 10);
-          return;
-        }
-        page.display(gfx);
-      }
-      loadFont();
+      FontLoader.bind(fonts, function() { page.display(gfx); });
     }
   },
   
@@ -194,17 +187,10 @@ var PDFViewer = {
       var fonts = [];
       page.compile(gfx, fonts);
 
-      var loadFont = function() {
-        if (!FontLoader.bind(fonts)) {
-          pageTimeout = window.setTimeout(loadFont, 10);
-          return;
-        }
-        page.display(gfx);
-      }
-      loadFont();
+      FontLoader.bind(fonts, function() { page.display(gfx); });
     }
   },
-  
+
   changeScale: function(num) {
     while (PDFViewer.element.hasChildNodes()) {
       PDFViewer.element.removeChild(PDFViewer.element.firstChild);

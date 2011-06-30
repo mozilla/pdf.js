@@ -95,31 +95,45 @@ var Fonts = {
 };
 
 var FontLoader = {
-  bind: function(fonts) {
+  bind: function(fonts, callback) {
     var worker = (typeof window == "undefined");
-    var ready = true;
+
+    function checkFontsLoaded() {
+      for (var i = 0; i < fonts.length; i++) {
+        var font = fonts[i];
+        if (Fonts[font.name].loading) {
+          return false;
+        }
+      }
+
+      document.documentElement.removeEventListener(
+        "pdfjsFontLoad", checkFontsLoaded, false);
+
+      callback();
+      return true;
+    }
 
     for (var i = 0; i < fonts.length; i++) {
       var font = fonts[i];
-      if (Fonts[font.name]) {
-        ready = ready && !Fonts[font.name].loading;
-        continue;
+      if (!Fonts[font.name]) {
+        var obj = new Font(font.name, font.file, font.properties);
+
+        var str = "";
+        var data = Fonts[font.name].data;
+        var length = data.length;
+        for (var j = 0; j < length; j++)
+          str += String.fromCharCode(data[j]);
+
+        worker ? obj.bindWorker(str) : obj.bindDOM(str);
       }
-
-      ready = false;
-
-      var obj = new Font(font.name, font.file, font.properties);
-
-      var str = "";
-      var data = Fonts[font.name].data;
-      var length = data.length;
-      for (var j = 0; j < length; j++)
-        str += String.fromCharCode(data[j]);
-
-      worker ? obj.bindWorker(str) : obj.bindDOM(str);
     }
 
-    return ready;
+    if (!checkFontsLoaded()) {
+      document.documentElement.addEventListener(
+        "pdfjsFontLoad", checkFontsLoaded, false);
+    }
+
+    return;
   }
 };
 
@@ -793,60 +807,73 @@ var Font = (function () {
       });
     },
 
-    bindDOM: function font_bindDom(data, callback) {
+    bindDOM: function font_bindDom(data) {
       var fontName = this.name;
-
-      // Just adding the font-face to the DOM doesn't make it load. It
-      // seems it's loaded once Gecko notices it's used. Therefore,
-      // add a div on the page using the loaded font.
-      var div = document.createElement("div");
-      var style = 'font-family:"' + name + 
-        '";position: absolute;top:-99999;left:-99999;z-index:-99999';
-      div.setAttribute("style", style);
-      document.body.appendChild(div);
-
-      /** Hack begin */
-      // Actually there is not event when a font has finished downloading so
-      // the following code are a dirty hack to 'guess' when a font is ready
-      // This code could go away when bug 471915 has landed
-      var canvas = document.createElement("canvas");
-      var ctx = canvas.getContext("2d");
-      ctx.font = "bold italic 20px " + fontName + ", Symbol, Arial";
-      var testString = "    ";
-
-      // Periodicaly check for the width of the testString, it will be
-      // different once the real font has loaded
-      var textWidth = ctx.measureText(testString).width;
-
-      var interval = window.setInterval(function canvasInterval(self) {
-        this.start = this.start || Date.now();
-        ctx.font = "bold italic 20px " + fontName + ", Symbol, Arial";
-
-        // For some reasons the font has not loaded, so mark it loaded for the
-        // page to proceed but cry
-        if (textWidth == ctx.measureText(testString).width) {
-          if ((Date.now() - this.start) < kMaxWaitForFontFace) {
-            return;
-          } else {
-            warn("Is " + fontName + " loaded?");
-          }
-        }
-        
-        window.clearInterval(interval);
-        Fonts[fontName].loading = false;
-        this.start = 0;
-        if (callback) {
-          callback();
-        }
-      }, 30, this);
-
-      /** Hack end */
 
       // Add the @font-face rule to the document
       var url = "url(data:" + this.mimetype + ";base64," + window.btoa(data) + ");";
       var rule = "@font-face { font-family:'" + fontName + "';src:" + url + "}";
       var styleSheet = document.styleSheets[0];
       styleSheet.insertRule(rule, styleSheet.length);
+
+      /** Hack begin */
+      // There's no event when a font has finished downloading so the
+      // following code is a dirty hack to 'guess' when a font is
+      // ready.  This code will be obsoleted by Mozilla bug 471915.
+      //
+      // The only reliable way to know if a font is loaded in Gecko
+      // (at the moment) is document.onload in a document with
+      // a @font-face rule defined in a "static" stylesheet.  We use a
+      // subdocument in an <iframe>, set up properly, to know when
+      // our @font-face rule was loaded.  However, the subdocument and
+      // outer document can't share CSS rules, so the inner document
+      // is only part of the puzzle.  The second piece is an invisible
+      // paragraph created in order to force loading of the @font-face
+      // in the *outer* document.  (The font still needs to be loaded
+      // for its metrics, for reflow).  We create the <p> first, in
+      // the outer document, then create the iframe.  Unless something
+      // goes really wonkily, we expect the @font-face for the outer
+      // document to processed before the inner.  That's still
+      // fragile, but seems to work in practice.
+      var p = document.createElement("p");
+      p.setAttribute("style",
+                     'font-family: "'+ fontName +'";'+
+                     'visibility: hidden;'+
+                     'width: 10px; height: 10px;'+
+                     'position: absolute; top: 0px; left: 0px;');
+      p.innerHTML = 'Hello';
+      document.body.appendChild(p);
+
+      // XXX we should have a time-out here too, and maybe fire
+      // pdfjsFontLoadFailed?
+      var src = '<!DOCTYPE HTML><html><head>'
+      src += '<style type="text/css">';
+      src += rule;
+      src += '</style>'
+      src += '<script type="application/javascript">'
+      src += '  var fontName="'+ fontName +'";\n';
+      src += '  window.onload = function () {\n'
+      src += '    var Fonts = top.document.defaultView.Fonts;\n';
+      src += '    var font = Fonts[fontName];\n';
+      src += '    font.loading = false;\n';
+      src += '    var doc = top.document;\n';
+      src += '    var evt = doc.createEvent("Events");\n';
+      src += '    evt.initEvent("pdfjsFontLoad", true, false);\n'
+      src += '    doc.documentElement.dispatchEvent(evt);\n';
+      src += '  }';
+      src += '</script>';
+      src += '</head>';
+      src += '<body style="font-family:\''+ fontName +'\'">';
+      src += 'Hello</body></html>';
+      var frame = document.createElement("iframe");
+      frame.src = 'data:text/html,'+ src;
+      frame.setAttribute("style",
+                         'visibility: hidden;'+
+                         'width: 10px; height: 10px;'+
+                         'position: absolute; top: 0px; left: 0px;');
+      document.body.appendChild(frame);
+
+      /** Hack end */
     }
   };
 
