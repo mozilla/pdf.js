@@ -1483,24 +1483,24 @@ CFF.prototype = {
     // If there is no object, just create an array saying that with another
     // offset byte.
     if (count == 0)
-      return [0x00, 0x00, 0x00];
+      return "\x00\x00\x00";
 
-    var data = [];
+    var data = "";
     var bytes = FontsUtils.integerToBytes(count, 2);
     for (var i = 0; i < bytes.length; i++)
-      data.push(bytes[i]);
+      data += String.fromCharCode(bytes[i]);
 
     // Next byte contains the offset size use to reference object in the file
     // Actually we're using 0x04 to be sure to be able to store everything
     // without thinking of it while coding.
-    data.push(0x04);
+    data += "\x04";
 
     // Add another offset after this one because we need a new offset
     var relativeOffset = 1;
     for (var i = 0; i < count + 1; i++) {
       var bytes = FontsUtils.integerToBytes(relativeOffset, 4);
       for (var j = 0; j < bytes.length; j++)
-        data.push(bytes[j]);
+        data += String.fromCharCode(bytes[j]);
 
       if (objects[i])
         relativeOffset += objects[i].length;
@@ -1508,17 +1508,22 @@ CFF.prototype = {
 
     for (var i =0; i < count; i++) {
       for (var j = 0; j < objects[i].length; j++)
-        data.push(isByte ? objects[i][j] : objects[i].charCodeAt(j));
+        data += isByte ? String.fromCharCode(objects[i][j]) : objects[i][j];
     }
     return data;
   },
 
   encodeNumber: function cff_encodeNumber(value) {
-    var x = 0;
     if (value >= -32768 && value <= 32767) {
-      return [ 28, value >> 8, value & 0xFF ];
+      return "\x1c" +
+             String.fromCharCode(value >> 8) +
+             String.fromCharCode(value & 0xFF);
     } else if (value >= (-2147483647-1) && value <= 2147483647) {
-      return [ 0xFF, value >> 24, Value >> 16, value >> 8, value & 0xFF ];
+      return "\xff" +
+             String.fromCharCode(value >> 24) +
+             String.fromCharCode(value >> 16) +
+             String.fromCharCode(value >> 8) +
+             String.fromCharCode(value & 0xFF);
     }
     error("Value: " + value + " is not allowed");
     return null;
@@ -1626,16 +1631,24 @@ CFF.prototype = {
   },
 
   wrap: function wrap(name, glyphs, charstrings, subrs, properties) {
+    function stringToArray(str) {
+      var array = [];
+      for (var i = 0; i < str.length; ++i)
+        array[i] = str.charCodeAt(i);
+
+      return array;
+    };
+
     var cff = new Uint8Array(kMaxFontFileSize);
     var currentOffset = 0;
 
     // Font header (major version, minor version, header size, offset size)
-    var header = [0x01, 0x00, 0x04, 0x04];
+    var header = "\x01\x00\x04\x04";
     currentOffset += header.length;
-    cff.set(header);
+    cff.set(stringToArray(header));
 
     // Names Index
-    var nameIndex = this.createCFFIndexHeader([name]);
+    var nameIndex = stringToArray(this.createCFFIndexHeader([name]));
     cff.set(nameIndex, currentOffset);
     currentOffset += nameIndex.length;
 
@@ -1649,11 +1662,11 @@ CFF.prototype = {
     var weight = "";
     var strings = [version, notice, fullName,
                    familyName, weight];
-    var stringsIndex = this.createCFFIndexHeader(strings);
+    var stringsIndex = stringToArray(this.createCFFIndexHeader(strings));
     var stringsDataLength = stringsIndex.length;
 
     // Create the global subroutines index
-    var globalSubrsIndex = this.createCFFIndexHeader([]);
+    var globalSubrsIndex = stringToArray(this.createCFFIndexHeader([]));
 
     // Fill the charset header (first byte is the encoding)
     var charset = [0x00];
@@ -1668,7 +1681,7 @@ CFF.prototype = {
       charset.push(bytes[1]);
     }
 
-    var charstringsIndex = this.createCFFIndexHeader([[0x8B, 0x0E]].concat(glyphs), true);
+    var charstringsIndex = stringToArray(this.createCFFIndexHeader([[0x8B, 0x0E]].concat(glyphs), true));
 
     //Top Dict Index
     var topDictIndex = [
@@ -1682,25 +1695,25 @@ CFF.prototype = {
 
     var fontBBox = properties.bbox;
     for (var i = 0; i < fontBBox.length; i++)
-      topDictIndex = topDictIndex.concat(this.encodeNumber(fontBBox[i]));
+      topDictIndex = topDictIndex.concat(stringToArray(this.encodeNumber(fontBBox[i])));
     topDictIndex.push(5) // FontBBox;
 
     var charsetOffset = currentOffset +
                         (topDictIndex.length + (4 + 4 + 4 + 7)) +
                         stringsIndex.length +
                         globalSubrsIndex.length;
-    topDictIndex = topDictIndex.concat(this.encodeNumber(charsetOffset));
+    topDictIndex = topDictIndex.concat(stringToArray(this.encodeNumber(charsetOffset)));
     topDictIndex.push(15); // charset
 
     topDictIndex = topDictIndex.concat([28, 0, 0, 16]) // Encoding
 
     var charstringsOffset = charsetOffset + (glyphsCount * 2) + 1;
-    topDictIndex = topDictIndex.concat(this.encodeNumber(charstringsOffset));
+    topDictIndex = topDictIndex.concat(stringToArray(this.encodeNumber(charstringsOffset)));
     topDictIndex.push(17); // charstrings
 
     topDictIndex = topDictIndex.concat([28, 0, 55])
     var privateOffset = charstringsOffset + charstringsIndex.length;
-    topDictIndex = topDictIndex.concat(this.encodeNumber(privateOffset));
+    topDictIndex = topDictIndex.concat(stringToArray(this.encodeNumber(privateOffset)));
     topDictIndex.push(18); // Private
 
     var indexes = [
@@ -1716,7 +1729,7 @@ CFF.prototype = {
     }
 
     // Private Data
-    var defaultWidth = this.encodeNumber(0);
+    var defaultWidth = stringToArray(this.encodeNumber(0));
     var privateData = [].concat(
       defaultWidth, [20],
       [139, 21], // nominalWidth
@@ -1736,7 +1749,7 @@ CFF.prototype = {
 
 
     // Local subrs
-    var subrsData = this.createCFFIndexHeader(subrs, true);
+    var subrsData = stringToArray(this.createCFFIndexHeader(subrs, true));
     cff.set(subrsData, currentOffset);
     currentOffset += subrsData.length;
 
