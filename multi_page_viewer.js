@@ -216,7 +216,6 @@ var PDFViewer = {
     
     if (PDFViewer.pdf) {
       for (i = 1; i <= PDFViewer.numberOfPages; i++) {
-        PDFViewer.createThumbnail(i);
         PDFViewer.createPage(i);
       }
     }
