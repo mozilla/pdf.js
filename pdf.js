@@ -3440,6 +3440,7 @@ var CanvasGraphics = (function() {
                     if (charset) {
                         assertWellFormed(IsString(charset), "invalid charset");
                         charset = charset.split("/");
+                        charset.shift();
                     }
                 } else if (IsName(encoding)) {
                     var encoding = Encodings[encoding.name];
@@ -3534,13 +3535,16 @@ var CanvasGraphics = (function() {
                 type: subType.name,
                 encoding: encodingMap,
                 charset: charset,
+                firstChar: fontDict.get("FirstChar"),
+                lastChar: fontDict.get("LastChar"),
                 bbox: descriptor.get("FontBBox"),
                 ascent: descriptor.get("Ascent"),
                 descent: descriptor.get("Descent"),
                 xHeight: descriptor.get("XHeight"),
                 capHeight: descriptor.get("CapHeight"),
                 flags: descriptor.get("Flags"),
-                italicAngle: descriptor.get("ItalicAngle")
+                italicAngle: descriptor.get("ItalicAngle"),
+                fixedPitch: false
             };
 
             return {
