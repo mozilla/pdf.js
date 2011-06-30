@@ -277,6 +277,12 @@ var PDFViewer = {
   openURL: function(url) {
     PDFViewer.url = url;
     document.title = url;
+
+    if (this.thumbsLoadingInterval) {
+      // cancel thumbs loading operations
+      clearInterval(this.thumbsLoadingInterval);
+      this.thumbsLoadingInterval = null;
+    }
     
     var req = new XMLHttpRequest();
     req.open('GET', url);
@@ -293,7 +299,9 @@ var PDFViewer = {
     
     req.send(null);
   },
-  
+
+  thumbsLoadingInterval: null,
+
   readPDF: function(data) {
     while (PDFViewer.element.hasChildNodes()) {
       PDFViewer.element.removeChild(PDFViewer.element.firstChild);
@@ -315,12 +323,22 @@ var PDFViewer = {
       PDFViewer.drawPage(1);
       document.location.hash = 1;
       
-      setTimeout(function() {
-        for (var i = 1; i <= PDFViewer.numberOfPages; i++) {
-          PDFViewer.createThumbnail(i);
-          PDFViewer.drawThumbnail(i);
+      // slowly loading the thumbs (few per second)
+      // first time we are loading more images than subsequent
+      var currentPageIndex = 1, imagesToLoad = 15;
+      this.thumbsLoadingInterval = setInterval((function() {
+        while (imagesToLoad-- > 0) {
+          if (currentPageIndex > PDFViewer.numberOfPages) {
+            clearInterval(this.thumbsLoadingInterval);
+            this.thumbsLoadingInterval = null;
+            return;
+          }
+          PDFViewer.createThumbnail(currentPageIndex);
+          PDFViewer.drawThumbnail(currentPageIndex);
+          ++currentPageIndex;
         }
-      }, 500);
+        imagesToLoad = 3; // next time loading less images
+      }).bind(this), 500);
     }
     
     PDFViewer.previousPageButton.className = (PDFViewer.pageNumber === 1) ? 'disabled' : '';
