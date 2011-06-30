@@ -93,11 +93,12 @@ function nextPage() {
   var ctx = canvas.getContext("2d");
 
   var fonts = [];
+  var imagesLoader = new ImagesLoader();
   var gfx = null;
   try {
     gfx = new CanvasGraphics(ctx);
     currentPage = pdfDoc.getPage(currentTask.pageNum);
-    currentPage.compile(gfx, fonts);
+    currentPage.compile(gfx, fonts, imagesLoader);
   } catch(e) {
     failure = 'compile: '+ e.toString();
   }
@@ -126,12 +127,19 @@ function nextPage() {
     snapshotCurrentPage(gfx);
   }
 
+  function checkImagesLoaded() {
+    imagesLoader.onLoad = function() {
+      checkFontsLoaded();
+    };
+    imagesLoader.enableOnLoad();
+  }
+
   if (failure) {
     // Skip font loading if there was a failure, since the fonts might
     // be in an inconsistent state.
     snapshotCurrentPage(gfx);
   } else {
-    checkFontsLoaded();
+    checkImagesLoaded();
   }
 }
 

@@ -9,6 +9,7 @@ var JpegStreamProxy = (function() {
   function constructor(bytes, dict) {
     this.id = JpegStreamProxyCounter++;
     this.dict = dict;
+    this.loaded = true;
 
     // Tell the main thread to create an image.
     postMessage({

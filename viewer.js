@@ -79,7 +79,8 @@ function displayPage(num) {
     // page.compile will collect all fonts for us, once we have loaded them
     // we can trigger the actual page rendering with page.display
     var fonts = [];
-    page.compile(gfx, fonts);
+    var imagesLoader = new ImagesLoader();
+    page.compile(gfx, fonts, imagesLoader);
     var t2 = Date.now();
 
     function loadFont() {
@@ -96,8 +97,14 @@ function displayPage(num) {
 
       var infoDisplay = document.getElementById("info");
       infoDisplay.innerHTML = "Time to load/compile/fonts/render: "+ (t1 - t0) + "/" + (t2 - t1) + "/" + (t3 - t2) + "/" + (t4 - t3) + " ms";
-    };
-    loadFont();
+    }
+    function loadImages() {
+      imagesLoader.onLoad = function() {
+        loadFont();
+      };
+      imagesLoader.enableOnLoad();
+    }
+    loadImages();
 }
 
 function nextPage() {
