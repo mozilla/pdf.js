@@ -249,7 +249,10 @@ var PDFViewer = {
       PDFViewer.pageNumber = num;
       PDFViewer.pageNumberInput.value = PDFViewer.pageNumber;
       PDFViewer.willJumpToPage = true;
-      
+
+      if (document.location.hash.substr(1) == PDFViewer.pageNumber)
+        // Force a "scroll event" to redraw
+        setTimeout(window.onscroll, 0);
       document.location.hash = PDFViewer.pageNumber;
       
       PDFViewer.previousPageButton.className = (PDFViewer.pageNumber === 1) ? 'disabled' : '';
