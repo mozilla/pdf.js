@@ -3,6 +3,8 @@
 
 "use strict";
 
+var isWorker = (typeof window == "undefined");
+
 /**
  * Maximum file size of the font.
  */
@@ -36,9 +38,12 @@ var kDisableFonts = false;
 
 var Fonts = (function () {
   var kScalePrecision = 40;
-  var fonts = Object.create(null);
-  var ctx = document.createElement("canvas").getContext("2d");
-  ctx.scale(1 / kScalePrecision, 1);
+  var fonts = Object.create(null);  
+
+  if (!isWorker) {
+    var ctx = document.createElement("canvas").getContext("2d");
+    ctx.scale(1 / kScalePrecision, 1);    
+  }
 
   function Font(name, data, properties) {
     this.name = name;
@@ -120,7 +125,6 @@ var Fonts = (function () {
 
 var FontLoader = {
   bind: function(fonts) {
-    var worker = (typeof window == "undefined");
     var ready = true;
 
     for (var i = 0; i < fonts.length; i++) {
@@ -140,7 +144,7 @@ var FontLoader = {
       for (var j = 0; j < length; j++)
         str += String.fromCharCode(data[j]);
 
-      worker ? obj.bindWorker(str) : obj.bindDOM(str);
+      isWorker ? obj.bindWorker(str) : obj.bindDOM(str);
     }
 
     return ready;
