@@ -140,6 +140,9 @@ function WorkerPDFDoc(canvas) {
   this.numPage = 1;
   this.numPages = null;
 
+  this.imagesLoading = 0;
+  this.imagesLoadedCallback = null;
+
   var imagesList = {};
   var canvasList = {
     0: canvas
@@ -319,7 +322,14 @@ function WorkerPDFDoc(canvas) {
     },
 
     "jpeg_stream": function(data) {
+      ++this.imagesLoading;
       var img = new Image();
+      img.onload = (function() {
+        if (--this.imagesLoading == 0 && this.imagesLoadedCallback) {
+          this.imagesLoadedCallback();
+          this.imagesLoadedCallback = null;
+        }
+      }).bind(this);
       img.src = "data:image/jpeg;base64," + window.btoa(data.raw);
       imagesList[data.id] = img;
     },
@@ -353,17 +363,24 @@ function WorkerPDFDoc(canvas) {
           }
         }.bind(this);
 
-        if (this.waitingForFonts) {
-          if (id == 0) {
-            console.log("want to render, but not all fonts are there", id);
-            this.waitingForFontsCallback.push(renderData);
+        var waitFonts = function() {
+          if (this.waitingForFonts) {
+            if (id == 0) {
+              console.log("want to render, but not all fonts are there", id);
+              this.waitingForFontsCallback.push(renderData);
+            } else {
+              // console.log("assume canvas doesn't have fonts", id);
+              renderData();
+            }
           } else {
-            // console.log("assume canvas doesn't have fonts", id);
             renderData();
           }
-        } else {
-          renderData();
-        }
+        }.bind(this);
+
+        if (this.imagesLoading == 0)
+          waitFonts();
+        else
+          this.imagesLoadedCallback = waitFonts;
     }
   }
 
