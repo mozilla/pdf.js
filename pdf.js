@@ -3440,6 +3440,7 @@ var CanvasGraphics = (function() {
                     if (charset) {
                         assertWellFormed(IsString(charset), "invalid charset");
                         charset = charset.split("/");
+                        charset.shift();
                     }
                 } else if (IsName(encoding)) {
                     var encoding = Encodings[encoding.name];
@@ -3534,6 +3535,8 @@ var CanvasGraphics = (function() {
                 type: subType.name,
                 encoding: encodingMap,
                 charset: charset,
+                firstChar: fontDict.get("FirstChar"),
+                lastChar: fontDict.get("LastChar"),
                 bbox: descriptor.get("FontBBox"),
                 ascent: descriptor.get("Ascent"),
                 descent: descriptor.get("Descent"),

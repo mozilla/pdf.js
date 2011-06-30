@@ -479,7 +479,7 @@ var Font = (function () {
 
     var charset = properties.charset;
     if (charset && charset.length) {
-      // XXX why is the first character equal to ''?
+      log(charset);
       for (var i = 1; i < charset.length; i++) {
         var position = getUnicodeRangeFor(GlyphsUnicode[charset[i]]);
         if (position < 32) {
