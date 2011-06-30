@@ -34,65 +34,89 @@ var kDisableFonts = false;
  *      http://cgit.freedesktop.org/poppler/poppler/tree/poppler/GfxFont.cc#n65
  */
 
-var kScalePrecision = 40;
-var Fonts = {
-  _active: null,
+var Fonts = (function () {
+  var kScalePrecision = 40;
+  var fonts = Object.create(null);
+  var ctx = document.createElement("canvas").getContext("2d");
+  ctx.scale(1 / kScalePrecision, 1);
 
-  get active() {
-    return this._active;
-  },
+  function Font(name, data, properties) {
+    this.name = name;
+    this.data = data;
+    this.properties = properties;
+    this.loading = true;
+    this.charsCache = Object.create(null);
+    this.sizes = [];
+  }
 
-  setActive: function fonts_setActive(name, size) {
-    this._active = this[name];
-    this.ctx.font = (size * kScalePrecision) + 'px "' + name + '"';
-  },
+  var current;
+  var charsCache;
+  var measureCache;
 
-  charsToUnicode: function fonts_chars2Unicode(chars) {
-    var active = this._active;
-    if (!active)
-      return chars;
+  return {
+    registerFont: function fonts_registerFont(fontName, data, properties) {
+      fonts[fontName] = new Font(fontName, data, properties);
+    },
+    blacklistFont: function fonts_blacklistFont(fontName) {
+      registerFont(fontName, null, {});
+      markLoaded(fontName);
+    },
+    lookup: function fonts_lookup(fontName) {
+      return fonts[fontName];
+    },
+    setActive: function fonts_setActive(fontName, size) {
+      current = fonts[fontName];
+      charsCache = current.charsCache;
+      var sizes = current.sizes;
+      if (!(measureCache = sizes[size]))
+        measureCache = sizes[size] = Object.create(null);
+      ctx.font = (size * kScalePrecision) + 'px "' + fontName + '"';
+    },
+    charsToUnicode: function fonts_chars2Unicode(chars) {
+      if (!charsCache)
+        return chars;
 
-    // if we translated this string before, just grab it from the cache
-    var str = active.cache[chars];
-    if (str)
-      return str;
+      // if we translated this string before, just grab it from the cache
+      var str = charsCache[chars];
+      if (str)
+        return str;
 
-    // translate the string using the font's encoding
-    var encoding = active.properties.encoding;
-    if (!encoding)
-      return chars;
+      // translate the string using the font's encoding
+      var encoding = current.properties.encoding;
+      if (!encoding)
+        return chars;
 
-    str = "";
-    for (var i = 0; i < chars.length; ++i) {
-      var charcode = chars.charCodeAt(i);
-      var unicode = encoding[charcode];
+      str = "";
+      for (var i = 0; i < chars.length; ++i) {
+        var charcode = chars.charCodeAt(i);
+        var unicode = encoding[charcode];
 
-      // Check if the glyph has already been converted
-      if (!IsNum(unicode))
+        // Check if the glyph has already been converted
+        if (!IsNum(unicode))
           unicode = encoding[unicode] = GlyphsUnicode[unicode.name];
 
-      // Handle surrogate pairs
-      if (unicode > 0xFFFF) {
-        str += String.fromCharCode(unicode & 0xFFFF);
-        unicode >>= 16;
+        // Handle surrogate pairs
+        if (unicode > 0xFFFF) {
+          str += String.fromCharCode(unicode & 0xFFFF);
+          unicode >>= 16;
+        }
+        str += String.fromCharCode(unicode);
       }
-      str += String.fromCharCode(unicode);
+
+      // Enter the translated string into the cache
+      return charsCache[chars] = str;
+    },
+    measureText: function fonts_measureText(text) {
+      var width;
+      if (measureCache && (width = measureCache[text]))
+        return width;
+      width = ctx.measureText(text).width / kScalePrecision;
+      if (measureCache)
+        measureCache[text] = width;
+      return width;
     }
-
-    // Enter the translated string into the cache
-    return active.cache[chars] = str;
-  },
-
-  get ctx() {
-    var ctx = document.createElement("canvas").getContext("2d");
-    ctx.scale(1 / kScalePrecision, 1);
-    return shadow(this, "ctx", ctx);
-  },
-
-  measureText: function fonts_measureText(text) {
-    return this.ctx.measureText(text).width / kScalePrecision;
   }
-};
+})();
 
 var FontLoader = {
   bind: function(fonts) {
@@ -101,8 +125,8 @@ var FontLoader = {
 
     for (var i = 0; i < fonts.length; i++) {
       var font = fonts[i];
-      if (Fonts[font.name]) {
-        ready = ready && !Fonts[font.name].loading;
+      if (Fonts.lookup(font.name)) {
+        ready = ready && !Fonts.lookup(font.name).loading;
         continue;
       }
 
@@ -111,7 +135,7 @@ var FontLoader = {
       var obj = new Font(font.name, font.file, font.properties);
 
       var str = "";
-      var data = Fonts[font.name].data;
+      var data = Fonts.lookup(font.name).data;
       var length = data.length;
       for (var j = 0; j < length; j++)
         str += String.fromCharCode(data[j]);
@@ -138,8 +162,8 @@ var Font = (function () {
     this.encoding = properties.encoding;
 
     // If the font has already been decoded simply return it
-    if (Fonts[name]) {
-      this.font = Fonts[name].data;
+    if (Fonts.lookup(name)) {
+      this.font = Fonts.lookup(name).data;
       return;
     }
     fontCount++;
@@ -148,12 +172,7 @@ var Font = (function () {
     // If the font is to be ignored, register it like an already loaded font
     // to avoid the cost of waiting for it be be loaded by the platform.
     if (properties.ignore || kDisableFonts) {
-      Fonts[name] = {
-        data: file,
-        loading: false,
-        properties: {},
-        cache: Object.create(null)
-      }
+      Fonts.blacklistFont(name);
       return;
     }
 
@@ -180,13 +199,7 @@ var Font = (function () {
         break;
     }
     this.data = data;
-
-    Fonts[name] = {
-      data: data,
-      properties: properties,
-      loading: true,
-      cache: Object.create(null)
-    };
+    Fonts.registerFont(name, data, properties);
   };
 
   function stringToArray(str) {
@@ -833,7 +846,7 @@ var Font = (function () {
         }
         
         window.clearInterval(interval);
-        Fonts[fontName].loading = false;
+        Fonts.lookup(fontName).loading = false;
         this.start = 0;
         if (callback) {
           callback();
