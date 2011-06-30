@@ -149,7 +149,11 @@ var FontLoader = {
         for (var j = 0; j < length; j++)
           str += String.fromCharCode(data[j]);
 
-        worker ? obj.bindWorker(str) : obj.bindDOM(str, rules, names);
+        var rule = worker ? obj.bindWorker(str) : obj.bindDOM(str);
+        if (rule) {
+          rules.push(rule);
+          names.push(font.name);
+        }
       }
     }
 
@@ -182,14 +186,25 @@ var FontLoader = {
       // our @font-face rule was loaded.  However, the subdocument and
       // outer document can't share CSS rules, so the inner document
       // is only part of the puzzle.  The second piece is an invisible
-      // paragraph created in order to force loading of the @font-face
-      // in the *outer* document.  (The font still needs to be loaded
-      // for its metrics, for reflow).  We create the <p> first (in
-      // |bindDom()| function below), for the outer document, then
-      // create the iframe.  Unless something goes really wonkily, we
-      // expect the @font-face for the outer document to be processed
-      // before the inner.  That's still fragile, but seems to work in
-      // practice.
+      // div created in order to force loading of the @font-face in
+      // the *outer* document.  (The font still needs to be loaded for
+      // its metrics, for reflow).  We create the div first for the
+      // outer document, then create the iframe.  Unless something
+      // goes really wonkily, we expect the @font-face for the outer
+      // document to be processed before the inner.  That's still
+      // fragile, but seems to work in practice.
+
+      var div = document.createElement("div");
+      div.setAttribute("style",
+                       'visibility: hidden;'+
+                       'width: 10px; height: 10px;'+
+                       'position: absolute; top: 0px; left: 0px;');
+      var html = '';
+      for (var i = 0; i < names.length; ++i) {
+        html += '<span style="font-family:'+ names[i] +'">Hi</span>';
+      }
+      div.innerHTML = html;
+      document.body.appendChild(div);
 
       // XXX we should have a time-out here too, and maybe fire
       // pdfjsFontLoadFailed?
@@ -218,7 +233,7 @@ var FontLoader = {
       src += '  }';
       src += '</script></head><body>';
       for (var i = 0; i < names.length; ++i) {
-        src += '<p style="font-family:\''+ fontName +'\'">Hello</p>';
+        src += '<p style="font-family:\''+ fontName +'\'">Hi</p>';
       }
       src += '</body></html>';
       var frame = document.createElement("iframe");
@@ -891,7 +906,7 @@ var Font = (function () {
       });
     },
 
-    bindDOM: function font_bindDom(data, rules, names) {
+    bindDOM: function font_bindDom(data) {
       var fontName = this.name;
 
       // Add the @font-face rule to the document
@@ -900,17 +915,7 @@ var Font = (function () {
       var styleSheet = document.styleSheets[0];
       styleSheet.insertRule(rule, styleSheet.length);
 
-      var p = document.createElement("p");
-      p.setAttribute("style",
-                     'font-family: "'+ fontName +'";'+
-                     'visibility: hidden;'+
-                     'width: 10px; height: 10px;'+
-                     'position: absolute; top: 0px; left: 0px;');
-      p.innerHTML = 'Hello';
-      document.body.appendChild(p);
-
-      rules.push(rule);
-      names.push(fontName);
+      return rule;
     }
   };
 
