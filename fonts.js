@@ -932,7 +932,7 @@ var Font = (function () {
                  string16(properties.ascent) + // Typographic Ascent
                  string16(properties.descent) + // Typographic Descent
                  "\x00\x00" + // Line Gap
-                 "\x00\xFF" + // advanceWidthMax
+                 "\xFF\xFF" + // advanceWidthMax
                  "\x00\x00" + // minLeftSidebearing
                  "\x00\x00" + // minRightSidebearing
                  "\x00\x00" + // xMaxExtent
