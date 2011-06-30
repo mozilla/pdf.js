@@ -149,6 +149,7 @@ function WorkerPDFDoc(canvas) {
 
   var currentX = 0;
   var currentXStack = [];
+  var pdfToCssUnitsCoef = 96.0 / 72.0;
 
   var ctxSpecial = {
     "$setCurrentX": function(value) {
@@ -287,6 +288,13 @@ function WorkerPDFDoc(canvas) {
       }
     },
     
+    "setup_page": function(data) {
+      var size = data.split(",");
+      var canvas = this.canvas, ctx = this.ctx;
+      canvas.width = parseInt(size[0]);
+      canvas.height = parseInt(size[1]);
+    },
+
     "font": function(data) {
       var base64 = window.btoa(data.raw);
 

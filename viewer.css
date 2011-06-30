@@ -24,10 +24,11 @@ span#info {
 }
 
 #viewer {
+}
+
+#canvas {
     margin: auto;
-    border: 1px solid black;
-    width: 12.75in;
-    height: 16.5in;
+    display: block;
 }
 
 #pageNumber {

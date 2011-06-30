@@ -792,6 +792,11 @@ var JpegStream = (function() {
 
         // create DOM image
         var img = new Image();
+        img.onload = (function() {
+            this.loaded = true;
+            if (this.onLoad)
+                this.onLoad();
+        }).bind(this);
         img.src = "data:image/jpeg;base64," + window.btoa(bytesToString(bytes));
         this.domImage = img;
     }
@@ -807,6 +812,46 @@ var JpegStream = (function() {
 
     return constructor;
 })();
+
+
+// Simple object to track the loading images
+// Initialy for every that is in loading call imageLoading()
+// and, when images onload is fired, call imageLoaded()
+// When all images are loaded, the onLoad event is fired.
+var ImagesLoader = (function() {
+    function constructor() {
+        this.loading = 0;
+        this.enabled = false;
+    }
+
+    constructor.prototype = {
+        onLoad: function() {},
+        imageLoading: function() {
+            ++this.loading;
+        },
+        imageLoaded: function() {
+            if (--this.loading == 0 && this.enabled)
+                this.onLoad();
+        },
+        bind: function(jpegStream) {
+            if (jpegStream.loaded)
+                return;
+            this.imageLoading();
+            jpegStream.onLoad = this.imageLoaded.bind(this);
+        },
+        enableOnLoad: function() {
+            this.enabled = true;
+            if (this.loading == 0)
+                this.onLoad();
+        },
+        disableOnLoad: function() {
+            this.enabled = false;
+        }
+    };
+
+    return constructor;
+})();
+
 var DecryptStream = (function() {
     function constructor(str, decrypt) {
         this.str = str;
@@ -2867,7 +2912,7 @@ var Page = (function() {
                                              ? obj
                                              : null));
         },
-        compile: function(gfx, fonts) {
+        compile: function(gfx, fonts, images) {
             if (this.code) {
                 // content was compiled
                 return;
@@ -2879,14 +2924,14 @@ var Page = (function() {
             if (!IsArray(this.content)) {
                 // content is not an array, shortcut
                 content = xref.fetchIfRef(this.content);
-                this.code = gfx.compile(content, xref, resources, fonts);
+                this.code = gfx.compile(content, xref, resources, fonts, images);
                 return;
             }
             // the content is an array, compiling all items
             var i, n = this.content.length, compiledItems = [];
             for (i = 0; i < n; ++i) {
                 content = xref.fetchIfRef(this.content[i]);
-                compiledItems.push(gfx.compile(content, xref, resources, fonts));
+                compiledItems.push(gfx.compile(content, xref, resources, fonts, images));
             }
             // creating the function that executes all compiled items
             this.code = function(gfx) {
@@ -3570,7 +3615,7 @@ var CanvasGraphics = (function() {
             this.xref = savedXref;
         },
 
-        compile: function(stream, xref, resources, fonts) {
+        compile: function(stream, xref, resources, fonts, images) {
             var xobjs = xref.fetchIfRef(resources.get("XObject")) || new Dict();
 
             var parser = new Parser(new Lexer(stream), false);
@@ -3611,7 +3656,10 @@ var CanvasGraphics = (function() {
                                 args[0].code = this.compile(xobj,
                                                             xref,
                                                             xobj.dict.get("Resources"),
-                                                            fonts);
+                                                            fonts,
+                                                            images);
+                            } else if (xobj instanceof JpegStream) {
+                                images.bind(xobj);
                             }
                         }
                     } else if (cmd == "Tf") { // eagerly collect all fonts

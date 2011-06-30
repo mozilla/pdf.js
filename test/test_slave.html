@@ -4,6 +4,7 @@
   <style type="text/css"></style>
   <script type="text/javascript" src="/pdf.js"></script>
   <script type="text/javascript" src="/fonts.js"></script>
+  <script type="text/javascript" src="/crypto.js"></script>
   <script type="text/javascript" src="/glyphlist.js"></script>
   <script type="application/javascript">
 var appPath, browser, canvas, currentTask, currentTaskIdx, failure, manifest, numPages, pdfDoc, stdout;
@@ -93,21 +94,23 @@ function nextPage() {
   var ctx = canvas.getContext("2d");
 
   var fonts = [];
+  var imagesLoader = new ImagesLoader();
   var gfx = null;
   try {
     gfx = new CanvasGraphics(ctx);
     currentPage = pdfDoc.getPage(currentTask.pageNum);
-    currentPage.compile(gfx, fonts);
+    currentPage.compile(gfx, fonts, imagesLoader);
   } catch(e) {
     failure = 'compile: '+ e.toString();
   }
 
   try {
+    var pdfToCssUnitsCoef = 96.0 / 72.0;
     // using mediaBox for the canvas size
-    var wTwips = (currentPage.mediaBox[2] - currentPage.mediaBox[0]);
-    var hTwips = (currentPage.mediaBox[3] - currentPage.mediaBox[1]);
-    canvas.width = wTwips * 96.0 / 72.0;
-    canvas.height = hTwips * 96.0 / 72.0;
+    var pageWidth = (currentPage.mediaBox[2] - currentPage.mediaBox[0]);
+    var pageHeight = (currentPage.mediaBox[3] - currentPage.mediaBox[1]);
+    canvas.width = pageWidth * pdfToCssUnitsCoef;
+    canvas.height = pageHeight * pdfToCssUnitsCoef;
     clear(ctx);
   } catch(e) {
     failure = 'page setup: '+ e.toString();
@@ -126,12 +129,19 @@ function nextPage() {
     snapshotCurrentPage(gfx);
   }
 
+  function checkImagesLoaded() {
+    imagesLoader.onLoad = function() {
+      checkFontsLoaded();
+    };
+    imagesLoader.enableOnLoad();
+  }
+
   if (failure) {
     // Skip font loading if there was a failure, since the fonts might
     // be in an inconsistent state.
     snapshotCurrentPage(gfx);
   } else {
-    checkFontsLoaded();
+    checkImagesLoaded();
   }
 }
 
