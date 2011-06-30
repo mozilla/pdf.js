@@ -58,12 +58,12 @@ function displayPage(num) {
     var t0 = Date.now();
 
     var page = pdfDocument.getPage(pageNum = num);
-    canvas.width = parseInt(canvas.getAttribute("defaultwidth")) * pageScale;
-    canvas.height = parseInt(canvas.getAttribute("defaultheight")) * pageScale;
 
-    // scale canvas by 2
-    canvas.width = 2 * page.mediaBox[2];
-    canvas.hieght = 2 * page.mediaBox[3];
+    var pdfToCssUnitsCoef = 96.0 / 72.0;
+    var pageWidth = (page.mediaBox[2] - page.mediaBox[0]);
+    var pageHeight = (page.mediaBox[3] - page.mediaBox[1]);
+    canvas.width = pageScale * pageWidth * pdfToCssUnitsCoef;
+    canvas.height = pageScale * pageHeight * pdfToCssUnitsCoef;
 
     var t1 = Date.now();
     var ctx = canvas.getContext("2d");
