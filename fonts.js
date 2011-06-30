@@ -299,6 +299,7 @@ var Font = (function () {
 
         // Wrap the CFF data inside an OTF font file
         data = this.convert(name, cff, properties);
+        writeToFile(data, "/tmp/file." + fontName + "-" + fontCount + ".otf");
         break;
 
       case "TrueType":
@@ -922,7 +923,7 @@ var Font = (function () {
       * while Windows use this data. So be careful if you hack on Linux and
       * have to touch the 'hmtx' table
       */
-      hmtx = "\x00\x00\x00\x00"; // Fake .notdef
+      hmtx = "\x00\x8B\x00\x00"; // Fake .notdef
       var width = 0, lsb = 0;
       for (var i = 0; i < charstrings.length; i++) {
         var charstring = charstrings[i];
@@ -1635,7 +1636,7 @@ CFF.prototype = {
       charset.push(bytes[1]);
     }
 
-    var charstringsIndex = this.createCFFIndexHeader([[0x40, 0x0E]].concat(glyphs), true);
+    var charstringsIndex = this.createCFFIndexHeader([[0x8B, 0x0E]].concat(glyphs), true);
 
     //Top Dict Index
     var topDictIndex = [
