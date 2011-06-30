@@ -31,6 +31,7 @@ importScripts("console.js")
 importScripts("canvas.js");
 importScripts("../pdf.js");
 importScripts("../fonts.js");
+importScripts("../crypto.js");
 importScripts("../glyphlist.js")
 
 // Use the JpegStreamProxy proxy.
@@ -59,11 +60,24 @@ onmessage = function(event) {
     // Let's try to render the first page...
     var page = pdfDocument.getPage(parseInt(data));
 
+    var pdfToCssUnitsCoef = 96.0 / 72.0;
+    var pageWidth = (page.mediaBox[2] - page.mediaBox[0]) * pdfToCssUnitsCoef;
+    var pageHeight = (page.mediaBox[3] - page.mediaBox[1]) * pdfToCssUnitsCoef;
+    postMessage({
+      action: "setup_page",
+      data: pageWidth + "," + pageHeight
+    });
+
+    // Set canvas size.
+    canvas.width = pageWidth;
+    canvas.height = pageHeight;
+
     // page.compile will collect all fonts for us, once we have loaded them
     // we can trigger the actual page rendering with page.display
     var fonts = [];
+    var imagesLoader = new ImagesLoader();
     var gfx = new CanvasGraphics(canvas.getContext("2d"), CanvasProxy);
-    page.compile(gfx, fonts);
+    page.compile(gfx, fonts, imagesLoader);
     console.timeEnd("compile");
 
     // Send fonts to the main thread.
