@@ -887,7 +887,7 @@ var Font = (function () {
               "\x00\x00" + // yMin
               "\x00\x00" + // xMax
               "\x00\x00" + // yMax
-              "\x00\x00" + // macStyle
+              string16(properties.italicAngle ? 1 : 0) + // macStyle
               "\x00\x11" + // lowestRecPPEM
               "\x00\x00" + // fontDirectionHint
               "\x00\x00" + // indexToLocFormat
@@ -906,7 +906,7 @@ var Font = (function () {
                  "\x00\x00" + // minRightSidebearing
                  "\x00\x00" + // xMaxExtent
                  "\x00\x00" + // caretSlopeRise
-                 "\x00\x00" + // caretSlopeRun
+                 string16(properties.italicAngle) + // caretSlopeRun
                  "\x00\x00" + // caretOffset
                  "\x00\x00" + // -reserved-
                  "\x00\x00" + // -reserved-
