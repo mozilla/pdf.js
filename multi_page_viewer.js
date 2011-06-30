@@ -29,11 +29,15 @@ var PDFViewer = {
   scale: 1.0,
   
   pageWidth: function(page) {
-    return page.mediaBox[2] * PDFViewer.scale;
+    var pdfToCssUnitsCoef = 96.0 / 72.0;
+    var width = (page.mediaBox[2] - page.mediaBox[0]);
+    return width * PDFViewer.scale * pdfToCssUnitsCoef;
   },
   
   pageHeight: function(page) {
-    return page.mediaBox[3] * PDFViewer.scale;
+    var pdfToCssUnitsCoef = 96.0 / 72.0;
+    var height = (page.mediaBox[3] - page.mediaBox[1]);
+    return height * PDFViewer.scale * pdfToCssUnitsCoef;
   },
   
   lastPagesDrawn: [],
@@ -106,10 +110,11 @@ var PDFViewer = {
       canvas.id = 'thumbnail' + num;
       canvas.mozOpaque = true;
 
-      // Canvas dimensions must be specified in CSS pixels. CSS pixels
-      // are always 96 dpi. These dimensions are 8.5in x 11in at 96dpi.
-      canvas.width = 104;
-      canvas.height = 134;
+      var pageWidth = PDFViewer.pageWidth(page);
+      var pageHeight = PDFViewer.pageHeight(page);
+      var thumbScale = Math.min(104 / pageWidth, 134 / pageHeight);
+      canvas.width = pageWidth * thumbScale;
+      canvas.height = pageHeight * thumbScale;
       div.appendChild(canvas);
 
       var ctx = canvas.getContext('2d');
@@ -175,8 +180,6 @@ var PDFViewer = {
       canvas.id = 'page' + num;
       canvas.mozOpaque = true;
 
-      // Canvas dimensions must be specified in CSS pixels. CSS pixels
-      // are always 96 dpi. These dimensions are 8.5in x 11in at 96dpi.
       canvas.width = PDFViewer.pageWidth(page);
       canvas.height = PDFViewer.pageHeight(page);
       div.appendChild(canvas);
