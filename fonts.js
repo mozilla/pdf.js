@@ -417,6 +417,7 @@ var Font = (function () {
   };
 
   function createCMapTable(glyphs) {
+    glyphs.push({ unicode: 0x0000 });
     var ranges = getRanges(glyphs);
 
     var headerSize = (12 * 2 + (ranges.length * 4 * 2));
@@ -450,7 +451,7 @@ var Font = (function () {
       var range = ranges[i];
       var start = range[0];
       var end = range[1];
-      var delta = (((start - 1) - bias) ^ 0xffff) + 1;
+      var delta = (((start - 1) - bias) ^ 0xffff);
       bias += (end - start + 1);
 
       startCount += string16(start);
@@ -479,7 +480,6 @@ var Font = (function () {
 
     var charset = properties.charset;
     if (charset && charset.length) {
-      log(charset);
       for (var i = 1; i < charset.length; i++) {
         var position = getUnicodeRangeFor(GlyphsUnicode[charset[i]]);
         if (position < 32) {
@@ -530,10 +530,8 @@ var Font = (function () {
            "\x00\x00\x00\x00" + // ulCodePageRange2 (Bits 32-63)
            string16(properties.xHeight)   + // sxHeight
            string16(properties.capHeight) + // sCapHeight
-           // XXX mapping .notdef in the cmap table will allow us to use it
-           // here instead, especially because these field are limit to 0xFFFF
-           string16(properties.firstChar) + // usDefaultChar
-           string16(properties.firstChar) + // usBreakChar
+           string16(0) + // usDefaultChar
+           string16(0) + // usBreakChar
            "\x00\x00";  // usMaxContext
   };
 
