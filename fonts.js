@@ -299,7 +299,6 @@ var Font = (function () {
 
         // Wrap the CFF data inside an OTF font file
         data = this.convert(name, cff, properties);
-        writeToFile(data, "/tmp/file." + fontName + "-" + fontCount + ".otf");
         break;
 
       case "TrueType":
@@ -373,7 +372,7 @@ var Font = (function () {
 
     // length
     var length = data.length;
-
+	
     // Per spec tables must be 4-bytes align so add padding as needed
     while (data.length & 3)
       data.push(0x00);
@@ -435,7 +434,7 @@ var Font = (function () {
                "\x00\x00\x00\x0C" + // start of the table record
                "\x00\x04" + // format
                string16(headerSize) + // length
-               "\x00\x00" + // languages
+               "\x04\x09" + // languages
                string16(segCount2) +
                string16(searchRange) +
                string16(searchEntry) +
@@ -458,7 +457,7 @@ var Font = (function () {
       startCount += string16(start);
       endCount += string16(end);
       idDeltas += string16(delta);
-      idRangeOffsets += string16(0);
+	  idRangeOffsets += string16(0);
 
       for (var j = 0; j < range.length; j++)
         glyphsIds += String.fromCharCode(range[j]);
@@ -479,10 +478,19 @@ var Font = (function () {
     var ulUnicodeRange3 = 0;
     var ulUnicodeRange4 = 0;
 
-    var charset = properties.charset;
+	var charset = properties.charset;
     if (charset && charset.length) {
+	    var firstCharIndex = null;
+	    var lastCharIndex = 0;
+
       for (var i = 1; i < charset.length; i++) {
-        var position = getUnicodeRangeFor(GlyphsUnicode[charset[i]]);
+	      var code = GlyphsUnicode[charset[i]];
+		    if (code < firstCharIndex || !firstCharIndex)
+		      firstCharIndex = code;
+		    if (code > lastCharIndex)
+		      lastCharIndex = code;
+
+	      var position = getUnicodeRangeFor(code);
         if (position < 32) {
           ulUnicodeRange1 |= 1 << position;
         } else if (position < 64) {
@@ -520,8 +528,8 @@ var Font = (function () {
            string32(ulUnicodeRange4) + // ulUnicodeRange4 (Bits 96-127)
            "\x2A\x32\x31\x2A" + // achVendID
            "\x00\x00" + // fsSelection
-           string16(properties.firstChar) + // usFirstCharIndex
-           string16(properties.lastChar) +  // usLastCharIndex
+           string16(firstCharIndex || properties.firstChar) + // usFirstCharIndex
+           string16(lastCharIndex || properties.lastChar) +  // usLastCharIndex
            "\x00\x20" + // sTypoAscender
            "\x00\x00" + // sTypeDescender
            "\x00\x00" + // sTypoLineGap
@@ -532,7 +540,7 @@ var Font = (function () {
            string16(properties.xHeight)   + // sxHeight
            string16(properties.capHeight) + // sCapHeight
            string16(0) + // usDefaultChar
-           string16(0) + // usBreakChar
+           string16(firstCharIndex || properties.firstChar) + // usBreakChar
            "\x00\x00";  // usMaxContext
   };
 
@@ -780,7 +788,7 @@ var Font = (function () {
           name = name.slice(0, name.length - 1);
 
         var strings = [
-          "Original licence",// 0.Copyright
+          "Original licence",  // 0.Copyright
           name,                // 1.Font family
           "Unknown",           // 2.Font subfamily (font weight)
           "uniqueID",          // 3.Unique ID
@@ -792,14 +800,9 @@ var Font = (function () {
           "Unknown"            // 9.Designer
         ];
 
-        var platforms = ["\x00\x01", "\x00\x03"];
-        var encodings = ["\x00\x00", "\x00\x01"];
-        var languages = ["\x00\x00", "\x04\x09"];
-
         // Mac want 1-byte per character strings while Windows want
         // 2-bytes per character, so duplicate the names table
         var stringsUnicode = [];
-        var names = [strings, stringsUnicode];
         for (var i = 0; i < strings.length; i++) {
           var str = strings[i];
 
@@ -809,7 +812,12 @@ var Font = (function () {
           stringsUnicode.push(strUnicode);
         }
 
-        var namesRecordCount = platforms.length * names.length;
+        var names = [strings, stringsUnicode];
+        var platforms = ["\x00\x01", "\x00\x03"];
+        var encodings = ["\x00\x00", "\x00\x01"];
+        var languages = ["\x00\x00", "\x04\x09"];
+
+        var namesRecordCount = strings.length * platforms.length;
         var nameTable =
           "\x00\x00" +                           // format
           string16(namesRecordCount) +           // Number of names Record
@@ -818,9 +826,9 @@ var Font = (function () {
         // Build the name records field
         var strOffset = 0;
         for (var i = 0; i < platforms.length; i++) {
-          var names = strings[i];
-          for (var j = 0; j < names.length; j++) {
-            var str = names[j];
+          var strs = names[i];
+          for (var j = 0; j < strs.length; j++) {
+            var str = strs[j];
             var nameRecord =
               platforms[i] + // platform ID
               encodings[i] + // encoding ID
@@ -833,7 +841,8 @@ var Font = (function () {
           }
         }
 
-        return nameTable + strings.join("") + stringsUnicode.join("");
+		    nameTable += strings.join("") + stringsUnicode.join("");
+        return nameTable;
       }
 
       // Required Tables
@@ -870,13 +879,13 @@ var Font = (function () {
 
       /** CMAP */
       var charstrings = font.charstrings;
-      cmap = createCMapTable(charstrings);
+      cmap = createCMapTable(charstrings.slice());
       createTableEntry(otf, offsets, "cmap", cmap);
 
       /** HEAD */
       head = stringToArray(
               "\x00\x01\x00\x00" + // Version number
-              "\x00\x00\x50\x00" + // fontRevision
+              "\x00\x00\x10\x00" + // fontRevision
               "\x00\x00\x00\x00" + // checksumAdjustement
               "\x5F\x0F\x3C\xF5" + // magicNumber
               "\x00\x00" + // Flags
@@ -923,7 +932,7 @@ var Font = (function () {
       * while Windows use this data. So be careful if you hack on Linux and
       * have to touch the 'hmtx' table
       */
-      hmtx = "\x00\x8B\x00\x00"; // Fake .notdef
+      hmtx = "\x00\x00\x00\x00"; // Fake .notdef
       var width = 0, lsb = 0;
       for (var i = 0; i < charstrings.length; i++) {
         var charstring = charstrings[i];
