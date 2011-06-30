@@ -434,7 +434,7 @@ var Font = (function () {
                "\x00\x00\x00\x0C" + // start of the table record
                "\x00\x04" + // format
                string16(headerSize) + // length
-               "\x04\x09" + // languages
+               "\x00\x00" + // languages
                string16(segCount2) +
                string16(searchRange) +
                string16(searchEntry) +
