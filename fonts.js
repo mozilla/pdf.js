@@ -299,6 +299,7 @@ var Font = (function () {
 
         // Wrap the CFF data inside an OTF font file
         data = this.convert(name, cff, properties);
+        writeToFile(data, "/tmp/file." + fontName + "-" + fontCount + ".otf");
         break;
 
       case "TrueType":
@@ -485,9 +486,9 @@ var Font = (function () {
 
       for (var i = 1; i < charset.length; i++) {
 	      var code = GlyphsUnicode[charset[i]];
-		    if (code < firstCharIndex || !firstCharIndex)
+		    if (firstCharIndex > code || !firstCharIndex)
 		      firstCharIndex = code;
-		    if (code > lastCharIndex)
+		    if (lastCharIndex < code)
 		      lastCharIndex = code;
 
 	      var position = getUnicodeRangeFor(code);
@@ -509,7 +510,7 @@ var Font = (function () {
            "\x02\x24" + // xAvgCharWidth
            "\x01\xF4" + // usWeightClass
            "\x00\x05" + // usWidthClass
-           "\x00\x00" + // fstype
+           "\x00\x02" + // fstype
            "\x02\x8A" + // ySubscriptXSize
            "\x02\xBB" + // ySubscriptYSize
            "\x00\x00" + // ySubscriptXOffset
@@ -521,41 +522,41 @@ var Font = (function () {
            "\x00\x31" + // yStrikeOutSize
            "\x01\x02" + // yStrikeOutPosition
            "\x00\x00" + // sFamilyClass
-           "\x02\x00\x06\x03\x00\x00\x00\x00\x00\x00" + // Panose
+           "\x00\x00\x06" + String.fromCharCode(properties.fixedPitch ? 0x09 : 0x00) +
+           "\x00\x00\x00\x00\x00\x00" + // Panose
            string32(ulUnicodeRange1) + // ulUnicodeRange1 (Bits 0-31)
            string32(ulUnicodeRange2) + // ulUnicodeRange2 (Bits 32-63)
            string32(ulUnicodeRange3) + // ulUnicodeRange3 (Bits 64-95)
            string32(ulUnicodeRange4) + // ulUnicodeRange4 (Bits 96-127)
            "\x2A\x32\x31\x2A" + // achVendID
-           "\x00\x00" + // fsSelection
+           string16(properties.italicAngle ? 1 : 0) + // fsSelection
            string16(firstCharIndex || properties.firstChar) + // usFirstCharIndex
            string16(lastCharIndex || properties.lastChar) +  // usLastCharIndex
-           "\x00\x20" + // sTypoAscender
-           "\x00\x00" + // sTypeDescender
-           "\x00\x00" + // sTypoLineGap
+           string16(properties.ascent) + // sTypoAscender
+           string16(properties.descent) + // sTypoDescender
+           "\x00\x64" + // sTypoLineGap (7%-10% of the unitsPerEM value)
            string16(properties.ascent)  + // usWinAscent
-           string16(properties.descent) + // usWinDescent
+           string16(-properties.descent) + // usWinDescent
            "\x00\x00\x00\x00" + // ulCodePageRange1 (Bits 0-31)
            "\x00\x00\x00\x00" + // ulCodePageRange2 (Bits 32-63)
            string16(properties.xHeight)   + // sxHeight
            string16(properties.capHeight) + // sCapHeight
            string16(0) + // usDefaultChar
            string16(firstCharIndex || properties.firstChar) + // usBreakChar
-           "\x00\x00";  // usMaxContext
+           "\x00\x03";  // usMaxContext
   };
 
   function createPostTable(properties) {
-    TODO("Fill with real values from the font dict");
-
-    return "\x00\x03\x00\x00"               + // Version number
-           string32(properties.italicAngle) + // italicAngle
-           "\x00\x00"                       + // underlinePosition
-           "\x00\x00"                       + // underlineThickness
-           "\x00\x00\x00\x00"               + // isFixedPitch
-           "\x00\x00\x00\x00"               + // minMemType42
-           "\x00\x00\x00\x00"               + // maxMemType42
-           "\x00\x00\x00\x00"               + // minMemType1
-           "\x00\x00\x00\x00";                // maxMemType1
+    var angle = Math.floor(properties.italicAngle * (Math.pow(2, 16)));
+    return "\x00\x03\x00\x00" + // Version number
+           string32(angle)    + // italicAngle
+           "\x00\x00"         + // underlinePosition
+           "\x00\x00"         + // underlineThickness
+           string32(properties.fixedPitch) + // isFixedPitch
+           "\x00\x00\x00\x00" + // minMemType42
+           "\x00\x00\x00\x00" + // maxMemType42
+           "\x00\x00\x00\x00" + // minMemType1
+           "\x00\x00\x00\x00";  // maxMemType1
   };
 
   constructor.prototype = {
@@ -844,6 +845,14 @@ var Font = (function () {
 		    nameTable += strings.join("") + stringsUnicode.join("");
         return nameTable;
       }
+	  
+	    function isFixedPitch(glyphs) {
+	      for (var i = 0; i < glyphs.length - 1; i++) {
+		    if (glyphs[i] != glyphs[i+1])
+		      return false;
+		    }
+		    return true;
+      };
 
       // Required Tables
       var CFF =
@@ -874,11 +883,12 @@ var Font = (function () {
       createTableEntry(otf, offsets, "CFF ", CFF);
 
       /** OS/2 */
+	    var charstrings = font.charstrings;
+	    properties.fixedPitch = isFixedPitch(charstrings);
       OS2 = stringToArray(createOS2Table(properties));
       createTableEntry(otf, offsets, "OS/2", OS2);
 
       /** CMAP */
-      var charstrings = font.charstrings;
       cmap = createCMapTable(charstrings.slice());
       createTableEntry(otf, offsets, "cmap", cmap);
 
@@ -893,10 +903,10 @@ var Font = (function () {
               "\x00\x00\x00\x00\x9e\x0b\x7e\x27" + // creation date
               "\x00\x00\x00\x00\x9e\x0b\x7e\x27" + // modifification date
               "\x00\x00" + // xMin
-              "\x00\x00" + // yMin
-              "\x00\x00" + // xMax
-              "\x00\x00" + // yMax
-              string16(properties.italicAngle ? 1 : 0) + // macStyle
+              string16(properties.descent) + // yMin
+              "\x0F\xFF" + // xMax
+              string16(properties.ascent) + // yMax
+              string16(properties.italicAngle ? 2 : 0) + // macStyle
               "\x00\x11" + // lowestRecPPEM
               "\x00\x00" + // fontDirectionHint
               "\x00\x00" + // indexToLocFormat
@@ -910,12 +920,12 @@ var Font = (function () {
                  string16(properties.ascent) + // Typographic Ascent
                  string16(properties.descent) + // Typographic Descent
                  "\x00\x00" + // Line Gap
-                 "\xFF\xFF" + // advanceWidthMax
+                 "\x00\xFF" + // advanceWidthMax
                  "\x00\x00" + // minLeftSidebearing
                  "\x00\x00" + // minRightSidebearing
                  "\x00\x00" + // xMaxExtent
-                 "\x00\x00" + // caretSlopeRise
-                 string16(properties.italicAngle) + // caretSlopeRun
+                 string16(properties.capHeight) + // caretSlopeRise
+                 string16(Math.tan(properties.italicAngle) * properties.xHeight) + // caretSlopeRun
                  "\x00\x00" + // caretOffset
                  "\x00\x00" + // -reserved-
                  "\x00\x00" + // -reserved-
@@ -933,10 +943,8 @@ var Font = (function () {
       * have to touch the 'hmtx' table
       */
       hmtx = "\x00\x00\x00\x00"; // Fake .notdef
-      var width = 0, lsb = 0;
       for (var i = 0; i < charstrings.length; i++) {
-        var charstring = charstrings[i];
-        hmtx += string16(charstring.width) + string16(0);
+        hmtx += string16(charstrings[i].width) + string16(0);
       }
       hmtx = stringToArray(hmtx);
       createTableEntry(otf, offsets, "hmtx", hmtx);
