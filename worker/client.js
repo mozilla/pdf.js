@@ -250,9 +250,10 @@ function WorkerPDFDoc(canvas) {
       }
       this.strokeStyle = pattern;
     },
-    
-    "$setFont": function(name) {
-      Fonts.active = name;
+
+    "$setFont": function(name, size) {
+      this.font = size + 'px "' + name + '"';
+      Fonts.setActive(name, size);
     }
   }
 
@@ -305,6 +306,13 @@ function WorkerPDFDoc(canvas) {
       document.body.appendChild(div);
     },
     
+    "setup_page": function(data) {
+      var size = data.split(",");
+      var canvas = this.canvas, ctx = this.ctx;
+      canvas.width = parseInt(size[0]);
+      canvas.height = parseInt(size[1]);
+    },
+
     "fonts": function(data) {
       this.waitingForFonts = true;
       this.fontWorker.ensureFonts(data, function() {
