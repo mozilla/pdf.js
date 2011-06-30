@@ -6,7 +6,7 @@
 /**
  * Maximum file size of the font.
  */
-var kMaxFontFileSize = 40000;
+var kMaxFontFileSize = 200000;
 
 /**
  * Maximum time to wait for a font to be loaded by @font-face
@@ -34,7 +34,7 @@ var kDisableFonts = false;
  *      http://cgit.freedesktop.org/poppler/poppler/tree/poppler/GfxFont.cc#n65
  */
 
-var Fonts = (function () {
+var Fonts = (function Fonts() {
   var kScalePrecision = 40;
   var fonts = Object.create(null);
   var ctx = document.createElement("canvas").getContext("2d");
@@ -1462,13 +1462,17 @@ var CFF = function(name, file, properties) {
   var length1 = file.dict.get("Length1");
   var length2 = file.dict.get("Length2");
   file.skip(length1);
-  var eexecBlock = file.getBytes(length2);
 
   // Decrypt the data blocks and retrieve it's content
+  var eexecBlock = file.getBytes(length2);
   var data = type1Parser.extractFontProgram(eexecBlock);
 
-  this.charstrings = this.getOrderedCharStrings(data.charstrings);
-  this.data = this.wrap(name, this.charstrings, data.subrs, properties);
+  var charstrings = this.getOrderedCharStrings(data.charstrings);
+  var type2Charstrings = this.getType2Charstrings(charstrings);
+  var subrs = this.getType2Subrs(data.subrs);
+
+  this.charstrings = charstrings;
+  this.data = this.wrap(name, type2Charstrings, this.charstrings, subrs, properties);
 };
 
 CFF.prototype = {
@@ -1546,12 +1550,40 @@ CFF.prototype = {
     return charstrings;
   },
 
+  getType2Charstrings: function cff_getType2Charstrings(type1Charstrings) {
+    var type2Charstrings = [];
+	  var count = type1Charstrings.length;
+    for (var i = 0; i < count; i++) {
+      var charstring = type1Charstrings[i].charstring;
+      type2Charstrings.push(this.flattenCharstring(charstring.slice(), this.commandsMap));
+    }
+    return type2Charstrings;
+  },
+
+  getType2Subrs: function cff_getType2Charstrings(type1Subrs) {
+    var bias = 0;
+    var count = type1Subrs.length;
+    if (count < 1240)
+      bias = 107;
+    else if (count < 33900)
+      bias = 1131;
+    else
+      bias = 32768;
+
+    // Add a bunch of empty subrs to deal with the Type2 bias
+    var type2Subrs = [];
+    for (var i = 0; i < bias; i++)
+      type2Subrs.push([0x0B]);
+
+    for (var i = 0; i < count; i++)
+      type2Subrs.push(this.flattenCharstring(type1Subrs[i], this.commandsMap));
+
+    return type2Subrs;
+  },
+
   /*
    * Flatten the commands by interpreting the postscript code and replacing
    * every 'callsubr', 'callothersubr' by the real commands.
-   *
-   * TODO This function also do a string to command number transformation
-   * that can probably be avoided if the Type1 decodeCharstring code is smarter
    */
   commandsMap: {
     "hstem": 1,
@@ -1573,58 +1605,27 @@ CFF.prototype = {
     "hvcurveto": 31,
   },
 
-  flattenCharstring: function flattenCharstring(charstring) {
-    var i = 0;
-    while (true) {
-      var obj = charstring[i];
-      if (obj == undefined) {
-        error("unknow charstring command for " + i + " in " + charstring);
-      }
-      if (obj.charAt) {
-        switch (obj) {
-          case "endchar":
-          case "return":
-            // CharString is ready to be re-encode to commands number at this point
-            for (var j = 0; j < charstring.length; j++) {
-              var command = charstring[j];
-              if (parseFloat(command) == command) {
-                charstring.splice(j, 1, 28, command >> 8, command);
-                j+= 2;
-              } else if (command.charAt) {
-                var cmd = this.commandsMap[command];
-                if (!cmd)
-                  error("Unknow command: " + command);
+  flattenCharstring: function flattenCharstring(charstring, map) {
+    for (var i = 0; i < charstring.length; i++) {
+      var command = charstring[i];
+      if (command.charAt) {
+        var cmd = map[command];
+        assert(cmd, "Unknow command: " + command);
 
-                if (IsArray(cmd)) {
-                  charstring.splice(j, 1, cmd[0], cmd[1]);
-                  j += 1;
-                } else {
-                  charstring[j] = cmd;
-                }
-              }
-            }
-            return charstring;
-
-          default:
-            break;
+        if (IsArray(cmd)) {
+          charstring.splice(i++, 1, cmd[0], cmd[1]);
+        } else {
+          charstring[i] = cmd;
         }
+      } else {
+        charstring.splice(i, 1, 28, command >> 8, command & 0xff);
+        i+= 2;
       }
-      i++;
     }
-    error("failing with i = " + i + " in charstring:" + charstring + "(" + charstring.length + ")");
-    return [];
+    return charstring;
   },
 
-  wrap: function wrap(name, charstrings, subrs, properties) {
-    // Starts the conversion of the Type1 charstrings to Type2
-    var glyphs = [];
-	  var glyphsCount = charstrings.length;
-    for (var i = 0; i < glyphsCount; i++) {
-      var charstring = charstrings[i].charstring;
-      glyphs.push(this.flattenCharstring(charstring.slice()));
-    }
-
-    // Create a CFF font data
+  wrap: function wrap(name, glyphs, charstrings, subrs, properties) {
     var cff = new Uint8Array(kMaxFontFileSize);
     var currentOffset = 0;
 
@@ -1656,10 +1657,12 @@ CFF.prototype = {
 
     // Fill the charset header (first byte is the encoding)
     var charset = [0x00];
+	  var glyphsCount = glyphs.length;
     for (var i = 0; i < glyphsCount; i++) {
       var index = CFFStrings.indexOf(charstrings[i].glyph);
       if (index == -1)
         index = CFFStrings.length + strings.indexOf(charstrings[i].glyph);
+
       var bytes = FontsUtils.integerToBytes(index, 2);
       charset.push(bytes[0]);
       charset.push(bytes[1]);
@@ -1731,28 +1734,9 @@ CFF.prototype = {
     cff.set(privateData, currentOffset);
     currentOffset += privateData.length;
 
-    // Local Subrs
-    var flattenedSubrs = [];
 
-    var bias = 0;
-    var subrsCount = subrs.length;
-    if (subrsCount < 1240)
-      bias = 107;
-    else if (subrsCount < 33900)
-      bias = 1131;
-    else
-      bias = 32768;
-
-    // Add a bunch of empty subrs to deal with the Type2 bias
-    for (var i = 0; i < bias; i++)
-      flattenedSubrs.push([0x0B]);
-
-    for (var i = 0; i < subrsCount; i++) {
-      var subr = subrs[i];
-      flattenedSubrs.push(this.flattenCharstring(subr));
-    }
-
-    var subrsData = this.createCFFIndexHeader(flattenedSubrs, true);
+    // Local subrs
+    var subrsData = this.createCFFIndexHeader(subrs, true);
     cff.set(subrsData, currentOffset);
     currentOffset += subrsData.length;
 
