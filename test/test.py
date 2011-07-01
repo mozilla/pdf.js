@@ -16,6 +16,9 @@ REFDIR = 'ref'
 TMPDIR = 'tmp'
 VERBOSE = False
 
+SERVER_HOST = "localhost"
+SERVER_PORT = 8080
+
 class TestOptions(OptionParser):
     def __init__(self, **kwargs):
         OptionParser.__init__(self, **kwargs)
@@ -41,7 +44,7 @@ class TestOptions(OptionParser):
         if options.browser and options.browserManifestFile:
             print "Warning: ignoring browser argument since manifest file was also supplied"
         if not options.browser and not options.browserManifestFile:
-            self.error("No test browsers found. Use --browserManifest or --browser args.")
+            print "No browser arguments supplied, so just starting server on port %s." % SERVER_PORT
         return options
         
 def prompt(question):
@@ -295,7 +298,9 @@ def setUp(options):
         testBrowsers = makeBrowserCommands(options.browserManifestFile)
     elif options.browser:
         testBrowsers = [makeBrowserCommand({"path":options.browser, "name":None})]
-    assert len(testBrowsers) > 0
+
+    if options.browserManifestFile or options.browser:
+        assert len(testBrowsers) > 0
 
     with open(options.manifestFile) as mf:
         manifestList = json.load(mf)
@@ -320,9 +325,11 @@ def startBrowsers(browsers, options):
     for b in browsers:
         b.setup()
         print 'Launching', b.name
+        host = 'http://%s:%s' % (SERVER_HOST, SERVER_PORT) 
+        path = '/test/test_slave.html?'
         qs = 'browser='+ urllib.quote(b.name) +'&manifestFile='+ urllib.quote(options.manifestFile)
         qs += '&path=' + b.path
-        b.start('http://localhost:8080/test/test_slave.html?'+ qs)
+        b.start(host + path + qs)
 
 def teardownBrowsers(browsers):
     for b in browsers:
@@ -476,7 +483,8 @@ def maybeUpdateRefImages(options, browser):
                 print 'done'
 
 def startReftest(browser):
-    url = "http://127.0.0.1:8080/test/resources/reftest-analyzer.xhtml"
+    url = "http://%s:%s" % (SERVER_HOST, SERVER_PORT)
+    url += "/test/resources/reftest-analyzer.xhtml"
     url += "#web=/test/eq.log"
     try:
         browser.setup()
@@ -487,20 +495,8 @@ def startReftest(browser):
         teardownBrowsers([browser])
     print "Completed reftest usage."
 
-def main():
+def runTests(options, browsers):
     t1 = time.time()
-    optionParser = TestOptions()
-    options, args = optionParser.parse_args()
-    options = optionParser.verifyOptions(options)
-    if options == None:
-        sys.exit(1)
-
-    httpd = TestServer(('127.0.0.1', 8080), PDFTestHandler)
-    httpd_thread = threading.Thread(target=httpd.serve_forever)
-    httpd_thread.setDaemon(True)
-    httpd_thread.start()
-
-    browsers = setUp(options)
     try:
         startBrowsers(browsers, options)
         while not State.done:
@@ -516,6 +512,27 @@ def main():
     elif options.reftest and State.numEqFailures > 0:
         print "\nStarting reftest harness to examine %d eq test failures." % State.numEqFailures
         startReftest(browsers[0])
+
+def main():
+    optionParser = TestOptions()
+    options, args = optionParser.parse_args()
+    options = optionParser.verifyOptions(options)
+    if options == None:
+        sys.exit(1)
+
+    httpd = TestServer((SERVER_HOST, SERVER_PORT), PDFTestHandler)
+    httpd_thread = threading.Thread(target=httpd.serve_forever)
+    httpd_thread.setDaemon(True)
+    httpd_thread.start()
+
+    browsers = setUp(options)
+    if len(browsers) > 0:
+        runTests(options, browsers)
+    else:
+        # just run the server
+        print "Running HTTP server. Press Ctrl-C to quit."
+        while True:
+            time.sleep(1)
 
 if __name__ == '__main__':
     main()
