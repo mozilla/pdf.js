@@ -285,7 +285,7 @@ function WorkerPDFDoc(canvas) {
       var url = "url(data:" + data.mimetype + ";base64," + base64 + ");";
       var rule = "@font-face { font-family:'" + data.fontName + "';src:" + url + "}";
       var styleSheet = document.styleSheets[0];
-      styleSheet.insertRule(rule, styleSheet.length);
+      styleSheet.insertRule(rule, styleSheet.cssRules.length);
 
       // Just adding the font-face to the DOM doesn't make it load. It
       // seems it's loaded once Gecko notices it's used. Therefore,

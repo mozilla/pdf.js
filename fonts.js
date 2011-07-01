@@ -1057,7 +1057,7 @@ var Font = (function () {
       var url = "url(data:" + this.mimetype + ";base64," + window.btoa(data) + ");";
       var rule = "@font-face { font-family:'" + fontName + "';src:" + url + "}";
       var styleSheet = document.styleSheets[0];
-      styleSheet.insertRule(rule, styleSheet.length);
+      styleSheet.insertRule(rule, styleSheet.cssRules.length);
     }
   };
 
