@@ -119,7 +119,8 @@ function CanvasProxy(width, height) {
   "$addCurrentX",
   "$saveCurrentX",
   "$restoreCurrentX",
-  "$showText"
+  "$showText",
+  "$setFont"
   ];
 
   function buildFuncCall(name) {
