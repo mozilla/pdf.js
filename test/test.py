@@ -16,6 +16,9 @@ REFDIR = 'ref'
 TMPDIR = 'tmp'
 VERBOSE = False
 
+SERVER_HOST = "localhost"
+SERVER_PORT = 8080
+
 class TestOptions(OptionParser):
     def __init__(self, **kwargs):
         OptionParser.__init__(self, **kwargs)
@@ -41,7 +44,7 @@ class TestOptions(OptionParser):
         if options.browser and options.browserManifestFile:
             print "Warning: ignoring browser argument since manifest file was also supplied"
         if not options.browser and not options.browserManifestFile:
-            self.error("No test browsers found. Use --browserManifest or --browser args.")
+            print "No browser arguments supplied, so just starting server on port %s." % SERVER_PORT
         return options
         
 def prompt(question):
@@ -248,6 +251,7 @@ def makeBrowserCommand(browser):
         if (name and name.find(key) > -1) or path.find(key) > -1:
             command = types[key](browser)
             command.name = command.name or key
+            break
 
     if command is None:
         raise Exception("Unrecognized browser: %s" % browser)
@@ -294,7 +298,9 @@ def setUp(options):
         testBrowsers = makeBrowserCommands(options.browserManifestFile)
     elif options.browser:
         testBrowsers = [makeBrowserCommand({"path":options.browser, "name":None})]
-    assert len(testBrowsers) > 0
+
+    if options.browserManifestFile or options.browser:
+        assert len(testBrowsers) > 0
 
     with open(options.manifestFile) as mf:
         manifestList = json.load(mf)
@@ -319,9 +325,11 @@ def startBrowsers(browsers, options):
     for b in browsers:
         b.setup()
         print 'Launching', b.name
+        host = 'http://%s:%s' % (SERVER_HOST, SERVER_PORT) 
+        path = '/test/test_slave.html?'
         qs = 'browser='+ urllib.quote(b.name) +'&manifestFile='+ urllib.quote(options.manifestFile)
         qs += '&path=' + b.path
-        b.start('http://localhost:8080/test/test_slave.html?'+ qs)
+        b.start(host + path + qs)
 
 def teardownBrowsers(browsers):
     for b in browsers:
@@ -438,26 +446,30 @@ def checkLoad(task, results, browser):
 
 def processResults():
     print ''
-    numErrors, numEqFailures, numEqNoSnapshot, numFBFFailures = State.numErrors, State.numEqFailures, State.numEqNoSnapshot, State.numFBFFailures
-    numFatalFailures = (numErrors + numFBFFailures)
-    if 0 == numEqFailures and 0 == numFatalFailures:
+    numFatalFailures = (State.numErrors + State.numFBFFailures)
+    if 0 == State.numEqFailures and 0 == numFatalFailures:
         print 'All tests passed.'
     else:
         print 'OHNOES!  Some tests failed!'
-        if 0 < numErrors:
-            print '  errors:', numErrors
-        if 0 < numEqFailures:
-            print '  different ref/snapshot:', numEqFailures
-        if 0 < numFBFFailures:
-            print '  different first/second rendering:', numFBFFailures
+        if 0 < State.numErrors:
+            print '  errors:', State.numErrors
+        if 0 < State.numEqFailures:
+            print '  different ref/snapshot:', State.numEqFailures
+        if 0 < State.numFBFFailures:
+            print '  different first/second rendering:', State.numFBFFailures
 
-    if State.masterMode and (0 < numEqFailures or 0 < numEqNoSnapshot):
+
+def maybeUpdateRefImages(options, browser):
+    if options.masterMode and (0 < State.numEqFailures or 0 < State.numEqNoSnapshot): 
         print "Some eq tests failed or didn't have snapshots."
         print 'Checking to see if master references can be updated...'
+        numFatalFailures = (State.numErrors + State.numFBFFailures)
         if 0 < numFatalFailures:
             print '  No.  Some non-eq tests failed.'
         else:
-            '  Yes!  The references in tmp/ can be synced with ref/.'
+            print '  Yes!  The references in tmp/ can be synced with ref/.'
+            if options.reftest:                                                                                                              
+                startReftest(browser)
             if not prompt('Would you like to update the master copy in ref/?'):
                 print '  OK, not updating.'
             else:
@@ -471,7 +483,8 @@ def processResults():
                 print 'done'
 
 def startReftest(browser):
-    url = "http://127.0.0.1:8080/test/resources/reftest-analyzer.xhtml"
+    url = "http://%s:%s" % (SERVER_HOST, SERVER_PORT)
+    url += "/test/resources/reftest-analyzer.xhtml"
     url += "#web=/test/eq.log"
     try:
         browser.setup()
@@ -482,20 +495,8 @@ def startReftest(browser):
         teardownBrowsers([browser])
     print "Completed reftest usage."
 
-def main():
+def runTests(options, browsers):
     t1 = time.time()
-    optionParser = TestOptions()
-    options, args = optionParser.parse_args()
-    options = optionParser.verifyOptions(options)
-    if options == None:
-        sys.exit(1)
-
-    httpd = TestServer(('127.0.0.1', 8080), PDFTestHandler)
-    httpd_thread = threading.Thread(target=httpd.serve_forever)
-    httpd_thread.setDaemon(True)
-    httpd_thread.start()
-
-    browsers = setUp(options)
     try:
         startBrowsers(browsers, options)
         while not State.done:
@@ -506,9 +507,32 @@ def main():
     t2 = time.time()
     print "Runtime was", int(t2 - t1), "seconds"
 
-    if options.reftest and State.numEqFailures > 0:
+    if options.masterMode:
+        maybeUpdateRefImages(options, browsers[0])
+    elif options.reftest and State.numEqFailures > 0:
         print "\nStarting reftest harness to examine %d eq test failures." % State.numEqFailures
         startReftest(browsers[0])
+
+def main():
+    optionParser = TestOptions()
+    options, args = optionParser.parse_args()
+    options = optionParser.verifyOptions(options)
+    if options == None:
+        sys.exit(1)
+
+    httpd = TestServer((SERVER_HOST, SERVER_PORT), PDFTestHandler)
+    httpd_thread = threading.Thread(target=httpd.serve_forever)
+    httpd_thread.setDaemon(True)
+    httpd_thread.start()
+
+    browsers = setUp(options)
+    if len(browsers) > 0:
+        runTests(options, browsers)
+    else:
+        # just run the server
+        print "Running HTTP server. Press Ctrl-C to quit."
+        while True:
+            time.sleep(1)
 
 if __name__ == '__main__':
     main()
