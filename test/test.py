@@ -439,26 +439,30 @@ def checkLoad(task, results, browser):
 
 def processResults():
     print ''
-    numErrors, numEqFailures, numEqNoSnapshot, numFBFFailures = State.numErrors, State.numEqFailures, State.numEqNoSnapshot, State.numFBFFailures
-    numFatalFailures = (numErrors + numFBFFailures)
-    if 0 == numEqFailures and 0 == numFatalFailures:
+    numFatalFailures = (State.numErrors + State.numFBFFailures)
+    if 0 == State.numEqFailures and 0 == numFatalFailures:
         print 'All tests passed.'
     else:
         print 'OHNOES!  Some tests failed!'
-        if 0 < numErrors:
-            print '  errors:', numErrors
-        if 0 < numEqFailures:
-            print '  different ref/snapshot:', numEqFailures
-        if 0 < numFBFFailures:
-            print '  different first/second rendering:', numFBFFailures
+        if 0 < State.numErrors:
+            print '  errors:', State.numErrors
+        if 0 < State.numEqFailures:
+            print '  different ref/snapshot:', State.numEqFailures
+        if 0 < State.numFBFFailures:
+            print '  different first/second rendering:', State.numFBFFailures
 
-    if State.masterMode and (0 < numEqFailures or 0 < numEqNoSnapshot):
+
+def maybeUpdateRefImages(options, browser):
+    if options.masterMode and (0 < State.numEqFailures or 0 < State.numEqNoSnapshot): 
         print "Some eq tests failed or didn't have snapshots."
         print 'Checking to see if master references can be updated...'
+        numFatalFailures = (State.numErrors + State.numFBFFailures)
         if 0 < numFatalFailures:
             print '  No.  Some non-eq tests failed.'
         else:
-            '  Yes!  The references in tmp/ can be synced with ref/.'
+            print '  Yes!  The references in tmp/ can be synced with ref/.'
+            if options.reftest:                                                                                                              
+                startReftest(browser)
             if not prompt('Would you like to update the master copy in ref/?'):
                 print '  OK, not updating.'
             else:
@@ -507,7 +511,9 @@ def main():
     t2 = time.time()
     print "Runtime was", int(t2 - t1), "seconds"
 
-    if options.reftest and State.numEqFailures > 0:
+    if options.masterMode:
+        maybeUpdateRefImages(options, browsers[0])
+    elif options.reftest and State.numEqFailures > 0:
         print "\nStarting reftest harness to examine %d eq test failures." % State.numEqFailures
         startReftest(browsers[0])
 
