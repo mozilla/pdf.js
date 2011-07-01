@@ -1333,14 +1333,19 @@ var Type1Parser = function() {
    * extracted from and eexec encrypted block of data
    */
   this.extractFontProgram = function t1_extractFontProgram(stream) {
-    var eexecString = decrypt(stream, kEexecEncryptionKey, 4);
-    var subrs = [],  glyphs = [];
-    var inGlyphs = false;
-    var inSubrs = false;
-    var glyph = "";
+    var eexec = decrypt(stream, kEexecEncryptionKey, 4);
+    var eexecString = "";
+    for (var i = 0; i < eexec.length; i++)
+      eexecString += String.fromCharCode(eexec[i]);
 
+    var glyphsSection = false, subrsSection = false;
+    var extracted = {
+      subrs: [],
+      charstrings: []
+    };
+
+    var glyph = "";
     var token = "";
-    var index = 0;
     var length = 0;
 
     var c = "";
@@ -1348,52 +1353,39 @@ var Type1Parser = function() {
     for (var i = 0; i < count; i++) {
       var c = eexecString[i];
 
-      if (inSubrs && c == 0x52) {
-        length = parseInt(length);
-        var data = eexecString.slice(i + 3, i + 3 + length);
-        var encodedSubr = decrypt(data, kCharStringsEncryptionKey, 4);
-        var str = decodeCharString(encodedSubr);
+      if ((glyphsSection || subrsSection) && c == "R") {
+        var data = eexec.slice(i + 3, i + 3 + length);
+        var encoded = decrypt(data, kCharStringsEncryptionKey, 4);
+        var str = decodeCharString(encoded);
 
-        subrs.push(str.charstring);
-        i += 3 + length;
-      } else if (inGlyphs && c == 0x52) {
-        length = parseInt(length);
-        var data = eexecString.slice(i + 3, i + 3 + length);
-        var encodedCharstring = decrypt(data, kCharStringsEncryptionKey, 4);
-        var str = decodeCharString(encodedCharstring);
-
-        glyphs.push({
+        if (glyphsSection) {
+          extracted.charstrings.push({
             glyph: glyph,
             data: str.charstring,
             lsb: str.lsb,
             width: str.width
-        });
-        i += 3 + length;
-      } else if (inGlyphs && c == 0x2F) {
+          });
+        } else {
+          extracted.subrs.push(str.charstring);
+        }
+        i += length + 3;
+      } else if (c == " ") {
+        length = parseInt(token);
         token = "";
-        glyph = "";
-
-        while ((c = eexecString[++i]) != 0x20)
-          glyph += String.fromCharCode(c);
-      } else if (!inSubrs && !inGlyphs && c == 0x2F && eexecString[i+1] == 0x53) {
-        while ((c = eexecString[++i]) != 0x20) {};
-        inSubrs = true;
-      } else if (c == 0x20) {
-        index = length;
-        length = token;
-        token = "";
-      } else if (c == 0x2F && eexecString[i+1] == 0x43 && eexecString[i+2] == 0x68) {
-        while ((c = eexecString[++i]) != 0x20) {};
-        inSubrs = false;
-        inGlyphs = true;
       } else {
-        token += String.fromCharCode(c);
+        token += c;
+        if (!glyphsSection) {
+          glyphsSection = token.indexOf("/CharString") != -1;
+          subrsSection = subrsSection || token.indexOf("Subrs") != -1;
+        } else if (c == "/") {
+          token = glyph = "";
+          while ((c = eexecString[++i]) != " ")
+            glyph += c;
+        }
       }
     }
-    return {
-      subrs: subrs,
-      charstrings: glyphs
-    }
+
+    return extracted;
   }
 };
 
