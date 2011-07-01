@@ -38,11 +38,11 @@ var kDisableFonts = false;
 
 var Fonts = (function Fonts() {
   var kScalePrecision = 40;
-  var fonts = Object.create(null);  
+  var fonts = Object.create(null);
 
   if (!isWorker) {
     var ctx = document.createElement("canvas").getContext("2d");
-    ctx.scale(1 / kScalePrecision, 1);    
+    ctx.scale(1 / kScalePrecision, 1);
   }
 
   function Font(name, data, properties) {
@@ -76,9 +76,6 @@ var Fonts = (function Fonts() {
       if (!(measureCache = sizes[size]))
         measureCache = sizes[size] = Object.create(null);
       ctx.font = (size * kScalePrecision) + 'px "' + fontName + '"';
-    },
-    getActive: function fonts_getActive() {
-      return current;
     },
     charsToUnicode: function fonts_chars2Unicode(chars) {
       if (!charsCache)
@@ -477,10 +474,11 @@ var Font = (function () {
       startCount += string16(start);
       endCount += string16(end);
       idDeltas += string16(delta);
-	  idRangeOffsets += string16(0);
+	    idRangeOffsets += string16(0);
 
-      for (var j = 0; j < range.length; j++)
-        glyphsIds += String.fromCharCode(range[j]);
+      for (var j = start; j < end; j++) {
+        glyphsIds += string16(j);
+      }
     }
 
     startCount += "\xFF\xFF";
@@ -1034,8 +1032,9 @@ var Font = (function () {
       // different once the real font has loaded
       var textWidth = ctx.measureText(testString).width;
 
+      var start = Date.now();
       var interval = window.setInterval(function canvasInterval(self) {
-        this.start = this.start || Date.now();
+        this.start = start;
         ctx.font = "bold italic 20px " + fontName + ", Symbol, Arial";
 
         // For some reasons the font has not loaded, so mark it loaded for the
