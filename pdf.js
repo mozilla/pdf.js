@@ -3544,7 +3544,8 @@ var CanvasGraphics = (function() {
                 capHeight: descriptor.get("CapHeight"),
                 flags: descriptor.get("Flags"),
                 italicAngle: descriptor.get("ItalicAngle"),
-                fixedPitch: false
+                fixedPitch: false,
+                textMatrix: IDENTITY_MATRIX.slice()
             };
 
             return {
@@ -3861,7 +3862,6 @@ var CanvasGraphics = (function() {
             // TODO: apply charSpacing, wordSpacing, textHScale
 
             this.ctx.save();
-            this.ctx.transform.apply(this.ctx, this.current.textMatrix);
             this.ctx.scale(1, -1);
 
             if (this.ctx.$showText) {
@@ -3869,6 +3869,8 @@ var CanvasGraphics = (function() {
             } else {
                 text = Fonts.charsToUnicode(text);
                 this.ctx.translate(this.current.x, -1 * this.current.y);
+                var matrix = Fonts.lookup(this.current.fontName).properties.textMatrix;
+                this.ctx.transform.apply(this.ctx, matrix);
                 this.ctx.fillText(text, 0, 0);
                 this.current.x += Fonts.measureText(text);
             }

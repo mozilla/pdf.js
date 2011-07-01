@@ -8,7 +8,7 @@ var isWorker = (typeof window == "undefined");
 /**
  * Maximum file size of the font.
  */
-var kMaxFontFileSize = 200000;
+var kMaxFontFileSize = 40000;
 
 /**
  * Maximum time to wait for a font to be loaded by @font-face
@@ -76,6 +76,9 @@ var Fonts = (function Fonts() {
       if (!(measureCache = sizes[size]))
         measureCache = sizes[size] = Object.create(null);
       ctx.font = (size * kScalePrecision) + 'px "' + fontName + '"';
+    },
+    getActive: function fonts_getActive() {
+      return current;
     },
     charsToUnicode: function fonts_chars2Unicode(chars) {
       if (!charsCache)
@@ -1386,7 +1389,57 @@ var Type1Parser = function() {
     }
 
     return extracted;
-  }
+  },
+
+  this.extractFontHeader = function t1_extractFontProgram(stream) {
+    var headerString = "";
+    for (var i = 0; i < stream.length; i++)
+      headerString += String.fromCharCode(stream[i]);
+
+    var info = {
+      textMatrix: null
+    };
+
+    function readNumberArray(str, index) {
+      var start = ++index;
+      var count = 0;
+      while ((c = str[index++]) != "]")
+        count++;
+
+      var array = str.substr(start, count).split(" ");
+      for (var i = 0; i < array.length; i++)
+        array[i] = parseFloat(array[i]);
+      return array;
+    };
+
+    var token = "";
+    var count = headerString.length;
+    for (var i = 0; i < count; i++) {
+      var c = headerString[i];
+      if (c == " " || c == "\n") {
+        switch (token) {
+          case "/FontMatrix":
+            var matrix = readNumberArray(headerString, i + 1);
+
+            // The FontMatrix is in unitPerEm, so make it pixels
+            for (var j = 0; j < matrix.length; j++)
+              matrix[j] *= 1000;
+
+            // Make the angle into the right direction
+            matrix[2] *= -1;
+
+            info.textMatrix = matrix;
+            break;
+        }
+        token = "";
+      } else {
+        token += c;
+      }
+    }
+
+    return info;
+  };
+
 };
 
 /**
@@ -1457,7 +1510,12 @@ var CFF = function(name, file, properties) {
   // Get the data block containing glyphs and subrs informations
   var length1 = file.dict.get("Length1");
   var length2 = file.dict.get("Length2");
-  file.skip(length1);
+
+  var headerBlock = file.getBytes(length1);
+  var header = type1Parser.extractFontHeader(headerBlock);
+  for (var info in header) {
+    properties[info] = header[info];
+  }
 
   // Decrypt the data blocks and retrieve it's content
   var eexecBlock = file.getBytes(length2);
@@ -1700,6 +1758,7 @@ CFF.prototype = {
       "charstrings": this.createCFFIndexHeader([[0x8B, 0x0E]].concat(glyphs), true),
 
       "private": (function(self) {
+          log(properties.stemSnapH);
         var data =
             "\x8b\x14" + // defaultWidth
             "\x8b\x15" + // nominalWidth
