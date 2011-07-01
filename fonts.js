@@ -1335,6 +1335,18 @@ var Type1Parser = function() {
    * Returns an object containing a Subrs array and a CharStrings array
    * extracted from and eexec encrypted block of data
    */
+  function readNumberArray(str, index) {
+    var start = ++index;
+    var count = 0;
+    while (str[index++] != "]")
+      count++;
+
+    var array = str.substr(start, count).split(" ");
+    for (var i = 0; i < array.length; i++)
+      array[i] = parseFloat(array[i] || 0);
+    return array;
+  };
+
   this.extractFontProgram = function t1_extractFontProgram(stream) {
     var eexec = decrypt(stream, kEexecEncryptionKey, 4);
     var eexecString = "";
@@ -1344,7 +1356,11 @@ var Type1Parser = function() {
     var glyphsSection = false, subrsSection = false;
     var extracted = {
       subrs: [],
-      charstrings: []
+      charstrings: [],
+      properties: {
+        stemSnapH: [0, 0],
+        stemSnapV: [0, 0]
+      }
     };
 
     var glyph = "";
@@ -1372,14 +1388,32 @@ var Type1Parser = function() {
           extracted.subrs.push(str.charstring);
         }
         i += length + 3;
-      } else if (c == " ") {
+      } else if (c == " " || c == "\n") {
         length = parseInt(token);
         token = "";
       } else {
         token += c;
         if (!glyphsSection) {
-          glyphsSection = token.indexOf("/CharString") != -1;
-          subrsSection = subrsSection || token.indexOf("Subrs") != -1;
+          switch (token) {
+            case "/CharString":
+              glyphsSection = true;
+              break;
+            case "/Subrs":
+              subrsSection = true;
+              break;
+            case "/StdHW":
+              extracted.properties.stdHW = readNumberArray(eexecString, i + 2)[0];
+              break;
+            case "/StdVW":
+              extracted.properties.stdVW = readNumberArray(eexecString, i + 2)[0];
+              break;
+            case "/StemSnapH":
+              extracted.properties.stemSnapH = readNumberArray(eexecString, i + 2);
+              break;
+            case "/StemSnapV":
+              extracted.properties.stemSnapV = readNumberArray(eexecString, i + 2);
+              break;
+          }
         } else if (c == "/") {
           token = glyph = "";
           while ((c = eexecString[++i]) != " ")
@@ -1398,18 +1432,6 @@ var Type1Parser = function() {
 
     var info = {
       textMatrix: null
-    };
-
-    function readNumberArray(str, index) {
-      var start = ++index;
-      var count = 0;
-      while ((c = str[index++]) != "]")
-        count++;
-
-      var array = str.substr(start, count).split(" ");
-      for (var i = 0; i < array.length; i++)
-        array[i] = parseFloat(array[i]);
-      return array;
     };
 
     var token = "";
@@ -1439,7 +1461,6 @@ var Type1Parser = function() {
 
     return info;
   };
-
 };
 
 /**
@@ -1513,13 +1534,14 @@ var CFF = function(name, file, properties) {
 
   var headerBlock = file.getBytes(length1);
   var header = type1Parser.extractFontHeader(headerBlock);
-  for (var info in header) {
+  for (var info in header)
     properties[info] = header[info];
-  }
 
   // Decrypt the data blocks and retrieve it's content
   var eexecBlock = file.getBytes(length2);
   var data = type1Parser.extractFontProgram(eexecBlock);
+  for (var info in data.properties)
+    properties[info] = data.properties[info];
 
   var charstrings = this.getOrderedCharStrings(data.charstrings);
   var type2Charstrings = this.getType2Charstrings(charstrings);
@@ -1758,14 +1780,22 @@ CFF.prototype = {
       "charstrings": this.createCFFIndexHeader([[0x8B, 0x0E]].concat(glyphs), true),
 
       "private": (function(self) {
-          log(properties.stemSnapH);
         var data =
             "\x8b\x14" + // defaultWidth
             "\x8b\x15" + // nominalWidth
-            "\x8b\x0a" + // StdHW
-            "\x8b\x0a" + // StdVW
-            "\x8b\x8b\x0c\x0c" + // StemSnapH
-            "\x8b\x8b\x0c\x0d";  // StemSnapV
+            self.encodeNumber(properties.stdHW) + "\x0a" + // StdHW
+            self.encodeNumber(properties.stdVW) + "\x0b";  // StdVW
+
+        var stemH = properties.stemSnapH;
+        for (var i = 0; i < stemH.length; i++)
+          data += self.encodeNumber(stemH[i]);
+        data += "\x0c\x0c"; // StemSnapH
+
+        var stemV = properties.stemSnapV;
+        for (var i = 0; i < stemV.length; i++)
+          data += self.encodeNumber(stemV[i]);
+        data += "\x0c\x0d"; // StemSnapV
+
         data += self.encodeNumber(data.length + 4) + "\x13"; // Subrs offset
 
         return data;
