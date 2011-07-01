@@ -624,6 +624,8 @@ var Font = (function () {
       };
 
       function replaceCMapTable(cmap, font, properties) {
+        font.pos = (font.start ? font.start : 0) + cmap.length;
+
         var version = FontsUtils.bytesToInteger(font.getBytes(2));
         var numTables = FontsUtils.bytesToInteger(font.getBytes(2));
 
