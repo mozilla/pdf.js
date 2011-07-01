@@ -3862,6 +3862,7 @@ var CanvasGraphics = (function() {
             // TODO: apply charSpacing, wordSpacing, textHScale
 
             this.ctx.save();
+            this.ctx.transform.apply(this.ctx, this.current.textMatrix);
             this.ctx.scale(1, -1);
 
             if (this.ctx.$showText) {
