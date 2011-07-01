@@ -1631,133 +1631,104 @@ CFF.prototype = {
   },
 
   wrap: function wrap(name, glyphs, charstrings, subrs, properties) {
-    function stringToArray(str) {
-      var array = [];
-      for (var i = 0; i < str.length; ++i)
-        array[i] = str.charCodeAt(i);
+    var fields = {
+      "header": "\x01\x00\x04\x04", // major version, minor version, header size, offset size
 
-      return array;
+      "names": this.createCFFIndexHeader([name]),
+
+      "topDict": (function topDict(self) {
+        return function() {
+          var dict =
+              "\x00\x01\x01\x01\x30" +
+              "\xf8\x1b\x00" + // version
+              "\xf8\x1b\x01" + // Notice
+              "\xf8\x1b\x02" + // FullName
+              "\xf8\x1b\x03" + // FamilyName
+              "\xf8\x1b\x04" +  // Weight
+              "\x1c\x00\x00\x10"; // Encoding
+
+          var boundingBox = properties.bbox;
+          for (var i = 0; i < boundingBox.length; i++)
+            dict += self.encodeNumber(boundingBox[i]);
+          dict += "\x05"; // FontBBox;
+
+          var offset = fields.header.length +
+                       fields.names.length +
+                       (dict.length + (4 + 4 + 7)) +
+                       fields.strings.length +
+                       fields.globalSubrs.length;
+          dict += self.encodeNumber(offset) + "\x0f"; // Charset
+
+          offset = offset + (glyphs.length * 2) + 1;
+          dict += self.encodeNumber(offset) + "\x11"; // Charstrings
+
+          dict += self.encodeNumber(fields.private.length);
+          var offset = offset + fields.charstrings.length;
+          dict += self.encodeNumber(offset) + "\x12"; // Private
+
+          return dict;
+        };
+      })(this),
+
+      "strings": (function strings(self) {
+        var strings = [
+          "Version 0.11",         // Version
+          "See original notice",  // Notice
+          name,                   // FullName
+          name,                   // FamilyName
+          "Medium"                // Weight
+        ];
+        return self.createCFFIndexHeader(strings);
+      })(this),
+
+      "globalSubrs": this.createCFFIndexHeader([]),
+
+      "charset": (function charset(self) {
+        var charset = "\x00"; // Encoding
+
+	      var count = glyphs.length;
+        for (var i = 0; i < count; i++) {
+          var index = CFFStrings.indexOf(charstrings[i].glyph.glyph);
+          // Some characters like asterikmath && circlecopyrt are missing from the
+          // original strings, for the moment let's map them to .notdef and see
+          // later if it cause any problems
+          if (index == -1)
+            index = 0;
+
+          var bytes = FontsUtils.integerToBytes(index, 2);
+          charset += String.fromCharCode(bytes[0]) + String.fromCharCode(bytes[1]);
+        }
+        return charset;
+      })(this),
+
+      "charstrings": this.createCFFIndexHeader([[0x8B, 0x0E]].concat(glyphs), true),
+
+      "private": (function(self) {
+        var data =
+            "\x8b\x14" + // defaultWidth
+            "\x8b\x15" + // nominalWidth
+            "\x8b\x0a" + // StdHW
+            "\x8b\x0a" + // StdVW
+            "\x8b\x8b\x0c\x0c" + // StemSnapH
+            "\x8b\x8b\x0c\x0d";  // StemSnapV
+        data += self.encodeNumber(data.length + 4) + "\x13"; // Subrs offset
+
+        return data;
+      })(this),
+
+      "localSubrs": this.createCFFIndexHeader(subrs, true)
     };
+    fields.topDict = fields.topDict();
 
-    var cff = new Uint8Array(kMaxFontFileSize);
-    var currentOffset = 0;
 
-    // Font header (major version, minor version, header size, offset size)
-    var header = "\x01\x00\x04\x04";
-    currentOffset += header.length;
-    cff.set(stringToArray(header));
-
-    // Names Index
-    var nameIndex = stringToArray(this.createCFFIndexHeader([name]));
-    cff.set(nameIndex, currentOffset);
-    currentOffset += nameIndex.length;
-
-    // Calculate strings before writing the TopDICT index in order
-    // to calculate correct relative offsets for storing 'charset'
-    // and 'charstrings' data
-    var version = "";
-    var notice = "";
-    var fullName = "";
-    var familyName = "";
-    var weight = "";
-    var strings = [version, notice, fullName,
-                   familyName, weight];
-    var stringsIndex = stringToArray(this.createCFFIndexHeader(strings));
-    var stringsDataLength = stringsIndex.length;
-
-    // Create the global subroutines index
-    var globalSubrsIndex = stringToArray(this.createCFFIndexHeader([]));
-
-    // Fill the charset header (first byte is the encoding)
-    var charset = [0x00];
-	  var glyphsCount = glyphs.length;
-    for (var i = 0; i < glyphsCount; i++) {
-      var index = CFFStrings.indexOf(charstrings[i].glyph);
-      if (index == -1)
-        index = CFFStrings.length + strings.indexOf(charstrings[i].glyph);
-
-      var bytes = FontsUtils.integerToBytes(index, 2);
-      charset.push(bytes[0]);
-      charset.push(bytes[1]);
+    var cff = [];
+    for (var index in fields) {
+      var field = fields[index];
+      for (var i = 0; i < field.length; i++)
+        cff.push(field.charCodeAt(i));
     }
 
-    var charstringsIndex = stringToArray(this.createCFFIndexHeader([[0x8B, 0x0E]].concat(glyphs), true));
-
-    //Top Dict Index
-    var topDictIndex = [
-      0x00, 0x01, 0x01, 0x01, 0x30,
-      248, 27, 0, // version
-      248, 28, 1, // Notice
-      248, 29, 2, // FullName
-      248, 30, 3, // FamilyName
-      248, 31, 4  // Weight
-    ];
-
-    var fontBBox = properties.bbox;
-    for (var i = 0; i < fontBBox.length; i++)
-      topDictIndex = topDictIndex.concat(stringToArray(this.encodeNumber(fontBBox[i])));
-    topDictIndex.push(5) // FontBBox;
-
-    var charsetOffset = currentOffset +
-                        (topDictIndex.length + (4 + 4 + 4 + 7)) +
-                        stringsIndex.length +
-                        globalSubrsIndex.length;
-    topDictIndex = topDictIndex.concat(stringToArray(this.encodeNumber(charsetOffset)));
-    topDictIndex.push(15); // charset
-
-    topDictIndex = topDictIndex.concat([28, 0, 0, 16]) // Encoding
-
-    var charstringsOffset = charsetOffset + (glyphsCount * 2) + 1;
-    topDictIndex = topDictIndex.concat(stringToArray(this.encodeNumber(charstringsOffset)));
-    topDictIndex.push(17); // charstrings
-
-    topDictIndex = topDictIndex.concat([28, 0, 55])
-    var privateOffset = charstringsOffset + charstringsIndex.length;
-    topDictIndex = topDictIndex.concat(stringToArray(this.encodeNumber(privateOffset)));
-    topDictIndex.push(18); // Private
-
-    var indexes = [
-      topDictIndex, stringsIndex,
-      globalSubrsIndex, charset,
-      charstringsIndex
-    ];
-
-    for (var i = 0; i < indexes.length; i++) {
-      var index = indexes[i];
-      cff.set(index, currentOffset);
-      currentOffset += index.length;
-    }
-
-    // Private Data
-    var defaultWidth = stringToArray(this.encodeNumber(0));
-    var privateData = [].concat(
-      defaultWidth, [20],
-      [139, 21], // nominalWidth
-      [
-      119, 159, 248, 97, 159, 247, 87, 159, 6,
-      30, 10, 3, 150, 37, 255, 12, 9,
-      139, 12,
-      10, 172, 10,
-      172, 150, 143, 146, 150, 146, 12, 12,
-      247, 32, 11,
-      247, 10, 161, 147, 154, 150, 143, 12, 13,
-      139, 12, 14,
-      28, 0, 55, 19 // Subrs offset
-    ]);
-    cff.set(privateData, currentOffset);
-    currentOffset += privateData.length;
-
-
-    // Local subrs
-    var subrsData = stringToArray(this.createCFFIndexHeader(subrs, true));
-    cff.set(subrsData, currentOffset);
-    currentOffset += subrsData.length;
-
-    var fontData = [];
-    for (var i = 0; i < currentOffset; i++)
-      fontData.push(cff[i]);
-
-    return fontData;
+    return cff;
   }
 };
 
