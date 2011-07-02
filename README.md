@@ -9,6 +9,10 @@ yet to integrate it into Firefox. We will explore that possibility once
 pdf.js is production ready. Until then we aim to publish a Firefox
 PDF reader extension powered by pdf.js.
 
+Our demo site is here:
+
+  http://andreasgal.github.com/pdf.js/
+
 You can read more about pdf.js here:
 
   http://andreasgal.com/2011/06/15/pdf-js/
