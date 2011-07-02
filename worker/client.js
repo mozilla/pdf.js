@@ -59,14 +59,15 @@ FontWorker.prototype = {
     "fonts": function(data) {
       // console.log("got processed fonts from worker", Object.keys(data));
       for (name in data) {
-        // Update the 
-        Fonts[name].properties = {
+        // Update the encoding property.
+        var font = Fonts.lookup(name);
+        font.properties = {
           encoding: data[name].encoding
         }
-        
+
         // Call `Font.prototype.bindDOM` to make the font get loaded on the page.
         Font.prototype.bindDOM.call(
-          Fonts[name],
+          font,
           data[name].str,
           // IsLoadedCallback.
           this.$handleFontLoadedCallback
@@ -84,19 +85,9 @@ FontWorker.prototype = {
         continue;
       }
     
-      // Store only the data on Fonts that is needed later on, such that we
-      // hold track on as lease memory as possible.
-      Fonts[font.name] = {
-        name:       font.name,
-        mimetype:   font.mimetype,
-        // This is set later on the worker replay. For some fonts, the encoding
-        // is calculated during the conversion process happening on the worker
-        // and therefore is not available right now.
-        // properties: {
-        //   encoding:  font.properties.encoding
-        // },
-        cache:      Object.create(null)
-      };
+      // Register the font but don't pass in any real data. The idea is to
+      // store as less data as possible to reduce memory usage.
+      Fonts.registerFont(font.name, Object.create(null), Object.create(null));
 
       // Mark this font to be handled later.
       notLoaded.push(font);
@@ -309,6 +300,13 @@ function WorkerPDFDoc(canvas) {
       document.body.appendChild(div);
     },
     
+    "setup_page": function(data) {
+      var size = data.split(",");
+      var canvas = this.canvas, ctx = this.ctx;
+      canvas.width = parseInt(size[0]);
+      canvas.height = parseInt(size[1]);
+    },
+
     "fonts": function(data) {
       this.waitingForFonts = true;
       this.fontWorker.ensureFonts(data, function() {

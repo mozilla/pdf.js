@@ -29,22 +29,26 @@ var PDFViewer = {
   scale: 1.0,
   
   pageWidth: function(page) {
-    return page.mediaBox[2] * PDFViewer.scale;
+    var pdfToCssUnitsCoef = 96.0 / 72.0;
+    var width = (page.mediaBox[2] - page.mediaBox[0]);
+    return width * PDFViewer.scale * pdfToCssUnitsCoef;
   },
   
   pageHeight: function(page) {
-    return page.mediaBox[3] * PDFViewer.scale;
+    var pdfToCssUnitsCoef = 96.0 / 72.0;
+    var height = (page.mediaBox[3] - page.mediaBox[1]);
+    return height * PDFViewer.scale * pdfToCssUnitsCoef;
   },
   
   lastPagesDrawn: [],
   
   visiblePages: function() {
-    const pageBottomMargin = 20;
+    const pageBottomMargin = 10;
     var windowTop = window.pageYOffset;
     var windowBottom = window.pageYOffset + window.innerHeight;
 
     var pageHeight, page;
-    var i, n = PDFViewer.numberOfPages, currentHeight = 0;
+    var i, n = PDFViewer.numberOfPages, currentHeight = pageBottomMargin;
     for (i = 1; i <= n; i++) {
       var page = PDFViewer.pdf.getPage(i);
       pageHeight = PDFViewer.pageHeight(page) + pageBottomMargin;
@@ -106,10 +110,11 @@ var PDFViewer = {
       canvas.id = 'thumbnail' + num;
       canvas.mozOpaque = true;
 
-      // Canvas dimensions must be specified in CSS pixels. CSS pixels
-      // are always 96 dpi. These dimensions are 8.5in x 11in at 96dpi.
-      canvas.width = 104;
-      canvas.height = 134;
+      var pageWidth = PDFViewer.pageWidth(page);
+      var pageHeight = PDFViewer.pageHeight(page);
+      var thumbScale = Math.min(104 / pageWidth, 134 / pageHeight);
+      canvas.width = pageWidth * thumbScale;
+      canvas.height = pageHeight * thumbScale;
       div.appendChild(canvas);
 
       var ctx = canvas.getContext('2d');
@@ -126,19 +131,12 @@ var PDFViewer = {
       var imagesLoader = new ImagesLoader();
       page.compile(gfx, fonts, imagesLoader);
 
-      var loadFont = function() {
-        if (!FontLoader.bind(fonts)) {
-          pageTimeout = window.setTimeout(loadFont, 10);
-          return;
-        }
-        page.display(gfx);
-      };
       var loadImages = function() {
         imagesLoader.onLoad = function() {
-          loadFont();
+          FontLoader.bind(fonts, function() { page.display(gfx); });
         };
         imagesLoader.enableOnLoad();
-      }
+      };
       loadImages();
     }
   },
@@ -182,8 +180,6 @@ var PDFViewer = {
       canvas.id = 'page' + num;
       canvas.mozOpaque = true;
 
-      // Canvas dimensions must be specified in CSS pixels. CSS pixels
-      // are always 96 dpi. These dimensions are 8.5in x 11in at 96dpi.
       canvas.width = PDFViewer.pageWidth(page);
       canvas.height = PDFViewer.pageHeight(page);
       div.appendChild(canvas);
@@ -202,23 +198,16 @@ var PDFViewer = {
       var imagesLoader = new ImagesLoader();
       page.compile(gfx, fonts, imagesLoader);
 
-      var loadFont = function() {
-        if (!FontLoader.bind(fonts)) {
-          pageTimeout = window.setTimeout(loadFont, 10);
-          return;
-        }
-        page.display(gfx);
-      }
       var loadImages = function() {
         imagesLoader.onLoad = function() {
-          loadFont();
+          FontLoader.bind(fonts, function() { page.display(gfx); });
         };
         imagesLoader.enableOnLoad();
       }
       loadImages();
     }
   },
-  
+
   changeScale: function(num) {
     while (PDFViewer.element.hasChildNodes()) {
       PDFViewer.element.removeChild(PDFViewer.element.firstChild);
@@ -288,6 +277,12 @@ var PDFViewer = {
   openURL: function(url) {
     PDFViewer.url = url;
     document.title = url;
+
+    if (this.thumbsLoadingInterval) {
+      // cancel thumbs loading operations
+      clearInterval(this.thumbsLoadingInterval);
+      this.thumbsLoadingInterval = null;
+    }
     
     var req = new XMLHttpRequest();
     req.open('GET', url);
@@ -304,7 +299,9 @@ var PDFViewer = {
     
     req.send(null);
   },
-  
+
+  thumbsLoadingInterval: null,
+
   readPDF: function(data) {
     while (PDFViewer.element.hasChildNodes()) {
       PDFViewer.element.removeChild(PDFViewer.element.firstChild);
@@ -326,12 +323,22 @@ var PDFViewer = {
       PDFViewer.drawPage(1);
       document.location.hash = 1;
       
-      setTimeout(function() {
-        for (var i = 1; i <= PDFViewer.numberOfPages; i++) {
-          PDFViewer.createThumbnail(i);
-          PDFViewer.drawThumbnail(i);
+      // slowly loading the thumbs (few per second)
+      // first time we are loading more images than subsequent
+      var currentPageIndex = 1, imagesToLoad = 15;
+      this.thumbsLoadingInterval = setInterval((function() {
+        while (imagesToLoad-- > 0) {
+          if (currentPageIndex > PDFViewer.numberOfPages) {
+            clearInterval(this.thumbsLoadingInterval);
+            this.thumbsLoadingInterval = null;
+            return;
+          }
+          PDFViewer.createThumbnail(currentPageIndex);
+          PDFViewer.drawThumbnail(currentPageIndex);
+          ++currentPageIndex;
         }
-      }, 500);
+        imagesToLoad = 3; // next time loading less images
+      }).bind(this), 500);
     }
     
     PDFViewer.previousPageButton.className = (PDFViewer.pageNumber === 1) ? 'disabled' : '';

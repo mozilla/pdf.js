@@ -4,6 +4,7 @@
   <style type="text/css"></style>
   <script type="text/javascript" src="/pdf.js"></script>
   <script type="text/javascript" src="/fonts.js"></script>
+  <script type="text/javascript" src="/crypto.js"></script>
   <script type="text/javascript" src="/glyphlist.js"></script>
   <script type="application/javascript">
 var appPath, browser, canvas, currentTask, currentTaskIdx, failure, manifest, numPages, pdfDoc, stdout;
@@ -104,43 +105,45 @@ function nextPage() {
   }
 
   try {
+    var pdfToCssUnitsCoef = 96.0 / 72.0;
     // using mediaBox for the canvas size
-    var wTwips = (currentPage.mediaBox[2] - currentPage.mediaBox[0]);
-    var hTwips = (currentPage.mediaBox[3] - currentPage.mediaBox[1]);
-    canvas.width = wTwips * 96.0 / 72.0;
-    canvas.height = hTwips * 96.0 / 72.0;
+    var pageWidth = (currentPage.mediaBox[2] - currentPage.mediaBox[0]);
+    var pageHeight = (currentPage.mediaBox[3] - currentPage.mediaBox[1]);
+    canvas.width = pageWidth * pdfToCssUnitsCoef;
+    canvas.height = pageHeight * pdfToCssUnitsCoef;
     clear(ctx);
   } catch(e) {
     failure = 'page setup: '+ e.toString();
   }
 
-  var fontLoaderTimer = null;
   function checkFontsLoaded() {
     try {
-      if (!FontLoader.bind(fonts)) {
-        fontLoaderTimer = window.setTimeout(checkFontsLoaded, 10);
-        return;
-      }
+      FontLoader.bind(fonts, function() { snapshotCurrentPage(gfx); });
     } catch(e) {
       failure = 'fonts: '+ e.toString();
     }
-    snapshotCurrentPage(gfx);
   }
 
   function checkImagesLoaded() {
     imagesLoader.onLoad = function() {
+      if (failure) {
+        snapshotCurrentPage(gfx);
+        return;
+      }
+
       checkFontsLoaded();
     };
     imagesLoader.enableOnLoad();
   }
 
   if (failure) {
-    // Skip font loading if there was a failure, since the fonts might
-    // be in an inconsistent state.
+    // Skip right to snapshotting if there was a failure, since the
+    // fonts might be in an inconsistent state.
     snapshotCurrentPage(gfx);
-  } else {
-    checkImagesLoaded();
+    return;
   }
+
+  checkImagesLoaded();
 }
 
 function snapshotCurrentPage(gfx) {
