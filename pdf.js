@@ -3938,6 +3938,10 @@ var CanvasGraphics = (function() {
         },
         setFillColor: function(/*...*/) {
             var cs = this.getFillColorSpace();
+            if (cs.name == "Pattern") {
+                TODO("implement Pattern fill");
+                return;
+            }
             var color = cs.getRgb(arguments);
             this.setFillRGBColor.apply(this, color);
         },
