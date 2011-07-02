@@ -124,6 +124,8 @@ var Fonts = (function Fonts() {
 })();
 
 var FontLoader = {
+  listeningForFontLoad: false,
+
   bind: function(fonts, callback) {
     function checkFontsLoaded() {
       for (var i = 0; i < fonts.length; i++) {
@@ -196,6 +198,9 @@ var FontLoader = {
       // goes really wonkily, we expect the @font-face for the outer
       // document to be processed before the inner.  That's still
       // fragile, but seems to work in practice.
+      //
+      // The postMessage() hackery was added to work around chrome bug
+      // 82402.
 
       var div = document.createElement("div");
       div.setAttribute("style",
@@ -208,6 +213,28 @@ var FontLoader = {
       }
       div.innerHTML = html;
       document.body.appendChild(div);
+
+      if (!this.listeneningForFontLoad) {
+        window.addEventListener(
+          "message",
+          function(e) {
+            var fontNames = e.data;
+            // Firefox 5 doesn't parse the JSON here.  Welcome to the
+            // Wonderful Web World.
+            if ("string" == typeof(fontNames)) {
+              fontNames = fontNames.split(",");
+            }
+            for (var i = 0; i < fontNames.length; ++i) {
+              var font = Fonts.lookup(fontNames[i]);
+              font.loading = false;
+            }
+            var evt = document.createEvent("Events");
+            evt.initEvent("pdfjsFontLoad", true, false);
+            document.documentElement.dispatchEvent(evt);
+          },
+          false);
+        this.listeneningForFontLoad = true;
+      }
 
       // XXX we should have a time-out here too, and maybe fire
       // pdfjsFontLoadFailed?
@@ -224,15 +251,7 @@ var FontLoader = {
       }
       src += '  var fontNames=['+ fontNamesArray +'];\n';
       src += '  window.onload = function () {\n'
-      src += '    var Fonts = top.document.defaultView.Fonts;\n';
-      src += '    for (var i = 0; i < fontNames.length; ++i) {\n';
-      src += '      var font = Fonts.lookup(fontNames[i]);\n';
-      src += '      font.loading = false;\n';
-      src += '    }\n';
-      src += '    var doc = top.document;\n';
-      src += '    var evt = doc.createEvent("Events");\n';
-      src += '    evt.initEvent("pdfjsFontLoad", true, false);\n'
-      src += '    doc.documentElement.dispatchEvent(evt);\n';
+      src += '    top.postMessage(fontNames, "*");\n';
       src += '  }';
       src += '</script></head><body>';
       for (var i = 0; i < names.length; ++i) {
@@ -1117,6 +1136,8 @@ var Font = (function () {
       var rule = "@font-face { font-family:'" + fontName + "';src:" + url + "}";
       var styleSheet = document.styleSheets[0];
       styleSheet.insertRule(rule, styleSheet.cssRules.length);
+
+      return rule;
     }
   };
 
