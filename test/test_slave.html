@@ -115,25 +115,18 @@ function nextPage() {
     failure = 'page setup: '+ e.toString();
   }
 
-  var fontLoaderTimer = null;
-  function checkFontsLoaded() {
+  if (!failure) {
     try {
-      if (!FontLoader.bind(fonts)) {
-        fontLoaderTimer = window.setTimeout(checkFontsLoaded, 10);
-        return;
-      }
+      FontLoader.bind(fonts, function() { snapshotCurrentPage(gfx); });
     } catch(e) {
       failure = 'fonts: '+ e.toString();
     }
-    snapshotCurrentPage(gfx);
   }
 
   if (failure) {
-    // Skip font loading if there was a failure, since the fonts might
-    // be in an inconsistent state.
+    // Skip right to snapshotting if there was a failure, since the
+    // fonts might be in an inconsistent state.
     snapshotCurrentPage(gfx);
-  } else {
-    checkFontsLoaded();
   }
 }
 

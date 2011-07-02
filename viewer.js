@@ -3,7 +3,7 @@
 
 "use strict";
 
-var pdfDocument, canvas, pageScale, pageDisplay, pageNum, numPages, pageTimeout;
+var pdfDocument, canvas, pageScale, pageDisplay, pageNum, numPages;
 function load(userInput) {
     canvas = document.getElementById("canvas");
     canvas.mozOpaque = true;
@@ -53,8 +53,6 @@ function gotoPage(num) {
 }
 
 function displayPage(num) {
-    window.clearTimeout(pageTimeout);
-
     document.getElementById("pageNumber").value = num;
 
     var t0 = Date.now();
@@ -82,22 +80,18 @@ function displayPage(num) {
     page.compile(gfx, fonts);
     var t2 = Date.now();
 
-    function loadFont() {
-      if (!FontLoader.bind(fonts)) {
-        pageTimeout = window.setTimeout(loadFont, 10);
-        return;
-      }
+    function displayPage() {
+        var t3 = Date.now();
 
-      var t3 = Date.now();
+        page.display(gfx);
 
-      page.display(gfx);
+        var t4 = Date.now();
 
-      var t4 = Date.now();
+        var infoDisplay = document.getElementById("info");
+        infoDisplay.innerHTML = "Time to load/compile/fonts/render: "+ (t1 - t0) + "/" + (t2 - t1) + "/" + (t3 - t2) + "/" + (t4 - t3) + " ms";
+    }
 
-      var infoDisplay = document.getElementById("info");
-      infoDisplay.innerHTML = "Time to load/compile/fonts/render: "+ (t1 - t0) + "/" + (t2 - t1) + "/" + (t3 - t2) + "/" + (t4 - t3) + " ms";
-    };
-    loadFont();
+    FontLoader.bind(fonts, displayPage);
 }
 
 function nextPage() {
