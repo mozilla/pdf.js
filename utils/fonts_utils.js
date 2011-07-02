@@ -1,6 +1,8 @@
 /* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- /
 /* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
 
+"use strict";
+
 /**
  * The Type2 reader code below is only used for debugging purpose since Type2
  * is only a CharString format and is never used directly as a Font file.
@@ -376,6 +378,9 @@ var Type2Parser = function(aFilePath) {
  * writeToFile(fontData, "/tmp/pdf.js." + fontCount + ".cff");
  */
 function writeToFile(aBytes, aFilePath) {
+  if (!("netscape" in window))
+    return;
+
   netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
   var Cc = Components.classes,
       Ci = Components.interfaces;
@@ -384,7 +389,7 @@ function writeToFile(aBytes, aFilePath) {
 
   var stream = Cc["@mozilla.org/network/file-output-stream;1"]
                  .createInstance(Ci.nsIFileOutputStream);
-  stream.init(file, 0x04 | 0x08 | 0x20, 0600, 0);
+  stream.init(file, 0x04 | 0x08 | 0x20, 0x180, 0);
 
   var bos = Cc["@mozilla.org/binaryoutputstream;1"]
               .createInstance(Ci.nsIBinaryOutputStream);

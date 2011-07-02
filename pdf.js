@@ -3404,7 +3404,7 @@ var CanvasGraphics = (function() {
             BX: "beginCompat",
             EX: "endCompat",
         },
-      
+
         translateFont: function(fontDict, xref, resources) {
             var fd = fontDict.get("FontDescriptor");
             if (!fd)
@@ -3545,7 +3545,7 @@ var CanvasGraphics = (function() {
                 flags: descriptor.get("Flags"),
                 italicAngle: descriptor.get("ItalicAngle"),
                 fixedPitch: false,
-                textMatrix: IDENTITY_MATRIX.slice()
+                textMatrix: IDENTITY_MATRIX
             };
 
             return {
@@ -3870,8 +3870,11 @@ var CanvasGraphics = (function() {
             } else {
                 text = Fonts.charsToUnicode(text);
                 this.ctx.translate(this.current.x, -1 * this.current.y);
-                var matrix = Fonts.lookup(this.current.fontName).properties.textMatrix;
-                this.ctx.transform.apply(this.ctx, matrix);
+
+                var font = Fonts.lookup(this.current.fontName);
+                if (font)
+                  this.ctx.transform.apply(this.ctx, font.properties.textMatrix);
+
                 this.ctx.fillText(text, 0, 0);
                 this.current.x += Fonts.measureText(text);
             }

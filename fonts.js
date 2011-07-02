@@ -437,25 +437,14 @@ var Font = (function () {
     glyphs.push({ unicode: 0x0000 });
     var ranges = getRanges(glyphs);
 
-    var numTables = 2;
-    var kFormat100ArraySize = 256;
+    var numTables = 1;
     var cmap = "\x00\x00" + // version
                string16(numTables) +  // numTables
-               "\x00\x01" + // platformID
-               "\x00\x00" + // encodingID
-               string32(4 + numTables * 8) + // start of the table record
                "\x00\x03" + // platformID
                "\x00\x01" + // encodingID
-               string32(4 + numTables * 8 + 6 + kFormat100ArraySize); // start of the table record
+               string32(4 + numTables * 8); // start of the table record
 
-    var format100 = "\x00\x00" + // format
-                    string16(6 + kFormat100ArraySize) + // length
-                    "\x00\x00"; // language
-
-    for (var i = 0; i < kFormat100ArraySize; i++)
-      format100 += String.fromCharCode(i);
-
-    var headerSize = (12 * 2 + (ranges.length * 4 * 2));
+    var headerSize = (12 * 2 + (ranges.length * 5 * 2));
     var segCount = ranges.length + 1;
     var segCount2 = segCount * 2;
     var searchRange = FontsUtils.getMaxPower2(segCount) * 2;
@@ -481,7 +470,7 @@ var Font = (function () {
       var range = ranges[i];
       var start = range[0];
       var end = range[1];
-      var delta = (((start - 1) - bias) ^ 0xffff);
+      var delta = (bias - start) % 0xffff;
       bias += (end - start + 1);
 
       startCount += string16(start);
@@ -489,7 +478,7 @@ var Font = (function () {
       idDeltas += string16(delta);
 	    idRangeOffsets += string16(0);
 
-      for (var j = start; j < end; j++) {
+      for (var j = start; j <= end; j++) {
         glyphsIds += string16(j);
       }
     }
@@ -501,7 +490,7 @@ var Font = (function () {
     format314 += endCount + "\x00\x00" + startCount +
                  idDeltas + idRangeOffsets + glyphsIds;
 
-    return stringToArray(cmap + format100 + format314);
+    return stringToArray(cmap + format314);
   };
 
   function createOS2Table(properties) {
@@ -541,7 +530,7 @@ var Font = (function () {
            "\x02\x24" + // xAvgCharWidth
            "\x01\xF4" + // usWeightClass
            "\x00\x05" + // usWidthClass
-           "\x00\x02" + // fstype
+           "\x00\x00" + // fstype (0 to let the font loads via font-face on IE)
            "\x02\x8A" + // ySubscriptXSize
            "\x02\xBB" + // ySubscriptYSize
            "\x00\x00" + // ySubscriptXOffset
@@ -1075,7 +1064,7 @@ var Font = (function () {
       var url = "url(data:" + this.mimetype + ";base64," + window.btoa(data) + ");";
       var rule = "@font-face { font-family:'" + fontName + "';src:" + url + "}";
       var styleSheet = document.styleSheets[0];
-      styleSheet.insertRule(rule, styleSheet.length);
+      styleSheet.insertRule(rule, styleSheet.cssRules.length);
     }
   };
 
