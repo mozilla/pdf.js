@@ -944,8 +944,6 @@ var Font = (function () {
     },
 
     convert: function font_convert(fontName, font, properties) {
-      var otf = new Uint8Array(kMaxFontFileSize);
-
       function createNameTable(name) {
   	    // All the strings of the name table should be an odd number of bytes
         if (name.length % 2)
@@ -1008,7 +1006,7 @@ var Font = (function () {
 		    nameTable += strings.join("") + stringsUnicode.join("");
         return nameTable;
       }
-	  
+
 	    function isFixedPitch(glyphs) {
 	      for (var i = 0; i < glyphs.length - 1; i++) {
 		    if (glyphs[i] != glyphs[i+1])
@@ -1017,46 +1015,34 @@ var Font = (function () {
 		    return true;
       };
 
-      // Required Tables
-      var CFF =
-        font.data,   // PostScript Font Program
-        OS2,         // OS/2 and Windows Specific metrics
-        cmap,        // Character to glyphs mapping
-        head,        // Font header
-        hhea,        // Horizontal header
-        hmtx,        // Horizontal metrics
-        maxp,        // Maximum profile
-        name,        // Naming tables
-        post;        // PostScript informations
-      var tables = [CFF, OS2, cmap, head, hhea, hmtx, maxp, name, post];
-
       // The offsets object holds at the same time a representation of where
       // to write the table entry information about a table and another offset
       // representing the offset where to draw the actual data of a particular
       // table
+      var kRequiredTablesCount = 9;
       var offsets = {
         currentOffset: 0,
-        virtualOffset: tables.length * (4 * 4)
+        virtualOffset: 9 * (4 * 4)
       };
 
-      // It there is only one font, offset table is the first bytes of the file
-      createOpenTypeHeader("\x4F\x54\x54\x4F", otf, offsets, tables.length);
+      var otf = new Uint8Array(kMaxFontFileSize);
+      createOpenTypeHeader("\x4F\x54\x54\x4F", otf, offsets, 9);
 
-      /** CFF */
-      createTableEntry(otf, offsets, "CFF ", CFF);
-
-      /** OS/2 */
 	    var charstrings = font.charstrings;
 	    properties.fixedPitch = isFixedPitch(charstrings);
-      OS2 = stringToArray(createOS2Table(properties));
-      createTableEntry(otf, offsets, "OS/2", OS2);
+      var fields = {
+        // PostScript Font Program
+        "CFF ": font.data,
 
-      /** CMAP */
-      cmap = createCMapTable(charstrings.slice());
-      createTableEntry(otf, offsets, "cmap", cmap);
+        // OS/2 and Windows Specific metrics
+        "OS/2": stringToArray(createOS2Table(properties)),
 
-      /** HEAD */
-      head = stringToArray(
+        // Character to glyphs mapping
+        "cmap": createCMapTable(charstrings.slice()),
+
+        // Font header
+        "head": (function() {
+          return stringToArray(
               "\x00\x01\x00\x00" + // Version number
               "\x00\x00\x10\x00" + // fontRevision
               "\x00\x00\x00\x00" + // checksumAdjustement
@@ -1073,63 +1059,59 @@ var Font = (function () {
               "\x00\x11" + // lowestRecPPEM
               "\x00\x00" + // fontDirectionHint
               "\x00\x00" + // indexToLocFormat
-              "\x00\x00"   // glyphDataFormat
-      );
-      createTableEntry(otf, offsets, "head", head);
+              "\x00\x00");  // glyphDataFormat
+        })(),
 
-      /** HHEA */
-      hhea = stringToArray(
-                 "\x00\x01\x00\x00" + // Version number
-                 string16(properties.ascent) + // Typographic Ascent
-                 string16(properties.descent) + // Typographic Descent
-                 "\x00\x00" + // Line Gap
-                 "\xFF\xFF" + // advanceWidthMax
-                 "\x00\x00" + // minLeftSidebearing
-                 "\x00\x00" + // minRightSidebearing
-                 "\x00\x00" + // xMaxExtent
-                 string16(properties.capHeight) + // caretSlopeRise
-                 string16(Math.tan(properties.italicAngle) * properties.xHeight) + // caretSlopeRun
-                 "\x00\x00" + // caretOffset
-                 "\x00\x00" + // -reserved-
-                 "\x00\x00" + // -reserved-
-                 "\x00\x00" + // -reserved-
-                 "\x00\x00" + // -reserved-
-                 "\x00\x00" + // metricDataFormat
-                 string16(charstrings.length + 1) // Number of HMetrics
-      );
-      createTableEntry(otf, offsets, "hhea", hhea);
+        // Horizontal header
+        "hhea": (function() {
+          return stringToArray(
+              "\x00\x01\x00\x00" + // Version number
+              string16(properties.ascent) + // Typographic Ascent
+              string16(properties.descent) + // Typographic Descent
+              "\x00\x00" + // Line Gap
+              "\xFF\xFF" + // advanceWidthMax
+              "\x00\x00" + // minLeftSidebearing
+              "\x00\x00" + // minRightSidebearing
+              "\x00\x00" + // xMaxExtent
+              string16(properties.capHeight) + // caretSlopeRise
+              string16(Math.tan(properties.italicAngle) * properties.xHeight) + // caretSlopeRun
+              "\x00\x00" + // caretOffset
+              "\x00\x00" + // -reserved-
+              "\x00\x00" + // -reserved-
+              "\x00\x00" + // -reserved-
+              "\x00\x00" + // -reserved-
+              "\x00\x00" + // metricDataFormat
+              string16(charstrings.length + 1)); // Number of HMetrics
+        })(),
 
-      /** HMTX */
-      /* For some reasons, probably related to how the backend handle fonts,
-      * Linux seems to ignore this file and prefer the data from the CFF itself
-      * while Windows use this data. So be careful if you hack on Linux and
-      * have to touch the 'hmtx' table
-      */
-      hmtx = "\x00\x00\x00\x00"; // Fake .notdef
-      for (var i = 0; i < charstrings.length; i++) {
-        hmtx += string16(charstrings[i].width) + string16(0);
-      }
-      hmtx = stringToArray(hmtx);
-      createTableEntry(otf, offsets, "hmtx", hmtx);
+        // Horizontal metrics
+        "hmtx": (function() {
+          var hmtx = "\x00\x00\x00\x00"; // Fake .notdef
+          for (var i = 0; i < charstrings.length; i++) {
+            hmtx += string16(charstrings[i].width) + string16(0);
+          }
+          return stringToArray(hmtx);
+        })(),
 
-      /** MAXP */
-      maxp = "\x00\x00\x50\x00" + // Version number
-             string16(charstrings.length + 1); // Num of glyphs
-      maxp = stringToArray(maxp);
-      createTableEntry(otf, offsets, "maxp", maxp);
+        // Maximum profile
+        "maxp": (function() {
+          return stringToArray(
+              "\x00\x00\x50\x00" + // Version number
+             string16(charstrings.length + 1)); // Num of glyphs
+        })(),
 
-      /** NAME */
-      name = stringToArray(createNameTable(fontName));
-      createTableEntry(otf, offsets, "name", name);
+        // Naming tables
+        "name": stringToArray(createNameTable(fontName)),
 
-      /** POST */
-      post = stringToArray(createPostTable(properties));
-      createTableEntry(otf, offsets, "post", post);
+        // PostScript informations
+        "post": stringToArray(createPostTable(properties))
+      };
 
-      // Once all the table entries header are written, dump the data!
-      var tables = [CFF, OS2, cmap, head, hhea, hmtx, maxp, name, post];
-      for (var i = 0; i < tables.length; i++) {
-        var table = tables[i];
+      for (var field in fields)
+        createTableEntry(otf, offsets, field, fields[field]);
+
+      for (var field in fields) {
+        var table = fields[field];
         otf.set(table, offsets.currentOffset);
         offsets.currentOffset += table.length;
       }
