@@ -36,13 +36,13 @@ var kDisableFonts = false;
  *      http://cgit.freedesktop.org/poppler/poppler/tree/poppler/GfxFont.cc#n65
  */
 
-var Fonts = (function () {
+var Fonts = (function Fonts() {
   var kScalePrecision = 40;
-  var fonts = Object.create(null);  
+  var fonts = Object.create(null);
 
   if (!isWorker) {
     var ctx = document.createElement("canvas").getContext("2d");
-    ctx.scale(1 / kScalePrecision, 1);    
+    ctx.scale(1 / kScalePrecision, 1);
   }
 
   function Font(name, data, properties) {
@@ -536,25 +536,27 @@ var Font = (function () {
     glyphs.push({ unicode: 0x0000 });
     var ranges = getRanges(glyphs);
 
-    var headerSize = (12 * 2 + (ranges.length * 4 * 2));
+    var numTables = 1;
+    var cmap = "\x00\x00" + // version
+               string16(numTables) +  // numTables
+               "\x00\x03" + // platformID
+               "\x00\x01" + // encodingID
+               string32(4 + numTables * 8); // start of the table record
+
+    var headerSize = (12 * 2 + (ranges.length * 5 * 2));
     var segCount = ranges.length + 1;
     var segCount2 = segCount * 2;
     var searchRange = FontsUtils.getMaxPower2(segCount) * 2;
     var searchEntry = Math.log(segCount) / Math.log(2);
     var rangeShift = 2 * segCount - searchRange;
 
-    var cmap = "\x00\x00" + // version
-               "\x00\x01" + // numTables
-               "\x00\x03" + // platformID
-               "\x00\x01" + // encodingID
-               "\x00\x00\x00\x0C" + // start of the table record
-               "\x00\x04" + // format
-               string16(headerSize) + // length
-               "\x00\x00" + // languages
-               string16(segCount2) +
-               string16(searchRange) +
-               string16(searchEntry) +
-               string16(rangeShift);
+    var format314 = "\x00\x04" + // format
+                    string16(headerSize) + // length
+                    "\x00\x00" + // language
+                    string16(segCount2) +
+                    string16(searchRange) +
+                    string16(searchEntry) +
+                    string16(rangeShift);
 
     // Fill up the 4 parallel arrays describing the segments.
     var startCount = "";
@@ -567,25 +569,27 @@ var Font = (function () {
       var range = ranges[i];
       var start = range[0];
       var end = range[1];
-      var delta = (((start - 1) - bias) ^ 0xffff);
+      var delta = (bias - start) % 0xffff;
       bias += (end - start + 1);
 
       startCount += string16(start);
       endCount += string16(end);
       idDeltas += string16(delta);
-	  idRangeOffsets += string16(0);
+	    idRangeOffsets += string16(0);
 
-      for (var j = 0; j < range.length; j++)
-        glyphsIds += String.fromCharCode(range[j]);
+      for (var j = start; j <= end; j++) {
+        glyphsIds += string16(j);
+      }
     }
 
-    startCount += "\xFF\xFF";
     endCount += "\xFF\xFF";
+    startCount += "\xFF\xFF";
     idDeltas += "\x00\x01";
     idRangeOffsets += "\x00\x00";
+    format314 += endCount + "\x00\x00" + startCount +
+                 idDeltas + idRangeOffsets + glyphsIds;
 
-    return stringToArray(cmap + endCount + "\x00\x00" + startCount +
-                         idDeltas + idRangeOffsets + glyphsIds);
+    return stringToArray(cmap + format314);
   };
 
   function createOS2Table(properties) {
@@ -625,7 +629,7 @@ var Font = (function () {
            "\x02\x24" + // xAvgCharWidth
            "\x01\xF4" + // usWeightClass
            "\x00\x05" + // usWidthClass
-           "\x00\x02" + // fstype
+           "\x00\x00" + // fstype (0 to let the font loads via font-face on IE)
            "\x02\x8A" + // ySubscriptXSize
            "\x02\xBB" + // ySubscriptYSize
            "\x00\x00" + // ySubscriptXOffset
@@ -720,6 +724,8 @@ var Font = (function () {
       };
 
       function replaceCMapTable(cmap, font, properties) {
+        font.pos = (font.start ? font.start : 0) + cmap.length;
+
         var version = FontsUtils.bytesToInteger(font.getBytes(2));
         var numTables = FontsUtils.bytesToInteger(font.getBytes(2));
 
@@ -1110,9 +1116,7 @@ var Font = (function () {
       var url = "url(data:" + this.mimetype + ";base64," + window.btoa(data) + ");";
       var rule = "@font-face { font-family:'" + fontName + "';src:" + url + "}";
       var styleSheet = document.styleSheets[0];
-      styleSheet.insertRule(rule, styleSheet.length);
-
-      return rule;
+      styleSheet.insertRule(rule, styleSheet.cssRules.length);
     }
   };
 
@@ -1387,15 +1391,36 @@ var Type1Parser = function() {
    * Returns an object containing a Subrs array and a CharStrings array
    * extracted from and eexec encrypted block of data
    */
-  this.extractFontProgram = function t1_extractFontProgram(stream) {
-    var eexecString = decrypt(stream, kEexecEncryptionKey, 4);
-    var subrs = [],  glyphs = [];
-    var inGlyphs = false;
-    var inSubrs = false;
-    var glyph = "";
+  function readNumberArray(str, index) {
+    var start = ++index;
+    var count = 0;
+    while (str[index++] != "]")
+      count++;
 
+    var array = str.substr(start, count).split(" ");
+    for (var i = 0; i < array.length; i++)
+      array[i] = parseFloat(array[i] || 0);
+    return array;
+  };
+
+  this.extractFontProgram = function t1_extractFontProgram(stream) {
+    var eexec = decrypt(stream, kEexecEncryptionKey, 4);
+    var eexecString = "";
+    for (var i = 0; i < eexec.length; i++)
+      eexecString += String.fromCharCode(eexec[i]);
+
+    var glyphsSection = false, subrsSection = false;
+    var extracted = {
+      subrs: [],
+      charstrings: [],
+      properties: {
+        stemSnapH: [0, 0],
+        stemSnapV: [0, 0]
+      }
+    };
+
+    var glyph = "";
     var token = "";
-    var index = 0;
     var length = 0;
 
     var c = "";
@@ -1403,53 +1428,95 @@ var Type1Parser = function() {
     for (var i = 0; i < count; i++) {
       var c = eexecString[i];
 
-      if (inSubrs && c == 0x52) {
-        length = parseInt(length);
-        var data = eexecString.slice(i + 3, i + 3 + length);
-        var encodedSubr = decrypt(data, kCharStringsEncryptionKey, 4);
-        var str = decodeCharString(encodedSubr);
+      if ((glyphsSection || subrsSection) && c == "R") {
+        var data = eexec.slice(i + 3, i + 3 + length);
+        var encoded = decrypt(data, kCharStringsEncryptionKey, 4);
+        var str = decodeCharString(encoded);
 
-        subrs.push(str.charstring);
-        i += 3 + length;
-      } else if (inGlyphs && c == 0x52) {
-        length = parseInt(length);
-        var data = eexecString.slice(i + 3, i + 3 + length);
-        var encodedCharstring = decrypt(data, kCharStringsEncryptionKey, 4);
-        var str = decodeCharString(encodedCharstring);
-
-        glyphs.push({
+        if (glyphsSection) {
+          extracted.charstrings.push({
             glyph: glyph,
             data: str.charstring,
             lsb: str.lsb,
             width: str.width
-        });
-        i += 3 + length;
-      } else if (inGlyphs && c == 0x2F) {
+          });
+        } else {
+          extracted.subrs.push(str.charstring);
+        }
+        i += length + 3;
+      } else if (c == " " || c == "\n") {
+        length = parseInt(token);
         token = "";
-        glyph = "";
-
-        while ((c = eexecString[++i]) != 0x20)
-          glyph += String.fromCharCode(c);
-      } else if (!inSubrs && !inGlyphs && c == 0x2F && eexecString[i+1] == 0x53) {
-        while ((c = eexecString[++i]) != 0x20) {};
-        inSubrs = true;
-      } else if (c == 0x20) {
-        index = length;
-        length = token;
-        token = "";
-      } else if (c == 0x2F && eexecString[i+1] == 0x43 && eexecString[i+2] == 0x68) {
-        while ((c = eexecString[++i]) != 0x20) {};
-        inSubrs = false;
-        inGlyphs = true;
       } else {
-        token += String.fromCharCode(c);
+        token += c;
+        if (!glyphsSection) {
+          switch (token) {
+            case "/CharString":
+              glyphsSection = true;
+              break;
+            case "/Subrs":
+              subrsSection = true;
+              break;
+            case "/StdHW":
+              extracted.properties.stdHW = readNumberArray(eexecString, i + 2)[0];
+              break;
+            case "/StdVW":
+              extracted.properties.stdVW = readNumberArray(eexecString, i + 2)[0];
+              break;
+            case "/StemSnapH":
+              extracted.properties.stemSnapH = readNumberArray(eexecString, i + 2);
+              break;
+            case "/StemSnapV":
+              extracted.properties.stemSnapV = readNumberArray(eexecString, i + 2);
+              break;
+          }
+        } else if (c == "/") {
+          token = glyph = "";
+          while ((c = eexecString[++i]) != " ")
+            glyph += c;
+        }
       }
     }
-    return {
-      subrs: subrs,
-      charstrings: glyphs
+
+    return extracted;
+  },
+
+  this.extractFontHeader = function t1_extractFontProgram(stream) {
+    var headerString = "";
+    for (var i = 0; i < stream.length; i++)
+      headerString += String.fromCharCode(stream[i]);
+
+    var info = {
+      textMatrix: null
+    };
+
+    var token = "";
+    var count = headerString.length;
+    for (var i = 0; i < count; i++) {
+      var c = headerString[i];
+      if (c == " " || c == "\n") {
+        switch (token) {
+          case "/FontMatrix":
+            var matrix = readNumberArray(headerString, i + 1);
+
+            // The FontMatrix is in unitPerEm, so make it pixels
+            for (var j = 0; j < matrix.length; j++)
+              matrix[j] *= 1000;
+
+            // Make the angle into the right direction
+            matrix[2] *= -1;
+
+            info.textMatrix = matrix;
+            break;
+        }
+        token = "";
+      } else {
+        token += c;
+      }
     }
-  }
+
+    return info;
+  };
 };
 
 /**
@@ -1520,14 +1587,24 @@ var CFF = function(name, file, properties) {
   // Get the data block containing glyphs and subrs informations
   var length1 = file.dict.get("Length1");
   var length2 = file.dict.get("Length2");
-  file.skip(length1);
-  var eexecBlock = file.getBytes(length2);
+
+  var headerBlock = file.getBytes(length1);
+  var header = type1Parser.extractFontHeader(headerBlock);
+  for (var info in header)
+    properties[info] = header[info];
 
   // Decrypt the data blocks and retrieve it's content
+  var eexecBlock = file.getBytes(length2);
   var data = type1Parser.extractFontProgram(eexecBlock);
+  for (var info in data.properties)
+    properties[info] = data.properties[info];
 
-  this.charstrings = this.getOrderedCharStrings(data.charstrings);
-  this.data = this.wrap(name, this.charstrings, data.subrs, properties);
+  var charstrings = this.getOrderedCharStrings(data.charstrings);
+  var type2Charstrings = this.getType2Charstrings(charstrings);
+  var subrs = this.getType2Subrs(data.subrs);
+
+  this.charstrings = charstrings;
+  this.data = this.wrap(name, type2Charstrings, this.charstrings, subrs, properties);
 };
 
 CFF.prototype = {
@@ -1538,24 +1615,24 @@ CFF.prototype = {
     // If there is no object, just create an array saying that with another
     // offset byte.
     if (count == 0)
-      return [0x00, 0x00, 0x00];
+      return "\x00\x00\x00";
 
-    var data = [];
+    var data = "";
     var bytes = FontsUtils.integerToBytes(count, 2);
     for (var i = 0; i < bytes.length; i++)
-      data.push(bytes[i]);
+      data += String.fromCharCode(bytes[i]);
 
     // Next byte contains the offset size use to reference object in the file
     // Actually we're using 0x04 to be sure to be able to store everything
     // without thinking of it while coding.
-    data.push(0x04);
+    data += "\x04";
 
     // Add another offset after this one because we need a new offset
     var relativeOffset = 1;
     for (var i = 0; i < count + 1; i++) {
       var bytes = FontsUtils.integerToBytes(relativeOffset, 4);
       for (var j = 0; j < bytes.length; j++)
-        data.push(bytes[j]);
+        data += String.fromCharCode(bytes[j]);
 
       if (objects[i])
         relativeOffset += objects[i].length;
@@ -1563,17 +1640,22 @@ CFF.prototype = {
 
     for (var i =0; i < count; i++) {
       for (var j = 0; j < objects[i].length; j++)
-        data.push(isByte ? objects[i][j] : objects[i].charCodeAt(j));
+        data += isByte ? String.fromCharCode(objects[i][j]) : objects[i][j];
     }
     return data;
   },
 
   encodeNumber: function cff_encodeNumber(value) {
-    var x = 0;
     if (value >= -32768 && value <= 32767) {
-      return [ 28, value >> 8, value & 0xFF ];
+      return "\x1c" +
+             String.fromCharCode(value >> 8) +
+             String.fromCharCode(value & 0xFF);
     } else if (value >= (-2147483647-1) && value <= 2147483647) {
-      return [ 0xFF, value >> 24, Value >> 16, value >> 8, value & 0xFF ];
+      return "\xff" +
+             String.fromCharCode(value >> 24) +
+             String.fromCharCode(value >> 16) +
+             String.fromCharCode(value >> 8) +
+             String.fromCharCode(value & 0xFF);
     }
     error("Value: " + value + " is not allowed");
     return null;
@@ -1605,12 +1687,40 @@ CFF.prototype = {
     return charstrings;
   },
 
+  getType2Charstrings: function cff_getType2Charstrings(type1Charstrings) {
+    var type2Charstrings = [];
+	  var count = type1Charstrings.length;
+    for (var i = 0; i < count; i++) {
+      var charstring = type1Charstrings[i].charstring;
+      type2Charstrings.push(this.flattenCharstring(charstring.slice(), this.commandsMap));
+    }
+    return type2Charstrings;
+  },
+
+  getType2Subrs: function cff_getType2Charstrings(type1Subrs) {
+    var bias = 0;
+    var count = type1Subrs.length;
+    if (count < 1240)
+      bias = 107;
+    else if (count < 33900)
+      bias = 1131;
+    else
+      bias = 32768;
+
+    // Add a bunch of empty subrs to deal with the Type2 bias
+    var type2Subrs = [];
+    for (var i = 0; i < bias; i++)
+      type2Subrs.push([0x0B]);
+
+    for (var i = 0; i < count; i++)
+      type2Subrs.push(this.flattenCharstring(type1Subrs[i], this.commandsMap));
+
+    return type2Subrs;
+  },
+
   /*
    * Flatten the commands by interpreting the postscript code and replacing
    * every 'callsubr', 'callothersubr' by the real commands.
-   *
-   * TODO This function also do a string to command number transformation
-   * that can probably be avoided if the Type1 decodeCharstring code is smarter
    */
   commandsMap: {
     "hstem": 1,
@@ -1632,194 +1742,134 @@ CFF.prototype = {
     "hvcurveto": 31,
   },
 
-  flattenCharstring: function flattenCharstring(charstring) {
-    var i = 0;
-    while (true) {
-      var obj = charstring[i];
-      if (obj == undefined) {
-        error("unknow charstring command for " + i + " in " + charstring);
-      }
-      if (obj.charAt) {
-        switch (obj) {
-          case "endchar":
-          case "return":
-            // CharString is ready to be re-encode to commands number at this point
-            for (var j = 0; j < charstring.length; j++) {
-              var command = charstring[j];
-              if (parseFloat(command) == command) {
-                charstring.splice(j, 1, 28, command >> 8, command);
-                j+= 2;
-              } else if (command.charAt) {
-                var cmd = this.commandsMap[command];
-                if (!cmd)
-                  error("Unknow command: " + command);
+  flattenCharstring: function flattenCharstring(charstring, map) {
+    for (var i = 0; i < charstring.length; i++) {
+      var command = charstring[i];
+      if (command.charAt) {
+        var cmd = map[command];
+        assert(cmd, "Unknow command: " + command);
 
-                if (IsArray(cmd)) {
-                  charstring.splice(j, 1, cmd[0], cmd[1]);
-                  j += 1;
-                } else {
-                  charstring[j] = cmd;
-                }
-              }
-            }
-            return charstring;
-
-          default:
-            break;
+        if (IsArray(cmd)) {
+          charstring.splice(i++, 1, cmd[0], cmd[1]);
+        } else {
+          charstring[i] = cmd;
         }
+      } else {
+        charstring.splice(i, 1, 28, command >> 8, command & 0xff);
+        i+= 2;
       }
-      i++;
     }
-    error("failing with i = " + i + " in charstring:" + charstring + "(" + charstring.length + ")");
-    return [];
+    return charstring;
   },
 
-  wrap: function wrap(name, charstrings, subrs, properties) {
-    // Starts the conversion of the Type1 charstrings to Type2
-    var glyphs = [];
-	  var glyphsCount = charstrings.length;
-    for (var i = 0; i < glyphsCount; i++) {
-      var charstring = charstrings[i].charstring;
-      glyphs.push(this.flattenCharstring(charstring.slice()));
+  wrap: function wrap(name, glyphs, charstrings, subrs, properties) {
+    var fields = {
+      "header": "\x01\x00\x04\x04", // major version, minor version, header size, offset size
+
+      "names": this.createCFFIndexHeader([name]),
+
+      "topDict": (function topDict(self) {
+        return function() {
+          var dict =
+              "\x00\x01\x01\x01\x30" +
+              "\xf8\x1b\x00" + // version
+              "\xf8\x1b\x01" + // Notice
+              "\xf8\x1b\x02" + // FullName
+              "\xf8\x1b\x03" + // FamilyName
+              "\xf8\x1b\x04" +  // Weight
+              "\x1c\x00\x00\x10"; // Encoding
+
+          var boundingBox = properties.bbox;
+          for (var i = 0; i < boundingBox.length; i++)
+            dict += self.encodeNumber(boundingBox[i]);
+          dict += "\x05"; // FontBBox;
+
+          var offset = fields.header.length +
+                       fields.names.length +
+                       (dict.length + (4 + 4 + 7)) +
+                       fields.strings.length +
+                       fields.globalSubrs.length;
+          dict += self.encodeNumber(offset) + "\x0f"; // Charset
+
+          offset = offset + (glyphs.length * 2) + 1;
+          dict += self.encodeNumber(offset) + "\x11"; // Charstrings
+
+          dict += self.encodeNumber(fields.private.length);
+          var offset = offset + fields.charstrings.length;
+          dict += self.encodeNumber(offset) + "\x12"; // Private
+
+          return dict;
+        };
+      })(this),
+
+      "strings": (function strings(self) {
+        var strings = [
+          "Version 0.11",         // Version
+          "See original notice",  // Notice
+          name,                   // FullName
+          name,                   // FamilyName
+          "Medium"                // Weight
+        ];
+        return self.createCFFIndexHeader(strings);
+      })(this),
+
+      "globalSubrs": this.createCFFIndexHeader([]),
+
+      "charset": (function charset(self) {
+        var charset = "\x00"; // Encoding
+
+	      var count = glyphs.length;
+        for (var i = 0; i < count; i++) {
+          var index = CFFStrings.indexOf(charstrings[i].glyph.glyph);
+          // Some characters like asterikmath && circlecopyrt are missing from the
+          // original strings, for the moment let's map them to .notdef and see
+          // later if it cause any problems
+          if (index == -1)
+            index = 0;
+
+          var bytes = FontsUtils.integerToBytes(index, 2);
+          charset += String.fromCharCode(bytes[0]) + String.fromCharCode(bytes[1]);
+        }
+        return charset;
+      })(this),
+
+      "charstrings": this.createCFFIndexHeader([[0x8B, 0x0E]].concat(glyphs), true),
+
+      "private": (function(self) {
+        var data =
+            "\x8b\x14" + // defaultWidth
+            "\x8b\x15" + // nominalWidth
+            self.encodeNumber(properties.stdHW) + "\x0a" + // StdHW
+            self.encodeNumber(properties.stdVW) + "\x0b";  // StdVW
+
+        var stemH = properties.stemSnapH;
+        for (var i = 0; i < stemH.length; i++)
+          data += self.encodeNumber(stemH[i]);
+        data += "\x0c\x0c"; // StemSnapH
+
+        var stemV = properties.stemSnapV;
+        for (var i = 0; i < stemV.length; i++)
+          data += self.encodeNumber(stemV[i]);
+        data += "\x0c\x0d"; // StemSnapV
+
+        data += self.encodeNumber(data.length + 4) + "\x13"; // Subrs offset
+
+        return data;
+      })(this),
+
+      "localSubrs": this.createCFFIndexHeader(subrs, true)
+    };
+    fields.topDict = fields.topDict();
+
+
+    var cff = [];
+    for (var index in fields) {
+      var field = fields[index];
+      for (var i = 0; i < field.length; i++)
+        cff.push(field.charCodeAt(i));
     }
 
-    // Create a CFF font data
-    var cff = new Uint8Array(kMaxFontFileSize);
-    var currentOffset = 0;
-
-    // Font header (major version, minor version, header size, offset size)
-    var header = [0x01, 0x00, 0x04, 0x04];
-    currentOffset += header.length;
-    cff.set(header);
-
-    // Names Index
-    var nameIndex = this.createCFFIndexHeader([name]);
-    cff.set(nameIndex, currentOffset);
-    currentOffset += nameIndex.length;
-
-    // Calculate strings before writing the TopDICT index in order
-    // to calculate correct relative offsets for storing 'charset'
-    // and 'charstrings' data
-    var version = "";
-    var notice = "";
-    var fullName = "";
-    var familyName = "";
-    var weight = "";
-    var strings = [version, notice, fullName,
-                   familyName, weight];
-    var stringsIndex = this.createCFFIndexHeader(strings);
-    var stringsDataLength = stringsIndex.length;
-
-    // Create the global subroutines index
-    var globalSubrsIndex = this.createCFFIndexHeader([]);
-
-    // Fill the charset header (first byte is the encoding)
-    var charset = [0x00];
-    for (var i = 0; i < glyphsCount; i++) {
-      var index = CFFStrings.indexOf(charstrings[i].glyph);
-      if (index == -1)
-        index = CFFStrings.length + strings.indexOf(charstrings[i].glyph);
-      var bytes = FontsUtils.integerToBytes(index, 2);
-      charset.push(bytes[0]);
-      charset.push(bytes[1]);
-    }
-
-    var charstringsIndex = this.createCFFIndexHeader([[0x8B, 0x0E]].concat(glyphs), true);
-
-    //Top Dict Index
-    var topDictIndex = [
-      0x00, 0x01, 0x01, 0x01, 0x30,
-      248, 27, 0, // version
-      248, 28, 1, // Notice
-      248, 29, 2, // FullName
-      248, 30, 3, // FamilyName
-      248, 31, 4  // Weight
-    ];
-
-    var fontBBox = properties.bbox;
-    for (var i = 0; i < fontBBox.length; i++)
-      topDictIndex = topDictIndex.concat(this.encodeNumber(fontBBox[i]));
-    topDictIndex.push(5) // FontBBox;
-
-    var charsetOffset = currentOffset +
-                        (topDictIndex.length + (4 + 4 + 4 + 7)) +
-                        stringsIndex.length +
-                        globalSubrsIndex.length;
-    topDictIndex = topDictIndex.concat(this.encodeNumber(charsetOffset));
-    topDictIndex.push(15); // charset
-
-    topDictIndex = topDictIndex.concat([28, 0, 0, 16]) // Encoding
-
-    var charstringsOffset = charsetOffset + (glyphsCount * 2) + 1;
-    topDictIndex = topDictIndex.concat(this.encodeNumber(charstringsOffset));
-    topDictIndex.push(17); // charstrings
-
-    topDictIndex = topDictIndex.concat([28, 0, 55])
-    var privateOffset = charstringsOffset + charstringsIndex.length;
-    topDictIndex = topDictIndex.concat(this.encodeNumber(privateOffset));
-    topDictIndex.push(18); // Private
-
-    var indexes = [
-      topDictIndex, stringsIndex,
-      globalSubrsIndex, charset,
-      charstringsIndex
-    ];
-
-    for (var i = 0; i < indexes.length; i++) {
-      var index = indexes[i];
-      cff.set(index, currentOffset);
-      currentOffset += index.length;
-    }
-
-    // Private Data
-    var defaultWidth = this.encodeNumber(0);
-    var privateData = [].concat(
-      defaultWidth, [20],
-      [139, 21], // nominalWidth
-      [
-      119, 159, 248, 97, 159, 247, 87, 159, 6,
-      30, 10, 3, 150, 37, 255, 12, 9,
-      139, 12,
-      10, 172, 10,
-      172, 150, 143, 146, 150, 146, 12, 12,
-      247, 32, 11,
-      247, 10, 161, 147, 154, 150, 143, 12, 13,
-      139, 12, 14,
-      28, 0, 55, 19 // Subrs offset
-    ]);
-    cff.set(privateData, currentOffset);
-    currentOffset += privateData.length;
-
-    // Local Subrs
-    var flattenedSubrs = [];
-
-    var bias = 0;
-    var subrsCount = subrs.length;
-    if (subrsCount < 1240)
-      bias = 107;
-    else if (subrsCount < 33900)
-      bias = 1131;
-    else
-      bias = 32768;
-
-    // Add a bunch of empty subrs to deal with the Type2 bias
-    for (var i = 0; i < bias; i++)
-      flattenedSubrs.push([0x0B]);
-
-    for (var i = 0; i < subrsCount; i++) {
-      var subr = subrs[i];
-      flattenedSubrs.push(this.flattenCharstring(subr));
-    }
-
-    var subrsData = this.createCFFIndexHeader(flattenedSubrs, true);
-    cff.set(subrsData, currentOffset);
-    currentOffset += subrsData.length;
-
-    var fontData = [];
-    for (var i = 0; i < currentOffset; i++)
-      fontData.push(cff[i]);
-
-    return fontData;
+    return cff;
   }
 };
 

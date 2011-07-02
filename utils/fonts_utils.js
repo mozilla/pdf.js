@@ -12,8 +12,6 @@
  * CharString or to understand the structure of the CFF format.
  */
 
-"use strict";
-
 /**
  * Build a charset by assigning the glyph name and the human readable form
  * of the glyph data.
@@ -380,6 +378,9 @@ var Type2Parser = function(aFilePath) {
  * writeToFile(fontData, "/tmp/pdf.js." + fontCount + ".cff");
  */
 function writeToFile(aBytes, aFilePath) {
+  if (!("netscape" in window))
+    return;
+
   netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
   var Cc = Components.classes,
       Ci = Components.interfaces;
@@ -388,7 +389,7 @@ function writeToFile(aBytes, aFilePath) {
 
   var stream = Cc["@mozilla.org/network/file-output-stream;1"]
                  .createInstance(Ci.nsIFileOutputStream);
-  stream.init(file, 0x04 | 0x08 | 0x20, 600, 0);
+  stream.init(file, 0x04 | 0x08 | 0x20, 0x180, 0);
 
   var bos = Cc["@mozilla.org/binaryoutputstream;1"]
               .createInstance(Ci.nsIBinaryOutputStream);
