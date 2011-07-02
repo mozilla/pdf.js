@@ -1117,6 +1117,8 @@ var Font = (function () {
       var rule = "@font-face { font-family:'" + fontName + "';src:" + url + "}";
       var styleSheet = document.styleSheets[0];
       styleSheet.insertRule(rule, styleSheet.cssRules.length);
+
+      return rule;
     }
   };
 
