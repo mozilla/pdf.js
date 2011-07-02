@@ -437,6 +437,24 @@ var Font = (function () {
     glyphs.push({ unicode: 0x0000 });
     var ranges = getRanges(glyphs);
 
+    var numTables = 2;
+    var kFormat100ArraySize = 256;
+    var cmap = "\x00\x00" + // version
+               string16(numTables) +  // numTables
+               "\x00\x01" + // platformID
+               "\x00\x00" + // encodingID
+               string32(4 + numTables * 8) + // start of the table record
+               "\x00\x03" + // platformID
+               "\x00\x01" + // encodingID
+               string32(4 + numTables * 8 + 6 + kFormat100ArraySize); // start of the table record
+
+    var format100 = "\x00\x00" + // format
+                    string16(6 + kFormat100ArraySize) + // length
+                    "\x00\x00"; // language
+
+    for (var i = 0; i < kFormat100ArraySize; i++)
+      format100 += String.fromCharCode(i);
+
     var headerSize = (12 * 2 + (ranges.length * 4 * 2));
     var segCount = ranges.length + 1;
     var segCount2 = segCount * 2;
@@ -444,18 +462,13 @@ var Font = (function () {
     var searchEntry = Math.log(segCount) / Math.log(2);
     var rangeShift = 2 * segCount - searchRange;
 
-    var cmap = "\x00\x00" + // version
-               "\x00\x01" + // numTables
-               "\x00\x03" + // platformID
-               "\x00\x01" + // encodingID
-               "\x00\x00\x00\x0C" + // start of the table record
-               "\x00\x04" + // format
-               string16(headerSize) + // length
-               "\x00\x00" + // languages
-               string16(segCount2) +
-               string16(searchRange) +
-               string16(searchEntry) +
-               string16(rangeShift);
+    var format314 = "\x00\x04" + // format
+                    string16(headerSize) + // length
+                    "\x00\x00" + // language
+                    string16(segCount2) +
+                    string16(searchRange) +
+                    string16(searchEntry) +
+                    string16(rangeShift);
 
     // Fill up the 4 parallel arrays describing the segments.
     var startCount = "";
@@ -481,13 +494,14 @@ var Font = (function () {
       }
     }
 
-    startCount += "\xFF\xFF";
     endCount += "\xFF\xFF";
+    startCount += "\xFF\xFF";
     idDeltas += "\x00\x01";
     idRangeOffsets += "\x00\x00";
+    format314 += endCount + "\x00\x00" + startCount +
+                 idDeltas + idRangeOffsets + glyphsIds;
 
-    return stringToArray(cmap + endCount + "\x00\x00" + startCount +
-                         idDeltas + idRangeOffsets + glyphsIds);
+    return stringToArray(cmap + format100 + format314);
   };
 
   function createOS2Table(properties) {

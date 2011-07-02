@@ -1,8 +1,6 @@
 /* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- /
 /* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
 
-"use strict";
-
 /**
  * The Type2 reader code below is only used for debugging purpose since Type2
  * is only a CharString format and is never used directly as a Font file.
@@ -11,8 +9,6 @@
  * order to investigate the similarity between a Type1 CharString and a Type2
  * CharString or to understand the structure of the CFF format.
  */
-
-"use strict";
 
 /**
  * Build a charset by assigning the glyph name and the human readable form
@@ -388,7 +384,7 @@ function writeToFile(aBytes, aFilePath) {
 
   var stream = Cc["@mozilla.org/network/file-output-stream;1"]
                  .createInstance(Ci.nsIFileOutputStream);
-  stream.init(file, 0x04 | 0x08 | 0x20, 600, 0);
+  stream.init(file, 0x04 | 0x08 | 0x20, 0600, 0);
 
   var bos = Cc["@mozilla.org/binaryoutputstream;1"]
               .createInstance(Ci.nsIBinaryOutputStream);
