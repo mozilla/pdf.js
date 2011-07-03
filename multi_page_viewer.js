@@ -43,12 +43,12 @@ var PDFViewer = {
   lastPagesDrawn: [],
   
   visiblePages: function() {
-    const pageBottomMargin = 20;
+    const pageBottomMargin = 10;
     var windowTop = window.pageYOffset;
     var windowBottom = window.pageYOffset + window.innerHeight;
 
     var pageHeight, page;
-    var i, n = PDFViewer.numberOfPages, currentHeight = 0;
+    var i, n = PDFViewer.numberOfPages, currentHeight = pageBottomMargin;
     for (i = 1; i <= n; i++) {
       var page = PDFViewer.pdf.getPage(i);
       pageHeight = PDFViewer.pageHeight(page) + pageBottomMargin;
@@ -130,14 +130,7 @@ var PDFViewer = {
       var fonts = [];
       page.compile(gfx, fonts);
 
-      var loadFont = function() {
-        if (!FontLoader.bind(fonts)) {
-          pageTimeout = window.setTimeout(loadFont, 10);
-          return;
-        }
-        page.display(gfx);
-      }
-      loadFont();
+      FontLoader.bind(fonts, function() { page.display(gfx); });
     }
   },
   
@@ -197,17 +190,10 @@ var PDFViewer = {
       var fonts = [];
       page.compile(gfx, fonts);
 
-      var loadFont = function() {
-        if (!FontLoader.bind(fonts)) {
-          pageTimeout = window.setTimeout(loadFont, 10);
-          return;
-        }
-        page.display(gfx);
-      }
-      loadFont();
+      FontLoader.bind(fonts, function() { page.display(gfx); });
     }
   },
-  
+
   changeScale: function(num) {
     while (PDFViewer.element.hasChildNodes()) {
       PDFViewer.element.removeChild(PDFViewer.element.firstChild);

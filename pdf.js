@@ -3266,7 +3266,6 @@ var CanvasExtraState = (function() {
         this.fontSize = 0;
         this.textMatrix = IDENTITY_MATRIX;
         this.leading = 0;
-        this.colorSpace = null;
         // Current point (in user coordinates)
         this.x = 0;
         this.y = 0;
@@ -3277,6 +3276,9 @@ var CanvasExtraState = (function() {
         this.charSpace = 0;
         this.wordSpace = 0;
         this.textHScale = 100;
+        // Color spaces
+        this.fillColorSpace = null;
+        this.strokeColorSpace = null;
     }
     constructor.prototype = {
     };
@@ -3404,7 +3406,7 @@ var CanvasGraphics = (function() {
             BX: "beginCompat",
             EX: "endCompat",
         },
-      
+
         translateFont: function(fontDict, xref, resources) {
             var fd = fontDict.get("FontDescriptor");
             if (!fd)
@@ -3544,7 +3546,8 @@ var CanvasGraphics = (function() {
                 capHeight: descriptor.get("CapHeight"),
                 flags: descriptor.get("Flags"),
                 italicAngle: descriptor.get("ItalicAngle"),
-                fixedPitch: false
+                fixedPitch: false,
+                textMatrix: IDENTITY_MATRIX
             };
 
             return {
@@ -3869,6 +3872,11 @@ var CanvasGraphics = (function() {
             } else {
                 text = Fonts.charsToUnicode(text);
                 this.ctx.translate(this.current.x, -1 * this.current.y);
+
+                var font = Fonts.lookup(this.current.fontName);
+                if (font)
+                  this.ctx.transform.apply(this.ctx, font.properties.textMatrix);
+
                 this.ctx.fillText(text, 0, 0);
                 this.current.x += Fonts.measureText(text);
             }
@@ -3911,51 +3919,36 @@ var CanvasGraphics = (function() {
 
         // Color
         setStrokeColorSpace: function(space) {
-            // TODO real impl
+            this.current.strokeColorSpace = 
+                ColorSpace.parse(space, this.xref, this.res);
         },
         setFillColorSpace: function(space) {
-            // TODO real impl
-            if (space.name === "Pattern")
-                this.current.colorSpace = "Pattern";
-            else
-                this.current.colorSpace = "DeviceRGB";
+            this.current.fillColorSpace = 
+                ColorSpace.parse(space, this.xref, this.res);
         },
         setStrokeColor: function(/*...*/) {
-            // TODO real impl
-            if (1 === arguments.length) {
-                this.setStrokeGray.apply(this, arguments);
-            } else if (3 === arguments.length) {
-                this.setStrokeRGBColor.apply(this, arguments);
-            } else if (4 === arguments.length) {
-                this.setStrokeCMYKColor.apply(this, arguments);
-            }
+            var cs = this.getStrokeColorSpace();
+            var color = cs.getRgb(arguments);
+            this.setStrokeRGBColor.apply(this, color);
         },
         setStrokeColorN: function(/*...*/) {
             // TODO real impl
+            TODO("check for special color spaces");
             this.setStrokeColor.apply(this, arguments);
         },
         setFillColor: function(/*...*/) {
-            // TODO real impl
-            if (1 === arguments.length) {
-                this.setFillGray.apply(this, arguments);
-            } else if (3 === arguments.length) {
-                this.setFillRGBColor.apply(this, arguments);
-            } else if (4 === arguments.length) {
-                this.setFillCMYKColor.apply(this, arguments);
+            var cs = this.getFillColorSpace();
+            if (cs.name == "Pattern") {
+                TODO("implement Pattern fill");
+                return;
             }
+            var color = cs.getRgb(arguments);
+            this.setFillRGBColor.apply(this, color);
         },
         setFillColorN: function(/*...*/) {
-            // TODO real impl
-            var colorSpace = this.current.colorSpace;
-            if (!colorSpace) {
-                var stateStack = this.stateStack;
-                var i = stateStack.length - 1;
-                while (!colorSpace && i >= 0) {
-                    colorSpace = stateStack[i--].colorSpace;
-                }
-            }
+            var cs = this.getFillColorSpace();
 
-            if (this.current.colorSpace == "Pattern") {
+            if (cs.name == "Pattern") {
                 var patternName = arguments[0];
                 if (IsName(patternName)) {
                     var xref = this.xref;
@@ -4333,6 +4326,36 @@ var CanvasGraphics = (function() {
             var bi = (255 * (1 - Math.min(1, y * (1 - k) + k))) | 0;
             return "rgb("+ ri +","+ gi +","+ bi +")";
         },
+        getFillColorSpace: function() {
+            var cs = this.current.fillColorSpace;
+            if (cs)
+                return cs;
+
+            var states = this.stateStack;
+            var i = states.length - 1;
+            while (i >= 0 && !(cs = states[i].fillColorSpace))
+                --i;
+
+            if (cs)
+                return cs;
+            else
+                return new DeviceRgbCS();
+        },
+        getStrokeColorSpace: function() {
+            var cs = this.current.strokeColorSpace;
+            if (cs)
+                return cs;
+            
+            var states = this.stateStack;
+            var i = states.length - 1;
+            while (i >= 0 && !(cs = states[i].strokeColorSpace))
+                --i;
+
+            if (cs)
+                return cs;
+            else
+                return new DeviceRgbCS();
+        },
         // We generally keep the canvas context set for
         // nonzero-winding, and just set evenodd for the operations
         // that need them.
@@ -4350,51 +4373,90 @@ var CanvasGraphics = (function() {
 })();
 
 var ColorSpace = (function() {
-    function constructor(xref, cs) {
+    function constructor() {
+        error("should not call ColorSpace constructor");
+    };
+
+    constructor.parse = function colorspace_parse(cs, xref, res) {
+        if (IsName(cs)) {
+            var colorSpaces = res.get("ColorSpace");
+            if (colorSpaces) {
+                var refcs = colorSpaces.get(cs.name);
+                if (refcs)
+                    cs = refcs;
+            }
+        }
+            
+        cs = xref.fetchIfRef(cs);
+
         if (IsName(cs)) {
             var mode = cs.name;
             this.mode = mode;
+
             switch(mode) {
             case "DeviceGray":
             case "G":
-                this.numComps = 1;
+                return new DeviceGrayCS();
                 break;
             case "DeviceRGB":
-                this.numComps = 3;
+            case "RGB":
+                return new DeviceRgbCS();
                 break;
+            case "DeviceCMYK":
+            case "CMYK":
+                return new DeviceCmykCS();
+                break;
+            case "Pattern":
+                return new PatternCS(null);
+                break;
+            default:
+                error("unrecognized colorspace " + mode);
             }
-            TODO("fill in color space constructor");
         } else if (IsArray(cs)) {
             var mode = cs[0].name;
             this.mode = mode;
 
-            var stream = cs[1];
-            stream = xref.fetchIfRef(stream);
-
             switch (mode) {
             case "DeviceGray":
             case "G":
-                this.stream = stream;
-                this.dict = stream.dict;
-                this.numComps = 1;
+                return new DeviceGrayCS();
+                break;
+            case "DeviceRGB":
+            case "RGB":
+                return new DeviceRgbCS();
+                break;
+            case "DeviceCMYK":
+            case "CMYK":
+                return new DeviceCmykCS();
+                break;
+            case "CalGray":
+                return new DeviceGrayCS();
+                break;
+            case "CalRGB":
+                return new DeviceRgbCS();
                 break;
             case "ICCBased":
+                var stream = xref.fetchIfRef(cs[1]);
                 var dict = stream.dict;
-
-                this.stream = stream;
-                this.dict = dict;
-                this.numComps = dict.get("N");
+                var numComps = dict.get("N");
+                if (numComps == 1)
+                    return new DeviceGrayCS();
+                else if (numComps == 3)
+                    return new DeviceRgbCS();
+                else if (numComps == 4)
+                    return new DeviceCmykCS();
+                break;
+            case "Pattern":
+                return new PatternCS();
                 break;
             case "Indexed":
-                this.stream = stream;
-                this.dict = stream.dict;
-                var base = cs[1];
-                var hival = cs[2];
-                assertWellFormed(0 <= hival && hival <= 255, "hival in range");
-                var lookupTable = cs[3];
-                TODO("implement 'Indexed' color space");
-                this.numComps = 3; // HACK
-                break;
+                var base = ColorSpace.parse(cs[1], xref, res);
+                var hiVal = cs[2];
+                var lookup = xref.fetchIfRef(cs[3]);
+                return new IndexedCS(base, hiVal, lookup);
+            case "Lab":
+            case "Seperation":
+            case "DeviceN":
             default:
                 error("unrecognized color space object '"+ mode +"'");
             }
@@ -4403,9 +4465,137 @@ var ColorSpace = (function() {
         }
     };
 
+    return constructor;
+})();
+
+var PatternCS = (function() {
+    function constructor() {
+        this.name = "Pattern";
+    }
+    constructor.prototype = {};
+  
+    return constructor;
+})();
+
+var IndexedCS = (function() {
+    function constructor(base, highVal, lookup) {
+        this.name = "Indexed";
+        this.numComps = 1;
+        this.defaultColor = [0];
+
+        this.base = base;
+        var baseNumComps = base.numComps;
+        this.highVal = highVal;
+
+        var length = baseNumComps * highVal;
+        var lookupArray = new Uint8Array(length);
+        if (IsStream(lookup)) {
+            var bytes = lookup.getBytes(length);
+            lookupArray.set(bytes);
+        } else if (IsString(lookup)) {
+            for (var i = 0; i < length; ++i)
+                lookupArray[i] = lookup.charCodeAt(i);
+        } else {
+            error("Unrecognized lookup table");
+        }
+        this.lookup = lookupArray;
+    }
+
     constructor.prototype = {
+        getRgb: function graycs_getRgb(color) {
+            var lookup = this.lookup;
+            var base = this.base;
+            var numComps = base.numComps;
+            
+            var c = [];
+            for (var i = 0; i < numComps; ++i)
+                c.push(lookup[i])
+            return this.base.getRgb(c);
+        },
+        getRgbBuffer: function graycs_getRgbBuffer(input) {
+            var base = this.base;
+            var numComps = base.numComps;
+            var lookup = this.lookup;
+            var length = input.length;
+
+            var baseBuf = new Uint8Array(length * numComps);
+            var baseBufPos = 0;
+            for (var i = 0; i < length; ++i) {
+                var lookupPos = input[i];
+                for (var j = 0; j < numComps ; ++j) {
+                    baseBuf[baseBufPos++] = lookup[lookupPos + j];
+                }
+            }
+            
+            return base.getRgbBuffer(baseBuf);
+        }
+    };
+    return constructor;
+})();
+
+var DeviceGrayCS = (function() {
+    function constructor() {
+        this.name = "DeviceGray";
+        this.numComps = 1;
+        this.defaultColor = [0];
     };
 
+    constructor.prototype = {
+        getRgb: function graycs_getRgb(color) {
+            var c = color[0];
+            return [c, c, c];
+        },
+        getRgbBuffer: function graycs_getRgbBuffer(input) {
+            var length = input.length;
+            var rgbBuf = new Uint8Array(length);
+            for (var i = 0, j = 0; i < length; ++i) {
+                var c = input[i];
+                rgbBuf[j++] = c;
+                rgbBuf[j++] = c;
+                rgbBuf[j++] = c;
+            }
+            return rgbBuf;
+        }
+    };
+    return constructor;
+})();
+
+var DeviceRgbCS = (function() {
+    function constructor() {
+        this.name = "DeviceRGB";
+        this.numComps = 3;
+        this.defaultColor = [0, 0, 0];
+    }
+    constructor.prototype = {
+        getRgb: function graycs_getRgb(color) {
+            return color;
+        },
+        getRgbBuffer: function graycs_getRgbBuffer(input) {
+            return input;
+        }
+    };
+    return constructor;
+})();
+
+var DeviceCmykCS = (function() {
+    function constructor() {
+        this.name = "DeviceCMYK";
+        this.numComps = 4;
+        this.defaultColor = [0, 0, 0, 1];
+    }
+    constructor.prototype = {
+        getRgb: function graycs_getRgb(color) {
+            var c = color[0], y = color[1], m = color[2], k = color[3];
+            var ri = (1 - Math.min(1, c * (1 - k) + k)) | 0;
+            var gi = (1 - Math.min(1, m * (1 - k) + k)) | 0;
+            var bi = (1 - Math.min(1, y * (1 - k) + k)) | 0;
+            return [ri, gi, bi];
+        },
+        getRgbBuffer: function graycs_getRgbBuffer(colorBuf) {
+            error("conversion from rgb to cmyk not implemented for images");
+            return colorBuf;
+        }
+    };
     return constructor;
 })();
 
@@ -4443,11 +4633,8 @@ var PDFImage = (function() {
         }
         this.bpc = bitsPerComponent;
 
-        var colorSpaces = res.get("ColorSpace");
-        var csStream = xref.fetchIfRef(dict.get2("ColorSpace", "CS"));
-        if (IsName(csStream) && inline)
-            csStream = colorSpaces.get(csStream);
-        this.colorSpace = new ColorSpace(xref, csStream);
+        var colorSpace = dict.get2("ColorSpace", "CS");
+        this.colorSpace = ColorSpace.parse(colorSpace, xref, res);
 
         this.numComps = this.colorSpace.numComps;
         this.decode = dict.get2("Decode", "D");
@@ -4523,7 +4710,7 @@ var PDFImage = (function() {
                     output[i] = Math.round(255 * ret / ((1 << bpc) - 1));
                 }
             }
-            return output;
+            return this.colorSpace.getRbaBuffer(output);
         },
         getOpacity: function getOpacity() {
             var smask = this.smask;
