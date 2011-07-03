@@ -905,7 +905,7 @@ var Font = (function () {
 
         // Tables needs to be written by ascendant alphabetic order
         tables.sort(function tables_sort(a, b) {
-          return a.tag > b.tag;
+          return (a.tag > b.tag) - (a.tag < b.tag);
         });
 
         // rewrite the tables but tweak offsets
