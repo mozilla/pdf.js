@@ -3946,7 +3946,7 @@ var CanvasGraphics = (function() {
             this.setFillRGBColor.apply(this, color);
         },
         setFillColorN: function(/*...*/) {
-            var cs = this.getStrokeColorSpace();
+            var cs = this.getFillColorSpace();
 
             if (cs.name == "Pattern") {
                 var patternName = arguments[0];
