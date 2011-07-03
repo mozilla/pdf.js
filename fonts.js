@@ -1656,7 +1656,7 @@ CFF.prototype = {
     };
 
     charstrings.sort(function charstrings_sort(a, b) {
-      return a.unicode > b.unicode;
+      return a.unicode - b.unicode;
     });
     return charstrings;
   },
