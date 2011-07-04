@@ -988,7 +988,7 @@ var Font = (function Font() {
         var nameTable =
           "\x00\x00" +                           // format
           string16(namesRecordCount) +           // Number of names Record
-          string16(namesRecordCount * 12 + 6);   // Storage
+          string16(namesRecordCount * 12 + 6);   // Offset to start of storage
 
         // Build the name records field
         var strOffset = 0;
@@ -1000,7 +1000,7 @@ var Font = (function Font() {
               platforms[i] + // platform ID
               encodings[i] + // encoding ID
               languages[i] + // language ID
-              string16(i) + // name ID
+              string16(j) + // name ID
               string16(str.length) +
               string16(strOffset);
             nameTable += nameRecord;
@@ -1008,9 +1008,9 @@ var Font = (function Font() {
           }
         }
 
-		    nameTable += strings.join("") + stringsUnicode.join("");
+        nameTable += strings.join("") + stringsUnicode.join("");
         return nameTable;
-      }
+      };
 
 	    function isFixedPitch(glyphs) {
 	      for (var i = 0; i < glyphs.length - 1; i++) {
