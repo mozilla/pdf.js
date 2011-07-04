@@ -2971,6 +2971,7 @@ var Catalog = (function() {
 
 var PDFDoc = (function() {
     function constructor(stream) {
+        assertWellFormed(stream.length > 0, "stream must have data");
         this.stream = stream;
         this.setup();
     }
