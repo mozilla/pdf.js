@@ -275,7 +275,7 @@ def downloadLinkedPDFs(manifestList):
             sys.stdout.flush()
             response = urllib2.urlopen(link)
 
-            with open(f, 'w') as out:
+            with open(f, 'wb') as out:
                 out.write(response.read())
 
             print 'done'
