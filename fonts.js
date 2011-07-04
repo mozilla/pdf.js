@@ -218,12 +218,7 @@ var FontLoader = {
         window.addEventListener(
           "message",
           function(e) {
-            var fontNames = e.data;
-            // Firefox 5 doesn't parse the JSON here.  Welcome to the
-            // Wonderful Web World.
-            if ("string" == typeof(fontNames)) {
-              fontNames = fontNames.split(",");
-            }
+            var fontNames = JSON.parse(e.data);
             for (var i = 0; i < fontNames.length; ++i) {
               var font = Fonts.lookup(fontNames[i]);
               font.loading = false;
@@ -251,7 +246,7 @@ var FontLoader = {
       }
       src += '  var fontNames=['+ fontNamesArray +'];\n';
       src += '  window.onload = function () {\n'
-      src += '    top.postMessage(fontNames, "*");\n';
+      src += '    top.postMessage(JSON.stringify(fontNames), "*");\n';
       src += '  }';
       src += '</script></head><body>';
       for (var i = 0; i < names.length; ++i) {
