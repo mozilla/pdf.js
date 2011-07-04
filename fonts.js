@@ -541,7 +541,7 @@ var Font = (function Font() {
     // checksum
     var checksum = 0;
     for (var i = 0; i < length; i+=4)
-      checksum += int16([data[i], data[i+1], data[i+2], data[i+3]]);
+      checksum += int32([data[i], data[i+1], data[i+2], data[i+3]]);
 
     var tableEntry = tag +
                      string32(checksum) +
