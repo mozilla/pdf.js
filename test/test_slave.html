@@ -88,31 +88,35 @@ function nextPage() {
     }
   }
 
-  failure = '';
-  log("    loading page "+ currentTask.pageNum +"... ");
+  var ctx, fonts, gfx;
+  if (!failure) {
+    log("    loading page "+ currentTask.pageNum +"... ");
 
-  var ctx = canvas.getContext("2d");
+    ctx = canvas.getContext("2d");
 
-  var fonts = [];
-  var gfx = null;
-  try {
-    gfx = new CanvasGraphics(ctx);
-    currentPage = pdfDoc.getPage(currentTask.pageNum);
-    currentPage.compile(gfx, fonts);
-  } catch(e) {
-    failure = 'compile: '+ e.toString();
+    fonts = [];
+    gfx = null;
+    try {
+      gfx = new CanvasGraphics(ctx);
+      currentPage = pdfDoc.getPage(currentTask.pageNum);
+      currentPage.compile(gfx, fonts);
+    } catch(e) {
+      failure = 'compile: '+ e.toString();
+    }
   }
 
-  try {
-    var pdfToCssUnitsCoef = 96.0 / 72.0;
-    // using mediaBox for the canvas size
-    var pageWidth = (currentPage.mediaBox[2] - currentPage.mediaBox[0]);
-    var pageHeight = (currentPage.mediaBox[3] - currentPage.mediaBox[1]);
-    canvas.width = pageWidth * pdfToCssUnitsCoef;
-    canvas.height = pageHeight * pdfToCssUnitsCoef;
-    clear(ctx);
-  } catch(e) {
-    failure = 'page setup: '+ e.toString();
+  if (!failure) {
+    try {
+      var pdfToCssUnitsCoef = 96.0 / 72.0;
+      // using mediaBox for the canvas size
+      var pageWidth = (currentPage.mediaBox[2] - currentPage.mediaBox[0]);
+      var pageHeight = (currentPage.mediaBox[3] - currentPage.mediaBox[1]);
+      canvas.width = pageWidth * pdfToCssUnitsCoef;
+      canvas.height = pageHeight * pdfToCssUnitsCoef;
+      clear(ctx);
+    } catch(e) {
+      failure = 'page setup: '+ e.toString();
+    }
   }
 
   if (!failure) {
@@ -145,6 +149,7 @@ function snapshotCurrentPage(gfx) {
   log("done"+ (failure ? " (failed!)" : "") +"\n");
 
   // Set up the next request
+  failure = '';
   backoff = (inFlightRequests > 0) ? inFlightRequests * 10 : 0;
   setTimeout(function() {
       ++currentTask.pageNum, nextPage();

@@ -99,7 +99,7 @@ class PDFTestHandler(BaseHTTPRequestHandler):
         self.send_header("Content-Type", MIMEs[ext])
         self.send_header("Content-Length", os.path.getsize(path))
         self.end_headers()
-        with open(path) as f:
+        with open(path, "rb") as f:
             self.wfile.write(f.read())
 
     def do_GET(self):
