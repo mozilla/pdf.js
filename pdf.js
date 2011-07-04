@@ -2971,6 +2971,7 @@ var Catalog = (function() {
 
 var PDFDoc = (function() {
     function constructor(stream) {
+        assertWellFormed(stream.length > 0, "stream must have data");
         this.stream = stream;
         this.setup();
     }
@@ -3946,7 +3947,7 @@ var CanvasGraphics = (function() {
             this.setFillRGBColor.apply(this, color);
         },
         setFillColorN: function(/*...*/) {
-            var cs = this.getStrokeColorSpace();
+            var cs = this.getFillColorSpace();
 
             if (cs.name == "Pattern") {
                 var patternName = arguments[0];
@@ -4380,9 +4381,11 @@ var ColorSpace = (function() {
     constructor.parse = function colorspace_parse(cs, xref, res) {
         if (IsName(cs)) {
             var colorSpaces = res.get("ColorSpace");
-            var refcs = colorSpaces.get(cs.name);
-            if (refcs)
-                cs = refcs;
+            if (colorSpaces) {
+                var refcs = colorSpaces.get(cs.name);
+                if (refcs)
+                    cs = refcs;
+            }
         }
             
         cs = xref.fetchIfRef(cs);
