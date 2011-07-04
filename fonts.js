@@ -67,7 +67,7 @@ var Fonts = (function Fonts() {
       markLoaded(fontName);
     },
     lookup: function fonts_lookup(fontName) {
-      return fonts[fontName];
+      return (fontName in fonts) ? fonts[fontName] : null;
     },
     setActive: function fonts_setActive(fontName, size) {
       current = fonts[fontName];
@@ -126,7 +126,7 @@ var Fonts = (function Fonts() {
 var FontLoader = {
   listeningForFontLoad: false,
 
-  bind: function(fonts, callback) {
+  bind: function font_bind(fonts, callback) {
     function checkFontsLoaded() {
       for (var i = 0; i < fonts.length; i++) {
         var font = fonts[i];
@@ -178,7 +178,7 @@ var FontLoader = {
   // loaded in a subdocument.  It's expected that the load of |rules|
   // has already started in this (outer) document, so that they should
   // be ordered before the load in the subdocument.
-  prepareFontLoadEvent: function(rules, names) {
+  prepareFontLoadEvent: function prepareFontLoadEvent(rules, names) {
       /** Hack begin */
       // There's no event when a font has finished downloading so the
       // following code is a dirty hack to 'guess' when a font is
@@ -412,7 +412,7 @@ function getUnicodeRangeFor(value) {
  *   var type1Font = new Font("MyFontName", binaryFile, propertiesObject);
  *   type1Font.bind();
  */
-var Font = (function () {
+var Font = (function Font() {
   var constructor = function font_constructor(name, file, properties) {
     this.name = name;
     this.encoding = properties.encoding;
@@ -543,7 +543,11 @@ var Font = (function () {
     for (var i = 0; i < length; i+=4)
       checksum += int16([data[i], data[i+1], data[i+2], data[i+3]]);
 
-    var tableEntry = tag + string32(checksum) + string32(offset) + string32(length);
+    var tableEntry = tag +
+                     string32(checksum) +
+                     string32(offset) +
+                     string32(length);
+
     tableEntry = stringToArray(tableEntry);
     file.set(tableEntry, offsets.currentOffset);
 
@@ -783,7 +787,7 @@ var Font = (function () {
               (format == 6 && numTables == 1 && !properties.encoding.empty)) {
             // Format 0 alone is not allowed by the sanitizer so let's rewrite
             // that to a 3-1-4 Unicode BMP table
-            TODO("Use an other source of informations than charset here, it is not reliable");
+            TODO("Charset is not reliable, use somethin else");
             var charset = properties.charset;
             var glyphs = [];
             for (var j = 0; j < charset.length; j++) {
@@ -823,8 +827,9 @@ var Font = (function () {
             for (var j = 0; j < glyphs.length; j++)
               glyphs[j] = { unicode: glyphs[j] + firstCode };
 
-            var ranges= getRanges(glyphs);
-            assert(ranges.length == 1, "Got " + ranges.length + " ranges in a dense array");
+            var ranges = getRanges(glyphs);
+            assert(ranges.length == 1,
+                   "Got " + ranges.length + " ranges in a dense array");
 
             var encoding = properties.encoding;
             var denseRange = ranges[0];
@@ -1041,7 +1046,7 @@ var Font = (function () {
         "cmap": createCMapTable(charstrings.slice()),
 
         // Font header
-        "head": (function() {
+        "head": (function convert_fields_head() {
           return stringToArray(
               "\x00\x01\x00\x00" + // Version number
               "\x00\x00\x10\x00" + // fontRevision
@@ -1063,7 +1068,7 @@ var Font = (function () {
         })(),
 
         // Horizontal header
-        "hhea": (function() {
+        "hhea": (function convert_fields_hhea() {
           return stringToArray(
               "\x00\x01\x00\x00" + // Version number
               string16(properties.ascent) + // Typographic Ascent
@@ -1085,7 +1090,7 @@ var Font = (function () {
         })(),
 
         // Horizontal metrics
-        "hmtx": (function() {
+        "hmtx": (function convert_fields_hmtx() {
           var hmtx = "\x00\x00\x00\x00"; // Fake .notdef
           for (var i = 0; i < charstrings.length; i++) {
             hmtx += string16(charstrings[i].width) + string16(0);
@@ -1094,7 +1099,7 @@ var Font = (function () {
         })(),
 
         // Maximum profile
-        "maxp": (function() {
+        "maxp": (function convert_fields_maxp() {
           return stringToArray(
               "\x00\x00\x50\x00" + // Version number
              string16(charstrings.length + 1)); // Num of glyphs
@@ -1134,14 +1139,11 @@ var Font = (function () {
     },
 
     bindDOM: function font_bindDom(data) {
-      var fontName = this.name;
-
-      // Add the @font-face rule to the document
       var url = "url(data:" + this.mimetype + ";base64," + window.btoa(data) + ");";
-      var rule = "@font-face { font-family:'" + fontName + "';src:" + url + "}";
+      var rule = "@font-face { font-family:'" + this.name + "';src:" + url + "}";
+
       var styleSheet = document.styleSheets[0];
       styleSheet.insertRule(rule, styleSheet.cssRules.length);
-
       return rule;
     }
   };
@@ -1154,7 +1156,7 @@ var Font = (function () {
  * program.
  * Some of its logic depends on the Type2 charstrings structure.
  */
-var Type1Parser = function() {
+var Type1Parser = function Type1Parser() {
   /*
    * Decrypt a Sequence of Ciphertext Bytes to Produce the Original Sequence
    * of Plaintext Bytes. The function took a key as a parameter which can be
@@ -1344,7 +1346,9 @@ var Type1Parser = function() {
         } else if (!command) {
           break;
         } else if (command == -1) {
-          error("Support for Type1 command " + value + " (" + escape + ") is not implemented in charstring: " + charString);
+          error("Support for Type1 command " +
+                value + " (" + escape + ")" +
+                " is not implemented in charstring: " + charString);
         }
 
         value = command;
@@ -1369,7 +1373,7 @@ var Type1Parser = function() {
    * Returns an object containing a Subrs array and a CharStrings array
    * extracted from and eexec encrypted block of data
    */
-  function readNumberArray(str, index) {
+  function readNumbers(str, index) {
     var start = ++index;
     var count = 0;
     while (str[index++] != "]")
@@ -1436,16 +1440,16 @@ var Type1Parser = function() {
               subrsSection = true;
               break;
             case "/StdHW":
-              extracted.properties.stdHW = readNumberArray(eexecString, i + 2)[0];
+              extracted.properties.stdHW = readNumbers(eexecString, i + 2)[0];
               break;
             case "/StdVW":
-              extracted.properties.stdVW = readNumberArray(eexecString, i + 2)[0];
+              extracted.properties.stdVW = readNumbers(eexecString, i + 2)[0];
               break;
             case "/StemSnapH":
-              extracted.properties.stemSnapH = readNumberArray(eexecString, i + 2);
+              extracted.properties.stemSnapH = readNumbers(eexecString, i + 2);
               break;
             case "/StemSnapV":
-              extracted.properties.stemSnapV = readNumberArray(eexecString, i + 2);
+              extracted.properties.stemSnapV = readNumbers(eexecString, i + 2);
               break;
           }
         } else if (c == "/") {
@@ -1475,7 +1479,7 @@ var Type1Parser = function() {
       if (c == " " || c == "\n") {
         switch (token) {
           case "/FontMatrix":
-            var matrix = readNumberArray(headerString, i + 1);
+            var matrix = readNumbers(headerString, i + 1);
 
             // The FontMatrix is in unitPerEm, so make it pixels
             for (var j = 0; j < matrix.length; j++)
@@ -1502,66 +1506,70 @@ var Type1Parser = function() {
  * which itself embed Type2 charstrings.
  */
 var CFFStrings = [
-  ".notdef","space","exclam","quotedbl","numbersign","dollar","percent","ampersand",
-  "quoteright","parenleft","parenright","asterisk","plus","comma","hyphen","period",
-  "slash","zero","one","two","three","four","five","six","seven","eight","nine",
-  "colon","semicolon","less","equal","greater","question","at","A","B","C","D","E",
-  "F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y",
-  "Z","bracketleft","backslash","bracketright","asciicircum","underscore",
-  "quoteleft","a","b","c","d","e","f","g","h","i","j","k","l","m","n","o","p","q",
-  "r","s","t","u","v","w","x","y","z","braceleft","bar","braceright","asciitilde",
-  "exclamdown","cent","sterling","fraction","yen","florin","section","currency",
-  "quotesingle","quotedblleft","guillemotleft","guilsinglleft","guilsinglright",
-  "fi","fl","endash","dagger","daggerdbl","periodcentered","paragraph","bullet",
+  ".notdef","space","exclam","quotedbl","numbersign","dollar","percent",
+  "ampersand","quoteright","parenleft","parenright","asterisk","plus","comma",
+  "hyphen","period","slash","zero","one","two","three","four","five","six",
+  "seven","eight","nine","colon","semicolon","less","equal","greater",
+  "question","at","A","B","C","D","E","F","G","H","I","J","K","L","M","N","O",
+  "P","Q","R","S","T","U","V","W","X","Y","Z","bracketleft","backslash",
+  "bracketright","asciicircum","underscore","quoteleft","a","b","c","d","e",
+  "f","g","h","i","j","k","l","m","n","o","p","q","r","s","t","u","v","w","x",
+  "y","z","braceleft","bar","braceright","asciitilde","exclamdown","cent",
+  "sterling","fraction","yen","florin","section","currency","quotesingle",
+  "quotedblleft","guillemotleft","guilsinglleft","guilsinglright","fi","fl",
+  "endash","dagger","daggerdbl","periodcentered","paragraph","bullet",
   "quotesinglbase","quotedblbase","quotedblright","guillemotright","ellipsis",
   "perthousand","questiondown","grave","acute","circumflex","tilde","macron",
-  "breve","dotaccent","dieresis","ring","cedilla","hungarumlaut","ogonek","caron",
-  "emdash","AE","ordfeminine","Lslash","Oslash","OE","ordmasculine","ae","dotlessi",
-  "lslash","oslash","oe","germandbls","onesuperior","logicalnot","mu","trademark",
-  "Eth","onehalf","plusminus","Thorn","onequarter","divide","brokenbar","degree",
-  "thorn","threequarters","twosuperior","registered","minus","eth","multiply",
-  "threesuperior","copyright","Aacute","Acircumflex","Adieresis","Agrave","Aring",
+  "breve","dotaccent","dieresis","ring","cedilla","hungarumlaut","ogonek",
+  "caron","emdash","AE","ordfeminine","Lslash","Oslash","OE","ordmasculine",
+  "ae","dotlessi","lslash","oslash","oe","germandbls","onesuperior",
+  "logicalnot","mu","trademark","Eth","onehalf","plusminus","Thorn",
+  "onequarter","divide","brokenbar","degree","thorn","threequarters",
+  "twosuperior","registered","minus","eth","multiply","threesuperior",
+  "copyright","Aacute","Acircumflex","Adieresis","Agrave","Aring",
   "Atilde","Ccedilla","Eacute","Ecircumflex","Edieresis","Egrave","Iacute",
-  "Icircumflex","Idieresis","Igrave","Ntilde","Oacute","Ocircumflex","Odieresis",
-  "Ograve","Otilde","Scaron","Uacute","Ucircumflex","Udieresis","Ugrave","Yacute",
-  "Ydieresis","Zcaron","aacute","acircumflex","adieresis","agrave","aring","atilde",
-  "ccedilla","eacute","ecircumflex","edieresis","egrave","iacute","icircumflex",
-  "idieresis","igrave","ntilde","oacute","ocircumflex","odieresis","ograve",
-  "otilde","scaron","uacute","ucircumflex","udieresis","ugrave","yacute",
-  "ydieresis","zcaron","exclamsmall","Hungarumlautsmall","dollaroldstyle",
-  "dollarsuperior","ampersandsmall","Acutesmall","parenleftsuperior",
-  "parenrightsuperior","266 ff","onedotenleader","zerooldstyle","oneoldstyle",
-  "twooldstyle","threeoldstyle","fouroldstyle","fiveoldstyle","sixoldstyle",
-  "sevenoldstyle","eightoldstyle","nineoldstyle","commasuperior",
-  "threequartersemdash","periodsuperior","questionsmall","asuperior","bsuperior",
-  "centsuperior","dsuperior","esuperior","isuperior","lsuperior","msuperior",
-  "nsuperior","osuperior","rsuperior","ssuperior","tsuperior","ff","ffi","ffl",
-  "parenleftinferior","parenrightinferior","Circumflexsmall","hyphensuperior",
-  "Gravesmall","Asmall","Bsmall","Csmall","Dsmall","Esmall","Fsmall","Gsmall",
-  "Hsmall","Ismall","Jsmall","Ksmall","Lsmall","Msmall","Nsmall","Osmall","Psmall",
-  "Qsmall","Rsmall","Ssmall","Tsmall","Usmall","Vsmall","Wsmall","Xsmall","Ysmall",
-  "Zsmall","colonmonetary","onefitted","rupiah","Tildesmall","exclamdownsmall",
-  "centoldstyle","Lslashsmall","Scaronsmall","Zcaronsmall","Dieresissmall",
-  "Brevesmall","Caronsmall","Dotaccentsmall","Macronsmall","figuredash",
-  "hypheninferior","Ogoneksmall","Ringsmall","Cedillasmall","questiondownsmall",
-  "oneeighth","threeeighths","fiveeighths","seveneighths","onethird","twothirds",
-  "zerosuperior","foursuperior","fivesuperior","sixsuperior","sevensuperior",
-  "eightsuperior","ninesuperior","zeroinferior","oneinferior","twoinferior",
-  "threeinferior","fourinferior","fiveinferior","sixinferior","seveninferior",
-  "eightinferior","nineinferior","centinferior","dollarinferior","periodinferior",
-  "commainferior","Agravesmall","Aacutesmall","Acircumflexsmall","Atildesmall",
-  "Adieresissmall","Aringsmall","AEsmall","Ccedillasmall","Egravesmall",
-  "Eacutesmall","Ecircumflexsmall","Edieresissmall","Igravesmall","Iacutesmall",
-  "Icircumflexsmall","Idieresissmall","Ethsmall","Ntildesmall","Ogravesmall",
-  "Oacutesmall","Ocircumflexsmall","Otildesmall","Odieresissmall","OEsmall",
-  "Oslashsmall","Ugravesmall","Uacutesmall","Ucircumflexsmall","Udieresissmall",
+  "Icircumflex","Idieresis","Igrave","Ntilde","Oacute","Ocircumflex",
+  "Odieresis","Ograve","Otilde","Scaron","Uacute","Ucircumflex","Udieresis",
+  "Ugrave","Yacute","Ydieresis","Zcaron","aacute","acircumflex","adieresis",
+  "agrave","aring","atilde","ccedilla","eacute","ecircumflex","edieresis",
+  "egrave","iacute","icircumflex","idieresis","igrave","ntilde","oacute",
+  "ocircumflex","odieresis","ograve","otilde","scaron","uacute","ucircumflex",
+  "udieresis","ugrave","yacute","ydieresis","zcaron","exclamsmall",
+  "Hungarumlautsmall","dollaroldstyle","dollarsuperior","ampersandsmall",
+  "Acutesmall","parenleftsuperior","parenrightsuperior","206 ff",
+  "onedotenleader","zerooldstyle","oneoldstyle","twooldstyle","threeoldstyle",
+  "fouroldstyle","fiveoldstyle","sixoldstyle","sevenoldstyle","eightoldstyle",
+  "nineoldstyle","commasuperior","threequartersemdash","periodsuperior",
+  "questionsmall","asuperior","bsuperior","centsuperior","dsuperior",
+  "esuperior","isuperior","lsuperior","msuperior", "nsuperior","osuperior",
+  "rsuperior","ssuperior","tsuperior","ff","ffi","ffl","parenleftinferior",
+  "parenrightinferior","Circumflexsmall","hyphensuperior","Gravesmall",
+  "Asmall","Bsmall","Csmall","Dsmall","Esmall","Fsmall","Gsmall","Hsmall",
+  "Ismall","Jsmall","Ksmall","Lsmall","Msmall","Nsmall","Osmall","Psmall",
+  "Qsmall","Rsmall","Ssmall","Tsmall","Usmall","Vsmall","Wsmall","Xsmall",
+  "Ysmall","Zsmall","colonmonetary","onefitted","rupiah","Tildesmall",
+  "exclamdownsmall","centoldstyle","Lslashsmall","Scaronsmall","Zcaronsmall",
+  "Dieresissmall","Brevesmall","Caronsmall","Dotaccentsmall","Macronsmall",
+  "figuredash","hypheninferior","Ogoneksmall","Ringsmall","Cedillasmall",
+  "questiondownsmall","oneeighth","threeeighths","fiveeighths","seveneighths",
+  "onethird","twothirds","zerosuperior","foursuperior","fivesuperior",
+  "sixsuperior","sevensuperior","eightsuperior","ninesuperior","zeroinferior",
+  "oneinferior","twoinferior","threeinferior","fourinferior","fiveinferior",
+  "sixinferior","seveninferior","eightinferior","nineinferior","centinferior",
+  "dollarinferior","periodinferior","commainferior","Agravesmall",
+  "Aacutesmall","Acircumflexsmall","Atildesmall","Adieresissmall","Aringsmall",
+  "AEsmall","Ccedillasmall","Egravesmall","Eacutesmall","Ecircumflexsmall",
+  "Edieresissmall","Igravesmall","Iacutesmall","Icircumflexsmall",
+  "Idieresissmall","Ethsmall","Ntildesmall","Ogravesmall","Oacutesmall",
+  "Ocircumflexsmall","Otildesmall","Odieresissmall","OEsmall","Oslashsmall",
+  "Ugravesmall","Uacutesmall","Ucircumflexsmall","Udieresissmall",
   "Yacutesmall","Thornsmall","Ydieresissmall","001.000","001.001","001.002",
   "001.003","Black","Bold","Book","Light","Medium","Regular","Roman","Semibold"
 ];
 
 var type1Parser = new Type1Parser();
 
-var CFF = function(name, file, properties) {
+var CFF = function CFF(name, file, properties) {
   // Get the data block containing glyphs and subrs informations
   var length1 = file.dict.get("Length1");
   var length2 = file.dict.get("Length2");
@@ -1582,7 +1590,8 @@ var CFF = function(name, file, properties) {
   var subrs = this.getType2Subrs(data.subrs);
 
   this.charstrings = charstrings;
-  this.data = this.wrap(name, type2Charstrings, this.charstrings, subrs, properties);
+  this.data = this.wrap(name, type2Charstrings,
+                        this.charstrings, subrs, properties);
 };
 
 CFF.prototype = {
@@ -1643,7 +1652,7 @@ CFF.prototype = {
       var unicode = GlyphsUnicode[glyph.glyph];
       if (!unicode) {
         if (glyph.glyph != ".notdef")
-          warn(glyph + " does not have an entry in the glyphs unicode dictionary");
+          warn(glyph + " has no entry in the glyphs unicode dictionary");
       } else {
         charstrings.push({
           glyph: glyph,
@@ -1666,7 +1675,8 @@ CFF.prototype = {
 	  var count = type1Charstrings.length;
     for (var i = 0; i < count; i++) {
       var charstring = type1Charstrings[i].charstring;
-      type2Charstrings.push(this.flattenCharstring(charstring.slice(), this.commandsMap));
+      var flate = this.flattenCharstring(charstring.slice(), this.commandsMap);
+      type2Charstrings.push(flate);
     }
     return type2Charstrings;
   },
@@ -1738,12 +1748,13 @@ CFF.prototype = {
 
   wrap: function wrap(name, glyphs, charstrings, subrs, properties) {
     var fields = {
-      "header": "\x01\x00\x04\x04", // major version, minor version, header size, offset size
+      // major version, minor version, header size, offset size
+      "header": "\x01\x00\x04\x04",
 
       "names": this.createCFFIndexHeader([name]),
 
       "topDict": (function topDict(self) {
-        return function() {
+        return function wrap_inner_topDict() {
           var dict =
               "\x00\x01\x01\x01\x30" +
               "\xf8\x1b\x00" + // version
@@ -1795,9 +1806,9 @@ CFF.prototype = {
 	      var count = glyphs.length;
         for (var i = 0; i < count; i++) {
           var index = CFFStrings.indexOf(charstrings[i].glyph.glyph);
-          // Some characters like asterikmath && circlecopyrt are missing from the
-          // original strings, for the moment let's map them to .notdef and see
-          // later if it cause any problems
+          // Some characters like asterikmath && circlecopyrt are missing from
+          // the original strings, for the moment let's map them to .notdef and
+          // see later if it cause any problems
           if (index == -1)
             index = 0;
 
@@ -1808,7 +1819,7 @@ CFF.prototype = {
 
       "charstrings": this.createCFFIndexHeader([[0x8B, 0x0E]].concat(glyphs), true),
 
-      "private": (function(self) {
+      "private": (function wrap_private(self) {
         var data =
             "\x8b\x14" + // defaultWidth
             "\x8b\x15" + // nominalWidth
