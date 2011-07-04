@@ -1024,14 +1024,14 @@ var Font = (function Font() {
       // to write the table entry information about a table and another offset
       // representing the offset where to draw the actual data of a particular
       // table
-      var kRequiredTablesCount = 9;
+      var tablesCount = 9;
       var offsets = {
         currentOffset: 0,
-        virtualOffset: 9 * (4 * 4)
+        virtualOffset: tablesCount * (4 * 4)
       };
 
       var otf = new Uint8Array(kMaxFontFileSize);
-      createOpenTypeHeader("\x4F\x54\x54\x4F", otf, offsets, 9);
+      createOpenTypeHeader("\x4F\x54\x54\x4F", otf, offsets, tablesCount);
 
 	    var charstrings = font.charstrings;
 	    properties.fixedPitch = isFixedPitch(charstrings);
@@ -1115,11 +1115,25 @@ var Font = (function Font() {
       for (var field in fields)
         createTableEntry(otf, offsets, field, fields[field]);
 
+      var headPosition = 0;
       for (var field in fields) {
         var table = fields[field];
+        if (field == "head")
+          headPosition = offsets.currentOffset;
+
         otf.set(table, offsets.currentOffset);
         offsets.currentOffset += table.length;
       }
+
+      // Now calculate the checksumAdjustement for all the file and put it into
+      // head. This will make the head checksum incorrect but per spec that's
+      // the way it works.
+      var checksumAdjustement = 0;
+      for (var i = 0; i < offsets.currentOffset; i+=4)
+        checksumAdjustement += int16([otf[i], otf[i+1], otf[i+2], otf[i+3]]);
+      checksumAdjustement = 0xB1B0AFBA - checksumAdjustement;
+      otf.set(stringToArray(string32(checksumAdjustement)), headPosition + (2 * 4));
+
 
       var fontData = [];
       for (var i = 0; i < offsets.currentOffset; i++)
