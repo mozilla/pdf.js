@@ -573,7 +573,7 @@ var Font = (function Font() {
         ++end;
         ++n;
       }
-      ranges.push([start, end]);
+      ranges.push({ start: start, end: end });
     }
     return ranges;
   };
@@ -589,11 +589,11 @@ var Font = (function Font() {
                "\x00\x01" + // encodingID
                string32(4 + numTables * 8); // start of the table record
 
-    var headerSize = (12 * 2 + (ranges.length * 5 * 2));
+    var headerSize = ((7 * 2) + (ranges.length * 4 * 2) + (4 * 2) + (glyphs.length * 2));
     var segCount = ranges.length + 1;
-    var segCount2 = segCount * 2;
-    var searchRange = getMaxPower2(segCount) * 2;
-    var searchEntry = Math.log(segCount) / Math.log(2);
+    var segCount2 = 2 * segCount;
+    var searchRange = 2 * getMaxPower2(segCount);
+    var entrySelector = Math.log(segCount) / Math.log(2);
     var rangeShift = 2 * segCount - searchRange;
 
     var format314 = "\x00\x04" + // format
@@ -601,7 +601,7 @@ var Font = (function Font() {
                     "\x00\x00" + // language
                     string16(segCount2) +
                     string16(searchRange) +
-                    string16(searchEntry) +
+                    string16(entrySelector) +
                     string16(rangeShift);
 
     // Fill up the 4 parallel arrays describing the segments.
@@ -613,8 +613,8 @@ var Font = (function Font() {
     var bias = 0;
     for (var i = 0; i < segCount - 1; i++) {
       var range = ranges[i];
-      var start = range[0];
-      var end = range[1];
+      var start = range.start;
+      var end = range.end;
       var delta = (bias - start) % 0xffff;
       bias += (end - start + 1);
 
@@ -622,16 +622,15 @@ var Font = (function Font() {
       endCount += string16(end);
       idDeltas += string16(delta);
 	    idRangeOffsets += string16(0);
-
-      for (var j = start; j <= end; j++) {
-        glyphsIds += string16(j);
-      }
     }
-
     endCount += "\xFF\xFF";
     startCount += "\xFF\xFF";
     idDeltas += "\x00\x01";
     idRangeOffsets += "\x00\x00";
+
+    for (var i = 0; i < glyphs.length; i++)
+      glyphsIds += string16(i);
+
     format314 += endCount + "\x00\x00" + startCount +
                  idDeltas + idRangeOffsets + glyphsIds;
 
@@ -833,11 +832,12 @@ var Font = (function Font() {
 
             var encoding = properties.encoding;
             var denseRange = ranges[0];
-            var start = denseRange[0];
-            var end = denseRange[1];
+            var start = denseRange.start;
+            var end = denseRange.end;
             var index = firstCode;
             for (var j = start; j <= end; j++)
               encoding[index++] = glyphs[j - firstCode - 1].unicode;
+
             cmap.data = createCMapTable(glyphs);
           }
         }
