@@ -57,6 +57,7 @@ function nextTask() {
     r.open("GET", task.file);
     r.mozResponseType = r.responseType = "arraybuffer";
     r.onreadystatechange = function() {
+        var failure;
         if (r.readyState == 4) {
             var data = r.mozResponseArrayBuffer || r.mozResponse ||
                 r.responseArrayBuffer || r.response;
@@ -67,7 +68,7 @@ function nextTask() {
                 failure = 'load PDF doc: '+ e.toString();
             }
             
-            task.pageNum = 1, nextPage(task);
+            task.pageNum = 1, nextPage(task, failure);
         }    
     };
     r.send(null);
@@ -77,7 +78,7 @@ function isLastPage(task) {
     return (task.pdfDoc && (task.pageNum > task.pdfDoc.numPages));
 }
 
-function nextPage(task) {
+function nextPage(task, loadError) {
     if (isLastPage(task)) {
 	      if (++task.round < task.rounds) {
 	          log("  Round "+ (1 + task.round) +"\n");
@@ -88,20 +89,24 @@ function nextPage(task) {
         }
     }
 
-    var failure = '';
-    log("    loading page "+ task.pageNum +"... ");
+    var failure = loadError || '';
 
-    var ctx = canvas.getContext("2d");
-    var fonts = [];
+    var ctx = null;
+    var fonts;
     var gfx = null;
     var page = null;
 
-    try {
-        gfx = new CanvasGraphics(ctx);
-        page = task.pdfDoc.getPage(task.pageNum);
-        page.compile(gfx, fonts);
-    } catch(e) {
-        failure = 'compile: '+ e.toString();
+    if (!failure) {
+        log("    loading page "+ task.pageNum +"... ");
+        ctx = canvas.getContext("2d");
+        fonts = [];
+        try {
+            gfx = new CanvasGraphics(ctx);
+            page = task.pdfDoc.getPage(task.pageNum);
+            page.compile(gfx, fonts);
+        } catch(e) {
+            failure = 'compile: '+ e.toString();
+        }
     }
 
     if (!failure) {
