@@ -92,13 +92,9 @@ function displayPage(num) {
         infoDisplay.innerHTML = "Time to load/compile/fonts/render: "+ (t1 - t0) + "/" + (t2 - t1) + "/" + (t3 - t2) + "/" + (t4 - t3) + " ms";
     }
 
-    function loadImages() {
-      imagesLoader.onLoad = function() {
-        FontLoader.bind(fonts, displayPage);
-      };
-      imagesLoader.enableOnLoad();
-    }
-    loadImages();
+    imagesLoader.notifyOnLoad(function() {
+      FontLoader.bind(fonts, displayPage);
+    });
 }
 
 function nextPage() {

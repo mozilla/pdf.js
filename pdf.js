@@ -821,17 +821,17 @@ var JpegStream = (function() {
 var ImagesLoader = (function() {
     function constructor() {
         this.loading = 0;
-        this.enabled = false;
     }
 
     constructor.prototype = {
-        onLoad: function() {},
         imageLoading: function() {
             ++this.loading;
         },
         imageLoaded: function() {
-            if (--this.loading == 0 && this.enabled)
+            if (--this.loading == 0 && this.onLoad) {
                 this.onLoad();
+                delete this.onLoad;
+            }
         },
         bind: function(jpegStream) {
             if (jpegStream.loaded)
@@ -839,13 +839,10 @@ var ImagesLoader = (function() {
             this.imageLoading();
             jpegStream.onLoad = this.imageLoaded.bind(this);
         },
-        enableOnLoad: function() {
-            this.enabled = true;
+        notifyOnLoad: function(callback) {
             if (this.loading == 0)
-                this.onLoad();
-        },
-        disableOnLoad: function() {
-            this.enabled = false;
+                callback();
+            this.onLoad = callback;
         }
     };
 

@@ -131,13 +131,9 @@ var PDFViewer = {
       var imagesLoader = new ImagesLoader();
       page.compile(gfx, fonts, imagesLoader);
 
-      var loadImages = function() {
-        imagesLoader.onLoad = function() {
-          FontLoader.bind(fonts, function() { page.display(gfx); });
-        };
-        imagesLoader.enableOnLoad();
-      };
-      loadImages();
+      imagesLoader.notifyOnLoad(function() {
+        FontLoader.bind(fonts, function() { page.display(gfx); });
+      });
     }
   },
   
@@ -198,13 +194,9 @@ var PDFViewer = {
       var imagesLoader = new ImagesLoader();
       page.compile(gfx, fonts, imagesLoader);
 
-      var loadImages = function() {
-        imagesLoader.onLoad = function() {
-          FontLoader.bind(fonts, function() { page.display(gfx); });
-        };
-        imagesLoader.enableOnLoad();
-      }
-      loadImages();
+      imagesLoader.notifyOnLoad(function() {
+        FontLoader.bind(fonts, function() { page.display(gfx); });
+      });
     }
   },
 

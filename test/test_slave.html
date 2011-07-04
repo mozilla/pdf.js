@@ -116,26 +116,6 @@ function nextPage() {
     failure = 'page setup: '+ e.toString();
   }
 
-  function checkFontsLoaded() {
-    try {
-      FontLoader.bind(fonts, function() { snapshotCurrentPage(gfx); });
-    } catch(e) {
-      failure = 'fonts: '+ e.toString();
-    }
-  }
-
-  function checkImagesLoaded() {
-    imagesLoader.onLoad = function() {
-      if (failure) {
-        snapshotCurrentPage(gfx);
-        return;
-      }
-
-      checkFontsLoaded();
-    };
-    imagesLoader.enableOnLoad();
-  }
-
   if (failure) {
     // Skip right to snapshotting if there was a failure, since the
     // fonts might be in an inconsistent state.
@@ -143,7 +123,18 @@ function nextPage() {
     return;
   }
 
-  checkImagesLoaded();
+  imagesLoader.notifyOnLoad(function() {
+    if (failure) {
+      snapshotCurrentPage(gfx);
+      return;
+    }
+
+    try {
+      FontLoader.bind(fonts, function() { snapshotCurrentPage(gfx); });
+    } catch(e) {
+      failure = 'fonts: '+ e.toString();
+    }
+  });
 }
 
 function snapshotCurrentPage(gfx) {
