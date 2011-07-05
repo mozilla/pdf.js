@@ -139,9 +139,9 @@ var CipherTransform = (function() {
     },
     decryptString: function(s) {
       var cipher = new this.stringCipherConstructor();
-      var data = string2bytes(s);
+      var data = stringToBytes(s);
       data = cipher.encryptBlock(data);
-      return bytes2string(data);
+      return bytesToString(data);
     }
   };
   return constructor;

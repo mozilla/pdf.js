@@ -3566,6 +3566,7 @@ var CanvasGraphics = (function() {
         },
 
         execute: function(code, xref, resources) {
+            resources = xref.fetchIfRef(resources) || new Dict();
             var savedXref = this.xref, savedRes = this.res, savedXobjs = this.xobjs;
             this.xref = xref;
             this.res = resources || new Dict();
