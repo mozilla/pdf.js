@@ -2236,6 +2236,9 @@ var Lexer = (function() {
             var stream = this.stream;
             var ch;
             while (true) {
+                if (!stream.getChar)
+                    log("bad stream");
+
                 if (!(ch = stream.getChar()))
                     return EOF;
                 if (comment) {
@@ -2842,7 +2845,7 @@ var Page = (function() {
 
     constructor.prototype = {
         getPageProp: function(key) {
-            return this.pageDict.get(key);
+            return this.xref.fetchIfRef(this.pageDict.get(key));
         },
         inheritPageProp: function(key) {
             var dict = this.pageDict;
@@ -3579,6 +3582,7 @@ var CanvasGraphics = (function() {
         },
 
         compile: function(stream, xref, resources, fonts) {
+            resources = xref.fetchIfRef(resources) || new Dict();
             var xobjs = xref.fetchIfRef(resources.get("XObject")) || new Dict();
 
             var parser = new Parser(new Lexer(stream), false);
