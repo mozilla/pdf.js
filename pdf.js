@@ -4452,7 +4452,7 @@ var ColorSpace = (function() {
                 break;
             case "Indexed":
                 var base = ColorSpace.parse(cs[1], xref, res);
-                var hiVal = cs[2];
+                var hiVal = cs[2] + 1;
                 var lookup = xref.fetchIfRef(cs[3]);
                 return new IndexedCS(base, hiVal, lookup);
             case "Lab":
