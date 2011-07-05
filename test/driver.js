@@ -152,7 +152,7 @@ function snapshotCurrentPage(gfx, page, task, failure) {
     }
 
     sendTaskResult(canvas.toDataURL("image/png"), task, failure);
-    log("done"+ (failure ? " (failed!)" : "") +"\n");
+    log("done"+ (failure ? " (failed!: "+ failure +")" : "") +"\n");
     
     // Set up the next request
     backoff = (inFlightRequests > 0) ? inFlightRequests * 10 : 0;
