@@ -2842,7 +2842,7 @@ var Page = (function() {
 
     constructor.prototype = {
         getPageProp: function(key) {
-            return this.pageDict.get(key);
+            return this.xref.fetchIfRef(this.pageDict.get(key));
         },
         inheritPageProp: function(key) {
             var dict = this.pageDict;
@@ -3566,6 +3566,7 @@ var CanvasGraphics = (function() {
         },
 
         execute: function(code, xref, resources) {
+            resources = xref.fetchIfRef(resources) || new Dict();
             var savedXref = this.xref, savedRes = this.res, savedXobjs = this.xobjs;
             this.xref = xref;
             this.res = resources || new Dict();
@@ -3579,6 +3580,7 @@ var CanvasGraphics = (function() {
         },
 
         compile: function(stream, xref, resources, fonts) {
+            resources = xref.fetchIfRef(resources) || new Dict();
             var xobjs = xref.fetchIfRef(resources.get("XObject")) || new Dict();
 
             var parser = new Parser(new Lexer(stream), false);
@@ -4452,7 +4454,7 @@ var ColorSpace = (function() {
                 break;
             case "Indexed":
                 var base = ColorSpace.parse(cs[1], xref, res);
-                var hiVal = cs[2];
+                var hiVal = cs[2] + 1;
                 var lookup = xref.fetchIfRef(cs[3]);
                 return new IndexedCS(base, hiVal, lookup);
             case "Lab":
