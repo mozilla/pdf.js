@@ -15,6 +15,13 @@ PDF_JS_FILES = \
 # not sure what to do for all yet
 all: help
 
+# make server
+#
+# This target starts a local web server at localhost:8888. This can be
+# used for testing all browsers.
+server:
+	@cd test; python test.py --port=8888;
+
 test: shell-test browser-test
 
 # make browser-test
@@ -150,4 +157,4 @@ help:
 	@echo "Read the comments in the Makefile for guidance.";
 
 .PHONY: all test browser-test font-test shell-test \
-	shell-msg lint clean web compiler help
+	shell-msg lint clean web compiler help server
