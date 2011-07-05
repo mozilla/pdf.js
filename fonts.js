@@ -70,11 +70,14 @@ var Fonts = (function Fonts() {
       return fonts[fontName];
     },
     setActive: function fonts_setActive(fontName, size) {
-      current = fonts[fontName];
-      charsCache = current.charsCache;
-      var sizes = current.sizes;
-      if (!(measureCache = sizes[size]))
-        measureCache = sizes[size] = Object.create(null);
+      // |current| can be null is fontName is a built-in font
+      // (e.g. "sans-serif")
+      if ((current = fonts[fontName])) {
+        charsCache = current.charsCache;
+        var sizes = current.sizes;
+        if (!(measureCache = sizes[size]))
+          measureCache = sizes[size] = Object.create(null);
+      }
       ctx.font = (size * kScalePrecision) + 'px "' + fontName + '"';
     },
     charsToUnicode: function fonts_chars2Unicode(chars) {
@@ -87,7 +90,7 @@ var Fonts = (function Fonts() {
         return str;
 
       // translate the string using the font's encoding
-      var encoding = current.properties.encoding;
+      var encoding = current ? current.properties.encoding : null;
       if (!encoding)
         return chars;
 
