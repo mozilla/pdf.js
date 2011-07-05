@@ -70,7 +70,6 @@ class State:
     remaining = 0
     results = { }
     done = False
-    masterMode = False
     numErrors = 0
     numEqFailures = 0
     numEqNoSnapshot = 0
@@ -157,7 +156,8 @@ class PDFTestHandler(BaseHTTPRequestHandler):
             # sort the results since they sometimes come in out of order
             for results in taskResults:
                 results.sort(key=lambda result: result.page)
-            check(State.manifest[id], taskResults, browser)
+            check(State.manifest[id], taskResults, browser,
+                  self.server.masterMode)
             # Please oh please GC this ...
             del State.taskResults[browser][id]
             State.remaining -= 1
@@ -284,7 +284,6 @@ def setUp(options):
     # Only serve files from a pdf.js clone
     assert not ANAL or os.path.isfile('../pdf.js') and os.path.isdir('../.git')
 
-    State.masterMode = options.masterMode
     if options.masterMode and os.path.isdir(TMPDIR):
         print 'Temporary snapshot dir tmp/ is still around.'
         print 'tmp/ can be removed if it has nothing you need.'
@@ -340,7 +339,7 @@ def teardownBrowsers(browsers):
             print "Temp dir was ", b.tempDir
             print "Error:", sys.exc_info()[0]
 
-def check(task, results, browser):
+def check(task, results, browser, masterMode):
     failed = False
     for r in xrange(len(results)):
         pageResults = results[r]
@@ -359,7 +358,7 @@ def check(task, results, browser):
 
     kind = task['type']
     if 'eq' == kind:
-        checkEq(task, results, browser)
+        checkEq(task, results, browser, masterMode)
     elif 'fbf' == kind:
         checkFBF(task, results, browser)
     elif 'load' == kind:
@@ -368,7 +367,7 @@ def check(task, results, browser):
         assert 0 and 'Unknown test type'
 
 
-def checkEq(task, results, browser):
+def checkEq(task, results, browser, masterMode):
     pfx = os.path.join(REFDIR, sys.platform, browser, task['id'])
     results = results[0]
     taskId = task['id']
@@ -406,12 +405,12 @@ def checkEq(task, results, browser):
                 passed = False
                 State.numEqFailures += 1
 
-        if State.masterMode and (ref is None or not eq):
+        if masterMode and (ref is None or not eq):
             tmpTaskDir = os.path.join(TMPDIR, sys.platform, browser, task['id'])
             try:
                 os.makedirs(tmpTaskDir)
             except OSError, e:
-                pass
+                print >>sys.stderr, 'Creating', tmpTaskDir, 'failed!'
 
             of = open(os.path.join(tmpTaskDir, str(page + 1)), 'w')
             of.write(snapshot)
@@ -521,6 +520,7 @@ def main():
         sys.exit(1)
 
     httpd = TestServer((SERVER_HOST, SERVER_PORT), PDFTestHandler)
+    httpd.masterMode = options.masterMode
     httpd_thread = threading.Thread(target=httpd.serve_forever)
     httpd_thread.setDaemon(True)
     httpd_thread.start()
