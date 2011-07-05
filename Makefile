@@ -32,7 +32,6 @@ ifeq ($(PDF_BROWSERS),)
 PDF_BROWSERS := $(DEFAULT_BROWSERS)
 endif
 
-
 browser-test:
 	@if [ ! "$(PDF_BROWSERS)" ]; then \
 	echo "Browser manifest file $(PDF_BROWSERS) does not exist."; \
@@ -98,7 +97,7 @@ web: | compiler pages-repo \
 
 	@cp $(GH_PAGES)/web/index.html.template $(GH_PAGES)/index.html;
 	@cd $(GH_PAGES); git add -A;
-	@echo "Website built in $(GH_PAGES)"
+	@echo "Website built in $(GH_PAGES)."
 
 # make pages-repo
 #
