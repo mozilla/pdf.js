@@ -70,11 +70,14 @@ var Fonts = (function Fonts() {
       return fonts[fontName];
     },
     setActive: function fonts_setActive(fontName, size) {
-      current = fonts[fontName];
-      charsCache = current.charsCache;
-      var sizes = current.sizes;
-      if (!(measureCache = sizes[size]))
-        measureCache = sizes[size] = Object.create(null);
+      // |current| can be null is fontName is a built-in font
+      // (e.g. "sans-serif")
+      if ((current = fonts[fontName])) {
+        charsCache = current.charsCache;
+        var sizes = current.sizes;
+        if (!(measureCache = sizes[size]))
+          measureCache = sizes[size] = Object.create(null);
+      }
       ctx.font = (size * kScalePrecision) + 'px "' + fontName + '"';
     },
     charsToUnicode: function fonts_chars2Unicode(chars) {
@@ -87,7 +90,7 @@ var Fonts = (function Fonts() {
         return str;
 
       // translate the string using the font's encoding
-      var encoding = current.properties.encoding;
+      var encoding = current ? current.properties.encoding : null;
       if (!encoding)
         return chars;
 
@@ -218,12 +221,7 @@ var FontLoader = {
         window.addEventListener(
           "message",
           function(e) {
-            var fontNames = e.data;
-            // Firefox 5 doesn't parse the JSON here.  Welcome to the
-            // Wonderful Web World.
-            if ("string" == typeof(fontNames)) {
-              fontNames = fontNames.split(",");
-            }
+            var fontNames = JSON.parse(e.data);
             for (var i = 0; i < fontNames.length; ++i) {
               var font = Fonts.lookup(fontNames[i]);
               font.loading = false;
@@ -251,7 +249,7 @@ var FontLoader = {
       }
       src += '  var fontNames=['+ fontNamesArray +'];\n';
       src += '  window.onload = function () {\n'
-      src += '    top.postMessage(fontNames, "*");\n';
+      src += '    top.postMessage(JSON.stringify(fontNames), "*");\n';
       src += '  }';
       src += '</script></head><body>';
       for (var i = 0; i < names.length; ++i) {
@@ -1812,8 +1810,8 @@ CFF.prototype = {
         var data =
             "\x8b\x14" + // defaultWidth
             "\x8b\x15" + // nominalWidth
-            self.encodeNumber(properties.stdHW) + "\x0a" + // StdHW
-            self.encodeNumber(properties.stdVW) + "\x0b";  // StdVW
+            self.encodeNumber(properties.stdHW || 0) + "\x0a" + // StdHW
+            self.encodeNumber(properties.stdVW || 0) + "\x0b";  // StdVW
 
         var stemH = properties.stemSnapH;
         for (var i = 0; i < stemH.length; i++)

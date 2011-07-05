@@ -2842,7 +2842,7 @@ var Page = (function() {
 
     constructor.prototype = {
         getPageProp: function(key) {
-            return this.pageDict.get(key);
+            return this.xref.fetchIfRef(this.pageDict.get(key));
         },
         inheritPageProp: function(key) {
             var dict = this.pageDict;
@@ -2971,6 +2971,7 @@ var Catalog = (function() {
 
 var PDFDoc = (function() {
     function constructor(stream) {
+        assertWellFormed(stream.length > 0, "stream must have data");
         this.stream = stream;
         this.setup();
     }
@@ -3565,6 +3566,7 @@ var CanvasGraphics = (function() {
         },
 
         execute: function(code, xref, resources) {
+            resources = xref.fetchIfRef(resources) || new Dict();
             var savedXref = this.xref, savedRes = this.res, savedXobjs = this.xobjs;
             this.xref = xref;
             this.res = resources || new Dict();
@@ -3578,6 +3580,7 @@ var CanvasGraphics = (function() {
         },
 
         compile: function(stream, xref, resources, fonts) {
+            resources = xref.fetchIfRef(resources) || new Dict();
             var xobjs = xref.fetchIfRef(resources.get("XObject")) || new Dict();
 
             var parser = new Parser(new Lexer(stream), false);
@@ -3874,7 +3877,7 @@ var CanvasGraphics = (function() {
                 this.ctx.translate(this.current.x, -1 * this.current.y);
 
                 var font = Fonts.lookup(this.current.fontName);
-                if (font)
+                if (font && font.properties.textMatrix)
                   this.ctx.transform.apply(this.ctx, font.properties.textMatrix);
 
                 this.ctx.fillText(text, 0, 0);
@@ -4451,7 +4454,7 @@ var ColorSpace = (function() {
                 break;
             case "Indexed":
                 var base = ColorSpace.parse(cs[1], xref, res);
-                var hiVal = cs[2];
+                var hiVal = cs[2] + 1;
                 var lookup = xref.fetchIfRef(cs[3]);
                 return new IndexedCS(base, hiVal, lookup);
             case "Lab":

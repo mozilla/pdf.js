@@ -17,7 +17,6 @@ TMPDIR = 'tmp'
 VERBOSE = False
 
 SERVER_HOST = "localhost"
-SERVER_PORT = 8080
 
 class TestOptions(OptionParser):
     def __init__(self, **kwargs):
@@ -34,6 +33,8 @@ class TestOptions(OptionParser):
         self.add_option("--reftest", action="store_true", dest="reftest",
                         help="Automatically start reftest showing comparison test failures, if there are any.",
                         default=False)
+        self.add_option("--port", action="store", dest="port", type="int",
+                        help="The port the HTTP server should listen on.", default=8080)
         self.set_usage(USAGE_EXAMPLE)
 
     def verifyOptions(self, options):
@@ -44,7 +45,7 @@ class TestOptions(OptionParser):
         if options.browser and options.browserManifestFile:
             print "Warning: ignoring browser argument since manifest file was also supplied"
         if not options.browser and not options.browserManifestFile:
-            print "No browser arguments supplied, so just starting server on port %s." % SERVER_PORT
+            print "Starting server on port %s." % options.port
         return options
         
 def prompt(question):
@@ -99,7 +100,7 @@ class PDFTestHandler(BaseHTTPRequestHandler):
         self.send_header("Content-Type", MIMEs[ext])
         self.send_header("Content-Length", os.path.getsize(path))
         self.end_headers()
-        with open(path) as f:
+        with open(path, "rb") as f:
             self.wfile.write(f.read())
 
     def do_GET(self):
@@ -275,7 +276,7 @@ def downloadLinkedPDFs(manifestList):
             sys.stdout.flush()
             response = urllib2.urlopen(link)
 
-            with open(f, 'w') as out:
+            with open(f, 'wb') as out:
                 out.write(response.read())
 
             print 'done'
@@ -325,7 +326,7 @@ def startBrowsers(browsers, options):
     for b in browsers:
         b.setup()
         print 'Launching', b.name
-        host = 'http://%s:%s' % (SERVER_HOST, SERVER_PORT) 
+        host = 'http://%s:%s' % (SERVER_HOST, options.port) 
         path = '/test/test_slave.html?'
         qs = 'browser='+ urllib.quote(b.name) +'&manifestFile='+ urllib.quote(options.manifestFile)
         qs += '&path=' + b.path
@@ -482,8 +483,8 @@ def maybeUpdateRefImages(options, browser):
 
                 print 'done'
 
-def startReftest(browser):
-    url = "http://%s:%s" % (SERVER_HOST, SERVER_PORT)
+def startReftest(browser, options):
+    url = "http://%s:%s" % (SERVER_HOST, options.port)
     url += "/test/resources/reftest-analyzer.xhtml"
     url += "#web=/test/eq.log"
     try:
@@ -511,7 +512,7 @@ def runTests(options, browsers):
         maybeUpdateRefImages(options, browsers[0])
     elif options.reftest and State.numEqFailures > 0:
         print "\nStarting reftest harness to examine %d eq test failures." % State.numEqFailures
-        startReftest(browsers[0])
+        startReftest(browsers[0], options)
 
 def main():
     optionParser = TestOptions()
@@ -520,7 +521,7 @@ def main():
     if options == None:
         sys.exit(1)
 
-    httpd = TestServer((SERVER_HOST, SERVER_PORT), PDFTestHandler)
+    httpd = TestServer((SERVER_HOST, options.port), PDFTestHandler)
     httpd_thread = threading.Thread(target=httpd.serve_forever)
     httpd_thread.setDaemon(True)
     httpd_thread.start()
@@ -531,8 +532,11 @@ def main():
     else:
         # just run the server
         print "Running HTTP server. Press Ctrl-C to quit."
-        while True:
-            time.sleep(1)
+        try:
+            while True:
+                time.sleep(1)
+        except (KeyboardInterrupt):
+            print "\nExiting."
 
 if __name__ == '__main__':
     main()
