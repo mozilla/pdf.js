@@ -2236,9 +2236,6 @@ var Lexer = (function() {
             var stream = this.stream;
             var ch;
             while (true) {
-                if (!stream.getChar)
-                    log("bad stream");
-
                 if (!(ch = stream.getChar()))
                     return EOF;
                 if (comment) {
