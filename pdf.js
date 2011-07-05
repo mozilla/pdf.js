@@ -3626,9 +3626,17 @@ var PartialEvaluator = (function() {
     translateFont: function(fontDict, xref, resources) {
       var fd = fontDict.get('FontDescriptor');
       if (!fd)
-        // XXX deprecated "special treatment" for standard
-        // fonts?  What do we need to do here?
-        return null;
+      {
+        //If font is a composite get the FontDescriptor from the descendant
+        var df = fontDict.get("DescendantFonts");
+        if (!df)
+          return null;
+        var descendant = xref.fetch(df[0]);
+        fd = descendant.get("FontDescriptor");
+        if (!fd)
+          return null;
+        fontDict.set("FontDescriptor", fd);
+      }
       var descriptor = xref.fetch(fd);
 
       var fontName = descriptor.get('FontName');
@@ -3674,6 +3682,7 @@ var PartialEvaluator = (function() {
           }
         } else if (IsName(encoding)) {
           var encoding = Encodings[encoding.name];
+          //XXX CIDFont support - get the CID Encoding especially support japan1 and identity
           if (!encoding)
             error('Unknown font encoding');
 
