@@ -3875,7 +3875,7 @@ var CanvasGraphics = (function() {
                 this.ctx.translate(this.current.x, -1 * this.current.y);
 
                 var font = Fonts.lookup(this.current.fontName);
-                if (font)
+                if (font && font.properties.textMatrix)
                   this.ctx.transform.apply(this.ctx, font.properties.textMatrix);
 
                 this.ctx.fillText(text, 0, 0);

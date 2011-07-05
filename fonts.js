@@ -1807,8 +1807,8 @@ CFF.prototype = {
         var data =
             "\x8b\x14" + // defaultWidth
             "\x8b\x15" + // nominalWidth
-            self.encodeNumber(properties.stdHW) + "\x0a" + // StdHW
-            self.encodeNumber(properties.stdVW) + "\x0b";  // StdVW
+            self.encodeNumber(properties.stdHW || 0) + "\x0a" + // StdHW
+            self.encodeNumber(properties.stdVW || 0) + "\x0b";  // StdVW
 
         var stemH = properties.stemSnapH;
         for (var i = 0; i < stemH.length; i++)
