@@ -4168,6 +4168,7 @@ var CanvasGraphics = (function() {
     shadingFill: function(shadingName) {
       var xref = this.xref;
       var res = this.res;
+      var ctx = this.ctx;
 
       var shadingRes = xref.fetchIfRef(res.get('Shading'));
       if (!shadingRes)
@@ -4180,14 +4181,20 @@ var CanvasGraphics = (function() {
       var shadingFill = this.getShading(shading);
 
       this.save();
-      this.ctx.fillStyle = shadingFill;
+      ctx.fillStyle = shadingFill;
 
       // HACK to draw the gradient onto an infinite rectangle.
       // PDF gradients are drawn across the entire image while
       // Canvas only allows gradients to be drawn in a rectangle
       // The following bug should allow us to remove this.
       // https://bugzilla.mozilla.org/show_bug.cgi?id=664884
-      this.ctx.fillRect(-1e10, -1e10, 2e10, 2e10);
+      
+      var inv = ctx.mozInverseTransform;
+      if (inv) {
+        log(inv);
+      } else {
+        this.ctx.fillRect(-1e10, -1e10, 2e10, 2e10);
+      }
 
       this.restore();
     },
