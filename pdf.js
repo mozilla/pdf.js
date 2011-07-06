@@ -4052,12 +4052,6 @@ var CanvasGraphics = (function() {
       this.transform.apply(this, inv);
     },
     setTilingPattern: function(pattern, dict) {
-      function applyMatrix(point, m) {
-        var x = point[0] * m[0] + point[1] * m[2] + m[4];
-        var y = point[0] * m[1] + point[1] * m[3] + m[5];
-        return [x, y];
-      };
-
       function multiply(m, tm) {
         var a = m[0] * tm[0] + m[1] * tm[2];
         var b = m[0] * tm[1] + m[1] * tm[3];
@@ -4094,9 +4088,9 @@ var CanvasGraphics = (function() {
       var ystep = dict.get('YStep');
 
       // top left corner should correspond to the top left of the bbox
-      var topLeft = applyMatrix([x0, y0], matrix);
+      var topLeft = this.applyTransform(x0, y0, matrix);
       // we want the canvas to be as large as the step size
-      var botRight = applyMatrix([x0 + xstep, y0 + ystep], matrix);
+      var botRight = this.applyTransform(x0 + xstep, y0 + ystep, matrix);
 
       var width = botRight[0] - topLeft[0];
       var height = botRight[1] - topLeft[1];
@@ -4117,7 +4111,7 @@ var CanvasGraphics = (function() {
       if (matrix[1] === 0 && matrix[2] === 0) {
         matrix[0] = tmpCanvas.width / xstep;
         matrix[3] = tmpCanvas.height / ystep;
-        topLeft = applyMatrix([x0, y0], matrix);
+        topLeft = this.applyTransform(x0, y0, matrix);
       }
 
       // move the top left corner of bounding box to [0,0]
@@ -4182,16 +4176,30 @@ var CanvasGraphics = (function() {
       this.save();
       ctx.fillStyle = shadingFill;
 
-      // HACK to draw the gradient onto an infinite rectangle.
-      // PDF gradients are drawn across the entire image while
-      // Canvas only allows gradients to be drawn in a rectangle
-      // The following bug should allow us to remove this.
-      // https://bugzilla.mozilla.org/show_bug.cgi?id=664884
-      
-      var inv = ctx.mozInverseTransform;
+      var inv = ctx.mozCurrentTransformInverse;
       if (inv) {
-        log(inv);
+        var canvas = ctx.canvas;
+        var width = canvas.width;
+        var height = canvas.height;
+
+        var bl = this.applyTransform(0, 0, inv);
+        var br = this.applyTransform(0, width, inv);
+        var ul = this.applyTransform(height, 0, inv);
+        var ur = this.applyTransform(height, width, inv);
+
+        var x0 = Math.min(bl[0], br[0], ul[0], ur[0]);
+        var y0 = Math.min(bl[1], br[1], ul[1], ur[1]);
+        var x1 = Math.max(bl[0], br[0], ul[0], ur[0]);
+        var y1 = Math.max(bl[1], br[1], ul[1], ur[1]);
+        
+        this.ctx.fillRect(x0, y0, x1 - x0, y1 - y0);
       } else {
+        // HACK to draw the gradient onto an infinite rectangle.
+        // PDF gradients are drawn across the entire image while
+        // Canvas only allows gradients to be drawn in a rectangle
+        // The following bug should allow us to remove this.
+        // https://bugzilla.mozilla.org/show_bug.cgi?id=664884
+      
         this.ctx.fillRect(-1e10, -1e10, 2e10, 2e10);
       }
 
@@ -4500,6 +4508,11 @@ var CanvasGraphics = (function() {
     },
     restoreFillRule: function(rule) {
       this.ctx.mozFillRule = rule;
+    },
+    applyTransform: function(x0, y0, m) {
+      var xt = x0 * m[0] + y0 * m[2] + m[4];
+      var yt = x0 * m[1] + y0 * m[3] + m[5];
+      return [xt, yt];
     }
   };
 
