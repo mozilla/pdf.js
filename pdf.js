@@ -4022,8 +4022,7 @@ var CanvasGraphics = (function() {
       var pattern = xref.fetchIfRef(patternRes.get(patternName.name));
       var dict = IsStream(pattern) ? pattern.dict : pattern;
 
-      var types = [null, this.setTilingPattern,
-          this.setShadingPattern];
+      var types = [null, this.setTilingPattern, this.setShadingPattern];
 
       var typeNum = dict.get("PatternType");
       var patternFn = types[typeNum];
