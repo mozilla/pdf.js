@@ -100,8 +100,12 @@ var Fonts = (function Fonts() {
         var unicode = encoding[charcode];
 
         // Check if the glyph has already been converted
-        if (!IsNum(unicode))
+        if (!unicode) {
+          // XXX is the right behavior?
+          unicode = charcode;
+        } else if (!IsNum(unicode)) {
           unicode = encoding[unicode] = GlyphsUnicode[unicode.name];
+        }
 
         // Handle surrogate pairs
         if (unicode > 0xFFFF) {
