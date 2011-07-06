@@ -643,17 +643,16 @@ var Font = (function Font() {
     var ulUnicodeRange3 = 0;
     var ulUnicodeRange4 = 0;
 
-	var charset = properties.charset;
+    var charset = properties.charset;
     if (charset && charset.length) {
-	    var firstCharIndex = null;
-	    var lastCharIndex = 0;
+      var firstCharIndex = null;
+      var lastCharIndex = 0;
 
-      for (var i = 1; i < charset.length; i++) {
-	      var code = GlyphsUnicode[charset[i]];
-		    if (firstCharIndex > code || !firstCharIndex)
+      for (var i = 1; i < charset.length; i++) {var code = GlyphsUnicode[charset[i]];
+        if (firstCharIndex > code || !firstCharIndex)
 		      firstCharIndex = code;
-		    if (lastCharIndex < code)
-		      lastCharIndex = code;
+        if (lastCharIndex < code)
+          lastCharIndex = code;
 
 	      var position = getUnicodeRangeFor(code);
         if (position < 32) {
