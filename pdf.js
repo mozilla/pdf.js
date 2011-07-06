@@ -3803,7 +3803,7 @@ var CanvasGraphics = (function() {
             this.current.leading = leading;
         },
         setFont: function(fontRef, size) {
-            var font = this.res.get("Font");
+            var font = this.xref.fetchIfRef(this.res.get("Font"));
             if (!IsDict(font))
               return;
 
