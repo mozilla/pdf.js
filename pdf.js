@@ -3948,13 +3948,13 @@ var CanvasGraphics = (function() {
 
             if (cs.name == "Pattern") {
                 var patternName = arguments[0];
-                this.ctx.fillStyle = this.getPattern(patternName);
+                this.setFillPattern(patternName);
             } else {
                 // TODO real impl
                 this.setFillColor.apply(this, arguments);
             }
         },
-        getPattern: function(patternName) {
+        setFillPattern: function(patternName) {
             if (!IsName(patternName))
                 error("Bad args to getPattern");
 
@@ -3964,27 +3964,40 @@ var CanvasGraphics = (function() {
                 error("Unable to find pattern resource");
 
             var pattern = xref.fetchIfRef(patternRes.get(patternName.name));
-            var patternDict = IsStream(pattern) ? pattern.dict : pattern;
+            var dict = IsStream(pattern) ? pattern.dict : pattern;
 
-            var types = [null, this.getTilingPattern,
-                this.getShadingPattern];
-            var typeNum = patternDict.get("PatternType");
+            var types = [null, this.setTilingPattern,
+                this.setShadingPattern];
+            
+            var typeNum = dict.get("PatternType");
             var patternFn = types[typeNum];
             if (!patternFn)
                 error("Unhandled pattern type");
-            return patternFn.call(this, pattern, patternDict);
+            patternFn.call(this, pattern, dict);
         },
-        getShadingPattern: function(pattern) {
-            var matrix = pattern.get("Matrix");
+        setShadingPattern: function(pattern, dict) {
+            var matrix = dict.get("Matrix");
 
-            this.save();
+            var inv = [0,0,0,0,0,0];
+            var det = 1 / (matrix[0] * matrix[3] - matrix[1] * matrix[2]);
+            inv[0] = matrix[3] * det;
+            inv[1] = -matrix[1] * det;
+            inv[2] = -matrix[2] * det;
+            inv[3] = matrix[0] * det;
+            inv[4] = det * (matrix[2] * matrix[5] - matrix[3] * matrix[4]);
+            inv[5] = det * (matrix[1] * matrix[4] - matrix[0] * matrix[5]);
+
             this.transform.apply(this, matrix);
             var shading = this.getShading(pattern.get("Shading"));
             this.restore();
+            this.ctx.fillStyle = shading;
 
-            return shading;
+            // HACK to get the gradient to show at the right location. If
+            // removed, the gradient will show at the pre-transform coordinates.
+            this.ctx.fillRect(0,0,0,0);
+            this.transform.apply(this, inv);
         },
-        getTilingPattern: function(pattern) {
+        setTilingPattern: function(pattern, dict) {
             function applyMatrix(point, m) {
                 var x = point[0] * m[0] + point[1] * m[2] + m[4];
                 var y = point[0] * m[1] + point[1] * m[3] + m[5];
@@ -4002,7 +4015,6 @@ var CanvasGraphics = (function() {
             };
 
             this.save();
-            var dict = pattern.dict;
             var ctx = this.ctx;
 
             var paintType = dict.get("PaintType");
@@ -4075,8 +4087,7 @@ var CanvasGraphics = (function() {
             this.restore();
 
             TODO("Inverse pattern is painted");
-            pattern = this.ctx.createPattern(tmpCanvas, "repeat");
-            return pattern;
+            this.ctx.fillStyle = this.ctx.createPattern(tmpCanvas, "repeat");
         },
         setStrokeGray: function(gray) {
             this.setStrokeRGBColor(gray, gray, gray);
