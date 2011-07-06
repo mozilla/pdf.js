@@ -4045,7 +4045,6 @@ var CanvasGraphics = (function() {
 
       this.transform.apply(this, matrix);
       var shading = this.getShading(pattern.get("Shading"));
-      this.restore();
       this.ctx.fillStyle = shading;
 
       // HACK to get the gradient to show at the right location. If
