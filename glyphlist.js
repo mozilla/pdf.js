@@ -1,7 +1,7 @@
 /* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- /
 /* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
 
-"use strict";
+'use strict';
 
 var GlyphsUnicode = {
   A: 0x0041,
@@ -2474,8 +2474,8 @@ var GlyphsUnicode = {
   lameddageshhebrew: 0xFB3C,
   lamedhebrew: 0x05DC,
   lamedholam: 0x05DC05B9,
-  lamedholamdagesh: "05DC 05B9 05BC",
-  lamedholamdageshhebrew: "05DC 05B9 05BC",
+  lamedholamdagesh: '05DC 05B9 05BC',
+  lamedholamdageshhebrew: '05DC 05B9 05BC',
   lamedholamhebrew: 0x05DC05B9,
   lamfinalarabic: 0xFEDE,
   lamhahinitialarabic: 0xFCCA,
@@ -2486,8 +2486,8 @@ var GlyphsUnicode = {
   lammedialarabic: 0xFEE0,
   lammeemhahinitialarabic: 0xFD88,
   lammeeminitialarabic: 0xFCCC,
-  lammeemjeeminitialarabic: "FEDF FEE4 FEA0",
-  lammeemkhahinitialarabic: "FEDF FEE4 FEA8",
+  lammeemjeeminitialarabic: 'FEDF FEE4 FEA0',
+  lammeemkhahinitialarabic: 'FEDF FEE4 FEA8',
   largecircle: 0x25EF,
   lbar: 0x019A,
   lbelt: 0x026C,
@@ -3250,7 +3250,7 @@ var GlyphsUnicode = {
   reharmenian: 0x0580,
   rehfinalarabic: 0xFEAE,
   rehiragana: 0x308C,
-  rehyehaleflamarabic: "0631 FEF3 FE8E 0644",
+  rehyehaleflamarabic: '0631 FEF3 FE8E 0644',
   rekatakana: 0x30EC,
   rekatakanahalfwidth: 0xFF9A,
   resh: 0x05E8,

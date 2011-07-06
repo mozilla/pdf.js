@@ -4,6 +4,7 @@
 <title>pdf.js Multi-Page Viewer</title>
 <meta http-equiv="Content-type" content="text/html;charset=UTF-8"/>
 <link rel="stylesheet" href="multi_page_viewer.css" type="text/css" media="screen"/>
+<script type="text/javascript" src="compatibility.js"></script>
 <script type="text/javascript" src="../pdf.js"></script>
 <script type="text/javascript" src="../fonts.js"></script>
 <script type="text/javascript" src="../crypto.js"></script>
@@ -34,7 +35,7 @@
       </select>
       <span class="label">Zoom</span>
     </span>
-    <span class="control">
+    <span class="control" id="fileWrapper">
       <span id="openFileButton"></span>
       <input type="file" id="fileInput"/>
       <span class="label">Open File</span>
