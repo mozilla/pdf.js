@@ -1,7 +1,7 @@
 /* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- /
 /* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
 
-"use strict";
+'use strict';
 
 var ARCFourCipher = (function() {
   function constructor(key) {
@@ -30,7 +30,7 @@ var ARCFourCipher = (function() {
         a = (a + 1) & 0xFF;
         tmp = s[a];
         b = (b + tmp) & 0xFF;
-        tmp2 = s[b]
+        tmp2 = s[b];
         s[a] = tmp2;
         s[b] = tmp;
         output[i] = data[i] ^ s[(tmp + tmp2) & 0xFF];
@@ -47,22 +47,23 @@ var ARCFourCipher = (function() {
 var md5 = (function() {
   var r = new Uint8Array([
     7, 12, 17, 22, 7, 12, 17, 22, 7, 12, 17, 22, 7, 12, 17, 22,
-    5,  9, 14, 20, 5,  9, 14, 20, 5,  9, 14, 20, 5,  9, 14, 20,
+    5, 9, 14, 20, 5, 9, 14, 20, 5, 9, 14, 20, 5, 9, 14, 20,
     4, 11, 16, 23, 4, 11, 16, 23, 4, 11, 16, 23, 4, 11, 16, 23,
     6, 10, 15, 21, 6, 10, 15, 21, 6, 10, 15, 21, 6, 10, 15, 21]);
+
   var k = new Int32Array([
     -680876936, -389564586, 606105819, -1044525330, -176418897, 1200080426,
     -1473231341, -45705983, 1770035416, -1958414417, -42063, -1990404162,
     1804603682, -40341101, -1502002290, 1236535329, -165796510, -1069501632,
-    643717713, -373897302, -701558691, 38016083, -660478335, -405537848, 568446438,
-    -1019803690, -187363961, 1163531501, -1444681467, -51403784, 1735328473,
-    -1926607734, -378558, -2022574463, 1839030562, -35309556, -1530992060,
-    1272893353, -155497632, -1094730640, 681279174, -358537222, -722521979,
-    76029189, -640364487, -421815835, 530742520, -995338651, -198630844, 1126891415,
-    -1416354905, -57434055, 1700485571, -1894986606, -1051523, -2054922799,
-    1873313359, -30611744, -1560198380, 1309151649, -145523070, -1120210379,
-    718787259, -343485551]);
-  
+    643717713, -373897302, -701558691, 38016083, -660478335, -405537848,
+    568446438, -1019803690, -187363961, 1163531501, -1444681467, -51403784,
+    1735328473, -1926607734, -378558, -2022574463, 1839030562, -35309556,
+    -1530992060, 1272893353, -155497632, -1094730640, 681279174, -358537222,
+    -722521979, 76029189, -640364487, -421815835, 530742520, -995338651,
+    -198630844, 1126891415, -1416354905, -57434055, 1700485571, -1894986606,
+    -1051523, -2054922799, 1873313359, -30611744, -1560198380, 1309151649,
+    -145523070, -1120210379, 718787259, -343485551]);
+
   function hash(data, offset, length) {
     var h0 = 1732584193, h1 = -271733879, h2 = -1732584194, h3 = 271733878;
     // pre-processing
@@ -76,10 +77,10 @@ var md5 = (function() {
     for (; i < n; ++i)
       padded[i] = 0;
     padded[i++] = (length << 3) & 0xFF;
-    padded[i++] = (length >> 5)  & 0xFF;
-    padded[i++] = (length >> 13)  & 0xFF;
-    padded[i++] = (length >> 21)  & 0xFF;
-    padded[i++] = (length >>> 29)  & 0xFF;
+    padded[i++] = (length >> 5) & 0xFF;
+    padded[i++] = (length >> 13) & 0xFF;
+    padded[i++] = (length >> 21) & 0xFF;
+    padded[i++] = (length >>> 29) & 0xFF;
     padded[i++] = 0;
     padded[i++] = 0;
     padded[i++] = 0;
@@ -87,8 +88,10 @@ var md5 = (function() {
     // TODO ArrayBuffer ?
     var w = new Int32Array(16);
     for (i = 0; i < paddedLength;) {
-      for (j = 0; j < 16; ++j, i += 4)
-        w[j] = padded[i] | (padded[i + 1] << 8) | (padded[i + 2] << 16) | (padded[i + 3] << 24);
+      for (j = 0; j < 16; ++j, i += 4) {
+        w[j] = (padded[i] | (padded[i + 1] << 8) |
+                (padded[i + 2] << 16) | (padded[i + 3] << 24));
+      }
       var a = h0, b = h1, c = h2, d = h3, f, g;
       for (j = 0; j < 64; ++j) {
         if (j < 16) {
@@ -131,7 +134,7 @@ var CipherTransform = (function() {
     this.streamCipherConstructor = streamCipherConstructor;
   }
   constructor.prototype = {
-    createStream: function (stream) {
+    createStream: function(stream) {
       var cipher = new this.streamCipherConstructor();
       return new DecryptStream(stream, function(data) {
         return cipher.encryptBlock(data);
@@ -148,10 +151,13 @@ var CipherTransform = (function() {
 })();
 
 var CipherTransformFactory = (function() {
-  function prepareKeyData(fileId, password, ownerPassword, userPassword, flags, revision, keyLength) {
+  function prepareKeyData(fileId, password, ownerPassword, userPassword,
+                          flags, revision, keyLength) {
     var defaultPasswordBytes = new Uint8Array([
-      0x28, 0xBF, 0x4E, 0x5E, 0x4E, 0x75, 0x8A, 0x41, 0x64, 0x00, 0x4E, 0x56, 0xFF, 0xFA, 0x01, 0x08, 
-      0x2E, 0x2E, 0x00, 0xB6, 0xD0, 0x68, 0x3E, 0x80, 0x2F, 0x0C, 0xA9, 0xFE, 0x64, 0x53, 0x69, 0x7A]);
+      0x28, 0xBF, 0x4E, 0x5E, 0x4E, 0x75, 0x8A, 0x41,
+      0x64, 0x00, 0x4E, 0x56, 0xFF, 0xFA, 0x01, 0x08,
+      0x2E, 0x2E, 0x00, 0xB6, 0xD0, 0x68, 0x3E, 0x80,
+      0x2F, 0x0C, 0xA9, 0xFE, 0x64, 0x53, 0x69, 0x7A]);
     var hashData = new Uint8Array(88), i = 0, j, n;
     if (password) {
       n = Math.min(32, password.length);
@@ -183,9 +189,10 @@ var CipherTransformFactory = (function() {
     var cipher, checkData;
 
     if (revision >= 3) {
-      // padded password in hashData, we can use this array for user password check
+      // padded password in hashData, we can use this array for user
+      // password check
       i = 32;
-      for(j = 0, n = fileId.length; j < n; ++j)
+      for (j = 0, n = fileId.length; j < n; ++j)
         hashData[i++] = fileId[j];
       cipher = new ARCFourCipher(encryptionKey);
       var checkData = cipher.encryptBlock(md5(hashData, 0, i));
@@ -203,37 +210,38 @@ var CipherTransformFactory = (function() {
     }
     for (j = 0, n = checkData.length; j < n; ++j) {
       if (userPassword[j] != checkData[j])
-        error("incorrect password");
+        error('incorrect password');
     }
     return encryptionKey;
-  } 
+  }
 
   function constructor(dict, fileId, password) {
-    var filter = dict.get("Filter");
-    if (!IsName(filter) || filter.name != "Standard")
-      error("unknown encryption method");
+    var filter = dict.get('Filter');
+    if (!IsName(filter) || filter.name != 'Standard')
+      error('unknown encryption method');
     this.dict = dict;
-    var algorithm = dict.get("V");
+    var algorithm = dict.get('V');
     if (!IsInt(algorithm) ||
       (algorithm != 1 && algorithm != 2))
-      error("unsupported encryption algorithm");
+      error('unsupported encryption algorithm');
     // TODO support algorithm 4
-    var keyLength = dict.get("Length") || 40;
+    var keyLength = dict.get('Length') || 40;
     if (!IsInt(keyLength) ||
       keyLength < 40 || (keyLength % 8) != 0)
-      error("invalid key length");
+      error('invalid key length');
     // prepare keys
-    var ownerPassword = stringToBytes(dict.get("O"));
-    var userPassword = stringToBytes(dict.get("U"));
-    var flags = dict.get("P");
-    var revision = dict.get("R");
+    var ownerPassword = stringToBytes(dict.get('O'));
+    var userPassword = stringToBytes(dict.get('U'));
+    var flags = dict.get('P');
+    var revision = dict.get('R');
     var fileIdBytes = stringToBytes(fileId);
     var passwordBytes;
     if (password)
       passwordBytes = stringToBytes(password);
 
-    this.encryptionKey = prepareKeyData(fileIdBytes, passwordBytes, 
-                                        ownerPassword, userPassword, flags, revision, keyLength);
+    this.encryptionKey = prepareKeyData(fileIdBytes, passwordBytes,
+                                        ownerPassword, userPassword,
+                                        flags, revision, keyLength);
   }
 
   constructor.prototype = {

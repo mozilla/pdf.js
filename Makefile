@@ -56,7 +56,7 @@ browser-test:
 #
 # This target runs all of the tests that can be run in a JS shell.
 # The shell used is taken from the JS_SHELL environment variable. If
-# that veriable is not defined, the script will attempt to use the copy
+# that variable is not defined, the script will attempt to use the copy
 # of Rhino that comes with the Closure compiler used for producing the
 # website.
 SHELL_TARGET = $(NULL)
