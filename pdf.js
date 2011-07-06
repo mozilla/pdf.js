@@ -3977,12 +3977,12 @@ var CanvasGraphics = (function() {
 
     // Color
     setStrokeColorSpace: function(space) {
-      this.current.strokeColorSpace =
-      ColorSpace.parse(space, this.xref, this.res);
+      this.current.strokeColorSpace = 
+          ColorSpace.parse(space, this.xref, this.res);
     },
     setFillColorSpace: function(space) {
-      this.current.fillColorSpace =
-      ColorSpace.parse(space, this.xref, this.res);
+      this.current.fillColorSpace = 
+          ColorSpace.parse(space, this.xref, this.res);
     },
     setStrokeColor: function(/*...*/) {
       var cs = this.getStrokeColorSpace();
@@ -3996,10 +3996,6 @@ var CanvasGraphics = (function() {
     },
     setFillColor: function(/*...*/) {
       var cs = this.getFillColorSpace();
-      if (cs.name == 'Pattern') {
-        TODO('implement Pattern fill');
-        return;
-      }
       var color = cs.getRgb(arguments);
       this.setFillRGBColor.apply(this, color);
     },
@@ -4008,28 +4004,55 @@ var CanvasGraphics = (function() {
 
       if (cs.name == 'Pattern') {
         var patternName = arguments[0];
-        if (IsName(patternName)) {
-          var xref = this.xref;
-          var patternRes = xref.fetchIfRef(this.res.get('Pattern'));
-          if (!patternRes)
-            error('Unable to find pattern resource');
-
-          var pattern = xref.fetchIfRef(patternRes.get(patternName.name));
-          var patternDict = IsStream(pattern) ? pattern.dict : pattern;
-          var types = [null, this.tilingFill,
-                       function() { TODO('Shading Patterns'); }];
-          var typeNum = patternDict.get('PatternType');
-          var patternFn = types[typeNum];
-          if (!patternFn)
-            error('Unhandled pattern type');
-          patternFn.call(this, pattern, patternDict);
-        }
+        this.setFillPattern(patternName);
       } else {
         // TODO real impl
         this.setFillColor.apply(this, arguments);
       }
     },
-    tilingFill: function(pattern) {
+    setFillPattern: function(patternName) {
+      if (!IsName(patternName))
+        error("Bad args to getPattern");
+
+      var xref = this.xref;
+      var patternRes = xref.fetchIfRef(this.res.get("Pattern"));
+      if (!patternRes)
+        error("Unable to find pattern resource");
+
+      var pattern = xref.fetchIfRef(patternRes.get(patternName.name));
+      var dict = IsStream(pattern) ? pattern.dict : pattern;
+
+      var types = [null, this.setTilingPattern,
+          this.setShadingPattern];
+
+      var typeNum = dict.get("PatternType");
+      var patternFn = types[typeNum];
+      if (!patternFn)
+        error("Unhandled pattern type");
+      patternFn.call(this, pattern, dict);
+    },
+    setShadingPattern: function(pattern, dict) {
+      var matrix = dict.get("Matrix");
+
+      var inv = [0,0,0,0,0,0];
+      var det = 1 / (matrix[0] * matrix[3] - matrix[1] * matrix[2]);
+      inv[0] = matrix[3] * det;
+      inv[1] = -matrix[1] * det;
+      inv[2] = -matrix[2] * det;
+      inv[3] = matrix[0] * det;
+      inv[4] = det * (matrix[2] * matrix[5] - matrix[3] * matrix[4]);
+      inv[5] = det * (matrix[1] * matrix[4] - matrix[0] * matrix[5]);
+
+      this.transform.apply(this, matrix);
+      var shading = this.getShading(pattern.get("Shading"));
+      this.ctx.fillStyle = shading;
+
+      // HACK to get the gradient to show at the right location. If
+      // removed, the gradient will show at the pre-transform coordinates.
+      this.ctx.fillRect(0,0,0,0);
+      this.transform.apply(this, inv);
+    },
+    setTilingPattern: function(pattern, dict) {
       function applyMatrix(point, m) {
         var x = point[0] * m[0] + point[1] * m[2] + m[4];
         var y = point[0] * m[1] + point[1] * m[3] + m[5];
@@ -4047,7 +4070,6 @@ var CanvasGraphics = (function() {
       };
 
       this.save();
-      var dict = pattern.dict;
       var ctx = this.ctx;
 
       var paintType = dict.get('PaintType');
@@ -4101,7 +4123,7 @@ var CanvasGraphics = (function() {
 
       // move the top left corner of bounding box to [0,0]
       matrix = multiply(matrix, [1, 0, 0, 1, -topLeft[0], -topLeft[1]]);
-
+      
       this.transform.apply(this, matrix);
 
       if (bbox && IsArray(bbox) && 4 == bbox.length) {
@@ -4143,7 +4165,7 @@ var CanvasGraphics = (function() {
     },
 
     // Shading
-    shadingFill: function(entryRef) {
+    shadingFill: function(shadingName) {
       var xref = this.xref;
       var res = this.res;
 
@@ -4151,11 +4173,26 @@ var CanvasGraphics = (function() {
       if (!shadingRes)
         error('No shading resource found');
 
-      var shading = xref.fetchIfRef(shadingRes.get(entryRef.name));
+      var shading = xref.fetchIfRef(shadingRes.get(shadingName.name));
       if (!shading)
         error('No shading object found');
 
+      var shadingFill = this.getShading(shading);
+
       this.save();
+      this.ctx.fillStyle = shadingFill;
+
+      // HACK to draw the gradient onto an infinite rectangle.
+      // PDF gradients are drawn across the entire image while
+      // Canvas only allows gradients to be drawn in a rectangle
+      // The following bug should allow us to remove this.
+      // https://bugzilla.mozilla.org/show_bug.cgi?id=664884
+      this.ctx.fillRect(-1e10, -1e10, 2e10, 2e10);
+
+      this.restore();
+    },
+    getShading: function(shading) {
+      shading = this.xref.fetchIfRef(shading);
 
       var bbox = shading.get('BBox');
       if (bbox && IsArray(bbox) && 4 == bbox.length) {
@@ -4164,31 +4201,28 @@ var CanvasGraphics = (function() {
         this.endPath();
       }
 
-      var cs = shading.get2('ColorSpace', 'CS');
-      TODO('shading-fill color space');
-
       var background = shading.get('Background');
       if (background)
         TODO('handle background colors');
 
+      var cs = shading.get2('ColorSpace', 'CS');
+      cs = ColorSpace.parse(cs, this.xref, this.res);
+
       var types = [null,
-                   this.fillFunctionShading,
-                   this.fillAxialShading,
-                   this.fillRadialShading];
+          null,
+          this.getAxialShading,
+          this.getRadialShading];
 
       var typeNum = shading.get('ShadingType');
-      var fillFn = types[typeNum];
-      if (!fillFn)
-        error("Unknown or NYI type of shading '" + typeNum + "'");
-      fillFn.apply(this, [shading]);
-
-      this.restore();
-    },
-
-    fillAxialShading: function(sh) {
+      var shadingFn = types[typeNum];
+      if (!shadingFn)
+        error("Unknown or NYI type of shading '"+ typeNum +"'");
+      return shadingFn.call(this, shading, cs);
+                },
+    getAxialShading: function(sh, cs) {
       var coordsArr = sh.get('Coords');
       var x0 = coordsArr[0], y0 = coordsArr[1],
-      x1 = coordsArr[2], y1 = coordsArr[3];
+          x1 = coordsArr[2], y1 = coordsArr[3];
 
       var t0 = 0.0, t1 = 1.0;
       if (sh.has('Domain')) {
@@ -4216,24 +4250,59 @@ var CanvasGraphics = (function() {
       // if there are sharp color changes. Ideally, we would implement
       // the spec faithfully and add lossless optimizations.
       var step = (t1 - t0) / 10;
+      var diff = t1 - t0;
 
       for (var i = t0; i <= t1; i += step) {
-        var c = fn.func([i]);
-        gradient.addColorStop(i, this.makeCssRgb.apply(this, c));
+        var color = fn.func([i]);
+        var rgbColor = cs.getRgb(color);
+        gradient.addColorStop((i - t0) / diff,
+            this.makeCssRgb.apply(this, rgbColor));
       }
 
-      this.ctx.fillStyle = gradient;
-
-      // HACK to draw the gradient onto an infinite rectangle.
-      // PDF gradients are drawn across the entire image while
-      // Canvas only allows gradients to be drawn in a rectangle
-      // The following bug should allow us to remove this.
-      // https://bugzilla.mozilla.org/show_bug.cgi?id=664884
-      this.ctx.fillRect(-1e10, -1e10, 2e10, 2e10);
+      return gradient;
     },
+    getRadialShading: function(sh, cs) {
+      var coordsArr = sh.get('Coords');
+      var x0 = coordsArr[0], y0 = coordsArr[1], r0 = coordsArr[2];
+      var x1 = coordsArr[3], y1 = coordsArr[4], r1 = coordsArr[5];
 
-    fillRadialShading: function(sh) {
-      TODO('radial shading');
+      var t0 = 0.0, t1 = 1.0;
+      if (sh.has('Domain')) {
+        var domainArr = sh.get('Domain');
+        t0 = domainArr[0], t1 = domainArr[1];
+      }
+
+      var extendStart = false, extendEnd = false;
+      if (sh.has('Extend')) {
+        var extendArr = sh.get('Extend');
+        extendStart = extendArr[0], extendEnd = extendArr[1];
+        TODO('Support extend');
+      }
+      var fnObj = sh.get('Function');
+      fnObj = this.xref.fetchIfRef(fnObj);
+      if (IsArray(fnObj))
+        error('No support for array of functions');
+      else if (!IsPDFFunction(fnObj))
+        error('Invalid function');
+      var fn = new PDFFunction(this.xref, fnObj);
+
+      var gradient = 
+        this.ctx.createRadialGradient(x0, y0, r0, x1, y1, r1);
+
+      // 10 samples seems good enough for now, but probably won't work
+      // if there are sharp color changes. Ideally, we would implement
+      // the spec faithfully and add lossless optimizations.
+      var step = (t1 - t0) / 10;
+      var diff = t1 - t0;
+
+      for (var i = t0; i <= t1; i += step) {
+        var color = fn.func([i]);
+        var rgbColor = cs.getRgb(color);
+        gradient.addColorStop((i - t0) / diff, 
+            this.makeCssRgb.apply(this, rgbColor));
+      }
+
+      return gradient;
     },
 
     // Images
@@ -4626,10 +4695,10 @@ var DeviceRgbCS = (function() {
     this.defaultColor = [0, 0, 0];
   }
   constructor.prototype = {
-    getRgb: function graycs_getRgb(color) {
+    getRgb: function rgbcs_getRgb(color) {
       return color;
     },
-    getRgbBuffer: function graycs_getRgbBuffer(input) {
+    getRgbBuffer: function rgbcs_getRgbBuffer(input) {
       return input;
     }
   };
@@ -4643,14 +4712,61 @@ var DeviceCmykCS = (function() {
     this.defaultColor = [0, 0, 0, 1];
   }
   constructor.prototype = {
-    getRgb: function graycs_getRgb(color) {
-      var c = color[0], y = color[1], m = color[2], k = color[3];
-      var ri = (1 - Math.min(1, c * (1 - k) + k)) | 0;
-      var gi = (1 - Math.min(1, m * (1 - k) + k)) | 0;
-      var bi = (1 - Math.min(1, y * (1 - k) + k)) | 0;
-      return [ri, gi, bi];
+    getRgb: function cmykcs_getRgb(color) {
+      var c = color[0], m = color[1], y = color[2], k = color[3];
+      var c1 = 1 - c, m1 = 1 - m, y1 = 1 - y, k1 = 1 - k;
+
+      var x, r, g, b;
+      // this is a matrix multiplication, unrolled for performance
+      // code is taken from the poppler implementation
+      x = c1 * m1 * y1 * k1; // 0 0 0 0
+      r = g = b = x;
+      x = c1 * m1 * y1 * k;  // 0 0 0 1
+      r += 0.1373 * x;
+      g += 0.1216 * x;
+      b += 0.1255 * x;
+      x = c1 * m1 * y  * k1; // 0 0 1 0
+      r += x;
+      g += 0.9490 * x;
+      x = c1 * m1 * y  * k;  // 0 0 1 1
+      r += 0.1098 * x;
+      g += 0.1020 * x;
+      x = c1 * m  * y1 * k1; // 0 1 0 0
+      r += 0.9255 * x;
+      b += 0.5490 * x;
+      x = c1 * m  * y1 * k;  // 0 1 0 1
+      r += 0.1412 * x;
+      x = c1 * m  * y  * k1; // 0 1 1 0
+      r += 0.9294 * x;
+      g += 0.1098 * x;
+      b += 0.1412 * x;
+      x = c1 * m  * y  * k;  // 0 1 1 1
+      r += 0.1333 * x;
+      x = c  * m1 * y1 * k1; // 1 0 0 0
+      g += 0.6784 * x;
+      b += 0.9373 * x;
+      x = c  * m1 * y1 * k;  // 1 0 0 1
+      g += 0.0588 * x;
+      b += 0.1412 * x;
+      x = c  * m1 * y  * k1; // 1 0 1 0
+      g += 0.6510 * x;
+      b += 0.3137 * x;
+      x = c  * m1 * y  * k;  // 1 0 1 1
+      g += 0.0745 * x;
+      x = c  * m  * y1 * k1; // 1 1 0 0
+      r += 0.1804 * x;
+      g += 0.1922 * x;
+      b += 0.5725 * x;
+      x = c  * m  * y1 * k;  // 1 1 0 1
+      b += 0.0078 * x;
+      x = c  * m  * y  * k1; // 1 1 1 0
+      r += 0.2118 * x;
+      g += 0.2119 * x;
+      b += 0.2235 * x;
+
+      return [r, g, b];
     },
-    getRgbBuffer: function graycs_getRgbBuffer(colorBuf) {
+    getRgbBuffer: function cmykcs_getRgbBuffer(colorBuf) {
       error('conversion from rgb to cmyk not implemented for images');
       return colorBuf;
     }
