@@ -3764,7 +3764,7 @@ var CanvasGraphics = (function() {
     transform: function(a, b, c, d, e, f) {
       this.ctx.transform(a, b, c, d, e, f);
     },
-    
+
     // Path
     moveTo: function(x, y) {
       this.ctx.moveTo(x, y);
@@ -3825,7 +3825,7 @@ var CanvasGraphics = (function() {
     endPath: function() {
       this.consumePath();
     },
-    
+
     // Clipping
     clip: function() {
       this.pendingClip = NORMAL_CLIP;
@@ -3833,7 +3833,7 @@ var CanvasGraphics = (function() {
     eoClip: function() {
       this.pendingClip = EO_CLIP;
     },
-    
+
     // Text
     beginText: function() {
       this.current.textMatrix = IDENTITY_MATRIX;
@@ -3858,27 +3858,27 @@ var CanvasGraphics = (function() {
       this.current.leading = leading;
     },
     setFont: function(fontRef, size) {
-      var font = this.xref.fetchIfRef(this.res.get("Font"));
+      var font = this.xref.fetchIfRef(this.res.get('Font'));
       if (!IsDict(font))
         return;
-      
+
       font = font.get(fontRef.name);
       font = this.xref.fetchIfRef(font);
       if (!font)
         return;
-      
-      var fontName = "";
-      var fontDescriptor = font.get("FontDescriptor");
+
+      var fontName = '';
+      var fontDescriptor = font.get('FontDescriptor');
       if (fontDescriptor && fontDescriptor.num) {
         var fontDescriptor = this.xref.fetchIfRef(fontDescriptor);
-        fontName = fontDescriptor.get("FontName").name.replace("+", "_");
+        fontName = fontDescriptor.get('FontName').name.replace('+', '_');
       }
-      
+
       if (!fontName) {
         // TODO: fontDescriptor is not available, fallback to default font
         fontName = 'sans-serif';
       }
-      
+
       this.current.fontName = fontName;
       this.current.fontSize = size;
 
