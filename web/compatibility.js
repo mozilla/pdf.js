@@ -137,4 +137,17 @@
   }; 
 })();
 
+// Function.prototype.bind ?
+(function() {
+  if (typeof Function.prototype.bind !== "undefined")
+    return;
 
+  Function.prototype.bind = function(obj) {
+    var fn = this, headArgs = Array.prototype.slice.call(arguments, 1);
+    var binded = function(tailArgs) {
+      var args = headArgs.concat(tailArgs);
+      return fn.apply(obj, args);
+    };
+    return binded;
+  };
+})();
