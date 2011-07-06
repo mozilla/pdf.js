@@ -1000,7 +1000,7 @@ var Font = (function() {
               platforms[i] + // platform ID
               encodings[i] + // encoding ID
               languages[i] + // language ID
-              string16(j) + // name ID
+              string16(i) + // name ID
               string16(str.length) +
               string16(strOffset);
             nameTable += nameRecord;
