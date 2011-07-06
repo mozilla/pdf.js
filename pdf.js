@@ -4002,7 +4002,7 @@ var CanvasGraphics = (function() {
     setFillColorN: function(/*...*/) {
       var cs = this.getFillColorSpace();
 
-      if (cs.name == "Pattern") {
+      if (cs.name == 'Pattern') {
         var patternName = arguments[0];
         this.setFillPattern(patternName);
       } else {
@@ -4121,8 +4121,10 @@ var CanvasGraphics = (function() {
         matrix[3] = tmpCanvas.height / ystep;
         topLeft = applyMatrix([x0, y0], matrix);
       }
+
       // move the top left corner of bounding box to [0,0]
       matrix = multiply(matrix, [1, 0, 0, 1, -topLeft[0], -topLeft[1]]);
+      
       this.transform.apply(this, matrix);
 
       if (bbox && IsArray(bbox) && 4 == bbox.length) {
@@ -4168,13 +4170,13 @@ var CanvasGraphics = (function() {
       var xref = this.xref;
       var res = this.res;
 
-      var shadingRes = xref.fetchIfRef(res.get("Shading"));
+      var shadingRes = xref.fetchIfRef(res.get('Shading'));
       if (!shadingRes)
-        error("No shading resource found");
+        error('No shading resource found');
 
       var shading = xref.fetchIfRef(shadingRes.get(shadingName.name));
       if (!shading)
-        error("No shading object found");
+        error('No shading object found');
 
       var shadingFill = this.getShading(shading);
 
@@ -4193,18 +4195,18 @@ var CanvasGraphics = (function() {
     getShading: function(shading) {
       shading = this.xref.fetchIfRef(shading);
 
-      var bbox = shading.get("BBox");
+      var bbox = shading.get('BBox');
       if (bbox && IsArray(bbox) && 4 == bbox.length) {
         this.rectangle.apply(this, bbox);
         this.clip();
         this.endPath();
       }
 
-      var background = shading.get("Background");
+      var background = shading.get('Background');
       if (background)
-        TODO("handle background colors");
+        TODO('handle background colors');
 
-      var cs = shading.get2("ColorSpace", "CS");
+      var cs = shading.get2('ColorSpace', 'CS');
       cs = ColorSpace.parse(cs, this.xref, this.res);
 
       var types = [null,
@@ -4212,14 +4214,14 @@ var CanvasGraphics = (function() {
           this.getAxialShading,
           this.getRadialShading];
 
-      var typeNum = shading.get("ShadingType");
+      var typeNum = shading.get('ShadingType');
       var shadingFn = types[typeNum];
       if (!shadingFn)
         error("Unknown or NYI type of shading '"+ typeNum +"'");
       return shadingFn.call(this, shading, cs);
                 },
     getAxialShading: function(sh, cs) {
-      var coordsArr = sh.get("Coords");
+      var coordsArr = sh.get('Coords');
       var x0 = coordsArr[0], y0 = coordsArr[1],
           x1 = coordsArr[2], y1 = coordsArr[3];
 
@@ -4230,17 +4232,17 @@ var CanvasGraphics = (function() {
       }
 
       var extendStart = false, extendEnd = false;
-      if (sh.has("Extend")) {
-        var extendArr = sh.get("Extend");
+      if (sh.has('Extend')) {
+        var extendArr = sh.get('Extend');
         extendStart = extendArr[0], extendEnd = extendArr[1];
-        TODO("Support extend");
+        TODO('Support extend');
       }
-      var fnObj = sh.get("Function");
+      var fnObj = sh.get('Function');
       fnObj = this.xref.fetchIfRef(fnObj);
       if (IsArray(fnObj))
-        error("No support for array of functions");
+        error('No support for array of functions');
       else if (!IsPDFFunction(fnObj))
-        error("Invalid function");
+        error('Invalid function');
       var fn = new PDFFunction(this.xref, fnObj);
 
       var gradient = this.ctx.createLinearGradient(x0, y0, x1, y1);
@@ -4261,28 +4263,28 @@ var CanvasGraphics = (function() {
       return gradient;
     },
     getRadialShading: function(sh, cs) {
-      var coordsArr = sh.get("Coords");
+      var coordsArr = sh.get('Coords');
       var x0 = coordsArr[0], y0 = coordsArr[1], r0 = coordsArr[2];
       var x1 = coordsArr[3], y1 = coordsArr[4], r1 = coordsArr[5];
 
       var t0 = 0.0, t1 = 1.0;
-      if (sh.has("Domain")) {
-        var domainArr = sh.get("Domain");
+      if (sh.has('Domain')) {
+        var domainArr = sh.get('Domain');
         t0 = domainArr[0], t1 = domainArr[1];
       }
 
       var extendStart = false, extendEnd = false;
-      if (sh.has("Extend")) {
-        var extendArr = sh.get("Extend");
+      if (sh.has('Extend')) {
+        var extendArr = sh.get('Extend');
         extendStart = extendArr[0], extendEnd = extendArr[1];
-        TODO("Support extend");
+        TODO('Support extend');
       }
-      var fnObj = sh.get("Function");
+      var fnObj = sh.get('Function');
       fnObj = this.xref.fetchIfRef(fnObj);
       if (IsArray(fnObj))
-        error("No support for array of functions");
+        error('No support for array of functions');
       else if (!IsPDFFunction(fnObj))
-        error("Invalid function");
+        error('Invalid function');
       var fn = new PDFFunction(this.xref, fnObj);
 
       var gradient = 
