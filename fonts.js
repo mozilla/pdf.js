@@ -537,9 +537,9 @@ var Font = (function() {
       offsets.virtualOffset++;
 
     // checksum
-    var checksum = 0;
-    for (var i = 0; i < length; i += 4)
-      checksum += int16([data[i], data[i + 1], data[i + 2], data[i + 3]]);
+    var checksum = 0, n = data.length;
+    for (var i = 0; i < n; i+=4)
+      checksum = (checksum + int32([data[i], data[i+1], data[i+2], data[i+3]])) | 0;
 
     var tableEntry = (tag + string32(checksum) +
                       string32(offset) + string32(length));
@@ -644,7 +644,7 @@ var Font = (function() {
       var firstCharIndex = null;
       var lastCharIndex = 0;
 
-      for (var i = 1; i < charset.length; i++) {
+      for (var i = 0; i < charset.length; i++) {
         var code = GlyphsUnicode[charset[i]];
         if (firstCharIndex > code || !firstCharIndex)
           firstCharIndex = code;
@@ -1000,7 +1000,7 @@ var Font = (function() {
               platforms[i] + // platform ID
               encodings[i] + // encoding ID
               languages[i] + // language ID
-              string16(i) + // name ID
+              string16(j) + // name ID
               string16(str.length) +
               string16(strOffset);
             nameTable += nameRecord;
@@ -1625,8 +1625,8 @@ CFF.prototype = {
     // Add another offset after this one because we need a new offset
     var relativeOffset = 1;
     for (var i = 0; i < count + 1; i++) {
-      data += String.fromCharCode(relativeOffset >> 24, relativeOffset >> 16,
-                                  relativeOffset >> 8, relativeOffset & 0xff);
+      data += String.fromCharCode((relativeOffset >>> 24) & 0xFF, (relativeOffset >> 16) & 0xFF,
+                                  (relativeOffset >> 8) & 0xFF, relativeOffset & 0xFF);
 
       if (objects[i])
         relativeOffset += objects[i].length;
@@ -1634,7 +1634,7 @@ CFF.prototype = {
 
     for (var i = 0; i < count; i++) {
       for (var j = 0; j < objects[i].length; j++)
-        data += isByte ? String.fromCharCode(objects[i][j]) : objects[i][j];
+        data += isByte ? String.fromCharCode(objects[i][j] & 0xFF) : objects[i][j];
     }
     return data;
   },
@@ -1642,13 +1642,13 @@ CFF.prototype = {
   encodeNumber: function cff_encodeNumber(value) {
     if (value >= -32768 && value <= 32767) {
       return '\x1c' +
-             String.fromCharCode(value >> 8) +
+             String.fromCharCode((value >> 8) & 0xFF) +
              String.fromCharCode(value & 0xFF);
-    } else if (value >= (-2147483647 - 1) && value <= 2147483647) {
+    } else if (value >= (-2147483647-1) && value <= 2147483647) {
       return '\xff' +
-             String.fromCharCode(value >> 24) +
-             String.fromCharCode(value >> 16) +
-             String.fromCharCode(value >> 8) +
+             String.fromCharCode((value >>> 24) & 0xFF) +
+             String.fromCharCode((value >> 16) & 0xFF) +
+             String.fromCharCode((value >> 8) & 0xFF) +
              String.fromCharCode(value & 0xFF);
     }
     error('Value: ' + value + ' is not allowed');
