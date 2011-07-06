@@ -4792,9 +4792,9 @@ var PDFImage = (function() {
     this.height = dict.get2('Height', 'H');
 
     if (this.width < 1 || this.height < 1)
-  error('Invalid image width or height');
+      error('Invalid image width or height');
 
-this.interpolate = dict.get2('Interpolate', 'I') || false;
+    this.interpolate = dict.get2('Interpolate', 'I') || false;
     this.imageMask = dict.get2('ImageMask', 'IM') || false;
 
     var bitsPerComponent = image.bitsPerComponent;
