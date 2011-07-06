@@ -42,5 +42,11 @@
        "link": true,
        "rounds": 1,
        "type": "eq"
+    },
+    {  "id": "openoffice-pdf",
+       "file": "pdfs/DiwanProfile.pdf",
+       "link": true,
+       "rounds": 1,
+       "type": "load"
     }
 ]
