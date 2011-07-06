@@ -4768,7 +4768,7 @@ var DeviceCmykCS = (function() {
       return [r, g, b];
     },
     getRgbBuffer: function cmykcs_getRgbBuffer(colorBuf) {
-      error("conversion from rgb to cmyk not implemented for images");
+      error('conversion from rgb to cmyk not implemented for images');
       return colorBuf;
     }
   };
