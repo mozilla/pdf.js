@@ -1917,32 +1917,37 @@ var Cmd = (function() {
 
 var Dict = (function() {
   function constructor() {
-    this.map = Object.create(null);
+    this.map = {};
   }
 
   constructor.prototype = {
-    get: function(key) {
-      if (key in this.map)
-        return this.map[key];
-      return null;
+    get: function(key1, key2, key3) {
+      var value;
+      if (typeof (value = this.map[key1]) != 'undefined' || key1 in map || typeof key2 == 'undefined') {
+        return value;
+      }
+      if (typeof (value = this.map[key2]) != 'undefined' || key2 in map || typeof key3 == 'undefined') {
+        return value;
+      }
+
+      return this.map[key3] || null;
     },
-    get2: function(key1, key2) {
-      return this.get(key1) || this.get(key2);
-    },
-    get3: function(key1, key2, key3) {
-      return this.get(key1) || this.get(key2) || this.get(key3);
-    },
-    has: function(key) {
-      return key in this.map;
-    },
+
     set: function(key, value) {
       this.map[key] = value;
     },
-    forEach: function(aCallback) {
-      for (var key in this.map)
-        aCallback(key, this.map[key]);
+
+    has: function(key) {
+      return key in this.map;
+    },
+
+    forEach: function(callback) {
+      for (var key in this.map) {
+        callback.call(null, key, this.map[key]);
+      }
     }
   };
+
   return constructor;
 })();
 
@@ -2459,8 +2464,8 @@ var Parser = (function() {
       return stream;
     },
     filter: function(stream, dict, length) {
-      var filter = dict.get2('Filter', 'F');
-      var params = dict.get2('DecodeParms', 'DP');
+      var filter = dict.get('Filter', 'F');
+      var params = dict.get('DecodeParms', 'DP');
       if (IsName(filter))
         return this.makeFilter(stream, filter.name, length, params);
       if (IsArray(filter)) {
@@ -3472,7 +3477,7 @@ var CanvasGraphics = (function() {
       assertWellFormed(IsName(fontName), 'invalid font name');
       fontName = fontName.name.replace('+', '_');
 
-      var fontFile = descriptor.get3('FontFile', 'FontFile2', 'FontFile3');
+      var fontFile = descriptor.get('FontFile', 'FontFile2', 'FontFile3');
       if (!fontFile)
         error('FontFile not found for font: ' + fontName);
       fontFile = xref.fetchIfRef(fontFile);
@@ -4204,7 +4209,7 @@ var CanvasGraphics = (function() {
       if (background)
         TODO('handle background colors');
 
-      var cs = shading.get2('ColorSpace', 'CS');
+      var cs = shading.get('ColorSpace', 'CS');
       cs = ColorSpace.parse(cs, this.xref, this.res);
 
       var types = [null,
@@ -4368,8 +4373,8 @@ var CanvasGraphics = (function() {
 
       var ctx = this.ctx;
       var dict = image.dict;
-      var w = dict.get2('Width', 'W');
-      var h = dict.get2('Height', 'H');
+      var w = dict.get('Width', 'W');
+      var h = dict.get('Height', 'H');
       // scale the image to the unit square
       ctx.scale(1 / w, -1 / h);
 
@@ -4786,18 +4791,18 @@ var PDFImage = (function() {
     // TODO cache rendered images?
 
     var dict = image.dict;
-    this.width = dict.get2('Width', 'W');
-    this.height = dict.get2('Height', 'H');
+    this.width = dict.get('Width', 'W');
+    this.height = dict.get('Height', 'H');
 
     if (this.width < 1 || this.height < 1)
       error('Invalid image width or height');
 
-    this.interpolate = dict.get2('Interpolate', 'I') || false;
-    this.imageMask = dict.get2('ImageMask', 'IM') || false;
+    this.interpolate = dict.get('Interpolate', 'I') || false;
+    this.imageMask = dict.get('ImageMask', 'IM') || false;
 
     var bitsPerComponent = image.bitsPerComponent;
     if (!bitsPerComponent) {
-      bitsPerComponent = dict.get2('BitsPerComponent', 'BPC');
+      bitsPerComponent = dict.get('BitsPerComponent', 'BPC');
       if (!bitsPerComponent) {
         if (this.imageMask)
           bitsPerComponent = 1;
@@ -4807,11 +4812,11 @@ var PDFImage = (function() {
     }
     this.bpc = bitsPerComponent;
 
-    var colorSpace = dict.get2('ColorSpace', 'CS');
+    var colorSpace = dict.get('ColorSpace', 'CS');
     this.colorSpace = ColorSpace.parse(colorSpace, xref, res);
 
     this.numComps = this.colorSpace.numComps;
-    this.decode = dict.get2('Decode', 'D');
+    this.decode = dict.get('Decode', 'D');
 
     var mask = xref.fetchIfRef(image.dict.get('Mask'));
     var smask = xref.fetchIfRef(image.dict.get('SMask'));
