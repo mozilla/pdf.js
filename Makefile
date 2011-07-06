@@ -40,7 +40,7 @@ PDF_BROWSERS := $(DEFAULT_BROWSERS)
 endif
 
 browser-test:
-	@if [ ! "$(PDF_BROWSERS)" ]; then \
+	@if [ ! -e "$(PDF_BROWSERS)" ]; then \
 	echo "Browser manifest file $(PDF_BROWSERS) does not exist."; \
 	echo "Try copying one of the examples" \
               "in test/resources/browser_manifests/"; \
