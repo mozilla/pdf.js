@@ -4719,6 +4719,7 @@ var IndexedCS = (function() {
       return this.base.getRgb(c);
     },
     getRgbBuffer: function indexcs_getRgbBuffer(input) {
+      var base = this.base;
       var numComps = base.numComps;
       var lookup = this.lookup;
       var length = input.length;
@@ -4732,7 +4733,7 @@ var IndexedCS = (function() {
         }
       }
 
-      return this.base.getRgbBuffer(baseBuf);
+      return base.getRgbBuffer(baseBuf);
     }
   };
   return constructor;
