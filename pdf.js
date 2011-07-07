@@ -1923,10 +1923,10 @@ var Dict = (function() {
   constructor.prototype = {
     get: function(key1, key2, key3) {
       var value;
-      if (typeof (value = this.map[key1]) != 'undefined' || key1 in map || typeof key2 == 'undefined') {
+      if (typeof (value = this.map[key1]) != 'undefined' || key1 in this.map || typeof key2 == 'undefined') {
         return value;
       }
-      if (typeof (value = this.map[key2]) != 'undefined' || key2 in map || typeof key3 == 'undefined') {
+      if (typeof (value = this.map[key2]) != 'undefined' || key2 in this.map || typeof key3 == 'undefined') {
         return value;
       }
 
