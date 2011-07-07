@@ -4646,11 +4646,11 @@ var SeparationCS = (function() {
   }
 
   constructor.prototype = {
-    getRgb: function tintcs_getRgb(color) {
+    getRgb: function sepcs_getRgb(color) {
       var tinted = this.tintFn.func(color);
       return this.base.getRgb(tinted);
     },
-    getRgbBuffer: function tintcs_getRgbBuffer(input) {
+    getRgbBuffer: function sepcs_getRgbBuffer(input) {
       var tintFn = this.tintFn;
       var base = this.base;
 
