@@ -26,6 +26,12 @@
        "rounds": 1,
        "type": "load"
     },
+    {  "id": "shavian-load",
+       "file": "pdfs/shavian.pdf",
+       "link": true,
+       "rounds": 1,
+       "type": "load"
+    },
     {  "id": "sizes",
        "file": "pdfs/sizes.pdf",
        "rounds": 1,
@@ -36,5 +42,11 @@
        "link": true,
        "rounds": 1,
        "type": "eq"
+    },
+    {  "id": "openoffice-pdf",
+       "file": "pdfs/DiwanProfile.pdf",
+       "link": true,
+       "rounds": 1,
+       "type": "load"
     }
 ]

@@ -1,38 +1,38 @@
 /* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- /
 /* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
 
-"use strict";
+'use strict';
 
 var consoleTimer = {};
 var console = {
   log: function log() {
     var args = Array.prototype.slice.call(arguments);
     postMessage({
-      action: "log",
+      action: 'log',
       data: args
     });
   },
-  
+
   time: function(name) {
     consoleTimer[name] = Date.now();
   },
-  
+
   timeEnd: function(name) {
     var time = consoleTimer[name];
     if (time == null) {
-      throw "Unkown timer name " + name;
+      throw 'Unkown timer name ' + name;
     }
-    this.log("Timer:", name, Date.now() - time);
+    this.log('Timer:', name, Date.now() - time);
   }
-}
+};
 
 //
-importScripts("console.js")
-importScripts("canvas.js");
-importScripts("../pdf.js");
-importScripts("../fonts.js");
-importScripts("../crypto.js");
-importScripts("../glyphlist.js")
+importScripts('console.js');
+importScripts('canvas.js');
+importScripts('../pdf.js');
+importScripts('../fonts.js');
+importScripts('../crypto.js');
+importScripts('../glyphlist.js');
 
 // Use the JpegStreamProxy proxy.
 JpegStream = JpegStreamProxy;
@@ -48,14 +48,14 @@ onmessage = function(event) {
   if (!pdfDocument) {
     pdfDocument = new PDFDoc(new Stream(data));
     postMessage({
-      action: "pdf_num_pages",
+      action: 'pdf_num_pages',
       data: pdfDocument.numPages
     });
     return;
   }
   // User requested to render a certain page.
   else {
-    console.time("compile");
+    console.time('compile');
 
     // Let's try to render the first page...
     var page = pdfDocument.getPage(parseInt(data));
@@ -64,8 +64,8 @@ onmessage = function(event) {
     var pageWidth = (page.mediaBox[2] - page.mediaBox[0]) * pdfToCssUnitsCoef;
     var pageHeight = (page.mediaBox[3] - page.mediaBox[1]) * pdfToCssUnitsCoef;
     postMessage({
-      action: "setup_page",
-      data: pageWidth + "," + pageHeight
+      action: 'setup_page',
+      data: pageWidth + ',' + pageHeight
     });
 
     // Set canvas size.
@@ -76,21 +76,21 @@ onmessage = function(event) {
     // we can trigger the actual page rendering with page.display
     var fonts = [];
     var imagesLoader = new ImagesLoader();
-    var gfx = new CanvasGraphics(canvas.getContext("2d"), CanvasProxy);
+    var gfx = new CanvasGraphics(canvas.getContext('2d'), CanvasProxy);
     page.compile(gfx, fonts, imagesLoader);
-    console.timeEnd("compile");
+    console.timeEnd('compile');
 
     // Send fonts to the main thread.
-    console.time("fonts");
+    console.time('fonts');
     postMessage({
-      action: "fonts",
-      data:   fonts
+      action: 'fonts',
+      data: fonts
     });
-    console.timeEnd("fonts");
-    
-    console.time("display");
+    console.timeEnd('fonts');
+
+    console.time('display');
     page.display(gfx);
     canvas.flush();
-    console.timeEnd("display");
+    console.timeEnd('display');
   }
-}
+};

@@ -1,9 +1,9 @@
 /* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- /
 /* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
 
-"use strict";
+'use strict';
 
-var isWorker = (typeof window == "undefined");
+var isWorker = (typeof window == 'undefined');
 
 /**
  * Maximum file size of the font.
@@ -11,7 +11,7 @@ var isWorker = (typeof window == "undefined");
 var kMaxFontFileSize = 40000;
 
 /**
- * Maximum time to wait for a font to be loaded by @font-face
+ * Maximum time to wait for a font to be loaded by font-face rules.
  */
 var kMaxWaitForFontFace = 1000;
 
@@ -20,7 +20,7 @@ var kMaxWaitForFontFace = 1000;
  * many fonts are loaded.
  */
 var fontCount = 0;
-var fontName  = "";
+var fontName = '';
 
 /**
  * If for some reason one want to debug without fonts activated, it just need
@@ -41,7 +41,7 @@ var Fonts = (function Fonts() {
   var fonts = Object.create(null);
 
   if (!isWorker) {
-    var ctx = document.createElement("canvas").getContext("2d");
+    var ctx = document.createElement('canvas').getContext('2d');
     ctx.scale(1 / kScalePrecision, 1);
   }
 
@@ -70,11 +70,14 @@ var Fonts = (function Fonts() {
       return fonts[fontName];
     },
     setActive: function fonts_setActive(fontName, size) {
-      current = fonts[fontName];
-      charsCache = current.charsCache;
-      var sizes = current.sizes;
-      if (!(measureCache = sizes[size]))
-        measureCache = sizes[size] = Object.create(null);
+      // |current| can be null is fontName is a built-in font
+      // (e.g. "sans-serif")
+      if ((current = fonts[fontName])) {
+        charsCache = current.charsCache;
+        var sizes = current.sizes;
+        if (!(measureCache = sizes[size]))
+          measureCache = sizes[size] = Object.create(null);
+      }
       ctx.font = (size * kScalePrecision) + 'px "' + fontName + '"';
     },
     charsToUnicode: function fonts_chars2Unicode(chars) {
@@ -87,11 +90,11 @@ var Fonts = (function Fonts() {
         return str;
 
       // translate the string using the font's encoding
-      var encoding = current.properties.encoding;
+      var encoding = current ? current.properties.encoding : null;
       if (!encoding)
         return chars;
 
-      str = "";
+      str = '';
       for (var i = 0; i < chars.length; ++i) {
         var charcode = chars.charCodeAt(i);
         var unicode = encoding[charcode];
@@ -120,7 +123,7 @@ var Fonts = (function Fonts() {
         measureCache[text] = width;
       return width;
     }
-  }
+  };
 })();
 
 var FontLoader = {
@@ -136,19 +139,19 @@ var FontLoader = {
       }
 
       document.documentElement.removeEventListener(
-        "pdfjsFontLoad", checkFontsLoaded, false);
+        'pdfjsFontLoad', checkFontsLoaded, false);
 
       callback();
       return true;
     }
 
-    var rules = [ ], names = [ ];
+    var rules = [], names = [];
     for (var i = 0; i < fonts.length; i++) {
       var font = fonts[i];
       if (!Fonts.lookup(font.name)) {
         var obj = new Font(font.name, font.file, font.properties);
 
-        var str = "";
+        var str = '';
         var data = Fonts.lookup(font.name).data;
         var length = data.length;
         for (var j = 0; j < length; j++)
@@ -168,7 +171,7 @@ var FontLoader = {
 
     if (!checkFontsLoaded()) {
       document.documentElement.addEventListener(
-        "pdfjsFontLoad", checkFontsLoaded, false);
+        'pdfjsFontLoad', checkFontsLoaded, false);
     }
 
     return;
@@ -202,34 +205,29 @@ var FontLoader = {
       // The postMessage() hackery was added to work around chrome bug
       // 82402.
 
-      var div = document.createElement("div");
-      div.setAttribute("style",
-                       'visibility: hidden;'+
-                       'width: 10px; height: 10px;'+
+      var div = document.createElement('div');
+      div.setAttribute('style',
+                       'visibility: hidden;' +
+                       'width: 10px; height: 10px;' +
                        'position: absolute; top: 0px; left: 0px;');
       var html = '';
       for (var i = 0; i < names.length; ++i) {
-        html += '<span style="font-family:'+ names[i] +'">Hi</span>';
+        html += '<span style="font-family:' + names[i] + '">Hi</span>';
       }
       div.innerHTML = html;
       document.body.appendChild(div);
 
       if (!this.listeneningForFontLoad) {
         window.addEventListener(
-          "message",
+          'message',
           function(e) {
-            var fontNames = e.data;
-            // Firefox 5 doesn't parse the JSON here.  Welcome to the
-            // Wonderful Web World.
-            if ("string" == typeof(fontNames)) {
-              fontNames = fontNames.split(",");
-            }
+            var fontNames = JSON.parse(e.data);
             for (var i = 0; i < fontNames.length; ++i) {
               var font = Fonts.lookup(fontNames[i]);
               font.loading = false;
             }
-            var evt = document.createEvent("Events");
-            evt.initEvent("pdfjsFontLoad", true, false);
+            var evt = document.createEvent('Events');
+            evt.initEvent('pdfjsFontLoad', true, false);
             document.documentElement.dispatchEvent(evt);
           },
           false);
@@ -243,26 +241,26 @@ var FontLoader = {
       for (var i = 0; i < rules.length; ++i) {
         src += rules[i];
       }
-      src += '</style>'
-      src += '<script type="application/javascript">'
+      src += '</style>';
+      src += '<script type="application/javascript">';
       var fontNamesArray = '';
       for (var i = 0; i < names.length; ++i) {
-        fontNamesArray += '"'+ names[i] + '", ';
+        fontNamesArray += '"' + names[i] + '", ';
       }
-      src += '  var fontNames=['+ fontNamesArray +'];\n';
-      src += '  window.onload = function () {\n'
-      src += '    top.postMessage(fontNames, "*");\n';
+      src += '  var fontNames=[' + fontNamesArray + '];\n';
+      src += '  window.onload = function () {\n';
+      src += '    top.postMessage(JSON.stringify(fontNames), "*");\n';
       src += '  }';
       src += '</script></head><body>';
       for (var i = 0; i < names.length; ++i) {
-        src += '<p style="font-family:\''+ fontName +'\'">Hi</p>';
+        src += '<p style="font-family:\'' + fontName + '\'">Hi</p>';
       }
       src += '</body></html>';
-      var frame = document.createElement("iframe");
-      frame.src = 'data:text/html,'+ src;
-      frame.setAttribute("style",
-                         'visibility: hidden;'+
-                         'width: 10px; height: 10px;'+
+      var frame = document.createElement('iframe');
+      frame.src = 'data:text/html,' + src;
+      frame.setAttribute('style',
+                         'visibility: hidden;' +
+                         'width: 10px; height: 10px;' +
                          'position: absolute; top: 0px; left: 0px;');
       document.body.appendChild(frame);
       /** Hack end */
@@ -270,129 +268,129 @@ var FontLoader = {
 };
 
 var UnicodeRanges = [
-  { "begin": 0x0000, "end": 0x007F }, // Basic Latin
-  { "begin": 0x0080, "end": 0x00FF }, // Latin-1 Supplement
-  { "begin": 0x0100, "end": 0x017F }, // Latin Extended-A
-  { "begin": 0x0180, "end": 0x024F }, // Latin Extended-B
-  { "begin": 0x0250, "end": 0x02AF }, // IPA Extensions
-  { "begin": 0x02B0, "end": 0x02FF }, // Spacing Modifier Letters
-  { "begin": 0x0300, "end": 0x036F }, // Combining Diacritical Marks
-  { "begin": 0x0370, "end": 0x03FF }, // Greek and Coptic
-  { "begin": 0x2C80, "end": 0x2CFF }, // Coptic
-  { "begin": 0x0400, "end": 0x04FF }, // Cyrillic
-  { "begin": 0x0530, "end": 0x058F }, // Armenian
-  { "begin": 0x0590, "end": 0x05FF }, // Hebrew
-  { "begin": 0xA500, "end": 0xA63F }, // Vai
-  { "begin": 0x0600, "end": 0x06FF }, // Arabic
-  { "begin": 0x07C0, "end": 0x07FF }, // NKo
-  { "begin": 0x0900, "end": 0x097F }, // Devanagari
-  { "begin": 0x0980, "end": 0x09FF }, // Bengali
-  { "begin": 0x0A00, "end": 0x0A7F }, // Gurmukhi
-  { "begin": 0x0A80, "end": 0x0AFF }, // Gujarati
-  { "begin": 0x0B00, "end": 0x0B7F }, // Oriya
-  { "begin": 0x0B80, "end": 0x0BFF }, // Tamil
-  { "begin": 0x0C00, "end": 0x0C7F }, // Telugu
-  { "begin": 0x0C80, "end": 0x0CFF }, // Kannada
-  { "begin": 0x0D00, "end": 0x0D7F }, // Malayalam
-  { "begin": 0x0E00, "end": 0x0E7F }, // Thai
-  { "begin": 0x0E80, "end": 0x0EFF }, // Lao
-  { "begin": 0x10A0, "end": 0x10FF }, // Georgian
-  { "begin": 0x1B00, "end": 0x1B7F }, // Balinese
-  { "begin": 0x1100, "end": 0x11FF }, // Hangul Jamo
-  { "begin": 0x1E00, "end": 0x1EFF }, // Latin Extended Additional
-  { "begin": 0x1F00, "end": 0x1FFF }, // Greek Extended
-  { "begin": 0x2000, "end": 0x206F }, // General Punctuation
-  { "begin": 0x2070, "end": 0x209F }, // Superscripts And Subscripts
-  { "begin": 0x20A0, "end": 0x20CF }, // Currency Symbol
-  { "begin": 0x20D0, "end": 0x20FF }, // Combining Diacritical Marks For Symbols
-  { "begin": 0x2100, "end": 0x214F }, // Letterlike Symbols
-  { "begin": 0x2150, "end": 0x218F }, // Number Forms
-  { "begin": 0x2190, "end": 0x21FF }, // Arrows
-  { "begin": 0x2200, "end": 0x22FF }, // Mathematical Operators
-  { "begin": 0x2300, "end": 0x23FF }, // Miscellaneous Technical
-  { "begin": 0x2400, "end": 0x243F }, // Control Pictures
-  { "begin": 0x2440, "end": 0x245F }, // Optical Character Recognition
-  { "begin": 0x2460, "end": 0x24FF }, // Enclosed Alphanumerics
-  { "begin": 0x2500, "end": 0x257F }, // Box Drawing
-  { "begin": 0x2580, "end": 0x259F }, // Block Elements
-  { "begin": 0x25A0, "end": 0x25FF }, // Geometric Shapes
-  { "begin": 0x2600, "end": 0x26FF }, // Miscellaneous Symbols
-  { "begin": 0x2700, "end": 0x27BF }, // Dingbats
-  { "begin": 0x3000, "end": 0x303F }, // CJK Symbols And Punctuation
-  { "begin": 0x3040, "end": 0x309F }, // Hiragana
-  { "begin": 0x30A0, "end": 0x30FF }, // Katakana
-  { "begin": 0x3100, "end": 0x312F }, // Bopomofo
-  { "begin": 0x3130, "end": 0x318F }, // Hangul Compatibility Jamo
-  { "begin": 0xA840, "end": 0xA87F }, // Phags-pa
-  { "begin": 0x3200, "end": 0x32FF }, // Enclosed CJK Letters And Months
-  { "begin": 0x3300, "end": 0x33FF }, // CJK Compatibility
-  { "begin": 0xAC00, "end": 0xD7AF }, // Hangul Syllables
-  { "begin": 0xD800, "end": 0xDFFF }, // Non-Plane 0 *
-  { "begin": 0x10900, "end": 0x1091F }, // Phoenicia
-  { "begin": 0x4E00, "end": 0x9FFF }, // CJK Unified Ideographs
-  { "begin": 0xE000, "end": 0xF8FF }, // Private Use Area (plane 0)
-  { "begin": 0x31C0, "end": 0x31EF }, // CJK Strokes
-  { "begin": 0xFB00, "end": 0xFB4F }, // Alphabetic Presentation Forms
-  { "begin": 0xFB50, "end": 0xFDFF }, // Arabic Presentation Forms-A
-  { "begin": 0xFE20, "end": 0xFE2F }, // Combining Half Marks
-  { "begin": 0xFE10, "end": 0xFE1F }, // Vertical Forms
-  { "begin": 0xFE50, "end": 0xFE6F }, // Small Form Variants
-  { "begin": 0xFE70, "end": 0xFEFF }, // Arabic Presentation Forms-B
-  { "begin": 0xFF00, "end": 0xFFEF }, // Halfwidth And Fullwidth Forms
-  { "begin": 0xFFF0, "end": 0xFFFF }, // Specials
-  { "begin": 0x0F00, "end": 0x0FFF }, // Tibetan
-  { "begin": 0x0700, "end": 0x074F }, // Syriac
-  { "begin": 0x0780, "end": 0x07BF }, // Thaana
-  { "begin": 0x0D80, "end": 0x0DFF }, // Sinhala
-  { "begin": 0x1000, "end": 0x109F }, // Myanmar
-  { "begin": 0x1200, "end": 0x137F }, // Ethiopic
-  { "begin": 0x13A0, "end": 0x13FF }, // Cherokee
-  { "begin": 0x1400, "end": 0x167F }, // Unified Canadian Aboriginal Syllabics
-  { "begin": 0x1680, "end": 0x169F }, // Ogham
-  { "begin": 0x16A0, "end": 0x16FF }, // Runic
-  { "begin": 0x1780, "end": 0x17FF }, // Khmer
-  { "begin": 0x1800, "end": 0x18AF }, // Mongolian
-  { "begin": 0x2800, "end": 0x28FF }, // Braille Patterns
-  { "begin": 0xA000, "end": 0xA48F }, // Yi Syllables
-  { "begin": 0x1700, "end": 0x171F }, // Tagalog
-  { "begin": 0x10300, "end": 0x1032F }, // Old Italic
-  { "begin": 0x10330, "end": 0x1034F }, // Gothic
-  { "begin": 0x10400, "end": 0x1044F }, // Deseret
-  { "begin": 0x1D000, "end": 0x1D0FF }, // Byzantine Musical Symbols
-  { "begin": 0x1D400, "end": 0x1D7FF }, // Mathematical Alphanumeric Symbols
-  { "begin": 0xFF000, "end": 0xFFFFD }, // Private Use (plane 15)
-  { "begin": 0xFE00, "end": 0xFE0F }, // Variation Selectors
-  { "begin": 0xE0000, "end": 0xE007F }, // Tags
-  { "begin": 0x1900, "end": 0x194F }, // Limbu
-  { "begin": 0x1950, "end": 0x197F }, // Tai Le
-  { "begin": 0x1980, "end": 0x19DF }, // New Tai Lue
-  { "begin": 0x1A00, "end": 0x1A1F }, // Buginese
-  { "begin": 0x2C00, "end": 0x2C5F }, // Glagolitic
-  { "begin": 0x2D30, "end": 0x2D7F }, // Tifinagh
-  { "begin": 0x4DC0, "end": 0x4DFF }, // Yijing Hexagram Symbols
-  { "begin": 0xA800, "end": 0xA82F }, // Syloti Nagri
-  { "begin": 0x10000, "end": 0x1007F }, // Linear B Syllabary
-  { "begin": 0x10140, "end": 0x1018F }, // Ancient Greek Numbers
-  { "begin": 0x10380, "end": 0x1039F }, // Ugaritic
-  { "begin": 0x103A0, "end": 0x103DF }, // Old Persian
-  { "begin": 0x10450, "end": 0x1047F }, // Shavian
-  { "begin": 0x10480, "end": 0x104AF }, // Osmanya
-  { "begin": 0x10800, "end": 0x1083F }, // Cypriot Syllabary
-  { "begin": 0x10A00, "end": 0x10A5F }, // Kharoshthi
-  { "begin": 0x1D300, "end": 0x1D35F }, // Tai Xuan Jing Symbols
-  { "begin": 0x12000, "end": 0x123FF }, // Cuneiform
-  { "begin": 0x1D360, "end": 0x1D37F }, // Counting Rod Numerals
-  { "begin": 0x1B80, "end": 0x1BBF }, // Sundanese
-  { "begin": 0x1C00, "end": 0x1C4F }, // Lepcha
-  { "begin": 0x1C50, "end": 0x1C7F }, // Ol Chiki
-  { "begin": 0xA880, "end": 0xA8DF }, // Saurashtra
-  { "begin": 0xA900, "end": 0xA92F }, // Kayah Li
-  { "begin": 0xA930, "end": 0xA95F }, // Rejang
-  { "begin": 0xAA00, "end": 0xAA5F }, // Cham
-  { "begin": 0x10190, "end": 0x101CF }, // Ancient Symbols
-  { "begin": 0x101D0, "end": 0x101FF }, // Phaistos Disc
-  { "begin": 0x102A0, "end": 0x102DF }, // Carian
-  { "begin": 0x1F030, "end": 0x1F09F }  // Domino Tiles
+  { 'begin': 0x0000, 'end': 0x007F }, // Basic Latin
+  { 'begin': 0x0080, 'end': 0x00FF }, // Latin-1 Supplement
+  { 'begin': 0x0100, 'end': 0x017F }, // Latin Extended-A
+  { 'begin': 0x0180, 'end': 0x024F }, // Latin Extended-B
+  { 'begin': 0x0250, 'end': 0x02AF }, // IPA Extensions
+  { 'begin': 0x02B0, 'end': 0x02FF }, // Spacing Modifier Letters
+  { 'begin': 0x0300, 'end': 0x036F }, // Combining Diacritical Marks
+  { 'begin': 0x0370, 'end': 0x03FF }, // Greek and Coptic
+  { 'begin': 0x2C80, 'end': 0x2CFF }, // Coptic
+  { 'begin': 0x0400, 'end': 0x04FF }, // Cyrillic
+  { 'begin': 0x0530, 'end': 0x058F }, // Armenian
+  { 'begin': 0x0590, 'end': 0x05FF }, // Hebrew
+  { 'begin': 0xA500, 'end': 0xA63F }, // Vai
+  { 'begin': 0x0600, 'end': 0x06FF }, // Arabic
+  { 'begin': 0x07C0, 'end': 0x07FF }, // NKo
+  { 'begin': 0x0900, 'end': 0x097F }, // Devanagari
+  { 'begin': 0x0980, 'end': 0x09FF }, // Bengali
+  { 'begin': 0x0A00, 'end': 0x0A7F }, // Gurmukhi
+  { 'begin': 0x0A80, 'end': 0x0AFF }, // Gujarati
+  { 'begin': 0x0B00, 'end': 0x0B7F }, // Oriya
+  { 'begin': 0x0B80, 'end': 0x0BFF }, // Tamil
+  { 'begin': 0x0C00, 'end': 0x0C7F }, // Telugu
+  { 'begin': 0x0C80, 'end': 0x0CFF }, // Kannada
+  { 'begin': 0x0D00, 'end': 0x0D7F }, // Malayalam
+  { 'begin': 0x0E00, 'end': 0x0E7F }, // Thai
+  { 'begin': 0x0E80, 'end': 0x0EFF }, // Lao
+  { 'begin': 0x10A0, 'end': 0x10FF }, // Georgian
+  { 'begin': 0x1B00, 'end': 0x1B7F }, // Balinese
+  { 'begin': 0x1100, 'end': 0x11FF }, // Hangul Jamo
+  { 'begin': 0x1E00, 'end': 0x1EFF }, // Latin Extended Additional
+  { 'begin': 0x1F00, 'end': 0x1FFF }, // Greek Extended
+  { 'begin': 0x2000, 'end': 0x206F }, // General Punctuation
+  { 'begin': 0x2070, 'end': 0x209F }, // Superscripts And Subscripts
+  { 'begin': 0x20A0, 'end': 0x20CF }, // Currency Symbol
+  { 'begin': 0x20D0, 'end': 0x20FF }, // Combining Diacritical Marks For Symbols
+  { 'begin': 0x2100, 'end': 0x214F }, // Letterlike Symbols
+  { 'begin': 0x2150, 'end': 0x218F }, // Number Forms
+  { 'begin': 0x2190, 'end': 0x21FF }, // Arrows
+  { 'begin': 0x2200, 'end': 0x22FF }, // Mathematical Operators
+  { 'begin': 0x2300, 'end': 0x23FF }, // Miscellaneous Technical
+  { 'begin': 0x2400, 'end': 0x243F }, // Control Pictures
+  { 'begin': 0x2440, 'end': 0x245F }, // Optical Character Recognition
+  { 'begin': 0x2460, 'end': 0x24FF }, // Enclosed Alphanumerics
+  { 'begin': 0x2500, 'end': 0x257F }, // Box Drawing
+  { 'begin': 0x2580, 'end': 0x259F }, // Block Elements
+  { 'begin': 0x25A0, 'end': 0x25FF }, // Geometric Shapes
+  { 'begin': 0x2600, 'end': 0x26FF }, // Miscellaneous Symbols
+  { 'begin': 0x2700, 'end': 0x27BF }, // Dingbats
+  { 'begin': 0x3000, 'end': 0x303F }, // CJK Symbols And Punctuation
+  { 'begin': 0x3040, 'end': 0x309F }, // Hiragana
+  { 'begin': 0x30A0, 'end': 0x30FF }, // Katakana
+  { 'begin': 0x3100, 'end': 0x312F }, // Bopomofo
+  { 'begin': 0x3130, 'end': 0x318F }, // Hangul Compatibility Jamo
+  { 'begin': 0xA840, 'end': 0xA87F }, // Phags-pa
+  { 'begin': 0x3200, 'end': 0x32FF }, // Enclosed CJK Letters And Months
+  { 'begin': 0x3300, 'end': 0x33FF }, // CJK Compatibility
+  { 'begin': 0xAC00, 'end': 0xD7AF }, // Hangul Syllables
+  { 'begin': 0xD800, 'end': 0xDFFF }, // Non-Plane 0 *
+  { 'begin': 0x10900, 'end': 0x1091F }, // Phoenicia
+  { 'begin': 0x4E00, 'end': 0x9FFF }, // CJK Unified Ideographs
+  { 'begin': 0xE000, 'end': 0xF8FF }, // Private Use Area (plane 0)
+  { 'begin': 0x31C0, 'end': 0x31EF }, // CJK Strokes
+  { 'begin': 0xFB00, 'end': 0xFB4F }, // Alphabetic Presentation Forms
+  { 'begin': 0xFB50, 'end': 0xFDFF }, // Arabic Presentation Forms-A
+  { 'begin': 0xFE20, 'end': 0xFE2F }, // Combining Half Marks
+  { 'begin': 0xFE10, 'end': 0xFE1F }, // Vertical Forms
+  { 'begin': 0xFE50, 'end': 0xFE6F }, // Small Form Variants
+  { 'begin': 0xFE70, 'end': 0xFEFF }, // Arabic Presentation Forms-B
+  { 'begin': 0xFF00, 'end': 0xFFEF }, // Halfwidth And Fullwidth Forms
+  { 'begin': 0xFFF0, 'end': 0xFFFF }, // Specials
+  { 'begin': 0x0F00, 'end': 0x0FFF }, // Tibetan
+  { 'begin': 0x0700, 'end': 0x074F }, // Syriac
+  { 'begin': 0x0780, 'end': 0x07BF }, // Thaana
+  { 'begin': 0x0D80, 'end': 0x0DFF }, // Sinhala
+  { 'begin': 0x1000, 'end': 0x109F }, // Myanmar
+  { 'begin': 0x1200, 'end': 0x137F }, // Ethiopic
+  { 'begin': 0x13A0, 'end': 0x13FF }, // Cherokee
+  { 'begin': 0x1400, 'end': 0x167F }, // Unified Canadian Aboriginal Syllabics
+  { 'begin': 0x1680, 'end': 0x169F }, // Ogham
+  { 'begin': 0x16A0, 'end': 0x16FF }, // Runic
+  { 'begin': 0x1780, 'end': 0x17FF }, // Khmer
+  { 'begin': 0x1800, 'end': 0x18AF }, // Mongolian
+  { 'begin': 0x2800, 'end': 0x28FF }, // Braille Patterns
+  { 'begin': 0xA000, 'end': 0xA48F }, // Yi Syllables
+  { 'begin': 0x1700, 'end': 0x171F }, // Tagalog
+  { 'begin': 0x10300, 'end': 0x1032F }, // Old Italic
+  { 'begin': 0x10330, 'end': 0x1034F }, // Gothic
+  { 'begin': 0x10400, 'end': 0x1044F }, // Deseret
+  { 'begin': 0x1D000, 'end': 0x1D0FF }, // Byzantine Musical Symbols
+  { 'begin': 0x1D400, 'end': 0x1D7FF }, // Mathematical Alphanumeric Symbols
+  { 'begin': 0xFF000, 'end': 0xFFFFD }, // Private Use (plane 15)
+  { 'begin': 0xFE00, 'end': 0xFE0F }, // Variation Selectors
+  { 'begin': 0xE0000, 'end': 0xE007F }, // Tags
+  { 'begin': 0x1900, 'end': 0x194F }, // Limbu
+  { 'begin': 0x1950, 'end': 0x197F }, // Tai Le
+  { 'begin': 0x1980, 'end': 0x19DF }, // New Tai Lue
+  { 'begin': 0x1A00, 'end': 0x1A1F }, // Buginese
+  { 'begin': 0x2C00, 'end': 0x2C5F }, // Glagolitic
+  { 'begin': 0x2D30, 'end': 0x2D7F }, // Tifinagh
+  { 'begin': 0x4DC0, 'end': 0x4DFF }, // Yijing Hexagram Symbols
+  { 'begin': 0xA800, 'end': 0xA82F }, // Syloti Nagri
+  { 'begin': 0x10000, 'end': 0x1007F }, // Linear B Syllabary
+  { 'begin': 0x10140, 'end': 0x1018F }, // Ancient Greek Numbers
+  { 'begin': 0x10380, 'end': 0x1039F }, // Ugaritic
+  { 'begin': 0x103A0, 'end': 0x103DF }, // Old Persian
+  { 'begin': 0x10450, 'end': 0x1047F }, // Shavian
+  { 'begin': 0x10480, 'end': 0x104AF }, // Osmanya
+  { 'begin': 0x10800, 'end': 0x1083F }, // Cypriot Syllabary
+  { 'begin': 0x10A00, 'end': 0x10A5F }, // Kharoshthi
+  { 'begin': 0x1D300, 'end': 0x1D35F }, // Tai Xuan Jing Symbols
+  { 'begin': 0x12000, 'end': 0x123FF }, // Cuneiform
+  { 'begin': 0x1D360, 'end': 0x1D37F }, // Counting Rod Numerals
+  { 'begin': 0x1B80, 'end': 0x1BBF }, // Sundanese
+  { 'begin': 0x1C00, 'end': 0x1C4F }, // Lepcha
+  { 'begin': 0x1C50, 'end': 0x1C7F }, // Ol Chiki
+  { 'begin': 0xA880, 'end': 0xA8DF }, // Saurashtra
+  { 'begin': 0xA900, 'end': 0xA92F }, // Kayah Li
+  { 'begin': 0xA930, 'end': 0xA95F }, // Rejang
+  { 'begin': 0xAA00, 'end': 0xAA5F }, // Cham
+  { 'begin': 0x10190, 'end': 0x101CF }, // Ancient Symbols
+  { 'begin': 0x101D0, 'end': 0x101FF }, // Phaistos Disc
+  { 'begin': 0x102A0, 'end': 0x102DF }, // Carian
+  { 'begin': 0x1F030, 'end': 0x1F09F }  // Domino Tiles
 ];
 
 function getUnicodeRangeFor(value) {
@@ -402,7 +400,7 @@ function getUnicodeRangeFor(value) {
       return i;
   }
   return -1;
-};
+}
 
 /**
  * 'Font' is the class the outside world should use, it encapsulate all the font
@@ -412,7 +410,7 @@ function getUnicodeRangeFor(value) {
  *   var type1Font = new Font("MyFontName", binaryFile, propertiesObject);
  *   type1Font.bind();
  */
-var Font = (function () {
+var Font = (function() {
   var constructor = function font_constructor(name, file, properties) {
     this.name = name;
     this.encoding = properties.encoding;
@@ -434,16 +432,16 @@ var Font = (function () {
 
     var data;
     switch (properties.type) {
-      case "Type1":
+      case 'Type1':
         var cff = new CFF(name, file, properties);
-        this.mimetype = "font/opentype";
+        this.mimetype = 'font/opentype';
 
         // Wrap the CFF data inside an OTF font file
         data = this.convert(name, cff, properties);
         break;
 
-      case "TrueType":
-        this.mimetype = "font/opentype";
+      case 'TrueType':
+        this.mimetype = 'font/opentype';
 
         // Repair the TrueType file if it is can be damaged in the point of
         // view of the sanitizer
@@ -451,7 +449,7 @@ var Font = (function () {
         break;
 
       default:
-        warn("Font " + properties.type + " is not supported");
+        warn('Font ' + properties.type + ' is not supported');
         break;
     }
     this.data = data;
@@ -464,6 +462,29 @@ var Font = (function () {
       array[i] = str.charCodeAt(i);
 
     return array;
+  };
+
+  function int16(bytes) {
+    return (bytes[0] << 8) + (bytes[1] & 0xff);
+  };
+
+  function int32(bytes) {
+    return (bytes[0] << 24) + (bytes[1] << 16) +
+           (bytes[2] << 8) + (bytes[3] & 0xff);
+  };
+
+  function getMaxPower2(number) {
+    var maxPower = 0;
+    var value = number;
+    while (value >= 2) {
+      value /= 2;
+      maxPower++;
+    }
+
+    value = 2;
+    for (var i = 1; i < maxPower; i++)
+      value *= 2;
+    return value;
   };
 
   function string16(value) {
@@ -486,7 +507,7 @@ var Font = (function () {
     header += string16(numTables);
 
     // searchRange (2 bytes)
-    var tablesMaxPower2 = FontsUtils.getMaxPower2(numTables);
+    var tablesMaxPower2 = getMaxPower2(numTables);
     var searchRange = tablesMaxPower2 * 16;
     header += string16(searchRange);
 
@@ -507,7 +528,7 @@ var Font = (function () {
 
     // length
     var length = data.length;
-	
+
     // Per spec tables must be 4-bytes align so add padding as needed
     while (data.length & 3)
       data.push(0x00);
@@ -516,11 +537,12 @@ var Font = (function () {
       offsets.virtualOffset++;
 
     // checksum
-    var checksum = 0;
-    for (var i = 0; i < length; i+=4)
-      checksum += FontsUtils.bytesToInteger([data[i], data[i+1], data[i+2], data[i+3]]);
+    var checksum = 0, n = data.length;
+    for (var i = 0; i < n; i+=4)
+      checksum = (checksum + int32([data[i], data[i+1], data[i+2], data[i+3]])) | 0;
 
-    var tableEntry = tag + string32(checksum) + string32(offset) + string32(length);
+    var tableEntry = (tag + string32(checksum) +
+                      string32(offset) + string32(length));
     tableEntry = stringToArray(tableEntry);
     file.set(tableEntry, offsets.currentOffset);
 
@@ -534,7 +556,7 @@ var Font = (function () {
     var codes = [];
     var length = glyphs.length;
     for (var n = 0; n < length; ++n)
-      codes.push(String.fromCharCode(glyphs[n].unicode))
+      codes.push(String.fromCharCode(glyphs[n].unicode));
     codes.sort();
 
     // Split the sorted codes into ranges.
@@ -556,33 +578,33 @@ var Font = (function () {
     var ranges = getRanges(glyphs);
 
     var numTables = 1;
-    var cmap = "\x00\x00" + // version
+    var cmap = '\x00\x00' + // version
                string16(numTables) +  // numTables
-               "\x00\x03" + // platformID
-               "\x00\x01" + // encodingID
+               '\x00\x03' + // platformID
+               '\x00\x01' + // encodingID
                string32(4 + numTables * 8); // start of the table record
 
     var headerSize = (12 * 2 + (ranges.length * 5 * 2));
     var segCount = ranges.length + 1;
     var segCount2 = segCount * 2;
-    var searchRange = FontsUtils.getMaxPower2(segCount) * 2;
+    var searchRange = getMaxPower2(segCount) * 2;
     var searchEntry = Math.log(segCount) / Math.log(2);
     var rangeShift = 2 * segCount - searchRange;
 
-    var format314 = "\x00\x04" + // format
+    var format314 = '\x00\x04' + // format
                     string16(headerSize) + // length
-                    "\x00\x00" + // language
+                    '\x00\x00' + // language
                     string16(segCount2) +
                     string16(searchRange) +
                     string16(searchEntry) +
                     string16(rangeShift);
 
     // Fill up the 4 parallel arrays describing the segments.
-    var startCount = "";
-    var endCount = "";
-    var idDeltas = "";
-    var idRangeOffsets = "";
-    var glyphsIds = "";
+    var startCount = '';
+    var endCount = '';
+    var idDeltas = '';
+    var idRangeOffsets = '';
+    var glyphsIds = '';
     var bias = 0;
     for (var i = 0; i < segCount - 1; i++) {
       var range = ranges[i];
@@ -594,18 +616,18 @@ var Font = (function () {
       startCount += string16(start);
       endCount += string16(end);
       idDeltas += string16(delta);
-	    idRangeOffsets += string16(0);
+      idRangeOffsets += string16(0);
 
       for (var j = start; j <= end; j++) {
         glyphsIds += string16(j);
       }
     }
 
-    endCount += "\xFF\xFF";
-    startCount += "\xFF\xFF";
-    idDeltas += "\x00\x01";
-    idRangeOffsets += "\x00\x00";
-    format314 += endCount + "\x00\x00" + startCount +
+    endCount += '\xFF\xFF';
+    startCount += '\xFF\xFF';
+    idDeltas += '\x00\x01';
+    idRangeOffsets += '\x00\x00';
+    format314 += endCount + '\x00\x00' + startCount +
                  idDeltas + idRangeOffsets + glyphsIds;
 
     return stringToArray(cmap + format314);
@@ -617,19 +639,19 @@ var Font = (function () {
     var ulUnicodeRange3 = 0;
     var ulUnicodeRange4 = 0;
 
-	var charset = properties.charset;
+    var charset = properties.charset;
     if (charset && charset.length) {
-	    var firstCharIndex = null;
-	    var lastCharIndex = 0;
+      var firstCharIndex = null;
+      var lastCharIndex = 0;
 
-      for (var i = 1; i < charset.length; i++) {
-	      var code = GlyphsUnicode[charset[i]];
-		    if (firstCharIndex > code || !firstCharIndex)
-		      firstCharIndex = code;
-		    if (lastCharIndex < code)
-		      lastCharIndex = code;
+      for (var i = 0; i < charset.length; i++) {
+        var code = GlyphsUnicode[charset[i]];
+        if (firstCharIndex > code || !firstCharIndex)
+          firstCharIndex = code;
+        if (lastCharIndex < code)
+          lastCharIndex = code;
 
-	      var position = getUnicodeRangeFor(code);
+        var position = getUnicodeRangeFor(code);
         if (position < 32) {
           ulUnicodeRange1 |= 1 << position;
         } else if (position < 64) {
@@ -639,62 +661,64 @@ var Font = (function () {
         } else if (position < 123) {
           ulUnicodeRange4 |= 1 << position - 96;
         } else {
-          error("Unicode ranges Bits > 123 are reserved for internal usage");
+          error('Unicode ranges Bits > 123 are reserved for internal usage');
         }
       }
     }
 
-    return "\x00\x03" + // version
-           "\x02\x24" + // xAvgCharWidth
-           "\x01\xF4" + // usWeightClass
-           "\x00\x05" + // usWidthClass
-           "\x00\x00" + // fstype (0 to let the font loads via font-face on IE)
-           "\x02\x8A" + // ySubscriptXSize
-           "\x02\xBB" + // ySubscriptYSize
-           "\x00\x00" + // ySubscriptXOffset
-           "\x00\x8C" + // ySubscriptYOffset
-           "\x02\x8A" + // ySuperScriptXSize
-           "\x02\xBB" + // ySuperScriptYSize
-           "\x00\x00" + // ySuperScriptXOffset
-           "\x01\xDF" + // ySuperScriptYOffset
-           "\x00\x31" + // yStrikeOutSize
-           "\x01\x02" + // yStrikeOutPosition
-           "\x00\x00" + // sFamilyClass
-           "\x00\x00\x06" + String.fromCharCode(properties.fixedPitch ? 0x09 : 0x00) +
-           "\x00\x00\x00\x00\x00\x00" + // Panose
+    return '\x00\x03' + // version
+           '\x02\x24' + // xAvgCharWidth
+           '\x01\xF4' + // usWeightClass
+           '\x00\x05' + // usWidthClass
+           '\x00\x00' + // fstype (0 to let the font loads via font-face on IE)
+           '\x02\x8A' + // ySubscriptXSize
+           '\x02\xBB' + // ySubscriptYSize
+           '\x00\x00' + // ySubscriptXOffset
+           '\x00\x8C' + // ySubscriptYOffset
+           '\x02\x8A' + // ySuperScriptXSize
+           '\x02\xBB' + // ySuperScriptYSize
+           '\x00\x00' + // ySuperScriptXOffset
+           '\x01\xDF' + // ySuperScriptYOffset
+           '\x00\x31' + // yStrikeOutSize
+           '\x01\x02' + // yStrikeOutPosition
+           '\x00\x00' + // sFamilyClass
+           '\x00\x00\x06' +
+           String.fromCharCode(properties.fixedPitch ? 0x09 : 0x00) +
+           '\x00\x00\x00\x00\x00\x00' + // Panose
            string32(ulUnicodeRange1) + // ulUnicodeRange1 (Bits 0-31)
            string32(ulUnicodeRange2) + // ulUnicodeRange2 (Bits 32-63)
            string32(ulUnicodeRange3) + // ulUnicodeRange3 (Bits 64-95)
            string32(ulUnicodeRange4) + // ulUnicodeRange4 (Bits 96-127)
-           "\x2A\x32\x31\x2A" + // achVendID
+           '\x2A\x32\x31\x2A' + // achVendID
            string16(properties.italicAngle ? 1 : 0) + // fsSelection
-           string16(firstCharIndex || properties.firstChar) + // usFirstCharIndex
+           string16(firstCharIndex ||
+                    properties.firstChar) + // usFirstCharIndex
            string16(lastCharIndex || properties.lastChar) +  // usLastCharIndex
            string16(properties.ascent) + // sTypoAscender
            string16(properties.descent) + // sTypoDescender
-           "\x00\x64" + // sTypoLineGap (7%-10% of the unitsPerEM value)
-           string16(properties.ascent)  + // usWinAscent
+           '\x00\x64' + // sTypoLineGap (7%-10% of the unitsPerEM value)
+           string16(properties.ascent) + // usWinAscent
            string16(-properties.descent) + // usWinDescent
-           "\x00\x00\x00\x00" + // ulCodePageRange1 (Bits 0-31)
-           "\x00\x00\x00\x00" + // ulCodePageRange2 (Bits 32-63)
-           string16(properties.xHeight)   + // sxHeight
+           '\x00\x00\x00\x00' + // ulCodePageRange1 (Bits 0-31)
+           '\x00\x00\x00\x00' + // ulCodePageRange2 (Bits 32-63)
+           string16(properties.xHeight) + // sxHeight
            string16(properties.capHeight) + // sCapHeight
            string16(0) + // usDefaultChar
            string16(firstCharIndex || properties.firstChar) + // usBreakChar
-           "\x00\x03";  // usMaxContext
+           '\x00\x03';  // usMaxContext
   };
 
   function createPostTable(properties) {
     var angle = Math.floor(properties.italicAngle * (Math.pow(2, 16)));
-    return "\x00\x03\x00\x00" + // Version number
-           string32(angle)    + // italicAngle
-           "\x00\x00"         + // underlinePosition
-           "\x00\x00"         + // underlineThickness
+    return '\x00\x03\x00\x00' + // Version number
+           string32(angle) + // italicAngle
+           '\x00\x00' + // underlinePosition
+           '\x00\x00' + // underlineThickness
            string32(properties.fixedPitch) + // isFixedPitch
-           "\x00\x00\x00\x00" + // minMemType42
-           "\x00\x00\x00\x00" + // maxMemType42
-           "\x00\x00\x00\x00" + // minMemType1
-           "\x00\x00\x00\x00";  // maxMemType1
+           '\x00\x00\x00\x00' + // minMemType42
+           '\x00\x00\x00\x00' + // maxMemType42
+           '\x00\x00\x00\x00' + // minMemType1
+           '\x00\x00\x00\x00';  // maxMemType1
   };
 
   constructor.prototype = {
@@ -712,9 +736,9 @@ var Font = (function () {
               String.fromCharCode(tag[2]) +
               String.fromCharCode(tag[3]);
 
-        var checksum = FontsUtils.bytesToInteger(file.getBytes(4));
-        var offset = FontsUtils.bytesToInteger(file.getBytes(4));
-        var length = FontsUtils.bytesToInteger(file.getBytes(4));
+        var checksum = int32(file.getBytes(4));
+        var offset = int32(file.getBytes(4));
+        var length = int32(file.getBytes(4));
 
         // Read the table associated data
         var previousPosition = file.pos;
@@ -729,38 +753,39 @@ var Font = (function () {
           length: offset,
           offset: length,
           data: data
-        }
+        };
       };
 
       function readOpenTypeHeader(ttf) {
         return {
           version: ttf.getBytes(4),
-          numTables: FontsUtils.bytesToInteger(ttf.getBytes(2)),
-          searchRange: FontsUtils.bytesToInteger(ttf.getBytes(2)),
-          entrySelector: FontsUtils.bytesToInteger(ttf.getBytes(2)),
-          rangeShift: FontsUtils.bytesToInteger(ttf.getBytes(2))
-        }
+          numTables: int16(ttf.getBytes(2)),
+          searchRange: int16(ttf.getBytes(2)),
+          entrySelector: int16(ttf.getBytes(2)),
+          rangeShift: int16(ttf.getBytes(2))
+        };
       };
 
       function replaceCMapTable(cmap, font, properties) {
         font.pos = (font.start ? font.start : 0) + cmap.length;
 
-        var version = FontsUtils.bytesToInteger(font.getBytes(2));
-        var numTables = FontsUtils.bytesToInteger(font.getBytes(2));
+        var version = int16(font.getBytes(2));
+        var numTables = int16(font.getBytes(2));
 
         for (var i = 0; i < numTables; i++) {
-          var platformID = FontsUtils.bytesToInteger(font.getBytes(2));
-          var encodingID = FontsUtils.bytesToInteger(font.getBytes(2));
-          var offset = FontsUtils.bytesToInteger(font.getBytes(4));
-          var format = FontsUtils.bytesToInteger(font.getBytes(2));
-          var length = FontsUtils.bytesToInteger(font.getBytes(2));
-          var language = FontsUtils.bytesToInteger(font.getBytes(2));
+          var platformID = int16(font.getBytes(2));
+          var encodingID = int16(font.getBytes(2));
+          var offset = int32(font.getBytes(4));
+          var format = int16(font.getBytes(2));
+          var length = int16(font.getBytes(2));
+          var language = int16(font.getBytes(2));
 
           if ((format == 0 && numTables == 1) ||
               (format == 6 && numTables == 1 && !properties.encoding.empty)) {
             // Format 0 alone is not allowed by the sanitizer so let's rewrite
             // that to a 3-1-4 Unicode BMP table
-            TODO("Use an other source of informations than charset here, it is not reliable");
+            TODO('Use an other source of informations than ' +
+                 'charset here, it is not reliable');
             var charset = properties.charset;
             var glyphs = [];
             for (var j = 0; j < charset.length; j++) {
@@ -776,13 +801,13 @@ var Font = (function () {
             // table. (This looks weird, so I can have missed something), this
             // works on Linux but seems to fails on Mac so let's rewrite the
             // cmap table to a 3-1-4 style
-            var firstCode = FontsUtils.bytesToInteger(font.getBytes(2));
-            var entryCount = FontsUtils.bytesToInteger(font.getBytes(2));
+            var firstCode = int16(font.getBytes(2));
+            var entryCount = int16(font.getBytes(2));
 
             var glyphs = [];
             var min = 0xffff, max = 0;
             for (var j = 0; j < entryCount; j++) {
-              var charcode = FontsUtils.bytesToInteger(font.getBytes(2));
+              var charcode = int16(font.getBytes(2));
               glyphs.push(charcode);
 
               if (charcode < min)
@@ -800,8 +825,9 @@ var Font = (function () {
             for (var j = 0; j < glyphs.length; j++)
               glyphs[j] = { unicode: glyphs[j] + firstCode };
 
-            var ranges= getRanges(glyphs);
-            assert(ranges.length == 1, "Got " + ranges.length + " ranges in a dense array");
+            var ranges = getRanges(glyphs);
+            assert(ranges.length == 1, 'Got ' + ranges.length +
+                   ' ranges in a dense array');
 
             var encoding = properties.encoding;
             var denseRange = ranges[0];
@@ -816,8 +842,8 @@ var Font = (function () {
       };
 
       // Check that required tables are present
-      var requiredTables = [ "OS/2", "cmap", "head", "hhea",
-                             "hmtx", "maxp", "name", "post" ];
+      var requiredTables = ['OS/2', 'cmap', 'head', 'hhea',
+                             'hmtx', 'maxp', 'name', 'post'];
 
       var header = readOpenTypeHeader(font);
       var numTables = header.numTables;
@@ -831,9 +857,9 @@ var Font = (function () {
         var table = readTableEntry(font);
         var index = requiredTables.indexOf(table.tag);
         if (index != -1) {
-          if (table.tag == "cmap")
+          if (table.tag == 'cmap')
             cmap = table;
-          else if (table.tag == "post")
+          else if (table.tag == 'post')
             post = table;
 
           requiredTables.splice(index, 1);
@@ -841,10 +867,10 @@ var Font = (function () {
         tables.push(table);
       }
 
-      // If any tables are still in the array this means some required tables are
-      // missing, which means that we need to rebuild the font in order to pass
-      // the sanitizer.
-      if (requiredTables.length && requiredTables[0] == "OS/2") {
+      // If any tables are still in the array this means some required
+      // tables are missing, which means that we need to rebuild the
+      // font in order to pass the sanitizer.
+      if (requiredTables.length && requiredTables[0] == 'OS/2') {
         // Create a new file to hold the new version of our truetype with a new
         // header and new offsets
         var ttf = new Uint8Array(kMaxFontFileSize);
@@ -859,13 +885,13 @@ var Font = (function () {
           virtualOffset: numTables * (4 * 4)
         };
 
-        // The new numbers of tables will be the last one plus the num of missing
-        // tables
-        createOpenTypeHeader("\x00\x01\x00\x00", ttf, offsets, numTables);
+        // The new numbers of tables will be the last one plus the num
+        // of missing tables
+        createOpenTypeHeader('\x00\x01\x00\x00', ttf, offsets, numTables);
 
         // Insert the missing table
         tables.push({
-          tag: "OS/2",
+          tag: 'OS/2',
           data: stringToArray(createOS2Table(properties))
         });
 
@@ -875,14 +901,14 @@ var Font = (function () {
         // Rewrite the 'post' table if needed
         if (!post) {
           tables.push({
-            tag: "post",
+            tag: 'post',
             data: stringToArray(createPostTable(properties))
           });
         }
 
         // Tables needs to be written by ascendant alphabetic order
         tables.sort(function tables_sort(a, b) {
-          return a.tag > b.tag;
+          return (a.tag > b.tag) - (a.tag < b.tag);
         });
 
         // rewrite the tables but tweak offsets
@@ -914,31 +940,31 @@ var Font = (function () {
 
         return fontData;
       } else if (requiredTables.length) {
-        error("Table " + requiredTables[0] + " is missing from the TrueType font");
+        error('Table ' + requiredTables[0] +
+              ' is missing from the TrueType font');
       }
 
       return font.getBytes();
     },
 
     convert: function font_convert(fontName, font, properties) {
-      var otf = new Uint8Array(kMaxFontFileSize);
-
       function createNameTable(name) {
-  	    // All the strings of the name table should be an odd number of bytes
+        // All the strings of the name table should be an odd number
+        // of bytes
         if (name.length % 2)
           name = name.slice(0, name.length - 1);
 
         var strings = [
-          "Original licence",  // 0.Copyright
+          'Original licence',  // 0.Copyright
           name,                // 1.Font family
-          "Unknown",           // 2.Font subfamily (font weight)
-          "uniqueID",          // 3.Unique ID
+          'Unknown',           // 2.Font subfamily (font weight)
+          'uniqueID',          // 3.Unique ID
           name,                // 4.Full font name
-          "Version 0.11",      // 5.Version
-          "Unknown",           // 6.Postscript name
-          "Unknown",           // 7.Trademark
-          "Unknown",           // 8.Manufacturer
-          "Unknown"            // 9.Designer
+          'Version 0.11',      // 5.Version
+          'Unknown',           // 6.Postscript name
+          'Unknown',           // 7.Trademark
+          'Unknown',           // 8.Manufacturer
+          'Unknown'            // 9.Designer
         ];
 
         // Mac want 1-byte per character strings while Windows want
@@ -947,20 +973,20 @@ var Font = (function () {
         for (var i = 0; i < strings.length; i++) {
           var str = strings[i];
 
-          var strUnicode = "";
+          var strUnicode = '';
           for (var j = 0; j < str.length; j++)
             strUnicode += string16(str.charCodeAt(j));
           stringsUnicode.push(strUnicode);
         }
 
         var names = [strings, stringsUnicode];
-        var platforms = ["\x00\x01", "\x00\x03"];
-        var encodings = ["\x00\x00", "\x00\x01"];
-        var languages = ["\x00\x00", "\x04\x09"];
+        var platforms = ['\x00\x01', '\x00\x03'];
+        var encodings = ['\x00\x00', '\x00\x01'];
+        var languages = ['\x00\x00', '\x04\x09'];
 
         var namesRecordCount = strings.length * platforms.length;
         var nameTable =
-          "\x00\x00" +                           // format
+          '\x00\x00' +                           // format
           string16(namesRecordCount) +           // Number of names Record
           string16(namesRecordCount * 12 + 6);   // Storage
 
@@ -974,7 +1000,7 @@ var Font = (function () {
               platforms[i] + // platform ID
               encodings[i] + // encoding ID
               languages[i] + // language ID
-              string16(i) + // name ID
+              string16(j) + // name ID
               string16(str.length) +
               string16(strOffset);
             nameTable += nameRecord;
@@ -982,131 +1008,116 @@ var Font = (function () {
           }
         }
 
-		    nameTable += strings.join("") + stringsUnicode.join("");
+        nameTable += strings.join('') + stringsUnicode.join('');
         return nameTable;
       }
-	  
-	    function isFixedPitch(glyphs) {
-	      for (var i = 0; i < glyphs.length - 1; i++) {
-		    if (glyphs[i] != glyphs[i+1])
-		      return false;
-		    }
-		    return true;
-      };
 
-      // Required Tables
-      var CFF =
-        font.data,   // PostScript Font Program
-        OS2,         // OS/2 and Windows Specific metrics
-        cmap,        // Character to glyphs mapping
-        head,        // Font header
-        hhea,        // Horizontal header
-        hmtx,        // Horizontal metrics
-        maxp,        // Maximum profile
-        name,        // Naming tables
-        post;        // PostScript informations
-      var tables = [CFF, OS2, cmap, head, hhea, hmtx, maxp, name, post];
+      function isFixedPitch(glyphs) {
+        for (var i = 0; i < glyphs.length - 1; i++) {
+          if (glyphs[i] != glyphs[i + 1])
+            return false;
+        }
+        return true;
+      };
 
       // The offsets object holds at the same time a representation of where
       // to write the table entry information about a table and another offset
       // representing the offset where to draw the actual data of a particular
       // table
+      var kRequiredTablesCount = 9;
       var offsets = {
         currentOffset: 0,
-        virtualOffset: tables.length * (4 * 4)
+        virtualOffset: 9 * (4 * 4)
       };
 
-      // It there is only one font, offset table is the first bytes of the file
-      createOpenTypeHeader("\x4F\x54\x54\x4F", otf, offsets, tables.length);
+      var otf = new Uint8Array(kMaxFontFileSize);
+      createOpenTypeHeader('\x4F\x54\x54\x4F', otf, offsets, 9);
 
-      /** CFF */
-      createTableEntry(otf, offsets, "CFF ", CFF);
+      var charstrings = font.charstrings;
+      properties.fixedPitch = isFixedPitch(charstrings);
+      var fields = {
+        // PostScript Font Program
+        'CFF ': font.data,
 
-      /** OS/2 */
-	    var charstrings = font.charstrings;
-	    properties.fixedPitch = isFixedPitch(charstrings);
-      OS2 = stringToArray(createOS2Table(properties));
-      createTableEntry(otf, offsets, "OS/2", OS2);
+        // OS/2 and Windows Specific metrics
+        'OS/2': stringToArray(createOS2Table(properties)),
 
-      /** CMAP */
-      cmap = createCMapTable(charstrings.slice());
-      createTableEntry(otf, offsets, "cmap", cmap);
+        // Character to glyphs mapping
+        'cmap': createCMapTable(charstrings.slice()),
 
-      /** HEAD */
-      head = stringToArray(
-              "\x00\x01\x00\x00" + // Version number
-              "\x00\x00\x10\x00" + // fontRevision
-              "\x00\x00\x00\x00" + // checksumAdjustement
-              "\x5F\x0F\x3C\xF5" + // magicNumber
-              "\x00\x00" + // Flags
-              "\x03\xE8" + // unitsPerEM (defaulting to 1000)
-              "\x00\x00\x00\x00\x9e\x0b\x7e\x27" + // creation date
-              "\x00\x00\x00\x00\x9e\x0b\x7e\x27" + // modifification date
-              "\x00\x00" + // xMin
+        // Font header
+        'head': (function() {
+          return stringToArray(
+              '\x00\x01\x00\x00' + // Version number
+              '\x00\x00\x10\x00' + // fontRevision
+              '\x00\x00\x00\x00' + // checksumAdjustement
+              '\x5F\x0F\x3C\xF5' + // magicNumber
+              '\x00\x00' + // Flags
+              '\x03\xE8' + // unitsPerEM (defaulting to 1000)
+              '\x00\x00\x00\x00\x9e\x0b\x7e\x27' + // creation date
+              '\x00\x00\x00\x00\x9e\x0b\x7e\x27' + // modifification date
+              '\x00\x00' + // xMin
               string16(properties.descent) + // yMin
-              "\x0F\xFF" + // xMax
+              '\x0F\xFF' + // xMax
               string16(properties.ascent) + // yMax
               string16(properties.italicAngle ? 2 : 0) + // macStyle
-              "\x00\x11" + // lowestRecPPEM
-              "\x00\x00" + // fontDirectionHint
-              "\x00\x00" + // indexToLocFormat
-              "\x00\x00"   // glyphDataFormat
-      );
-      createTableEntry(otf, offsets, "head", head);
+              '\x00\x11' + // lowestRecPPEM
+              '\x00\x00' + // fontDirectionHint
+              '\x00\x00' + // indexToLocFormat
+              '\x00\x00');  // glyphDataFormat
+        })(),
 
-      /** HHEA */
-      hhea = stringToArray(
-                 "\x00\x01\x00\x00" + // Version number
-                 string16(properties.ascent) + // Typographic Ascent
-                 string16(properties.descent) + // Typographic Descent
-                 "\x00\x00" + // Line Gap
-                 "\xFF\xFF" + // advanceWidthMax
-                 "\x00\x00" + // minLeftSidebearing
-                 "\x00\x00" + // minRightSidebearing
-                 "\x00\x00" + // xMaxExtent
-                 string16(properties.capHeight) + // caretSlopeRise
-                 string16(Math.tan(properties.italicAngle) * properties.xHeight) + // caretSlopeRun
-                 "\x00\x00" + // caretOffset
-                 "\x00\x00" + // -reserved-
-                 "\x00\x00" + // -reserved-
-                 "\x00\x00" + // -reserved-
-                 "\x00\x00" + // -reserved-
-                 "\x00\x00" + // metricDataFormat
-                 string16(charstrings.length + 1) // Number of HMetrics
-      );
-      createTableEntry(otf, offsets, "hhea", hhea);
+        // Horizontal header
+        'hhea': (function() {
+          return stringToArray(
+              '\x00\x01\x00\x00' + // Version number
+              string16(properties.ascent) + // Typographic Ascent
+              string16(properties.descent) + // Typographic Descent
+              '\x00\x00' + // Line Gap
+              '\xFF\xFF' + // advanceWidthMax
+              '\x00\x00' + // minLeftSidebearing
+              '\x00\x00' + // minRightSidebearing
+              '\x00\x00' + // xMaxExtent
+              string16(properties.capHeight) + // caretSlopeRise
+              string16(Math.tan(properties.italicAngle) *
+                       properties.xHeight) + // caretSlopeRun
+              '\x00\x00' + // caretOffset
+              '\x00\x00' + // -reserved-
+              '\x00\x00' + // -reserved-
+              '\x00\x00' + // -reserved-
+              '\x00\x00' + // -reserved-
+              '\x00\x00' + // metricDataFormat
+              string16(charstrings.length + 1)); // Number of HMetrics
+        })(),
 
-      /** HMTX */
-      /* For some reasons, probably related to how the backend handle fonts,
-      * Linux seems to ignore this file and prefer the data from the CFF itself
-      * while Windows use this data. So be careful if you hack on Linux and
-      * have to touch the 'hmtx' table
-      */
-      hmtx = "\x00\x00\x00\x00"; // Fake .notdef
-      for (var i = 0; i < charstrings.length; i++) {
-        hmtx += string16(charstrings[i].width) + string16(0);
-      }
-      hmtx = stringToArray(hmtx);
-      createTableEntry(otf, offsets, "hmtx", hmtx);
+        // Horizontal metrics
+        'hmtx': (function() {
+          var hmtx = '\x00\x00\x00\x00'; // Fake .notdef
+          for (var i = 0; i < charstrings.length; i++) {
+            hmtx += string16(charstrings[i].width) + string16(0);
+          }
+          return stringToArray(hmtx);
+        })(),
 
-      /** MAXP */
-      maxp = "\x00\x00\x50\x00" + // Version number
-             string16(charstrings.length + 1); // Num of glyphs
-      maxp = stringToArray(maxp);
-      createTableEntry(otf, offsets, "maxp", maxp);
+        // Maximum profile
+        'maxp': (function() {
+          return stringToArray(
+              '\x00\x00\x50\x00' + // Version number
+             string16(charstrings.length + 1)); // Num of glyphs
+        })(),
 
-      /** NAME */
-      name = stringToArray(createNameTable(fontName));
-      createTableEntry(otf, offsets, "name", name);
+        // Naming tables
+        'name': stringToArray(createNameTable(fontName)),
 
-      /** POST */
-      post = stringToArray(createPostTable(properties));
-      createTableEntry(otf, offsets, "post", post);
+        // PostScript informations
+        'post': stringToArray(createPostTable(properties))
+      };
 
-      // Once all the table entries header are written, dump the data!
-      var tables = [CFF, OS2, cmap, head, hhea, hmtx, maxp, name, post];
-      for (var i = 0; i < tables.length; i++) {
-        var table = tables[i];
+      for (var field in fields)
+        createTableEntry(otf, offsets, field, fields[field]);
+
+      for (var field in fields) {
+        var table = fields[field];
         otf.set(table, offsets.currentOffset);
         offsets.currentOffset += table.length;
       }
@@ -1119,9 +1130,9 @@ var Font = (function () {
 
     bindWorker: function font_bindWorker(data) {
       postMessage({
-        action: "font",
+        action: 'font',
         data: {
-          raw:      data,
+          raw: data,
           fontName: this.name,
           mimetype: this.mimetype
         }
@@ -1131,9 +1142,10 @@ var Font = (function () {
     bindDOM: function font_bindDom(data) {
       var fontName = this.name;
 
-      // Add the @font-face rule to the document
-      var url = "url(data:" + this.mimetype + ";base64," + window.btoa(data) + ");";
-      var rule = "@font-face { font-family:'" + fontName + "';src:" + url + "}";
+      // Add the font-face rule to the document
+      var url = ('url(data:' + this.mimetype + ';base64,' +
+                 window.btoa(data) + ');');
+      var rule = "@font-face { font-family:'" + fontName + "';src:" + url + '}';
       var styleSheet = document.styleSheets[0];
       styleSheet.insertRule(rule, styleSheet.cssRules.length);
 
@@ -1144,58 +1156,10 @@ var Font = (function () {
   return constructor;
 })();
 
-
-/**
- * FontsUtils is a static class dedicated to hold codes that are not related
- * to fonts in particular and needs to be share between them.
- */
-var FontsUtils = {
-  _bytesArray: new Uint8Array(4),
-  integerToBytes: function fu_integerToBytes(value, bytesCount) {
-    var bytes = this._bytesArray;
-
-    if (bytesCount == 1) {
-      bytes.set([value]);
-      return bytes[0];
-    } else if (bytesCount == 2) {
-      bytes.set([value >> 8, value & 0xff]);
-      return [bytes[0], bytes[1]];
-    } else if (bytesCount == 4) {
-      bytes.set([value >> 24, value >> 16, value >> 8, value]);
-      return [bytes[0], bytes[1], bytes[2], bytes[3]];
-    }
-
-    error("This number of bytes " + bytesCount + " is not supported");
-    return null;
-  },
-
-  bytesToInteger: function fu_bytesToInteger(bytesArray) {
-    var value = 0;
-    for (var i = 0; i < bytesArray.length; i++)
-      value = (value << 8) + bytesArray[i];
-    return value;
-  },
-
-  getMaxPower2: function fu_getMaxPower2(number) {
-    var maxPower = 0;
-    var value = number;
-    while (value >= 2) {
-      value /= 2;
-      maxPower++;
-    }
-
-    value = 2;
-    for (var i = 1; i < maxPower; i++)
-      value *= 2;
-    return value;
-  }
-};
-
-
 /**
  * Type1Parser encapsulate the needed code for parsing a Type1 font
- * program.
- * Some of its logic depends on the Type2 charstrings structure.
+ * program. Some of its logic depends on the Type2 charstrings
+ * structure.
  */
 var Type1Parser = function() {
   /*
@@ -1210,7 +1174,7 @@ var Type1Parser = function() {
     var r = key, c1 = 52845, c2 = 22719;
     var decryptedString = [];
 
-    var value = "";
+    var value = '';
     var count = stream.length;
     for (var i = 0; i < count; i++) {
       value = stream[i];
@@ -1259,65 +1223,65 @@ var Type1Parser = function() {
    * the charStrings.
    */
   var charStringDictionary = {
-    "1": "hstem",
-    "3": "vstem",
-    "4": "vmoveto",
-    "5": "rlineto",
-    "6": "hlineto",
-    "7": "vlineto",
-    "8": "rrcurveto",
+    '1': 'hstem',
+    '3': 'vstem',
+    '4': 'vmoveto',
+    '5': 'rlineto',
+    '6': 'hlineto',
+    '7': 'vlineto',
+    '8': 'rrcurveto',
 
     // closepath is a Type1 command that do not take argument and is useless
     // in Type2 and it can simply be ignored.
-    "9": null, // closepath
+    '9': null, // closepath
 
-    "10": "callsubr",
+    '10': 'callsubr',
 
     // return is normally used inside sub-routines to tells to the execution
     // flow that it can be back to normal.
     // During the translation process Type1 charstrings will be flattened and
     // sub-routines will be embedded directly into the charstring directly, so
     // this can be ignored safely.
-    "11": "return",
+    '11': 'return',
 
-    "12": {
+    '12': {
       // dotsection is a Type1 command to specify some hinting feature for dots
       // that do not take a parameter and it can safely be ignored for Type2.
-      "0": null, // dotsection
+      '0': null, // dotsection
 
       // [vh]stem3 are Type1 only and Type2 supports [vh]stem with multiple
       // parameters, so instead of returning [vh]stem3 take a shortcut and
       // return [vhstem] instead.
-      "1": "vstem",
-      "2": "hstem",
+      '1': 'vstem',
+      '2': 'hstem',
 
       // Type1 only command with command not (yet) built-in ,throw an error
-      "6": -1, // seac
-      "7": -1, //sbw
+      '6': -1, // seac
+      '7': -1, //sbw
 
-      "11": "sub",
-      "12": "div",
+      '11': 'sub',
+      '12': 'div',
 
       // callothersubr is a mechanism to make calls on the postscript
       // interpreter, this is not supported by Type2 charstring but hopefully
       // most of the default commands can be ignored safely.
-      "16": "callothersubr",
+      '16': 'callothersubr',
 
-      "17": "pop",
+      '17': 'pop',
 
       // setcurrentpoint sets the current point to x, y without performing a
       // moveto (this is a one shot positionning command). This is used only
       // with the return of an OtherSubrs call.
       // TODO Implement the OtherSubrs charstring embedding and replace this
       //      call by a no-op, like 2 'pop' commands for example.
-      "33": null, //setcurrentpoint
+      '33': null //setcurrentpoint
     },
-    "13": "hsbw",
-    "14": "endchar",
-    "21": "rmoveto",
-    "22": "hmoveto",
-    "30": "vhcurveto",
-    "31": "hvcurveto"
+    '13': 'hsbw',
+    '14': 'endchar',
+    '21': 'rmoveto',
+    '22': 'hmoveto',
+    '30': 'vhcurveto',
+    '31': 'hvcurveto'
   };
 
   var kEscapeCommand = 12;
@@ -1328,7 +1292,7 @@ var Type1Parser = function() {
     var width = 0;
     var used = false;
 
-    var value = "";
+    var value = '';
     var count = array.length;
     for (var i = 0; i < count; i++) {
       value = parseInt(array[i]);
@@ -1360,20 +1324,20 @@ var Type1Parser = function() {
             }
           }
 
-          command = charStringDictionary["12"][escape];
+          command = charStringDictionary['12'][escape];
         } else {
           // TODO Clean this code
           if (value == 13) {
             if (charstring.length == 2) {
               width = charstring[1];
-            } else if (charstring.length == 4 && charstring[3] == "div") {
+            } else if (charstring.length == 4 && charstring[3] == 'div') {
               width = charstring[1] / charstring[2];
             } else {
-              error("Unsupported hsbw format: " + charstring);
+              error('Unsupported hsbw format: ' + charstring);
             }
 
             lsb = charstring[0];
-            charstring.push(lsb, "hmoveto");
+            charstring.push(lsb, 'hmoveto');
             charstring.splice(0, 1);
             continue;
           }
@@ -1387,7 +1351,9 @@ var Type1Parser = function() {
         } else if (!command) {
           break;
         } else if (command == -1) {
-          error("Support for Type1 command " + value + " (" + escape + ") is not implemented in charstring: " + charString);
+          error('Support for Type1 command ' + value +
+                ' (' + escape + ') is not implemented in charstring: ' +
+                charString);
         }
 
         value = command;
@@ -1409,16 +1375,16 @@ var Type1Parser = function() {
   };
 
   /**
-   * Returns an object containing a Subrs array and a CharStrings array
-   * extracted from and eexec encrypted block of data
+   * Returns an object containing a Subrs array and a CharStrings
+   * array extracted from and eexec encrypted block of data
    */
   function readNumberArray(str, index) {
     var start = ++index;
     var count = 0;
-    while (str[index++] != "]")
+    while (str[index++] != ']')
       count++;
 
-    var array = str.substr(start, count).split(" ");
+    var array = str.substr(start, count).split(' ');
     for (var i = 0; i < array.length; i++)
       array[i] = parseFloat(array[i] || 0);
     return array;
@@ -1426,12 +1392,12 @@ var Type1Parser = function() {
 
   this.extractFontProgram = function t1_extractFontProgram(stream) {
     var eexec = decrypt(stream, kEexecEncryptionKey, 4);
-    var eexecString = "";
+    var eexecStr = '';
     for (var i = 0; i < eexec.length; i++)
-      eexecString += String.fromCharCode(eexec[i]);
+      eexecStr += String.fromCharCode(eexec[i]);
 
     var glyphsSection = false, subrsSection = false;
-    var extracted = {
+    var program = {
       subrs: [],
       charstrings: [],
       properties: {
@@ -1440,70 +1406,70 @@ var Type1Parser = function() {
       }
     };
 
-    var glyph = "";
-    var token = "";
+    var glyph = '';
+    var token = '';
     var length = 0;
 
-    var c = "";
-    var count = eexecString.length;
+    var c = '';
+    var count = eexecStr.length;
     for (var i = 0; i < count; i++) {
-      var c = eexecString[i];
+      var c = eexecStr[i];
 
-      if ((glyphsSection || subrsSection) && c == "R") {
+      if ((glyphsSection || subrsSection) && c == 'R') {
         var data = eexec.slice(i + 3, i + 3 + length);
         var encoded = decrypt(data, kCharStringsEncryptionKey, 4);
         var str = decodeCharString(encoded);
 
         if (glyphsSection) {
-          extracted.charstrings.push({
+          program.charstrings.push({
             glyph: glyph,
             data: str.charstring,
             lsb: str.lsb,
             width: str.width
           });
         } else {
-          extracted.subrs.push(str.charstring);
+          program.subrs.push(str.charstring);
         }
         i += length + 3;
-      } else if (c == " " || c == "\n") {
+      } else if (c == ' ' || c == '\n') {
         length = parseInt(token);
-        token = "";
+        token = '';
       } else {
         token += c;
         if (!glyphsSection) {
           switch (token) {
-            case "/CharString":
+            case '/CharString':
               glyphsSection = true;
               break;
-            case "/Subrs":
+            case '/Subrs':
               subrsSection = true;
               break;
-            case "/StdHW":
-              extracted.properties.stdHW = readNumberArray(eexecString, i + 2)[0];
+            case '/StdHW':
+              program.properties.stdHW = readNumberArray(eexecStr, i + 2)[0];
               break;
-            case "/StdVW":
-              extracted.properties.stdVW = readNumberArray(eexecString, i + 2)[0];
+            case '/StdVW':
+              program.properties.stdVW = readNumberArray(eexecStr, i + 2)[0];
               break;
-            case "/StemSnapH":
-              extracted.properties.stemSnapH = readNumberArray(eexecString, i + 2);
+            case '/StemSnapH':
+              program.properties.stemSnapH = readNumberArray(eexecStr, i + 2);
               break;
-            case "/StemSnapV":
-              extracted.properties.stemSnapV = readNumberArray(eexecString, i + 2);
+            case '/StemSnapV':
+              program.properties.stemSnapV = readNumberArray(eexecStr, i + 2);
               break;
           }
-        } else if (c == "/") {
-          token = glyph = "";
-          while ((c = eexecString[++i]) != " ")
+        } else if (c == '/') {
+          token = glyph = '';
+          while ((c = eexecStr[++i]) != ' ')
             glyph += c;
         }
       }
     }
 
-    return extracted;
+    return program;
   },
 
   this.extractFontHeader = function t1_extractFontProgram(stream) {
-    var headerString = "";
+    var headerString = '';
     for (var i = 0; i < stream.length; i++)
       headerString += String.fromCharCode(stream[i]);
 
@@ -1511,13 +1477,13 @@ var Type1Parser = function() {
       textMatrix: null
     };
 
-    var token = "";
+    var token = '';
     var count = headerString.length;
     for (var i = 0; i < count; i++) {
       var c = headerString[i];
-      if (c == " " || c == "\n") {
+      if (c == ' ' || c == '\n') {
         switch (token) {
-          case "/FontMatrix":
+          case '/FontMatrix':
             var matrix = readNumberArray(headerString, i + 1);
 
             // The FontMatrix is in unitPerEm, so make it pixels
@@ -1530,7 +1496,7 @@ var Type1Parser = function() {
             info.textMatrix = matrix;
             break;
         }
-        token = "";
+        token = '';
       } else {
         token += c;
       }
@@ -1545,69 +1511,79 @@ var Type1Parser = function() {
  * which itself embed Type2 charstrings.
  */
 var CFFStrings = [
-  ".notdef","space","exclam","quotedbl","numbersign","dollar","percent","ampersand",
-  "quoteright","parenleft","parenright","asterisk","plus","comma","hyphen","period",
-  "slash","zero","one","two","three","four","five","six","seven","eight","nine",
-  "colon","semicolon","less","equal","greater","question","at","A","B","C","D","E",
-  "F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y",
-  "Z","bracketleft","backslash","bracketright","asciicircum","underscore",
-  "quoteleft","a","b","c","d","e","f","g","h","i","j","k","l","m","n","o","p","q",
-  "r","s","t","u","v","w","x","y","z","braceleft","bar","braceright","asciitilde",
-  "exclamdown","cent","sterling","fraction","yen","florin","section","currency",
-  "quotesingle","quotedblleft","guillemotleft","guilsinglleft","guilsinglright",
-  "fi","fl","endash","dagger","daggerdbl","periodcentered","paragraph","bullet",
-  "quotesinglbase","quotedblbase","quotedblright","guillemotright","ellipsis",
-  "perthousand","questiondown","grave","acute","circumflex","tilde","macron",
-  "breve","dotaccent","dieresis","ring","cedilla","hungarumlaut","ogonek","caron",
-  "emdash","AE","ordfeminine","Lslash","Oslash","OE","ordmasculine","ae","dotlessi",
-  "lslash","oslash","oe","germandbls","onesuperior","logicalnot","mu","trademark",
-  "Eth","onehalf","plusminus","Thorn","onequarter","divide","brokenbar","degree",
-  "thorn","threequarters","twosuperior","registered","minus","eth","multiply",
-  "threesuperior","copyright","Aacute","Acircumflex","Adieresis","Agrave","Aring",
-  "Atilde","Ccedilla","Eacute","Ecircumflex","Edieresis","Egrave","Iacute",
-  "Icircumflex","Idieresis","Igrave","Ntilde","Oacute","Ocircumflex","Odieresis",
-  "Ograve","Otilde","Scaron","Uacute","Ucircumflex","Udieresis","Ugrave","Yacute",
-  "Ydieresis","Zcaron","aacute","acircumflex","adieresis","agrave","aring","atilde",
-  "ccedilla","eacute","ecircumflex","edieresis","egrave","iacute","icircumflex",
-  "idieresis","igrave","ntilde","oacute","ocircumflex","odieresis","ograve",
-  "otilde","scaron","uacute","ucircumflex","udieresis","ugrave","yacute",
-  "ydieresis","zcaron","exclamsmall","Hungarumlautsmall","dollaroldstyle",
-  "dollarsuperior","ampersandsmall","Acutesmall","parenleftsuperior",
-  "parenrightsuperior","266 ff","onedotenleader","zerooldstyle","oneoldstyle",
-  "twooldstyle","threeoldstyle","fouroldstyle","fiveoldstyle","sixoldstyle",
-  "sevenoldstyle","eightoldstyle","nineoldstyle","commasuperior",
-  "threequartersemdash","periodsuperior","questionsmall","asuperior","bsuperior",
-  "centsuperior","dsuperior","esuperior","isuperior","lsuperior","msuperior",
-  "nsuperior","osuperior","rsuperior","ssuperior","tsuperior","ff","ffi","ffl",
-  "parenleftinferior","parenrightinferior","Circumflexsmall","hyphensuperior",
-  "Gravesmall","Asmall","Bsmall","Csmall","Dsmall","Esmall","Fsmall","Gsmall",
-  "Hsmall","Ismall","Jsmall","Ksmall","Lsmall","Msmall","Nsmall","Osmall","Psmall",
-  "Qsmall","Rsmall","Ssmall","Tsmall","Usmall","Vsmall","Wsmall","Xsmall","Ysmall",
-  "Zsmall","colonmonetary","onefitted","rupiah","Tildesmall","exclamdownsmall",
-  "centoldstyle","Lslashsmall","Scaronsmall","Zcaronsmall","Dieresissmall",
-  "Brevesmall","Caronsmall","Dotaccentsmall","Macronsmall","figuredash",
-  "hypheninferior","Ogoneksmall","Ringsmall","Cedillasmall","questiondownsmall",
-  "oneeighth","threeeighths","fiveeighths","seveneighths","onethird","twothirds",
-  "zerosuperior","foursuperior","fivesuperior","sixsuperior","sevensuperior",
-  "eightsuperior","ninesuperior","zeroinferior","oneinferior","twoinferior",
-  "threeinferior","fourinferior","fiveinferior","sixinferior","seveninferior",
-  "eightinferior","nineinferior","centinferior","dollarinferior","periodinferior",
-  "commainferior","Agravesmall","Aacutesmall","Acircumflexsmall","Atildesmall",
-  "Adieresissmall","Aringsmall","AEsmall","Ccedillasmall","Egravesmall",
-  "Eacutesmall","Ecircumflexsmall","Edieresissmall","Igravesmall","Iacutesmall",
-  "Icircumflexsmall","Idieresissmall","Ethsmall","Ntildesmall","Ogravesmall",
-  "Oacutesmall","Ocircumflexsmall","Otildesmall","Odieresissmall","OEsmall",
-  "Oslashsmall","Ugravesmall","Uacutesmall","Ucircumflexsmall","Udieresissmall",
-  "Yacutesmall","Thornsmall","Ydieresissmall","001.000","001.001","001.002",
-  "001.003","Black","Bold","Book","Light","Medium","Regular","Roman","Semibold"
+  '.notdef', 'space', 'exclam', 'quotedbl', 'numbersign', 'dollar', 'percent',
+  'ampersand', 'quoteright', 'parenleft', 'parenright', 'asterisk', 'plus',
+  'comma', 'hyphen', 'period', 'slash', 'zero', 'one', 'two', 'three', 'four',
+  'five', 'six', 'seven', 'eight', 'nine', 'colon', 'semicolon', 'less',
+  'equal', 'greater', 'question', 'at', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H',
+  'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W',
+  'X', 'Y', 'Z', 'bracketleft', 'backslash', 'bracketright', 'asciicircum',
+  'underscore', 'quoteleft', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j',
+  'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y',
+  'z', 'braceleft', 'bar', 'braceright', 'asciitilde', 'exclamdown', 'cent',
+  'sterling', 'fraction', 'yen', 'florin', 'section', 'currency',
+  'quotesingle', 'quotedblleft', 'guillemotleft', 'guilsinglleft',
+  'guilsinglright', 'fi', 'fl', 'endash', 'dagger', 'daggerdbl',
+  'periodcentered', 'paragraph', 'bullet', 'quotesinglbase', 'quotedblbase',
+  'quotedblright', 'guillemotright', 'ellipsis', 'perthousand', 'questiondown',
+  'grave', 'acute', 'circumflex', 'tilde', 'macron', 'breve', 'dotaccent',
+  'dieresis', 'ring', 'cedilla', 'hungarumlaut', 'ogonek', 'caron', 'emdash',
+  'AE', 'ordfeminine', 'Lslash', 'Oslash', 'OE', 'ordmasculine', 'ae',
+  'dotlessi', 'lslash', 'oslash', 'oe', 'germandbls', 'onesuperior',
+  'logicalnot', 'mu', 'trademark', 'Eth', 'onehalf', 'plusminus', 'Thorn',
+  'onequarter', 'divide', 'brokenbar', 'degree', 'thorn', 'threequarters',
+  'twosuperior', 'registered', 'minus', 'eth', 'multiply', 'threesuperior',
+  'copyright', 'Aacute', 'Acircumflex', 'Adieresis', 'Agrave', 'Aring',
+  'Atilde', 'Ccedilla', 'Eacute', 'Ecircumflex', 'Edieresis', 'Egrave',
+  'Iacute', 'Icircumflex', 'Idieresis', 'Igrave', 'Ntilde', 'Oacute',
+  'Ocircumflex', 'Odieresis', 'Ograve', 'Otilde', 'Scaron', 'Uacute',
+  'Ucircumflex', 'Udieresis', 'Ugrave', 'Yacute', 'Ydieresis', 'Zcaron',
+  'aacute', 'acircumflex', 'adieresis', 'agrave', 'aring', 'atilde',
+  'ccedilla', 'eacute', 'ecircumflex', 'edieresis', 'egrave', 'iacute',
+  'icircumflex', 'idieresis', 'igrave', 'ntilde', 'oacute', 'ocircumflex',
+  'odieresis', 'ograve', 'otilde', 'scaron', 'uacute', 'ucircumflex',
+  'udieresis', 'ugrave', 'yacute', 'ydieresis', 'zcaron', 'exclamsmall',
+  'Hungarumlautsmall', 'dollaroldstyle', 'dollarsuperior', 'ampersandsmall',
+  'Acutesmall', 'parenleftsuperior', 'parenrightsuperior', '266 ff',
+  'onedotenleader', 'zerooldstyle', 'oneoldstyle', 'twooldstyle',
+  'threeoldstyle', 'fouroldstyle', 'fiveoldstyle', 'sixoldstyle',
+  'sevenoldstyle', 'eightoldstyle', 'nineoldstyle', 'commasuperior',
+  'threequartersemdash', 'periodsuperior', 'questionsmall', 'asuperior',
+  'bsuperior', 'centsuperior', 'dsuperior', 'esuperior', 'isuperior',
+  'lsuperior', 'msuperior', 'nsuperior', 'osuperior', 'rsuperior', 'ssuperior',
+  'tsuperior', 'ff', 'ffi', 'ffl', 'parenleftinferior', 'parenrightinferior',
+  'Circumflexsmall', 'hyphensuperior', 'Gravesmall', 'Asmall', 'Bsmall',
+  'Csmall', 'Dsmall', 'Esmall', 'Fsmall', 'Gsmall', 'Hsmall', 'Ismall',
+  'Jsmall', 'Ksmall', 'Lsmall', 'Msmall', 'Nsmall', 'Osmall', 'Psmall',
+  'Qsmall', 'Rsmall', 'Ssmall', 'Tsmall', 'Usmall', 'Vsmall', 'Wsmall',
+  'Xsmall', 'Ysmall', 'Zsmall', 'colonmonetary', 'onefitted', 'rupiah',
+  'Tildesmall', 'exclamdownsmall', 'centoldstyle', 'Lslashsmall',
+  'Scaronsmall', 'Zcaronsmall', 'Dieresissmall', 'Brevesmall', 'Caronsmall',
+  'Dotaccentsmall', 'Macronsmall', 'figuredash', 'hypheninferior',
+  'Ogoneksmall', 'Ringsmall', 'Cedillasmall', 'questiondownsmall', 'oneeighth',
+  'threeeighths', 'fiveeighths', 'seveneighths', 'onethird', 'twothirds',
+  'zerosuperior', 'foursuperior', 'fivesuperior', 'sixsuperior',
+  'sevensuperior', 'eightsuperior', 'ninesuperior', 'zeroinferior',
+  'oneinferior', 'twoinferior', 'threeinferior', 'fourinferior',
+  'fiveinferior', 'sixinferior', 'seveninferior', 'eightinferior',
+  'nineinferior', 'centinferior', 'dollarinferior', 'periodinferior',
+  'commainferior', 'Agravesmall', 'Aacutesmall', 'Acircumflexsmall',
+  'Atildesmall', 'Adieresissmall', 'Aringsmall', 'AEsmall', 'Ccedillasmall',
+  'Egravesmall', 'Eacutesmall', 'Ecircumflexsmall', 'Edieresissmall',
+  'Igravesmall', 'Iacutesmall', 'Icircumflexsmall', 'Idieresissmall',
+  'Ethsmall', 'Ntildesmall', 'Ogravesmall', 'Oacutesmall', 'Ocircumflexsmall',
+  'Otildesmall', 'Odieresissmall', 'OEsmall', 'Oslashsmall', 'Ugravesmall',
+  'Uacutesmall', 'Ucircumflexsmall', 'Udieresissmall', 'Yacutesmall',
+  'Thornsmall', 'Ydieresissmall', '001.000', '001.001', '001.002', '001.003',
+  'Black', 'Bold', 'Book', 'Light', 'Medium', 'Regular', 'Roman', 'Semibold'
 ];
 
 var type1Parser = new Type1Parser();
 
 var CFF = function(name, file, properties) {
   // Get the data block containing glyphs and subrs informations
-  var length1 = file.dict.get("Length1");
-  var length2 = file.dict.get("Length2");
+  var length1 = file.dict.get('Length1');
+  var length2 = file.dict.get('Length2');
 
   var headerBlock = file.getBytes(length1);
   var header = type1Parser.extractFontHeader(headerBlock);
@@ -1625,7 +1601,8 @@ var CFF = function(name, file, properties) {
   var subrs = this.getType2Subrs(data.subrs);
 
   this.charstrings = charstrings;
-  this.data = this.wrap(name, type2Charstrings, this.charstrings, subrs, properties);
+  this.data = this.wrap(name, type2Charstrings, this.charstrings,
+                        subrs, properties);
 };
 
 CFF.prototype = {
@@ -1636,49 +1613,45 @@ CFF.prototype = {
     // If there is no object, just create an array saying that with another
     // offset byte.
     if (count == 0)
-      return "\x00\x00\x00";
+      return '\x00\x00\x00';
 
-    var data = "";
-    var bytes = FontsUtils.integerToBytes(count, 2);
-    for (var i = 0; i < bytes.length; i++)
-      data += String.fromCharCode(bytes[i]);
+    var data = String.fromCharCode(count >> 8, count & 0xff);
 
     // Next byte contains the offset size use to reference object in the file
     // Actually we're using 0x04 to be sure to be able to store everything
     // without thinking of it while coding.
-    data += "\x04";
+    data += '\x04';
 
     // Add another offset after this one because we need a new offset
     var relativeOffset = 1;
     for (var i = 0; i < count + 1; i++) {
-      var bytes = FontsUtils.integerToBytes(relativeOffset, 4);
-      for (var j = 0; j < bytes.length; j++)
-        data += String.fromCharCode(bytes[j]);
+      data += String.fromCharCode((relativeOffset >>> 24) & 0xFF, (relativeOffset >> 16) & 0xFF,
+                                  (relativeOffset >> 8) & 0xFF, relativeOffset & 0xFF);
 
       if (objects[i])
         relativeOffset += objects[i].length;
     }
 
-    for (var i =0; i < count; i++) {
+    for (var i = 0; i < count; i++) {
       for (var j = 0; j < objects[i].length; j++)
-        data += isByte ? String.fromCharCode(objects[i][j]) : objects[i][j];
+        data += isByte ? String.fromCharCode(objects[i][j] & 0xFF) : objects[i][j];
     }
     return data;
   },
 
   encodeNumber: function cff_encodeNumber(value) {
     if (value >= -32768 && value <= 32767) {
-      return "\x1c" +
-             String.fromCharCode(value >> 8) +
+      return '\x1c' +
+             String.fromCharCode((value >> 8) & 0xFF) +
              String.fromCharCode(value & 0xFF);
     } else if (value >= (-2147483647-1) && value <= 2147483647) {
-      return "\xff" +
-             String.fromCharCode(value >> 24) +
-             String.fromCharCode(value >> 16) +
-             String.fromCharCode(value >> 8) +
+      return '\xff' +
+             String.fromCharCode((value >>> 24) & 0xFF) +
+             String.fromCharCode((value >> 16) & 0xFF) +
+             String.fromCharCode((value >> 8) & 0xFF) +
              String.fromCharCode(value & 0xFF);
     }
-    error("Value: " + value + " is not allowed");
+    error('Value: ' + value + ' is not allowed');
     return null;
   },
 
@@ -1689,8 +1662,10 @@ CFF.prototype = {
       var glyph = glyphs[i];
       var unicode = GlyphsUnicode[glyph.glyph];
       if (!unicode) {
-        if (glyph.glyph != ".notdef")
-          warn(glyph + " does not have an entry in the glyphs unicode dictionary");
+        if (glyph.glyph != '.notdef') {
+          warn(glyph +
+               ' does not have an entry in the glyphs unicode dictionary');
+        }
       } else {
         charstrings.push({
           glyph: glyph,
@@ -1700,20 +1675,21 @@ CFF.prototype = {
           lsb: glyph.lsb
         });
       }
-    };
+    }
 
     charstrings.sort(function charstrings_sort(a, b) {
-      return a.unicode > b.unicode;
+      return a.unicode - b.unicode;
     });
     return charstrings;
   },
 
   getType2Charstrings: function cff_getType2Charstrings(type1Charstrings) {
     var type2Charstrings = [];
-	  var count = type1Charstrings.length;
+    var count = type1Charstrings.length;
     for (var i = 0; i < count; i++) {
       var charstring = type1Charstrings[i].charstring;
-      type2Charstrings.push(this.flattenCharstring(charstring.slice(), this.commandsMap));
+      type2Charstrings.push(this.flattenCharstring(charstring.slice(),
+                                                   this.commandsMap));
     }
     return type2Charstrings;
   },
@@ -1744,23 +1720,23 @@ CFF.prototype = {
    * every 'callsubr', 'callothersubr' by the real commands.
    */
   commandsMap: {
-    "hstem": 1,
-    "vstem": 3,
-    "vmoveto": 4,
-    "rlineto": 5,
-    "hlineto": 6,
-    "vlineto": 7,
-    "rrcurveto": 8,
-    "callsubr": 10,
-    "return": 11,
-    "sub": [12, 11],
-    "div": [12, 12],
-    "pop": [1, 12, 18],
-    "endchar": 14,
-    "rmoveto": 21,
-    "hmoveto": 22,
-    "vhcurveto": 30,
-    "hvcurveto": 31,
+    'hstem': 1,
+    'vstem': 3,
+    'vmoveto': 4,
+    'rlineto': 5,
+    'hlineto': 6,
+    'vlineto': 7,
+    'rrcurveto': 8,
+    'callsubr': 10,
+    'return': 11,
+    'sub': [12, 11],
+    'div': [12, 12],
+    'pop': [1, 12, 18],
+    'endchar': 14,
+    'rmoveto': 21,
+    'hmoveto': 22,
+    'vhcurveto': 30,
+    'hvcurveto': 31
   },
 
   flattenCharstring: function flattenCharstring(charstring, map) {
@@ -1768,7 +1744,7 @@ CFF.prototype = {
       var command = charstring[i];
       if (command.charAt) {
         var cmd = map[command];
-        assert(cmd, "Unknow command: " + command);
+        assert(cmd, 'Unknow command: ' + command);
 
         if (IsArray(cmd)) {
           charstring.splice(i++, 1, cmd[0], cmd[1]);
@@ -1777,7 +1753,7 @@ CFF.prototype = {
         }
       } else {
         charstring.splice(i, 1, 28, command >> 8, command & 0xff);
-        i+= 2;
+        i += 2;
       }
     }
     return charstring;
@@ -1785,100 +1761,102 @@ CFF.prototype = {
 
   wrap: function wrap(name, glyphs, charstrings, subrs, properties) {
     var fields = {
-      "header": "\x01\x00\x04\x04", // major version, minor version, header size, offset size
+      // major version, minor version, header size, offset size
+      'header': '\x01\x00\x04\x04',
 
-      "names": this.createCFFIndexHeader([name]),
+      'names': this.createCFFIndexHeader([name]),
 
-      "topDict": (function topDict(self) {
+      'topDict': (function topDict(self) {
         return function() {
           var dict =
-              "\x00\x01\x01\x01\x30" +
-              "\xf8\x1b\x00" + // version
-              "\xf8\x1b\x01" + // Notice
-              "\xf8\x1b\x02" + // FullName
-              "\xf8\x1b\x03" + // FamilyName
-              "\xf8\x1b\x04" +  // Weight
-              "\x1c\x00\x00\x10"; // Encoding
+              '\x00\x01\x01\x01\x30' +
+              '\xf8\x1b\x00' + // version
+              '\xf8\x1b\x01' + // Notice
+              '\xf8\x1b\x02' + // FullName
+              '\xf8\x1b\x03' + // FamilyName
+              '\xf8\x1b\x04' +  // Weight
+              '\x1c\x00\x00\x10'; // Encoding
 
           var boundingBox = properties.bbox;
           for (var i = 0; i < boundingBox.length; i++)
             dict += self.encodeNumber(boundingBox[i]);
-          dict += "\x05"; // FontBBox;
+          dict += '\x05'; // FontBBox;
 
           var offset = fields.header.length +
                        fields.names.length +
                        (dict.length + (4 + 4 + 7)) +
                        fields.strings.length +
                        fields.globalSubrs.length;
-          dict += self.encodeNumber(offset) + "\x0f"; // Charset
+          dict += self.encodeNumber(offset) + '\x0f'; // Charset
 
           offset = offset + (glyphs.length * 2) + 1;
-          dict += self.encodeNumber(offset) + "\x11"; // Charstrings
+          dict += self.encodeNumber(offset) + '\x11'; // Charstrings
 
           dict += self.encodeNumber(fields.private.length);
           var offset = offset + fields.charstrings.length;
-          dict += self.encodeNumber(offset) + "\x12"; // Private
+          dict += self.encodeNumber(offset) + '\x12'; // Private
 
           return dict;
         };
       })(this),
 
-      "strings": (function strings(self) {
+      'strings': (function strings(self) {
         var strings = [
-          "Version 0.11",         // Version
-          "See original notice",  // Notice
+          'Version 0.11',         // Version
+          'See original notice',  // Notice
           name,                   // FullName
           name,                   // FamilyName
-          "Medium"                // Weight
+          'Medium'                // Weight
         ];
         return self.createCFFIndexHeader(strings);
       })(this),
 
-      "globalSubrs": this.createCFFIndexHeader([]),
+      'globalSubrs': this.createCFFIndexHeader([]),
 
-      "charset": (function charset(self) {
-        var charset = "\x00"; // Encoding
+      'charset': (function charset(self) {
+        var charset = '\x00'; // Encoding
 
-	      var count = glyphs.length;
+        var count = glyphs.length;
         for (var i = 0; i < count; i++) {
           var index = CFFStrings.indexOf(charstrings[i].glyph.glyph);
-          // Some characters like asterikmath && circlecopyrt are missing from the
-          // original strings, for the moment let's map them to .notdef and see
-          // later if it cause any problems
+          // Some characters like asterikmath && circlecopyrt are
+          // missing from the original strings, for the moment let's
+          // map them to .notdef and see later if it cause any
+          // problems
           if (index == -1)
             index = 0;
 
-          var bytes = FontsUtils.integerToBytes(index, 2);
-          charset += String.fromCharCode(bytes[0]) + String.fromCharCode(bytes[1]);
+          charset += String.fromCharCode(index >> 8, index & 0xff);
         }
         return charset;
       })(this),
 
-      "charstrings": this.createCFFIndexHeader([[0x8B, 0x0E]].concat(glyphs), true),
+      'charstrings': this.createCFFIndexHeader([[0x8B, 0x0E]].concat(glyphs),
+                                               true),
 
-      "private": (function(self) {
+      'private': (function(self) {
         var data =
-            "\x8b\x14" + // defaultWidth
-            "\x8b\x15" + // nominalWidth
-            self.encodeNumber(properties.stdHW) + "\x0a" + // StdHW
-            self.encodeNumber(properties.stdVW) + "\x0b";  // StdVW
+            '\x8b\x14' + // defaultWidth
+            '\x8b\x15' + // nominalWidth
+            self.encodeNumber(properties.stdHW || 0) + '\x0a' + // StdHW
+            self.encodeNumber(properties.stdVW || 0) + '\x0b';  // StdVW
 
         var stemH = properties.stemSnapH;
         for (var i = 0; i < stemH.length; i++)
           data += self.encodeNumber(stemH[i]);
-        data += "\x0c\x0c"; // StemSnapH
+        data += '\x0c\x0c'; // StemSnapH
 
         var stemV = properties.stemSnapV;
         for (var i = 0; i < stemV.length; i++)
           data += self.encodeNumber(stemV[i]);
-        data += "\x0c\x0d"; // StemSnapV
+        data += '\x0c\x0d'; // StemSnapV
 
-        data += self.encodeNumber(data.length + 4) + "\x13"; // Subrs offset
+        data += self.encodeNumber(data.length + 4) + '\x13'; // Subrs offset
 
         return data;
       })(this),
 
-      "localSubrs": this.createCFFIndexHeader(subrs, true)
+      'localSubrs': this.createCFFIndexHeader(subrs, true)
     };
     fields.topDict = fields.topDict();
 
