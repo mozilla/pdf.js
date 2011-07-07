@@ -4707,7 +4707,7 @@ var IndexedCS = (function() {
   }
 
   constructor.prototype = {
-    getRgb: function graycs_getRgb(color) {
+    getRgb: function indexcs_getRgb(color) {
       var numComps = base.numComps;
 
       var start = color[0] * numComps;
@@ -4718,8 +4718,7 @@ var IndexedCS = (function() {
 
       return this.base.getRgb(c);
     },
-    getRgbBuffer: function graycs_getRgbBuffer(input) {
-      var base = this.base;
+    getRgbBuffer: function indexcs_getRgbBuffer(input) {
       var numComps = base.numComps;
       var lookup = this.lookup;
       var length = input.length;
@@ -4727,13 +4726,13 @@ var IndexedCS = (function() {
       var baseBuf = new Uint8Array(length * numComps);
       var baseBufPos = 0;
       for (var i = 0; i < length; ++i) {
-        var lookupPos = input[i];
+        var lookupPos = input[i] * numComps;
         for (var j = 0; j < numComps; ++j) {
           baseBuf[baseBufPos++] = lookup[lookupPos + j];
         }
       }
 
-      return base.getRgbBuffer(baseBuf);
+      return this.base.getRgbBuffer(baseBuf);
     }
   };
   return constructor;
