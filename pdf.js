@@ -4520,8 +4520,22 @@ var CanvasGraphics = (function() {
 })();
 
 var ColorSpace = (function() {
+  // Constructor should define this.numComps, this.defaultColor, this.name
   function constructor() {
     error('should not call ColorSpace constructor');
+  };
+
+  constructor.prototype = {
+    // Input: array of size numComps representing color component values
+    // Output: array of rgb values, each value ranging from [0.1]
+    getRgb: function cs_getRgb(color) {
+      error('Should not call ColorSpace.getRgb');
+    },
+    // Input: Uint8Array of component values, each value scaled to [0,255]
+    // Output: Uint8Array of rgb values, each value scaled to [0,255]
+    getRgbBuffer: function cs_getRgbBuffer(input) {
+      error('Should not call ColorSpace.getRgbBuffer');
+    }
   };
 
   constructor.parse = function colorspace_parse(cs, xref, res) {
