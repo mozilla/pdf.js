@@ -1613,7 +1613,7 @@ var CCITTFaxStream = (function() {
       }
 
       if (this.byteAlign)
-        inputBits &= ~7;
+        this.inputBits &= ~7;
 
       var gotEOL = false;
 
@@ -4601,14 +4601,58 @@ var ColorSpace = (function() {
         var hiVal = cs[2] + 1;
         var lookup = xref.fetchIfRef(cs[3]);
         return new IndexedCS(base, hiVal, lookup);
+        break;
+      case 'Separation':
+        var name = cs[1];
+        var alt = ColorSpace.parse(cs[2], xref, res);
+        var tintFn = new PDFFunction(xref, xref.fetchIfRef(cs[3]));
+        return new TintCS("Separation", alt, tintFn);
+        break;
       case 'Lab':
-      case 'Seperation':
       case 'DeviceN':
       default:
         error("unrecognized color space object '" + mode + "'");
       }
     } else {
       error('unrecognized color space object');
+    }
+  };
+
+  return constructor;
+})();
+
+var TintCS = (function() {
+  function constructor(name, base, tintFn) {
+    this.name = name;
+    this.numComps = 1;
+    this.defaultColor = [0];
+
+    this.base = base;
+    this.tintFn = tintFn;
+  }
+
+  constructor.prototype = {
+    getRgb: function tintcs_getRgb(color) {
+      var tinted = this.tintFn.func(color);
+      return this.base.getRgb(tinted);
+    },
+    getRgbBuffer: function tintcs_getRgbBuffer(input) {
+      var tintFn = this.tintFn;
+      var base = this.base;
+
+      var length = 3 * input.length;
+      var rgbBuf = new Uint8Array(length);
+      var pos = 0;
+
+      for (var i = 0, ii = input.length; i < ii; ++i) {
+        var scaled = input[i] / 255;
+        var tinted = tintFn.func([scaled]);
+        var rgb = base.getRgb(tinted);
+        for (var j = 0; j < 3; ++j)
+          rgbBuf[pos++] = Math.round(255 * rgb[j]);
+      }
+
+      return rgbBuf;
     }
   };
 
@@ -4655,7 +4699,9 @@ var IndexedCS = (function() {
       var numComps = base.numComps;
 
       var c = [];
-      for (var i = 0; i < numComps; ++i)
+      var start = color[0] * numComps;
+
+      for (var i = start, ii = start + numComps; i < ii; ++i)
         c.push(lookup[i]);
       return this.base.getRgb(c);
     },
@@ -4693,7 +4739,7 @@ var DeviceGrayCS = (function() {
       return [c, c, c];
     },
     getRgbBuffer: function graycs_getRgbBuffer(input) {
-      var length = input.length;
+      var length = input.length * 3;
       var rgbBuf = new Uint8Array(length);
       for (var i = 0, j = 0; i < length; ++i) {
         var c = input[i];
@@ -4786,8 +4832,22 @@ var DeviceCmykCS = (function() {
       return [r, g, b];
     },
     getRgbBuffer: function cmykcs_getRgbBuffer(colorBuf) {
-      error('conversion from rgb to cmyk not implemented for images');
-      return colorBuf;
+      var length = colorBuf.length / 4;
+      var rgbBuf = new Uint8Array(length * 3);
+      var rgbBufPos = 0;
+      var colorBufPos = 0;
+
+      for (var i = 0; i < length; i++) {
+        var cmyk = [];
+        for (var j = 0; j < 4; ++j)
+          cmyk.push(colorBuf[colorBufPos++]/255);
+
+        var rgb = this.getRgb(cmyk);
+        for (var j = 0; j < 3; ++j)
+          rgb[rgbBufPos++] = Math.round(rgb[j] * 255);
+      }
+
+      return rgbBuf;
     }
   };
   return constructor;
@@ -4904,7 +4964,7 @@ var PDFImage = (function() {
           output[i] = Math.round(255 * ret / ((1 << bpc) - 1));
         }
       }
-      return this.colorSpace.getRbaBuffer(output);
+      return output;
     },
     getOpacity: function getOpacity() {
       var smask = this.smask;
@@ -4936,32 +4996,17 @@ var PDFImage = (function() {
       var rowBytes = (width * numComps * bpc + 7) >> 3;
       var imgArray = this.image.getBytes(height * rowBytes);
 
-      var comps = this.getComponents(imgArray);
+      var comps = this.colorSpace.getRgbBuffer(this.getComponents(imgArray));
       var compsPos = 0;
       var opacity = this.getOpacity();
       var opacityPos = 0;
       var length = width * height * 4;
 
-      switch (numComps) {
-      case 1:
-        for (var i = 0; i < length; i += 4) {
-          var p = comps[compsPos++];
-          buffer[i] = p;
-          buffer[i + 1] = p;
-          buffer[i + 2] = p;
-          buffer[i + 3] = opacity[opacityPos++];
-        }
-        break;
-      case 3:
-        for (var i = 0; i < length; i += 4) {
-          buffer[i] = comps[compsPos++];
-          buffer[i + 1] = comps[compsPos++];
-          buffer[i + 2] = comps[compsPos++];
-          buffer[i + 3] = opacity[opacityPos++];
-        }
-        break;
-      default:
-        TODO('Images with ' + numComps + ' components per pixel');
+      for (var i = 0; i < length; i += 4) {
+        buffer[i] = comps[compsPos++];
+        buffer[i + 1] = comps[compsPos++];
+        buffer[i + 2] = comps[compsPos++];
+        buffer[i + 3] = opacity[opacityPos++];
       }
     },
     fillGrayBuffer: function fillGrayBuffer(buffer) {
