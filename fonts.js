@@ -2,7 +2,7 @@
 /* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
 
 'use strict';
-
+var missingGlyphs = [];
 var isWorker = (typeof window == 'undefined');
 
 /**
@@ -1661,9 +1661,11 @@ CFF.prototype = {
     for (var i = 0; i < glyphs.length; i++) {
       var glyph = glyphs[i];
       var unicode = GlyphsUnicode[glyph.glyph];
+      
       if (!unicode) {
         if (glyph.glyph != '.notdef') {
-          warn(glyph +
+          missingGlyphs.push(glyph.glyph);
+          warn(glyph.glyph +
                ' does not have an entry in the glyphs unicode dictionary');
         }
       } else {
