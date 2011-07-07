@@ -4708,15 +4708,14 @@ var IndexedCS = (function() {
 
   constructor.prototype = {
     getRgb: function graycs_getRgb(color) {
-      var lookup = this.lookup;
-      var base = this.base;
       var numComps = base.numComps;
 
-      var c = [];
       var start = color[0] * numComps;
+      var c = [];
 
       for (var i = start, ii = start + numComps; i < ii; ++i)
-        c.push(lookup[i]);
+        c.push(this.lookup[i]);
+
       return this.base.getRgb(c);
     },
     getRgbBuffer: function graycs_getRgbBuffer(input) {
