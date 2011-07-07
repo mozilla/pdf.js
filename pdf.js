@@ -4655,7 +4655,6 @@ var SeparationCS = (function() {
       var base = this.base;
 
       var length = 3 * input.length;
-      var rgbBuf = new Uint8Array(length);
       var pos = 0;
 
       var numComps = base.numComps;
