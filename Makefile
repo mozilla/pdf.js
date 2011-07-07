@@ -3,6 +3,9 @@ BUILD_DIR := build
 DEFAULT_BROWSERS := test/resources/browser_manifests/browser_manifest.json
 DEFAULT_TESTS := test/test_manifest.json
 
+# Let folks define custom rules for their clones.
+-include local.mk
+
 # JS files needed for pdf.js.
 # This list doesn't account for the 'worker' directory.
 PDF_JS_FILES = \
@@ -156,5 +159,5 @@ clean:
 help:
 	@echo "Read the comments in the Makefile for guidance.";
 
-.PHONY: all test browser-test font-test shell-test \
+.PHONY:: all test browser-test font-test shell-test \
 	shell-msg lint clean web compiler help server
