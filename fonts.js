@@ -16,20 +16,6 @@ var kMaxFontFileSize = 40000;
 var kMaxWaitForFontFace = 1000;
 
 /**
- * Useful for debugging when you want to certains operations depending on how
- * many fonts are loaded.
- */
-var fontCount = 0;
-var fontName = '';
-
-/**
- * If for some reason one want to debug without fonts activated, it just need
- * to turn this pref to true/false.
- */
-var kDisableFonts = false;
-
-
-/**
  * Hold a map of decoded fonts and of the standard fourteen Type1 fonts and
  * their acronyms.
  * TODO Add the standard fourteen Type1 fonts list by default
@@ -253,7 +239,7 @@ var FontLoader = {
       src += '  }';
       src += '</script></head><body>';
       for (var i = 0; i < names.length; ++i) {
-        src += '<p style="font-family:\'' + fontName + '\'">Hi</p>';
+        src += '<p style="font-family:\'' + names[i] + '\'">Hi</p>';
       }
       src += '</body></html>';
       var frame = document.createElement('iframe');
@@ -420,12 +406,10 @@ var Font = (function() {
       this.font = Fonts.lookup(name).data;
       return;
     }
-    fontCount++;
-    fontName = name;
 
     // If the font is to be ignored, register it like an already loaded font
     // to avoid the cost of waiting for it be be loaded by the platform.
-    if (properties.ignore || kDisableFonts) {
+    if (properties.ignore) {
       Fonts.blacklistFont(name);
       return;
     }
