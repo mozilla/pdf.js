@@ -4620,7 +4620,7 @@ var ColorSpace = (function() {
         var name = cs[1];
         var alt = ColorSpace.parse(cs[2], xref, res);
         var tintFn = new PDFFunction(xref, xref.fetchIfRef(cs[3]));
-        return new TintCS("Separation", alt, tintFn);
+        return new SeparationCS(alt, tintFn);
         break;
       case 'Lab':
       case 'DeviceN':
@@ -4635,11 +4635,11 @@ var ColorSpace = (function() {
   return constructor;
 })();
 
-var TintCS = (function() {
-  function constructor(name, base, tintFn) {
-    this.name = name;
+var SeparationCS = (function() {
+  function constructor(base, tintFn) {
+    this.name = "Separation";
     this.numComps = 1;
-    this.defaultColor = [0];
+    this.defaultColor = [1];
 
     this.base = base;
     this.tintFn = tintFn;
