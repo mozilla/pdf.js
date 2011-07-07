@@ -4989,7 +4989,7 @@ var PDFFunction = (function() {
     if (!typeFn)
       error('Unknown type of function');
 
-    typeFn.apply(this, [fn, dict]);
+    typeFn.call(this, fn, dict);
   };
 
   constructor.prototype = {
