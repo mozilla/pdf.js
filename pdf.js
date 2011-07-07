@@ -4658,15 +4658,16 @@ var SeparationCS = (function() {
       var rgbBuf = new Uint8Array(length);
       var pos = 0;
 
+      var numComps = base.numComps;
+      var baseBuf = new Uint8Array(numComps * input.length);
       for (var i = 0, ii = input.length; i < ii; ++i) {
         var scaled = input[i] / 255;
         var tinted = tintFn.func([scaled]);
-        var rgb = base.getRgb(tinted);
-        for (var j = 0; j < 3; ++j)
-          rgbBuf[pos++] = Math.round(255 * rgb[j]);
+        for (var j = 0; j < numComps; ++j)
+          baseBuf[pos++] = 255 * tinted[j];
       }
+      return base.getRgbBuffer(baseBuf);
 
-      return rgbBuf;
     }
   };
 
@@ -4856,7 +4857,7 @@ var DeviceCmykCS = (function() {
 
         var rgb = this.getRgb(cmyk);
         for (var j = 0; j < 3; ++j)
-          rgb[rgbBufPos++] = Math.round(rgb[j] * 255);
+          rgbBuf[rgbBufPos++] = Math.round(rgb[j] * 255);
       }
 
       return rgbBuf;
