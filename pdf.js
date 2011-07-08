@@ -904,6 +904,47 @@ var Ascii85Stream = (function() {
   return constructor;
 })();
 
+var AsciiHexStream = (function() {
+  function constructor(str) {
+    this.str = str;
+    this.dict = str.dict;
+    
+    DecodeStream.call(this);
+  }
+  
+  constructor.prototype = Object.create(DecodeStream.prototype);
+  
+  constructor.prototype.readBlock = function() {
+    var gtCode = '>'.charCodeAt(0), bytes = this.str.getBytes(), c, n, 
+        decodeLength, buffer, bufferLength, i, length;
+    
+    decodeLength = (bytes.length + 1) / 2;
+    buffer = this.ensureBuffer(this.bufferLength + decodeLength);
+    bufferLength = this.bufferLength;
+    
+    for(i = 0, length = bytes.length; i < length; i++) {
+      c = String.fromCharCode(bytes[i]);
+      while (Lexer.isSpace(c) && (i+1) < length) {
+        c = String.fromCharCode(bytes[++i]);
+      }
+      
+      if((i+1) < length && (bytes[i+1] !== gtCode)) {
+        n = String.fromCharCode(bytes[++i]);
+        buffer[bufferLength++] = Number('0x'+c+n);
+      } else {
+        if(bytes[i] !== gtCode) { // EOD marker at an odd number, behave as if a 0 followed the last digit.
+          buffer[bufferLength++] = Number('0x'+c+'0');
+        }
+      }
+    }
+    
+    this.bufferLength = bufferLength;
+    this.eof = true;
+  };
+  
+  return constructor;
+})();
+
 var CCITTFaxStream = (function() {
 
   var ccittEOL = -2;
@@ -2496,6 +2537,8 @@ var Parser = (function() {
         return new JpegStream(bytes, stream.dict);
       } else if (name == 'ASCII85Decode') {
         return new Ascii85Stream(stream);
+      } else if (name == 'ASCIIHexDecode') {
+        return new AsciiHexStream(stream);
       } else if (name == 'CCITTFaxDecode') {
         TODO('implement fax stream');
         return new CCITTFaxStream(stream, params);
