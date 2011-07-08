@@ -912,28 +912,55 @@ var AsciiHexStream = (function() {
     DecodeStream.call(this);
   }
   
+  var hexvalueMap = {
+      9: -1, // \t
+      32: -1, // space
+      48: 0,
+      49: 1,
+      50: 2,
+      51: 3,
+      52: 4,
+      53: 5,
+      54: 6,
+      55: 7,
+      56: 8,
+      57: 9,
+      65: 10,
+      66: 11,
+      67: 12,
+      68: 13,
+      69: 14,
+      70: 15,
+      97: 10,
+      98: 11,
+      99: 12,
+      100: 13,
+      101: 14,
+      102: 15
+  };
+
   constructor.prototype = Object.create(DecodeStream.prototype);
   
   constructor.prototype.readBlock = function() {
     var gtCode = '>'.charCodeAt(0), bytes = this.str.getBytes(), c, n, 
         decodeLength, buffer, bufferLength, i, length;
     
-    decodeLength = (bytes.length + 1) / 2;
+    decodeLength = (bytes.length + 1) >> 1;
     buffer = this.ensureBuffer(this.bufferLength + decodeLength);
     bufferLength = this.bufferLength;
     
     for(i = 0, length = bytes.length; i < length; i++) {
-      c = String.fromCharCode(bytes[i]);
-      while (Lexer.isSpace(c) && (i+1) < length) {
-        c = String.fromCharCode(bytes[++i]);
+      c = hexvalueMap[bytes[i]];
+      while (c == -1 && (i+1) < length) {
+        c = hexvalueMap[bytes[++i]];
       }
       
       if((i+1) < length && (bytes[i+1] !== gtCode)) {
-        n = String.fromCharCode(bytes[++i]);
-        buffer[bufferLength++] = Number('0x'+c+n);
+        n = hexvalueMap[bytes[++i]];
+        buffer[bufferLength++] = c*16+n;
       } else {
         if(bytes[i] !== gtCode) { // EOD marker at an odd number, behave as if a 0 followed the last digit.
-          buffer[bufferLength++] = Number('0x'+c+'0');
+          buffer[bufferLength++] = c*16;
         }
       }
     }
