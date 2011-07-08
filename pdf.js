@@ -4015,14 +4015,14 @@ var CanvasGraphics = (function() {
       ctx.scale(1, -1);
 
       if (this.ctx.$showText) {
-        ctx.$showText(current.y, Fonts.charsToUnicode(text));
+        ctx.$showText(current.y, text);
       } else {
-        text = Fonts.charsToUnicode(text);
         ctx.translate(current.x, -1 * current.y);
-
         var font = this.current.font;
-        if (font)
+        if (font) {
           ctx.transform.apply(ctx, font.textMatrix);
+          text = font.charsToUnicode(text);
+        }
         ctx.fillText(text, 0, 0);
         current.x += Fonts.measureText(text);
       }
