@@ -1917,7 +1917,7 @@ var Cmd = (function() {
 
 var Dict = (function() {
   function constructor() {
-    this.map = {};
+    this.map = Object.create(null);
   }
 
   constructor.prototype = {
