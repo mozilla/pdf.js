@@ -3687,7 +3687,6 @@ var CanvasGraphics = (function() {
               var font = xref.fetchIfRef(fontRes.get(args[0].name));
               assertWellFormed(IsDict(font));
               if (!font.translated) {
-                // sbarman marker
                 font.translated = this.translateFont(font, xref, resources);
                 if (fonts && font.translated) {
                   // keep track of each font we translated so the caller can
@@ -3886,7 +3885,7 @@ var CanvasGraphics = (function() {
         this.ctx.$setFont(fontName, size);
       } else {
         this.ctx.font = size + 'px "' + fontName + '"';
-        Fonts.setActive(font, size);
+        Fonts.setActive(fontObj, size);
       }
     },
     setTextRenderingMode: function(mode) {

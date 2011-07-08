@@ -31,11 +31,13 @@ var Fonts = (function Fonts() {
     ctx.scale(1 / kScalePrecision, 1);
   }
 
-  function FontInfo(name, data, properties, id) {
+  var fontCount = 0;
+  
+  function FontInfo(name, data, properties) {
     this.name = name;
     this.data = data;
     this.properties = properties;
-    this.id = id;
+    this.id = fontCount++;
     this.loading = true;
     this.charsCache = Object.create(null);
     this.sizes = [];
@@ -45,12 +47,11 @@ var Fonts = (function Fonts() {
   var charsCache;
   var measureCache;
 
-  var fontCount = 0;
-
   return {
     registerFont: function fonts_registerFont(fontName, data, properties) {
-      fonts.push(new FontInfo(fontName, data, properties, fontCount));
-      return fontCount++;
+      var font = new FontInfo(fontName, data, properties);
+      fonts.push(font);
+      return font.id;
     },
     blacklistFont: function fonts_blacklistFont(fontName) {
       var id = registerFont(fontName, null, {});
@@ -122,8 +123,8 @@ var FontLoader = {
 
   bind: function(fonts, callback) {
     function checkFontsLoaded() {
-      for (var i = 0; i < fonts.length; i++) {
-        var id = fonts[i].fontDict.fontObj.id;
+      for (var i = 0; i < allIds.length; i++) {
+        var id = allIds[i];
         if (Fonts.lookupById(id).loading) {
           return false;
         }
@@ -136,12 +137,15 @@ var FontLoader = {
       return true;
     }
 
+    var allIds = [];
     var rules = [], names = [], ids = [];
+
     for (var i = 0; i < fonts.length; i++) {
       var font = fonts[i];
 
       var obj = new Font(font.name, font.file, font.properties);
       font.fontDict.fontObj = obj;
+      allIds.push(obj.id);
 
       var str = '';
       var data = Fonts.lookupById(obj.id).data;
@@ -160,7 +164,7 @@ var FontLoader = {
     if (!isWorker && rules.length) {
       FontLoader.prepareFontLoadEvent(rules, names, ids);
     }
-
+    
     if (!checkFontsLoaded()) {
       document.documentElement.addEventListener(
         'pdfjsFontLoad', checkFontsLoaded, false);
@@ -406,12 +410,6 @@ var Font = (function() {
   var constructor = function font_constructor(name, file, properties) {
     this.name = name;
     this.encoding = properties.encoding;
-
-    // If the font has already been decoded simply return it
-    //if (Fonts.lookup(name)) {
-    //  this.font = Fonts.lookup(name).data;
-    //  return;
-    //}
 
     // If the font is to be ignored, register it like an already loaded font
     // to avoid the cost of waiting for it be be loaded by the platform.
