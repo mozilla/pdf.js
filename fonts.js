@@ -1124,7 +1124,7 @@ var Font = (function() {
         action: 'font',
         data: {
           raw: data,
-          fontName: this.name,
+          fontName: this.loadedName,
           mimetype: this.mimetype
         }
       });
