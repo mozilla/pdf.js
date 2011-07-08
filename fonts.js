@@ -61,16 +61,16 @@ var Fonts = (function Fonts() {
     lookupById: function fonts_lookupById(id) {
       return fonts[id];
     },
-    setActive: function fonts_setActive(font, size) {
+    setActive: function fonts_setActive(fontName, fontObj, size) {
       // |current| can be null is fontName is a built-in font
       // (e.g. "sans-serif")
-      if ((current = fonts[font.id])) {
+      if (fontObj && (current = fonts[fontObj.id])) {
         charsCache = current.charsCache;
         var sizes = current.sizes;
         if (!(measureCache = sizes[size]))
           measureCache = sizes[size] = Object.create(null);
       }
-      ctx.font = (size * kScalePrecision) + 'px "' + font.loadedName + '"';
+      ctx.font = (size * kScalePrecision) + 'px "' + fontName + '"';
     },
     charsToUnicode: function fonts_chars2Unicode(chars) {
       if (!charsCache)
@@ -161,6 +161,7 @@ var FontLoader = {
       }
     }
 
+    this.listeningForFontLoad = false;
     if (!isWorker && rules.length) {
       FontLoader.prepareFontLoadEvent(rules, names, ids);
     }
@@ -213,7 +214,7 @@ var FontLoader = {
       div.innerHTML = html;
       document.body.appendChild(div);
 
-      if (!this.listeneningForFontLoad) {
+      if (!this.listeningForFontLoad) {
         window.addEventListener(
           'message',
           function(e) {
@@ -227,7 +228,7 @@ var FontLoader = {
             document.documentElement.dispatchEvent(evt);
           },
           false);
-        this.listeneningForFontLoad = true;
+        this.listeningForFontLoad = true;
       }
 
       // XXX we should have a time-out here too, and maybe fire

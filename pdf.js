@@ -3885,7 +3885,7 @@ var CanvasGraphics = (function() {
         this.ctx.$setFont(fontName, size);
       } else {
         this.ctx.font = size + 'px "' + fontName + '"';
-        Fonts.setActive(fontObj, size);
+        Fonts.setActive(fontName, fontObj, size);
       }
     },
     setTextRenderingMode: function(mode) {
