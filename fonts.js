@@ -69,7 +69,11 @@ var Fonts = (function Fonts() {
         var sizes = current.sizes;
         if (!(measureCache = sizes[size]))
           measureCache = sizes[size] = Object.create(null);
+      } else {
+        charsCache = null;
+        measureCache = null
       }
+
       ctx.font = (size * kScalePrecision) + 'px "' + fontName + '"';
     },
     charsToUnicode: function fonts_chars2Unicode(chars) {

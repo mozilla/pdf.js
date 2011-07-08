@@ -3930,10 +3930,12 @@ var CanvasGraphics = (function() {
         text = Fonts.charsToUnicode(text);
         this.ctx.translate(this.current.x, -1 * this.current.y);
 
-        var font = Fonts.lookupById(this.current.font.id);
-        if (font && font.properties.textMatrix)
-          this.ctx.transform.apply(this.ctx, font.properties.textMatrix);
-
+        var font = this.current.font;
+        if (font) {
+          var fontInfo = Fonts.lookupById(font.id);
+          if (fontInfo && fontInfo.properties.textMatrix)
+            this.ctx.transform.apply(this.ctx, fontInfo.properties.textMatrix);
+        }
         this.ctx.fillText(text, 0, 0);
         this.current.x += Fonts.measureText(text);
       }
