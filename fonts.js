@@ -38,12 +38,10 @@ var Fonts = (function Fonts() {
     this.properties = properties;
     this.id = fontCount++;
     this.loading = true;
-    this.charsCache = Object.create(null);
     this.sizes = [];
   }
 
   var current;
-  var charsCache;
   var measureCache;
 
   return {
@@ -64,50 +62,14 @@ var Fonts = (function Fonts() {
       // |current| can be null is fontName is a built-in font
       // (e.g. "sans-serif")
       if (fontObj && (current = fonts[fontObj.id])) {
-        charsCache = current.charsCache;
         var sizes = current.sizes;
         if (!(measureCache = sizes[size]))
           measureCache = sizes[size] = Object.create(null);
       } else {
-        charsCache = null;
         measureCache = null
       }
 
       ctx.font = (size * kScalePrecision) + 'px "' + fontName + '"';
-    },
-    charsToUnicode: function fonts_chars2Unicode(chars) {
-      if (!charsCache)
-        return chars;
-
-      // if we translated this string before, just grab it from the cache
-      var str = charsCache[chars];
-      if (str)
-        return str;
-
-      // translate the string using the font's encoding
-      var encoding = current ? current.properties.encoding : null;
-      if (!encoding)
-        return chars;
-
-      str = '';
-      for (var i = 0; i < chars.length; ++i) {
-        var charcode = chars.charCodeAt(i);
-        var unicode = encoding[charcode];
-
-        // Check if the glyph has already been converted
-        if (!IsNum(unicode))
-          unicode = encoding[unicode] = GlyphsUnicode[unicode.name];
-
-        // Handle surrogate pairs
-        if (unicode > 0xFFFF) {
-          str += String.fromCharCode(unicode & 0xFFFF);
-          unicode >>= 16;
-        }
-        str += String.fromCharCode(unicode);
-      }
-
-      // Enter the translated string into the cache
-      return charsCache[chars] = str;
     },
     measureText: function fonts_measureText(text) {
       var width;
@@ -1146,6 +1108,46 @@ var Font = (function() {
       styleSheet.insertRule(rule, styleSheet.cssRules.length);
 
       return rule;
+    },
+
+    charsToUnicode: function fonts_chars2Unicode(chars) {
+      var charsCache = this.charsCache;
+
+      // if we translated this string before, just grab it from the cache
+      if (charsCache) {
+        var str = charsCache[chars];
+        if (str)
+          return str;
+      }
+
+      // translate the string using the font's encoding
+      var encoding = this.encoding;
+      if (!encoding)
+        return chars;
+
+      // lazily create the translation cache
+      if (!charsCache)
+        charsCache = this.charsCache = Object.create(null);
+
+      str = '';
+      for (var i = 0; i < chars.length; ++i) {
+        var charcode = chars.charCodeAt(i);
+        var unicode = encoding[charcode];
+
+        // Check if the glyph has already been converted
+        if (!IsNum(unicode))
+          unicode = encoding[unicode] = GlyphsUnicode[unicode.name];
+
+        // Handle surrogate pairs
+        if (unicode > 0xFFFF) {
+          str += String.fromCharCode(unicode & 0xFFFF);
+          unicode >>= 16;
+        }
+        str += String.fromCharCode(unicode);
+      }
+
+      // Enter the translated string into the cache
+      return charsCache[chars] = str;
     }
   };
 
