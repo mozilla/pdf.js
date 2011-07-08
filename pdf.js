@@ -3936,7 +3936,7 @@ var CanvasGraphics = (function() {
         ctx.$showText(current.y, Fonts.charsToUnicode(text));
       } else {
         text = Fonts.charsToUnicode(text);
-        ctx.translate(this.current.x, -1 * this.current.y);
+        ctx.translate(current.x, -1 * current.y);
 
         var font = this.current.font;
         if (font)
