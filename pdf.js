@@ -3557,7 +3557,19 @@ var CanvasGraphics = (function() {
       if (fontDict.has('Encoding')) {
         var encoding = xref.fetchIfRef(fontDict.get('Encoding'));
         if (IsDict(encoding)) {
-          // Build a map between codes and glyphs
+          // Build a map of between codes and glyphs
+          // Load the base encoding
+          var baseName = encoding.get('BaseEncoding');
+          if (baseName) {
+            var base = Encodings[baseName.name];
+            var index = 0;
+            for (var j = 0, end = base.length; j < end; j++)
+              encodingMap[index++] = GlyphsUnicode[base[j]];
+          } else {
+            TODO('need to load default encoding');
+          }
+
+          // Load the differences between the base and original
           var differences = encoding.get('Differences');
           var index = 0;
           for (var j = 0; j < differences.length; j++) {
