@@ -3937,24 +3937,24 @@ var CanvasGraphics = (function() {
     showText: function(text) {
       // TODO: apply charSpacing, wordSpacing, textHScale
 
-      this.ctx.save();
-      this.ctx.transform.apply(this.ctx, this.current.textMatrix);
-      this.ctx.scale(1, -1);
+      var ctx = this.ctx;
+      var current = this.current;
+
+      ctx.save();
+      ctx.transform.apply(ctx, current.textMatrix);
+      ctx.scale(1, -1);
 
       if (this.ctx.$showText) {
-        this.ctx.$showText(this.current.y, Fonts.charsToUnicode(text));
+        ctx.$showText(current.y, Fonts.charsToUnicode(text));
       } else {
         text = Fonts.charsToUnicode(text);
-        this.ctx.translate(this.current.x, -1 * this.current.y);
+        ctx.translate(current.x, -1 * current.y);
 
         var font = this.current.font;
-        if (font) {
-          var fontInfo = Fonts.lookupById(font.id);
-          if (fontInfo && fontInfo.properties.textMatrix)
-            this.ctx.transform.apply(this.ctx, fontInfo.properties.textMatrix);
-        }
-        this.ctx.fillText(text, 0, 0);
-        this.current.x += Fonts.measureText(text);
+        if (font)
+          ctx.transform.apply(ctx, font.textMatrix);
+        ctx.fillText(text, 0, 0);
+        current.x += Fonts.measureText(text);
       }
 
       this.ctx.restore();
