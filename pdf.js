@@ -904,6 +904,74 @@ var Ascii85Stream = (function() {
   return constructor;
 })();
 
+var AsciiHexStream = (function() {
+  function constructor(str) {
+    this.str = str;
+    this.dict = str.dict;
+    
+    DecodeStream.call(this);
+  }
+  
+  var hexvalueMap = {
+      9: -1, // \t
+      32: -1, // space
+      48: 0,
+      49: 1,
+      50: 2,
+      51: 3,
+      52: 4,
+      53: 5,
+      54: 6,
+      55: 7,
+      56: 8,
+      57: 9,
+      65: 10,
+      66: 11,
+      67: 12,
+      68: 13,
+      69: 14,
+      70: 15,
+      97: 10,
+      98: 11,
+      99: 12,
+      100: 13,
+      101: 14,
+      102: 15
+  };
+
+  constructor.prototype = Object.create(DecodeStream.prototype);
+  
+  constructor.prototype.readBlock = function() {
+    var gtCode = '>'.charCodeAt(0), bytes = this.str.getBytes(), c, n, 
+        decodeLength, buffer, bufferLength, i, length;
+    
+    decodeLength = (bytes.length + 1) >> 1;
+    buffer = this.ensureBuffer(this.bufferLength + decodeLength);
+    bufferLength = this.bufferLength;
+    
+    for(i = 0, length = bytes.length; i < length; i++) {
+      c = hexvalueMap[bytes[i]];
+      while (c == -1 && (i+1) < length) {
+        c = hexvalueMap[bytes[++i]];
+      }
+      
+      if((i+1) < length && (bytes[i+1] !== gtCode)) {
+        n = hexvalueMap[bytes[++i]];
+        buffer[bufferLength++] = c*16+n;
+      } else {
+        if(bytes[i] !== gtCode) { // EOD marker at an odd number, behave as if a 0 followed the last digit.
+          buffer[bufferLength++] = c*16;
+        }
+      }
+    }
+    
+    this.bufferLength = bufferLength;
+    this.eof = true;
+  };
+  
+  return constructor;
+})();
+
 var CCITTFaxStream = (function() {
 
   var ccittEOL = -2;
@@ -1943,7 +2011,7 @@ var Dict = (function() {
 
     forEach: function(callback) {
       for (var key in this.map) {
-        callback.call(null, key, this.map[key]);
+        callback(key, this.map[key]);
       }
     }
   };
@@ -2496,6 +2564,8 @@ var Parser = (function() {
         return new JpegStream(bytes, stream.dict);
       } else if (name == 'ASCII85Decode') {
         return new Ascii85Stream(stream);
+      } else if (name == 'ASCIIHexDecode') {
+        return new AsciiHexStream(stream);
       } else if (name == 'CCITTFaxDecode') {
         TODO('implement fax stream');
         return new CCITTFaxStream(stream, params);
@@ -3487,7 +3557,19 @@ var CanvasGraphics = (function() {
       if (fontDict.has('Encoding')) {
         var encoding = xref.fetchIfRef(fontDict.get('Encoding'));
         if (IsDict(encoding)) {
-          // Build a map between codes and glyphs
+          // Build a map of between codes and glyphs
+          // Load the base encoding
+          var baseName = encoding.get('BaseEncoding');
+          if (baseName) {
+            var base = Encodings[baseName.name];
+            var index = 0;
+            for (var j = 0, end = base.length; j < end; j++)
+              encodingMap[index++] = GlyphsUnicode[base[j]];
+          } else {
+            TODO('need to load default encoding');
+          }
+
+          // Load the differences between the base and original
           var differences = encoding.get('Differences');
           var index = 0;
           for (var j = 0; j < differences.length; j++) {
