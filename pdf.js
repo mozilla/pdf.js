@@ -3610,9 +3610,10 @@ var CanvasGraphics = (function() {
 
       return {
         name: fontName,
-          file: fontFile,
-          properties: properties
-          };
+        fontDict: fontDict, 
+        file: fontFile,
+        properties: properties
+      };
     },
 
     beginDrawing: function(mediaBox) {
@@ -3873,25 +3874,23 @@ var CanvasGraphics = (function() {
         return;
 
       var fontName = '';
-      var fontDescriptor = font.get('FontDescriptor');
-      if (fontDescriptor && fontDescriptor.num) {
-        var fontDescriptor = this.xref.fetchIfRef(fontDescriptor);
-        fontName = fontDescriptor.get('FontName').name.replace('+', '_');
-      }
+      var fontObj = font.fontObj;
+      if (fontObj)
+        fontName = fontObj.loadedName;
 
       if (!fontName) {
         // TODO: fontDescriptor is not available, fallback to default font
         fontName = 'sans-serif';
       }
 
-      this.current.fontName = fontName;
+      this.current.font = fontObj;
       this.current.fontSize = size;
 
       if (this.ctx.$setFont) {
         this.ctx.$setFont(fontName, size);
       } else {
         this.ctx.font = size + 'px "' + fontName + '"';
-        Fonts.setActive(fontName, size);
+        Fonts.setActive(fontName, fontObj, size);
       }
     },
     setTextRenderingMode: function(mode) {
@@ -3936,10 +3935,12 @@ var CanvasGraphics = (function() {
         text = Fonts.charsToUnicode(text);
         this.ctx.translate(this.current.x, -1 * this.current.y);
 
-        var font = Fonts.lookup(this.current.fontName);
-        if (font && font.properties.textMatrix)
-          this.ctx.transform.apply(this.ctx, font.properties.textMatrix);
-
+        var font = this.current.font;
+        if (font) {
+          var fontInfo = Fonts.lookupById(font.id);
+          if (fontInfo && fontInfo.properties.textMatrix)
+            this.ctx.transform.apply(this.ctx, fontInfo.properties.textMatrix);
+        }
         this.ctx.fillText(text, 0, 0);
         this.current.x += Fonts.measureText(text);
       }
