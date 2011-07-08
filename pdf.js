@@ -1943,7 +1943,7 @@ var Dict = (function() {
 
     forEach: function(callback) {
       for (var key in this.map) {
-        callback.call(null, key, this.map[key]);
+        callback(key, this.map[key]);
       }
     }
   };
