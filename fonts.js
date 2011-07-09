@@ -22,14 +22,7 @@ var kMaxWaitForFontFace = 1000;
  */
 
 var Fonts = (function Fonts() {
-  var kScalePrecision = 40;
   var fonts = [];
-
-  if (!isWorker) {
-    var ctx = document.createElement('canvas').getContext('2d');
-    ctx.scale(1 / kScalePrecision, 1);
-  }
-
   var fontCount = 0;
   
   function FontInfo(name, data, properties) {
@@ -42,7 +35,6 @@ var Fonts = (function Fonts() {
   }
 
   var current;
-  var measureCache;
 
   return {
     registerFont: function fonts_registerFont(fontName, data, properties) {
@@ -57,28 +49,6 @@ var Fonts = (function Fonts() {
     },
     lookupById: function fonts_lookupById(id) {
       return fonts[id];
-    },
-    setActive: function fonts_setActive(fontName, fontObj, size) {
-      // |current| can be null is fontName is a built-in font
-      // (e.g. "sans-serif")
-      if (fontObj && (current = fonts[fontObj.id])) {
-        var sizes = current.sizes;
-        if (!(measureCache = sizes[size]))
-          measureCache = sizes[size] = Object.create(null);
-      } else {
-        measureCache = null
-      }
-
-      ctx.font = (size * kScalePrecision) + 'px "' + fontName + '"';
-    },
-    measureText: function fonts_measureText(text) {
-      var width;
-      if (measureCache && (width = measureCache[text]))
-        return width;
-      width = ctx.measureText(text).width / kScalePrecision;
-      if (measureCache)
-        measureCache[text] = width;
-      return width;
     }
   };
 })();
@@ -1110,7 +1080,7 @@ var Font = (function() {
       return rule;
     },
 
-    charsToUnicode: function fonts_chars2Unicode(chars) {
+    charsToUnicode: function fonts_charsToUnicode(chars) {
       var charsCache = this.charsCache;
 
       // if we translated this string before, just grab it from the cache
