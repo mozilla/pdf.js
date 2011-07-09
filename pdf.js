@@ -4021,14 +4021,28 @@ var CanvasGraphics = (function() {
       var cs = this.getFillColorSpace();
 
       if (cs.name == 'Pattern') {
-        var patternName = arguments[0];
-        this.setFillPattern(patternName);
+        var length = arguments.length;
+        var base = cs.base;
+        if (base) {
+          var baseComps = base.numComps;
+
+          if (baseComps != length - 1)
+            error("invalid base color for pattern colorspace");
+
+          var color = [];
+          for (var i = 0; i < baseComps; ++i)
+            color.push(arguments[i]);
+
+          color = base.getRgb(color);
+        }
+        var patternName = arguments[length - 1];
+        this.setFillPattern(patternName, base, color);
       } else {
         // TODO real impl
         this.setFillColor.apply(this, arguments);
       }
     },
-    setFillPattern: function(patternName) {
+    setFillPattern: function(patternName, baseCS, color) {
       if (!IsName(patternName))
         error("Bad args to getPattern");
 
@@ -4046,7 +4060,7 @@ var CanvasGraphics = (function() {
       var patternFn = types[typeNum];
       if (!patternFn)
         error("Unhandled pattern type");
-      patternFn.call(this, pattern, dict);
+      patternFn.call(this, pattern, dict, baseCS, color);
     },
     setShadingPattern: function(pattern, dict) {
       var matrix = dict.get("Matrix");
@@ -4069,7 +4083,7 @@ var CanvasGraphics = (function() {
       this.ctx.fillRect(0,0,0,0);
       this.transform.apply(this, inv);
     },
-    setTilingPattern: function(pattern, dict) {
+    setTilingPattern: function(pattern, dict, baseCS, color) {
       function multiply(m, tm) {
         var a = m[0] * tm[0] + m[1] * tm[2];
         var b = m[0] * tm[1] + m[1] * tm[3];
@@ -4083,17 +4097,6 @@ var CanvasGraphics = (function() {
       this.save();
       var ctx = this.ctx;
 
-      var paintType = dict.get('PaintType');
-      switch (paintType) {
-      case PAINT_TYPE_COLORED:
-        // should go to default for color space
-        ctx.fillStyle = this.makeCssRgb(1, 1, 1);
-        ctx.strokeStyle = this.makeCssRgb(0, 0, 0);
-        break;
-      case PAINT_TYPE_UNCOLORED:
-      default:
-        error('Unsupported paint type');
-      }
 
       TODO('TilingType');
 
@@ -4123,6 +4126,21 @@ var CanvasGraphics = (function() {
       var tmpCtx = tmpCanvas.getContext('2d');
       var savedCtx = ctx;
       this.ctx = tmpCtx;
+
+      var paintType = dict.get('PaintType');
+      switch (paintType) {
+      case PAINT_TYPE_COLORED:
+        // should go to default for color space
+        tmpCtx.fillStyle = this.makeCssRgb(1, 1, 1);
+        tmpCtx.strokeStyle = this.makeCssRgb(0, 0, 0);
+        break;
+      case PAINT_TYPE_UNCOLORED:
+        tmpCtx.fillStyle = this.makeCssRgb.apply(this, baseCS.getRgb(color));
+        tmpCtx.strokeStyle = this.makeCssRgb.apply(this, baseCS.getRgb(color));
+        break;
+      default:
+        error('Unsupported paint type');
+      }
 
       // normalize transform matrix so each step
       // takes up the entire tmpCanvas (need to remove white borders)
@@ -4247,8 +4265,12 @@ var CanvasGraphics = (function() {
 
       var typeNum = shading.get('ShadingType');
       var shadingFn = types[typeNum];
+
+      // Most likely we will not implement other types of shading
+      // unless the browser supports them
       if (!shadingFn)
-        error("Unknown or NYI type of shading '"+ typeNum +"'");
+        TODO("Unknown or NYI type of shading '"+ typeNum +"'");
+
       return shadingFn.call(this, shading, cs);
                 },
     getAxialShading: function(sh, cs) {
@@ -4626,7 +4648,10 @@ var ColorSpace = (function() {
           return new DeviceCmykCS();
         break;
       case 'Pattern':
-        return new PatternCS();
+        var baseCS = cs[1];
+        if (baseCS)
+          baseCS = ColorSpace.parse(baseCS, xref, res);
+        return new PatternCS(baseCS);
         break;
       case 'Indexed':
         var base = ColorSpace.parse(cs[1], xref, res);
@@ -4692,8 +4717,9 @@ var SeparationCS = (function() {
 })();
 
 var PatternCS = (function() {
-  function constructor() {
+  function constructor(baseCS) {
     this.name = 'Pattern';
+    this.base = baseCS;
   }
   constructor.prototype = {};
 
