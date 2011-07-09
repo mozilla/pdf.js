@@ -3972,7 +3972,6 @@ var CanvasGraphics = (function() {
         this.ctx.$setFont(fontName, size);
       } else {
         this.ctx.font = size + 'px "' + fontName + '"';
-        Fonts.setActive(fontName, fontObj, size);
       }
     },
     setTextRenderingMode: function(mode) {
@@ -4018,16 +4017,14 @@ var CanvasGraphics = (function() {
         ctx.$showText(current.y, text);
       } else {
         ctx.translate(current.x, -1 * current.y);
-        var font = this.current.font;
-        if (font) {
-          ctx.transform.apply(ctx, font.textMatrix);
-          text = font.charsToUnicode(text);
-        }
+        var font = current.font;
+        ctx.transform.apply(ctx, font.textMatrix);
+        text = font.charsToUnicode(text);
         ctx.fillText(text, 0, 0);
-        current.x += Fonts.measureText(text);
+        current.x += font.measureText(text, current.fontSize);
       }
 
-      this.ctx.restore();
+      ctx.restore();
     },
     showSpacedText: function(arr) {
       for (var i = 0; i < arr.length; ++i) {

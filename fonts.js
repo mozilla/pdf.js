@@ -22,14 +22,7 @@ var kMaxWaitForFontFace = 1000;
  */
 
 var Fonts = (function Fonts() {
-  var kScalePrecision = 40;
   var fonts = [];
-
-  if (!isWorker) {
-    var ctx = document.createElement('canvas').getContext('2d');
-    ctx.scale(1 / kScalePrecision, 1);
-  }
-
   var fontCount = 0;
   
   function FontInfo(name, data, properties) {
@@ -42,7 +35,6 @@ var Fonts = (function Fonts() {
   }
 
   var current;
-  var measureCache;
 
   return {
     registerFont: function fonts_registerFont(fontName, data, properties) {
@@ -57,28 +49,6 @@ var Fonts = (function Fonts() {
     },
     lookupById: function fonts_lookupById(id) {
       return fonts[id];
-    },
-    setActive: function fonts_setActive(fontName, fontObj, size) {
-      // |current| can be null is fontName is a built-in font
-      // (e.g. "sans-serif")
-      if (fontObj && (current = fonts[fontObj.id])) {
-        var sizes = current.sizes;
-        if (!(measureCache = sizes[size]))
-          measureCache = sizes[size] = Object.create(null);
-      } else {
-        measureCache = null
-      }
-
-      ctx.font = (size * kScalePrecision) + 'px "' + fontName + '"';
-    },
-    measureText: function fonts_measureText(text) {
-      var width;
-      if (measureCache && (width = measureCache[text]))
-        return width;
-      width = ctx.measureText(text).width / kScalePrecision;
-      if (measureCache)
-        measureCache[text] = width;
-      return width;
     }
   };
 })();
@@ -364,6 +334,14 @@ function getUnicodeRangeFor(value) {
   return -1;
 }
 
+var MeasureText = {
+  currentCache: null,
+  currentFont: null,
+  currentSize: 0,
+  ctx: null,
+  sizes: Object.create(null)
+};
+
 /**
  * 'Font' is the class the outside world should use, it encapsulate all the font
  * decoding logics whatever type it is (assuming the font type is supported).
@@ -373,6 +351,8 @@ function getUnicodeRangeFor(value) {
  *   type1Font.bind();
  */
 var Font = (function() {
+  var kScalePrecision = 40;
+
   var constructor = function font_constructor(name, file, properties) {
     this.name = name;
     this.textMatrix = properties.textMatrix || IDENTITY_MATRIX;
@@ -1110,7 +1090,7 @@ var Font = (function() {
       return rule;
     },
 
-    charsToUnicode: function fonts_chars2Unicode(chars) {
+    charsToUnicode: function fonts_charsToUnicode(chars) {
       var charsCache = this.charsCache;
 
       // if we translated this string before, just grab it from the cache
@@ -1148,6 +1128,32 @@ var Font = (function() {
 
       // Enter the translated string into the cache
       return charsCache[chars] = str;
+    },
+
+    measureText: function fonts_measureText(text, size) {
+      if (MeasureText.currentFont != this ||
+          MeasureText.currentSize != size) {
+        var ctx = MeasureText.ctx;
+        if (!ctx) {
+          ctx = MeasureText.ctx = document.createElement('canvas').getContext('2d');
+          ctx.scale(1 / kScalePrecision, 1);
+        }
+        ctx.font = (size * kScalePrecision) + 'px "' + this.loadedName + '"';
+        MeasureText.currentFont = this;
+        MeasureText.currentSize = size;
+        var cache = MeasureText.sizes[size];
+        if (!cache)
+          cache = MeasureText.sizes[size] = Object.create(null);
+        MeasureText.currentCache = cache;
+      }
+
+      var key = size + "$" + text;
+      var width = MeasureText.currentCache[key];
+      if (width)
+        return width;
+      var ctx = MeasureText.ctx;
+      width = ctx.measureText(text).width / kScalePrecision;
+      return MeasureText.currentCache[key] = width;
     }
   };
 
