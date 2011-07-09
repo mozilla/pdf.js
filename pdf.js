@@ -4,7 +4,7 @@
 'use strict';
 
 var ERRORS = 0, WARNINGS = 1, TODOS = 5;
-var verbosity = WARNINGS;
+var verbosity = TODOS;
 
 function log(msg) {
   if (console && console.log)
@@ -4078,9 +4078,13 @@ var CanvasGraphics = (function() {
       this.setStrokeRGBColor.apply(this, color);
     },
     setStrokeColorN: function(/*...*/) {
-      // TODO real impl
-      TODO('check for special color spaces');
-      this.setStrokeColor.apply(this, arguments);
+      var cs = this.getStrokeColorSpace();
+
+      if (cs.name == 'Pattern') {
+        this.ctx.strokeStyle = this.getPattern(cs, arguments);
+      } else {
+        this.setStrokeColor.apply(this, arguments);
+      }
     },
     setFillColor: function(/*...*/) {
       var cs = this.getFillColorSpace();
@@ -4091,28 +4095,28 @@ var CanvasGraphics = (function() {
       var cs = this.getFillColorSpace();
 
       if (cs.name == 'Pattern') {
-        var length = arguments.length;
-        var base = cs.base;
-        if (base) {
-          var baseComps = base.numComps;
-
-          if (baseComps != length - 1)
-            error("invalid base color for pattern colorspace");
-
-          var color = [];
-          for (var i = 0; i < baseComps; ++i)
-            color.push(arguments[i]);
-
-          color = base.getRgb(color);
-        }
-        var patternName = arguments[length - 1];
-        this.setFillPattern(patternName, base, color);
+        this.ctx.fillStyle = this.getPattern(cs, arguments);
       } else {
-        // TODO real impl
         this.setFillColor.apply(this, arguments);
       }
     },
-    setFillPattern: function(patternName, baseCS, color) {
+    getPattern: function(cs, args) {
+      var length = args.length;
+      var base = cs.base;
+      if (base) {
+        var baseComps = base.numComps;
+
+        if (baseComps != length - 1)
+          error("invalid base color for pattern colorspace");
+
+        var color = [];
+        for (var i = 0; i < baseComps; ++i)
+          color.push(args[i]);
+
+        color = base.getRgb(color);
+      }
+
+      var patternName = args[length - 1];
       if (!IsName(patternName))
         error("Bad args to getPattern");
 
@@ -4124,17 +4128,17 @@ var CanvasGraphics = (function() {
       var pattern = xref.fetchIfRef(patternRes.get(patternName.name));
       var dict = IsStream(pattern) ? pattern.dict : pattern;
 
-      var types = [null, this.setTilingPattern, this.setShadingPattern];
+      var types = [null, this.getTilingPattern, this.getShadingPattern];
 
       var typeNum = dict.get("PatternType");
       var patternFn = types[typeNum];
       if (!patternFn)
         error("Unhandled pattern type");
-      patternFn.call(this, pattern, dict, baseCS, color);
+      return patternFn.call(this, pattern, dict, color);
     },
-    setShadingPattern: function(pattern, dict) {
+    getShadingPattern: function(pattern, dict) {
       var matrix = dict.get("Matrix");
-
+/*
       var inv = [0,0,0,0,0,0];
       var det = 1 / (matrix[0] * matrix[3] - matrix[1] * matrix[2]);
       inv[0] = matrix[3] * det;
@@ -4145,15 +4149,17 @@ var CanvasGraphics = (function() {
       inv[5] = det * (matrix[1] * matrix[4] - matrix[0] * matrix[5]);
 
       this.transform.apply(this, matrix);
-      var shading = this.getShading(pattern.get("Shading"));
-      this.ctx.fillStyle = shading;
+      //var shading = this.getShading(pattern.get("Shading"));
+*/      return this.getShading(pattern.get("Shading"));
+      
+/*      this.ctx.fillStyle = shading;
 
       // HACK to get the gradient to show at the right location. If
       // removed, the gradient will show at the pre-transform coordinates.
       this.ctx.fillRect(0,0,0,0);
       this.transform.apply(this, inv);
-    },
-    setTilingPattern: function(pattern, dict, baseCS, color) {
+*/    },
+    getTilingPattern: function(pattern, dict, color) {
       function multiply(m, tm) {
         var a = m[0] * tm[0] + m[1] * tm[2];
         var b = m[0] * tm[1] + m[1] * tm[3];
@@ -4205,8 +4211,8 @@ var CanvasGraphics = (function() {
         tmpCtx.strokeStyle = this.makeCssRgb(0, 0, 0);
         break;
       case PAINT_TYPE_UNCOLORED:
-        tmpCtx.fillStyle = this.makeCssRgb.apply(this, baseCS.getRgb(color));
-        tmpCtx.strokeStyle = this.makeCssRgb.apply(this, baseCS.getRgb(color));
+        tmpCtx.fillStyle = this.makeCssRgb.apply(this, color);
+        tmpCtx.strokeStyle = this.makeCssRgb.apply(this, color);
         break;
       default:
         error('Unsupported paint type');
@@ -4241,8 +4247,7 @@ var CanvasGraphics = (function() {
       this.restore();
 
       TODO('Inverse pattern is painted');
-      pattern = this.ctx.createPattern(tmpCanvas, 'repeat');
-      this.ctx.fillStyle = pattern;
+      return this.ctx.createPattern(tmpCanvas, 'repeat');
     },
     setStrokeGray: function(gray) {
       this.setStrokeRGBColor(gray, gray, gray);
@@ -4312,20 +4317,23 @@ var CanvasGraphics = (function() {
       this.restore();
     },
     getShading: function(shading) {
+      this.save();
+      
       shading = this.xref.fetchIfRef(shading);
+      var dict = IsStream(shading) ? shading.dict : shading;
 
-      var bbox = shading.get('BBox');
+      var bbox = dict.get('BBox');
       if (bbox && IsArray(bbox) && 4 == bbox.length) {
         this.rectangle.apply(this, bbox);
         this.clip();
         this.endPath();
       }
 
-      var background = shading.get('Background');
+      var background = dict.get('Background');
       if (background)
         TODO('handle background colors');
 
-      var cs = shading.get('ColorSpace', 'CS');
+      var cs = dict.get('ColorSpace', 'CS');
       cs = ColorSpace.parse(cs, this.xref, this.res);
 
       var types = [null,
@@ -4333,16 +4341,20 @@ var CanvasGraphics = (function() {
           this.getAxialShading,
           this.getRadialShading];
 
-      var typeNum = shading.get('ShadingType');
+      var typeNum = dict.get('ShadingType');
       var shadingFn = types[typeNum];
+      
+      this.restore();
 
       // Most likely we will not implement other types of shading
       // unless the browser supports them
-      if (!shadingFn)
+      if (!shadingFn) {
         TODO("Unknown or NYI type of shading '"+ typeNum +"'");
+        return this.makeCssRgb(0, 0, 0);
+      }
 
       return shadingFn.call(this, shading, cs);
-                },
+    },
     getAxialShading: function(sh, cs) {
       var coordsArr = sh.get('Coords');
       var x0 = coordsArr[0], y0 = coordsArr[1],
@@ -4425,7 +4437,6 @@ var CanvasGraphics = (function() {
         gradient.addColorStop((i - t0) / diff, 
             this.makeCssRgb.apply(this, rgbColor));
       }
-
       return gradient;
     },
 
