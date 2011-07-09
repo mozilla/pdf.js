@@ -184,7 +184,8 @@ var FontLoader = {
           'message',
           function(e) {
             var fontNames = JSON.parse(e.data);
-            for (var i = 0; i < fontNames.length; ++i) {
+            // set all the fonts to loaded (not sure if this is correct)
+            for (var i = 0; i < ids.length; ++i) {
               var font = Fonts.lookupById(ids[i]);
               font.loading = false;
             }
