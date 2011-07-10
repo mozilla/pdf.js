@@ -1408,7 +1408,7 @@ var Type1Parser = function() {
       subrs: [],
       charstrings: [],
       properties: {
-        private: {}
+        'private': {}
       }
     };
 
