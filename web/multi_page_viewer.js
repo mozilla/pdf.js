@@ -128,9 +128,12 @@ var PDFViewer = {
       // page.compile will collect all fonts for us, once we have loaded them
       // we can trigger the actual page rendering with page.display
       var fonts = [];
-      page.compile(gfx, fonts);
+      var imagesLoader = new ImagesLoader();
+      page.compile(gfx, fonts, imagesLoader);
 
-      FontLoader.bind(fonts, function() { page.display(gfx); });
+      imagesLoader.notifyOnLoad(function() {
+        FontLoader.bind(fonts, function() { page.display(gfx); });
+      });
     }
   },
 
@@ -188,9 +191,12 @@ var PDFViewer = {
       // page.compile will collect all fonts for us, once we have loaded them
       // we can trigger the actual page rendering with page.display
       var fonts = [];
-      page.compile(gfx, fonts);
+      var imagesLoader = new ImagesLoader();
+      page.compile(gfx, fonts, imagesLoader);
 
-      FontLoader.bind(fonts, function() { page.display(gfx); });
+      imagesLoader.notifyOnLoad(function() {
+        FontLoader.bind(fonts, function() { page.display(gfx); });
+      });
     }
   },
 

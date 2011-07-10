@@ -81,7 +81,7 @@ function isLastPage(task) {
 function nextPage(task, loadError) {
     if (isLastPage(task)) {
 	      if (++task.round < task.rounds) {
-	          log("  Round "+ (1 + task.round) +"\n");
+	          log('  Round ' + (1 + task.round) + '\n');
 	          task.pageNum = 1;
 	      } else {
 	          ++currentTaskIdx, nextTask();
@@ -93,19 +93,21 @@ function nextPage(task, loadError) {
 
     var ctx = null;
     var fonts;
+    var imagesLoader;
     var gfx = null;
     var page = null;
 
     if (!failure) {
-        log("    loading page "+ task.pageNum +"... ");
-        ctx = canvas.getContext("2d");
+        log('    loading page ' + task.pageNum + '... ');
+        ctx = canvas.getContext('2d');
         fonts = [];
+        imagesLoader = new ImagesLoader();
         try {
             gfx = new CanvasGraphics(ctx);
             page = task.pdfDoc.getPage(task.pageNum);
-            page.compile(gfx, fonts);
+            page.compile(gfx, fonts, imagesLoader);
         } catch(e) {
-            failure = 'compile: '+ e.toString();
+            failure = 'compile: ' + e.toString();
         }
     }
 
@@ -119,25 +121,29 @@ function nextPage(task, loadError) {
             canvas.height = pageHeight * pdfToCssUnitsCoef;
             clear(ctx);
         } catch(e) {
-            failure = 'page setup: '+ e.toString();
-        }
-    }
-
-    if (!failure) {
-        try {
-            FontLoader.bind(fonts, function() { 
-                snapshotCurrentPage(gfx, page, task, failure); 
-                });
-        } catch(e) {
-            failure = 'fonts: '+ e.toString();
+            failure = 'page setup: ' + e.toString();
         }
     }
 
     if (failure) {
-        // Skip right to snapshotting if there was a failure, since the
-        // fonts might be in an inconsistent state.
-        snapshotCurrentPage(gfx, page, task, failure);
+         // Skip right to snapshotting if there was a failure, since the
+         // fonts might be in an inconsistent state.
+        snapshotCurrentPage(gfx);
+        return;
     }
+
+    imagesLoader.notifyOnLoad(function() {
+        if (failure) {
+            snapshotCurrentPage(gfx);
+            return;
+        }
+
+        try {
+            FontLoader.bind(fonts, function() { snapshotCurrentPage(gfx); });
+        } catch(e) {
+            failure = 'fonts: ' + e.toString();
+        }
+    });
 }
 
 function snapshotCurrentPage(gfx, page, task, failure) {

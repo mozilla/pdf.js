@@ -75,8 +75,9 @@ onmessage = function(event) {
     // page.compile will collect all fonts for us, once we have loaded them
     // we can trigger the actual page rendering with page.display
     var fonts = [];
+    var imagesLoader = new ImagesLoader();
     var gfx = new CanvasGraphics(canvas.getContext('2d'), CanvasProxy);
-    page.compile(gfx, fonts);
+    page.compile(gfx, fonts, imagesLoader);
     console.timeEnd('compile');
 
     // Send fonts to the main thread.
