@@ -3385,18 +3385,13 @@ var Encodings = {
 
 var IDENTITY_MATRIX = [1, 0, 0, 1, 0, 0];
 
-// <canvas> contexts store most of the state we need natively.
-// However, PDF needs a bit more state, which we store here.
-var CanvasExtraState = (function() {
+var EvalState = (function() {
   function constructor() {
     // Are soft masks and alpha values shapes or opacities?
     this.alphaIsShape = false;
     this.fontSize = 0;
     this.textMatrix = IDENTITY_MATRIX;
     this.leading = 0;
-    // Current point (in user coordinates)
-    this.x = 0;
-    this.y = 0;
     // Start of text line (in text coordinates)
     this.lineX = 0;
     this.lineY = 0;
@@ -3413,126 +3408,187 @@ var CanvasExtraState = (function() {
   return constructor;
 })();
 
-function ScratchCanvas(width, height) {
-  var canvas = document.createElement('canvas');
-  canvas.width = width;
-  canvas.height = height;
-  return canvas;
-}
-
-var CanvasGraphics = (function() {
-  function constructor(canvasCtx, imageCanvas) {
-    this.ctx = canvasCtx;
-    this.current = new CanvasExtraState();
-    this.stateStack = [];
-    this.pendingClip = null;
-    this.res = null;
-    this.xobjs = null;
-    this.ScratchCanvas = imageCanvas || ScratchCanvas;
+var PartialEvaluator = (function() {
+  function constructor() {
+    this.state = new EvalState();
+    this.stateStack = [ ];
   }
 
-  var LINE_CAP_STYLES = ['butt', 'round', 'square'];
-  var LINE_JOIN_STYLES = ['miter', 'round', 'bevel'];
-  var NORMAL_CLIP = {};
-  var EO_CLIP = {};
+  var OP_MAP = {
+    // Graphics state
+    w: 'setLineWidth',
+    J: 'setLineCap',
+    j: 'setLineJoin',
+    M: 'setMiterLimit',
+    d: 'setDash',
+    ri: 'setRenderingIntent',
+    i: 'setFlatness',
+    gs: 'setGState',
+    q: 'save',
+    Q: 'restore',
+    cm: 'transform',
 
-  // Used for tiling patterns
-  var PAINT_TYPE_COLORED = 1, PAINT_TYPE_UNCOLORED = 2;
+    // Path
+    m: 'moveTo',
+    l: 'lineTo',
+    c: 'curveTo',
+    v: 'curveTo2',
+    y: 'curveTo3',
+    h: 'closePath',
+    re: 'rectangle',
+    S: 'stroke',
+    s: 'closeStroke',
+    f: 'fill',
+    F: 'fill',
+    'f*': 'eoFill',
+    B: 'fillStroke',
+    'B*': 'eoFillStroke',
+    b: 'closeFillStroke',
+    'b*': 'closeEOFillStroke',
+    n: 'endPath',
+
+    // Clipping
+    W: 'clip',
+    'W*': 'eoClip',
+
+    // Text
+    BT: 'beginText',
+    ET: 'endText',
+    Tc: 'setCharSpacing',
+    Tw: 'setWordSpacing',
+    Tz: 'setHScale',
+    TL: 'setLeading',
+    Tf: 'setFont',
+    Tr: 'setTextRenderingMode',
+    Ts: 'setTextRise',
+    Td: 'moveText',
+    TD: 'setLeadingMoveText',
+    Tm: 'setTextMatrix',
+    'T*': 'nextLine',
+    Tj: 'showText',
+    TJ: 'showSpacedText',
+    "'": 'nextLineShowText',
+    '"': 'nextLineSetSpacingShowText',
+
+    // Type3 fonts
+    d0: 'setCharWidth',
+    d1: 'setCharWidthAndBounds',
+
+    // Color
+    CS: 'setStrokeColorSpace',
+    cs: 'setFillColorSpace',
+    SC: 'setStrokeColor',
+    SCN: 'setStrokeColorN',
+    sc: 'setFillColor',
+    scn: 'setFillColorN',
+    G: 'setStrokeGray',
+    g: 'setFillGray',
+    RG: 'setStrokeRGBColor',
+    rg: 'setFillRGBColor',
+    K: 'setStrokeCMYKColor',
+    k: 'setFillCMYKColor',
+
+    // Shading
+    sh: 'shadingFill',
+
+    // Images
+    BI: 'beginInlineImage',
+
+    // XObjects
+    Do: 'paintXObject',
+
+    // Marked content
+    MP: 'markPoint',
+    DP: 'markPointProps',
+    BMC: 'beginMarkedContent',
+    BDC: 'beginMarkedContentProps',
+    EMC: 'endMarkedContent',
+
+    // Compatibility
+    BX: 'beginCompat',
+    EX: 'endCompat'
+  };
 
   constructor.prototype = {
-    map: {
-      // Graphics state
-      w: 'setLineWidth',
-      J: 'setLineCap',
-      j: 'setLineJoin',
-      M: 'setMiterLimit',
-      d: 'setDash',
-      ri: 'setRenderingIntent',
-      i: 'setFlatness',
-      gs: 'setGState',
-      q: 'save',
-      Q: 'restore',
-      cm: 'transform',
+    eval: function(stream, xref, resources, fonts) {
+      resources = xref.fetchIfRef(resources) || new Dict();
+      var xobjs = xref.fetchIfRef(resources.get('XObject')) || new Dict();
 
-      // Path
-      m: 'moveTo',
-      l: 'lineTo',
-      c: 'curveTo',
-      v: 'curveTo2',
-      y: 'curveTo3',
-      h: 'closePath',
-      re: 'rectangle',
-      S: 'stroke',
-      s: 'closeStroke',
-      f: 'fill',
-      F: 'fill',
-      'f*': 'eoFill',
-      B: 'fillStroke',
-      'B*': 'eoFillStroke',
-      b: 'closeFillStroke',
-      'b*': 'closeEOFillStroke',
-      n: 'endPath',
+      var parser = new Parser(new Lexer(stream), false);
+      var objpool = [];
 
-      // Clipping
-      W: 'clip',
-      'W*': 'eoClip',
+      function emitArg(arg) {
+        if (typeof arg == 'object' || typeof arg == 'string') {
+          var index = objpool.length;
+          objpool[index] = arg;
+          return 'objpool[' + index + ']';
+        }
+        return arg;
+      }
 
-      // Text
-      BT: 'beginText',
-      ET: 'endText',
-      Tc: 'setCharSpacing',
-      Tw: 'setWordSpacing',
-      Tz: 'setHScale',
-      TL: 'setLeading',
-      Tf: 'setFont',
-      Tr: 'setTextRenderingMode',
-      Ts: 'setTextRise',
-      Td: 'moveText',
-      TD: 'setLeadingMoveText',
-      Tm: 'setTextMatrix',
-      'T*': 'nextLine',
-      Tj: 'showText',
-      TJ: 'showSpacedText',
-      "'": 'nextLineShowText',
-      '"': 'nextLineSetSpacingShowText',
+      var src = '';
 
-      // Type3 fonts
-      d0: 'setCharWidth',
-      d1: 'setCharWidthAndBounds',
+      var args = [];
+      var obj;
+      while (!IsEOF(obj = parser.getObj())) {
+        if (IsCmd(obj)) {
+          var cmd = obj.cmd;
+          var fn = OP_MAP[cmd];
+          assertWellFormed(fn, "Unknown command '" + cmd + "'");
+          // TODO figure out how to type-check vararg functions
 
-      // Color
-      CS: 'setStrokeColorSpace',
-      cs: 'setFillColorSpace',
-      SC: 'setStrokeColor',
-      SCN: 'setStrokeColorN',
-      sc: 'setFillColor',
-      scn: 'setFillColorN',
-      G: 'setStrokeGray',
-      g: 'setFillGray',
-      RG: 'setStrokeRGBColor',
-      rg: 'setFillRGBColor',
-      K: 'setStrokeCMYKColor',
-      k: 'setFillCMYKColor',
+          if (cmd == 'Do' && !args[0].code) { // eagerly compile XForm objects
+            var name = args[0].name;
+            var xobj = xobjs.get(name);
+            if (xobj) {
+              xobj = xref.fetchIfRef(xobj);
+              assertWellFormed(IsStream(xobj), 'XObject should be a stream');
 
-      // Shading
-      sh: 'shadingFill',
+              var type = xobj.dict.get('Subtype');
+              assertWellFormed(
+                IsName(type),
+                'XObject should have a Name subtype'
+              );
 
-      // Images
-      BI: 'beginInlineImage',
+              if ('Form' == type.name) {
+                args[0].code = this.eval(xobj,
+                                         xref,
+                                         xobj.dict.get('Resources'),
+                                         fonts);
+              }
+            }
+          } else if (cmd == 'Tf') { // eagerly collect all fonts
+            var fontRes = resources.get('Font');
+            if (fontRes) {
+              fontRes = xref.fetchIfRef(fontRes);
+              var font = xref.fetchIfRef(fontRes.get(args[0].name));
+              assertWellFormed(IsDict(font));
+              if (!font.translated) {
+                font.translated = this.translateFont(font, xref, resources);
+                if (fonts && font.translated) {
+                  // keep track of each font we translated so the caller can
+                  // load them asynchronously before calling display on a page
+                  fonts.push(font.translated);
+                }
+              }
+            }
+          }
 
-      // XObjects
-      Do: 'paintXObject',
+          src += 'this.';
+          src += fn;
+          src += '(';
+          src += args.map(emitArg).join(',');
+          src += ');\n';
 
-      // Marked content
-      MP: 'markPoint',
-      DP: 'markPointProps',
-      BMC: 'beginMarkedContent',
-      BDC: 'beginMarkedContentProps',
-      EMC: 'endMarkedContent',
+          args.length = 0;
+        } else {
+          assertWellFormed(args.length <= 33, 'Too many arguments');
+          args.push(obj);
+        }
+      }
 
-      // Compatibility
-      BX: 'beginCompat',
-      EX: 'endCompat'
+      var fn = Function('objpool', src);
+      return function(gfx) { fn.call(gfx, objpool); };
     },
 
     translateFont: function(fontDict, xref, resources) {
@@ -3697,12 +3753,76 @@ var CanvasGraphics = (function() {
         properties: properties
       };
     },
+  };
 
+  return constructor;
+})();
+
+// <canvas> contexts store most of the state we need natively.
+// However, PDF needs a bit more state, which we store here.
+var CanvasExtraState = (function() {
+  function constructor() {
+    // Are soft masks and alpha values shapes or opacities?
+    this.alphaIsShape = false;
+    this.fontSize = 0;
+    this.textMatrix = IDENTITY_MATRIX;
+    this.leading = 0;
+    // Current point (in user coordinates)
+    this.x = 0;
+    this.y = 0;
+    // Start of text line (in text coordinates)
+    this.lineX = 0;
+    this.lineY = 0;
+    // Character and word spacing
+    this.charSpace = 0;
+    this.wordSpace = 0;
+    this.textHScale = 100;
+    // Color spaces
+    this.fillColorSpace = null;
+    this.strokeColorSpace = null;
+  }
+  constructor.prototype = {
+  };
+  return constructor;
+})();
+
+function ScratchCanvas(width, height) {
+  var canvas = document.createElement('canvas');
+  canvas.width = width;
+  canvas.height = height;
+  return canvas;
+}
+
+var CanvasGraphics = (function() {
+  function constructor(canvasCtx, imageCanvas) {
+    this.ctx = canvasCtx;
+    this.current = new CanvasExtraState();
+    this.stateStack = [];
+    this.pendingClip = null;
+    this.res = null;
+    this.xobjs = null;
+    this.ScratchCanvas = imageCanvas || ScratchCanvas;
+  }
+
+  var LINE_CAP_STYLES = ['butt', 'round', 'square'];
+  var LINE_JOIN_STYLES = ['miter', 'round', 'bevel'];
+  var NORMAL_CLIP = {};
+  var EO_CLIP = {};
+
+  // Used for tiling patterns
+  var PAINT_TYPE_COLORED = 1, PAINT_TYPE_UNCOLORED = 2;
+
+  constructor.prototype = {
     beginDrawing: function(mediaBox) {
       var cw = this.ctx.canvas.width, ch = this.ctx.canvas.height;
       this.ctx.save();
       this.ctx.scale(cw / mediaBox.width, -ch / mediaBox.height);
       this.ctx.translate(0, -mediaBox.height);
+    },
+
+    compile: function(stream, xref, resources, fonts) {
+      var pe = new PartialEvaluator();
+      return pe.eval(stream, xref, resources, fonts);
     },
 
     execute: function(code, xref, resources) {
@@ -3717,88 +3837,6 @@ var CanvasGraphics = (function() {
       this.xobjs = savedXobjs;
       this.res = savedRes;
       this.xref = savedXref;
-    },
-
-    compile: function(stream, xref, resources, fonts) {
-      resources = xref.fetchIfRef(resources) || new Dict();
-      var xobjs = xref.fetchIfRef(resources.get('XObject')) || new Dict();
-
-      var parser = new Parser(new Lexer(stream), false);
-      var objpool = [];
-
-      function emitArg(arg) {
-        if (typeof arg == 'object' || typeof arg == 'string') {
-          var index = objpool.length;
-          objpool[index] = arg;
-          return 'objpool[' + index + ']';
-        }
-        return arg;
-      }
-
-      var src = '';
-
-      var args = [];
-      var map = this.map;
-      var obj;
-      while (!IsEOF(obj = parser.getObj())) {
-        if (IsCmd(obj)) {
-          var cmd = obj.cmd;
-          var fn = map[cmd];
-          assertWellFormed(fn, "Unknown command '" + cmd + "'");
-          // TODO figure out how to type-check vararg functions
-
-          if (cmd == 'Do' && !args[0].code) { // eagerly compile XForm objects
-            var name = args[0].name;
-            var xobj = xobjs.get(name);
-            if (xobj) {
-              xobj = xref.fetchIfRef(xobj);
-              assertWellFormed(IsStream(xobj), 'XObject should be a stream');
-
-              var type = xobj.dict.get('Subtype');
-              assertWellFormed(
-                IsName(type),
-                'XObject should have a Name subtype'
-              );
-
-              if ('Form' == type.name) {
-                args[0].code = this.compile(xobj,
-                                            xref,
-                                            xobj.dict.get('Resources'),
-                                            fonts);
-              }
-            }
-          } else if (cmd == 'Tf') { // eagerly collect all fonts
-            var fontRes = resources.get('Font');
-            if (fontRes) {
-              fontRes = xref.fetchIfRef(fontRes);
-              var font = xref.fetchIfRef(fontRes.get(args[0].name));
-              assertWellFormed(IsDict(font));
-              if (!font.translated) {
-                font.translated = this.translateFont(font, xref, resources);
-                if (fonts && font.translated) {
-                  // keep track of each font we translated so the caller can
-                  // load them asynchronously before calling display on a page
-                  fonts.push(font.translated);
-                }
-              }
-            }
-          }
-
-          src += 'this.';
-          src += fn;
-          src += '(';
-          src += args.map(emitArg).join(',');
-          src += ');\n';
-
-          args.length = 0;
-        } else {
-          assertWellFormed(args.length <= 33, 'Too many arguments');
-          args.push(obj);
-        }
-      }
-
-      var fn = Function('objpool', src);
-      return function(gfx) { fn.call(gfx, objpool); };
     },
 
     endDrawing: function() {
