@@ -243,10 +243,8 @@ var PDFViewer = {
         setTimeout(window.onscroll, 0);
       document.location.hash = PDFViewer.pageNumber;
 
-      PDFViewer.previousPageButton.className =
-        (PDFViewer.pageNumber === 1) ? 'disabled' : '';
-      PDFViewer.nextPageButton.className =
-        (PDFViewer.pageNumber === PDFViewer.numberOfPages) ? 'disabled' : '';
+      PDFViewer.previousPageButton.disabled = (PDFViewer.pageNumber === 1);
+      PDFViewer.nextPageButton.disabled = (PDFViewer.pageNumber === PDFViewer.numberOfPages);
     }
   },
 
@@ -333,10 +331,8 @@ var PDFViewer = {
       }).bind(this), 500);
     }
 
-    PDFViewer.previousPageButton.className =
-      (PDFViewer.pageNumber === 1) ? 'disabled' : '';
-    PDFViewer.nextPageButton.className =
-      (PDFViewer.pageNumber === PDFViewer.numberOfPages) ? 'disabled' : '';
+    PDFViewer.previousPageButton.disabled = (PDFViewer.pageNumber === 1);
+    PDFViewer.nextPageButton.disabled = (PDFViewer.pageNumber === PDFViewer.numberOfPages);
   }
 };
 
@@ -404,42 +400,30 @@ window.onload = function() {
 
   PDFViewer.previousPageButton = document.getElementById('previousPageButton');
   PDFViewer.previousPageButton.onclick = function(evt) {
-    if (this.className.indexOf('disabled') === -1) {
-      PDFViewer.goToPreviousPage();
-    }
+    PDFViewer.goToPreviousPage();
   };
   PDFViewer.previousPageButton.onmousedown = function(evt) {
-    if (this.className.indexOf('disabled') === -1) {
-      this.className = 'down';
-    }
+    this.className = 'down';
   };
   PDFViewer.previousPageButton.onmouseup = function(evt) {
-    this.className =
-      (this.className.indexOf('disabled') !== -1) ? 'disabled' : '';
+    this.className = '';
   };
   PDFViewer.previousPageButton.onmouseout = function(evt) {
-    this.className =
-      (this.className.indexOf('disabled') !== -1) ? 'disabled' : '';
+    this.className = '';
   };
 
   PDFViewer.nextPageButton = document.getElementById('nextPageButton');
   PDFViewer.nextPageButton.onclick = function(evt) {
-    if (this.className.indexOf('disabled') === -1) {
-      PDFViewer.goToNextPage();
-    }
+    PDFViewer.goToNextPage();
   };
   PDFViewer.nextPageButton.onmousedown = function(evt) {
-    if (this.className.indexOf('disabled') === -1) {
-      this.className = 'down';
-    }
+    this.className = 'down';
   };
   PDFViewer.nextPageButton.onmouseup = function(evt) {
-    this.className =
-      (this.className.indexOf('disabled') !== -1) ? 'disabled' : '';
+    this.className = '';
   };
   PDFViewer.nextPageButton.onmouseout = function(evt) {
-    this.className =
-      (this.className.indexOf('disabled') !== -1) ? 'disabled' : '';
+    this.className = '';
   };
 
   PDFViewer.scaleSelect = document.getElementById('scaleSelect');
@@ -450,22 +434,16 @@ window.onload = function() {
   if (window.File && window.FileReader && window.FileList && window.Blob) {
     var openFileButton = document.getElementById('openFileButton');
     openFileButton.onclick = function(evt) {
-      if (this.className.indexOf('disabled') === -1) {
-        PDFViewer.fileInput.click();
-      }
+      PDFViewer.fileInput.click();
     };
     openFileButton.onmousedown = function(evt) {
-      if (this.className.indexOf('disabled') === -1) {
-        this.className = 'down';
-      }
+      this.className = 'down';
     };
     openFileButton.onmouseup = function(evt) {
-      this.className =
-        (this.className.indexOf('disabled') !== -1) ? 'disabled' : '';
+      this.className = '';
     };
     openFileButton.onmouseout = function(evt) {
-      this.className =
-        (this.className.indexOf('disabled') !== -1) ? 'disabled' : '';
+      this.className = '';
     };
 
     PDFViewer.fileInput = document.getElementById('fileInput');
@@ -540,10 +518,8 @@ window.onload = function() {
     // Update the page number input with the current page number.
     if (!PDFViewer.willJumpToPage && visiblePages.length > 0) {
       PDFViewer.pageNumber = PDFViewer.pageNumberInput.value = visiblePages[0];
-      PDFViewer.previousPageButton.className =
-        (PDFViewer.pageNumber === 1) ? 'disabled' : '';
-      PDFViewer.nextPageButton.className =
-        (PDFViewer.pageNumber === PDFViewer.numberOfPages) ? 'disabled' : '';
+      PDFViewer.previousPageButton.disabled = (PDFViewer.pageNumber === 1);
+      PDFViewer.nextPageButton.disabled = (PDFViewer.pageNumber === PDFViewer.numberOfPages);
     } else {
       PDFViewer.willJumpToPage = false;
     }

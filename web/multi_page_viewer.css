@@ -16,6 +16,7 @@ canvas {
 
 span {
   font-size: 0.8em;
+  text-shadow: 0px 1px 0px #fff;
 }
 
 .control {
@@ -31,12 +32,12 @@ span {
   height: 20px;
   padding: 0px;
   margin: 0px 2px 0px 0px;
-  border-radius: 4px;
-  -moz-border-radius: 4px;
-  -webkit-border-radius: 4px;
-  box-shadow: 0px 1px 0px rgba(255, 255, 255, 0.25);
-  -moz-box-shadow: 0px 1px 0px rgba(255, 255, 255, 0.25);
-  -webkit-box-shadow: 0px 1px 0px rgba(255, 255, 255, 0.25);
+  border-radius: 3px;
+  -moz-border-radius: 3px;
+  -webkit-border-radius: 3px;
+  box-shadow: inset 0px 1px 1px rgba(0, 0, 0, 0.3);
+  -moz-box-shadow: inset 0px 1px 1px rgba(0, 0, 0, 0.3);
+  -webkit-box-shadow: inset 0px 1px 1px rgba(0, 0, 0, 0.3);
 }
 
 .control > select {
@@ -45,12 +46,12 @@ span {
   height: 22px;
   padding: 2px 0px 0px;
   margin: 0px 0px 1px;
-  border-radius: 4px;
-  -moz-border-radius: 4px;
-  -webkit-border-radius: 4px;
-  box-shadow: 0px 1px 0px rgba(255, 255, 255, 0.25);
-  -moz-box-shadow: 0px 1px 0px rgba(255, 255, 255, 0.25);
-  -webkit-box-shadow: 0px 1px 0px rgba(255, 255, 255, 0.25);
+  border-radius: 3px;
+  -moz-border-radius: 3px;
+  -webkit-border-radius: 3px;
+  box-shadow: inset 0px 1px 1px rgba(0, 0, 0, 0.3);
+  -moz-box-shadow: inset 0px 1px 1px rgba(0, 0, 0, 0.3);
+  -webkit-box-shadow: inset 0px 1px 1px rgba(0, 0, 0, 0.3);
 }
 
 .control > span {
@@ -96,6 +97,8 @@ span {
 
 #controls {
   background-color: #eee;
+  background: -moz-linear-gradient(center bottom, #ddd 0%, #fff 100%);
+  background: -webkit-gradient(linear, left bottom, left top, color-stop(0.0, #ddd), color-stop(1.0, #fff));
   border-bottom: 1px solid #666;
   padding: 4px 0px 0px 8px;
   position: fixed;
@@ -114,58 +117,121 @@ span {
   -webkit-user-select: text;
 }
 
-#previousPageButton {
-  background: url('images/buttons.png') no-repeat 0px -23px;
+button {
+  background-color: #ddd;
+  background: -moz-linear-gradient(center bottom, #c3c3c3 0%, #f3f3f3 100%);
+  background: -webkit-gradient(linear, left bottom, left top, color-stop(0.0, #c3c3c3), color-stop(1.0, #f3f3f3));
+  border: 1px solid #4d4d4d;
   cursor: default;
-  display: inline-block;
   float: left;
-  margin: 0px;
+  margin: 0px 0px 1px;
+  width: 29px;
+  height: 22px;
+	border-radius: 3px;
+	-moz-border-radius: 3px;
+	-webkit-border-radius: 3px;
+}
+
+button:disabled {
+  background-color: #eee;
+  background: -moz-linear-gradient(center bottom, #ddd 0%, #fff 100%);
+  background: -webkit-gradient(linear, left bottom, left top, color-stop(0.0, #ddd), color-stop(1.0, #fff));
+}
+
+button:disabled > span {
+  opacity: 0.3;
+  -moz-opacity: 0.3;
+  -webkit-opacity: 0.3;
+}
+
+button.down {
+  background-color: #777;
+  background: -moz-linear-gradient(center bottom, #888 0%, #555 100%);
+  background: -webkit-gradient(linear, left bottom, left top, color-stop(0.0, #888), color-stop(1.0, #555));
+  box-shadow: inset 0px 0px 2px rgba(0, 0, 0, 0.8);
+  -moz-box-shadow: inset 0px 0px 2px rgba(0, 0, 0, 0.8);
+  -webkit-box-shadow: inset 0px 0px 2px rgba(0, 0, 0, 0.8);
+}
+
+#previousPageButton {
   width: 28px;
-  height: 23px;
+  border-right: 0px;
+  border-top-right-radius: 0px;
+  border-bottom-right-radius: 0px;
+  -moz-border-radius-topright: 0px;
+  -moz-border-radius-bottomright: 0px;
+  -webkit-border-top-right-radius: 0px;
+  -webkit-border-bottom-right-radius: 0px;
 }
 
-#previousPageButton.down {
-  background: url('images/buttons.png') no-repeat 0px -46px;
-}
-
-#previousPageButton.disabled {
+#previousPageButton > span {
   background: url('images/buttons.png') no-repeat 0px 0px;
+  display: inline-block;
+  width: 19px;
+  height: 19px;
 }
 
 #nextPageButton {
-  background: url('images/buttons.png') no-repeat -28px -23px;
-  cursor: default;
-  display: inline-block;
-  float: left;
-  margin: 0px;
   width: 28px;
-  height: 23px;
+  border-top-left-radius: 0px;
+  border-bottom-left-radius: 0px;
+  -moz-border-radius-topleft: 0px;
+  -moz-border-radius-bottomleft: 0px;
+  -webkit-border-top-left-radius: 0px;
+  -webkit-border-bottom-left-radius: 0px;
 }
 
-#nextPageButton.down {
-  background: url('images/buttons.png') no-repeat -28px -46px;
+#nextPageButton > span {
+  background: url('images/buttons.png') no-repeat -19px 0px;
+  display: inline-block;
+  width: 19px;
+  height: 19px;
 }
 
-#nextPageButton.disabled {
-  background: url('images/buttons.png') no-repeat -28px 0px;
+#singleLayoutButton {
+  width: 28px;
+  border-right: 0px;
+  border-top-right-radius: 0px;
+  border-bottom-right-radius: 0px;
+  -moz-border-radius-topright: 0px;
+  -moz-border-radius-bottomright: 0px;
+  -webkit-border-top-right-radius: 0px;
+  -webkit-border-bottom-right-radius: 0px;
+}
+
+#singleLayoutButton > span {
+  background: url('images/buttons.png') no-repeat -57px 0px;
+  display: inline-block;
+  width: 19px;
+  height: 19px;
+}
+
+#splitLayoutButton {
+  width: 28px;
+  border-top-left-radius: 0px;
+  border-bottom-left-radius: 0px;
+  -moz-border-radius-topleft: 0px;
+  -moz-border-radius-bottomleft: 0px;
+  -webkit-border-top-left-radius: 0px;
+  -webkit-border-bottom-left-radius: 0px;
+}
+
+#splitLayoutButton > span {
+  background: url('images/buttons.png') no-repeat -76px 0px;
+  display: inline-block;
+  width: 19px;
+  height: 19px;
 }
 
 #openFileButton {
-  background: url('images/buttons.png') no-repeat -56px -23px;
-  cursor: default;
+  margin-left: 3px;
+}
+
+#openFileButton > span {
+  background: url('images/buttons.png') no-repeat -38px 0px;
   display: inline-block;
-  float: left;
-  margin: 0px 0px 0px 3px;
-  width: 29px;
-  height: 23px;
-}
-
-#openFileButton.down {
-  background: url('images/buttons.png') no-repeat -56px -46px;
-}
-
-#openFileButton.disabled {
-  background: url('images/buttons.png') no-repeat -56px 0px;
+  width: 19px;
+  height: 19px;
 }
 
 #fileInput {

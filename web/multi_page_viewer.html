@@ -14,8 +14,8 @@
 <body>
   <div id="controls">
     <span class="control">
-      <span id="previousPageButton" class="disabled"></span>
-      <span id="nextPageButton" class="disabled"></span>
+      <button id="previousPageButton" disabled="disabled"><span></span></button>
+      <button id="nextPageButton" disabled="disabled"><span></span></button>
       <span class="label">Previous/Next</span>
     </span>
     <span class="control">
@@ -35,8 +35,18 @@
       </select>
       <span class="label">Zoom</span>
     </span>
+    
+    <!-- WIP: Leave commented out until implemented -->
+    <!--
+    <span class="control">
+      <button id="singleLayoutButton" class="selected"><span></span></button>
+      <button id="splitLayoutButton"><span></span></button>
+      <span class="label">Page Layout</span>
+    </span>
+    -->
+    
     <span class="control" id="fileWrapper">
-      <span id="openFileButton"></span>
+      <button id="openFileButton"><span></span></button>
       <input type="file" id="fileInput"/>
       <span class="label">Open File</span>
     </span>
