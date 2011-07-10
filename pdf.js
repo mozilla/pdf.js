@@ -3972,6 +3972,7 @@ var CanvasGraphics = (function() {
         this.ctx.$setFont(fontName, size);
       } else {
         this.ctx.font = size + 'px "' + fontName + '"';
+        Fonts.setActive(fontName, fontObj, size);
       }
     },
     setTextRenderingMode: function(mode) {
@@ -4009,25 +4010,24 @@ var CanvasGraphics = (function() {
       var ctx = this.ctx;
       var current = this.current;
 
+      ctx.save();
+      ctx.transform.apply(ctx, current.textMatrix);
+      ctx.scale(1, -1);
+
       if (this.ctx.$showText) {
         ctx.$showText(current.y, text);
       } else {
-        ctx.save();
-
-        ctx.transform.apply(ctx, current.textMatrix);
-        ctx.scale(1, -1);
         ctx.translate(current.x, -1 * current.y);
-
-        var font = current.font;
-        ctx.transform.apply(ctx, font.textMatrix);
-
-        text = font.charsToUnicode(text);
-
+        var font = this.current.font;
+        if (font) {
+          ctx.transform.apply(ctx, font.textMatrix);
+          text = font.charsToUnicode(text);
+        }
         ctx.fillText(text, 0, 0);
-        current.x += ctx.measureText(text).width;
-
-        ctx.restore();
+        current.x += Fonts.measureText(text);
       }
+
+      this.ctx.restore();
     },
     showSpacedText: function(arr) {
       for (var i = 0; i < arr.length; ++i) {
