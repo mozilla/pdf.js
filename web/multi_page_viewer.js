@@ -43,7 +43,7 @@ var PDFViewer = {
   lastPagesDrawn: [],
 
   visiblePages: function() {
-    const pageBottomMargin = 10;
+    var pageBottomMargin = 10;
     var windowTop = window.pageYOffset;
     var windowBottom = window.pageYOffset + window.innerHeight;
 
