@@ -1,7 +1,7 @@
 REPO = git@github.com:andreasgal/pdf.js.git
 BUILD_DIR := build
-DEFAULT_BROWSERS := test/resources/browser_manifests/browser_manifest.json
-DEFAULT_TESTS := test/test_manifest.json
+DEFAULT_BROWSERS := resources/browser_manifests/browser_manifest.json
+DEFAULT_TESTS := test_manifest.json
 
 # Let folks define custom rules for their clones.
 -include local.mk
@@ -43,7 +43,7 @@ PDF_BROWSERS := $(DEFAULT_BROWSERS)
 endif
 
 browser-test:
-	@if [ ! -f "$(PDF_BROWSERS)" ]; then \
+	@if [ ! -f "test/$(PDF_BROWSERS)" ]; then \
 	echo "Browser manifest file $(PDF_BROWSERS) does not exist."; \
 	echo "Try copying one of the examples" \
               "in test/resources/browser_manifests/"; \
@@ -52,8 +52,8 @@ browser-test:
 
 	cd test; \
 	python test.py --reftest \
-	--browserManifestFile=$(abspath $(PDF_BROWSERS)) \
-	--manifestFile=$(abspath $(PDF_TESTS))
+	--browserManifestFile=$(PDF_BROWSERS) \
+	--manifestFile=$(PDF_TESTS)
 
 # make shell-test
 #
