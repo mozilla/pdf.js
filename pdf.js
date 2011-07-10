@@ -4313,19 +4313,20 @@ var CanvasGraphics = (function() {
     },
     getShading: function(shading) {
       shading = this.xref.fetchIfRef(shading);
+      var dict = IsStream(shading) ? shading.dict : shading;
 
-      var bbox = shading.get('BBox');
+      var bbox = dict.get('BBox');
       if (bbox && IsArray(bbox) && 4 == bbox.length) {
         this.rectangle.apply(this, bbox);
         this.clip();
         this.endPath();
       }
 
-      var background = shading.get('Background');
+      var background = dict.get('Background');
       if (background)
         TODO('handle background colors');
 
-      var cs = shading.get('ColorSpace', 'CS');
+      var cs = dict.get('ColorSpace', 'CS');
       cs = ColorSpace.parse(cs, this.xref, this.res);
 
       var types = [null,
@@ -4333,16 +4334,18 @@ var CanvasGraphics = (function() {
           this.getAxialShading,
           this.getRadialShading];
 
-      var typeNum = shading.get('ShadingType');
+      var typeNum = dict.get('ShadingType');
       var shadingFn = types[typeNum];
 
       // Most likely we will not implement other types of shading
       // unless the browser supports them
-      if (!shadingFn)
-        TODO("Unknown or NYI type of shading '"+ typeNum +"'");
+      if (!shadingFn) {
+        warn("Unknown or NYI type of shading '"+ typeNum +"'");
+        return 'hotpink';
+      }
 
       return shadingFn.call(this, shading, cs);
-                },
+    },
     getAxialShading: function(sh, cs) {
       var coordsArr = sh.get('Coords');
       var x0 = coordsArr[0], y0 = coordsArr[1],
