@@ -44,7 +44,7 @@ function assertWellFormed(cond, msg) {
 }
 
 function shadow(obj, prop, value) {
-  Object.defineProperty(obj, prop, { value: value, enumerable: true });
+  Object.defineProperty(obj, prop, { value: value, enumerable: true, configurable: true, writable: false });
     return value;
 }
 
