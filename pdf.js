@@ -5299,13 +5299,16 @@ var PDFFunction = (function() {
       return array;
     },
     constructInterpolated: function() {
-      error('unhandled type of function');
+      TODO('unhandled type of function');
+      this.func = function () { return [ 255, 105, 180 ]; }
     },
     constructStiched: function() {
-      error('unhandled type of function');
+      TODO('unhandled type of function');
+      this.func = function () { return [ 255, 105, 180 ]; }
     },
     constructPostScript: function() {
-      error('unhandled type of function');
+      TODO('unhandled type of function');
+      this.func = function () { return [ 255, 105, 180 ]; }
     }
   };
 
