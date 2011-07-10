@@ -705,6 +705,9 @@ var Font = (function() {
         var data = file.getBytes(length);
         file.pos = previousPosition;
 
+        if (tag == 'head')
+          data[8] = data[9] = data[10] = data[11] = 0; // clearing checksum adjustment
+
         return {
           tag: tag,
           checksum: checksum,
