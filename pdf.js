@@ -4016,7 +4016,7 @@ var CanvasGraphics = (function() {
 
         ctx.transform.apply(ctx, current.textMatrix);
         ctx.scale(1, -1);
-        ctx.translate(current.x, -current.y);
+        ctx.translate(current.x, -1 * current.y);
 
         var font = current.font;
         ctx.transform.apply(ctx, font.textMatrix);
