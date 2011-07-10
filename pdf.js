@@ -904,6 +904,74 @@ var Ascii85Stream = (function() {
   return constructor;
 })();
 
+var AsciiHexStream = (function() {
+  function constructor(str) {
+    this.str = str;
+    this.dict = str.dict;
+    
+    DecodeStream.call(this);
+  }
+  
+  var hexvalueMap = {
+      9: -1, // \t
+      32: -1, // space
+      48: 0,
+      49: 1,
+      50: 2,
+      51: 3,
+      52: 4,
+      53: 5,
+      54: 6,
+      55: 7,
+      56: 8,
+      57: 9,
+      65: 10,
+      66: 11,
+      67: 12,
+      68: 13,
+      69: 14,
+      70: 15,
+      97: 10,
+      98: 11,
+      99: 12,
+      100: 13,
+      101: 14,
+      102: 15
+  };
+
+  constructor.prototype = Object.create(DecodeStream.prototype);
+  
+  constructor.prototype.readBlock = function() {
+    var gtCode = '>'.charCodeAt(0), bytes = this.str.getBytes(), c, n, 
+        decodeLength, buffer, bufferLength, i, length;
+    
+    decodeLength = (bytes.length + 1) >> 1;
+    buffer = this.ensureBuffer(this.bufferLength + decodeLength);
+    bufferLength = this.bufferLength;
+    
+    for(i = 0, length = bytes.length; i < length; i++) {
+      c = hexvalueMap[bytes[i]];
+      while (c == -1 && (i+1) < length) {
+        c = hexvalueMap[bytes[++i]];
+      }
+      
+      if((i+1) < length && (bytes[i+1] !== gtCode)) {
+        n = hexvalueMap[bytes[++i]];
+        buffer[bufferLength++] = c*16+n;
+      } else {
+        if(bytes[i] !== gtCode) { // EOD marker at an odd number, behave as if a 0 followed the last digit.
+          buffer[bufferLength++] = c*16;
+        }
+      }
+    }
+    
+    this.bufferLength = bufferLength;
+    this.eof = true;
+  };
+  
+  return constructor;
+})();
+
 var CCITTFaxStream = (function() {
 
   var ccittEOL = -2;
@@ -1613,7 +1681,7 @@ var CCITTFaxStream = (function() {
       }
 
       if (this.byteAlign)
-        inputBits &= ~7;
+        this.inputBits &= ~7;
 
       var gotEOL = false;
 
@@ -1921,28 +1989,33 @@ var Dict = (function() {
   }
 
   constructor.prototype = {
-    get: function(key) {
-      if (key in this.map)
-        return this.map[key];
-      return null;
+    get: function(key1, key2, key3) {
+      var value;
+      if (typeof (value = this.map[key1]) != 'undefined' || key1 in this.map || typeof key2 == 'undefined') {
+        return value;
+      }
+      if (typeof (value = this.map[key2]) != 'undefined' || key2 in this.map || typeof key3 == 'undefined') {
+        return value;
+      }
+
+      return this.map[key3] || null;
     },
-    get2: function(key1, key2) {
-      return this.get(key1) || this.get(key2);
-    },
-    get3: function(key1, key2, key3) {
-      return this.get(key1) || this.get(key2) || this.get(key3);
-    },
-    has: function(key) {
-      return key in this.map;
-    },
+
     set: function(key, value) {
       this.map[key] = value;
     },
-    forEach: function(aCallback) {
-      for (var key in this.map)
-        aCallback(key, this.map[key]);
+
+    has: function(key) {
+      return key in this.map;
+    },
+
+    forEach: function(callback) {
+      for (var key in this.map) {
+        callback(key, this.map[key]);
+      }
     }
   };
+
   return constructor;
 })();
 
@@ -2459,8 +2532,8 @@ var Parser = (function() {
       return stream;
     },
     filter: function(stream, dict, length) {
-      var filter = dict.get2('Filter', 'F');
-      var params = dict.get2('DecodeParms', 'DP');
+      var filter = dict.get('Filter', 'F');
+      var params = dict.get('DecodeParms', 'DP');
       if (IsName(filter))
         return this.makeFilter(stream, filter.name, length, params);
       if (IsArray(filter)) {
@@ -2491,6 +2564,8 @@ var Parser = (function() {
         return new JpegStream(bytes, stream.dict);
       } else if (name == 'ASCII85Decode') {
         return new Ascii85Stream(stream);
+      } else if (name == 'ASCIIHexDecode') {
+        return new AsciiHexStream(stream);
       } else if (name == 'CCITTFaxDecode') {
         TODO('implement fax stream');
         return new CCITTFaxStream(stream, params);
@@ -3472,7 +3547,7 @@ var CanvasGraphics = (function() {
       assertWellFormed(IsName(fontName), 'invalid font name');
       fontName = fontName.name.replace('+', '_');
 
-      var fontFile = descriptor.get3('FontFile', 'FontFile2', 'FontFile3');
+      var fontFile = descriptor.get('FontFile', 'FontFile2', 'FontFile3');
       if (!fontFile)
         error('FontFile not found for font: ' + fontName);
       fontFile = xref.fetchIfRef(fontFile);
@@ -3482,7 +3557,19 @@ var CanvasGraphics = (function() {
       if (fontDict.has('Encoding')) {
         var encoding = xref.fetchIfRef(fontDict.get('Encoding'));
         if (IsDict(encoding)) {
-          // Build a map between codes and glyphs
+          // Build a map of between codes and glyphs
+          // Load the base encoding
+          var baseName = encoding.get('BaseEncoding');
+          if (baseName) {
+            var base = Encodings[baseName.name];
+            var index = 0;
+            for (var j = 0, end = base.length; j < end; j++)
+              encodingMap[index++] = GlyphsUnicode[base[j]];
+          } else {
+            TODO('need to load default encoding');
+          }
+
+          // Load the differences between the base and original
           var differences = encoding.get('Differences');
           var index = 0;
           for (var j = 0; j < differences.length; j++) {
@@ -3605,9 +3692,10 @@ var CanvasGraphics = (function() {
 
       return {
         name: fontName,
-          file: fontFile,
-          properties: properties
-          };
+        fontDict: fontDict, 
+        file: fontFile,
+        properties: properties
+      };
     },
 
     beginDrawing: function(mediaBox) {
@@ -3868,25 +3956,22 @@ var CanvasGraphics = (function() {
         return;
 
       var fontName = '';
-      var fontDescriptor = font.get('FontDescriptor');
-      if (fontDescriptor && fontDescriptor.num) {
-        var fontDescriptor = this.xref.fetchIfRef(fontDescriptor);
-        fontName = fontDescriptor.get('FontName').name.replace('+', '_');
-      }
+      var fontObj = font.fontObj;
+      if (fontObj)
+        fontName = fontObj.loadedName;
 
       if (!fontName) {
         // TODO: fontDescriptor is not available, fallback to default font
         fontName = 'sans-serif';
       }
 
-      this.current.fontName = fontName;
+      this.current.font = fontObj;
       this.current.fontSize = size;
 
       if (this.ctx.$setFont) {
         this.ctx.$setFont(fontName, size);
       } else {
         this.ctx.font = size + 'px "' + fontName + '"';
-        Fonts.setActive(fontName, size);
       }
     },
     setTextRenderingMode: function(mode) {
@@ -3921,25 +4006,28 @@ var CanvasGraphics = (function() {
     showText: function(text) {
       // TODO: apply charSpacing, wordSpacing, textHScale
 
-      this.ctx.save();
-      this.ctx.transform.apply(this.ctx, this.current.textMatrix);
-      this.ctx.scale(1, -1);
+      var ctx = this.ctx;
+      var current = this.current;
 
       if (this.ctx.$showText) {
-        this.ctx.$showText(this.current.y, Fonts.charsToUnicode(text));
+        ctx.$showText(current.y, text);
       } else {
-        text = Fonts.charsToUnicode(text);
-        this.ctx.translate(this.current.x, -1 * this.current.y);
+        ctx.save();
 
-        var font = Fonts.lookup(this.current.fontName);
-        if (font && font.properties.textMatrix)
-          this.ctx.transform.apply(this.ctx, font.properties.textMatrix);
+        ctx.transform.apply(ctx, current.textMatrix);
+        ctx.scale(1, -1);
+        ctx.translate(current.x, -current.y);
 
-        this.ctx.fillText(text, 0, 0);
-        this.current.x += Fonts.measureText(text);
+        var font = current.font;
+        ctx.transform.apply(ctx, font.textMatrix);
+
+        text = font.charsToUnicode(text);
+
+        ctx.fillText(text, 0, 0);
+        current.x += ctx.measureText(text).width;
+
+        ctx.restore();
       }
-
-      this.ctx.restore();
     },
     showSpacedText: function(arr) {
       for (var i = 0; i < arr.length; ++i) {
@@ -4003,14 +4091,28 @@ var CanvasGraphics = (function() {
       var cs = this.getFillColorSpace();
 
       if (cs.name == 'Pattern') {
-        var patternName = arguments[0];
-        this.setFillPattern(patternName);
+        var length = arguments.length;
+        var base = cs.base;
+        if (base) {
+          var baseComps = base.numComps;
+
+          if (baseComps != length - 1)
+            error("invalid base color for pattern colorspace");
+
+          var color = [];
+          for (var i = 0; i < baseComps; ++i)
+            color.push(arguments[i]);
+
+          color = base.getRgb(color);
+        }
+        var patternName = arguments[length - 1];
+        this.setFillPattern(patternName, base, color);
       } else {
         // TODO real impl
         this.setFillColor.apply(this, arguments);
       }
     },
-    setFillPattern: function(patternName) {
+    setFillPattern: function(patternName, baseCS, color) {
       if (!IsName(patternName))
         error("Bad args to getPattern");
 
@@ -4028,7 +4130,7 @@ var CanvasGraphics = (function() {
       var patternFn = types[typeNum];
       if (!patternFn)
         error("Unhandled pattern type");
-      patternFn.call(this, pattern, dict);
+      patternFn.call(this, pattern, dict, baseCS, color);
     },
     setShadingPattern: function(pattern, dict) {
       var matrix = dict.get("Matrix");
@@ -4051,7 +4153,7 @@ var CanvasGraphics = (function() {
       this.ctx.fillRect(0,0,0,0);
       this.transform.apply(this, inv);
     },
-    setTilingPattern: function(pattern, dict) {
+    setTilingPattern: function(pattern, dict, baseCS, color) {
       function multiply(m, tm) {
         var a = m[0] * tm[0] + m[1] * tm[2];
         var b = m[0] * tm[1] + m[1] * tm[3];
@@ -4065,17 +4167,6 @@ var CanvasGraphics = (function() {
       this.save();
       var ctx = this.ctx;
 
-      var paintType = dict.get('PaintType');
-      switch (paintType) {
-      case PAINT_TYPE_COLORED:
-        // should go to default for color space
-        ctx.fillStyle = this.makeCssRgb(1, 1, 1);
-        ctx.strokeStyle = this.makeCssRgb(0, 0, 0);
-        break;
-      case PAINT_TYPE_UNCOLORED:
-      default:
-        error('Unsupported paint type');
-      }
 
       TODO('TilingType');
 
@@ -4105,6 +4196,21 @@ var CanvasGraphics = (function() {
       var tmpCtx = tmpCanvas.getContext('2d');
       var savedCtx = ctx;
       this.ctx = tmpCtx;
+
+      var paintType = dict.get('PaintType');
+      switch (paintType) {
+      case PAINT_TYPE_COLORED:
+        // should go to default for color space
+        tmpCtx.fillStyle = this.makeCssRgb(1, 1, 1);
+        tmpCtx.strokeStyle = this.makeCssRgb(0, 0, 0);
+        break;
+      case PAINT_TYPE_UNCOLORED:
+        tmpCtx.fillStyle = this.makeCssRgb.apply(this, baseCS.getRgb(color));
+        tmpCtx.strokeStyle = this.makeCssRgb.apply(this, baseCS.getRgb(color));
+        break;
+      default:
+        error('Unsupported paint type');
+      }
 
       // normalize transform matrix so each step
       // takes up the entire tmpCanvas (need to remove white borders)
@@ -4219,7 +4325,7 @@ var CanvasGraphics = (function() {
       if (background)
         TODO('handle background colors');
 
-      var cs = shading.get2('ColorSpace', 'CS');
+      var cs = shading.get('ColorSpace', 'CS');
       cs = ColorSpace.parse(cs, this.xref, this.res);
 
       var types = [null,
@@ -4229,8 +4335,12 @@ var CanvasGraphics = (function() {
 
       var typeNum = shading.get('ShadingType');
       var shadingFn = types[typeNum];
+
+      // Most likely we will not implement other types of shading
+      // unless the browser supports them
       if (!shadingFn)
-        error("Unknown or NYI type of shading '"+ typeNum +"'");
+        TODO("Unknown or NYI type of shading '"+ typeNum +"'");
+
       return shadingFn.call(this, shading, cs);
                 },
     getAxialShading: function(sh, cs) {
@@ -4383,8 +4493,8 @@ var CanvasGraphics = (function() {
 
       var ctx = this.ctx;
       var dict = image.dict;
-      var w = dict.get2('Width', 'W');
-      var h = dict.get2('Height', 'H');
+      var w = dict.get('Width', 'W');
+      var h = dict.get('Height', 'H');
       // scale the image to the unit square
       ctx.scale(1 / w, -1 / h);
 
@@ -4520,8 +4630,22 @@ var CanvasGraphics = (function() {
 })();
 
 var ColorSpace = (function() {
+  // Constructor should define this.numComps, this.defaultColor, this.name
   function constructor() {
     error('should not call ColorSpace constructor');
+  };
+
+  constructor.prototype = {
+    // Input: array of size numComps representing color component values
+    // Output: array of rgb values, each value ranging from [0.1]
+    getRgb: function cs_getRgb(color) {
+      error('Should not call ColorSpace.getRgb');
+    },
+    // Input: Uint8Array of component values, each value scaled to [0,255]
+    // Output: Uint8Array of rgb values, each value scaled to [0,255]
+    getRgbBuffer: function cs_getRgbBuffer(input) {
+      error('Should not call ColorSpace.getRgbBuffer');
+    }
   };
 
   constructor.parse = function colorspace_parse(cs, xref, res) {
@@ -4594,15 +4718,24 @@ var ColorSpace = (function() {
           return new DeviceCmykCS();
         break;
       case 'Pattern':
-        return new PatternCS();
+        var baseCS = cs[1];
+        if (baseCS)
+          baseCS = ColorSpace.parse(baseCS, xref, res);
+        return new PatternCS(baseCS);
         break;
       case 'Indexed':
         var base = ColorSpace.parse(cs[1], xref, res);
         var hiVal = cs[2] + 1;
         var lookup = xref.fetchIfRef(cs[3]);
         return new IndexedCS(base, hiVal, lookup);
+        break;
+      case 'Separation':
+        var name = cs[1];
+        var alt = ColorSpace.parse(cs[2], xref, res);
+        var tintFn = new PDFFunction(xref, xref.fetchIfRef(cs[3]));
+        return new SeparationCS(alt, tintFn);
+        break;
       case 'Lab':
-      case 'Seperation':
       case 'DeviceN':
       default:
         error("unrecognized color space object '" + mode + "'");
@@ -4615,9 +4748,48 @@ var ColorSpace = (function() {
   return constructor;
 })();
 
+var SeparationCS = (function() {
+  function constructor(base, tintFn) {
+    this.name = "Separation";
+    this.numComps = 1;
+    this.defaultColor = [1];
+
+    this.base = base;
+    this.tintFn = tintFn;
+  }
+
+  constructor.prototype = {
+    getRgb: function sepcs_getRgb(color) {
+      var tinted = this.tintFn.func(color);
+      return this.base.getRgb(tinted);
+    },
+    getRgbBuffer: function sepcs_getRgbBuffer(input) {
+      var tintFn = this.tintFn;
+      var base = this.base;
+
+      var length = 3 * input.length;
+      var pos = 0;
+
+      var numComps = base.numComps;
+      var baseBuf = new Uint8Array(numComps * input.length);
+      for (var i = 0, ii = input.length; i < ii; ++i) {
+        var scaled = input[i] / 255;
+        var tinted = tintFn.func([scaled]);
+        for (var j = 0; j < numComps; ++j)
+          baseBuf[pos++] = 255 * tinted[j];
+      }
+      return base.getRgbBuffer(baseBuf);
+
+    }
+  };
+
+  return constructor;
+})();
+
 var PatternCS = (function() {
-  function constructor() {
+  function constructor(baseCS) {
     this.name = 'Pattern';
+    this.base = baseCS;
   }
   constructor.prototype = {};
 
@@ -4649,17 +4821,18 @@ var IndexedCS = (function() {
   }
 
   constructor.prototype = {
-    getRgb: function graycs_getRgb(color) {
-      var lookup = this.lookup;
-      var base = this.base;
+    getRgb: function indexcs_getRgb(color) {
       var numComps = base.numComps;
 
+      var start = color[0] * numComps;
       var c = [];
-      for (var i = 0; i < numComps; ++i)
-        c.push(lookup[i]);
+
+      for (var i = start, ii = start + numComps; i < ii; ++i)
+        c.push(this.lookup[i]);
+
       return this.base.getRgb(c);
     },
-    getRgbBuffer: function graycs_getRgbBuffer(input) {
+    getRgbBuffer: function indexcs_getRgbBuffer(input) {
       var base = this.base;
       var numComps = base.numComps;
       var lookup = this.lookup;
@@ -4668,7 +4841,7 @@ var IndexedCS = (function() {
       var baseBuf = new Uint8Array(length * numComps);
       var baseBufPos = 0;
       for (var i = 0; i < length; ++i) {
-        var lookupPos = input[i];
+        var lookupPos = input[i] * numComps;
         for (var j = 0; j < numComps; ++j) {
           baseBuf[baseBufPos++] = lookup[lookupPos + j];
         }
@@ -4693,7 +4866,7 @@ var DeviceGrayCS = (function() {
       return [c, c, c];
     },
     getRgbBuffer: function graycs_getRgbBuffer(input) {
-      var length = input.length;
+      var length = input.length * 3;
       var rgbBuf = new Uint8Array(length);
       for (var i = 0, j = 0; i < length; ++i) {
         var c = input[i];
@@ -4786,8 +4959,22 @@ var DeviceCmykCS = (function() {
       return [r, g, b];
     },
     getRgbBuffer: function cmykcs_getRgbBuffer(colorBuf) {
-      error('conversion from rgb to cmyk not implemented for images');
-      return colorBuf;
+      var length = colorBuf.length / 4;
+      var rgbBuf = new Uint8Array(length * 3);
+      var rgbBufPos = 0;
+      var colorBufPos = 0;
+
+      for (var i = 0; i < length; i++) {
+        var cmyk = [];
+        for (var j = 0; j < 4; ++j)
+          cmyk.push(colorBuf[colorBufPos++]/255);
+
+        var rgb = this.getRgb(cmyk);
+        for (var j = 0; j < 3; ++j)
+          rgbBuf[rgbBufPos++] = Math.round(rgb[j] * 255);
+      }
+
+      return rgbBuf;
     }
   };
   return constructor;
@@ -4806,18 +4993,18 @@ var PDFImage = (function() {
     // TODO cache rendered images?
 
     var dict = image.dict;
-    this.width = dict.get2('Width', 'W');
-    this.height = dict.get2('Height', 'H');
+    this.width = dict.get('Width', 'W');
+    this.height = dict.get('Height', 'H');
 
     if (this.width < 1 || this.height < 1)
       error('Invalid image width or height');
 
-    this.interpolate = dict.get2('Interpolate', 'I') || false;
-    this.imageMask = dict.get2('ImageMask', 'IM') || false;
+    this.interpolate = dict.get('Interpolate', 'I') || false;
+    this.imageMask = dict.get('ImageMask', 'IM') || false;
 
     var bitsPerComponent = image.bitsPerComponent;
     if (!bitsPerComponent) {
-      bitsPerComponent = dict.get2('BitsPerComponent', 'BPC');
+      bitsPerComponent = dict.get('BitsPerComponent', 'BPC');
       if (!bitsPerComponent) {
         if (this.imageMask)
           bitsPerComponent = 1;
@@ -4827,11 +5014,11 @@ var PDFImage = (function() {
     }
     this.bpc = bitsPerComponent;
 
-    var colorSpace = dict.get2('ColorSpace', 'CS');
+    var colorSpace = dict.get('ColorSpace', 'CS');
     this.colorSpace = ColorSpace.parse(colorSpace, xref, res);
 
     this.numComps = this.colorSpace.numComps;
-    this.decode = dict.get2('Decode', 'D');
+    this.decode = dict.get('Decode', 'D');
 
     var mask = xref.fetchIfRef(image.dict.get('Mask'));
     var smask = xref.fetchIfRef(image.dict.get('SMask'));
@@ -4904,7 +5091,7 @@ var PDFImage = (function() {
           output[i] = Math.round(255 * ret / ((1 << bpc) - 1));
         }
       }
-      return this.colorSpace.getRbaBuffer(output);
+      return output;
     },
     getOpacity: function getOpacity() {
       var smask = this.smask;
@@ -4936,32 +5123,17 @@ var PDFImage = (function() {
       var rowBytes = (width * numComps * bpc + 7) >> 3;
       var imgArray = this.image.getBytes(height * rowBytes);
 
-      var comps = this.getComponents(imgArray);
+      var comps = this.colorSpace.getRgbBuffer(this.getComponents(imgArray));
       var compsPos = 0;
       var opacity = this.getOpacity();
       var opacityPos = 0;
       var length = width * height * 4;
 
-      switch (numComps) {
-      case 1:
-        for (var i = 0; i < length; i += 4) {
-          var p = comps[compsPos++];
-          buffer[i] = p;
-          buffer[i + 1] = p;
-          buffer[i + 2] = p;
-          buffer[i + 3] = opacity[opacityPos++];
-        }
-        break;
-      case 3:
-        for (var i = 0; i < length; i += 4) {
-          buffer[i] = comps[compsPos++];
-          buffer[i + 1] = comps[compsPos++];
-          buffer[i + 2] = comps[compsPos++];
-          buffer[i + 3] = opacity[opacityPos++];
-        }
-        break;
-      default:
-        TODO('Images with ' + numComps + ' components per pixel');
+      for (var i = 0; i < length; i += 4) {
+        buffer[i] = comps[compsPos++];
+        buffer[i + 1] = comps[compsPos++];
+        buffer[i + 2] = comps[compsPos++];
+        buffer[i + 3] = opacity[opacityPos++];
       }
     },
     fillGrayBuffer: function fillGrayBuffer(buffer) {
@@ -5004,7 +5176,7 @@ var PDFFunction = (function() {
     if (!typeFn)
       error('Unknown type of function');
 
-    typeFn.apply(this, [fn, dict]);
+    typeFn.call(this, fn, dict);
   };
 
   constructor.prototype = {

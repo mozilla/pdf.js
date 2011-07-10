@@ -2,7 +2,6 @@
 /* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
 
 'use strict';
-
 var isWorker = (typeof window == 'undefined');
 
 /**
@@ -16,20 +15,6 @@ var kMaxFontFileSize = 40000;
 var kMaxWaitForFontFace = 1000;
 
 /**
- * Useful for debugging when you want to certains operations depending on how
- * many fonts are loaded.
- */
-var fontCount = 0;
-var fontName = '';
-
-/**
- * If for some reason one want to debug without fonts activated, it just need
- * to turn this pref to true/false.
- */
-var kDisableFonts = false;
-
-
-/**
  * Hold a map of decoded fonts and of the standard fourteen Type1 fonts and
  * their acronyms.
  * TODO Add the standard fourteen Type1 fonts list by default
@@ -37,91 +22,33 @@ var kDisableFonts = false;
  */
 
 var Fonts = (function Fonts() {
-  var kScalePrecision = 40;
-  var fonts = Object.create(null);
-
-  if (!isWorker) {
-    var ctx = document.createElement('canvas').getContext('2d');
-    ctx.scale(1 / kScalePrecision, 1);
-  }
-
-  function Font(name, data, properties) {
+  var fonts = [];
+  var fontCount = 0;
+  
+  function FontInfo(name, data, properties) {
     this.name = name;
     this.data = data;
     this.properties = properties;
+    this.id = fontCount++;
     this.loading = true;
-    this.charsCache = Object.create(null);
     this.sizes = [];
   }
 
   var current;
-  var charsCache;
-  var measureCache;
 
   return {
     registerFont: function fonts_registerFont(fontName, data, properties) {
-      fonts[fontName] = new Font(fontName, data, properties);
+      var font = new FontInfo(fontName, data, properties);
+      fonts.push(font);
+      return font.id;
     },
     blacklistFont: function fonts_blacklistFont(fontName) {
-      registerFont(fontName, null, {});
+      var id = registerFont(fontName, null, {});
       markLoaded(fontName);
+      return id;
     },
-    lookup: function fonts_lookup(fontName) {
-      return fonts[fontName];
-    },
-    setActive: function fonts_setActive(fontName, size) {
-      // |current| can be null is fontName is a built-in font
-      // (e.g. "sans-serif")
-      if ((current = fonts[fontName])) {
-        charsCache = current.charsCache;
-        var sizes = current.sizes;
-        if (!(measureCache = sizes[size]))
-          measureCache = sizes[size] = Object.create(null);
-      }
-      ctx.font = (size * kScalePrecision) + 'px "' + fontName + '"';
-    },
-    charsToUnicode: function fonts_chars2Unicode(chars) {
-      if (!charsCache)
-        return chars;
-
-      // if we translated this string before, just grab it from the cache
-      var str = charsCache[chars];
-      if (str)
-        return str;
-
-      // translate the string using the font's encoding
-      var encoding = current ? current.properties.encoding : null;
-      if (!encoding)
-        return chars;
-
-      str = '';
-      for (var i = 0; i < chars.length; ++i) {
-        var charcode = chars.charCodeAt(i);
-        var unicode = encoding[charcode];
-
-        // Check if the glyph has already been converted
-        if (!IsNum(unicode))
-          unicode = encoding[unicode] = GlyphsUnicode[unicode.name];
-
-        // Handle surrogate pairs
-        if (unicode > 0xFFFF) {
-          str += String.fromCharCode(unicode & 0xFFFF);
-          unicode >>= 16;
-        }
-        str += String.fromCharCode(unicode);
-      }
-
-      // Enter the translated string into the cache
-      return charsCache[chars] = str;
-    },
-    measureText: function fonts_measureText(text) {
-      var width;
-      if (measureCache && (width = measureCache[text]))
-        return width;
-      width = ctx.measureText(text).width / kScalePrecision;
-      if (measureCache)
-        measureCache[text] = width;
-      return width;
+    lookupById: function fonts_lookupById(id) {
+      return fonts[id];
     }
   };
 })();
@@ -131,9 +58,9 @@ var FontLoader = {
 
   bind: function(fonts, callback) {
     function checkFontsLoaded() {
-      for (var i = 0; i < fonts.length; i++) {
-        var font = fonts[i];
-        if (Fonts.lookup(font.name).loading) {
+      for (var i = 0; i < allIds.length; i++) {
+        var id = allIds[i];
+        if (Fonts.lookupById(id).loading) {
           return false;
         }
       }
@@ -145,30 +72,35 @@ var FontLoader = {
       return true;
     }
 
-    var rules = [], names = [];
+    var allIds = [];
+    var rules = [], names = [], ids = [];
+
     for (var i = 0; i < fonts.length; i++) {
       var font = fonts[i];
-      if (!Fonts.lookup(font.name)) {
-        var obj = new Font(font.name, font.file, font.properties);
 
-        var str = '';
-        var data = Fonts.lookup(font.name).data;
-        var length = data.length;
-        for (var j = 0; j < length; j++)
-          str += String.fromCharCode(data[j]);
+      var obj = new Font(font.name, font.file, font.properties);
+      font.fontDict.fontObj = obj;
+      allIds.push(obj.id);
 
-        var rule = isWorker ? obj.bindWorker(str) : obj.bindDOM(str);
-        if (rule) {
-          rules.push(rule);
-          names.push(font.name);
-        }
+      var str = '';
+      var data = Fonts.lookupById(obj.id).data;
+      var length = data.length;
+      for (var j = 0; j < length; j++)
+        str += String.fromCharCode(data[j]);
+
+      var rule = isWorker ? obj.bindWorker(str) : obj.bindDOM(str);
+      if (rule) {
+        rules.push(rule);
+        names.push(obj.loadedName);
+        ids.push(obj.id);
       }
     }
 
+    this.listeningForFontLoad = false;
     if (!isWorker && rules.length) {
-      FontLoader.prepareFontLoadEvent(rules, names);
+      FontLoader.prepareFontLoadEvent(rules, names, ids);
     }
-
+    
     if (!checkFontsLoaded()) {
       document.documentElement.addEventListener(
         'pdfjsFontLoad', checkFontsLoaded, false);
@@ -181,7 +113,7 @@ var FontLoader = {
   // loaded in a subdocument.  It's expected that the load of |rules|
   // has already started in this (outer) document, so that they should
   // be ordered before the load in the subdocument.
-  prepareFontLoadEvent: function(rules, names) {
+  prepareFontLoadEvent: function(rules, names, ids) {
       /** Hack begin */
       // There's no event when a font has finished downloading so the
       // following code is a dirty hack to 'guess' when a font is
@@ -217,13 +149,13 @@ var FontLoader = {
       div.innerHTML = html;
       document.body.appendChild(div);
 
-      if (!this.listeneningForFontLoad) {
+      if (!this.listeningForFontLoad) {
         window.addEventListener(
           'message',
           function(e) {
             var fontNames = JSON.parse(e.data);
             for (var i = 0; i < fontNames.length; ++i) {
-              var font = Fonts.lookup(fontNames[i]);
+              var font = Fonts.lookupById(fontNames[i].substring(7) | 0);
               font.loading = false;
             }
             var evt = document.createEvent('Events');
@@ -231,7 +163,7 @@ var FontLoader = {
             document.documentElement.dispatchEvent(evt);
           },
           false);
-        this.listeneningForFontLoad = true;
+        this.listeningForFontLoad = true;
       }
 
       // XXX we should have a time-out here too, and maybe fire
@@ -253,7 +185,7 @@ var FontLoader = {
       src += '  }';
       src += '</script></head><body>';
       for (var i = 0; i < names.length; ++i) {
-        src += '<p style="font-family:\'' + fontName + '\'">Hi</p>';
+        src += '<p style="font-family:\'' + names[i] + '\'">Hi</p>';
       }
       src += '</body></html>';
       var frame = document.createElement('iframe');
@@ -413,20 +345,14 @@ function getUnicodeRangeFor(value) {
 var Font = (function() {
   var constructor = function font_constructor(name, file, properties) {
     this.name = name;
+    this.textMatrix = properties.textMatrix || IDENTITY_MATRIX;
     this.encoding = properties.encoding;
-
-    // If the font has already been decoded simply return it
-    if (Fonts.lookup(name)) {
-      this.font = Fonts.lookup(name).data;
-      return;
-    }
-    fontCount++;
-    fontName = name;
 
     // If the font is to be ignored, register it like an already loaded font
     // to avoid the cost of waiting for it be be loaded by the platform.
-    if (properties.ignore || kDisableFonts) {
-      Fonts.blacklistFont(name);
+    if (properties.ignore) {
+      this.id = Fonts.blacklistFont(name);
+      this.loadedName = 'pdfFont' + this.id;
       return;
     }
 
@@ -453,7 +379,9 @@ var Font = (function() {
         break;
     }
     this.data = data;
-    Fonts.registerFont(name, data, properties);
+
+    this.id = Fonts.registerFont(name, data, properties);
+    this.loadedName = 'pdfFont' + this.id;
   };
 
   function stringToArray(str) {
@@ -1128,14 +1056,14 @@ var Font = (function() {
         action: 'font',
         data: {
           raw: data,
-          fontName: this.name,
+          fontName: this.loadedName,
           mimetype: this.mimetype
         }
       });
     },
 
     bindDOM: function font_bindDom(data) {
-      var fontName = this.name;
+      var fontName = this.loadedName;
 
       // Add the font-face rule to the document
       var url = ('url(data:' + this.mimetype + ';base64,' +
@@ -1145,6 +1073,46 @@ var Font = (function() {
       styleSheet.insertRule(rule, styleSheet.cssRules.length);
 
       return rule;
+    },
+
+    charsToUnicode: function fonts_charsToUnicode(chars) {
+      var charsCache = this.charsCache;
+
+      // if we translated this string before, just grab it from the cache
+      if (charsCache) {
+        var str = charsCache[chars];
+        if (str)
+          return str;
+      }
+
+      // translate the string using the font's encoding
+      var encoding = this.encoding;
+      if (!encoding)
+        return chars;
+
+      // lazily create the translation cache
+      if (!charsCache)
+        charsCache = this.charsCache = Object.create(null);
+
+      str = '';
+      for (var i = 0; i < chars.length; ++i) {
+        var charcode = chars.charCodeAt(i);
+        var unicode = encoding[charcode];
+
+        // Check if the glyph has already been converted
+        if (!IsNum(unicode))
+          unicode = encoding[unicode] = GlyphsUnicode[unicode.name];
+
+        // Handle surrogate pairs
+        if (unicode > 0xFFFF) {
+          str += String.fromCharCode(unicode & 0xFFFF);
+          unicode >>= 16;
+        }
+        str += String.fromCharCode(unicode);
+      }
+
+      // Enter the translated string into the cache
+      return charsCache[chars] = str;
     }
   };
 
@@ -1676,7 +1644,7 @@ CFF.prototype = {
       var unicode = GlyphsUnicode[glyph.glyph];
       if (!unicode) {
         if (glyph.glyph != '.notdef') {
-          warn(glyph +
+          warn(glyph.glyph +
                ' does not have an entry in the glyphs unicode dictionary');
         }
       } else {
