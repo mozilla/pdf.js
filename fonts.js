@@ -1133,6 +1133,12 @@ var Font = (function() {
       for (var i = 0; i < chars.length; ++i) {
         var charcode = chars.charCodeAt(i);
         var unicode = encoding[charcode];
+        if ('undefined' == typeof(unicode)) {
+          // FIXME/issue 233: we're hitting this in test/pdf/sizes.pdf
+          // at the moment, for unknown reasons.
+          warn('Unencoded charcode '+ charcode);
+          unicode = charcode;
+        }
 
         // Check if the glyph has already been converted
         if (!IsNum(unicode))
