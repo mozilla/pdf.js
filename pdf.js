@@ -5365,9 +5365,28 @@ var PDFFunction = (function() {
       }
       return array;
     },
-    constructInterpolated: function() {
-      TODO('unhandled type of function');
-      this.func = function () { return [ 255, 105, 180 ]; }
+    constructInterpolated: function(str, dict) {
+      var c0 = dict.get('C0') || [0];
+      var c1 = dict.get('C1') || [1];
+      var n = dict.get('N');
+      
+      if (!IsArray(c0) || !IsArray(c1))
+        error('Illegal dictionary for interpolated function');
+
+      var length = c0.length;
+      var diff = [];
+      for (var i = 0; i < length; ++i)
+        diff.push(c1[i] - c0[i]);
+
+      this.func = function (args) {
+        var x = args[0];
+
+        var out = [];
+        for (var j = 0; j < length; ++j)
+          out.push(c0[j] + (x^n * diff[i]));
+
+        return out;
+      }
     },
     constructStiched: function() {
       TODO('unhandled type of function');
