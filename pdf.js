@@ -4251,8 +4251,10 @@ var CanvasGraphics = (function() {
       var height = botRight[1] - topLeft[1];
 
       // TODO: hack to avoid OOM, remove then pattern code is fixed
-      if (Math.abs(width) > 8192 || Math.abs(height) > 8192)
+      if (Math.abs(width) > 8192 || Math.abs(height) > 8192) {
+        this.restore();
         return 'hotpink';
+      }
 
       var tmpCanvas = new this.ScratchCanvas(width, height);
 
