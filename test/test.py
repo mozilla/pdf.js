@@ -17,7 +17,6 @@ TMPDIR = 'tmp'
 VERBOSE = False
 
 SERVER_HOST = "localhost"
-SERVER_PORT = 8080
 
 class TestOptions(OptionParser):
     def __init__(self, **kwargs):
@@ -34,6 +33,8 @@ class TestOptions(OptionParser):
         self.add_option("--reftest", action="store_true", dest="reftest",
                         help="Automatically start reftest showing comparison test failures, if there are any.",
                         default=False)
+        self.add_option("--port", action="store", dest="port", type="int",
+                        help="The port the HTTP server should listen on.", default=8080)
         self.set_usage(USAGE_EXAMPLE)
 
     def verifyOptions(self, options):
@@ -44,7 +45,7 @@ class TestOptions(OptionParser):
         if options.browser and options.browserManifestFile:
             print "Warning: ignoring browser argument since manifest file was also supplied"
         if not options.browser and not options.browserManifestFile:
-            print "No browser arguments supplied, so just starting server on port %s." % SERVER_PORT
+            print "Starting server on port %s." % options.port
         return options
         
 def prompt(question):
@@ -70,7 +71,6 @@ class State:
     remaining = 0
     results = { }
     done = False
-    masterMode = False
     numErrors = 0
     numEqFailures = 0
     numEqNoSnapshot = 0
@@ -99,7 +99,7 @@ class PDFTestHandler(BaseHTTPRequestHandler):
         self.send_header("Content-Type", MIMEs[ext])
         self.send_header("Content-Length", os.path.getsize(path))
         self.end_headers()
-        with open(path) as f:
+        with open(path, "rb") as f:
             self.wfile.write(f.read())
 
     def do_GET(self):
@@ -157,7 +157,8 @@ class PDFTestHandler(BaseHTTPRequestHandler):
             # sort the results since they sometimes come in out of order
             for results in taskResults:
                 results.sort(key=lambda result: result.page)
-            check(State.manifest[id], taskResults, browser)
+            check(State.manifest[id], taskResults, browser,
+                  self.server.masterMode)
             # Please oh please GC this ...
             del State.taskResults[browser][id]
             State.remaining -= 1
@@ -188,7 +189,7 @@ class BaseBrowserCommand(object):
             self._fixupMacPath()
 
         if not os.path.exists(self.path):
-            throw("Path to browser '%s' does not exist." % self.path)
+            raise Exception("Path to browser '%s' does not exist." % self.path)
 
     def setup(self):
         self.tempDir = tempfile.mkdtemp()
@@ -275,7 +276,7 @@ def downloadLinkedPDFs(manifestList):
             sys.stdout.flush()
             response = urllib2.urlopen(link)
 
-            with open(f, 'w') as out:
+            with open(f, 'wb') as out:
                 out.write(response.read())
 
             print 'done'
@@ -284,7 +285,6 @@ def setUp(options):
     # Only serve files from a pdf.js clone
     assert not ANAL or os.path.isfile('../pdf.js') and os.path.isdir('../.git')
 
-    State.masterMode = options.masterMode
     if options.masterMode and os.path.isdir(TMPDIR):
         print 'Temporary snapshot dir tmp/ is still around.'
         print 'tmp/ can be removed if it has nothing you need.'
@@ -325,7 +325,7 @@ def startBrowsers(browsers, options):
     for b in browsers:
         b.setup()
         print 'Launching', b.name
-        host = 'http://%s:%s' % (SERVER_HOST, SERVER_PORT) 
+        host = 'http://%s:%s' % (SERVER_HOST, options.port) 
         path = '/test/test_slave.html?'
         qs = 'browser='+ urllib.quote(b.name) +'&manifestFile='+ urllib.quote(options.manifestFile)
         qs += '&path=' + b.path
@@ -340,7 +340,7 @@ def teardownBrowsers(browsers):
             print "Temp dir was ", b.tempDir
             print "Error:", sys.exc_info()[0]
 
-def check(task, results, browser):
+def check(task, results, browser, masterMode):
     failed = False
     for r in xrange(len(results)):
         pageResults = results[r]
@@ -359,7 +359,7 @@ def check(task, results, browser):
 
     kind = task['type']
     if 'eq' == kind:
-        checkEq(task, results, browser)
+        checkEq(task, results, browser, masterMode)
     elif 'fbf' == kind:
         checkFBF(task, results, browser)
     elif 'load' == kind:
@@ -368,7 +368,7 @@ def check(task, results, browser):
         assert 0 and 'Unknown test type'
 
 
-def checkEq(task, results, browser):
+def checkEq(task, results, browser, masterMode):
     pfx = os.path.join(REFDIR, sys.platform, browser, task['id'])
     results = results[0]
     taskId = task['id']
@@ -406,12 +406,12 @@ def checkEq(task, results, browser):
                 passed = False
                 State.numEqFailures += 1
 
-        if State.masterMode and (ref is None or not eq):
+        if masterMode and (ref is None or not eq):
             tmpTaskDir = os.path.join(TMPDIR, sys.platform, browser, task['id'])
             try:
                 os.makedirs(tmpTaskDir)
             except OSError, e:
-                pass
+                print >>sys.stderr, 'Creating', tmpTaskDir, 'failed!'
 
             of = open(os.path.join(tmpTaskDir, str(page + 1)), 'w')
             of.write(snapshot)
@@ -482,8 +482,8 @@ def maybeUpdateRefImages(options, browser):
 
                 print 'done'
 
-def startReftest(browser):
-    url = "http://%s:%s" % (SERVER_HOST, SERVER_PORT)
+def startReftest(browser, options):
+    url = "http://%s:%s" % (SERVER_HOST, options.port)
     url += "/test/resources/reftest-analyzer.xhtml"
     url += "#web=/test/eq.log"
     try:
@@ -511,7 +511,7 @@ def runTests(options, browsers):
         maybeUpdateRefImages(options, browsers[0])
     elif options.reftest and State.numEqFailures > 0:
         print "\nStarting reftest harness to examine %d eq test failures." % State.numEqFailures
-        startReftest(browsers[0])
+        startReftest(browsers[0], options)
 
 def main():
     optionParser = TestOptions()
@@ -520,7 +520,8 @@ def main():
     if options == None:
         sys.exit(1)
 
-    httpd = TestServer((SERVER_HOST, SERVER_PORT), PDFTestHandler)
+    httpd = TestServer((SERVER_HOST, options.port), PDFTestHandler)
+    httpd.masterMode = options.masterMode
     httpd_thread = threading.Thread(target=httpd.serve_forever)
     httpd_thread.setDaemon(True)
     httpd_thread.start()
@@ -531,8 +532,11 @@ def main():
     else:
         # just run the server
         print "Running HTTP server. Press Ctrl-C to quit."
-        while True:
-            time.sleep(1)
+        try:
+            while True:
+                time.sleep(1)
+        except (KeyboardInterrupt):
+            print "\nExiting."
 
 if __name__ == '__main__':
     main()

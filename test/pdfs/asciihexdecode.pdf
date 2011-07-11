@@ -1,0 +1,55 @@
+%PDF-1.0
+1 0 obj
+<<
+	/Pages 2 0 R
+	/Type /Catalog
+>>
+endobj
+2 0 obj
+<<
+	/Count 1
+	/Kids [ 3 0 R ]
+	/Type /Pages
+>>
+endobj
+3 0 obj
+<<
+	/MediaBox [ 0 0 795 842 ]
+	/Parent 2 0 R
+	/Contents 4 0 R
+	/Resources <<
+		/Font <<
+			/F1 <<
+				/Name /F1
+				/BaseFont /Helvetica
+				/Subtype /Type1
+				/Type /Font
+			>>
+		>>
+	>>
+	/Type /Page
+>>
+endobj
+4 0 obj
+<<
+	/Filter /ASCIIHexDecode
+	/Length 111
+>>stream
+42540A2F46312033302054660A333530203735302054640A323020544C0A312054720A2848656C6C6F20776F726C642920546A0A45540A>
+endstream
+endobj
+xref
+0 5
+0000000000 65535 f
+0000000010 00000 n
+0000000067 00000 n
+0000000136 00000 n
+0000000373 00000 n
+trailer
+<<
+	/Root 1 0 R
+	/Size 5
+>>
+startxref
+568
+%%EOF

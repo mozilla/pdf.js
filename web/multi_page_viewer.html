@@ -4,17 +4,18 @@
 <title>pdf.js Multi-Page Viewer</title>
 <meta http-equiv="Content-type" content="text/html;charset=UTF-8"/>
 <link rel="stylesheet" href="multi_page_viewer.css" type="text/css" media="screen"/>
-<script type="text/javascript" src="pdf.js"></script>
-<script type="text/javascript" src="fonts.js"></script>
-<script type="text/javascript" src="crypto.js"></script>
-<script type="text/javascript" src="glyphlist.js"></script>
+<script type="text/javascript" src="compatibility.js"></script>
+<script type="text/javascript" src="../pdf.js"></script>
+<script type="text/javascript" src="../fonts.js"></script>
+<script type="text/javascript" src="../crypto.js"></script>
+<script type="text/javascript" src="../glyphlist.js"></script>
 <script type="text/javascript" src="multi_page_viewer.js"></script>
 </head>
 <body>
   <div id="controls">
     <span class="control">
-      <span id="previousPageButton" class="disabled"></span>
-      <span id="nextPageButton" class="disabled"></span>
+      <button id="previousPageButton" disabled="disabled"><span></span></button>
+      <button id="nextPageButton" disabled="disabled"><span></span></button>
       <span class="label">Previous/Next</span>
     </span>
     <span class="control">
@@ -34,8 +35,18 @@
       </select>
       <span class="label">Zoom</span>
     </span>
+    
+    <!-- WIP: Leave commented out until implemented -->
+    <!--
     <span class="control">
-      <span id="openFileButton"></span>
+      <button id="singleLayoutButton" class="selected"><span></span></button>
+      <button id="splitLayoutButton"><span></span></button>
+      <span class="label">Page Layout</span>
+    </span>
+    -->
+    
+    <span class="control" id="fileWrapper">
+      <button id="openFileButton"><span></span></button>
       <input type="file" id="fileInput"/>
       <span class="label">Open File</span>
     </span>
