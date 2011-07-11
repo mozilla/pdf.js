@@ -1,7 +1,9 @@
+/* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- /
+/* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
+
 /*
  * A Test Driver for PDF.js
  */
-
 
 var appPath, browser, canvas, currentTaskIdx, manifest, stdout;
 
@@ -21,16 +23,16 @@ function load() {
     browser = params.browser;
     manifestFile = params.manifestFile;
     appPath = params.path;
-    
+
     canvas = document.createElement("canvas");
     canvas.mozOpaque = true;
     stdout = document.getElementById("stdout");
-    
+
     log("load...\n");
 
     log("Harness thinks this browser is '"+ browser + "' with path " + appPath + "\n");
     log("Fetching manifest "+ manifestFile +"...");
-    
+
     var r = new XMLHttpRequest();
     r.open("GET", manifestFile, false);
     r.onreadystatechange = function(e) {
@@ -61,15 +63,15 @@ function nextTask() {
         if (r.readyState == 4) {
             var data = r.mozResponseArrayBuffer || r.mozResponse ||
                 r.responseArrayBuffer || r.response;
-        
+
             try {
                 task.pdfDoc = new PDFDoc(new Stream(data));
             } catch(e) {
                 failure = 'load PDF doc: '+ e.toString();
             }
-            
+
             task.pageNum = 1, nextPage(task, failure);
-        }    
+        }
     };
     r.send(null);
 }
@@ -92,25 +94,13 @@ function nextPage(task, loadError) {
     var failure = loadError || '';
 
     var ctx = null;
-    var fonts;
-    var gfx = null;
     var page = null;
-
     if (!failure) {
-        log("    loading page "+ task.pageNum +"... ");
-        ctx = canvas.getContext("2d");
-        fonts = [];
         try {
-            gfx = new CanvasGraphics(ctx);
+            log("    loading page "+ task.pageNum +"... ");
+            ctx = canvas.getContext("2d");
             page = task.pdfDoc.getPage(task.pageNum);
-            page.compile(gfx, fonts);
-        } catch(e) {
-            failure = 'compile: '+ e.toString();
-        }
-    }
 
-    if (!failure) {
-        try {
             var pdfToCssUnitsCoef = 96.0 / 72.0;
             // using mediaBox for the canvas size
             var pageWidth = (page.mediaBox[2] - page.mediaBox[0]);
@@ -118,42 +108,28 @@ function nextPage(task, loadError) {
             canvas.width = pageWidth * pdfToCssUnitsCoef;
             canvas.height = pageHeight * pdfToCssUnitsCoef;
             clear(ctx);
+
+            page.startRendering(
+              ctx,
+              function() { snapshotCurrentPage(page, task, failure); });
         } catch(e) {
             failure = 'page setup: '+ e.toString();
-        }
-    }
-
-    if (!failure) {
-        try {
-            FontLoader.bind(fonts, function() { 
-                snapshotCurrentPage(gfx, page, task, failure); 
-                });
-        } catch(e) {
-            failure = 'fonts: '+ e.toString();
         }
     }
 
     if (failure) {
         // Skip right to snapshotting if there was a failure, since the
         // fonts might be in an inconsistent state.
-        snapshotCurrentPage(gfx, page, task, failure);
+        snapshotCurrentPage(page, task, failure);
     }
 }
 
-function snapshotCurrentPage(gfx, page, task, failure) {
+function snapshotCurrentPage(page, task, failure) {
     log("done, snapshotting... ");
-    
-    if (!failure) {
-        try {
-            page.display(gfx);
-        } catch(e) {
-            failure = 'render: '+ e.toString();
-        }
-    }
 
     sendTaskResult(canvas.toDataURL("image/png"), task, failure);
     log("done"+ (failure ? " (failed!: "+ failure +")" : "") +"\n");
-    
+
     // Set up the next request
     backoff = (inFlightRequests > 0) ? inFlightRequests * 10 : 0;
     setTimeout(function() {

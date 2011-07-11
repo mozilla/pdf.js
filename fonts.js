@@ -542,20 +542,11 @@ var Font = (function() {
                '\x00\x01' + // encodingID
                string32(4 + numTables * 8); // start of the table record
 
-    var headerSize = (12 * 2 + (ranges.length * 5 * 2));
     var segCount = ranges.length + 1;
     var segCount2 = segCount * 2;
     var searchRange = getMaxPower2(segCount) * 2;
     var searchEntry = Math.log(segCount) / Math.log(2);
     var rangeShift = 2 * segCount - searchRange;
-
-    var format314 = '\x00\x04' + // format
-                    string16(headerSize) + // length
-                    '\x00\x00' + // language
-                    string16(segCount2) +
-                    string16(searchRange) +
-                    string16(searchEntry) +
-                    string16(rangeShift);
 
     // Fill up the 4 parallel arrays describing the segments.
     var startCount = '';
@@ -568,7 +559,7 @@ var Font = (function() {
       var range = ranges[i];
       var start = range[0];
       var end = range[1];
-      var delta = (bias - start) % 0xffff;
+      var delta = (bias - start) & 0xffff;
       bias += (end - start + 1);
 
       startCount += string16(start);
@@ -585,10 +576,19 @@ var Font = (function() {
     startCount += '\xFF\xFF';
     idDeltas += '\x00\x01';
     idRangeOffsets += '\x00\x00';
-    format314 += endCount + '\x00\x00' + startCount +
-                 idDeltas + idRangeOffsets + glyphsIds;
 
-    return stringToArray(cmap + format314);
+    var format314 = '\x00\x00' + // language
+                    string16(segCount2) +
+                    string16(searchRange) +
+                    string16(searchEntry) +
+                    string16(rangeShift) +
+                    endCount + '\x00\x00' + startCount +
+                    idDeltas + idRangeOffsets + glyphsIds;
+
+    return stringToArray(cmap +
+                         '\x00\x04' + // format
+                         string16(format314.length + 4) + // length
+                         format314);
   };
 
   function createOS2Table(properties) {
@@ -704,6 +704,9 @@ var Font = (function() {
         file.skip(offset);
         var data = file.getBytes(length);
         file.pos = previousPosition;
+
+        if (tag == 'head')
+          data[8] = data[9] = data[10] = data[11] = 0; // clearing checksum adjustment
 
         return {
           tag: tag,
@@ -907,11 +910,6 @@ var Font = (function() {
 
     convert: function font_convert(fontName, font, properties) {
       function createNameTable(name) {
-        // All the strings of the name table should be an odd number
-        // of bytes
-        if (name.length % 2)
-          name = name.slice(0, name.length - 1);
-
         var strings = [
           'Original licence',  // 0.Copyright
           name,                // 1.Font family
@@ -919,7 +917,7 @@ var Font = (function() {
           'uniqueID',          // 3.Unique ID
           name,                // 4.Full font name
           'Version 0.11',      // 5.Version
-          'Unknown',           // 6.Postscript name
+          '',                  // 6.Postscript name
           'Unknown',           // 7.Trademark
           'Unknown',           // 8.Manufacturer
           'Unknown'            // 9.Designer
@@ -958,7 +956,7 @@ var Font = (function() {
               platforms[i] + // platform ID
               encodings[i] + // encoding ID
               languages[i] + // language ID
-              string16(i) + // name ID
+              string16(j) + // name ID
               string16(str.length) +
               string16(strOffset);
             nameTable += nameRecord;
@@ -1133,6 +1131,12 @@ var Font = (function() {
       for (var i = 0; i < chars.length; ++i) {
         var charcode = chars.charCodeAt(i);
         var unicode = encoding[charcode];
+        if ('undefined' == typeof(unicode)) {
+          // FIXME/issue 233: we're hitting this in test/pdf/sizes.pdf
+          // at the moment, for unknown reasons.
+          warn('Unencoded charcode '+ charcode);
+          unicode = charcode;
+        }
 
         // Check if the glyph has already been converted
         if (!IsNum(unicode))
@@ -1388,6 +1392,18 @@ var Type1Parser = function() {
     return array;
   };
 
+  function readNumber(str, index) {
+    while (str[index++] == ' ')
+      ;
+    var start = index;
+
+    var count = 0;
+    while (str[index++] != ' ')
+      count++;
+
+    return parseFloat(str.substr(start, count) || 0);
+  };
+
   this.extractFontProgram = function t1_extractFontProgram(stream) {
     var eexec = decrypt(stream, kEexecEncryptionKey, 4);
     var eexecStr = '';
@@ -1399,8 +1415,7 @@ var Type1Parser = function() {
       subrs: [],
       charstrings: [],
       properties: {
-        stemSnapH: [0, 0],
-        stemSnapV: [0, 0]
+        'private': {}
       }
     };
 
@@ -1442,17 +1457,24 @@ var Type1Parser = function() {
             case '/Subrs':
               subrsSection = true;
               break;
-            case '/StdHW':
-              program.properties.stdHW = readNumberArray(eexecStr, i + 2)[0];
-              break;
-            case '/StdVW':
-              program.properties.stdVW = readNumberArray(eexecStr, i + 2)[0];
-              break;
+            case '/BlueValues':
+            case '/OtherBlues':
+            case '/FamilyBlues':
+            case '/FamilyOtherBlues':
             case '/StemSnapH':
-              program.properties.stemSnapH = readNumberArray(eexecStr, i + 2);
-              break;
             case '/StemSnapV':
-              program.properties.stemSnapV = readNumberArray(eexecStr, i + 2);
+              program.properties.private[token.substring(1)] = readNumberArray(eexecStr, i + 2);
+              break;
+            case '/StdHW':
+            case '/StdVW':
+              program.properties.private[token.substring(1)] = readNumberArray(eexecStr, i + 2)[0];
+              break;
+            case '/BlueShift':
+            case '/BlueFuzz':
+            case '/BlueScale':
+            case '/LanguageGroup':
+            case '/ExpansionFactor':
+              program.properties.private[token.substring(1)] = readNumber(eexecStr, i + 1);
               break;
           }
         } else if (c == '/') {
@@ -1642,7 +1664,7 @@ CFF.prototype = {
       return '\x1c' +
              String.fromCharCode((value >> 8) & 0xFF) +
              String.fromCharCode(value & 0xFF);
-    } else if (value >= (-2147483647-1) && value <= 2147483647) {
+    } else if (value >= (-2147483648) && value <= 2147483647) {
       return '\xff' +
              String.fromCharCode((value >>> 24) & 0xFF) +
              String.fromCharCode((value >> 16) & 0xFF) +
@@ -1769,10 +1791,10 @@ CFF.prototype = {
           var dict =
               '\x00\x01\x01\x01\x30' +
               '\xf8\x1b\x00' + // version
-              '\xf8\x1b\x01' + // Notice
-              '\xf8\x1b\x02' + // FullName
-              '\xf8\x1b\x03' + // FamilyName
-              '\xf8\x1b\x04' +  // Weight
+              '\xf8\x1c\x01' + // Notice
+              '\xf8\x1d\x02' + // FullName
+              '\xf8\x1e\x03' + // FamilyName
+              '\xf8\x1f\x04' +  // Weight
               '\x1c\x00\x00\x10'; // Encoding
 
           var boundingBox = properties.bbox;
@@ -1791,7 +1813,7 @@ CFF.prototype = {
           dict += self.encodeNumber(offset) + '\x11'; // Charstrings
 
           dict += self.encodeNumber(fields.private.length);
-          var offset = offset + fields.charstrings.length;
+          offset = offset + fields.charstrings.length;
           dict += self.encodeNumber(offset) + '\x12'; // Private
 
           return dict;
@@ -1835,19 +1857,33 @@ CFF.prototype = {
       'private': (function(self) {
         var data =
             '\x8b\x14' + // defaultWidth
-            '\x8b\x15' + // nominalWidth
-            self.encodeNumber(properties.stdHW || 0) + '\x0a' + // StdHW
-            self.encodeNumber(properties.stdVW || 0) + '\x0b';  // StdVW
+            '\x8b\x15';  // nominalWidth
+        var fieldMap = {
+          BlueValues: '\x06',
+          OtherBlues: '\x07',
+          FamilyBlues: '\x08',
+          FamilyOtherBlues: '\x09',
+          StemSnapH: '\x0c\x0c',
+          StemSnapV: '\x0c\x0d',
+          BlueShift: '\x0c\x0a',
+          BlueFuzz: '\x0c\x0b',
+          BlueScale: '\x0c\x09',
+          LanguageGroup: '\x0c\x11',
+          ExpansionFactor:  '\x0c\x18'
+        };
+        for (var field in fieldMap) {
+          if (!properties.private.hasOwnProperty(field)) continue;
+          var value = properties.private[field];
 
-        var stemH = properties.stemSnapH;
-        for (var i = 0; i < stemH.length; i++)
-          data += self.encodeNumber(stemH[i]);
-        data += '\x0c\x0c'; // StemSnapH
-
-        var stemV = properties.stemSnapV;
-        for (var i = 0; i < stemV.length; i++)
-          data += self.encodeNumber(stemV[i]);
-        data += '\x0c\x0d'; // StemSnapV
+          if (IsArray(value)) {
+            data += self.encodeNumber(value[0]);
+            for (var i = 1; i < value.length; i++)
+              data += self.encodeNumber(value[i] - value[i - 1]);
+          } else {
+            data += self.encodeNumber(value);
+          }
+          data += fieldMap[field];
+        }
 
         data += self.encodeNumber(data.length + 4) + '\x13'; // Subrs offset
 

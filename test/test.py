@@ -189,7 +189,7 @@ class BaseBrowserCommand(object):
             self._fixupMacPath()
 
         if not os.path.exists(self.path):
-            throw("Path to browser '%s' does not exist." % self.path)
+            raise Exception("Path to browser '%s' does not exist." % self.path)
 
     def setup(self):
         self.tempDir = tempfile.mkdtemp()
