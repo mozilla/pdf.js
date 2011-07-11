@@ -4,7 +4,7 @@
 'use strict';
 
 var ERRORS = 0, WARNINGS = 1, TODOS = 5;
-var verbosity = TODOS;
+var verbosity = WARNINGS;
 
 function log(msg) {
   if (console && console.log)
@@ -4194,7 +4194,7 @@ var CanvasGraphics = (function() {
 
       // TODO: hack to avoid OOM, remove then pattern code is fixed
       if (Math.abs(width) > 8192 || Math.abs(height) > 8192)
-        return false;
+        return this.makeCssRgb(0, 0, 0);
 
       var tmpCanvas = new this.ScratchCanvas(width, height);
 
