@@ -64,6 +64,14 @@ function stringToBytes(str) {
   return bytes;
 }
 
+function singleByteToMultiByteString (str) {
+  var multiByteStr = "";
+  var bytes = stringToBytes(e);
+  for (var j = 0; j<bytes.length; j++) {
+    multiByteStr += String.fromCharCode((bytes[j++]<<16) | bytes[j]);
+  }
+  return multiByteStr;
+}
 var Stream = (function() {
   function constructor(arrayBuffer, start, length, dict) {
     this.bytes = new Uint8Array(arrayBuffer);
@@ -3624,19 +3632,26 @@ var PartialEvaluator = (function() {
     },
 
     translateFont: function(fontDict, xref, resources) {
-      var fd = fontDict.get('FontDescriptor');
-      if (!fd)
+      var fd;
+      var descendant = [];
+      var subType = fontDict.get('Subtype');
+      assertWellFormed(IsName(subType), 'invalid font Subtype');
+      
+      //If font is a composite get the FontDescriptor from the descendant font
+      if (subType.name == "Type0")
       {
-        //If font is a composite get the FontDescriptor from the descendant
         var df = fontDict.get("DescendantFonts");
         if (!df)
           return null;
-        var descendant = xref.fetch(df[0]);
+        descendant = xref.fetch(df[0]);
         fd = descendant.get("FontDescriptor");
-        if (!fd)
-          return null;
-        fontDict.set("FontDescriptor", fd);
+      } else {
+        fd = fontDict.get('FontDescriptor');
       }
+      
+      if (!fd)
+        return null;
+      
       var descriptor = xref.fetch(fd);
 
       var fontName = descriptor.get('FontName');
@@ -3650,7 +3665,32 @@ var PartialEvaluator = (function() {
 
       var encodingMap = {};
       var charset = [];
-      if (fontDict.has('Encoding')) {
+      if (subType.name == 'Type0') {
+        //XXX CIDFont support - only identity CID Encoding for now
+        var encoding = xref.fetchIfRef(fontDict.get('Encoding'));
+        if (IsName(encoding)) {
+          //Encoding is a predefined CMap
+          if (encoding.name == 'Identity-H') {
+            if (descendant.get('Subtype').name == 'CIDFontType2')
+            {
+              //Extract an encoding from the CIDToGIDMap
+              var glyphsStream = xref.fetchIfRef(descendant.get('CIDToGIDMap'));
+              var glyphsData = glyphsStream.getBytes(0);
+              var i = 0;
+              for (var j=0; j<glyphsData.length; j++) {
+                var glyphID = (glyphsData[j++]*0x100)+glyphsData[j];
+                //encodingMap[glyphID] = i++;
+                charset.push(glyphID);
+              }
+              encoding[0] = 0;
+            }
+          } else {
+            TODO ('Need to support predefined CMaps see PDF 32000-1:2008 9.7.5.2 Predefined CMaps')
+          }
+        } else {
+          TODO ('Need to support encoding streams see PDF 32000-1:2008  9.7.5.3'); 
+        }
+      } else if (fontDict.has('Encoding')) {
         var encoding = xref.fetchIfRef(fontDict.get('Encoding'));
         if (IsDict(encoding)) {
           // Build a map of between codes and glyphs
@@ -3682,7 +3722,6 @@ var PartialEvaluator = (function() {
           }
         } else if (IsName(encoding)) {
           var encoding = Encodings[encoding.name];
-          //XXX CIDFont support - get the CID Encoding especially support japan1 and identity
           if (!encoding)
             error('Unknown font encoding');
 
@@ -3766,9 +3805,6 @@ var PartialEvaluator = (function() {
           }
         }
       }
-
-      var subType = fontDict.get('Subtype');
-      assertWellFormed(IsName(subType), 'invalid font Subtype');
 
       var properties = {
         type: subType.name,

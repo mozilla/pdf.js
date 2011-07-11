@@ -404,12 +404,21 @@ var Font = (function() {
         data = this.checkAndRepair(name, file, properties);
         break;
 
+      case 'Type0':
+        //this is a Truetype font
+        this.mimetype = 'font/opentype';
+
+        // Repair the TrueType file if it is can be damaged in the point of
+        // view of the sanitizer
+        data = this.checkAndRepair(name, file, properties);
+        break;
+
       default:
         warn('Font ' + properties.type + ' is not supported');
         break;
     }
     this.data = data;
-
+    this.type = properties.type; //use the type to test if the string is single or multi-byte
     this.id = Fonts.registerFont(name, data, properties);
     this.loadedName = 'pdfFont' + this.id;
   };
@@ -856,8 +865,26 @@ var Font = (function() {
           data: stringToArray(createOS2Table(properties))
         });
 
-        // Replace the old CMAP table with a shiny new one
-        replaceCMapTable(cmap, font, properties);
+        if (!cmap) {
+          var glyphs = [];
+          var charset = properties.charset;
+          for (var i=1; i < charset.length; i++) {
+            if (charset.indexOf(i) != -1) {
+              glyphs.push({
+                unicode: charset.indexOf(i)
+              });
+            } else {
+              break;
+            }
+          }
+          tables.push({
+            tag: 'cmap',
+            data: createCMapTable(glyphs)
+          })
+        } else {
+          // Replace the old CMAP table with a shiny new one
+          replaceCMapTable(cmap, font, properties);          
+        }
 
         // Rewrite the 'post' table if needed
         if (!post) {
@@ -1110,44 +1137,63 @@ var Font = (function() {
 
     charsToUnicode: function fonts_chars2Unicode(chars) {
       var charsCache = this.charsCache;
-
+      var str;
+      
       // if we translated this string before, just grab it from the cache
       if (charsCache) {
-        var str = charsCache[chars];
+        str = charsCache[chars];
         if (str)
           return str;
       }
-
-      // translate the string using the font's encoding
-      var encoding = this.encoding;
-      if (!encoding)
-        return chars;
-
+      
       // lazily create the translation cache
       if (!charsCache)
         charsCache = this.charsCache = Object.create(null);
-
-      str = '';
-      for (var i = 0; i < chars.length; ++i) {
-        var charcode = chars.charCodeAt(i);
-        var unicode = encoding[charcode];
-        if ('undefined' == typeof(unicode)) {
-          // FIXME/issue 233: we're hitting this in test/pdf/sizes.pdf
-          // at the moment, for unknown reasons.
-          warn('Unencoded charcode '+ charcode);
-          unicode = charcode;
+      
+      if (this.type == "Type0") {
+        //string needs to be converted from byte to multi-byte assume for now two-byte
+        str = '';
+        var multiByteStr = "";
+        var length = chars.length;
+        for (var i = 0; i < length; i++) {
+          var byte1 = chars.charCodeAt(i++) & 0xFF;
+          var byte2;
+          if (i == length)
+            byte2 = 0;
+          else
+            byte2 = chars.charCodeAt(i) & 0xFF;
+          multiByteStr += String.fromCharCode((byte1<<8) | byte2);
         }
-
-        // Check if the glyph has already been converted
-        if (!IsNum(unicode))
-          unicode = encoding[unicode] = GlyphsUnicode[unicode.name];
-
-        // Handle surrogate pairs
-        if (unicode > 0xFFFF) {
-          str += String.fromCharCode(unicode & 0xFFFF);
-          unicode >>= 16;
+        str = multiByteStr;
+      }
+      else {
+        // translate the string using the font's encoding
+        var encoding = this.encoding;
+        if (!encoding)
+          return chars;
+  
+        str = '';
+        for (var i = 0; i < chars.length; ++i) {
+          var charcode = chars.charCodeAt(i);
+          var unicode = encoding[charcode];
+          if ('undefined' == typeof(unicode)) {
+            // FIXME/issue 233: we're hitting this in test/pdf/sizes.pdf
+            // at the moment, for unknown reasons.
+            warn('Unencoded charcode '+ charcode);
+            unicode = charcode;
+          }
+  
+          // Check if the glyph has already been converted
+          if (!IsNum(unicode))
+            unicode = encoding[unicode] = GlyphsUnicode[unicode.name];
+  
+          // Handle surrogate pairs
+          if (unicode > 0xFFFF) {
+            str += String.fromCharCode(unicode & 0xFFFF);
+            unicode >>= 16;
+          }
+          str += String.fromCharCode(unicode);
         }
-        str += String.fromCharCode(unicode);
       }
 
       // Enter the translated string into the cache
