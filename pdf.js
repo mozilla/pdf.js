@@ -4176,9 +4176,6 @@ var CanvasGraphics = (function() {
       if (base) {
         var baseComps = base.numComps;
 
-        if (baseComps != length - 1)
-          error("invalid base color for pattern colorspace");
-
         var color = [];
         for (var i = 0; i < baseComps; ++i)
           color.push(args[i]);
@@ -4263,7 +4260,6 @@ var CanvasGraphics = (function() {
       var savedCtx = ctx;
       this.ctx = tmpCtx;
 
-      var fillColor, strokeColor;
       var paintType = dict.get('PaintType');
       switch (paintType) {
       case PAINT_TYPE_COLORED:
