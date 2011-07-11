@@ -72,29 +72,15 @@ function displayPage(num) {
   ctx.fillRect(0, 0, canvas.width, canvas.height);
   ctx.restore();
 
-  var gfx = new CanvasGraphics(ctx);
-
-  // page.compile will collect all fonts for us, once we have loaded them
-  // we can trigger the actual page rendering with page.display
-  var fonts = [];
-  page.compile(gfx, fonts);
-  var t2 = Date.now();
-
-  function displayPage() {
-    var t3 = Date.now();
-
-    page.display(gfx);
-
-    var t4 = Date.now();
-
-    var infoDisplay = document.getElementById('info');
-    infoDisplay.innerHTML = 'Time to load/compile/fonts/render: ' +
-      (t1 - t0) + '/' + (t2 - t1) + '/' + (t3 - t2) + '/' + (t4 - t3) + ' ms';
-  }
-
-  // Always defer call to displayPage() to work around bug in
-  // Firefox error reporting from XHR callbacks.
-  FontLoader.bind(fonts, function() { setTimeout(displayPage, 0); });
+  page.startRendering(
+    ctx,
+    function() {
+      var infoDisplay = document.getElementById('info');
+      var stats = page.stats;
+      var t2 = stats.compile, t3 = stats.fonts, t4 = stats.render;
+      infoDisplay.innerHTML = 'Time to load/compile/fonts/render: ' +
+        (t1 - t0) + '/' + (t2 - t1) + '/' + (t3 - t2) + '/' + (t4 - t3) + ' ms';
+  });
 }
 
 function nextPage() {

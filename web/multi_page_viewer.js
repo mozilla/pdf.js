@@ -123,14 +123,7 @@ var PDFViewer = {
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       ctx.restore();
 
-      var gfx = new CanvasGraphics(ctx);
-
-      // page.compile will collect all fonts for us, once we have loaded them
-      // we can trigger the actual page rendering with page.display
-      var fonts = [];
-      page.compile(gfx, fonts);
-
-      FontLoader.bind(fonts, function() { page.display(gfx); });
+      page.startRendering(ctx, function() { });
     }
   },
 
@@ -183,14 +176,7 @@ var PDFViewer = {
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       ctx.restore();
 
-      var gfx = new CanvasGraphics(ctx);
-
-      // page.compile will collect all fonts for us, once we have loaded them
-      // we can trigger the actual page rendering with page.display
-      var fonts = [];
-      page.compile(gfx, fonts);
-
-      FontLoader.bind(fonts, function() { page.display(gfx); });
+      page.startRendering(ctx, function() { });
     }
   },
 
