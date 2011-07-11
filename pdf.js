@@ -2923,9 +2923,15 @@ var XRef = (function() {
 
 var Page = (function() {
   function constructor(xref, pageNumber, pageDict) {
-    this.xref = xref;
     this.pageNumber = pageNumber;
     this.pageDict = pageDict;
+    this.stats = {
+      create: Date.now(),
+      compile: 0.0,
+      fonts: 0.0,
+      render: 0.0,
+    };
+    this.xref = xref;
   }
 
   constructor.prototype = {
@@ -2954,6 +2960,32 @@ var Page = (function() {
       return shadow(this, 'mediaBox',
                     ((IsArray(obj) && obj.length == 4) ? obj : null));
     },
+    startRendering: function(canvasCtx, continuation) {
+      var self = this;
+      var stats = self.stats;
+      stats.compile = stats.fonts = stats.render = 0;
+
+      var gfx = new CanvasGraphics(canvasCtx);
+      var fonts = [ ];
+
+      this.compile(gfx, fonts);
+      stats.compile = Date.now();
+
+      FontLoader.bind(
+        fonts,
+        function() {
+          stats.fonts = Date.now();
+          // Always defer call to display() to work around bug in
+          // Firefox error reporting from XHR callbacks.
+          setTimeout(function () {
+            self.display(gfx);
+            stats.render = Date.now();
+            continuation();
+          });
+        });
+    },
+
+
     compile: function(gfx, fonts) {
       if (this.code) {
         // content was compiled
