@@ -5370,6 +5370,9 @@ var PDFFunction = (function() {
       var c1 = dict.get('C1') || [1];
       var n = dict.get('N');
       
+      if (!IsArray(c0) || !IsArray(c1))
+        error('Illegal dictionary for interpolated function');
+
       var length = c0.length;
       var diff = [];
       for (var i = 0; i < length; ++i)
