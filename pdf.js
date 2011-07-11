@@ -4208,27 +4208,15 @@ var CanvasGraphics = (function() {
     },
     getShadingPattern: function(pattern, dict) {
       var matrix = dict.get("Matrix");
-/*
-      var inv = [0,0,0,0,0,0];
-      var det = 1 / (matrix[0] * matrix[3] - matrix[1] * matrix[2]);
-      inv[0] = matrix[3] * det;
-      inv[1] = -matrix[1] * det;
-      inv[2] = -matrix[2] * det;
-      inv[3] = matrix[0] * det;
-      inv[4] = det * (matrix[2] * matrix[5] - matrix[3] * matrix[4]);
-      inv[5] = det * (matrix[1] * matrix[4] - matrix[0] * matrix[5]);
-
-      this.transform.apply(this, matrix);
-      //var shading = this.getShading(pattern.get("Shading"));
-*/      return this.getShading(pattern.get("Shading"));
       
-/*      this.ctx.fillStyle = shading;
+      this.save();
+      this.transform.apply(this, matrix);
+      var shading = this.getShading(pattern.get("Shading"));
+      this.restore();
 
-      // HACK to get the gradient to show at the right location. If
-      // removed, the gradient will show at the pre-transform coordinates.
-      this.ctx.fillRect(0,0,0,0);
-      this.transform.apply(this, inv);
-*/    },
+      TODO('store transform so it can be applied before every fill');
+      return shading;
+    },
     getTilingPattern: function(pattern, dict, color) {
       function multiply(m, tm) {
         var a = m[0] * tm[0] + m[1] * tm[2];
@@ -4264,7 +4252,7 @@ var CanvasGraphics = (function() {
 
       // TODO: hack to avoid OOM, remove then pattern code is fixed
       if (Math.abs(width) > 8192 || Math.abs(height) > 8192)
-        return this.makeCssRgb(0, 0, 0);
+        return 'hotpink';
 
       var tmpCanvas = new this.ScratchCanvas(width, height);
 
@@ -4273,16 +4261,17 @@ var CanvasGraphics = (function() {
       var savedCtx = ctx;
       this.ctx = tmpCtx;
 
+      var fillColor, strokeColor;
       var paintType = dict.get('PaintType');
       switch (paintType) {
       case PAINT_TYPE_COLORED:
-        // should go to default for color space
-        tmpCtx.fillStyle = this.makeCssRgb(1, 1, 1);
-        tmpCtx.strokeStyle = this.makeCssRgb(0, 0, 0);
+        tmpCtx.fillStyle = savedCtx.fillStyle;
+        tmpCtx.strokeStyle = savedCtx.strokeStyle;
         break;
       case PAINT_TYPE_UNCOLORED:
-        tmpCtx.fillStyle = this.makeCssRgb.apply(this, color);
-        tmpCtx.strokeStyle = this.makeCssRgb.apply(this, color);
+        color = this.makeCssRgb.apply(this, color);
+        tmpCtx.fillStyle = color;
+        tmpCtx.strokeStyle = color;
         break;
       default:
         error('Unsupported paint type');
@@ -4316,7 +4305,6 @@ var CanvasGraphics = (function() {
       this.ctx = savedCtx;
       this.restore();
 
-      TODO('Inverse pattern is painted');
       return this.ctx.createPattern(tmpCanvas, 'repeat');
     },
     setStrokeGray: function(gray) {
