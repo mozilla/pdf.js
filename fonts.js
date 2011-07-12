@@ -389,6 +389,7 @@ var Font = (function() {
     var data;
     switch (properties.type) {
       case 'Type1':
+      case 'CIDFontType0':
         var cff = new CFF(name, file, properties);
         this.mimetype = 'font/opentype';
 
@@ -397,15 +398,7 @@ var Font = (function() {
         break;
 
       case 'TrueType':
-        this.mimetype = 'font/opentype';
-
-        // Repair the TrueType file if it is can be damaged in the point of
-        // view of the sanitizer
-        data = this.checkAndRepair(name, file, properties);
-        break;
-
-      case 'Type0':
-        //this is a Truetype font
+      case 'CIDFontType2':
         this.mimetype = 'font/opentype';
 
         // Repair the TrueType file if it is can be damaged in the point of
@@ -421,6 +414,7 @@ var Font = (function() {
     this.type = properties.type; //use the type to test if the string is single or multi-byte
     this.id = Fonts.registerFont(name, data, properties);
     this.loadedName = 'pdfFont' + this.id;
+    this.compositeFont = properties.compositeFont;
   };
 
   function stringToArray(str) {
@@ -1150,8 +1144,11 @@ var Font = (function() {
       if (!charsCache)
         charsCache = this.charsCache = Object.create(null);
       
-      if (this.type == "Type0") {
-        //string needs to be converted from byte to multi-byte assume for now two-byte
+      if (this.compositeFont) {
+        // composite fonts have multi-byte strings
+        // convert the string from single-byte to multi-byte
+        // XXX assuming CIDFonts are two-byte - later need to extract the correct byte encoding
+        //     according to the PDF spec
         str = '';
         var multiByteStr = "";
         var length = chars.length;
@@ -1162,7 +1159,7 @@ var Font = (function() {
             byte2 = 0;
           else
             byte2 = chars.charCodeAt(i) & 0xFF;
-          multiByteStr += String.fromCharCode((byte1<<8) | byte2);
+          multiByteStr += String.fromCharCode((byte1 << 8) | byte2);
         }
         str = multiByteStr;
       }

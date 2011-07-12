@@ -64,14 +64,6 @@ function stringToBytes(str) {
   return bytes;
 }
 
-function singleByteToMultiByteString (str) {
-  var multiByteStr = "";
-  var bytes = stringToBytes(e);
-  for (var j = 0; j<bytes.length; j++) {
-    multiByteStr += String.fromCharCode((bytes[j++]<<16) | bytes[j]);
-  }
-  return multiByteStr;
-}
 var Stream = (function() {
   function constructor(arrayBuffer, start, length, dict) {
     this.bytes = new Uint8Array(arrayBuffer);
@@ -3635,16 +3627,22 @@ var PartialEvaluator = (function() {
       var fd;
       var descendant = [];
       var subType = fontDict.get('Subtype');
+      var compositeFont = false;
       assertWellFormed(IsName(subType), 'invalid font Subtype');
       
-      //If font is a composite get the FontDescriptor from the descendant font
-      if (subType.name == "Type0")
+      //If font is a composite 
+      //  - get the descendant font
+      //  - set the type according to the descendant font
+      //  - get the FontDescriptor from the descendant font
+      if (subType.name == 'Type0')
       {
-        var df = fontDict.get("DescendantFonts");
+        var df = fontDict.get('DescendantFonts');
         if (!df)
           return null;
+        compositeFont = true;
         descendant = xref.fetch(df[0]);
-        fd = descendant.get("FontDescriptor");
+        subType = descendant.get('Subtype');
+        fd = descendant.get('FontDescriptor');
       } else {
         fd = fontDict.get('FontDescriptor');
       }
@@ -3665,24 +3663,26 @@ var PartialEvaluator = (function() {
 
       var encodingMap = {};
       var charset = [];
-      if (subType.name == 'Type0') {
-        //XXX CIDFont support - only identity CID Encoding for now
+      if (compositeFont) {
+        //Special CIDFont support
+        //XXX only identity CID Encodings supported for now
         var encoding = xref.fetchIfRef(fontDict.get('Encoding'));
         if (IsName(encoding)) {
           //Encoding is a predefined CMap
           if (encoding.name == 'Identity-H') {
-            if (descendant.get('Subtype').name == 'CIDFontType2')
-            {
-              //Extract an encoding from the CIDToGIDMap
-              var glyphsStream = xref.fetchIfRef(descendant.get('CIDToGIDMap'));
-              var glyphsData = glyphsStream.getBytes(0);
-              var i = 0;
-              for (var j=0; j<glyphsData.length; j++) {
-                var glyphID = (glyphsData[j++]*0x100)+glyphsData[j];
-                //encodingMap[glyphID] = i++;
-                charset.push(glyphID);
+            if (subType.name == 'CIDFontType2') {
+              var cidToGidMap = descendant.get('CIDToGIDMap');
+              if (cidToGidMap) {
+                //Extract the charset from the CIDToGIDMap
+                var glyphsStream = xref.fetchIfRef(cidToGidMap);
+                var glyphsData = glyphsStream.getBytes(0);
+                var i = 0;
+                //glyph ids are big-endian 2-byte values
+                for (var j=0; j<glyphsData.length; j++) {
+                  var glyphID = (glyphsData[j++] << 8) | glyphsData[j];
+                  charset.push(glyphID);
+                }
               }
-              encoding[0] = 0;
             }
           } else {
             TODO ('Need to support predefined CMaps see PDF 32000-1:2008 9.7.5.2 Predefined CMaps')
@@ -3820,7 +3820,8 @@ var PartialEvaluator = (function() {
         flags: descriptor.get('Flags'),
         italicAngle: descriptor.get('ItalicAngle'),
         fixedPitch: false,
-        textMatrix: IDENTITY_MATRIX
+        textMatrix: IDENTITY_MATRIX,
+        compositeFont: compositeFont
       };
 
       return {
