@@ -48,5 +48,20 @@
        "link": true,
        "rounds": 1,
        "type": "load"
+    },
+    {  "id": "openofficecidtruetype-pdf",
+       "file": "pdfs/arial_unicode_en_cidfont.pdf",
+       "rounds": 1,
+       "type": "load"
+    },
+    {  "id": "openofficearabiccidtruetype-pdf",
+       "file": "pdfs/arial_unicode_ab_cidfont.pdf",
+       "rounds": 1,
+       "type": "load"
+    },
+    {  "id": "arabiccidtruetype-pdf",
+       "file": "pdfs/ArabicCIDTrueType.pdf",
+       "rounds": 1,
+       "type": "load"
     }
 ]
