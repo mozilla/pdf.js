@@ -7,7 +7,7 @@ var isWorker = (typeof window == 'undefined');
 /**
  * Maximum file size of the font.
  */
-var kMaxFontFileSize = 40000;
+var kMaxFontFileSize = 200000;
 
 /**
  * Maximum time to wait for a font to be loaded by font-face rules.
