@@ -3634,8 +3634,7 @@ var PartialEvaluator = (function() {
       //  - get the descendant font
       //  - set the type according to the descendant font
       //  - get the FontDescriptor from the descendant font
-      if (subType.name == 'Type0')
-      {
+      if (subType.name == 'Type0') {
         var df = fontDict.get('DescendantFonts');
         if (!df)
           return null;

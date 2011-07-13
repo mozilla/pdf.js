@@ -411,7 +411,7 @@ var Font = (function() {
         break;
     }
     this.data = data;
-    this.type = properties.type; // Use the type to test if the string is single or multi-byte
+    this.type = properties.type;
     this.id = Fonts.registerFont(name, data, properties);
     this.loadedName = 'pdfFont' + this.id;
     this.compositeFont = properties.compositeFont;
@@ -924,13 +924,12 @@ var Font = (function() {
 
         // Replace the old CMAP table with a shiny new one
         if (properties.type == 'CIDFontType2') {
-          // Type2 composite fonts map charcters directly to glyphs so the cmap
+          // Type2 composite fonts map characters directly to glyphs so the cmap
           // table must be replaced.
           
           var glyphs = [];
           var charset = properties.charset;
-          if (charset.length == 0)
-          {
+          if (!charset.length) {
             // PDF did not contain a GIDMap for the font so create an identity cmap
             
             // First get the number of glyphs from the maxp table
@@ -939,16 +938,17 @@ var Font = (function() {
             var numGlyphs = int16(font.getBytes(2));
             
             // Now create an identity mapping
-            for (var i=1; i < numGlyphs; i++) {
+            for (var i = 1; i < numGlyphs; i++) {
               glyphs.push({
                 unicode: i
               });
             }
           } else {
-            for (var i=1; i < charset.length; i++) {
-              if (charset.indexOf(i) != -1) {
+            for (var i = 1; i < charset.length; i++) {
+              var index = charset.indexOf(i);
+              if (index != -1) {
                 glyphs.push({
-                  unicode: charset.indexOf(i)
+                  unicode: index
                 });
               } else {
                 break;
