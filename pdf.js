@@ -3630,7 +3630,7 @@ var PartialEvaluator = (function() {
       var compositeFont = false;
       assertWellFormed(IsName(subType), 'invalid font Subtype');
       
-      //If font is a composite 
+      // If font is a composite 
       //  - get the descendant font
       //  - set the type according to the descendant font
       //  - get the FontDescriptor from the descendant font
@@ -3664,31 +3664,35 @@ var PartialEvaluator = (function() {
       var encodingMap = {};
       var charset = [];
       if (compositeFont) {
-        //Special CIDFont support
-        //XXX only identity CID Encodings supported for now
-        var encoding = xref.fetchIfRef(fontDict.get('Encoding'));
-        if (IsName(encoding)) {
-          //Encoding is a predefined CMap
-          if (encoding.name == 'Identity-H') {
-            if (subType.name == 'CIDFontType2') {
-              var cidToGidMap = descendant.get('CIDToGIDMap');
-              if (cidToGidMap) {
-                //Extract the charset from the CIDToGIDMap
-                var glyphsStream = xref.fetchIfRef(cidToGidMap);
-                var glyphsData = glyphsStream.getBytes(0);
-                var i = 0;
-                //glyph ids are big-endian 2-byte values
-                for (var j=0; j<glyphsData.length; j++) {
-                  var glyphID = (glyphsData[j++] << 8) | glyphsData[j];
-                  charset.push(glyphID);
-                }
-              }
+        // Special CIDFont support
+        // XXX only CIDFontType2 supported for now
+        if (subType.name == 'CIDFontType2') {
+          var cidToGidMap = descendant.get('CIDToGIDMap');
+          if (cidToGidMap && IsRef(cidToGidMap)) {
+            // Extract the charset from the CIDToGIDMap
+            var glyphsStream = xref.fetchIfRef(cidToGidMap);
+            var glyphsData = glyphsStream.getBytes(0);
+            var i = 0;
+            // Glyph ids are big-endian 2-byte values
+            for (var j=0; j<glyphsData.length; j++) {
+              var glyphID = (glyphsData[j++] << 8) | glyphsData[j];
+              charset.push(glyphID);
+            }
+          }
+        }
+        else {
+          // XXX This is a placeholder for handling of the encoding of CIDFontType0 fonts
+          var encoding = xref.fetchIfRef(fontDict.get('Encoding'));
+          if (IsName(encoding)) {
+            // Encoding is a predefined CMap
+            if (encoding.name == 'Identity-H') {
+              TODO ('Need to create an identity cmap')
+            } else {
+              TODO ('Need to support predefined CMaps see PDF 32000-1:2008 9.7.5.2 Predefined CMaps')
             }
           } else {
-            TODO ('Need to support predefined CMaps see PDF 32000-1:2008 9.7.5.2 Predefined CMaps')
+            TODO ('Need to support encoding streams see PDF 32000-1:2008  9.7.5.3'); 
           }
-        } else {
-          TODO ('Need to support encoding streams see PDF 32000-1:2008  9.7.5.3'); 
         }
       } else if (fontDict.has('Encoding')) {
         var encoding = xref.fetchIfRef(fontDict.get('Encoding'));

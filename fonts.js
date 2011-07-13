@@ -411,7 +411,7 @@ var Font = (function() {
         break;
     }
     this.data = data;
-    this.type = properties.type; //use the type to test if the string is single or multi-byte
+    this.type = properties.type; // Use the type to test if the string is single or multi-byte
     this.id = Fonts.registerFont(name, data, properties);
     this.loadedName = 'pdfFont' + this.id;
     this.compositeFont = properties.compositeFont;
@@ -682,6 +682,65 @@ var Font = (function() {
            '\x00\x00\x00\x00';  // maxMemType1
   };
 
+  function createNameTable(name) {
+    var strings = [
+      'Original licence',  // 0.Copyright
+      name,                // 1.Font family
+      'Unknown',           // 2.Font subfamily (font weight)
+      'uniqueID',          // 3.Unique ID
+      name,                // 4.Full font name
+      'Version 0.11',      // 5.Version
+      '',                  // 6.Postscript name
+      'Unknown',           // 7.Trademark
+      'Unknown',           // 8.Manufacturer
+      'Unknown'            // 9.Designer
+    ];
+  
+    // Mac want 1-byte per character strings while Windows want
+    // 2-bytes per character, so duplicate the names table
+    var stringsUnicode = [];
+    for (var i = 0; i < strings.length; i++) {
+      var str = strings[i];
+  
+      var strUnicode = '';
+      for (var j = 0; j < str.length; j++)
+        strUnicode += string16(str.charCodeAt(j));
+      stringsUnicode.push(strUnicode);
+    }
+  
+    var names = [strings, stringsUnicode];
+    var platforms = ['\x00\x01', '\x00\x03'];
+    var encodings = ['\x00\x00', '\x00\x01'];
+    var languages = ['\x00\x00', '\x04\x09'];
+  
+    var namesRecordCount = strings.length * platforms.length;
+    var nameTable =
+      '\x00\x00' +                           // format
+      string16(namesRecordCount) +           // Number of names Record
+      string16(namesRecordCount * 12 + 6);   // Storage
+  
+    // Build the name records field
+    var strOffset = 0;
+    for (var i = 0; i < platforms.length; i++) {
+      var strs = names[i];
+      for (var j = 0; j < strs.length; j++) {
+        var str = strs[j];
+        var nameRecord =
+          platforms[i] + // platform ID
+          encodings[i] + // encoding ID
+          languages[i] + // language ID
+          string16(j) + // name ID
+          string16(str.length) +
+          string16(strOffset);
+        nameTable += nameRecord;
+        strOffset += str.length;
+      }
+    }
+  
+    nameTable += strings.join('') + stringsUnicode.join('');
+    return nameTable;
+  }
+
   constructor.prototype = {
     name: null,
     font: null,
@@ -814,7 +873,7 @@ var Font = (function() {
 
       // This keep a reference to the CMap and the post tables since they can
       // be rewritted
-      var cmap, post;
+      var cmap, post, nameTable, maxp;
 
       var tables = [];
       for (var i = 0; i < numTables; i++) {
@@ -825,6 +884,10 @@ var Font = (function() {
             cmap = table;
           else if (table.tag == 'post')
             post = table;
+          else if (table.tag == 'name')
+            nameTable = table;
+          else if (table.tag == 'maxp')
+            maxp = table;
 
           requiredTables.splice(index, 1);
         }
@@ -859,24 +922,50 @@ var Font = (function() {
           data: stringToArray(createOS2Table(properties))
         });
 
-        if (!cmap) {
+        // Replace the old CMAP table with a shiny new one
+        if (properties.type == 'CIDFontType2') {
+          // Type2 composite fonts map charcters directly to glyphs so the cmap
+          // table must be replaced.
+          
           var glyphs = [];
           var charset = properties.charset;
-          for (var i=1; i < charset.length; i++) {
-            if (charset.indexOf(i) != -1) {
+          if (charset.length == 0)
+          {
+            // PDF did not contain a GIDMap for the font so create an identity cmap
+            
+            // First get the number of glyphs from the maxp table
+            font.pos = (font.start ? font.start : 0) + maxp.length;
+            var version = int16(font.getBytes(4));
+            var numGlyphs = int16(font.getBytes(2));
+            
+            // Now create an identity mapping
+            for (var i=1; i < numGlyphs; i++) {
               glyphs.push({
-                unicode: charset.indexOf(i)
+                unicode: i
               });
-            } else {
-              break;
+            }
+          } else {
+            for (var i=1; i < charset.length; i++) {
+              if (charset.indexOf(i) != -1) {
+                glyphs.push({
+                  unicode: charset.indexOf(i)
+                });
+              } else {
+                break;
+              }
             }
           }
-          tables.push({
-            tag: 'cmap',
-            data: createCMapTable(glyphs)
-          })
+          
+          if (!cmap) {
+            // Font did not contain a cmap
+            tables.push({
+              tag: 'cmap',
+              data: createCMapTable(glyphs)
+            })
+          } else {
+            cmap.data = createCMapTable(glyphs);
+          }
         } else {
-          // Replace the old CMAP table with a shiny new one
           replaceCMapTable(cmap, font, properties);          
         }
 
@@ -885,6 +974,14 @@ var Font = (function() {
           tables.push({
             tag: 'post',
             data: stringToArray(createPostTable(properties))
+          });
+        }
+
+        // Rewrite the 'name' table if needed
+        if (!nameTable) {
+          tables.push({
+            tag: 'name',
+            data: stringToArray(createNameTable(this.name))
           });
         }
 
@@ -930,65 +1027,6 @@ var Font = (function() {
     },
 
     convert: function font_convert(fontName, font, properties) {
-      function createNameTable(name) {
-        var strings = [
-          'Original licence',  // 0.Copyright
-          name,                // 1.Font family
-          'Unknown',           // 2.Font subfamily (font weight)
-          'uniqueID',          // 3.Unique ID
-          name,                // 4.Full font name
-          'Version 0.11',      // 5.Version
-          '',                  // 6.Postscript name
-          'Unknown',           // 7.Trademark
-          'Unknown',           // 8.Manufacturer
-          'Unknown'            // 9.Designer
-        ];
-
-        // Mac want 1-byte per character strings while Windows want
-        // 2-bytes per character, so duplicate the names table
-        var stringsUnicode = [];
-        for (var i = 0; i < strings.length; i++) {
-          var str = strings[i];
-
-          var strUnicode = '';
-          for (var j = 0; j < str.length; j++)
-            strUnicode += string16(str.charCodeAt(j));
-          stringsUnicode.push(strUnicode);
-        }
-
-        var names = [strings, stringsUnicode];
-        var platforms = ['\x00\x01', '\x00\x03'];
-        var encodings = ['\x00\x00', '\x00\x01'];
-        var languages = ['\x00\x00', '\x04\x09'];
-
-        var namesRecordCount = strings.length * platforms.length;
-        var nameTable =
-          '\x00\x00' +                           // format
-          string16(namesRecordCount) +           // Number of names Record
-          string16(namesRecordCount * 12 + 6);   // Storage
-
-        // Build the name records field
-        var strOffset = 0;
-        for (var i = 0; i < platforms.length; i++) {
-          var strs = names[i];
-          for (var j = 0; j < strs.length; j++) {
-            var str = strs[j];
-            var nameRecord =
-              platforms[i] + // platform ID
-              encodings[i] + // encoding ID
-              languages[i] + // language ID
-              string16(j) + // name ID
-              string16(str.length) +
-              string16(strOffset);
-            nameTable += nameRecord;
-            strOffset += str.length;
-          }
-        }
-
-        nameTable += strings.join('') + stringsUnicode.join('');
-        return nameTable;
-      }
-
       function isFixedPitch(glyphs) {
         for (var i = 0; i < glyphs.length - 1; i++) {
           if (glyphs[i] != glyphs[i + 1])
