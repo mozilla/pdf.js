@@ -4148,9 +4148,13 @@ var CanvasGraphics = (function() {
       this.setStrokeRGBColor.apply(this, color);
     },
     setStrokeColorN: function(/*...*/) {
-      // TODO real impl
-      TODO('check for special color spaces');
-      this.setStrokeColor.apply(this, arguments);
+      var cs = this.getStrokeColorSpace();
+
+      if (cs.name == 'Pattern') {
+        this.ctx.strokeStyle = this.getPattern(cs, arguments);
+      } else {
+        this.setStrokeColor.apply(this, arguments);
+      }
     },
     setFillColor: function(/*...*/) {
       var cs = this.getFillColorSpace();
@@ -4161,28 +4165,25 @@ var CanvasGraphics = (function() {
       var cs = this.getFillColorSpace();
 
       if (cs.name == 'Pattern') {
-        var length = arguments.length;
-        var base = cs.base;
-        if (base) {
-          var baseComps = base.numComps;
-
-          if (baseComps != length - 1)
-            error("invalid base color for pattern colorspace");
-
-          var color = [];
-          for (var i = 0; i < baseComps; ++i)
-            color.push(arguments[i]);
-
-          color = base.getRgb(color);
-        }
-        var patternName = arguments[length - 1];
-        this.setFillPattern(patternName, base, color);
+        this.ctx.fillStyle = this.getPattern(cs, arguments);
       } else {
-        // TODO real impl
         this.setFillColor.apply(this, arguments);
       }
     },
-    setFillPattern: function(patternName, baseCS, color) {
+    getPattern: function(cs, args) {
+      var length = args.length;
+      var base = cs.base;
+      if (base) {
+        var baseComps = base.numComps;
+
+        var color = [];
+        for (var i = 0; i < baseComps; ++i)
+          color.push(args[i]);
+
+        color = base.getRgb(color);
+      }
+
+      var patternName = args[length - 1];
       if (!IsName(patternName))
         error("Bad args to getPattern");
 
@@ -4194,36 +4195,26 @@ var CanvasGraphics = (function() {
       var pattern = xref.fetchIfRef(patternRes.get(patternName.name));
       var dict = IsStream(pattern) ? pattern.dict : pattern;
 
-      var types = [null, this.setTilingPattern, this.setShadingPattern];
+      var types = [null, this.getTilingPattern, this.getShadingPattern];
 
       var typeNum = dict.get("PatternType");
       var patternFn = types[typeNum];
       if (!patternFn)
         error("Unhandled pattern type");
-      patternFn.call(this, pattern, dict, baseCS, color);
+      return patternFn.call(this, pattern, dict, color);
     },
-    setShadingPattern: function(pattern, dict) {
+    getShadingPattern: function(pattern, dict) {
       var matrix = dict.get("Matrix");
-
-      var inv = [0,0,0,0,0,0];
-      var det = 1 / (matrix[0] * matrix[3] - matrix[1] * matrix[2]);
-      inv[0] = matrix[3] * det;
-      inv[1] = -matrix[1] * det;
-      inv[2] = -matrix[2] * det;
-      inv[3] = matrix[0] * det;
-      inv[4] = det * (matrix[2] * matrix[5] - matrix[3] * matrix[4]);
-      inv[5] = det * (matrix[1] * matrix[4] - matrix[0] * matrix[5]);
-
+      
+      this.save();
       this.transform.apply(this, matrix);
       var shading = this.getShading(pattern.get("Shading"));
-      this.ctx.fillStyle = shading;
+      this.restore();
 
-      // HACK to get the gradient to show at the right location. If
-      // removed, the gradient will show at the pre-transform coordinates.
-      this.ctx.fillRect(0,0,0,0);
-      this.transform.apply(this, inv);
+      TODO('store transform so it can be applied before every fill');
+      return shading;
     },
-    setTilingPattern: function(pattern, dict, baseCS, color) {
+    getTilingPattern: function(pattern, dict, color) {
       function multiply(m, tm) {
         var a = m[0] * tm[0] + m[1] * tm[2];
         var b = m[0] * tm[1] + m[1] * tm[3];
@@ -4257,8 +4248,10 @@ var CanvasGraphics = (function() {
       var height = botRight[1] - topLeft[1];
 
       // TODO: hack to avoid OOM, remove then pattern code is fixed
-      if (Math.abs(width) > 8192 || Math.abs(height) > 8192)
-        return false;
+      if (Math.abs(width) > 8192 || Math.abs(height) > 8192) {
+        this.restore();
+        return 'hotpink';
+      }
 
       var tmpCanvas = new this.ScratchCanvas(width, height);
 
@@ -4270,13 +4263,13 @@ var CanvasGraphics = (function() {
       var paintType = dict.get('PaintType');
       switch (paintType) {
       case PAINT_TYPE_COLORED:
-        // should go to default for color space
-        tmpCtx.fillStyle = this.makeCssRgb(1, 1, 1);
-        tmpCtx.strokeStyle = this.makeCssRgb(0, 0, 0);
+        tmpCtx.fillStyle = savedCtx.fillStyle;
+        tmpCtx.strokeStyle = savedCtx.strokeStyle;
         break;
       case PAINT_TYPE_UNCOLORED:
-        tmpCtx.fillStyle = this.makeCssRgb.apply(this, baseCS.getRgb(color));
-        tmpCtx.strokeStyle = this.makeCssRgb.apply(this, baseCS.getRgb(color));
+        color = this.makeCssRgb.apply(this, color);
+        tmpCtx.fillStyle = color;
+        tmpCtx.strokeStyle = color;
         break;
       default:
         error('Unsupported paint type');
@@ -4310,9 +4303,7 @@ var CanvasGraphics = (function() {
       this.ctx = savedCtx;
       this.restore();
 
-      TODO('Inverse pattern is painted');
-      pattern = this.ctx.createPattern(tmpCanvas, 'repeat');
-      this.ctx.fillStyle = pattern;
+      return this.ctx.createPattern(tmpCanvas, 'repeat');
     },
     setStrokeGray: function(gray) {
       this.setStrokeRGBColor(gray, gray, gray);
@@ -4382,6 +4373,8 @@ var CanvasGraphics = (function() {
       this.restore();
     },
     getShading: function(shading) {
+      this.save();
+      
       shading = this.xref.fetchIfRef(shading);
       var dict = IsStream(shading) ? shading.dict : shading;
 
@@ -4406,6 +4399,8 @@ var CanvasGraphics = (function() {
 
       var typeNum = dict.get('ShadingType');
       var shadingFn = types[typeNum];
+      
+      this.restore();
 
       // Most likely we will not implement other types of shading
       // unless the browser supports them
@@ -4498,7 +4493,6 @@ var CanvasGraphics = (function() {
         gradient.addColorStop((i - t0) / diff, 
             this.makeCssRgb.apply(this, rgbColor));
       }
-
       return gradient;
     },
 
@@ -5371,9 +5365,28 @@ var PDFFunction = (function() {
       }
       return array;
     },
-    constructInterpolated: function() {
-      TODO('unhandled type of function');
-      this.func = function () { return [ 255, 105, 180 ]; }
+    constructInterpolated: function(str, dict) {
+      var c0 = dict.get('C0') || [0];
+      var c1 = dict.get('C1') || [1];
+      var n = dict.get('N');
+      
+      if (!IsArray(c0) || !IsArray(c1))
+        error('Illegal dictionary for interpolated function');
+
+      var length = c0.length;
+      var diff = [];
+      for (var i = 0; i < length; ++i)
+        diff.push(c1[i] - c0[i]);
+
+      this.func = function (args) {
+        var x = args[0];
+
+        var out = [];
+        for (var j = 0; j < length; ++j)
+          out.push(c0[j] + (x^n * diff[i]));
+
+        return out;
+      }
     },
     constructStiched: function() {
       TODO('unhandled type of function');
