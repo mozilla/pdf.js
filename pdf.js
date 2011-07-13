@@ -4496,8 +4496,6 @@ var CanvasGraphics = (function() {
     },
     getAxialShading: function(sh, cs) {
       var coordsArr = sh.get('Coords');
-      var x0 = coordsArr[0], y0 = coordsArr[1],
-          x1 = coordsArr[2], y1 = coordsArr[3];
 
       var t0 = 0.0, t1 = 1.0;
       if (sh.has('Domain')) {
@@ -4519,22 +4517,51 @@ var CanvasGraphics = (function() {
         error('Invalid function');
       var fn = new PDFFunction(this.xref, fnObj);
 
-      var gradient = this.ctx.createLinearGradient(x0, y0, x1, y1);
-
       // 10 samples seems good enough for now, but probably won't work
       // if there are sharp color changes. Ideally, we would implement
       // the spec faithfully and add lossless optimizations.
       var step = (t1 - t0) / 10;
       var diff = t1 - t0;
 
+      var colorStops = [];
       for (var i = t0; i <= t1; i += step) {
         var color = fn.func([i]);
-        var rgbColor = cs.getRgb(color);
-        gradient.addColorStop((i - t0) / diff,
-            this.makeCssRgb.apply(this, rgbColor));
+        var rgbColor = this.makeCssRgb.apply(this, cs.getRgb(color));
+        colorStops.push([(i - t0) / diff, rgbColor]);
       }
+      
+      var patternMatrix = this.ctx.mozCurrentTransform;
 
-      return gradient;
+      return {
+        patternFn : function() {
+          var x0 = coordsArr[0], y0 = coordsArr[1];
+          var x1 = coordsArr[2], y1 = coordsArr[3];
+          
+          // if the browser supports getting the tranform matrix, convert
+          // gradient coordinates from pattern space to current user space
+          if (patternMatrix) {
+            var userMatrix = this.ctx.mozCurrentTransformInverse;
+            
+            var p = this.applyTransform(x0, y0, patternMatrix);
+            p = this.applyTransform(p[0], p[1], userMatrix);
+            x0 = p[0];
+            y0 = p[1];
+
+            var p = this.applyTransform(x1, y1, patternMatrix);
+            p = this.applyTransform(p[0], p[1], userMatrix);
+            x1 = p[0];
+            y1 = p[1];
+          }
+
+          var gradient = 
+              this.ctx.createLinearGradient(x0, y0, x1, y1);
+          for (var i = 0, ii = colorStops.length; i < ii; ++i) {
+            var c = colorStops[i];
+            gradient.addColorStop(c[0], c[1]);
+          }
+          return gradient;
+        }
+      }
     },
     getRadialShading: function(sh, cs) {
       var coordsArr = sh.get('Coords');
