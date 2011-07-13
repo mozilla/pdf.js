@@ -3793,7 +3793,7 @@ var PartialEvaluator = (function() {
 // <canvas> contexts store most of the state we need natively.
 // However, PDF needs a bit more state, which we store here.
 var CanvasExtraState = (function() {
-  function constructor() {
+  function constructor(old) {
     // Are soft masks and alpha values shapes or opacities?
     this.alphaIsShape = false;
     this.fontSize = 0;
@@ -3810,10 +3810,70 @@ var CanvasExtraState = (function() {
     this.wordSpace = 0;
     this.textHScale = 100;
     // Color spaces
-    this.fillColorSpace = null;
-    this.strokeColorSpace = null;
+    this.fillColorSpaceObj = null;
+    this.strokeColorSpaceObj = null;
+    this.fillColorObj = null;
+    this.strokeColorObj = null;
+
+    this.old = old;
   }
   constructor.prototype = {
+    get fillColorSpace() {
+      var cs = this.fillColorSpaceObj;
+      if (cs)
+        return cs;
+
+      var old = this.old;
+      if (old)
+        return old.fillColorSpace;
+
+      return null;
+    },
+    set fillColorSpace(cs) {
+      this.fillColorSpaceObj = cs;
+    },
+    get strokeColorSpace() {
+      var cs = this.strokeColorSpaceObj;
+      if (cs)
+        return cs;
+
+      var old = this.old;
+      if (old)
+        return old.strokeColorSpace;
+
+      return null;
+    }, 
+    set strokeColorSpace(cs) {
+      this.strokeColorSpaceObj = cs;
+    },
+    get fillColor() {
+      var color = this.fillColorObj;
+      if (color)
+        return color;
+
+      var old = this.old;
+      if (old)
+        return old.fillColor;
+
+      return null;
+    },
+    set fillColor(color) {
+      this.fillColorObj = color;
+    },
+    get strokeColor() {
+      var color = this.strokeColorObj;
+      if (color)
+        return color;
+
+      var old = this.old;
+      if (old)
+        return old.strokeColor;
+
+      return null;
+    },
+    set strokeColor(color) {
+      this.strokeColorObj = color;
+    }
   };
   return constructor;
 })();
@@ -3906,8 +3966,9 @@ var CanvasGraphics = (function() {
       if (this.ctx.$saveCurrentX) {
         this.ctx.$saveCurrentX();
       }
-      this.stateStack.push(this.current);
-      this.current = new CanvasExtraState();
+      var old = this.current;
+      this.stateStack.push(old);
+      this.current = new CanvasExtraState(old);
     },
     restore: function() {
       var prev = this.stateStack.pop();
@@ -3954,7 +4015,16 @@ var CanvasGraphics = (function() {
       this.stroke();
     },
     fill: function() {
-      this.ctx.fill();
+      var ctx = this.ctx;
+      var fillColor = this.current.fillColor;
+
+      if (fillColor.type === "Pattern") {
+        this.ctx.fillStyle = fillColor.patternFn.apply(this, ctx);
+        ctx.fill();
+      } else {
+        ctx.fill();
+      }
+
       this.consumePath();
     },
     eoFill: function() {
@@ -3963,8 +4033,14 @@ var CanvasGraphics = (function() {
       this.restoreFillRule(savedFillRule);
     },
     fillStroke: function() {
-      this.ctx.fill();
-      this.ctx.stroke();
+      var ctx = this.ctx;
+      var fillCS = this.current.fillColorSpace;
+
+      if (fillCS && fillCS.name === "Pattern")
+        this.current.fillPattern(ctx); 
+
+      ctx.fill();
+      ctx.stroke();
       this.consumePath();
     },
     eoFillStroke: function() {
@@ -4143,12 +4219,12 @@ var CanvasGraphics = (function() {
           ColorSpace.parse(space, this.xref, this.res);
     },
     setStrokeColor: function(/*...*/) {
-      var cs = this.getStrokeColorSpace();
+      var cs = this.current.strokeColorSpace;
       var color = cs.getRgb(arguments);
       this.setStrokeRGBColor.apply(this, color);
     },
     setStrokeColorN: function(/*...*/) {
-      var cs = this.getStrokeColorSpace();
+      var cs = this.current.strokeColorSpace;
 
       if (cs.name == 'Pattern') {
         this.ctx.strokeStyle = this.getPattern(cs, arguments);
@@ -4157,15 +4233,19 @@ var CanvasGraphics = (function() {
       }
     },
     setFillColor: function(/*...*/) {
-      var cs = this.getFillColorSpace();
+      var cs = this.current.fillColorSpace;
       var color = cs.getRgb(arguments);
       this.setFillRGBColor.apply(this, color);
     },
     setFillColorN: function(/*...*/) {
-      var cs = this.getFillColorSpace();
+      var cs = this.current.fillColorSpace;
 
       if (cs.name == 'Pattern') {
-        this.ctx.fillStyle = this.getPattern(cs, arguments);
+        // return a set of functions which will set the pattern
+        // when fill is called
+        var pattern = this.getPattern(cs, arguments);
+        this.current.fillColor = pattern;
+        this.current.fillColor.type = "Pattern";
       } else {
         this.setFillColor.apply(this, arguments);
       }
@@ -4210,9 +4290,9 @@ var CanvasGraphics = (function() {
       this.transform.apply(this, matrix);
       var shading = this.getShading(pattern.get("Shading"));
       this.restore();
-
-      TODO('store transform so it can be applied before every fill');
       return shading;
+     // TODO('store transform so it can be applied before every fill');
+     // return shading;
     },
     getTilingPattern: function(pattern, dict, color) {
       function multiply(m, tm) {
@@ -4315,13 +4395,16 @@ var CanvasGraphics = (function() {
       this.ctx.strokeStyle = this.makeCssRgb(r, g, b);
     },
     setFillRGBColor: function(r, g, b) {
-      this.ctx.fillStyle = this.makeCssRgb(r, g, b);
+      var color = this.makeCssRgb(r, g, b);
+      this.ctx.fillStyle = color;
+      this.current.fillColor = color;
     },
     setStrokeCMYKColor: function(c, m, y, k) {
       this.ctx.strokeStyle = this.makeCssCmyk(c, m, y, k);
     },
     setFillCMYKColor: function(c, m, y, k) {
-      this.ctx.fillStyle = this.makeCssCmyk(c, m, y, k);
+      var color = (new DeviceCmykCS()).getRgb([c, m, y, k]);
+      this.setFillRGBColor.apply(this, color);
     },
 
     // Shading
@@ -4341,7 +4424,7 @@ var CanvasGraphics = (function() {
       var shadingFill = this.getShading(shading);
 
       this.save();
-      ctx.fillStyle = shadingFill;
+      ctx.fillStyle = shadingFill.patternFn.apply(this, ctx);
 
       var inv = ctx.mozCurrentTransformInverse;
       if (inv) {
@@ -4455,8 +4538,6 @@ var CanvasGraphics = (function() {
     },
     getRadialShading: function(sh, cs) {
       var coordsArr = sh.get('Coords');
-      var x0 = coordsArr[0], y0 = coordsArr[1], r0 = coordsArr[2];
-      var x1 = coordsArr[3], y1 = coordsArr[4], r1 = coordsArr[5];
 
       var t0 = 0.0, t1 = 1.0;
       if (sh.has('Domain')) {
@@ -4478,22 +4559,51 @@ var CanvasGraphics = (function() {
         error('Invalid function');
       var fn = new PDFFunction(this.xref, fnObj);
 
-      var gradient = 
-        this.ctx.createRadialGradient(x0, y0, r0, x1, y1, r1);
-
       // 10 samples seems good enough for now, but probably won't work
       // if there are sharp color changes. Ideally, we would implement
       // the spec faithfully and add lossless optimizations.
       var step = (t1 - t0) / 10;
       var diff = t1 - t0;
 
+      var colorStops = [];
       for (var i = t0; i <= t1; i += step) {
         var color = fn.func([i]);
-        var rgbColor = cs.getRgb(color);
-        gradient.addColorStop((i - t0) / diff, 
-            this.makeCssRgb.apply(this, rgbColor));
+        var rgbColor = this.makeCssRgb.apply(this, cs.getRgb(color));
+        colorStops.push([(i - t0) / diff, rgbColor]);
       }
-      return gradient;
+
+      var patternMatrix = this.ctx.mozCurrentTransform;
+
+      return {
+        patternFn : function() {
+          var x0 = coordsArr[0], y0 = coordsArr[1], r0 = coordsArr[2];
+          var x1 = coordsArr[3], y1 = coordsArr[4], r1 = coordsArr[5];
+          
+          // if the browser supports getting the tranform matrix, convert
+          // gradient coordinates from pattern space to current user space
+          if (patternMatrix) {
+            var userMatrix = this.ctx.mozCurrentTransformInverse;
+            
+            var p = this.applyTransform(x0, y0, patternMatrix);
+            p = this.applyTransform(p[0], p[1], userMatrix);
+            x0 = p[0];
+            y0 = p[1];
+
+            var p = this.applyTransform(x1, y1, patternMatrix);
+            p = this.applyTransform(p[0], p[1], userMatrix);
+            x1 = p[0];
+            y1 = p[1];
+          }
+
+          var gradient = 
+              this.ctx.createRadialGradient(x0, y0, r0, x1, y1, r1);
+          for (var i = 0, ii = colorStops.length; i < ii; ++i) {
+            var c = colorStops[i];
+            gradient.addColorStop(c[0], c[1]);
+          }
+          return gradient;
+        }
+      }
     },
 
     // Images
@@ -4644,36 +4754,6 @@ var CanvasGraphics = (function() {
       var gi = (255 * (1 - Math.min(1, m * (1 - k) + k))) | 0;
       var bi = (255 * (1 - Math.min(1, y * (1 - k) + k))) | 0;
       return 'rgb(' + ri + ',' + gi + ',' + bi + ')';
-    },
-    getFillColorSpace: function() {
-      var cs = this.current.fillColorSpace;
-      if (cs)
-        return cs;
-
-      var states = this.stateStack;
-      var i = states.length - 1;
-      while (i >= 0 && !(cs = states[i].fillColorSpace))
-        --i;
-
-      if (cs)
-        return cs;
-      else
-        return new DeviceRgbCS();
-    },
-    getStrokeColorSpace: function() {
-      var cs = this.current.strokeColorSpace;
-      if (cs)
-        return cs;
-
-      var states = this.stateStack;
-      var i = states.length - 1;
-      while (i >= 0 && !(cs = states[i].strokeColorSpace))
-        --i;
-
-      if (cs)
-        return cs;
-      else
-        return new DeviceRgbCS();
     },
     // We generally keep the canvas context set for
     // nonzero-winding, and just set evenodd for the operations
