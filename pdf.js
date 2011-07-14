@@ -2969,6 +2969,7 @@ var Page = (function() {
       var fonts = [ ];
 
       this.compile(gfx, fonts);
+      fonts = []
       stats.compile = Date.now();
 
       FontLoader.bind(
@@ -3901,9 +3902,6 @@ var CanvasGraphics = (function() {
   var NORMAL_CLIP = {};
   var EO_CLIP = {};
 
-  // Used for tiling patterns
-  var PAINT_TYPE_COLORED = 1, PAINT_TYPE_UNCOLORED = 2;
-
   constructor.prototype = {
     beginDrawing: function(mediaBox) {
       var cw = this.ctx.canvas.width, ch = this.ctx.canvas.height;
@@ -4019,11 +4017,9 @@ var CanvasGraphics = (function() {
       var fillColor = this.current.fillColor;
 
       if (fillColor.type === "Pattern") {
-        this.ctx.fillStyle = fillColor.getPattern(ctx);
-        ctx.fill();
-      } else {
-        ctx.fill();
+        ctx.fillStyle = fillColor.getPattern(ctx);
       }
+      ctx.fill();
 
       this.consumePath();
     },
@@ -4227,7 +4223,7 @@ var CanvasGraphics = (function() {
       var cs = this.current.strokeColorSpace;
 
       if (cs.name == 'Pattern') {
-        this.ctx.strokeStyle = this.getPattern(cs, arguments);
+    //    this.ctx.strokeStyle = this.getPattern(cs, arguments);
       } else {
         this.setStrokeColor.apply(this, arguments);
       }
@@ -4242,15 +4238,13 @@ var CanvasGraphics = (function() {
 
       if (cs.name == 'Pattern') {
         // wait until fill to actually get the pattern
-        var pattern = Pattern.parse(cs, arguments, this.xref, this.res,
+        var pattern = Pattern.parse(arguments, cs, this.xref, this.res,
                                     this.ctx);
         this.current.fillColor = pattern;
         this.current.fillColor.type = "Pattern";
       } else {
         this.setFillColor.apply(this, arguments);
       }
-    },
-    getPattern: function(cs, args) {
     },
     getShadingPattern: function(pattern, dict) {
      // TODO('store transform so it can be applied before every fill');
@@ -4297,7 +4291,7 @@ var CanvasGraphics = (function() {
       var shadingFill = Pattern.parseShading(shading, null, xref, res, ctx);
 
       this.save();
-      ctx.fillStyle = shadingFill.getPattern(ctx);
+      ctx.fillStyle = shadingFill.getPattern();
 
       var inv = ctx.mozCurrentTransformInverse;
       if (inv) {
@@ -4327,12 +4321,6 @@ var CanvasGraphics = (function() {
       }
 
       this.restore();
-    },
-    getShading: function(shading) {
-    },
-    getAxialShading: function(sh, cs) {
-    },
-    getRadialShading: function(sh, cs) {
     },
 
     // Images
@@ -4534,8 +4522,6 @@ var ColorSpace = (function() {
       }
     }
 
-    if (!xref.fetchIfRef)
-      console.log("blah");
     cs = xref.fetchIfRef(cs);
 
     if (IsName(cs)) {
@@ -4872,7 +4858,7 @@ var Pattern = (function() {
     },
   };
 
-  constructor.parse = function pattern_parse(cs, args, xref, res, ctx) {
+  constructor.parse = function pattern_parse(args, cs, xref, res, ctx) {
     var length = args.length;
 
     var patternName = args[length - 1];
@@ -4885,19 +4871,7 @@ var Pattern = (function() {
 
     var pattern = xref.fetchIfRef(patternRes.get(patternName.name));
     var dict = IsStream(pattern) ? pattern.dict : pattern;
-
     var typeNum = dict.get("PatternType");
-    
-    var matrix = dict.get('Matrix');
-    var patMatrix = ctx.mozCurrentTransform;
-    if (patMatrix) {
-      if (matrix) {
-        ctx.save();
-        ctx.transform.apply(ctx, matrix);
-        patMatrix = ctx.mozCurrentTransform;
-        ctx.restore();
-      }
-    }
 
     switch(typeNum) {
     case 1:
@@ -4912,51 +4886,53 @@ var Pattern = (function() {
 
         color = base.getRgb(color);
       }
-      return new TilingPattern(pattern, dict, color);
+      return new TilingPattern(pattern, dict, color, xref, ctx);
       break;
     case 2:
-      var shading = xref.fetchIfRef(pattern.get('Shading'));
-      return Pattern.parseShading(shading, patMatrix, xref, res, ctx);
+      var shading = xref.fetchIfRef(dict.get('Shading'));
+      var matrix = dict.get('Matrix');
+      return Pattern.parseShading(shading, matrix, xref, res, ctx);
+      break;
     default:
       error('Unknown type of pattern');
     }
   };
 
-  constructor.parseShading = function pattern_shading(shading, patMatrix,
+  constructor.parseShading = function pattern_shading(shading, matrix,
       xref, res, ctx) {
 
     var dict = IsStream(shading) ? shading.dict : shading;
-
-    var bbox = dict.get('BBox');
-    var bg = dict.get('Background');
-
-    var cs = dict.get('ColorSpace', 'CS');
-    cs = ColorSpace.parse(cs, xref, res);
-
     var type = dict.get('ShadingType');
 
     switch (type) {
     case 2:
-      return new AxialShading(dict, patMatrix, bbox, cs, bg, xref);
+      return new SimpleShading(dict, matrix, xref, res, ctx);
       break;
     case 3:
-      return new RadialShading(dict, patMatrix, bbox, cs, bg, xref);
+      return new SimpleShading(dict, matrix, xref, res, ctx);
       break;
     default:
-      return new DummyShading();
+      error('Unsupported shading');
     }
   }
   return constructor;
 })();
 
-var AxialShading = (function() {
-  function constructor(dict, patternMatrix, bbox, cs, background, xref) {
-    this.bbox = bbox;
-    this.cs = cs;
-    this.background = background;
-    this.patternMatrix = patternMatrix;
-
+var SimpleShading = (function() {
+  function constructor(dict, matrix, xref, res, ctx) {
+    this.matrix = matrix;
+    var bbox = dict.get('BBox');
+    var background = dict.get('Background');
     this.coordsArr = dict.get('Coords');
+    this.shadingType = dict.get('ShadingType');
+
+    this.ctx = ctx;
+    this.curMatrix = ctx.mozCurrentTransform;
+    console.log(ctx.mozCurrentTransform);
+
+    var cs = dict.get('ColorSpace', 'CS');
+    cs = ColorSpace.parse(cs, xref, res);
+    this.cs = cs;
 
     var t0 = 0.0, t1 = 1.0;
     if (dict.has('Domain')) {
@@ -4999,40 +4975,60 @@ var AxialShading = (function() {
   };
 
   constructor.prototype = {
-    getPattern: function(ctx) {
+    getPattern: function() {
       var coordsArr = this.coordsArr;
-      var x0 = coordsArr[0], y0 = coordsArr[1];
-      var x1 = coordsArr[2], y1 = coordsArr[3];
+      var type = this.shadingType;
+      if (type == 2) {
+        var p0 = [coordsArr[0], coordsArr[1]];
+        var p1 = [coordsArr[2], coordsArr[3]];
+      } else if (type == 3) {
+        var p0 = [coordsArr[0], coordsArr[1]];
+        var p1 = [coordsArr[3], coordsArr[4]];
+        var r0 = coordsArr[2], r1 = coordsArr[5]
+      } else {
+        error()
+      }
+
+      var matrix = this.matrix;
+      if (matrix) {
+        p0 = this.applyTransform(p0, matrix);
+        p1 = this.applyTransform(p1, matrix);
+      }
 
       // if the browser supports getting the tranform matrix, convert
       // gradient coordinates from pattern space to current user space
-      var patternMatrix = this.patternMatrix;
-      if (patternMatrix) {
+      var curMatrix = this.curMatrix;
+      var ctx = this.ctx;
+      if (curMatrix) {
         var userMatrix = ctx.mozCurrentTransformInverse;
+        console.log(p0 + ',' + p1);
+        console.log(curMatrix);
+        console.log(userMatrix);
 
-        var p = this.applyTransform(x0, y0, patternMatrix);
-        p = this.applyTransform(p[0], p[1], userMatrix);
-        x0 = p[0];
-        y0 = p[1];
+        p0 = this.applyTransform(p0, curMatrix);
+        p0 = this.applyTransform(p0, userMatrix);
+        console.log(p0);
 
-        var p = this.applyTransform(x1, y1, patternMatrix);
-        p = this.applyTransform(p[0], p[1], userMatrix);
-        x1 = p[0];
-        y1 = p[1];
+        p1 = this.applyTransform(p1, curMatrix);
+        p1 = this.applyTransform(p1, userMatrix);
+        console.log(p0 + ',' + p1);
       }
 
       var colorStops = this.colorStops;
-      var gradient = 
-        ctx.createLinearGradient(x0, y0, x1, y1);
+      if (type == 2)
+        var grad = ctx.createLinearGradient(p0[0], p0[1], p1[0], p1[1]);
+      else if (type == 3)
+        var grad = ctx.createRadialGradient(p0[0], p0[1], r0, p1[0], p1[1], r1);
+
       for (var i = 0, ii = colorStops.length; i < ii; ++i) {
         var c = colorStops[i];
-        gradient.addColorStop(c[0], c[1]);
+        grad.addColorStop(c[0], c[1]);
       }
-      return gradient;
+      return grad;
     },
-    applyTransform: function(x0, y0, m) {
-      var xt = x0 * m[0] + y0 * m[2] + m[4];
-      var yt = x0 * m[1] + y0 * m[3] + m[5];
+    applyTransform: function(p, m) {
+      var xt = p[0] * m[0] + p[1] * m[2] + m[4];
+      var yt = p[0] * m[1] + p[1] * m[3] + m[5];
       return [xt, yt];
     },
     makeCssRgb: function(r, g, b) {
@@ -5043,63 +5039,85 @@ var AxialShading = (function() {
   return constructor;
 })();
 
-var RadialShading = (function() {
-  function constructor(dict, patternMatrix, bbox, cs, background, xref) {
-    this.bbox = bbox;
-    this.cs = cs;
-    this.background = background;
-    this.patternMatrix = patternMatrix;
+var TilingPattern = (function() {
+  var PAINT_TYPE_COLORED = 1, PAINT_TYPE_UNCOLORED = 2;
+  
+  function constructor(pattern, dict, color, patMatrix, xref, ctx) {
+      function multiply(m, tm) {
+        var a = m[0] * tm[0] + m[1] * tm[2];
+        var b = m[0] * tm[1] + m[1] * tm[3];
+        var c = m[2] * tm[0] + m[3] * tm[2];
+        var d = m[2] * tm[1] + m[3] * tm[3];
+        var e = m[4] * tm[0] + m[5] * tm[2] + tm[4];
+        var f = m[4] * tm[1] + m[5] * tm[3] + tm[5];
+        return [a, b, c, d, e, f];
+      };
 
-    this.coordsArr = dict.get('Coords');
 
-    var t0 = 0.0, t1 = 1.0;
-    if (dict.has('Domain')) {
-      var domainArr = dict.get('Domain');
-      t0 = domainArr[0], t1 = domainArr[1];
-    }
+      TODO('TilingType');
 
-    var extendStart = false, extendEnd = false;
-    if (dict.has('Extend')) {
-      var extendArr = dict.get('Extend');
-      extendStart = extendArr[0], extendEnd = extendArr[1];
-      TODO('Support extend');
-    }
+      this.patMatrix = patMatrix;
 
-    this.extendStart = extendStart;
-    this.extendEnd = extendEnd;
+      var bbox = dict.get('BBox');
+      var x0 = bbox[0], y0 = bbox[1], x1 = bbox[2], y1 = bbox[3];
 
-    var fnObj = dict.get('Function');
-    fnObj = xref.fetchIfRef(fnObj);
-    if (IsArray(fnObj))
-      error('No support for array of functions');
-    else if (!IsPDFFunction(fnObj))
-      error('Invalid function');
-    var fn = new PDFFunction(xref, fnObj);
+      var xstep = dict.get('XStep');
+      var ystep = dict.get('YStep');
 
-    // 10 samples seems good enough for now, but probably won't work
-    // if there are sharp color changes. Ideally, we would implement
-    // the spec faithfully and add lossless optimizations.
-    var step = (t1 - t0) / 10;
-    var diff = t1 - t0;
+      var topLeft = [x0, y0];
+      // we want the canvas to be as large as the step size
+      var botRight = [x0 + xstep, y0 + ystep]
 
-    var colorStops = [];
-    for (var i = t0; i <= t1; i += step) {
-      var color = fn.func([i]);
-      var rgbColor = this.makeCssRgb.apply(this, cs.getRgb(color));
-      colorStops.push([(i - t0) / diff, rgbColor]);
-    }
+      var width = botRight[0] - topLeft[0];
+      var height = botRight[1] - topLeft[1];
 
-    this.colorStops = colorStops;
+      // TODO: hack to avoid OOM, remove then pattern code is fixed
+      while (Math.abs(width) > 8192 || Math.abs(height) > 8192) {
+        width /= 2;
+        height /= 2;
+      }
+
+      var tmpCanvas = new ScratchCanvas(width, height);
+
+      // set the new canvas element context as the graphics context
+      var tmpCtx = tmpCanvas.getContext('2d');
+      var graphics = new CanvasGraphics(tmpCtx);
+
+      var paintType = dict.get('PaintType');
+      switch (paintType) {
+      case PAINT_TYPE_COLORED:
+        tmpCtx.fillStyle = ctx.fillStyle;
+        tmpCtx.strokeStyle = ctx.strokeStyle;
+        break;
+      case PAINT_TYPE_UNCOLORED:
+        color = this.makeCssRgb.apply(this, color);
+        tmpCtx.fillStyle = color;
+        tmpCtx.strokeStyle = color;
+        break;
+      default:
+        error('Unsupported paint type');
+      }
+
+      // transform coordinates to pattern space
+      var tmpTransform = [width / xstep, 0, 0, height / ystep, -topLeft[0], -topLeft[1]];
+      graphics.transform.apply(graphics, matrix);
+
+      if (bbox && IsArray(bbox) && 4 == bbox.length) {
+        graphics.rectangle.apply(graphics, bbox);
+        graphics.clip();
+        graphics.endPath();
+      }
+
+      var res = xref.fetchIfRef(dict.get('Resources'));
+      if (!pattern.code)
+        pattern.code = graphics.compile(pattern, xref, res, []);
+      graphics.execute(pattern.code, xref, res);
+
+      this.canvas = tmpCanvas;
   };
 
   constructor.prototype = {
-    getPattern: function(ctx) {
-      var coordsArr = this.coordsArr;
-      var x0 = coordsArr[0], y0 = coordsArr[1], r0 = coordsArr[2];
-      var x1 = coordsArr[3], y1 = coordsArr[4], r1 = coordsArr[5];
-
-      // if the browser supports getting the tranform matrix, convert
-      // gradient coordinates from pattern space to current user space
+    getPattern: function tiling_getPattern(ctx) {
       var patternMatrix = this.patternMatrix;
       if (patternMatrix) {
         var userMatrix = ctx.mozCurrentTransformInverse;
@@ -5118,11 +5136,10 @@ var RadialShading = (function() {
       var colorStops = this.colorStops;
       var gradient = 
         ctx.createRadialGradient(x0, y0, r0, x1, y1, r1);
-      for (var i = 0, ii = colorStops.length; i < ii; ++i) {
+      for (var i = 0, ii = colorStops.length; i < ii; ++i)
         var c = colorStops[i];
-        gradient.addColorStop(c[0], c[1]);
-      }
-      return gradient;
+      ctx.transform.apply
+      return ctx.createPattern(this.canvas, 'repeat');
     },
     applyTransform: function(x0, y0, m) {
       var xt = x0 * m[0] + y0 * m[2] + m[4];
@@ -5133,105 +5150,6 @@ var RadialShading = (function() {
       var ri = (255 * r) | 0, gi = (255 * g) | 0, bi = (255 * b) | 0;
       return 'rgb(' + ri + ',' + gi + ',' + bi + ')';
     }
-  };
-
-  return constructor;
-})();
-
-var TilingPattern = (function() {
-  function constructor(tiling) {
-      function multiply(m, tm) {
-        var a = m[0] * tm[0] + m[1] * tm[2];
-        var b = m[0] * tm[1] + m[1] * tm[3];
-        var c = m[2] * tm[0] + m[3] * tm[2];
-        var d = m[2] * tm[1] + m[3] * tm[3];
-        var e = m[4] * tm[0] + m[5] * tm[2] + tm[4];
-        var f = m[4] * tm[1] + m[5] * tm[3] + tm[5];
-        return [a, b, c, d, e, f];
-      };
-
-      this.save();
-      var ctx = this.ctx;
-
-
-      TODO('TilingType');
-
-      var matrix = dict.get('Matrix') || IDENTITY_MATRIX;
-
-      var bbox = dict.get('BBox');
-      var x0 = bbox[0], y0 = bbox[1], x1 = bbox[2], y1 = bbox[3];
-
-      var xstep = dict.get('XStep');
-      var ystep = dict.get('YStep');
-
-      // top left corner should correspond to the top left of the bbox
-      var topLeft = this.applyTransform(x0, y0, matrix);
-      // we want the canvas to be as large as the step size
-      var botRight = this.applyTransform(x0 + xstep, y0 + ystep, matrix);
-
-      var width = botRight[0] - topLeft[0];
-      var height = botRight[1] - topLeft[1];
-
-      // TODO: hack to avoid OOM, remove then pattern code is fixed
-      if (Math.abs(width) > 8192 || Math.abs(height) > 8192) {
-        this.restore();
-        return 'hotpink';
-      }
-
-      var tmpCanvas = new this.ScratchCanvas(width, height);
-
-      // set the new canvas element context as the graphics context
-      var tmpCtx = tmpCanvas.getContext('2d');
-      var savedCtx = ctx;
-      this.ctx = tmpCtx;
-
-      var paintType = dict.get('PaintType');
-      switch (paintType) {
-      case PAINT_TYPE_COLORED:
-        tmpCtx.fillStyle = savedCtx.fillStyle;
-        tmpCtx.strokeStyle = savedCtx.strokeStyle;
-        break;
-      case PAINT_TYPE_UNCOLORED:
-        color = this.makeCssRgb.apply(this, color);
-        tmpCtx.fillStyle = color;
-        tmpCtx.strokeStyle = color;
-        break;
-      default:
-        error('Unsupported paint type');
-      }
-
-      // normalize transform matrix so each step
-      // takes up the entire tmpCanvas (need to remove white borders)
-      if (matrix[1] === 0 && matrix[2] === 0) {
-        matrix[0] = tmpCanvas.width / xstep;
-        matrix[3] = tmpCanvas.height / ystep;
-        topLeft = this.applyTransform(x0, y0, matrix);
-      }
-
-      // move the top left corner of bounding box to [0,0]
-      matrix = multiply(matrix, [1, 0, 0, 1, -topLeft[0], -topLeft[1]]);
-      
-      this.transform.apply(this, matrix);
-
-      if (bbox && IsArray(bbox) && 4 == bbox.length) {
-        this.rectangle.apply(this, bbox);
-        this.clip();
-        this.endPath();
-      }
-
-      var xref = this.xref;
-      var res = xref.fetchIfRef(dict.get('Resources'));
-      if (!pattern.code)
-        pattern.code = this.compile(pattern, xref, res, []);
-      this.execute(pattern.code, xref, res);
-
-      this.ctx = savedCtx;
-      this.restore();
-
-      return this.ctx.createPattern(tmpCanvas, 'repeat');
-  };
-
-  constructor.prototype = {
   };
   return constructor;
 })();
