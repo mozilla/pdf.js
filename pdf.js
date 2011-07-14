@@ -2969,7 +2969,6 @@ var Page = (function() {
       var fonts = [ ];
 
       this.compile(gfx, fonts);
-      fonts = []
       stats.compile = Date.now();
 
       FontLoader.bind(
@@ -4017,9 +4016,13 @@ var CanvasGraphics = (function() {
       var fillColor = this.current.fillColor;
 
       if (fillColor.type === "Pattern") {
+        this.ctx.save();
         ctx.fillStyle = fillColor.getPattern(ctx);
+        ctx.fill();
+        this.ctx.restore();
+      } else {
+        ctx.fill();
       }
-      ctx.fill();
 
       this.consumePath();
     },
@@ -4245,12 +4248,6 @@ var CanvasGraphics = (function() {
       } else {
         this.setFillColor.apply(this, arguments);
       }
-    },
-    getShadingPattern: function(pattern, dict) {
-     // TODO('store transform so it can be applied before every fill');
-     // return shading;
-    },
-    getTilingPattern: function(pattern, dict, color) {
     },
     setStrokeGray: function(gray) {
       this.setStrokeRGBColor(gray, gray, gray);
@@ -4906,9 +4903,8 @@ var Pattern = (function() {
 
     switch (type) {
     case 2:
-      return new SimpleShading(dict, matrix, xref, res, ctx);
-      break;
     case 3:
+      // both radial and axial shadings are handled by simple shading
       return new SimpleShading(dict, matrix, xref, res, ctx);
       break;
     default:
@@ -4928,7 +4924,6 @@ var SimpleShading = (function() {
 
     this.ctx = ctx;
     this.curMatrix = ctx.mozCurrentTransform;
-    console.log(ctx.mozCurrentTransform);
 
     var cs = dict.get('ColorSpace', 'CS');
     cs = ColorSpace.parse(cs, xref, res);
@@ -5001,17 +4996,12 @@ var SimpleShading = (function() {
       var ctx = this.ctx;
       if (curMatrix) {
         var userMatrix = ctx.mozCurrentTransformInverse;
-        console.log(p0 + ',' + p1);
-        console.log(curMatrix);
-        console.log(userMatrix);
 
         p0 = this.applyTransform(p0, curMatrix);
         p0 = this.applyTransform(p0, userMatrix);
-        console.log(p0);
 
         p1 = this.applyTransform(p1, curMatrix);
         p1 = this.applyTransform(p1, userMatrix);
-        console.log(p0 + ',' + p1);
       }
 
       var colorStops = this.colorStops;
@@ -5042,7 +5032,7 @@ var SimpleShading = (function() {
 var TilingPattern = (function() {
   var PAINT_TYPE_COLORED = 1, PAINT_TYPE_UNCOLORED = 2;
   
-  function constructor(pattern, dict, color, patMatrix, xref, ctx) {
+  function constructor(pattern, dict, color, xref, ctx) {
       function multiply(m, tm) {
         var a = m[0] * tm[0] + m[1] * tm[2];
         var b = m[0] * tm[1] + m[1] * tm[3];
@@ -5053,10 +5043,12 @@ var TilingPattern = (function() {
         return [a, b, c, d, e, f];
       };
 
-
       TODO('TilingType');
 
-      this.patMatrix = patMatrix;
+      this.matrix = dict.get("Matrix");
+      this.curMatrix = ctx.mozCurrentTransform;
+      this.invMatrix = ctx.mozCurrentTransformInverse;
+      this.ctx = ctx;
 
       var bbox = dict.get('BBox');
       var x0 = bbox[0], y0 = bbox[1], x1 = bbox[2], y1 = bbox[3];
@@ -5072,9 +5064,9 @@ var TilingPattern = (function() {
       var height = botRight[1] - topLeft[1];
 
       // TODO: hack to avoid OOM, remove then pattern code is fixed
-      while (Math.abs(width) > 8192 || Math.abs(height) > 8192) {
-        width /= 2;
-        height /= 2;
+      while (Math.abs(width) > 512 || Math.abs(height) > 512) {
+        width = 512;
+        height = 512;
       }
 
       var tmpCanvas = new ScratchCanvas(width, height);
@@ -5098,9 +5090,14 @@ var TilingPattern = (function() {
         error('Unsupported paint type');
       }
 
+      var scale = [width / xstep, height / ystep];
+      this.scale = scale;
+
       // transform coordinates to pattern space
-      var tmpTransform = [width / xstep, 0, 0, height / ystep, -topLeft[0], -topLeft[1]];
-      graphics.transform.apply(graphics, matrix);
+      var tmpTranslate = [1, 0, 0, 1, -topLeft[0], -topLeft[1]];
+      var tmpScale = [scale[0], 0, 0, scale[1], 0, 0];
+      graphics.transform.apply(graphics, tmpScale);
+      graphics.transform.apply(graphics, tmpTranslate);
 
       if (bbox && IsArray(bbox) && 4 == bbox.length) {
         graphics.rectangle.apply(graphics, bbox);
@@ -5118,27 +5115,18 @@ var TilingPattern = (function() {
 
   constructor.prototype = {
     getPattern: function tiling_getPattern(ctx) {
-      var patternMatrix = this.patternMatrix;
-      if (patternMatrix) {
-        var userMatrix = ctx.mozCurrentTransformInverse;
+      var matrix = this.matrix;
+      var curMatrix = this.curMatrix;
 
-        var p = this.applyTransform(x0, y0, patternMatrix);
-        p = this.applyTransform(p[0], p[1], userMatrix);
-        x0 = p[0];
-        y0 = p[1];
+      if (curMatrix)
+        ctx.setTransform.apply(ctx, curMatrix);
 
-        var p = this.applyTransform(x1, y1, patternMatrix);
-        p = this.applyTransform(p[0], p[1], userMatrix);
-        x1 = p[0];
-        y1 = p[1];
-      }
+      if (matrix)
+        ctx.transform.apply(ctx, matrix);
 
-      var colorStops = this.colorStops;
-      var gradient = 
-        ctx.createRadialGradient(x0, y0, r0, x1, y1, r1);
-      for (var i = 0, ii = colorStops.length; i < ii; ++i)
-        var c = colorStops[i];
-      ctx.transform.apply
+      var scale = this.scale;
+      ctx.scale(1 / scale[0], 1 / scale[1]);
+
       return ctx.createPattern(this.canvas, 'repeat');
     },
     applyTransform: function(x0, y0, m) {
