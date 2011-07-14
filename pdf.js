@@ -221,6 +221,9 @@ var DecodeStream = (function() {
       if (!n)
         n = 1;
       this.pos += n;
+    },
+    reset: function decodestream_reset() {
+      this.pos = 0;
     }
   };
 
