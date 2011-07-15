@@ -372,7 +372,7 @@ function getUnicodeRangeFor(value) {
  *   var type1Font = new Font("MyFontName", binaryFile, propertiesObject);
  *   type1Font.bind();
  */
-var Font = (function() {
+var Font = (function Font() {
   var constructor = function font_constructor(name, file, properties) {
     this.name = name;
     this.textMatrix = properties.textMatrix || IDENTITY_MATRIX;
@@ -531,6 +531,19 @@ var Font = (function() {
       }
       ranges.push([start, end]);
     }
+    
+    // Removes duplicate ranges
+    for (var i = ranges.length - 1; i > 0; i--) {
+      var range = [];
+      var range1 = ranges[i];
+      var range2 = ranges[i - 1];
+      if (range1[0] == range2[1]) {
+        range2[0] = range2[0] - 1;
+        range2[1] = range1[1];
+        ranges.splice(i, 1);
+      }
+    }
+    
     return ranges;
   };
 
@@ -790,21 +803,57 @@ var Font = (function() {
       };
 
       function replaceCMapTable(cmap, font, properties) {
-        font.pos = (font.start ? font.start : 0) + cmap.length;
+        var start = (font.start ? font.start : 0) + cmap.length;
+        font.pos = start;
 
         var version = int16(font.getBytes(2));
-        var numTables = int16(font.getBytes(2));
+        var numRecords = int16(font.getBytes(2));
 
-        for (var i = 0; i < numTables; i++) {
-          var platformID = int16(font.getBytes(2));
-          var encodingID = int16(font.getBytes(2));
-          var offset = int32(font.getBytes(4));
+        var records = [];
+        for (var i = 0; i < numRecords; i++) {
+          records.push({
+            platformID: int16(font.getBytes(2)),
+            encodingID: int16(font.getBytes(2)),
+            offset: int32(font.getBytes(4))
+          });
+        };
+
+        
+        for (var i = 0; i < numRecords; i++) {
+          var table = records[i];
+          font.pos = start + table.offset;
+          
           var format = int16(font.getBytes(2));
           var length = int16(font.getBytes(2));
           var language = int16(font.getBytes(2));
-
-          if ((format == 0 && numTables == 1) ||
-              (format == 6 && numTables == 1 && !properties.encoding.empty)) {
+          
+          if (format == 0 && numRecords > 1) {
+            // Characters below 0x20 are controls characters that are hardcoded
+            // into the platform so if some characters in the font are assigned
+            // under this limit they will not be displayed so let's rewrite the
+            // CMap.
+            var map = [];
+            var rewrite = false;
+            for (var j = 0; j < 256; j++) {
+              var index = font.getByte();
+              if (index != 0) {
+                map.push(index);
+                if (j < 0x20)
+                  rewrite = true;
+              }
+            }
+            
+            if (rewrite) {
+              var glyphs = [];
+              for (var j = 0x20; j < 256; j++) {
+                // TODO do not hardcode WinAnsiEncoding
+                var unicode = GlyphsUnicode[Encodings["WinAnsiEncoding"][j]];
+                glyphs.push({ unicode: unicode });
+              }
+              cmap.data = createCMapTable(glyphs, true);
+            }
+          } else if ((format == 0 && numRecords == 1) ||
+                     (format == 6 && numRecords == 1 && !properties.encoding.empty)) {
             // Format 0 alone is not allowed by the sanitizer so let's rewrite
             // that to a 3-1-4 Unicode BMP table
             TODO('Use an other source of informations than ' +
@@ -818,7 +867,7 @@ var Font = (function() {
             }
 
             cmap.data = createCMapTable(glyphs);
-          } else if (format == 6 && numTables == 1) {
+          } else if (format == 6 && numRecords == 1) {
             // Format 6 is a 2-bytes dense mapping, which means the font data
             // lives glue together even if they are pretty far in the unicode
             // table. (This looks weird, so I can have missed something), this
@@ -871,10 +920,7 @@ var Font = (function() {
       var header = readOpenTypeHeader(font);
       var numTables = header.numTables;
 
-      // This keep a reference to the CMap and the post tables since they can
-      // be rewritted
-      var cmap, post, nameTable, maxp;
-
+      var cmap, maxp;
       var tables = [];
       for (var i = 0; i < numTables; i++) {
         var table = readTableEntry(font);
@@ -882,10 +928,6 @@ var Font = (function() {
         if (index != -1) {
           if (table.tag == 'cmap')
             cmap = table;
-          else if (table.tag == 'post')
-            post = table;
-          else if (table.tag == 'name')
-            nameTable = table;
           else if (table.tag == 'maxp')
             maxp = table;
 
@@ -894,136 +936,127 @@ var Font = (function() {
         tables.push(table);
       }
 
-      // If any tables are still in the array this means some required
-      // tables are missing, which means that we need to rebuild the
-      // font in order to pass the sanitizer.
-      if (requiredTables.length && requiredTables[0] == 'OS/2') {
-        // Create a new file to hold the new version of our truetype with a new
-        // header and new offsets
-        var ttf = new Uint8Array(kMaxFontFileSize);
+      // Create a new file to hold the new version of our truetype with a new
+      // header and new offsets
+      var ttf = new Uint8Array(kMaxFontFileSize);
 
-        // The offsets object holds at the same time a representation of where
-        // to write the table entry information about a table and another offset
-        // representing the offset where to put the actual data of a particular
-        // table
-        var numTables = header.numTables + requiredTables.length;
-        var offsets = {
-          currentOffset: 0,
-          virtualOffset: numTables * (4 * 4)
-        };
+      // The offsets object holds at the same time a representation of where
+      // to write the table entry information about a table and another offset
+      // representing the offset where to put the actual data of a particular
+      // table
+      var numTables = header.numTables + requiredTables.length;
+      var offsets = {
+      	currentOffset: 0,
+        virtualOffset: numTables * (4 * 4)
+      };
 
-        // The new numbers of tables will be the last one plus the num
-        // of missing tables
-        createOpenTypeHeader('\x00\x01\x00\x00', ttf, offsets, numTables);
+      // The new numbers of tables will be the last one plus the num
+      // of missing tables
+      createOpenTypeHeader('\x00\x01\x00\x00', ttf, offsets, numTables);
 
-        // Insert the missing table
+			if (requiredTables.indexOf('OS/2') != -1) {
         tables.push({
           tag: 'OS/2',
           data: stringToArray(createOS2Table(properties))
         });
+			}
 
-        // Replace the old CMAP table with a shiny new one
-        if (properties.type == 'CIDFontType2') {
-          // Type2 composite fonts map characters directly to glyphs so the cmap
-          // table must be replaced.
+      // Replace the old CMAP table with a shiny new one
+      if (properties.type == 'CIDFontType2') {
+      	// Type2 composite fonts map characters directly to glyphs so the cmap
+        // table must be replaced.
           
-          var glyphs = [];
-          var charset = properties.charset;
-          if (!charset.length) {
-            // PDF did not contain a GIDMap for the font so create an identity cmap
+        var glyphs = [];
+        var charset = properties.charset;
+        if (!charset.length) {
+          // PDF did not contain a GIDMap for the font so create an identity cmap
             
-            // First get the number of glyphs from the maxp table
-            font.pos = (font.start ? font.start : 0) + maxp.length;
-            var version = int16(font.getBytes(4));
-            var numGlyphs = int16(font.getBytes(2));
+          // First get the number of glyphs from the maxp table
+          font.pos = (font.start ? font.start : 0) + maxp.length;
+          var version = int16(font.getBytes(4));
+          var numGlyphs = int16(font.getBytes(2));
             
-            // Now create an identity mapping
-            for (var i = 1; i < numGlyphs; i++) {
-              glyphs.push({
-                unicode: i
-              });
-            }
-          } else {
-            for (var i = 1; i < charset.length; i++) {
-              var index = charset.indexOf(i);
-              if (index != -1) {
-                glyphs.push({
-                  unicode: index
-                });
-              } else {
-                break;
-              }
-            }
-          }
-          
-          if (!cmap) {
-            // Font did not contain a cmap
-            tables.push({
-              tag: 'cmap',
-              data: createCMapTable(glyphs)
-            })
-          } else {
-            cmap.data = createCMapTable(glyphs);
+          // Now create an identity mapping
+          for (var i = 1; i < numGlyphs; i++) {
+            glyphs.push({
+              unicode: i
+            });
           }
         } else {
-          replaceCMapTable(cmap, font, properties);          
+          for (var i = 1; i < charset.length; i++) {
+            var index = charset.indexOf(i);
+            if (index != -1) {
+              glyphs.push({
+                unicode: index
+              });
+            } else {
+              break;
+            }
+          }
         }
-
-        // Rewrite the 'post' table if needed
-        if (!post) {
+          
+        if (!cmap) {
+          // Font did not contain a cmap
           tables.push({
-            tag: 'post',
-            data: stringToArray(createPostTable(properties))
-          });
+            tag: 'cmap',
+            data: createCMapTable(glyphs)
+          })
+        } else {
+          cmap.data = createCMapTable(glyphs);
         }
-
-        // Rewrite the 'name' table if needed
-        if (!nameTable) {
-          tables.push({
-            tag: 'name',
-            data: stringToArray(createNameTable(this.name))
-          });
-        }
-
-        // Tables needs to be written by ascendant alphabetic order
-        tables.sort(function tables_sort(a, b) {
-          return (a.tag > b.tag) - (a.tag < b.tag);
-        });
-
-        // rewrite the tables but tweak offsets
-        for (var i = 0; i < tables.length; i++) {
-          var table = tables[i];
-          var data = [];
-
-          var tableData = table.data;
-          for (var j = 0; j < tableData.length; j++)
-            data.push(tableData[j]);
-          createTableEntry(ttf, offsets, table.tag, data);
-        }
-
-        // Add the table datas
-        for (var i = 0; i < tables.length; i++) {
-          var table = tables[i];
-          var tableData = table.data;
-          ttf.set(tableData, offsets.currentOffset);
-          offsets.currentOffset += tableData.length;
-
-          // 4-byte aligned data
-          while (offsets.currentOffset & 3)
-            offsets.currentOffset++;
-        }
-
-        var fontData = [];
-        for (var i = 0; i < offsets.currentOffset; i++)
-          fontData.push(ttf[i]);
-
-        return fontData;
-      } else if (requiredTables.length) {
-        error('Table ' + requiredTables[0] +
-              ' is missing from the TrueType font');
+      } else {
+        replaceCMapTable(cmap, font, properties);          
       }
 
-      return font.getBytes();
+      // Rewrite the 'post' table if needed
+      if (requiredTables.indexOf('post') != -1) {
+        tables.push({
+          tag: 'post',
+          data: stringToArray(createPostTable(properties))
+        });
+      }
+
+      // Rewrite the 'name' table if needed
+      if (requiredTables.indexOf('name') != -1) {
+        tables.push({
+          tag: 'name',
+          data: stringToArray(createNameTable(this.name))
+        });
+      }
+
+      // Tables needs to be written by ascendant alphabetic order
+      tables.sort(function tables_sort(a, b) {
+        return (a.tag > b.tag) - (a.tag < b.tag);
+      });
+
+      // rewrite the tables but tweak offsets
+      for (var i = 0; i < tables.length; i++) {
+        var table = tables[i];
+        var data = [];
+
+        var tableData = table.data;
+        for (var j = 0; j < tableData.length; j++)
+          data.push(tableData[j]);
+        createTableEntry(ttf, offsets, table.tag, data);
+      }
+
+      // Add the table datas
+      for (var i = 0; i < tables.length; i++) {
+        var table = tables[i];
+        var tableData = table.data;
+        ttf.set(tableData, offsets.currentOffset);
+        offsets.currentOffset += tableData.length;
+
+        // 4-byte aligned data
+        while (offsets.currentOffset & 3)
+          offsets.currentOffset++;
+      }
+
+      var fontData = [];
+      for (var i = 0; i < offsets.currentOffset; i++)
+        fontData.push(ttf[i]);
+
+      return fontData;
     },
 
     convert: function font_convert(fontName, font, properties) {
