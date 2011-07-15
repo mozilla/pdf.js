@@ -784,8 +784,8 @@ var Font = (function Font() {
         return {
           tag: tag,
           checksum: checksum,
-          length: offset,
-          offset: length,
+          length: length,
+          offset: offset,
           data: data
         };
       };
@@ -801,7 +801,7 @@ var Font = (function Font() {
       };
 
       function replaceCMapTable(cmap, font, properties) {
-        var start = (font.start ? font.start : 0) + cmap.length;
+        var start = (font.start ? font.start : 0) + cmap.offset;
         font.pos = start;
 
         var version = int16(font.getBytes(2));
@@ -970,7 +970,7 @@ var Font = (function Font() {
           // PDF did not contain a GIDMap for the font so create an identity cmap
             
           // First get the number of glyphs from the maxp table
-          font.pos = (font.start ? font.start : 0) + maxp.length;
+          font.pos = (font.start ? font.start : 0) + maxp.offset;
           var version = int16(font.getBytes(4));
           var numGlyphs = int16(font.getBytes(2));
             
