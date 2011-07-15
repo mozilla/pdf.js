@@ -4226,7 +4226,10 @@ var CanvasGraphics = (function() {
       var cs = this.current.strokeColorSpace;
 
       if (cs.name == 'Pattern') {
-    //    this.ctx.strokeStyle = this.getPattern(cs, arguments);
+        // wait until fill to actually get the pattern
+        var pattern = Pattern.parse(arguments, cs, this.xref, this.res,
+                                    this.ctx);
+        this.current.strokeColor = pattern;
       } else {
         this.setStrokeColor.apply(this, arguments);
       }
@@ -4243,8 +4246,9 @@ var CanvasGraphics = (function() {
         // wait until fill to actually get the pattern
         var pattern = Pattern.parse(arguments, cs, this.xref, this.res,
                                     this.ctx);
-        this.current.fillColor = pattern;
-        this.current.fillColor.type = "Pattern";
+//        this.current.fillColor = pattern;
+        this.ctx.fillStyle = pattern.getPattern();
+        this.current.fillColor = "blah";
       } else {
         this.setFillColor.apply(this, arguments);
       }
@@ -4256,19 +4260,24 @@ var CanvasGraphics = (function() {
       this.setFillRGBColor(gray, gray, gray);
     },
     setStrokeRGBColor: function(r, g, b) {
-      this.ctx.strokeStyle = this.makeCssRgb(r, g, b);
+      var color = Util.makeCssRgb(r, g, b);
+      this.ctx.strokeStyle = color;
+      this.current.fillColor = color;
     },
     setFillRGBColor: function(r, g, b) {
-      var color = this.makeCssRgb(r, g, b);
+      var color = Util.makeCssRgb(r, g, b);
       this.ctx.fillStyle = color;
       this.current.fillColor = color;
     },
     setStrokeCMYKColor: function(c, m, y, k) {
-      this.ctx.strokeStyle = this.makeCssCmyk(c, m, y, k);
+      var color = Util.makeCssCmyk(c, m, y, k);
+      this.ctx.strokeStyle = color;
+      this.current.fillColor = color;
     },
     setFillCMYKColor: function(c, m, y, k) {
-      var color = (new DeviceCmykCS()).getRgb([c, m, y, k]);
-      this.setFillRGBColor.apply(this, color);
+      var color = Util.makeCssCmyk(c, m, y, k);
+      this.ctx.fillStyle = color;
+      this.current.fillColor = color;
     },
 
     // Shading
@@ -4296,10 +4305,10 @@ var CanvasGraphics = (function() {
         var width = canvas.width;
         var height = canvas.height;
 
-        var bl = this.applyTransform(0, 0, inv);
-        var br = this.applyTransform(0, width, inv);
-        var ul = this.applyTransform(height, 0, inv);
-        var ur = this.applyTransform(height, width, inv);
+        var bl = Util.applyTransform([0, 0], inv);
+        var br = Util.applyTransform([0, width], inv);
+        var ul = Util.applyTransform([height, 0], inv);
+        var ur = Util.applyTransform([height, width], inv);
 
         var x0 = Math.min(bl[0], br[0], ul[0], ur[0]);
         var y0 = Math.min(bl[1], br[1], ul[1], ur[1]);
@@ -4457,18 +4466,6 @@ var CanvasGraphics = (function() {
       }
       this.ctx.beginPath();
     },
-    makeCssRgb: function(r, g, b) {
-      var ri = (255 * r) | 0, gi = (255 * g) | 0, bi = (255 * b) | 0;
-      return 'rgb(' + ri + ',' + gi + ',' + bi + ')';
-    },
-    makeCssCmyk: function(c, m, y, k) {
-      // while waiting on CSS's cmyk()...
-      // http://www.ilkeratalay.com/colorspacesfaq.php#rgb
-      var ri = (255 * (1 - Math.min(1, c * (1 - k) + k))) | 0;
-      var gi = (255 * (1 - Math.min(1, m * (1 - k) + k))) | 0;
-      var bi = (255 * (1 - Math.min(1, y * (1 - k) + k))) | 0;
-      return 'rgb(' + ri + ',' + gi + ',' + bi + ')';
-    },
     // We generally keep the canvas context set for
     // nonzero-winding, and just set evenodd for the operations
     // that need them.
@@ -4480,13 +4477,27 @@ var CanvasGraphics = (function() {
     restoreFillRule: function(rule) {
       this.ctx.mozFillRule = rule;
     },
-    applyTransform: function(x0, y0, m) {
-      var xt = x0 * m[0] + y0 * m[2] + m[4];
-      var yt = x0 * m[1] + y0 * m[3] + m[5];
-      return [xt, yt];
-    }
   };
 
+  return constructor;
+})();
+
+var Util = (function() {
+  function constructor() {};
+  constructor.makeCssRgb = function makergb(r, g, b) {
+    var ri = (255 * r) | 0, gi = (255 * g) | 0, bi = (255 * b) | 0;
+    return 'rgb(' + ri + ',' + gi + ',' + bi + ')';
+  };
+  constructor.makeCssCmyk = function makecmyk(c, m, y, k) {
+    var c = (new DeviceCmykCS()).getRgb([c, m, y, k]);
+    return 'rgb(' + c[0] + ',' + c[1] + ',' + c[2] + ')';
+  };
+  constructor.applyTransform = function apply(p, m) {
+    var xt = p[0] * m[0] + p[1] * m[2] + m[4];
+    var yt = p[0] * m[1] + p[1] * m[3] + m[5];
+    return [xt, yt];
+  };
+  
   return constructor;
 })();
 
@@ -4884,12 +4895,10 @@ var Pattern = (function() {
         color = base.getRgb(color);
       }
       return new TilingPattern(pattern, dict, color, xref, ctx);
-      break;
     case 2:
       var shading = xref.fetchIfRef(dict.get('Shading'));
       var matrix = dict.get('Matrix');
       return Pattern.parseShading(shading, matrix, xref, res, ctx);
-      break;
     default:
       error('Unknown type of pattern');
     }
@@ -4904,23 +4913,33 @@ var Pattern = (function() {
     switch (type) {
     case 2:
     case 3:
-      // both radial and axial shadings are handled by simple shading
-      return new SimpleShading(dict, matrix, xref, res, ctx);
-      break;
+      // both radial and axial shadings are handled by RadialAxial shading
+      return new RadialAxialShading(dict, matrix, xref, res, ctx);
     default:
-      error('Unsupported shading');
+      return new DummyShading();
     }
   }
   return constructor;
 })();
 
-var SimpleShading = (function() {
+var DummyShading = (function() {
+  function constructor() {};
+  constructor.prototype = {
+    getPattern: function dummy_getpattern() {
+      return 'hotpink';
+    }
+  };
+  return constructor;
+})();
+
+var RadialAxialShading = (function() {
   function constructor(dict, matrix, xref, res, ctx) {
     this.matrix = matrix;
     var bbox = dict.get('BBox');
     var background = dict.get('Background');
     this.coordsArr = dict.get('Coords');
     this.shadingType = dict.get('ShadingType');
+    this.type = 'Pattern';
 
     this.ctx = ctx;
     this.curMatrix = ctx.mozCurrentTransform;
@@ -4962,7 +4981,7 @@ var SimpleShading = (function() {
     var colorStops = [];
     for (var i = t0; i <= t1; i += step) {
       var color = fn.func([i]);
-      var rgbColor = this.makeCssRgb.apply(this, cs.getRgb(color));
+      var rgbColor = Util.makeCssRgb.apply(this, cs.getRgb(color));
       colorStops.push([(i - t0) / diff, rgbColor]);
     }
 
@@ -4986,8 +5005,8 @@ var SimpleShading = (function() {
 
       var matrix = this.matrix;
       if (matrix) {
-        p0 = this.applyTransform(p0, matrix);
-        p1 = this.applyTransform(p1, matrix);
+        p0 = Util.applyTransform(p0, matrix);
+        p1 = Util.applyTransform(p1, matrix);
       }
 
       // if the browser supports getting the tranform matrix, convert
@@ -4997,11 +5016,11 @@ var SimpleShading = (function() {
       if (curMatrix) {
         var userMatrix = ctx.mozCurrentTransformInverse;
 
-        p0 = this.applyTransform(p0, curMatrix);
-        p0 = this.applyTransform(p0, userMatrix);
+        p0 = Util.applyTransform(p0, curMatrix);
+        p0 = Util.applyTransform(p0, userMatrix);
 
-        p1 = this.applyTransform(p1, curMatrix);
-        p1 = this.applyTransform(p1, userMatrix);
+        p1 = Util.applyTransform(p1, curMatrix);
+        p1 = Util.applyTransform(p1, userMatrix);
       }
 
       var colorStops = this.colorStops;
@@ -5015,15 +5034,6 @@ var SimpleShading = (function() {
         grad.addColorStop(c[0], c[1]);
       }
       return grad;
-    },
-    applyTransform: function(p, m) {
-      var xt = p[0] * m[0] + p[1] * m[2] + m[4];
-      var yt = p[0] * m[1] + p[1] * m[3] + m[5];
-      return [xt, yt];
-    },
-    makeCssRgb: function(r, g, b) {
-      var ri = (255 * r) | 0, gi = (255 * g) | 0, bi = (255 * b) | 0;
-      return 'rgb(' + ri + ',' + gi + ',' + bi + ')';
     }
   };
   return constructor;
@@ -5049,6 +5059,7 @@ var TilingPattern = (function() {
       this.curMatrix = ctx.mozCurrentTransform;
       this.invMatrix = ctx.mozCurrentTransformInverse;
       this.ctx = ctx;
+      this.type = 'Pattern';
 
       var bbox = dict.get('BBox');
       var x0 = bbox[0], y0 = bbox[1], x1 = bbox[2], y1 = bbox[3];
@@ -5082,7 +5093,7 @@ var TilingPattern = (function() {
         tmpCtx.strokeStyle = ctx.strokeStyle;
         break;
       case PAINT_TYPE_UNCOLORED:
-        color = this.makeCssRgb.apply(this, color);
+        color = Util.makeCssRgb.apply(this, color);
         tmpCtx.fillStyle = color;
         tmpCtx.strokeStyle = color;
         break;
@@ -5128,15 +5139,6 @@ var TilingPattern = (function() {
       ctx.scale(1 / scale[0], 1 / scale[1]);
 
       return ctx.createPattern(this.canvas, 'repeat');
-    },
-    applyTransform: function(x0, y0, m) {
-      var xt = x0 * m[0] + y0 * m[2] + m[4];
-      var yt = x0 * m[1] + y0 * m[3] + m[5];
-      return [xt, yt];
-    },
-    makeCssRgb: function(r, g, b) {
-      var ri = (255 * r) | 0, gi = (255 * g) | 0, bi = (255 * b) | 0;
-      return 'rgb(' + ri + ',' + gi + ',' + bi + ')';
     }
   };
   return constructor;
