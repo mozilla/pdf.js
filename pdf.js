@@ -4004,7 +4004,17 @@ var CanvasGraphics = (function() {
       this.ctx.rect(x, y, width, height);
     },
     stroke: function() {
-      this.ctx.stroke();
+      var ctx = this.ctx;
+      var strokeColor = this.current.strokeColor;
+      if (strokeColor && strokeColor.type === "Pattern") {
+        ctx.save();
+        ctx.strokeStyle = strokeColor.getPattern(ctx);
+        ctx.stroke();
+        ctx.restore();
+      } else {
+        ctx.stroke();
+      }
+
       this.consumePath();
     },
     closeStroke: function() {
@@ -4015,11 +4025,11 @@ var CanvasGraphics = (function() {
       var ctx = this.ctx;
       var fillColor = this.current.fillColor;
 
-      if (fillColor.type === "Pattern") {
-        this.ctx.save();
+      if (fillColor && fillColor.type === "Pattern") {
+        ctx.save();
         ctx.fillStyle = fillColor.getPattern(ctx);
         ctx.fill();
-        this.ctx.restore();
+        ctx.restore();
       } else {
         ctx.fill();
       }
@@ -4033,13 +4043,27 @@ var CanvasGraphics = (function() {
     },
     fillStroke: function() {
       var ctx = this.ctx;
-      var fillCS = this.current.fillColorSpace;
 
-      if (fillCS && fillCS.name === "Pattern")
-        this.current.fillPattern(ctx); 
-
-      ctx.fill();
-      ctx.stroke();
+      var fillColor = this.current.fillColor;
+      if (fillColor && fillColor.type === "Pattern") {
+        ctx.save();
+        ctx.fillStyle = fillColor.getPattern(ctx);
+        ctx.fill();
+        ctx.restore();
+      } else {
+        ctx.fill();
+      }
+      
+      var strokeColor = this.current.strokeColor;
+      if (stokeColor && strokeColor.type === "Pattern") {
+        ctx.save();
+        ctx.strokeStyle = strokeColor.getPattern(ctx);
+        ctx.stroke();
+        ctx.restore();
+      } else {
+        ctx.stroke();
+      }
+      
       this.consumePath();
     },
     eoFillStroke: function() {
@@ -4246,9 +4270,7 @@ var CanvasGraphics = (function() {
         // wait until fill to actually get the pattern
         var pattern = Pattern.parse(arguments, cs, this.xref, this.res,
                                     this.ctx);
-//        this.current.fillColor = pattern;
-        this.ctx.fillStyle = pattern.getPattern();
-        this.current.fillColor = "blah";
+        this.current.fillColor = pattern;
       } else {
         this.setFillColor.apply(this, arguments);
       }
@@ -4262,7 +4284,7 @@ var CanvasGraphics = (function() {
     setStrokeRGBColor: function(r, g, b) {
       var color = Util.makeCssRgb(r, g, b);
       this.ctx.strokeStyle = color;
-      this.current.fillColor = color;
+      this.current.strokeColor = color;
     },
     setFillRGBColor: function(r, g, b) {
       var color = Util.makeCssRgb(r, g, b);
@@ -4272,7 +4294,7 @@ var CanvasGraphics = (function() {
     setStrokeCMYKColor: function(c, m, y, k) {
       var color = Util.makeCssCmyk(c, m, y, k);
       this.ctx.strokeStyle = color;
-      this.current.fillColor = color;
+      this.current.strokeColor = color;
     },
     setFillCMYKColor: function(c, m, y, k) {
       var color = Util.makeCssCmyk(c, m, y, k);
@@ -5125,9 +5147,10 @@ var TilingPattern = (function() {
   };
 
   constructor.prototype = {
-    getPattern: function tiling_getPattern(ctx) {
+    getPattern: function tiling_getPattern() {
       var matrix = this.matrix;
       var curMatrix = this.curMatrix;
+      var ctx = this.ctx;
 
       if (curMatrix)
         ctx.setTransform.apply(ctx, curMatrix);
