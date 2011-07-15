@@ -816,6 +816,8 @@ var Font = (function Font() {
           });
         };
 
+        var encoding = properties.encoding;
+        var charset = properties.charset;
         for (var i = 0; i < numRecords; i++) {
           var table = records[i];
           font.pos = start + table.offset;
@@ -824,38 +826,41 @@ var Font = (function Font() {
           var length = int16(font.getBytes(2));
           var language = int16(font.getBytes(2));
 
-          if (format == 0 && numRecords > 1) {
+          if (format == 0) {
             // Characters below 0x20 are controls characters that are hardcoded
             // into the platform so if some characters in the font are assigned
             // under this limit they will not be displayed so let's rewrite the
             // CMap.
-            var map = [];
-            var rewrite = false;
-            for (var j = 0; j < 256; j++) {
-              var index = font.getByte();
-              if (index != 0) {
-                map.push(index);
-                if (j < 0x20)
-                  rewrite = true;
+            var glyphs = [];           
+            if (encoding.empty) {
+              var orderedGlyphs= [];
+              for ( var j = 0; j < charset.length; j++) {
+                var unicode = GlyphsUnicode[charset[font.getByte()]] || 0;
+                glyphs.push({ unicode: unicode });
+                orderedGlyphs.push(unicode);
               }
-            }
 
-            if (rewrite) {
-              var glyphs = [];
+              orderedGlyphs.sort(function(a, b) {
+                return a - b;
+              });
+
+              for (var p in encoding) {
+                if (p != "empty")
+                  properties.encoding[p] = orderedGlyphs[p - 1];
+              }
+            } else {
               for (var j = 0x20; j < 256; j++) {
                 // TODO do not hardcode WinAnsiEncoding
                 var unicode = GlyphsUnicode[Encodings["WinAnsiEncoding"][j]];
                 glyphs.push({ unicode: unicode });
               }
-              cmap.data = createCMapTable(glyphs);
             }
-          } else if ((format == 0 && numRecords == 1) ||
-                     (format == 6 && numRecords == 1 && !properties.encoding.empty)) {
+            cmap.data = createCMapTable(glyphs);
+          } else if (format == 6 && numRecords == 1 && !encoding.empty) {
             // Format 0 alone is not allowed by the sanitizer so let's rewrite
             // that to a 3-1-4 Unicode BMP table
             TODO('Use an other source of informations than ' +
                  'charset here, it is not reliable');
-            var charset = properties.charset;
             var glyphs = [];
             for (var j = 0; j < charset.length; j++) {
               glyphs.push({
@@ -898,7 +903,6 @@ var Font = (function Font() {
             assert(ranges.length == 1, 'Got ' + ranges.length +
                    ' ranges in a dense array');
 
-            var encoding = properties.encoding;
             var denseRange = ranges[0];
             var start = denseRange[0];
             var end = denseRange[1];

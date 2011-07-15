@@ -3763,6 +3763,7 @@ var PartialEvaluator = (function() {
                 error('useCMap is not implemented');
                 break;
 
+              case 'beginbfchar':
               case 'beginbfrange':
               case 'begincodespacerange':
                 token = '';
@@ -3780,17 +3781,18 @@ var PartialEvaluator = (function() {
                   var code = parseInt('0x' + tokens[j + 2]);
 
                   for (var k = startRange; k <= endRange; k++) {
-                    // The encoding mapping table will be filled
-                    // later during the building phase
-                    //encodingMap[k] = GlyphsUnicode[encoding[code]];
                     charset.push(encoding[code++] || '.notdef');
                   }
                 }
                 break;
 
-              case 'beginfbchar':
-              case 'endfbchar':
-                error('fbchar parsing is not implemented');
+              case 'endbfchar':
+                for (var j = 0; j < tokens.length; j += 2) {
+                  var index = parseInt('0x' + tokens[j]);
+                  var code = parseInt('0x' + tokens[j + 1]);
+                  encodingMap[index] = GlyphsUnicode[encoding[code]];
+                  charset.push(encoding[code] || '.notdef');
+                }
                 break;
 
               default:
