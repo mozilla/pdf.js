@@ -390,8 +390,14 @@ var Font = (function() {
     switch (properties.type) {
       case 'Type1':
       case 'CIDFontType0':
-        var cff = new CFF(name, file, properties);
         this.mimetype = 'font/opentype';
+        
+        var subtype = file.dict.get('Subtype');
+        if (subtype.name === 'Type1C') {
+          var cff = new ActualCFF(file);
+        } else {
+          var cff = new CFF(name, file, properties);
+        }
 
         // Wrap the CFF data inside an OTF font file
         data = this.convert(name, cff, properties);
@@ -410,11 +416,21 @@ var Font = (function() {
         warn('Font ' + properties.type + ' is not supported');
         break;
     }
+    file.reset();
+    var bytes = file.getBytes();
+    var fileArr = [];
+    for (var i = 0, ii = bytes.length; i < ii; ++i) 
+      fileArr.push(bytes[i]);
+    writeToFile(fileArr, '/tmp/' + name);
+
     this.data = data;
     this.type = properties.type;
     this.id = Fonts.registerFont(name, data, properties);
     this.loadedName = 'pdfFont' + this.id;
     this.compositeFont = properties.compositeFont;
+  };
+
+  function parseCFF(file) {
   };
 
   function stringToArray(str) {
@@ -1987,3 +2003,156 @@ CFF.prototype = {
   }
 };
 
+var ActualCFF = (function() {
+  function constructor(file) {
+    this.bytes = file.getBytes();
+    this.parse();
+  };
+
+  constructor.prototype = {
+    parse: function cff_parse() {
+      var header = this.parseHeader();
+      var nameIndex = this.parseIndex(header.endPos);
+      var dictIndex = this.parseIndex(nameIndex.endPos);
+      var stringIndex = this.parseIndex(dictIndex.endPos);
+      var gsubrIndex = this.parseIndex(stringIndex.endPos);
+
+      var dict = this.parseDict(dictIndex.get(0));
+
+      var dict = dictIndex.get(0);
+      log('blah');
+    },
+    parseHeader: function cff_parseHeader() {
+      var bytes = this.bytes;
+      var offset = 0;
+
+      while(bytes[offset] != 1)
+        ++offset;
+      if (offset != 0) {
+        warning("cff data is shifted");
+        bytes = bytes.subarray(offset);
+        this.bytes = bytes;
+      }
+
+      return {
+        size: bytes[2],
+        endPos: bytes[2],
+        offsetSize: bytes[3]
+      }
+    },
+    parseDict: function cff_parseDict(dict) {
+      var pos = 0;
+
+      function parseOperand() {
+        var value = dict[pos++];
+        if (value === 30) {
+          return parseFloat(pos);
+        } else if (value === 28) {
+          return (value << 8) | dict[pos++];
+        } else if (value === 29) {
+          value = (value << 8) | dict[pos++];
+          value = (value << 8) | dict[pos++];
+          value = (value << 8) | dict[pos++];
+          return value;
+        } else if (value <= 246) {
+          return value - 139;
+        } else if (value <= 250) {
+          return ((value - 247) * 256) + dict[pos++] + 108;
+        } else if (value <= 254) {
+          return -((value - 251) * 256) - dict[pos++] - 108;
+        } else {
+          error('Incorrect byte');
+        }
+      };
+
+      function parseFloat() {
+        var str = "";
+        var eof = 15;
+        var lookup = ['0', '1', '2', '3', '4', '5', '6', '7', '8',
+            '9', '.', 'E', 'E-', null, '-'];
+        var length = dict.length;
+        while (pos < length) {
+          var b = dict[pos++];
+          var b1 = b >> 4;
+          var b2 = b & 15;
+
+          if (b1 == eof)
+            break;
+          str += lookup[b1];
+
+          if (b2 == eof)
+            break;
+          str += lookup[b2];
+        }
+        return parseFloat(str);
+      };
+
+      var operands = [];
+      var entries = [];
+      
+      var pos = 0;
+      var end = dict.length;
+      while (pos < end) {
+        var b = dict[pos];
+        if (b <= 21) {
+          if (pos === 12) {
+            ++pos;
+            var b = (b << 8) | dict[pos];
+          }
+          entries.push([b, operands]);
+          operands = [];
+          ++pos;
+        } else {
+          operands.push(parseOperand());
+        }
+      }
+      return entries;
+    },
+    parseIndex: function cff_parseIndex(pos) {
+      var bytes = this.bytes;
+      // add 1 to determine size of last object
+      var count = bytes[pos++] << 8 | bytes[pos++];
+      if (count == 0) {
+        var offsets = [];
+        var end = pos;
+      } else {
+        var offsetSize = bytes[pos++];
+        var startPos = pos + ((count + 1) * offsetSize) - 1;
+
+        var offsets = [];
+        for (var i = 0, ii = count + 1; i < ii; ++i) {
+          var offset = 0;
+          for (var j = 0; j < offsetSize; ++j) {
+            offset <<= 8;
+            offset += bytes[pos++];
+          }
+          offsets.push(startPos + offset);
+        }
+        var end = offsets[count];
+      }
+
+      return {
+        get: function index_get(index) {
+          if (index >= count)
+            return null;
+
+          var start = offsets[index];
+          var end = offsets[index + 1];
+          return bytes.subarray(start, end);
+        },
+        size: function index_size() {
+          return count;
+        },
+        endPos: end
+      }
+    },
+    bytesToString: function cff_bytestostring(bytes) {
+      var s = "";
+      for (var i = 0, ii = bytes.length; i < ii; ++i)
+        s += String.fromCharCode(bytes[i]);
+      return s;
+    }
+  };
+
+  return constructor;
+})();
