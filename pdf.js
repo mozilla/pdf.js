@@ -4055,7 +4055,7 @@ var CanvasGraphics = (function() {
       }
       
       var strokeColor = this.current.strokeColor;
-      if (stokeColor && strokeColor.type === "Pattern") {
+      if (strokeColor && strokeColor.type === "Pattern") {
         ctx.save();
         ctx.strokeStyle = strokeColor.getPattern(ctx);
         ctx.stroke();
