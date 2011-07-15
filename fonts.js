@@ -534,13 +534,11 @@ var Font = (function Font() {
     
     // Removes duplicate ranges
     for (var i = ranges.length - 1; i > 0; i--) {
-      var range = [];
-      var range1 = ranges[i];
-      var range2 = ranges[i - 1];
-      if (range1[0] == range2[1]) {
-        range2[0] = range2[0] - 1;
-        range2[1] = range1[1];
-        ranges.splice(i, 1);
+      var range = ranges[i];
+      var prevRange = ranges[i - 1];
+      if (range[0] <= prevRange[1]) {
+        range[0] = prevRange[0] - 2;
+        ranges.splice(i - 1, 1);
       }
     }
     
@@ -850,7 +848,7 @@ var Font = (function Font() {
                 var unicode = GlyphsUnicode[Encodings["WinAnsiEncoding"][j]];
                 glyphs.push({ unicode: unicode });
               }
-              cmap.data = createCMapTable(glyphs, true);
+              cmap.data = createCMapTable(glyphs);
             }
           } else if ((format == 0 && numRecords == 1) ||
                      (format == 6 && numRecords == 1 && !properties.encoding.empty)) {
