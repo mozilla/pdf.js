@@ -4946,7 +4946,9 @@ var Pattern = (function() {
 })();
 
 var DummyShading = (function() {
-  function constructor() {};
+  function constructor() {
+    this.type = 'Pattern';
+  };
   constructor.prototype = {
     getPattern: function dummy_getpattern() {
       return 'hotpink';
