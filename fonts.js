@@ -816,7 +816,6 @@ var Font = (function Font() {
           });
         };
 
-        
         for (var i = 0; i < numRecords; i++) {
           var table = records[i];
           font.pos = start + table.offset;
@@ -824,7 +823,7 @@ var Font = (function Font() {
           var format = int16(font.getBytes(2));
           var length = int16(font.getBytes(2));
           var language = int16(font.getBytes(2));
-          
+
           if (format == 0 && numRecords > 1) {
             // Characters below 0x20 are controls characters that are hardcoded
             // into the platform so if some characters in the font are assigned
@@ -840,7 +839,7 @@ var Font = (function Font() {
                   rewrite = true;
               }
             }
-            
+
             if (rewrite) {
               var glyphs = [];
               for (var j = 0x20; j < 256; j++) {
@@ -918,7 +917,7 @@ var Font = (function Font() {
       var header = readOpenTypeHeader(font);
       var numTables = header.numTables;
 
-      var cmap, maxp;
+      var cmap, maxp, hhea, hmtx;
       var tables = [];
       for (var i = 0; i < numTables; i++) {
         var table = readTableEntry(font);
@@ -928,6 +927,10 @@ var Font = (function Font() {
             cmap = table;
           else if (table.tag == 'maxp')
             maxp = table;
+          else if (table.tag == 'hhea')
+            hhea = table;
+          else if (table.tag == 'hmtx')
+            hmtx = table;
 
           requiredTables.splice(index, 1);
         }
@@ -944,7 +947,7 @@ var Font = (function Font() {
       // table
       var numTables = header.numTables + requiredTables.length;
       var offsets = {
-      	currentOffset: 0,
+        currentOffset: 0,
         virtualOffset: numTables * (4 * 4)
       };
 
@@ -952,29 +955,45 @@ var Font = (function Font() {
       // of missing tables
       createOpenTypeHeader('\x00\x01\x00\x00', ttf, offsets, numTables);
 
-			if (requiredTables.indexOf('OS/2') != -1) {
+      if (requiredTables.indexOf('OS/2') != -1) {
         tables.push({
           tag: 'OS/2',
           data: stringToArray(createOS2Table(properties))
         });
-			}
+      }
+
+      // Ensure the hmtx tables contains an advance width and a sidebearing
+      // for the number of glyphs declared in the maxp table
+      font.pos = (font.start ? font.start : 0) + maxp.offset;
+      var version = int16(font.getBytes(4));
+      var numGlyphs = int16(font.getBytes(2));
+
+      font.pos = (font.start ? font.start : 0) + hhea.offset;
+      font.pos += hhea.length - 2;
+      var numOfHMetrics = int16(font.getBytes(2));
+
+      var numOfSidebearings = numGlyphs - numOfHMetrics;
+      var numMissing = numOfSidebearings - (hmtx.length - numOfHMetrics * 4);
+      if (numMissing > 0) {
+        font.pos = (font.start ? font.start : 0) + hmtx.offset;
+        var metrics = "";
+        for (var i = 0; i < hmtx.length; i++)
+          metrics += String.fromCharCode(font.getByte());
+        for (var i = 0; i < numMissing; i++)
+          metrics += "\x00\x00";
+        hmtx.data = stringToArray(metrics);
+      }
+
 
       // Replace the old CMAP table with a shiny new one
       if (properties.type == 'CIDFontType2') {
-      	// Type2 composite fonts map characters directly to glyphs so the cmap
+        // Type2 composite fonts map characters directly to glyphs so the cmap
         // table must be replaced.
           
         var glyphs = [];
         var charset = properties.charset;
         if (!charset.length) {
-          // PDF did not contain a GIDMap for the font so create an identity cmap
-            
-          // First get the number of glyphs from the maxp table
-          font.pos = (font.start ? font.start : 0) + maxp.offset;
-          var version = int16(font.getBytes(4));
-          var numGlyphs = int16(font.getBytes(2));
-            
-          // Now create an identity mapping
+          // Type2 composite fonts map characters directly to glyphs so the cmap
           for (var i = 1; i < numGlyphs; i++) {
             glyphs.push({
               unicode: i
@@ -983,27 +1002,25 @@ var Font = (function Font() {
         } else {
           for (var i = 1; i < charset.length; i++) {
             var index = charset.indexOf(i);
-            if (index != -1) {
-              glyphs.push({
-                unicode: index
-              });
-            } else {
+            if (index == -1)
               break;
-            }
+
+            glyphs.push({
+              unicode: index
+            });
           }
         }
-          
+
         if (!cmap) {
-          // Font did not contain a cmap
-          tables.push({
+          cmap = {
             tag: 'cmap',
-            data: createCMapTable(glyphs)
-          })
-        } else {
-          cmap.data = createCMapTable(glyphs);
+            data: null
+          };
+          tables.push(cmap);
         }
+        cmap.data = createCMapTable(glyphs);
       } else {
-        replaceCMapTable(cmap, font, properties);          
+        replaceCMapTable(cmap, font, properties);
       }
 
       // Rewrite the 'post' table if needed
