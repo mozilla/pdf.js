@@ -4512,7 +4512,8 @@ var Util = (function() {
   };
   constructor.makeCssCmyk = function makecmyk(c, m, y, k) {
     var c = (new DeviceCmykCS()).getRgb([c, m, y, k]);
-    return 'rgb(' + c[0] + ',' + c[1] + ',' + c[2] + ')';
+    var ri = (255 * c[0]) | 0, gi = (255 * c[1]) | 0, bi = (255 * c[2]) | 0;
+    return 'rgb(' + ri + ',' + gi + ',' + bi + ')';
   };
   constructor.applyTransform = function apply(p, m) {
     var xt = p[0] * m[0] + p[1] * m[2] + m[4];
