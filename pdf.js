@@ -19,7 +19,7 @@ function warn(msg) {
 }
 
 function error(msg) {
-  console.log(backtrace());
+  log(backtrace());
   throw new Error(msg);
 }
 
@@ -2849,13 +2849,6 @@ var XRef = (function() {
       return this.fetch(obj);
     },
     fetch: function(ref) {
-
-
-      if ("undefined" == typeof ref) {
-        console.log(backtrace());
-      }
-
-
       var num = ref.num;
       var e = this.cache[num];
       if (e)
@@ -4793,15 +4786,6 @@ var ColorSpace = (function() {
   };
 
   constructor.parse = function colorspace_parse(cs, xref, res) {
-
-
-
-    if ("undefined" == typeof(cs))
-      console.log(backtrace());
-
-
-
-
     if (IsName(cs)) {
       var colorSpaces = res.get('ColorSpace');
       if (colorSpaces) {
