@@ -421,7 +421,8 @@ var Font = (function() {
     var fileArr = [];
     for (var i = 0, ii = bytes.length; i < ii; ++i) 
       fileArr.push(bytes[i]);
-    writeToFile(fileArr, '/tmp/' + name);
+    writeToFile(data, '/tmp/' + name);
+    writeToFile(fileArr, '/tmp/' + name + 'file');
 
     this.data = data;
     this.type = properties.type;
@@ -2006,7 +2007,14 @@ CFF.prototype = {
 var ActualCFF = (function() {
 
   function constructor(file) {
-    this.bytes = file.getBytes();
+    var bytes = file.getBytes();
+    this.bytes = bytes;
+    
+    var data = []
+    for (var i = 0, ii = bytes.length; i < ii; ++i) 
+      data.push(bytes[i]);
+    this.data = data;
+
     this.parse();
   };
 
@@ -2034,13 +2042,25 @@ var ActualCFF = (function() {
       baseDict = this.parseDict(privBytes);
       // var  privDict = this.getPrivDict(baseDict, strings);
       
-      var encodings = this.parseEncoding(topDict['Encoding']);
+      var encoding = this.parseEncoding(topDict['Encoding']);
       var charStrings = this.parseIndex(topDict['CharStrings']);
-      var charsets = this.parseCharsets(topDict['charset'], charStrings.length,
+      var charset = this.parseCharsets(topDict['charset'], charStrings.length,
           strings);
+
+      this.charstrings = this.getCharStrings(encoding, charset);
 
 //      var dict = dictIndex.get(0);
       log('blah');
+    },
+    getCharStrings: function cff_charstrings(encoding, charsets) {
+      var charstrings = [];
+      for (var i = 0, ii = charsets.length; i < ii; ++i) {
+        var charName = charsets[i];
+          var charCode = GlyphsUnicode[charName];
+          if (charCode) 
+          charstrings.push( {unicode: charCode, width: 0});
+      }
+      return charstrings;
     },
     parseEncoding: function cff_parseencoding(pos) {
       if (pos == 0) {
@@ -2258,10 +2278,10 @@ var ActualCFF = (function() {
         endPos: end
       }
     },
-    bytesToString: function cff_bytestostring(bytes) {
+    bytesToString: function cff_bytestostring(bytesArr) {
       var s = "";
-      for (var i = 0, ii = bytes.length; i < ii; ++i)
-        s += String.fromCharCode(bytes[i]);
+      for (var i = 0, ii = bytesArr.length; i < ii; ++i)
+        s += String.fromCharCode(bytesArr[i]);
       return s;
     }
   };
