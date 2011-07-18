@@ -3561,23 +3561,9 @@ var PartialEvaluator = (function() {
     eval: function(stream, xref, resources, fonts) {
       resources = xref.fetchIfRef(resources) || new Dict();
       var xobjs = xref.fetchIfRef(resources.get('XObject')) || new Dict();
-
       var parser = new Parser(new Lexer(stream), false);
-      var objpool = [];
-
-      function emitArg(arg) {
-        if (typeof arg == 'object' || typeof arg == 'string') {
-          var index = objpool.length;
-          objpool[index] = arg;
-          return 'objpool[' + index + ']';
-        }
-        return arg;
-      }
-
-      var src = '';
-
-      var args = [];
-      var obj;
+      var args = [], argsArray = [], fnArray = [], obj;
+      
       while (!IsEOF(obj = parser.getObj())) {
         if (IsCmd(obj)) {
           var cmd = obj.cmd;
@@ -3599,10 +3585,7 @@ var PartialEvaluator = (function() {
               );
 
               if ('Form' == type.name) {
-                args[0].code = this.eval(xobj,
-                                         xref,
-                                         xobj.dict.get('Resources'),
-                                         fonts);
+                args[0].code = this.eval(xobj, xref, xobj.dict.get('Resources'), fonts);
               }
             }
           } else if (cmd == 'Tf') { // eagerly collect all fonts
@@ -3622,21 +3605,19 @@ var PartialEvaluator = (function() {
             }
           }
 
-          src += 'this.';
-          src += fn;
-          src += '(';
-          src += args.map(emitArg).join(',');
-          src += ');\n';
-
-          args.length = 0;
+          fnArray.push(fn);
+          argsArray.push(args);
+          args = [];
         } else {
           assertWellFormed(args.length <= 33, 'Too many arguments');
           args.push(obj);
         }
       }
 
-      var fn = Function('objpool', src);
-      return function(gfx) { fn.call(gfx, objpool); };
+      return function(gfx) {
+        for(var i = 0, length = argsArray.length; i < length; i++)
+          gfx[fnArray[i]].apply(gfx, argsArray[i]);
+      }
     },
 
     translateFont: function(fontDict, xref, resources) {
