@@ -19,6 +19,7 @@ function warn(msg) {
 }
 
 function error(msg) {
+  log(backtrace());
   throw new Error(msg);
 }
 
@@ -41,6 +42,16 @@ function assert(cond, msg) {
 function assertWellFormed(cond, msg) {
   if (!cond)
     malformed(msg);
+}
+
+function backtrace() {
+  var stackStr;
+  try {
+    throw new Error();
+  } catch(e) {
+    stackStr = e.stack;
+  };
+  return stackStr.split('\n').slice(1).join('\n');
 }
 
 function shadow(obj, prop, value) {
@@ -2960,7 +2971,7 @@ var Page = (function() {
       return shadow(this, 'mediaBox',
                     ((IsArray(obj) && obj.length == 4) ? obj : null));
     },
-    startRendering: function(canvasCtx, continuation) {
+    startRendering: function(canvasCtx, continuation, onerror) {
       var self = this;
       var stats = self.stats;
       stats.compile = stats.fonts = stats.render = 0;
@@ -2978,9 +2989,14 @@ var Page = (function() {
           // Always defer call to display() to work around bug in
           // Firefox error reporting from XHR callbacks.
           setTimeout(function () {
-            self.display(gfx);
-            stats.render = Date.now();
-            continuation();
+            var exc = null;
+            try {
+              self.display(gfx);
+              stats.render = Date.now();
+            } catch (e) {
+              exc = e.toString();
+            }
+            continuation(exc);
           });
         });
     },
@@ -3639,7 +3655,12 @@ var PartialEvaluator = (function() {
         if (!df)
           return null;
         compositeFont = true;
-        descendant = xref.fetch(df[0]);
+
+        if (IsRef(df)) {
+          df = xref.fetch(df);
+        }
+
+        descendant = xref.fetch(IsRef(df) ? df : df[0]);
         subType = descendant.get('Subtype');
         fd = descendant.get('FontDescriptor');
       } else {
@@ -4856,10 +4877,10 @@ var ColorSpace = (function() {
       case 'Lab':
       case 'DeviceN':
       default:
-        error("unrecognized color space object '" + mode + "'");
+        error("unimplemented color space object '" + mode + "'");
       }
     } else {
-      error('unrecognized color space object');
+      error('unrecognized color space object: "'+ cs +"'");
     }
   };
 
@@ -5133,6 +5154,10 @@ var PDFImage = (function() {
     this.bpc = bitsPerComponent;
 
     var colorSpace = dict.get('ColorSpace', 'CS');
+    if (!colorSpace) {
+      TODO('JPX images (which don"t require color spaces');
+      colorSpace = new Name('DeviceRGB');
+    }
     this.colorSpace = ColorSpace.parse(colorSpace, xref, res);
 
     this.numComps = this.colorSpace.numComps;
