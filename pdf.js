@@ -19,6 +19,7 @@ function warn(msg) {
 }
 
 function error(msg) {
+  log(backtrace());
   throw new Error(msg);
 }
 
@@ -41,6 +42,16 @@ function assert(cond, msg) {
 function assertWellFormed(cond, msg) {
   if (!cond)
     malformed(msg);
+}
+
+function backtrace() {
+  var stackStr;
+  try {
+    throw new Error();
+  } catch(e) {
+    stackStr = e.stack;
+  };
+  return stackStr.split('\n').slice(1).join('\n');
 }
 
 function shadow(obj, prop, value) {
@@ -2960,7 +2971,7 @@ var Page = (function() {
       return shadow(this, 'mediaBox',
                     ((IsArray(obj) && obj.length == 4) ? obj : null));
     },
-    startRendering: function(canvasCtx, continuation) {
+    startRendering: function(canvasCtx, continuation, onerror) {
       var self = this;
       var stats = self.stats;
       stats.compile = stats.fonts = stats.render = 0;
@@ -2978,9 +2989,14 @@ var Page = (function() {
           // Always defer call to display() to work around bug in
           // Firefox error reporting from XHR callbacks.
           setTimeout(function () {
-            self.display(gfx);
-            stats.render = Date.now();
-            continuation();
+            var exc = null;
+            try {
+              self.display(gfx);
+              stats.render = Date.now();
+            } catch (e) {
+              exc = e.toString();
+            }
+            continuation(exc);
           });
         });
     },
@@ -3624,11 +3640,36 @@ var PartialEvaluator = (function() {
     },
 
     translateFont: function(fontDict, xref, resources) {
-      var fd = fontDict.get('FontDescriptor');
+      var fd;
+      var descendant = [];
+      var subType = fontDict.get('Subtype');
+      var compositeFont = false;
+      assertWellFormed(IsName(subType), 'invalid font Subtype');
+      
+      // If font is a composite 
+      //  - get the descendant font
+      //  - set the type according to the descendant font
+      //  - get the FontDescriptor from the descendant font
+      if (subType.name == 'Type0') {
+        var df = fontDict.get('DescendantFonts');
+        if (!df)
+          return null;
+        compositeFont = true;
+
+        if (IsRef(df)) {
+          df = xref.fetch(df);
+        }
+
+        descendant = xref.fetch(IsRef(df) ? df : df[0]);
+        subType = descendant.get('Subtype');
+        fd = descendant.get('FontDescriptor');
+      } else {
+        fd = fontDict.get('FontDescriptor');
+      }
+      
       if (!fd)
-        // XXX deprecated "special treatment" for standard
-        // fonts?  What do we need to do here?
         return null;
+      
       var descriptor = xref.fetch(fd);
 
       var fontName = descriptor.get('FontName');
@@ -3642,7 +3683,38 @@ var PartialEvaluator = (function() {
 
       var encodingMap = {};
       var charset = [];
-      if (fontDict.has('Encoding')) {
+      if (compositeFont) {
+        // Special CIDFont support
+        // XXX only CIDFontType2 supported for now
+        if (subType.name == 'CIDFontType2') {
+          var cidToGidMap = descendant.get('CIDToGIDMap');
+          if (cidToGidMap && IsRef(cidToGidMap)) {
+            // Extract the charset from the CIDToGIDMap
+            var glyphsStream = xref.fetchIfRef(cidToGidMap);
+            var glyphsData = glyphsStream.getBytes(0);
+            var i = 0;
+            // Glyph ids are big-endian 2-byte values
+            for (var j=0; j<glyphsData.length; j++) {
+              var glyphID = (glyphsData[j++] << 8) | glyphsData[j];
+              charset.push(glyphID);
+            }
+          }
+        }
+        else {
+          // XXX This is a placeholder for handling of the encoding of CIDFontType0 fonts
+          var encoding = xref.fetchIfRef(fontDict.get('Encoding'));
+          if (IsName(encoding)) {
+            // Encoding is a predefined CMap
+            if (encoding.name == 'Identity-H') {
+              TODO ('Need to create an identity cmap')
+            } else {
+              TODO ('Need to support predefined CMaps see PDF 32000-1:2008 9.7.5.2 Predefined CMaps')
+            }
+          } else {
+            TODO ('Need to support encoding streams see PDF 32000-1:2008  9.7.5.3'); 
+          }
+        }
+      } else if (fontDict.has('Encoding')) {
         var encoding = xref.fetchIfRef(fontDict.get('Encoding'));
         if (IsDict(encoding)) {
           // Build a map of between codes and glyphs
@@ -3758,9 +3830,6 @@ var PartialEvaluator = (function() {
         }
       }
 
-      var subType = fontDict.get('Subtype');
-      assertWellFormed(IsName(subType), 'invalid font Subtype');
-
       var properties = {
         type: subType.name,
         encoding: encodingMap,
@@ -3775,7 +3844,8 @@ var PartialEvaluator = (function() {
         flags: descriptor.get('Flags'),
         italicAngle: descriptor.get('ItalicAngle'),
         fixedPitch: false,
-        textMatrix: IDENTITY_MATRIX
+        textMatrix: IDENTITY_MATRIX,
+        compositeFont: compositeFont
       };
 
       return {
@@ -4585,10 +4655,10 @@ var ColorSpace = (function() {
       case 'Lab':
       case 'DeviceN':
       default:
-        error("unrecognized color space object '" + mode + "'");
+        error("unimplemented color space object '" + mode + "'");
       }
     } else {
-      error('unrecognized color space object');
+      error('unrecognized color space object: "'+ cs +"'");
     }
   };
 
@@ -5163,6 +5233,10 @@ var PDFImage = (function() {
     this.bpc = bitsPerComponent;
 
     var colorSpace = dict.get('ColorSpace', 'CS');
+    if (!colorSpace) {
+      TODO('JPX images (which don"t require color spaces');
+      colorSpace = new Name('DeviceRGB');
+    }
     this.colorSpace = ColorSpace.parse(colorSpace, xref, res);
 
     this.numComps = this.colorSpace.numComps;
