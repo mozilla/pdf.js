@@ -3585,10 +3585,7 @@ var PartialEvaluator = (function() {
               );
 
               if ('Form' == type.name) {
-                args[0].code = this.eval(xobj,
-                                            xref,
-                                            xobj.dict.get('Resources'),
-                                            fonts);
+                args[0].code = this.eval(xobj, xref, xobj.dict.get('Resources'), fonts);
               }
             }
           } else if (cmd == 'Tf') { // eagerly collect all fonts
@@ -3618,9 +3615,8 @@ var PartialEvaluator = (function() {
       }
 
       return function(gfx) {
-        for(var i = 0, length = argsArray.length; i < length; i++) {
+        for(var i = 0, length = argsArray.length; i < length; i++)
           gfx[fnArray[i]].apply(gfx, argsArray[i]);
-        }
       }
     },
 
