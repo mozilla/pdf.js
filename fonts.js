@@ -2040,27 +2040,68 @@ var ActualCFF = (function() {
       var privOffset = privInfo[1], privLength = privInfo[0];
       var privBytes = bytes.subarray(privOffset, privOffset + privLength);
       baseDict = this.parseDict(privBytes);
-      // var  privDict = this.getPrivDict(baseDict, strings);
+      var  privDict = this.getPrivDict(baseDict, strings);
       
       var encoding = this.parseEncoding(topDict['Encoding']);
       var charStrings = this.parseIndex(topDict['CharStrings']);
       var charset = this.parseCharsets(topDict['charset'], charStrings.length,
           strings);
 
-      this.charstrings = this.getCharStrings(encoding, charset);
+      this.charstrings = this.getCharStrings(encoding, charset, charStrings,
+          privDict);
 
 //      var dict = dictIndex.get(0);
       log('blah');
     },
-    getCharStrings: function cff_charstrings(encoding, charsets) {
+    getCharStrings: function cff_charstrings(encoding, charsets, charStrings,
+                                             privDict) {
+
+      var defaultWidth = privDict['defaultWidthX'];
+      var nominalWidth = privDict['nominalWidthX'];
+
       var charstrings = [];
       for (var i = 0, ii = charsets.length; i < ii; ++i) {
         var charName = charsets[i];
-          var charCode = GlyphsUnicode[charName];
-          if (charCode) 
-          charstrings.push( {unicode: charCode, width: 0});
+        var charCode = GlyphsUnicode[charName];
+        if (charCode) {
+          var charString = this.parseCharString(charStrings.get(i),
+              defaultWidth, nominalWidth);
+          charstrings.push({unicode: charCode, width: charString.width});
+        }
       }
       return charstrings;
+    },
+    parseCharString: function cff_parsecs(bytes, defaultWidth, nominalWidth) {
+      var pos = 0;
+      
+      function parseInt() {
+        var value = bytes[pos++];
+        if (value < 32)
+          return null;
+
+        if (value <= 246) {
+          return value - 139;
+        } else if (value <= 250) {
+          return ((value - 247) * 256) + bytes[pos++] + 108;
+        } else if (value <= 254) {
+          return -((value - 251) * 256) - bytes[pos++] - 108;
+        } else {
+          error('Incorrect byte');
+        }
+      };
+      
+      var val = bytes[pos];
+      var w;
+      if (val >= 32 && val <= 254) {
+        w = parseInt();
+      }
+
+      if (w)
+        w += nominalWidth;
+      else
+        w = defaultWidth;
+
+      return {width: w}
     },
     parseEncoding: function cff_parseencoding(pos) {
       if (pos == 0) {
@@ -2098,6 +2139,29 @@ var ActualCFF = (function() {
         default:
       }
 
+    },
+    getPrivDict: function cff_getprivdict(baseDict, strings) {
+      var dict = {};
+
+      dict['defaultWidthX'] = 0;
+      dict['nominalWidthX'] = 0;
+
+      // default values
+
+      for (var i = 0, ii = baseDict.length; i < ii; ++i) {
+        var pair = baseDict[i];
+        var key = pair[0];
+        var value = pair[1];
+        switch(key) {
+          case 20:
+            dict['defaultWidthX'] = value[0];
+          case 21:
+            dict['nominalWidthX'] = value[0];
+          default:
+            TODO('interpret top dict key');
+        }
+      }
+      return dict;
     },
     getTopDict: function cff_gettopdict(baseDict, strings) {
       var dict = {};
