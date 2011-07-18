@@ -3817,62 +3817,10 @@ var CanvasExtraState = (function() {
 
     this.old = old;
   }
+
   constructor.prototype = {
-    get fillColorSpace() {
-      var cs = this.fillColorSpaceObj;
-      if (cs)
-        return cs;
-
-      var old = this.old;
-      if (old)
-        return old.fillColorSpace;
-
-      return null;
-    },
-    set fillColorSpace(cs) {
-      this.fillColorSpaceObj = cs;
-    },
-    get strokeColorSpace() {
-      var cs = this.strokeColorSpaceObj;
-      if (cs)
-        return cs;
-
-      var old = this.old;
-      if (old)
-        return old.strokeColorSpace;
-
-      return null;
-    }, 
-    set strokeColorSpace(cs) {
-      this.strokeColorSpaceObj = cs;
-    },
-    get fillColor() {
-      var color = this.fillColorObj;
-      if (color)
-        return color;
-
-      var old = this.old;
-      if (old)
-        return old.fillColor;
-
-      return null;
-    },
-    set fillColor(color) {
-      this.fillColorObj = color;
-    },
-    get strokeColor() {
-      var color = this.strokeColorObj;
-      if (color)
-        return color;
-
-      var old = this.old;
-      if (old)
-        return old.strokeColor;
-
-      return null;
-    },
-    set strokeColor(color) {
-      this.strokeColorObj = color;
+    clone: function canvasextra_clone() {
+      return Object.create(this);
     }
   };
   return constructor;
@@ -3965,7 +3913,7 @@ var CanvasGraphics = (function() {
       }
       var old = this.current;
       this.stateStack.push(old);
-      this.current = new CanvasExtraState(old);
+      this.current = old.clone();
     },
     restore: function() {
       var prev = this.stateStack.pop();
@@ -4007,6 +3955,8 @@ var CanvasGraphics = (function() {
       var ctx = this.ctx;
       var strokeColor = this.current.strokeColor;
       if (strokeColor && strokeColor.type === "Pattern") {
+        // for patterns, we transform to pattern space, calculate
+        // the pattern, call stroke, and restore to user space
         ctx.save();
         ctx.strokeStyle = strokeColor.getPattern(ctx);
         ctx.stroke();
@@ -4250,7 +4200,9 @@ var CanvasGraphics = (function() {
       var cs = this.current.strokeColorSpace;
 
       if (cs.name == 'Pattern') {
-        // wait until fill to actually get the pattern
+        // wait until fill to actually get the pattern, since Canvas
+        // calcualtes the pattern according to the current coordinate space,
+        // not the space when the pattern is set.
         var pattern = Pattern.parse(arguments, cs, this.xref, this.res,
                                     this.ctx);
         this.current.strokeColor = pattern;
@@ -4957,6 +4909,8 @@ var DummyShading = (function() {
   return constructor;
 })();
 
+// Radial and axial shading have very similar implementations
+// If needed, the implementations can be broken into two classes
 var RadialAxialShading = (function() {
   function constructor(dict, matrix, xref, res, ctx) {
     this.matrix = matrix;
@@ -5099,7 +5053,10 @@ var TilingPattern = (function() {
       var width = botRight[0] - topLeft[0];
       var height = botRight[1] - topLeft[1];
 
-      // TODO: hack to avoid OOM, remove then pattern code is fixed
+      // TODO: hack to avoid OOM, we would idealy compute the tiling
+      // pattern to be only as large as the acual size in device space
+      // This could be computed with .mozCurrentTransform, but still 
+      // needs to be implemented
       while (Math.abs(width) > 512 || Math.abs(height) > 512) {
         width = 512;
         height = 512;
