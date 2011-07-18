@@ -393,7 +393,7 @@ var Font = (function() {
         this.mimetype = 'font/opentype';
         
         var subtype = file.dict.get('Subtype');
-        if (subtype.name === 'Type1C') {
+        if (subtype && subtype.name === 'Type1C') {
           var cff = new ActualCFF(file);
         } else {
           var cff = new CFF(name, file, properties);
@@ -2004,6 +2004,7 @@ CFF.prototype = {
 };
 
 var ActualCFF = (function() {
+
   function constructor(file) {
     this.bytes = file.getBytes();
     this.parse();
@@ -2017,10 +2018,121 @@ var ActualCFF = (function() {
       var stringIndex = this.parseIndex(dictIndex.endPos);
       var gsubrIndex = this.parseIndex(stringIndex.endPos);
 
-      var dict = this.parseDict(dictIndex.get(0));
+      if (dictIndex.length != 1)
+        error('More than 1 font');
 
-      var dict = dictIndex.get(0);
+      var strings = this.getStrings(stringIndex);
+
+      var baseDict = this.parseDict(dictIndex.get(0));
+      var topDict = this.getTopDict(baseDict, strings);
+
+      var bytes = this.bytes;
+
+      var privInfo = topDict['Private'];
+      var privOffset = privInfo[1], privLength = privInfo[0];
+      var privBytes = bytes.subarray(privOffset, privOffset + privLength);
+      baseDict = this.parseDict(privBytes);
+      // var  privDict = this.getPrivDict(baseDict, strings);
+      
+      var encodings = this.parseEncoding(topDict['Encoding']);
+      var charStrings = this.parseIndex(topDict['CharStrings']);
+      var charsets = this.parseCharsets(topDict['charset'], charStrings.length,
+          strings);
+
+//      var dict = dictIndex.get(0);
       log('blah');
+    },
+    parseEncoding: function cff_parseencoding(pos) {
+      if (pos == 0) {
+        return Encodings.StandardEncoding;
+      } else if (pos == 1) {
+        return Encodings.ExpertEncoding;
+      }
+
+      error('not implemented encodings');
+    },
+    parseCharsets: function cff_parsecharsets(pos, length, strings) {
+      var bytes = this.bytes;
+      var format = bytes[pos++];
+      var charset = ['.notdef'];
+      switch (format) {
+        case 0:
+          for (var i = 0, ii = length - 1; i < ii; ++i) {
+            var id = bytes[pos++];
+            id = (id << 8) | bytes[pos++];
+            charset.push(strings[id]);
+          }
+          return charset;
+        case 1:
+          // subtract 1 for the .notdef glyph
+          length -= 1;
+          while (charset.length <= length) {
+            var first = bytes[pos++];
+            first = (first << 8) | bytes[pos++];
+            var numLeft = bytes[pos++];
+            for (var i = 0; i <= numLeft; ++i)
+              charset.push(strings[first++]);
+          }
+          return charset;
+        case 2:
+        default:
+      }
+
+    },
+    getTopDict: function cff_gettopdict(baseDict, strings) {
+      var dict = {};
+
+      // default values
+      dict['Encoding'] = 0;
+      dict['charset'] = 0;
+
+      for (var i = 0, ii = baseDict.length; i < ii; ++i) {
+        var pair = baseDict[i];
+        var key = pair[0];
+        var value = pair[1];
+        switch(key) {
+          case 1:
+            dict['Notice'] = strings[value[0]];
+            break;
+          case 4:
+            dict['Weight'] = strings[value[0]];
+            break;
+          case 3094:
+            dict['BaseFontName'] = strings[value[0]];
+            break;
+          case 5:
+            dict['FontBBox'] = value;
+            break;
+          case 13:
+            dict['UniqueID'] = value[0];
+            break;
+          case 15:
+            dict['charset'] = value[0];
+            break;
+          case 16:
+            dict['Encoding'] = value[0];
+            break;
+          case 17:
+            dict['CharStrings'] = value[0];
+            break;
+          case 18:
+            dict['Private'] = value;
+            break;
+          default:
+            TODO('interpret top dict key');
+        }
+      }
+      return dict;
+    },
+    getStrings: function cff_getstrings(stringIndex) {
+      var stringArray = [];
+      for (var i = 0, ii = CFFStrings.length; i < ii; ++i)
+        stringArray.push(CFFStrings[i]);
+
+      for (var i = 0, ii = stringIndex.length; i < ii; ++i)
+        stringArray.push(this.bytesToString(stringIndex.get(i)));
+
+      return stringArray;
     },
     parseHeader: function cff_parseHeader() {
       var bytes = this.bytes;
@@ -2035,7 +2147,6 @@ var ActualCFF = (function() {
       }
 
       return {
-        size: bytes[2],
         endPos: bytes[2],
         offsetSize: bytes[3]
       }
@@ -2046,10 +2157,13 @@ var ActualCFF = (function() {
       function parseOperand() {
         var value = dict[pos++];
         if (value === 30) {
-          return parseFloat(pos);
+          return parseFloatOperand(pos);
         } else if (value === 28) {
-          return (value << 8) | dict[pos++];
+          value = dict[pos++];
+          value = (value << 8) | dict[pos++];
+          return value;
         } else if (value === 29) {
+          value = dict[pos++];
           value = (value << 8) | dict[pos++];
           value = (value << 8) | dict[pos++];
           value = (value << 8) | dict[pos++];
@@ -2065,7 +2179,7 @@ var ActualCFF = (function() {
         }
       };
 
-      function parseFloat() {
+      function parseFloatOperand() {
         var str = "";
         var eof = 15;
         var lookup = ['0', '1', '2', '3', '4', '5', '6', '7', '8',
@@ -2095,7 +2209,7 @@ var ActualCFF = (function() {
       while (pos < end) {
         var b = dict[pos];
         if (b <= 21) {
-          if (pos === 12) {
+          if (b === 12) {
             ++pos;
             var b = (b << 8) | dict[pos];
           }
@@ -2110,13 +2224,13 @@ var ActualCFF = (function() {
     },
     parseIndex: function cff_parseIndex(pos) {
       var bytes = this.bytes;
-      // add 1 to determine size of last object
       var count = bytes[pos++] << 8 | bytes[pos++];
       if (count == 0) {
         var offsets = [];
         var end = pos;
       } else {
         var offsetSize = bytes[pos++];
+        // add 1 for offset to determine size of last object
         var startPos = pos + ((count + 1) * offsetSize) - 1;
 
         var offsets = [];
@@ -2140,9 +2254,7 @@ var ActualCFF = (function() {
           var end = offsets[index + 1];
           return bytes.subarray(start, end);
         },
-        size: function index_size() {
-          return count;
-        },
+        length: count,
         endPos: end
       }
     },
