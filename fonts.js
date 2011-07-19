@@ -375,7 +375,6 @@ function getUnicodeRangeFor(value) {
 var Font = (function Font() {
   var constructor = function font_constructor(name, file, properties) {
     this.name = name;
-    this.textMatrix = properties.textMatrix || IDENTITY_MATRIX;
     this.encoding = properties.encoding;
 
     // If the font is to be ignored, register it like an already loaded font
@@ -411,6 +410,7 @@ var Font = (function Font() {
         break;
     }
     this.data = data;
+    this.textMatrix = properties.textMatrix || IDENTITY_MATRIX;
     this.type = properties.type;
     this.id = Fonts.registerFont(name, data, properties);
     this.loadedName = 'pdfFont' + this.id;
