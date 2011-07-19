@@ -2067,6 +2067,8 @@ var ActualCFF = (function() {
           var charString = this.parseCharString(charStrings.get(i),
               defaultWidth, nominalWidth);
           charstrings.push({unicode: charCode, width: charString.width});
+        } else {
+          charstrings.push({unicode: 0, width: 0});
         }
       }
       return charstrings;
