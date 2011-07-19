@@ -3674,7 +3674,7 @@ var PartialEvaluator = (function() {
 
       var fontName = descriptor.get('FontName');
       assertWellFormed(IsName(fontName), 'invalid font name');
-      fontName = fontName.name.replace('+', '_');
+      fontName = fontName.name.replace(/[\+,\-]/g, '_');
 
       var fontFile = descriptor.get('FontFile', 'FontFile2', 'FontFile3');
       if (!fontFile)
