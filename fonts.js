@@ -394,7 +394,7 @@ var Font = (function() {
         
         var subtype = file.dict.get('Subtype');
         if (subtype && subtype.name === 'Type1C') {
-          var cff = new ActualCFF(file);
+          var cff = new Type2CFF(file);
         } else {
           var cff = new CFF(name, file, properties);
         }
@@ -416,13 +416,6 @@ var Font = (function() {
         warn('Font ' + properties.type + ' is not supported');
         break;
     }
-    file.reset();
-    var bytes = file.getBytes();
-    var fileArr = [];
-    for (var i = 0, ii = bytes.length; i < ii; ++i) 
-      fileArr.push(bytes[i]);
-    writeToFile(data, '/tmp/' + name);
-    writeToFile(fileArr, '/tmp/' + name + 'file');
 
     this.data = data;
     this.type = properties.type;
@@ -2004,12 +1997,13 @@ CFF.prototype = {
   }
 };
 
-var ActualCFF = (function() {
+var Type2CFF = (function() {
 
   function constructor(file) {
     var bytes = file.getBytes();
     this.bytes = bytes;
-    
+   
+    // Other classes expect this.data to be a Javascript array
     var data = []
     for (var i = 0, ii = bytes.length; i < ii; ++i) 
       data.push(bytes[i]);
@@ -2047,11 +2041,10 @@ var ActualCFF = (function() {
       var charset = this.parseCharsets(topDict['charset'], charStrings.length,
           strings);
 
+      // charstrings contains info about glyphs (one element per glyph
+      // containing mappings for {unicode, width}
       this.charstrings = this.getCharStrings(encoding, charset, charStrings,
           privDict);
-
-//      var dict = dictIndex.get(0);
-      log('blah');
     },
     getCharStrings: function cff_charstrings(encoding, charsets, charStrings,
                                              privDict) {
@@ -2067,8 +2060,6 @@ var ActualCFF = (function() {
           var charString = this.parseCharString(charStrings.get(i),
               defaultWidth, nominalWidth);
           charstrings.push({unicode: charCode, width: charString.width});
-        } else {
-          charstrings.push({unicode: 0, width: 0});
         }
       }
       return charstrings;
