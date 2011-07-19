@@ -404,7 +404,6 @@ var Font = (function Font() {
         // Repair the TrueType file if it is can be damaged in the point of
         // view of the sanitizer
         data = this.checkAndRepair(name, file, properties);
-				writeToFile(data, "/tmp/file." + this.name + ".ttf");
         break;
 
       default:
