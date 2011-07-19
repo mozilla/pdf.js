@@ -4136,7 +4136,7 @@ var CanvasGraphics = (function() {
       }
     },
     setLeadingMoveText: function(x, y) {
-      this.setLeading(-y);
+      this.setLeading(y);
       this.moveText(x, y);
     },
     setTextMatrix: function(a, b, c, d, e, f) {
