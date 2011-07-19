@@ -424,9 +424,6 @@ var Font = (function() {
     this.compositeFont = properties.compositeFont;
   };
 
-  function parseCFF(file) {
-  };
-
   function stringToArray(str) {
     var array = [];
     for (var i = 0; i < str.length; ++i)
@@ -1999,6 +1996,7 @@ CFF.prototype = {
 
 var Type2CFF = (function() {
 
+  // TODO: replace parsing code with the Type2Parser in font_utils.js
   function constructor(file) {
     var bytes = file.getBytes();
     this.bytes = bytes;
