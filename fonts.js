@@ -399,6 +399,18 @@ var Font = (function() {
           var cff = new CFF(name, file, properties);
         }
 
+        var widths = properties.glyphWidths;
+        if (widths) {
+          var charstrings = cff.charstrings;
+          for (var i = 0, ii = charstrings.length; i < ii; ++i) {
+            var charstring  = charstrings[i];
+            var unicode = charstring.unicode;
+            var width = widths[unicode];
+            if (width)
+              charstring.width = width;
+          }
+        }
+
         // Wrap the CFF data inside an OTF font file
         data = this.convert(name, cff, properties);
         break;
