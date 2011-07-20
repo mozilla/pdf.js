@@ -532,18 +532,6 @@ var Font = (function Font() {
       ranges.push([start, end]);
     }
     
-    // Removes duplicate ranges
-/*
-    for (var i = ranges.length - 1; i > 0; i--) {
-      var range = ranges[i];
-      var prevRange = ranges[i - 1];
-      if (range[0] <= prevRange[1]) {
-        range[0] = prevRange[0] - 2;
-        ranges.splice(i - 1, 1);
-      }
-    }
-*/
-    
     return ranges;
   };
 
@@ -838,6 +826,21 @@ var Font = (function Font() {
               if (index) {
                 deltas.push(index);
                 glyphs.push({ unicode : j });
+              }
+            }
+
+            var rewrite = false;
+            for (var code in encoding) {
+              if (code < 0x20 && encoding[code]) 
+                rewrite = true;
+
+              if (rewrite)
+                encoding[code] = parseInt(code) + 0x1F;
+            }
+
+            if (rewrite) {
+              for (var j = 0; j < glyphs.length; j++) {
+                glyphs[j].unicode += 0x1F;
               }
             }
             cmap.data = createCMapTable(glyphs, deltas);

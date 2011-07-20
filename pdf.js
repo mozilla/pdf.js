@@ -3733,7 +3733,11 @@ var PartialEvaluator = (function() {
           var index = 0;
           for (var j = 0; j < differences.length; j++) {
             var data = differences[j];
-            IsNum(data) ? index = data : encodingMap[index++] = data;
+            if (subType.name == 'TrueType') {
+              IsNum(data) ? index = data : encodingMap[index++] = j;
+            } else {
+              IsNum(data) ? index = data : encodingMap[index++] = GlyphsUnicode[data.name];
+            }
           }
 
           // Get the font charset if any
