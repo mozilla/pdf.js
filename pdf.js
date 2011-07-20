@@ -3722,9 +3722,8 @@ var PartialEvaluator = (function() {
           var baseName = encoding.get('BaseEncoding');
           if (baseName) {
             var base = Encodings[baseName.name];
-            var index = 0;
             for (var j = 0, end = base.length; j < end; j++)
-              encodingMap[index++] = GlyphsUnicode[base[j]];
+              encodingMap[j] = GlyphsUnicode[base[j]] || 0;
           } else {
             TODO('need to load default encoding');
           }

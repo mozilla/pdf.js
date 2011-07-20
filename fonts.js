@@ -533,6 +533,7 @@ var Font = (function Font() {
     }
     
     // Removes duplicate ranges
+/*
     for (var i = ranges.length - 1; i > 0; i--) {
       var range = ranges[i];
       var prevRange = ranges[i - 1];
@@ -541,12 +542,12 @@ var Font = (function Font() {
         ranges.splice(i - 1, 1);
       }
     }
+*/
     
     return ranges;
   };
 
-  function createCMapTable(glyphs) {
-    glyphs.push({ unicode: 0x0000 });
+  function createCMapTable(glyphs, deltas) {
     var ranges = getRanges(glyphs);
 
     var numTables = 1;
@@ -573,18 +574,17 @@ var Font = (function Font() {
       var range = ranges[i];
       var start = range[0];
       var end = range[1];
-      var delta = (bias - start) & 0xffff;
+			var offset = (segCount - i) * 2 + bias * 2;
       bias += (end - start + 1);
 
       startCount += string16(start);
       endCount += string16(end);
-      idDeltas += string16(delta);
-      idRangeOffsets += string16(0);
-
-      for (var j = start; j <= end; j++) {
-        glyphsIds += string16(j);
-      }
+      idDeltas += string16(0);
+      idRangeOffsets += string16(offset);
     }
+
+    for (var i = 0; i < glyphs.length; i++)
+      glyphsIds += string16(deltas ? deltas[i] : i + 1);
 
     endCount += '\xFF\xFF';
     startCount += '\xFF\xFF';
@@ -832,30 +832,15 @@ var Font = (function Font() {
             // under this limit they will not be displayed so let's rewrite the
             // CMap.
             var glyphs = [];           
-            if (encoding.empty) {
-              var orderedGlyphs= [];
-              for ( var j = 0; j < charset.length; j++) {
-                var unicode = GlyphsUnicode[charset[font.getByte()]] || 0;
-                glyphs.push({ unicode: unicode });
-                orderedGlyphs.push(unicode);
-              }
-
-              orderedGlyphs.sort(function(a, b) {
-                return a - b;
-              });
-
-              for (var p in encoding) {
-                if (p != "empty")
-                  properties.encoding[p] = orderedGlyphs[p - 1];
-              }
-            } else {
-              for (var j = 0x20; j < 256; j++) {
-                // TODO do not hardcode WinAnsiEncoding
-                var unicode = GlyphsUnicode[Encodings["WinAnsiEncoding"][j]];
-                glyphs.push({ unicode: unicode });
+            var deltas = [];
+            for (var j = 0; j < 256; j++) {
+              var index = font.getByte();
+              if (index) {
+                deltas.push(index);
+                glyphs.push({ unicode : j });
               }
             }
-            cmap.data = createCMapTable(glyphs);
+            cmap.data = createCMapTable(glyphs, deltas);
           } else if (format == 6 && numRecords == 1 && !encoding.empty) {
             // Format 0 alone is not allowed by the sanitizer so let's rewrite
             // that to a 3-1-4 Unicode BMP table
