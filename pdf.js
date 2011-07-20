@@ -3814,8 +3814,15 @@ var PartialEvaluator = (function() {
         }
       }
 
+      if (fontFile && fontFile.dict) {
+        var fileType = fontFile.dict.get('Subtype');
+        if (fileType)
+          fileType = fileType.name;
+      }
+
       var properties = {
         type: subType.name,
+        subtype: fileType,
         encoding: encodingMap,
         charset: charset,
         firstChar: fontDict.get('FirstChar'),

@@ -392,8 +392,8 @@ var Font = (function() {
       case 'CIDFontType0':
         this.mimetype = 'font/opentype';
         
-        var subtype = file.dict.get('Subtype');
-        if (subtype && subtype.name === 'Type1C') {
+        var subtype = properties.subtype;
+        if (subtype === 'Type1C') {
           var cff = new Type2CFF(file);
         } else {
           var cff = new CFF(name, file, properties);
