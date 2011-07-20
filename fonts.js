@@ -394,23 +394,9 @@ var Font = (function() {
         
         var subtype = properties.subtype;
         if (subtype === 'Type1C') {
-          var cff = new Type2CFF(file);
+          var cff = new Type2CFF(file, properties);
         } else {
           var cff = new CFF(name, file, properties);
-        }
-
-        var widths = properties.glyphWidths;
-        if (widths) {
-          var charstrings = cff.charstrings;
-          for (var i = 0, ii = charstrings.length; i < ii; ++i) {
-            var charstring  = charstrings[i];
-            var unicode = charstring.unicode;
-            var width = widths[unicode];
-            if (width)
-              charstring.width = width;
-            else
-              charstring.width = 0;
-          }
         }
 
         // Wrap the CFF data inside an OTF font file
@@ -2011,9 +1997,10 @@ CFF.prototype = {
 var Type2CFF = (function() {
 
   // TODO: replace parsing code with the Type2Parser in font_utils.js
-  function constructor(file) {
+  function constructor(file, properties) {
     var bytes = file.getBytes();
     this.bytes = bytes;
+    this.properties = properties;
    
     // Other classes expect this.data to be a Javascript array
     var data = []
@@ -2056,10 +2043,11 @@ var Type2CFF = (function() {
       // charstrings contains info about glyphs (one element per glyph
       // containing mappings for {unicode, width}
       this.charstrings = this.getCharStrings(encoding, charset, charStrings,
-          privDict);
+          privDict, this.properties);
     },
     getCharStrings: function cff_charstrings(encoding, charsets, charStrings,
-                                             privDict) {
+                                             privDict, properties) {
+      var widths = properties.glyphWidths;
 
       var defaultWidth = privDict['defaultWidthX'];
       var nominalWidth = privDict['nominalWidthX'];
@@ -2069,7 +2057,10 @@ var Type2CFF = (function() {
         var charName = charsets[i];
         var charCode = GlyphsUnicode[charName];
         if (charCode) {
-          charstrings.push({unicode: charCode, width: 0});
+          var width = widths[charCode];
+          if (!width)
+            width = defaultWidth;
+          charstrings.push({unicode: charCode, width: width});
         }
       }
       return charstrings;
