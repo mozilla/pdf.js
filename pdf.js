@@ -3821,15 +3821,11 @@ var PartialEvaluator = (function() {
       }
 
       var widths = fontDict.get('Widths');
-      var firstChar = fontDict.get('FirstChar');
-      var lastChar = fontDict.get('LastChar');
       if (widths) {
-        var glyphWidths = [];
-        for (var i = 0; i < firstChar; ++i)
-          glyphWidths.push(0);
-        
+        var glyphWidths = {};
+        var unicode = fontDict.get('FirstChar');
         for (var i = 0, ii = widths.length; i < ii; ++i)
-          glyphWidths.push(widths[i]);
+          glyphWidths[unicode++] = widths[i];
       }
 
       var properties = {

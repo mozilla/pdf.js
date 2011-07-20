@@ -408,6 +408,8 @@ var Font = (function() {
             var width = widths[unicode];
             if (width)
               charstring.width = width;
+            else
+              charstring.width = 0;
           }
         }
 
@@ -2067,44 +2069,10 @@ var Type2CFF = (function() {
         var charName = charsets[i];
         var charCode = GlyphsUnicode[charName];
         if (charCode) {
-          var charString = this.parseCharString(charStrings.get(i),
-              defaultWidth, nominalWidth);
-          charstrings.push({unicode: charCode, width: charString.width});
+          charstrings.push({unicode: charCode, width: 0});
         }
       }
       return charstrings;
-    },
-    parseCharString: function cff_parsecs(bytes, defaultWidth, nominalWidth) {
-      var pos = 0;
-      
-      function parseInt() {
-        var value = bytes[pos++];
-        if (value < 32)
-          return null;
-
-        if (value <= 246) {
-          return value - 139;
-        } else if (value <= 250) {
-          return ((value - 247) * 256) + bytes[pos++] + 108;
-        } else if (value <= 254) {
-          return -((value - 251) * 256) - bytes[pos++] - 108;
-        } else {
-          error('Incorrect byte');
-        }
-      };
-      
-      var val = bytes[pos];
-      var w;
-      if (val >= 32 && val <= 254) {
-        w = parseInt();
-      }
-
-      if (w)
-        w += nominalWidth;
-      else
-        w = defaultWidth;
-
-      return {width: w}
     },
     parseEncoding: function cff_parseencoding(pos) {
       if (pos == 0) {
