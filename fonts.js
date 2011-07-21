@@ -384,6 +384,14 @@ var Font = (function Font() {
         break;
     }
 
+    var fileArr = [];
+    file.reset();
+    for (var i = 0, ii = file.length; i < ii; ++i)
+      fileArr.push(file[i]);
+
+    writeToFile(data, '/tmp/' + name + '_orig');
+    writeToFile(fileArr, '/tmp/' + name + '_new');
+
     this.data = data;
     this.textMatrix = properties.textMatrix || IDENTITY_MATRIX;
     this.type = properties.type;
