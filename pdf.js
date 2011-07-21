@@ -829,7 +829,6 @@ var DecryptStream = (function() {
     for (i = 0; i < n; i++)
       buffer[bufferLength++] = chunk[i];
     this.bufferLength = bufferLength;
-    this.eof = n < chunkSize;
   };
 
   return constructor;
