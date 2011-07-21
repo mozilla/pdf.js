@@ -2056,17 +2056,17 @@ var Type2CFF = (function() {
       baseDict = this.parseDict(privBytes);
       var  privDict = this.getPrivDict(baseDict, strings);
       
-      var encoding = this.parseEncoding(topDict['Encoding']);
+//      var encoding = this.parseEncoding(topDict['Encoding']);
       var charStrings = this.parseIndex(topDict['CharStrings']);
       var charset = this.parseCharsets(topDict['charset'], charStrings.length,
           strings);
 
       // charstrings contains info about glyphs (one element per glyph
       // containing mappings for {unicode, width}
-      this.charstrings = this.getCharStrings(encoding, charset, charStrings,
+      this.charstrings = this.getCharStrings(charset, charStrings,
           privDict, this.properties);
     },
-    getCharStrings: function cff_charstrings(encoding, charsets, charStrings,
+    getCharStrings: function cff_charstrings(charsets, charStrings,
                                              privDict, properties) {
       var widths = properties.glyphWidths;
 
