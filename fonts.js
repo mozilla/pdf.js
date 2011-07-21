@@ -1786,8 +1786,10 @@ CFF.prototype = {
              String.fromCharCode((value >> 8) & 0xFF) +
              String.fromCharCode(value & 0xFF);
     } else if (value >= (-2147483648) && value <= 2147483647) {
+      value ^= 0xffffffff;
+      value += 1;
       return '\xff' +
-             String.fromCharCode((value >>> 24) & 0xFF) +
+             String.fromCharCode((value >> 24) & 0xFF) +
              String.fromCharCode((value >> 16) & 0xFF) +
              String.fromCharCode((value >> 8) & 0xFF) +
              String.fromCharCode(value & 0xFF);
@@ -1893,7 +1895,14 @@ CFF.prototype = {
           charstring[i] = cmd;
         }
       } else {
-        charstring.splice(i, 1, 28, command >> 8, command & 0xff);
+        // Type1 charstring use a division for number above 32000
+        if (command > 32000) {
+          var divisor = charstring[i + 1];
+          command /= divisor;
+          charstring.splice(i, 3, 28, command >> 8, command & 0xff);
+        } else {
+          charstring.splice(i, 1, 28, command >> 8, command & 0xff);
+        }
         i += 2;
       }
     }
