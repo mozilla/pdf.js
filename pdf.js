@@ -843,7 +843,6 @@ var DecryptStream = (function() {
     for (i = 0; i < n; i++)
       buffer[bufferLength++] = chunk[i];
     this.bufferLength = bufferLength;
-    this.eof = n < chunkSize;
   };
 
   return constructor;
@@ -2985,7 +2984,7 @@ var Page = (function() {
       this.compile(gfx, fonts);
       stats.compile = Date.now();
 
-      FontLoader.bind(
+      var fontObjs = FontLoader.bind(
         fonts,
         function() {
           stats.fonts = Date.now();
@@ -3002,6 +3001,9 @@ var Page = (function() {
             continuation(exc);
           });
         });
+
+      for (var i = 0, ii = fonts.length; i < ii; ++i)
+        fonts[i].fontDict.fontObj = fontObjs[i];
     },
 
 
@@ -4112,7 +4114,7 @@ var CanvasGraphics = (function() {
         this.ctx.$setFont(fontName, size);
       } else {
         this.ctx.font = size + 'px "' + fontName + '"';
-        Fonts.setActive(fontName, fontObj, size);
+        FontMeasure.setActive(fontObj, size);
       }
     },
     setTextRenderingMode: function(mode) {
@@ -4164,7 +4166,7 @@ var CanvasGraphics = (function() {
           text = font.charsToUnicode(text);
         }
         ctx.fillText(text, 0, 0);
-        current.x += Fonts.measureText(text);
+        current.x += FontMeasure.measureText(text);
       }
 
       this.ctx.restore();
