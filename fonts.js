@@ -27,17 +27,6 @@ var FontMeasure = (function FontMeasure() {
   var ctx = document.createElement('canvas').getContext('2d');
   ctx.scale(1 / kScalePrecision, 1);
 
-  /*
-  function FontInfo(name, data, properties) {
-    this.name = name;
-    this.data = data;
-    this.properties = properties;
-    this.id = fontCount++;
-    this.loading = true;
-    this.sizes = [];
-  }
-*/
-
   var current;
   var measureCache;
 
@@ -55,8 +44,6 @@ var FontMeasure = (function FontMeasure() {
     },
     measureText: function fonts_measureText(text) {
       var width;
-      // something is wrong with the caching, it is messing up page 12 in
-      // the tracemonkey paper
       if (measureCache && (width = measureCache[text]))
         return width;
       width = ctx.measureText(text).width / kScalePrecision;
@@ -359,6 +346,7 @@ var Font = (function() {
     this.name = name;
     this.textMatrix = properties.textMatrix || IDENTITY_MATRIX;
     this.encoding = properties.encoding;
+    this.sizes = [];
 
     // If the font is to be ignored, register it like an already loaded font
     // to avoid the cost of waiting for it be be loaded by the platform.
@@ -731,7 +719,6 @@ var Font = (function() {
     font: null,
     mimetype: null,
     encoding: null,
-    sizes: [],
 
     checkAndRepair: function font_checkAndRepair(name, font, properties) {
       function readTableEntry(file) {
