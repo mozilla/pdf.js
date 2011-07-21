@@ -19,6 +19,7 @@ function warn(msg) {
 }
 
 function error(msg) {
+  log(backtrace());
   throw new Error(msg);
 }
 
@@ -41,6 +42,16 @@ function assert(cond, msg) {
 function assertWellFormed(cond, msg) {
   if (!cond)
     malformed(msg);
+}
+
+function backtrace() {
+  var stackStr;
+  try {
+    throw new Error();
+  } catch(e) {
+    stackStr = e.stack;
+  };
+  return stackStr.split('\n').slice(1).join('\n');
 }
 
 function shadow(obj, prop, value) {
@@ -2959,7 +2970,7 @@ var Page = (function() {
       return shadow(this, 'mediaBox',
                     ((IsArray(obj) && obj.length == 4) ? obj : null));
     },
-    startRendering: function(canvasCtx, continuation) {
+    startRendering: function(canvasCtx, continuation, onerror) {
       var self = this;
       var stats = self.stats;
       stats.compile = stats.fonts = stats.render = 0;
@@ -2970,18 +2981,26 @@ var Page = (function() {
       this.compile(gfx, fonts);
       stats.compile = Date.now();
 
-      FontLoader.bind(
+      var fontObjs = FontLoader.bind(
         fonts,
         function() {
           stats.fonts = Date.now();
           // Always defer call to display() to work around bug in
           // Firefox error reporting from XHR callbacks.
           setTimeout(function () {
-            self.display(gfx);
-            stats.render = Date.now();
-            continuation();
+            var exc = null;
+            try {
+              self.display(gfx);
+              stats.render = Date.now();
+            } catch (e) {
+              exc = e.toString();
+            }
+            continuation(exc);
           });
         });
+
+      for (var i = 0, ii = fonts.length; i < ii; ++i)
+        fonts[i].fontDict.fontObj = fontObjs[i];
     },
 
 
@@ -3544,23 +3563,9 @@ var PartialEvaluator = (function() {
     eval: function(stream, xref, resources, fonts) {
       resources = xref.fetchIfRef(resources) || new Dict();
       var xobjs = xref.fetchIfRef(resources.get('XObject')) || new Dict();
-
       var parser = new Parser(new Lexer(stream), false);
-      var objpool = [];
-
-      function emitArg(arg) {
-        if (typeof arg == 'object' || typeof arg == 'string') {
-          var index = objpool.length;
-          objpool[index] = arg;
-          return 'objpool[' + index + ']';
-        }
-        return arg;
-      }
-
-      var src = '';
-
-      var args = [];
-      var obj;
+      var args = [], argsArray = [], fnArray = [], obj;
+      
       while (!IsEOF(obj = parser.getObj())) {
         if (IsCmd(obj)) {
           var cmd = obj.cmd;
@@ -3582,10 +3587,7 @@ var PartialEvaluator = (function() {
               );
 
               if ('Form' == type.name) {
-                args[0].code = this.eval(xobj,
-                                         xref,
-                                         xobj.dict.get('Resources'),
-                                         fonts);
+                args[0].code = this.eval(xobj, xref, xobj.dict.get('Resources'), fonts);
               }
             }
           } else if (cmd == 'Tf') { // eagerly collect all fonts
@@ -3605,21 +3607,19 @@ var PartialEvaluator = (function() {
             }
           }
 
-          src += 'this.';
-          src += fn;
-          src += '(';
-          src += args.map(emitArg).join(',');
-          src += ');\n';
-
-          args.length = 0;
+          fnArray.push(fn);
+          argsArray.push(args);
+          args = [];
         } else {
           assertWellFormed(args.length <= 33, 'Too many arguments');
           args.push(obj);
         }
       }
 
-      var fn = Function('objpool', src);
-      return function(gfx) { fn.call(gfx, objpool); };
+      return function(gfx) {
+        for(var i = 0, length = argsArray.length; i < length; i++)
+          gfx[fnArray[i]].apply(gfx, argsArray[i]);
+      }
     },
 
     translateFont: function(fontDict, xref, resources) {
@@ -3638,7 +3638,12 @@ var PartialEvaluator = (function() {
         if (!df)
           return null;
         compositeFont = true;
-        descendant = xref.fetch(df[0]);
+
+        if (IsRef(df)) {
+          df = xref.fetch(df);
+        }
+
+        descendant = xref.fetch(IsRef(df) ? df : df[0]);
         subType = descendant.get('Subtype');
         fd = descendant.get('FontDescriptor');
       } else {
@@ -4090,7 +4095,7 @@ var CanvasGraphics = (function() {
         this.ctx.$setFont(fontName, size);
       } else {
         this.ctx.font = size + 'px "' + fontName + '"';
-        Fonts.setActive(fontName, fontObj, size);
+        FontMeasure.setActive(fontObj, size);
       }
     },
     setTextRenderingMode: function(mode) {
@@ -4142,7 +4147,7 @@ var CanvasGraphics = (function() {
           text = font.charsToUnicode(text);
         }
         ctx.fillText(text, 0, 0);
-        current.x += Fonts.measureText(text);
+        current.x += FontMeasure.measureText(text);
       }
 
       this.ctx.restore();
@@ -4853,10 +4858,10 @@ var ColorSpace = (function() {
       case 'Lab':
       case 'DeviceN':
       default:
-        error("unrecognized color space object '" + mode + "'");
+        error("unimplemented color space object '" + mode + "'");
       }
     } else {
-      error('unrecognized color space object');
+      error('unrecognized color space object: "'+ cs +"'");
     }
   };
 
@@ -5130,6 +5135,10 @@ var PDFImage = (function() {
     this.bpc = bitsPerComponent;
 
     var colorSpace = dict.get('ColorSpace', 'CS');
+    if (!colorSpace) {
+      TODO('JPX images (which don"t require color spaces');
+      colorSpace = new Name('DeviceRGB');
+    }
     this.colorSpace = ColorSpace.parse(colorSpace, xref, res);
 
     this.numComps = this.colorSpace.numComps;

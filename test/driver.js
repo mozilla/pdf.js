@@ -111,7 +111,10 @@ function nextPage(task, loadError) {
 
             page.startRendering(
               ctx,
-              function() { snapshotCurrentPage(page, task, failure); });
+              function(e) {
+                snapshotCurrentPage(page, task,
+                                    (!failure && e) ? ('render: '+ e) : failure);
+              });
         } catch(e) {
             failure = 'page setup: '+ e.toString();
         }
