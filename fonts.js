@@ -448,11 +448,12 @@ var Font = (function Font() {
 
     var fileArr = [];
     file.reset();
+    file = file.getBytes();
     for (var i = 0, ii = file.length; i < ii; ++i)
       fileArr.push(file[i]);
 
-    writeToFile(data, '/tmp/' + name + '_orig');
-    writeToFile(fileArr, '/tmp/' + name + '_new');
+    writeToFile(data, '/tmp/' + name + '_new');
+    writeToFile(fileArr, '/tmp/' + name + '_orig');
 
     this.data = data;
     this.type = properties.type;
