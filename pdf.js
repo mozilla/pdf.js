@@ -3657,7 +3657,7 @@ var PartialEvaluator = (function() {
 
       var fontName = descriptor.get('FontName');
       assertWellFormed(IsName(fontName), 'invalid font name');
-      fontName = fontName.name.replace('+', '_');
+      fontName = fontName.name.replace(/[\+,\-]/g, '_');
 
       var fontFile = descriptor.get('FontFile', 'FontFile2', 'FontFile3');
       if (!fontFile)
@@ -3705,9 +3705,8 @@ var PartialEvaluator = (function() {
           var baseName = encoding.get('BaseEncoding');
           if (baseName) {
             var base = Encodings[baseName.name];
-            var index = 0;
             for (var j = 0, end = base.length; j < end; j++)
-              encodingMap[index++] = GlyphsUnicode[base[j]];
+              encodingMap[j] = GlyphsUnicode[base[j]] || 0;
           } else {
             TODO('need to load default encoding');
           }
@@ -3717,7 +3716,11 @@ var PartialEvaluator = (function() {
           var index = 0;
           for (var j = 0; j < differences.length; j++) {
             var data = differences[j];
-            IsNum(data) ? index = data : encodingMap[index++] = data;
+            if (subType.name == 'TrueType') {
+              IsNum(data) ? index = data : encodingMap[index++] = j;
+            } else {
+              IsNum(data) ? index = data : encodingMap[index++] = GlyphsUnicode[data.name];
+            }
           }
 
           // Get the font charset if any
@@ -3767,6 +3770,7 @@ var PartialEvaluator = (function() {
                 error('useCMap is not implemented');
                 break;
 
+              case 'beginbfchar':
               case 'beginbfrange':
               case 'begincodespacerange':
                 token = '';
@@ -3784,17 +3788,18 @@ var PartialEvaluator = (function() {
                   var code = parseInt('0x' + tokens[j + 2]);
 
                   for (var k = startRange; k <= endRange; k++) {
-                    // The encoding mapping table will be filled
-                    // later during the building phase
-                    //encodingMap[k] = GlyphsUnicode[encoding[code]];
                     charset.push(encoding[code++] || '.notdef');
                   }
                 }
                 break;
 
-              case 'beginfbchar':
-              case 'endfbchar':
-                error('fbchar parsing is not implemented');
+              case 'endbfchar':
+                for (var j = 0; j < tokens.length; j += 2) {
+                  var index = parseInt('0x' + tokens[j]);
+                  var code = parseInt('0x' + tokens[j + 1]);
+                  encodingMap[index] = GlyphsUnicode[encoding[code]];
+                  charset.push(encoding[code] || '.notdef');
+                }
                 break;
 
               default:
@@ -3879,6 +3884,9 @@ function ScratchCanvas(width, height) {
 }
 
 var CanvasGraphics = (function() {
+  var kScalePrecision = 50;
+  var kRasterizerMin = 14;
+
   function constructor(canvasCtx, imageCanvas) {
     this.ctx = canvasCtx;
     this.current = new CanvasExtraState();
@@ -4094,8 +4102,10 @@ var CanvasGraphics = (function() {
       if (this.ctx.$setFont) {
         this.ctx.$setFont(fontName, size);
       } else {
-        this.ctx.font = size + 'px "' + fontName + '"';
         FontMeasure.setActive(fontObj, size);
+
+        size = (size <= kRasterizerMin) ? size * kScalePrecision : size;
+        this.ctx.font = size + 'px "' + fontName + '"';
       }
     },
     setTextRenderingMode: function(mode) {
@@ -4112,7 +4122,7 @@ var CanvasGraphics = (function() {
       }
     },
     setLeadingMoveText: function(x, y) {
-      this.setLeading(-y);
+      this.setLeading(y);
       this.moveText(x, y);
     },
     setTextMatrix: function(a, b, c, d, e, f) {
@@ -4143,6 +4153,8 @@ var CanvasGraphics = (function() {
         ctx.translate(current.x, -1 * current.y);
         var font = this.current.font;
         if (font) {
+          if (this.current.fontSize < kRasterizerMin)
+            ctx.transform(1 / kScalePrecision, 0, 0, 1 / kScalePrecision, 0, 0);
           ctx.transform.apply(ctx, font.textMatrix);
           text = font.charsToUnicode(text);
         }
