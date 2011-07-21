@@ -63,5 +63,11 @@
        "file": "pdfs/ArabicCIDTrueType.pdf",
        "rounds": 1,
        "type": "load"
+    },
+    {  "id": "i9-pdf",
+       "file": "pdfs/i9.pdf",
+       "link": true,
+       "rounds": 1,
+       "type": "eq"
     }
 ]
