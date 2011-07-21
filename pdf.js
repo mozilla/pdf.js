@@ -3879,6 +3879,9 @@ function ScratchCanvas(width, height) {
 }
 
 var CanvasGraphics = (function() {
+  var kScalePrecision = 50;
+  var kRasterizerMin = 14;
+
   function constructor(canvasCtx, imageCanvas) {
     this.ctx = canvasCtx;
     this.current = new CanvasExtraState();
@@ -4094,8 +4097,10 @@ var CanvasGraphics = (function() {
       if (this.ctx.$setFont) {
         this.ctx.$setFont(fontName, size);
       } else {
-        this.ctx.font = size + 'px "' + fontName + '"';
         FontMeasure.setActive(fontObj, size);
+
+        size = (size <= kRasterizerMin) ? size * kScalePrecision : size;
+        this.ctx.font = size + 'px"' + fontName + '"';
       }
     },
     setTextRenderingMode: function(mode) {
@@ -4143,6 +4148,8 @@ var CanvasGraphics = (function() {
         ctx.translate(current.x, -1 * current.y);
         var font = this.current.font;
         if (font) {
+          if (this.current.fontSize < kRasterizerMin)
+            ctx.transform(1 / kScalePrecision, 0, 0, 1 / kScalePrecision, 0, 0);
           ctx.transform.apply(ctx, font.textMatrix);
           text = font.charsToUnicode(text);
         }
