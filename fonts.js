@@ -1069,6 +1069,7 @@ var Font = (function Font() {
 
       var charstrings = font.charstrings;
       properties.fixedPitch = isFixedPitch(charstrings);
+
       var fields = {
         // PostScript Font Program
         'CFF ': font.data,
@@ -1077,7 +1078,7 @@ var Font = (function Font() {
         'OS/2': stringToArray(createOS2Table(properties)),
 
         // Character to glyphs mapping
-        'cmap': createCMapTable(charstrings.slice()),
+        'cmap': createCMapTable(charstrings.slice(), font.glyphIds),
 
         // Font header
         'head': (function() {
@@ -2065,8 +2066,17 @@ var Type2CFF = (function() {
 
       // charstrings contains info about glyphs (one element per glyph
       // containing mappings for {unicode, width})
-      this.charstrings = this.getCharStrings(charset, charStrings,
+      var charstrings = this.getCharStrings(charset, charStrings,
           privDict, this.properties);
+     
+      // create the mapping between charstring and glyph id
+      var glyphIds = [];
+      for (var i = 0, ii = charstrings.length; i < ii; ++i) {
+        glyphIds.push(charstrings[i].gid);
+      }
+
+      this.charstrings = charstrings;
+      this.glyphIds = glyphIds;
     },
     getCharStrings: function cff_charstrings(charsets, charStrings,
                                              privDict, properties) {
@@ -2081,12 +2091,15 @@ var Type2CFF = (function() {
         var charCode = GlyphsUnicode[charName];
         if (charCode) {
           var width = widths[charCode] || defaultWidth;
-          charstrings.push({unicode: charCode, width: width});
+          charstrings.push({unicode: charCode, width: width, gid: i});
         } else {
           if (charName !== '.notdef')
             warn('Cannot find unicode for glyph ' + charName);
         }
       }
+
+      // sort the arry by the unicode value
+      charstrings.sort(function(a, b) {return a.unicode - b.unicode});
       return charstrings;
     },
     parseEncoding: function cff_parseencoding(pos) {
