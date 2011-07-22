@@ -4114,13 +4114,13 @@ var CanvasGraphics = (function() {
     endText: function() {
     },
     setCharSpacing: function(spacing) {
-      this.ctx.charSpacing = spacing;
+      this.current.charSpacing = spacing;
     },
     setWordSpacing: function(spacing) {
-      this.ctx.wordSpacing = spacing;
+      this.current.wordSpacing = spacing;
     },
     setHScale: function(scale) {
-      this.ctx.textHScale = (scale % 100) * 0.01;
+      this.current.textHScale = (scale % 100) * 0.01;
     },
     setLeading: function(leading) {
       this.current.leading = leading;
@@ -4195,18 +4195,41 @@ var CanvasGraphics = (function() {
       ctx.save();
       ctx.transform.apply(ctx, current.textMatrix);
       ctx.scale(1, -1);
+      
+      ctx.translate(current.x, -1 * current.y);
 
-      if (this.ctx.$showText) {
-        ctx.$showText(current.y, text);
-      } else {
-        ctx.translate(current.x, -1 * current.y);
-        var font = this.current.font;
-        if (font) {
-          if (this.current.fontSize < kRasterizerMin)
-            ctx.transform(1 / kScalePrecision, 0, 0, 1 / kScalePrecision, 0, 0);
-          ctx.transform.apply(ctx, font.textMatrix);
-          text = font.charsToUnicode(text);
+      var scaleFactor = 1;
+      var font = this.current.font;
+      if (font) {
+        if (this.current.fontSize < kRasterizerMin) {
+          scaleFactor = 1 / kScalePrecision;
+          ctx.scale(scaleFactor, scaleFactor);
         }
+        ctx.transform.apply(ctx, font.textMatrix);
+        text = font.charsToUnicode(text);
+      }
+
+      var charSpacing = current.charSpacing;
+      var wordSpacing = current.wordSpacing;
+      var textHScale = current.textHScale;
+      
+      if (charSpacing || wordSpacing || textHScale) {
+        charSpacing = charSpacing || 0;
+        wordSpacing = wordSpacing || 0;
+        var width = 0;
+
+        for (var i = 0, ii = text.length; i < ii; ++i) {
+          var c = text.charAt(i);
+          ctx.fillText(c, 0, 0);
+          var charWidth = FontMeasure.measureText(c) + charSpacing;
+          if (c.charCodeAt(0) == 32)
+            charWidth += wordSpacing;
+
+          ctx.translate(charWidth / scaleFactor, 0);
+          width += charWidth;
+        }
+        current.x += width;
+      } else {
         ctx.fillText(text, 0, 0);
         current.x += FontMeasure.measureText(text);
       }
