@@ -506,9 +506,37 @@ var Font = (function Font() {
     
     return ranges;
   };
+  
+  function getRangesMod(glyphs) {
+    // Array.sort() sorts by characters, not numerically, so convert to an
+    // array of characters.
+    var codes = [];
+    var length = glyphs.length;
+    for (var n = 0; n < length; ++n)
+      codes.push([glyphs[n].unicode, n]);
+    codes.sort(function(a,b) {return a[0] - b[0]});
+
+    // Split the sorted codes into ranges.
+    var ranges = [];
+    for (var n = 0; n < length; ) {
+      var start = codes[n][0];
+      var end = start;
+      var glyphstart = codes[n][1];
+      var glyph = glyphstart;
+      ++n;
+      while (n < length && end + 1 == codes[n][0] && glyph + 1 == codes[n][1]) {
+        ++end;
+        ++glyph;
+        ++n;
+      }
+      ranges.push([start, end, glyphstart]);
+    }
+    
+    return ranges;
+  };
 
   function createCMapTable(glyphs, deltas) {
-    var ranges = getRanges(glyphs);
+    var ranges = getRangesMod(glyphs);
 
     var numTables = 1;
     var cmap = '\x00\x00' + // version
@@ -539,8 +567,12 @@ var Font = (function Font() {
 
       startCount += string16(start);
       endCount += string16(end);
-      idDeltas += string16(0);
-      idRangeOffsets += string16(offset);
+      var delta = range[2] + 1 - start;
+      while (delta < 0)
+        delta += 65536;
+
+      idDeltas += string16(delta);
+      idRangeOffsets += string16(0);
     }
 
     for (var i = 0; i < glyphs.length; i++)
