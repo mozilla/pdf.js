@@ -2036,12 +2036,14 @@ var Type2CFF = (function() {
     parse: function cff_parse() {
       var header = this.parseHeader();
       var nameIndex = this.parseIndex(header.endPos);
+      
       var dictIndex = this.parseIndex(nameIndex.endPos);
+      if (dictIndex.length != 1)
+        error('More than 1 font');
+      
       var stringIndex = this.parseIndex(dictIndex.endPos);
       var gsubrIndex = this.parseIndex(stringIndex.endPos);
 
-      if (dictIndex.length != 1)
-        error('More than 1 font');
 
       var strings = this.getStrings(stringIndex);
 
@@ -2055,20 +2057,20 @@ var Type2CFF = (function() {
       var privBytes = bytes.subarray(privOffset, privOffset + privLength);
       baseDict = this.parseDict(privBytes);
       var  privDict = this.getPrivDict(baseDict, strings);
-      
-//      var encoding = this.parseEncoding(topDict['Encoding']);
+
+      TODO('Parse encoding');
       var charStrings = this.parseIndex(topDict['CharStrings']);
       var charset = this.parseCharsets(topDict['charset'], charStrings.length,
           strings);
 
       // charstrings contains info about glyphs (one element per glyph
-      // containing mappings for {unicode, width}
+      // containing mappings for {unicode, width})
       this.charstrings = this.getCharStrings(charset, charStrings,
           privDict, this.properties);
     },
     getCharStrings: function cff_charstrings(charsets, charStrings,
                                              privDict, properties) {
-      var widths = properties.glyphWidths;
+      var widths = properties.widths;
 
       var defaultWidth = privDict['defaultWidthX'];
       var nominalWidth = privDict['nominalWidthX'];
@@ -2078,10 +2080,11 @@ var Type2CFF = (function() {
         var charName = charsets[i];
         var charCode = GlyphsUnicode[charName];
         if (charCode) {
-          var width = widths[charCode];
-          if (!width)
-            width = defaultWidth;
+          var width = widths[charCode] || defaultWidth;
           charstrings.push({unicode: charCode, width: width});
+        } else {
+          if (charName !== '.notdef')
+            warn('Cannot find unicode for glyph ' + charName);
         }
       }
       return charstrings;
@@ -2099,17 +2102,18 @@ var Type2CFF = (function() {
       var bytes = this.bytes;
       var format = bytes[pos++];
       var charset = ['.notdef'];
+      // subtract 1 for the .notdef glyph
+      length -= 1;
+
       switch (format) {
         case 0:
-          for (var i = 0, ii = length - 1; i < ii; ++i) {
+          for (var i = 0; i < length; ++i) {
             var id = bytes[pos++];
             id = (id << 8) | bytes[pos++];
             charset.push(strings[id]);
           }
           return charset;
         case 1:
-          // subtract 1 for the .notdef glyph
-          length -= 1;
           while (charset.length <= length) {
             var first = bytes[pos++];
             first = (first << 8) | bytes[pos++];
@@ -2119,17 +2123,26 @@ var Type2CFF = (function() {
           }
           return charset;
         case 2:
+          while (charset.length <= length) {
+            var first = bytes[pos++];
+            first = (first << 8) | bytes[pos++];
+            var numLeft = bytes[pos++];
+            numLeft = (numLeft << 8) | bytes[pos++];
+            for (var i = 0; i <= numLeft; ++i)
+              charset.push(strings[first++]);
+          }
+          return charset;
         default:
+          error('Unknown charset format');
       }
 
     },
     getPrivDict: function cff_getprivdict(baseDict, strings) {
       var dict = {};
 
+      // default values
       dict['defaultWidthX'] = 0;
       dict['nominalWidthX'] = 0;
-
-      // default values
 
       for (var i = 0, ii = baseDict.length; i < ii; ++i) {
         var pair = baseDict[i];
@@ -2192,12 +2205,19 @@ var Type2CFF = (function() {
       return dict;
     },
     getStrings: function cff_getstrings(stringIndex) {
+      function bytesToString(bytesArr) {
+        var s = "";
+        for (var i = 0, ii = bytesArr.length; i < ii; ++i)
+          s += String.fromCharCode(bytesArr[i]);
+        return s;
+      }
+
       var stringArray = [];
       for (var i = 0, ii = CFFStrings.length; i < ii; ++i)
         stringArray.push(CFFStrings[i]);
 
       for (var i = 0, ii = stringIndex.length; i < ii; ++i)
-        stringArray.push(this.bytesToString(stringIndex.get(i)));
+        stringArray.push(bytesToString(stringIndex.get(i)));
 
       return stringArray;
     },
@@ -2207,6 +2227,7 @@ var Type2CFF = (function() {
 
       while(bytes[offset] != 1)
         ++offset;
+
       if (offset != 0) {
         warning("cff data is shifted");
         bytes = bytes.subarray(offset);
@@ -2325,12 +2346,6 @@ var Type2CFF = (function() {
         endPos: end
       }
     },
-    bytesToString: function cff_bytestostring(bytesArr) {
-      var s = "";
-      for (var i = 0, ii = bytesArr.length; i < ii; ++i)
-        s += String.fromCharCode(bytesArr[i]);
-      return s;
-    }
   };
 
   return constructor;

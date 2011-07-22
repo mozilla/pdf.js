@@ -3838,7 +3838,7 @@ var PartialEvaluator = (function() {
       var properties = {
         type: subType.name,
         subtype: fileType,
-        glyphWidths: glyphWidths,
+        widths: glyphWidths,
         encoding: encodingMap,
         charset: charset,
         firstChar: fontDict.get('FirstChar'),
