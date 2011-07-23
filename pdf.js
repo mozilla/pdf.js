@@ -3446,8 +3446,8 @@ var EvalState = (function() {
     this.lineX = 0;
     this.lineY = 0;
     // Character and word spacing
-    this.charSpace = 0;
-    this.wordSpace = 0;
+    this.charSpacing = 0;
+    this.wordSpacing = 0;
     this.textHScale = 1;
     // Color spaces
     this.fillColorSpace = null;
@@ -3864,8 +3864,8 @@ var CanvasExtraState = (function() {
     this.lineX = 0;
     this.lineY = 0;
     // Character and word spacing
-    this.charSpace = 0;
-    this.wordSpace = 0;
+    this.charSpacing = 0;
+    this.wordSpacing = 0;
     this.textHScale = 1;
     // Color spaces
     this.fillColorSpaceObj = null;
@@ -4212,7 +4212,7 @@ var CanvasGraphics = (function() {
       var charSpacing = current.charSpacing;
       var wordSpacing = current.wordSpacing;
       var textHScale = current.textHScale;
-      
+
       if (charSpacing != 0 || wordSpacing != 0 || textHScale != 1) {
         scaleFactorX *= textHScale;
         ctx.scale(1 / textHScale, 1);
