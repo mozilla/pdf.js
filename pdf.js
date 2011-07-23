@@ -3448,7 +3448,7 @@ var EvalState = (function() {
     // Character and word spacing
     this.charSpace = 0;
     this.wordSpace = 0;
-    this.textHScale = 100;
+    this.textHScale = 1;
     // Color spaces
     this.fillColorSpace = null;
     this.strokeColorSpace = null;
@@ -3866,7 +3866,7 @@ var CanvasExtraState = (function() {
     // Character and word spacing
     this.charSpace = 0;
     this.wordSpace = 0;
-    this.textHScale = 100;
+    this.textHScale = 1;
     // Color spaces
     this.fillColorSpaceObj = null;
     this.strokeColorSpaceObj = null;
@@ -4120,7 +4120,7 @@ var CanvasGraphics = (function() {
       this.current.wordSpacing = spacing;
     },
     setHScale: function(scale) {
-      this.current.textHScale = (scale % 100) * 0.01;
+      this.current.textHScale = scale / 100;
     },
     setLeading: function(leading) {
       this.current.leading = leading;
@@ -4198,12 +4198,12 @@ var CanvasGraphics = (function() {
       
       ctx.translate(current.x, -1 * current.y);
 
-      var scaleFactor = 1;
+      var scaleFactorX = 1, scaleFactorY = 1;
       var font = this.current.font;
       if (font) {
         if (this.current.fontSize < kRasterizerMin) {
-          scaleFactor = 1 / kScalePrecision;
-          ctx.scale(scaleFactor, scaleFactor);
+          scaleFactorX = scaleFactorY = kScalePrecision;
+          ctx.scale(1 / scaleFactorX, 1 / scaleFactorY);
         }
         ctx.transform.apply(ctx, font.textMatrix);
         text = font.charsToUnicode(text);
@@ -4213,9 +4213,9 @@ var CanvasGraphics = (function() {
       var wordSpacing = current.wordSpacing;
       var textHScale = current.textHScale;
       
-      if (charSpacing || wordSpacing || textHScale) {
-        charSpacing = charSpacing || 0;
-        wordSpacing = wordSpacing || 0;
+      if (charSpacing != 0 || wordSpacing != 0 || textHScale != 1) {
+        scaleFactorX *= textHScale;
+        ctx.scale(1 / textHScale, 1);
         var width = 0;
 
         for (var i = 0, ii = text.length; i < ii; ++i) {
@@ -4225,7 +4225,7 @@ var CanvasGraphics = (function() {
           if (c.charCodeAt(0) == 32)
             charWidth += wordSpacing;
 
-          ctx.translate(charWidth / scaleFactor, 0);
+          ctx.translate(charWidth * scaleFactorX, 0);
           width += charWidth;
         }
         current.x += width;
@@ -4243,7 +4243,7 @@ var CanvasGraphics = (function() {
           if (this.ctx.$addCurrentX) {
             this.ctx.$addCurrentX(-e * 0.001 * this.current.fontSize);
           } else {
-            this.current.x -= e * 0.001 * this.current.fontSize;
+            this.current.x -= e * 0.001 * this.current.fontSize * this.current.textHScale;
           }
         } else if (IsString(e)) {
           this.showText(e);
