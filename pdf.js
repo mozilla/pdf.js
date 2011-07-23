@@ -4224,7 +4224,6 @@ var CanvasGraphics = (function() {
           var charWidth = FontMeasure.measureText(c) + charSpacing;
           if (c.charCodeAt(0) == 32)
             charWidth += wordSpacing;
-
           ctx.translate(charWidth * scaleFactorX, 0);
           width += charWidth;
         }
