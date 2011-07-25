@@ -2313,11 +2313,16 @@ var Lexer = (function() {
         }
         if (specialChars[ch.charCodeAt(0)] != 1) {
           var x, x2;
-          if (((x = ToHexDigit(ch)) == -1) ||
-              ((x2 = ToHexDigit(stream.getChar())) == -1)) {
+          if ((x = ToHexDigit(ch)) == -1)
             error('Illegal character in hex string');
-            break;
-          }
+
+          ch = stream.getChar();
+          while (specialChars[ch.charCodeAt(0)] == 1)
+            ch = stream.getChar();
+
+          if ((x2 = ToHexDigit(ch)) == -1)
+            error('Illegal character in hex string');
+
           str += String.fromCharCode((x << 4) | x2);
         }
       }
