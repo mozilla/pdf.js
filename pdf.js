@@ -4142,7 +4142,7 @@ var CanvasGraphics = (function() {
       this.current.textHScale = scale / 100;
     },
     setLeading: function(leading) {
-      this.current.leading = leading;
+      this.current.leading = -leading;
     },
     setFont: function(fontRef, size) {
       var font = this.xref.fetchIfRef(this.res.get('Font'));
@@ -4194,7 +4194,7 @@ var CanvasGraphics = (function() {
       }
     },
     setLeadingMoveText: function(x, y) {
-      this.setLeading(y);
+      this.setLeading(-y);
       this.moveText(x, y);
     },
     setTextMatrix: function(a, b, c, d, e, f) {
@@ -4207,7 +4207,7 @@ var CanvasGraphics = (function() {
       this.current.y = this.current.lineY = 0;
     },
     nextLine: function() {
-      this.moveText(0, -this.current.leading);
+      this.moveText(0, this.current.leading);
     },
     showText: function(text) {
       // TODO: apply charSpacing, wordSpacing, textHScale
