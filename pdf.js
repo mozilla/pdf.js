@@ -4207,7 +4207,7 @@ var CanvasGraphics = (function() {
       this.current.y = this.current.lineY = 0;
     },
     nextLine: function() {
-      this.moveText(0, this.current.leading);
+      this.moveText(0, -this.current.leading);
     },
     showText: function(text) {
       // TODO: apply charSpacing, wordSpacing, textHScale
