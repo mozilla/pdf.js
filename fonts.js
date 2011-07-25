@@ -357,8 +357,14 @@ var Font = (function Font() {
     switch (properties.type) {
       case 'Type1':
       case 'CIDFontType0':
-        var cff = new CFF(name, file, properties);
         this.mimetype = 'font/opentype';
+        
+        var subtype = properties.subtype;
+        if (subtype === 'Type1C') {
+          var cff = new Type2CFF(file, properties);
+        } else {
+          var cff = new CFF(name, file, properties);
+        }
 
         // Wrap the CFF data inside an OTF font file
         data = this.convert(name, cff, properties);
@@ -377,6 +383,7 @@ var Font = (function Font() {
         warn('Font ' + properties.type + ' is not supported');
         break;
     }
+
     this.data = data;
     this.textMatrix = properties.textMatrix || IDENTITY_MATRIX;
     this.type = properties.type;
@@ -1062,6 +1069,7 @@ var Font = (function Font() {
 
       var charstrings = font.charstrings;
       properties.fixedPitch = isFixedPitch(charstrings);
+
       var fields = {
         // PostScript Font Program
         'CFF ': font.data,
@@ -1070,7 +1078,7 @@ var Font = (function Font() {
         'OS/2': stringToArray(createOS2Table(properties)),
 
         // Character to glyphs mapping
-        'cmap': createCMapTable(charstrings.slice()),
+        'cmap': createCMapTable(charstrings.slice(), font.glyphIds),
 
         // Font header
         'head': (function() {
@@ -2008,3 +2016,350 @@ CFF.prototype = {
   }
 };
 
+var Type2CFF = (function() {
+
+  // TODO: replace parsing code with the Type2Parser in font_utils.js
+  function constructor(file, properties) {
+    var bytes = file.getBytes();
+    this.bytes = bytes;
+    this.properties = properties;
+   
+    // Other classes expect this.data to be a Javascript array
+    var data = []
+    for (var i = 0, ii = bytes.length; i < ii; ++i) 
+      data.push(bytes[i]);
+    this.data = data;
+
+    this.parse();
+  };
+
+  constructor.prototype = {
+    parse: function cff_parse() {
+      var header = this.parseHeader();
+      var nameIndex = this.parseIndex(header.endPos);
+      
+      var dictIndex = this.parseIndex(nameIndex.endPos);
+      if (dictIndex.length != 1)
+        error('More than 1 font');
+      
+      var stringIndex = this.parseIndex(dictIndex.endPos);
+      var gsubrIndex = this.parseIndex(stringIndex.endPos);
+
+
+      var strings = this.getStrings(stringIndex);
+
+      var baseDict = this.parseDict(dictIndex.get(0));
+      var topDict = this.getTopDict(baseDict, strings);
+
+      var bytes = this.bytes;
+
+      var privInfo = topDict['Private'];
+      var privOffset = privInfo[1], privLength = privInfo[0];
+      var privBytes = bytes.subarray(privOffset, privOffset + privLength);
+      baseDict = this.parseDict(privBytes);
+      var  privDict = this.getPrivDict(baseDict, strings);
+
+      TODO('Parse encoding');
+      var charStrings = this.parseIndex(topDict['CharStrings']);
+      var charset = this.parseCharsets(topDict['charset'], charStrings.length,
+          strings);
+
+      // charstrings contains info about glyphs (one element per glyph
+      // containing mappings for {unicode, width})
+      var charstrings = this.getCharStrings(charset, charStrings,
+          privDict, this.properties);
+     
+      // create the mapping between charstring and glyph id
+      var glyphIds = [];
+      for (var i = 0, ii = charstrings.length; i < ii; ++i) {
+        glyphIds.push(charstrings[i].gid);
+      }
+
+      this.charstrings = charstrings;
+      this.glyphIds = glyphIds;
+    },
+    getCharStrings: function cff_charstrings(charsets, charStrings,
+                                             privDict, properties) {
+      var widths = properties.widths;
+
+      var defaultWidth = privDict['defaultWidthX'];
+      var nominalWidth = privDict['nominalWidthX'];
+
+      var charstrings = [];
+      for (var i = 0, ii = charsets.length; i < ii; ++i) {
+        var charName = charsets[i];
+        var charCode = GlyphsUnicode[charName];
+        if (charCode) {
+          var width = widths[charCode] || defaultWidth;
+          charstrings.push({unicode: charCode, width: width, gid: i});
+        } else {
+          if (charName !== '.notdef')
+            warn('Cannot find unicode for glyph ' + charName);
+        }
+      }
+
+      // sort the arry by the unicode value
+      charstrings.sort(function(a, b) {return a.unicode - b.unicode});
+      return charstrings;
+    },
+    parseEncoding: function cff_parseencoding(pos) {
+      if (pos == 0) {
+        return Encodings.StandardEncoding;
+      } else if (pos == 1) {
+        return Encodings.ExpertEncoding;
+      }
+
+      error('not implemented encodings');
+    },
+    parseCharsets: function cff_parsecharsets(pos, length, strings) {
+      var bytes = this.bytes;
+      var format = bytes[pos++];
+      var charset = ['.notdef'];
+      // subtract 1 for the .notdef glyph
+      length -= 1;
+
+      switch (format) {
+        case 0:
+          for (var i = 0; i < length; ++i) {
+            var id = bytes[pos++];
+            id = (id << 8) | bytes[pos++];
+            charset.push(strings[id]);
+          }
+          return charset;
+        case 1:
+          while (charset.length <= length) {
+            var first = bytes[pos++];
+            first = (first << 8) | bytes[pos++];
+            var numLeft = bytes[pos++];
+            for (var i = 0; i <= numLeft; ++i)
+              charset.push(strings[first++]);
+          }
+          return charset;
+        case 2:
+          while (charset.length <= length) {
+            var first = bytes[pos++];
+            first = (first << 8) | bytes[pos++];
+            var numLeft = bytes[pos++];
+            numLeft = (numLeft << 8) | bytes[pos++];
+            for (var i = 0; i <= numLeft; ++i)
+              charset.push(strings[first++]);
+          }
+          return charset;
+        default:
+          error('Unknown charset format');
+      }
+
+    },
+    getPrivDict: function cff_getprivdict(baseDict, strings) {
+      var dict = {};
+
+      // default values
+      dict['defaultWidthX'] = 0;
+      dict['nominalWidthX'] = 0;
+
+      for (var i = 0, ii = baseDict.length; i < ii; ++i) {
+        var pair = baseDict[i];
+        var key = pair[0];
+        var value = pair[1];
+        switch(key) {
+          case 20:
+            dict['defaultWidthX'] = value[0];
+          case 21:
+            dict['nominalWidthX'] = value[0];
+          default:
+            TODO('interpret top dict key');
+        }
+      }
+      return dict;
+    },
+    getTopDict: function cff_gettopdict(baseDict, strings) {
+      var dict = {};
+
+      // default values
+      dict['Encoding'] = 0;
+      dict['charset'] = 0;
+
+      for (var i = 0, ii = baseDict.length; i < ii; ++i) {
+        var pair = baseDict[i];
+        var key = pair[0];
+        var value = pair[1];
+        switch(key) {
+          case 1:
+            dict['Notice'] = strings[value[0]];
+            break;
+          case 4:
+            dict['Weight'] = strings[value[0]];
+            break;
+          case 3094:
+            dict['BaseFontName'] = strings[value[0]];
+            break;
+          case 5:
+            dict['FontBBox'] = value;
+            break;
+          case 13:
+            dict['UniqueID'] = value[0];
+            break;
+          case 15:
+            dict['charset'] = value[0];
+            break;
+          case 16:
+            dict['Encoding'] = value[0];
+            break;
+          case 17:
+            dict['CharStrings'] = value[0];
+            break;
+          case 18:
+            dict['Private'] = value;
+            break;
+          default:
+            TODO('interpret top dict key');
+        }
+      }
+      return dict;
+    },
+    getStrings: function cff_getstrings(stringIndex) {
+      function bytesToString(bytesArr) {
+        var s = "";
+        for (var i = 0, ii = bytesArr.length; i < ii; ++i)
+          s += String.fromCharCode(bytesArr[i]);
+        return s;
+      }
+
+      var stringArray = [];
+      for (var i = 0, ii = CFFStrings.length; i < ii; ++i)
+        stringArray.push(CFFStrings[i]);
+
+      for (var i = 0, ii = stringIndex.length; i < ii; ++i)
+        stringArray.push(bytesToString(stringIndex.get(i)));
+
+      return stringArray;
+    },
+    parseHeader: function cff_parseHeader() {
+      var bytes = this.bytes;
+      var offset = 0;
+
+      while(bytes[offset] != 1)
+        ++offset;
+
+      if (offset != 0) {
+        warning("cff data is shifted");
+        bytes = bytes.subarray(offset);
+        this.bytes = bytes;
+      }
+
+      return {
+        endPos: bytes[2],
+        offsetSize: bytes[3]
+      }
+    },
+    parseDict: function cff_parseDict(dict) {
+      var pos = 0;
+
+      function parseOperand() {
+        var value = dict[pos++];
+        if (value === 30) {
+          return parseFloatOperand(pos);
+        } else if (value === 28) {
+          value = dict[pos++];
+          value = (value << 8) | dict[pos++];
+          return value;
+        } else if (value === 29) {
+          value = dict[pos++];
+          value = (value << 8) | dict[pos++];
+          value = (value << 8) | dict[pos++];
+          value = (value << 8) | dict[pos++];
+          return value;
+        } else if (value <= 246) {
+          return value - 139;
+        } else if (value <= 250) {
+          return ((value - 247) * 256) + dict[pos++] + 108;
+        } else if (value <= 254) {
+          return -((value - 251) * 256) - dict[pos++] - 108;
+        } else {
+          error('Incorrect byte');
+        }
+      };
+
+      function parseFloatOperand() {
+        var str = "";
+        var eof = 15;
+        var lookup = ['0', '1', '2', '3', '4', '5', '6', '7', '8',
+            '9', '.', 'E', 'E-', null, '-'];
+        var length = dict.length;
+        while (pos < length) {
+          var b = dict[pos++];
+          var b1 = b >> 4;
+          var b2 = b & 15;
+
+          if (b1 == eof)
+            break;
+          str += lookup[b1];
+
+          if (b2 == eof)
+            break;
+          str += lookup[b2];
+        }
+        return parseFloat(str);
+      };
+
+      var operands = [];
+      var entries = [];
+      
+      var pos = 0;
+      var end = dict.length;
+      while (pos < end) {
+        var b = dict[pos];
+        if (b <= 21) {
+          if (b === 12) {
+            ++pos;
+            var b = (b << 8) | dict[pos];
+          }
+          entries.push([b, operands]);
+          operands = [];
+          ++pos;
+        } else {
+          operands.push(parseOperand());
+        }
+      }
+      return entries;
+    },
+    parseIndex: function cff_parseIndex(pos) {
+      var bytes = this.bytes;
+      var count = bytes[pos++] << 8 | bytes[pos++];
+      if (count == 0) {
+        var offsets = [];
+        var end = pos;
+      } else {
+        var offsetSize = bytes[pos++];
+        // add 1 for offset to determine size of last object
+        var startPos = pos + ((count + 1) * offsetSize) - 1;
+
+        var offsets = [];
+        for (var i = 0, ii = count + 1; i < ii; ++i) {
+          var offset = 0;
+          for (var j = 0; j < offsetSize; ++j) {
+            offset <<= 8;
+            offset += bytes[pos++];
+          }
+          offsets.push(startPos + offset);
+        }
+        var end = offsets[count];
+      }
+
+      return {
+        get: function index_get(index) {
+          if (index >= count)
+            return null;
+
+          var start = offsets[index];
+          var end = offsets[index + 1];
+          return bytes.subarray(start, end);
+        },
+        length: count,
+        endPos: end
+      }
+    },
+  };
+
+  return constructor;
+})();

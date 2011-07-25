@@ -232,6 +232,9 @@ var DecodeStream = (function() {
       if (!n)
         n = 1;
       this.pos += n;
+    },
+    reset: function decodestream_reset() {
+      this.pos = 0;
     }
   };
 
@@ -3818,8 +3821,24 @@ var PartialEvaluator = (function() {
         }
       }
 
+      if (fontFile && fontFile.dict) {
+        var fileType = fontFile.dict.get('Subtype');
+        if (fileType)
+          fileType = fileType.name;
+      }
+
+      var widths = fontDict.get('Widths');
+      if (widths) {
+        var glyphWidths = {};
+        var unicode = fontDict.get('FirstChar');
+        for (var i = 0, ii = widths.length; i < ii; ++i)
+          glyphWidths[unicode++] = widths[i];
+      }
+
       var properties = {
         type: subType.name,
+        subtype: fileType,
+        widths: glyphWidths,
         encoding: encodingMap,
         charset: charset,
         firstChar: fontDict.get('FirstChar'),
