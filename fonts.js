@@ -15,11 +15,51 @@ var kMaxFontFileSize = 200000;
 var kMaxWaitForFontFace = 1000;
 
 /**
- * Hold a map of decoded fonts and of the standard fourteen Type1 fonts and
- * their acronyms.
- * TODO Add the standard fourteen Type1 fonts list by default
- *      http://cgit.freedesktop.org/poppler/poppler/tree/poppler/GfxFont.cc#n65
+ * Hold a map of decoded fonts and of the standard fourteen Type1
+ * fonts and their acronyms.
  */
+var stdFontMap = {
+  "Arial":                        "Helvetica",
+  "Arial_Bold":                   "Helvetica-Bold",
+  "Arial_BoldItalic":             "Helvetica-BoldOblique",
+  "Arial_Italic":                 "Helvetica-Oblique",
+  "Arial_BoldItalicMT":           "Helvetica-BoldOblique",
+  "Arial_BoldMT":                 "Helvetica-Bold",
+  "Arial_ItalicMT":               "Helvetica-Oblique",
+  "ArialMT":                      "Helvetica",
+  "Courier_Bold":                 "Courier-Bold",
+  "Courier_BoldItalic":           "Courier-BoldOblique",
+  "Courier_Italic":               "Courier-Oblique",
+  "CourierNew":                   "Courier",
+  "CourierNew_Bold":              "Courier-Bold",
+  "CourierNew_BoldItalic":        "Courier-BoldOblique",
+  "CourierNew_Italic":            "Courier-Oblique",
+  "CourierNewPS_BoldItalicMT":    "Courier-BoldOblique",
+  "CourierNewPS_BoldMT":          "Courier-Bold",
+  "CourierNewPS_ItalicMT":        "Courier-Oblique",
+  "CourierNewPSMT":               "Courier",
+  "Helvetica_Bold":               "Helvetica-Bold",
+  "Helvetica_BoldItalic":         "Helvetica-BoldOblique",
+  "Helvetica_Italic":             "Helvetica-Oblique",
+  "Symbol_Bold":                  "Symbol",
+  "Symbol_BoldItalic":            "Symbol",
+  "Symbol_Italic":                "Symbol",
+  "TimesNewRoman":                "Times-Roman",
+  "TimesNewRoman_Bold":           "Times-Bold",
+  "TimesNewRoman_BoldItalic":     "Times-BoldItalic",
+  "TimesNewRoman_Italic":         "Times-Italic",
+  "TimesNewRomanPS":              "Times-Roman",
+  "TimesNewRomanPS_Bold":         "Times-Bold",
+  "TimesNewRomanPS_BoldItalic":   "Times-BoldItalic",
+  "TimesNewRomanPS_BoldItalicMT": "Times-BoldItalic",
+  "TimesNewRomanPS_BoldMT":       "Times-Bold",
+  "TimesNewRomanPS_Italic":       "Times-Italic",
+  "TimesNewRomanPS_ItalicMT":     "Times-Italic",
+  "TimesNewRomanPSMT":            "Times-Roman",
+  "TimesNewRomanPSMT_Bold":       "Times-Bold",
+  "TimesNewRomanPSMT_BoldItalic": "Times-BoldItalic",
+  "TimesNewRomanPSMT_Italic":     "Times-Italic"
+};
 
 var FontMeasure = (function FontMeasure() {
   var kScalePrecision = 50;
@@ -39,7 +79,12 @@ var FontMeasure = (function FontMeasure() {
         measureCache = null
       }
 
-      ctx.font = (size * kScalePrecision) + 'px "' + font.loadedName + '"';
+      var name = font.loadedName;
+      var bold = font.bold ? "bold" : "normal";
+      var italic = font.italic ? "italic" : "normal";
+      size *= kScalePrecision;
+      var rule = bold + " " + italic + " " + size + 'px "' + name + '"';
+      ctx.font = rule;
     },
     measureText: function fonts_measureText(text) {
       var width;
@@ -78,19 +123,20 @@ var FontLoader = {
       var font = fonts[i];
 
       var obj = new Font(font.name, font.file, font.properties);
-      obj.loading = true;
       objs.push(obj);
 
       var str = '';
       var data = obj.data;
-      var length = data.length;
-      for (var j = 0; j < length; j++)
-        str += String.fromCharCode(data[j]);
+      if (data) {
+        var length = data.length;
+        for (var j = 0; j < length; j++)
+          str += String.fromCharCode(data[j]);
 
-      var rule = isWorker ? obj.bindWorker(str) : obj.bindDOM(str);
-      if (rule) {
-        rules.push(rule);
-        names.push(obj.loadedName);
+        var rule = isWorker ? obj.bindWorker(str) : obj.bindDOM(str);
+        if (rule) {
+          rules.push(rule);
+          names.push(obj.loadedName);
+        }
       }
     }
 
@@ -350,6 +396,16 @@ var Font = (function Font() {
     // to avoid the cost of waiting for it be be loaded by the platform.
     if (properties.ignore) {
       this.loadedName = 'Arial';
+      this.loading = false;
+      return;
+    }
+
+    if (!file) {
+      var fontName = stdFontMap[name];
+      this.bold = (fontName.indexOf("Bold") != -1);
+      this.italic = (fontName.indexOf("Oblique") != -1);
+      this.loadedName = fontName.split("-")[0];
+      this.loading = false;
       return;
     }
 
@@ -385,10 +441,11 @@ var Font = (function Font() {
     }
 
     this.data = data;
-    this.textMatrix = properties.textMatrix || IDENTITY_MATRIX;
     this.type = properties.type;
+    this.textMatrix = properties.textMatrix;
     this.loadedName = getUniqueName();
     this.compositeFont = properties.compositeFont;
+    this.loading = true;
   };
 
   var numFonts = 0;

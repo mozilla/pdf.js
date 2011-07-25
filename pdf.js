@@ -3662,11 +3662,6 @@ var PartialEvaluator = (function() {
       assertWellFormed(IsName(fontName), 'invalid font name');
       fontName = fontName.name.replace(/[\+,\-]/g, '_');
 
-      var fontFile = descriptor.get('FontFile', 'FontFile2', 'FontFile3');
-      if (!fontFile)
-        error('FontFile not found for font: ' + fontName);
-      fontFile = xref.fetchIfRef(fontFile);
-
       var encodingMap = {};
       var charset = [];
       if (compositeFont) {
@@ -3821,10 +3816,15 @@ var PartialEvaluator = (function() {
         }
       }
 
-      if (fontFile && fontFile.dict) {
-        var fileType = fontFile.dict.get('Subtype');
-        if (fileType)
-          fileType = fileType.name;
+      var fontFile = descriptor.get('FontFile', 'FontFile2', 'FontFile3');
+      if (fontFile) {
+        fontFile = xref.fetchIfRef(fontFile);
+
+        if (fontFile.dict) {
+          var fileType = fontFile.dict.get('Subtype');
+          if (fileType)
+            fileType = fileType.name;
+        }
       }
 
       var widths = fontDict.get('Widths');
@@ -4154,26 +4154,30 @@ var CanvasGraphics = (function() {
       if (!font)
         return;
 
-      var fontName = '';
+      var name = '';
       var fontObj = font.fontObj;
       if (fontObj)
-        fontName = fontObj.loadedName;
+        name = fontObj.loadedName;
 
-      if (!fontName) {
+      if (!name) {
         // TODO: fontDescriptor is not available, fallback to default font
-        fontName = 'sans-serif';
+        name = 'sans-serif';
       }
 
       this.current.font = fontObj;
       this.current.fontSize = size;
 
       if (this.ctx.$setFont) {
-        this.ctx.$setFont(fontName, size);
+        this.ctx.$setFont(name, size);
       } else {
         FontMeasure.setActive(fontObj, size);
 
         size = (size <= kRasterizerMin) ? size * kScalePrecision : size;
-        this.ctx.font = size + 'px "' + fontName + '"';
+
+        var bold = fontObj.bold ? "bold" : "normal";
+        var italic = fontObj.italic ? "italic" : "normal";
+        var rule = bold + " " + italic + " " + size + 'px "' + name + '"';
+        this.ctx.font = rule;
       }
     },
     setTextRenderingMode: function(mode) {
@@ -4224,7 +4228,7 @@ var CanvasGraphics = (function() {
           scaleFactorX = scaleFactorY = kScalePrecision;
           ctx.scale(1 / scaleFactorX, 1 / scaleFactorY);
         }
-        ctx.transform.apply(ctx, font.textMatrix);
+        ctx.transform.apply(ctx, font.textMatrix || IDENTITY_MATRIX);
         text = font.charsToUnicode(text);
       }
 
