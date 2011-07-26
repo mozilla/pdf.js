@@ -515,5 +515,5 @@ window.onload = function() {
 };
 
 window.addEventListener('pdfloaded', function(evt) {
-  PDFViewer.readPDF(data);
+  PDFViewer.readPDF(evt.detail);
 }, true);
