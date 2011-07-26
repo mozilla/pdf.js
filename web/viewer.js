@@ -29,6 +29,9 @@ function queryParams() {
 
 function open(url) {
   document.title = url;
+  if (url.indexOf("http") == 0)
+    return;
+
   var req = new XMLHttpRequest();
   req.open('GET', url);
   req.mozResponseType = req.responseType = 'arraybuffer';
@@ -37,13 +40,21 @@ function open(url) {
     if (req.readyState == 4 && req.status == req.expected) {
       var data = (req.mozResponseArrayBuffer || req.mozResponse ||
                   req.responseArrayBuffer || req.response);
-      pdfDocument = new PDFDoc(new Stream(data));
-      numPages = pdfDocument.numPages;
-      document.getElementById('numPages').innerHTML = numPages.toString();
-      goToPage(pageNum);
+      loadDocument(data);
     }
   };
   req.send(null);
+}
+
+window.addEventListener("pdfloaded", function(aEvent) {
+  loadDocument(aEvent.detail);
+}, true);
+
+function loadDocument(data) {
+  pdfDocument = new PDFDoc(new Stream(data));
+  numPages = pdfDocument.numPages;
+  document.getElementById('numPages').innerHTML = numPages.toString();
+  goToPage(pageNum);
 }
 
 function gotoPage(num) {
