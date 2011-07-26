@@ -249,6 +249,8 @@ var PDFViewer = {
   openURL: function(url) {
     PDFViewer.url = url;
     document.title = url;
+    if (url.indexOf("http") == 0)
+      return;
 
     if (this.thumbsLoadingInterval) {
       // cancel thumbs loading operations
@@ -511,3 +513,7 @@ window.onload = function() {
     }
   };
 };
+
+window.addEventListener('pdfloaded', function(evt) {
+  PDFViewer.readPDF(data);
+}, true);
