@@ -2,35 +2,129 @@
 /* vim: set shiftwidth=4 tabstop=8 autoindent cindent expandtab: */
 
 body {
-    margin: 6px;
-    padding: 0px;
-    background-color: #c0bdb7;
+  background-color: #929292;
+  font-family: 'Lucida Grande', 'Lucida Sans Unicode', Helvetica, Arial, Verdana, sans-serif;
+  margin: 0px;
+  padding: 0px;
 }
 
+/* === Toolbar === */
 #controls {
-    position:fixed;
-    left: 0px;
-    top: 0px;
-    width: 100%;
-    padding: 7px;
-    border-bottom: 1px solid black;
-    background-color: rgb(242, 240, 238);
+  background-color: #eee;
+  background: -moz-linear-gradient(center bottom, #eee 0%, #fff 100%);
+  background: -webkit-gradient(linear, left bottom, left top, color-stop(0.0, #ddd), color-stop(1.0, #fff));
+  border-bottom: 1px solid #666;
+  padding: 4px;
+  position: fixed;
+  left: 0px;
+  top: 0px;
+  height: 40px;
+  width: 100%;
 }
 
-span#info {
-    float: right;
-    font: 14px sans-serif;
-    margin-right: 10px;
+.separator {
+  display: inline;
+  border-left: 1px solid #d3d3d3;
+  border-right: 1px solid #fff;
+  height: 32px;
+  width:0px;
+  margin: 4px;
 }
 
-#viewer {
+#controls > button {
+  line-height: 32px;
 }
 
-#canvas {
-    margin: auto;
-    display: block;
+#controls > button[disabled] > img {
+  opacity: 0.5;
 }
 
 #pageNumber {
-    text-align: right;
+  text-align: right;
 }
+
+#fileInput {
+  line-height: 32px;
+}
+
+span#info {
+  display: none;
+}
+
+@-moz-document regexp("http:.*debug=1.*") {
+  span#info {
+    display: inline-block;
+  }
+}
+
+/* === Sidebar === */
+#sidebar {
+  position: fixed;
+  width: 200px;
+  top: 62px;
+  bottom: 18px;
+  left: -140px;
+  transition: left 0.25s ease-in-out 1s;
+  -moz-transition: left 0.25s ease-in-out 1s;
+  -webkit-transition: left 0.25s ease-in-out 1s;
+}
+
+#sidebar:hover {
+  left: 0px;
+  transition: left 0.25s ease-in-out 0s;
+  -moz-transition: left 0.25s ease-in-out 0s;
+  -webkit-transition: left 0.25s ease-in-out 0s;
+}
+
+#sidebarBox {
+  background-color: rgba(0, 0, 0, 0.7);
+  width: 150px;
+  height: 100%;
+  border-top-right-radius: 8px;
+  border-bottom-right-radius: 8px;
+  -moz-border-radius-topright: 8px;
+  -moz-border-radius-bottomright: 8px;
+  -webkit-border-top-right-radius: 8px;
+  -webkit-border-bottom-right-radius: 8px;
+  box-shadow: 0px 2px 8px #000;
+  -moz-box-shadow: 0px 2px 8px #000;
+  -webkit-box-shadow: 0px 2px 8px #000;
+}
+
+#sidebarScrollView {
+  position: absolute;
+  overflow: hidden;
+  overflow-y: auto;
+  top: 10px;
+  bottom: 10px;
+  left: 10px;
+  width: 130px;
+}
+
+.thumbnail {
+  width: 104px;
+  height: 134px;
+  background-color: white;
+  margin: 5px;
+}
+
+/* === Content view === */
+canvas {
+  margin: auto;
+  display: block;
+  box-shadow: 0px 4px 10px #000;
+  -moz-box-shadow: 0px 4px 10px #000;
+  -webkit-box-shadow: 0px 4px 10px #000;
+}
+
+.page {
+  width: 816px;
+  height: 1056px;
+  margin: 10px auto;
+}
+
+#viewer {
+  margin: 44px 0px 0px;
+  padding: 8px 0px;
+}
+
