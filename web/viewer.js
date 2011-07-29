@@ -5,7 +5,6 @@
 
 var kDefaultURL = 'compressed.tracemonkey-pldi-09.pdf';
 var kDefaultScale = 150;
-
 var kCacheSize = 20;
 
 var Cache = function(size) {
@@ -24,41 +23,40 @@ var PDFView = {
   thumbnails: [],
 
   set scale(val) {
-    var options = document.getElementById('scaleSelect').options;
-    for (var i = 0; i < options.length; i++) {
-      var option = options[i];
-      option.selected = (option.value == val);
-    }
-
     var pages = this.pages;
     var cssUnits = 96.0 / 72.0;
     for (var i = 0; i < pages.length; i++)
       pages[i].update(val / 100 * cssUnits);
 
     // Jump the scroll position to the correct page.
-    this.page = this.page;
+    document.location.hash = this.page;
+
+    var event = document.createEvent("UIEvents");
+    event.initUIEvent("scalechange", false, false, window, val);
+    window.dispatchEvent(event);
   },
 
   set page(val) {
     var pages = this.pages;
-    var input = document.getElementById("pageNumber");
-    if (val <= 0 || val > pages.length) {
-      input.value = this.page;
-      return;
+    if (val <= 0 || val == this.page || val > pages.length) {
+      // TODO If the hash if set to a dumb value, like #123456, the input field
+      // of the UI will be set to it even if no page is changed because its out
+      // of bound.
+      val = this.page || 1;
+    } else {
+      // Draw the page before jumping to it in order to avoid seeing the
+      // possible gap between pages if the page has never been draw before.
+      pages[val - 1].draw();
+      document.location.hash = val;
     }
   
-    document.location.hash = val;
-    document.getElementById("previous").disabled = (val == 1);
-    document.getElementById("next").disabled = (val == pages.length);
-    if (input.value == val)
-      return;
-
-    input.value = val;
-    pages[val - 1].draw();
+    var event = document.createEvent("UIEvents");
+    event.initUIEvent("pagechange", false, false, window, val);
+    window.dispatchEvent(event);
   },
 
   get page() {
-    return parseInt(document.location.hash.substring(1)) || 1;
+    return parseInt(document.location.hash.substring(1));
   },
 
   open: function(url, scale) {
@@ -253,7 +251,7 @@ window.addEventListener('pdfloaded', function(evt) {
   PDFView.load(evt.detail);
 }, true);
 
-window.addEventListener('scroll', function(evt) {
+window.addEventListener('scroll', function onscroll(evt) {
   var visiblePages = PDFView.getVisiblePages();
   for (var i = 0; i < visiblePages.length; i++) {
     var page = visiblePages[i];
@@ -316,3 +314,19 @@ window.addEventListener("transitionend", function(evt) {
   }, 500);
 }, true);
 
+
+window.addEventListener("scalechange", function(evt) {
+  var options = document.getElementById('scaleSelect').options;
+  for (var i = 0; i < options.length; i++) {
+    var option = options[i];
+    option.selected = (option.value == evt.detail);
+  }
+}, true);
+
+window.addEventListener("pagechange", function(evt) {
+  var page = evt.detail;
+  document.location.hash = page;
+  document.getElementById("pageNumber").value = page;
+  document.getElementById("previous").disabled = (page == 1);
+  document.getElementById("next").disabled = (page == PDFView.pages.length);
+}, true);
