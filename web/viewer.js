@@ -6,6 +6,19 @@
 var kDefaultURL = 'compressed.tracemonkey-pldi-09.pdf';
 var kDefaultScale = 150;
 
+var kCacheSize = 20;
+
+var Cache = function(size) {
+  var data = [];
+  this.push = function(view) {
+    data.push(view);
+    if (data.length > size)
+      data.shift().update();
+  };
+};
+
+var cache = new Cache(kCacheSize);
+
 var PDFView = {
   pages: [],
   thumbnails: [],
@@ -121,7 +134,7 @@ var PDFView = {
     var windowBottom = window.pageYOffset + window.innerHeight;
     for (; i <= pages.length && currentHeight < windowBottom; i++) {
       var page = pages[i - 1];
-      visiblePages.push({ id: page.id, y: currentHeight });
+      visiblePages.push({ id: page.id, y: currentHeight, view: page });
       currentHeight += page.height * page.scale + kBottomMargin;
     }
 
@@ -146,7 +159,7 @@ var PageView = function(container, content, id, width, height, stats) {
   container.appendChild(div);
 
   this.update = function(scale) {
-    this.scale = scale;
+    this.scale = scale || this.scale;
     div.style.width =  (this.width * this.scale)+ 'px';
     div.style.height = (this.height * this.scale) + 'px';
 
@@ -157,7 +170,7 @@ var PageView = function(container, content, id, width, height, stats) {
   this.draw = function() {
     if (div.hasChildNodes()) {
       this.updateStats();
-      return;
+      return false;
     }
 
     var canvas = document.createElement('canvas');
@@ -176,6 +189,8 @@ var PageView = function(container, content, id, width, height, stats) {
 
     stats.begin = Date.now();
     this.content.startRendering(ctx, this.updateStats);
+
+    return true;
   };
 
   this.updateStats = function() {
@@ -240,8 +255,11 @@ window.addEventListener('pdfloaded', function(evt) {
 
 window.addEventListener('scroll', function(evt) {
   var visiblePages = PDFView.getVisiblePages();
-  for (var i = 0; i < visiblePages.length; i++)
-    PDFView.pages[visiblePages[i].id - 1].draw();
+  for (var i = 0; i < visiblePages.length; i++) {
+    var page = visiblePages[i];
+    if (PDFView.pages[page.id - 1].draw())
+      cache.push(page.view);
+  }
 
   if (!visiblePages.length)
     return;
