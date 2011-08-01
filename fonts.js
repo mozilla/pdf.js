@@ -1001,7 +1001,8 @@ var Font = (function Font() {
       var numOfHMetrics = int16(font.getBytes(2));
 
       var numOfSidebearings = numGlyphs - numOfHMetrics;
-      var numMissing = numOfSidebearings - (hmtx.length - numOfHMetrics * 4);
+      var numMissing = numOfSidebearings -
+        ((hmtx.length - numOfHMetrics * 4) >> 1);
       if (numMissing > 0) {
         font.pos = (font.start ? font.start : 0) + hmtx.offset;
         var metrics = "";
@@ -1012,6 +1013,12 @@ var Font = (function Font() {
         hmtx.data = stringToArray(metrics);
       }
 
+      // Sanitizer reduces the glyph advanceWidth to the maxAdvanceWidth
+      // Sometimes it's 0. That needs to be fixed
+      if (hhea.data[10] == 0 && hhea.data[11] == 0) {
+        hhea.data[10] = 0xFF;
+        hhea.data[11] = 0xFF;
+      }
 
       // Replace the old CMAP table with a shiny new one
       if (properties.type == 'CIDFontType2') {
