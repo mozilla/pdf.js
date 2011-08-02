@@ -2997,12 +2997,12 @@ var Page = (function() {
           // Firefox error reporting from XHR callbacks.
           setTimeout(function () {
             var exc = null;
-            try {
+           // try {
               self.display(gfx);
               stats.render = Date.now();
-            } catch (e) {
-              exc = e.toString();
-            }
+          //  } catch (e) {
+          //    exc = e.toString();
+          //  }
             continuation(exc);
           });
         });
@@ -3571,6 +3571,7 @@ var PartialEvaluator = (function() {
     eval: function(stream, xref, resources, fonts) {
       resources = xref.fetchIfRef(resources) || new Dict();
       var xobjs = xref.fetchIfRef(resources.get('XObject')) || new Dict();
+      var patterns = xref.fetchIfRef(resources.get("Pattern")) || new Dict(); 
       var parser = new Parser(new Lexer(stream), false);
       var args = [], argsArray = [], fnArray = [], obj;
       
@@ -3581,7 +3582,23 @@ var PartialEvaluator = (function() {
           assertWellFormed(fn, "Unknown command '" + cmd + "'");
           // TODO figure out how to type-check vararg functions
 
-          if (cmd == 'Do' && !args[0].code) { // eagerly compile XForm objects
+          if ((cmd == 'SCN' || cmd == 'scn') && !args[args.length - 1].code) {
+            // compile tiling patterns
+            var patternName = args[args.length - 1];
+            // SCN/scn applies patterns along with normal colors
+            if (IsName(patternName)) {
+              var pattern = xref.fetchIfRef(patterns.get(patternName.name));
+              if (pattern) {
+                var dict = IsStream(pattern) ? pattern.dict : pattern;
+                var typeNum = dict.get("PatternType");
+                if (typeNum == 1) {
+                  patternName.code = this.eval(pattern, xref,
+                      dict.get('Resources'), fonts);
+                }
+              }
+            }
+          } else if (cmd == 'Do' && !args[0].code) {
+            // eagerly compile XForm objects
             var name = args[0].name;
             var xobj = xobjs.get(name);
             if (xobj) {
@@ -3595,7 +3612,8 @@ var PartialEvaluator = (function() {
               );
 
               if ('Form' == type.name) {
-                args[0].code = this.eval(xobj, xref, xobj.dict.get('Resources'), fonts);
+                args[0].code = this.eval(xobj, xref, xobj.dict.get('Resources'),
+                                         fonts);
               }
             }
           } else if (cmd == 'Tf') { // eagerly collect all fonts
@@ -4984,7 +5002,8 @@ var Pattern = (function() {
 
         color = base.getRgb(color);
       }
-      return new TilingPattern(pattern, dict, color, xref, ctx);
+      var code = patternName.code;
+      return new TilingPattern(pattern, code, dict, color, xref, ctx);
     case 2:
       var shading = xref.fetchIfRef(dict.get('Shading'));
       var matrix = dict.get('Matrix');
@@ -5136,7 +5155,7 @@ var RadialAxialShading = (function() {
 var TilingPattern = (function() {
   var PAINT_TYPE_COLORED = 1, PAINT_TYPE_UNCOLORED = 2;
   
-  function constructor(pattern, dict, color, xref, ctx) {
+  function constructor(pattern, code, dict, color, xref, ctx) {
       function multiply(m, tm) {
         var a = m[0] * tm[0] + m[1] * tm[2];
         var b = m[0] * tm[1] + m[1] * tm[3];
@@ -5214,9 +5233,7 @@ var TilingPattern = (function() {
       }
 
       var res = xref.fetchIfRef(dict.get('Resources'));
-      if (!pattern.code)
-        pattern.code = graphics.compile(pattern, xref, res, []);
-      graphics.execute(pattern.code, xref, res);
+      graphics.execute(code, xref, res);
 
       this.canvas = tmpCanvas;
   };
