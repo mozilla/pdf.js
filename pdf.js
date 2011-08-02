@@ -2997,12 +2997,12 @@ var Page = (function() {
           // Firefox error reporting from XHR callbacks.
           setTimeout(function () {
             var exc = null;
-           // try {
+            try {
               self.display(gfx);
               stats.render = Date.now();
-          //  } catch (e) {
-          //    exc = e.toString();
-          //  }
+            } catch (e) {
+              exc = e.toString();
+            }
             continuation(exc);
           });
         });
