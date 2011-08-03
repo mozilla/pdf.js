@@ -2187,7 +2187,6 @@ var Lexer = (function() {
       return value;
     },
     getString: function() {
-      var n = 0;
       var numParen = 1;
       var done = false;
       var str = '';
@@ -2269,8 +2268,6 @@ var Lexer = (function() {
           break;
         }
       } while (!done);
-      if (!str.length)
-        return EOF;
       return str;
     },
     getName: function(ch) {
