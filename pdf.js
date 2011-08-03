@@ -2412,6 +2412,9 @@ var Lexer = (function() {
           return;
         }
       }
+    },
+    skip: function() {
+      this.stream.skip();
     }
   };
 
