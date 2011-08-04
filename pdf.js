@@ -1523,18 +1523,18 @@ var CCITTFaxStream = (function() {
   };
 
   constructor.prototype.lookChar = function() {
+    if (this.buf != EOF)
+      return this.buf;
+
     var refLine = this.refLine;
     var codingLine = this.codingLine;
     var columns = this.columns;
 
     var refPos, blackPixels, bits;
 
-    if (this.buf != EOF)
-      return buf;
-
     if (this.outputBits == 0) {
       if (this.eof)
-        return;
+        return null;
 
       this.err = false;
 
@@ -1753,7 +1753,7 @@ var CCITTFaxStream = (function() {
           code1 = this.lookBits(13);
           if (code1 == EOF) {
             this.eof = true;
-            return;
+            return null;
           }
           if ((code1 >> 1) == 1) {
             break;
