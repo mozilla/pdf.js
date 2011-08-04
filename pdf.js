@@ -3618,9 +3618,6 @@ var PartialEvaluator = (function() {
         if (IsCmd(obj)) {
           var cmd = obj.cmd;
           var fn = OP_MAP[cmd];
-          if (!fn) {
-            log('blah');
-          }
           assertWellFormed(fn, "Unknown command '" + cmd + "'");
           // TODO figure out how to type-check vararg functions
 
