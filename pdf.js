@@ -228,6 +228,13 @@ var DecodeStream = (function() {
       }
       return String.fromCharCode(this.buffer[this.pos++]);
     },
+    makeSubStream: function decodestream_makeSubstream(start, length, dict) {
+      var end = start + length;
+      while (this.bufferLength <= end && !this.eof) {
+        this.readBlock();
+      }
+      return new Stream(this.buffer, start, length, dict);
+    },
     skip: function decodestream_skip(n) {
       if (!n)
         n = 1;
@@ -2436,28 +2443,21 @@ var Parser = (function() {
       this.buf2 = this.lexer.getObj();
     },
     shift: function() {
-      if (this.inlineImg > 0) {
-        if (this.inlineImg < 2) {
-          this.inlineImg++;
-        } else {
-          // in a damaged content stream, if 'ID' shows up in the middle
-          // of a dictionary, we need to reset
-          this.inlineImg = 0;
-        }
-      } else if (IsCmd(this.buf2, 'ID')) {
-        this.lexer.skip(); // skip char after 'ID' command
-        this.inlineImg = 1;
-      }
-      this.buf1 = this.buf2;
-      // don't buffer inline image data
-      this.buf2 = (this.inlineImg > 0) ? null : this.lexer.getObj();
+      if (IsCmd(this.buf2, 'ID')) {
+        this.buf1 = this.buf2;
+        this.buf2 = null;
+        // skip byte after ID
+        this.lexer.skip();
+      } else {
+        this.buf1 = this.buf2;
+        this.buf2 = this.lexer.getObj();
+     }
     },
     getObj: function(cipherTransform) {
-      // refill buffer after inline image data
-      if (this.inlineImg == 2)
-        this.refill();
-
-      if (IsCmd(this.buf1, '[')) { // array
+      if (IsCmd(this.buf1, 'BI')) { // inline image
+        this.shift();
+        return this.makeInlineImage(cipherTransform);
+      } else if (IsCmd(this.buf1, '[')) { // array
         this.shift();
         var array = [];
         while (!IsCmd(this.buf1, ']') && !IsEOF(this.buf1))
@@ -2472,7 +2472,6 @@ var Parser = (function() {
         while (!IsCmd(this.buf1, '>>') && !IsEOF(this.buf1)) {
           if (!IsName(this.buf1)) {
             error('Dictionary key must be a name object');
-            shift();
           } else {
             var key = this.buf1.name;
             this.shift();
@@ -2492,7 +2491,6 @@ var Parser = (function() {
           this.shift();
         }
         return dict;
-
       } else if (IsInt(this.buf1)) { // indirect reference or integer
         var num = this.buf1;
         this.shift();
@@ -2515,6 +2513,46 @@ var Parser = (function() {
       var obj = this.buf1;
       this.shift();
       return obj;
+    },
+    makeInlineImage: function(cipherTransform) {
+      var lexer = this.lexer;
+      var stream = lexer.stream;
+
+      // parse dictionary
+      var dict = new Dict();
+      while (!IsCmd(this.buf1, 'ID') && !IsEOF(this.buf1)) {
+        if (!IsName(this.buf1)) {
+          error('Dictionary key must be a name object');
+        } else {
+          var key = this.buf1.name;
+          this.shift();
+          if (IsEOF(this.buf1))
+            break;
+          dict.set(key, this.getObj(cipherTransform));
+        }
+      }
+
+      // parse image stream
+      var startPos = stream.pos;
+
+      var c1 = stream.getChar();
+      var c2 = stream.getChar();
+      while (!(c1 == 'E' && c2 == 'I') && c2 != null) {
+        c1 = c2;
+        c2 = stream.getChar();
+      }
+
+      var length = (stream.pos - 2) - startPos;
+      var imageStream = stream.makeSubStream(startPos, length, dict);
+      if (cipherTransform)
+        imageStream = cipherTransform.createStream(imageStream);
+      imageStream = this.filter(imageStream, dict, length);
+      imageStream.parameters = dict;
+
+      this.buf2 = new Cmd('EI');
+      this.shift();
+
+      return imageStream;
     },
     makeStream: function(dict, cipherTransform) {
       var lexer = this.lexer;
@@ -2577,15 +2615,14 @@ var Parser = (function() {
           return new PredictorStream(new FlateStream(stream), params);
         }
         return new FlateStream(stream);
-      } else if (name == 'DCTDecode') {
+      } else if (name == 'DCTDecode' || name == 'DCT') {
         var bytes = stream.getBytes(length);
         return new JpegStream(bytes, stream.dict);
-      } else if (name == 'ASCII85Decode') {
+      } else if (name == 'ASCII85Decode' || name == 'A85') {
         return new Ascii85Stream(stream);
-      } else if (name == 'ASCIIHexDecode') {
+      } else if (name == 'ASCIIHexDecode' || name == 'AHx') {
         return new AsciiHexStream(stream);
-      } else if (name == 'CCITTFaxDecode') {
-        TODO('implement fax stream');
+      } else if (name == 'CCITTFaxDecode' || name == 'CCF') {
         return new CCITTFaxStream(stream, params);
       } else {
         error("filter '" + name + "' not supported yet");
@@ -3551,6 +3588,8 @@ var PartialEvaluator = (function() {
 
     // Images
     BI: 'beginInlineImage',
+    ID: 'beginImageData',
+    EI: 'endInlineImage',
 
     // XObjects
     Do: 'paintXObject',
@@ -3579,6 +3618,9 @@ var PartialEvaluator = (function() {
         if (IsCmd(obj)) {
           var cmd = obj.cmd;
           var fn = OP_MAP[cmd];
+          if (!fn) {
+            log('blah');
+          }
           assertWellFormed(fn, "Unknown command '" + cmd + "'");
           // TODO figure out how to type-check vararg functions
 
@@ -4438,11 +4480,13 @@ var CanvasGraphics = (function() {
 
     // Images
     beginInlineImage: function() {
-      TODO('inline images');
-      error('(Stream will not be parsed properly, bailing now)');
-      // Like an inline stream:
-      //  - key/value pairs up to Cmd(ID)
-      //  - then image data up to Cmd(EI)
+      error('Should not call beginInlineImage');
+    },
+    beginImageData: function() {
+      error('Should not call beginImageData');
+    },
+    endInlineImage: function(image) {
+      this.paintImageXObject(null, image, true);
     },
 
     // XObjects
