@@ -230,9 +230,8 @@ var DecodeStream = (function() {
     },
     makeSubStream: function decodestream_makeSubstream(start, length, dict) {
       var end = start + length;
-      while (this.bufferLength <= end && !this.eof) {
+      while (this.bufferLength <= end && !this.eof)
         this.readBlock();
-      }
       return new Stream(this.buffer, start, length, dict);
     },
     skip: function decodestream_skip(n) {
