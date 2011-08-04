@@ -69,5 +69,11 @@
        "link": true,
        "rounds": 1,
        "type": "eq"
+    },
+    {  "id": "hmm-pdf",
+       "file": "pdfs/hmm.pdf",
+       "link": true,
+       "rounds": 1,
+       "type": "load"
     }
 ]
