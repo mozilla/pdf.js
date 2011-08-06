@@ -99,7 +99,7 @@ function nextPage(task, loadError) {
     var page = null;
     if (!failure) {
         try {
-            log("    loading page "+ task.pageNum +"... ");
+            log("    loading page "+ task.pageNum +"/"+ task.pdfDoc.numPages +"... ");
             ctx = canvas.getContext("2d");
             page = task.pdfDoc.getPage(task.pageNum);
 
