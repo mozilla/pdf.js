@@ -1,0 +1,10 @@
+[
+   {
+    "name":"firefox",
+    "path":"C:/Program Files (x86)/Firefox/firefox.exe"
+   },
+   {
+    "name":"aurora",
+    "path":"C:/Program Files (x86)/Aurora/firefox.exe"
+   }
+]
