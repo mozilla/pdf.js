@@ -1,6 +1,14 @@
 /* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- /
 /* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
 
+// - The JPEG specification can be found in the ITU CCITT Recommendation T.81
+//   (www.w3.org/Graphics/JPEG/itu-t81.pdf)
+// - The JFIF specification can be found in the JPEG File Interchange Format
+//   (www.w3.org/Graphics/JPEG/jfif3.pdf)
+// - The Adobe Application-Specific JPEG markers in the Supporting the DCT Filters
+//   in PostScript Level 2, Technical Note #5116
+//   (partners.adobe.com/public/developer/en/ps/sdk/5116.DCT_Filter.pdf)
+
 var JpegImage = (function() {
   "use strict";
 
@@ -263,13 +271,14 @@ var JpegImage = (function() {
         offset += 2;
         return value;
       }
-      function readFrame() {
+      function readDataBlock() {
         var length = readUint16();
         var array = data.subarray(offset, offset + length - 2);
         offset += array.length;
         return array;
       }
       var jfif = null;
+      var adobe = null;
       var pixels = null;
       var frame, resetInterval;
       var quantizationTables = [], frames = [];
@@ -300,7 +309,7 @@ var JpegImage = (function() {
           case 0xFFEE: // APP14
           case 0xFFEF: // APP15
           case 0xFFFE: // COM (Comment)
-            var appData = readFrame();
+            var appData = readDataBlock();
 
             if (fileMarker === 0xFFE0) {
               if (appData[0] === 0x4A && appData[1] === 0x46 && appData[2] === 0x49 &&
@@ -317,7 +326,17 @@ var JpegImage = (function() {
               }
             }
             // TODO APP1 - Exif
-            // TODO APP14 - Adobe
+            if (fileMarker === 0xFFEE) {
+              if (appData[0] === 0x41 && appData[1] === 0x64 && appData[2] === 0x6F &&
+                appData[3] === 0x62 && appData[4] === 65 && appData[5] === 0) { // 'Adobe\x00'
+                adobe = {
+                  version: appData[6],
+                  flags0: (appData[7] << 8) | appData[8],
+                  flags1: (appData[9] << 8) | appData[10],
+                  transformCode: appData[11]
+                };
+              }
+            }
             break;
 
           case 0xFFDB: // DQT (Define Quantization Tables)
@@ -423,6 +442,7 @@ var JpegImage = (function() {
       this.width = frame.samplesPerLine;
       this.height = frame.scanLines;
       this.jfif = jfif;
+      this.adobe = adobe;
       this.components = [];
       for (var id in frame.components) {
         if (frame.components.hasOwnProperty(id)) {
