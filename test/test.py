@@ -469,7 +469,7 @@ def maybeUpdateRefImages(options, browser):
         else:
             print '  Yes!  The references in tmp/ can be synced with ref/.'
             if options.reftest:                                                                                                              
-                startReftest(browser)
+                startReftest(browser, options)
             if not prompt('Would you like to update the master copy in ref/?'):
                 print '  OK, not updating.'
             else:
