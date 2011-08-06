@@ -1,9 +1,9 @@
 /* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- /
 /* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
 
-"use strict";
-
 var JpegImage = (function() {
+  "use strict";
+
   function constructor() {
   }
 
@@ -111,16 +111,16 @@ var JpegImage = (function() {
         return n;
       return n + (-1 << length) + 1;
     }
-    function decodeBaseline() {
+    function decodeBaseline(component) {
       var zz = new Int32Array(64);
-      var t = decodeHuffman(this.huffmanTableDC);
-      var diff = t == 0 ? 0 : receiveAndExtend(t);
-      zz[0]= (this.pred += diff);
+      var t = decodeHuffman(component.huffmanTableDC);
+      var diff = t === 0 ? 0 : receiveAndExtend(t);
+      zz[0]= (component.pred += diff);
       var k = 1;
       while (k < 64) {
-        var rs = decodeHuffman(this.huffmanTableAC);
+        var rs = decodeHuffman(component.huffmanTableAC);
         var s = rs & 15, r = rs >> 4;
-        if (s == 0) {
+        if (s === 0) {
           if (r != 15)
             break;
           k += 16;
@@ -189,7 +189,7 @@ var JpegImage = (function() {
     } else {
       for (i = 0; i < componentsLength; i++) {
         component = components[i];
-        component.blocksPerLine = (samplesPerLine * component.h / maxH + 7) >> 3
+        component.blocksPerLine = (samplesPerLine * component.h / maxH + 7) >> 3;
         component.mcusPerLine = ((component.blocksPerLine + component.h - 1) / component.h) | 0;
         component.decode = decodeBaseline;
       }
@@ -209,7 +209,7 @@ var JpegImage = (function() {
           v = component.v;
           for (j = 0; j < v; j++) {
             for (k = 0; k < h; k++) {
-              var zz = component.decode();
+              var zz = component.decode(component);
               if (marker) break stopComponentsParsing;
 
               var r = quantizeAndInverse(zz, component.quantizationTable);
@@ -295,9 +295,9 @@ var JpegImage = (function() {
           case 0xFFFE: // COM (Comment)
             var appData = readFrame();
 
-            if (fileMarker == 0xFFE0) {
-              if (appData[0] == 0x4A && appData[1] == 0x46 && appData[2] == 0x49 &&
-                appData[3] == 0x46 && appData[4] == 0) { // JFIF
+            if (fileMarker === 0xFFE0) {
+              if (appData[0] === 0x4A && appData[1] === 0x46 && appData[2] === 0x49 &&
+                appData[3] === 0x46 && appData[4] === 0) { // 'JFIF\x00'
                 jfif = {
                   version: { major: appData[5], minor: appData[6] },
                   densityUnits: appData[7],
@@ -316,16 +316,16 @@ var JpegImage = (function() {
           case 0xFFDB: // DQT (Define Quantization Tables)
             var quantizationTableCount = Math.floor((readUint16() - 2) / 65);
             for (i = 0; i < quantizationTableCount; i++) {
-              var tableSpec = data[offset++];
+              var quantizationTableSpec = data[offset++];
               var tableData = new Int32Array(64);
-              if ((tableSpec >> 4) == 0) { // 8 bit values
+              if ((quantizationTableSpec >> 4) === 0) { // 8 bit values
                 for (j = 0; j < 64; j++)
                   tableData[j] = data[offset++];
-              } else if ((tableSpec >> 4) == 1) { //16 bit
+              } else if ((quantizationTableSpec >> 4) === 1) { //16 bit
                   tableData[j] = readUint16();
               } else
                 throw "DQT: invalid table spec";
-              quantizationTables[tableSpec & 15] = tableData;
+              quantizationTables[quantizationTableSpec & 15] = tableData;
             }
             break;
 
@@ -333,7 +333,7 @@ var JpegImage = (function() {
           case 0xFFC2: // SOF2 (Start of Frame, Progressive DCT)
             readUint16(); // skip data length
             frame = {};
-            frame.progressive = fileMarker == 0xFFC2;
+            frame.progressive = (fileMarker === 0xFFC2);
             frame.precision = data[offset++];
             frame.scanLines = readUint16();
             frame.samplesPerLine = readUint16();
@@ -341,11 +341,11 @@ var JpegImage = (function() {
             var componentsCount = data[offset++];
             var maxH = 0, maxV = 0;
             for (i = 0; i < componentsCount; i++) {
-              var id = data[offset];
+              var componentId = data[offset];
               var h = data[offset + 1] >> 4;
               var v = data[offset + 1] & 15;
               var qId = data[offset + 2];
-              frame.components[id] = {
+              frame.components[componentId] = {
                 h: h,
                 v: v,
                 quantizationTable: quantizationTables[qId],
@@ -364,7 +364,7 @@ var JpegImage = (function() {
           case 0xFFC4: // DHT (Define Huffman Tables)
             var huffmanLength = readUint16();
             for (i = 2; i < huffmanLength;) {
-              var tableSpec = data[offset++];
+              var huffmanTableSpec = data[offset++];
               var codeLengths = new Uint8Array(16);
               var codeLengthSum = 0;
               for (j = 0; j < 16; j++, offset++)
@@ -374,7 +374,8 @@ var JpegImage = (function() {
                 huffmanValues[j] = data[offset];
               i += 17 + codeLengthSum;
 
-              ((tableSpec >> 4) == 0 ? huffmanTablesDC : huffmanTablesAC)[tableSpec & 15] =
+              ((huffmanTableSpec >> 4) === 0 ? 
+                huffmanTablesDC : huffmanTablesAC)[huffmanTableSpec & 15] =
                 buildHuffmanTable(codeLengths, huffmanValues);
             }
             break;
@@ -386,11 +387,10 @@ var JpegImage = (function() {
 
           case 0xFFDA: // SOS (Start of Scan)
             var scanLength = readUint16();
-            var componentsCount = data[offset++];
+            var selectorsCount = data[offset++];
             var components = [], component;
-            for (i = 0; i < componentsCount; i++) {
-              var id = data[offset++];
-              component = frame.components[id];
+            for (i = 0; i < selectorsCount; i++) {
+              component = frame.components[data[offset++]];
               var tableSpec = data[offset++];
               component.huffmanTableDC = huffmanTablesDC[tableSpec >> 4];
               component.huffmanTableAC = huffmanTablesAC[tableSpec & 15];
@@ -418,13 +418,14 @@ var JpegImage = (function() {
       this.height = frame.scanLines;
       this.jfif = jfif;
       this.components = [];
-      for (i in frame.components) {
-        if (!frame.components.hasOwnProperty(i)) continue;
-        this.components.push({
-          lines: frame.components[i].lines,
-          scaleX: frame.components[i].h / frame.maxH,
-          scaleY: frame.components[i].v / frame.maxV
-        });
+      for (var id in frame.components) {
+        if (frame.components.hasOwnProperty(id)) {
+          this.components.push({
+            lines: frame.components[id].lines,
+            scaleX: frame.components[id].h / frame.maxH,
+            scaleY: frame.components[id].v / frame.maxV
+          });
+        }
       }
     },
     copyToImageData: function(imageData) {
@@ -434,14 +435,15 @@ var JpegImage = (function() {
       var component1, component2, component3, component4;
       var component1Line, component2Line, component3Line, component4Line;
       var x, y;
+      var offset = 0, data = imageData.data;
+      var Y, Cb, Cr, K, C, M, Ye;
       switch (this.components.length) {
         case 1:
           component1 = this.components[0];
-          var offset = 0, data = imageData.data;
           for (y = 0; y < height; y++) {
             component1Line = component1.lines[0 | (y * component1.scaleY * scaleY)];
             for (x = 0; x < width; x++) {
-              var Y = component1Line[0 | (x * component1.scaleX * scaleX)];
+              Y = component1Line[0 | (x * component1.scaleX * scaleX)];
 
               data[offset++] = Y;
               data[offset++] = Y;
@@ -454,15 +456,14 @@ var JpegImage = (function() {
           component1 = this.components[0];
           component2 = this.components[1];
           component3 = this.components[2];
-          var offset = 0, data = imageData.data;
           for (y = 0; y < height; y++) {
             component1Line = component1.lines[0 | (y * component1.scaleY * scaleY)];
             component2Line = component2.lines[0 | (y * component2.scaleY * scaleY)];
             component3Line = component3.lines[0 | (y * component3.scaleY * scaleY)];
             for (x = 0; x < width; x++) {
-              var Y = component1Line[0 | (x * component1.scaleX * scaleX)];
-              var Cb = component2Line[0 | (x * component2.scaleX * scaleX)];
-              var Cr = component3Line[0 | (x * component3.scaleX * scaleX)];
+              Y = component1Line[0 | (x * component1.scaleX * scaleX)];
+              Cb = component2Line[0 | (x * component2.scaleX * scaleX)];
+              Cr = component3Line[0 | (x * component3.scaleX * scaleX)];
 
               data[offset++] = Y + 1.402 * (Cr - 128);
               data[offset++] = Y - 0.3441363 * (Cb - 128) - 0.71413636 * (Cr - 128);
@@ -476,21 +477,20 @@ var JpegImage = (function() {
           component2 = this.components[1];
           component3 = this.components[2];
           component4 = this.components[3];
-          var offset = 0, data = imageData.data;
           for (y = 0; y < height; y++) {
             component1Line = component1.lines[0 | (y * component1.scaleY * scaleY)];
             component2Line = component2.lines[0 | (y * component2.scaleY * scaleY)];
             component3Line = component3.lines[0 | (y * component3.scaleY * scaleY)];
             component4Line = component4.lines[0 | (y * component4.scaleY * scaleY)];
             for (x = 0; x < width; x++) {
-              var Y = component1Line[0 | (x * component1.scaleX * scaleX)];
-              var Cb = component2Line[0 | (x * component2.scaleX * scaleX)];
-              var Cr = component3Line[0 | (x * component3.scaleX * scaleX)];
-              var K = component4Line[0 | (x * component4.scaleX * scaleX)];
+              Y = component1Line[0 | (x * component1.scaleX * scaleX)];
+              Cb = component2Line[0 | (x * component2.scaleX * scaleX)];
+              Cr = component3Line[0 | (x * component3.scaleX * scaleX)];
+              K = component4Line[0 | (x * component4.scaleX * scaleX)];
 
-              var C = 255 - (Y + 1.402 * (Cr - 128));
-              var M = 255 - (Y - 0.3441363 * (Cb - 128) - 0.71413636 * (Cr - 128));
-              var Ye = 255 - (Y + 1.772 * (Cb - 128));
+              C = 255 - (Y + 1.402 * (Cr - 128));
+              M = 255 - (Y - 0.3441363 * (Cb - 128) - 0.71413636 * (Cr - 128));
+              Ye = 255 - (Y + 1.772 * (Cb - 128));
 
               data[offset++] = 255 - Math.min(255, C * (1 - K / 255) + K);
               data[offset++] = 255 - Math.min(255, M * (1 - K / 255) + K);
