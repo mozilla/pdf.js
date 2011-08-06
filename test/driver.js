@@ -5,6 +5,8 @@
  * A Test Driver for PDF.js
  */
 
+'use strict';
+
 var appPath, browser, canvas, currentTaskIdx, manifest, stdout;
 
 function queryParams() {
@@ -21,7 +23,7 @@ function queryParams() {
 function load() {
     var params = queryParams();
     browser = params.browser;
-    manifestFile = params.manifestFile;
+    var manifestFile = params.manifestFile;
     appPath = params.path;
 
     canvas = document.createElement("canvas");
@@ -134,7 +136,7 @@ function snapshotCurrentPage(page, task, failure) {
     log("done"+ (failure ? " (failed!: "+ failure +")" : "") +"\n");
 
     // Set up the next request
-    backoff = (inFlightRequests > 0) ? inFlightRequests * 10 : 0;
+    var backoff = (inFlightRequests > 0) ? inFlightRequests * 10 : 0;
     setTimeout(function() {
         ++task.pageNum, nextPage(task);
     },
