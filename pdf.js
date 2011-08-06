@@ -2995,7 +2995,7 @@ var Page = (function() {
     inheritPageProp: function(key) {
       var dict = this.pageDict;
       var obj = dict.get(key);
-      while (typeof obj == 'undefined') {
+      while (obj === undefined) {
         dict = this.xref.fetchIfRef(dict.get('Parent'));
         if (!dict)
           break;
