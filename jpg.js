@@ -67,16 +67,16 @@ var JpegImage = (function() {
   }
 
   function decodeScan(data, offset,
-                      frame, components,
+                      frame, components, resetInterval,
                       spectralStart, spectralEnd,
                       successivePrev, successive) {
     var precision = frame.precision;
     var samplesPerLine = frame.samplesPerLine;
+    var scanLines = frame.scanLines;
     var progressive = frame.progressive;
-    var maxH = frame.maxH;
+    var maxH = frame.maxH, maxV = frame.maxV;
 
     var startOffset = offset, bitsData = 0, bitsCount = 0;
-    var marker = 0;
     function readBit() {
       if (bitsCount > 0) {
         bitsCount--;
@@ -86,19 +86,12 @@ var JpegImage = (function() {
       if (bitsData == 0xFF) {
         var nextByte = data[offset++];
         if (nextByte) {
-          marker = (bitsData << 8) | nextByte;
-          return null; // marker
+          throw "unexpected marker: " + ((bitsData << 8) | nextByte).toString(16);
         }
         // unstuff 0
       }
       bitsCount = 7;
       return bitsData >>> 7;
-    }
-    function ensureMarker() {
-      bitsCount = 0;
-      if (readBit() !== null)
-        throw "marker is expected";
-      return null;
     }
     function decodeHuffman(tree) {
       var node = tree, bit;
@@ -107,7 +100,7 @@ var JpegImage = (function() {
         if (typeof node === 'number')
           return node;
         if (typeof node !== 'object')
-          return ensureMarker();
+          throw "invalid huffman sequence";
       }
       return null;
     }
@@ -194,7 +187,7 @@ var JpegImage = (function() {
     }
 
     var componentsLength = components.length;
-    var component, i, j, k;
+    var component, i, j, k, n;
     if (progressive) {
       throw "not implemented: progressive";
     } else {
@@ -206,44 +199,47 @@ var JpegImage = (function() {
       }
     }
 
-    var mcu = 0;
-    var h, v;
-    while (true) {
-      marker = 0;
-      if (componentsLength == 1) {
-        throw "not implemented: non-interleaved";
-      } else {
-        stopComponentsParsing:
+    if (componentsLength == 1)
+      throw "not implemented: non-interleaved";
+
+    var mcu = 0, marker;
+    var mcuExpected =
+      (0|((((samplesPerLine + 7) >> 3) + maxH - 1) / maxH)) *
+      (0|((((scanLines + 7) >> 3) + maxV - 1) / maxV));
+    if (!resetInterval) resetInterval = mcuExpected;
+
+    while (mcu < mcuExpected) {
+      for (n = 0; n < resetInterval; n++) {
         for (i = 0; i < componentsLength; i++) {
           component = components[i];
-          h = component.h;
-          v = component.v;
+          var h = component.h, v = component.v;
           for (j = 0; j < v; j++) {
             for (k = 0; k < h; k++) {
               var zz = component.decode(component);
-              if (marker) break stopComponentsParsing;
-
               var r = quantizeAndInverse(zz, component.quantizationTable);
               storeMcu(component, r, mcu, j, k);
             }
           }
         }
-        if (!marker) {
-          mcu++;
-        }
+        mcu++;
       }
-      if (marker) {
-        if (marker >= 0xFFD0 && marker <= 0xFFD7) { // RSTx
-          for (i = 0; i < componentsLength; i++)
-            components[i].pred = 0;
-          throw "not implemented reset marker";
-        }
-        else
-          break;
+      // find marker
+      bitsCount = 0;
+      marker = (data[offset] << 8) | data[offset + 1];
+      if (marker <= 0xFF00) {
+        throw "marker was not found";
       }
+
+      if (marker >= 0xFFD0 && marker <= 0xFFD7) { // RSTx
+        offset += 2;
+        for (i = 0; i < componentsLength; i++)
+          components[i].pred = 0;
+      }
+      else
+        break;
     }
 
-    return { processed: offset - startOffset, nextMarker: marker };
+    return offset - startOffset;
   }
 
   constructor.prototype = {
@@ -410,13 +406,12 @@ var JpegImage = (function() {
             var spectralStart = data[offset++];
             var spectralEnd = data[offset++];
             var successiveApproximation = data[offset++];
-            var result = decodeScan(data, offset,
-              frame, components,
+            var processed = decodeScan(data, offset,
+              frame, components, resetInterval,
               spectralStart, spectralEnd,
               successiveApproximation >> 4, successiveApproximation & 15);
-            offset += result.processed;
-            fileMarker = result.nextMarker;
-            continue;
+            offset += processed;
+            break;
           default:
             throw "unknown JPEG marker " + fileMarker.toString(16);
         }
