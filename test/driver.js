@@ -79,7 +79,7 @@ function nextTask() {
 }
 
 function isLastPage(task) {
-    return (task.pdfDoc && (task.pageNum > task.pdfDoc.numPages));
+    return (!task.pdfDoc || (task.pageNum > task.pdfDoc.numPages));
 }
 
 function nextPage(task, loadError) {
