@@ -7,15 +7,31 @@ var JpegImage = (function() {
   function constructor() {
   }
 
-  var iDCTTable = (function() {
-    var table = [], i, j;
+  var iDCTTables = (function() {
+    var cosTables = [], i, j;
     for (i = 0; i < 8; i++) {
-      table.push(new Float32Array(8));
+      cosTables.push(new Float32Array(8));
       for (j = 0; j < 8; j++)
-        table[i][j] = Math.cos((2 * i + 1) * j * Math.PI / 16) *
+        cosTables[i][j] = Math.cos((2 * i + 1) * j * Math.PI / 16) *
           (j > 0 ? 1 : 1/Math.sqrt(2));
     }
-    return table;
+
+    var x, y, u, v;
+    var tables = [];
+    for (y = 0; y < 8; y++) {
+      var cosTable_y = cosTables[y];
+      for (x = 0; x < 8; x++) {
+        var cosTable_x = cosTables[x];
+        var table = new Float32Array(64);
+        i = 0;
+        for (v = 0; v < 8; v++) {
+          for (u = 0; u < 8; u++)
+            table[i++] = cosTable_x[u] * cosTable_y[v];
+        }
+        tables.push(table);
+      }
+    }
+    return tables;
   })();
 
   function buildHuffmanTable(codeLengths, values) {
@@ -144,21 +160,16 @@ var JpegImage = (function() {
         zz[35] * qt[35], zz[36] * qt[36], zz[48] * qt[48], zz[49] * qt[49], zz[57] * qt[57], zz[58] * qt[58], zz[62] * qt[62], zz[63] * qt[63]]);
       var i, j, y, x, u, v;
 
-      var r = new Uint8Array(64);
-      for (y = 0; y < 8; y++) {
-        var iDCTTable_y = iDCTTable[y];
-        for (x = 0; x < 8; x++) {
-          var iDCTTable_x = iDCTTable[x];
-          var sum = 0;
-          for (u = 0; u < 8; u++) {
-            for (v = 0; v < 8; v++)
-              sum += iDCTTable_x[u] * iDCTTable_y[v] * R[(v << 3) + u];
-          }
-          // TODO loosing precision?
-          var sample = 128 + ((sum / 4) >> (precision - 8));
-          // clamping
-          r[(y << 3) + x] = sample < 0 ? 0 : sample > 0xFF ? 0xFF : sample;
-        }
+      var r = new Uint8Array(64), ri;
+      for (i = 0; i < 64; i++) {
+        var sum = 0;
+        var table = iDCTTables[i];
+        for (j = 0; j < 64; j++)
+          sum += table[j] * R[j];
+        // TODO loosing precision?
+        var sample = 128 + ((sum / 4) >> (precision - 8));
+        // clamping
+        r[i] = sample < 0 ? 0 : sample > 0xFF ? 0xFF : sample;
       }
       return r;
     }
