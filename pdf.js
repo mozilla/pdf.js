@@ -2995,7 +2995,7 @@ var Page = (function() {
     inheritPageProp: function(key) {
       var dict = this.pageDict;
       var obj = dict.get(key);
-      while (!obj) {
+      while (typeof obj == 'undefined') {
         dict = this.xref.fetchIfRef(dict.get('Parent'));
         if (!dict)
           break;
@@ -3013,6 +3013,32 @@ var Page = (function() {
       var obj = this.inheritPageProp('MediaBox');
       return shadow(this, 'mediaBox',
                     ((IsArray(obj) && obj.length == 4) ? obj : null));
+    },
+    get width() {
+      var mediaBox = this.mediaBox;
+      var rotate = this.rotate;
+      var width;
+      if (rotate == 0 || rotate == 180) {
+        width = (mediaBox[2] - mediaBox[0]);
+      } else {
+        width = (mediaBox[3] - mediaBox[1]);
+      }
+      return shadow(this, 'width', width);
+    },
+    get height() {
+      var mediaBox = this.mediaBox;
+      var rotate = this.rotate;
+      var height;
+      if (rotate == 0 || rotate == 180) {
+        height = (mediaBox[3] - mediaBox[1]);
+      } else {
+        height = (mediaBox[2] - mediaBox[0]);
+      }
+      return shadow(this, 'height', height);
+    },
+    get rotate() {
+      var rotate = this.inheritPageProp("Rotate") || 0;
+      return shadow(this, 'rotate', rotate);
     },
     startRendering: function(canvasCtx, continuation, onerror) {
       var self = this;
@@ -3085,8 +3111,9 @@ var Page = (function() {
       var mediaBox = xref.fetchIfRef(this.mediaBox);
       assertWellFormed(IsDict(resources), 'invalid page resources');
       gfx.beginDrawing({ x: mediaBox[0], y: mediaBox[1],
-            width: mediaBox[2] - mediaBox[0],
-            height: mediaBox[3] - mediaBox[1] });
+            width: this.width,
+            height: this.height,
+            rotate: this.rotate });
       gfx.execute(this.code, xref, resources);
       gfx.endDrawing();
     }
@@ -3994,8 +4021,21 @@ var CanvasGraphics = (function() {
     beginDrawing: function(mediaBox) {
       var cw = this.ctx.canvas.width, ch = this.ctx.canvas.height;
       this.ctx.save();
-      this.ctx.scale(cw / mediaBox.width, -ch / mediaBox.height);
-      this.ctx.translate(0, -mediaBox.height);
+      switch (mediaBox.rotate) {
+        case 0:
+          this.ctx.transform(1, 0, 0, -1, 0, ch);
+          break;
+        case 90:
+          this.ctx.transform(0, 1, 1, 0, 0, 0);
+          break;
+        case 180:
+          this.ctx.transform(-1, 0, 0, 1, cw, 0);
+          break;
+        case 270:
+          this.ctx.transform(0, -1, -1, 0, cw, ch);
+          break;
+      }
+      this.ctx.scale(cw / mediaBox.width, ch / mediaBox.height);
     },
 
     compile: function(stream, xref, resources, fonts) {
