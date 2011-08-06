@@ -75,5 +75,10 @@
        "link": true,
        "rounds": 1,
        "type": "load"
+    },
+    {  "id": "rotation",
+       "file": "pdfs/rotation.pdf",
+       "rounds": 1,
+       "type": "load"
     }
 ]

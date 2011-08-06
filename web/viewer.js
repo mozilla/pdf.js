@@ -104,10 +104,7 @@ var PDFView = {
     var thumbnails = this.thumbnails = [];
     for (var i = 1; i <= pagesCount; i++) {
       var page = pdf.getPage(i);
-      var mediaBox = page.mediaBox;
-      var width = (mediaBox[2] - mediaBox[0]);
-      var height = (mediaBox[3] - mediaBox[1]);
-      pages.push(new PageView(container, page, i, width, height, page.stats));
+      pages.push(new PageView(container, page, i, page.width, page.height, page.stats));
       thumbnails.push(new ThumbnailView(sidebar, pages[i - 1]));
     };
 
