@@ -105,8 +105,8 @@ function nextPage(task, loadError) {
 
             var pdfToCssUnitsCoef = 96.0 / 72.0;
             // using mediaBox for the canvas size
-            var pageWidth = (page.mediaBox[2] - page.mediaBox[0]);
-            var pageHeight = (page.mediaBox[3] - page.mediaBox[1]);
+            var pageWidth = page.width;
+            var pageHeight = page.height;
             canvas.width = pageWidth * pdfToCssUnitsCoef;
             canvas.height = pageHeight * pdfToCssUnitsCoef;
             clear(ctx);
