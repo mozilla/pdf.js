@@ -1,6 +1,22 @@
+/* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- /
+/* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
+
+"use strict";
+
 var JpegImage = (function() {
   function constructor() {
   }
+
+  var iDCTTable = (function() {
+    var table = [], i, j;
+    for (i = 0; i < 8; i++) {
+      table.push(new Float32Array(8));
+      for (j = 0; j < 8; j++)
+        table[i][j] = Math.cos((2 * i + 1) * j * Math.PI / 16) *
+          (j > 0 ? 1 : 1/Math.sqrt(2));
+    }
+    return table;
+  })();
 
   function buildHuffmanTable(codeLengths, values) {
     var k = 0, code = [], i, j, length = 16;
@@ -33,7 +49,7 @@ var JpegImage = (function() {
     }
     return code[0].children;
   }
-  
+
   function decodeScan(data, offset,
                       frame, components,
                       spectralStart, spectralEnd,
@@ -42,7 +58,7 @@ var JpegImage = (function() {
     var samplesPerLine = frame.samplesPerLine;
     var progressive = frame.progressive;
     var maxH = frame.maxH;
-    
+
     var startOffset = offset, bitsData = 0, bitsCount = 0;
     var marker = 0;
     function readBit() {
@@ -127,21 +143,16 @@ var JpegImage = (function() {
         zz[21] * qt[21], zz[34] * qt[34], zz[37] * qt[37], zz[47] * qt[47], zz[50] * qt[50], zz[56] * qt[56], zz[59] * qt[59], zz[61] * qt[61],
         zz[35] * qt[35], zz[36] * qt[36], zz[48] * qt[48], zz[49] * qt[49], zz[57] * qt[57], zz[58] * qt[58], zz[62] * qt[62], zz[63] * qt[63]]);
       var i, j, y, x, u, v;
-      
-      var cTable = [1/Math.sqrt(2),1,1,1,1,1,1,1];
-      var cosTable = [[],[],[],[],[],[],[],[]];
-      for (i = 0; i < 8; i++) {
-        for (j = 0; j < 8; j++)
-          cosTable[i][j] = Math.cos((2 * i + 1) * j * Math.PI / 16);
-      }
 
       var r = new Uint8Array(64);
       for (y = 0; y < 8; y++) {
+        var iDCTTable_y = iDCTTable[y];
         for (x = 0; x < 8; x++) {
+          var iDCTTable_x = iDCTTable[x];
           var sum = 0;
           for (u = 0; u < 8; u++) {
             for (v = 0; v < 8; v++)
-              sum += cTable[u] * cTable[v] * R[v * 8 + u] * cosTable[x][u] * cosTable[y][v];
+              sum += iDCTTable_x[u] * iDCTTable_y[v] * R[(v << 3) + u];
           }
           // TODO loosing precision?
           var sample = 128 + ((sum / 4) >> (precision - 8));
@@ -152,22 +163,22 @@ var JpegImage = (function() {
       return r;
     }
     function storeMcu(component, r, mcu, row, col) {
-      var h = component.h, v  = component.v;
-      var blocksPerLine = (samplesPerLine * h / maxH + 7) >> 3;
-      var mcusPerLine = ((blocksPerLine + h - 1) / h) | 0;
-      var mcuRow = (mcu / mcusPerLine) | 0, mcuCol = mcu % mcusPerLine;
-      var blockRow = mcuRow * v + row, blockCol = mcuCol * h + col;
+      var mcuRow = (mcu / component.mcusPerLine) | 0;
+      var mcuCol = mcu % component.mcusPerLine;
+      var blockRow = mcuRow * component.v + row;
+      var blockCol = mcuCol * component.h + col;
 
       var scanLine = blockRow << 3, sample = blockCol << 3;
       var lines = component.lines;
       while (scanLine + 8 > lines.length) {
-        lines.push(new Uint8Array(blocksPerLine << 3));
+        lines.push(new Uint8Array(component.blocksPerLine << 3));
       }
 
-      var i, j;
+      var i, j, offset = 0;
       for (j = 0; j < 8; j++) {
+        var line = lines[scanLine + j];
         for (i = 0; i < 8; i++)
-          lines[scanLine + j][sample + i] = r[j * 8 + i]; 
+          line[sample + i] = r[offset++];
       }
     }
 
@@ -176,8 +187,12 @@ var JpegImage = (function() {
     if (progressive) {
       throw "not implemented: progressive";
     } else {
-      for (i = 0; i < componentsLength; i++)
-        components[i].decode = decodeBaseline;
+      for (i = 0; i < componentsLength; i++) {
+        component = components[i];
+        component.blocksPerLine = (samplesPerLine * component.h / maxH + 7) >> 3
+        component.mcusPerLine = ((component.blocksPerLine + component.h - 1) / component.h) | 0;
+        component.decode = decodeBaseline;
+      }
     }
 
     var mcu = 0;
@@ -197,7 +212,7 @@ var JpegImage = (function() {
               var zz = component.decode();
               if (marker) break stopComponentsParsing;
 
-              var r = quantizeAndInverse(zz, component.quantizationTable);              
+              var r = quantizeAndInverse(zz, component.quantizationTable);
               storeMcu(component, r, mcu, j, k);
             }
           }
@@ -208,16 +223,18 @@ var JpegImage = (function() {
       }
       if (marker) {
         if (marker >= 0xFFD0 && marker <= 0xFFD7) { // RSTx
+          for (i = 0; i < componentsLength; i++)
+            components[i].pred = 0;
           throw "not implemented reset marker";
         }
         else
           break;
       }
     }
-    
+
     return { processed: offset - startOffset, nextMarker: marker };
   }
-  
+
   constructor.prototype = {
     load: function(path) {
       var xhr = new XMLHttpRequest();
@@ -230,7 +247,7 @@ var JpegImage = (function() {
         if (this.onload)
           this.onload();
       }).bind(this);
-      xhr.send(null);    
+      xhr.send(null);
     },
     parse: function(data) {
       var offset = 0, length = data.length;
@@ -257,10 +274,9 @@ var JpegImage = (function() {
 
       fileMarker = readUint16();
       while (fileMarker != 0xFFD9) { // EOI (End of image)
-        console.log(fileMarker.toString(16));
         var i, j, l;
-        switch(fileMarker) {  
-          case 0xFFE0: // APP0 (Application Specific)            
+        switch(fileMarker) {
+          case 0xFFE0: // APP0 (Application Specific)
           case 0xFFE1: // APP1
           case 0xFFE2: // APP2
           case 0xFFE3: // APP3
@@ -277,10 +293,10 @@ var JpegImage = (function() {
           case 0xFFEE: // APP14
           case 0xFFEF: // APP15
           case 0xFFFE: // COM (Comment)
-            appData = readFrame();
+            var appData = readFrame();
 
             if (fileMarker == 0xFFE0) {
-              if (appData[0] == 0x4A && appData[1] == 0x46 && appData[2] == 0x49 && 
+              if (appData[0] == 0x4A && appData[1] == 0x46 && appData[2] == 0x49 &&
                 appData[3] == 0x46 && appData[4] == 0) { // JFIF
                 jfif = {
                   version: { major: appData[5], minor: appData[6] },
@@ -328,7 +344,7 @@ var JpegImage = (function() {
               var id = data[offset];
               var h = data[offset + 1] >> 4;
               var v = data[offset + 1] & 15;
-              var qId = data[offset + 2];              
+              var qId = data[offset + 2];
               frame.components[id] = {
                 h: h,
                 v: v,
@@ -375,9 +391,9 @@ var JpegImage = (function() {
             for (i = 0; i < componentsCount; i++) {
               var id = data[offset++];
               component = frame.components[id];
-              var tableSpec = data[offset++];              
+              var tableSpec = data[offset++];
               component.huffmanTableDC = huffmanTablesDC[tableSpec >> 4];
-              component.huffmanTableAC = huffmanTablesAC[tableSpec & 15];              
+              component.huffmanTableAC = huffmanTablesAC[tableSpec & 15];
               components.push(component);
             }
             var spectralStart = data[offset++];
@@ -397,7 +413,7 @@ var JpegImage = (function() {
       }
       if (frames.length != 1)
         throw "only single frame JPEGs supported";
-      
+
       this.width = frame.samplesPerLine;
       this.height = frame.scanLines;
       this.jfif = jfif;
@@ -414,7 +430,7 @@ var JpegImage = (function() {
     copyToImageData: function(imageData) {
       var width = imageData.width, height = imageData.height;
       var scaleX = this.width / width, scaleY = this.height / height;
-      
+
       var component1, component2, component3, component4;
       var component1Line, component2Line, component3Line, component4Line;
       var x, y;
@@ -426,7 +442,7 @@ var JpegImage = (function() {
             component1Line = component1.lines[0 | (y * component1.scaleY * scaleY)];
             for (x = 0; x < width; x++) {
               var Y = component1Line[0 | (x * component1.scaleX * scaleX)];
-              
+
               data[offset++] = Y;
               data[offset++] = Y;
               data[offset++] = Y;
@@ -447,7 +463,7 @@ var JpegImage = (function() {
               var Y = component1Line[0 | (x * component1.scaleX * scaleX)];
               var Cb = component2Line[0 | (x * component2.scaleX * scaleX)];
               var Cr = component3Line[0 | (x * component3.scaleX * scaleX)];
-              
+
               data[offset++] = Y + 1.402 * (Cr - 128);
               data[offset++] = Y - 0.3441363 * (Cb - 128) - 0.71413636 * (Cr - 128);
               data[offset++] = Y + 1.772 * (Cb - 128);
@@ -475,7 +491,7 @@ var JpegImage = (function() {
               var C = 255 - (Y + 1.402 * (Cr - 128));
               var M = 255 - (Y - 0.3441363 * (Cb - 128) - 0.71413636 * (Cr - 128));
               var Ye = 255 - (Y + 1.772 * (Cb - 128));
-              
+
               data[offset++] = 255 - Math.min(255, C * (1 - K / 255) + K);
               data[offset++] = 255 - Math.min(255, M * (1 - K / 255) + K);
               data[offset++] = 255 - Math.min(255, Ye * (1 - K / 255) + K);
