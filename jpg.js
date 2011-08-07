@@ -193,6 +193,23 @@ var JpegImage = (function() {
           line[sample + i] = r[offset++];
       }
     }
+    function storeBlock(component, r, mcu) {
+      var blockRow = (mcu / component.mcusPerLine) | 0;
+      var blockCol = mcu % component.mcusPerLine;
+
+      var scanLine = blockRow << 3, sample = blockCol << 3;
+      var lines = component.lines;
+      while (scanLine + 8 > lines.length) {
+        lines.push(new Uint8Array(component.blocksPerLine << 3));
+      }
+
+      var i, j, offset = 0;
+      for (j = 0; j < 8; j++) {
+        var line = lines[scanLine + j];
+        for (i = 0; i < 8; i++)
+          line[sample + i] = r[offset++];
+      }
+    }
 
     var componentsLength = components.length;
     var component, i, j, k, n;
@@ -207,30 +224,39 @@ var JpegImage = (function() {
       }
     }
 
-    if (componentsLength == 1)
-      throw "not implemented: non-interleaved";
-
     var mcu = 0, marker;
     var mcuExpected =
       (0|((((samplesPerLine + 7) >> 3) + maxH - 1) / maxH)) *
       (0|((((scanLines + 7) >> 3) + maxV - 1) / maxV));
     if (!resetInterval) resetInterval = mcuExpected;
 
+    var zz, r;
     while (mcu < mcuExpected) {
-      for (n = 0; n < resetInterval; n++) {
-        for (i = 0; i < componentsLength; i++) {
-          component = components[i];
-          var h = component.h, v = component.v;
-          for (j = 0; j < v; j++) {
-            for (k = 0; k < h; k++) {
-              var zz = component.decode(component);
-              var r = quantizeAndInverse(zz, component.quantizationTable);
-              storeMcu(component, r, mcu, j, k);
+      if (componentsLength == 1) {
+        component = components[0];
+        for (n = 0; n < resetInterval; n++) {
+          zz = component.decode(component);
+          r = quantizeAndInverse(zz, component.quantizationTable);
+          storeBlock(component, r, mcu);
+          mcu++;
+        }
+      } else {
+        for (n = 0; n < resetInterval; n++) {
+          for (i = 0; i < componentsLength; i++) {
+            component = components[i];
+            var h = component.h, v = component.v;
+            for (j = 0; j < v; j++) {
+              for (k = 0; k < h; k++) {
+                zz = component.decode(component);
+                r = quantizeAndInverse(zz, component.quantizationTable);
+                storeMcu(component, r, mcu, j, k);
+              }
             }
           }
+          mcu++;
         }
-        mcu++;
       }
+
       // find marker
       bitsCount = 0;
       marker = (data[offset] << 8) | data[offset + 1];
