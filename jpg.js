@@ -128,8 +128,7 @@ var JpegImage = (function() {
         return n;
       return n + (-1 << length) + 1;
     }
-    function decodeBaseline(component) {
-      var zz = new Int32Array(64);
+    function decodeBaseline(component, zz) {
       var t = decodeHuffman(component.huffmanTableDC);
       var diff = t === 0 ? 0 : receiveAndExtend(t);
       zz[0]= (component.pred += diff);
@@ -147,68 +146,18 @@ var JpegImage = (function() {
         zz[k] = receiveAndExtend(s);
         k++;
       }
-      return zz;
     }
-    function quantizeAndInverse(zz, qt) {
-      var R = new Int32Array([
-        zz[0]  * qt[0],  zz[1]  * qt[1],  zz[5]  * qt[5],  zz[6]  * qt[6],  zz[14] * qt[14], zz[15] * qt[15], zz[27] * qt[27], zz[28] * qt[28],
-        zz[2]  * qt[2],  zz[4]  * qt[4],  zz[7]  * qt[7],  zz[13] * qt[13], zz[16] * qt[16], zz[26] * qt[26], zz[29] * qt[29], zz[42] * qt[42],
-        zz[3]  * qt[3],  zz[8]  * qt[8],  zz[12] * qt[12], zz[17] * qt[17], zz[25] * qt[25], zz[30] * qt[30], zz[41] * qt[41], zz[43] * qt[43],
-        zz[9]  * qt[9],  zz[11] * qt[11], zz[18] * qt[18], zz[24] * qt[24], zz[31] * qt[31], zz[40] * qt[40], zz[44] * qt[44], zz[53] * qt[53],
-        zz[10] * qt[10], zz[19] * qt[19], zz[23] * qt[23], zz[32] * qt[32], zz[39] * qt[39], zz[45] * qt[45], zz[52] * qt[52], zz[54] * qt[54],
-        zz[20] * qt[20], zz[22] * qt[22], zz[33] * qt[33], zz[38] * qt[38], zz[46] * qt[46], zz[51] * qt[51], zz[55] * qt[55], zz[60] * qt[60],
-        zz[21] * qt[21], zz[34] * qt[34], zz[37] * qt[37], zz[47] * qt[47], zz[50] * qt[50], zz[56] * qt[56], zz[59] * qt[59], zz[61] * qt[61],
-        zz[35] * qt[35], zz[36] * qt[36], zz[48] * qt[48], zz[49] * qt[49], zz[57] * qt[57], zz[58] * qt[58], zz[62] * qt[62], zz[63] * qt[63]]);
-      var i, j, y, x, u, v;
-
-      var r = new Uint8Array(64), ri;
-      for (i = 0; i < 64; i++) {
-        var sum = 0;
-        var table = iDCTTables[i];
-        for (j = 0; j < 64; j++)
-          sum += table[j] * R[j];
-        // TODO loosing precision?
-        var sample = 128 + ((sum / 4) >> (precision - 8));
-        // clamping
-        r[i] = sample < 0 ? 0 : sample > 0xFF ? 0xFF : sample;
-      }
-      return r;
-    }
-    function storeMcu(component, r, mcu, row, col) {
+    function decodeMcu(component, mcu, row, col) {
       var mcuRow = (mcu / component.mcusPerLine) | 0;
       var mcuCol = mcu % component.mcusPerLine;
       var blockRow = mcuRow * component.v + row;
       var blockCol = mcuCol * component.h + col;
-
-      var scanLine = blockRow << 3, sample = blockCol << 3;
-      var lines = component.lines;
-      while (scanLine + 8 > lines.length) {
-        lines.push(new Uint8Array(component.blocksPerLine << 3));
-      }
-
-      var i, j, offset = 0;
-      for (j = 0; j < 8; j++) {
-        var line = lines[scanLine + j];
-        for (i = 0; i < 8; i++)
-          line[sample + i] = r[offset++];
-      }
+      component.decode(component, component.blocks[blockRow][blockCol]);
     }
-    function storeBlock(component, r, mcu) {
+    function decodeBlock(component, mcu) {
       var blockRow = (mcu / component.mcusPerLine) | 0;
       var blockCol = mcu % component.mcusPerLine;
-
-      var scanLine = blockRow << 3, sample = blockCol << 3;
-      var lines = component.lines;
-      while (scanLine + 8 > lines.length) {
-        lines.push(new Uint8Array(component.blocksPerLine << 3));
-      }
-
-      var i, j, offset = 0;
-      for (j = 0; j < 8; j++) {
-        var line = lines[scanLine + j];
-        for (i = 0; i < 8; i++)
-          line[sample + i] = r[offset++];
-      }
+      component.decode(component, component.blocks[blockRow][blockCol]);
     }
 
     var componentsLength = components.length;
@@ -218,9 +167,8 @@ var JpegImage = (function() {
     } else {
       for (i = 0; i < componentsLength; i++) {
         component = components[i];
-        component.blocksPerLine = (samplesPerLine * component.h / maxH + 7) >> 3;
-        component.mcusPerLine = ((component.blocksPerLine + component.h - 1) / component.h) | 0;
         component.decode = decodeBaseline;
+        component.pred = 0;
       }
     }
 
@@ -230,26 +178,23 @@ var JpegImage = (function() {
       (0|((((scanLines + 7) >> 3) + maxV - 1) / maxV));
     if (!resetInterval) resetInterval = mcuExpected;
 
-    var zz, r;
+    var h, v;
     while (mcu < mcuExpected) {
       if (componentsLength == 1) {
         component = components[0];
         for (n = 0; n < resetInterval; n++) {
-          zz = component.decode(component);
-          r = quantizeAndInverse(zz, component.quantizationTable);
-          storeBlock(component, r, mcu);
+          decodeBlock(component, mcu);
           mcu++;
         }
       } else {
         for (n = 0; n < resetInterval; n++) {
           for (i = 0; i < componentsLength; i++) {
             component = components[i];
-            var h = component.h, v = component.v;
+            h = component.h;
+            v = component.v;
             for (j = 0; j < v; j++) {
               for (k = 0; k < h; k++) {
-                zz = component.decode(component);
-                r = quantizeAndInverse(zz, component.quantizationTable);
-                storeMcu(component, r, mcu, j, k);
+                decodeMcu(component, mcu, j, k);
               }
             }
           }
@@ -274,6 +219,59 @@ var JpegImage = (function() {
     }
 
     return offset - startOffset;
+  }
+
+  function buildComponentData(frame, component) {
+    var lines = [];
+    var blocksPerLine = component.blocksPerLine;
+    var blocksPerColumn = component.blocksPerColumn;
+    var samplesPerLine = blocksPerLine << 3;
+
+    function quantizeAndInverse(zz) {
+      var qt = component.quantizationTable;
+      var precision = frame.precision;
+      var R = new Int32Array([
+        zz[0]  * qt[0],  zz[1]  * qt[1],  zz[5]  * qt[5],  zz[6]  * qt[6],  zz[14] * qt[14], zz[15] * qt[15], zz[27] * qt[27], zz[28] * qt[28],
+        zz[2]  * qt[2],  zz[4]  * qt[4],  zz[7]  * qt[7],  zz[13] * qt[13], zz[16] * qt[16], zz[26] * qt[26], zz[29] * qt[29], zz[42] * qt[42],
+        zz[3]  * qt[3],  zz[8]  * qt[8],  zz[12] * qt[12], zz[17] * qt[17], zz[25] * qt[25], zz[30] * qt[30], zz[41] * qt[41], zz[43] * qt[43],
+        zz[9]  * qt[9],  zz[11] * qt[11], zz[18] * qt[18], zz[24] * qt[24], zz[31] * qt[31], zz[40] * qt[40], zz[44] * qt[44], zz[53] * qt[53],
+        zz[10] * qt[10], zz[19] * qt[19], zz[23] * qt[23], zz[32] * qt[32], zz[39] * qt[39], zz[45] * qt[45], zz[52] * qt[52], zz[54] * qt[54],
+        zz[20] * qt[20], zz[22] * qt[22], zz[33] * qt[33], zz[38] * qt[38], zz[46] * qt[46], zz[51] * qt[51], zz[55] * qt[55], zz[60] * qt[60],
+        zz[21] * qt[21], zz[34] * qt[34], zz[37] * qt[37], zz[47] * qt[47], zz[50] * qt[50], zz[56] * qt[56], zz[59] * qt[59], zz[61] * qt[61],
+        zz[35] * qt[35], zz[36] * qt[36], zz[48] * qt[48], zz[49] * qt[49], zz[57] * qt[57], zz[58] * qt[58], zz[62] * qt[62], zz[63] * qt[63]]);
+
+      var r = new Uint8Array(64), i, j;
+      for (i = 0; i < 64; i++) {
+        var sum = 0;
+        var table = iDCTTables[i];
+        for (j = 0; j < 64; j++)
+          sum += table[j] * R[j];
+        // TODO loosing precision?
+        var sample = 128 + ((sum / 4) >> (precision - 8));
+        // clamping
+        r[i] = sample < 0 ? 0 : sample > 0xFF ? 0xFF : sample;
+      }
+      return r;
+    }
+
+    var i, j;
+    for (var blockRow = 0; blockRow < blocksPerColumn; blockRow++) {
+      var scanLine = blockRow << 3;
+      for (i = 0; i < 8; i++)
+        lines.push(new Uint8Array(samplesPerLine));
+
+      for (var blockCol = 0; blockCol < blocksPerLine; blockCol++) {
+        var r = quantizeAndInverse(component.blocks[blockRow][blockCol]);
+
+        var offset = 0, sample = blockCol << 3;
+        for (j = 0; j < 8; j++) {
+          var line = lines[scanLine + j];
+          for (i = 0; i < 8; i++)
+            line[sample + i] = r[offset++];
+        }
+      }
+    }
+    return lines;
   }
 
   constructor.prototype = {
@@ -302,6 +300,40 @@ var JpegImage = (function() {
         var array = data.subarray(offset, offset + length - 2);
         offset += array.length;
         return array;
+      }
+      function prepareComponents(frame) {
+        var maxH = 0, maxV = 0;
+        var component, componentId;
+        for (componentId in frame.components) {
+          if (frame.components.hasOwnProperty(componentId)) {
+            component = frame.components[componentId];
+            if (maxH < component.h) maxH = component.h;
+            if (maxV < component.v) maxV = component.v;
+          }
+        }
+        var mcusPerLine = Math.ceil(frame.samplesPerLine / 8 / maxH);
+        var mcusPerColumn = Math.ceil(frame.scanLines / 8 / maxV);
+        for (componentId in frame.components) {
+          if (frame.components.hasOwnProperty(componentId)) {
+            component = frame.components[componentId];
+            var blocksPerLine = mcusPerLine * component.h;
+            var blocksPerColumn = mcusPerColumn * component.v;
+            var blocks = [];
+            for (var i = 0; i < blocksPerColumn; i++) {
+              var row = [];
+              for (var j = 0; j < blocksPerLine; j++)
+                row.push(new Int32Array(64));
+              blocks.push(row);
+            }
+            component.blocksPerLine = blocksPerLine;
+            component.blocksPerColumn = blocksPerColumn;
+            component.blocks = blocks;
+
+            component.mcusPerLine = mcusPerLine;
+          }
+        }
+        frame.maxH = maxH;
+        frame.maxV = maxV;
       }
       var jfif = null;
       var adobe = null;
@@ -390,26 +422,21 @@ var JpegImage = (function() {
             frame.scanLines = readUint16();
             frame.samplesPerLine = readUint16();
             frame.components = [];
-            var componentsCount = data[offset++];
+            var componentsCount = data[offset++], componentId;
             var maxH = 0, maxV = 0;
             for (i = 0; i < componentsCount; i++) {
-              var componentId = data[offset];
+              componentId = data[offset];
               var h = data[offset + 1] >> 4;
               var v = data[offset + 1] & 15;
               var qId = data[offset + 2];
               frame.components[componentId] = {
                 h: h,
                 v: v,
-                quantizationTable: quantizationTables[qId],
-                pred: 0,
-                lines: []
+                quantizationTable: quantizationTables[qId]
               };
               offset += 3;
-              if (maxH < h) maxH = h;
-              if (maxV < v) maxV = v;
             }
-            frame.maxH = maxH;
-            frame.maxV = maxV;
+            prepareComponents(frame);
             frames.push(frame);
             break;
 
@@ -473,7 +500,7 @@ var JpegImage = (function() {
       for (var id in frame.components) {
         if (frame.components.hasOwnProperty(id)) {
           this.components.push({
-            lines: frame.components[id].lines,
+            lines: buildComponentData(frame, frame.components[id]),
             scaleX: frame.components[id].h / frame.maxH,
             scaleY: frame.components[id].v / frame.maxV
           });
