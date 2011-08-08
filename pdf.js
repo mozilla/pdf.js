@@ -48,9 +48,9 @@ function backtrace() {
   var stackStr;
   try {
     throw new Error();
-  } catch(e) {
+  } catch (e) {
     stackStr = e.stack;
-  };
+  }
   return stackStr.split('\n').slice(1).join('\n');
 }
 
@@ -927,10 +927,10 @@ var AsciiHexStream = (function() {
   function constructor(str) {
     this.str = str;
     this.dict = str.dict;
-    
+
     DecodeStream.call(this);
   }
-  
+
   var hexvalueMap = {
       9: -1, // \t
       32: -1, // space
@@ -959,35 +959,35 @@ var AsciiHexStream = (function() {
   };
 
   constructor.prototype = Object.create(DecodeStream.prototype);
-  
+
   constructor.prototype.readBlock = function() {
-    var gtCode = '>'.charCodeAt(0), bytes = this.str.getBytes(), c, n, 
+    var gtCode = '>'.charCodeAt(0), bytes = this.str.getBytes(), c, n,
         decodeLength, buffer, bufferLength, i, length;
-    
+
     decodeLength = (bytes.length + 1) >> 1;
     buffer = this.ensureBuffer(this.bufferLength + decodeLength);
     bufferLength = this.bufferLength;
-    
-    for(i = 0, length = bytes.length; i < length; i++) {
+
+    for (i = 0, length = bytes.length; i < length; i++) {
       c = hexvalueMap[bytes[i]];
-      while (c == -1 && (i+1) < length) {
+      while (c == -1 && (i + 1) < length) {
         c = hexvalueMap[bytes[++i]];
       }
-      
-      if((i+1) < length && (bytes[i+1] !== gtCode)) {
+
+      if ((i + 1) < length && (bytes[i + 1] !== gtCode)) {
         n = hexvalueMap[bytes[++i]];
-        buffer[bufferLength++] = c*16+n;
+        buffer[bufferLength++] = c * 16 + n;
       } else {
-        if(bytes[i] !== gtCode) { // EOD marker at an odd number, behave as if a 0 followed the last digit.
-          buffer[bufferLength++] = c*16;
+        if (bytes[i] !== gtCode) { // EOD marker at an odd number, behave as if a 0 followed the last digit.
+          buffer[bufferLength++] = c * 16;
         }
       }
     }
-    
+
     this.bufferLength = bufferLength;
     this.eof = true;
   };
-  
+
   return constructor;
 })();
 
@@ -2983,7 +2983,7 @@ var Page = (function() {
       create: Date.now(),
       compile: 0.0,
       fonts: 0.0,
-      render: 0.0,
+      render: 0.0
     };
     this.xref = xref;
   }
@@ -3037,7 +3037,7 @@ var Page = (function() {
       return shadow(this, 'height', height);
     },
     get rotate() {
-      var rotate = this.inheritPageProp("Rotate") || 0;
+      var rotate = this.inheritPageProp('Rotate') || 0;
       // Normalize rotation so it's a multiple of 90 and between 0 and 270
       if (rotate % 90 != 0) {
         rotate = 0;
@@ -3056,7 +3056,7 @@ var Page = (function() {
       stats.compile = stats.fonts = stats.render = 0;
 
       var gfx = new CanvasGraphics(canvasCtx);
-      var fonts = [ ];
+      var fonts = [];
 
       this.compile(gfx, fonts);
       stats.compile = Date.now();
@@ -3067,7 +3067,7 @@ var Page = (function() {
           stats.fonts = Date.now();
           // Always defer call to display() to work around bug in
           // Firefox error reporting from XHR callbacks.
-          setTimeout(function () {
+          setTimeout(function() {
             var exc = null;
             try {
               self.display(gfx);
@@ -3542,7 +3542,7 @@ var EvalState = (function() {
 var PartialEvaluator = (function() {
   function constructor() {
     this.state = new EvalState();
-    this.stateStack = [ ];
+    this.stateStack = [];
   }
 
   var OP_MAP = {
@@ -3646,10 +3646,10 @@ var PartialEvaluator = (function() {
     eval: function(stream, xref, resources, fonts) {
       resources = xref.fetchIfRef(resources) || new Dict();
       var xobjs = xref.fetchIfRef(resources.get('XObject')) || new Dict();
-      var patterns = xref.fetchIfRef(resources.get("Pattern")) || new Dict(); 
+      var patterns = xref.fetchIfRef(resources.get('Pattern')) || new Dict();
       var parser = new Parser(new Lexer(stream), false);
       var args = [], argsArray = [], fnArray = [], obj;
-      
+
       while (!IsEOF(obj = parser.getObj())) {
         if (IsCmd(obj)) {
           var cmd = obj.cmd;
@@ -3665,7 +3665,7 @@ var PartialEvaluator = (function() {
               var pattern = xref.fetchIfRef(patterns.get(patternName.name));
               if (pattern) {
                 var dict = IsStream(pattern) ? pattern.dict : pattern;
-                var typeNum = dict.get("PatternType");
+                var typeNum = dict.get('PatternType');
                 if (typeNum == 1) {
                   patternName.code = this.eval(pattern, xref,
                       dict.get('Resources'), fonts);
@@ -3718,7 +3718,7 @@ var PartialEvaluator = (function() {
       }
 
       return function(gfx) {
-        for(var i = 0, length = argsArray.length; i < length; i++)
+        for (var i = 0, length = argsArray.length; i < length; i++)
           gfx[fnArray[i]].apply(gfx, argsArray[i]);
       }
     },
@@ -3729,8 +3729,8 @@ var PartialEvaluator = (function() {
       var subType = fontDict.get('Subtype');
       var compositeFont = false;
       assertWellFormed(IsName(subType), 'invalid font Subtype');
-      
-      // If font is a composite 
+
+      // If font is a composite
       //  - get the descendant font
       //  - set the type according to the descendant font
       //  - get the FontDescriptor from the descendant font
@@ -3750,10 +3750,10 @@ var PartialEvaluator = (function() {
       } else {
         fd = fontDict.get('FontDescriptor');
       }
-      
+
       if (!fd)
         return null;
-      
+
       var descriptor = xref.fetch(fd);
 
       var fontName = xref.fetchIfRef(descriptor.get('FontName'));
@@ -3773,7 +3773,7 @@ var PartialEvaluator = (function() {
             var glyphsData = glyphsStream.getBytes(0);
             var i = 0;
             // Glyph ids are big-endian 2-byte values
-            for (var j=0; j<glyphsData.length; j++) {
+            for (var j = 0; j < glyphsData.length; j++) {
               var glyphID = (glyphsData[j++] << 8) | glyphsData[j];
               charset.push(glyphID);
             }
@@ -3785,12 +3785,12 @@ var PartialEvaluator = (function() {
           if (IsName(encoding)) {
             // Encoding is a predefined CMap
             if (encoding.name == 'Identity-H') {
-              TODO ('Need to create an identity cmap')
+              TODO('Need to create an identity cmap');
             } else {
-              TODO ('Need to support predefined CMaps see PDF 32000-1:2008 9.7.5.2 Predefined CMaps')
+              TODO('Need to support predefined CMaps see PDF 32000-1:2008 9.7.5.2 Predefined CMaps');
             }
           } else {
-            TODO ('Need to support encoding streams see PDF 32000-1:2008  9.7.5.3'); 
+            TODO('Need to support encoding streams see PDF 32000-1:2008  9.7.5.3');
           }
         }
       } else if (fontDict.has('Encoding')) {
@@ -3955,11 +3955,11 @@ var PartialEvaluator = (function() {
 
       return {
         name: fontName,
-        fontDict: fontDict, 
+        fontDict: fontDict,
         file: fontFile,
         properties: properties
       };
-    },
+    }
   };
 
   return constructor;
@@ -4145,7 +4145,7 @@ var CanvasGraphics = (function() {
     stroke: function() {
       var ctx = this.ctx;
       var strokeColor = this.current.strokeColor;
-      if (strokeColor && strokeColor.type === "Pattern") {
+      if (strokeColor && strokeColor.type === 'Pattern') {
         // for patterns, we transform to pattern space, calculate
         // the pattern, call stroke, and restore to user space
         ctx.save();
@@ -4166,7 +4166,7 @@ var CanvasGraphics = (function() {
       var ctx = this.ctx;
       var fillColor = this.current.fillColor;
 
-      if (fillColor && fillColor.type === "Pattern") {
+      if (fillColor && fillColor.type === 'Pattern') {
         ctx.save();
         ctx.fillStyle = fillColor.getPattern(ctx);
         ctx.fill();
@@ -4186,7 +4186,7 @@ var CanvasGraphics = (function() {
       var ctx = this.ctx;
 
       var fillColor = this.current.fillColor;
-      if (fillColor && fillColor.type === "Pattern") {
+      if (fillColor && fillColor.type === 'Pattern') {
         ctx.save();
         ctx.fillStyle = fillColor.getPattern(ctx);
         ctx.fill();
@@ -4194,9 +4194,9 @@ var CanvasGraphics = (function() {
       } else {
         ctx.fill();
       }
-      
+
       var strokeColor = this.current.strokeColor;
-      if (strokeColor && strokeColor.type === "Pattern") {
+      if (strokeColor && strokeColor.type === 'Pattern') {
         ctx.save();
         ctx.strokeStyle = strokeColor.getPattern(ctx);
         ctx.stroke();
@@ -4204,7 +4204,7 @@ var CanvasGraphics = (function() {
       } else {
         ctx.stroke();
       }
-      
+
       this.consumePath();
     },
     eoFillStroke: function() {
@@ -4285,9 +4285,9 @@ var CanvasGraphics = (function() {
 
         size = (size <= kRasterizerMin) ? size * kScalePrecision : size;
 
-        var bold = fontObj.bold ? "bold" : "normal";
-        var italic = fontObj.italic ? "italic" : "normal";
-        var rule = bold + " " + italic + " " + size + 'px "' + name + '"';
+        var bold = fontObj.bold ? 'bold' : 'normal';
+        var italic = fontObj.italic ? 'italic' : 'normal';
+        var rule = bold + ' ' + italic + ' ' + size + 'px "' + name + '"';
         this.ctx.font = rule;
       }
     },
@@ -4329,7 +4329,7 @@ var CanvasGraphics = (function() {
       ctx.save();
       ctx.transform.apply(ctx, current.textMatrix);
       ctx.scale(1, -1);
-      
+
       ctx.translate(current.x, -1 * current.y);
 
       var scaleFactorX = 1, scaleFactorY = 1;
@@ -4405,11 +4405,11 @@ var CanvasGraphics = (function() {
 
     // Color
     setStrokeColorSpace: function(space) {
-      this.current.strokeColorSpace = 
+      this.current.strokeColorSpace =
           ColorSpace.parse(space, this.xref, this.res);
     },
     setFillColorSpace: function(space) {
-      this.current.fillColorSpace = 
+      this.current.fillColorSpace =
           ColorSpace.parse(space, this.xref, this.res);
     },
     setStrokeColor: function(/*...*/) {
@@ -4509,7 +4509,7 @@ var CanvasGraphics = (function() {
         var y0 = Math.min(bl[1], br[1], ul[1], ur[1]);
         var x1 = Math.max(bl[0], br[0], ul[0], ur[0]);
         var y1 = Math.max(bl[1], br[1], ul[1], ur[1]);
-        
+
         this.ctx.fillRect(x0, y0, x1 - x0, y1 - y0);
       } else {
         // HACK to draw the gradient onto an infinite rectangle.
@@ -4517,7 +4517,7 @@ var CanvasGraphics = (function() {
         // Canvas only allows gradients to be drawn in a rectangle
         // The following bug should allow us to remove this.
         // https://bugzilla.mozilla.org/show_bug.cgi?id=664884
-      
+
         this.ctx.fillRect(-1e10, -1e10, 2e10, 2e10);
       }
 
@@ -4673,7 +4673,7 @@ var CanvasGraphics = (function() {
     },
     restoreFillRule: function(rule) {
       this.ctx.mozFillRule = rule;
-    },
+    }
   };
 
   return constructor;
@@ -4695,7 +4695,7 @@ var Util = (function() {
     var yt = p[0] * m[1] + p[1] * m[3] + m[5];
     return [xt, yt];
   };
-  
+
   return constructor;
 })();
 
@@ -4811,7 +4811,7 @@ var ColorSpace = (function() {
         error("unimplemented color space object '" + mode + "'");
       }
     } else {
-      error('unrecognized color space object: "'+ cs +"'");
+      error('unrecognized color space object: "' + cs + "'");
     }
   };
 
@@ -4820,7 +4820,7 @@ var ColorSpace = (function() {
 
 var SeparationCS = (function() {
   function constructor(base, tintFn) {
-    this.name = "Separation";
+    this.name = 'Separation';
     this.numComps = 1;
     this.defaultColor = [1];
 
@@ -4987,41 +4987,41 @@ var DeviceCmykCS = (function() {
       r += 0.1373 * x;
       g += 0.1216 * x;
       b += 0.1255 * x;
-      x = c1 * m1 * y  * k1; // 0 0 1 0
+      x = c1 * m1 * y * k1; // 0 0 1 0
       r += x;
       g += 0.9490 * x;
-      x = c1 * m1 * y  * k;  // 0 0 1 1
+      x = c1 * m1 * y * k;  // 0 0 1 1
       r += 0.1098 * x;
       g += 0.1020 * x;
-      x = c1 * m  * y1 * k1; // 0 1 0 0
+      x = c1 * m * y1 * k1; // 0 1 0 0
       r += 0.9255 * x;
       b += 0.5490 * x;
-      x = c1 * m  * y1 * k;  // 0 1 0 1
+      x = c1 * m * y1 * k;  // 0 1 0 1
       r += 0.1412 * x;
-      x = c1 * m  * y  * k1; // 0 1 1 0
+      x = c1 * m * y * k1; // 0 1 1 0
       r += 0.9294 * x;
       g += 0.1098 * x;
       b += 0.1412 * x;
-      x = c1 * m  * y  * k;  // 0 1 1 1
+      x = c1 * m * y * k;  // 0 1 1 1
       r += 0.1333 * x;
-      x = c  * m1 * y1 * k1; // 1 0 0 0
+      x = c * m1 * y1 * k1; // 1 0 0 0
       g += 0.6784 * x;
       b += 0.9373 * x;
-      x = c  * m1 * y1 * k;  // 1 0 0 1
+      x = c * m1 * y1 * k;  // 1 0 0 1
       g += 0.0588 * x;
       b += 0.1412 * x;
-      x = c  * m1 * y  * k1; // 1 0 1 0
+      x = c * m1 * y * k1; // 1 0 1 0
       g += 0.6510 * x;
       b += 0.3137 * x;
-      x = c  * m1 * y  * k;  // 1 0 1 1
+      x = c * m1 * y * k;  // 1 0 1 1
       g += 0.0745 * x;
-      x = c  * m  * y1 * k1; // 1 1 0 0
+      x = c * m * y1 * k1; // 1 1 0 0
       r += 0.1804 * x;
       g += 0.1922 * x;
       b += 0.5725 * x;
-      x = c  * m  * y1 * k;  // 1 1 0 1
+      x = c * m * y1 * k;  // 1 1 0 1
       b += 0.0078 * x;
-      x = c  * m  * y  * k1; // 1 1 1 0
+      x = c * m * y * k1; // 1 1 1 0
       r += 0.2118 * x;
       g += 0.2119 * x;
       b += 0.2235 * x;
@@ -5037,7 +5037,7 @@ var DeviceCmykCS = (function() {
       for (var i = 0; i < length; i++) {
         var cmyk = [];
         for (var j = 0; j < 4; ++j)
-          cmyk.push(colorBuf[colorBufPos++]/255);
+          cmyk.push(colorBuf[colorBufPos++] / 255);
 
         var rgb = this.getRgb(cmyk);
         for (var j = 0; j < 3; ++j)
@@ -5061,7 +5061,7 @@ var Pattern = (function() {
     // Output: the appropriate fillStyle or strokeStyle
     getPattern: function pattern_getStyle(ctx) {
       error('Should not call Pattern.getStyle');
-    },
+    }
   };
 
   constructor.parse = function pattern_parse(args, cs, xref, res, ctx) {
@@ -5069,17 +5069,17 @@ var Pattern = (function() {
 
     var patternName = args[length - 1];
     if (!IsName(patternName))
-      error("Bad args to getPattern");
+      error('Bad args to getPattern');
 
-    var patternRes = xref.fetchIfRef(res.get("Pattern"));
+    var patternRes = xref.fetchIfRef(res.get('Pattern'));
     if (!patternRes)
-      error("Unable to find pattern resource");
+      error('Unable to find pattern resource');
 
     var pattern = xref.fetchIfRef(patternRes.get(patternName.name));
     var dict = IsStream(pattern) ? pattern.dict : pattern;
-    var typeNum = dict.get("PatternType");
+    var typeNum = dict.get('PatternType');
 
-    switch(typeNum) {
+    switch (typeNum) {
     case 1:
       var base = cs.base;
       var color;
@@ -5201,9 +5201,9 @@ var RadialAxialShading = (function() {
       } else if (type == 3) {
         var p0 = [coordsArr[0], coordsArr[1]];
         var p1 = [coordsArr[3], coordsArr[4]];
-        var r0 = coordsArr[2], r1 = coordsArr[5]
+        var r0 = coordsArr[2], r1 = coordsArr[5];
       } else {
-        error()
+        error();
       }
 
       var matrix = this.matrix;
@@ -5244,7 +5244,7 @@ var RadialAxialShading = (function() {
 
 var TilingPattern = (function() {
   var PAINT_TYPE_COLORED = 1, PAINT_TYPE_UNCOLORED = 2;
-  
+
   function constructor(pattern, code, dict, color, xref, ctx) {
       function multiply(m, tm) {
         var a = m[0] * tm[0] + m[1] * tm[2];
@@ -5258,7 +5258,7 @@ var TilingPattern = (function() {
 
       TODO('TilingType');
 
-      this.matrix = dict.get("Matrix");
+      this.matrix = dict.get('Matrix');
       this.curMatrix = ctx.mozCurrentTransform;
       this.invMatrix = ctx.mozCurrentTransformInverse;
       this.ctx = ctx;
@@ -5272,14 +5272,14 @@ var TilingPattern = (function() {
 
       var topLeft = [x0, y0];
       // we want the canvas to be as large as the step size
-      var botRight = [x0 + xstep, y0 + ystep]
+      var botRight = [x0 + xstep, y0 + ystep];
 
       var width = botRight[0] - topLeft[0];
       var height = botRight[1] - topLeft[1];
 
       // TODO: hack to avoid OOM, we would idealy compute the tiling
       // pattern to be only as large as the acual size in device space
-      // This could be computed with .mozCurrentTransform, but still 
+      // This could be computed with .mozCurrentTransform, but still
       // needs to be implemented
       while (Math.abs(width) > 512 || Math.abs(height) > 512) {
         width = 512;
@@ -5676,7 +5676,7 @@ var PDFFunction = (function() {
       var c0 = dict.get('C0') || [0];
       var c1 = dict.get('C1') || [1];
       var n = dict.get('N');
-      
+
       if (!IsArray(c0) || !IsArray(c1))
         error('Illegal dictionary for interpolated function');
 
@@ -5685,7 +5685,7 @@ var PDFFunction = (function() {
       for (var i = 0; i < length; ++i)
         diff.push(c1[i] - c0[i]);
 
-      this.func = function (args) {
+      this.func = function(args) {
         var x = args[0];
 
         var out = [];
@@ -5697,11 +5697,11 @@ var PDFFunction = (function() {
     },
     constructStiched: function() {
       TODO('unhandled type of function');
-      this.func = function () { return [ 255, 105, 180 ]; }
+      this.func = function() { return [255, 105, 180]; }
     },
     constructPostScript: function() {
       TODO('unhandled type of function');
-      this.func = function () { return [ 255, 105, 180 ]; }
+      this.func = function() { return [255, 105, 180]; }
     }
   };
 
