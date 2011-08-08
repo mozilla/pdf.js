@@ -81,6 +81,7 @@ var JpegImage = (function() {
     var precision = frame.precision;
     var samplesPerLine = frame.samplesPerLine;
     var scanLines = frame.scanLines;
+    var mcusPerLine = frame.mcusPerLine;
     var progressive = frame.progressive;
     var maxH = frame.maxH, maxV = frame.maxV;
 
@@ -149,8 +150,8 @@ var JpegImage = (function() {
     }
     function decodeDCFirst(component, zz) {
       var t = decodeHuffman(component.huffmanTableDC);
-      var diff = t === 0 ? 0 : receiveAndExtend(t);
-      zz[0] = (component.pred += diff) << successive;
+      var diff = t === 0 ? 0 : (receiveAndExtend(t) << successive);
+      zz[0] = (component.pred += diff);
     }
     function decodeDCSuccessive(component, zz) {
       zz[0] |= readBit() << successive;
@@ -163,14 +164,6 @@ var JpegImage = (function() {
       }
       var k = spectralStart, e = spectralEnd;
       while (k <= e) {
-        // check if marker is next
-        if (data[offset] == 0xFF && data[offset + 1] !== 0) {
-          var tailMask = (1 << bitsCount) - 1;
-          if ((bitsData & tailMask) == tailMask)
-            eobrun = -1 >>> 1; // marker found
-          break;
-        }
-
         var rs = decodeHuffman(component.huffmanTableAC);
         var s = rs & 15, r = rs >> 4;
         if (s === 0) {
@@ -186,79 +179,63 @@ var JpegImage = (function() {
         k++;
       }
     }
-    var successiveACState = null;
+    var successiveACState = 0, successiveACNextValue;
     function decodeACSuccessive(component, zz) {
-      var k = spectralStart, e = spectralEnd;
+      var k = spectralStart, e = spectralEnd, r = 0;
       while (k <= e) {
-        if (successiveACState === null) {
-          // check if marker is next
-          if (data[offset] == 0xFF && data[offset + 1] !== 0) {
-            var tailMask = (1 << bitsCount) - 1;
-            if ((bitsData & tailMask) == tailMask)
-              eobrun = -1 >>> 1; // marker found
-            break;
-          }
+        switch (successiveACState) {
+        case 0: // initial state
           var rs = decodeHuffman(component.huffmanTableAC);
           var s = rs & 15, r = rs >> 4;
           if (s === 0) {
             if (r < 15) {
               eobrun = receive(r) + (1 << r);
-              successiveACState = {
-                state: 0
-              };
+              successiveACState = 4;
             } else {
-              successiveACState = {
-                state: 1,
-                r: 16
-              };
+              r = 16;
+              successiveACState = 1;
             }
           } else {
-            successiveACState = {
-              state: r ? 2 : 3,
-              r: r,
-              newValue: receiveAndExtend(s)
-            };
+            if (s !== 1)
+              throw "invalid ACn encoding";
+            successiveACNextValue = receiveAndExtend(s);
+            successiveACState = r ? 2 : 3;
           }
-        }
-        switch (successiveACState.state) {
-        case 0:
-          if (zz[k])
-            zz[k] |= readBit() << successive;
-          break;
-        case 1:
+          continue;
+        case 1: // skipping r zero items
         case 2:
           if (zz[k])
             zz[k] |= readBit() << successive;
           else {
-            successiveACState.r--;
-            if (successiveACState.r === 0) {
-              if (successiveACState.state == 2)
-                successiveACState.state = 3;
-              else
-                successiveACState = null;
-            }
+            r--;
+            if (r === 0)
+              successiveACState = successiveACState == 2 ? 3 : 0;
           }
           break;
-        case 3:
+        case 3: // set value for a zero item
           if (zz[k])
             zz[k] |= readBit() << successive;
           else {
-            zz[k] = successiveACState.newValue << successive;
-            successiveACState = null;
+            zz[k] = successiveACNextValue << successive;
+            successiveACState = 0;
           }
+          break;
+        case 4: // eob
+          if (zz[k])
+            zz[k] |= readBit() << successive;
           break;
         }
         k++;
       }
-      if (successiveACState && successiveACState.state === 0) {
+      if (successiveACState === 4) {
         eobrun--;
         if (eobrun === 0)
-          successiveACState = null;
+          successiveACState = 0;
       }
     }
     function decodeMcu(component, decode, mcu, row, col) {
-      var mcuRow = (mcu / component.mcusPerLine) | 0;
-      var mcuCol = mcu % component.mcusPerLine;
+      var mcuRow = (mcu / mcusPerLine) | 0;
+      var mcuCol = mcu % mcusPerLine;
       var blockRow = mcuRow * component.v + row;
       var blockCol = mcuCol * component.h + col;
       decode(component, component.blocks[blockRow][blockCol]);
@@ -280,20 +257,23 @@ var JpegImage = (function() {
     } else {
       decodeFn = decodeBaseline;
     }
-    for (i = 0; i < componentsLength; i++)
-      components[i].pred = 0;
 
     var mcu = 0, marker;
     var mcuExpected;
     if (componentsLength == 1) {
       mcuExpected = components[0].blocksPerLine * components[0].blocksPerColumn;
     } else {
-      mcuExpected = components[0].mcusPerLine * components[0].mcusPerColumn;
+      mcuExpected = mcusPerLine * frame.mcusPerColumn;
     }
     if (!resetInterval) resetInterval = mcuExpected;
 
     var h, v;
     while (mcu < mcuExpected) {
+      // reset interval stuff
+      for (i = 0; i < componentsLength; i++)
+        components[i].pred = 0;
+      eobrun = 0;
+
       if (componentsLength == 1) {
         component = components[0];
         for (n = 0; n < resetInterval; n++) {
@@ -325,9 +305,6 @@ var JpegImage = (function() {
 
       if (marker >= 0xFFD0 && marker <= 0xFFD7) { // RSTx
         offset += 2;
-        for (i = 0; i < componentsLength; i++)
-          components[i].pred = 0;
-        eobrun = 0;
       }
       else
         break;
@@ -431,25 +408,26 @@ var JpegImage = (function() {
         for (componentId in frame.components) {
           if (frame.components.hasOwnProperty(componentId)) {
             component = frame.components[componentId];
-            var blocksPerLine = mcusPerLine * component.h;
-            var blocksPerColumn = mcusPerColumn * component.v;
+            var blocksPerLine = Math.ceil(Math.ceil(frame.samplesPerLine / 8) * component.h / maxH);
+            var blocksPerColumn = Math.ceil(Math.ceil(frame.scanLines  / 8) * component.v / maxV);
+            var blocksPerLineForMcu = mcusPerLine * component.h;
+            var blocksPerColumnForMcu = mcusPerColumn * component.v;
             var blocks = [];
-            for (var i = 0; i < blocksPerColumn; i++) {
+            for (var i = 0; i < blocksPerColumnForMcu; i++) {
               var row = [];
-              for (var j = 0; j < blocksPerLine; j++)
+              for (var j = 0; j < blocksPerLineForMcu; j++)
                 row.push(new Int32Array(64));
               blocks.push(row);
             }
             component.blocksPerLine = blocksPerLine;
             component.blocksPerColumn = blocksPerColumn;
             component.blocks = blocks;
-
-            component.mcusPerLine = mcusPerLine;
-            component.mcusPerColumn = mcusPerColumn;
           }
         }
         frame.maxH = maxH;
         frame.maxV = maxV;
+        frame.mcusPerLine = mcusPerLine;
+        frame.mcusPerColumn = mcusPerColumn;
       }
       var jfif = null;
       var adobe = null;
