@@ -3038,6 +3038,16 @@ var Page = (function() {
     },
     get rotate() {
       var rotate = this.inheritPageProp("Rotate") || 0;
+      // Normalize rotation so it's a multiple of 90 and between 0 and 270
+      if (rotate % 90 != 0) {
+        rotate = 0;
+      } else if (rotate >= 360) {
+        rotate = rotate % 360;
+      } else if (rotate < 0) {
+        // The spec doesn't cover negatives, assume its counterclockwise
+        // rotation. The following is the other implementation of modulo.
+        rotate = ((rotate % 360) + 360) % 360;
+      }
       return shadow(this, 'rotate', rotate);
     },
     startRendering: function(canvasCtx, continuation, onerror) {
