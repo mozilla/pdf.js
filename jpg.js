@@ -175,7 +175,7 @@ var JpegImage = (function() {
           continue;
         }
         k += r;
-        zz[k] = receiveAndExtend(s);
+        zz[k] = receiveAndExtend(s) * (1 << successive);
         k++;
       }
     }
@@ -205,7 +205,7 @@ var JpegImage = (function() {
         case 1: // skipping r zero items
         case 2:
           if (zz[k])
-            zz[k] |= readBit() << successive;
+            zz[k] += (readBit() << successive);
           else {
             r--;
             if (r === 0)
@@ -214,7 +214,7 @@ var JpegImage = (function() {
           break;
         case 3: // set value for a zero item
           if (zz[k])
-            zz[k] |= readBit() << successive;
+            zz[k] += (readBit() << successive);
           else {
             zz[k] = successiveACNextValue << successive;
             successiveACState = 0;
@@ -222,7 +222,7 @@ var JpegImage = (function() {
           break;
         case 4: // eob
           if (zz[k])
-            zz[k] |= readBit() << successive;
+            zz[k] += (readBit() << successive);
           break;
         }
         k++;
@@ -351,7 +351,6 @@ var JpegImage = (function() {
       var scanLine = blockRow << 3;
       for (i = 0; i < 8; i++)
         lines.push(new Uint8Array(samplesPerLine));
-
       for (var blockCol = 0; blockCol < blocksPerLine; blockCol++) {
         var r = quantizeAndInverse(component.blocks[blockRow][blockCol]);
 

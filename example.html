@@ -4,19 +4,32 @@
 <script src="jpg.js"></script>
 <script>
 
-var j = new JpegImage();
-j.onload = function() {
-  var c = document.getElementById("c");
-  c.width = j.width;
-  c.height = j.height;
-  var ctx = c.getContext("2d");
-  var d = ctx.getImageData(0,0,j.width,j.height);
-  j.copyToImageData(d);
-  ctx.putImageData(d, 0, 0);
-};
-j.load("j1.jpg");
+function displayImage(canvasId, url) {
+  var j = new JpegImage();
+  j.onload = function() {
+    var c = document.getElementById(canvasId);
+    c.width = j.width;
+    c.height = j.height;
+    var ctx = c.getContext("2d");
+    var d = ctx.getImageData(0,0,j.width,j.height);
+    j.copyToImageData(d);
+    ctx.putImageData(d, 0, 0);
+  };
+  j.load(url);
+}
+
+displayImage("c1", "j1.jpg");
+displayImage("c2", "j2.jpg");
+displayImage("c3", "j3.jpg");
 </script>
 </head>
 <body>
-<canvas id="c"></canvas>
+  <table>
+    <tr><th>baseline</th><th>progressive</th><th>baseline (gray)</th></tr>
+    <tr>
+      <td><canvas id="c1"></canvas></td>
+      <td><canvas id="c2"></canvas></td>
+      <td><canvas id="c3"></canvas></td>
+    </tr>
+  </table>
 </body></html>
