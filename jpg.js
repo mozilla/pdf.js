@@ -390,18 +390,8 @@ var JpegImage = (function() {
   }
 
   constructor.prototype = {
-    load: function(path) {
-      var xhr = new XMLHttpRequest();
-      xhr.open("GET", path, true);
-      xhr.responseType = "arraybuffer";
-      xhr.onload = (function() {
-        // TODO catch parse error
-        var data = new Uint8Array(xhr.response || xhr.mozResponseArrayBuffer);
-        this.parse(data);
-        if (this.onload)
-          this.onload();
-      }).bind(this);
-      xhr.send(null);
+    load: function(data) {
+      this.parse(data);
     },
     parse: function(data) {
       var offset = 0, length = data.length;
@@ -622,6 +612,63 @@ var JpegImage = (function() {
           });
         }
       }
+    },
+    getBuffer: function() {
+      var width = this.width, height = this.height;
+
+      var component1, component2, component3, component4;
+      var component1Line, component2Line, component3Line, component4Line;
+      var x, y;
+      var offset = 0;
+
+      var length = this.components.length;
+      var buffer = new Uint8Array(length * width * height);
+      switch (this.components.length) {
+        case 1:
+          component1 = this.components[0];
+          for (y = 0; y < height; y++) {
+            component1Line = component1.lines[y];
+            component1Line = component1.lines[0 | (y * component1.scaleY)];
+            for (x = 0; x < width; x++) {
+              buffer[offset++] = component1Line[0 | (x * component1.scaleX)];
+            }
+          }
+          break;
+        case 3:
+          component1 = this.components[0];
+          component2 = this.components[1];
+          component3 = this.components[2];
+          for (y = 0; y < height; y++) {
+            component1Line = component1.lines[0 | (y * component1.scaleY)];
+            component2Line = component2.lines[0 | (y * component2.scaleY)];
+            component3Line = component3.lines[0 | (y * component3.scaleY)];
+            for (x = 0; x < width; x++) {
+              buffer[offset++] = component1Line[0 | (x * component1.scaleX)];
+              buffer[offset++] = component2Line[0 | (x * component2.scaleX)];
+              buffer[offset++] = component3Line[0 | (x * component3.scaleX)];
+            }
+          }
+          break;
+        case 4:
+          component1 = this.components[0];
+          component2 = this.components[1];
+          component3 = this.components[2];
+          component4 = this.components[3];
+          for (y = 0; y < height; y++) {
+            component1Line = component1.lines[0 | (y * component1.scaleY)];
+            component2Line = component2.lines[0 | (y * component2.scaleY)];
+            component3Line = component3.lines[0 | (y * component3.scaleY)];
+            component4Line = component4.lines[0 | (y * component4.scaleY)];
+            for (x = 0; x < width; x++) {
+              buffer[offset++] = component1Line[0 | (x * component1.scaleX)];
+              buffer[offset++] = component2Line[0 | (x * component2.scaleX)];
+              buffer[offset++] = component3Line[0 | (x * component3.scaleX)];
+              buffer[offset++] = component4Line[0 | (x * component4.scaleX)];
+            }
+          }
+          break;
+      }
+      return buffer;
     },
     copyToImageData: function(imageData) {
       var width = imageData.width, height = imageData.height;
