@@ -813,12 +813,16 @@ var JpegStream = (function() {
       cs = ColorSpace.parse(cs, xref, res);
       if (cs.name != 'DeviceCMYK') {
         // create DOM image
+        TODO('Ensure image is loaded before displaying');
         var img = new Image();
         img.src = 'data:image/jpeg;base64,' 
             + window.btoa(bytesToString(this.bytes));
         this.domImage = img;
         return img;
       } else {
+        // If the colorspace is cmyk, then use the javascript library to decode
+        // the jpeg. This is because the browser inverts cmyk images which
+        // cannot be inverted back.
         var img = new JpegImage();
         img.load(this.bytes);
         this.buffer = img.getBuffer();
