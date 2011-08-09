@@ -46,11 +46,11 @@ function assertWellFormed(cond, msg) {
 
 function backtrace() {
   var stackStr;
-  try {
+//  try {
     throw new Error();
-  } catch(e) {
-    stackStr = e.stack;
-  };
+//  } catch(e) {
+//    stackStr = e.stack;
+//  };
   return stackStr.split('\n').slice(1).join('\n');
 }
 
@@ -801,25 +801,29 @@ var JpegStream = (function() {
   function constructor(bytes, dict) {
     // TODO: per poppler, some images may have "junk" before that
     // need to be removed
+    this.bytes = bytes;
     this.dict = dict;
-    var bpc = dict.get('BitsPerComponent', 'BPC');
-
-    if (bpc == 3) {
-      // create DOM image
-      var img = new Image();
-      img.src = 'data:image/jpeg;base64,' + window.btoa(bytesToString(bytes));
-      this.domImage = img;
-      this.getImage = function() {
-        return this.domImage;
-      }
-    } else {
-      var img = new JpegImage();
-      img.load(bytes);
-      this.buffer = img.getBuffer();
-    }
+      
   }
 
   constructor.prototype = {
+    getImage: function(xref, res) {
+      var dict = this.dict;
+      var cs = dict.get('ColorSpace', 'CS');
+      cs = ColorSpace.parse(cs, xref, res);
+      if (cs.name != 'DeviceCMYK') {
+        // create DOM image
+        var img = new Image();
+        img.src = 'data:image/jpeg;base64,' 
+            + window.btoa(bytesToString(this.bytes));
+        this.domImage = img;
+        return img;
+      } else {
+        var img = new JpegImage();
+        img.load(this.bytes);
+        this.buffer = img.getBuffer();
+      }
+    },
     getChar: function() {
       error('internal error: getChar is not valid on JpegStream');
     },
@@ -3043,12 +3047,12 @@ var Page = (function() {
           // Firefox error reporting from XHR callbacks.
           setTimeout(function () {
             var exc = null;
-            try {
+//            try {
               self.display(gfx);
               stats.render = Date.now();
-            } catch (e) {
-              exc = e.toString();
-            }
+//            } catch (e) {
+//              exc = e.toString();
+//            }
             continuation(exc);
           });
         });
@@ -4559,11 +4563,13 @@ var CanvasGraphics = (function() {
       // stream has a getImage property which directly returns a
       // suitable DOM Image object.
       if (image.getImage) {
-        var domImage = image.getImage();
-        ctx.drawImage(domImage, 0, 0, domImage.width, domImage.height,
+        var domImage = image.getImage(this.xref, this.res);
+        if (domImage) {
+          ctx.drawImage(domImage, 0, 0, domImage.width, domImage.height,
                       0, -h, w, h);
-        this.restore();
-        return;
+          this.restore();
+          return;
+        }
       }
 
       var imageObj = new PDFImage(this.xref, this.res, image, inline);
