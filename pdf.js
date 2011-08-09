@@ -46,11 +46,11 @@ function assertWellFormed(cond, msg) {
 
 function backtrace() {
   var stackStr;
-//  try {
+  try {
     throw new Error();
-//  } catch(e) {
-//    stackStr = e.stack;
-//  };
+  } catch(e) {
+    stackStr = e.stack;
+  };
   return stackStr.split('\n').slice(1).join('\n');
 }
 
@@ -3047,12 +3047,12 @@ var Page = (function() {
           // Firefox error reporting from XHR callbacks.
           setTimeout(function () {
             var exc = null;
-//            try {
+            try {
               self.display(gfx);
               stats.render = Date.now();
-//            } catch (e) {
-//              exc = e.toString();
-//            }
+            } catch (e) {
+              exc = e.toString();
+            }
             continuation(exc);
           });
         });
