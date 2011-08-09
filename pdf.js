@@ -55,7 +55,10 @@ function backtrace() {
 }
 
 function shadow(obj, prop, value) {
-  Object.defineProperty(obj, prop, { value: value, enumerable: true, configurable: true, writable: false });
+  Object.defineProperty(obj, prop, { value: value,
+                                     enumerable: true,
+                                     configurable: true,
+                                     writable: false });
     return value;
 }
 
@@ -978,7 +981,9 @@ var AsciiHexStream = (function() {
         n = hexvalueMap[bytes[++i]];
         buffer[bufferLength++] = c * 16 + n;
       } else {
-        if (bytes[i] !== gtCode) { // EOD marker at an odd number, behave as if a 0 followed the last digit.
+        // EOD marker at an odd number, behave as if a 0 followed the last
+        // digit.
+        if (bytes[i] !== gtCode) {
           buffer[bufferLength++] = c * 16;
         }
       }
@@ -2010,10 +2015,12 @@ var Dict = (function() {
   constructor.prototype = {
     get: function(key1, key2, key3) {
       var value;
-      if (typeof (value = this.map[key1]) != 'undefined' || key1 in this.map || typeof key2 == 'undefined') {
+      if (typeof (value = this.map[key1]) != 'undefined' || key1 in this.map ||
+          typeof key2 == 'undefined') {
         return value;
       }
-      if (typeof (value = this.map[key2]) != 'undefined' || key2 in this.map || typeof key3 == 'undefined') {
+      if (typeof (value = this.map[key2]) != 'undefined' || key2 in this.map ||
+          typeof key3 == 'undefined') {
         return value;
       }
 
@@ -3780,17 +3787,20 @@ var PartialEvaluator = (function() {
           }
         }
         else {
-          // XXX This is a placeholder for handling of the encoding of CIDFontType0 fonts
+          // XXX This is a placeholder for handling of the encoding of
+          // CIDFontType0 fonts
           var encoding = xref.fetchIfRef(fontDict.get('Encoding'));
           if (IsName(encoding)) {
             // Encoding is a predefined CMap
             if (encoding.name == 'Identity-H') {
               TODO('Need to create an identity cmap');
             } else {
-              TODO('Need to support predefined CMaps see PDF 32000-1:2008 9.7.5.2 Predefined CMaps');
+              TODO('Need to support predefined CMaps see PDF 32000-1:2008 ' +
+                   '9.7.5.2 Predefined CMaps');
             }
           } else {
-            TODO('Need to support encoding streams see PDF 32000-1:2008  9.7.5.3');
+            TODO('Need to support encoding streams see PDF 32000-1:2008 ' +
+                 '9.7.5.3');
           }
         }
       } else if (fontDict.has('Encoding')) {
@@ -3812,10 +3822,11 @@ var PartialEvaluator = (function() {
           var index = 0;
           for (var j = 0; j < differences.length; j++) {
             var data = differences[j];
-            if (subType.name == 'TrueType') {
-              IsNum(data) ? index = data : encodingMap[index++] = j;
+            if (IsNum(data)) {
+              index = data;
             } else {
-              IsNum(data) ? index = data : encodingMap[index++] = GlyphsUnicode[data.name];
+              encodingMap[index++] = (subType.name == 'TrueType') ? j :
+                                     GlyphsUnicode[data.name];
             }
           }
 
@@ -4376,7 +4387,8 @@ var CanvasGraphics = (function() {
           if (this.ctx.$addCurrentX) {
             this.ctx.$addCurrentX(-e * 0.001 * this.current.fontSize);
           } else {
-            this.current.x -= e * 0.001 * this.current.fontSize * this.current.textHScale;
+            this.current.x -= e * 0.001 * this.current.fontSize *
+                              this.current.textHScale;
           }
         } else if (IsString(e)) {
           this.showText(e);
