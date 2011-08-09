@@ -24,6 +24,12 @@ var JpegImage = (function() {
           (j > 0 ? 1 : 1/Math.sqrt(2));
     }
 
+    var zzTransform = new Int32Array([
+      0, 1, 5, 6, 14, 15, 27, 28, 2, 4, 7, 13, 16, 26, 29, 42, 3, 8, 12,
+      17, 25, 30, 41, 43, 9, 11, 18, 24, 31, 40, 44, 53, 10, 19, 23, 32,
+      39, 45, 52, 54, 20, 22, 33, 38, 46, 51, 55, 60, 21, 34, 37, 47,
+      50, 56, 59, 61, 35, 36, 48, 49, 57, 58, 62, 63]);
+
     var x, y, u, v;
     var tables = [];
     for (y = 0; y < 8; y++) {
@@ -34,7 +40,7 @@ var JpegImage = (function() {
         i = 0;
         for (v = 0; v < 8; v++) {
           for (u = 0; u < 8; u++)
-            table[i++] = cosTable_x[u] * cosTable_y[v];
+            table[zzTransform[i++]] = cosTable_x[u] * cosTable_y[v];
         }
         tables.push(table);
       }
@@ -321,16 +327,11 @@ var JpegImage = (function() {
 
     function quantizeAndInverse(zz) {
       var qt = component.quantizationTable;
-      var precision = frame.precision;
-      var R = new Int32Array([
-        zz[0]  * qt[0],  zz[1]  * qt[1],  zz[5]  * qt[5],  zz[6]  * qt[6],  zz[14] * qt[14], zz[15] * qt[15], zz[27] * qt[27], zz[28] * qt[28],
-        zz[2]  * qt[2],  zz[4]  * qt[4],  zz[7]  * qt[7],  zz[13] * qt[13], zz[16] * qt[16], zz[26] * qt[26], zz[29] * qt[29], zz[42] * qt[42],
-        zz[3]  * qt[3],  zz[8]  * qt[8],  zz[12] * qt[12], zz[17] * qt[17], zz[25] * qt[25], zz[30] * qt[30], zz[41] * qt[41], zz[43] * qt[43],
-        zz[9]  * qt[9],  zz[11] * qt[11], zz[18] * qt[18], zz[24] * qt[24], zz[31] * qt[31], zz[40] * qt[40], zz[44] * qt[44], zz[53] * qt[53],
-        zz[10] * qt[10], zz[19] * qt[19], zz[23] * qt[23], zz[32] * qt[32], zz[39] * qt[39], zz[45] * qt[45], zz[52] * qt[52], zz[54] * qt[54],
-        zz[20] * qt[20], zz[22] * qt[22], zz[33] * qt[33], zz[38] * qt[38], zz[46] * qt[46], zz[51] * qt[51], zz[55] * qt[55], zz[60] * qt[60],
-        zz[21] * qt[21], zz[34] * qt[34], zz[37] * qt[37], zz[47] * qt[47], zz[50] * qt[50], zz[56] * qt[56], zz[59] * qt[59], zz[61] * qt[61],
-        zz[35] * qt[35], zz[36] * qt[36], zz[48] * qt[48], zz[49] * qt[49], zz[57] * qt[57], zz[58] * qt[58], zz[62] * qt[62], zz[63] * qt[63]]);
+      var precisionShift = frame.precision - 8;
+
+      var R = new Int32Array(64);
+      for (i = 0; i < 64; i++)
+        R[i] = zz[i] * qt[i];
 
       var r = new Uint8Array(64), i, j;
       for (i = 0; i < 64; i++) {
@@ -339,7 +340,7 @@ var JpegImage = (function() {
         for (j = 0; j < 64; j++)
           sum += table[j] * R[j];
         // TODO loosing precision?
-        var sample = 128 + ((sum / 4) >> (precision - 8));
+        var sample = 128 + ((sum / 4) >> precisionShift);
         // clamping
         r[i] = sample < 0 ? 0 : sample > 0xFF ? 0xFF : sample;
       }
