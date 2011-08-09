@@ -802,19 +802,29 @@ var JpegStream = (function() {
     // TODO: per poppler, some images may have "junk" before that
     // need to be removed
     this.dict = dict;
+    var bpc = dict.get('BitsPerComponent', 'BPC');
 
-    // create DOM image
-    var img = new Image();
-    img.src = 'data:image/jpeg;base64,' + window.btoa(bytesToString(bytes));
-    this.domImage = img;
+    if (bpc == 3) {
+      // create DOM image
+      var img = new Image();
+      img.src = 'data:image/jpeg;base64,' + window.btoa(bytesToString(bytes));
+      this.domImage = img;
+      this.getImage = function() {
+        return this.domImage;
+      }
+    } else {
+      var img = new JpegImage();
+      img.load(bytes);
+      this.buffer = img.getBuffer();
+    }
   }
 
   constructor.prototype = {
-    getImage: function() {
-      return this.domImage;
-    },
     getChar: function() {
       error('internal error: getChar is not valid on JpegStream');
+    },
+    getBytes: function() {
+      return this.buffer;
     }
   };
 
