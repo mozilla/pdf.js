@@ -12,7 +12,8 @@
 var JpegImage = (function() {
   "use strict";
 
-  function constructor() {
+  function constructor(transform) {
+    this.transform = transform;
   }
 
   var iDCTTables = (function() {
@@ -491,14 +492,23 @@ var JpegImage = (function() {
             }
             // TODO APP1 - Exif
             if (fileMarker === 0xFFEE) {
-              if (appData[0] === 0x41 && appData[1] === 0x64 && appData[2] === 0x6F &&
-                appData[3] === 0x62 && appData[4] === 65 && appData[5] === 0) { // 'Adobe\x00'
+              if (appData[0] === 0x41 && appData[1] === 0x64 && 
+                  appData[2] === 0x6F && appData[3] === 0x62 && 
+                  appData[4] === 0x65 && appData[5] === 0) { // 'Adobe\x00'
                 adobe = {
                   version: appData[6],
                   flags0: (appData[7] << 8) | appData[8],
                   flags1: (appData[9] << 8) | appData[10],
                   transformCode: appData[11]
                 };
+/*
+                var transform = this.transform;
+                if (tranform == 1) {
+                  adobe.tranformCode = 1;
+                } else if (tranform == 0) {
+                  adobe.tranformCode = 0;
+                }
+*/
               }
             }
             break;
@@ -654,19 +664,46 @@ var JpegImage = (function() {
           component2 = this.components[1];
           component3 = this.components[2];
           component4 = this.components[3];
-          for (y = 0; y < height; y++) {
-            component1Line = component1.lines[0 | (y * component1.scaleY)];
-            component2Line = component2.lines[0 | (y * component2.scaleY)];
-            component3Line = component3.lines[0 | (y * component3.scaleY)];
-            component4Line = component4.lines[0 | (y * component4.scaleY)];
-            for (x = 0; x < width; x++) {
-              buffer[offset++] = component1Line[0 | (x * component1.scaleX)];
-              buffer[offset++] = component2Line[0 | (x * component2.scaleX)];
-              buffer[offset++] = component3Line[0 | (x * component3.scaleX)];
-              buffer[offset++] = component4Line[0 | (x * component4.scaleX)];
+
+          var adobe = this.adobe;
+          if (adobe && adobe.transformCode) {
+            for (y = 0; y < height; y++) {
+              component1Line = component1.lines[0 | (y * component1.scaleY)];
+              component2Line = component2.lines[0 | (y * component2.scaleY)];
+              component3Line = component3.lines[0 | (y * component3.scaleY)];
+              component4Line = component4.lines[0 | (y * component4.scaleY)];
+              for (x = 0; x < width; x++) {
+                var Y = component1Line[0 | (x * component1.scaleX)];
+                var Cb = component2Line[0 | (x * component2.scaleX)];
+                var Cr = component3Line[0 | (x * component3.scaleX)];
+                var K = component4Line[0 | (x * component4.scaleX)];
+
+                var C = 255 - (Y + 1.402 * (Cr - 128));
+                var M = 255 - (Y - 0.3441363 * (Cb - 128) - 0.71413636 * (Cr - 128));
+                var Y = 255 - (Y + 1.772 * (Cb - 128));
+
+                buffer[offset++] =  0 | C;
+                buffer[offset++] =  0 | M;
+                buffer[offset++] = 0 | Y;
+                buffer[offset++] = K;
+              }
+            }
+          } else {
+            for (y = 0; y < height; y++) {
+              component1Line = component1.lines[0 | (y * component1.scaleY)];
+              component2Line = component2.lines[0 | (y * component2.scaleY)];
+              component3Line = component3.lines[0 | (y * component3.scaleY)];
+              component4Line = component4.lines[0 | (y * component4.scaleY)];
+              for (x = 0; x < width; x++) {
+                buffer[offset++] = component1Line[0 | (x * component1.scaleX)];
+                buffer[offset++] = component2Line[0 | (x * component2.scaleX)];
+                buffer[offset++] = component3Line[0 | (x * component3.scaleX)];
+                buffer[offset++] = component4Line[0 | (x * component4.scaleX)];
+              }
             }
           }
           break;
+          
       }
       return buffer;
     },
