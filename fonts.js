@@ -19,46 +19,46 @@ var kMaxWaitForFontFace = 1000;
  * fonts and their acronyms.
  */
 var stdFontMap = {
-  'Arial':                        'Helvetica',
-  'Arial_Bold':                   'Helvetica-Bold',
-  'Arial_BoldItalic':             'Helvetica-BoldOblique',
-  'Arial_Italic':                 'Helvetica-Oblique',
-  'Arial_BoldItalicMT':           'Helvetica-BoldOblique',
-  'Arial_BoldMT':                 'Helvetica-Bold',
-  'Arial_ItalicMT':               'Helvetica-Oblique',
-  'ArialMT':                      'Helvetica',
-  'Courier_Bold':                 'Courier-Bold',
-  'Courier_BoldItalic':           'Courier-BoldOblique',
-  'Courier_Italic':               'Courier-Oblique',
-  'CourierNew':                   'Courier',
-  'CourierNew_Bold':              'Courier-Bold',
-  'CourierNew_BoldItalic':        'Courier-BoldOblique',
-  'CourierNew_Italic':            'Courier-Oblique',
-  'CourierNewPS_BoldItalicMT':    'Courier-BoldOblique',
-  'CourierNewPS_BoldMT':          'Courier-Bold',
-  'CourierNewPS_ItalicMT':        'Courier-Oblique',
-  'CourierNewPSMT':               'Courier',
-  'Helvetica_Bold':               'Helvetica-Bold',
-  'Helvetica_BoldItalic':         'Helvetica-BoldOblique',
-  'Helvetica_Italic':             'Helvetica-Oblique',
-  'Symbol_Bold':                  'Symbol',
-  'Symbol_BoldItalic':            'Symbol',
-  'Symbol_Italic':                'Symbol',
-  'TimesNewRoman':                'Times-Roman',
-  'TimesNewRoman_Bold':           'Times-Bold',
-  'TimesNewRoman_BoldItalic':     'Times-BoldItalic',
-  'TimesNewRoman_Italic':         'Times-Italic',
-  'TimesNewRomanPS':              'Times-Roman',
-  'TimesNewRomanPS_Bold':         'Times-Bold',
-  'TimesNewRomanPS_BoldItalic':   'Times-BoldItalic',
+  'Arial': 'Helvetica',
+  'Arial_Bold': 'Helvetica-Bold',
+  'Arial_BoldItalic': 'Helvetica-BoldOblique',
+  'Arial_Italic': 'Helvetica-Oblique',
+  'Arial_BoldItalicMT': 'Helvetica-BoldOblique',
+  'Arial_BoldMT': 'Helvetica-Bold',
+  'Arial_ItalicMT': 'Helvetica-Oblique',
+  'ArialMT': 'Helvetica',
+  'Courier_Bold': 'Courier-Bold',
+  'Courier_BoldItalic': 'Courier-BoldOblique',
+  'Courier_Italic': 'Courier-Oblique',
+  'CourierNew': 'Courier',
+  'CourierNew_Bold': 'Courier-Bold',
+  'CourierNew_BoldItalic': 'Courier-BoldOblique',
+  'CourierNew_Italic': 'Courier-Oblique',
+  'CourierNewPS_BoldItalicMT': 'Courier-BoldOblique',
+  'CourierNewPS_BoldMT': 'Courier-Bold',
+  'CourierNewPS_ItalicMT': 'Courier-Oblique',
+  'CourierNewPSMT': 'Courier',
+  'Helvetica_Bold': 'Helvetica-Bold',
+  'Helvetica_BoldItalic': 'Helvetica-BoldOblique',
+  'Helvetica_Italic': 'Helvetica-Oblique',
+  'Symbol_Bold': 'Symbol',
+  'Symbol_BoldItalic': 'Symbol',
+  'Symbol_Italic': 'Symbol',
+  'TimesNewRoman': 'Times-Roman',
+  'TimesNewRoman_Bold': 'Times-Bold',
+  'TimesNewRoman_BoldItalic': 'Times-BoldItalic',
+  'TimesNewRoman_Italic': 'Times-Italic',
+  'TimesNewRomanPS': 'Times-Roman',
+  'TimesNewRomanPS_Bold': 'Times-Bold',
+  'TimesNewRomanPS_BoldItalic': 'Times-BoldItalic',
   'TimesNewRomanPS_BoldItalicMT': 'Times-BoldItalic',
-  'TimesNewRomanPS_BoldMT':       'Times-Bold',
-  'TimesNewRomanPS_Italic':       'Times-Italic',
-  'TimesNewRomanPS_ItalicMT':     'Times-Italic',
-  'TimesNewRomanPSMT':            'Times-Roman',
-  'TimesNewRomanPSMT_Bold':       'Times-Bold',
+  'TimesNewRomanPS_BoldMT': 'Times-Bold',
+  'TimesNewRomanPS_Italic': 'Times-Italic',
+  'TimesNewRomanPS_ItalicMT': 'Times-Italic',
+  'TimesNewRomanPSMT': 'Times-Roman',
+  'TimesNewRomanPSMT_Bold': 'Times-Bold',
   'TimesNewRomanPSMT_BoldItalic': 'Times-BoldItalic',
-  'TimesNewRomanPSMT_Italic':     'Times-Italic'
+  'TimesNewRomanPSMT_Italic': 'Times-Italic'
 };
 
 var FontMeasure = (function FontMeasure() {
@@ -536,7 +536,8 @@ var Font = (function Font() {
     // checksum
     var checksum = 0, n = data.length;
     for (var i = 0; i < n; i += 4)
-      checksum = (checksum + int32([data[i], data[i + 1], data[i + 2], data[i + 3]])) | 0;
+      checksum = (checksum + int32([data[i], data[i + 1], data[i + 2],
+                                    data[i + 3]])) | 0;
 
     var tableEntry = (tag + string32(checksum) +
                       string32(offset) + string32(length));
@@ -803,7 +804,8 @@ var Font = (function Font() {
         file.pos = previousPosition;
 
         if (tag == 'head')
-          data[8] = data[9] = data[10] = data[11] = 0; // clearing checksum adjustment
+          // clearing checksum adjustment
+          data[8] = data[9] = data[10] = data[11] = 0;
 
         return {
           tag: tag,
@@ -1267,10 +1269,9 @@ var Font = (function Font() {
         charsCache = this.charsCache = Object.create(null);
 
       if (this.compositeFont) {
-        // composite fonts have multi-byte strings
-        // convert the string from single-byte to multi-byte
-        // XXX assuming CIDFonts are two-byte - later need to extract the correct byte encoding
-        //     according to the PDF spec
+        // composite fonts have multi-byte strings convert the string from
+        // single-byte to multi-byte XXX assuming CIDFonts are two-byte - later
+        // need to extract the correct byte encoding according to the PDF spec
         str = '';
         var multiByteStr = '';
         var length = chars.length;
@@ -1558,8 +1559,8 @@ var Type1Parser = function() {
   };
 
   function readNumber(str, index) {
-    while (str[index++] == ' ')
-      ;
+    while (str[index++] == ' ');
+
     var start = index;
 
     var count = 0;
@@ -1628,18 +1629,21 @@ var Type1Parser = function() {
             case '/FamilyOtherBlues':
             case '/StemSnapH':
             case '/StemSnapV':
-              program.properties.private[token.substring(1)] = readNumberArray(eexecStr, i + 2);
+              program.properties.private[token.substring(1)] =
+                readNumberArray(eexecStr, i + 2);
               break;
             case '/StdHW':
             case '/StdVW':
-              program.properties.private[token.substring(1)] = readNumberArray(eexecStr, i + 2)[0];
+              program.properties.private[token.substring(1)] =
+                readNumberArray(eexecStr, i + 2)[0];
               break;
             case '/BlueShift':
             case '/BlueFuzz':
             case '/BlueScale':
             case '/LanguageGroup':
             case '/ExpansionFactor':
-              program.properties.private[token.substring(1)] = readNumber(eexecStr, i + 1);
+              program.properties.private[token.substring(1)] =
+                readNumber(eexecStr, i + 1);
               break;
           }
         } else if (c == '/') {
@@ -1810,8 +1814,10 @@ CFF.prototype = {
     // Add another offset after this one because we need a new offset
     var relativeOffset = 1;
     for (var i = 0; i < count + 1; i++) {
-      data += String.fromCharCode((relativeOffset >>> 24) & 0xFF, (relativeOffset >> 16) & 0xFF,
-                                  (relativeOffset >> 8) & 0xFF, relativeOffset & 0xFF);
+      data += String.fromCharCode((relativeOffset >>> 24) & 0xFF,
+                                  (relativeOffset >> 16) & 0xFF,
+                                  (relativeOffset >> 8) & 0xFF,
+                                  relativeOffset & 0xFF);
 
       if (objects[i])
         relativeOffset += objects[i].length;
@@ -1819,7 +1825,8 @@ CFF.prototype = {
 
     for (var i = 0; i < count; i++) {
       for (var j = 0; j < objects[i].length; j++)
-        data += isByte ? String.fromCharCode(objects[i][j] & 0xFF) : objects[i][j];
+        data += isByte ? String.fromCharCode(objects[i][j] & 0xFF) :
+                objects[i][j];
     }
     return data;
   },
