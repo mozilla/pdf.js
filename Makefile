@@ -86,7 +86,7 @@ font-test:
 # To install gjslint, see:
 #
 # <http://code.google.com/closure/utilities/docs/linter_howto.html>
-SRC_DIRS := . utils worker web
+SRC_DIRS := . utils worker web test test/resources/firefox
 GJSLINT_FILES = $(foreach DIR,$(SRC_DIRS),$(wildcard $(DIR)/*.js))
 lint:
 	gjslint $(GJSLINT_FILES)
