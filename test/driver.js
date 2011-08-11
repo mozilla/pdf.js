@@ -32,7 +32,8 @@ function load() {
 
     log('load...\n');
 
-    log('Harness thinks this browser is "' + browser + '" with path "' + appPath + '"\n');
+    log('Harness thinks this browser is "' + browser + '" with path "' +
+        appPath + '"\n');
     log('Fetching manifest "' + manifestFile + '"... ');
 
     var r = new XMLHttpRequest();
@@ -99,7 +100,8 @@ function nextPage(task, loadError) {
     var page = null;
     if (!failure) {
         try {
-            log(' loading page ' + task.pageNum + '/' + task.pdfDoc.numPages + '... ');
+            log(' loading page ' + task.pageNum + '/' + task.pdfDoc.numPages +
+                '... ');
             ctx = canvas.getContext('2d');
             page = task.pdfDoc.getPage(task.pageNum);
 
@@ -114,8 +116,8 @@ function nextPage(task, loadError) {
             page.startRendering(
               ctx,
               function(e) {
-                snapshotCurrentPage(page, task,
-                                    (!failure && e) ? ('render : ' + e) : failure);
+                snapshotCurrentPage(page, task, (!failure && e) ?
+                                                ('render : ' + e) : failure);
               });
         } catch (e) {
             failure = 'page setup : ' + e.toString();
