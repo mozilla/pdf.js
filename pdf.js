@@ -1989,18 +1989,23 @@ var LZWStream = (function() {
     this.dict = str.dict;
     this.cachedData = 0;
     this.bitsCached = 0;
-    this.earlyChange = earlyChange;
-    this.codeLength = 9;
-    this.nextCode = 258;
-    this.dictionary = [];
-    this.currentSequence = null;
+
+    var maxLzwDictionarySize = 4097;
+    var lzwState = {
+      earlyChange: earlyChange,
+      codeLength: 9,
+      nextCode: 258,
+      dictionaryValues: new Uint8Array(maxLzwDictionarySize),
+      dictionaryLengths: new Uint16Array(maxLzwDictionarySize),
+      dictionaryPrevCodes: new Uint16Array(maxLzwDictionarySize),
+      currentSequence: new Uint8Array(maxLzwDictionarySize),
+      currentSequenceLength: 0
+    };
     for (var i = 0; i < 256; ++i) {
-      this.dictionary[i] = {
-        value: i,
-        firstValue: i,
-        length: 1
-      };
+      lzwState.dictionaryValues[i] = i;
+      lzwState.dictionaryLengths[i] = 1;
     }
+    this.lzwState = lzwState;
 
     DecodeStream.call(this);
   }
@@ -2027,34 +2032,44 @@ var LZWStream = (function() {
 
   constructor.prototype.readBlock = function() {
     var blockSize = 512;
-    var decoded = [];
+    var estimatedDecodedSize = blockSize * 2, decodedSizeDelta = blockSize;
     var i, j, q;
-    var earlyChange = this.earlyChange;
-    var nextCode = this.nextCode;
-    var dictionary = this.dictionary;
-    var codeLength = this.codeLength;
-    var prevCode = this.prevCode;
-    var currentSequence = this.currentSequence;
+
+    var lzwState = this.lzwState;
+    var earlyChange = lzwState.earlyChange;
+    var nextCode = lzwState.nextCode;
+    var dictionaryValues = lzwState.dictionaryValues;
+    var dictionaryLengths = lzwState.dictionaryLengths;
+    var dictionaryPrevCodes = lzwState.dictionaryPrevCodes;
+    var codeLength = lzwState.codeLength;
+    var prevCode = lzwState.prevCode;
+    var currentSequence = lzwState.currentSequence;
+    var currentSequenceLength = lzwState.currentSequenceLength;
+
+    var decodedLength = 0;
+    var currentBufferLength = this.bufferLength;
+    var buffer = this.ensureBuffer(this.bufferLength + estimatedDecodedSize);
+
     for (i = 0; i < blockSize; i++) {
       var code = this.readBits(codeLength);
-      var hasPrev = !!currentSequence;
+      var hasPrev = currentSequenceLength > 0;
       if (code < 256) {
-        currentSequence = dictionary[code];
+        currentSequence[0] = code;
+        currentSequenceLength = 1;
       } else if (code >= 258) {
         if (code < nextCode) {
-          currentSequence = dictionary[code];
+          currentSequenceLength = dictionaryLengths[code];
+          for (j = currentSequenceLength - 1, q = code; j >= 0; j--) {
+            currentSequence[j] = dictionaryValues[q];
+            q = dictionaryPrevCodes[q];
+          }
         } else {
-          currentSequence = {
-            value: currentSequence.firstValue,
-            length: currentSequence.length + 1,
-            firstValue: currentSequence.firstValue,
-            prev: currentSequence
-          };
+          currentSequence[currentSequenceLength++] = currentSequence[0];
         }
       } else if (code == 256) {
         codeLength = 9;
         nextCode = 258;
-        currentSequence = null;
+        currentSequenceLength = 0;
         continue;
       } else {
         this.eof = true;
@@ -2062,49 +2077,32 @@ var LZWStream = (function() {
       }
 
       if (hasPrev) {
-        var prevCodeSequence = dictionary[prevCode];
-        dictionary[nextCode] = {
-          prev: prevCodeSequence,
-          length: prevCodeSequence.length + 1,
-          firstValue: prevCodeSequence.firstValue,
-          value: currentSequence.firstValue
-        };
+        dictionaryPrevCodes[nextCode] = prevCode;
+        dictionaryLengths[nextCode] = dictionaryLengths[prevCode] + 1;
+        dictionaryValues[nextCode] = currentSequence[0];
         nextCode++;
-        switch(nextCode + earlyChange) {
-          case 512:
-            codeLength = 10;
-            break;
-          case 1024:
-            codeLength = 11;
-            break;
-          case 2048:
-            codeLength = 12;
-            break;
-        }
+        codeLength = (nextCode + earlyChange) & (nextCode + earlyChange - 1) ?
+          codeLength : Math.min(Math.log(nextCode + earlyChange) /
+          0.6931471805599453 + 1, 12) | 0;
       }
       prevCode = code;
-      decoded.push(currentSequence);
-    }
-    this.nextCode = nextCode;
-    this.codeLength = codeLength;
-    this.prevCode = prevCode;
-    this.currentSequence = currentSequence;
 
-    var blockLength = 0;
-    var length = decoded.length;
-    for (i = 0; i < length; i++)
-      blockLength += decoded[i].length;
-    var bufferLength = this.bufferLength;
-    var buffer = this.ensureBuffer(bufferLength + blockLength);
-    for (i = 0; i < length; i++) {
-      var p = decoded[i];
-      for (q = p.length - 1; q >= 0; q--) {
-        buffer[bufferLength + q] = p.value;
-        p = p.prev;
+      decodedLength += currentSequenceLength;
+      if (estimatedDecodedSize < decodedLength) {
+        do {
+          estimatedDecodedSize += decodedSizeDelta;
+        } while (estimatedDecodedSize < decodedLength);
+        buffer = this.ensureBuffer(this.bufferLength + estimatedDecodedSize);
       }
-      bufferLength += decoded[i].length;
+      for (j = 0; j < currentSequenceLength; j++)
+        buffer[currentBufferLength++] = currentSequence[j];
     }
-    this.bufferLength = bufferLength;
+    lzwState.nextCode = nextCode;
+    lzwState.codeLength = codeLength;
+    lzwState.prevCode = prevCode;
+    lzwState.currentSequenceLength = currentSequenceLength;
+
+    this.bufferLength = currentBufferLength;
   };
 
   return constructor;
@@ -2752,7 +2750,8 @@ var Parser = (function() {
         if (params) {
           if (params.has('EarlyChange'))
             earlyChange = params.get('EarlyChange');
-          return new PredictorStream(new LZWStream(stream, earlyChange), params);
+          return new PredictorStream(
+            new LZWStream(stream, earlyChange), params);
         }
         return new LZWStream(stream, earlyChange);
       } else if (name == 'DCTDecode' || name == 'DCT') {
