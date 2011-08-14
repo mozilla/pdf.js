@@ -644,9 +644,7 @@ var PredictorStream = (function() {
 
     this.stream = stream;
     this.dict = stream.dict;
-    if (params.has('EarlyChange')) {
-      error('EarlyChange predictor parameter is not supported');
-    }
+
     var colors = this.colors = params.get('Colors') || 1;
     var bits = this.bits = params.get('BitsPerComponent') || 8;
     var columns = this.columns = params.get('Columns') || 1;
@@ -1985,6 +1983,134 @@ var CCITTFaxStream = (function() {
   return constructor;
 })();
 
+var LZWStream = (function() {
+  function constructor(str, earlyChange) {
+    this.str = str;
+    this.dict = str.dict;
+    this.cachedData = 0;
+    this.bitsCached = 0;
+    this.earlyChange = earlyChange;
+    this.codeLength = 9;
+    this.nextCode = 258;
+    this.dictionary = [];
+    this.currentSequence = null;
+    for (var i = 0; i < 256; ++i) {
+      this.dictionary[i] = {
+        value: i,
+        firstValue: i,
+        length: 1
+      };
+    }
+
+    DecodeStream.call(this);
+  }
+
+  constructor.prototype = Object.create(DecodeStream.prototype);
+
+  constructor.prototype.readBits = function(n) {
+    var bitsCached = this.bitsCached;
+    var cachedData = this.cachedData;
+    while (bitsCached < n) {
+      var c = this.str.getByte();
+      if (c == null) {
+        this.eof = true;
+        return;
+      }
+      cachedData = (cachedData << 8) | c;
+      bitsCached += 8;
+    }
+    this.bitsCached = (bitsCached -= n);
+    this.cachedData = cachedData;
+    this.lastCode = null;
+    return (cachedData >>> bitsCached) & ((1 << n) - 1);
+  };
+
+  constructor.prototype.readBlock = function() {
+    var blockSize = 512;
+    var decoded = [];
+    var i, j, q;
+    var earlyChange = this.earlyChange;
+    var nextCode = this.nextCode;
+    var dictionary = this.dictionary;
+    var codeLength = this.codeLength;
+    var prevCode = this.prevCode;
+    var currentSequence = this.currentSequence;
+    for (i = 0; i < blockSize; i++) {
+      var code = this.readBits(codeLength);
+      var hasPrev = !!currentSequence;
+      if (code < 256) {
+        currentSequence = dictionary[code];
+      } else if (code >= 258) {
+        if (code < nextCode) {
+          currentSequence = dictionary[code];
+        } else {
+          currentSequence = {
+            value: currentSequence.firstValue,
+            length: currentSequence.length + 1,
+            firstValue: currentSequence.firstValue,
+            prev: currentSequence
+          };
+        }
+      } else if (code == 256) {
+        codeLength = 9;
+        nextCode = 258;
+        currentSequence = null;
+        continue;
+      } else {
+        this.eof = true;
+        break;
+      }
+
+      if (hasPrev) {
+        var prevCodeSequence = dictionary[prevCode];
+        dictionary[nextCode] = {
+          prev: prevCodeSequence,
+          length: prevCodeSequence.length + 1,
+          firstValue: prevCodeSequence.firstValue,
+          value: currentSequence.firstValue
+        };
+        nextCode++;
+        switch(nextCode + earlyChange) {
+          case 512:
+            codeLength = 10;
+            break;
+          case 1024:
+            codeLength = 11;
+            break;
+          case 2048:
+            codeLength = 12;
+            break;
+        }
+      }
+      prevCode = code;
+      decoded.push(currentSequence);
+    }
+    this.nextCode = nextCode;
+    this.codeLength = codeLength;
+    this.prevCode = prevCode;
+    this.currentSequence = currentSequence;
+
+    var blockLength = 0;
+    var length = decoded.length;
+    for (i = 0; i < length; i++)
+      blockLength += decoded[i].length;
+    var bufferLength = this.bufferLength;
+    var buffer = this.ensureBuffer(bufferLength + blockLength);
+    for (i = 0; i < length; i++) {
+      var p = decoded[i];
+      for (q = p.length - 1; q >= 0; q--) {
+        buffer[bufferLength + q] = p.value;
+        p = p.prev;
+      }
+      bufferLength += decoded[i].length;
+    }
+    this.bufferLength = bufferLength;
+  };
+
+  return constructor;
+})();
+
+
 var Name = (function() {
   function constructor(name) {
     this.name = name;
@@ -2621,6 +2747,14 @@ var Parser = (function() {
           return new PredictorStream(new FlateStream(stream), params);
         }
         return new FlateStream(stream);
+      } else if (name == 'LZWDecode' || name == 'LZW') {
+        var earlyChange = 1;
+        if (params) {
+          if (params.has('EarlyChange'))
+            earlyChange = params.get('EarlyChange');
+          return new PredictorStream(new LZWStream(stream, earlyChange), params);
+        }
+        return new LZWStream(stream, earlyChange);
       } else if (name == 'DCTDecode' || name == 'DCT') {
         var bytes = stream.getBytes(length);
         return new JpegStream(bytes, stream.dict);
