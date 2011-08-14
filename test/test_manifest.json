@@ -80,5 +80,11 @@
        "file": "pdfs/rotation.pdf",
        "rounds": 1,
        "type": "load"
+    },
+    {  "id": "ecma262-pdf",
+       "file": "pdfs/ecma262.pdf",
+       "link": true,
+       "rounds": 1,
+       "type": "load"
     }
 ]

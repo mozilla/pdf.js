@@ -7,7 +7,7 @@ var isWorker = (typeof window == 'undefined');
 /**
  * Maximum file size of the font.
  */
-var kMaxFontFileSize = 200000;
+var kMaxFontFileSize = 300000;
 
 /**
  * Maximum time to wait for a font to be loaded by font-face rules.
@@ -83,7 +83,7 @@ var FontMeasure = (function FontMeasure() {
       var bold = font.bold ? 'bold' : 'normal';
       var italic = font.italic ? 'italic' : 'normal';
       size *= kScalePrecision;
-      var rule = bold + ' ' + italic + ' ' + size + 'px "' + name + '"';
+      var rule = italic + ' ' + bold + ' ' + size + 'px "' + name + '"';
       ctx.font = rule;
     },
     measureText: function fonts_measureText(text) {
@@ -395,17 +395,23 @@ var Font = (function Font() {
     // If the font is to be ignored, register it like an already loaded font
     // to avoid the cost of waiting for it be be loaded by the platform.
     if (properties.ignore) {
-      this.loadedName = 'Arial';
+      this.loadedName = 'sans-serif';
       this.loading = false;
       return;
     }
 
     if (!file) {
-      var fontName = stdFontMap[name];
+      // The file data is not specified. Trying to mingle the font name
+      // to be used with the canvas.font.
+      var fontName = stdFontMap[name] || name.replace('_', '-');
       this.bold = (fontName.indexOf('Bold') != -1);
-      this.italic = (fontName.indexOf('Oblique') != -1);
+      this.italic = (fontName.indexOf('Oblique') != -1) ||
+                    (fontName.indexOf('Italic') != -1);
       this.loadedName = fontName.split('-')[0];
       this.loading = false;
+      this.charsToUnicode = function(s) {
+        return s;
+      };
       return;
     }
 

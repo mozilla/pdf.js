@@ -3758,8 +3758,17 @@ var PartialEvaluator = (function() {
         fd = fontDict.get('FontDescriptor');
       }
 
-      if (!fd)
-        return null;
+      if (!fd) {
+        var baseFontName = fontDict.get('BaseFont');
+        if (!IsName(baseFontName))
+          return null;
+        // Using base font name as a font name.
+        return {
+          name: baseFontName.name.replace(/[\+,\-]/g, '_'),
+          fontDict: fontDict,
+          properties: {}
+        };
+      }
 
       var descriptor = xref.fetch(fd);
 
@@ -4298,7 +4307,7 @@ var CanvasGraphics = (function() {
 
         var bold = fontObj.bold ? 'bold' : 'normal';
         var italic = fontObj.italic ? 'italic' : 'normal';
-        var rule = bold + ' ' + italic + ' ' + size + 'px "' + name + '"';
+        var rule = italic + ' ' + bold + ' ' + size + 'px "' + name + '"';
         this.ctx.font = rule;
       }
     },
