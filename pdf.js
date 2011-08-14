@@ -2081,17 +2081,9 @@ var LZWStream = (function() {
         dictionaryLengths[nextCode] = dictionaryLengths[prevCode] + 1;
         dictionaryValues[nextCode] = currentSequence[0];
         nextCode++;
-        switch (nextCode + earlyChange) {
-          case 512:
-            codeLength = 10;
-            break;
-          case 1024:
-            codeLength = 11;
-            break;
-          case 2048:
-            codeLength = 12;
-            break;
-        }
+        codeLength = (nextCode + earlyChange) & (nextCode + earlyChange - 1) ?
+          codeLength : Math.min(Math.log(nextCode + earlyChange) /
+          0.6931471805599453 + 1, 12) | 0;
       }
       prevCode = code;
 
