@@ -5,14 +5,16 @@
  * A Test Driver for PDF.js
  */
 
+'use strict';
+
 var appPath, browser, canvas, currentTaskIdx, manifest, stdout;
 
 function queryParams() {
     var qs = window.location.search.substring(1);
-    var kvs = qs.split("&");
+    var kvs = qs.split('&');
     var params = { };
     for (var i = 0; i < kvs.length; ++i) {
-        var kv = kvs[i].split("=");
+        var kv = kvs[i].split('=');
         params[unescape(kv[0])] = unescape(kv[1]);
     }
     return params;
@@ -21,23 +23,24 @@ function queryParams() {
 function load() {
     var params = queryParams();
     browser = params.browser;
-    manifestFile = params.manifestFile;
+    var manifestFile = params.manifestFile;
     appPath = params.path;
 
-    canvas = document.createElement("canvas");
+    canvas = document.createElement('canvas');
     canvas.mozOpaque = true;
-    stdout = document.getElementById("stdout");
+    stdout = document.getElementById('stdout');
 
-    log("load...\n");
+    log('load...\n');
 
-    log("Harness thinks this browser is '"+ browser + "' with path " + appPath + "\n");
-    log("Fetching manifest "+ manifestFile +"...");
+    log('Harness thinks this browser is "' + browser + '" with path "' +
+        appPath + '"\n');
+    log('Fetching manifest "' + manifestFile + '"... ');
 
     var r = new XMLHttpRequest();
-    r.open("GET", manifestFile, false);
+    r.open('GET', manifestFile, false);
     r.onreadystatechange = function(e) {
         if (r.readyState == 4) {
-            log("done\n");
+            log('done\n');
             manifest = JSON.parse(r.responseText);
             currentTaskIdx = 0, nextTask();
         }
@@ -53,11 +56,11 @@ function nextTask() {
     var task = manifest[currentTaskIdx];
     task.round = 0;
 
-    log("Loading file "+ task.file +"\n");
+    log('Loading file "' + task.file + '"\n');
 
     var r = new XMLHttpRequest();
-    r.open("GET", task.file);
-    r.mozResponseType = r.responseType = "arraybuffer";
+    r.open('GET', task.file);
+    r.mozResponseType = r.responseType = 'arraybuffer';
     r.onreadystatechange = function() {
         var failure;
         if (r.readyState == 4) {
@@ -66,8 +69,8 @@ function nextTask() {
 
             try {
                 task.pdfDoc = new PDFDoc(new Stream(data));
-            } catch(e) {
-                failure = 'load PDF doc: '+ e.toString();
+            } catch (e) {
+                failure = 'load PDF doc : ' + e.toString();
             }
 
             task.pageNum = 1, nextPage(task, failure);
@@ -77,17 +80,17 @@ function nextTask() {
 }
 
 function isLastPage(task) {
-    return (task.pdfDoc && (task.pageNum > task.pdfDoc.numPages));
+    return (!task.pdfDoc || (task.pageNum > task.pdfDoc.numPages));
 }
 
 function nextPage(task, loadError) {
     if (isLastPage(task)) {
-	      if (++task.round < task.rounds) {
-	          log("  Round "+ (1 + task.round) +"\n");
-	          task.pageNum = 1;
-	      } else {
-	          ++currentTaskIdx, nextTask();
-	          return;
+        if (++task.round < task.rounds) {
+            log(' Round ' + (1 + task.round) + '\n');
+            task.pageNum = 1;
+        } else {
+            ++currentTaskIdx, nextTask();
+            return;
         }
     }
 
@@ -97,14 +100,15 @@ function nextPage(task, loadError) {
     var page = null;
     if (!failure) {
         try {
-            log("    loading page "+ task.pageNum +"... ");
-            ctx = canvas.getContext("2d");
+            log(' loading page ' + task.pageNum + '/' + task.pdfDoc.numPages +
+                '... ');
+            ctx = canvas.getContext('2d');
             page = task.pdfDoc.getPage(task.pageNum);
 
             var pdfToCssUnitsCoef = 96.0 / 72.0;
             // using mediaBox for the canvas size
-            var pageWidth = (page.mediaBox[2] - page.mediaBox[0]);
-            var pageHeight = (page.mediaBox[3] - page.mediaBox[1]);
+            var pageWidth = page.width;
+            var pageHeight = page.height;
             canvas.width = pageWidth * pdfToCssUnitsCoef;
             canvas.height = pageHeight * pdfToCssUnitsCoef;
             clear(ctx);
@@ -112,11 +116,11 @@ function nextPage(task, loadError) {
             page.startRendering(
               ctx,
               function(e) {
-                snapshotCurrentPage(page, task,
-                                    (!failure && e) ? ('render: '+ e) : failure);
+                snapshotCurrentPage(page, task, (!failure && e) ?
+                                                ('render : ' + e) : failure);
               });
-        } catch(e) {
-            failure = 'page setup: '+ e.toString();
+        } catch (e) {
+            failure = 'page setup : ' + e.toString();
         }
     }
 
@@ -128,13 +132,13 @@ function nextPage(task, loadError) {
 }
 
 function snapshotCurrentPage(page, task, failure) {
-    log("done, snapshotting... ");
+    log('done, snapshotting... ');
 
-    sendTaskResult(canvas.toDataURL("image/png"), task, failure);
-    log("done"+ (failure ? " (failed!: "+ failure +")" : "") +"\n");
+    sendTaskResult(canvas.toDataURL('image/png'), task, failure);
+    log('done' + (failure ? ' (failed !: ' + failure + ')' : '') + '\n');
 
     // Set up the next request
-    backoff = (inFlightRequests > 0) ? inFlightRequests * 10 : 0;
+    var backoff = (inFlightRequests > 0) ? inFlightRequests * 10 : 0;
     setTimeout(function() {
         ++task.pageNum, nextPage(task);
     },
@@ -144,13 +148,13 @@ function snapshotCurrentPage(page, task, failure) {
 
 function sendQuitRequest() {
   var r = new XMLHttpRequest();
-  r.open("POST", "/tellMeToQuit?path=" + escape(appPath), false);
-  r.send("");
+  r.open('POST', '/tellMeToQuit?path = ' + escape(appPath), false);
+  r.send('');
 }
 
 function quitApp() {
-  log("Done!");
-  document.body.innerHTML = "Tests are finished.  <h1>CLOSE ME!</h1>";
+  log('Done !');
+  document.body.innerHTML = 'Tests are finished. <h1>CLOSE ME!</h1>';
   if (window.SpecialPowers) {
     SpecialPowers.quitApplication();
   } else {
@@ -161,7 +165,7 @@ function quitApp() {
 
 function done() {
   if (inFlightRequests > 0) {
-    document.getElementById("inFlightCount").innerHTML = inFlightRequests;
+    document.getElementById('inFlightCount').innerHTML = inFlightRequests;
     setTimeout(done, 100);
   } else {
     setTimeout(quitApp, 100);
@@ -181,20 +185,20 @@ function sendTaskResult(snapshot, task, failure) {
 
   var r = new XMLHttpRequest();
   // (The POST URI is ignored atm.)
-  r.open("POST", "/submit_task_results", true);
-  r.setRequestHeader("Content-Type", "application/json");
+  r.open('POST', '/submit_task_results', true);
+  r.setRequestHeader('Content-Type', 'application/json');
   r.onreadystatechange = function(e) {
     if (r.readyState == 4) {
       inFlightRequests--;
     }
   }
-  document.getElementById("inFlightCount").innerHTML = inFlightRequests++;
+  document.getElementById('inFlightCount').innerHTML = inFlightRequests++;
   r.send(JSON.stringify(result));
 }
 
 function clear(ctx) {
   ctx.save();
-  ctx.fillStyle = "rgb(255, 255, 255)";
+  ctx.fillStyle = 'rgb(255, 255, 255)';
   ctx.fillRect(0, 0, canvas.width, canvas.height);
   ctx.restore();
 }

@@ -40,6 +40,7 @@
   // so we can use the TypedArray as well
   window.Uint32Array = TypedArray;
   window.Int32Array = TypedArray;
+  window.Uint16Array = TypedArray;
 })();
 
 // Object.create() ?

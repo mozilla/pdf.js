@@ -75,5 +75,22 @@
        "link": true,
        "rounds": 1,
        "type": "load"
+    },
+    {  "id": "rotation",
+       "file": "pdfs/rotation.pdf",
+       "rounds": 1,
+       "type": "load"
+    },
+    {  "id": "ecma262-pdf",
+       "file": "pdfs/ecma262.pdf",
+       "link": true,
+       "rounds": 1,
+       "type": "load"
+    },
+    {  "id": "jai-pdf",
+       "file": "pdfs/jai.pdf",
+       "link": true,
+       "rounds": 1,
+       "type": "load"
     }
 ]

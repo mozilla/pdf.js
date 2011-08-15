@@ -41,15 +41,15 @@ var PDFView = {
 
   set page(val) {
     var pages = this.pages;
-    var input = document.getElementById("pageNumber");
+    var input = document.getElementById('pageNumber');
     if (val <= 0 || val > pages.length) {
       input.value = this.page;
       return;
     }
-  
+
     document.location.hash = val;
-    document.getElementById("previous").disabled = (val == 1);
-    document.getElementById("next").disabled = (val == pages.length);
+    document.getElementById('previous').disabled = (val == 1);
+    document.getElementById('next').disabled = (val == pages.length);
     if (input.value == val)
       return;
 
@@ -62,7 +62,7 @@ var PDFView = {
   },
 
   open: function(url, scale) {
-    if (url.indexOf("http") == 0)
+    if (url.indexOf('http') == 0)
       return;
 
     document.title = url;
@@ -104,12 +104,10 @@ var PDFView = {
     var thumbnails = this.thumbnails = [];
     for (var i = 1; i <= pagesCount; i++) {
       var page = pdf.getPage(i);
-      var mediaBox = page.mediaBox;
-      var width = (mediaBox[2] - mediaBox[0]);
-      var height = (mediaBox[3] - mediaBox[1]);
-      pages.push(new PageView(container, page, i, width, height, page.stats));
+      pages.push(new PageView(container, page, i, page.width, page.height,
+                              page.stats));
       thumbnails.push(new ThumbnailView(sidebar, pages[i - 1]));
-    };
+    }
 
     this.scale = (scale || kDefaultScale);
     this.page = parseInt(document.location.hash.substring(1)) || 1;
@@ -139,7 +137,7 @@ var PDFView = {
     }
 
     return visiblePages;
-  },
+  }
 };
 
 var PageView = function(container, content, id, width, height, stats) {
@@ -160,7 +158,7 @@ var PageView = function(container, content, id, width, height, stats) {
 
   this.update = function(scale) {
     this.scale = scale || this.scale;
-    div.style.width =  (this.width * this.scale)+ 'px';
+    div.style.width = (this.width * this.scale) + 'px';
     div.style.height = (this.height * this.scale) + 'px';
 
     while (div.hasChildNodes())
@@ -195,7 +193,7 @@ var PageView = function(container, content, id, width, height, stats) {
 
   this.updateStats = function() {
     var t1 = stats.compile, t2 = stats.fonts, t3 = stats.render;
-    var str = 'Time to compile/fonts/render: ' + 
+    var str = 'Time to compile/fonts/render: ' +
               (t1 - stats.begin) + '/' + (t2 - t1) + '/' + (t3 - t2) + ' ms';
     document.getElementById('info').innerHTML = str;
   };
@@ -273,11 +271,11 @@ window.addEventListener('scroll', function(evt) {
     PDFView.page = firstPage.id;
 }, true);
 
-window.addEventListener("hashchange", function(evt) {
+window.addEventListener('hashchange', function(evt) {
   PDFView.page = PDFView.page;
 });
 
-window.addEventListener("change", function(evt) {
+window.addEventListener('change', function(evt) {
   var files = evt.target.files;
   if (!files || files.length == 0)
     return;
@@ -303,7 +301,7 @@ window.addEventListener("change", function(evt) {
   document.location.hash = 1;
 }, true);
 
-window.addEventListener("transitionend", function(evt) {
+window.addEventListener('transitionend', function(evt) {
   var pageIndex = 0;
   var pagesCount = PDFView.pages.length;
 
@@ -311,7 +309,7 @@ window.addEventListener("transitionend", function(evt) {
   container._interval = window.setInterval(function() {
     if (pageIndex >= pagesCount)
       return window.clearInterval(container._interval);
-        
+
     PDFView.thumbnails[pageIndex++].draw();
   }, 500);
 }, true);
