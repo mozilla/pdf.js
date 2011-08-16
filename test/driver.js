@@ -80,10 +80,19 @@ function nextTask() {
 }
 
 function isLastPage(task) {
-  return (!task.pdfDoc || (task.pageNum > task.pdfDoc.numPages));
+  return (task.pageNum > task.pdfDoc.numPages);
 }
 
 function nextPage(task, loadError) {
+  var failure = loadError || '';
+
+  if (!task.pdfDoc) {
+    sendTaskResult(canvas.toDataURL('image/png'), task, failure);
+    log('done' + (failure ? ' (failed !: ' + failure + ')' : '') + '\n');
+    ++currentTaskIdx, nextTask();
+    return;
+  }
+
   if (isLastPage(task)) {
     if (++task.round < task.rounds) {
       log(' Round ' + (1 + task.round) + '\n');
@@ -94,15 +103,13 @@ function nextPage(task, loadError) {
     }
   }
 
-  var failure = loadError || '';
-
-  var ctx = null;
   var page = null;
+
   if (!failure) {
     try {
       log(' loading page ' + task.pageNum + '/' + task.pdfDoc.numPages +
           '... ');
-      ctx = canvas.getContext('2d');
+      var ctx = canvas.getContext('2d');
       page = task.pdfDoc.getPage(task.pageNum);
 
       var pdfToCssUnitsCoef = 96.0 / 72.0;
@@ -179,7 +186,7 @@ var inFlightRequests = 0;
 function sendTaskResult(snapshot, task, failure) {
   var result = { browser: browser,
                  id: task.id,
-                 numPages: task.pdfDoc.numPages,
+                 numPages: task.pdfDoc ? task.pdfDoc.numPages : 0,
                  failure: failure,
                  file: task.file,
                  round: task.round,
