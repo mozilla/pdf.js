@@ -802,20 +802,38 @@ var JpegStream = (function() {
   function constructor(bytes, dict) {
     // TODO: per poppler, some images may have "junk" before that
     // need to be removed
+    this.bytes = bytes;
     this.dict = dict;
-
-    // create DOM image
-    var img = new Image();
-    img.src = 'data:image/jpeg;base64,' + window.btoa(bytesToString(bytes));
-    this.domImage = img;
+      
   }
 
   constructor.prototype = {
-    getImage: function() {
-      return this.domImage;
+    getImage: function(xref, res) {
+      var dict = this.dict;
+      var cs = dict.get('ColorSpace', 'CS');
+      cs = ColorSpace.parse(cs, xref, res);
+      if (cs.name != 'DeviceCMYK') {
+        // create DOM image
+        TODO('Ensure image is loaded before displaying');
+        var img = new Image();
+        img.src = 'data:image/jpeg;base64,' 
+            + window.btoa(bytesToString(this.bytes));
+        this.domImage = img;
+        return img;
+      } else {
+        // If the colorspace is cmyk, then use the javascript library to decode
+        // the jpeg. This is because the browser inverts cmyk images which
+        // cannot be inverted back.
+        var img = new JpegImage();
+        img.load(this.bytes);
+        this.buffer = img.getBuffer();
+      }
     },
     getChar: function() {
       error('internal error: getChar is not valid on JpegStream');
+    },
+    getBytes: function() {
+      return this.buffer;
     }
   };
 
@@ -4753,11 +4771,13 @@ var CanvasGraphics = (function() {
       // stream has a getImage property which directly returns a
       // suitable DOM Image object.
       if (image.getImage) {
-        var domImage = image.getImage();
-        ctx.drawImage(domImage, 0, 0, domImage.width, domImage.height,
+        var domImage = image.getImage(this.xref, this.res);
+        if (domImage) {
+          ctx.drawImage(domImage, 0, 0, domImage.width, domImage.height,
                       0, -h, w, h);
-        this.restore();
-        return;
+          this.restore();
+          return;
+        }
       }
 
       var imageObj = new PDFImage(this.xref, this.res, image, inline);
