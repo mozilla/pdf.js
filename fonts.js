@@ -1469,7 +1469,7 @@ var Type1Parser = function() {
     var value = '';
     var count = array.length;
     for (var i = 0; i < count; i++) {
-      value = parseInt(array[i]);
+      value = array[i];
 
       if (value < 32) {
         var command = null;
@@ -1479,8 +1479,8 @@ var Type1Parser = function() {
           // TODO Clean this code
           if (escape == 16) {
             var index = charstring.pop();
-            var argc = charstring.pop();
-            var data = charstring.pop();
+//            var argc = charstring.pop();
+//            var data = charstring.pop();
 
             // If the flex mechanishm is not used in a font program, Adobe
             // state that that entries 0, 1 and 2 can simply be replace by
@@ -1492,8 +1492,8 @@ var Type1Parser = function() {
             // This is the same things about hint replacement, if it is not used
             // entry 3 can be replaced by {3}
             if (index == 3) {
-              charstring.push(3);
-              i++;
+//              charstring.push(3);
+//              i++;
               continue;
             }
           }
@@ -1532,11 +1532,11 @@ var Type1Parser = function() {
 
         value = command;
       } else if (value <= 246) {
-        value = parseInt(value) - 139;
+        value = value - 139;
       } else if (value <= 250) {
-        value = ((value - 247) * 256) + parseInt(array[++i]) + 108;
+        value = ((value - 247) * 256) + array[++i] + 108;
       } else if (value <= 254) {
-        value = -((value - 251) * 256) - parseInt(array[++i]) - 108;
+        value = -((value - 251) * 256) - array[++i] - 108;
       } else {
         value = (array[++i] & 0xff) << 24 | (array[++i] & 0xff) << 16 |
                 (array[++i] & 0xff) << 8 | (array[++i] & 0xff) << 0;
