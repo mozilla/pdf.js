@@ -1598,6 +1598,17 @@ var Type1Parser = function() {
     var c = '';
     var count = eexecStr.length;
     for (var i = 0; i < count; i++) {
+      var getToken = function() {
+        while(i < count && (eexecStr[i] == ' ' || eexecStr[i] == '\n'))
+          ++i;
+
+        var t = '';
+        while(i < count && !(eexecStr[i] == ' ' || eexecStr[i] == '\n'))
+          t += eexecStr[i++];
+
+        return t;
+      }
+
       var c = eexecStr[i];
 
       if ((glyphsSection || subrsSection) && c == 'R') {
@@ -1627,7 +1638,25 @@ var Type1Parser = function() {
               glyphsSection = true;
               break;
             case '/Subrs':
-              subrsSection = true;
+              ++i;
+              var num = parseInt(getToken());
+              getToken(); // read in 'array'
+              for (var j = 0; j < num; ++j) {
+                var t = getToken(); // read in 'dup'
+                if (t == 'ND')
+                  break;
+                var index = parseInt(getToken());
+                if (index > j)
+                  j = index;
+                var length = parseInt(getToken());
+                getToken(); // read in 'RD'
+                var data = eexec.slice(i + 1, i + 1 + length);
+                var encoded = decrypt(data, kCharStringsEncryptionKey, 4);
+                var str = decodeCharString(encoded);
+                i = i + 1 + length;
+                getToken(); //read in 'NP'
+                program.subrs[index] = str.charstring;
+              }
               break;
             case '/BlueValues':
             case '/OtherBlues':
@@ -1909,8 +1938,13 @@ CFF.prototype = {
     for (var i = 0; i < bias; i++)
       type2Subrs.push([0x0B]);
 
-    for (var i = 0; i < count; i++)
-      type2Subrs.push(this.flattenCharstring(type1Subrs[i], this.commandsMap));
+    for (var i = 0; i < count; i++) {
+      var subr = type1Subrs[i];
+      if (!subr)
+        subr = [0x0B];
+
+      type2Subrs.push(this.flattenCharstring(subr, this.commandsMap));
+    }
 
     return type2Subrs;
   },
