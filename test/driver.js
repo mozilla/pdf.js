@@ -156,7 +156,8 @@ function sendQuitRequest() {
 
 function quitApp() {
   log('Done !');
-  document.body.innerHTML = 'Tests are finished. <h1>CLOSE ME!</h1>';
+  document.body.innerHTML = 'Tests are finished. <h1>CLOSE ME!</h1>' +
+                             document.body.innerHTML;
   if (window.SpecialPowers) {
     SpecialPowers.quitApplication();
   } else {
