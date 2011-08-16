@@ -4,7 +4,7 @@
 'use strict';
 
 var ERRORS = 0, WARNINGS = 1, TODOS = 5;
-var verbosity = WARNINGS;
+var verbosity = TODOS;
 
 function log(msg) {
   if (console && console.log)
@@ -4137,6 +4137,9 @@ var CanvasExtraState = (function() {
     this.charSpacing = 0;
     this.wordSpacing = 0;
     this.textHScale = 1;
+    // Path variables
+    this.pathX = 0;
+    this.pathY = 0;
     // Color spaces
     this.fillColorSpaceObj = null;
     this.strokeColorSpaceObj = null;
@@ -4276,18 +4279,39 @@ var CanvasGraphics = (function() {
     // Path
     moveTo: function(x, y) {
       this.ctx.moveTo(x, y);
+      
+      var current = this.current;
+      current.pathX = x;
+      current.pathY = y;
     },
     lineTo: function(x, y) {
       this.ctx.lineTo(x, y);
+      
+      var current = this.current;
+      current.pathX = x;
+      current.pathY = y;
     },
     curveTo: function(x1, y1, x2, y2, x3, y3) {
       this.ctx.bezierCurveTo(x1, y1, x2, y2, x3, y3);
+      
+      var current = this.current;
+      current.pathX = x3;
+      current.pathY = y3;
     },
     curveTo2: function(x2, y2, x3, y3) {
-      TODO("'v' operator: need current point in gfx context");
+      var current = this.current;
+      this.ctx.bezierCurveTo(current.pathX, current.pathY, x2, y2, x3, y3);
+//      TODO("'v' operator: need current point in gfx context");
+      
+      current.pathX = x3;
+      current.pathY = y3;
     },
     curveTo3: function(x1, y1, x3, y3) {
       this.curveTo(x1, y1, x3, y3, x3, y3);
+      
+      var current = this.current;
+      current.pathX = x3;
+      current.pathY = y3;
     },
     closePath: function() {
       this.ctx.closePath();
