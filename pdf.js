@@ -4,7 +4,7 @@
 'use strict';
 
 var ERRORS = 0, WARNINGS = 1, TODOS = 5;
-var verbosity = TODOS;
+var verbosity = WARNINGS;
 
 function log(msg) {
   if (console && console.log)
@@ -4301,7 +4301,6 @@ var CanvasGraphics = (function() {
     curveTo2: function(x2, y2, x3, y3) {
       var current = this.current;
       this.ctx.bezierCurveTo(current.pathX, current.pathY, x2, y2, x3, y3);
-//      TODO("'v' operator: need current point in gfx context");
       
       current.pathX = x3;
       current.pathY = y3;
