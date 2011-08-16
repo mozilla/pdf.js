@@ -1488,8 +1488,9 @@ var Type1Parser = function() {
           // TODO Clean this code
           if (escape == 16) {
             var index = charstring.pop();
-//            var argc = charstring.pop();
-//            var data = charstring.pop();
+            var argc = charstring.pop();
+            for (var j = 0; j < argc; j++)
+              var data = charstring.pop();
 
             // If the flex mechanishm is not used in a font program, Adobe
             // state that that entries 0, 1 and 2 can simply be replace by
@@ -1501,8 +1502,8 @@ var Type1Parser = function() {
             // This is the same things about hint replacement, if it is not used
             // entry 3 can be replaced by {3}
             if (index == 3) {
-//              charstring.push(3);
-//              i++;
+              charstring.push(3);
+              i++;
               continue;
             }
           }
