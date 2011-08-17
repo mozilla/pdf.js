@@ -660,6 +660,10 @@ var JpegImage = (function() {
                 var M = 255 - (Y - 0.3441363 * (Cb - 128) - 0.71413636 * (Cr - 128));
                 var Y = 255 - (Y + 1.772 * (Cb - 128));
 
+                C = C > 255 ? 255 : (C < 0 ? 0 : C); 
+                M = M > 255 ? 255 : (M < 0 ? 0 : M); 
+                Y = Y > 255 ? 255 : (Y < 0 ? 0 : Y); 
+
                 buffer[offset++] =  0 | C;
                 buffer[offset++] =  0 | M;
                 buffer[offset++] = 0 | Y;
