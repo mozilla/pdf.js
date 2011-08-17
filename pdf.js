@@ -4149,7 +4149,11 @@ var CanvasExtraState = (function() {
   constructor.prototype = {
     clone: function canvasextra_clone() {
       return Object.create(this);
-    }
+    }, 
+    setCurrentPoint: function canvasextra_setCurrentPoint(x, y) {
+      this.x = x;
+      this.y = y;
+    },
   };
   return constructor;
 })();
@@ -4276,18 +4280,24 @@ var CanvasGraphics = (function() {
     // Path
     moveTo: function(x, y) {
       this.ctx.moveTo(x, y);
+      this.current.setCurrentPoint(x, y);
     },
     lineTo: function(x, y) {
       this.ctx.lineTo(x, y);
+      this.current.setCurrentPoint(x, y);
     },
     curveTo: function(x1, y1, x2, y2, x3, y3) {
       this.ctx.bezierCurveTo(x1, y1, x2, y2, x3, y3);
+      this.current.setCurrentPoint(x3, y3);
     },
     curveTo2: function(x2, y2, x3, y3) {
-      TODO("'v' operator: need current point in gfx context");
+      var current = this.current;
+      this.ctx.bezierCurveTo(current.x, current.y, x2, y2, x3, y3);
+      current.setCurrentPoint(x3, y3);
     },
     curveTo3: function(x1, y1, x3, y3) {
       this.curveTo(x1, y1, x3, y3, x3, y3);
+      this.current.setCurrentPoint(x3, y3);
     },
     closePath: function() {
       this.ctx.closePath();
@@ -5704,7 +5714,7 @@ var PDFFunction = (function() {
     if (!typeFn)
       error('Unknown type of function');
 
-    typeFn.call(this, fn, dict);
+    typeFn.call(this, fn, dict, xref);
   };
 
   constructor.prototype = {
@@ -5849,9 +5859,58 @@ var PDFFunction = (function() {
         return out;
       }
     },
-    constructStiched: function() {
-      TODO('unhandled type of function');
-      this.func = function() { return [255, 105, 180]; }
+    constructStiched: function(fn, dict, xref) {
+      var domain = dict.get('Domain');
+      var range = dict.get('Range');
+
+      if (!domain)
+        error('No domain');
+
+      var inputSize = domain.length / 2;
+      if (inputSize != 1)
+        error('Bad domain for stiched function');
+
+      var fnRefs = dict.get('Functions');
+      var fns = [];
+      for (var i = 0, ii = fnRefs.length; i < ii; ++i)
+        fns.push(new PDFFunction(xref, xref.fetchIfRef(fnRefs[i])));
+        
+      var bounds = dict.get('Bounds');
+      var encode = dict.get('Encode');
+
+      this.func = function(args) {
+        var clip = function(v, min, max) {
+          if (v > max)
+            v = max;
+          else if (v < min)
+            v = min;
+          return v;
+        }
+
+        // clip to domain
+        var v = clip(args[0], domain[0], domain[1]);
+        // calulate which bound the value is in
+        for (var i = 0, ii = bounds.length; i < ii; ++i) {
+          if (v < bounds[i])
+            break;
+        }
+
+        // encode value into domain of function
+        var dmin = domain[0];
+        if (i > 0)
+          dmin = bounds[i - 1];
+        var dmax = domain[1];
+        if (i < bounds.length)
+          dmax = bounds[i];
+        
+        var rmin = encode[2 * i];
+        var rmax = encode[2 * i + 1];
+
+        var v2 = rmin + (v - dmin) * (rmax - rmin) / (dmax - dmin);  
+        
+        // call the appropropriate function
+        return fns[i].func([v2]);
+      }
     },
     constructPostScript: function() {
       TODO('unhandled type of function');
