@@ -1490,7 +1490,7 @@ var Type1Parser = function() {
             var index = charstring.pop();
             var argc = charstring.pop();
             for (var j = 0; j < argc; j++)
-              var data = charstring.pop();
+              charstring.push('drop');
 
             // If the flex mechanishm is not used in a font program, Adobe
             // state that that entries 0, 1 and 2 can simply be replace by
@@ -1976,6 +1976,8 @@ CFF.prototype = {
     'sub': [12, 11],
     'div': [12, 12],
     'pop': [1, 12, 18],
+//    'pop': [],
+    'drop' : [12, 18],
     'endchar': 14,
     'rmoveto': 21,
     'hmoveto': 22,
