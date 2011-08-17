@@ -1967,7 +1967,6 @@ CFF.prototype = {
     'sub': [12, 11],
     'div': [12, 12],
     'pop': [1, 12, 18],
-//    'pop': [],
     'drop' : [12, 18],
     'endchar': 14,
     'rmoveto': 21,
