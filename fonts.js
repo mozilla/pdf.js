@@ -1469,7 +1469,7 @@ var Type1Parser = function() {
     var value = '';
     var count = array.length;
     for (var i = 0; i < count; i++) {
-      value = parseInt(array[i]);
+      value = array[i];
 
       if (value < 32) {
         var command = null;
@@ -1480,7 +1480,8 @@ var Type1Parser = function() {
           if (escape == 16) {
             var index = charstring.pop();
             var argc = charstring.pop();
-            var data = charstring.pop();
+            for (var j = 0; j < argc; j++)
+              charstring.push('drop');
 
             // If the flex mechanishm is not used in a font program, Adobe
             // state that that entries 0, 1 and 2 can simply be replace by
@@ -1532,11 +1533,11 @@ var Type1Parser = function() {
 
         value = command;
       } else if (value <= 246) {
-        value = parseInt(value) - 139;
+        value = value - 139;
       } else if (value <= 250) {
-        value = ((value - 247) * 256) + parseInt(array[++i]) + 108;
+        value = ((value - 247) * 256) + array[++i] + 108;
       } else if (value <= 254) {
-        value = -((value - 251) * 256) - parseInt(array[++i]) - 108;
+        value = -((value - 251) * 256) - array[++i] - 108;
       } else {
         value = (array[++i] & 0xff) << 24 | (array[++i] & 0xff) << 16 |
                 (array[++i] & 0xff) << 8 | (array[++i] & 0xff) << 0;
@@ -1598,6 +1599,17 @@ var Type1Parser = function() {
     var c = '';
     var count = eexecStr.length;
     for (var i = 0; i < count; i++) {
+      var getToken = function() {
+        while(i < count && (eexecStr[i] == ' ' || eexecStr[i] == '\n'))
+          ++i;
+
+        var t = '';
+        while(i < count && !(eexecStr[i] == ' ' || eexecStr[i] == '\n'))
+          t += eexecStr[i++];
+
+        return t;
+      }
+
       var c = eexecStr[i];
 
       if ((glyphsSection || subrsSection) && c == 'R') {
@@ -1627,7 +1639,25 @@ var Type1Parser = function() {
               glyphsSection = true;
               break;
             case '/Subrs':
-              subrsSection = true;
+              ++i;
+              var num = parseInt(getToken());
+              getToken(); // read in 'array'
+              for (var j = 0; j < num; ++j) {
+                var t = getToken(); // read in 'dup'
+                if (t == 'ND')
+                  break;
+                var index = parseInt(getToken());
+                if (index > j)
+                  j = index;
+                var length = parseInt(getToken());
+                getToken(); // read in 'RD'
+                var data = eexec.slice(i + 1, i + 1 + length);
+                var encoded = decrypt(data, kCharStringsEncryptionKey, 4);
+                var str = decodeCharString(encoded);
+                i = i + 1 + length;
+                getToken(); //read in 'NP'
+                program.subrs[index] = str.charstring;
+              }
               break;
             case '/BlueValues':
             case '/OtherBlues':
@@ -1909,8 +1939,13 @@ CFF.prototype = {
     for (var i = 0; i < bias; i++)
       type2Subrs.push([0x0B]);
 
-    for (var i = 0; i < count; i++)
-      type2Subrs.push(this.flattenCharstring(type1Subrs[i], this.commandsMap));
+    for (var i = 0; i < count; i++) {
+      var subr = type1Subrs[i];
+      if (!subr)
+        subr = [0x0B];
+
+      type2Subrs.push(this.flattenCharstring(subr, this.commandsMap));
+    }
 
     return type2Subrs;
   },
@@ -1932,6 +1967,7 @@ CFF.prototype = {
     'sub': [12, 11],
     'div': [12, 12],
     'pop': [1, 12, 18],
+    'drop' : [12, 18],
     'endchar': 14,
     'rmoveto': 21,
     'hmoveto': 22,
