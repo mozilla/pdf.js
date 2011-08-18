@@ -1990,7 +1990,7 @@ var LZWStream = (function() {
     this.cachedData = 0;
     this.bitsCached = 0;
 
-    var maxLzwDictionarySize = 4097;
+    var maxLzwDictionarySize = 4096;
     var lzwState = {
       earlyChange: earlyChange,
       codeLength: 9,
@@ -2036,6 +2036,9 @@ var LZWStream = (function() {
     var i, j, q;
 
     var lzwState = this.lzwState;
+    if (!lzwState)
+      return; // eof was found
+
     var earlyChange = lzwState.earlyChange;
     var nextCode = lzwState.nextCode;
     var dictionaryValues = lzwState.dictionaryValues;
@@ -2073,6 +2076,7 @@ var LZWStream = (function() {
         continue;
       } else {
         this.eof = true;
+        delete this.lzwState;
         break;
       }
 
