@@ -975,7 +975,7 @@ var Font = (function Font() {
 
       // Create a new file to hold the new version of our truetype with a new
       // header and new offsets
-      var ttf = new Uint8Array(kMaxFontFileSize);
+      var ttf = new Uint8Array(kMaxFontFileSize*3);
 
       // The offsets object holds at the same time a representation of where
       // to write the table entry information about a table and another offset
@@ -1102,6 +1102,8 @@ var Font = (function Font() {
       for (var i = 0; i < tables.length; i++) {
         var table = tables[i];
         var tableData = table.data;
+        if (tableData.length + offsets.currentOffset > ttf.length)
+          log('blah');
         ttf.set(tableData, offsets.currentOffset);
         offsets.currentOffset += tableData.length;
 
