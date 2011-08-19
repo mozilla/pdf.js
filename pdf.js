@@ -806,6 +806,11 @@ var JpegStream = (function() {
 
     // create DOM image
     var img = new Image();
+    img.onload = (function() {
+      this.loaded = true;
+      if (this.onLoad)
+        this.onLoad();
+    }).bind(this);
     img.src = 'data:image/jpeg;base64,' + window.btoa(bytesToString(bytes));
     this.domImage = img;
   }
@@ -816,6 +821,44 @@ var JpegStream = (function() {
     },
     getChar: function() {
       error('internal error: getChar is not valid on JpegStream');
+    }
+  };
+
+  return constructor;
+})();
+
+// Simple object to track the loading images
+// Initialy for every that is in loading call imageLoading()
+// and, when images onload is fired, call imageLoaded()
+// When all images are loaded, the onLoad event is fired.
+var ImagesLoader = (function() {
+  function constructor() {
+    this.loading = 0;
+  }
+
+  constructor.prototype = {
+    imageLoading: function() {
+      ++this.loading;
+    },
+
+    imageLoaded: function() {
+      if (--this.loading == 0 && this.onLoad) {
+        this.onLoad();
+        delete this.onLoad;
+      }
+    },
+
+    bind: function(jpegStream) {
+      if (jpegStream.loaded)
+        return;
+      this.imageLoading();
+      jpegStream.onLoad = this.imageLoaded.bind(this);
+    },
+
+    notifyOnLoad: function(callback) {
+      if (this.loading == 0)
+        callback();
+      this.onLoad = callback;
     }
   };
 
@@ -1990,7 +2033,7 @@ var LZWStream = (function() {
     this.cachedData = 0;
     this.bitsCached = 0;
 
-    var maxLzwDictionarySize = 4097;
+    var maxLzwDictionarySize = 4096;
     var lzwState = {
       earlyChange: earlyChange,
       codeLength: 9,
@@ -2036,6 +2079,9 @@ var LZWStream = (function() {
     var i, j, q;
 
     var lzwState = this.lzwState;
+    if (!lzwState)
+      return; // eof was found
+
     var earlyChange = lzwState.earlyChange;
     var nextCode = lzwState.nextCode;
     var dictionaryValues = lzwState.dictionaryValues;
@@ -2073,6 +2119,7 @@ var LZWStream = (function() {
         continue;
       } else {
         this.eof = true;
+        delete this.lzwState;
         break;
       }
 
@@ -3123,6 +3170,7 @@ var Page = (function() {
       create: Date.now(),
       compile: 0.0,
       fonts: 0.0,
+      images: 0.0,
       render: 0.0
     };
     this.xref = xref;
@@ -3197,25 +3245,33 @@ var Page = (function() {
 
       var gfx = new CanvasGraphics(canvasCtx);
       var fonts = [];
+      var images = new ImagesLoader()
 
-      this.compile(gfx, fonts);
+      this.compile(gfx, fonts, images);
       stats.compile = Date.now();
+
+      var displayContinuation = function() {
+        // Always defer call to display() to work around bug in
+        // Firefox error reporting from XHR callbacks.
+        setTimeout(function() {
+          var exc = null;
+          try {
+            self.display(gfx);
+            stats.render = Date.now();
+          } catch (e) {
+            exc = e.toString();
+          }
+          continuation(exc);
+        });
+      };
 
       var fontObjs = FontLoader.bind(
         fonts,
         function() {
           stats.fonts = Date.now();
-          // Always defer call to display() to work around bug in
-          // Firefox error reporting from XHR callbacks.
-          setTimeout(function() {
-            var exc = null;
-            try {
-              self.display(gfx);
-              stats.render = Date.now();
-            } catch (e) {
-              exc = e.toString();
-            }
-            continuation(exc);
+          images.notifyOnLoad(function() {
+            stats.images = Date.now();
+            displayContinuation();
           });
         });
 
@@ -3224,7 +3280,7 @@ var Page = (function() {
     },
 
 
-    compile: function(gfx, fonts) {
+    compile: function(gfx, fonts, images) {
       if (this.code) {
         // content was compiled
         return;
@@ -3236,14 +3292,14 @@ var Page = (function() {
       if (!IsArray(this.content)) {
         // content is not an array, shortcut
         content = xref.fetchIfRef(this.content);
-        this.code = gfx.compile(content, xref, resources, fonts);
+        this.code = gfx.compile(content, xref, resources, fonts, images);
         return;
       }
       // the content is an array, compiling all items
       var i, n = this.content.length, compiledItems = [];
       for (i = 0; i < n; ++i) {
         content = xref.fetchIfRef(this.content[i]);
-        compiledItems.push(gfx.compile(content, xref, resources, fonts));
+        compiledItems.push(gfx.compile(content, xref, resources, fonts, images));
       }
       // creating the function that executes all compiled items
       this.code = function(gfx) {
@@ -3783,7 +3839,7 @@ var PartialEvaluator = (function() {
   };
 
   constructor.prototype = {
-    eval: function(stream, xref, resources, fonts) {
+    eval: function(stream, xref, resources, fonts, images) {
       resources = xref.fetchIfRef(resources) || new Dict();
       var xobjs = xref.fetchIfRef(resources.get('XObject')) || new Dict();
       var patterns = xref.fetchIfRef(resources.get('Pattern')) || new Dict();
@@ -3828,8 +3884,10 @@ var PartialEvaluator = (function() {
 
               if ('Form' == type.name) {
                 args[0].code = this.eval(xobj, xref, xobj.dict.get('Resources'),
-                                         fonts);
+                                         fonts, images);
               }
+              if (xobj instanceof JpegStream)
+                images.bind(xobj); // monitoring image load
             }
           } else if (cmd == 'Tf') { // eagerly collect all fonts
             var fontRes = resources.get('Font');
@@ -4205,9 +4263,9 @@ var CanvasGraphics = (function() {
       this.ctx.scale(cw / mediaBox.width, ch / mediaBox.height);
     },
 
-    compile: function(stream, xref, resources, fonts) {
+    compile: function(stream, xref, resources, fonts, images) {
       var pe = new PartialEvaluator();
-      return pe.eval(stream, xref, resources, fonts);
+      return pe.eval(stream, xref, resources, fonts, images);
     },
 
     execute: function(code, xref, resources) {
