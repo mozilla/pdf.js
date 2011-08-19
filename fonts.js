@@ -441,12 +441,6 @@ var Font = (function Font() {
         break;
     }
 
-    var fileArr = [];
-    file.reset();
-    file = file.getBytes();
-    for (var i = 0, ii = file.length; i < ii; ++i)
-      fileArr.push(file[i]);
-
     this.data = data;
     this.type = properties.type;
     this.textMatrix = properties.textMatrix;
