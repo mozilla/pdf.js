@@ -447,9 +447,6 @@ var Font = (function Font() {
     for (var i = 0, ii = file.length; i < ii; ++i)
       fileArr.push(file[i]);
 
-    writeToFile(data, '/tmp/' + name + '_new');
-    writeToFile(fileArr, '/tmp/' + name + '_orig');
-
     this.data = data;
     this.type = properties.type;
     this.textMatrix = properties.textMatrix;
