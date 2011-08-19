@@ -980,7 +980,7 @@ var Font = (function Font() {
       var ttf = {
         file: "",
         virtualOffset: numTables * (4 * 4)
-      }
+      };
 
       // The new numbers of tables will be the last one plus the num
       // of missing tables
@@ -1125,7 +1125,7 @@ var Font = (function Font() {
       var otf = {
         file: "",
         virtualOffset: 9 * (4 * 4)
-      }
+      };
 
       createOpenTypeHeader('\x4F\x54\x54\x4F', otf, 9);
 
