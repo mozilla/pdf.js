@@ -5,11 +5,6 @@
 var isWorker = (typeof window == 'undefined');
 
 /**
- * Maximum file size of the font.
- */
-var kMaxFontFileSize = 300000;
-
-/**
  * Maximum time to wait for a font to be loaded by font-face rules.
  */
 var kMaxWaitForFontFace = 1000;
@@ -466,6 +461,14 @@ var Font = (function Font() {
 
     return array;
   };
+  
+  function arrayToString(arr) {
+    var str = "";
+    for (var i = 0; i < arr.length; ++i)
+      str += String.fromCharCode(arr[i]);
+
+    return str;
+  };
 
   function int16(bytes) {
     return (bytes[0] << 8) + (bytes[1] & 0xff);
@@ -502,7 +505,7 @@ var Font = (function Font() {
            String.fromCharCode(value & 0xff);
   };
 
-  function createOpenTypeHeader(sfnt, file, offsets, numTables) {
+  function createOpenTypeHeader(sfnt, file, numTables) {
     // sfnt version (4 bytes)
     var header = sfnt;
 
@@ -520,14 +523,13 @@ var Font = (function Font() {
     // rangeShift (2 bytes)
     header += string16(numTables * 16 - searchRange);
 
-    file.set(stringToArray(header), offsets.currentOffset);
-    offsets.currentOffset += header.length;
-    offsets.virtualOffset += header.length;
+    file.file += header;
+    file.virtualOffset += header.length;
   };
 
-  function createTableEntry(file, offsets, tag, data) {
+  function createTableEntry(file, tag, data) {
     // offset
-    var offset = offsets.virtualOffset;
+    var offset = file.virtualOffset;
 
     // length
     var length = data.length;
@@ -536,8 +538,8 @@ var Font = (function Font() {
     while (data.length & 3)
       data.push(0x00);
 
-    while (offsets.virtualOffset & 3)
-      offsets.virtualOffset++;
+    while (file.virtualOffset & 3)
+      file.virtualOffset++;
 
     // checksum
     var checksum = 0, n = data.length;
@@ -547,11 +549,8 @@ var Font = (function Font() {
 
     var tableEntry = (tag + string32(checksum) +
                       string32(offset) + string32(length));
-    tableEntry = stringToArray(tableEntry);
-    file.set(tableEntry, offsets.currentOffset);
-
-    offsets.currentOffset += tableEntry.length;
-    offsets.virtualOffset += data.length;
+    file.file += tableEntry;
+    file.virtualOffset += data.length;
   };
 
   function getRanges(glyphs) {
@@ -973,23 +972,19 @@ var Font = (function Font() {
         tables.push(table);
       }
 
-      // Create a new file to hold the new version of our truetype with a new
-      // header and new offsets
-      var ttf = new Uint8Array(kMaxFontFileSize*3);
-
-      // The offsets object holds at the same time a representation of where
-      // to write the table entry information about a table and another offset
-      // representing the offset where to put the actual data of a particular
-      // table
       var numTables = header.numTables + requiredTables.length;
-      var offsets = {
-        currentOffset: 0,
+      
+      // header and new offsets. Table entry information is appended to the
+      // end of file. The virtualOffset represents where to put the actual
+      // data of a particular table;
+      var ttf = {
+        file: "",
         virtualOffset: numTables * (4 * 4)
-      };
+      }
 
       // The new numbers of tables will be the last one plus the num
       // of missing tables
-      createOpenTypeHeader('\x00\x01\x00\x00', ttf, offsets, numTables);
+      createOpenTypeHeader('\x00\x01\x00\x00', ttf, numTables);
 
       if (requiredTables.indexOf('OS/2') != -1) {
         tables.push({
@@ -1095,28 +1090,21 @@ var Font = (function Font() {
         var tableData = table.data;
         for (var j = 0; j < tableData.length; j++)
           data.push(tableData[j]);
-        createTableEntry(ttf, offsets, table.tag, data);
+        createTableEntry(ttf, table.tag, data);
       }
 
       // Add the table datas
       for (var i = 0; i < tables.length; i++) {
         var table = tables[i];
         var tableData = table.data;
-        if (tableData.length + offsets.currentOffset > ttf.length)
-          log('blah');
-        ttf.set(tableData, offsets.currentOffset);
-        offsets.currentOffset += tableData.length;
+        ttf.file += arrayToString(tableData);
 
         // 4-byte aligned data
-        while (offsets.currentOffset & 3)
-          offsets.currentOffset++;
+        while (ttf.file.length & 3)
+          ttf.file += String.fromCharCode(0);
       }
 
-      var fontData = [];
-      for (var i = 0; i < offsets.currentOffset; i++)
-        fontData.push(ttf[i]);
-
-      return fontData;
+      return stringToArray(ttf.file);
     },
 
     convert: function font_convert(fontName, font, properties) {
@@ -1133,13 +1121,13 @@ var Font = (function Font() {
       // representing the offset where to draw the actual data of a particular
       // table
       var kRequiredTablesCount = 9;
-      var offsets = {
-        currentOffset: 0,
-        virtualOffset: 9 * (4 * 4)
-      };
 
-      var otf = new Uint8Array(kMaxFontFileSize);
-      createOpenTypeHeader('\x4F\x54\x54\x4F', otf, offsets, 9);
+      var otf = {
+        file: "",
+        virtualOffset: 9 * (4 * 4)
+      }
+
+      createOpenTypeHeader('\x4F\x54\x54\x4F', otf, 9);
 
       var charstrings = font.charstrings;
       properties.fixedPitch = isFixedPitch(charstrings);
@@ -1223,18 +1211,14 @@ var Font = (function Font() {
       };
 
       for (var field in fields)
-        createTableEntry(otf, offsets, field, fields[field]);
+        createTableEntry(otf, field, fields[field]);
 
       for (var field in fields) {
         var table = fields[field];
-        otf.set(table, offsets.currentOffset);
-        offsets.currentOffset += table.length;
+        otf.file += arrayToString(table);
       }
 
-      var fontData = [];
-      for (var i = 0; i < offsets.currentOffset; i++)
-        fontData.push(otf[i]);
-      return fontData;
+      return stringToArray(otf.file);
     },
 
     bindWorker: function font_bindWorker(data) {
