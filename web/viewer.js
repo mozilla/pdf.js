@@ -168,8 +168,7 @@ var PageView = function(container, content, id, width, height, stats) {
   function setupLinks(canvas, content, scale) {
     var links = content.getLinks();
     var currentLink = null;
-    if (links.length > 0)
-    {
+    if (links.length > 0) {
       canvas.addEventListener('mousemove', function(e) {
         var x = e.pageX;
         var y = e.pageY;
