@@ -3,7 +3,6 @@
 
 'use strict';
 
-
 /**
  * The Type2 reader code below is only used for debugging purpose since Type2
  * is only a CharString format and is never used directly as a Font file.
