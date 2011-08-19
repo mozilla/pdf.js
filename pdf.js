@@ -3202,6 +3202,9 @@ var Page = (function() {
       return shadow(this, 'mediaBox',
                     ((IsArray(obj) && obj.length == 4) ? obj : null));
     },
+    get annotations() {
+      return shadow(this, 'annotations', this.inheritPageProp('Annots'));
+    },
     get width() {
       var mediaBox = this.mediaBox;
       var rotate = this.rotate;
@@ -3322,6 +3325,56 @@ var Page = (function() {
             rotate: this.rotate });
       gfx.execute(this.code, xref, resources);
       gfx.endDrawing();
+    },
+    rotatePoint: function (x, y) {
+      var rotate = this.rotate;
+      switch (rotate) {
+        default:
+        case 0:
+          return {x: x, y: this.height - y};
+        case 180:
+          return {x: this.width - x, y: y};
+        case 90:
+          return {x: this.width - y, y: this.height - x};
+        case 270:
+          return {x: y, y: x};
+      }
+    },
+    getLinks: function() {
+      var xref = this.xref;
+      var annotations = xref.fetchIfRef(this.annotations);
+      var i, n = annotations.length;
+      var links = [];
+      for (i = 0; i < n; ++i) {
+        var annotation = xref.fetch(annotations[i]);
+        if (!IsDict(annotation, 'Annot'))
+          continue;
+        var subtype = annotation.get("Subtype");
+        if (!IsName(subtype) || subtype.name != 'Link')
+          continue;
+        var rect = annotation.get("Rect");
+        var topLeftCorner = this.rotatePoint(rect[0], rect[1]);
+        var bottomRightCorner = this.rotatePoint(rect[2], rect[3]);
+
+        var link = {};
+        link.x = Math.min(topLeftCorner.x, bottomRightCorner.x);
+        link.y = Math.min(topLeftCorner.y, bottomRightCorner.y);
+        link.width = Math.abs(topLeftCorner.x - bottomRightCorner.x);
+        link.height = Math.abs(topLeftCorner.y - bottomRightCorner.y);
+        var a = annotation.get("A");
+        if (a) {
+          switch(a.get("S").name) {
+            case "URI":
+              link.url = a.get("URI");
+              break;
+            default:
+              TODO("other link types");
+              break;
+          }
+        }
+        links.push(link);
+      }
+      return links;
     }
   };
 
