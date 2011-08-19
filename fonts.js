@@ -790,6 +790,8 @@ var Font = (function Font() {
     encoding: null,
 
     checkAndRepair: function font_checkAndRepair(name, font, properties) {
+      var kCmapGlyphOffset = 0xFF;
+
       function readTableEntry(file) {
         // tag
         var tag = file.getBytes(4);
@@ -1042,17 +1044,17 @@ var Font = (function Font() {
         var encoding = properties.encoding;
 
         for (var i = 1; i < numGlyphs; i++) {
-          glyphs.push({ unicode: i + 0xFF });
+          glyphs.push({ unicode: i + kCmapGlyphOffset });
         }
 
         if ('undefined' == typeof(encoding[0])) {
           // the font is directly characters to glyphs with no encoding
           // so create an identity encoding
           for (i = 0; i < numGlyphs; i++)
-            encoding[i] = i + 0xFF;
+            encoding[i] = i + kCmapGlyphOffset;
         } else {
           for (var i in encoding)
-            encoding[i] = encoding[i] + 0xFF;
+            encoding[i] = encoding[i] + kCmapGlyphOffset;
         }
 
         if (!cmap) {
