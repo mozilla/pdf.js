@@ -1032,26 +1032,27 @@ var Font = (function Font() {
       if (properties.type == 'CIDFontType2') {
         // Type2 composite fonts map characters directly to glyphs so the cmap
         // table must be replaced.
+        // canvas fillText will reencode some characters even if the font has a
+        // glyph at that position - e.g. newline is converted to a space and U+00AD
+        // (soft hypen) is not drawn.
+        // So, offset all the glyphs by 0xFF to avoid these cases and use
+        // the encoding to map incoming characters to the new glyph positions
 
         var glyphs = [];
-        var charset = properties.charset;
-        if (!charset.length) {
-          // Type2 composite fonts map characters directly to glyphs so the cmap
-          for (var i = 1; i < numGlyphs; i++) {
-            glyphs.push({
-              unicode: i
-            });
-          }
-        } else {
-          for (var i = 1; i < charset.length; i++) {
-            var index = charset.indexOf(i);
-            if (index == -1)
-              break;
+        var encoding = properties.encoding;
 
-            glyphs.push({
-              unicode: index
-            });
-          }
+        for (var i = 1; i < numGlyphs; i++) {
+          glyphs.push({ unicode: i + 0xFF });
+        }
+
+        if ('undefined' == typeof(encoding[0])) {
+          // the font is directly characters to glyphs with no encoding
+          // so create an identity encoding
+          for (i = 0; i < numGlyphs; i++)
+            encoding[i] = i + 0xFF;
+        } else {
+          for (var i in encoding)
+            encoding[i] = encoding[i] + 0xFF;
         }
 
         if (!cmap) {
@@ -1274,31 +1275,26 @@ var Font = (function Font() {
       if (!charsCache)
         charsCache = this.charsCache = Object.create(null);
 
+      // translate the string using the font's encoding
+      var encoding = this.encoding;
+      if (!encoding)
+        return chars;
+      str = '';
+
       if (this.compositeFont) {
         // composite fonts have multi-byte strings convert the string from
-        // single-byte to multi-byte XXX assuming CIDFonts are two-byte - later
-        // need to extract the correct byte encoding according to the PDF spec
-        str = '';
-        var multiByteStr = '';
-        var length = chars.length;
+        // single-byte to multi-byte
+        // XXX assuming CIDFonts are two-byte - later need to extract the
+        // correct byte encoding according to the PDF spec
+        var length = chars.length - 1; // looping over two bytes at a time so
+                                       // loop should never end on the last byte
         for (var i = 0; i < length; i++) {
-          var byte1 = chars.charCodeAt(i++) & 0xFF;
-          var byte2;
-          if (i == length)
-            byte2 = 0;
-          else
-            byte2 = chars.charCodeAt(i) & 0xFF;
-          multiByteStr += String.fromCharCode((byte1 << 8) | byte2);
+          var charcode = int16([chars.charCodeAt(i++), chars.charCodeAt(i)]);
+          var unicode = encoding[charcode];
+          str += String.fromCharCode(unicode);
         }
-        str = multiByteStr;
       }
       else {
-        // translate the string using the font's encoding
-        var encoding = this.encoding;
-        if (!encoding)
-          return chars;
-
-        str = '';
         for (var i = 0; i < chars.length; ++i) {
           var charcode = chars.charCodeAt(i);
           var unicode = encoding[charcode];
