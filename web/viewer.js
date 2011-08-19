@@ -165,6 +165,39 @@ var PageView = function(container, content, id, width, height, stats) {
       div.removeChild(div.lastChild);
   };
 
+  function setupLinks(canvas, content, scale) {
+    var links = content.getLinks();
+    var currentLink = null;
+    if (links.length > 0) {
+      canvas.addEventListener('mousemove', function(e) {
+        var x = e.pageX;
+        var y = e.pageY;
+        for (var p = canvas; p; p = p.offsetParent) {
+          x -= p.offsetLeft;
+          y -= p.offsetTop;
+        }
+        x /= scale;
+        y /= scale;
+        for (var i = 0; i < links.length; i++) {
+          var link = links[i];
+          if (!link.url)
+            continue;
+          if (link.x <= x && link.y <= y &&
+            x < link.x + link.width && y < link.y + link.height) {
+            currentLink = link;
+            canvas.style.cursor = 'pointer';
+            return;
+          }
+        }
+        currentLink = null;
+        canvas.style.cursor = 'default';
+      }, false);
+      canvas.addEventListener('mousedown', function(e) {
+        window.location.href = currentLink.url;
+      }, false);
+    }
+  }
+
   this.draw = function() {
     if (div.hasChildNodes()) {
       this.updateStats();
@@ -187,6 +220,8 @@ var PageView = function(container, content, id, width, height, stats) {
 
     stats.begin = Date.now();
     this.content.startRendering(ctx, this.updateStats);
+
+    setupLinks(canvas, this.content, this.scale);
 
     return true;
   };
