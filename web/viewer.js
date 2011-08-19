@@ -166,7 +166,7 @@ var PageView = function(container, content, id, width, height, stats) {
   };
 
   function setupLinks(canvas, content, scale) {
-    var links = content.getLinks(scale);
+    var links = content.getLinks();
     var currentLink = null;
     if (links.length > 0)
     {
@@ -177,6 +177,8 @@ var PageView = function(container, content, id, width, height, stats) {
           x -= p.offsetLeft;
           y -= p.offsetTop;
         }
+        x /= scale;
+        y /= scale;
         for (var i = 0; i < links.length; i++) {
           var link = links[i];
           if (!link.url)

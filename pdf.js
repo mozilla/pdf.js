@@ -3340,7 +3340,7 @@ var Page = (function() {
           return {x: y, y: x};
       }
     },
-    getLinks: function(scale) {
+    getLinks: function() {
       var xref = this.xref;
       var annotations = xref.fetchIfRef(this.annotations);
       var i, n = annotations.length;
@@ -3357,10 +3357,10 @@ var Page = (function() {
         var bottomRightCorner = this.rotatePoint(rect[2], rect[3]);
 
         var link = {};
-        link.x = scale * Math.min(topLeftCorner.x, bottomRightCorner.x);
-        link.y = scale * Math.min(topLeftCorner.y, bottomRightCorner.y);
-        link.width = scale * Math.abs(topLeftCorner.x - bottomRightCorner.x);
-        link.height = scale * Math.abs(topLeftCorner.y - bottomRightCorner.y);
+        link.x = Math.min(topLeftCorner.x, bottomRightCorner.x);
+        link.y = Math.min(topLeftCorner.y, bottomRightCorner.y);
+        link.width = Math.abs(topLeftCorner.x - bottomRightCorner.x);
+        link.height = Math.abs(topLeftCorner.y - bottomRightCorner.y);
         var a = annotation.get("A");
         if (a) {
           switch(a.get("S").name) {
