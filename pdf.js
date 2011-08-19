@@ -3342,7 +3342,7 @@ var Page = (function() {
     },
     getLinks: function() {
       var xref = this.xref;
-      var annotations = xref.fetchIfRef(this.annotations);
+      var annotations = xref.fetchIfRef(this.annotations) || [];
       var i, n = annotations.length;
       var links = [];
       for (i = 0; i < n; ++i) {
