@@ -4028,14 +4028,15 @@ var PartialEvaluator = (function() {
         if (subType.name == 'CIDFontType2') {
           var cidToGidMap = descendant.get('CIDToGIDMap');
           if (cidToGidMap && IsRef(cidToGidMap)) {
-            // Extract the charset from the CIDToGIDMap
+            // Extract the encoding from the CIDToGIDMap
             var glyphsStream = xref.fetchIfRef(cidToGidMap);
             var glyphsData = glyphsStream.getBytes(0);
-            var i = 0;
             // Glyph ids are big-endian 2-byte values
+            encodingMap[0] = 0; //set this to 0 to verify the font has an encoding
             for (var j = 0; j < glyphsData.length; j++) {
               var glyphID = (glyphsData[j++] << 8) | glyphsData[j];
-              charset.push(glyphID);
+              if (glyphID != 0)
+                encodingMap[j>>1] = glyphID;
             }
           }
         }

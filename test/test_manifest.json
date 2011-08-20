@@ -64,6 +64,11 @@
        "rounds": 1,
        "type": "load"
     },
+    {  "id": "complexttffont-pdf",
+       "file": "pdfs/complex_ttf_font.pdf",
+       "rounds": 1,
+       "type": "load"
+    },
     {  "id": "i9-pdf",
        "file": "pdfs/i9.pdf",
        "link": true,
