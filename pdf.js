@@ -2228,6 +2228,26 @@ var Ref = (function() {
   return constructor;
 })();
 
+// The reference is identified by number and generation,
+// this structure stores only one instance of the reference.
+var RefSet = (function() {
+  function constructor() {
+    this.dict = {};
+  }
+
+  constructor.prototype = {
+    has: function(ref) {
+      return !!this.dict['R' + ref.num + '.' + ref.gen];
+    },
+
+    put: function(ref) {
+      this.dict['R' + ref.num + '.' + ref.gen] = ref;
+    }
+  };
+
+  return constructor;
+})();
+
 function IsBool(v) {
   return typeof v == 'boolean';
 }
@@ -3163,7 +3183,7 @@ var XRef = (function() {
 })();
 
 var Page = (function() {
-  function constructor(xref, pageNumber, pageDict) {
+  function constructor(xref, pageNumber, pageDict, ref) {
     this.pageNumber = pageNumber;
     this.pageDict = pageDict;
     this.stats = {
@@ -3174,6 +3194,7 @@ var Page = (function() {
       render: 0.0
     };
     this.xref = xref;
+    this.ref = ref;
   }
 
   constructor.prototype = {
@@ -3349,10 +3370,10 @@ var Page = (function() {
         var annotation = xref.fetch(annotations[i]);
         if (!IsDict(annotation, 'Annot'))
           continue;
-        var subtype = annotation.get("Subtype");
+        var subtype = annotation.get('Subtype');
         if (!IsName(subtype) || subtype.name != 'Link')
           continue;
-        var rect = annotation.get("Rect");
+        var rect = annotation.get('Rect');
         var topLeftCorner = this.rotatePoint(rect[0], rect[1]);
         var bottomRightCorner = this.rotatePoint(rect[2], rect[3]);
 
@@ -3361,14 +3382,17 @@ var Page = (function() {
         link.y = Math.min(topLeftCorner.y, bottomRightCorner.y);
         link.width = Math.abs(topLeftCorner.x - bottomRightCorner.x);
         link.height = Math.abs(topLeftCorner.y - bottomRightCorner.y);
-        var a = annotation.get("A");
+        var a = this.xref.fetchIfRef(annotation.get('A'));
         if (a) {
-          switch(a.get("S").name) {
-            case "URI":
-              link.url = a.get("URI");
+          switch(a.get('S').name) {
+            case 'URI':
+              link.url = a.get('URI');
+              break;
+            case 'GoTo':
+              link.dest = a.get('D');
               break;
             default:
-              TODO("other link types");
+              TODO('other link types');
               break;
           }
         }
@@ -3398,6 +3422,63 @@ var Catalog = (function() {
       // shadow the prototype getter
       return shadow(this, 'toplevelPagesDict', obj);
     },
+    get documentOutline() {
+      function convertIfUnicode(str) {
+        if (str[0] === '\xFE' && str[1] === '\xFF') {
+          // UTF16BE BOM
+          var i, n = str.length, str2 = "";
+          for (i = 2; i < n; i+=2)
+            str2 += String.fromCharCode(
+              (str.charCodeAt(i) << 8) | str.charCodeAt(i + 1));
+          str = str2;
+        }
+        return str;
+      }
+      var obj = this.catDict.get('Outlines');
+      var root = { items: [] };
+      if (IsRef(obj)) {
+        obj = this.xref.fetch(obj).get('First');
+        var processed = new RefSet();
+        if (IsRef(obj)) {
+          var queue = [{obj: obj, parent: root}];
+          // to avoid recursion keeping track of the items
+          // in the processed dictionary
+          processed.put(obj);
+          while (queue.length > 0) {
+            var i = queue.shift();
+            var outlineDict = this.xref.fetch(i.obj);
+            if (!outlineDict.has('Title'))
+              error('Invalid outline item');
+            var dest = outlineDict.get('Dest');
+            if (!dest && outlineDict.get('A')) {
+              var a = this.xref.fetchIfRef(outlineDict.get('A'));
+              dest = a.get('D');
+            }
+            var outlineItem = {
+              dest: dest,
+              title: convertIfUnicode(outlineDict.get('Title')),
+              color: outlineDict.get('C') || [0, 0, 0],
+              count: outlineDict.get('Count'),
+              bold: !!(outlineDict.get('F') & 2),
+              italic: !!(outlineDict.get('F') & 1),
+              items: []
+            };
+            i.parent.items.push(outlineItem);
+            obj = outlineDict.get('First');
+            if (IsRef(obj) && !processed.has(obj)) {
+              queue.push({obj: obj, parent: outlineItem});
+              processed.put(obj);
+            }
+            obj = outlineDict.get('Next');
+            if (IsRef(obj) && !processed.has(obj)) {
+              queue.push({obj: obj, parent: i.parent});
+              processed.put(obj);
+            }
+          }
+        }
+      }
+      return shadow(this, 'documentOutline', root);
+    },
     get numPages() {
       var obj = this.toplevelPagesDict.get('Count');
       assertWellFormed(
@@ -3418,7 +3499,7 @@ var Catalog = (function() {
                          'page dictionary kid is not a reference');
         var obj = this.xref.fetch(kid);
         if (IsDict(obj, 'Page') || (IsDict(obj) && !obj.has('Kids'))) {
-          pageCache.push(new Page(this.xref, pageCache.length, obj));
+          pageCache.push(new Page(this.xref, pageCache.length, obj, kid));
         } else { // must be a child page dictionary
           assertWellFormed(
             IsDict(obj),
@@ -3427,6 +3508,39 @@ var Catalog = (function() {
           this.traverseKids(obj);
         }
       }
+    },
+    get destinations() {
+      var xref = this.xref;
+      var obj = this.catDict.get('Names');
+      obj = obj ? xref.fetch(obj) : this.catDict;
+      obj = obj.get('Dests');
+      var dests = {};
+      if (obj) {
+        // reading name tree
+        var processed = new RefSet();
+        processed.put(obj);
+        var queue = [obj];
+        while (queue.length > 0) {
+          var i, n;
+          obj = xref.fetch(queue.shift());
+          if (obj.has('Kids')) {
+            var kids = obj.get('Kids');
+            for (i = 0, n = kids.length; i < n; i++) {
+              var kid = kids[i];
+              if (processed.has(kid))
+                error('invalid destinations');
+              queue.push(kid);
+              processed.put(kid);
+            }
+            continue;
+          }
+          var names = obj.get('Names');
+          for (i = 0, n = names.length; i < n; i += 2) {
+            dests[names[i]] = xref.fetch(names[i + 1]).get('D');
+          }
+        }
+      }
+      return shadow(this, 'destinations', dests);
     },
     getPage: function(n) {
       var pageCache = this.pageCache;
