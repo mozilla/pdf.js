@@ -4889,7 +4889,10 @@ var CanvasGraphics = (function() {
       var imgData = tmpCtx.getImageData(0, 0, w, h);
       var pixels = imgData.data;
 
-      imageObj.fillRgbaBuffer(pixels);
+      if (imageObj.imageMask)
+        imageObj.fillUsingStencilMask(pixels, this.current.fillColor);
+      else
+        imageObj.fillRgbaBuffer(pixels);
 
       tmpCtx.putImageData(imgData, 0, 0);
       ctx.drawImage(tmpCanvas, 0, -h);
@@ -5660,14 +5663,16 @@ var PDFImage = (function() {
     }
     this.bpc = bitsPerComponent;
 
-    var colorSpace = dict.get('ColorSpace', 'CS');
-    if (!colorSpace) {
-      TODO('JPX images (which don"t require color spaces');
-      colorSpace = new Name('DeviceRGB');
+    if (!this.imageMask) {
+      var colorSpace = dict.get('ColorSpace', 'CS');
+      if (!colorSpace) {
+        TODO('JPX images (which don"t require color spaces');
+        colorSpace = new Name('DeviceRGB');
+      }
+      this.colorSpace = ColorSpace.parse(colorSpace, xref, res);
+      this.numComps = this.colorSpace.numComps;
     }
-    this.colorSpace = ColorSpace.parse(colorSpace, xref, res);
 
-    this.numComps = this.colorSpace.numComps;
     this.decode = dict.get('Decode', 'D');
 
     var mask = xref.fetchIfRef(image.dict.get('Mask'));
@@ -5762,6 +5767,31 @@ var PDFImage = (function() {
           buf[i] = 255;
       }
       return buf;
+    },
+    fillUsingStencilMask: function fillUsingStencilMask(buffer, cssRgb) {
+      var m = /rgb\((\d+),(\d+),(\d+)\)/.exec(cssRgb); // parse CSS color
+      var r = m[1] | 0, g = m[2] | 0, b = m[3] | 0;
+      var width = this.width;
+      var height = this.height;
+      var imgArray = this.image.getBytes((height * width + 7) >> 3);
+      var i, j, mask;
+      var bufferPos = 0, imgArrayPos = 0;
+      for (i = 0; i < height; i++) {
+        for (j = 0; j < width; j++) {
+          var buf = imgArray[imgArrayPos++];
+          for (mask = 128; mask > 0; mask >>= 1) {
+            if (buf & mask) {
+              buffer[bufferPos++] = r;
+              buffer[bufferPos++] = g;
+              buffer[bufferPos++] = b;
+              buffer[bufferPos++] = 255;
+            } else {
+              buffer[bufferPos + 3] = 0;
+              bufferPos += 4;
+            }
+          }
+        }
+      }
     },
     fillRgbaBuffer: function fillRgbaBuffer(buffer) {
       var numComps = this.numComps;
