@@ -84,6 +84,20 @@ var PDFView = {
     xhr.send(null);
   },
 
+  navigateTo: function (dest) {
+    var i, n = this.pages.length;
+    var destRef = dest[0];
+    // TODO optimize destination page search
+    for (i = 0; i < n; i++) {
+      var pageRef = this.pages[i].content.ref;
+      if (destRef.num == pageRef.num && destRef.gen == pageRef.gen) {
+        this.page = i + 1;
+        // TODO scroll to specific region on the page
+        break;
+      }
+    }
+  },
+
   load: function(data, scale) {
     var sidebar = document.getElementById('sidebarView');
     sidebar.parentNode.scrollTop = 0;
@@ -105,7 +119,7 @@ var PDFView = {
     for (var i = 1; i <= pagesCount; i++) {
       var page = pdf.getPage(i);
       pages.push(new PageView(container, page, i, page.width, page.height,
-                              page.stats));
+                              page.stats, this.navigateTo.bind(this)));
       thumbnails.push(new ThumbnailView(sidebar, pages[i - 1]));
     }
 
@@ -140,7 +154,8 @@ var PDFView = {
   }
 };
 
-var PageView = function(container, content, id, width, height, stats) {
+var PageView = function(container, content, id, width, height,
+                        stats, navigateTo) {
   this.width = width;
   this.height = height;
   this.id = id;
@@ -178,10 +193,9 @@ var PageView = function(container, content, id, width, height, stats) {
         }
         x /= scale;
         y /= scale;
-        for (var i = 0; i < links.length; i++) {
+        var i, n = links.length;
+        for (i = 0; i < n; i++) {
           var link = links[i];
-          if (!link.url)
-            continue;
           if (link.x <= x && link.y <= y &&
             x < link.x + link.width && y < link.y + link.height) {
             currentLink = link;
@@ -193,7 +207,12 @@ var PageView = function(container, content, id, width, height, stats) {
         canvas.style.cursor = 'default';
       }, false);
       canvas.addEventListener('mousedown', function(e) {
-        window.location.href = currentLink.url;
+        if (!currentLink)
+          return;
+        if (currentLink.url)
+          window.location.href = currentLink.url;
+        if (currentLink.dest)
+          navigateTo(currentLink.dest);
       }, false);
     }
   }
