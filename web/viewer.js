@@ -85,16 +85,14 @@ var PDFView = {
   },
 
   navigateTo: function (dest) {
-    var i, n = this.pages.length;
+    if (typeof dest === 'string')
+      dest = this.destinations[dest];
+    // dest array looks like that: <page-ref> </XYZ|FitXXX> <args..>
     var destRef = dest[0];
-    // TODO optimize destination page search
-    for (i = 0; i < n; i++) {
-      var pageRef = this.pages[i].content.ref;
-      if (destRef.num == pageRef.num && destRef.gen == pageRef.gen) {
-        this.page = i + 1;
-        // TODO scroll to specific region on the page
-        break;
-      }
+    var pageNumber = this.pagesRefMap[destRef.num + ' ' + destRef.gen + ' R'];
+    if (pageNumber) {
+      this.page = pageNumber;
+      // TODO scroll to specific region on the page, the precise scaling required
     }
   },
 
@@ -115,16 +113,21 @@ var PDFView = {
     document.getElementById('numPages').innerHTML = pagesCount;
 
     var pages = this.pages = [];
+    var pagesRefMap = {};
     var thumbnails = this.thumbnails = [];
     for (var i = 1; i <= pagesCount; i++) {
       var page = pdf.getPage(i);
       pages.push(new PageView(container, page, i, page.width, page.height,
                               page.stats, this.navigateTo.bind(this)));
       thumbnails.push(new ThumbnailView(sidebar, pages[i - 1]));
+      var pageRef = page.ref;
+      pagesRefMap[pageRef.num + ' ' + pageRef.gen + ' R'] = i;
     }
 
     this.scale = (scale || kDefaultScale);
     this.page = parseInt(document.location.hash.substring(1)) || 1;
+    this.pagesRefMap = pagesRefMap;
+    this.destinations = pdf.catalog.destinations;
   },
 
   getVisiblePages: function() {

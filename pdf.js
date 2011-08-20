@@ -2228,6 +2228,26 @@ var Ref = (function() {
   return constructor;
 })();
 
+// The reference is identified by number and generation,
+// this structure stores only one instance of the reference.
+var RefSet = (function() {
+  function constructor() {
+    this.dict = {};
+  }
+
+  constructor.prototype = {
+    has: function(ref) {
+      return !!this.dict['R' + ref.num + '.' + ref.gen];
+    },
+
+    put: function(ref) {
+      this.dict['R' + ref.num + '.' + ref.gen] = ref;
+    }
+  };
+
+  return constructor;
+})();
+
 function IsBool(v) {
   return typeof v == 'boolean';
 }
@@ -3408,22 +3428,22 @@ var Catalog = (function() {
           // UTF16BE BOM
           var i, n = str.length, str2 = "";
           for (i = 2; i < n; i+=2)
-            str2 += String.fromCharCode((str.charCodeAt(i) << 8) | str.charCodeAt(i + 1));
+            str2 += String.fromCharCode(
+              (str.charCodeAt(i) << 8) | str.charCodeAt(i + 1));
           str = str2;
         }
         return str;
       }
-
       var obj = this.catDict.get('Outlines');
       var root = { items: [] };
       if (IsRef(obj)) {
         obj = this.xref.fetch(obj).get('First');
-        var processed = {};
+        var processed = new RefSet();
         if (IsRef(obj)) {
           var queue = [{obj: obj, parent: root}];
           // to avoid recursion keeping track of the items
           // in the processed dictionary
-          processed['R' + obj.num + ',' + obj.gen] = true;
+          processed.put(obj);
           while (queue.length > 0) {
             var i = queue.shift();
             var outlineDict = this.xref.fetch(i.obj);
@@ -3438,20 +3458,21 @@ var Catalog = (function() {
               dest: dest,
               title: convertIfUnicode(outlineDict.get('Title')),
               color: outlineDict.get('C') || [0, 0, 0],
+              count: outlineDict.get('Count'),
               bold: !!(outlineDict.get('F') & 2),
               italic: !!(outlineDict.get('F') & 1),
               items: []
             };
             i.parent.items.push(outlineItem);
             obj = outlineDict.get('First');
-            if (IsRef(obj) && !processed['R' + obj.num + ',' + obj.gen]) {
+            if (IsRef(obj) && !processed.has(obj)) {
               queue.push({obj: obj, parent: outlineItem});
-              processed['R' + obj.num + ',' + obj.gen] = true;
+              processed.put(obj);
             }
             obj = outlineDict.get('Next');
-            if (IsRef(obj) && !processed['R' + obj.num + ',' + obj.gen]) {
+            if (IsRef(obj) && !processed.has(obj)) {
               queue.push({obj: obj, parent: i.parent});
-              processed['R' + obj.num + ',' + obj.gen] = true;
+              processed.put(obj);
             }
           }
         }
@@ -3487,6 +3508,39 @@ var Catalog = (function() {
           this.traverseKids(obj);
         }
       }
+    },
+    get destinations() {
+      var xref = this.xref;
+      var obj = this.catDict.get('Names');
+      obj = obj ? xref.fetch(obj) : this.catDict;
+      obj = obj.get('Dests');
+      var dests = {};
+      if (obj) {
+        // reading name tree
+        var processed = new RefSet();
+        processed.put(obj);
+        var queue = [obj];
+        while (queue.length > 0) {
+          var i, n;
+          obj = xref.fetch(queue.shift());
+          if (obj.has('Kids')) {
+            var kids = obj.get('Kids');
+            for (i = 0, n = kids.length; i < n; i++) {
+              var kid = kids[i];
+              if (processed.has(kid))
+                error('invalid destinations');
+              queue.push(kid);
+              processed.put(kid);
+            }
+            continue;
+          }
+          var names = obj.get('Names');
+          for (i = 0, n = names.length; i < n; i += 2) {
+            dests[names[i]] = xref.fetch(names[i + 1]).get('D');
+          }
+        }
+      }
+      return shadow(this, 'destinations', dests);
     },
     getPage: function(n) {
       var pageCache = this.pageCache;
