@@ -789,7 +789,7 @@ var Font = (function Font() {
     encoding: null,
 
     checkAndRepair: function font_checkAndRepair(name, font, properties) {
-      var kCmapGlyphOffset = 0xFF;
+      var kCmapGlyphOffset = 0xE000; //offset glpyhs to the Unicode Private Use Area
 
       function readTableEntry(file) {
         // tag
