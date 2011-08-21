@@ -4889,9 +4889,13 @@ var CanvasGraphics = (function() {
       var imgData = tmpCtx.getImageData(0, 0, w, h);
       var pixels = imgData.data;
 
-      if (imageObj.imageMask)
-        imageObj.fillUsingStencilMask(pixels, this.current.fillColor);
-      else
+      if (imageObj.imageMask) {
+        var inverseDecode = imageObj.decode && imageObj.decode[0] > 0;
+        // TODO fillColor pattern support
+        var fillColor = this.current.fillColor;
+        imageObj.fillUsingStencilMask(pixels, fillColor,
+                                      inverseDecode);
+      } else
         imageObj.fillRgbaBuffer(pixels);
 
       tmpCtx.putImageData(imgData, 0, 0);
@@ -5768,27 +5772,25 @@ var PDFImage = (function() {
       }
       return buf;
     },
-    fillUsingStencilMask: function fillUsingStencilMask(buffer, cssRgb) {
+    fillUsingStencilMask: function fillUsingStencilMask(buffer,
+      cssRgb, inverseDecode) {
       var m = /rgb\((\d+),(\d+),(\d+)\)/.exec(cssRgb); // parse CSS color
       var r = m[1] | 0, g = m[2] | 0, b = m[3] | 0;
-      var width = this.width;
-      var height = this.height;
-      var imgArray = this.image.getBytes((height * width + 7) >> 3);
-      var i, j, mask;
+      var bufferLength = this.width * this.height;
+      var imgArray = this.image.getBytes((bufferLength + 7) >> 3);
+      var i, mask;
       var bufferPos = 0, imgArrayPos = 0;
-      for (i = 0; i < height; i++) {
-        for (j = 0; j < width; j++) {
-          var buf = imgArray[imgArrayPos++];
-          for (mask = 128; mask > 0; mask >>= 1) {
-            if (buf & mask) {
-              buffer[bufferPos++] = r;
-              buffer[bufferPos++] = g;
-              buffer[bufferPos++] = b;
-              buffer[bufferPos++] = 255;
-            } else {
-              buffer[bufferPos + 3] = 0;
-              bufferPos += 4;
-            }
+      for (i = 0; i < bufferLength; i++) {
+        var buf = imgArray[imgArrayPos++];
+        for (mask = 128; mask > 0; mask >>= 1) {
+          if (!(buf & mask) != inverseDecode) {
+            buffer[bufferPos++] = r;
+            buffer[bufferPos++] = g;
+            buffer[bufferPos++] = b;
+            buffer[bufferPos++] = 255;
+          } else {
+            buffer[bufferPos + 3] = 0;
+            bufferPos += 4;
           }
         }
       }
