@@ -3395,6 +3395,9 @@ var Page = (function() {
               TODO('other link types');
               break;
           }
+        } else if (annotation.has('Dest')) {
+          // simple destination link
+          link.dest = annotation.get('Dest').name;
         }
         links.push(link);
       }
@@ -3449,11 +3452,12 @@ var Catalog = (function() {
             var outlineDict = this.xref.fetch(i.obj);
             if (!outlineDict.has('Title'))
               error('Invalid outline item');
-            var dest = outlineDict.get('Dest');
-            if (!dest && outlineDict.get('A')) {
-              var a = this.xref.fetchIfRef(outlineDict.get('A'));
-              dest = a.get('D');
-            }
+            var dest = outlineDict.get('A');
+            if (dest)
+              dest = this.xref.fetchIfRef(dest).get('D');
+            else if (outlineDict.has('Dest'))
+              dest = outlineDict.get('Dest').name;
+
             var outlineItem = {
               dest: dest,
               title: convertIfUnicode(outlineDict.get('Title')),
@@ -3477,7 +3481,8 @@ var Catalog = (function() {
           }
         }
       }
-      return shadow(this, 'documentOutline', root);
+      obj = root.items.length > 0 ? root.items : null;
+      return shadow(this, 'documentOutline', obj);
     },
     get numPages() {
       var obj = this.toplevelPagesDict.get('Count');
@@ -3511,15 +3516,25 @@ var Catalog = (function() {
     },
     get destinations() {
       var xref = this.xref;
+      var dests = {}, nameTreeRef, nameDictionaryRef;
       var obj = this.catDict.get('Names');
-      obj = obj ? xref.fetch(obj) : this.catDict;
-      obj = obj.get('Dests');
-      var dests = {};
-      if (obj) {
+      if (obj)
+        nameTreeRef = xref.fetch(obj).get('Dests');
+      else if(this.catDict.has('Dests'))
+        nameDictionaryRef = this.catDict.get('Dests');
+
+      if (nameDictionaryRef) {
+        // reding simple destination dictionary
+        obj = xref.fetch(nameDictionaryRef);
+        obj.forEach(function(key, value) {
+          dests[key] = xref.fetch(value).get('D');
+        });
+      }
+      if (nameTreeRef) {
         // reading name tree
         var processed = new RefSet();
-        processed.put(obj);
-        var queue = [obj];
+        processed.put(nameTreeRef);
+        var queue = [nameTreeRef];
         while (queue.length > 0) {
           var i, n;
           obj = xref.fetch(queue.shift());
