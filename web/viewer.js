@@ -84,7 +84,7 @@ var PDFView = {
     xhr.send(null);
   },
 
-  navigateTo: function (dest) {
+  navigateTo: function(dest) {
     if (typeof dest === 'string')
       dest = this.destinations[dest];
     // dest array looks like that: <page-ref> </XYZ|FitXXX> <args..>
@@ -92,7 +92,8 @@ var PDFView = {
     var pageNumber = this.pagesRefMap[destRef.num + ' ' + destRef.gen + ' R'];
     if (pageNumber) {
       this.page = pageNumber;
-      // TODO scroll to specific region on the page, the precise scaling required
+      // TODO scroll to specific region on the page, the precise scaling
+      // required.
     }
   },
 
