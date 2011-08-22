@@ -3455,8 +3455,11 @@ var Catalog = (function() {
             var dest = outlineDict.get('A');
             if (dest)
               dest = this.xref.fetchIfRef(dest).get('D');
-            else if (outlineDict.has('Dest'))
-              dest = outlineDict.get('Dest').name;
+            else if (outlineDict.has('Dest')) {
+              dest = outlineDict.get('Dest');
+              if (IsName(dest))
+                dest = dest.name;
+            }
 
             var outlineItem = {
               dest: dest,
