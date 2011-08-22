@@ -390,13 +390,13 @@ var FlateStream = (function() {
     var cmf = bytes[bytesPos++];
     var flg = bytes[bytesPos++];
     if (cmf == -1 || flg == -1)
-      error('Invalid header in flate stream');
+      error('Invalid header in flate stream: ' + cmf + ', ' + flg);
     if ((cmf & 0x0f) != 0x08)
-      error('Unknown compression method in flate stream');
+      error('Unknown compression method in flate stream: ' + cmf + ', ' + flg);
     if ((((cmf << 8) + flg) % 31) != 0)
-      error('Bad FCHECK in flate stream');
+      error('Bad FCHECK in flate stream: ' + cmf + ', ' + flg);
     if (flg & 0x20)
-      error('FDICT bit set in flate stream');
+      error('FDICT bit set in flate stream: ' + cmf + ', ' + flg);
 
     this.bytes = bytes;
     this.bytesPos = bytesPos;
@@ -635,7 +635,7 @@ var PredictorStream = (function() {
     if (predictor <= 1)
       return stream; // no prediction
     if (predictor !== 2 && (predictor < 10 || predictor > 15))
-      error('Unsupported predictor');
+      error('Unsupported predictor: ' + predictor);
 
     if (predictor === 2)
       this.readBlock = this.readBlockTiff;
@@ -787,7 +787,7 @@ var PredictorStream = (function() {
         break;
       }
     default:
-      error('Unsupported predictor');
+      error('Unsupported predictor: ' + predictor);
       break;
     }
     this.bufferLength += rowBytes;
@@ -2387,7 +2387,7 @@ var Lexer = (function() {
       } while (true);
       var value = parseFloat(str);
       if (isNaN(value))
-        error('Invalid floating point number');
+        error('Invalid floating point number: ' + value);
       return value;
     },
     getString: function() {
@@ -2486,7 +2486,7 @@ var Lexer = (function() {
             stream.skip();
             var x2 = ToHexDigit(stream.getChar());
             if (x2 == -1)
-              error('Illegal digit in hex char in name');
+              error('Illegal digit in hex char in name: ' + x2);
             str += String.fromCharCode((x << 4) | x2);
           } else {
             str += '#';
@@ -2497,7 +2497,8 @@ var Lexer = (function() {
         }
       }
       if (str.length > 128)
-        error('Warning: name token is longer than allowed by the spec.');
+        error('Warning: name token is longer than allowed by the spec: ' +
+              str.length);
       return new Name(str);
     },
     getHexString: function(ch) {
@@ -2515,14 +2516,14 @@ var Lexer = (function() {
         if (specialChars[ch.charCodeAt(0)] != 1) {
           var x, x2;
           if ((x = ToHexDigit(ch)) == -1)
-            error('Illegal character in hex string');
+            error('Illegal character in hex string: ' + ch);
 
           ch = stream.getChar();
           while (specialChars[ch.charCodeAt(0)] == 1)
             ch = stream.getChar();
 
           if ((x2 = ToHexDigit(ch)) == -1)
-            error('Illegal character in hex string');
+            error('Illegal character in hex string: ' + ch);
 
           str += String.fromCharCode((x << 4) | x2);
         }
@@ -2582,7 +2583,7 @@ var Lexer = (function() {
       return new Cmd(ch);
       // fall through
       case ')':
-      error('Illegal character');
+      error('Illegal character: ' + ch);
       return Error;
       }
 
@@ -2591,7 +2592,7 @@ var Lexer = (function() {
       while (!!(ch = stream.lookChar()) && !specialChars[ch.charCodeAt(0)]) {
         stream.skip();
         if (str.length == 128) {
-          error('Command token too long');
+          error('Command token too long: ' + str.length);
           break;
         }
         str += ch;
@@ -2765,7 +2766,7 @@ var Parser = (function() {
       if (xref)
         length = xref.fetchIfRef(length);
       if (!IsInt(length)) {
-        error("Bad 'Length' attribute in stream");
+        error('Bad ' + Length + ' attribute in stream');
         length = 0;
       }
 
@@ -2774,7 +2775,7 @@ var Parser = (function() {
       this.shift(); // '>>'
       this.shift(); // 'stream'
       if (!IsCmd(this.buf1, 'endstream'))
-        error("Missing 'endstream'");
+        error('Missing endstream');
       this.shift();
 
       stream = stream.makeSubStream(pos, length, dict);
@@ -2795,7 +2796,7 @@ var Parser = (function() {
         for (var i = 0, ii = filterArray.length; i < ii; ++i) {
           filter = filterArray[i];
           if (!IsName(filter))
-            error('Bad filter name');
+            error('Bad filter name: ' + filter);
           else {
             params = null;
             if (IsArray(paramsArray) && (i in paramsArray))
@@ -2831,7 +2832,7 @@ var Parser = (function() {
       } else if (name == 'CCITTFaxDecode' || name == 'CCF') {
         return new CCITTFaxStream(stream, params);
       } else {
-        error("filter '" + name + "' not supported yet");
+        error('filter "' + name + '" not supported yet');
       }
       return stream;
     }
@@ -2864,7 +2865,7 @@ var Linearization = (function() {
           obj > 0) {
         return obj;
       }
-      error("'" + name + "' field in linearization table is invalid");
+      error('"' + name + '" field in linearization table is invalid');
       return 0;
     },
     getHint: function(index) {
@@ -2877,7 +2878,7 @@ var Linearization = (function() {
           obj2 > 0) {
         return obj2;
       }
-      error('Hints table in linearization table is invalid');
+      error('Hints table in linearization table is invalid: ' + index);
       return 0;
     },
     get length() {
@@ -2952,14 +2953,14 @@ var XRef = (function() {
           error('Invalid XRef table');
         var n = obj;
         if (first < 0 || n < 0 || (first + n) != ((first + n) | 0))
-          error('Invalid XRef table');
+          error('Invalid XRef table: ' + first + ', ' + n);
         for (var i = first; i < first + n; ++i) {
           var entry = {};
           if (!IsInt(obj = parser.getObj()))
-            error('Invalid XRef table');
+            error('Invalid XRef table: ' + first + ', ' + n);
           entry.offset = obj;
           if (!IsInt(obj = parser.getObj()))
-            error('Invalid XRef table');
+            error('Invalid XRef table: ' + first + ', ' + n);
           entry.gen = obj;
           obj = parser.getObj();
           if (IsCmd(obj, 'n')) {
@@ -2967,7 +2968,7 @@ var XRef = (function() {
           } else if (IsCmd(obj, 'f')) {
             entry.free = true;
           } else {
-            error('Invalid XRef table');
+            error('Invalid XRef table: ' + first + ', ' + n);
           }
           if (!this.entries[i]) {
             // In some buggy PDF files the xref table claims to start at 1
@@ -3022,13 +3023,13 @@ var XRef = (function() {
       while (range.length > 0) {
         var first = range[0], n = range[1];
         if (!IsInt(first) || !IsInt(n))
-          error('Invalid XRef range fields');
+          error('Invalid XRef range fields: ' + first + ', ' + n);
         var typeFieldWidth = byteWidths[0];
         var offsetFieldWidth = byteWidths[1];
         var generationFieldWidth = byteWidths[2];
         if (!IsInt(typeFieldWidth) || !IsInt(offsetFieldWidth) ||
             !IsInt(generationFieldWidth)) {
-          error('Invalid XRef entry fields length');
+          error('Invalid XRef entry fields length: ' + first + ', ' + n);
         }
         for (i = 0; i < n; ++i) {
           var type = 0, offset = 0, generation = 0;
@@ -3054,7 +3055,7 @@ var XRef = (function() {
           case 2:
             break;
           default:
-            error('Invalid XRef entry type');
+            error('Invalid XRef entry type: ' + type);
             break;
           }
           if (!this.entries[first + i])
@@ -3155,12 +3156,12 @@ var XRef = (function() {
       for (i = 0; i < n; ++i) {
         var num = parser.getObj();
         if (!IsInt(num)) {
-          error('invalid object number in the ObjStm stream');
+          error('invalid object number in the ObjStm stream: ' + num);
         }
         nums.push(num);
         var offset = parser.getObj();
         if (!IsInt(offset)) {
-          error('invalid object offset in the ObjStm stream');
+          error('invalid object offset in the ObjStm stream: ' + offset);
         }
       }
       // read stream objects for cache
@@ -3269,7 +3270,7 @@ var Page = (function() {
 
       var gfx = new CanvasGraphics(canvasCtx);
       var fonts = [];
-      var images = new ImagesLoader()
+      var images = new ImagesLoader();
 
       this.compile(gfx, fonts, images);
       stats.compile = Date.now();
@@ -3323,7 +3324,8 @@ var Page = (function() {
       var i, n = this.content.length, compiledItems = [];
       for (i = 0; i < n; ++i) {
         content = xref.fetchIfRef(this.content[i]);
-        compiledItems.push(gfx.compile(content, xref, resources, fonts, images));
+        compiledItems.push(gfx.compile(content, xref, resources, fonts,
+                                       images));
       }
       // creating the function that executes all compiled items
       this.code = function(gfx) {
@@ -3347,7 +3349,7 @@ var Page = (function() {
       gfx.execute(this.code, xref, resources);
       gfx.endDrawing();
     },
-    rotatePoint: function (x, y) {
+    rotatePoint: function(x, y) {
       var rotate = this.rotate;
       switch (rotate) {
         default:
@@ -3384,7 +3386,7 @@ var Page = (function() {
         link.height = Math.abs(topLeftCorner.y - bottomRightCorner.y);
         var a = this.xref.fetchIfRef(annotation.get('A'));
         if (a) {
-          switch(a.get('S').name) {
+          switch (a.get('S').name) {
             case 'URI':
               link.url = a.get('URI');
               break;
@@ -3426,8 +3428,8 @@ var Catalog = (function() {
       function convertIfUnicode(str) {
         if (str[0] === '\xFE' && str[1] === '\xFF') {
           // UTF16BE BOM
-          var i, n = str.length, str2 = "";
-          for (i = 2; i < n; i+=2)
+          var i, n = str.length, str2 = '';
+          for (i = 2; i < n; i += 2)
             str2 += String.fromCharCode(
               (str.charCodeAt(i) << 8) | str.charCodeAt(i + 1));
           str = str2;
@@ -4146,11 +4148,12 @@ var PartialEvaluator = (function() {
             var glyphsStream = xref.fetchIfRef(cidToGidMap);
             var glyphsData = glyphsStream.getBytes(0);
             // Glyph ids are big-endian 2-byte values
-            encodingMap[0] = 0; //set this to 0 to verify the font has an encoding
+            // Set this to 0 to verify the font has an encoding.
+            encodingMap[0] = 0;
             for (var j = 0; j < glyphsData.length; j++) {
               var glyphID = (glyphsData[j++] << 8) | glyphsData[j];
               if (glyphID != 0)
-                encodingMap[j>>1] = glyphID;
+                encodingMap[j >> 1] = glyphID;
             }
           }
         }
@@ -4375,11 +4378,11 @@ var CanvasExtraState = (function() {
   constructor.prototype = {
     clone: function canvasextra_clone() {
       return Object.create(this);
-    }, 
+    },
     setCurrentPoint: function canvasextra_setCurrentPoint(x, y) {
       this.x = x;
       this.y = y;
-    },
+    }
   };
   return constructor;
 })();
@@ -5106,12 +5109,12 @@ var ColorSpace = (function() {
     // Input: array of size numComps representing color component values
     // Output: array of rgb values, each value ranging from [0.1]
     getRgb: function cs_getRgb(color) {
-      error('Should not call ColorSpace.getRgb');
+      error('Should not call ColorSpace.getRgb: ' + color);
     },
     // Input: Uint8Array of component values, each value scaled to [0,255]
     // Output: Uint8Array of rgb values, each value scaled to [0,255]
     getRgbBuffer: function cs_getRgbBuffer(input) {
-      error('Should not call ColorSpace.getRgbBuffer');
+      error('Should not call ColorSpace.getRgbBuffer: ' + input);
     }
   };
 
@@ -5205,10 +5208,10 @@ var ColorSpace = (function() {
       case 'Lab':
       case 'DeviceN':
       default:
-        error("unimplemented color space object '" + mode + "'");
+        error('unimplemented color space object "' + mode + '"');
       }
     } else {
-      error('unrecognized color space object: "' + cs + "'");
+      error('unrecognized color space object: "' + cs + '"');
     }
   };
 
@@ -5282,7 +5285,7 @@ var IndexedCS = (function() {
       for (var i = 0; i < length; ++i)
         lookupArray[i] = lookup.charCodeAt(i);
     } else {
-      error('Unrecognized lookup table');
+      error('Unrecognized lookup table: ' + lookup);
     }
     this.lookup = lookupArray;
   }
@@ -5457,7 +5460,7 @@ var Pattern = (function() {
     // Input: current Canvas context
     // Output: the appropriate fillStyle or strokeStyle
     getPattern: function pattern_getStyle(ctx) {
-      error('Should not call Pattern.getStyle');
+      error('Should not call Pattern.getStyle: ' + ctx);
     }
   };
 
@@ -5466,7 +5469,7 @@ var Pattern = (function() {
 
     var patternName = args[length - 1];
     if (!IsName(patternName))
-      error('Bad args to getPattern');
+      error('Bad args to getPattern: ' + patternName);
 
     var patternRes = xref.fetchIfRef(res.get('Pattern'));
     if (!patternRes)
@@ -5496,7 +5499,7 @@ var Pattern = (function() {
       var matrix = dict.get('Matrix');
       return Pattern.parseShading(shading, matrix, xref, res, ctx);
     default:
-      error('Unknown type of pattern');
+      error('Unknown type of pattern: ' + typeNum);
     }
   };
 
@@ -5701,7 +5704,7 @@ var TilingPattern = (function() {
         tmpCtx.strokeStyle = color;
         break;
       default:
-        error('Unsupported paint type');
+        error('Unsupported paint type: ' + paintType);
       }
 
       var scale = [width / xstep, height / ystep];
@@ -5764,7 +5767,8 @@ var PDFImage = (function() {
     this.height = dict.get('Height', 'H');
 
     if (this.width < 1 || this.height < 1)
-      error('Invalid image width or height');
+      error('Invalid image width: ' + this.width + ' or height: ' +
+            this.height);
 
     this.interpolate = dict.get('Interpolate', 'I') || false;
     this.imageMask = dict.get('ImageMask', 'IM') || false;
@@ -5776,7 +5780,7 @@ var PDFImage = (function() {
         if (this.imageMask)
           bitsPerComponent = 1;
         else
-          error('Bits per component missing in image');
+          error('Bits per component missing in image: ' + this.imageMask);
       }
     }
     this.bpc = bitsPerComponent;
@@ -5876,7 +5880,8 @@ var PDFImage = (function() {
         var sw = smask.width;
         var sh = smask.height;
         if (sw != this.width || sh != this.height)
-          error('smask dimensions do not match image dimensions');
+          error('smask dimensions do not match image dimensions: ' + sw +
+                ' != ' + this.width + ', ' + sh + ' != ' + this.height);
 
         smask.fillGrayBuffer(buf);
         return buf;
@@ -5935,7 +5940,7 @@ var PDFImage = (function() {
     fillGrayBuffer: function fillGrayBuffer(buffer) {
       var numComps = this.numComps;
       if (numComps != 1)
-        error('Reading gray scale from a color image');
+        error('Reading gray scale from a color image: ' + numComps);
 
       var width = this.width;
       var height = this.height;
@@ -5987,7 +5992,8 @@ var PDFFunction = (function() {
       var outputSize = range.length / 2;
 
       if (inputSize != 1)
-        error('No support for multi-variable inputs to functions');
+        error('No support for multi-variable inputs to functions: ' +
+              inputSize);
 
       var size = dict.get('Size');
       var bps = dict.get('BitsPerSample');
@@ -5995,7 +6001,7 @@ var PDFFunction = (function() {
       if (!order)
         order = 1;
       if (order !== 1)
-        error('No support for cubic spline interpolation');
+        error('No support for cubic spline interpolation: ' + order);
 
       var encode = dict.get('Encode');
       if (!encode) {
@@ -6021,7 +6027,8 @@ var PDFFunction = (function() {
         }
 
         if (inputSize != args.length)
-          error('Incorrect number of arguments');
+          error('Incorrect number of arguments: ' + inputSize + ' != ' +
+                args.length);
 
         for (var i = 0; i < inputSize; i++) {
           var i2 = i * 2;
@@ -6132,7 +6139,7 @@ var PDFFunction = (function() {
       var fns = [];
       for (var i = 0, ii = fnRefs.length; i < ii; ++i)
         fns.push(new PDFFunction(xref, xref.fetchIfRef(fnRefs[i])));
-        
+
       var bounds = dict.get('Bounds');
       var encode = dict.get('Encode');
 
@@ -6160,12 +6167,12 @@ var PDFFunction = (function() {
         var dmax = domain[1];
         if (i < bounds.length)
           dmax = bounds[i];
-        
+
         var rmin = encode[2 * i];
         var rmax = encode[2 * i + 1];
 
-        var v2 = rmin + (v - dmin) * (rmax - rmin) / (dmax - dmin);  
-        
+        var v2 = rmin + (v - dmin) * (rmax - rmin) / (dmax - dmin);
+
         // call the appropropriate function
         return fns[i].func([v2]);
       }

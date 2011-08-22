@@ -461,9 +461,9 @@ var Font = (function Font() {
 
     return array;
   };
-  
+
   function arrayToString(arr) {
-    var str = "";
+    var str = '';
     for (var i = 0; i < arr.length; ++i)
       str += String.fromCharCode(arr[i]);
 
@@ -789,10 +789,10 @@ var Font = (function Font() {
     encoding: null,
 
     checkAndRepair: function font_checkAndRepair(name, font, properties) {
-      var kCmapGlyphOffset = 0xE000; //offset glpyhs to the Unicode Private Use Area
+      // offset glyphs to the Unicode Private Use Area
+      var kCmapGlyphOffset = 0xE000;
 
       function readTableEntry(file) {
-        // tag
         var tag = file.getBytes(4);
         tag = String.fromCharCode(tag[0]) +
               String.fromCharCode(tag[1]) +
@@ -975,12 +975,12 @@ var Font = (function Font() {
       }
 
       var numTables = header.numTables + requiredTables.length;
-      
+
       // header and new offsets. Table entry information is appended to the
       // end of file. The virtualOffset represents where to put the actual
       // data of a particular table;
       var ttf = {
-        file: "",
+        file: '',
         virtualOffset: numTables * (4 * 4)
       };
 
@@ -1030,8 +1030,8 @@ var Font = (function Font() {
         // Type2 composite fonts map characters directly to glyphs so the cmap
         // table must be replaced.
         // canvas fillText will reencode some characters even if the font has a
-        // glyph at that position - e.g. newline is converted to a space and U+00AD
-        // (soft hypen) is not drawn.
+        // glyph at that position - e.g. newline is converted to a space and
+        // U+00AD (soft hyphen) is not drawn.
         // So, offset all the glyphs by 0xFF to avoid these cases and use
         // the encoding to map incoming characters to the new glyph positions
 
@@ -1126,7 +1126,7 @@ var Font = (function Font() {
       var kRequiredTablesCount = 9;
 
       var otf = {
-        file: "",
+        file: '',
         virtualOffset: 9 * (4 * 4)
       };
 
@@ -1584,11 +1584,11 @@ var Type1Parser = function() {
     var count = eexecStr.length;
     for (var i = 0; i < count; i++) {
       var getToken = function() {
-        while(i < count && (eexecStr[i] == ' ' || eexecStr[i] == '\n'))
+        while (i < count && (eexecStr[i] == ' ' || eexecStr[i] == '\n'))
           ++i;
 
         var t = '';
-        while(i < count && !(eexecStr[i] == ' ' || eexecStr[i] == '\n'))
+        while (i < count && !(eexecStr[i] == ' ' || eexecStr[i] == '\n'))
           t += eexecStr[i++];
 
         return t;
