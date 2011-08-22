@@ -3438,9 +3438,10 @@ var Catalog = (function() {
         return str;
       }
       var obj = this.catDict.get('Outlines');
+      var xref = this.xref;
       var root = { items: [] };
       if (IsRef(obj)) {
-        obj = this.xref.fetch(obj).get('First');
+        obj = xref.fetch(obj).get('First');
         var processed = new RefSet();
         if (IsRef(obj)) {
           var queue = [{obj: obj, parent: root}];
@@ -3449,12 +3450,12 @@ var Catalog = (function() {
           processed.put(obj);
           while (queue.length > 0) {
             var i = queue.shift();
-            var outlineDict = this.xref.fetch(i.obj);
+            var outlineDict = xref.fetch(i.obj);
             if (!outlineDict.has('Title'))
               error('Invalid outline item');
             var dest = outlineDict.get('A');
             if (dest)
-              dest = this.xref.fetchIfRef(dest).get('D');
+              dest = xref.fetchIfRef(dest).get('D');
             else if (outlineDict.has('Dest')) {
               dest = outlineDict.get('Dest');
               if (IsName(dest))
