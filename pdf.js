@@ -3397,6 +3397,9 @@ var Page = (function() {
               TODO('other link types');
               break;
           }
+        } else if (annotation.has('Dest')) {
+          // simple destination link
+          link.dest = annotation.get('Dest').name;
         }
         links.push(link);
       }
@@ -3437,9 +3440,10 @@ var Catalog = (function() {
         return str;
       }
       var obj = this.catDict.get('Outlines');
+      var xref = this.xref;
       var root = { items: [] };
       if (IsRef(obj)) {
-        obj = this.xref.fetch(obj).get('First');
+        obj = xref.fetch(obj).get('First');
         var processed = new RefSet();
         if (IsRef(obj)) {
           var queue = [{obj: obj, parent: root}];
@@ -3448,14 +3452,18 @@ var Catalog = (function() {
           processed.put(obj);
           while (queue.length > 0) {
             var i = queue.shift();
-            var outlineDict = this.xref.fetch(i.obj);
+            var outlineDict = xref.fetch(i.obj);
             if (!outlineDict.has('Title'))
               error('Invalid outline item');
-            var dest = outlineDict.get('Dest');
-            if (!dest && outlineDict.get('A')) {
-              var a = this.xref.fetchIfRef(outlineDict.get('A'));
-              dest = a.get('D');
+            var dest = outlineDict.get('A');
+            if (dest)
+              dest = xref.fetchIfRef(dest).get('D');
+            else if (outlineDict.has('Dest')) {
+              dest = outlineDict.get('Dest');
+              if (IsName(dest))
+                dest = dest.name;
             }
+
             var outlineItem = {
               dest: dest,
               title: convertIfUnicode(outlineDict.get('Title')),
@@ -3479,7 +3487,8 @@ var Catalog = (function() {
           }
         }
       }
-      return shadow(this, 'documentOutline', root);
+      obj = root.items.length > 0 ? root.items : null;
+      return shadow(this, 'documentOutline', obj);
     },
     get numPages() {
       var obj = this.toplevelPagesDict.get('Count');
@@ -3513,15 +3522,25 @@ var Catalog = (function() {
     },
     get destinations() {
       var xref = this.xref;
+      var dests = {}, nameTreeRef, nameDictionaryRef;
       var obj = this.catDict.get('Names');
-      obj = obj ? xref.fetch(obj) : this.catDict;
-      obj = obj.get('Dests');
-      var dests = {};
-      if (obj) {
+      if (obj)
+        nameTreeRef = xref.fetch(obj).get('Dests');
+      else if(this.catDict.has('Dests'))
+        nameDictionaryRef = this.catDict.get('Dests');
+
+      if (nameDictionaryRef) {
+        // reading simple destination dictionary
+        obj = xref.fetch(nameDictionaryRef);
+        obj.forEach(function(key, value) {
+          dests[key] = xref.fetch(value).get('D');
+        });
+      }
+      if (nameTreeRef) {
         // reading name tree
         var processed = new RefSet();
-        processed.put(obj);
-        var queue = [obj];
+        processed.put(nameTreeRef);
+        var queue = [nameTreeRef];
         while (queue.length > 0) {
           var i, n;
           obj = xref.fetch(queue.shift());
@@ -4776,7 +4795,7 @@ var CanvasGraphics = (function() {
       var scaleFactorX = 1, scaleFactorY = 1;
       var font = this.current.font;
       if (font) {
-        if (this.current.fontSize < kRasterizerMin) {
+        if (this.current.fontSize <= kRasterizerMin) {
           scaleFactorX = scaleFactorY = kScalePrecision;
           ctx.scale(1 / scaleFactorX, 1 / scaleFactorY);
         }
