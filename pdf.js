@@ -4727,7 +4727,7 @@ var CanvasGraphics = (function() {
       var scaleFactorX = 1, scaleFactorY = 1;
       var font = this.current.font;
       if (font) {
-        if (this.current.fontSize < kRasterizerMin) {
+        if (this.current.fontSize <= kRasterizerMin) {
           scaleFactorX = scaleFactorY = kScalePrecision;
           ctx.scale(1 / scaleFactorX, 1 / scaleFactorY);
         }

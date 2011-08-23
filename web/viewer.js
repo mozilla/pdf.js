@@ -5,7 +5,6 @@
 
 var kDefaultURL = 'compressed.tracemonkey-pldi-09.pdf';
 var kDefaultScale = 150;
-
 var kCacheSize = 20;
 
 var Cache = function(size) {
@@ -24,19 +23,17 @@ var PDFView = {
   thumbnails: [],
 
   set scale(val) {
-    var options = document.getElementById('scaleSelect').options;
-    for (var i = 0; i < options.length; i++) {
-      var option = options[i];
-      option.selected = (option.value == val);
-    }
-
     var pages = this.pages;
     var cssUnits = 96.0 / 72.0;
     for (var i = 0; i < pages.length; i++)
       pages[i].update(val / 100 * cssUnits);
 
     // Jump the scroll position to the correct page.
-    this.page = this.page;
+    document.location.hash = this.page;
+
+    var event = document.createEvent("UIEvents");
+    event.initUIEvent("scalechange", false, false, window, val);
+    window.dispatchEvent(event);
   },
 
   set page(val) {
@@ -58,7 +55,7 @@ var PDFView = {
   },
 
   get page() {
-    return parseInt(document.location.hash.substring(1)) || 1;
+    return parseInt(document.location.hash.substring(1));
   },
 
   open: function(url, scale) {
@@ -309,7 +306,7 @@ window.addEventListener('pdfloaded', function(evt) {
   PDFView.load(evt.detail);
 }, true);
 
-window.addEventListener('scroll', function(evt) {
+window.addEventListener('scroll', function onscroll(evt) {
   var visiblePages = PDFView.getVisiblePages();
   for (var i = 0; i < visiblePages.length; i++) {
     var page = visiblePages[i];
@@ -372,3 +369,19 @@ window.addEventListener('transitionend', function(evt) {
   }, 500);
 }, true);
 
+
+window.addEventListener("scalechange", function(evt) {
+  var options = document.getElementById('scaleSelect').options;
+  for (var i = 0; i < options.length; i++) {
+    var option = options[i];
+    option.selected = (option.value == evt.detail);
+  }
+}, true);
+
+window.addEventListener("pagechange", function(evt) {
+  var page = evt.detail;
+  document.location.hash = page;
+  document.getElementById("pageNumber").value = page;
+  document.getElementById("previous").disabled = (page == 1);
+  document.getElementById("next").disabled = (page == PDFView.pages.length);
+}, true);
