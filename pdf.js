@@ -48,14 +48,17 @@ function backtrace() {
   var stackStr;
   try {
     throw new Error();
-  } catch(e) {
+  } catch (e) {
     stackStr = e.stack;
-  };
+  }
   return stackStr.split('\n').slice(1).join('\n');
 }
 
 function shadow(obj, prop, value) {
-  Object.defineProperty(obj, prop, { value: value, enumerable: true, configurable: true, writable: false });
+  Object.defineProperty(obj, prop, { value: value,
+                                     enumerable: true,
+                                     configurable: true,
+                                     writable: false });
     return value;
 }
 
@@ -228,6 +231,12 @@ var DecodeStream = (function() {
       }
       return String.fromCharCode(this.buffer[this.pos++]);
     },
+    makeSubStream: function decodestream_makeSubstream(start, length, dict) {
+      var end = start + length;
+      while (this.bufferLength <= end && !this.eof)
+        this.readBlock();
+      return new Stream(this.buffer, start, length, dict);
+    },
     skip: function decodestream_skip(n) {
       if (!n)
         n = 1;
@@ -381,13 +390,13 @@ var FlateStream = (function() {
     var cmf = bytes[bytesPos++];
     var flg = bytes[bytesPos++];
     if (cmf == -1 || flg == -1)
-      error('Invalid header in flate stream');
+      error('Invalid header in flate stream: ' + cmf + ', ' + flg);
     if ((cmf & 0x0f) != 0x08)
-      error('Unknown compression method in flate stream');
+      error('Unknown compression method in flate stream: ' + cmf + ', ' + flg);
     if ((((cmf << 8) + flg) % 31) != 0)
-      error('Bad FCHECK in flate stream');
+      error('Bad FCHECK in flate stream: ' + cmf + ', ' + flg);
     if (flg & 0x20)
-      error('FDICT bit set in flate stream');
+      error('FDICT bit set in flate stream: ' + cmf + ', ' + flg);
 
     this.bytes = bytes;
     this.bytesPos = bytesPos;
@@ -626,7 +635,7 @@ var PredictorStream = (function() {
     if (predictor <= 1)
       return stream; // no prediction
     if (predictor !== 2 && (predictor < 10 || predictor > 15))
-      error('Unsupported predictor');
+      error('Unsupported predictor: ' + predictor);
 
     if (predictor === 2)
       this.readBlock = this.readBlockTiff;
@@ -635,9 +644,7 @@ var PredictorStream = (function() {
 
     this.stream = stream;
     this.dict = stream.dict;
-    if (params.has('EarlyChange')) {
-      error('EarlyChange predictor parameter is not supported');
-    }
+
     var colors = this.colors = params.get('Colors') || 1;
     var bits = this.bits = params.get('BitsPerComponent') || 8;
     var columns = this.columns = params.get('Columns') || 1;
@@ -780,7 +787,7 @@ var PredictorStream = (function() {
         break;
       }
     default:
-      error('Unsupported predictor');
+      error('Unsupported predictor: ' + predictor);
       break;
     }
     this.bufferLength += rowBytes;
@@ -799,6 +806,11 @@ var JpegStream = (function() {
 
     // create DOM image
     var img = new Image();
+    img.onload = (function() {
+      this.loaded = true;
+      if (this.onLoad)
+        this.onLoad();
+    }).bind(this);
     img.src = 'data:image/jpeg;base64,' + window.btoa(bytesToString(bytes));
     this.domImage = img;
   }
@@ -809,6 +821,44 @@ var JpegStream = (function() {
     },
     getChar: function() {
       error('internal error: getChar is not valid on JpegStream');
+    }
+  };
+
+  return constructor;
+})();
+
+// Simple object to track the loading images
+// Initialy for every that is in loading call imageLoading()
+// and, when images onload is fired, call imageLoaded()
+// When all images are loaded, the onLoad event is fired.
+var ImagesLoader = (function() {
+  function constructor() {
+    this.loading = 0;
+  }
+
+  constructor.prototype = {
+    imageLoading: function() {
+      ++this.loading;
+    },
+
+    imageLoaded: function() {
+      if (--this.loading == 0 && this.onLoad) {
+        this.onLoad();
+        delete this.onLoad;
+      }
+    },
+
+    bind: function(jpegStream) {
+      if (jpegStream.loaded)
+        return;
+      this.imageLoading();
+      jpegStream.onLoad = this.imageLoaded.bind(this);
+    },
+
+    notifyOnLoad: function(callback) {
+      if (this.loading == 0)
+        callback();
+      this.onLoad = callback;
     }
   };
 
@@ -921,10 +971,10 @@ var AsciiHexStream = (function() {
   function constructor(str) {
     this.str = str;
     this.dict = str.dict;
-    
+
     DecodeStream.call(this);
   }
-  
+
   var hexvalueMap = {
       9: -1, // \t
       32: -1, // space
@@ -953,35 +1003,37 @@ var AsciiHexStream = (function() {
   };
 
   constructor.prototype = Object.create(DecodeStream.prototype);
-  
+
   constructor.prototype.readBlock = function() {
-    var gtCode = '>'.charCodeAt(0), bytes = this.str.getBytes(), c, n, 
+    var gtCode = '>'.charCodeAt(0), bytes = this.str.getBytes(), c, n,
         decodeLength, buffer, bufferLength, i, length;
-    
+
     decodeLength = (bytes.length + 1) >> 1;
     buffer = this.ensureBuffer(this.bufferLength + decodeLength);
     bufferLength = this.bufferLength;
-    
-    for(i = 0, length = bytes.length; i < length; i++) {
+
+    for (i = 0, length = bytes.length; i < length; i++) {
       c = hexvalueMap[bytes[i]];
-      while (c == -1 && (i+1) < length) {
+      while (c == -1 && (i + 1) < length) {
         c = hexvalueMap[bytes[++i]];
       }
-      
-      if((i+1) < length && (bytes[i+1] !== gtCode)) {
+
+      if ((i + 1) < length && (bytes[i + 1] !== gtCode)) {
         n = hexvalueMap[bytes[++i]];
-        buffer[bufferLength++] = c*16+n;
+        buffer[bufferLength++] = c * 16 + n;
       } else {
-        if(bytes[i] !== gtCode) { // EOD marker at an odd number, behave as if a 0 followed the last digit.
-          buffer[bufferLength++] = c*16;
+        // EOD marker at an odd number, behave as if a 0 followed the last
+        // digit.
+        if (bytes[i] !== gtCode) {
+          buffer[bufferLength++] = c * 16;
         }
       }
     }
-    
+
     this.bufferLength = bufferLength;
     this.eof = true;
   };
-  
+
   return constructor;
 })();
 
@@ -1517,18 +1569,18 @@ var CCITTFaxStream = (function() {
   };
 
   constructor.prototype.lookChar = function() {
+    if (this.buf != EOF)
+      return this.buf;
+
     var refLine = this.refLine;
     var codingLine = this.codingLine;
     var columns = this.columns;
 
     var refPos, blackPixels, bits;
 
-    if (this.buf != EOF)
-      return buf;
-
     if (this.outputBits == 0) {
       if (this.eof)
-        return;
+        return null;
 
       this.err = false;
 
@@ -1747,7 +1799,7 @@ var CCITTFaxStream = (function() {
           code1 = this.lookBits(13);
           if (code1 == EOF) {
             this.eof = true;
-            return;
+            return null;
           }
           if ((code1 >> 1) == 1) {
             break;
@@ -1974,6 +2026,136 @@ var CCITTFaxStream = (function() {
   return constructor;
 })();
 
+var LZWStream = (function() {
+  function constructor(str, earlyChange) {
+    this.str = str;
+    this.dict = str.dict;
+    this.cachedData = 0;
+    this.bitsCached = 0;
+
+    var maxLzwDictionarySize = 4096;
+    var lzwState = {
+      earlyChange: earlyChange,
+      codeLength: 9,
+      nextCode: 258,
+      dictionaryValues: new Uint8Array(maxLzwDictionarySize),
+      dictionaryLengths: new Uint16Array(maxLzwDictionarySize),
+      dictionaryPrevCodes: new Uint16Array(maxLzwDictionarySize),
+      currentSequence: new Uint8Array(maxLzwDictionarySize),
+      currentSequenceLength: 0
+    };
+    for (var i = 0; i < 256; ++i) {
+      lzwState.dictionaryValues[i] = i;
+      lzwState.dictionaryLengths[i] = 1;
+    }
+    this.lzwState = lzwState;
+
+    DecodeStream.call(this);
+  }
+
+  constructor.prototype = Object.create(DecodeStream.prototype);
+
+  constructor.prototype.readBits = function(n) {
+    var bitsCached = this.bitsCached;
+    var cachedData = this.cachedData;
+    while (bitsCached < n) {
+      var c = this.str.getByte();
+      if (c == null) {
+        this.eof = true;
+        return;
+      }
+      cachedData = (cachedData << 8) | c;
+      bitsCached += 8;
+    }
+    this.bitsCached = (bitsCached -= n);
+    this.cachedData = cachedData;
+    this.lastCode = null;
+    return (cachedData >>> bitsCached) & ((1 << n) - 1);
+  };
+
+  constructor.prototype.readBlock = function() {
+    var blockSize = 512;
+    var estimatedDecodedSize = blockSize * 2, decodedSizeDelta = blockSize;
+    var i, j, q;
+
+    var lzwState = this.lzwState;
+    if (!lzwState)
+      return; // eof was found
+
+    var earlyChange = lzwState.earlyChange;
+    var nextCode = lzwState.nextCode;
+    var dictionaryValues = lzwState.dictionaryValues;
+    var dictionaryLengths = lzwState.dictionaryLengths;
+    var dictionaryPrevCodes = lzwState.dictionaryPrevCodes;
+    var codeLength = lzwState.codeLength;
+    var prevCode = lzwState.prevCode;
+    var currentSequence = lzwState.currentSequence;
+    var currentSequenceLength = lzwState.currentSequenceLength;
+
+    var decodedLength = 0;
+    var currentBufferLength = this.bufferLength;
+    var buffer = this.ensureBuffer(this.bufferLength + estimatedDecodedSize);
+
+    for (i = 0; i < blockSize; i++) {
+      var code = this.readBits(codeLength);
+      var hasPrev = currentSequenceLength > 0;
+      if (code < 256) {
+        currentSequence[0] = code;
+        currentSequenceLength = 1;
+      } else if (code >= 258) {
+        if (code < nextCode) {
+          currentSequenceLength = dictionaryLengths[code];
+          for (j = currentSequenceLength - 1, q = code; j >= 0; j--) {
+            currentSequence[j] = dictionaryValues[q];
+            q = dictionaryPrevCodes[q];
+          }
+        } else {
+          currentSequence[currentSequenceLength++] = currentSequence[0];
+        }
+      } else if (code == 256) {
+        codeLength = 9;
+        nextCode = 258;
+        currentSequenceLength = 0;
+        continue;
+      } else {
+        this.eof = true;
+        delete this.lzwState;
+        break;
+      }
+
+      if (hasPrev) {
+        dictionaryPrevCodes[nextCode] = prevCode;
+        dictionaryLengths[nextCode] = dictionaryLengths[prevCode] + 1;
+        dictionaryValues[nextCode] = currentSequence[0];
+        nextCode++;
+        codeLength = (nextCode + earlyChange) & (nextCode + earlyChange - 1) ?
+          codeLength : Math.min(Math.log(nextCode + earlyChange) /
+          0.6931471805599453 + 1, 12) | 0;
+      }
+      prevCode = code;
+
+      decodedLength += currentSequenceLength;
+      if (estimatedDecodedSize < decodedLength) {
+        do {
+          estimatedDecodedSize += decodedSizeDelta;
+        } while (estimatedDecodedSize < decodedLength);
+        buffer = this.ensureBuffer(this.bufferLength + estimatedDecodedSize);
+      }
+      for (j = 0; j < currentSequenceLength; j++)
+        buffer[currentBufferLength++] = currentSequence[j];
+    }
+    lzwState.nextCode = nextCode;
+    lzwState.codeLength = codeLength;
+    lzwState.prevCode = prevCode;
+    lzwState.currentSequenceLength = currentSequenceLength;
+
+    this.bufferLength = currentBufferLength;
+  };
+
+  return constructor;
+})();
+
+
 var Name = (function() {
   function constructor(name) {
     this.name = name;
@@ -2004,10 +2186,12 @@ var Dict = (function() {
   constructor.prototype = {
     get: function(key1, key2, key3) {
       var value;
-      if (typeof (value = this.map[key1]) != 'undefined' || key1 in this.map || typeof key2 == 'undefined') {
+      if (typeof (value = this.map[key1]) != 'undefined' || key1 in this.map ||
+          typeof key2 == 'undefined') {
         return value;
       }
-      if (typeof (value = this.map[key2]) != 'undefined' || key2 in this.map || typeof key3 == 'undefined') {
+      if (typeof (value = this.map[key2]) != 'undefined' || key2 in this.map ||
+          typeof key3 == 'undefined') {
         return value;
       }
 
@@ -2039,6 +2223,26 @@ var Ref = (function() {
   }
 
   constructor.prototype = {
+  };
+
+  return constructor;
+})();
+
+// The reference is identified by number and generation,
+// this structure stores only one instance of the reference.
+var RefSet = (function() {
+  function constructor() {
+    this.dict = {};
+  }
+
+  constructor.prototype = {
+    has: function(ref) {
+      return !!this.dict['R' + ref.num + '.' + ref.gen];
+    },
+
+    put: function(ref) {
+      this.dict['R' + ref.num + '.' + ref.gen] = ref;
+    }
   };
 
   return constructor;
@@ -2183,11 +2387,10 @@ var Lexer = (function() {
       } while (true);
       var value = parseFloat(str);
       if (isNaN(value))
-        error('Invalid floating point number');
+        error('Invalid floating point number: ' + value);
       return value;
     },
     getString: function() {
-      var n = 0;
       var numParen = 1;
       var done = false;
       var str = '';
@@ -2269,8 +2472,6 @@ var Lexer = (function() {
           break;
         }
       } while (!done);
-      if (!str.length)
-        return EOF;
       return str;
     },
     getName: function(ch) {
@@ -2285,7 +2486,7 @@ var Lexer = (function() {
             stream.skip();
             var x2 = ToHexDigit(stream.getChar());
             if (x2 == -1)
-              error('Illegal digit in hex char in name');
+              error('Illegal digit in hex char in name: ' + x2);
             str += String.fromCharCode((x << 4) | x2);
           } else {
             str += '#';
@@ -2296,7 +2497,8 @@ var Lexer = (function() {
         }
       }
       if (str.length > 128)
-        error('Warning: name token is longer than allowed by the spec.');
+        error('Warning: name token is longer than allowed by the spec: ' +
+              str.length);
       return new Name(str);
     },
     getHexString: function(ch) {
@@ -2314,14 +2516,14 @@ var Lexer = (function() {
         if (specialChars[ch.charCodeAt(0)] != 1) {
           var x, x2;
           if ((x = ToHexDigit(ch)) == -1)
-            error('Illegal character in hex string');
+            error('Illegal character in hex string: ' + ch);
 
           ch = stream.getChar();
           while (specialChars[ch.charCodeAt(0)] == 1)
             ch = stream.getChar();
 
           if ((x2 = ToHexDigit(ch)) == -1)
-            error('Illegal character in hex string');
+            error('Illegal character in hex string: ' + ch);
 
           str += String.fromCharCode((x << 4) | x2);
         }
@@ -2381,7 +2583,7 @@ var Lexer = (function() {
       return new Cmd(ch);
       // fall through
       case ')':
-      error('Illegal character');
+      error('Illegal character: ' + ch);
       return Error;
       }
 
@@ -2390,7 +2592,7 @@ var Lexer = (function() {
       while (!!(ch = stream.lookChar()) && !specialChars[ch.charCodeAt(0)]) {
         stream.skip();
         if (str.length == 128) {
-          error('Command token too long');
+          error('Command token too long: ' + str.length);
           break;
         }
         str += ch;
@@ -2415,6 +2617,9 @@ var Lexer = (function() {
           return;
         }
       }
+    },
+    skip: function() {
+      this.stream.skip();
     }
   };
 
@@ -2436,28 +2641,21 @@ var Parser = (function() {
       this.buf2 = this.lexer.getObj();
     },
     shift: function() {
-      if (this.inlineImg > 0) {
-        if (this.inlineImg < 2) {
-          this.inlineImg++;
-        } else {
-          // in a damaged content stream, if 'ID' shows up in the middle
-          // of a dictionary, we need to reset
-          this.inlineImg = 0;
-        }
-      } else if (IsCmd(this.buf2, 'ID')) {
-        this.lexer.skip(); // skip char after 'ID' command
-        this.inlineImg = 1;
-      }
-      this.buf1 = this.buf2;
-      // don't buffer inline image data
-      this.buf2 = (this.inlineImg > 0) ? null : this.lexer.getObj();
+      if (IsCmd(this.buf2, 'ID')) {
+        this.buf1 = this.buf2;
+        this.buf2 = null;
+        // skip byte after ID
+        this.lexer.skip();
+      } else {
+        this.buf1 = this.buf2;
+        this.buf2 = this.lexer.getObj();
+     }
     },
     getObj: function(cipherTransform) {
-      // refill buffer after inline image data
-      if (this.inlineImg == 2)
-        this.refill();
-
-      if (IsCmd(this.buf1, '[')) { // array
+      if (IsCmd(this.buf1, 'BI')) { // inline image
+        this.shift();
+        return this.makeInlineImage(cipherTransform);
+      } else if (IsCmd(this.buf1, '[')) { // array
         this.shift();
         var array = [];
         while (!IsCmd(this.buf1, ']') && !IsEOF(this.buf1))
@@ -2472,7 +2670,6 @@ var Parser = (function() {
         while (!IsCmd(this.buf1, '>>') && !IsEOF(this.buf1)) {
           if (!IsName(this.buf1)) {
             error('Dictionary key must be a name object');
-            shift();
           } else {
             var key = this.buf1.name;
             this.shift();
@@ -2492,7 +2689,6 @@ var Parser = (function() {
           this.shift();
         }
         return dict;
-
       } else if (IsInt(this.buf1)) { // indirect reference or integer
         var num = this.buf1;
         this.shift();
@@ -2516,6 +2712,46 @@ var Parser = (function() {
       this.shift();
       return obj;
     },
+    makeInlineImage: function(cipherTransform) {
+      var lexer = this.lexer;
+      var stream = lexer.stream;
+
+      // parse dictionary
+      var dict = new Dict();
+      while (!IsCmd(this.buf1, 'ID') && !IsEOF(this.buf1)) {
+        if (!IsName(this.buf1)) {
+          error('Dictionary key must be a name object');
+        } else {
+          var key = this.buf1.name;
+          this.shift();
+          if (IsEOF(this.buf1))
+            break;
+          dict.set(key, this.getObj(cipherTransform));
+        }
+      }
+
+      // parse image stream
+      var startPos = stream.pos;
+
+      var c1 = stream.getChar();
+      var c2 = stream.getChar();
+      while (!(c1 == 'E' && c2 == 'I') && c2 != null) {
+        c1 = c2;
+        c2 = stream.getChar();
+      }
+
+      var length = (stream.pos - 2) - startPos;
+      var imageStream = stream.makeSubStream(startPos, length, dict);
+      if (cipherTransform)
+        imageStream = cipherTransform.createStream(imageStream);
+      imageStream = this.filter(imageStream, dict, length);
+      imageStream.parameters = dict;
+
+      this.buf2 = new Cmd('EI');
+      this.shift();
+
+      return imageStream;
+    },
     makeStream: function(dict, cipherTransform) {
       var lexer = this.lexer;
       var stream = lexer.stream;
@@ -2530,7 +2766,7 @@ var Parser = (function() {
       if (xref)
         length = xref.fetchIfRef(length);
       if (!IsInt(length)) {
-        error("Bad 'Length' attribute in stream");
+        error('Bad ' + Length + ' attribute in stream');
         length = 0;
       }
 
@@ -2539,7 +2775,7 @@ var Parser = (function() {
       this.shift(); // '>>'
       this.shift(); // 'stream'
       if (!IsCmd(this.buf1, 'endstream'))
-        error("Missing 'endstream'");
+        error('Missing endstream');
       this.shift();
 
       stream = stream.makeSubStream(pos, length, dict);
@@ -2560,7 +2796,7 @@ var Parser = (function() {
         for (var i = 0, ii = filterArray.length; i < ii; ++i) {
           filter = filterArray[i];
           if (!IsName(filter))
-            error('Bad filter name');
+            error('Bad filter name: ' + filter);
           else {
             params = null;
             if (IsArray(paramsArray) && (i in paramsArray))
@@ -2577,18 +2813,26 @@ var Parser = (function() {
           return new PredictorStream(new FlateStream(stream), params);
         }
         return new FlateStream(stream);
-      } else if (name == 'DCTDecode') {
+      } else if (name == 'LZWDecode' || name == 'LZW') {
+        var earlyChange = 1;
+        if (params) {
+          if (params.has('EarlyChange'))
+            earlyChange = params.get('EarlyChange');
+          return new PredictorStream(
+            new LZWStream(stream, earlyChange), params);
+        }
+        return new LZWStream(stream, earlyChange);
+      } else if (name == 'DCTDecode' || name == 'DCT') {
         var bytes = stream.getBytes(length);
         return new JpegStream(bytes, stream.dict);
-      } else if (name == 'ASCII85Decode') {
+      } else if (name == 'ASCII85Decode' || name == 'A85') {
         return new Ascii85Stream(stream);
-      } else if (name == 'ASCIIHexDecode') {
+      } else if (name == 'ASCIIHexDecode' || name == 'AHx') {
         return new AsciiHexStream(stream);
-      } else if (name == 'CCITTFaxDecode') {
-        TODO('implement fax stream');
+      } else if (name == 'CCITTFaxDecode' || name == 'CCF') {
         return new CCITTFaxStream(stream, params);
       } else {
-        error("filter '" + name + "' not supported yet");
+        error('filter "' + name + '" not supported yet');
       }
       return stream;
     }
@@ -2621,7 +2865,7 @@ var Linearization = (function() {
           obj > 0) {
         return obj;
       }
-      error("'" + name + "' field in linearization table is invalid");
+      error('"' + name + '" field in linearization table is invalid');
       return 0;
     },
     getHint: function(index) {
@@ -2634,7 +2878,7 @@ var Linearization = (function() {
           obj2 > 0) {
         return obj2;
       }
-      error('Hints table in linearization table is invalid');
+      error('Hints table in linearization table is invalid: ' + index);
       return 0;
     },
     get length() {
@@ -2709,14 +2953,14 @@ var XRef = (function() {
           error('Invalid XRef table');
         var n = obj;
         if (first < 0 || n < 0 || (first + n) != ((first + n) | 0))
-          error('Invalid XRef table');
+          error('Invalid XRef table: ' + first + ', ' + n);
         for (var i = first; i < first + n; ++i) {
           var entry = {};
           if (!IsInt(obj = parser.getObj()))
-            error('Invalid XRef table');
+            error('Invalid XRef table: ' + first + ', ' + n);
           entry.offset = obj;
           if (!IsInt(obj = parser.getObj()))
-            error('Invalid XRef table');
+            error('Invalid XRef table: ' + first + ', ' + n);
           entry.gen = obj;
           obj = parser.getObj();
           if (IsCmd(obj, 'n')) {
@@ -2724,7 +2968,7 @@ var XRef = (function() {
           } else if (IsCmd(obj, 'f')) {
             entry.free = true;
           } else {
-            error('Invalid XRef table');
+            error('Invalid XRef table: ' + first + ', ' + n);
           }
           if (!this.entries[i]) {
             // In some buggy PDF files the xref table claims to start at 1
@@ -2779,13 +3023,13 @@ var XRef = (function() {
       while (range.length > 0) {
         var first = range[0], n = range[1];
         if (!IsInt(first) || !IsInt(n))
-          error('Invalid XRef range fields');
+          error('Invalid XRef range fields: ' + first + ', ' + n);
         var typeFieldWidth = byteWidths[0];
         var offsetFieldWidth = byteWidths[1];
         var generationFieldWidth = byteWidths[2];
         if (!IsInt(typeFieldWidth) || !IsInt(offsetFieldWidth) ||
             !IsInt(generationFieldWidth)) {
-          error('Invalid XRef entry fields length');
+          error('Invalid XRef entry fields length: ' + first + ', ' + n);
         }
         for (i = 0; i < n; ++i) {
           var type = 0, offset = 0, generation = 0;
@@ -2811,7 +3055,7 @@ var XRef = (function() {
           case 2:
             break;
           default:
-            error('Invalid XRef entry type');
+            error('Invalid XRef entry type: ' + type);
             break;
           }
           if (!this.entries[first + i])
@@ -2912,12 +3156,12 @@ var XRef = (function() {
       for (i = 0; i < n; ++i) {
         var num = parser.getObj();
         if (!IsInt(num)) {
-          error('invalid object number in the ObjStm stream');
+          error('invalid object number in the ObjStm stream: ' + num);
         }
         nums.push(num);
         var offset = parser.getObj();
         if (!IsInt(offset)) {
-          error('invalid object offset in the ObjStm stream');
+          error('invalid object offset in the ObjStm stream: ' + offset);
         }
       }
       // read stream objects for cache
@@ -2940,16 +3184,18 @@ var XRef = (function() {
 })();
 
 var Page = (function() {
-  function constructor(xref, pageNumber, pageDict) {
+  function constructor(xref, pageNumber, pageDict, ref) {
     this.pageNumber = pageNumber;
     this.pageDict = pageDict;
     this.stats = {
       create: Date.now(),
       compile: 0.0,
       fonts: 0.0,
-      render: 0.0,
+      images: 0.0,
+      render: 0.0
     };
     this.xref = xref;
+    this.ref = ref;
   }
 
   constructor.prototype = {
@@ -2959,7 +3205,7 @@ var Page = (function() {
     inheritPageProp: function(key) {
       var dict = this.pageDict;
       var obj = dict.get(key);
-      while (!obj) {
+      while (obj === undefined) {
         dict = this.xref.fetchIfRef(dict.get('Parent'));
         if (!dict)
           break;
@@ -2978,32 +3224,79 @@ var Page = (function() {
       return shadow(this, 'mediaBox',
                     ((IsArray(obj) && obj.length == 4) ? obj : null));
     },
+    get annotations() {
+      return shadow(this, 'annotations', this.inheritPageProp('Annots'));
+    },
+    get width() {
+      var mediaBox = this.mediaBox;
+      var rotate = this.rotate;
+      var width;
+      if (rotate == 0 || rotate == 180) {
+        width = (mediaBox[2] - mediaBox[0]);
+      } else {
+        width = (mediaBox[3] - mediaBox[1]);
+      }
+      return shadow(this, 'width', width);
+    },
+    get height() {
+      var mediaBox = this.mediaBox;
+      var rotate = this.rotate;
+      var height;
+      if (rotate == 0 || rotate == 180) {
+        height = (mediaBox[3] - mediaBox[1]);
+      } else {
+        height = (mediaBox[2] - mediaBox[0]);
+      }
+      return shadow(this, 'height', height);
+    },
+    get rotate() {
+      var rotate = this.inheritPageProp('Rotate') || 0;
+      // Normalize rotation so it's a multiple of 90 and between 0 and 270
+      if (rotate % 90 != 0) {
+        rotate = 0;
+      } else if (rotate >= 360) {
+        rotate = rotate % 360;
+      } else if (rotate < 0) {
+        // The spec doesn't cover negatives, assume its counterclockwise
+        // rotation. The following is the other implementation of modulo.
+        rotate = ((rotate % 360) + 360) % 360;
+      }
+      return shadow(this, 'rotate', rotate);
+    },
     startRendering: function(canvasCtx, continuation, onerror) {
       var self = this;
       var stats = self.stats;
       stats.compile = stats.fonts = stats.render = 0;
 
       var gfx = new CanvasGraphics(canvasCtx);
-      var fonts = [ ];
+      var fonts = [];
+      var images = new ImagesLoader();
 
-      this.compile(gfx, fonts);
+      this.compile(gfx, fonts, images);
       stats.compile = Date.now();
+
+      var displayContinuation = function() {
+        // Always defer call to display() to work around bug in
+        // Firefox error reporting from XHR callbacks.
+        setTimeout(function() {
+          var exc = null;
+          try {
+            self.display(gfx);
+            stats.render = Date.now();
+          } catch (e) {
+            exc = e.toString();
+          }
+          continuation(exc);
+        });
+      };
 
       var fontObjs = FontLoader.bind(
         fonts,
         function() {
           stats.fonts = Date.now();
-          // Always defer call to display() to work around bug in
-          // Firefox error reporting from XHR callbacks.
-          setTimeout(function () {
-            var exc = null;
-            try {
-              self.display(gfx);
-              stats.render = Date.now();
-            } catch (e) {
-              exc = e.toString();
-            }
-            continuation(exc);
+          images.notifyOnLoad(function() {
+            stats.images = Date.now();
+            displayContinuation();
           });
         });
 
@@ -3012,7 +3305,7 @@ var Page = (function() {
     },
 
 
-    compile: function(gfx, fonts) {
+    compile: function(gfx, fonts, images) {
       if (this.code) {
         // content was compiled
         return;
@@ -3024,14 +3317,15 @@ var Page = (function() {
       if (!IsArray(this.content)) {
         // content is not an array, shortcut
         content = xref.fetchIfRef(this.content);
-        this.code = gfx.compile(content, xref, resources, fonts);
+        this.code = gfx.compile(content, xref, resources, fonts, images);
         return;
       }
       // the content is an array, compiling all items
       var i, n = this.content.length, compiledItems = [];
       for (i = 0; i < n; ++i) {
         content = xref.fetchIfRef(this.content[i]);
-        compiledItems.push(gfx.compile(content, xref, resources, fonts));
+        compiledItems.push(gfx.compile(content, xref, resources, fonts,
+                                       images));
       }
       // creating the function that executes all compiled items
       this.code = function(gfx) {
@@ -3049,10 +3343,64 @@ var Page = (function() {
       var mediaBox = xref.fetchIfRef(this.mediaBox);
       assertWellFormed(IsDict(resources), 'invalid page resources');
       gfx.beginDrawing({ x: mediaBox[0], y: mediaBox[1],
-            width: mediaBox[2] - mediaBox[0],
-            height: mediaBox[3] - mediaBox[1] });
+            width: this.width,
+            height: this.height,
+            rotate: this.rotate });
       gfx.execute(this.code, xref, resources);
       gfx.endDrawing();
+    },
+    rotatePoint: function(x, y) {
+      var rotate = this.rotate;
+      switch (rotate) {
+        default:
+        case 0:
+          return {x: x, y: this.height - y};
+        case 180:
+          return {x: this.width - x, y: y};
+        case 90:
+          return {x: this.width - y, y: this.height - x};
+        case 270:
+          return {x: y, y: x};
+      }
+    },
+    getLinks: function() {
+      var xref = this.xref;
+      var annotations = xref.fetchIfRef(this.annotations) || [];
+      var i, n = annotations.length;
+      var links = [];
+      for (i = 0; i < n; ++i) {
+        var annotation = xref.fetch(annotations[i]);
+        if (!IsDict(annotation, 'Annot'))
+          continue;
+        var subtype = annotation.get('Subtype');
+        if (!IsName(subtype) || subtype.name != 'Link')
+          continue;
+        var rect = annotation.get('Rect');
+        var topLeftCorner = this.rotatePoint(rect[0], rect[1]);
+        var bottomRightCorner = this.rotatePoint(rect[2], rect[3]);
+
+        var link = {};
+        link.x = Math.min(topLeftCorner.x, bottomRightCorner.x);
+        link.y = Math.min(topLeftCorner.y, bottomRightCorner.y);
+        link.width = Math.abs(topLeftCorner.x - bottomRightCorner.x);
+        link.height = Math.abs(topLeftCorner.y - bottomRightCorner.y);
+        var a = this.xref.fetchIfRef(annotation.get('A'));
+        if (a) {
+          switch (a.get('S').name) {
+            case 'URI':
+              link.url = a.get('URI');
+              break;
+            case 'GoTo':
+              link.dest = a.get('D');
+              break;
+            default:
+              TODO('other link types');
+              break;
+          }
+        }
+        links.push(link);
+      }
+      return links;
     }
   };
 
@@ -3076,6 +3424,63 @@ var Catalog = (function() {
       // shadow the prototype getter
       return shadow(this, 'toplevelPagesDict', obj);
     },
+    get documentOutline() {
+      function convertIfUnicode(str) {
+        if (str[0] === '\xFE' && str[1] === '\xFF') {
+          // UTF16BE BOM
+          var i, n = str.length, str2 = '';
+          for (i = 2; i < n; i += 2)
+            str2 += String.fromCharCode(
+              (str.charCodeAt(i) << 8) | str.charCodeAt(i + 1));
+          str = str2;
+        }
+        return str;
+      }
+      var obj = this.catDict.get('Outlines');
+      var root = { items: [] };
+      if (IsRef(obj)) {
+        obj = this.xref.fetch(obj).get('First');
+        var processed = new RefSet();
+        if (IsRef(obj)) {
+          var queue = [{obj: obj, parent: root}];
+          // to avoid recursion keeping track of the items
+          // in the processed dictionary
+          processed.put(obj);
+          while (queue.length > 0) {
+            var i = queue.shift();
+            var outlineDict = this.xref.fetch(i.obj);
+            if (!outlineDict.has('Title'))
+              error('Invalid outline item');
+            var dest = outlineDict.get('Dest');
+            if (!dest && outlineDict.get('A')) {
+              var a = this.xref.fetchIfRef(outlineDict.get('A'));
+              dest = a.get('D');
+            }
+            var outlineItem = {
+              dest: dest,
+              title: convertIfUnicode(outlineDict.get('Title')),
+              color: outlineDict.get('C') || [0, 0, 0],
+              count: outlineDict.get('Count'),
+              bold: !!(outlineDict.get('F') & 2),
+              italic: !!(outlineDict.get('F') & 1),
+              items: []
+            };
+            i.parent.items.push(outlineItem);
+            obj = outlineDict.get('First');
+            if (IsRef(obj) && !processed.has(obj)) {
+              queue.push({obj: obj, parent: outlineItem});
+              processed.put(obj);
+            }
+            obj = outlineDict.get('Next');
+            if (IsRef(obj) && !processed.has(obj)) {
+              queue.push({obj: obj, parent: i.parent});
+              processed.put(obj);
+            }
+          }
+        }
+      }
+      return shadow(this, 'documentOutline', root);
+    },
     get numPages() {
       var obj = this.toplevelPagesDict.get('Count');
       assertWellFormed(
@@ -3096,7 +3501,7 @@ var Catalog = (function() {
                          'page dictionary kid is not a reference');
         var obj = this.xref.fetch(kid);
         if (IsDict(obj, 'Page') || (IsDict(obj) && !obj.has('Kids'))) {
-          pageCache.push(new Page(this.xref, pageCache.length, obj));
+          pageCache.push(new Page(this.xref, pageCache.length, obj, kid));
         } else { // must be a child page dictionary
           assertWellFormed(
             IsDict(obj),
@@ -3105,6 +3510,39 @@ var Catalog = (function() {
           this.traverseKids(obj);
         }
       }
+    },
+    get destinations() {
+      var xref = this.xref;
+      var obj = this.catDict.get('Names');
+      obj = obj ? xref.fetch(obj) : this.catDict;
+      obj = obj.get('Dests');
+      var dests = {};
+      if (obj) {
+        // reading name tree
+        var processed = new RefSet();
+        processed.put(obj);
+        var queue = [obj];
+        while (queue.length > 0) {
+          var i, n;
+          obj = xref.fetch(queue.shift());
+          if (obj.has('Kids')) {
+            var kids = obj.get('Kids');
+            for (i = 0, n = kids.length; i < n; i++) {
+              var kid = kids[i];
+              if (processed.has(kid))
+                error('invalid destinations');
+              queue.push(kid);
+              processed.put(kid);
+            }
+            continue;
+          }
+          var names = obj.get('Names');
+          for (i = 0, n = names.length; i < n; i += 2) {
+            dests[names[i]] = xref.fetch(names[i + 1]).get('D');
+          }
+        }
+      }
+      return shadow(this, 'destinations', dests);
     },
     getPage: function(n) {
       var pageCache = this.pageCache;
@@ -3469,7 +3907,7 @@ var EvalState = (function() {
 var PartialEvaluator = (function() {
   function constructor() {
     this.state = new EvalState();
-    this.stateStack = [ ];
+    this.stateStack = [];
   }
 
   var OP_MAP = {
@@ -3551,6 +3989,8 @@ var PartialEvaluator = (function() {
 
     // Images
     BI: 'beginInlineImage',
+    ID: 'beginImageData',
+    EI: 'endInlineImage',
 
     // XObjects
     Do: 'paintXObject',
@@ -3568,12 +4008,13 @@ var PartialEvaluator = (function() {
   };
 
   constructor.prototype = {
-    eval: function(stream, xref, resources, fonts) {
+    eval: function(stream, xref, resources, fonts, images) {
       resources = xref.fetchIfRef(resources) || new Dict();
       var xobjs = xref.fetchIfRef(resources.get('XObject')) || new Dict();
+      var patterns = xref.fetchIfRef(resources.get('Pattern')) || new Dict();
       var parser = new Parser(new Lexer(stream), false);
       var args = [], argsArray = [], fnArray = [], obj;
-      
+
       while (!IsEOF(obj = parser.getObj())) {
         if (IsCmd(obj)) {
           var cmd = obj.cmd;
@@ -3581,7 +4022,23 @@ var PartialEvaluator = (function() {
           assertWellFormed(fn, "Unknown command '" + cmd + "'");
           // TODO figure out how to type-check vararg functions
 
-          if (cmd == 'Do' && !args[0].code) { // eagerly compile XForm objects
+          if ((cmd == 'SCN' || cmd == 'scn') && !args[args.length - 1].code) {
+            // compile tiling patterns
+            var patternName = args[args.length - 1];
+            // SCN/scn applies patterns along with normal colors
+            if (IsName(patternName)) {
+              var pattern = xref.fetchIfRef(patterns.get(patternName.name));
+              if (pattern) {
+                var dict = IsStream(pattern) ? pattern.dict : pattern;
+                var typeNum = dict.get('PatternType');
+                if (typeNum == 1) {
+                  patternName.code = this.eval(pattern, xref,
+                      dict.get('Resources'), fonts);
+                }
+              }
+            }
+          } else if (cmd == 'Do' && !args[0].code) {
+            // eagerly compile XForm objects
             var name = args[0].name;
             var xobj = xobjs.get(name);
             if (xobj) {
@@ -3595,8 +4052,11 @@ var PartialEvaluator = (function() {
               );
 
               if ('Form' == type.name) {
-                args[0].code = this.eval(xobj, xref, xobj.dict.get('Resources'), fonts);
+                args[0].code = this.eval(xobj, xref, xobj.dict.get('Resources'),
+                                         fonts, images);
               }
+              if (xobj instanceof JpegStream)
+                images.bind(xobj); // monitoring image load
             }
           } else if (cmd == 'Tf') { // eagerly collect all fonts
             var fontRes = resources.get('Font');
@@ -3625,7 +4085,7 @@ var PartialEvaluator = (function() {
       }
 
       return function(gfx) {
-        for(var i = 0, length = argsArray.length; i < length; i++)
+        for (var i = 0, length = argsArray.length; i < length; i++)
           gfx[fnArray[i]].apply(gfx, argsArray[i]);
       }
     },
@@ -3636,8 +4096,8 @@ var PartialEvaluator = (function() {
       var subType = fontDict.get('Subtype');
       var compositeFont = false;
       assertWellFormed(IsName(subType), 'invalid font Subtype');
-      
-      // If font is a composite 
+
+      // If font is a composite
       //  - get the descendant font
       //  - set the type according to the descendant font
       //  - get the FontDescriptor from the descendant font
@@ -3657,13 +4117,22 @@ var PartialEvaluator = (function() {
       } else {
         fd = fontDict.get('FontDescriptor');
       }
-      
-      if (!fd)
-        return null;
-      
+
+      if (!fd) {
+        var baseFontName = fontDict.get('BaseFont');
+        if (!IsName(baseFontName))
+          return null;
+        // Using base font name as a font name.
+        return {
+          name: baseFontName.name.replace(/[\+,\-]/g, '_'),
+          fontDict: fontDict,
+          properties: {}
+        };
+      }
+
       var descriptor = xref.fetch(fd);
 
-      var fontName = descriptor.get('FontName');
+      var fontName = xref.fetchIfRef(descriptor.get('FontName'));
       assertWellFormed(IsName(fontName), 'invalid font name');
       fontName = fontName.name.replace(/[\+,\-]/g, '_');
 
@@ -3675,29 +4144,34 @@ var PartialEvaluator = (function() {
         if (subType.name == 'CIDFontType2') {
           var cidToGidMap = descendant.get('CIDToGIDMap');
           if (cidToGidMap && IsRef(cidToGidMap)) {
-            // Extract the charset from the CIDToGIDMap
+            // Extract the encoding from the CIDToGIDMap
             var glyphsStream = xref.fetchIfRef(cidToGidMap);
             var glyphsData = glyphsStream.getBytes(0);
-            var i = 0;
             // Glyph ids are big-endian 2-byte values
-            for (var j=0; j<glyphsData.length; j++) {
+            // Set this to 0 to verify the font has an encoding.
+            encodingMap[0] = 0;
+            for (var j = 0; j < glyphsData.length; j++) {
               var glyphID = (glyphsData[j++] << 8) | glyphsData[j];
-              charset.push(glyphID);
+              if (glyphID != 0)
+                encodingMap[j >> 1] = glyphID;
             }
           }
         }
         else {
-          // XXX This is a placeholder for handling of the encoding of CIDFontType0 fonts
+          // XXX This is a placeholder for handling of the encoding of
+          // CIDFontType0 fonts
           var encoding = xref.fetchIfRef(fontDict.get('Encoding'));
           if (IsName(encoding)) {
             // Encoding is a predefined CMap
             if (encoding.name == 'Identity-H') {
-              TODO ('Need to create an identity cmap')
+              TODO('Need to create an identity cmap');
             } else {
-              TODO ('Need to support predefined CMaps see PDF 32000-1:2008 9.7.5.2 Predefined CMaps')
+              TODO('Need to support predefined CMaps see PDF 32000-1:2008 ' +
+                   '9.7.5.2 Predefined CMaps');
             }
           } else {
-            TODO ('Need to support encoding streams see PDF 32000-1:2008  9.7.5.3'); 
+            TODO('Need to support encoding streams see PDF 32000-1:2008 ' +
+                 '9.7.5.3');
           }
         }
       } else if (fontDict.has('Encoding')) {
@@ -3719,10 +4193,11 @@ var PartialEvaluator = (function() {
           var index = 0;
           for (var j = 0; j < differences.length; j++) {
             var data = differences[j];
-            if (subType.name == 'TrueType') {
-              IsNum(data) ? index = data : encodingMap[index++] = j;
+            if (IsNum(data)) {
+              index = data;
             } else {
-              IsNum(data) ? index = data : encodingMap[index++] = GlyphsUnicode[data.name];
+              encodingMap[index++] = (subType.name == 'TrueType') ? j :
+                                     GlyphsUnicode[data.name];
             }
           }
 
@@ -3862,11 +4337,11 @@ var PartialEvaluator = (function() {
 
       return {
         name: fontName,
-        fontDict: fontDict, 
+        fontDict: fontDict,
         file: fontFile,
         properties: properties
       };
-    },
+    }
   };
 
   return constructor;
@@ -3903,6 +4378,10 @@ var CanvasExtraState = (function() {
   constructor.prototype = {
     clone: function canvasextra_clone() {
       return Object.create(this);
+    },
+    setCurrentPoint: function canvasextra_setCurrentPoint(x, y) {
+      this.x = x;
+      this.y = y;
     }
   };
   return constructor;
@@ -3938,13 +4417,26 @@ var CanvasGraphics = (function() {
     beginDrawing: function(mediaBox) {
       var cw = this.ctx.canvas.width, ch = this.ctx.canvas.height;
       this.ctx.save();
-      this.ctx.scale(cw / mediaBox.width, -ch / mediaBox.height);
-      this.ctx.translate(0, -mediaBox.height);
+      switch (mediaBox.rotate) {
+        case 0:
+          this.ctx.transform(1, 0, 0, -1, 0, ch);
+          break;
+        case 90:
+          this.ctx.transform(0, 1, 1, 0, 0, 0);
+          break;
+        case 180:
+          this.ctx.transform(-1, 0, 0, 1, cw, 0);
+          break;
+        case 270:
+          this.ctx.transform(0, -1, -1, 0, cw, ch);
+          break;
+      }
+      this.ctx.scale(cw / mediaBox.width, ch / mediaBox.height);
     },
 
-    compile: function(stream, xref, resources, fonts) {
+    compile: function(stream, xref, resources, fonts, images) {
       var pe = new PartialEvaluator();
-      return pe.eval(stream, xref, resources, fonts);
+      return pe.eval(stream, xref, resources, fonts, images);
     },
 
     execute: function(code, xref, resources) {
@@ -4017,18 +4509,24 @@ var CanvasGraphics = (function() {
     // Path
     moveTo: function(x, y) {
       this.ctx.moveTo(x, y);
+      this.current.setCurrentPoint(x, y);
     },
     lineTo: function(x, y) {
       this.ctx.lineTo(x, y);
+      this.current.setCurrentPoint(x, y);
     },
     curveTo: function(x1, y1, x2, y2, x3, y3) {
       this.ctx.bezierCurveTo(x1, y1, x2, y2, x3, y3);
+      this.current.setCurrentPoint(x3, y3);
     },
     curveTo2: function(x2, y2, x3, y3) {
-      TODO("'v' operator: need current point in gfx context");
+      var current = this.current;
+      this.ctx.bezierCurveTo(current.x, current.y, x2, y2, x3, y3);
+      current.setCurrentPoint(x3, y3);
     },
     curveTo3: function(x1, y1, x3, y3) {
       this.curveTo(x1, y1, x3, y3, x3, y3);
+      this.current.setCurrentPoint(x3, y3);
     },
     closePath: function() {
       this.ctx.closePath();
@@ -4039,7 +4537,7 @@ var CanvasGraphics = (function() {
     stroke: function() {
       var ctx = this.ctx;
       var strokeColor = this.current.strokeColor;
-      if (strokeColor && strokeColor.type === "Pattern") {
+      if (strokeColor && strokeColor.type === 'Pattern') {
         // for patterns, we transform to pattern space, calculate
         // the pattern, call stroke, and restore to user space
         ctx.save();
@@ -4060,7 +4558,7 @@ var CanvasGraphics = (function() {
       var ctx = this.ctx;
       var fillColor = this.current.fillColor;
 
-      if (fillColor && fillColor.type === "Pattern") {
+      if (fillColor && fillColor.type === 'Pattern') {
         ctx.save();
         ctx.fillStyle = fillColor.getPattern(ctx);
         ctx.fill();
@@ -4080,7 +4578,7 @@ var CanvasGraphics = (function() {
       var ctx = this.ctx;
 
       var fillColor = this.current.fillColor;
-      if (fillColor && fillColor.type === "Pattern") {
+      if (fillColor && fillColor.type === 'Pattern') {
         ctx.save();
         ctx.fillStyle = fillColor.getPattern(ctx);
         ctx.fill();
@@ -4088,9 +4586,9 @@ var CanvasGraphics = (function() {
       } else {
         ctx.fill();
       }
-      
+
       var strokeColor = this.current.strokeColor;
-      if (strokeColor && strokeColor.type === "Pattern") {
+      if (strokeColor && strokeColor.type === 'Pattern') {
         ctx.save();
         ctx.strokeStyle = strokeColor.getPattern(ctx);
         ctx.stroke();
@@ -4098,7 +4596,7 @@ var CanvasGraphics = (function() {
       } else {
         ctx.stroke();
       }
-      
+
       this.consumePath();
     },
     eoFillStroke: function() {
@@ -4179,9 +4677,9 @@ var CanvasGraphics = (function() {
 
         size = (size <= kRasterizerMin) ? size * kScalePrecision : size;
 
-        var bold = fontObj.bold ? "bold" : "normal";
-        var italic = fontObj.italic ? "italic" : "normal";
-        var rule = bold + " " + italic + " " + size + 'px "' + name + '"';
+        var bold = fontObj.bold ? 'bold' : 'normal';
+        var italic = fontObj.italic ? 'italic' : 'normal';
+        var rule = italic + ' ' + bold + ' ' + size + 'px "' + name + '"';
         this.ctx.font = rule;
       }
     },
@@ -4223,7 +4721,7 @@ var CanvasGraphics = (function() {
       ctx.save();
       ctx.transform.apply(ctx, current.textMatrix);
       ctx.scale(1, -1);
-      
+
       ctx.translate(current.x, -1 * current.y);
 
       var scaleFactorX = 1, scaleFactorY = 1;
@@ -4270,7 +4768,8 @@ var CanvasGraphics = (function() {
           if (this.ctx.$addCurrentX) {
             this.ctx.$addCurrentX(-e * 0.001 * this.current.fontSize);
           } else {
-            this.current.x -= e * 0.001 * this.current.fontSize * this.current.textHScale;
+            this.current.x -= e * 0.001 * this.current.fontSize *
+                              this.current.textHScale;
           }
         } else if (IsString(e)) {
           this.showText(e);
@@ -4299,11 +4798,11 @@ var CanvasGraphics = (function() {
 
     // Color
     setStrokeColorSpace: function(space) {
-      this.current.strokeColorSpace = 
+      this.current.strokeColorSpace =
           ColorSpace.parse(space, this.xref, this.res);
     },
     setFillColorSpace: function(space) {
-      this.current.fillColorSpace = 
+      this.current.fillColorSpace =
           ColorSpace.parse(space, this.xref, this.res);
     },
     setStrokeColor: function(/*...*/) {
@@ -4403,7 +4902,7 @@ var CanvasGraphics = (function() {
         var y0 = Math.min(bl[1], br[1], ul[1], ur[1]);
         var x1 = Math.max(bl[0], br[0], ul[0], ur[0]);
         var y1 = Math.max(bl[1], br[1], ul[1], ur[1]);
-        
+
         this.ctx.fillRect(x0, y0, x1 - x0, y1 - y0);
       } else {
         // HACK to draw the gradient onto an infinite rectangle.
@@ -4411,7 +4910,7 @@ var CanvasGraphics = (function() {
         // Canvas only allows gradients to be drawn in a rectangle
         // The following bug should allow us to remove this.
         // https://bugzilla.mozilla.org/show_bug.cgi?id=664884
-      
+
         this.ctx.fillRect(-1e10, -1e10, 2e10, 2e10);
       }
 
@@ -4420,11 +4919,13 @@ var CanvasGraphics = (function() {
 
     // Images
     beginInlineImage: function() {
-      TODO('inline images');
-      error('(Stream will not be parsed properly, bailing now)');
-      // Like an inline stream:
-      //  - key/value pairs up to Cmd(ID)
-      //  - then image data up to Cmd(EI)
+      error('Should not call beginInlineImage');
+    },
+    beginImageData: function() {
+      error('Should not call beginImageData');
+    },
+    endInlineImage: function(image) {
+      this.paintImageXObject(null, image, true);
     },
 
     // XObjects
@@ -4505,7 +5006,14 @@ var CanvasGraphics = (function() {
       var imgData = tmpCtx.getImageData(0, 0, w, h);
       var pixels = imgData.data;
 
-      imageObj.fillRgbaBuffer(pixels);
+      if (imageObj.imageMask) {
+        var inverseDecode = imageObj.decode && imageObj.decode[0] > 0;
+        // TODO fillColor pattern support
+        var fillColor = this.current.fillColor;
+        imageObj.fillUsingStencilMask(pixels, fillColor,
+                                      inverseDecode);
+      } else
+        imageObj.fillRgbaBuffer(pixels);
 
       tmpCtx.putImageData(imgData, 0, 0);
       ctx.drawImage(tmpCanvas, 0, -h);
@@ -4565,7 +5073,7 @@ var CanvasGraphics = (function() {
     },
     restoreFillRule: function(rule) {
       this.ctx.mozFillRule = rule;
-    },
+    }
   };
 
   return constructor;
@@ -4587,7 +5095,7 @@ var Util = (function() {
     var yt = p[0] * m[1] + p[1] * m[3] + m[5];
     return [xt, yt];
   };
-  
+
   return constructor;
 })();
 
@@ -4601,12 +5109,12 @@ var ColorSpace = (function() {
     // Input: array of size numComps representing color component values
     // Output: array of rgb values, each value ranging from [0.1]
     getRgb: function cs_getRgb(color) {
-      error('Should not call ColorSpace.getRgb');
+      error('Should not call ColorSpace.getRgb: ' + color);
     },
     // Input: Uint8Array of component values, each value scaled to [0,255]
     // Output: Uint8Array of rgb values, each value scaled to [0,255]
     getRgbBuffer: function cs_getRgbBuffer(input) {
-      error('Should not call ColorSpace.getRgbBuffer');
+      error('Should not call ColorSpace.getRgbBuffer: ' + input);
     }
   };
 
@@ -4700,10 +5208,10 @@ var ColorSpace = (function() {
       case 'Lab':
       case 'DeviceN':
       default:
-        error("unimplemented color space object '" + mode + "'");
+        error('unimplemented color space object "' + mode + '"');
       }
     } else {
-      error('unrecognized color space object: "'+ cs +"'");
+      error('unrecognized color space object: "' + cs + '"');
     }
   };
 
@@ -4712,7 +5220,7 @@ var ColorSpace = (function() {
 
 var SeparationCS = (function() {
   function constructor(base, tintFn) {
-    this.name = "Separation";
+    this.name = 'Separation';
     this.numComps = 1;
     this.defaultColor = [1];
 
@@ -4777,7 +5285,7 @@ var IndexedCS = (function() {
       for (var i = 0; i < length; ++i)
         lookupArray[i] = lookup.charCodeAt(i);
     } else {
-      error('Unrecognized lookup table');
+      error('Unrecognized lookup table: ' + lookup);
     }
     this.lookup = lookupArray;
   }
@@ -4879,41 +5387,41 @@ var DeviceCmykCS = (function() {
       r += 0.1373 * x;
       g += 0.1216 * x;
       b += 0.1255 * x;
-      x = c1 * m1 * y  * k1; // 0 0 1 0
+      x = c1 * m1 * y * k1; // 0 0 1 0
       r += x;
       g += 0.9490 * x;
-      x = c1 * m1 * y  * k;  // 0 0 1 1
+      x = c1 * m1 * y * k;  // 0 0 1 1
       r += 0.1098 * x;
       g += 0.1020 * x;
-      x = c1 * m  * y1 * k1; // 0 1 0 0
+      x = c1 * m * y1 * k1; // 0 1 0 0
       r += 0.9255 * x;
       b += 0.5490 * x;
-      x = c1 * m  * y1 * k;  // 0 1 0 1
+      x = c1 * m * y1 * k;  // 0 1 0 1
       r += 0.1412 * x;
-      x = c1 * m  * y  * k1; // 0 1 1 0
+      x = c1 * m * y * k1; // 0 1 1 0
       r += 0.9294 * x;
       g += 0.1098 * x;
       b += 0.1412 * x;
-      x = c1 * m  * y  * k;  // 0 1 1 1
+      x = c1 * m * y * k;  // 0 1 1 1
       r += 0.1333 * x;
-      x = c  * m1 * y1 * k1; // 1 0 0 0
+      x = c * m1 * y1 * k1; // 1 0 0 0
       g += 0.6784 * x;
       b += 0.9373 * x;
-      x = c  * m1 * y1 * k;  // 1 0 0 1
+      x = c * m1 * y1 * k;  // 1 0 0 1
       g += 0.0588 * x;
       b += 0.1412 * x;
-      x = c  * m1 * y  * k1; // 1 0 1 0
+      x = c * m1 * y * k1; // 1 0 1 0
       g += 0.6510 * x;
       b += 0.3137 * x;
-      x = c  * m1 * y  * k;  // 1 0 1 1
+      x = c * m1 * y * k;  // 1 0 1 1
       g += 0.0745 * x;
-      x = c  * m  * y1 * k1; // 1 1 0 0
+      x = c * m * y1 * k1; // 1 1 0 0
       r += 0.1804 * x;
       g += 0.1922 * x;
       b += 0.5725 * x;
-      x = c  * m  * y1 * k;  // 1 1 0 1
+      x = c * m * y1 * k;  // 1 1 0 1
       b += 0.0078 * x;
-      x = c  * m  * y  * k1; // 1 1 1 0
+      x = c * m * y * k1; // 1 1 1 0
       r += 0.2118 * x;
       g += 0.2119 * x;
       b += 0.2235 * x;
@@ -4929,7 +5437,7 @@ var DeviceCmykCS = (function() {
       for (var i = 0; i < length; i++) {
         var cmyk = [];
         for (var j = 0; j < 4; ++j)
-          cmyk.push(colorBuf[colorBufPos++]/255);
+          cmyk.push(colorBuf[colorBufPos++] / 255);
 
         var rgb = this.getRgb(cmyk);
         for (var j = 0; j < 3; ++j)
@@ -4952,8 +5460,8 @@ var Pattern = (function() {
     // Input: current Canvas context
     // Output: the appropriate fillStyle or strokeStyle
     getPattern: function pattern_getStyle(ctx) {
-      error('Should not call Pattern.getStyle');
-    },
+      error('Should not call Pattern.getStyle: ' + ctx);
+    }
   };
 
   constructor.parse = function pattern_parse(args, cs, xref, res, ctx) {
@@ -4961,17 +5469,17 @@ var Pattern = (function() {
 
     var patternName = args[length - 1];
     if (!IsName(patternName))
-      error("Bad args to getPattern");
+      error('Bad args to getPattern: ' + patternName);
 
-    var patternRes = xref.fetchIfRef(res.get("Pattern"));
+    var patternRes = xref.fetchIfRef(res.get('Pattern'));
     if (!patternRes)
-      error("Unable to find pattern resource");
+      error('Unable to find pattern resource');
 
     var pattern = xref.fetchIfRef(patternRes.get(patternName.name));
     var dict = IsStream(pattern) ? pattern.dict : pattern;
-    var typeNum = dict.get("PatternType");
+    var typeNum = dict.get('PatternType');
 
-    switch(typeNum) {
+    switch (typeNum) {
     case 1:
       var base = cs.base;
       var color;
@@ -4984,13 +5492,14 @@ var Pattern = (function() {
 
         color = base.getRgb(color);
       }
-      return new TilingPattern(pattern, dict, color, xref, ctx);
+      var code = patternName.code;
+      return new TilingPattern(pattern, code, dict, color, xref, ctx);
     case 2:
       var shading = xref.fetchIfRef(dict.get('Shading'));
       var matrix = dict.get('Matrix');
       return Pattern.parseShading(shading, matrix, xref, res, ctx);
     default:
-      error('Unknown type of pattern');
+      error('Unknown type of pattern: ' + typeNum);
     }
   };
 
@@ -5092,9 +5601,9 @@ var RadialAxialShading = (function() {
       } else if (type == 3) {
         var p0 = [coordsArr[0], coordsArr[1]];
         var p1 = [coordsArr[3], coordsArr[4]];
-        var r0 = coordsArr[2], r1 = coordsArr[5]
+        var r0 = coordsArr[2], r1 = coordsArr[5];
       } else {
-        error()
+        error();
       }
 
       var matrix = this.matrix;
@@ -5135,8 +5644,8 @@ var RadialAxialShading = (function() {
 
 var TilingPattern = (function() {
   var PAINT_TYPE_COLORED = 1, PAINT_TYPE_UNCOLORED = 2;
-  
-  function constructor(pattern, dict, color, xref, ctx) {
+
+  function constructor(pattern, code, dict, color, xref, ctx) {
       function multiply(m, tm) {
         var a = m[0] * tm[0] + m[1] * tm[2];
         var b = m[0] * tm[1] + m[1] * tm[3];
@@ -5149,7 +5658,7 @@ var TilingPattern = (function() {
 
       TODO('TilingType');
 
-      this.matrix = dict.get("Matrix");
+      this.matrix = dict.get('Matrix');
       this.curMatrix = ctx.mozCurrentTransform;
       this.invMatrix = ctx.mozCurrentTransformInverse;
       this.ctx = ctx;
@@ -5163,14 +5672,14 @@ var TilingPattern = (function() {
 
       var topLeft = [x0, y0];
       // we want the canvas to be as large as the step size
-      var botRight = [x0 + xstep, y0 + ystep]
+      var botRight = [x0 + xstep, y0 + ystep];
 
       var width = botRight[0] - topLeft[0];
       var height = botRight[1] - topLeft[1];
 
       // TODO: hack to avoid OOM, we would idealy compute the tiling
       // pattern to be only as large as the acual size in device space
-      // This could be computed with .mozCurrentTransform, but still 
+      // This could be computed with .mozCurrentTransform, but still
       // needs to be implemented
       while (Math.abs(width) > 512 || Math.abs(height) > 512) {
         width = 512;
@@ -5195,7 +5704,7 @@ var TilingPattern = (function() {
         tmpCtx.strokeStyle = color;
         break;
       default:
-        error('Unsupported paint type');
+        error('Unsupported paint type: ' + paintType);
       }
 
       var scale = [width / xstep, height / ystep];
@@ -5214,9 +5723,7 @@ var TilingPattern = (function() {
       }
 
       var res = xref.fetchIfRef(dict.get('Resources'));
-      if (!pattern.code)
-        pattern.code = graphics.compile(pattern, xref, res, []);
-      graphics.execute(pattern.code, xref, res);
+      graphics.execute(code, xref, res);
 
       this.canvas = tmpCanvas;
   };
@@ -5260,7 +5767,8 @@ var PDFImage = (function() {
     this.height = dict.get('Height', 'H');
 
     if (this.width < 1 || this.height < 1)
-      error('Invalid image width or height');
+      error('Invalid image width: ' + this.width + ' or height: ' +
+            this.height);
 
     this.interpolate = dict.get('Interpolate', 'I') || false;
     this.imageMask = dict.get('ImageMask', 'IM') || false;
@@ -5272,19 +5780,21 @@ var PDFImage = (function() {
         if (this.imageMask)
           bitsPerComponent = 1;
         else
-          error('Bits per component missing in image');
+          error('Bits per component missing in image: ' + this.imageMask);
       }
     }
     this.bpc = bitsPerComponent;
 
-    var colorSpace = dict.get('ColorSpace', 'CS');
-    if (!colorSpace) {
-      TODO('JPX images (which don"t require color spaces');
-      colorSpace = new Name('DeviceRGB');
+    if (!this.imageMask) {
+      var colorSpace = dict.get('ColorSpace', 'CS');
+      if (!colorSpace) {
+        TODO('JPX images (which don"t require color spaces');
+        colorSpace = new Name('DeviceRGB');
+      }
+      this.colorSpace = ColorSpace.parse(colorSpace, xref, res);
+      this.numComps = this.colorSpace.numComps;
     }
-    this.colorSpace = ColorSpace.parse(colorSpace, xref, res);
 
-    this.numComps = this.colorSpace.numComps;
     this.decode = dict.get('Decode', 'D');
 
     var mask = xref.fetchIfRef(image.dict.get('Mask'));
@@ -5370,7 +5880,8 @@ var PDFImage = (function() {
         var sw = smask.width;
         var sh = smask.height;
         if (sw != this.width || sh != this.height)
-          error('smask dimensions do not match image dimensions');
+          error('smask dimensions do not match image dimensions: ' + sw +
+                ' != ' + this.width + ', ' + sh + ' != ' + this.height);
 
         smask.fillGrayBuffer(buf);
         return buf;
@@ -5379,6 +5890,29 @@ var PDFImage = (function() {
           buf[i] = 255;
       }
       return buf;
+    },
+    fillUsingStencilMask: function fillUsingStencilMask(buffer,
+      cssRgb, inverseDecode) {
+      var m = /rgb\((\d+),(\d+),(\d+)\)/.exec(cssRgb); // parse CSS color
+      var r = m[1] | 0, g = m[2] | 0, b = m[3] | 0;
+      var bufferLength = this.width * this.height;
+      var imgArray = this.image.getBytes((bufferLength + 7) >> 3);
+      var i, mask;
+      var bufferPos = 0, imgArrayPos = 0;
+      for (i = 0; i < bufferLength; i++) {
+        var buf = imgArray[imgArrayPos++];
+        for (mask = 128; mask > 0; mask >>= 1) {
+          if (!(buf & mask) != inverseDecode) {
+            buffer[bufferPos++] = r;
+            buffer[bufferPos++] = g;
+            buffer[bufferPos++] = b;
+            buffer[bufferPos++] = 255;
+          } else {
+            buffer[bufferPos + 3] = 0;
+            bufferPos += 4;
+          }
+        }
+      }
     },
     fillRgbaBuffer: function fillRgbaBuffer(buffer) {
       var numComps = this.numComps;
@@ -5406,7 +5940,7 @@ var PDFImage = (function() {
     fillGrayBuffer: function fillGrayBuffer(buffer) {
       var numComps = this.numComps;
       if (numComps != 1)
-        error('Reading gray scale from a color image');
+        error('Reading gray scale from a color image: ' + numComps);
 
       var width = this.width;
       var height = this.height;
@@ -5443,7 +5977,7 @@ var PDFFunction = (function() {
     if (!typeFn)
       error('Unknown type of function');
 
-    typeFn.call(this, fn, dict);
+    typeFn.call(this, fn, dict, xref);
   };
 
   constructor.prototype = {
@@ -5458,7 +5992,8 @@ var PDFFunction = (function() {
       var outputSize = range.length / 2;
 
       if (inputSize != 1)
-        error('No support for multi-variable inputs to functions');
+        error('No support for multi-variable inputs to functions: ' +
+              inputSize);
 
       var size = dict.get('Size');
       var bps = dict.get('BitsPerSample');
@@ -5466,7 +6001,7 @@ var PDFFunction = (function() {
       if (!order)
         order = 1;
       if (order !== 1)
-        error('No support for cubic spline interpolation');
+        error('No support for cubic spline interpolation: ' + order);
 
       var encode = dict.get('Encode');
       if (!encode) {
@@ -5492,7 +6027,8 @@ var PDFFunction = (function() {
         }
 
         if (inputSize != args.length)
-          error('Incorrect number of arguments');
+          error('Incorrect number of arguments: ' + inputSize + ' != ' +
+                args.length);
 
         for (var i = 0; i < inputSize; i++) {
           var i2 = i * 2;
@@ -5569,7 +6105,7 @@ var PDFFunction = (function() {
       var c0 = dict.get('C0') || [0];
       var c1 = dict.get('C1') || [1];
       var n = dict.get('N');
-      
+
       if (!IsArray(c0) || !IsArray(c1))
         error('Illegal dictionary for interpolated function');
 
@@ -5578,7 +6114,7 @@ var PDFFunction = (function() {
       for (var i = 0; i < length; ++i)
         diff.push(c1[i] - c0[i]);
 
-      this.func = function (args) {
+      this.func = function(args) {
         var x = args[0];
 
         var out = [];
@@ -5588,13 +6124,62 @@ var PDFFunction = (function() {
         return out;
       }
     },
-    constructStiched: function() {
-      TODO('unhandled type of function');
-      this.func = function () { return [ 255, 105, 180 ]; }
+    constructStiched: function(fn, dict, xref) {
+      var domain = dict.get('Domain');
+      var range = dict.get('Range');
+
+      if (!domain)
+        error('No domain');
+
+      var inputSize = domain.length / 2;
+      if (inputSize != 1)
+        error('Bad domain for stiched function');
+
+      var fnRefs = dict.get('Functions');
+      var fns = [];
+      for (var i = 0, ii = fnRefs.length; i < ii; ++i)
+        fns.push(new PDFFunction(xref, xref.fetchIfRef(fnRefs[i])));
+
+      var bounds = dict.get('Bounds');
+      var encode = dict.get('Encode');
+
+      this.func = function(args) {
+        var clip = function(v, min, max) {
+          if (v > max)
+            v = max;
+          else if (v < min)
+            v = min;
+          return v;
+        }
+
+        // clip to domain
+        var v = clip(args[0], domain[0], domain[1]);
+        // calulate which bound the value is in
+        for (var i = 0, ii = bounds.length; i < ii; ++i) {
+          if (v < bounds[i])
+            break;
+        }
+
+        // encode value into domain of function
+        var dmin = domain[0];
+        if (i > 0)
+          dmin = bounds[i - 1];
+        var dmax = domain[1];
+        if (i < bounds.length)
+          dmax = bounds[i];
+
+        var rmin = encode[2 * i];
+        var rmax = encode[2 * i + 1];
+
+        var v2 = rmin + (v - dmin) * (rmax - rmin) / (dmax - dmin);
+
+        // call the appropropriate function
+        return fns[i].func([v2]);
+      }
     },
     constructPostScript: function() {
       TODO('unhandled type of function');
-      this.func = function () { return [ 255, 105, 180 ]; }
+      this.func = function() { return [255, 105, 180]; }
     }
   };
 

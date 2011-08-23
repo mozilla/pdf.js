@@ -38,21 +38,20 @@ var PDFView = {
 
   set page(val) {
     var pages = this.pages;
-    if (val <= 0 || val == this.page || val > pages.length) {
-      // TODO If the hash if set to a dumb value, like #123456, the input field
-      // of the UI will be set to it even if no page is changed because its out
-      // of bound.
-      val = this.page || 1;
-    } else {
-      // Draw the page before jumping to it in order to avoid seeing the
-      // possible gap between pages if the page has never been draw before.
-      pages[val - 1].draw();
-      document.location.hash = val;
+    var input = document.getElementById('pageNumber');
+    if (val <= 0 || val > pages.length) {
+      input.value = this.page;
+      return;
     }
-  
-    var event = document.createEvent("UIEvents");
-    event.initUIEvent("pagechange", false, false, window, val);
-    window.dispatchEvent(event);
+
+    document.location.hash = val;
+    document.getElementById('previous').disabled = (val == 1);
+    document.getElementById('next').disabled = (val == pages.length);
+    if (input.value == val)
+      return;
+
+    input.value = val;
+    pages[val - 1].draw();
   },
 
   get page() {
@@ -60,7 +59,7 @@ var PDFView = {
   },
 
   open: function(url, scale) {
-    if (url.indexOf("http") == 0)
+    if (url.indexOf('http') == 0)
       return;
 
     document.title = url;
@@ -82,6 +81,19 @@ var PDFView = {
     xhr.send(null);
   },
 
+  navigateTo: function(dest) {
+    if (typeof dest === 'string')
+      dest = this.destinations[dest];
+    // dest array looks like that: <page-ref> </XYZ|FitXXX> <args..>
+    var destRef = dest[0];
+    var pageNumber = this.pagesRefMap[destRef.num + ' ' + destRef.gen + ' R'];
+    if (pageNumber) {
+      this.page = pageNumber;
+      // TODO scroll to specific region on the page, the precise scaling
+      // required.
+    }
+  },
+
   load: function(data, scale) {
     var sidebar = document.getElementById('sidebarView');
     sidebar.parentNode.scrollTop = 0;
@@ -99,18 +111,21 @@ var PDFView = {
     document.getElementById('numPages').innerHTML = pagesCount;
 
     var pages = this.pages = [];
+    var pagesRefMap = {};
     var thumbnails = this.thumbnails = [];
     for (var i = 1; i <= pagesCount; i++) {
       var page = pdf.getPage(i);
-      var mediaBox = page.mediaBox;
-      var width = (mediaBox[2] - mediaBox[0]);
-      var height = (mediaBox[3] - mediaBox[1]);
-      pages.push(new PageView(container, page, i, width, height, page.stats));
+      pages.push(new PageView(container, page, i, page.width, page.height,
+                              page.stats, this.navigateTo.bind(this)));
       thumbnails.push(new ThumbnailView(sidebar, pages[i - 1]));
-    };
+      var pageRef = page.ref;
+      pagesRefMap[pageRef.num + ' ' + pageRef.gen + ' R'] = i;
+    }
 
     this.scale = (scale || kDefaultScale);
     this.page = parseInt(document.location.hash.substring(1)) || 1;
+    this.pagesRefMap = pagesRefMap;
+    this.destinations = pdf.catalog.destinations;
   },
 
   getVisiblePages: function() {
@@ -137,10 +152,11 @@ var PDFView = {
     }
 
     return visiblePages;
-  },
+  }
 };
 
-var PageView = function(container, content, id, width, height, stats) {
+var PageView = function(container, content, id, width, height,
+                        stats, navigateTo) {
   this.width = width;
   this.height = height;
   this.id = id;
@@ -158,12 +174,49 @@ var PageView = function(container, content, id, width, height, stats) {
 
   this.update = function(scale) {
     this.scale = scale || this.scale;
-    div.style.width =  (this.width * this.scale)+ 'px';
+    div.style.width = (this.width * this.scale) + 'px';
     div.style.height = (this.height * this.scale) + 'px';
 
     while (div.hasChildNodes())
       div.removeChild(div.lastChild);
   };
+
+  function setupLinks(canvas, content, scale) {
+    var links = content.getLinks();
+    var currentLink = null;
+    if (links.length > 0) {
+      canvas.addEventListener('mousemove', function(e) {
+        var x = e.pageX;
+        var y = e.pageY;
+        for (var p = canvas; p; p = p.offsetParent) {
+          x -= p.offsetLeft;
+          y -= p.offsetTop;
+        }
+        x /= scale;
+        y /= scale;
+        var i, n = links.length;
+        for (i = 0; i < n; i++) {
+          var link = links[i];
+          if (link.x <= x && link.y <= y &&
+            x < link.x + link.width && y < link.y + link.height) {
+            currentLink = link;
+            canvas.style.cursor = 'pointer';
+            return;
+          }
+        }
+        currentLink = null;
+        canvas.style.cursor = 'default';
+      }, false);
+      canvas.addEventListener('mousedown', function(e) {
+        if (!currentLink)
+          return;
+        if (currentLink.url)
+          window.location.href = currentLink.url;
+        if (currentLink.dest)
+          navigateTo(currentLink.dest);
+      }, false);
+    }
+  }
 
   this.draw = function() {
     if (div.hasChildNodes()) {
@@ -188,12 +241,14 @@ var PageView = function(container, content, id, width, height, stats) {
     stats.begin = Date.now();
     this.content.startRendering(ctx, this.updateStats);
 
+    setupLinks(canvas, this.content, this.scale);
+
     return true;
   };
 
   this.updateStats = function() {
     var t1 = stats.compile, t2 = stats.fonts, t3 = stats.render;
-    var str = 'Time to compile/fonts/render: ' + 
+    var str = 'Time to compile/fonts/render: ' +
               (t1 - stats.begin) + '/' + (t2 - t1) + '/' + (t3 - t2) + ' ms';
     document.getElementById('info').innerHTML = str;
   };
@@ -271,11 +326,11 @@ window.addEventListener('scroll', function onscroll(evt) {
     PDFView.page = firstPage.id;
 }, true);
 
-window.addEventListener("hashchange", function(evt) {
+window.addEventListener('hashchange', function(evt) {
   PDFView.page = PDFView.page;
 });
 
-window.addEventListener("change", function(evt) {
+window.addEventListener('change', function(evt) {
   var files = evt.target.files;
   if (!files || files.length == 0)
     return;
@@ -301,7 +356,7 @@ window.addEventListener("change", function(evt) {
   document.location.hash = 1;
 }, true);
 
-window.addEventListener("transitionend", function(evt) {
+window.addEventListener('transitionend', function(evt) {
   var pageIndex = 0;
   var pagesCount = PDFView.pages.length;
 
@@ -309,7 +364,7 @@ window.addEventListener("transitionend", function(evt) {
   container._interval = window.setInterval(function() {
     if (pageIndex >= pagesCount)
       return window.clearInterval(container._interval);
-        
+
     PDFView.thumbnails[pageIndex++].draw();
   }, 500);
 }, true);
