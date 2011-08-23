@@ -3528,7 +3528,7 @@ var Catalog = (function() {
         nameDictionaryRef = this.catDict.get('Dests');
 
       if (nameDictionaryRef) {
-        // reding simple destination dictionary
+        // reading simple destination dictionary
         obj = xref.fetch(nameDictionaryRef);
         obj.forEach(function(key, value) {
           dests[key] = xref.fetch(value).get('D');
