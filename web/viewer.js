@@ -129,6 +129,33 @@ var PDFView = {
     this.page = parseInt(document.location.hash.substring(1)) || 1;
     this.pagesRefMap = pagesRefMap;
     this.destinations = pdf.catalog.destinations;
+    if (pdf.catalog.documentOutline) {
+      this.outline = new DocumentOutlineView(pdf.catalog.documentOutline);
+      var outlineSwitchButton = document.getElementById('outlineSwitch');
+      outlineSwitchButton.removeAttribute('disabled');
+      this.switchSidebarView('outline');
+    }
+  },
+
+  switchSidebarView: function(view) {
+    var thumbsScrollView = document.getElementById('sidebarScrollView');
+    var outlineScrollView = document.getElementById('outlineScrollView');
+    var thumbsSwitchButton = document.getElementById('thumbsSwitch');
+    var outlineSwitchButton = document.getElementById('outlineSwitch');
+    switch(view) {
+      case 'thumbs':
+        thumbsScrollView.style.display = 'block';
+        outlineScrollView.style.display = 'none';
+        thumbsSwitchButton.setAttribute('data-selected', true);
+        outlineSwitchButton.removeAttribute('data-selected');
+        break;
+      case 'outline':
+        thumbsScrollView.style.display = 'none';
+        outlineScrollView.style.display = 'block';
+        thumbsSwitchButton.removeAttribute('data-selected');
+        outlineSwitchButton.setAttribute('data-selected', true);
+        break;
+    }
   },
 
   getVisiblePages: function() {
@@ -288,6 +315,42 @@ var ThumbnailView = function(container, page) {
 
     page.content.startRendering(ctx, function() { });
   };
+};
+
+var DocumentOutlineView = function(outline) {
+  var outlineView = document.getElementById('outlineView');
+
+  function bindItemLink(domObj, item) {
+    domObj.href = '';
+    domObj.onclick = function(e) {
+      PDFView.navigateTo(item.dest);
+      return false;
+    };
+  }
+
+  var queue = [{parent: outlineView, items: outline}];
+  while (queue.length > 0) {
+    var levelData = queue.shift();
+    var i, n = levelData.items.length;
+    for (i = 0; i < n; i++) {
+      var item = levelData.items[i];
+      var div = document.createElement('div');
+      div.className = 'outlineItem';
+      var a = document.createElement('a');
+      bindItemLink(a, item);
+      a.textContent = item.title;
+      div.appendChild(a);
+
+      if (item.items.length > 0) {
+        var itemsDiv = document.createElement('div');
+        itemsDiv.className = 'outlineItems';
+        div.appendChild(itemsDiv);
+        queue.push({parent: itemsDiv, items: item.items});
+      }
+
+      levelData.parent.appendChild(div);
+    }
+  }
 };
 
 window.addEventListener('load', function(evt) {
