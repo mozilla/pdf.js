@@ -60,10 +60,10 @@ span#info {
 /* === Sidebar === */
 #sidebar {
   position: fixed;
-  width: 200px;
+  width: 350px;
   top: 62px;
   bottom: 18px;
-  left: -140px;
+  left: -290px;
   transition: left 0.25s ease-in-out 1s;
   -moz-transition: left 0.25s ease-in-out 1s;
   -webkit-transition: left 0.25s ease-in-out 1s;
@@ -78,7 +78,7 @@ span#info {
 
 #sidebarBox {
   background-color: rgba(0, 0, 0, 0.7);
-  width: 150px;
+  width: 300px;
   height: 100%;
   border-top-right-radius: 8px;
   border-bottom-right-radius: 8px;
@@ -98,14 +98,73 @@ span#info {
   top: 10px;
   bottom: 10px;
   left: 10px;
-  width: 130px;
+  width: 280px;
 }
 
 .thumbnail {
   width: 104px;
   height: 134px;
   background-color: white;
-  margin: 5px;
+  margin-top: 5px;
+  margin-bottom: 5px;
+  margin-left:auto;
+  margin-right:auto;
+}
+
+#outlineScrollView {
+  position: absolute;
+  background-color: #fff;
+  overflow: auto;
+  top: 10px;
+  bottom: 10px;
+  left: 10px;
+  width: 280px;
+}
+
+#outlineView {
+  padding-top: 4px;
+  padding-bottom: 100px;
+  padding-left: 6px;
+  padding-right: 6px;
+  font-size: smaller;
+}
+
+.outlineItem > .outlineItems {
+  margin-left: 20px;
+}
+
+.outlineItem > a {
+  text-decoration: none;
+  color: black;
+}
+
+.outlineItem > a:hover {
+  background: #ff0;
+  box-shadow: 0px 2px 10px #ff0;
+}
+
+#sidebarControls {
+  position:absolute;
+  width: 120px;
+  height: 32px;
+  left: 15px;
+  bottom: 35px;
+}
+
+#sidebarControls > button {
+  box-shadow: 0px 4px 10px #000;
+  -moz-box-shadow: 0px 4px 10px #000;
+  -webkit-box-shadow: 0px 4px 10px #000;
+}
+
+#sidebarControls > button[disabled] > img {
+  opacity: 0.5;
+}
+
+#sidebarControls > button[data-selected] {
+  box-shadow: 0px 4px 10px #ff0;
+  -moz-box-shadow: 0px 4px 10px #ff0;
+  -webkit-box-shadow: 0px 4px 10px #ff0;
 }
 
 /* === Content view === */
@@ -126,5 +185,12 @@ canvas {
 #viewer {
   margin: 44px 0px 0px;
   padding: 8px 0px;
+}
+
+#sidebarView canvas:hover {
+  background: #ff0;
+  box-shadow: 0px 2px 10px #ff0;
+  -moz-box-shadow: 0px 2px 10px #ff0;
+  -webkit-box-shadow: 0px 2px 10px #ff0;
 }
 
