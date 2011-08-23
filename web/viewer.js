@@ -27,9 +27,12 @@ var PDFView = {
     var cssUnits = 96.0 / 72.0;
     for (var i = 0; i < pages.length; i++)
       pages[i].update(val / 100 * cssUnits);
-
-    // Jump the scroll position to the correct page.
-    document.location.hash = this.page;
+      
+    if(document.location.hash == '#' + this.page)
+      this.pages[this.page-1].draw();
+    else
+      // Jump the scroll position to the correct page.
+      document.location.hash = this.page;
 
     var event = document.createEvent("UIEvents");
     event.initUIEvent("scalechange", false, false, window, val);
