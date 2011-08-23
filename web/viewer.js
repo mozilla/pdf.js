@@ -30,6 +30,8 @@ var PDFView = {
 
     // Jump the scroll position to the correct page.
     document.location.hash = this.page;
+    //following line fixes the issue:https://github.com/andreasgal/pdf.js/issues/360
+    this.pages[this.page-1].draw();
 
     var event = document.createEvent("UIEvents");
     event.initUIEvent("scalechange", false, false, window, val);
