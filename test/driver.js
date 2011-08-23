@@ -221,6 +221,8 @@ function checkScrolling() {
 }
 
 function log(str) {
-  stdout.innerHTML += str;
-  checkScrolling();
+  stdout.insertAdjacentHTML("BeforeEnd", str);
+
+  if (str.charAt(str.length - 1) == '\n')
+    checkScrolling();
 }
