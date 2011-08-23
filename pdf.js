@@ -4313,7 +4313,7 @@ var PartialEvaluator = (function() {
           return null;
         // Using base font name as a font name.
         baseFontName = baseFontName.name.replace(/[\+,\-]/g, '_');
-        if (baseFontName == 'Symbol') {
+        if (/^Symbol(_?(Bold|Italic))*$/.test(baseFontName)) {
           // special case for symbols
           var encoding = Encodings.symbolsEncoding;
           for (var i = 0, n = encoding.length, j; i < n; i++) {
