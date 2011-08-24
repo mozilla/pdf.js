@@ -4176,6 +4176,7 @@ var PartialEvaluator = (function() {
       }
 
       var encodingMap = {};
+      var glyphMap = {};
       var charset = [];
       if (compositeFont) {
         // Special CIDFont support
@@ -4213,116 +4214,130 @@ var PartialEvaluator = (function() {
                  '9.7.5.3');
           }
         }
-      } else if (fontDict.has('Encoding')) {
-        var encoding = xref.fetchIfRef(fontDict.get('Encoding'));
-        if (IsDict(encoding)) {
-          // Build a map of between codes and glyphs
-          // Load the base encoding
-          var baseName = encoding.get('BaseEncoding');
-          if (baseName) {
-            var base = Encodings[baseName.name];
-            for (var j = 0, end = base.length; j < end; j++)
-              encodingMap[j] = GlyphsUnicode[base[j]] || 0;
-          } else {
-            TODO('need to load default encoding');
-          }
-
-          // Load the differences between the base and original
-          var differences = encoding.get('Differences');
-          var index = 0;
-          for (var j = 0; j < differences.length; j++) {
-            var data = differences[j];
-            if (IsNum(data)) {
-              index = data;
-            } else {
-              encodingMap[index++] = (subType.name == 'TrueType') ? j :
-                                     GlyphsUnicode[data.name];
+      } else {
+        var baseEncoding = null, diffEncoding = [];
+        if (fontDict.has('Encoding')) {
+          var encoding = xref.fetchIfRef(fontDict.get('Encoding'));
+          if (IsDict(encoding)) {
+            // Build a map of between codes and glyphs
+            // Load the base encoding
+            var baseName = encoding.get('BaseEncoding');
+            if (baseName) {
+              baseEncoding = Encodings[baseName.name].slice();
             }
-          }
-        } else if (IsName(encoding)) {
-          var encoding = Encodings[encoding.name];
-          if (!encoding)
-            error('Unknown font encoding');
 
-          var index = 0;
-          for (var j = 0; j < encoding.length; j++)
-            encodingMap[index++] = GlyphsUnicode[encoding[j]];
-
-          // firstChar and width are required
-          // (except for 14 standard fonts)
-          var firstChar = xref.fetchIfRef(fontDict.get('FirstChar'));
-          var widths = xref.fetchIfRef(fontDict.get('Widths')) || [];
-          for (var j = 0; j < widths.length; j++) {
-            if (widths[j])
-              charset.push(encoding[j + firstChar]);
+            // Load the differences between the base and original
+            var differences = encoding.get('Differences');
+            var index = 0;
+            for (var j = 0; j < differences.length; j++) {
+              var data = differences[j];
+              if (IsNum(data)) {
+                index = data;
+              } else {
+                diffEncoding[index++] = data.name;
+              }
+            }
+          } else if (IsName(encoding)) {
+            baseEncoding = Encodings[encoding.name].slice();
           }
         }
-      } else if (fontDict.has('ToUnicode')) {
-        encodingMap = {empty: true};
-        var cmapObj = xref.fetchIfRef(fontDict.get('ToUnicode'));
-        if (IsName(cmapObj)) {
-          error('ToUnicode file cmap translation not implemented');
-        } else if (IsStream(cmapObj)) {
-          var encoding = Encodings['WinAnsiEncoding'];
-          var firstChar = xref.fetchIfRef(fontDict.get('FirstChar'));
 
-          var tokens = [];
-          var token = '';
+        if (!baseEncoding) {
+          var type = subType.name;
+          if (type == 'TrueType') {
+            baseEncoding = Encodings.WinAnsiEncoding.slice(0);
+          } else if (type == 'Type1') {
+            baseEncoding = Encodings.StandardEncoding.slice(0);
+          } else {
+            error('Unknown type of font');
+          }
+        }
 
-          var cmap = cmapObj.getBytes(cmapObj.length);
-          for (var i = 0; i < cmap.length; i++) {
-            var byte = cmap[i];
-            if (byte == 0x20 || byte == 0x0A || byte == 0x3C || byte == 0x3E) {
-              switch (token) {
-              case 'useCMap':
-                error('useCMap is not implemented');
-                break;
+        // merge in the differences
+        var length = baseEncoding.length > diffEncoding.length ? 
+            baseEncoding.length : diffEncoding.length;
+        for (var i = 0, ii = length; i < ii; ++i) {
+          var diffGlyph = diffEncoding[i];
+          var baseGlyph = baseEncoding[i];
+          if (diffGlyph) {
+            glyphMap[i] = diffGlyph;
+            encodingMap[i] = GlyphsUnicode[diffGlyph];
+          } else if (baseGlyph) {
+            glyphMap[i] = baseGlyph;
+            encodingMap[i] = GlyphsUnicode[baseGlyph];
+          }
+        }
 
-              case 'beginbfchar':
-              case 'beginbfrange':
-              case 'begincodespacerange':
-                token = '';
-                tokens = [];
-                break;
+        if (fontDict.has('ToUnicode')) {
+          var cmapObj = xref.fetchIfRef(fontDict.get('ToUnicode'));
+          if (IsName(cmapObj)) {
+            error('ToUnicode file cmap translation not implemented');
+          } else if (IsStream(cmapObj)) {
+            var firstChar = xref.fetchIfRef(fontDict.get('FirstChar'));
 
-              case 'endcodespacerange':
-                TODO('Support CMap ranges');
-                break;
+            var tokens = [];
+            var token = '';
 
-              case 'endbfrange':
-                for (var j = 0; j < tokens.length; j += 3) {
-                  var startRange = parseInt('0x' + tokens[j]);
-                  var endRange = parseInt('0x' + tokens[j + 1]);
-                  var code = parseInt('0x' + tokens[j + 2]);
+            var cmap = cmapObj.getBytes(cmapObj.length);
+            for (var i = 0; i < cmap.length; i++) {
+              var byte = cmap[i];
+              if (byte == 0x20 || byte == 0x0A || byte == 0x3C || 
+                  byte == 0x3E) {
+                switch (token) {
+                  case 'useCMap':
+                    error('useCMap is not implemented');
+                    break;
 
-                  for (var k = startRange; k <= endRange; k++) {
-                    charset.push(encoding[code++] || '.notdef');
-                  }
+                  case 'beginbfchar':
+                  case 'beginbfrange':
+                  case 'begincodespacerange':
+                    token = '';
+                    tokens = [];
+                    break;
+
+                  case 'endcodespacerange':
+                    TODO('Support CMap ranges');
+                    break;
+
+                  case 'endbfrange':
+                    for (var j = 0; j < tokens.length; j += 3) {
+                      var startRange = parseInt('0x' + tokens[j]);
+                      var endRange = parseInt('0x' + tokens[j + 1]);
+                      var code = parseInt('0x' + tokens[j + 2]);
+                    }
+                    break;
+
+                  case 'endbfchar':
+                    for (var j = 0; j < tokens.length; j += 2) {
+                      var index = parseInt('0x' + tokens[j]);
+                      var code = parseInt('0x' + tokens[j + 1]);
+                      encodingMap[index] = code;
+                    }
+                    break;
+
+                  default:
+                    if (token.length) {
+                      tokens.push(token);
+                      token = '';
+                    }
+                    break;
                 }
-                break;
-
-              case 'endbfchar':
-                for (var j = 0; j < tokens.length; j += 2) {
-                  var index = parseInt('0x' + tokens[j]);
-                  var code = parseInt('0x' + tokens[j + 1]);
-                  encodingMap[index] = GlyphsUnicode[encoding[code]];
-                  charset.push(encoding[code] || '.notdef');
-                }
-                break;
-
-              default:
-                if (token.length) {
-                  tokens.push(token);
-                  token = '';
-                }
-                break;
+              } else if (byte == 0x5B || byte == 0x5D) {
+                error('CMAP list parsing is not implemented');
+              } else {
+                token += String.fromCharCode(byte);
               }
-            } else if (byte == 0x5B || byte == 0x5D) {
-              error('CMAP list parsing is not implemented');
-            } else {
-              token += String.fromCharCode(byte);
             }
           }
+        }
+
+        // firstChar and width are required
+        // (except for 14 standard fonts)
+        var firstChar = xref.fetchIfRef(fontDict.get('FirstChar'));
+        var widths = xref.fetchIfRef(fontDict.get('Widths')) || [];
+        for (var j = 0; j < widths.length; j++) {
+          if (widths[j])
+            charset.push(glyphMap[j + firstChar]);
         }
       }
 
