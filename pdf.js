@@ -289,6 +289,32 @@ var FakeStream = (function() {
   return constructor;
 })();
 
+var StreamsSequenceStream = (function() {
+  function constructor(streams) {
+    this.streams = streams;
+    DecodeStream.call(this);
+  }
+
+  constructor.prototype = Object.create(DecodeStream.prototype);
+
+  constructor.prototype.readBlock = function() {
+    var streams = this.streams;
+    if (streams.length == 0) {
+      this.eof = true;
+      return;
+    }
+    var stream = streams.shift();
+    var chunk = stream.getBytes();
+    var bufferLength = this.bufferLength;
+    var newLength = bufferLength + chunk.length;
+    var buffer = this.ensureBuffer(newLength);
+    buffer.set(chunk, bufferLength);
+    this.bufferLength = newLength;
+  };
+
+  return constructor;
+})();
+
 var FlateStream = (function() {
   var codeLenCodeMap = new Uint32Array([
     16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15
@@ -3312,28 +3338,16 @@ var Page = (function() {
       }
 
       var xref = this.xref;
-      var content;
+      var content = xref.fetchIfRef(this.content);
       var resources = xref.fetchIfRef(this.resources);
-      if (!IsArray(this.content)) {
-        // content is not an array, shortcut
-        content = xref.fetchIfRef(this.content);
-        this.code = gfx.compile(content, xref, resources, fonts, images);
-        return;
+      if (IsArray(this.content)) {
+        // fetching items
+        var i, n = content.length;
+        for (i = 0; i < n; ++i)
+          content[i] = xref.fetchIfRef(this.content[i]);
+        content = new StreamsSequenceStream(content);
       }
-      // the content is an array, compiling all items
-      var i, n = this.content.length, compiledItems = [];
-      for (i = 0; i < n; ++i) {
-        content = xref.fetchIfRef(this.content[i]);
-        compiledItems.push(gfx.compile(content, xref, resources, fonts,
-                                       images));
-      }
-      // creating the function that executes all compiled items
-      this.code = function(gfx) {
-        var i, n = compiledItems.length;
-        for (i = 0; i < n; ++i) {
-          compiledItems[i](gfx);
-        }
-      };
+      this.code = gfx.compile(content, xref, resources, fonts, images);
     },
     display: function(gfx) {
       assert(this.code instanceof Function,
