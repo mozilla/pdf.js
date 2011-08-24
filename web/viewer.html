@@ -2,7 +2,7 @@
 <html>
     <head>
         <title>Simple pdf.js page viewer</title>
-        <link rel="stylesheet" href="viewer.css"></link>
+        <link rel="stylesheet" href="viewer.css"/>
 
         <script type="text/javascript" src="compatibility.js"></script>
         <script type="text/javascript" src="viewer.js"></script>
@@ -26,7 +26,7 @@
 
       <div class="separator"></div>
 
-      <input type="text" id="pageNumber" onchange="PDFView.page = this.value;" value="1" size="4"></input>
+      <input type="text" id="pageNumber" onchange="PDFView.page = this.value;" value="1" size="4"/>
 
       <span>/</span>
       <span id="numPages">--</span>
@@ -38,7 +38,7 @@
         <option value="75">75%</option>
         <option value="100">100%</option>
         <option value="125">125%</option>
-        <option value="150" selected="selected"><p>150%</p></option>
+        <option value="150" selected="selected">150%</option>
         <option value="200">200%</option>
       </select>
 
@@ -51,7 +51,7 @@
 
       <div class="separator"></div>
 
-      <input id="fileInput" type="file"></input>
+      <input id="fileInput" type="file"/>
 
       <div class="separator"></div>
 
@@ -62,6 +62,17 @@
       <div id="sidebarBox">
         <div id="sidebarScrollView">
           <div id="sidebarView"></div>
+        </div>
+        <div id="outlineScrollView" style="display:none">
+          <div id="outlineView"></div>
+        </div>
+        <div id="sidebarControls">
+          <button id="thumbsSwitch" title="Show Thumbnails" onclick="PDFView.switchSidebarView('thumbs')" data-selected>
+            <img src="images/nav-thumbs.svg" align="top" height="32" alt="Thumbs" />
+          </button>
+          <button id="outlineSwitch" title="Show Document Outline" onclick="PDFView.switchSidebarView('outline')" disabled>
+            <img src="images/nav-outline.svg" align="top" height="32" alt="Document Outline" />
+          </button>
         </div>
      </div>
     </div>

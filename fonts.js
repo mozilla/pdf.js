@@ -404,9 +404,6 @@ var Font = (function Font() {
                     (fontName.indexOf('Italic') != -1);
       this.loadedName = fontName.split('-')[0];
       this.loading = false;
-      this.charsToUnicode = function(s) {
-        return s;
-      };
       return;
     }
 

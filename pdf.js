@@ -289,6 +289,32 @@ var FakeStream = (function() {
   return constructor;
 })();
 
+var StreamsSequenceStream = (function() {
+  function constructor(streams) {
+    this.streams = streams;
+    DecodeStream.call(this);
+  }
+
+  constructor.prototype = Object.create(DecodeStream.prototype);
+
+  constructor.prototype.readBlock = function() {
+    var streams = this.streams;
+    if (streams.length == 0) {
+      this.eof = true;
+      return;
+    }
+    var stream = streams.shift();
+    var chunk = stream.getBytes();
+    var bufferLength = this.bufferLength;
+    var newLength = bufferLength + chunk.length;
+    var buffer = this.ensureBuffer(newLength);
+    buffer.set(chunk, bufferLength);
+    this.bufferLength = newLength;
+  };
+
+  return constructor;
+})();
+
 var FlateStream = (function() {
   var codeLenCodeMap = new Uint32Array([
     16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15
@@ -3312,28 +3338,16 @@ var Page = (function() {
       }
 
       var xref = this.xref;
-      var content;
+      var content = xref.fetchIfRef(this.content);
       var resources = xref.fetchIfRef(this.resources);
-      if (!IsArray(this.content)) {
-        // content is not an array, shortcut
-        content = xref.fetchIfRef(this.content);
-        this.code = gfx.compile(content, xref, resources, fonts, images);
-        return;
+      if (IsArray(this.content)) {
+        // fetching items
+        var i, n = content.length;
+        for (i = 0; i < n; ++i)
+          content[i] = xref.fetchIfRef(this.content[i]);
+        content = new StreamsSequenceStream(content);
       }
-      // the content is an array, compiling all items
-      var i, n = this.content.length, compiledItems = [];
-      for (i = 0; i < n; ++i) {
-        content = xref.fetchIfRef(this.content[i]);
-        compiledItems.push(gfx.compile(content, xref, resources, fonts,
-                                       images));
-      }
-      // creating the function that executes all compiled items
-      this.code = function(gfx) {
-        var i, n = compiledItems.length;
-        for (i = 0; i < n; ++i) {
-          compiledItems[i](gfx);
-        }
-      };
+      this.code = gfx.compile(content, xref, resources, fonts, images);
     },
     display: function(gfx) {
       assert(this.code instanceof Function,
@@ -3370,7 +3384,7 @@ var Page = (function() {
       var links = [];
       for (i = 0; i < n; ++i) {
         var annotation = xref.fetch(annotations[i]);
-        if (!IsDict(annotation, 'Annot'))
+        if (!IsDict(annotation))
           continue;
         var subtype = annotation.get('Subtype');
         if (!IsName(subtype) || subtype.name != 'Link')
@@ -3397,6 +3411,9 @@ var Page = (function() {
               TODO('other link types');
               break;
           }
+        } else if (annotation.has('Dest')) {
+          // simple destination link
+          link.dest = annotation.get('Dest').name;
         }
         links.push(link);
       }
@@ -3437,9 +3454,10 @@ var Catalog = (function() {
         return str;
       }
       var obj = this.catDict.get('Outlines');
+      var xref = this.xref;
       var root = { items: [] };
       if (IsRef(obj)) {
-        obj = this.xref.fetch(obj).get('First');
+        obj = xref.fetch(obj).get('First');
         var processed = new RefSet();
         if (IsRef(obj)) {
           var queue = [{obj: obj, parent: root}];
@@ -3448,14 +3466,18 @@ var Catalog = (function() {
           processed.put(obj);
           while (queue.length > 0) {
             var i = queue.shift();
-            var outlineDict = this.xref.fetch(i.obj);
+            var outlineDict = xref.fetch(i.obj);
             if (!outlineDict.has('Title'))
               error('Invalid outline item');
-            var dest = outlineDict.get('Dest');
-            if (!dest && outlineDict.get('A')) {
-              var a = this.xref.fetchIfRef(outlineDict.get('A'));
-              dest = a.get('D');
+            var dest = outlineDict.get('A');
+            if (dest)
+              dest = xref.fetchIfRef(dest).get('D');
+            else if (outlineDict.has('Dest')) {
+              dest = outlineDict.get('Dest');
+              if (IsName(dest))
+                dest = dest.name;
             }
+
             var outlineItem = {
               dest: dest,
               title: convertIfUnicode(outlineDict.get('Title')),
@@ -3479,7 +3501,8 @@ var Catalog = (function() {
           }
         }
       }
-      return shadow(this, 'documentOutline', root);
+      obj = root.items.length > 0 ? root.items : null;
+      return shadow(this, 'documentOutline', obj);
     },
     get numPages() {
       var obj = this.toplevelPagesDict.get('Count');
@@ -3513,15 +3536,26 @@ var Catalog = (function() {
     },
     get destinations() {
       var xref = this.xref;
+      var dests = {}, nameTreeRef, nameDictionaryRef;
       var obj = this.catDict.get('Names');
-      obj = obj ? xref.fetch(obj) : this.catDict;
-      obj = obj.get('Dests');
-      var dests = {};
-      if (obj) {
+      if (obj)
+        nameTreeRef = xref.fetchIfRef(obj).get('Dests');
+      else if(this.catDict.has('Dests'))
+        nameDictionaryRef = this.catDict.get('Dests');
+
+      if (nameDictionaryRef) {
+        // reading simple destination dictionary
+        obj = xref.fetch(nameDictionaryRef);
+        obj.forEach(function(key, value) {
+          if (!value) return;
+          dests[key] = xref.fetch(value).get('D');
+        });
+      }
+      if (nameTreeRef) {
         // reading name tree
         var processed = new RefSet();
-        processed.put(obj);
-        var queue = [obj];
+        processed.put(nameTreeRef);
+        var queue = [nameTreeRef];
         while (queue.length > 0) {
           var i, n;
           obj = xref.fetch(queue.shift());
@@ -3538,7 +3572,8 @@ var Catalog = (function() {
           }
           var names = obj.get('Names');
           for (i = 0, n = names.length; i < n; i += 2) {
-            dests[names[i]] = xref.fetch(names[i + 1]).get('D');
+            var dest = xref.fetch(names[i + 1]);
+            dests[names[i]] = IsDict(dest) ? dest.get('D') : dest;
           }
         }
       }
@@ -3851,6 +3886,44 @@ var Encodings = {
       'ucircumflex', 'udieresis', 'yacute', 'thorn', 'ydieresis'
     ]);
   },
+  get symbolsEncoding() {
+    return shadow(this, 'symbolsEncoding',
+      [,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+      'space', 'exclam', 'universal', 'numbersign', 'existential', 'percent',
+      'ampersand', 'suchthat', 'parenleft', 'parenright', 'asteriskmath',
+      'plus', 'comma', 'minus', 'period', 'slash', 'zero', 'one', 'two',
+      'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'colon',
+      'semicolon', 'less', 'equal', 'greater', 'question', 'congruent',
+      'Alpha', 'Beta', 'Chi', 'Delta', 'Epsilon', 'Phi', 'Gamma', 'Eta',
+      'Iota', 'theta1', 'Kappa', 'Lambda', 'Mu', 'Nu', 'Omicron', 'Pi',
+      'Theta', 'Rho', 'Sigma', 'Tau', 'Upsilon', 'sigma1', 'Omega', 'Xi',
+      'Psi', 'Zeta', 'bracketleft', 'therefore', 'bracketright',
+      'perpendicular', 'underscore', 'radicalex', 'alpha', 'beta', 'chi',
+      'delta', 'epsilon', 'phi', 'gamma', 'eta', 'iota', 'phi1', 'kappa',
+      'lambda', 'mu', 'nu', 'omicron', 'pi', 'theta', 'rho', 'sigma', 'tau',
+      'upsilon', 'omega1', 'omega', 'xi', 'psi', 'zeta', 'braceleft', 'bar',
+      'braceright', 'similar',,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,, 'Euro',
+      'Upsilon1', 'minute', 'lessequal', 'fraction', 'infinity', 'florin',
+      'club', 'diamond', 'heart', 'spade', 'arrowboth', 'arrowleft', 'arrowup',
+      'arrowright', 'arrowdown', 'degree', 'plusminus', 'second',
+      'greaterequal', 'multiply', 'proportional', 'partialdiff', 'bullet',
+      'divide', 'notequal', 'equivalence', 'approxequal', 'ellipsis',
+      'arrowvertex', 'arrowhorizex', 'carriagereturn', 'aleph', 'Ifraktur',
+      'Rfraktur', 'weierstrass', 'circlemultiply', 'circleplus', 'emptyset',
+      'intersection', 'union', 'propersuperset', 'reflexsuperset', 'notsubset',
+      'propersubset', 'reflexsubset', 'element', 'notelement', 'angle',
+      'gradient', 'registerserif', 'copyrightserif', 'trademarkserif',
+      'product', 'radical', 'dotmath', 'logicalnot', 'logicaland', 'logicalor',
+      'arrowdblboth', 'arrowdblleft', 'arrowdblup', 'arrowdblright',
+      'arrowdbldown', 'lozenge', 'angleleft', 'registersans', 'copyrightsans',
+      'trademarksans', 'summation', 'parenlefttp', 'parenleftex',
+      'parenleftbt', 'bracketlefttp', 'bracketleftex', 'bracketleftbt',
+      'bracelefttp', 'braceleftmid', 'braceleftbt', 'braceex', ,'angleright',
+      'integral', 'integraltp', 'integralex', 'integralbt', 'parenrighttp',
+      'parenrightex', 'parenrightbt', 'bracketrighttp', 'bracketrightex',
+      'bracketrightbt', 'bracerighttp', 'bracerightmid', 'bracerightbt'
+    ]);
+  },
   get zapfDingbatsEncoding() {
     return shadow(this, 'zapfDingbatsEncoding',
       [,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
@@ -4118,25 +4191,8 @@ var PartialEvaluator = (function() {
         fd = fontDict.get('FontDescriptor');
       }
 
-      if (!fd) {
-        var baseFontName = fontDict.get('BaseFont');
-        if (!IsName(baseFontName))
-          return null;
-        // Using base font name as a font name.
-        return {
-          name: baseFontName.name.replace(/[\+,\-]/g, '_'),
-          fontDict: fontDict,
-          properties: {}
-        };
-      }
-
-      var descriptor = xref.fetch(fd);
-
-      var fontName = xref.fetchIfRef(descriptor.get('FontName'));
-      assertWellFormed(IsName(fontName), 'invalid font name');
-      fontName = fontName.name.replace(/[\+,\-]/g, '_');
-
       var encodingMap = {};
+      var glyphMap = {};
       var charset = [];
       if (compositeFont) {
         // Special CIDFont support
@@ -4174,127 +4230,162 @@ var PartialEvaluator = (function() {
                  '9.7.5.3');
           }
         }
-      } else if (fontDict.has('Encoding')) {
-        var encoding = xref.fetchIfRef(fontDict.get('Encoding'));
-        if (IsDict(encoding)) {
-          // Build a map of between codes and glyphs
-          // Load the base encoding
-          var baseName = encoding.get('BaseEncoding');
-          if (baseName) {
-            var base = Encodings[baseName.name];
-            for (var j = 0, end = base.length; j < end; j++)
-              encodingMap[j] = GlyphsUnicode[base[j]] || 0;
-          } else {
-            TODO('need to load default encoding');
-          }
-
-          // Load the differences between the base and original
-          var differences = encoding.get('Differences');
-          var index = 0;
-          for (var j = 0; j < differences.length; j++) {
-            var data = differences[j];
-            if (IsNum(data)) {
-              index = data;
-            } else {
-              encodingMap[index++] = (subType.name == 'TrueType') ? j :
-                                     GlyphsUnicode[data.name];
+      } else {
+        var baseEncoding = null, diffEncoding = [];
+        if (fontDict.has('Encoding')) {
+          var encoding = xref.fetchIfRef(fontDict.get('Encoding'));
+          if (IsDict(encoding)) {
+            // Build a map of between codes and glyphs
+            // Load the base encoding
+            var baseName = encoding.get('BaseEncoding');
+            if (baseName) {
+              baseEncoding = Encodings[baseName.name].slice();
             }
-          }
 
-          // Get the font charset if any
-          var charset = descriptor.get('CharSet');
-          if (charset) {
-            assertWellFormed(IsString(charset), 'invalid charset');
-            charset = charset.split('/');
-            charset.shift();
-          }
-        } else if (IsName(encoding)) {
-          var encoding = Encodings[encoding.name];
-          if (!encoding)
-            error('Unknown font encoding');
-
-          var index = 0;
-          for (var j = 0; j < encoding.length; j++)
-            encodingMap[index++] = GlyphsUnicode[encoding[j]];
-
-          var firstChar = xref.fetchIfRef(fontDict.get('FirstChar'));
-          var widths = xref.fetchIfRef(fontDict.get('Widths'));
-          assertWellFormed(IsArray(widths) && IsInt(firstChar),
-                           'invalid font Widths or FirstChar');
-
-          for (var j = 0; j < widths.length; j++) {
-            if (widths[j])
-              charset.push(encoding[j + firstChar]);
+            // Load the differences between the base and original
+            var differences = encoding.get('Differences');
+            var index = 0;
+            for (var j = 0; j < differences.length; j++) {
+              var data = differences[j];
+              if (IsNum(data)) {
+                index = data;
+              } else {
+                diffEncoding[index++] = data.name;
+              }
+            }
+          } else if (IsName(encoding)) {
+            baseEncoding = Encodings[encoding.name].slice();
           }
         }
-      } else if (fontDict.has('ToUnicode')) {
-        encodingMap = {empty: true};
-        var cmapObj = xref.fetchIfRef(fontDict.get('ToUnicode'));
-        if (IsName(cmapObj)) {
-          error('ToUnicode file cmap translation not implemented');
-        } else if (IsStream(cmapObj)) {
-          var encoding = Encodings['WinAnsiEncoding'];
-          var firstChar = xref.fetchIfRef(fontDict.get('FirstChar'));
 
-          var tokens = [];
-          var token = '';
+        if (!baseEncoding) {
+          var type = subType.name;
+          if (type == 'TrueType') {
+            baseEncoding = Encodings.WinAnsiEncoding.slice(0);
+          } else if (type == 'Type1') {
+            baseEncoding = Encodings.StandardEncoding.slice(0);
+          } else {
+            error('Unknown type of font');
+          }
+        }
 
-          var cmap = cmapObj.getBytes(cmapObj.length);
-          for (var i = 0; i < cmap.length; i++) {
-            var byte = cmap[i];
-            if (byte == 0x20 || byte == 0x0A || byte == 0x3C || byte == 0x3E) {
-              switch (token) {
-              case 'useCMap':
-                error('useCMap is not implemented');
-                break;
+        // merge in the differences
+        var length = baseEncoding.length > diffEncoding.length ? 
+            baseEncoding.length : diffEncoding.length;
+        for (var i = 0, ii = length; i < ii; ++i) {
+          var diffGlyph = diffEncoding[i];
+          var baseGlyph = baseEncoding[i];
+          if (diffGlyph) {
+            glyphMap[i] = diffGlyph;
+            encodingMap[i] = GlyphsUnicode[diffGlyph];
+          } else if (baseGlyph) {
+            glyphMap[i] = baseGlyph;
+            encodingMap[i] = GlyphsUnicode[baseGlyph];
+          }
+        }
 
-              case 'beginbfchar':
-              case 'beginbfrange':
-              case 'begincodespacerange':
-                token = '';
-                tokens = [];
-                break;
+        if (fontDict.has('ToUnicode')) {
+          var cmapObj = xref.fetchIfRef(fontDict.get('ToUnicode'));
+          if (IsName(cmapObj)) {
+            error('ToUnicode file cmap translation not implemented');
+          } else if (IsStream(cmapObj)) {
+            var firstChar = xref.fetchIfRef(fontDict.get('FirstChar'));
 
-              case 'endcodespacerange':
-                TODO('Support CMap ranges');
-                break;
+            var tokens = [];
+            var token = '';
 
-              case 'endbfrange':
-                for (var j = 0; j < tokens.length; j += 3) {
-                  var startRange = parseInt('0x' + tokens[j]);
-                  var endRange = parseInt('0x' + tokens[j + 1]);
-                  var code = parseInt('0x' + tokens[j + 2]);
+            var cmap = cmapObj.getBytes(cmapObj.length);
+            for (var i = 0; i < cmap.length; i++) {
+              var byte = cmap[i];
+              if (byte == 0x20 || byte == 0x0A || byte == 0x3C || 
+                  byte == 0x3E) {
+                switch (token) {
+                  case 'useCMap':
+                    error('useCMap is not implemented');
+                    break;
 
-                  for (var k = startRange; k <= endRange; k++) {
-                    charset.push(encoding[code++] || '.notdef');
-                  }
+                  case 'beginbfchar':
+                  case 'beginbfrange':
+                  case 'begincodespacerange':
+                    token = '';
+                    tokens = [];
+                    break;
+
+                  case 'endcodespacerange':
+                    TODO('Support CMap ranges');
+                    break;
+
+                  case 'endbfrange':
+                    for (var j = 0; j < tokens.length; j += 3) {
+                      var startRange = parseInt('0x' + tokens[j]);
+                      var endRange = parseInt('0x' + tokens[j + 1]);
+                      var code = parseInt('0x' + tokens[j + 2]);
+                    }
+                    break;
+
+                  case 'endbfchar':
+                    for (var j = 0; j < tokens.length; j += 2) {
+                      var index = parseInt('0x' + tokens[j]);
+                      var code = parseInt('0x' + tokens[j + 1]);
+                      encodingMap[index] = code;
+                    }
+                    break;
+
+                  default:
+                    if (token.length) {
+                      tokens.push(token);
+                      token = '';
+                    }
+                    break;
                 }
-                break;
-
-              case 'endbfchar':
-                for (var j = 0; j < tokens.length; j += 2) {
-                  var index = parseInt('0x' + tokens[j]);
-                  var code = parseInt('0x' + tokens[j + 1]);
-                  encodingMap[index] = GlyphsUnicode[encoding[code]];
-                  charset.push(encoding[code] || '.notdef');
-                }
-                break;
-
-              default:
-                if (token.length) {
-                  tokens.push(token);
-                  token = '';
-                }
-                break;
+              } else if (byte == 0x5B || byte == 0x5D) {
+                error('CMAP list parsing is not implemented');
+              } else {
+                token += String.fromCharCode(byte);
               }
-            } else if (byte == 0x5B || byte == 0x5D) {
-              error('CMAP list parsing is not implemented');
-            } else {
-              token += String.fromCharCode(byte);
             }
           }
+        }
+
+        // firstChar and width are required
+        // (except for 14 standard fonts)
+        var firstChar = xref.fetchIfRef(fontDict.get('FirstChar'));
+        var widths = xref.fetchIfRef(fontDict.get('Widths')) || [];
+        for (var j = 0; j < widths.length; j++) {
+          if (widths[j])
+            charset.push(glyphMap[j + firstChar]);
         }
       }
+
+      if (!fd) {
+        var baseFontName = fontDict.get('BaseFont');
+        if (!IsName(baseFontName))
+          return null;
+        // Using base font name as a font name.
+        baseFontName = baseFontName.name.replace(/[\+,\-]/g, '_');
+        if (/^Symbol(_?(Bold|Italic))*$/.test(baseFontName)) {
+          // special case for symbols
+          var encoding = Encodings.symbolsEncoding;
+          for (var i = 0, n = encoding.length, j; i < n; i++) {
+            if (!(j = encoding[i]))
+              continue;
+            encodingMap[i] = GlyphsUnicode[j] || 0;
+          }
+        }
+        return {
+          name: baseFontName,
+          fontDict: fontDict,
+          properties: {
+            encoding: encodingMap
+          }
+        };
+      }
+
+      var descriptor = xref.fetch(fd);
+
+      var fontName = xref.fetchIfRef(descriptor.get('FontName'));
+      assertWellFormed(IsName(fontName), 'invalid font name');
+      fontName = fontName.name.replace(/[\+,\-]/g, '_');
 
       var fontFile = descriptor.get('FontFile', 'FontFile2', 'FontFile3');
       if (fontFile) {
@@ -4305,6 +4396,14 @@ var PartialEvaluator = (function() {
           if (fileType)
             fileType = fileType.name;
         }
+      }
+
+      if (descriptor.has('CharSet')) {
+        // Get the font charset if any (meaningful only in Type 1)
+        charset = descriptor.get('CharSet');
+        assertWellFormed(IsString(charset), 'invalid charset');
+        charset = charset.split('/');
+        charset.shift();
       }
 
       var widths = fontDict.get('Widths');
