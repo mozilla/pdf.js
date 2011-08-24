@@ -3870,6 +3870,44 @@ var Encodings = {
       'ucircumflex', 'udieresis', 'yacute', 'thorn', 'ydieresis'
     ]);
   },
+  get symbolsEncoding() {
+    return shadow(this, 'symbolsEncoding',
+      [,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+      'space', 'exclam', 'universal', 'numbersign', 'existential', 'percent',
+      'ampersand', 'suchthat', 'parenleft', 'parenright', 'asteriskmath',
+      'plus', 'comma', 'minus', 'period', 'slash', 'zero', 'one', 'two',
+      'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'colon',
+      'semicolon', 'less', 'equal', 'greater', 'question', 'congruent',
+      'Alpha', 'Beta', 'Chi', 'Delta', 'Epsilon', 'Phi', 'Gamma', 'Eta',
+      'Iota', 'theta1', 'Kappa', 'Lambda', 'Mu', 'Nu', 'Omicron', 'Pi',
+      'Theta', 'Rho', 'Sigma', 'Tau', 'Upsilon', 'sigma1', 'Omega', 'Xi',
+      'Psi', 'Zeta', 'bracketleft', 'therefore', 'bracketright',
+      'perpendicular', 'underscore', 'radicalex', 'alpha', 'beta', 'chi',
+      'delta', 'epsilon', 'phi', 'gamma', 'eta', 'iota', 'phi1', 'kappa',
+      'lambda', 'mu', 'nu', 'omicron', 'pi', 'theta', 'rho', 'sigma', 'tau',
+      'upsilon', 'omega1', 'omega', 'xi', 'psi', 'zeta', 'braceleft', 'bar',
+      'braceright', 'similar',,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,, 'Euro',
+      'Upsilon1', 'minute', 'lessequal', 'fraction', 'infinity', 'florin',
+      'club', 'diamond', 'heart', 'spade', 'arrowboth', 'arrowleft', 'arrowup',
+      'arrowright', 'arrowdown', 'degree', 'plusminus', 'second',
+      'greaterequal', 'multiply', 'proportional', 'partialdiff', 'bullet',
+      'divide', 'notequal', 'equivalence', 'approxequal', 'ellipsis',
+      'arrowvertex', 'arrowhorizex', 'carriagereturn', 'aleph', 'Ifraktur',
+      'Rfraktur', 'weierstrass', 'circlemultiply', 'circleplus', 'emptyset',
+      'intersection', 'union', 'propersuperset', 'reflexsuperset', 'notsubset',
+      'propersubset', 'reflexsubset', 'element', 'notelement', 'angle',
+      'gradient', 'registerserif', 'copyrightserif', 'trademarkserif',
+      'product', 'radical', 'dotmath', 'logicalnot', 'logicaland', 'logicalor',
+      'arrowdblboth', 'arrowdblleft', 'arrowdblup', 'arrowdblright',
+      'arrowdbldown', 'lozenge', 'angleleft', 'registersans', 'copyrightsans',
+      'trademarksans', 'summation', 'parenlefttp', 'parenleftex',
+      'parenleftbt', 'bracketlefttp', 'bracketleftex', 'bracketleftbt',
+      'bracelefttp', 'braceleftmid', 'braceleftbt', 'braceex', ,'angleright',
+      'integral', 'integraltp', 'integralex', 'integralbt', 'parenrighttp',
+      'parenrightex', 'parenrightbt', 'bracketrighttp', 'bracketrightex',
+      'bracketrightbt', 'bracerighttp', 'bracerightmid', 'bracerightbt'
+    ]);
+  },
   get zapfDingbatsEncoding() {
     return shadow(this, 'zapfDingbatsEncoding',
       [,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
@@ -4137,24 +4175,6 @@ var PartialEvaluator = (function() {
         fd = fontDict.get('FontDescriptor');
       }
 
-      if (!fd) {
-        var baseFontName = fontDict.get('BaseFont');
-        if (!IsName(baseFontName))
-          return null;
-        // Using base font name as a font name.
-        return {
-          name: baseFontName.name.replace(/[\+,\-]/g, '_'),
-          fontDict: fontDict,
-          properties: {}
-        };
-      }
-
-      var descriptor = xref.fetch(fd);
-
-      var fontName = xref.fetchIfRef(descriptor.get('FontName'));
-      assertWellFormed(IsName(fontName), 'invalid font name');
-      fontName = fontName.name.replace(/[\+,\-]/g, '_');
-
       var encodingMap = {};
       var charset = [];
       if (compositeFont) {
@@ -4219,14 +4239,6 @@ var PartialEvaluator = (function() {
                                      GlyphsUnicode[data.name];
             }
           }
-
-          // Get the font charset if any
-          var charset = descriptor.get('CharSet');
-          if (charset) {
-            assertWellFormed(IsString(charset), 'invalid charset');
-            charset = charset.split('/');
-            charset.shift();
-          }
         } else if (IsName(encoding)) {
           var encoding = Encodings[encoding.name];
           if (!encoding)
@@ -4236,11 +4248,10 @@ var PartialEvaluator = (function() {
           for (var j = 0; j < encoding.length; j++)
             encodingMap[index++] = GlyphsUnicode[encoding[j]];
 
+          // firstChar and width are required
+          // (except for 14 standard fonts)
           var firstChar = xref.fetchIfRef(fontDict.get('FirstChar'));
-          var widths = xref.fetchIfRef(fontDict.get('Widths'));
-          assertWellFormed(IsArray(widths) && IsInt(firstChar),
-                           'invalid font Widths or FirstChar');
-
+          var widths = xref.fetchIfRef(fontDict.get('Widths')) || [];
           for (var j = 0; j < widths.length; j++) {
             if (widths[j])
               charset.push(encoding[j + firstChar]);
@@ -4315,6 +4326,36 @@ var PartialEvaluator = (function() {
         }
       }
 
+      if (!fd) {
+        var baseFontName = fontDict.get('BaseFont');
+        if (!IsName(baseFontName))
+          return null;
+        // Using base font name as a font name.
+        baseFontName = baseFontName.name.replace(/[\+,\-]/g, '_');
+        if (/^Symbol(_?(Bold|Italic))*$/.test(baseFontName)) {
+          // special case for symbols
+          var encoding = Encodings.symbolsEncoding;
+          for (var i = 0, n = encoding.length, j; i < n; i++) {
+            if (!(j = encoding[i]))
+              continue;
+            encodingMap[i] = GlyphsUnicode[j] || 0;
+          }
+        }
+        return {
+          name: baseFontName,
+          fontDict: fontDict,
+          properties: {
+            encoding: encodingMap
+          }
+        };
+      }
+
+      var descriptor = xref.fetch(fd);
+
+      var fontName = xref.fetchIfRef(descriptor.get('FontName'));
+      assertWellFormed(IsName(fontName), 'invalid font name');
+      fontName = fontName.name.replace(/[\+,\-]/g, '_');
+
       var fontFile = descriptor.get('FontFile', 'FontFile2', 'FontFile3');
       if (fontFile) {
         fontFile = xref.fetchIfRef(fontFile);
@@ -4324,6 +4365,14 @@ var PartialEvaluator = (function() {
           if (fileType)
             fileType = fileType.name;
         }
+      }
+
+      if (descriptor.has('CharSet')) {
+        // Get the font charset if any (meaningful only in Type 1)
+        charset = descriptor.get('CharSet');
+        assertWellFormed(IsString(charset), 'invalid charset');
+        charset = charset.split('/');
+        charset.shift();
       }
 
       var widths = fontDict.get('Widths');
