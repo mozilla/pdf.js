@@ -3370,7 +3370,7 @@ var Page = (function() {
       var links = [];
       for (i = 0; i < n; ++i) {
         var annotation = xref.fetch(annotations[i]);
-        if (!IsDict(annotation, 'Annot'))
+        if (!IsDict(annotation))
           continue;
         var subtype = annotation.get('Subtype');
         if (!IsName(subtype) || subtype.name != 'Link')
@@ -3525,7 +3525,7 @@ var Catalog = (function() {
       var dests = {}, nameTreeRef, nameDictionaryRef;
       var obj = this.catDict.get('Names');
       if (obj)
-        nameTreeRef = xref.fetch(obj).get('Dests');
+        nameTreeRef = xref.fetchIfRef(obj).get('Dests');
       else if(this.catDict.has('Dests'))
         nameDictionaryRef = this.catDict.get('Dests');
 
@@ -3533,6 +3533,7 @@ var Catalog = (function() {
         // reading simple destination dictionary
         obj = xref.fetch(nameDictionaryRef);
         obj.forEach(function(key, value) {
+          if (!value) return;
           dests[key] = xref.fetch(value).get('D');
         });
       }
@@ -3557,7 +3558,8 @@ var Catalog = (function() {
           }
           var names = obj.get('Names');
           for (i = 0, n = names.length; i < n; i += 2) {
-            dests[names[i]] = xref.fetch(names[i + 1]).get('D');
+            var dest = xref.fetch(names[i + 1]);
+            dests[names[i]] = IsDict(dest) ? dest.get('D') : dest;
           }
         }
       }
