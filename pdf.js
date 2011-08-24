@@ -4176,6 +4176,7 @@ var PartialEvaluator = (function() {
       }
 
       var encodingMap = {};
+      var glyphMap = {};
       var charset = [];
       if (compositeFont) {
         // Special CIDFont support
@@ -4258,19 +4259,20 @@ var PartialEvaluator = (function() {
         for (var i = 0, ii = length; i < ii; ++i) {
           var diffGlyph = diffEncoding[i];
           var baseGlyph = baseEncoding[i];
-          if (diffGlyph)
+          if (diffGlyph) {
+            glyphMap[i] = diffGlyph;
             encodingMap[i] = GlyphsUnicode[diffGlyph];
-          else if (baseGlyph)
+          } else if (baseGlyph) {
+            glyphMap[i] = baseGlyph;
             encodingMap[i] = GlyphsUnicode[baseGlyph];
+          }
         }
 
-        if (fontDict.has('ToUnicode') && false) {
-          encodingMap = {empty: true};
+        if (fontDict.has('ToUnicode')) {
           var cmapObj = xref.fetchIfRef(fontDict.get('ToUnicode'));
           if (IsName(cmapObj)) {
             error('ToUnicode file cmap translation not implemented');
           } else if (IsStream(cmapObj)) {
-            var encoding = Encodings['WinAnsiEncoding'];
             var firstChar = xref.fetchIfRef(fontDict.get('FirstChar'));
 
             var tokens = [];
@@ -4279,7 +4281,8 @@ var PartialEvaluator = (function() {
             var cmap = cmapObj.getBytes(cmapObj.length);
             for (var i = 0; i < cmap.length; i++) {
               var byte = cmap[i];
-              if (byte == 0x20 || byte == 0x0A || byte == 0x3C || byte == 0x3E) {
+              if (byte == 0x20 || byte == 0x0A || byte == 0x3C || 
+                  byte == 0x3E) {
                 switch (token) {
                   case 'useCMap':
                     error('useCMap is not implemented');
@@ -4301,10 +4304,6 @@ var PartialEvaluator = (function() {
                       var startRange = parseInt('0x' + tokens[j]);
                       var endRange = parseInt('0x' + tokens[j + 1]);
                       var code = parseInt('0x' + tokens[j + 2]);
-
-                      for (var k = startRange; k <= endRange; k++) {
-                        charset.push(encoding[code++] || '.notdef');
-                      }
                     }
                     break;
 
@@ -4312,8 +4311,7 @@ var PartialEvaluator = (function() {
                     for (var j = 0; j < tokens.length; j += 2) {
                       var index = parseInt('0x' + tokens[j]);
                       var code = parseInt('0x' + tokens[j + 1]);
-                      encodingMap[index] = GlyphsUnicode[encoding[code]];
-                      charset.push(encoding[code] || '.notdef');
+                      encodingMap[index] = code;
                     }
                     break;
 
@@ -4339,7 +4337,7 @@ var PartialEvaluator = (function() {
         var widths = xref.fetchIfRef(fontDict.get('Widths')) || [];
         for (var j = 0; j < widths.length; j++) {
           if (widths[j])
-            charset.push(encodingMap[j + firstChar]);
+            charset.push(glyphMap[j + firstChar]);
         }
       }
 
