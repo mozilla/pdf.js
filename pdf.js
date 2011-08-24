@@ -4264,7 +4264,7 @@ var PartialEvaluator = (function() {
             encodingMap[i] = GlyphsUnicode[baseGlyph];
         }
 
-        if (fontDict.has('ToUnicode')) {
+        if (fontDict.has('ToUnicode') && false) {
           encodingMap = {empty: true};
           var cmapObj = xref.fetchIfRef(fontDict.get('ToUnicode'));
           if (IsName(cmapObj)) {
@@ -4333,15 +4333,15 @@ var PartialEvaluator = (function() {
           }
         }
 
-/*       // firstChar and width are required
+        // firstChar and width are required
         // (except for 14 standard fonts)
         var firstChar = xref.fetchIfRef(fontDict.get('FirstChar'));
         var widths = xref.fetchIfRef(fontDict.get('Widths')) || [];
         for (var j = 0; j < widths.length; j++) {
           if (widths[j])
-            charset.push(encoding[j + firstChar]);
+            charset.push(encodingMap[j + firstChar]);
         }
-*/      }
+      }
 
       if (!fd) {
         var baseFontName = fontDict.get('BaseFont');
