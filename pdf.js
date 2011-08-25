@@ -208,6 +208,11 @@ var DecodeStream = (function() {
           this.readBlock();
 
         var end = this.bufferLength;
+
+        // checking if bufferLength is still 0 then
+        // the buffer has to be initialized
+        if (!end)
+          this.buffer = new Uint8Array(0);
       }
 
       this.pos = end;
@@ -3340,11 +3345,11 @@ var Page = (function() {
       var xref = this.xref;
       var content = xref.fetchIfRef(this.content);
       var resources = xref.fetchIfRef(this.resources);
-      if (IsArray(this.content)) {
+      if (IsArray(content)) {
         // fetching items
         var i, n = content.length;
         for (i = 0; i < n; ++i)
-          content[i] = xref.fetchIfRef(this.content[i]);
+          content[i] = xref.fetchIfRef(content[i]);
         content = new StreamsSequenceStream(content);
       }
       this.code = gfx.compile(content, xref, resources, fonts, images);
@@ -4191,6 +4196,7 @@ var PartialEvaluator = (function() {
         fd = fontDict.get('FontDescriptor');
       }
 
+      var builtInEncoding = false;
       var encodingMap = {};
       var glyphMap = {};
       var charset = [];
@@ -4261,9 +4267,11 @@ var PartialEvaluator = (function() {
         if (!baseEncoding) {
           var type = subType.name;
           if (type == 'TrueType') {
-            baseEncoding = Encodings.WinAnsiEncoding.slice(0);
+            baseEncoding = Encodings.WinAnsiEncoding.slice();
           } else if (type == 'Type1') {
-            baseEncoding = Encodings.StandardEncoding.slice(0);
+            baseEncoding = Encodings.StandardEncoding.slice();
+            if (!diffEncoding.length)
+              builtInEncoding = true;
           } else {
             error('Unknown type of font');
           }
@@ -4285,6 +4293,7 @@ var PartialEvaluator = (function() {
         }
 
         if (fontDict.has('ToUnicode')) {
+          encodingMap['empty'] = true;
           var cmapObj = xref.fetchIfRef(fontDict.get('ToUnicode'));
           if (IsName(cmapObj)) {
             error('ToUnicode file cmap translation not implemented');
@@ -4419,6 +4428,7 @@ var PartialEvaluator = (function() {
         subtype: fileType,
         widths: glyphWidths,
         encoding: encodingMap,
+        builtInEncoding: builtInEncoding,
         charset: charset,
         firstChar: fontDict.get('FirstChar'),
         lastChar: fontDict.get('LastChar'),
@@ -5102,15 +5112,18 @@ var CanvasGraphics = (function() {
 
       var tmpCanvas = new this.ScratchCanvas(w, h);
       var tmpCtx = tmpCanvas.getContext('2d');
+      if (imageObj.imageMask) {
+        var fillColor = this.current.fillColor;
+        tmpCtx.fillStyle = (fillColor && fillColor.type === 'Pattern') ?
+          fillColor.getPattern(tmpCtx) : fillColor;
+        tmpCtx.fillRect(0, 0, w, h);
+      }
       var imgData = tmpCtx.getImageData(0, 0, w, h);
       var pixels = imgData.data;
 
       if (imageObj.imageMask) {
-        var inverseDecode = imageObj.decode && imageObj.decode[0] > 0;
-        // TODO fillColor pattern support
-        var fillColor = this.current.fillColor;
-        imageObj.fillUsingStencilMask(pixels, fillColor,
-                                      inverseDecode);
+        var inverseDecode = !!imageObj.decode && imageObj.decode[0] > 0;
+        imageObj.applyStencilMask(pixels, inverseDecode);
       } else
         imageObj.fillRgbaBuffer(pixels);
 
@@ -5990,26 +6003,26 @@ var PDFImage = (function() {
       }
       return buf;
     },
-    fillUsingStencilMask: function fillUsingStencilMask(buffer,
-      cssRgb, inverseDecode) {
-      var m = /rgb\((\d+),(\d+),(\d+)\)/.exec(cssRgb); // parse CSS color
-      var r = m[1] | 0, g = m[2] | 0, b = m[3] | 0;
-      var bufferLength = this.width * this.height;
-      var imgArray = this.image.getBytes((bufferLength + 7) >> 3);
-      var i, mask;
-      var bufferPos = 0, imgArrayPos = 0;
-      for (i = 0; i < bufferLength; i++) {
-        var buf = imgArray[imgArrayPos++];
-        for (mask = 128; mask > 0; mask >>= 1) {
-          if (!(buf & mask) != inverseDecode) {
-            buffer[bufferPos++] = r;
-            buffer[bufferPos++] = g;
-            buffer[bufferPos++] = b;
-            buffer[bufferPos++] = 255;
-          } else {
-            buffer[bufferPos + 3] = 0;
-            bufferPos += 4;
+    applyStencilMask: function applyStencilMask(buffer, inverseDecode) {
+      var width = this.width, height = this.height;
+      var bitStrideLength = (width + 7) >> 3;
+      var imgArray = this.image.getBytes(bitStrideLength * height);
+      var imgArrayPos = 0;
+      var i, j, mask, buf;
+      // removing making non-masked pixels transparent
+      var bufferPos = 3; // alpha component offset
+      for (i = 0; i < height; i++) {
+        mask = 0;
+        for (j = 0; j < width; j++) {
+          if (!mask) {
+            buf = imgArray[imgArrayPos++];
+            mask = 128;
           }
+          if (!(buf & mask) == inverseDecode) {
+            buffer[bufferPos] = 0;
+          }
+          bufferPos += 4;
+          mask >>= 1;
         }
       }
     },

@@ -543,7 +543,7 @@ var CipherTransformFactory = (function() {
       key[i++] = 0x54;
     }
     var hash = md5(key, 0, i);
-    return hash.subarray(0, Math.min(key.length, 16));
+    return hash.subarray(0, Math.min(encryptionKey.length + 5, 16));
   }
 
   function buildCipherConstructor(cf, name, num, gen, key) {
