@@ -3482,10 +3482,10 @@ var Catalog = (function() {
               if (IsName(dest))
                 dest = dest.name;
             }
-
+            var title = xref.fetchIfRef(outlineDict.get('Title'));
             var outlineItem = {
               dest: dest,
-              title: convertIfUnicode(outlineDict.get('Title')),
+              title: convertIfUnicode(title),
               color: outlineDict.get('C') || [0, 0, 0],
               count: outlineDict.get('Count'),
               bold: !!(outlineDict.get('F') & 2),
