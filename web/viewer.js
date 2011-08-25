@@ -212,39 +212,24 @@ var PageView = function(container, content, id, width, height,
   };
 
   function setupLinks(canvas, content, scale) {
+    function bindLink(link, dest) {
+      if (dest) {
+        link.onclick = function() {
+          PDFView.navigateTo(dest);
+          return false;
+        };
+      }
+    }
     var links = content.getLinks();
-    var currentLink = null;
-    if (links.length > 0) {
-      canvas.addEventListener('mousemove', function(e) {
-        var x = e.pageX;
-        var y = e.pageY;
-        for (var p = canvas; p; p = p.offsetParent) {
-          x -= p.offsetLeft;
-          y -= p.offsetTop;
-        }
-        x /= scale;
-        y /= scale;
-        var i, n = links.length;
-        for (i = 0; i < n; i++) {
-          var link = links[i];
-          if (link.x <= x && link.y <= y &&
-            x < link.x + link.width && y < link.y + link.height) {
-            currentLink = link;
-            canvas.style.cursor = 'pointer';
-            return;
-          }
-        }
-        currentLink = null;
-        canvas.style.cursor = 'default';
-      }, false);
-      canvas.addEventListener('mousedown', function(e) {
-        if (!currentLink)
-          return;
-        if (currentLink.url)
-          window.location.href = currentLink.url;
-        if (currentLink.dest)
-          navigateTo(currentLink.dest);
-      }, false);
+    for (var i = 0; i < links.length; i++) {
+      var link = document.createElement('a');
+      link.style.left = Math.floor(links[i].x * scale) + 'px';
+      link.style.top = Math.floor(links[i].y * scale) + 'px';
+      link.style.width = Math.ceil(links[i].width * scale) + 'px';
+      link.style.height = Math.ceil(links[i].height * scale) + 'px';
+      link.href = links[i].url || '';
+      bindLink(link, links[i].dest);
+      div.appendChild(link);
     }
   }
 
