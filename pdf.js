@@ -4288,6 +4288,7 @@ var PartialEvaluator = (function() {
         }
 
         if (fontDict.has('ToUnicode')) {
+          encodingMap['empty'] = true;
           var cmapObj = xref.fetchIfRef(fontDict.get('ToUnicode'));
           if (IsName(cmapObj)) {
             error('ToUnicode file cmap translation not implemented');
