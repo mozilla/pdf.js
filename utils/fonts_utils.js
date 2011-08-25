@@ -3,7 +3,7 @@
 
 'use strict';
 
-/**
+/*
  * The Type2 reader code below is only used for debugging purpose since Type2
  * is only a CharString format and is never used directly as a Font file.
  *
@@ -12,7 +12,7 @@
  * CharString or to understand the structure of the CFF format.
  */
 
-/**
+/*
  * Build a charset by assigning the glyph name and the human readable form
  * of the glyph data.
  */
@@ -38,7 +38,7 @@ function readCharset(aStream, aCharstrings) {
   return charset;
 }
 
-/**
+/*
  * Take a Type2 binary charstring as input and transform it to a human
  * readable representation as specified by the 'The Type 2 Charstring Format',
  * chapter 3.1.
@@ -86,7 +86,7 @@ function readCharstringEncoding(aString) {
 }
 
 
-/**
+/*
  * Take a binary DICT Data as input and transform it into a human readable
  * form as specified by 'The Compact Font Format Specification', chapter 5.
  */
@@ -159,8 +159,7 @@ function readFontDictData(aString, aMap) {
   return fontDictDataTokens;
 }
 
-
-/**
+/*
  * Take a stream as input and return an array of objects.
  * In CFF an INDEX is a structure with the following format:
  *  {
@@ -371,8 +370,7 @@ var Type2Parser = function(aFilePath) {
  *
  */
 
-
-/**
+/*
  * Write to a file to the disk (works only on Firefox in privilege mode)
  * but this is useful for dumping a font file to the disk and check with
  * fontforge or the ots program what's wrong with the file.

@@ -3545,7 +3545,7 @@ var Catalog = (function() {
       var obj = this.catDict.get('Names');
       if (obj)
         nameTreeRef = xref.fetchIfRef(obj).get('Dests');
-      else if(this.catDict.has('Dests'))
+      else if (this.catDict.has('Dests'))
         nameDictionaryRef = this.catDict.get('Dests');
 
       if (nameDictionaryRef) {
@@ -3923,7 +3923,7 @@ var Encodings = {
       'arrowdbldown', 'lozenge', 'angleleft', 'registersans', 'copyrightsans',
       'trademarksans', 'summation', 'parenlefttp', 'parenleftex',
       'parenleftbt', 'bracketlefttp', 'bracketleftex', 'bracketleftbt',
-      'bracelefttp', 'braceleftmid', 'braceleftbt', 'braceex', ,'angleright',
+      'bracelefttp', 'braceleftmid', 'braceleftbt', 'braceex',, 'angleright',
       'integral', 'integraltp', 'integralex', 'integralbt', 'parenrighttp',
       'parenrightex', 'parenrightbt', 'bracketrighttp', 'bracketrightex',
       'bracketrightbt', 'bracerighttp', 'bracerightmid', 'bracerightbt'
@@ -4278,8 +4278,8 @@ var PartialEvaluator = (function() {
         }
 
         // merge in the differences
-        var length = baseEncoding.length > diffEncoding.length ? 
-            baseEncoding.length : diffEncoding.length;
+        var length = baseEncoding.length > diffEncoding.length ?
+                     baseEncoding.length : diffEncoding.length;
         for (var i = 0, ii = length; i < ii; ++i) {
           var diffGlyph = diffEncoding[i];
           var baseGlyph = baseEncoding[i];
@@ -4306,7 +4306,7 @@ var PartialEvaluator = (function() {
             var cmap = cmapObj.getBytes(cmapObj.length);
             for (var i = 0; i < cmap.length; i++) {
               var byte = cmap[i];
-              if (byte == 0x20 || byte == 0x0A || byte == 0x3C || 
+              if (byte == 0x20 || byte == 0x0A || byte == 0x3C ||
                   byte == 0x3E) {
                 switch (token) {
                   case 'useCMap':
