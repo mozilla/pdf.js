@@ -1284,8 +1284,6 @@ var Font = (function Font() {
           var charcode = chars.charCodeAt(i);
           var unicode = encoding[charcode];
           if ('undefined' == typeof(unicode)) {
-            // FIXME/issue 233: we're hitting this in test/pdf/sizes.pdf
-            // at the moment, for unknown reasons.
             warn('Unencoded charcode ' + charcode);
             unicode = charcode;
           }
@@ -1485,16 +1483,22 @@ var Type1Parser = function() {
           // TODO Clean this code
           if (value == 13) {
             if (charstring.length == 2) {
+              lsb = charstring[0];
               width = charstring[1];
+              charstring.splice(0, 1);
             } else if (charstring.length == 4 && charstring[3] == 'div') {
+              lsb = charstring[0];
               width = charstring[1] / charstring[2];
+              charstring.splice(0, 1);
+            } else if (charstring.length == 4 && charstring[2] == 'div') {
+              lsb = charstring[0] / charstring[1];
+              width = charstring[3];
+              charstring.splice(0, 3);
             } else {
               error('Unsupported hsbw format: ' + charstring);
             }
 
-            lsb = charstring[0];
             charstring.push(lsb, 'hmoveto');
-            charstring.splice(0, 1);
             continue;
           }
           command = charStringDictionary[value];
@@ -1584,13 +1588,12 @@ var Type1Parser = function() {
         while (i < count && (eexecStr[i] == ' ' || eexecStr[i] == '\n'))
           ++i;
 
-        var t = '';
+        var token = '';
         while (i < count && !(eexecStr[i] == ' ' || eexecStr[i] == '\n'))
-          t += eexecStr[i++];
+          token += eexecStr[i++];
 
-        return t;
-      }
-
+        return token;
+      };
       var c = eexecStr[i];
 
       if ((glyphsSection || subrsSection) && c == 'R') {
@@ -1674,18 +1677,28 @@ var Type1Parser = function() {
     return program;
   },
 
-  this.extractFontHeader = function t1_extractFontProgram(stream) {
+  this.extractFontHeader = function t1_extractFontHeader(stream, properties) {
     var headerString = '';
     for (var i = 0; i < stream.length; i++)
       headerString += String.fromCharCode(stream[i]);
 
-    var info = {
-      textMatrix: null
-    };
-
     var token = '';
     var count = headerString.length;
     for (var i = 0; i < count; i++) {
+      var getToken = function() {
+        var char = headerString[i];
+        while (i < count && (char == ' ' || char == '\n' || char == '/'))
+          char = headerString[++i];
+
+        var token = '';
+        while (i < count && !(char == ' ' || char == '\n' || char == '/')) {
+          token += char;
+          char = headerString[++i];
+        }
+
+        return token;
+      };
+
       var c = headerString[i];
       if (c == ' ' || c == '\n') {
         switch (token) {
@@ -1699,7 +1712,25 @@ var Type1Parser = function() {
             // Make the angle into the right direction
             matrix[2] *= -1;
 
-            info.textMatrix = matrix;
+            properties.textMatrix = matrix;
+            break;
+          case '/Encoding':
+            if (!properties.builtInEncoding)
+              break;
+
+            var size = parseInt(getToken());
+            getToken(); // read in 'array'
+
+            for (var j = 0; j < size; j++) {
+              var token = getToken();
+              if (token == 'dup') {
+                var index = parseInt(getToken());
+                var glyph = getToken();
+                properties.encoding[index] = GlyphsUnicode[glyph];
+                getToken(); // read the in 'put'
+                j = index;
+              }
+            }
             break;
         }
         token = '';
@@ -1707,8 +1738,6 @@ var Type1Parser = function() {
         token += c;
       }
     }
-
-    return info;
   };
 };
 
@@ -1792,13 +1821,11 @@ var CFF = function(name, file, properties) {
   var length2 = file.dict.get('Length2');
 
   var headerBlock = file.getBytes(length1);
-  var header = type1Parser.extractFontHeader(headerBlock);
-  for (var info in header)
-    properties[info] = header[info];
+  type1Parser.extractFontHeader(headerBlock, properties);
 
   // Decrypt the data blocks and retrieve it's content
   var eexecBlock = file.getBytes(length2);
-  var data = type1Parser.extractFontProgram(eexecBlock);
+  var data = type1Parser.extractFontProgram(eexecBlock, properties);
   for (var info in data.properties)
     properties[info] = data.properties[info];
 
@@ -1868,15 +1895,14 @@ CFF.prototype = {
 
   getOrderedCharStrings: function cff_getOrderedCharStrings(glyphs) {
     var charstrings = [];
+    var missings = [];
 
     for (var i = 0; i < glyphs.length; i++) {
       var glyph = glyphs[i];
       var unicode = GlyphsUnicode[glyph.glyph];
       if (!unicode) {
-        if (glyph.glyph != '.notdef') {
-          warn(glyph.glyph +
-               ' does not have an entry in the glyphs unicode dictionary');
-        }
+        if (glyph.glyph != '.notdef')
+          missings.push(glyph.glyph);
       } else {
         charstrings.push({
           glyph: glyph,
@@ -1887,6 +1913,9 @@ CFF.prototype = {
         });
       }
     }
+
+    if (missings.length)
+      warn(missings + ' does not have unicode in the glyphs dictionary');
 
     charstrings.sort(function charstrings_sort(a, b) {
       return a.unicode - b.unicode;
