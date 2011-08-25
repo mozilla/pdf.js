@@ -5115,7 +5115,7 @@ var CanvasGraphics = (function() {
       if (imageObj.imageMask) {
         var fillColor = this.current.fillColor;
         tmpCtx.fillStyle = (fillColor && fillColor.type === 'Pattern') ?
-          fillColor.getPattern(ctx) : fillColor;
+          fillColor.getPattern(tmpCtx) : fillColor;
         tmpCtx.fillRect(0, 0, w, h);
       }
       var imgData = tmpCtx.getImageData(0, 0, w, h);
