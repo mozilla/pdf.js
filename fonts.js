@@ -1484,16 +1484,16 @@ var Type1Parser = function() {
           if (value == 13) {
             if (charstring.length == 2) {
               lsb = charstring[0];
-              charstring.splice(0, 1);
               width = charstring[1];
+              charstring.splice(0, 1);
             } else if (charstring.length == 4 && charstring[3] == 'div') {
               lsb = charstring[0];
-              charstring.splice(0, 1);
               width = charstring[1] / charstring[2];
+              charstring.splice(0, 1);
             } else if (charstring.length == 4 && charstring[2] == 'div') {
               lsb = charstring[0] / charstring[1];
-              charstring.splice(0, 3);
               width = charstring[3];
+              charstring.splice(0, 3);
             } else {
               error('Unsupported hsbw format: ' + charstring);
             }
