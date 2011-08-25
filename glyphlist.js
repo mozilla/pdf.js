@@ -1087,6 +1087,8 @@ var GlyphsUnicode = {
   amsquare: 0x33C2,
   anbopomofo: 0x3122,
   angbopomofo: 0x3124,
+  angbracketleft: 0x3008, // This glyph is missing from Adobe's original list.
+  angbracketright: 0x3009, // This glyph is missing from Adobe's original list.
   angkhankhuthai: 0x0E5A,
   angle: 0x2220,
   anglebracketleft: 0x3008,
@@ -1385,6 +1387,7 @@ var GlyphsUnicode = {
   cieucparenkorean: 0x3208,
   cieucuparenkorean: 0x321C,
   circle: 0x25CB,
+  circlecopyrt: 0x00A9, // This glyph is missing from Adobe's original list.
   circlemultiply: 0x2297,
   circleot: 0x2299,
   circleplus: 0x2295,
@@ -4286,9 +4289,4 @@ var GlyphsUnicode = {
   zuhiragana: 0x305A,
   zukatakana: 0x30BA
 };
-
-// Add missing glyphs from the Adobe's original list
-GlyphsUnicode.angbracketleft = 0x3008;
-GlyphsUnicode.angbracketright = 0x3009;
-GlyphsUnicode.circlecopyrt = 0x00A9;
 
