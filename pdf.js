@@ -6003,8 +6003,7 @@ var PDFImage = (function() {
       }
       return buf;
     },
-    applyStencilMask: function fillUsingStencilMask(buffer,
-      inverseDecode) {
+    applyStencilMask: function applyStencilMask(buffer, inverseDecode) {
       var width = this.width, height = this.height;
       var bitStrideLength = (width + 7) >> 3;
       var imgArray = this.image.getBytes(bitStrideLength * height);
