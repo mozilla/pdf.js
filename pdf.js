@@ -208,6 +208,11 @@ var DecodeStream = (function() {
           this.readBlock();
 
         var end = this.bufferLength;
+
+        // checking if bufferLength is still 0 then
+        // the buffer has to be initialized
+        if (!end)
+          this.buffer = new Uint8Array(0);
       }
 
       this.pos = end;
@@ -3340,11 +3345,11 @@ var Page = (function() {
       var xref = this.xref;
       var content = xref.fetchIfRef(this.content);
       var resources = xref.fetchIfRef(this.resources);
-      if (IsArray(this.content)) {
+      if (IsArray(content)) {
         // fetching items
         var i, n = content.length;
         for (i = 0; i < n; ++i)
-          content[i] = xref.fetchIfRef(this.content[i]);
+          content[i] = xref.fetchIfRef(content[i]);
         content = new StreamsSequenceStream(content);
       }
       this.code = gfx.compile(content, xref, resources, fonts, images);
