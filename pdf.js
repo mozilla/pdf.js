@@ -4191,6 +4191,7 @@ var PartialEvaluator = (function() {
         fd = fontDict.get('FontDescriptor');
       }
 
+      var builtInEncoding = false;
       var encodingMap = {};
       var glyphMap = {};
       var charset = [];
@@ -4261,9 +4262,11 @@ var PartialEvaluator = (function() {
         if (!baseEncoding) {
           var type = subType.name;
           if (type == 'TrueType') {
-            baseEncoding = Encodings.WinAnsiEncoding.slice(0);
+            baseEncoding = Encodings.WinAnsiEncoding.slice();
           } else if (type == 'Type1') {
-            baseEncoding = Encodings.StandardEncoding.slice(0);
+            baseEncoding = Encodings.StandardEncoding.slice();
+            if (!diffEncoding.length)
+              builtInEncoding = true;
           } else {
             error('Unknown type of font');
           }
@@ -4419,6 +4422,7 @@ var PartialEvaluator = (function() {
         subtype: fileType,
         widths: glyphWidths,
         encoding: encodingMap,
+        builtInEncoding: builtInEncoding,
         charset: charset,
         firstChar: fontDict.get('FirstChar'),
         lastChar: fontDict.get('LastChar'),
