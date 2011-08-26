@@ -428,7 +428,7 @@ var Font = (function Font() {
       case 'CIDFontType2':
         this.mimetype = 'font/opentype';
 
-        // Repair the TrueType file if it is can be damaged in the point of
+        // Repair the TrueType file. It is can be damaged in the point of
         // view of the sanitizer
         data = this.checkAndRepair(name, file, properties);
         break;
@@ -822,7 +822,7 @@ var Font = (function Font() {
 
       function readOpenTypeHeader(ttf) {
         return {
-          version: ttf.getBytes(4),
+          version: arrayToString(ttf.getBytes(4)),
           numTables: int16(ttf.getBytes(2)),
           searchRange: int16(ttf.getBytes(2)),
           entrySelector: int16(ttf.getBytes(2)),
@@ -983,7 +983,7 @@ var Font = (function Font() {
 
       // The new numbers of tables will be the last one plus the num
       // of missing tables
-      createOpenTypeHeader('\x00\x01\x00\x00', ttf, numTables);
+      createOpenTypeHeader(header.version, ttf, numTables);
 
       if (requiredTables.indexOf('OS/2') != -1) {
         tables.push({
@@ -1829,7 +1829,7 @@ var CFF = function(name, file, properties) {
   for (var info in data.properties)
     properties[info] = data.properties[info];
 
-  var charstrings = this.getOrderedCharStrings(data.charstrings);
+  var charstrings = this.getOrderedCharStrings(data.charstrings, properties);
   var type2Charstrings = this.getType2Charstrings(charstrings);
   var subrs = this.getType2Subrs(data.subrs);
 
@@ -1848,7 +1848,7 @@ CFF.prototype = {
     if (count == 0)
       return '\x00\x00\x00';
 
-    var data = String.fromCharCode(count >> 8, count & 0xff);
+    var data = String.fromCharCode((count >> 8) & 0xFF, count & 0xff);
 
     // Next byte contains the offset size use to reference object in the file
     // Actually we're using 0x04 to be sure to be able to store everything
@@ -1881,9 +1881,7 @@ CFF.prototype = {
              String.fromCharCode((value >> 8) & 0xFF) +
              String.fromCharCode(value & 0xFF);
     } else if (value >= (-2147483648) && value <= 2147483647) {
-      value ^= 0xffffffff;
-      value += 1;
-      return '\xff' +
+      return '\x1d' +
              String.fromCharCode((value >> 24) & 0xFF) +
              String.fromCharCode((value >> 16) & 0xFF) +
              String.fromCharCode((value >> 8) & 0xFF) +
@@ -1893,13 +1891,13 @@ CFF.prototype = {
     return null;
   },
 
-  getOrderedCharStrings: function cff_getOrderedCharStrings(glyphs) {
+  getOrderedCharStrings: function cff_getOrderedCharStrings(glyphs, properties) {
     var charstrings = [];
     var missings = [];
 
     for (var i = 0; i < glyphs.length; i++) {
       var glyph = glyphs[i];
-      var unicode = GlyphsUnicode[glyph.glyph];
+      var unicode = properties.glyphs[glyph.glyph];
       if (!unicode) {
         if (glyph.glyph != '.notdef')
           missings.push(glyph.glyph);
@@ -2021,8 +2019,8 @@ CFF.prototype = {
 
       'topDict': (function topDict(self) {
         return function() {
+          var header = '\x00\x01\x01\x01';
           var dict =
-              '\x00\x01\x01\x01\x30' +
               '\xf8\x1b\x00' + // version
               '\xf8\x1c\x01' + // Notice
               '\xf8\x1d\x02' + // FullName
@@ -2037,19 +2035,29 @@ CFF.prototype = {
 
           var offset = fields.header.length +
                        fields.names.length +
-                       (dict.length + (4 + 4 + 7)) +
+                       (header.length + 1) +
+                       (dict.length + (4 + 4)) +
                        fields.strings.length +
                        fields.globalSubrs.length;
+
+          // If the offset if over 32767, encodeNumber is going to return
+          // 5 bytes to encode the position instead of 3.
+          if ((offset + fields.charstrings.length) > 32767) {
+            offset += 9;
+          } else {
+            offset += 7;
+          }
+
           dict += self.encodeNumber(offset) + '\x0f'; // Charset
 
           offset = offset + (glyphs.length * 2) + 1;
           dict += self.encodeNumber(offset) + '\x11'; // Charstrings
 
-          dict += self.encodeNumber(fields.private.length);
           offset = offset + fields.charstrings.length;
+          dict += self.encodeNumber(fields.private.length);
           dict += self.encodeNumber(offset) + '\x12'; // Private
 
-          return dict;
+          return header + String.fromCharCode(dict.length + 1) + dict;
         };
       })(this),
 
