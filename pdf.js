@@ -3418,7 +3418,8 @@ var Page = (function() {
           }
         } else if (annotation.has('Dest')) {
           // simple destination link
-          link.dest = annotation.get('Dest').name;
+          var dest = annotation.get('Dest');
+          link.dest = IsName(dest) ? dest.name : dest;
         }
         links.push(link);
       }
