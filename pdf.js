@@ -4295,6 +4295,10 @@ var PartialEvaluator = (function() {
 
         if (fontDict.has('ToUnicode')) {
           encodingMap['empty'] = true;
+          var glyphsMap = {};
+          for (var p in glyphMap)
+            glyphsMap[glyphMap[p]] = encodingMap[p];
+
           var cmapObj = xref.fetchIfRef(fontDict.get('ToUnicode'));
           if (IsName(cmapObj)) {
             error('ToUnicode file cmap translation not implemented');
@@ -4393,7 +4397,9 @@ var PartialEvaluator = (function() {
 
       var descriptor = xref.fetch(fd);
 
-      var fontName = xref.fetchIfRef(descriptor.get('FontName'));
+      var fontName = fontDict.get('Name');
+      if (!fontName)
+        fontName = xref.fetchIfRef(descriptor.get('FontName'));;
       assertWellFormed(IsName(fontName), 'invalid font name');
       fontName = fontName.name.replace(/[\+,\-]/g, '_');
 
@@ -4429,6 +4435,7 @@ var PartialEvaluator = (function() {
         subtype: fileType,
         widths: glyphWidths,
         encoding: encodingMap,
+        glyphs: glyphsMap || GlyphsUnicode,
         builtInEncoding: builtInEncoding,
         charset: charset,
         firstChar: fontDict.get('FirstChar'),
