@@ -2601,6 +2601,11 @@ var Lexer = (function() {
         stream.skip();
         return new Cmd('<<');
       }
+      if (ch == '?') {
+        // xmp header
+        stream.skip();
+        return new Cmd('<?');
+      }
       return this.getHexString(ch);
       // dict punctuation
       case '>':
@@ -2608,6 +2613,12 @@ var Lexer = (function() {
       if (ch == '>') {
         stream.skip();
         return new Cmd('>>');
+      }
+      case '?':
+      ch = stream.lookChar();
+      if (ch == '>') {
+        stream.skip();
+        return new Cmd('?>');
       }
       case '{':
       case '}':
