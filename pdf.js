@@ -4399,7 +4399,7 @@ var PartialEvaluator = (function() {
 
       var fontName = fontDict.get('Name');
       if (!fontName)
-        fontName = xref.fetchIfRef(descriptor.get('FontName'));;
+        fontName = xref.fetchIfRef(descriptor.get('FontName'));
       assertWellFormed(IsName(fontName), 'invalid font name');
       fontName = fontName.name.replace(/[\+,\-]/g, '_');
 
