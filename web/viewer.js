@@ -27,15 +27,15 @@ var PDFView = {
     var cssUnits = 96.0 / 72.0;
     for (var i = 0; i < pages.length; i++)
       pages[i].update(val / 100 * cssUnits);
-      
-    if(document.location.hash == '#' + this.page)
-      this.pages[this.page-1].draw();
+
+    if (document.location.hash == '#' + this.page)
+      this.pages[this.page - 1].draw();
     else
       // Jump the scroll position to the correct page.
       document.location.hash = this.page;
 
-    var event = document.createEvent("UIEvents");
-    event.initUIEvent("scalechange", false, false, window, val);
+    var event = document.createEvent('UIEvents');
+    event.initUIEvent('scalechange', false, false, window, val);
     window.dispatchEvent(event);
   },
 
@@ -142,7 +142,7 @@ var PDFView = {
     var outlineScrollView = document.getElementById('outlineScrollView');
     var thumbsSwitchButton = document.getElementById('thumbsSwitch');
     var outlineSwitchButton = document.getElementById('outlineSwitch');
-    switch(view) {
+    switch (view) {
       case 'thumbs':
         thumbsScrollView.style.display = 'block';
         outlineScrollView.style.display = 'none';
@@ -212,39 +212,24 @@ var PageView = function(container, content, id, width, height,
   };
 
   function setupLinks(canvas, content, scale) {
+    function bindLink(link, dest) {
+      if (dest) {
+        link.onclick = function() {
+          PDFView.navigateTo(dest);
+          return false;
+        };
+      }
+    }
     var links = content.getLinks();
-    var currentLink = null;
-    if (links.length > 0) {
-      canvas.addEventListener('mousemove', function(e) {
-        var x = e.pageX;
-        var y = e.pageY;
-        for (var p = canvas; p; p = p.offsetParent) {
-          x -= p.offsetLeft;
-          y -= p.offsetTop;
-        }
-        x /= scale;
-        y /= scale;
-        var i, n = links.length;
-        for (i = 0; i < n; i++) {
-          var link = links[i];
-          if (link.x <= x && link.y <= y &&
-            x < link.x + link.width && y < link.y + link.height) {
-            currentLink = link;
-            canvas.style.cursor = 'pointer';
-            return;
-          }
-        }
-        currentLink = null;
-        canvas.style.cursor = 'default';
-      }, false);
-      canvas.addEventListener('mousedown', function(e) {
-        if (!currentLink)
-          return;
-        if (currentLink.url)
-          window.location.href = currentLink.url;
-        if (currentLink.dest)
-          navigateTo(currentLink.dest);
-      }, false);
+    for (var i = 0; i < links.length; i++) {
+      var link = document.createElement('a');
+      link.style.left = Math.floor(links[i].x * scale) + 'px';
+      link.style.top = Math.floor(links[i].y * scale) + 'px';
+      link.style.width = Math.ceil(links[i].width * scale) + 'px';
+      link.style.height = Math.ceil(links[i].height * scale) + 'px';
+      link.href = links[i].url || '';
+      bindLink(link, links[i].dest);
+      div.appendChild(link);
     }
   }
 
@@ -436,7 +421,7 @@ window.addEventListener('transitionend', function(evt) {
 }, true);
 
 
-window.addEventListener("scalechange", function(evt) {
+window.addEventListener('scalechange', function(evt) {
   var options = document.getElementById('scaleSelect').options;
   for (var i = 0; i < options.length; i++) {
     var option = options[i];
@@ -444,10 +429,10 @@ window.addEventListener("scalechange", function(evt) {
   }
 }, true);
 
-window.addEventListener("pagechange", function(evt) {
+window.addEventListener('pagechange', function(evt) {
   var page = evt.detail;
   document.location.hash = page;
-  document.getElementById("pageNumber").value = page;
-  document.getElementById("previous").disabled = (page == 1);
-  document.getElementById("next").disabled = (page == PDFView.pages.length);
+  document.getElementById('pageNumber').value = page;
+  document.getElementById('previous').disabled = (page == 1);
+  document.getElementById('next').disabled = (page == PDFView.pages.length);
 }, true);

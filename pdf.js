@@ -3418,7 +3418,8 @@ var Page = (function() {
           }
         } else if (annotation.has('Dest')) {
           // simple destination link
-          link.dest = annotation.get('Dest').name;
+          var dest = annotation.get('Dest');
+          link.dest = IsName(dest) ? dest.name : dest;
         }
         links.push(link);
       }
@@ -3482,10 +3483,10 @@ var Catalog = (function() {
               if (IsName(dest))
                 dest = dest.name;
             }
-
+            var title = xref.fetchIfRef(outlineDict.get('Title'));
             var outlineItem = {
               dest: dest,
-              title: convertIfUnicode(outlineDict.get('Title')),
+              title: convertIfUnicode(title),
               color: outlineDict.get('C') || [0, 0, 0],
               count: outlineDict.get('Count'),
               bold: !!(outlineDict.get('F') & 2),
@@ -3545,7 +3546,7 @@ var Catalog = (function() {
       var obj = this.catDict.get('Names');
       if (obj)
         nameTreeRef = xref.fetchIfRef(obj).get('Dests');
-      else if(this.catDict.has('Dests'))
+      else if (this.catDict.has('Dests'))
         nameDictionaryRef = this.catDict.get('Dests');
 
       if (nameDictionaryRef) {
@@ -3923,7 +3924,7 @@ var Encodings = {
       'arrowdbldown', 'lozenge', 'angleleft', 'registersans', 'copyrightsans',
       'trademarksans', 'summation', 'parenlefttp', 'parenleftex',
       'parenleftbt', 'bracketlefttp', 'bracketleftex', 'bracketleftbt',
-      'bracelefttp', 'braceleftmid', 'braceleftbt', 'braceex', ,'angleright',
+      'bracelefttp', 'braceleftmid', 'braceleftbt', 'braceex',, 'angleright',
       'integral', 'integraltp', 'integralex', 'integralbt', 'parenrighttp',
       'parenrightex', 'parenrightbt', 'bracketrighttp', 'bracketrightex',
       'bracketrightbt', 'bracerighttp', 'bracerightmid', 'bracerightbt'
@@ -4278,8 +4279,8 @@ var PartialEvaluator = (function() {
         }
 
         // merge in the differences
-        var length = baseEncoding.length > diffEncoding.length ? 
-            baseEncoding.length : diffEncoding.length;
+        var length = baseEncoding.length > diffEncoding.length ?
+                     baseEncoding.length : diffEncoding.length;
         for (var i = 0, ii = length; i < ii; ++i) {
           var diffGlyph = diffEncoding[i];
           var baseGlyph = baseEncoding[i];
@@ -4310,7 +4311,7 @@ var PartialEvaluator = (function() {
             var cmap = cmapObj.getBytes(cmapObj.length);
             for (var i = 0; i < cmap.length; i++) {
               var byte = cmap[i];
-              if (byte == 0x20 || byte == 0x0A || byte == 0x3C || 
+              if (byte == 0x20 || byte == 0x0A || byte == 0x3C ||
                   byte == 0x3E) {
                 switch (token) {
                   case 'useCMap':
@@ -5119,15 +5120,18 @@ var CanvasGraphics = (function() {
 
       var tmpCanvas = new this.ScratchCanvas(w, h);
       var tmpCtx = tmpCanvas.getContext('2d');
+      if (imageObj.imageMask) {
+        var fillColor = this.current.fillColor;
+        tmpCtx.fillStyle = (fillColor && fillColor.type === 'Pattern') ?
+          fillColor.getPattern(tmpCtx) : fillColor;
+        tmpCtx.fillRect(0, 0, w, h);
+      }
       var imgData = tmpCtx.getImageData(0, 0, w, h);
       var pixels = imgData.data;
 
       if (imageObj.imageMask) {
-        var inverseDecode = imageObj.decode && imageObj.decode[0] > 0;
-        // TODO fillColor pattern support
-        var fillColor = this.current.fillColor;
-        imageObj.fillUsingStencilMask(pixels, fillColor,
-                                      inverseDecode);
+        var inverseDecode = !!imageObj.decode && imageObj.decode[0] > 0;
+        imageObj.applyStencilMask(pixels, inverseDecode);
       } else
         imageObj.fillRgbaBuffer(pixels);
 
@@ -6007,26 +6011,26 @@ var PDFImage = (function() {
       }
       return buf;
     },
-    fillUsingStencilMask: function fillUsingStencilMask(buffer,
-      cssRgb, inverseDecode) {
-      var m = /rgb\((\d+),(\d+),(\d+)\)/.exec(cssRgb); // parse CSS color
-      var r = m[1] | 0, g = m[2] | 0, b = m[3] | 0;
-      var bufferLength = this.width * this.height;
-      var imgArray = this.image.getBytes((bufferLength + 7) >> 3);
-      var i, mask;
-      var bufferPos = 0, imgArrayPos = 0;
-      for (i = 0; i < bufferLength; i++) {
-        var buf = imgArray[imgArrayPos++];
-        for (mask = 128; mask > 0; mask >>= 1) {
-          if (!(buf & mask) != inverseDecode) {
-            buffer[bufferPos++] = r;
-            buffer[bufferPos++] = g;
-            buffer[bufferPos++] = b;
-            buffer[bufferPos++] = 255;
-          } else {
-            buffer[bufferPos + 3] = 0;
-            bufferPos += 4;
+    applyStencilMask: function applyStencilMask(buffer, inverseDecode) {
+      var width = this.width, height = this.height;
+      var bitStrideLength = (width + 7) >> 3;
+      var imgArray = this.image.getBytes(bitStrideLength * height);
+      var imgArrayPos = 0;
+      var i, j, mask, buf;
+      // removing making non-masked pixels transparent
+      var bufferPos = 3; // alpha component offset
+      for (i = 0; i < height; i++) {
+        mask = 0;
+        for (j = 0; j < width; j++) {
+          if (!mask) {
+            buf = imgArray[imgArrayPos++];
+            mask = 128;
           }
+          if (!(buf & mask) == inverseDecode) {
+            buffer[bufferPos] = 0;
+          }
+          bufferPos += 4;
+          mask >>= 1;
         }
       }
     },

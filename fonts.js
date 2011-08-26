@@ -1309,7 +1309,7 @@ var Font = (function Font() {
   return constructor;
 })();
 
-/**
+/*
  * Type1Parser encapsulate the needed code for parsing a Type1 font
  * program. Some of its logic depends on the Type2 charstrings
  * structure.
@@ -1534,7 +1534,7 @@ var Type1Parser = function() {
     return { charstring: charstring, width: width, lsb: lsb };
   };
 
-  /**
+  /*
    * Returns an object containing a Subrs array and a CharStrings
    * array extracted from and eexec encrypted block of data
    */
