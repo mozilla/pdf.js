@@ -5233,7 +5233,7 @@ var ColorSpace = (function() {
   constructor.parse = function colorspace_parse(cs, xref, res) {
     if (IsName(cs)) {
       var colorSpaces = res.get('ColorSpace');
-      if (colorSpaces) {
+      if (IsDict(colorSpaces)) {
         var refcs = colorSpaces.get(cs.name);
         if (refcs)
           cs = refcs;
