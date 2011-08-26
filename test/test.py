@@ -58,6 +58,7 @@ MIMEs = {
     '.html': 'text/html',
     '.js': 'application/javascript',
     '.json': 'application/json',
+    '.svg': 'image/svg+xml',
     '.pdf': 'application/pdf',
     '.xhtml': 'application/xhtml+xml',
     '.ico': 'image/x-icon',
