@@ -428,7 +428,7 @@ var Font = (function Font() {
       case 'CIDFontType2':
         this.mimetype = 'font/opentype';
 
-        // Repair the TrueType file if it is can be damaged in the point of
+        // Repair the TrueType file. It is can be damaged in the point of
         // view of the sanitizer
         data = this.checkAndRepair(name, file, properties);
         break;
@@ -1900,7 +1900,7 @@ CFF.prototype = {
     for (var i = 0; i < glyphs.length; i++) {
       var glyph = glyphs[i];
       var unicode = properties.glyphs[glyph.glyph];
-      if ('undefined' == typeof(unicode)) {
+      if (!unicode) {
         if (glyph.glyph != '.notdef')
           missings.push(glyph.glyph);
       } else {
