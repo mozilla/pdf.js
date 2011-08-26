@@ -1891,7 +1891,8 @@ CFF.prototype = {
     return null;
   },
 
-  getOrderedCharStrings: function cff_getOrderedCharStrings(glyphs, properties) {
+  getOrderedCharStrings: function cff_getOrderedCharStrings(glyphs,
+                                                            properties) {
     var charstrings = [];
     var missings = [];
 
