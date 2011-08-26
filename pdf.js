@@ -4392,7 +4392,9 @@ var PartialEvaluator = (function() {
 
       var descriptor = xref.fetch(fd);
 
-      var fontName = xref.fetchIfRef(descriptor.get('FontName'));
+      var fontName = fontDict.get('Name');
+      if (!fontName)
+        fontName = xref.fetchIfRef(descriptor.get('FontName'));;
       assertWellFormed(IsName(fontName), 'invalid font name');
       fontName = fontName.name.replace(/[\+,\-]/g, '_');
 
@@ -4423,11 +4425,16 @@ var PartialEvaluator = (function() {
           glyphWidths[unicode++] = widths[i];
       }
 
+      var glyphsMap = {};
+      for (var p in glyphMap)
+        glyphsMap[glyphMap[p]] = encodingMap[p];
+
       var properties = {
         type: subType.name,
         subtype: fileType,
         widths: glyphWidths,
         encoding: encodingMap,
+        glyphs: glyphsMap,
         builtInEncoding: builtInEncoding,
         charset: charset,
         firstChar: fontDict.get('FirstChar'),

@@ -822,7 +822,7 @@ var Font = (function Font() {
 
       function readOpenTypeHeader(ttf) {
         return {
-          version: ttf.getBytes(4),
+          version: arrayToString(ttf.getBytes(4)),
           numTables: int16(ttf.getBytes(2)),
           searchRange: int16(ttf.getBytes(2)),
           entrySelector: int16(ttf.getBytes(2)),
@@ -983,7 +983,7 @@ var Font = (function Font() {
 
       // The new numbers of tables will be the last one plus the num
       // of missing tables
-      createOpenTypeHeader('\x00\x01\x00\x00', ttf, numTables);
+      createOpenTypeHeader(header.version, ttf, numTables);
 
       if (requiredTables.indexOf('OS/2') != -1) {
         tables.push({
@@ -1829,7 +1829,7 @@ var CFF = function(name, file, properties) {
   for (var info in data.properties)
     properties[info] = data.properties[info];
 
-  var charstrings = this.getOrderedCharStrings(data.charstrings);
+  var charstrings = this.getOrderedCharStrings(data.charstrings, properties);
   var type2Charstrings = this.getType2Charstrings(charstrings);
   var subrs = this.getType2Subrs(data.subrs);
 
@@ -1893,14 +1893,14 @@ CFF.prototype = {
     return null;
   },
 
-  getOrderedCharStrings: function cff_getOrderedCharStrings(glyphs) {
+  getOrderedCharStrings: function cff_getOrderedCharStrings(glyphs, properties) {
     var charstrings = [];
     var missings = [];
 
     for (var i = 0; i < glyphs.length; i++) {
       var glyph = glyphs[i];
-      var unicode = GlyphsUnicode[glyph.glyph];
-      if (!unicode) {
+      var unicode = properties.glyphs[glyph.glyph];
+      if ('undefined' == typeof(unicode)) {
         if (glyph.glyph != '.notdef')
           missings.push(glyph.glyph);
       } else {
