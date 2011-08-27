@@ -130,7 +130,12 @@ var PDFView = {
     this.scale = (scale || kDefaultScale);
     this.page = parseInt(document.location.hash.substring(1)) || 1;
     this.pagesRefMap = pagesRefMap;
-    this.destinations = pdf.catalog.destinations;
+    this.destinations = pdf.catalog.destinations; 
+    
+    // trigger onchange scale event to provide iframe rendering ref:issue:369
+    var scaleSelector = document.getElementById('scaleSelect');
+    scaleSelector['onchange'](scaleSelector);
+
     if (pdf.catalog.documentOutline) {
       this.outline = new DocumentOutlineView(pdf.catalog.documentOutline);
       var outlineSwitchButton = document.getElementById('outlineSwitch');
