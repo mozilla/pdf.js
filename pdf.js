@@ -2714,7 +2714,9 @@ var Parser = (function() {
 
         // stream objects are not allowed inside content streams or
         // object streams
-        if (this.allowStreams && IsCmd(this.buf2, 'stream')) {
+        if (IsCmd(this.buf2, 'stream')) {
+          if (!this.allowStreams)
+            return dict;
           return this.makeStream(dict, cipherTransform);
         } else {
           this.shift();
