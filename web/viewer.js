@@ -87,6 +87,8 @@ var PDFView = {
   navigateTo: function(dest) {
     if (typeof dest === 'string')
       dest = this.destinations[dest];
+    if (!(dest instanceof Array))
+      return; // invalid destination
     // dest array looks like that: <page-ref> </XYZ|FitXXX> <args..>
     var destRef = dest[0];
     var pageNumber = this.pagesRefMap[destRef.num + ' ' + destRef.gen + ' R'];
