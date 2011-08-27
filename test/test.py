@@ -103,6 +103,33 @@ class PDFTestHandler(BaseHTTPRequestHandler):
         with open(path, "rb") as f:
             self.wfile.write(f.read())
 
+    def sendIndex(self, path, query):
+        if not path.endswith("/"):
+          # we need trailing slash
+          self.send_response(301)
+          redirectLocation = path + "/"
+          if query:
+            redirectLocation += "?" + query
+          self.send_header("Location",  redirectLocation)
+          self.end_headers()
+          return
+
+        self.send_response(200)
+        self.send_header("Content-Type", "text/html")
+        self.end_headers()
+        if query == "frame":
+          self.wfile.write("<html><frameset cols=*,200><frame name=pdf>" +
+            "<frame src='" + path + "'></frameset></html>")
+          return
+
+        location = os.path.abspath(os.path.realpath(DOC_ROOT + os.sep + path))
+        self.wfile.write("<html><body><h1>PDFs of " + path + "</h1>\n")
+        for filename in os.listdir(location):
+          if filename.lower().endswith('.pdf'):
+            self.wfile.write("<a href='/web/viewer.html?file=" + path + filename + "' target=pdf>" +
+              filename + "</a><br>\n")
+        self.wfile.write("</body></html>")
+
     def do_GET(self):
         url = urlparse(self.path)
         # Ignore query string
@@ -113,6 +140,10 @@ class PDFTestHandler(BaseHTTPRequestHandler):
 
         if url.path == "/favicon.ico":
             self.sendFile(os.path.join(DOC_ROOT, "test", "resources", "favicon.ico"), ext)
+            return
+
+        if os.path.isdir(path):
+            self.sendIndex(url.path, url.query)
             return
 
         if not (prefix == DOC_ROOT
