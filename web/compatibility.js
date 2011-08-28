@@ -148,11 +148,11 @@
 
   Function.prototype.bind = function(obj) {
     var fn = this, headArgs = Array.prototype.slice.call(arguments, 1);
-    var binded = function() {
+    var bound = function() {
       var args = Array.prototype.concat.apply(headArgs, arguments);
       return fn.apply(obj, args);
     };
-    return binded;
+    return bound;
   };
 })();
 
