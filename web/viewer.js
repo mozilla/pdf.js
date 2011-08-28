@@ -211,6 +211,7 @@ var PageView = function(container, content, id, width, height,
 
     while (div.hasChildNodes())
       div.removeChild(div.lastChild);
+    div.removeAttribute('data-loaded');
   };
 
   function setupLinks(canvas, content, scale) {
@@ -259,6 +260,7 @@ var PageView = function(container, content, id, width, height,
     this.content.startRendering(ctx, this.updateStats);
 
     setupLinks(canvas, this.content, this.scale);
+    div.setAttribute('data-loaded', true);
 
     return true;
   };
