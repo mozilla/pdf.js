@@ -168,12 +168,12 @@
     set: function(src) {
       this.$src = src;
       if (src.substr(0, 14) != 'data:text/html') {
-        originalSrcDescriptor['set'].call(this, src);
+        originalSrcDescriptor.set.call(this, src);
         return;
       }
       // for text/html, using blank document and then
       // document's open, write, and close operations
-      originalSrcDescriptor['set'].call(this, 'about:blank');
+      originalSrcDescriptor.set.call(this, 'about:blank');
       setTimeout((function() {
         var doc = this.contentDocument;
         doc.open('text/html');
