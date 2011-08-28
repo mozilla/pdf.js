@@ -36,6 +36,11 @@ body {
   line-height: 32px;
 }
 
+#controls > button > img {
+  width: 32px;
+  height: 32px;
+}
+
 #controls > button[disabled] > img {
   opacity: 0.5;
 }
@@ -157,6 +162,11 @@ span#info {
   box-shadow: 0px 4px 10px #000;
   -moz-box-shadow: 0px 4px 10px #000;
   -webkit-box-shadow: 0px 4px 10px #000;
+}
+
+#sidebarControls > button > img {
+  width: 32px;
+  height: 32px;
 }
 
 #sidebarControls > button[disabled] > img {
