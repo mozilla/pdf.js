@@ -5133,7 +5133,7 @@ var CanvasGraphics = (function() {
         var inverseDecode = !!imageObj.decode && imageObj.decode[0] > 0;
         imageObj.applyStencilMask(pixels, inverseDecode);
       } else
-        imageObj.fillRgbaBuffer(pixels);
+        imageObj.fillRgbaBuffer(pixels, imageObj.decode);
 
       tmpCtx.putImageData(imgData, 0, 0);
       ctx.drawImage(tmpCanvas, 0, -h);
@@ -5928,7 +5928,7 @@ var PDFImage = (function() {
   };
 
   constructor.prototype = {
-    getComponents: function getComponents(buffer) {
+    getComponents: function getComponents(buffer, decodeMap) {
       var bpc = this.bpc;
       if (bpc == 8)
         return buffer;
@@ -5942,6 +5942,11 @@ var PDFImage = (function() {
       var output = new Uint8Array(length);
 
       if (bpc == 1) {
+        var valueZero = 0, valueOne = 255;
+        if (decodeMap) {
+          valueZero = decodeMap[0] ? 255 : 0;
+          valueOne = decodeMap[1] ? 255 : 0;
+        }
         var rowComps = width * numComps;
         var mask = 0;
         var buf = 0;
@@ -5959,13 +5964,11 @@ var PDFImage = (function() {
             mask = 128;
           }
 
-          var t = buf & mask;
-          if (t == 0)
-            output[i] = 0;
-          else
-            output[i] = 255;
+          output[i] = !(buf & mask) ? valueZero : valueOne;
         }
       } else {
+        if (decodeMap != null)
+          TODO('interpolate component values');
         var rowComps = width * numComps;
         var bits = 0;
         var buf = 0;
@@ -6034,7 +6037,7 @@ var PDFImage = (function() {
         }
       }
     },
-    fillRgbaBuffer: function fillRgbaBuffer(buffer) {
+    fillRgbaBuffer: function fillRgbaBuffer(buffer, decodeMap) {
       var numComps = this.numComps;
       var width = this.width;
       var height = this.height;
@@ -6044,7 +6047,8 @@ var PDFImage = (function() {
       var rowBytes = (width * numComps * bpc + 7) >> 3;
       var imgArray = this.image.getBytes(height * rowBytes);
 
-      var comps = this.colorSpace.getRgbBuffer(this.getComponents(imgArray));
+      var comps = this.colorSpace.getRgbBuffer(
+        this.getComponents(imgArray, decodeMap));
       var compsPos = 0;
       var opacity = this.getOpacity();
       var opacityPos = 0;
