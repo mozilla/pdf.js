@@ -767,59 +767,59 @@ var PredictorStream = (function() {
       prevRow = currentRow;
 
     switch (predictor) {
-    case 0:
-      break;
-    case 1:
-      for (var i = 0; i < pixBytes; ++i)
-        currentRow[i] = rawBytes[i];
-      for (; i < rowBytes; ++i)
-        currentRow[i] = (currentRow[i - pixBytes] + rawBytes[i]) & 0xFF;
-      break;
-    case 2:
-      for (var i = 0; i < rowBytes; ++i)
-        currentRow[i] = (prevRow[i] + rawBytes[i]) & 0xFF;
-      break;
-    case 3:
-      for (var i = 0; i < pixBytes; ++i)
-        currentRow[i] = (prevRow[i] >> 1) + rawBytes[i];
-      for (; i < rowBytes; ++i) {
-        currentRow[i] = (((prevRow[i] + currentRow[i - pixBytes]) >> 1) +
-                         rawBytes[i]) & 0xFF;
-      }
-      break;
-    case 4:
-      // we need to save the up left pixels values. the simplest way
-      // is to create a new buffer
-      for (var i = 0; i < pixBytes; ++i)
-        currentRow[i] = rawBytes[i];
-      for (; i < rowBytes; ++i) {
-        var up = prevRow[i];
-        var upLeft = lastRow[i - pixBytes];
-        var left = currentRow[i - pixBytes];
-        var p = left + up - upLeft;
-
-        var pa = p - left;
-        if (pa < 0)
-          pa = -pa;
-        var pb = p - up;
-        if (pb < 0)
-          pb = -pb;
-        var pc = p - upLeft;
-        if (pc < 0)
-          pc = -pc;
-
-        var c = rawBytes[i];
-        if (pa <= pb && pa <= pc)
-          currentRow[i] = left + c;
-        else if (pb <= pc)
-          currentRow[i] = up + c;
-        else
-          currentRow[i] = upLeft + c;
+      case 0:
         break;
-      }
-    default:
-      error('Unsupported predictor: ' + predictor);
-      break;
+      case 1:
+        for (var i = 0; i < pixBytes; ++i)
+          currentRow[i] = rawBytes[i];
+        for (; i < rowBytes; ++i)
+          currentRow[i] = (currentRow[i - pixBytes] + rawBytes[i]) & 0xFF;
+        break;
+      case 2:
+        for (var i = 0; i < rowBytes; ++i)
+          currentRow[i] = (prevRow[i] + rawBytes[i]) & 0xFF;
+        break;
+      case 3:
+        for (var i = 0; i < pixBytes; ++i)
+          currentRow[i] = (prevRow[i] >> 1) + rawBytes[i];
+        for (; i < rowBytes; ++i) {
+          currentRow[i] = (((prevRow[i] + currentRow[i - pixBytes]) >> 1) +
+                           rawBytes[i]) & 0xFF;
+        }
+        break;
+      case 4:
+        // we need to save the up left pixels values. the simplest way
+        // is to create a new buffer
+        for (var i = 0; i < pixBytes; ++i)
+          currentRow[i] = rawBytes[i];
+        for (; i < rowBytes; ++i) {
+          var up = prevRow[i];
+          var upLeft = lastRow[i - pixBytes];
+          var left = currentRow[i - pixBytes];
+          var p = left + up - upLeft;
+
+          var pa = p - left;
+          if (pa < 0)
+            pa = -pa;
+          var pb = p - up;
+          if (pb < 0)
+            pb = -pb;
+          var pc = p - upLeft;
+          if (pc < 0)
+            pc = -pc;
+
+          var c = rawBytes[i];
+          if (pa <= pb && pa <= pc)
+            currentRow[i] = left + c;
+          else if (pb <= pc)
+            currentRow[i] = up + c;
+          else
+            currentRow[i] = upLeft + c;
+          break;
+        }
+      default:
+        error('Unsupported predictor: ' + predictor);
+        break;
     }
     this.bufferLength += rowBytes;
   };
@@ -1527,12 +1527,10 @@ var CCITTFaxStream = (function() {
     this.buf = EOF;
 
     var code1;
-    while ((code1 = this.lookBits(12)) == 0) {
+    while ((code1 = this.lookBits(12)) == 0)
       this.eatBits(1);
-    }
-    if (code1 == 1) {
+    if (code1 == 1)
       this.eatBits(12);
-    }
     if (this.encoding > 0) {
       this.nextLine2D = !this.lookBits(1);
       this.eatBits(1);
@@ -1562,9 +1560,8 @@ var CCITTFaxStream = (function() {
         this.err = true;
         a1 = this.columns;
       }
-      if ((codingPos & 1) ^ blackPixels) {
+      if ((codingPos & 1) ^ blackPixels)
         ++codingPos;
-      }
 
       codingLine[codingPos] = a1;
     }
@@ -1629,131 +1626,129 @@ var CCITTFaxStream = (function() {
         while (codingLine[this.codingPos] < columns) {
           var code1 = this.getTwoDimCode();
           switch (code1) {
-          case twoDimPass:
-            this.addPixels(refLine[refPos + 1], blackPixels);
-            if (refLine[refPos + 1] < columns)
-              refPos += 2;
-            break;
-          case twoDimHoriz:
-            var code1 = 0, code2 = 0;
-            if (blackPixels) {
-              var code3;
-              do {
-                code1 += (code3 = this.getBlackCode());
-              } while (code3 >= 64);
-              do {
-                code2 += (code3 = this.getWhiteCode());
-              } while (code3 >= 64);
-            } else {
-              var code3;
-              do {
-                code1 += (code3 = this.getWhiteCode());
-              } while (code3 >= 64);
-              do {
-                code2 += (code3 = this.getBlackCode());
-              } while (code3 >= 64);
-            }
-            this.addPixels(codingLine[this.codingPos] +
-                           code1, blackPixels);
-            if (codingLine[this.codingPos] < columns) {
-              this.addPixels(codingLine[this.codingPos] + code2,
-                             blackPixels ^ 1);
-            }
-            while (refLine[refPos] <= codingLine[this.codingPos] &&
-                   refLine[refPos] < columns) {
-              refPos += 2;
-            }
-            break;
-          case twoDimVertR3:
-            this.addPixels(refLine[refPos] + 3, blackPixels);
-            blackPixels ^= 1;
-            if (codingLine[this.codingPos] < columns) {
-              ++refPos;
-              while (refLine[refPos] <= codingLine[this.codingPos] &&
-                     refLine[refPos] < columns)
+            case twoDimPass:
+              this.addPixels(refLine[refPos + 1], blackPixels);
+              if (refLine[refPos + 1] < columns)
                 refPos += 2;
-            }
-            break;
-          case twoDimVertR2:
-            this.addPixels(refLine[refPos] + 2, blackPixels);
-            blackPixels ^= 1;
-            if (codingLine[this.codingPos] < columns) {
-              ++refPos;
-              while (refLine[refPos] <= codingLine[this.codingPos] &&
-                     refLine[refPos] < columns) {
-                refPos += 2;
+              break;
+            case twoDimHoriz:
+              var code1 = 0, code2 = 0;
+              if (blackPixels) {
+                var code3;
+                do {
+                  code1 += (code3 = this.getBlackCode());
+                } while (code3 >= 64);
+                do {
+                  code2 += (code3 = this.getWhiteCode());
+                } while (code3 >= 64);
+              } else {
+                var code3;
+                do {
+                  code1 += (code3 = this.getWhiteCode());
+                } while (code3 >= 64);
+                do {
+                  code2 += (code3 = this.getBlackCode());
+                } while (code3 >= 64);
               }
-            }
-            break;
-          case twoDimVertR1:
-            this.addPixels(refLine[refPos] + 1, blackPixels);
-            blackPixels ^= 1;
-            if (codingLine[this.codingPos] < columns) {
-              ++refPos;
+              this.addPixels(codingLine[this.codingPos] +
+                             code1, blackPixels);
+              if (codingLine[this.codingPos] < columns)
+                this.addPixels(codingLine[this.codingPos] + code2,
+                               blackPixels ^ 1);
               while (refLine[refPos] <= codingLine[this.codingPos] &&
                      refLine[refPos] < columns)
                 refPos += 2;
-            }
-            break;
-          case twoDimVert0:
-            this.addPixels(refLine[refPos], blackPixels);
-            blackPixels ^= 1;
-            if (codingLine[this.codingPos] < columns) {
-              ++refPos;
-              while (refLine[refPos] <= codingLine[this.codingPos] &&
-                     refLine[refPos] < columns)
-                refPos += 2;
-            }
-            break;
-          case twoDimVertL3:
-            this.addPixelsNeg(refLine[refPos] - 3, blackPixels);
-            blackPixels ^= 1;
-            if (codingLine[this.codingPos] < columns) {
-              if (refPos > 0)
-                --refPos;
-              else
+              break;
+            case twoDimVertR3:
+              this.addPixels(refLine[refPos] + 3, blackPixels);
+              blackPixels ^= 1;
+              if (codingLine[this.codingPos] < columns) {
                 ++refPos;
-              while (refLine[refPos] <= codingLine[this.codingPos] &&
-                     refLine[refPos] < columns)
-                refPos += 2;
-            }
-            break;
-          case twoDimVertL2:
-            this.addPixelsNeg(refLine[refPos] - 2, blackPixels);
-            blackPixels ^= 1;
-            if (codingLine[this.codingPos] < columns) {
-              if (refPos > 0)
-                --refPos;
-              else
+                while (refLine[refPos] <= codingLine[this.codingPos] &&
+                       refLine[refPos] < columns)
+                  refPos += 2;
+              }
+              break;
+            case twoDimVertR2:
+              this.addPixels(refLine[refPos] + 2, blackPixels);
+              blackPixels ^= 1;
+              if (codingLine[this.codingPos] < columns) {
                 ++refPos;
-              while (refLine[refPos] <= codingLine[this.codingPos] &&
-                     refLine[refPos] < columns)
-                refPos += 2;
-            }
-            break;
-          case twoDimVertL1:
-            this.addPixelsNeg(refLine[refPos] - 1, blackPixels);
-            blackPixels ^= 1;
-            if (codingLine[this.codingPos] < columns) {
-              if (refPos > 0)
-                --refPos;
-              else
+                while (refLine[refPos] <= codingLine[this.codingPos] &&
+                       refLine[refPos] < columns) {
+                  refPos += 2;
+                }
+              }
+              break;
+            case twoDimVertR1:
+              this.addPixels(refLine[refPos] + 1, blackPixels);
+              blackPixels ^= 1;
+              if (codingLine[this.codingPos] < columns) {
                 ++refPos;
+                while (refLine[refPos] <= codingLine[this.codingPos] &&
+                       refLine[refPos] < columns)
+                  refPos += 2;
+              }
+              break;
+            case twoDimVert0:
+              this.addPixels(refLine[refPos], blackPixels);
+              blackPixels ^= 1;
+              if (codingLine[this.codingPos] < columns) {
+                ++refPos;
+                while (refLine[refPos] <= codingLine[this.codingPos] &&
+                       refLine[refPos] < columns)
+                  refPos += 2;
+              }
+              break;
+            case twoDimVertL3:
+              this.addPixelsNeg(refLine[refPos] - 3, blackPixels);
+              blackPixels ^= 1;
+              if (codingLine[this.codingPos] < columns) {
+                if (refPos > 0)
+                  --refPos;
+                else
+                  ++refPos;
+                while (refLine[refPos] <= codingLine[this.codingPos] &&
+                       refLine[refPos] < columns)
+                  refPos += 2;
+              }
+              break;
+            case twoDimVertL2:
+              this.addPixelsNeg(refLine[refPos] - 2, blackPixels);
+              blackPixels ^= 1;
+              if (codingLine[this.codingPos] < columns) {
+                if (refPos > 0)
+                  --refPos;
+                else
+                  ++refPos;
+                while (refLine[refPos] <= codingLine[this.codingPos] &&
+                       refLine[refPos] < columns)
+                  refPos += 2;
+              }
+              break;
+            case twoDimVertL1:
+              this.addPixelsNeg(refLine[refPos] - 1, blackPixels);
+              blackPixels ^= 1;
+              if (codingLine[this.codingPos] < columns) {
+                if (refPos > 0)
+                  --refPos;
+                else
+                  ++refPos;
 
-              while (refLine[refPos] <= codingLine[this.codingPos] &&
-                     refLine[refPos] < columns)
-                refPos += 2;
-            }
-            break;
-          case EOF:
-            this.addPixels(columns, 0);
-            this.eof = true;
-            break;
-          default:
-            warn('bad 2d code');
-            this.addPixels(columns, 0);
-            this.err = true;
-            break;
+                while (refLine[refPos] <= codingLine[this.codingPos] &&
+                       refLine[refPos] < columns)
+                  refPos += 2;
+              }
+              break;
+            case EOF:
+              this.addPixels(columns, 0);
+              this.eof = true;
+              break;
+            default:
+              warn('bad 2d code');
+              this.addPixels(columns, 0);
+              this.err = true;
+              break;
           }
         }
       } else {
@@ -1781,9 +1776,9 @@ var CCITTFaxStream = (function() {
 
       var gotEOL = false;
 
-      if (!this.eoblock && this.row == this.rows - 1) {
+      if (!this.eoblock && this.row == this.rows - 1)
         this.eof = true;
-      } else {
+      else {
         code1 = this.lookBits(12);
         while (code1 == 0) {
           this.eatBits(1);
@@ -1792,9 +1787,8 @@ var CCITTFaxStream = (function() {
         if (code1 == 1) {
           this.eatBits(12);
           gotEOL = true;
-        } else if (code1 == EOF) {
+        } else if (code1 == EOF)
           this.eof = true;
-        }
       }
 
       if (!this.eof && this.encoding > 0) {
@@ -1832,9 +1826,8 @@ var CCITTFaxStream = (function() {
             this.eof = true;
             return null;
           }
-          if ((code1 >> 1) == 1) {
+          if ((code1 >> 1) == 1)
             break;
-          }
           this.eatBits(1);
         }
         this.eatBits(12);
@@ -1844,10 +1837,8 @@ var CCITTFaxStream = (function() {
         }
       }
 
-      if (codingLine[0] > 0)
-        this.outputBits = codingLine[this.codingPos = 0];
-      else
-        this.outputBits = codingLine[this.codingPos = 1];
+      this.outputBits = (codingLine[0] > 0) ? codingLine[this.codingPos = 0] :
+                                              codingLine[this.codingPos = 1];
       ++this.row;
     }
 
@@ -1865,16 +1856,14 @@ var CCITTFaxStream = (function() {
       do {
         if (this.outputBits > bits) {
           this.buf <<= bits;
-          if (!(this.codingPos & 1)) {
+          if (!(this.codingPos & 1))
             this.buf |= 0xFF >> (8 - bits);
-          }
           this.outputBits -= bits;
           bits = 0;
         } else {
           this.buf <<= this.outputBits;
-          if (!(this.codingPos & 1)) {
+          if (!(this.codingPos & 1))
             this.buf |= 0xFF >> (8 - this.outputBits);
-          }
           bits -= this.outputBits;
           this.outputBits = 0;
           if (codingLine[this.codingPos] < columns) {
@@ -1888,15 +1877,13 @@ var CCITTFaxStream = (function() {
         }
       } while (bits);
     }
-    if (this.black) {
+    if (this.black)
       this.buf ^= 0xFF;
-    }
     return this.buf;
   };
 
   constructor.prototype.getTwoDimCode = function() {
-    var code = 0;
-    var p;
+    var code, p;
     if (this.eoblock) {
       code = this.lookBits(7);
       p = twoDimTable[code];
@@ -1907,9 +1894,8 @@ var CCITTFaxStream = (function() {
     } else {
       for (var n = 1; n <= 7; ++n) {
         code = this.lookBits(n);
-        if (n < 7) {
+        if (n < 7)
           code <<= 7 - n;
-        }
         p = twoDimTable[code];
         if (p[0] == n) {
           this.eatBits(n);
@@ -1922,25 +1908,21 @@ var CCITTFaxStream = (function() {
   };
 
   constructor.prototype.getWhiteCode = function() {
-    var code = 0;
-    var p;
-    var n;
+    var code, p;
     if (this.eoblock) {
       code = this.lookBits(12);
       if (code == EOF)
         return 1;
 
-      if ((code >> 5) == 0)
-        p = whiteTable1[code];
-      else
-        p = whiteTable2[code >> 3];
+      p = ((code >> 5) == 0) ? whiteTable1[code] : whiteTable2[code >> 3];
 
       if (p[0] > 0) {
         this.eatBits(p[0]);
         return p[1];
       }
     } else {
-      for (var n = 1; n <= 9; ++n) {
+      var n;
+      for (n = 1; n <= 9; ++n) {
         code = this.lookBits(n);
         if (code == EOF)
           return 1;
@@ -1953,7 +1935,7 @@ var CCITTFaxStream = (function() {
           return p[0];
         }
       }
-      for (var n = 11; n <= 12; ++n) {
+      for (n = 11; n <= 12; ++n) {
         code == this.lookBits(n);
         if (code == EOF)
           return 1;
@@ -1972,7 +1954,7 @@ var CCITTFaxStream = (function() {
   };
 
   constructor.prototype.getBlackCode = function() {
-    var code, p, n;
+    var code, p;
     if (this.eoblock) {
       code = this.lookBits(13);
       if (code == EOF)
@@ -1989,6 +1971,7 @@ var CCITTFaxStream = (function() {
         return p[1];
       }
     } else {
+      var n;
       for (n = 2; n <= 6; ++n) {
         code = this.lookBits(n);
         if (code == EOF)
@@ -2105,13 +2088,13 @@ var LZWStream = (function() {
   };
 
   constructor.prototype.readBlock = function() {
-    var blockSize = 512;
-    var estimatedDecodedSize = blockSize * 2, decodedSizeDelta = blockSize;
-    var i, j, q;
-
     var lzwState = this.lzwState;
     if (!lzwState)
       return; // eof was found
+
+    var blockSize = 512;
+    var estimatedDecodedSize = blockSize * 2, decodedSizeDelta = blockSize;
+    var i, j, q;
 
     var earlyChange = lzwState.earlyChange;
     var nextCode = lzwState.nextCode;
@@ -2327,7 +2310,7 @@ function IsPDFFunction(v) {
   var fnDict;
   if (typeof v != 'object')
     return false;
-  else if (IsDict(v))
+  if (IsDict(v))
     fnDict = v;
   else if (IsStream(v))
     fnDict = v.dict;
@@ -2406,14 +2389,13 @@ var Lexer = (function() {
           // ignore minus signs in the middle of numbers to match
           // Adobe's behavior
           warn('Badly formated number');
-        } else if (ch >= '0' && ch <= '9') {
+        } else if (ch >= '0' && ch <= '9')
           str += ch;
-        } else if (ch == 'e' || ch == 'E') {
+        else if (ch == 'e' || ch == 'E')
           floating = true;
-        } else {
-          // the last character doesn't belong to us
-          break;
-        }
+        else
+          break; // the last character doesn't belong to us
+
         stream.skip();
       } while (true);
       var value = parseFloat(str);
@@ -2429,78 +2411,77 @@ var Lexer = (function() {
       var ch;
       do {
         switch (ch = stream.getChar()) {
-        case undefined:
-          warn('Unterminated string');
-          done = true;
-          break;
-        case '(':
-          ++numParen;
-          str += ch;
-          break;
-        case ')':
-          if (--numParen == 0) {
-            done = true;
-          } else {
-            str += ch;
-          }
-          break;
-        case '\\':
-          switch (ch = stream.getChar()) {
           case undefined:
             warn('Unterminated string');
             done = true;
             break;
-          case 'n':
-            str += '\n';
-            break;
-          case 'r':
-            str += '\r';
-            break;
-          case 't':
-            str += '\t';
-            break;
-          case 'b':
-            str += '\b';
-            break;
-          case 'f':
-            str += '\f';
-            break;
-          case '\\':
           case '(':
-          case ')':
+            ++numParen;
             str += ch;
             break;
-          case '0': case '1': case '2': case '3':
-          case '4': case '5': case '6': case '7':
-            var x = ch - '0';
-            ch = stream.lookChar();
-            if (ch >= '0' && ch <= '7') {
-              stream.skip();
-              x = (x << 3) + (ch - '0');
-              ch = stream.lookChar();
-              if (ch >= '0' && ch <= '7') {
-                stream.skip();
-                x = (x << 3) + (ch - '0');
-              }
-            }
+          case ')':
+            if (--numParen == 0)
+              done = true;
+            else
+              str += ch;
+            break;
+          case '\\':
+            switch (ch = stream.getChar()) {
+              case undefined:
+                warn('Unterminated string');
+                done = true;
+                break;
+              case 'n':
+                str += '\n';
+                break;
+              case 'r':
+                str += '\r';
+                break;
+              case 't':
+                str += '\t';
+                break;
+              case 'b':
+                str += '\b';
+                break;
+              case 'f':
+                str += '\f';
+                break;
+              case '\\':
+              case '(':
+              case ')':
+                str += ch;
+                break;
+              case '0': case '1': case '2': case '3':
+              case '4': case '5': case '6': case '7':
+                var x = ch - '0';
+                ch = stream.lookChar();
+                if (ch >= '0' && ch <= '7') {
+                  stream.skip();
+                  x = (x << 3) + (ch - '0');
+                  ch = stream.lookChar();
+                  if (ch >= '0' && ch <= '7') {
+                    stream.skip();
+                    x = (x << 3) + (ch - '0');
+                  }
+                }
 
-            str += String.fromCharCode(x);
-            break;
-          case '\r':
-            ch = stream.lookChar();
-            if (ch == '\n')
-              stream.skip();
-            break;
-          case '\n':
+                str += String.fromCharCode(x);
+                break;
+              case '\r':
+                ch = stream.lookChar();
+                if (ch == '\n')
+                  stream.skip();
+                break;
+              case '\n':
+                break;
+              default:
+                str += ch;
+                break;
+            }
             break;
           default:
             str += ch;
             break;
-          }
-          break;
-        default:
-          str += ch;
-          break;
         }
       } while (!done);
       return str;
@@ -2510,20 +2491,21 @@ var Lexer = (function() {
       var stream = this.stream;
       while (!!(ch = stream.lookChar()) && !specialChars[ch.charCodeAt(0)]) {
         stream.skip();
-        if (ch == '#') {
-          ch = stream.lookChar();
-          var x = ToHexDigit(ch);
-          if (x != -1) {
-            stream.skip();
-            var x2 = ToHexDigit(stream.getChar());
-            if (x2 == -1)
-              error('Illegal digit in hex char in name: ' + x2);
-            str += String.fromCharCode((x << 4) | x2);
-          } else {
-            str += '#';
-            str += ch;
-          }
+        if (ch != '#') {
+          str += ch;
+          continue;
+        }
+
+        ch = stream.lookChar();
+        var x = ToHexDigit(ch);
+        if (x != -1) {
+          stream.skip();
+          var x2 = ToHexDigit(stream.getChar());
+          if (x2 == -1)
+            error('Illegal digit in hex char in name: ' + x2);
+          str += String.fromCharCode((x << 4) | x2);
         } else {
+          str += '#';
           str += ch;
         }
       }
@@ -2537,9 +2519,8 @@ var Lexer = (function() {
       var stream = this.stream;
       while (1) {
         ch = stream.getChar();
-        if (ch == '>') {
+        if (ch == '>')
           break;
-        }
         if (!ch) {
           warn('Unterminated hex string');
           break;
@@ -2572,50 +2553,49 @@ var Lexer = (function() {
         if (comment) {
           if (ch == '\r' || ch == '\n')
             comment = false;
-        } else if (ch == '%') {
+        } else if (ch == '%')
           comment = true;
-        } else if (specialChars[ch.charCodeAt(0)] != 1) {
+        else if (specialChars[ch.charCodeAt(0)] != 1)
           break;
-        }
       }
 
       // start reading token
       switch (ch) {
-      case '0': case '1': case '2': case '3': case '4':
-      case '5': case '6': case '7': case '8': case '9':
-      case '+': case '-': case '.':
-      return this.getNumber(ch);
-      case '(':
-      return this.getString();
-      case '/':
-      return this.getName(ch);
-      // array punctuation
-      case '[':
-      case ']':
-      return new Cmd(ch);
-      // hex string or dict punctuation
-      case '<':
-      ch = stream.lookChar();
-      if (ch == '<') {
+        case '0': case '1': case '2': case '3': case '4':
+        case '5': case '6': case '7': case '8': case '9':
+        case '+': case '-': case '.':
+          return this.getNumber(ch);
+        case '(':
+          return this.getString();
+        case '/':
+          return this.getName(ch);
+        // array punctuation
+        case '[':
+        case ']':
+          return new Cmd(ch);
+        // hex string or dict punctuation
+        case '<':
+          ch = stream.lookChar();
+          if (ch == '<') {
+            // dict punctuation
+            stream.skip();
+            return new Cmd('<<');
+          }
+          return this.getHexString(ch);
         // dict punctuation
-        stream.skip();
-        return new Cmd('<<');
-      }
-      return this.getHexString(ch);
-      // dict punctuation
-      case '>':
-      ch = stream.lookChar();
-      if (ch == '>') {
-        stream.skip();
-        return new Cmd('>>');
-      }
-      case '{':
-      case '}':
-      return new Cmd(ch);
-      // fall through
-      case ')':
-      error('Illegal character: ' + ch);
-      return Error;
+        case '>':
+          ch = stream.lookChar();
+          if (ch == '>') {
+            stream.skip();
+            return new Cmd('>>');
+          }
+        case '{':
+        case '}':
+          return new Cmd(ch);
+        // fall through
+        case ')':
+          error('Illegal character: ' + ch);
+        return Error;
       }
 
       // command
@@ -2680,13 +2660,14 @@ var Parser = (function() {
       } else {
         this.buf1 = this.buf2;
         this.buf2 = this.lexer.getObj();
-     }
+      }
     },
     getObj: function(cipherTransform) {
       if (IsCmd(this.buf1, 'BI')) { // inline image
         this.shift();
         return this.makeInlineImage(cipherTransform);
-      } else if (IsCmd(this.buf1, '[')) { // array
+      }
+      if (IsCmd(this.buf1, '[')) { // array
         this.shift();
         var array = [];
         while (!IsCmd(this.buf1, ']') && !IsEOF(this.buf1))
@@ -2695,13 +2676,14 @@ var Parser = (function() {
           error('End of file inside array');
         this.shift();
         return array;
-      } else if (IsCmd(this.buf1, '<<')) { // dictionary or stream
+      }
+      if (IsCmd(this.buf1, '<<')) { // dictionary or stream
         this.shift();
         var dict = new Dict();
         while (!IsCmd(this.buf1, '>>') && !IsEOF(this.buf1)) {
-          if (!IsName(this.buf1)) {
+          if (!IsName(this.buf1))
             error('Dictionary key must be a name object');
-          } else {
+          else {
             var key = this.buf1.name;
             this.shift();
             if (IsEOF(this.buf1))
@@ -2714,13 +2696,13 @@ var Parser = (function() {
 
         // stream objects are not allowed inside content streams or
         // object streams
-        if (this.allowStreams && IsCmd(this.buf2, 'stream')) {
+        if (this.allowStreams && IsCmd(this.buf2, 'stream'))
           return this.makeStream(dict, cipherTransform);
-        } else {
+        else
           this.shift();
-        }
         return dict;
-      } else if (IsInt(this.buf1)) { // indirect reference or integer
+      }
+      if (IsInt(this.buf1)) { // indirect reference or integer
         var num = this.buf1;
         this.shift();
         if (IsInt(this.buf1) && IsCmd(this.buf2, 'R')) {
@@ -2730,7 +2712,8 @@ var Parser = (function() {
           return ref;
         }
         return num;
-      } else if (IsString(this.buf1)) { // string
+      }
+      if (IsString(this.buf1)) { // string
         var str = this.buf1;
         this.shift();
         if (cipherTransform)
@@ -2750,9 +2733,9 @@ var Parser = (function() {
       // parse dictionary
       var dict = new Dict();
       while (!IsCmd(this.buf1, 'ID') && !IsEOF(this.buf1)) {
-        if (!IsName(this.buf1)) {
+        if (!IsName(this.buf1))
           error('Dictionary key must be a name object');
-        } else {
+        else {
           var key = this.buf1.name;
           this.shift();
           if (IsEOF(this.buf1))
@@ -2840,11 +2823,11 @@ var Parser = (function() {
     },
     makeFilter: function(stream, name, length, params) {
       if (name == 'FlateDecode' || name == 'Fl') {
-        if (params) {
+        if (params)
           return new PredictorStream(new FlateStream(stream), params);
-        }
         return new FlateStream(stream);
-      } else if (name == 'LZWDecode' || name == 'LZW') {
+      }
+      if (name == 'LZWDecode' || name == 'LZW') {
         var earlyChange = 1;
         if (params) {
           if (params.has('EarlyChange'))
@@ -2853,18 +2836,17 @@ var Parser = (function() {
             new LZWStream(stream, earlyChange), params);
         }
         return new LZWStream(stream, earlyChange);
-      } else if (name == 'DCTDecode' || name == 'DCT') {
-        var bytes = stream.getBytes(length);
-        return new JpegStream(bytes, stream.dict);
-      } else if (name == 'ASCII85Decode' || name == 'A85') {
-        return new Ascii85Stream(stream);
-      } else if (name == 'ASCIIHexDecode' || name == 'AHx') {
-        return new AsciiHexStream(stream);
-      } else if (name == 'CCITTFaxDecode' || name == 'CCF') {
-        return new CCITTFaxStream(stream, params);
-      } else {
-        error('filter "' + name + '" not supported yet');
       }
+      if (name == 'DCTDecode' || name == 'DCT')
+        return new JpegStream(stream.getBytes(length), stream.dict);
+      if (name == 'ASCII85Decode' || name == 'A85')
+        return new Ascii85Stream(stream);
+      if (name == 'ASCIIHexDecode' || name == 'AHx')
+        return new AsciiHexStream(stream);
+      if (name == 'CCITTFaxDecode' || name == 'CCF')
+        return new CCITTFaxStream(stream, params);
+
+      error('filter "' + name + '" not supported yet');
       return stream;
     }
   };
@@ -2891,24 +2873,17 @@ var Linearization = (function() {
     getInt: function(name) {
       var linDict = this.linDict;
       var obj;
-      if (IsDict(linDict) &&
-          IsInt(obj = linDict.get(name)) &&
-          obj > 0) {
+      if (IsDict(linDict) && IsInt(obj = linDict.get(name)) && obj > 0)
         return obj;
-      }
       error('"' + name + '" field in linearization table is invalid');
       return 0;
     },
     getHint: function(index) {
       var linDict = this.linDict;
       var obj1, obj2;
-      if (IsDict(linDict) &&
-          IsArray(obj1 = linDict.get('H')) &&
-          obj1.length >= 2 &&
-          IsInt(obj2 = obj1[index]) &&
-          obj2 > 0) {
+      if (IsDict(linDict) && IsArray(obj1 = linDict.get('H')) &&
+          obj1.length >= 2 && IsInt(obj2 = obj1[index]) && obj2 > 0)
         return obj2;
-      }
       error('Hints table in linearization table is invalid: ' + index);
       return 0;
     },
@@ -2994,20 +2969,19 @@ var XRef = (function() {
             error('Invalid XRef table: ' + first + ', ' + n);
           entry.gen = obj;
           obj = parser.getObj();
-          if (IsCmd(obj, 'n')) {
+          if (IsCmd(obj, 'n'))
             entry.uncompressed = true;
-          } else if (IsCmd(obj, 'f')) {
+          else if (IsCmd(obj, 'f'))
             entry.free = true;
-          } else {
+          else
             error('Invalid XRef table: ' + first + ', ' + n);
-          }
+
           if (!this.entries[i]) {
             // In some buggy PDF files the xref table claims to start at 1
             // instead of 0.
-            if (i == 1 && first == 1 &&
-                entry.offset == 0 && entry.gen == 65535 && entry.free) {
+            if (i == 1 && first == 1 && entry.offset == 0 &&
+                entry.gen == 65535 && entry.free)
               i = first = 0;
-            }
             this.entries[i] = entry;
           }
         }
@@ -3021,16 +2995,15 @@ var XRef = (function() {
       // get the 'Prev' pointer
       var prev;
       obj = dict.get('Prev');
-      if (IsInt(obj)) {
+      if (IsInt(obj))
         prev = obj;
-      } else if (IsRef(obj)) {
+      else if (IsRef(obj)) {
         // certain buggy PDF generators generate "/Prev NNN 0 R" instead
         // of "/Prev NNN"
         prev = obj.num;
       }
-      if (prev) {
+      if (prev)
         this.readXRef(prev);
-      }
 
       // check for 'XRefStm' key
       if (IsInt(obj = dict.get('XRefStm'))) {
@@ -3059,9 +3032,9 @@ var XRef = (function() {
         var offsetFieldWidth = byteWidths[1];
         var generationFieldWidth = byteWidths[2];
         if (!IsInt(typeFieldWidth) || !IsInt(offsetFieldWidth) ||
-            !IsInt(generationFieldWidth)) {
+            !IsInt(generationFieldWidth))
           error('Invalid XRef entry fields length: ' + first + ', ' + n);
-        }
+
         for (i = 0; i < n; ++i) {
           var type = 0, offset = 0, generation = 0;
           for (j = 0; j < typeFieldWidth; ++j)
@@ -3077,17 +3050,17 @@ var XRef = (function() {
           entry.offset = offset;
           entry.gen = generation;
           switch (type) {
-          case 0:
-            entry.free = true;
-            break;
-          case 1:
-            entry.uncompressed = true;
-            break;
-          case 2:
-            break;
-          default:
-            error('Invalid XRef entry type: ' + type);
-            break;
+            case 0:
+              entry.free = true;
+              break;
+            case 1:
+              entry.uncompressed = true;
+              break;
+            case 2:
+              break;
+            default:
+              error('Invalid XRef entry type: ' + type);
+              break;
           }
           if (!this.entries[first + i])
             this.entries[first + i] = entry;
@@ -3109,11 +3082,9 @@ var XRef = (function() {
         return this.readXRefTable(parser);
       // parse an xref stream
       if (IsInt(obj)) {
-        if (!IsInt(parser.getObj()) ||
-            !IsCmd(parser.getObj(), 'obj') ||
-            !IsStream(obj = parser.getObj())) {
+        if (!IsInt(parser.getObj()) || !IsCmd(parser.getObj(), 'obj') ||
+            !IsStream(obj = parser.getObj()))
           error('Invalid XRef stream');
-        }
         return this.readXRefStream(obj);
       }
       error('Invalid XRef');
@@ -3147,11 +3118,9 @@ var XRef = (function() {
         var obj1 = parser.getObj();
         var obj2 = parser.getObj();
         var obj3 = parser.getObj();
-        if (!IsInt(obj1) || obj1 != num ||
-            !IsInt(obj2) || obj2 != gen ||
-            !IsCmd(obj3)) {
+        if (!IsInt(obj1) || obj1 != num || !IsInt(obj2) || obj2 != gen ||
+            !IsCmd(obj3))
           error('bad XRef entry');
-        }
         if (!IsCmd(obj3, 'obj')) {
           // some bad pdfs use "obj1234" and really mean 1234
           if (obj3.cmd.indexOf('obj') == 0) {
@@ -3161,11 +3130,10 @@ var XRef = (function() {
           }
           error('bad XRef entry');
         }
-        if (this.encrypt) {
-          e = parser.getObj(this.encrypt.createCipherTransform(num, gen));
-        } else {
-          e = parser.getObj();
-        }
+        e = (this.encrypt) ?
+            parser.getObj(this.encrypt.createCipherTransform(num, gen)) :
+            parser.getObj();
+
         // Don't cache streams since they are mutable.
         if (!IsStream(e))
           this.cache[num] = e;
@@ -3178,22 +3146,19 @@ var XRef = (function() {
         error('bad ObjStm stream');
       var first = stream.parameters.get('First');
       var n = stream.parameters.get('N');
-      if (!IsInt(first) || !IsInt(n)) {
+      if (!IsInt(first) || !IsInt(n))
         error('invalid first and n parameters for ObjStm stream');
-      }
       parser = new Parser(new Lexer(stream), false);
       var i, entries = [], nums = [];
       // read the object numbers to populate cache
       for (i = 0; i < n; ++i) {
         var num = parser.getObj();
-        if (!IsInt(num)) {
+        if (!IsInt(num))
           error('invalid object number in the ObjStm stream: ' + num);
-        }
         nums.push(num);
         var offset = parser.getObj();
-        if (!IsInt(offset)) {
+        if (!IsInt(offset))
           error('invalid object offset in the ObjStm stream: ' + offset);
-        }
       }
       // read stream objects for cache
       for (i = 0; i < n; ++i) {
@@ -3201,9 +3166,8 @@ var XRef = (function() {
         this.cache[nums[i]] = entries[i];
       }
       e = entries[e.gen];
-      if (!e) {
+      if (!e)
         error('bad XRef entry for compressed object');
-      }
       return e;
     },
     getCatalogObj: function() {
@@ -3259,35 +3223,27 @@ var Page = (function() {
       return shadow(this, 'annotations', this.inheritPageProp('Annots'));
     },
     get width() {
-      var mediaBox = this.mediaBox;
+      var mBox = this.mediaBox;
       var rotate = this.rotate;
-      var width;
-      if (rotate == 0 || rotate == 180) {
-        width = (mediaBox[2] - mediaBox[0]);
-      } else {
-        width = (mediaBox[3] - mediaBox[1]);
-      }
+      var width = (rotate == 0 || rotate == 180) ? (mBox[2] - mBox[0]) :
+                                                   (mBox[3] - mBox[1]);
       return shadow(this, 'width', width);
     },
     get height() {
-      var mediaBox = this.mediaBox;
+      var mBox = this.mediaBox;
       var rotate = this.rotate;
-      var height;
-      if (rotate == 0 || rotate == 180) {
-        height = (mediaBox[3] - mediaBox[1]);
-      } else {
-        height = (mediaBox[2] - mediaBox[0]);
-      }
+      var height = (rotate == 0 || rotate == 180) ? (mBox[3] - mBox[1]) :
+                                                    (mBox[2] - mBox[0]);
       return shadow(this, 'height', height);
     },
     get rotate() {
       var rotate = this.inheritPageProp('Rotate') || 0;
       // Normalize rotation so it's a multiple of 90 and between 0 and 270
-      if (rotate % 90 != 0) {
+      if (rotate % 90 != 0)
         rotate = 0;
-      } else if (rotate >= 360) {
+      else if (rotate >= 360)
         rotate = rotate % 360;
-      } else if (rotate < 0) {
+      else if (rotate < 0) {
         // The spec doesn't cover negatives, assume its counterclockwise
         // rotation. The following is the other implementation of modulo.
         rotate = ((rotate % 360) + 360) % 360;
@@ -3337,10 +3293,8 @@ var Page = (function() {
 
 
     compile: function(gfx, fonts, images) {
-      if (this.code) {
-        // content was compiled
-        return;
-      }
+      if (this.code)
+        return; // content was compiled
 
       var xref = this.xref;
       var content = xref.fetchIfRef(this.content);
@@ -3553,7 +3507,8 @@ var Catalog = (function() {
         // reading simple destination dictionary
         obj = xref.fetch(nameDictionaryRef);
         obj.forEach(function(key, value) {
-          if (!value) return;
+          if (!value)
+            return;
           dests[key] = xref.fetch(value).get('D');
         });
       }
@@ -3616,9 +3571,9 @@ var PDFDoc = (function() {
     stream.pos = pos;
     var index = backwards ? str.lastIndexOf(needle) : str.indexOf(needle);
     if (index == -1)
-      return false; /* not found */
+      return false;
     stream.pos += index;
-    return true; /* found */
+    return true;
   }
 
   constructor.prototype = {
@@ -3651,8 +3606,7 @@ var PDFDoc = (function() {
         if (find(stream, 'startxref', 1024, true)) {
           stream.skip(9);
           var ch;
-          while (Lexer.isSpace(ch = stream.getChar()))
-;
+          while (Lexer.isSpace(ch = stream.getChar()));
           var str = '';
           while ((ch - '0') <= 9) {
             str += ch;
@@ -4130,10 +4084,9 @@ var PartialEvaluator = (function() {
                 'XObject should have a Name subtype'
               );
 
-              if ('Form' == type.name) {
+              if ('Form' == type.name)
                 args[0].code = this.eval(xobj, xref, xobj.dict.get('Resources'),
                                          fonts, images);
-              }
               if (xobj instanceof JpegStream)
                 images.bind(xobj); // monitoring image load
             }
@@ -4186,16 +4139,14 @@ var PartialEvaluator = (function() {
           return null;
         compositeFont = true;
 
-        if (IsRef(df)) {
+        if (IsRef(df))
           df = xref.fetch(df);
-        }
 
         descendant = xref.fetch(IsRef(df) ? df : df[0]);
         subType = descendant.get('Subtype');
         fd = descendant.get('FontDescriptor');
-      } else {
+      } else
         fd = fontDict.get('FontDescriptor');
-      }
 
       var builtInEncoding = false;
       var encodingMap = {};
@@ -4226,16 +4177,14 @@ var PartialEvaluator = (function() {
           var encoding = xref.fetchIfRef(fontDict.get('Encoding'));
           if (IsName(encoding)) {
             // Encoding is a predefined CMap
-            if (encoding.name == 'Identity-H') {
+            if (encoding.name == 'Identity-H')
               TODO('Need to create an identity cmap');
-            } else {
+            else
               TODO('Need to support predefined CMaps see PDF 32000-1:2008 ' +
                    '9.7.5.2 Predefined CMaps');
-            }
-          } else {
+          } else
             TODO('Need to support encoding streams see PDF 32000-1:2008 ' +
                  '9.7.5.3');
-          }
         }
       } else {
         var baseEncoding = null, diffEncoding = [];
@@ -4245,37 +4194,33 @@ var PartialEvaluator = (function() {
             // Build a map of between codes and glyphs
             // Load the base encoding
             var baseName = encoding.get('BaseEncoding');
-            if (baseName) {
+            if (baseName)
               baseEncoding = Encodings[baseName.name].slice();
-            }
 
             // Load the differences between the base and original
             var differences = encoding.get('Differences');
             var index = 0;
             for (var j = 0; j < differences.length; j++) {
               var data = differences[j];
-              if (IsNum(data)) {
+              if (IsNum(data))
                 index = data;
-              } else {
+              else
                 diffEncoding[index++] = data.name;
-              }
             }
-          } else if (IsName(encoding)) {
+          } else if (IsName(encoding))
             baseEncoding = Encodings[encoding.name].slice();
-          }
         }
 
         if (!baseEncoding) {
           var type = subType.name;
-          if (type == 'TrueType') {
+          if (type == 'TrueType')
             baseEncoding = Encodings.WinAnsiEncoding.slice();
-          } else if (type == 'Type1') {
+          else if (type == 'Type1') {
             baseEncoding = Encodings.StandardEncoding.slice();
             if (!diffEncoding.length)
               builtInEncoding = true;
-          } else {
+          } else
             error('Unknown type of font');
-          }
         }
 
         // merge in the differences
@@ -4300,9 +4245,9 @@ var PartialEvaluator = (function() {
             glyphsMap[glyphMap[p]] = encodingMap[p];
 
           var cmapObj = xref.fetchIfRef(fontDict.get('ToUnicode'));
-          if (IsName(cmapObj)) {
+          if (IsName(cmapObj))
             error('ToUnicode file cmap translation not implemented');
-          } else if (IsStream(cmapObj)) {
+          else if (IsStream(cmapObj)) {
             var firstChar = xref.fetchIfRef(fontDict.get('FirstChar'));
 
             var tokens = [];
@@ -4352,11 +4297,10 @@ var PartialEvaluator = (function() {
                     }
                     break;
                 }
-              } else if (byte == 0x5B || byte == 0x5D) {
+              } else if (byte == 0x5B || byte == 0x5D)
                 error('CMAP list parsing is not implemented');
-              } else {
+              else
                 token += String.fromCharCode(byte);
-              }
             }
           }
         }
@@ -4602,9 +4546,8 @@ var CanvasGraphics = (function() {
     },
     save: function() {
       this.ctx.save();
-      if (this.ctx.$saveCurrentX) {
+      if (this.ctx.$saveCurrentX)
         this.ctx.$saveCurrentX();
-      }
       var old = this.current;
       this.stateStack.push(old);
       this.current = old.clone();
@@ -4612,9 +4555,8 @@ var CanvasGraphics = (function() {
     restore: function() {
       var prev = this.stateStack.pop();
       if (prev) {
-        if (this.ctx.$restoreCurrentX) {
+        if (this.ctx.$restoreCurrentX)
           this.ctx.$restoreCurrentX();
-        }
         this.current = prev;
         this.ctx.restore();
       }
@@ -4661,9 +4603,8 @@ var CanvasGraphics = (function() {
         ctx.strokeStyle = strokeColor.getPattern(ctx);
         ctx.stroke();
         ctx.restore();
-      } else {
+      } else
         ctx.stroke();
-      }
 
       this.consumePath();
     },
@@ -4680,9 +4621,8 @@ var CanvasGraphics = (function() {
         ctx.fillStyle = fillColor.getPattern(ctx);
         ctx.fill();
         ctx.restore();
-      } else {
+      } else
         ctx.fill();
-      }
 
       this.consumePath();
     },
@@ -4700,9 +4640,8 @@ var CanvasGraphics = (function() {
         ctx.fillStyle = fillColor.getPattern(ctx);
         ctx.fill();
         ctx.restore();
-      } else {
+      } else
         ctx.fill();
-      }
 
       var strokeColor = this.current.strokeColor;
       if (strokeColor && strokeColor.type === 'Pattern') {
@@ -4710,9 +4649,8 @@ var CanvasGraphics = (function() {
         ctx.strokeStyle = strokeColor.getPattern(ctx);
         ctx.stroke();
         ctx.restore();
-      } else {
+      } else
         ctx.stroke();
-      }
 
       this.consumePath();
     },
@@ -4787,9 +4725,9 @@ var CanvasGraphics = (function() {
       this.current.font = fontObj;
       this.current.fontSize = size;
 
-      if (this.ctx.$setFont) {
+      if (this.ctx.$setFont)
         this.ctx.$setFont(name, size);
-      } else {
+      else {
         FontMeasure.setActive(fontObj, size);
 
         size = (size <= kRasterizerMin) ? size * kScalePrecision : size;
@@ -4882,17 +4820,15 @@ var CanvasGraphics = (function() {
       for (var i = 0; i < arr.length; ++i) {
         var e = arr[i];
         if (IsNum(e)) {
-          if (this.ctx.$addCurrentX) {
+          if (this.ctx.$addCurrentX)
             this.ctx.$addCurrentX(-e * 0.001 * this.current.fontSize);
-          } else {
+          else
             this.current.x -= e * 0.001 * this.current.fontSize *
                               this.current.textHScale;
-          }
-        } else if (IsString(e)) {
+        } else if (IsString(e))
           this.showText(e);
-        } else {
+        else
           malformed('TJ array element ' + e + " isn't string or num");
-        }
       }
     },
     nextLineShowText: function(text) {
@@ -4937,9 +4873,8 @@ var CanvasGraphics = (function() {
         var pattern = Pattern.parse(arguments, cs, this.xref, this.res,
                                     this.ctx);
         this.current.strokeColor = pattern;
-      } else {
+      } else
         this.setStrokeColor.apply(this, arguments);
-      }
     },
     setFillColor: function(/*...*/) {
       var cs = this.current.fillColorSpace;
@@ -4954,9 +4889,8 @@ var CanvasGraphics = (function() {
         var pattern = Pattern.parse(arguments, cs, this.xref, this.res,
                                     this.ctx);
         this.current.fillColor = pattern;
-      } else {
+      } else
         this.setFillColor.apply(this, arguments);
-      }
     },
     setStrokeGray: function(gray) {
       this.setStrokeRGBColor(gray, gray, gray);
@@ -5054,26 +4988,23 @@ var CanvasGraphics = (function() {
       assertWellFormed(IsStream(xobj), 'XObject should be a stream');
 
       var oc = xobj.dict.get('OC');
-      if (oc) {
+      if (oc)
         TODO('oc for xobject');
-      }
 
       var opi = xobj.dict.get('OPI');
-      if (opi) {
+      if (opi)
         TODO('opi for xobject');
-      }
 
       var type = xobj.dict.get('Subtype');
       assertWellFormed(IsName(type), 'XObject should have a Name subtype');
-      if ('Image' == type.name) {
+      if ('Image' == type.name)
         this.paintImageXObject(obj, xobj, false);
-      } else if ('Form' == type.name) {
+      else if ('Form' == type.name)
         this.paintFormXObject(obj, xobj);
-      } else if ('PS' == type.name) {
+      else if ('PS' == type.name)
         warn('(deprecated) PostScript XObjects are not supported');
-      } else {
+      else
         malformed('Unknown XObject subtype ' + type.name);
-      }
     },
 
     paintFormXObject: function(ref, stream) {
@@ -5255,84 +5186,71 @@ var ColorSpace = (function() {
       this.mode = mode;
 
       switch (mode) {
-      case 'DeviceGray':
-      case 'G':
-        return new DeviceGrayCS();
-        break;
-      case 'DeviceRGB':
-      case 'RGB':
-        return new DeviceRgbCS();
-        break;
-      case 'DeviceCMYK':
-      case 'CMYK':
-        return new DeviceCmykCS();
-        break;
-      case 'Pattern':
-        return new PatternCS(null);
-        break;
-      default:
-        error('unrecognized colorspace ' + mode);
+        case 'DeviceGray':
+        case 'G':
+          return new DeviceGrayCS();
+        case 'DeviceRGB':
+        case 'RGB':
+          return new DeviceRgbCS();
+        case 'DeviceCMYK':
+        case 'CMYK':
+          return new DeviceCmykCS();
+        case 'Pattern':
+          return new PatternCS(null);
+        default:
+          error('unrecognized colorspace ' + mode);
       }
     } else if (IsArray(cs)) {
       var mode = cs[0].name;
       this.mode = mode;
 
       switch (mode) {
-      case 'DeviceGray':
-      case 'G':
-        return new DeviceGrayCS();
-        break;
-      case 'DeviceRGB':
-      case 'RGB':
-        return new DeviceRgbCS();
-        break;
-      case 'DeviceCMYK':
-      case 'CMYK':
-        return new DeviceCmykCS();
-        break;
-      case 'CalGray':
-        return new DeviceGrayCS();
-        break;
-      case 'CalRGB':
-        return new DeviceRgbCS();
-        break;
-      case 'ICCBased':
-        var stream = xref.fetchIfRef(cs[1]);
-        var dict = stream.dict;
-        var numComps = dict.get('N');
-        if (numComps == 1)
+        case 'DeviceGray':
+        case 'G':
           return new DeviceGrayCS();
-        else if (numComps == 3)
+        case 'DeviceRGB':
+        case 'RGB':
           return new DeviceRgbCS();
-        else if (numComps == 4)
+        case 'DeviceCMYK':
+        case 'CMYK':
           return new DeviceCmykCS();
-        break;
-      case 'Pattern':
-        var baseCS = cs[1];
-        if (baseCS)
-          baseCS = ColorSpace.parse(baseCS, xref, res);
-        return new PatternCS(baseCS);
-        break;
-      case 'Indexed':
-        var base = ColorSpace.parse(cs[1], xref, res);
-        var hiVal = cs[2] + 1;
-        var lookup = xref.fetchIfRef(cs[3]);
-        return new IndexedCS(base, hiVal, lookup);
-        break;
-      case 'Separation':
-        var name = cs[1];
-        var alt = ColorSpace.parse(cs[2], xref, res);
-        var tintFn = new PDFFunction(xref, xref.fetchIfRef(cs[3]));
-        return new SeparationCS(alt, tintFn);
-        break;
-      case 'Lab':
-      case 'DeviceN':
-      default:
-        error('unimplemented color space object "' + mode + '"');
+        case 'CalGray':
+          return new DeviceGrayCS();
+        case 'CalRGB':
+          return new DeviceRgbCS();
+        case 'ICCBased':
+          var stream = xref.fetchIfRef(cs[1]);
+          var dict = stream.dict;
+          var numComps = dict.get('N');
+          if (numComps == 1)
+            return new DeviceGrayCS();
+          else if (numComps == 3)
+            return new DeviceRgbCS();
+          else if (numComps == 4)
+            return new DeviceCmykCS();
+          break;
+        case 'Pattern':
+          var baseCS = cs[1];
+          if (baseCS)
+            baseCS = ColorSpace.parse(baseCS, xref, res);
+          return new PatternCS(baseCS);
+        case 'Indexed':
+          var base = ColorSpace.parse(cs[1], xref, res);
+          var hiVal = cs[2] + 1;
+          var lookup = xref.fetchIfRef(cs[3]);
+          return new IndexedCS(base, hiVal, lookup);
+        case 'Separation':
+          var name = cs[1];
+          var alt = ColorSpace.parse(cs[2], xref, res);
+          var tintFn = new PDFFunction(xref, xref.fetchIfRef(cs[3]));
+          return new SeparationCS(alt, tintFn);
+        case 'Lab':
+        case 'DeviceN':
+        default:
+          error('unimplemented color space object "' + mode + '"');
       }
-    } else {
+    } else
       error('unrecognized color space object: "' + cs + '"');
-    }
   };
 
   return constructor;
@@ -5404,9 +5322,8 @@ var IndexedCS = (function() {
     } else if (IsString(lookup)) {
       for (var i = 0; i < length; ++i)
         lookupArray[i] = lookup.charCodeAt(i);
-    } else {
+    } else
       error('Unrecognized lookup table: ' + lookup);
-    }
     this.lookup = lookupArray;
   }
 
@@ -5432,9 +5349,8 @@ var IndexedCS = (function() {
       var baseBufPos = 0;
       for (var i = 0; i < length; ++i) {
         var lookupPos = input[i] * numComps;
-        for (var j = 0; j < numComps; ++j) {
+        for (var j = 0; j < numComps; ++j)
           baseBuf[baseBufPos++] = lookup[lookupPos + j];
-        }
       }
 
       return base.getRgbBuffer(baseBuf);
@@ -5600,26 +5516,26 @@ var Pattern = (function() {
     var typeNum = dict.get('PatternType');
 
     switch (typeNum) {
-    case 1:
-      var base = cs.base;
-      var color;
-      if (base) {
-        var baseComps = base.numComps;
+      case 1:
+        var base = cs.base;
+        var color;
+        if (base) {
+          var baseComps = base.numComps;
 
-        color = [];
-        for (var i = 0; i < baseComps; ++i)
-          color.push(args[i]);
+          color = [];
+          for (var i = 0; i < baseComps; ++i)
+            color.push(args[i]);
 
-        color = base.getRgb(color);
-      }
-      var code = patternName.code;
-      return new TilingPattern(pattern, code, dict, color, xref, ctx);
-    case 2:
-      var shading = xref.fetchIfRef(dict.get('Shading'));
-      var matrix = dict.get('Matrix');
-      return Pattern.parseShading(shading, matrix, xref, res, ctx);
-    default:
-      error('Unknown type of pattern: ' + typeNum);
+          color = base.getRgb(color);
+        }
+        var code = patternName.code;
+        return new TilingPattern(pattern, code, dict, color, xref, ctx);
+      case 2:
+        var shading = xref.fetchIfRef(dict.get('Shading'));
+        var matrix = dict.get('Matrix');
+        return Pattern.parseShading(shading, matrix, xref, res, ctx);
+      default:
+        error('Unknown type of pattern: ' + typeNum);
     }
   };
 
@@ -5630,12 +5546,12 @@ var Pattern = (function() {
     var type = dict.get('ShadingType');
 
     switch (type) {
-    case 2:
-    case 3:
-      // both radial and axial shadings are handled by RadialAxial shading
-      return new RadialAxialShading(dict, matrix, xref, res, ctx);
-    default:
-      return new DummyShading();
+      case 2:
+      case 3:
+        // both radial and axial shadings are handled by RadialAxial shading
+        return new RadialAxialShading(dict, matrix, xref, res, ctx);
+      default:
+        return new DummyShading();
     }
   }
   return constructor;
@@ -5814,17 +5730,17 @@ var TilingPattern = (function() {
 
       var paintType = dict.get('PaintType');
       switch (paintType) {
-      case PAINT_TYPE_COLORED:
-        tmpCtx.fillStyle = ctx.fillStyle;
-        tmpCtx.strokeStyle = ctx.strokeStyle;
-        break;
-      case PAINT_TYPE_UNCOLORED:
-        color = Util.makeCssRgb.apply(this, color);
-        tmpCtx.fillStyle = color;
-        tmpCtx.strokeStyle = color;
-        break;
-      default:
-        error('Unsupported paint type: ' + paintType);
+        case PAINT_TYPE_COLORED:
+          tmpCtx.fillStyle = ctx.fillStyle;
+          tmpCtx.strokeStyle = ctx.strokeStyle;
+          break;
+        case PAINT_TYPE_UNCOLORED:
+          color = Util.makeCssRgb.apply(this, color);
+          tmpCtx.fillStyle = color;
+          tmpCtx.strokeStyle = color;
+          break;
+        default:
+          error('Unsupported paint type: ' + paintType);
       }
 
       var scale = [width / xstep, height / ystep];
@@ -5920,11 +5836,10 @@ var PDFImage = (function() {
     var mask = xref.fetchIfRef(image.dict.get('Mask'));
     var smask = xref.fetchIfRef(image.dict.get('SMask'));
 
-    if (mask) {
+    if (mask)
       TODO('masked images');
-    } else if (smask) {
+    else if (smask)
       this.smask = new PDFImage(xref, res, smask);
-    }
   };
 
   constructor.prototype = {
@@ -5950,9 +5865,8 @@ var PDFImage = (function() {
           if (i % rowComps == 0) {
             mask = 0;
             buf = 0;
-          } else {
+          } else
             mask >>= 1;
-          }
 
           if (mask <= 0) {
             buf = buffer[bufferPos++];
@@ -6005,10 +5919,9 @@ var PDFImage = (function() {
 
         smask.fillGrayBuffer(buf);
         return buf;
-      } else {
-        for (var i = 0, ii = width * height; i < ii; ++i)
-          buf[i] = 255;
       }
+      for (var i = 0, ii = width * height; i < ii; ++i)
+        buf[i] = 255;
       return buf;
     },
     applyStencilMask: function applyStencilMask(buffer, inverseDecode) {
@@ -6019,16 +5932,15 @@ var PDFImage = (function() {
       var i, j, mask, buf;
       // removing making non-masked pixels transparent
       var bufferPos = 3; // alpha component offset
-      for (i = 0; i < height; i++) {
+      for (i = 0; i < height; ++i) {
         mask = 0;
-        for (j = 0; j < width; j++) {
+        for (j = 0; j < width; ++j) {
           if (!mask) {
             buf = imgArray[imgArrayPos++];
             mask = 128;
           }
-          if (!(buf & mask) == inverseDecode) {
+          if (!(buf & mask) == inverseDecode)
             buffer[bufferPos] = 0;
-          }
           bufferPos += 4;
           mask >>= 1;
         }
@@ -6150,7 +6062,7 @@ var PDFFunction = (function() {
           error('Incorrect number of arguments: ' + inputSize + ' != ' +
                 args.length);
 
-        for (var i = 0; i < inputSize; i++) {
+        for (var i = 0; i < inputSize; ++i) {
           var i2 = i * 2;
 
           // clip to the domain
@@ -6176,9 +6088,9 @@ var PDFFunction = (function() {
 
         var output = [];
         for (var i = 0; i < outputSize; ++i) {
-          if (ceil == floor) {
+          if (ceil == floor)
             var v = samples[ceil + i];
-          } else {
+          else {
             var low = samples[floor + i];
             var high = samples[ceil + i];
             var v = low * scale + high * (1 - scale);
@@ -6198,7 +6110,7 @@ var PDFFunction = (function() {
     },
     getSampleArray: function(size, outputSize, bps, str) {
       var length = 1;
-      for (var i = 0; i < size.length; i++)
+      for (var i = 0; i < size.length; ++i)
         length *= size[i];
       length *= outputSize;
 
@@ -6208,7 +6120,7 @@ var PDFFunction = (function() {
 
       var strBytes = str.getBytes((length * bps + 7) / 8);
       var strIdx = 0;
-      for (var i = 0; i < length; i++) {
+      for (var i = 0; i < length; ++i) {
         var b;
         while (codeSize < bps) {
           codeBuf <<= 8;
