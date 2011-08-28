@@ -136,7 +136,7 @@ class PDFTestHandler(BaseHTTPRequestHandler):
         path, _ = url.path, url.query
         path = os.path.abspath(os.path.realpath(DOC_ROOT + os.sep + path))
         prefix = os.path.commonprefix(( path, DOC_ROOT ))
-        _, ext = os.path.splitext(path)
+        _, ext = os.path.splitext(path.lower())
 
         if url.path == "/favicon.ico":
             self.sendFile(os.path.join(DOC_ROOT, "test", "resources", "favicon.ico"), ext)
