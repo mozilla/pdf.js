@@ -210,3 +210,34 @@ canvas {
   -webkit-box-shadow: 0px 2px 10px #ff0;
 }
 
+/* === Printed media overrides === */
+@media print {
+  #sidebar {
+    display: none;
+  }
+
+  #controls {
+    display: none;
+  }
+
+  #viewer {
+    margin: 0;
+    padding: 0;
+  }
+
+  .page {
+    display: none;
+    margin: 0;
+  }
+
+  .page canvas {
+    box-shadow: none;
+    -moz-box-shadow: none;
+    -webkit-box-shadow: none;
+  }
+
+  .page[data-loaded] {
+    display: block;
+    page-break-after: always;
+  }
+}
