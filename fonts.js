@@ -220,7 +220,7 @@ var FontLoader = {
       }
       src += '  var fontNames=[' + fontNamesArray + '];\n';
       src += '  window.onload = function () {\n';
-      src += '    top.postMessage(JSON.stringify(fontNames), "*");\n';
+      src += '    parent.postMessage(JSON.stringify(fontNames), "*");\n';
       src += '  }';
       src += '</script></head><body>';
       for (var i = 0; i < names.length; ++i) {
@@ -1868,7 +1868,8 @@ CFF.prototype = {
     return null;
   },
 
-  getOrderedCharStrings: function cff_getOrderedCharStrings(glyphs, properties) {
+  getOrderedCharStrings: function cff_getOrderedCharStrings(glyphs,
+                                                            properties) {
     var charstrings = [];
     var missings = [];
 

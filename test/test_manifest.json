@@ -97,5 +97,11 @@
        "link": true,
        "rounds": 1,
        "type": "load"
+    },
+    {  "id": "cable",
+       "file": "pdfs/cable.pdf",
+       "link": true,
+       "rounds": 1,
+       "type": "eq"
     }
 ]
