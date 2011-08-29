@@ -870,13 +870,15 @@ var Font = (function Font() {
               }
             }
 
-            if (properties.firstChar < 0x20)
+            if (properties.firstChar < 0x20) {
               var code = 0;
               for (var j = 0; j < glyphs.length; j++) {
                 var glyph = glyphs[j];
                 glyphs[j].unicode += 0x1F;
                 properties.glyphs[glyph.glyph] = encoding[++code] = glyph.unicode;
+              }
             }
+            
             return cmap.data = createCMapTable(glyphs, deltas);
           } else if (format == 6) {
             // Format 6 is a 2-bytes dense mapping, which means the font data
