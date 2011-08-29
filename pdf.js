@@ -4199,8 +4199,6 @@ var PartialEvaluator = (function() {
 
       var builtInEncoding = false;
       var encodingMap = {};
-      var glyphMap = {};
-      var charset = [];
       if (compositeFont) {
         // Special CIDFont support
         // XXX only CIDFontType2 supported for now
@@ -4242,69 +4240,61 @@ var PartialEvaluator = (function() {
         if (fontDict.has('Encoding')) {
           var encoding = xref.fetchIfRef(fontDict.get('Encoding'));
           if (IsDict(encoding)) {
-            // Build a map of between codes and glyphs
-            // Load the base encoding
             var baseName = encoding.get('BaseEncoding');
-            if (baseName) {
+            if (baseName)
               baseEncoding = Encodings[baseName.name].slice();
-            }
 
             // Load the differences between the base and original
             var differences = encoding.get('Differences');
             var index = 0;
             for (var j = 0; j < differences.length; j++) {
               var data = differences[j];
-              if (IsNum(data)) {
+              if (IsNum(data))
                 index = data;
-              } else {
+              else
                 diffEncoding[index++] = data.name;
-              }
             }
           } else if (IsName(encoding)) {
             baseEncoding = Encodings[encoding.name].slice();
+          } else {
+            error("Encoding is not a Name nor a Dict");
           }
         }
 
+        var fontType = subType.name; 
         if (!baseEncoding) {
-          var type = subType.name;
-          if (type == 'TrueType') {
-            baseEncoding = Encodings.WinAnsiEncoding.slice();
-          } else if (type == 'Type1') {
-            baseEncoding = Encodings.StandardEncoding.slice();
-            if (!diffEncoding.length)
-              builtInEncoding = true;
-          } else {
-            error('Unknown type of font');
+          switch (fontType) {
+            case 'TrueType':
+              baseEncoding = Encodings.WinAnsiEncoding.slice();
+              break;
+            case 'Type1':
+              baseEncoding = Encodings.StandardEncoding.slice();
+              break;
+            default:
+              warn('Unknown type of font: ' + fontType);
+              break;
           }
         }
+
+        // firstChar and width are required
+        // (except for 14 standard fonts)
+        var firstChar = xref.fetchIfRef(fontDict.get('FirstChar')) || 0;
+        var lastChar = xref.fetchIfRef(fontDict.get('LastChar')) || 0;
+        var widths = xref.fetchIfRef(fontDict.get('Widths')) || [];
 
         // merge in the differences
-        var length = baseEncoding.length > diffEncoding.length ?
-                     baseEncoding.length : diffEncoding.length;
-        for (var i = 0, ii = length; i < ii; ++i) {
-          var diffGlyph = diffEncoding[i];
-          var baseGlyph = baseEncoding[i];
-          if (diffGlyph) {
-            glyphMap[i] = diffGlyph;
-            encodingMap[i] = GlyphsUnicode[diffGlyph];
-          } else if (baseGlyph) {
-            glyphMap[i] = baseGlyph;
-            encodingMap[i] = GlyphsUnicode[baseGlyph];
-          }
+        var glyphsMap = {};
+        for (var i = firstChar; i <= lastChar; i++) {
+          var glyph = diffEncoding[i] || baseEncoding[i];
+          if (glyph)
+            glyphsMap[glyph] = encodingMap[i] = GlyphsUnicode[glyph];
         }
 
-        if (fontDict.has('ToUnicode')) {
-          encodingMap['empty'] = true;
-          var glyphsMap = {};
-          for (var p in glyphMap)
-            glyphsMap[glyphMap[p]] = encodingMap[p];
-
+        if (fontDict.has('ToUnicode') && differences) {
           var cmapObj = xref.fetchIfRef(fontDict.get('ToUnicode'));
           if (IsName(cmapObj)) {
             error('ToUnicode file cmap translation not implemented');
           } else if (IsStream(cmapObj)) {
-            var firstChar = xref.fetchIfRef(fontDict.get('FirstChar'));
-
             var tokens = [];
             var token = '';
 
@@ -4334,6 +4324,8 @@ var PartialEvaluator = (function() {
                       var startRange = parseInt('0x' + tokens[j]);
                       var endRange = parseInt('0x' + tokens[j + 1]);
                       var code = parseInt('0x' + tokens[j + 2]);
+                      for (var k = startRange; k < endRange; k++)
+                        encodingMap[k] = code++;
                     }
                     break;
 
@@ -4359,15 +4351,6 @@ var PartialEvaluator = (function() {
               }
             }
           }
-        }
-
-        // firstChar and width are required
-        // (except for 14 standard fonts)
-        var firstChar = xref.fetchIfRef(fontDict.get('FirstChar'));
-        var widths = xref.fetchIfRef(fontDict.get('Widths')) || [];
-        for (var j = 0; j < widths.length; j++) {
-          if (widths[j])
-            charset.push(glyphMap[j + firstChar]);
         }
       }
 
@@ -4396,7 +4379,6 @@ var PartialEvaluator = (function() {
       }
 
       var descriptor = xref.fetch(fd);
-
       var fontName = fontDict.get('Name');
       if (!fontName)
         fontName = xref.fetchIfRef(descriptor.get('FontName'));;
@@ -4414,14 +4396,6 @@ var PartialEvaluator = (function() {
         }
       }
 
-      if (descriptor.has('CharSet')) {
-        // Get the font charset if any (meaningful only in Type 1)
-        charset = descriptor.get('CharSet');
-        assertWellFormed(IsString(charset), 'invalid charset');
-        charset = charset.split('/');
-        charset.shift();
-      }
-
       var widths = fontDict.get('Widths');
       if (widths) {
         var glyphWidths = {};
@@ -4435,9 +4409,8 @@ var PartialEvaluator = (function() {
         subtype: fileType,
         widths: glyphWidths,
         encoding: encodingMap,
+        differences: diffEncoding,
         glyphs: glyphsMap || GlyphsUnicode,
-        builtInEncoding: builtInEncoding,
-        charset: charset,
         firstChar: fontDict.get('FirstChar'),
         lastChar: fontDict.get('LastChar'),
         bbox: descriptor.get('FontBBox'),
