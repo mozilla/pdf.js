@@ -1703,7 +1703,7 @@ var Type1Parser = function() {
                 var index = parseInt(getToken());
                 var glyph = getToken();
               
-                if (!properties.differences[j]) {
+                if (!properties.encoding[index]) {
                   var code = GlyphsUnicode[glyph];
                   properties.glyphs[glyph] = properties.encoding[index] = code;
                 }
