@@ -66,7 +66,7 @@ var FontMeasure = (function FontMeasure() {
 
   return {
     setActive: function fonts_setActive(font, size) {
-      if (current = font) {
+      if (current == font) {
         var sizes = current.sizes;
         if (!(measureCache = sizes[size]))
           measureCache = sizes[size] = Object.create(null);
@@ -856,7 +856,7 @@ var Font = (function Font() {
           var language = int16(font.getBytes(2));
 
           if (format == 4) {
-            return;
+            return cmap.data;
           } else if (format == 0) {
             // Characters below 0x20 are controls characters that are hardcoded
             // into the platform so if some characters in the font are assigned
@@ -927,6 +927,7 @@ var Font = (function Font() {
             return cmap.data = createCMapTable(glyphs);
           }
         }
+        return cmap.data;
       };
 
       // Check that required tables are present
@@ -2287,7 +2288,7 @@ var Type2CFF = (function() {
             id = (id << 8) | bytes[pos++];
             charset.push(strings[id]);
           }
-          return charset;
+          break;
         case 1:
           while (charset.length <= length) {
             var first = bytes[pos++];
@@ -2296,7 +2297,7 @@ var Type2CFF = (function() {
             for (var i = 0; i <= numLeft; ++i)
               charset.push(strings[first++]);
           }
-          return charset;
+          break;
         case 2:
           while (charset.length <= length) {
             var first = bytes[pos++];
@@ -2306,11 +2307,11 @@ var Type2CFF = (function() {
             for (var i = 0; i <= numLeft; ++i)
               charset.push(strings[first++]);
           }
-          return charset;
+          break;
         default:
           error('Unknown charset format');
       }
-
+      return charset;
     },
     getPrivDict: function cff_getprivdict(baseDict, strings) {
       var dict = {};
@@ -2440,6 +2441,7 @@ var Type2CFF = (function() {
         } else {
           error('Incorrect byte');
         }
+        return -1;
       };
 
       function parseFloatOperand() {

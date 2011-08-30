@@ -417,16 +417,18 @@ window.addEventListener('transitionend', function(evt) {
   var pagesCount = PDFView.pages.length;
 
   var container = document.getElementById('sidebarView');
-  container._interval = window.setInterval(function() {
-    if (pageIndex >= pagesCount)
-      return window.clearInterval(container._interval);
+  container._interval = window.setInterval(function interval() {
+    if (pageIndex >= pagesCount) {
+      window.clearInterval(container._interval);
+      return;
+    }
 
     PDFView.thumbnails[pageIndex++].draw();
   }, 500);
 }, true);
 
 
-window.addEventListener('scalechange', function(evt) {
+window.addEventListener('scalechange', function scalechange(evt) {
   var options = document.getElementById('scaleSelect').options;
   for (var i = 0; i < options.length; i++) {
     var option = options[i];
@@ -434,7 +436,7 @@ window.addEventListener('scalechange', function(evt) {
   }
 }, true);
 
-window.addEventListener('pagechange', function(evt) {
+window.addEventListener('pagechange', function pagechange(evt) {
   var page = evt.detail;
   document.location.hash = page;
   document.getElementById('pageNumber').value = page;

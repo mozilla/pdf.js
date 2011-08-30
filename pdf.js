@@ -2093,7 +2093,7 @@ var LZWStream = (function() {
       var c = this.str.getByte();
       if (c == null) {
         this.eof = true;
-        return;
+        return null;
       }
       cachedData = (cachedData << 8) | c;
       bitsCached += 8;
@@ -5208,7 +5208,7 @@ var Util = (function() {
     return 'rgb(' + ri + ',' + gi + ',' + bi + ')';
   };
   constructor.makeCssCmyk = function makecmyk(c, m, y, k) {
-    var c = (new DeviceCmykCS()).getRgb([c, m, y, k]);
+    c = (new DeviceCmykCS()).getRgb([c, m, y, k]);
     var ri = (255 * c[0]) | 0, gi = (255 * c[1]) | 0, bi = (255 * c[2]) | 0;
     return 'rgb(' + ri + ',' + gi + ',' + bi + ')';
   };
@@ -5335,6 +5335,7 @@ var ColorSpace = (function() {
     } else {
       error('unrecognized color space object: "' + cs + '"');
     }
+    return null;
   };
 
   return constructor;
@@ -5623,6 +5624,7 @@ var Pattern = (function() {
     default:
       error('Unknown type of pattern: ' + typeNum);
     }
+    return null;
   };
 
   constructor.parseShading = function pattern_shading(shading, matrix,
