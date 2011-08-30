@@ -57,7 +57,7 @@ var stdFontMap = {
 };
 
 var FontMeasure = (function FontMeasure() {
-  var kScalePrecision = 50;
+  var kScalePrecision = 30;
   var ctx = document.createElement('canvas').getContext('2d');
   ctx.scale(1 / kScalePrecision, 1);
 
