@@ -4290,7 +4290,7 @@ var PartialEvaluator = (function() {
             glyphsMap[glyph] = encodingMap[i] = GlyphsUnicode[glyph];
         }
 
-        if (fontDict.has('ToUnicode') && differences) {
+        if (fontType == 'TrueType' && fontDict.has('ToUnicode') && differences) {
           var cmapObj = xref.fetchIfRef(fontDict.get('ToUnicode'));
           if (IsName(cmapObj)) {
             error('ToUnicode file cmap translation not implemented');
@@ -4358,6 +4358,7 @@ var PartialEvaluator = (function() {
         var baseFontName = fontDict.get('BaseFont');
         if (!IsName(baseFontName))
           return null;
+
         // Using base font name as a font name.
         baseFontName = baseFontName.name.replace(/[\+,\-]/g, '_');
         if (/^Symbol(_?(Bold|Italic))*$/.test(baseFontName)) {

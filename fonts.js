@@ -385,6 +385,7 @@ var Font = (function Font() {
   var constructor = function font_constructor(name, file, properties) {
     this.name = name;
     this.encoding = properties.encoding;
+    this.glyphs = properties.glyphs;
     this.sizes = [];
 
     // If the font is to be ignored, register it like an already loaded font
@@ -1271,6 +1272,10 @@ var Font = (function Font() {
             unicode = charcode;
           }
 
+          // Check if the glyph has already been converted
+          if (!IsNum(unicode))
+            unicode = encoding[charcode] = this.glyphs[unicode];
+
           // Handle surrogate pairs
           if (unicode > 0xFFFF) {
             str += String.fromCharCode(unicode & 0xFFFF);
@@ -1703,9 +1708,9 @@ var Type1Parser = function() {
                 var index = parseInt(getToken());
                 var glyph = getToken();
               
-                if (!properties.encoding[index]) {
-                  var code = GlyphsUnicode[glyph];
-                  properties.glyphs[glyph] = properties.encoding[index] = code;
+                if ('undefined' == typeof(properties.differences[index])) {
+                  properties.encoding[index] = glyph;
+                  properties.glyphs[glyph] = GlyphsUnicode[glyph];
                 }
                 getToken(); // read the in 'put'
               }
