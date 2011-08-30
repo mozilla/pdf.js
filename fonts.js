@@ -423,6 +423,7 @@ var Font = (function Font() {
 
         // Wrap the CFF data inside an OTF font file
         data = this.convert(name, cff, properties);
+        writeToFile(data, "/tmp/" + name + ".otf");
         break;
 
       case 'TrueType':
@@ -2198,10 +2199,16 @@ var Type2CFF = (function() {
       var nominalWidth = privDict['nominalWidthX'];
 
       var charstrings = [];
-      for (var code in encoding) {
-        var gid = encoding[code];
-        var width = widths[code] || defaultWidth;
-        charstrings.push({unicode: code, width: width, gid: gid});
+      var differences = properties.differences;
+      for (var i = 1; i < charsets.length; i++) {
+        var glyph = charsets[i];
+        var charCode = properties.glyphs[glyph];
+        if (charCode) {
+          var width = widths[charCode] || defaultWidth;
+          charstrings.push({unicode: charCode, width: width, gid: i});
+        } else if (glyph !== '.notdef') {
+          warn('Cannot find unicode for glyph ' + charName);
+        }
       }
 
       // sort the array by the unicode value
@@ -2246,7 +2253,6 @@ var Type2CFF = (function() {
 
           case 1:
             var rangesCount = bytes[pos++];
-            log(rangesCount);
             var gid = 1;
             for (var i = 0; i < rangesCount; i++) {
               var start = bytes[pos++];
