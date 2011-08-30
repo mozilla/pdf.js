@@ -4287,7 +4287,7 @@ var PartialEvaluator = (function() {
         for (var i = firstChar; i <= lastChar; i++) {
           var glyph = diffEncoding[i] || baseEncoding[i];
           if (glyph)
-            glyphsMap[glyph] = encodingMap[i] = GlyphsUnicode[glyph];
+            glyphsMap[glyph] = encodingMap[i] = GlyphsUnicode[glyph] || i;
         }
 
         if (fontType == 'TrueType' && fontDict.has('ToUnicode') && differences) {
