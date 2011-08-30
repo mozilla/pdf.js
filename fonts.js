@@ -415,11 +415,10 @@ var Font = (function Font() {
         this.mimetype = 'font/opentype';
 
         var subtype = properties.subtype;
-        if (subtype === 'Type1C') {
+        if (subtype === 'Type1C')
           var cff = new Type2CFF(file, properties);
-        } else {
+        else
           var cff = new CFF(name, file, properties);
-        }
 
         // Wrap the CFF data inside an OTF font file
         data = this.convert(name, cff, properties);
@@ -2140,23 +2139,18 @@ var Type2CFF = (function() {
     this.bytes = bytes;
     this.properties = properties;
 
-    // Other classes expect this.data to be a Javascript array
-    var data = [];
-    for (var i = 0, ii = bytes.length; i < ii; ++i)
-      data.push(bytes[i]);
-    this.data = data;
-
-    this.parse(properties);
+    this.data = this.parse();
   };
 
   constructor.prototype = {
-    parse: function cff_parse(properties) {
+    parse: function cff_parse() {
       var header = this.parseHeader();
+      var properties = this.properties;
       var nameIndex = this.parseIndex(header.endPos);
 
       var dictIndex = this.parseIndex(nameIndex.endPos);
       if (dictIndex.length != 1)
-        error('More than 1 font');
+        error('CFF contains more than 1 font');
 
       var stringIndex = this.parseIndex(dictIndex.endPos);
       var gsubrIndex = this.parseIndex(stringIndex.endPos);
@@ -2168,20 +2162,30 @@ var Type2CFF = (function() {
 
       var bytes = this.bytes;
 
-      var privInfo = topDict['Private'];
-      var privOffset = privInfo[1], privLength = privInfo[0];
+      var privateInfo = topDict['Private'];
+      var privOffset = privateInfo[1], privLength = privateInfo[0];
       var privBytes = bytes.subarray(privOffset, privOffset + privLength);
       baseDict = this.parseDict(privBytes);
       var privDict = this.getPrivDict(baseDict, strings);
 
       var charStrings = this.parseIndex(topDict['CharStrings']);
-      var charset = this.parseCharsets(topDict['charset'], charStrings.length, strings);
-      var encoding = this.parseEncoding(topDict['Encoding'], properties, strings, charset);
+      var charset = this.parseCharsets(topDict['charset'],
+                                       charStrings.length, strings);
+      var hasSupplement = this.parseEncoding(topDict['Encoding'], properties, 
+                                             strings, charset);
+
+      // The font sanitizer does not support CFF encoding with a
+      // supplement, since the encoding is not really use to map
+      // between gid to glyph, let's overwrite what is declared in
+      // the top dictionary to let the sanitizer think the font use
+      // StandardEncoding, that's a lie but that's ok.
+      if (hasSupplement)
+        bytes[topDict['Encoding']] = 0;
 
       // charstrings contains info about glyphs (one element per glyph
       // containing mappings for {unicode, width})
-      var charstrings = this.getCharStrings(charset, charStrings, encoding,
-          privDict, this.properties);
+      var charstrings = this.getCharStrings(charset, charStrings,
+                                            privDict, this.properties);
 
       // create the mapping between charstring and glyph id
       var glyphIds = [];
@@ -2190,9 +2194,14 @@ var Type2CFF = (function() {
 
       this.charstrings = charstrings;
       this.glyphIds = glyphIds;
+
+      var data = [];
+      for (var i = 0, ii = bytes.length; i < ii; ++i)
+        data.push(bytes[i]);
+      return data;
     },
 
-    getCharStrings: function cff_charstrings(charsets, charStrings, encoding,
+    getCharStrings: function cff_charstrings(charsets, charStrings,
                                              privDict, properties) {
       var widths = properties.widths;
 
@@ -2203,13 +2212,10 @@ var Type2CFF = (function() {
       var differences = properties.differences;
       for (var i = 1; i < charsets.length; i++) {
         var glyph = charsets[i];
-        var charCode = properties.glyphs[glyph];
-        if (charCode) {
-          var width = widths[charCode] || defaultWidth;
-          charstrings.push({unicode: charCode, width: width, gid: i});
-        } else if (glyph !== '.notdef') {
-          warn('Cannot find unicode for glyph ' + charName);
-        }
+        var code = differences.indexOf(glyph);
+        var width = widths[code] || defaultWidth;
+        properties.encoding[i] = i + 0x1F;
+        charstrings.push({unicode: code + 0x1F, width: width, gid: i});
       }
 
       // sort the array by the unicode value
@@ -2248,8 +2254,10 @@ var Type2CFF = (function() {
             for (var i = 1; i <= glyphsCount; i++) 
               encoding[bytes[pos++]] = i;
 
-            if (format & 0x80)
+            if (format & 0x80) {
               readSupplement();
+              return true;
+            }
             break;
 
           case 1:
@@ -2262,8 +2270,10 @@ var Type2CFF = (function() {
                 encoding[j] = gid++;
             }
 
-            if (format & 0x80)
+            if (format & 0x80) {
               readSupplement();
+              return true;
+            }
             break;
 
           default:
@@ -2271,7 +2281,7 @@ var Type2CFF = (function() {
             break;
         }
       }
-      return encoding;
+      return false;
     },
 
     parseCharsets: function cff_parsecharsets(pos, length, strings) {
