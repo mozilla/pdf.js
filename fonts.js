@@ -2210,12 +2210,22 @@ var Type2CFF = (function() {
 
       var charstrings = [];
       var differences = properties.differences;
+      var index = 1;
+      var kCmapGlyphOffset = 0xE000;
       for (var i = 1; i < charsets.length; i++) {
         var glyph = charsets[i];
+        for (var j = index; j < differences.length; j++) {
+          if (differences[j]) {
+            index = j;
+            break;
+          }
+        }
+
         var code = differences.indexOf(glyph);
         var width = widths[code] || defaultWidth;
-        properties.encoding[i] = i + 0x1F;
-        charstrings.push({unicode: code + 0x1F, width: width, gid: i});
+        properties.encoding[index] = index + kCmapGlyphOffset;
+        charstrings.push({unicode: code + kCmapGlyphOffset, width: width, gid: i});
+        index++;
       }
 
       // sort the array by the unicode value
