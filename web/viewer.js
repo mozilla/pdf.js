@@ -42,7 +42,7 @@ var PDFView = {
   set page(val) {
     var pages = this.pages;
     var input = document.getElementById('pageNumber');
-    if (val <= 0 || val > pages.length) {
+    if (!(0 < val && val <= pages.length)) {
       input.value = this.page;
       return;
     }
@@ -58,7 +58,7 @@ var PDFView = {
   },
 
   get page() {
-    return parseInt(document.location.hash.substring(1));
+    return parseInt(document.location.hash.substring(1)) || 1;
   },
 
   open: function(url, scale) {
@@ -91,7 +91,8 @@ var PDFView = {
       return; // invalid destination
     // dest array looks like that: <page-ref> </XYZ|FitXXX> <args..>
     var destRef = dest[0];
-    var pageNumber = this.pagesRefMap[destRef.num + ' ' + destRef.gen + ' R'];
+    var pageNumber = destRef instanceof Object ?
+      this.pagesRefMap[destRef.num + ' ' + destRef.gen + ' R'] : (destRef + 1);
     if (pageNumber) {
       this.page = pageNumber;
       // TODO scroll to specific region on the page, the precise scaling

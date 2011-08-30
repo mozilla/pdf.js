@@ -2714,8 +2714,9 @@ var Parser = (function() {
 
         // stream objects are not allowed inside content streams or
         // object streams
-        if (this.allowStreams && IsCmd(this.buf2, 'stream')) {
-          return this.makeStream(dict, cipherTransform);
+        if (IsCmd(this.buf2, 'stream')) {
+          return this.allowStreams ?
+            this.makeStream(dict, cipherTransform) : dict;
         } else {
           this.shift();
         }
@@ -3541,6 +3542,11 @@ var Catalog = (function() {
       }
     },
     get destinations() {
+      function fetchDestination(ref) {
+        var dest = xref.fetchIfRef(ref);
+        return IsDict(dest) ? dest.get('D') : dest;
+      }
+
       var xref = this.xref;
       var dests = {}, nameTreeRef, nameDictionaryRef;
       var obj = this.catDict.get('Names');
@@ -3551,10 +3557,10 @@ var Catalog = (function() {
 
       if (nameDictionaryRef) {
         // reading simple destination dictionary
-        obj = xref.fetch(nameDictionaryRef);
+        obj = xref.fetchIfRef(nameDictionaryRef);
         obj.forEach(function(key, value) {
           if (!value) return;
-          dests[key] = xref.fetch(value).get('D');
+          dests[key] = fetchDestination(value);
         });
       }
       if (nameTreeRef) {
@@ -3578,8 +3584,7 @@ var Catalog = (function() {
           }
           var names = obj.get('Names');
           for (i = 0, n = names.length; i < n; i += 2) {
-            var dest = xref.fetch(names[i + 1]);
-            dests[names[i]] = IsDict(dest) ? dest.get('D') : dest;
+            dests[names[i]] = fetchDestination(names[i + 1]);
           }
         }
       }
@@ -4297,55 +4302,78 @@ var PartialEvaluator = (function() {
           } else if (IsStream(cmapObj)) {
             var tokens = [];
             var token = '';
+            var beginArrayToken = {};
 
             var cmap = cmapObj.getBytes(cmapObj.length);
             for (var i = 0; i < cmap.length; i++) {
               var byte = cmap[i];
-              if (byte == 0x20 || byte == 0x0A || byte == 0x3C ||
-                  byte == 0x3E) {
+              if (byte == 0x20 || byte == 0x0D || byte == 0x0A ||
+                  byte == 0x3C || byte == 0x5B || byte == 0x5D) {
                 switch (token) {
-                  case 'useCMap':
-                    error('useCMap is not implemented');
+                  case 'usecmap':
+                    error('usecmap is not implemented');
                     break;
 
                   case 'beginbfchar':
                   case 'beginbfrange':
-                  case 'begincodespacerange':
+                  case 'begincidchar':
+                  case 'begincidrange':
                     token = '';
                     tokens = [];
                     break;
 
-                  case 'endcodespacerange':
-                    TODO('Support CMap ranges');
-                    break;
-
+                  case 'endcidrange':
                   case 'endbfrange':
                     for (var j = 0; j < tokens.length; j += 3) {
-                      var startRange = parseInt('0x' + tokens[j]);
-                      var endRange = parseInt('0x' + tokens[j + 1]);
-                      var code = parseInt('0x' + tokens[j + 2]);
-                      for (var k = startRange; k < endRange; k++)
-                        encodingMap[k] = code++;
+                      var startRange = tokens[j];
+                      var endRange = tokens[j + 1];
+                      var code = tokens[j + 2];
+                      while(startRange < endRange) {
+                        encodingMap[startRange] = code++;
+                        ++startRange;
+                      }
                     }
                     break;
 
+                  case 'endcidchar':
                   case 'endbfchar':
                     for (var j = 0; j < tokens.length; j += 2) {
-                      var index = parseInt('0x' + tokens[j]);
-                      var code = parseInt('0x' + tokens[j + 1]);
+                      var index = tokens[j];
+                      var code = tokens[j + 1];
                       encodingMap[index] = code;
                     }
                     break;
 
+                  case '':
+                    break;
+
                   default:
-                    if (token.length) {
-                      tokens.push(token);
-                      token = '';
-                    }
+                    if (token[0] >= '0' && token[0] <= '9')
+                      token = parseInt(token, 10); // a number
+                    tokens.push(token);
+                    token = '';
                     break;
                 }
-              } else if (byte == 0x5B || byte == 0x5D) {
-                error('CMAP list parsing is not implemented');
+                switch (byte) {
+                  case 0x5B:
+                    // begin list parsing
+                    tokens.push(beginArrayToken);
+                    break;
+                  case 0x5D:
+                    // collect array items
+                    var items = [], item;
+                    while (tokens.length && (item = tokens.pop()) != beginArrayToken) {
+                      items.unshift(item);
+                    }
+                    tokens.push(items);
+                    break;
+                }
+              } else if (byte == 0x3E) {
+                if (token.length) {
+                  // parsing hex number
+                  tokens.push(parseInt(token, 16));
+                  token = '';
+                }
               } else {
                 token += String.fromCharCode(byte);
               }
