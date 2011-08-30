@@ -3541,6 +3541,11 @@ var Catalog = (function() {
       }
     },
     get destinations() {
+      function fetchDestination(ref) {
+        var dest = xref.fetchIfRef(ref);
+        return IsDict(dest) ? dest.get('D') : dest;
+      }
+
       var xref = this.xref;
       var dests = {}, nameTreeRef, nameDictionaryRef;
       var obj = this.catDict.get('Names');
@@ -3551,10 +3556,10 @@ var Catalog = (function() {
 
       if (nameDictionaryRef) {
         // reading simple destination dictionary
-        obj = xref.fetch(nameDictionaryRef);
+        obj = xref.fetchIfRef(nameDictionaryRef);
         obj.forEach(function(key, value) {
           if (!value) return;
-          dests[key] = xref.fetch(value).get('D');
+          dests[key] = fetchDestination(value);
         });
       }
       if (nameTreeRef) {
@@ -3578,8 +3583,7 @@ var Catalog = (function() {
           }
           var names = obj.get('Names');
           for (i = 0, n = names.length; i < n; i += 2) {
-            var dest = xref.fetch(names[i + 1]);
-            dests[names[i]] = IsDict(dest) ? dest.get('D') : dest;
+            dests[names[i]] = fetchDestination(names[i + 1]);
           }
         }
       }
