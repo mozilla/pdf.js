@@ -1019,9 +1019,8 @@ var Font = (function Font() {
         var glyphs = [];
         var encoding = properties.encoding;
 
-        for (var i = 1; i < numGlyphs; i++) {
+        for (var i = 1; i < numGlyphs; i++)
           glyphs.push({ unicode: i + kCmapGlyphOffset });
-        }
 
         if ('undefined' == typeof(encoding[0])) {
           // the font is directly characters to glyphs with no encoding
@@ -2133,7 +2132,6 @@ CFF.prototype = {
 };
 
 var Type2CFF = (function() {
-
   // TODO: replace parsing code with the Type2Parser in font_utils.js
   function constructor(file, properties) {
     var bytes = file.getBytes();
@@ -2146,11 +2144,11 @@ var Type2CFF = (function() {
       data.push(bytes[i]);
     this.data = data;
 
-    this.parse();
+    this.parse(properties);
   };
 
   constructor.prototype = {
-    parse: function cff_parse() {
+    parse: function cff_parse(properties) {
       var header = this.parseHeader();
       var nameIndex = this.parseIndex(header.endPos);
 
@@ -2174,26 +2172,25 @@ var Type2CFF = (function() {
       baseDict = this.parseDict(privBytes);
       var privDict = this.getPrivDict(baseDict, strings);
 
-      TODO('Parse encoding');
       var charStrings = this.parseIndex(topDict['CharStrings']);
-      var charset = this.parseCharsets(topDict['charset'], charStrings.length,
-          strings);
+      var charset = this.parseCharsets(topDict['charset'], charStrings.length, strings);
+      var encoding = this.parseEncoding(topDict['Encoding'], properties, strings, charset);
 
       // charstrings contains info about glyphs (one element per glyph
       // containing mappings for {unicode, width})
-      var charstrings = this.getCharStrings(charset, charStrings,
+      var charstrings = this.getCharStrings(charset, charStrings, encoding,
           privDict, this.properties);
 
       // create the mapping between charstring and glyph id
       var glyphIds = [];
-      for (var i = 0, ii = charstrings.length; i < ii; ++i) {
+      for (var i = 0; i < charstrings.length; i++)
         glyphIds.push(charstrings[i].gid);
-      }
 
       this.charstrings = charstrings;
       this.glyphIds = glyphIds;
     },
-    getCharStrings: function cff_charstrings(charsets, charStrings,
+
+    getCharStrings: function cff_charstrings(charsets, charStrings, encoding,
                                              privDict, properties) {
       var widths = properties.widths;
 
@@ -2201,31 +2198,75 @@ var Type2CFF = (function() {
       var nominalWidth = privDict['nominalWidthX'];
 
       var charstrings = [];
-      for (var i = 0, ii = charsets.length; i < ii; ++i) {
-        var charName = charsets[i];
-        var charCode = properties.glyphs[charName];
-        if (charCode) {
-          var width = widths[charCode] || defaultWidth;
-          charstrings.push({unicode: charCode, width: width, gid: i});
-        } else {
-          if (charName !== '.notdef')
-            warn('Cannot find unicode for glyph ' + charName);
-        }
+      for (var code in encoding) {
+        var gid = encoding[code];
+        var width = widths[code] || defaultWidth;
+        charstrings.push({unicode: code, width: width, gid: gid});
       }
 
-      // sort the arry by the unicode value
+      // sort the array by the unicode value
       charstrings.sort(function(a, b) {return a.unicode - b.unicode});
       return charstrings;
     },
-    parseEncoding: function cff_parseencoding(pos) {
-      if (pos == 0) {
-        return Encodings.StandardEncoding;
-      } else if (pos == 1) {
-        return Encodings.ExpertEncoding;
+
+    parseEncoding: function cff_parseencoding(pos, properties, strings, charset) {
+      var encoding = {};
+      var bytes = this.bytes;
+
+      function readSupplement() {
+        var supplementsCount = bytes[pos++];
+        for (var i = 0; i < supplementsCount; i++) {
+          var code = bytes[pos++];
+          var sid = (bytes[pos++] << 8) + (bytes[pos++] & 0xff);
+          encoding[code] = properties.differences.indexOf(strings[sid]);
+        }
       }
 
-      error('not implemented encodings');
+      if (pos == 0 || pos == 1) {
+        var gid = 1;
+        var baseEncoding = pos ? Encodings.ExpertEncoding
+                               : Encodings.StandardEncoding;
+        for (var i = 0; i < charset.length; i++) {
+          var index = baseEncoding.indexOf(charset[i]);
+          if (index != -1)
+            encoding[index] = gid++;
+        }
+      } else {
+
+        var format = bytes[pos++];
+        switch (format & 0x7f) {
+          case 0:
+            var glyphsCount = bytes[pos++];
+            for (var i = 1; i <= glyphsCount; i++) 
+              encoding[bytes[pos++]] = i;
+
+            if (format & 0x80)
+              readSupplement();
+            break;
+
+          case 1:
+            var rangesCount = bytes[pos++];
+            log(rangesCount);
+            var gid = 1;
+            for (var i = 0; i < rangesCount; i++) {
+              var start = bytes[pos++];
+              var count = bytes[pos++];
+              for (var j = start; j <= start + count; j++)
+                encoding[j] = gid++;
+            }
+
+            if (format & 0x80)
+              readSupplement();
+            break;
+
+          default:
+            error('Unknow encoding format: ' + format + " in CFF");
+            break;
+        }
+      }
+      return encoding;
     },
+
     parseCharsets: function cff_parsecharsets(pos, length, strings) {
       var bytes = this.bytes;
       var format = bytes[pos++];
