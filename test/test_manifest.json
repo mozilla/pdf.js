@@ -103,5 +103,11 @@
        "link": true,
        "rounds": 1,
        "type": "eq"
+    },
+    {  "id": "pdkids",
+       "file": "pdfs/pdkids.pdf",
+       "link": true,
+       "rounds": 1,
+       "type": "eq"
     }
 ]
