@@ -109,13 +109,23 @@ span#info {
 }
 
 .thumbnail {
-  width: 104px;
+  width: 134px;
   height: 134px;
-  background-color: white;
   margin-top: 5px;
   margin-bottom: 5px;
   margin-left:auto;
   margin-right:auto;
+  line-height: 134px;
+  text-align: center;
+}
+
+.thumbnail:not([data-loaded]) {
+  background-color: gray;
+}
+
+.thumbnail > canvas {
+  vertical-align: middle;
+  display: inline-block;
 }
 
 #outlineScrollView {
