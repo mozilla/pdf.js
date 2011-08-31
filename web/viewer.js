@@ -218,11 +218,10 @@ var PageView = function(container, content, id, width, height,
 
   function setupLinks(canvas, content, scale) {
     function bindLink(link, dest) {
-      if (dest) {
-        link.onclick = function() {
+      link.onclick = function() {
+        if (dest)
           PDFView.navigateTo(dest);
-          return false;
-        };
+        return false;
       }
     }
     var links = content.getLinks();
@@ -233,7 +232,7 @@ var PageView = function(container, content, id, width, height,
       link.style.width = Math.ceil(links[i].width * scale) + 'px';
       link.style.height = Math.ceil(links[i].height * scale) + 'px';
       link.href = links[i].url || '';
-      bindLink(link, links[i].dest);
+      bindLink(link, ('dest' in links[i]) ? links[i].dest : null);
       div.appendChild(link);
     }
   }
@@ -423,16 +422,18 @@ window.addEventListener('transitionend', function(evt) {
   var pagesCount = PDFView.pages.length;
 
   var container = document.getElementById('sidebarView');
-  container._interval = window.setInterval(function() {
-    if (pageIndex >= pagesCount)
-      return window.clearInterval(container._interval);
+  container._interval = window.setInterval(function interval() {
+    if (pageIndex >= pagesCount) {
+      window.clearInterval(container._interval);
+      return;
+    }
 
     PDFView.thumbnails[pageIndex++].draw();
   }, 500);
 }, true);
 
 
-window.addEventListener('scalechange', function(evt) {
+window.addEventListener('scalechange', function scalechange(evt) {
   var options = document.getElementById('scaleSelect').options;
   for (var i = 0; i < options.length; i++) {
     var option = options[i];
@@ -440,7 +441,7 @@ window.addEventListener('scalechange', function(evt) {
   }
 }, true);
 
-window.addEventListener('pagechange', function(evt) {
+window.addEventListener('pagechange', function pagechange(evt) {
   var page = evt.detail;
   document.location.hash = page;
   document.getElementById('pageNumber').value = page;
