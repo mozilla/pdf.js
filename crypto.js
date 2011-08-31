@@ -569,6 +569,7 @@ var CipherTransformFactory = (function() {
       };
     }
     error('Unknown crypto method');
+    return null;
   }
 
   constructor.prototype = {
