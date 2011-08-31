@@ -1972,7 +1972,7 @@ var CCITTFaxStream = (function() {
   };
 
   constructor.prototype.getBlackCode = function() {
-    var code, p, n;
+    var code, p;
     if (this.eoblock) {
       code = this.lookBits(13);
       if (code == EOF)
@@ -1989,20 +1989,20 @@ var CCITTFaxStream = (function() {
         return p[1];
       }
     } else {
-      for (var n = 2; n <= 6; ++n) {
+      var n;
+      for (n = 2; n <= 6; ++n) {
         code = this.lookBits(n);
         if (code == EOF)
           return 1;
         if (n < 6)
           code <<= 6 - n;
-
         p = blackTable3[code];
         if (p[0] == n) {
           this.eatBits(n);
           return p[1];
         }
       }
-      for (var n = 7; n <= 12; ++n) {
+      for (n = 7; n <= 12; ++n) {
         code = this.lookBits(n);
         if (code == EOF)
           return 1;
@@ -2021,7 +2021,7 @@ var CCITTFaxStream = (function() {
         if (code == EOF)
           return 1;
         if (n < 13)
-          code << 13 - n;
+          code <<= 13 - n;
         p = blackTable1[code];
         if (p[0] == n) {
           this.eatBits(n);
