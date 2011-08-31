@@ -123,7 +123,8 @@ var PDFView = {
       var page = pdf.getPage(i);
       pages.push(new PageView(container, page, i, page.width, page.height,
                               page.stats, this.navigateTo.bind(this)));
-      thumbnails.push(new ThumbnailView(sidebar, pages[i - 1]));
+      thumbnails.push(new ThumbnailView(sidebar, pages[i - 1],
+                                        page.width / page.height));
       var pageRef = page.ref;
       pagesRefMap[pageRef.num + ' ' + pageRef.gen + ' R'] = i;
     }
@@ -274,7 +275,7 @@ var PageView = function(container, content, id, width, height,
   };
 };
 
-var ThumbnailView = function(container, page) {
+var ThumbnailView = function(container, page, pageRatio) {
   var anchor = document.createElement('a');
   anchor.href = '#' + page.id;
 
@@ -293,8 +294,13 @@ var ThumbnailView = function(container, page) {
     canvas.id = 'thumbnail' + page.id;
     canvas.mozOpaque = true;
 
-    canvas.width = 104;
-    canvas.height = 134;
+    var maxThumbSize = 134;
+    canvas.width = pageRatio >= 1 ? maxThumbSize :
+      maxThumbSize * pageRatio;
+    canvas.height = pageRatio <= 1 ? maxThumbSize :
+      maxThumbSize / pageRatio;
+
+    div.setAttribute('data-loaded', true);
     div.appendChild(canvas);
 
     var ctx = canvas.getContext('2d');
