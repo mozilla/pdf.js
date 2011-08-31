@@ -4284,8 +4284,11 @@ var PartialEvaluator = (function() {
         // firstChar and width are required
         // (except for 14 standard fonts)
         var firstChar = xref.fetchIfRef(fontDict.get('FirstChar')) || 0;
-        var lastChar = xref.fetchIfRef(fontDict.get('LastChar')) || 0;
         var widths = xref.fetchIfRef(fontDict.get('Widths')) || [];
+
+        var lastChar = xref.fetchIfRef(fontDict.get('LastChar'));
+        if (!lastChar)
+          lastChar = diffEncoding.length || baseEncoding.length;
 
         // merge in the differences
         var glyphsMap = {};
