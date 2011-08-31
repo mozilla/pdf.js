@@ -55,11 +55,17 @@ function backtrace() {
 }
 
 function shadow(obj, prop, value) {
-  Object.defineProperty(obj, prop, { value: value,
-                                     enumerable: true,
-                                     configurable: true,
-                                     writable: false });
-    return value;
+  try {
+    Object.defineProperty(obj, prop, { value: value,
+                                       enumerable: true,
+                                       configurable: true,
+                                       writable: false });
+  } catch(e) {
+    obj.__defineGetter__(prop, function() {
+      return value;
+    });
+  }
+  return value;
 }
 
 function bytesToString(bytes) {
