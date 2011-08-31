@@ -5513,6 +5513,8 @@ var DeviceRgbCS = (function() {
       return color;
     },
     getRgbBuffer: function rgbcs_getRgbBuffer(input, bits) {
+      if (bits == 8)
+        return input;
       var scale = 255 / ((1 << bits) - 1);
       var i, length = input.length;
       var rgbBuf = new Uint8Array(length);
@@ -5977,7 +5979,8 @@ var PDFImage = (function() {
 
       var length = width * height;
       var bufferPos = 0;
-      var output = new Uint16Array(length);
+      var output = bpc <= 8 ? new Uint8Array(length) :
+        bpc <= 16 ? new Uint16Array(length) : new Uint32Array(length);
 
       if (bpc == 1) {
         var valueZero = 0, valueOne = 1;
