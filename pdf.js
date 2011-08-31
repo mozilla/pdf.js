@@ -4338,7 +4338,7 @@ var PartialEvaluator = (function() {
                       var startRange = tokens[j];
                       var endRange = tokens[j + 1];
                       var code = tokens[j + 2];
-                      while(startRange < endRange) {
+                      while (startRange < endRange) {
                         encodingMap[startRange] = code++;
                         ++startRange;
                       }
@@ -4372,9 +4372,9 @@ var PartialEvaluator = (function() {
                   case 0x5D:
                     // collect array items
                     var items = [], item;
-                    while (tokens.length && (item = tokens.pop()) != beginArrayToken) {
+                    while (tokens.length &&
+                      (item = tokens.pop()) != beginArrayToken)
                       items.unshift(item);
-                    }
                     tokens.push(items);
                     break;
                 }
