@@ -4281,10 +4281,6 @@ var PartialEvaluator = (function() {
             case 'Type1':
               baseEncoding = Encodings.StandardEncoding.slice();
               break;
-            case 'Type3':
-              // There is no baseEncoding for a Type3 font, the 'Encoding'
-              // entry is required and should provide a complete encoding
-              break;
             default:
               warn('Unknown type of font: ' + fontType);
               break;
@@ -4307,10 +4303,6 @@ var PartialEvaluator = (function() {
           if (glyph)
             glyphsMap[glyph] = encodingMap[i] = GlyphsUnicode[glyph] || i;
         }
-
-        
-        if (fontType == 'Type3')
-        log(glyphsMap);
 
         if (fontType == 'TrueType' && fontDict.has('ToUnicode') && differences) {
           var cmapObj = xref.fetchIfRef(fontDict.get('ToUnicode'));
