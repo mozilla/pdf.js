@@ -422,7 +422,6 @@ var Font = (function Font() {
 
         // Wrap the CFF data inside an OTF font file
         data = this.convert(name, cff, properties);
-        writeToFile(data, "/tmp/" + name + ".otf");
         break;
 
       case 'TrueType':
@@ -2210,7 +2209,7 @@ var Type2CFF = (function() {
 
       var charstrings = [];
       var differences = properties.differences;
-      var index = 1;
+      var index = 0;
       var kCmapGlyphOffset = 0xE000;
       for (var i = 1; i < charsets.length; i++) {
         var glyph = charsets[i];
@@ -2222,6 +2221,9 @@ var Type2CFF = (function() {
         }
 
         var code = differences.indexOf(glyph);
+        if (code == -1)
+          code = properties.glyphs[glyph] || index;
+
         var width = widths[code] || defaultWidth;
         properties.encoding[index] = index + kCmapGlyphOffset;
         charstrings.push({unicode: code + kCmapGlyphOffset, width: width, gid: i});
