@@ -2207,25 +2207,29 @@ var Type2CFF = (function() {
       var nominalWidth = privDict['nominalWidthX'];
 
       var charstrings = [];
+      var kCmapGlyphOffset = 0xE000;
       var differences = properties.differences;
       var index = 0;
-      var kCmapGlyphOffset = 0xE000;
       for (var i = 1; i < charsets.length; i++) {
+        var code = -1;
         var glyph = charsets[i];
         for (var j = index; j < differences.length; j++) {
           if (differences[j]) {
             index = j;
+            code = differences.indexOf(glyph);
             break;
           }
         }
 
-        var code = differences.indexOf(glyph);
         if (code == -1)
-          code = properties.glyphs[glyph] || index;
+          index = code = properties.glyphs[glyph] || index;
 
         var width = widths[code] || defaultWidth;
         properties.encoding[index] = index + kCmapGlyphOffset;
-        charstrings.push({unicode: code + kCmapGlyphOffset, width: width, gid: i});
+        charstrings.push({
+          unicode: code + kCmapGlyphOffset,
+          width: width, gid: i
+        });
         index++;
       }
 
