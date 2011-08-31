@@ -415,10 +415,8 @@ var Font = (function Font() {
         this.mimetype = 'font/opentype';
 
         var subtype = properties.subtype;
-        if (subtype === 'Type1C')
-          var cff = new Type2CFF(file, properties);
-        else
-          var cff = new CFF(name, file, properties);
+        var cff = (subtype === 'Type1C') ? new Type2CFF(file, properties)
+                                         : new CFF(name, file, properties);
 
         // Wrap the CFF data inside an OTF font file
         data = this.convert(name, cff, properties);
@@ -2161,16 +2159,16 @@ var Type2CFF = (function() {
 
       var bytes = this.bytes;
 
-      var privateInfo = topDict['Private'];
+      var privateInfo = topDict.Private;
       var privOffset = privateInfo[1], privLength = privateInfo[0];
       var privBytes = bytes.subarray(privOffset, privOffset + privLength);
       baseDict = this.parseDict(privBytes);
       var privDict = this.getPrivDict(baseDict, strings);
 
-      var charStrings = this.parseIndex(topDict['CharStrings']);
-      var charset = this.parseCharsets(topDict['charset'],
+      var charStrings = this.parseIndex(topDict.CharStrings);
+      var charset = this.parseCharsets(topDict.charset,
                                        charStrings.length, strings);
-      var hasSupplement = this.parseEncoding(topDict['Encoding'], properties, 
+      var hasSupplement = this.parseEncoding(topDict.Encoding, properties, 
                                              strings, charset);
 
       // The font sanitizer does not support CFF encoding with a
@@ -2179,7 +2177,7 @@ var Type2CFF = (function() {
       // the top dictionary to let the sanitizer think the font use
       // StandardEncoding, that's a lie but that's ok.
       if (hasSupplement)
-        bytes[topDict['Encoding']] = 0;
+        bytes[topDict.Encoding] = 0;
 
       // charstrings contains info about glyphs (one element per glyph
       // containing mappings for {unicode, width})
@@ -2258,7 +2256,6 @@ var Type2CFF = (function() {
             encoding[index] = gid++;
         }
       } else {
-
         var format = bytes[pos++];
         switch (format & 0x7f) {
           case 0:
