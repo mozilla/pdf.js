@@ -5383,9 +5383,10 @@ var SeparationCS = (function() {
       var tinted = this.tintFn.func(color);
       return this.base.getRgb(tinted);
     },
-    getRgbBuffer: function sepcs_getRgbBuffer(input) {
+    getRgbBuffer: function sepcs_getRgbBuffer(input, bits) {
       var tintFn = this.tintFn;
       var base = this.base;
+      var scale = 1 / ((1 << bits) - 1);
 
       var length = 3 * input.length;
       var pos = 0;
@@ -5393,12 +5394,12 @@ var SeparationCS = (function() {
       var numComps = base.numComps;
       var baseBuf = new Uint8Array(numComps * input.length);
       for (var i = 0, ii = input.length; i < ii; ++i) {
-        var scaled = input[i] / 255;
+        var scaled = input[i] * scale;
         var tinted = tintFn.func([scaled]);
         for (var j = 0; j < numComps; ++j)
           baseBuf[pos++] = 255 * tinted[j];
       }
-      return base.getRgbBuffer(baseBuf);
+      return base.getRgbBuffer(baseBuf, 8);
 
     }
   };
@@ -5467,7 +5468,7 @@ var IndexedCS = (function() {
         }
       }
 
-      return base.getRgbBuffer(baseBuf);
+      return base.getRgbBuffer(baseBuf, 8);
     }
   };
   return constructor;
@@ -5485,11 +5486,12 @@ var DeviceGrayCS = (function() {
       var c = color[0];
       return [c, c, c];
     },
-    getRgbBuffer: function graycs_getRgbBuffer(input) {
+    getRgbBuffer: function graycs_getRgbBuffer(input, bits) {
+      var scale = 255 / ((1 << bits) - 1);
       var length = input.length * 3;
       var rgbBuf = new Uint8Array(length);
       for (var i = 0, j = 0; i < length; ++i) {
-        var c = input[i];
+        var c = (scale * input[i]) | 0;
         rgbBuf[j++] = c;
         rgbBuf[j++] = c;
         rgbBuf[j++] = c;
@@ -5501,7 +5503,7 @@ var DeviceGrayCS = (function() {
 })();
 
 var DeviceRgbCS = (function() {
-  function constructor() {
+  function constructor(bits) {
     this.name = 'DeviceRGB';
     this.numComps = 3;
     this.defaultColor = [0, 0, 0];
@@ -5510,8 +5512,15 @@ var DeviceRgbCS = (function() {
     getRgb: function rgbcs_getRgb(color) {
       return color;
     },
-    getRgbBuffer: function rgbcs_getRgbBuffer(input) {
-      return input;
+    getRgbBuffer: function rgbcs_getRgbBuffer(input, bits) {
+      if (bits == 8)
+        return input;
+      var scale = 255 / ((1 << bits) - 1);
+      var i, length = input.length;
+      var rgbBuf = new Uint8Array(length);
+      for (i = 0; i < length; ++i)
+        rgbBuf[i] = (scale * input[i]) | 0;
+      return rgbBuf;
     }
   };
   return constructor;
@@ -5578,7 +5587,8 @@ var DeviceCmykCS = (function() {
 
       return [r, g, b];
     },
-    getRgbBuffer: function cmykcs_getRgbBuffer(colorBuf) {
+    getRgbBuffer: function cmykcs_getRgbBuffer(colorBuf, bits) {
+      var scale = 1 / ((1 << bits) - 1);
       var length = colorBuf.length / 4;
       var rgbBuf = new Uint8Array(length * 3);
       var rgbBufPos = 0;
@@ -5587,7 +5597,7 @@ var DeviceCmykCS = (function() {
       for (var i = 0; i < length; i++) {
         var cmyk = [];
         for (var j = 0; j < 4; ++j)
-          cmyk.push(colorBuf[colorBufPos++] / 255);
+          cmyk.push(scale * colorBuf[colorBufPos++]);
 
         var rgb = this.getRgb(cmyk);
         for (var j = 0; j < 3; ++j)
@@ -5969,13 +5979,14 @@ var PDFImage = (function() {
 
       var length = width * height;
       var bufferPos = 0;
-      var output = new Uint8Array(length);
+      var output = bpc <= 8 ? new Uint8Array(length) :
+        bpc <= 16 ? new Uint16Array(length) : new Uint32Array(length);
 
       if (bpc == 1) {
-        var valueZero = 0, valueOne = 255;
+        var valueZero = 0, valueOne = 1;
         if (decodeMap) {
-          valueZero = decodeMap[0] ? 255 : 0;
-          valueOne = decodeMap[1] ? 255 : 0;
+          valueZero = decodeMap[0] ? 1 : 0;
+          valueOne = decodeMap[1] ? 1 : 0;
         }
         var rowComps = width * numComps;
         var mask = 0;
@@ -6000,25 +6011,22 @@ var PDFImage = (function() {
         if (decodeMap != null)
           TODO('interpolate component values');
         var rowComps = width * numComps;
-        var bits = 0;
-        var buf = 0;
-
+        var bits, buf;
         for (var i = 0, ii = length; i < ii; ++i) {
+          if (i % rowComps == 0) {
+            buf = 0;
+            bits = 0;
+          }
+
           while (bits < bpc) {
             buf = (buf << 8) | buffer[bufferPos++];
             bits += 8;
           }
-          var remainingBits = bits - bpc;
-          var ret = buf >> remainingBits;
 
-          if (i % rowComps == 0) {
-            buf = 0;
-            bits = 0;
-          } else {
-            buf = buf & ((1 << remainingBits) - 1);
-            bits = remainingBits;
-          }
-          output[i] = Math.round(255 * ret / ((1 << bpc) - 1));
+          var remainingBits = bits - bpc;
+          output[i] = buf >> remainingBits;
+          buf = buf & ((1 << remainingBits) - 1);
+          bits = remainingBits;
         }
       }
       return output;
@@ -6078,7 +6086,7 @@ var PDFImage = (function() {
       var imgArray = this.image.getBytes(height * rowBytes);
 
       var comps = this.colorSpace.getRgbBuffer(
-        this.getComponents(imgArray, decodeMap));
+        this.getComponents(imgArray, decodeMap), bpc);
       var compsPos = 0;
       var opacity = this.getOpacity();
       var opacityPos = 0;
