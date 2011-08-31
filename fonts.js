@@ -80,6 +80,7 @@ var FontMeasure = (function FontMeasure() {
       size *= kScalePrecision;
       var rule = italic + ' ' + bold + ' ' + size + 'px "' + name + '"';
       ctx.font = rule;
+      current = font;
     },
     measureText: function fonts_measureText(text) {
       var width;

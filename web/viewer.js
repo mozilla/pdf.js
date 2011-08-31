@@ -217,11 +217,10 @@ var PageView = function(container, content, id, width, height,
 
   function setupLinks(canvas, content, scale) {
     function bindLink(link, dest) {
-      if (dest) {
-        link.onclick = function() {
+      link.onclick = function() {
+        if (dest)
           PDFView.navigateTo(dest);
-          return false;
-        };
+        return false;
       }
     }
     var links = content.getLinks();
@@ -232,7 +231,7 @@ var PageView = function(container, content, id, width, height,
       link.style.width = Math.ceil(links[i].width * scale) + 'px';
       link.style.height = Math.ceil(links[i].height * scale) + 'px';
       link.href = links[i].url || '';
-      bindLink(link, links[i].dest);
+      bindLink(link, ('dest' in links[i]) ? links[i].dest : null);
       div.appendChild(link);
     }
   }
