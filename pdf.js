@@ -4300,8 +4300,12 @@ var PartialEvaluator = (function() {
         var glyphsMap = {};
         for (var i = firstChar; i <= lastChar; i++) {
           var glyph = diffEncoding[i] || baseEncoding[i];
-          if (glyph)
+          if (glyph) {
             glyphsMap[glyph] = encodingMap[i] = GlyphsUnicode[glyph] || i;
+            if (glyphsMap[glyph] <= 0x1f)
+              glyphsMap[glyph] = encodingMap[i] += 0xE000;
+            
+          }
         }
 
         if (fontType == 'TrueType' && fontDict.has('ToUnicode') && differences) {
