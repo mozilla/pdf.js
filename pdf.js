@@ -4417,9 +4417,7 @@ var PartialEvaluator = (function() {
       }
 
       var descriptor = xref.fetch(fd);
-      var fontName = fontDict.get('Name');
-      if (!fontName)
-        fontName = xref.fetchIfRef(descriptor.get('FontName'));
+      var fontName = xref.fetchIfRef(descriptor.get('FontName'));
       assertWellFormed(IsName(fontName), 'invalid font name');
       fontName = fontName.name.replace(/[\+,\-]/g, '_');
 
@@ -4805,7 +4803,9 @@ var CanvasGraphics = (function() {
 
         size = (size <= kRasterizerMin) ? size * kScalePrecision : size;
 
-        var bold = fontObj.bold ? 'bold' : 'normal';
+        var bold = fontObj.black ? (fontObj.bold ? 'bolder' : 'bold')
+                                 : (fontObj.bold ? 'bold' : 'normal');
+
         var italic = fontObj.italic ? 'italic' : 'normal';
         var rule = italic + ' ' + bold + ' ' + size + 'px "' + name + '"';
         this.ctx.font = rule;
@@ -4841,8 +4841,6 @@ var CanvasGraphics = (function() {
       this.moveText(0, this.current.leading);
     },
     showText: function(text) {
-      // TODO: apply charSpacing, wordSpacing, textHScale
-
       var ctx = this.ctx;
       var current = this.current;
 
@@ -4853,9 +4851,9 @@ var CanvasGraphics = (function() {
       ctx.translate(current.x, -1 * current.y);
 
       var scaleFactorX = 1, scaleFactorY = 1;
-      var font = this.current.font;
+      var font = current.font;
       if (font) {
-        if (this.current.fontSize <= kRasterizerMin) {
+        if (current.fontSize <= kRasterizerMin) {
           scaleFactorX = scaleFactorY = kScalePrecision;
           ctx.scale(1 / scaleFactorX, 1 / scaleFactorY);
         }
@@ -4866,6 +4864,13 @@ var CanvasGraphics = (function() {
       var charSpacing = current.charSpacing;
       var wordSpacing = current.wordSpacing;
       var textHScale = current.textHScale;
+
+      // This is a poor simulation for Arial Narrow while font-stretch
+      // is not implemented (bug 3512)
+      if (current.font.narrow) {
+        textHScale += 0.2;
+        charSpacing -= (0.09 * current.fontSize);
+      }
 
       if (charSpacing != 0 || wordSpacing != 0 || textHScale != 1) {
         scaleFactorX *= textHScale;
