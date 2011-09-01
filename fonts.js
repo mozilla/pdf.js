@@ -14,6 +14,14 @@ var kMaxWaitForFontFace = 1000;
  * fonts and their acronyms.
  */
 var stdFontMap = {
+  'ArialNarrow': 'Helvetica',
+  'ArialNarrow_Bold': 'Helvetica-Bold',
+  'ArialNarrow_BoldItalic': 'Helvetica-BoldOblique',
+  'ArialNarrow_Italic': 'Helvetica-Oblique',
+  'ArialBlack': 'Helvetica',
+  'ArialBlack_Bold': 'Helvetica-Bold',
+  'ArialBlack_BoldItalic': 'Helvetica-BoldOblique',
+  'ArialBlack_Italic': 'Helvetica-Oblique',
   'Arial': 'Helvetica',
   'Arial_Bold': 'Helvetica-Bold',
   'Arial_BoldItalic': 'Helvetica-BoldOblique',
@@ -404,6 +412,12 @@ var Font = (function Font() {
       this.bold = (fontName.indexOf('Bold') != -1);
       this.italic = (fontName.indexOf('Oblique') != -1) ||
                     (fontName.indexOf('Italic') != -1);
+
+      // Use 'name' instead of 'fontName' here because the original
+      // name ArialNarrow for example will be replaced by Helvetica.
+      this.narrow = (name.indexOf("Narrow") != -1)
+      this.black = (name.indexOf("Black") != -1)
+
       this.loadedName = fontName.split('-')[0];
       this.loading = false;
       return;
