@@ -1466,6 +1466,7 @@ var Type1Parser = function() {
 
             // This is the same things about hint replacement, if it is not used
             // entry 3 can be replaced by {3}
+            // TODO support hint replacment
             if (index == 3) {
               charstring.push(3);
               i++;
@@ -1942,7 +1943,7 @@ CFF.prototype = {
     return type2Charstrings;
   },
 
-  getType2Subrs: function cff_getType2Charstrings(type1Subrs) {
+  getType2Subrs: function cff_getType2Subrs(type1Subrs) {
     var bias = 0;
     var count = type1Subrs.length;
     if (count < 1240)
