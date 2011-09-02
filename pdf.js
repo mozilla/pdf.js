@@ -4301,9 +4301,12 @@ var PartialEvaluator = (function() {
         for (var i = firstChar; i <= lastChar; i++) {
           var glyph = diffEncoding[i] || baseEncoding[i];
           if (glyph) {
-            glyphsMap[glyph] = encodingMap[i] = GlyphsUnicode[glyph] || i;
-            if (glyphsMap[glyph] <= 0x1f)
-              glyphsMap[glyph] = encodingMap[i] += 0xE000;
+            var index = GlyphsUnicode[glyph] || i;
+            glyphsMap[glyph] = encodingMap[i] = index;
+
+            var kCmapGlyphOffset = 0xE000;
+            if (index <= 0x1f || (index >= 127 && index <= 255))
+              glyphsMap[glyph] = encodingMap[i] += kCmapGlyphOffset;
             
           }
         }
