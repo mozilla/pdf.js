@@ -1457,7 +1457,7 @@ var Type1Parser = function() {
             for (var j = 0; j < argc; j++)
               charstring.push('drop');
 
-            // If the flex mechanishm is not used in a font program, Adobe
+            // If the flex mechanism is not used in a font program, Adobe
             // state that that entries 0, 1 and 2 can simply be replace by
             // {}, which means that we can simply ignore them.
             if (index < 3) {
@@ -1641,7 +1641,8 @@ var Type1Parser = function() {
                 var length = parseInt(getToken());
                 getToken(); // read in 'RD'
                 var data = eexec.slice(i + 1, i + 1 + length);
-                var encoded = decrypt(data, kCharStringsEncryptionKey, 4);
+                var lenIV = program.properties.private['lenIV'];
+                var encoded = decrypt(data, kCharStringsEncryptionKey, lenIV);
                 var str = decodeCharString(encoded);
                 i = i + 1 + length;
                 getToken(); //read in 'NP'
