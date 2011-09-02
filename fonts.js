@@ -1633,7 +1633,7 @@ var Type1Parser = function() {
               getToken(); // read in 'array'
               for (var j = 0; j < num; ++j) {
                 var t = getToken(); // read in 'dup'
-                if (t == 'ND' || t == '|-') 
+                if (t == 'ND' || t == '|-' || t == 'noaccess') 
                   break;
                 var index = parseInt(getToken());
                 if (index > j)
@@ -1645,7 +1645,9 @@ var Type1Parser = function() {
                 var encoded = decrypt(data, kCharStringsEncryptionKey, lenIV);
                 var str = decodeCharString(encoded);
                 i = i + 1 + length;
-                getToken(); //read in 'NP'
+                t = getToken(); //read in 'NP'
+                if (t == 'noaccess')
+                  getToken(); //read in 'put'
                 program.subrs[index] = str.charstring;
               }
               break;
