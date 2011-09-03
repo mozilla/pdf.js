@@ -33,6 +33,13 @@
 
       <div class="separator"></div>
 
+      <button id="next" title="Zoom Out" onclick="PDFView.zoomOut();">
+        <img src="images/list-remove.svg" align="top" height="32"/>
+      </button>
+      <button id="next" title="Zoom In" onclick="PDFView.zoomIn();">
+        <img src="images/list-add.svg" align="top" height="32"/>
+      </button>
+
       <select id="scaleSelect" onchange="PDFView.parseScale(this.value);">
         <option id="customScaleOption" value="custom"></option>
         <option value="0.5">50%</option>
@@ -44,9 +51,6 @@
         <option id="pageWidthOption" value="page-width">Page Width</option>
         <option id="pageFitOption" value="page-fit">Page Fit</option>
       </select>
-
-      <button id="zoomOut" onclick="PDFView.zoomOut();" title="Zoom Out">&ndash;</button>
-      <button id="zoomIn" onclick="PDFView.zoomIn();" title="Zoom In">+</button>
 
       <div class="separator"></div>
 

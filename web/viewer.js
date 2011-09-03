@@ -480,7 +480,6 @@ window.addEventListener('transitionend', function(evt) {
 window.addEventListener('scalechange', function scalechange(evt) {
   var customScaleOption = document.getElementById('customScaleOption');
   customScaleOption.selected = false;
-  customScaleOption.removeAttribute('data-scale');
 
   if (!evt.resetAutoSettings &&
        (document.getElementById('pageWidthOption').selected ||
@@ -503,7 +502,6 @@ window.addEventListener('scalechange', function scalechange(evt) {
   }
 
   if (!predefinedValueFound) {
-    customScaleOption.setAttribute('data-scale', evt.scale);
     customScaleOption.textContent = Math.round(evt.scale * 10000) / 100 + '%';
     customScaleOption.selected = true;
   }
@@ -521,11 +519,13 @@ window.addEventListener('pagechange', function pagechange(evt) {
 
 window.addEventListener('keydown', function (evt) {
   switch(evt.keyCode) {
-    case 61:
+    case 61: // '+' and '=' keys
     case 107:
+    case 187:
       PDFView.zoomIn();
       break;
-    case 109:
+    case 109: // '-' keys
+    case 189:
       PDFView.zoomOut();
       break;
   }

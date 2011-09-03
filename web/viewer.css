@@ -65,12 +65,6 @@ span#info {
   }
 }
 
-#zoomOut, #zoomIn {
-  font-weight: bold;
-  font-size: larger;
-  width: 32px;
-}
-
 /* === Sidebar === */
 #sidebar {
   position: fixed;
@@ -242,7 +236,7 @@ canvas {
   border-top: 1px solid black;
 }
 
-#customScaleOption:not([data-scale]) {
+#customScaleOption {
   display: none;
 }
 
