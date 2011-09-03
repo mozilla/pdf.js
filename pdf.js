@@ -3547,7 +3547,7 @@ var Catalog = (function() {
     },
     get destinations() {
       function fetchDestination(ref) {
-        var dest = xref.fetchIfRef(ref);
+        var dest = this.xref.fetchIfRef(ref);
         return IsDict(dest) ? dest.get('D') : dest;
       }
 
