@@ -1,4 +1,4 @@
-/* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- /
+/* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 /* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
 
 'use strict';
@@ -16,6 +16,16 @@ function log(msg) {
 function warn(msg) {
   if (verbosity >= WARNINGS)
     log('Warning: ' + msg);
+}
+
+function backtrace() {
+  var stackStr;
+  try {
+    throw new Error();
+  } catch (e) {
+    stackStr = e.stack;
+  }
+  return stackStr.split('\n').slice(1).join('\n');
 }
 
 function error(msg) {
@@ -44,23 +54,13 @@ function assertWellFormed(cond, msg) {
     malformed(msg);
 }
 
-function backtrace() {
-  var stackStr;
-  try {
-    throw new Error();
-  } catch (e) {
-    stackStr = e.stack;
-  }
-  return stackStr.split('\n').slice(1).join('\n');
-}
-
 function shadow(obj, prop, value) {
   try {
     Object.defineProperty(obj, prop, { value: value,
                                        enumerable: true,
                                        configurable: true,
                                        writable: false });
-  } catch(e) {
+  } catch (e) {
     obj.__defineGetter__(prop, function() {
       return value;
     });
@@ -185,7 +185,7 @@ var DecodeStream = (function() {
       var buffer2 = new Uint8Array(size);
       for (var i = 0; i < current; ++i)
         buffer2[i] = buffer[i];
-      return this.buffer = buffer2;
+      return (this.buffer = buffer2);
     },
     getByte: function decodestream_getByte() {
       var pos = this.pos;
@@ -197,11 +197,11 @@ var DecodeStream = (function() {
       return this.buffer[this.pos++];
     },
     getBytes: function decodestream_getBytes(length) {
-      var pos = this.pos;
+      var end, pos = this.pos;
 
       if (length) {
         this.ensureBuffer(pos + length);
-        var end = pos + length;
+        end = pos + length;
 
         while (!this.eof && this.bufferLength < end)
           this.readBlock();
@@ -213,7 +213,7 @@ var DecodeStream = (function() {
         while (!this.eof)
           this.readBlock();
 
-        var end = this.bufferLength;
+        end = this.bufferLength;
 
         // checking if bufferLength is still 0 then
         // the buffer has to be initialized
@@ -265,7 +265,7 @@ var FakeStream = (function() {
   function constructor(stream) {
     this.dict = stream.dict;
     DecodeStream.call(this);
-  };
+  }
 
   constructor.prototype = Object.create(DecodeStream.prototype);
   constructor.prototype.readBlock = function() {
@@ -532,8 +532,8 @@ var FlateStream = (function() {
 
   constructor.prototype.readBlock = function() {
     function repeat(stream, array, len, offset, what) {
-      var repeat = stream.getBits(len) + offset;
-      while (repeat-- > 0)
+      var repeatLength = stream.getBits(len) + offset;
+      while (repeatLength-- > 0)
         array[i++] = what;
     }
 
@@ -821,8 +821,8 @@ var PredictorStream = (function() {
           currentRow[i] = up + c;
         else
           currentRow[i] = upLeft + c;
-        break;
       }
+      break;
     default:
       error('Unsupported predictor: ' + predictor);
       break;
@@ -1621,6 +1621,7 @@ var CCITTFaxStream = (function() {
 
       this.err = false;
 
+      var code1, code2, code3;
       if (this.nextLine2D) {
         for (var i = 0; codingLine[i] < columns; ++i)
           refLine[i] = codingLine[i];
@@ -1633,7 +1634,7 @@ var CCITTFaxStream = (function() {
         blackPixels = 0;
 
         while (codingLine[this.codingPos] < columns) {
-          var code1 = this.getTwoDimCode();
+          code1 = this.getTwoDimCode();
           switch (code1) {
           case twoDimPass:
             this.addPixels(refLine[refPos + 1], blackPixels);
@@ -1641,9 +1642,8 @@ var CCITTFaxStream = (function() {
               refPos += 2;
             break;
           case twoDimHoriz:
-            var code1 = 0, code2 = 0;
+            code1 = code2 = 0;
             if (blackPixels) {
-              var code3;
               do {
                 code1 += (code3 = this.getBlackCode());
               } while (code3 >= 64);
@@ -1651,7 +1651,6 @@ var CCITTFaxStream = (function() {
                 code2 += (code3 = this.getWhiteCode());
               } while (code3 >= 64);
             } else {
-              var code3;
               do {
                 code1 += (code3 = this.getWhiteCode());
               } while (code3 >= 64);
@@ -1831,7 +1830,6 @@ var CCITTFaxStream = (function() {
           this.eof = true;
         }
       } else if (this.err && this.eoline) {
-        var code1;
         while (true) {
           code1 = this.lookBits(13);
           if (code1 == EOF) {
@@ -2403,7 +2401,7 @@ var Lexer = (function() {
       var floating = false;
       var str = ch;
       var stream = this.stream;
-      do {
+      for (;;) {
         ch = stream.lookChar();
         if (ch == '.' && !floating) {
           str += ch;
@@ -2421,7 +2419,7 @@ var Lexer = (function() {
           break;
         }
         stream.skip();
-      } while (true);
+      }
       var value = parseFloat(str);
       if (isNaN(value))
         error('Invalid floating point number: ' + value);
@@ -2541,7 +2539,7 @@ var Lexer = (function() {
     getHexString: function(ch) {
       var str = '';
       var stream = this.stream;
-      while (1) {
+      for (;;) {
         ch = stream.getChar();
         if (ch == '>') {
           break;
@@ -3378,15 +3376,15 @@ var Page = (function() {
     rotatePoint: function(x, y) {
       var rotate = this.rotate;
       switch (rotate) {
-        default:
-        case 0:
-          return {x: x, y: this.height - y};
         case 180:
           return {x: this.width - x, y: y};
         case 90:
           return {x: this.width - y, y: this.height - x};
         case 270:
           return {x: y, y: x};
+        case 0:
+        default:
+          return {x: x, y: this.height - y};
       }
     },
     getLinks: function() {
@@ -4268,11 +4266,11 @@ var PartialEvaluator = (function() {
           } else if (IsName(encoding)) {
             baseEncoding = Encodings[encoding.name].slice();
           } else {
-            error("Encoding is not a Name nor a Dict");
+            error('Encoding is not a Name nor a Dict');
           }
         }
 
-        var fontType = subType.name; 
+        var fontType = subType.name;
         if (!baseEncoding) {
           switch (fontType) {
             case 'TrueType':
@@ -4307,11 +4305,11 @@ var PartialEvaluator = (function() {
             var kCmapGlyphOffset = 0xE000;
             if (index <= 0x1f || (index >= 127 && index <= 255))
               glyphsMap[glyph] = encodingMap[i] += kCmapGlyphOffset;
-            
           }
         }
 
-        if (fontType == 'TrueType' && fontDict.has('ToUnicode') && differences) {
+        if (fontType == 'TrueType' && fontDict.has('ToUnicode') &&
+            differences) {
           var cmapObj = xref.fetchIfRef(fontDict.get('ToUnicode'));
           if (IsName(cmapObj)) {
             error('ToUnicode file cmap translation not implemented');
@@ -4810,8 +4808,8 @@ var CanvasGraphics = (function() {
 
         size = (size <= kRasterizerMin) ? size * kScalePrecision : size;
 
-        var bold = fontObj.black ? (fontObj.bold ? 'bolder' : 'bold')
-                                 : (fontObj.bold ? 'bold' : 'normal');
+        var bold = fontObj.black ? (fontObj.bold ? 'bolder' : 'bold') :
+                                   (fontObj.bold ? 'bold' : 'normal');
 
         var italic = fontObj.italic ? 'italic' : 'normal';
         var rule = italic + ' ' + bold + ' ' + size + 'px "' + name + '"';
