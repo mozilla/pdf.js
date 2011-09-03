@@ -21,6 +21,8 @@ body {
   height: 40px;
   width: 100%;
   z-index: 1;
+  white-space:nowrap;
+  overflow: hidden;
 }
 
 .separator {
@@ -61,6 +63,12 @@ span#info {
   span#info {
     display: inline-block;
   }
+}
+
+#zoomOut, #zoomIn {
+  font-weight: bold;
+  font-size: larger;
+  width: 32px;
 }
 
 /* === Sidebar === */
