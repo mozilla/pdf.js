@@ -1439,7 +1439,6 @@ var Type1Parser = function() {
     var charstring = [];
     var lsb = 0;
     var width = 0;
-    var used = false;
 
     var value = '';
     var count = array.length;
@@ -1458,7 +1457,7 @@ var Type1Parser = function() {
             for (var j = 0; j < argc; j++)
               charstring.push('drop');
 
-            // If the flex mechanishm is not used in a font program, Adobe
+            // If the flex mechanism is not used in a font program, Adobe
             // state that that entries 0, 1 and 2 can simply be replace by
             // {}, which means that we can simply ignore them.
             if (index < 3) {
@@ -1467,6 +1466,7 @@ var Type1Parser = function() {
 
             // This is the same things about hint replacement, if it is not used
             // entry 3 can be replaced by {3}
+            // TODO support hint replacment
             if (index == 3) {
               charstring.push(3);
               i++;
@@ -1477,7 +1477,7 @@ var Type1Parser = function() {
           command = charStringDictionary['12'][escape];
         } else {
           // TODO Clean this code
-          if (value == 13) {
+          if (value == 13) { //hsbw
             if (charstring.length == 2) {
               lsb = charstring[0];
               width = charstring[1];
@@ -1509,7 +1509,7 @@ var Type1Parser = function() {
         } else if (command == -1) {
           error('Support for Type1 command ' + value +
                 ' (' + escape + ') is not implemented in charstring: ' +
-                charString);
+                charstring);
         }
 
         value = command;
@@ -1535,7 +1535,11 @@ var Type1Parser = function() {
    * array extracted from and eexec encrypted block of data
    */
   function readNumberArray(str, index) {
-    var start = ++index;
+    var start = index;
+    while (str[index++] != '[')
+      start++;
+    start++;
+
     var count = 0;
     while (str[index++] != ']')
       count++;
@@ -1569,7 +1573,9 @@ var Type1Parser = function() {
       subrs: [],
       charstrings: [],
       properties: {
-        'private': {}
+        'private': {
+          'lenIV': 4
+        }
       }
     };
 
@@ -1592,9 +1598,12 @@ var Type1Parser = function() {
       };
       var c = eexecStr[i];
 
-      if ((glyphsSection || subrsSection) && c == 'R') {
-        var data = eexec.slice(i + 3, i + 3 + length);
-        var encoded = decrypt(data, kCharStringsEncryptionKey, 4);
+      if ((glyphsSection || subrsSection) && 
+          (token == 'RD' || token == '-|')) {
+        i++;
+        var data = eexec.slice(i, i + length);
+        var lenIV = program.properties.private['lenIV'];
+        var encoded = decrypt(data, kCharStringsEncryptionKey, lenIV);
         var str = decodeCharString(encoded);
 
         if (glyphsSection) {
@@ -1607,7 +1616,8 @@ var Type1Parser = function() {
         } else {
           program.subrs.push(str.charstring);
         }
-        i += length + 3;
+        i += length;
+        token = '';
       } else if (c == ' ' || c == '\n') {
         length = parseInt(token);
         token = '';
@@ -1624,7 +1634,7 @@ var Type1Parser = function() {
               getToken(); // read in 'array'
               for (var j = 0; j < num; ++j) {
                 var t = getToken(); // read in 'dup'
-                if (t == 'ND')
+                if (t == 'ND' || t == '|-' || t == 'noaccess') 
                   break;
                 var index = parseInt(getToken());
                 if (index > j)
@@ -1632,10 +1642,13 @@ var Type1Parser = function() {
                 var length = parseInt(getToken());
                 getToken(); // read in 'RD'
                 var data = eexec.slice(i + 1, i + 1 + length);
-                var encoded = decrypt(data, kCharStringsEncryptionKey, 4);
+                var lenIV = program.properties.private['lenIV'];
+                var encoded = decrypt(data, kCharStringsEncryptionKey, lenIV);
                 var str = decodeCharString(encoded);
                 i = i + 1 + length;
-                getToken(); //read in 'NP'
+                t = getToken(); //read in 'NP'
+                if (t == 'noaccess')
+                  getToken(); //read in 'put'
                 program.subrs[index] = str.charstring;
               }
               break;
@@ -1646,7 +1659,7 @@ var Type1Parser = function() {
             case '/StemSnapH':
             case '/StemSnapV':
               program.properties.private[token.substring(1)] =
-                readNumberArray(eexecStr, i + 2);
+                readNumberArray(eexecStr, i + 1);
               break;
             case '/StdHW':
             case '/StdVW':
@@ -1654,6 +1667,7 @@ var Type1Parser = function() {
                 readNumberArray(eexecStr, i + 2)[0];
               break;
             case '/BlueShift':
+            case '/lenIV':
             case '/BlueFuzz':
             case '/BlueScale':
             case '/LanguageGroup':
@@ -1821,7 +1835,7 @@ var CFF = function(name, file, properties) {
 
   // Decrypt the data blocks and retrieve it's content
   var eexecBlock = file.getBytes(length2);
-  var data = type1Parser.extractFontProgram(eexecBlock, properties);
+  var data = type1Parser.extractFontProgram(eexecBlock);
   for (var info in data.properties)
     properties[info] = data.properties[info];
 
@@ -1929,7 +1943,7 @@ CFF.prototype = {
     return type2Charstrings;
   },
 
-  getType2Subrs: function cff_getType2Charstrings(type1Subrs) {
+  getType2Subrs: function cff_getType2Subrs(type1Subrs) {
     var bias = 0;
     var count = type1Subrs.length;
     if (count < 1240)
@@ -1987,11 +2001,10 @@ CFF.prototype = {
         var cmd = map[command];
         assert(cmd, 'Unknow command: ' + command);
 
-        if (IsArray(cmd)) {
+        if (IsArray(cmd))
           charstring.splice(i++, 1, cmd[0], cmd[1]);
-        } else {
+        else
           charstring[i] = cmd;
-        }
       } else {
         // Type1 charstring use a division for number above 32000
         if (command > 32000) {
@@ -2110,7 +2123,8 @@ CFF.prototype = {
           ExpansionFactor: '\x0c\x18'
         };
         for (var field in fieldMap) {
-          if (!properties.private.hasOwnProperty(field)) continue;
+          if (!properties.private.hasOwnProperty(field))
+            continue;
           var value = properties.private[field];
 
           if (IsArray(value)) {
