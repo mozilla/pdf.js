@@ -1828,7 +1828,12 @@ var type1Parser = new Type1Parser();
 var CFF = function(name, file, properties) {
   // Get the data block containing glyphs and subrs informations
   var length1 = file.dict.get('Length1');
+  if (!IsNum(length1))
+    length1 = length1.num;
+
   var length2 = file.dict.get('Length2');
+  if (!IsNum(length2))
+    length2 = length2.num;
 
   var headerBlock = file.getBytes(length1);
   type1Parser.extractFontHeader(headerBlock, properties);
