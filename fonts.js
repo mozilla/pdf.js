@@ -9,6 +9,10 @@ var isWorker = (typeof window == 'undefined');
  */
 var kMaxWaitForFontFace = 1000;
 
+// Unicode Private Use Area
+var kCmapGlyphOffset = 0xE000;
+
+
 /**
  * Hold a map of decoded fonts and of the standard fourteen Type1
  * fonts and their acronyms.
@@ -797,9 +801,6 @@ var Font = (function Font() {
     encoding: null,
 
     checkAndRepair: function font_checkAndRepair(name, font, properties) {
-      // offset glyphs to the Unicode Private Use Area
-      var kCmapGlyphOffset = 0xE000;
-
       function readTableEntry(file) {
         var tag = file.getBytes(4);
         tag = String.fromCharCode(tag[0]) +
@@ -879,16 +880,23 @@ var Font = (function Font() {
               var index = font.getByte();
               if (index) {
                 deltas.push(index);
-                glyphs.push({ unicode: j });
+
+                var code = encoding[index];
+                for (var glyph in properties.glyphs) {
+                  if (properties.glyphs[glyph] == code) 
+                    break;
+                }
+
+                glyphs.push({ glyph: glyph, unicode: j });
               }
             }
 
             if (properties.firstChar < 0x20) {
-              var code = 0;
               for (var j = 0; j < glyphs.length; j++) {
                 var glyph = glyphs[j];
-                glyphs[j].unicode += 0x1F;
-                properties.glyphs[glyph.glyph] = encoding[++code] = glyph.unicode;
+                var code = glyph.unicode + kCmapGlyphOffset;
+                properties.glyphs[glyph.glyph] = encoding[glyph.unicode] = code;
+                glyph.unicode = code;
               }
             }
             
@@ -1406,7 +1414,7 @@ var Type1Parser = function() {
 
       // Type1 only command with command not (yet) built-in ,throw an error
       '6': -1, // seac
-      '7': -1, //sbw
+      '7': -1, // sbw
 
       '11': 'sub',
       '12': 'div',
@@ -1422,8 +1430,8 @@ var Type1Parser = function() {
       // moveto (this is a one shot positionning command). This is used only
       // with the return of an OtherSubrs call.
       // TODO Implement the OtherSubrs charstring embedding and replace this
-      //      call by a no-op, like 2 'pop' commands for example.
-      '33': null //setcurrentpoint
+      // call by a no-op, like 2 'pop' commands for example.
+      '33': null // setcurrentpoint
     },
     '13': 'hsbw',
     '14': 'endchar',
@@ -1458,7 +1466,7 @@ var Type1Parser = function() {
               charstring.push('drop');
 
             // If the flex mechanism is not used in a font program, Adobe
-            // state that that entries 0, 1 and 2 can simply be replace by
+            // states that entries 0, 1 and 2 can simply be replaced by
             // {}, which means that we can simply ignore them.
             if (index < 3) {
               continue;
@@ -1477,7 +1485,7 @@ var Type1Parser = function() {
           command = charStringDictionary['12'][escape];
         } else {
           // TODO Clean this code
-          if (value == 13) { //hsbw
+          if (value == 13) { // hsbw
             if (charstring.length == 2) {
               lsb = charstring[0];
               width = charstring[1];
@@ -1646,9 +1654,9 @@ var Type1Parser = function() {
                 var encoded = decrypt(data, kCharStringsEncryptionKey, lenIV);
                 var str = decodeCharString(encoded);
                 i = i + 1 + length;
-                t = getToken(); //read in 'NP'
+                t = getToken(); // read in 'NP'
                 if (t == 'noaccess')
-                  getToken(); //read in 'put'
+                  getToken(); // read in 'put'
                 program.subrs[index] = str.charstring;
               }
               break;
@@ -2235,7 +2243,6 @@ var Type2CFF = (function() {
       var nominalWidth = privDict['nominalWidthX'];
 
       var charstrings = [];
-      var kCmapGlyphOffset = 0xE000;
       var differences = properties.differences;
       var index = 0;
       for (var i = 1; i < charsets.length; i++) {
