@@ -45,13 +45,14 @@ var PDFView = {
   },
 
   parseScale: function(value) {
+    if ('custom' == value)
+      return;
+
     var scale = parseFloat(value);
     if (scale) {
       this.setScale(scale, true);
       return;
     }
-    if ('custom' == value)
-      return;
 
     var currentPage = this.pages[this.page - 1];
     var scrollbarPadding = 40;
@@ -493,7 +494,7 @@ window.addEventListener('scalechange', function scalechange(evt) {
   var value = '' + evt.scale;
   for (var i = 0; i < options.length; i++) {
     var option = options[i];
-    if (option.value != evt.scale) {
+    if (option.value != value) {
       option.selected = false;
       continue;
     }
@@ -517,16 +518,19 @@ window.addEventListener('pagechange', function pagechange(evt) {
   document.getElementById('next').disabled = (page == PDFView.pages.length);
 }, true);
 
-window.addEventListener('keydown', function (evt) {
+window.addEventListener('keydown', function keydown(evt) {
   switch(evt.keyCode) {
-    case 61: // '+' and '=' keys
-    case 107:
-    case 187:
+    case 61: // FF/Mac '='
+    case 107: // FF '+' and '='
+    case 187: // Chrome '+'
       PDFView.zoomIn();
       break;
-    case 109: // '-' keys
-    case 189:
+    case 109: // FF '-'
+    case 189: // Chrome '-'
       PDFView.zoomOut();
+      break;
+    case 48: // '0'
+      PDFView.setScale(kDefaultScale, true);
       break;
   }
 });
