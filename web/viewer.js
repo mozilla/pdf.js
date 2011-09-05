@@ -8,6 +8,8 @@ var kDefaultScale = 1.5;
 var kDefaultScaleDelta = 1.1;
 var kCacheSize = 20;
 var kCssUnits = 96.0 / 72.0;
+var kScrollbarPadding = 40;
+
 
 var Cache = function(size) {
   var data = [];
@@ -44,7 +46,7 @@ var PDFView = {
     window.dispatchEvent(event);
   },
 
-  parseScale: function(value) {
+  parseScale: function(value, resetAutoSettings) {
     var scale = parseFloat(value);
     if (scale) {
       this.setScale(scale, true);
@@ -54,15 +56,18 @@ var PDFView = {
       return;
 
     var currentPage = this.pages[this.page - 1];
-    var scrollbarPadding = 40;
-    var pageWidthScale = (window.innerWidth - scrollbarPadding) /
+    var pageWidthScale = (window.innerWidth - kScrollbarPadding) /
       currentPage.width / kCssUnits;
-    var pageHeightScale = (window.innerHeight - scrollbarPadding) /
+    var pageHeightScale = (window.innerHeight - kScrollbarPadding) /
       currentPage.height / kCssUnits;
     if ('page-width' == value)
-      this.setScale(pageWidthScale);
-    else if ('page-fit' == value)
-      this.setScale(Math.min(pageWidthScale, pageHeightScale));
+      this.setScale(pageWidthScale, resetAutoSettings);
+    if ('page-height' == value)
+      this.setScale(pageHeightScale, resetAutoSettings);
+    if ('page-fit' == value) {
+      this.setScale(
+        Math.min(pageWidthScale, pageHeightScale), resetAutoSettings);
+    }
   },
 
   zoomIn: function() {
@@ -129,8 +134,8 @@ var PDFView = {
       this.pagesRefMap[destRef.num + ' ' + destRef.gen + ' R'] : (destRef + 1);
     if (pageNumber) {
       this.page = pageNumber;
-      // TODO scroll to specific region on the page, the precise scaling
-      // required.
+      var currentPage = this.pages[pageNumber - 1];
+      currentPage.scrollIntoView(dest);
     }
   },
 
@@ -266,10 +271,79 @@ var PageView = function(container, content, id, width, height,
       link.style.width = Math.ceil(links[i].width * scale) + 'px';
       link.style.height = Math.ceil(links[i].height * scale) + 'px';
       link.href = links[i].url || '';
-      bindLink(link, ('dest' in links[i]) ? links[i].dest : null);
+      if (!links[i].url)
+        bindLink(link, ('dest' in links[i]) ? links[i].dest : null);
       div.appendChild(link);
     }
   }
+
+  this.scrollIntoView = function(dest) {
+      var x = 0, y = 0;
+      var width = 0, height = 0, widthScale, heightScale;
+      var scale = 0;
+      switch (dest[1].name) {
+        default:
+          return;
+        case 'XYZ':
+          x = dest[2];
+          y = dest[3];
+          scale = dest[4];
+          break;
+        case 'Fit':
+        case 'FitB':
+          scale = 'page-fit';
+          break;
+        case 'FitH':
+        case 'FitBH':
+          y = dest[2];
+          scale = 'page-width';
+          break;
+        case 'FitV':
+        case 'FitBV':
+          x = dest[2];
+          scale = 'page-height';
+          break;
+        case 'FitR':
+          x = dest[2];
+          y = dest[3];
+          width = dest[4] - x;
+          height = dest[5] - y;
+          widthScale = (window.innerWidth - kScrollbarPadding) /
+            width / kCssUnits;
+          heightScale = (window.innerHeight - kScrollbarPadding) /
+            height / kCssUnits;
+          scale = Math.min(widthScale, heightScale);
+          break;
+      }
+
+      var boundingRect = [
+        this.content.rotatePoint(x, y),
+        this.content.rotatePoint(x + width, y + height)
+      ];
+
+      if (scale)
+        PDFView.setScale(scale, true);
+
+      setTimeout(function() {
+        // letting page to re-layout before scrolling
+        var scale = PDFView.currentScale;
+        var x = Math.min(boundingRect[0].x, boundingRect[1].x);
+        var y = Math.min(boundingRect[0].y, boundingRect[1].y);
+        var width = Math.abs(boundingRect[0].x - boundingRect[1].x);
+        var height = Math.abs(boundingRect[0].y - boundingRect[1].y);
+
+        // using temporary div to scroll it into view
+        var tempDiv = document.createElement('div');
+        tempDiv.style.position = 'absolute';
+        tempDiv.style.left = Math.floor(x * scale) + 'px';
+        tempDiv.style.top = Math.floor(y * scale) + 'px';
+        tempDiv.style.width = Math.ceil(width * scale) + 'px';
+        tempDiv.style.height = Math.ceil(height * scale) + 'px';
+        div.appendChild(tempDiv);
+        tempDiv.scrollIntoView(true);
+        div.removeChild(tempDiv);
+      }, 0);
+  };
 
   this.draw = function() {
     if (div.hasChildNodes()) {
