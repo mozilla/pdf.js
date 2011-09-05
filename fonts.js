@@ -2248,8 +2248,8 @@ var Type2CFF = (function() {
       for (var i = 1; i < charsets.length; i++) {
         var code = -1;
         var glyph = charsets[i];
-        for (var j = index; j < differences.length; j++) {
-          if (differences[j]) {
+        for (var j = 0; j < differences.length; j++) {
+          if (differences[j] == glyph) {
             index = j;
             code = differences.indexOf(glyph);
             break;
