@@ -21,6 +21,8 @@ body {
   height: 40px;
   width: 100%;
   z-index: 1;
+  white-space:nowrap;
+  overflow: hidden;
 }
 
 .separator {
@@ -109,13 +111,23 @@ span#info {
 }
 
 .thumbnail {
-  width: 104px;
+  width: 134px;
   height: 134px;
-  background-color: white;
   margin-top: 5px;
   margin-bottom: 5px;
   margin-left:auto;
   margin-right:auto;
+  line-height: 134px;
+  text-align: center;
+}
+
+.thumbnail:not([data-loaded]) {
+  background-color: gray;
+}
+
+.thumbnail > canvas {
+  vertical-align: middle;
+  display: inline-block;
 }
 
 #outlineScrollView {
@@ -218,6 +230,14 @@ canvas {
   box-shadow: 0px 2px 10px #ff0;
   -moz-box-shadow: 0px 2px 10px #ff0;
   -webkit-box-shadow: 0px 2px 10px #ff0;
+}
+
+#pageWidthOption {
+  border-top: 1px solid black;
+}
+
+#customScaleOption {
+  display: none;
 }
 
 /* === Printed media overrides === */

@@ -4,8 +4,10 @@
 'use strict';
 
 var kDefaultURL = 'compressed.tracemonkey-pldi-09.pdf';
-var kDefaultScale = 150;
+var kDefaultScale = 1.5;
+var kDefaultScaleDelta = 1.1;
 var kCacheSize = 20;
+var kCssUnits = 96.0 / 72.0;
 
 var Cache = function(size) {
   var data = [];
@@ -21,12 +23,13 @@ var cache = new Cache(kCacheSize);
 var PDFView = {
   pages: [],
   thumbnails: [],
+  currentScale: kDefaultScale,
 
-  set scale(val) {
+  setScale: function(val, resetAutoSettings) {
     var pages = this.pages;
-    var cssUnits = 96.0 / 72.0;
     for (var i = 0; i < pages.length; i++)
-      pages[i].update(val / 100 * cssUnits);
+      pages[i].update(val * kCssUnits);
+    this.currentScale = val;
 
     if (document.location.hash == '#' + this.page)
       this.pages[this.page - 1].draw();
@@ -35,8 +38,40 @@ var PDFView = {
       document.location.hash = this.page;
 
     var event = document.createEvent('UIEvents');
-    event.initUIEvent('scalechange', false, false, window, val);
+    event.initUIEvent('scalechange', false, false, window, 0);
+    event.scale = val;
+    event.resetAutoSettings = resetAutoSettings;
     window.dispatchEvent(event);
+  },
+
+  parseScale: function(value) {
+    if ('custom' == value)
+      return;
+
+    var scale = parseFloat(value);
+    if (scale) {
+      this.setScale(scale, true);
+      return;
+    }
+
+    var currentPage = this.pages[this.page - 1];
+    var scrollbarPadding = 40;
+    var pageWidthScale = (window.innerWidth - scrollbarPadding) /
+      currentPage.width / kCssUnits;
+    var pageHeightScale = (window.innerHeight - scrollbarPadding) /
+      currentPage.height / kCssUnits;
+    if ('page-width' == value)
+      this.setScale(pageWidthScale);
+    else if ('page-fit' == value)
+      this.setScale(Math.min(pageWidthScale, pageHeightScale));
+  },
+
+  zoomIn: function() {
+    this.setScale(this.currentScale * kDefaultScaleDelta, true);
+  },
+
+  zoomOut: function() {
+    this.setScale(this.currentScale / kDefaultScaleDelta, true);
   },
 
   set page(val) {
@@ -123,12 +158,13 @@ var PDFView = {
       var page = pdf.getPage(i);
       pages.push(new PageView(container, page, i, page.width, page.height,
                               page.stats, this.navigateTo.bind(this)));
-      thumbnails.push(new ThumbnailView(sidebar, pages[i - 1]));
+      thumbnails.push(new ThumbnailView(sidebar, pages[i - 1],
+                                        page.width / page.height));
       var pageRef = page.ref;
       pagesRefMap[pageRef.num + ' ' + pageRef.gen + ' R'] = i;
     }
 
-    this.scale = (scale || kDefaultScale);
+    this.setScale(scale || kDefaultScale, true);
     this.page = parseInt(document.location.hash.substring(1)) || 1;
     this.pagesRefMap = pagesRefMap;
     this.destinations = pdf.catalog.destinations;
@@ -273,7 +309,7 @@ var PageView = function(container, content, id, width, height,
   };
 };
 
-var ThumbnailView = function(container, page) {
+var ThumbnailView = function(container, page, pageRatio) {
   var anchor = document.createElement('a');
   anchor.href = '#' + page.id;
 
@@ -292,8 +328,13 @@ var ThumbnailView = function(container, page) {
     canvas.id = 'thumbnail' + page.id;
     canvas.mozOpaque = true;
 
-    canvas.width = 104;
-    canvas.height = 134;
+    var maxThumbSize = 134;
+    canvas.width = pageRatio >= 1 ? maxThumbSize :
+      maxThumbSize * pageRatio;
+    canvas.height = pageRatio <= 1 ? maxThumbSize :
+      maxThumbSize / pageRatio;
+
+    div.setAttribute('data-loaded', true);
     div.appendChild(canvas);
 
     var ctx = canvas.getContext('2d');
@@ -349,7 +390,7 @@ window.addEventListener('load', function(evt) {
     params[unescape(param[0])] = unescape(param[1]);
   }
 
-  PDFView.open(params.file || kDefaultURL, parseInt(params.scale));
+  PDFView.open(params.file || kDefaultURL, parseFloat(params.scale));
 
   if (!window.File || !window.FileReader || !window.FileList || !window.Blob)
     document.getElementById('fileInput').style.display = 'none';
@@ -361,7 +402,7 @@ window.addEventListener('pdfloaded', function(evt) {
   PDFView.load(evt.detail);
 }, true);
 
-window.addEventListener('scroll', function onscroll(evt) {
+function updateViewarea() {
   var visiblePages = PDFView.getVisiblePages();
   for (var i = 0; i < visiblePages.length; i++) {
     var page = visiblePages[i];
@@ -379,7 +420,18 @@ window.addEventListener('scroll', function onscroll(evt) {
     PDFView.page = lastPage.id;
   else if (currentId < firstPage.id)
     PDFView.page = firstPage.id;
+}
+
+window.addEventListener('scroll', function onscroll(evt) {
+  updateViewarea();
 }, true);
+
+window.addEventListener('resize', function onscroll(evt) {
+  if (document.getElementById('pageWidthOption').selected ||
+      document.getElementById('pageFitOption').selected)
+      PDFView.parseScale(document.getElementById('scaleSelect').value);
+  updateViewarea();
+});
 
 window.addEventListener('hashchange', function(evt) {
   PDFView.page = PDFView.page;
@@ -426,13 +478,36 @@ window.addEventListener('transitionend', function(evt) {
   }, 500);
 }, true);
 
-
 window.addEventListener('scalechange', function scalechange(evt) {
+  var customScaleOption = document.getElementById('customScaleOption');
+  customScaleOption.selected = false;
+
+  if (!evt.resetAutoSettings &&
+       (document.getElementById('pageWidthOption').selected ||
+        document.getElementById('pageFitOption').selected)) {
+      updateViewarea();
+      return;
+  }
+
   var options = document.getElementById('scaleSelect').options;
+  var predefinedValueFound = false;
+  var value = '' + evt.scale;
   for (var i = 0; i < options.length; i++) {
     var option = options[i];
-    option.selected = (option.value == evt.detail);
+    if (option.value != value) {
+      option.selected = false;
+      continue;
+    }
+    option.selected = true;
+    predefinedValueFound = true;
   }
+
+  if (!predefinedValueFound) {
+    customScaleOption.textContent = Math.round(evt.scale * 10000) / 100 + '%';
+    customScaleOption.selected = true;
+  }
+
+  updateViewarea();
 }, true);
 
 window.addEventListener('pagechange', function pagechange(evt) {
@@ -442,3 +517,20 @@ window.addEventListener('pagechange', function pagechange(evt) {
   document.getElementById('previous').disabled = (page == 1);
   document.getElementById('next').disabled = (page == PDFView.pages.length);
 }, true);
+
+window.addEventListener('keydown', function keydown(evt) {
+  switch(evt.keyCode) {
+    case 61: // FF/Mac '='
+    case 107: // FF '+' and '='
+    case 187: // Chrome '+'
+      PDFView.zoomIn();
+      break;
+    case 109: // FF '-'
+    case 189: // Chrome '-'
+      PDFView.zoomOut();
+      break;
+    case 48: // '0'
+      PDFView.setScale(kDefaultScale, true);
+      break;
+  }
+});
