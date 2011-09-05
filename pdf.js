@@ -3356,6 +3356,7 @@ var Page = (function() {
       }
       return shadow(this, 'rotate', rotate);
     },
+
     startRendering: function(canvasCtx, continuation) {
       var self = this;
       var stats = self.stats;
@@ -3399,27 +3400,13 @@ var Page = (function() {
         fonts.push(font);
       }
 
-      var fontObjs = FontLoader.bind(
-        fonts,
-        function() {
-          // Rebuild the FontsMap. This is emulating the behavior of the main
-          // thread.
-          if (fontObjs) {
-            // Replace the FontsMap hash with the fontObjs.
-            for (var i = 0; i < fontObjs.length; i++) {
-              FontsMap[fontObjs[i].loadedName] = {fontObj: fontObjs[i]};
-            }
-          }
-
-          stats.fonts = Date.now();
-          images.notifyOnLoad(function() {
-            stats.images = Date.now();
-            displayContinuation();
-          });
-        }
-      );
+      this.ensureFonts(fonts, function() {
+        images.notifyOnLoad(function() {
+          stats.images = Date.now();
+          displayContinuation();
+        });
+      })
     },
-
 
     compile: function(gfx, fonts, images) {
       if (this.code) {
@@ -3439,6 +3426,27 @@ var Page = (function() {
       }
       this.code = gfx.compile(content, xref, resources, fonts, images);
     },
+    
+    ensureFonts: function(fonts, callback) {
+      var fontObjs = FontLoader.bind(
+        fonts,
+        function() {
+          // Rebuild the FontsMap. This is emulating the behavior of the main
+          // thread.
+          if (fontObjs) {
+            // Replace the FontsMap hash with the fontObjs.
+            for (var i = 0; i < fontObjs.length; i++) {
+              FontsMap[fontObjs[i].loadedName] = {fontObj: fontObjs[i]};
+            }
+          }
+
+          this.stats.fonts = Date.now();
+          
+          callback.call(this);
+        }.bind(this)
+      );
+    },
+    
     display: function(gfx) {
       assert(this.code instanceof Function,
              'page content must be compiled first');
