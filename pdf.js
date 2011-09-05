@@ -4212,23 +4212,24 @@ var PartialEvaluator = (function() {
           } else if (cmd == 'Tf') { // eagerly collect all fonts
             var fontName = args[0].name;
             
-            // Check if this font is known already and process it otherwise.
-            if (!FontsMap[fontName]) {
-              var fontRes = resources.get('Font');
-              if (fontRes) {
-                fontRes = xref.fetchIfRef(fontRes);
-                var font = xref.fetchIfRef(fontRes.get(fontName));
-                assertWellFormed(IsDict(font));
-                if (!font.translated) {
-                  font.translated = this.translateFont(font, xref, resources);
-                  if (fonts && font.translated) {
-                    // keep track of each font we translated so the caller can
-                    // load them asynchronously before calling display on a page
-                    fonts.push(font.translated);
-                    FontsMap[fontName] = font;
-                  }
+            var fontRes = resources.get('Font');
+            if (fontRes) {
+              fontRes = xref.fetchIfRef(fontRes);
+              var font = xref.fetchIfRef(fontRes.get(fontName));
+              assertWellFormed(IsDict(font));
+              if (!font.translated) {
+                font.translated = this.translateFont(font, xref, resources);
+                if (fonts && font.translated) {
+                  // keep track of each font we translated so the caller can
+                  // load them asynchronously before calling display on a page
+                  fonts.push(font.translated);
+                  FontsMap[font.translated.name] = font;
                 }
               }
+              args[0].name = font.translated.name;
+            } else {
+              // TODO: TOASK: Is it possible to get here? If so, what does
+              // args[0].name should be like???
             }
           }
 
