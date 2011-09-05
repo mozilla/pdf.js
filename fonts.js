@@ -2252,9 +2252,12 @@ var Type2CFF = (function() {
           index = code = properties.glyphs[glyph] || index;
 
         var width = widths[code] || defaultWidth;
-        properties.encoding[index] = index + kCmapGlyphOffset;
+        if (index <= 0x1f || (index >= 127 && code <= 255))
+          code += kCmapGlyphOffset;
+
+        properties.encoding[index] = code;
         charstrings.push({
-          unicode: code + kCmapGlyphOffset,
+          unicode: code,
           width: width, gid: i
         });
         index++;
