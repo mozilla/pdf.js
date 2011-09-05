@@ -4297,10 +4297,6 @@ var PartialEvaluator = (function() {
           lastChar = diffEncoding.length || baseEncoding.length;
 
         // merge in the differences
-        function isDisplayable(code) {
-          return code > 0x1f && (code < 128 || code > 255);
-        }
-
         var glyphsMap = {};
         for (var i = firstChar; i <= lastChar; i++) {
           var glyph = diffEncoding[i] || baseEncoding[i];
@@ -4308,7 +4304,7 @@ var PartialEvaluator = (function() {
             var index = GlyphsUnicode[glyph] || i;
             glyphsMap[glyph] = encodingMap[i] = index;
 
-            if (!isDisplayable(index))
+            if (index <= 0x1f || (index >= 128 && code <= 255))
               glyphsMap[glyph] = encodingMap[i] += kCmapGlyphOffset;
           }
         }
