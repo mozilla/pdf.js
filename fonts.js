@@ -509,15 +509,17 @@ var Font = (function Font() {
     this.data = data;
     this.type = properties.type;
     this.textMatrix = properties.textMatrix;
-    this.loadedName = getUniqueName();
     this.composite = properties.composite;
+    this.loadedName = properties.loadedName;
+    
+    // TODO: Remove this once we can be sure nothing got broken to du changes
+    // in this commit.
+    if (!this.loadedName) {
+      throw "There has to be a `loadedName`";
+    }
+    
     this.loading = true;
   };
-
-  var numFonts = 0;
-  function getUniqueName() {
-    return 'pdfFont' + numFonts++;
-  }
 
   function stringToArray(str) {
     var array = [];
