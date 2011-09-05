@@ -3373,28 +3373,51 @@ var Page = (function() {
         // Firefox error reporting from XHR callbacks.
         setTimeout(function() {
           var exc = null;
-          try {
+          // try {
             self.display(gfx);
             stats.render = Date.now();
-          } catch (e) {
-            exc = e.toString();
-          }
-          if (continuation) continuation(exc);
+          // } catch (e) {
+          //   exc = e.toString();
+          // }
+          continuation(exc);
         });
       };
+      
+      // Make a copy of the necessary datat to build a font later. The `font`
+      // object will be sent to the main thread later on.
+      var fontsBackup = fonts;
+      fonts = [];
+      for (var i = 0; i < fontsBackup.length; i++) {
+        var orgFont = fontsBackup[i];
+        var orgFontObj = orgFont.fontObj;
+      
+        var font = {
+          name:       orgFont.name,
+          file:       orgFont.file,
+          properties: orgFont.properties
+        }
+        fonts.push(font);
+      }
 
       var fontObjs = FontLoader.bind(
         fonts,
         function() {
+          // Rebuild the FontsMap. This is emulating the behavior of the main
+          // thread.
+          if (fontObjs) {
+            // Replace the FontsMap hash with the fontObjs.
+            for (var i = 0; i < fontObjs.length; i++) {
+              FontsMap[fontObjs[i].loadedName] = {fontObj: fontObjs[i]};
+            }
+          }
+
           stats.fonts = Date.now();
           images.notifyOnLoad(function() {
             stats.images = Date.now();
             displayContinuation();
           });
-        });
-
-      for (var i = 0, ii = fonts.length; i < ii; ++i)
-        fonts[i].dict.fontObj = fontObjs[i];
+        }
+      );
     },
 
 
@@ -4052,6 +4075,7 @@ var EvalState = (function() {
 })();
 
 var FontsMap = {};
+var FontLoadedCounter = 0;
 
 var PartialEvaluator = (function() {
   function constructor() {
@@ -4157,7 +4181,9 @@ var PartialEvaluator = (function() {
   };
 
   constructor.prototype = {
-    evaluate: function(stream, xref, resources, fonts, images) {
+    evalRaw: function(stream, xref, resources, fonts, images, uniquePrefix) {
+      uniquePrefix = uniquePrefix || "";
+      
       resources = xref.fetchIfRef(resources) || new Dict();
       var xobjs = xref.fetchIfRef(resources.get('XObject')) || new Dict();
       var patterns = xref.fetchIfRef(resources.get('Pattern')) || new Dict();
@@ -4223,10 +4249,13 @@ var PartialEvaluator = (function() {
                   // keep track of each font we translated so the caller can
                   // load them asynchronously before calling display on a page
                   fonts.push(font.translated);
-                  FontsMap[font.translated.name] = font;
+                  
+                  var loadedName = uniquePrefix + "font_" + (FontLoadedCounter++);
+                  font.translated.properties.loadedName = loadedName;
+                  FontsMap[loadedName] = font;
                 }
               }
-              args[0].name = font.translated.name;
+              args[0].name = font.translated.properties.loadedName;
             } else {
               // TODO: TOASK: Is it possible to get here? If so, what does
               // args[0].name should be like???
@@ -4246,7 +4275,18 @@ var PartialEvaluator = (function() {
       window.fnArray = fnArray;
       window.argsArray = argsArray;
 
+      return {
+        fnArray: fnArray,
+        argsArray: argsArray
+      };
+    },
+    
+    eval: function(stream, xref, resources, fonts, images, uniquePrefix) {
+      var ret = this.evalRaw(stream, xref, resources, fonts, images, uniquePrefix);
+      
       return function(gfx) {
+        var argsArray = ret.argsArray;
+        var fnArray =   ret.fnArray;
         for (var i = 0, length = argsArray.length; i < length; i++)
           gfx[fnArray[i]].apply(gfx, argsArray[i]);
       };
