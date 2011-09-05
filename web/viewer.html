@@ -33,13 +33,25 @@
 
       <div class="separator"></div>
 
-      <select id="scaleSelect" onchange="PDFView.scale = parseInt(this.value);">
-        <option value="50">50%</option>
-        <option value="75">75%</option>
-        <option value="100">100%</option>
-        <option value="125">125%</option>
-        <option value="150" selected="selected">150%</option>
-        <option value="200">200%</option>
+      <button id="next" title="Zoom Out" onclick="PDFView.zoomOut();">
+        <img src="images/zoom-out.svg" align="top" height="32"/>
+      </button>
+      <button id="next" title="Zoom In" onclick="PDFView.zoomIn();">
+        <img src="images/zoom-in.svg" align="top" height="32"/>
+      </button>
+
+      <div class="separator"></div>
+
+      <select id="scaleSelect" onchange="PDFView.parseScale(this.value);">
+        <option id="customScaleOption" value="custom"></option>
+        <option value="0.5">50%</option>
+        <option value="0.75">75%</option>
+        <option value="1">100%</option>
+        <option value="1.25">125%</option>
+        <option value="1.5" selected="selected">150%</option>
+        <option value="2">200%</option>
+        <option id="pageWidthOption" value="page-width">Page Width</option>
+        <option id="pageFitOption" value="page-fit">Page Fit</option>
       </select>
 
       <div class="separator"></div>
