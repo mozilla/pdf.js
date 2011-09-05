@@ -5469,9 +5469,8 @@ var DeviceGrayCS = (function() {
     },
     getRgbBuffer: function graycs_getRgbBuffer(input, bits) {
       var scale = 255 / ((1 << bits) - 1);
-      var length = input.length * 3;
-      var rgbBuf = new Uint8Array(length);
-      for (var i = 0, j = 0; i < length; ++i) {
+      var rgbBuf = new Uint8Array(input.length * 3);
+      for (var i = 0, j = 0; i < input.length; ++i) {
         var c = (scale * input[i]) | 0;
         rgbBuf[j++] = c;
         rgbBuf[j++] = c;
