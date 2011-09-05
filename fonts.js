@@ -12,7 +12,6 @@ var kMaxWaitForFontFace = 1000;
 // Unicode Private Use Area
 var kCmapGlyphOffset = 0xE000;
 
-
 /**
  * Hold a map of decoded fonts and of the standard fourteen Type1
  * fonts and their acronyms.
@@ -887,16 +886,9 @@ var Font = (function Font() {
                     break;
                 }
 
-                glyphs.push({ glyph: glyph, unicode: j });
-              }
-            }
-
-            if (properties.firstChar < 0x20) {
-              for (var j = 0; j < glyphs.length; j++) {
-                var glyph = glyphs[j];
-                var code = glyph.unicode + kCmapGlyphOffset;
-                properties.glyphs[glyph.glyph] = encoding[glyph.unicode] = code;
-                glyph.unicode = code;
+                var unicode = j + kCmapGlyphOffset;
+                properties.glyphs[glyph] = encoding[j] = unicode;
+                glyphs.push({ glyph: glyph, unicode: unicode });
               }
             }
             
