@@ -34,11 +34,13 @@
       <div class="separator"></div>
 
       <button id="next" title="Zoom Out" onclick="PDFView.zoomOut();">
-        <img src="images/list-remove.svg" align="top" height="32"/>
+        <img src="images/zoom-out.svg" align="top" height="32"/>
       </button>
       <button id="next" title="Zoom In" onclick="PDFView.zoomIn();">
-        <img src="images/list-add.svg" align="top" height="32"/>
+        <img src="images/zoom-in.svg" align="top" height="32"/>
       </button>
+
+      <div class="separator"></div>
 
       <select id="scaleSelect" onchange="PDFView.parseScale(this.value);">
         <option id="customScaleOption" value="custom"></option>
