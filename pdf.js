@@ -4008,6 +4008,8 @@ var EvalState = (function() {
   return constructor;
 })();
 
+var FontsMap = {};
+
 var PartialEvaluator = (function() {
   function constructor() {
     this.state = new EvalState();
@@ -4163,17 +4165,23 @@ var PartialEvaluator = (function() {
                 images.bind(xobj); // monitoring image load
             }
           } else if (cmd == 'Tf') { // eagerly collect all fonts
-            var fontRes = resources.get('Font');
-            if (fontRes) {
-              fontRes = xref.fetchIfRef(fontRes);
-              var font = xref.fetchIfRef(fontRes.get(args[0].name));
-              assertWellFormed(IsDict(font));
-              if (!font.translated) {
-                font.translated = this.translateFont(font, xref, resources);
-                if (fonts && font.translated) {
-                  // keep track of each font we translated so the caller can
-                  // load them asynchronously before calling display on a page
-                  fonts.push(font.translated);
+            var fontName = args[0].name;
+            
+            // Check if this font is known already and process it otherwise.
+            if (!FontsMap[fontName]) {
+              var fontRes = resources.get('Font');
+              if (fontRes) {
+                fontRes = xref.fetchIfRef(fontRes);
+                var font = xref.fetchIfRef(fontRes.get(fontName));
+                assertWellFormed(IsDict(font));
+                if (!font.translated) {
+                  font.translated = this.translateFont(font, xref, resources);
+                  if (fonts && font.translated) {
+                    // keep track of each font we translated so the caller can
+                    // load them asynchronously before calling display on a page
+                    fonts.push(font.translated);
+                    FontsMap[fontName] = font;
+                  }
                 }
               }
             }
@@ -4187,6 +4195,10 @@ var PartialEvaluator = (function() {
           args.push(obj);
         }
       }
+
+      // Expose arrays for debugging purpose.
+      window.fnArray = fnArray;
+      window.argsArray = argsArray;
 
       return function(gfx) {
         for (var i = 0, length = argsArray.length; i < length; i++)
@@ -4820,16 +4832,14 @@ var CanvasGraphics = (function() {
       this.current.leading = -leading;
     },
     setFont: function(fontRef, size) {
-      var font = this.xref.fetchIfRef(this.res.get('Font'));
-      if (!IsDict(font))
-        return;
-
-      font = font.get(fontRef.name);
-      font = this.xref.fetchIfRef(font);
-      if (!font)
-        return;
-
-      var fontObj = font.fontObj;
+      // Lookup the fontObj using fontRef only.
+      var fontRefName = fontRef.name;
+      var fontObj = FontsMap[fontRefName].fontObj;
+      
+      if (!fontObj) {
+        throw "Can't find font for " + fontRefName;
+      }
+      
       var name = fontObj.loadedName;
       if (!name) {
         // TODO: fontDescriptor is not available, fallback to default font
