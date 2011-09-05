@@ -21,6 +21,8 @@ body {
   height: 40px;
   width: 100%;
   z-index: 1;
+  white-space:nowrap;
+  overflow: hidden;
 }
 
 .separator {
@@ -228,6 +230,14 @@ canvas {
   box-shadow: 0px 2px 10px #ff0;
   -moz-box-shadow: 0px 2px 10px #ff0;
   -webkit-box-shadow: 0px 2px 10px #ff0;
+}
+
+#pageWidthOption {
+  border-top: 1px solid black;
+}
+
+#customScaleOption {
+  display: none;
 }
 
 /* === Printed media overrides === */
