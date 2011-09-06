@@ -3,9 +3,8 @@
 
 'use strict';
 
-//
 importScripts('console.js');
-importScripts('event_handler.js');
+importScripts('message_handler.js');
 importScripts('../pdf.js');
 importScripts('../fonts.js');
 importScripts('../crypto.js');
@@ -14,9 +13,9 @@ importScripts('../glyphlist.js');
 // Listen for messages from the main thread.
 var pdfDoc = null;
 
-var handler = new MessageHandler({
+var handler = new MessageHandler("worker", {
   "doc": function(data) {
-    pdfDocument = new PDFDoc(new Stream(data));
+    pdfDoc = new PDFDoc(new Stream(data));
     console.log("setup pdfDoc");
   },
   
@@ -24,11 +23,11 @@ var handler = new MessageHandler({
     pageNum = parseInt(pageNum);
     console.log("about to process page", pageNum);
     
-    var page = pdfDocument.getPage(pageNum);
+    var page = pdfDoc.getPage(pageNum);
     
     // The following code does quite the same as Page.prototype.startRendering,
     // but stops at one point and sends the result back to the main thread.
-    var gfx = new CanvasGraphics(canvasCtx);
+    var gfx = new CanvasGraphics(null);
     var fonts = [];
     // TODO: Figure out how image loading is handled inside the worker.
     var images = new ImagesLoader();
@@ -43,9 +42,9 @@ var handler = new MessageHandler({
       var font = fonts[i];
     
       fontsMin.push({
-        name:       orgFont.name,
-        file:       orgFont.file,
-        properties: orgFont.properties
+        name:       font.name,
+        file:       font.file,
+        properties: font.properties
       });
     }
     
@@ -58,6 +57,4 @@ var handler = new MessageHandler({
       preCompilation: preCompilation,
     });
   }
-}, postMessage);
-
-onmessage = handler.onMessage;
+}, this);
