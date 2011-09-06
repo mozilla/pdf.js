@@ -126,14 +126,15 @@ class PDFTestHandler(BaseHTTPRequestHandler):
         self.wfile.write("<html><body><h1>PDFs of " + path + "</h1>\n")
         for filename in os.listdir(location):
           if filename.lower().endswith('.pdf'):
-            self.wfile.write("<a href='/web/viewer.html?file=" + path + filename + "' target=pdf>" +
+            self.wfile.write("<a href='/web/viewer.html?file=" +
+              urllib.quote_plus(path + filename, '/') + "' target=pdf>" +
               filename + "</a><br>\n")
         self.wfile.write("</body></html>")
 
     def do_GET(self):
         url = urlparse(self.path)
         # Ignore query string
-        path, _ = url.path, url.query
+        path, _ = urllib.unquote_plus(url.path), url.query
         path = os.path.abspath(os.path.realpath(DOC_ROOT + os.sep + path))
         prefix = os.path.commonprefix(( path, DOC_ROOT ))
         _, ext = os.path.splitext(path.lower())
