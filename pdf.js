@@ -4304,7 +4304,7 @@ var PartialEvaluator = (function() {
             var index = GlyphsUnicode[glyph] || i;
             glyphsMap[glyph] = encodingMap[i] = index;
 
-            if (index <= 0x1f || (index >= 128 && code <= 255))
+            if (index <= 0x1f || (index >= 127 && index <= 255))
               glyphsMap[glyph] = encodingMap[i] += kCmapGlyphOffset;
           }
         }
