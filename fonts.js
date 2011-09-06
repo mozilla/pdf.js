@@ -857,9 +857,47 @@ var Font = (function Font() {
           });
         }
 
+        // Check that table are sorted by platformID then encodingID,
+        records.sort(function(a, b) {
+          return ((a.platformID << 16) + a.encodingID) -
+                 ((b.platformID << 16) + b.encodingID)
+        });
+
+        var tables = [records[0]];
+        for (var i = 1; i < numRecords; i++) {
+          // The sanitizer will drop the font if 2 tables have the same
+          // platformID and the same encodingID, this will be correct for
+          // most cases but if the font has been made for Mac it could
+          // exist a few platformID: 1, encodingID: 0 but with a different
+          // language field and that's correct. But the sanitizer does not
+          // seem to support this case.
+          var current = records[i];
+          var previous = records[i - 1];
+          if (((current.platformID << 16) + current.encodingID) <=
+             ((previous.platformID << 16) + previous.encodingID))
+                continue;
+          tables.push(current);
+        }
+
+        var missing = numRecords - tables.length;
+        if (missing) {
+          numRecords = tables.length;
+          var data = string16(version) + string16(numRecords);
+
+          for (var i = 0; i < numRecords; i++) {
+            var table = tables[i];
+            data += string16(table.platformID) +
+                    string16(table.encodingID) +
+                    string32(table.offset);
+          }
+
+          for (var i = 0; i < data.length; i++)
+            cmap.data[i] = data.charCodeAt(i); 
+        }
+
         var encoding = properties.encoding;
         for (var i = 0; i < numRecords; i++) {
-          var table = records[i];
+          var table = tables[i];
           font.pos = start + table.offset;
 
           var format = int16(font.getBytes(2));

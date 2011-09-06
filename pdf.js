@@ -4304,6 +4304,9 @@ var PartialEvaluator = (function() {
             var index = GlyphsUnicode[glyph] || i;
             glyphsMap[glyph] = encodingMap[i] = index;
 
+            if (!fontFile)
+              continue;
+
             if (index <= 0x1f || (index >= 127 && index <= 255))
               glyphsMap[glyph] = encodingMap[i] += kCmapGlyphOffset;
           }
@@ -4824,7 +4827,7 @@ var CanvasGraphics = (function() {
                                    (fontObj.bold ? 'bold' : 'normal');
 
         var italic = fontObj.italic ? 'italic' : 'normal';
-        var rule = italic + ' ' + bold + ' ' + size + 'px "' + name + '"';
+        var rule = italic + ' ' + bold + ' ' + size + 'px "' + name + '", "sans-serif"';
         this.ctx.font = rule;
       }
     },
