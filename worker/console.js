@@ -9,7 +9,7 @@ var console = {
     var args = Array.prototype.slice.call(arguments);
     postMessage({
       action: 'log',
-      data: args
+      data:   args
     });
   },
 
