@@ -858,6 +858,11 @@ var Font = (function Font() {
         }
 
         // Check that table are sorted by platformID then encodingID,
+        records.sort(function(a, b) {
+          return ((a.platformID << 16) + a.encodingID) -
+                 ((b.platformID << 16) + b.encodingID)
+        });
+
         var tables = [records[0]];
         for (var i = 1; i < numRecords; i++) {
           // The sanitizer will drop the font if 2 tables have the same
@@ -875,7 +880,7 @@ var Font = (function Font() {
         }
 
         var missing = numRecords - tables.length;
-        if (numRecords - tables.length) {
+        if (missing) {
           numRecords = tables.length;
           var data = string16(version) + string16(numRecords);
 
