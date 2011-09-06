@@ -4252,8 +4252,8 @@ var PartialEvaluator = (function() {
 
               if ('Form' == type.name) {
                 // console.log("got xobj that is a Form");
-                args[0].code = this.eval(xobj, xref, xobj.dict.get('Resources'),
-                                         fonts, images);
+                args[0].raw = this.evalRaw(xobj, xref, xobj.dict.get('Resources'),
+                                         fonts, images, uniquePrefix);
               }
               if (xobj instanceof JpegStream) {
                 images.bind(xobj); // monitoring image load
@@ -5369,7 +5369,8 @@ var CanvasGraphics = (function() {
         this.endPath();
       }
 
-      this.execute(ref.code, this.xref, stream.dict.get('Resources'));
+      var code = this.pe.evalFromRaw(ref.raw)
+      this.execute(code, this.xref, stream.dict.get('Resources'));
 
       this.restore();
     },
