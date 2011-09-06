@@ -3162,7 +3162,7 @@ var XRef = (function() {
         if (!IsCmd(obj3, 'obj')) {
           // some bad pdfs use "obj1234" and really mean 1234
           if (obj3.cmd.indexOf('obj') == 0) {
-            num = parseInt(obj3.cmd.substring(3));
+            num = parseInt(obj3.cmd.substring(3), 10);
             if (!isNaN(num))
               return num;
           }
@@ -3669,7 +3669,7 @@ var PDFDoc = (function() {
             str += ch;
             ch = stream.getChar();
           }
-          startXRef = parseInt(str);
+          startXRef = parseInt(str, 10);
           if (isNaN(startXRef))
             startXRef = 0;
         }
