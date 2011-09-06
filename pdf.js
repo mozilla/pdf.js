@@ -3447,12 +3447,12 @@ var Catalog = (function() {
 
   constructor.prototype = {
     get toplevelPagesDict() {
-      var obj = this.catDict.get('Pages');
-      assertWellFormed(IsRef(obj), 'invalid top-level pages reference');
-      var obj = this.xref.fetch(obj);
-      assertWellFormed(IsDict(obj), 'invalid top-level pages dictionary');
+      var pagesObj = this.catDict.get('Pages');
+      assertWellFormed(IsRef(pagesObj), 'invalid top-level pages reference');
+      var xrefObj = this.xref.fetch(pagesObj);
+      assertWellFormed(IsDict(xrefObj), 'invalid top-level pages dictionary');
       // shadow the prototype getter
-      return shadow(this, 'toplevelPagesDict', obj);
+      return shadow(this, 'toplevelPagesDict', xrefObj);
     },
     get documentOutline() {
       function convertIfUnicode(str) {
