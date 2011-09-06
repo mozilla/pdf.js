@@ -2358,7 +2358,7 @@ var Lexer = (function() {
   }
 
   constructor.isSpace = function(ch) {
-    return ch == ' ' || ch == '\t';
+    return ch == ' ' || ch == '\t' || ch == '\x0d';
   };
 
   // A '1' in this array means the character is white space.  A '1' or
@@ -4428,6 +4428,7 @@ var PartialEvaluator = (function() {
       fontName = fontName.name.replace(/[\+,\-]/g, '_');
 
       var fontFile = descriptor.get('FontFile', 'FontFile2', 'FontFile3');
+      var length1, length2;
       if (fontFile) {
         fontFile = xref.fetchIfRef(fontFile);
 
@@ -4436,6 +4437,14 @@ var PartialEvaluator = (function() {
           if (fileType)
             fileType = fileType.name;
         }
+
+        length1 = fontFile.dict.get('Length1');
+        if (!IsInt(length1))
+          length1 = xref.fetchIfRef(length1);
+
+        length2 = fontFile.dict.get('Length2');
+        if (!IsInt(length2))
+          length2 = xref.fetchIfRef(length2);
       }
 
       var widths = fontDict.get('Widths');
@@ -4464,7 +4473,9 @@ var PartialEvaluator = (function() {
         italicAngle: descriptor.get('ItalicAngle'),
         fixedPitch: false,
         textMatrix: IDENTITY_MATRIX,
-        compositeFont: compositeFont
+        compositeFont: compositeFont,
+        length1: length1,
+        length2: length2
       };
 
       return {

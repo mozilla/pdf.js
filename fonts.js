@@ -12,7 +12,6 @@ var kMaxWaitForFontFace = 1000;
 // Unicode Private Use Area
 var kCmapGlyphOffset = 0xE000;
 
-
 /**
  * Hold a map of decoded fonts and of the standard fourteen Type1
  * fonts and their acronyms.
@@ -887,16 +886,9 @@ var Font = (function Font() {
                     break;
                 }
 
-                glyphs.push({ glyph: glyph, unicode: j });
-              }
-            }
-
-            if (properties.firstChar < 0x20) {
-              for (var j = 0; j < glyphs.length; j++) {
-                var glyph = glyphs[j];
-                var code = glyph.unicode + kCmapGlyphOffset;
-                properties.glyphs[glyph.glyph] = encoding[glyph.unicode] = code;
-                glyph.unicode = code;
+                var unicode = j + kCmapGlyphOffset;
+                properties.glyphs[glyph] = encoding[j] = unicode;
+                glyphs.push({ glyph: glyph, unicode: unicode });
               }
             }
             
@@ -1570,6 +1562,10 @@ var Type1Parser = function() {
     return parseFloat(str.substr(start, count) || 0);
   };
 
+  function isSeparator(c) {
+    return c == ' ' || c == '\n' || c == '\x0d';
+  };
+
   this.extractFontProgram = function t1_extractFontProgram(stream) {
     var eexec = decrypt(stream, kEexecEncryptionKey, 4);
     var eexecStr = '';
@@ -1594,12 +1590,12 @@ var Type1Parser = function() {
     var c = '';
     var count = eexecStr.length;
     for (var i = 0; i < count; i++) {
-      var getToken = function() {
-        while (i < count && (eexecStr[i] == ' ' || eexecStr[i] == '\n'))
+      var getToken = function getToken() {
+        while (i < count && isSeparator(eexecStr[i]))
           ++i;
 
         var token = '';
-        while (i < count && !(eexecStr[i] == ' ' || eexecStr[i] == '\n'))
+        while (i < count && !isSeparator(eexecStr[i]))
           token += eexecStr[i++];
 
         return token;
@@ -1626,7 +1622,7 @@ var Type1Parser = function() {
         }
         i += length;
         token = '';
-      } else if (c == ' ' || c == '\n') {
+      } else if (isSeparator(c)) {
         length = parseInt(token);
         token = '';
       } else {
@@ -1703,13 +1699,13 @@ var Type1Parser = function() {
     var token = '';
     var count = headerString.length;
     for (var i = 0; i < count; i++) {
-      var getToken = function() {
+      var getToken = function getToken() {
         var char = headerString[i];
-        while (i < count && (char == ' ' || char == '\n' || char == '/'))
+        while (i < count && (isSeparator(char) || char == '/'))
           char = headerString[++i];
 
         var token = '';
-        while (i < count && !(char == ' ' || char == '\n' || char == '/')) {
+        while (i < count && !(isSeparator(char) || char == '/')) {
           token += char;
           char = headerString[++i];
         }
@@ -1718,7 +1714,7 @@ var Type1Parser = function() {
       };
 
       var c = headerString[i];
-      if (c == ' ' || c == '\n') {
+      if (isSeparator(c)) {
         switch (token) {
           case '/FontMatrix':
             var matrix = readNumberArray(headerString, i + 1);
@@ -1744,7 +1740,7 @@ var Type1Parser = function() {
               
                 if ('undefined' == typeof(properties.differences[index])) {
                   properties.encoding[index] = glyph;
-                  properties.glyphs[glyph] = GlyphsUnicode[glyph];
+                  properties.glyphs[glyph] = GlyphsUnicode[glyph] || index;
                 }
                 getToken(); // read the in 'put'
               }
@@ -1760,8 +1756,8 @@ var Type1Parser = function() {
 };
 
 /**
- * The CFF class takes a Type1 file and wrap it into a 'Compact Font Format',
- * which itself embed Type2 charstrings.
+ * The CFF class takes a Type1 file and wrap it into a 
+ * 'Compact Font Format' which itself embed Type2 charstrings.
  */
 var CFFStrings = [
   '.notdef', 'space', 'exclam', 'quotedbl', 'numbersign', 'dollar', 'percent',
@@ -1835,14 +1831,11 @@ var type1Parser = new Type1Parser();
 
 var CFF = function(name, file, properties) {
   // Get the data block containing glyphs and subrs informations
-  var length1 = file.dict.get('Length1');
-  var length2 = file.dict.get('Length2');
-
-  var headerBlock = file.getBytes(length1);
+  var headerBlock = file.getBytes(properties.length1);
   type1Parser.extractFontHeader(headerBlock, properties);
 
   // Decrypt the data blocks and retrieve it's content
-  var eexecBlock = file.getBytes(length2);
+  var eexecBlock = file.getBytes(properties.length2);
   var data = type1Parser.extractFontProgram(eexecBlock);
   for (var info in data.properties)
     properties[info] = data.properties[info];
@@ -2248,8 +2241,8 @@ var Type2CFF = (function() {
       for (var i = 1; i < charsets.length; i++) {
         var code = -1;
         var glyph = charsets[i];
-        for (var j = index; j < differences.length; j++) {
-          if (differences[j]) {
+        for (var j = 0; j < differences.length; j++) {
+          if (differences[j] == glyph) {
             index = j;
             code = differences.indexOf(glyph);
             break;
@@ -2260,9 +2253,12 @@ var Type2CFF = (function() {
           index = code = properties.glyphs[glyph] || index;
 
         var width = widths[code] || defaultWidth;
-        properties.encoding[index] = index + kCmapGlyphOffset;
+        if (code <= 0x1f || (code >= 127 && code <= 255))
+          code += kCmapGlyphOffset;
+
+        properties.encoding[index] = code;
         charstrings.push({
-          unicode: code + kCmapGlyphOffset,
+          unicode: code,
           width: width, gid: i
         });
         index++;
