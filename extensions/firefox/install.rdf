@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+
+<RDF xmlns="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+     xmlns:em="http://www.mozilla.org/2004/em-rdf#">
+
+  <Description about="urn:mozilla:install-manifest">
+    <em:id>uriloader@pdf.js</em:id>
+    <em:name>pdf.js</em:name>
+    <em:version>0.1</em:version>
+	  <em:iconURL>chrome://pdf.js/skin/logo.png</em:iconURL>
+    <em:targetApplication>
+      <Description>
+       <em:id>{ec8030f7-c20a-464f-9b0e-13a3a9e97384}</em:id>
+       <em:minVersion>6.0</em:minVersion>
+       <em:maxVersion>9.0.*</em:maxVersion>
+     </Description>
+    </em:targetApplication>
+    <em:bootstrap>true</em:bootstrap>
+    <em:unpack>true</em:unpack>
+    <em:creator>Vivien Nicolas</em:creator>
+    <em:description>pdf.js uri loader</em:description>
+    <em:homepageURL>https://github.com/andreasgal/pdf.js/</em:homepageURL>
+  </Description>
+</RDF>
