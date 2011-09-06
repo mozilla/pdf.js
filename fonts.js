@@ -117,6 +117,47 @@ var serifFonts = {
   'Wide Latin': true, 'Windsor': true, 'XITS': true
 };
 
+// Create the FontMeasure object only on the main thread.
+if (!isWorker) {
+  var FontMeasure = (function FontMeasure() {
+    var kScalePrecision = 30;
+    var ctx = document.createElement('canvas').getContext('2d');
+    ctx.scale(1 / kScalePrecision, 1);
+
+    var current;
+    var measureCache;
+
+    return {
+      setActive: function fonts_setActive(font, size) {
+        if (current == font) {
+          var sizes = current.sizes;
+          if (!(measureCache = sizes[size]))
+            measureCache = sizes[size] = Object.create(null);
+        } else {
+          measureCache = null;
+        }
+
+        var name = font.loadedName;
+        var bold = font.bold ? 'bold' : 'normal';
+        var italic = font.italic ? 'italic' : 'normal';
+        size *= kScalePrecision;
+        var rule = italic + ' ' + bold + ' ' + size + 'px "' + name + '"';
+        ctx.font = rule;
+        current = font;
+      },
+      measureText: function fonts_measureText(text) {
+        var width;
+        if (measureCache && (width = measureCache[text]))
+          return width;
+        width = ctx.measureText(text).width / kScalePrecision;
+        if (measureCache)
+          measureCache[text] = width;
+        return width;
+      }
+    };
+  })();  
+}
+
 var FontLoader = {
   listeningForFontLoad: false,
 
