@@ -51,18 +51,19 @@ var handler = new MessageHandler("worker", {
     // TODO: Handle images here.
     
     console.log("about to send page", pageNum);
-    
-    // Make a copy of the fnArray and show all cmds it has.
-    var fnArray = preCompilation.fnArray.slice(0).sort();
-    for (var i = 0; i < fnArray.length; true) {
-      if (fnArray[i] == fnArray[i + 1]) {
-        fnArray.splice(i, 1);
-      } else {
-        i++;
+   
+    if (false /* show used commands */) {
+      // Make a copy of the fnArray and show all cmds it has.
+      var fnArray = preCompilation.fnArray.slice(0).sort();
+      for (var i = 0; i < fnArray.length; true) {
+        if (fnArray[i] == fnArray[i + 1]) {
+          fnArray.splice(i, 1);
+        } else {
+          i++;
+        }
       }
-    }
-    console.log("cmds", fnArray);
-    
+      console.log("cmds", fnArray);
+    } 
     
     handler.send("page", {
       pageNum:        pageNum,
