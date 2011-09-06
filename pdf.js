@@ -3380,7 +3380,7 @@ var Page = (function() {
       })
     },
 
-    compile: function(gfx, fonts, images) {
+    preCompile: function(gfx, fonts, images) {
       if (this.code) {
         // content was compiled
         return;
@@ -3396,7 +3396,12 @@ var Page = (function() {
           content[i] = xref.fetchIfRef(content[i]);
         content = new StreamsSequenceStream(content);
       }
-      this.code = gfx.compile(content, xref, resources, fonts, images);
+      return gfx.preCompile(content, xref, resources, fonts, images);
+    },
+
+    compile: function(gfx, fonts, images) {
+      var preCompilation = this.preCompile(gfx, fonts, images);
+      this.code = gfx.postCompile(preCompilation);
     },
     
     ensureFonts: function(fonts, callback) {
@@ -4256,6 +4261,15 @@ var PartialEvaluator = (function() {
           gfx[fnArray[i]].apply(gfx, argsArray[i]);
       };
     },
+    
+    evalFromRaw: function(raw) {
+      return function(gfx) {
+        var argsArray = raw.argsArray;
+        var fnArray =   raw.fnArray;
+        for (var i = 0, length = argsArray.length; i < length; i++)
+          gfx[fnArray[i]].apply(gfx, argsArray[i]);
+      };
+    },
 
     extractEncoding: function(dict, xref, properties) {
       var type = properties.type;
@@ -4669,9 +4683,13 @@ var CanvasGraphics = (function() {
       this.ctx.scale(cw / mediaBox.width, ch / mediaBox.height);
     },
 
-    compile: function(stream, xref, resources, fonts, images) {
-      var pe = new PartialEvaluator();
-      return pe.eval(stream, xref, resources, fonts, images);
+    preCompile: function(stream, xref, resources, fonts, images) {
+      var pe = this.pe = new PartialEvaluator();
+      return pe.evalRaw(stream, xref, resources, fonts, images);
+    },
+    
+    postCompile: function(raw) {
+      return this.pe.evalFromRaw(raw);
     },
 
     execute: function(code, xref, resources) {
