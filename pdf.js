@@ -4824,7 +4824,7 @@ var CanvasGraphics = (function() {
                                    (fontObj.bold ? 'bold' : 'normal');
 
         var italic = fontObj.italic ? 'italic' : 'normal';
-        var rule = italic + ' ' + bold + ' ' + size + 'px "' + name + '"';
+        var rule = italic + ' ' + bold + ' ' + size + 'px "' + name + '", "sans-serif"';
         this.ctx.font = rule;
       }
     },
