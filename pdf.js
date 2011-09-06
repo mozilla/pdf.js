@@ -4252,8 +4252,12 @@ var PartialEvaluator = (function() {
 
               if ('Form' == type.name) {
                 // console.log("got xobj that is a Form");
-                args[0].raw = this.evalRaw(xobj, xref, xobj.dict.get('Resources'),
+                var raw = this.evalRaw(xobj, xref, xobj.dict.get('Resources'),
                                          fonts, images, uniquePrefix);
+                var matrix = xobj.dict.get('Matrix');
+                var bbox = xobj.dict.get('BBox');
+                args = [raw, matrix, bbox];
+                fn = "paintReadyFormXObject";
               }
               if (xobj instanceof JpegStream) {
                 images.bind(xobj); // monitoring image load
@@ -4288,10 +4292,10 @@ var PartialEvaluator = (function() {
                   fn = "paintReadyImageXObject";
                   args = [ imgData ];
                   
-                  console.log("xobj subtype image", w, h, imageObj.imageMask);
+                  // console.log("xobj subtype image", w, h, imageObj.imageMask);
                 }
               }
-              console.log("xobj subtype", xobj.dict.get('Subtype').name);
+              // console.log("xobj subtype", xobj.dict.get('Subtype').name);
 
             }
           } else if (cmd == 'Tf') { // eagerly collect all fonts
@@ -4321,13 +4325,23 @@ var PartialEvaluator = (function() {
             }
           }
 
-          // var skips = ["paintXObject"];
-          // 
-          // if (skips.indexOf(fn) != -1) {
-          //   // console.log("skipping", fn);
-          //   args = [];
-          //   continue;
-          // }
+          // Transform some cmds.
+          switch (fn) {
+          // Parse the ColorSpace data to a raw format.
+          case "setFillColorSpace":
+          case "setStrokeColorSpace":
+            args = [ ColorSpace.parseRaw(args[0], xref, resources) ];
+            break;
+          }
+
+          var skips = [];
+          //var skips = ["setFillColorSpace", "setFillColor", "setStrokeColorSpace", "setStrokeColor"];
+          
+          if (skips.indexOf(fn) != -1) {
+            // console.log("skipping", fn);
+            args = [];
+            continue;
+          }
 
           fnArray.push(fn);
           argsArray.push(args);
@@ -5193,13 +5207,15 @@ var CanvasGraphics = (function() {
     },
 
     // Color
-    setStrokeColorSpace: function(space) {
+    setStrokeColorSpace: function(raw) {
       this.current.strokeColorSpace =
-          ColorSpace.parse(space, this.xref, this.res);
+            ColorSpace.fromRaw(raw);
+      //    ColorSpace.parse(space, this.xref, this.res);
     },
-    setFillColorSpace: function(space) {
+    setFillColorSpace: function(raw) {
       this.current.fillColorSpace =
-          ColorSpace.parse(space, this.xref, this.res);
+            ColorSpace.fromRaw(raw);
+      //    ColorSpace.parse(space, this.xref, this.res);
     },
     setStrokeColor: function(/*...*/) {
       var cs = this.current.strokeColorSpace;
@@ -5353,6 +5369,25 @@ var CanvasGraphics = (function() {
       } else {
         malformed('Unknown XObject subtype ' + type.name);
       }
+    },
+    
+    paintReadyFormXObject: function(raw, matrix, bbox) {
+      this.save();
+
+      if (matrix && IsArray(matrix) && 6 == matrix.length)
+        this.transform.apply(this, matrix);
+
+      if (bbox && IsArray(bbox) && 4 == bbox.length) {
+        this.rectangle.apply(this, bbox);
+        this.clip();
+        this.endPath();
+      }
+
+      var code = this.pe.evalFromRaw(raw)
+      // this.execute(code, this.xref, stream.dict.get('Resources'));
+      this.execute(code, this.xref, null);
+
+      this.restore();
     },
 
     paintFormXObject: function(ref, stream) {
@@ -5617,6 +5652,120 @@ var ColorSpace = (function() {
         var alt = ColorSpace.parse(cs[2], xref, res);
         var tintFn = new PDFFunction(xref, xref.fetchIfRef(cs[3]));
         return new SeparationCS(alt, tintFn);
+      case 'Lab':
+      case 'DeviceN':
+      default:
+        error('unimplemented color space object "' + mode + '"');
+      }
+    } else {
+      error('unrecognized color space object: "' + cs + '"');
+    }
+    return null;
+  };
+  
+  constructor.fromRaw = function(raw) {
+    var name;
+    if (IsArray(raw)) {
+      name = raw[0];
+    } else {
+      name = raw;
+    }
+    
+    switch (name) {
+      case "DeviceGrayCS":
+        return new DeviceGrayCS();
+      case "DeviceRgbCS":
+        return new DeviceRgbCS();
+      case "DeviceCmykCS":
+        return new DeviceCmykCS();
+      case "Pattern":
+        return new PatternCS(raw[1]);
+      default:
+        error("Unkown name " + name);
+    }
+  }
+  
+  constructor.parseRaw = function colorspace_parse(cs, xref, res) {
+    if (IsName(cs)) {
+      var colorSpaces = res.get('ColorSpace');
+      if (IsDict(colorSpaces)) {
+        var refcs = colorSpaces.get(cs.name);
+        if (refcs)
+          cs = refcs;
+      }
+    }
+
+    cs = xref.fetchIfRef(cs);
+
+    if (IsName(cs)) {
+      var mode = cs.name;
+      this.mode = mode;
+
+      switch (mode) {
+      case 'DeviceGray':
+      case 'G':
+        return "DeviceGrayCS";
+      case 'DeviceRGB':
+      case 'RGB':
+        return "DeviceRgbCS";
+      case 'DeviceCMYK':
+      case 'CMYK':
+        return "DeviceCmykCS";
+      case 'Pattern':
+        return ["PatternCS", null];
+      default:
+        error('unrecognized colorspace ' + mode);
+      }
+    } else if (IsArray(cs)) {
+      var mode = cs[0].name;
+      this.mode = mode;
+
+      switch (mode) {
+      case 'DeviceGray':
+      case 'G':
+        return "DeviceGrayCS";
+      case 'DeviceRGB':
+      case 'RGB':
+        return "DeviceRgbCS";
+      case 'DeviceCMYK':
+      case 'CMYK':
+        return "DeviceCmykCS";
+      case 'CalGray':
+        return "DeviceGrayCS";
+      case 'CalRGB':
+        return "DeviceRgbCS";
+      case 'ICCBased':
+        var stream = xref.fetchIfRef(cs[1]);
+        var dict = stream.dict;
+        var numComps = dict.get('N');
+        if (numComps == 1)
+          return "DeviceGrayCS";
+        if (numComps == 3)
+          return "DeviceRgbCS";
+        if (numComps == 4)
+          return "DeviceCmykCS";
+        break;
+      case 'Pattern':
+        // TODO: IMPLEMENT ME
+
+        // var baseCS = cs[1];
+        // if (baseCS)
+        //   baseCS = ColorSpace.parse(baseCS, xref, res);
+        // return new PatternCS(baseCS);
+      case 'Indexed':
+        // TODO: IMPLEMENT ME
+
+        // var base = ColorSpace.parse(cs[1], xref, res);
+        // var hiVal = cs[2] + 1;
+        // var lookup = xref.fetchIfRef(cs[3]);
+        // return new IndexedCS(base, hiVal, lookup);
+      case 'Separation':
+        // TODO: IMPLEMENT ME
+      
+        // var name = cs[1];
+        // var alt = ColorSpace.parse(cs[2], xref, res);
+        // var tintFn = new PDFFunction(xref, xref.fetchIfRef(cs[3]));
+        // return new SeparationCS(alt, tintFn);
       case 'Lab':
       case 'DeviceN':
       default:
