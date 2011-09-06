@@ -4406,8 +4406,8 @@ var PartialEvaluator = (function() {
           return null;
 
         // Using base font name as a font name.
-        baseFontName = baseFontName.name.replace(/[\+,\-]/g, '_');
-        if (/^Symbol(_?(Bold|Italic))*$/.test(baseFontName)) {
+        baseFontName = baseFontName.name;
+        if (/^Symbol(-?(Bold|Italic))*$/.test(baseFontName)) {
           // special case for symbols
           var encoding = Encodings.symbolsEncoding;
           for (var i = 0, n = encoding.length, j; i < n; i++) {
@@ -4428,7 +4428,7 @@ var PartialEvaluator = (function() {
       var descriptor = xref.fetch(fd);
       var fontName = xref.fetchIfRef(descriptor.get('FontName'));
       assertWellFormed(IsName(fontName), 'invalid font name');
-      fontName = fontName.name.replace(/[\+,\-]/g, '_');
+      fontName = fontName.name;
 
       var fontFile = descriptor.get('FontFile', 'FontFile2', 'FontFile3');
       var length1, length2;
@@ -4803,11 +4803,8 @@ var CanvasGraphics = (function() {
       if (!font)
         return;
 
-      var name = '';
       var fontObj = font.fontObj;
-      if (fontObj)
-        name = fontObj.loadedName;
-
+      var name = fontObj.loadedName;
       if (!name) {
         // TODO: fontDescriptor is not available, fallback to default font
         name = 'sans-serif';
@@ -4827,7 +4824,9 @@ var CanvasGraphics = (function() {
                                    (fontObj.bold ? 'bold' : 'normal');
 
         var italic = fontObj.italic ? 'italic' : 'normal';
-        var rule = italic + ' ' + bold + ' ' + size + 'px "' + name + '", "sans-serif"';
+        var serif = fontObj.serif ? 'serif' : 'sans-serif';
+        var typeface = '"' + name + '", ' + serif
+        var rule = italic + ' ' + bold + ' ' + size + 'px ' + typeface;
         this.ctx.font = rule;
       }
     },
