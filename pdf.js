@@ -3358,18 +3358,48 @@ var Page = (function() {
     },
 
     startRendering: function(canvasCtx, continuation) {
+      var gfx = new CanvasGraphics(canvasCtx);
+
+      // If there is already some code to render, then use it directly.
+      if (this.code) {
+        this.display(gfx);
+        return;
+      }
+      
       var self = this;
       var stats = self.stats;
       stats.compile = stats.fonts = stats.render = 0;
-
-      var gfx = new CanvasGraphics(canvasCtx);
+      
       var fonts = [];
       var images = new ImagesLoader();
 
-      this.compile(gfx, fonts, images);
+      var preCompilation = this.preCompile(gfx, fonts, images);
       stats.compile = Date.now();
+      
+      // Make a copy of the necessary datat to build a font later. The `font`
+      // object will be sent to the main thread later on.
+      var fontsBackup = fonts;
+      fonts = [];
+      for (var i = 0; i < fontsBackup.length; i++) {
+        var orgFont = fontsBackup[i];
+      
+        var font = {
+          name:       orgFont.name,
+          file:       orgFont.file,
+          properties: orgFont.properties
+        }
+        fonts.push(font);
+      }
 
+      this.startRenderingFromPreCompilation(gfx, preCompilation, fonts, images, continuation);
+    },
+    
+    startRenderingFromPreCompilation: function(gfx, preCompilation, fonts, images, continuation) {
+      var self = this;
+      
       var displayContinuation = function() {
+        self.code = gfx.postCompile(preCompilation);
+        
         // Always defer call to display() to work around bug in
         // Firefox error reporting from XHR callbacks.
         setTimeout(function() {
@@ -3384,22 +3414,6 @@ var Page = (function() {
         });
       };
       
-      // Make a copy of the necessary datat to build a font later. The `font`
-      // object will be sent to the main thread later on.
-      var fontsBackup = fonts;
-      fonts = [];
-      for (var i = 0; i < fontsBackup.length; i++) {
-        var orgFont = fontsBackup[i];
-        var orgFontObj = orgFont.fontObj;
-      
-        var font = {
-          name:       orgFont.name,
-          file:       orgFont.file,
-          properties: orgFont.properties
-        }
-        fonts.push(font);
-      }
-
       this.ensureFonts(fonts, function() {
         images.notifyOnLoad(function() {
           stats.images = Date.now();
@@ -3424,12 +3438,8 @@ var Page = (function() {
           content[i] = xref.fetchIfRef(content[i]);
         content = new StreamsSequenceStream(content);
       }
-      return gfx.preCompile(content, xref, resources, fonts, images);
-    },
-
-    compile: function(gfx, fonts, images) {
-      var preCompilation = this.preCompile(gfx, fonts, images);
-      this.code = gfx.postCompile(preCompilation);
+      return gfx.preCompile(content, xref, resources, fonts, images, 
+                this.pageNumber + "_");
     },
     
     ensureFonts: function(fonts, callback) {

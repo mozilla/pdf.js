@@ -25,8 +25,21 @@ var WorkerPage = (function() {
     },
     
     startRendering: function(ctx, callback, errback)  {
+      this.ctx = ctx;
+      this.callback = callback;
       // TODO: Place the worker magic HERE.
-      this.page.startRendering(ctx, callback, errback);
+      // this.page.startRendering(ctx, callback, errback);
+      
+      this.workerPDF.startRendering(this)
+    },
+    
+    startRenderingFromPreCompilation: function(preCompilation, fonts, images) {
+      var gfx = new CanvasGraphics(this.ctx);
+      
+      // TODO: Add proper handling for images loaded by the worker.
+      var images = new ImagesLoader();
+      
+      this.page.startRenderingFromPreCompilation(gfx, preCompilation, fonts, images, this.callback);
     },
     
     getLinks: function() {
@@ -46,11 +59,28 @@ var WorkerPDFDoc = (function() {
     this.catalog = this.pdf.catalog;
     
     this.pageCache = [];
+    
+    this.worker = new Worker("worker/boot.js");
+    this.handler = new MessageHandler({
+      "page": function(data) {
+        var pageNum = data.pageNum;
+        var page = this.pageCache[pageNum];
+        
+        page.startRenderingFromPreCompilation(data.preCompilation, data.fonts, data.images);
+      }
+    }, this.worker.postMessage, this);
+    this.worker.onmessage = this.handler.onMessage;
+    
+    this.handler.send("doc", data);
   }
 
   constructor.prototype = {
     get numPages() {
       return this.pdf.numPages;
+    },
+    
+    startRendering: function(page) {
+      this.handler.send("page", page.page.pageNumber);
     },
     
     getPage: function(n) {
