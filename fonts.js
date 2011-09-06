@@ -1661,7 +1661,7 @@ var Type1Parser = function() {
         i += length;
         token = '';
       } else if (isSeparator(c)) {
-        length = parseInt(token);
+        length = parseInt(token, 10);
         token = '';
       } else {
         token += c;
@@ -1672,16 +1672,16 @@ var Type1Parser = function() {
               break;
             case '/Subrs':
               ++i;
-              var num = parseInt(getToken());
+              var num = parseInt(getToken(), 10);
               getToken(); // read in 'array'
               for (var j = 0; j < num; ++j) {
                 var t = getToken(); // read in 'dup'
                 if (t == 'ND' || t == '|-' || t == 'noaccess') 
                   break;
-                var index = parseInt(getToken());
+                var index = parseInt(getToken(), 10);
                 if (index > j)
                   j = index;
-                var length = parseInt(getToken());
+                var length = parseInt(getToken(), 10);
                 getToken(); // read in 'RD'
                 var data = eexec.slice(i + 1, i + 1 + length);
                 var lenIV = program.properties.private['lenIV'];
@@ -1767,13 +1767,13 @@ var Type1Parser = function() {
             properties.textMatrix = matrix;
             break;
           case '/Encoding':
-            var size = parseInt(getToken());
+            var size = parseInt(getToken(), 10);
             getToken(); // read in 'array'
 
             for (var j = 0; j < size; j++) {
               var token = getToken();
               if (token == 'dup') {
-                var index = parseInt(getToken());
+                var index = parseInt(getToken(), 10);
                 var glyph = getToken();
               
                 if ('undefined' == typeof(properties.differences[index])) {
