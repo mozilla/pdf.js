@@ -52,7 +52,7 @@ var handler = new MessageHandler("worker", {
     
     console.log("about to send page", pageNum);
    
-    if (false /* show used commands */) {
+    if (true /* show used commands */) {
       // Make a copy of the fnArray and show all cmds it has.
       var fnArray = preCompilation.fnArray.slice(0).sort();
       for (var i = 0; i < fnArray.length; true) {

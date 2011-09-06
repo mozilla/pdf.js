@@ -4169,6 +4169,7 @@ var PartialEvaluator = (function() {
       var patterns = xref.fetchIfRef(resources.get('Pattern')) || new Dict();
       var parser = new Parser(new Lexer(stream), false);
       var args = [], argsArray = [], fnArray = [], obj;
+      var res = resources;
 
       while (!IsEOF(obj = parser.getObj())) {
         if (IsCmd(obj)) {
@@ -4288,7 +4289,12 @@ var PartialEvaluator = (function() {
           case "setStrokeColorSpace":
             args = [ ColorSpace.parseRaw(args[0], xref, resources) ];
             break;
+          case "shadingFill":
+
+            break;
           }
+
+          
 
           var skips = [];
           //var skips = ["setFillColorSpace", "setFillColor", "setStrokeColorSpace", "setStrokeColor"];
