@@ -4251,12 +4251,33 @@ var PartialEvaluator = (function() {
               );
 
               if ('Form' == type.name) {
-                args[0].code = this.evaluate(xobj, xref,
-                                             xobj.dict.get('Resources'), fonts,
-                                             images);
+                // console.log("got xobj that is a Form");
+                args[0].code = this.eval(xobj, xref, xobj.dict.get('Resources'),
+                                         fonts, images);
               }
-              if (xobj instanceof JpegStream)
+              if (xobj instanceof JpegStream) {
                 images.bind(xobj); // monitoring image load
+                // console.log("got xobj that is a JpegStream");
+              }
+              
+              if (xobj.dict.get('Subtype').name == "Image") {
+                // Check if we have an image that is not rendered by the platform.
+                // Needs to be rendered ourself.
+                if (!(xobj instanceof JpegStream)) {
+                  var image = xobj;
+                  var dict = image.dict;
+                  var w = dict.get('Width', 'W');
+                  var h = dict.get('Height', 'H');
+                  
+                  var inline = false;
+                  
+                  var imageObj = new PDFImage(xref, resources, image, inline);
+                  
+                  console.log("xobj subtype image", w, h, imageObj.imageMask);
+                }
+              }
+              console.log("xobj subtype", xobj.dict.get('Subtype').name);
+
             }
           } else if (cmd == 'Tf') { // eagerly collect all fonts
             var fontName = args[0].name;
@@ -4283,6 +4304,14 @@ var PartialEvaluator = (function() {
               // TODO: TOASK: Is it possible to get here? If so, what does
               // args[0].name should be like???
             }
+          }
+
+          var skips = ["paintXObject"];
+
+          if (skips.indexOf(fn) != -1) {
+            // console.log("skipping", fn);
+            args = [];
+            continue;
           }
 
           fnArray.push(fn);
