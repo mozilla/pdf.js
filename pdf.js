@@ -4228,6 +4228,21 @@ var PartialEvaluator = (function() {
                   var inline = false;
                   
                   var imageObj = new PDFImage(xref, resources, image, inline);
+
+                  if (imageObj.imageMask) {
+                    throw "Can't handle this in the web worker :/";
+                  }
+                  
+                  var imgData = {
+                    width: w,
+                    height: h,
+                    data: new Uint8Array(w * h * 4)
+                  };
+                  var pixels = imgData.data;
+                  imageObj.fillRgbaBuffer(pixels, imageObj.decode);
+                  
+                  fn = "paintReadyImageXObject";
+                  args = [ imgData ];
                   
                   console.log("xobj subtype image", w, h, imageObj.imageMask);
                 }
@@ -4262,13 +4277,13 @@ var PartialEvaluator = (function() {
             }
           }
 
-          var skips = ["paintXObject"];
-
-          if (skips.indexOf(fn) != -1) {
-            // console.log("skipping", fn);
-            args = [];
-            continue;
-          }
+          // var skips = ["paintXObject"];
+          // 
+          // if (skips.indexOf(fn) != -1) {
+          //   // console.log("skipping", fn);
+          //   args = [];
+          //   continue;
+          // }
 
           fnArray.push(fn);
           argsArray.push(args);
@@ -5313,6 +5328,31 @@ var CanvasGraphics = (function() {
         imageObj.fillRgbaBuffer(pixels, imageObj.decode);
 
       tmpCtx.putImageData(imgData, 0, 0);
+      ctx.drawImage(tmpCanvas, 0, -h);
+      this.restore();
+    },
+    
+    paintReadyImageXObject: function(imgData) {
+      this.save();
+
+      var ctx = this.ctx;
+      var w = imgData.width;
+      var h = imgData.height;
+      // scale the image to the unit square
+      ctx.scale(1 / w, -1 / h);
+
+
+      var tmpCanvas = new this.ScratchCanvas(w, h);
+      var tmpCtx = tmpCanvas.getContext('2d');
+      var tmpImgData = tmpCtx.getImageData(0, 0, w, h);
+
+      // Copy over the imageData.
+      var tmpImgDataPixels = tmpImgData.data;
+      var len = tmpImgDataPixels.length;
+      while (len--) 
+        tmpImgDataPixels[len] = imgData.data[len];
+
+      tmpCtx.putImageData(tmpImgData, 0, 0);
       ctx.drawImage(tmpCanvas, 0, -h);
       this.restore();
     },
