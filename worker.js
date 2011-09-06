@@ -60,16 +60,29 @@ var WorkerPDFDoc = (function() {
     
     this.pageCache = [];
     
-    this.worker = new Worker("worker/boot.js");
-    this.handler = new MessageHandler({
+    this.worker = new Worker("../worker/boot.js");
+    this.handler = new MessageHandler("main", {
       "page": function(data) {
         var pageNum = data.pageNum;
         var page = this.pageCache[pageNum];
         
+        // Add necessary shape back to fonts.
+        var fonts = data.fonts;
+        for (var i = 0; i < fonts.length; i++) {
+          var font = fonts[i];
+          
+          var fontFileDict = new Dict();
+          fontFileDict.map = font.file.dict.map;
+
+          var fontFile = new Stream(font.file.bytes, font.file.start,
+                                    font.file.end - font.file.start, fontFileDict);
+          font.file = new FlateStream(fontFile);
+        }
+        
+        console.log("startRenderingFromPreCompilation:", "numberOfFonts", fonts.length);
         page.startRenderingFromPreCompilation(data.preCompilation, data.fonts, data.images);
       }
-    }, this.worker.postMessage, this);
-    this.worker.onmessage = this.handler.onMessage;
+    }, this.worker, this);
     
     this.handler.send("doc", data);
   }
@@ -80,7 +93,7 @@ var WorkerPDFDoc = (function() {
     },
     
     startRendering: function(page) {
-      this.handler.send("page", page.page.pageNumber);
+      this.handler.send("page", page.page.pageNumber + 1);
     },
     
     getPage: function(n) {

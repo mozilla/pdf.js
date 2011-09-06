@@ -4,8 +4,18 @@
 'use strict';
 
 
-function MessageHandler(actionHandler, postMessage, scope) {
-  this.onMessage = function(event) {
+function MessageHandler(name, actionHandler, comObj, scope) {
+  this.name = name;
+  
+  actionHandler["console_log"] = function(data) {
+      console.log.apply(console, data);
+  }
+  actionHandler["console_error"] = function(data) {
+      console.error.apply(console, data);
+  }
+
+  
+  comObj.onmessage = function(event) {
     var data = event.data;
     if (data.action in actionHandler) {
       actionHandler[data.action].call(scope, data.data);
@@ -15,9 +25,14 @@ function MessageHandler(actionHandler, postMessage, scope) {
   };
   
   this.send = function(actionName, data) {
-    postMessage({
-      action: actionName,
-      data:   data
-    });
+    try {
+      comObj.postMessage({
+        action: actionName,
+        data:   data
+      });      
+    } catch (e) {
+      console.error("FAILED to send data from", this.name);
+      throw e;
+    }
   }
 }

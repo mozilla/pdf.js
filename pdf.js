@@ -3406,7 +3406,7 @@ var Page = (function() {
           var exc = null;
           // try {
             self.display(gfx);
-            stats.render = Date.now();
+            self.stats.render = Date.now();
           // } catch (e) {
           //   exc = e.toString();
           // }
@@ -3416,7 +3416,7 @@ var Page = (function() {
       
       this.ensureFonts(fonts, function() {
         images.notifyOnLoad(function() {
-          stats.images = Date.now();
+          self.stats.images = Date.now();
           displayContinuation();
         });
       })
@@ -4294,10 +4294,6 @@ var PartialEvaluator = (function() {
         }
       }
 
-      // Expose arrays for debugging purpose.
-      window.fnArray = fnArray;
-      window.argsArray = argsArray;
-
       return {
         fnArray: fnArray,
         argsArray: argsArray
@@ -4791,6 +4787,9 @@ var CanvasGraphics = (function() {
     },
     
     postCompile: function(raw) {
+      if (!this.pe) {
+        this.pe = new PartialEvaluator();
+      }
       return this.pe.evalFromRaw(raw);
     },
 
