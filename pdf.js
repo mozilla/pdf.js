@@ -4191,21 +4191,22 @@ var PartialEvaluator = (function() {
                 var dict = IsStream(pattern) ? pattern.dict : pattern;
                 var typeNum = dict.get('PatternType');
 
-                // Type1 is TilingPattern, Type2 is ShadingPattern.
+                // Type1 is TilingPattern
                 if (typeNum == 1) {
                   // Create an IR of the pattern code.
                   var codeIR = this.evalRaw(pattern, xref,
                                     dict.get('Resources'), fonts);
                   
                   args = TilingPattern.getIR(codeIR, dict);
-
-                  //patternName.code = this.evalRaw(pattern, xref,
-                  //    dict.get('Resources'), fonts);
-                } else {
+                } 
+                // Type2 is ShadingPattern.
+                else if (typeNum == 2) {
                   var shading = xref.fetchIfRef(dict.get('Shading'));
                   var matrix = dict.get('Matrix');
                   var pattern = Pattern.parseShading(shading, matrix, xref, res, null /*ctx*/);
                   args = pattern.getPatternRaw();
+                } else {
+                  error("Unkown PatternType " + typeNum);
                 }
               }
             }
@@ -5191,7 +5192,7 @@ var CanvasGraphics = (function() {
         this.setStrokeColor.apply(this, arguments);
       }
     },
-    getColorN_IR_Pattern: function(IR) {
+    getColorN_IR_Pattern: function(IR, cs) {
       if (IR[0] == "TilingPatternIR") {
         // First, build the `color` var like it's done in the
         // Pattern.prototype.parse function.
@@ -5220,7 +5221,7 @@ var CanvasGraphics = (function() {
       var cs = this.current.strokeColorSpace;
 
       if (cs.name == 'Pattern') {
-        this.current.strokeColor = this.getColorN_IR_Pattern(arguments);
+        this.current.strokeColor = this.getColorN_IR_Pattern(arguments, cs);
       } else {
         this.setStrokeColor.apply(this, arguments);
       }
@@ -5247,7 +5248,7 @@ var CanvasGraphics = (function() {
       var cs = this.current.fillColorSpace;
 
       if (cs.name == 'Pattern') {
-        this.current.fillColor = this.getColorN_IR_Pattern(arguments);
+        this.current.fillColor = this.getColorN_IR_Pattern(arguments, cs);
       } else {
         this.setFillColor.apply(this, arguments);
       }
