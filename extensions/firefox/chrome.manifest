@@ -1,0 +1,5 @@
+content pdf.js content/
+
+component {2278dfd0-b75c-11e0-8257-1ba3d93c9f1a} components/pdfContentHandler.js
+contract @mozilla.org/uriloader/content-handler;1?type=application/pdf {2278dfd0-b75c-11e0-8257-1ba3d93c9f1a}
+

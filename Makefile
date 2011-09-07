@@ -146,6 +146,32 @@ $(BUILD_DIR)/compiler.zip: | $(BUILD_DIR)
 	curl $(COMPILER_URL) > $(BUILD_DIR)/compiler.zip;
 	cd $(BUILD_DIR); unzip compiler.zip compiler.jar;
 
+# make firefox-extension
+#
+# This target produce a restartless firefox extension containing a
+# copy of the pdf.js source.
+CONTENT_DIR := content
+EXTENSION_SRC := ./extensions/firefox
+EXTENSION_NAME := pdf.js.xpi
+PDF_WEB_FILES = \
+	web/images \
+	web/compatibility.js \
+	web/viewer.css \
+	web/viewer.js \
+	web/viewer.html \
+	$(NULL)
+extension:
+	# Copy a standalone version of pdf.js inside the content directory
+	@rm -Rf $(EXTENSION_SRC)/$(CONTENT_DIR)/
+	@mkdir $(EXTENSION_SRC)/$(CONTENT_DIR)/
+	@cp $(PDF_JS_FILES) $(EXTENSION_SRC)/$(CONTENT_DIR)/ 
+	@cp -r $(PDF_WEB_FILES) $(EXTENSION_SRC)/$(CONTENT_DIR)/ 
+
+	# Create the xpi
+	@cd $(EXTENSION_SRC); zip -r $(EXTENSION_NAME) *
+	@echo "extension created: " $(EXTENSION_NAME)
+
+
 # Make sure there's a build directory.
 $(BUILD_DIR):
 	mkdir -p $(BUILD_DIR)
