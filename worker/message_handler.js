@@ -4,29 +4,41 @@
 'use strict';
 
 
-function MessageHandler(name, actionHandler, comObj, scope) {
+function MessageHandler(name, comObj) {
   this.name = name;
+  this.comObj = comObj;
+  var ah = this.actionHandler = {};
   
-  actionHandler["console_log"] = function(data) {
+  ah["console_log"] = [function(data) {
       console.log.apply(console, data);
-  }
-  actionHandler["console_error"] = function(data) {
+  }]
+  ah["console_error"] = [function(data) {
       console.error.apply(console, data);
-  }
-
+  }]
   
   comObj.onmessage = function(event) {
     var data = event.data;
-    if (data.action in actionHandler) {
-      actionHandler[data.action].call(scope, data.data);
+    if (data.action in ah) {
+      var action = ah[data.action];
+      action[0].call(action[1], data.data);
     } else {
       throw 'Unkown action from worker: ' + data.action;
     }
   };
-  
-  this.send = function(actionName, data) {
+}
+
+MessageHandler.prototype = {
+  on: function(actionName, handler, scope) {
+    var ah = this.actionHandler;
+    if (ah[actionName]) {
+      throw "There is already an actionName called '" + actionName + "'";
+    }
+    ah[actionName] = [handler, scope];
+  },
+
+  send: function(actionName, data) {
     try {
-      comObj.postMessage({
+      this.comObj.postMessage({
         action: actionName,
         data:   data
       });      
@@ -35,4 +47,6 @@ function MessageHandler(name, actionHandler, comObj, scope) {
       throw e;
     }
   }
+  
 }
+

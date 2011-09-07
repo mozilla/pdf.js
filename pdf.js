@@ -5716,6 +5716,7 @@ var ColorSpace = (function() {
           return "DeviceCmykCS";
         break;
       case 'Pattern':
+        console.log("ColorSpace Pattern");
         // TODO: IMPLEMENT ME
 
         // var baseCS = cs[1];
