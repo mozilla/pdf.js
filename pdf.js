@@ -4187,9 +4187,18 @@ var PartialEvaluator = (function() {
               if (pattern) {
                 var dict = IsStream(pattern) ? pattern.dict : pattern;
                 var typeNum = dict.get('PatternType');
+
+                // Type1 is TilingPattern, Type2 is ShadingPattern.
                 if (typeNum == 1) {
-                  patternName.code = this.eval(pattern, xref,
-                      dict.get('Resources'), fonts);
+                  // Create an IR of the pattern code.
+                  var codeIR = this.evalRaw(pattern, xref,
+                                    dict.get('Resources'), fonts);
+                  
+                  fn = "setFillColorN_IR";
+                  args = TilingPattern.getIR(codeIR, dict);
+
+                  //patternName.code = this.evalRaw(pattern, xref,
+                  //    dict.get('Resources'), fonts);
                 }
               }
             }
@@ -4791,6 +4800,13 @@ var CanvasGraphics = (function() {
       this.xref = savedXref;
     },
 
+    executeIR: function(codeIR) {
+      var argsArray = codeIR.argsArray;
+      var fnArray =   codeIR.fnArray;
+      for (var i = 0, length = argsArray.length; i < length; i++)
+        this[fnArray[i]].apply(this, argsArray[i]);
+    },
+
     endDrawing: function() {
       this.ctx.restore();
     },
@@ -5180,6 +5196,36 @@ var CanvasGraphics = (function() {
         // wait until fill to actually get the pattern
         var pattern = Pattern.parse(arguments, cs, this.xref, this.res,
                                     this.ctx);
+        this.current.fillColor = pattern;
+      } else {
+        this.setFillColor.apply(this, arguments);
+      }
+    },
+    setFillColorN_IR: function(/*...*/) {
+      var cs = this.current.fillColorSpace;
+
+      if (cs.name == 'Pattern') {
+        var IR = arguments;
+        if (IR[0] == "TilingPatternIR") {
+          // First, build the `color` var like it's done in the
+          // Pattern.prototype.parse function.
+          var base = cs.base;
+          var color;
+          if (base) {
+            var baseComps = base.numComps;
+
+            color = [];
+            for (var i = 0; i < baseComps; ++i)
+              color.push(args[i]);
+
+            color = base.getRgb(color);
+          }
+
+          // Build the pattern based on the IR data.
+          var pattern = new TilingPatternIR(IR, color, this.ctx);
+        } else {
+          throw "Unkown IR type";
+        }
         this.current.fillColor = pattern;
       } else {
         this.setFillColor.apply(this, arguments);
@@ -6246,20 +6292,119 @@ var RadialAxialShading = (function() {
   return constructor;
 })();
 
+var TilingPatternIR = (function() {
+  var PAINT_TYPE_COLORED = 1, PAINT_TYPE_UNCOLORED = 2;
+
+  function TilingPatternIR(IR, color, ctx) {
+    // "Unfolding" the IR.
+    var codeIR = IR[1];
+    this.matrix = IR[2];
+    var bbox = IR[3];
+    var xstep = IR[4];
+    var ystep = IR[5];
+    var paintType = IR[6];
+
+    // 
+    TODO('TilingType');
+
+    this.curMatrix = ctx.mozCurrentTransform;
+    this.invMatrix = ctx.mozCurrentTransformInverse;
+    this.ctx = ctx;
+    this.type = 'Pattern';
+
+    var x0 = bbox[0], y0 = bbox[1], x1 = bbox[2], y1 = bbox[3];
+    var topLeft = [x0, y0];
+    // we want the canvas to be as large as the step size
+    var botRight = [x0 + xstep, y0 + ystep];
+
+    var width = botRight[0] - topLeft[0];
+    var height = botRight[1] - topLeft[1];
+
+    // TODO: hack to avoid OOM, we would idealy compute the tiling
+    // pattern to be only as large as the acual size in device space
+    // This could be computed with .mozCurrentTransform, but still
+    // needs to be implemented
+    while (Math.abs(width) > 512 || Math.abs(height) > 512) {
+      width = 512;
+      height = 512;
+    }
+
+    var tmpCanvas = new ScratchCanvas(width, height);
+
+    // set the new canvas element context as the graphics context
+    var tmpCtx = tmpCanvas.getContext('2d');
+    var graphics = new CanvasGraphics(tmpCtx);
+
+    switch (paintType) {
+    case PAINT_TYPE_COLORED:
+      tmpCtx.fillStyle = ctx.fillStyle;
+      tmpCtx.strokeStyle = ctx.strokeStyle;
+      break;
+    case PAINT_TYPE_UNCOLORED:
+      color = Util.makeCssRgb.apply(this, color);
+      tmpCtx.fillStyle = color;
+      tmpCtx.strokeStyle = color;
+      break;
+    default:
+      error('Unsupported paint type: ' + paintType);
+    }
+
+    var scale = [width / xstep, height / ystep];
+    this.scale = scale;
+
+    // transform coordinates to pattern space
+    var tmpTranslate = [1, 0, 0, 1, -topLeft[0], -topLeft[1]];
+    var tmpScale = [scale[0], 0, 0, scale[1], 0, 0];
+    graphics.transform.apply(graphics, tmpScale);
+    graphics.transform.apply(graphics, tmpTranslate);
+
+    if (bbox && IsArray(bbox) && 4 == bbox.length) {
+      graphics.rectangle.apply(graphics, bbox);
+      graphics.clip();
+      graphics.endPath();
+    }
+
+    graphics.executeIR(codeIR);
+
+    this.canvas = tmpCanvas;
+  }
+
+  TilingPatternIR.prototype = {
+    getPattern: function tiling_getPattern() {
+      var matrix = this.matrix;
+      var curMatrix = this.curMatrix;
+      var ctx = this.ctx;
+
+      if (curMatrix)
+        ctx.setTransform.apply(ctx, curMatrix);
+
+      if (matrix)
+        ctx.transform.apply(ctx, matrix);
+
+      var scale = this.scale;
+      ctx.scale(1 / scale[0], 1 / scale[1]);
+
+      return ctx.createPattern(this.canvas, 'repeat');
+    }
+  }
+
+  return TilingPatternIR;
+})();
+
 var TilingPattern = (function() {
   var PAINT_TYPE_COLORED = 1, PAINT_TYPE_UNCOLORED = 2;
 
-  function constructor(pattern, code, dict, color, xref, ctx) {
-      function multiply(m, tm) {
-        var a = m[0] * tm[0] + m[1] * tm[2];
-        var b = m[0] * tm[1] + m[1] * tm[3];
-        var c = m[2] * tm[0] + m[3] * tm[2];
-        var d = m[2] * tm[1] + m[3] * tm[3];
-        var e = m[4] * tm[0] + m[5] * tm[2] + tm[4];
-        var f = m[4] * tm[1] + m[5] * tm[3] + tm[5];
-        return [a, b, c, d, e, f];
-      }
+  constructor.getIR = function(codeIR, dict) {
+    var matrix = dict.get('Matrix');
+    var bbox = dict.get('BBox');
+    var xstep = dict.get('XStep');
+    var ystep = dict.get('YStep');
+    var paintType = dict.get('PaintType');
+    
+    return ["TilingPatternIR", codeIR, matrix, bbox, xstep, ystep, paintType];
+  }
 
+  function constructor(pattern, code, dict, color, xref, ctx) {
       TODO('TilingType');
 
       this.matrix = dict.get('Matrix');
