@@ -592,8 +592,8 @@ var FlateStream = (function() {
       var numCodeLenCodes = this.getBits(4) + 4;
 
       // build the code lengths code table
-      var codeLenCodeLengths = [];
-      
+      var codeLenCodeLengths = new Uint8Array(codeLenCodeMap.length);
+
       for (var i = 0; i < numCodeLenCodes; ++i)
         codeLenCodeLengths[codeLenCodeMap[i]] = this.getBits(3);
       var codeLenCodeTab = this.generateHuffmanTable(codeLenCodeLengths);
@@ -602,7 +602,7 @@ var FlateStream = (function() {
       var len = 0;
       var i = 0;
       var codes = numLitCodes + numDistCodes;
-      var codeLengths = [];
+      var codeLengths = new Uint8Array(codes);
       while (i < codes) {
         var code = this.getCode(codeLenCodeTab);
         if (code == 16) {
@@ -617,9 +617,9 @@ var FlateStream = (function() {
       }
 
       litCodeTable =
-        this.generateHuffmanTable(codeLengths.slice(0, numLitCodes));
+        this.generateHuffmanTable(codeLengths.subarray(0, numLitCodes));
       distCodeTable =
-        this.generateHuffmanTable(codeLengths.slice(numLitCodes, codes));
+        this.generateHuffmanTable(codeLengths.subarray(numLitCodes, codes));
     } else {
       error('Unknown block type in flate stream');
     }
@@ -4825,7 +4825,7 @@ var CanvasGraphics = (function() {
 
         var italic = fontObj.italic ? 'italic' : 'normal';
         var serif = fontObj.serif ? 'serif' : 'sans-serif';
-        var typeface = '"' + name + '", ' + serif
+        var typeface = '"' + name + '", ' + serif;
         var rule = italic + ' ' + bold + ' ' + size + 'px ' + typeface;
         this.ctx.font = rule;
       }
