@@ -3339,7 +3339,7 @@ var Page = (function() {
         });
 
       for (var i = 0, ii = fonts.length; i < ii; ++i)
-        fonts[i].fontDict.fontObj = fontObjs[i];
+        fonts[i].dict.fontObj = fontObjs[i];
     },
 
 
@@ -4180,59 +4180,30 @@ var PartialEvaluator = (function() {
       };
     },
 
-    translateFont: function(fontDict, xref, resources) {
-      var fd;
-      var descendant = [];
-      var subType = fontDict.get('Subtype');
-      var compositeFont = false;
-      assertWellFormed(IsName(subType), 'invalid font Subtype');
-
-      // If font is a composite
-      //  - get the descendant font
-      //  - set the type according to the descendant font
-      //  - get the FontDescriptor from the descendant font
-      if (subType.name == 'Type0') {
-        var df = fontDict.get('DescendantFonts');
-        if (!df)
-          return null;
-        compositeFont = true;
-
-        if (IsRef(df)) {
-          df = xref.fetch(df);
-        }
-
-        descendant = xref.fetch(IsRef(df) ? df : df[0]);
-        subType = descendant.get('Subtype');
-        fd = descendant.get('FontDescriptor');
-      } else {
-        fd = fontDict.get('FontDescriptor');
-      }
-
-      var builtInEncoding = false;
-      var encodingMap = {};
-      if (compositeFont) {
-        // Special CIDFont support
+    extractEncoding: function(dict, xref, properties) {
+      var type = properties.type;
+      if (properties.composite) {
         // XXX only CIDFontType2 supported for now
-        if (subType.name == 'CIDFontType2') {
-          var cidToGidMap = descendant.get('CIDToGIDMap');
-          if (cidToGidMap && IsRef(cidToGidMap)) {
-            // Extract the encoding from the CIDToGIDMap
-            var glyphsStream = xref.fetchIfRef(cidToGidMap);
-            var glyphsData = glyphsStream.getBytes(0);
-            // Glyph ids are big-endian 2-byte values
-            // Set this to 0 to verify the font has an encoding.
-            encodingMap[0] = 0;
-            for (var j = 0; j < glyphsData.length; j++) {
-              var glyphID = (glyphsData[j++] << 8) | glyphsData[j];
-              if (glyphID != 0)
-                encodingMap[j >> 1] = glyphID;
-            }
+        if (type == 'CIDFontType2') {
+          var cidToGidMap = dict.get('CIDToGIDMap');
+          if (!cidToGidMap || !IsRef(cidToGidMap))
+            return GlyphsUnicode;
+
+          // Extract the encoding from the CIDToGIDMap
+          var glyphsStream = xref.fetchIfRef(cidToGidMap);
+          var glyphsData = glyphsStream.getBytes(0);
+
+          // Glyph ids are big-endian 2-byte values
+          // Set this to 0 to verify the font has an encoding.
+          var encoding = properties.encoding;
+          encoding[0] = 0;
+          for (var j = 0; j < glyphsData.length; j++) {
+            var glyphID = (glyphsData[j++] << 8) | glyphsData[j];
+            if (glyphID != 0)
+              encoding[j >> 1] = glyphID;
           }
-        }
-        else {
-          // XXX This is a placeholder for handling of the encoding of
-          // CIDFontType0 fonts
-          var encoding = xref.fetchIfRef(fontDict.get('Encoding'));
+        } else if (type == 'CIDFontType0') {
+          var encoding = xref.fetchIfRef(dict.get('Encoding'));
           if (IsName(encoding)) {
             // Encoding is a predefined CMap
             if (encoding.name == 'Identity-H') {
@@ -4246,227 +4217,254 @@ var PartialEvaluator = (function() {
                  '9.7.5.3');
           }
         }
-      } else {
-        var baseEncoding = null, diffEncoding = [];
-        if (fontDict.has('Encoding')) {
-          var encoding = xref.fetchIfRef(fontDict.get('Encoding'));
-          if (IsDict(encoding)) {
-            var baseName = encoding.get('BaseEncoding');
-            if (baseName)
-              baseEncoding = Encodings[baseName.name].slice();
+        return GlyphsUnicode;
+      }
 
-            // Load the differences between the base and original
-            var differences = encoding.get('Differences');
-            var index = 0;
-            for (var j = 0; j < differences.length; j++) {
-              var data = differences[j];
-              if (IsNum(data))
-                index = data;
-              else
-                diffEncoding[index++] = data.name;
-            }
-          } else if (IsName(encoding)) {
-            baseEncoding = Encodings[encoding.name].slice();
-          } else {
-            error('Encoding is not a Name nor a Dict');
+      var differences = properties.differences;
+      var map = properties.encoding;
+      var baseEncoding = null;
+      if (dict.has('Encoding')) {
+        var encoding = xref.fetchIfRef(dict.get('Encoding'));
+        if (IsDict(encoding)) {
+          var baseName = encoding.get('BaseEncoding');
+          if (baseName)
+            baseEncoding = Encodings[baseName.name].slice();
+
+          // Load the differences between the base and original
+          var diffEncoding = encoding.get('Differences');
+          var index = 0;
+          for (var j = 0; j < diffEncoding.length; j++) {
+            var data = diffEncoding[j];
+            if (IsNum(data))
+              index = data;
+            else
+              differences[index++] = data.name;
           }
+        } else if (IsName(encoding)) {
+          baseEncoding = Encodings[encoding.name].slice();
+        } else {
+          error('Encoding is not a Name nor a Dict');
         }
+      }
 
-        var fontType = subType.name;
-        if (!baseEncoding) {
-          switch (fontType) {
-            case 'TrueType':
-              baseEncoding = Encodings.WinAnsiEncoding.slice();
-              break;
-            case 'Type1':
-              baseEncoding = Encodings.StandardEncoding.slice();
-              break;
-            default:
-              warn('Unknown type of font: ' + fontType);
-              break;
-          }
+      if (!baseEncoding) {
+        switch (type) {
+          case 'TrueType':
+            baseEncoding = Encodings.WinAnsiEncoding.slice();
+            break;
+          case 'Type1':
+            baseEncoding = Encodings.StandardEncoding.slice();
+            break;
+          default:
+              warn('Unknown type of font: ' + type);
+            break;
         }
+      }
 
-        // firstChar and width are required
-        // (except for 14 standard fonts)
-        var firstChar = xref.fetchIfRef(fontDict.get('FirstChar')) || 0;
-        var widths = xref.fetchIfRef(fontDict.get('Widths')) || [];
+      // merge in the differences
+      var firstChar = properties.firstChar;
+      var lastChar = properties.lastChar;
+      var glyphs = {};
+      for (var i = firstChar; i <= lastChar; i++) {
+        var glyph = differences[i] || baseEncoding[i];
+        if (glyph) {
+          var index = GlyphsUnicode[glyph] || i;
+          glyphs[glyph] = map[i] = index;
 
-        var lastChar = xref.fetchIfRef(fontDict.get('LastChar'));
-        if (!lastChar)
-          lastChar = diffEncoding.length || baseEncoding.length;
+          // If there is no file, the character mapping can't be modified
+          // but this is unlikely that there is any standard encoding with
+          // chars below 0x1f, so that's fine.
+          if (!properties.file)
+            continue;
 
-        // merge in the differences
-        var glyphsMap = {};
-        for (var i = firstChar; i <= lastChar; i++) {
-          var glyph = diffEncoding[i] || baseEncoding[i];
-          if (glyph) {
-            var index = GlyphsUnicode[glyph] || i;
-            glyphsMap[glyph] = encodingMap[i] = index;
-
-            if (!fontFile)
-              continue;
-
-            if (index <= 0x1f || (index >= 127 && index <= 255))
-              glyphsMap[glyph] = encodingMap[i] += kCmapGlyphOffset;
-          }
+          if (index <= 0x1f || (index >= 127 && index <= 255))
+            glyphs[glyph] = map[i] += kCmapGlyphOffset;
         }
+      }
 
-        if (fontType == 'TrueType' && fontDict.has('ToUnicode') &&
-            differences) {
-          var cmapObj = xref.fetchIfRef(fontDict.get('ToUnicode'));
-          if (IsName(cmapObj)) {
-            error('ToUnicode file cmap translation not implemented');
-          } else if (IsStream(cmapObj)) {
-            var tokens = [];
-            var token = '';
-            var beginArrayToken = {};
+      if (type == 'TrueType' && dict.has('ToUnicode') && differences) {
+        var cmapObj = xref.fetchIfRef(dict.get('ToUnicode'));
+        if (IsName(cmapObj)) {
+          error('ToUnicode file cmap translation not implemented');
+        } else if (IsStream(cmapObj)) {
+          var tokens = [];
+          var token = '';
+          var beginArrayToken = {};
 
-            var cmap = cmapObj.getBytes(cmapObj.length);
-            for (var i = 0; i < cmap.length; i++) {
-              var byte = cmap[i];
-              if (byte == 0x20 || byte == 0x0D || byte == 0x0A ||
-                  byte == 0x3C || byte == 0x5B || byte == 0x5D) {
-                switch (token) {
-                  case 'usecmap':
-                    error('usecmap is not implemented');
-                    break;
+          var cmap = cmapObj.getBytes(cmapObj.length);
+          for (var i = 0; i < cmap.length; i++) {
+            var byte = cmap[i];
+            if (byte == 0x20 || byte == 0x0D || byte == 0x0A ||
+                byte == 0x3C || byte == 0x5B || byte == 0x5D) {
+              switch (token) {
+                case 'usecmap':
+                  error('usecmap is not implemented');
+                  break;
 
-                  case 'beginbfchar':
-                  case 'beginbfrange':
-                  case 'begincidchar':
-                  case 'begincidrange':
-                    token = '';
-                    tokens = [];
-                    break;
+                case 'beginbfchar':
+                case 'beginbfrange':
+                case 'begincidchar':
+                case 'begincidrange':
+                  token = '';
+                  tokens = [];
+                  break;
 
-                  case 'endcidrange':
-                  case 'endbfrange':
-                    for (var j = 0; j < tokens.length; j += 3) {
-                      var startRange = tokens[j];
-                      var endRange = tokens[j + 1];
-                      var code = tokens[j + 2];
-                      while (startRange < endRange) {
-                        encodingMap[startRange] = code++;
-                        ++startRange;
-                      }
+                case 'endcidrange':
+                case 'endbfrange':
+                  for (var j = 0; j < tokens.length; j += 3) {
+                    var startRange = tokens[j];
+                    var endRange = tokens[j + 1];
+                    var code = tokens[j + 2];
+                    while (startRange < endRange) {
+                      map[startRange] = code++;
+                      ++startRange;
                     }
-                    break;
+                  }
+                  break;
 
-                  case 'endcidchar':
-                  case 'endbfchar':
-                    for (var j = 0; j < tokens.length; j += 2) {
-                      var index = tokens[j];
-                      var code = tokens[j + 1];
-                      encodingMap[index] = code;
-                    }
-                    break;
+                case 'endcidchar':
+                case 'endbfchar':
+                  for (var j = 0; j < tokens.length; j += 2) {
+                    var index = tokens[j];
+                    var code = tokens[j + 1];
+                    map[index] = code;
+                  }
+                  break;
 
-                  case '':
-                    break;
+                case '':
+                  break;
 
-                  default:
-                    if (token[0] >= '0' && token[0] <= '9')
-                      token = parseInt(token, 10); // a number
-                    tokens.push(token);
-                    token = '';
-                    break;
-                }
-                switch (byte) {
-                  case 0x5B:
-                    // begin list parsing
-                    tokens.push(beginArrayToken);
-                    break;
-                  case 0x5D:
-                    // collect array items
-                    var items = [], item;
-                    while (tokens.length &&
-                      (item = tokens.pop()) != beginArrayToken)
+                default:
+                  if (token[0] >= '0' && token[0] <= '9')
+                    token = parseInt(token, 10); // a number
+                  tokens.push(token);
+                  token = '';
+                  break;
+              }
+              switch (byte) {
+                case 0x5B:
+                  // begin list parsing
+                  tokens.push(beginArrayToken);
+                  break;
+                case 0x5D:
+                  // collect array items
+                  var items = [], item;
+                  while (tokens.length &&
+                    (item = tokens.pop()) != beginArrayToken)
                       items.unshift(item);
                     tokens.push(items);
-                    break;
-                }
-              } else if (byte == 0x3E) {
-                if (token.length) {
-                  // parsing hex number
-                  tokens.push(parseInt(token, 16));
-                  token = '';
-                }
-              } else {
-                token += String.fromCharCode(byte);
+                  break;
               }
+            } else if (byte == 0x3E) {
+              if (token.length) {
+                // parsing hex number
+                tokens.push(parseInt(token, 16));
+                token = '';
+              }
+            } else {
+              token += String.fromCharCode(byte);
             }
           }
         }
       }
 
-      if (!fd) {
-        var baseFontName = fontDict.get('BaseFont');
+      return glyphs;
+    },
+
+    translateFont: function(dict, xref, resources) {
+      var subType = dict.get('Subtype');
+      assertWellFormed(IsName(subType), 'invalid font Subtype');
+
+      var composite = false
+      if (subType.name == 'Type0') {
+        // If font is a composite
+        //  - get the descendant font
+        //  - set the type according to the descendant font
+        //  - get the FontDescriptor from the descendant font
+        var df = dict.get('DescendantFonts');
+        if (!df)
+          return null;
+
+        if (IsRef(df))
+          df = xref.fetch(df);
+
+        dict = xref.fetch(IsRef(df) ? df : df[0]);
+
+        subType = dict.get('Subtype');
+        assertWellFormed(IsName(subType), 'invalid font Subtype');
+        composite = true;
+      }
+
+      // Before PDF 1.5 if the font was one of the base 14 fonts, having a
+      // FontDescriptor was not required. This case is here for compatibility.
+      var descriptor = xref.fetchIfRef(dict.get('FontDescriptor'));
+      if (!descriptor) {
+        var baseFontName = dict.get('BaseFont');
         if (!IsName(baseFontName))
           return null;
 
         // Using base font name as a font name.
         baseFontName = baseFontName.name;
+        var map = {};
         if (/^Symbol(-?(Bold|Italic))*$/.test(baseFontName)) {
           // special case for symbols
           var encoding = Encodings.symbolsEncoding;
           for (var i = 0, n = encoding.length, j; i < n; i++) {
             if (!(j = encoding[i]))
               continue;
-            encodingMap[i] = GlyphsUnicode[j] || 0;
+            map[i] = GlyphsUnicode[j] || 0;
           }
         }
         return {
           name: baseFontName,
-          fontDict: fontDict,
+          dict: dict,
           properties: {
-            encoding: encodingMap
+            encoding: map
           }
         };
       }
 
-      var descriptor = xref.fetch(fd);
+      // According to the spec if 'FontDescriptor' is declared, 'FirstChar',
+      // 'LastChar' and 'Widths' should exists too, but some PDF encoders seems
+      // to ignore this rule when a variant of a standart font is used.
+      // TODO Fill the width array depending on which of the base font this is 
+      // a variant.
+      var firstChar = xref.fetchIfRef(dict.get('FirstChar')) || 0;
+      var lastChar = xref.fetchIfRef(dict.get('LastChar')) || 256;
+      var widths = xref.fetchIfRef(dict.get('Widths')) || [];
+
       var fontName = xref.fetchIfRef(descriptor.get('FontName'));
       assertWellFormed(IsName(fontName), 'invalid font name');
-      fontName = fontName.name;
 
       var fontFile = descriptor.get('FontFile', 'FontFile2', 'FontFile3');
-      var length1, length2;
       if (fontFile) {
         fontFile = xref.fetchIfRef(fontFile);
-
         if (fontFile.dict) {
           var fileType = fontFile.dict.get('Subtype');
           if (fileType)
             fileType = fileType.name;
+
+          var length1 = fontFile.dict.get('Length1');
+          if (!IsInt(length1))
+            length1 = xref.fetchIfRef(length1);
+
+          var length2 = fontFile.dict.get('Length2');
+          if (!IsInt(length2))
+            length2 = xref.fetchIfRef(length2);
         }
-
-        length1 = fontFile.dict.get('Length1');
-        if (!IsInt(length1))
-          length1 = xref.fetchIfRef(length1);
-
-        length2 = fontFile.dict.get('Length2');
-        if (!IsInt(length2))
-          length2 = xref.fetchIfRef(length2);
-      }
-
-      var widths = fontDict.get('Widths');
-      if (widths) {
-        var glyphWidths = {};
-        var unicode = fontDict.get('FirstChar');
-        for (var i = 0, ii = widths.length; i < ii; ++i)
-          glyphWidths[unicode++] = widths[i];
       }
 
       var properties = {
         type: subType.name,
         subtype: fileType,
-        widths: glyphWidths,
-        encoding: encodingMap,
-        differences: diffEncoding,
-        glyphs: glyphsMap || GlyphsUnicode,
-        firstChar: fontDict.get('FirstChar'),
-        lastChar: fontDict.get('LastChar'),
+        file: fontFile,
+        length1: length1,
+        length2: length2,
+        composite: composite,
+        fixedPitch: false,
+        textMatrix: IDENTITY_MATRIX,
+        firstChar: firstChar || 0,
+        lastChar: lastChar || 256,
         bbox: descriptor.get('FontBBox'),
         ascent: descriptor.get('Ascent'),
         descent: descriptor.get('Descent'),
@@ -4474,16 +4472,23 @@ var PartialEvaluator = (function() {
         capHeight: descriptor.get('CapHeight'),
         flags: descriptor.get('Flags'),
         italicAngle: descriptor.get('ItalicAngle'),
-        fixedPitch: false,
-        textMatrix: IDENTITY_MATRIX,
-        compositeFont: compositeFont,
-        length1: length1,
-        length2: length2
+        differences: [],
+        widths: [],
+        encoding: {}
       };
 
+      // XXX Encoding and Glyphs should point to the same object so it will
+      // be hard to be out of sync. The object could contains the unicode and
+      // the width of the glyph.
+      for (var i = 0; i <= widths.length; i++)
+        properties.widths[firstChar++] = widths[i];
+
+      properties.glyphs = this.extractEncoding(dict, xref, properties);
+      log(properties.encoding);
+
       return {
-        name: fontName,
-        fontDict: fontDict,
+        name: fontName.name,
+        dict: dict,
         file: fontFile,
         properties: properties
       };
@@ -4887,7 +4892,7 @@ var CanvasGraphics = (function() {
       // This is a poor simulation for Arial Narrow while font-stretch
       // is not implemented (bug 3512)
       if (current.font.narrow) {
-        textHScale += 0.2;
+        textHScale += 0.6;
         charSpacing -= (0.09 * current.fontSize);
       }
 

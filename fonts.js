@@ -510,7 +510,7 @@ var Font = (function Font() {
     this.type = properties.type;
     this.textMatrix = properties.textMatrix;
     this.loadedName = getUniqueName();
-    this.compositeFont = properties.compositeFont;
+    this.composite = properties.composite;
     this.loading = true;
   };
 
@@ -1352,7 +1352,7 @@ var Font = (function Font() {
         return chars;
       str = '';
 
-      if (this.compositeFont) {
+      if (this.composite) {
         // composite fonts have multi-byte strings convert the string from
         // single-byte to multi-byte
         // XXX assuming CIDFonts are two-byte - later need to extract the
