@@ -5729,7 +5729,17 @@ var ColorSpace = (function() {
       case "DeviceCmykCS":
         return new DeviceCmykCS();
       case "PatternCS":
-        return new PatternCS(raw[1]);
+        var baseCS = raw[1];
+        if (baseCS == null) {
+          return new PatternCS(null);
+        } else {
+          return new PatternCS(ColorSpace.fromIR(baseCS));
+        }
+      case "Indexed":
+        var baseCS = raw[1];
+        var hiVal  = raw[2];
+        var lookup = raw[3];
+        return new IndexedCS(ColorSpace.fromIR(baseCS), hiVal, lookup)
       default:
         error("Unkown name " + name);
     }
@@ -5796,23 +5806,18 @@ var ColorSpace = (function() {
           return "DeviceCmykCS";
         break;
       case 'Pattern':
-        console.log("ColorSpace Pattern");
-        // TODO: IMPLEMENT ME
-
-        // var baseCS = cs[1];
-        // if (baseCS)
-        //   baseCS = ColorSpace.parse(baseCS, xref, res);
-        // return new PatternCS(baseCS);
+        var baseCS = cs[1];
+        if (baseCS)
+          baseCS = ColorSpace.parseToIR(baseCS, xref, res);
+        return ["PatternCS", baseCS];
       case 'Indexed':
-        // TODO: IMPLEMENT ME
+        var baseCS = ColorSpace.parseToIR(cs[1], xref, res);
+        var hiVal = cs[2] + 1;
+        var lookup = xref.fetchIfRef(cs[3]);
+        return ["IndexedCS", baseCS, hiVal, lookup];
+      case 'Separation':      
+        error("Need to implement IR form for SeparationCS");
 
-        // var base = ColorSpace.parse(cs[1], xref, res);
-        // var hiVal = cs[2] + 1;
-        // var lookup = xref.fetchIfRef(cs[3]);
-        // return new IndexedCS(base, hiVal, lookup);
-      case 'Separation':
-        // TODO: IMPLEMENT ME
-      
         // var name = cs[1];
         // var alt = ColorSpace.parse(cs[2], xref, res);
         // var tintFn = new PDFFunction(xref, xref.fetchIfRef(cs[3]));
