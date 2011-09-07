@@ -4223,7 +4223,7 @@ var PartialEvaluator = (function() {
                   var shading = xref.fetchIfRef(dict.get('Shading'));
                   var matrix = dict.get('Matrix');
                   var pattern = Pattern.parseShading(shading, matrix, xref, res, null /*ctx*/);
-                  args = pattern.getPatternRaw();
+                  args = pattern.getIR();
                 } else {
                   error("Unkown PatternType " + typeNum);
                 }
@@ -4347,7 +4347,7 @@ var PartialEvaluator = (function() {
           // Parse the ColorSpace data to a raw format.
           case "setFillColorSpace":
           case "setStrokeColorSpace":
-            args = [ ColorSpace.parseRaw(args[0], xref, resources) ];
+            args = [ ColorSpace.parseToIR(args[0], xref, resources) ];
             break;
           case "shadingFill":
             var shadingRes = xref.fetchIfRef(res.get('Shading'));
@@ -4359,7 +4359,7 @@ var PartialEvaluator = (function() {
               error('No shading object found');
 
             var shadingFill = Pattern.parseShading(shading, null, xref, res, /* ctx */ null);
-            var patternIR = shadingFill.getPatternRaw();
+            var patternIR = shadingFill.getIR();
 
             args = [ patternIR ];
             fn = "shadingFill";
@@ -5197,13 +5197,11 @@ var CanvasGraphics = (function() {
     // Color
     setStrokeColorSpace: function(raw) {
       this.current.strokeColorSpace =
-            ColorSpace.fromRaw(raw);
-      //    ColorSpace.parse(space, this.xref, this.res);
+            ColorSpace.fromIR(raw);
     },
     setFillColorSpace: function(raw) {
       this.current.fillColorSpace =
-            ColorSpace.fromRaw(raw);
-      //    ColorSpace.parse(space, this.xref, this.res);
+            ColorSpace.fromIR(raw);
     },
     setStrokeColor: function(/*...*/) {
       var cs = this.current.strokeColorSpace;
@@ -5229,7 +5227,7 @@ var CanvasGraphics = (function() {
         // Build the pattern based on the IR data.
         var pattern = new TilingPatternIR(IR, color, this.ctx);
       } else if (IR[0] == "RadialAxialShading") {
-        var pattern = Pattern.shadingFromRaw(this.ctx, IR); 
+        var pattern = Pattern.shadingFromIR(this.ctx, IR); 
       } else {
         throw "Unkown IR type";
       }
@@ -5289,7 +5287,7 @@ var CanvasGraphics = (function() {
       var ctx = this.ctx;
       
       this.save();
-      ctx.fillStyle = Pattern.shadingFromRaw(ctx, patternIR);
+      ctx.fillStyle = Pattern.shadingFromIR(ctx, patternIR);
 
       var inv = ctx.mozCurrentTransformInverse;
       if (inv) {
@@ -5629,7 +5627,7 @@ var ColorSpace = (function() {
     return null;
   };
   
-  constructor.fromRaw = function(raw) {
+  constructor.fromIR = function(raw) {
     var name;
     if (IsArray(raw)) {
       name = raw[0];
@@ -5651,7 +5649,7 @@ var ColorSpace = (function() {
     }
   }
   
-  constructor.parseRaw = function colorspace_parse(cs, xref, res) {
+  constructor.parseToIR = function colorspace_parse(cs, xref, res) {
     if (IsName(cs)) {
       var colorSpaces = res.get('ColorSpace');
       if (IsDict(colorSpaces)) {
@@ -6003,10 +6001,10 @@ var Pattern = (function() {
     }
   };
 
-  constructor.shadingFromRaw = function(ctx, raw) {
+  constructor.shadingFromIR = function(ctx, raw) {
     var obj = window[raw[0]];
 
-    return obj.fromRaw(ctx, raw);
+    return obj.fromIR(ctx, raw);
   }
 
   constructor.parse = function pattern_parse(args, cs, xref, res, ctx) {
@@ -6138,7 +6136,7 @@ var RadialAxialShading = (function() {
     this.colorStops = colorStops;
   }
 
-  constructor.fromRaw = function(ctx, raw) {
+  constructor.fromIR = function(ctx, raw) {
     var type = raw[1];
     var colorStops = raw[2];
     var p0 = raw[3];
@@ -6215,7 +6213,7 @@ var RadialAxialShading = (function() {
       return grad;
     },
 
-    getPatternRaw: function() {
+    getIR: function() {
       var coordsArr = this.coordsArr;
       var type = this.shadingType;
       if (type == 2) {
