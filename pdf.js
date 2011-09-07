@@ -4367,16 +4367,16 @@ var PartialEvaluator = (function() {
           }
         }
       }
-
       return glyphs;
     },
 
     translateFont: function(dict, xref, resources) {
-      var subType = dict.get('Subtype');
-      assertWellFormed(IsName(subType), 'invalid font Subtype');
+      var baseDict = dict;
+      var type = dict.get('Subtype');
+      assertWellFormed(IsName(type), 'invalid font Subtype');
 
       var composite = false
-      if (subType.name == 'Type0') {
+      if (type.name == 'Type0') {
         // If font is a composite
         //  - get the descendant font
         //  - set the type according to the descendant font
@@ -4390,8 +4390,8 @@ var PartialEvaluator = (function() {
 
         dict = xref.fetch(IsRef(df) ? df : df[0]);
 
-        subType = dict.get('Subtype');
-        assertWellFormed(IsName(subType), 'invalid font Subtype');
+        type = dict.get('Subtype');
+        assertWellFormed(IsName(type), 'invalid font Subtype');
         composite = true;
       }
 
@@ -4417,7 +4417,7 @@ var PartialEvaluator = (function() {
         }
         return {
           name: baseFontName,
-          dict: dict,
+          dict: baseDict,
           properties: {
             encoding: map
           }
@@ -4440,9 +4440,9 @@ var PartialEvaluator = (function() {
       if (fontFile) {
         fontFile = xref.fetchIfRef(fontFile);
         if (fontFile.dict) {
-          var fileType = fontFile.dict.get('Subtype');
-          if (fileType)
-            fileType = fileType.name;
+          var subtype = fontFile.dict.get('Subtype');
+          if (subtype)
+            subtype = subtype.name;
 
           var length1 = fontFile.dict.get('Length1');
           if (!IsInt(length1))
@@ -4455,8 +4455,8 @@ var PartialEvaluator = (function() {
       }
 
       var properties = {
-        type: subType.name,
-        subtype: fileType,
+        type: type.name,
+        subtype: subtype,
         file: fontFile,
         length1: length1,
         length2: length2,
@@ -4484,11 +4484,10 @@ var PartialEvaluator = (function() {
         properties.widths[firstChar++] = widths[i];
 
       properties.glyphs = this.extractEncoding(dict, xref, properties);
-      log(properties.encoding);
 
       return {
         name: fontName.name,
-        dict: dict,
+        dict: baseDict,
         file: fontFile,
         properties: properties
       };

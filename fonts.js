@@ -1131,8 +1131,8 @@ var Font = (function Font() {
           for (i = 0; i < numGlyphs; i++)
             encoding[i] = i + kCmapGlyphOffset;
         } else {
-          for (var i in encoding)
-            encoding[i] = encoding[i] + kCmapGlyphOffset;
+          for (var code in encoding)
+            encoding[code] += kCmapGlyphOffset;
         }
 
         if (!cmap) {
