@@ -6251,54 +6251,6 @@ var RadialAxialShading = (function() {
   }
 
   constructor.prototype = {
-    getPattern: function() {
-      var coordsArr = this.coordsArr;
-      var type = this.shadingType;
-      var p0, p1, r0, r1;
-      if (type == 2) {
-        p0 = [coordsArr[0], coordsArr[1]];
-        p1 = [coordsArr[2], coordsArr[3]];
-      } else if (type == 3) {
-        p0 = [coordsArr[0], coordsArr[1]];
-        p1 = [coordsArr[3], coordsArr[4]];
-        r0 = coordsArr[2];
-        r1 = coordsArr[5];
-      } else {
-        error('getPattern type unknown: ' + type);
-      }
-
-      var matrix = this.matrix;
-      if (matrix) {
-        p0 = Util.applyTransform(p0, matrix);
-        p1 = Util.applyTransform(p1, matrix);
-      }
-
-      // if the browser supports getting the tranform matrix, convert
-      // gradient coordinates from pattern space to current user space
-      var ctx = this.ctx;
-      if (ctx.mozCurrentTransform) {
-        var userMatrix = ctx.mozCurrentTransformInverse;
-
-        p0 = Util.applyTransform(p0, curMatrix);
-        p0 = Util.applyTransform(p0, userMatrix);
-
-        p1 = Util.applyTransform(p1, curMatrix);
-        p1 = Util.applyTransform(p1, userMatrix);
-      }
-
-      var colorStops = this.colorStops, grad;
-      if (type == 2)
-        grad = ctx.createLinearGradient(p0[0], p0[1], p1[0], p1[1]);
-      else if (type == 3)
-        grad = ctx.createRadialGradient(p0[0], p0[1], r0, p1[0], p1[1], r1);
-
-      for (var i = 0, ii = colorStops.length; i < ii; ++i) {
-        var c = colorStops[i];
-        grad.addColorStop(c[0], c[1]);
-      }
-      return grad;
-    },
-
     getIR: function() {
       var coordsArr = this.coordsArr;
       var type = this.shadingType;
@@ -6311,7 +6263,7 @@ var RadialAxialShading = (function() {
         var p1 = [coordsArr[3], coordsArr[4]];
         var r0 = coordsArr[2], r1 = coordsArr[5];
       } else {
-        error();
+        error('getPattern type unknown: ' + type);
       }
 
       var matrix = this.matrix;
