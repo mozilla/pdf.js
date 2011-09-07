@@ -4250,7 +4250,7 @@ var PartialEvaluator = (function() {
                 var matrix = xobj.dict.get('Matrix');
                 var bbox = xobj.dict.get('BBox');
                 args = [ raw, matrix, bbox ];
-                fn = "paintReadyFormXObject";
+                fn = "paintFormXObject";
               } else if ('Image' == type.name) {
                 var image = xobj;
                 var dict = image.dict;
@@ -4265,7 +4265,7 @@ var PartialEvaluator = (function() {
                   });
 
                   // TODO: Place dependency note in IR queue.
-                  fn = 'paintReadyJpegXObject';
+                  fn = 'paintJpegXObject';
                   args = [ objId, w, h ];
                 } else {
                   // Needs to be rendered ourself.
@@ -4291,7 +4291,7 @@ var PartialEvaluator = (function() {
                     var pixels = imgData.data;
                     imageObj.fillRgbaBuffer(pixels, imageObj.decode);
                     
-                    fn = "paintReadyImageXObject";
+                    fn = "paintImageXObject";
                     args = [ imgData ];
                   } else /* imageMask == true */ {
                     // This depends on a tmpCanvas beeing filled with the
@@ -4299,7 +4299,7 @@ var PartialEvaluator = (function() {
                     // data can't be done here. Instead of creating a
                     // complete PDFImage, only read the information needed
                     // for later.
-                    fn = "paintReadyImageMaskXObject";
+                    fn = "paintImageMaskXObject";
                     
                     var width = dict.get('Width', 'W');
                     var height = dict.get('Height', 'H');
@@ -4359,23 +4359,12 @@ var PartialEvaluator = (function() {
               error('No shading object found');
 
             var shadingFill = Pattern.parseShading(shading, null, xref, res, /* ctx */ null);
-            var patternRaw = shadingFill.getPatternRaw();
+            var patternIR = shadingFill.getPatternRaw();
 
-            args = [ patternRaw ];
-            fn = "shadingFillRaw";
+            args = [ patternIR ];
+            fn = "shadingFill";
 
             break;
-          }
-
-          
-
-          var skips = [ "setFillColorN" ];//[ "paintReadyFormXObject" ];
-          //var skips = ["setFillColorSpace", "setFillColor", "setStrokeColorSpace", "setStrokeColor"];
-          
-          if (skips.indexOf(fn) != -1) {
-            // console.log("skipping", fn);
-            args = [];
-            continue;
           }
 
           fnArray.push(fn);
@@ -5221,20 +5210,6 @@ var CanvasGraphics = (function() {
       var color = cs.getRgb(arguments);
       this.setStrokeRGBColor.apply(this, color);
     },
-    setStrokeColorN: function(/*...*/) {
-      var cs = this.current.strokeColorSpace;
-
-      if (cs.name == 'Pattern') {
-        // wait until fill to actually get the pattern, since Canvas
-        // calcualtes the pattern according to the current coordinate space,
-        // not the space when the pattern is set.
-        var pattern = Pattern.parse(arguments, cs, this.xref, this.res,
-                                    this.ctx);
-        this.current.strokeColor = pattern;
-      } else {
-        this.setStrokeColor.apply(this, arguments);
-      }
-    },
     getColorN_IR_Pattern: function(IR, cs) {
       if (IR[0] == "TilingPatternIR") {
         // First, build the `color` var like it's done in the
@@ -5268,24 +5243,11 @@ var CanvasGraphics = (function() {
       } else {
         this.setStrokeColor.apply(this, arguments);
       }
-      
     },
     setFillColor: function(/*...*/) {
       var cs = this.current.fillColorSpace;
       var color = cs.getRgb(arguments);
       this.setFillRGBColor.apply(this, color);
-    },
-    setFillColorN: function(/*...*/) {
-      var cs = this.current.fillColorSpace;
-
-      if (cs.name == 'Pattern') {
-        // wait until fill to actually get the pattern
-        var pattern = Pattern.parse(arguments, cs, this.xref, this.res,
-                                    this.ctx);
-        this.current.fillColor = pattern;
-      } else {
-        this.setFillColor.apply(this, arguments);
-      }
     },
     setFillColorN_IR: function(/*...*/) {
       var cs = this.current.fillColorSpace;
@@ -5323,60 +5285,11 @@ var CanvasGraphics = (function() {
       this.current.fillColor = color;
     },
 
-    // Shading
-    shadingFill: function(shadingName) {
-      var xref = this.xref;
-      var res = this.res;
-      var ctx = this.ctx;
-
-      var shadingRes = xref.fetchIfRef(res.get('Shading'));
-      if (!shadingRes)
-        error('No shading resource found');
-
-      var shading = xref.fetchIfRef(shadingRes.get(shadingName.name));
-      if (!shading)
-        error('No shading object found');
-
-      var shadingFill = Pattern.parseShading(shading, null, xref, res, ctx);
-
-      this.save();
-      ctx.fillStyle = shadingFill.getPattern();
-
-      var inv = ctx.mozCurrentTransformInverse;
-      if (inv) {
-        var canvas = ctx.canvas;
-        var width = canvas.width;
-        var height = canvas.height;
-
-        var bl = Util.applyTransform([0, 0], inv);
-        var br = Util.applyTransform([0, width], inv);
-        var ul = Util.applyTransform([height, 0], inv);
-        var ur = Util.applyTransform([height, width], inv);
-
-        var x0 = Math.min(bl[0], br[0], ul[0], ur[0]);
-        var y0 = Math.min(bl[1], br[1], ul[1], ur[1]);
-        var x1 = Math.max(bl[0], br[0], ul[0], ur[0]);
-        var y1 = Math.max(bl[1], br[1], ul[1], ur[1]);
-
-        this.ctx.fillRect(x0, y0, x1 - x0, y1 - y0);
-      } else {
-        // HACK to draw the gradient onto an infinite rectangle.
-        // PDF gradients are drawn across the entire image while
-        // Canvas only allows gradients to be drawn in a rectangle
-        // The following bug should allow us to remove this.
-        // https://bugzilla.mozilla.org/show_bug.cgi?id=664884
-
-        this.ctx.fillRect(-1e10, -1e10, 2e10, 2e10);
-      }
-
-      this.restore();
-    },
-
-    shadingFillRaw: function(patternRaw) {
+    shadingFill: function(patternIR) {
       var ctx = this.ctx;
       
       this.save();
-      ctx.fillStyle = Pattern.shadingFromRaw(ctx, patternRaw);
+      ctx.fillStyle = Pattern.shadingFromRaw(ctx, patternIR);
 
       var inv = ctx.mozCurrentTransformInverse;
       if (inv) {
@@ -5406,7 +5319,6 @@ var CanvasGraphics = (function() {
       }
 
       this.restore();
-
     },
 
     // Images
@@ -5419,39 +5331,8 @@ var CanvasGraphics = (function() {
     endInlineImage: function(image) {
       this.paintImageXObject(null, image, true);
     },
-
-    // XObjects
-    paintXObject: function(obj) {
-      var xobj = this.xobjs.get(obj.name);
-      if (!xobj)
-        return;
-      xobj = this.xref.fetchIfRef(xobj);
-      assertWellFormed(IsStream(xobj), 'XObject should be a stream');
-
-      var oc = xobj.dict.get('OC');
-      if (oc) {
-        TODO('oc for xobject');
-      }
-
-      var opi = xobj.dict.get('OPI');
-      if (opi) {
-        TODO('opi for xobject');
-      }
-
-      var type = xobj.dict.get('Subtype');
-      assertWellFormed(IsName(type), 'XObject should have a Name subtype');
-      if ('Image' == type.name) {
-        this.paintImageXObject(obj, xobj, false);
-      } else if ('Form' == type.name) {
-        this.paintFormXObject(obj, xobj);
-      } else if ('PS' == type.name) {
-        warn('(deprecated) PostScript XObjects are not supported');
-      } else {
-        malformed('Unknown XObject subtype ' + type.name);
-      }
-    },
-    
-    paintReadyFormXObject: function(raw, matrix, bbox) {
+  
+    paintFormXObject: function(raw, matrix, bbox) {
       this.save();
 
       if (matrix && IsArray(matrix) && 6 == matrix.length)
@@ -5470,27 +5351,7 @@ var CanvasGraphics = (function() {
       this.restore();
     },
 
-    paintFormXObject: function(ref, stream) {
-      this.save();
-
-      var matrix = stream.dict.get('Matrix');
-      if (matrix && IsArray(matrix) && 6 == matrix.length)
-        this.transform.apply(this, matrix);
-
-      var bbox = stream.dict.get('BBox');
-      if (bbox && IsArray(bbox) && 4 == bbox.length) {
-        this.rectangle.apply(this, bbox);
-        this.clip();
-        this.endPath();
-      }
-
-      var code = this.pe.evalFromRaw(ref.raw)
-      this.execute(code, this.xref, stream.dict.get('Resources'));
-
-      this.restore();
-    },
-
-    paintReadyJpegXObject: function(objId, w, h) {
+    paintJpegXObject: function(objId, w, h) {
       var image = Objects[objId];
       if (!image) {
         error("Dependent image isn't ready yet");
@@ -5507,53 +5368,8 @@ var CanvasGraphics = (function() {
 
       this.restore();
     },
-
-    paintImageXObject: function(ref, image, inline) {
-      this.save();
-
-      var ctx = this.ctx;
-      var dict = image.dict;
-      var w = dict.get('Width', 'W');
-      var h = dict.get('Height', 'H');
-      // scale the image to the unit square
-      ctx.scale(1 / w, -1 / h);
-
-      // If the platform can render the image format directly, the
-      // stream has a getImage property which directly returns a
-      // suitable DOM Image object.
-      if (image.getImage) {
-        var domImage = image.getImage();
-        ctx.drawImage(domImage, 0, 0, domImage.width, domImage.height,
-                      0, -h, w, h);
-        this.restore();
-        return;
-      }
-
-      var imageObj = new PDFImage(this.xref, this.res, image, inline);
-
-      var tmpCanvas = new this.ScratchCanvas(w, h);
-      var tmpCtx = tmpCanvas.getContext('2d');
-      if (imageObj.imageMask) {
-        var fillColor = this.current.fillColor;
-        tmpCtx.fillStyle = (fillColor && fillColor.type === 'Pattern') ?
-          fillColor.getPattern(tmpCtx) : fillColor;
-        tmpCtx.fillRect(0, 0, w, h);
-      }
-      var imgData = tmpCtx.getImageData(0, 0, w, h);
-      var pixels = imgData.data;
-
-      if (imageObj.imageMask) {
-        var inverseDecode = !!imageObj.decode && imageObj.decode[0] > 0;
-        imageObj.applyStencilMask(pixels, inverseDecode);
-      } else
-        imageObj.fillRgbaBuffer(pixels, imageObj.decode);
-
-      tmpCtx.putImageData(imgData, 0, 0);
-      ctx.drawImage(tmpCanvas, 0, -h);
-      this.restore();
-    },
     
-    paintReadyImageMaskXObject: function(imgArray, inverseDecode, width, height) {
+    paintImageMaskXObject: function(imgArray, inverseDecode, width, height) {
       function applyStencilMask(buffer, inverseDecode) {
         var imgArrayPos = 0;
         var i, j, mask, buf;
@@ -5601,7 +5417,7 @@ var CanvasGraphics = (function() {
       this.restore();
     },
 
-    paintReadyImageXObject: function(imgData) {
+    paintImageXObject: function(imgData) {
       this.save();
 
       var ctx = this.ctx;
