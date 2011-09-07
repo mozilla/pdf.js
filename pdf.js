@@ -5629,88 +5629,8 @@ var ColorSpace = (function() {
   };
 
   constructor.parse = function colorspace_parse(cs, xref, res) {
-    if (IsName(cs)) {
-      var colorSpaces = res.get('ColorSpace');
-      if (IsDict(colorSpaces)) {
-        var refcs = colorSpaces.get(cs.name);
-        if (refcs)
-          cs = refcs;
-      }
-    }
-
-    cs = xref.fetchIfRef(cs);
-
-    if (IsName(cs)) {
-      var mode = cs.name;
-      this.mode = mode;
-
-      switch (mode) {
-      case 'DeviceGray':
-      case 'G':
-        return new DeviceGrayCS();
-      case 'DeviceRGB':
-      case 'RGB':
-        return new DeviceRgbCS();
-      case 'DeviceCMYK':
-      case 'CMYK':
-        return new DeviceCmykCS();
-      case 'Pattern':
-        return new PatternCS(null);
-      default:
-        error('unrecognized colorspace ' + mode);
-      }
-    } else if (IsArray(cs)) {
-      var mode = cs[0].name;
-      this.mode = mode;
-
-      switch (mode) {
-      case 'DeviceGray':
-      case 'G':
-        return new DeviceGrayCS();
-      case 'DeviceRGB':
-      case 'RGB':
-        return new DeviceRgbCS();
-      case 'DeviceCMYK':
-      case 'CMYK':
-        return new DeviceCmykCS();
-      case 'CalGray':
-        return new DeviceGrayCS();
-      case 'CalRGB':
-        return new DeviceRgbCS();
-      case 'ICCBased':
-        var stream = xref.fetchIfRef(cs[1]);
-        var dict = stream.dict;
-        var numComps = dict.get('N');
-        if (numComps == 1)
-          return new DeviceGrayCS();
-        if (numComps == 3)
-          return new DeviceRgbCS();
-        if (numComps == 4)
-          return new DeviceCmykCS();
-        break;
-      case 'Pattern':
-        var baseCS = cs[1];
-        if (baseCS)
-          baseCS = ColorSpace.parse(baseCS, xref, res);
-        return new PatternCS(baseCS);
-      case 'Indexed':
-        var base = ColorSpace.parse(cs[1], xref, res);
-        var hiVal = cs[2] + 1;
-        var lookup = xref.fetchIfRef(cs[3]);
-        return new IndexedCS(base, hiVal, lookup);
-      case 'Separation':
-        var alt = ColorSpace.parse(cs[2], xref, res);
-        var tintFn = new PDFFunction(xref, xref.fetchIfRef(cs[3]));
-        return new SeparationCS(alt, tintFn);
-      case 'Lab':
-      case 'DeviceN':
-      default:
-        error('unimplemented color space object "' + mode + '"');
-      }
-    } else {
-      error('unrecognized color space object: "' + cs + '"');
-    }
-    return null;
+    var IR = constructor.parseToIR(cs, xref, res);
+    return constructor.fromIR(IR);
   };
   
   constructor.fromIR = function(raw) {
@@ -5743,6 +5663,7 @@ var ColorSpace = (function() {
       default:
         error("Unkown name " + name);
     }
+    return null;
   }
   
   constructor.parseToIR = function colorspace_parse(cs, xref, res) {
