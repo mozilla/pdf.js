@@ -4269,23 +4269,47 @@ var PartialEvaluator = (function() {
                   args = [ objId, w, h ];
                 } else {
                   // Needs to be rendered ourself.
-                  var inline = false;
-                  var imageObj = new PDFImage(xref, resources, image, inline);
+                  
+                  // Figure out if the image has an imageMask.
+                  var imageMask = dict.get('ImageMask', 'IM') || false;
 
-                  if (imageObj.imageMask) {
-                    throw "Can't handle this in the web worker :/";
+                  // If there is no imageMask, create the PDFImage and a lot
+                  // of image processing can be done here.
+                  if (!imageMask) {
+                    var inline = false;
+                    var imageObj = new PDFImage(xref, resources, image, inline);
+
+                    if (imageObj.imageMask) {
+                      throw "Can't handle this in the web worker :/";
+                    }
+                    
+                    var imgData = {
+                      width: w,
+                      height: h,
+                      data: new Uint8Array(w * h * 4)
+                    };
+                    var pixels = imgData.data;
+                    imageObj.fillRgbaBuffer(pixels, imageObj.decode);
+                    
+                    fn = "paintReadyImageXObject";
+                    args = [ imgData ];
+                  } else /* imageMask == true */ {
+                    // This depends on a tmpCanvas beeing filled with the
+                    // current fillStyle, such that processing the pixel
+                    // data can't be done here. Instead of creating a
+                    // complete PDFImage, only read the information needed
+                    // for later.
+                    fn = "paintReadyImageMaskXObject";
+                    
+                    var width = dict.get('Width', 'W');
+                    var height = dict.get('Height', 'H');
+                    var bitStrideLength = (width + 7) >> 3;
+                    var imgArray = image.getBytes(bitStrideLength * height);
+                    var decode = dict.get('Decode', 'D');
+                    var inverseDecode = !!imageObj.decode && imageObj.decode[0] > 0;
+
+                    args = [ imgArray, inverseDecode, width, height ];
                   }
-                  
-                  var imgData = {
-                    width: w,
-                    height: h,
-                    data: new Uint8Array(w * h * 4)
-                  };
-                  var pixels = imgData.data;
-                  imageObj.fillRgbaBuffer(pixels, imageObj.decode);
-                  
-                  fn = "paintReadyImageXObject";
-                  args = [ imgData ];
                 }
               } else {
                 error('Unhandled XObject subtype ' + type.name);
@@ -5529,6 +5553,54 @@ var CanvasGraphics = (function() {
       this.restore();
     },
     
+    paintReadyImageMaskXObject: function(imgArray, inverseDecode, width, height) {
+      function applyStencilMask(buffer, inverseDecode) {
+        var imgArrayPos = 0;
+        var i, j, mask, buf;
+        // removing making non-masked pixels transparent
+        var bufferPos = 3; // alpha component offset
+        for (i = 0; i < height; i++) {
+          mask = 0;
+          for (j = 0; j < width; j++) {
+            if (!mask) {
+              buf = imgArray[imgArrayPos++];
+              mask = 128;
+            }
+            if (!(buf & mask) == inverseDecode) {
+              buffer[bufferPos] = 0;
+            }
+            bufferPos += 4;
+            mask >>= 1;
+          }
+        }
+      }
+
+      this.save();
+
+      var ctx = this.ctx;
+      var w = width, h = height;
+
+      // scale the image to the unit square
+      ctx.scale(1 / w, -1 / h);
+
+      var tmpCanvas = new this.ScratchCanvas(w, h);
+      var tmpCtx = tmpCanvas.getContext('2d');
+      var fillColor = this.current.fillColor;
+
+      tmpCtx.fillStyle = (fillColor && fillColor.type === 'Pattern') ?
+        fillColor.getPattern(tmpCtx) : fillColor;
+      tmpCtx.fillRect(0, 0, w, h);
+
+      var imgData = tmpCtx.getImageData(0, 0, w, h);
+      var pixels = imgData.data;
+
+      applyStencilMask(pixels, inverseDecode);
+
+      tmpCtx.putImageData(imgData, 0, 0);
+      ctx.drawImage(tmpCanvas, 0, -h);
+      this.restore();
+    },
+
     paintReadyImageXObject: function(imgData) {
       this.save();
 
@@ -5546,6 +5618,9 @@ var CanvasGraphics = (function() {
       // Copy over the imageData.
       var tmpImgDataPixels = tmpImgData.data;
       var len = tmpImgDataPixels.length;
+
+      // TODO: There got to be a better way to copy an ImageData array
+      // then coping over all the bytes one by one :/
       while (len--) 
         tmpImgDataPixels[len] = imgData.data[len];
 
@@ -6700,29 +6775,6 @@ var PDFImage = (function() {
           buf[i] = 255;
       }
       return buf;
-    },
-    applyStencilMask: function applyStencilMask(buffer, inverseDecode) {
-      var width = this.width, height = this.height;
-      var bitStrideLength = (width + 7) >> 3;
-      var imgArray = this.image.getBytes(bitStrideLength * height);
-      var imgArrayPos = 0;
-      var i, j, mask, buf;
-      // removing making non-masked pixels transparent
-      var bufferPos = 3; // alpha component offset
-      for (i = 0; i < height; i++) {
-        mask = 0;
-        for (j = 0; j < width; j++) {
-          if (!mask) {
-            buf = imgArray[imgArrayPos++];
-            mask = 128;
-          }
-          if (!(buf & mask) == inverseDecode) {
-            buffer[bufferPos] = 0;
-          }
-          bufferPos += 4;
-          mask >>= 1;
-        }
-      }
     },
     fillRgbaBuffer: function fillRgbaBuffer(buffer, decodeMap) {
       var numComps = this.numComps;
