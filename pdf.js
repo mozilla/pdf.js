@@ -4415,12 +4415,20 @@ var PartialEvaluator = (function() {
             map[i] = GlyphsUnicode[j] || 0;
           }
         }
+
+        var properties = {
+          type: type.name,
+          encoding: map,
+          differences: [],
+          firstChar: 0,
+          lastChar: 256
+        };
+        this.extractEncoding(dict, xref, properties);
+
         return {
           name: baseFontName,
           dict: baseDict,
-          properties: {
-            encoding: map
-          }
+          properties: properties
         };
       }
 
