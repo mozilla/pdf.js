@@ -60,31 +60,48 @@ var WorkerPDFDoc = (function() {
     
     this.pageCache = [];
     
-    this.worker = new Worker("../worker/boot.js");
-    this.handler = new MessageHandler("main", {
-      "page": function(data) {
-        var pageNum = data.pageNum;
-        var page = this.pageCache[pageNum];
-        
-        // Add necessary shape back to fonts.
-        var fonts = data.fonts;
-        for (var i = 0; i < fonts.length; i++) {
-          var font = fonts[i];
-          
-          var fontFileDict = new Dict();
-          fontFileDict.map = font.file.dict.map;
-
-          var fontFile = new Stream(font.file.bytes, font.file.start,
-                                    font.file.end - font.file.start, fontFileDict);
-          font.file = new FlateStream(fontFile);
-        }
-        
-        console.log("startRenderingFromPreCompilation:", "numberOfFonts", fonts.length);
-        page.startRenderingFromPreCompilation(data.preCompilation, data.fonts, data.images);
-      }
-    }, this.worker, this);
+    var useWorker = false;
     
-    this.handler.send("doc", data);
+    if (useWorker) {
+      var worker = new Worker("../worker/boot.js");      
+    } else {
+      // If we don't use a worker, just post/sendMessage to the main thread.
+      var worker = {
+        postMessage: function(obj) {
+          worker.onmessage({data: obj});
+        }
+      }
+    }
+
+    var handler = this.handler = new MessageHandler("main", worker);
+    handler.on("page", function(data) {
+      var pageNum = data.pageNum;
+      var page = this.pageCache[pageNum];
+      
+      // Add necessary shape back to fonts.
+      var fonts = data.fonts;
+      for (var i = 0; i < fonts.length; i++) {
+        var font = fonts[i];
+        
+        var fontFileDict = new Dict();
+        fontFileDict.map = font.file.dict.map;
+
+        var fontFile = new Stream(font.file.bytes, font.file.start,
+                                  font.file.end - font.file.start, fontFileDict);
+        font.file = new FlateStream(fontFile);
+      }
+      
+      console.log("startRenderingFromPreCompilation:", "numberOfFonts", fonts.length);
+      page.startRenderingFromPreCompilation(data.preCompilation, data.fonts, data.images);
+    }, this);
+    
+    if (!useWorker) {
+      // If the main thread is our worker, setup the handling for the messages
+      // the main thread sends to it self.
+      WorkerHandler.setup(handler);
+    }
+    
+    handler.send("doc", data);
   }
 
   constructor.prototype = {
@@ -93,7 +110,7 @@ var WorkerPDFDoc = (function() {
     },
     
     startRendering: function(page) {
-      this.handler.send("page", page.page.pageNumber + 1);
+      this.handler.send("page_request", page.page.pageNumber + 1);
     },
     
     getPage: function(n) {
