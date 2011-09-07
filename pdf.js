@@ -4899,7 +4899,7 @@ var CanvasGraphics = (function() {
       // This is a poor simulation for Arial Narrow while font-stretch
       // is not implemented (bug 3512)
       if (current.font.narrow) {
-        textHScale += 0.6;
+        textHScale += 0.2;
         charSpacing -= (0.09 * current.fontSize);
       }
 
