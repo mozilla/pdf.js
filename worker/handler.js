@@ -22,8 +22,7 @@ var WorkerHandler = {
       // but stops at one point and sends the result back to the main thread.
       var gfx = new CanvasGraphics(null);
       var fonts = [];
-      // TODO: Figure out how image loading is handled inside the worker.
-      var images = new ImagesLoader();
+      var images = [];
 
       // Pre compile the pdf page and fetch the fonts/images.
       var preCompilation = page.preCompile(gfx, fonts, images);
@@ -76,7 +75,7 @@ var WorkerHandler = {
       handler.send("page", {
         pageNum:        pageNum,
         fonts:          fontsMin,
-        images:         [],
+        images:         images,
         preCompilation: preCompilation,
       });
     }, this);

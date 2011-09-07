@@ -50,6 +50,9 @@ var WorkerPage = (function() {
   return constructor;
 })();
 
+// This holds a list of objects the IR queue depends on.
+var Objects = {};
+
 var WorkerPDFDoc = (function() {
   function constructor(data) {
     this.data = data;
@@ -60,7 +63,7 @@ var WorkerPDFDoc = (function() {
     
     this.pageCache = [];
     
-    var useWorker = true;
+    var useWorker = false;
     
     if (useWorker) {
       var worker = new Worker("../worker/boot.js");      
@@ -90,9 +93,27 @@ var WorkerPDFDoc = (function() {
                                   font.file.end - font.file.start, fontFileDict);
         font.file = new FlateStream(fontFile);
       }
-      
-      console.log("startRenderingFromPreCompilation:", "numberOfFonts", fonts.length);
-      page.startRenderingFromPreCompilation(data.preCompilation, data.fonts, data.images);
+    
+      var imageLoadingDone = function() {
+        console.log("startRenderingFromPreCompilation:", "numberOfFonts", fonts.length);
+        page.startRenderingFromPreCompilation(data.preCompilation, data.fonts, data.images);
+      }
+
+      var images = data.images;
+      if (images.length != 0) {
+        // Generate JpegStreams based on IR information and start rendering
+        // once the compilation is done.
+        var loader = new ImagesLoader();
+        loader.onLoad = imageLoadingDone;
+
+        for (var i = 0; i < images.length; i++) {
+          var image = images[i];
+          var stream = new JpegStreamIR(image.id, image.IR);
+          loader.bind(stream);
+        }
+      } else {
+        imageLoadingDone();
+      }
     }, this);
     
     if (!useWorker) {

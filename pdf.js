@@ -859,6 +859,31 @@ var PredictorStream = (function() {
   return constructor;
 })();
 
+var JpegStreamIR = (function() {
+  function JpegStreamIR(objId, IR) {
+    var src = IR;
+
+    // create DOM image
+    var img = new Image();
+    img.onload = (function() {
+      this.loaded = true;
+      Objects[objId] = this;
+      if (this.onLoad)
+        this.onLoad();
+    }).bind(this);
+    img.src = src;
+    this.domImage = img;
+  }
+
+  JpegStreamIR.prototype = {
+    getImage: function() {
+      return this.domImage;
+    }
+  }
+
+  return JpegStreamIR;
+})()
+
 // A JpegStream can't be read directly. We use the platform to render
 // the underlying JPEG data for us.
 var JpegStream = (function() {
@@ -891,30 +916,23 @@ var JpegStream = (function() {
     newBytes.set(embedMarker, 2);
     return newBytes;
   }
-
+  
   function constructor(bytes, dict) {
     // TODO: per poppler, some images may have "junk" before that
     // need to be removed
     this.dict = dict;
-
+    
     if (isYcckImage(bytes))
       bytes = fixYcckImage(bytes);
 
-    // create DOM image
-    var img = new Image();
-    img.onload = (function() {
-      this.loaded = true;
-      if (this.onLoad)
-        this.onLoad();
-    }).bind(this);
-    img.src = 'data:image/jpeg;base64,' + window.btoa(bytesToString(bytes));
-    this.domImage = img;
+    this.src = 'data:image/jpeg;base64,' + window.btoa(bytesToString(bytes)); 
   }
 
   constructor.prototype = {
-    getImage: function() {
-      return this.domImage;
+    getIR: function() {
+      return this.src;
     },
+
     getChar: function() {
       error('internal error: getChar is not valid on JpegStream');
     }
@@ -4100,6 +4118,8 @@ var EvalState = (function() {
 var FontsMap = {};
 var FontLoadedCounter = 0;
 
+var objIdCounter = 0;
+
 var PartialEvaluator = (function() {
   function constructor() {
     this.state = new EvalState();
@@ -4273,25 +4293,27 @@ var PartialEvaluator = (function() {
                                          fonts, images, uniquePrefix);
                 var matrix = xobj.dict.get('Matrix');
                 var bbox = xobj.dict.get('BBox');
-                args = [raw, matrix, bbox];
+                args = [ raw, matrix, bbox ];
                 fn = "paintReadyFormXObject";
-              }
-              if (xobj instanceof JpegStream) {
-                images.bind(xobj); // monitoring image load
-                // console.log("got xobj that is a JpegStream");
-              }
-              
-              if (xobj.dict.get('Subtype').name == "Image") {
-                // Check if we have an image that is not rendered by the platform.
-                // Needs to be rendered ourself.
-                if (!(xobj instanceof JpegStream)) {
-                  var image = xobj;
-                  var dict = image.dict;
-                  var w = dict.get('Width', 'W');
-                  var h = dict.get('Height', 'H');
-                  
+              } else if ('Image' == type.name) {
+                var image = xobj;
+                var dict = image.dict;
+                var w = dict.get('Width', 'W');
+                var h = dict.get('Height', 'H');
+
+                if (image instanceof JpegStream) {
+                  var objId = ++objIdCounter;
+                  images.push({
+                    id: objId,
+                    IR: image.getIR()
+                  });
+
+                  // TODO: Place dependency note in IR queue.
+                  fn = 'paintReadyJpegXObject';
+                  args = [ objId, w, h ];
+                } else {
+                  // Needs to be rendered ourself.
                   var inline = false;
-                  
                   var imageObj = new PDFImage(xref, resources, image, inline);
 
                   if (imageObj.imageMask) {
@@ -4308,12 +4330,10 @@ var PartialEvaluator = (function() {
                   
                   fn = "paintReadyImageXObject";
                   args = [ imgData ];
-                  
-                  // console.log("xobj subtype image", w, h, imageObj.imageMask);
                 }
+              } else {
+                error('Unhandled XObject subtype ' + type.name);
               }
-              // console.log("xobj subtype", xobj.dict.get('Subtype').name);
-
             }
           } else if (cmd == 'Tf') { // eagerly collect all fonts
             var fontName = args[0].name;
@@ -5529,6 +5549,24 @@ var CanvasGraphics = (function() {
 
       var code = this.pe.evalFromRaw(ref.raw)
       this.execute(code, this.xref, stream.dict.get('Resources'));
+
+      this.restore();
+    },
+
+    paintReadyJpegXObject: function(objId, w, h) {
+      var image = Objects[objId];
+      if (!image) {
+        error("Dependent image isn't ready yet");
+      }
+
+      this.save();
+      
+      var ctx = this.ctx;
+      ctx.scale(1 / w, -1 / h);
+
+      var domImage = image.getImage();
+      ctx.drawImage(domImage, 0, 0, domImage.width, domImage.height,
+                    0, -h, w, h);
 
       this.restore();
     },
