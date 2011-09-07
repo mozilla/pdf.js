@@ -95,8 +95,10 @@ var WorkerPDFDoc = (function() {
       }
     
       var imageLoadingDone = function() {
+        var timeStart = new Date();
         console.log("startRenderingFromPreCompilation:", "numberOfFonts", fonts.length);
         page.startRenderingFromPreCompilation(data.preCompilation, data.fonts, data.images);
+        console.log("RenderingTime", (new Date()) - timeStart);
       }
 
       var images = data.images;
