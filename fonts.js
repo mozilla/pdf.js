@@ -1597,7 +1597,7 @@ var Type1Parser = function() {
         } else if (!command) {
           break;
         } else if (command == -1) {
-          error('Support for Type1 command ' + value +
+          warn('Support for Type1 command ' + value +
                 ' (' + escape + ') is not implemented in charstring: ' +
                 charstring);
         }
@@ -1641,7 +1641,8 @@ var Type1Parser = function() {
   };
 
   function readNumber(str, index) {
-    while (str[index++] == ' ');
+    while (str[index] == ' ')
+      index++;
 
     var start = index;
 
