@@ -4222,6 +4222,8 @@ var PartialEvaluator = (function() {
           // TODO figure out how to type-check vararg functions
 
           if ((cmd == 'SCN' || cmd == 'scn') && !args[args.length - 1].code) {
+            fn = "setFillColorN_IR";
+            
             // compile tiling patterns
             var patternName = args[args.length - 1];
             // SCN/scn applies patterns along with normal colors
@@ -4237,11 +4239,15 @@ var PartialEvaluator = (function() {
                   var codeIR = this.evalRaw(pattern, xref,
                                     dict.get('Resources'), fonts);
                   
-                  fn = "setFillColorN_IR";
                   args = TilingPattern.getIR(codeIR, dict);
 
                   //patternName.code = this.evalRaw(pattern, xref,
                   //    dict.get('Resources'), fonts);
+                } else {
+                  var shading = xref.fetchIfRef(dict.get('Shading'));
+                  var matrix = dict.get('Matrix');
+                  var pattern = Pattern.parseShading(shading, matrix, xref, res, null /*ctx*/);
+                  args = pattern.getPatternRaw();
                 }
               }
             }
@@ -5309,6 +5315,8 @@ var CanvasGraphics = (function() {
 
           // Build the pattern based on the IR data.
           var pattern = new TilingPatternIR(IR, color, this.ctx);
+        } else if (IR[0] == "RadialAxialShading") {
+          var pattern = Pattern.shadingFromRaw(this.ctx, IR); 
         } else {
           throw "Unkown IR type";
         }
