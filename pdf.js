@@ -592,17 +592,17 @@ var FlateStream = (function() {
       var numCodeLenCodes = this.getBits(4) + 4;
 
       // build the code lengths code table
-      var codeLenCodeLengths = Array(codeLenCodeMap.length);
-      var i = 0;
-      while (i < numCodeLenCodes)
-        codeLenCodeLengths[codeLenCodeMap[i++]] = this.getBits(3);
+      var codeLenCodeLengths = [];
+      
+      for (var i = 0; i < numCodeLenCodes; ++i)
+        codeLenCodeLengths[codeLenCodeMap[i]] = this.getBits(3);
       var codeLenCodeTab = this.generateHuffmanTable(codeLenCodeLengths);
 
       // build the literal and distance code tables
       var len = 0;
       var i = 0;
       var codes = numLitCodes + numDistCodes;
-      var codeLengths = new Array(codes);
+      var codeLengths = [];
       while (i < codes) {
         var code = this.getCode(codeLenCodeTab);
         if (code == 16) {
