@@ -1527,6 +1527,7 @@ var Type1Parser = function() {
 
   function decodeCharString(array) {
     var charstring = [];
+    var params;
     var lsb = 0;
     var width = 0;
 
@@ -1563,27 +1564,26 @@ var Type1Parser = function() {
               continue;
             }
           }
+          if (escape == 12) {
+            // div
+            params = charstring.splice(-2, 2);
+            charstring.push(params[0] / params[1]);
+            continue;
+          }
+          if (escape == 6) {
+            TODO('standard encoding accented character');
+            // TODO seac... ignoring for now
+            charstring.splice(-5, 5);
+            continue;
+          }
 
           command = charStringDictionary['12'][escape];
         } else {
           // TODO Clean this code
           if (value == 13) { // hsbw
-            if (charstring.length == 2) {
-              lsb = charstring[0];
-              width = charstring[1];
-              charstring.splice(0, 1);
-            } else if (charstring.length == 4 && charstring[3] == 'div') {
-              lsb = charstring[0];
-              width = charstring[1] / charstring[2];
-              charstring.splice(0, 1);
-            } else if (charstring.length == 4 && charstring[2] == 'div') {
-              lsb = charstring[0] / charstring[1];
-              width = charstring[3];
-              charstring.splice(0, 3);
-            } else {
-              error('Unsupported hsbw format: ' + charstring);
-            }
-
+            params = charstring.splice(-2, 2); // sbx wx
+            lsb = params[0];
+            width = params[1];
             charstring.push(lsb, 'hmoveto');
             continue;
           }
