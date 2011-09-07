@@ -6195,7 +6195,8 @@ var RadialAxialShading = (function() {
     var p1 = raw[4];
     var r0 = raw[5];
 
-    if (ctx.mozCurrentTransform) {
+    var curMatrix = ctx.mozCurrentTransform; 
+    if (curMatrix) {
       var userMatrix = ctx.mozCurrentTransformInverse;
 
       p0 = Util.applyTransform(p0, curMatrix);
