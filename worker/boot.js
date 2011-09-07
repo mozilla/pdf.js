@@ -53,16 +53,31 @@ var handler = new MessageHandler("worker", {
     console.log("about to send page", pageNum);
    
     if (true /* show used commands */) {
-      // Make a copy of the fnArray and show all cmds it has.
-      var fnArray = preCompilation.fnArray.slice(0).sort();
-      for (var i = 0; i < fnArray.length; true) {
-        if (fnArray[i] == fnArray[i + 1]) {
-          fnArray.splice(i, 1);
+      var cmdMap = {};
+      
+      var fnArray = preCompilation.fnArray;
+      for (var i = 0; i < fnArray.length; i++) {
+        var entry = fnArray[i];
+        if (entry == "paintReadyFormXObject") {
+          //console.log(preCompilation.argsArray[i]);
+        }
+        if (cmdMap[entry] == null) {
+          cmdMap[entry] = 1;
         } else {
-          i++;
+          cmdMap[entry] += 1;
         }
       }
-      console.log("cmds", fnArray);
+
+      // // Make a copy of the fnArray and show all cmds it has.
+      // var fnArray = preCompilation.fnArray.slice(0).sort();
+      // for (var i = 0; i < fnArray.length; true) {
+      //   if (fnArray[i] == fnArray[i + 1]) {
+      //     fnArray.splice(i, 1);
+      //   } else {
+      //     i++;
+      //   }
+      // }
+      console.log("cmds", JSON.stringify(cmdMap));
     } 
     
     handler.send("page", {

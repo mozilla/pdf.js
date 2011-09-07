@@ -4334,13 +4334,26 @@ var PartialEvaluator = (function() {
             args = [ ColorSpace.parseRaw(args[0], xref, resources) ];
             break;
           case "shadingFill":
+            var shadingRes = xref.fetchIfRef(res.get('Shading'));
+            if (!shadingRes)
+              error('No shading resource found');
+
+            var shading = xref.fetchIfRef(shadingRes.get(args[0].name));
+            if (!shading)
+              error('No shading object found');
+
+            var shadingFill = Pattern.parseShading(shading, null, xref, res, /* ctx */ null);
+            var patternRaw = shadingFill.getPatternRaw();
+
+            args = [ patternRaw ];
+            fn = "shadingFillRaw";
 
             break;
           }
 
           
 
-          var skips = [];
+          var skips = [ "setFillColorN" ];//[ "paintReadyFormXObject" ];
           //var skips = ["setFillColorSpace", "setFillColor", "setStrokeColorSpace", "setStrokeColor"];
           
           if (skips.indexOf(fn) != -1) {
@@ -5335,6 +5348,43 @@ var CanvasGraphics = (function() {
       this.restore();
     },
 
+    shadingFillRaw: function(patternRaw) {
+      var ctx = this.ctx;
+      
+      this.save();
+      ctx.fillStyle = Pattern.shadingFromRaw(ctx, patternRaw);
+
+      var inv = ctx.mozCurrentTransformInverse;
+      if (inv) {
+        var canvas = ctx.canvas;
+        var width = canvas.width;
+        var height = canvas.height;
+
+        var bl = Util.applyTransform([0, 0], inv);
+        var br = Util.applyTransform([0, width], inv);
+        var ul = Util.applyTransform([height, 0], inv);
+        var ur = Util.applyTransform([height, width], inv);
+
+        var x0 = Math.min(bl[0], br[0], ul[0], ur[0]);
+        var y0 = Math.min(bl[1], br[1], ul[1], ur[1]);
+        var x1 = Math.max(bl[0], br[0], ul[0], ur[0]);
+        var y1 = Math.max(bl[1], br[1], ul[1], ur[1]);
+
+        this.ctx.fillRect(x0, y0, x1 - x0, y1 - y0);
+      } else {
+        // HACK to draw the gradient onto an infinite rectangle.
+        // PDF gradients are drawn across the entire image while
+        // Canvas only allows gradients to be drawn in a rectangle
+        // The following bug should allow us to remove this.
+        // https://bugzilla.mozilla.org/show_bug.cgi?id=664884
+
+        this.ctx.fillRect(-1e10, -1e10, 2e10, 2e10);
+      }
+
+      this.restore();
+
+    },
+
     // Images
     beginInlineImage: function() {
       error('Should not call beginInlineImage');
@@ -5684,7 +5734,7 @@ var ColorSpace = (function() {
         return new DeviceRgbCS();
       case "DeviceCmykCS":
         return new DeviceCmykCS();
-      case "Pattern":
+      case "PatternCS":
         return new PatternCS(raw[1]);
       default:
         error("Unkown name " + name);
@@ -6042,6 +6092,12 @@ var Pattern = (function() {
     }
   };
 
+  constructor.shadingFromRaw = function(ctx, raw) {
+    var obj = window[raw[0]];
+
+    return obj.fromRaw(ctx, raw);
+  }
+
   constructor.parse = function pattern_parse(args, cs, xref, res, ctx) {
     var length = args.length;
 
@@ -6122,7 +6178,6 @@ var RadialAxialShading = (function() {
     this.type = 'Pattern';
 
     this.ctx = ctx;
-    this.curMatrix = ctx.mozCurrentTransform;
 
     var cs = dict.get('ColorSpace', 'CS');
     cs = ColorSpace.parse(cs, xref, res);
@@ -6170,6 +6225,35 @@ var RadialAxialShading = (function() {
     this.colorStops = colorStops;
   }
 
+  constructor.fromRaw = function(ctx, raw) {
+    var type = raw[1];
+    var colorStops = raw[2];
+    var p0 = raw[3];
+    var p1 = raw[4];
+    var r0 = raw[5];
+
+    if (ctx.mozCurrentTransform) {
+      var userMatrix = ctx.mozCurrentTransformInverse;
+
+      p0 = Util.applyTransform(p0, curMatrix);
+      p0 = Util.applyTransform(p0, userMatrix);
+
+      p1 = Util.applyTransform(p1, curMatrix);
+      p1 = Util.applyTransform(p1, userMatrix);
+    }
+
+    if (type == 2)
+      var grad = ctx.createLinearGradient(p0[0], p0[1], p1[0], p1[1]);
+    else if (type == 3)
+      var grad = ctx.createRadialGradient(p0[0], p0[1], r0, p1[0], p1[1], r1);
+
+    for (var i = 0, ii = colorStops.length; i < ii; ++i) {
+      var c = colorStops[i];
+      grad.addColorStop(c[0], c[1]);
+    }
+    return grad;
+  }
+
   constructor.prototype = {
     getPattern: function() {
       var coordsArr = this.coordsArr;
@@ -6195,9 +6279,8 @@ var RadialAxialShading = (function() {
 
       // if the browser supports getting the tranform matrix, convert
       // gradient coordinates from pattern space to current user space
-      var curMatrix = this.curMatrix;
       var ctx = this.ctx;
-      if (curMatrix) {
+      if (ctx.mozCurrentTransform) {
         var userMatrix = ctx.mozCurrentTransformInverse;
 
         p0 = Util.applyTransform(p0, curMatrix);
@@ -6218,8 +6301,33 @@ var RadialAxialShading = (function() {
         grad.addColorStop(c[0], c[1]);
       }
       return grad;
+    },
+
+    getPatternRaw: function() {
+      var coordsArr = this.coordsArr;
+      var type = this.shadingType;
+      if (type == 2) {
+        var p0 = [coordsArr[0], coordsArr[1]];
+        var p1 = [coordsArr[2], coordsArr[3]];
+        var r0 = null;
+      } else if (type == 3) {
+        var p0 = [coordsArr[0], coordsArr[1]];
+        var p1 = [coordsArr[3], coordsArr[4]];
+        var r0 = coordsArr[2], r1 = coordsArr[5];
+      } else {
+        error();
+      }
+
+      var matrix = this.matrix;
+      if (matrix) {
+        p0 = Util.applyTransform(p0, matrix);
+        p1 = Util.applyTransform(p1, matrix);
+      }
+      
+      return [ "RadialAxialShading", type, this.colorStops, p0, p1, r0 ];
     }
   };
+  
   return constructor;
 })();
 
