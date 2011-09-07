@@ -4179,7 +4179,8 @@ var PartialEvaluator = (function() {
           // TODO figure out how to type-check vararg functions
 
           if ((cmd == 'SCN' || cmd == 'scn') && !args[args.length - 1].code) {
-            fn = "setFillColorN_IR";
+            // Use the IR version for setStroke/FillColorN.
+            fn += '_IR';
             
             // compile tiling patterns
             var patternName = args[args.length - 1];
@@ -5190,6 +5191,41 @@ var CanvasGraphics = (function() {
         this.setStrokeColor.apply(this, arguments);
       }
     },
+    getColorN_IR_Pattern: function(IR) {
+      if (IR[0] == "TilingPatternIR") {
+        // First, build the `color` var like it's done in the
+        // Pattern.prototype.parse function.
+        var base = cs.base;
+        var color;
+        if (base) {
+          var baseComps = base.numComps;
+
+          color = [];
+          for (var i = 0; i < baseComps; ++i)
+            color.push(args[i]);
+
+          color = base.getRgb(color);
+        }
+
+        // Build the pattern based on the IR data.
+        var pattern = new TilingPatternIR(IR, color, this.ctx);
+      } else if (IR[0] == "RadialAxialShading") {
+        var pattern = Pattern.shadingFromRaw(this.ctx, IR); 
+      } else {
+        throw "Unkown IR type";
+      }
+      return pattern; 
+    },
+    setStrokeColorN_IR: function(/*...*/) {
+      var cs = this.current.strokeColorSpace;
+
+      if (cs.name == 'Pattern') {
+        this.current.strokeColor = this.getColorN_IR_Pattern(arguments);
+      } else {
+        this.setStrokeColor.apply(this, arguments);
+      }
+      
+    },
     setFillColor: function(/*...*/) {
       var cs = this.current.fillColorSpace;
       var color = cs.getRgb(arguments);
@@ -5211,30 +5247,7 @@ var CanvasGraphics = (function() {
       var cs = this.current.fillColorSpace;
 
       if (cs.name == 'Pattern') {
-        var IR = arguments;
-        if (IR[0] == "TilingPatternIR") {
-          // First, build the `color` var like it's done in the
-          // Pattern.prototype.parse function.
-          var base = cs.base;
-          var color;
-          if (base) {
-            var baseComps = base.numComps;
-
-            color = [];
-            for (var i = 0; i < baseComps; ++i)
-              color.push(args[i]);
-
-            color = base.getRgb(color);
-          }
-
-          // Build the pattern based on the IR data.
-          var pattern = new TilingPatternIR(IR, color, this.ctx);
-        } else if (IR[0] == "RadialAxialShading") {
-          var pattern = Pattern.shadingFromRaw(this.ctx, IR); 
-        } else {
-          throw "Unkown IR type";
-        }
-        this.current.fillColor = pattern;
+        this.current.fillColor = this.getColorN_IR_Pattern(arguments);
       } else {
         this.setFillColor.apply(this, arguments);
       }
