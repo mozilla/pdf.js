@@ -5509,8 +5509,12 @@ var ColorSpace = (function() {
   };
 
   constructor.parse = function colorspace_parse(cs, xref, res) {
-    var IR = constructor.parseToIR(cs, xref, res);
-    return constructor.fromIR(IR);
+    var IR = constructor.parseToIR(cs, xref, res, true);
+    if (!(IR instanceof SeparationCS)) {
+      return constructor.fromIR(IR);
+    } else {
+      return IR
+    }
   };
   
   constructor.fromIR = function(raw) {
@@ -5546,7 +5550,7 @@ var ColorSpace = (function() {
     return null;
   }
   
-  constructor.parseToIR = function colorspace_parse(cs, xref, res) {
+  constructor.parseToIR = function colorspace_parse(cs, xref, res, parseOnly) {
     if (IsName(cs)) {
       var colorSpaces = res.get('ColorSpace');
       if (IsDict(colorSpaces)) {
@@ -5616,13 +5620,15 @@ var ColorSpace = (function() {
         var hiVal = cs[2] + 1;
         var lookup = xref.fetchIfRef(cs[3]);
         return ["IndexedCS", baseCS, hiVal, lookup];
-      case 'Separation':      
-        error("Need to implement IR form for SeparationCS");
-
-        // var name = cs[1];
-        // var alt = ColorSpace.parse(cs[2], xref, res);
-        // var tintFn = new PDFFunction(xref, xref.fetchIfRef(cs[3]));
-        // return new SeparationCS(alt, tintFn);
+      case 'Separation':
+        if (!parseOnly) {
+          error("Need to implement IR form for SeparationCS");
+        } else {
+          var name = cs[1];
+          var alt = ColorSpace.parse(cs[2], xref, res);
+          var tintFn = new PDFFunction(xref, xref.fetchIfRef(cs[3]));
+          return new SeparationCS(alt, tintFn);
+        }
       case 'Lab':
       case 'DeviceN':
       default:
@@ -5669,7 +5675,6 @@ var SeparationCS = (function() {
           baseBuf[pos++] = 255 * tinted[j];
       }
       return base.getRgbBuffer(baseBuf, 8);
-
     }
   };
 
