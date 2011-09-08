@@ -4389,7 +4389,7 @@ var PartialEvaluator = (function() {
       var type = dict.get('Subtype');
       assertWellFormed(IsName(type), 'invalid font Subtype');
 
-      var composite = false
+      var composite = false;
       if (type.name == 'Type0') {
         // If font is a composite
         //  - get the descendant font
@@ -4449,7 +4449,7 @@ var PartialEvaluator = (function() {
       // According to the spec if 'FontDescriptor' is declared, 'FirstChar',
       // 'LastChar' and 'Widths' should exists too, but some PDF encoders seems
       // to ignore this rule when a variant of a standart font is used.
-      // TODO Fill the width array depending on which of the base font this is 
+      // TODO Fill the width array depending on which of the base font this is
       // a variant.
       var firstChar = xref.fetchIfRef(dict.get('FirstChar')) || 0;
       var lastChar = xref.fetchIfRef(dict.get('LastChar')) || 256;
