@@ -6083,6 +6083,7 @@ var RadialAxialShading = (function() {
     var p0 = raw[3];
     var p1 = raw[4];
     var r0 = raw[5];
+    var r1 = raw[6];
 
     var curMatrix = ctx.mozCurrentTransform; 
     if (curMatrix) {
@@ -6115,10 +6116,12 @@ var RadialAxialShading = (function() {
         var p0 = [coordsArr[0], coordsArr[1]];
         var p1 = [coordsArr[2], coordsArr[3]];
         var r0 = null;
+        var r1 = null;
       } else if (type == 3) {
         var p0 = [coordsArr[0], coordsArr[1]];
         var p1 = [coordsArr[3], coordsArr[4]];
-        var r0 = coordsArr[2], r1 = coordsArr[5];
+        var r0 = coordsArr[2];
+        var r1 = coordsArr[5];
       } else {
         error('getPattern type unknown: ' + type);
       }
@@ -6129,7 +6132,7 @@ var RadialAxialShading = (function() {
         p1 = Util.applyTransform(p1, matrix);
       }
       
-      return [ "RadialAxialShading", type, this.colorStops, p0, p1, r0 ];
+      return [ "RadialAxialShading", type, this.colorStops, p0, p1, r0, r1 ];
     }
   };
   
