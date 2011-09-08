@@ -4208,13 +4208,19 @@ var PartialEvaluator = (function() {
           var glyphsData = glyphsStream.getBytes(0);
 
           // Glyph ids are big-endian 2-byte values
-          // Set this to 0 to verify the font has an encoding.
           var encoding = properties.encoding;
-          encoding[0] = 0;
+
+          // Set encoding 0 to later verify the font has an encoding
+          encoding[0] = { unicode: 0 };
           for (var j = 0; j < glyphsData.length; j++) {
             var glyphID = (glyphsData[j++] << 8) | glyphsData[j];
-            if (glyphID != 0)
-              encoding[j >> 1] = glyphID;
+            if (glyphID == 0)
+              continue;
+
+            encoding[j >> 1] = {
+              unicode: glyphID,
+              width: 0
+            };
           }
         } else if (type == 'CIDFontType0') {
           var encoding = xref.fetchIfRef(dict.get('Encoding'));
@@ -4281,19 +4287,23 @@ var PartialEvaluator = (function() {
       var glyphs = {};
       for (var i = firstChar; i <= lastChar; i++) {
         var glyph = differences[i] || baseEncoding[i];
-        if (glyph) {
-          var index = GlyphsUnicode[glyph] || i;
-          glyphs[glyph] = map[i] = index;
+        var index = GlyphsUnicode[glyph] || i;
+        map[i] = {
+          unicode: index,
+          width: properties.widths[i] || properties.defaultWidth
+        };
 
-          // If there is no file, the character mapping can't be modified
-          // but this is unlikely that there is any standard encoding with
-          // chars below 0x1f, so that's fine.
-          if (!properties.file)
-            continue;
+        if (glyph)
+          glyphs[glyph] = map[i];
 
-          if (index <= 0x1f || (index >= 127 && index <= 255))
-            glyphs[glyph] = map[i] += kCmapGlyphOffset;
-        }
+        // If there is no file, the character mapping can't be modified
+        // but this is unlikely that there is any standard encoding with
+        // chars below 0x1f, so that's fine.
+        if (!properties.file)
+          continue;
+
+        if (index <= 0x1f || (index >= 127 && index <= 255))
+          map[i].unicode += kCmapGlyphOffset;
       }
 
       if (type == 'TrueType' && dict.has('ToUnicode') && differences) {
@@ -4330,7 +4340,9 @@ var PartialEvaluator = (function() {
                     var endRange = tokens[j + 1];
                     var code = tokens[j + 2];
                     while (startRange < endRange) {
-                      map[startRange] = code++;
+                      var mapping = map[startRange] || {};
+                      mapping.unicode = code++;
+                      map[startRange] = mapping;
                       ++startRange;
                     }
                   }
@@ -4341,7 +4353,9 @@ var PartialEvaluator = (function() {
                   for (var j = 0; j < tokens.length; j += 2) {
                     var index = tokens[j];
                     var code = tokens[j + 1];
-                    map[index] = code;
+                    var mapping = map[index] || {};
+                    mapping.unicode = code;
+                    map[index] = mapping;
                   }
                   break;
 
@@ -4434,6 +4448,7 @@ var PartialEvaluator = (function() {
           type: type.name,
           encoding: map,
           differences: [],
+          widths: {},
           firstChar: 0,
           lastChar: 256
         };
@@ -4492,19 +4507,18 @@ var PartialEvaluator = (function() {
         descent: descriptor.get('Descent'),
         xHeight: descriptor.get('XHeight'),
         capHeight: descriptor.get('CapHeight'),
+        defaultWidth: parseFloat(descriptor.get('MissingWidth')) || 0,
         flags: descriptor.get('Flags'),
         italicAngle: descriptor.get('ItalicAngle'),
         differences: [],
-        widths: [],
+        widths: (function() {
+          var glyphWidths = {};
+          for (var i = 0; i < widths.length; i++)
+            glyphWidths[firstChar++] = widths[i];
+          return glyphWidths;
+        })(),
         encoding: {}
       };
-
-      // XXX Encoding and Glyphs should point to the same object so it will
-      // be hard to be out of sync. The object could contains the unicode and
-      // the width of the glyph.
-      for (var i = 0; i <= widths.length; i++)
-        properties.widths[firstChar++] = widths[i];
-
       properties.glyphs = this.extractEncoding(dict, xref, properties);
 
       return {
@@ -4897,6 +4911,7 @@ var CanvasGraphics = (function() {
 
       var scaleFactorX = 1, scaleFactorY = 1;
       var font = current.font;
+      var baseText= text;
       if (font) {
         if (current.fontSize <= kRasterizerMin) {
           scaleFactorX = scaleFactorY = kScalePrecision;
@@ -4906,16 +4921,11 @@ var CanvasGraphics = (function() {
         text = font.charsToUnicode(text);
       }
 
+      var encoding = current.font.encoding;
+      var size = current.fontSize;
       var charSpacing = current.charSpacing;
       var wordSpacing = current.wordSpacing;
       var textHScale = current.textHScale;
-
-      // This is a poor simulation for Arial Narrow while font-stretch
-      // is not implemented (bug 3512)
-      if (current.font.narrow) {
-        textHScale += 0.2;
-        charSpacing -= (0.09 * current.fontSize);
-      }
 
       if (charSpacing != 0 || wordSpacing != 0 || textHScale != 1) {
         scaleFactorX *= textHScale;
@@ -4923,9 +4933,10 @@ var CanvasGraphics = (function() {
         var width = 0;
 
         for (var i = 0, ii = text.length; i < ii; ++i) {
-          var c = text.charAt(i);
+          var c = baseText.charAt(i);
           ctx.fillText(c, 0, 0);
-          var charWidth = FontMeasure.measureText(c) + charSpacing;
+          var charWidth = FontMeasure.measureText(c, encoding, size);
+          charWidth += charSpacing;
           if (c.charCodeAt(0) == 32)
             charWidth += wordSpacing;
           ctx.translate(charWidth * scaleFactorX, 0);
@@ -4934,7 +4945,7 @@ var CanvasGraphics = (function() {
         current.x += width;
       } else {
         ctx.fillText(text, 0, 0);
-        current.x += FontMeasure.measureText(text);
+        current.x += FontMeasure.measureText(baseText, encoding, size);
       }
 
       this.ctx.restore();
