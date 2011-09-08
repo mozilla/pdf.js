@@ -444,7 +444,6 @@ var Font = (function Font() {
   var constructor = function font_constructor(name, file, properties) {
     this.name = name;
     this.encoding = properties.encoding;
-    this.glyphs = properties.glyphs;
     this.sizes = [];
 
     var names = name.split("+");
@@ -1367,10 +1366,6 @@ var Font = (function Font() {
             warn('Unencoded charcode ' + charcode);
             unicode = charcode;
           }
-
-          // Check if the glyph has already been converted
-          if (!IsNum(unicode))
-            unicode = encoding[charcode].unicode = this.glyphs[unicode].unicode;
 
           // Handle surrogate pairs
           if (unicode > 0xFFFF) {
