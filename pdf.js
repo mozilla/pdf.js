@@ -5843,49 +5843,8 @@ var Pattern = (function() {
 
   constructor.shadingFromIR = function(ctx, raw) {
     var obj = window[raw[0]];
-
     return obj.fromIR(ctx, raw);
   }
-
-  constructor.parse = function pattern_parse(args, cs, xref, res, ctx) {
-    var length = args.length;
-
-    var patternName = args[length - 1];
-    if (!IsName(patternName))
-      error('Bad args to getPattern: ' + patternName);
-
-    var patternRes = xref.fetchIfRef(res.get('Pattern'));
-    if (!patternRes)
-      error('Unable to find pattern resource');
-
-    var pattern = xref.fetchIfRef(patternRes.get(patternName.name));
-    var dict = IsStream(pattern) ? pattern.dict : pattern;
-    var typeNum = dict.get('PatternType');
-
-    switch (typeNum) {
-    case 1:
-      var base = cs.base;
-      var color;
-      if (base) {
-        var baseComps = base.numComps;
-
-        color = [];
-        for (var i = 0; i < baseComps; ++i)
-          color.push(args[i]);
-
-        color = base.getRgb(color);
-      }
-      var code = patternName.code;
-      return new TilingPattern(pattern, code, dict, color, xref, ctx);
-    case 2:
-      var shading = xref.fetchIfRef(dict.get('Shading'));
-      var matrix = dict.get('Matrix');
-      return Pattern.parseShading(shading, matrix, xref, res, ctx);
-    default:
-      error('Unknown type of pattern: ' + typeNum);
-    }
-    return null;
-  };
 
   constructor.parseShading = function pattern_shading(shading, matrix,
       xref, res, ctx) {
@@ -6134,10 +6093,8 @@ var TilingPatternIR = (function() {
   return TilingPatternIR;
 })();
 
-var TilingPattern = (function() {
-  var PAINT_TYPE_COLORED = 1, PAINT_TYPE_UNCOLORED = 2;
-
-  constructor.getIR = function(codeIR, dict) {
+var TilingPattern = {
+  getIR: function(codeIR, dict) {
     var matrix = dict.get('Matrix');
     var bbox = dict.get('BBox');
     var xstep = dict.get('XStep');
@@ -6146,101 +6103,7 @@ var TilingPattern = (function() {
     
     return ["TilingPatternIR", codeIR, matrix, bbox, xstep, ystep, paintType];
   }
-
-  function constructor(pattern, code, dict, color, xref, ctx) {
-      TODO('TilingType');
-
-      this.matrix = dict.get('Matrix');
-      this.curMatrix = ctx.mozCurrentTransform;
-      this.invMatrix = ctx.mozCurrentTransformInverse;
-      this.ctx = ctx;
-      this.type = 'Pattern';
-
-      var bbox = dict.get('BBox');
-      var x0 = bbox[0], y0 = bbox[1], x1 = bbox[2], y1 = bbox[3];
-
-      var xstep = dict.get('XStep');
-      var ystep = dict.get('YStep');
-
-      var topLeft = [x0, y0];
-      // we want the canvas to be as large as the step size
-      var botRight = [x0 + xstep, y0 + ystep];
-
-      var width = botRight[0] - topLeft[0];
-      var height = botRight[1] - topLeft[1];
-
-      // TODO: hack to avoid OOM, we would idealy compute the tiling
-      // pattern to be only as large as the acual size in device space
-      // This could be computed with .mozCurrentTransform, but still
-      // needs to be implemented
-      while (Math.abs(width) > 512 || Math.abs(height) > 512) {
-        width = 512;
-        height = 512;
-      }
-
-      var tmpCanvas = new ScratchCanvas(width, height);
-
-      // set the new canvas element context as the graphics context
-      var tmpCtx = tmpCanvas.getContext('2d');
-      var graphics = new CanvasGraphics(tmpCtx);
-
-      var paintType = dict.get('PaintType');
-      switch (paintType) {
-      case PAINT_TYPE_COLORED:
-        tmpCtx.fillStyle = ctx.fillStyle;
-        tmpCtx.strokeStyle = ctx.strokeStyle;
-        break;
-      case PAINT_TYPE_UNCOLORED:
-        color = Util.makeCssRgb.apply(this, color);
-        tmpCtx.fillStyle = color;
-        tmpCtx.strokeStyle = color;
-        break;
-      default:
-        error('Unsupported paint type: ' + paintType);
-      }
-
-      var scale = [width / xstep, height / ystep];
-      this.scale = scale;
-
-      // transform coordinates to pattern space
-      var tmpTranslate = [1, 0, 0, 1, -topLeft[0], -topLeft[1]];
-      var tmpScale = [scale[0], 0, 0, scale[1], 0, 0];
-      graphics.transform.apply(graphics, tmpScale);
-      graphics.transform.apply(graphics, tmpTranslate);
-
-      if (bbox && IsArray(bbox) && 4 == bbox.length) {
-        graphics.rectangle.apply(graphics, bbox);
-        graphics.clip();
-        graphics.endPath();
-      }
-
-      var res = xref.fetchIfRef(dict.get('Resources'));
-      graphics.execute(code, xref, res);
-
-      this.canvas = tmpCanvas;
-  }
-
-  constructor.prototype = {
-    getPattern: function tiling_getPattern() {
-      var matrix = this.matrix;
-      var curMatrix = this.curMatrix;
-      var ctx = this.ctx;
-
-      if (curMatrix)
-        ctx.setTransform.apply(ctx, curMatrix);
-
-      if (matrix)
-        ctx.transform.apply(ctx, matrix);
-
-      var scale = this.scale;
-      ctx.scale(1 / scale[0], 1 / scale[1]);
-
-      return ctx.createPattern(this.canvas, 'repeat');
-    }
-  };
-  return constructor;
-})();
-
+};
 
 var PDFImage = (function() {
   function constructor(xref, res, image, inline) {
