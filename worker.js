@@ -33,13 +33,13 @@ var WorkerPage = (function() {
       this.workerPDF.startRendering(this)
     },
     
-    startRenderingFromPreCompilation: function(preCompilation, fonts, images) {
+    startRenderingFromIRQueue: function(IRQueue, fonts, images) {
       var gfx = new CanvasGraphics(this.ctx);
       
       // TODO: Add proper handling for images loaded by the worker.
       var images = new ImagesLoader();
       
-      this.page.startRenderingFromPreCompilation(gfx, preCompilation, fonts, images, this.callback);
+      this.page.startRenderingFromIRQueue(gfx, IRQueue, fonts, images, this.callback);
     },
     
     getLinks: function() {
@@ -63,7 +63,7 @@ var WorkerPDFDoc = (function() {
     
     this.pageCache = [];
     
-    var useWorker = false;
+    var useWorker = true;
     
     if (useWorker) {
       var worker = new Worker("../worker/boot.js");      
@@ -97,7 +97,7 @@ var WorkerPDFDoc = (function() {
       var imageLoadingDone = function() {
         var timeStart = new Date();
         console.log("startRenderingFromPreCompilation:", "numberOfFonts", fonts.length);
-        page.startRenderingFromPreCompilation(data.preCompilation, data.fonts, data.images);
+        page.startRenderingFromIRQueue(data.IRQueue, data.fonts, data.images);
         console.log("RenderingTime", (new Date()) - timeStart);
       }
 

@@ -25,7 +25,7 @@ var WorkerHandler = {
       var images = [];
 
       // Pre compile the pdf page and fetch the fonts/images.
-      var preCompilation = page.preCompile(gfx, fonts, images);
+      var IRQueue = page.getIRQueue(fonts, images);
 
       // Extract the minimum of font data that is required to build all required
       // font stuff on the main thread.
@@ -47,7 +47,7 @@ var WorkerHandler = {
       if (true /* show used commands */) {
         var cmdMap = {};
   
-        var fnArray = preCompilation.fnArray;
+        var fnArray = IRQueue .fnArray;
         for (var i = 0; i < fnArray.length; i++) {
           var entry = fnArray[i];
           if (entry == "paintReadyFormXObject") {
@@ -73,10 +73,10 @@ var WorkerHandler = {
       } 
 
       handler.send("page", {
-        pageNum:        pageNum,
-        fonts:          fontsMin,
-        images:         images,
-        preCompilation: preCompilation,
+        pageNum:  pageNum,
+        fonts:    fontsMin,
+        images:   images,
+        IRQueue:  IRQueue,
       });
     }, this);
   }
