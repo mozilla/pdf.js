@@ -3389,7 +3389,8 @@ var Page = (function() {
       }
       
       var pe = this.pe = new PartialEvaluator();
-      return this.IRQueue = pe.getIRQueue(content, xref, resources, fonts, images, this.pageNumber + "_");
+      var IRQueue = {};
+      return this.IRQueue = pe.getIRQueue(content, xref, resources, IRQueue, fonts, images, this.pageNumber + "_");
     },
     
     ensureFonts: function(fonts, callback) {
@@ -4141,14 +4142,22 @@ var PartialEvaluator = (function() {
   };
 
   constructor.prototype = {
-    getIRQueue: function(stream, xref, resources, fonts, images, uniquePrefix) {
+    getIRQueue: function(stream, xref, resources, queue, fonts, images, uniquePrefix) {
       uniquePrefix = uniquePrefix || "";
+      if (!queue.argsArray) {
+        queue.argsArray = []
+      }
+      if (!queue.fnArray) {
+        queue.fnArray = [];
+      }
+
+      var fnArray = queue.fnArray, argsArray = queue.argsArray;
       
       resources = xref.fetchIfRef(resources) || new Dict();
       var xobjs = xref.fetchIfRef(resources.get('XObject')) || new Dict();
       var patterns = xref.fetchIfRef(resources.get('Pattern')) || new Dict();
       var parser = new Parser(new Lexer(stream), false);
-      var args = [], argsArray = [], fnArray = [], obj;
+      var args = [], obj;
       var res = resources;
 
       while (!IsEOF(obj = parser.getObj())) {
@@ -4173,9 +4182,10 @@ var PartialEvaluator = (function() {
 
                 // Type1 is TilingPattern
                 if (typeNum == 1) {
+                  // TODO: Add dependency here.
                   // Create an IR of the pattern code.
                   var codeIR = this.getIRQueue(pattern, xref,
-                                    dict.get('Resources'), fonts, images, uniquePrefix);
+                                    dict.get('Resources'), {}, fonts, images, uniquePrefix);
                   
                   args = TilingPattern.getIR(codeIR, dict);
                 } 
@@ -4205,13 +4215,19 @@ var PartialEvaluator = (function() {
               );
 
               if ('Form' == type.name) {
-                // console.log("got xobj that is a Form");
-                var raw = this.getIRQueue(xobj, xref, xobj.dict.get('Resources'),
-                                         fonts, images, uniquePrefix);
                 var matrix = xobj.dict.get('Matrix');
                 var bbox = xobj.dict.get('BBox');
-                args = [ raw, matrix, bbox ];
-                fn = "paintFormXObject";
+                
+                fnArray.push("paintFormXObjectBegin");
+                argsArray.push([ matrix, bbox ]);
+                
+                // This adds the IRQueue of the xObj to the current queue.
+                this.getIRQueue(xobj, xref, xobj.dict.get('Resources'), queue,
+                                         fonts, images, uniquePrefix);
+
+
+                fn = "paintFormXObjectEnd";
+                args = [];
               } else if ('Image' == type.name) {
                 var image = xobj;
                 var dict = image.dict;
@@ -5246,7 +5262,7 @@ var CanvasGraphics = (function() {
       this.paintImageXObject(null, image, true);
     },
   
-    paintFormXObject: function(IRQueue, matrix, bbox) {
+    paintFormXObjectBegin: function(matrix, bbox) {
       this.save();
 
       if (matrix && IsArray(matrix) && 6 == matrix.length)
@@ -5257,10 +5273,9 @@ var CanvasGraphics = (function() {
         this.clip();
         this.endPath();
       }
+    },
 
-      // this.execute(code, this.xref, stream.dict.get('Resources'));
-      this.executeIRQueue(IRQueue);
-
+    paintFormXObjectEnd: function() {
       this.restore();
     },
 
