@@ -111,7 +111,7 @@ var WorkerPDFDoc = (function() {
     
     this.pageCache = [];
     
-    var useWorker = false;
+    var useWorker = true;
     
     if (useWorker) {
       var worker = new Worker("../worker/boot.js");      
