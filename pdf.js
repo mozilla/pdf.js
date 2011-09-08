@@ -3374,50 +3374,12 @@ var Page = (function() {
       }
       return shadow(this, 'rotate', rotate);
     },
-
-    startRendering: function(canvasCtx, continuation) {
-      var gfx = new CanvasGraphics(canvasCtx);
-
-      // If there is already some code to render, then use it directly.
-      if (this.code) {
-        this.display(gfx);
-        return;
-      }
       
+    startRenderingFromIRQueue: function(gfx, IRQueue, fonts, images, continuation) {
       var self = this;
-      var stats = self.stats;
-      stats.compile = stats.fonts = stats.render = 0;
+      this.IRQueue = IRQueue;
       
-      var fonts = [];
-      var images = new ImagesLoader();
-
-      var preCompilation = this.preCompile(gfx, fonts, images);
-      stats.compile = Date.now();
-      
-      // Make a copy of the necessary datat to build a font later. The `font`
-      // object will be sent to the main thread later on.
-      var fontsBackup = fonts;
-      fonts = [];
-      for (var i = 0; i < fontsBackup.length; i++) {
-        var orgFont = fontsBackup[i];
-      
-        var font = {
-          name:       orgFont.name,
-          file:       orgFont.file,
-          properties: orgFont.properties
-        }
-        fonts.push(font);
-      }
-
-      this.startRenderingFromPreCompilation(gfx, preCompilation, fonts, images, continuation);
-    },
-    
-    startRenderingFromPreCompilation: function(gfx, preCompilation, fonts, images, continuation) {
-      var self = this;
-      
-      var displayContinuation = function() {
-        self.code = gfx.postCompile(preCompilation);
-        
+      var displayContinuation = function() {      
         // Always defer call to display() to work around bug in
         // Firefox error reporting from XHR callbacks.
         setTimeout(function() {
@@ -3440,10 +3402,10 @@ var Page = (function() {
       })
     },
 
-    preCompile: function(gfx, fonts, images) {
-      if (this.code) {
+    getIRQueue: function(fonts, images) {
+      if (this.IRQueue) {
         // content was compiled
-        return;
+        return this.IRQueue;
       }
 
       var xref = this.xref;
@@ -3456,8 +3418,9 @@ var Page = (function() {
           content[i] = xref.fetchIfRef(content[i]);
         content = new StreamsSequenceStream(content);
       }
-      return gfx.preCompile(content, xref, resources, fonts, images, 
-                this.pageNumber + "_");
+      
+      var pe = this.pe = new PartialEvaluator();
+      return this.IRQueue = pe.getIRQueue(content, xref, resources, fonts, images, this.pageNumber + "_");
     },
     
     ensureFonts: function(fonts, callback) {
@@ -3481,8 +3444,6 @@ var Page = (function() {
     },
     
     display: function(gfx) {
-      assert(this.code instanceof Function,
-             'page content must be compiled first');
       var xref = this.xref;
       var resources = xref.fetchIfRef(this.resources);
       var mediaBox = xref.fetchIfRef(this.mediaBox);
@@ -3491,7 +3452,7 @@ var Page = (function() {
             width: this.width,
             height: this.height,
             rotate: this.rotate });
-      gfx.execute(this.code, xref, resources);
+      gfx.executeIRQueue(this.IRQueue);
       gfx.endDrawing();
     },
     rotatePoint: function(x, y) {
@@ -4224,7 +4185,7 @@ var PartialEvaluator = (function() {
   };
 
   constructor.prototype = {
-    evalRaw: function(stream, xref, resources, fonts, images, uniquePrefix) {
+    getIRQueue: function(stream, xref, resources, fonts, images, uniquePrefix) {
       uniquePrefix = uniquePrefix || "";
       
       resources = xref.fetchIfRef(resources) || new Dict();
@@ -4257,8 +4218,8 @@ var PartialEvaluator = (function() {
                 // Type1 is TilingPattern
                 if (typeNum == 1) {
                   // Create an IR of the pattern code.
-                  var codeIR = this.evalRaw(pattern, xref,
-                                    dict.get('Resources'), fonts);
+                  var codeIR = this.getIRQueue(pattern, xref,
+                                    dict.get('Resources'), fonts, images, uniquePrefix);
                   
                   args = TilingPattern.getIR(codeIR, dict);
                 } 
@@ -4289,7 +4250,7 @@ var PartialEvaluator = (function() {
 
               if ('Form' == type.name) {
                 // console.log("got xobj that is a Form");
-                var raw = this.evalRaw(xobj, xref, xobj.dict.get('Resources'),
+                var raw = this.getIRQueue(xobj, xref, xobj.dict.get('Resources'),
                                          fonts, images, uniquePrefix);
                 var matrix = xobj.dict.get('Matrix');
                 var bbox = xobj.dict.get('BBox');
@@ -4423,26 +4384,6 @@ var PartialEvaluator = (function() {
       return {
         fnArray: fnArray,
         argsArray: argsArray
-      };
-    },
-    
-    eval: function(stream, xref, resources, fonts, images, uniquePrefix) {
-      var ret = this.evalRaw(stream, xref, resources, fonts, images, uniquePrefix);
-      
-      return function(gfx) {
-        var argsArray = ret.argsArray;
-        var fnArray =   ret.fnArray;
-        for (var i = 0, length = argsArray.length; i < length; i++)
-          gfx[fnArray[i]].apply(gfx, argsArray[i]);
-      };
-    },
-    
-    evalFromRaw: function(raw) {
-      return function(gfx) {
-        var argsArray = raw.argsArray;
-        var fnArray =   raw.fnArray;
-        for (var i = 0, length = argsArray.length; i < length; i++)
-          gfx[fnArray[i]].apply(gfx, argsArray[i]);
       };
     },
 
@@ -4907,37 +4848,12 @@ var CanvasGraphics = (function() {
       this.ctx.scale(cw / mediaBox.width, ch / mediaBox.height);
     },
 
-    preCompile: function(stream, xref, resources, fonts, images) {
-      var pe = this.pe = new PartialEvaluator();
-      return pe.evalRaw(stream, xref, resources, fonts, images);
-    },
-    
-    postCompile: function(raw) {
-      if (!this.pe) {
-        this.pe = new PartialEvaluator();
-      }
-      return this.pe.evalFromRaw(raw);
-    },
-
-    execute: function(code, xref, resources) {
-      resources = xref.fetchIfRef(resources) || new Dict();
-      var savedXref = this.xref, savedRes = this.res, savedXobjs = this.xobjs;
-      this.xref = xref;
-      this.res = resources || new Dict();
-      this.xobjs = xref.fetchIfRef(this.res.get('XObject')) || new Dict();
-
-      code(this);
-
-      this.xobjs = savedXobjs;
-      this.res = savedRes;
-      this.xref = savedXref;
-    },
-
-    executeIR: function(codeIR) {
+    executeIRQueue: function(codeIR) {
       var argsArray = codeIR.argsArray;
       var fnArray =   codeIR.fnArray;
-      for (var i = 0, length = argsArray.length; i < length; i++)
-        this[fnArray[i]].apply(this, argsArray[i]);
+      for (var i = 0, length = argsArray.length; i < length; i++) {
+        this[fnArray[i]].apply(this, argsArray[i]);        
+      }
     },
 
     endDrawing: function() {
@@ -5417,7 +5333,7 @@ var CanvasGraphics = (function() {
       this.paintImageXObject(null, image, true);
     },
   
-    paintFormXObject: function(raw, matrix, bbox) {
+    paintFormXObject: function(IRQueue, matrix, bbox) {
       this.save();
 
       if (matrix && IsArray(matrix) && 6 == matrix.length)
@@ -5429,9 +5345,8 @@ var CanvasGraphics = (function() {
         this.endPath();
       }
 
-      var code = this.pe.evalFromRaw(raw)
       // this.execute(code, this.xref, stream.dict.get('Resources'));
-      this.execute(code, this.xref, null);
+      this.executeIRQueue(IRQueue);
 
       this.restore();
     },
@@ -6210,7 +6125,7 @@ var TilingPatternIR = (function() {
 
   function TilingPatternIR(IR, color, ctx) {
     // "Unfolding" the IR.
-    var codeIR = IR[1];
+    var IRQueue = IR[1];
     this.matrix = IR[2];
     var bbox = IR[3];
     var xstep = IR[4];
@@ -6277,7 +6192,7 @@ var TilingPatternIR = (function() {
       graphics.endPath();
     }
 
-    graphics.executeIR(codeIR);
+    graphics.executeIRQueue(IRQueue);
 
     this.canvas = tmpCanvas;
   }
