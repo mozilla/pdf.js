@@ -4194,13 +4194,19 @@ var PartialEvaluator = (function() {
           var glyphsData = glyphsStream.getBytes(0);
 
           // Glyph ids are big-endian 2-byte values
-          // Set this to 0 to verify the font has an encoding.
           var encoding = properties.encoding;
-          encoding[0] = 0;
+
+          // Set encoding 0 to later verify the font has an encoding
+          encoding[0] = { unicode: 0 };
           for (var j = 0; j < glyphsData.length; j++) {
             var glyphID = (glyphsData[j++] << 8) | glyphsData[j];
-            if (glyphID != 0)
-              encoding[j >> 1] = glyphID;
+            if (glyphID == 0)
+              continue;
+
+            encoding[j >> 1] = {
+              unicode: glyphID,
+              width: 0
+            };
           }
         } else if (type == 'CIDFontType0') {
           var encoding = xref.fetchIfRef(dict.get('Encoding'));
@@ -4269,7 +4275,10 @@ var PartialEvaluator = (function() {
         var glyph = differences[i] || baseEncoding[i];
         if (glyph) {
           var index = GlyphsUnicode[glyph] || i;
-          glyphs[glyph] = map[i] = index;
+          glyphs[glyph] = map[i] = {
+            unicode: index,
+            width: properties.widths[i - firstChar] || properties.defaultWidth
+          };
 
           // If there is no file, the character mapping can't be modified
           // but this is unlikely that there is any standard encoding with
@@ -4278,7 +4287,7 @@ var PartialEvaluator = (function() {
             continue;
 
           if (index <= 0x1f || (index >= 127 && index <= 255))
-            glyphs[glyph] = map[i] += kCmapGlyphOffset;
+            map[i].unicode += kCmapGlyphOffset;
         }
       }
 
@@ -4316,7 +4325,10 @@ var PartialEvaluator = (function() {
                     var endRange = tokens[j + 1];
                     var code = tokens[j + 2];
                     while (startRange < endRange) {
-                      map[startRange] = code++;
+                      map[startRange] = {
+                        unicode: code++,
+                        width: 0
+                      }
                       ++startRange;
                     }
                   }
@@ -4327,7 +4339,10 @@ var PartialEvaluator = (function() {
                   for (var j = 0; j < tokens.length; j += 2) {
                     var index = tokens[j];
                     var code = tokens[j + 1];
-                    map[index] = code;
+                    map[index] = {
+                      unicode: code,
+                      width: 0
+                    };
                   }
                   break;
 
@@ -4478,19 +4493,18 @@ var PartialEvaluator = (function() {
         descent: descriptor.get('Descent'),
         xHeight: descriptor.get('XHeight'),
         capHeight: descriptor.get('CapHeight'),
+        defaultWidth: descriptor.get('MissingWidth') || 0,
         flags: descriptor.get('Flags'),
         italicAngle: descriptor.get('ItalicAngle'),
         differences: [],
-        widths: [],
+        widths: (function() {
+          var glyphWidths = {};
+          for (var i = 0; i <= widths.length; i++)
+            glyphWidths[firstChar++] = widths[i];
+          return glyphWidths;
+        })(),
         encoding: {}
       };
-
-      // XXX Encoding and Glyphs should point to the same object so it will
-      // be hard to be out of sync. The object could contains the unicode and
-      // the width of the glyph.
-      for (var i = 0; i <= widths.length; i++)
-        properties.widths[firstChar++] = widths[i];
-
       properties.glyphs = this.extractEncoding(dict, xref, properties);
 
       return {
