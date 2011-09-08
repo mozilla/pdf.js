@@ -1553,7 +1553,7 @@ var CCITTFaxStream = (function() {
     this.row = 0;
     this.nextLine2D = this.encoding < 0;
     this.inputBits = 0;
-    this.inputBuf;
+    this.inputBuf = EOF;
     this.outputBits = 0;
     this.buf = EOF;
 
@@ -3676,8 +3676,7 @@ var PDFDoc = (function() {
         if (find(stream, 'startxref', 1024, true)) {
           stream.skip(9);
           var ch;
-          while (Lexer.isSpace(ch = stream.getChar()))
-;
+          while (Lexer.isSpace(ch = stream.getChar())){}
           var str = '';
           while ((ch - '0') <= 9) {
             str += ch;
