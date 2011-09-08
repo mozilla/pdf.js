@@ -3423,7 +3423,7 @@ var Page = (function() {
       
       var pe = this.pe = new PartialEvaluator();
       var IRQueue = {};
-      return this.IRQueue = pe.getIRQueue(content, xref, resources, IRQueue, fonts, images, this.pageNumber + "_");
+      return this.IRQueue = pe.getIRQueue(content, xref, resources, IRQueue, fonts, images, "p" + this.pageNumber + "_");
     },
     
     ensureFonts: function(fonts, callback) {
