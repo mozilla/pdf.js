@@ -68,7 +68,8 @@ function nextTask() {
         r.responseArrayBuffer || r.response;
 
       try {
-        task.pdfDoc = new PDFDoc(new Stream(data));
+        task.pdfDoc = new WorkerPDFDoc(data);
+        // task.pdfDoc = new PDFDoc(new Stream(data));
       } catch (e) {
         failure = 'load PDF doc : ' + e.toString();
       }
