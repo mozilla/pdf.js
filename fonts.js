@@ -140,11 +140,21 @@ var FontMeasure = (function FontMeasure() {
       ctx.font = rule;
       current = font;
     },
-    measureText: function fonts_measureText(text) {
+    measureText: function fonts_measureText(text, encoding, size) {
       var width;
       if (measureCache && (width = measureCache[text]))
         return width;
-      width = ctx.measureText(text).width / kScalePrecision;
+
+      try {
+        width = 0.0;
+        for (var i = 0; i < text.length; i++) {
+          var charWidth = encoding[text.charCodeAt(i)].width;
+          width += parseFloat(charWidth);
+        }
+        width = width * size / 1000;
+      } catch(e) {
+        width = ctx.measureText(text).width / kScalePrecision;
+      }
       if (measureCache)
         measureCache[text] = width;
       return width;
@@ -468,8 +478,7 @@ var Font = (function Font() {
                     (fontName.indexOf('Italic') != -1);
 
       // Use 'name' instead of 'fontName' here because the original
-      // name ArialNarrow for example will be replaced by Helvetica.
-      this.narrow = (name.indexOf("Narrow") != -1)
+      // name ArialBlack for example will be replaced by Helvetica.
       this.black = (name.indexOf("Black") != -1)
 
       this.loadedName = fontName.split('-')[0];
@@ -1018,7 +1027,9 @@ var Font = (function Font() {
             var index = firstCode;
             for (var j = start; j <= end; j++) {
               var code = j - firstCode - 1;
-              encoding[index++] = { unicode: glyphs[code].unicode };
+              var mapping = encoding[index + 1] || {};
+              mapping.unicode = glyphs[code].unicode;
+              encoding[index++] = mapping;
             }
             return cmap.data = createCMapTable(glyphs);
           }
@@ -2329,12 +2340,11 @@ var Type2CFF = (function() {
           }
         }
 
-        if (code == -1) {
-          var mapping = properties.glyphs[glyph] || {};
+        var mapping = properties.glyphs[glyph] || {};
+        if (code == -1)
           index = code = mapping.unicode || index;
-        }
 
-        var width = widths[code] || defaultWidth;
+        var width = mapping.width || defaultWidth;
         if (code <= 0x1f || (code >= 127 && code <= 255))
           code += kCmapGlyphOffset;
 

@@ -4273,22 +4273,23 @@ var PartialEvaluator = (function() {
       var glyphs = {};
       for (var i = firstChar; i <= lastChar; i++) {
         var glyph = differences[i] || baseEncoding[i];
-        if (glyph) {
-          var index = GlyphsUnicode[glyph] || i;
-          glyphs[glyph] = map[i] = {
-            unicode: index,
-            width: properties.widths[i - firstChar] || properties.defaultWidth
-          };
+        var index = GlyphsUnicode[glyph] || i;
+        map[i] = {
+          unicode: index,
+          width: properties.widths[i] || properties.defaultWidth
+        };
 
-          // If there is no file, the character mapping can't be modified
-          // but this is unlikely that there is any standard encoding with
-          // chars below 0x1f, so that's fine.
-          if (!properties.file)
-            continue;
+        if (glyph)
+          glyphs[glyph] = map[i];
 
-          if (index <= 0x1f || (index >= 127 && index <= 255))
-            map[i].unicode += kCmapGlyphOffset;
-        }
+        // If there is no file, the character mapping can't be modified
+        // but this is unlikely that there is any standard encoding with
+        // chars below 0x1f, so that's fine.
+        if (!properties.file)
+          continue;
+
+        if (index <= 0x1f || (index >= 127 && index <= 255))
+          map[i].unicode += kCmapGlyphOffset;
       }
 
       if (type == 'TrueType' && dict.has('ToUnicode') && differences) {
@@ -4325,10 +4326,9 @@ var PartialEvaluator = (function() {
                     var endRange = tokens[j + 1];
                     var code = tokens[j + 2];
                     while (startRange < endRange) {
-                      map[startRange] = {
-                        unicode: code++,
-                        width: 0
-                      }
+                      var mapping = map[startRange] || {};
+                      mapping.unicode = code++;
+                      map[startRange] = mapping;
                       ++startRange;
                     }
                   }
@@ -4339,10 +4339,9 @@ var PartialEvaluator = (function() {
                   for (var j = 0; j < tokens.length; j += 2) {
                     var index = tokens[j];
                     var code = tokens[j + 1];
-                    map[index] = {
-                      unicode: code,
-                      width: 0
-                    };
+                    var mapping = map[index] || {};
+                    mapping.unicode = code;
+                    map[index] = mapping;
                   }
                   break;
 
@@ -4494,13 +4493,13 @@ var PartialEvaluator = (function() {
         descent: descriptor.get('Descent'),
         xHeight: descriptor.get('XHeight'),
         capHeight: descriptor.get('CapHeight'),
-        defaultWidth: descriptor.get('MissingWidth') || 0,
+        defaultWidth: parseFloat(descriptor.get('MissingWidth')) || 0,
         flags: descriptor.get('Flags'),
         italicAngle: descriptor.get('ItalicAngle'),
         differences: [],
         widths: (function() {
           var glyphWidths = {};
-          for (var i = 0; i <= widths.length; i++)
+          for (var i = 0; i < widths.length; i++)
             glyphWidths[firstChar++] = widths[i];
           return glyphWidths;
         })(),
@@ -4898,6 +4897,7 @@ var CanvasGraphics = (function() {
 
       var scaleFactorX = 1, scaleFactorY = 1;
       var font = current.font;
+      var baseText= text;
       if (font) {
         if (current.fontSize <= kRasterizerMin) {
           scaleFactorX = scaleFactorY = kScalePrecision;
@@ -4907,16 +4907,11 @@ var CanvasGraphics = (function() {
         text = font.charsToUnicode(text);
       }
 
+      var encoding = current.font.encoding;
+      var size = current.fontSize;
       var charSpacing = current.charSpacing;
       var wordSpacing = current.wordSpacing;
       var textHScale = current.textHScale;
-
-      // This is a poor simulation for Arial Narrow while font-stretch
-      // is not implemented (bug 3512)
-      if (current.font.narrow) {
-        textHScale += 0.2;
-        charSpacing -= (0.09 * current.fontSize);
-      }
 
       if (charSpacing != 0 || wordSpacing != 0 || textHScale != 1) {
         scaleFactorX *= textHScale;
@@ -4924,9 +4919,10 @@ var CanvasGraphics = (function() {
         var width = 0;
 
         for (var i = 0, ii = text.length; i < ii; ++i) {
-          var c = text.charAt(i);
+          var c = baseText.charAt(i);
           ctx.fillText(c, 0, 0);
-          var charWidth = FontMeasure.measureText(c) + charSpacing;
+          var charWidth = FontMeasure.measureText(c, encoding, size);
+          charWidth += charSpacing;
           if (c.charCodeAt(0) == 32)
             charWidth += wordSpacing;
           ctx.translate(charWidth * scaleFactorX, 0);
@@ -4935,7 +4931,7 @@ var CanvasGraphics = (function() {
         current.x += width;
       } else {
         ctx.fillText(text, 0, 0);
-        current.x += FontMeasure.measureText(text);
+        current.x += FontMeasure.measureText(baseText, encoding, size);
       }
 
       this.ctx.restore();
