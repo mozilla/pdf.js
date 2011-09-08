@@ -860,13 +860,15 @@ var PredictorStream = (function() {
 
 var JpegStreamIR = (function() {
   function JpegStreamIR(objId, IR) {
-    var src = IR;
+    var src = 'data:image/jpeg;base64,' + window.btoa(IR);
 
     // create DOM image
     var img = new Image();
     img.onload = (function() {
       this.loaded = true;
-      Objects[objId] = this;
+
+      Objects.resolve(objId, this);
+
       if (this.onLoad)
         this.onLoad();
     }).bind(this);
@@ -890,7 +892,7 @@ var JpegStream = (function() {
     // TODO: per poppler, some images may have "junk" before that
     // need to be removed
     this.dict = dict;
-    this.src = 'data:image/jpeg;base64,' + window.btoa(bytesToString(bytes)); 
+    this.src = bytesToString(bytes); 
   }
 
   constructor.prototype = {
@@ -3422,8 +3424,16 @@ var Page = (function() {
             width: this.width,
             height: this.height,
             rotate: this.rotate });
-      gfx.executeIRQueue(this.IRQueue);
-      gfx.endDrawing();
+            
+      var startIdx = 0;
+      var length = this.IRQueue.fnArray.length;
+      var IRQueue = this.IRQueue;
+      
+      function next() {
+        console.log("next executeIRQueue", startIdx, length);
+        startIdx = gfx.executeIRQueue(IRQueue, startIdx, next);
+      }
+      next();
     },
     rotatePoint: function(x, y) {
       var rotate = this.rotate;
@@ -4241,7 +4251,11 @@ var PartialEvaluator = (function() {
                     IR: image.getIR()
                   });
 
-                  // TODO: Place dependency note in IR queue.
+                  // Add the dependency on the image object.
+                  fnArray.push("dependency");
+                  argsArray.push([ objId ]);
+                  
+                  // The normal fn.
                   fn = 'paintJpegXObject';
                   args = [ objId, w, h ];
                 } else {
@@ -4771,12 +4785,35 @@ var CanvasGraphics = (function() {
       this.ctx.scale(cw / mediaBox.width, ch / mediaBox.height);
     },
 
-    executeIRQueue: function(codeIR) {
+    executeIRQueue: function(codeIR, startIdx, continueCallback) {
       var argsArray = codeIR.argsArray;
       var fnArray =   codeIR.fnArray;
-      for (var i = 0, length = argsArray.length; i < length; i++) {
-        this[fnArray[i]].apply(this, argsArray[i]);        
+      var i = startIdx || 0;
+      var length = argsArray.length;
+      for (i; i < length; i++) {
+        if (fnArray[i] !== "dependency") {
+          this[fnArray[i]].apply(this, argsArray[i]);
+        } else {
+          var deps = argsArray[i];
+          for (var n = 0; n < deps.length; n++) {
+            var depObjId = deps[n];
+            var promise;
+            if (!Objects[depObjId]) {
+              promise = Objects[depObjId] = new Promise();
+            } else {
+              promise = Objects[depObjId];
+            }
+            // If the promise isn't resolved yet, add the continueCallback
+            // to the promise and bail out.
+            if (!promise.isResolved) {
+              console.log("Unresolved object: " + depObjId);
+              promise.then(continueCallback);
+              return i;
+            }
+          }
+        }
       }
+      return i; 
     },
 
     endDrawing: function() {
@@ -5280,7 +5317,7 @@ var CanvasGraphics = (function() {
     },
 
     paintJpegXObject: function(objId, w, h) {
-      var image = Objects[objId];
+      var image = Objects[objId].data;
       if (!image) {
         error("Dependent image isn't ready yet");
       }
