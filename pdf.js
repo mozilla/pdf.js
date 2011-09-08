@@ -4197,8 +4197,31 @@ var PartialEvaluator = (function() {
     extractEncoding: function(dict, xref, properties) {
       var type = properties.type;
       if (properties.composite) {
-        // XXX only CIDFontType2 supported for now
         if (type == 'CIDFontType2') {
+          var defaultWidth = xref.fetchIfRef(dict.get('DW')) || 1000;
+          properties.defaultWidth = defaultWidth;
+
+          var glyphsWidths = {};
+          var widths = xref.fetchIfRef(dict.get('W'));
+          if (widths) {
+            var start = 0, end = 0;
+            for (var i = 0; i < widths.length; i++) {
+              var code = widths[i];
+              if (IsArray(code)) {
+                for (var j = 0; j < code.length; j++)
+                  glyphsWidths[start++] = code[j];
+                start = 0;
+              } else if (start) {
+                for (var j = start; j <= code; j++)
+                  glyphsWidths[j] = widths[++i];
+                start = 0;
+              } else {
+                start = code;
+              }
+            }
+          }
+          properties.widths = glyphsWidths;
+
           var cidToGidMap = dict.get('CIDToGIDMap');
           if (!cidToGidMap || !IsRef(cidToGidMap))
             return GlyphsUnicode;
@@ -4211,15 +4234,16 @@ var PartialEvaluator = (function() {
           var encoding = properties.encoding;
 
           // Set encoding 0 to later verify the font has an encoding
-          encoding[0] = { unicode: 0 };
+          encoding[0] = { unicode: 0, width: 0 };
           for (var j = 0; j < glyphsData.length; j++) {
             var glyphID = (glyphsData[j++] << 8) | glyphsData[j];
             if (glyphID == 0)
               continue;
 
-            encoding[j >> 1] = {
+            var code = j >> 1;
+            encoding[code] = {
               unicode: glyphID,
-              width: 0
+              width: glyphsWidths[code] || defaultWidth
             };
           }
         } else if (type == 'CIDFontType0') {
@@ -4287,22 +4311,24 @@ var PartialEvaluator = (function() {
       var glyphs = {};
       for (var i = firstChar; i <= lastChar; i++) {
         var glyph = differences[i] || baseEncoding[i];
-        if (glyph) {
-          var index = GlyphsUnicode[glyph] || i;
-          glyphs[glyph] = map[i] = {
-            unicode: index,
-            width: properties.widths[i - firstChar] || properties.defaultWidth
-          };
+        var index = GlyphsUnicode[glyph] || i;
+        var width = properties.widths[i] || properties.widths[glyph];
+        map[i] = {
+          unicode: index,
+          width: width || properties.defaultWidth
+        };
 
-          // If there is no file, the character mapping can't be modified
-          // but this is unlikely that there is any standard encoding with
-          // chars below 0x1f, so that's fine.
-          if (!properties.file)
-            continue;
+        if (glyph)
+          glyphs[glyph] = map[i];
 
-          if (index <= 0x1f || (index >= 127 && index <= 255))
-            map[i].unicode += kCmapGlyphOffset;
-        }
+        // If there is no file, the character mapping can't be modified
+        // but this is unlikely that there is any standard encoding with
+        // chars below 0x1f, so that's fine.
+        if (!properties.file)
+          continue;
+
+        if (index <= 0x1f || (index >= 127 && index <= 255))
+          map[i].unicode += kCmapGlyphOffset;
       }
 
       if (type == 'TrueType' && dict.has('ToUnicode') && differences) {
@@ -4339,10 +4365,9 @@ var PartialEvaluator = (function() {
                     var endRange = tokens[j + 1];
                     var code = tokens[j + 2];
                     while (startRange < endRange) {
-                      map[startRange] = {
-                        unicode: code++,
-                        width: 0
-                      }
+                      var mapping = map[startRange] || {};
+                      mapping.unicode = code++;
+                      map[startRange] = mapping;
                       ++startRange;
                     }
                   }
@@ -4353,10 +4378,9 @@ var PartialEvaluator = (function() {
                   for (var j = 0; j < tokens.length; j += 2) {
                     var index = tokens[j];
                     var code = tokens[j + 1];
-                    map[index] = {
-                      unicode: code,
-                      width: 0
-                    };
+                    var mapping = map[index] || {};
+                    mapping.unicode = code;
+                    map[index] = mapping;
                   }
                   break;
 
@@ -4425,7 +4449,8 @@ var PartialEvaluator = (function() {
       }
 
       // Before PDF 1.5 if the font was one of the base 14 fonts, having a
-      // FontDescriptor was not required. This case is here for compatibility.
+      // FontDescriptor was not required.
+      // This case is here for compatibility.
       var descriptor = xref.fetchIfRef(dict.get('FontDescriptor'));
       if (!descriptor) {
         var baseFontName = dict.get('BaseFont');
@@ -4445,11 +4470,18 @@ var PartialEvaluator = (function() {
           }
         }
 
+        var defaultWidth = 0;
+        var widths = Metrics[stdFontMap[baseFontName] || baseFontName];
+        if (IsNum(widths)) {
+          defaultWidth = widths;
+          widths = null;
+        }
         var properties = {
           type: type.name,
           encoding: map,
           differences: [],
-          widths: {},
+          widths: widths,
+          defaultWidth: defaultWidth,
           firstChar: 0,
           lastChar: 256
         };
@@ -4508,13 +4540,13 @@ var PartialEvaluator = (function() {
         descent: descriptor.get('Descent'),
         xHeight: descriptor.get('XHeight'),
         capHeight: descriptor.get('CapHeight'),
-        defaultWidth: descriptor.get('MissingWidth') || 0,
+        defaultWidth: parseFloat(descriptor.get('MissingWidth')) || 0,
         flags: descriptor.get('Flags'),
         italicAngle: descriptor.get('ItalicAngle'),
         differences: [],
         widths: (function() {
           var glyphWidths = {};
-          for (var i = 0; i <= widths.length; i++)
+          for (var i = 0; i < widths.length; i++)
             glyphWidths[firstChar++] = widths[i];
           return glyphWidths;
         })(),
@@ -4903,6 +4935,7 @@ var CanvasGraphics = (function() {
     showText: function(text) {
       var ctx = this.ctx;
       var current = this.current;
+      var originalText = text;
 
       ctx.save();
       ctx.transform.apply(ctx, current.textMatrix);
@@ -4921,16 +4954,10 @@ var CanvasGraphics = (function() {
         text = font.charsToUnicode(text);
       }
 
+      var size = current.fontSize;
       var charSpacing = current.charSpacing;
       var wordSpacing = current.wordSpacing;
       var textHScale = current.textHScale;
-
-      // This is a poor simulation for Arial Narrow while font-stretch
-      // is not implemented (bug 3512)
-      if (current.font.narrow) {
-        textHScale += 0.2;
-        charSpacing -= (0.09 * current.fontSize);
-      }
 
       if (charSpacing != 0 || wordSpacing != 0 || textHScale != 1) {
         scaleFactorX *= textHScale;
@@ -4938,9 +4965,10 @@ var CanvasGraphics = (function() {
         var width = 0;
 
         for (var i = 0, ii = text.length; i < ii; ++i) {
-          var c = text.charAt(i);
-          ctx.fillText(c, 0, 0);
-          var charWidth = FontMeasure.measureText(c) + charSpacing;
+          ctx.fillText(text.charAt(i), 0, 0);
+          var c = originalText.charAt(i);
+          var charWidth = FontMeasure.measureText(c, font, size);
+          charWidth += charSpacing;
           if (c.charCodeAt(0) == 32)
             charWidth += wordSpacing;
           ctx.translate(charWidth * scaleFactorX, 0);
@@ -4949,7 +4977,7 @@ var CanvasGraphics = (function() {
         current.x += width;
       } else {
         ctx.fillText(text, 0, 0);
-        current.x += FontMeasure.measureText(text);
+        current.x += FontMeasure.measureText(originalText, font, size);
       }
 
       this.ctx.restore();
