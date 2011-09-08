@@ -4241,7 +4241,7 @@ var PartialEvaluator = (function() {
                   var codeIR = this.getIRQueue(pattern, xref,
                                     dict.get('Resources'), {}, fonts, images, uniquePrefix);
                   
-                  args = TilingPattern.getIR(codeIR, dict);
+                  args = TilingPattern.getIR(codeIR, dict, args);
                 } 
                 // Type2 is ShadingPattern.
                 else if (typeNum == 2) {
@@ -5268,6 +5268,7 @@ var CanvasGraphics = (function() {
       if (IR[0] == "TilingPatternIR") {
         // First, build the `color` var like it's done in the
         // Pattern.prototype.parse function.
+        var args = IR[1];
         var base = cs.base;
         var color;
         if (base) {
@@ -5282,7 +5283,7 @@ var CanvasGraphics = (function() {
 
         // Build the pattern based on the IR data.
         var pattern = new TilingPatternIR(IR, color, this.ctx);
-      } else if (IR[0] == "RadialAxialShading") {
+      } else if (IR[0] == "RadialAxialShading" || IR[0] == "DummyShading") {
         var pattern = Pattern.shadingFromIR(this.ctx, IR); 
       } else {
         throw "Unkown IR type";
@@ -5745,7 +5746,7 @@ var SeparationCS = (function() {
 
   constructor.prototype = {
     getRgb: function sepcs_getRgb(color) {
-      var tinted = this.tintFn.func(color);
+      var tinted = this.tintFn(color);
       return this.base.getRgb(tinted);
     },
     getRgbBuffer: function sepcs_getRgbBuffer(input, bits) {
@@ -5760,7 +5761,7 @@ var SeparationCS = (function() {
       var baseBuf = new Uint8Array(numComps * length);
       for (var i = 0; i < length; ++i) {
         var scaled = input[i] * scale;
-        var tinted = tintFn.func([scaled]);
+        var tinted = tintFn([scaled]);
         for (var j = 0; j < numComps; ++j)
           baseBuf[pos++] = 255 * tinted[j];
       }
@@ -6015,9 +6016,14 @@ var DummyShading = (function() {
   function constructor() {
     this.type = 'Pattern';
   }
+
+  constructor.fromIR = function() {
+    return 'hotpink';
+  }
+
   constructor.prototype = {
-    getPattern: function dummy_getpattern() {
-      return 'hotpink';
+    getIR: function dummpy_getir() {
+      return [ 'DummyShading' ];
     }
   };
   return constructor;
@@ -6033,7 +6039,6 @@ var RadialAxialShading = (function() {
     this.type = 'Pattern';
 
     this.ctx = ctx;
-
     var cs = dict.get('ColorSpace', 'CS');
     cs = ColorSpace.parse(cs, xref, res);
     this.cs = cs;
@@ -6147,12 +6152,12 @@ var TilingPatternIR = (function() {
 
   function TilingPatternIR(IR, color, ctx) {
     // "Unfolding" the IR.
-    var IRQueue = IR[1];
-    this.matrix = IR[2];
-    var bbox = IR[3];
-    var xstep = IR[4];
-    var ystep = IR[5];
-    var paintType = IR[6];
+    var IRQueue   = IR[2];
+    this.matrix   = IR[3];
+    var bbox      = IR[4];
+    var xstep     = IR[5];
+    var ystep     = IR[6];
+    var paintType = IR[7];
 
     // 
     TODO('TilingType');
@@ -6242,14 +6247,14 @@ var TilingPatternIR = (function() {
 })();
 
 var TilingPattern = {
-  getIR: function(codeIR, dict) {
+  getIR: function(codeIR, dict, args) {
     var matrix = dict.get('Matrix');
     var bbox = dict.get('BBox');
     var xstep = dict.get('XStep');
     var ystep = dict.get('YStep');
     var paintType = dict.get('PaintType');
     
-    return ["TilingPatternIR", codeIR, matrix, bbox, xstep, ystep, paintType];
+    return ["TilingPatternIR", args, codeIR, matrix, bbox, xstep, ystep, paintType];
   }
 };
 
@@ -6718,7 +6723,7 @@ var PDFFunction = (function() {
         var v2 = rmin + (v - dmin) * (rmax - rmin) / (dmax - dmin);
 
         // call the appropropriate function
-        return fns[i].func([v2]);
+        return fns[i]([v2]);
       };
     },
 
@@ -6726,9 +6731,9 @@ var PDFFunction = (function() {
       return [ CONSTRUCT_POSTSCRIPT ];
     },
 
-    constructPostScriptFromIR: function(IR) {
+    constructPostScriptFromIR: function() {
       TODO('unhandled type of function');
-      this.func = function() {
+      return function() {
         return [255, 105, 180];
       };
     }
