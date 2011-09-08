@@ -4435,6 +4435,7 @@ var PartialEvaluator = (function() {
           type: type.name,
           encoding: map,
           differences: [],
+          widths: {},
           firstChar: 0,
           lastChar: 256
         };
