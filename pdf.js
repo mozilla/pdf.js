@@ -84,6 +84,31 @@ function stringToBytes(str) {
   return bytes;
 }
 
+var PDFStringTranslateTable = [
+  ,,,,,,,,,,,,,,,,,,,,,,,, 0x2D8, 0x2C7, 0x2C6, 0x2D9, 0x2DD, 0x2DB, 0x2DA,
+  0x2DC,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+  ,,,,,,,,,,,,,,,,,,,,,,,,,,,,, 0x2022, 0x2020, 0x2021, 0x2026, 0x2014,
+  0x2013, 0x192, 0x2044, 0x2039, 0x203A, 0x2212, 0x2030, 0x201E, 0x201C,
+  0x201D, 0x2018, 0x2019, 0x201A, 0x2122, 0xFB01, 0xFB02, 0x141, 0x152,
+  0x160, 0x178, 0x17D, 0x131, 0x142, 0x153, 0x161, 0x17E,, 0x20AC
+];
+
+function stringToPDFString(str) {
+  var i, n = str.length, str2 = '';
+  if (str[0] === '\xFE' && str[1] === '\xFF') {
+    // UTF16BE BOM
+    for (i = 2; i < n; i += 2)
+      str2 += String.fromCharCode(
+        (str.charCodeAt(i) << 8) | str.charCodeAt(i + 1));
+  } else {
+    for (i = 0; i < n; ++i) {
+      var code = PDFStringTranslateTable[str.charCodeAt(i)];
+      str2 += code ? String.fromCharCode(code) : str.charAt(i);
+    }
+  }
+  return str2;
+}
+
 var Stream = (function() {
   function constructor(arrayBuffer, start, length, dict) {
     this.bytes = new Uint8Array(arrayBuffer);
@@ -3455,17 +3480,6 @@ var Catalog = (function() {
       return shadow(this, 'toplevelPagesDict', xrefObj);
     },
     get documentOutline() {
-      function convertIfUnicode(str) {
-        if (str[0] === '\xFE' && str[1] === '\xFF') {
-          // UTF16BE BOM
-          var i, n = str.length, str2 = '';
-          for (i = 2; i < n; i += 2)
-            str2 += String.fromCharCode(
-              (str.charCodeAt(i) << 8) | str.charCodeAt(i + 1));
-          str = str2;
-        }
-        return str;
-      }
       var obj = this.catDict.get('Outlines');
       var xref = this.xref;
       var root = { items: [] };
@@ -3493,7 +3507,7 @@ var Catalog = (function() {
             var title = xref.fetchIfRef(outlineDict.get('Title'));
             var outlineItem = {
               dest: dest,
-              title: convertIfUnicode(title),
+              title: stringToPDFString(title),
               color: outlineDict.get('C') || [0, 0, 0],
               count: outlineDict.get('Count'),
               bold: !!(outlineDict.get('F') & 2),
