@@ -5604,12 +5604,12 @@ var ColorSpace = (function() {
     }
   };
   
-  constructor.fromIR = function(raw) {
+  constructor.fromIR = function(IR) {
     var name;
-    if (IsArray(raw)) {
-      name = raw[0];
+    if (IsArray(IR)) {
+      name = IR[0];
     } else {
-      name = raw;
+      name = IR;
     }
     
     switch (name) {
@@ -5620,17 +5620,25 @@ var ColorSpace = (function() {
       case "DeviceCmykCS":
         return new DeviceCmykCS();
       case "PatternCS":
-        var baseCS = raw[1];
+        var baseCS = IR[1];
         if (baseCS == null) {
           return new PatternCS(null);
         } else {
           return new PatternCS(ColorSpace.fromIR(baseCS));
         }
-      case "Indexed":
-        var baseCS = raw[1];
-        var hiVal  = raw[2];
-        var lookup = raw[3];
+      case "IndexedCS":
+        var baseCS = IR[1];
+        var hiVal  = IR[2];
+        var lookup = IR[3];
         return new IndexedCS(ColorSpace.fromIR(baseCS), hiVal, lookup)
+      case "SeparationCS":
+        var alt       = IR[1];
+        var tintFnIR  = IR[2];
+        
+        return new SeparationCS(
+          ColorSpace.fromIR(alt),
+          PDFFunction.fromIR(tintFnIR)
+        );
       default:
         error("Unkown name " + name);
     }
@@ -5708,14 +5716,9 @@ var ColorSpace = (function() {
         var lookup = xref.fetchIfRef(cs[3]);
         return ["IndexedCS", baseCS, hiVal, lookup];
       case 'Separation':
-        if (!parseOnly) {
-          error("Need to implement IR form for SeparationCS");
-        } else {
-          var name = cs[1];
-          var alt = ColorSpace.parse(cs[2], xref, res);
-          var tintFn = new PDFFunction(xref, xref.fetchIfRef(cs[3]));
-          return new SeparationCS(alt, tintFn);
-        }
+        var alt = ColorSpace.parseToIR(cs[2], xref, res);
+        var tintFnIR = PDFFunction.getIR(xref, xref.fetchIfRef(cs[3]));
+        return ["SeparationCS", alt, tintFnIR];
       case 'Lab':
       case 'DeviceN':
       default:
@@ -6059,7 +6062,7 @@ var RadialAxialShading = (function() {
       error('No support for array of functions');
     else if (!IsPDFFunction(fnObj))
       error('Invalid function');
-    var fn = new PDFFunction(xref, fnObj);
+    var fn = PDFFunction.parse(xref, fnObj);
 
     // 10 samples seems good enough for now, but probably won't work
     // if there are sharp color changes. Ideally, we would implement
@@ -6069,7 +6072,7 @@ var RadialAxialShading = (function() {
 
     var colorStops = [];
     for (var i = t0; i <= t1; i += step) {
-      var color = fn.func([i]);
+      var color = fn([i]);
       var rgbColor = Util.makeCssRgb.apply(this, cs.getRgb(color));
       colorStops.push([(i - t0) / diff, rgbColor]);
     }
@@ -6439,26 +6442,76 @@ var PDFImage = (function() {
 })();
 
 var PDFFunction = (function() {
-  function constructor(xref, fn) {
-    var dict = fn.dict;
-    if (!dict)
-      dict = fn;
+  var CONSTRUCT_SAMPLED = 0;
+  var CONSTRUCT_INTERPOLATED = 2;
+  var CONSTRUCT_STICHED = 3;
+  var CONSTRUCT_POSTSCRIPT = 4;
+  
+  return {
+    getSampleArray: function(size, outputSize, bps, str) {
+      var length = 1;
+      for (var i = 0; i < size.length; i++)
+        length *= size[i];
+      length *= outputSize;
 
-    var types = [this.constructSampled,
-                 null,
-                 this.constructInterpolated,
-                 this.constructStiched,
-                 this.constructPostScript];
+      var array = [];
+      var codeSize = 0;
+      var codeBuf = 0;
 
-    var typeNum = dict.get('FunctionType');
-    var typeFn = types[typeNum];
-    if (!typeFn)
-      error('Unknown type of function');
+      var strBytes = str.getBytes((length * bps + 7) / 8);
+      var strIdx = 0;
+      for (var i = 0; i < length; i++) {
+        var b;
+        while (codeSize < bps) {
+          codeBuf <<= 8;
+          codeBuf |= strBytes[strIdx++];
+          codeSize += 8;
+        }
+        codeSize -= bps;
+        array.push(codeBuf >> codeSize);
+        codeBuf &= (1 << codeSize) - 1;
+      }
+      return array;
+    },
 
-    typeFn.call(this, fn, dict, xref);
-  }
+    getIR: function(xref, fn) {
+      var dict = fn.dict;
+      if (!dict)
+        dict = fn;
 
-  constructor.prototype = {
+      var types = [this.constructSampled,
+                   null,
+                   this.constructInterpolated,
+                   this.constructStiched,
+                   this.constructPostScript];
+
+      var typeNum = dict.get('FunctionType');
+      var typeFn = types[typeNum];
+      if (!typeFn)
+        error('Unknown type of function');
+
+      return typeFn.call(this, fn, dict, xref);    
+    },
+  
+    fromIR: function(IR) {
+      var type = IR[0];
+      switch (type) {
+        case CONSTRUCT_SAMPLED:
+          return this.constructSampledFromIR(IR);
+        case CONSTRUCT_INTERPOLATED:
+          return this.constructInterpolatedFromIR(IR);
+        case CONSTRUCT_STICHED:
+          return this.constructStichedFromIR(IR);
+        case CONSTRUCT_POSTSCRIPT:
+          return this.constructPostScriptFromIR(IR);
+      }
+    },
+
+    parse: function(xref, fn) {
+      var IR = this.getIR(xref, fn);
+      return this.fromIR(IR);
+    },
+
     constructSampled: function(str, dict) {
       var domain = dict.get('Domain');
       var range = dict.get('Range');
@@ -6495,7 +6548,21 @@ var PDFFunction = (function() {
 
       var samples = this.getSampleArray(size, outputSize, bps, str);
 
-      this.func = function(args) {
+      return [ CONSTRUCT_SAMPLED, inputSize, domain, encode, decode, samples, size, outputSize, bps, range ];
+    },
+    
+    constructSampledFromIR: function(IR) {
+      var inputSize = IR[1];
+      var domain    = IR[2];
+      var encode    = IR[3];
+      var decode    = IR[4]
+      var samples   = IR[5]
+      var size      = IR[6]
+      var outputSize= IR[7];
+      var bps       = IR[8];
+      var range     = IR[9];
+      
+      return function(args) {
         var clip = function(v, min, max) {
           if (v > max)
             v = max;
@@ -6552,33 +6619,9 @@ var PDFFunction = (function() {
         }
 
         return output;
-      };
-    },
-    getSampleArray: function(size, outputSize, bps, str) {
-      var length = 1;
-      for (var i = 0; i < size.length; i++)
-        length *= size[i];
-      length *= outputSize;
-
-      var array = [];
-      var codeSize = 0;
-      var codeBuf = 0;
-
-      var strBytes = str.getBytes((length * bps + 7) / 8);
-      var strIdx = 0;
-      for (var i = 0; i < length; i++) {
-        var b;
-        while (codeSize < bps) {
-          codeBuf <<= 8;
-          codeBuf |= strBytes[strIdx++];
-          codeSize += 8;
-        }
-        codeSize -= bps;
-        array.push(codeBuf >> codeSize);
-        codeBuf &= (1 << codeSize) - 1;
       }
-      return array;
     },
+
     constructInterpolated: function(str, dict) {
       var c0 = dict.get('C0') || [0];
       var c1 = dict.get('C1') || [1];
@@ -6592,7 +6635,14 @@ var PDFFunction = (function() {
       for (var i = 0; i < length; ++i)
         diff.push(c1[i] - c0[i]);
 
-      this.func = function(args) {
+      return [ CONSTRUCT_INTERPOLATED, c0, diff ];
+    },
+
+    constructInterpolatedFromIR: function(IR) {
+      var c0 = IR[1];
+      var diff = IR[2];
+
+      return function(args) {
         var x = args[0];
 
         var out = [];
@@ -6600,8 +6650,10 @@ var PDFFunction = (function() {
           out.push(c0[j] + (x^n * diff[i]));
 
         return out;
-      };
+        
+      }
     },
+    
     constructStiched: function(fn, dict, xref) {
       var domain = dict.get('Domain');
       var range = dict.get('Range');
@@ -6616,12 +6668,26 @@ var PDFFunction = (function() {
       var fnRefs = dict.get('Functions');
       var fns = [];
       for (var i = 0, ii = fnRefs.length; i < ii; ++i)
-        fns.push(new PDFFunction(xref, xref.fetchIfRef(fnRefs[i])));
+        fns.push(PDFFunction.getIR(xref, xref.fetchIfRef(fnRefs[i])));
 
       var bounds = dict.get('Bounds');
       var encode = dict.get('Encode');
 
-      this.func = function(args) {
+      return [ CONSTRUCT_STICHED, domain, bounds, encoding, fns ];
+    },
+
+    constructStichedFromIR: function(IR) {
+      var domain    = IR[1];
+      var bounds    = IR[2];
+      var encoding  = IR[3];
+      var fnsIR     = IR[4];
+      var fns = [];
+
+      for (var i = 0; i < fnsIR.length; i++) {
+        fns.push(PDFFunction.fromIR(fnsIR[i]));
+      }
+
+      return function(args) {
         var clip = function(v, min, max) {
           if (v > max)
             v = max;
@@ -6655,13 +6721,17 @@ var PDFFunction = (function() {
         return fns[i].func([v2]);
       };
     },
+
     constructPostScript: function() {
+      return [ CONSTRUCT_POSTSCRIPT ];
+    },
+
+    constructPostScriptFromIR: function(IR) {
       TODO('unhandled type of function');
       this.func = function() {
         return [255, 105, 180];
       };
     }
-  };
-
-  return constructor;
+  }
 })();
+
