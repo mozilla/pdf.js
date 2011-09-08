@@ -825,7 +825,7 @@ var PredictorStream = (function() {
         currentRow[i] = rawBytes[i];
       for (; i < rowBytes; ++i) {
         var up = prevRow[i];
-        var upLeft = lastRow[i - pixBytes];
+        var upLeft = prevRow[i - pixBytes];
         var left = currentRow[i - pixBytes];
         var p = left + up - upLeft;
 
