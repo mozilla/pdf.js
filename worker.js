@@ -51,12 +51,27 @@ var WorkerPage = (function() {
 })();
 
 // This holds a list of objects the IR queue depends on.
-var Objects = {};
+var Objects = {
+  resolve: function(objId, data) {
+    // In case there is a promise already on this object, just resolve it.
+    if (Objects[objId] instanceof Promise) {
+      Objects[objId].resolve(data);
+    } else {
+      Objects[objId] = new Promise(data);
+    }
+  }
+};
 
 var Promise = (function() {
-  function Promise(name) {
-    this.name = name;
-    this.isResolved = false;
+  function Promise(data) {
+    // If you build a promise and pass in some data it's already resolved.
+    if (data != null) {
+      this.isResolved = true;
+      this.data = data;
+    } else {
+      this.isResolved = false;      
+    }
+    this.callbacks = [];
   };
   
   Promise.prototype = {
@@ -83,6 +98,7 @@ var Promise = (function() {
       }
     }
   }
+  return Promise;
 })();
 
 var WorkerPDFDoc = (function() {
@@ -95,7 +111,7 @@ var WorkerPDFDoc = (function() {
     
     this.pageCache = [];
     
-    var useWorker = true;
+    var useWorker = false;
     
     if (useWorker) {
       var worker = new Worker("../worker/boot.js");      
@@ -125,29 +141,17 @@ var WorkerPDFDoc = (function() {
                                   font.file.end - font.file.start, fontFileDict);
         font.file = new FlateStream(fontFile);
       }
-    
-      var imageLoadingDone = function() {
-        var timeStart = new Date();
-        console.log("startRenderingFromPreCompilation:", "numberOfFonts", fonts.length);
-        page.startRenderingFromIRQueue(data.IRQueue, data.fonts, data.images);
-        console.log("RenderingTime", (new Date()) - timeStart);
-      }
 
       var images = data.images;
-      if (images.length != 0) {
-        // Generate JpegStreams based on IR information and start rendering
-        // once the compilation is done.
-        var loader = new ImagesLoader();
-        loader.onLoad = imageLoadingDone;
-
-        for (var i = 0; i < images.length; i++) {
-          var image = images[i];
-          var stream = new JpegStreamIR(image.id, image.IR);
-          loader.bind(stream);
-        }
-      } else {
-        imageLoadingDone();
+      for (var i = 0; i < images.length; i++) {
+        var image = images[i];
+        var stream = new JpegStreamIR(image.id, image.IR);
       }
+      
+      var timeStart = new Date();
+      console.log("startRenderingFromPreCompilation:", "numberOfFonts", fonts.length);
+      page.startRenderingFromIRQueue(data.IRQueue, data.fonts, data.images);
+      console.log("RenderingTime", (new Date()) - timeStart);
     }, this);
     
     if (!useWorker) {
