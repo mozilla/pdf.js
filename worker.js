@@ -53,6 +53,38 @@ var WorkerPage = (function() {
 // This holds a list of objects the IR queue depends on.
 var Objects = {};
 
+var Promise = (function() {
+  function Promise(name) {
+    this.name = name;
+    this.isResolved = false;
+  };
+  
+  Promise.prototype = {
+    resolve: function(data) {
+      if (this.isResolved) {
+        throw "A Promise can be resolved only once";
+      }
+      
+      this.isResolved = true;
+      this.data = data;
+      var callbacks = this.callbacks;
+      
+      for (var i = 0; i < callbacks.length; i++) {
+        callbacks[i].call(null, data);
+      }
+    },
+    
+    then: function(callback) {
+      // If the promise is already resolved, call the callback directly.
+      if (this.isResolved) {
+        callback.call(null, this.data);
+      } else {
+        this.callbacks.push(callback);        
+      }
+    }
+  }
+})();
+
 var WorkerPDFDoc = (function() {
   function constructor(data) {
     this.data = data;
