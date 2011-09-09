@@ -4755,6 +4755,8 @@ function ScratchCanvas(width, height) {
 var CanvasGraphics = (function() {
   var kScalePrecision = 50;
   var kRasterizerMin = 14;
+  var kExecutionTime = 50;
+  var kExecutionTimeCheck = 500;
 
   function constructor(canvasCtx, imageCanvas) {
     this.ctx = canvasCtx;
@@ -4792,34 +4794,54 @@ var CanvasGraphics = (function() {
       this.ctx.scale(cw / mediaBox.width, ch / mediaBox.height);
     },
 
-    executeIRQueue: function(codeIR, startIdx, continueCallback) {
+    executeIRQueue: function(codeIR, executionStartIdx, continueCallback) {
       var argsArray = codeIR.argsArray;
       var fnArray =   codeIR.fnArray;
-      var i = startIdx || 0;
-      var length = argsArray.length;
-      for (i; i < length; i++) {
-        if (fnArray[i] !== "dependency") {
-          this[fnArray[i]].apply(this, argsArray[i]);
-        } else {
-          var deps = argsArray[i];
-          for (var n = 0; n < deps.length; n++) {
-            var depObjId = deps[n];
-            var promise;
-            if (!Objects[depObjId]) {
-              promise = Objects[depObjId] = new Promise();
-            } else {
-              promise = Objects[depObjId];
-            }
-            // If the promise isn't resolved yet, add the continueCallback
-            // to the promise and bail out.
-            if (!promise.isResolved) {
-              promise.then(continueCallback);
-              return i;
+      var i = executionStartIdx || 0;
+      var argsArrayLen = argsArray.length;
+      
+      var executionEndIdx;
+      var startTime = Date.now();
+
+      do {
+        executionEndIdx = Math.min(argsArrayLen, i + kExecutionTimeCheck);
+        
+        for (i; i < executionEndIdx; i++) {
+          if (fnArray[i] !== "dependency") {
+            this[fnArray[i]].apply(this, argsArray[i]);
+          } else {
+            var deps = argsArray[i];
+            for (var n = 0; n < deps.length; n++) {
+              var depObjId = deps[n];
+              var promise;
+              if (!Objects[depObjId]) {
+                promise = Objects[depObjId] = new Promise();
+              } else {
+                promise = Objects[depObjId];
+              }
+              // If the promise isn't resolved yet, add the continueCallback
+              // to the promise and bail out.
+              if (!promise.isResolved) {
+                promise.then(continueCallback);
+                return i;
+              }
             }
           }
         }
-      }
-      return i; 
+
+        // If the entire IRQueue was executed, stop as were done.
+        if (i == argsArrayLen) {
+          return i;
+        } 
+        // If the execution took longer then a certain amount of time, shedule
+        // to continue exeution after a short delay.
+        else if ((Date.now() - startTime) > kExecutionTime) {
+          setTimeout(continueCallback, 0);
+          return i;
+        }
+        // If the IRQueue isn't executed completly yet OR the execution time
+        // was short enough, do another execution round.
+      } while (true);
     },
 
     endDrawing: function() {
