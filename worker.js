@@ -62,16 +62,25 @@ var WorkerPage = (function() {
 var Objects = {
   resolve: function(objId, data) {
     // In case there is a promise already on this object, just resolve it.
-    if (Objects[objId] instanceof Promise) {
+    if (Objects[objId]) {
       Objects[objId].resolve(data);
     } else {
-      Objects[objId] = new Promise(data);
+      Objects[objId] = new Promise(objId, data);
     }
+  },
+
+  get: function(objId) {
+    var obj = Objects[objId];
+    if (!obj || !obj.isResolved) {
+      throw "Requesting object that isn't resolved yet";
+    }
+    return obj.data;
   }
 };
 
 var Promise = (function() {
-  function Promise(data) {
+  function Promise(name, data) {
+    this.name = name;
     // If you build a promise and pass in some data it's already resolved.
     if (data != null) {
       this.isResolved = true;
@@ -84,6 +93,8 @@ var Promise = (function() {
   
   Promise.prototype = {
     resolve: function(data) {
+      console.log("resolve", this.name);
+      
       if (this.isResolved) {
         throw "A Promise can be resolved only once";
       }
@@ -137,29 +148,6 @@ var WorkerPDFDoc = (function() {
       var pageNum = data.pageNum;
       var page = this.pageCache[pageNum];
       
-      // Add necessary shape back to fonts.
-      var fonts = data.fonts;
-      for (var i = 0; i < fonts.length; i++) {
-        var font = fonts[i];
-        
-        // Some fonts don't have a file, e.g. the build in ones like Arial.
-        if (font.file) {
-          var fontFileDict = new Dict();
-          fontFileDict.map = font.file.dict.map;
-
-          var fontFile = new Stream(font.file.bytes, font.file.start,
-                                    font.file.end - font.file.start, fontFileDict);
-                               
-          // Check if this is a FlateStream. Otherwise just use the created 
-          // Stream one. This makes complex_ttf_font.pdf work.
-          var cmf = font.file.bytes[0];
-          if ((cmf & 0x0f) == 0x08) {
-            font.file = new FlateStream(fontFile);
-          } else {
-            font.file = fontFile;
-          }          
-        }
-      }
 
       page.startRenderingFromIRQueue(data.IRQueue, data.fonts);
     }, this);
@@ -172,6 +160,45 @@ var WorkerPDFDoc = (function() {
         case "JpegStream":
           var IR = data[2];
           new JpegStreamIR(objId, IR);
+        break;
+        case "Font":
+          var name = data[2];
+          var file = data[3];
+          var properties = data[4];
+
+          console.log("got new font", name);
+
+          var font = {
+            name: name,
+            file: file,
+            properties: properties
+          };
+
+          // Some fonts don't have a file, e.g. the build in ones like Arial.
+          if (file) {
+            var fontFileDict = new Dict();
+            fontFileDict.map = file.dict.map;
+
+            var fontFile = new Stream(file.bytes, file.start,
+                                      file.end - file.start, fontFileDict);
+                                 
+            // Check if this is a FlateStream. Otherwise just use the created 
+            // Stream one. This makes complex_ttf_font.pdf work.
+            var cmf = file.bytes[0];
+            if ((cmf & 0x0f) == 0x08) {
+              font.file = new FlateStream(fontFile);
+            } else {
+              font.file = fontFile;
+            }          
+          }
+
+          FontLoader.bind(
+            [ font ],
+            function(fontObjs) {
+              var fontObj = fontObjs[0];
+              Objects.resolve(objId, fontObj);
+            }
+          );
         break;
         default:
           throw "Got unkown object type " + objType;

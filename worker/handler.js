@@ -19,25 +19,12 @@ var WorkerHandler = {
       // The following code does quite the same as Page.prototype.startRendering,
       // but stops at one point and sends the result back to the main thread.
       var gfx = new CanvasGraphics(null);
-      var fonts = [];
 
       var start = Date.now();
       // Pre compile the pdf page and fetch the fonts/images.
-      var IRQueue = page.getIRQueue(handler, fonts);
+      var IRQueue = page.getIRQueue(handler);
 
       console.log("page=%d - getIRQueue: time=%dms, len=%d", pageNum, Date.now() - start, IRQueue.fnArray.length);
-      // Extract the minimum of font data that is required to build all required
-      // font stuff on the main thread.
-      var fontsMin = [];
-      for (var i = 0; i < fonts.length; i++) {
-        var font = fonts[i];
-
-        fontsMin.push({
-          name:       font.name,
-          file:       font.file,
-          properties: font.properties
-        });
-      }
 
       if (false /* show used commands */) {
         var cmdMap = {};
@@ -59,7 +46,6 @@ var WorkerHandler = {
 
       handler.send("page", {
         pageNum:  pageNum,
-        fonts:    fontsMin,
         IRQueue:  IRQueue,
       });
     }, this);

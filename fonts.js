@@ -156,24 +156,12 @@ if (!isWorker) {
 }
 
 var FontLoader = {
-  listeningForFontLoad: false,
+  fontLoadData: {},
+  fonts: {},
 
   bind: function(fonts, callback) {
-    function checkFontsLoaded() {
-      for (var i = 0; i < objs.length; i++) {
-        var fontObj = objs[i];
-        if (fontObj.loading) {
-          return false;
-        }
-      }
-
-      document.documentElement.removeEventListener(
-        'pdfjsFontLoad', checkFontsLoaded, false);
-
-      callback(objs);
-      return true;
-    }
-
+    console.log("requesting fonts", fonts[0].properties.loadedName, fonts[0].name);
+    
     var rules = [], names = [], objs = [];
 
     for (var i = 0; i < fonts.length; i++) {
@@ -193,28 +181,33 @@ var FontLoader = {
         if (rule) {
           rules.push(rule);
           names.push(obj.loadedName);
+          this.fonts[obj.loadedName] = obj;
+          this.fontLoadData[obj.loadedName] = obj;
         }
       }
     }
 
-    this.listeningForFontLoad = false;
-    if (!isWorker && rules.length) {
-      FontLoader.prepareFontLoadEvent(rules, names, objs);
-    }
-
-    if (!checkFontsLoaded()) {
-      document.documentElement.addEventListener(
-        'pdfjsFontLoad', checkFontsLoaded, false);
+    if (rules.length) {
+      this.fontsLoading += rules.length;
+      FontLoader.prepareFontLoadEvent(rules, names);
     }
 
     return objs;
   },
+  
+  postFontLoadEvent: function(names) {
+    for (var i = 0; i < names.length; i++) {
+      var name = names[i];
+      Objects.resolve(name, this.fontLoadData[name]);
+    }
+  },
+  
   // Set things up so that at least one pdfjsFontLoad event is
   // dispatched when all the @font-face |rules| for |names| have been
   // loaded in a subdocument.  It's expected that the load of |rules|
   // has already started in this (outer) document, so that they should
   // be ordered before the load in the subdocument.
-  prepareFontLoadEvent: function(rules, names, objs) {
+  prepareFontLoadEvent: function(rules, names, callback) {
       /** Hack begin */
       // There's no event when a font has finished downloading so the
       // following code is a dirty hack to 'guess' when a font is
@@ -250,23 +243,6 @@ var FontLoader = {
       div.innerHTML = html;
       document.body.appendChild(div);
 
-      if (!this.listeningForFontLoad) {
-        window.addEventListener(
-          'message',
-          function(e) {
-            var fontNames = JSON.parse(e.data);
-            for (var i = 0; i < objs.length; ++i) {
-              var font = objs[i];
-              font.loading = false;
-            }
-            var evt = document.createEvent('Events');
-            evt.initEvent('pdfjsFontLoad', true, false);
-            document.documentElement.dispatchEvent(evt);
-          },
-          false);
-        this.listeningForFontLoad = true;
-      }
-
       // XXX we should have a time-out here too, and maybe fire
       // pdfjsFontLoadFailed?
       var src = '<!DOCTYPE HTML><html><head>';
@@ -299,6 +275,16 @@ var FontLoader = {
       /** Hack end */
   }
 };
+
+if (!isWorker) {
+  window.addEventListener(
+    'message',
+    function(e) {
+      FontLoader.postFontLoadEvent(JSON.parse(e.data));
+    }.bind(this),
+  false);
+}
+
 
 var UnicodeRanges = [
   { 'begin': 0x0000, 'end': 0x007F }, // Basic Latin

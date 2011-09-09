@@ -3322,16 +3322,17 @@ var Page = (function() {
           } catch (e) {
             exc = e.toString();
             continuation(exc);
+            throw e;
           }
         });
       };
       
-      this.ensureFonts(fonts, function() {
+      // this.ensureFonts(fonts, function() {
         displayContinuation();
-      });
+      // });
     },
 
-    getIRQueue: function(handler, fonts) {
+    getIRQueue: function(handler) {
       if (this.IRQueue) {
         // content was compiled
         return this.IRQueue;
@@ -3350,7 +3351,7 @@ var Page = (function() {
       
       var pe = this.pe = new PartialEvaluator();
       var IRQueue = {};
-      return this.IRQueue = pe.getIRQueue(content, xref, resources, IRQueue, handler, fonts, "p" + this.pageNumber + "_");
+      return this.IRQueue = pe.getIRQueue(content, xref, resources, IRQueue, handler, "p" + this.pageNumber + "_");
     },
     
     ensureFonts: function(fonts, callback) {
@@ -4117,7 +4118,13 @@ var PartialEvaluator = (function() {
   };
 
   constructor.prototype = {
-    getIRQueue: function(stream, xref, resources, queue, handler, fonts, uniquePrefix) {
+    getIRQueue: function(stream, xref, resources, queue, handler, uniquePrefix) {
+
+      function insertDependency(depList) {
+        fnArray.push("dependency");
+        argsArray.push(depList);
+      }
+
       function buildPaintImageXObject(image, inline) {
         var dict = image.dict;
         var w = dict.get('Width', 'W');
@@ -4128,9 +4135,8 @@ var PartialEvaluator = (function() {
           handler.send("obj", [objId, "JpegStream", image.getIR()]);
 
           // Add the dependency on the image object.
-          fnArray.push("dependency");
-          argsArray.push([ objId ]);
-      
+          insertDependency([objId]);
+
           // The normal fn.
           fn = 'paintJpegXObject';
           args = [ objId, w, h ];
@@ -4221,7 +4227,7 @@ var PartialEvaluator = (function() {
                   // TODO: Add dependency here.
                   // Create an IR of the pattern code.
                   var codeIR = this.getIRQueue(pattern, xref,
-                                    dict.get('Resources'), {}, handler, fonts, uniquePrefix);
+                                    dict.get('Resources'), {}, handler, uniquePrefix);
                   
                   args = TilingPattern.getIR(codeIR, dict, args);
                 } 
@@ -4259,7 +4265,7 @@ var PartialEvaluator = (function() {
                 
                 // This adds the IRQueue of the xObj to the current queue.
                 this.getIRQueue(xobj, xref, xobj.dict.get('Resources'), queue,
-                                         handler, fonts, uniquePrefix);
+                                         handler, uniquePrefix);
 
 
                 fn = "paintFormXObjectEnd";
@@ -4280,14 +4286,24 @@ var PartialEvaluator = (function() {
               assertWellFormed(IsDict(font));
               if (!font.translated) {
                 font.translated = this.translateFont(font, xref, resources);
-                if (fonts && font.translated) {
+                if (font.translated) {
                   // keep track of each font we translated so the caller can
                   // load them asynchronously before calling display on a page
-                  fonts.push(font.translated);
-                  
                   var loadedName = uniquePrefix + "font_" + (FontLoadedCounter++);
                   font.translated.properties.loadedName = loadedName;
                   FontsMap[loadedName] = font;
+
+                  handler.send("obj", [
+                      loadedName, 
+                      "Font", 
+                      font.translated.name,
+                      font.translated.file,
+                      font.translated.properties
+                  ]);
+
+                  // Ensure the font is ready before the font is set
+                  // and later on used for drawing.
+                  insertDependency([loadedName]);
                 }
               }
               args[0].name = font.translated.properties.loadedName;
@@ -4774,13 +4790,14 @@ var CanvasGraphics = (function() {
               var depObjId = deps[n];
               var promise;
               if (!Objects[depObjId]) {
-                promise = Objects[depObjId] = new Promise();
+                promise = Objects[depObjId] = new Promise(depObjId);
               } else {
                 promise = Objects[depObjId];
               }
               // If the promise isn't resolved yet, add the continueCallback
               // to the promise and bail out.
               if (!promise.isResolved) {
+                console.log("depending on obj", depObjId);
                 promise.then(continueCallback);
                 return i;
               }
@@ -5000,13 +5017,14 @@ var CanvasGraphics = (function() {
     setFont: function(fontRef, size) {
       // Lookup the fontObj using fontRef only.
       var fontRefName = fontRef.name;
-      var fontObj = FontsMap[fontRefName].fontObj;
+      var fontObj = Objects.get(fontRefName);
       
       if (!fontObj) {
         throw "Can't find font for " + fontRefName;
       }
       
       var name = fontObj.loadedName;
+      console.log("setFont", name);
       if (!name) {
         // TODO: fontDescriptor is not available, fallback to default font
         name = 'sans-serif';
