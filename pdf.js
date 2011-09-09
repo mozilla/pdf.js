@@ -825,7 +825,7 @@ var PredictorStream = (function() {
         currentRow[i] = rawBytes[i];
       for (; i < rowBytes; ++i) {
         var up = prevRow[i];
-        var upLeft = lastRow[i - pixBytes];
+        var upLeft = prevRow[i - pixBytes];
         var left = currentRow[i - pixBytes];
         var p = left + up - upLeft;
 
@@ -1553,7 +1553,7 @@ var CCITTFaxStream = (function() {
     this.row = 0;
     this.nextLine2D = this.encoding < 0;
     this.inputBits = 0;
-    this.inputBuf;
+    this.inputBuf = 0;
     this.outputBits = 0;
     this.buf = EOF;
 
@@ -3676,8 +3676,7 @@ var PDFDoc = (function() {
         if (find(stream, 'startxref', 1024, true)) {
           stream.skip(9);
           var ch;
-          while (Lexer.isSpace(ch = stream.getChar()))
-;
+          while (Lexer.isSpace(ch = stream.getChar())) {}
           var str = '';
           while ((ch - '0') <= 9) {
             str += ch;
@@ -4389,7 +4388,7 @@ var PartialEvaluator = (function() {
       var type = dict.get('Subtype');
       assertWellFormed(IsName(type), 'invalid font Subtype');
 
-      var composite = false
+      var composite = false;
       if (type.name == 'Type0') {
         // If font is a composite
         //  - get the descendant font
@@ -4449,7 +4448,7 @@ var PartialEvaluator = (function() {
       // According to the spec if 'FontDescriptor' is declared, 'FirstChar',
       // 'LastChar' and 'Widths' should exists too, but some PDF encoders seems
       // to ignore this rule when a variant of a standart font is used.
-      // TODO Fill the width array depending on which of the base font this is 
+      // TODO Fill the width array depending on which of the base font this is
       // a variant.
       var firstChar = xref.fetchIfRef(dict.get('FirstChar')) || 0;
       var lastChar = xref.fetchIfRef(dict.get('LastChar')) || 256;
