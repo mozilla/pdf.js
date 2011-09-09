@@ -139,7 +139,15 @@ var WorkerPDFDoc = (function() {
 
         var fontFile = new Stream(font.file.bytes, font.file.start,
                                   font.file.end - font.file.start, fontFileDict);
-        font.file = new FlateStream(fontFile);
+                               
+        // Check if this is a FlateStream. Otherwise just use the created 
+        // Stream one. This makes complex_ttf_font.pdf work.
+        var cmf = font.file.bytes[0];
+        if ((cmf & 0x0f) == 0x08) {
+          font.file = new FlateStream(fontFile);
+        } else {
+          font.file = fontFile;
+        }
       }
 
       var images = data.images;
