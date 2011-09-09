@@ -4153,6 +4153,70 @@ var PartialEvaluator = (function() {
 
   constructor.prototype = {
     getIRQueue: function(stream, xref, resources, queue, fonts, images, uniquePrefix) {
+      function buildPaintImageXObject(image, inline) {
+        var dict = image.dict;
+        var w = dict.get('Width', 'W');
+        var h = dict.get('Height', 'H');
+
+        if (image instanceof JpegStream) {
+          var objId = ++objIdCounter;
+          images.push({
+            id: objId,
+            IR: image.getIR()
+          });
+
+          // Add the dependency on the image object.
+          fnArray.push("dependency");
+          argsArray.push([ objId ]);
+      
+          // The normal fn.
+          fn = 'paintJpegXObject';
+          args = [ objId, w, h ];
+        } else {
+          // Needs to be rendered ourself.
+      
+          // Figure out if the image has an imageMask.
+          var imageMask = dict.get('ImageMask', 'IM') || false;
+
+          // If there is no imageMask, create the PDFImage and a lot
+          // of image processing can be done here.
+          if (!imageMask) {
+            var imageObj = new PDFImage(xref, resources, image, inline);
+
+            if (imageObj.imageMask) {
+              throw "Can't handle this in the web worker :/";
+            }
+        
+            var imgData = {
+              width: w,
+              height: h,
+              data: new Uint8Array(w * h * 4)
+            };
+            var pixels = imgData.data;
+            imageObj.fillRgbaBuffer(pixels, imageObj.decode);
+        
+            fn = "paintImageXObject";
+            args = [ imgData ];
+          } else /* imageMask == true */ {
+            // This depends on a tmpCanvas beeing filled with the
+            // current fillStyle, such that processing the pixel
+            // data can't be done here. Instead of creating a
+            // complete PDFImage, only read the information needed
+            // for later.
+            fn = "paintImageMaskXObject";
+        
+            var width = dict.get('Width', 'W');
+            var height = dict.get('Height', 'H');
+            var bitStrideLength = (width + 7) >> 3;
+            var imgArray = image.getBytes(bitStrideLength * height);
+            var decode = dict.get('Decode', 'D');
+            var inverseDecode = !!decode && decode[0] > 0;
+
+            args = [ imgArray, inverseDecode, width, height ];
+          }
+        }
+      }
+      
       uniquePrefix = uniquePrefix || "";
       if (!queue.argsArray) {
         queue.argsArray = []
@@ -4239,69 +4303,7 @@ var PartialEvaluator = (function() {
                 fn = "paintFormXObjectEnd";
                 args = [];
               } else if ('Image' == type.name) {
-                var image = xobj;
-                var dict = image.dict;
-                var w = dict.get('Width', 'W');
-                var h = dict.get('Height', 'H');
-
-                if (image instanceof JpegStream) {
-                  var objId = ++objIdCounter;
-                  images.push({
-                    id: objId,
-                    IR: image.getIR()
-                  });
-
-                  // Add the dependency on the image object.
-                  fnArray.push("dependency");
-                  argsArray.push([ objId ]);
-                  
-                  // The normal fn.
-                  fn = 'paintJpegXObject';
-                  args = [ objId, w, h ];
-                } else {
-                  // Needs to be rendered ourself.
-                  
-                  // Figure out if the image has an imageMask.
-                  var imageMask = dict.get('ImageMask', 'IM') || false;
-
-                  // If there is no imageMask, create the PDFImage and a lot
-                  // of image processing can be done here.
-                  if (!imageMask) {
-                    var inline = false;
-                    var imageObj = new PDFImage(xref, resources, image, inline);
-
-                    if (imageObj.imageMask) {
-                      throw "Can't handle this in the web worker :/";
-                    }
-                    
-                    var imgData = {
-                      width: w,
-                      height: h,
-                      data: new Uint8Array(w * h * 4)
-                    };
-                    var pixels = imgData.data;
-                    imageObj.fillRgbaBuffer(pixels, imageObj.decode);
-                    
-                    fn = "paintImageXObject";
-                    args = [ imgData ];
-                  } else /* imageMask == true */ {
-                    // This depends on a tmpCanvas beeing filled with the
-                    // current fillStyle, such that processing the pixel
-                    // data can't be done here. Instead of creating a
-                    // complete PDFImage, only read the information needed
-                    // for later.
-                    fn = "paintImageMaskXObject";
-                    
-                    var width = dict.get('Width', 'W');
-                    var height = dict.get('Height', 'H');
-                    var bitStrideLength = (width + 7) >> 3;
-                    var imgArray = image.getBytes(bitStrideLength * height);
-                    var decode = dict.get('Decode', 'D');
-                    var inverseDecode = !!imageObj.decode && imageObj.decode[0] > 0;
-
-                    args = [ imgArray, inverseDecode, width, height ];
-                  }
-                }
+                buildPaintImageXObject(xobj, false)
               } else {
                 error('Unhandled XObject subtype ' + type.name);
               }
@@ -4331,6 +4333,8 @@ var PartialEvaluator = (function() {
               // TODO: TOASK: Is it possible to get here? If so, what does
               // args[0].name should be like???
             }
+          } else if (cmd == 'EI') {
+            buildPaintImageXObject(args[0], true);
           }
 
           // Transform some cmds.
@@ -5295,9 +5299,6 @@ var CanvasGraphics = (function() {
     },
     beginImageData: function() {
       error('Should not call beginImageData');
-    },
-    endInlineImage: function(image) {
-      this.paintImageXObject(null, image, true);
     },
   
     paintFormXObjectBegin: function(matrix, bbox) {

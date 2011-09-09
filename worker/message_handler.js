@@ -37,16 +37,10 @@ MessageHandler.prototype = {
   },
 
   send: function(actionName, data) {
-    try {
-      this.comObj.postMessage({
-        action: actionName,
-        data:   data
-      });      
-    } catch (e) {
-      console.error("FAILED to send data from", this.name);
-      throw e;
-    }
+    this.comObj.postMessage({
+      action: actionName,
+      data:   data
+    });      
   }
-  
 }
 
