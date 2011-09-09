@@ -134,19 +134,22 @@ var WorkerPDFDoc = (function() {
       for (var i = 0; i < fonts.length; i++) {
         var font = fonts[i];
         
-        var fontFileDict = new Dict();
-        fontFileDict.map = font.file.dict.map;
+        // Some fonts don't have a file, e.g. the build in ones like Arial.
+        if (font.file) {
+          var fontFileDict = new Dict();
+          fontFileDict.map = font.file.dict.map;
 
-        var fontFile = new Stream(font.file.bytes, font.file.start,
-                                  font.file.end - font.file.start, fontFileDict);
+          var fontFile = new Stream(font.file.bytes, font.file.start,
+                                    font.file.end - font.file.start, fontFileDict);
                                
-        // Check if this is a FlateStream. Otherwise just use the created 
-        // Stream one. This makes complex_ttf_font.pdf work.
-        var cmf = font.file.bytes[0];
-        if ((cmf & 0x0f) == 0x08) {
-          font.file = new FlateStream(fontFile);
-        } else {
-          font.file = fontFile;
+          // Check if this is a FlateStream. Otherwise just use the created 
+          // Stream one. This makes complex_ttf_font.pdf work.
+          var cmf = font.file.bytes[0];
+          if ((cmf & 0x0f) == 0x08) {
+            font.file = new FlateStream(fontFile);
+          } else {
+            font.file = fontFile;
+          }          
         }
       }
 
