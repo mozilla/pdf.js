@@ -3427,9 +3427,9 @@ var Page = (function() {
     },
     
     ensureFonts: function(fonts, callback) {
-      var fontObjs = FontLoader.bind(
+      FontLoader.bind(
         fonts,
-        function() {
+        function(fontObjs) {
           // Rebuild the FontsMap. This is emulating the behavior of the main
           // thread.
           if (fontObjs) {

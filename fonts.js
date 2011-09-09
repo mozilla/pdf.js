@@ -173,7 +173,7 @@ var FontLoader = {
       document.documentElement.removeEventListener(
         'pdfjsFontLoad', checkFontsLoaded, false);
 
-      callback();
+      callback(objs);
       return true;
     }
 
@@ -450,6 +450,8 @@ var Font = (function Font() {
   var constructor = function font_constructor(name, file, properties) {
     this.name = name;
     this.encoding = properties.encoding;
+    this.glyphs = properties.glyphs;
+    this.loadedName = properties.loadedName;
     this.sizes = [];
 
     var names = name.split('+');
@@ -477,7 +479,6 @@ var Font = (function Font() {
       // name ArialBlack for example will be replaced by Helvetica.
       this.black = (name.search(/Black/g) != -1);
 
-      this.loadedName = fontName.split('-')[0];
       this.loading = false;
       return;
     }
@@ -514,14 +515,13 @@ var Font = (function Font() {
     this.type = properties.type;
     this.textMatrix = properties.textMatrix;
     this.composite = properties.composite;
-    this.loadedName = properties.loadedName;
     
     // TODO: Remove this once we can be sure nothing got broken to du changes
     // in this commit.
     if (!this.loadedName) {
       throw "There has to be a `loadedName`";
     }
-    
+
     this.loading = true;
   };
 
