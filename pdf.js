@@ -6639,20 +6639,21 @@ var PDFFunction = (function() {
       for (var i = 0; i < length; ++i)
         diff.push(c1[i] - c0[i]);
 
-      return [ CONSTRUCT_INTERPOLATED, c0, diff, n ];
+      return [ CONSTRUCT_INTERPOLATED, c0, diff, n, i ];
     },
 
     constructInterpolatedFromIR: function(IR) {
       var c0   = IR[1];
       var diff = IR[2];
       var n    = IR[3];
+      var i    = IR[4];
 
       return function(args) {
         var x = args[0];
 
         var out = [];
         for (var j = 0; j < length; ++j)
-          out.push(c0[j] + (x^n * diff[j]));
+          out.push(c0[j] + (x^n * diff[i]));
 
         return out;
         
