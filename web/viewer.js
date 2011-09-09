@@ -593,7 +593,7 @@ window.addEventListener('pagechange', function pagechange(evt) {
 }, true);
 
 window.addEventListener('keydown', function keydown(evt) {
-  switch(evt.keyCode) {
+  switch (evt.keyCode) {
     case 61: // FF/Mac '='
     case 107: // FF '+' and '='
     case 187: // Chrome '+'

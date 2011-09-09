@@ -447,10 +447,10 @@ var Font = (function Font() {
     this.glyphs = properties.glyphs;
     this.sizes = [];
 
-    var names = name.split("+");
+    var names = name.split('+');
     names = names.length > 1 ? names[1] : names[0];
     names = names.split(/[-,_]/g)[0];
-    this.serif = serifFonts[names] || (name.indexOf("Serif") != -1);
+    this.serif = serifFonts[names] || (name.indexOf('Serif') != -1);
 
     // If the font is to be ignored, register it like an already loaded font
     // to avoid the cost of waiting for it be be loaded by the platform.
@@ -470,8 +470,8 @@ var Font = (function Font() {
 
       // Use 'name' instead of 'fontName' here because the original
       // name ArialNarrow for example will be replaced by Helvetica.
-      this.narrow = (name.indexOf("Narrow") != -1)
-      this.black = (name.indexOf("Black") != -1)
+      this.narrow = (name.indexOf('Narrow') != -1);
+      this.black = (name.indexOf('Black') != -1);
 
       this.loadedName = fontName.split('-')[0];
       this.loading = false;
@@ -485,8 +485,8 @@ var Font = (function Font() {
         this.mimetype = 'font/opentype';
 
         var subtype = properties.subtype;
-        var cff = (subtype === 'Type1C') ? new Type2CFF(file, properties)
-                                         : new CFF(name, file, properties);
+        var cff = (subtype === 'Type1C') ?
+          new Type2CFF(file, properties) : new CFF(name, file, properties);
 
         // Wrap the CFF data inside an OTF font file
         data = this.convert(name, cff, properties);
@@ -912,7 +912,7 @@ var Font = (function Font() {
         // Check that table are sorted by platformID then encodingID,
         records.sort(function(a, b) {
           return ((a.platformID << 16) + a.encodingID) -
-                 ((b.platformID << 16) + b.encodingID)
+                 ((b.platformID << 16) + b.encodingID);
         });
 
         var tables = [records[0]];
@@ -944,7 +944,7 @@ var Font = (function Font() {
           }
 
           for (var i = 0; i < data.length; i++)
-            cmap.data[i] = data.charCodeAt(i); 
+            cmap.data[i] = data.charCodeAt(i);
         }
 
         var encoding = properties.encoding;
@@ -972,7 +972,7 @@ var Font = (function Font() {
 
                 var code = encoding[index];
                 for (var glyph in properties.glyphs) {
-                  if (properties.glyphs[glyph] == code) 
+                  if (properties.glyphs[glyph] == code)
                     break;
                 }
 
@@ -981,7 +981,7 @@ var Font = (function Font() {
                 glyphs.push({ glyph: glyph, unicode: unicode });
               }
             }
-            
+
             return cmap.data = createCMapTable(glyphs, deltas);
           } else if (format == 6) {
             // Format 6 is a 2-bytes dense mapping, which means the font data
@@ -1693,7 +1693,7 @@ var Type1Parser = function() {
       };
       var c = eexecStr[i];
 
-      if ((glyphsSection || subrsSection) && 
+      if ((glyphsSection || subrsSection) &&
           (token == 'RD' || token == '-|')) {
         i++;
         var data = eexec.slice(i, i + length);
@@ -1729,7 +1729,7 @@ var Type1Parser = function() {
               getToken(); // read in 'array'
               for (var j = 0; j < num; ++j) {
                 var t = getToken(); // read in 'dup'
-                if (t == 'ND' || t == '|-' || t == 'noaccess') 
+                if (t == 'ND' || t == '|-' || t == 'noaccess')
                   break;
                 var index = parseInt(getToken(), 10);
                 if (index > j)
@@ -1828,7 +1828,7 @@ var Type1Parser = function() {
               if (token == 'dup') {
                 var index = parseInt(getToken(), 10);
                 var glyph = getToken();
-              
+
                 if ('undefined' == typeof(properties.differences[index])) {
                   properties.encoding[index] = glyph;
                   properties.glyphs[glyph] = GlyphsUnicode[glyph] || index;
@@ -1847,7 +1847,7 @@ var Type1Parser = function() {
 };
 
 /**
- * The CFF class takes a Type1 file and wrap it into a 
+ * The CFF class takes a Type1 file and wrap it into a
  * 'Compact Font Format' which itself embed Type2 charstrings.
  */
 var CFFStrings = [
@@ -2289,7 +2289,7 @@ var Type2CFF = (function() {
       var charStrings = this.parseIndex(topDict.CharStrings);
       var charset = this.parseCharsets(topDict.charset,
                                        charStrings.length, strings);
-      var hasSupplement = this.parseEncoding(topDict.Encoding, properties, 
+      var hasSupplement = this.parseEncoding(topDict.Encoding, properties,
                                              strings, charset);
 
       // The font sanitizer does not support CFF encoding with a
@@ -2360,7 +2360,8 @@ var Type2CFF = (function() {
       return charstrings;
     },
 
-    parseEncoding: function cff_parseencoding(pos, properties, strings, charset) {
+    parseEncoding: function cff_parseencoding(pos, properties, strings,
+                                              charset) {
       var encoding = {};
       var bytes = this.bytes;
 
@@ -2375,8 +2376,8 @@ var Type2CFF = (function() {
 
       if (pos == 0 || pos == 1) {
         var gid = 1;
-        var baseEncoding = pos ? Encodings.ExpertEncoding
-                               : Encodings.StandardEncoding;
+        var baseEncoding =
+          pos ? Encodings.ExpertEncoding : Encodings.StandardEncoding;
         for (var i = 0; i < charset.length; i++) {
           var index = baseEncoding.indexOf(charset[i]);
           if (index != -1)
@@ -2387,7 +2388,7 @@ var Type2CFF = (function() {
         switch (format & 0x7f) {
           case 0:
             var glyphsCount = bytes[pos++];
-            for (var i = 1; i <= glyphsCount; i++) 
+            for (var i = 1; i <= glyphsCount; i++)
               encoding[bytes[pos++]] = i;
 
             if (format & 0x80) {
@@ -2413,7 +2414,7 @@ var Type2CFF = (function() {
             break;
 
           default:
-            error('Unknow encoding format: ' + format + " in CFF");
+            error('Unknow encoding format: ' + format + ' in CFF');
             break;
         }
       }
