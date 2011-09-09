@@ -3386,13 +3386,12 @@ var Page = (function() {
         // Firefox error reporting from XHR callbacks.
         setTimeout(function() {
           var exc = null;
-          // try {
-            self.display(gfx);
-            self.stats.render = Date.now();
-          // } catch (e) {
-          //   exc = e.toString();
-          // }
-          continuation(exc);
+          try {
+            self.display(gfx, continuation);
+          } catch (e) {
+            exc = e.toString();
+            continuation(exc);
+          }
         });
       };
       
@@ -3446,7 +3445,7 @@ var Page = (function() {
       );
     },
     
-    display: function(gfx) {
+    display: function(gfx, callback) {
       var xref = this.xref;
       var resources = xref.fetchIfRef(this.resources);
       var mediaBox = xref.fetchIfRef(this.mediaBox);
@@ -3460,8 +3459,13 @@ var Page = (function() {
       var length = this.IRQueue.fnArray.length;
       var IRQueue = this.IRQueue;
       
+      var self = this;
       function next() {
         startIdx = gfx.executeIRQueue(IRQueue, startIdx, next);
+        if (startIdx == length) {
+          self.stats.render = Date.now();
+          callback();
+        }
       }
       next();
     },
