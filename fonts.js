@@ -1032,15 +1032,48 @@ var Font = (function Font() {
             var end = denseRange[1];
             var index = firstCode;
             for (var j = start; j <= end; j++) {
-              var code = j - firstCode - 1;
+              var code = glyphs[j - start];
               var mapping = encoding[index] || {};
-              mapping.unicode = glyphs[code].unicode;
+              mapping.unicode = code.unicode;
               encoding[index++] = mapping;
             }
             return cmap.data = createCMapTable(glyphs);
           }
         }
         return cmap.data;
+      };
+
+      function sanitizeMetrics(font, header, metrics, numGlyphs) {
+        if (!header && !metrics)
+          return;
+
+        // The vhea/vmtx tables are not required, so it happens that
+        // some fonts embed a vmtx table without a vhea table. In this
+        // situation the sanitizer assume numOfLongVerMetrics = 1. As
+        // a result it tries to read numGlyphs - 1 SHORT from the vmtx
+        // table, and if it is not possible, the font is rejected.
+        // So remove the vmtx table if there is no vhea table.
+        if (!header && metrics) {
+          metrics.data = null;
+          return;
+        }
+
+        font.pos = (font.start ? font.start : 0) + header.offset;
+        font.pos += header.length - 2;
+        var numOfMetrics = int16(font.getBytes(2));
+      
+        var numOfSidebearings = numGlyphs - numOfMetrics;
+        var numMissing = numOfSidebearings -
+          ((hmtx.length - numOfMetrics * 4) >> 1);
+        if (numMissing > 0) {
+          font.pos = (font.start ? font.start : 0) + metrics.offset;
+          var entries = '';
+          for (var i = 0; i < hmtx.length; i++)
+            entries += String.fromCharCode(font.getByte());
+          for (var i = 0; i < numMissing; i++)
+            entries += '\x00\x00';
+          metrics.data = stringToArray(entries);
+        }
       };
 
       // Check that required tables are present
@@ -1050,7 +1083,7 @@ var Font = (function Font() {
       var header = readOpenTypeHeader(font);
       var numTables = header.numTables;
 
-      var cmap, maxp, hhea, hmtx;
+      var cmap, maxp, hhea, hmtx, vhea, vmtx;
       var tables = [];
       for (var i = 0; i < numTables; i++) {
         var table = readTableEntry(font);
@@ -1066,6 +1099,11 @@ var Font = (function Font() {
             hmtx = table;
 
           requiredTables.splice(index, 1);
+        } else {
+          if (table.tag == 'vmtx')
+            vmtx = table;
+          else if (table.tag == 'vhea')
+            vhea = table;
         }
         tables.push(table);
       }
@@ -1091,28 +1129,14 @@ var Font = (function Font() {
         });
       }
 
-      // Ensure the hmtx tables contains an advance width and a sidebearing
-      // for the number of glyphs declared in the maxp table
+      // Ensure the [h/v]mtx tables contains the advance width and
+      // sidebearings information for numGlyphs in the maxp table
       font.pos = (font.start ? font.start : 0) + maxp.offset;
       var version = int16(font.getBytes(4));
       var numGlyphs = int16(font.getBytes(2));
 
-      font.pos = (font.start ? font.start : 0) + hhea.offset;
-      font.pos += hhea.length - 2;
-      var numOfHMetrics = int16(font.getBytes(2));
-
-      var numOfSidebearings = numGlyphs - numOfHMetrics;
-      var numMissing = numOfSidebearings -
-        ((hmtx.length - numOfHMetrics * 4) >> 1);
-      if (numMissing > 0) {
-        font.pos = (font.start ? font.start : 0) + hmtx.offset;
-        var metrics = '';
-        for (var i = 0; i < hmtx.length; i++)
-          metrics += String.fromCharCode(font.getByte());
-        for (var i = 0; i < numMissing; i++)
-          metrics += '\x00\x00';
-        hmtx.data = stringToArray(metrics);
-      }
+      sanitizeMetrics(font, hhea, hmtx, numGlyphs);
+      sanitizeMetrics(font, vhea, vmtx, numGlyphs);
 
       // Sanitizer reduces the glyph advanceWidth to the maxAdvanceWidth
       // Sometimes it's 0. That needs to be fixed
