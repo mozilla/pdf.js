@@ -131,7 +131,7 @@ var WorkerPDFDoc = (function() {
     var useWorker = true;
     
     if (useWorker) {
-      var worker = new Worker("../worker/boot.js");      
+      var worker = new Worker("../worker/boot_processor.js");
     } else {
       // If we don't use a worker, just post/sendMessage to the main thread.
       var worker = {
