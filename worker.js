@@ -93,8 +93,6 @@ var Promise = (function() {
   
   Promise.prototype = {
     resolve: function(data) {
-      console.log("resolve", this.name);
-      
       if (this.isResolved) {
         throw "A Promise can be resolved only once";
       }
@@ -165,8 +163,6 @@ var WorkerPDFDoc = (function() {
           var name = data[2];
           var file = data[3];
           var properties = data[4];
-
-          console.log("got new font", name);
 
           var font = {
             name: name,
