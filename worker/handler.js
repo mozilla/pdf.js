@@ -9,12 +9,10 @@ var WorkerHandler = {
     
     handler.on("doc", function(data) {
       pdfDoc = new PDFDoc(new Stream(data));
-      console.log("setup pdfDoc");
     });
   
     handler.on("page_request", function(pageNum) {
       pageNum = parseInt(pageNum);
-      console.log("about to process page", pageNum);
 
       var page = pdfDoc.getPage(pageNum);
 
@@ -40,11 +38,7 @@ var WorkerHandler = {
         });
       }
 
-      // TODO: Handle images here.
-
-      console.log("about to send page", pageNum);
-
-      if (true /* show used commands */) {
+      if (false /* show used commands */) {
         var cmdMap = {};
   
         var fnArray = IRQueue .fnArray;
@@ -59,16 +53,6 @@ var WorkerHandler = {
             cmdMap[entry] += 1;
           }
         }
-
-        // // Make a copy of the fnArray and show all cmds it has.
-        // var fnArray = preCompilation.fnArray.slice(0).sort();
-        // for (var i = 0; i < fnArray.length; true) {
-        //   if (fnArray[i] == fnArray[i + 1]) {
-        //     fnArray.splice(i, 1);
-        //   } else {
-        //     i++;
-        //   }
-        // }
         console.log("cmds", JSON.stringify(cmdMap));
       } 
 
