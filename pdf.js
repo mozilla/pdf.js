@@ -3430,7 +3430,6 @@ var Page = (function() {
       var IRQueue = this.IRQueue;
       
       function next() {
-        console.log("next executeIRQueue", startIdx, length);
         startIdx = gfx.executeIRQueue(IRQueue, startIdx, next);
       }
       next();
@@ -4810,7 +4809,6 @@ var CanvasGraphics = (function() {
             // If the promise isn't resolved yet, add the continueCallback
             // to the promise and bail out.
             if (!promise.isResolved) {
-              console.log("Unresolved object: " + depObjId);
               promise.then(continueCallback);
               return i;
             }

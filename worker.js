@@ -160,7 +160,6 @@ var WorkerPDFDoc = (function() {
       }
       
       var timeStart = new Date();
-      console.log("startRenderingFromPreCompilation:", "numberOfFonts", fonts.length);
       page.startRenderingFromIRQueue(data.IRQueue, data.fonts, data.images);
       console.log("RenderingTime", (new Date()) - timeStart);
     }, this);
