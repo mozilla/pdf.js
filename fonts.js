@@ -155,7 +155,9 @@ var FontMeasure = (function FontMeasure() {
           var charWidth = parseFloat(font.encoding[charcode].width);
           width += charWidth;
         }
-        width = width * size / 1000;
+        // XXX should use the unit-per-em value from the embedded font
+        var unitsPerEm = 1000;
+        width = width * size / unitsPerEm;
       } catch(e) {
         width = ctx.measureText(text).width / kScalePrecision;
       }
