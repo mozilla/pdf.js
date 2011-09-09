@@ -8,8 +8,16 @@ var console = {
   log: function log() {
     var args = Array.prototype.slice.call(arguments);
     postMessage({
-      action: 'log',
-      data: args
+      action: 'console_log',
+      data:   args
+    });
+  },
+  
+  error: function error() {
+    var args = Array.prototype.slice.call(arguments);
+    postMessage({
+      action: 'console_error',
+      data:   args
     });
   },
 
