@@ -1033,7 +1033,7 @@ var Font = (function Font() {
             var index = firstCode;
             for (var j = start; j <= end; j++) {
               var code = j - firstCode - 1;
-              var mapping = encoding[index + 1] || {};
+              var mapping = encoding[index] || {};
               mapping.unicode = glyphs[code].unicode;
               encoding[index++] = mapping;
             }
