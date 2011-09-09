@@ -160,8 +160,6 @@ var FontLoader = {
   fonts: {},
 
   bind: function(fonts, callback) {
-    console.log("requesting fonts", fonts[0].properties.loadedName, fonts[0].name);
-    
     var rules = [], names = [], objs = [];
 
     for (var i = 0; i < fonts.length; i++) {
