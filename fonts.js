@@ -1374,17 +1374,25 @@ var Font = (function Font() {
                                        // loop should never end on the last byte
         for (var i = 0; i < length; i++) {
           var charcode = int16([chars.charCodeAt(i++), chars.charCodeAt(i)]);
-          var unicode = encoding[charcode].unicode;
+          var unicode = encoding[charcode];
+          if ('undefined' == typeof(unicode)) {
+            warn('Unencoded charcode ' + charcode);
+            unicode = charcode;
+          } else {
+            unicode = unicode.unicode;
+          }
           str += String.fromCharCode(unicode);
         }
       }
       else {
         for (var i = 0; i < chars.length; ++i) {
           var charcode = chars.charCodeAt(i);
-          var unicode = encoding[charcode].unicode;
+          var unicode = encoding[charcode];
           if ('undefined' == typeof(unicode)) {
             warn('Unencoded charcode ' + charcode);
             unicode = charcode;
+          } else {
+            unicode = unicode.unicode;
           }
 
           // Handle surrogate pairs
