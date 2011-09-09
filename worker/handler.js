@@ -20,11 +20,12 @@ var WorkerHandler = {
       // but stops at one point and sends the result back to the main thread.
       var gfx = new CanvasGraphics(null);
       var fonts = [];
-      var images = [];
 
+      var start = Date.now();
       // Pre compile the pdf page and fetch the fonts/images.
-      var IRQueue = page.getIRQueue(fonts, images);
+      var IRQueue = page.getIRQueue(handler, fonts);
 
+      console.log("page=%d - getIRQueue: time=%dms, len=%d", pageNum, Date.now() - start, IRQueue.fnArray.length);
       // Extract the minimum of font data that is required to build all required
       // font stuff on the main thread.
       var fontsMin = [];
@@ -59,7 +60,6 @@ var WorkerHandler = {
       handler.send("page", {
         pageNum:  pageNum,
         fonts:    fontsMin,
-        images:   images,
         IRQueue:  IRQueue,
       });
     }, this);

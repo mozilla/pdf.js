@@ -943,44 +943,6 @@ var JpegStream = (function() {
   return constructor;
 })();
 
-// Simple object to track the loading images
-// Initialy for every that is in loading call imageLoading()
-// and, when images onload is fired, call imageLoaded()
-// When all images are loaded, the onLoad event is fired.
-var ImagesLoader = (function() {
-  function constructor() {
-    this.loading = 0;
-  }
-
-  constructor.prototype = {
-    imageLoading: function() {
-      ++this.loading;
-    },
-
-    imageLoaded: function() {
-      if (--this.loading == 0 && this.onLoad) {
-        this.onLoad();
-        delete this.onLoad;
-      }
-    },
-
-    bind: function(jpegStream) {
-      if (jpegStream.loaded)
-        return;
-      this.imageLoading();
-      jpegStream.onLoad = this.imageLoaded.bind(this);
-    },
-
-    notifyOnLoad: function(callback) {
-      if (this.loading == 0)
-        callback();
-      this.onLoad = callback;
-    }
-  };
-
-  return constructor;
-})();
-
 var DecryptStream = (function() {
   function constructor(str, decrypt) {
     this.str = str;
@@ -3377,7 +3339,7 @@ var Page = (function() {
       return shadow(this, 'rotate', rotate);
     },
       
-    startRenderingFromIRQueue: function(gfx, IRQueue, fonts, images, continuation) {
+    startRenderingFromIRQueue: function(gfx, IRQueue, fonts, continuation) {
       var self = this;
       this.IRQueue = IRQueue;
       
@@ -3396,14 +3358,11 @@ var Page = (function() {
       };
       
       this.ensureFonts(fonts, function() {
-        images.notifyOnLoad(function() {
-          self.stats.images = Date.now();
-          displayContinuation();
-        });
-      })
+        displayContinuation();
+      });
     },
 
-    getIRQueue: function(fonts, images) {
+    getIRQueue: function(handler, fonts) {
       if (this.IRQueue) {
         // content was compiled
         return this.IRQueue;
@@ -3422,7 +3381,7 @@ var Page = (function() {
       
       var pe = this.pe = new PartialEvaluator();
       var IRQueue = {};
-      return this.IRQueue = pe.getIRQueue(content, xref, resources, IRQueue, fonts, images, "p" + this.pageNumber + "_");
+      return this.IRQueue = pe.getIRQueue(content, xref, resources, IRQueue, handler, fonts, "p" + this.pageNumber + "_");
     },
     
     ensureFonts: function(fonts, callback) {
@@ -3460,10 +3419,13 @@ var Page = (function() {
       var IRQueue = this.IRQueue;
       
       var self = this;
+      var startTime = Date.now();
       function next() {
         startIdx = gfx.executeIRQueue(IRQueue, startIdx, next);
         if (startIdx == length) {
           self.stats.render = Date.now();
+          console.log("page=%d - executeIRQueue: time=%dms", 
+            self.pageNumber + 1, self.stats.render - startTime);
           callback();
         }
       }
@@ -4199,7 +4161,7 @@ var PartialEvaluator = (function() {
   };
 
   constructor.prototype = {
-    getIRQueue: function(stream, xref, resources, queue, fonts, images, uniquePrefix) {
+    getIRQueue: function(stream, xref, resources, queue, handler, fonts, uniquePrefix) {
       function buildPaintImageXObject(image, inline) {
         var dict = image.dict;
         var w = dict.get('Width', 'W');
@@ -4207,10 +4169,7 @@ var PartialEvaluator = (function() {
 
         if (image instanceof JpegStream) {
           var objId = ++objIdCounter;
-          images.push({
-            id: objId,
-            IR: image.getIR()
-          });
+          handler.send("obj", [objId, "JpegStream", image.getIR()]);
 
           // Add the dependency on the image object.
           fnArray.push("dependency");
@@ -4291,7 +4250,7 @@ var PartialEvaluator = (function() {
           if ((cmd == 'SCN' || cmd == 'scn') && !args[args.length - 1].code) {
             // Use the IR version for setStroke/FillColorN.
             fn += '_IR';
-            
+             
             // compile tiling patterns
             var patternName = args[args.length - 1];
             // SCN/scn applies patterns along with normal colors
@@ -4306,7 +4265,7 @@ var PartialEvaluator = (function() {
                   // TODO: Add dependency here.
                   // Create an IR of the pattern code.
                   var codeIR = this.getIRQueue(pattern, xref,
-                                    dict.get('Resources'), {}, fonts, images, uniquePrefix);
+                                    dict.get('Resources'), {}, handler, fonts, uniquePrefix);
                   
                   args = TilingPattern.getIR(codeIR, dict, args);
                 } 
@@ -4344,7 +4303,7 @@ var PartialEvaluator = (function() {
                 
                 // This adds the IRQueue of the xObj to the current queue.
                 this.getIRQueue(xobj, xref, xobj.dict.get('Resources'), queue,
-                                         fonts, images, uniquePrefix);
+                                         handler, fonts, uniquePrefix);
 
 
                 fn = "paintFormXObjectEnd";
