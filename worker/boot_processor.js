@@ -9,6 +9,7 @@ importScripts('../pdf.js');
 importScripts('../fonts.js');
 importScripts('../crypto.js');
 importScripts('../glyphlist.js');
+importScripts('../metrics.js');
 importScripts('handler.js');
 
 // Listen for messages from the main thread.
