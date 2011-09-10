@@ -556,12 +556,6 @@ var FlateStream = (function() {
   };
 
   constructor.prototype.readBlock = function() {
-    function repeat(stream, array, len, offset, what) {
-      var repeatLength = stream.getBits(len) + offset;
-      while (repeatLength-- > 0)
-        array[i++] = what;
-    }
-
     // read block header
     var hdr = this.getBits(3);
     if (hdr & 1)
@@ -631,14 +625,19 @@ var FlateStream = (function() {
       while (i < codes) {
         var code = this.getCode(codeLenCodeTab);
         if (code == 16) {
-          repeat(this, codeLengths, 2, 3, len);
+          var bitsLength = 2, bitsOffset = 3, what = len;
         } else if (code == 17) {
-          repeat(this, codeLengths, 3, 3, len = 0);
+          var bitsLength = 3, bitsOffset = 3, what = (len = 0);
         } else if (code == 18) {
-          repeat(this, codeLengths, 7, 11, len = 0);
+          var bitsLength = 7, bitsOffset = 11, what = (len = 0);
         } else {
           codeLengths[i++] = len = code;
+          continue;
         }
+
+        var repeatLength = this.getBits(bitsLength) + bitsOffset;
+        while (repeatLength-- > 0)
+          codeLengths[i++] = what;
       }
 
       litCodeTable =
