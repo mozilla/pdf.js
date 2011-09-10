@@ -161,68 +161,57 @@ if (!isWorker) {
 var FontLoader = {
   fonts: {},
   fontsLoading: false,
-  waitingNames: [],
-  waitingStr:  [],
+  waitingFontObjs: [],
+  waitingFontIds:  [],
 
-  bind: function(fonts, callback) {
-    var rules = [], names = [];
-
-    for (var i = 0; i < fonts.length; i++) {
-      var font = fonts[i];
-
-      var obj = new Font(font.name, font.file, font.properties);
-
-      var str = '';
-      var data = obj.data;
-      var name = obj.loadedName;
-      if (data) {
-        var length = data.length;
-        for (var j = 0; j < length; j++)
-          str += String.fromCharCode(data[j]);
-
-
-        this.fonts[obj.loadedName] = obj;
-        
-        this.waitingNames.push(name);
-        this.waitingStr.push(str);
-      } else {
-        // If there is no data, then there is nothing to load and we can
-        // resolve the object right away.
-        Objects.resolve(name, obj);
-      }
-    }
-
+  bind: function(objId, fontObj) {
+    this.waitingFontObjs.push(fontObj);
+    this.waitingFontIds.push(objId);
+    
     if (!this.fontsLoading) {
       this.executeWaiting();
-    } else {
-      console.log('There are currently some fonts getting loaded - waiting');
     }
+  },
+ 
+  bindDOM: function font_bindDom(fontObj) {
+    var fontName = fontObj.loadedName;
+    // Add the font-face rule to the document
+    var url = ('url(data:' + fontObj.mimetype + ';base64,' +
+                 window.btoa(fontObj.str) + ');');
+    var rule = "@font-face { font-family:'" + fontName + "';src:" + url + '}';
+    var styleSheet = document.styleSheets[0];
+    styleSheet.insertRule(rule, styleSheet.cssRules.length);
+    return rule;
   },
 
   executeWaiting: function() {
-    var names = this.waitingNames;
-    console.log('executing fonts', names.join(', '));
-
     var rules = [];
-    for (var i = 0; i < names.length; i++) {
-      var obj = this.fonts[names[i]];
-      var rule = obj.bindDOM(this.waitingStr[i]);
+    var names = [];
+    var objIds = this.waitingFontIds;
+
+    for (var i = 0; i < this.waitingFontObjs.length; i++) {
+      var fontObj = this.waitingFontObjs[i];
+      var rule = this.bindDOM(fontObj);
+      this.fonts[objIds[i]] = fontObj;
+      names.push(fontObj.loadedName);
       rules.push(rule);
     }
-    this.prepareFontLoadEvent(rules, names);
-    this.waitingNames = [];
-    this.waitingStr = [];
+
+    this.prepareFontLoadEvent(rules, names, objIds);
+    this.waitingFontIds = [];
+    this.waitingFontObjs = [];
   },
   
-  fontLoadEvent: function(names) {
+  fontLoadEvent: function(objIds) {
+    for (var i = 0; i < objIds.length; i++) {
+      var objId = objIds[i];
+      Objects.resolve(objId, this.fonts[objId]);
+      delete this.fonts[objId];
+    }
+    
     this.fontsLoading = false;
 
-    for (var i = 0; i < names.length; i++) {
-      var name = names[i];
-      Objects.resolve(name, this.fonts[name]);
-    }
-
-    if (this.waitingNames.length != 0) {
+    if (this.waitingFontIds.length != 0) {
       this.executeWaiting();
     }
   },
@@ -232,7 +221,7 @@ var FontLoader = {
   // loaded in a subdocument.  It's expected that the load of |rules|
   // has already started in this (outer) document, so that they should
   // be ordered before the load in the subdocument.
-  prepareFontLoadEvent: function(rules, names) {
+  prepareFontLoadEvent: function(rules, names, objIds) {
       this.fontsLoading = true;
       /** Hack begin */
       // There's no event when a font has finished downloading so the
@@ -278,18 +267,16 @@ var FontLoader = {
       }
       src += '</style>';
       src += '<script type="application/javascript">';
-      var fontNamesArray = '';
-      for (var i = 0; i < names.length; ++i) {
-        fontNamesArray += '"' + names[i] + '", ';
+      var objIdsArray = '';
+      for (var i = 0; i < objIds.length; ++i) {
+        objIdsArray += '"' + objIds[i] + '", ';
       }
-      src += '  var fontNames=[' + fontNamesArray + '];\n';
+      src += '  var objIds=[' + objIdsArray + '];\n';      
       src += '  window.onload = function () {\n';
-      src += '    setTimeout(function(){parent.postMessage(JSON.stringify(fontNames), "*")},0);\n';
+      src += '    setTimeout(function(){parent.postMessage(JSON.stringify(objIds), "*")},0);\n';
       src += '  }';
       src += '</script></head><body>';
-      for (var i = 0; i < names.length; ++i) {
-        src += '<p style="font-family:\'' + names[i] + '\'">Hi</p>';
-      }
+      src += '<p style="font-family:\'' + name + '\'">Hi</p>';
       src += '</body></html>';
       var frame = document.createElement('iframe');
       frame.src = 'data:text/html,' + src;
@@ -446,6 +433,90 @@ function getUnicodeRangeFor(value) {
   }
   return -1;
 }
+
+/**
+ * FontShape is the minimal shape a FontObject can have to be useful during
+ * executing the IRQueue.
+ */
+var FontShape = (function FontShape() {
+  var constructor = function FontShape_constructor(obj) {
+    for (var name in obj) {
+      this[name] = obj[name];
+    }
+  };
+
+  function int16(bytes) {
+    return (bytes[0] << 8) + (bytes[1] & 0xff);
+  };
+  
+  constructor.prototype = {
+    charsToUnicode: function fonts_chars2Unicode(chars) {
+      var charsCache = this.charsCache;
+      var str;
+
+      // if we translated this string before, just grab it from the cache
+      if (charsCache) {
+        str = charsCache[chars];
+        if (str)
+          return str;
+      }
+
+      // lazily create the translation cache
+      if (!charsCache)
+        charsCache = this.charsCache = Object.create(null);
+
+      // translate the string using the font's encoding
+      var encoding = this.encoding;
+      if (!encoding)
+        return chars;
+      str = '';
+
+      if (this.composite) {
+        // composite fonts have multi-byte strings convert the string from
+        // single-byte to multi-byte
+        // XXX assuming CIDFonts are two-byte - later need to extract the
+        // correct byte encoding according to the PDF spec
+        var length = chars.length - 1; // looping over two bytes at a time so
+                                       // loop should never end on the last byte
+        for (var i = 0; i < length; i++) {
+          var charcode = int16([chars.charCodeAt(i++), chars.charCodeAt(i)]);
+          var unicode = encoding[charcode];
+          if ('undefined' == typeof(unicode)) {
+            warn('Unencoded charcode ' + charcode);
+            unicode = charcode;
+          } else {
+            unicode = unicode.unicode;
+          }
+          str += String.fromCharCode(unicode);
+        }
+      }
+      else {
+        for (var i = 0; i < chars.length; ++i) {
+          var charcode = chars.charCodeAt(i);
+          var unicode = encoding[charcode];
+          if ('undefined' == typeof(unicode)) {
+            warn('Unencoded charcode ' + charcode);
+            unicode = charcode;
+          } else {
+            unicode = unicode.unicode;
+          }
+
+          // Handle surrogate pairs
+          if (unicode > 0xFFFF) {
+            str += String.fromCharCode(unicode & 0xFFFF);
+            unicode >>= 16;
+          }
+          str += String.fromCharCode(unicode);
+        }
+      }
+
+      // Enter the translated string into the cache
+      return (charsCache[chars] = str);
+    }
+  }
+  
+  return constructor;
+})();
 
 /**
  * 'Font' is the class the outside world should use, it encapsulate all the font
@@ -1322,98 +1393,6 @@ var Font = (function Font() {
       }
 
       return stringToArray(otf.file);
-    },
-
-    bindWorker: function font_bindWorker(data) {
-      postMessage({
-        action: 'font',
-        data: {
-          raw: data,
-          fontName: this.loadedName,
-          mimetype: this.mimetype
-        }
-      });
-    },
-
-    bindDOM: function font_bindDom(data) {
-      var fontName = this.loadedName;
-
-      // Add the font-face rule to the document
-      var url = ('url(data:' + this.mimetype + ';base64,' +
-                 window.btoa(data) + ');');
-      var rule = "@font-face { font-family:'" + fontName + "';src:" + url + '}';
-      var styleSheet = document.styleSheets[0];
-      if (!styleSheet) {
-        document.documentElement.firstChild.appendChild( document.createElement('style') );
-        styleSheet = document.styleSheets[0];
-      }
-      styleSheet.insertRule(rule, styleSheet.cssRules.length);
-
-      return rule;
-    },
-
-    charsToUnicode: function fonts_chars2Unicode(chars) {
-      var charsCache = this.charsCache;
-      var str;
-
-      // if we translated this string before, just grab it from the cache
-      if (charsCache) {
-        str = charsCache[chars];
-        if (str)
-          return str;
-      }
-
-      // lazily create the translation cache
-      if (!charsCache)
-        charsCache = this.charsCache = Object.create(null);
-
-      // translate the string using the font's encoding
-      var encoding = this.encoding;
-      if (!encoding)
-        return chars;
-      str = '';
-
-      if (this.composite) {
-        // composite fonts have multi-byte strings convert the string from
-        // single-byte to multi-byte
-        // XXX assuming CIDFonts are two-byte - later need to extract the
-        // correct byte encoding according to the PDF spec
-        var length = chars.length - 1; // looping over two bytes at a time so
-                                       // loop should never end on the last byte
-        for (var i = 0; i < length; i++) {
-          var charcode = int16([chars.charCodeAt(i++), chars.charCodeAt(i)]);
-          var unicode = encoding[charcode];
-          if ('undefined' == typeof(unicode)) {
-            warn('Unencoded charcode ' + charcode);
-            unicode = charcode;
-          } else {
-            unicode = unicode.unicode;
-          }
-          str += String.fromCharCode(unicode);
-        }
-      }
-      else {
-        for (var i = 0; i < chars.length; ++i) {
-          var charcode = chars.charCodeAt(i);
-          var unicode = encoding[charcode];
-          if ('undefined' == typeof(unicode)) {
-            warn('Unencoded charcode ' + charcode);
-            unicode = charcode;
-          } else {
-            unicode = unicode.unicode;
-          }
-
-          // Handle surrogate pairs
-          if (unicode > 0xFFFF) {
-            str += String.fromCharCode(unicode & 0xFFFF);
-            unicode >>= 16;
-          }
-          str += String.fromCharCode(unicode);
-        }
-      }
-
-      // Enter the translated string into the cache
-      return (charsCache[chars] = str);
     }
   };
 

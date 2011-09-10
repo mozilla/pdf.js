@@ -141,6 +141,9 @@ var WorkerPDFDoc = (function() {
       }
     }
 
+    var fontWorker = new Worker('../worker/boot_font.js');
+    var fontHandler = this.fontHandler = new MessageHandler('font', fontWorker);
+
     var handler = this.handler = new MessageHandler("main", worker);
     handler.on("page", function(data) {
       var pageNum = data.pageNum;
@@ -164,42 +167,23 @@ var WorkerPDFDoc = (function() {
           var file = data[3];
           var properties = data[4];
 
-          var font = {
-            name: name,
-            file: file,
-            properties: properties
-          };
-
-          // Some fonts don't have a file, e.g. the build in ones like Arial.
-          if (file) {
-            var fontFileDict = new Dict();
-            fontFileDict.map = file.dict.map;
-
-            var fontFile = new Stream(file.bytes, file.start,
-                                      file.end - file.start, fontFileDict);
-                                 
-            // Check if this is a FlateStream. Otherwise just use the created 
-            // Stream one. This makes complex_ttf_font.pdf work.
-            var cmf = file.bytes[0];
-            if ((cmf & 0x0f) == 0x08) {
-              font.file = new FlateStream(fontFile);
-            } else {
-              font.file = fontFile;
-            }          
-          }
-
-          FontLoader.bind(
-            [ font ],
-            function(fontObjs) {
-              var fontObj = fontObjs[0];
-              Objects.resolve(objId, fontObj);
-            }
-          );
+          fontHandler.send("font", [objId, name, file, properties]);
         break;
         default:
           throw "Got unkown object type " + objType;
       }
     }, this);
+
+    fontHandler.on('font_ready', function(data) {
+      var objId   = data[0];
+      var fontObj = new FontShape(data[1]);
+      // If there is no string, then there is nothing to attach to the DOM.
+      if (!fontObj.str) {
+        Objects.resolve(objId, fontObj);
+      } else {
+        FontLoader.bind(objId, fontObj);
+      }
+    });
     
     if (!useWorker) {
       // If the main thread is our worker, setup the handling for the messages
