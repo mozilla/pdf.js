@@ -12,6 +12,9 @@ var kMaxWaitForFontFace = 1000;
 // Unicode Private Use Area
 var kCmapGlyphOffset = 0xE000;
 
+// Until hinting is fully supported this constant can be used
+var kHintingEnabled = false;
+
 /**
  * Hold a map of decoded fonts and of the standard fourteen Type1
  * fonts and their acronyms.
@@ -1526,6 +1529,9 @@ var Type1Parser = function() {
               i++;
               continue;
             }
+          } else if (!kHintingEnabled && (value == 1 || value == 2)) {
+            charstring.push('drop', 'drop', 'drop', 'drop', 'drop', 'drop');
+            continue;
           }
 
           command = charStringDictionary['12'][escape];
@@ -1549,6 +1555,9 @@ var Type1Parser = function() {
             }
 
             charstring.push(lsb, 'hmoveto');
+            continue;
+          } else if (!kHintingEnabled && (value == 1 || value == 3)) {
+            charstring.push('drop', 'drop');
             continue;
           }
           command = charStringDictionary[value];
