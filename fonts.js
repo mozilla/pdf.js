@@ -114,60 +114,6 @@ var serifFonts = {
   'Wide Latin': true, 'Windsor': true, 'XITS': true
 };
 
-var FontMeasure = (function FontMeasure() {
-  var kScalePrecision = 30;
-  var ctx = document.createElement('canvas').getContext('2d');
-  ctx.scale(1 / kScalePrecision, 1);
-
-  var current;
-  var measureCache;
-
-  return {
-    setActive: function fonts_setActive(font, size) {
-      if (current == font) {
-        var sizes = current.sizes;
-        if (!(measureCache = sizes[size]))
-          measureCache = sizes[size] = Object.create(null);
-      } else {
-        measureCache = null;
-      }
-
-      var name = font.loadedName;
-      var bold = font.bold ? 'bold' : 'normal';
-      var italic = font.italic ? 'italic' : 'normal';
-      size *= kScalePrecision;
-      var rule = italic + ' ' + bold + ' ' + size + 'px "' + name + '"';
-      ctx.font = rule;
-      current = font;
-    },
-    measureText: function fonts_measureText(text, font, size) {
-      var width;
-      if (measureCache && (width = measureCache[text]))
-        return width;
-
-      try {
-        width = 0.0;
-        var composite = font.composite;
-        for (var i = 0; i < text.length; i++) {
-          var charcode = composite ? 
-            ((text.charCodeAt(i++) << 8) + text.charCodeAt(i)) :
-            text.charCodeAt(i);
-          var charWidth = parseFloat(font.encoding[charcode].width);
-          width += charWidth;
-        }
-        // XXX should use the unit-per-em value from the embedded font
-        var unitsPerEm = 1000;
-        width = width * size / unitsPerEm;
-      } catch(e) {
-        width = ctx.measureText(text).width / kScalePrecision;
-      }
-      if (measureCache)
-        measureCache[text] = width;
-      return width;
-    }
-  };
-})();
-
 var FontLoader = {
   listeningForFontLoad: false,
 
@@ -1142,9 +1088,10 @@ var Font = (function Font() {
           // so create an identity encoding
           var widths = properties.widths;
           for (i = 0; i < numGlyphs; i++) {
+            var width = widths[i];
             encoding[i] = {
               unicode: i + kCmapGlyphOffset,
-              width: widths[i] || properties.defaultWidth
+              width: IsNum(width) ? width : properties.defaultWidth
             };
           }
         } else {
@@ -2360,13 +2307,13 @@ var Type2CFF = (function() {
         if (code == -1)
           index = code = mapping.unicode || index;
 
-        var width = mapping.width || defaultWidth;
         if (code <= 0x1f || (code >= 127 && code <= 255))
           code += kCmapGlyphOffset;
 
+        var width = mapping.width;
         properties.glyphs[glyph] = properties.encoding[index] = {
           unicode: code,
-          width: width
+          width: IsNum(width) ? width : defaultWidth
         };
 
         charstrings.push({

@@ -4242,9 +4242,10 @@ var PartialEvaluator = (function() {
               continue;
 
             var code = j >> 1;
+            var width = glyphsWidths[code];
             encoding[code] = {
               unicode: glyphID,
-              width: glyphsWidths[code] || defaultWidth
+              width: IsNum(width) ? width : defaultWidth
             };
           }
         } else if (type == 'CIDFontType0') {
@@ -4316,7 +4317,7 @@ var PartialEvaluator = (function() {
         var width = properties.widths[i] || properties.widths[glyph];
         map[i] = {
           unicode: index,
-          width: width || properties.defaultWidth
+          width: IsNum(width) ? width : properties.defaultWidth
         };
 
         if (glyph)
@@ -4615,9 +4616,6 @@ function ScratchCanvas(width, height) {
 }
 
 var CanvasGraphics = (function() {
-  var kScalePrecision = 50.0;
-  var kRasterizerMin = 14;
-
   function constructor(canvasCtx, imageCanvas) {
     this.ctx = canvasCtx;
     this.current = new CanvasExtraState();
@@ -4878,22 +4876,13 @@ var CanvasGraphics = (function() {
         return;
 
       var fontObj = font.fontObj;
-      var name = fontObj.loadedName;
-      if (!name) {
-        // TODO: fontDescriptor is not available, fallback to default font
-        name = 'sans-serif';
-      }
-
       this.current.font = fontObj;
       this.current.fontSize = size;
 
+      var name = fontObj.loadedName || 'sans-serif';
       if (this.ctx.$setFont) {
         this.ctx.$setFont(name, size);
       } else {
-        FontMeasure.setActive(fontObj, size);
-
-        size = (size <= kRasterizerMin) ? size * kScalePrecision : size;
-
         var bold = fontObj.black ? (fontObj.bold ? 'bolder' : 'bold') :
                                    (fontObj.bold ? 'bold' : 'normal');
 
@@ -4944,42 +4933,40 @@ var CanvasGraphics = (function() {
 
       ctx.translate(current.x, -1 * current.y);
 
-      var scaleFactorX = 1, scaleFactorY = 1;
       var font = current.font;
       if (font) {
-        if (current.fontSize <= kRasterizerMin) {
-          scaleFactorX = scaleFactorY = kScalePrecision;
-          ctx.scale(1 / scaleFactorX, 1 / scaleFactorY);
-        }
         ctx.transform.apply(ctx, font.textMatrix || IDENTITY_MATRIX);
         text = font.charsToUnicode(text);
       }
 
-      var size = current.fontSize;
+      var composite = font.composite;
+      var encoding = font.encoding;
+      var fontSize = current.fontSize;
       var charSpacing = current.charSpacing;
       var wordSpacing = current.wordSpacing;
       var textHScale = current.textHScale;
+      ctx.scale(1 / textHScale, 1);
 
-      if (charSpacing != 0 || wordSpacing != 0 || textHScale != 1) {
-        scaleFactorX *= textHScale;
-        ctx.scale(1 / textHScale, 1);
-        var width = 0;
-
-        for (var i = 0, ii = text.length; i < ii; ++i) {
-          ctx.fillText(text.charAt(i), 0, 0);
-          var c = originalText.charAt(i);
-          var charWidth = FontMeasure.measureText(c, font, size);
-          charWidth += charSpacing;
-          if (c.charCodeAt(0) == 32)
-            charWidth += wordSpacing;
-          ctx.translate(charWidth * scaleFactorX, 0);
-          width += charWidth;
+      var width = 0;
+      for (var i = 0; i < text.length; i++) {
+        if (composite) {
+          var position = i * 2 + 1;
+          var charcode = (originalText.charCodeAt(position - 1) << 8) +
+                          originalText.charCodeAt(position);
+        } else {
+          var charcode = originalText.charCodeAt(i);
         }
-        current.x += width;
-      } else {
-        ctx.fillText(text, 0, 0);
-        current.x += FontMeasure.measureText(originalText, font, size);
+
+        var charWidth = font.encoding[charcode].width * fontSize * 0.001;
+        charWidth += charSpacing;
+        if (charcode == 32)
+          charWidth += wordSpacing;
+
+        ctx.fillText(text.charAt(i), 0, 0);
+        ctx.translate(charWidth, 0);
+        width += charWidth;
       }
+      current.x += width;
 
       this.ctx.restore();
     },
