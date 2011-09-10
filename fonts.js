@@ -114,43 +114,46 @@ var serifFonts = {
   'Wide Latin': true, 'Windsor': true, 'XITS': true
 };
 
-var FontMeasure = (function FontMeasure() {
-  var kScalePrecision = 30;
-  var ctx = document.createElement('canvas').getContext('2d');
-  ctx.scale(1 / kScalePrecision, 1);
+// Create the FontMeasure object only on the main thread.
+if (!isWorker) {
+  var FontMeasure = (function FontMeasure() {
+    var kScalePrecision = 30;
+    var ctx = document.createElement('canvas').getContext('2d');
+    ctx.scale(1 / kScalePrecision, 1);
 
-  var current;
-  var measureCache;
+    var current;
+    var measureCache;
 
-  return {
-    setActive: function fonts_setActive(font, size) {
-      if (current == font) {
-        var sizes = current.sizes;
-        if (!(measureCache = sizes[size]))
-          measureCache = sizes[size] = Object.create(null);
-      } else {
-        measureCache = null;
-      }
+    return {
+      setActive: function fonts_setActive(font, size) {
+        if (current == font) {
+          var sizes = current.sizes;
+          if (!(measureCache = sizes[size]))
+            measureCache = sizes[size] = Object.create(null);
+        } else {
+          measureCache = null;
+        }
 
-      var name = font.loadedName;
-      var bold = font.bold ? 'bold' : 'normal';
-      var italic = font.italic ? 'italic' : 'normal';
-      size *= kScalePrecision;
-      var rule = italic + ' ' + bold + ' ' + size + 'px "' + name + '"';
-      ctx.font = rule;
-      current = font;
-    },
-    measureText: function fonts_measureText(text) {
-      var width;
-      if (measureCache && (width = measureCache[text]))
+        var name = font.loadedName;
+        var bold = font.bold ? 'bold' : 'normal';
+        var italic = font.italic ? 'italic' : 'normal';
+        size *= kScalePrecision;
+        var rule = italic + ' ' + bold + ' ' + size + 'px "' + name + '"';
+        ctx.font = rule;
+        current = font;
+      },
+      measureText: function fonts_measureText(text) {
+        var width;
+        if (measureCache && (width = measureCache[text]))
+          return width;
+        width = ctx.measureText(text).width / kScalePrecision;
+        if (measureCache)
+          measureCache[text] = width;
         return width;
-      width = ctx.measureText(text).width / kScalePrecision;
-      if (measureCache)
-        measureCache[text] = width;
-      return width;
-    }
-  };
-})();
+      }
+    };
+  })();  
+}
 
 var FontLoader = {
   listeningForFontLoad: false,
@@ -167,7 +170,7 @@ var FontLoader = {
       document.documentElement.removeEventListener(
         'pdfjsFontLoad', checkFontsLoaded, false);
 
-      callback();
+      callback(objs);
       return true;
     }
 
@@ -445,6 +448,7 @@ var Font = (function Font() {
     this.name = name;
     this.encoding = properties.encoding;
     this.glyphs = properties.glyphs;
+    this.loadedName = properties.loadedName;
     this.sizes = [];
 
     var names = name.split('+');
@@ -473,7 +477,6 @@ var Font = (function Font() {
       this.narrow = (name.indexOf('Narrow') != -1);
       this.black = (name.indexOf('Black') != -1);
 
-      this.loadedName = fontName.split('-')[0];
       this.loading = false;
       return;
     }
@@ -509,15 +512,16 @@ var Font = (function Font() {
     this.data = data;
     this.type = properties.type;
     this.textMatrix = properties.textMatrix;
-    this.loadedName = getUniqueName();
     this.composite = properties.composite;
+    
+    // TODO: Remove this once we can be sure nothing got broken to du changes
+    // in this commit.
+    if (!this.loadedName) {
+      throw "There has to be a `loadedName`";
+    }
+
     this.loading = true;
   };
-
-  var numFonts = 0;
-  function getUniqueName() {
-    return 'pdfFont' + numFonts++;
-  }
 
   function stringToArray(str) {
     var array = [];
