@@ -934,7 +934,9 @@ var Font = (function Font() {
                 deltas.push(index);
 
                 var unicode = j + kCmapGlyphOffset;
-                encoding[j].unicode = unicode;
+                var mapping = encoding[j] || {};
+                mapping.unicode = unicode;
+                encoding[j] = mapping;
                 glyphs.push({ unicode: unicode });
               }
             }
