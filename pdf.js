@@ -4212,8 +4212,9 @@ var PartialEvaluator = (function() {
                   glyphsWidths[start++] = code[j];
                 start = 0;
               } else if (start) {
+                var width = widths[++i];
                 for (var j = start; j <= code; j++)
-                  glyphsWidths[j] = widths[++i];
+                  glyphsWidths[j] = width;
                 start = 0;
               } else {
                 start = code;
@@ -4614,7 +4615,7 @@ function ScratchCanvas(width, height) {
 }
 
 var CanvasGraphics = (function() {
-  var kScalePrecision = 50;
+  var kScalePrecision = 50.0;
   var kRasterizerMin = 14;
 
   function constructor(canvasCtx, imageCanvas) {
