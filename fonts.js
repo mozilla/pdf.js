@@ -465,7 +465,7 @@ var Font = (function Font() {
     var names = name.split("+");
     names = names.length > 1 ? names[1] : names[0];
     names = names.split(/[-,_]/g)[0];
-    this.serif = serifFonts[names] || (name.indexOf("Serif") != -1);
+    this.serif = serifFonts[names] || (name.search(/serif/gi) != -1);
 
     // If the font is to be ignored, register it like an already loaded font
     // to avoid the cost of waiting for it be be loaded by the platform.
