@@ -5120,7 +5120,6 @@ var CanvasGraphics = (function() {
       }
       
       var name = fontObj.loadedName;
-      console.log("setFont", name);
       if (!name) {
         // TODO: fontDescriptor is not available, fallback to default font
         name = 'sans-serif';

@@ -159,49 +159,73 @@ if (!isWorker) {
 }
 
 var FontLoader = {
-  fontLoadData: {},
   fonts: {},
+  fontsLoading: false,
+  waitingNames: [],
+  waitingStr:  [],
 
   bind: function(fonts, callback) {
     console.log("requesting fonts", fonts[0].properties.loadedName, fonts[0].name);
     
-    var rules = [], names = [], objs = [];
+    var rules = [], names = [];
 
     for (var i = 0; i < fonts.length; i++) {
       var font = fonts[i];
 
       var obj = new Font(font.name, font.file, font.properties);
-      objs.push(obj);
 
       var str = '';
       var data = obj.data;
+      var name = obj.loadedName;
       if (data) {
         var length = data.length;
         for (var j = 0; j < length; j++)
           str += String.fromCharCode(data[j]);
 
-        var rule = isWorker ? obj.bindWorker(str) : obj.bindDOM(str);
-        if (rule) {
-          rules.push(rule);
-          names.push(obj.loadedName);
-          this.fonts[obj.loadedName] = obj;
-          this.fontLoadData[obj.loadedName] = obj;
-        }
+
+        this.fonts[obj.loadedName] = obj;
+        
+        this.waitingNames.push(name);
+        this.waitingStr.push(str);
+      } else {
+        // If there is no data, then there is nothing to load and we can
+        // resolve the object right away.
+        Objects.resolve(name, obj);
       }
     }
 
-    if (rules.length) {
-      this.fontsLoading += rules.length;
-      FontLoader.prepareFontLoadEvent(rules, names);
+    if (!this.fontsLoading) {
+      this.executeWaiting();
+    } else {
+      console.log('There are currently some fonts getting loaded - waiting');
     }
+  },
 
-    return objs;
+  executeWaiting: function() {
+    var names = this.waitingNames;
+    console.log('executing fonts', names.join(', '));
+
+    var rules = [];
+    for (var i = 0; i < names.length; i++) {
+      var obj = this.fonts[names[i]];
+      var rule = obj.bindDOM(this.waitingStr[i]);
+      rules.push(rule);
+    }
+    this.prepareFontLoadEvent(rules, names);
+    this.waitingNames = [];
+    this.waitingStr = [];
   },
   
-  postFontLoadEvent: function(names) {
+  fontLoadEvent: function(names) {
+    this.fontsLoading = false;
+
     for (var i = 0; i < names.length; i++) {
       var name = names[i];
-      Objects.resolve(name, this.fontLoadData[name]);
+      Objects.resolve(name, this.fonts[name]);
+    }
+
+    if (this.waitingNames.length != 0) {
+      this.executeWaiting();
     }
   },
   
@@ -210,7 +234,8 @@ var FontLoader = {
   // loaded in a subdocument.  It's expected that the load of |rules|
   // has already started in this (outer) document, so that they should
   // be ordered before the load in the subdocument.
-  prepareFontLoadEvent: function(rules, names, callback) {
+  prepareFontLoadEvent: function(rules, names) {
+      this.fontsLoading = true;
       /** Hack begin */
       // There's no event when a font has finished downloading so the
       // following code is a dirty hack to 'guess' when a font is
@@ -261,7 +286,7 @@ var FontLoader = {
       }
       src += '  var fontNames=[' + fontNamesArray + '];\n';
       src += '  window.onload = function () {\n';
-      src += '    parent.postMessage(JSON.stringify(fontNames), "*");\n';
+      src += '    setTimeout(function(){parent.postMessage(JSON.stringify(fontNames), "*")},0);\n';
       src += '  }';
       src += '</script></head><body>';
       for (var i = 0; i < names.length; ++i) {
@@ -283,7 +308,7 @@ if (!isWorker) {
   window.addEventListener(
     'message',
     function(e) {
-      FontLoader.postFontLoadEvent(JSON.parse(e.data));
+      FontLoader.fontLoadEvent(JSON.parse(e.data));
     }.bind(this),
   false);
 }
