@@ -479,13 +479,13 @@ var Font = (function Font() {
       // The file data is not specified. Trying to fix the font name
       // to be used with the canvas.font.
       var fontName = stdFontMap[name] || name.replace('_', '-');
-      this.bold = (fontName.indexOf('Bold') != -1);
-      this.italic = (fontName.indexOf('Oblique') != -1) ||
-                    (fontName.indexOf('Italic') != -1);
+      this.bold = (fontName.search(/bold/gi) != -1);
+      this.italic = (fontName.search(/oblique/gi) != -1) ||
+                    (fontName.search(/italic/gi) != -1);
 
       // Use 'name' instead of 'fontName' here because the original
       // name ArialBlack for example will be replaced by Helvetica.
-      this.black = (name.indexOf("Black") != -1)
+      this.black = (name.search(/Black/g) != -1)
 
       this.loadedName = fontName.split('-')[0];
       this.loading = false;
