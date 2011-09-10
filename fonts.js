@@ -1001,43 +1001,17 @@ var Font = (function Font() {
             var entryCount = int16(font.getBytes(2));
 
             var glyphs = [];
-            var min = 0xffff, max = 0;
-            for (var j = 0; j < entryCount; j++) {
-              var charcode = int16(font.getBytes(2));
-              if (!charcode)
-                continue;
-              glyphs.push(charcode);
+            var ids = [];
+            for (var j = 0; j < firstCode + entryCount; j++) {
+              var code = (j >= firstCode) ? int16(font.getBytes(2)) : j;
+              glyphs.push({ unicode: j + kCmapGlyphOffset });
+              ids.push(code);
 
-              if (charcode < min)
-                min = charcode;
-              if (charcode > max)
-                max = charcode;
+              var mapping = encoding[j] || {};
+              mapping.unicode = glyphs[j].unicode;
+              encoding[j] = mapping;
             }
-
-            // Since Format 6 is a dense array, check for gaps
-            for (var j = min; j < max; j++) {
-              if (glyphs.indexOf(j) == -1)
-                glyphs.push(j);
-            }
-
-            for (var j = 0; j < glyphs.length; j++)
-              glyphs[j] = { unicode: glyphs[j] + firstCode };
-
-            var ranges = getRanges(glyphs);
-            assert(ranges.length == 1, 'Got ' + ranges.length +
-                   ' ranges in a dense array');
-
-            var denseRange = ranges[0];
-            var start = denseRange[0];
-            var end = denseRange[1];
-            var index = firstCode;
-            for (var j = start; j <= end; j++) {
-              var code = glyphs[j - start];
-              var mapping = encoding[index] || {};
-              mapping.unicode = code.unicode;
-              encoding[index++] = mapping;
-            }
-            return cmap.data = createCMapTable(glyphs);
+            return cmap.data = createCMapTable(glyphs, ids);
           }
         }
         return cmap.data;
