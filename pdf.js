@@ -860,10 +860,41 @@ var PredictorStream = (function() {
 // A JpegStream can't be read directly. We use the platform to render
 // the underlying JPEG data for us.
 var JpegStream = (function() {
+  function isYcckImage(bytes) {
+    var maxBytesScanned = Math.max(bytes.length - 16, 1024);
+    // Looking for APP14, 'Adobe' and transform = 2
+    for (var i = 0; i < maxBytesScanned; ++i) {
+      if (bytes[i] == 0xFF || bytes[i + 1] == 0xEE ||
+          bytes[i + 2] == 0x00 || bytes[i + 3] == 0x0E ||
+          bytes[i + 4] == 0x41 || bytes[i + 5] == 0x64 ||
+          bytes[i + 6] == 0x6F || bytes[i + 7] == 0x62 ||
+          bytes[i + 8] == 0x65 || bytes[i + 9] == 0x00 ||
+          bytes[i + 15] == 0x02)
+          return true;
+    }
+    return false;
+  }
+
+  function fixYcckImage(bytes) {
+    // Inserting 'EMBED' marker after JPEG signature
+    var embedMarker = new Uint8Array([0xFF, 0xEC, 0, 8, 
+      0x45, 0x4D, 0x42, 0x45, 0x44, 0]);
+    var newBytes = new Uint8Array(bytes.length + embedMarker.length);
+    newBytes.set(bytes, embedMarker.length);
+    // copy JPEG header
+    newBytes[0] = bytes[0];
+    newBytes[1] = bytes[1];
+    newBytes.set(embedMarker, 2);
+    return newBytes;
+  }
+
   function constructor(bytes, dict) {
     // TODO: per poppler, some images may have "junk" before that
     // need to be removed
     this.dict = dict;
+
+    if (isYcckImage(bytes))
+      bytes = fixYcckImage(bytes);
 
     // create DOM image
     var img = new Image();
