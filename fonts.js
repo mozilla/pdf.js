@@ -1845,10 +1845,10 @@ var Type1Parser = function() {
               if (token == 'dup') {
                 var index = parseInt(getToken(), 10);
                 var glyph = getToken();
-              
+
                 if ('undefined' == typeof(properties.differences[index])) {
                   var mapping = properties.encoding[index] || {};
-                  mapping.unicode = GlyphsUnicode[glyph] || j;
+                  mapping.unicode = GlyphsUnicode[glyph] || index;
                   properties.glyphs[glyph] = properties.encoding[index] = mapping;
                 }
                 getToken(); // read the in 'put'
