@@ -560,7 +560,7 @@ var CFFDictDataMap = {
     '18': {
       name: 'ExpansionFactor'
     },
-    '9': {
+    '19': {
       name: 'initialRandomSeed'
     },
     '20': {

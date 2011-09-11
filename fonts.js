@@ -2251,7 +2251,7 @@ var Type2CFF = (function() {
 
       var strings = this.getStrings(stringIndex);
 
-      var baseDict = this.parseDict(dictIndex.get(0));
+      var baseDict = this.parseDict(dictIndex.get(0).data);
       var topDict = this.getTopDict(baseDict, strings);
 
       var bytes = this.bytes;
@@ -2275,6 +2275,33 @@ var Type2CFF = (function() {
       // StandardEncoding, that's a lie but that's ok.
       if (hasSupplement)
         bytes[topDict.Encoding] = 0;
+
+      // The CFF specification state that the 'dotsection' command
+      // (12, 0) is deprecated and treated as a no-op, but all Type2
+      // charstrings processors should support them. Unfortunately
+      // the font sanitizer don't. As a workaround the sequence (12, 0)
+      // is replaced by a useless (0, hmoveto).
+      var count = charStrings.length;
+      for (var i = 0; i < count; i++) {
+        var charstring = charStrings.get(i);
+
+        var start = charstring.start;
+        var data = charstring.data;
+        var length = data.length;
+        for (var j = 0; j <= length; j) {
+          var value = data[j++];
+          if (value == 12 && data[j++] == 0) {
+              bytes[start + j - 2] = 139;
+              bytes[start + j - 1] = 22;
+          } else if (value === 28) {
+            j += 2;
+          } else if (value >= 247 && value <= 254) {
+            j++;
+          } else if (value == 255) {
+            j += 4;
+          }
+        }
+      }
 
       // charstrings contains info about glyphs (one element per glyph
       // containing mappings for {unicode, width})
@@ -2566,7 +2593,7 @@ var Type2CFF = (function() {
         } else if (value <= 254) {
           return -((value - 251) * 256) - dict[pos++] - 108;
         } else {
-          error('Incorrect byte');
+          error('255 is not a valid DICT command');
         }
         return -1;
       };
@@ -2644,7 +2671,11 @@ var Type2CFF = (function() {
 
           var start = offsets[index];
           var end = offsets[index + 1];
-          return bytes.subarray(start, end);
+          return {
+            start: start,
+            end: end,
+            data: bytes.subarray(start, end)
+          }
         },
         length: count,
         endPos: end
