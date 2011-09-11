@@ -4502,7 +4502,7 @@ var PartialEvaluator = (function() {
           }
         }
 
-         // TODO implement default widths for standard fonts metrics
+        // TODO implement default widths for standard fonts metrics
         var defaultWidth = 1000;
         var widths = Metrics[stdFontMap[baseFontName] || baseFontName];
         if (IsNum(widths)) {
