@@ -4939,7 +4939,6 @@ var CanvasGraphics = (function() {
       }
 
       var composite = font.composite;
-      var encoding = font.encoding;
       var fontSize = current.fontSize;
       var charSpacing = current.charSpacing;
       var wordSpacing = current.wordSpacing;
@@ -4956,7 +4955,9 @@ var CanvasGraphics = (function() {
           var charcode = originalText.charCodeAt(i);
         }
 
-        var charWidth = font.encoding[charcode].width * fontSize * 0.001;
+        var encoding = font.encoding[charcode];
+        var charWidth = (encoding ? encoding.width : font.defaultWidth);
+        charWidth *= (fontSize * 0.001);
         charWidth += charSpacing;
         if (charcode == 32)
           charWidth += wordSpacing;
