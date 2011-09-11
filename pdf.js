@@ -710,9 +710,9 @@ var PredictorStream = (function() {
     var bits = this.bits = params.get('BitsPerComponent') || 8;
     var columns = this.columns = params.get('Columns') || 1;
 
-    var pixBytes = this.pixBytes = (colors * bits + 7) >> 3;
+    this.pixBytes = (colors * bits + 7) >> 3;
     // add an extra pixByte to represent the pixel left of column 0
-    var rowBytes = this.rowBytes = (columns * colors * bits + 7) >> 3;
+    this.rowBytes = (columns * colors * bits + 7) >> 3;
 
     DecodeStream.call(this);
     return this;
@@ -722,7 +722,6 @@ var PredictorStream = (function() {
 
   constructor.prototype.readBlockTiff = function() {
     var rowBytes = this.rowBytes;
-    var pixBytes = this.pixBytes;
 
     var bufferLength = this.bufferLength;
     var buffer = this.ensureBuffer(bufferLength + rowBytes);
@@ -733,16 +732,18 @@ var PredictorStream = (function() {
 
     var rawBytes = this.stream.getBytes(rowBytes);
 
+    var inbuf = 0, outbuf = 0;
+    var inbits = 0, outbits = 0;
+
     if (bits === 1) {
-      var inbuf = 0;
       for (var i = 0; i < rowBytes; ++i) {
         var c = rawBytes[i];
-        inBuf = (inBuf << 8) | c;
+        inbuf = (inbuf << 8) | c;
         // bitwise addition is exclusive or
-        // first shift inBuf and then add
-        currentRow[i] = (c ^ (inBuf >> colors)) & 0xFF;
-        // truncate inBuf (assumes colors < 16)
-        inBuf &= 0xFFFF;
+        // first shift inbuf and then add
+        currentRow[i] = (c ^ (inbuf >> colors)) & 0xFF;
+        // truncate inbuf (assumes colors < 16)
+        inbuf &= 0xFFFF;
       }
     } else if (bits === 8) {
       for (var i = 0; i < colors; ++i)
@@ -752,8 +753,6 @@ var PredictorStream = (function() {
     } else {
       var compArray = new Uint8Array(colors + 1);
       var bitMask = (1 << bits) - 1;
-      var inbuf = 0, outbut = 0;
-      var inbits = 0, outbits = 0;
       var j = 0, k = 0;
       var columns = this.columns;
       for (var i = 0; i < columns; ++i) {
@@ -1015,11 +1014,11 @@ var Ascii85Stream = (function() {
       return;
     }
 
-    var bufferLength = this.bufferLength;
+    var bufferLength = this.bufferLength, buffer;
 
     // special code for z
     if (c == zCode) {
-      var buffer = this.ensureBuffer(bufferLength + 4);
+      buffer = this.ensureBuffer(bufferLength + 4);
       for (var i = 0; i < 4; ++i)
         buffer[bufferLength + i] = 0;
       this.bufferLength += 4;
@@ -1036,7 +1035,7 @@ var Ascii85Stream = (function() {
         if (!c || c == tildaCode)
           break;
       }
-      var buffer = this.ensureBuffer(bufferLength + i - 1);
+      buffer = this.ensureBuffer(bufferLength + i - 1);
       this.bufferLength += i - 1;
 
       // partial ending;
@@ -1874,7 +1873,7 @@ var CCITTFaxStream = (function() {
             for (var i = 0; i < 4; ++i) {
               code1 = this.lookBits(12);
               if (code1 != 1)
-                warning('bad rtc code');
+                warn('bad rtc code: ' + code1);
               this.eatBits(12);
               if (this.encoding > 0) {
                 this.lookBits(1);
@@ -2013,7 +2012,7 @@ var CCITTFaxStream = (function() {
         }
       }
       for (var n = 11; n <= 12; ++n) {
-        code == this.lookBits(n);
+        code = this.lookBits(n);
         if (code == EOF)
           return 1;
         if (n < 12)
@@ -2436,11 +2435,6 @@ var Lexer = (function() {
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,   // ex
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0    // fx
   ];
-
-  var MIN_INT = (1 << 31) | 0;
-  var MAX_INT = (MIN_INT - 1) | 0;
-  var MIN_UINT = 0;
-  var MAX_UINT = ((1 << 30) * 4) - 1;
 
   function ToHexDigit(ch) {
     if (ch >= '0' && ch <= '9')
@@ -3107,7 +3101,6 @@ var XRef = (function() {
     },
     readXRefStream: function readXRefStream(stream) {
       var streamParameters = stream.parameters;
-      var length = streamParameters.get('Length');
       var byteWidths = streamParameters.get('W');
       var range = streamParameters.get('Index');
       if (!range)
@@ -3356,7 +3349,7 @@ var Page = (function() {
       }
       return shadow(this, 'rotate', rotate);
     },
-    startRendering: function(canvasCtx, continuation, onerror) {
+    startRendering: function(canvasCtx, continuation) {
       var self = this;
       var stats = self.stats;
       stats.compile = stats.fonts = stats.render = 0;
@@ -3754,8 +3747,7 @@ var PDFDoc = (function() {
       return shadow(this, 'numPages', num);
     },
     getPage: function(n) {
-      var linearization = this.linearization;
-      // assert(!linearization, "linearized page access not implemented");
+      // assert(!this.linearization, 'linearized page access not implemented');
       return this.catalog.getPage(n);
     }
   };
@@ -4141,7 +4133,7 @@ var PartialEvaluator = (function() {
   };
 
   constructor.prototype = {
-    eval: function(stream, xref, resources, fonts, images) {
+    evaluate: function(stream, xref, resources, fonts, images) {
       resources = xref.fetchIfRef(resources) || new Dict();
       var xobjs = xref.fetchIfRef(resources.get('XObject')) || new Dict();
       var patterns = xref.fetchIfRef(resources.get('Pattern')) || new Dict();
@@ -4165,8 +4157,9 @@ var PartialEvaluator = (function() {
                 var dict = IsStream(pattern) ? pattern.dict : pattern;
                 var typeNum = dict.get('PatternType');
                 if (typeNum == 1) {
-                  patternName.code = this.eval(pattern, xref,
-                      dict.get('Resources'), fonts);
+                  patternName.code = this.evaluate(pattern, xref,
+                                                   dict.get('Resources'),
+                                                   fonts);
                 }
               }
             }
@@ -4185,8 +4178,9 @@ var PartialEvaluator = (function() {
               );
 
               if ('Form' == type.name) {
-                args[0].code = this.eval(xobj, xref, xobj.dict.get('Resources'),
-                                         fonts, images);
+                args[0].code = this.evaluate(xobj, xref,
+                                             xobj.dict.get('Resources'), fonts,
+                                             images);
               }
               if (xobj instanceof JpegStream)
                 images.bind(xobj); // monitoring image load
@@ -4224,7 +4218,7 @@ var PartialEvaluator = (function() {
     },
 
     extractEncoding: function(dict, xref, properties) {
-      var type = properties.type;
+      var type = properties.type, encoding;
       if (properties.composite) {
         if (type == 'CIDFontType2') {
           var defaultWidth = xref.fetchIfRef(dict.get('DW')) || 1000;
@@ -4261,7 +4255,7 @@ var PartialEvaluator = (function() {
           var glyphsData = glyphsStream.getBytes(0);
 
           // Glyph ids are big-endian 2-byte values
-          var encoding = properties.encoding;
+          encoding = properties.encoding;
 
           // Set encoding 0 to later verify the font has an encoding
           encoding[0] = { unicode: 0, width: 0 };
@@ -4278,7 +4272,7 @@ var PartialEvaluator = (function() {
             };
           }
         } else if (type == 'CIDFontType0') {
-          var encoding = xref.fetchIfRef(dict.get('Encoding'));
+          encoding = xref.fetchIfRef(dict.get('Encoding'));
           if (IsName(encoding)) {
             // Encoding is a predefined CMap
             if (encoding.name == 'Identity-H') {
@@ -4299,7 +4293,7 @@ var PartialEvaluator = (function() {
       var map = properties.encoding;
       var baseEncoding = null;
       if (dict.has('Encoding')) {
-        var encoding = xref.fetchIfRef(dict.get('Encoding'));
+        encoding = xref.fetchIfRef(dict.get('Encoding'));
         if (IsDict(encoding)) {
           var baseName = encoding.get('BaseEncoding');
           if (baseName)
@@ -4536,20 +4530,21 @@ var PartialEvaluator = (function() {
 
       var fontName = xref.fetchIfRef(descriptor.get('FontName'));
       assertWellFormed(IsName(fontName), 'invalid font name');
+      var subtype = '', length1 = 0, length2 = 0;
 
       var fontFile = descriptor.get('FontFile', 'FontFile2', 'FontFile3');
       if (fontFile) {
         fontFile = xref.fetchIfRef(fontFile);
         if (fontFile.dict) {
-          var subtype = fontFile.dict.get('Subtype');
+          subtype = fontFile.dict.get('Subtype');
           if (subtype)
             subtype = subtype.name;
 
-          var length1 = fontFile.dict.get('Length1');
+          length1 = fontFile.dict.get('Length1');
           if (!IsInt(length1))
             length1 = xref.fetchIfRef(length1);
 
-          var length2 = fontFile.dict.get('Length2');
+          length2 = fontFile.dict.get('Length2');
           if (!IsInt(length2))
             length2 = xref.fetchIfRef(length2);
         }
@@ -4683,7 +4678,7 @@ var CanvasGraphics = (function() {
 
     compile: function(stream, xref, resources, fonts, images) {
       var pe = new PartialEvaluator();
-      return pe.eval(stream, xref, resources, fonts, images);
+      return pe.evaluate(stream, xref, resources, fonts, images);
     },
 
     execute: function(code, xref, resources) {
@@ -4722,13 +4717,13 @@ var CanvasGraphics = (function() {
       this.ctx.mozDashOffset = dashPhase;
     },
     setRenderingIntent: function(intent) {
-      TODO('set rendering intent');
+      TODO('set rendering intent: ' + intent);
     },
     setFlatness: function(flatness) {
-      TODO('set flatness');
+      TODO('set flatness: ' + flatness);
     },
     setGState: function(dictName) {
-      TODO('set graphics state from dict');
+      TODO('set graphics state from dict: ' + dictName);
     },
     save: function() {
       this.ctx.save();
@@ -4923,10 +4918,10 @@ var CanvasGraphics = (function() {
       }
     },
     setTextRenderingMode: function(mode) {
-      TODO('text rendering mode');
+      TODO('text rendering mode: ' + mode);
     },
     setTextRise: function(rise) {
-      TODO('text rise');
+      TODO('text rise: ' + rise);
     },
     moveText: function(x, y) {
       this.current.x = this.current.lineX += x;
@@ -5028,10 +5023,13 @@ var CanvasGraphics = (function() {
 
     // Type3 fonts
     setCharWidth: function(xWidth, yWidth) {
-      TODO("type 3 fonts ('d0' operator)");
+      TODO('type 3 fonts ("d0" operator) xWidth: ' + xWidth + ' yWidth: ' +
+           yWidth);
     },
     setCharWidthAndBounds: function(xWidth, yWidth, llx, lly, urx, ury) {
-      TODO("type 3 fonts ('d1' operator)");
+      TODO('type 3 fonts ("d1" operator) xWidth: ' + xWidth + ' yWidth: ' +
+           yWidth + ' llx: ' + llx + ' lly: ' + lly + ' urx: ' + urx +
+           ' ury ' + ury);
     },
 
     // Color
@@ -5430,7 +5428,6 @@ var ColorSpace = (function() {
         var lookup = xref.fetchIfRef(cs[3]);
         return new IndexedCS(base, hiVal, lookup);
       case 'Separation':
-        var name = cs[1];
         var alt = ColorSpace.parse(cs[2], xref, res);
         var tintFn = new PDFFunction(xref, xref.fetchIfRef(cs[3]));
         return new SeparationCS(alt, tintFn);
@@ -5468,12 +5465,12 @@ var SeparationCS = (function() {
       var base = this.base;
       var scale = 1 / ((1 << bits) - 1);
 
-      var length = 3 * input.length;
+      var length = input.length;
       var pos = 0;
 
       var numComps = base.numComps;
-      var baseBuf = new Uint8Array(numComps * input.length);
-      for (var i = 0, ii = input.length; i < ii; ++i) {
+      var baseBuf = new Uint8Array(numComps * length);
+      for (var i = 0; i < length; ++i) {
         var scaled = input[i] * scale;
         var tinted = tintFn.func([scaled]);
         for (var j = 0; j < numComps; ++j)
@@ -5779,8 +5776,6 @@ var DummyShading = (function() {
 var RadialAxialShading = (function() {
   function constructor(dict, matrix, xref, res, ctx) {
     this.matrix = matrix;
-    var bbox = dict.get('BBox');
-    var background = dict.get('Background');
     this.coordsArr = dict.get('Coords');
     this.shadingType = dict.get('ShadingType');
     this.type = 'Pattern';
@@ -5838,15 +5833,17 @@ var RadialAxialShading = (function() {
     getPattern: function() {
       var coordsArr = this.coordsArr;
       var type = this.shadingType;
+      var p0, p1, r0, r1;
       if (type == 2) {
-        var p0 = [coordsArr[0], coordsArr[1]];
-        var p1 = [coordsArr[2], coordsArr[3]];
+        p0 = [coordsArr[0], coordsArr[1]];
+        p1 = [coordsArr[2], coordsArr[3]];
       } else if (type == 3) {
-        var p0 = [coordsArr[0], coordsArr[1]];
-        var p1 = [coordsArr[3], coordsArr[4]];
-        var r0 = coordsArr[2], r1 = coordsArr[5];
+        p0 = [coordsArr[0], coordsArr[1]];
+        p1 = [coordsArr[3], coordsArr[4]];
+        r0 = coordsArr[2];
+        r1 = coordsArr[5];
       } else {
-        error();
+        error('getPattern type unknown: ' + type);
       }
 
       var matrix = this.matrix;
@@ -5869,11 +5866,11 @@ var RadialAxialShading = (function() {
         p1 = Util.applyTransform(p1, userMatrix);
       }
 
-      var colorStops = this.colorStops;
+      var colorStops = this.colorStops, grad;
       if (type == 2)
-        var grad = ctx.createLinearGradient(p0[0], p0[1], p1[0], p1[1]);
+        grad = ctx.createLinearGradient(p0[0], p0[1], p1[0], p1[1]);
       else if (type == 3)
-        var grad = ctx.createRadialGradient(p0[0], p0[1], r0, p1[0], p1[1], r1);
+        grad = ctx.createRadialGradient(p0[0], p0[1], r0, p1[0], p1[1], r1);
 
       for (var i = 0, ii = colorStops.length; i < ii; ++i) {
         var c = colorStops[i];
@@ -6064,6 +6061,7 @@ var PDFImage = (function() {
       var bufferPos = 0;
       var output = bpc <= 8 ? new Uint8Array(length) :
         bpc <= 16 ? new Uint16Array(length) : new Uint32Array(length);
+      var rowComps = width * numComps;
 
       if (bpc == 1) {
         var valueZero = 0, valueOne = 1;
@@ -6071,7 +6069,6 @@ var PDFImage = (function() {
           valueZero = decodeMap[0] ? 1 : 0;
           valueOne = decodeMap[1] ? 1 : 0;
         }
-        var rowComps = width * numComps;
         var mask = 0;
         var buf = 0;
 
@@ -6093,8 +6090,7 @@ var PDFImage = (function() {
       } else {
         if (decodeMap != null)
           TODO('interpolate component values');
-        var rowComps = width * numComps;
-        var bits, buf;
+        var bits = 0, buf = 0;
         for (var i = 0, ii = length; i < ii; ++i) {
           if (i % rowComps == 0) {
             buf = 0;
@@ -6299,14 +6295,14 @@ var PDFFunction = (function() {
         floor *= outputSize;
         ceil *= outputSize;
 
-        var output = [];
+        var output = [], v = 0;
         for (var i = 0; i < outputSize; ++i) {
           if (ceil == floor) {
-            var v = samples[ceil + i];
+            v = samples[ceil + i];
           } else {
             var low = samples[floor + i];
             var high = samples[ceil + i];
-            var v = low * scale + high * (1 - scale);
+            v = low * scale + high * (1 - scale);
           }
 
           var i2 = i * 2;
