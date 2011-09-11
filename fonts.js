@@ -2534,20 +2534,20 @@ var Type2CFF = (function() {
       }
       return dict;
     },
-    getStrings: function cff_getstrings(stringIndex) {
-      function bytesToString(bytesArr) {
-        var s = '';
-        for (var i = 0, ii = bytesArr.length; i < ii; ++i)
-          s += String.fromCharCode(bytesArr[i]);
-        return s;
+    getStrings: function cff_getStrings(stringIndex) {
+      function bytesToString(bytesArray) {
+        var str = '';
+        for (var i = 0, length = bytesArray.length; i < length; i++)
+          str += String.fromCharCode(bytesArray[i]);
+        return str;
       }
 
       var stringArray = [];
-      for (var i = 0, ii = CFFStrings.length; i < ii; ++i)
+      for (var i = 0, length = CFFStrings.length; i < length; i++)
         stringArray.push(CFFStrings[i]);
 
-      for (var i = 0, ii = stringIndex.length; i < ii; ++i)
-        stringArray.push(bytesToString(stringIndex.get(i)));
+      for (var i = 0, length = stringIndex.length; i < length; i++)
+        stringArray.push(bytesToString(stringIndex.get(i).data));
 
       return stringArray;
     },
