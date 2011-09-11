@@ -4954,7 +4954,6 @@ var CanvasGraphics = (function() {
     showText: function(text) {
       var ctx = this.ctx;
       var current = this.current;
-      var originalText = text;
 
       ctx.save();
       ctx.transform.apply(ctx, current.textMatrix);
@@ -4963,9 +4962,15 @@ var CanvasGraphics = (function() {
       ctx.translate(current.x, -1 * current.y);
 
       var font = current.font;
+      var glyphs = [];
       if (font) {
         ctx.transform.apply(ctx, font.textMatrix || IDENTITY_MATRIX);
-        text = font.charsToUnicode(text);
+        glyphs = font.charsToGlyphs(text);
+      } else {
+        // fallback to simple glyphs
+        glyphs = [];
+        for (var i = 0; i < text.length; ++i)
+          glyphs.push({unicode: text.charCodeAt(i)});
       }
 
       var composite = font.composite;
@@ -4977,21 +4982,19 @@ var CanvasGraphics = (function() {
       ctx.scale(1 / textHScale, 1);
 
       var width = 0;
-      for (var i = 0; i < text.length; i++) {
-        if (composite) {
-          var position = i * 2 + 1;
-          var charcode = (originalText.charCodeAt(position - 1) << 8) +
-                          originalText.charCodeAt(position);
-        } else {
-          var charcode = originalText.charCodeAt(i);
-        }
+      for (var i = 0; i < glyphs.length; i++) {
+        var glyph = glyphs[i];
+        var unicode = glyph.unicode;
+        var char = unicode >= 0x10000 ?
+          String.fromCharCode(0xD800 | ((unicode - 0x10000) >> 10),
+          0xDC00 | (unicode & 0x3FF)) : String.fromCharCode(unicode);
 
-        var charWidth = font.encoding[charcode].width * fontSize * 0.001;
+        var charWidth = glyph.width * fontSize * 0.001;
         charWidth += charSpacing;
-        if (charcode == 32)
+        if (unicode == 32)
           charWidth += wordSpacing;
 
-        ctx.fillText(text.charAt(i), 0, 0);
+        ctx.fillText(char, 0, 0);
         ctx.translate(charWidth, 0);
         width += charWidth;
       }

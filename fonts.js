@@ -1296,7 +1296,7 @@ var Font = (function Font() {
       return rule;
     },
 
-    charsToUnicode: function fonts_chars2Unicode(chars) {
+    charsToGlyphs: function fonts_chars2Glyphs(chars) {
       var charsCache = this.charsCache;
       var str;
 
@@ -1315,7 +1315,7 @@ var Font = (function Font() {
       var encoding = this.encoding;
       if (!encoding)
         return chars;
-      str = '';
+      var glyphs = [];
 
       if (this.composite) {
         // composite fonts have multi-byte strings convert the string from
@@ -1329,11 +1329,9 @@ var Font = (function Font() {
           var unicode = encoding[charcode];
           if ('undefined' == typeof(unicode)) {
             warn('Unencoded charcode ' + charcode);
-            unicode = charcode;
-          } else {
-            unicode = unicode.unicode;
+            unicode = { unicode: charcode };
           }
-          str += String.fromCharCode(unicode);
+          glyphs.push(unicode);
         }
       }
       else {
@@ -1342,22 +1340,14 @@ var Font = (function Font() {
           var unicode = encoding[charcode];
           if ('undefined' == typeof(unicode)) {
             warn('Unencoded charcode ' + charcode);
-            unicode = charcode;
-          } else {
-            unicode = unicode.unicode;
+            unicode = { unicode: charcode };
           }
-
-          // Handle surrogate pairs
-          if (unicode > 0xFFFF) {
-            str += String.fromCharCode(unicode & 0xFFFF);
-            unicode >>= 16;
-          }
-          str += String.fromCharCode(unicode);
+          glyphs.push(unicode);
         }
       }
 
       // Enter the translated string into the cache
-      return charsCache[chars] = str;
+      return charsCache[chars] = glyphs;
     }
   };
 
