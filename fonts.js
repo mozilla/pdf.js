@@ -1056,7 +1056,7 @@ var Font = (function Font() {
 
       // Ensure the [h/v]mtx tables contains the advance width and
       // sidebearings information for numGlyphs in the maxp table
-      font.pos = (font.start ? font.start : 0) + maxp.offset;
+      font.pos = (font.start || 0) + maxp.offset;
       var version = int16(font.getBytes(4));
       var numGlyphs = int16(font.getBytes(2));
 
@@ -1165,7 +1165,7 @@ var Font = (function Font() {
             return false;
         }
         return true;
-      };
+      }
 
       // The offsets object holds at the same time a representation of where
       // to write the table entry information about a table and another offset
@@ -1357,7 +1357,7 @@ var Font = (function Font() {
       }
 
       // Enter the translated string into the cache
-      return charsCache[chars] = str;
+      return (charsCache[chars] = str);
     }
   };
 
@@ -1390,7 +1390,7 @@ var Type1Parser = function() {
       r = ((value + r) * c1 + c2) & ((1 << 16) - 1);
     }
     return decryptedString.slice(discardNumber);
-  };
+  }
 
   /*
    * CharStrings are encoded following the the CharString Encoding sequence
@@ -1593,7 +1593,7 @@ var Type1Parser = function() {
     }
 
     return { charstring: charstring, width: width, lsb: lsb };
-  };
+  }
 
   /*
    * Returns an object containing a Subrs array and a CharStrings
@@ -1613,7 +1613,7 @@ var Type1Parser = function() {
     for (var i = 0; i < array.length; i++)
       array[i] = parseFloat(array[i] || 0);
     return array;
-  };
+  }
 
   function readNumber(str, index) {
     while (str[index] == ' ')
@@ -1626,11 +1626,11 @@ var Type1Parser = function() {
       count++;
 
     return parseFloat(str.substr(start, count) || 0);
-  };
+  }
 
   function isSeparator(c) {
     return c == ' ' || c == '\n' || c == '\x0d';
-  };
+  }
 
   this.extractFontProgram = function t1_extractFontProgram(stream) {
     var eexec = decrypt(stream, kEexecEncryptionKey, 4);
@@ -1755,7 +1755,7 @@ var Type1Parser = function() {
     }
 
     return program;
-  },
+  };
 
   this.extractFontHeader = function t1_extractFontHeader(stream, properties) {
     var headerString = '';
@@ -2153,7 +2153,7 @@ CFF.prototype = {
       'globalSubrs': this.createCFFIndexHeader([]),
 
       'charset': (function charset(self) {
-        var charset = '\x00'; // Encoding
+        var charsetString = '\x00'; // Encoding
 
         var count = glyphs.length;
         for (var i = 0; i < count; i++) {
@@ -2165,9 +2165,9 @@ CFF.prototype = {
           if (index == -1)
             index = 0;
 
-          charset += String.fromCharCode(index >> 8, index & 0xff);
+          charsetString += String.fromCharCode(index >> 8, index & 0xff);
         }
-        return charset;
+        return charsetString;
       })(this),
 
       'charstrings': this.createCFFIndexHeader([[0x8B, 0x0E]].concat(glyphs),
@@ -2234,7 +2234,7 @@ var Type2CFF = (function() {
     this.properties = properties;
 
     this.data = this.parse();
-  };
+  }
 
   constructor.prototype = {
     parse: function cff_parse() {
@@ -2457,7 +2457,7 @@ var Type2CFF = (function() {
           case 21:
             dict['nominalWidthX'] = value[0];
           default:
-            TODO('interpret top dict key');
+            TODO('interpret top dict key: ' + key);
         }
       }
       return dict;
@@ -2569,7 +2569,7 @@ var Type2CFF = (function() {
           error('Incorrect byte');
         }
         return -1;
-      };
+      }
 
       function parseFloatOperand() {
         var str = '';
@@ -2591,7 +2591,7 @@ var Type2CFF = (function() {
           str += lookup[b2];
         }
         return parseFloat(str);
-      };
+      }
 
       var operands = [];
       var entries = [];
@@ -2617,15 +2617,14 @@ var Type2CFF = (function() {
     parseIndex: function cff_parseIndex(pos) {
       var bytes = this.bytes;
       var count = bytes[pos++] << 8 | bytes[pos++];
-      if (count == 0) {
-        var offsets = [];
-        var end = pos;
-      } else {
+      var offsets = [];
+      var end = pos;
+
+      if (count != 0) {
         var offsetSize = bytes[pos++];
         // add 1 for offset to determine size of last object
         var startPos = pos + ((count + 1) * offsetSize) - 1;
 
-        var offsets = [];
         for (var i = 0, ii = count + 1; i < ii; ++i) {
           var offset = 0;
           for (var j = 0; j < offsetSize; ++j) {
@@ -2634,7 +2633,7 @@ var Type2CFF = (function() {
           }
           offsets.push(startPos + offset);
         }
-        var end = offsets[count];
+        end = offsets[count];
       }
 
       return {
