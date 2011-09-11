@@ -2429,37 +2429,42 @@ var Type2CFF = (function() {
     },
 
     parseCharsets: function cff_parsecharsets(pos, length, strings) {
+      if (pos == 0) {
+        return ISOAdobeCharset;
+      } else if (pos == 1) {
+        return CFFExpertCharset;
+      } else if (pos == 2) {
+        return CFFExpertSubsetCharset;
+      }
+
       var bytes = this.bytes;
       var format = bytes[pos++];
       var charset = ['.notdef'];
+
       // subtract 1 for the .notdef glyph
       length -= 1;
 
       switch (format) {
         case 0:
-          for (var i = 0; i < length; ++i) {
-            var id = bytes[pos++];
-            id = (id << 8) | bytes[pos++];
-            charset.push(strings[id]);
+          for (var i = 0; i < length; i++) {
+            var sid = (bytes[pos++]  << 8) | bytes[pos++];
+            charset.push(strings[sid]);
           }
           break;
         case 1:
           while (charset.length <= length) {
-            var first = bytes[pos++];
-            first = (first << 8) | bytes[pos++];
-            var numLeft = bytes[pos++];
-            for (var i = 0; i <= numLeft; ++i)
-              charset.push(strings[first++]);
+            var sid = (bytes[pos++] << 8) | bytes[pos++];
+            var count = bytes[pos++];
+            for (var i = 0; i <= count; i++)
+              charset.push(strings[sid++]);
           }
           break;
         case 2:
           while (charset.length <= length) {
-            var first = bytes[pos++];
-            first = (first << 8) | bytes[pos++];
-            var numLeft = bytes[pos++];
-            numLeft = (numLeft << 8) | bytes[pos++];
-            for (var i = 0; i <= numLeft; ++i)
-              charset.push(strings[first++]);
+            var sid = (bytes[pos++] << 8) | bytes[pos++];
+            var count = (bytes[pos++] << 8) | bytes[pos++];
+            for (var i = 0; i <= count; i++)
+              charset.push(strings[sid++]);
           }
           break;
         default:
