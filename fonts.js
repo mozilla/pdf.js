@@ -448,7 +448,7 @@ var Font = (function Font() {
         this.mimetype = 'font/opentype';
 
         var subtype = properties.subtype;
-        var cff = (subtype === 'Type1C') ?
+        var cff = (subtype == 'Type1C' || properties.type == 'CIDFontType0') ?
           new Type2CFF(file, properties) : new CFF(name, file, properties);
 
         // Wrap the CFF data inside an OTF font file
@@ -2256,11 +2256,16 @@ var Type2CFF = (function() {
 
       var bytes = this.bytes;
 
+      var privateDict = {};
       var privateInfo = topDict.Private;
-      var privOffset = privateInfo[1], privLength = privateInfo[0];
-      var privBytes = bytes.subarray(privOffset, privOffset + privLength);
-      baseDict = this.parseDict(privBytes);
-      var privDict = this.getPrivDict(baseDict, strings);
+      if (privateInfo) {
+        var privOffset = privateInfo[1], privLength = privateInfo[0];
+        var privBytes = bytes.subarray(privOffset, privOffset + privLength);
+        baseDict = this.parseDict(privBytes);
+        privateDict = this.getPrivDict(baseDict, strings);
+      } else {
+        privateDict.defaultWidthX = properties.defaultWidth;
+      }
 
       var charStrings = this.parseIndex(topDict.CharStrings);
       var charset = this.parseCharsets(topDict.charset,
@@ -2306,7 +2311,7 @@ var Type2CFF = (function() {
       // charstrings contains info about glyphs (one element per glyph
       // containing mappings for {unicode, width})
       var charstrings = this.getCharStrings(charset, charStrings,
-                                            privDict, this.properties);
+                                            privateDict, this.properties);
 
       // create the mapping between charstring and glyph id
       var glyphIds = [];
@@ -2323,10 +2328,8 @@ var Type2CFF = (function() {
     },
 
     getCharStrings: function cff_charstrings(charsets, charStrings,
-                                             privDict, properties) {
-      var defaultWidth = privDict['defaultWidthX'];
-      var nominalWidth = privDict['nominalWidthX'];
-
+                                             privateDict, properties) {
+      var defaultWidth = privateDict['defaultWidthX'];
       var charstrings = [];
       var differences = properties.differences;
       var index = 0;
