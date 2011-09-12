@@ -1,4 +1,4 @@
-/* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- /
+/* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 /* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
 
 'use strict';
@@ -434,7 +434,7 @@ var Font = (function Font() {
 
       // Use 'name' instead of 'fontName' here because the original
       // name ArialBlack for example will be replaced by Helvetica.
-      this.black = (name.search(/Black/g) != -1)
+      this.black = (name.search(/Black/g) != -1);
 
       this.loadedName = fontName.split('-')[0];
       this.loading = false;
@@ -986,7 +986,7 @@ var Font = (function Font() {
         font.pos = (font.start ? font.start : 0) + header.offset;
         font.pos += header.length - 2;
         var numOfMetrics = int16(font.getBytes(2));
-      
+
         var numOfSidebearings = numGlyphs - numOfMetrics;
         var numMissing = numOfSidebearings -
           ((hmtx.length - numOfMetrics * 4) >> 1);
@@ -1807,7 +1807,8 @@ var Type1Parser = function() {
                 if ('undefined' == typeof(properties.differences[index])) {
                   var mapping = properties.encoding[index] || {};
                   mapping.unicode = GlyphsUnicode[glyph] || index;
-                  properties.glyphs[glyph] = properties.encoding[index] = mapping;
+                  properties.glyphs[glyph] = properties.encoding[index] =
+                                             mapping;
                 }
                 getToken(); // read the in 'put'
               }
