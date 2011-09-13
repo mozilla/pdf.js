@@ -4824,8 +4824,6 @@ function ScratchCanvas(width, height) {
 }
 
 var CanvasGraphics = (function() {
-  var kScalePrecision = 50;
-  var kRasterizerMin = 14;
   var kExecutionTime = 50;
   var kExecutionTimeCheck = 500;
 
@@ -5127,14 +5125,7 @@ var CanvasGraphics = (function() {
       if (this.ctx.$setFont) {
         this.ctx.$setFont(name, size);
       } else {
-        var bold = fontObj.black ? (fontObj.bold ? 'bolder' : 'bold') :
-                                   (fontObj.bold ? 'bold' : 'normal');
-
-        var italic = fontObj.italic ? 'italic' : 'normal';
-        var serif = fontObj.serif ? 'serif' : 'sans-serif';
-        var typeface = '"' + name + '", ' + serif;
-        var rule = italic + ' ' + bold + ' ' + size + 'px ' + typeface;
-        this.ctx.font = rule;
+        this.ctx.font = fontObj.getRule(size);
       }
     },
     setTextRenderingMode: function(mode) {

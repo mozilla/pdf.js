@@ -441,6 +441,17 @@ var FontShape = (function FontShape() {
     for (var name in obj) {
       this[name] = obj[name];
     }
+    
+    var name = this.loadedName;
+    var bold = this.black ? (this.bold ? 'bolder' : 'bold') :
+                            (this.bold ? 'bold' : 'normal');
+
+    var italic = this.italic ? 'italic' : 'normal';
+    var serif = this.serif ? 'serif' : 'sans-serif';
+    var typeface = '"' + name + '", ' + serif;
+
+    this.$name1 = italic + ' ' + bold + ' ';
+    this.$name2 = 'px ' + typeface;
   };
 
   function int16(bytes) {
@@ -448,6 +459,10 @@ var FontShape = (function FontShape() {
   };
   
   constructor.prototype = {
+    getRule: function fonts_getRule(size) {
+      return this.$name1 + size + this.$name2;
+    },
+    
     charsToUnicode: function fonts_chars2Unicode(chars) {
       var charsCache = this.charsCache;
       var str;
