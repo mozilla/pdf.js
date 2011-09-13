@@ -60,6 +60,19 @@ var WorkerPage = (function() {
 
 // This holds a list of objects the IR queue depends on.
 var Objects = {
+  getPromise: function(objId) {
+	  if (Objects[objId]) {
+	    return this[objId];
+	  } else {
+	    return this[objId] = new Promise(objId);
+	  }
+  },
+  
+  setData: function(objId, data) {
+    var promise = this.getPromise(objId);
+    promise.data = data;
+  },
+	
   resolve: function(objId, data) {
     // In case there is a promise already on this object, just resolve it.
     if (Objects[objId]) {
@@ -79,19 +92,39 @@ var Objects = {
 };
 
 var Promise = (function() {
+  var EMPTY_PROMISE = {};
+
   function Promise(name, data) {
     this.name = name;
     // If you build a promise and pass in some data it's already resolved.
     if (data != null) {
       this.isResolved = true;
-      this.data = data;
+      this.$data = data;
     } else {
       this.isResolved = false;      
+      this.$data = EMPTY_PROMISE;
     }
     this.callbacks = [];
   };
   
   Promise.prototype = {
+    set data(data) {
+      if (data === undefined) {
+        return;
+      }
+      if (this.$data !== EMPTY_PROMISE) {
+        throw "Promise " + this.name + ": Cannot set the data of a promise twice";
+      }
+      this.$data = data;
+    },
+    
+    get data() {
+      if (this.$data === EMPTY_PROMISE) {
+        throw "Promise " + this.name + ": Cannot get data that isn't set";
+      }
+      return this.$data;
+    },
+    
     resolve: function(data) {
       if (this.isResolved) {
         throw "A Promise can be resolved only once";
@@ -109,7 +142,8 @@ var Promise = (function() {
     then: function(callback) {
       // If the promise is already resolved, call the callback directly.
       if (this.isResolved) {
-        callback.call(null, this.data);
+        var data = this.data;
+        callback.call(null, data);
       } else {
         this.callbacks.push(callback);        
       }
@@ -128,7 +162,7 @@ var WorkerPDFDoc = (function() {
     
     this.pageCache = [];
     
-    var useWorker = true;
+    var useWorker = false;
     
     if (useWorker) {
       var worker = new Worker("../worker/boot_processor.js");
@@ -181,6 +215,7 @@ var WorkerPDFDoc = (function() {
       if (!fontObj.str) {
         Objects.resolve(objId, fontObj);
       } else {
+        Objects.setData(objId, fontObj);
         FontLoader.bind(objId, fontObj);
       }
     });

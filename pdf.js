@@ -4884,12 +4884,8 @@ var CanvasGraphics = (function() {
             var deps = argsArray[i];
             for (var n = 0; n < deps.length; n++) {
               var depObjId = deps[n];
-              var promise;
-              if (!Objects[depObjId]) {
-                promise = Objects[depObjId] = new Promise(depObjId);
-              } else {
-                promise = Objects[depObjId];
-              }
+              var promise = Objects.getPromise(depObjId);
+
               // If the promise isn't resolved yet, add the continueCallback
               // to the promise and bail out.
               if (!promise.isResolved) {

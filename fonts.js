@@ -192,7 +192,6 @@ var FontLoader = {
     for (var i = 0; i < this.waitingFontObjs.length; i++) {
       var fontObj = this.waitingFontObjs[i];
       var rule = this.bindDOM(fontObj);
-      this.fonts[objIds[i]] = fontObj;
       names.push(fontObj.loadedName);
       rules.push(rule);
     }
@@ -205,8 +204,7 @@ var FontLoader = {
   fontLoadEvent: function(objIds) {
     for (var i = 0; i < objIds.length; i++) {
       var objId = objIds[i];
-      Objects.resolve(objId, this.fonts[objId]);
-      delete this.fonts[objId];
+      Objects.resolve(objId);
     }
     
     this.fontsLoading = false;
