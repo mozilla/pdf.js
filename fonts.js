@@ -158,136 +158,127 @@ if (!isWorker) {
   })();  
 }
 
+/**
+ * The FontLoader binds a fontObj to the DOM and checks if it is loaded.
+ * At the point of writing (11/9/14) there is no DOM event to detect loading
+ * of fonts. Therefore, we measure the font using a canvas before the
+ * font is attached to the DOM and later on test if the width changed.
+ * To ensure there is a change in the font size, two fallback fonts are used.
+ * The font used might look like this:
+ *    ctx.font = "normal normmal 'p0_font_0', 'Arial'
+ *
+ * As long as the font 'p0_font_0' isn't loaded, the font 'Arial' is used. A
+ * second measurement is done against the font 'Courier':
+ *    ctx.font = "normal normmal 'p0_font_0', 'Courier'
+ *
+ * The font sizes of Arial and Courier are quite different which ensures there
+ * gone be a change nomatter what the font looks like (e.g. you could end up
+ * with a font that looks like Arial which means you don't see any change in
+ * size, but as Courier is checked as well, there will be difference in this
+ * font).
+ *
+ * !!! The test string used for measurements is really important. Some fonts
+ * don't have definitions for characters like "a" or "b", but only for some
+ * unicode characters. Therefore, the test string have to be build using the
+ * encoding of the fontObj.
+ */
 var FontLoader = {
-  fonts: {},
-  fontsLoading: false,
-  waitingFontObjs: [],
-  waitingFontIds:  [],
-
-  bind: function(objId, fontObj) {
-    this.waitingFontObjs.push(fontObj);
-    this.waitingFontIds.push(objId);
+  scratchCtx: null,
+  
+  /**
+   * Create the canvas used for measuring the width of text.
+   */
+  setup: function() {
+    var canvas = document.createElement("canvas");
+    var ctx = canvas.getContext("2d");
+    this.ctx = ctx;
+  },
+  
+  /**
+   * Measures the width of some string using a fontObj and some different
+   * fallback fonts.
+   */
+  measure: function(fontObj, str) {
+    var ctx = this.ctx;
     
-    if (!this.fontsLoading) {
-      this.executeWaiting();
+    // THe fonts used as fallback.
+    var fallbacks = [ "Arial", "Courier" ];
+    
+    var widths = [];
+    for (var n = 0; n < fallbacks.length; n++) {
+      // Choose a large font size as there are no sub-pixel returned from
+      // measureText.
+      var font = fontObj.getRule(420, fallbacks[n]);
+      ctx.font = font;
+      
+      widths.push(ctx.measureText(str).width);
     }
+    return widths;
+  },
+  
+  /**
+   * Attaches a fontObj to the DOM and calls Objects.resolve(objId) once
+   * the font is loaded.
+   */
+  bind: function(objId, fontObj) {
+    var encoding = fontObj.encoding;
+    var testStr = "";
+    for (var enc in encoding) {
+      testStr += String.fromCharCode(encoding[enc]);
+      if (testStr.length == 10) {
+        break;
+      }
+    }
+
+    var before = this.measure(fontObj, testStr);
+    this.bindDOM(fontObj);
+
+    var check = function() {
+      var measure = this.measure(fontObj, testStr);
+      
+      for (var i = 0; i < measure.length; i++) {
+        if (measure[i] !== before[i]) {
+            Objects.resolve(objId);
+            return;
+        }        
+      }
+      
+      setTimeout(check, 0);
+    }.bind(this);
+    
+    // Start checking if font is loaded.
+    check();
   },
  
+  /**
+   * Attach the fontObj to the DOM.
+   */
   bindDOM: function font_bindDom(fontObj) {
-    var fontName = fontObj.loadedName;
+    // The browser isn't loading a font until it's used on the page. Attaching
+    // a hidden div that uses the font 'tells' the browser to load the font.
+    var div = document.createElement('div');
+    div.setAttribute('style',
+                     'visibility: hidden;' +
+                     'width: 10px; height: 10px;' +
+                     'position: absolute; top: 0px; left: 0px;' +
+                     'font-family: ' + fontObj.loadedName);
+    div.innerHTML = "Hi";
+    document.body.appendChild(div);
+    
     // Add the font-face rule to the document
+    var fontName = fontObj.loadedName;
     var url = ('url(data:' + fontObj.mimetype + ';base64,' +
                  window.btoa(fontObj.str) + ');');
     var rule = "@font-face { font-family:'" + fontName + "';src:" + url + '}';
     var styleSheet = document.styleSheets[0];
     styleSheet.insertRule(rule, styleSheet.cssRules.length);
     return rule;
-  },
-
-  executeWaiting: function() {
-    var rules = [];
-    var names = [];
-    var objIds = this.waitingFontIds;
-
-    for (var i = 0; i < this.waitingFontObjs.length; i++) {
-      var fontObj = this.waitingFontObjs[i];
-      var rule = this.bindDOM(fontObj);
-      names.push(fontObj.loadedName);
-      rules.push(rule);
-    }
-
-    this.prepareFontLoadEvent(rules, names, objIds);
-    this.waitingFontIds = [];
-    this.waitingFontObjs = [];
-  },
-  
-  fontLoadEvent: function(objIds) {
-    for (var i = 0; i < objIds.length; i++) {
-      var objId = objIds[i];
-      Objects.resolve(objId);
-    }
-    
-    this.fontsLoading = false;
-
-    if (this.waitingFontIds.length != 0) {
-      this.executeWaiting();
-    }
-  },
-  
-  // Set things up so that at least one pdfjsFontLoad event is
-  // dispatched when all the @font-face |rules| for |names| have been
-  // loaded in a subdocument.  It's expected that the load of |rules|
-  // has already started in this (outer) document, so that they should
-  // be ordered before the load in the subdocument.
-  prepareFontLoadEvent: function(rules, names, objIds) {
-      this.fontsLoading = true;
-      /** Hack begin */
-      // There's no event when a font has finished downloading so the
-      // following code is a dirty hack to 'guess' when a font is
-      // ready.  This code will be obsoleted by Mozilla bug 471915.
-      //
-      // The only reliable way to know if a font is loaded in Gecko
-      // (at the moment) is document.onload in a document with
-      // a @font-face rule defined in a "static" stylesheet.  We use a
-      // subdocument in an <iframe>, set up properly, to know when
-      // our @font-face rule was loaded.  However, the subdocument and
-      // outer document can't share CSS rules, so the inner document
-      // is only part of the puzzle.  The second piece is an invisible
-      // div created in order to force loading of the @font-face in
-      // the *outer* document.  (The font still needs to be loaded for
-      // its metrics, for reflow).  We create the div first for the
-      // outer document, then create the iframe.  Unless something
-      // goes really wonkily, we expect the @font-face for the outer
-      // document to be processed before the inner.  That's still
-      // fragile, but seems to work in practice.
-      //
-      // The postMessage() hackery was added to work around chrome bug
-      // 82402.
-
-      var div = document.createElement('div');
-      div.setAttribute('style',
-                       'visibility: hidden;' +
-                       'width: 10px; height: 10px;' +
-                       'position: absolute; top: 0px; left: 0px;');
-      var html = '';
-      for (var i = 0; i < names.length; ++i) {
-        html += '<span style="font-family:' + names[i] + '">Hi</span>';
-      }
-      div.innerHTML = html;
-      document.body.appendChild(div);
-
-      // XXX we should have a time-out here too, and maybe fire
-      // pdfjsFontLoadFailed?
-      var src = '<!DOCTYPE HTML><html><head>';
-      src += '<style type="text/css">';
-      for (var i = 0; i < rules.length; ++i) {
-        src += rules[i];
-      }
-      src += '</style>';
-      src += '<script type="application/javascript">';
-      var objIdsArray = '';
-      for (var i = 0; i < objIds.length; ++i) {
-        objIdsArray += '"' + objIds[i] + '", ';
-      }
-      src += '  var objIds=[' + objIdsArray + '];\n';      
-      src += '  window.onload = function () {\n';
-      src += '    setTimeout(function(){parent.postMessage(JSON.stringify(objIds), "*")},0);\n';
-      src += '  }';
-      src += '</script></head><body>';
-      src += '<p style="font-family:\'' + name + '\'">Hi</p>';
-      src += '</body></html>';
-      var frame = document.createElement('iframe');
-      frame.src = 'data:text/html,' + src;
-      frame.setAttribute('style',
-                         'visibility: hidden;' +
-                         'width: 10px; height: 10px;' +
-                         'position: absolute; top: 0px; left: 0px;');
-      document.body.appendChild(frame);
-      /** Hack end */
   }
 };
 
 if (!isWorker) {
+  FontLoader.setup();
+  
   window.addEventListener(
     'message',
     function(e) {
@@ -447,11 +438,10 @@ var FontShape = (function FontShape() {
                             (this.bold ? 'bold' : 'normal');
 
     var italic = this.italic ? 'italic' : 'normal';
-    var serif = this.serif ? 'serif' : 'sans-serif';
-    var typeface = '"' + name + '", ' + serif;
+    this.fontFallback = this.serif ? 'serif' : 'sans-serif';
 
     this.$name1 = italic + ' ' + bold + ' ';
-    this.$name2 = 'px ' + typeface;
+    this.$name2 = 'px "' + name + '", "';
   };
 
   function int16(bytes) {
@@ -459,8 +449,9 @@ var FontShape = (function FontShape() {
   };
   
   constructor.prototype = {
-    getRule: function fonts_getRule(size) {
-      return this.$name1 + size + this.$name2;
+    getRule: function fonts_getRule(size, fallback) {
+      fallback = fallback || this.fontFallback;
+      return this.$name1 + size + this.$name2 + fallback + '"';
     },
     
     charsToUnicode: function fonts_chars2Unicode(chars) {
