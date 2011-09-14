@@ -85,7 +85,7 @@ var Objects = {
   get: function(objId) {
     var obj = Objects[objId];
     if (!obj || !obj.isResolved) {
-      throw "Requesting object that isn't resolved yet";
+      throw "Requesting object that isn't resolved yet " + objId;
     }
     return obj.data;
   }
@@ -162,7 +162,7 @@ var WorkerPDFDoc = (function() {
     
     this.pageCache = [];
     
-    var useWorker = false;
+    var useWorker = true;
     
     if (useWorker) {
       var worker = new Worker("../worker/boot_processor.js");
