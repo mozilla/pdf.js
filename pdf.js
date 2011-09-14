@@ -2894,6 +2894,8 @@ var Parser = (function() {
             if (IsArray(paramsArray) && (i in paramsArray))
               params = paramsArray[i];
             stream = this.makeFilter(stream, filter.name, length, params);
+            // after the first stream the length variable is invalid
+            length = null;
           }
         }
       }
