@@ -3188,7 +3188,7 @@ var XRef = (function() {
         return obj;
       return this.fetch(obj);
     },
-    fetch: function(ref) {
+    fetch: function(ref, suppressEncryption) {
       var num = ref.num;
       var e = this.cache[num];
       if (e)
@@ -3219,7 +3219,7 @@ var XRef = (function() {
           }
           error('bad XRef entry');
         }
-        if (this.encrypt) {
+        if (this.encrypt && !suppressEncryption) {
           e = parser.getObj(this.encrypt.createCipherTransform(num, gen));
         } else {
           e = parser.getObj();
@@ -4375,7 +4375,10 @@ var PartialEvaluator = (function() {
       }
 
       if (type == 'TrueType' && dict.has('ToUnicode') && differences) {
-        var cmapObj = xref.fetchIfRef(dict.get('ToUnicode'));
+        var cmapObj = dict.get('ToUnicode');
+        if (IsRef(cmapObj)) {
+          cmapObj = xref.fetch(cmapObj, true);
+        }
         if (IsName(cmapObj)) {
           error('ToUnicode file cmap translation not implemented');
         } else if (IsStream(cmapObj)) {

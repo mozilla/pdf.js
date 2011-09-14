@@ -109,5 +109,11 @@
        "link": true,
        "rounds": 1,
        "type": "eq"
+    },
+    {  "id": "artofwar",
+       "file": "pdfs/artofwar.pdf",
+       "link": true,
+       "rounds": 1,
+       "type": "eq"
     }
 ]
