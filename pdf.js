@@ -85,12 +85,15 @@ function stringToBytes(str) {
 }
 
 var PDFStringTranslateTable = [
-  ,,,,,,,,,,,,,,,,,,,,,,,, 0x2D8, 0x2C7, 0x2C6, 0x2D9, 0x2DD, 0x2DB, 0x2DA,
-  0x2DC,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
-  ,,,,,,,,,,,,,,,,,,,,,,,,,,,,, 0x2022, 0x2020, 0x2021, 0x2026, 0x2014,
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  0x2D8, 0x2C7, 0x2C6, 0x2D9, 0x2DD, 0x2DB, 0x2DA, 0x2DC, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x2022, 0x2020, 0x2021, 0x2026, 0x2014,
   0x2013, 0x192, 0x2044, 0x2039, 0x203A, 0x2212, 0x2030, 0x201E, 0x201C,
-  0x201D, 0x2018, 0x2019, 0x201A, 0x2122, 0xFB01, 0xFB02, 0x141, 0x152,
-  0x160, 0x178, 0x17D, 0x131, 0x142, 0x153, 0x161, 0x17E,, 0x20AC
+  0x201D, 0x2018, 0x2019, 0x201A, 0x2122, 0xFB01, 0xFB02, 0x141, 0x152, 0x160,
+  0x178, 0x17D, 0x131, 0x142, 0x153, 0x161, 0x17E, 0, 0x20AC
 ];
 
 function stringToPDFString(str) {
@@ -556,12 +559,6 @@ var FlateStream = (function() {
   };
 
   constructor.prototype.readBlock = function() {
-    function repeat(stream, array, len, offset, what) {
-      var repeatLength = stream.getBits(len) + offset;
-      while (repeatLength-- > 0)
-        array[i++] = what;
-    }
-
     // read block header
     var hdr = this.getBits(3);
     if (hdr & 1)
@@ -631,14 +628,19 @@ var FlateStream = (function() {
       while (i < codes) {
         var code = this.getCode(codeLenCodeTab);
         if (code == 16) {
-          repeat(this, codeLengths, 2, 3, len);
+          var bitsLength = 2, bitsOffset = 3, what = len;
         } else if (code == 17) {
-          repeat(this, codeLengths, 3, 3, len = 0);
+          var bitsLength = 3, bitsOffset = 3, what = (len = 0);
         } else if (code == 18) {
-          repeat(this, codeLengths, 7, 11, len = 0);
+          var bitsLength = 7, bitsOffset = 11, what = (len = 0);
         } else {
           codeLengths[i++] = len = code;
+          continue;
         }
+
+        var repeatLength = this.getBits(bitsLength) + bitsOffset;
+        while (repeatLength-- > 0)
+          codeLengths[i++] = what;
       }
 
       litCodeTable =
@@ -711,9 +713,9 @@ var PredictorStream = (function() {
     var bits = this.bits = params.get('BitsPerComponent') || 8;
     var columns = this.columns = params.get('Columns') || 1;
 
-    var pixBytes = this.pixBytes = (colors * bits + 7) >> 3;
+    this.pixBytes = (colors * bits + 7) >> 3;
     // add an extra pixByte to represent the pixel left of column 0
-    var rowBytes = this.rowBytes = (columns * colors * bits + 7) >> 3;
+    this.rowBytes = (columns * colors * bits + 7) >> 3;
 
     DecodeStream.call(this);
     return this;
@@ -723,7 +725,6 @@ var PredictorStream = (function() {
 
   constructor.prototype.readBlockTiff = function() {
     var rowBytes = this.rowBytes;
-    var pixBytes = this.pixBytes;
 
     var bufferLength = this.bufferLength;
     var buffer = this.ensureBuffer(bufferLength + rowBytes);
@@ -734,16 +735,18 @@ var PredictorStream = (function() {
 
     var rawBytes = this.stream.getBytes(rowBytes);
 
+    var inbuf = 0, outbuf = 0;
+    var inbits = 0, outbits = 0;
+
     if (bits === 1) {
-      var inbuf = 0;
       for (var i = 0; i < rowBytes; ++i) {
         var c = rawBytes[i];
-        inBuf = (inBuf << 8) | c;
+        inbuf = (inbuf << 8) | c;
         // bitwise addition is exclusive or
-        // first shift inBuf and then add
-        currentRow[i] = (c ^ (inBuf >> colors)) & 0xFF;
-        // truncate inBuf (assumes colors < 16)
-        inBuf &= 0xFFFF;
+        // first shift inbuf and then add
+        currentRow[i] = (c ^ (inbuf >> colors)) & 0xFF;
+        // truncate inbuf (assumes colors < 16)
+        inbuf &= 0xFFFF;
       }
     } else if (bits === 8) {
       for (var i = 0; i < colors; ++i)
@@ -753,8 +756,6 @@ var PredictorStream = (function() {
     } else {
       var compArray = new Uint8Array(colors + 1);
       var bitMask = (1 << bits) - 1;
-      var inbuf = 0, outbut = 0;
-      var inbits = 0, outbits = 0;
       var j = 0, k = 0;
       var columns = this.columns;
       for (var i = 0; i < columns; ++i) {
@@ -861,10 +862,43 @@ var PredictorStream = (function() {
 // A JpegStream can't be read directly. We use the platform to render
 // the underlying JPEG data for us.
 var JpegStream = (function() {
+  function isYcckImage(bytes) {
+    var maxBytesScanned = Math.max(bytes.length - 16, 1024);
+    // Looking for APP14, 'Adobe' and transform = 2
+    for (var i = 0; i < maxBytesScanned; ++i) {
+      if (bytes[i] == 0xFF && bytes[i + 1] == 0xEE &&
+          bytes[i + 2] == 0x00 && bytes[i + 3] == 0x0E &&
+          bytes[i + 4] == 0x41 && bytes[i + 5] == 0x64 &&
+          bytes[i + 6] == 0x6F && bytes[i + 7] == 0x62 &&
+          bytes[i + 8] == 0x65 && bytes[i + 9] == 0x00)
+          return bytes[i + 15] == 0x02;
+      // scanning until frame tag
+      if (bytes[i] == 0xFF && bytes[i + 1] == 0xC0)
+        break;
+    }
+    return false;
+  }
+
+  function fixYcckImage(bytes) {
+    // Inserting 'EMBED' marker after JPEG signature
+    var embedMarker = new Uint8Array([0xFF, 0xEC, 0, 8, 0x45, 0x4D, 0x42, 0x45,
+                                      0x44, 0]);
+    var newBytes = new Uint8Array(bytes.length + embedMarker.length);
+    newBytes.set(bytes, embedMarker.length);
+    // copy JPEG header
+    newBytes[0] = bytes[0];
+    newBytes[1] = bytes[1];
+    newBytes.set(embedMarker, 2);
+    return newBytes;
+  }
+
   function constructor(bytes, dict) {
     // TODO: per poppler, some images may have "junk" before that
     // need to be removed
     this.dict = dict;
+
+    if (isYcckImage(bytes))
+      bytes = fixYcckImage(bytes);
 
     // create DOM image
     var img = new Image();
@@ -985,11 +1019,11 @@ var Ascii85Stream = (function() {
       return;
     }
 
-    var bufferLength = this.bufferLength;
+    var bufferLength = this.bufferLength, buffer;
 
     // special code for z
     if (c == zCode) {
-      var buffer = this.ensureBuffer(bufferLength + 4);
+      buffer = this.ensureBuffer(bufferLength + 4);
       for (var i = 0; i < 4; ++i)
         buffer[bufferLength + i] = 0;
       this.bufferLength += 4;
@@ -1006,7 +1040,7 @@ var Ascii85Stream = (function() {
         if (!c || c == tildaCode)
           break;
       }
-      var buffer = this.ensureBuffer(bufferLength + i - 1);
+      buffer = this.ensureBuffer(bufferLength + i - 1);
       this.bufferLength += i - 1;
 
       // partial ending;
@@ -1844,7 +1878,7 @@ var CCITTFaxStream = (function() {
             for (var i = 0; i < 4; ++i) {
               code1 = this.lookBits(12);
               if (code1 != 1)
-                warning('bad rtc code');
+                warn('bad rtc code: ' + code1);
               this.eatBits(12);
               if (this.encoding > 0) {
                 this.lookBits(1);
@@ -1983,7 +2017,7 @@ var CCITTFaxStream = (function() {
         }
       }
       for (var n = 11; n <= 12; ++n) {
-        code == this.lookBits(n);
+        code = this.lookBits(n);
         if (code == EOF)
           return 1;
         if (n < 12)
@@ -2406,11 +2440,6 @@ var Lexer = (function() {
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,   // ex
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0    // fx
   ];
-
-  var MIN_INT = (1 << 31) | 0;
-  var MAX_INT = (MIN_INT - 1) | 0;
-  var MIN_UINT = 0;
-  var MAX_UINT = ((1 << 30) * 4) - 1;
 
   function ToHexDigit(ch) {
     if (ch >= '0' && ch <= '9')
@@ -2865,6 +2894,8 @@ var Parser = (function() {
             if (IsArray(paramsArray) && (i in paramsArray))
               params = paramsArray[i];
             stream = this.makeFilter(stream, filter.name, length, params);
+            // after the first stream the length variable is invalid
+            length = null;
           }
         }
       }
@@ -3077,7 +3108,6 @@ var XRef = (function() {
     },
     readXRefStream: function readXRefStream(stream) {
       var streamParameters = stream.parameters;
-      var length = streamParameters.get('Length');
       var byteWidths = streamParameters.get('W');
       var range = streamParameters.get('Index');
       if (!range)
@@ -3162,7 +3192,7 @@ var XRef = (function() {
         return obj;
       return this.fetch(obj);
     },
-    fetch: function(ref) {
+    fetch: function(ref, suppressEncryption) {
       var num = ref.num;
       var e = this.cache[num];
       if (e)
@@ -3193,7 +3223,7 @@ var XRef = (function() {
           }
           error('bad XRef entry');
         }
-        if (this.encrypt) {
+        if (this.encrypt && !suppressEncryption) {
           e = parser.getObj(this.encrypt.createCipherTransform(num, gen));
         } else {
           e = parser.getObj();
@@ -3326,7 +3356,7 @@ var Page = (function() {
       }
       return shadow(this, 'rotate', rotate);
     },
-    startRendering: function(canvasCtx, continuation, onerror) {
+    startRendering: function(canvasCtx, continuation) {
       var self = this;
       var stats = self.stats;
       stats.compile = stats.fonts = stats.render = 0;
@@ -3349,7 +3379,7 @@ var Page = (function() {
           } catch (e) {
             exc = e.toString();
           }
-          continuation(exc);
+          if (continuation) continuation(exc);
         });
       };
 
@@ -3724,8 +3754,6 @@ var PDFDoc = (function() {
       return shadow(this, 'numPages', num);
     },
     getPage: function(n) {
-      var linearization = this.linearization;
-      // assert(!linearization, "linearized page access not implemented");
       return this.catalog.getPage(n);
     }
   };
@@ -3735,38 +3763,42 @@ var PDFDoc = (function() {
 
 var Encodings = {
   get ExpertEncoding() {
-    return shadow(this, 'ExpertEncoding', [,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
-      'space', 'exclamsmall', 'Hungarumlautsmall',, 'dollaroldstyle',
-      'dollarsuperior', 'ampersandsmall', 'Acutesmall', 'parenleftsuperior',
-      'parenrightsuperior', 'twodotenleader', 'onedotenleader', 'comma',
-      'hyphen', 'period', 'fraction', 'zerooldstyle', 'oneoldstyle',
-      'twooldstyle', 'threeoldstyle', 'fouroldstyle', 'fiveoldstyle',
-      'sixoldstyle', 'sevenoldstyle', 'eightoldstyle', 'nineoldstyle', 'colon',
-      'semicolon', 'commasuperior', 'threequartersemdash', 'periodsuperior',
-      'questionsmall',, 'asuperior', 'bsuperior', 'centsuperior', 'dsuperior',
-      'esuperior',,, 'isuperior',,, 'lsuperior', 'msuperior', 'nsuperior',
-      'osuperior',,, 'rsuperior', 'ssuperior', 'tsuperior',, 'ff', 'fi', 'fl',
-      'ffi', 'ffl', 'parenleftinferior',, 'parenrightinferior',
+    return shadow(this, 'ExpertEncoding', ['', '', '', '', '', '', '', '', '',
+      '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '',
+      '', '', '', '', '', 'space', 'exclamsmall', 'Hungarumlautsmall', '',
+      'dollaroldstyle', 'dollarsuperior', 'ampersandsmall', 'Acutesmall',
+      'parenleftsuperior', 'parenrightsuperior', 'twodotenleader',
+      'onedotenleader', 'comma', 'hyphen', 'period', 'fraction',
+      'zerooldstyle', 'oneoldstyle', 'twooldstyle', 'threeoldstyle',
+      'fouroldstyle', 'fiveoldstyle', 'sixoldstyle', 'sevenoldstyle',
+      'eightoldstyle', 'nineoldstyle', 'colon', 'semicolon', 'commasuperior',
+      'threequartersemdash', 'periodsuperior', 'questionsmall', '',
+      'asuperior', 'bsuperior', 'centsuperior', 'dsuperior', 'esuperior', '',
+      '', 'isuperior', '', '', 'lsuperior', 'msuperior', 'nsuperior',
+      'osuperior', '', '', 'rsuperior', 'ssuperior', 'tsuperior', '', 'ff',
+      'fi', 'fl', 'ffi', 'ffl', 'parenleftinferior', '', 'parenrightinferior',
       'Circumflexsmall', 'hyphensuperior', 'Gravesmall', 'Asmall', 'Bsmall',
       'Csmall', 'Dsmall', 'Esmall', 'Fsmall', 'Gsmall', 'Hsmall', 'Ismall',
       'Jsmall', 'Ksmall', 'Lsmall', 'Msmall', 'Nsmall', 'Osmall', 'Psmall',
       'Qsmall', 'Rsmall', 'Ssmall', 'Tsmall', 'Usmall', 'Vsmall', 'Wsmall',
       'Xsmall', 'Ysmall', 'Zsmall', 'colonmonetary', 'onefitted', 'rupiah',
-      'Tildesmall',,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,, 'exclamdownsmall',
-      'centoldstyle', 'Lslashsmall',,, 'Scaronsmall', 'Zcaronsmall',
-      'Dieresissmall', 'Brevesmall', 'Caronsmall',, 'Dotaccentsmall',,,
-      'Macronsmall',,, 'figuredash', 'hypheninferior',,, 'Ogoneksmall',
-      'Ringsmall', 'Cedillasmall',,,, 'onequarter', 'onehalf', 'threequarters',
+      'Tildesmall', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '',
+      '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '',
+      '', 'exclamdownsmall', 'centoldstyle', 'Lslashsmall', '', '',
+      'Scaronsmall', 'Zcaronsmall', 'Dieresissmall', 'Brevesmall',
+      'Caronsmall', '', 'Dotaccentsmall', '', '', 'Macronsmall', '', '',
+      'figuredash', 'hypheninferior', '', '', 'Ogoneksmall', 'Ringsmall',
+      'Cedillasmall', '', '', '', 'onequarter', 'onehalf', 'threequarters',
       'questiondownsmall', 'oneeighth', 'threeeighths', 'fiveeighths',
-      'seveneighths', 'onethird', 'twothirds',,, 'zerosuperior', 'onesuperior',
-      'twosuperior', 'threesuperior', 'foursuperior', 'fivesuperior',
-      'sixsuperior', 'sevensuperior', 'eightsuperior', 'ninesuperior',
-      'zeroinferior', 'oneinferior', 'twoinferior', 'threeinferior',
-      'fourinferior', 'fiveinferior', 'sixinferior', 'seveninferior',
-      'eightinferior', 'nineinferior', 'centinferior', 'dollarinferior',
-      'periodinferior', 'commainferior', 'Agravesmall', 'Aacutesmall',
-      'Acircumflexsmall', 'Atildesmall', 'Adieresissmall', 'Aringsmall',
-      'AEsmall', 'Ccedillasmall', 'Egravesmall', 'Eacutesmall',
+      'seveneighths', 'onethird', 'twothirds', '', '', 'zerosuperior',
+      'onesuperior', 'twosuperior', 'threesuperior', 'foursuperior',
+      'fivesuperior', 'sixsuperior', 'sevensuperior', 'eightsuperior',
+      'ninesuperior', 'zeroinferior', 'oneinferior', 'twoinferior',
+      'threeinferior', 'fourinferior', 'fiveinferior', 'sixinferior',
+      'seveninferior', 'eightinferior', 'nineinferior', 'centinferior',
+      'dollarinferior', 'periodinferior', 'commainferior', 'Agravesmall',
+      'Aacutesmall', 'Acircumflexsmall', 'Atildesmall', 'Adieresissmall',
+      'Aringsmall', 'AEsmall', 'Ccedillasmall', 'Egravesmall', 'Eacutesmall',
       'Ecircumflexsmall', 'Edieresissmall', 'Igravesmall', 'Iacutesmall',
       'Icircumflexsmall', 'Idieresissmall', 'Ethsmall', 'Ntildesmall',
       'Ogravesmall', 'Oacutesmall', 'Ocircumflexsmall', 'Otildesmall',
@@ -3776,168 +3808,177 @@ var Encodings = {
     ]);
   },
   get MacExpertEncoding() {
-    return shadow(this, 'MacExpertEncoding', [,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
-      'space', 'exclamsmall', 'Hungarumlautsmall', 'centoldstyle',
-      'dollaroldstyle', 'dollarsuperior', 'ampersandsmall', 'Acutesmall',
-      'parenleftsuperior', 'parenrightsuperior', 'twodotenleader',
-      'onedotenleader', 'comma', 'hyphen', 'period', 'fraction',
-      'zerooldstyle', 'oneoldstyle', 'twooldstyle', 'threeoldstyle',
-      'fouroldstyle', 'fiveoldstyle', 'sixoldstyle', 'sevenoldstyle',
-      'eightoldstyle', 'nineoldstyle', 'colon', 'semicolon',,
-      'threequartersemdash',, 'questionsmall',,,,, 'Ethsmall',,, 'onequarter',
-      'onehalf', 'threequarters', 'oneeighth', 'threeeighths', 'fiveeighths',
-      'seveneighths', 'onethird', 'twothirds',,,,,,, 'ff', 'fi', 'fl', 'ffi',
-      'ffl', 'parenleftinferior',, 'parenrightinferior', 'Circumflexsmall',
+    return shadow(this, 'MacExpertEncoding', ['', '', '', '', '', '', '', '',
+      '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '',
+      '', '', '', '', '', '', 'space', 'exclamsmall', 'Hungarumlautsmall',
+      'centoldstyle', 'dollaroldstyle', 'dollarsuperior', 'ampersandsmall',
+      'Acutesmall', 'parenleftsuperior', 'parenrightsuperior',
+      'twodotenleader', 'onedotenleader', 'comma', 'hyphen', 'period',
+      'fraction', 'zerooldstyle', 'oneoldstyle', 'twooldstyle',
+      'threeoldstyle', 'fouroldstyle', 'fiveoldstyle', 'sixoldstyle',
+      'sevenoldstyle', 'eightoldstyle', 'nineoldstyle', 'colon', 'semicolon',
+      '', 'threequartersemdash', '', 'questionsmall', '', '', '', '',
+      'Ethsmall', '', '', 'onequarter', 'onehalf', 'threequarters',
+      'oneeighth', 'threeeighths', 'fiveeighths', 'seveneighths', 'onethird',
+      'twothirds', '', '', '', '', '', '', 'ff', 'fi', 'fl', 'ffi', 'ffl',
+      'parenleftinferior', '', 'parenrightinferior', 'Circumflexsmall',
       'hypheninferior', 'Gravesmall', 'Asmall', 'Bsmall', 'Csmall', 'Dsmall',
       'Esmall', 'Fsmall', 'Gsmall', 'Hsmall', 'Ismall', 'Jsmall', 'Ksmall',
       'Lsmall', 'Msmall', 'Nsmall', 'Osmall', 'Psmall', 'Qsmall', 'Rsmall',
       'Ssmall', 'Tsmall', 'Usmall', 'Vsmall', 'Wsmall', 'Xsmall', 'Ysmall',
-      'Zsmall', 'colonmonetary', 'onefitted', 'rupiah', 'Tildesmall',,,
-      'asuperior', 'centsuperior',,,,, 'Aacutesmall', 'Agravesmall',
-      'Acircumflexsmall', 'Adieresissmall', 'Atildesmall', 'Aringsmall',
-      'Ccedillasmall', 'Eacutesmall', 'Egravesmall', 'Ecircumflexsmall',
-      'Edieresissmall', 'Iacutesmall', 'Igravesmall', 'Icircumflexsmall',
-      'Idieresissmall', 'Ntildesmall', 'Oacutesmall', 'Ogravesmall',
-      'Ocircumflexsmall', 'Odieresissmall', 'Otildesmall', 'Uacutesmall',
-      'Ugravesmall', 'Ucircumflexsmall', 'Udieresissmall',, 'eightsuperior',
-      'fourinferior', 'threeinferior', 'sixinferior', 'eightinferior',
-      'seveninferior', 'Scaronsmall',, 'centinferior', 'twoinferior',,
-      'Dieresissmall',, 'Caronsmall', 'osuperior', 'fiveinferior',,
-      'commainferior', 'periodinferior', 'Yacutesmall',, 'dollarinferior',,
-      'Thornsmall',, 'nineinferior', 'zeroinferior', 'Zcaronsmall', 'AEsmall',
-      'Oslashsmall', 'questiondownsmall', 'oneinferior', 'Lslashsmall',,,,,,,
-      'Cedillasmall',,,,,, 'OEsmall', 'figuredash', 'hyphensuperior',,,,,
-      'exclamdownsmall',, 'Ydieresissmall',, 'onesuperior', 'twosuperior',
-      'threesuperior', 'foursuperior', 'fivesuperior', 'sixsuperior',
-      'sevensuperior', 'ninesuperior', 'zerosuperior',, 'esuperior',
-      'rsuperior', 'tsuperior',,, 'isuperior', 'ssuperior', 'dsuperior',,,,,,
-      'lsuperior', 'Ogoneksmall', 'Brevesmall', 'Macronsmall', 'bsuperior',
-      'nsuperior', 'msuperior', 'commasuperior', 'periodsuperior',
-      'Dotaccentsmall', 'Ringsmall'
+      'Zsmall', 'colonmonetary', 'onefitted', 'rupiah', 'Tildesmall', '', '',
+      'asuperior', 'centsuperior', '', '', '', '', 'Aacutesmall',
+      'Agravesmall', 'Acircumflexsmall', 'Adieresissmall', 'Atildesmall',
+      'Aringsmall', 'Ccedillasmall', 'Eacutesmall', 'Egravesmall',
+      'Ecircumflexsmall', 'Edieresissmall', 'Iacutesmall', 'Igravesmall',
+      'Icircumflexsmall', 'Idieresissmall', 'Ntildesmall', 'Oacutesmall',
+      'Ogravesmall', 'Ocircumflexsmall', 'Odieresissmall', 'Otildesmall',
+      'Uacutesmall', 'Ugravesmall', 'Ucircumflexsmall', 'Udieresissmall', '',
+      'eightsuperior', 'fourinferior', 'threeinferior', 'sixinferior',
+      'eightinferior', 'seveninferior', 'Scaronsmall', '', 'centinferior',
+      'twoinferior', '', 'Dieresissmall', '', 'Caronsmall', 'osuperior',
+      'fiveinferior', '', 'commainferior', 'periodinferior', 'Yacutesmall', '',
+      'dollarinferior', '', 'Thornsmall', '', 'nineinferior', 'zeroinferior',
+      'Zcaronsmall', 'AEsmall', 'Oslashsmall', 'questiondownsmall',
+      'oneinferior', 'Lslashsmall', '', '', '', '', '', '', 'Cedillasmall', '',
+      '', '', '', '', 'OEsmall', 'figuredash', 'hyphensuperior', '', '', '',
+      '', 'exclamdownsmall', '', 'Ydieresissmall', '', 'onesuperior',
+      'twosuperior', 'threesuperior', 'foursuperior', 'fivesuperior',
+      'sixsuperior', 'sevensuperior', 'ninesuperior', 'zerosuperior', '',
+      'esuperior', 'rsuperior', 'tsuperior', '', '', 'isuperior', 'ssuperior',
+      'dsuperior', '', '', '', '', '', 'lsuperior', 'Ogoneksmall',
+      'Brevesmall', 'Macronsmall', 'bsuperior', 'nsuperior', 'msuperior',
+      'commasuperior', 'periodsuperior', 'Dotaccentsmall', 'Ringsmall'
     ]);
   },
   get MacRomanEncoding() {
-    return shadow(this, 'MacRomanEncoding', [,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
-      'space', 'exclam', 'quotedbl', 'numbersign', 'dollar', 'percent',
-      'ampersand', 'quotesingle', 'parenleft', 'parenright', 'asterisk',
-      'plus', 'comma', 'hyphen', 'period', 'slash', 'zero', 'one', 'two',
-      'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'colon',
-      'semicolon', 'less', 'equal', 'greater', 'question', 'at', 'A', 'B', 'C',
-      'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q',
-      'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', 'bracketleft', 'backslash',
-      'bracketright', 'asciicircum', 'underscore', 'grave', 'a', 'b', 'c', 'd',
-      'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r',
-      's', 't', 'u', 'v', 'w', 'x', 'y', 'z', 'braceleft', 'bar', 'braceright',
-      'asciitilde',, 'Adieresis', 'Aring', 'Ccedilla', 'Eacute', 'Ntilde',
-      'Odieresis', 'Udieresis', 'aacute', 'agrave', 'acircumflex', 'adieresis',
-      'atilde', 'aring', 'ccedilla', 'eacute', 'egrave', 'ecircumflex',
-      'edieresis', 'iacute', 'igrave', 'icircumflex', 'idieresis', 'ntilde',
-      'oacute', 'ograve', 'ocircumflex', 'odieresis', 'otilde', 'uacute',
-      'ugrave', 'ucircumflex', 'udieresis', 'dagger', 'degree', 'cent',
-      'sterling', 'section', 'bullet', 'paragraph', 'germandbls', 'registered',
-      'copyright', 'trademark', 'acute', 'dieresis', 'notequal', 'AE',
-      'Oslash', 'infinity', 'plusminus', 'lessequal', 'greaterequal', 'yen',
-      'mu', 'partialdiff', 'summation', 'product', 'pi', 'integral',
-      'ordfeminine', 'ordmasculine', 'Omega', 'ae', 'oslash', 'questiondown',
-      'exclamdown', 'logicalnot', 'radical', 'florin', 'approxequal', 'Delta',
-      'guillemotleft', 'guillemotright', 'ellipsis', 'space', 'Agrave',
-      'Atilde', 'Otilde', 'OE', 'oe', 'endash', 'emdash', 'quotedblleft',
-      'quotedblright', 'quoteleft', 'quoteright', 'divide', 'lozenge',
-      'ydieresis', 'Ydieresis', 'fraction', 'currency', 'guilsinglleft',
-      'guilsinglright', 'fi', 'fl', 'daggerdbl', 'periodcentered',
-      'quotesinglbase', 'quotedblbase', 'perthousand', 'Acircumflex',
-      'Ecircumflex', 'Aacute', 'Edieresis', 'Egrave', 'Iacute', 'Icircumflex',
-      'Idieresis', 'Igrave', 'Oacute', 'Ocircumflex', 'apple', 'Ograve',
-      'Uacute', 'Ucircumflex', 'Ugrave', 'dotlessi', 'circumflex', 'tilde',
-      'macron', 'breve', 'dotaccent', 'ring', 'cedilla', 'hungarumlaut',
-      'ogonek', 'caron'
+    return shadow(this, 'MacRomanEncoding', ['', '', '', '', '', '', '', '',
+      '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '',
+      '', '', '', '', '', '', 'space', 'exclam', 'quotedbl', 'numbersign',
+      'dollar', 'percent', 'ampersand', 'quotesingle', 'parenleft',
+      'parenright', 'asterisk', 'plus', 'comma', 'hyphen', 'period', 'slash',
+      'zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight',
+      'nine', 'colon', 'semicolon', 'less', 'equal', 'greater', 'question',
+      'at', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
+      'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
+      'bracketleft', 'backslash', 'bracketright', 'asciicircum', 'underscore',
+      'grave', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm',
+      'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
+      'braceleft', 'bar', 'braceright', 'asciitilde', '', 'Adieresis', 'Aring',
+      'Ccedilla', 'Eacute', 'Ntilde', 'Odieresis', 'Udieresis', 'aacute',
+      'agrave', 'acircumflex', 'adieresis', 'atilde', 'aring', 'ccedilla',
+      'eacute', 'egrave', 'ecircumflex', 'edieresis', 'iacute', 'igrave',
+      'icircumflex', 'idieresis', 'ntilde', 'oacute', 'ograve', 'ocircumflex',
+      'odieresis', 'otilde', 'uacute', 'ugrave', 'ucircumflex', 'udieresis',
+      'dagger', 'degree', 'cent', 'sterling', 'section', 'bullet', 'paragraph',
+      'germandbls', 'registered', 'copyright', 'trademark', 'acute',
+      'dieresis', 'notequal', 'AE', 'Oslash', 'infinity', 'plusminus',
+      'lessequal', 'greaterequal', 'yen', 'mu', 'partialdiff', 'summation',
+      'product', 'pi', 'integral', 'ordfeminine', 'ordmasculine', 'Omega',
+      'ae', 'oslash', 'questiondown', 'exclamdown', 'logicalnot', 'radical',
+      'florin', 'approxequal', 'Delta', 'guillemotleft', 'guillemotright',
+      'ellipsis', 'space', 'Agrave', 'Atilde', 'Otilde', 'OE', 'oe', 'endash',
+      'emdash', 'quotedblleft', 'quotedblright', 'quoteleft', 'quoteright',
+      'divide', 'lozenge', 'ydieresis', 'Ydieresis', 'fraction', 'currency',
+      'guilsinglleft', 'guilsinglright', 'fi', 'fl', 'daggerdbl',
+      'periodcentered', 'quotesinglbase', 'quotedblbase', 'perthousand',
+      'Acircumflex', 'Ecircumflex', 'Aacute', 'Edieresis', 'Egrave', 'Iacute',
+      'Icircumflex', 'Idieresis', 'Igrave', 'Oacute', 'Ocircumflex', 'apple',
+      'Ograve', 'Uacute', 'Ucircumflex', 'Ugrave', 'dotlessi', 'circumflex',
+      'tilde', 'macron', 'breve', 'dotaccent', 'ring', 'cedilla',
+      'hungarumlaut', 'ogonek', 'caron'
     ]);
   },
   get StandardEncoding() {
-    return shadow(this, 'StandardEncoding', [,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
-      'space', 'exclam', 'quotedbl', 'numbersign', 'dollar', 'percent',
-      'ampersand', 'quoteright', 'parenleft', 'parenright', 'asterisk',
-      'plus', 'comma', 'hyphen', 'period', 'slash', 'zero', 'one', 'two',
-      'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'colon',
-      'semicolon', 'less', 'equal', 'greater', 'question', 'at', 'A', 'B',
-      'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P',
-      'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', 'bracketleft',
-      'backslash', 'bracketright', 'asciicircum', 'underscore', 'quoteleft',
-      'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n',
-      'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', 'braceleft',
-      'bar', 'braceright', 'asciitilde',,, 'exclamdown', 'cent', 'sterling',
-      'fraction', 'yen', 'florin', 'section', 'currency', 'quotesingle',
-      'quotedblleft', 'guillemotleft', 'guilsinglleft', 'guilsinglright', 'fi',
-      'fl',, 'endash', 'dagger', 'daggerdbl', 'periodcentered',, 'paragraph',
-      'bullet', 'quotesinglbase', 'quotedblbase', 'quotedblright',
-      'guillemotright', 'ellipsis', 'perthousand',, 'questiondown',, 'grave',
-      'acute', 'circumflex', 'tilde', 'macron', 'breve', 'dotaccent',
-      'dieresis',, 'ring', 'cedilla',, 'hungarumlaut', 'ogonek', 'caron',
-      'emdash',,,,,,,,,,,,,,,,, 'AE',, 'ordfeminine',,,,, 'Lslash', 'Oslash',
-      'OE', 'ordmasculine',,,,,, 'ae',,,, 'dotlessi',,, 'lslash', 'oslash',
-      'oe', 'germandbls'
+    return shadow(this, 'StandardEncoding', ['', '', '', '', '', '', '', '',
+      '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '',
+      '', '', '', '', '', '', 'space', 'exclam', 'quotedbl', 'numbersign',
+      'dollar', 'percent', 'ampersand', 'quoteright', 'parenleft',
+      'parenright', 'asterisk', 'plus', 'comma', 'hyphen', 'period', 'slash',
+      'zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight',
+      'nine', 'colon', 'semicolon', 'less', 'equal', 'greater', 'question',
+      'at', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
+      'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
+      'bracketleft', 'backslash', 'bracketright', 'asciicircum', 'underscore',
+      'quoteleft', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l',
+      'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
+      'braceleft', 'bar', 'braceright', 'asciitilde', '', '', 'exclamdown',
+      'cent', 'sterling', 'fraction', 'yen', 'florin', 'section', 'currency',
+      'quotesingle', 'quotedblleft', 'guillemotleft', 'guilsinglleft',
+      'guilsinglright', 'fi', 'fl', '', 'endash', 'dagger', 'daggerdbl',
+      'periodcentered', '', 'paragraph', 'bullet', 'quotesinglbase',
+      'quotedblbase', 'quotedblright', 'guillemotright', 'ellipsis',
+      'perthousand', '', 'questiondown', '', 'grave', 'acute', 'circumflex',
+      'tilde', 'macron', 'breve', 'dotaccent', 'dieresis', '', 'ring',
+      'cedilla', '', 'hungarumlaut', 'ogonek', 'caron', 'emdash', '', '', '',
+      '', '', '', '', '', '', '', '', '', '', '', '', '', 'AE', '',
+      'ordfeminine', '', '', '', '', 'Lslash', 'Oslash', 'OE', 'ordmasculine',
+      '', '', '', '', '', 'ae', '', '', '', 'dotlessi', '', '', 'lslash',
+      'oslash', 'oe', 'germandbls'
     ]);
   },
   get WinAnsiEncoding() {
-    return shadow(this, 'WinAnsiEncoding',
-     [,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
-      'space', 'exclam', 'quotedbl', 'numbersign', 'dollar', 'percent',
-      'ampersand', 'quotesingle', 'parenleft', 'parenright', 'asterisk',
-      'plus', 'comma', 'hyphen', 'period', 'slash', 'zero', 'one', 'two',
-      'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'colon',
-      'semicolon', 'less', 'equal', 'greater', 'question', 'at', 'A', 'B', 'C',
-      'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q',
-      'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', 'bracketleft', 'backslash',
-      'bracketright', 'asciicircum', 'underscore', 'grave', 'a', 'b', 'c', 'd',
-      'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r',
-      's', 't', 'u', 'v', 'w', 'x', 'y', 'z', 'braceleft', 'bar', 'braceright',
-      'asciitilde', 'bullet', 'Euro', 'bullet', 'quotesinglbase', 'florin',
-      'quotedblbase', 'ellipsis', 'dagger', 'daggerdbl', 'circumflex',
-      'perthousand', 'Scaron', 'guilsinglleft', 'OE', 'bullet', 'Zcaron',
-      'bullet', 'bullet', 'quoteleft', 'quoteright', 'quotedblleft',
-      'quotedblright', 'bullet', 'endash', 'emdash', 'tilde', 'trademark',
-      'scaron', 'guilsinglright', 'oe', 'bullet', 'zcaron', 'Ydieresis',
-      'space', 'exclamdown', 'cent', 'sterling', 'currency', 'yen', 'brokenbar',
-      'section', 'dieresis', 'copyright', 'ordfeminine', 'guillemotleft',
-      'logicalnot', 'hyphen', 'registered', 'macron', 'degree', 'plusminus',
-      'twosuperior', 'threesuperior', 'acute', 'mu', 'paragraph',
-      'periodcentered', 'cedilla', 'onesuperior', 'ordmasculine',
-      'guillemotright', 'onequarter', 'onehalf', 'threequarters',
-      'questiondown', 'Agrave', 'Aacute', 'Acircumflex', 'Atilde', 'Adieresis',
-      'Aring', 'AE', 'Ccedilla', 'Egrave', 'Eacute', 'Ecircumflex',
-      'Edieresis', 'Igrave', 'Iacute', 'Icircumflex', 'Idieresis', 'Eth',
-      'Ntilde', 'Ograve', 'Oacute', 'Ocircumflex', 'Otilde', 'Odieresis',
-      'multiply', 'Oslash', 'Ugrave', 'Uacute', 'Ucircumflex', 'Udieresis',
-      'Yacute', 'Thorn', 'germandbls', 'agrave', 'aacute', 'acircumflex',
-      'atilde', 'adieresis', 'aring', 'ae', 'ccedilla', 'egrave', 'eacute',
-      'ecircumflex', 'edieresis', 'igrave', 'iacute', 'icircumflex',
-      'idieresis', 'eth', 'ntilde', 'ograve', 'oacute', 'ocircumflex',
-      'otilde', 'odieresis', 'divide', 'oslash', 'ugrave', 'uacute',
-      'ucircumflex', 'udieresis', 'yacute', 'thorn', 'ydieresis'
+    return shadow(this, 'WinAnsiEncoding', ['', '', '', '', '', '', '', '', '',
+      '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '',
+      '', '', '', '', '', 'space', 'exclam', 'quotedbl', 'numbersign',
+      'dollar', 'percent', 'ampersand', 'quotesingle', 'parenleft',
+      'parenright', 'asterisk', 'plus', 'comma', 'hyphen', 'period', 'slash',
+      'zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight',
+      'nine', 'colon', 'semicolon', 'less', 'equal', 'greater', 'question',
+      'at', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
+      'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
+      'bracketleft', 'backslash', 'bracketright', 'asciicircum', 'underscore',
+      'grave', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm',
+      'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
+      'braceleft', 'bar', 'braceright', 'asciitilde', 'bullet', 'Euro',
+      'bullet', 'quotesinglbase', 'florin', 'quotedblbase', 'ellipsis',
+      'dagger', 'daggerdbl', 'circumflex', 'perthousand', 'Scaron',
+      'guilsinglleft', 'OE', 'bullet', 'Zcaron', 'bullet', 'bullet',
+      'quoteleft', 'quoteright', 'quotedblleft', 'quotedblright', 'bullet',
+      'endash', 'emdash', 'tilde', 'trademark', 'scaron', 'guilsinglright',
+      'oe', 'bullet', 'zcaron', 'Ydieresis', 'space', 'exclamdown', 'cent',
+      'sterling', 'currency', 'yen', 'brokenbar', 'section', 'dieresis',
+      'copyright', 'ordfeminine', 'guillemotleft', 'logicalnot', 'hyphen',
+      'registered', 'macron', 'degree', 'plusminus', 'twosuperior',
+      'threesuperior', 'acute', 'mu', 'paragraph', 'periodcentered',
+      'cedilla', 'onesuperior', 'ordmasculine', 'guillemotright', 'onequarter',
+      'onehalf', 'threequarters', 'questiondown', 'Agrave', 'Aacute',
+      'Acircumflex', 'Atilde', 'Adieresis', 'Aring', 'AE', 'Ccedilla',
+      'Egrave', 'Eacute', 'Ecircumflex', 'Edieresis', 'Igrave', 'Iacute',
+      'Icircumflex', 'Idieresis', 'Eth', 'Ntilde', 'Ograve', 'Oacute',
+      'Ocircumflex', 'Otilde', 'Odieresis', 'multiply', 'Oslash', 'Ugrave',
+      'Uacute', 'Ucircumflex', 'Udieresis', 'Yacute', 'Thorn', 'germandbls',
+      'agrave', 'aacute', 'acircumflex', 'atilde', 'adieresis', 'aring', 'ae',
+      'ccedilla', 'egrave', 'eacute', 'ecircumflex', 'edieresis', 'igrave',
+      'iacute', 'icircumflex', 'idieresis', 'eth', 'ntilde', 'ograve',
+      'oacute', 'ocircumflex', 'otilde', 'odieresis', 'divide', 'oslash',
+      'ugrave', 'uacute', 'ucircumflex', 'udieresis', 'yacute', 'thorn',
+      'ydieresis'
     ]);
   },
   get symbolsEncoding() {
-    return shadow(this, 'symbolsEncoding',
-      [,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
-      'space', 'exclam', 'universal', 'numbersign', 'existential', 'percent',
-      'ampersand', 'suchthat', 'parenleft', 'parenright', 'asteriskmath',
-      'plus', 'comma', 'minus', 'period', 'slash', 'zero', 'one', 'two',
-      'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'colon',
-      'semicolon', 'less', 'equal', 'greater', 'question', 'congruent',
-      'Alpha', 'Beta', 'Chi', 'Delta', 'Epsilon', 'Phi', 'Gamma', 'Eta',
-      'Iota', 'theta1', 'Kappa', 'Lambda', 'Mu', 'Nu', 'Omicron', 'Pi',
-      'Theta', 'Rho', 'Sigma', 'Tau', 'Upsilon', 'sigma1', 'Omega', 'Xi',
-      'Psi', 'Zeta', 'bracketleft', 'therefore', 'bracketright',
+    return shadow(this, 'symbolsEncoding', ['', '', '', '', '', '', '', '', '',
+      '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '',
+      '', '', '', '', '', 'space', 'exclam', 'universal', 'numbersign',
+      'existential', 'percent', 'ampersand', 'suchthat', 'parenleft',
+      'parenright', 'asteriskmath', 'plus', 'comma', 'minus', 'period',
+      'slash', 'zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven',
+      'eight', 'nine', 'colon', 'semicolon', 'less', 'equal', 'greater',
+      'question', 'congruent', 'Alpha', 'Beta', 'Chi', 'Delta', 'Epsilon',
+      'Phi', 'Gamma', 'Eta', 'Iota', 'theta1', 'Kappa', 'Lambda', 'Mu', 'Nu',
+      'Omicron', 'Pi', 'Theta', 'Rho', 'Sigma', 'Tau', 'Upsilon', 'sigma1',
+      'Omega', 'Xi', 'Psi', 'Zeta', 'bracketleft', 'therefore', 'bracketright',
       'perpendicular', 'underscore', 'radicalex', 'alpha', 'beta', 'chi',
       'delta', 'epsilon', 'phi', 'gamma', 'eta', 'iota', 'phi1', 'kappa',
       'lambda', 'mu', 'nu', 'omicron', 'pi', 'theta', 'rho', 'sigma', 'tau',
       'upsilon', 'omega1', 'omega', 'xi', 'psi', 'zeta', 'braceleft', 'bar',
-      'braceright', 'similar',,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,, 'Euro',
-      'Upsilon1', 'minute', 'lessequal', 'fraction', 'infinity', 'florin',
-      'club', 'diamond', 'heart', 'spade', 'arrowboth', 'arrowleft', 'arrowup',
-      'arrowright', 'arrowdown', 'degree', 'plusminus', 'second',
-      'greaterequal', 'multiply', 'proportional', 'partialdiff', 'bullet',
-      'divide', 'notequal', 'equivalence', 'approxequal', 'ellipsis',
+      'braceright', 'similar', '', '', '', '', '', '', '', '', '', '', '', '',
+      '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '',
+      '', '', '', 'Euro', 'Upsilon1', 'minute', 'lessequal', 'fraction',
+      'infinity', 'florin', 'club', 'diamond', 'heart', 'spade', 'arrowboth',
+      'arrowleft', 'arrowup', 'arrowright', 'arrowdown', 'degree', 'plusminus',
+      'second', 'greaterequal', 'multiply', 'proportional', 'partialdiff',
+      'bullet', 'divide', 'notequal', 'equivalence', 'approxequal', 'ellipsis',
       'arrowvertex', 'arrowhorizex', 'carriagereturn', 'aleph', 'Ifraktur',
       'Rfraktur', 'weierstrass', 'circlemultiply', 'circleplus', 'emptyset',
       'intersection', 'union', 'propersuperset', 'reflexsuperset', 'notsubset',
@@ -3948,36 +3989,39 @@ var Encodings = {
       'arrowdbldown', 'lozenge', 'angleleft', 'registersans', 'copyrightsans',
       'trademarksans', 'summation', 'parenlefttp', 'parenleftex',
       'parenleftbt', 'bracketlefttp', 'bracketleftex', 'bracketleftbt',
-      'bracelefttp', 'braceleftmid', 'braceleftbt', 'braceex',, 'angleright',
-      'integral', 'integraltp', 'integralex', 'integralbt', 'parenrighttp',
-      'parenrightex', 'parenrightbt', 'bracketrighttp', 'bracketrightex',
-      'bracketrightbt', 'bracerighttp', 'bracerightmid', 'bracerightbt'
+      'bracelefttp', 'braceleftmid', 'braceleftbt', 'braceex', '',
+      'angleright', 'integral', 'integraltp', 'integralex', 'integralbt',
+      'parenrighttp', 'parenrightex', 'parenrightbt', 'bracketrighttp',
+      'bracketrightex', 'bracketrightbt', 'bracerighttp', 'bracerightmid',
+      'bracerightbt'
     ]);
   },
   get zapfDingbatsEncoding() {
-    return shadow(this, 'zapfDingbatsEncoding',
-      [,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
-      'space', 'a1', 'a2', 'a202', 'a3', 'a4', 'a5', 'a119', 'a118', 'a117',
-      'a11', 'a12', 'a13', 'a14', 'a15', 'a16', 'a105', 'a17', 'a18', 'a19',
-      'a20', 'a21', 'a22', 'a23', 'a24', 'a25', 'a26', 'a27', 'a28', 'a6',
-      'a7', 'a8', 'a9', 'a10', 'a29', 'a30', 'a31', 'a32', 'a33', 'a34', 'a35',
-      'a36', 'a37', 'a38', 'a39', 'a40', 'a41', 'a42', 'a43', 'a44', 'a45',
-      'a46', 'a47', 'a48', 'a49', 'a50', 'a51', 'a52', 'a53', 'a54', 'a55',
-      'a56', 'a57', 'a58', 'a59', 'a60', 'a61', 'a62', 'a63', 'a64', 'a65',
-      'a66', 'a67', 'a68', 'a69', 'a70', 'a71', 'a72', 'a73', 'a74', 'a203',
-      'a75', 'a204', 'a76', 'a77', 'a78', 'a79', 'a81', 'a82', 'a83', 'a84',
-      'a97', 'a98', 'a99', 'a100',,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,, 'a101',
-      'a102', 'a103', 'a104', 'a106', 'a107', 'a108', 'a112', 'a111', 'a110',
-      'a109', 'a120', 'a121', 'a122', 'a123', 'a124', 'a125', 'a126', 'a127',
-      'a128', 'a129', 'a130', 'a131', 'a132', 'a133', 'a134', 'a135', 'a136',
-      'a137', 'a138', 'a139', 'a140', 'a141', 'a142', 'a143', 'a144', 'a145',
-      'a146', 'a147', 'a148', 'a149', 'a150', 'a151', 'a152', 'a153', 'a154',
-      'a155', 'a156', 'a157', 'a158', 'a159', 'a160', 'a161', 'a163', 'a164',
-      'a196', 'a165', 'a192', 'a166', 'a167', 'a168', 'a169', 'a170', 'a171',
-      'a172', 'a173', 'a162', 'a174', 'a175', 'a176', 'a177', 'a178', 'a179',
-      'a193', 'a180', 'a199', 'a181', 'a200', 'a182',, 'a201', 'a183', 'a184',
-      'a197', 'a185', 'a194', 'a198', 'a186', 'a195', 'a187', 'a188', 'a189',
-      'a190', 'a191'
+    return shadow(this, 'zapfDingbatsEncoding', ['', '', '', '', '', '', '',
+      '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '',
+      '', '', '', '', '', '', '', 'space', 'a1', 'a2', 'a202', 'a3', 'a4',
+      'a5', 'a119', 'a118', 'a117', 'a11', 'a12', 'a13', 'a14', 'a15', 'a16',
+      'a105', 'a17', 'a18', 'a19', 'a20', 'a21', 'a22', 'a23', 'a24', 'a25',
+      'a26', 'a27', 'a28', 'a6', 'a7', 'a8', 'a9', 'a10', 'a29', 'a30', 'a31',
+      'a32', 'a33', 'a34', 'a35', 'a36', 'a37', 'a38', 'a39', 'a40', 'a41',
+      'a42', 'a43', 'a44', 'a45', 'a46', 'a47', 'a48', 'a49', 'a50', 'a51',
+      'a52', 'a53', 'a54', 'a55', 'a56', 'a57', 'a58', 'a59', 'a60', 'a61',
+      'a62', 'a63', 'a64', 'a65', 'a66', 'a67', 'a68', 'a69', 'a70', 'a71',
+      'a72', 'a73', 'a74', 'a203', 'a75', 'a204', 'a76', 'a77', 'a78', 'a79',
+      'a81', 'a82', 'a83', 'a84', 'a97', 'a98', 'a99', 'a100', '', '', '', '',
+      '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '',
+      '', '', '', '', '', '', '', '', '', '', '', '', 'a101', 'a102', 'a103',
+      'a104', 'a106', 'a107', 'a108', 'a112', 'a111', 'a110', 'a109', 'a120',
+      'a121', 'a122', 'a123', 'a124', 'a125', 'a126', 'a127', 'a128', 'a129',
+      'a130', 'a131', 'a132', 'a133', 'a134', 'a135', 'a136', 'a137', 'a138',
+      'a139', 'a140', 'a141', 'a142', 'a143', 'a144', 'a145', 'a146', 'a147',
+      'a148', 'a149', 'a150', 'a151', 'a152', 'a153', 'a154', 'a155', 'a156',
+      'a157', 'a158', 'a159', 'a160', 'a161', 'a163', 'a164', 'a196', 'a165',
+      'a192', 'a166', 'a167', 'a168', 'a169', 'a170', 'a171', 'a172', 'a173',
+      'a162', 'a174', 'a175', 'a176', 'a177', 'a178', 'a179', 'a193', 'a180',
+      'a199', 'a181', 'a200', 'a182', '', 'a201', 'a183', 'a184', 'a197',
+      'a185', 'a194', 'a198', 'a186', 'a195', 'a187', 'a188', 'a189', 'a190',
+      'a191'
     ]);
   }
 };
@@ -4111,7 +4155,7 @@ var PartialEvaluator = (function() {
   };
 
   constructor.prototype = {
-    eval: function(stream, xref, resources, fonts, images) {
+    evaluate: function(stream, xref, resources, fonts, images) {
       resources = xref.fetchIfRef(resources) || new Dict();
       var xobjs = xref.fetchIfRef(resources.get('XObject')) || new Dict();
       var patterns = xref.fetchIfRef(resources.get('Pattern')) || new Dict();
@@ -4135,8 +4179,9 @@ var PartialEvaluator = (function() {
                 var dict = IsStream(pattern) ? pattern.dict : pattern;
                 var typeNum = dict.get('PatternType');
                 if (typeNum == 1) {
-                  patternName.code = this.eval(pattern, xref,
-                      dict.get('Resources'), fonts);
+                  patternName.code = this.evaluate(pattern, xref,
+                                                   dict.get('Resources'),
+                                                   fonts);
                 }
               }
             }
@@ -4155,8 +4200,9 @@ var PartialEvaluator = (function() {
               );
 
               if ('Form' == type.name) {
-                args[0].code = this.eval(xobj, xref, xobj.dict.get('Resources'),
-                                         fonts, images);
+                args[0].code = this.evaluate(xobj, xref,
+                                             xobj.dict.get('Resources'), fonts,
+                                             images);
               }
               if (xobj instanceof JpegStream)
                 images.bind(xobj); // monitoring image load
@@ -4194,7 +4240,7 @@ var PartialEvaluator = (function() {
     },
 
     extractEncoding: function(dict, xref, properties) {
-      var type = properties.type;
+      var type = properties.type, encoding;
       if (properties.composite) {
         if (type == 'CIDFontType2') {
           var defaultWidth = xref.fetchIfRef(dict.get('DW')) || 1000;
@@ -4231,7 +4277,7 @@ var PartialEvaluator = (function() {
           var glyphsData = glyphsStream.getBytes(0);
 
           // Glyph ids are big-endian 2-byte values
-          var encoding = properties.encoding;
+          encoding = properties.encoding;
 
           // Set encoding 0 to later verify the font has an encoding
           encoding[0] = { unicode: 0, width: 0 };
@@ -4248,7 +4294,7 @@ var PartialEvaluator = (function() {
             };
           }
         } else if (type == 'CIDFontType0') {
-          var encoding = xref.fetchIfRef(dict.get('Encoding'));
+          encoding = xref.fetchIfRef(dict.get('Encoding'));
           if (IsName(encoding)) {
             // Encoding is a predefined CMap
             if (encoding.name == 'Identity-H') {
@@ -4269,7 +4315,7 @@ var PartialEvaluator = (function() {
       var map = properties.encoding;
       var baseEncoding = null;
       if (dict.has('Encoding')) {
-        var encoding = xref.fetchIfRef(dict.get('Encoding'));
+        encoding = xref.fetchIfRef(dict.get('Encoding'));
         if (IsDict(encoding)) {
           var baseName = encoding.get('BaseEncoding');
           if (baseName)
@@ -4333,7 +4379,10 @@ var PartialEvaluator = (function() {
       }
 
       if (type == 'TrueType' && dict.has('ToUnicode') && differences) {
-        var cmapObj = xref.fetchIfRef(dict.get('ToUnicode'));
+        var cmapObj = dict.get('ToUnicode');
+        if (IsRef(cmapObj)) {
+          cmapObj = xref.fetch(cmapObj, true);
+        }
         if (IsName(cmapObj)) {
           error('ToUnicode file cmap translation not implemented');
         } else if (IsStream(cmapObj)) {
@@ -4653,7 +4702,7 @@ var CanvasGraphics = (function() {
 
     compile: function(stream, xref, resources, fonts, images) {
       var pe = new PartialEvaluator();
-      return pe.eval(stream, xref, resources, fonts, images);
+      return pe.evaluate(stream, xref, resources, fonts, images);
     },
 
     execute: function(code, xref, resources) {
@@ -4692,13 +4741,13 @@ var CanvasGraphics = (function() {
       this.ctx.mozDashOffset = dashPhase;
     },
     setRenderingIntent: function(intent) {
-      TODO('set rendering intent');
+      TODO('set rendering intent: ' + intent);
     },
     setFlatness: function(flatness) {
-      TODO('set flatness');
+      TODO('set flatness: ' + flatness);
     },
     setGState: function(dictName) {
-      TODO('set graphics state from dict');
+      TODO('set graphics state from dict: ' + dictName);
     },
     save: function() {
       this.ctx.save();
@@ -4893,10 +4942,10 @@ var CanvasGraphics = (function() {
       }
     },
     setTextRenderingMode: function(mode) {
-      TODO('text rendering mode');
+      TODO('text rendering mode: ' + mode);
     },
     setTextRise: function(rise) {
-      TODO('text rise');
+      TODO('text rise: ' + rise);
     },
     moveText: function(x, y) {
       this.current.x = this.current.lineX += x;
@@ -4999,10 +5048,13 @@ var CanvasGraphics = (function() {
 
     // Type3 fonts
     setCharWidth: function(xWidth, yWidth) {
-      TODO("type 3 fonts ('d0' operator)");
+      TODO('type 3 fonts ("d0" operator) xWidth: ' + xWidth + ' yWidth: ' +
+           yWidth);
     },
     setCharWidthAndBounds: function(xWidth, yWidth, llx, lly, urx, ury) {
-      TODO("type 3 fonts ('d1' operator)");
+      TODO('type 3 fonts ("d1" operator) xWidth: ' + xWidth + ' yWidth: ' +
+           yWidth + ' llx: ' + llx + ' lly: ' + lly + ' urx: ' + urx +
+           ' ury ' + ury);
     },
 
     // Color
@@ -5401,7 +5453,6 @@ var ColorSpace = (function() {
         var lookup = xref.fetchIfRef(cs[3]);
         return new IndexedCS(base, hiVal, lookup);
       case 'Separation':
-        var name = cs[1];
         var alt = ColorSpace.parse(cs[2], xref, res);
         var tintFn = new PDFFunction(xref, xref.fetchIfRef(cs[3]));
         return new SeparationCS(alt, tintFn);
@@ -5439,12 +5490,12 @@ var SeparationCS = (function() {
       var base = this.base;
       var scale = 1 / ((1 << bits) - 1);
 
-      var length = 3 * input.length;
+      var length = input.length;
       var pos = 0;
 
       var numComps = base.numComps;
-      var baseBuf = new Uint8Array(numComps * input.length);
-      for (var i = 0, ii = input.length; i < ii; ++i) {
+      var baseBuf = new Uint8Array(numComps * length);
+      for (var i = 0; i < length; ++i) {
         var scaled = input[i] * scale;
         var tinted = tintFn.func([scaled]);
         for (var j = 0; j < numComps; ++j)
@@ -5750,8 +5801,6 @@ var DummyShading = (function() {
 var RadialAxialShading = (function() {
   function constructor(dict, matrix, xref, res, ctx) {
     this.matrix = matrix;
-    var bbox = dict.get('BBox');
-    var background = dict.get('Background');
     this.coordsArr = dict.get('Coords');
     this.shadingType = dict.get('ShadingType');
     this.type = 'Pattern';
@@ -5809,15 +5858,17 @@ var RadialAxialShading = (function() {
     getPattern: function() {
       var coordsArr = this.coordsArr;
       var type = this.shadingType;
+      var p0, p1, r0, r1;
       if (type == 2) {
-        var p0 = [coordsArr[0], coordsArr[1]];
-        var p1 = [coordsArr[2], coordsArr[3]];
+        p0 = [coordsArr[0], coordsArr[1]];
+        p1 = [coordsArr[2], coordsArr[3]];
       } else if (type == 3) {
-        var p0 = [coordsArr[0], coordsArr[1]];
-        var p1 = [coordsArr[3], coordsArr[4]];
-        var r0 = coordsArr[2], r1 = coordsArr[5];
+        p0 = [coordsArr[0], coordsArr[1]];
+        p1 = [coordsArr[3], coordsArr[4]];
+        r0 = coordsArr[2];
+        r1 = coordsArr[5];
       } else {
-        error();
+        error('getPattern type unknown: ' + type);
       }
 
       var matrix = this.matrix;
@@ -5840,11 +5891,11 @@ var RadialAxialShading = (function() {
         p1 = Util.applyTransform(p1, userMatrix);
       }
 
-      var colorStops = this.colorStops;
+      var colorStops = this.colorStops, grad;
       if (type == 2)
-        var grad = ctx.createLinearGradient(p0[0], p0[1], p1[0], p1[1]);
+        grad = ctx.createLinearGradient(p0[0], p0[1], p1[0], p1[1]);
       else if (type == 3)
-        var grad = ctx.createRadialGradient(p0[0], p0[1], r0, p1[0], p1[1], r1);
+        grad = ctx.createRadialGradient(p0[0], p0[1], r0, p1[0], p1[1], r1);
 
       for (var i = 0, ii = colorStops.length; i < ii; ++i) {
         var c = colorStops[i];
@@ -6035,6 +6086,7 @@ var PDFImage = (function() {
       var bufferPos = 0;
       var output = bpc <= 8 ? new Uint8Array(length) :
         bpc <= 16 ? new Uint16Array(length) : new Uint32Array(length);
+      var rowComps = width * numComps;
 
       if (bpc == 1) {
         var valueZero = 0, valueOne = 1;
@@ -6042,7 +6094,6 @@ var PDFImage = (function() {
           valueZero = decodeMap[0] ? 1 : 0;
           valueOne = decodeMap[1] ? 1 : 0;
         }
-        var rowComps = width * numComps;
         var mask = 0;
         var buf = 0;
 
@@ -6064,8 +6115,7 @@ var PDFImage = (function() {
       } else {
         if (decodeMap != null)
           TODO('interpolate component values');
-        var rowComps = width * numComps;
-        var bits, buf;
+        var bits = 0, buf = 0;
         for (var i = 0, ii = length; i < ii; ++i) {
           if (i % rowComps == 0) {
             buf = 0;
@@ -6270,14 +6320,14 @@ var PDFFunction = (function() {
         floor *= outputSize;
         ceil *= outputSize;
 
-        var output = [];
+        var output = [], v = 0;
         for (var i = 0; i < outputSize; ++i) {
           if (ceil == floor) {
-            var v = samples[ceil + i];
+            v = samples[ceil + i];
           } else {
             var low = samples[floor + i];
             var high = samples[ceil + i];
-            var v = low * scale + high * (1 - scale);
+            v = low * scale + high * (1 - scale);
           }
 
           var i2 = i * 2;
