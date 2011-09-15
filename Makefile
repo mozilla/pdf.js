@@ -55,30 +55,30 @@ browser-test:
 	--browserManifestFile=$(PDF_BROWSERS) \
 	--manifestFile=$(PDF_TESTS)
 
-# make shell-test
-#
-# This target runs all of the tests that can be run in a JS shell.
-# The shell used is taken from the JS_SHELL environment variable. If
-# that variable is not defined, the script will attempt to use the copy
-# of Rhino that comes with the Closure compiler used for producing the
-# website.
-SHELL_TARGET = $(NULL)
-ifeq ($(JS_SHELL),)
-JS_SHELL := "java -cp $(BUILD_DIR)/compiler.jar"
-JS_SHELL += "com.google.javascript.jscomp.mozilla.rhino.tools.shell.Main"
-SHELL_TARGET = compiler
-endif
-
-shell-test: shell-msg $(SHELL_TARGET) font-test
-shell-msg:
-ifeq ($(SHELL_TARGET), compiler)
-	@echo "No JS_SHELL env variable present."
-	@echo "The default is to find a copy of Rhino and try that."
-endif
-	@echo "JS shell command is: $(JS_SHELL)"
-
-font-test:
-	@echo "font test stub."
+# # make shell-test
+# #
+# # This target runs all of the tests that can be run in a JS shell.
+# # The shell used is taken from the JS_SHELL environment variable. If
+# # that variable is not defined, the script will attempt to use the copy
+# # of Rhino that comes with the Closure compiler used for producing the
+# # website.
+# SHELL_TARGET = $(NULL)
+# ifeq ($(JS_SHELL),)
+# JS_SHELL := "java -cp $(BUILD_DIR)/compiler.jar"
+# JS_SHELL += "com.google.javascript.jscomp.mozilla.rhino.tools.shell.Main"
+# SHELL_TARGET = compiler
+# endif
+# 
+# shell-test: shell-msg $(SHELL_TARGET) font-test
+# shell-msg:
+# ifeq ($(SHELL_TARGET), compiler)
+#   @echo "No JS_SHELL env variable present."
+#   @echo "The default is to find a copy of Rhino and try that."
+# endif
+#   @echo "JS shell command is: $(JS_SHELL)"
+# 
+# font-test:
+#   @echo "font test stub."
 
 # make lint
 #
@@ -133,18 +133,18 @@ $(GH_PAGES)/web/%: web/%
 $(GH_PAGES)/web/images/%: web/images/%
 	@cp $< $@
 
-# make compiler
-#
-# This target downloads the Closure compiler, and places it in the
-# build directory. This target is also useful when the user doesn't
-# have a JS shell available--we can have them use the Rhino shell that
-# comes with Closure.
-COMPILER_URL = http://closure-compiler.googlecode.com/files/compiler-latest.zip
-
-compiler: $(BUILD_DIR)/compiler.zip
-$(BUILD_DIR)/compiler.zip: | $(BUILD_DIR)
-	curl $(COMPILER_URL) > $(BUILD_DIR)/compiler.zip;
-	cd $(BUILD_DIR); unzip compiler.zip compiler.jar;
+# # make compiler
+# #
+# # This target downloads the Closure compiler, and places it in the
+# # build directory. This target is also useful when the user doesn't
+# # have a JS shell available--we can have them use the Rhino shell that
+# # comes with Closure.
+# COMPILER_URL = http://closure-compiler.googlecode.com/files/compiler-latest.zip
+# 
+# compiler: $(BUILD_DIR)/compiler.zip
+# $(BUILD_DIR)/compiler.zip: | $(BUILD_DIR)
+#   curl $(COMPILER_URL) > $(BUILD_DIR)/compiler.zip;
+#   cd $(BUILD_DIR); unzip compiler.zip compiler.jar;
 
 # make firefox-extension
 #
