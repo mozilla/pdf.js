@@ -4349,13 +4349,15 @@ var PartialEvaluator = (function() {
                       font.translated.file,
                       font.translated.properties
                   ]);
-
-                  // Ensure the font is ready before the font is set
-                  // and later on used for drawing.
-                  insertDependency([loadedName]);
                 }
               }
               args[0].name = font.translated.properties.loadedName;
+              
+              // Ensure the font is ready before the font is set
+              // and later on used for drawing.
+              // TODO: This should get insert to the IRQueue only once per
+              // page.
+              insertDependency([font.translated.properties.loadedName]);
             } else {
               // TODO: TOASK: Is it possible to get here? If so, what does
               // args[0].name should be like???
