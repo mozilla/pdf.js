@@ -1291,6 +1291,10 @@ var Font = (function Font() {
                  window.btoa(data) + ');');
       var rule = "@font-face { font-family:'" + fontName + "';src:" + url + '}';
       var styleSheet = document.styleSheets[0];
+      if (!styleSheet) {
+        document.documentElement.firstChild.appendChild( document.createElement('style') );
+        styleSheet = document.styleSheets[0];
+      }
       styleSheet.insertRule(rule, styleSheet.cssRules.length);
 
       return rule;
