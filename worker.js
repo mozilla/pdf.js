@@ -60,11 +60,14 @@ var WorkerPage = (function() {
 
 // This holds a list of objects the IR queue depends on.
 var Objects = {
+  hash: {},
+  
   getPromise: function(objId) {
-	  if (Objects[objId]) {
-	    return this[objId];
+    var hash = this.hash;
+	  if (hash[objId]) {
+	    return hash[objId];
 	  } else {
-	    return this[objId] = new Promise(objId);
+	    return hash[objId] = new Promise(objId);
 	  }
   },
   
@@ -74,20 +77,26 @@ var Objects = {
   },
 	
   resolve: function(objId, data) {
+    var hash = this.hash;
     // In case there is a promise already on this object, just resolve it.
-    if (Objects[objId]) {
-      Objects[objId].resolve(data);
+    if (hash[objId]) {
+      hash[objId].resolve(data);
     } else {
-      Objects[objId] = new Promise(objId, data);
+      hash[objId] = new Promise(objId, data);
     }
   },
 
   get: function(objId) {
-    var obj = Objects[objId];
+    var obj = this.hash[objId];
     if (!obj || !obj.isResolved) {
       throw "Requesting object that isn't resolved yet " + objId;
     }
     return obj.data;
+  },
+  
+  clear: function() {
+    delete this.hash;
+    this.hash = {};
   }
 };
 
@@ -154,6 +163,10 @@ var Promise = (function() {
 
 var WorkerPDFDoc = (function() {
   function constructor(data) {
+    // For now, as we create a new WorkerPDFDoc, we clear all objects.
+    // TODO: Have the objects per WorkerPDFDoc.
+    Objects.clear();
+    
     this.data = data;
     this.stream = new Stream(data);
     this.pdf = new PDFDoc(this.stream);

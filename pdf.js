@@ -5400,7 +5400,7 @@ var CanvasGraphics = (function() {
     },
 
     paintJpegXObject: function(objId, w, h) {
-      var image = Objects[objId].data;
+      var image = Objects.get(objId);
       if (!image) {
         error("Dependent image isn't ready yet");
       }

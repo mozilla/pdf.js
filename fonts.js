@@ -224,11 +224,15 @@ var FontLoader = {
     console.log("load font", objId);
     var encoding = fontObj.encoding;
     var testStr = "";
-    for (var enc in encoding) {
-      testStr += String.fromCharCode(encoding[enc].unicode);
-      if (testStr.length == 10) {
-        break;
-      }
+    // If the font has a encoding defined. If, use the characters of the
+    // encoding, otherwise use some dump string for testing.
+    if (Object.keys(encoding).length != 0) {
+      for (var enc in encoding) {
+        testStr += String.fromCharCode(encoding[enc].unicode);
+      }      
+    } else {
+      console.log("empty font.encoding");
+      testStr = "abcdefghiklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.-+='!";
     }
 
     var before = this.measure(fontObj, testStr);
