@@ -833,9 +833,11 @@ var Font = (function Font() {
         var data = file.getBytes(length);
         file.pos = previousPosition;
 
-        if (tag == 'head')
+        if (tag == 'head') {
           // clearing checksum adjustment
           data[8] = data[9] = data[10] = data[11] = 0;
+          data[17] |= 0x20; //Set font optimized for cleartype flag
+        }
 
         return {
           tag: tag,
@@ -1008,7 +1010,7 @@ var Font = (function Font() {
       var header = readOpenTypeHeader(font);
       var numTables = header.numTables;
 
-      var cmap, maxp, hhea, hmtx, vhea, vmtx;
+      var cmap, maxp, hhea, hmtx, vhea, vmtx, head;
       var tables = [];
       for (var i = 0; i < numTables; i++) {
         var table = readTableEntry(font);
@@ -1022,6 +1024,8 @@ var Font = (function Font() {
             hhea = table;
           else if (table.tag == 'hmtx')
             hmtx = table;
+          else if (table.tag == 'head')
+            head = table;
 
           requiredTables.splice(index, 1);
         } else {
@@ -1048,6 +1052,13 @@ var Font = (function Font() {
       createOpenTypeHeader(header.version, ttf, numTables);
 
       if (requiredTables.indexOf('OS/2') != -1) {
+        if (typeof(head) != 'undefined') {
+          var ymax = int16([head.data[42],head.data[43]]);
+          var ymin = int16([head.data[38],head.data[39]]) - 0x10000;   //always negative
+          properties.ascent = ymax;
+          properties.descent = ymin;
+        }
+
         tables.push({
           tag: 'OS/2',
           data: stringToArray(createOS2Table(properties))
