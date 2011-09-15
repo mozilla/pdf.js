@@ -6061,8 +6061,8 @@ var PDFImage = (function() {
 
     this.decode = dict.get('Decode', 'D');
 
-    var mask = xref.fetchIfRef(image.dict.get('Mask'));
-    var smask = xref.fetchIfRef(image.dict.get('SMask'));
+    var mask = xref.fetchIfRef(dict.get('Mask'));
+    var smask = xref.fetchIfRef(dict.get('SMask'));
 
     if (mask) {
       TODO('masked images');

@@ -25,3 +25,4 @@ var console = {
     this.log('Timer:', name, Date.now() - time);
   }
 };
+

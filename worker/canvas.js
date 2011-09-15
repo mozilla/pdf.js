@@ -39,7 +39,7 @@ function GradientProxy(cmdQueue, x0, y0, x1, y1) {
   cmdQueue.push(['$createLinearGradient', [x0, y0, x1, y1]]);
   this.addColorStop = function(i, rgba) {
     cmdQueue.push(['$addColorStop', [i, rgba]]);
-  }
+  };
 }
 
 // Really simple PatternProxy.
@@ -72,7 +72,7 @@ function CanvasProxy(width, height) {
       throw 'CanvasProxy can only provide a 2d context.';
     }
     return ctx;
-  }
+  };
 
   // Expose only the minimum of the canvas object - there is no dom to do
   // more here.
@@ -127,7 +127,7 @@ function CanvasProxy(width, height) {
     return function() {
       // console.log("funcCall", name)
       cmdQueue.push([name, Array.prototype.slice.call(arguments)]);
-    }
+    };
   }
   var name;
   for (var i = 0; i < ctxFunc.length; i++) {
@@ -139,11 +139,11 @@ function CanvasProxy(width, height) {
 
   ctx.createPattern = function(object, kind) {
     return new PatternProxy(cmdQueue, object, kind);
-  }
+  };
 
   ctx.createLinearGradient = function(x0, y0, x1, y1) {
     return new GradientProxy(cmdQueue, x0, y0, x1, y1);
-  }
+  };
 
   ctx.getImageData = function(x, y, w, h) {
     return {
@@ -151,11 +151,11 @@ function CanvasProxy(width, height) {
       height: h,
       data: Uint8ClampedArray(w * h * 4)
     };
-  }
+  };
 
   ctx.putImageData = function(data, x, y, width, height) {
     cmdQueue.push(['$putImageData', [data, x, y, width, height]]);
-  }
+  };
 
   ctx.drawImage = function(image, x, y, width, height,
                            sx, sy, swidth, sheight) {
@@ -168,7 +168,7 @@ function CanvasProxy(width, height) {
     } else {
       throw 'unkown type to drawImage';
     }
-  }
+  };
 
   // Setup property access to `ctx`.
   var ctxProp = {
@@ -195,14 +195,14 @@ function CanvasProxy(width, height) {
   function buildGetter(name) {
     return function() {
       return ctx['$' + name];
-    }
+    };
   }
 
   function buildSetter(name) {
     return function(value) {
       cmdQueue.push(['$', name, value]);
-      return ctx['$' + name] = value;
-    }
+      return (ctx['$' + name] = value);
+    };
   }
 
   // Setting the value to `stroke|fillStyle` needs special handling, as it
@@ -215,9 +215,9 @@ function CanvasProxy(width, height) {
         cmdQueue.push(['$' + name + 'Pattern', [value.id]]);
       } else {
         cmdQueue.push(['$', name, value]);
-        return ctx['$' + name] = value;
+        return (ctx['$' + name] = value);
       }
-    }
+    };
   }
 
   for (var name in ctxProp) {
