@@ -225,7 +225,7 @@ var FontLoader = {
     var encoding = fontObj.encoding;
     var testStr = "";
     for (var enc in encoding) {
-      testStr += String.fromCharCode(encoding[enc]);
+      testStr += String.fromCharCode(encoding[enc].unicode);
       if (testStr.length == 10) {
         break;
       }
