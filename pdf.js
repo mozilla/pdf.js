@@ -4506,7 +4506,7 @@ var PartialEvaluator = (function() {
           type: type.name,
           encoding: map,
           differences: [],
-          widths: widths,
+          widths: widths || {},
           defaultWidth: defaultWidth,
           firstChar: 0,
           lastChar: 256
