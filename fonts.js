@@ -221,6 +221,7 @@ var FontLoader = {
    * the font is loaded.
    */
   bind: function(objId, fontObj) {
+    console.log("load font", objId);
     var encoding = fontObj.encoding;
     var testStr = "";
     for (var enc in encoding) {
@@ -238,6 +239,7 @@ var FontLoader = {
       
       for (var i = 0; i < measure.length; i++) {
         if (measure[i] !== before[i]) {
+            console.log("loaded font", objId);
             Objects.resolve(objId);
             return;
         }        
