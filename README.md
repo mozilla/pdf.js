@@ -18,12 +18,16 @@ successful.
 
 ## Getting started
 
+**Online demo**
+
 For an online demo, visit:
 
   http://andreasgal.github.com/pdf.js/web/viewer.html
 
 This demo provides an interactive interface for displaying and browsing PDFs
 using the pdf.js API.
+
+**Hello world**
 
 For a "hello world" example, take a look at:
 
