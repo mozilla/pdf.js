@@ -182,7 +182,7 @@ var WorkerPDFDoc = (function() {
     var useWorker = true;
     
     if (useWorker) {
-      var worker = new Worker("../worker/boot_processor.js");
+      var worker = this.worker = new Worker("../worker/boot_processor.js");
     } else {
       // If we don't use a worker, just post/sendMessage to the main thread.
       var worker = {
@@ -262,6 +262,24 @@ var WorkerPDFDoc = (function() {
       
       var page = this.pdf.getPage(n);
       return this.pageCache[n] = new WorkerPage(this, page);
+    },
+    
+    destroy: function() {
+      console.log("destroy worker");
+      if (this.worker) {
+        this.worker.terminate();
+      }
+      if (this.fontWorker) {
+        this.fontWorker.terminate();
+      }
+      
+      for (var n in this.pageCache) {
+        delete this.pageCache[n];
+      }
+      delete this.data;
+      delete this.stream;
+      delete this.pdf;
+      delete this.catalog;
     }
   };
   

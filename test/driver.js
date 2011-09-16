@@ -50,6 +50,11 @@ function load() {
 window.onload = load;
 
 function nextTask() {
+  // If there is a pdfDoc on the last task executed, destroy it to free memory.
+  if (task && task.pdfDoc) {
+    task.pdfDoc.destroy();
+    delete task.pdfDoc;
+  }
   if (currentTaskIdx == manifest.length) {
     return done();
   }
