@@ -182,86 +182,9 @@ if (!isWorker) {
  * unicode characters. Therefore, the test string have to be build using the
  * encoding of the fontObj.
  */
-var FontLoader = {
-  scratchCtx: null,
-  loading: {},
-  
-  /**
-   * Create the canvas used for measuring the width of text.
-   */
-  setup: function() {
-    var canvas = document.createElement("canvas");
-    var ctx = canvas.getContext("2d");
-    this.ctx = ctx;
-  },
-  
-  /**
-   * Measures the width of some string using a fontObj and some different
-   * fallback fonts.
-   */
-  measure: function(fontObj, str) {
-    var ctx = this.ctx;
-    
-    // THe fonts used as fallback.
-    var fallbacks = [ "Arial", "Courier" ];
-    
-    var widths = [];
-    for (var n = 0; n < fallbacks.length; n++) {
-      // Choose a large font size as there are no sub-pixel returned from
-      // measureText.
-      var font = fontObj.getRule(420, fallbacks[n]);
-      ctx.font = font;
-      
-      widths.push(ctx.measureText(str).width);
-    }
-    return widths;
-  },
-  
-  /**
-   * Attaches a fontObj to the DOM and calls Objects.resolve(objId) once
-   * the font is loaded.
-   */
-  bind: function(objId, fontObj) {
-    this.loading[objId] = true;
-    var encoding = fontObj.encoding;
-    
-    // If the font has an encoding, build the test string based on it. If the
-    // font doesn't have an encoding, the font can't been used right now and
-    // we skip here.
-    if (fontObj.supported) {
-      var testStr = "";
-      for (var enc in encoding) {
-        testStr += String.fromCharCode(encoding[enc].unicode);
-      }      
-    } else {
-      // This font isn't fully supported yet. Resolve the object such that
-      // the execution continues but do nothing else.
-      Objects.resolve(objId);
-      return;
-    }
+ var FontLoader = {
+   listeningForFontLoad: false,
 
-    var before = this.measure(fontObj, testStr);
-    this.bindDOM(fontObj);
-
-    var check = function() {
-      var measure = this.measure(fontObj, testStr);
-      
-      for (var i = 0; i < measure.length; i++) {
-        if (measure[i] !== before[i]) {
-            console.log("loaded font", objId);
-            delete this.loading[objId];
-            Objects.resolve(objId);
-            return;
-        }        
-      }
-      
-      setTimeout(check, 0);
-    }.bind(this);
-    
-    // Start checking if font is loaded.
-    check();
-  },
- 
   /**
    * Attach the fontObj to the DOM.
    */
@@ -285,19 +208,159 @@ var FontLoader = {
     var styleSheet = document.styleSheets[0];
     styleSheet.insertRule(rule, styleSheet.cssRules.length);
     return rule;
-  }
-};
+  },
 
-if (!isWorker) {
-  FontLoader.setup();
-  
-  window.addEventListener(
-    'message',
-    function(e) {
-      FontLoader.fontLoadEvent(JSON.parse(e.data));
-    }.bind(this),
-  false);
-}
+  bind: function(fonts, callback) {
+     function checkFontsLoaded() {
+       for (var i = 0; i < objs.length; i++) {
+         var fontObj = objs[i];
+         if (fontObj.loading) {
+           return false;
+         }
+       }
+
+       document.documentElement.removeEventListener(
+         'pdfjsFontLoad', checkFontsLoaded, false);
+
+       callback();
+       return true;
+     }
+
+     var rules = [], names = [], objs = [];
+
+     for (var i = 0; i < fonts.length; i++) {
+       var font = fonts[i];
+       var obj = font;
+
+       objs.push(obj);
+
+       var str = '';
+       var rule = this.bindDOM(font);
+       if (rule) {
+         rules.push(rule);
+         names.push(obj.loadedName);
+       }
+     }
+
+     // console.log("bind", fonts, rules, names);
+
+     this.listeningForFontLoad = false;
+     if (!isWorker && rules.length) {
+       FontLoader.prepareFontLoadEvent(rules, names, objs);
+     }
+
+     if (!checkFontsLoaded()) {
+       document.documentElement.addEventListener(
+         'pdfjsFontLoad', checkFontsLoaded, false);
+     }
+
+     return objs;
+   },
+   // Set things up so that at least one pdfjsFontLoad event is
+   // dispatched when all the @font-face |rules| for |names| have been
+   // loaded in a subdocument.  It's expected that the load of |rules|
+   // has already started in this (outer) document, so that they should
+   // be ordered before the load in the subdocument.
+   prepareFontLoadEvent: function(rules, names, objs) {
+       /** Hack begin */
+       // There's no event when a font has finished downloading so the
+       // following code is a dirty hack to 'guess' when a font is
+       // ready.  This code will be obsoleted by Mozilla bug 471915.
+       //
+       // The only reliable way to know if a font is loaded in Gecko
+       // (at the moment) is document.onload in a document with
+       // a @font-face rule defined in a "static" stylesheet.  We use a
+       // subdocument in an <iframe>, set up properly, to know when
+       // our @font-face rule was loaded.  However, the subdocument and
+       // outer document can't share CSS rules, so the inner document
+       // is only part of the puzzle.  The second piece is an invisible
+       // div created in order to force loading of the @font-face in
+       // the *outer* document.  (The font still needs to be loaded for
+       // its metrics, for reflow).  We create the div first for the
+       // outer document, then create the iframe.  Unless something
+       // goes really wonkily, we expect the @font-face for the outer
+       // document to be processed before the inner.  That's still
+       // fragile, but seems to work in practice.
+       //
+       // The postMessage() hackery was added to work around chrome bug
+       // 82402.
+
+       var div = document.createElement('div');
+       div.setAttribute('style',
+                        'visibility: hidden;' +
+                        'width: 10px; height: 10px;' +
+                        'position: absolute; top: 0px; left: 0px;');
+       var html = '';
+       for (var i = 0; i < names.length; ++i) {
+         html += '<span style="font-family:' + names[i] + '">Hi</span>';
+       }
+       div.innerHTML = html;
+       document.body.appendChild(div);
+
+       if (!this.listeningForFontLoad) {
+         window.addEventListener(
+           'message',
+           function(e) {
+             var fontNames = JSON.parse(e.data);
+             for (var i = 0; i < objs.length; ++i) {
+               var font = objs[i];
+               font.loading = false;
+             }
+             var evt = document.createEvent('Events');
+             evt.initEvent('pdfjsFontLoad', true, false);
+             document.documentElement.dispatchEvent(evt);
+           },
+           false);
+         this.listeningForFontLoad = true;
+       }
+
+       // XXX we should have a time-out here too, and maybe fire
+       // pdfjsFontLoadFailed?
+       var src = '<!DOCTYPE HTML><html><head>';
+       src += '<style type="text/css">';
+       for (var i = 0; i < rules.length; ++i) {
+         src += rules[i];
+       }
+       src += '</style>';
+       src += '<script type="application/javascript">';
+       var fontNamesArray = '';
+       for (var i = 0; i < names.length; ++i) {
+         fontNamesArray += '"' + names[i] + '", ';
+       }
+       src += '  var fontNames=[' + fontNamesArray + '];\n';
+       src += '  window.onload = function () {\n';
+       // src += '    parent.postMessage(JSON.stringify(fontNames), "*");\n';
+       src += '  }';
+       src += '</script></head><body>';
+       for (var i = 0; i < names.length; ++i) {
+         src += '<p style="font-family:\'' + names[i] + '\'">Hi</p>';
+       }
+       src += '</body></html>';
+       var frame = document.createElement('iframe');
+       frame.src = 'data:text/html,' + src;
+       frame.setAttribute('style',
+                          'visibility: hidden;' +
+                          'width: 10px; height: 10px;' +
+                          'position: absolute; top: 0px; left: 0px;');
+       document.body.appendChild(frame);
+       frame.onload = function() {
+         Objects.resolve(names[0]);
+       }
+       /** Hack end */
+   }
+ };
+
+// if (!isWorker) {
+//   FontLoader.setup();
+//   
+//   window.addEventListener(
+//     'message',
+//     function(e) {
+//       console.log("msg!", e.data);
+//       Objects.resolve(e.data);
+//     }.bind(this),
+//   false);
+// }
 
 
 var UnicodeRanges = [

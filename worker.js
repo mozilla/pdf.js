@@ -229,7 +229,10 @@ var WorkerPDFDoc = (function() {
         Objects.resolve(objId, fontObj);
       } else {
         Objects.setData(objId, fontObj);
-        FontLoader.bind(objId, fontObj);
+        FontLoader.bind([fontObj], function() {
+          console.log("loaded", fontObj.loadedName);
+          Objects.resolve(objId);
+        });
       }
     });
     
