@@ -436,6 +436,7 @@ var Font = (function Font() {
       // name ArialBlack for example will be replaced by Helvetica.
       this.black = (name.search(/Black/g) != -1);
 
+      this.defaultWidth = properties.defaultWidth;
       this.loadedName = fontName.split('-')[0];
       this.loading = false;
       return;
