@@ -670,7 +670,9 @@ var Font = (function Font() {
                          format314);
   };
 
-  function createOS2Table(properties) {
+  function createOS2Table(properties, override) {
+    var override = override || {};
+
     var ulUnicodeRange1 = 0;
     var ulUnicodeRange2 = 0;
     var ulUnicodeRange3 = 0;
@@ -701,22 +703,19 @@ var Font = (function Font() {
       }
     }
 
-    var openTypeUnitsPerEm = (typeof (properties.openTypeUnitsPerEm) == 'undefined') ? kPDFGlyphSpaceUnits : properties.openTypeUnitsPerEm;
-    var typoAscent = properties.ascent;
-    var typoDescent = properties.descent;
-    var winAscent = typoAscent;
-    var winDescent = -typoDescent;
+    var unitsPerEm = override.unitsPerEm || kPDFGlyphSpaceUnits;
+    var typoAscent = override.ascent || properties.ascent;
+    var typoDescent = override.descent || properties.descent;
+    var winAscent = override.yMax || typoAscent;
+    var winDescent = -override.yMin || -typoDescent;
 
-    // if the font already has ascent and descent information then use these values
-    if (typeof (properties.openTypeAscent) != 'undefined') {
-      typoAscent = properties.openTypeAscent;
-      typoDescent = properties.openTypeDescent;
-      winAscent = properties.openTypeYMax;
-      winDescent = -properties.openTypeYMin;
-    } else if (openTypeUnitsPerEm != kPDFGlyphSpaceUnits) {
+    // if there is a units per em value but no other override then scale the calculated ascent
+    if (unitsPerEm != kPDFGlyphSpaceUnits && 'undefined' == typeof(override.ascent)) {
       // if the font units differ to the PDF glyph space units then scale up the values
-      typoAscent = Math.round(typoAscent * openTypeUnitsPerEm / kPDFGlyphSpaceUnits);
-      typoDescent = Math.round(typoDescent * openTypeUnitsPerEm / kPDFGlyphSpaceUnits);
+      typoAscent = Math.round(typoAscent * unitsPerEm / kPDFGlyphSpaceUnits);
+      typoDescent = Math.round(typoDescent * unitsPerEm / kPDFGlyphSpaceUnits);
+      winAscent = typoAscent;
+      winDescent = -typoDescent;
     }
 
     return '\x00\x03' + // version
@@ -1072,22 +1071,23 @@ var Font = (function Font() {
         virtualOffset: numTables * (4 * 4)
       };
 
-      //extract some more font properties from the OpenType head and hhea tables
-      properties.openTypeUnitsPerEm = int16([head.data[18], head.data[19]]);
-      properties.openTypeYMax = int16([head.data[42], head.data[43]]);
-      properties.openTypeYMin = int16([head.data[38], head.data[39]]) - 0x10000;   //always negative
-      properties.openTypeAscent =  int16([hhea.data[4], hhea.data[5]]);
-      properties.openTypeDescent =  int16([hhea.data[6], hhea.data[7]]) - 0x10000;   //always negative
-
-
       // The new numbers of tables will be the last one plus the num
       // of missing tables
       createOpenTypeHeader(header.version, ttf, numTables);
 
       if (requiredTables.indexOf('OS/2') != -1) {
+        //extract some more font properties from the OpenType head and hhea tables
+        var override = {
+          unitsPerEm: int16([head.data[18], head.data[19]]),
+          yMax: int16([head.data[42], head.data[43]]),
+          yMin: int16([head.data[38], head.data[39]]) - 0x10000, //always negative
+          ascent: int16([hhea.data[4], hhea.data[5]]),
+          descent: int16([hhea.data[6], hhea.data[7]]) - 0x10000 //always negative
+        }
+
         tables.push({
           tag: 'OS/2',
-          data: stringToArray(createOS2Table(properties))
+          data: stringToArray(createOS2Table(properties, override))
         });
       }
 
