@@ -3379,7 +3379,7 @@ var Page = (function() {
           } catch (e) {
             exc = e.toString();
           }
-          continuation(exc);
+          if (continuation) continuation(exc);
         });
       };
 
