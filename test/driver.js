@@ -74,7 +74,7 @@ function nextTask() {
         failure = 'load PDF doc : ' + e.toString();
       }
 
-      task.pageNum = 1, nextPage(task, failure);
+      task.pageNum = task.firstPage || 1, nextPage(task, failure);
     }
   };
   r.send(null);
