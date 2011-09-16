@@ -4294,7 +4294,6 @@ var PartialEvaluator = (function() {
             };
           }
         } else if (type == 'CIDFontType0') {
-          encoding = xref.fetchIfRef(dict.get('Encoding'));
           if (IsName(encoding)) {
             // Encoding is a predefined CMap
             if (encoding.name == 'Identity-H') {
@@ -4521,8 +4520,7 @@ var PartialEvaluator = (function() {
           }
         }
 
-        // TODO implement default widths for standard fonts metrics
-        var defaultWidth = 1000;
+        var defaultWidth = 0;
         var widths = Metrics[stdFontMap[baseFontName] || baseFontName];
         if (IsNum(widths)) {
           defaultWidth = widths;
@@ -4994,6 +4992,12 @@ var CanvasGraphics = (function() {
       var width = 0;
       for (var i = 0; i < glyphs.length; i++) {
         var glyph = glyphs[i];
+        if (glyph === null) {
+          // word break
+          width += wordSpacing;
+          continue;
+        }
+
         var unicode = glyph.unicode;
         var char = unicode >= 0x10000 ?
           String.fromCharCode(0xD800 | ((unicode - 0x10000) >> 10),
@@ -5001,11 +5005,8 @@ var CanvasGraphics = (function() {
 
         var charWidth = (glyph.width || defaultCharWidth) * fontSize * 0.001;
         charWidth += charSpacing;
-        if (unicode == 32)
-          charWidth += wordSpacing;
 
-        ctx.fillText(char, 0, 0);
-        ctx.translate(charWidth, 0);
+        ctx.fillText(char, width, 0);
         width += charWidth;
       }
       current.x += width;
