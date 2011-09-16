@@ -182,8 +182,88 @@ if (!isWorker) {
  * unicode characters. Therefore, the test string have to be build using the
  * encoding of the fontObj.
  */
- var FontLoader = {
-   listeningForFontLoad: false,
+var FontLoader = {
+  listeningForFontLoad: false,
+   
+   scratchCtx: null,
+	 loading: {},
+ 	  
+ 	/**
+   * Create the canvas used for measuring the width of text.
+   */
+  setup: function() {
+    var canvas = document.createElement("canvas");
+    var ctx = canvas.getContext("2d");
+    this.ctx = ctx;
+  },
+  
+  /**
+   * Measures the width of some string using a fontObj and some different
+   * fallback fonts.
+   */
+  measure: function(fontObj, str) {
+    var ctx = this.ctx;
+    
+    // THe fonts used as fallback.
+    var fallbacks = [ "Arial", "Courier" ];
+    
+    var widths = [];
+    for (var n = 0; n < fallbacks.length; n++) {
+      // Choose a large font size as there are no sub-pixel returned from
+      // measureText.
+      var font = fontObj.getRule(420, fallbacks[n]);
+      ctx.font = font;
+      
+      widths.push(ctx.measureText(str).width);
+    }
+    return widths;
+  },
+  
+  /**
+   * Attaches a fontObj to the DOM and calls Objects.resolve(objId) once
+   * the font is loaded.
+   */
+  bindWebKit: function(objId, fontObj) {
+    this.loading[objId] = true;
+    var encoding = fontObj.encoding;
+    
+    // If the font has an encoding, build the test string based on it. If the
+    // font doesn't have an encoding, the font can't been used right now and
+    // we skip here.
+    if (fontObj.supported) {
+      var testStr = "";
+      for (var enc in encoding) {
+        testStr += String.fromCharCode(encoding[enc].unicode);
+      }      
+    } else {
+      // This font isn't fully supported yet. Resolve the object such that
+      // the execution continues but do nothing else.
+      Objects.resolve(objId);
+      return;
+    }
+
+    var before = this.measure(fontObj, testStr);
+    this.bindDOM(fontObj);
+
+    var start = Date.now();
+    var check = function() {
+      var measure = this.measure(fontObj, testStr);
+      
+      for (var i = 0; i < measure.length; i++) {
+        if (measure[i] !== before[i]) {
+            console.log("loaded font", objId, before, measure, Date.now() - start);
+            delete this.loading[objId];
+            Objects.resolve(objId);
+            return;
+        }        
+      }
+      
+      setTimeout(check, 0);
+    }.bind(this);
+    
+    // Start checking if font is loaded.
+    check();
+  },
 
   /**
    * Attach the fontObj to the DOM.
@@ -211,6 +291,13 @@ if (!isWorker) {
   },
 
   bind: function(fonts, callback) {
+    // If this isn't Gecko, we assume it's WebKit. See notes in bindWebKit.
+    if (!isGecko) {
+      var fontObj = fonts[0];
+      this.bindWebKit(fontObj.loadedName, fontObj);
+      return;
+    }
+    
      function checkFontsLoaded() {
        for (var i = 0; i < objs.length; i++) {
          var fontObj = objs[i];
@@ -350,18 +437,9 @@ if (!isWorker) {
    }
  };
 
-// if (!isWorker) {
-//   FontLoader.setup();
-//   
-//   window.addEventListener(
-//     'message',
-//     function(e) {
-//       console.log("msg!", e.data);
-//       Objects.resolve(e.data);
-//     }.bind(this),
-//   false);
-// }
-
+if (!isWorker) {
+  FontLoader.setup();
+}
 
 var UnicodeRanges = [
   { 'begin': 0x0000, 'end': 0x007F }, // Basic Latin
