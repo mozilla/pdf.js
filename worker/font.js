@@ -64,3 +64,4 @@ this.onmessage = function(event) {
     throw 'Unkown action from worker: ' + data.action;
   }
 };
+
