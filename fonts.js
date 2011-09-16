@@ -12,6 +12,9 @@ var kMaxWaitForFontFace = 1000;
 // Unicode Private Use Area
 var kCmapGlyphOffset = 0xE000;
 
+// PDF Glyph Space Units are one Thousandth of a TextSpace Unit except for Type 3 fonts
+var kPDFGlyphSpaceUnits = 1000;
+
 // Until hinting is fully supported this constant can be used
 var kHintingEnabled = false;
 
@@ -534,6 +537,10 @@ var Font = (function Font() {
   };
 
   function createOpenTypeHeader(sfnt, file, numTables) {
+    // Windows hates the Mac TrueType sfnt version number
+    if (sfnt == 'true')
+      sfnt = string32(0x00010000);
+
     // sfnt version (4 bytes)
     var header = sfnt;
 
@@ -694,6 +701,24 @@ var Font = (function Font() {
       }
     }
 
+    var openTypeUnitsPerEm = (typeof (properties.openTypeUnitsPerEm) == 'undefined') ? kPDFGlyphSpaceUnits : properties.openTypeUnitsPerEm;
+    var typoAscent = properties.ascent;
+    var typoDescent = properties.descent;
+    var winAscent = typoAscent;
+    var winDescent = -typoDescent;
+
+    // if the font already has ascent and descent information then use these values
+    if (typeof (properties.openTypeAscent) != 'undefined') {
+      typoAscent = properties.openTypeAscent;
+      typoDescent = properties.openTypeDescent;
+      winAscent = properties.openTypeYMax;
+      winDescent = -properties.openTypeYMin;
+    } else if (openTypeUnitsPerEm != kPDFGlyphSpaceUnits) {
+      // if the font units differ to the PDF glyph space units then scale up the values
+      typoAscent = Math.round(typoAscent * openTypeUnitsPerEm / kPDFGlyphSpaceUnits);
+      typoDescent = Math.round(typoDescent * openTypeUnitsPerEm / kPDFGlyphSpaceUnits);
+    }
+
     return '\x00\x03' + // version
            '\x02\x24' + // xAvgCharWidth
            '\x01\xF4' + // usWeightClass
@@ -722,11 +747,11 @@ var Font = (function Font() {
            string16(firstCharIndex ||
                     properties.firstChar) + // usFirstCharIndex
            string16(lastCharIndex || properties.lastChar) +  // usLastCharIndex
-           string16(properties.ascent) + // sTypoAscender
-           string16(properties.descent) + // sTypoDescender
+           string16(typoAscent) + // sTypoAscender
+           string16(typoDescent) + // sTypoDescender
            '\x00\x64' + // sTypoLineGap (7%-10% of the unitsPerEM value)
-           string16(properties.ascent) + // usWinAscent
-           string16(-properties.descent) + // usWinDescent
+           string16(winAscent) + // usWinAscent
+           string16(winDescent) + // usWinDescent
            '\x00\x00\x00\x00' + // ulCodePageRange1 (Bits 0-31)
            '\x00\x00\x00\x00' + // ulCodePageRange2 (Bits 32-63)
            string16(properties.xHeight) + // sxHeight
@@ -1047,18 +1072,19 @@ var Font = (function Font() {
         virtualOffset: numTables * (4 * 4)
       };
 
+      //extract some more font properties from the OpenType head and hhea tables
+      properties.openTypeUnitsPerEm = int16([head.data[18], head.data[19]]);
+      properties.openTypeYMax = int16([head.data[42], head.data[43]]);
+      properties.openTypeYMin = int16([head.data[38], head.data[39]]) - 0x10000;   //always negative
+      properties.openTypeAscent =  int16([hhea.data[4], hhea.data[5]]);
+      properties.openTypeDescent =  int16([hhea.data[6], hhea.data[7]]) - 0x10000;   //always negative
+
+
       // The new numbers of tables will be the last one plus the num
       // of missing tables
       createOpenTypeHeader(header.version, ttf, numTables);
 
       if (requiredTables.indexOf('OS/2') != -1) {
-        if (typeof(head) != 'undefined') {
-          var ymax = int16([head.data[42],head.data[43]]);
-          var ymin = int16([head.data[38],head.data[39]]) - 0x10000;   //always negative
-          properties.ascent = ymax;
-          properties.descent = ymin;
-        }
-
         tables.push({
           tag: 'OS/2',
           data: stringToArray(createOS2Table(properties))
