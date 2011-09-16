@@ -184,6 +184,7 @@ if (!isWorker) {
  */
 var FontLoader = {
   scratchCtx: null,
+  loading: {},
   
   /**
    * Create the canvas used for measuring the width of text.
@@ -221,18 +222,22 @@ var FontLoader = {
    * the font is loaded.
    */
   bind: function(objId, fontObj) {
-    console.log("load font", objId);
+    this.loading[objId] = true;
     var encoding = fontObj.encoding;
-    var testStr = "";
-    // If the font has a encoding defined. If, use the characters of the
-    // encoding, otherwise use some dump string for testing.
-    if (Object.keys(encoding).length != 0) {
+    
+    // If the font has an encoding, build the test string based on it. If the
+    // font doesn't have an encoding, the font can't been used right now and
+    // we skip here.
+    if (fontObj.supported) {
+      var testStr = "";
       for (var enc in encoding) {
         testStr += String.fromCharCode(encoding[enc].unicode);
       }      
     } else {
-      console.log("empty font.encoding");
-      testStr = "abcdefghiklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.-+='!";
+      // This font isn't fully supported yet. Resolve the object such that
+      // the execution continues but do nothing else.
+      Objects.resolve(objId);
+      return;
     }
 
     var before = this.measure(fontObj, testStr);
@@ -244,6 +249,7 @@ var FontLoader = {
       for (var i = 0; i < measure.length; i++) {
         if (measure[i] !== before[i]) {
             console.log("loaded font", objId);
+            delete this.loading[objId];
             Objects.resolve(objId);
             return;
         }        
@@ -448,6 +454,8 @@ var FontShape = (function FontShape() {
 
     this.$name1 = italic + ' ' + bold + ' ';
     this.$name2 = 'px "' + name + '", "';
+    
+    this.supported = Object.keys(this.encoding).length != 0;
   };
 
   function int16(bytes) {

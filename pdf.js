@@ -5165,6 +5165,12 @@ var CanvasGraphics = (function() {
       this.moveText(0, this.current.leading);
     },
     showText: function(text) {
+      // If the current font isn't supported, we can't display the text and
+      // bail out.
+      if (!this.current.font.supported) {
+        return;
+      }
+      
       var ctx = this.ctx;
       var current = this.current;
       var originalText = text;
@@ -5213,6 +5219,12 @@ var CanvasGraphics = (function() {
       this.ctx.restore();
     },
     showSpacedText: function(arr) {
+      // If the current font isn't supported, we can't display the text and
+      // bail out.
+      if (!this.current.font.supported) {
+        return;
+      }
+      
       for (var i = 0; i < arr.length; ++i) {
         var e = arr[i];
         if (IsNum(e)) {
