@@ -136,7 +136,7 @@ var Promise = (function() {
     
     resolve: function(data) {
       if (this.isResolved) {
-        throw "A Promise can be resolved only once";
+        throw "A Promise can be resolved only once " + this.name;
       }
       
       this.isResolved = true;
@@ -229,10 +229,7 @@ var WorkerPDFDoc = (function() {
         Objects.resolve(objId, fontObj);
       } else {
         Objects.setData(objId, fontObj);
-        FontLoader.bind([fontObj], function() {
-          console.log("loaded", fontObj.loadedName);
-          Objects.resolve(objId);
-        });
+        FontLoader.bind(fontObj);
       }
     });
     
