@@ -3,6 +3,9 @@
 
 'use strict';
 
+// Set this to true if you want to use workers.
+var useWorker = false;
+
 var WorkerPage = (function() {
   function constructor(workerPDF, page) {
     this.workerPDF = workerPDF;
@@ -179,10 +182,9 @@ var WorkerPDFDoc = (function() {
     
     this.pageCache = [];
     
-    var useWorker = true;
-    
     if (useWorker) {
-      var worker = this.worker = new Worker("../worker/boot_processor.js");
+      var worker = this.worker = new Worker("../worker/processor_boot.js");
+      var fontWorker = this.fontWorker = new Worker('../worker/font_boot.js');
     } else {
       // If we don't use a worker, just post/sendMessage to the main thread.
       var worker = {
@@ -190,21 +192,22 @@ var WorkerPDFDoc = (function() {
           worker.onmessage({data: obj});
         }
       }
+      var fontWorker = {
+        postMessage: function(obj) {
+          fontWorker.onmessage({data: obj});
+        }
+      }
     }
 
-    var fontWorker = new Worker('../worker/boot_font.js');
-    var fontHandler = this.fontHandler = new MessageHandler('font', fontWorker);
-
-    var handler = this.handler = new MessageHandler("main", worker);
-    handler.on("page", function(data) {
+    var processorHandler = this.processorHandler = new MessageHandler("main", worker);
+    processorHandler.on("page", function(data) {
       var pageNum = data.pageNum;
       var page = this.pageCache[pageNum];
       
-
       page.startRenderingFromIRQueue(data.IRQueue, data.fonts);
     }, this);
 
-    handler.on("obj", function(data) {
+    processorHandler.on("obj", function(data) {
       var objId   = data[0];
       var objType = data[1];
 
@@ -225,6 +228,7 @@ var WorkerPDFDoc = (function() {
       }
     }, this);
 
+    var fontHandler = this.fontHandler = new MessageHandler('font', fontWorker);
     fontHandler.on('font_ready', function(data) {
       var objId   = data[0];
       var fontObj = new FontShape(data[1]);
@@ -240,10 +244,11 @@ var WorkerPDFDoc = (function() {
     if (!useWorker) {
       // If the main thread is our worker, setup the handling for the messages
       // the main thread sends to it self.
-      WorkerHandler.setup(handler);
+      WorkerProcessorHandler.setup(processorHandler);
+      WorkerFontHandler.setup(fontHandler);
     }
     
-    handler.send("doc", data);
+    processorHandler.send("doc", data);
   }
 
   constructor.prototype = {
@@ -252,7 +257,7 @@ var WorkerPDFDoc = (function() {
     },
     
     startRendering: function(page) {
-      this.handler.send("page_request", page.page.pageNumber + 1);
+      this.processorHandler.send("page_request", page.page.pageNumber + 1);
     },
     
     getPage: function(n) {

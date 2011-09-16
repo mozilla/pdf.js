@@ -3,7 +3,7 @@
 
 'use strict';
 
-var WorkerHandler = {
+var WorkerProcessorHandler = {
   setup: function(handler) {
     var pdfDoc = null;
     

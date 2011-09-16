@@ -9,11 +9,8 @@ importScripts('../pdf.js');
 importScripts('../fonts.js');
 importScripts('../crypto.js');
 importScripts('../glyphlist.js');
-importScripts('../metrics.js');
-importScripts('handler.js');
+importScripts('font_handler.js');
 
-// Listen for messages from the main thread.
-var pdfDoc = null;
 
-var handler = new MessageHandler("worker", this);
-WorkerHandler.setup(handler);
+var handler = new MessageHandler("worker_font", this);
+WorkerFontHandler.setup(handler);
