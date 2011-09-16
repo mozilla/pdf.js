@@ -6682,6 +6682,8 @@ var PDFFunction = (function() {
       var diff = IR[2];
       var n    = IR[3];
       var i    = IR[4];
+      
+      var length = diff.length;
 
       return function(args) {
         var x = args[0];
