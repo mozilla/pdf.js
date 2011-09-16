@@ -149,6 +149,10 @@ var Promise = (function() {
     },
     
     then: function(callback) {
+      if (!callback) {
+        throw "Requiring callback" + this.name;
+      }
+      
       // If the promise is already resolved, call the callback directly.
       if (this.isResolved) {
         var data = this.data;

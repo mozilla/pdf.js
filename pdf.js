@@ -4167,11 +4167,15 @@ var PartialEvaluator = (function() {
   };
 
   constructor.prototype = {
-    getIRQueue: function(stream, xref, resources, queue, handler, uniquePrefix) {
+    getIRQueue: function(stream, xref, resources, queue, handler, 
+                          uniquePrefix, dependency) {
 
       function insertDependency(depList) {
         fnArray.push("dependency");
         argsArray.push(depList);
+        for (var i = 0; i < depList.length; i++) {
+          dependency.push(depList);
+        }
       }
 
       function buildPaintImageXObject(image, inline) {
@@ -4243,6 +4247,7 @@ var PartialEvaluator = (function() {
       }
 
       var fnArray = queue.fnArray, argsArray = queue.argsArray;
+      var dependency = dependency || [];
       
       resources = xref.fetchIfRef(resources) || new Dict();
       var xobjs = xref.fetchIfRef(resources.get('XObject')) || new Dict();
@@ -4273,10 +4278,15 @@ var PartialEvaluator = (function() {
 
                 // Type1 is TilingPattern
                 if (typeNum == 1) {
-                  // TODO: Add dependency here.
                   // Create an IR of the pattern code.
+                  var depIdx = dependency.length;
                   var codeIR = this.getIRQueue(pattern, xref,
-                                    dict.get('Resources'), {}, handler, uniquePrefix);
+                                    dict.get('Resources'), {}, handler, 
+                                    uniquePrefix, dependency);
+                  
+                  // Add the dependencies that are required to execute the
+                  // codeIR.
+                  insertDependency(dependency.slice(depIdx));
                   
                   args = TilingPattern.getIR(codeIR, dict, args);
                 } 
@@ -4313,9 +4323,14 @@ var PartialEvaluator = (function() {
                 argsArray.push([ matrix, bbox ]);
                 
                 // This adds the IRQueue of the xObj to the current queue.
+                var depIdx = dependency.length;
+                
                 this.getIRQueue(xobj, xref, xobj.dict.get('Resources'), queue,
-                                         handler, uniquePrefix);
+                                         handler, uniquePrefix, dependency);
 
+               // Add the dependencies that are required to execute the
+               // codeIR.
+               insertDependency(dependency.slice(depIdx));
 
                 fn = "paintFormXObjectEnd";
                 args = [];
