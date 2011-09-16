@@ -4922,10 +4922,13 @@ var CanvasGraphics = (function() {
         } 
         // If the execution took longer then a certain amount of time, shedule
         // to continue exeution after a short delay.
-        else if ((Date.now() - startTime) > kExecutionTime) {
+        // However, this is only possible if a 'continueCallback' is passed in.
+        else if (continueCallback && 
+                (Date.now() - startTime) > kExecutionTime) {
           setTimeout(continueCallback, 0);
           return i;
-        }
+        }          
+
         // If the IRQueue isn't executed completly yet OR the execution time
         // was short enough, do another execution round.
       } while (true);
