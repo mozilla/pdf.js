@@ -4365,7 +4365,9 @@ var PartialEvaluator = (function() {
           width: IsNum(width) ? width : properties.defaultWidth
         };
 
-        if (glyph)
+        // skipping already specified glyphs, e.g. difference
+        // and baseEncoding may refer the same glyphs
+        if (glyph && !glyphs[glyph])
           glyphs[glyph] = map[i];
 
         // If there is no file, the character mapping can't be modified
