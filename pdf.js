@@ -4357,7 +4357,13 @@ var PartialEvaluator = (function() {
       var widths = properties.widths || [];
       var glyphs = {};
       for (var i = firstChar; i <= lastChar; i++) {
-        var glyph = differences[i] || baseEncoding[i];
+        var glyph = differences[i];
+        if (!glyph) {
+          glyph = baseEncoding[i];
+          // skipping already specified by difference glyphs
+          if (differences.indexOf(glyph) >= 0)
+            continue;
+        }
         var index = GlyphsUnicode[glyph] || i;
         var width = widths[i] || widths[glyph];
         map[i] = {
@@ -4365,9 +4371,7 @@ var PartialEvaluator = (function() {
           width: IsNum(width) ? width : properties.defaultWidth
         };
 
-        // skipping already specified glyphs, e.g. difference
-        // and baseEncoding may refer the same glyphs
-        if (glyph && !glyphs[glyph])
+        if (glyph)
           glyphs[glyph] = map[i];
 
         // If there is no file, the character mapping can't be modified
