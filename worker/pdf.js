@@ -58,7 +58,7 @@ onmessage = function(event) {
     console.time('compile');
 
     // Let's try to render the first page...
-    var page = pdfDocument.getPage(parseInt(data));
+    var page = pdfDocument.getPage(parseInt(data, 10));
 
     var pdfToCssUnitsCoef = 96.0 / 72.0;
     var pageWidth = (page.mediaBox[2] - page.mediaBox[0]) * pdfToCssUnitsCoef;

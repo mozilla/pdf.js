@@ -3224,7 +3224,14 @@ var XRef = (function() {
           error('bad XRef entry');
         }
         if (this.encrypt && !suppressEncryption) {
-          e = parser.getObj(this.encrypt.createCipherTransform(num, gen));
+          try {
+            e = parser.getObj(this.encrypt.createCipherTransform(num, gen));
+          } catch(ex) {
+            // almost all streams must to encrypted, but sometimes
+            // they are not probably due to some broken generators
+            // re-trying without encryption
+            return this.fetch(ref, true);
+          }
         } else {
           e = parser.getObj();
         }
@@ -4381,7 +4388,7 @@ var PartialEvaluator = (function() {
       if (type == 'TrueType' && dict.has('ToUnicode') && differences) {
         var cmapObj = dict.get('ToUnicode');
         if (IsRef(cmapObj)) {
-          cmapObj = xref.fetch(cmapObj, true);
+          cmapObj = xref.fetch(cmapObj);
         }
         if (IsName(cmapObj)) {
           error('ToUnicode file cmap translation not implemented');
@@ -6056,8 +6063,8 @@ var PDFImage = (function() {
 
     this.decode = dict.get('Decode', 'D');
 
-    var mask = xref.fetchIfRef(image.dict.get('Mask'));
-    var smask = xref.fetchIfRef(image.dict.get('SMask'));
+    var mask = xref.fetchIfRef(dict.get('Mask'));
+    var smask = xref.fetchIfRef(dict.get('SMask'));
 
     if (mask) {
       TODO('masked images');

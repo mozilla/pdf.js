@@ -1,6 +1,8 @@
 /* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 /* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
 
+'use strict';
+
 // Checking if the typed arrays are supported
 (function() {
   if (typeof Uint8Array !== 'undefined')
@@ -10,8 +12,9 @@
     return this.slice(start, end);
   }
 
-  function set_(array, offset) {
-    if (arguments.length < 2) offset = 0;
+  function set_function(array, offset) {
+    if (arguments.length < 2)
+      offset = 0;
     for (var i = 0, n = array.length; i < n; ++i, ++offset)
       this[offset] = array[i] & 0xFF;
   }
@@ -19,15 +22,17 @@
   function TypedArray(arg1) {
     var result;
     if (typeof arg1 === 'number') {
-       result = new Array(arg1);
-       for (var i = 0; i < arg1; ++i)
-         result[i] = 0;
+      result = [];
+      for (var i = 0; i < arg1; ++i)
+        result[i] = 0;
     } else
-       result = arg1.slice(0);
+      result = arg1.slice(0);
+
     result.subarray = subarray;
     result.buffer = result;
     result.byteLength = result.length;
-    result.set = set_;
+    result.set = set_function;
+
     if (typeof arg1 === 'object' && arg1.buffer)
       result.buffer = arg1.buffer;
 

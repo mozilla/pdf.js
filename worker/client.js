@@ -58,7 +58,7 @@ FontWorker.prototype = {
 
     'fonts': function(data) {
       // console.log("got processed fonts from worker", Object.keys(data));
-      for (name in data) {
+      for (var name in data) {
         // Update the encoding property.
         var font = Fonts.lookup(name);
         font.properties = {
@@ -176,7 +176,7 @@ function WorkerPDFDoc(canvas) {
       // Copy over the imageData.
       var len = imageRealData.length;
       while (len--)
-      imgRealData[len] = imageRealData[len];
+        imgRealData[len] = imageRealData[len];
 
       this.putImageData(imgData, x, y);
     },
@@ -273,7 +273,7 @@ function WorkerPDFDoc(canvas) {
     },
 
     'pdf_num_pages': function(data) {
-      this.numPages = parseInt(data);
+      this.numPages = parseInt(data, 10);
       if (this.loadCallback) {
         this.loadCallback();
       }
@@ -302,8 +302,8 @@ function WorkerPDFDoc(canvas) {
     'setup_page': function(data) {
       var size = data.split(',');
       var canvas = this.canvas, ctx = this.ctx;
-      canvas.width = parseInt(size[0]);
-      canvas.height = parseInt(size[1]);
+      canvas.width = parseInt(size[0], 10);
+      canvas.height = parseInt(size[1], 10);
     },
 
     'fonts': function(data) {
@@ -397,7 +397,7 @@ WorkerPDFDoc.prototype.open = function(url, callback) {
 };
 
 WorkerPDFDoc.prototype.showPage = function(numPage) {
-  this.numPage = parseInt(numPage);
+  this.numPage = parseInt(numPage, 10);
   console.log('=== start rendering page ' + numPage + ' ===');
   console.time('>>> total page display time:');
   this.worker.postMessage(numPage);
@@ -407,11 +407,12 @@ WorkerPDFDoc.prototype.showPage = function(numPage) {
 };
 
 WorkerPDFDoc.prototype.nextPage = function() {
-  if (this.numPage == this.numPages) return;
-  this.showPage(++this.numPage);
+  if (this.numPage != this.numPages)
+    this.showPage(++this.numPage);
 };
 
 WorkerPDFDoc.prototype.prevPage = function() {
-  if (this.numPage == 1) return;
-  this.showPage(--this.numPage);
+  if (this.numPage != 1)
+    this.showPage(--this.numPage);
 };
+

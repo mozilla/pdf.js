@@ -12,6 +12,9 @@ var kMaxWaitForFontFace = 1000;
 // Unicode Private Use Area
 var kCmapGlyphOffset = 0xE000;
 
+// PDF Glyph Space Units are one Thousandth of a TextSpace Unit except for Type 3 fonts
+var kPDFGlyphSpaceUnits = 1000;
+
 // Until hinting is fully supported this constant can be used
 var kHintingEnabled = false;
 
@@ -536,6 +539,10 @@ var Font = (function Font() {
   };
 
   function createOpenTypeHeader(sfnt, file, numTables) {
+    // Windows hates the Mac TrueType sfnt version number
+    if (sfnt == 'true')
+      sfnt = string32(0x00010000);
+
     // sfnt version (4 bytes)
     var header = sfnt;
 
@@ -665,7 +672,9 @@ var Font = (function Font() {
                          format314);
   };
 
-  function createOS2Table(properties) {
+  function createOS2Table(properties, override) {
+    var override = override || {};
+
     var ulUnicodeRange1 = 0;
     var ulUnicodeRange2 = 0;
     var ulUnicodeRange3 = 0;
@@ -696,6 +705,21 @@ var Font = (function Font() {
       }
     }
 
+    var unitsPerEm = override.unitsPerEm || kPDFGlyphSpaceUnits;
+    var typoAscent = override.ascent || properties.ascent;
+    var typoDescent = override.descent || properties.descent;
+    var winAscent = override.yMax || typoAscent;
+    var winDescent = -override.yMin || -typoDescent;
+
+    // if there is a units per em value but no other override then scale the calculated ascent
+    if (unitsPerEm != kPDFGlyphSpaceUnits && 'undefined' == typeof(override.ascent)) {
+      // if the font units differ to the PDF glyph space units then scale up the values
+      typoAscent = Math.round(typoAscent * unitsPerEm / kPDFGlyphSpaceUnits);
+      typoDescent = Math.round(typoDescent * unitsPerEm / kPDFGlyphSpaceUnits);
+      winAscent = typoAscent;
+      winDescent = -typoDescent;
+    }
+
     return '\x00\x03' + // version
            '\x02\x24' + // xAvgCharWidth
            '\x01\xF4' + // usWeightClass
@@ -724,11 +748,11 @@ var Font = (function Font() {
            string16(firstCharIndex ||
                     properties.firstChar) + // usFirstCharIndex
            string16(lastCharIndex || properties.lastChar) +  // usLastCharIndex
-           string16(properties.ascent) + // sTypoAscender
-           string16(properties.descent) + // sTypoDescender
+           string16(typoAscent) + // sTypoAscender
+           string16(typoDescent) + // sTypoDescender
            '\x00\x64' + // sTypoLineGap (7%-10% of the unitsPerEM value)
-           string16(properties.ascent) + // usWinAscent
-           string16(-properties.descent) + // usWinDescent
+           string16(winAscent) + // usWinAscent
+           string16(winDescent) + // usWinDescent
            '\x00\x00\x00\x00' + // ulCodePageRange1 (Bits 0-31)
            '\x00\x00\x00\x00' + // ulCodePageRange2 (Bits 32-63)
            string16(properties.xHeight) + // sxHeight
@@ -835,9 +859,11 @@ var Font = (function Font() {
         var data = file.getBytes(length);
         file.pos = previousPosition;
 
-        if (tag == 'head')
+        if (tag == 'head') {
           // clearing checksum adjustment
           data[8] = data[9] = data[10] = data[11] = 0;
+          data[17] |= 0x20; //Set font optimized for cleartype flag
+        }
 
         return {
           tag: tag,
@@ -1010,7 +1036,7 @@ var Font = (function Font() {
       var header = readOpenTypeHeader(font);
       var numTables = header.numTables;
 
-      var cmap, maxp, hhea, hmtx, vhea, vmtx;
+      var cmap, maxp, hhea, hmtx, vhea, vmtx, head;
       var tables = [];
       for (var i = 0; i < numTables; i++) {
         var table = readTableEntry(font);
@@ -1024,6 +1050,8 @@ var Font = (function Font() {
             hhea = table;
           else if (table.tag == 'hmtx')
             hmtx = table;
+          else if (table.tag == 'head')
+            head = table;
 
           requiredTables.splice(index, 1);
         } else {
@@ -1050,9 +1078,18 @@ var Font = (function Font() {
       createOpenTypeHeader(header.version, ttf, numTables);
 
       if (requiredTables.indexOf('OS/2') != -1) {
+        //extract some more font properties from the OpenType head and hhea tables
+        var override = {
+          unitsPerEm: int16([head.data[18], head.data[19]]),
+          yMax: int16([head.data[42], head.data[43]]),
+          yMin: int16([head.data[38], head.data[39]]) - 0x10000, //always negative
+          ascent: int16([hhea.data[4], hhea.data[5]]),
+          descent: int16([hhea.data[6], hhea.data[7]]) - 0x10000 //always negative
+        }
+
         tables.push({
           tag: 'OS/2',
-          data: stringToArray(createOS2Table(properties))
+          data: stringToArray(createOS2Table(properties, override))
         });
       }
 
