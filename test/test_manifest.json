@@ -115,5 +115,11 @@
        "link": true,
        "rounds": 1,
        "type": "eq"
+    },
+    {  "id": "wdsg_fitc",
+       "file": "pdfs/wdsg_fitc.pdf",
+       "link": true,
+       "rounds": 1,
+       "type": "eq"
     }
 ]
