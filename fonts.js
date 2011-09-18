@@ -12,7 +12,8 @@ var kMaxWaitForFontFace = 1000;
 // Unicode Private Use Area
 var kCmapGlyphOffset = 0xE000;
 
-// PDF Glyph Space Units are one Thousandth of a TextSpace Unit except for Type 3 fonts
+// PDF Glyph Space Units are one Thousandth of a TextSpace Unit
+// except for Type 3 fonts
 var kPDFGlyphSpaceUnits = 1000;
 
 // Until hinting is fully supported this constant can be used
@@ -731,9 +732,12 @@ var Font = (function Font() {
     var winAscent = override.yMax || typoAscent;
     var winDescent = -override.yMin || -typoDescent;
 
-    // if there is a units per em value but no other override then scale the calculated ascent
-    if (unitsPerEm != kPDFGlyphSpaceUnits && 'undefined' == typeof(override.ascent)) {
-      // if the font units differ to the PDF glyph space units then scale up the values
+    // if there is a units per em value but no other override
+    // then scale the calculated ascent
+    if (unitsPerEm != kPDFGlyphSpaceUnits &&
+        'undefined' == typeof(override.ascent)) {
+      // if the font units differ to the PDF glyph space units
+      // then scale up the values
       typoAscent = Math.round(typoAscent * unitsPerEm / kPDFGlyphSpaceUnits);
       typoDescent = Math.round(typoDescent * unitsPerEm / kPDFGlyphSpaceUnits);
       winAscent = typoAscent;
@@ -1098,14 +1102,15 @@ var Font = (function Font() {
       createOpenTypeHeader(header.version, ttf, numTables);
 
       if (requiredTables.indexOf('OS/2') != -1) {
-        //extract some more font properties from the OpenType head and hhea tables
+        // extract some more font properties from the OpenType head and
+        // hhea tables; yMin and descent value are always negative
         var override = {
           unitsPerEm: int16([head.data[18], head.data[19]]),
           yMax: int16([head.data[42], head.data[43]]),
-          yMin: int16([head.data[38], head.data[39]]) - 0x10000, //always negative
+          yMin: int16([head.data[38], head.data[39]]) - 0x10000,
           ascent: int16([hhea.data[4], hhea.data[5]]),
-          descent: int16([hhea.data[6], hhea.data[7]]) - 0x10000 //always negative
-        }
+          descent: int16([hhea.data[6], hhea.data[7]]) - 0x10000
+        };
 
         tables.push({
           tag: 'OS/2',
@@ -1358,7 +1363,8 @@ var Font = (function Font() {
       var rule = "@font-face { font-family:'" + fontName + "';src:" + url + '}';
       var styleSheet = document.styleSheets[0];
       if (!styleSheet) {
-        document.documentElement.firstChild.appendChild( document.createElement('style') );
+        document.documentElement.firstChild.appendChild(
+          document.createElement('style'));
         styleSheet = document.styleSheets[0];
       }
       styleSheet.insertRule(rule, styleSheet.cssRules.length);
