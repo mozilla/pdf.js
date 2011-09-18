@@ -3,23 +3,26 @@
 
 'use strict';
 
-if (typeof console.time == 'undefined') {
+var consoleUtils = (function() {
   var consoleTimer = {};
-  console.time = function(name) {
+
+  var obj = {};
+  obj.time = function(name) {
     consoleTimer[name] = Date.now();
   };
-
-  console.timeEnd = function(name) {
+  obj.timeEnd = function(name) {
     var time = consoleTimer[name];
     if (time == null) {
       throw 'Unkown timer name ' + name;
     }
-    this.log('Timer:', name, Date.now() - time);
+    console.log('Timer:', name, Date.now() - time);
   };
-}
+
+  return obj;
+})();
 
 function FontWorker() {
-  this.worker = new Worker('worker/font.js');
+  this.worker = new Worker('../worker/font.js');
   this.fontsWaiting = 0;
   this.fontsWaitingCallbacks = [];
 
@@ -96,7 +99,7 @@ FontWorker.prototype = {
       this.fontsWaiting++;
     }
 
-    console.time('ensureFonts');
+    consoleUtils.time('ensureFonts');
     // If there are fonts, that need to get loaded, tell the FontWorker to get
     // started and push the callback on the waiting-callback-stack.
     if (notLoaded.length != 0) {
@@ -124,7 +127,7 @@ function WorkerPDFDoc(canvas) {
 
   this.ctx = canvas.getContext('2d');
   this.canvas = canvas;
-  this.worker = new Worker('worker/pdf.js');
+  this.worker = new Worker('../worker/pdf.js');
   this.fontWorker = new FontWorker();
   this.waitingForFonts = false;
   this.waitingForFontsCallback = [];
@@ -167,7 +170,8 @@ function WorkerPDFDoc(canvas) {
     },
 
     '$putImageData': function(imageData, x, y) {
-      var imgData = this.getImageData(0, 0, imageData.width, imageData.height);
+      var imgData = this.getImageData(0, 0,
+        imageData.width, imageData.height);
 
       // Store the .data property to avaid property lookups.
       var imageRealData = imageData.data;
@@ -339,7 +343,7 @@ function WorkerPDFDoc(canvas) {
 
         var renderData = function() {
           if (id == 0) {
-            console.time('main canvas rendering');
+            consoleUtils.time('main canvas rendering');
             var ctx = this.ctx;
             ctx.save();
             ctx.fillStyle = 'rgb(255, 255, 255)';
@@ -348,8 +352,8 @@ function WorkerPDFDoc(canvas) {
           }
           renderProxyCanvas(canvasList[id], cmdQueue);
           if (id == 0) {
-            console.timeEnd('main canvas rendering');
-            console.timeEnd('>>> total page display time:');
+            consoleUtils.timeEnd('main canvas rendering');
+            consoleUtils.timeEnd('>>> total page display time:');
           }
         }.bind(this);
 
@@ -368,51 +372,52 @@ function WorkerPDFDoc(canvas) {
   };
 
   // Listen to the WebWorker for data and call actionHandler on it.
-  this.worker.onmessage = function(event) {
+  this.worker.addEventListener('message', function(event) {
     var data = event.data;
     if (data.action in actionHandler) {
       actionHandler[data.action].call(this, data.data);
     } else {
       throw 'Unkown action from worker: ' + data.action;
     }
-  }.bind(this);
+  }.bind(this));
 }
 
-WorkerPDFDoc.prototype.open = function(url, callback) {
-  var req = new XMLHttpRequest();
-  req.open('GET', url);
-  req.mozResponseType = req.responseType = 'arraybuffer';
-  req.expected = (document.URL.indexOf('file:') == 0) ? 0 : 200;
-  req.onreadystatechange = function() {
-    if (req.readyState == 4 && req.status == req.expected) {
-      var data = req.mozResponseArrayBuffer || req.mozResponse ||
-      req.responseArrayBuffer || req.response;
+WorkerPDFDoc.prototype = {
+  open: function(url, callback) {
+    var req = new XMLHttpRequest();
+    req.open('GET', url);
+    req.mozResponseType = req.responseType = 'arraybuffer';
+    req.expected = (document.URL.indexOf('file:') == 0) ? 0 : 200;
+    req.onreadystatechange = function() {
+      if (req.readyState == 4 && req.status == req.expected) {
+        var data = req.mozResponseArrayBuffer || req.mozResponse ||
+        req.responseArrayBuffer || req.response;
 
-      this.loadCallback = callback;
-      this.worker.postMessage(data);
-      this.showPage(this.numPage);
+        this.loadCallback = callback;
+        this.worker.postMessage(data);
+        this.showPage(this.numPage);
+      }
+    }.bind(this);
+    req.send(null);
+  },
+
+  showPage: function(numPage) {
+    this.numPage = parseInt(numPage, 10);
+    console.log('=== start rendering page ' + numPage + ' ===');
+    consoleUtils.time('>>> total page display time:');
+    this.worker.postMessage(numPage);
+    if (this.onChangePage) {
+      this.onChangePage(numPage);
     }
-  }.bind(this);
-  req.send(null);
-};
+  },
 
-WorkerPDFDoc.prototype.showPage = function(numPage) {
-  this.numPage = parseInt(numPage, 10);
-  console.log('=== start rendering page ' + numPage + ' ===');
-  console.time('>>> total page display time:');
-  this.worker.postMessage(numPage);
-  if (this.onChangePage) {
-    this.onChangePage(numPage);
+  nextPage: function() {
+    if (this.numPage != this.numPages)
+      this.showPage(++this.numPage);
+  },
+
+  prevPage: function() {
+    if (this.numPage != 1)
+      this.showPage(--this.numPage);
   }
 };
-
-WorkerPDFDoc.prototype.nextPage = function() {
-  if (this.numPage != this.numPages)
-    this.showPage(++this.numPage);
-};
-
-WorkerPDFDoc.prototype.prevPage = function() {
-  if (this.numPage != 1)
-    this.showPage(--this.numPage);
-};
-
