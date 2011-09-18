@@ -12,7 +12,8 @@ var kMaxWaitForFontFace = 1000;
 // Unicode Private Use Area
 var kCmapGlyphOffset = 0xE000;
 
-// PDF Glyph Space Units are one Thousandth of a TextSpace Unit except for Type 3 fonts
+// PDF Glyph Space Units are one Thousandth of a TextSpace Unit
+// except for Type 3 fonts
 var kPDFGlyphSpaceUnits = 1000;
 
 // Until hinting is fully supported this constant can be used
@@ -596,19 +597,24 @@ var Font = (function Font() {
     var codes = [];
     var length = glyphs.length;
     for (var n = 0; n < length; ++n)
-      codes.push(String.fromCharCode(glyphs[n].unicode));
-    codes.sort();
+      codes.push({ unicode: glyphs[n].unicode, code: n });
+    codes.sort(function(a, b) {
+      return a.unicode - b.unicode;
+    });
 
     // Split the sorted codes into ranges.
     var ranges = [];
     for (var n = 0; n < length; ) {
-      var start = codes[n++].charCodeAt(0);
+      var start = codes[n].unicode;
+      var startCode = codes[n].code;
+      ++n;
       var end = start;
-      while (n < length && end + 1 == codes[n].charCodeAt(0)) {
+      while (n < length && end + 1 == codes[n].unicode) {
         ++end;
         ++n;
       }
-      ranges.push([start, end]);
+      var endCode = codes[n - 1].code;
+      ranges.push([start, end, startCode, endCode]);
     }
 
     return ranges;
@@ -637,21 +643,38 @@ var Font = (function Font() {
     var idRangeOffsets = '';
     var glyphsIds = '';
     var bias = 0;
-    for (var i = 0; i < segCount - 1; i++) {
-      var range = ranges[i];
-      var start = range[0];
-      var end = range[1];
-      var offset = (segCount - i) * 2 + bias * 2;
-      bias += (end - start + 1);
 
-      startCount += string16(start);
-      endCount += string16(end);
-      idDeltas += string16(0);
-      idRangeOffsets += string16(offset);
+    if (deltas) {
+      for (var i = 0; i < segCount - 1; i++) {
+        var range = ranges[i];
+        var start = range[0];
+        var end = range[1];
+        var offset = (segCount - i) * 2 + bias * 2;
+        bias += (end - start + 1);
+
+        startCount += string16(start);
+        endCount += string16(end);
+        idDeltas += string16(0);
+        idRangeOffsets += string16(offset);
+
+        var startCode = range[2];
+        var endCode = range[3];
+        for (var j = startCode; j <= endCode; ++j)
+          glyphsIds += string16(deltas[j]);
+      }
+    } else {
+      for (var i = 0; i < segCount - 1; i++) {
+        var range = ranges[i];
+        var start = range[0];
+        var end = range[1];
+        var startCode = range[2];
+
+        startCount += string16(start);
+        endCount += string16(end);
+        idDeltas += string16((startCode - start + 1) & 0xFFFF);
+        idRangeOffsets += string16(0);
+      }
     }
-
-    for (var i = 0; i < glyphs.length; i++)
-      glyphsIds += string16(deltas ? deltas[i] : i + 1);
 
     endCount += '\xFF\xFF';
     startCount += '\xFF\xFF';
@@ -711,9 +734,12 @@ var Font = (function Font() {
     var winAscent = override.yMax || typoAscent;
     var winDescent = -override.yMin || -typoDescent;
 
-    // if there is a units per em value but no other override then scale the calculated ascent
-    if (unitsPerEm != kPDFGlyphSpaceUnits && 'undefined' == typeof(override.ascent)) {
-      // if the font units differ to the PDF glyph space units then scale up the values
+    // if there is a units per em value but no other override
+    // then scale the calculated ascent
+    if (unitsPerEm != kPDFGlyphSpaceUnits &&
+        'undefined' == typeof(override.ascent)) {
+      // if the font units differ to the PDF glyph space units
+      // then scale up the values
       typoAscent = Math.round(typoAscent * unitsPerEm / kPDFGlyphSpaceUnits);
       typoDescent = Math.round(typoDescent * unitsPerEm / kPDFGlyphSpaceUnits);
       winAscent = typoAscent;
@@ -1078,14 +1104,15 @@ var Font = (function Font() {
       createOpenTypeHeader(header.version, ttf, numTables);
 
       if (requiredTables.indexOf('OS/2') != -1) {
-        //extract some more font properties from the OpenType head and hhea tables
+        // extract some more font properties from the OpenType head and
+        // hhea tables; yMin and descent value are always negative
         var override = {
           unitsPerEm: int16([head.data[18], head.data[19]]),
           yMax: int16([head.data[42], head.data[43]]),
-          yMin: int16([head.data[38], head.data[39]]) - 0x10000, //always negative
+          yMin: int16([head.data[38], head.data[39]]) - 0x10000,
           ascent: int16([hhea.data[4], hhea.data[5]]),
-          descent: int16([hhea.data[6], hhea.data[7]]) - 0x10000 //always negative
-        }
+          descent: int16([hhea.data[6], hhea.data[7]]) - 0x10000
+        };
 
         tables.push({
           tag: 'OS/2',
@@ -1126,7 +1153,7 @@ var Font = (function Font() {
           tables.push(cmap);
         }
 
-        var encoding = properties.encoding;
+        var encoding = properties.encoding, i;
         if (!encoding[0]) {
           // the font is directly characters to glyphs with no encoding
           // so create an identity encoding
@@ -1134,18 +1161,25 @@ var Font = (function Font() {
           for (i = 0; i < numGlyphs; i++) {
             var width = widths[i];
             encoding[i] = {
-              unicode: i + kCmapGlyphOffset,
+              unicode: i <= 0x1f || (i >= 127 && i <= 255) ?
+                i + kCmapGlyphOffset : i,
               width: IsNum(width) ? width : properties.defaultWidth
             };
           }
         } else {
-          for (var code in encoding)
-            encoding[code].unicode += kCmapGlyphOffset;
+          for (i = 0; i <= 0x1f; i++)
+            encoding[i].unicode += kCmapGlyphOffset;
+          for (i = 127; i <= 255; i++)
+            encoding[i].unicode += kCmapGlyphOffset;
         }
 
         var glyphs = [];
-        for (var i = 1; i < numGlyphs; i++)
-          glyphs.push({ unicode: i + kCmapGlyphOffset });
+        for (i = 1; i < numGlyphs; i++) {
+          glyphs.push({
+            unicode: i <= 0x1f || (i >= 127 && i <= 255) ?
+              i + kCmapGlyphOffset : i
+          });
+        }
         cmap.data = createCMapTable(glyphs);
       } else {
         replaceCMapTable(cmap, font, properties);
@@ -1331,7 +1365,8 @@ var Font = (function Font() {
       var rule = "@font-face { font-family:'" + fontName + "';src:" + url + '}';
       var styleSheet = document.styleSheets[0];
       if (!styleSheet) {
-        document.documentElement.firstChild.appendChild( document.createElement('style') );
+        document.documentElement.firstChild.appendChild(
+          document.createElement('style'));
         styleSheet = document.styleSheets[0];
       }
       styleSheet.insertRule(rule, styleSheet.cssRules.length);
