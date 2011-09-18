@@ -4989,7 +4989,6 @@ var CanvasGraphics = (function() {
       ctx.transform.apply(ctx, font.textMatrix || IDENTITY_MATRIX);
 
       var glyphs = font.charsToGlyphs(text);
-      var defaultCharWidth = font.defaultWidth;
       var fontSize = current.fontSize;
       var charSpacing = current.charSpacing;
       var wordSpacing = current.wordSpacing;
@@ -5010,7 +5009,7 @@ var CanvasGraphics = (function() {
           String.fromCharCode(0xD800 | ((unicode - 0x10000) >> 10),
           0xDC00 | (unicode & 0x3FF)) : String.fromCharCode(unicode);
 
-        var charWidth = (glyph.width || defaultCharWidth) * fontSize * 0.001;
+        var charWidth = glyph.width * fontSize * 0.001;
         charWidth += charSpacing;
 
         ctx.fillText(char, width, 0);

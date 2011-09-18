@@ -1373,7 +1373,10 @@ var Font = (function Font() {
           var glyph = encoding[charcode];
           if ('undefined' == typeof(glyph)) {
             warn('Unencoded charcode ' + charcode);
-            glyph = { unicode: charcode };
+            glyph = {
+              unicode: charcode,
+              width: this.defaultWidth
+            };
           }
           glyphs.push(glyph);
           // placing null after each word break charcode (ASCII SPACE)
@@ -1387,7 +1390,10 @@ var Font = (function Font() {
           var glyph = encoding[charcode];
           if ('undefined' == typeof(glyph)) {
             warn('Unencoded charcode ' + charcode);
-            glyph = { unicode: charcode };
+            glyph = {
+              unicode: charcode,
+              width: this.defaultWidth
+            };
           }
           glyphs.push(glyph);
           if (charcode == 0x20)
