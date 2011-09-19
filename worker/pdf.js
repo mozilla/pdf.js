@@ -11,8 +11,10 @@ var console = {
       action: 'log',
       data: args
     });
-  },
+  }
+};
 
+var consoleUtils = {
   time: function(name) {
     consoleTimer[name] = Date.now();
   },
@@ -22,7 +24,7 @@ var console = {
     if (time == null) {
       throw 'Unkown timer name ' + name;
     }
-    this.log('Timer:', name, Date.now() - time);
+    console.log('Timer:', name, Date.now() - time);
   }
 };
 
@@ -42,7 +44,7 @@ var canvas = new CanvasProxy(1224, 1584);
 
 // Listen for messages from the main thread.
 var pdfDocument = null;
-onmessage = function(event) {
+addEventListener('message', function(event) {
   var data = event.data;
   // If there is no pdfDocument yet, then the sent data is the PDFDocument.
   if (!pdfDocument) {
@@ -55,7 +57,7 @@ onmessage = function(event) {
   }
   // User requested to render a certain page.
   else {
-    console.time('compile');
+    consoleUtils.time('compile');
 
     // Let's try to render the first page...
     var page = pdfDocument.getPage(parseInt(data, 10));
@@ -77,19 +79,19 @@ onmessage = function(event) {
     var fonts = [];
     var gfx = new CanvasGraphics(canvas.getContext('2d'), CanvasProxy);
     page.compile(gfx, fonts);
-    console.timeEnd('compile');
+    consoleUtils.timeEnd('compile');
 
     // Send fonts to the main thread.
-    console.time('fonts');
+    consoleUtils.time('fonts');
     postMessage({
       action: 'fonts',
       data: fonts
     });
-    console.timeEnd('fonts');
+    consoleUtils.timeEnd('fonts');
 
-    console.time('display');
+    consoleUtils.time('display');
     page.display(gfx);
     canvas.flush();
-    console.timeEnd('display');
+    consoleUtils.timeEnd('display');
   }
-};
+});

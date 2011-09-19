@@ -56,12 +56,12 @@ var actionHandler = {
 };
 
 // Listen to the MainThread for data and call actionHandler on it.
-this.onmessage = function(event) {
+addEventListener('message', function(event) {
   var data = event.data;
   if (data.action in actionHandler) {
     actionHandler[data.action].call(this, data.data);
   } else {
     throw 'Unkown action from worker: ' + data.action;
   }
-};
+});
 
