@@ -1219,10 +1219,13 @@ var Font = (function Font() {
             };
           }
         } else {
-          for (i = 0; i <= 0x1f; i++)
-            encoding[i].unicode += kCmapGlyphOffset;
-          for (i = 127; i <= 255; i++)
-            encoding[i].unicode += kCmapGlyphOffset;
+          for (i in encoding) {
+            if (encoding.hasOwnProperty(i)) {
+              var unicode = encoding[i].unicode;
+              if (unicode <= 0x1f || (unicode >= 127 && unicode <= 255))
+                encoding[i].unicode = unicode += kCmapGlyphOffset;
+            }
+          }
         }
 
         var glyphs = [];
