@@ -90,9 +90,14 @@ Follow us on twitter: @pdfjs
 
   http://twitter.com/#!/pdfjs
 
-Join our mailing list:
+Join our mailing list: 
 
   dev-pdf-js@lists.mozilla.org
+  
+Subscribe either using lists.mozilla.org or Google Groups: 
+  
+  https://lists.mozilla.org/listinfo/dev-pdf-js
+  https://groups.google.com/group/mozilla.dev.pdf-js/topics
 
 Talk to us on IRC:
 
