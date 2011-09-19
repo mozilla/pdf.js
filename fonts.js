@@ -1053,6 +1053,49 @@ var Font = (function Font() {
         }
       };
 
+      function sanitizeGlyphLocations(loca, glyf, numGlyphs,
+                                      isGlyphLocationsLong) {
+        var itemSize, itemDecode, itemEncode;
+        if (isGlyphLocationsLong) {
+          itemSize = 4;
+          itemDecode = function(data, offset) {
+            return (data[offset] << 24) | (data[offset + 1] << 16) |
+                   (data[offset + 2] << 8) | data[offset + 3];
+          };
+          itemEncode = function(data, offset, value) {
+            data[offset] = (value >>> 24) & 0xFF;
+            data[offset + 1] = (value >> 16) & 0xFF;
+            data[offset + 2] = (value >> 8) & 0xFF;
+            data[offset + 3] = value & 0xFF;
+          };
+        } else {
+          itemSize = 2;
+          itemDecode = function(data, offset) {
+            return (data[offset] << 8) | data[offset + 1];
+          };
+          itemEncode = function(data, offset, value) {
+            data[offset] = (value >> 8) & 0xFF;
+            data[offset + 1] = value & 0xFF;
+          };
+        }
+        var locaData = loca.data;
+        var startOffset = itemDecode(locaData, 0);
+        var firstOffset = itemDecode(locaData, itemSize);
+        if (firstOffset - startOffset < 12 || startOffset > 0) {
+          // removing first glyph
+          glyf.data = glyf.data.subarray(firstOffset);
+          glyf.length -= firstOffset;
+
+          itemEncode(locaData, 0, 0);
+          var i, pos = itemSize;
+          for (i = 1; i <= numGlyphs; ++i) {
+            itemEncode(locaData, pos,
+              itemDecode(locaData, pos) - firstOffset);
+            pos += itemSize;
+          }
+        }
+      }
+
       // Check that required tables are present
       var requiredTables = ['OS/2', 'cmap', 'head', 'hhea',
                              'hmtx', 'maxp', 'name', 'post'];
@@ -1060,7 +1103,7 @@ var Font = (function Font() {
       var header = readOpenTypeHeader(font);
       var numTables = header.numTables;
 
-      var cmap, maxp, hhea, hmtx, vhea, vmtx, head;
+      var cmap, maxp, hhea, hmtx, vhea, vmtx, head, loca, glyf;
       var tables = [];
       for (var i = 0; i < numTables; i++) {
         var table = readTableEntry(font);
@@ -1083,6 +1126,10 @@ var Font = (function Font() {
             vmtx = table;
           else if (table.tag == 'vhea')
             vhea = table;
+          else if (table.tag == 'loca')
+            loca = table;
+          else if (table.tag == 'glyf')
+            glyf = table;
         }
         tables.push(table);
       }
@@ -1126,6 +1173,11 @@ var Font = (function Font() {
 
       sanitizeMetrics(font, hhea, hmtx, numGlyphs);
       sanitizeMetrics(font, vhea, vmtx, numGlyphs);
+
+      if (head && loca && glyf) {
+        var isGlyphLocationsLong = int16([head.data[50], head.data[51]]);
+        sanitizeGlyphLocations(loca, glyf, numGlyphs, isGlyphLocationsLong);
+      }
 
       // Sanitizer reduces the glyph advanceWidth to the maxAdvanceWidth
       // Sometimes it's 0. That needs to be fixed
