@@ -127,5 +127,11 @@
        "link": true,
        "rounds": 1,
        "type": "eq"
+    },
+    {  "id": "fips197",
+       "file": "pdfs/fips197.pdf",
+       "link": true,
+       "rounds": 1,
+       "type": "load"
     }
 ]
