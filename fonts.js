@@ -1071,11 +1071,11 @@ var Font = (function Font() {
         } else {
           itemSize = 2;
           itemDecode = function(data, offset) {
-            return (data[offset] << 8) | data[offset + 1];
+            return (data[offset] << 9) | (data[offset + 1] << 1);
           };
           itemEncode = function(data, offset, value) {
-            data[offset] = (value >> 8) & 0xFF;
-            data[offset + 1] = value & 0xFF;
+            data[offset] = (value >> 9) & 0xFF;
+            data[offset + 1] = (value >> 1) & 0xFF;
           };
         }
         var locaData = loca.data;
