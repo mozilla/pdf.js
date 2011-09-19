@@ -3226,8 +3226,8 @@ var XRef = (function() {
         if (this.encrypt && !suppressEncryption) {
           try {
             e = parser.getObj(this.encrypt.createCipherTransform(num, gen));
-          } catch(ex) {
-            // almost all streams must to encrypted, but sometimes
+          } catch (ex) {
+            // almost all streams must be encrypted, but sometimes
             // they are not probably due to some broken generators
             // re-trying without encryption
             return this.fetch(ref, true);

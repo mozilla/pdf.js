@@ -49,7 +49,7 @@ function load() {
   };
   r.send(null);
 }
-window.onload = load;
+documet.addEventListener('DOMContentLoaded', load);
 
 function nextTask() {
   if (currentTaskIdx == manifest.length) {
