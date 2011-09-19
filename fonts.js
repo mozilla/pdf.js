@@ -440,6 +440,7 @@ var Font = (function Font() {
       // name ArialBlack for example will be replaced by Helvetica.
       this.black = (name.search(/Black/g) != -1);
 
+      this.defaultWidth = properties.defaultWidth;
       this.loadedName = fontName.split('-')[0];
       this.loading = false;
       return;
@@ -476,6 +477,7 @@ var Font = (function Font() {
     this.data = data;
     this.type = properties.type;
     this.textMatrix = properties.textMatrix;
+    this.defaultWidth = properties.defaultWidth;
     this.loadedName = getUniqueName();
     this.composite = properties.composite;
     this.loading = true;
@@ -1424,15 +1426,15 @@ var Font = (function Font() {
       return rule;
     },
 
-    charsToUnicode: function fonts_chars2Unicode(chars) {
+    charsToGlyphs: function fonts_chars2Glyphs(chars) {
       var charsCache = this.charsCache;
-      var str;
+      var glyphs;
 
       // if we translated this string before, just grab it from the cache
       if (charsCache) {
-        str = charsCache[chars];
-        if (str)
-          return str;
+        glyphs = charsCache[chars];
+        if (glyphs)
+          return glyphs;
       }
 
       // lazily create the translation cache
@@ -1443,7 +1445,8 @@ var Font = (function Font() {
       var encoding = this.encoding;
       if (!encoding)
         return chars;
-      str = '';
+
+      glyphs = [];
 
       if (this.composite) {
         // composite fonts have multi-byte strings convert the string from
@@ -1454,38 +1457,39 @@ var Font = (function Font() {
                                        // loop should never end on the last byte
         for (var i = 0; i < length; i++) {
           var charcode = int16([chars.charCodeAt(i++), chars.charCodeAt(i)]);
-          var unicode = encoding[charcode];
-          if ('undefined' == typeof(unicode)) {
+          var glyph = encoding[charcode];
+          if ('undefined' == typeof(glyph)) {
             warn('Unencoded charcode ' + charcode);
-            unicode = charcode;
-          } else {
-            unicode = unicode.unicode;
+            glyph = {
+              unicode: charcode,
+              width: this.defaultWidth
+            };
           }
-          str += String.fromCharCode(unicode);
+          glyphs.push(glyph);
+          // placing null after each word break charcode (ASCII SPACE)
+          if (charcode == 0x20)
+            glyphs.push(null);
         }
       }
       else {
         for (var i = 0; i < chars.length; ++i) {
           var charcode = chars.charCodeAt(i);
-          var unicode = encoding[charcode];
-          if ('undefined' == typeof(unicode)) {
+          var glyph = encoding[charcode];
+          if ('undefined' == typeof(glyph)) {
             warn('Unencoded charcode ' + charcode);
-            unicode = charcode;
-          } else {
-            unicode = unicode.unicode;
+            glyph = {
+              unicode: charcode,
+              width: this.defaultWidth
+            };
           }
-
-          // Handle surrogate pairs
-          if (unicode > 0xFFFF) {
-            str += String.fromCharCode(unicode & 0xFFFF);
-            unicode >>= 16;
-          }
-          str += String.fromCharCode(unicode);
+          glyphs.push(glyph);
+          if (charcode == 0x20)
+            glyphs.push(null);
         }
       }
 
       // Enter the translated string into the cache
-      return (charsCache[chars] = str);
+      return (charsCache[chars] = glyphs);
     }
   };
 

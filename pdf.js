@@ -4301,7 +4301,6 @@ var PartialEvaluator = (function() {
             };
           }
         } else if (type == 'CIDFontType0') {
-          encoding = xref.fetchIfRef(dict.get('Encoding'));
           if (IsName(encoding)) {
             // Encoding is a predefined CMap
             if (encoding.name == 'Identity-H') {
@@ -4362,6 +4361,7 @@ var PartialEvaluator = (function() {
       // merge in the differences
       var firstChar = properties.firstChar;
       var lastChar = properties.lastChar;
+      var widths = properties.widths || [];
       var glyphs = {};
       for (var i = firstChar; i <= lastChar; i++) {
         var glyph = differences[i];
@@ -4372,7 +4372,7 @@ var PartialEvaluator = (function() {
             continue;
         }
         var index = GlyphsUnicode[glyph] || i;
-        var width = properties.widths[i] || properties.widths[glyph];
+        var width = widths[i] || widths[glyph];
         map[i] = {
           unicode: index,
           width: IsNum(width) ? width : properties.defaultWidth
@@ -4543,7 +4543,7 @@ var PartialEvaluator = (function() {
           type: type.name,
           encoding: map,
           differences: [],
-          widths: widths,
+          widths: widths || {},
           defaultWidth: defaultWidth,
           firstChar: 0,
           lastChar: 256
@@ -4934,7 +4934,7 @@ var CanvasGraphics = (function() {
       font = font.get(fontRef.name);
       font = this.xref.fetchIfRef(font);
       if (!font)
-        return;
+        error('Referenced font is not found');
 
       var fontObj = font.fontObj;
       this.current.font = fontObj;
@@ -4986,22 +4986,15 @@ var CanvasGraphics = (function() {
     showText: function(text) {
       var ctx = this.ctx;
       var current = this.current;
-      var originalText = text;
+      var font = current.font;
 
       ctx.save();
       ctx.transform.apply(ctx, current.textMatrix);
       ctx.scale(1, -1);
-
       ctx.translate(current.x, -1 * current.y);
+      ctx.transform.apply(ctx, font.textMatrix || IDENTITY_MATRIX);
 
-      var font = current.font;
-      if (font) {
-        ctx.transform.apply(ctx, font.textMatrix || IDENTITY_MATRIX);
-        text = font.charsToUnicode(text);
-      }
-
-      var composite = font.composite;
-      var encoding = font.encoding;
+      var glyphs = font.charsToGlyphs(text);
       var fontSize = current.fontSize;
       var charSpacing = current.charSpacing;
       var wordSpacing = current.wordSpacing;
@@ -5009,22 +5002,23 @@ var CanvasGraphics = (function() {
       ctx.scale(1 / textHScale, 1);
 
       var width = 0;
-      for (var i = 0; i < text.length; i++) {
-        if (composite) {
-          var position = i * 2 + 1;
-          var charcode = (originalText.charCodeAt(position - 1) << 8) +
-                          originalText.charCodeAt(position);
-        } else {
-          var charcode = originalText.charCodeAt(i);
+      for (var i = 0; i < glyphs.length; i++) {
+        var glyph = glyphs[i];
+        if (glyph === null) {
+          // word break
+          width += wordSpacing;
+          continue;
         }
 
-        var charWidth = font.encoding[charcode].width * fontSize * 0.001;
-        charWidth += charSpacing;
-        if (charcode == 32)
-          charWidth += wordSpacing;
+        var unicode = glyph.unicode;
+        var char = unicode >= 0x10000 ?
+          String.fromCharCode(0xD800 | ((unicode - 0x10000) >> 10),
+          0xDC00 | (unicode & 0x3FF)) : String.fromCharCode(unicode);
 
-        ctx.fillText(text.charAt(i), 0, 0);
-        ctx.translate(charWidth, 0);
+        var charWidth = glyph.width * fontSize * 0.001;
+        charWidth += charSpacing;
+
+        ctx.fillText(char, width, 0);
         width += charWidth;
       }
       current.x += width;
