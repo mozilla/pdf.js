@@ -1,4 +1,4 @@
-/* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- /
+/* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 /* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
 
 'use strict';
@@ -560,7 +560,7 @@ var CFFDictDataMap = {
     '18': {
       name: 'ExpansionFactor'
     },
-    '9': {
+    '19': {
       name: 'initialRandomSeed'
     },
     '20': {

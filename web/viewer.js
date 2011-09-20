@@ -1,4 +1,4 @@
-/* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- /
+/* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 /* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
 
 'use strict';
@@ -98,7 +98,7 @@ var PDFView = {
   },
 
   get page() {
-    return parseInt(document.location.hash.substring(1)) || 1;
+    return parseInt(document.location.hash.substring(1), 10) || 1;
   },
 
   open: function(url, scale) {
@@ -170,7 +170,7 @@ var PDFView = {
     }
 
     this.setScale(scale || kDefaultScale, true);
-    this.page = parseInt(document.location.hash.substring(1)) || 1;
+    this.page = parseInt(document.location.hash.substring(1), 10) || 1;
     this.pagesRefMap = pagesRefMap;
     this.destinations = pdf.catalog.destinations;
     if (pdf.catalog.documentOutline) {
@@ -209,7 +209,7 @@ var PDFView = {
 
     var currentHeight = kBottomMargin;
     var windowTop = window.pageYOffset;
-    for (var i = 1; i <= pages.length; i++) {
+    for (var i = 1; i <= pages.length; ++i) {
       var page = pages[i - 1];
       var pageHeight = page.height * page.scale + kBottomMargin;
       if (currentHeight + pageHeight > windowTop)
@@ -219,10 +219,11 @@ var PDFView = {
     }
 
     var windowBottom = window.pageYOffset + window.innerHeight;
-    for (; i <= pages.length && currentHeight < windowBottom; i++) {
-      var page = pages[i - 1];
-      visiblePages.push({ id: page.id, y: currentHeight, view: page });
-      currentHeight += page.height * page.scale + kBottomMargin;
+    for (; i <= pages.length && currentHeight < windowBottom; ++i) {
+      var singlePage = pages[i - 1];
+      visiblePages.push({ id: singlePage.id, y: currentHeight,
+                          view: singlePage });
+      currentHeight += singlePage.height * singlePage.scale + kBottomMargin;
     }
 
     return visiblePages;
@@ -256,13 +257,13 @@ var PageView = function(container, content, id, width, height,
     div.removeAttribute('data-loaded');
   };
 
-  function setupLinks(canvas, content, scale) {
+  function setupLinks(content, scale) {
     function bindLink(link, dest) {
       link.onclick = function() {
         if (dest)
           PDFView.navigateTo(dest);
         return false;
-      }
+      };
     }
     var links = content.getLinks();
     for (var i = 0; i < links.length; i++) {
@@ -283,8 +284,6 @@ var PageView = function(container, content, id, width, height,
       var width = 0, height = 0, widthScale, heightScale;
       var scale = 0;
       switch (dest[1].name) {
-        default:
-          return;
         case 'XYZ':
           x = dest[2];
           y = dest[3];
@@ -315,6 +314,8 @@ var PageView = function(container, content, id, width, height,
             height / kCssUnits;
           scale = Math.min(widthScale, heightScale);
           break;
+        default:
+          return;
       }
 
       var boundingRect = [
@@ -369,7 +370,7 @@ var PageView = function(container, content, id, width, height,
     stats.begin = Date.now();
     this.content.startRendering(ctx, this.updateStats);
 
-    setupLinks(canvas, this.content, this.scale);
+    setupLinks(this.content, this.scale);
     div.setAttribute('data-loaded', true);
 
     return true;
@@ -593,7 +594,7 @@ window.addEventListener('pagechange', function pagechange(evt) {
 }, true);
 
 window.addEventListener('keydown', function keydown(evt) {
-  switch(evt.keyCode) {
+  switch (evt.keyCode) {
     case 61: // FF/Mac '='
     case 107: // FF '+' and '='
     case 187: // Chrome '+'

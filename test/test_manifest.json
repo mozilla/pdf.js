@@ -69,6 +69,12 @@
        "rounds": 1,
        "type": "load"
     },
+    {  "id": "wnv_chinese-pdf",
+       "file": "pdfs/wnv_chinese.pdf",
+       "link": true,
+       "rounds": 1,
+       "type": "eq"
+    },
     {  "id": "i9-pdf",
        "file": "pdfs/i9.pdf",
        "link": true,
@@ -109,5 +115,23 @@
        "link": true,
        "rounds": 1,
        "type": "eq"
+    },
+    {  "id": "artofwar",
+       "file": "pdfs/artofwar.pdf",
+       "link": true,
+       "rounds": 1,
+       "type": "eq"
+    },
+    {  "id": "wdsg_fitc",
+       "file": "pdfs/wdsg_fitc.pdf",
+       "link": true,
+       "rounds": 1,
+       "type": "eq"
+    },
+    {  "id": "fips197",
+       "file": "pdfs/fips197.pdf",
+       "link": true,
+       "rounds": 1,
+       "type": "load"
     }
 ]

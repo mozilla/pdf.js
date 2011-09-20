@@ -1,4 +1,4 @@
-/* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- /
+/* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 /* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
 
 'use strict';
@@ -56,11 +56,12 @@ var actionHandler = {
 };
 
 // Listen to the MainThread for data and call actionHandler on it.
-this.onmessage = function(event) {
+addEventListener('message', function(event) {
   var data = event.data;
   if (data.action in actionHandler) {
     actionHandler[data.action].call(this, data.data);
   } else {
     throw 'Unkown action from worker: ' + data.action;
   }
-};
+});
+
