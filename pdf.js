@@ -4324,14 +4324,16 @@ var PartialEvaluator = (function() {
             baseEncoding = Encodings[baseName.name].slice();
 
           // Load the differences between the base and original
-          var diffEncoding = encoding.get('Differences');
-          var index = 0;
-          for (var j = 0; j < diffEncoding.length; j++) {
-            var data = diffEncoding[j];
-            if (IsNum(data))
-              index = data;
-            else
-              differences[index++] = data.name;
+          if (encoding.has('Differences')) {
+            var diffEncoding = encoding.get('Differences');
+            var index = 0;
+            for (var j = 0; j < diffEncoding.length; j++) {
+              var data = diffEncoding[j];
+              if (IsNum(data))
+                index = data;
+              else
+                differences[index++] = data.name;
+            }
           }
         } else if (IsName(encoding)) {
           baseEncoding = Encodings[encoding.name].slice();

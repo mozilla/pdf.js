@@ -133,5 +133,11 @@
        "link": true,
        "rounds": 1,
        "type": "load"
+    },
+    {  "id": "txt2pdf",
+       "file": "pdfs/txt2pdf.pdf",
+       "link": true,
+       "rounds": 1,
+       "type": "load"
     }
 ]
