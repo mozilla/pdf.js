@@ -2586,7 +2586,7 @@ var Type2CFF = (function() {
       switch (format) {
         case 0:
           for (var i = 0; i < length; i++) {
-            var sid = (bytes[pos++]  << 8) | bytes[pos++];
+            var sid = (bytes[pos++] << 8) | bytes[pos++];
             charset.push(strings[sid]);
           }
           break;
@@ -2818,7 +2818,7 @@ var Type2CFF = (function() {
             start: start,
             end: end,
             data: bytes.subarray(start, end)
-          }
+          };
         },
         length: count,
         endPos: end
