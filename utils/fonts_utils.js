@@ -82,7 +82,7 @@ function readCharstringEncoding(aString) {
     } else if (value <= 31) {
       token = CFFEncodingMap[value];
     } else if (value < 247) {
-      token = parseInt(value) - 139;
+      token = parseInt(value, 10) - 139;
     } else if (value < 251) {
       token = (value - 247) * 256 + aString[i++] + 108;
     } else if (value < 255) {
@@ -126,7 +126,7 @@ function readFontDictData(aString, aMap) {
       while (!parsed) {
         var byte = aString[i++];
 
-        var nibbles = [parseInt(byte / 16), parseInt(byte % 16)];
+        var nibbles = [parseInt(byte / 16, 10), parseInt(byte % 16, 10)];
         for (var j = 0; j < nibbles.length; j++) {
           var nibble = nibbles[j];
           switch (nibble) {
@@ -157,7 +157,7 @@ function readFontDictData(aString, aMap) {
     } else if (value <= 31) {
       token = aMap[value];
     } else if (value <= 246) {
-      token = parseInt(value) - 139;
+      token = parseInt(value, 10) - 139;
     } else if (value <= 250) {
       token = (value - 247) * 256 + aString[i++] + 108;
     } else if (value <= 254) {
@@ -206,7 +206,7 @@ function readFontIndexData(aStream, aIsByte) {
     }
     error(offsize + ' is not a valid offset size');
     return null;
-  };
+  }
 
   var offsets = [];
   for (var i = 0; i < count + 1; i++)
@@ -249,7 +249,7 @@ var Type2Parser = function(aFilePath) {
   function dump(aStr) {
     if (debug)
       log(aStr);
-  };
+  }
 
   function parseAsToken(aString, aMap) {
     var decoded = readFontDictData(aString, aMap);
@@ -290,7 +290,7 @@ var Type2Parser = function(aFilePath) {
         }
       }
     }
-  };
+  }
 
   this.parse = function(aStream) {
     font.set('major', aStream.getByte());
@@ -363,7 +363,7 @@ var Type2Parser = function(aFilePath) {
       aStream.pos = charsetEntry;
       var charset = readCharset(aStream, charStrings);
     }
-  }
+  };
 };
 
 /*

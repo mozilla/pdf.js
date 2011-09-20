@@ -8,6 +8,7 @@
 'use strict';
 
 var appPath, browser, canvas, currentTaskIdx, manifest, stdout;
+var inFlightRequests = 0;
 
 function queryParams() {
   var qs = window.location.search.substring(1);
@@ -42,12 +43,12 @@ function load() {
     if (r.readyState == 4) {
       log('done\n');
       manifest = JSON.parse(r.responseText);
-      currentTaskIdx = 0, nextTask();
+      currentTaskIdx = 0;
+      nextTask();
     }
   };
   r.send(null);
 }
-window.onload = load;
 
 function nextTask() {
   if (currentTaskIdx == manifest.length) {
@@ -73,7 +74,8 @@ function nextTask() {
         failure = 'load PDF doc : ' + e.toString();
       }
 
-      task.pageNum = 1, nextPage(task, failure);
+      task.pageNum = 1;
+      nextPage(task, failure);
     }
   };
   r.send(null);
@@ -89,7 +91,8 @@ function nextPage(task, loadError) {
   if (!task.pdfDoc) {
     sendTaskResult(canvas.toDataURL('image/png'), task, failure);
     log('done' + (failure ? ' (failed !: ' + failure + ')' : '') + '\n');
-    ++currentTaskIdx, nextTask();
+    ++currentTaskIdx;
+    nextTask();
     return;
   }
 
@@ -98,7 +101,8 @@ function nextPage(task, loadError) {
       log(' Round ' + (1 + task.round) + '\n');
       task.pageNum = 1;
     } else {
-      ++currentTaskIdx, nextTask();
+      ++currentTaskIdx;
+      nextTask();
       return;
     }
   }
@@ -123,7 +127,7 @@ function nextPage(task, loadError) {
       page.startRendering(
         ctx,
         function(e) {
-          snapshotCurrentPage(page, task, (!failure && e) ?
+          snapshotCurrentPage(task, (!failure && e) ?
             ('render : ' + e) : failure);
         }
       );
@@ -135,11 +139,11 @@ function nextPage(task, loadError) {
   if (failure) {
     // Skip right to snapshotting if there was a failure, since the
     // fonts might be in an inconsistent state.
-    snapshotCurrentPage(page, task, failure);
+    snapshotCurrentPage(task, failure);
   }
 }
 
-function snapshotCurrentPage(page, task, failure) {
+function snapshotCurrentPage(task, failure) {
   log('done, snapshotting... ');
 
   sendTaskResult(canvas.toDataURL('image/png'), task, failure);
@@ -149,7 +153,8 @@ function snapshotCurrentPage(page, task, failure) {
   var backoff = (inFlightRequests > 0) ? inFlightRequests * 10 : 0;
   setTimeout(
     function() {
-      ++task.pageNum, nextPage(task);
+      ++task.pageNum;
+      nextPage(task);
     },
     backoff
   );
@@ -182,7 +187,6 @@ function done() {
   }
 }
 
-var inFlightRequests = 0;
 function sendTaskResult(snapshot, task, failure) {
   var result = { browser: browser,
                  id: task.id,
@@ -201,7 +205,7 @@ function sendTaskResult(snapshot, task, failure) {
     if (r.readyState == 4) {
       inFlightRequests--;
     }
-  }
+  };
   document.getElementById('inFlightCount').innerHTML = inFlightRequests++;
   r.send(JSON.stringify(result));
 }
