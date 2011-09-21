@@ -2415,7 +2415,7 @@ var Lexer = (function() {
   }
 
   constructor.isSpace = function(ch) {
-    return ch == ' ' || ch == '\t' || ch == '\x0d';
+    return ch == ' ' || ch == '\t' || ch == '\x0d' || ch == '\x0a';
   };
 
   // A '1' in this array means the character is white space.  A '1' or
@@ -4184,7 +4184,7 @@ var PartialEvaluator = (function() {
                 if (typeNum == 1) {
                   patternName.code = this.evaluate(pattern, xref,
                                                    dict.get('Resources'),
-                                                   fonts);
+                                                   fonts, images);
                 }
               }
             }
