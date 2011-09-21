@@ -139,5 +139,11 @@
        "link": true,
        "rounds": 1,
        "type": "load"
+    },
+    {  "id": "f1040",
+       "file": "pdfs/f1040.pdf",
+       "link": true,
+       "rounds": 1,
+       "type": "load"
     }
 ]
