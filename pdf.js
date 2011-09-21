@@ -3094,10 +3094,11 @@ var XRef = (function() {
       // check for 'XRefStm' key
       if (IsInt(obj = dict.get('XRefStm'))) {
         var pos = obj;
-        if (pos in this.xrefstms)
-          error('Invalid XRef table');
-        this.xrefstms[pos] = 1; // avoid infinite recursion
-        this.readXRef(pos);
+        // ignore previously loaded xref streams (possible infinite recursion)
+        if (!(pos in this.xrefstms)) {
+          this.xrefstms[pos] = 1;
+          this.readXRef(pos);
+        }
       }
 
       return dict;
