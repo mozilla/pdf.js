@@ -55,7 +55,7 @@ function readCharset(aStream, aCharstrings) {
  */
 function readCharstringEncoding(aString) {
   if (!aString)
-    return "";
+    return '';
 
   var charstringTokens = [];
 
