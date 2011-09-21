@@ -2415,7 +2415,7 @@ var Lexer = (function() {
   }
 
   constructor.isSpace = function(ch) {
-    return ch == ' ' || ch == '\t' || ch == '\x0d';
+    return ch == ' ' || ch == '\t' || ch == '\x0d' || ch == '\x0a';
   };
 
   // A '1' in this array means the character is white space.  A '1' or
@@ -4184,7 +4184,7 @@ var PartialEvaluator = (function() {
                 if (typeNum == 1) {
                   patternName.code = this.evaluate(pattern, xref,
                                                    dict.get('Resources'),
-                                                   fonts);
+                                                   fonts, images);
                 }
               }
             }
@@ -4324,14 +4324,16 @@ var PartialEvaluator = (function() {
             baseEncoding = Encodings[baseName.name].slice();
 
           // Load the differences between the base and original
-          var diffEncoding = encoding.get('Differences');
-          var index = 0;
-          for (var j = 0; j < diffEncoding.length; j++) {
-            var data = diffEncoding[j];
-            if (IsNum(data))
-              index = data;
-            else
-              differences[index++] = data.name;
+          if (encoding.has('Differences')) {
+            var diffEncoding = encoding.get('Differences');
+            var index = 0;
+            for (var j = 0; j < diffEncoding.length; j++) {
+              var data = diffEncoding[j];
+              if (IsNum(data))
+                index = data;
+              else
+                differences[index++] = data.name;
+            }
           }
         } else if (IsName(encoding)) {
           baseEncoding = Encodings[encoding.name].slice();
