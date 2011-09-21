@@ -3319,6 +3319,31 @@ var Page = (function() {
       return shadow(this, 'mediaBox',
                     ((IsArray(obj) && obj.length == 4) ? obj : null));
     },
+    get view() {
+      var obj = this.inheritPageProp('CropBox');
+      var view = {
+        x: 0,
+        y: 0,
+        width: this.width,
+        height: this.height
+      };
+      if (IsArray(obj) && obj.length == 4) {
+        var rotate = this.rotate;
+        if (rotate == 0 || rotate == 180) {
+          view.x = obj[0];
+          view.y = obj[1];
+          view.width = obj[2] - view.x;
+          view.height = obj[3] - view.y;
+        } else {
+          view.x = obj[1];
+          view.y = obj[0];
+          view.width = obj[3] - view.x;
+          view.height = obj[2] - view.y;
+        }
+      }
+
+      return shadow(this, 'cropBox', view);
+    },
     get annotations() {
       return shadow(this, 'annotations', this.inheritPageProp('Annots'));
     },
