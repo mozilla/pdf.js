@@ -118,7 +118,7 @@ var PDFView = {
         var data = (xhr.mozResponseArrayBuffer || xhr.mozResponse ||
                     xhr.responseArrayBuffer || xhr.response);
         
-		document.getElementById('loading').style.display = "none";
+        document.getElementById('loading').style.display = "none";
         PDFView.load(data, scale);
       }
     };
