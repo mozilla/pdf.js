@@ -2571,9 +2571,9 @@ var Type2CFF = (function() {
       if (pos == 0) {
         return ISOAdobeCharset;
       } else if (pos == 1) {
-        return CFFExpertCharset;
+        return ExpertCharset;
       } else if (pos == 2) {
-        return CFFExpertSubsetCharset;
+        return ExpertSubsetCharset;
       }
 
       var bytes = this.bytes;
