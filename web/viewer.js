@@ -111,14 +111,14 @@ var PDFView = {
     xhr.open('GET', url);
     xhr.mozResponseType = xhr.responseType = 'arraybuffer';
     xhr.expected = (document.URL.indexOf('file:') === 0) ? 0 : 200; 
-	xhr.onprogress=PDFView.progressLevel;
+    xhr.onprogress = PDFView.progressLevel;
 
     xhr.onreadystatechange = function() {
       if (xhr.readyState === 4 && xhr.status === xhr.expected) {
         var data = (xhr.mozResponseArrayBuffer || xhr.mozResponse ||
                     xhr.responseArrayBuffer || xhr.response);
         
-		document.getElementById('loading').style.display="none";
+		document.getElementById('loading').style.display = "none";
         PDFView.load(data, scale);
       }
     };
@@ -127,8 +127,8 @@ var PDFView = {
   },
 
   progressLevel: function(evt) {
-  	var p=Math.round((evt.loaded / evt.total)*100);
-	document.getElementById('loading').innerHTML = 'Loading... '+p+'%';
+    var p = Math.round((evt.loaded / evt.total) * 100);
+    document.getElementById('loading').innerHTML = 'Loading... ' + p + '%';
   },
 
   navigateTo: function(dest) {
