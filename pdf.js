@@ -4490,9 +4490,9 @@ var PartialEvaluator = (function partialEvaluator() {
       return glyphs;
     },
 
-    getBaseFontMetrics: function(baseFontName) {
+    getBaseFontMetricsAndMap: function getBaseFontMetricsAndMap(name) {
       var map = {};
-      if (/^Symbol(-?(Bold|Italic))*$/.test(baseFontName)) {
+      if (/^Symbol(-?(Bold|Italic))*$/.test(name)) {
         // special case for symbols
         var encoding = Encodings.symbolsEncoding;
         for (var i = 0, n = encoding.length, j; i < n; i++) {
@@ -4503,7 +4503,7 @@ var PartialEvaluator = (function partialEvaluator() {
       }
 
       var defaultWidth = 0;
-      var widths = Metrics[stdFontMap[baseFontName] || baseFontName];
+      var widths = Metrics[stdFontMap[name] || name];
       if (IsNum(widths)) {
         defaultWidth = widths;
         widths = null;
@@ -4553,14 +4553,14 @@ var PartialEvaluator = (function partialEvaluator() {
 
         // Using base font name as a font name.
         baseFontName = baseFontName.name.replace(/,/g, '_');
-        var metrics = this.getBaseFontMetrics(baseFontName);
+        var metricsAndMap = this.getBaseFontMetricsAndMap(baseFontName);
 
         var properties = {
           type: type.name,
-          encoding: metrics.map,
+          encoding: metricsAndMap.map,
           differences: [],
-          widths: metrics.widths,
-          defaultWidth: metrics.defaultWidth,
+          widths: metricsAndMap.widths,
+          defaultWidth: metricsAndMap.defaultWidth,
           firstChar: 0,
           lastChar: 256
         };
@@ -4592,11 +4592,11 @@ var PartialEvaluator = (function partialEvaluator() {
         // Trying get the BaseFont metrics (see comment above).
         var baseFontName = dict.get('BaseFont');
         if (IsName(baseFontName)) {
-          var metrics = this.getBaseFontMetrics(baseFontName.name);
+          var metricsAndMap = this.getBaseFontMetricsAndMap(baseFontName.name);
 
-          glyphWidths = metrics.widths;
-          defaultWidth = metrics.defaultWidth;
-          encoding = metrics.map;
+          glyphWidths = metricsAndMap.widths;
+          defaultWidth = metricsAndMap.defaultWidth;
+          encoding = metricsAndMap.map;
         }
       }
 
