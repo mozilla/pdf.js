@@ -12,6 +12,8 @@ PDF_JS_FILES = \
 	pdf.js \
 	crypto.js \
 	fonts.js \
+	metrics.js \
+	charsets.js \
 	glyphlist.js \
 	$(NULL)
 
