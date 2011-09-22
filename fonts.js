@@ -447,13 +447,14 @@ var Font = (function Font() {
     }
 
     var data;
-    switch (properties.type) {
+    var type = properties.type;
+    switch (type) {
       case 'Type1':
       case 'CIDFontType0':
         this.mimetype = 'font/opentype';
 
         var subtype = properties.subtype;
-        var cff = (subtype == 'Type1C' || properties.type == 'CIDFontType0') ?
+        var cff = (subtype == 'Type1C' || subtype == 'CIDFontType0C') ?
           new Type2CFF(file, properties) : new CFF(name, file, properties);
 
         // Wrap the CFF data inside an OTF font file
@@ -475,7 +476,7 @@ var Font = (function Font() {
     }
 
     this.data = data;
-    this.type = properties.type;
+    this.type = type;
     this.textMatrix = properties.textMatrix;
     this.defaultWidth = properties.defaultWidth;
     this.loadedName = getUniqueName();
@@ -2522,8 +2523,8 @@ var Type2CFF = (function() {
 
       if (pos == 0 || pos == 1) {
         var gid = 1;
-        var baseEncoding =
-          pos ? Encodings.ExpertEncoding : Encodings.StandardEncoding;
+        var baseEncoding = pos ? Encodings.ExpertEncoding.slice() :
+                                 Encodings.StandardEncoding.slice();
         for (var i = 0; i < charset.length; i++) {
           var index = baseEncoding.indexOf(charset[i]);
           if (index != -1)
@@ -2569,11 +2570,11 @@ var Type2CFF = (function() {
 
     parseCharsets: function cff_parsecharsets(pos, length, strings) {
       if (pos == 0) {
-        return ISOAdobeCharset;
+        return ISOAdobeCharset.slice();
       } else if (pos == 1) {
-        return ExpertCharset;
+        return ExpertCharset.slice();
       } else if (pos == 2) {
-        return ExpertSubsetCharset;
+        return ExpertSubsetCharset.slice();
       }
 
       var bytes = this.bytes;
