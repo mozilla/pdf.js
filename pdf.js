@@ -5033,7 +5033,8 @@ var CanvasGraphics = (function canvasGraphics() {
       ctx.scale(1 / textHScale, 1);
 
       var width = 0;
-      for (var i = 0; i < glyphs.length; i++) {
+      var glyphsLength = glyphs.length;
+      for (var i = 0; i < glyphsLength; ++i) {
         var glyph = glyphs[i];
         if (glyph === null) {
           // word break
@@ -5042,34 +5043,35 @@ var CanvasGraphics = (function canvasGraphics() {
         }
 
         var unicode = glyph.unicode;
-        var char = unicode >= 0x10000 ?
+        var char = (unicode >= 0x10000) ?
           String.fromCharCode(0xD800 | ((unicode - 0x10000) >> 10),
           0xDC00 | (unicode & 0x3FF)) : String.fromCharCode(unicode);
 
-        var charWidth = glyph.width * fontSize * 0.001;
-        charWidth += charSpacing;
-
         ctx.fillText(char, width, 0);
-        width += charWidth;
+        width += glyph.width * fontSize * 0.001 + charSpacing;
       }
       current.x += width;
 
       this.ctx.restore();
     },
     showSpacedText: function canvasGraphicsShowSpacedText(arr) {
-      for (var i = 0; i < arr.length; ++i) {
+      var ctx = this.ctx;
+      var current = this.current;
+      var fontSize = current.fontSize;
+      var textHScale = current.textHScale;
+      var arrLength = arr.length;
+      for (var i = 0; i < arrLength; ++i) {
         var e = arr[i];
         if (IsNum(e)) {
-          if (this.ctx.$addCurrentX) {
-            this.ctx.$addCurrentX(-e * 0.001 * this.current.fontSize);
+          if (ctx.$addCurrentX) {
+            ctx.$addCurrentX(-e * 0.001 * fontSize);
           } else {
-            this.current.x -= e * 0.001 * this.current.fontSize *
-                              this.current.textHScale;
+            current.x -= e * 0.001 * fontSize * textHScale;
           }
         } else if (IsString(e)) {
           this.showText(e);
         } else {
-          malformed('TJ array element ' + e + " isn't string or num");
+          malformed('TJ array element ' + e + ' is not string or num');
         }
       }
     },
