@@ -4490,6 +4490,32 @@ var PartialEvaluator = (function partialEvaluator() {
       return glyphs;
     },
 
+    getBaseFontMetricsAndMap: function getBaseFontMetricsAndMap(name) {
+      var map = {};
+      if (/^Symbol(-?(Bold|Italic))*$/.test(name)) {
+        // special case for symbols
+        var encoding = Encodings.symbolsEncoding;
+        for (var i = 0, n = encoding.length, j; i < n; i++) {
+          if (!(j = encoding[i]))
+            continue;
+          map[i] = GlyphsUnicode[j] || 0;
+        }
+      }
+
+      var defaultWidth = 0;
+      var widths = Metrics[stdFontMap[name] || name];
+      if (IsNum(widths)) {
+        defaultWidth = widths;
+        widths = null;
+      }
+
+      return {
+        defaultWidth: defaultWidth,
+        widths: widths || [],
+        map: map
+      };
+    },
+
     translateFont: function partialEvaluatorTranslateFont(dict, xref,
                                                           resources) {
       var baseDict = dict;
@@ -4526,30 +4552,15 @@ var PartialEvaluator = (function partialEvaluator() {
           return null;
 
         // Using base font name as a font name.
-        baseFontName = baseFontName.name;
-        var map = {};
-        if (/^Symbol(-?(Bold|Italic))*$/.test(baseFontName)) {
-          // special case for symbols
-          var encoding = Encodings.symbolsEncoding;
-          for (var i = 0, n = encoding.length, j; i < n; i++) {
-            if (!(j = encoding[i]))
-              continue;
-            map[i] = GlyphsUnicode[j] || 0;
-          }
-        }
+        baseFontName = baseFontName.name.replace(/,/g, '_');
+        var metricsAndMap = this.getBaseFontMetricsAndMap(baseFontName);
 
-        var defaultWidth = 0;
-        var widths = Metrics[stdFontMap[baseFontName] || baseFontName];
-        if (IsNum(widths)) {
-          defaultWidth = widths;
-          widths = null;
-        }
         var properties = {
           type: type.name,
-          encoding: map,
+          encoding: metricsAndMap.map,
           differences: [],
-          widths: widths || {},
-          defaultWidth: defaultWidth,
+          widths: metricsAndMap.widths,
+          defaultWidth: metricsAndMap.defaultWidth,
           firstChar: 0,
           lastChar: 256
         };
@@ -4569,7 +4580,25 @@ var PartialEvaluator = (function partialEvaluator() {
       // a variant.
       var firstChar = xref.fetchIfRef(dict.get('FirstChar')) || 0;
       var lastChar = xref.fetchIfRef(dict.get('LastChar')) || 256;
-      var widths = xref.fetchIfRef(dict.get('Widths')) || [];
+      var defaultWidth = 0;
+      var glyphWidths = {};
+      var encoding = {};
+      var widths = xref.fetchIfRef(dict.get('Widths'));
+      if (widths) {
+        for (var i = 0, j = firstChar; i < widths.length; i++, j++)
+          glyphWidths[j] = widths[i];
+        defaultWidth = parseFloat(descriptor.get('MissingWidth')) || 0;
+      } else {
+        // Trying get the BaseFont metrics (see comment above).
+        var baseFontName = dict.get('BaseFont');
+        if (IsName(baseFontName)) {
+          var metricsAndMap = this.getBaseFontMetricsAndMap(baseFontName.name);
+
+          glyphWidths = metricsAndMap.widths;
+          defaultWidth = metricsAndMap.defaultWidth;
+          encoding = metricsAndMap.map;
+        }
+      }
 
       var fontName = xref.fetchIfRef(descriptor.get('FontName'));
       assertWellFormed(IsName(fontName), 'invalid font name');
@@ -4608,17 +4637,12 @@ var PartialEvaluator = (function partialEvaluator() {
         descent: descriptor.get('Descent'),
         xHeight: descriptor.get('XHeight'),
         capHeight: descriptor.get('CapHeight'),
-        defaultWidth: parseFloat(descriptor.get('MissingWidth')) || 0,
+        defaultWidth: defaultWidth,
         flags: descriptor.get('Flags'),
         italicAngle: descriptor.get('ItalicAngle'),
         differences: [],
-        widths: (function partialEvaluatorWidths() {
-          var glyphWidths = {};
-          for (var i = 0; i < widths.length; i++)
-            glyphWidths[firstChar++] = widths[i];
-          return glyphWidths;
-        })(),
-        encoding: {}
+        widths: glyphWidths,
+        encoding: encoding
       };
       properties.glyphs = this.extractEncoding(dict, xref, properties);
 
