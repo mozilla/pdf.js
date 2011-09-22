@@ -145,5 +145,11 @@
        "link": true,
        "rounds": 1,
        "type": "load"
+    },
+    {  "id": "hudsonsurvey",
+       "file": "pdfs/hudsonsurvey.pdf",
+       "link": true,
+       "rounds": 1,
+       "type": "load"
     }
 ]
