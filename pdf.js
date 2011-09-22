@@ -4280,8 +4280,9 @@ var PartialEvaluator = (function partialEvaluator() {
           properties.widths = glyphsWidths;
 
           var cidToGidMap = dict.get('CIDToGIDMap');
-          if (!cidToGidMap || !IsRef(cidToGidMap))
-            return GlyphsUnicode;
+          if (!cidToGidMap || !IsRef(cidToGidMap)) {
+            return Object.create(GlyphsUnicode);
+          }
 
           // Extract the encoding from the CIDToGIDMap
           var glyphsStream = xref.fetchIfRef(cidToGidMap);
@@ -4318,7 +4319,7 @@ var PartialEvaluator = (function partialEvaluator() {
                  '9.7.5.3');
           }
         }
-        return GlyphsUnicode;
+        return Object.create(GlyphsUnicode);
       }
 
       var differences = properties.differences;
@@ -4494,7 +4495,7 @@ var PartialEvaluator = (function partialEvaluator() {
       var map = {};
       if (/^Symbol(-?(Bold|Italic))*$/.test(name)) {
         // special case for symbols
-        var encoding = Encodings.symbolsEncoding;
+        var encoding = Encodings.symbolsEncoding.slice();
         for (var i = 0, n = encoding.length, j; i < n; i++) {
           if (!(j = encoding[i]))
             continue;

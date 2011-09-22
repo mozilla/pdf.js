@@ -447,13 +447,14 @@ var Font = (function Font() {
     }
 
     var data;
-    switch (properties.type) {
+    var type = properties.type;
+    switch (type) {
       case 'Type1':
       case 'CIDFontType0':
         this.mimetype = 'font/opentype';
 
         var subtype = properties.subtype;
-        var cff = (subtype === 'Type1C') ?
+        var cff = (subtype == 'Type1C' || subtype == 'CIDFontType0C') ?
           new Type2CFF(file, properties) : new CFF(name, file, properties);
 
         // Wrap the CFF data inside an OTF font file
@@ -475,7 +476,7 @@ var Font = (function Font() {
     }
 
     this.data = data;
-    this.type = properties.type;
+    this.type = type;
     this.textMatrix = properties.textMatrix;
     this.defaultWidth = properties.defaultWidth;
     this.loadedName = getUniqueName();
@@ -2387,16 +2388,21 @@ var Type2CFF = (function() {
 
       var strings = this.getStrings(stringIndex);
 
-      var baseDict = this.parseDict(dictIndex.get(0));
+      var baseDict = this.parseDict(dictIndex.get(0).data);
       var topDict = this.getTopDict(baseDict, strings);
 
       var bytes = this.bytes;
 
+      var privateDict = {};
       var privateInfo = topDict.Private;
-      var privOffset = privateInfo[1], privLength = privateInfo[0];
-      var privBytes = bytes.subarray(privOffset, privOffset + privLength);
-      baseDict = this.parseDict(privBytes);
-      var privDict = this.getPrivDict(baseDict, strings);
+      if (privateInfo) {
+        var privOffset = privateInfo[1], privLength = privateInfo[0];
+        var privBytes = bytes.subarray(privOffset, privOffset + privLength);
+        baseDict = this.parseDict(privBytes);
+        privateDict = this.getPrivDict(baseDict, strings);
+      } else {
+        privateDict.defaultWidthX = properties.defaultWidth;
+      }
 
       var charStrings = this.parseIndex(topDict.CharStrings);
       var charset = this.parseCharsets(topDict.charset,
@@ -2412,10 +2418,37 @@ var Type2CFF = (function() {
       if (hasSupplement)
         bytes[topDict.Encoding] = 0;
 
+      // The CFF specification state that the 'dotsection' command
+      // (12, 0) is deprecated and treated as a no-op, but all Type2
+      // charstrings processors should support them. Unfortunately
+      // the font sanitizer don't. As a workaround the sequence (12, 0)
+      // is replaced by a useless (0, hmoveto).
+      var count = charStrings.length;
+      for (var i = 0; i < count; i++) {
+        var charstring = charStrings.get(i);
+
+        var start = charstring.start;
+        var data = charstring.data;
+        var length = data.length;
+        for (var j = 0; j <= length; j) {
+          var value = data[j++];
+          if (value == 12 && data[j++] == 0) {
+              bytes[start + j - 2] = 139;
+              bytes[start + j - 1] = 22;
+          } else if (value === 28) {
+            j += 2;
+          } else if (value >= 247 && value <= 254) {
+            j++;
+          } else if (value == 255) {
+            j += 4;
+          }
+        }
+      }
+
       // charstrings contains info about glyphs (one element per glyph
       // containing mappings for {unicode, width})
       var charstrings = this.getCharStrings(charset, charStrings,
-                                            privDict, this.properties);
+                                            privateDict, this.properties);
 
       // create the mapping between charstring and glyph id
       var glyphIds = [];
@@ -2432,10 +2465,8 @@ var Type2CFF = (function() {
     },
 
     getCharStrings: function cff_charstrings(charsets, charStrings,
-                                             privDict, properties) {
-      var defaultWidth = privDict['defaultWidthX'];
-      var nominalWidth = privDict['nominalWidthX'];
-
+                                             privateDict, properties) {
+      var defaultWidth = privateDict['defaultWidthX'];
       var charstrings = [];
       var differences = properties.differences;
       var index = 0;
@@ -2492,8 +2523,8 @@ var Type2CFF = (function() {
 
       if (pos == 0 || pos == 1) {
         var gid = 1;
-        var baseEncoding =
-          pos ? Encodings.ExpertEncoding : Encodings.StandardEncoding;
+        var baseEncoding = pos ? Encodings.ExpertEncoding.slice() :
+                                 Encodings.StandardEncoding.slice();
         for (var i = 0; i < charset.length; i++) {
           var index = baseEncoding.indexOf(charset[i]);
           if (index != -1)
@@ -2538,37 +2569,42 @@ var Type2CFF = (function() {
     },
 
     parseCharsets: function cff_parsecharsets(pos, length, strings) {
+      if (pos == 0) {
+        return ISOAdobeCharset.slice();
+      } else if (pos == 1) {
+        return ExpertCharset.slice();
+      } else if (pos == 2) {
+        return ExpertSubsetCharset.slice();
+      }
+
       var bytes = this.bytes;
       var format = bytes[pos++];
       var charset = ['.notdef'];
+
       // subtract 1 for the .notdef glyph
       length -= 1;
 
       switch (format) {
         case 0:
-          for (var i = 0; i < length; ++i) {
-            var id = bytes[pos++];
-            id = (id << 8) | bytes[pos++];
-            charset.push(strings[id]);
+          for (var i = 0; i < length; i++) {
+            var sid = (bytes[pos++] << 8) | bytes[pos++];
+            charset.push(strings[sid]);
           }
           break;
         case 1:
           while (charset.length <= length) {
-            var first = bytes[pos++];
-            first = (first << 8) | bytes[pos++];
-            var numLeft = bytes[pos++];
-            for (var i = 0; i <= numLeft; ++i)
-              charset.push(strings[first++]);
+            var sid = (bytes[pos++] << 8) | bytes[pos++];
+            var count = bytes[pos++];
+            for (var i = 0; i <= count; i++)
+              charset.push(strings[sid++]);
           }
           break;
         case 2:
           while (charset.length <= length) {
-            var first = bytes[pos++];
-            first = (first << 8) | bytes[pos++];
-            var numLeft = bytes[pos++];
-            numLeft = (numLeft << 8) | bytes[pos++];
-            for (var i = 0; i <= numLeft; ++i)
-              charset.push(strings[first++]);
+            var sid = (bytes[pos++] << 8) | bytes[pos++];
+            var count = (bytes[pos++] << 8) | bytes[pos++];
+            for (var i = 0; i <= count; i++)
+              charset.push(strings[sid++]);
           }
           break;
         default:
@@ -2643,20 +2679,20 @@ var Type2CFF = (function() {
       }
       return dict;
     },
-    getStrings: function cff_getstrings(stringIndex) {
-      function bytesToString(bytesArr) {
-        var s = '';
-        for (var i = 0, ii = bytesArr.length; i < ii; ++i)
-          s += String.fromCharCode(bytesArr[i]);
-        return s;
+    getStrings: function cff_getStrings(stringIndex) {
+      function bytesToString(bytesArray) {
+        var str = '';
+        for (var i = 0, length = bytesArray.length; i < length; i++)
+          str += String.fromCharCode(bytesArray[i]);
+        return str;
       }
 
       var stringArray = [];
-      for (var i = 0, ii = CFFStrings.length; i < ii; ++i)
+      for (var i = 0, length = CFFStrings.length; i < length; i++)
         stringArray.push(CFFStrings[i]);
 
-      for (var i = 0, ii = stringIndex.length; i < ii; ++i)
-        stringArray.push(bytesToString(stringIndex.get(i)));
+      for (var i = 0, length = stringIndex.length; i < length; i++)
+        stringArray.push(bytesToString(stringIndex.get(i).data));
 
       return stringArray;
     },
@@ -2702,7 +2738,7 @@ var Type2CFF = (function() {
         } else if (value <= 254) {
           return -((value - 251) * 256) - dict[pos++] - 108;
         } else {
-          error('Incorrect byte');
+          error('255 is not a valid DICT command');
         }
         return -1;
       }
@@ -2779,7 +2815,11 @@ var Type2CFF = (function() {
 
           var start = offsets[index];
           var end = offsets[index + 1];
-          return bytes.subarray(start, end);
+          return {
+            start: start,
+            end: end,
+            data: bytes.subarray(start, end)
+          };
         },
         length: count,
         endPos: end
