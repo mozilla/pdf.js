@@ -3321,8 +3321,10 @@ var Page = (function pagePage() {
     },
     get mediaBox() {
       var obj = this.inheritPageProp('MediaBox');
-      return shadow(this, 'mediaBox',
-                    ((IsArray(obj) && obj.length == 4) ? obj : null));
+      // Reset invalid media box to letter size.
+      if (!IsArray(obj) || obj.length === 4)
+        obj = [0, 0, 612, 792];
+      return shadow(this, 'mediaBox', obj);
     },
     get view() {
       var obj = this.inheritPageProp('CropBox');
