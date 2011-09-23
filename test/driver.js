@@ -58,7 +58,7 @@ function cleanup() {
   }
   var guard = document.getElementById('content-end');
   var body = document.body;
-  while (body.lastChild != guard)
+  while (body.lastChild !== guard)
     body.removeChild(body.lastChild);
 }
 
