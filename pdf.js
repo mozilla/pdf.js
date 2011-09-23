@@ -6466,7 +6466,7 @@ var PDFFunction = (function pDFFunction() {
         return out;
       };
     },
-    constructStiched: function(fn, dict, xref) {
+    constructStiched: function pDFFunctionConstructStiched(fn, dict, xref) {
       var domain = dict.get('Domain');
       var range = dict.get('Range');
 
@@ -6485,8 +6485,8 @@ var PDFFunction = (function pDFFunction() {
       var bounds = dict.get('Bounds');
       var encode = dict.get('Encode');
 
-      this.func = function(args) {
-        var clip = function(v, min, max) {
+      this.func = function pDFFunctionConstructStichedFunc(args) {
+        var clip = function pDFFunctionConstructStichedFuncClip(v, min, max) {
           if (v > max)
             v = max;
           else if (v < min)
@@ -6519,9 +6519,9 @@ var PDFFunction = (function pDFFunction() {
         return fns[i].func([v2]);
       };
     },
-    constructPostScript: function() {
+    constructPostScript: function pDFFunctionConstructPostScript() {
       TODO('unhandled type of function');
-      this.func = function() {
+      this.func = function pDFFunctionConstructPostScriptFunc() {
         return [255, 105, 180];
       };
     }
