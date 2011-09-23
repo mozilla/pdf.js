@@ -57,8 +57,9 @@ function cleanup() {
       styleSheet.deleteRule(0);
   }
   var guard = document.getElementById('content-end');
-  while (document.body.lastChild != guard)
-    document.body.removeChild(document.body.lastChild);
+  var body = document.body;
+  while (body.lastChild != guard)
+    body.removeChild(body.lastChild);
 }
 
 function nextTask() {
