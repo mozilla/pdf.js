@@ -180,7 +180,8 @@ var FontLoader = {
   // loaded in a subdocument.  It's expected that the load of |rules|
   // has already started in this (outer) document, so that they should
   // be ordered before the load in the subdocument.
-  prepareFontLoadEvent: function fontLoaderPrepareFontLoadEvent(rules, names, objs) {
+  prepareFontLoadEvent: function fontLoaderPrepareFontLoadEvent(rules, names,
+                                                                objs) {
       /** Hack begin */
       // There's no event when a font has finished downloading so the
       // following code is a dirty hack to 'guess' when a font is
@@ -2504,7 +2505,7 @@ var Type2CFF = (function type2CFF() {
 
       // sort the array by the unicode value
       charstrings.sort(function type2CFFGetCharStringsSort(a, b) {
-        return a.unicode - b.unicode
+        return a.unicode - b.unicode;
       });
       return charstrings;
     },
