@@ -2740,13 +2740,14 @@ var Parser = (function parserParser() {
       } else {
         this.buf1 = this.buf2;
         this.buf2 = this.lexer.getObj();
-     }
+      }
     },
     getObj: function parserGetObj(cipherTransform) {
       if (IsCmd(this.buf1, 'BI')) { // inline image
         this.shift();
         return this.makeInlineImage(cipherTransform);
-      } else if (IsCmd(this.buf1, '[')) { // array
+      }
+      if (IsCmd(this.buf1, '[')) { // array
         this.shift();
         var array = [];
         while (!IsCmd(this.buf1, ']') && !IsEOF(this.buf1))
@@ -2755,7 +2756,8 @@ var Parser = (function parserParser() {
           error('End of file inside array');
         this.shift();
         return array;
-      } else if (IsCmd(this.buf1, '<<')) { // dictionary or stream
+      }
+      if (IsCmd(this.buf1, '<<')) { // dictionary or stream
         this.shift();
         var dict = new Dict();
         while (!IsCmd(this.buf1, '>>') && !IsEOF(this.buf1)) {
@@ -2777,11 +2779,11 @@ var Parser = (function parserParser() {
         if (IsCmd(this.buf2, 'stream')) {
           return this.allowStreams ?
             this.makeStream(dict, cipherTransform) : dict;
-        } else {
-          this.shift();
         }
+        this.shift();
         return dict;
-      } else if (IsInt(this.buf1)) { // indirect reference or integer
+      }
+      if (IsInt(this.buf1)) { // indirect reference or integer
         var num = this.buf1;
         this.shift();
         if (IsInt(this.buf1) && IsCmd(this.buf2, 'R')) {
@@ -2791,7 +2793,8 @@ var Parser = (function parserParser() {
           return ref;
         }
         return num;
-      } else if (IsString(this.buf1)) { // string
+      }
+      if (IsString(this.buf1)) { // string
         var str = this.buf1;
         this.shift();
         if (cipherTransform)
