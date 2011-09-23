@@ -124,7 +124,7 @@ var serifFonts = {
 var FontLoader = {
   listeningForFontLoad: false,
 
-  bind: function(fonts, callback) {
+  bind: function fontLoaderBind(fonts, callback) {
     function checkFontsLoaded() {
       for (var i = 0; i < objs.length; i++) {
         var fontObj = objs[i];
@@ -180,7 +180,7 @@ var FontLoader = {
   // loaded in a subdocument.  It's expected that the load of |rules|
   // has already started in this (outer) document, so that they should
   // be ordered before the load in the subdocument.
-  prepareFontLoadEvent: function(rules, names, objs) {
+  prepareFontLoadEvent: function fontLoaderPrepareFontLoadEvent(rules, names, objs) {
       /** Hack begin */
       // There's no event when a font has finished downloading so the
       // following code is a dirty hack to 'guess' when a font is
@@ -219,7 +219,7 @@ var FontLoader = {
       if (!this.listeningForFontLoad) {
         window.addEventListener(
           'message',
-          function(e) {
+          function fontLoaderMessage(e) {
             var fontNames = JSON.parse(e.data);
             for (var i = 0; i < objs.length; ++i) {
               var font = objs[i];
@@ -247,7 +247,7 @@ var FontLoader = {
         fontNamesArray += '"' + names[i] + '", ';
       }
       src += '  var fontNames=[' + fontNamesArray + '];\n';
-      src += '  window.onload = function () {\n';
+      src += '  window.onload = function fontLoaderOnload() {\n';
       src += '    parent.postMessage(JSON.stringify(fontNames), "*");\n';
       src += '  }';
       src += '</script></head><body>';
@@ -599,7 +599,7 @@ var Font = (function Font() {
     var length = glyphs.length;
     for (var n = 0; n < length; ++n)
       codes.push({ unicode: glyphs[n].unicode, code: n });
-    codes.sort(function(a, b) {
+    codes.sort(function fontGetRangesSort(a, b) {
       return a.unicode - b.unicode;
     });
 
@@ -928,7 +928,7 @@ var Font = (function Font() {
         }
 
         // Check that table are sorted by platformID then encodingID,
-        records.sort(function(a, b) {
+        records.sort(function fontReplaceCMapTableSort(a, b) {
           return ((a.platformID << 16) + a.encodingID) -
                  ((b.platformID << 16) + b.encodingID);
         });
@@ -1061,11 +1061,11 @@ var Font = (function Font() {
         var itemSize, itemDecode, itemEncode;
         if (isGlyphLocationsLong) {
           itemSize = 4;
-          itemDecode = function(data, offset) {
+          itemDecode = function fontItemDecodeLong(data, offset) {
             return (data[offset] << 24) | (data[offset + 1] << 16) |
                    (data[offset + 2] << 8) | data[offset + 3];
           };
-          itemEncode = function(data, offset, value) {
+          itemEncode = function fontItemEncodeLong(data, offset, value) {
             data[offset] = (value >>> 24) & 0xFF;
             data[offset + 1] = (value >> 16) & 0xFF;
             data[offset + 2] = (value >> 8) & 0xFF;
@@ -1073,10 +1073,10 @@ var Font = (function Font() {
           };
         } else {
           itemSize = 2;
-          itemDecode = function(data, offset) {
+          itemDecode = function fontItemDecode(data, offset) {
             return (data[offset] << 9) | (data[offset + 1] << 1);
           };
-          itemEncode = function(data, offset, value) {
+          itemEncode = function fontItemEncode(data, offset, value) {
             data[offset] = (value >> 9) & 0xFF;
             data[offset + 1] = (value >> 1) & 0xFF;
           };
@@ -1323,7 +1323,7 @@ var Font = (function Font() {
         'cmap': createCMapTable(charstrings.slice(), font.glyphIds),
 
         // Font header
-        'head': (function() {
+        'head': (function fontFieldsHead() {
           return stringToArray(
               '\x00\x01\x00\x00' + // Version number
               '\x00\x00\x10\x00' + // fontRevision
@@ -1345,7 +1345,7 @@ var Font = (function Font() {
         })(),
 
         // Horizontal header
-        'hhea': (function() {
+        'hhea': (function fontFieldsHhea() {
           return stringToArray(
               '\x00\x01\x00\x00' + // Version number
               string16(properties.ascent) + // Typographic Ascent
@@ -1368,7 +1368,7 @@ var Font = (function Font() {
         })(),
 
         // Horizontal metrics
-        'hmtx': (function() {
+        'hmtx': (function fontFieldsHmtx() {
           var hmtx = '\x00\x00\x00\x00'; // Fake .notdef
           for (var i = 0; i < charstrings.length; i++) {
             hmtx += string16(charstrings[i].width) + string16(0);
@@ -1377,7 +1377,7 @@ var Font = (function Font() {
         })(),
 
         // Maximum profile
-        'maxp': (function() {
+        'maxp': (function fontFieldsMaxp() {
           return stringToArray(
               '\x00\x00\x50\x00' + // Version number
              string16(charstrings.length + 1)); // Num of glyphs
@@ -1505,7 +1505,7 @@ var Font = (function Font() {
  * program. Some of its logic depends on the Type2 charstrings
  * structure.
  */
-var Type1Parser = function() {
+var Type1Parser = function type1Parser() {
   /*
    * Decrypt a Sequence of Ciphertext Bytes to Produce the Original Sequence
    * of Plaintext Bytes. The function took a key as a parameter which can be
@@ -2033,7 +2033,7 @@ var CFFStrings = [
 
 var type1Parser = new Type1Parser();
 
-var CFF = function(name, file, properties) {
+var CFF = function cFF(name, file, properties) {
   // Get the data block containing glyphs and subrs informations
   var headerBlock = file.getBytes(properties.length1);
   type1Parser.extractFontHeader(headerBlock, properties);
@@ -2233,7 +2233,7 @@ CFF.prototype = {
       'names': this.createCFFIndexHeader([name]),
 
       'topDict': (function topDict(self) {
-        return function() {
+        return function cFFWrapTopDict() {
           var header = '\x00\x01\x01\x01';
           var dict =
               '\xf8\x1b\x00' + // version
@@ -2310,7 +2310,7 @@ CFF.prototype = {
       'charstrings': this.createCFFIndexHeader([[0x8B, 0x0E]].concat(glyphs),
                                                true),
 
-      'private': (function(self) {
+      'private': (function cFFWrapPrivate(self) {
         var data =
             '\x8b\x14' + // defaultWidth
             '\x8b\x15';  // nominalWidth
@@ -2363,7 +2363,7 @@ CFF.prototype = {
   }
 };
 
-var Type2CFF = (function() {
+var Type2CFF = (function type2CFF() {
   // TODO: replace parsing code with the Type2Parser in font_utils.js
   function constructor(file, properties) {
     var bytes = file.getBytes();
@@ -2503,7 +2503,9 @@ var Type2CFF = (function() {
       }
 
       // sort the array by the unicode value
-      charstrings.sort(function(a, b) {return a.unicode - b.unicode});
+      charstrings.sort(function type2CFFGetCharStringsSort(a, b) {
+        return a.unicode - b.unicode
+      });
       return charstrings;
     },
 
