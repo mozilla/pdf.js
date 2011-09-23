@@ -39,7 +39,7 @@ function load() {
 
   var r = new XMLHttpRequest();
   r.open('GET', manifestFile, false);
-  r.onreadystatechange = function(e) {
+  r.onreadystatechange = function loadOnreadystatechange(e) {
     if (r.readyState == 4) {
       log('done\n');
       manifest = JSON.parse(r.responseText);
@@ -62,7 +62,7 @@ function nextTask() {
   var r = new XMLHttpRequest();
   r.open('GET', task.file);
   r.mozResponseType = r.responseType = 'arraybuffer';
-  r.onreadystatechange = function() {
+  r.onreadystatechange = function nextTaskOnreadystatechange() {
     var failure;
     if (r.readyState == 4) {
       var data = r.mozResponseArrayBuffer || r.mozResponse ||
@@ -85,11 +85,15 @@ function isLastPage(task) {
   return (task.pageNum > task.pdfDoc.numPages);
 }
 
+function canvasToDataURL() {
+  return canvas.toDataURL('image/png');
+}
+
 function nextPage(task, loadError) {
   var failure = loadError || '';
 
   if (!task.pdfDoc) {
-    sendTaskResult(canvas.toDataURL('image/png'), task, failure);
+    sendTaskResult(canvasToDataURL(), task, failure);
     log('done' + (failure ? ' (failed !: ' + failure + ')' : '') + '\n');
     ++currentTaskIdx;
     nextTask();
@@ -126,7 +130,7 @@ function nextPage(task, loadError) {
 
       page.startRendering(
         ctx,
-        function(e) {
+        function nextPageStartRendering(e) {
           snapshotCurrentPage(task, (!failure && e) ?
             ('render : ' + e) : failure);
         }
@@ -146,13 +150,13 @@ function nextPage(task, loadError) {
 function snapshotCurrentPage(task, failure) {
   log('done, snapshotting... ');
 
-  sendTaskResult(canvas.toDataURL('image/png'), task, failure);
+  sendTaskResult(canvasToDataURL(), task, failure);
   log('done' + (failure ? ' (failed !: ' + failure + ')' : '') + '\n');
 
   // Set up the next request
   var backoff = (inFlightRequests > 0) ? inFlightRequests * 10 : 0;
   setTimeout(
-    function() {
+    function snapshotCurrentPageSetTimeout() {
       ++task.pageNum;
       nextPage(task);
     },
@@ -201,7 +205,7 @@ function sendTaskResult(snapshot, task, failure) {
   // (The POST URI is ignored atm.)
   r.open('POST', '/submit_task_results', true);
   r.setRequestHeader('Content-Type', 'application/json');
-  r.onreadystatechange = function(e) {
+  r.onreadystatechange = function sendTaskResultOnreadystatechange(e) {
     if (r.readyState == 4) {
       inFlightRequests--;
     }
