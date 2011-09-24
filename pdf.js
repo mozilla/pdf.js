@@ -3176,23 +3176,26 @@ var XRef = (function xRefXRef() {
       }
       function skipUntil(data, offset, what) {
         var length = what.length, dataLength = data.length;
-        var bytes = new Uint8Array(length);
-        var i, skipped = 0;
-        for (i = 0; i < length; i++)
-          bytes[i] = what.charCodeAt(i);
+        var skipped = 0;
         // finding byte sequence
-        while(offset < dataLength) {
+        while (offset < dataLength) {
           var i = 0;
-          while (i < length && data[offset + i] == bytes[i])
+          while (i < length && data[offset + i] == what[i])
             ++i;
           if (i >= length)
-            break; // sequnce found
+            break; // sequence found
 
           offset++;
           skipped++;
         }
         return skipped;
       }
+      var trailerBytes = new Uint8Array([116, 114, 97, 105, 108, 101, 114]);
+      var startxrefBytes = new Uint8Array([115, 116, 97, 114, 116, 120, 114,
+                                          101, 102]);
+      var endobjBytes = new Uint8Array([101, 110, 100, 111, 98, 106]);
+      var xrefBytes = new Uint8Array([47, 88, 82, 101, 102]);
+
       var stream = this.stream;
       stream.pos = 0;
       var buffer = stream.getBytes();
@@ -3216,9 +3219,9 @@ var XRef = (function xRefXRef() {
         var token = readToken(buffer, position);
         var m;
         if (token === 'xref') {
-          position += skipUntil(buffer, position, 'trailer');
+          position += skipUntil(buffer, position, trailerBytes);
           trailers.push(position);
-          position += skipUntil(buffer, position, 'startxref');
+          position += skipUntil(buffer, position, startxrefBytes);
         } else if ((m = /^(\d+)\s+(\d+)\s+obj\b/.exec(token))) {
           this.entries[m[1]] = {
             offset: position,
@@ -3226,12 +3229,12 @@ var XRef = (function xRefXRef() {
             uncompressed: true
           };
 
-          var contentLength = skipUntil(buffer, position, 'endobj') + 7;
+          var contentLength = skipUntil(buffer, position, endobjBytes) + 7;
           var content = buffer.subarray(position, position + contentLength);
 
           // checking XRef stream suspect
           // (it shall have '/XRef' and next char is not a letter)
-          var xrefTagOffset = skipUntil(content, 0, '/XRef');
+          var xrefTagOffset = skipUntil(content, 0, xrefBytes);
           if (xrefTagOffset < contentLength &&
               content[xrefTagOffset + 5] < 64) {
             xrefStms.push(position);
