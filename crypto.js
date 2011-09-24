@@ -45,7 +45,7 @@ var ARCFourCipher = (function aRCFourCipher() {
   return constructor;
 })();
 
-var md5 = (function md5Md5() {
+var calculateMD5 = (function calculateMD5() {
   var r = new Uint8Array([
     7, 12, 17, 22, 7, 12, 17, 22, 7, 12, 17, 22, 7, 12, 17, 22,
     5, 9, 14, 20, 5, 9, 14, 20, 5, 9, 14, 20, 5, 9, 14, 20,
@@ -452,11 +452,11 @@ var CipherTransformFactory = (function cipherTransformFactory() {
       hashData[i++] = 0xFF;
       hashData[i++] = 0xFF;
     }
-    var hash = md5(hashData, 0, i);
+    var hash = calculateMD5(hashData, 0, i);
     var keyLengthInBytes = keyLength >> 3;
     if (revision >= 3) {
       for (j = 0; j < 50; ++j) {
-         hash = md5(hash, 0, keyLengthInBytes);
+         hash = calculateMD5(hash, 0, keyLengthInBytes);
       }
     }
     var encryptionKey = hash.subarray(0, keyLengthInBytes);
@@ -469,7 +469,7 @@ var CipherTransformFactory = (function cipherTransformFactory() {
       for (j = 0, n = fileId.length; j < n; ++j)
         hashData[i++] = fileId[j];
       cipher = new ARCFourCipher(encryptionKey);
-      var checkData = cipher.encryptBlock(md5(hashData, 0, i));
+      var checkData = cipher.encryptBlock(calculateMD5(hashData, 0, i));
       n = encryptionKey.length;
       var derrivedKey = new Uint8Array(n), k;
       for (j = 1; j <= 19; ++j) {
@@ -544,7 +544,7 @@ var CipherTransformFactory = (function cipherTransformFactory() {
       key[i++] = 0x6C;
       key[i++] = 0x54;
     }
-    var hash = md5(key, 0, i);
+    var hash = calculateMD5(key, 0, i);
     return hash.subarray(0, Math.min(encryptionKey.length + 5, 16));
   }
 
