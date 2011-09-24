@@ -3322,7 +3322,7 @@ var Page = (function pagePage() {
     get mediaBox() {
       var obj = this.inheritPageProp('MediaBox');
       // Reset invalid media box to letter size.
-      if (!IsArray(obj) || obj.length === 4)
+      if (!IsArray(obj) || obj.length !== 4)
         obj = [0, 0, 612, 792];
       return shadow(this, 'mediaBox', obj);
     },
