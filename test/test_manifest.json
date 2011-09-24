@@ -151,5 +151,11 @@
        "link": true,
        "rounds": 1,
        "type": "load"
+    },
+    {  "id": "extgstate",
+       "file": "pdfs/extgstate.pdf",
+       "link": false,
+       "rounds": 1,
+       "type": "load"
     }
 ]
