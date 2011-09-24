@@ -107,6 +107,13 @@ function nextPage(task, loadError) {
     }
   }
 
+  if (task.skipPages && task.skipPages.indexOf(task.pageNum) >= 0) {
+    log(' skipping page ' + task.pageNum + '/' + task.pdfDoc.numPages +
+        '... ');
+    snapshotCurrentPage(task, '');
+    return;
+  }
+
   var page = null;
 
   if (!failure) {

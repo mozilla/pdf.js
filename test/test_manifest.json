@@ -151,5 +151,12 @@
        "link": true,
        "rounds": 1,
        "type": "load"
+    },
+    {  "id": "ibwa-bad",
+       "file": "pdfs/ibwa-bad.pdf",
+       "link": true,
+       "rounds": 1,
+       "skipPages": [ 16 ],
+       "type": "load"
     }
 ]
