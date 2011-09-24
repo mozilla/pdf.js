@@ -182,19 +182,33 @@ if (!isWorker) {
  * unicode characters. Therefore, the test string have to be build using the
  * encoding of the fontObj.
  */
+var SAW_EMPTY_TIMEOT = 1000;
 var FontLoader = {
   listeningForFontLoad: false,
    
-   scratchCtx: null,
-	 loading: {},
- 	  
- 	/**
+  scratchCtx: null,
+  loading: {},
+  width: 200,
+  fallbacks: [
+    "arial,'URW Gothic L',sans-serif'", 
+    "Georgia,'Century Schoolbook L',serif" 
+  ],
+  
+  /**
    * Create the canvas used for measuring the width of text.
    */
   setup: function() {
-    var canvas = document.createElement("canvas");
+    var canvas = this.canvas = document.createElement("canvas");
+    canvas.id = "foo"
+    canvas.setAttribute('style', 'position: absolute;top: 0px;left: 0px;z-index: 100;border: 1px solid red;');
+    canvas.width = "" + this.width;
+    canvas.height = "10";
+  
     var ctx = canvas.getContext("2d");
-    this.ctx = ctx;
+    this.ctx = ctx;      
+    
+    ctx.clearRect(0, 0, this.width, 10);
+    this.empty = canvas.toDataURL("image/png");      
   },
   
   /**
@@ -203,30 +217,66 @@ var FontLoader = {
    */
   measure: function(fontObj, str) {
     var ctx = this.ctx;
+    var canvas = this.canvas;
     
-    // THe fonts used as fallback.
-    var fallbacks = [ "Arial", "Courier" ];
+    // Set the width of the canvas based on the length of the test string.
+    canvas.width = this.width;
+    
+    // The fonts used as fallback.
+    var fallbacks = this.fallbacks;
+    
+    var imgData = [];
+    for (var n = 0; n < fallbacks.length; n++) {
+      // Choose a large font size as there are no sub-pixel returned from
+      // measureText.
+      var font = fontObj.getRule(10, fallbacks[n]);
+      ctx.font = font;
+      
+      ctx.clearRect(0, 0, this.width, 10);
+      ctx.fillText(str, 0, 10);
+      
+      var data = canvas.toDataURL("image/png");
+      imgData.push(data);
+    }
+  
+    return imgData;
+  },
+  
+  measureWidth: function(fontObj, str) {
+        var ctx = this.ctx;
+    var canvas = this.canvas;
+    
+    // Set the width of the canvas based on the length of the test string.
+    canvas.width = this.width;
+    
+    // The fonts used as fallback.
+    var fallbacks = this.fallbacks;
     
     var widths = [];
     for (var n = 0; n < fallbacks.length; n++) {
       // Choose a large font size as there are no sub-pixel returned from
       // measureText.
-      var font = fontObj.getRule(420, fallbacks[n]);
+      var font = fontObj.getRule(1000, fallbacks[n]);
       ctx.font = font;
       
       widths.push(ctx.measureText(str).width);
     }
+
     return widths;
   },
+  
   
   /**
    * Attaches a fontObj to the DOM and calls Objects.resolve(objId) once
    * the font is loaded.
    */
   bindWebKit: function(objId, fontObj) {
-    this.loading[objId] = true;
-    var encoding = fontObj.encoding;
+    var self = this;
     
+    // Mark this font as beeing loaded;
+    this.loading[objId] = true;
+
+    var encoding = fontObj.encoding;    
     // If the font has an encoding, build the test string based on it. If the
     // font doesn't have an encoding, the font can't been used right now and
     // we skip here.
@@ -242,20 +292,85 @@ var FontLoader = {
       return;
     }
 
+    // Snapshot what the testStr looks like before the font is attached to the
+    // DOM/loaded.
     var before = this.measure(fontObj, testStr);
+    
+    // Add the font css to the DOM - let the loading begin!
     this.bindDOM(fontObj);
-
+    
     var start = Date.now();
+    
+    // Once the font is loaded, this function is called to mark the object
+    // corresponding to the font as beeing loaded.
+    function resolve() {
+      delete self.loading[objId]; // DEBUG INFO
+      Objects.resolve(objId);
+    };
+
+    // `sawEmpty` keeps track if the font was seen in between as "empty". Empty
+    // means the rendering output was empty/blank/no output at all.
+    var sawEmpty = false;
+    
+    // This function determs if the font loaded. Basically, if the measurement
+    // is not the same as it was before the font was attached to the DOM, the
+    // font is loaded. Note that measure[0] doesn't have to be the same as
+    // measure[1]. This can happen, if not all characters in testStr are defined
+    // by the attached font and therefore the fallback font is used.
     var check = function() {
       var measure = this.measure(fontObj, testStr);
       
+      if (measure[0] === measure[1] && measure[0] === this.empty) {
+        if (!sawEmpty) {
+          sawEmpty = Date.now();
+          setTimeout(check, 0);
+        } else {
+          if (Date.now() - sawEmpty > SAW_EMPTY_TIMEOT) {
+            // console.log('font renders empty timeout', objId);  // DEBUG
+            resolve();
+          } else {
+            setTimeout(check, 0);
+          }
+        }
+        return;
+      }
+  
+      
       for (var i = 0; i < measure.length; i++) {
         if (measure[i] !== before[i]) {
-            console.log("loaded font", objId, before, measure, Date.now() - start);
-            delete this.loading[objId];
-            Objects.resolve(objId);
-            return;
-        }        
+          // If the rendering has changed *BUT* the rendering is empty now,
+          // the font is about to get loaded but isn't done yet. Shedule to
+          // check back later.
+
+          if (measure[i] === this.empty) {
+            // If we see a font beeing morer then SAW_EMPTY_TIMEOT empty assume
+            // the font "is" empty and mark it as resolved.
+            if (sawEmpty) {
+              if (Date.now() - sawEmpty > SAW_EMPTY_TIMEOT) {
+                // console.log('font renders empty timeout', objId);  // DEBUG
+                // alert("TIMEOUT " + objId);
+                resolve();
+              }
+            } else {
+              sawEmpty = Date.now();
+              // console.log('font renders empty', objId, testStr);  // DEBUG
+              setTimeout(check, 0);              
+            }
+          } else {
+            resolve();
+            // console.log('font loaded', objId);  // DEBUG
+          }
+          return;
+        }
+      }
+      
+      // If we get here, then measure === before. However, if the font was
+      // empty in between, this means the font got loaded but the loaded
+      // font doesn't change the output of the font.
+      if (sawEmpty) {
+        // console.log("resolve as was empty before"); // DEBUG
+        resolve();
+        return;
       }
       
       setTimeout(check, 0);
@@ -511,7 +626,7 @@ var FontShape = (function FontShape() {
     this.fontFallback = this.serif ? 'serif' : 'sans-serif';
 
     this.$name1 = italic + ' ' + bold + ' ';
-    this.$name2 = 'px "' + name + '", "';
+    this.$name2 = 'px ' + name + ', ';
     
     this.supported = Object.keys(this.encoding).length != 0;
   };
@@ -523,7 +638,7 @@ var FontShape = (function FontShape() {
   constructor.prototype = {
     getRule: function fonts_getRule(size, fallback) {
       fallback = fallback || this.fontFallback;
-      return this.$name1 + size + this.$name2 + fallback + '"';
+      return this.$name1 + size + this.$name2 + fallback + '';
     },
     
     charsToUnicode: function fonts_chars2Unicode(chars) {
