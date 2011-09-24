@@ -3161,6 +3161,110 @@ var XRef = (function xRefXRef() {
         this.readXRef(prev);
       return streamParameters;
     },
+    indexObjects: function indexObjects() {
+      // Simple scan through the PDF content to find objects,
+      // trailers and XRef streams.
+      function readToken(data, offset) {
+        var token = '', ch = data[offset];
+        while (ch !== 13 && ch !== 10) {
+          if (++offset >= data.length)
+            break;
+          token += String.fromCharCode(ch);
+          ch = data[offset];
+        }
+        return token;
+      }
+      function skipUntil(data, offset, what) {
+        var length = what.length, dataLength = data.length;
+        var bytes = new Uint8Array(length);
+        var i, skipped = 0;
+        for (i = 0; i < length; i++)
+          bytes[i] = what.charCodeAt(i);
+        // finding byte sequence
+        while(offset < dataLength) {
+          var i = 0;
+          while (i < length && data[offset + i] == bytes[i])
+            ++i;
+          if (i >= length)
+            break; // sequnce found
+
+          offset++;
+          skipped++;
+        }
+        return skipped;
+      }
+      var stream = this.stream;
+      stream.pos = 0;
+      var buffer = stream.getBytes();
+      var position = 0, length = buffer.length;
+      var trailers = [], xrefStms = [];
+      var state = 0;
+      var currentToken;
+      while (position < length) {
+        var ch = buffer[position];
+        if (ch === 32 || ch === 9 || ch === 13 || ch === 10) {
+          ++position;
+          continue;
+        }
+        if (ch === 37) { // %-comment
+          do {
+            ++position;
+            ch = buffer[position];
+          } while (ch !== 13 && ch !== 10);
+          continue;
+        }
+        var token = readToken(buffer, position);
+        var m;
+        if (token === 'xref') {
+          position += skipUntil(buffer, position, 'trailer');
+          trailers.push(position);
+          position += skipUntil(buffer, position, 'startxref');
+        } else if ((m = /^(\d+)\s+(\d+)\s+obj\b/.exec(token))) {
+          this.entries[m[1]] = {
+            offset: position,
+            gen: m[2] | 0,
+            uncompressed: true
+          };
+
+          var contentLength = skipUntil(buffer, position, 'endobj') + 7;
+          var content = buffer.subarray(position, position + contentLength);
+
+          // checking XRef stream suspect
+          // (it shall have '/XRef' and next char is not a letter)
+          var xrefTagOffset = skipUntil(content, 0, '/XRef');
+          if (xrefTagOffset < contentLength &&
+              content[xrefTagOffset + 5] < 64) {
+            xrefStms.push(position);
+            this.xrefstms[position] = 1; // don't read it recursively
+          }
+
+          position += contentLength;
+        } else
+          position += token.length + 1;
+      }
+      // reading XRef streams
+      for (var i = 0; i < xrefStms.length; ++i) {
+          this.readXRef(xrefStms[i]);
+      }
+      // finding main trailer
+      for (var i = 0; i < trailers.length; ++i) {
+        stream.pos = trailers[i];
+        var parser = new Parser(new Lexer(stream), true);
+        var obj = parser.getObj();
+        if (!IsCmd(obj, 'trailer'))
+          continue;
+        // read the trailer dictionary
+        var dict;
+        if (!IsDict(dict = parser.getObj()))
+          continue;
+        // taking the first one with 'ID'
+        if (dict.has('ID'))
+          return dict;
+      }
+      // nothing helps
+      error('Invalid PDF structure');
+      return null;
+    },
     readXRef: function readXref(startXRef) {
       var stream = this.stream;
       stream.pos = startXRef;
@@ -3178,8 +3282,7 @@ var XRef = (function xRefXRef() {
         }
         return this.readXRefStream(obj);
       }
-      error('Invalid XRef');
-      return null;
+      return this.indexObjects();
     },
     getEntry: function xRefGetEntry(i) {
       var e = this.entries[i];
