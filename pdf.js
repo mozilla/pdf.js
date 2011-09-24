@@ -3427,8 +3427,10 @@ var Page = (function pagePage() {
     },
     get mediaBox() {
       var obj = this.inheritPageProp('MediaBox');
-      return shadow(this, 'mediaBox',
-                    ((IsArray(obj) && obj.length == 4) ? obj : null));
+      // Reset invalid media box to letter size.
+      if (!IsArray(obj) || obj.length !== 4)
+        obj = [0, 0, 612, 792];
+      return shadow(this, 'mediaBox', obj);
     },
     get view() {
       var obj = this.inheritPageProp('CropBox');
@@ -4922,7 +4924,65 @@ var CanvasGraphics = (function canvasGraphics() {
       TODO('set flatness: ' + flatness);
     },
     setGState: function canvasGraphicsSetGState(dictName) {
-      TODO('set graphics state from dict: ' + dictName);
+      var extGState = this.xref.fetchIfRef(this.res.get('ExtGState'));
+      if (IsDict(extGState) && extGState.has(dictName.name)) {
+        var gsState = this.xref.fetchIfRef(extGState.get(dictName.name));
+        var self = this;
+        gsState.forEach(function(key, value) {
+          switch (key) {
+            case 'Type':
+              break;
+            case 'LW':
+              self.setLineWidth(value);
+              break;
+            case 'LC':
+              self.setLineCap(value);
+              break;
+            case 'LJ':
+              self.setLineJoin(value);
+              break;
+            case 'ML':
+              self.setMiterLimit(value);
+              break;
+            case 'D':
+              self.setDash(value[0], value[1]);
+              break;
+            case 'RI':
+              self.setRenderingIntent(value);
+              break;
+            case 'FL':
+              self.setFlatness(value);
+              break;
+            case 'Font':
+              self.setFont(value[0], value[1]);
+              break;
+            case 'OP':
+            case 'op':
+            case 'OPM':
+            case 'BG':
+            case 'BG2':
+            case 'UCR':
+            case 'UCR2':
+            case 'TR':
+            case 'TR2':
+            case 'HT':
+            case 'SM':
+            case 'SA':
+            case 'BM':
+            case 'SMask':
+            case 'CA':
+            case 'ca':
+            case 'AIS':
+            case 'TK':
+              TODO('graphic state operator ' + key);
+              break;
+            default:
+              warn('Unknown graphic state operator ' + key);
+              break;
+          }
+        });
+      }
+
     },
     save: function canvasGraphicsSave() {
       this.ctx.save();
@@ -5089,11 +5149,17 @@ var CanvasGraphics = (function canvasGraphics() {
       this.current.leading = -leading;
     },
     setFont: function canvasGraphicsSetFont(fontRef, size) {
-      var font = this.xref.fetchIfRef(this.res.get('Font'));
-      if (!IsDict(font))
-        return;
+      var font;
+      // the tf command uses a name, but graphics state uses a reference
+      if (IsName(fontRef)) {
+        font = this.xref.fetchIfRef(this.res.get('Font'));
+        if (!IsDict(font))
+         return;
 
-      font = font.get(fontRef.name);
+        font = font.get(fontRef.name);
+      } else if (IsRef(fontRef)) {
+        font = fontRef;
+      }
       font = this.xref.fetchIfRef(font);
       if (!font)
         error('Referenced font is not found');
@@ -6572,7 +6638,7 @@ var PDFFunction = (function pDFFunction() {
         return out;
       };
     },
-    constructStiched: function(fn, dict, xref) {
+    constructStiched: function pDFFunctionConstructStiched(fn, dict, xref) {
       var domain = dict.get('Domain');
       var range = dict.get('Range');
 
@@ -6591,8 +6657,8 @@ var PDFFunction = (function pDFFunction() {
       var bounds = dict.get('Bounds');
       var encode = dict.get('Encode');
 
-      this.func = function(args) {
-        var clip = function(v, min, max) {
+      this.func = function pDFFunctionConstructStichedFunc(args) {
+        var clip = function pDFFunctionConstructStichedFuncClip(v, min, max) {
           if (v > max)
             v = max;
           else if (v < min)
@@ -6625,9 +6691,9 @@ var PDFFunction = (function pDFFunction() {
         return fns[i].func([v2]);
       };
     },
-    constructPostScript: function() {
+    constructPostScript: function pDFFunctionConstructPostScript() {
       TODO('unhandled type of function');
-      this.func = function() {
+      this.func = function pDFFunctionConstructPostScriptFunc() {
         return [255, 105, 180];
       };
     }
