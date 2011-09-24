@@ -58,9 +58,9 @@ var PDFView = {
 
     var currentPage = this.pages[this.page - 1];
     var pageWidthScale = (window.innerWidth - kScrollbarPadding) /
-      currentPage.width / kCssUnits;
+                          currentPage.width / kCssUnits;
     var pageHeightScale = (window.innerHeight - kScrollbarPadding) /
-      currentPage.height / kCssUnits;
+                           currentPage.height / kCssUnits;
     if ('page-width' == value)
       this.setScale(pageWidthScale, resetAutoSettings);
     if ('page-height' == value)
@@ -170,7 +170,7 @@ var PDFView = {
       var page = pdf.getPage(i);
       pages.push(new PageView(container, page, i, page.width, page.height,
                               page.stats, this.navigateTo.bind(this)));
-      thumbnails.push(new ThumbnailView(sidebar, pages[i - 1],
+      thumbnails.push(new ThumbnailView(sidebar, page, i,
                                         page.width / page.height));
       var pageRef = page.ref;
       pagesRefMap[pageRef.num + ' ' + pageRef.gen + ' R'] = i;
@@ -237,12 +237,16 @@ var PDFView = {
   }
 };
 
-var PageView = function(container, content, id, width, height,
+var PageView = function(container, content, id, pageWidth, pageHeight,
                         stats, navigateTo) {
-  this.width = width;
-  this.height = height;
   this.id = id;
   this.content = content;
+
+  var view = this.content.view;
+  this.x = view.x;
+  this.y = view.y;
+  this.width = view.width;
+  this.height = view.height;
 
   var anchor = document.createElement('a');
   anchor.name = '' + this.id;
@@ -272,11 +276,12 @@ var PageView = function(container, content, id, width, height,
         return false;
       };
     }
+
     var links = content.getLinks();
     for (var i = 0; i < links.length; i++) {
       var link = document.createElement('a');
-      link.style.left = Math.floor(links[i].x * scale) + 'px';
-      link.style.top = Math.floor(links[i].y * scale) + 'px';
+      link.style.left = (Math.floor(links[i].x - view.x) * scale) + 'px';
+      link.style.top = (Math.floor(links[i].y - view.y) * scale) + 'px';
       link.style.width = Math.ceil(links[i].width * scale) + 'px';
       link.style.height = Math.ceil(links[i].height * scale) + 'px';
       link.href = links[i].url || '';
@@ -364,8 +369,9 @@ var PageView = function(container, content, id, width, height,
     canvas.id = 'page' + this.id;
     canvas.mozOpaque = true;
 
-    canvas.width = this.width * this.scale;
-    canvas.height = this.height * this.scale;
+    var scale = this.scale;
+    canvas.width = pageWidth * scale;
+    canvas.height = pageHeight * scale;
     div.appendChild(canvas);
 
     var ctx = canvas.getContext('2d');
@@ -373,6 +379,7 @@ var PageView = function(container, content, id, width, height,
     ctx.fillStyle = 'rgb(255, 255, 255)';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     ctx.restore();
+    ctx.translate(-this.x * scale, -this.y * scale);
 
     stats.begin = Date.now();
     this.content.startRendering(ctx, this.updateStats);
@@ -391,12 +398,12 @@ var PageView = function(container, content, id, width, height,
   };
 };
 
-var ThumbnailView = function(container, page, pageRatio) {
+var ThumbnailView = function(container, page, id, pageRatio) {
   var anchor = document.createElement('a');
-  anchor.href = '#' + page.id;
+  anchor.href = '#' + id;
 
   var div = document.createElement('div');
-  div.id = 'thumbnailContainer' + page.id;
+  div.id = 'thumbnailContainer' + id;
   div.className = 'thumbnail';
 
   anchor.appendChild(div);
@@ -407,7 +414,7 @@ var ThumbnailView = function(container, page, pageRatio) {
       return;
 
     var canvas = document.createElement('canvas');
-    canvas.id = 'thumbnail' + page.id;
+    canvas.id = 'thumbnail' + id;
     canvas.mozOpaque = true;
 
     var maxThumbSize = 134;
@@ -425,7 +432,15 @@ var ThumbnailView = function(container, page, pageRatio) {
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     ctx.restore();
 
-    page.content.startRendering(ctx, function() { });
+    var view = page.view;
+    var scaleX = (canvas.width / page.width);
+    var scaleY = (canvas.height / page.height);
+    ctx.translate(-view.x * scaleX, -view.y * scaleY);
+    div.style.width = (view.width * scaleX) + 'px';
+    div.style.height = (view.height * scaleY) + 'px';
+    div.style.lineHeight = (view.height * scaleY) + 'px';
+
+    page.startRendering(ctx, function() { });
   };
 };
 

@@ -3321,8 +3321,35 @@ var Page = (function pagePage() {
     },
     get mediaBox() {
       var obj = this.inheritPageProp('MediaBox');
-      return shadow(this, 'mediaBox',
-                    ((IsArray(obj) && obj.length == 4) ? obj : null));
+      // Reset invalid media box to letter size.
+      if (!IsArray(obj) || obj.length === 4)
+        obj = [0, 0, 612, 792];
+      return shadow(this, 'mediaBox', obj);
+    },
+    get view() {
+      var obj = this.inheritPageProp('CropBox');
+      var view = {
+        x: 0,
+        y: 0,
+        width: this.width,
+        height: this.height
+      };
+      if (IsArray(obj) && obj.length == 4) {
+        var rotate = this.rotate;
+        if (rotate == 0 || rotate == 180) {
+          view.x = obj[0];
+          view.y = obj[1];
+          view.width = obj[2] - view.x;
+          view.height = obj[3] - view.y;
+        } else {
+          view.x = obj[1];
+          view.y = obj[0];
+          view.width = obj[3] - view.x;
+          view.height = obj[2] - view.y;
+        }
+      }
+
+      return shadow(this, 'cropBox', view);
     },
     get annotations() {
       return shadow(this, 'annotations', this.inheritPageProp('Annots'));
@@ -5097,7 +5124,8 @@ var CanvasGraphics = (function canvasGraphics() {
       ctx.scale(1 / textHScale, 1);
 
       var width = 0;
-      for (var i = 0; i < glyphs.length; i++) {
+      var glyphsLength = glyphs.length;
+      for (var i = 0; i < glyphsLength; ++i) {
         var glyph = glyphs[i];
         if (glyph === null) {
           // word break
@@ -5106,34 +5134,35 @@ var CanvasGraphics = (function canvasGraphics() {
         }
 
         var unicode = glyph.unicode;
-        var char = unicode >= 0x10000 ?
+        var char = (unicode >= 0x10000) ?
           String.fromCharCode(0xD800 | ((unicode - 0x10000) >> 10),
           0xDC00 | (unicode & 0x3FF)) : String.fromCharCode(unicode);
 
-        var charWidth = glyph.width * fontSize * 0.001;
-        charWidth += charSpacing;
-
         ctx.fillText(char, width, 0);
-        width += charWidth;
+        width += glyph.width * fontSize * 0.001 + charSpacing;
       }
       current.x += width;
 
       this.ctx.restore();
     },
     showSpacedText: function canvasGraphicsShowSpacedText(arr) {
-      for (var i = 0; i < arr.length; ++i) {
+      var ctx = this.ctx;
+      var current = this.current;
+      var fontSize = current.fontSize;
+      var textHScale = current.textHScale;
+      var arrLength = arr.length;
+      for (var i = 0; i < arrLength; ++i) {
         var e = arr[i];
         if (IsNum(e)) {
-          if (this.ctx.$addCurrentX) {
-            this.ctx.$addCurrentX(-e * 0.001 * this.current.fontSize);
+          if (ctx.$addCurrentX) {
+            ctx.$addCurrentX(-e * 0.001 * fontSize);
           } else {
-            this.current.x -= e * 0.001 * this.current.fontSize *
-                              this.current.textHScale;
+            current.x -= e * 0.001 * fontSize * textHScale;
           }
         } else if (IsString(e)) {
           this.showText(e);
         } else {
-          malformed('TJ array element ' + e + " isn't string or num");
+          malformed('TJ array element ' + e + ' is not string or num');
         }
       }
     },
@@ -5495,7 +5524,7 @@ var ColorSpace = (function colorSpaceColorSpace() {
 
   constructor.parse = function colorspace_parse(cs, xref, res) {
     if (IsName(cs)) {
-      var colorSpaces = res.get('ColorSpace');
+      var colorSpaces = xref.fetchIfRef(res.get('ColorSpace'));
       if (IsDict(colorSpaces)) {
         var refcs = colorSpaces.get(cs.name);
         if (refcs)
@@ -6503,7 +6532,7 @@ var PDFFunction = (function pDFFunction() {
         return out;
       };
     },
-    constructStiched: function(fn, dict, xref) {
+    constructStiched: function pDFFunctionConstructStiched(fn, dict, xref) {
       var domain = dict.get('Domain');
       var range = dict.get('Range');
 
@@ -6522,8 +6551,8 @@ var PDFFunction = (function pDFFunction() {
       var bounds = dict.get('Bounds');
       var encode = dict.get('Encode');
 
-      this.func = function(args) {
-        var clip = function(v, min, max) {
+      this.func = function pDFFunctionConstructStichedFunc(args) {
+        var clip = function pDFFunctionConstructStichedFuncClip(v, min, max) {
           if (v > max)
             v = max;
           else if (v < min)
@@ -6556,9 +6585,9 @@ var PDFFunction = (function pDFFunction() {
         return fns[i].func([v2]);
       };
     },
-    constructPostScript: function() {
+    constructPostScript: function pDFFunctionConstructPostScript() {
       TODO('unhandled type of function');
-      this.func = function() {
+      this.func = function pDFFunctionConstructPostScriptFunc() {
         return [255, 105, 180];
       };
     }
