@@ -4818,7 +4818,65 @@ var CanvasGraphics = (function canvasGraphics() {
       TODO('set flatness: ' + flatness);
     },
     setGState: function canvasGraphicsSetGState(dictName) {
-      TODO('set graphics state from dict: ' + dictName);
+      var extGState = this.xref.fetchIfRef(this.res.get('ExtGState'));
+      if (IsDict(extGState) && extGState.has(dictName.name)) {
+        var gsState = this.xref.fetchIfRef(extGState.get(dictName.name));
+        var self = this;
+        gsState.forEach(function(key, value) {
+          switch (key) {
+            case 'Type':
+              break;
+            case 'LW':
+              self.setLineWidth(value);
+              break;
+            case 'LC':
+              self.setLineCap(value);
+              break;
+            case 'LJ':
+              self.setLineJoin(value);
+              break;
+            case 'ML':
+              self.setMiterLimit(value);
+              break;
+            case 'D':
+              self.setDash(value[0], value[1]);
+              break;
+            case 'RI':
+              self.setRenderingIntent(value);
+              break;
+            case 'FL':
+              self.setFlatness(value);
+              break;
+            case 'Font':
+              self.setFont(value[0], value[1]);
+              break;
+            case 'OP':
+            case 'op':
+            case 'OPM':
+            case 'BG':
+            case 'BG2':
+            case 'UCR':
+            case 'UCR2':
+            case 'TR':
+            case 'TR2':
+            case 'HT':
+            case 'SM':
+            case 'SA':
+            case 'BM':
+            case 'SMask':
+            case 'CA':
+            case 'ca':
+            case 'AIS':
+            case 'TK':
+              TODO('graphic state operator ' + key);
+              break;
+            default:
+              warn('Unknown graphic state operator ' + key);
+              break;
+          }
+        });
+      }
+
     },
     save: function canvasGraphicsSave() {
       this.ctx.save();
@@ -4985,11 +5043,17 @@ var CanvasGraphics = (function canvasGraphics() {
       this.current.leading = -leading;
     },
     setFont: function canvasGraphicsSetFont(fontRef, size) {
-      var font = this.xref.fetchIfRef(this.res.get('Font'));
-      if (!IsDict(font))
-        return;
+      var font;
+      // the tf command uses a name, but graphics state uses a reference
+      if (IsName(fontRef)) {
+        font = this.xref.fetchIfRef(this.res.get('Font'));
+        if (!IsDict(font))
+         return;
 
-      font = font.get(fontRef.name);
+        font = font.get(fontRef.name);
+      } else if (IsRef(fontRef)) {
+        font = fontRef;
+      }
       font = this.xref.fetchIfRef(font);
       if (!font)
         error('Referenced font is not found');
