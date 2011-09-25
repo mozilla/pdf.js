@@ -64,6 +64,20 @@ in a custom project.
 
 
 
+## Contributing
+
+pdf.js is a community-driver project, so contributors are always welcome. 
+Simply fork our repo and contribute away. A great place to start is our
+open issues. For better consistency and long-term stability, please do look around the 
+code and try to follow our conventions.
+
+If you __don't want to hack__ on the project or have short spare times, you still
+can help! Just open PDFs in the 
+[online demo](http://andreasgal.github.com/pdf.js/web/viewer.html) and report 
+any breakage in rendering.
+
+
+
 ## Running the Tests
 
 pdf.js comes with browser-level regression tests that allow one to probe 
@@ -88,16 +102,6 @@ manifest file at:
 The test type `eq` tests whether the output images are identical to reference 
 images. The test type `load` simply tests whether the file loads without 
 raising any errors.
-
-
-## Contributing
-
-pdf.js is a community-driver project, so contributors are always welcome. 
-Simply fork our repo and contribute away. A great place to start is our
-open issues. 
-
-For better consistency and long-term stability, please do look around the 
-code and try to follow our conventions.
 
 
 ## Additional resources
