@@ -128,3 +128,22 @@ Subscribe either using lists.mozilla.org or Google Groups:
 Talk to us on IRC:
 
   #pdfjs on irc.mozilla.org
+  
+## Additional resources to understand the structure of PDF
+
+A really basic overview of PDF is described here:
+
+  http://partners.adobe.com/public/developer/en/livecycle/lc_pdf_overview_format.pdf
+
+A more detailed file example:
+
+  http://gnupdf.org/Introduction_to_PDF
+  
+The PDF specification itself is an ISO and not free available. However, there is
+a "PDF Reference" from Adobe:
+
+  http://wwwimages.adobe.com/www.adobe.com/content/dam/Adobe/en/devnet/pdf/pdfs/pdf_reference_1-7.pdf
+
+Recommanded chapters to read: "2. Overview", "3.4 File Structure", 
+"4.1 Graphics Objects" that lists the PDF commands.
+
