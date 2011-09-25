@@ -27,6 +27,27 @@ For an online demo, visit:
 This demo provides an interactive interface for displaying and browsing PDFs
 using the pdf.js API.
 
+**Getting the code**
+
+To get a local copy of the current code, clone it using git:
+
+```bash
+    git clone git://github.com/andreasgal/pdf.js.git pdfjs
+    cd pdfjs
+```
+
+Next, you need to start a local web server as some browsers don't allow opening
+PDF files for a file:// url:
+
+```bash
+  python static.py
+```
+
+If everything worked out, you can now serve 
+`http://localhost:8888/web/viewer.html`.
+
+
+
 **Hello world**
 
 For a "hello world" example, take a look at:
@@ -97,6 +118,7 @@ Join our mailing list:
 Subscribe either using lists.mozilla.org or Google Groups: 
   
   https://lists.mozilla.org/listinfo/dev-pdf-js
+
   https://groups.google.com/group/mozilla.dev.pdf-js/topics
 
 Talk to us on IRC:
