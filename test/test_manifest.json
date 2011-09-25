@@ -139,5 +139,23 @@
        "link": true,
        "rounds": 1,
        "type": "load"
+    },
+    {  "id": "f1040",
+       "file": "pdfs/f1040.pdf",
+       "link": true,
+       "rounds": 1,
+       "type": "load"
+    },
+    {  "id": "hudsonsurvey",
+       "file": "pdfs/hudsonsurvey.pdf",
+       "link": true,
+       "rounds": 1,
+       "type": "load"
+    },
+    {  "id": "extgstate",
+       "file": "pdfs/extgstate.pdf",
+       "link": false,
+       "rounds": 1,
+       "type": "load"
     }
 ]
