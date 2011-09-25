@@ -714,7 +714,6 @@ var PredictorStream = (function() {
     var columns = this.columns = params.get('Columns') || 1;
 
     this.pixBytes = (colors * bits + 7) >> 3;
-    // add an extra pixByte to represent the pixel left of column 0
     this.rowBytes = (columns * colors * bits + 7) >> 3;
 
     DecodeStream.call(this);
@@ -796,10 +795,12 @@ var PredictorStream = (function() {
     var currentRow = buffer.subarray(bufferLength, bufferLength + rowBytes);
     var prevRow = buffer.subarray(bufferLength - rowBytes, bufferLength);
     if (prevRow.length == 0)
-      prevRow = currentRow;
+      prevRow = new Uint8Array(rowBytes);
 
     switch (predictor) {
       case 0:
+        for (var i = 0; i < rowBytes; ++i)
+          currentRow[i] = rawBytes[i];
         break;
       case 1:
         for (var i = 0; i < pixBytes; ++i)
@@ -822,8 +823,11 @@ var PredictorStream = (function() {
       case 4:
         // we need to save the up left pixels values. the simplest way
         // is to create a new buffer
-        for (var i = 0; i < pixBytes; ++i)
-          currentRow[i] = rawBytes[i];
+        for (var i = 0; i < pixBytes; ++i) {
+          var up = prevRow[i];
+          var c = rawBytes[i];
+          currentRow[i] = up + c;
+        }
         for (; i < rowBytes; ++i) {
           var up = prevRow[i];
           var upLeft = prevRow[i - pixBytes];
