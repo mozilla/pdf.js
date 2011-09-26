@@ -1,13 +1,17 @@
+/* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
+
 //
 // See README for overview
 //
 
+'use strict';
 
 //
 // Ajax GET request, for binary files
 // (like jQuery's $.get(), but supports the binary type ArrayBuffer)
 //
-var ajaxGet = function(url, callback){
+var ajaxGet = function(url, callback) {
   var xhr = new XMLHttpRequest();
   xhr.open('GET', url);
   xhr.mozResponseType = xhr.responseType = 'arraybuffer';
@@ -20,13 +24,13 @@ var ajaxGet = function(url, callback){
       callback(data);
     }
   };
-  xhr.send(null);  
-}
+  xhr.send(null);
+};
 
 //
 // This is where the fun happens
 //
-ajaxGet('helloworld.pdf', function(data){
+ajaxGet('helloworld.pdf', function ajaxGetHelloWorld(data) {
   //
   // Instantiate PDFDoc with PDF data
   //
@@ -40,10 +44,11 @@ ajaxGet('helloworld.pdf', function(data){
   var canvas = document.getElementById('the-canvas');
   var context = canvas.getContext('2d');
   canvas.height = page.height * scale;
-  canvas.width = page.width * scale;  
+  canvas.width = page.width * scale;
 
   //
   // Render PDF page into canvas context
   //
   page.startRendering(context);
 });
+
