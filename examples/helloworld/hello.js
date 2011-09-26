@@ -30,7 +30,7 @@ ajaxGet('helloworld.pdf', function(data){
   //
   // Instantiate PDFDoc with PDF data
   //
-  var pdf = new PDFDoc(new Stream(data));
+  var pdf = new PDFDoc(data);
   var page = pdf.getPage(1);
   var scale = 1.5;
 
