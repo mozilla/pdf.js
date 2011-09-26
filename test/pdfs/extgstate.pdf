@@ -1,0 +1,105 @@
+%PDF-1.4
+%цдья
+1 0 obj
+<<
+/Type /Catalog
+/Version /1.4
+/Pages 2 0 R
+>>
+endobj
+2 0 obj
+<<
+/Type /Pages
+/Kids [3 0 R]
+/Count 1
+>>
+endobj
+3 0 obj
+<<
+/Type /Page
+/MediaBox [0 0 612 792]
+/Resources 4 0 R
+/Parent 2 0 R
+/Contents 5 0 R
+>>
+endobj
+4 0 obj
+<<
+/ExtGState 6 0 R
+/Font 7 0 R
+/XObject <<
+>>
+>>
+endobj
+5 0 obj
+<<
+/Length 8 0 R
+>>
+stream
+/GS1 gs
+/F0 12 Tf
+BT
+100 700 Td
+(I should be courier!) Tj
+ET
+50 600 m
+400 600 l
+S
+
+endstream
+endobj
+6 0 obj
+<<
+/GS1 9 0 R
+>>
+endobj
+7 0 obj
+<<
+/F0 10 0 R
+>>
+endobj
+8 0 obj
+82
+endobj
+9 0 obj
+<<
+/Type /ExtGState
+/LW 10
+/LC 1
+/LJ 2
+/ML 0.3000000119
+/D [[0.0917000026 183.3300018311]
+ 0]
+/Font [10 0 R 36]
+>>
+endobj
+10 0 obj
+<<
+/Type /Font
+/Subtype /Type1
+/BaseFont /Courier
+/Encoding /WinAnsiEncoding
+>>
+endobj
+xref
+0 11
+0000000000 65535 f
+0000000015 00000 n
+0000000078 00000 n
+0000000135 00000 n
+0000000239 00000 n
+0000000304 00000 n
+0000000441 00000 n
+0000000473 00000 n
+0000000505 00000 n
+0000000523 00000 n
+0000000653 00000 n
+trailer
+<<
+/Root 1 0 R
+/ID [<BFFF29B7D1C75EC69AC080682C2AFC5B> <BFFF29B7D1C75EC69AC080682C2AFC5B>]
+/Size 11
+>>
+startxref
+749
+%%EOF

@@ -50,7 +50,21 @@ function load() {
   r.send(null);
 }
 
+function cleanup() {
+  var styleSheet = document.styleSheets[0];
+  if (styleSheet) {
+    while (styleSheet.cssRules.length > 0)
+      styleSheet.deleteRule(0);
+  }
+  var guard = document.getElementById('content-end');
+  var body = document.body;
+  while (body.lastChild !== guard)
+    body.removeChild(body.lastChild);
+}
+
 function nextTask() {
+  cleanup();
+
   if (currentTaskIdx == manifest.length) {
     return done();
   }
