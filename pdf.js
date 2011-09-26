@@ -1134,7 +1134,7 @@ var AsciiHexStream = (function asciiHexStream() {
   return constructor;
 })();
 
-var CCITTFaxStream = (function cCITTFaxStream() {
+var CCITTFaxStream = (function ccittFaxStream() {
 
   var ccittEOL = -2;
   var twoDimPass = 0;
@@ -1609,7 +1609,7 @@ var CCITTFaxStream = (function cCITTFaxStream() {
 
   constructor.prototype = Object.create(DecodeStream.prototype);
 
-  constructor.prototype.readBlock = function cCITTFaxStreamReadBlock() {
+  constructor.prototype.readBlock = function ccittFaxStreamReadBlock() {
     while (!this.eof) {
       var c = this.lookChar();
       this.buf = EOF;
@@ -1619,7 +1619,7 @@ var CCITTFaxStream = (function cCITTFaxStream() {
   };
 
   constructor.prototype.addPixels =
-    function cCITTFaxStreamAddPixels(a1, blackPixels) {
+    function ccittFaxStreamAddPixels(a1, blackPixels) {
     var codingLine = this.codingLine;
     var codingPos = this.codingPos;
 
@@ -1639,7 +1639,7 @@ var CCITTFaxStream = (function cCITTFaxStream() {
   };
 
   constructor.prototype.addPixelsNeg =
-    function cCITTFaxStreamAddPixelsNeg(a1, blackPixels) {
+    function ccittFaxStreamAddPixelsNeg(a1, blackPixels) {
     var codingLine = this.codingLine;
     var codingPos = this.codingPos;
 
@@ -1667,7 +1667,7 @@ var CCITTFaxStream = (function cCITTFaxStream() {
     this.codingPos = codingPos;
   };
 
-  constructor.prototype.lookChar = function cCITTFaxStreamLookChar() {
+  constructor.prototype.lookChar = function ccittFaxStreamLookChar() {
     if (this.buf != EOF)
       return this.buf;
 
@@ -1959,7 +1959,7 @@ var CCITTFaxStream = (function cCITTFaxStream() {
     return this.buf;
   };
 
-  constructor.prototype.getTwoDimCode = function cCITTFaxStreamGetTwoDimCode() {
+  constructor.prototype.getTwoDimCode = function ccittFaxStreamGetTwoDimCode() {
     var code = 0;
     var p;
     if (this.eoblock) {
@@ -1986,7 +1986,7 @@ var CCITTFaxStream = (function cCITTFaxStream() {
     return EOF;
   };
 
-  constructor.prototype.getWhiteCode = function cCITTFaxStreamGetWhiteCode() {
+  constructor.prototype.getWhiteCode = function ccittFaxStreamGetWhiteCode() {
     var code = 0;
     var p;
     var n;
@@ -2036,7 +2036,7 @@ var CCITTFaxStream = (function cCITTFaxStream() {
     return 1;
   };
 
-  constructor.prototype.getBlackCode = function cCITTFaxStreamGetBlackCode() {
+  constructor.prototype.getBlackCode = function ccittFaxStreamGetBlackCode() {
     var code, p;
     if (this.eoblock) {
       code = this.lookBits(13);
@@ -2099,7 +2099,7 @@ var CCITTFaxStream = (function cCITTFaxStream() {
     return 1;
   };
 
-  constructor.prototype.lookBits = function cCITTFaxStreamLookBits(n) {
+  constructor.prototype.lookBits = function ccittFaxStreamLookBits(n) {
     var c;
     while (this.inputBits < n) {
       if ((c = this.str.getByte()) == null) {
@@ -2114,7 +2114,7 @@ var CCITTFaxStream = (function cCITTFaxStream() {
     return (this.inputBuf >> (this.inputBits - n)) & (0xFFFF >> (16 - n));
   };
 
-  constructor.prototype.eatBits = function cCITTFaxStreamEatBits(n) {
+  constructor.prototype.eatBits = function ccittFaxStreamEatBits(n) {
     if ((this.inputBits -= n) < 0)
       this.inputBits = 0;
   };
@@ -2122,7 +2122,7 @@ var CCITTFaxStream = (function cCITTFaxStream() {
   return constructor;
 })();
 
-var LZWStream = (function lZWStream() {
+var LZWStream = (function lzwStream() {
   function constructor(str, earlyChange) {
     this.str = str;
     this.dict = str.dict;
@@ -2151,7 +2151,7 @@ var LZWStream = (function lZWStream() {
 
   constructor.prototype = Object.create(DecodeStream.prototype);
 
-  constructor.prototype.readBits = function lZWStreamReadBits(n) {
+  constructor.prototype.readBits = function lzwStreamReadBits(n) {
     var bitsCached = this.bitsCached;
     var cachedData = this.cachedData;
     while (bitsCached < n) {
@@ -2169,7 +2169,7 @@ var LZWStream = (function lZWStream() {
     return (cachedData >>> bitsCached) & ((1 << n) - 1);
   };
 
-  constructor.prototype.readBlock = function lZWStreamReadBlock() {
+  constructor.prototype.readBlock = function lzwStreamReadBlock() {
     var blockSize = 512;
     var estimatedDecodedSize = blockSize * 2, decodedSizeDelta = blockSize;
     var i, j, q;
@@ -3689,7 +3689,7 @@ var Catalog = (function catalogCatalog() {
   return constructor;
 })();
 
-var PDFDoc = (function pDFDoc() {
+var PDFDoc = (function pdfDoc() {
   function constructor(stream) {
     assertWellFormed(stream.length > 0, 'stream must have data');
     this.stream = stream;
@@ -3768,7 +3768,7 @@ var PDFDoc = (function pDFDoc() {
     },
     // Find the header, remove leading garbage and setup the stream
     // starting from the header.
-    checkHeader: function pDFDocCheckHeader() {
+    checkHeader: function pdfDocCheckHeader() {
       var stream = this.stream;
       stream.reset();
       if (find(stream, '%PDF-', 1024)) {
@@ -3778,7 +3778,7 @@ var PDFDoc = (function pDFDoc() {
       }
       // May not be a PDF file, continue anyway.
     },
-    setup: function pDFDocSetup(ownerPassword, userPassword) {
+    setup: function pdfDocSetup(ownerPassword, userPassword) {
       this.checkHeader();
       this.xref = new XRef(this.stream,
                            this.startXRef,
@@ -3791,7 +3791,7 @@ var PDFDoc = (function pDFDoc() {
       // shadow the prototype getter
       return shadow(this, 'numPages', num);
     },
-    getPage: function pDFDocGetPage(n) {
+    getPage: function pdfDocGetPage(n) {
       return this.catalog.getPage(n);
     }
   };
@@ -6158,7 +6158,7 @@ var TilingPattern = (function tilingPattern() {
 })();
 
 
-var PDFImage = (function pDFImage() {
+var PDFImage = (function pdfImage() {
   function constructor(xref, res, image, inline) {
     this.image = image;
     if (image.getParams) {
@@ -6369,7 +6369,7 @@ var PDFImage = (function pDFImage() {
   return constructor;
 })();
 
-var PDFFunction = (function pDFFunction() {
+var PDFFunction = (function pdfFunction() {
   function constructor(xref, fn) {
     var dict = fn.dict;
     if (!dict)
@@ -6390,7 +6390,7 @@ var PDFFunction = (function pDFFunction() {
   }
 
   constructor.prototype = {
-    constructSampled: function pDFFunctionConstructSampled(str, dict) {
+    constructSampled: function pdfFunctionConstructSampled(str, dict) {
       var domain = dict.get('Domain');
       var range = dict.get('Range');
 
@@ -6426,8 +6426,8 @@ var PDFFunction = (function pDFFunction() {
 
       var samples = this.getSampleArray(size, outputSize, bps, str);
 
-      this.func = function pDFFunctionFunc(args) {
-        var clip = function pDFFunctionClip(v, min, max) {
+      this.func = function pdfFunctionFunc(args) {
+        var clip = function pdfFunctionClip(v, min, max) {
           if (v > max)
             v = max;
           else if (v < min)
@@ -6485,7 +6485,7 @@ var PDFFunction = (function pDFFunction() {
         return output;
       };
     },
-    getSampleArray: function pDFFunctionGetSampleArray(size, outputSize, bps,
+    getSampleArray: function pdfFunctionGetSampleArray(size, outputSize, bps,
                                                        str) {
       var length = 1;
       for (var i = 0; i < size.length; i++)
@@ -6511,7 +6511,7 @@ var PDFFunction = (function pDFFunction() {
       }
       return array;
     },
-    constructInterpolated: function pDFFunctionConstructInterpolated(str,
+    constructInterpolated: function pdfFunctionConstructInterpolated(str,
                                                                      dict) {
       var c0 = dict.get('C0') || [0];
       var c1 = dict.get('C1') || [1];
@@ -6525,7 +6525,7 @@ var PDFFunction = (function pDFFunction() {
       for (var i = 0; i < length; ++i)
         diff.push(c1[i] - c0[i]);
 
-      this.func = function pDFFunctionConstructInterpolatedFunc(args) {
+      this.func = function pdfFunctionConstructInterpolatedFunc(args) {
         var x = args[0];
 
         var out = [];
@@ -6535,7 +6535,7 @@ var PDFFunction = (function pDFFunction() {
         return out;
       };
     },
-    constructStiched: function pDFFunctionConstructStiched(fn, dict, xref) {
+    constructStiched: function pdfFunctionConstructStiched(fn, dict, xref) {
       var domain = dict.get('Domain');
       var range = dict.get('Range');
 
@@ -6554,8 +6554,8 @@ var PDFFunction = (function pDFFunction() {
       var bounds = dict.get('Bounds');
       var encode = dict.get('Encode');
 
-      this.func = function pDFFunctionConstructStichedFunc(args) {
-        var clip = function pDFFunctionConstructStichedFuncClip(v, min, max) {
+      this.func = function pdfFunctionConstructStichedFunc(args) {
+        var clip = function pdfFunctionConstructStichedFuncClip(v, min, max) {
           if (v > max)
             v = max;
           else if (v < min)
@@ -6588,9 +6588,9 @@ var PDFFunction = (function pDFFunction() {
         return fns[i].func([v2]);
       };
     },
-    constructPostScript: function pDFFunctionConstructPostScript() {
+    constructPostScript: function pdfFunctionConstructPostScript() {
       TODO('unhandled type of function');
-      this.func = function pDFFunctionConstructPostScriptFunc() {
+      this.func = function pdfFunctionConstructPostScriptFunc() {
         return [255, 105, 180];
       };
     }
