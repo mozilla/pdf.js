@@ -3,7 +3,7 @@
 
 'use strict';
 
-var ARCFourCipher = (function aRCFourCipher() {
+var ARCFourCipher = (function arcFourCipher() {
   function constructor(key) {
     this.a = 0;
     this.b = 0;
@@ -21,7 +21,7 @@ var ARCFourCipher = (function aRCFourCipher() {
   }
 
   constructor.prototype = {
-    encryptBlock: function aRCFourCipherEncryptBlock(data) {
+    encryptBlock: function arcFourCipherEncryptBlock(data) {
       var i, n = data.length, tmp, tmp2;
       var a = this.a, b = this.b, s = this.s;
       var output = new Uint8Array(n);
@@ -142,7 +142,7 @@ var NullCipher = (function nullCipher() {
   return constructor;
 })();
 
-var AES128Cipher = (function aES128Cipher() {
+var AES128Cipher = (function aes128Cipher() {
   var rcon = new Uint8Array([
     0x8d, 0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x1b, 0x36, 0x6c,
     0xd8, 0xab, 0x4d, 0x9a, 0x2f, 0x5e, 0xbc, 0x63, 0xc6, 0x97, 0x35, 0x6a,
@@ -372,7 +372,7 @@ var AES128Cipher = (function aES128Cipher() {
   }
 
   constructor.prototype = {
-    decryptBlock: function aES128CipherDecryptBlock(data) {
+    decryptBlock: function aes128CipherDecryptBlock(data) {
       var i, sourceLength = data.length;
       var buffer = this.buffer, bufferLength = this.bufferPosition;
       // waiting for IV values -- they are at the start of the stream

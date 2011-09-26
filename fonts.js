@@ -2034,7 +2034,7 @@ var CFFStrings = [
 
 var type1Parser = new Type1Parser();
 
-var CFF = function cFF(name, file, properties) {
+var CFF = function cffCFF(name, file, properties) {
   // Get the data block containing glyphs and subrs informations
   var headerBlock = file.getBytes(properties.length1);
   type1Parser.extractFontHeader(headerBlock, properties);
@@ -2234,7 +2234,7 @@ CFF.prototype = {
       'names': this.createCFFIndexHeader([name]),
 
       'topDict': (function topDict(self) {
-        return function cFFWrapTopDict() {
+        return function cffWrapTopDict() {
           var header = '\x00\x01\x01\x01';
           var dict =
               '\xf8\x1b\x00' + // version
@@ -2311,7 +2311,7 @@ CFF.prototype = {
       'charstrings': this.createCFFIndexHeader([[0x8B, 0x0E]].concat(glyphs),
                                                true),
 
-      'private': (function cFFWrapPrivate(self) {
+      'private': (function cffWrapPrivate(self) {
         var data =
             '\x8b\x14' + // defaultWidth
             '\x8b\x15';  // nominalWidth
