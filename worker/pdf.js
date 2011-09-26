@@ -48,7 +48,7 @@ addEventListener('message', function(event) {
   var data = event.data;
   // If there is no pdfDocument yet, then the sent data is the PDFDocument.
   if (!pdfDocument) {
-    pdfDocument = new PDFDoc(new Stream(data));
+    pdfDocument = new PDFDoc(data);
     postMessage({
       action: 'pdf_num_pages',
       data: pdfDocument.numPages

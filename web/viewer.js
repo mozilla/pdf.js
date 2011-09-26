@@ -159,7 +159,7 @@ var PDFView = {
     while (container.hasChildNodes())
       container.removeChild(container.lastChild);
 
-    var pdf = new PDFDoc(new Stream(data));
+    var pdf = new PDFDoc(data);
     var pagesCount = pdf.numPages;
     document.getElementById('numPages').innerHTML = pagesCount;
 

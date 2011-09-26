@@ -3800,7 +3800,8 @@ var Catalog = (function catalogCatalog() {
 })();
 
 var PDFDoc = (function pdfDoc() {
-  function constructor(stream) {
+  function constructor(data) {
+    var stream = new Stream(data);
     assertWellFormed(stream.length > 0, 'stream must have data');
     this.stream = stream;
     this.setup();
