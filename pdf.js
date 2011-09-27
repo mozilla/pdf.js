@@ -129,16 +129,16 @@ function getPdf(arg, callback) {
   xhr.mozResponseType = xhr.responseType = 'arraybuffer';
   xhr.expected = (document.URL.indexOf('file:') === 0) ? 0 : 200;
   xhr.onprogress = params.progress || undefined;
-  
-  xhr.onreadystatechange = function() {
+
+  xhr.onreadystatechange = function getPdfOnreadystatechange() {
     var data;
     if (xhr.readyState === 4 && xhr.status === xhr.expected) {
       data = (xhr.mozResponseArrayBuffer || xhr.mozResponse ||
-                  xhr.responseArrayBuffer || xhr.response);
+              xhr.responseArrayBuffer || xhr.response);
       callback(data);
     }
   };
-  xhr.send(null);  
+  xhr.send(null);
 }
 
 var Stream = (function streamStream() {
@@ -4965,7 +4965,7 @@ var CanvasGraphics = (function canvasGraphics() {
       if (IsDict(extGState) && extGState.has(dictName.name)) {
         var gsState = this.xref.fetchIfRef(extGState.get(dictName.name));
         var self = this;
-        gsState.forEach(function(key, value) {
+        gsState.forEach(function canvasGraphicsSetGStateForEach(key, value) {
           switch (key) {
             case 'Type':
               break;

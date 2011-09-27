@@ -107,7 +107,7 @@ var PDFView = {
 
     document.title = url;
 
-    getPdf({url:url, progress:PDFView.progressLevel}, function(data) {
+    getPdf({url: url, progress: PDFView.progressLevel}, function(data) {
       document.getElementById('loading').style.display = 'none';
       PDFView.load(data, scale);
     });

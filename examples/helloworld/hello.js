@@ -7,7 +7,7 @@
 
 'use strict';
 
-getPdf('helloworld.pdf', function(data){  
+getPdf('helloworld.pdf', function getPdfHelloWorld(data) {
   //
   // Instantiate PDFDoc with PDF data
   //
