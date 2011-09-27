@@ -88,7 +88,8 @@ browser-test:
 # To install gjslint, see:
 #
 # <http://code.google.com/closure/utilities/docs/linter_howto.html>
-SRC_DIRS := . utils worker web test
+SRC_DIRS := . utils worker web test examples/helloworld extensions/firefox \
+            extensions/firefox/components
 GJSLINT_FILES = $(foreach DIR,$(SRC_DIRS),$(wildcard $(DIR)/*.js))
 lint:
 	gjslint $(GJSLINT_FILES)
