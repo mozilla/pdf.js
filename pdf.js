@@ -172,7 +172,8 @@ var Stream = (function streamStream() {
     },
     makeSubStream: function stream_makeSubstream(start, length, dict) {
       return new Stream(this.bytes.buffer, start, length, dict);
-    }
+    },
+    isStream: true
   };
 
   return constructor;
@@ -3800,8 +3801,21 @@ var Catalog = (function catalogCatalog() {
 })();
 
 var PDFDoc = (function pdfDoc() {
-  function constructor(data) {
-    var stream = new Stream(data);
+  function constructor(arg, callback) {    
+    // Stream argument
+    if (typeof arg.isStream !== 'undefined') {
+      init.call(this, arg);
+    }
+    // ArrayBuffer argument
+    else if (typeof arg.byteLength !== 'undefined') {
+      init.call(this, new Stream(arg));
+    }
+    else {
+      error('Unknown argument type');
+    }    
+  }
+
+  function init(stream){
     assertWellFormed(stream.length > 0, 'stream must have data');
     this.stream = stream;
     this.setup();
@@ -3822,7 +3836,7 @@ var PDFDoc = (function pdfDoc() {
     stream.pos += index;
     return true; /* found */
   }
-
+  
   constructor.prototype = {
     get linearization() {
       var length = this.stream.length;
