@@ -107,23 +107,10 @@ var PDFView = {
 
     document.title = url;
 
-    var xhr = new XMLHttpRequest();
-    xhr.open('GET', url);
-    xhr.mozResponseType = xhr.responseType = 'arraybuffer';
-    xhr.expected = (document.URL.indexOf('file:') === 0) ? 0 : 200;
-    xhr.onprogress = PDFView.progressLevel;
-
-    xhr.onreadystatechange = function() {
-      if (xhr.readyState === 4 && xhr.status === xhr.expected) {
-        var data = (xhr.mozResponseArrayBuffer || xhr.mozResponse ||
-                    xhr.responseArrayBuffer || xhr.response);
-
-        document.getElementById('loading').style.display = 'none';
-        PDFView.load(data, scale);
-      }
-    };
-
-    xhr.send(null);
+    getPdf({url:url, progress:PDFView.progressLevel}, function(data) {
+      document.getElementById('loading').style.display = 'none';
+      PDFView.load(data, scale);
+    });
   },
 
   progressLevel: function(evt) {

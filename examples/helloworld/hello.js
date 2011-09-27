@@ -7,30 +7,7 @@
 
 'use strict';
 
-//
-// Ajax GET request, for binary files
-// (like jQuery's $.get(), but supports the binary type ArrayBuffer)
-//
-var ajaxGet = function(url, callback) {
-  var xhr = new XMLHttpRequest();
-  xhr.open('GET', url);
-  xhr.mozResponseType = xhr.responseType = 'arraybuffer';
-  xhr.expected = (document.URL.indexOf('file:') === 0) ? 0 : 200;
-  xhr.onreadystatechange = function() {
-    if (xhr.readyState === 4 && xhr.status === xhr.expected) {
-      var data = (xhr.mozResponseArrayBuffer || xhr.mozResponse ||
-                  xhr.responseArrayBuffer || xhr.response);
-
-      callback(data);
-    }
-  };
-  xhr.send(null);
-};
-
-//
-// This is where the fun happens
-//
-ajaxGet('helloworld.pdf', function ajaxGetHelloWorld(data) {
+getPdf('helloworld.pdf', function(data){  
   //
   // Instantiate PDFDoc with PDF data
   //
