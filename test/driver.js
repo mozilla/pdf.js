@@ -73,7 +73,7 @@ function nextTask() {
 
   log('Loading file "' + task.file + '"\n');
 
-  getPdf(task.file, function(data){
+  getPdf(task.file, function nextTaskGetPdf(data) {
     var failure;
     try {
       task.pdfDoc = new PDFDoc(data);
