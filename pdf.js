@@ -3830,7 +3830,7 @@ var Catalog = (function catalogCatalog() {
 })();
 
 var PDFDoc = (function pdfDoc() {
-  function constructor(arg, callback) {    
+  function constructor(arg, callback) {
     // Stream argument
     if (typeof arg.isStream !== 'undefined') {
       init.call(this, arg);
@@ -3841,10 +3841,10 @@ var PDFDoc = (function pdfDoc() {
     }
     else {
       error('Unknown argument type');
-    }    
+    }
   }
 
-  function init(stream){
+  function init(stream) {
     assertWellFormed(stream.length > 0, 'stream must have data');
     this.stream = stream;
     this.setup();
@@ -3865,7 +3865,7 @@ var PDFDoc = (function pdfDoc() {
     stream.pos += index;
     return true; /* found */
   }
-  
+
   constructor.prototype = {
     get linearization() {
       var length = this.stream.length;
