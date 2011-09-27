@@ -2832,14 +2832,37 @@ var Parser = (function parserParser() {
       // parse image stream
       var startPos = stream.pos;
 
-      var c1 = stream.getChar();
-      var c2 = stream.getChar();
-      while (!(c1 == 'E' && c2 == 'I') && c2 != null) {
-        c1 = c2;
-        c2 = stream.getChar();
+      // searching for the /\sEI\s/
+      var state = 0, ch;
+      while (state != 4 && (ch = stream.getByte()) != null) {
+        switch (ch) {
+          case 0x20:
+          case 0x0D:
+          case 0x0A:
+            state = state === 3 ? 4 : 1;
+            break;
+          case 0x45:
+            state = state === 1 ? 2 : 0;
+            break;
+          case 0x49:
+            state = state === 2 ? 3 : 0;
+            break;
+          default:
+            state = 0;
+            break;
+        }
       }
 
-      var length = (stream.pos - 2) - startPos;
+      // TODO improve the small images performance to remove the limit
+      var inlineImgLimit = 500;
+      if (++this.inlineImg >= inlineImgLimit) {
+        if (this.inlineImg === inlineImgLimit)
+          warn('Too many inline images');
+        this.shift();
+        return null;
+      }
+
+      var length = (stream.pos - 4) - startPos;
       var imageStream = stream.makeSubStream(startPos, length, dict);
       if (cipherTransform)
         imageStream = cipherTransform.createStream(imageStream);
@@ -4377,7 +4400,7 @@ var PartialEvaluator = (function partialEvaluator() {
           fnArray.push(fn);
           argsArray.push(args);
           args = [];
-        } else {
+        } else if (obj != null) {
           assertWellFormed(args.length <= 33, 'Too many arguments');
           args.push(obj);
         }
