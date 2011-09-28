@@ -8,9 +8,6 @@ const PDF_CONTENT_TYPE = "application/pdf";
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
 
-// TODO
-// Add some download progress event
-
 function log(aMsg) {
   let msg = "pdfContentHandler.js: " + (aMsg.join ? aMsg.join("") : aMsg);
   Cc["@mozilla.org/consoleservice;1"].getService(Ci.nsIConsoleService)
@@ -18,33 +15,45 @@ function log(aMsg) {
   dump(msg + "\n");
 };
 
+function fireEventTo(aName, aData, aWindow) {
+  let window = aWindow.wrappedJSObject;
+  let evt = window.document.createEvent("CustomEvent");
+  evt.initCustomEvent("pdf" + aName, false, false, aData);
+  window.document.dispatchEvent(evt);
+};
+
 function loadDocument(aWindow, aDocumentUrl) {
   let xhr = Cc["@mozilla.org/xmlextras/xmlhttprequest;1"]
               .createInstance(Ci.nsIXMLHttpRequest);
-  xhr.open("GET", aDocumentUrl);
-  xhr.mozResponseType = xhr.responseType = "arraybuffer";
-  xhr.onreadystatechange = function() {
-    if (xhr.readyState == 4 && xhr.status == 200) {
-      let data = (xhr.mozResponseArrayBuffer || xhr.mozResponse ||
-                  xhr.responseArrayBuffer || xhr.response);
-      try {
-        var view = new Uint8Array(data);
 
-        // I think accessing aWindow.wrappedJSObject returns a 
-        // XPCSafeJSObjectWrapper and so it is safe but mrbkap can confirm that
-        let window = aWindow.wrappedJSObject;
-        var arrayBuffer = new window.ArrayBuffer(data.byteLength);
-        var view2 = new window.Uint8Array(arrayBuffer);
-        view2.set(view);
+  xhr.onprogress = function updateProgress(evt) {
+    if (evt.lengthComputable)
+      fireEventTo(evt.type, evt.loaded / evt.total, aWindow);
+  };
 
-        let evt = window.document.createEvent("CustomEvent");
-        evt.initCustomEvent("pdfloaded", false, false, arrayBuffer);
-        window.document.dispatchEvent(evt);
-      } catch(e) {
-        log("Error - " + e);
-      }
+  xhr.onerror = function error(evt) {
+    fireEventTo(evt.type, false, aWindow);
+  };
+
+  xhr.onload = function load(evt) {
+    let data = (xhr.mozResponseArrayBuffer || xhr.mozResponse ||
+                xhr.responseArrayBuffer || xhr.response);
+    try {
+      let view = new Uint8Array(data);
+
+      let window = aWindow.wrappedJSObject;
+      let arrayBuffer = new window.ArrayBuffer(data.byteLength);
+      let view2 = new window.Uint8Array(arrayBuffer);
+      view2.set(view);
+
+      fireEventTo(evt.type, arrayBuffer, aWindow);
+    } catch(e) {
+      log("Error - " + e);
     }
   };
+
+  xhr.open("GET", aDocumentUrl);
+  xhr.responseType = "arraybuffer";
   xhr.send(null);
 };
 
@@ -131,7 +140,7 @@ pdfContentHandler.prototype = {
       url = url.replace("%s", uri.spec);
       window.location = url;
     } catch(e) {
-      log("Error - " + e);
+      log("Error retrieving the pdf.js base url - " + e);
     }
   },
 

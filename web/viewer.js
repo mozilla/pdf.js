@@ -111,24 +111,22 @@ var PDFView = {
     xhr.open('GET', url);
     xhr.mozResponseType = xhr.responseType = 'arraybuffer';
     xhr.expected = (document.URL.indexOf('file:') === 0) ? 0 : 200;
-    xhr.onprogress = PDFView.progressLevel;
+    xhr.onprogress = function updateProgress(evt) {
+      if (evt.lengthComputable)
+        PDFView.progress(evt.loaded / evt.total);
+    };
+
+    xhr.onerror = PDFView.error;
 
     xhr.onreadystatechange = function() {
       if (xhr.readyState === 4 && xhr.status === xhr.expected) {
         var data = (xhr.mozResponseArrayBuffer || xhr.mozResponse ||
                     xhr.responseArrayBuffer || xhr.response);
-
-        document.getElementById('loading').style.display = 'none';
         PDFView.load(data, scale);
       }
     };
 
     xhr.send(null);
-  },
-
-  progressLevel: function(evt) {
-    var p = Math.round((evt.loaded / evt.total) * 100);
-    document.getElementById('loading').innerHTML = 'Loading... ' + p + '%';
   },
 
   navigateTo: function(dest) {
@@ -147,7 +145,21 @@ var PDFView = {
     }
   },
 
+  error: function() {
+    var loadingIndicator = document.getElementById('loading');
+    loadingIndicator.innerHTML = 'Error';
+  },
+
+  progress: function(level) {
+    var percent = Math.round(level * 100);
+    var loadingIndicator = document.getElementById('loading');
+    loadingIndicator.innerHTML = 'Loading... ' + percent + '%';
+  },
+
   load: function(data, scale) {
+    var loadingIndicator = document.getElementById('loading');
+    loadingIndicator.style.display = 'none';
+
     var sidebar = document.getElementById('sidebarView');
     sidebar.parentNode.scrollTop = 0;
 
@@ -495,8 +507,16 @@ window.addEventListener('load', function(evt) {
     document.getElementById('fileInput').value = null;
 }, true);
 
-window.addEventListener('pdfloaded', function(evt) {
+window.addEventListener('pdfload', function(evt) {
   PDFView.load(evt.detail);
+}, true);
+
+window.addEventListener('pdfprogress', function(evt) {
+  PDFView.progress(evt.detail);
+}, true);
+
+window.addEventListener('pdferror', function(evt) {
+  PDFView.error();
 }, true);
 
 function updateViewarea() {
