@@ -116,25 +116,32 @@ function stringToPDFString(str) {
 // getPdf()
 // Convenience function to perform binary Ajax GET
 // Usage: getPdf('http://...', callback)
-//        getPdf({url:String [,progress:Function]}, callback)
+//        getPdf({
+//                 url:String ,
+//                 [,progress:Function, error:Function]
+//               },
+//               callback)
 //
 function getPdf(arg, callback) {
   var params = arg;
-  if (typeof arg === 'string') {
-    params = {url: arg};
-  }
+  if (typeof arg === 'string')
+    params = { url: arg };
 
   var xhr = new XMLHttpRequest();
   xhr.open('GET', params.url);
   xhr.mozResponseType = xhr.responseType = 'arraybuffer';
   xhr.expected = (document.URL.indexOf('file:') === 0) ? 0 : 200;
-  xhr.onprogress = params.progress || undefined;
+
+  if ('progress' in params)
+    xhr.onprogrss = params.progress || undefined;
+
+  if ('error' in params)
+    xhr.onerror = params.error || undefined;
 
   xhr.onreadystatechange = function getPdfOnreadystatechange() {
-    var data;
     if (xhr.readyState === 4 && xhr.status === xhr.expected) {
-      data = (xhr.mozResponseArrayBuffer || xhr.mozResponse ||
-              xhr.responseArrayBuffer || xhr.response);
+      var data = (xhr.mozResponseArrayBuffer || xhr.mozResponse ||
+                  xhr.responseArrayBuffer || xhr.response);
       callback(data);
     }
   };
