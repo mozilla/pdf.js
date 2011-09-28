@@ -112,6 +112,42 @@ function stringToPDFString(str) {
   return str2;
 }
 
+//
+// getPdf()
+// Convenience function to perform binary Ajax GET
+// Usage: getPdf('http://...', callback)
+//        getPdf({
+//                 url:String ,
+//                 [,progress:Function, error:Function]
+//               },
+//               callback)
+//
+function getPdf(arg, callback) {
+  var params = arg;
+  if (typeof arg === 'string')
+    params = { url: arg };
+
+  var xhr = new XMLHttpRequest();
+  xhr.open('GET', params.url);
+  xhr.mozResponseType = xhr.responseType = 'arraybuffer';
+  xhr.expected = (document.URL.indexOf('file:') === 0) ? 0 : 200;
+
+  if ('progress' in params)
+    xhr.onprogrss = params.progress || undefined;
+
+  if ('error' in params)
+    xhr.onerror = params.error || undefined;
+
+  xhr.onreadystatechange = function getPdfOnreadystatechange() {
+    if (xhr.readyState === 4 && xhr.status === xhr.expected) {
+      var data = (xhr.mozResponseArrayBuffer || xhr.mozResponse ||
+                  xhr.responseArrayBuffer || xhr.response);
+      callback(data);
+    }
+  };
+  xhr.send(null);
+}
+
 var Stream = (function streamStream() {
   function constructor(arrayBuffer, start, length, dict) {
     this.bytes = new Uint8Array(arrayBuffer);
@@ -172,7 +208,8 @@ var Stream = (function streamStream() {
     },
     makeSubStream: function stream_makeSubstream(start, length, dict) {
       return new Stream(this.bytes.buffer, start, length, dict);
-    }
+    },
+    isStream: true
   };
 
   return constructor;
@@ -3800,8 +3837,21 @@ var Catalog = (function catalogCatalog() {
 })();
 
 var PDFDoc = (function pdfDoc() {
-  function constructor(data) {
-    var stream = new Stream(data);
+  function constructor(arg, callback) {
+    // Stream argument
+    if (typeof arg.isStream !== 'undefined') {
+      init.call(this, arg);
+    }
+    // ArrayBuffer argument
+    else if (typeof arg.byteLength !== 'undefined') {
+      init.call(this, new Stream(arg));
+    }
+    else {
+      error('Unknown argument type');
+    }
+  }
+
+  function init(stream) {
     assertWellFormed(stream.length > 0, 'stream must have data');
     this.stream = stream;
     this.setup();
@@ -4936,7 +4986,7 @@ var CanvasGraphics = (function canvasGraphics() {
       if (IsDict(extGState) && extGState.has(dictName.name)) {
         var gsState = this.xref.fetchIfRef(extGState.get(dictName.name));
         var self = this;
-        gsState.forEach(function(key, value) {
+        gsState.forEach(function canvasGraphicsSetGStateForEach(key, value) {
           switch (key) {
             case 'Type':
               break;

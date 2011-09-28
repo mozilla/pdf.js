@@ -73,26 +73,16 @@ function nextTask() {
 
   log('Loading file "' + task.file + '"\n');
 
-  var r = new XMLHttpRequest();
-  r.open('GET', task.file);
-  r.mozResponseType = r.responseType = 'arraybuffer';
-  r.onreadystatechange = function nextTaskOnreadystatechange() {
+  getPdf(task.file, function nextTaskGetPdf(data) {
     var failure;
-    if (r.readyState == 4) {
-      var data = r.mozResponseArrayBuffer || r.mozResponse ||
-        r.responseArrayBuffer || r.response;
-
-      try {
-        task.pdfDoc = new PDFDoc(data);
-      } catch (e) {
-        failure = 'load PDF doc : ' + e.toString();
-      }
-
-      task.pageNum = 1;
-      nextPage(task, failure);
+    try {
+      task.pdfDoc = new PDFDoc(data);
+    } catch (e) {
+      failure = 'load PDF doc : ' + e.toString();
     }
-  };
-  r.send(null);
+    task.pageNum = 1;
+    nextPage(task, failure);
+  });
 }
 
 function isLastPage(task) {

@@ -107,26 +107,18 @@ var PDFView = {
 
     document.title = url;
 
-    var xhr = new XMLHttpRequest();
-    xhr.open('GET', url);
-    xhr.mozResponseType = xhr.responseType = 'arraybuffer';
-    xhr.expected = (document.URL.indexOf('file:') === 0) ? 0 : 200;
-    xhr.onprogress = function updateProgress(evt) {
-      if (evt.lengthComputable)
-        PDFView.progress(evt.loaded / evt.total);
-    };
-
-    xhr.onerror = PDFView.error;
-
-    xhr.onreadystatechange = function() {
-      if (xhr.readyState === 4 && xhr.status === xhr.expected) {
-        var data = (xhr.mozResponseArrayBuffer || xhr.mozResponse ||
-                    xhr.responseArrayBuffer || xhr.response);
+    getPdf(
+      {
+        url: url,
+        progress: function getPdfProgress(evt) {
+          if (evt.lengthComputable)
+            PDFView.progress(evt.loaded / evt.total);
+        },
+        error: PDFView.error
+      },
+      function getPdfLoad(data) {
         PDFView.load(data, scale);
-      }
-    };
-
-    xhr.send(null);
+      });
   },
 
   navigateTo: function(dest) {
