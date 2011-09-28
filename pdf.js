@@ -2378,57 +2378,57 @@ var RefSet = (function refSet() {
   return constructor;
 })();
 
-function IsBool(v) {
+function isBool(v) {
   return typeof v == 'boolean';
 }
 
-function IsInt(v) {
+function isInt(v) {
   return typeof v == 'number' && ((v | 0) == v);
 }
 
-function IsNum(v) {
+function isNum(v) {
   return typeof v == 'number';
 }
 
-function IsString(v) {
+function isString(v) {
   return typeof v == 'string';
 }
 
-function IsNull(v) {
+function isNull(v) {
   return v === null;
 }
 
-function IsName(v) {
+function isName(v) {
   return v instanceof Name;
 }
 
-function IsCmd(v, cmd) {
+function isCmd(v, cmd) {
   return v instanceof Cmd && (!cmd || v.cmd == cmd);
 }
 
-function IsDict(v, type) {
+function isDict(v, type) {
   return v instanceof Dict && (!type || v.get('Type').name == type);
 }
 
-function IsArray(v) {
+function isArray(v) {
   return v instanceof Array;
 }
 
-function IsStream(v) {
+function isStream(v) {
   return typeof v == 'object' && v != null && ('getChar' in v);
 }
 
-function IsRef(v) {
+function isRef(v) {
   return v instanceof Ref;
 }
 
-function IsPDFFunction(v) {
+function isPDFFunction(v) {
   var fnDict;
   if (typeof v != 'object')
     return false;
-  else if (IsDict(v))
+  else if (isDict(v))
     fnDict = v;
-  else if (IsStream(v))
+  else if (isStream(v))
     fnDict = v.dict;
   else
     return false;
@@ -2437,13 +2437,13 @@ function IsPDFFunction(v) {
 
 var EOF = {};
 
-function IsEOF(v) {
+function isEOF(v) {
   return v == EOF;
 }
 
 var None = {};
 
-function IsNone(v) {
+function isNone(v) {
   return v == None;
 }
 
@@ -2477,7 +2477,7 @@ var Lexer = (function lexer() {
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0    // fx
   ];
 
-  function ToHexDigit(ch) {
+  function toHexDigit(ch) {
     if (ch >= '0' && ch <= '9')
       return ch.charCodeAt(0) - 48;
     ch = ch.toUpperCase();
@@ -2606,10 +2606,10 @@ var Lexer = (function lexer() {
         stream.skip();
         if (ch == '#') {
           ch = stream.lookChar();
-          var x = ToHexDigit(ch);
+          var x = toHexDigit(ch);
           if (x != -1) {
             stream.skip();
-            var x2 = ToHexDigit(stream.getChar());
+            var x2 = toHexDigit(stream.getChar());
             if (x2 == -1)
               error('Illegal digit in hex char in name: ' + x2);
             str += String.fromCharCode((x << 4) | x2);
@@ -2640,14 +2640,14 @@ var Lexer = (function lexer() {
         }
         if (specialChars[ch.charCodeAt(0)] != 1) {
           var x, x2;
-          if ((x = ToHexDigit(ch)) == -1)
+          if ((x = toHexDigit(ch)) == -1)
             error('Illegal character in hex string: ' + ch);
 
           ch = stream.getChar();
           while (specialChars[ch.charCodeAt(0)] == 1)
             ch = stream.getChar();
 
-          if ((x2 = ToHexDigit(ch)) == -1)
+          if ((x2 = toHexDigit(ch)) == -1)
             error('Illegal character in hex string: ' + ch);
 
           str += String.fromCharCode((x << 4) | x2);
@@ -2766,7 +2766,7 @@ var Parser = (function parserParser() {
       this.buf2 = this.lexer.getObj();
     },
     shift: function parserShift() {
-      if (IsCmd(this.buf2, 'ID')) {
+      if (isCmd(this.buf2, 'ID')) {
         this.buf1 = this.buf2;
         this.buf2 = null;
         // skip byte after ID
@@ -2777,50 +2777,50 @@ var Parser = (function parserParser() {
       }
     },
     getObj: function parserGetObj(cipherTransform) {
-      if (IsCmd(this.buf1, 'BI')) { // inline image
+      if (isCmd(this.buf1, 'BI')) { // inline image
         this.shift();
         return this.makeInlineImage(cipherTransform);
       }
-      if (IsCmd(this.buf1, '[')) { // array
+      if (isCmd(this.buf1, '[')) { // array
         this.shift();
         var array = [];
-        while (!IsCmd(this.buf1, ']') && !IsEOF(this.buf1))
+        while (!isCmd(this.buf1, ']') && !isEOF(this.buf1))
           array.push(this.getObj());
-        if (IsEOF(this.buf1))
+        if (isEOF(this.buf1))
           error('End of file inside array');
         this.shift();
         return array;
       }
-      if (IsCmd(this.buf1, '<<')) { // dictionary or stream
+      if (isCmd(this.buf1, '<<')) { // dictionary or stream
         this.shift();
         var dict = new Dict();
-        while (!IsCmd(this.buf1, '>>') && !IsEOF(this.buf1)) {
-          if (!IsName(this.buf1)) {
+        while (!isCmd(this.buf1, '>>') && !isEOF(this.buf1)) {
+          if (!isName(this.buf1)) {
             error('Dictionary key must be a name object');
           } else {
             var key = this.buf1.name;
             this.shift();
-            if (IsEOF(this.buf1))
+            if (isEOF(this.buf1))
               break;
             dict.set(key, this.getObj(cipherTransform));
           }
         }
-        if (IsEOF(this.buf1))
+        if (isEOF(this.buf1))
           error('End of file inside dictionary');
 
         // stream objects are not allowed inside content streams or
         // object streams
-        if (IsCmd(this.buf2, 'stream')) {
+        if (isCmd(this.buf2, 'stream')) {
           return this.allowStreams ?
             this.makeStream(dict, cipherTransform) : dict;
         }
         this.shift();
         return dict;
       }
-      if (IsInt(this.buf1)) { // indirect reference or integer
+      if (isInt(this.buf1)) { // indirect reference or integer
         var num = this.buf1;
         this.shift();
-        if (IsInt(this.buf1) && IsCmd(this.buf2, 'R')) {
+        if (isInt(this.buf1) && isCmd(this.buf2, 'R')) {
           var ref = new Ref(num, this.buf1);
           this.shift();
           this.shift();
@@ -2828,7 +2828,7 @@ var Parser = (function parserParser() {
         }
         return num;
       }
-      if (IsString(this.buf1)) { // string
+      if (isString(this.buf1)) { // string
         var str = this.buf1;
         this.shift();
         if (cipherTransform)
@@ -2847,13 +2847,13 @@ var Parser = (function parserParser() {
 
       // parse dictionary
       var dict = new Dict();
-      while (!IsCmd(this.buf1, 'ID') && !IsEOF(this.buf1)) {
-        if (!IsName(this.buf1)) {
+      while (!isCmd(this.buf1, 'ID') && !isEOF(this.buf1)) {
+        if (!isName(this.buf1)) {
           error('Dictionary key must be a name object');
         } else {
           var key = this.buf1.name;
           this.shift();
-          if (IsEOF(this.buf1))
+          if (isEOF(this.buf1))
             break;
           dict.set(key, this.getObj(cipherTransform));
         }
@@ -2894,7 +2894,7 @@ var Parser = (function parserParser() {
       var xref = this.xref;
       if (xref)
         length = xref.fetchIfRef(length);
-      if (!IsInt(length)) {
+      if (!isInt(length)) {
         error('Bad ' + length + ' attribute in stream');
         length = 0;
       }
@@ -2903,7 +2903,7 @@ var Parser = (function parserParser() {
       stream.pos = pos + length;
       this.shift(); // '>>'
       this.shift(); // 'stream'
-      if (!IsCmd(this.buf1, 'endstream'))
+      if (!isCmd(this.buf1, 'endstream'))
         error('Missing endstream');
       this.shift();
 
@@ -2917,18 +2917,18 @@ var Parser = (function parserParser() {
     filter: function parserFilter(stream, dict, length) {
       var filter = dict.get('Filter', 'F');
       var params = dict.get('DecodeParms', 'DP');
-      if (IsName(filter))
+      if (isName(filter))
         return this.makeFilter(stream, filter.name, length, params);
-      if (IsArray(filter)) {
+      if (isArray(filter)) {
         var filterArray = filter;
         var paramsArray = params;
         for (var i = 0, ii = filterArray.length; i < ii; ++i) {
           filter = filterArray[i];
-          if (!IsName(filter))
+          if (!isName(filter))
             error('Bad filter name: ' + filter);
           else {
             params = null;
-            if (IsArray(paramsArray) && (i in paramsArray))
+            if (isArray(paramsArray) && (i in paramsArray))
               params = paramsArray[i];
             stream = this.makeFilter(stream, filter.name, length, params);
             // after the first stream the length variable is invalid
@@ -2979,10 +2979,10 @@ var Linearization = (function linearizationLinearization() {
     var obj2 = this.parser.getObj();
     var obj3 = this.parser.getObj();
     this.linDict = this.parser.getObj();
-    if (IsInt(obj1) && IsInt(obj2) && IsCmd(obj3, 'obj') &&
-        IsDict(this.linDict)) {
+    if (isInt(obj1) && isInt(obj2) && isCmd(obj3, 'obj') &&
+        isDict(this.linDict)) {
       var obj = this.linDict.get('Linearized');
-      if (!(IsNum(obj) && obj > 0))
+      if (!(isNum(obj) && obj > 0))
         this.linDict = null;
     }
   }
@@ -2991,8 +2991,8 @@ var Linearization = (function linearizationLinearization() {
     getInt: function linearizationGetInt(name) {
       var linDict = this.linDict;
       var obj;
-      if (IsDict(linDict) &&
-          IsInt(obj = linDict.get(name)) &&
+      if (isDict(linDict) &&
+          isInt(obj = linDict.get(name)) &&
           obj > 0) {
         return obj;
       }
@@ -3002,10 +3002,10 @@ var Linearization = (function linearizationLinearization() {
     getHint: function linearizationGetHint(index) {
       var linDict = this.linDict;
       var obj1, obj2;
-      if (IsDict(linDict) &&
-          IsArray(obj1 = linDict.get('H')) &&
+      if (isDict(linDict) &&
+          isArray(obj1 = linDict.get('H')) &&
           obj1.length >= 2 &&
-          IsInt(obj2 = obj1[index]) &&
+          isInt(obj2 = obj1[index]) &&
           obj2 > 0) {
         return obj2;
       }
@@ -3013,7 +3013,7 @@ var Linearization = (function linearizationLinearization() {
       return 0;
     },
     get length() {
-      if (!IsDict(this.linDict))
+      if (!isDict(this.linDict))
         return 0;
       return this.getInt('L');
     },
@@ -3067,7 +3067,7 @@ var XRef = (function xRefXRef() {
     }
 
     // get the root dictionary (catalog) object
-    if (!IsRef(this.root = trailerDict.get('Root')))
+    if (!isRef(this.root = trailerDict.get('Root')))
       error('Invalid root reference');
   }
 
@@ -3075,28 +3075,28 @@ var XRef = (function xRefXRef() {
     readXRefTable: function readXRefTable(parser) {
       var obj;
       while (true) {
-        if (IsCmd(obj = parser.getObj(), 'trailer'))
+        if (isCmd(obj = parser.getObj(), 'trailer'))
           break;
-        if (!IsInt(obj))
+        if (!isInt(obj))
           error('Invalid XRef table');
         var first = obj;
-        if (!IsInt(obj = parser.getObj()))
+        if (!isInt(obj = parser.getObj()))
           error('Invalid XRef table');
         var n = obj;
         if (first < 0 || n < 0 || (first + n) != ((first + n) | 0))
           error('Invalid XRef table: ' + first + ', ' + n);
         for (var i = first; i < first + n; ++i) {
           var entry = {};
-          if (!IsInt(obj = parser.getObj()))
+          if (!isInt(obj = parser.getObj()))
             error('Invalid XRef table: ' + first + ', ' + n);
           entry.offset = obj;
-          if (!IsInt(obj = parser.getObj()))
+          if (!isInt(obj = parser.getObj()))
             error('Invalid XRef table: ' + first + ', ' + n);
           entry.gen = obj;
           obj = parser.getObj();
-          if (IsCmd(obj, 'n')) {
+          if (isCmd(obj, 'n')) {
             entry.uncompressed = true;
-          } else if (IsCmd(obj, 'f')) {
+          } else if (isCmd(obj, 'f')) {
             entry.free = true;
           } else {
             error('Invalid XRef table: ' + first + ', ' + n);
@@ -3115,15 +3115,15 @@ var XRef = (function xRefXRef() {
 
       // read the trailer dictionary
       var dict;
-      if (!IsDict(dict = parser.getObj()))
+      if (!isDict(dict = parser.getObj()))
         error('Invalid XRef table');
 
       // get the 'Prev' pointer
       var prev;
       obj = dict.get('Prev');
-      if (IsInt(obj)) {
+      if (isInt(obj)) {
         prev = obj;
-      } else if (IsRef(obj)) {
+      } else if (isRef(obj)) {
         // certain buggy PDF generators generate "/Prev NNN 0 R" instead
         // of "/Prev NNN"
         prev = obj.num;
@@ -3133,7 +3133,7 @@ var XRef = (function xRefXRef() {
       }
 
       // check for 'XRefStm' key
-      if (IsInt(obj = dict.get('XRefStm'))) {
+      if (isInt(obj = dict.get('XRefStm'))) {
         var pos = obj;
         // ignore previously loaded xref streams (possible infinite recursion)
         if (!(pos in this.xrefstms)) {
@@ -3153,13 +3153,13 @@ var XRef = (function xRefXRef() {
       var i, j;
       while (range.length > 0) {
         var first = range[0], n = range[1];
-        if (!IsInt(first) || !IsInt(n))
+        if (!isInt(first) || !isInt(n))
           error('Invalid XRef range fields: ' + first + ', ' + n);
         var typeFieldWidth = byteWidths[0];
         var offsetFieldWidth = byteWidths[1];
         var generationFieldWidth = byteWidths[2];
-        if (!IsInt(typeFieldWidth) || !IsInt(offsetFieldWidth) ||
-            !IsInt(generationFieldWidth)) {
+        if (!isInt(typeFieldWidth) || !isInt(offsetFieldWidth) ||
+            !isInt(generationFieldWidth)) {
           error('Invalid XRef entry fields length: ' + first + ', ' + n);
         }
         for (i = 0; i < n; ++i) {
@@ -3194,7 +3194,7 @@ var XRef = (function xRefXRef() {
         range.splice(0, 2);
       }
       var prev = streamParameters.get('Prev');
-      if (IsInt(prev))
+      if (isInt(prev))
         this.readXRef(prev);
       return streamParameters;
     },
@@ -3291,11 +3291,11 @@ var XRef = (function xRefXRef() {
         stream.pos = trailers[i];
         var parser = new Parser(new Lexer(stream), true);
         var obj = parser.getObj();
-        if (!IsCmd(obj, 'trailer'))
+        if (!isCmd(obj, 'trailer'))
           continue;
         // read the trailer dictionary
         var dict;
-        if (!IsDict(dict = parser.getObj()))
+        if (!isDict(dict = parser.getObj()))
           continue;
         // taking the first one with 'ID'
         if (dict.has('ID'))
@@ -3311,13 +3311,13 @@ var XRef = (function xRefXRef() {
       var parser = new Parser(new Lexer(stream), true);
       var obj = parser.getObj();
       // parse an old-style xref table
-      if (IsCmd(obj, 'xref'))
+      if (isCmd(obj, 'xref'))
         return this.readXRefTable(parser);
       // parse an xref stream
-      if (IsInt(obj)) {
-        if (!IsInt(parser.getObj()) ||
-            !IsCmd(parser.getObj(), 'obj') ||
-            !IsStream(obj = parser.getObj())) {
+      if (isInt(obj)) {
+        if (!isInt(parser.getObj()) ||
+            !isCmd(parser.getObj(), 'obj') ||
+            !isStream(obj = parser.getObj())) {
           error('Invalid XRef stream');
         }
         return this.readXRefStream(obj);
@@ -3331,7 +3331,7 @@ var XRef = (function xRefXRef() {
       return e;
     },
     fetchIfRef: function xRefFetchIfRef(obj) {
-      if (!IsRef(obj))
+      if (!isRef(obj))
         return obj;
       return this.fetch(obj);
     },
@@ -3352,12 +3352,12 @@ var XRef = (function xRefXRef() {
         var obj1 = parser.getObj();
         var obj2 = parser.getObj();
         var obj3 = parser.getObj();
-        if (!IsInt(obj1) || obj1 != num ||
-            !IsInt(obj2) || obj2 != gen ||
-            !IsCmd(obj3)) {
+        if (!isInt(obj1) || obj1 != num ||
+            !isInt(obj2) || obj2 != gen ||
+            !isCmd(obj3)) {
           error('bad XRef entry');
         }
-        if (!IsCmd(obj3, 'obj')) {
+        if (!isCmd(obj3, 'obj')) {
           // some bad pdfs use "obj1234" and really mean 1234
           if (obj3.cmd.indexOf('obj') == 0) {
             num = parseInt(obj3.cmd.substring(3), 10);
@@ -3379,18 +3379,18 @@ var XRef = (function xRefXRef() {
           e = parser.getObj();
         }
         // Don't cache streams since they are mutable.
-        if (!IsStream(e))
+        if (!isStream(e))
           this.cache[num] = e;
         return e;
       }
 
       // compressed entry
       stream = this.fetch(new Ref(e.offset, 0));
-      if (!IsStream(stream))
+      if (!isStream(stream))
         error('bad ObjStm stream');
       var first = stream.parameters.get('First');
       var n = stream.parameters.get('N');
-      if (!IsInt(first) || !IsInt(n)) {
+      if (!isInt(first) || !isInt(n)) {
         error('invalid first and n parameters for ObjStm stream');
       }
       parser = new Parser(new Lexer(stream), false);
@@ -3398,12 +3398,12 @@ var XRef = (function xRefXRef() {
       // read the object numbers to populate cache
       for (i = 0; i < n; ++i) {
         num = parser.getObj();
-        if (!IsInt(num)) {
+        if (!isInt(num)) {
           error('invalid object number in the ObjStm stream: ' + num);
         }
         nums.push(num);
         var offset = parser.getObj();
-        if (!IsInt(offset)) {
+        if (!isInt(offset)) {
           error('invalid object offset in the ObjStm stream: ' + offset);
         }
       }
@@ -3465,7 +3465,7 @@ var Page = (function pagePage() {
     get mediaBox() {
       var obj = this.inheritPageProp('MediaBox');
       // Reset invalid media box to letter size.
-      if (!IsArray(obj) || obj.length !== 4)
+      if (!isArray(obj) || obj.length !== 4)
         obj = [0, 0, 612, 792];
       return shadow(this, 'mediaBox', obj);
     },
@@ -3477,7 +3477,7 @@ var Page = (function pagePage() {
         width: this.width,
         height: this.height
       };
-      if (IsArray(obj) && obj.length == 4) {
+      if (isArray(obj) && obj.length == 4) {
         var rotate = this.rotate;
         if (rotate == 0 || rotate == 180) {
           view.x = obj[0];
@@ -3584,7 +3584,7 @@ var Page = (function pagePage() {
       var xref = this.xref;
       var content = xref.fetchIfRef(this.content);
       var resources = xref.fetchIfRef(this.resources);
-      if (IsArray(content)) {
+      if (isArray(content)) {
         // fetching items
         var i, n = content.length;
         for (i = 0; i < n; ++i)
@@ -3599,7 +3599,7 @@ var Page = (function pagePage() {
       var xref = this.xref;
       var resources = xref.fetchIfRef(this.resources);
       var mediaBox = xref.fetchIfRef(this.mediaBox);
-      assertWellFormed(IsDict(resources), 'invalid page resources');
+      assertWellFormed(isDict(resources), 'invalid page resources');
       gfx.beginDrawing({ x: mediaBox[0], y: mediaBox[1],
             width: this.width,
             height: this.height,
@@ -3628,10 +3628,10 @@ var Page = (function pagePage() {
       var links = [];
       for (i = 0; i < n; ++i) {
         var annotation = xref.fetch(annotations[i]);
-        if (!IsDict(annotation))
+        if (!isDict(annotation))
           continue;
         var subtype = annotation.get('Subtype');
-        if (!IsName(subtype) || subtype.name != 'Link')
+        if (!isName(subtype) || subtype.name != 'Link')
           continue;
         var rect = annotation.get('Rect');
         var topLeftCorner = this.rotatePoint(rect[0], rect[1]);
@@ -3657,7 +3657,7 @@ var Page = (function pagePage() {
         } else if (annotation.has('Dest')) {
           // simple destination link
           var dest = annotation.get('Dest');
-          link.dest = IsName(dest) ? dest.name : dest;
+          link.dest = isName(dest) ? dest.name : dest;
         }
         links.push(link);
       }
@@ -3672,16 +3672,16 @@ var Catalog = (function catalogCatalog() {
   function constructor(xref) {
     this.xref = xref;
     var obj = xref.getCatalogObj();
-    assertWellFormed(IsDict(obj), 'catalog object is not a dictionary');
+    assertWellFormed(isDict(obj), 'catalog object is not a dictionary');
     this.catDict = obj;
   }
 
   constructor.prototype = {
     get toplevelPagesDict() {
       var pagesObj = this.catDict.get('Pages');
-      assertWellFormed(IsRef(pagesObj), 'invalid top-level pages reference');
+      assertWellFormed(isRef(pagesObj), 'invalid top-level pages reference');
       var xrefObj = this.xref.fetch(pagesObj);
-      assertWellFormed(IsDict(xrefObj), 'invalid top-level pages dictionary');
+      assertWellFormed(isDict(xrefObj), 'invalid top-level pages dictionary');
       // shadow the prototype getter
       return shadow(this, 'toplevelPagesDict', xrefObj);
     },
@@ -3689,10 +3689,10 @@ var Catalog = (function catalogCatalog() {
       var obj = this.catDict.get('Outlines');
       var xref = this.xref;
       var root = { items: [] };
-      if (IsRef(obj)) {
+      if (isRef(obj)) {
         obj = xref.fetch(obj).get('First');
         var processed = new RefSet();
-        if (IsRef(obj)) {
+        if (isRef(obj)) {
           var queue = [{obj: obj, parent: root}];
           // to avoid recursion keeping track of the items
           // in the processed dictionary
@@ -3707,7 +3707,7 @@ var Catalog = (function catalogCatalog() {
               dest = xref.fetchIfRef(dest).get('D');
             else if (outlineDict.has('Dest')) {
               dest = outlineDict.get('Dest');
-              if (IsName(dest))
+              if (isName(dest))
                 dest = dest.name;
             }
             var title = xref.fetchIfRef(outlineDict.get('Title'));
@@ -3722,12 +3722,12 @@ var Catalog = (function catalogCatalog() {
             };
             i.parent.items.push(outlineItem);
             obj = outlineDict.get('First');
-            if (IsRef(obj) && !processed.has(obj)) {
+            if (isRef(obj) && !processed.has(obj)) {
               queue.push({obj: obj, parent: outlineItem});
               processed.put(obj);
             }
             obj = outlineDict.get('Next');
-            if (IsRef(obj) && !processed.has(obj)) {
+            if (isRef(obj) && !processed.has(obj)) {
               queue.push({obj: obj, parent: i.parent});
               processed.put(obj);
             }
@@ -3740,7 +3740,7 @@ var Catalog = (function catalogCatalog() {
     get numPages() {
       var obj = this.toplevelPagesDict.get('Count');
       assertWellFormed(
-        IsInt(obj),
+        isInt(obj),
         'page count in top level pages object is not an integer'
       );
       // shadow the prototype getter
@@ -3749,18 +3749,18 @@ var Catalog = (function catalogCatalog() {
     traverseKids: function catalogTraverseKids(pagesDict) {
       var pageCache = this.pageCache;
       var kids = pagesDict.get('Kids');
-      assertWellFormed(IsArray(kids),
+      assertWellFormed(isArray(kids),
                        'page dictionary kids object is not an array');
       for (var i = 0; i < kids.length; ++i) {
         var kid = kids[i];
-        assertWellFormed(IsRef(kid),
+        assertWellFormed(isRef(kid),
                          'page dictionary kid is not a reference');
         var obj = this.xref.fetch(kid);
-        if (IsDict(obj, 'Page') || (IsDict(obj) && !obj.has('Kids'))) {
+        if (isDict(obj, 'Page') || (isDict(obj) && !obj.has('Kids'))) {
           pageCache.push(new Page(this.xref, pageCache.length, obj, kid));
         } else { // must be a child page dictionary
           assertWellFormed(
-            IsDict(obj),
+            isDict(obj),
             'page dictionary kid reference points to wrong type of object'
           );
           this.traverseKids(obj);
@@ -3770,7 +3770,7 @@ var Catalog = (function catalogCatalog() {
     get destinations() {
       function fetchDestination(xref, ref) {
         var dest = xref.fetchIfRef(ref);
-        return IsDict(dest) ? dest.get('D') : dest;
+        return isDict(dest) ? dest.get('D') : dest;
       }
 
       var xref = this.xref;
@@ -4355,8 +4355,8 @@ var PartialEvaluator = (function partialEvaluator() {
       var parser = new Parser(new Lexer(stream), false);
       var args = [], argsArray = [], fnArray = [], obj;
 
-      while (!IsEOF(obj = parser.getObj())) {
-        if (IsCmd(obj)) {
+      while (!isEOF(obj = parser.getObj())) {
+        if (isCmd(obj)) {
           var cmd = obj.cmd;
           var fn = OP_MAP[cmd];
           assertWellFormed(fn, "Unknown command '" + cmd + "'");
@@ -4366,10 +4366,10 @@ var PartialEvaluator = (function partialEvaluator() {
             // compile tiling patterns
             var patternName = args[args.length - 1];
             // SCN/scn applies patterns along with normal colors
-            if (IsName(patternName)) {
+            if (isName(patternName)) {
               var pattern = xref.fetchIfRef(patterns.get(patternName.name));
               if (pattern) {
-                var dict = IsStream(pattern) ? pattern.dict : pattern;
+                var dict = isStream(pattern) ? pattern.dict : pattern;
                 var typeNum = dict.get('PatternType');
                 if (typeNum == 1) {
                   patternName.code = this.evaluate(pattern, xref,
@@ -4384,11 +4384,11 @@ var PartialEvaluator = (function partialEvaluator() {
             var xobj = xobjs.get(name);
             if (xobj) {
               xobj = xref.fetchIfRef(xobj);
-              assertWellFormed(IsStream(xobj), 'XObject should be a stream');
+              assertWellFormed(isStream(xobj), 'XObject should be a stream');
 
               var type = xobj.dict.get('Subtype');
               assertWellFormed(
-                IsName(type),
+                isName(type),
                 'XObject should have a Name subtype'
               );
 
@@ -4405,7 +4405,7 @@ var PartialEvaluator = (function partialEvaluator() {
             if (fontRes) {
               fontRes = xref.fetchIfRef(fontRes);
               var font = xref.fetchIfRef(fontRes.get(args[0].name));
-              assertWellFormed(IsDict(font));
+              assertWellFormed(isDict(font));
               if (!font.translated) {
                 font.translated = this.translateFont(font, xref, resources);
                 if (fonts && font.translated) {
@@ -4447,7 +4447,7 @@ var PartialEvaluator = (function partialEvaluator() {
             var start = 0, end = 0;
             for (var i = 0; i < widths.length; i++) {
               var code = widths[i];
-              if (IsArray(code)) {
+              if (isArray(code)) {
                 for (var j = 0; j < code.length; j++)
                   glyphsWidths[start++] = code[j];
                 start = 0;
@@ -4464,7 +4464,7 @@ var PartialEvaluator = (function partialEvaluator() {
           properties.widths = glyphsWidths;
 
           var cidToGidMap = dict.get('CIDToGIDMap');
-          if (!cidToGidMap || !IsRef(cidToGidMap)) {
+          if (!cidToGidMap || !isRef(cidToGidMap)) {
             return Object.create(GlyphsUnicode);
           }
 
@@ -4486,11 +4486,11 @@ var PartialEvaluator = (function partialEvaluator() {
             var width = glyphsWidths[code];
             encoding[code] = {
               unicode: glyphID,
-              width: IsNum(width) ? width : defaultWidth
+              width: isNum(width) ? width : defaultWidth
             };
           }
         } else if (type == 'CIDFontType0') {
-          if (IsName(encoding)) {
+          if (isName(encoding)) {
             // Encoding is a predefined CMap
             if (encoding.name == 'Identity-H') {
               TODO('Need to create an identity cmap');
@@ -4511,7 +4511,7 @@ var PartialEvaluator = (function partialEvaluator() {
       var baseEncoding = null;
       if (dict.has('Encoding')) {
         encoding = xref.fetchIfRef(dict.get('Encoding'));
-        if (IsDict(encoding)) {
+        if (isDict(encoding)) {
           var baseName = encoding.get('BaseEncoding');
           if (baseName)
             baseEncoding = Encodings[baseName.name].slice();
@@ -4522,13 +4522,13 @@ var PartialEvaluator = (function partialEvaluator() {
             var index = 0;
             for (var j = 0; j < diffEncoding.length; j++) {
               var data = diffEncoding[j];
-              if (IsNum(data))
+              if (isNum(data))
                 index = data;
               else
                 differences[index++] = data.name;
             }
           }
-        } else if (IsName(encoding)) {
+        } else if (isName(encoding)) {
           baseEncoding = Encodings[encoding.name].slice();
         } else {
           error('Encoding is not a Name nor a Dict');
@@ -4565,7 +4565,7 @@ var PartialEvaluator = (function partialEvaluator() {
         var width = widths[i] || widths[glyph];
         map[i] = {
           unicode: index,
-          width: IsNum(width) ? width : properties.defaultWidth
+          width: isNum(width) ? width : properties.defaultWidth
         };
 
         if (glyph)
@@ -4583,12 +4583,12 @@ var PartialEvaluator = (function partialEvaluator() {
 
       if (type == 'TrueType' && dict.has('ToUnicode') && differences) {
         var cmapObj = dict.get('ToUnicode');
-        if (IsRef(cmapObj)) {
+        if (isRef(cmapObj)) {
           cmapObj = xref.fetch(cmapObj);
         }
-        if (IsName(cmapObj)) {
+        if (isName(cmapObj)) {
           error('ToUnicode file cmap translation not implemented');
-        } else if (IsStream(cmapObj)) {
+        } else if (isStream(cmapObj)) {
           var tokens = [];
           var token = '';
           var beginArrayToken = {};
@@ -4689,7 +4689,7 @@ var PartialEvaluator = (function partialEvaluator() {
 
       var defaultWidth = 0;
       var widths = Metrics[stdFontMap[name] || name];
-      if (IsNum(widths)) {
+      if (isNum(widths)) {
         defaultWidth = widths;
         widths = null;
       }
@@ -4705,7 +4705,7 @@ var PartialEvaluator = (function partialEvaluator() {
                                                           resources) {
       var baseDict = dict;
       var type = dict.get('Subtype');
-      assertWellFormed(IsName(type), 'invalid font Subtype');
+      assertWellFormed(isName(type), 'invalid font Subtype');
 
       var composite = false;
       if (type.name == 'Type0') {
@@ -4717,13 +4717,13 @@ var PartialEvaluator = (function partialEvaluator() {
         if (!df)
           return null;
 
-        if (IsRef(df))
+        if (isRef(df))
           df = xref.fetch(df);
 
-        dict = xref.fetch(IsRef(df) ? df : df[0]);
+        dict = xref.fetch(isRef(df) ? df : df[0]);
 
         type = dict.get('Subtype');
-        assertWellFormed(IsName(type), 'invalid font Subtype');
+        assertWellFormed(isName(type), 'invalid font Subtype');
         composite = true;
       }
 
@@ -4733,7 +4733,7 @@ var PartialEvaluator = (function partialEvaluator() {
       var descriptor = xref.fetchIfRef(dict.get('FontDescriptor'));
       if (!descriptor) {
         var baseFontName = dict.get('BaseFont');
-        if (!IsName(baseFontName))
+        if (!isName(baseFontName))
           return null;
 
         // Using base font name as a font name.
@@ -4776,7 +4776,7 @@ var PartialEvaluator = (function partialEvaluator() {
       } else {
         // Trying get the BaseFont metrics (see comment above).
         var baseFontName = dict.get('BaseFont');
-        if (IsName(baseFontName)) {
+        if (isName(baseFontName)) {
           var metricsAndMap = this.getBaseFontMetricsAndMap(baseFontName.name);
 
           glyphWidths = metricsAndMap.widths;
@@ -4786,7 +4786,7 @@ var PartialEvaluator = (function partialEvaluator() {
       }
 
       var fontName = xref.fetchIfRef(descriptor.get('FontName'));
-      assertWellFormed(IsName(fontName), 'invalid font name');
+      assertWellFormed(isName(fontName), 'invalid font name');
 
       var fontFile = descriptor.get('FontFile', 'FontFile2', 'FontFile3');
       if (fontFile) {
@@ -4797,11 +4797,11 @@ var PartialEvaluator = (function partialEvaluator() {
             subtype = subtype.name;
 
           var length1 = fontFile.dict.get('Length1');
-          if (!IsInt(length1))
+          if (!isInt(length1))
             length1 = xref.fetchIfRef(length1);
 
           var length2 = fontFile.dict.get('Length2');
-          if (!IsInt(length2))
+          if (!isInt(length2))
             length2 = xref.fetchIfRef(length2);
         }
       }
@@ -4976,7 +4976,7 @@ var CanvasGraphics = (function canvasGraphics() {
     },
     setGState: function canvasGraphicsSetGState(dictName) {
       var extGState = this.xref.fetchIfRef(this.res.get('ExtGState'));
-      if (IsDict(extGState) && extGState.has(dictName.name)) {
+      if (isDict(extGState) && extGState.has(dictName.name)) {
         var gsState = this.xref.fetchIfRef(extGState.get(dictName.name));
         var self = this;
         gsState.forEach(function canvasGraphicsSetGStateForEach(key, value) {
@@ -5202,13 +5202,13 @@ var CanvasGraphics = (function canvasGraphics() {
     setFont: function canvasGraphicsSetFont(fontRef, size) {
       var font;
       // the tf command uses a name, but graphics state uses a reference
-      if (IsName(fontRef)) {
+      if (isName(fontRef)) {
         font = this.xref.fetchIfRef(this.res.get('Font'));
-        if (!IsDict(font))
+        if (!isDict(font))
          return;
 
         font = font.get(fontRef.name);
-      } else if (IsRef(fontRef)) {
+      } else if (isRef(fontRef)) {
         font = fontRef;
       }
       font = this.xref.fetchIfRef(font);
@@ -5310,13 +5310,13 @@ var CanvasGraphics = (function canvasGraphics() {
       var arrLength = arr.length;
       for (var i = 0; i < arrLength; ++i) {
         var e = arr[i];
-        if (IsNum(e)) {
+        if (isNum(e)) {
           if (ctx.$addCurrentX) {
             ctx.$addCurrentX(-e * 0.001 * fontSize);
           } else {
             current.x -= e * 0.001 * fontSize * textHScale;
           }
-        } else if (IsString(e)) {
+        } else if (isString(e)) {
           this.showText(e);
         } else {
           malformed('TJ array element ' + e + ' is not string or num');
@@ -5490,7 +5490,7 @@ var CanvasGraphics = (function canvasGraphics() {
       if (!xobj)
         return;
       xobj = this.xref.fetchIfRef(xobj);
-      assertWellFormed(IsStream(xobj), 'XObject should be a stream');
+      assertWellFormed(isStream(xobj), 'XObject should be a stream');
 
       var oc = xobj.dict.get('OC');
       if (oc) {
@@ -5503,7 +5503,7 @@ var CanvasGraphics = (function canvasGraphics() {
       }
 
       var type = xobj.dict.get('Subtype');
-      assertWellFormed(IsName(type), 'XObject should have a Name subtype');
+      assertWellFormed(isName(type), 'XObject should have a Name subtype');
       if ('Image' == type.name) {
         this.paintImageXObject(obj, xobj, false);
       } else if ('Form' == type.name) {
@@ -5519,11 +5519,11 @@ var CanvasGraphics = (function canvasGraphics() {
       this.save();
 
       var matrix = stream.dict.get('Matrix');
-      if (matrix && IsArray(matrix) && 6 == matrix.length)
+      if (matrix && isArray(matrix) && 6 == matrix.length)
         this.transform.apply(this, matrix);
 
       var bbox = stream.dict.get('BBox');
-      if (bbox && IsArray(bbox) && 4 == bbox.length) {
+      if (bbox && isArray(bbox) && 4 == bbox.length) {
         this.rectangle.apply(this, bbox);
         this.clip();
         this.endPath();
@@ -5680,9 +5680,9 @@ var ColorSpace = (function colorSpaceColorSpace() {
   };
 
   constructor.parse = function colorspace_parse(cs, xref, res) {
-    if (IsName(cs)) {
+    if (isName(cs)) {
       var colorSpaces = xref.fetchIfRef(res.get('ColorSpace'));
-      if (IsDict(colorSpaces)) {
+      if (isDict(colorSpaces)) {
         var refcs = colorSpaces.get(cs.name);
         if (refcs)
           cs = refcs;
@@ -5691,7 +5691,7 @@ var ColorSpace = (function colorSpaceColorSpace() {
 
     cs = xref.fetchIfRef(cs);
 
-    if (IsName(cs)) {
+    if (isName(cs)) {
       var mode = cs.name;
       this.mode = mode;
 
@@ -5710,7 +5710,7 @@ var ColorSpace = (function colorSpaceColorSpace() {
         default:
           error('unrecognized colorspace ' + mode);
       }
-    } else if (IsArray(cs)) {
+    } else if (isArray(cs)) {
       var mode = cs[0].name;
       this.mode = mode;
 
@@ -5828,10 +5828,10 @@ var IndexedCS = (function indexedCS() {
 
     var length = baseNumComps * highVal;
     var lookupArray = new Uint8Array(length);
-    if (IsStream(lookup)) {
+    if (isStream(lookup)) {
       var bytes = lookup.getBytes(length);
       lookupArray.set(bytes);
-    } else if (IsString(lookup)) {
+    } else if (isString(lookup)) {
       for (var i = 0; i < length; ++i)
         lookupArray[i] = lookup.charCodeAt(i);
     } else {
@@ -6027,7 +6027,7 @@ var Pattern = (function patternPattern() {
     var length = args.length;
 
     var patternName = args[length - 1];
-    if (!IsName(patternName))
+    if (!isName(patternName))
       error('Bad args to getPattern: ' + patternName);
 
     var patternRes = xref.fetchIfRef(res.get('Pattern'));
@@ -6035,7 +6035,7 @@ var Pattern = (function patternPattern() {
       error('Unable to find pattern resource');
 
     var pattern = xref.fetchIfRef(patternRes.get(patternName.name));
-    var dict = IsStream(pattern) ? pattern.dict : pattern;
+    var dict = isStream(pattern) ? pattern.dict : pattern;
     var typeNum = dict.get('PatternType');
 
     switch (typeNum) {
@@ -6066,7 +6066,7 @@ var Pattern = (function patternPattern() {
   constructor.parseShading = function pattern_shading(shading, matrix,
       xref, res, ctx) {
 
-    var dict = IsStream(shading) ? shading.dict : shading;
+    var dict = isStream(shading) ? shading.dict : shading;
     var type = dict.get('ShadingType');
 
     switch (type) {
@@ -6129,9 +6129,9 @@ var RadialAxialShading = (function radialAxialShading() {
 
     var fnObj = dict.get('Function');
     fnObj = xref.fetchIfRef(fnObj);
-    if (IsArray(fnObj))
+    if (isArray(fnObj))
       error('No support for array of functions');
-    else if (!IsPDFFunction(fnObj))
+    else if (!isPDFFunction(fnObj))
       error('Invalid function');
     var fn = new PDFFunction(xref, fnObj);
 
@@ -6278,7 +6278,7 @@ var TilingPattern = (function tilingPattern() {
       graphics.transform.apply(graphics, tmpScale);
       graphics.transform.apply(graphics, tmpTranslate);
 
-      if (bbox && IsArray(bbox) && 4 == bbox.length) {
+      if (bbox && isArray(bbox) && 4 == bbox.length) {
         graphics.rectangle.apply(graphics, bbox);
         graphics.clip();
         graphics.endPath();
@@ -6671,7 +6671,7 @@ var PDFFunction = (function pdfFunction() {
       var c1 = dict.get('C1') || [1];
       var n = dict.get('N');
 
-      if (!IsArray(c0) || !IsArray(c1))
+      if (!isArray(c0) || !isArray(c1))
         error('Illegal dictionary for interpolated function');
 
       var length = c0.length;

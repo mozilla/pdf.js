@@ -258,7 +258,7 @@ var Type2Parser = function(aFilePath) {
     var count = decoded.length;
     for (var i = 0; i < count; i++) {
       var token = decoded[i];
-      if (IsNum(token)) {
+      if (isNum(token)) {
         stack.push(token);
       } else {
         switch (token.operand) {
