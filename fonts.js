@@ -709,7 +709,10 @@ var Font = (function Font() {
     var lastCharIndex = 0;
 
     var encoding = properties.encoding;
-    for (var index in encoding) {
+    var encodingLength = encoding.length;
+    for (var index = 0; index < encodingLength; ++index) {
+      if (encoding[index] === undefined)
+        continue;
       var code = encoding[index].unicode;
       if (firstCharIndex > code || !firstCharIndex)
         firstCharIndex = code;
@@ -1221,11 +1224,12 @@ var Font = (function Font() {
             };
           }
         } else {
-          for (i in encoding) {
-            if (encoding.hasOwnProperty(i)) {
+          var encodingLength = encoding.length;
+          for (i = 0; i < encodingLength; ++i) {
+            if (encoding[i] !== undefined) {
               var unicode = encoding[i].unicode;
               if (unicode <= 0x1f || (unicode >= 127 && unicode <= 255))
-                encoding[i].unicode = unicode += kCmapGlyphOffset;
+                encoding[i].unicode = (unicode += kCmapGlyphOffset);
             }
           }
         }
@@ -2512,7 +2516,7 @@ var Type2CFF = (function type2CFF() {
 
     parseEncoding: function cff_parseencoding(pos, properties, strings,
                                               charset) {
-      var encoding = {};
+      var encoding = [];
       var bytes = this.bytes;
 
       function readSupplement() {

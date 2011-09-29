@@ -341,8 +341,10 @@ var Type2Parser = function(aFilePath) {
     dump('private:' + privateDict);
     parseAsToken(privateDict, CFFDictPrivateDataMap);
 
-    for (var p in font.map)
-      dump(p + '::' + font.get(p));
+    var fontMapLength = font.map.length;
+    for (var p = 0; p < fontMapLength; ++p)
+      if (font.map[p] !== undefined)
+        dump(p + '::' + font.get(p));
 
     // Read CharStrings Index
     var charStringsOffset = font.get('CharStrings');
