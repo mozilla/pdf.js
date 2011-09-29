@@ -443,6 +443,7 @@ var Font = (function Font() {
 
       this.defaultWidth = properties.defaultWidth;
       this.loadedName = fontName.split('-')[0];
+      this.composite = properties.composite;
       this.loading = false;
       return;
     }

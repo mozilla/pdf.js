@@ -4437,72 +4437,107 @@ var PartialEvaluator = (function partialEvaluator() {
                                                               properties) {
       var type = properties.type, encoding;
       if (properties.composite) {
-        if (type == 'CIDFontType2') {
-          var defaultWidth = xref.fetchIfRef(dict.get('DW')) || 1000;
-          properties.defaultWidth = defaultWidth;
+        var defaultWidth = xref.fetchIfRef(dict.get('DW')) || 1000;
+        properties.defaultWidth = defaultWidth;
 
-          var glyphsWidths = {};
-          var widths = xref.fetchIfRef(dict.get('W'));
-          if (widths) {
-            var start = 0, end = 0;
-            for (var i = 0; i < widths.length; i++) {
-              var code = widths[i];
-              if (IsArray(code)) {
-                for (var j = 0; j < code.length; j++)
-                  glyphsWidths[start++] = code[j];
-                start = 0;
-              } else if (start) {
-                var width = widths[++i];
-                for (var j = start; j <= code; j++)
-                  glyphsWidths[j] = width;
-                start = 0;
-              } else {
-                start = code;
+        var glyphsWidths = {};
+        var widths = xref.fetchIfRef(dict.get('W'));
+        if (widths) {
+          var start = 0, end = 0;
+          for (var i = 0; i < widths.length; i++) {
+            var code = widths[i];
+            if (IsArray(code)) {
+              for (var j = 0; j < code.length; j++)
+                glyphsWidths[start++] = code[j];
+              start = 0;
+            } else if (start) {
+              var width = widths[++i];
+              for (var j = start; j <= code; j++)
+                glyphsWidths[j] = width;
+              start = 0;
+            } else {
+              start = code;
+            }
+          }
+        }
+        properties.widths = glyphsWidths;
+
+        // Glyph ids are big-endian 2-byte values
+        encoding = properties.encoding;
+
+        var cidToGidMap = dict.get('CIDToGIDMap');
+        if (!cidToGidMap || !IsRef(cidToGidMap)) {
+          // trying to guess encoding from CIDSystemInfo
+          var cidSystemInfo = dict.get('CIDSystemInfo');
+          var cidToUnicode;
+          if (IsDict(cidSystemInfo)) {
+            cidToUnicode = CIDToUnicodeMaps[
+              cidSystemInfo.get('Registry') + '-' +
+              cidSystemInfo.get('Ordering')];
+          }
+          if (cidToUnicode) {
+            encoding[0] = { unicode: 0, width: 0 };
+            var glyph = 1, i, j;
+            for (i = 0; i < cidToUnicode.length; ++i) {
+              var unicode = cidToUnicode[i];
+              if (IsArray(unicode)) {
+                var length = unicode.length;
+                if (glyph in glyphsWidths) {
+                  for (j = 0; j < length; j++) {
+                    encoding[unicode[j]] = {
+                      unicode: unicode[j],
+                      width: glyphsWidths[glyph]
+                    };
+                  }
+                }
+                glyph++;
+              } else if (typeof unicode === 'object') {
+                var fillLength = unicode.f;
+                if (fillLength) {
+                  unicode = unicode.c;
+                  for (j = 0; j < fillLength; ++j) {
+                    if (!(glyph in glyphsWidths))
+                      continue;
+                    encoding[unicode] = {
+                      unicode: unicode,
+                      width: glyphsWidths[glyph]
+                    };
+                    unicode++;
+                    glyph++;
+                  }
+                } else
+                  glyph += unicode.s;
+              } else if (unicode) {
+                encoding[unicode] = {
+                  unicode: unicode,
+                  width: glyphsWidths[glyph++]
+                };
               }
             }
           }
-          properties.widths = glyphsWidths;
 
-          var cidToGidMap = dict.get('CIDToGIDMap');
-          if (!cidToGidMap || !IsRef(cidToGidMap)) {
-            return Object.create(GlyphsUnicode);
-          }
-
-          // Extract the encoding from the CIDToGIDMap
-          var glyphsStream = xref.fetchIfRef(cidToGidMap);
-          var glyphsData = glyphsStream.getBytes(0);
-
-          // Glyph ids are big-endian 2-byte values
-          encoding = properties.encoding;
-
-          // Set encoding 0 to later verify the font has an encoding
-          encoding[0] = { unicode: 0, width: 0 };
-          for (var j = 0; j < glyphsData.length; j++) {
-            var glyphID = (glyphsData[j++] << 8) | glyphsData[j];
-            if (glyphID == 0)
-              continue;
-
-            var code = j >> 1;
-            var width = glyphsWidths[code];
-            encoding[code] = {
-              unicode: glyphID,
-              width: IsNum(width) ? width : defaultWidth
-            };
-          }
-        } else if (type == 'CIDFontType0') {
-          if (IsName(encoding)) {
-            // Encoding is a predefined CMap
-            if (encoding.name == 'Identity-H') {
-              TODO('Need to create an identity cmap');
-            } else {
-              TODO('Need to support predefined CMaps see PDF 32000-1:2008 ' +
-                   '9.7.5.2 Predefined CMaps');
-            }
-          } else {
-            TODO('Need to support encoding streams see PDF 32000-1:2008 ' +
-                 '9.7.5.3');
-          }
+          return Object.create(GlyphsUnicode);
         }
+
+        // Extract the encoding from the CIDToGIDMap
+        var glyphsStream = xref.fetchIfRef(cidToGidMap);
+        var glyphsData = glyphsStream.getBytes(0);
+
+        // Set encoding 0 to later verify the font has an encoding
+        encoding[0] = { unicode: 0, width: 0 };
+        for (var j = 0; j < glyphsData.length; j++) {
+          var glyphID = (glyphsData[j++] << 8) | glyphsData[j];
+          if (glyphID == 0)
+            continue;
+
+          var code = j >> 1;
+          var width = glyphsWidths[code];
+          encoding[code] = {
+            unicode: glyphID,
+            width: IsNum(width) ? width : defaultWidth
+          };
+        }
+
         return Object.create(GlyphsUnicode);
       }
 
