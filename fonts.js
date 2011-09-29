@@ -429,7 +429,7 @@ var Font = (function Font() {
       return;
     }
 
-    // Trying to fix encoding using glyph widths and CIDSystemInfo
+    // Trying to fix encoding using glyph widths and CIDSystemInfo.
     this.fixWidths(properties);
 
     if (!file) {
@@ -1429,9 +1429,9 @@ var Font = (function Font() {
         var unicode = cidToUnicode[i];
         if (isArray(unicode)) {
           if (glyph in glyphsWidths) {
-          var length = unicode.length;
+            var length = unicode.length;
             for (j = 0; j < length; j++) {
-              k = unicode[i];
+              k = unicode[j];
               encoding[k] = {
                 unicode: k <= 0x1f || (k >= 127 && k <= 255) ?
                   k + kCmapGlyphOffset : k,
