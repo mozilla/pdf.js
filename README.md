@@ -78,7 +78,7 @@ any breakage in rendering.
 
 Our Github contributors so far:
 
-+ https://github.com/arturadib/pdf.js/contributors
++ https://github.com/andreasgal/pdf.js/contributors
 
 You can add your name to it! :)
 
