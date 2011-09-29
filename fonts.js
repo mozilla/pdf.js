@@ -429,6 +429,9 @@ var Font = (function Font() {
       return;
     }
 
+    // Trying to fix encoding using glyph widths and CIDSystemInfo
+    this.fixWidths(properties);
+
     if (!file) {
       // The file data is not specified. Trying to fix the font name
       // to be used with the canvas.font.
@@ -1401,6 +1404,63 @@ var Font = (function Font() {
       }
 
       return stringToArray(otf.file);
+    },
+
+    fixWidths: function font_fixWidths(properties) {
+      var encoding = properties.encoding;
+      if (encoding[0])
+        return;
+      var glyphsWidths = properties.widths;
+      if (!glyphsWidths)
+        return;
+
+      var cidSystemInfo = properties.cidSystemInfo;
+      var cidToUnicode;
+      if (cidSystemInfo) {
+        cidToUnicode = CIDToUnicodeMaps[cidSystemInfo.registry +
+          '-' + cidSystemInfo.ordering];
+      }
+      if (!cidToUnicode)
+        return;
+
+      encoding[0] = { unicode: 0, width: 0 };
+      var glyph = 1, i, j;
+      for (i = 0; i < cidToUnicode.length; ++i) {
+        var unicode = cidToUnicode[i];
+        if (isArray(unicode)) {
+          var length = unicode.length;
+          if (glyph in glyphsWidths) {
+            for (j = 0; j < length; j++) {
+              encoding[unicode[j]] = {
+                unicode: unicode[j],
+                width: glyphsWidths[glyph]
+              };
+            }
+          }
+          glyph++;
+        } else if (typeof unicode === 'object') {
+          var fillLength = unicode.f;
+          if (fillLength) {
+            unicode = unicode.c;
+            for (j = 0; j < fillLength; ++j) {
+              if (!(glyph in glyphsWidths))
+                continue;
+              encoding[unicode] = {
+                unicode: unicode,
+                width: glyphsWidths[glyph]
+              };
+              unicode++;
+              glyph++;
+            }
+          } else
+            glyph += unicode.s;
+        } else if (unicode) {
+          encoding[unicode] = {
+            unicode: unicode,
+            width: glyphsWidths[glyph++]
+          };
+        }
+      }
     },
 
     bindWorker: function font_bindWorker(data) {

@@ -4472,56 +4472,19 @@ var PartialEvaluator = (function partialEvaluator() {
         // Glyph ids are big-endian 2-byte values
         encoding = properties.encoding;
 
+        // CIDSystemInfo might help to match width and glyphs
+        var cidSystemInfo = dict.get('CIDSystemInfo');
+        if (isDict(cidSystemInfo)) {
+          properties.cidSystemInfo = {
+            registry: cidSystemInfo.get('Registry'),
+            ordering: cidSystemInfo.get('Ordering'),
+            supplement: cidSystemInfo.get('Supplement')
+          };
+        }
+
         var cidToGidMap = dict.get('CIDToGIDMap');
         if (!cidToGidMap || !isRef(cidToGidMap)) {
-          // trying to guess encoding from CIDSystemInfo
-          var cidSystemInfo = dict.get('CIDSystemInfo');
-          var cidToUnicode;
-          if (isDict(cidSystemInfo)) {
-            cidToUnicode = CIDToUnicodeMaps[
-              cidSystemInfo.get('Registry') + '-' +
-              cidSystemInfo.get('Ordering')];
-          }
-          if (cidToUnicode) {
-            encoding[0] = { unicode: 0, width: 0 };
-            var glyph = 1, i, j;
-            for (i = 0; i < cidToUnicode.length; ++i) {
-              var unicode = cidToUnicode[i];
-              if (isArray(unicode)) {
-                var length = unicode.length;
-                if (glyph in glyphsWidths) {
-                  for (j = 0; j < length; j++) {
-                    encoding[unicode[j]] = {
-                      unicode: unicode[j],
-                      width: glyphsWidths[glyph]
-                    };
-                  }
-                }
-                glyph++;
-              } else if (typeof unicode === 'object') {
-                var fillLength = unicode.f;
-                if (fillLength) {
-                  unicode = unicode.c;
-                  for (j = 0; j < fillLength; ++j) {
-                    if (!(glyph in glyphsWidths))
-                      continue;
-                    encoding[unicode] = {
-                      unicode: unicode,
-                      width: glyphsWidths[glyph]
-                    };
-                    unicode++;
-                    glyph++;
-                  }
-                } else
-                  glyph += unicode.s;
-              } else if (unicode) {
-                encoding[unicode] = {
-                  unicode: unicode,
-                  width: glyphsWidths[glyph++]
-                };
-              }
-            }
-          }
+
 
           return Object.create(GlyphsUnicode);
         }
