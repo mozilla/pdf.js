@@ -1424,15 +1424,17 @@ var Font = (function Font() {
         return;
 
       encoding[0] = { unicode: 0, width: 0 };
-      var glyph = 1, i, j;
+      var glyph = 1, i, j, k;
       for (i = 0; i < cidToUnicode.length; ++i) {
         var unicode = cidToUnicode[i];
         if (isArray(unicode)) {
-          var length = unicode.length;
           if (glyph in glyphsWidths) {
+          var length = unicode.length;
             for (j = 0; j < length; j++) {
-              encoding[unicode[j]] = {
-                unicode: unicode[j],
+              k = unicode[i];
+              encoding[k] = {
+                unicode: k <= 0x1f || (k >= 127 && k <= 255) ?
+                  k + kCmapGlyphOffset : k,
                 width: glyphsWidths[glyph]
               };
             }
@@ -1441,25 +1443,29 @@ var Font = (function Font() {
         } else if (typeof unicode === 'object') {
           var fillLength = unicode.f;
           if (fillLength) {
-            unicode = unicode.c;
+            k = unicode.c;
             for (j = 0; j < fillLength; ++j) {
               if (!(glyph in glyphsWidths))
                 continue;
-              encoding[unicode] = {
-                unicode: unicode,
+              encoding[k] = {
+                unicode: k <= 0x1f || (k >= 127 && k <= 255) ?
+                  k + kCmapGlyphOffset : k,
                 width: glyphsWidths[glyph]
               };
-              unicode++;
+              k++;
               glyph++;
             }
           } else
             glyph += unicode.s;
-        } else if (unicode) {
-          encoding[unicode] = {
-            unicode: unicode,
+        } else if (unicode && (glyph in glyphsWidths)) {
+          k = unicode;
+          encoding[k] = {
+            unicode: k <= 0x1f || (k >= 127 && k <= 255) ?
+                  k + kCmapGlyphOffset : k,
             width: glyphsWidths[glyph++]
           };
-        }
+        } else
+          glyph++;
       }
     },
 
