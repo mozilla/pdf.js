@@ -493,16 +493,16 @@ var CipherTransformFactory = (function cipherTransformFactory() {
 
   function constructor(dict, fileId, password) {
     var filter = dict.get('Filter');
-    if (!IsName(filter) || filter.name != 'Standard')
+    if (!isName(filter) || filter.name != 'Standard')
       error('unknown encryption method');
     this.dict = dict;
     var algorithm = dict.get('V');
-    if (!IsInt(algorithm) ||
+    if (!isInt(algorithm) ||
       (algorithm != 1 && algorithm != 2 && algorithm != 4))
       error('unsupported encryption algorithm');
     this.algorithm = algorithm;
     var keyLength = dict.get('Length') || 40;
-    if (!IsInt(keyLength) ||
+    if (!isInt(keyLength) ||
       keyLength < 40 || (keyLength % 8) != 0)
       error('invalid key length');
     // prepare keys
