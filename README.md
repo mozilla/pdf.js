@@ -31,17 +31,13 @@ using the pdf.js API.
 
 To get a local copy of the current code, clone it using git:
 
-```bash
-    git clone git://github.com/andreasgal/pdf.js.git pdfjs
-    cd pdfjs
-```
+    $ git clone git://github.com/andreasgal/pdf.js.git pdfjs
+    $ cd pdfjs
 
 Next, you need to start a local web server as some browsers don't allow opening
 PDF files for a file:// url:
 
-```bash
-  make server
-```
+    $ make server
 
 If everything worked out, you can now serve 
 
