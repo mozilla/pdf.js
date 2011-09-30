@@ -120,6 +120,8 @@ var Promise = (function() {
   };
   
   Promise.prototype = {
+    hasData: false,
+
     set data(data) {
       if (data === undefined) {
         return;
@@ -128,6 +130,11 @@ var Promise = (function() {
         throw "Promise " + this.name + ": Cannot set the data of a promise twice";
       }
       this.$data = data;
+      this.hasData = true;
+
+      if (this.$onDataCallback) {
+        this.$onDataCallback(data);
+      }
     },
     
     get data() {
@@ -135,6 +142,14 @@ var Promise = (function() {
         throw "Promise " + this.name + ": Cannot get data that isn't set";
       }
       return this.$data;
+    },
+
+    onData: function(callback) {
+      if (this.$data !== EMPTY_PROMISE) {
+        callback(this.$data);
+      } else {
+        this.$onDataCallback = callback;
+      }
     },
     
     resolve: function(data) {
@@ -203,8 +218,26 @@ var WorkerPDFDoc = (function() {
     processorHandler.on("page", function(data) {
       var pageNum = data.pageNum;
       var page = this.pageCache[pageNum];
-      
-      page.startRenderingFromIRQueue(data.IRQueue, data.fonts);
+     
+      var depFonts = data.depFonts;
+
+      function checkFontData() {
+        // Check if all fontObjs have been processed. If not, shedule a
+        // callback that is called once the data arrives and that checks
+        // the next fonts.
+        for (var i = 0; i < depFonts.length; i++) {
+          var fontName = depFonts[i];
+          var fontObj = Objects.get(fontName);
+          if (!fontObj.hasData) {
+            fontObj.onData(checkFontData);
+          }
+        }
+
+        // At this point, all font data ia loaded. Start the actuall rendering.
+        page.startRenderingFromIRQueue(data.IRQueue, depFonts);
+      }
+
+      checkFontData();
     }, this);
 
     processorHandler.on("obj", function(data) {

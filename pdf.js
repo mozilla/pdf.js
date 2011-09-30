@@ -3363,12 +3363,12 @@ var Page = (function() {
         });
       };
       
-      // this.ensureFonts(fonts, function() {
+      this.ensureFonts(fonts, function() {
         displayContinuation();
-      // });
+      });
     },
 
-    getIRQueue: function(handler) {
+    getIRQueue: function(handler, dependency) {
       if (this.IRQueue) {
         // content was compiled
         return this.IRQueue;
@@ -3387,7 +3387,7 @@ var Page = (function() {
       
       var pe = this.pe = new PartialEvaluator();
       var IRQueue = {};
-      return this.IRQueue = pe.getIRQueue(content, xref, resources, IRQueue, handler, "p" + this.pageNumber + "_");
+      return this.IRQueue = pe.getIRQueue(content, xref, resources, IRQueue, handler, "p" + this.pageNumber + "_", dependency);
     },
     
     ensureFonts: function(fonts, callback) {
@@ -4353,7 +4353,7 @@ var PartialEvaluator = (function() {
                 if (font.translated) {
                   // keep track of each font we translated so the caller can
                   // load them asynchronously before calling display on a page
-                  var loadedName = uniquePrefix + "font_" + (FontLoadedCounter++);
+                  var loadedName = "font_" + getIRQueue + + (FontLoadedCounter++);
                   font.translated.properties.loadedName = loadedName;
                   FontsMap[loadedName] = font;
 

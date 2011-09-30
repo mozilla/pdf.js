@@ -21,8 +21,11 @@ var WorkerProcessorHandler = {
       var gfx = new CanvasGraphics(null);
 
       var start = Date.now();
+
+      var dependency = [];
+
       // Pre compile the pdf page and fetch the fonts/images.
-      var IRQueue = page.getIRQueue(handler);
+      var IRQueue = page.getIRQueue(handler, dependency);
 
       console.log("page=%d - getIRQueue: time=%dms, len=%d", pageNum, Date.now() - start, IRQueue.fnArray.length);
 
@@ -42,11 +45,22 @@ var WorkerProcessorHandler = {
           }
         }
         console.log("cmds", JSON.stringify(cmdMap));
-      } 
+      }
+
+      // Filter the dependecies for fonts.
+      var fonts = {};
+      for (var i = 0; i < dependency.length; i++) {
+        var dep = dependency[i];
+        if (dep.indexOf('font_') == 0) {
+          fonts[dep] = true;
+        }
+      }
+
 
       handler.send("page", {
         pageNum:  pageNum,
         IRQueue:  IRQueue,
+        depFonts: Object.keys(fonts)
       });
     }, this);
   }
