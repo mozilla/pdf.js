@@ -53,7 +53,7 @@ You can also view all the test pdf files on the right side serving
 
 For a "hello world" example, take a look at:
 
-+ [examples/helloworld/hello.js](blob/master/examples/helloworld/hello.js)
++ [examples/helloworld/hello.js](https://github.com/andreasgal/pdf.js/blob/master/examples/helloworld/hello.js)
 
 This example illustrates the bare minimum ingredients for integrating pdf.js
 in a custom project.
@@ -64,8 +64,8 @@ in a custom project.
 
 pdf.js is a community-driven project, so contributors are always welcome. 
 Simply fork our repo and contribute away. A great place to start is our
-[open issues](issues/). For better consistency and long-term stability, please do 
-look around the code and try to follow our conventions.
+[open issues](https://github.com/andreasgal/pdf.js/issues). For better consistency and 
+long-term stability, please do look around the code and try to follow our conventions.
 
 If you don't want to hack on the project or have short spare times, __you still
 can help!__ Just open PDFs in the 
