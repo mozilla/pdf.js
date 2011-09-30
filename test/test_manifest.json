@@ -18,13 +18,15 @@
        "file": "pdfs/intelisa.pdf",
        "link": true,
        "rounds": 1,
-       "type": "load"
+       "type": "load",
+       "pageLimit": 100       
     },
     {  "id": "pdfspec-load",
        "file": "pdfs/pdf.pdf",
        "link": true,
        "rounds": 1,
-       "type": "load"
+       "type": "load",
+       "pageLimit": 100       
     },
     {  "id": "shavian-load",
        "file": "pdfs/shavian.pdf",
@@ -102,7 +104,8 @@
        "file": "pdfs/jai.pdf",
        "link": true,
        "rounds": 1,
-       "type": "load"
+       "type": "load",
+       "pageLimit": 100
     },
     {  "id": "cable",
        "file": "pdfs/cable.pdf",
