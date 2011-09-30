@@ -1212,25 +1212,11 @@ var Font = (function Font() {
         }
 
         var encoding = properties.encoding, i;
-        if (!encoding[0]) {
-          // the font is directly characters to glyphs with no encoding
-          // so create an identity encoding
-          var widths = properties.widths;
-          for (i = 0; i < numGlyphs; i++) {
-            var width = widths[i];
-            encoding[i] = {
-              unicode: i <= 0x1f || (i >= 127 && i <= 255) ?
-                i + kCmapGlyphOffset : i,
-              width: isNum(width) ? width : properties.defaultWidth
-            };
-          }
-        } else {
-          for (i in encoding) {
-            if (encoding.hasOwnProperty(i)) {
-              var unicode = encoding[i].unicode;
-              if (unicode <= 0x1f || (unicode >= 127 && unicode <= 255))
-                encoding[i].unicode = unicode += kCmapGlyphOffset;
-            }
+        for (i in encoding) {
+          if (encoding.hasOwnProperty(i)) {
+            var unicode = encoding[i].unicode;
+            if (unicode <= 0x1f || (unicode >= 127 && unicode <= 255))
+              encoding[i].unicode = unicode += kCmapGlyphOffset;
           }
         }
 
@@ -1407,6 +1393,10 @@ var Font = (function Font() {
     },
 
     fixWidths: function font_fixWidths(properties) {
+      if (properties.type !== 'CIDFontType0' &&
+          properties.type !== 'CIDFontType2')
+          return;
+
       var encoding = properties.encoding;
       if (encoding[0])
         return;
@@ -1414,30 +1404,48 @@ var Font = (function Font() {
       if (!glyphsWidths)
         return;
 
+      var defaultWidth = properties.defaultWidth;
       var cidSystemInfo = properties.cidSystemInfo;
       var cidToUnicode;
       if (cidSystemInfo) {
-        cidToUnicode = CIDToUnicodeMaps[cidSystemInfo.registry +
-          '-' + cidSystemInfo.ordering];
+        cidToUnicode = CIDToUnicodeMaps[
+          cidSystemInfo.registry + '-' + cidSystemInfo.ordering];
       }
-      if (!cidToUnicode)
+      if (!cidToUnicode) {
+        // the font is directly characters to glyphs with no encoding
+        // so create an identity encoding
+        for (i = 0; i < 0xD800; i++) {
+          var width = glyphsWidths[i];
+          encoding[i] = {
+            unicode: i,
+            width: isNum(width) ? width : defaultWidth
+          };
+        }
+        // skipping surrogates + 256-user defined
+        for (i = 0xE100; i <= 0xFFFF; i++) {
+          var width = glyphsWidths[i];
+          encoding[i] = {
+            unicode: i,
+            width: isNum(width) ? width : defaultWidth
+          };
+        }
         return;
+      }
 
       encoding[0] = { unicode: 0, width: 0 };
       var glyph = 1, i, j, k;
       for (i = 0; i < cidToUnicode.length; ++i) {
         var unicode = cidToUnicode[i];
+        var width;
         if (isArray(unicode)) {
-          if (glyph in glyphsWidths) {
-            var length = unicode.length;
-            for (j = 0; j < length; j++) {
-              k = unicode[j];
-              encoding[k] = {
-                unicode: k <= 0x1f || (k >= 127 && k <= 255) ?
-                  k + kCmapGlyphOffset : k,
-                width: glyphsWidths[glyph]
-              };
-            }
+          var length = unicode.length;
+          width = glyphsWidths[glyph];
+          for (j = 0; j < length; j++) {
+            k = unicode[j];
+            encoding[k] = {
+              unicode: k,
+              width: isNum(width) ? width : defaultWidth
+            };
           }
           glyph++;
         } else if (typeof unicode === 'object') {
@@ -1445,24 +1453,20 @@ var Font = (function Font() {
           if (fillLength) {
             k = unicode.c;
             for (j = 0; j < fillLength; ++j) {
-              if (!(glyph in glyphsWidths))
-                continue;
+              width = glyphsWidths[glyph++];
               encoding[k] = {
-                unicode: k <= 0x1f || (k >= 127 && k <= 255) ?
-                  k + kCmapGlyphOffset : k,
-                width: glyphsWidths[glyph]
+                unicode: k,
+                width: isNum(width) ? width : defaultWidth
               };
               k++;
-              glyph++;
             }
           } else
             glyph += unicode.s;
-        } else if (unicode && (glyph in glyphsWidths)) {
-          k = unicode;
-          encoding[k] = {
-            unicode: k <= 0x1f || (k >= 127 && k <= 255) ?
-                  k + kCmapGlyphOffset : k,
-            width: glyphsWidths[glyph++]
+        } else if (unicode) {
+          width = glyphsWidths[glyph++];
+          encoding[unicode] = {
+            unicode: unicode,
+            width: isNum(width) ? width : defaultWidth
           };
         } else
           glyph++;
