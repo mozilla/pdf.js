@@ -142,7 +142,8 @@ var PDFView = {
     if (dest instanceof Array) {
       var destRef = dest[0]; // see nevigateTo method for dest format
       var pageNumber = destRef instanceof Object ?
-        this.pagesRefMap[destRef.num + ' ' + destRef.gen + ' R'] : (destRef + 1);
+        this.pagesRefMap[destRef.num + ' ' + destRef.gen + ' R'] :
+        (destRef + 1);
       if (pageNumber) {
         return '#page=' + pageNumber + '&dest=' + dest.slice(1).join(',');
       }
