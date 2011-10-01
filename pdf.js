@@ -4173,7 +4173,10 @@ var PartialEvaluator = (function() {
         fnArray.push("dependency");
         argsArray.push(depList);
         for (var i = 0; i < depList.length; i++) {
-          dependency.push(depList[i]);
+          var dep = depList[i];
+          if (dependency.indexOf(dep) == -1) {
+            dependency.push(depList[i]);
+          }
         }
       }
 
