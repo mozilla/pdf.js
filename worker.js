@@ -115,11 +115,11 @@ var Promise = (function() {
     // If you build a promise and pass in some data it's already resolved.
     if (data != null) {
       this.isResolved = true;
-      this.$data = data;
+      this._data = data;
       this.hasData = true;
     } else {
       this.isResolved = false;      
-      this.$data = EMPTY_PROMISE;
+      this._data = EMPTY_PROMISE;
     }
     this.callbacks = [];
   };
@@ -131,29 +131,29 @@ var Promise = (function() {
       if (data === undefined) {
         return;
       }
-      if (this.$data !== EMPTY_PROMISE) {
+      if (this._data !== EMPTY_PROMISE) {
         throw "Promise " + this.name + ": Cannot set the data of a promise twice";
       }
-      this.$data = data;
+      this._data = data;
       this.hasData = true;
 
-      if (this.$onDataCallback) {
-        this.$onDataCallback(data);
+      if (this.onDataCallback) {
+        this.onDataCallback(data);
       }
     },
     
     get data() {
-      if (this.$data === EMPTY_PROMISE) {
+      if (this._data === EMPTY_PROMISE) {
         throw "Promise " + this.name + ": Cannot get data that isn't set";
       }
-      return this.$data;
+      return this._data;
     },
 
     onData: function(callback) {
-      if (this.$data !== EMPTY_PROMISE) {
-        callback(this.$data);
+      if (this._data !== EMPTY_PROMISE) {
+        callback(this._data);
       } else {
-        this.$onDataCallback = callback;
+        this.onDataCallback = callback;
       }
     },
     

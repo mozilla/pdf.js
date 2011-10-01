@@ -501,8 +501,8 @@ var FontShape = (function FontShape() {
     var italic = this.italic ? 'italic' : 'normal';
     this.fontFallback = this.serif ? 'serif' : 'sans-serif';
 
-    this.$name1 = italic + ' ' + bold + ' ';
-    this.$name2 = 'px "' + name + '", "';
+    this.namePart1 = italic + ' ' + bold + ' ';
+    this.namePart2 = 'px "' + name + '", "';
     
     this.supported = Object.keys(this.encoding).length != 0;
 
@@ -517,7 +517,7 @@ var FontShape = (function FontShape() {
   constructor.prototype = {
     getRule: function fonts_getRule(size, fallback) {
       fallback = fallback || this.fontFallback;
-      return this.$name1 + size + this.$name2 + fallback + '"';
+      return this.namePart1 + size + this.namePart2 + fallback + '"';
     },
     
     charsToUnicode: function fonts_chars2Unicode(chars) {
