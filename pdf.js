@@ -4683,7 +4683,7 @@ var PartialEvaluator = (function partialEvaluator() {
     },
 
     getBaseFontMetricsAndMap: function getBaseFontMetricsAndMap(name) {
-      var map = {};
+      var map = [];
       if (/^Symbol(-?(Bold|Italic))*$/.test(name)) {
         // special case for symbols
         var encoding = Encodings.symbolsEncoding.slice();
@@ -4774,7 +4774,7 @@ var PartialEvaluator = (function partialEvaluator() {
       var lastChar = xref.fetchIfRef(dict.get('LastChar')) || 256;
       var defaultWidth = 0;
       var glyphWidths = {};
-      var encoding = {};
+      var encoding = [];
       var widths = xref.fetchIfRef(dict.get('Widths'));
       if (widths) {
         for (var i = 0, j = firstChar; i < widths.length; i++, j++)
