@@ -3479,18 +3479,12 @@ var Page = (function pagePage() {
         height: this.height
       };
       if (isArray(obj) && obj.length == 4) {
-        var rotate = this.rotate;
-        if (rotate == 0 || rotate == 180) {
-          view.x = obj[0];
-          view.y = obj[1];
-          view.width = obj[2] - view.x;
-          view.height = obj[3] - view.y;
-        } else {
-          view.x = obj[1];
-          view.y = obj[0];
-          view.width = obj[3] - view.x;
-          view.height = obj[2] - view.y;
-        }
+        var tl = this.rotatePoint(obj[0], obj[1]);
+        var br = this.rotatePoint(obj[2], obj[3]);
+        view.x = Math.min(tl.x, br.x);
+        view.y = Math.min(tl.y, br.y);
+        view.width = Math.abs(tl.x - br.x);
+        view.height = Math.abs(tl.y - br.y);
       }
 
       return shadow(this, 'cropBox', view);
