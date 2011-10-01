@@ -55,16 +55,10 @@ function assertWellFormed(cond, msg) {
 }
 
 function shadow(obj, prop, value) {
-  try {
-    Object.defineProperty(obj, prop, { value: value,
-                                       enumerable: true,
-                                       configurable: true,
-                                       writable: false });
-  } catch (e) {
-    obj.__defineGetter__(prop, function shadowDefineGetter() {
-      return value;
-    });
-  }
+  Object.defineProperty(obj, prop, { value: value,
+                                     enumerable: true,
+                                     configurable: true,
+                                     writable: false });
   return value;
 }
 
