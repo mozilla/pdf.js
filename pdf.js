@@ -4183,7 +4183,7 @@ var PartialEvaluator = (function() {
         var h = dict.get('Height', 'H');
 
         if (image instanceof JpegStream) {
-          var objId = ++objIdCounter;
+          var objId = 'img_' + ++objIdCounter;
           handler.send("obj", [objId, "JpegStream", image.getIR()]);
 
           // Add the dependency on the image object.

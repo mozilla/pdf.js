@@ -261,6 +261,7 @@ var WorkerPDFDoc = (function() {
         case "JpegStream":
           var IR = data[2];
           new JpegStreamIR(objId, IR);
+          console.log('got image');
         break;
         case "Font":
           var name = data[2];

@@ -217,6 +217,7 @@ var FontLoader = {
         if (fontObj.loading) {
           return false;
         }
+        Objects.resolve(fontObj.loadedName);
       }
 
       document.documentElement.removeEventListener(
