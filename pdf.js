@@ -3348,7 +3348,8 @@ var Page = (function() {
       var self = this;
       this.IRQueue = IRQueue;
       
-      var displayContinuation = function() {      
+      var displayContinuation = function() { 
+        console.log('--display--');
         // Always defer call to display() to work around bug in
         // Firefox error reporting from XHR callbacks.
         setTimeout(function() {
@@ -3391,18 +3392,16 @@ var Page = (function() {
     },
     
     ensureFonts: function(fonts, callback) {
+      console.log('--ensureFonts--');
+      // Convert the font names to the corresponding font obj.
+      for (var i = 0; i < fonts.length; i++) {
+        fonts[i] = Objects.get(fonts[i], true);
+      }
+
+      // Load all the fonts
       FontLoader.bind(
         fonts,
         function(fontObjs) {
-          // Rebuild the FontsMap. This is emulating the behavior of the main
-          // thread.
-          if (fontObjs) {
-            // Replace the FontsMap hash with the fontObjs.
-            for (var i = 0; i < fontObjs.length; i++) {
-              FontsMap[fontObjs[i].loadedName] = {fontObj: fontObjs[i]};
-            }
-          }
-
           this.stats.fonts = Date.now();
           
           callback.call(this);
@@ -4174,7 +4173,7 @@ var PartialEvaluator = (function() {
         fnArray.push("dependency");
         argsArray.push(depList);
         for (var i = 0; i < depList.length; i++) {
-          dependency.push(depList);
+          dependency.push(depList[i]);
         }
       }
 
@@ -4353,7 +4352,7 @@ var PartialEvaluator = (function() {
                 if (font.translated) {
                   // keep track of each font we translated so the caller can
                   // load them asynchronously before calling display on a page
-                  var loadedName = "font_" + getIRQueue + + (FontLoadedCounter++);
+                  var loadedName = "font_" + uniquePrefix + (FontLoadedCounter++);
                   font.translated.properties.loadedName = loadedName;
                   FontsMap[loadedName] = font;
 

@@ -184,86 +184,6 @@ if (!isWorker) {
  */
 var FontLoader = {
   listeningForFontLoad: false,
-   
-   scratchCtx: null,
-	 loading: {},
- 	  
- 	/**
-   * Create the canvas used for measuring the width of text.
-   */
-  setup: function() {
-    var canvas = document.createElement("canvas");
-    var ctx = canvas.getContext("2d");
-    this.ctx = ctx;
-  },
-  
-  /**
-   * Measures the width of some string using a fontObj and some different
-   * fallback fonts.
-   */
-  measure: function(fontObj, str) {
-    var ctx = this.ctx;
-    
-    // THe fonts used as fallback.
-    var fallbacks = [ "Arial", "Courier" ];
-    
-    var widths = [];
-    for (var n = 0; n < fallbacks.length; n++) {
-      // Choose a large font size as there are no sub-pixel returned from
-      // measureText.
-      var font = fontObj.getRule(420, fallbacks[n]);
-      ctx.font = font;
-      
-      widths.push(ctx.measureText(str).width);
-    }
-    return widths;
-  },
-  
-  /**
-   * Attaches a fontObj to the DOM and calls Objects.resolve(objId) once
-   * the font is loaded.
-   */
-  bindWebKit: function(objId, fontObj) {
-    this.loading[objId] = true;
-    var encoding = fontObj.encoding;
-    
-    // If the font has an encoding, build the test string based on it. If the
-    // font doesn't have an encoding, the font can't been used right now and
-    // we skip here.
-    if (fontObj.supported) {
-      var testStr = "";
-      for (var enc in encoding) {
-        testStr += String.fromCharCode(encoding[enc].unicode);
-      }      
-    } else {
-      // This font isn't fully supported yet. Resolve the object such that
-      // the execution continues but do nothing else.
-      Objects.resolve(objId);
-      return;
-    }
-
-    var before = this.measure(fontObj, testStr);
-    this.bindDOM(fontObj);
-
-    var start = Date.now();
-    var check = function() {
-      var measure = this.measure(fontObj, testStr);
-      
-      for (var i = 0; i < measure.length; i++) {
-        if (measure[i] !== before[i]) {
-            console.log("loaded font", objId, before, measure, Date.now() - start);
-            delete this.loading[objId];
-            Objects.resolve(objId);
-            return;
-        }        
-      }
-      
-      setTimeout(check, 0);
-    }.bind(this);
-    
-    // Start checking if font is loaded.
-    check();
-  },
 
   /**
    * Attach the fontObj to the DOM.
@@ -290,14 +210,50 @@ var FontLoader = {
     return rule;
   },
 
-  bind: function(fontObj) {
-    // If this isn't Gecko, we assume it's WebKit. See notes in bindWebKit.
-    if (!isGecko) {
-      this.bindWebKit(fontObj.loadedName, fontObj);
-    } else {
-      var rule = this.bindDOM(fontObj);
-      FontLoader.prepareFontLoadEvent(fontObj, rule);      
+  bind: function fontLoaderBind(fonts, callback) {
+    function checkFontsLoaded() {
+      for (var i = 0; i < objs.length; i++) {
+        var fontObj = objs[i];
+        if (fontObj.loading) {
+          return false;
+        }
+      }
+
+      document.documentElement.removeEventListener(
+        'pdfjsFontLoad', checkFontsLoaded, false);
+
+      callback();
+      return true;
     }
+
+    var rules = [], names = [], objs = [];
+
+    for (var i = 0; i < fonts.length; i++) {
+      var font = fonts[i];
+
+      // If there is no string on the font, then the font can't get loaded /
+      // get attached to the DOM. Skip this font.
+      if (!font.str) {
+        continue;
+      }
+
+      objs.push(font);
+
+      rules.push(this.bindDOM(font));
+      names.push(font.loadedName);
+    }
+
+    this.listeningForFontLoad = false;
+    if (!isWorker && rules.length) {
+      FontLoader.prepareFontLoadEvent(rules, names, objs);
+    }
+
+    if (!checkFontsLoaded()) {
+      document.documentElement.addEventListener(
+        'pdfjsFontLoad', checkFontsLoaded, false);
+    }
+
+    return objs;
   },
 
   // Set things up so that at least one pdfjsFontLoad event is
@@ -305,7 +261,8 @@ var FontLoader = {
   // loaded in a subdocument.  It's expected that the load of |rules|
   // has already started in this (outer) document, so that they should
   // be ordered before the load in the subdocument.
-  prepareFontLoadEvent: function(fontObj, rule) {
+  prepareFontLoadEvent: function fontLoaderPrepareFontLoadEvent(rules, names,
+                                                                objs) {
       /** Hack begin */
       // There's no event when a font has finished downloading so the
       // following code is a dirty hack to 'guess' when a font is
@@ -329,15 +286,56 @@ var FontLoader = {
       // The postMessage() hackery was added to work around chrome bug
       // 82402.
 
+      var div = document.createElement('div');
+      div.setAttribute('style',
+                       'visibility: hidden;' +
+                       'width: 10px; height: 10px;' +
+                       'position: absolute; top: 0px; left: 0px;');
+      var html = '';
+      for (var i = 0; i < names.length; ++i) {
+        html += '<span style="font-family:' + names[i] + '">Hi</span>';
+      }
+      div.innerHTML = html;
+      document.body.appendChild(div);
+
+      if (!this.listeningForFontLoad) {
+        window.addEventListener(
+          'message',
+          function fontLoaderMessage(e) {
+            var fontNames = JSON.parse(e.data);
+            for (var i = 0; i < objs.length; ++i) {
+              var font = objs[i];
+              font.loading = false;
+            }
+            var evt = document.createEvent('Events');
+            evt.initEvent('pdfjsFontLoad', true, false);
+            document.documentElement.dispatchEvent(evt);
+          },
+          false);
+        this.listeningForFontLoad = true;
+      }
+
       // XXX we should have a time-out here too, and maybe fire
       // pdfjsFontLoadFailed?
       var src = '<!DOCTYPE HTML><html><head>';
       src += '<style type="text/css">';
-      src += rule;
+      for (var i = 0; i < rules.length; ++i) {
+        src += rules[i];
+      }
       src += '</style>';
-      src += '</script>';
-      src += '</head><body>';
-      src += '<p style="font-family:\'' + fontObj.loadedName + '\'">Hi</p>'
+      src += '<script type="application/javascript">';
+      var fontNamesArray = '';
+      for (var i = 0; i < names.length; ++i) {
+        fontNamesArray += '"' + names[i] + '", ';
+      }
+      src += '  var fontNames=[' + fontNamesArray + '];\n';
+      src += '  window.onload = function fontLoaderOnload() {\n';
+      src += '    parent.postMessage(JSON.stringify(fontNames), "*");\n';
+      src += '  }';
+      src += '</script></head><body>';
+      for (var i = 0; i < names.length; ++i) {
+        src += '<p style="font-family:\'' + names[i] + '\'">Hi</p>';
+      }
       src += '</body></html>';
       var frame = document.createElement('iframe');
       frame.src = 'data:text/html,' + src;
@@ -346,17 +344,9 @@ var FontLoader = {
                          'width: 10px; height: 10px;' +
                          'position: absolute; top: 0px; left: 0px;');
       document.body.appendChild(frame);
-      
-      frame.onload = function() {
-        Objects.resolve(fontObj.loadedName);
-      }
       /** Hack end */
   }
 };
-
-if (!isWorker) {
-  FontLoader.setup();
-}
 
 var UnicodeRanges = [
   { 'begin': 0x0000, 'end': 0x007F }, // Basic Latin
@@ -514,6 +504,9 @@ var FontShape = (function FontShape() {
     this.$name2 = 'px "' + name + '", "';
     
     this.supported = Object.keys(this.encoding).length != 0;
+
+    // Set the loading flag. Gets set to false in FontLoader.bind().
+    this.loading = true;
   };
 
   function int16(bytes) {

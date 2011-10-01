@@ -89,9 +89,13 @@ var Objects = {
     }
   },
 
-  get: function(objId) {
+  /**
+   * If `ignoreResolve` is true, this function doesn't test if the object
+   * is resolved when getting the object's data.
+   */
+  get: function(objId, ignoreResolve) {
     var obj = this.hash[objId];
-    if (!obj || !obj.isResolved) {
+    if (!ignoreResolve && (!obj || !obj.isResolved)) {
       throw "Requesting object that isn't resolved yet " + objId;
     }
     return obj.data;
@@ -112,6 +116,7 @@ var Promise = (function() {
     if (data != null) {
       this.isResolved = true;
       this.$data = data;
+      this.hasData = true;
     } else {
       this.isResolved = false;      
       this.$data = EMPTY_PROMISE;
@@ -219,7 +224,11 @@ var WorkerPDFDoc = (function() {
       var pageNum = data.pageNum;
       var page = this.pageCache[pageNum];
      
+      // DepFonts are all fonts are required to render the page. `fontsToLoad`
+      // are all the fonts that are required to render the page AND that
+      // aren't loaded on the page yet.
       var depFonts = data.depFonts;
+      var fontsToLoad = [];
 
       function checkFontData() {
         // Check if all fontObjs have been processed. If not, shedule a
@@ -227,14 +236,18 @@ var WorkerPDFDoc = (function() {
         // the next fonts.
         for (var i = 0; i < depFonts.length; i++) {
           var fontName = depFonts[i];
-          var fontObj = Objects.get(fontName);
+          var fontObj = Objects.getPromise(fontName);
           if (!fontObj.hasData) {
+            console.log('need to wait for fontData', fontName);
             fontObj.onData(checkFontData);
+            return;
+          } else if (!fontObj.isResolved) {
+            fontsToLoad.push(fontName);
           }
         }
 
         // At this point, all font data ia loaded. Start the actuall rendering.
-        page.startRenderingFromIRQueue(data.IRQueue, depFonts);
+        page.startRenderingFromIRQueue(data.IRQueue, fontsToLoad);
       }
 
       checkFontData();
@@ -265,12 +278,14 @@ var WorkerPDFDoc = (function() {
     fontHandler.on('font_ready', function(data) {
       var objId   = data[0];
       var fontObj = new FontShape(data[1]);
+
+      console.log('got fontData', objId);
+
       // If there is no string, then there is nothing to attach to the DOM.
       if (!fontObj.str) {
         Objects.resolve(objId, fontObj);
       } else {
         Objects.setData(objId, fontObj);
-        FontLoader.bind(fontObj);
       }
     });
     
