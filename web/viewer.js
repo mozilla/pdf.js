@@ -9,6 +9,8 @@ var kDefaultScaleDelta = 1.1;
 var kCacheSize = 20;
 var kCssUnits = 96.0 / 72.0;
 var kScrollbarPadding = 40;
+var kMinScale = 0.25;
+var kMaxScale = 4.0;
 
 
 var Cache = function(size) {
@@ -72,11 +74,13 @@ var PDFView = {
   },
 
   zoomIn: function() {
-    this.setScale(this.currentScale * kDefaultScaleDelta, true);
+    var newScale = Math.min(kMaxScale, this.currentScale * kDefaultScaleDelta);
+    this.setScale(newScale, true);
   },
 
   zoomOut: function() {
-    this.setScale(this.currentScale / kDefaultScaleDelta, true);
+    var newScale = Math.max(kMinScale, this.currentScale / kDefaultScaleDelta);
+    this.setScale(newScale, true);
   },
 
   set page(val) {
@@ -166,6 +170,7 @@ var PDFView = {
     var pdf = new PDFDoc(data);
     var pagesCount = pdf.numPages;
     document.getElementById('numPages').innerHTML = pagesCount;
+    document.getElementById('pageNumber').max = pagesCount;
 
     var pages = this.pages = [];
     var pagesRefMap = {};
@@ -628,6 +633,13 @@ window.addEventListener('pagechange', function pagechange(evt) {
 }, true);
 
 window.addEventListener('keydown', function keydown(evt) {
+  var curElement = document.activeElement;
+  var controlsElement = document.getElementById('controls');
+  while (curElement) {
+    if (curElement === controlsElement)
+      return; // ignoring if the 'controls' element is focused
+    curElement = curElement.parentNode;
+  }
   switch (evt.keyCode) {
     case 61: // FF/Mac '='
     case 107: // FF '+' and '='
