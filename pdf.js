@@ -6,11 +6,6 @@
 var ERRORS = 0, WARNINGS = 1, TODOS = 5;
 var verbosity = WARNINGS;
 
-var isGecko = false;
-if (typeof navigator !== 'undefined') {
-  isGecko = navigator.userAgent.indexOf("Gecko/") !== -1;
-}
-
 function log(msg) {
   if (console && console.log)
     console.log(msg);
@@ -5512,11 +5507,10 @@ var CanvasGraphics = (function() {
       var tmpCtx = tmpCanvas.getContext('2d');
       var tmpImgData;
       
-      // Gecko doesn't care too much of the shape of imgData, but other browser
-      // do.
-      if (isGecko) {
-        tmpImgData = imgData;
-      } else {
+      // Deactivating this for now until we have feature detection.
+      // if (isGecko) {
+      //  tmpImgData = imgData;
+      // } else {
         tmpImgData = tmpCtx.getImageData(0, 0, w, h);
 
         // Copy over the imageData.
@@ -5527,7 +5521,7 @@ var CanvasGraphics = (function() {
         // then coping over all the bytes one by one :/
         while (len--) 
           tmpImgDataPixels[len] = imgData.data[len];
-      }
+      // }
 
       tmpCtx.putImageData(tmpImgData, 0, 0);
       ctx.drawImage(tmpCanvas, 0, -h);
