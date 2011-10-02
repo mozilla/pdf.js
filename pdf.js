@@ -860,7 +860,7 @@ var PredictorStream = (function() {
 })();
 
 var JpegStreamIR = (function() {
-  function JpegStreamIR(objId, IR) {
+  function JpegStreamIR(objId, IR, objs) {
     var src = 'data:image/jpeg;base64,' + window.btoa(IR);
 
     // create DOM image
@@ -868,7 +868,7 @@ var JpegStreamIR = (function() {
     img.onload = (function() {
       this.loaded = true;
 
-      Objects.resolve(objId, this);
+      objs.resolve(objId, this);
 
       if (this.onLoad)
         this.onLoad();
@@ -3392,7 +3392,7 @@ var Page = (function() {
       for (var i = 0; i < fonts.length; i++) {
         // HACK FOR NOW. Access the data directly. This isn't allowed as the
         // font object isn't resolved yet.
-        fonts[i] = Objects.objs[fonts[i]].data;
+        fonts[i] = this.objs.objs[fonts[i]].data;
       }
 
       // Load all the fonts
@@ -3402,7 +3402,8 @@ var Page = (function() {
           this.stats.fonts = Date.now();
           
           callback.call(this);
-        }.bind(this)
+        }.bind(this),
+        this.objs
       );
     },
     
@@ -4852,14 +4853,15 @@ var CanvasGraphics = (function() {
   // if we execute longer then `kExecutionTime`.
   var kExecutionTimeCheck = 500;
 
-  function constructor(canvasCtx, imageCanvas) {
+  function constructor(canvasCtx, objs) {
     this.ctx = canvasCtx;
     this.current = new CanvasExtraState();
     this.stateStack = [];
     this.pendingClip = null;
     this.res = null;
     this.xobjs = null;
-    this.ScratchCanvas = imageCanvas || ScratchCanvas;
+    this.ScratchCanvas = ScratchCanvas;
+    this.objs = objs;
   }
 
   var LINE_CAP_STYLES = ['butt', 'round', 'square'];
@@ -4897,6 +4899,8 @@ var CanvasGraphics = (function() {
       var executionEndIdx;
       var startTime = Date.now();
 
+      var objs = this.objs;
+
       do {
         executionEndIdx = Math.min(argsArrayLen, i + kExecutionTimeCheck);
         
@@ -4910,8 +4914,8 @@ var CanvasGraphics = (function() {
 
               // If the promise isn't resolved yet, add the continueCallback
               // to the promise and bail out.
-              if (!Objects.isResolved(depObjId)) {
-                Objects.get(depObjId, continueCallback);
+              if (!objs.isResolved(depObjId)) {
+                objs.get(depObjId, continueCallback);
                 return i;
               }
             }
@@ -5133,7 +5137,7 @@ var CanvasGraphics = (function() {
     setFont: function(fontRef, size) {
       // Lookup the fontObj using fontRef only.
       var fontRefName = fontRef.name;
-      var fontObj = Objects.get(fontRefName);
+      var fontObj = this.objs.get(fontRefName);
       
       if (!fontObj) {
         throw "Can't find font for " + fontRefName;
@@ -5314,7 +5318,7 @@ var CanvasGraphics = (function() {
         }
 
         // Build the pattern based on the IR data.
-        var pattern = new TilingPatternIR(IR, color, this.ctx);
+        var pattern = new TilingPatternIR(IR, color, this.ctx, this.objs);
       } else if (IR[0] == "RadialAxialShading" || IR[0] == "DummyShading") {
         var pattern = Pattern.shadingFromIR(this.ctx, IR); 
       } else {
@@ -5434,7 +5438,7 @@ var CanvasGraphics = (function() {
     },
 
     paintJpegXObject: function(objId, w, h) {
-      var image = Objects.get(objId);
+      var image = this.objs.get(objId);
       if (!image) {
         error("Dependent image isn't ready yet");
       }
@@ -6185,7 +6189,7 @@ var RadialAxialShading = (function() {
 var TilingPatternIR = (function() {
   var PAINT_TYPE_COLORED = 1, PAINT_TYPE_UNCOLORED = 2;
 
-  function TilingPatternIR(IR, color, ctx) {
+  function TilingPatternIR(IR, color, ctx, objs) {
     // "Unfolding" the IR.
     var IRQueue   = IR[2];
     this.matrix   = IR[3];
@@ -6223,7 +6227,7 @@ var TilingPatternIR = (function() {
 
     // set the new canvas element context as the graphics context
     var tmpCtx = tmpCanvas.getContext('2d');
-    var graphics = new CanvasGraphics(tmpCtx);
+    var graphics = new CanvasGraphics(tmpCtx, objs);
 
     switch (paintType) {
     case PAINT_TYPE_COLORED:

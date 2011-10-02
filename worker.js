@@ -7,9 +7,10 @@
 var useWorker = false;
 
 var WorkerPage = (function() {
-  function constructor(workerPDF, page) {
+  function constructor(workerPDF, page, objs) {
     this.workerPDF = workerPDF;
     this.page = page;
+    this.objs = objs;
     
     this.ref = page.ref;
   }
@@ -38,7 +39,7 @@ var WorkerPage = (function() {
     },
     
     startRenderingFromIRQueue: function(IRQueue, fonts) {
-      var gfx = new CanvasGraphics(this.ctx);
+      var gfx = new CanvasGraphics(this.ctx, this.objs);
       
       var startTime = Date.now();
       var callback = function(err) {
@@ -250,8 +251,6 @@ var Promise = (function() {
   return Promise;
 })();
 
-var Objects = new PDFObjects();
-
 var WorkerPDFDoc = (function() {
   function constructor(data) {
     
@@ -260,6 +259,7 @@ var WorkerPDFDoc = (function() {
     this.pdf = new PDFDoc(this.stream);
     
     this.catalog = this.pdf.catalog;
+    this.objs = new PDFObjects();
     
     this.pageCache = [];
     
@@ -290,6 +290,7 @@ var WorkerPDFDoc = (function() {
       // aren't loaded on the page yet.
       var depFonts = data.depFonts;
       var fontsToLoad = [];
+      var objs = this.objs;
 
       function checkFontData() {
         // Check if all fontObjs have been processed. If not, shedule a
@@ -297,11 +298,11 @@ var WorkerPDFDoc = (function() {
         // the next fonts.
         for (var i = 0; i < depFonts.length; i++) {
           var fontName = depFonts[i];
-          if (!Objects.hasData(fontName)) {
+          if (!objs.hasData(fontName)) {
             console.log('need to wait for fontData', fontName);
-            Objects.onData(fontObj, checkFontData);
+            objs.onData(fontObj, checkFontData);
             return;
-          } else if (!Objects.isResolved(fontName)) {
+          } else if (!objs.isResolved(fontName)) {
             fontsToLoad.push(fontName);
           }
         }
@@ -320,7 +321,7 @@ var WorkerPDFDoc = (function() {
       switch (objType) {
         case "JpegStream":
           var IR = data[2];
-          new JpegStreamIR(objId, IR);
+          new JpegStreamIR(objId, IR, this.objs);
           console.log('got image');
         break;
         case "Font":
@@ -344,11 +345,11 @@ var WorkerPDFDoc = (function() {
 
       // If there is no string, then there is nothing to attach to the DOM.
       if (!fontObj.str) {
-        Objects.resolve(objId, fontObj);
+        this.objs.resolve(objId, fontObj);
       } else {
-        Objects.setData(objId, fontObj);
+        this.objs.setData(objId, fontObj);
       }
-    });
+    }.bind(this));
     
     if (!useWorker) {
       // If the main thread is our worker, setup the handling for the messages
@@ -375,7 +376,10 @@ var WorkerPDFDoc = (function() {
       }
       
       var page = this.pdf.getPage(n);
-      return this.pageCache[n] = new WorkerPage(this, page);
+      // Add a reference to the objects such that Page can forward the reference
+      // to the CanvasGraphics and so on.
+      page.objs = this.objs;
+      return this.pageCache[n] = new WorkerPage(this, page, this.objs);
     },
     
     destroy: function() {

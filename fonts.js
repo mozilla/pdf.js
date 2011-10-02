@@ -210,14 +210,14 @@ var FontLoader = {
     return rule;
   },
 
-  bind: function fontLoaderBind(fonts, callback) {
+  bind: function fontLoaderBind(fonts, callback, objects) {
     function checkFontsLoaded() {
       for (var i = 0; i < objs.length; i++) {
         var fontObj = objs[i];
         if (fontObj.loading) {
           return false;
         }
-        Objects.resolve(fontObj.loadedName);
+        objects.resolve(fontObj.loadedName);
       }
 
       document.documentElement.removeEventListener(
