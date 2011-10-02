@@ -3390,7 +3390,9 @@ var Page = (function() {
       console.log('--ensureFonts--');
       // Convert the font names to the corresponding font obj.
       for (var i = 0; i < fonts.length; i++) {
-        fonts[i] = Objects.get(fonts[i], true);
+        // HACK FOR NOW. Access the data directly. This isn't allowed as the
+        // font object isn't resolved yet.
+        fonts[i] = Objects.objs[fonts[i]].data;
       }
 
       // Load all the fonts
@@ -4905,12 +4907,11 @@ var CanvasGraphics = (function() {
             var deps = argsArray[i];
             for (var n = 0; n < deps.length; n++) {
               var depObjId = deps[n];
-              var promise = Objects.getPromise(depObjId);
 
               // If the promise isn't resolved yet, add the continueCallback
               // to the promise and bail out.
-              if (!promise.isResolved) {
-                promise.then(continueCallback);
+              if (!Objects.isResolved(depObjId)) {
+                Objects.get(depObjId, continueCallback);
                 return i;
               }
             }

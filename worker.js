@@ -61,55 +61,117 @@ var WorkerPage = (function() {
   return constructor;
 })();
 
-// This holds a list of objects the IR queue depends on.
-var Objects = {
-  hash: {},
-  
-  getPromise: function(objId) {
-    var hash = this.hash;
-	  if (hash[objId]) {
-	    return hash[objId];
-	  } else {
-	    return hash[objId] = new Promise(objId);
-	  }
-  },
-  
-  setData: function(objId, data) {
-    var promise = this.getPromise(objId);
-    promise.data = data;
-  },
-	
-  resolve: function(objId, data) {
-    var hash = this.hash;
-    // In case there is a promise already on this object, just resolve it.
-    if (hash[objId]) {
-      hash[objId].resolve(data);
-    } else {
-      hash[objId] = new Promise(objId, data);
-    }
-  },
-
-  /**
-   * If `ignoreResolve` is true, this function doesn't test if the object
-   * is resolved when getting the object's data.
-   */
-  get: function(objId, ignoreResolve) {
-    var obj = this.hash[objId];
-    if (!ignoreResolve && (!obj || !obj.isResolved)) {
-      throw "Requesting object that isn't resolved yet " + objId;
-    }
-    return obj.data;
-  },
-  
-  clear: function() {
-    delete this.hash;
-    this.hash = {};
+var PDFObjects = (function() {
+  function PDFObjects() {
+    this.objs = {};
   }
-};
 
+  PDFObjects.prototype = {
+    objs: null,
+
+    /**
+     * Ensures there is an object defined for `objId`. Stores `data` on the
+     * object *if* it is created.
+     */
+    ensureObj: function(objId, data) {
+      if (!this.objs[objId]) {
+        return this.objs[objId] = new Promise(objId, data);
+      } else {
+        return this.objs[objId];
+      }
+    },
+
+    /**
+     * If called *without* callback, this returns the data of `objId` but the
+     * object needs to be resolved. If it isn't, this function throws.
+     *
+     * If called *with* a callback, the callback is called with the data of the
+     * object once the object is resolved. That means, if you call this 
+     * function and the object is already resolved, the callback gets called
+     * right away.
+     */
+    get: function(objId, callback) {
+      // If there is a callback, then the get can be async and the object is 
+      // not required to be resolved right now
+      if (callback) {
+        this.ensureObj(objId).then(callback);
+      } 
+      // If there isn't a callback, the user expects to get the resolved data
+      // directly.
+      else {
+        var obj = this.objs[objId];
+
+        // If there isn't an object yet or the object isn't resolved, then the
+        // data isn't ready yet!
+        if (!obj || !obj.isResolved) {
+          throw "Requesting object that isn't resolved yet " + objId;
+        } 
+        // Direct access.
+        else {
+          return obj.data;
+        }
+      }
+    },
+
+    /**
+     * Resolves the object `objId` with optional `data`.
+     */
+    resolve: function(objId, data) {
+      var objs = this.objs;
+      
+      // In case there is a promise already on this object, just resolve it.
+      if (objs[objId]) {
+        objs[objId].resolve(data);
+      } else {
+        this.ensureObj(objId, data);
+      }
+    },
+
+    onData: function(objId, callback) {
+      this.ensureObj(objId).onData(callback);
+    },
+
+    isResolved: function(objId) {
+      var objs = this.objs;
+      if (!objs[objId]) {
+        return false;
+      } else {
+        return objs[objId].isResolved;
+      }
+    },
+
+    hasData: function(objId) {
+      var objs = this.objs;
+      if (!objs[objId]) {
+        return false;
+      } else {
+        return objs[objId].hasData;
+      }
+    },
+
+    /**
+     * Sets the data of an object but *doesn't* resolve it.
+     */
+    setData: function(objId, data) {
+      // Watchout! If you call `this.ensureObj(objId, data)` you'll gone create
+      // a *resolved* promise which shouldn't be the case!
+      this.ensureObj(objId).data = data;
+    }
+  }
+  return PDFObjects;
+})();
+
+
+/**
+ * "Promise" object.
+ */
 var Promise = (function() {
   var EMPTY_PROMISE = {};
 
+  /**
+   * If `data` is passed in this constructor, the promise is created resolved.
+   * If there isn't data, it isn't resolved at the beginning.
+   */
   function Promise(name, data) {
     this.name = name;
     // If you build a promise and pass in some data it's already resolved.
@@ -161,7 +223,7 @@ var Promise = (function() {
       if (this.isResolved) {
         throw "A Promise can be resolved only once " + this.name;
       }
-      
+
       this.isResolved = true;
       this.data = data;
       var callbacks = this.callbacks;
@@ -188,11 +250,10 @@ var Promise = (function() {
   return Promise;
 })();
 
+var Objects = new PDFObjects();
+
 var WorkerPDFDoc = (function() {
   function constructor(data) {
-    // For now, as we create a new WorkerPDFDoc, we clear all objects.
-    // TODO: Have the objects per WorkerPDFDoc.
-    Objects.clear();
     
     this.data = data;
     this.stream = new Stream(data);
@@ -236,12 +297,11 @@ var WorkerPDFDoc = (function() {
         // the next fonts.
         for (var i = 0; i < depFonts.length; i++) {
           var fontName = depFonts[i];
-          var fontObj = Objects.getPromise(fontName);
-          if (!fontObj.hasData) {
+          if (!Objects.hasData(fontName)) {
             console.log('need to wait for fontData', fontName);
-            fontObj.onData(checkFontData);
+            Objects.onData(fontObj, checkFontData);
             return;
-          } else if (!fontObj.isResolved) {
+          } else if (!Objects.isResolved(fontName)) {
             fontsToLoad.push(fontName);
           }
         }
