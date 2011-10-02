@@ -4573,11 +4573,10 @@ var PartialEvaluator = (function partialEvaluator() {
       var glyphs = {};
       for (var i = firstChar; i <= lastChar; i++) {
         var glyph = differences[i];
+        var replaceGlyph = true;
         if (!glyph) {
           glyph = baseEncoding[i];
-          // skipping already specified by difference glyphs
-          if (differences.indexOf(glyph) >= 0)
-            continue;
+          replaceGlyph = false;
         }
         var index = GlyphsUnicode[glyph] || i;
         var width = widths[i] || widths[glyph];
@@ -4586,8 +4585,10 @@ var PartialEvaluator = (function partialEvaluator() {
           width: isNum(width) ? width : properties.defaultWidth
         };
 
-        if (glyph)
-          glyphs[glyph] = map[i];
+        if (glyph) {
+          if (replaceGlyph || !glyphs[glyph])
+            glyphs[glyph] = map[i];
+        }
 
         // If there is no file, the character mapping can't be modified
         // but this is unlikely that there is any standard encoding with
