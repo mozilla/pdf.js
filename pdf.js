@@ -4585,10 +4585,8 @@ var PartialEvaluator = (function partialEvaluator() {
           width: isNum(width) ? width : properties.defaultWidth
         };
 
-        if (glyph) {
-          if (replaceGlyph || !glyphs[glyph])
+        if (glyph && (replaceGlyph || !glyphs[glyph]))
             glyphs[glyph] = map[i];
-        }
 
         // If there is no file, the character mapping can't be modified
         // but this is unlikely that there is any standard encoding with
