@@ -4366,6 +4366,20 @@ var PartialEvaluator = (function partialEvaluator() {
         if (isCmd(obj)) {
           var cmd = obj.cmd;
           var fn = OP_MAP[cmd];
+          if (!fn) {
+            // invalid content command, trying to recover
+            if (cmd.substr(-2) == 'BT') {
+              fn = OP_MAP[cmd.substr(0, cmd.length - 2)];
+              // feeding 'BT' on next interation
+              parser = {
+                getObj: function() {
+                  parser = this.oldParser;
+                  return { name: 'BT' };
+                },
+                oldParser: parser
+              };
+            }
+          }
           assertWellFormed(fn, "Unknown command '" + cmd + "'");
           // TODO figure out how to type-check vararg functions
 
