@@ -4843,7 +4843,11 @@ function ScratchCanvas(width, height) {
 }
 
 var CanvasGraphics = (function() {
+  // Defines the time the executeIRQueue gone be executing
+  // before it stops and shedules a continue of execution.
   var kExecutionTime = 50;
+  // Number of IR commands to execute before checking
+  // if we execute longer then `kExecutionTime`.
   var kExecutionTimeCheck = 500;
 
   function constructor(canvasCtx, imageCanvas) {
