@@ -4455,72 +4455,70 @@ var PartialEvaluator = (function partialEvaluator() {
                                                               properties) {
       var type = properties.type, encoding;
       if (properties.composite) {
-        if (type == 'CIDFontType2') {
-          var defaultWidth = xref.fetchIfRef(dict.get('DW')) || 1000;
-          properties.defaultWidth = defaultWidth;
+        var defaultWidth = xref.fetchIfRef(dict.get('DW')) || 1000;
+        properties.defaultWidth = defaultWidth;
 
-          var glyphsWidths = {};
-          var widths = xref.fetchIfRef(dict.get('W'));
-          if (widths) {
-            var start = 0, end = 0;
-            for (var i = 0; i < widths.length; i++) {
-              var code = widths[i];
-              if (isArray(code)) {
-                for (var j = 0; j < code.length; j++)
-                  glyphsWidths[start++] = code[j];
-                start = 0;
-              } else if (start) {
-                var width = widths[++i];
-                for (var j = start; j <= code; j++)
-                  glyphsWidths[j] = width;
-                start = 0;
-              } else {
-                start = code;
-              }
-            }
-          }
-          properties.widths = glyphsWidths;
-
-          var cidToGidMap = dict.get('CIDToGIDMap');
-          if (!cidToGidMap || !isRef(cidToGidMap)) {
-            return Object.create(GlyphsUnicode);
-          }
-
-          // Extract the encoding from the CIDToGIDMap
-          var glyphsStream = xref.fetchIfRef(cidToGidMap);
-          var glyphsData = glyphsStream.getBytes(0);
-
-          // Glyph ids are big-endian 2-byte values
-          encoding = properties.encoding;
-
-          // Set encoding 0 to later verify the font has an encoding
-          encoding[0] = { unicode: 0, width: 0 };
-          for (var j = 0; j < glyphsData.length; j++) {
-            var glyphID = (glyphsData[j++] << 8) | glyphsData[j];
-            if (glyphID == 0)
-              continue;
-
-            var code = j >> 1;
-            var width = glyphsWidths[code];
-            encoding[code] = {
-              unicode: glyphID,
-              width: isNum(width) ? width : defaultWidth
-            };
-          }
-        } else if (type == 'CIDFontType0') {
-          if (isName(encoding)) {
-            // Encoding is a predefined CMap
-            if (encoding.name == 'Identity-H') {
-              TODO('Need to create an identity cmap');
+        var glyphsWidths = {};
+        var widths = xref.fetchIfRef(dict.get('W'));
+        if (widths) {
+          var start = 0, end = 0;
+          for (var i = 0; i < widths.length; i++) {
+            var code = widths[i];
+            if (isArray(code)) {
+              for (var j = 0; j < code.length; j++)
+                glyphsWidths[start++] = code[j];
+              start = 0;
+            } else if (start) {
+              var width = widths[++i];
+              for (var j = start; j <= code; j++)
+                glyphsWidths[j] = width;
+              start = 0;
             } else {
-              TODO('Need to support predefined CMaps see PDF 32000-1:2008 ' +
-                   '9.7.5.2 Predefined CMaps');
+              start = code;
             }
-          } else {
-            TODO('Need to support encoding streams see PDF 32000-1:2008 ' +
-                 '9.7.5.3');
           }
         }
+        properties.widths = glyphsWidths;
+
+        // Glyph ids are big-endian 2-byte values
+        encoding = properties.encoding;
+
+        // CIDSystemInfo might help to match width and glyphs
+        var cidSystemInfo = dict.get('CIDSystemInfo');
+        if (isDict(cidSystemInfo)) {
+          properties.cidSystemInfo = {
+            registry: cidSystemInfo.get('Registry'),
+            ordering: cidSystemInfo.get('Ordering'),
+            supplement: cidSystemInfo.get('Supplement')
+          };
+        }
+
+        var cidToGidMap = dict.get('CIDToGIDMap');
+        if (!cidToGidMap || !isRef(cidToGidMap)) {
+
+
+          return Object.create(GlyphsUnicode);
+        }
+
+        // Extract the encoding from the CIDToGIDMap
+        var glyphsStream = xref.fetchIfRef(cidToGidMap);
+        var glyphsData = glyphsStream.getBytes(0);
+
+        // Set encoding 0 to later verify the font has an encoding
+        encoding[0] = { unicode: 0, width: 0 };
+        for (var j = 0; j < glyphsData.length; j++) {
+          var glyphID = (glyphsData[j++] << 8) | glyphsData[j];
+          if (glyphID == 0)
+            continue;
+
+          var code = j >> 1;
+          var width = glyphsWidths[code];
+          encoding[code] = {
+            unicode: glyphID,
+            width: isNum(width) ? width : defaultWidth
+          };
+        }
+
         return Object.create(GlyphsUnicode);
       }
 
