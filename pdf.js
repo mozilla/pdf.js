@@ -4751,6 +4751,9 @@ var PartialEvaluator = (function partialEvaluator() {
       // This case is here for compatibility.
       var descriptor = xref.fetchIfRef(dict.get('FontDescriptor'));
       if (!descriptor) {
+        // Note for Type3 fonts: it has no no base font, feeding default
+        // font name and trying to get font metrics as the same way as for
+        // a font without descriptor.
         var baseFontName = dict.get('BaseFont') || new Name('sans-serif');
 
         // Using base font name as a font name.
