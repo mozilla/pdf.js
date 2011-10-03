@@ -4888,8 +4888,8 @@ var CanvasExtraState = (function canvasExtraState() {
     this.fillColorObj = null;
     this.strokeColorObj = null;
     // Default fore and background colors
-    this.fillColor = "#000000";
-    this.strokeColor = "#000000";
+    this.fillColor = '#000000';
+    this.strokeColor = '#000000';
 
     this.old = old;
   }
