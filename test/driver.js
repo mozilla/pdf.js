@@ -205,7 +205,8 @@ function done() {
 function sendTaskResult(snapshot, task, failure) {
   var result = { browser: browser,
                  id: task.id,
-                 numPages: task.pdfDoc ? (task.pageLimit || task.pdfDoc.numPages) : 0,
+                 numPages: task.pdfDoc ? 
+                           (task.pageLimit || task.pdfDoc.numPages) : 0,
                  failure: failure,
                  file: task.file,
                  round: task.round,
