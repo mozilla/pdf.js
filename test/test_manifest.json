@@ -164,5 +164,11 @@
        "rounds": 1,
        "skipPages": [ 16 ],
        "type": "load"
+    },
+    {  "id": "simpletype3font",
+       "file": "pdfs/simpletype3font.pdf",
+       "link": false,
+       "rounds": 1,
+       "type": "load"
     }
 ]

@@ -414,6 +414,8 @@ var Font = (function Font() {
   var constructor = function font_constructor(name, file, properties) {
     this.name = name;
     this.encoding = properties.encoding;
+    this.coded = properties.coded;
+    this.resources = properties.resources;
     this.sizes = [];
 
     var names = name.split('+');
@@ -428,6 +430,9 @@ var Font = (function Font() {
       this.loading = false;
       return;
     }
+    this.fontMatrix = properties.fontMatrix;
+    if (properties.type == 'Type3')
+      return;
 
     if (!file) {
       // The file data is not specified. Trying to fix the font name
@@ -478,7 +483,7 @@ var Font = (function Font() {
 
     this.data = data;
     this.type = type;
-    this.textMatrix = properties.textMatrix;
+    this.fontMatrix = properties.fontMatrix;
     this.defaultWidth = properties.defaultWidth;
     this.loadedName = getUniqueName();
     this.composite = properties.composite;
@@ -1929,7 +1934,7 @@ var Type1Parser = function type1Parser() {
             // Make the angle into the right direction
             matrix[2] *= -1;
 
-            properties.textMatrix = matrix;
+            properties.fontMatrix = matrix;
             break;
           case '/Encoding':
             var size = parseInt(getToken(), 10);
