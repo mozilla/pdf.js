@@ -1,5 +1,3 @@
-asdfasdf
-
 # pdf.js
 
 
