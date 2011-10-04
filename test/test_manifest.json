@@ -181,6 +181,6 @@
        "file": "pdfs/simpletype3font.pdf",
        "link": false,
        "rounds": 1,
-       "type": "load"
+       "type": "eq"
     }
 ]

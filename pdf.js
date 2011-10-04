@@ -4858,7 +4858,7 @@ var PartialEvaluator = (function partialEvaluator() {
       };
       properties.glyphs = this.extractEncoding(dict, xref, properties);
 
-      if (type.name == 'Type3') {
+      if (type.name === 'Type3') {
         properties.coded = true;
         var charProcs = xref.fetchIfRef(dict.get('CharProcs'));
         var fontResources = xref.fetchIfRef(dict.get('Resources')) || resources;
@@ -5421,7 +5421,7 @@ var CanvasGraphics = (function canvasGraphics() {
                                                                         lly,
                                                                         urx,
                                                                         ury) {
-      // TODO? According the spec we're also suppose to ignore any operators
+      // TODO According to the spec we're also suppose to ignore any operators
       // that set color or include images while processing this type3 font.
       this.rectangle(llx, lly, urx - llx, ury - lly);
       this.clip();
