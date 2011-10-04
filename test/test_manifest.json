@@ -171,6 +171,12 @@
        "skipPages": [ 16 ],
        "type": "load"
     },
+    {  "id": "tcpdf_033",
+       "file": "pdfs/tcpdf_033.pdf",
+       "link": true,
+       "rounds": 1,
+       "type": "eq"
+    },
     {  "id": "simpletype3font",
        "file": "pdfs/simpletype3font.pdf",
        "link": false,
