@@ -106,6 +106,16 @@ images. The test type `load` simply tests whether the file loads without
 raising any errors.
 
 
+## Running tests through our bot
+
+If you are a reviewer, you can use our remote bot to issue comprehensive tests 
+against reference images before merging pull requests.
+
+See the bot repo for details:
+
++ https://github.com/arturadib/pdf.js-bot
+
+
 ## Additional resources
 
 Our demo site is here:
