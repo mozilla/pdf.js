@@ -149,7 +149,7 @@ $(GH_PAGES)/web/images/%: web/images/%
 #   curl $(COMPILER_URL) > $(BUILD_DIR)/compiler.zip;
 #   cd $(BUILD_DIR); unzip compiler.zip compiler.jar;
 
-# make firefox-extension
+# make extension
 #
 # This target produce a restartless firefox extension containing a
 # copy of the pdf.js source.
@@ -172,6 +172,34 @@ extension:
 
 	# Create the xpi
 	@cd $(EXTENSION_SRC); zip -r $(EXTENSION_NAME) *
+	@echo "extension created: " $(EXTENSION_NAME)
+
+
+# make jetpack
+#
+# This target produces a restartless Jetpack-based Firefox addon containing a
+# copy of the pdf.js source.
+JETPACK_SRC := ./extensions/firefox-jetpack
+JETPACK_DATA_DIR := data
+EXTENSION_NAME := pdf.js-jetpack.xpi
+CFX ?= cfx
+PDF_WEB_FILES = \
+	web/images \
+	web/compatibility.js \
+	web/viewer.css \
+	web/viewer.js \
+	web/viewer.html \
+	$(NULL)
+jetpack:
+	# Copy a standalone version of pdf.js inside the content directory
+	@rm -Rf $(JETPACK_SRC)/$(JETPACK_DATA_DIR)/
+	@mkdir -p $(JETPACK_SRC)/$(JETPACK_DATA_DIR)/web
+	@cp $(PDF_JS_FILES) $(JETPACK_SRC)/$(JETPACK_DATA_DIR)/
+	@cp -r $(PDF_WEB_FILES) $(JETPACK_SRC)/$(JETPACK_DATA_DIR)/web/
+
+	# Create the xpi
+	@cd $(JETPACK_SRC) && $(CFX) xpi
+	@cp $(JETPACK_SRC)/pdf-js.xpi $(EXTENSION_NAME)
 	@echo "extension created: " $(EXTENSION_NAME)
 
 

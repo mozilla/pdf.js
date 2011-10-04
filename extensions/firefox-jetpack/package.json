@@ -1,0 +1,9 @@
+{
+    "name": "pdf-js",
+    "license": "MPL 1.1/GPL 2.0/LGPL 2.1",
+    "author": "Mozilla Labs",
+    "version": "0.1",
+    "fullName": "pdf.js PDF Reader",
+    "id": "jid1-7sy5jT9TffQN9w",
+    "description": "A built-in PDF reader, built on open Web technologies"
+}
