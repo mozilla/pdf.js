@@ -88,7 +88,8 @@ browser-test:
 # To install gjslint, see:
 #
 # <http://code.google.com/closure/utilities/docs/linter_howto.html>
-SRC_DIRS := . utils worker web test
+SRC_DIRS := . utils worker web test examples/helloworld extensions/firefox \
+            extensions/firefox/components
 GJSLINT_FILES = $(foreach DIR,$(SRC_DIRS),$(wildcard $(DIR)/*.js))
 lint:
 	gjslint $(GJSLINT_FILES)
@@ -165,9 +166,9 @@ PDF_WEB_FILES = \
 extension:
 	# Copy a standalone version of pdf.js inside the content directory
 	@rm -Rf $(EXTENSION_SRC)/$(CONTENT_DIR)/
-	@mkdir $(EXTENSION_SRC)/$(CONTENT_DIR)/
+	@mkdir -p $(EXTENSION_SRC)/$(CONTENT_DIR)/web
 	@cp $(PDF_JS_FILES) $(EXTENSION_SRC)/$(CONTENT_DIR)/ 
-	@cp -r $(PDF_WEB_FILES) $(EXTENSION_SRC)/$(CONTENT_DIR)/ 
+	@cp -r $(PDF_WEB_FILES) $(EXTENSION_SRC)/$(CONTENT_DIR)/web/
 
 	# Create the xpi
 	@cd $(EXTENSION_SRC); zip -r $(EXTENSION_NAME) *

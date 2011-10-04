@@ -1222,7 +1222,7 @@ var Font = (function Font() {
             encoding[i] = {
               unicode: i <= 0x1f || (i >= 127 && i <= 255) ?
                 i + kCmapGlyphOffset : i,
-              width: IsNum(width) ? width : properties.defaultWidth
+              width: isNum(width) ? width : properties.defaultWidth
             };
           }
         } else {
@@ -2212,7 +2212,7 @@ CFF.prototype = {
         var cmd = map[command];
         assert(cmd, 'Unknow command: ' + command);
 
-        if (IsArray(cmd))
+        if (isArray(cmd))
           charstring.splice(i++, 1, cmd[0], cmd[1]);
         else
           charstring[i] = cmd;
@@ -2338,7 +2338,7 @@ CFF.prototype = {
             continue;
           var value = properties.private[field];
 
-          if (IsArray(value)) {
+          if (isArray(value)) {
             data += self.encodeNumber(value[0]);
             for (var i = 1; i < value.length; i++)
               data += self.encodeNumber(value[i] - value[i - 1]);
@@ -2497,7 +2497,7 @@ var Type2CFF = (function type2CFF() {
         var width = mapping.width;
         properties.glyphs[glyph] = properties.encoding[index] = {
           unicode: code,
-          width: IsNum(width) ? width : defaultWidth
+          width: isNum(width) ? width : defaultWidth
         };
 
         charstrings.push({
