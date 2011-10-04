@@ -1225,7 +1225,7 @@ var Font = (function Font() {
         for (i in encoding) {
           if (encoding.hasOwnProperty(i)) {
             var unicode = encoding[i].unicode;
-            if (unicode <= 0x1f || (unicode >= 127 && unicode <= kUnicodeCJKStart))
+            if (unicode <= 0x1f || (unicode >= 127 && unicode <= kSizeOfGlyphArea))
               encoding[i].unicode = unicode += cmapGlyphOffset;
           }
         }
@@ -1233,7 +1233,7 @@ var Font = (function Font() {
         var glyphs = [];
         for (i = 1; i < numGlyphs; i++) {
           glyphs.push({
-            unicode: i <= 0x1f || (i >= 127 && i < kUnicodeCJKStart) ?
+            unicode: i <= 0x1f || (i >= 127 && i < kSizeOfGlyphArea) ?
               i + cmapGlyphOffset : i
           });
         }
