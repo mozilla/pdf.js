@@ -211,6 +211,17 @@ var FontLoader = {
   },
 
   bind: function fontLoaderBind(fonts, callback, objects) {
+    var fontsToLoad = {};
+    // check if there are twice the same font.
+    for (var i = 0; i < fonts.length; i++) {
+      var fontName = fonts[i].loadedName;
+      if (fontsToLoad[fontName]) {
+        throw "Got twice the same font!";
+      } else {
+        fontsToLoad[fontName] = true;
+      }
+    }
+    
     function checkFontsLoaded() {
       for (var i = 0; i < objs.length; i++) {
         var fontObj = objs[i];

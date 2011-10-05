@@ -264,8 +264,7 @@ var WorkerPDFDoc = (function() {
     this.pageCache = [];
     
     if (useWorker) {
-      var worker = this.worker = new Worker("../worker/processor_boot.js");
-      var fontWorker = this.fontWorker = new Worker('../worker/font_boot.js');
+      var worker = this.worker = new Worker("../worker/pdf_worker_loader.js");
     } else {
       // If we don't use a worker, just post/sendMessage to the main thread.
       var worker = {
@@ -273,12 +272,9 @@ var WorkerPDFDoc = (function() {
           worker.onmessage({data: obj});
         }
       }
-      var fontWorker = {
-        postMessage: function(obj) {
-          fontWorker.onmessage({data: obj});
-        }
-      }
     }
+    
+    this.fontsLoading = {};
 
     var processorHandler = this.processorHandler = new MessageHandler("main", worker);
     processorHandler.on("page", function(data) {
@@ -289,21 +285,41 @@ var WorkerPDFDoc = (function() {
       // are all the fonts that are required to render the page AND that
       // aren't loaded on the page yet.
       var depFonts = data.depFonts;
-      var fontsToLoad = [];
       var objs = this.objs;
+      var fontsToLoad = [];
+      var fontsLoading = this.fontsLoading;
+      // The `i` for the checkFontData is stored here to keep the state in
+      // the closure.
+      var i = 0;  
+                  
 
       function checkFontData() {
         // Check if all fontObjs have been processed. If not, shedule a
         // callback that is called once the data arrives and that checks
         // the next fonts.
-        for (var i = 0; i < depFonts.length; i++) {
+        for (i; i < depFonts.length; i++) {
           var fontName = depFonts[i];
           if (!objs.hasData(fontName)) {
             console.log('need to wait for fontData', fontName);
-            objs.onData(fontObj, checkFontData);
+            objs.onData(fontName, checkFontData);
             return;
           } else if (!objs.isResolved(fontName)) {
             fontsToLoad.push(fontName);
+          }
+        }
+        
+        // There can be edge cases where two pages wait for one font and then
+        // call startRenderingFromIRQueue twice with the same font. That makes
+        // the font getting loaded twice and throw an error later as the font
+        // promise gets resolved twice.
+        // This prevents thats fonts are loaded really only once.
+        for (var j = 0; j < fontsToLoad.length; j++) {
+          var fontName = fontsToLoad[j];
+          if (fontsLoading[fontName]) {
+            fontsToLoad.splice(j, 1);
+            j--;
+          } else {
+            fontsLoading[fontName] = true;
           }
         }
 
@@ -329,15 +345,14 @@ var WorkerPDFDoc = (function() {
           var file = data[3];
           var properties = data[4];
 
-          fontHandler.send("font", [objId, name, file, properties]);
+          processorHandler.send("font", [objId, name, file, properties]);
         break;
         default:
           throw "Got unkown object type " + objType;
       }
     }, this);
 
-    var fontHandler = this.fontHandler = new MessageHandler('font', fontWorker);
-    fontHandler.on('font_ready', function(data) {
+    processorHandler.on('font_ready', function(data) {
       var objId   = data[0];
       var fontObj = new FontShape(data[1]);
 
@@ -355,7 +370,6 @@ var WorkerPDFDoc = (function() {
       // If the main thread is our worker, setup the handling for the messages
       // the main thread sends to it self.
       WorkerProcessorHandler.setup(processorHandler);
-      WorkerFontHandler.setup(fontHandler);
     }
     
     processorHandler.send("doc", data);

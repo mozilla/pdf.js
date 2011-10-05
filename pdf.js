@@ -3387,7 +3387,7 @@ var Page = (function() {
     },
     
     ensureFonts: function(fonts, callback) {
-      console.log('--ensureFonts--');
+      console.log('--ensureFonts--', '' + fonts);
       // Convert the font names to the corresponding font obj.
       for (var i = 0; i < fonts.length; i++) {
         // HACK FOR NOW. Access the data directly. This isn't allowed as the
