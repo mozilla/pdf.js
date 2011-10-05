@@ -53,7 +53,7 @@ browser-test:
 	fi;
 
 	cd test; \
-	python -u test.py --reftest \
+	python test.py --reftest \
 	--browserManifestFile=$(PDF_BROWSERS) \
 	--manifestFile=$(PDF_TESTS)
 
