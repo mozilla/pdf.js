@@ -181,5 +181,11 @@
        "link": true,
        "rounds": 1,
        "type": "eq"
+    },
+    {  "id": "simpletype3font",
+       "file": "pdfs/simpletype3font.pdf",
+       "link": false,
+       "rounds": 1,
+       "type": "eq"
     }
 ]
