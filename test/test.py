@@ -435,9 +435,9 @@ def checkEq(task, results, browser, masterMode):
                 # NB: this follows the format of Mozilla reftest
                 # output so that we can reuse its reftest-analyzer
                 # script
-                print >>eqLog, 'REFTEST TEST-UNEXPECTED-FAIL |', browser +'-'+ taskId +'-page'+ str(page + 1), '| image comparison (==)'
-                print >>eqLog, 'REFTEST   IMAGE 1 (TEST):', snapshot
-                print >>eqLog, 'REFTEST   IMAGE 2 (REFERENCE):', ref
+                eqLog.write('REFTEST TEST-UNEXPECTED-FAIL | ' + browser +'-'+ taskId +'-page'+ str(page + 1) + ' | image comparison (==)\n')
+                eqLog.write('REFTEST   IMAGE 1 (TEST): ' + snapshot + '\n')
+                eqLog.write('REFTEST   IMAGE 2 (REFERENCE): ' + ref + '\n')
 
                 passed = False
                 State.numEqFailures += 1
@@ -456,7 +456,8 @@ def checkEq(task, results, browser, masterMode):
 
     if passed:
         print 'TEST-PASS | eq test', task['id'], '| in', browser
-
+    if State.eqLog:
+        State.eqLog.close();
 
 def checkFBF(task, results, browser):
     round0, round1 = results[0], results[1]
