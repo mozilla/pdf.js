@@ -62,7 +62,7 @@ function loadDocument(aWindow, aDocumentUrl) {
 }
 
 let WebProgressListener = {
-  init: function(aWindow, aUrl) {
+  init: function WebProgressListenerInit(aWindow, aUrl) {
     this._locationHasChanged = false;
     this._documentUrl = aUrl;
 

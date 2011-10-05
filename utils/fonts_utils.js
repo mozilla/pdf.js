@@ -232,7 +232,7 @@ function readFontIndexData(aStream, aIsByte) {
   return objects;
 }
 
-var Type2Parser = function(aFilePath) {
+var Type2Parser = function type2Parser(aFilePath) {
   var font = new Dict();
 
   var xhr = new XMLHttpRequest();
@@ -292,7 +292,7 @@ var Type2Parser = function(aFilePath) {
     }
   }
 
-  this.parse = function(aStream) {
+  this.parse = function type2ParserParse(aStream) {
     font.set('major', aStream.getByte());
     font.set('minor', aStream.getByte());
     font.set('hdrSize', aStream.getByte());

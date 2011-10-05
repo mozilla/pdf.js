@@ -47,9 +47,19 @@ You can also view all the test pdf files on the right side serving
 
 + http://localhost:8888/test/pdfs/?frame
 
+### Learning
 
+Here are some initial pointers to help contributors get off the ground. 
+Additional resources are available in a separate section below.
 
-### Hello world
+#### Introductory video
+
+Check out the presentation by our contributor Julian Viereck on the inner 
+workings of PDF and pdf.js:
+
++ http://www.youtube.com/watch?v=Iv15UY-4Fg8
+
+#### Hello world
 
 For a "hello world" example, take a look at:
 
@@ -80,7 +90,7 @@ You can add your name to it! :)
 
 
 
-## Running the Tests
+## Running the tests
 
 pdf.js comes with browser-level regression tests that allow one to probe 
 whether it's able to successfully parse PDFs, as well as compare its output
@@ -146,7 +156,7 @@ Follow us on twitter: @pdfjs
   
   
   
-## Additional resources to understand the structure of PDF
+## PDF-related resources
 
 A really basic overview of PDF is described here:
 
