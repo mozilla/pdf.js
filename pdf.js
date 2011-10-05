@@ -127,7 +127,7 @@ function getPdf(arg, callback) {
   xhr.expected = (document.URL.indexOf('file:') === 0) ? 0 : 200;
 
   if ('progress' in params)
-    xhr.onprogrss = params.progress || undefined;
+    xhr.onprogress = params.progress || undefined;
 
   if ('error' in params)
     xhr.onerror = params.error || undefined;
