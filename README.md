@@ -80,7 +80,7 @@ You can add your name to it! :)
 
 
 
-## Running the Tests
+## Running the tests
 
 pdf.js comes with browser-level regression tests that allow one to probe 
 whether it's able to successfully parse PDFs, as well as compare its output
@@ -146,7 +146,7 @@ Follow us on twitter: @pdfjs
   
   
   
-## Additional resources to understand the structure of PDF
+## PDF-related resources
 
 A really basic overview of PDF is described here:
 
