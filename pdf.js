@@ -6356,8 +6356,10 @@ var TilingPattern = (function tilingPattern() {
       graphics.transform.apply(graphics, tmpScale);
       graphics.transform.apply(graphics, tmpTranslate);
 
-      if (bbox && isArray(bbox) && 4 == bbox.length) {
-        graphics.rectangle(bbox[0], bbox[1], width, height);
+      if (bbox && isArray(bbox) && 4 == bbox.length) {        
+        var bboxWidth = bbox[2] - bbox[0];
+        var bboxHeight = bbox[3] - bbox[1];
+        graphics.rectangle(bbox[0], bbox[1], bboxWidth, bboxHeight);
         graphics.clip();
         graphics.endPath();
       }
