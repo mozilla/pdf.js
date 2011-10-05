@@ -47,9 +47,19 @@ You can also view all the test pdf files on the right side serving
 
 + http://localhost:8888/test/pdfs/?frame
 
+### Learning
 
+Here are some initial pointers to help contributors get off the ground. 
+Additional resources are available in a separate section below.
 
-### Hello world
+#### Introductory video
+
+Check out the presentation by our contributor Julian Viereck on the inner 
+workings of PDF and pdf.js:
+
++ http://www.youtube.com/watch?v=Iv15UY-4Fg8
+
+#### Hello world
 
 For a "hello world" example, take a look at:
 
