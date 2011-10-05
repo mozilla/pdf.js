@@ -414,6 +414,8 @@ var Font = (function Font() {
   var constructor = function font_constructor(name, file, properties) {
     this.name = name;
     this.encoding = properties.encoding;
+    this.coded = properties.coded;
+    this.resources = properties.resources;
     this.sizes = [];
 
     var names = name.split('+');
@@ -428,6 +430,12 @@ var Font = (function Font() {
       this.loading = false;
       return;
     }
+    this.fontMatrix = properties.fontMatrix;
+    if (properties.type == 'Type3')
+      return;
+
+    // Trying to fix encoding using glyph widths and CIDSystemInfo.
+    this.fixWidths(properties);
 
     if (!file) {
       // The file data is not specified. Trying to fix the font name
@@ -443,6 +451,7 @@ var Font = (function Font() {
 
       this.defaultWidth = properties.defaultWidth;
       this.loadedName = fontName.split('-')[0];
+      this.composite = properties.composite;
       this.loading = false;
       return;
     }
@@ -478,7 +487,7 @@ var Font = (function Font() {
 
     this.data = data;
     this.type = type;
-    this.textMatrix = properties.textMatrix;
+    this.fontMatrix = properties.fontMatrix;
     this.defaultWidth = properties.defaultWidth;
     this.loadedName = getUniqueName();
     this.composite = properties.composite;
@@ -1208,25 +1217,11 @@ var Font = (function Font() {
         }
 
         var encoding = properties.encoding, i;
-        if (!encoding[0]) {
-          // the font is directly characters to glyphs with no encoding
-          // so create an identity encoding
-          var widths = properties.widths;
-          for (i = 0; i < numGlyphs; i++) {
-            var width = widths[i];
-            encoding[i] = {
-              unicode: i <= 0x1f || (i >= 127 && i <= 255) ?
-                i + kCmapGlyphOffset : i,
-              width: isNum(width) ? width : properties.defaultWidth
-            };
-          }
-        } else {
-          for (i in encoding) {
-            if (encoding.hasOwnProperty(i)) {
-              var unicode = encoding[i].unicode;
-              if (unicode <= 0x1f || (unicode >= 127 && unicode <= 255))
-                encoding[i].unicode = unicode += kCmapGlyphOffset;
-            }
+        for (i in encoding) {
+          if (encoding.hasOwnProperty(i)) {
+            var unicode = encoding[i].unicode;
+            if (unicode <= 0x1f || (unicode >= 127 && unicode <= 255))
+              encoding[i].unicode = unicode += kCmapGlyphOffset;
           }
         }
 
@@ -1400,6 +1395,87 @@ var Font = (function Font() {
       }
 
       return stringToArray(otf.file);
+    },
+
+    fixWidths: function font_fixWidths(properties) {
+      if (properties.type !== 'CIDFontType0' &&
+          properties.type !== 'CIDFontType2')
+          return;
+
+      var encoding = properties.encoding;
+      if (encoding[0])
+        return;
+      var glyphsWidths = properties.widths;
+      if (!glyphsWidths)
+        return;
+
+      var defaultWidth = properties.defaultWidth;
+      var cidSystemInfo = properties.cidSystemInfo;
+      var cidToUnicode;
+      if (cidSystemInfo) {
+        cidToUnicode = CIDToUnicodeMaps[
+          cidSystemInfo.registry + '-' + cidSystemInfo.ordering];
+      }
+      if (!cidToUnicode) {
+        // the font is directly characters to glyphs with no encoding
+        // so create an identity encoding
+        for (i = 0; i < 0xD800; i++) {
+          var width = glyphsWidths[i];
+          encoding[i] = {
+            unicode: i,
+            width: isNum(width) ? width : defaultWidth
+          };
+        }
+        // skipping surrogates + 256-user defined
+        for (i = 0xE100; i <= 0xFFFF; i++) {
+          var width = glyphsWidths[i];
+          encoding[i] = {
+            unicode: i,
+            width: isNum(width) ? width : defaultWidth
+          };
+        }
+        return;
+      }
+
+      encoding[0] = { unicode: 0, width: 0 };
+      var glyph = 1, i, j, k;
+      for (i = 0; i < cidToUnicode.length; ++i) {
+        var unicode = cidToUnicode[i];
+        var width;
+        if (isArray(unicode)) {
+          var length = unicode.length;
+          width = glyphsWidths[glyph];
+          for (j = 0; j < length; j++) {
+            k = unicode[j];
+            encoding[k] = {
+              unicode: k,
+              width: isNum(width) ? width : defaultWidth
+            };
+          }
+          glyph++;
+        } else if (typeof unicode === 'object') {
+          var fillLength = unicode.f;
+          if (fillLength) {
+            k = unicode.c;
+            for (j = 0; j < fillLength; ++j) {
+              width = glyphsWidths[glyph++];
+              encoding[k] = {
+                unicode: k,
+                width: isNum(width) ? width : defaultWidth
+              };
+              k++;
+            }
+          } else
+            glyph += unicode.s;
+        } else if (unicode) {
+          width = glyphsWidths[glyph++];
+          encoding[unicode] = {
+            unicode: unicode,
+            width: isNum(width) ? width : defaultWidth
+          };
+        } else
+          glyph++;
+      }
     },
 
     bindWorker: function font_bindWorker(data) {
@@ -1929,7 +2005,7 @@ var Type1Parser = function type1Parser() {
             // Make the angle into the right direction
             matrix[2] *= -1;
 
-            properties.textMatrix = matrix;
+            properties.fontMatrix = matrix;
             break;
           case '/Encoding':
             var size = parseInt(getToken(), 10);

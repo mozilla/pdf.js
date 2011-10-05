@@ -90,7 +90,7 @@ You can add your name to it! :)
 
 
 
-## Running the Tests
+## Running the tests
 
 pdf.js comes with browser-level regression tests that allow one to probe 
 whether it's able to successfully parse PDFs, as well as compare its output
@@ -114,6 +114,16 @@ manifest file at:
 The test type `eq` tests whether the output images are identical to reference 
 images. The test type `load` simply tests whether the file loads without 
 raising any errors.
+
+
+## Running tests through our bot
+
+If you are a reviewer, you can use our remote bot to issue comprehensive tests 
+against reference images before merging pull requests.
+
+See the bot repo for details:
+
++ https://github.com/arturadib/pdf.js-bot
 
 
 ## Additional resources
@@ -146,7 +156,7 @@ Follow us on twitter: @pdfjs
   
   
   
-## Additional resources to understand the structure of PDF
+## PDF-related resources
 
 A really basic overview of PDF is described here:
 
