@@ -69,6 +69,11 @@
        "rounds": 1,
        "type": "load"
     },
+    {  "id": "thuluthfont-pdf",
+       "file": "pdfs/ThuluthFeatures.pdf",
+       "rounds": 1,
+       "type": "eq"
+    },
     {  "id": "wnv_chinese-pdf",
        "file": "pdfs/wnv_chinese.pdf",
        "link": true,
