@@ -456,8 +456,6 @@ def checkEq(task, results, browser, masterMode):
 
     if passed:
         print 'TEST-PASS | eq test', task['id'], '| in', browser
-    if State.eqLog:
-        State.eqLog.close();
 
 def checkFBF(task, results, browser):
     round0, round1 = results[0], results[1]
@@ -544,7 +542,8 @@ def runTests(options, browsers):
         teardownBrowsers(browsers)
     t2 = time.time()
     print "Runtime was", int(t2 - t1), "seconds"
-
+    if State.eqLog:
+        State.eqLog.close();
     if options.masterMode:
         maybeUpdateRefImages(options, browsers[0])
     elif options.reftest and State.numEqFailures > 0:
