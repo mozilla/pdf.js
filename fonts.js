@@ -11,6 +11,7 @@ var kMaxWaitForFontFace = 1000;
 
 // Unicode Private Use Area
 var kCmapGlyphOffset = 0xE000;
+var kSizeOfGlyphArea = 0x1900;
 
 // PDF Glyph Space Units are one Thousandth of a TextSpace Unit
 // except for Type 3 fonts
@@ -1217,18 +1218,21 @@ var Font = (function Font() {
         }
 
         var encoding = properties.encoding, i;
+
+        // offsetting glyphs to avoid problematic unicode ranges
         for (i in encoding) {
           if (encoding.hasOwnProperty(i)) {
             var unicode = encoding[i].unicode;
-            if (unicode <= 0x1f || (unicode >= 127 && unicode <= 255))
-              encoding[i].unicode = unicode += kCmapGlyphOffset;
+            if (unicode <= 0x1f ||
+                (unicode >= 127 && unicode < kSizeOfGlyphArea))
+              encoding[i].unicode += kCmapGlyphOffset;
           }
         }
 
         var glyphs = [];
         for (i = 1; i < numGlyphs; i++) {
           glyphs.push({
-            unicode: i <= 0x1f || (i >= 127 && i <= 255) ?
+            unicode: i <= 0x1f || (i >= 127 && i < kSizeOfGlyphArea) ?
               i + kCmapGlyphOffset : i
           });
         }
