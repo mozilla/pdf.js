@@ -1219,16 +1219,12 @@ var Font = (function Font() {
 
         var encoding = properties.encoding, i;
 
-        // offsetting glyphs to avoid problematic unicode ranges should only be
-        // done for fonts with a medium-sized glyph count otherwise we could
-        // overflow the glyph range or overwrite existing glyph positions
-        var canRemapAllGlyphs = numGlyphs < kSizeOfGlyphArea;
-
+        // offsetting glyphs to avoid problematic unicode ranges
         for (i in encoding) {
           if (encoding.hasOwnProperty(i)) {
             var unicode = encoding[i].unicode;
-            if (canRemapAllGlyphs || unicode <= 0x1f ||
-                (unicode >= 127 && unicode <= 255))
+            if (unicode <= 0x1f ||
+                (unicode >= 127 && unicode < kSizeOfGlyphArea))
               encoding[i].unicode += kCmapGlyphOffset;
           }
         }
@@ -1236,8 +1232,7 @@ var Font = (function Font() {
         var glyphs = [];
         for (i = 1; i < numGlyphs; i++) {
           glyphs.push({
-            unicode: canRemapAllGlyphs ||
-                     i <= 0x1f || (i >= 127 && i < kSizeOfGlyphArea) ?
+            unicode: i <= 0x1f || (i >= 127 && i < kSizeOfGlyphArea) ?
               i + kCmapGlyphOffset : i
           });
         }
