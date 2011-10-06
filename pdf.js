@@ -5600,7 +5600,9 @@ var CanvasGraphics = (function canvasGraphics() {
 
       var bbox = stream.dict.get('BBox');
       if (bbox && isArray(bbox) && 4 == bbox.length) {
-        this.rectangle.apply(this, bbox);
+        var width = bbox[2] - bbox[0];
+        var height = bbox[3] - bbox[1];
+        this.rectangle(bbox[0], bbox[1], width, height);
         this.clip();
         this.endPath();
       }
@@ -6355,7 +6357,9 @@ var TilingPattern = (function tilingPattern() {
       graphics.transform.apply(graphics, tmpTranslate);
 
       if (bbox && isArray(bbox) && 4 == bbox.length) {
-        graphics.rectangle.apply(graphics, bbox);
+        var bboxWidth = bbox[2] - bbox[0];
+        var bboxHeight = bbox[3] - bbox[1];
+        graphics.rectangle(bbox[0], bbox[1], bboxWidth, bboxHeight);
         graphics.clip();
         graphics.endPath();
       }
