@@ -76,7 +76,7 @@ pdf.js is a community-driven project, so contributors are always welcome.
 Simply fork our repo and contribute away. A great place to start is our
 [open issues](https://github.com/andreasgal/pdf.js/issues). For better consistency and 
 long-term stability, please do look around the code and try to follow our conventions.
-For more information about the contributor process see the 
+More information about the contributor process can be found on the 
 [contributor wiki page](https://github.com/andreasgal/pdf.js/wiki/Contributing).
 
 If you don't want to hack on the project or have little spare time, __you still
