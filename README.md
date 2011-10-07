@@ -76,8 +76,10 @@ pdf.js is a community-driven project, so contributors are always welcome.
 Simply fork our repo and contribute away. A great place to start is our
 [open issues](https://github.com/andreasgal/pdf.js/issues). For better consistency and 
 long-term stability, please do look around the code and try to follow our conventions.
+For more information about the contributor process see the 
+[contributor wiki page](https://github.com/andreasgal/pdf.js/wiki/Contributing).
 
-If you don't want to hack on the project or have short spare times, __you still
+If you don't want to hack on the project or have little spare time, __you still
 can help!__ Just open PDFs in the 
 [online demo](http://andreasgal.github.com/pdf.js/web/viewer.html) and report 
 any breakage in rendering.
