@@ -169,6 +169,12 @@
        "rounds": 1,
        "type": "load"
     },
+    {  "id": "vesta-bad",
+       "file": "pdfs/vesta.pdf",
+       "link": true,
+       "rounds": 1,
+       "type": "load"
+    },
     {  "id": "ibwa-bad",
        "file": "pdfs/ibwa-bad.pdf",
        "link": true,
