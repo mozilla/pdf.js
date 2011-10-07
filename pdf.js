@@ -981,7 +981,7 @@ var ImagesLoader = (function imagesLoader() {
     },
 
     bind: function imagesLoaderBind(jpegStream) {
-      if (jpegStream.loaded)
+      if (jpegStream.loaded || jpegStream.onLoad)
         return;
       this.imageLoading();
       jpegStream.onLoad = this.imageLoaded.bind(this);
@@ -3402,8 +3402,8 @@ var XRef = (function xRefXRef() {
         } else {
           e = parser.getObj();
         }
-        // Don't cache streams since they are mutable.
-        if (!isStream(e))
+        // Don't cache streams since they are mutable (except images).
+        if (!isStream(e) || e.getImage)
           this.cache[num] = e;
         return e;
       }
@@ -4429,8 +4429,13 @@ var PartialEvaluator = (function partialEvaluator() {
                                              xobj.dict.get('Resources'), fonts,
                                              images);
               }
-              if (xobj instanceof JpegStream)
+              if (isStream(xobj) && xobj.getImage) {
                 images.bind(xobj); // monitoring image load
+
+                var smask = xref.fetchIfRef(xobj.dict.get('SMask'));
+                if (isStream(smask) && smask.getImage)
+                  images.bind(smask); // monitoring image load
+              }
             }
           } else if (cmd == 'Tf') { // eagerly collect all fonts
             var fontRes = resources.get('Font');
@@ -6533,6 +6538,18 @@ var PDFImage = (function pdfImage() {
       var buf = new Uint8Array(width * height);
 
       if (smask) {
+        if (smask.image.getImage) {
+          // smask is a DOM image
+          var tempCanvas = new ScratchCanvas(width, height);
+          var tempCtx = tempCanvas.getContext('2d');
+          var domImage = smask.image.getImage();
+          tempCtx.drawImage(domImage, 0, 0, domImage.width, domImage.height,
+            0, 0, width, height);
+          var data = tempCtx.getImageData(0, 0, width, height).data;
+          for (var i = 0, j = 0, ii = width * height; i < ii; ++i, j += 4)
+            buf[i] = data[j]; // getting first component value
+          return buf;
+        }
         var sw = smask.width;
         var sh = smask.height;
         if (sw != this.width || sh != this.height)
