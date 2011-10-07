@@ -1,13 +1,15 @@
-DiwanProfile.pdf
-artofwar.pdf
-cable.pdf
-ecma262.pdf
-hmm.pdf
-i9.pdf
-intelisa.pdf
-openweb_tm-PRINT.pdf
-pdf.pdf
-pdkids.pdf
-shavian.pdf
-jai.pdf
+*.pdf
+
+!tracemonkey.pdf
+!ArabicCIDTrueType.pdf
+!ThuluthFeatures.pdf
+!arial_unicode_ab_cidfont.pdf
+!arial_unicode_en_cidfont.pdf
+!asciihexdecode.pdf
+!canvas.pdf
+!complex_ttf_font.pdf
+!extgstate.pdf
+!rotation.pdf
+!simpletype3font.pdf
+!sizes.pdf
 
