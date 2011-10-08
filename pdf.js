@@ -4105,7 +4105,62 @@ var PDFDoc = (function() {
           var file = data[3];
           var properties = data[4];
 
-          processorHandler.send("font", [objId, name, file, properties]);
+          
+          // << CODE TAKEN FROM WORKER >>
+          data  = [objId, name, file, properties];
+          var objId      = data[0];
+          var name       = data[1];
+          var file       = data[2];
+          var properties = data[3];
+
+          var font = {
+            name: name,
+            file: file,
+            properties: properties
+          };
+
+          // Some fonts don't have a file, e.g. the build in ones like Arial.
+          if (file) {
+            var fontFileDict = new Dict();
+            fontFileDict.map = file.dict.map;
+
+            var fontFile = new Stream(file.bytes, file.start,
+                                      file.end - file.start, fontFileDict);
+                             
+            // Check if this is a FlateStream. Otherwise just use the created 
+            // Stream one. This makes complex_ttf_font.pdf work.
+            var cmf = file.bytes[0];
+            if ((cmf & 0x0f) == 0x08) {
+              font.file = new FlateStream(fontFile);
+            } else {
+              font.file = fontFile;
+            }          
+          }
+
+          var obj = new Font(font.name, font.file, font.properties);
+
+          var str = '';
+          var data = obj.data;
+          if (data) {
+            var length = data.length;
+            for (var j = 0; j < length; j++)
+              str += String.fromCharCode(data[j]);
+          }
+
+          obj.str = str;
+
+          var fontObj = new FontShape(obj);
+          for (var prop in obj) {
+            fontObj[prop] = obj[prop];
+          }
+
+          if (!str) {
+            this.objs.resolve(objId, fontObj);
+          } else {
+            this.objs.setData(objId, fontObj);
+          }
+
+          // processorHandler.send("font", [objId, name, file, properties]);
         break;
         default:
           throw "Got unkown object type " + objType;
@@ -5721,6 +5776,7 @@ var CanvasGraphics = (function canvasGraphics() {
       }
       
       var name = fontObj.loadedName || 'sans-serif';
+      console.log('setFont', name);
 
       this.current.font = fontObj;
       this.current.fontSize = size;
@@ -5765,8 +5821,11 @@ var CanvasGraphics = (function canvasGraphics() {
       // If the current font isn't supported, we can't display the text and
       // bail out.
       if (!this.current.font.supported) {
+        console.log("showText BAIL OUT");
         return;
       }
+
+      console.log("showText", text);
 
       var ctx = this.ctx;
       var current = this.current;
@@ -5840,11 +5899,15 @@ var CanvasGraphics = (function canvasGraphics() {
     },
 
     showSpacedText: function canvasGraphicsShowSpacedText(arr) {
+
       // If the current font isn't supported, we can't display the text and
       // bail out.
       if (!this.current.font.supported) {
+        console.log("showSpacedText BAIL OUT");
         return;
       }
+
+      console.log("showSpacedText", arr);
       
       var ctx = this.ctx;
       var current = this.current;
