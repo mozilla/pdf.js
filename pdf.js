@@ -963,13 +963,6 @@ var JpegStream = (function jpegStream() {
     if (isAdobeImage(bytes))
       bytes = fixAdobeImage(bytes);
 
-    // create DOM image
-    var img = new Image();
-    img.onload = (function jpegStreamOnload() {
-      this.loaded = true;
-      if (this.onLoad)
-        this.onLoad();
-    }).bind(this);
     this.src = bytesToString(bytes); 
   }
 
