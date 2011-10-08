@@ -2550,7 +2550,7 @@ var Type2CFF = (function type2CFF() {
       var defaultWidth = privateDict['defaultWidthX'];
       var charstrings = [];
       var differences = properties.differences;
-      var index = 0;
+      var index = properties.firstChar || 0;
       for (var i = 1; i < charsets.length; i++) {
         var code = -1;
         var glyph = charsets[i];
@@ -2562,7 +2562,8 @@ var Type2CFF = (function type2CFF() {
           }
         }
 
-        var mapping = properties.glyphs[glyph] || {};
+        var mapping =
+          properties.glyphs[glyph] || properties.glyphs[index] || {};
         if (code == -1)
           index = code = mapping.unicode || index;
 
