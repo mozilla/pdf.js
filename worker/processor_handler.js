@@ -8,7 +8,9 @@ var WorkerProcessorHandler = {
     var pdfDoc = null;
     
     handler.on("doc", function(data) {
-      pdfDoc = new PDFDoc(new Stream(data));
+      // Create only the model of the PDFDoc, which is enough for
+      // processing the content of the pdf.
+      pdfDoc = new PDFDocModel(new Stream(data));
     });
   
     handler.on("page_request", function(pageNum) {

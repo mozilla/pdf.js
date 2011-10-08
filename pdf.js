@@ -3861,7 +3861,7 @@ var Catalog = (function catalogCatalog() {
   return constructor;
 })();
 
-var PDFDoc = (function pdfDoc() {
+var PDFDocModel = (function pdfDoc() {
   function constructor(arg, callback) {
     // Stream argument
     if (typeof arg.isStream !== 'undefined') {
@@ -3982,6 +3982,189 @@ var PDFDoc = (function pdfDoc() {
     }
   };
 
+  return constructor;
+})();
+
+var PDFDoc = (function() {
+  function constructor(arg, callback) {
+    var stream = null;
+    var data = null;
+
+    // Stream argument
+    if (typeof arg.isStream !== 'undefined') {
+      stream = arg;
+      data = arg.bytes;
+    }
+    // ArrayBuffer argument
+    else if (typeof arg.byteLength !== 'undefined') {
+      stream = new Stream(arg);
+      data = arg;
+    }
+    else {
+      error('Unknown argument type');
+    }
+
+    this.data = data;
+    this.stream = stream;
+    this.pdf = new PDFDocModel(stream);
+    
+    this.catalog = this.pdf.catalog;
+    this.objs = new PDFObjects();
+    
+    this.pageCache = [];
+    
+    if (useWorker) {
+      var worker = this.worker = new Worker("../worker/pdf_worker_loader.js");
+    } else {
+      // If we don't use a worker, just post/sendMessage to the main thread.
+      var worker = {
+        postMessage: function(obj) {
+          worker.onmessage({data: obj});
+        }
+      }
+    }
+    
+    this.fontsLoading = {};
+
+    var processorHandler = this.processorHandler = new MessageHandler("main", worker);
+    processorHandler.on("page", function(data) {
+      var pageNum = data.pageNum;
+      var page = this.pageCache[pageNum];
+     
+      // DepFonts are all fonts are required to render the page. `fontsToLoad`
+      // are all the fonts that are required to render the page AND that
+      // aren't loaded on the page yet.
+      var depFonts = data.depFonts;
+      var objs = this.objs;
+      var fontsToLoad = [];
+      var fontsLoading = this.fontsLoading;
+      // The `i` for the checkFontData is stored here to keep the state in
+      // the closure.
+      var i = 0;  
+                  
+
+      function checkFontData() {
+        // Check if all fontObjs have been processed. If not, shedule a
+        // callback that is called once the data arrives and that checks
+        // the next fonts.
+        for (i; i < depFonts.length; i++) {
+          var fontName = depFonts[i];
+          if (!objs.hasData(fontName)) {
+            console.log('need to wait for fontData', fontName);
+            objs.onData(fontName, checkFontData);
+            return;
+          } else if (!objs.isResolved(fontName)) {
+            fontsToLoad.push(fontName);
+          }
+        }
+        
+        // There can be edge cases where two pages wait for one font and then
+        // call startRenderingFromIRQueue twice with the same font. That makes
+        // the font getting loaded twice and throw an error later as the font
+        // promise gets resolved twice.
+        // This prevents thats fonts are loaded really only once.
+        for (var j = 0; j < fontsToLoad.length; j++) {
+          var fontName = fontsToLoad[j];
+          if (fontsLoading[fontName]) {
+            fontsToLoad.splice(j, 1);
+            j--;
+          } else {
+            fontsLoading[fontName] = true;
+          }
+        }
+
+        // At this point, all font data ia loaded. Start the actuall rendering.
+        page.startRenderingFromIRQueue(data.IRQueue, fontsToLoad);
+      }
+
+      checkFontData();
+    }, this);
+
+    processorHandler.on("obj", function(data) {
+      var objId   = data[0];
+      var objType = data[1];
+
+      switch (objType) {
+        case "JpegStream":
+          var IR = data[2];
+          new JpegStreamIR(objId, IR, this.objs);
+          console.log('got image');
+        break;
+        case "Font":
+          var name = data[2];
+          var file = data[3];
+          var properties = data[4];
+
+          processorHandler.send("font", [objId, name, file, properties]);
+        break;
+        default:
+          throw "Got unkown object type " + objType;
+      }
+    }, this);
+
+    processorHandler.on('font_ready', function(data) {
+      var objId   = data[0];
+      var fontObj = new FontShape(data[1]);
+
+      console.log('got fontData', objId);
+
+      // If there is no string, then there is nothing to attach to the DOM.
+      if (!fontObj.str) {
+        this.objs.resolve(objId, fontObj);
+      } else {
+        this.objs.setData(objId, fontObj);
+      }
+    }.bind(this));
+    
+    if (!useWorker) {
+      // If the main thread is our worker, setup the handling for the messages
+      // the main thread sends to it self.
+      WorkerProcessorHandler.setup(processorHandler);
+    }
+    
+    processorHandler.send("doc", data);
+  }
+
+  constructor.prototype = {
+    get numPages() {
+      return this.pdf.numPages;
+    },
+    
+    startRendering: function(page) {
+      this.processorHandler.send("page_request", page.page.pageNumber + 1);
+    },
+    
+    getPage: function(n) {
+      if (this.pageCache[n]) {
+        return this.pageCache[n];
+      }
+      
+      var page = this.pdf.getPage(n);
+      // Add a reference to the objects such that Page can forward the reference
+      // to the CanvasGraphics and so on.
+      page.objs = this.objs;
+      return this.pageCache[n] = new WorkerPage(this, page, this.objs);
+    },
+    
+    destroy: function() {
+      console.log("destroy worker");
+      if (this.worker) {
+        this.worker.terminate();
+      }
+      if (this.fontWorker) {
+        this.fontWorker.terminate();
+      }
+      
+      for (var n in this.pageCache) {
+        delete this.pageCache[n];
+      }
+      delete this.data;
+      delete this.stream;
+      delete this.pdf;
+      delete this.catalog;
+    }
+  };
+  
   return constructor;
 })();
 
