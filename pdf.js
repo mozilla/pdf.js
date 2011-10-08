@@ -4757,7 +4757,7 @@ var PartialEvaluator = (function partialEvaluator() {
         if (isRef(df))
           df = xref.fetch(df);
 
-        dict = xref.fetch(isRef(df) ? df : df[0]);
+        dict = xref.fetchIfRef(isRef(df) ? df : df[0]);
 
         type = dict.get('Subtype');
         assertWellFormed(isName(type), 'invalid font Subtype');

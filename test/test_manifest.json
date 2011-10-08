@@ -43,6 +43,11 @@
        "rounds": 1,
        "type": "eq"
     },
+    {  "id": "plusminus",
+       "file": "pdfs/Test-plusminus.pdf",
+       "rounds": 1,
+       "type": "eq"
+    },
     {  "id": "openoffice-pdf",
        "file": "pdfs/DiwanProfile.pdf",
        "link": true,
