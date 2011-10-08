@@ -150,7 +150,6 @@ var FontLoader = {
       // to the page already and we don't have to do anything for this font
       // here future.
       if (font.fontObj) {
-        console.log('got already', font.properties.loadedName);
         continue;
       }
 
