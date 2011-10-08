@@ -3594,11 +3594,11 @@ var Page = (function pagePage() {
     ensureFonts: function(fonts, callback) {
       console.log('--ensureFonts--', '' + fonts);
       // Convert the font names to the corresponding font obj.
-      // for (var i = 0; i < fonts.length; i++) {
-      //   // HACK FOR NOW. Access the data directly. This isn't allowed as the
-      //   // font object isn't resolved yet.
-      //   fonts[i] = this.objs.objs[fonts[i]].data;
-      // }
+      for (var i = 0; i < fonts.length; i++) {
+        // HACK FOR NOW. Access the data directly. This isn't allowed as the
+        // font object isn't resolved yet.
+        fonts[i] = this.objs.objs[fonts[i]].data;
+      }
 
       // Load all the fonts
       var fontObjs = FontLoader.bind(
@@ -3610,9 +3610,6 @@ var Page = (function pagePage() {
         }.bind(this),
         this.objs
       );
-      
-      for (var i = 0, ii = fonts.length; i < ii; ++i)
-        fonts[i].dict.fontObj = fontObjs[i];
     },
     
     display: function(gfx, callback) {
@@ -4059,42 +4056,49 @@ var PDFDoc = (function() {
       var i = 0;  
                   
 
-      function checkFontData() {
-        // Check if all fontObjs have been processed. If not, shedule a
-        // callback that is called once the data arrives and that checks
-        // the next fonts.
-        for (i; i < depFonts.length; i++) {
-          var fontName = depFonts[i];
-          if (!objs.hasData(fontName)) {
-            console.log('need to wait for fontData', fontName);
-            objs.onData(fontName, checkFontData);
-            return;
-          } else if (!objs.isResolved(fontName)) {
-            fontsToLoad.push(fontName);
-          }
-        }
-        
-        // There can be edge cases where two pages wait for one font and then
-        // call startRenderingFromIRQueue twice with the same font. That makes
-        // the font getting loaded twice and throw an error later as the font
-        // promise gets resolved twice.
-        // This prevents thats fonts are loaded really only once.
-        for (var j = 0; j < fontsToLoad.length; j++) {
-          var fontName = fontsToLoad[j];
-          if (fontsLoading[fontName]) {
-            fontsToLoad.splice(j, 1);
-            j--;
-          } else {
-            fontsLoading[fontName] = true;
-          }
-        }
+      // function checkFontData() {
+      //   // Check if all fontObjs have been processed. If not, shedule a
+      //   // callback that is called once the data arrives and that checks
+      //   // the next fonts.
+      //   for (i; i < depFonts.length; i++) {
+      //     var fontName = depFonts[i];
+      //     if (!objs.hasData(fontName)) {
+      //       console.log('need to wait for fontData', fontName);
+      //       objs.onData(fontName, checkFontData);
+      //       return;
+      //     } else if (!objs.isResolved(fontName)) {
+      //       fontsToLoad.push(fontName);
+      //     }
+      //   }
+      //   
+      //   // There can be edge cases where two pages wait for one font and then
+      //   // call startRenderingFromIRQueue twice with the same font. That makes
+      //   // the font getting loaded twice and throw an error later as the font
+      //   // promise gets resolved twice.
+      //   // This prevents thats fonts are loaded really only once.
+      //   for (var j = 0; j < fontsToLoad.length; j++) {
+      //     var fontName = fontsToLoad[j];
+      //     if (fontsLoading[fontName]) {
+      //       fontsToLoad.splice(j, 1);
+      //       j--;
+      //     } else {
+      //       fontsLoading[fontName] = true;
+      //     }
+      //   }
+      // 
+      //   for (var i = 0; i < depFonts.lenght; i++) {
+      //     // Get fonts from the objects.
+      //     fontsToLoad.push(this.objs.get(depFonts[i]));
+      //   }
+      // 
+      //   // At this point, all font data ia loaded. Start the actuall rendering.
+      //   page.startRenderingFromIRQueue(data.IRQueue, fontsToLoad);
+      // }
+      //
+      // checkFontData();
 
-        // At this point, all font data ia loaded. Start the actuall rendering.
-        page.startRenderingFromIRQueue(data.IRQueue, fontsToLoad);
-      }
-
-//      checkFontData();
-        page.startRenderingFromIRQueue(data.IRQueue, data.depFonts);
+      // Start rendering directly for now, as the fonts are 
+      page.startRenderingFromIRQueue(data.IRQueue, Object.keys(data.depFonts));
     }, this);
 
     processorHandler.on("obj", function(data) {
@@ -4111,26 +4115,11 @@ var PDFDoc = (function() {
           var name = data[2];
           var file = data[3];
           var properties = data[4];
-
           
-          // << CODE TAKEN FROM WORKER >>
-          data  = [objId, name, file, properties];
-          var objId      = data[0];
-          var name       = data[1];
-          var file       = data[2];
-          var properties = data[3];
-
-          var font = {
-            name: name,
-            file: file,
-            properties: properties
-          };
-
-          // Some fonts don't have a file, e.g. the build in ones like Arial.
           if (file) {
             var fontFileDict = new Dict();
             fontFileDict.map = file.dict.map;
-
+          
             var fontFile = new Stream(file.bytes, file.start,
                                       file.end - file.start, fontFileDict);
                              
@@ -4138,34 +4127,76 @@ var PDFDoc = (function() {
             // Stream one. This makes complex_ttf_font.pdf work.
             var cmf = file.bytes[0];
             if ((cmf & 0x0f) == 0x08) {
-              font.file = new FlateStream(fontFile);
+              file = new FlateStream(fontFile);
             } else {
-              font.file = fontFile;
+              file = fontFile;
             }          
           }
 
-          var obj = new Font(font.name, font.file, font.properties);
-
-          var str = '';
-          var data = obj.data;
-          if (data) {
-            var length = data.length;
-            for (var j = 0; j < length; j++)
-              str += String.fromCharCode(data[j]);
-          }
-
-          obj.str = str;
-
-          var fontObj = new FontShape(obj);
-          for (var prop in obj) {
-            fontObj[prop] = obj[prop];
-          }
-
-          if (!str) {
-            this.objs.resolve(objId, fontObj);
-          } else {
-            this.objs.setData(objId, fontObj);
-          }
+          
+          // For now, resolve the font object here direclty. The real font object
+          // is then created in FontLoader.bind().
+          this.objs.resolve(objId, {
+            name: name,
+            file: file,
+            properties: properties
+          });
+          
+          // 
+          // 
+          // // << CODE TAKEN FROM WORKER >>
+          // data  = [objId, name, file, properties];
+          // var objId      = data[0];
+          // var name       = data[1];
+          // var file       = data[2];
+          // var properties = data[3];
+          // 
+          // var font = {
+          //   name: name,
+          //   file: file,
+          //   properties: properties
+          // };
+          // 
+          // // Some fonts don't have a file, e.g. the build in ones like Arial.
+          // if (file) {
+          //   var fontFileDict = new Dict();
+          //   fontFileDict.map = file.dict.map;
+          // 
+          //   var fontFile = new Stream(file.bytes, file.start,
+          //                             file.end - file.start, fontFileDict);
+          //                    
+          //   // Check if this is a FlateStream. Otherwise just use the created 
+          //   // Stream one. This makes complex_ttf_font.pdf work.
+          //   var cmf = file.bytes[0];
+          //   if ((cmf & 0x0f) == 0x08) {
+          //     font.file = new FlateStream(fontFile);
+          //   } else {
+          //     font.file = fontFile;
+          //   }          
+          // }
+          // 
+          // var obj = new Font(font.name, font.file, font.properties);
+          // 
+          // var str = '';
+          // var data = obj.data;
+          // if (data) {
+          //   var length = data.length;
+          //   for (var j = 0; j < length; j++)
+          //     str += String.fromCharCode(data[j]);
+          // }
+          // 
+          // obj.str = str;
+          // 
+          // var fontObj = new FontShape(obj);
+          // for (var prop in obj) {
+          //   fontObj[prop] = obj[prop];
+          // }
+          // 
+          // if (!str) {
+          //   this.objs.resolve(objId, fontObj);
+          // } else {
+          //   this.objs.setData(objId, fontObj);
+          // }
 
           // processorHandler.send("font", [objId, name, file, properties]);
         break;
@@ -4194,7 +4225,7 @@ var PDFDoc = (function() {
       WorkerProcessorHandler.setup(processorHandler);
     }
     
-    processorHandler.send("doc", this.pdf);
+    processorHandler.send("doc", this.data);
   }
 
   constructor.prototype = {
@@ -4872,22 +4903,23 @@ var PartialEvaluator = (function partialEvaluator() {
               }
             }
           } else if (cmd == 'Tf') { // eagerly collect all fonts
-            var fontRes = resources.get('Font');
-            if (fontRes) {
-              fontRes = xref.fetchIfRef(fontRes);
-              var font = xref.fetchIfRef(fontRes.get(args[0].name));
-              assertWellFormed(isDict(font));
-              if (!font.translated) {
-                font.translated = this.translateFont(font, xref, resources);
-                if (font.translated) {
-                  // keep track of each font we translated so the caller can
-                  // load them asynchronously before calling display on a page
-                  // fonts.push(font.translated);
-                  dependency.push(font.translated);
-                }
-              }
-            }
-
+            args[0].name = handleSetFont(args[0].name);
+            // var fontRes = resources.get('Font');
+            // if (fontRes) {
+            //   fontRes = xref.fetchIfRef(fontRes);
+            //   var font = xref.fetchIfRef(fontRes.get(args[0].name));
+            //   assertWellFormed(isDict(font));
+            //   if (!font.translated) {
+            //     font.translated = this.translateFont(font, xref, resources);
+            //     if (font.translated) {
+            //       // keep track of each font we translated so the caller can
+            //       // load them asynchronously before calling display on a page
+            //       // fonts.push(font.translated);
+            //       dependency.push(font.translated);
+            //     }
+            //   }
+            // }
+            // 
           } else if (cmd == 'EI') {
             buildPaintImageXObject(args[0], true);
           }
@@ -5789,22 +5821,32 @@ var CanvasGraphics = (function canvasGraphics() {
       this.current.leading = -leading;
     },
     setFont: function canvasGraphicsSetFont(fontRef, size) {
-      var font;
-      // the tf command uses a name, but graphics state uses a reference
-      if (isName(fontRef)) {
-        font = this.xref.fetchIfRef(this.res.get('Font'));
-        if (!isDict(font))
-         return;
-
-        font = font.get(fontRef.name);
-      } else if (isRef(fontRef)) {
-        font = fontRef;
+      // Lookup the fontObj using fontRef only.
+      var fontRefName = fontRef.name;
+      var fontObj = this.objs.get(fontRefName).fontObj;
+      
+      if (!fontObj) {
+        throw "Can't find font for " + fontRefName;
       }
-      font = this.xref.fetchIfRef(font);
-      if (!font)
-        error('Referenced font is not found');
+      
+      var name = fontObj.loadedName || 'sans-serif';
 
-      var fontObj = font.fontObj;
+      // var font;
+      // // the tf command uses a name, but graphics state uses a reference
+      // if (isName(fontRef)) {
+      //   font = this.xref.fetchIfRef(this.res.get('Font'));
+      //   if (!isDict(font))
+      //    return;
+      // 
+      //   font = font.get(fontRef.name);
+      // } else if (isRef(fontRef)) {
+      //   font = fontRef;
+      // }
+      // font = this.xref.fetchIfRef(font);
+      // if (!font)
+      //   error('Referenced font is not found');
+      // 
+      // var fontObj = font.fontObj;
       this.current.font = fontObj;
       this.current.fontSize = size;
 
@@ -5860,7 +5902,7 @@ var CanvasGraphics = (function canvasGraphics() {
       //   return;
       // }
 
-      console.log("showText", text);
+      // console.log("showText", text);
 
       var ctx = this.ctx;
       var current = this.current;
@@ -5942,7 +5984,7 @@ var CanvasGraphics = (function canvasGraphics() {
       //   return;
       // }
 
-      console.log("showSpacedText", arr);
+      // console.log("showSpacedText", arr);
       
       var ctx = this.ctx;
       var current = this.current;

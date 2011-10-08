@@ -145,8 +145,21 @@ var FontLoader = {
 
     for (var i = 0; i < fonts.length; i++) {
       var font = fonts[i];
+      
+      // If there is already a fontObj on the font, then it was loaded/attached
+      // to the page already and we don't have to do anything for this font
+      // here future.
+      if (font.fontObj) {
+        console.log('got already', font.properties.loadedName);
+        continue;
+      }
 
       var obj = new Font(font.name, font.file, font.properties);
+
+      // Store the fontObj on the font such that `setFont` in CanvasGraphics
+      // can reuse it later again.
+      font.fontObj = obj;
+
       objs.push(obj);
 
       var str = '';
@@ -402,6 +415,111 @@ function getUnicodeRangeFor(value) {
   }
   return -1;
 }
+
+/**
+ * FontShape is the minimal shape a FontObject can have to be useful during
+ * executing the IRQueue.
+ */
+var FontShape = (function FontShape() {
+  var constructor = function FontShape_constructor(obj) {
+    for (var name in obj) {
+      this[name] = obj[name];
+    }
+    
+    var name = this.loadedName;
+    var bold = this.black ? (this.bold ? 'bolder' : 'bold') :
+                            (this.bold ? 'bold' : 'normal');
+
+    var italic = this.italic ? 'italic' : 'normal';
+    this.fontFallback = this.serif ? 'serif' : 'sans-serif';
+
+    this.namePart1 = italic + ' ' + bold + ' ';
+    this.namePart2 = 'px "' + name + '", "';
+    
+    this.supported = Object.keys(this.encoding).length != 0;
+
+    // Set the loading flag. Gets set to false in FontLoader.bind().
+    this.loading = true;
+  };
+
+  function int16(bytes) {
+    return (bytes[0] << 8) + (bytes[1] & 0xff);
+  };
+  
+  constructor.prototype = {
+    getRule: function fonts_getRule(size, fallback) {
+      fallback = fallback || this.fontFallback;
+      return this.namePart1 + size + this.namePart2 + fallback + '"';
+    },
+    
+    charsToUnicode: function fonts_chars2Unicode(chars) {
+      var charsCache = this.charsCache;
+      var str;
+
+      // if we translated this string before, just grab it from the cache
+      if (charsCache) {
+        str = charsCache[chars];
+        if (str)
+          return str;
+      }
+
+      // lazily create the translation cache
+      if (!charsCache)
+        charsCache = this.charsCache = Object.create(null);
+
+      // translate the string using the font's encoding
+      var encoding = this.encoding;
+      if (!encoding)
+        return chars;
+      str = '';
+
+      if (this.composite) {
+        // composite fonts have multi-byte strings convert the string from
+        // single-byte to multi-byte
+        // XXX assuming CIDFonts are two-byte - later need to extract the
+        // correct byte encoding according to the PDF spec
+        var length = chars.length - 1; // looping over two bytes at a time so
+                                       // loop should never end on the last byte
+        for (var i = 0; i < length; i++) {
+          var charcode = int16([chars.charCodeAt(i++), chars.charCodeAt(i)]);
+          var unicode = encoding[charcode];
+          if ('undefined' == typeof(unicode)) {
+            warn('Unencoded charcode ' + charcode);
+            unicode = charcode;
+          } else {
+            unicode = unicode.unicode;
+          }
+          str += String.fromCharCode(unicode);
+        }
+      }
+      else {
+        for (var i = 0; i < chars.length; ++i) {
+          var charcode = chars.charCodeAt(i);
+          var unicode = encoding[charcode];
+          if ('undefined' == typeof(unicode)) {
+            warn('Unencoded charcode ' + charcode);
+            unicode = charcode;
+          } else {
+            unicode = unicode.unicode;
+          }
+
+          // Handle surrogate pairs
+          if (unicode > 0xFFFF) {
+            str += String.fromCharCode(unicode & 0xFFFF);
+            unicode >>= 16;
+          }
+          str += String.fromCharCode(unicode);
+        }
+      }
+
+      // Enter the translated string into the cache
+      return (charsCache[chars] = str);
+    }
+  }
+  
+  return constructor;
+})();
+
 
 /**
  * 'Font' is the class the outside world should use, it encapsulate all the font
