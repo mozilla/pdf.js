@@ -10,7 +10,7 @@ var WorkerProcessorHandler = {
     handler.on("doc", function(data) {
       // Create only the model of the PDFDoc, which is enough for
       // processing the content of the pdf.
-      pdfDoc = new PDFDocModel(new Stream(data));
+      pdfDoc = data;//new PDFDocModel(new Stream(data));
     });
   
     handler.on("page_request", function(pageNum) {
@@ -50,19 +50,26 @@ var WorkerProcessorHandler = {
       }
 
       // Filter the dependecies for fonts.
-      var fonts = {};
+      // var fonts = {};
+      // for (var i = 0; i < dependency.length; i++) {
+      //   var dep = dependency[i];
+      //   if (dep.indexOf('font_') == 0) {
+      //     fonts[dep] = true;
+      //   }
+      // }
+
+      var fonts = [];
       for (var i = 0; i < dependency.length; i++) {
         var dep = dependency[i];
-        if (dep.indexOf('font_') == 0) {
-          fonts[dep] = true;
+        if (typeof dep === "object") {
+          fonts.push(dep);
         }
       }
-
 
       handler.send("page", {
         pageNum:  pageNum,
         IRQueue:  IRQueue,
-        depFonts: Object.keys(fonts)
+        depFonts: fonts
       });
     }, this);
     

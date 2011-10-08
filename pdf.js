@@ -3554,13 +3554,13 @@ var Page = (function pagePage() {
         // Firefox error reporting from XHR callbacks.
         setTimeout(function pageSetTimeout() {
           var exc = null;
-          try {
+          // try {
             self.display(gfx, continuation);
-          } catch (e) {
-            exc = e.toString();
-            continuation(exc);
-            throw e;
-          }
+          // } catch (e) {
+          //   exc = e.toString();
+          //   continuation(exc);
+          //   throw e;
+          // }
         });
       };
       
@@ -3594,14 +3594,14 @@ var Page = (function pagePage() {
     ensureFonts: function(fonts, callback) {
       console.log('--ensureFonts--', '' + fonts);
       // Convert the font names to the corresponding font obj.
-      for (var i = 0; i < fonts.length; i++) {
-        // HACK FOR NOW. Access the data directly. This isn't allowed as the
-        // font object isn't resolved yet.
-        fonts[i] = this.objs.objs[fonts[i]].data;
-      }
+      // for (var i = 0; i < fonts.length; i++) {
+      //   // HACK FOR NOW. Access the data directly. This isn't allowed as the
+      //   // font object isn't resolved yet.
+      //   fonts[i] = this.objs.objs[fonts[i]].data;
+      // }
 
       // Load all the fonts
-      FontLoader.bind(
+      var fontObjs = FontLoader.bind(
         fonts,
         function(fontObjs) {
           this.stats.fonts = Date.now();
@@ -3610,6 +3610,9 @@ var Page = (function pagePage() {
         }.bind(this),
         this.objs
       );
+      
+      for (var i = 0, ii = fonts.length; i < ii; ++i)
+        fonts[i].dict.fontObj = fontObjs[i];
     },
     
     display: function(gfx, callback) {
@@ -3617,6 +3620,9 @@ var Page = (function pagePage() {
       var resources = xref.fetchIfRef(this.resources);
       var mediaBox = xref.fetchIfRef(this.mediaBox);
       assertWellFormed(isDict(resources), 'invalid page resources');
+      
+      gfx.xref = xref;
+      gfx.res = resources;
       gfx.beginDrawing({ x: mediaBox[0], y: mediaBox[1],
             width: this.width,
             height: this.height,
@@ -4087,7 +4093,8 @@ var PDFDoc = (function() {
         page.startRenderingFromIRQueue(data.IRQueue, fontsToLoad);
       }
 
-      checkFontData();
+//      checkFontData();
+        page.startRenderingFromIRQueue(data.IRQueue, data.depFonts);
     }, this);
 
     processorHandler.on("obj", function(data) {
@@ -4187,7 +4194,7 @@ var PDFDoc = (function() {
       WorkerProcessorHandler.setup(processorHandler);
     }
     
-    processorHandler.send("doc", data);
+    processorHandler.send("doc", this.pdf);
   }
 
   constructor.prototype = {
@@ -4865,7 +4872,22 @@ var PartialEvaluator = (function partialEvaluator() {
               }
             }
           } else if (cmd == 'Tf') { // eagerly collect all fonts
-            args[0].name = handleSetFont(args[0].name);
+            var fontRes = resources.get('Font');
+            if (fontRes) {
+              fontRes = xref.fetchIfRef(fontRes);
+              var font = xref.fetchIfRef(fontRes.get(args[0].name));
+              assertWellFormed(isDict(font));
+              if (!font.translated) {
+                font.translated = this.translateFont(font, xref, resources);
+                if (font.translated) {
+                  // keep track of each font we translated so the caller can
+                  // load them asynchronously before calling display on a page
+                  // fonts.push(font.translated);
+                  dependency.push(font.translated);
+                }
+              }
+            }
+
           } else if (cmd == 'EI') {
             buildPaintImageXObject(args[0], true);
           }
@@ -5767,24 +5789,37 @@ var CanvasGraphics = (function canvasGraphics() {
       this.current.leading = -leading;
     },
     setFont: function canvasGraphicsSetFont(fontRef, size) {
-      // Lookup the fontObj using fontRef only.
-      var fontRefName = fontRef.name;
-      var fontObj = this.objs.get(fontRefName);
-      
-      if (!fontObj) {
-        throw "Can't find font for " + fontRefName;
-      }
-      
-      var name = fontObj.loadedName || 'sans-serif';
-      console.log('setFont', name);
+      var font;
+      // the tf command uses a name, but graphics state uses a reference
+      if (isName(fontRef)) {
+        font = this.xref.fetchIfRef(this.res.get('Font'));
+        if (!isDict(font))
+         return;
 
+        font = font.get(fontRef.name);
+      } else if (isRef(fontRef)) {
+        font = fontRef;
+      }
+      font = this.xref.fetchIfRef(font);
+      if (!font)
+        error('Referenced font is not found');
+
+      var fontObj = font.fontObj;
       this.current.font = fontObj;
       this.current.fontSize = size;
 
+      var name = fontObj.loadedName || 'sans-serif';
       if (this.ctx.$setFont) {
         this.ctx.$setFont(name, size);
       } else {
-        this.ctx.font = fontObj.getRule(size);
+        var bold = fontObj.black ? (fontObj.bold ? 'bolder' : 'bold') :
+                                   (fontObj.bold ? 'bold' : 'normal');
+
+        var italic = fontObj.italic ? 'italic' : 'normal';
+        var serif = fontObj.serif ? 'serif' : 'sans-serif';
+        var typeface = '"' + name + '", ' + serif;
+        var rule = italic + ' ' + bold + ' ' + size + 'px ' + typeface;
+        this.ctx.font = rule;
       }
     },
     setTextRenderingMode: function canvasGraphicsSetTextRenderingMode(mode) {
@@ -5820,10 +5855,10 @@ var CanvasGraphics = (function canvasGraphics() {
     showText: function canvasGraphicsShowText(text) {
       // If the current font isn't supported, we can't display the text and
       // bail out.
-      if (!this.current.font.supported) {
-        console.log("showText BAIL OUT");
-        return;
-      }
+      // if (!this.current.font.supported) {
+      //   console.log("showText BAIL OUT");
+      //   return;
+      // }
 
       console.log("showText", text);
 
@@ -5902,10 +5937,10 @@ var CanvasGraphics = (function canvasGraphics() {
 
       // If the current font isn't supported, we can't display the text and
       // bail out.
-      if (!this.current.font.supported) {
-        console.log("showSpacedText BAIL OUT");
-        return;
-      }
+      // if (!this.current.font.supported) {
+      //   console.log("showSpacedText BAIL OUT");
+      //   return;
+      // }
 
       console.log("showSpacedText", arr);
       

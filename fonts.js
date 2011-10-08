@@ -122,118 +122,16 @@ var serifFonts = {
   'Wide Latin': true, 'Windsor': true, 'XITS': true
 };
 
-// Create the FontMeasure object only on the main thread.
-if (!isWorker) {
-  var FontMeasure = (function FontMeasure() {
-    var kScalePrecision = 30;
-    var ctx = document.createElement('canvas').getContext('2d');
-    ctx.scale(1 / kScalePrecision, 1);
-
-    var current;
-    var measureCache;
-
-    return {
-      setActive: function fonts_setActive(font, size) {
-        if (current == font) {
-          var sizes = current.sizes;
-          if (!(measureCache = sizes[size]))
-            measureCache = sizes[size] = Object.create(null);
-        } else {
-          measureCache = null;
-        }
-
-        var name = font.loadedName;
-        var bold = font.bold ? 'bold' : 'normal';
-        var italic = font.italic ? 'italic' : 'normal';
-        size *= kScalePrecision;
-        var rule = italic + ' ' + bold + ' ' + size + 'px "' + name + '"';
-        ctx.font = rule;
-        current = font;
-      },
-      measureText: function fonts_measureText(text) {
-        var width;
-        if (measureCache && (width = measureCache[text]))
-          return width;
-        width = ctx.measureText(text).width / kScalePrecision;
-        if (measureCache)
-          measureCache[text] = width;
-        return width;
-      }
-    };
-  })();  
-}
-
-/**
- * The FontLoader binds a fontObj to the DOM and checks if it is loaded.
- * At the point of writing (11/9/14) there is no DOM event to detect loading
- * of fonts. Therefore, we measure the font using a canvas before the
- * font is attached to the DOM and later on test if the width changed.
- * To ensure there is a change in the font size, two fallback fonts are used.
- * The font used might look like this:
- *    ctx.font = "normal normmal 'p0_font_0', 'Arial'
- *
- * As long as the font 'p0_font_0' isn't loaded, the font 'Arial' is used. A
- * second measurement is done against the font 'Courier':
- *    ctx.font = "normal normmal 'p0_font_0', 'Courier'
- *
- * The font sizes of Arial and Courier are quite different which ensures there
- * gone be a change nomatter what the font looks like (e.g. you could end up
- * with a font that looks like Arial which means you don't see any change in
- * size, but as Courier is checked as well, there will be difference in this
- * font).
- *
- * !!! The test string used for measurements is really important. Some fonts
- * don't have definitions for characters like "a" or "b", but only for some
- * unicode characters. Therefore, the test string have to be build using the
- * encoding of the fontObj.
- */
 var FontLoader = {
   listeningForFontLoad: false,
 
-  /**
-   * Attach the fontObj to the DOM.
-   */
-  bindDOM: function font_bindDom(fontObj) {
-    // The browser isn't loading a font until it's used on the page. Attaching
-    // a hidden div that uses the font 'tells' the browser to load the font.
-    var div = document.createElement('div');
-    div.setAttribute('style',
-                     'visibility: hidden;' +
-                     'width: 10px; height: 10px;' +
-                     'position: absolute; top: 0px; left: 0px;' +
-                     'font-family: ' + fontObj.loadedName);
-    div.innerHTML = "Hi";
-    document.body.appendChild(div);
-    
-    // Add the font-face rule to the document
-    var fontName = fontObj.loadedName;
-    var url = ('url(data:' + fontObj.mimetype + ';base64,' +
-                 window.btoa(fontObj.str) + ');');
-    var rule = "@font-face { font-family:'" + fontName + "';src:" + url + '}';
-    var styleSheet = document.styleSheets[0];
-    styleSheet.insertRule(rule, styleSheet.cssRules.length);
-    return rule;
-  },
-
-  bind: function fontLoaderBind(fonts, callback, objects) {
-    var fontsToLoad = {};
-    // check if there are twice the same font.
-    for (var i = 0; i < fonts.length; i++) {
-      var fontName = fonts[i].loadedName;
-      if (fontsToLoad[fontName]) {
-        throw "Got twice the same font!";
-      } else {
-        fontsToLoad[fontName] = true;
-      }
-    }
-
+  bind: function fontLoaderBind(fonts, callback) {
     function checkFontsLoaded() {
       for (var i = 0; i < objs.length; i++) {
         var fontObj = objs[i];
         if (fontObj.loading) {
           return false;
         }
-        objects.resolve(fontObj.loadedName);
       }
 
       document.documentElement.removeEventListener(
@@ -248,16 +146,22 @@ var FontLoader = {
     for (var i = 0; i < fonts.length; i++) {
       var font = fonts[i];
 
-      // If there is no string on the font, then the font can't get loaded /
-      // get attached to the DOM. Skip this font.
-      if (!font.str) {
-        continue;
+      var obj = new Font(font.name, font.file, font.properties);
+      objs.push(obj);
+
+      var str = '';
+      var data = obj.data;
+      if (data) {
+        var length = data.length;
+        for (var j = 0; j < length; j++)
+          str += String.fromCharCode(data[j]);
+
+        var rule = isWorker ? obj.bindWorker(str) : obj.bindDOM(str);
+        if (rule) {
+          rules.push(rule);
+          names.push(obj.loadedName);
+        }
       }
-
-      objs.push(font);
-
-      rules.push(this.bindDOM(font));
-      names.push(font.loadedName);
     }
 
     this.listeningForFontLoad = false;
@@ -272,7 +176,6 @@ var FontLoader = {
 
     return objs;
   },
-
   // Set things up so that at least one pdfjsFontLoad event is
   // dispatched when all the @font-face |rules| for |names| have been
   // loaded in a subdocument.  It's expected that the load of |rules|
@@ -501,110 +404,6 @@ function getUnicodeRangeFor(value) {
 }
 
 /**
- * FontShape is the minimal shape a FontObject can have to be useful during
- * executing the IRQueue.
- */
-var FontShape = (function FontShape() {
-  var constructor = function FontShape_constructor(obj) {
-    for (var name in obj) {
-      this[name] = obj[name];
-    }
-    
-    var name = this.loadedName;
-    var bold = this.black ? (this.bold ? 'bolder' : 'bold') :
-                            (this.bold ? 'bold' : 'normal');
-
-    var italic = this.italic ? 'italic' : 'normal';
-    this.fontFallback = this.serif ? 'serif' : 'sans-serif';
-
-    this.namePart1 = italic + ' ' + bold + ' ';
-    this.namePart2 = 'px "' + name + '", "';
-    
-    this.supported = Object.keys(this.encoding).length != 0;
-
-    // Set the loading flag. Gets set to false in FontLoader.bind().
-    this.loading = true;
-  };
-
-  function int16(bytes) {
-    return (bytes[0] << 8) + (bytes[1] & 0xff);
-  };
-  
-  constructor.prototype = {
-    getRule: function fonts_getRule(size, fallback) {
-      fallback = fallback || this.fontFallback;
-      return this.namePart1 + size + this.namePart2 + fallback + '"';
-    },
-    
-    charsToUnicode: function fonts_chars2Unicode(chars) {
-      var charsCache = this.charsCache;
-      var str;
-
-      // if we translated this string before, just grab it from the cache
-      if (charsCache) {
-        str = charsCache[chars];
-        if (str)
-          return str;
-      }
-
-      // lazily create the translation cache
-      if (!charsCache)
-        charsCache = this.charsCache = Object.create(null);
-
-      // translate the string using the font's encoding
-      var encoding = this.encoding;
-      if (!encoding)
-        return chars;
-      str = '';
-
-      if (this.composite) {
-        // composite fonts have multi-byte strings convert the string from
-        // single-byte to multi-byte
-        // XXX assuming CIDFonts are two-byte - later need to extract the
-        // correct byte encoding according to the PDF spec
-        var length = chars.length - 1; // looping over two bytes at a time so
-                                       // loop should never end on the last byte
-        for (var i = 0; i < length; i++) {
-          var charcode = int16([chars.charCodeAt(i++), chars.charCodeAt(i)]);
-          var unicode = encoding[charcode];
-          if ('undefined' == typeof(unicode)) {
-            warn('Unencoded charcode ' + charcode);
-            unicode = charcode;
-          } else {
-            unicode = unicode.unicode;
-          }
-          str += String.fromCharCode(unicode);
-        }
-      }
-      else {
-        for (var i = 0; i < chars.length; ++i) {
-          var charcode = chars.charCodeAt(i);
-          var unicode = encoding[charcode];
-          if ('undefined' == typeof(unicode)) {
-            warn('Unencoded charcode ' + charcode);
-            unicode = charcode;
-          } else {
-            unicode = unicode.unicode;
-          }
-
-          // Handle surrogate pairs
-          if (unicode > 0xFFFF) {
-            str += String.fromCharCode(unicode & 0xFFFF);
-            unicode >>= 16;
-          }
-          str += String.fromCharCode(unicode);
-        }
-      }
-
-      // Enter the translated string into the cache
-      return (charsCache[chars] = str);
-    }
-  }
-  
-  return constructor;
-})();
-
-/**
  * 'Font' is the class the outside world should use, it encapsulate all the font
  * decoding logics whatever type it is (assuming the font type is supported).
  *
@@ -616,10 +415,6 @@ var Font = (function Font() {
   var constructor = function font_constructor(name, file, properties) {
     this.name = name;
     this.encoding = properties.encoding;
-    
-    // Glyhps are no needed anymore? MERGE
-    // this.glyphs = properties.glyphs;
-    this.loadedName = properties.loadedName;
     this.coded = properties.coded;
     this.resources = properties.resources;
     this.sizes = [];
@@ -656,8 +451,7 @@ var Font = (function Font() {
       this.black = (name.search(/Black/g) != -1);
 
       this.defaultWidth = properties.defaultWidth;
-      // MERGE
-      // this.loadedName = fontName.split('-')[0];
+      this.loadedName = fontName.split('-')[0];
       this.composite = properties.composite;
       this.loading = false;
       return;
@@ -693,22 +487,18 @@ var Font = (function Font() {
     }
 
     this.data = data;
-    // MERGE
-    //this.textMatrix = properties.textMatrix;
     this.type = type;
     this.fontMatrix = properties.fontMatrix;
     this.defaultWidth = properties.defaultWidth;
-    this.loadedName = properties.loadedName;
+    this.loadedName = getUniqueName();
     this.composite = properties.composite;
-    
-    // TODO: Remove this once we can be sure nothing got broken to du changes
-    // in this commit.
-    if (!this.loadedName) {
-      throw "There has to be a `loadedName`";
-    }
-
     this.loading = true;
   };
+
+  var numFonts = 0;
+  function getUniqueName() {
+    return 'pdfFont' + numFonts++;
+  }
 
   function stringToArray(str) {
     var array = [];
@@ -1690,6 +1480,35 @@ var Font = (function Font() {
         } else
           glyph++;
       }
+    },
+
+    bindWorker: function font_bindWorker(data) {
+      postMessage({
+        action: 'font',
+        data: {
+          raw: data,
+          fontName: this.loadedName,
+          mimetype: this.mimetype
+        }
+      });
+    },
+
+    bindDOM: function font_bindDom(data) {
+      var fontName = this.loadedName;
+
+      // Add the font-face rule to the document
+      var url = ('url(data:' + this.mimetype + ';base64,' +
+                 window.btoa(data) + ');');
+      var rule = "@font-face { font-family:'" + fontName + "';src:" + url + '}';
+      var styleSheet = document.styleSheets[0];
+      if (!styleSheet) {
+        document.documentElement.firstChild.appendChild(
+          document.createElement('style'));
+        styleSheet = document.styleSheets[0];
+      }
+      styleSheet.insertRule(rule, styleSheet.cssRules.length);
+
+      return rule;
     },
 
     charsToGlyphs: function fonts_chars2Glyphs(chars) {
