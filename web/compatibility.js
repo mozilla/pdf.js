@@ -1,8 +1,10 @@
 /* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 /* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
 
+'use strict';
+
 // Checking if the typed arrays are supported
-(function() {
+(function checkTypedArrayCompatibility() {
   if (typeof Uint8Array !== 'undefined')
     return;
 
@@ -10,8 +12,9 @@
     return this.slice(start, end);
   }
 
-  function set_(array, offset) {
-    if (arguments.length < 2) offset = 0;
+  function setArrayOffset(array, offset) {
+    if (arguments.length < 2)
+      offset = 0;
     for (var i = 0, n = array.length; i < n; ++i, ++offset)
       this[offset] = array[i] & 0xFF;
   }
@@ -19,15 +22,17 @@
   function TypedArray(arg1) {
     var result;
     if (typeof arg1 === 'number') {
-       result = new Array(arg1);
-       for (var i = 0; i < arg1; ++i)
-         result[i] = 0;
+      result = [];
+      for (var i = 0; i < arg1; ++i)
+        result[i] = 0;
     } else
-       result = arg1.slice(0);
+      result = arg1.slice(0);
+
     result.subarray = subarray;
     result.buffer = result;
     result.byteLength = result.length;
-    result.set = set_;
+    result.set = setArrayOffset;
+
     if (typeof arg1 === 'object' && arg1.buffer)
       result.buffer = arg1.buffer;
 
@@ -44,31 +49,31 @@
 })();
 
 // Object.create() ?
-(function() {
+(function checkObjectCreateCompatibility() {
   if (typeof Object.create !== 'undefined')
     return;
 
-  Object.create = function(proto) {
-    var constructor = function() {};
+  Object.create = function objectCreate(proto) {
+    var constructor = function objectCreateConstructor() {};
     constructor.prototype = proto;
     return new constructor();
   };
 })();
 
 // Object.defineProperty() ?
-(function() {
+(function checkObjectDefinePropertyCompatibility() {
   if (typeof Object.defineProperty !== 'undefined')
     return;
 
-  Object.defineProperty = function(obj, name, def) {
+  Object.defineProperty = function objectDefineProperty(obj, name, def) {
     delete obj[name];
     if ('get' in def)
       obj.__defineGetter__(name, def['get']);
     if ('set' in def)
       obj.__defineSetter__(name, def['set']);
     if ('value' in def) {
-      obj.__defineSetter__(name, function(value) {
-        this.__defineGetter__(name, function() {
+      obj.__defineSetter__(name, function objectDefinePropertySetter(value) {
+        this.__defineGetter__(name, function objectDefinePropertyGetter() {
           return value;
         });
         return value;
@@ -79,7 +84,7 @@
 })();
 
 // No XMLHttpRequest.response ?
-(function() {
+(function checkXMLHttpRequestResponseCompatibility() {
   var xhrPrototype = XMLHttpRequest.prototype;
   if ('response' in xhrPrototype ||
       'mozResponseArrayBuffer' in xhrPrototype ||
@@ -89,7 +94,7 @@
   // IE ?
   if (typeof VBArray !== 'undefined') {
     Object.defineProperty(xhrPrototype, 'response', {
-      get: function() {
+      get: function xmlHttpRequestResponseGet() {
         return new Uint8Array(new VBArray(this.responseBody).toArray());
       }
     });
@@ -117,14 +122,14 @@
 })();
 
 // window.btoa (base64 encode function) ?
-(function() {
+(function checkWindowBtoaCompatibility() {
   if ('btoa' in window)
     return;
 
   var digits =
     'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=';
 
-  window.btoa = function(chars) {
+  window.btoa = function windowBtoa(chars) {
     var buffer = '';
     var i, n;
     for (i = 0, n = chars.length; i < n; i += 3) {
@@ -142,13 +147,13 @@
 })();
 
 // Function.prototype.bind ?
-(function() {
+(function checkFunctionPrototypeBindCompatibility() {
   if (typeof Function.prototype.bind !== 'undefined')
     return;
 
-  Function.prototype.bind = function(obj) {
+  Function.prototype.bind = function functionPrototypeBind(obj) {
     var fn = this, headArgs = Array.prototype.slice.call(arguments, 1);
-    var bound = function() {
+    var bound = function functionPrototypeBindBound() {
       var args = Array.prototype.concat.apply(headArgs, arguments);
       return fn.apply(obj, args);
     };
@@ -157,15 +162,15 @@
 })();
 
 // IE9 text/html data URI
-(function() {
+(function checkDocumentDocumentModeCompatibility() {
   if (document.documentMode !== 9)
     return;
   // overriding the src property
   var originalSrcDescriptor = Object.getOwnPropertyDescriptor(
     HTMLIFrameElement.prototype, 'src');
   Object.defineProperty(HTMLIFrameElement.prototype, 'src', {
-    get: function() { return this.$src; },
-    set: function(src) {
+    get: function htmlIFrameElementPrototypeSrcGet() { return this.$src; },
+    set: function htmlIFrameElementPrototypeSrcSet(src) {
       this.$src = src;
       if (src.substr(0, 14) != 'data:text/html') {
         originalSrcDescriptor.set.call(this, src);
@@ -174,7 +179,7 @@
       // for text/html, using blank document and then
       // document's open, write, and close operations
       originalSrcDescriptor.set.call(this, 'about:blank');
-      setTimeout((function() {
+      setTimeout((function htmlIFrameElementPrototypeSrcOpenWriteClose() {
         var doc = this.contentDocument;
         doc.open('text/html');
         doc.write(src.substr(src.indexOf(',') + 1));
@@ -184,3 +189,4 @@
     enumerable: true
   });
 })();
+

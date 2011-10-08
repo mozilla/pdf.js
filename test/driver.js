@@ -8,6 +8,7 @@
 'use strict';
 
 var appPath, browser, canvas, currentTaskIdx, manifest, stdout;
+var inFlightRequests = 0;
 
 function queryParams() {
   var qs = window.location.search.substring(1);
@@ -38,16 +39,28 @@ function load() {
 
   var r = new XMLHttpRequest();
   r.open('GET', manifestFile, false);
-  r.onreadystatechange = function(e) {
+  r.onreadystatechange = function loadOnreadystatechange(e) {
     if (r.readyState == 4) {
       log('done\n');
       manifest = JSON.parse(r.responseText);
-      currentTaskIdx = 0, nextTask();
+      currentTaskIdx = 0;
+      nextTask();
     }
   };
   r.send(null);
 }
-window.onload = load;
+
+function cleanup() {
+  var styleSheet = document.styleSheets[0];
+  if (styleSheet) {
+    while (styleSheet.cssRules.length > 0)
+      styleSheet.deleteRule(0);
+  }
+  var guard = document.getElementById('content-end');
+  var body = document.body;
+  while (body.lastChild !== guard)
+    body.removeChild(body.lastChild);
+}
 
 function nextTask() {
   // If there is a pdfDoc on the last task executed, destroy it to free memory.
@@ -55,6 +68,8 @@ function nextTask() {
     task.pdfDoc.destroy();
     delete task.pdfDoc;
   }
+  cleanup();
+
   if (currentTaskIdx == manifest.length) {
     return done();
   }
@@ -63,39 +78,34 @@ function nextTask() {
 
   log('Loading file "' + task.file + '"\n');
 
-  var r = new XMLHttpRequest();
-  r.open('GET', task.file);
-  r.mozResponseType = r.responseType = 'arraybuffer';
-  r.onreadystatechange = function() {
+  getPdf(task.file, function nextTaskGetPdf(data) {
     var failure;
-    if (r.readyState == 4) {
-      var data = r.mozResponseArrayBuffer || r.mozResponse ||
-        r.responseArrayBuffer || r.response;
-
-      try {
-        task.pdfDoc = new WorkerPDFDoc(data);
-        // task.pdfDoc = new PDFDoc(new Stream(data));
-      } catch (e) {
-        failure = 'load PDF doc : ' + e.toString();
-      }
-
-      task.pageNum = task.firstPage || 1, nextPage(task, failure);
+    try {
+      task.pdfDoc = new PDFDoc(data);
+    } catch (e) {
+      failure = 'load PDF doc : ' + e.toString();
     }
-  };
-  r.send(null);
+    task.pageNum = task.firstPage || 1;
+    nextPage(task, failure);
+  });
 }
 
 function isLastPage(task) {
-  return (task.pageNum > task.pdfDoc.numPages);
+  return task.pageNum > task.pdfDoc.numPages || task.pageNum > task.pageLimit;
+}
+
+function canvasToDataURL() {
+  return canvas.toDataURL('image/png');
 }
 
 function nextPage(task, loadError) {
   var failure = loadError || '';
 
   if (!task.pdfDoc) {
-    sendTaskResult(canvas.toDataURL('image/png'), task, failure);
+    sendTaskResult(canvasToDataURL(), task, failure);
     log('done' + (failure ? ' (failed !: ' + failure + ')' : '') + '\n');
-    ++currentTaskIdx, nextTask();
+    ++currentTaskIdx;
+    nextTask();
     return;
   }
 
@@ -104,9 +114,17 @@ function nextPage(task, loadError) {
       log(' Round ' + (1 + task.round) + '\n');
       task.pageNum = 1;
     } else {
-      ++currentTaskIdx, nextTask();
+      ++currentTaskIdx;
+      nextTask();
       return;
     }
+  }
+
+  if (task.skipPages && task.skipPages.indexOf(task.pageNum) >= 0) {
+    log(' skipping page ' + task.pageNum + '/' + task.pdfDoc.numPages +
+        '... ');
+    snapshotCurrentPage(task, '');
+    return;
   }
 
   var page = null;
@@ -128,8 +146,8 @@ function nextPage(task, loadError) {
 
       page.startRendering(
         ctx,
-        function(e) {
-          snapshotCurrentPage(page, task, (!failure && e) ?
+        function nextPageStartRendering(e) {
+          snapshotCurrentPage(task, (!failure && e) ?
             ('render : ' + e) : failure);
         }
       );
@@ -141,21 +159,22 @@ function nextPage(task, loadError) {
   if (failure) {
     // Skip right to snapshotting if there was a failure, since the
     // fonts might be in an inconsistent state.
-    snapshotCurrentPage(page, task, failure);
+    snapshotCurrentPage(task, failure);
   }
 }
 
-function snapshotCurrentPage(page, task, failure) {
+function snapshotCurrentPage(task, failure) {
   log('done, snapshotting... ');
 
-  sendTaskResult(canvas.toDataURL('image/png'), task, failure);
+  sendTaskResult(canvasToDataURL(), task, failure);
   log('done' + (failure ? ' (failed !: ' + failure + ')' : '') + '\n');
 
   // Set up the next request
   var backoff = (inFlightRequests > 0) ? inFlightRequests * 10 : 0;
   setTimeout(
-    function() {
-      ++task.pageNum, nextPage(task);
+    function snapshotCurrentPageSetTimeout() {
+      ++task.pageNum;
+      nextPage(task);
     },
     backoff
   );
@@ -188,11 +207,11 @@ function done() {
   }
 }
 
-var inFlightRequests = 0;
 function sendTaskResult(snapshot, task, failure) {
   var result = { browser: browser,
                  id: task.id,
-                 numPages: task.pdfDoc ? task.pdfDoc.numPages : 0,
+                 numPages: task.pdfDoc ?
+                           (task.pageLimit || task.pdfDoc.numPages) : 0,
                  failure: failure,
                  file: task.file,
                  round: task.round,
@@ -203,11 +222,11 @@ function sendTaskResult(snapshot, task, failure) {
   // (The POST URI is ignored atm.)
   r.open('POST', '/submit_task_results', true);
   r.setRequestHeader('Content-Type', 'application/json');
-  r.onreadystatechange = function(e) {
+  r.onreadystatechange = function sendTaskResultOnreadystatechange(e) {
     if (r.readyState == 4) {
       inFlightRequests--;
     }
-  }
+  };
   document.getElementById('inFlightCount').innerHTML = inFlightRequests++;
   r.send(JSON.stringify(result));
 }

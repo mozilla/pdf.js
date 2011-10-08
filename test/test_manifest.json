@@ -69,6 +69,17 @@
        "rounds": 1,
        "type": "load"
     },
+    {  "id": "thuluthfont-pdf",
+       "file": "pdfs/ThuluthFeatures.pdf",
+       "rounds": 1,
+       "type": "eq"
+    },
+    {  "id": "wnv_chinese-pdf",
+       "file": "pdfs/wnv_chinese.pdf",
+       "link": true,
+       "rounds": 1,
+       "type": "eq"
+    },
     {  "id": "i9-pdf",
        "file": "pdfs/i9.pdf",
        "link": true,
@@ -113,6 +124,79 @@
     {  "id": "artofwar",
        "file": "pdfs/artofwar.pdf",
        "link": true,
+       "rounds": 1,
+       "type": "eq"
+    },
+    {  "id": "wdsg_fitc",
+       "file": "pdfs/wdsg_fitc.pdf",
+       "link": true,
+       "rounds": 1,
+       "type": "eq"
+    },
+    {  "id": "unix01",
+       "file": "pdfs/unix01.pdf",
+       "link": true,
+       "rounds": 1,
+       "type": "eq"
+    },
+    {  "id": "fips197",
+       "file": "pdfs/fips197.pdf",
+       "link": true,
+       "rounds": 1,
+       "type": "load"
+    },
+    {  "id": "txt2pdf",
+       "file": "pdfs/txt2pdf.pdf",
+       "link": true,
+       "rounds": 1,
+       "type": "load"
+    },
+    {  "id": "f1040",
+       "file": "pdfs/f1040.pdf",
+       "link": true,
+       "rounds": 1,
+       "type": "load"
+    },
+    {  "id": "hudsonsurvey",
+       "file": "pdfs/hudsonsurvey.pdf",
+       "link": true,
+       "rounds": 1,
+       "type": "load"
+    },
+    {  "id": "extgstate",
+       "file": "pdfs/extgstate.pdf",
+       "link": false,
+       "rounds": 1,
+       "type": "load"
+    },
+    {  "id": "usmanm-bad",
+       "file": "pdfs/usmanm-bad.pdf",
+       "link": true,
+       "rounds": 1,
+       "type": "eq"
+    },
+    {  "id": "vesta-bad",
+       "file": "pdfs/vesta.pdf",
+       "link": true,
+       "rounds": 1,
+       "type": "load"
+    },
+    {  "id": "ibwa-bad",
+       "file": "pdfs/ibwa-bad.pdf",
+       "link": true,
+       "rounds": 1,
+       "skipPages": [ 16 ],
+       "type": "load"
+    },
+    {  "id": "tcpdf_033",
+       "file": "pdfs/tcpdf_033.pdf",
+       "link": true,
+       "rounds": 1,
+       "type": "eq"
+    },
+    {  "id": "simpletype3font",
+       "file": "pdfs/simpletype3font.pdf",
+       "link": false,
        "rounds": 1,
        "type": "eq"
     }

@@ -9,16 +9,15 @@
 
 
 var pdfDoc;
-window.onload = function() {
+window.onload = function webViewerWorkerOnload() {
     window.canvas = document.getElementById("canvas");
     window.ctx = canvas.getContext("2d");
 
     pdfDoc = new WorkerPDFDoc(window.canvas);
-    pdfDoc.onChangePage = function(numPage) {
+    pdfDoc.onChangePage = function webViewerWorkerOnChangePage(numPage) {
         document.getElementById("pageNumber").value = numPage;
     }
-    // pdfDoc.open("canvas.pdf", function() {
-    pdfDoc.open("compressed.tracemonkey-pldi-09.pdf", function() {
+    pdfDoc.open("compressed.tracemonkey-pldi-09.pdf", function webViewerWorkerOpen() {
         document.getElementById("numPages").innerHTML = "/" + pdfDoc.numPages;
     })
 }

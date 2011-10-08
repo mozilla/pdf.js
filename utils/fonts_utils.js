@@ -20,17 +20,27 @@ function readCharset(aStream, aCharstrings) {
   var charset = {};
 
   var format = aStream.getByte();
+  var count = aCharstrings.length - 1;
   if (format == 0) {
     charset['.notdef'] = readCharstringEncoding(aCharstrings[0]);
 
-    var count = aCharstrings.length - 1;
     for (var i = 1; i < count + 1; i++) {
       var sid = aStream.getByte() << 8 | aStream.getByte();
       charset[CFFStrings[sid]] = readCharstringEncoding(aCharstrings[i]);
       //log(CFFStrings[sid] + "::" + charset[CFFStrings[sid]]);
     }
   } else if (format == 1) {
-    error('Charset Range are not supported');
+    for (var i = 1; i < count + 1; i++) {
+      var first = aStream.getByte();
+      first = (first << 8) | aStream.getByte();
+      var numLeft = aStream.getByte();
+      for (var j = 0; j <= numLeft; j++) {
+        var sid = first++;
+        if (CFFStrings[sid] == 'three')
+          log(aCharstrings[j]);
+        charset[CFFStrings[sid]] = readCharstringEncoding(aCharstrings[j]);
+      }
+    }
   } else {
     error('Invalid charset format');
   }
@@ -44,6 +54,9 @@ function readCharset(aStream, aCharstrings) {
  * chapter 3.1.
  */
 function readCharstringEncoding(aString) {
+  if (!aString)
+    return '';
+
   var charstringTokens = [];
 
   var count = aString.length;
@@ -69,11 +82,11 @@ function readCharstringEncoding(aString) {
     } else if (value <= 31) {
       token = CFFEncodingMap[value];
     } else if (value < 247) {
-      token = parseInt(value) - 139;
+      token = parseInt(value, 10) - 139;
     } else if (value < 251) {
-      token = ((value - 247) * 256) + aString[i++] + 108;
+      token = (value - 247) * 256 + aString[i++] + 108;
     } else if (value < 255) {
-      token = -((value - 251) * 256) - aString[i++] - 108;
+      token = -(value - 251) * 256 - aString[i++] - 108;
     } else {// value == 255
       token = aString[i++] << 24 | aString[i++] << 16 |
               aString[i++] << 8 | aString[i];
@@ -113,7 +126,7 @@ function readFontDictData(aString, aMap) {
       while (!parsed) {
         var byte = aString[i++];
 
-        var nibbles = [parseInt(byte / 16), parseInt(byte % 16)];
+        var nibbles = [parseInt(byte / 16, 10), parseInt(byte % 16, 10)];
         for (var j = 0; j < nibbles.length; j++) {
           var nibble = nibbles[j];
           switch (nibble) {
@@ -144,11 +157,11 @@ function readFontDictData(aString, aMap) {
     } else if (value <= 31) {
       token = aMap[value];
     } else if (value <= 246) {
-      token = parseInt(value) - 139;
+      token = parseInt(value, 10) - 139;
     } else if (value <= 250) {
-      token = ((value - 247) * 256) + aString[i++] + 108;
+      token = (value - 247) * 256 + aString[i++] + 108;
     } else if (value <= 254) {
-      token = -((value - 251) * 256) - aString[i++] - 108;
+      token = -(value - 251) * 256 - aString[i++] - 108;
     } else if (value == 255) {
       error('255 is not a valid DICT command');
     }
@@ -193,13 +206,13 @@ function readFontIndexData(aStream, aIsByte) {
     }
     error(offsize + ' is not a valid offset size');
     return null;
-  };
+  }
 
   var offsets = [];
   for (var i = 0; i < count + 1; i++)
     offsets.push(getNextOffset());
 
-  log('Found ' + count + ' objects at offsets :' +
+  dump('Found ' + count + ' objects at offsets :' +
       offsets + ' (offsize: ' + offsize + ')');
 
   // Now extract the objects
@@ -219,7 +232,7 @@ function readFontIndexData(aStream, aIsByte) {
   return objects;
 }
 
-var Type2Parser = function(aFilePath) {
+var Type2Parser = function type2Parser(aFilePath) {
   var font = new Dict();
 
   var xhr = new XMLHttpRequest();
@@ -236,7 +249,7 @@ var Type2Parser = function(aFilePath) {
   function dump(aStr) {
     if (debug)
       log(aStr);
-  };
+  }
 
   function parseAsToken(aString, aMap) {
     var decoded = readFontDictData(aString, aMap);
@@ -245,7 +258,7 @@ var Type2Parser = function(aFilePath) {
     var count = decoded.length;
     for (var i = 0; i < count; i++) {
       var token = decoded[i];
-      if (IsNum(token)) {
+      if (isNum(token)) {
         stack.push(token);
       } else {
         switch (token.operand) {
@@ -277,31 +290,28 @@ var Type2Parser = function(aFilePath) {
         }
       }
     }
-  };
+  }
 
-  this.parse = function(aStream) {
+  this.parse = function type2ParserParse(aStream) {
     font.set('major', aStream.getByte());
     font.set('minor', aStream.getByte());
     font.set('hdrSize', aStream.getByte());
     font.set('offsize', aStream.getByte());
 
-    // Move the cursor after the header
-    aStream.skip(font.get('hdrSize') - aStream.pos);
-
     // Read the NAME Index
     dump('Reading Index: Names');
     font.set('Names', readFontIndexData(aStream));
-    log('Names: ' + font.get('Names'));
+    dump('Names: ' + font.get('Names'));
 
     // Read the Top Dict Index
     dump('Reading Index: TopDict');
     var topDict = readFontIndexData(aStream, true);
-    log('TopDict: ' + topDict);
+    dump('TopDict: ' + topDict);
 
     // Read the String Index
     dump('Reading Index: Strings');
     var strings = readFontIndexData(aStream);
-    log('strings: ' + strings);
+    dump('strings: ' + strings);
 
     // Fill up the Strings dictionary with the new unique strings
     for (var i = 0; i < strings.length; i++)
@@ -321,7 +331,7 @@ var Type2Parser = function(aFilePath) {
 
     // Reading Private Dict
     var priv = font.get('Private');
-    log('Reading Private Dict (offset: ' + priv.offset +
+    dump('Reading Private Dict (offset: ' + priv.offset +
         ' size: ' + priv.size + ')');
     aStream.pos = priv.offset;
 
@@ -353,7 +363,7 @@ var Type2Parser = function(aFilePath) {
       aStream.pos = charsetEntry;
       var charset = readCharset(aStream, charStrings);
     }
-  }
+  };
 };
 
 /*

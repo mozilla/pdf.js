@@ -119,6 +119,7 @@ span#info {
   margin-right:auto;
   line-height: 134px;
   text-align: center;
+  overflow: hidden;
 }
 
 .thumbnail:not([data-loaded]) {
@@ -195,16 +196,17 @@ span#info {
 canvas {
   margin: auto;
   display: block;
-  box-shadow: 0px 4px 10px #000;
-  -moz-box-shadow: 0px 4px 10px #000;
-  -webkit-box-shadow: 0px 4px 10px #000;
 }
 
 .page {
   width: 816px;
   height: 1056px;
   margin: 10px auto;
-  position:relative;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0px 4px 10px #000;
+  -moz-box-shadow: 0px 4px 10px #000;
+  -webkit-box-shadow: 0px 4px 10px #000;
 }
 
 .page > a {
@@ -270,4 +272,9 @@ canvas {
     display: block;
     page-break-after: always;
   }
+}
+
+#loading {
+	margin: 100px 0;
+	text-align: center;
 }

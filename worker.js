@@ -28,6 +28,10 @@ var WorkerPage = (function() {
       return this.page.stats;
     },
     
+    get view() {
+      return this.page.view;
+    },
+
     startRendering: function(ctx, callback, errback)  {
       this.ctx = ctx;
       this.callback = callback;

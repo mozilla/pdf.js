@@ -3,7 +3,7 @@
 
 'use strict';
 
-var ARCFourCipher = (function() {
+var ARCFourCipher = (function arcFourCipher() {
   function constructor(key) {
     this.a = 0;
     this.b = 0;
@@ -21,7 +21,7 @@ var ARCFourCipher = (function() {
   }
 
   constructor.prototype = {
-    encryptBlock: function(data) {
+    encryptBlock: function arcFourCipherEncryptBlock(data) {
       var i, n = data.length, tmp, tmp2;
       var a = this.a, b = this.b, s = this.s;
       var output = new Uint8Array(n);
@@ -45,7 +45,7 @@ var ARCFourCipher = (function() {
   return constructor;
 })();
 
-var md5 = (function() {
+var calculateMD5 = (function calculateMD5() {
   var r = new Uint8Array([
     7, 12, 17, 22, 7, 12, 17, 22, 7, 12, 17, 22, 7, 12, 17, 22,
     5, 9, 14, 20, 5, 9, 14, 20, 5, 9, 14, 20, 5, 9, 14, 20,
@@ -129,12 +129,12 @@ var md5 = (function() {
   return hash;
 })();
 
-var NullCipher = (function() {
+var NullCipher = (function nullCipher() {
   function constructor() {
   }
 
   constructor.prototype = {
-    decryptBlock: function(data) {
+    decryptBlock: function nullCipherDecryptBlock(data) {
       return data;
     }
   };
@@ -142,7 +142,7 @@ var NullCipher = (function() {
   return constructor;
 })();
 
-var AES128Cipher = (function() {
+var AES128Cipher = (function aes128Cipher() {
   var rcon = new Uint8Array([
     0x8d, 0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x1b, 0x36, 0x6c,
     0xd8, 0xab, 0x4d, 0x9a, 0x2f, 0x5e, 0xbc, 0x63, 0xc6, 0x97, 0x35, 0x6a,
@@ -372,7 +372,7 @@ var AES128Cipher = (function() {
   }
 
   constructor.prototype = {
-    decryptBlock: function(data) {
+    decryptBlock: function aes128CipherDecryptBlock(data) {
       var i, sourceLength = data.length;
       var buffer = this.buffer, bufferLength = this.bufferPosition;
       // waiting for IV values -- they are at the start of the stream
@@ -395,19 +395,21 @@ var AES128Cipher = (function() {
   return constructor;
 })();
 
-var CipherTransform = (function() {
+var CipherTransform = (function cipherTransform() {
   function constructor(stringCipherConstructor, streamCipherConstructor) {
     this.stringCipherConstructor = stringCipherConstructor;
     this.streamCipherConstructor = streamCipherConstructor;
   }
   constructor.prototype = {
-    createStream: function(stream) {
+    createStream: function cipherTransformCreateStream(stream) {
       var cipher = new this.streamCipherConstructor();
-      return new DecryptStream(stream, function(data) {
-        return cipher.decryptBlock(data);
-      });
+      return new DecryptStream(stream,
+        function cipherTransformDecryptStream(data) {
+          return cipher.decryptBlock(data);
+        }
+      );
     },
-    decryptString: function(s) {
+    decryptString: function cipherTransformDecryptString(s) {
       var cipher = new this.stringCipherConstructor();
       var data = stringToBytes(s);
       data = cipher.decryptBlock(data);
@@ -417,7 +419,7 @@ var CipherTransform = (function() {
   return constructor;
 })();
 
-var CipherTransformFactory = (function() {
+var CipherTransformFactory = (function cipherTransformFactory() {
   function prepareKeyData(fileId, password, ownerPassword, userPassword,
                           flags, revision, keyLength, encryptMetadata) {
     var defaultPasswordBytes = new Uint8Array([
@@ -450,11 +452,11 @@ var CipherTransformFactory = (function() {
       hashData[i++] = 0xFF;
       hashData[i++] = 0xFF;
     }
-    var hash = md5(hashData, 0, i);
+    var hash = calculateMD5(hashData, 0, i);
     var keyLengthInBytes = keyLength >> 3;
     if (revision >= 3) {
       for (j = 0; j < 50; ++j) {
-         hash = md5(hash, 0, keyLengthInBytes);
+         hash = calculateMD5(hash, 0, keyLengthInBytes);
       }
     }
     var encryptionKey = hash.subarray(0, keyLengthInBytes);
@@ -467,7 +469,7 @@ var CipherTransformFactory = (function() {
       for (j = 0, n = fileId.length; j < n; ++j)
         hashData[i++] = fileId[j];
       cipher = new ARCFourCipher(encryptionKey);
-      var checkData = cipher.encryptBlock(md5(hashData, 0, i));
+      var checkData = cipher.encryptBlock(calculateMD5(hashData, 0, i));
       n = encryptionKey.length;
       var derrivedKey = new Uint8Array(n), k;
       for (j = 1; j <= 19; ++j) {
@@ -491,16 +493,16 @@ var CipherTransformFactory = (function() {
 
   function constructor(dict, fileId, password) {
     var filter = dict.get('Filter');
-    if (!IsName(filter) || filter.name != 'Standard')
+    if (!isName(filter) || filter.name != 'Standard')
       error('unknown encryption method');
     this.dict = dict;
     var algorithm = dict.get('V');
-    if (!IsInt(algorithm) ||
+    if (!isInt(algorithm) ||
       (algorithm != 1 && algorithm != 2 && algorithm != 4))
       error('unsupported encryption algorithm');
     this.algorithm = algorithm;
     var keyLength = dict.get('Length') || 40;
-    if (!IsInt(keyLength) ||
+    if (!isInt(keyLength) ||
       keyLength < 40 || (keyLength % 8) != 0)
       error('invalid key length');
     // prepare keys
@@ -542,7 +544,7 @@ var CipherTransformFactory = (function() {
       key[i++] = 0x6C;
       key[i++] = 0x54;
     }
-    var hash = md5(key, 0, i);
+    var hash = calculateMD5(key, 0, i);
     return hash.subarray(0, Math.min(encryptionKey.length + 5, 16));
   }
 
@@ -552,18 +554,18 @@ var CipherTransformFactory = (function() {
     if (cryptFilter != null)
       cfm = cryptFilter.get('CFM');
     if (!cfm || cfm.name == 'None') {
-      return function() {
+      return function cipherTransformFactoryBuildCipherConstructorNone() {
         return new NullCipher();
       };
     }
     if ('V2' == cfm.name) {
-      return function() {
+      return function cipherTransformFactoryBuildCipherConstructorV2() {
         return new ARCFourCipher(
           buildObjectKey(num, gen, key, false));
       };
     }
     if ('AESV2' == cfm.name) {
-      return function() {
+      return function cipherTransformFactoryBuildCipherConstructorAESV2() {
         return new AES128Cipher(
           buildObjectKey(num, gen, key, true));
       };
@@ -573,7 +575,8 @@ var CipherTransformFactory = (function() {
   }
 
   constructor.prototype = {
-    createCipherTransform: function(num, gen) {
+    createCipherTransform: function buildCipherCreateCipherTransform(num,
+                                                                     gen) {
       if (this.algorithm == 4) {
         return new CipherTransform(
           buildCipherConstructor(this.cf, this.stmf,
@@ -583,7 +586,7 @@ var CipherTransformFactory = (function() {
       }
       // algorithms 1 and 2
       var key = buildObjectKey(num, gen, this.encryptionKey, false);
-      var cipherConstructor = function() {
+      var cipherConstructor = function buildCipherCipherConstructor() {
         return new ARCFourCipher(key);
       };
       return new CipherTransform(cipherConstructor, cipherConstructor);

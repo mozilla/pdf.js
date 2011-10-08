@@ -11,6 +11,8 @@
         <script type="text/javascript" src="../crypto.js"></script>
         <script type="text/javascript" src="../glyphlist.js"></script>
         <script type="text/javascript" src="../metrics.js"></script>
+        <script type="text/javascript" src="../charsets.js"></script>
+        <script type="text/javascript" src="../cidmaps.js"></script>
         <script type="text/javascript" src="../worker.js"></script>
         <script type="text/javascript" src="../worker/message_handler.js"></script>
         <script type="text/javascript" src="../worker/processor_handler.js"></script>
@@ -30,7 +32,7 @@
 
       <div class="separator"></div>
 
-      <input type="text" id="pageNumber" onchange="PDFView.page = this.value;" value="1" size="4"/>
+      <input type="number" id="pageNumber" onchange="PDFView.page = this.value;" value="1" size="4" min="1" />
 
       <span>/</span>
       <span id="numPages">--</span>
@@ -92,7 +94,8 @@
         </div>
      </div>
     </div>
-
+    
+    <div id="loading">Loading... 0%</div>
     <div id="viewer"></div>
   </body>
 </html>
