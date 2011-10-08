@@ -3260,7 +3260,7 @@ var XRef = (function xRefXRef() {
       var stream = this.stream;
       stream.pos = 0;
       var buffer = stream.getBytes();
-      var position = 0, length = buffer.length;
+      var position = stream.start, length = buffer.length;
       var trailers = [], xrefStms = [];
       var state = 0;
       var currentToken;
@@ -3311,6 +3311,7 @@ var XRef = (function xRefXRef() {
           this.readXRef(xrefStms[i]);
       }
       // finding main trailer
+      var dict;
       for (var i = 0; i < trailers.length; ++i) {
         stream.pos = trailers[i];
         var parser = new Parser(new Lexer(stream), true);
@@ -3318,13 +3319,15 @@ var XRef = (function xRefXRef() {
         if (!isCmd(obj, 'trailer'))
           continue;
         // read the trailer dictionary
-        var dict;
         if (!isDict(dict = parser.getObj()))
           continue;
         // taking the first one with 'ID'
         if (dict.has('ID'))
           return dict;
       }
+      // no tailer with 'ID', taking last one (if exists)
+      if (dict)
+        return dict;
       // nothing helps
       error('Invalid PDF structure');
       return null;
@@ -4595,7 +4598,7 @@ var PartialEvaluator = (function partialEvaluator() {
         var glyph = differences[i];
         var replaceGlyph = true;
         if (!glyph) {
-          glyph = baseEncoding[i];
+          glyph = baseEncoding[i] || i;
           replaceGlyph = false;
         }
         var index = GlyphsUnicode[glyph] || i;
@@ -4605,7 +4608,7 @@ var PartialEvaluator = (function partialEvaluator() {
           width: isNum(width) ? width : properties.defaultWidth
         };
 
-        if (glyph && (replaceGlyph || !glyphs[glyph]))
+        if (replaceGlyph || !glyphs[glyph])
             glyphs[glyph] = map[i];
 
         // If there is no file, the character mapping can't be modified
