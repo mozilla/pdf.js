@@ -3861,6 +3861,16 @@ var Catalog = (function catalogCatalog() {
   return constructor;
 })();
 
+/**
+ * The `PDFDocModel` holds all the data of the PDF file. Compared to the 
+ * `PDFDoc`, this one doesn't have any job management code.
+ * Right now there exists one PDFDocModel on the main thread + one object
+ * for each worker. If there is no worker support enabled, there are two
+ * `PDFDocModel` objects on the main thread created.
+ * TODO: Refactor the internal object structure, such that there is no
+ * need for the `PDFDocModel` anymore and there is only one object on the
+ * main thread and not one entire copy on each worker instance.
+ */
 var PDFDocModel = (function pdfDoc() {
   function constructor(arg, callback) {
     // Stream argument

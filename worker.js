@@ -66,6 +66,12 @@ var WorkerPage = (function() {
   return constructor;
 })();
 
+/**
+ * A PDF document and page is build up of many objects. E.g. there are objects
+ * for fonts, images, rendering code and such. These objects might get processed
+ * inside of a worker. The `PDFObjects` implements some basic functions to manage
+ * these objects.
+ */
 var PDFObjects = (function() {
   function PDFObjects() {
     this.objs = {};
@@ -75,6 +81,7 @@ var PDFObjects = (function() {
     objs: null,
 
     /**
+     * Internal function.
      * Ensures there is an object defined for `objId`. Stores `data` on the
      * object *if* it is created.
      */
@@ -169,6 +176,15 @@ var PDFObjects = (function() {
 
 /**
  * "Promise" object.
+ * Each object that is stored in PDFObjects is based on a Promise object that
+ * contains the status of the object and the data. There migth be situations,
+ * where a function want to use the value of an object, but it isn't ready at
+ * that time. To get a notification, once the object is ready to be used, s.o.
+ * can add a callback using the `then` method on the promise that then calls
+ * the callback once the object gets resolved.
+ * A promise can get resolved only once and only once the data of the promise
+ * can be set. If any of these happens twice or the data is required before
+ * it was set, an exception is throw.
  */
 var Promise = (function() {
   var EMPTY_PROMISE = {};
