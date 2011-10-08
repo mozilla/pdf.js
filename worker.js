@@ -4,7 +4,7 @@
 'use strict';
 
 // Set this to true if you want to use workers.
-var useWorker = true;
+var useWorker = false;
 
 var WorkerPage = (function() {
   function constructor(workerPDF, page, objs) {

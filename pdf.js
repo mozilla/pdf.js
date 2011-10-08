@@ -4687,7 +4687,8 @@ var PartialEvaluator = (function partialEvaluator() {
           var font = xref.fetchIfRef(fontRes.get(fontName));
           assertWellFormed(isDict(font));
           if (!font.translated) {
-            font.translated = self.translateFont(font, xref, resources);
+            font.translated = self.translateFont(font, xref, resources, handler, 
+                          uniquePrefix, dependency);
             if (font.translated) {
               // keep track of each font we translated so the caller can
               // load them asynchronously before calling display on a page
@@ -5279,7 +5280,7 @@ var PartialEvaluator = (function partialEvaluator() {
     },
 
     translateFont: function partialEvaluatorTranslateFont(dict, xref,
-                                                          resources) {
+                                                          resources, queue, handler, uniquePrefix, dependency) {
       var baseDict = dict;
       var type = dict.get('Subtype');
       assertWellFormed(isName(type), 'invalid font Subtype');
@@ -5424,9 +5425,9 @@ var PartialEvaluator = (function partialEvaluator() {
         properties.resources = fontResources;
         for (var key in charProcs.map) {
           var glyphStream = xref.fetchIfRef(charProcs.map[key]);
-          properties.glyphs[key].code = this.evaluate(glyphStream,
-                                                       xref,
-                                                       fontResources);
+          var queue = {};
+          properties.glyphs[key].IRQueue = this.getIRQueue(glyphStream,
+                                        xref, fontResources, queue, handler, uniquePrefix, dependency);
         }
       }
 
@@ -5925,7 +5926,7 @@ var CanvasGraphics = (function canvasGraphics() {
           this.save();
           ctx.scale(fontSize, fontSize);
           ctx.transform.apply(ctx, fontMatrix);
-          this.execute(glyph.code, this.xref, font.resources);
+          this.executeIRQueue(glyph.IRQueue);
           this.restore();
 
           var transformed = Util.applyTransform([glyph.width, 0], fontMatrix);
