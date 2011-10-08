@@ -4398,6 +4398,48 @@ var PartialEvaluator = (function partialEvaluator() {
         }
       }
 
+      var self = this;
+      function handleSetFont(fontName) {
+        var loadedName = null;
+
+        var fontRes = resources.get('Font');
+        if (fontRes) {
+          fontRes = xref.fetchIfRef(fontRes);
+          var font = xref.fetchIfRef(fontRes.get(fontName));
+          assertWellFormed(isDict(font));
+          if (!font.translated) {
+            font.translated = self.translateFont(font, xref, resources);
+            if (font.translated) {
+              // keep track of each font we translated so the caller can
+              // load them asynchronously before calling display on a page
+              loadedName = "font_" + uniquePrefix + (FontLoadedCounter++);
+              font.translated.properties.loadedName = loadedName;
+              font.loadedName = loadedName;
+              FontsMap[loadedName] = font;
+
+              handler.send("obj", [
+                  loadedName, 
+                  "Font", 
+                  font.translated.name,
+                  font.translated.file,
+                  font.translated.properties
+              ]);
+            }
+          }
+          loadedName = loadedName || font.loadedName;
+          
+          // Ensure the font is ready before the font is set
+          // and later on used for drawing.
+          // TODO: This should get insert to the IRQueue only once per
+          // page.
+          insertDependency([loadedName]);
+          return loadedName;
+        } else {
+          // TODO: TOASK: Is it possible to get here? If so, what does
+          // args[0].name should be like???
+        }
+      }
+
       function buildPaintImageXObject(image, inline) {
         var dict = image.dict;
         var w = dict.get('Width', 'W');
@@ -4575,42 +4617,7 @@ var PartialEvaluator = (function partialEvaluator() {
               }
             }
           } else if (cmd == 'Tf') { // eagerly collect all fonts
-            var fontName = args[0].name;
-            
-            var fontRes = resources.get('Font');
-            if (fontRes) {
-              fontRes = xref.fetchIfRef(fontRes);
-              var font = xref.fetchIfRef(fontRes.get(fontName));
-              assertWellFormed(isDict(font));
-              if (!font.translated) {
-                font.translated = this.translateFont(font, xref, resources);
-                if (font.translated) {
-                  // keep track of each font we translated so the caller can
-                  // load them asynchronously before calling display on a page
-                  var loadedName = "font_" + uniquePrefix + (FontLoadedCounter++);
-                  font.translated.properties.loadedName = loadedName;
-                  FontsMap[loadedName] = font;
-
-                  handler.send("obj", [
-                      loadedName, 
-                      "Font", 
-                      font.translated.name,
-                      font.translated.file,
-                      font.translated.properties
-                  ]);
-                }
-              }
-              args[0].name = font.translated.properties.loadedName;
-              
-              // Ensure the font is ready before the font is set
-              // and later on used for drawing.
-              // TODO: This should get insert to the IRQueue only once per
-              // page.
-              insertDependency([font.translated.properties.loadedName]);
-            } else {
-              // TODO: TOASK: Is it possible to get here? If so, what does
-              // args[0].name should be like???
-            }
+            args[0].name = handleSetFont(args[0].name);
           } else if (cmd == 'EI') {
             buildPaintImageXObject(args[0], true);
           }
@@ -4638,6 +4645,58 @@ var PartialEvaluator = (function partialEvaluator() {
             fn = "shadingFill";
 
             break;
+          case "setGState":
+            var dictName = args[0];
+            var extGState = xref.fetchIfRef(resources.get('ExtGState'));
+            if (isDict(extGState) && extGState.has(dictName.name)) {
+              var gsState = xref.fetchIfRef(extGState.get(dictName.name));
+
+              // This array holds the converted/processed state data.
+              var gsStateObj = [];
+
+              gsState.forEach(function canvasGraphicsSetGStateForEach(key, value) {
+                switch (key) {
+                  case 'Type':
+                    break;
+                  case 'LW':
+                  case 'LC':
+                  case 'LJ':
+                  case 'ML':
+                  case 'D':
+                  case 'RI':
+                  case 'FL':
+                    gsStateObj.push([key, value]);
+                    break;
+                  case 'Font':
+                    gsStateObj.push(['Font', handleSetFont(value[0]), value[1] ]);
+                    break;
+                  case 'OP':
+                  case 'op':
+                  case 'OPM':
+                  case 'BG':
+                  case 'BG2':
+                  case 'UCR':
+                  case 'UCR2':
+                  case 'TR':
+                  case 'TR2':
+                  case 'HT':
+                  case 'SM':
+                  case 'SA':
+                  case 'BM':
+                  case 'SMask':
+                  case 'CA':
+                  case 'ca':
+                  case 'AIS':
+                  case 'TK':
+                    TODO('graphic state operator ' + key);
+                    break;
+                  default:
+                    warn('Unknown graphic state operator ' + key);
+                    break;
+                }
+              });
+              args = [ gsStateObj ];
+            }
           }
 
           fnArray.push(fn);
@@ -5261,66 +5320,39 @@ var CanvasGraphics = (function canvasGraphics() {
     setFlatness: function canvasGraphicsSetFlatness(flatness) {
       TODO('set flatness: ' + flatness);
     },
-    setGState: function canvasGraphicsSetGState(dictName) {
-      var extGState = this.xref.fetchIfRef(this.res.get('ExtGState'));
-      if (isDict(extGState) && extGState.has(dictName.name)) {
-        var gsState = this.xref.fetchIfRef(extGState.get(dictName.name));
-        var self = this;
-        gsState.forEach(function canvasGraphicsSetGStateForEach(key, value) {
-          switch (key) {
-            case 'Type':
-              break;
-            case 'LW':
-              self.setLineWidth(value);
-              break;
-            case 'LC':
-              self.setLineCap(value);
-              break;
-            case 'LJ':
-              self.setLineJoin(value);
-              break;
-            case 'ML':
-              self.setMiterLimit(value);
-              break;
-            case 'D':
-              self.setDash(value[0], value[1]);
-              break;
-            case 'RI':
-              self.setRenderingIntent(value);
-              break;
-            case 'FL':
-              self.setFlatness(value);
-              break;
-            case 'Font':
-              self.setFont(value[0], value[1]);
-              break;
-            case 'OP':
-            case 'op':
-            case 'OPM':
-            case 'BG':
-            case 'BG2':
-            case 'UCR':
-            case 'UCR2':
-            case 'TR':
-            case 'TR2':
-            case 'HT':
-            case 'SM':
-            case 'SA':
-            case 'BM':
-            case 'SMask':
-            case 'CA':
-            case 'ca':
-            case 'AIS':
-            case 'TK':
-              TODO('graphic state operator ' + key);
-              break;
-            default:
-              warn('Unknown graphic state operator ' + key);
-              break;
-          }
-        });
-      }
+    setGState: function canvasGraphicsSetGState(states) {
+      for (var i = 0; i < states.lenght; i++) {
+        var state = states[i];
+        var key = state[0];
+        var value = state[1];
 
+        switch (key) {
+          case 'LW':
+            this.setLineWidth(value);
+            break;
+          case 'LC':
+            self.setLineCap(value);
+            break;
+          case 'LJ':
+            self.setLineJoin(value);
+            break;
+          case 'ML':
+            self.setMiterLimit(value);
+            break;
+          case 'D':
+            self.setDash(value[0], value[1]);
+            break;
+          case 'RI':
+            self.setRenderingIntent(value);
+            break;
+          case 'FL':
+            self.setFlatness(value);
+            break;
+          case 'Font':
+            self.setFont(state[1], state[2]);
+            break;
+        }
+      }
     },
     save: function canvasGraphicsSave() {
       this.ctx.save();
