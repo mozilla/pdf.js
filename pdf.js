@@ -4224,7 +4224,11 @@ var PDFDoc = (function() {
       WorkerProcessorHandler.setup(processorHandler);
     }
 
-    processorHandler.send('doc', this.data);
+    this.workerReadyPromise = new Promise('workerReady');
+    setTimeout(function() {
+      processorHandler.send('doc', this.data);
+      this.workerReadyPromise.resolve(true);
+    }.bind(this));
   }
 
   constructor.prototype = {
@@ -4233,7 +4237,10 @@ var PDFDoc = (function() {
     },
 
     startRendering: function(page) {
-      this.processorHandler.send('page_request', page.page.pageNumber + 1);
+      // The worker might not be ready to receive the page request yet.
+      this.workerReadyPromise.then(function() {
+        this.processorHandler.send('page_request', page.page.pageNumber + 1);
+      }.bind(this));
     },
 
     getPage: function(n) {
