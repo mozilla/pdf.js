@@ -2271,7 +2271,7 @@ CFF.prototype = {
     'return': 11,
     'sub': [12, 11],
     'div': [12, 12],
-    'pop': [1, 12, 18],
+    'pop': [139, 12, 18],
     'drop' : [12, 18],
     'endchar': 14,
     'rmoveto': 21,
@@ -2287,9 +2287,11 @@ CFF.prototype = {
         var cmd = map[command];
         assert(cmd, 'Unknow command: ' + command);
 
-        if (isArray(cmd))
+        if (isArray(cmd)) {
           charstring.splice(i++, 1, cmd[0], cmd[1]);
-        else
+          if (cmd.length > 2)
+            charstring.splice(++i, 0, cmd[2]);
+        } else if (cmd !== null)
           charstring[i] = cmd;
       } else {
         // Type1 charstring use a division for number above 32000
