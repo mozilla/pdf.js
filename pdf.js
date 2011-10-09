@@ -7539,13 +7539,13 @@ var PDFFunction = (function() {
       var bounds = dict.get('Bounds');
       var encode = dict.get('Encode');
 
-      return [CONSTRUCT_STICHED, domain, bounds, encoding, fns];
+      return [CONSTRUCT_STICHED, domain, bounds, encode, fns];
     },
 
     constructStichedFromIR: function pdfFunctionConstructStichedFromIR(IR) {
       var domain = IR[1];
       var bounds = IR[2];
-      var encoding = IR[3];
+      var encode = IR[3];
       var fnsIR = IR[4];
       var fns = [];
 
