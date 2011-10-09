@@ -4691,13 +4691,14 @@ var PartialEvaluator = (function partialEvaluator() {
       }
 
       var self = this;
-      function handleSetFont(fontName) {
+      function handleSetFont(fontName, fontRef) {
         var loadedName = null;
 
         var fontRes = resources.get('Font');
         if (fontRes) {
           fontRes = xref.fetchIfRef(fontRes);
-          var font = xref.fetchIfRef(fontRes.get(fontName));
+          fontRef = fontRef || fontRes.get(fontName);
+          var font = xref.fetchIfRef(fontRef);
           assertWellFormed(isDict(font));
           if (!font.translated) {
             font.translated = self.translateFont(font, xref, resources, handler,
@@ -4984,7 +4985,10 @@ var PartialEvaluator = (function partialEvaluator() {
                   case 'Font':
                     gsStateObj.push([
                       'Font',
-                      handleSetFont(value[0]), value[1]
+                      // isRef(value[0]) === true -> pass in as ref and not as
+                      // font name.
+                      handleSetFont(null, value[0]),
+                      value[1]
                     ]);
                     break;
                   case 'OP':
