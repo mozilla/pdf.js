@@ -6,20 +6,21 @@
 var WorkerProcessorHandler = {
   setup: function(handler) {
     var pdfDoc = null;
-    
-    handler.on("doc", function(data) {
+
+    handler.on('doc', function(data) {
       // Create only the model of the PDFDoc, which is enough for
       // processing the content of the pdf.
       pdfDoc = new PDFDocModel(new Stream(data));
     });
-  
-    handler.on("page_request", function(pageNum) {
+
+    handler.on('page_request', function(pageNum) {
       pageNum = parseInt(pageNum);
 
       var page = pdfDoc.getPage(pageNum);
 
-      // The following code does quite the same as Page.prototype.startRendering,
-      // but stops at one point and sends the result back to the main thread.
+      // The following code does quite the same as
+      // Page.prototype.startRendering, but stops at one point and sends the
+      // result back to the main thread.
       var gfx = new CanvasGraphics(null);
 
       var start = Date.now();
@@ -29,15 +30,16 @@ var WorkerProcessorHandler = {
       // Pre compile the pdf page and fetch the fonts/images.
       var IRQueue = page.getIRQueue(handler, dependency);
 
-      console.log("page=%d - getIRQueue: time=%dms, len=%d", pageNum, Date.now() - start, IRQueue.fnArray.length);
+      console.log('page=%d - getIRQueue: time=%dms, len=%d', pageNum,
+                                  Date.now() - start, IRQueue.fnArray.length);
 
       if (false /* show used commands */) {
         var cmdMap = {};
-  
+
         var fnArray = IRQueue .fnArray;
         for (var i = 0; i < fnArray.length; i++) {
           var entry = fnArray[i];
-          if (entry == "paintReadyFormXObject") {
+          if (entry == 'paintReadyFormXObject') {
             //console.log(preCompilation.argsArray[i]);
           }
           if (cmdMap[entry] == null) {
@@ -46,7 +48,7 @@ var WorkerProcessorHandler = {
             cmdMap[entry] += 1;
           }
         }
-        console.log("cmds", JSON.stringify(cmdMap));
+        console.log('cmds', JSON.stringify(cmdMap));
       }
 
       // Filter the dependecies for fonts.
@@ -66,17 +68,17 @@ var WorkerProcessorHandler = {
       //   }
       // }
 
-      handler.send("page", {
-        pageNum:  pageNum,
-        IRQueue:  IRQueue,
+      handler.send('page', {
+        pageNum: pageNum,
+        IRQueue: IRQueue,
         depFonts: fonts
       });
     }, this);
-    
-    handler.on("font", function(data) {  
-      var objId      = data[0];
-      var name       = data[1];
-      var file       = data[2];
+
+    handler.on('font', function(data) {
+      var objId = data[0];
+      var name = data[1];
+      var file = data[2];
       var properties = data[3];
 
       var font = {
@@ -92,15 +94,15 @@ var WorkerProcessorHandler = {
 
         var fontFile = new Stream(file.bytes, file.start,
                                   file.end - file.start, fontFileDict);
-                         
-        // Check if this is a FlateStream. Otherwise just use the created 
+
+        // Check if this is a FlateStream. Otherwise just use the created
         // Stream one. This makes complex_ttf_font.pdf work.
         var cmf = file.bytes[0];
         if ((cmf & 0x0f) == 0x08) {
           font.file = new FlateStream(fontFile);
         } else {
           font.file = fontFile;
-        }          
+        }
       }
 
       var obj = new Font(font.name, font.file, font.properties);
@@ -119,7 +121,7 @@ var WorkerProcessorHandler = {
       // anymore as we sent over the ready str.
       delete obj.data;
 
-      handler.send("font_ready", [objId, obj]);
+      handler.send('font_ready', [objId, obj]);
     });
   }
-}
+};

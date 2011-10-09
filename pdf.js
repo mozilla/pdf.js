@@ -917,10 +917,10 @@ var JpegStreamIR = (function() {
     getImage: function() {
       return this.domImage;
     }
-  }
+  };
 
   return JpegStreamIR;
-})()
+})();
 
 // A JpegStream can't be read directly. We use the platform to render
 // the underlying JPEG data for us.
@@ -954,16 +954,16 @@ var JpegStream = (function jpegStream() {
     newBytes.set(embedMarker, 2);
     return newBytes;
   }
-  
+
   function constructor(bytes, dict) {
-    // TODO: per poppler, some images may have "junk" before that
+    // TODO: per poppler, some images may have 'junk' before that
     // need to be removed
     this.dict = dict;
 
     if (isAdobeImage(bytes))
       bytes = fixAdobeImage(bytes);
 
-    this.src = bytesToString(bytes); 
+    this.src = bytesToString(bytes);
   }
 
   constructor.prototype = {
@@ -3535,12 +3535,13 @@ var Page = (function pagePage() {
       }
       return shadow(this, 'rotate', rotate);
     },
-      
-    startRenderingFromIRQueue: function startRenderingFromIRQueue(gfx, IRQueue, fonts, continuation) {
+
+    startRenderingFromIRQueue: function startRenderingFromIRQueue(gfx,
+                                                IRQueue, fonts, continuation) {
       var self = this;
       this.IRQueue = IRQueue;
-      
-      var displayContinuation = function pageDisplayContinuation() { 
+
+      var displayContinuation = function pageDisplayContinuation() {
         console.log('--display--');
 
         // Always defer call to display() to work around bug in
@@ -3556,7 +3557,7 @@ var Page = (function pagePage() {
           // }
         });
       };
-      
+
       this.ensureFonts(fonts, function() {
         displayContinuation();
       });
@@ -3578,12 +3579,13 @@ var Page = (function pagePage() {
           content[i] = xref.fetchIfRef(content[i]);
         content = new StreamsSequenceStream(content);
       }
-      
+
       var pe = this.pe = new PartialEvaluator();
       var IRQueue = {};
-      return this.IRQueue = pe.getIRQueue(content, xref, resources, IRQueue, handler, "p" + this.pageNumber + "_", dependency);
+      return this.IRQueue = pe.getIRQueue(content, xref, resources, IRQueue,
+                              handler, 'p' + this.pageNumber + '_', dependency);
     },
-    
+
     ensureFonts: function(fonts, callback) {
       console.log('--ensureFonts--', '' + fonts);
       // Convert the font names to the corresponding font obj.
@@ -3598,37 +3600,37 @@ var Page = (function pagePage() {
         fonts,
         function(fontObjs) {
           this.stats.fonts = Date.now();
-          
+
           callback.call(this);
         }.bind(this),
         this.objs
       );
     },
-    
+
     display: function(gfx, callback) {
       var xref = this.xref;
       var resources = xref.fetchIfRef(this.resources);
       var mediaBox = xref.fetchIfRef(this.mediaBox);
       assertWellFormed(isDict(resources), 'invalid page resources');
-      
+
       gfx.xref = xref;
       gfx.res = resources;
       gfx.beginDrawing({ x: mediaBox[0], y: mediaBox[1],
             width: this.width,
             height: this.height,
             rotate: this.rotate });
-            
+
       var startIdx = 0;
       var length = this.IRQueue.fnArray.length;
       var IRQueue = this.IRQueue;
-      
+
       var self = this;
       var startTime = Date.now();
       function next() {
         startIdx = gfx.executeIRQueue(IRQueue, startIdx, next);
         if (startIdx == length) {
           self.stats.render = Date.now();
-          console.log("page=%d - executeIRQueue: time=%dms", 
+          console.log('page=%d - executeIRQueue: time=%dms',
             self.pageNumber + 1, self.stats.render - startTime);
           callback();
         }
@@ -3858,7 +3860,7 @@ var Catalog = (function catalogCatalog() {
 })();
 
 /**
- * The `PDFDocModel` holds all the data of the PDF file. Compared to the 
+ * The `PDFDocModel` holds all the data of the PDF file. Compared to the
  * `PDFDoc`, this one doesn't have any job management code.
  * Right now there exists one PDFDocModel on the main thread + one object
  * for each worker. If there is no worker support enabled, there are two
@@ -4013,30 +4015,32 @@ var PDFDoc = (function() {
     this.data = data;
     this.stream = stream;
     this.pdf = new PDFDocModel(stream);
-    
+
     this.catalog = this.pdf.catalog;
     this.objs = new PDFObjects();
-    
+
     this.pageCache = [];
-    
+
     if (useWorker) {
-      var worker = this.worker = new Worker("../worker/pdf_worker_loader.js");
+      var worker = this.worker = new Worker('../worker/pdf_worker_loader.js');
     } else {
       // If we don't use a worker, just post/sendMessage to the main thread.
       var worker = {
         postMessage: function(obj) {
           worker.onmessage({data: obj});
         }
-      }
+      };
     }
-    
+
     this.fontsLoading = {};
 
-    var processorHandler = this.processorHandler = new MessageHandler("main", worker);
-    processorHandler.on("page", function(data) {
+    var processorHandler = this.processorHandler =
+                                        new MessageHandler('main', worker);
+
+    processorHandler.on('page', function(data) {
       var pageNum = data.pageNum;
       var page = this.pageCache[pageNum];
-     
+
       // DepFonts are all fonts are required to render the page. `fontsToLoad`
       // are all the fonts that are required to render the page AND that
       // aren't loaded on the page yet.
@@ -4046,8 +4050,8 @@ var PDFDoc = (function() {
       var fontsLoading = this.fontsLoading;
       // The `i` for the checkFontData is stored here to keep the state in
       // the closure.
-      var i = 0;  
-                  
+      var i = 0;
+
 
       // function checkFontData() {
       //   // Check if all fontObjs have been processed. If not, shedule a
@@ -4063,11 +4067,12 @@ var PDFDoc = (function() {
       //       fontsToLoad.push(fontName);
       //     }
       //   }
-      //   
+      //
       //   // There can be edge cases where two pages wait for one font and then
-      //   // call startRenderingFromIRQueue twice with the same font. That makes
-      //   // the font getting loaded twice and throw an error later as the font
-      //   // promise gets resolved twice.
+      //   // call startRenderingFromIRQueue twice with the same font. That
+      //   // makes the font getting loaded twice and throw an error later as
+      //   // the font promise gets resolved twice.
+      //   //
       //   // This prevents thats fonts are loaded really only once.
       //   for (var j = 0; j < fontsToLoad.length; j++) {
       //     var fontName = fontsToLoad[j];
@@ -4078,98 +4083,99 @@ var PDFDoc = (function() {
       //       fontsLoading[fontName] = true;
       //     }
       //   }
-      // 
+      //
       //   for (var i = 0; i < depFonts.lenght; i++) {
       //     // Get fonts from the objects.
       //     fontsToLoad.push(this.objs.get(depFonts[i]));
       //   }
-      // 
-      //   // At this point, all font data ia loaded. Start the actuall rendering.
+      //
+      //   // At this point, all font data ia loaded. Start the actuall
+      //   // rendering.
       //   page.startRenderingFromIRQueue(data.IRQueue, fontsToLoad);
       // }
       //
       // checkFontData();
 
-      // Start rendering directly for now, as the fonts are 
+      // Start rendering directly for now, as the fonts are
       page.startRenderingFromIRQueue(data.IRQueue, Object.keys(data.depFonts));
     }, this);
 
-    processorHandler.on("obj", function(data) {
-      var objId   = data[0];
+    processorHandler.on('obj', function(data) {
+      var objId = data[0];
       var objType = data[1];
 
       switch (objType) {
-        case "JpegStream":
+        case 'JpegStream':
           var IR = data[2];
           new JpegStreamIR(objId, IR, this.objs);
           console.log('got image');
         break;
-        case "Font":
+        case 'Font':
           var name = data[2];
           var file = data[3];
           var properties = data[4];
-          
+
           if (file) {
             var fontFileDict = new Dict();
             fontFileDict.map = file.dict.map;
-          
+
             var fontFile = new Stream(file.bytes, file.start,
                                       file.end - file.start, fontFileDict);
-                             
-            // Check if this is a FlateStream. Otherwise just use the created 
+
+            // Check if this is a FlateStream. Otherwise just use the created
             // Stream one. This makes complex_ttf_font.pdf work.
             var cmf = file.bytes[0];
             if ((cmf & 0x0f) == 0x08) {
               file = new FlateStream(fontFile);
             } else {
               file = fontFile;
-            }          
+            }
           }
 
-          
-          // For now, resolve the font object here direclty. The real font object
-          // is then created in FontLoader.bind().
+
+          // For now, resolve the font object here direclty. The real font
+          // object is then created in FontLoader.bind().
           this.objs.resolve(objId, {
             name: name,
             file: file,
             properties: properties
           });
-          
-          // 
-          // 
+
+          //
+          //
           // // << CODE TAKEN FROM WORKER >>
-          // data  = [objId, name, file, properties];
-          // var objId      = data[0];
-          // var name       = data[1];
-          // var file       = data[2];
+          // data = [objId, name, file, properties];
+          // var objId = data[0];
+          // var name = data[1];
+          // var file = data[2];
           // var properties = data[3];
-          // 
+          //
           // var font = {
           //   name: name,
           //   file: file,
           //   properties: properties
           // };
-          // 
+          //
           // // Some fonts don't have a file, e.g. the build in ones like Arial.
           // if (file) {
           //   var fontFileDict = new Dict();
           //   fontFileDict.map = file.dict.map;
-          // 
+          //
           //   var fontFile = new Stream(file.bytes, file.start,
           //                             file.end - file.start, fontFileDict);
-          //                    
-          //   // Check if this is a FlateStream. Otherwise just use the created 
+          //
+          //   // Check if this is a FlateStream. Otherwise just use the created
           //   // Stream one. This makes complex_ttf_font.pdf work.
           //   var cmf = file.bytes[0];
           //   if ((cmf & 0x0f) == 0x08) {
           //     font.file = new FlateStream(fontFile);
           //   } else {
           //     font.file = fontFile;
-          //   }          
+          //   }
           // }
-          // 
+          //
           // var obj = new Font(font.name, font.file, font.properties);
-          // 
+          //
           // var str = '';
           // var data = obj.data;
           // if (data) {
@@ -4177,29 +4183,29 @@ var PDFDoc = (function() {
           //   for (var j = 0; j < length; j++)
           //     str += String.fromCharCode(data[j]);
           // }
-          // 
+          //
           // obj.str = str;
-          // 
+          //
           // var fontObj = new FontShape(obj);
           // for (var prop in obj) {
           //   fontObj[prop] = obj[prop];
           // }
-          // 
+          //
           // if (!str) {
           //   this.objs.resolve(objId, fontObj);
           // } else {
           //   this.objs.setData(objId, fontObj);
           // }
 
-          // processorHandler.send("font", [objId, name, file, properties]);
+          // processorHandler.send('font', [objId, name, file, properties]);
         break;
         default:
-          throw "Got unkown object type " + objType;
+          throw 'Got unkown object type ' + objType;
       }
     }, this);
 
     processorHandler.on('font_ready', function(data) {
-      var objId   = data[0];
+      var objId = data[0];
       var fontObj = new FontShape(data[1]);
 
       console.log('got fontData', objId);
@@ -4211,46 +4217,46 @@ var PDFDoc = (function() {
         this.objs.setData(objId, fontObj);
       }
     }.bind(this));
-    
+
     if (!useWorker) {
       // If the main thread is our worker, setup the handling for the messages
       // the main thread sends to it self.
       WorkerProcessorHandler.setup(processorHandler);
     }
-    
-    processorHandler.send("doc", this.data);
+
+    processorHandler.send('doc', this.data);
   }
 
   constructor.prototype = {
     get numPages() {
       return this.pdf.numPages;
     },
-    
+
     startRendering: function(page) {
-      this.processorHandler.send("page_request", page.page.pageNumber + 1);
+      this.processorHandler.send('page_request', page.page.pageNumber + 1);
     },
-    
+
     getPage: function(n) {
       if (this.pageCache[n]) {
         return this.pageCache[n];
       }
-      
+
       var page = this.pdf.getPage(n);
       // Add a reference to the objects such that Page can forward the reference
       // to the CanvasGraphics and so on.
       page.objs = this.objs;
       return this.pageCache[n] = new WorkerPage(this, page, this.objs);
     },
-    
+
     destroy: function() {
-      console.log("destroy worker");
+      console.log('destroy worker');
       if (this.worker) {
         this.worker.terminate();
       }
       if (this.fontWorker) {
         this.fontWorker.terminate();
       }
-      
+
       for (var n in this.pageCache) {
         delete this.pageCache[n];
       }
@@ -4260,7 +4266,7 @@ var PDFDoc = (function() {
       delete this.catalog;
     }
   };
-  
+
   return constructor;
 })();
 
@@ -4663,11 +4669,11 @@ var PartialEvaluator = (function partialEvaluator() {
   };
 
   constructor.prototype = {
-    getIRQueue: function partialEvaluatorGetIRQueue(stream, xref, resources, queue, handler, 
-                          uniquePrefix, dependency) {
+    getIRQueue: function partialEvaluatorGetIRQueue(stream, xref, resources,
+                                    queue, handler, uniquePrefix, dependency) {
 
       function insertDependency(depList) {
-        fnArray.push("dependency");
+        fnArray.push('dependency');
         argsArray.push(depList);
         for (var i = 0; i < depList.length; i++) {
           var dep = depList[i];
@@ -4687,19 +4693,19 @@ var PartialEvaluator = (function partialEvaluator() {
           var font = xref.fetchIfRef(fontRes.get(fontName));
           assertWellFormed(isDict(font));
           if (!font.translated) {
-            font.translated = self.translateFont(font, xref, resources, handler, 
+            font.translated = self.translateFont(font, xref, resources, handler,
                           uniquePrefix, dependency);
             if (font.translated) {
               // keep track of each font we translated so the caller can
               // load them asynchronously before calling display on a page
-              loadedName = "font_" + uniquePrefix + (FontLoadedCounter++);
+              loadedName = 'font_' + uniquePrefix + (FontLoadedCounter++);
               font.translated.properties.loadedName = loadedName;
               font.loadedName = loadedName;
               FontsMap[loadedName] = font;
 
-              handler.send("obj", [
-                  loadedName, 
-                  "Font", 
+              handler.send('obj', [
+                  loadedName,
+                  'Font',
                   font.translated.name,
                   font.translated.file,
                   font.translated.properties
@@ -4707,7 +4713,7 @@ var PartialEvaluator = (function partialEvaluator() {
             }
           }
           loadedName = loadedName || font.loadedName;
-          
+
           // Ensure the font is ready before the font is set
           // and later on used for drawing.
           // TODO: This should get insert to the IRQueue only once per
@@ -4717,6 +4723,7 @@ var PartialEvaluator = (function partialEvaluator() {
         } else {
           // TODO: TOASK: Is it possible to get here? If so, what does
           // args[0].name should be like???
+          return null;
         }
       }
 
@@ -4727,17 +4734,17 @@ var PartialEvaluator = (function partialEvaluator() {
 
         if (image instanceof JpegStream) {
           var objId = 'img_' + ++objIdCounter;
-          handler.send("obj", [objId, "JpegStream", image.getIR()]);
+          handler.send('obj', [objId, 'JpegStream', image.getIR()]);
 
           // Add the dependency on the image object.
           insertDependency([objId]);
 
           // The normal fn.
           fn = 'paintJpegXObject';
-          args = [ objId, w, h ];
+          args = [objId, w, h];
         } else {
           // Needs to be rendered ourself.
-      
+
           // Figure out if the image has an imageMask.
           var imageMask = dict.get('ImageMask', 'IM') || false;
 
@@ -4747,9 +4754,9 @@ var PartialEvaluator = (function partialEvaluator() {
             var imageObj = new PDFImage(xref, resources, image, inline);
 
             if (imageObj.imageMask) {
-              throw "Can't handle this in the web worker :/";
+              throw 'Can\'t handle this in the web worker :/';
             }
-        
+
             var imgData = {
               width: w,
               height: h,
@@ -4757,17 +4764,17 @@ var PartialEvaluator = (function partialEvaluator() {
             };
             var pixels = imgData.data;
             imageObj.fillRgbaBuffer(pixels, imageObj.decode);
-        
-            fn = "paintImageXObject";
-            args = [ imgData ];
+
+            fn = 'paintImageXObject';
+            args = [imgData];
           } else /* imageMask == true */ {
             // This depends on a tmpCanvas beeing filled with the
             // current fillStyle, such that processing the pixel
             // data can't be done here. Instead of creating a
             // complete PDFImage, only read the information needed
             // for later.
-            fn = "paintImageMaskXObject";
-        
+            fn = 'paintImageMaskXObject';
+
             var width = dict.get('Width', 'W');
             var height = dict.get('Height', 'H');
             var bitStrideLength = (width + 7) >> 3;
@@ -4775,14 +4782,14 @@ var PartialEvaluator = (function partialEvaluator() {
             var decode = dict.get('Decode', 'D');
             var inverseDecode = !!decode && decode[0] > 0;
 
-            args = [ imgArray, inverseDecode, width, height ];
+            args = [imgArray, inverseDecode, width, height];
           }
         }
       }
-      
-      uniquePrefix = uniquePrefix || "";
+
+      uniquePrefix = uniquePrefix || '';
       if (!queue.argsArray) {
-        queue.argsArray = []
+        queue.argsArray = [];
       }
       if (!queue.fnArray) {
         queue.fnArray = [];
@@ -4790,7 +4797,7 @@ var PartialEvaluator = (function partialEvaluator() {
 
       var fnArray = queue.fnArray, argsArray = queue.argsArray;
       var dependency = dependency || [];
-      
+
       resources = xref.fetchIfRef(resources) || new Dict();
       var xobjs = xref.fetchIfRef(resources.get('XObject')) || new Dict();
       var patterns = xref.fetchIfRef(resources.get('Pattern')) || new Dict();
@@ -4816,13 +4823,13 @@ var PartialEvaluator = (function partialEvaluator() {
               };
             }
           }
-          assertWellFormed(fn, "Unknown command '" + cmd + "'");
+          assertWellFormed(fn, 'Unknown command "' + cmd + '"');
           // TODO figure out how to type-check vararg functions
 
           if ((cmd == 'SCN' || cmd == 'scn') && !args[args.length - 1].code) {
             // Use the IR version for setStroke/FillColorN.
             fn += '_IR';
-             
+
             // compile tiling patterns
             var patternName = args[args.length - 1];
             // SCN/scn applies patterns along with normal colors
@@ -4837,23 +4844,24 @@ var PartialEvaluator = (function partialEvaluator() {
                   // Create an IR of the pattern code.
                   var depIdx = dependency.length;
                   var codeIR = this.getIRQueue(pattern, xref,
-                                    dict.get('Resources'), {}, handler, 
+                                    dict.get('Resources'), {}, handler,
                                     uniquePrefix, dependency);
-                  
+
                   // Add the dependencies that are required to execute the
                   // codeIR.
                   insertDependency(dependency.slice(depIdx));
-                  
+
                   args = TilingPattern.getIR(codeIR, dict, args);
-                } 
+                }
                 // Type2 is ShadingPattern.
                 else if (typeNum == 2) {
                   var shading = xref.fetchIfRef(dict.get('Shading'));
                   var matrix = dict.get('Matrix');
-                  var pattern = Pattern.parseShading(shading, matrix, xref, res, null /*ctx*/);
+                  var pattern = Pattern.parseShading(shading, matrix, xref, res,
+                                                                  null /*ctx*/);
                   args = pattern.getIR();
                 } else {
-                  error("Unkown PatternType " + typeNum);
+                  error('Unkown PatternType ' + typeNum);
                 }
               }
             }
@@ -4874,13 +4882,13 @@ var PartialEvaluator = (function partialEvaluator() {
               if ('Form' == type.name) {
                 var matrix = xobj.dict.get('Matrix');
                 var bbox = xobj.dict.get('BBox');
-                
-                fnArray.push("paintFormXObjectBegin");
-                argsArray.push([ matrix, bbox ]);
-                
+
+                fnArray.push('paintFormXObjectBegin');
+                argsArray.push([matrix, bbox]);
+
                 // This adds the IRQueue of the xObj to the current queue.
                 var depIdx = dependency.length;
-                
+
                 this.getIRQueue(xobj, xref, xobj.dict.get('Resources'), queue,
                                          handler, uniquePrefix, dependency);
 
@@ -4888,10 +4896,10 @@ var PartialEvaluator = (function partialEvaluator() {
                // codeIR.
                insertDependency(dependency.slice(depIdx));
 
-                fn = "paintFormXObjectEnd";
+                fn = 'paintFormXObjectEnd';
                 args = [];
               } else if ('Image' == type.name) {
-                buildPaintImageXObject(xobj, false)
+                buildPaintImageXObject(xobj, false);
               } else {
                 error('Unhandled XObject subtype ' + type.name);
               }
@@ -4907,13 +4915,14 @@ var PartialEvaluator = (function partialEvaluator() {
             //     font.translated = this.translateFont(font, xref, resources);
             //     if (font.translated) {
             //       // keep track of each font we translated so the caller can
-            //       // load them asynchronously before calling display on a page
+            //       // load them asynchronously before calling display on a
+            //       // page
             //       // fonts.push(font.translated);
             //       dependency.push(font.translated);
             //     }
             //   }
             // }
-            // 
+            //
           } else if (cmd == 'EI') {
             buildPaintImageXObject(args[0], true);
           }
@@ -4921,11 +4930,11 @@ var PartialEvaluator = (function partialEvaluator() {
           // Transform some cmds.
           switch (fn) {
           // Parse the ColorSpace data to a raw format.
-          case "setFillColorSpace":
-          case "setStrokeColorSpace":
-            args = [ ColorSpace.parseToIR(args[0], xref, resources) ];
+          case 'setFillColorSpace':
+          case 'setStrokeColorSpace':
+            args = [ColorSpace.parseToIR(args[0], xref, resources)];
             break;
-          case "shadingFill":
+          case 'shadingFill':
             var shadingRes = xref.fetchIfRef(res.get('Shading'));
             if (!shadingRes)
               error('No shading resource found');
@@ -4934,14 +4943,15 @@ var PartialEvaluator = (function partialEvaluator() {
             if (!shading)
               error('No shading object found');
 
-            var shadingFill = Pattern.parseShading(shading, null, xref, res, /* ctx */ null);
+            var shadingFill = Pattern.parseShading(shading, null, xref, res,
+                                                                /* ctx */ null);
             var patternIR = shadingFill.getIR();
 
-            args = [ patternIR ];
-            fn = "shadingFill";
+            args = [patternIR];
+            fn = 'shadingFill';
 
             break;
-          case "setGState":
+          case 'setGState':
             var dictName = args[0];
             var extGState = xref.fetchIfRef(resources.get('ExtGState'));
             if (isDict(extGState) && extGState.has(dictName.name)) {
@@ -4950,7 +4960,8 @@ var PartialEvaluator = (function partialEvaluator() {
               // This array holds the converted/processed state data.
               var gsStateObj = [];
 
-              gsState.forEach(function canvasGraphicsSetGStateForEach(key, value) {
+              gsState.forEach(
+              function canvasGraphicsSetGStateForEach(key, value) {
                 switch (key) {
                   case 'Type':
                     break;
@@ -4964,7 +4975,10 @@ var PartialEvaluator = (function partialEvaluator() {
                     gsStateObj.push([key, value]);
                     break;
                   case 'Font':
-                    gsStateObj.push(['Font', handleSetFont(value[0]), value[1] ]);
+                    gsStateObj.push([
+                      'Font',
+                      handleSetFont(value[0]), value[1]
+                    ]);
                     break;
                   case 'OP':
                   case 'op':
@@ -4991,7 +5005,7 @@ var PartialEvaluator = (function partialEvaluator() {
                     break;
                 }
               });
-              args = [ gsStateObj ];
+              args = [gsStateObj];
             }
           }
 
@@ -5279,8 +5293,8 @@ var PartialEvaluator = (function partialEvaluator() {
       };
     },
 
-    translateFont: function partialEvaluatorTranslateFont(dict, xref,
-                                                          resources, queue, handler, uniquePrefix, dependency) {
+    translateFont: function partialEvaluatorTranslateFont(dict, xref, resources,
+                                    queue, handler, uniquePrefix, dependency) {
       var baseDict = dict;
       var type = dict.get('Subtype');
       assertWellFormed(isName(type), 'invalid font Subtype');
@@ -5426,8 +5440,8 @@ var PartialEvaluator = (function partialEvaluator() {
         for (var key in charProcs.map) {
           var glyphStream = xref.fetchIfRef(charProcs.map[key]);
           var queue = {};
-          properties.glyphs[key].IRQueue = this.getIRQueue(glyphStream,
-                                        xref, fontResources, queue, handler, uniquePrefix, dependency);
+          properties.glyphs[key].IRQueue = this.getIRQueue(glyphStream, xref,
+                      fontResources, queue, handler, uniquePrefix, dependency);
         }
       }
 
@@ -5538,13 +5552,13 @@ var CanvasGraphics = (function canvasGraphics() {
       this.ctx.scale(cw / mediaBox.width, ch / mediaBox.height);
     },
 
-    executeIRQueue: function canvasGraphicsExecuteIRQueue(codeIR, 
+    executeIRQueue: function canvasGraphicsExecuteIRQueue(codeIR,
                                   executionStartIdx, continueCallback) {
       var argsArray = codeIR.argsArray;
-      var fnArray =   codeIR.fnArray;
+      var fnArray = codeIR.fnArray;
       var i = executionStartIdx || 0;
       var argsArrayLen = argsArray.length;
-      
+
       var executionEndIdx;
       var startTime = Date.now();
 
@@ -5552,9 +5566,9 @@ var CanvasGraphics = (function canvasGraphics() {
 
       do {
         executionEndIdx = Math.min(argsArrayLen, i + kExecutionTimeCheck);
-        
+
         for (i; i < executionEndIdx; i++) {
-          if (fnArray[i] !== "dependency") {
+          if (fnArray[i] !== 'dependency') {
             this[fnArray[i]].apply(this, argsArray[i]);
           } else {
             var deps = argsArray[i];
@@ -5574,15 +5588,15 @@ var CanvasGraphics = (function canvasGraphics() {
         // If the entire IRQueue was executed, stop as were done.
         if (i == argsArrayLen) {
           return i;
-        } 
+        }
         // If the execution took longer then a certain amount of time, shedule
         // to continue exeution after a short delay.
         // However, this is only possible if a 'continueCallback' is passed in.
-        else if (continueCallback && 
+        else if (continueCallback &&
                 (Date.now() - startTime) > kExecutionTime) {
           setTimeout(continueCallback, 0);
           return i;
-        }          
+        }
 
         // If the IRQueue isn't executed completly yet OR the execution time
         // was short enough, do another execution round.
@@ -5818,11 +5832,11 @@ var CanvasGraphics = (function canvasGraphics() {
       // Lookup the fontObj using fontRef only.
       var fontRefName = fontRef.name;
       var fontObj = this.objs.get(fontRefName).fontObj;
-      
+
       if (!fontObj) {
-        throw "Can't find font for " + fontRefName;
+        throw 'Can\'t find font for ' + fontRefName;
       }
-      
+
       var name = fontObj.loadedName || 'sans-serif';
 
       // var font;
@@ -5831,7 +5845,7 @@ var CanvasGraphics = (function canvasGraphics() {
       //   font = this.xref.fetchIfRef(this.res.get('Font'));
       //   if (!isDict(font))
       //    return;
-      // 
+      //
       //   font = font.get(fontRef.name);
       // } else if (isRef(fontRef)) {
       //   font = fontRef;
@@ -5839,7 +5853,7 @@ var CanvasGraphics = (function canvasGraphics() {
       // font = this.xref.fetchIfRef(font);
       // if (!font)
       //   error('Referenced font is not found');
-      // 
+      //
       // var fontObj = font.fontObj;
       this.current.font = fontObj;
       this.current.fontSize = size;
@@ -5979,7 +5993,7 @@ var CanvasGraphics = (function canvasGraphics() {
       // }
 
       // console.log("showSpacedText", arr);
-      
+
       var ctx = this.ctx;
       var current = this.current;
       var fontSize = current.fontSize;
@@ -6032,7 +6046,8 @@ var CanvasGraphics = (function canvasGraphics() {
     },
 
     // Color
-    setStrokeColorSpace: function canvasGraphicsSetStrokeColorSpacefunction(raw) {
+    setStrokeColorSpace:
+    function canvasGraphicsSetStrokeColorSpacefunction(raw) {
       this.current.strokeColorSpace =
             ColorSpace.fromIR(raw);
     },
@@ -6046,7 +6061,7 @@ var CanvasGraphics = (function canvasGraphics() {
       this.setStrokeRGBColor.apply(this, color);
     },
     getColorN_IR_Pattern: function(IR, cs) {
-      if (IR[0] == "TilingPatternIR") {
+      if (IR[0] == 'TilingPatternIR') {
         // First, build the `color` var like it's done in the
         // Pattern.prototype.parse function.
         var args = IR[1];
@@ -6064,12 +6079,12 @@ var CanvasGraphics = (function canvasGraphics() {
 
         // Build the pattern based on the IR data.
         var pattern = new TilingPatternIR(IR, color, this.ctx, this.objs);
-      } else if (IR[0] == "RadialAxialShading" || IR[0] == "DummyShading") {
-        var pattern = Pattern.shadingFromIR(this.ctx, IR); 
+      } else if (IR[0] == 'RadialAxialShading' || IR[0] == 'DummyShading') {
+        var pattern = Pattern.shadingFromIR(this.ctx, IR);
       } else {
-        throw "Unkown IR type";
+        throw 'Unkown IR type';
       }
-      return pattern; 
+      return pattern;
     },
     setStrokeColorN_IR: function canvasGraphicsSetStrokeColorN(/*...*/) {
       var cs = this.current.strokeColorSpace;
@@ -6123,7 +6138,7 @@ var CanvasGraphics = (function canvasGraphics() {
 
     shadingFill: function canvasGraphicsShadingFill(patternIR) {
       var ctx = this.ctx;
-      
+
       this.save();
       ctx.fillStyle = Pattern.shadingFromIR(ctx, patternIR);
 
@@ -6164,8 +6179,9 @@ var CanvasGraphics = (function canvasGraphics() {
     beginImageData: function canvasGraphicsBeginImageData() {
       error('Should not call beginImageData');
     },
-  
-    paintFormXObjectBegin: function canvasGraphicsPaintFormXObject(matrix, bbox) {
+
+    paintFormXObjectBegin:
+    function canvasGraphicsPaintFormXObject(matrix, bbox) {
       this.save();
 
       if (matrix && isArray(matrix) && 6 == matrix.length)
@@ -6187,11 +6203,11 @@ var CanvasGraphics = (function canvasGraphics() {
     paintJpegXObject: function(objId, w, h) {
       var image = this.objs.get(objId);
       if (!image) {
-        error("Dependent image isn't ready yet");
+        error('Dependent image isn\'t ready yet');
       }
 
       this.save();
-      
+
       var ctx = this.ctx;
       ctx.scale(1 / w, -1 / h);
 
@@ -6201,7 +6217,7 @@ var CanvasGraphics = (function canvasGraphics() {
 
       this.restore();
     },
-    
+
     paintImageMaskXObject: function(imgArray, inverseDecode, width, height) {
       function applyStencilMask(buffer, inverseDecode) {
         var imgArrayPos = 0;
@@ -6262,7 +6278,7 @@ var CanvasGraphics = (function canvasGraphics() {
       var tmpCanvas = new this.ScratchCanvas(w, h);
       var tmpCtx = tmpCanvas.getContext('2d');
       var tmpImgData;
-      
+
       // Deactivating this for now until we have feature detection.
       // if (isGecko) {
       //  tmpImgData = imgData;
@@ -6275,7 +6291,7 @@ var CanvasGraphics = (function canvasGraphics() {
 
         // TODO: There got to be a better way to copy an ImageData array
         // then coping over all the bytes one by one :/
-        while (len--) 
+        while (len--)
           tmpImgDataPixels[len] = imgData.data[len];
       // }
 
@@ -6388,10 +6404,10 @@ var ColorSpace = (function colorSpaceColorSpace() {
     if (!(IR instanceof SeparationCS)) {
       return constructor.fromIR(IR);
     } else {
-      return IR
+      return IR;
     }
   };
-  
+
   constructor.fromIR = function(IR) {
     var name;
     if (isArray(IR)) {
@@ -6399,40 +6415,40 @@ var ColorSpace = (function colorSpaceColorSpace() {
     } else {
       name = IR;
     }
-    
+
     switch (name) {
-      case "DeviceGrayCS":
+      case 'DeviceGrayCS':
         return new DeviceGrayCS();
-      case "DeviceRgbCS":
+      case 'DeviceRgbCS':
         return new DeviceRgbCS();
-      case "DeviceCmykCS":
+      case 'DeviceCmykCS':
         return new DeviceCmykCS();
-      case "PatternCS":
+      case 'PatternCS':
         var baseCS = IR[1];
         if (baseCS == null) {
           return new PatternCS(null);
         } else {
           return new PatternCS(ColorSpace.fromIR(baseCS));
         }
-      case "IndexedCS":
+      case 'IndexedCS':
         var baseCS = IR[1];
-        var hiVal  = IR[2];
+        var hiVal = IR[2];
         var lookup = IR[3];
-        return new IndexedCS(ColorSpace.fromIR(baseCS), hiVal, lookup)
-      case "SeparationCS":
-        var alt       = IR[1];
-        var tintFnIR  = IR[2];
-        
+        return new IndexedCS(ColorSpace.fromIR(baseCS), hiVal, lookup);
+      case 'SeparationCS':
+        var alt = IR[1];
+        var tintFnIR = IR[2];
+
         return new SeparationCS(
           ColorSpace.fromIR(alt),
           PDFFunction.fromIR(tintFnIR)
         );
       default:
-        error("Unkown name " + name);
+        error('Unkown name ' + name);
     }
     return null;
   }
-  
+
   constructor.parseToIR = function colorspace_parse(cs, xref, res, parseOnly) {
     if (isName(cs)) {
       var colorSpaces = res.get('ColorSpace');
@@ -6452,15 +6468,15 @@ var ColorSpace = (function colorSpaceColorSpace() {
       switch (mode) {
       case 'DeviceGray':
       case 'G':
-        return "DeviceGrayCS";
+        return 'DeviceGrayCS';
       case 'DeviceRGB':
       case 'RGB':
-        return "DeviceRgbCS";
+        return 'DeviceRgbCS';
       case 'DeviceCMYK':
       case 'CMYK':
-        return "DeviceCmykCS";
+        return 'DeviceCmykCS';
       case 'Pattern':
-        return ["PatternCS", null];
+        return ['PatternCS', null];
       default:
         error('unrecognized colorspace ' + mode);
       }
@@ -6471,42 +6487,42 @@ var ColorSpace = (function colorSpaceColorSpace() {
       switch (mode) {
       case 'DeviceGray':
       case 'G':
-        return "DeviceGrayCS";
+        return 'DeviceGrayCS';
       case 'DeviceRGB':
       case 'RGB':
-        return "DeviceRgbCS";
+        return 'DeviceRgbCS';
       case 'DeviceCMYK':
       case 'CMYK':
-        return "DeviceCmykCS";
+        return 'DeviceCmykCS';
       case 'CalGray':
-        return "DeviceGrayCS";
+        return 'DeviceGrayCS';
       case 'CalRGB':
-        return "DeviceRgbCS";
+        return 'DeviceRgbCS';
       case 'ICCBased':
         var stream = xref.fetchIfRef(cs[1]);
         var dict = stream.dict;
         var numComps = dict.get('N');
         if (numComps == 1)
-          return "DeviceGrayCS";
+          return 'DeviceGrayCS';
         if (numComps == 3)
-          return "DeviceRgbCS";
+          return 'DeviceRgbCS';
         if (numComps == 4)
-          return "DeviceCmykCS";
+          return 'DeviceCmykCS';
         break;
       case 'Pattern':
         var baseCS = cs[1];
         if (baseCS)
           baseCS = ColorSpace.parseToIR(baseCS, xref, res);
-        return ["PatternCS", baseCS];
+        return ['PatternCS', baseCS];
       case 'Indexed':
         var baseCS = ColorSpace.parseToIR(cs[1], xref, res);
         var hiVal = cs[2] + 1;
         var lookup = xref.fetchIfRef(cs[3]);
-        return ["IndexedCS", baseCS, hiVal, lookup];
+        return ['IndexedCS', baseCS, hiVal, lookup];
       case 'Separation':
         var alt = ColorSpace.parseToIR(cs[2], xref, res);
         var tintFnIR = PDFFunction.getIR(xref, xref.fetchIfRef(cs[3]));
-        return ["SeparationCS", alt, tintFnIR];
+        return ['SeparationCS', alt, tintFnIR];
       case 'Lab':
       case 'DeviceN':
       default:
@@ -6810,7 +6826,7 @@ var DummyShading = (function dummyShading() {
 
   constructor.prototype = {
     getIR: function dummpy_getir() {
-      return [ 'DummyShading' ];
+      return ['DummyShading'];
     }
   };
   return constructor;
@@ -6880,7 +6896,7 @@ var RadialAxialShading = (function radialAxialShading() {
     var r0 = raw[5];
     var r1 = raw[6];
 
-    var curMatrix = ctx.mozCurrentTransform; 
+    var curMatrix = ctx.mozCurrentTransform;
     if (curMatrix) {
       var userMatrix = ctx.mozCurrentTransformInverse;
 
@@ -6926,11 +6942,11 @@ var RadialAxialShading = (function radialAxialShading() {
         p0 = Util.applyTransform(p0, matrix);
         p1 = Util.applyTransform(p1, matrix);
       }
-      
-      return [ "RadialAxialShading", type, this.colorStops, p0, p1, r0, r1 ];
+
+      return ['RadialAxialShading', type, this.colorStops, p0, p1, r0, r1];
     }
   };
-  
+
   return constructor;
 })();
 
@@ -6938,15 +6954,15 @@ var TilingPatternIR = (function tilingPattern() {
   var PAINT_TYPE_COLORED = 1, PAINT_TYPE_UNCOLORED = 2;
 
   function TilingPatternIR(IR, color, ctx, objs) {
-    // "Unfolding" the IR.
-    var IRQueue   = IR[2];
-    this.matrix   = IR[3];
-    var bbox      = IR[4];
-    var xstep     = IR[5];
-    var ystep     = IR[6];
+    // 'Unfolding' the IR.
+    var IRQueue = IR[2];
+    this.matrix = IR[3];
+    var bbox = IR[4];
+    var xstep = IR[5];
+    var ystep = IR[6];
     var paintType = IR[7];
 
-    // 
+    //
     TODO('TilingType');
 
     this.curMatrix = ctx.mozCurrentTransform;
@@ -7030,7 +7046,7 @@ var TilingPatternIR = (function tilingPattern() {
 
       return ctx.createPattern(this.canvas, 'repeat');
     }
-  }
+  };
 
   return TilingPatternIR;
 })();
@@ -7042,8 +7058,10 @@ var TilingPattern = {
     var xstep = dict.get('XStep');
     var ystep = dict.get('YStep');
     var paintType = dict.get('PaintType');
-    
-    return ["TilingPatternIR", args, codeIR, matrix, bbox, xstep, ystep, paintType];
+
+    return [
+      'TilingPatternIR', args, codeIR, matrix, bbox, xstep, ystep, paintType
+    ];
   }
 };
 
@@ -7278,7 +7296,7 @@ var PDFFunction = (function() {
   var CONSTRUCT_INTERPOLATED = 2;
   var CONSTRUCT_STICHED = 3;
   var CONSTRUCT_POSTSCRIPT = 4;
-  
+
   return {
     getSampleArray: function(size, outputSize, bps, str) {
       var length = 1;
@@ -7322,9 +7340,9 @@ var PDFFunction = (function() {
       if (!typeFn)
         error('Unknown type of function');
 
-      return typeFn.call(this, fn, dict, xref);    
+      return typeFn.call(this, fn, dict, xref);
     },
-  
+
     fromIR: function(IR) {
       var type = IR[0];
       switch (type) {
@@ -7380,20 +7398,23 @@ var PDFFunction = (function() {
 
       var samples = this.getSampleArray(size, outputSize, bps, str);
 
-      return [ CONSTRUCT_SAMPLED, inputSize, domain, encode, decode, samples, size, outputSize, bps, range ];
+      return [
+        CONSTRUCT_SAMPLED, inputSize, domain, encode, decode, samples, size,
+        outputSize, bps, range
+      ];
     },
-    
+
     constructSampledFromIR: function(IR) {
       var inputSize = IR[1];
-      var domain    = IR[2];
-      var encode    = IR[3];
-      var decode    = IR[4]
-      var samples   = IR[5]
-      var size      = IR[6]
-      var outputSize= IR[7];
-      var bps       = IR[8];
-      var range     = IR[9];
-      
+      var domain = IR[2];
+      var encode = IR[3];
+      var decode = IR[4];
+      var samples = IR[5];
+      var size = IR[6];
+      var outputSize = IR[7];
+      var bps = IR[8];
+      var range = IR[9];
+
       return function(args) {
         var clip = function(v, min, max) {
           if (v > max)
@@ -7454,7 +7475,8 @@ var PDFFunction = (function() {
       }
     },
 
-    constructInterpolated: function pdfFunctionConstructInterpolated(str, dict) {
+    constructInterpolated:
+    function pdfFunctionConstructInterpolated(str, dict) {
       var c0 = dict.get('C0') || [0];
       var c1 = dict.get('C1') || [1];
       var n = dict.get('N');
@@ -7467,15 +7489,16 @@ var PDFFunction = (function() {
       for (var i = 0; i < length; ++i)
         diff.push(c1[i] - c0[i]);
 
-      return [ CONSTRUCT_INTERPOLATED, c0, diff, n, i ];
+      return [CONSTRUCT_INTERPOLATED, c0, diff, n, i];
     },
 
-    constructInterpolatedFromIR: function pdfFunctionconstructInterpolatedFromIR(IR) {
-      var c0   = IR[1];
+    constructInterpolatedFromIR:
+    function pdfFunctionconstructInterpolatedFromIR(IR) {
+      var c0 = IR[1];
       var diff = IR[2];
-      var n    = IR[3];
-      var i    = IR[4];
-      
+      var n = IR[3];
+      var i = IR[4];
+
       var length = diff.length;
 
       return function(args) {
@@ -7486,10 +7509,10 @@ var PDFFunction = (function() {
           out.push(c0[j] + (x^n * diff[i]));
 
         return out;
-        
+
       }
     },
-    
+
     constructStiched: function pdfFunctionConstructStiched(fn, dict, xref) {
       var domain = dict.get('Domain');
       var range = dict.get('Range');
@@ -7509,14 +7532,14 @@ var PDFFunction = (function() {
       var bounds = dict.get('Bounds');
       var encode = dict.get('Encode');
 
-      return [ CONSTRUCT_STICHED, domain, bounds, encoding, fns ];
+      return [CONSTRUCT_STICHED, domain, bounds, encoding, fns];
     },
 
     constructStichedFromIR: function pdfFunctionConstructStichedFromIR(IR) {
-      var domain    = IR[1];
-      var bounds    = IR[2];
-      var encoding  = IR[3];
-      var fnsIR     = IR[4];
+      var domain = IR[1];
+      var bounds = IR[2];
+      var encoding = IR[3];
+      var fnsIR = IR[4];
       var fns = [];
 
       for (var i = 0; i < fnsIR.length; i++) {
@@ -7559,7 +7582,7 @@ var PDFFunction = (function() {
     },
 
     constructPostScript: function pdfFunctionConstructPostScript() {
-      return [ CONSTRUCT_POSTSCRIPT ];
+      return [CONSTRUCT_POSTSCRIPT];
     },
 
     constructPostScriptFromIR: function pdfFunctionConstructPostScriptFromIR() {
@@ -7568,6 +7591,6 @@ var PDFFunction = (function() {
         return [255, 105, 180];
       };
     }
-  }
+  };
 })();
 

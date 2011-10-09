@@ -15,5 +15,5 @@ importScripts('processor_handler.js');
 // Listen for messages from the main thread.
 var pdfDoc = null;
 
-var handler = new MessageHandler("worker_processor", this);
+var handler = new MessageHandler('worker_processor', this);
 WorkerProcessorHandler.setup(handler);

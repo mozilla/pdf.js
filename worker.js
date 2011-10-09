@@ -11,23 +11,23 @@ var WorkerPage = (function() {
     this.workerPDF = workerPDF;
     this.page = page;
     this.objs = objs;
-    
+
     this.ref = page.ref;
   }
-  
+
   constructor.prototype = {
     get width() {
       return this.page.width;
     },
-    
+
     get height() {
       return this.page.height;
     },
-    
+
     get stats() {
       return this.page.stats;
     },
-    
+
     get view() {
       return this.page.view;
     },
@@ -37,40 +37,40 @@ var WorkerPage = (function() {
       this.callback = callback;
       // TODO: Place the worker magic HERE.
       // this.page.startRendering(ctx, callback, errback);
-      
+
       this.startRenderingTime = Date.now();
-      this.workerPDF.startRendering(this)
+      this.workerPDF.startRendering(this);
     },
-    
+
     startRenderingFromIRQueue: function(IRQueue, fonts) {
       var gfx = new CanvasGraphics(this.ctx, this.objs);
-      
+
       var startTime = Date.now();
       var callback = function(err) {
         var pageNum = this.page.pageNumber + 1;
-        console.log("page=%d - rendering time: time=%dms", 
+        console.log('page=%d - rendering time: time=%dms',
           pageNum, Date.now() - startTime);
-        console.log("page=%d - total time: time=%dms", 
+        console.log('page=%d - total time: time=%dms',
           pageNum, Date.now() - this.startRenderingTime);
 
         this.callback(err);
       }.bind(this);
       this.page.startRenderingFromIRQueue(gfx, IRQueue, fonts, callback);
     },
-    
+
     getLinks: function() {
       return this.page.getLinks();
     }
   };
-  
+
   return constructor;
 })();
 
 /**
  * A PDF document and page is build up of many objects. E.g. there are objects
  * for fonts, images, rendering code and such. These objects might get processed
- * inside of a worker. The `PDFObjects` implements some basic functions to manage
- * these objects.
+ * inside of a worker. The `PDFObjects` implements some basic functions to
+ * manage these objects.
  */
 var PDFObjects = (function() {
   function PDFObjects() {
@@ -98,16 +98,16 @@ var PDFObjects = (function() {
      * object needs to be resolved. If it isn't, this function throws.
      *
      * If called *with* a callback, the callback is called with the data of the
-     * object once the object is resolved. That means, if you call this 
+     * object once the object is resolved. That means, if you call this
      * function and the object is already resolved, the callback gets called
      * right away.
      */
     get: function(objId, callback) {
-      // If there is a callback, then the get can be async and the object is 
+      // If there is a callback, then the get can be async and the object is
       // not required to be resolved right now
       if (callback) {
         this.ensureObj(objId).then(callback);
-      } 
+      }
       // If there isn't a callback, the user expects to get the resolved data
       // directly.
       else {
@@ -116,8 +116,8 @@ var PDFObjects = (function() {
         // If there isn't an object yet or the object isn't resolved, then the
         // data isn't ready yet!
         if (!obj || !obj.isResolved) {
-          throw "Requesting object that isn't resolved yet " + objId;
-        } 
+          throw 'Requesting object that isn\'t resolved yet ' + objId;
+        }
         // Direct access.
         else {
           return obj.data;
@@ -130,7 +130,7 @@ var PDFObjects = (function() {
      */
     resolve: function(objId, data) {
       var objs = this.objs;
-      
+
       // In case there is a promise already on this object, just resolve it.
       if (objs[objId]) {
         objs[objId].resolve(data);
@@ -169,13 +169,13 @@ var PDFObjects = (function() {
       // a *resolved* promise which shouldn't be the case!
       this.ensureObj(objId).data = data;
     }
-  }
+  };
   return PDFObjects;
 })();
 
 
 /**
- * "Promise" object.
+ * 'Promise' object.
  * Each object that is stored in PDFObjects is based on a Promise object that
  * contains the status of the object and the data. There migth be situations,
  * where a function want to use the value of an object, but it isn't ready at
@@ -201,12 +201,12 @@ var Promise = (function() {
       this._data = data;
       this.hasData = true;
     } else {
-      this.isResolved = false;      
+      this.isResolved = false;
       this._data = EMPTY_PROMISE;
     }
     this.callbacks = [];
   };
-  
+
   Promise.prototype = {
     hasData: false,
 
@@ -215,7 +215,8 @@ var Promise = (function() {
         return;
       }
       if (this._data !== EMPTY_PROMISE) {
-        throw "Promise " + this.name + ": Cannot set the data of a promise twice";
+        throw 'Promise ' + this.name +
+                                ': Cannot set the data of a promise twice';
       }
       this._data = data;
       this.hasData = true;
@@ -224,10 +225,10 @@ var Promise = (function() {
         this.onDataCallback(data);
       }
     },
-    
+
     get data() {
       if (this._data === EMPTY_PROMISE) {
-        throw "Promise " + this.name + ": Cannot get data that isn't set";
+        throw 'Promise ' + this.name + ': Cannot get data that isn\'t set';
       }
       return this._data;
     },
@@ -239,35 +240,35 @@ var Promise = (function() {
         this.onDataCallback = callback;
       }
     },
-    
+
     resolve: function(data) {
       if (this.isResolved) {
-        throw "A Promise can be resolved only once " + this.name;
+        throw 'A Promise can be resolved only once ' + this.name;
       }
 
       this.isResolved = true;
       this.data = data;
       var callbacks = this.callbacks;
-      
+
       for (var i = 0; i < callbacks.length; i++) {
         callbacks[i].call(null, data);
       }
     },
-    
+
     then: function(callback) {
       if (!callback) {
-        throw "Requiring callback" + this.name;
+        throw 'Requiring callback' + this.name;
       }
-      
+
       // If the promise is already resolved, call the callback directly.
       if (this.isResolved) {
         var data = this.data;
         callback.call(null, data);
       } else {
-        this.callbacks.push(callback);        
+        this.callbacks.push(callback);
       }
     }
-  }
+  };
   return Promise;
 })();
 

@@ -9,15 +9,15 @@ var console = {
     var args = Array.prototype.slice.call(arguments);
     postMessage({
       action: 'console_log',
-      data:   args
+      data: args
     });
   },
-  
+
   error: function error() {
     var args = Array.prototype.slice.call(arguments);
     postMessage({
       action: 'console_error',
-      data:   args
+      data: args
     });
   },
 

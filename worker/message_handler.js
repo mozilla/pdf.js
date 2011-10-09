@@ -8,14 +8,14 @@ function MessageHandler(name, comObj) {
   this.name = name;
   this.comObj = comObj;
   var ah = this.actionHandler = {};
-  
-  ah["console_log"] = [function(data) {
+
+  ah['console_log'] = [function(data) {
       console.log.apply(console, data);
-  }]
-  ah["console_error"] = [function(data) {
+  }];
+  ah['console_error'] = [function(data) {
       console.error.apply(console, data);
-  }]
-  
+  }];
+
   comObj.onmessage = function(event) {
     var data = event.data;
     if (data.action in ah) {
@@ -39,8 +39,8 @@ MessageHandler.prototype = {
   send: function(actionName, data) {
     this.comObj.postMessage({
       action: actionName,
-      data:   data
-    });      
+      data: data
+    });
   }
-}
+};
 
