@@ -6458,7 +6458,7 @@ var ColorSpace = (function colorSpaceColorSpace() {
 
   constructor.parseToIR = function colorspace_parse(cs, xref, res, parseOnly) {
     if (isName(cs)) {
-      var colorSpaces = res.get('ColorSpace');
+      var colorSpaces = xref.fetchIfRef(res.get('ColorSpace'));
       if (isDict(colorSpaces)) {
         var refcs = colorSpaces.get(cs.name);
         if (refcs)
