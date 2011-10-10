@@ -183,7 +183,7 @@ function snapshotCurrentPage(task, failure) {
 function sendQuitRequest() {
   var r = new XMLHttpRequest();
   r.open('POST', '/tellMeToQuit?path=' + escape(appPath), false);
-  r.send('');
+  r.send(null);
 }
 
 function quitApp() {
