@@ -3558,6 +3558,12 @@ var Page = (function pagePage() {
       var self = this;
       var stats = self.stats;
       stats.compile = stats.fonts = stats.render = 0;
+      if (!this.content) {
+        setTimeout(function norenderingSetTimeout() {
+          if (continuation) continuation(null);
+        });
+        return;
+      }
 
       var gfx = new CanvasGraphics(canvasCtx);
       var fonts = [];
@@ -4610,6 +4616,8 @@ var PartialEvaluator = (function partialEvaluator() {
 
         if (replaceGlyph || !glyphs[glyph])
             glyphs[glyph] = map[i];
+        if (replaceGlyph || !glyphs[index])
+            glyphs[index] = map[i];
 
         // If there is no file, the character mapping can't be modified
         // but this is unlikely that there is any standard encoding with
