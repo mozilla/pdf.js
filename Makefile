@@ -3,6 +3,9 @@ BUILD_DIR := build
 DEFAULT_BROWSERS := resources/browser_manifests/browser_manifest.json
 DEFAULT_TESTS := test_manifest.json
 
+EXTENSION_SRC := ./extensions/firefox
+EXTENSION_NAME := pdf.js.xpi
+
 # Let folks define custom rules for their clones.
 -include local.mk
 
@@ -103,14 +106,17 @@ lint:
 # TODO: Use the Closure compiler to optimize the pdf.js files.
 #
 GH_PAGES = $(BUILD_DIR)/gh-pages
-web: | compiler pages-repo \
+web: | extension compiler pages-repo \
 	$(addprefix $(GH_PAGES)/, $(PDF_JS_FILES)) \
 	$(addprefix $(GH_PAGES)/, $(wildcard web/*.*)) \
-	$(addprefix $(GH_PAGES)/, $(wildcard web/images/*.*))
+	$(addprefix $(GH_PAGES)/, $(wildcard web/images/*.*)) \
+	$(addprefix $(GH_PAGES)/, $(wildcard $(EXTENSION_SRC)/*.xpi))
 
 	@cp $(GH_PAGES)/web/index.html.template $(GH_PAGES)/index.html;
 	@cd $(GH_PAGES); git add -A;
+	@echo
 	@echo "Website built in $(GH_PAGES)."
+	@echo "Don't forget to cd into $(GH_PAGES)/ and issue 'git commit' to push changes."
 
 # make pages-repo
 #
@@ -126,6 +132,7 @@ pages-repo: | $(BUILD_DIR)
 	fi;
 	@mkdir -p $(GH_PAGES)/web;
 	@mkdir -p $(GH_PAGES)/web/images;
+	@mkdir -p $(GH_PAGES)/$(EXTENSION_SRC);
 
 $(GH_PAGES)/%.js: %.js
 	@cp $< $@
@@ -135,6 +142,9 @@ $(GH_PAGES)/web/%: web/%
 
 $(GH_PAGES)/web/images/%: web/images/%
 	@cp $< $@
+
+$(GH_PAGES)/$(EXTENSION_SRC)/%: $(EXTENSION_SRC)/%
+	@cp -R $< $@
 
 # # make compiler
 # #
@@ -149,13 +159,11 @@ $(GH_PAGES)/web/images/%: web/images/%
 #   curl $(COMPILER_URL) > $(BUILD_DIR)/compiler.zip;
 #   cd $(BUILD_DIR); unzip compiler.zip compiler.jar;
 
-# make firefox-extension
+# make extension
 #
 # This target produce a restartless firefox extension containing a
 # copy of the pdf.js source.
 CONTENT_DIR := content
-EXTENSION_SRC := ./extensions/firefox
-EXTENSION_NAME := pdf.js.xpi
 PDF_WEB_FILES = \
 	web/images \
 	web/compatibility.js \
