@@ -1753,6 +1753,9 @@ var Type1Parser = function type1Parser() {
             // pop or setcurrentpoint commands can be ignored
             // since we are not doing callothersubr
             continue;
+          } else if (!kHintingEnabled && (escape == 1 || escape == 2)) {
+            charstring.push('drop', 'drop', 'drop', 'drop', 'drop', 'drop');
+            continue;
           }
 
           command = charStringDictionary['12'][escape];
