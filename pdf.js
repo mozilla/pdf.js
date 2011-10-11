@@ -3580,9 +3580,11 @@ var Page = (function pagePage() {
         content = new StreamsSequenceStream(content);
       }
 
-      var pe = this.pe = new PartialEvaluator(xref, handler, 'p' + this.pageNumber + '_');
+      var pe = this.pe = new PartialEvaluator(
+                                xref, handler, 'p' + this.pageNumber + '_');
       var IRQueue = {};
-      return this.IRQueue = pe.getIRQueue(content, resources, IRQueue, dependency);
+      return this.IRQueue = pe.getIRQueue(
+                                content, resources, IRQueue, dependency);
     },
 
     ensureFonts: function(fonts, callback) {
@@ -4593,7 +4595,7 @@ var PartialEvaluator = (function partialEvaluator() {
             if (font.translated) {
               // keep track of each font we translated so the caller can
               // load them asynchronously before calling display on a page
-              loadedName = 'font_' + uniquePrefix + ++this.objIdCounter;
+              loadedName = 'font_' + uniquePrefix + ++self.objIdCounter;
               font.translated.properties.loadedName = loadedName;
               font.loadedName = loadedName;
 
@@ -5544,9 +5546,6 @@ var CanvasGraphics = (function canvasGraphics() {
     },
     save: function canvasGraphicsSave() {
       this.ctx.save();
-      if (this.ctx.$saveCurrentX) {
-        this.ctx.$saveCurrentX();
-      }
       var old = this.current;
       this.stateStack.push(old);
       this.current = old.clone();
@@ -5554,9 +5553,6 @@ var CanvasGraphics = (function canvasGraphics() {
     restore: function canvasGraphicsRestore() {
       var prev = this.stateStack.pop();
       if (prev) {
-        if (this.ctx.$restoreCurrentX) {
-          this.ctx.$restoreCurrentX();
-        }
         this.current = prev;
         this.ctx.restore();
       }
@@ -5686,9 +5682,6 @@ var CanvasGraphics = (function canvasGraphics() {
     // Text
     beginText: function canvasGraphicsBeginText() {
       this.current.textMatrix = IDENTITY_MATRIX;
-      if (this.ctx.$setCurrentX) {
-        this.ctx.$setCurrentX(0);
-      }
       this.current.x = this.current.lineX = 0;
       this.current.y = this.current.lineY = 0;
     },
@@ -5721,18 +5714,14 @@ var CanvasGraphics = (function canvasGraphics() {
       this.current.fontSize = size;
 
       var name = fontObj.loadedName || 'sans-serif';
-      if (this.ctx.$setFont) {
-        this.ctx.$setFont(name, size);
-      } else {
-        var bold = fontObj.black ? (fontObj.bold ? 'bolder' : 'bold') :
-                                   (fontObj.bold ? 'bold' : 'normal');
+      var bold = fontObj.black ? (fontObj.bold ? 'bolder' : 'bold') :
+                                 (fontObj.bold ? 'bold' : 'normal');
 
-        var italic = fontObj.italic ? 'italic' : 'normal';
-        var serif = fontObj.serif ? 'serif' : 'sans-serif';
-        var typeface = '"' + name + '", ' + serif;
-        var rule = italic + ' ' + bold + ' ' + size + 'px ' + typeface;
-        this.ctx.font = rule;
-      }
+      var italic = fontObj.italic ? 'italic' : 'normal';
+      var serif = fontObj.serif ? 'serif' : 'sans-serif';
+      var typeface = '"' + name + '", ' + serif;
+      var rule = italic + ' ' + bold + ' ' + size + 'px ' + typeface;
+      this.ctx.font = rule;
     },
     setTextRenderingMode: function canvasGraphicsSetTextRenderingMode(mode) {
       TODO('text rendering mode: ' + mode);
@@ -5743,9 +5732,6 @@ var CanvasGraphics = (function canvasGraphics() {
     moveText: function canvasGraphicsMoveText(x, y) {
       this.current.x = this.current.lineX += x;
       this.current.y = this.current.lineY += y;
-      if (this.ctx.$setCurrentX) {
-        this.ctx.$setCurrentX(this.current.x);
-      }
     },
     setLeadingMoveText: function canvasGraphicsSetLeadingMoveText(x, y) {
       this.setLeading(-y);
@@ -5754,9 +5740,6 @@ var CanvasGraphics = (function canvasGraphics() {
     setTextMatrix: function canvasGraphicsSetTextMatrix(a, b, c, d, e, f) {
       this.current.textMatrix = [a, b, c, d, e, f];
 
-      if (this.ctx.$setCurrentX) {
-        this.ctx.$setCurrentX(0);
-      }
       this.current.x = this.current.lineX = 0;
       this.current.y = this.current.lineY = 0;
     },
@@ -5845,11 +5828,7 @@ var CanvasGraphics = (function canvasGraphics() {
       for (var i = 0; i < arrLength; ++i) {
         var e = arr[i];
         if (isNum(e)) {
-          if (ctx.$addCurrentX) {
-            ctx.$addCurrentX(-e * 0.001 * fontSize);
-          } else {
-            current.x -= e * 0.001 * fontSize * textHScale;
-          }
+          current.x -= e * 0.001 * fontSize * textHScale;
         } else if (isString(e)) {
           this.showText(e);
         } else {
