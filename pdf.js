@@ -4784,7 +4784,8 @@ var PartialEvaluator = (function partialEvaluator() {
                 // This adds the IRQueue of the xObj to the current queue.
                 var depIdx = dependency.length;
 
-                this.getIRQueue(xobj, xobj.dict.get('Resources'), queue, dependency);
+                this.getIRQueue(xobj, xobj.dict.get('Resources'), queue, 
+                                                                dependency);
 
                // Add the dependencies that are required to execute the
                // codeIR.
@@ -7308,7 +7309,7 @@ var PDFFunction = (function() {
       for (var i = 0; i < length; ++i)
         diff.push(c1[i] - c0[i]);
 
-      return [CONSTRUCT_INTERPOLATED, c0, diff, n, i];
+      return [CONSTRUCT_INTERPOLATED, c0, diff, n];
     },
 
     constructInterpolatedFromIR:
@@ -7316,16 +7317,15 @@ var PDFFunction = (function() {
       var c0 = IR[1];
       var diff = IR[2];
       var n = IR[3];
-      var i = IR[4];
 
       var length = diff.length;
 
       return function(args) {
-        var x = args[0];
+        var x = n == 1 ? args[0] : Math.pow(args[0], n);
 
         var out = [];
         for (var j = 0; j < length; ++j)
-          out.push(c0[j] + (x^n * diff[i]));
+          out.push(c0[j] + (x * diff[j]));
 
         return out;
 
