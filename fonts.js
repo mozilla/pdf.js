@@ -1715,7 +1715,7 @@ var Type1Parser = function type1Parser() {
     var charstring = [];
     var lsb = 0;
     var width = 0;
-    var flexState = 0, flexPoints;
+    var flexState = 0;
 
     var value = '';
     var count = array.length;
@@ -1783,11 +1783,9 @@ var Type1Parser = function type1Parser() {
               switch (subrNumber) {
                 case 1:
                   flexState = 1; // prepare for flex coordinates
-                  flexPoints = 0;
                   break;
                 case 2:
                   flexState = 2; // flex in progress
-                  flexPoints++;
                   break;
                 case 0:
                   // type2 flex command does not need final coords
@@ -2317,7 +2315,7 @@ CFF.prototype = {
 
         if (isArray(cmd))
           charstring.splice(i++, 1, cmd[0], cmd[1]);
-        else if (cmd !== null)
+        else
           charstring[i] = cmd;
       } else {
         // Type1 charstring use a division for number above 32000
