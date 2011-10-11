@@ -6797,11 +6797,11 @@ var PDFFunction = (function pdfFunction() {
         diff.push(c1[i] - c0[i]);
 
       this.func = function pdfFunctionConstructInterpolatedFunc(args) {
-        var x = args[0];
+        var x = n == 1 ? args[0] : Math.pow(args[0], n);
 
         var out = [];
         for (var j = 0; j < length; ++j)
-          out.push(c0[j] + (x^n * diff[i]));
+          out.push(c0[j] + (x * diff[j]));
 
         return out;
       };
