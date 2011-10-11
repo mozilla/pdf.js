@@ -60,18 +60,10 @@ var WorkerProcessorHandler = {
         }
       }
 
-      // var fonts = [];
-      // for (var i = 0; i < dependency.length; i++) {
-      //   var dep = dependency[i];
-      //   if (typeof dep === "object") {
-      //     fonts.push(dep);
-      //   }
-      // }
-
       handler.send('page', {
         pageNum: pageNum,
         IRQueue: IRQueue,
-        depFonts: fonts
+        depFonts: Object.keys(fonts)
       });
     }, this);
 
