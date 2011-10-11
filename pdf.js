@@ -3580,10 +3580,9 @@ var Page = (function pagePage() {
         content = new StreamsSequenceStream(content);
       }
 
-      var pe = this.pe = new PartialEvaluator();
+      var pe = this.pe = new PartialEvaluator(xref, handler, 'p' + this.pageNumber + '_');
       var IRQueue = {};
-      return this.IRQueue = pe.getIRQueue(content, xref, resources, IRQueue,
-                              handler, 'p' + this.pageNumber + '_', dependency);
+      return this.IRQueue = pe.getIRQueue(content, resources, IRQueue, dependency);
     },
 
     ensureFonts: function(fonts, callback) {
@@ -4451,15 +4450,15 @@ var EvalState = (function evalState() {
   return constructor;
 })();
 
-var FontsMap = {};
-var FontLoadedCounter = 0;
-
-var objIdCounter = 0;
-
 var PartialEvaluator = (function partialEvaluator() {
-  function constructor() {
+  function constructor(xref, handler, uniquePrefix) {
     this.state = new EvalState();
     this.stateStack = [];
+
+    this.xref = xref;
+    this.handler = handler;
+    this.uniquePrefix = uniquePrefix;
+    this.objIdCounter = 0;
   }
 
   var OP_MAP = {
@@ -4560,8 +4559,12 @@ var PartialEvaluator = (function partialEvaluator() {
   };
 
   constructor.prototype = {
-    getIRQueue: function partialEvaluatorGetIRQueue(stream, xref, resources,
-                                    queue, handler, uniquePrefix, dependency) {
+    getIRQueue: function partialEvaluatorGetIRQueue(stream, resources,
+                                    queue, dependency) {
+
+      var xref = this.xref;
+      var handler = this.handler;
+      var uniquePrefix = this.uniquePrefix;
 
       function insertDependency(depList) {
         fnArray.push('dependency');
@@ -4590,10 +4593,9 @@ var PartialEvaluator = (function partialEvaluator() {
             if (font.translated) {
               // keep track of each font we translated so the caller can
               // load them asynchronously before calling display on a page
-              loadedName = 'font_' + uniquePrefix + (FontLoadedCounter++);
+              loadedName = 'font_' + uniquePrefix + ++this.objIdCounter;
               font.translated.properties.loadedName = loadedName;
               font.loadedName = loadedName;
-              FontsMap[loadedName] = font;
 
               handler.send('obj', [
                   loadedName,
@@ -4625,7 +4627,7 @@ var PartialEvaluator = (function partialEvaluator() {
         var h = dict.get('Height', 'H');
 
         if (image instanceof JpegStream) {
-          var objId = 'img_' + ++objIdCounter;
+          var objId = 'img_' + uniquePrefix + ++self.objIdCounter;
           handler.send('obj', [objId, 'JpegStream', image.getIR()]);
 
           // Add the dependency on the image object.
@@ -4735,9 +4737,8 @@ var PartialEvaluator = (function partialEvaluator() {
                 if (typeNum == 1) {
                   // Create an IR of the pattern code.
                   var depIdx = dependency.length;
-                  var codeIR = this.getIRQueue(pattern, xref,
-                                    dict.get('Resources'), {}, handler,
-                                    uniquePrefix, dependency);
+                  var codeIR = this.getIRQueue(pattern,
+                                    dict.get('Resources'), {}, dependency);
 
                   // Add the dependencies that are required to execute the
                   // codeIR.
@@ -4781,8 +4782,7 @@ var PartialEvaluator = (function partialEvaluator() {
                 // This adds the IRQueue of the xObj to the current queue.
                 var depIdx = dependency.length;
 
-                this.getIRQueue(xobj, xref, xobj.dict.get('Resources'), queue,
-                                         handler, uniquePrefix, dependency);
+                this.getIRQueue(xobj, xobj.dict.get('Resources'), queue, dependency);
 
                // Add the dependencies that are required to execute the
                // codeIR.
@@ -5318,8 +5318,8 @@ var PartialEvaluator = (function partialEvaluator() {
         for (var key in charProcs.map) {
           var glyphStream = xref.fetchIfRef(charProcs.map[key]);
           var queue = {};
-          properties.glyphs[key].IRQueue = this.getIRQueue(glyphStream, xref,
-                      fontResources, queue, handler, uniquePrefix, dependency);
+          properties.glyphs[key].IRQueue = this.getIRQueue(glyphStream,
+                      fontResources, queue, dependency);
         }
       }
 
