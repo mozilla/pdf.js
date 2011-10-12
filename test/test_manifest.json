@@ -199,6 +199,12 @@
        "rounds": 1,
        "type": "eq"
     },
+    {  "id": "pal-o47",
+       "file": "pdfs/pal-o47.pdf",
+       "link": true,
+       "rounds": 1,
+       "type": "eq"
+    },
     {  "id": "simpletype3font",
        "file": "pdfs/simpletype3font.pdf",
        "link": false,

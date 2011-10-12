@@ -26,53 +26,53 @@ var kHintingEnabled = false;
  */
 var stdFontMap = {
   'ArialNarrow': 'Helvetica',
-  'ArialNarrow_Bold': 'Helvetica-Bold',
-  'ArialNarrow_BoldItalic': 'Helvetica-BoldOblique',
-  'ArialNarrow_Italic': 'Helvetica-Oblique',
+  'ArialNarrow-Bold': 'Helvetica-Bold',
+  'ArialNarrow-BoldItalic': 'Helvetica-BoldOblique',
+  'ArialNarrow-Italic': 'Helvetica-Oblique',
   'ArialBlack': 'Helvetica',
-  'ArialBlack_Bold': 'Helvetica-Bold',
-  'ArialBlack_BoldItalic': 'Helvetica-BoldOblique',
-  'ArialBlack_Italic': 'Helvetica-Oblique',
+  'ArialBlack-Bold': 'Helvetica-Bold',
+  'ArialBlack-BoldItalic': 'Helvetica-BoldOblique',
+  'ArialBlack-Italic': 'Helvetica-Oblique',
   'Arial': 'Helvetica',
-  'Arial_Bold': 'Helvetica-Bold',
-  'Arial_BoldItalic': 'Helvetica-BoldOblique',
-  'Arial_Italic': 'Helvetica-Oblique',
-  'Arial_BoldItalicMT': 'Helvetica-BoldOblique',
-  'Arial_BoldMT': 'Helvetica-Bold',
-  'Arial_ItalicMT': 'Helvetica-Oblique',
+  'Arial-Bold': 'Helvetica-Bold',
+  'Arial-BoldItalic': 'Helvetica-BoldOblique',
+  'Arial-Italic': 'Helvetica-Oblique',
+  'Arial-BoldItalicMT': 'Helvetica-BoldOblique',
+  'Arial-BoldMT': 'Helvetica-Bold',
+  'Arial-ItalicMT': 'Helvetica-Oblique',
   'ArialMT': 'Helvetica',
-  'Courier_Bold': 'Courier-Bold',
-  'Courier_BoldItalic': 'Courier-BoldOblique',
-  'Courier_Italic': 'Courier-Oblique',
+  'Courier-Bold': 'Courier-Bold',
+  'Courier-BoldItalic': 'Courier-BoldOblique',
+  'Courier-Italic': 'Courier-Oblique',
   'CourierNew': 'Courier',
-  'CourierNew_Bold': 'Courier-Bold',
-  'CourierNew_BoldItalic': 'Courier-BoldOblique',
-  'CourierNew_Italic': 'Courier-Oblique',
-  'CourierNewPS_BoldItalicMT': 'Courier-BoldOblique',
-  'CourierNewPS_BoldMT': 'Courier-Bold',
-  'CourierNewPS_ItalicMT': 'Courier-Oblique',
+  'CourierNew-Bold': 'Courier-Bold',
+  'CourierNew-BoldItalic': 'Courier-BoldOblique',
+  'CourierNew-Italic': 'Courier-Oblique',
+  'CourierNewPS-BoldItalicMT': 'Courier-BoldOblique',
+  'CourierNewPS-BoldMT': 'Courier-Bold',
+  'CourierNewPS-ItalicMT': 'Courier-Oblique',
   'CourierNewPSMT': 'Courier',
-  'Helvetica_Bold': 'Helvetica-Bold',
-  'Helvetica_BoldItalic': 'Helvetica-BoldOblique',
-  'Helvetica_Italic': 'Helvetica-Oblique',
-  'Symbol_Bold': 'Symbol',
-  'Symbol_BoldItalic': 'Symbol',
-  'Symbol_Italic': 'Symbol',
+  'Helvetica-Bold': 'Helvetica-Bold',
+  'Helvetica-BoldItalic': 'Helvetica-BoldOblique',
+  'Helvetica-Italic': 'Helvetica-Oblique',
+  'Symbol-Bold': 'Symbol',
+  'Symbol-BoldItalic': 'Symbol',
+  'Symbol-Italic': 'Symbol',
   'TimesNewRoman': 'Times-Roman',
-  'TimesNewRoman_Bold': 'Times-Bold',
-  'TimesNewRoman_BoldItalic': 'Times-BoldItalic',
-  'TimesNewRoman_Italic': 'Times-Italic',
+  'TimesNewRoman-Bold': 'Times-Bold',
+  'TimesNewRoman-BoldItalic': 'Times-BoldItalic',
+  'TimesNewRoman-Italic': 'Times-Italic',
   'TimesNewRomanPS': 'Times-Roman',
-  'TimesNewRomanPS_Bold': 'Times-Bold',
-  'TimesNewRomanPS_BoldItalic': 'Times-BoldItalic',
-  'TimesNewRomanPS_BoldItalicMT': 'Times-BoldItalic',
-  'TimesNewRomanPS_BoldMT': 'Times-Bold',
-  'TimesNewRomanPS_Italic': 'Times-Italic',
-  'TimesNewRomanPS_ItalicMT': 'Times-Italic',
+  'TimesNewRomanPS-Bold': 'Times-Bold',
+  'TimesNewRomanPS-BoldItalic': 'Times-BoldItalic',
+  'TimesNewRomanPS-BoldItalicMT': 'Times-BoldItalic',
+  'TimesNewRomanPS-BoldMT': 'Times-Bold',
+  'TimesNewRomanPS-Italic': 'Times-Italic',
+  'TimesNewRomanPS-ItalicMT': 'Times-Italic',
   'TimesNewRomanPSMT': 'Times-Roman',
-  'TimesNewRomanPSMT_Bold': 'Times-Bold',
-  'TimesNewRomanPSMT_BoldItalic': 'Times-BoldItalic',
-  'TimesNewRomanPSMT_Italic': 'Times-Italic'
+  'TimesNewRomanPSMT-Bold': 'Times-Bold',
+  'TimesNewRomanPSMT-BoldItalic': 'Times-BoldItalic',
+  'TimesNewRomanPSMT-Italic': 'Times-Italic'
 };
 
 var serifFonts = {
@@ -441,7 +441,9 @@ var Font = (function Font() {
     if (!file) {
       // The file data is not specified. Trying to fix the font name
       // to be used with the canvas.font.
-      var fontName = stdFontMap[name] || name.replace('_', '-');
+      var fontName = name.replace(/,_/g, '-');
+      fontName = stdFontMap[fontName] || fontName;
+
       this.bold = (fontName.search(/bold/gi) != -1);
       this.italic = (fontName.search(/oblique/gi) != -1) ||
                     (fontName.search(/italic/gi) != -1);
@@ -2890,7 +2892,15 @@ var Type2CFF = (function type2CFF() {
         if (b <= 21) {
           if (b === 12) {
             ++pos;
-            var b = (b << 8) | dict[pos];
+            var op = dict[pos];
+            if ((op > 14 && op < 17) ||
+                (op > 23 && op < 30) || op > 38) {
+              warn('Invalid CFF dictionary key: ' + op);
+              // trying to replace it with initialRandomSeed
+              // to pass sanitizer
+              dict[pos] = 19;
+            }
+            var b = (b << 8) | op;
           }
           entries.push([b, operands]);
           operands = [];
