@@ -2565,9 +2565,9 @@ var Type2CFF = (function type2CFF() {
         }
         if (!inDifferences) {
           var code = properties.firstChar + i;
-          for (var s in encoding) {
+          for (var charcode in encoding) {
             if (encoding[s] == i) {
-              code = s | 0;
+              code = charcode | 0;
               break;
             }
           }
