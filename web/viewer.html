@@ -17,30 +17,30 @@
 
   <body>
     <div id="controls">
-      <button id="previous" onclick="PDFView.page--;">
-        <img src="images/go-up.svg" align="top" height="32"/>
+      <button id="previous" title="Previous Page" onclick="--PDFView.page;">
+        <img src="images/go-up.svg" alt="Previous Page" style="vertical-align:top;" height="32"/>
         Previous
       </button>
 
-      <button id="next" onclick="PDFView.page++;">
-        <img src="images/go-down.svg" align="top" height="32"/>
+      <button id="next" title="Next Page" onclick="++PDFView.page;">
+        <img src="images/go-down.svg" alt="Next Page" style="vertical-align:top;" height="32"/>
         Next
       </button>
 
       <div class="separator"></div>
 
-      <input type="number" id="pageNumber" onchange="PDFView.page = this.value;" value="1" size="4" min="1" />
+      <input type="number" id="pageNumber" onchange="PDFView.page = this.value;" value="1" min="1"/>
 
       <span>/</span>
       <span id="numPages">--</span>
 
       <div class="separator"></div>
 
-      <button id="next" title="Zoom Out" onclick="PDFView.zoomOut();">
-        <img src="images/zoom-out.svg" align="top" height="32"/>
+      <button id="zoom-out" title="Zoom Out" onclick="PDFView.zoomOut();">
+        <img src="images/zoom-out.svg" alt="Zoom Out" style="vertical-align:top;" height="32"/>
       </button>
-      <button id="next" title="Zoom In" onclick="PDFView.zoomIn();">
-        <img src="images/zoom-in.svg" align="top" height="32"/>
+      <button id="zoom-in" title="Zoom In" onclick="PDFView.zoomIn();">
+        <img src="images/zoom-in.svg" alt="Zoom In" style="vertical-align:top;" height="32"/>
       </button>
 
       <div class="separator"></div>
@@ -59,8 +59,8 @@
 
       <div class="separator"></div>
 
-      <button id="print" onclick="window.print();">
-        <img src="images/document-print.svg" align="top" height="32"/>
+      <button id="print" title="Print Document" onclick="window.print();">
+        <img src="images/document-print.svg" alt="Print Document" style="vertical-align:top;" height="32"/>
         Print
       </button>
 
@@ -82,11 +82,11 @@
           <div id="outlineView"></div>
         </div>
         <div id="sidebarControls">
-          <button id="thumbsSwitch" title="Show Thumbnails" onclick="PDFView.switchSidebarView('thumbs')" data-selected>
-            <img src="images/nav-thumbs.svg" align="top" height="32" alt="Thumbs" />
+          <button id="thumbsSwitch" title="Show Page Thumbnails" onclick="PDFView.switchSidebarView('thumbs')" data-selected>
+            <img src="images/nav-thumbs.svg" alt="Show Page Thumbnails" style="vertical-align:top;" height="32"/>
           </button>
           <button id="outlineSwitch" title="Show Document Outline" onclick="PDFView.switchSidebarView('outline')" disabled>
-            <img src="images/nav-outline.svg" align="top" height="32" alt="Document Outline" />
+            <img src="images/nav-outline.svg" alt="Show Document Outline" style="vertical-align:top;" height="32"/>
           </button>
         </div>
      </div>
