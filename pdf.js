@@ -4783,7 +4783,7 @@ var PartialEvaluator = (function partialEvaluator() {
             return null;
 
           // Using base font name as a font name.
-          baseFontName = baseFontName.name.replace(/,_/g, '-');
+          baseFontName = baseFontName.name.replace(/[,_]/g, '-');
           var metricsAndMap = this.getBaseFontMetricsAndMap(baseFontName);
 
           var properties = {
