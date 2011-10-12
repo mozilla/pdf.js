@@ -2859,7 +2859,15 @@ var Type2CFF = (function type2CFF() {
         if (b <= 21) {
           if (b === 12) {
             ++pos;
-            var b = (b << 8) | dict[pos];
+            var op = dict[pos];
+            if ((op > 14 && op < 17) ||
+                (op > 23 && op < 30) || op > 38) {
+              warn('Invalid CFF dictionary key: ' + op);
+              // trying to replace it with initialRandomSeed
+              // to pass sanitizer
+              dict[pos] = 19;
+            }
+            var b = (b << 8) | op;
           }
           entries.push([b, operands]);
           operands = [];
