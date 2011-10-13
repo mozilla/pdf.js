@@ -1717,6 +1717,7 @@ var Type1Parser = function type1Parser() {
     var charstring = [];
     var lsb = 0;
     var width = 0;
+    var flexState = 0;
 
     var value = '';
     var count = array.length;
@@ -1750,7 +1751,11 @@ var Type1Parser = function type1Parser() {
               i++;
               continue;
             }
-          } else if (!kHintingEnabled && (value == 1 || value == 2)) {
+          } else if (escape == 17 || escape == 33) {
+            // pop or setcurrentpoint commands can be ignored
+            // since we are not doing callothersubr
+            continue;
+          } else if (!kHintingEnabled && (escape == 1 || escape == 2)) {
             charstring.push('drop', 'drop', 'drop', 'drop', 'drop', 'drop');
             continue;
           }
@@ -1777,6 +1782,29 @@ var Type1Parser = function type1Parser() {
 
             charstring.push(lsb, 'hmoveto');
             continue;
+          } else if (value == 10) { // callsubr
+            if (charstring[charstring.length - 1] < 3) { // subr #0..2
+              var subrNumber = charstring.pop();
+              switch (subrNumber) {
+                case 1:
+                  flexState = 1; // prepare for flex coordinates
+                  break;
+                case 2:
+                  flexState = 2; // flex in progress
+                  break;
+                case 0:
+                  // type2 flex command does not need final coords
+                  charstring.push('exch', 'drop', 'exch', 'drop');
+                  charstring.push('flex');
+                  flexState = 0;
+                  break;
+              }
+              continue;
+            }
+          } else if (value == 21 && flexState > 0) {
+            if (flexState > 1)
+              continue; // ignoring rmoveto
+            value = 5; // first segment replacing with rlineto
           } else if (!kHintingEnabled && (value == 1 || value == 3)) {
             charstring.push('drop', 'drop');
             continue;
@@ -2273,7 +2301,8 @@ CFF.prototype = {
     'return': 11,
     'sub': [12, 11],
     'div': [12, 12],
-    'pop': [1, 12, 18],
+    'exch': [12, 28],
+    'flex': [12, 35],
     'drop' : [12, 18],
     'endchar': 14,
     'rmoveto': 21,
