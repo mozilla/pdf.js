@@ -146,7 +146,19 @@ var FontLoader = {
     for (var i = 0; i < fonts.length; i++) {
       var font = fonts[i];
 
+      // If there is already a fontObj on the font, then it was loaded/attached
+      // to the page already and we don't have to do anything for this font
+      // here future.
+      if (font.fontObj) {
+        continue;
+      }
+
       var obj = new Font(font.name, font.file, font.properties);
+
+      // Store the fontObj on the font such that `setFont` in CanvasGraphics
+      // can reuse it later again.
+      font.fontObj = obj;
+
       objs.push(obj);
 
       var str = '';
