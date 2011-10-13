@@ -5512,7 +5512,7 @@ var CanvasGraphics = (function canvasGraphics() {
       TODO('set flatness: ' + flatness);
     },
     setGState: function canvasGraphicsSetGState(states) {
-      for (var i = 0; i < states.lenght; i++) {
+      for (var i = 0; i < states.length; i++) {
         var state = states[i];
         var key = state[0];
         var value = state[1];
