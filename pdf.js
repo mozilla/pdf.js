@@ -4384,6 +4384,7 @@ var PartialEvaluator = (function partialEvaluator() {
 
       while (!isEOF(obj = parser.getObj())) {
         if (isCmd(obj)) {
+          debugger;
           var cmd = obj.cmd;
           var fn = OP_MAP[cmd];
           if (!fn) {
@@ -5273,6 +5274,7 @@ var CanvasGraphics = (function canvasGraphics() {
       this.current.leading = -leading;
     },
     setFont: function canvasGraphicsSetFont(fontRef, size) {
+      debugger;
       var font;
       // the tf command uses a name, but graphics state uses a reference
       if (isName(fontRef)) {
