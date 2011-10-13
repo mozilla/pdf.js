@@ -33,24 +33,6 @@ var WorkerProcessorHandler = {
       console.log('page=%d - getIRQueue: time=%dms, len=%d', pageNum,
                                   Date.now() - start, IRQueue.fnArray.length);
 
-      if (false /* show used commands */) {
-        var cmdMap = {};
-
-        var fnArray = IRQueue .fnArray;
-        for (var i = 0; i < fnArray.length; i++) {
-          var entry = fnArray[i];
-          if (entry == 'paintReadyFormXObject') {
-            //console.log(preCompilation.argsArray[i]);
-          }
-          if (cmdMap[entry] == null) {
-            cmdMap[entry] = 1;
-          } else {
-            cmdMap[entry] += 1;
-          }
-        }
-        console.log('cmds', JSON.stringify(cmdMap));
-      }
-
       // Filter the dependecies for fonts.
       var fonts = {};
       for (var i = 0; i < dependency.length; i++) {

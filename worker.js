@@ -7,8 +7,8 @@
 var useWorker = false;
 
 var WorkerPage = (function() {
-  function constructor(workerPDF, page, objs) {
-    this.workerPDF = workerPDF;
+  function constructor(pdf, page, objs) {
+    this.pdf = pdf;
     this.page = page;
     this.objs = objs;
 
@@ -39,7 +39,7 @@ var WorkerPage = (function() {
       // this.page.startRendering(ctx, callback, errback);
 
       this.startRenderingTime = Date.now();
-      this.workerPDF.startRendering(this);
+      this.pdf.startRendering(this);
     },
 
     startRenderingFromIRQueue: function(IRQueue, fonts) {
@@ -53,7 +53,9 @@ var WorkerPage = (function() {
         console.log('page=%d - total time: time=%dms',
           pageNum, Date.now() - this.startRenderingTime);
 
-        this.callback(err);
+        if (this.callback) {
+          this.callback(err);
+        }
       }.bind(this);
       this.page.startRenderingFromIRQueue(gfx, IRQueue, fonts, callback);
     },
@@ -165,7 +167,7 @@ var PDFObjects = (function() {
      * Sets the data of an object but *doesn't* resolve it.
      */
     setData: function(objId, data) {
-      // Watchout! If you call `this.ensureObj(objId, data)` you'll gone create
+      // Watchout! If you call `this.ensureObj(objId, data)` you'll gonna create
       // a *resolved* promise which shouldn't be the case!
       this.ensureObj(objId).data = data;
     }

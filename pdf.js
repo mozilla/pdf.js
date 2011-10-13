@@ -3548,13 +3548,13 @@ var Page = (function pagePage() {
         // Firefox error reporting from XHR callbacks.
         setTimeout(function pageSetTimeout() {
           var exc = null;
-          // try {
+          try {
             self.display(gfx, continuation);
-          // } catch (e) {
-          //   exc = e.toString();
-          //   continuation(exc);
-          //   throw e;
-          // }
+          } catch (e) {
+            exc = e.toString();
+            continuation(exc);
+            throw e;
+          }
         });
       };
 
@@ -4564,6 +4564,7 @@ var PartialEvaluator = (function partialEvaluator() {
     getIRQueue: function partialEvaluatorGetIRQueue(stream, resources,
                                     queue, dependency) {
 
+      var self = this;
       var xref = this.xref;
       var handler = this.handler;
       var uniquePrefix = this.uniquePrefix;
@@ -4579,7 +4580,6 @@ var PartialEvaluator = (function partialEvaluator() {
         }
       }
 
-      var self = this;
       function handleSetFont(fontName, fontRef) {
         var loadedName = null;
 
@@ -4784,7 +4784,7 @@ var PartialEvaluator = (function partialEvaluator() {
                 // This adds the IRQueue of the xObj to the current queue.
                 var depIdx = dependency.length;
 
-                this.getIRQueue(xobj, xobj.dict.get('Resources'), queue, 
+                this.getIRQueue(xobj, xobj.dict.get('Resources'), queue,
                                                                 dependency);
 
                // Add the dependencies that are required to execute the
@@ -5389,7 +5389,7 @@ function ScratchCanvas(width, height) {
 }
 
 var CanvasGraphics = (function canvasGraphics() {
-  // Defines the time the executeIRQueue gone be executing
+  // Defines the time the executeIRQueue gonna be executing
   // before it stops and shedules a continue of execution.
   var kExecutionTime = 50;
   // Number of IR commands to execute before checking
