@@ -144,6 +144,13 @@
        "rounds": 1,
        "type": "eq"
     },
+    {  "id": "fit11-talk",
+       "file": "pdfs/fit11-talk.pdf",
+       "link": true,
+       "rounds": 1,
+       "skipPages": [12,31],
+       "type": "eq"
+    },
     {  "id": "fips197",
        "file": "pdfs/fips197.pdf",
        "link": true,
