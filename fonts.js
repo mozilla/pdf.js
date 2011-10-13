@@ -2551,34 +2551,34 @@ var Type2CFF = (function type2CFF() {
                                              privateDict, properties) {
       var defaultWidth = privateDict['defaultWidthX'];
       var charstrings = [];
-      var differences = properties.differences;
-      for (var i = 1; i < charsets.length; i++) {
-        var inDifferences;
+      var firstChar = properties.firstChar;
+      var glyphMap = {};
+      for (var i = 0; i < charsets.length; i++) {
         var glyph = charsets[i];
-        var code;
-        for (var j = 0; j < differences.length; j++) {
-          if (differences[j] == glyph) {
-            code = j;
-            inDifferences = true;
-            break;
-          }
+        for (var charcode in encoding) {
+          if (encoding[charcode] == i)
+            glyphMap[glyph] = charcode | 0;
         }
-        if (!inDifferences) {
-          var code = properties.firstChar + i;
-          for (var charcode in encoding) {
-            if (encoding[s] == i) {
-              code = charcode | 0;
-              break;
-            }
-          }
-        }
+      }
 
-        if (properties.encoding[code] &&
-            properties.encoding[code].inDifferences)
-            continue;
+      var differences = properties.differences;
+      for (var i = 0; i < differences.length; ++i) {
+        var glyph = differences[i];
+        if (!glyph)
+          continue;
+        var oldGlyph = charsets[i];
+        if (oldGlyph)
+          delete glyphMap[oldGlyph];
+        glyphMap[differences[i]] = i;
+      }
 
-        var mapping = properties.glyphs[code] || properties.glyphs[glyph] || {};
-        var unicode = mapping.unicode || code;
+      var glyphs = properties.glyphs;
+      for (var i = 1; i < charsets.length; i++) {
+        var glyph = charsets[i];
+        var code = glyphMap[glyph] || 0;
+
+        var mapping = glyphs[code] || glyphs[glyph] || {};
+        var unicode = mapping.unicode;
 
         if (unicode <= 0x1f || (unicode >= 127 && unicode <= 255))
           unicode += kCmapGlyphOffset;
@@ -2586,13 +2586,13 @@ var Type2CFF = (function type2CFF() {
         var width = isNum(mapping.width) ? mapping.width : defaultWidth;
         properties.encoding[code] = {
           unicode: unicode,
-          width: width,
-          inDifferences: inDifferences
+          width: width
         };
 
         charstrings.push({
           unicode: unicode,
           width: width,
+          code: code,
           gid: i
         });
       }
@@ -2604,7 +2604,6 @@ var Type2CFF = (function type2CFF() {
 
       // remove duplicates -- they might appear during selection:
       //   properties.glyphs[code] || properties.glyphs[glyph]
-      // TODO make more deterministic
       var nextUnusedUnicode = kCmapGlyphOffset + 0x0020;
       var lastUnicode = charstrings[0].unicode, wasModified = false;
       for (var i = 1; i < charstrings.length; ++i) {
@@ -2612,8 +2611,12 @@ var Type2CFF = (function type2CFF() {
           lastUnicode = charstrings[i].unicode;
           continue;
         }
-        // duplicate found -- changing the unicode for previous one
-        charstrings[i - 1].unicode = nextUnusedUnicode++;
+        // duplicate found -- keeping the item that has
+        // different code and unicode, that one created
+        // as result of modification of the base encoding
+        var duplicateIndex =
+          charstrings[i].unicode == charstrings[i].code ? i : i - 1;
+        charstrings[duplicateIndex].unicode = nextUnusedUnicode++;
         wasModified = true;
       }
       if (!wasModified)

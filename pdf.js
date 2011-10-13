@@ -4615,9 +4615,9 @@ var PartialEvaluator = (function partialEvaluator() {
         };
 
         if (replaceGlyph || !glyphs[glyph])
-            glyphs[glyph] = map[i];
+          glyphs[glyph] = map[i];
         if (replaceGlyph || !glyphs[index])
-            glyphs[index] = map[i];
+          glyphs[index] = map[i];
 
         // If there is no file, the character mapping can't be modified
         // but this is unlikely that there is any standard encoding with
