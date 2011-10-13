@@ -155,7 +155,7 @@
        "file": "pdfs/fips197.pdf",
        "link": true,
        "rounds": 1,
-       "type": "load"
+       "type": "eq"
     },
     {  "id": "txt2pdf",
        "file": "pdfs/txt2pdf.pdf",

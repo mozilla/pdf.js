@@ -441,7 +441,7 @@ var Font = (function Font() {
     if (!file) {
       // The file data is not specified. Trying to fix the font name
       // to be used with the canvas.font.
-      var fontName = name.replace(/,_/g, '-');
+      var fontName = name.replace(/[,_]/g, '-');
       fontName = stdFontMap[fontName] || fontName;
 
       this.bold = (fontName.search(/bold/gi) != -1);
