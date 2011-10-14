@@ -100,7 +100,7 @@
     {  "id": "rotation",
        "file": "pdfs/rotation.pdf",
        "rounds": 1,
-       "type": "load"
+       "type": "eq"
     },
     {  "id": "ecma262-pdf",
        "file": "pdfs/ecma262.pdf",
@@ -179,7 +179,7 @@
        "file": "pdfs/extgstate.pdf",
        "link": false,
        "rounds": 1,
-       "type": "load"
+       "type": "eq"
     },
     {  "id": "usmanm-bad",
        "file": "pdfs/usmanm-bad.pdf",
