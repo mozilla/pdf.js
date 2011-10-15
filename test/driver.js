@@ -142,8 +142,7 @@ function nextPage(task, loadError) {
       page.startRendering(
         ctx,
         function nextPageStartRendering(e) {
-          snapshotCurrentPage(task, (!failure && e) ?
-            ('render : ' + e) : failure);
+          snapshotCurrentPage(task, e ? ('render : ' + e) : failure);
         }
       );
     } catch (e) {
