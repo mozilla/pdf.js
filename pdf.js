@@ -4381,6 +4381,10 @@ var PartialEvaluator = (function partialEvaluator() {
       var patterns = xref.fetchIfRef(resources.get('Pattern')) || new Dict();
       var parser = new Parser(new Lexer(stream), false);
       var args = [], argsArray = [], fnArray = [], obj;
+      var getObjBt = function getObjBt() {
+        parser = this.oldParser;
+        return { name: 'BT' };
+      };
 
       while (!isEOF(obj = parser.getObj())) {
         if (isCmd(obj)) {
@@ -4392,10 +4396,7 @@ var PartialEvaluator = (function partialEvaluator() {
               fn = OP_MAP[cmd.substr(0, cmd.length - 2)];
               // feeding 'BT' on next interation
               parser = {
-                getObj: function() {
-                  parser = this.oldParser;
-                  return { name: 'BT' };
-                },
+                getObj: getObjBt,
                 oldParser: parser
               };
             }
