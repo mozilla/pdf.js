@@ -2089,45 +2089,35 @@ var CCITTFaxStream = (function ccittFaxStream() {
         return p[1];
       }
     } else {
-      var n;
-      for (n = 2; n <= 6; ++n) {
-        code = this.lookBits(n);
-        if (code == EOF)
-          return 1;
-        if (n < 6)
-          code <<= 6 - n;
-        p = blackTable3[code];
-        if (p[0] == n) {
-          this.eatBits(n);
-          return p[1];
-        }
-      }
-      for (n = 7; n <= 12; ++n) {
-        code = this.lookBits(n);
-        if (code == EOF)
-          return 1;
-        if (n < 12)
-          code <<= 12 - n;
-        if (code >= 64) {
-          p = blackTable2[code - 64];
-          if (p[0] == n) {
-            this.eatBits(n);
-            return p[1];
+      var findBlackCode = function ccittFaxStreamFindBlackCode(start, end, table, limit) {
+        for (var i = start; i <= end; ++i) {
+          var code = this.lookBits(i);
+          if (code == EOF)
+            return [true, 1];
+          if (i < end)
+            code <<= end - i;
+          if (code >= limit) {
+            var p = table[code];
+            if (p[0] == i) {
+              this.eatBits(i);
+              return [true, p[1]];
+            }
           }
         }
-      }
-      for (n = 10; n <= 13; ++n) {
-        code = this.lookBits(n);
-        if (code == EOF)
-          return 1;
-        if (n < 13)
-          code <<= 13 - n;
-        p = blackTable1[code];
-        if (p[0] == n) {
-          this.eatBits(n);
-          return p[1];
-        }
-      }
+        return [false, 0];
+      };
+
+      var result = findBlackCode(2, 6, blackTable3, -1);
+      if (result[0])
+        return result[1];
+
+      result = findBlackCode(7, 12, blackTable2, 64);
+      if (result[0])
+        return result[1];
+
+      result = findBlackCode(10, 13, blackTable1, -1);
+      if (result[0])
+        return result[1];
     }
     warn('bad black code');
     this.eatBits(1);
