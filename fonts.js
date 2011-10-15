@@ -987,9 +987,7 @@ var Font = (function Font() {
           var length = int16(font.getBytes(2));
           var language = int16(font.getBytes(2));
 
-          if (format == 4) {
-            return cmap.data;
-          } else if (format == 0) {
+          if (format == 0) {
             // Characters below 0x20 are controls characters that are hardcoded
             // into the platform so if some characters in the font are assigned
             // under this limit they will not be displayed so let's rewrite the
@@ -1009,6 +1007,62 @@ var Font = (function Font() {
               }
             }
 
+            return cmap.data = createCMapTable(glyphs, deltas);
+          } else if (format == 4) {
+            // re-creating the table in format 4 since the encoding
+            // might be changed
+            var segCount = (int16(font.getBytes(2)) >> 1);
+            font.getBytes(6); // skipping range fields
+            var segIndex, segments = [];
+            for (segIndex = 0; segIndex < segCount; segIndex++) {
+              segments.push({ end: int16(font.getBytes(2)) });
+            }
+            font.getBytes(2);
+            for (segIndex = 0; segIndex < segCount; segIndex++) {
+              segments[segIndex].start = int16(font.getBytes(2));
+            }
+            for (segIndex = 0; segIndex < segCount; segIndex++) {
+              segments[segIndex].delta = int16(font.getBytes(2));
+            }
+            var offsetsCount = 0;
+            for (segIndex = 0; segIndex < segCount; segIndex++) {
+              var segment = segments[segIndex];
+              var rangeOffset = int16(font.getBytes(2));
+              if (!rangeOffset) {
+                segment.offsetIndex = -1;
+                continue;
+              }
+
+              var offsetIndex = (rangeOffset >> 1) - (segCount - segIndex);
+              segment.offsetIndex = offsetIndex;
+              offsetsCount = Math.max(offsetsCount, offsetIndex +
+                segment.end - segment.start + 1);
+            }
+            var offsets = [];
+            for (var j = 0; j < offsetsCount; j++)
+              offsets.push(int16(font.getBytes(2)));
+
+            var glyphs = [], deltas = [];
+            for (segIndex = 0; segIndex < segCount; segIndex++) {
+              var segment = segments[segIndex];
+              var start = segment.start, end = segment.end;
+              var delta = segment.delta, offsetIndex = segment.offsetIndex;
+              for (var j = start; j <= end; j++) {
+                if (j == 0xFFFF )
+                  continue;
+                var glyphCode = offsetIndex < 0 ? j :
+                  offsets[offsetIndex + j - start];
+                glyphCode = (glyphCode + delta) & 0xFFFF;
+                if (glyphCode == 0)
+                  continue;
+                var unicode = j;
+                if (unicode <= 0x1f ||
+                  (unicode >= 127 && unicode < 255))
+                  unicode += kCmapGlyphOffset;
+                glyphs.push({ unicode: unicode });
+                deltas.push(glyphCode);
+              }
+            }
             return cmap.data = createCMapTable(glyphs, deltas);
           } else if (format == 6) {
             // Format 6 is a 2-bytes dense mapping, which means the font data
@@ -1242,6 +1296,7 @@ var Font = (function Font() {
       } else {
         replaceCMapTable(cmap, font, properties);
       }
+      cmap.length = cmap.data.length;
 
       // Rewrite the 'post' table if needed
       if (requiredTables.indexOf('post') != -1) {
