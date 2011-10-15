@@ -108,7 +108,7 @@ var PDFView = {
   },
 
   open: function pdfViewOpen(url, scale) {
-    if (url.indexOf('http') == 0)
+    if (window.pdfjsIsChromeLoading)
       return;
 
     document.title = url;
