@@ -108,10 +108,13 @@ var PDFView = {
   },
 
   open: function pdfViewOpen(url, scale) {
-    if (window.pdfjsIsChromeLoading)
-      return;
-
     document.title = url;
+
+    if (window.pdfjsIsChromeLoading) {
+      // we need the pdfjsIsChromeLoading flag only once -- clearing
+      delete window.pdfjsIsChromeLoading;
+      return;
+    }
 
     getPdf(
       {
