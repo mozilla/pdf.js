@@ -181,6 +181,12 @@
        "rounds": 1,
        "type": "eq"
     },
+    {  "id": "menu1",
+       "file": "pdfs/menu1.pdf",
+       "link": true,
+       "rounds": 1,
+       "type": "eq"
+    },
     {  "id": "usmanm-bad",
        "file": "pdfs/usmanm-bad.pdf",
        "link": true,
