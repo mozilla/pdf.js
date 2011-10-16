@@ -2089,7 +2089,8 @@ var CCITTFaxStream = (function ccittFaxStream() {
         return p[1];
       }
     } else {
-      var findBlackCode = function ccittFaxStreamFindBlackCode(start, end, table, limit) {
+      var findBlackCode = function ccittFaxStreamFindBlackCode(start, end,
+                                                               table, limit) {
         for (var i = start; i <= end; ++i) {
           var code = this.lookBits(i);
           if (code == EOF)
