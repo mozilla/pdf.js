@@ -2098,7 +2098,7 @@ var CCITTFaxStream = (function ccittFaxStream() {
           if (i < end)
             code <<= end - i;
           if (code >= limit) {
-            var p = table[code];
+            var p = table[code - ((limit == -1) ? 0 : limit)];
             if (p[0] == i) {
               this.eatBits(i);
               return [true, p[1]];
