@@ -66,7 +66,8 @@ function nextTask() {
   cleanup();
 
   if (currentTaskIdx == manifest.length) {
-    return done();
+    done();
+    return;
   }
   var task = manifest[currentTaskIdx];
   task.round = 0;
@@ -86,7 +87,7 @@ function nextTask() {
 }
 
 function isLastPage(task) {
-  return task.pageNum > task.pdfDoc.numPages || task.pageNum > task.pageLimit;
+  return task.pageNum > (task.pageLimit || task.pdfDoc.numPages);
 }
 
 function canvasToDataURL() {
