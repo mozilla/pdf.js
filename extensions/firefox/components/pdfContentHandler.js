@@ -98,6 +98,7 @@ let WebProgressListener = {
   onLocationChange: function onLocationChange(aWebProgress, aRequest,
                                               aLocationURI) {
     this._locationHasChanged = true;
+    aWebProgress.DOMWindow.wrappedJSObject.pdfjsIsChromeLoading = true;
   },
 
   onStatusChange: function onStatusChange(aWebProgress, aRequest, aStatus,
