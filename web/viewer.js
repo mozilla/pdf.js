@@ -108,9 +108,6 @@ var PDFView = {
   },
 
   open: function pdfViewOpen(url, scale) {
-    if (url.indexOf('http') == 0)
-      return;
-
     document.title = url;
 
     getPdf(
@@ -553,18 +550,6 @@ window.addEventListener('load', function webViewerLoad(evt) {
     document.getElementById('fileInput').style.display = 'none';
   else
     document.getElementById('fileInput').value = null;
-}, true);
-
-window.addEventListener('pdfload', function webViewerPdfload(evt) {
-  PDFView.load(evt.detail);
-}, true);
-
-window.addEventListener('pdfprogress', function webViewerPdfProgress(evt) {
-  PDFView.progress(evt.detail);
-}, true);
-
-window.addEventListener('pdferror', function webViewerPdfError(evt) {
-  PDFView.error();
 }, true);
 
 function updateViewarea() {
