@@ -2021,6 +2021,25 @@ var CCITTFaxStream = (function ccittFaxStream() {
     return EOF;
   };
 
+  var findTableCode = function ccittFaxStreamFindTableCode(start, end, table,
+                                                           limit) {
+    for (var i = start; i <= end; ++i) {
+      var code = this.lookBits(i);
+      if (code == EOF)
+        return [true, 1];
+      if (i < end)
+        code <<= end - i;
+      if (code >= limit) {
+        var p = table[code - ((limit == ccittEOL) ? 0 : limit)];
+        if (p[0] == i) {
+          this.eatBits(i);
+          return [true, p[1]];
+        }
+      }
+    }
+    return [false, 0];
+  };
+
   constructor.prototype.getWhiteCode = function ccittFaxStreamGetWhiteCode() {
     var code = 0;
     var p;
@@ -2040,31 +2059,13 @@ var CCITTFaxStream = (function ccittFaxStream() {
         return p[1];
       }
     } else {
-      for (var n = 1; n <= 9; ++n) {
-        code = this.lookBits(n);
-        if (code == EOF)
-          return 1;
+      var result = findTableCode(1, 9, whiteTable2, ccittEOL);
+      if (result[0])
+        return result[1];
 
-        if (n < 9)
-          code <<= 9 - n;
-        p = whiteTable2[code];
-        if (p[0] == n) {
-          this.eatBits(n);
-          return p[0];
-        }
-      }
-      for (var n = 11; n <= 12; ++n) {
-        code = this.lookBits(n);
-        if (code == EOF)
-          return 1;
-        if (n < 12)
-          code <<= 12 - n;
-        p = whiteTable1[code];
-        if (p[0] == n) {
-          this.eatBits(n);
-          return p[1];
-        }
-      }
+      result = findTableCode(11, 12, whiteTable1, ccittEOL);
+      if (result[0])
+        return result[1];
     }
     warn('bad white code');
     this.eatBits(1);
@@ -2089,45 +2090,17 @@ var CCITTFaxStream = (function ccittFaxStream() {
         return p[1];
       }
     } else {
-      var n;
-      for (n = 2; n <= 6; ++n) {
-        code = this.lookBits(n);
-        if (code == EOF)
-          return 1;
-        if (n < 6)
-          code <<= 6 - n;
-        p = blackTable3[code];
-        if (p[0] == n) {
-          this.eatBits(n);
-          return p[1];
-        }
-      }
-      for (n = 7; n <= 12; ++n) {
-        code = this.lookBits(n);
-        if (code == EOF)
-          return 1;
-        if (n < 12)
-          code <<= 12 - n;
-        if (code >= 64) {
-          p = blackTable2[code - 64];
-          if (p[0] == n) {
-            this.eatBits(n);
-            return p[1];
-          }
-        }
-      }
-      for (n = 10; n <= 13; ++n) {
-        code = this.lookBits(n);
-        if (code == EOF)
-          return 1;
-        if (n < 13)
-          code <<= 13 - n;
-        p = blackTable1[code];
-        if (p[0] == n) {
-          this.eatBits(n);
-          return p[1];
-        }
-      }
+      var result = findTableCode(2, 6, blackTable3, ccittEOL);
+      if (result[0])
+        return result[1];
+
+      result = findTableCode(7, 12, blackTable2, 64);
+      if (result[0])
+        return result[1];
+
+      result = findTableCode(10, 13, blackTable1, ccittEOL);
+      if (result[0])
+        return result[1];
     }
     warn('bad black code');
     this.eatBits(1);
@@ -4381,6 +4354,10 @@ var PartialEvaluator = (function partialEvaluator() {
       var patterns = xref.fetchIfRef(resources.get('Pattern')) || new Dict();
       var parser = new Parser(new Lexer(stream), false);
       var args = [], argsArray = [], fnArray = [], obj;
+      var getObjBt = function getObjBt() {
+        parser = this.oldParser;
+        return { name: 'BT' };
+      };
 
       while (!isEOF(obj = parser.getObj())) {
         if (isCmd(obj)) {
@@ -4392,10 +4369,7 @@ var PartialEvaluator = (function partialEvaluator() {
               fn = OP_MAP[cmd.substr(0, cmd.length - 2)];
               // feeding 'BT' on next interation
               parser = {
-                getObj: function() {
-                  parser = this.oldParser;
-                  return { name: 'BT' };
-                },
+                getObj: getObjBt,
                 oldParser: parser
               };
             }
@@ -5108,7 +5082,8 @@ var CanvasGraphics = (function canvasGraphics() {
     stroke: function canvasGraphicsStroke() {
       var ctx = this.ctx;
       var strokeColor = this.current.strokeColor;
-      if (strokeColor && strokeColor.type === 'Pattern') {
+      if (strokeColor && strokeColor.hasOwnProperty('type') &&
+          strokeColor.type === 'Pattern') {
         // for patterns, we transform to pattern space, calculate
         // the pattern, call stroke, and restore to user space
         ctx.save();
@@ -5129,7 +5104,8 @@ var CanvasGraphics = (function canvasGraphics() {
       var ctx = this.ctx;
       var fillColor = this.current.fillColor;
 
-      if (fillColor && fillColor.type === 'Pattern') {
+      if (fillColor && fillColor.hasOwnProperty('type') &&
+          fillColor.type === 'Pattern') {
         ctx.save();
         ctx.fillStyle = fillColor.getPattern(ctx);
         ctx.fill();
@@ -5149,7 +5125,8 @@ var CanvasGraphics = (function canvasGraphics() {
       var ctx = this.ctx;
 
       var fillColor = this.current.fillColor;
-      if (fillColor && fillColor.type === 'Pattern') {
+      if (fillColor && fillColor.hasOwnProperty('type') &&
+          fillColor.type === 'Pattern') {
         ctx.save();
         ctx.fillStyle = fillColor.getPattern(ctx);
         ctx.fill();
@@ -5159,7 +5136,8 @@ var CanvasGraphics = (function canvasGraphics() {
       }
 
       var strokeColor = this.current.strokeColor;
-      if (strokeColor && strokeColor.type === 'Pattern') {
+      if (strokeColor && strokeColor.hasOwnProperty('type') &&
+          strokeColor.type === 'Pattern') {
         ctx.save();
         ctx.strokeStyle = strokeColor.getPattern(ctx);
         ctx.stroke();

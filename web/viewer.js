@@ -178,7 +178,9 @@ var PDFView = {
 
     while (sidebar.hasChildNodes())
       sidebar.removeChild(sidebar.lastChild);
-    clearInterval(sidebar._loadingInterval);
+
+    if ('_loadingInterval' in sidebar)
+      clearInterval(sidebar._loadingInterval);
 
     var container = document.getElementById('viewer');
     while (container.hasChildNodes())
@@ -544,7 +546,8 @@ window.addEventListener('load', function webViewerLoad(evt) {
     params[unescape(param[0])] = unescape(param[1]);
   }
 
-  PDFView.open(params.file || kDefaultURL, parseFloat(params.scale));
+  var scale = ('scale' in params) ? params.scale : kDefaultScale;
+  PDFView.open(params.file || kDefaultURL, parseFloat(scale));
 
   if (!window.File || !window.FileReader || !window.FileList || !window.Blob)
     document.getElementById('fileInput').style.display = 'none';
