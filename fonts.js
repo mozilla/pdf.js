@@ -1504,7 +1504,7 @@ var Font = (function Font() {
 
         // Character to glyphs mapping
         'cmap': createCMapTable(charstrings.slice(),
-                                ('glyphIds' in font) ? font.glyphIds: null),
+                                ('glyphIds' in font) ? font.glyphIds : null),
 
         // Font header
         'head': (function fontFieldsHead() {
