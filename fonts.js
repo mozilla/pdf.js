@@ -394,6 +394,44 @@ var UnicodeRanges = [
   { 'begin': 0x1F030, 'end': 0x1F09F }  // Domino Tiles
 ];
 
+var MacStandardGlyphOrdering = [
+  '.notdef', '.null', 'nonmarkingreturn', 'space', 'exclam', 'quotedbl',
+  'numbersign', 'dollar', 'percent', 'ampersand', 'quotesingle', 'parenleft',
+  'parenright', 'asterisk', 'plus', 'comma', 'hyphen', 'period', 'slash',
+  'zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight',
+  'nine', 'colon', 'semicolon', 'less', 'equal', 'greater', 'question', 'at',
+  'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O',
+  'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', 'bracketleft',
+  'backslash', 'bracketright', 'asciicircum', 'underscore', 'grave', 'a', 'b',
+  'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q',
+  'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', 'braceleft', 'bar', 'braceright',
+  'asciitilde', 'Adieresis', 'Aring', 'Ccedilla', 'Eacute', 'Ntilde',
+  'Odieresis', 'Udieresis', 'aacute', 'agrave', 'acircumflex', 'adieresis',
+  'atilde', 'aring', 'ccedilla', 'eacute', 'egrave', 'ecircumflex', 'edieresis',
+  'iacute', 'igrave', 'icircumflex', 'idieresis', 'ntilde', 'oacute', 'ograve',
+  'ocircumflex', 'odieresis', 'otilde', 'uacute', 'ugrave', 'ucircumflex',
+  'udieresis', 'dagger', 'degree', 'cent', 'sterling', 'section', 'bullet',
+  'paragraph', 'germandbls', 'registered', 'copyright', 'trademark', 'acute',
+  'dieresis', 'notequal', 'AE', 'Oslash', 'infinity', 'plusminus', 'lessequal',
+  'greaterequal', 'yen', 'mu', 'partialdiff', 'summation', 'product', 'pi',
+  'integral', 'ordfeminine', 'ordmasculine', 'Omega', 'ae', 'oslash',
+  'questiondown', 'exclamdown', 'logicalnot', 'radical', 'florin',
+  'approxequal', 'Delta', 'guillemotleft', 'guillemotright', 'ellipsis',
+  'nonbreakingspace', 'Agrave', 'Atilde', 'Otilde', 'OE', 'oe', 'endash',
+  'emdash', 'quotedblleft', 'quotedblright', 'quoteleft', 'quoteright',
+  'divide', 'lozenge', 'ydieresis', 'Ydieresis', 'fraction', 'currency',
+  'guilsinglleft', 'guilsinglright', 'fi', 'fl', 'daggerdbl', 'periodcentered',
+  'quotesinglbase', 'quotedblbase', 'perthousand', 'Acircumflex',
+  'Ecircumflex', 'Aacute', 'Edieresis', 'Egrave', 'Iacute', 'Icircumflex',
+  'Idieresis', 'Igrave', 'Oacute', 'Ocircumflex', 'apple', 'Ograve', 'Uacute',
+  'Ucircumflex', 'Ugrave', 'dotlessi', 'circumflex', 'tilde', 'macron',
+  'breve', 'dotaccent', 'ring', 'cedilla', 'hungarumlaut', 'ogonek', 'caron',
+  'Lslash', 'lslash', 'Scaron', 'scaron', 'Zcaron', 'zcaron', 'brokenbar',
+  'Eth', 'eth', 'Yacute', 'yacute', 'Thorn', 'thorn', 'minus', 'multiply',
+  'onesuperior', 'twosuperior', 'threesuperior', 'onehalf', 'onequarter',
+  'threequarters', 'franc', 'Gbreve', 'gbreve', 'Idotaccent', 'Scedilla',
+  'scedilla', 'Cacute', 'cacute', 'Ccaron', 'ccaron', 'dcroat'];
+
 function getUnicodeRangeFor(value) {
   for (var i = 0; i < UnicodeRanges.length; i++) {
     var range = UnicodeRanges[i];
@@ -950,6 +988,22 @@ var Font = (function Font() {
         };
       };
 
+      function createGlyphNameMap(glyphs, ids, properties) {
+        var glyphNames = properties.glyphNames;
+        if (!glyphNames)
+          return;
+        var glyphsLength = glyphs.length;
+        var glyphNameMap = {};
+        for (var i = 0; i < glyphsLength; ++i) {
+          var glyphName = glyphNames[ids[i]];
+          if (!glyphName)
+            continue;
+          var unicode = glyphs[i].unicode;
+          glyphNameMap[glyphName] = unicode;
+        }
+        properties.glyphNameMap = glyphNameMap;
+      }
+
       function replaceCMapTable(cmap, font, properties) {
         var start = (font.start ? font.start : 0) + cmap.offset;
         font.pos = start;
@@ -1004,7 +1058,6 @@ var Font = (function Font() {
             cmap.data[i] = data.charCodeAt(i);
         }
 
-        var encoding = properties.encoding;
         for (var i = 0; i < numRecords; i++) {
           var table = tables[i];
           font.pos = start + table.offset;
@@ -1029,6 +1082,7 @@ var Font = (function Font() {
               }
             }
 
+            createGlyphNameMap(glyphs, ids, properties);
             return cmap.data = createCMapTable(glyphs, ids);
           } else if (format == 4) {
             // re-creating the table in format 4 since the encoding
@@ -1089,6 +1143,8 @@ var Font = (function Font() {
                 ids.push(glyphCode);
               }
             }
+
+            createGlyphNameMap(glyphs, ids, properties);
             return cmap.data = createCMapTable(glyphs, ids);
           } else if (format == 6) {
             // Format 6 is a 2-bytes dense mapping, which means the font data
@@ -1106,8 +1162,9 @@ var Font = (function Font() {
               var unicode = adaptUnicode(j);
               glyphs.push({ unicode: unicode });
               ids.push(code);
-
             }
+
+            createGlyphNameMap(glyphs, ids, properties);
             return cmap.data = createCMapTable(glyphs, ids);
           }
         }
@@ -1190,6 +1247,49 @@ var Font = (function Font() {
         }
       }
 
+      function readGlyphNameMap(post, properties) {
+        var start = (font.start ? font.start : 0) + post.offset;
+        font.pos = start;
+
+        var length = post.length, end = start + length;
+        var version = int32(font.getBytes(4));
+        // skip rest to the tables
+        font.getBytes(28);
+
+        var glyphNames;
+        switch (version) {
+          case 0x00010000:
+            glyphNames = MacStandardGlyphOrdering;
+            break;
+          case 0x00020000:
+            var numGlyphs = int16(font.getBytes(2));
+            var glyphNameIndexes = [];
+            for (var i = 0; i < numGlyphs; ++i)
+              glyphNameIndexes.push(int16(font.getBytes(2)));
+            var customNames = [];
+            while (font.pos < end) {
+              var stringLength = font.getByte();
+              var string = '';
+              for (var i = 0; i < stringLength; ++i)
+                string += font.getChar();
+              customNames.push(string);
+            }
+            glyphNames = [];
+            for (var i = 0; i < numGlyphs; ++i) {
+              var j = glyphNameIndexes[i];
+              if (j < 258) {
+                glyphNames.push(MacStandardGlyphOrdering[j]);
+                continue;
+              }
+              glyphNames.push(customNames[j - 258]);
+            }
+          default:
+            warn('Unknown/unsupported post table version ' + version);
+            break;
+        }
+        properties.glyphNames = glyphNames;
+      }
+
       // Check that required tables are present
       var requiredTables = ['OS/2', 'cmap', 'head', 'hhea',
                              'hmtx', 'maxp', 'name', 'post'];
@@ -1197,7 +1297,7 @@ var Font = (function Font() {
       var header = readOpenTypeHeader(font);
       var numTables = header.numTables;
 
-      var cmap, maxp, hhea, hmtx, vhea, vmtx, head, loca, glyf;
+      var cmap, post, maxp, hhea, hmtx, vhea, vmtx, head, loca, glyf;
       var tables = [];
       for (var i = 0; i < numTables; i++) {
         var table = readTableEntry(font);
@@ -1205,6 +1305,8 @@ var Font = (function Font() {
         if (index != -1) {
           if (table.tag == 'cmap')
             cmap = table;
+          else if (table.tag == 'post')
+            post = table;
           else if (table.tag == 'maxp')
             maxp = table;
           else if (table.tag == 'hhea')
@@ -1280,6 +1382,11 @@ var Font = (function Font() {
         hhea.data[11] = 0xFF;
       }
 
+      // The 'post' table has glyphs names.
+      if (post) {
+        readGlyphNameMap(post, properties);
+      }
+
       // Replace the old CMAP table with a shiny new one
       if (properties.type == 'CIDFontType2') {
         // Type2 composite fonts map characters directly to glyphs so the cmap
@@ -1307,6 +1414,7 @@ var Font = (function Font() {
         cmap.data = createCMapTable(glyphs);
       } else {
         replaceCMapTable(cmap, font, properties);
+        this.glyphNameMap = properties.glyphNameMap;
       }
 
       // Rewrite the 'post' table if needed
