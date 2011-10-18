@@ -5136,7 +5136,8 @@ var CanvasGraphics = (function canvasGraphics() {
     stroke: function canvasGraphicsStroke() {
       var ctx = this.ctx;
       var strokeColor = this.current.strokeColor;
-      if (strokeColor && strokeColor.type === 'Pattern') {
+      if (strokeColor && strokeColor.hasOwnProperty('type') &&
+          strokeColor.type === 'Pattern') {
         // for patterns, we transform to pattern space, calculate
         // the pattern, call stroke, and restore to user space
         ctx.save();
@@ -5157,7 +5158,8 @@ var CanvasGraphics = (function canvasGraphics() {
       var ctx = this.ctx;
       var fillColor = this.current.fillColor;
 
-      if (fillColor && fillColor.type === 'Pattern') {
+      if (fillColor && fillColor.hasOwnProperty('type') &&
+          fillColor.type === 'Pattern') {
         ctx.save();
         ctx.fillStyle = fillColor.getPattern(ctx);
         ctx.fill();
@@ -5177,7 +5179,8 @@ var CanvasGraphics = (function canvasGraphics() {
       var ctx = this.ctx;
 
       var fillColor = this.current.fillColor;
-      if (fillColor && fillColor.type === 'Pattern') {
+      if (fillColor && fillColor.hasOwnProperty('type') &&
+          fillColor.type === 'Pattern') {
         ctx.save();
         ctx.fillStyle = fillColor.getPattern(ctx);
         ctx.fill();
@@ -5187,7 +5190,8 @@ var CanvasGraphics = (function canvasGraphics() {
       }
 
       var strokeColor = this.current.strokeColor;
-      if (strokeColor && strokeColor.type === 'Pattern') {
+      if (strokeColor && strokeColor.hasOwnProperty('type') &&
+          strokeColor.type === 'Pattern') {
         ctx.save();
         ctx.strokeStyle = strokeColor.getPattern(ctx);
         ctx.stroke();
