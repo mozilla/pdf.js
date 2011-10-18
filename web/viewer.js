@@ -186,7 +186,7 @@ var PDFView = {
 
   load: function pdfViewLoad(data, scale) {
     var loadingIndicator = document.getElementById('loading');
-    loadingIndicator.style.display = 'none';
+    loadingIndicator.setAttribute('hidden', 'true');
 
     var sidebar = document.getElementById('sidebarView');
     sidebar.parentNode.scrollTop = 0;
@@ -282,14 +282,14 @@ var PDFView = {
     var outlineSwitchButton = document.getElementById('outlineSwitch');
     switch (view) {
       case 'thumbs':
-        thumbsScrollView.style.display = 'block';
-        outlineScrollView.style.display = 'none';
+        thumbsScrollView.removeAttribute('hidden');
+        outlineScrollView.setAttribute('hidden', 'true');
         thumbsSwitchButton.setAttribute('data-selected', true);
         outlineSwitchButton.removeAttribute('data-selected');
         break;
       case 'outline':
-        thumbsScrollView.style.display = 'none';
-        outlineScrollView.style.display = 'block';
+        thumbsScrollView.setAttribute('hidden', 'true');
+        outlineScrollView.removeAttribute('hidden');
         thumbsSwitchButton.removeAttribute('data-selected');
         outlineSwitchButton.setAttribute('data-selected', true);
         break;
@@ -592,7 +592,7 @@ window.addEventListener('load', function webViewerLoad(evt) {
   PDFView.open(params.file || kDefaultURL, parseFloat(scale));
 
   if (!window.File || !window.FileReader || !window.FileList || !window.Blob)
-    document.getElementById('fileInput').style.display = 'none';
+    document.getElementById('fileInput').setAttribute('hidden', 'true');
   else
     document.getElementById('fileInput').value = null;
 }, true);
@@ -677,7 +677,7 @@ window.addEventListener('change', function webViewerChange(evt) {
   document.title = file.name;
 
   // URL does not reflect proper document location - hiding bookmark icon.
-  document.getElementById('viewBookmark').style.display = 'none';
+  document.getElementById('viewBookmark').setAttribute('hidden', 'true');
 }, true);
 
 window.addEventListener('transitionend', function webViewerTransitionend(evt) {

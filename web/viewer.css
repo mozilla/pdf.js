@@ -8,6 +8,10 @@ body {
   padding: 0px;
 }
 
+[hidden] {
+  display: none;
+}
+
 /* === Toolbar === */
 #controls {
   background-color: #eee;
