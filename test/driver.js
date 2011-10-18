@@ -87,7 +87,11 @@ function nextTask() {
 }
 
 function isLastPage(task) {
-  return task.pageNum > (task.pageLimit || task.pdfDoc.numPages);
+  var limit = task.pageLimit || 0;
+  if (!limit || limit > task.pdfDoc.numPages)
+   limit = task.pdfDoc.numPages;
+
+  return task.pageNum > limit;
 }
 
 function canvasToDataURL() {
