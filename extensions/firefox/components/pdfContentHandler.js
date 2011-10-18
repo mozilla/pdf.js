@@ -131,8 +131,7 @@ pdfContentHandler.prototype = {
       throw Cr.NS_ERROR_WONT_HANDLE_CONTENT;
 
     let window = null;
-    let callbacks = aRequest.notificationCallbacks ?
-                    aRequest.notificationCallbacks :
+    let callbacks = aRequest.notificationCallbacks ||
                     aRequest.loadGroup.notificationCallbacks;
     if (!callbacks)
       return;
