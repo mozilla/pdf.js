@@ -34,6 +34,10 @@ body {
   margin: 4px;
 }
 
+#controls > a > img {
+  margin: 2px;
+}
+
 #controls > button {
   line-height: 32px;
 }
