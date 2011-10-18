@@ -3,8 +3,9 @@ BUILD_DIR := build
 DEFAULT_BROWSERS := resources/browser_manifests/browser_manifest.json
 DEFAULT_TESTS := test_manifest.json
 
-EXTENSION_SRC := ./extensions/firefox
-EXTENSION_NAME := pdf.js.xpi
+EXTENSION_SRC := ./extensions/
+FIREFOX_EXTENSION_NAME := pdf.js.xpi
+CHROME_EXTENSION_NAME := pdf.js.crx
 
 # Let folks define custom rules for their clones.
 -include local.mk
@@ -17,6 +18,7 @@ PDF_JS_FILES = \
 	fonts.js \
 	metrics.js \
 	charsets.js \
+	cidmaps.js \
 	glyphlist.js \
 	$(NULL)
 
@@ -92,7 +94,7 @@ browser-test:
 #
 # <http://code.google.com/closure/utilities/docs/linter_howto.html>
 SRC_DIRS := . utils worker web test examples/helloworld extensions/firefox \
-            extensions/firefox/components
+            extensions/firefox/components extensions/chrome
 GJSLINT_FILES = $(foreach DIR,$(SRC_DIRS),$(wildcard $(DIR)/*.js))
 lint:
 	gjslint $(GJSLINT_FILES)
@@ -110,7 +112,8 @@ web: | extension compiler pages-repo \
 	$(addprefix $(GH_PAGES)/, $(PDF_JS_FILES)) \
 	$(addprefix $(GH_PAGES)/, $(wildcard web/*.*)) \
 	$(addprefix $(GH_PAGES)/, $(wildcard web/images/*.*)) \
-	$(addprefix $(GH_PAGES)/, $(wildcard $(EXTENSION_SRC)/*.xpi))
+	$(addprefix $(GH_PAGES)/, $(wildcard $(EXTENSION_SRC)/firefox/*.xpi)) \
+	$(addprefix $(GH_PAGES)/, $(wildcard $(EXTENSION_SRC)/chrome/*.crx))
 
 	@cp $(GH_PAGES)/web/index.html.template $(GH_PAGES)/index.html;
 	@cd $(GH_PAGES); git add -A;
@@ -132,7 +135,8 @@ pages-repo: | $(BUILD_DIR)
 	fi;
 	@mkdir -p $(GH_PAGES)/web;
 	@mkdir -p $(GH_PAGES)/web/images;
-	@mkdir -p $(GH_PAGES)/$(EXTENSION_SRC);
+	@mkdir -p $(GH_PAGES)/$(EXTENSION_SRC)/firefox;
+	@mkdir -p $(GH_PAGES)/$(EXTENSION_SRC)/chrome;
 
 $(GH_PAGES)/%.js: %.js
 	@cp $< $@
@@ -143,8 +147,10 @@ $(GH_PAGES)/web/%: web/%
 $(GH_PAGES)/web/images/%: web/images/%
 	@cp $< $@
 
-$(GH_PAGES)/$(EXTENSION_SRC)/%: $(EXTENSION_SRC)/%
+$(GH_PAGES)/$(EXTENSION_SRC)/firefox/%: $(EXTENSION_SRC)/firefox/%
 	@cp -R $< $@
+
+$(GH_PAGES)/$(EXTENSION_SRC)/chrome/%: $(EXTENSION_SRC)/chrome/%
 
 # # make compiler
 # #
@@ -163,7 +169,7 @@ $(GH_PAGES)/$(EXTENSION_SRC)/%: $(EXTENSION_SRC)/%
 #
 # This target produce a restartless firefox extension containing a
 # copy of the pdf.js source.
-CONTENT_DIR := content
+CONTENT_DIR := firefox/content
 PDF_WEB_FILES = \
 	web/images \
 	web/compatibility.js \
@@ -179,8 +185,17 @@ extension:
 	@cp -r $(PDF_WEB_FILES) $(EXTENSION_SRC)/$(CONTENT_DIR)/web/
 
 	# Create the xpi
-	@cd $(EXTENSION_SRC); zip -r $(EXTENSION_NAME) *
-	@echo "extension created: " $(EXTENSION_NAME)
+	@cd $(EXTENSION_SRC)/firefox; zip -r $(FIREFOX_EXTENSION_NAME) *
+	@echo "extension created: " $(FIREFOX_EXTENSION_NAME)
+
+  # Copy a standalone version of pdf.js inside the extension directory
+	@cp $(PDF_JS_FILES) $(EXTENSION_SRC)/chrome/ 
+	@mkdir -p $(EXTENSION_SRC)/chrome/web
+	@cp -r $(PDF_WEB_FILES) $(EXTENSION_SRC)/chrome/web/
+
+  # Create the crx
+  #TODO
+
 
 
 # Make sure there's a build directory.

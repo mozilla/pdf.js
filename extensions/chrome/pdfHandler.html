@@ -1,0 +1,17 @@
+<!doctype html>
+<script>
+chrome.experimental.webRequest.onBeforeRequest.addListener(
+  function(details) {
+    var url = chrome.extension.getURL('') + 'web/viewer.html?file=' + details.url;
+    return { redirectUrl: url };
+  },
+  {
+    urls: [
+      "http://*/*.pdf",
+      "file://*/*.pdf",
+    ],
+    types: [ "main_frame" ]
+  },
+  ["blocking"]);
+</script>
+
