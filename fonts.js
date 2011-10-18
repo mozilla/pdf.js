@@ -710,7 +710,13 @@ var Font = (function Font() {
   };
 
   function createOS2Table(properties, override) {
-    var override = override || {};
+    override = override || {
+      unitsPerEm: 0,
+      yMax: 0,
+      yMin: 0,
+      ascent: 0,
+      descent: 0
+    };
 
     var ulUnicodeRange1 = 0;
     var ulUnicodeRange2 = 0;
@@ -1322,7 +1328,8 @@ var Font = (function Font() {
         'OS/2': stringToArray(createOS2Table(properties)),
 
         // Character to glyphs mapping
-        'cmap': createCMapTable(charstrings.slice(), font.glyphIds),
+        'cmap': createCMapTable(charstrings.slice(),
+                                ('glyphIds' in font) ? font.glyphIds: null),
 
         // Font header
         'head': (function fontFieldsHead() {
@@ -2612,7 +2619,8 @@ var Type2CFF = (function type2CFF() {
         if (unicode <= 0x1f || (unicode >= 127 && unicode <= 255))
           unicode += kCmapGlyphOffset;
 
-        var width = isNum(mapping.width) ? mapping.width : defaultWidth;
+        var width = ('width' in mapping) && isNum(mapping.width) ? mapping.width
+                                                                 : defaultWidth;
         properties.encoding[code] = {
           unicode: unicode,
           width: width
