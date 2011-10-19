@@ -48,16 +48,12 @@ pdfContentHandler.prototype = {
       throw NS_ERROR_WONT_HANDLE_CONTENT;
     }
 
-    // To allow a Download feature we need to ensure pdf.js
-    // is not opened again if the request for opening an
-    // application/pdf document has been done by itself.
-    let location = window.location.toString();
-    if (location.indexOf(url.replace('%s', '')) == 0)
+    let targetUrl = aRequest.URI.spec;
+    if (targetUrl.indexOf('?pdfjs.action=download') >= 0)
       throw NS_ERROR_WONT_HANDLE_CONTENT;
 
     aRequest.cancel(Cr.NS_BINDING_ABORTED);
-    let uri = aRequest.URI;
-    window.location = url.replace('%s', uri.spec);
+    window.location = url.replace('%s', targetUrl);
   },
 
   classID: Components.ID('{2278dfd0-b75c-11e0-8257-1ba3d93c9f1a}'),

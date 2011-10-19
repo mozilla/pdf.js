@@ -85,10 +85,6 @@ var PDFView = {
     this.setScale(newScale, true);
   },
 
-  download: function pdfViewDownload() {
-    window.open(document.title, '_parent', 'pdf=yes');
-  },
-
   set page(val) {
     var pages = this.pages;
     var input = document.getElementById('pageNumber');
@@ -119,7 +115,7 @@ var PDFView = {
   },
 
   open: function pdfViewOpen(url, scale) {
-    document.title = url;
+    document.title = this.url = url;
 
     getPdf(
       {
@@ -133,6 +129,10 @@ var PDFView = {
       function getPdfLoad(data) {
         PDFView.load(data, scale);
       });
+  },
+
+  download: function pdfViewDownload() {
+    window.open(this.url + '?pdfjs.action=download', '_parent');
   },
 
   navigateTo: function pdfViewNavigateTo(dest) {
