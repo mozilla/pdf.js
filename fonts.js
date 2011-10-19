@@ -1329,7 +1329,7 @@ var Font = (function Font() {
 
         // Character to glyphs mapping
         'cmap': createCMapTable(charstrings.slice(),
-                                ('glyphIds' in font) ? font.glyphIds: null),
+                                ('glyphIds' in font) ? font.glyphIds : null),
 
         // Font header
         'head': (function fontFieldsHead() {
@@ -2613,14 +2613,13 @@ var Type2CFF = (function type2CFF() {
         var glyph = charsets[i];
         var code = glyphMap[glyph] || 0;
 
-        var mapping = glyphs[code] || glyphs[glyph] || {};
+        var mapping = glyphs[code] || glyphs[glyph] || { width: defaultWidth };
         var unicode = mapping.unicode;
 
         if (unicode <= 0x1f || (unicode >= 127 && unicode <= 255))
           unicode += kCmapGlyphOffset;
 
-        var width = ('width' in mapping) && isNum(mapping.width) ? mapping.width
-                                                                 : defaultWidth;
+        var width = isNum(mapping.width) ? mapping.width : defaultWidth;
         properties.encoding[code] = {
           unicode: unicode,
           width: width

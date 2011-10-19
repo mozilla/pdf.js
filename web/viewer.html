@@ -64,11 +64,20 @@
         Print
       </button>
 
+      <button id="download" title="Download" onclick="PDFView.download();" oncontextmenu="return false;">
+        <img src="images/download.svg" align="top" height="32"/>
+        Download
+      </button>
+
       <div class="separator"></div>
 
       <input id="fileInput" type="file" oncontextmenu="return false;"/>
 
       <div class="separator"></div>
+
+      <a href="#" id="viewBookmark" title="Current View (bookmark or copy the location)">
+        <img src="images/bookmark.svg" alt="Bookmark" align="top" height="32"/>
+      </a>
 
       <span id="info">--</span>
     </div>
@@ -78,7 +87,7 @@
         <div id="sidebarScrollView">
           <div id="sidebarView"></div>
         </div>
-        <div id="outlineScrollView" style="display:none">
+        <div id="outlineScrollView" hidden='true'>
           <div id="outlineView"></div>
         </div>
         <div id="sidebarControls">

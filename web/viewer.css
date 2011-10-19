@@ -8,6 +8,10 @@ body {
   padding: 0px;
 }
 
+[hidden] {
+  display: none;
+}
+
 /* === Toolbar === */
 #controls {
   background-color: #eee;
@@ -32,6 +36,10 @@ body {
   height: 32px;
   width:0px;
   margin: 4px;
+}
+
+#controls > a > img {
+  margin: 2px;
 }
 
 #controls > button {
