@@ -1,7 +1,6 @@
 # pdf.js
 
 
-
 ## Overview
 
 pdf.js is an HTML5 technology experiment that explores building a faithful
