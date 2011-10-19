@@ -115,7 +115,7 @@ var PDFView = {
   },
 
   open: function pdfViewOpen(url, scale) {
-    document.title = url;
+    document.title = this.url = url;
 
     getPdf(
       {
@@ -129,6 +129,10 @@ var PDFView = {
       function getPdfLoad(data) {
         PDFView.load(data, scale);
       });
+  },
+
+  download: function pdfViewDownload() {
+    window.open(this.url + '?pdfjs.action=download', '_parent');
   },
 
   navigateTo: function pdfViewNavigateTo(dest) {
@@ -661,8 +665,9 @@ window.addEventListener('change', function webViewerChange(evt) {
 
   document.title = file.name;
 
-  // URL does not reflect proper document location - hiding bookmark icon.
+  // URL does not reflect proper document location - hiding some icons.
   document.getElementById('viewBookmark').setAttribute('hidden', 'true');
+  document.getElementById('download').setAttribute('hidden', 'true');
 }, true);
 
 window.addEventListener('transitionend', function webViewerTransitionend(evt) {
