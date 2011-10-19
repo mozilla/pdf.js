@@ -2021,6 +2021,25 @@ var CCITTFaxStream = (function ccittFaxStream() {
     return EOF;
   };
 
+  var findTableCode = function ccittFaxStreamFindTableCode(start, end, table,
+                                                           limit) {
+    for (var i = start; i <= end; ++i) {
+      var code = this.lookBits(i);
+      if (code == EOF)
+        return [true, 1];
+      if (i < end)
+        code <<= end - i;
+      if (code >= limit) {
+        var p = table[code - ((limit == ccittEOL) ? 0 : limit)];
+        if (p[0] == i) {
+          this.eatBits(i);
+          return [true, p[1]];
+        }
+      }
+    }
+    return [false, 0];
+  };
+
   constructor.prototype.getWhiteCode = function ccittFaxStreamGetWhiteCode() {
     var code = 0;
     var p;
@@ -2040,31 +2059,13 @@ var CCITTFaxStream = (function ccittFaxStream() {
         return p[1];
       }
     } else {
-      for (var n = 1; n <= 9; ++n) {
-        code = this.lookBits(n);
-        if (code == EOF)
-          return 1;
+      var result = findTableCode(1, 9, whiteTable2, ccittEOL);
+      if (result[0])
+        return result[1];
 
-        if (n < 9)
-          code <<= 9 - n;
-        p = whiteTable2[code];
-        if (p[0] == n) {
-          this.eatBits(n);
-          return p[0];
-        }
-      }
-      for (var n = 11; n <= 12; ++n) {
-        code = this.lookBits(n);
-        if (code == EOF)
-          return 1;
-        if (n < 12)
-          code <<= 12 - n;
-        p = whiteTable1[code];
-        if (p[0] == n) {
-          this.eatBits(n);
-          return p[1];
-        }
-      }
+      result = findTableCode(11, 12, whiteTable1, ccittEOL);
+      if (result[0])
+        return result[1];
     }
     warn('bad white code');
     this.eatBits(1);
@@ -2089,45 +2090,17 @@ var CCITTFaxStream = (function ccittFaxStream() {
         return p[1];
       }
     } else {
-      var n;
-      for (n = 2; n <= 6; ++n) {
-        code = this.lookBits(n);
-        if (code == EOF)
-          return 1;
-        if (n < 6)
-          code <<= 6 - n;
-        p = blackTable3[code];
-        if (p[0] == n) {
-          this.eatBits(n);
-          return p[1];
-        }
-      }
-      for (n = 7; n <= 12; ++n) {
-        code = this.lookBits(n);
-        if (code == EOF)
-          return 1;
-        if (n < 12)
-          code <<= 12 - n;
-        if (code >= 64) {
-          p = blackTable2[code - 64];
-          if (p[0] == n) {
-            this.eatBits(n);
-            return p[1];
-          }
-        }
-      }
-      for (n = 10; n <= 13; ++n) {
-        code = this.lookBits(n);
-        if (code == EOF)
-          return 1;
-        if (n < 13)
-          code <<= 13 - n;
-        p = blackTable1[code];
-        if (p[0] == n) {
-          this.eatBits(n);
-          return p[1];
-        }
-      }
+      var result = findTableCode(2, 6, blackTable3, ccittEOL);
+      if (result[0])
+        return result[1];
+
+      result = findTableCode(7, 12, blackTable2, 64);
+      if (result[0])
+        return result[1];
+
+      result = findTableCode(10, 13, blackTable1, ccittEOL);
+      if (result[0])
+        return result[1];
     }
     warn('bad black code');
     this.eatBits(1);
@@ -3634,8 +3607,8 @@ var Page = (function pagePage() {
       gfx.execute(this.code, xref, resources);
       gfx.endDrawing();
     },
-    rotatePoint: function pageRotatePoint(x, y) {
-      var rotate = this.rotate;
+    rotatePoint: function pageRotatePoint(x, y, reverse) {
+      var rotate = reverse ? (360 - this.rotate) : this.rotate;
       switch (rotate) {
         case 180:
           return {x: this.width - x, y: y};
@@ -3643,6 +3616,7 @@ var Page = (function pagePage() {
           return {x: this.width - y, y: this.height - x};
         case 270:
           return {x: y, y: x};
+        case 360:
         case 0:
         default:
           return {x: x, y: this.height - y};
