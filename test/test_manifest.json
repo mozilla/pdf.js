@@ -100,7 +100,7 @@
     {  "id": "rotation",
        "file": "pdfs/rotation.pdf",
        "rounds": 1,
-       "type": "load"
+       "type": "eq"
     },
     {  "id": "ecma262-pdf",
        "file": "pdfs/ecma262.pdf",
@@ -144,11 +144,18 @@
        "rounds": 1,
        "type": "eq"
     },
+    {  "id": "fit11-talk",
+       "file": "pdfs/fit11-talk.pdf",
+       "link": true,
+       "rounds": 1,
+       "skipPages": [12,31],
+       "type": "eq"
+    },
     {  "id": "fips197",
        "file": "pdfs/fips197.pdf",
        "link": true,
        "rounds": 1,
-       "type": "load"
+       "type": "eq"
     },
     {  "id": "txt2pdf",
        "file": "pdfs/txt2pdf.pdf",
@@ -172,7 +179,7 @@
        "file": "pdfs/extgstate.pdf",
        "link": false,
        "rounds": 1,
-       "type": "load"
+       "type": "eq"
     },
     {  "id": "usmanm-bad",
        "file": "pdfs/usmanm-bad.pdf",
@@ -195,6 +202,12 @@
     },
     {  "id": "tcpdf_033",
        "file": "pdfs/tcpdf_033.pdf",
+       "link": true,
+       "rounds": 1,
+       "type": "eq"
+    },
+    {  "id": "pal-o47",
+       "file": "pdfs/pal-o47.pdf",
        "link": true,
        "rounds": 1,
        "type": "eq"

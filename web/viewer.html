@@ -20,12 +20,12 @@
 
   <body>
     <div id="controls">
-      <button id="previous" onclick="PDFView.page--;">
+      <button id="previous" onclick="PDFView.page--;" oncontextmenu="return false;">
         <img src="images/go-up.svg" align="top" height="32"/>
         Previous
       </button>
 
-      <button id="next" onclick="PDFView.page++;">
+      <button id="next" onclick="PDFView.page++;" oncontextmenu="return false;">
         <img src="images/go-down.svg" align="top" height="32"/>
         Next
       </button>
@@ -39,16 +39,16 @@
 
       <div class="separator"></div>
 
-      <button id="next" title="Zoom Out" onclick="PDFView.zoomOut();">
+      <button id="zoomOut" title="Zoom Out" onclick="PDFView.zoomOut();" oncontextmenu="return false;">
         <img src="images/zoom-out.svg" align="top" height="32"/>
       </button>
-      <button id="next" title="Zoom In" onclick="PDFView.zoomIn();">
+      <button id="zoomIn" title="Zoom In" onclick="PDFView.zoomIn();" oncontextmenu="return false;">
         <img src="images/zoom-in.svg" align="top" height="32"/>
       </button>
 
       <div class="separator"></div>
 
-      <select id="scaleSelect" onchange="PDFView.parseScale(this.value);">
+      <select id="scaleSelect" onchange="PDFView.parseScale(this.value);" oncontextmenu="return false;">
         <option id="customScaleOption" value="custom"></option>
         <option value="0.5">50%</option>
         <option value="0.75">75%</option>
@@ -62,16 +62,25 @@
 
       <div class="separator"></div>
 
-      <button id="print" onclick="window.print();">
+      <button id="print" onclick="window.print();" oncontextmenu="return false;">
         <img src="images/document-print.svg" align="top" height="32"/>
         Print
       </button>
 
+      <button id="download" title="Download" onclick="PDFView.download();" oncontextmenu="return false;">
+        <img src="images/download.svg" align="top" height="32"/>
+        Download
+      </button>
+
       <div class="separator"></div>
 
-      <input id="fileInput" type="file"/>
+      <input id="fileInput" type="file" oncontextmenu="return false;"/>
 
       <div class="separator"></div>
+
+      <a href="#" id="viewBookmark" title="Current View (bookmark or copy the location)">
+        <img src="images/bookmark.svg" alt="Bookmark" align="top" height="32"/>
+      </a>
 
       <span id="info">--</span>
     </div>
@@ -81,7 +90,7 @@
         <div id="sidebarScrollView">
           <div id="sidebarView"></div>
         </div>
-        <div id="outlineScrollView" style="display:none">
+        <div id="outlineScrollView" hidden='true'>
           <div id="outlineView"></div>
         </div>
         <div id="sidebarControls">

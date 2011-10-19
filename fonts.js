@@ -26,53 +26,53 @@ var kHintingEnabled = false;
  */
 var stdFontMap = {
   'ArialNarrow': 'Helvetica',
-  'ArialNarrow_Bold': 'Helvetica-Bold',
-  'ArialNarrow_BoldItalic': 'Helvetica-BoldOblique',
-  'ArialNarrow_Italic': 'Helvetica-Oblique',
+  'ArialNarrow-Bold': 'Helvetica-Bold',
+  'ArialNarrow-BoldItalic': 'Helvetica-BoldOblique',
+  'ArialNarrow-Italic': 'Helvetica-Oblique',
   'ArialBlack': 'Helvetica',
-  'ArialBlack_Bold': 'Helvetica-Bold',
-  'ArialBlack_BoldItalic': 'Helvetica-BoldOblique',
-  'ArialBlack_Italic': 'Helvetica-Oblique',
+  'ArialBlack-Bold': 'Helvetica-Bold',
+  'ArialBlack-BoldItalic': 'Helvetica-BoldOblique',
+  'ArialBlack-Italic': 'Helvetica-Oblique',
   'Arial': 'Helvetica',
-  'Arial_Bold': 'Helvetica-Bold',
-  'Arial_BoldItalic': 'Helvetica-BoldOblique',
-  'Arial_Italic': 'Helvetica-Oblique',
-  'Arial_BoldItalicMT': 'Helvetica-BoldOblique',
-  'Arial_BoldMT': 'Helvetica-Bold',
-  'Arial_ItalicMT': 'Helvetica-Oblique',
+  'Arial-Bold': 'Helvetica-Bold',
+  'Arial-BoldItalic': 'Helvetica-BoldOblique',
+  'Arial-Italic': 'Helvetica-Oblique',
+  'Arial-BoldItalicMT': 'Helvetica-BoldOblique',
+  'Arial-BoldMT': 'Helvetica-Bold',
+  'Arial-ItalicMT': 'Helvetica-Oblique',
   'ArialMT': 'Helvetica',
-  'Courier_Bold': 'Courier-Bold',
-  'Courier_BoldItalic': 'Courier-BoldOblique',
-  'Courier_Italic': 'Courier-Oblique',
+  'Courier-Bold': 'Courier-Bold',
+  'Courier-BoldItalic': 'Courier-BoldOblique',
+  'Courier-Italic': 'Courier-Oblique',
   'CourierNew': 'Courier',
-  'CourierNew_Bold': 'Courier-Bold',
-  'CourierNew_BoldItalic': 'Courier-BoldOblique',
-  'CourierNew_Italic': 'Courier-Oblique',
-  'CourierNewPS_BoldItalicMT': 'Courier-BoldOblique',
-  'CourierNewPS_BoldMT': 'Courier-Bold',
-  'CourierNewPS_ItalicMT': 'Courier-Oblique',
+  'CourierNew-Bold': 'Courier-Bold',
+  'CourierNew-BoldItalic': 'Courier-BoldOblique',
+  'CourierNew-Italic': 'Courier-Oblique',
+  'CourierNewPS-BoldItalicMT': 'Courier-BoldOblique',
+  'CourierNewPS-BoldMT': 'Courier-Bold',
+  'CourierNewPS-ItalicMT': 'Courier-Oblique',
   'CourierNewPSMT': 'Courier',
-  'Helvetica_Bold': 'Helvetica-Bold',
-  'Helvetica_BoldItalic': 'Helvetica-BoldOblique',
-  'Helvetica_Italic': 'Helvetica-Oblique',
-  'Symbol_Bold': 'Symbol',
-  'Symbol_BoldItalic': 'Symbol',
-  'Symbol_Italic': 'Symbol',
+  'Helvetica-Bold': 'Helvetica-Bold',
+  'Helvetica-BoldItalic': 'Helvetica-BoldOblique',
+  'Helvetica-Italic': 'Helvetica-Oblique',
+  'Symbol-Bold': 'Symbol',
+  'Symbol-BoldItalic': 'Symbol',
+  'Symbol-Italic': 'Symbol',
   'TimesNewRoman': 'Times-Roman',
-  'TimesNewRoman_Bold': 'Times-Bold',
-  'TimesNewRoman_BoldItalic': 'Times-BoldItalic',
-  'TimesNewRoman_Italic': 'Times-Italic',
+  'TimesNewRoman-Bold': 'Times-Bold',
+  'TimesNewRoman-BoldItalic': 'Times-BoldItalic',
+  'TimesNewRoman-Italic': 'Times-Italic',
   'TimesNewRomanPS': 'Times-Roman',
-  'TimesNewRomanPS_Bold': 'Times-Bold',
-  'TimesNewRomanPS_BoldItalic': 'Times-BoldItalic',
-  'TimesNewRomanPS_BoldItalicMT': 'Times-BoldItalic',
-  'TimesNewRomanPS_BoldMT': 'Times-Bold',
-  'TimesNewRomanPS_Italic': 'Times-Italic',
-  'TimesNewRomanPS_ItalicMT': 'Times-Italic',
+  'TimesNewRomanPS-Bold': 'Times-Bold',
+  'TimesNewRomanPS-BoldItalic': 'Times-BoldItalic',
+  'TimesNewRomanPS-BoldItalicMT': 'Times-BoldItalic',
+  'TimesNewRomanPS-BoldMT': 'Times-Bold',
+  'TimesNewRomanPS-Italic': 'Times-Italic',
+  'TimesNewRomanPS-ItalicMT': 'Times-Italic',
   'TimesNewRomanPSMT': 'Times-Roman',
-  'TimesNewRomanPSMT_Bold': 'Times-Bold',
-  'TimesNewRomanPSMT_BoldItalic': 'Times-BoldItalic',
-  'TimesNewRomanPSMT_Italic': 'Times-Italic'
+  'TimesNewRomanPSMT-Bold': 'Times-Bold',
+  'TimesNewRomanPSMT-BoldItalic': 'Times-BoldItalic',
+  'TimesNewRomanPSMT-Italic': 'Times-Italic'
 };
 
 var serifFonts = {
@@ -453,7 +453,9 @@ var Font = (function Font() {
     if (!file) {
       // The file data is not specified. Trying to fix the font name
       // to be used with the canvas.font.
-      var fontName = stdFontMap[name] || name.replace('_', '-');
+      var fontName = name.replace(/[,_]/g, '-');
+      fontName = stdFontMap[fontName] || fontName;
+
       this.bold = (fontName.search(/bold/gi) != -1);
       this.italic = (fontName.search(/oblique/gi) != -1) ||
                     (fontName.search(/italic/gi) != -1);
@@ -720,7 +722,13 @@ var Font = (function Font() {
   };
 
   function createOS2Table(properties, override) {
-    var override = override || {};
+    override = override || {
+      unitsPerEm: 0,
+      yMax: 0,
+      yMin: 0,
+      ascent: 0,
+      descent: 0
+    };
 
     var ulUnicodeRange1 = 0;
     var ulUnicodeRange2 = 0;
@@ -1332,7 +1340,8 @@ var Font = (function Font() {
         'OS/2': stringToArray(createOS2Table(properties)),
 
         // Character to glyphs mapping
-        'cmap': createCMapTable(charstrings.slice(), font.glyphIds),
+        'cmap': createCMapTable(charstrings.slice(),
+                                ('glyphIds' in font) ? font.glyphIds : null),
 
         // Font header
         'head': (function fontFieldsHead() {
@@ -1727,6 +1736,7 @@ var Type1Parser = function type1Parser() {
     var charstring = [];
     var lsb = 0;
     var width = 0;
+    var flexState = 0;
 
     var value = '';
     var count = array.length;
@@ -1760,7 +1770,11 @@ var Type1Parser = function type1Parser() {
               i++;
               continue;
             }
-          } else if (!kHintingEnabled && (value == 1 || value == 2)) {
+          } else if (escape == 17 || escape == 33) {
+            // pop or setcurrentpoint commands can be ignored
+            // since we are not doing callothersubr
+            continue;
+          } else if (!kHintingEnabled && (escape == 1 || escape == 2)) {
             charstring.push('drop', 'drop', 'drop', 'drop', 'drop', 'drop');
             continue;
           }
@@ -1787,6 +1801,29 @@ var Type1Parser = function type1Parser() {
 
             charstring.push(lsb, 'hmoveto');
             continue;
+          } else if (value == 10) { // callsubr
+            if (charstring[charstring.length - 1] < 3) { // subr #0..2
+              var subrNumber = charstring.pop();
+              switch (subrNumber) {
+                case 1:
+                  flexState = 1; // prepare for flex coordinates
+                  break;
+                case 2:
+                  flexState = 2; // flex in progress
+                  break;
+                case 0:
+                  // type2 flex command does not need final coords
+                  charstring.push('exch', 'drop', 'exch', 'drop');
+                  charstring.push('flex');
+                  flexState = 0;
+                  break;
+              }
+              continue;
+            }
+          } else if (value == 21 && flexState > 0) {
+            if (flexState > 1)
+              continue; // ignoring rmoveto
+            value = 5; // first segment replacing with rlineto
           } else if (!kHintingEnabled && (value == 1 || value == 3)) {
             charstring.push('drop', 'drop');
             continue;
@@ -2283,7 +2320,8 @@ CFF.prototype = {
     'return': 11,
     'sub': [12, 11],
     'div': [12, 12],
-    'pop': [1, 12, 18],
+    'exch': [12, 28],
+    'flex': [12, 35],
     'drop' : [12, 18],
     'endchar': 14,
     'rmoveto': 21,
@@ -2500,7 +2538,7 @@ var Type2CFF = (function type2CFF() {
       var charStrings = this.parseIndex(topDict.CharStrings);
       var charset = this.parseCharsets(topDict.charset,
                                        charStrings.length, strings);
-      var hasSupplement = this.parseEncoding(topDict.Encoding, properties,
+      var encoding = this.parseEncoding(topDict.Encoding, properties,
                                              strings, charset);
 
       // The font sanitizer does not support CFF encoding with a
@@ -2508,8 +2546,8 @@ var Type2CFF = (function type2CFF() {
       // between gid to glyph, let's overwrite what is declared in
       // the top dictionary to let the sanitizer think the font use
       // StandardEncoding, that's a lie but that's ok.
-      if (hasSupplement)
-        bytes[topDict.Encoding] = 0;
+      if (encoding.hasSupplement)
+        bytes[topDict.Encoding] &= 0x7F;
 
       // The CFF specification state that the 'dotsection' command
       // (12, 0) is deprecated and treated as a no-op, but all Type2
@@ -2540,7 +2578,7 @@ var Type2CFF = (function type2CFF() {
 
       // charstrings contains info about glyphs (one element per glyph
       // containing mappings for {unicode, width})
-      var charstrings = this.getCharStrings(charset, charStrings,
+      var charstrings = this.getCharStrings(charset, encoding.encoding,
                                             privateDict, this.properties);
 
       // create the mapping between charstring and glyph id
@@ -2557,46 +2595,82 @@ var Type2CFF = (function type2CFF() {
       return data;
     },
 
-    getCharStrings: function cff_charstrings(charsets, charStrings,
+    getCharStrings: function cff_charstrings(charsets, encoding,
                                              privateDict, properties) {
       var defaultWidth = privateDict['defaultWidthX'];
       var charstrings = [];
-      var differences = properties.differences;
-      var index = properties.firstChar || 0;
-      for (var i = 1; i < charsets.length; i++) {
-        var code = -1;
+      var firstChar = properties.firstChar;
+      var glyphMap = {};
+      for (var i = 0; i < charsets.length; i++) {
         var glyph = charsets[i];
-        for (var j = 0; j < differences.length; j++) {
-          if (differences[j] == glyph) {
-            index = j;
-            code = differences.indexOf(glyph);
-            break;
-          }
+        for (var charcode in encoding) {
+          if (encoding[charcode] == i)
+            glyphMap[glyph] = charcode | 0;
         }
+      }
 
-        var mapping =
-          properties.glyphs[glyph] || properties.glyphs[index] || {};
-        if (code == -1)
-          index = code = mapping.unicode || index;
+      var differences = properties.differences;
+      for (var i = 0; i < differences.length; ++i) {
+        var glyph = differences[i];
+        if (!glyph)
+          continue;
+        var oldGlyph = charsets[i];
+        if (oldGlyph)
+          delete glyphMap[oldGlyph];
+        glyphMap[differences[i]] = i;
+      }
 
-        if (code <= 0x1f || (code >= 127 && code <= 255))
-          code += kCmapGlyphOffset;
+      var glyphs = properties.glyphs;
+      for (var i = 1; i < charsets.length; i++) {
+        var glyph = charsets[i];
+        var code = glyphMap[glyph] || 0;
 
-        var width = mapping.width;
-        properties.glyphs[glyph] = properties.encoding[index] = {
-          unicode: code,
-          width: isNum(width) ? width : defaultWidth
+        var mapping = glyphs[code] || glyphs[glyph] || { width: defaultWidth };
+        var unicode = mapping.unicode;
+
+        if (unicode <= 0x1f || (unicode >= 127 && unicode <= 255))
+          unicode += kCmapGlyphOffset;
+
+        var width = isNum(mapping.width) ? mapping.width : defaultWidth;
+        properties.encoding[code] = {
+          unicode: unicode,
+          width: width
         };
 
         charstrings.push({
-          unicode: code,
+          unicode: unicode,
           width: width,
+          code: code,
           gid: i
         });
-        index++;
       }
 
       // sort the array by the unicode value
+      charstrings.sort(function type2CFFGetCharStringsSort(a, b) {
+        return a.unicode - b.unicode;
+      });
+
+      // remove duplicates -- they might appear during selection:
+      //   properties.glyphs[code] || properties.glyphs[glyph]
+      var nextUnusedUnicode = kCmapGlyphOffset + 0x0020;
+      var lastUnicode = charstrings[0].unicode, wasModified = false;
+      for (var i = 1; i < charstrings.length; ++i) {
+        if (lastUnicode != charstrings[i].unicode) {
+          lastUnicode = charstrings[i].unicode;
+          continue;
+        }
+        // duplicate found -- keeping the item that has
+        // different code and unicode, that one created
+        // as result of modification of the base encoding
+        var duplicateIndex =
+          charstrings[i].unicode == charstrings[i].code ? i : i - 1;
+        charstrings[duplicateIndex].unicode = nextUnusedUnicode++;
+        wasModified = true;
+      }
+      if (!wasModified)
+        return charstrings;
+
+      // sort the array by the unicode value (again)
       charstrings.sort(function type2CFFGetCharStringsSort(a, b) {
         return a.unicode - b.unicode;
       });
@@ -2607,6 +2681,10 @@ var Type2CFF = (function type2CFF() {
                                               charset) {
       var encoding = {};
       var bytes = this.bytes;
+      var result = {
+        encoding: encoding,
+        hasSupplement: false
+      };
 
       function readSupplement() {
         var supplementsCount = bytes[pos++];
@@ -2633,11 +2711,6 @@ var Type2CFF = (function type2CFF() {
             var glyphsCount = bytes[pos++];
             for (var i = 1; i <= glyphsCount; i++)
               encoding[bytes[pos++]] = i;
-
-            if (format & 0x80) {
-              readSupplement();
-              return true;
-            }
             break;
 
           case 1:
@@ -2649,19 +2722,18 @@ var Type2CFF = (function type2CFF() {
               for (var j = start; j <= start + count; j++)
                 encoding[j] = gid++;
             }
-
-            if (format & 0x80) {
-              readSupplement();
-              return true;
-            }
             break;
 
           default:
             error('Unknow encoding format: ' + format + ' in CFF');
             break;
         }
+        if (format & 0x80) {
+          readSupplement();
+          result.hasSupplement = true;
+        }
       }
-      return false;
+      return result;
     },
 
     parseCharsets: function cff_parsecharsets(pos, length, strings) {
@@ -2871,7 +2943,15 @@ var Type2CFF = (function type2CFF() {
         if (b <= 21) {
           if (b === 12) {
             ++pos;
-            var b = (b << 8) | dict[pos];
+            var op = dict[pos];
+            if ((op > 14 && op < 17) ||
+                (op > 23 && op < 30) || op > 38) {
+              warn('Invalid CFF dictionary key: ' + op);
+              // trying to replace it with initialRandomSeed
+              // to pass sanitizer
+              dict[pos] = 19;
+            }
+            var b = (b << 8) | op;
           }
           entries.push([b, operands]);
           operands = [];

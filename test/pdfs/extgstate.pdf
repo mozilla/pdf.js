@@ -36,8 +36,9 @@ endobj
 /Length 8 0 R
 >>
 stream
+ /F0 12 Tf
+/F1 12 Tf
 /GS1 gs
-/F0 12 Tf
 BT
 100 700 Td
 (I should be courier!) Tj
@@ -56,10 +57,11 @@ endobj
 7 0 obj
 <<
 /F0 10 0 R
+/F1 11 0 R
 >>
 endobj
 8 0 obj
-82
+93
 endobj
 9 0 obj
 <<
@@ -81,25 +83,34 @@ endobj
 /Encoding /WinAnsiEncoding
 >>
 endobj
+11 0 obj
+<<
+/Type /Font
+/Subtype /Type1
+/BaseFont /Times-Italic
+/Encoding /WinAnsiEncoding
+>>
+endobj
 xref
-0 11
+0 12
 0000000000 65535 f
 0000000015 00000 n
 0000000078 00000 n
 0000000135 00000 n
 0000000239 00000 n
 0000000304 00000 n
-0000000441 00000 n
-0000000473 00000 n
-0000000505 00000 n
-0000000523 00000 n
-0000000653 00000 n
+0000000452 00000 n
+0000000484 00000 n
+0000000527 00000 n
+0000000545 00000 n
+0000000675 00000 n
+0000000771 00000 n
 trailer
 <<
 /Root 1 0 R
-/ID [<BFFF29B7D1C75EC69AC080682C2AFC5B> <BFFF29B7D1C75EC69AC080682C2AFC5B>]
-/Size 11
+/ID [<FCE2529ACCE848A953BDB5D497D71C36> <FCE2529ACCE848A953BDB5D497D71C36>]
+/Size 12
 >>
 startxref
-749
+872
 %%EOF
