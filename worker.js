@@ -4,69 +4,7 @@
 'use strict';
 
 // Set this to true if you want to use workers.
-var useWorker = false;
-
-var WorkerPage = (function() {
-  function constructor(pdf, page, objs) {
-    this.pdf = pdf;
-    this.page = page;
-    this.objs = objs;
-
-    this.ref = page.ref;
-  }
-
-  constructor.prototype = {
-    get width() {
-      return this.page.width;
-    },
-
-    get height() {
-      return this.page.height;
-    },
-
-    get stats() {
-      return this.page.stats;
-    },
-
-    get view() {
-      return this.page.view;
-    },
-
-    startRendering: function(ctx, callback, errback)  {
-      this.ctx = ctx;
-      this.callback = callback;
-      // TODO: Place the worker magic HERE.
-      // this.page.startRendering(ctx, callback, errback);
-
-      this.startRenderingTime = Date.now();
-      this.pdf.startRendering(this);
-    },
-
-    startRenderingFromIRQueue: function(IRQueue, fonts) {
-      var gfx = new CanvasGraphics(this.ctx, this.objs);
-
-      var startTime = Date.now();
-      var callback = function(err) {
-        var pageNum = this.page.pageNumber + 1;
-        console.log('page=%d - rendering time: time=%dms',
-          pageNum, Date.now() - startTime);
-        console.log('page=%d - total time: time=%dms',
-          pageNum, Date.now() - this.startRenderingTime);
-
-        if (this.callback) {
-          this.callback(err);
-        }
-      }.bind(this);
-      this.page.startRenderingFromIRQueue(gfx, IRQueue, fonts, callback);
-    },
-
-    getLinks: function() {
-      return this.page.getLinks();
-    }
-  };
-
-  return constructor;
-})();
+var useWorker = true;
 
 /**
  * A PDF document and page is build up of many objects. E.g. there are objects

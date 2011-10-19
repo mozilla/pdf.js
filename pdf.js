@@ -3509,10 +3509,12 @@ var Page = (function pagePage() {
       return shadow(this, 'rotate', rotate);
     },
 
-    startRenderingFromIRQueue: function startRenderingFromIRQueue(gfx,
-                                                IRQueue, fonts, continuation) {
+    startRenderingFromIRQueue: function startRenderingFromIRQueue(
+                                                IRQueue, fonts) {
       var self = this;
       this.IRQueue = IRQueue;
+      var gfx = new CanvasGraphics(this.ctx, this.objs);
+      var continuation = this.callback;
 
       var displayContinuation = function pageDisplayContinuation() {
         console.log('--display--');
@@ -3665,6 +3667,13 @@ var Page = (function pagePage() {
         links.push(link);
       }
       return links;
+    },
+    startRendering: function(ctx, callback, errback)  {
+      this.ctx = ctx;
+      this.callback = callback;
+
+      this.startRenderingTime = Date.now();
+      this.pdf.startRendering(this);
     }
   };
 
@@ -4098,7 +4107,7 @@ var PDFDoc = (function() {
     startRendering: function(page) {
       // The worker might not be ready to receive the page request yet.
       this.workerReadyPromise.then(function() {
-        this.processorHandler.send('page_request', page.page.pageNumber + 1);
+        this.processorHandler.send('page_request', page.pageNumber + 1);
       }.bind(this));
     },
 
@@ -4111,7 +4120,8 @@ var PDFDoc = (function() {
       // Add a reference to the objects such that Page can forward the reference
       // to the CanvasGraphics and so on.
       page.objs = this.objs;
-      return this.pageCache[n] = new WorkerPage(this, page, this.objs);
+      page.pdf = this;
+      return this.pageCache[n] = page;
     },
 
     destroy: function() {
