@@ -1589,6 +1589,11 @@ var Font = (function Font() {
     },
 
     loadCidToUnicode: function font_loadCidToUnicode(properties) {
+      if (properties.cidToGidMap) {
+        this.cidToUnicode = properties.cidToGidMap;
+        return;
+      }
+
       if (!properties.cidSystemInfo)
           return;
 
@@ -1661,16 +1666,16 @@ var Font = (function Font() {
     },
 
     charToGlyph: function fonts_charToGlyph(charcode) {
-      var width = this.widths[charcode];
-      if (!isNum(width)) width = this.defaultWidth;
       var unicode;
+      var width = this.widths[charcode];
       if (this.cidToUnicode) {
-        unicode = adaptUnicode(this.cidToUnicode[charcode] ||
-          GlyphsUnicode[glyphName] || charcode);
+        unicode = this.noUnicodeAdaptation ? charcode :
+          adaptUnicode(this.cidToUnicode[charcode] || charcode);
       } else {
         var glyphName = this.differences[charcode] || this.encoding[charcode];
         if (this.glyphNameMap) {
-          unicode = this.glyphNameMap[glyphName] || adaptUnicode(charcode);
+          unicode = this.glyphNameMap[glyphName] ||
+            adaptUnicode(GlyphsUnicode[glyphName] || charcode);
         } else {
           unicode = GlyphsUnicode[glyphName] || charcode;
           if (!this.noUnicodeAdaptation)
@@ -1679,7 +1684,7 @@ var Font = (function Font() {
       }
       var glyph = {
         unicode: unicode,
-        width: width
+        width: isNum(width) ? width : this.defaultWidth
       };
       if (this.coded)
         glyph.code = this.charProcs[glyphName];

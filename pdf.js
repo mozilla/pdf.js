@@ -4671,7 +4671,7 @@ var PartialEvaluator = (function partialEvaluator() {
       var defaultWidth = 0, widths = [];
       var glyphWidths = Metrics[stdFontMap[name] || name];
       if (isNum(glyphWidths)) {
-        defaultWidth = widths;
+        defaultWidth = glyphWidths;
       } else {
         // glyphWidths stored in {glyph-name -> width} format
         // converting to {char-code -> width} array
