@@ -43,7 +43,7 @@ pdfContentHandler.prototype = {
     let url = null;
     try {
       url = Services.prefs.getCharPref('extensions.pdf.js.url');
-    } catch(e) {
+    } catch (e) {
       log('Error retrieving the pdf.js base url - ' + e);
       throw NS_ERROR_WONT_HANDLE_CONTENT;
     }
