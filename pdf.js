@@ -3607,8 +3607,8 @@ var Page = (function pagePage() {
       gfx.execute(this.code, xref, resources);
       gfx.endDrawing();
     },
-    rotatePoint: function pageRotatePoint(x, y) {
-      var rotate = this.rotate;
+    rotatePoint: function pageRotatePoint(x, y, reverse) {
+      var rotate = reverse ? (360 - this.rotate) : this.rotate;
       switch (rotate) {
         case 180:
           return {x: this.width - x, y: y};
@@ -3616,6 +3616,7 @@ var Page = (function pagePage() {
           return {x: this.width - y, y: this.height - x};
         case 270:
           return {x: y, y: x};
+        case 360:
         case 0:
         default:
           return {x: x, y: this.height - y};
