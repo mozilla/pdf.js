@@ -1157,9 +1157,9 @@ var Font = (function Font() {
 
             var glyphs = [];
             var ids = [];
-            for (var j = 0; j < firstCode + entryCount; j++) {
-              var code = (j >= firstCode) ? int16(font.getBytes(2)) : j;
-              var unicode = adaptUnicode(j);
+            for (var j = 0; j < entryCount; j++) {
+              var code = int16(font.getBytes(2));
+              var unicode = adaptUnicode(firstCode + j);
               glyphs.push({ unicode: unicode });
               ids.push(code);
             }
@@ -1283,6 +1283,9 @@ var Font = (function Font() {
               }
               glyphNames.push(customNames[j - 258]);
             }
+            break;
+          case 0x00030000:
+            break;
           default:
             warn('Unknown/unsupported post table version ' + version);
             break;
@@ -1662,7 +1665,8 @@ var Font = (function Font() {
       if (!isNum(width)) width = this.defaultWidth;
       var unicode;
       if (this.cidToUnicode) {
-        unicode = adaptUnicode(this.cidToUnicode[charcode] || charcode);
+        unicode = adaptUnicode(this.cidToUnicode[charcode] ||
+          GlyphsUnicode[glyphName] || charcode);
       } else {
         var glyphName = this.differences[charcode] || this.encoding[charcode];
         if (this.glyphNameMap) {
@@ -2193,10 +2197,11 @@ var Type1Parser = function type1Parser() {
           case '/Encoding':
             var encodingArg = getToken();
             var encoding;
-            if (!isNum(encodingArg)) {
+            if (!/^\d+$/.test(encodingArg)) {
               // encoding name is specified
               encoding = Encodings[encodingArg];
             } else {
+              encoding = [];
               var size = parseInt(encodingArg, 10);
               getToken(); // read in 'array'
 
@@ -2690,6 +2695,24 @@ var Type2CFF = (function type2CFF() {
                                        charStrings.length, strings);
       var encoding = this.parseEncoding(topDict.Encoding, properties,
                                              strings, charset);
+      var encodingHasItems = false;
+      for (var item in encoding.encoding) {
+        if (encoding.encoding.hasOwnProperty(item)) {
+          encodingHasItems = true;
+          break;
+        }
+      }
+      if (!encodingHasItems && charset.length) {
+        // no encoding item, but charset has items
+        // building encoding from what we have
+        for (var i = 0; i < charset.length; ++i) {
+          var glyphName = charset[i];
+          var charcode = properties.baseEncoding.indexOf(glyphName);
+          if (charcode < 0)
+            continue;
+          encoding.encoding[charcode] = i;
+        }
+      }
 
       // The font sanitizer does not support CFF encoding with a
       // supplement, since the encoding is not really use to map
@@ -2748,15 +2771,28 @@ var Type2CFF = (function type2CFF() {
     getCharStrings: function cff_charstrings(charsets, encoding,
                                              privateDict, properties) {
       var charstrings = [];
+      var nextUnusedUnicode = 0xE021;
       for (var i = 0; i < charsets.length; i++) {
         var glyph = charsets[i];
+        var encodingFound = false;
         for (var charcode in encoding) {
-          if (encoding[charcode] == i)
+          if (encoding[charcode] == i) {
             charstrings.push({
               unicode: adaptUnicode(charcode | 0),
               gid: i,
               glyph: glyph
             });
+            encodingFound = true;
+            break;
+          }
+        }
+        if (!encodingFound) {
+          // giving unicode value anyway
+          charstrings.push({
+            unicode: nextUnusedUnicode++,
+            gid: i,
+            glyph: glyph
+          });
         }
       }
 
