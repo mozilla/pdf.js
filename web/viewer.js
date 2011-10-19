@@ -85,6 +85,10 @@ var PDFView = {
     this.setScale(newScale, true);
   },
 
+  download: function pdfViewDownload() {
+    window.open(document.title, '_parent', 'pdf=yes');
+  },
+
   set page(val) {
     var pages = this.pages;
     var input = document.getElementById('pageNumber');
@@ -661,8 +665,9 @@ window.addEventListener('change', function webViewerChange(evt) {
 
   document.title = file.name;
 
-  // URL does not reflect proper document location - hiding bookmark icon.
+  // URL does not reflect proper document location - hiding some icons.
   document.getElementById('viewBookmark').setAttribute('hidden', 'true');
+  document.getElementById('download').setAttribute('hidden', 'true');
 }, true);
 
 window.addEventListener('transitionend', function webViewerTransitionend(evt) {
