@@ -20,16 +20,17 @@ function log(aMsg) {
   dump(msg + '\n');
 }
 
+const NS_ERROR_WONT_HANDLE_CONTENT = 0x805d0001;
 function pdfContentHandler() {
 }
 
 pdfContentHandler.prototype = {
   handleContent: function handleContent(aMimetype, aContext, aRequest) {
     if (aMimetype != PDF_CONTENT_TYPE)
-      throw Cr.NS_ERROR_WONT_HANDLE_CONTENT;
+      throw NS_ERROR_WONT_HANDLE_CONTENT;
 
     if (!(aRequest instanceof Ci.nsIChannel))
-      throw Cr.NS_ERROR_WONT_HANDLE_CONTENT;
+      throw NS_ERROR_WONT_HANDLE_CONTENT;
 
     let window = null;
     let callbacks = aRequest.notificationCallbacks ||
@@ -37,18 +38,22 @@ pdfContentHandler.prototype = {
     if (!callbacks)
       return;
 
-    aRequest.cancel(Cr.NS_BINDING_ABORTED);
-    let uri = aRequest.URI;
+    window = callbacks.getInterface(Ci.nsIDOMWindow);
 
+    let url = null;
     try {
-      let url = Services.prefs.getCharPref('extensions.pdf.js.url');
-      url = url.replace('%s', uri.spec);
-
-      window = callbacks.getInterface(Ci.nsIDOMWindow);
-      window.location = url;
+      url = Services.prefs.getCharPref('extensions.pdf.js.url');
     } catch (e) {
       log('Error retrieving the pdf.js base url - ' + e);
+      throw NS_ERROR_WONT_HANDLE_CONTENT;
     }
+
+    let targetUrl = aRequest.URI.spec;
+    if (targetUrl.indexOf('?pdfjs.action=download') >= 0)
+      throw NS_ERROR_WONT_HANDLE_CONTENT;
+
+    aRequest.cancel(Cr.NS_BINDING_ABORTED);
+    window.location = url.replace('%s', targetUrl);
   },
 
   classID: Components.ID('{2278dfd0-b75c-11e0-8257-1ba3d93c9f1a}'),
