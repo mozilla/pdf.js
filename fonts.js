@@ -1557,12 +1557,8 @@ var Font = (function Font() {
         // Horizontal metrics
         'hmtx': (function fontFieldsHmtx() {
           var hmtx = '\x00\x00\x00\x00'; // Fake .notdef
-          var glyphWidths = [];
-          // ordering by gid
           for (var i = 0; i < charstrings.length; i++)
-            glyphWidths[charstrings[i].gid] = charstrings[i].width;
-          for (var i = 0; i < charstrings.length; i++)
-            hmtx += string16(glyphWidths[i]) + string16(0);
+            hmtx += string16(charstrings[i].width) + string16(0);
           return stringToArray(hmtx);
         })(),
 
@@ -2421,7 +2417,7 @@ CFF.prototype = {
       });
     }
 
-    var unusedUnicode = 0x100;
+    var unusedUnicode = 0xE021;
     for (var i = 0; i < charstrings.length; i++) {
       var charstring = charstrings[i];
       charstring.unicode = charstring.unicode ?
