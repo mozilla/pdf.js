@@ -959,6 +959,60 @@ var JpegStream = (function jpegStream() {
   return constructor;
 })();
 
+var JpxStream = (function jpxStream() {
+  var worker;
+  var queue = {};
+  var id = 0;
+
+  function processImage(e) {
+    var imageData = e.data;
+    var image = queue[imageData.tag];
+    delete queue[imageData.tag];
+
+    if ('error' in imageData) {
+      error('Unable to process JPX: ' + imageData.error);
+      return;
+    }
+
+    var img = image.domImage;
+    img.width = imageData.width;
+    img.height = imageData.height;
+    var ctx = img.getContext('2d');
+    ctx.putImageData(imageData, 0, 0);
+
+    image.loaded = true;
+    if (image.onLoad)
+      image.onLoad();
+  }
+
+  function constructor(bytes, dict) {
+    this.dict = dict;
+
+    if (!worker) {
+      worker = new Worker('../jpx/jpxworker.js');
+      worker.addEventListener('message', processImage, false);
+    }
+
+    var tag = 'jpx' + (id++);
+    queue[tag] = this;
+    worker.postMessage({data:bytes, tag: tag});
+
+    var img = document.createElement('CANVAS');
+    this.domImage = img;
+  }
+
+  constructor.prototype = {
+    getImage: function jpxStreamGetImage() {
+      return this.domImage;
+    },
+    getChar: function jpxStreamGetChar() {
+      error('internal error: getChar is not valid on JpxStream');
+    }
+  };
+
+  return constructor;
+})();
+
 // Simple object to track the loading images
 // Initialy for every that is in loading call imageLoading()
 // and, when images onload is fired, call imageLoaded()
@@ -2953,6 +3007,9 @@ var Parser = (function parserParser() {
       } else if (name == 'DCTDecode' || name == 'DCT') {
         var bytes = stream.getBytes(length);
         return new JpegStream(bytes, stream.dict);
+      } else if (name == 'JPXDecode' || name == 'JPX') {
+        var bytes = stream.getBytes(length);
+        return new JpxStream(bytes, stream.dict);
       } else if (name == 'ASCII85Decode' || name == 'A85') {
         return new Ascii85Stream(stream);
       } else if (name == 'ASCIIHexDecode' || name == 'AHx') {
