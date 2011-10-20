@@ -4682,8 +4682,6 @@ var PartialEvaluator = (function partialEvaluator() {
             continue;
           widths[index] = glyphWidths[glyphName];
         }
-        // TODO we need default width as well, using 'x' for now
-        defaultWidth = widths['x'.charCodeAt(0)];
       }
 
       return {

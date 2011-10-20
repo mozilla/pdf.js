@@ -1616,7 +1616,7 @@ var Font = (function Font() {
         if (isArray(unicode)) {
           var length = unicode.length;
           for (j = 0; j < length; j++) {
-            cidToUnicodeMap[glyph] = unicode[j];
+            cidToUnicodeMap[unicode[j]] = glyph;
           }
           glyph++;
         } else if (typeof unicode === 'object') {
@@ -1666,11 +1666,14 @@ var Font = (function Font() {
     },
 
     charToGlyph: function fonts_charToGlyph(charcode) {
-      var unicode;
+      var unicode, width;
       var width = this.widths[charcode];
       if (this.cidToUnicode) {
-        unicode = this.noUnicodeAdaptation ? charcode :
-          adaptUnicode(this.cidToUnicode[charcode] || charcode);
+        if (this.noUnicodeAdaptation) {
+          width = this.widths[this.cidToUnicode[charcode]];
+          unicode = charcode;
+        } else
+          unicode = adaptUnicode(this.cidToUnicode[charcode] || charcode);
       } else {
         var glyphName = this.differences[charcode] || this.encoding[charcode];
         if (this.glyphNameMap) {
