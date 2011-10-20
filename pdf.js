@@ -3518,17 +3518,10 @@ var Page = (function pagePage() {
       var gfx = new CanvasGraphics(this.ctx, this.objs);
       var startTime = Date.now();
       var continuation = function(err) {
-        var pageNum = this.pageNumber + 1;
-        console.log('page=%d - rendering time: time=%dms',
-          pageNum, Date.now() - startTime);
-        console.log('page=%d - total time: time=%dms',
-          pageNum, Date.now() - this.startRenderingTime);
-
         this.callback(err);
       }.bind(this);
 
       var displayContinuation = function pageDisplayContinuation() {
-        console.log('--display--');
         // Always defer call to display() to work around bug in
         // Firefox error reporting from XHR callbacks.
         setTimeout(function pageSetTimeout() {
@@ -3573,7 +3566,6 @@ var Page = (function pagePage() {
     },
 
     ensureFonts: function(fonts, callback) {
-      console.log('--ensureFonts--', '' + fonts);
       // Convert the font names to the corresponding font obj.
       for (var i = 0; i < fonts.length; i++) {
         fonts[i] = this.objs.objs[fonts[i]].data;
@@ -3614,9 +3606,6 @@ var Page = (function pagePage() {
         startIdx = gfx.executeIRQueue(IRQueue, startIdx, next);
         if (startIdx == length) {
           self.stats.render = Date.now();
-          console.log('page=%d - executeIRQueue: time=%dms',
-            self.pageNumber + 1, self.stats.render - startTime);
-          console.log('call back');
           callback();
         }
       }
@@ -4046,7 +4035,6 @@ var PDFDoc = (function() {
         case 'JpegStream':
           var IR = data[2];
           new JpegImage(objId, IR, this.objs);
-          console.log('got image');
         break;
         case 'Font':
           var name = data[2];
@@ -4086,8 +4074,6 @@ var PDFDoc = (function() {
     processorHandler.on('font_ready', function(data) {
       var objId = data[0];
       var fontObj = new FontShape(data[1]);
-
-      console.log('got fontData', objId);
 
       // If there is no string, then there is nothing to attach to the DOM.
       if (!fontObj.str) {
@@ -4136,7 +4122,6 @@ var PDFDoc = (function() {
     },
 
     destroy: function() {
-      console.log('destroy worker');
       if (this.worker) {
         this.worker.terminate();
       }
