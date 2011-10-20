@@ -5883,7 +5883,7 @@ var CanvasGraphics = (function canvasGraphics() {
       this.setStrokeRGBColor.apply(this, color);
     },
     getColorN_IR_Pattern: function(IR, cs) {
-      if (IR[0] == 'TilingPatternIR') {
+      if (IR[0] == 'TilingPattern') {
         // First, build the `color` var like it's done in the
         // Pattern.prototype.parse function.
         var args = IR[1];
@@ -5900,7 +5900,7 @@ var CanvasGraphics = (function canvasGraphics() {
         }
 
         // Build the pattern based on the IR data.
-        var pattern = new TilingPatternIR(IR, color, this.ctx, this.objs);
+        var pattern = new TilingPattern(IR, color, this.ctx, this.objs);
       } else if (IR[0] == 'RadialAxialShading' || IR[0] == 'DummyShading') {
         var pattern = Pattern.shadingFromIR(this.ctx, IR);
       } else {
@@ -6768,10 +6768,10 @@ var RadialAxialShading = (function radialAxialShading() {
   return constructor;
 })();
 
-var TilingPatternIR = (function tilingPattern() {
+var TilingPattern = (function tilingPattern() {
   var PAINT_TYPE_COLORED = 1, PAINT_TYPE_UNCOLORED = 2;
 
-  function TilingPatternIR(IR, color, ctx, objs) {
+  function TilingPattern(IR, color, ctx, objs) {
     // 'Unfolding' the IR.
     var IRQueue = IR[2];
     this.matrix = IR[3];
@@ -6847,7 +6847,19 @@ var TilingPatternIR = (function tilingPattern() {
     this.canvas = tmpCanvas;
   }
 
-  TilingPatternIR.prototype = {
+  TilingPattern.getIR = function tiling_getIR(codeIR, dict, args) {
+    var matrix = dict.get('Matrix');
+    var bbox = dict.get('BBox');
+    var xstep = dict.get('XStep');
+    var ystep = dict.get('YStep');
+    var paintType = dict.get('PaintType');
+
+    return [
+      'TilingPattern', args, codeIR, matrix, bbox, xstep, ystep, paintType
+    ];
+  }
+
+  TilingPattern.prototype = {
     getPattern: function tiling_getPattern() {
       var matrix = this.matrix;
       var curMatrix = this.curMatrix;
@@ -6866,22 +6878,8 @@ var TilingPatternIR = (function tilingPattern() {
     }
   };
 
-  return TilingPatternIR;
+  return TilingPattern;
 })();
-
-var TilingPattern = {
-  getIR: function(codeIR, dict, args) {
-    var matrix = dict.get('Matrix');
-    var bbox = dict.get('BBox');
-    var xstep = dict.get('XStep');
-    var ystep = dict.get('YStep');
-    var paintType = dict.get('PaintType');
-
-    return [
-      'TilingPatternIR', args, codeIR, matrix, bbox, xstep, ystep, paintType
-    ];
-  }
-};
 
 var PDFImage = (function pdfImage() {
   function constructor(xref, res, image, inline) {
