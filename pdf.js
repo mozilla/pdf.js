@@ -897,8 +897,8 @@ var PredictorStream = (function predictorStream() {
   return constructor;
 })();
 
-var JpegStreamIR = (function() {
-  function JpegStreamIR(objId, IR, objs) {
+var JpegImage = (function() {
+  function JpegImage(objId, IR, objs) {
     var src = 'data:image/jpeg;base64,' + window.btoa(IR);
 
     // create DOM image
@@ -915,13 +915,13 @@ var JpegStreamIR = (function() {
     this.domImage = img;
   }
 
-  JpegStreamIR.prototype = {
+  JpegImage.prototype = {
     getImage: function() {
       return this.domImage;
     }
   };
 
-  return JpegStreamIR;
+  return JpegImage;
 })();
 
 // A JpegStream can't be read directly. We use the platform to render
@@ -4045,7 +4045,7 @@ var PDFDoc = (function() {
       switch (objType) {
         case 'JpegStream':
           var IR = data[2];
-          new JpegStreamIR(objId, IR, this.objs);
+          new JpegImage(objId, IR, this.objs);
           console.log('got image');
         break;
         case 'Font':
