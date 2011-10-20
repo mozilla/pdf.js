@@ -4479,7 +4479,8 @@ var PartialEvaluator = (function partialEvaluator() {
       }
 
       var differences = [];
-      var baseEncoding = Encodings.StandardEncoding;
+      var baseEncoding = properties.type == 'TrueType' ?
+        Encodings.WinAnsiEncoding : Encodings.StandardEncoding;
       var hasEncoding = dict.has('Encoding');
       if (hasEncoding) {
         var encoding = xref.fetchIfRef(dict.get('Encoding'));

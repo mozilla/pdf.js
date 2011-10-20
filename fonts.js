@@ -2831,8 +2831,8 @@ var Type2CFF = (function type2CFF() {
 
       if (pos == 0 || pos == 1) {
         var gid = 1;
-        var baseEncoding = pos ? Encodings.ExpertEncoding.slice() :
-                                 Encodings.StandardEncoding.slice();
+        var baseEncoding = pos ? Encodings.ExpertEncoding :
+                                 Encodings.StandardEncoding;
         for (var i = 0; i < charset.length; i++) {
           var index = baseEncoding.indexOf(charset[i]);
           if (index != -1)
@@ -2853,7 +2853,7 @@ var Type2CFF = (function type2CFF() {
             for (var i = 0; i < rangesCount; i++) {
               var start = bytes[pos++];
               var count = bytes[pos++];
-              for (var j = start; j <= start + count; j++)
+              for (var j = start; j < start + count; j++)
                 encoding[j] = gid++;
             }
             break;
