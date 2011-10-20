@@ -18,6 +18,7 @@ PDF_JS_FILES = \
 	metrics.js \
 	charsets.js \
 	glyphlist.js \
+	cidmaps.js \
 	$(NULL)
 
 # not sure what to do for all yet
