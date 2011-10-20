@@ -4794,7 +4794,7 @@ var PartialEvaluator = (function partialEvaluator() {
               }
             }
           } else if (cmd == 'Tf') { // eagerly collect all fonts
-            args[0].name = handleSetFont(args[0].name);
+            args[0] = handleSetFont(args[0].name);
           } else if (cmd == 'EI') {
             buildPaintImageXObject(args[0], true);
           }
@@ -4849,8 +4849,6 @@ var PartialEvaluator = (function partialEvaluator() {
                   case 'Font':
                     gsStateObj.push([
                       'Font',
-                      // isRef(value[0]) === true -> pass in as ref and not as
-                      // font name.
                       handleSetFont(null, value[0]),
                       value[1]
                     ]);
@@ -5518,25 +5516,25 @@ var CanvasGraphics = (function canvasGraphics() {
             this.setLineWidth(value);
             break;
           case 'LC':
-            self.setLineCap(value);
+            this.setLineCap(value);
             break;
           case 'LJ':
-            self.setLineJoin(value);
+            this.setLineJoin(value);
             break;
           case 'ML':
-            self.setMiterLimit(value);
+            this.setMiterLimit(value);
             break;
           case 'D':
-            self.setDash(value[0], value[1]);
+            this.setDash(value[0], value[1]);
             break;
           case 'RI':
-            self.setRenderingIntent(value);
+            this.setRenderingIntent(value);
             break;
           case 'FL':
-            self.setFlatness(value);
+            this.setFlatness(value);
             break;
           case 'Font':
-            self.setFont(state[1], state[2]);
+            this.setFont(state[1], state[2]);
             break;
         }
       }
@@ -5700,9 +5698,8 @@ var CanvasGraphics = (function canvasGraphics() {
     setLeading: function canvasGraphicsSetLeading(leading) {
       this.current.leading = -leading;
     },
-    setFont: function canvasGraphicsSetFont(fontRef, size) {
-      // Lookup the fontObj using fontRef only.
-      var fontRefName = fontRef.name;
+    setFont: function canvasGraphicsSetFont(fontRefName, size) {
+      // Lookup the fontObj using fontRefName only.
       var fontObj = this.objs.get(fontRefName).fontObj;
 
       if (!fontObj) {
