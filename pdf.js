@@ -3514,11 +3514,19 @@ var Page = (function pagePage() {
       var self = this;
       this.IRQueue = IRQueue;
       var gfx = new CanvasGraphics(this.ctx, this.objs);
-      var continuation = this.callback;
+      var startTime = Date.now();
+      var continuation = function(err) {
+        var pageNum = this.pageNumber + 1;
+        console.log('page=%d - rendering time: time=%dms',
+          pageNum, Date.now() - startTime);
+        console.log('page=%d - total time: time=%dms',
+          pageNum, Date.now() - this.startRenderingTime);
+
+        this.callback(err);
+      }.bind(this);
 
       var displayContinuation = function pageDisplayContinuation() {
         console.log('--display--');
-
         // Always defer call to display() to work around bug in
         // Firefox error reporting from XHR callbacks.
         setTimeout(function pageSetTimeout() {
@@ -3606,6 +3614,7 @@ var Page = (function pagePage() {
           self.stats.render = Date.now();
           console.log('page=%d - executeIRQueue: time=%dms',
             self.pageNumber + 1, self.stats.render - startTime);
+          console.log('call back');
           callback();
         }
       }
@@ -3668,7 +3677,7 @@ var Page = (function pagePage() {
       }
       return links;
     },
-    startRendering: function(ctx, callback, errback)  {
+    startRendering: function(ctx, callback)  {
       this.ctx = ctx;
       this.callback = callback;
 
@@ -4683,7 +4692,7 @@ var PartialEvaluator = (function partialEvaluator() {
       var patterns = xref.fetchIfRef(resources.get('Pattern')) || new Dict();
       var parser = new Parser(new Lexer(stream), false);
       var res = resources;
-      var args = [], argsArray = [], fnArray = [], obj;
+      var args = [], obj;
       var getObjBt = function getObjBt() {
         parser = this.oldParser;
         return { name: 'BT' };
@@ -6082,7 +6091,6 @@ var CanvasGraphics = (function canvasGraphics() {
 
     paintImageXObject: function(imgData) {
       this.save();
-
       var ctx = this.ctx;
       var w = imgData.width;
       var h = imgData.height;
