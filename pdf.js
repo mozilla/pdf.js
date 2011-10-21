@@ -1977,6 +1977,33 @@ var CCITTFaxStream = (function ccittFaxStream() {
     return this.buf;
   };
 
+  // This functions returns the code found from the table.
+  // The start and end parameters set the boundaries for searching the table.
+  // The limit parameter is optional. Function returns an array with three
+  // values. The first array element indicates whether a valid code is being
+  // returned. The second array element is the actual code. The third array
+  // element indicates whether EOF was reached.
+  var findTableCode = function ccittFaxStreamFindTableCode(start, end, table,
+                                                           limit) {
+    var limitValue = limit || 0;
+
+    for (var i = start; i <= end; ++i) {
+      var code = this.lookBits(i);
+      if (code == EOF)
+        return [true, 1, false];
+      if (i < end)
+        code <<= end - i;
+      if (!limitValue || code >= limitValue) {
+        var p = table[code - limitValue];
+        if (p[0] == i) {
+          this.eatBits(i);
+          return [true, p[1], true];
+        }
+      }
+    }
+    return [false, 0, false];
+  };
+
   constructor.prototype.getTwoDimCode = function ccittFaxStreamGetTwoDimCode() {
     var code = 0;
     var p;
@@ -1988,39 +2015,12 @@ var CCITTFaxStream = (function ccittFaxStream() {
         return p[1];
       }
     } else {
-      for (var n = 1; n <= 7; ++n) {
-        code = this.lookBits(n);
-        if (n < 7) {
-          code <<= 7 - n;
-        }
-        p = twoDimTable[code];
-        if (p[0] == n) {
-          this.eatBits(n);
-          return p[1];
-        }
-      }
+      var result = findTableCode(1, 7, twoDimTable);
+      if (result[0] && result[2])
+        return result[1];
     }
     warn('Bad two dim code');
     return EOF;
-  };
-
-  var findTableCode = function ccittFaxStreamFindTableCode(start, end, table,
-                                                           limit) {
-    for (var i = start; i <= end; ++i) {
-      var code = this.lookBits(i);
-      if (code == EOF)
-        return [true, 1];
-      if (i < end)
-        code <<= end - i;
-      if (code >= limit) {
-        var p = table[code - ((limit == ccittEOL) ? 0 : limit)];
-        if (p[0] == i) {
-          this.eatBits(i);
-          return [true, p[1]];
-        }
-      }
-    }
-    return [false, 0];
   };
 
   constructor.prototype.getWhiteCode = function ccittFaxStreamGetWhiteCode() {
@@ -2042,11 +2042,11 @@ var CCITTFaxStream = (function ccittFaxStream() {
         return p[1];
       }
     } else {
-      var result = findTableCode(1, 9, whiteTable2, ccittEOL);
+      var result = findTableCode(1, 9, whiteTable2);
       if (result[0])
         return result[1];
 
-      result = findTableCode(11, 12, whiteTable1, ccittEOL);
+      result = findTableCode(11, 12, whiteTable1);
       if (result[0])
         return result[1];
     }
@@ -2073,7 +2073,7 @@ var CCITTFaxStream = (function ccittFaxStream() {
         return p[1];
       }
     } else {
-      var result = findTableCode(2, 6, blackTable3, ccittEOL);
+      var result = findTableCode(2, 6, blackTable3);
       if (result[0])
         return result[1];
 
@@ -2081,7 +2081,7 @@ var CCITTFaxStream = (function ccittFaxStream() {
       if (result[0])
         return result[1];
 
-      result = findTableCode(10, 13, blackTable1, ccittEOL);
+      result = findTableCode(10, 13, blackTable1);
       if (result[0])
         return result[1];
     }
