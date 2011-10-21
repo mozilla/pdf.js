@@ -7472,7 +7472,7 @@ var PDFObjects = (function() {
      * Sets the data of an object but *doesn't* resolve it.
      */
     setData: function(objId, data) {
-      // Watchout! If you call `this.ensureObj(objId, data)` you're going to 
+      // Watchout! If you call `this.ensureObj(objId, data)` you're going to
       // create a *resolved* promise which shouldn't be the case!
       this.ensureObj(objId).data = data;
     }
