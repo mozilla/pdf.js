@@ -5,6 +5,7 @@
 
 var ERRORS = 0, WARNINGS = 1, TODOS = 5;
 var verbosity = WARNINGS;
+
 // Set this to true if you want to use workers.
 var useWorker = false;
 
@@ -898,10 +899,9 @@ var PredictorStream = (function predictorStream() {
 })();
 
 var JpegImage = (function() {
-  function JpegImage(objId, IR, objs) {
-    var src = 'data:image/jpeg;base64,' + window.btoa(IR);
+  function JpegImage(objId, imageData, objs) {
+    var src = 'data:image/jpeg;base64,' + window.btoa(imageData);
 
-    // create DOM image
     var img = new Image();
     img.onload = (function() {
       this.loaded = true;
@@ -2375,6 +2375,10 @@ function isStream(v) {
   return typeof v == 'object' && v != null && ('getChar' in v);
 }
 
+function isArrayBuffer(v) {
+  return typeof v == 'object' && v != null && ('byteLength' in v);
+}
+
 function isRef(v) {
   return v instanceof Ref;
 }
@@ -3517,20 +3521,15 @@ var Page = (function pagePage() {
       this.IRQueue = IRQueue;
       var gfx = new CanvasGraphics(this.ctx, this.objs);
       var startTime = Date.now();
-      var continuation = function(err) {
-        this.callback(err);
-      }.bind(this);
 
       var displayContinuation = function pageDisplayContinuation() {
         // Always defer call to display() to work around bug in
         // Firefox error reporting from XHR callbacks.
         setTimeout(function pageSetTimeout() {
-          var exc = null;
           try {
-            self.display(gfx, continuation);
+            self.display(gfx, self.callback);
           } catch (e) {
-            exc = e.toString();
-            continuation(exc);
+            if (self.callback) self.callback(e.toString());
             throw e;
           }
         });
@@ -3606,7 +3605,7 @@ var Page = (function pagePage() {
         startIdx = gfx.executeIRQueue(IRQueue, startIdx, next);
         if (startIdx == length) {
           self.stats.render = Date.now();
-          callback();
+          if (callback) callback();
         }
       }
       next();
@@ -3853,17 +3852,12 @@ var Catalog = (function catalogCatalog() {
  */
 var PDFDocModel = (function pdfDoc() {
   function constructor(arg, callback) {
-    // Stream argument
-    if (typeof arg.isStream !== 'undefined') {
+    if (isStream(arg))
       init.call(this, arg);
-    }
-    // ArrayBuffer argument
-    else if (typeof arg.byteLength !== 'undefined') {
+    else if (isArrayBuffer(arg))
       init.call(this, new Stream(arg));
-    }
-    else {
-      error('Unknown argument type');
-    }
+    else
+      error('PDFDocModel: Unknown argument type');
   }
 
   function init(stream) {
@@ -3980,18 +3974,14 @@ var PDFDoc = (function() {
     var stream = null;
     var data = null;
 
-    // Stream argument
-    if (typeof arg.isStream !== 'undefined') {
+    if (isStream(arg)) {
       stream = arg;
       data = arg.bytes;
-    }
-    // ArrayBuffer argument
-    else if (typeof arg.byteLength !== 'undefined') {
+    } else if (isArrayBuffer(arg)) {
       stream = new Stream(arg);
       data = arg;
-    }
-    else {
-      error('Unknown argument type');
+    } else {
+      error('PDFDoc: Unknown argument type');
     }
 
     this.data = data;
@@ -4004,15 +3994,17 @@ var PDFDoc = (function() {
     this.pageCache = [];
 
     if (useWorker) {
-      var worker = this.worker = new Worker('../worker/pdf_worker_loader.js');
+      var worker = new Worker('../worker/pdf_worker_loader.js');
     } else {
       // If we don't use a worker, just post/sendMessage to the main thread.
       var worker = {
         postMessage: function(obj) {
           worker.onmessage({data: obj});
-        }
+        },
+        terminate: function() {}
       };
     }
+    this.worker = worker;
 
     this.fontsLoading = {};
 
@@ -4028,13 +4020,13 @@ var PDFDoc = (function() {
     }, this);
 
     processorHandler.on('obj', function(data) {
-      var objId = data[0];
-      var objType = data[1];
+      var id = data[0];
+      var type = data[1];
 
-      switch (objType) {
+      switch (type) {
         case 'JpegStream':
           var IR = data[2];
-          new JpegImage(objId, IR, this.objs);
+          new JpegImage(id, IR, this.objs);
         break;
         case 'Font':
           var name = data[2];
@@ -4060,26 +4052,26 @@ var PDFDoc = (function() {
 
           // For now, resolve the font object here direclty. The real font
           // object is then created in FontLoader.bind().
-          this.objs.resolve(objId, {
+          this.objs.resolve(id, {
             name: name,
             file: file,
             properties: properties
           });
         break;
         default:
-          throw 'Got unkown object type ' + objType;
+          throw 'Got unkown object type ' + type;
       }
     }, this);
 
     processorHandler.on('font_ready', function(data) {
-      var objId = data[0];
-      var fontObj = new FontShape(data[1]);
+      var id = data[0];
+      var font = new FontShape(data[1]);
 
       // If there is no string, then there is nothing to attach to the DOM.
-      if (!fontObj.str) {
-        this.objs.resolve(objId, fontObj);
+      if (!font.str) {
+        this.objs.resolve(id, font);
       } else {
-        this.objs.setData(objId, fontObj);
+        this.objs.setData(id, font);
       }
     }.bind(this));
 
@@ -4109,9 +4101,8 @@ var PDFDoc = (function() {
     },
 
     getPage: function(n) {
-      if (this.pageCache[n]) {
+      if (this.pageCache[n])
         return this.pageCache[n];
-      }
 
       var page = this.pdf.getPage(n);
       // Add a reference to the objects such that Page can forward the reference
@@ -4122,16 +4113,15 @@ var PDFDoc = (function() {
     },
 
     destroy: function() {
-      if (this.worker) {
+      if (this.worker)
         this.worker.terminate();
-      }
-      if (this.fontWorker) {
-        this.fontWorker.terminate();
-      }
 
-      for (var n in this.pageCache) {
+      if (this.fontWorker)
+        this.fontWorker.terminate();
+
+      for (var n in this.pageCache)
         delete this.pageCache[n];
-      }
+
       delete this.data;
       delete this.stream;
       delete this.pdf;
@@ -4564,43 +4554,43 @@ var PartialEvaluator = (function partialEvaluator() {
         var loadedName = null;
 
         var fontRes = resources.get('Font');
-        if (fontRes) {
-          fontRes = xref.fetchIfRef(fontRes);
-          fontRef = fontRef || fontRes.get(fontName);
-          var font = xref.fetchIfRef(fontRef);
-          assertWellFormed(isDict(font));
-          if (!font.translated) {
-            font.translated = self.translateFont(font, xref, resources, handler,
-                          uniquePrefix, dependency);
-            if (font.translated) {
-              // keep track of each font we translated so the caller can
-              // load them asynchronously before calling display on a page
-              loadedName = 'font_' + uniquePrefix + ++self.objIdCounter;
-              font.translated.properties.loadedName = loadedName;
-              font.loadedName = loadedName;
 
-              handler.send('obj', [
-                  loadedName,
-                  'Font',
-                  font.translated.name,
-                  font.translated.file,
-                  font.translated.properties
-              ]);
-            }
+        // TODO: TOASK: Is it possible to get here? If so, what does
+        // args[0].name should be like???
+        assert(fontRes, 'fontRes not available');
+
+        fontRes = xref.fetchIfRef(fontRes);
+        fontRef = fontRef || fontRes.get(fontName);
+        var font = xref.fetchIfRef(fontRef);
+        assertWellFormed(isDict(font));
+        if (!font.translated) {
+          font.translated = self.translateFont(font, xref, resources, handler,
+                        uniquePrefix, dependency);
+          if (font.translated) {
+            // keep track of each font we translated so the caller can
+            // load them asynchronously before calling display on a page
+            loadedName = 'font_' + uniquePrefix + ++self.objIdCounter;
+            font.translated.properties.loadedName = loadedName;
+            font.loadedName = loadedName;
+
+            var translated = font.translated;
+            handler.send('obj', [
+                loadedName,
+                'Font',
+                translated.name,
+                translated.file,
+                translated.properties
+            ]);
           }
-          loadedName = loadedName || font.loadedName;
-
-          // Ensure the font is ready before the font is set
-          // and later on used for drawing.
-          // TODO: This should get insert to the IRQueue only once per
-          // page.
-          insertDependency([loadedName]);
-          return loadedName;
-        } else {
-          // TODO: TOASK: Is it possible to get here? If so, what does
-          // args[0].name should be like???
-          return null;
         }
+        loadedName = loadedName || font.loadedName;
+
+        // Ensure the font is ready before the font is set
+        // and later on used for drawing.
+        // TODO: This should get insert to the IRQueue only once per
+        // page.
+        insertDependency([loadedName]);
+        return loadedName;
       }
 
       function buildPaintImageXObject(image, inline) {
@@ -4618,49 +4608,52 @@ var PartialEvaluator = (function partialEvaluator() {
           // The normal fn.
           fn = 'paintJpegXObject';
           args = [objId, w, h];
-        } else {
-          // Needs to be rendered ourself.
 
-          // Figure out if the image has an imageMask.
-          var imageMask = dict.get('ImageMask', 'IM') || false;
-
-          // If there is no imageMask, create the PDFImage and a lot
-          // of image processing can be done here.
-          if (!imageMask) {
-            var imageObj = new PDFImage(xref, resources, image, inline);
-
-            if (imageObj.imageMask) {
-              throw 'Can\'t handle this in the web worker :/';
-            }
-
-            var imgData = {
-              width: w,
-              height: h,
-              data: new Uint8Array(w * h * 4)
-            };
-            var pixels = imgData.data;
-            imageObj.fillRgbaBuffer(pixels, imageObj.decode);
-
-            fn = 'paintImageXObject';
-            args = [imgData];
-          } else /* imageMask == true */ {
-            // This depends on a tmpCanvas beeing filled with the
-            // current fillStyle, such that processing the pixel
-            // data can't be done here. Instead of creating a
-            // complete PDFImage, only read the information needed
-            // for later.
-            fn = 'paintImageMaskXObject';
-
-            var width = dict.get('Width', 'W');
-            var height = dict.get('Height', 'H');
-            var bitStrideLength = (width + 7) >> 3;
-            var imgArray = image.getBytes(bitStrideLength * height);
-            var decode = dict.get('Decode', 'D');
-            var inverseDecode = !!decode && decode[0] > 0;
-
-            args = [imgArray, inverseDecode, width, height];
-          }
+          return;
         }
+
+        // Needs to be rendered ourself.
+
+        // Figure out if the image has an imageMask.
+        var imageMask = dict.get('ImageMask', 'IM') || false;
+
+        // If there is no imageMask, create the PDFImage and a lot
+        // of image processing can be done here.
+        if (!imageMask) {
+          var imageObj = new PDFImage(xref, resources, image, inline);
+
+          if (imageObj.imageMask) {
+            throw 'Can\'t handle this in the web worker :/';
+          }
+
+          var imgData = {
+            width: w,
+            height: h,
+            data: new Uint8Array(w * h * 4)
+          };
+          var pixels = imgData.data;
+          imageObj.fillRgbaBuffer(pixels, imageObj.decode);
+
+          fn = 'paintImageXObject';
+          args = [imgData];
+          return;
+        }
+
+        // This depends on a tmpCanvas beeing filled with the
+        // current fillStyle, such that processing the pixel
+        // data can't be done here. Instead of creating a
+        // complete PDFImage, only read the information needed
+        // for later.
+        fn = 'paintImageMaskXObject';
+
+        var width = dict.get('Width', 'W');
+        var height = dict.get('Height', 'H');
+        var bitStrideLength = (width + 7) >> 3;
+        var imgArray = image.getBytes(bitStrideLength * height);
+        var decode = dict.get('Decode', 'D');
+        var inverseDecode = !!decode && decode[0] > 0;
+
+        args = [imgArray, inverseDecode, width, height];
       }
 
       uniquePrefix = uniquePrefix || '';
@@ -4684,6 +4677,7 @@ var PartialEvaluator = (function partialEvaluator() {
         parser = this.oldParser;
         return { name: 'BT' };
       };
+      var TILING_PATTERN = 1, SHADING_PATTERN = 2;
 
       while (!isEOF(obj = parser.getObj())) {
         if (isCmd(obj)) {
@@ -4716,8 +4710,7 @@ var PartialEvaluator = (function partialEvaluator() {
                 var dict = isStream(pattern) ? pattern.dict : pattern;
                 var typeNum = dict.get('PatternType');
 
-                // Type1 is TilingPattern
-                if (typeNum == 1) {
+                if (typeNum == TILING_PATTERN) {
                   // Create an IR of the pattern code.
                   var depIdx = dependency.length;
                   var codeIR = this.getIRQueue(pattern,
@@ -4729,8 +4722,7 @@ var PartialEvaluator = (function partialEvaluator() {
 
                   args = TilingPattern.getIR(codeIR, dict, args);
                 }
-                // Type2 is ShadingPattern.
-                else if (typeNum == 2) {
+                else if (typeNum == SHADING_PATTERN) {
                   var shading = xref.fetchIfRef(dict.get('Shading'));
                   var matrix = dict.get('Matrix');
                   var pattern = Pattern.parseShading(shading, matrix, xref, res,
@@ -4786,88 +4778,89 @@ var PartialEvaluator = (function partialEvaluator() {
             buildPaintImageXObject(args[0], true);
           }
 
-          // Transform some cmds.
           switch (fn) {
-          // Parse the ColorSpace data to a raw format.
-          case 'setFillColorSpace':
-          case 'setStrokeColorSpace':
-            args = [ColorSpace.parseToIR(args[0], xref, resources)];
-            break;
-          case 'shadingFill':
-            var shadingRes = xref.fetchIfRef(res.get('Shading'));
-            if (!shadingRes)
-              error('No shading resource found');
+            // Parse the ColorSpace data to a raw format.
+            case 'setFillColorSpace':
+            case 'setStrokeColorSpace':
+              args = [ColorSpace.parseToIR(args[0], xref, resources)];
+              break;
+            case 'shadingFill':
+              var shadingRes = xref.fetchIfRef(res.get('Shading'));
+              if (!shadingRes)
+                error('No shading resource found');
 
-            var shading = xref.fetchIfRef(shadingRes.get(args[0].name));
-            if (!shading)
-              error('No shading object found');
+              var shading = xref.fetchIfRef(shadingRes.get(args[0].name));
+              if (!shading)
+                error('No shading object found');
 
-            var shadingFill = Pattern.parseShading(shading, null, xref, res,
-                                                                /* ctx */ null);
-            var patternIR = shadingFill.getIR();
+              var shadingFill = Pattern.parseShading(shading, null, xref, res,
+                                                      null);
+              var patternIR = shadingFill.getIR();
+              args = [patternIR];
+              fn = 'shadingFill';
+              break;
+            case 'setGState':
+              var dictName = args[0];
+              var extGState = xref.fetchIfRef(resources.get('ExtGState'));
 
-            args = [patternIR];
-            fn = 'shadingFill';
+              if (!isDict(extGState) || !extGState.has(dictName.name))
+                break;
 
-            break;
-          case 'setGState':
-            var dictName = args[0];
-            var extGState = xref.fetchIfRef(resources.get('ExtGState'));
-            if (isDict(extGState) && extGState.has(dictName.name)) {
               var gsState = xref.fetchIfRef(extGState.get(dictName.name));
 
               // This array holds the converted/processed state data.
               var gsStateObj = [];
 
               gsState.forEach(
-              function canvasGraphicsSetGStateForEach(key, value) {
-                switch (key) {
-                  case 'Type':
-                    break;
-                  case 'LW':
-                  case 'LC':
-                  case 'LJ':
-                  case 'ML':
-                  case 'D':
-                  case 'RI':
-                  case 'FL':
-                    gsStateObj.push([key, value]);
-                    break;
-                  case 'Font':
-                    gsStateObj.push([
-                      'Font',
-                      handleSetFont(null, value[0]),
-                      value[1]
-                    ]);
-                    break;
-                  case 'OP':
-                  case 'op':
-                  case 'OPM':
-                  case 'BG':
-                  case 'BG2':
-                  case 'UCR':
-                  case 'UCR2':
-                  case 'TR':
-                  case 'TR2':
-                  case 'HT':
-                  case 'SM':
-                  case 'SA':
-                  case 'BM':
-                  case 'SMask':
-                  case 'CA':
-                  case 'ca':
-                  case 'AIS':
-                  case 'TK':
-                    TODO('graphic state operator ' + key);
-                    break;
-                  default:
-                    warn('Unknown graphic state operator ' + key);
-                    break;
+                function canvasGraphicsSetGStateForEach(key, value) {
+                  switch (key) {
+                    case 'Type':
+                      break;
+                    case 'LW':
+                    case 'LC':
+                    case 'LJ':
+                    case 'ML':
+                    case 'D':
+                    case 'RI':
+                    case 'FL':
+                      gsStateObj.push([key, value]);
+                      break;
+                    case 'Font':
+                      gsStateObj.push([
+                        'Font',
+                        handleSetFont(null, value[0]),
+                        value[1]
+                      ]);
+                      break;
+                    case 'OP':
+                    case 'op':
+                    case 'OPM':
+                    case 'BG':
+                    case 'BG2':
+                    case 'UCR':
+                    case 'UCR2':
+                    case 'TR':
+                    case 'TR2':
+                    case 'HT':
+                    case 'SM':
+                    case 'SA':
+                    case 'BM':
+                    case 'SMask':
+                    case 'CA':
+                    case 'ca':
+                    case 'AIS':
+                    case 'TK':
+                      TODO('graphic state operator ' + key);
+                      break;
+                    default:
+                      warn('Unknown graphic state operator ' + key);
+                      break;
+                  }
                 }
-              });
+              );
               args = [gsStateObj];
-            }
-          }
+              break;
+          } // switch
 
           fnArray.push(fn);
           argsArray.push(args);
@@ -5370,9 +5363,10 @@ function ScratchCanvas(width, height) {
 }
 
 var CanvasGraphics = (function canvasGraphics() {
-  // Defines the time the executeIRQueue gonna be executing
+  // Defines the time the executeIRQueue is going to be executing
   // before it stops and shedules a continue of execution.
   var kExecutionTime = 50;
+
   // Number of IR commands to execute before checking
   // if we execute longer then `kExecutionTime`.
   var kExecutionTimeCheck = 500;
@@ -5451,11 +5445,11 @@ var CanvasGraphics = (function canvasGraphics() {
         if (i == argsArrayLen) {
           return i;
         }
+
         // If the execution took longer then a certain amount of time, shedule
         // to continue exeution after a short delay.
         // However, this is only possible if a 'continueCallback' is passed in.
-        else if (continueCallback &&
-                (Date.now() - startTime) > kExecutionTime) {
+        if (continueCallback && (Date.now() - startTime) > kExecutionTime) {
           setTimeout(continueCallback, 0);
           return i;
         }
@@ -5686,7 +5680,6 @@ var CanvasGraphics = (function canvasGraphics() {
       this.current.leading = -leading;
     },
     setFont: function canvasGraphicsSetFont(fontRefName, size) {
-      // Lookup the fontObj using fontRefName only.
       var fontObj = this.objs.get(fontRefName).fontObj;
 
       if (!fontObj) {
@@ -5731,7 +5724,6 @@ var CanvasGraphics = (function canvasGraphics() {
     nextLine: function canvasGraphicsNextLine() {
       this.moveText(0, this.current.leading);
     },
-
     showText: function canvasGraphicsShowText(text) {
       var ctx = this.ctx;
       var current = this.current;
@@ -5855,12 +5847,10 @@ var CanvasGraphics = (function canvasGraphics() {
     // Color
     setStrokeColorSpace:
     function canvasGraphicsSetStrokeColorSpacefunction(raw) {
-      this.current.strokeColorSpace =
-            ColorSpace.fromIR(raw);
+      this.current.strokeColorSpace = ColorSpace.fromIR(raw);
     },
     setFillColorSpace: function canvasGraphicsSetFillColorSpace(raw) {
-      this.current.fillColorSpace =
-            ColorSpace.fromIR(raw);
+      this.current.fillColorSpace = ColorSpace.fromIR(raw);
     },
     setStrokeColor: function canvasGraphicsSetStrokeColor(/*...*/) {
       var cs = this.current.strokeColorSpace;
@@ -5869,8 +5859,6 @@ var CanvasGraphics = (function canvasGraphics() {
     },
     getColorN_IR_Pattern: function(IR, cs) {
       if (IR[0] == 'TilingPattern') {
-        // First, build the `color` var like it's done in the
-        // Pattern.prototype.parse function.
         var args = IR[1];
         var base = cs.base;
         var color;
@@ -5883,8 +5871,6 @@ var CanvasGraphics = (function canvasGraphics() {
 
           color = base.getRgb(color);
         }
-
-        // Build the pattern based on the IR data.
         var pattern = new TilingPattern(IR, color, this.ctx, this.objs);
       } else if (IR[0] == 'RadialAxialShading' || IR[0] == 'DummyShading') {
         var pattern = Pattern.shadingFromIR(this.ctx, IR);
@@ -6016,6 +6002,7 @@ var CanvasGraphics = (function canvasGraphics() {
       this.save();
 
       var ctx = this.ctx;
+      // scale the image to the unit square
       ctx.scale(1 / w, -1 / h);
 
       var domImage = image.getImage();
@@ -6051,7 +6038,6 @@ var CanvasGraphics = (function canvasGraphics() {
 
       var ctx = this.ctx;
       var w = width, h = height;
-
       // scale the image to the unit square
       ctx.scale(1 / w, -1 / h);
 
@@ -6205,11 +6191,10 @@ var ColorSpace = (function colorSpaceColorSpace() {
 
   constructor.parse = function colorspace_parse(cs, xref, res) {
     var IR = constructor.parseToIR(cs, xref, res, true);
-    if (!(IR instanceof SeparationCS)) {
-      return constructor.fromIR(IR);
-    } else {
+    if (IR instanceof SeparationCS)
       return IR;
-    }
+
+    return constructor.fromIR(IR);
   };
 
   constructor.fromIR = function(IR) {
@@ -6270,67 +6255,67 @@ var ColorSpace = (function colorSpaceColorSpace() {
       this.mode = mode;
 
       switch (mode) {
-      case 'DeviceGray':
-      case 'G':
-        return 'DeviceGrayCS';
-      case 'DeviceRGB':
-      case 'RGB':
-        return 'DeviceRgbCS';
-      case 'DeviceCMYK':
-      case 'CMYK':
-        return 'DeviceCmykCS';
-      case 'Pattern':
-        return ['PatternCS', null];
-      default:
-        error('unrecognized colorspace ' + mode);
+        case 'DeviceGray':
+        case 'G':
+          return 'DeviceGrayCS';
+        case 'DeviceRGB':
+        case 'RGB':
+          return 'DeviceRgbCS';
+        case 'DeviceCMYK':
+        case 'CMYK':
+          return 'DeviceCmykCS';
+        case 'Pattern':
+          return ['PatternCS', null];
+        default:
+          error('unrecognized colorspace ' + mode);
       }
     } else if (isArray(cs)) {
       var mode = cs[0].name;
       this.mode = mode;
 
       switch (mode) {
-      case 'DeviceGray':
-      case 'G':
-        return 'DeviceGrayCS';
-      case 'DeviceRGB':
-      case 'RGB':
-        return 'DeviceRgbCS';
-      case 'DeviceCMYK':
-      case 'CMYK':
-        return 'DeviceCmykCS';
-      case 'CalGray':
-        return 'DeviceGrayCS';
-      case 'CalRGB':
-        return 'DeviceRgbCS';
-      case 'ICCBased':
-        var stream = xref.fetchIfRef(cs[1]);
-        var dict = stream.dict;
-        var numComps = dict.get('N');
-        if (numComps == 1)
+        case 'DeviceGray':
+        case 'G':
           return 'DeviceGrayCS';
-        if (numComps == 3)
+        case 'DeviceRGB':
+        case 'RGB':
           return 'DeviceRgbCS';
-        if (numComps == 4)
+        case 'DeviceCMYK':
+        case 'CMYK':
           return 'DeviceCmykCS';
-        break;
-      case 'Pattern':
-        var baseCS = cs[1];
-        if (baseCS)
-          baseCS = ColorSpace.parseToIR(baseCS, xref, res);
-        return ['PatternCS', baseCS];
-      case 'Indexed':
-        var baseCS = ColorSpace.parseToIR(cs[1], xref, res);
-        var hiVal = cs[2] + 1;
-        var lookup = xref.fetchIfRef(cs[3]);
-        return ['IndexedCS', baseCS, hiVal, lookup];
-      case 'Separation':
-        var alt = ColorSpace.parseToIR(cs[2], xref, res);
-        var tintFnIR = PDFFunction.getIR(xref, xref.fetchIfRef(cs[3]));
-        return ['SeparationCS', alt, tintFnIR];
-      case 'Lab':
-      case 'DeviceN':
-      default:
-        error('unimplemented color space object "' + mode + '"');
+        case 'CalGray':
+          return 'DeviceGrayCS';
+        case 'CalRGB':
+          return 'DeviceRgbCS';
+        case 'ICCBased':
+          var stream = xref.fetchIfRef(cs[1]);
+          var dict = stream.dict;
+          var numComps = dict.get('N');
+          if (numComps == 1)
+            return 'DeviceGrayCS';
+          if (numComps == 3)
+            return 'DeviceRgbCS';
+          if (numComps == 4)
+            return 'DeviceCmykCS';
+          break;
+        case 'Pattern':
+          var baseCS = cs[1];
+          if (baseCS)
+            baseCS = ColorSpace.parseToIR(baseCS, xref, res);
+          return ['PatternCS', baseCS];
+        case 'Indexed':
+          var baseCS = ColorSpace.parseToIR(cs[1], xref, res);
+          var hiVal = cs[2] + 1;
+          var lookup = xref.fetchIfRef(cs[3]);
+          return ['IndexedCS', baseCS, hiVal, lookup];
+        case 'Separation':
+          var alt = ColorSpace.parseToIR(cs[2], xref, res);
+          var tintFnIR = PDFFunction.getIR(xref, xref.fetchIfRef(cs[3]));
+          return ['SeparationCS', alt, tintFnIR];
+        case 'Lab':
+        case 'DeviceN':
+        default:
+          error('unimplemented color space object "' + mode + '"');
       }
     } else {
       error('unrecognized color space object: "' + cs + '"');
@@ -6758,7 +6743,6 @@ var TilingPattern = (function tilingPattern() {
   var PAINT_TYPE_COLORED = 1, PAINT_TYPE_UNCOLORED = 2;
 
   function TilingPattern(IR, color, ctx, objs) {
-    // 'Unfolding' the IR.
     var IRQueue = IR[2];
     this.matrix = IR[3];
     var bbox = IR[4];
@@ -6766,7 +6750,6 @@ var TilingPattern = (function tilingPattern() {
     var ystep = IR[6];
     var paintType = IR[7];
 
-    //
     TODO('TilingType');
 
     this.curMatrix = ctx.mozCurrentTransform;
@@ -6775,6 +6758,7 @@ var TilingPattern = (function tilingPattern() {
     this.type = 'Pattern';
 
     var x0 = bbox[0], y0 = bbox[1], x1 = bbox[2], y1 = bbox[3];
+
     var topLeft = [x0, y0];
     // we want the canvas to be as large as the step size
     var botRight = [x0 + xstep, y0 + ystep];
@@ -6798,17 +6782,17 @@ var TilingPattern = (function tilingPattern() {
     var graphics = new CanvasGraphics(tmpCtx, objs);
 
     switch (paintType) {
-    case PAINT_TYPE_COLORED:
-      tmpCtx.fillStyle = ctx.fillStyle;
-      tmpCtx.strokeStyle = ctx.strokeStyle;
-      break;
-    case PAINT_TYPE_UNCOLORED:
-      color = Util.makeCssRgb.apply(this, color);
-      tmpCtx.fillStyle = color;
-      tmpCtx.strokeStyle = color;
-      break;
-    default:
-      error('Unsupported paint type: ' + paintType);
+      case PAINT_TYPE_COLORED:
+        tmpCtx.fillStyle = ctx.fillStyle;
+        tmpCtx.strokeStyle = ctx.strokeStyle;
+        break;
+      case PAINT_TYPE_UNCOLORED:
+        color = Util.makeCssRgb.apply(this, color);
+        tmpCtx.fillStyle = color;
+        tmpCtx.strokeStyle = color;
+        break;
+      default:
+        error('Unsupported paint type: ' + paintType);
     }
 
     var scale = [width / xstep, height / ystep];
@@ -7113,7 +7097,6 @@ var PDFFunction = (function() {
       var strBytes = str.getBytes((length * bps + 7) / 8);
       var strIdx = 0;
       for (var i = 0; i < length; i++) {
-        var b;
         while (codeSize < bps) {
           codeBuf <<= 8;
           codeBuf |= strBytes[strIdx++];
@@ -7396,7 +7379,7 @@ var PDFFunction = (function() {
 })();
 
 /**
- * A PDF document and page is build up of many objects. E.g. there are objects
+ * A PDF document and page is built of many objects. E.g. there are objects
  * for fonts, images, rendering code and such. These objects might get processed
  * inside of a worker. The `PDFObjects` implements some basic functions to
  * manage these objects.
@@ -7415,11 +7398,9 @@ var PDFObjects = (function() {
      * object *if* it is created.
      */
     ensureObj: function(objId, data) {
-      if (!this.objs[objId]) {
-        return this.objs[objId] = new Promise(objId, data);
-      } else {
+      if (this.objs[objId])
         return this.objs[objId];
-      }
+      return this.objs[objId] = new Promise(objId, data);
     },
 
     /**
@@ -7436,22 +7417,19 @@ var PDFObjects = (function() {
       // not required to be resolved right now
       if (callback) {
         this.ensureObj(objId).then(callback);
+        return;
       }
+
       // If there isn't a callback, the user expects to get the resolved data
       // directly.
-      else {
-        var obj = this.objs[objId];
+      var obj = this.objs[objId];
 
-        // If there isn't an object yet or the object isn't resolved, then the
-        // data isn't ready yet!
-        if (!obj || !obj.isResolved) {
-          throw 'Requesting object that isn\'t resolved yet ' + objId;
-        }
-        // Direct access.
-        else {
-          return obj.data;
-        }
-      }
+      // If there isn't an object yet or the object isn't resolved, then the
+      // data isn't ready yet!
+      if (!obj || !obj.isResolved)
+        throw 'Requesting object that isn\'t resolved yet ' + objId;
+      else
+        return obj.data;
     },
 
     /**
@@ -7494,8 +7472,8 @@ var PDFObjects = (function() {
      * Sets the data of an object but *doesn't* resolve it.
      */
     setData: function(objId, data) {
-      // Watchout! If you call `this.ensureObj(objId, data)` you'll gonna create
-      // a *resolved* promise which shouldn't be the case!
+      // Watchout! If you call `this.ensureObj(objId, data)` you're going to 
+      // create a *resolved* promise which shouldn't be the case!
       this.ensureObj(objId).data = data;
     }
   };
