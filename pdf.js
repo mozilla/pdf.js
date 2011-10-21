@@ -7445,7 +7445,6 @@ var PDFObjects = (function() {
         // If there isn't an object yet or the object isn't resolved, then the
         // data isn't ready yet!
         if (!obj || !obj.isResolved) {
-          debugger;
           throw 'Requesting object that isn\'t resolved yet ' + objId;
         }
         // Direct access.
