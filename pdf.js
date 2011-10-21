@@ -6057,13 +6057,13 @@ var CanvasGraphics = (function canvasGraphics() {
 
       var tmpCanvas = new this.ScratchCanvas(w, h);
       var tmpCtx = tmpCanvas.getContext('2d');
-      if (imageObj.imageMask) {
-        var fillColor = this.current.fillColor;
-        tmpCtx.fillStyle = (fillColor && fillColor.hasOwnProperty('type') &&
-                            fillColor.type === 'Pattern') ?
-                            fillColor.getPattern(tmpCtx) : fillColor;
-        tmpCtx.fillRect(0, 0, w, h);
-      }
+
+      var fillColor = this.current.fillColor;
+      tmpCtx.fillStyle = (fillColor && fillColor.hasOwnProperty('type') &&
+                          fillColor.type === 'Pattern') ?
+                          fillColor.getPattern(tmpCtx) : fillColor;
+      tmpCtx.fillRect(0, 0, w, h);
+
       var imgData = tmpCtx.getImageData(0, 0, w, h);
       var pixels = imgData.data;
 
