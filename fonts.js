@@ -475,7 +475,7 @@ var Font = (function Font() {
   var constructor = function font_constructor(name, file, properties) {
     this.name = name;
     this.coded = properties.coded;
-    this.charProcs = properties.charProcs;
+    this.charProcIRQueues = properties.charProcIRQueues;
     this.resources = properties.resources;
     this.sizes = [];
 
@@ -1686,7 +1686,7 @@ var Font = (function Font() {
     },
 
     charToGlyph: function fonts_charToGlyph(charcode) {
-      var unicode, width, code;
+      var unicode, width, codeIRQueue;
 
       var width = this.widths[charcode];
       if (!isNum(width))
@@ -1724,7 +1724,7 @@ var Font = (function Font() {
           break;
         case 'Type3':
           var glyphName = this.differences[charcode] || this.encoding[charcode];
-          code = this.charProcs[glyphName];
+          codeIRQueue = this.charProcIRQueues[glyphName];
           unicode = charcode;
           break;
         case 'TrueType':
@@ -1745,7 +1745,7 @@ var Font = (function Font() {
       return {
         unicode: unicode,
         width: width,
-        code: code
+        codeIRQueue: codeIRQueue
       };
     },
 
