@@ -63,6 +63,11 @@ function cleanup() {
 }
 
 function nextTask() {
+  // If there is a pdfDoc on the last task executed, destroy it to free memory.
+  if (task && task.pdfDoc) {
+    task.pdfDoc.destroy();
+    delete task.pdfDoc;
+  }
   cleanup();
 
   if (currentTaskIdx == manifest.length) {
@@ -81,7 +86,7 @@ function nextTask() {
     } catch (e) {
       failure = 'load PDF doc : ' + e.toString();
     }
-    task.pageNum = 1;
+    task.pageNum = task.firstPage || 1;
     nextPage(task, failure);
   });
 }
