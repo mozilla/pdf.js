@@ -1022,8 +1022,6 @@ var Font = (function Font() {
         var start = (font.start ? font.start : 0) + cmap.offset;
         font.pos = start;
 
-
-
         var version = int16(font.getBytes(2));
         var numRecords = int16(font.getBytes(2));
 
