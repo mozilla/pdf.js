@@ -472,6 +472,9 @@ var Font = (function Font() {
     names = names.split(/[-,_]/g)[0];
     this.serif = serifFonts[names] || (name.search(/serif/gi) != -1);
 
+    var type = properties.type;
+    this.type = type;
+
     // If the font is to be ignored, register it like an already loaded font
     // to avoid the cost of waiting for it be be loaded by the platform.
     if (properties.ignore) {
@@ -484,6 +487,7 @@ var Font = (function Font() {
     this.widths = properties.widths;
     this.defaultWidth = properties.defaultWidth;
     this.composite = properties.composite;
+    this.toUnicode = properties.toUnicode;
 
     this.fontMatrix = properties.fontMatrix;
     if (properties.type == 'Type3')
@@ -514,7 +518,6 @@ var Font = (function Font() {
     }
 
     var data;
-    var type = properties.type;
     switch (type) {
       case 'Type1':
       case 'CIDFontType0':
@@ -543,7 +546,6 @@ var Font = (function Font() {
     }
 
     this.data = data;
-    this.type = type;
     this.fontMatrix = properties.fontMatrix;
     this.encoding = properties.baseEncoding;
     this.loadedName = getUniqueName();
@@ -1008,6 +1010,8 @@ var Font = (function Font() {
         var start = (font.start ? font.start : 0) + cmap.offset;
         font.pos = start;
 
+
+
         var version = int16(font.getBytes(2));
         var numRecords = int16(font.getBytes(2));
 
@@ -1067,6 +1071,11 @@ var Font = (function Font() {
           var language = int16(font.getBytes(2));
 
           if (format == 0) {
+            // if more record exist and format = 0 is first,
+            // skipping to next format
+            if (i < numRecords - 1)
+              continue;
+
             // Characters below 0x20 are controls characters that are hardcoded
             // into the platform so if some characters in the font are assigned
             // under this limit they will not be displayed so let's rewrite the
@@ -1665,32 +1674,67 @@ var Font = (function Font() {
     },
 
     charToGlyph: function fonts_charToGlyph(charcode) {
-      var unicode, width;
+      var unicode, width, code;
+
       var width = this.widths[charcode];
-      if (this.cidToUnicode) {
-        if (this.noUnicodeAdaptation) {
-          width = this.widths[this.cidToUnicode[charcode]];
-          unicode = charcode;
-        } else
+      if (!isNum(width))
+        width = this.defaultWidth;
+
+      switch (this.type) {
+        case 'CIDFontType0':
+          if (this.noUnicodeAdaptation) {
+            width = this.widths[this.cidToUnicode[charcode]];
+            if (!isNum(width))
+              width = this.defaultWidth;
+            unicode = charcode;
+            break;
+          }
           unicode = adaptUnicode(this.cidToUnicode[charcode] || charcode);
-      } else {
-        var glyphName = this.differences[charcode] || this.encoding[charcode];
-        if (this.glyphNameMap) {
+          break;
+        case 'CIDFontType2':
+          if (this.noUnicodeAdaptation) {
+            width = this.widths[this.cidToUnicode[charcode]];
+            if (!isNum(width))
+              width = this.defaultWidth;
+            unicode = charcode;
+            break;
+          }
+          unicode = adaptUnicode(this.cidToUnicode[charcode] || charcode);
+          break;
+        case 'Type1':
+          var glyphName = this.differences[charcode] || this.encoding[charcode];
+          if (this.noUnicodeAdaptation) {
+            unicode = GlyphsUnicode[glyphName] || charcode;
+            break;
+          }
           unicode = this.glyphNameMap[glyphName] ||
             adaptUnicode(GlyphsUnicode[glyphName] || charcode);
-        } else {
-          unicode = GlyphsUnicode[glyphName] || charcode;
-          if (!this.noUnicodeAdaptation)
-            unicode = adaptUnicode(unicode);
-        }
+          break;
+        case 'Type3':
+          var glyphName = this.differences[charcode] || this.encoding[charcode];
+          code = this.charProcs[glyphName];
+          unicode = charcode;
+          break;
+        case 'TrueType':
+          var glyphName = this.differences[charcode];
+          if (glyphName && this.glyphNameMap) {
+            unicode = this.glyphNameMap[glyphName] ||
+              adaptUnicode(GlyphsUnicode[glyphName] || charcode);
+          } else {
+            unicode = charcode;
+            if (!this.noUnicodeAdaptation)
+              unicode = adaptUnicode(unicode);
+          }
+          break;
+        default:
+          warn('Unsupported font type: ' + this.type);
+          break;
       }
-      var glyph = {
+      return {
         unicode: unicode,
-        width: isNum(width) ? width : this.defaultWidth
+        width: width,
+        code: code
       };
-      if (this.coded)
-        glyph.code = this.charProcs[glyphName];
-      return glyph;
     },
 
     charsToGlyphs: function fonts_chars2Glyphs(chars) {
@@ -1982,6 +2026,17 @@ var Type1Parser = function type1Parser() {
           warn('Support for Type1 command ' + value +
                 ' (' + escape + ') is not implemented in charstring: ' +
                 charstring);
+          if (value == 12) {
+            // we know how to ignore only some the Type1 commands
+            switch (escape) {
+              case 7:
+                charstring.push('drop', 'drop', 'drop', 'drop');
+                continue;
+              case 8:
+                charstring.push('drop');
+                continue;
+            }
+          }
         }
 
         value = command;
@@ -2368,6 +2423,7 @@ CFF.prototype = {
   },
 
   encodeNumber: function cff_encodeNumber(value) {
+    value |= 0;
     if (value >= -32768 && value <= 32767) {
       return '\x1c' +
              String.fromCharCode((value >> 8) & 0xFF) +
@@ -2386,42 +2442,16 @@ CFF.prototype = {
   getOrderedCharStrings: function cff_getOrderedCharStrings(glyphs,
                                                             properties) {
     var charstrings = [];
-    var unicodeUsedIn = [];
-
     for (var i = 0; i < glyphs.length; i++) {
       var item = glyphs[i];
-      var glyph = item.glyph;
-      if (glyph == '.notdef')
-        continue;
-
-      var code = properties.differences.indexOf(glyph);
-      if (code >= 0) {
-        if (unicodeUsedIn[code] >= 0)
-          charstrings[unicodeUsedIn[code]].unicode = null;
-        unicodeUsedIn[code] = -1;
-      } else {
-        code = properties.baseEncoding.indexOf(glyph);
-        if (code >= 0 && unicodeUsedIn[code] != -1)
-          unicodeUsedIn[code] = charstrings.length;
-        else
-          code = null;
-      }
-
       charstrings.push({
-        glyph: glyph,
-        unicode: code,
+        glyph: item.glyph,
+        unicode: adaptUnicode(i),
         gid: i,
         charstring: item.data,
         width: item.width,
         lsb: item.lsb
       });
-    }
-
-    var unusedUnicode = 0xE021;
-    for (var i = 0; i < charstrings.length; i++) {
-      var charstring = charstrings[i];
-      charstring.unicode = charstring.unicode ?
-          adaptUnicode(charstring.unicode) : unusedUnicode++;
     }
     charstrings.sort(function charstrings_sort(a, b) {
       return a.unicode - b.unicode;
@@ -2702,24 +2732,6 @@ var Type2CFF = (function type2CFF() {
                                        charStrings.length, strings);
       var encoding = this.parseEncoding(topDict.Encoding, properties,
                                              strings, charset);
-      var encodingHasItems = false;
-      for (var item in encoding.encoding) {
-        if (encoding.encoding.hasOwnProperty(item)) {
-          encodingHasItems = true;
-          break;
-        }
-      }
-      if (!encodingHasItems && charset.length) {
-        // no encoding item, but charset has items
-        // building encoding from what we have
-        for (var i = 0; i < charset.length; ++i) {
-          var glyphName = charset[i];
-          var charcode = properties.baseEncoding.indexOf(glyphName);
-          if (charcode < 0)
-            continue;
-          encoding.encoding[charcode] = i;
-        }
-      }
 
       // The font sanitizer does not support CFF encoding with a
       // supplement, since the encoding is not really use to map
@@ -2913,6 +2925,7 @@ var Type2CFF = (function type2CFF() {
       }
       return charset;
     },
+
     getPrivDict: function cff_getprivdict(baseDict, strings) {
       var dict = {};
 
@@ -2973,6 +2986,17 @@ var Type2CFF = (function type2CFF() {
             break;
           case 18:
             dict['Private'] = value;
+            break;
+          case 3102:
+          case 3103:
+          case 3104:
+          case 3105:
+          case 3106:
+          case 3107:
+          case 3108:
+          case 3109:
+          case 3110:
+            dict['cidOperatorPresent'] = true;
             break;
           default:
             TODO('interpret top dict key');
@@ -3085,6 +3109,15 @@ var Type2CFF = (function type2CFF() {
               dict[pos] = 19;
             }
             var b = (b << 8) | op;
+          }
+          if (!operands.length && b == 8 &&
+              dict[pos + 1] == 9) {
+            // no operands for FamilyBlues, removing the key
+            // and next one is FamilyOtherBlues - skipping them
+            // also replacing FamilyBlues to pass sanitizer
+            dict[pos] = 139;
+            pos += 2;
+            continue;
           }
           entries.push([b, operands]);
           operands = [];
