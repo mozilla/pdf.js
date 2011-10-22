@@ -2875,8 +2875,8 @@ var Type2CFF = (function type2CFF() {
             var gid = 1;
             for (var i = 0; i < rangesCount; i++) {
               var start = bytes[pos++];
-              var count = bytes[pos++];
-              for (var j = start; j < start + count; j++)
+              var left = bytes[pos++];
+              for (var j = start; j <= start + left; j++)
                 encoding[j] = gid++;
             }
             break;
