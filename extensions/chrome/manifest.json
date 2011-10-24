@@ -5,7 +5,7 @@
   "permissions": [
     "experimental",
     "http://*/*.pdf",
-    "file:///*/*.pdf"
+    "file://*/*.pdf"
   ],
   "background_page": "pdfHandler.html"
 }
