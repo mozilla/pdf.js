@@ -2959,10 +2959,8 @@ var Parser = (function parserParser() {
         return new AsciiHexStream(stream);
       } else if (name == 'CCITTFaxDecode' || name == 'CCF') {
         return new CCITTFaxStream(stream, params);
-      } else if (name == 'JPXDecode') {
-        warn('filter "' + name + '" not supported yet');
       } else {
-        error('filter "' + name + '" not supported yet');
+        TODO('filter "' + name + '" not supported yet');
       }
       return stream;
     }
