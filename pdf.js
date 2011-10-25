@@ -4665,7 +4665,7 @@ var PartialEvaluator = (function partialEvaluator() {
       }
 
       var fnArray = queue.fnArray, argsArray = queue.argsArray;
-      var dependency = dependency || [];
+      var dependencyArray = dependency || [];
 
       resources = xref.fetchIfRef(resources) || new Dict();
       var xobjs = xref.fetchIfRef(resources.get('XObject')) || new Dict();
@@ -4712,13 +4712,14 @@ var PartialEvaluator = (function partialEvaluator() {
 
                 if (typeNum == TILING_PATTERN) {
                   // Create an IR of the pattern code.
-                  var depIdx = dependency.length;
-                  var codeIR = this.getIRQueue(pattern,
-                                    dict.get('Resources'), {}, dependency);
+                  var depIdx = dependencyArray.length;
+                  var queueObj = {};
+                  var codeIR = this.getIRQueue(pattern, dict.get('Resources'),
+                                               queueObj, dependencyArray);
 
                   // Add the dependencies that are required to execute the
                   // codeIR.
-                  insertDependency(dependency.slice(depIdx));
+                  insertDependency(dependencyArray.slice(depIdx));
 
                   args = TilingPattern.getIR(codeIR, dict, args);
                 }
@@ -4755,14 +4756,14 @@ var PartialEvaluator = (function partialEvaluator() {
                 argsArray.push([matrix, bbox]);
 
                 // This adds the IRQueue of the xObj to the current queue.
-                var depIdx = dependency.length;
+                var depIdx = dependencyArray.length;
 
                 this.getIRQueue(xobj, xobj.dict.get('Resources'), queue,
-                                                                dependency);
+                                dependencyArray);
 
                // Add the dependencies that are required to execute the
                // codeIR.
-               insertDependency(dependency.slice(depIdx));
+               insertDependency(dependencyArray.slice(depIdx));
 
                 fn = 'paintFormXObjectEnd';
                 args = [];
@@ -5294,9 +5295,11 @@ var PartialEvaluator = (function partialEvaluator() {
         properties.resources = fontResources;
         for (var key in charProcs.map) {
           var glyphStream = xref.fetchIfRef(charProcs.map[key]);
-          var queue = {};
+          var queueObj = {};
           properties.glyphs[key].IRQueue = this.getIRQueue(glyphStream,
-                      fontResources, queue, dependency);
+                                                           fontResources,
+                                                           queueObj,
+                                                           dependency);
         }
       }
 
@@ -7138,6 +7141,7 @@ var PDFFunction = (function() {
         case CONSTRUCT_STICHED:
           return this.constructStichedFromIR(IR);
         case CONSTRUCT_POSTSCRIPT:
+        default:
           return this.constructPostScriptFromIR(IR);
       }
     },
@@ -7417,7 +7421,7 @@ var PDFObjects = (function() {
       // not required to be resolved right now
       if (callback) {
         this.ensureObj(objId).then(callback);
-        return;
+        return null;
       }
 
       // If there isn't a callback, the user expects to get the resolved data
@@ -7426,8 +7430,10 @@ var PDFObjects = (function() {
 
       // If there isn't an object yet or the object isn't resolved, then the
       // data isn't ready yet!
-      if (!obj || !obj.isResolved)
+      if (!obj || !obj.isResolved) {
         throw 'Requesting object that isn\'t resolved yet ' + objId;
+        return null;
+      }
       else
         return obj.data;
     },
