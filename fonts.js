@@ -2631,7 +2631,8 @@ var Type2CFF = (function type2CFF() {
         if (unicode <= 0x1f || (unicode >= 127 && unicode <= 255))
           unicode += kCmapGlyphOffset;
 
-        var width = isNum(mapping.width) ? mapping.width : defaultWidth;
+        var width = (mapping.hasOwnProperty('width') && isNum(mapping.width)) ?
+                    mapping.width : defaultWidth;
         properties.encoding[code] = {
           unicode: unicode,
           width: width
