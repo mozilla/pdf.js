@@ -3,7 +3,7 @@
 
 var PDF = {};
 
-(function(globalScope){
+(function(globalScope) {
   // Use strict in our context only - users might not want it
   'use strict';
 
@@ -11,7 +11,7 @@ var PDF = {};
   var useWorker = false;
   var console;
 
-  // Files are inserted below - see Makefile  
+  // Files are inserted below - see Makefile
   /* INSERT_POINT */
 
   // Worker-specific
@@ -20,7 +20,7 @@ var PDF = {};
   } else {
     var consoleTimer = {};
     console = workerConsole;
-  
+
     // Listen for messages from the main thread.
     var handler = new MessageHandler('worker_processor', globalScope);
     WorkerProcessorHandler.setup(handler);

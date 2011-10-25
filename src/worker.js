@@ -169,4 +169,4 @@ var workerConsole = {
     }
     this.log('Timer:', name, Date.now() - time);
   }
-};    
+};
