@@ -128,8 +128,8 @@ lint:
 # TODO: Use the Closure compiler to optimize the pdf.js files.
 #
 GH_PAGES = $(BUILD_DIR)/gh-pages
-web: | extension compiler pages-repo \
-	$(addprefix $(GH_PAGES)/, $(PDF_JS_FILES)) \
+web: | pdfjs extension compiler pages-repo \
+	$(addprefix $(GH_PAGES)/, $(PDFJS_TARGET)) \
 	$(addprefix $(GH_PAGES)/, $(wildcard web/*.*)) \
 	$(addprefix $(GH_PAGES)/, $(wildcard web/images/*.*)) \
 	$(addprefix $(GH_PAGES)/, $(wildcard $(EXTENSION_SRC)/*.xpi))
@@ -154,9 +154,10 @@ pages-repo: | $(BUILD_DIR)
 	fi;
 	@mkdir -p $(GH_PAGES)/web;
 	@mkdir -p $(GH_PAGES)/web/images;
+	@mkdir -p $(GH_PAGES)/build;
 	@mkdir -p $(GH_PAGES)/$(EXTENSION_SRC);
 
-$(GH_PAGES)/%.js: %.js
+$(GH_PAGES)/$(BUILD_DIR)/%.js: build/%.js
 	@cp $< $@
 
 $(GH_PAGES)/web/%: web/%
