@@ -1,8 +1,6 @@
 /* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 /* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
 
-'use strict';
-
 var ERRORS = 0, WARNINGS = 1, TODOS = 5;
 var verbosity = WARNINGS;
 

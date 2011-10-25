@@ -558,7 +558,7 @@ var CanvasGraphics = (function canvasGraphics() {
           color = base.getRgb(color);
         }
         var pattern = new TilingPattern(IR, color, this.ctx, this.objs);
-      } else if (IR[0] == 'RadialAxialShading' || IR[0] == 'DummyShading') {
+      } else if (IR[0] == 'RadialAxial' || IR[0] == 'Dummy') {
         var pattern = Pattern.shadingFromIR(this.ctx, IR);
       } else {
         throw 'Unkown IR type';

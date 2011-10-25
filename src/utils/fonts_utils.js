@@ -1,8 +1,6 @@
 /* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 /* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
 
-'use strict';
-
 /*
  * The Type2 reader code below is only used for debugging purpose since Type2
  * is only a CharString format and is never used directly as a Font file.

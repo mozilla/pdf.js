@@ -4,18 +4,15 @@
 // // TODO: Global namespace
 // var PDF = {};
 
-// Stay away from global
 (function(){
-
+  // Use strict in our context only - users might not want it
   'use strict';
 
-  // All files will be inserted below this point
-  // INSERT_POINT
+  // Files are inserted below - see Makefile  
+  /* INSERT_POINT */
 
-  //
   // Expose API in global object
-  //
   window.PDFDoc = PDFDoc;
   window.getPdf = getPdf;
 
-})(); // self-executing function
+})();

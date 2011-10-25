@@ -41,6 +41,15 @@ PDF_WORKER_FILES = \
 	worker/processor_handler.js \
 	$(NULL)	
 
+# make server
+#
+# This target starts a local web server at localhost:8888. This can be
+# used for testing all browsers.
+server:
+	@cd test; python test.py --port=8888;
+
+test: pdfjs shell-test browser-test
+
 #
 # Bundle pdf.js
 #
@@ -52,22 +61,6 @@ pdfjs:
 	sed -E '/INSERT_POINT/ r all_files.tmp' pdf.js > ../build/pdf.js; \
 	rm -f all_files.tmp; \
 	cd ..
-
-#
-# Watch for file changes, regenerate pdf.js if change found
-#
-watch:
-	@echo "Watching for file changes in src/"
-	@python watch.py src/*.js - 'make pdfjs'
-
-# make server
-#
-# This target starts a local web server at localhost:8888. This can be
-# used for testing all browsers.
-server:
-	@cd test; python test.py --port=8888;
-
-test: shell-test browser-test
 
 # make browser-test
 #
@@ -240,5 +233,12 @@ clean:
 help:
 	@echo "Read the comments in the Makefile for guidance.";
 
-.PHONY:: all test browser-test font-test shell-test \
+#
+# Watch for file changes, regenerate pdf.js if change found
+#
+watch:
+	@echo "Watching for file changes in src/"
+	@python watch.py src/*.js - 'make pdfjs'
+
+.PHONY:: all pdfjs watch test browser-test font-test shell-test \
 	shell-msg lint clean web compiler help server

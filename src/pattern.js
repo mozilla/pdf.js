@@ -13,8 +13,7 @@ var Pattern = (function patternPattern() {
   };
 
   constructor.shadingFromIR = function pattern_shadingFromIR(ctx, raw) {
-    var obj = window[raw[0]];
-    return obj.fromIR(ctx, raw);
+    return Shadings[raw[0]].fromIR(ctx, raw);
   }
 
   constructor.parseShading = function pattern_shading(shading, matrix,
@@ -27,34 +26,19 @@ var Pattern = (function patternPattern() {
       case 2:
       case 3:
         // both radial and axial shadings are handled by RadialAxial shading
-        return new RadialAxialShading(dict, matrix, xref, res, ctx);
+        return new Shadings.RadialAxial(dict, matrix, xref, res, ctx);
       default:
-        return new DummyShading();
+        return new Shadings.Dummy();
     }
   };
   return constructor;
 })();
 
-var DummyShading = (function dummyShading() {
-  function constructor() {
-    this.type = 'Pattern';
-  }
-
-  constructor.fromIR = function() {
-    return 'hotpink';
-  }
-
-  constructor.prototype = {
-    getIR: function dummpy_getir() {
-      return ['DummyShading'];
-    }
-  };
-  return constructor;
-})();
+var Shadings = {};
 
 // Radial and axial shading have very similar implementations
 // If needed, the implementations can be broken into two classes
-var RadialAxialShading = (function radialAxialShading() {
+Shadings.RadialAxial = (function radialAxialShading() {
   function constructor(dict, matrix, xref, res, ctx) {
     this.matrix = matrix;
     this.coordsArr = dict.get('Coords');
@@ -163,10 +147,27 @@ var RadialAxialShading = (function radialAxialShading() {
         p1 = Util.applyTransform(p1, matrix);
       }
 
-      return ['RadialAxialShading', type, this.colorStops, p0, p1, r0, r1];
+      return ['RadialAxial', type, this.colorStops, p0, p1, r0, r1];
     }
   };
 
+  return constructor;
+})();
+
+Shadings.Dummy = (function dummyShading() {
+  function constructor() {
+    this.type = 'Pattern';
+  }
+
+  constructor.fromIR = function() {
+    return 'hotpink';
+  }
+
+  constructor.prototype = {
+    getIR: function dummpy_getir() {
+      return ['Dummy'];
+    }
+  };
   return constructor;
 })();
 

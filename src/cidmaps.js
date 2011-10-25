@@ -1,8 +1,6 @@
 /* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 /* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
 
-'use strict';
-
 var CIDToUnicodeMaps = {
   'Adobe-Japan1': [[32, 160], {f: 12, c: 33}, [45, 8209], {f: 46, c: 46}, 165,
     {f: 2, c: 93}, [95, 818], [96, 768], {f: 27, c: 97}, 166, 125, [732, 771],
