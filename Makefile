@@ -196,8 +196,9 @@ PDF_WEB_FILES = \
 extension: | pdfjs
 	# Copy a standalone version of pdf.js inside the content directory
 	@rm -Rf $(EXTENSION_SRC)/$(CONTENT_DIR)/
+	@mkdir -p $(EXTENSION_SRC)/$(CONTENT_DIR)/$(BUILD_DIR)
 	@mkdir -p $(EXTENSION_SRC)/$(CONTENT_DIR)/web
-	@cp $(PDFJS_TARGET) $(EXTENSION_SRC)/$(CONTENT_DIR)/ 
+	@cp $(PDFJS_TARGET) $(EXTENSION_SRC)/$(CONTENT_DIR)/$(BUILD_DIR)
 	@cp -r $(PDF_WEB_FILES) $(EXTENSION_SRC)/$(CONTENT_DIR)/web/
 
 	# Create the xpi
