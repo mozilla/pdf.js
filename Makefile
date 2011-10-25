@@ -20,7 +20,6 @@ PDF_JS_FILES = \
   charsets.js \
   cidmaps.js \
   colorspace.js \
-  core.js \
   crypto.js \
   evaluator.js \
   fonts.js \
