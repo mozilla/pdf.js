@@ -49,7 +49,7 @@ pdfjs:
 	@mkdir -p $(BUILD_DIR)
 	@cd src; \
 	cat $(PDF_JS_FILES) > all_files.tmp; \
-	sed -E '/INSERT_POINT/ r all_files.tmp' pdf.js > ../$(PDFJS_TARGET); \
+	sed '/INSERT_POINT/ r all_files.tmp' pdf.js > ../$(PDFJS_TARGET); \
 	rm -f all_files.tmp; \
 	cd ..
 
