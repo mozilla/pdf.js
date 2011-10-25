@@ -1,5 +1,6 @@
 REPO = git@github.com:andreasgal/pdf.js.git
 BUILD_DIR := build
+PDFJS_TARGET := $(BUILD_DIR)/pdf.js
 DEFAULT_BROWSERS := resources/browser_manifests/browser_manifest.json
 DEFAULT_TESTS := test_manifest.json
 
@@ -10,7 +11,6 @@ EXTENSION_NAME := pdf.js.xpi
 -include local.mk
 
 # JS files needed for pdf.js.
-# This list doesn't account for the 'worker' directory.
 PDF_JS_FILES = \
   core.js \
   util.js \
@@ -30,16 +30,8 @@ PDF_JS_FILES = \
   parser.js \
   pattern.js \
   stream.js \
-  worker/message_handler.js \
-  worker/processor_handler.js \
+  worker.js \
 	$(NULL)
-
-PDF_WORKER_FILES = \
-	worker/console.js \
-	worker/message_handler.js \
-	worker/pdf_worker_loader.js \
-	worker/processor_handler.js \
-	$(NULL)	
 
 # make server
 #
@@ -55,10 +47,10 @@ test: pdfjs shell-test browser-test
 #
 pdfjs:
 	@echo "Bundling source files..."
-	@mkdir -p build
+	@mkdir -p $(BUILD_DIR)
 	@cd src; \
 	cat $(PDF_JS_FILES) > all_files.tmp; \
-	sed -E '/INSERT_POINT/ r all_files.tmp' pdf.js > ../build/pdf.js; \
+	sed -E '/INSERT_POINT/ r all_files.tmp' pdf.js > ../$(PDFJS_TARGET); \
 	rm -f all_files.tmp; \
 	cd ..
 
@@ -121,7 +113,7 @@ browser-test:
 # To install gjslint, see:
 #
 # <http://code.google.com/closure/utilities/docs/linter_howto.html>
-SRC_DIRS := . utils worker web test examples/helloworld extensions/firefox \
+SRC_DIRS := . utils web test examples/helloworld extensions/firefox \
             extensions/firefox/components
 GJSLINT_FILES = $(foreach DIR,$(SRC_DIRS),$(wildcard $(DIR)/*.js))
 lint:
@@ -138,7 +130,6 @@ lint:
 GH_PAGES = $(BUILD_DIR)/gh-pages
 web: | extension compiler pages-repo \
 	$(addprefix $(GH_PAGES)/, $(PDF_JS_FILES)) \
-	$(addprefix $(GH_PAGES)/, $(PDF_WORKER_FILES)) \
 	$(addprefix $(GH_PAGES)/, $(wildcard web/*.*)) \
 	$(addprefix $(GH_PAGES)/, $(wildcard web/images/*.*)) \
 	$(addprefix $(GH_PAGES)/, $(wildcard $(EXTENSION_SRC)/*.xpi))
@@ -161,15 +152,11 @@ pages-repo: | $(BUILD_DIR)
 	git clone -b gh-pages $(REPO) $(GH_PAGES); \
 	rm -rf $(GH_PAGES)/*; \
 	fi;
-	@mkdir -p $(GH_PAGES)/worker;
 	@mkdir -p $(GH_PAGES)/web;
 	@mkdir -p $(GH_PAGES)/web/images;
 	@mkdir -p $(GH_PAGES)/$(EXTENSION_SRC);
 
 $(GH_PAGES)/%.js: %.js
-	@cp $< $@
-
-$(GH_PAGES)/worker/%: worker/%
 	@cp $< $@
 
 $(GH_PAGES)/web/%: web/%
@@ -206,14 +193,12 @@ PDF_WEB_FILES = \
 	web/viewer.js \
 	web/viewer.html \
 	$(NULL)
-extension:
+extension: | pdfjs
 	# Copy a standalone version of pdf.js inside the content directory
 	@rm -Rf $(EXTENSION_SRC)/$(CONTENT_DIR)/
 	@mkdir -p $(EXTENSION_SRC)/$(CONTENT_DIR)/web
-	@mkdir -p $(EXTENSION_SRC)/$(CONTENT_DIR)/worker
-	@cp $(PDF_JS_FILES) $(EXTENSION_SRC)/$(CONTENT_DIR)/ 
+	@cp $(PDFJS_TARGET) $(EXTENSION_SRC)/$(CONTENT_DIR)/ 
 	@cp -r $(PDF_WEB_FILES) $(EXTENSION_SRC)/$(CONTENT_DIR)/web/
-	@cp -r $(PDF_WORKER_FILES) $(EXTENSION_SRC)/$(CONTENT_DIR)/worker/
 
 	# Create the xpi
 	@cd $(EXTENSION_SRC); zip -r $(EXTENSION_NAME) *

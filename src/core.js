@@ -4,9 +4,6 @@
 var ERRORS = 0, WARNINGS = 1, TODOS = 5;
 var verbosity = WARNINGS;
 
-// Set this to true if you want to use workers.
-var useWorker = false;
-
 //
 // getPdf()
 // Convenience function to perform binary Ajax GET
@@ -463,7 +460,7 @@ var PDFDoc = (function() {
     this.pageCache = [];
 
     if (useWorker) {
-      var worker = new Worker('../worker/pdf_worker_loader.js');
+      var worker = new Worker('../build/pdf.js');
     } else {
       // If we don't use a worker, just post/sendMessage to the main thread.
       var worker = {
