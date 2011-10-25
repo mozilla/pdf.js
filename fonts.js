@@ -1689,7 +1689,7 @@ var Font = (function Font() {
         styleSheet = document.styleSheets[0];
       }
       styleSheet.insertRule(rule, styleSheet.cssRules.length);
-console.log(this.name + url);
+
       return rule;
     },
 
