@@ -27,6 +27,14 @@ For an online demo, visit:
 This demo provides an interactive interface for displaying and browsing PDFs
 using the pdf.js API.
 
+### Extension
+
+A Firefox extension is also available:
+
++ http://andreasgal.github.com/pdf.js/extensions/firefox/pdf.js.xpi
+
+However, note that the extension might not reflect the latest source in our master branch.
+
 ### Getting the code
 
 To get a local copy of the current code, clone it using git:
@@ -47,7 +55,7 @@ You can also view all the test pdf files on the right side serving
 
 + http://localhost:8888/test/pdfs/?frame
 
-### Learning
+## Learning
 
 Here are some initial pointers to help contributors get off the ground. 
 Additional resources are available in a separate section below.

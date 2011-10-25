@@ -21,6 +21,13 @@ PDF_JS_FILES = \
 	cidmaps.js \
 	$(NULL)
 
+PDF_WORKER_FILES = \
+	worker/console.js \
+	worker/message_handler.js \
+	worker/pdf_worker_loader.js \
+	worker/processor_handler.js \
+	$(NULL)	
+
 # not sure what to do for all yet
 all: help
 
@@ -109,6 +116,7 @@ lint:
 GH_PAGES = $(BUILD_DIR)/gh-pages
 web: | extension compiler pages-repo \
 	$(addprefix $(GH_PAGES)/, $(PDF_JS_FILES)) \
+	$(addprefix $(GH_PAGES)/, $(PDF_WORKER_FILES)) \
 	$(addprefix $(GH_PAGES)/, $(wildcard web/*.*)) \
 	$(addprefix $(GH_PAGES)/, $(wildcard web/images/*.*)) \
 	$(addprefix $(GH_PAGES)/, $(wildcard $(EXTENSION_SRC)/*.xpi))
@@ -131,11 +139,15 @@ pages-repo: | $(BUILD_DIR)
 	git clone -b gh-pages $(REPO) $(GH_PAGES); \
 	rm -rf $(GH_PAGES)/*; \
 	fi;
+	@mkdir -p $(GH_PAGES)/worker;
 	@mkdir -p $(GH_PAGES)/web;
 	@mkdir -p $(GH_PAGES)/web/images;
 	@mkdir -p $(GH_PAGES)/$(EXTENSION_SRC);
 
 $(GH_PAGES)/%.js: %.js
+	@cp $< $@
+
+$(GH_PAGES)/worker/%: worker/%
 	@cp $< $@
 
 $(GH_PAGES)/web/%: web/%
@@ -176,8 +188,10 @@ extension:
 	# Copy a standalone version of pdf.js inside the content directory
 	@rm -Rf $(EXTENSION_SRC)/$(CONTENT_DIR)/
 	@mkdir -p $(EXTENSION_SRC)/$(CONTENT_DIR)/web
+	@mkdir -p $(EXTENSION_SRC)/$(CONTENT_DIR)/worker
 	@cp $(PDF_JS_FILES) $(EXTENSION_SRC)/$(CONTENT_DIR)/ 
 	@cp -r $(PDF_WEB_FILES) $(EXTENSION_SRC)/$(CONTENT_DIR)/web/
+	@cp -r $(PDF_WORKER_FILES) $(EXTENSION_SRC)/$(CONTENT_DIR)/worker/
 
 	# Create the xpi
 	@cd $(EXTENSION_SRC); zip -r $(EXTENSION_NAME) *
