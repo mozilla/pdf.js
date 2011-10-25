@@ -1008,14 +1008,19 @@ var Font = (function Font() {
           return;
         var glyphsLength = glyphs.length;
         var glyphNameMap = {};
+        var encoding = [];
         for (var i = 0; i < glyphsLength; ++i) {
           var glyphName = glyphNames[ids[i]];
           if (!glyphName)
             continue;
           var unicode = glyphs[i].unicode;
           glyphNameMap[glyphName] = unicode;
+          var code = glyphs[i].code;
+          encoding[code] = glyphName;
         }
         properties.glyphNameMap = glyphNameMap;
+        if (!properties.hasEncoding)
+          properties.baseEncoding = encoding;
       }
 
       function replaceCMapTable(cmap, font, properties) {
@@ -1096,7 +1101,7 @@ var Font = (function Font() {
               var index = font.getByte();
               if (index) {
                 var unicode = adaptUnicode(j);
-                glyphs.push({ unicode: unicode });
+                glyphs.push({ unicode: unicode, code: j });
                 ids.push(index);
               }
             }
@@ -1158,7 +1163,7 @@ var Font = (function Font() {
                   continue;
 
                 var unicode = adaptUnicode(j);
-                glyphs.push({ unicode: unicode });
+                glyphs.push({ unicode: unicode, code: j });
                 ids.push(glyphCode);
               }
             }
@@ -1177,10 +1182,11 @@ var Font = (function Font() {
             var glyphs = [];
             var ids = [];
             for (var j = 0; j < entryCount; j++) {
-              var code = int16(font.getBytes(2));
-              var unicode = adaptUnicode(firstCode + j);
-              glyphs.push({ unicode: unicode });
-              ids.push(code);
+              var glyphCode = int16(font.getBytes(2));
+              var code = firstCode + j;
+              var unicode = adaptUnicode(code);
+              glyphs.push({ unicode: unicode, code: code });
+              ids.push(glyphCode);
             }
 
             createGlyphNameMap(glyphs, ids, properties);
@@ -1511,11 +1517,15 @@ var Font = (function Font() {
       properties.fixedPitch = isFixedPitch(charstrings);
 
       var glyphNameMap = {};
+      var encoding = [];
       for (var i = 0; i < charstrings.length; ++i) {
         var charstring = charstrings[i];
         glyphNameMap[charstring.glyph] = charstring.unicode;
+        encoding[charstring.code] = charstring.glyph;
       }
       this.glyphNameMap = glyphNameMap;
+      if (!properties.hasEncoding)
+        properties.baseEncoding = encoding;
 
       var fields = {
         // PostScript Font Program
@@ -1679,7 +1689,7 @@ var Font = (function Font() {
         styleSheet = document.styleSheets[0];
       }
       styleSheet.insertRule(rule, styleSheet.cssRules.length);
-
+console.log(this.name + url);
       return rule;
     },
 
@@ -2800,29 +2810,42 @@ var Type2CFF = (function type2CFF() {
     getCharStrings: function cff_charstrings(charsets, encoding,
                                              privateDict, properties) {
       var charstrings = [];
-      var nextUnusedUnicode = 0xE021;
+      var unicodeUsed = [];
+      var unassignedUnicodeItems = [];
       for (var i = 0; i < charsets.length; i++) {
         var glyph = charsets[i];
         var encodingFound = false;
         for (var charcode in encoding) {
           if (encoding[charcode] == i) {
+            var code = charcode | 0;
             charstrings.push({
-              unicode: adaptUnicode(charcode | 0),
+              unicode: adaptUnicode(code),
+              code: code,
               gid: i,
               glyph: glyph
             });
+            unicodeUsed[code] = true;
             encodingFound = true;
             break;
           }
         }
         if (!encodingFound) {
-          // giving unicode value anyway
-          charstrings.push({
-            unicode: nextUnusedUnicode++,
-            gid: i,
-            glyph: glyph
-          });
+          unassignedUnicodeItems.push(i);
         }
+      }
+      var nextUnusedUnicode = 0x21;
+      for (var j = 0; j < unassignedUnicodeItems.length; ++j) {
+        var i = unassignedUnicodeItems[j];
+        // giving unicode value anyway
+        while (unicodeUsed[nextUnusedUnicode])
+          nextUnusedUnicode++;
+        var code = nextUnusedUnicode++;
+        charstrings.push({
+          unicode: adaptUnicode(code),
+          code: code,
+          gid: i,
+          glyph: charsets[i]
+        });
       }
 
       // sort the array by the unicode value (again)
