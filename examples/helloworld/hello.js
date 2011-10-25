@@ -7,11 +7,11 @@
 
 'use strict';
 
-getPdf('helloworld.pdf', function getPdfHelloWorld(data) {
+PDF.getPdf('helloworld.pdf', function getPdfHelloWorld(data) {
   //
   // Instantiate PDFDoc with PDF data
   //
-  var pdf = new PDFDoc(data);
+  var pdf = new PDF.PDFDoc(data);
   var page = pdf.getPage(1);
   var scale = 1.5;
 
