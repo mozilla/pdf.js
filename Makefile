@@ -12,13 +12,26 @@ EXTENSION_NAME := pdf.js.xpi
 # JS files needed for pdf.js.
 # This list doesn't account for the 'worker' directory.
 PDF_JS_FILES = \
-	pdf.js \
-	crypto.js \
-	fonts.js \
-	metrics.js \
-	charsets.js \
-	glyphlist.js \
-	cidmaps.js \
+  core.js \
+  util.js \
+  canvas.js \
+  obj.js \
+  function.js \
+  charsets.js \
+  cidmaps.js \
+  colorspace.js \
+  core.js \
+  crypto.js \
+  evaluator.js \
+  fonts.js \
+  glyphlist.js \
+  image.js \
+  metrics.js \
+  parser.js \
+  pattern.js \
+  stream.js \
+  worker/message_handler.js \
+  worker/processor_handler.js \
 	$(NULL)
 
 PDF_WORKER_FILES = \
@@ -28,8 +41,24 @@ PDF_WORKER_FILES = \
 	worker/processor_handler.js \
 	$(NULL)	
 
-# not sure what to do for all yet
-all: help
+#
+# Bundle pdf.js
+#
+pdfjs:
+	@echo "Bundling source files..."
+	@mkdir -p build
+	@cd src; \
+	cat $(PDF_JS_FILES) > all_files.tmp; \
+	sed -E '/INSERT_POINT/ r all_files.tmp' pdf.js > ../build/pdf.js; \
+	rm -f all_files.tmp; \
+	cd ..
+
+#
+# Watch for file changes, regenerate pdf.js if change found
+#
+watch:
+	@echo "Watching for file changes in src/"
+	@python watch.py src/*.js - 'make pdfjs'
 
 # make server
 #
