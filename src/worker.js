@@ -138,6 +138,8 @@ var WorkerProcessorHandler = {
   }
 };
 
+var consoleTimer = {};
+
 var workerConsole = {
   log: function log() {
     var args = Array.prototype.slice.call(arguments);
@@ -167,3 +169,12 @@ var workerConsole = {
     this.log('Timer:', name, Date.now() - time);
   }
 };
+
+// Worker thread?
+if (typeof window === 'undefined') {
+  console = workerConsole;
+
+  // Listen for messages from the main thread.
+  var handler = new MessageHandler('worker_processor', this);
+  WorkerProcessorHandler.setup(handler);
+}

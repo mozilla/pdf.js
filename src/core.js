@@ -4,7 +4,15 @@
 var ERRORS = 0, WARNINGS = 1, TODOS = 5;
 var verbosity = WARNINGS;
 
-//
+var useWorker = false;
+
+// The global PDF object exposes the API
+// In production, it will be declared outside a global wrapper
+// In development, it will be declared here
+if (typeof PDF === 'undefined') {
+  var PDF = {};
+}
+
 // getPdf()
 // Convenience function to perform binary Ajax GET
 // Usage: getPdf('http://...', callback)
@@ -13,7 +21,6 @@ var verbosity = WARNINGS;
 //                 [,progress:Function, error:Function]
 //               },
 //               callback)
-//
 function getPdf(arg, callback) {
   var params = arg;
   if (typeof arg === 'string')
@@ -39,6 +46,7 @@ function getPdf(arg, callback) {
   };
   xhr.send(null);
 }
+PDF.getPdf = getPdf;
 
 var Page = (function pagePage() {
   function constructor(xref, pageNumber, pageDict, ref) {
@@ -460,7 +468,7 @@ var PDFDoc = (function() {
     this.pageCache = [];
 
     if (useWorker) {
-      var worker = new Worker('../build/pdf.js');
+      var worker = new Worker('../src/worker_loader.js');
     } else {
       // If we don't use a worker, just post/sendMessage to the main thread.
       var worker = {
@@ -597,3 +605,4 @@ var PDFDoc = (function() {
 
   return constructor;
 })();
+PDF.PDFDoc = PDFDoc;
