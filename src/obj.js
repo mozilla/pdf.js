@@ -675,7 +675,7 @@ var PDFObjects = (function() {
       // not required to be resolved right now
       if (callback) {
         this.ensureObj(objId).then(callback);
-        return;
+        return null;
       }
 
       // If there isn't a callback, the user expects to get the resolved data
@@ -684,10 +684,12 @@ var PDFObjects = (function() {
 
       // If there isn't an object yet or the object isn't resolved, then the
       // data isn't ready yet!
-      if (!obj || !obj.isResolved)
+      if (!obj || !obj.isResolved) {
         throw 'Requesting object that isn\'t resolved yet ' + objId;
-      else
+        return null;
+      } else {
         return obj.data;
+      }
     },
 
     /**

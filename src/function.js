@@ -64,6 +64,7 @@ var PDFFunction = (function() {
         case CONSTRUCT_STICHED:
           return this.constructStichedFromIR(IR);
         case CONSTRUCT_POSTSCRIPT:
+        default:
           return this.constructPostScriptFromIR(IR);
       }
     },

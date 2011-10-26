@@ -244,7 +244,7 @@ var Parser = (function parserParser() {
       } else if (name == 'CCITTFaxDecode' || name == 'CCF') {
         return new CCITTFaxStream(stream, params);
       } else {
-        error('filter "' + name + '" not supported yet');
+        TODO('filter "' + name + '" not supported yet');
       }
       return stream;
     }
