@@ -55,6 +55,14 @@ You can also view all the test pdf files on the right side serving
 
 + http://localhost:8888/test/pdfs/?frame
 
+### Building pdf.js
+
+In order to bundle all `src/` files into a final `pdf.js`, issue:
+
+    $ make bundle
+
+This will generate the file `build/pdf.js` that can be included in your final project. (WARNING: That's a large file! Consider minifying it).
+
 ## Learning
 
 Here are some initial pointers to help contributors get off the ground. 
