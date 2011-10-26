@@ -1,9 +1,9 @@
 /* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 /* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
 
-var PDF = {};
+var PDFJS = {};
 
-(function() {
+(function pdfjsWrapper() {
 
   // Use strict in our context only - users might not want it
   'use strict';

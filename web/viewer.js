@@ -122,7 +122,7 @@ var PDFView = {
     document.title = this.url = url;
 
     var self = this;
-    PDF.getPdf(
+    PDFJS.getPdf(
       {
         url: url,
         progress: function getPdfProgress(evt) {
@@ -209,7 +209,7 @@ var PDFView = {
     while (container.hasChildNodes())
       container.removeChild(container.lastChild);
 
-    var pdf = new PDF.PDFDoc(data);
+    var pdf = new PDFJS.PDFDoc(data);
     var pagesCount = pdf.numPages;
     document.getElementById('numPages').innerHTML = pagesCount;
     document.getElementById('pageNumber').max = pagesCount;

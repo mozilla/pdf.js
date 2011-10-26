@@ -9,11 +9,11 @@ var ERRORS = 0, WARNINGS = 1, TODOS = 5;
 var verbosity = WARNINGS;
 var useWorker = false;
 
-// The global PDF object exposes the API
+// The global PDFJS object exposes the API
 // In production, it will be declared outside a global wrapper
 // In development, it will be declared here
-if (!globalScope.PDF) {
-  globalScope.PDF = {};
+if (!globalScope.PDFJS) {
+  globalScope.PDFJS = {};
 }
 
 // getPdf()
@@ -49,7 +49,7 @@ function getPdf(arg, callback) {
   };
   xhr.send(null);
 }
-globalScope.PDF.getPdf = getPdf;
+globalScope.PDFJS.getPdf = getPdf;
 
 var Page = (function pagePage() {
   function constructor(xref, pageNumber, pageDict, ref) {
@@ -608,4 +608,4 @@ var PDFDoc = (function() {
 
   return constructor;
 })();
-globalScope.PDF.PDFDoc = PDFDoc;
+globalScope.PDFJS.PDFDoc = PDFDoc;
