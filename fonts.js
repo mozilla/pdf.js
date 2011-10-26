@@ -1517,15 +1517,21 @@ var Font = (function Font() {
       properties.fixedPitch = isFixedPitch(charstrings);
 
       var glyphNameMap = {};
-      var encoding = [];
       for (var i = 0; i < charstrings.length; ++i) {
         var charstring = charstrings[i];
         glyphNameMap[charstring.glyph] = charstring.unicode;
-        encoding[charstring.code] = charstring.glyph;
       }
       this.glyphNameMap = glyphNameMap;
-      if (!properties.hasEncoding)
+
+      if (!properties.hasEncoding && (properties.subtype == 'Type1C' ||
+          properties.subtype == 'CIDFontType0C')) {
+        var encoding = [];
+        for (var i = 0; i < charstrings.length; ++i) {
+          var charstring = charstrings[i];
+          encoding[charstring.code] = charstring.glyph;
+        }
         properties.baseEncoding = encoding;
+      }
 
       var fields = {
         // PostScript Font Program
@@ -1724,6 +1730,7 @@ var Font = (function Font() {
         case 'Type1':
           var glyphName = this.differences[charcode] || this.encoding[charcode];
           if (this.noUnicodeAdaptation) {
+            width = this.widths[glyphName];
             unicode = GlyphsUnicode[glyphName] || charcode;
             break;
           }

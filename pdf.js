@@ -5099,15 +5099,7 @@ var PartialEvaluator = (function partialEvaluator() {
       if (isNum(glyphWidths)) {
         defaultWidth = glyphWidths;
       } else {
-        // glyphWidths stored in {glyph-name -> width} format
-        // converting to {char-code -> width} array
-        var encoding = Encodings.StandardEncoding;
-        for (var glyphName in glyphWidths) {
-          var index = encoding.indexOf(glyphName);
-          if (index < 0)
-            continue;
-          widths[index] = glyphWidths[glyphName];
-        }
+        widths = glyphWidths;
       }
 
       return {
