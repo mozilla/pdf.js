@@ -39,7 +39,7 @@ PDF_JS_FILES = \
 server:
 	@cd test; python test.py --port=8888;
 
-test: pdfjs shell-test browser-test
+test: shell-test browser-test
 
 #
 # Create production output (pdf.js, and corresponding changes to web files)
