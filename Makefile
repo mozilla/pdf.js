@@ -1,11 +1,13 @@
 REPO = git@github.com:andreasgal/pdf.js.git
 BUILD_DIR := build
-PDFJS_TARGET := $(BUILD_DIR)/pdf.js
+BUILD_TARGET := $(BUILD_DIR)/pdf.js
 DEFAULT_BROWSERS := resources/browser_manifests/browser_manifest.json
 DEFAULT_TESTS := test_manifest.json
 
 EXTENSION_SRC := ./extensions/firefox
 EXTENSION_NAME := pdf.js.xpi
+
+all: bundle
 
 # Let folks define custom rules for their clones.
 -include local.mk
@@ -45,7 +47,7 @@ test: shell-test browser-test
 # Create production output (pdf.js, and corresponding changes to web files)
 #
 production: | bundle
-	@echo "Preparing viewer-production.html..."; \
+	@echo "Preparing web/viewer-production.html"; \
 	cd web; \
 	sed '/PDFJSSCRIPT_REMOVE/d' viewer.html > viewer-1.tmp; \
 	sed '/PDFJSSCRIPT_INCLUDE_BUILD/ r viewer-snippet.html' viewer-1.tmp > viewer-production.html; \
@@ -55,12 +57,11 @@ production: | bundle
 #
 # Bundle pdf.js
 #
-bundle:
-	@echo "Bundling source files into pdf.js..."
-	@mkdir -p $(BUILD_DIR)
+bundle: | $(BUILD_DIR)
+	@echo "Bundling source files into $(BUILD_TARGET)"
 	@cd src; \
 	cat $(PDF_JS_FILES) > all_files.tmp; \
-	sed '/PDFJSSCRIPT_INCLUDE_ALL/ r all_files.tmp' pdf.js > ../$(PDFJS_TARGET); \
+	sed '/PDFJSSCRIPT_INCLUDE_ALL/ r all_files.tmp' pdf.js > ../$(BUILD_TARGET); \
 	rm -f *.tmp; \
 	cd ..
 
@@ -139,7 +140,7 @@ lint:
 #
 GH_PAGES = $(BUILD_DIR)/gh-pages
 web: | production extension compiler pages-repo \
-	$(addprefix $(GH_PAGES)/, $(PDFJS_TARGET)) \
+	$(addprefix $(GH_PAGES)/, $(BUILD_TARGET)) \
 	$(addprefix $(GH_PAGES)/, $(wildcard web/*.*)) \
 	$(addprefix $(GH_PAGES)/, $(wildcard web/images/*.*)) \
 	$(addprefix $(GH_PAGES)/, $(wildcard $(EXTENSION_SRC)/*.xpi))
@@ -210,7 +211,7 @@ extension: | production
 	@rm -Rf $(EXTENSION_SRC)/$(CONTENT_DIR)/
 	@mkdir -p $(EXTENSION_SRC)/$(CONTENT_DIR)/$(BUILD_DIR)
 	@mkdir -p $(EXTENSION_SRC)/$(CONTENT_DIR)/web
-	@cp $(PDFJS_TARGET) $(EXTENSION_SRC)/$(CONTENT_DIR)/$(BUILD_DIR)
+	@cp $(BUILD_TARGET) $(EXTENSION_SRC)/$(CONTENT_DIR)/$(BUILD_DIR)
 	@cp -r $(PDF_WEB_FILES) $(EXTENSION_SRC)/$(CONTENT_DIR)/web/
 	@mv -f $(EXTENSION_SRC)/$(CONTENT_DIR)/web/viewer-production.html $(EXTENSION_SRC)/$(CONTENT_DIR)/web/viewer.html
 
@@ -232,5 +233,5 @@ clean:
 help:
 	@echo "Read the comments in the Makefile for guidance.";
 
-.PHONY:: production watch test browser-test font-test shell-test \
+.PHONY:: production test browser-test font-test shell-test \
 	shell-msg lint clean web compiler help server

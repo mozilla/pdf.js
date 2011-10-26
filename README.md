@@ -59,21 +59,15 @@ You can also view all the test pdf files on the right side serving
 
 In order to bundle all `src/` files into a final `pdf.js`, issue:
 
-    $ make bundle
+    $ make
 
 This will generate the file `build/pdf.js` that can be included in your final project. (WARNING: That's a large file! Consider minifying it).
+
 
 ## Learning
 
 Here are some initial pointers to help contributors get off the ground. 
 Additional resources are available in a separate section below.
-
-#### Introductory video
-
-Check out the presentation by our contributor Julian Viereck on the inner 
-workings of PDF and pdf.js:
-
-+ http://www.youtube.com/watch?v=Iv15UY-4Fg8
 
 #### Hello world
 
@@ -83,6 +77,14 @@ For a "hello world" example, take a look at:
 
 This example illustrates the bare minimum ingredients for integrating pdf.js
 in a custom project.
+
+#### Introductory video
+
+Check out the presentation by our contributor Julian Viereck on the inner 
+workings of PDF and pdf.js:
+
++ http://www.youtube.com/watch?v=Iv15UY-4Fg8
+
 
 
 
