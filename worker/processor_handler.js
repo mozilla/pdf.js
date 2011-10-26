@@ -1,4 +1,4 @@
-/* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- /
+/* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 /* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
 
 'use strict';
@@ -82,11 +82,11 @@ var WorkerProcessorHandler = {
       var obj = new Font(font.name, font.file, font.properties);
 
       var str = '';
-      var data = obj.data;
-      if (data) {
-        var length = data.length;
+      var objData = obj.data;
+      if (objData) {
+        var length = objData.length;
         for (var j = 0; j < length; j++)
-          str += String.fromCharCode(data[j]);
+          str += String.fromCharCode(objData[j]);
       }
 
       obj.str = str;
@@ -99,3 +99,4 @@ var WorkerProcessorHandler = {
     });
   }
 };
+
