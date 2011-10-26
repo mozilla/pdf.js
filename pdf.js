@@ -7522,19 +7522,19 @@ var Promise = (function() {
   Promise.prototype = {
     hasData: false,
 
-    set data(data) {
-      if (data === undefined) {
+    set data(value) {
+      if (value === undefined) {
         return;
       }
       if (this._data !== EMPTY_PROMISE) {
         throw 'Promise ' + this.name +
                                 ': Cannot set the data of a promise twice';
       }
-      this._data = data;
+      this._data = value;
       this.hasData = true;
 
       if (this.onDataCallback) {
-        this.onDataCallback(data);
+        this.onDataCallback(value);
       }
     },
 
