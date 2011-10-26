@@ -1,5 +1,7 @@
-/* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- /
+/* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 /* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
+
+'use strict';
 
 function MessageHandler(name, comObj) {
   this.name = name;
@@ -172,9 +174,9 @@ var workerConsole = {
 
 // Worker thread?
 if (typeof window === 'undefined') {
-  console = workerConsole;
+  globalScope.console = workerConsole;
 
   // Listen for messages from the main thread.
-  var handler = new MessageHandler('worker_processor', this);
+  var handler = new MessageHandler('worker_processor', globalScope);
   WorkerProcessorHandler.setup(handler);
 }

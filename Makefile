@@ -45,7 +45,7 @@ test: pdfjs shell-test browser-test
 # Create production output (pdf.js, and corresponding changes to web files)
 #
 production: | bundle
-	@echo "Preparing production viewer..."; \
+	@echo "Preparing viewer-production.html..."; \
 	cd web; \
 	sed '/PDFJSSCRIPT_REMOVE/d' viewer.html > viewer-1.tmp; \
 	sed '/PDFJSSCRIPT_INCLUDE_BUILD/ r viewer-snippet.html' viewer-1.tmp > viewer-production.html; \

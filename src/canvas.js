@@ -1,5 +1,8 @@
 // <canvas> contexts store most of the state we need natively.
 // However, PDF needs a bit more state, which we store here.
+
+'use strict';
+
 var CanvasExtraState = (function canvasExtraState() {
   function constructor(old) {
     // Are soft masks and alpha values shapes or opacities?
