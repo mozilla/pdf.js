@@ -10,7 +10,7 @@ var useWorker = false;
 // In production, it will be declared outside a global wrapper
 // In development, it will be declared here
 if (typeof PDF === 'undefined') {
-  var PDF = {};
+  PDF = {};
 }
 
 // getPdf()

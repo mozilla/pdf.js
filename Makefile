@@ -42,15 +42,26 @@ server:
 test: pdfjs shell-test browser-test
 
 #
+# Create production output (pdf.js, and corresponding changes to web files)
+#
+production: | bundle
+	@echo "Preparing production viewer..."; \
+	cd web; \
+	sed '/PDFJSSCRIPT_REMOVE/d' viewer.html > viewer-1.tmp; \
+	sed '/PDFJSSCRIPT_INCLUDE_BUILD/ r viewer-snippet.html' viewer-1.tmp > viewer-production.html; \
+	rm -f *.tmp; \
+	cd ..
+
+#
 # Bundle pdf.js
 #
-pdfjs:
-	@echo "Bundling source files..."
+bundle:
+	@echo "Bundling source files into pdf.js..."
 	@mkdir -p $(BUILD_DIR)
 	@cd src; \
 	cat $(PDF_JS_FILES) > all_files.tmp; \
-	sed '/INSERT_POINT/ r all_files.tmp' pdf.js > ../$(PDFJS_TARGET); \
-	rm -f all_files.tmp; \
+	sed '/PDFJSSCRIPT_INCLUDE_ALL/ r all_files.tmp' pdf.js > ../$(PDFJS_TARGET); \
+	rm -f *.tmp; \
 	cd ..
 
 # make browser-test
@@ -127,13 +138,14 @@ lint:
 # TODO: Use the Closure compiler to optimize the pdf.js files.
 #
 GH_PAGES = $(BUILD_DIR)/gh-pages
-web: | pdfjs extension compiler pages-repo \
+web: | production extension compiler pages-repo \
 	$(addprefix $(GH_PAGES)/, $(PDFJS_TARGET)) \
 	$(addprefix $(GH_PAGES)/, $(wildcard web/*.*)) \
 	$(addprefix $(GH_PAGES)/, $(wildcard web/images/*.*)) \
 	$(addprefix $(GH_PAGES)/, $(wildcard $(EXTENSION_SRC)/*.xpi))
 
 	@cp $(GH_PAGES)/web/index.html.template $(GH_PAGES)/index.html;
+	@mv -f $(GH_PAGES)/web/viewer-production.html $(GH_PAGES)/web/viewer.html;
 	@cd $(GH_PAGES); git add -A;
 	@echo
 	@echo "Website built in $(GH_PAGES)."
@@ -191,15 +203,16 @@ PDF_WEB_FILES = \
 	web/compatibility.js \
 	web/viewer.css \
 	web/viewer.js \
-	web/viewer.html \
+	web/viewer-production.html \
 	$(NULL)
-extension: | pdfjs
+extension: | production
 	# Copy a standalone version of pdf.js inside the content directory
 	@rm -Rf $(EXTENSION_SRC)/$(CONTENT_DIR)/
 	@mkdir -p $(EXTENSION_SRC)/$(CONTENT_DIR)/$(BUILD_DIR)
 	@mkdir -p $(EXTENSION_SRC)/$(CONTENT_DIR)/web
 	@cp $(PDFJS_TARGET) $(EXTENSION_SRC)/$(CONTENT_DIR)/$(BUILD_DIR)
 	@cp -r $(PDF_WEB_FILES) $(EXTENSION_SRC)/$(CONTENT_DIR)/web/
+	@mv -f $(EXTENSION_SRC)/$(CONTENT_DIR)/web/viewer-production.html $(EXTENSION_SRC)/$(CONTENT_DIR)/web/viewer.html
 
 	# Create the xpi
 	@cd $(EXTENSION_SRC); zip -r $(EXTENSION_NAME) *
@@ -219,12 +232,5 @@ clean:
 help:
 	@echo "Read the comments in the Makefile for guidance.";
 
-#
-# Watch for file changes, regenerate pdf.js if change found
-#
-watch:
-	@echo "Watching for file changes in src/"
-	@python watch.py src/*.js - 'make pdfjs'
-
-.PHONY:: all pdfjs watch test browser-test font-test shell-test \
+.PHONY:: production watch test browser-test font-test shell-test \
 	shell-msg lint clean web compiler help server

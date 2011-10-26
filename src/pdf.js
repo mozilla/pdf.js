@@ -4,9 +4,11 @@
 var PDF = {};
 
 (function() {
+  
   // Use strict in our context only - users might not want it
   'use strict';
 
   // Files are inserted below - see Makefile
-  /* INSERT_POINT */
+  /* PDFJSSCRIPT_INCLUDE_ALL */
+  
 })();
