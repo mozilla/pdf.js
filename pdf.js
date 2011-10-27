@@ -5643,10 +5643,12 @@ var CanvasGraphics = (function canvasGraphics() {
       this.restoreFillRule(savedFillRule);
     },
     closeFillStroke: function canvasGraphicsCloseFillStroke() {
-      return this.fillStroke();
+      this.closePath();
+      this.fillStroke();
     },
     closeEOFillStroke: function canvasGraphicsCloseEOFillStroke() {
       var savedFillRule = this.setEOFillRule();
+      this.closePath();
       this.fillStroke();
       this.restoreFillRule(savedFillRule);
     },
