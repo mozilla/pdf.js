@@ -899,7 +899,41 @@ var PredictorStream = (function predictorStream() {
 })();
 
 var JpegImage = (function() {
+  var cmykWorker = null;
+  var nextQueueTag = 0;
+  var cmykImagesQueue = {};
+  function cmykProcessed(e) {
+    var tag = e.data.tag;
+    var cmykImage = cmykImagesQueue[tag];
+    delete cmykImagesQueue[tag];
+
+    var objs = cmykImage.objs;
+    var objId = cmykImage.objId;
+    if (e.data.error)
+      throw e.data.error;
+
+    cmykImage.loaded = true;
+    cmykImage.domImage = e.data;
+
+    objs.resolve(objId, cmykImage);
+
+    if (cmykImage.onLoad)
+      cmykImage.onLoad();
+  }
+
   function JpegImage(objId, imageData, objs) {
+    if (imageData.cmyk) {
+      if (!cmykWorker) {
+        cmykWorker = new Worker('../jpgjs/jpg_worker.js');
+        cmykWorker.addEventListener('message', cmykProcessed, false);
+      }
+      var tag = "jpg" + (++nextQueueTag);
+      cmykImagesQueue[tag] = this;
+      cmykWorker.postMessage({ tag: tag, bytes: imageData.cmyk });
+      this.objs = objs;
+      this.objId = objId;
+      return;
+    }
     var src = 'data:image/jpeg;base64,' + window.btoa(imageData);
 
     var img = new Image();
@@ -962,15 +996,20 @@ var JpegStream = (function jpegStream() {
     // need to be removed
     this.dict = dict;
 
-    if (isAdobeImage(bytes))
-      bytes = fixAdobeImage(bytes);
+    if (isAdobeImage(bytes)) {
+      // when bug 674619 land, let's check if browser can do
+      // normal cmyk and do the following instead
+      //     bytes = fixAdobeImage(bytes);
+      this.cmyk = bytes;
+      return;
+    }
 
     this.src = bytesToString(bytes);
   }
 
   constructor.prototype = {
     getIR: function() {
-      return this.src;
+      return this.src || { cmyk: this.cmyk };
     },
     getChar: function jpegStreamGetChar() {
       error('internal error: getChar is not valid on JpegStream');
@@ -3366,7 +3405,7 @@ var XRef = (function xRefXRef() {
           e = parser.getObj();
         }
         // Don't cache streams since they are mutable (except images).
-        if (!isStream(e) || e.getImage)
+        if (!isStream(e) || e.getIR)
           this.cache[num] = e;
         return e;
       }
@@ -6009,6 +6048,13 @@ var CanvasGraphics = (function canvasGraphics() {
       ctx.scale(1 / w, -1 / h);
 
       var domImage = image.getImage();
+      if (domImage.data) {
+        var tmpCanvas = new this.ScratchCanvas(domImage.width,
+                                               domImage.height);
+        var tmpCtx = tmpCanvas.getContext('2d');
+        tmpCtx.putImageData(domImage, 0, 0);
+        domImage = tmpCanvas;
+      }
       ctx.drawImage(domImage, 0, 0, domImage.width, domImage.height,
                     0, -h, w, h);
 
