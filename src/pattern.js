@@ -287,3 +287,4 @@ var TilingPattern = (function tilingPattern() {
 
   return TilingPattern;
 })();
+
