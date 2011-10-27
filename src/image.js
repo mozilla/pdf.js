@@ -254,3 +254,4 @@ var JpegImage = (function() {
 
   return JpegImage;
 })();
+

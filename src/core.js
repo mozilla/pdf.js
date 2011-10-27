@@ -608,4 +608,6 @@ var PDFDoc = (function() {
 
   return constructor;
 })();
+
 globalScope.PDFJS.PDFDoc = PDFDoc;
+
