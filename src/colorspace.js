@@ -397,5 +397,7 @@ var DeviceCmykCS = (function deviceCmykCS() {
       return rgbBuf;
     }
   };
+
   return constructor;
 })();
+

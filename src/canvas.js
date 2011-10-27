@@ -1,7 +1,10 @@
-// <canvas> contexts store most of the state we need natively.
-// However, PDF needs a bit more state, which we store here.
+/* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
 
 'use strict';
+
+// <canvas> contexts store most of the state we need natively.
+// However, PDF needs a bit more state, which we store here.
 
 var CanvasExtraState = (function canvasExtraState() {
   function constructor(old) {
@@ -838,3 +841,4 @@ var CanvasGraphics = (function canvasGraphics() {
 
   return constructor;
 })();
+
