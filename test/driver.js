@@ -82,7 +82,7 @@ function nextTask() {
   getPdf(task.file, function nextTaskGetPdf(data) {
     var failure;
     try {
-      task.pdfDoc = new PDFDoc(data);
+      task.pdfDoc = new PDFJS.PDFDoc(data);
     } catch (e) {
       failure = 'load PDF doc : ' + e.toString();
     }
