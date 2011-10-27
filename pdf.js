@@ -5344,6 +5344,9 @@ var CanvasExtraState = (function canvasExtraState() {
     this.strokeColor = '#000000';
 
     this.old = old;
+
+    this.fillColorSpace = new DeviceGrayCS;
+    this.strokeColorSpace = new DeviceGrayCS;
   }
 
   constructor.prototype = {
