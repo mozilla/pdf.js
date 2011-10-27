@@ -899,24 +899,26 @@ var PredictorStream = (function predictorStream() {
 })();
 
 var JpegImage = (function() {
-  var cmykWorker = null, nextTag = 0;
-  var queue = {};
+  var cmykWorker = null;
+  var nextQueueTag = 0;
+  var cmykImagesQueue = {};
   function cmykProcessed(e) {
     var tag = e.data.tag;
-    var item = queue[tag];
-    delete queue[tag];
+    var cmykImage = cmykImagesQueue[tag];
+    delete cmykImagesQueue[tag];
 
-    var objs = item.objs, objId = item.objId;
+    var objs = cmykImage.objs;
+    var objId = cmykImage.objId;
     if (e.data.error)
       throw e.data.error;
 
-    item.loaded = true;
-    item.domImage = e.data;
+    cmykImage.loaded = true;
+    cmykImage.domImage = e.data;
 
-    objs.resolve(objId, item);
+    objs.resolve(objId, cmykImage);
 
-    if (item.onLoad)
-      item.onLoad();
+    if (cmykImage.onLoad)
+      cmykImage.onLoad();
   }
 
   function JpegImage(objId, imageData, objs) {
@@ -925,8 +927,8 @@ var JpegImage = (function() {
         cmykWorker = new Worker('../jpgjs/jpg_worker.js');
         cmykWorker.addEventListener('message', cmykProcessed, false);
       }
-      var tag = "jpg" + (++nextTag);
-      queue[tag] = this;
+      var tag = "jpg" + (++nextQueueTag);
+      cmykImagesQueue[tag] = this;
       cmykWorker.postMessage({ tag: tag, bytes: imageData.cmyk });
       this.objs = objs;
       this.objId = objId;

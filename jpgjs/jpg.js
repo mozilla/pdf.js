@@ -602,7 +602,7 @@ var JpegImage = (function jpegImage() {
       }
     },
     getData: function getData(data, width, height) {
-      function clump8(a) {
+      function clampTo8bit(a) {
         return a < 0 ? 0 : a > 255 ? 255 : a;
       }
 
@@ -620,7 +620,7 @@ var JpegImage = (function jpegImage() {
           for (y = 0; y < height; y++) {
             component1Line = component1.lines[0 | (y * component1.scaleY * scaleY)];
             for (x = 0; x < width; x++) {
-              Y = clump8(component1Line[0 | (x * component1.scaleX * scaleX)]);
+              Y = clampTo8bit(component1Line[0 | (x * component1.scaleX * scaleX)]);
 
               data[offset++] = Y;
               data[offset++] = Y;
@@ -642,9 +642,9 @@ var JpegImage = (function jpegImage() {
               Cb = component2Line[0 | (x * component2.scaleX * scaleX)];
               Cr = component3Line[0 | (x * component3.scaleX * scaleX)];
 
-              data[offset++] = clump8(Y + 1.402 * (Cr - 128));
-              data[offset++] = clump8(Y - 0.3441363 * (Cb - 128) - 0.71413636 * (Cr - 128));
-              data[offset++] = clump8(Y + 1.772 * (Cb - 128));
+              data[offset++] = clampTo8bit(Y + 1.402 * (Cr - 128));
+              data[offset++] = clampTo8bit(Y - 0.3441363 * (Cb - 128) - 0.71413636 * (Cr - 128));
+              data[offset++] = clampTo8bit(Y + 1.772 * (Cb - 128));
               data[offset++] = 255;
             }
           }
@@ -675,9 +675,9 @@ var JpegImage = (function jpegImage() {
                 Cr = component3Line[0 | (x * component3.scaleX * scaleX)];
                 K = component4Line[0 | (x * component4.scaleX * scaleX)];
 
-                C = 255 - clump8(Y + 1.402 * (Cr - 128));
-                M = 255 - clump8(Y - 0.3441363 * (Cb - 128) - 0.71413636 * (Cr - 128));
-                Ye = 255 - clump8(Y + 1.772 * (Cb - 128));
+                C = 255 - clampTo8bit(Y + 1.402 * (Cr - 128));
+                M = 255 - clampTo8bit(Y - 0.3441363 * (Cb - 128) - 0.71413636 * (Cr - 128));
+                Ye = 255 - clampTo8bit(Y + 1.772 * (Cb - 128));
               }
 
               data[offset++] = 255 - Math.min(255, C * (1 - K / 255) + K);
