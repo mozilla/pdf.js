@@ -161,6 +161,7 @@ var PDFView = {
   getDestinationHash: function pdfViewGetDestinationHash(dest) {
     if (typeof dest === 'string')
       return '#' + escape(dest);
+    if (!this.pagesRefMap) return;
     if (dest instanceof Array) {
       var destRef = dest[0]; // see navigateTo method for dest format
       var pageNumber = destRef instanceof Object ?

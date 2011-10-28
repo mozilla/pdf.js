@@ -560,6 +560,8 @@ var Font = (function Font() {
     this.data = data;
     this.fontMatrix = properties.fontMatrix;
     this.encoding = properties.baseEncoding;
+    this.hasShortCmap = properties.hasShortCmap;
+    this.hasEncoding = properties.hasEncoding;
     this.loadedName = getUniqueName();
     this.loading = true;
   };
@@ -1105,6 +1107,8 @@ var Font = (function Font() {
                 ids.push(index);
               }
             }
+
+            properties.hasShortCmap = true;
 
             createGlyphNameMap(glyphs, ids, properties);
             return cmap.data = createCMapTable(glyphs, ids);
@@ -1703,15 +1707,11 @@ var Font = (function Font() {
       var unicode, width, codeIRQueue;
 
       var width = this.widths[charcode];
-      if (!isNum(width))
-        width = this.defaultWidth;
 
       switch (this.type) {
         case 'CIDFontType0':
           if (this.noUnicodeAdaptation) {
             width = this.widths[this.cidToUnicode[charcode]];
-            if (!isNum(width))
-              width = this.defaultWidth;
             unicode = charcode;
             break;
           }
@@ -1720,8 +1720,6 @@ var Font = (function Font() {
         case 'CIDFontType2':
           if (this.noUnicodeAdaptation) {
             width = this.widths[this.cidToUnicode[charcode]];
-            if (!isNum(width))
-              width = this.defaultWidth;
             unicode = charcode;
             break;
           }
@@ -1743,14 +1741,20 @@ var Font = (function Font() {
           unicode = charcode;
           break;
         case 'TrueType':
-          var glyphName = this.differences[charcode];
-          if (glyphName && this.glyphNameMap) {
-            unicode = this.glyphNameMap[glyphName] ||
-              adaptUnicode(GlyphsUnicode[glyphName] || charcode);
+          if (!this.hasEncoding) {
+            unicode = this.noUnicodeAdaptation ? charcode : adaptUnicode(charcode);
+            break;
+          }
+          var glyphName = this.differences[charcode] || this.encoding[charcode];
+          if (!glyphName)
+            glyphName = Encodings.StandardEncoding[charcode];
+          if (this.hasShortCmap) {
+            var j = Encodings.MacRomanEncoding.indexOf(glyphName);
+            unicode = j >= 0 ? adaptUnicode(j) :
+              this.glyphNameMap[glyphName];
           } else {
-            unicode = charcode;
-            if (!this.noUnicodeAdaptation)
-              unicode = adaptUnicode(unicode);
+            unicode = glyphName in GlyphsUnicode ? adaptUnicode(GlyphsUnicode[glyphName]) :
+              this.glyphNameMap[glyphName];
           }
           break;
         default:
@@ -1759,7 +1763,7 @@ var Font = (function Font() {
       }
       return {
         unicode: unicode,
-        width: width,
+        width: isNum(width) ? width : this.defaultWidth,
         codeIRQueue: codeIRQueue
       };
     },
