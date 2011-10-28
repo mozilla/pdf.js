@@ -3,27 +3,32 @@
 
 <head>
   <!-- In production, only one script (pdf.js) is necessary -->
-  <script type="text/javascript" src="../../src/core.js"></script> 
-  <script type="text/javascript" src="../../src/util.js"></script>  
-  <script type="text/javascript" src="../../src/canvas.js"></script>  
-  <script type="text/javascript" src="../../src/obj.js"></script>  
-  <script type="text/javascript" src="../../src/function.js"></script> 
-  <script type="text/javascript" src="../../src/charsets.js"></script>  
-  <script type="text/javascript" src="../../src/cidmaps.js"></script>  
-  <script type="text/javascript" src="../../src/colorspace.js"></script>  
-  <script type="text/javascript" src="../../src/crypto.js"></script>  
-  <script type="text/javascript" src="../../src/evaluator.js"></script>  
-  <script type="text/javascript" src="../../src/fonts.js"></script>  
-  <script type="text/javascript" src="../../src/glyphlist.js"></script>  
-  <script type="text/javascript" src="../../src/image.js"></script>  
-  <script type="text/javascript" src="../../src/metrics.js"></script>  
-  <script type="text/javascript" src="../../src/parser.js"></script>  
-  <script type="text/javascript" src="../../src/pattern.js"></script>  
-  <script type="text/javascript" src="../../src/stream.js"></script>  
-  <script type="text/javascript" src="../../src/worker.js"></script>  
+  <script type="text/javascript" src="../../src/core.js"></script>
+  <script type="text/javascript" src="../../src/util.js"></script>
+  <script type="text/javascript" src="../../src/canvas.js"></script>
+  <script type="text/javascript" src="../../src/obj.js"></script>
+  <script type="text/javascript" src="../../src/function.js"></script>
+  <script type="text/javascript" src="../../src/charsets.js"></script>
+  <script type="text/javascript" src="../../src/cidmaps.js"></script>
+  <script type="text/javascript" src="../../src/colorspace.js"></script>
+  <script type="text/javascript" src="../../src/crypto.js"></script>
+  <script type="text/javascript" src="../../src/evaluator.js"></script>
+  <script type="text/javascript" src="../../src/fonts.js"></script>
+  <script type="text/javascript" src="../../src/glyphlist.js"></script>
+  <script type="text/javascript" src="../../src/image.js"></script>
+  <script type="text/javascript" src="../../src/metrics.js"></script>
+  <script type="text/javascript" src="../../src/parser.js"></script>
+  <script type="text/javascript" src="../../src/pattern.js"></script>
+  <script type="text/javascript" src="../../src/stream.js"></script>
+  <script type="text/javascript" src="../../src/worker.js"></script>
 
+  <script type="text/javascript">
+    // Specify the directory of the source files, such that the web worker
+    // knows where to load them.
+    var PDFJS_WORKER_DIR = '../../src/';
+  </script>
   <script type="text/javascript" src="hello.js"></script>
-</head>  
+</head>
 
 <body>
   <canvas id="the-canvas" style="border:1px solid black;"/>

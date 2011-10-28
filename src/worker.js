@@ -174,10 +174,9 @@ var workerConsole = {
 
 // Worker thread?
 if (typeof window === 'undefined') {
-  globalScope.console = workerConsole;
+  this.console = workerConsole;
 
-  // Listen for messages from the main thread.
-  var handler = new MessageHandler('worker_processor', globalScope);
+  var handler = new MessageHandler('worker_processor', this);
   WorkerProcessorHandler.setup(handler);
 }
 

@@ -4,7 +4,6 @@
 var PDFJS = {};
 
 (function pdfjsWrapper() {
-
   // Use strict in our context only - users might not want it
   'use strict';
 

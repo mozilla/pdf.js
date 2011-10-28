@@ -3,9 +3,9 @@
     <head>
         <title>Simple pdf.js page viewer</title>
         <link rel="stylesheet" href="viewer.css"/>
-        
+
         <!-- PDFJSSCRIPT_INCLUDE_BUILD -->
-        
+        <script type="text/javascript">var PDFJS_WORKER_DIR = "../src/"</script> <!-- PDFJSSCRIPT_REMOVE -->
         <script type="text/javascript" src="../src/core.js"></script> <!-- PDFJSSCRIPT_REMOVE -->
         <script type="text/javascript" src="../src/util.js"></script>  <!-- PDFJSSCRIPT_REMOVE -->
         <script type="text/javascript" src="../src/canvas.js"></script>  <!-- PDFJSSCRIPT_REMOVE -->
@@ -114,7 +114,7 @@
         </div>
      </div>
     </div>
-    
+
     <div id="loading">Loading... 0%</div>
     <div id="viewer"></div>
   </body>
