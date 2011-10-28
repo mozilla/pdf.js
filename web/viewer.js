@@ -475,6 +475,10 @@ var PageView = function pageView(container, content, id, pageWidth, pageHeight,
     canvas.mozOpaque = true;
     div.appendChild(canvas);
 
+    var textDiv = document.createElement('div');
+    textDiv.className = 'textLayer';
+    div.appendChild(textDiv);
+
     var scale = this.scale;
     canvas.width = pageWidth * scale;
     canvas.height = pageHeight * scale;
@@ -487,7 +491,7 @@ var PageView = function pageView(container, content, id, pageWidth, pageHeight,
     ctx.translate(-this.x * scale, -this.y * scale);
 
     stats.begin = Date.now();
-    this.content.startRendering(ctx, this.updateStats);
+    this.content.startRendering(ctx, this.updateStats, textDiv, scale);
 
     setupLinks(this.content, this.scale);
     div.setAttribute('data-loaded', true);
