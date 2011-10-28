@@ -217,5 +217,10 @@
        "link": false,
        "rounds": 1,
        "type": "eq"
+    },
+    {  "id": "close-path-bug",
+       "file": "pdfs/close-path-bug.pdf",
+       "rounds": 1,
+       "type": "eq"
     }
 ]
