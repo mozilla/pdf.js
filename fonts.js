@@ -1743,14 +1743,15 @@ var Font = (function Font() {
           unicode = charcode;
           break;
         case 'TrueType':
+          var glyphName = this.differences[charcode] || this.encoding[charcode];
+          if (!glyphName)
+            glyphName = Encodings.StandardEncoding[charcode];
           if (!this.hasEncoding) {
+            width = this.widths[charcode] || this.widths[glyphName];
             unicode = this.noUnicodeAdaptation ?
               charcode : adaptUnicode(charcode);
             break;
           }
-          var glyphName = this.differences[charcode] || this.encoding[charcode];
-          if (!glyphName)
-            glyphName = Encodings.StandardEncoding[charcode];
           if (this.hasShortCmap) {
             var j = Encodings.MacRomanEncoding.indexOf(glyphName);
             unicode = j >= 0 ? adaptUnicode(j) :
