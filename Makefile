@@ -1,35 +1,38 @@
 REPO = git@github.com:andreasgal/pdf.js.git
 BUILD_DIR := build
+BUILD_TARGET := $(BUILD_DIR)/pdf.js
 DEFAULT_BROWSERS := resources/browser_manifests/browser_manifest.json
 DEFAULT_TESTS := test_manifest.json
 
 EXTENSION_SRC := ./extensions/firefox
 EXTENSION_NAME := pdf.js.xpi
 
+all: bundle
+
 # Let folks define custom rules for their clones.
 -include local.mk
 
 # JS files needed for pdf.js.
-# This list doesn't account for the 'worker' directory.
 PDF_JS_FILES = \
-	pdf.js \
-	crypto.js \
-	fonts.js \
-	metrics.js \
-	charsets.js \
-	glyphlist.js \
-	cidmaps.js \
+  core.js \
+  util.js \
+  canvas.js \
+  obj.js \
+  function.js \
+  charsets.js \
+  cidmaps.js \
+  colorspace.js \
+  crypto.js \
+  evaluator.js \
+  fonts.js \
+  glyphlist.js \
+  image.js \
+  metrics.js \
+  parser.js \
+  pattern.js \
+  stream.js \
+  worker.js \
 	$(NULL)
-
-PDF_WORKER_FILES = \
-	worker/console.js \
-	worker/message_handler.js \
-	worker/pdf_worker_loader.js \
-	worker/processor_handler.js \
-	$(NULL)	
-
-# not sure what to do for all yet
-all: help
 
 # make server
 #
@@ -39,6 +42,28 @@ server:
 	@cd test; python test.py --port=8888;
 
 test: shell-test browser-test
+
+#
+# Create production output (pdf.js, and corresponding changes to web files)
+#
+production: | bundle
+	@echo "Preparing web/viewer-production.html"; \
+	cd web; \
+	sed '/PDFJSSCRIPT_REMOVE/d' viewer.html > viewer-1.tmp; \
+	sed '/PDFJSSCRIPT_INCLUDE_BUILD/ r viewer-snippet.html' viewer-1.tmp > viewer-production.html; \
+	rm -f *.tmp; \
+	cd ..
+
+#
+# Bundle pdf.js
+#
+bundle: | $(BUILD_DIR)
+	@echo "Bundling source files into $(BUILD_TARGET)"
+	@cd src; \
+	cat $(PDF_JS_FILES) > all_files.tmp; \
+	sed '/PDFJSSCRIPT_INCLUDE_ALL/ r all_files.tmp' pdf.js > ../$(BUILD_TARGET); \
+	rm -f *.tmp; \
+	cd ..
 
 # make browser-test
 #
@@ -99,11 +124,11 @@ browser-test:
 # To install gjslint, see:
 #
 # <http://code.google.com/closure/utilities/docs/linter_howto.html>
-SRC_DIRS := . utils worker web test examples/helloworld extensions/firefox \
+SRC_DIRS := . src utils web test examples/helloworld extensions/firefox \
             extensions/firefox/components
 GJSLINT_FILES = $(foreach DIR,$(SRC_DIRS),$(wildcard $(DIR)/*.js))
 lint:
-	gjslint $(GJSLINT_FILES)
+	gjslint --nojsdoc $(GJSLINT_FILES)
 
 # make web
 #
@@ -114,14 +139,14 @@ lint:
 # TODO: Use the Closure compiler to optimize the pdf.js files.
 #
 GH_PAGES = $(BUILD_DIR)/gh-pages
-web: | extension compiler pages-repo \
-	$(addprefix $(GH_PAGES)/, $(PDF_JS_FILES)) \
-	$(addprefix $(GH_PAGES)/, $(PDF_WORKER_FILES)) \
+web: | production extension compiler pages-repo \
+	$(addprefix $(GH_PAGES)/, $(BUILD_TARGET)) \
 	$(addprefix $(GH_PAGES)/, $(wildcard web/*.*)) \
 	$(addprefix $(GH_PAGES)/, $(wildcard web/images/*.*)) \
 	$(addprefix $(GH_PAGES)/, $(wildcard $(EXTENSION_SRC)/*.xpi))
 
 	@cp $(GH_PAGES)/web/index.html.template $(GH_PAGES)/index.html;
+	@mv -f $(GH_PAGES)/web/viewer-production.html $(GH_PAGES)/web/viewer.html;
 	@cd $(GH_PAGES); git add -A;
 	@echo
 	@echo "Website built in $(GH_PAGES)."
@@ -139,15 +164,12 @@ pages-repo: | $(BUILD_DIR)
 	git clone -b gh-pages $(REPO) $(GH_PAGES); \
 	rm -rf $(GH_PAGES)/*; \
 	fi;
-	@mkdir -p $(GH_PAGES)/worker;
 	@mkdir -p $(GH_PAGES)/web;
 	@mkdir -p $(GH_PAGES)/web/images;
+	@mkdir -p $(GH_PAGES)/build;
 	@mkdir -p $(GH_PAGES)/$(EXTENSION_SRC);
 
-$(GH_PAGES)/%.js: %.js
-	@cp $< $@
-
-$(GH_PAGES)/worker/%: worker/%
+$(GH_PAGES)/$(BUILD_DIR)/%.js: build/%.js
 	@cp $< $@
 
 $(GH_PAGES)/web/%: web/%
@@ -182,16 +204,16 @@ PDF_WEB_FILES = \
 	web/compatibility.js \
 	web/viewer.css \
 	web/viewer.js \
-	web/viewer.html \
+	web/viewer-production.html \
 	$(NULL)
-extension:
+extension: | production
 	# Copy a standalone version of pdf.js inside the content directory
 	@rm -Rf $(EXTENSION_SRC)/$(CONTENT_DIR)/
+	@mkdir -p $(EXTENSION_SRC)/$(CONTENT_DIR)/$(BUILD_DIR)
 	@mkdir -p $(EXTENSION_SRC)/$(CONTENT_DIR)/web
-	@mkdir -p $(EXTENSION_SRC)/$(CONTENT_DIR)/worker
-	@cp $(PDF_JS_FILES) $(EXTENSION_SRC)/$(CONTENT_DIR)/ 
+	@cp $(BUILD_TARGET) $(EXTENSION_SRC)/$(CONTENT_DIR)/$(BUILD_DIR)
 	@cp -r $(PDF_WEB_FILES) $(EXTENSION_SRC)/$(CONTENT_DIR)/web/
-	@cp -r $(PDF_WORKER_FILES) $(EXTENSION_SRC)/$(CONTENT_DIR)/worker/
+	@mv -f $(EXTENSION_SRC)/$(CONTENT_DIR)/web/viewer-production.html $(EXTENSION_SRC)/$(CONTENT_DIR)/web/viewer.html
 
 	# Create the xpi
 	@cd $(EXTENSION_SRC); zip -r $(EXTENSION_NAME) *
@@ -211,5 +233,5 @@ clean:
 help:
 	@echo "Read the comments in the Makefile for guidance.";
 
-.PHONY:: all test browser-test font-test shell-test \
+.PHONY:: production test browser-test font-test shell-test \
 	shell-msg lint clean web compiler help server

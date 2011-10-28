@@ -1,7 +1,47 @@
-/* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- /
+/* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 /* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
 
 'use strict';
+
+function MessageHandler(name, comObj) {
+  this.name = name;
+  this.comObj = comObj;
+  var ah = this.actionHandler = {};
+
+  ah['console_log'] = [function(data) {
+      console.log.apply(console, data);
+  }];
+  ah['console_error'] = [function(data) {
+      console.error.apply(console, data);
+  }];
+
+  comObj.onmessage = function(event) {
+    var data = event.data;
+    if (data.action in ah) {
+      var action = ah[data.action];
+      action[0].call(action[1], data.data);
+    } else {
+      throw 'Unkown action from worker: ' + data.action;
+    }
+  };
+}
+
+MessageHandler.prototype = {
+  on: function(actionName, handler, scope) {
+    var ah = this.actionHandler;
+    if (ah[actionName]) {
+      throw "There is already an actionName called '" + actionName + "'";
+    }
+    ah[actionName] = [handler, scope];
+  },
+
+  send: function(actionName, data) {
+    this.comObj.postMessage({
+      action: actionName,
+      data: data
+    });
+  }
+};
 
 var WorkerProcessorHandler = {
   setup: function(handler) {
@@ -82,11 +122,11 @@ var WorkerProcessorHandler = {
       var obj = new Font(font.name, font.file, font.properties);
 
       var str = '';
-      var data = obj.data;
-      if (data) {
-        var length = data.length;
-        for (var j = 0; j < length; j++)
-          str += String.fromCharCode(data[j]);
+      var objData = obj.data;
+      if (objData) {
+        var length = objData.length;
+        for (var j = 0; j < length; ++j)
+          str += String.fromCharCode(objData[j]);
       }
 
       obj.str = str;
@@ -99,3 +139,45 @@ var WorkerProcessorHandler = {
     });
   }
 };
+
+var consoleTimer = {};
+
+var workerConsole = {
+  log: function log() {
+    var args = Array.prototype.slice.call(arguments);
+    postMessage({
+      action: 'console_log',
+      data: args
+    });
+  },
+
+  error: function error() {
+    var args = Array.prototype.slice.call(arguments);
+    postMessage({
+      action: 'console_error',
+      data: args
+    });
+  },
+
+  time: function(name) {
+    consoleTimer[name] = Date.now();
+  },
+
+  timeEnd: function(name) {
+    var time = consoleTimer[name];
+    if (time == null) {
+      throw 'Unkown timer name ' + name;
+    }
+    this.log('Timer:', name, Date.now() - time);
+  }
+};
+
+// Worker thread?
+if (typeof window === 'undefined') {
+  globalScope.console = workerConsole;
+
+  // Listen for messages from the main thread.
+  var handler = new MessageHandler('worker_processor', globalScope);
+  WorkerProcessorHandler.setup(handler);
+}
+
