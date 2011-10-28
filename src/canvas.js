@@ -60,7 +60,7 @@ var CanvasGraphics = (function canvasGraphics() {
   // if we execute longer then `kExecutionTime`.
   var kExecutionTimeCheck = 500;
 
-  function constructor(canvasCtx, objs) {
+  function constructor(canvasCtx, objs, textLayer, textScale) {
     this.ctx = canvasCtx;
     this.current = new CanvasExtraState();
     this.stateStack = [];
@@ -69,6 +69,8 @@ var CanvasGraphics = (function canvasGraphics() {
     this.xobjs = null;
     this.ScratchCanvas = ScratchCanvas;
     this.objs = objs;
+    this.textLayer = textLayer;
+    this.textScale = textScale;
   }
 
   var LINE_CAP_STYLES = ['butt', 'round', 'square'];
@@ -95,6 +97,7 @@ var CanvasGraphics = (function canvasGraphics() {
           break;
       }
       this.ctx.scale(cw / mediaBox.width, ch / mediaBox.height);
+      this.textDivs = [];
     },
 
     executeIRQueue: function canvasGraphicsExecuteIRQueue(codeIR,
@@ -150,6 +153,17 @@ var CanvasGraphics = (function canvasGraphics() {
 
     endDrawing: function canvasGraphicsEndDrawing() {
       this.ctx.restore();
+
+      // Text selection-specific
+      var textLayer = this.textLayer;
+      var textDivs = this.textDivs;
+      for (var i = 0, length = textDivs.length; i < length; ++i) {
+        if (textDivs[i].dataset.textLength>1) { // avoid div by zero
+          textLayer.appendChild(textDivs[i]);
+          // Adjust div width to match canvas text width
+          textDivs[i].style.letterSpacing = ((textDivs[i].dataset.canvasWidth - textDivs[i].offsetWidth)/(textDivs[i].dataset.textLength-1)) + 'px';
+        }
+      }
     },
 
     // Graphics state
@@ -414,6 +428,12 @@ var CanvasGraphics = (function canvasGraphics() {
       this.moveText(0, this.current.leading);
     },
     showText: function canvasGraphicsShowText(text) {
+      function unicodeToChar(unicode) {
+        return (unicode >= 0x10000) ?
+          String.fromCharCode(0xD800 | ((unicode - 0x10000) >> 10),
+          0xDC00 | (unicode & 0x3FF)) : String.fromCharCode(unicode);
+      };
+
       var ctx = this.ctx;
       var current = this.current;
       var font = current.font;
@@ -423,6 +443,8 @@ var CanvasGraphics = (function canvasGraphics() {
       var wordSpacing = current.wordSpacing;
       var textHScale = current.textHScale;
       var glyphsLength = glyphs.length;
+      var text = { chars:'', width:0 };
+      
       if (font.coded) {
         ctx.save();
         ctx.transform.apply(ctx, current.textMatrix);
@@ -446,11 +468,12 @@ var CanvasGraphics = (function canvasGraphics() {
           this.restore();
 
           var transformed = Util.applyTransform([glyph.width, 0], fontMatrix);
-          var width = transformed[0] * fontSize + charSpacing;
+          var charWidth = transformed[0] * fontSize + charSpacing;
+          ctx.translate(charWidth, 0);
+          current.x += charWidth;
 
-          ctx.translate(width, 0);
-          current.x += width;
-
+          text.chars += unicodeToChar(glyph.unicode);
+          text.width += charWidth;
         }
         ctx.restore();
       } else {
@@ -459,7 +482,6 @@ var CanvasGraphics = (function canvasGraphics() {
         ctx.scale(1, -1);
         ctx.translate(current.x, -1 * current.y);
         ctx.transform.apply(ctx, font.fontMatrix || IDENTITY_MATRIX);
-
         ctx.scale(1 / textHScale, 1);
 
         var width = 0;
@@ -471,36 +493,100 @@ var CanvasGraphics = (function canvasGraphics() {
             continue;
           }
 
-          var unicode = glyph.unicode;
-          var char = (unicode >= 0x10000) ?
-            String.fromCharCode(0xD800 | ((unicode - 0x10000) >> 10),
-            0xDC00 | (unicode & 0x3FF)) : String.fromCharCode(unicode);
-
+          var char = unicodeToChar(glyph.unicode);
+          var charWidth = glyph.width * fontSize * 0.001 + charSpacing;
           ctx.fillText(char, width, 0);
-          width += glyph.width * fontSize * 0.001 + charSpacing;
+          width += charWidth;
+          
+          text.chars += char;
+          text.width += charWidth;
         }
         current.x += width;
-
         ctx.restore();
       }
+      return text;
     },
-
     showSpacedText: function canvasGraphicsShowSpacedText(arr) {
       var ctx = this.ctx;
       var current = this.current;
       var fontSize = current.fontSize;
       var textHScale = current.textHScale;
       var arrLength = arr.length;
+      var textLayer = this.textLayer;
+      var font = current.font;
+      var text = {str:'', length:0, canvasWidth:0, spaceWidth:0, geom:{}};
+
+      // Text selection-specific
+      text.spaceWidth = this.current.font.charsToGlyphs(' ')[0].width;
+      if (!text.spaceWidth>0) {
+        // Hack (space is sometimes not encoded)
+        text.spaceWidth = this.current.font.charsToGlyphs('i')[0].width;
+      }
+
+      // Compute text.geom
+      // TODO: refactor the series of transformations below, and share it with showText()
+      ctx.save();
+      ctx.transform.apply(ctx, current.textMatrix);
+      ctx.scale(1, -1);
+      ctx.translate(current.x, -1 * current.y);
+      ctx.transform.apply(ctx, font.fontMatrix || IDENTITY_MATRIX);
+      ctx.scale(1 / textHScale, 1);
+      var inv = ctx.mozCurrentTransform;
+      if (inv) {
+        var bl = Util.applyTransform([0, 0], inv);
+        var tr = Util.applyTransform([1, 1], inv);
+        text.geom.x = bl[0];
+        text.geom.y = bl[1];
+        text.geom.xFactor = tr[0] - bl[0];
+        text.geom.yFactor = tr[1] - bl[1];
+      }
+      ctx.restore();
+      
       for (var i = 0; i < arrLength; ++i) {
         var e = arr[i];
         if (isNum(e)) {
-          current.x -= e * 0.001 * fontSize * textHScale;
+          var spacingLength = -e * 0.001 * fontSize * textHScale;
+          current.x += spacingLength;
+
+          // Text selection-specific
+          // Emulate arbitrary spacing via HTML spaces
+          text.canvasWidth += spacingLength;
+          if (e<0 && text.spaceWidth>0) { // avoid div by zero
+            var numFakeSpaces = Math.round(-e / text.spaceWidth);
+            for (var j = 0; j < numFakeSpaces; ++j)
+              text.str += '&nbsp;';
+            text.length += numFakeSpaces>0 ? 1 : 0;
+          }
         } else if (isString(e)) {
-          this.showText(e);
+          var shownText = this.showText(e);
+
+          // Text selection-specific
+          if (shownText.chars === ' ') {
+            text.str += '&nbsp;';        
+          } else {
+            text.str += shownText.chars;
+          }
+          text.canvasWidth += shownText.width;
+          text.length += e.length;
         } else {
           malformed('TJ array element ' + e + ' is not string or num');
         }
       }
+      
+      if (textLayer) {
+        var div = document.createElement('div');
+        var fontHeight = text.geom.yFactor * fontSize;
+        div.style.fontSize = fontHeight + 'px';
+        // TODO: family should be '= font.loadedName', but some fonts don't 
+        // have spacing info (cf. fonts.js > Font > fields > htmx)
+        div.style.fontFamily = 'serif'; 
+        div.style.left = text.geom.x + 'px';
+        div.style.top = (text.geom.y - fontHeight) + 'px';
+        div.innerHTML = text.str;
+        div.dataset.canvasWidth = text.canvasWidth * text.geom.xFactor;
+        div.dataset.textLength = text.length;
+        this.textDivs.push(div);                
+      }      
     },
     nextLineShowText: function canvasGraphicsNextLineShowText(text) {
       this.nextLine();
