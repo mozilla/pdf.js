@@ -22,16 +22,15 @@ function warn(msg) {
 }
 
 function backtrace() {
-  var stackStr;
   try {
     throw new Error();
   } catch (e) {
-    stackStr = e.stack;
+    return e.stack ? e.stack.split('\n').slice(2).join('\n') : "";
   }
-  return stackStr.split('\n').slice(1).join('\n');
 }
 
 function error(msg) {
+  log("Error: " + msg);
   log(backtrace());
   throw new Error(msg);
 }
