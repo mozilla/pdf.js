@@ -2759,10 +2759,20 @@ var Type2CFF = (function type2CFF() {
       }
 
       var charStrings = this.parseIndex(topDict.CharStrings);
-      var charset = this.parseCharsets(topDict.charset,
-                                       charStrings.length, strings);
-      var encoding = this.parseEncoding(topDict.Encoding, properties,
-                                             strings, charset);
+
+      var charset, encoding;
+      var isCIDFont = properties.subtype == 'CIDFontType0C';
+      if (isCIDFont) {
+        charset = [];
+        charset.length = charStrings.length;
+        encoding = this.parseCidMap(topDict.charset,
+                                    charStrings.length);
+      } else {
+        charset = this.parseCharsets(topDict.charset,
+                                     charStrings.length, strings);
+        encoding = this.parseEncoding(topDict.Encoding, properties,
+                                      strings, charset);
+      }
 
       // The font sanitizer does not support CFF encoding with a
       // supplement, since the encoding is not really use to map
@@ -2969,7 +2979,44 @@ var Type2CFF = (function type2CFF() {
       }
       return charset;
     },
+    parseCidMap: function cff_parsecharsets(pos, length) {
+      var bytes = this.bytes;
+      var format = bytes[pos++];
 
+      var encoding = {};
+      var map = {encoding: encoding};
+
+      encoding[0] = 0;
+
+      var gid = 1;
+      switch (format) {
+        case 0:
+          while (gid < length) {
+            var cid = (bytes[pos++] << 8) | bytes[pos++];
+            encoding[cid] = gid++;
+          }
+          break;
+        case 1:
+          while (gid < length) {
+            var cid = (bytes[pos++] << 8) | bytes[pos++];
+            var count = bytes[pos++];
+            for (var i = 0; i <= count; i++)
+              encoding[cid++] = gid++;
+          }
+          break;
+        case 2:
+          while (gid < length) {
+            var cid = (bytes[pos++] << 8) | bytes[pos++];
+            var count = (bytes[pos++] << 8) | bytes[pos++];
+            for (var i = 0; i <= count; i++)
+              encoding[cid++] = gid++;
+          }
+          break;
+        default:
+          error('Unknown charset format');
+      }
+      return map;
+    },
     getPrivDict: function cff_getprivdict(baseDict, strings) {
       var dict = {};
 
