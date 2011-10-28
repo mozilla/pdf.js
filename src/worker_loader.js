@@ -3,22 +3,40 @@
 
 'use strict';
 
-importScripts('../src/core.js');
-importScripts('../src/util.js');
-importScripts('../src/canvas.js');
-importScripts('../src/obj.js');
-importScripts('../src/function.js');
-importScripts('../src/charsets.js');
-importScripts('../src/cidmaps.js');
-importScripts('../src/colorspace.js');
-importScripts('../src/crypto.js');
-importScripts('../src/evaluator.js');
-importScripts('../src/fonts.js');
-importScripts('../src/glyphlist.js');
-importScripts('../src/image.js');
-importScripts('../src/metrics.js');
-importScripts('../src/parser.js');
-importScripts('../src/pattern.js');
-importScripts('../src/stream.js');
-importScripts('../src/worker.js');
+this.onmessage = function(evt) {
+  // Reset the `onmessage` function as it was only set to call
+  // this function the first time a message is passed to the worker
+  // but shouldn't get called anytime afterwards.
+  delete this.onmessage;
 
+  // Directory the include files are contained is send as the
+  // first message to the worker.
+  var dir = evt.data;
+
+  // List of files to include;
+  var files = [
+    'core.js',
+    'util.js',
+    'canvas.js',
+    'obj.js',
+    'function.js',
+    'charsets.js',
+    'cidmaps.js',
+    'colorspace.js',
+    'crypto.js',
+    'evaluator.js',
+    'fonts.js',
+    'glyphlist.js',
+    'image.js',
+    'metrics.js',
+    'parser.js',
+    'pattern.js',
+    'stream.js',
+    'worker.js'
+  ];
+
+  // Load all the files.
+  for (var i = 0; i < files.length; i++) {
+    importScripts(dir + files[i]);
+  }
+}.bind(this);
