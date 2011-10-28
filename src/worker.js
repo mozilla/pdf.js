@@ -8,14 +8,14 @@ function MessageHandler(name, comObj) {
   this.comObj = comObj;
   var ah = this.actionHandler = {};
 
-  ah['console_log'] = [function(data) {
+  ah['console_log'] = [function ahConsoleLog(data) {
       console.log.apply(console, data);
   }];
-  ah['console_error'] = [function(data) {
+  ah['console_error'] = [function ahConsoleError(data) {
       console.error.apply(console, data);
   }];
 
-  comObj.onmessage = function(event) {
+  comObj.onmessage = function messageHandlerComObjOnMessage(event) {
     var data = event.data;
     if (data.action in ah) {
       var action = ah[data.action];
@@ -27,15 +27,15 @@ function MessageHandler(name, comObj) {
 }
 
 MessageHandler.prototype = {
-  on: function(actionName, handler, scope) {
+  on: function messageHandlerOn(actionName, handler, scope) {
     var ah = this.actionHandler;
     if (ah[actionName]) {
-      throw "There is already an actionName called '" + actionName + "'";
+      throw 'There is already an actionName called "' + actionName + '"';
     }
     ah[actionName] = [handler, scope];
   },
 
-  send: function(actionName, data) {
+  send: function messageHandlerSend(actionName, data) {
     this.comObj.postMessage({
       action: actionName,
       data: data
@@ -44,16 +44,16 @@ MessageHandler.prototype = {
 };
 
 var WorkerProcessorHandler = {
-  setup: function(handler) {
+  setup: function wphSetup(handler) {
     var pdfDoc = null;
 
-    handler.on('doc', function(data) {
+    handler.on('doc', function wphSetupDoc(data) {
       // Create only the model of the PDFDoc, which is enough for
       // processing the content of the pdf.
       pdfDoc = new PDFDocModel(new Stream(data));
     });
 
-    handler.on('page_request', function(pageNum) {
+    handler.on('page_request', function wphSetupPageRequest(pageNum) {
       pageNum = parseInt(pageNum);
 
       var page = pdfDoc.getPage(pageNum);
@@ -89,7 +89,7 @@ var WorkerProcessorHandler = {
       });
     }, this);
 
-    handler.on('font', function(data) {
+    handler.on('font', function wphSetupFont(data) {
       var objId = data[0];
       var name = data[1];
       var file = data[2];
@@ -159,11 +159,11 @@ var workerConsole = {
     });
   },
 
-  time: function(name) {
+  time: function time(name) {
     consoleTimer[name] = Date.now();
   },
 
-  timeEnd: function(name) {
+  timeEnd: function timeEnd(name) {
     var time = consoleTimer[name];
     if (time == null) {
       throw 'Unkown timer name ' + name;
