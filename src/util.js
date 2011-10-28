@@ -16,16 +16,15 @@ function warn(msg) {
 }
 
 function backtrace() {
-  var stackStr;
   try {
     throw new Error();
   } catch (e) {
-    stackStr = e.stack;
+    return e.stack ? e.stack.split('\n').slice(2).join('\n') : '';
   }
-  return stackStr.split('\n').slice(1).join('\n');
 }
 
 function error(msg) {
+  log('Error: ' + msg);
   log(backtrace());
   throw new Error(msg);
 }
@@ -222,19 +221,19 @@ var Promise = (function() {
   Promise.prototype = {
     hasData: false,
 
-    set data(data) {
-      if (data === undefined) {
+    set data(value) {
+      if (value === undefined) {
         return;
       }
       if (this._data !== EMPTY_PROMISE) {
         throw 'Promise ' + this.name +
                                 ': Cannot set the data of a promise twice';
       }
-      this._data = data;
+      this._data = value;
       this.hasData = true;
 
       if (this.onDataCallback) {
-        this.onDataCallback(data);
+        this.onDataCallback(value);
       }
     },
 

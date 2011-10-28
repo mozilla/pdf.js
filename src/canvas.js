@@ -24,7 +24,9 @@ var CanvasExtraState = (function canvasExtraState() {
     this.wordSpacing = 0;
     this.textHScale = 1;
     // Color spaces
+    this.fillColorSpace = new DeviceGrayCS;
     this.fillColorSpaceObj = null;
+    this.strokeColorSpace = new DeviceGrayCS;
     this.strokeColorSpaceObj = null;
     this.fillColorObj = null;
     this.strokeColorObj = null;
@@ -332,10 +334,12 @@ var CanvasGraphics = (function canvasGraphics() {
       this.restoreFillRule(savedFillRule);
     },
     closeFillStroke: function canvasGraphicsCloseFillStroke() {
-      return this.fillStroke();
+      this.closePath();
+      this.fillStroke();
     },
     closeEOFillStroke: function canvasGraphicsCloseEOFillStroke() {
       var savedFillRule = this.setEOFillRule();
+      this.closePath();
       this.fillStroke();
       this.restoreFillRule(savedFillRule);
     },
