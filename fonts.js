@@ -1006,8 +1006,10 @@ var Font = (function Font() {
 
       function createGlyphNameMap(glyphs, ids, properties) {
         var glyphNames = properties.glyphNames;
-        if (!glyphNames)
+        if (!glyphNames) {
+          properties.glyphNameMap = {};
           return;
+        }
         var glyphsLength = glyphs.length;
         var glyphNameMap = {};
         var encoding = [];
@@ -1742,7 +1744,8 @@ var Font = (function Font() {
           break;
         case 'TrueType':
           if (!this.hasEncoding) {
-            unicode = this.noUnicodeAdaptation ? charcode : adaptUnicode(charcode);
+            unicode = this.noUnicodeAdaptation ?
+              charcode : adaptUnicode(charcode);
             break;
           }
           var glyphName = this.differences[charcode] || this.encoding[charcode];
@@ -1753,7 +1756,8 @@ var Font = (function Font() {
             unicode = j >= 0 ? adaptUnicode(j) :
               this.glyphNameMap[glyphName];
           } else {
-            unicode = glyphName in GlyphsUnicode ? adaptUnicode(GlyphsUnicode[glyphName]) :
+            unicode = glyphName in GlyphsUnicode ?
+              adaptUnicode(GlyphsUnicode[glyphName]) :
               this.glyphNameMap[glyphName];
           }
           break;
