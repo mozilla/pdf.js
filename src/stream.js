@@ -801,7 +801,7 @@ var JpegStream = (function jpegStream() {
   }
 
   constructor.prototype = {
-    getIR: function() {
+    getIR: function jpegStreamGetIR() {
       return this.src;
     },
     getChar: function jpegStreamGetChar() {

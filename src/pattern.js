@@ -43,7 +43,7 @@ var Shadings = {};
 
 // Radial and axial shading have very similar implementations
 // If needed, the implementations can be broken into two classes
-Shadings.RadialAxial = (function radialAxialShading() {
+Shadings.RadialAxial = (function radialAxialShadings() {
   function constructor(dict, matrix, xref, res, ctx) {
     this.matrix = matrix;
     this.coordsArr = dict.get('Coords');
@@ -97,7 +97,7 @@ Shadings.RadialAxial = (function radialAxialShading() {
     this.colorStops = colorStops;
   }
 
-  constructor.fromIR = function(ctx, raw) {
+  constructor.fromIR = function radialAxialShadingsGetIR(ctx, raw) {
     var type = raw[1];
     var colorStops = raw[2];
     var p0 = raw[3];
@@ -129,7 +129,7 @@ Shadings.RadialAxial = (function radialAxialShading() {
   }
 
   constructor.prototype = {
-    getIR: function RadialAxialShading_getIR() {
+    getIR: function radialAxialShadingsGetIR() {
       var coordsArr = this.coordsArr;
       var type = this.shadingType;
       if (type == 2) {
@@ -159,17 +159,17 @@ Shadings.RadialAxial = (function radialAxialShading() {
   return constructor;
 })();
 
-Shadings.Dummy = (function dummyShading() {
+Shadings.Dummy = (function dummyShadings() {
   function constructor() {
     this.type = 'Pattern';
   }
 
-  constructor.fromIR = function() {
+  constructor.fromIR = function dummyShadingsFromIR() {
     return 'hotpink';
   }
 
   constructor.prototype = {
-    getIR: function dummpy_getir() {
+    getIR: function dummyShadingsGetIR() {
       return ['Dummy'];
     }
   };
