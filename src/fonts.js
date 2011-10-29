@@ -766,6 +766,7 @@ var Font = (function Font() {
     this.defaultWidth = properties.defaultWidth;
     this.composite = properties.composite;
     this.toUnicode = properties.toUnicode;
+    this.hasEncoding = properties.hasEncoding;
 
     this.fontMatrix = properties.fontMatrix;
     if (properties.type == 'Type3')
@@ -827,7 +828,6 @@ var Font = (function Font() {
     this.fontMatrix = properties.fontMatrix;
     this.encoding = properties.baseEncoding;
     this.hasShortCmap = properties.hasShortCmap;
-    this.hasEncoding = properties.hasEncoding;
     this.loadedName = getUniqueName();
     this.loading = true;
   };
@@ -2006,10 +2006,14 @@ var Font = (function Font() {
           var glyphName = this.differences[charcode] || this.encoding[charcode];
           if (!glyphName)
             glyphName = Encodings.StandardEncoding[charcode];
+          if (!isNum(width))
+            width = this.widths[glyphName];
+          if (this.noUnicodeAdaptation) {
+            unicode = GlyphsUnicode[glyphName] || charcode;
+            break;
+          }
           if (!this.hasEncoding) {
-            width = this.widths[charcode] || this.widths[glyphName];
-            unicode = this.noUnicodeAdaptation ?
-              charcode : adaptUnicode(charcode);
+            unicode = adaptUnicode(charcode);
             break;
           }
           if (this.hasShortCmap) {
