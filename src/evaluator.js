@@ -459,15 +459,178 @@ var PartialEvaluator = (function partialEvaluator() {
       };
     },
 
-    extractEncoding: function partialEvaluatorExtractEncoding(dict,
-                                                              xref,
-                                                              properties) {
-      var type = properties.type, encoding;
-      if (properties.composite) {
-        var defaultWidth = xref.fetchIfRef(dict.get('DW')) || 1000;
-        properties.defaultWidth = defaultWidth;
+    extractDataStructures: function
+      partialEvaluatorExtractDataStructures(dict, baseDict,
+                                            xref, properties) {
+      // 9.10.2
+      var toUnicode = dict.get('ToUnicode') ||
+        baseDict.get('ToUnicode');
+      if (toUnicode)
+        properties.toUnicode = this.readToUnicode(toUnicode, xref);
 
-        var glyphsWidths = {};
+      if (properties.composite) {
+        // CIDSystemInfo helps to match CID to glyphs
+        var cidSystemInfo = xref.fetchIfRef(dict.get('CIDSystemInfo'));
+        if (isDict(cidSystemInfo)) {
+          properties.cidSystemInfo = {
+            registry: cidSystemInfo.get('Registry'),
+            ordering: cidSystemInfo.get('Ordering'),
+            supplement: cidSystemInfo.get('Supplement')
+          };
+        }
+
+        var cidToGidMap = xref.fetchIfRef(dict.get('CIDToGIDMap'));
+        if (isStream(cidToGidMap))
+          properties.cidToGidMap = this.readCidToGidMap(cidToGidMap);
+      }
+
+      var differences = [];
+      var baseEncoding = Encodings.StandardEncoding;
+      var hasEncoding = dict.has('Encoding');
+      if (hasEncoding) {
+        var encoding = xref.fetchIfRef(dict.get('Encoding'));
+        if (isDict(encoding)) {
+          var baseName = encoding.get('BaseEncoding');
+          if (baseName)
+            baseEncoding = Encodings[baseName.name];
+
+          // Load the differences between the base and original
+          if (encoding.has('Differences')) {
+            var diffEncoding = encoding.get('Differences');
+            var index = 0;
+            for (var j = 0; j < diffEncoding.length; j++) {
+              var data = diffEncoding[j];
+              if (isNum(data))
+                index = data;
+              else
+                differences[index++] = data.name;
+            }
+          }
+        } else if (isName(encoding)) {
+          baseEncoding = Encodings[encoding.name];
+        } else {
+          error('Encoding is not a Name nor a Dict');
+        }
+      }
+      properties.differences = differences;
+      properties.baseEncoding = baseEncoding;
+      properties.hasEncoding = hasEncoding;
+    },
+
+    readToUnicode:
+      function partialEvaluatorReadToUnicode(toUnicode, xref) {
+      var cmapObj = xref.fetchIfRef(toUnicode);
+      var charToUnicode = [];
+      if (isName(cmapObj)) {
+        error('ToUnicode file cmap translation not implemented');
+      } else if (isStream(cmapObj)) {
+        var tokens = [];
+        var token = '';
+        var beginArrayToken = {};
+
+        var cmap = cmapObj.getBytes(cmapObj.length);
+        for (var i = 0; i < cmap.length; i++) {
+          var byte = cmap[i];
+          if (byte == 0x20 || byte == 0x0D || byte == 0x0A ||
+              byte == 0x3C || byte == 0x5B || byte == 0x5D) {
+            switch (token) {
+              case 'usecmap':
+                error('usecmap is not implemented');
+                break;
+
+              case 'beginbfchar':
+              case 'beginbfrange':
+              case 'begincidchar':
+              case 'begincidrange':
+                token = '';
+                tokens = [];
+                break;
+
+              case 'endcidrange':
+              case 'endbfrange':
+                for (var j = 0; j < tokens.length; j += 3) {
+                  var startRange = tokens[j];
+                  var endRange = tokens[j + 1];
+                  var code = tokens[j + 2];
+                  while (startRange <= endRange) {
+                    charToUnicode[startRange] = code++;
+                    ++startRange;
+                  }
+                }
+                break;
+
+              case 'endcidchar':
+              case 'endbfchar':
+                for (var j = 0; j < tokens.length; j += 2) {
+                  var index = tokens[j];
+                  var code = tokens[j + 1];
+                  charToUnicode[index] = code;
+                }
+                break;
+
+              case '':
+                break;
+
+              default:
+                if (token[0] >= '0' && token[0] <= '9')
+                  token = parseInt(token, 10); // a number
+                tokens.push(token);
+                token = '';
+            }
+            switch (byte) {
+              case 0x5B:
+                // begin list parsing
+                tokens.push(beginArrayToken);
+                break;
+              case 0x5D:
+                // collect array items
+                var items = [], item;
+                while (tokens.length &&
+                       (item = tokens.pop()) != beginArrayToken)
+                  items.unshift(item);
+                tokens.push(items);
+                break;
+            }
+          } else if (byte == 0x3E) {
+            if (token.length) {
+              // parsing hex number
+              tokens.push(parseInt(token, 16));
+              token = '';
+            }
+          } else {
+            token += String.fromCharCode(byte);
+          }
+        }
+      }
+      return charToUnicode;
+    },
+    readCidToGidMap:
+      function partialEvaluatorReadCidToGidMap(cidToGidStream) {
+      // Extract the encoding from the CIDToGIDMap
+      var glyphsData = cidToGidStream.getBytes();
+
+      // Set encoding 0 to later verify the font has an encoding
+      var result = [];
+      for (var j = 0; j < glyphsData.length; j++) {
+        var glyphID = (glyphsData[j++] << 8) | glyphsData[j];
+        if (glyphID == 0)
+          continue;
+
+        var code = j >> 1;
+        result[code] = glyphID;
+      }
+      return result;
+    },
+
+    extractWidths: function partialEvaluatorWidths(dict,
+                                                   xref,
+                                                   descriptor,
+                                                   properties) {
+      var glyphsWidths = [];
+      var defaultWidth = 0;
+      if (properties.composite) {
+        defaultWidth = xref.fetchIfRef(dict.get('DW')) || 1000;
+
         var widths = xref.fetchIfRef(dict.get('W'));
         if (widths) {
           var start = 0, end = 0;
@@ -487,246 +650,41 @@ var PartialEvaluator = (function partialEvaluator() {
             }
           }
         }
-        properties.widths = glyphsWidths;
-
-        // Glyph ids are big-endian 2-byte values
-        encoding = properties.encoding;
-
-        // CIDSystemInfo might help to match width and glyphs
-        var cidSystemInfo = dict.get('CIDSystemInfo');
-        if (isDict(cidSystemInfo)) {
-          properties.cidSystemInfo = {
-            registry: cidSystemInfo.get('Registry'),
-            ordering: cidSystemInfo.get('Ordering'),
-            supplement: cidSystemInfo.get('Supplement')
-          };
-        }
-
-        var cidToGidMap = dict.get('CIDToGIDMap');
-        if (!cidToGidMap || !isRef(cidToGidMap)) {
-
-
-          return Object.create(GlyphsUnicode);
-        }
-
-        // Extract the encoding from the CIDToGIDMap
-        var glyphsStream = xref.fetchIfRef(cidToGidMap);
-        var glyphsData = glyphsStream.getBytes(0);
-
-        // Set encoding 0 to later verify the font has an encoding
-        encoding[0] = { unicode: 0, width: 0 };
-        for (var j = 0; j < glyphsData.length; j++) {
-          var glyphID = (glyphsData[j++] << 8) | glyphsData[j];
-          if (glyphID == 0)
-            continue;
-
-          var code = j >> 1;
-          var width = glyphsWidths[code];
-          encoding[code] = {
-            unicode: glyphID,
-            width: isNum(width) ? width : defaultWidth
-          };
-        }
-
-        return Object.create(GlyphsUnicode);
-      }
-
-      var differences = properties.differences;
-      var map = properties.encoding;
-      var baseEncoding = null;
-      if (dict.has('Encoding')) {
-        encoding = xref.fetchIfRef(dict.get('Encoding'));
-        if (isDict(encoding)) {
-          var baseName = encoding.get('BaseEncoding');
-          if (baseName)
-            baseEncoding = Encodings[baseName.name].slice();
-
-          // Load the differences between the base and original
-          if (encoding.has('Differences')) {
-            var diffEncoding = encoding.get('Differences');
-            var index = 0;
-            for (var j = 0; j < diffEncoding.length; j++) {
-              var data = diffEncoding[j];
-              if (isNum(data))
-                index = data;
-              else
-                differences[index++] = data.name;
-            }
-          }
-        } else if (isName(encoding)) {
-          baseEncoding = Encodings[encoding.name].slice();
+      } else {
+        var firstChar = properties.firstChar;
+        var widths = xref.fetchIfRef(dict.get('Widths'));
+        if (widths) {
+          for (var i = 0, j = firstChar; i < widths.length; i++, j++)
+            glyphsWidths[j] = widths[i];
+          defaultWidth = parseFloat(descriptor.get('MissingWidth')) || 0;
         } else {
-          error('Encoding is not a Name nor a Dict');
-        }
-      }
+          // Trying get the BaseFont metrics (see comment above).
+          var baseFontName = dict.get('BaseFont');
+          if (isName(baseFontName)) {
+            var metrics = this.getBaseFontMetrics(baseFontName.name);
 
-      if (!baseEncoding) {
-        switch (type) {
-          case 'TrueType':
-            baseEncoding = Encodings.WinAnsiEncoding.slice();
-            break;
-          case 'Type1':
-          case 'Type3':
-            baseEncoding = Encodings.StandardEncoding.slice();
-            break;
-          default:
-            warn('Unknown type of font: ' + type);
-            baseEncoding = [];
-            break;
-        }
-      }
-
-      // merge in the differences
-      var firstChar = properties.firstChar;
-      var lastChar = properties.lastChar;
-      var widths = properties.widths || [];
-      var glyphs = {};
-      for (var i = firstChar; i <= lastChar; i++) {
-        var glyph = differences[i];
-        var replaceGlyph = true;
-        if (!glyph) {
-          glyph = baseEncoding[i] || i;
-          replaceGlyph = false;
-        }
-        var index = GlyphsUnicode[glyph] || i;
-        var width = widths[i] || widths[glyph];
-        map[i] = {
-          unicode: index,
-          width: isNum(width) ? width : properties.defaultWidth
-        };
-
-        if (replaceGlyph || !glyphs[glyph])
-          glyphs[glyph] = map[i];
-        if (replaceGlyph || !glyphs[index])
-          glyphs[index] = map[i];
-
-        // If there is no file, the character mapping can't be modified
-        // but this is unlikely that there is any standard encoding with
-        // chars below 0x1f, so that's fine.
-        if (!properties.file)
-          continue;
-
-        if (index <= 0x1f || (index >= 127 && index <= 255))
-          map[i].unicode += kCmapGlyphOffset;
-      }
-
-      if (type == 'TrueType' && dict.has('ToUnicode') && differences) {
-        var cmapObj = dict.get('ToUnicode');
-        if (isRef(cmapObj)) {
-          cmapObj = xref.fetch(cmapObj);
-        }
-        if (isName(cmapObj)) {
-          error('ToUnicode file cmap translation not implemented');
-        } else if (isStream(cmapObj)) {
-          var tokens = [];
-          var token = '';
-          var beginArrayToken = {};
-
-          var cmap = cmapObj.getBytes(cmapObj.length);
-          for (var i = 0; i < cmap.length; i++) {
-            var byte = cmap[i];
-            if (byte == 0x20 || byte == 0x0D || byte == 0x0A ||
-                byte == 0x3C || byte == 0x5B || byte == 0x5D) {
-              switch (token) {
-                case 'usecmap':
-                  error('usecmap is not implemented');
-                  break;
-
-                case 'beginbfchar':
-                case 'beginbfrange':
-                case 'begincidchar':
-                case 'begincidrange':
-                  token = '';
-                  tokens = [];
-                  break;
-
-                case 'endcidrange':
-                case 'endbfrange':
-                  for (var j = 0; j < tokens.length; j += 3) {
-                    var startRange = tokens[j];
-                    var endRange = tokens[j + 1];
-                    var code = tokens[j + 2];
-                    while (startRange < endRange) {
-                      var mapping = map[startRange] || {};
-                      mapping.unicode = code++;
-                      map[startRange] = mapping;
-                      ++startRange;
-                    }
-                  }
-                  break;
-
-                case 'endcidchar':
-                case 'endbfchar':
-                  for (var j = 0; j < tokens.length; j += 2) {
-                    var index = tokens[j];
-                    var code = tokens[j + 1];
-                    var mapping = map[index] || {};
-                    mapping.unicode = code;
-                    map[index] = mapping;
-                  }
-                  break;
-
-                case '':
-                  break;
-
-                default:
-                  if (token[0] >= '0' && token[0] <= '9')
-                    token = parseInt(token, 10); // a number
-                  tokens.push(token);
-                  token = '';
-              }
-              switch (byte) {
-                case 0x5B:
-                  // begin list parsing
-                  tokens.push(beginArrayToken);
-                  break;
-                case 0x5D:
-                  // collect array items
-                  var items = [], item;
-                  while (tokens.length &&
-                         (item = tokens.pop()) != beginArrayToken)
-                    items.unshift(item);
-                  tokens.push(items);
-                  break;
-              }
-            } else if (byte == 0x3E) {
-              if (token.length) {
-                // parsing hex number
-                tokens.push(parseInt(token, 16));
-                token = '';
-              }
-            } else {
-              token += String.fromCharCode(byte);
-            }
+            glyphsWidths = metrics.widths;
+            defaultWidth = metrics.defaultWidth;
           }
         }
       }
-      return glyphs;
+
+      properties.defaultWidth = defaultWidth;
+      properties.widths = glyphsWidths;
     },
 
-    getBaseFontMetricsAndMap: function getBaseFontMetricsAndMap(name) {
-      var map = {};
-      if (/^Symbol(-?(Bold|Italic))*$/.test(name)) {
-        // special case for symbols
-        var encoding = Encodings.symbolsEncoding.slice();
-        for (var i = 0, n = encoding.length, j; i < n; i++) {
-          if (!(j = encoding[i]))
-            continue;
-          map[i] = GlyphsUnicode[j] || 0;
-        }
-      }
-
-      var defaultWidth = 0;
-      var widths = Metrics[stdFontMap[name] || name];
-      if (isNum(widths)) {
-        defaultWidth = widths;
-        widths = null;
+    getBaseFontMetrics: function getBaseFontMetrics(name) {
+      var defaultWidth = 0, widths = [];
+      var glyphWidths = Metrics[stdFontMap[name] || name];
+      if (isNum(glyphWidths)) {
+        defaultWidth = glyphWidths;
+      } else {
+        widths = glyphWidths;
       }
 
       return {
         defaultWidth: defaultWidth,
-        widths: widths || [],
-        map: map
+        widths: widths
       };
     },
 
@@ -755,6 +713,7 @@ var PartialEvaluator = (function partialEvaluator() {
         assertWellFormed(isName(type), 'invalid font Subtype');
         composite = true;
       }
+      var maxCharIndex = composite ? 0xFFFF : 0xFF;
 
       var descriptor = xref.fetchIfRef(dict.get('FontDescriptor'));
       if (!descriptor) {
@@ -773,18 +732,16 @@ var PartialEvaluator = (function partialEvaluator() {
 
           // Using base font name as a font name.
           baseFontName = baseFontName.name.replace(/[,_]/g, '-');
-          var metricsAndMap = this.getBaseFontMetricsAndMap(baseFontName);
+          var metrics = this.getBaseFontMetrics(baseFontName);
 
           var properties = {
             type: type.name,
-            encoding: metricsAndMap.map,
-            differences: [],
-            widths: metricsAndMap.widths,
-            defaultWidth: metricsAndMap.defaultWidth,
+            widths: metrics.widths,
+            defaultWidth: metrics.defaultWidth,
             firstChar: 0,
-            lastChar: 256
+            lastChar: maxCharIndex
           };
-          this.extractEncoding(dict, xref, properties);
+          this.extractDataStructures(dict, dict, xref, properties);
 
           return {
             name: baseFontName,
@@ -801,26 +758,7 @@ var PartialEvaluator = (function partialEvaluator() {
       // TODO Fill the width array depending on which of the base font this is
       // a variant.
       var firstChar = xref.fetchIfRef(dict.get('FirstChar')) || 0;
-      var lastChar = xref.fetchIfRef(dict.get('LastChar')) || 256;
-      var defaultWidth = 0;
-      var glyphWidths = {};
-      var encoding = {};
-      var widths = xref.fetchIfRef(dict.get('Widths'));
-      if (widths) {
-        for (var i = 0, j = firstChar; i < widths.length; i++, j++)
-          glyphWidths[j] = widths[i];
-        defaultWidth = parseFloat(descriptor.get('MissingWidth')) || 0;
-      } else {
-        // Trying get the BaseFont metrics (see comment above).
-        var baseFontName = dict.get('BaseFont');
-        if (isName(baseFontName)) {
-          var metricsAndMap = this.getBaseFontMetricsAndMap(baseFontName.name);
-
-          glyphWidths = metricsAndMap.widths;
-          defaultWidth = metricsAndMap.defaultWidth;
-          encoding = metricsAndMap.map;
-        }
-      }
+      var lastChar = xref.fetchIfRef(dict.get('LastChar')) || maxCharIndex;
 
       var fontName = xref.fetchIfRef(descriptor.get('FontName'));
       assertWellFormed(isName(fontName), 'invalid font name');
@@ -853,34 +791,30 @@ var PartialEvaluator = (function partialEvaluator() {
         fixedPitch: false,
         fontMatrix: dict.get('FontMatrix') || IDENTITY_MATRIX,
         firstChar: firstChar || 0,
-        lastChar: lastChar || 256,
+        lastChar: lastChar || maxCharIndex,
         bbox: descriptor.get('FontBBox'),
         ascent: descriptor.get('Ascent'),
         descent: descriptor.get('Descent'),
         xHeight: descriptor.get('XHeight'),
         capHeight: descriptor.get('CapHeight'),
-        defaultWidth: defaultWidth,
         flags: descriptor.get('Flags'),
         italicAngle: descriptor.get('ItalicAngle'),
-        differences: [],
-        widths: glyphWidths,
-        encoding: encoding,
         coded: false
       };
-      properties.glyphs = this.extractEncoding(dict, xref, properties);
+      this.extractWidths(dict, xref, descriptor, properties);
+      this.extractDataStructures(dict, baseDict, xref, properties);
 
       if (type.name === 'Type3') {
         properties.coded = true;
         var charProcs = xref.fetchIfRef(dict.get('CharProcs'));
         var fontResources = xref.fetchIfRef(dict.get('Resources')) || resources;
         properties.resources = fontResources;
+        properties.charProcIRQueues = {};
         for (var key in charProcs.map) {
           var glyphStream = xref.fetchIfRef(charProcs.map[key]);
           var queueObj = {};
-          properties.glyphs[key].IRQueue = this.getIRQueue(glyphStream,
-                                                           fontResources,
-                                                           queueObj,
-                                                           dependency);
+          properties.charProcIRQueues[key] =
+            this.getIRQueue(glyphStream, fontResources, queueObj, dependency);
         }
       }
 

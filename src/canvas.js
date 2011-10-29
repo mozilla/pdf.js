@@ -445,7 +445,7 @@ var CanvasGraphics = (function canvasGraphics() {
           this.save();
           ctx.scale(fontSize, fontSize);
           ctx.transform.apply(ctx, fontMatrix);
-          this.executeIRQueue(glyph.IRQueue);
+          this.executeIRQueue(glyph.codeIRQueue);
           this.restore();
 
           var transformed = Util.applyTransform([glyph.width, 0], fontMatrix);
