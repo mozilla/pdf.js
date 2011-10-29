@@ -83,6 +83,21 @@
   };
 })();
 
+// Object.keys() ?
+(function checkObjectKeysCompatibility() {
+  if (typeof Object.keys !== 'undefined')
+    return;
+
+  Object.keys = function objectKeys(obj) {
+    var result = [];
+    for (var i in obj) {
+      if (obj.hasOwnProperty(i))
+        result.push(i);
+    }
+    return result;
+  };
+})();
+
 // No XMLHttpRequest.response ?
 (function checkXMLHttpRequestResponseCompatibility() {
   var xhrPrototype = XMLHttpRequest.prototype;
