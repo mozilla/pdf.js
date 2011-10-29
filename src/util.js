@@ -197,7 +197,7 @@ function isPDFFunction(v) {
  * can be set. If any of these happens twice or the data is required before
  * it was set, an exception is throw.
  */
-var Promise = (function() {
+var Promise = (function promise() {
   var EMPTY_PROMISE = {};
 
   /**
@@ -244,7 +244,7 @@ var Promise = (function() {
       return this._data;
     },
 
-    onData: function(callback) {
+    onData: function promiseOnData(callback) {
       if (this._data !== EMPTY_PROMISE) {
         callback(this._data);
       } else {
@@ -252,7 +252,7 @@ var Promise = (function() {
       }
     },
 
-    resolve: function(data) {
+    resolve: function promiseResolve(data) {
       if (this.isResolved) {
         throw 'A Promise can be resolved only once ' + this.name;
       }
@@ -266,7 +266,7 @@ var Promise = (function() {
       }
     },
 
-    then: function(callback) {
+    then: function promiseThen(callback) {
       if (!callback) {
         throw 'Requiring callback' + this.name;
       }
