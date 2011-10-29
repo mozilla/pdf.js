@@ -729,6 +729,12 @@ function isAdaptedUnicode(unicode) {
     unicode < kCmapGlyphOffset + kSizeOfGlyphArea;
 }
 
+function isSpecialUnicode(unicode) {
+  return (unicode <= 0x1F || (unicode >= 127 && unicode < kSizeOfGlyphArea)) ||
+    unicode >= kCmapGlyphOffset &&
+    unicode < kCmapGlyphOffset + kSizeOfGlyphArea;
+}
+
 /**
  * 'Font' is the class the outside world should use, it encapsulate all the font
  * decoding logics whatever type it is (assuming the font type is supported).
@@ -2744,11 +2750,28 @@ CFF.prototype = {
   getOrderedCharStrings: function cff_getOrderedCharStrings(glyphs,
                                                             properties) {
     var charstrings = [];
-    for (var i = 0; i < glyphs.length; i++) {
+    var reverseMapping = {};
+    var encoding = properties.baseEncoding;
+    var differences = properties.differences;
+    var i, length;
+    for (i = 0, length = encoding.length; i < length; ++i) {
+      if (encoding[i] && !isSpecialUnicode(i))
+        reverseMapping[encoding[i]] = i;
+    }
+    for (i = 0, length = differences.length; i < length; ++i) {
+      if (differences[i] && !isSpecialUnicode(i))
+        reverseMapping[differences[i]] = i;
+    }
+    reverseMapping['.notdef'] = 0;
+    var unusedUnicode = kCmapGlyphOffset;
+    for (i = 0, length = glyphs.length; i < length; i++) {
       var item = glyphs[i];
+      var glyphName = item.glyph;
+      var unicode = glyphName in reverseMapping ?
+        reverseMapping[glyphName] : unusedUnicode++;
       charstrings.push({
-        glyph: item.glyph,
-        unicode: adaptUnicode(i),
+        glyph: glyphName,
+        unicode: unicode,
         gid: i,
         charstring: item.data,
         width: item.width,
