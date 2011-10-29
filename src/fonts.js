@@ -1996,7 +1996,8 @@ var Font = (function Font() {
         case 'Type1':
           var glyphName = this.differences[charcode] || this.encoding[charcode];
           if (this.noUnicodeAdaptation) {
-            width = this.widths[glyphName];
+            if (!isNum(width))
+              width = this.widths[glyphName];
             unicode = GlyphsUnicode[glyphName] || charcode;
             break;
           }
@@ -2024,7 +2025,7 @@ var Font = (function Font() {
           }
           if (this.hasShortCmap) {
             var j = Encodings.MacRomanEncoding.indexOf(glyphName);
-            unicode = j >= 0 ? adaptUnicode(j) :
+            unicode = j >= 0 && !isSpecialUnicode(j) ? j :
               this.glyphNameMap[glyphName];
           } else {
             unicode = glyphName in GlyphsUnicode ?
