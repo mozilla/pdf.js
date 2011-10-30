@@ -1432,7 +1432,7 @@ var Font = (function Font() {
                 var glyphCode = offsetIndex < 0 ? j :
                   offsets[offsetIndex + j - start];
                 glyphCode = (glyphCode + delta) & 0xFFFF;
-                if (glyphCode == 0)
+                if (glyphCode == 0 || isAdaptedUnicode(j))
                   continue;
 
                 var unicode = adaptUnicode(j);
@@ -1457,6 +1457,9 @@ var Font = (function Font() {
             for (var j = 0; j < entryCount; j++) {
               var glyphCode = int16(font.getBytes(2));
               var code = firstCode + j;
+              if (isAdaptedUnicode(glyphCode))
+                continue;
+
               var unicode = adaptUnicode(code);
               glyphs.push({ unicode: unicode, code: code });
               ids.push(glyphCode);
@@ -2754,14 +2757,23 @@ CFF.prototype = {
     var reverseMapping = {};
     var encoding = properties.baseEncoding;
     var differences = properties.differences;
-    var i, length;
+    var usedIn = [];
+    var i, length, glyphName;
     for (i = 0, length = encoding.length; i < length; ++i) {
-      if (encoding[i] && !isSpecialUnicode(i))
-        reverseMapping[encoding[i]] = i;
+      glyphName = encoding[i];
+      if (!glyphName || isSpecialUnicode(i))
+        continue;
+      reverseMapping[glyphName] = i;
+      usedIn[i] = glyphName;
     }
     for (i = 0, length = differences.length; i < length; ++i) {
-      if (differences[i] && !isSpecialUnicode(i))
-        reverseMapping[differences[i]] = i;
+      glyphName = differences[i];
+      if (!glyphName || isSpecialUnicode(i))
+        continue;
+      if (usedIn[i])
+        delete reverseMapping[usedIn[i]];
+      reverseMapping[glyphName] = i;
+      usedIn[i] = glyphName;
     }
     reverseMapping['.notdef'] = 0;
     var unusedUnicode = kCmapGlyphOffset;
