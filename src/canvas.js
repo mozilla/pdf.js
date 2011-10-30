@@ -541,8 +541,7 @@ var CanvasGraphics = (function canvasGraphics() {
     },
 
     // Color
-    setStrokeColorSpace:
-    function canvasGraphicsSetStrokeColorSpacefunction(raw) {
+    setStrokeColorSpace: function canvasGraphicsSetStrokeColorSpace(raw) {
       this.current.strokeColorSpace = ColorSpace.fromIR(raw);
     },
     setFillColorSpace: function canvasGraphicsSetFillColorSpace(raw) {
@@ -553,7 +552,7 @@ var CanvasGraphics = (function canvasGraphics() {
       var color = cs.getRgb(arguments);
       this.setStrokeRGBColor.apply(this, color);
     },
-    getColorN_IR_Pattern: function(IR, cs) {
+    getColorN_IR_Pattern: function canvasGraphicsGetColorN_IR_Pattern(IR, cs) {
       if (IR[0] == 'TilingPattern') {
         var args = IR[1];
         var base = cs.base;
@@ -669,8 +668,8 @@ var CanvasGraphics = (function canvasGraphics() {
       error('Should not call beginImageData');
     },
 
-    paintFormXObjectBegin:
-    function canvasGraphicsPaintFormXObject(matrix, bbox) {
+    paintFormXObjectBegin: function canvasGraphicsPaintFormXObjectBegin(matrix,
+                                                                        bbox) {
       this.save();
 
       if (matrix && isArray(matrix) && 6 == matrix.length)
@@ -685,11 +684,11 @@ var CanvasGraphics = (function canvasGraphics() {
       }
     },
 
-    paintFormXObjectEnd: function() {
+    paintFormXObjectEnd: function canvasGraphicsPaintFormXObjectEnd() {
       this.restore();
     },
 
-    paintJpegXObject: function(objId, w, h) {
+    paintJpegXObject: function canvasGraphicsPaintJpegXObject(objId, w, h) {
       var image = this.objs.get(objId);
       if (!image) {
         error('Dependent image isn\'t ready yet');
@@ -708,7 +707,8 @@ var CanvasGraphics = (function canvasGraphics() {
       this.restore();
     },
 
-    paintImageMaskXObject: function(imgArray, inverseDecode, width, height) {
+    paintImageMaskXObject: function canvasGraphicsPaintImageMaskXObject(
+                             imgArray, inverseDecode, width, height) {
       function applyStencilMask(buffer, inverseDecode) {
         var imgArrayPos = 0;
         var i, j, mask, buf;
@@ -756,7 +756,7 @@ var CanvasGraphics = (function canvasGraphics() {
       this.restore();
     },
 
-    paintImageXObject: function(imgData) {
+    paintImageXObject: function canvasGraphicsPaintImageXObject(imgData) {
       this.save();
       var ctx = this.ctx;
       var w = imgData.width;
