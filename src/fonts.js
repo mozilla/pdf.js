@@ -2756,24 +2756,12 @@ CFF.prototype = {
     var charstrings = [];
     var reverseMapping = {};
     var encoding = properties.baseEncoding;
-    var differences = properties.differences;
-    var usedIn = [];
     var i, length, glyphName;
     for (i = 0, length = encoding.length; i < length; ++i) {
       glyphName = encoding[i];
       if (!glyphName || isSpecialUnicode(i))
         continue;
       reverseMapping[glyphName] = i;
-      usedIn[i] = glyphName;
-    }
-    for (i = 0, length = differences.length; i < length; ++i) {
-      glyphName = differences[i];
-      if (!glyphName || isSpecialUnicode(i))
-        continue;
-      if (usedIn[i])
-        delete reverseMapping[usedIn[i]];
-      reverseMapping[glyphName] = i;
-      usedIn[i] = glyphName;
     }
     reverseMapping['.notdef'] = 0;
     var unusedUnicode = kCmapGlyphOffset;
