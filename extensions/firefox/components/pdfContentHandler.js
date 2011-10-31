@@ -56,7 +56,6 @@ pdfContentHandler.prototype = {
       throw NS_ERROR_WONT_HANDLE_CONTENT;
 
     aRequest.cancel(Cr.NS_BINDING_ABORTED);
-    aRequest.cancel(Cr.NS_BINDING_ABORTED);
     window.location = url.replace('%s', encodeURIComponent(targetUrl));
   },
 
