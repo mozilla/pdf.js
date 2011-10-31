@@ -491,7 +491,7 @@ var PageView = function pageView(container, content, id, pageWidth, pageHeight,
     ctx.translate(-this.x * scale, -this.y * scale);
 
     stats.begin = Date.now();
-    this.content.startRendering(ctx, this.updateStats, textLayer, scale);
+    this.content.startRendering(ctx, this.updateStats, textLayer);
 
     setupLinks(this.content, this.scale);
     div.setAttribute('data-loaded', true);

@@ -7,7 +7,7 @@ var globalScope = (typeof window === 'undefined') ? this : window;
 
 var ERRORS = 0, WARNINGS = 1, TODOS = 5;
 var verbosity = WARNINGS;
-var useWorker = false;
+var useWorker = true;
 
 // The global PDFJS object exposes the API
 // In production, it will be declared outside a global wrapper
@@ -157,7 +157,7 @@ var Page = (function pagePage() {
                                                 IRQueue, fonts) {
       var self = this;
       this.IRQueue = IRQueue;
-      var gfx = new CanvasGraphics(this.ctx, this.objs, this.textLayer, this.textScale);
+      var gfx = new CanvasGraphics(this.ctx, this.objs, this.textLayer);
       var startTime = Date.now();
 
       var displayContinuation = function pageDisplayContinuation() {
@@ -306,11 +306,10 @@ var Page = (function pagePage() {
       }
       return links;
     },
-    startRendering: function(ctx, callback, textLayer, textScale)  {
+    startRendering: function(ctx, callback, textLayer)  {
       this.ctx = ctx;
       this.callback = callback;
       this.textLayer = textLayer;
-      this.textScale = textScale;
 
       this.startRenderingTime = Date.now();
       this.pdf.startRendering(this);
