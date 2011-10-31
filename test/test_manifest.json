@@ -222,5 +222,11 @@
        "file": "pdfs/close-path-bug.pdf",
        "rounds": 1,
        "type": "eq"
+    },
+    {  "id": "alphatrans",
+       "file": "pdfs/alphatrans.pdf",
+       "link": false,
+       "rounds": 1,
+       "type": "eq"
     }
 ]
