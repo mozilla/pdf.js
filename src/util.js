@@ -16,16 +16,15 @@ function warn(msg) {
 }
 
 function backtrace() {
-  var stackStr;
   try {
     throw new Error();
   } catch (e) {
-    stackStr = e.stack;
+    return e.stack ? e.stack.split('\n').slice(2).join('\n') : '';
   }
-  return stackStr.split('\n').slice(1).join('\n');
 }
 
 function error(msg) {
+  log('Error: ' + msg);
   log(backtrace());
   throw new Error(msg);
 }
@@ -198,7 +197,7 @@ function isPDFFunction(v) {
  * can be set. If any of these happens twice or the data is required before
  * it was set, an exception is throw.
  */
-var Promise = (function() {
+var Promise = (function promise() {
   var EMPTY_PROMISE = {};
 
   /**
@@ -222,19 +221,19 @@ var Promise = (function() {
   Promise.prototype = {
     hasData: false,
 
-    set data(data) {
-      if (data === undefined) {
+    set data(value) {
+      if (value === undefined) {
         return;
       }
       if (this._data !== EMPTY_PROMISE) {
         throw 'Promise ' + this.name +
                                 ': Cannot set the data of a promise twice';
       }
-      this._data = data;
+      this._data = value;
       this.hasData = true;
 
       if (this.onDataCallback) {
-        this.onDataCallback(data);
+        this.onDataCallback(value);
       }
     },
 
@@ -245,7 +244,7 @@ var Promise = (function() {
       return this._data;
     },
 
-    onData: function(callback) {
+    onData: function promiseOnData(callback) {
       if (this._data !== EMPTY_PROMISE) {
         callback(this._data);
       } else {
@@ -253,7 +252,7 @@ var Promise = (function() {
       }
     },
 
-    resolve: function(data) {
+    resolve: function promiseResolve(data) {
       if (this.isResolved) {
         throw 'A Promise can be resolved only once ' + this.name;
       }
@@ -267,7 +266,7 @@ var Promise = (function() {
       }
     },
 
-    then: function(callback) {
+    then: function promiseThen(callback) {
       if (!callback) {
         throw 'Requiring callback' + this.name;
       }
@@ -281,5 +280,7 @@ var Promise = (function() {
       }
     }
   };
+
   return Promise;
 })();
+

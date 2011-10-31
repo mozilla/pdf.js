@@ -153,7 +153,7 @@ var Page = (function pagePage() {
       return shadow(this, 'rotate', rotate);
     },
 
-    startRenderingFromIRQueue: function startRenderingFromIRQueue(
+    startRenderingFromIRQueue: function pageStartRenderingFromIRQueue(
                                                 IRQueue, fonts) {
       var self = this;
       this.IRQueue = IRQueue;
@@ -173,12 +173,13 @@ var Page = (function pagePage() {
         });
       };
 
-      this.ensureFonts(fonts, function() {
+      this.ensureFonts(fonts,
+                       function pageStartRenderingFromIRQueueEnsureFonts() {
         displayContinuation();
       });
     },
 
-    getIRQueue: function(handler, dependency) {
+    getIRQueue: function pageGetIRQueue(handler, dependency) {
       if (this.IRQueue) {
         // content was compiled
         return this.IRQueue;
@@ -202,7 +203,7 @@ var Page = (function pagePage() {
                                 content, resources, IRQueue, dependency);
     },
 
-    ensureFonts: function(fonts, callback) {
+    ensureFonts: function pageEnsureFonts(fonts, callback) {
       // Convert the font names to the corresponding font obj.
       for (var i = 0; i < fonts.length; i++) {
         fonts[i] = this.objs.objs[fonts[i]].data;
@@ -211,7 +212,7 @@ var Page = (function pagePage() {
       // Load all the fonts
       var fontObjs = FontLoader.bind(
         fonts,
-        function(fontObjs) {
+        function pageEnsureFontsFontObjs(fontObjs) {
           this.stats.fonts = Date.now();
 
           callback.call(this);
@@ -220,7 +221,7 @@ var Page = (function pagePage() {
       );
     },
 
-    display: function(gfx, callback) {
+    display: function pageDisplay(gfx, callback) {
       var xref = this.xref;
       var resources = xref.fetchIfRef(this.resources);
       var mediaBox = xref.fetchIfRef(this.mediaBox);
@@ -305,7 +306,7 @@ var Page = (function pagePage() {
       }
       return links;
     },
-    startRendering: function(ctx, callback)  {
+    startRendering: function pageStartRendering(ctx, callback)  {
       this.ctx = ctx;
       this.callback = callback;
 
@@ -446,7 +447,7 @@ var PDFDocModel = (function pdfDoc() {
   return constructor;
 })();
 
-var PDFDoc = (function() {
+var PDFDoc = (function pdfDoc() {
   function constructor(arg, callback) {
     var stream = null;
     var data = null;
@@ -475,10 +476,10 @@ var PDFDoc = (function() {
     } else {
       // If we don't use a worker, just post/sendMessage to the main thread.
       var worker = {
-        postMessage: function(obj) {
+        postMessage: function pdfDocPostMessage(obj) {
           worker.onmessage({data: obj});
         },
-        terminate: function() {}
+        terminate: function pdfDocTerminate() {}
       };
     }
     this.worker = worker;
@@ -488,7 +489,7 @@ var PDFDoc = (function() {
     var processorHandler = this.processorHandler =
                                         new MessageHandler('main', worker);
 
-    processorHandler.on('page', function(data) {
+    processorHandler.on('page', function pdfDocPage(data) {
       var pageNum = data.pageNum;
       var page = this.pageCache[pageNum];
       var depFonts = data.depFonts;
@@ -496,7 +497,7 @@ var PDFDoc = (function() {
       page.startRenderingFromIRQueue(data.IRQueue, depFonts);
     }, this);
 
-    processorHandler.on('obj', function(data) {
+    processorHandler.on('obj', function pdfDocObj(data) {
       var id = data[0];
       var type = data[1];
 
@@ -540,7 +541,7 @@ var PDFDoc = (function() {
       }
     }, this);
 
-    processorHandler.on('font_ready', function(data) {
+    processorHandler.on('font_ready', function pdfDocFontReady(data) {
       var id = data[0];
       var font = new FontShape(data[1]);
 
@@ -559,7 +560,7 @@ var PDFDoc = (function() {
     }
 
     this.workerReadyPromise = new Promise('workerReady');
-    setTimeout(function() {
+    setTimeout(function pdfDocFontReadySetTimeout() {
       processorHandler.send('doc', this.data);
       this.workerReadyPromise.resolve(true);
     }.bind(this));
@@ -570,14 +571,14 @@ var PDFDoc = (function() {
       return this.pdf.numPages;
     },
 
-    startRendering: function(page) {
+    startRendering: function pdfDocStartRendering(page) {
       // The worker might not be ready to receive the page request yet.
-      this.workerReadyPromise.then(function() {
+      this.workerReadyPromise.then(function pdfDocStartRenderingThen() {
         this.processorHandler.send('page_request', page.pageNumber + 1);
       }.bind(this));
     },
 
-    getPage: function(n) {
+    getPage: function pdfDocGetPage(n) {
       if (this.pageCache[n])
         return this.pageCache[n];
 
@@ -589,7 +590,7 @@ var PDFDoc = (function() {
       return this.pageCache[n] = page;
     },
 
-    destroy: function() {
+    destroy: function pdfDocDestroy() {
       if (this.worker)
         this.worker.terminate();
 
@@ -608,4 +609,6 @@ var PDFDoc = (function() {
 
   return constructor;
 })();
+
 globalScope.PDFJS.PDFDoc = PDFDoc;
+

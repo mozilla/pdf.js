@@ -12,17 +12,17 @@ var ColorSpace = (function colorSpaceColorSpace() {
   constructor.prototype = {
     // Input: array of size numComps representing color component values
     // Output: array of rgb values, each value ranging from [0.1]
-    getRgb: function cs_getRgb(color) {
+    getRgb: function colorSpaceGetRgb(color) {
       error('Should not call ColorSpace.getRgb: ' + color);
     },
     // Input: Uint8Array of component values, each value scaled to [0,255]
     // Output: Uint8Array of rgb values, each value scaled to [0,255]
-    getRgbBuffer: function cs_getRgbBuffer(input) {
+    getRgbBuffer: function colorSpaceGetRgbBuffer(input) {
       error('Should not call ColorSpace.getRgbBuffer: ' + input);
     }
   };
 
-  constructor.parse = function colorspace_parse(cs, xref, res) {
+  constructor.parse = function colorSpaceParse(cs, xref, res) {
     var IR = constructor.parseToIR(cs, xref, res, true);
     if (IR instanceof SeparationCS)
       return IR;
@@ -30,7 +30,7 @@ var ColorSpace = (function colorSpaceColorSpace() {
     return constructor.fromIR(IR);
   };
 
-  constructor.fromIR = function(IR) {
+  constructor.fromIR = function colorSpaceFromIR(IR) {
     var name;
     if (isArray(IR)) {
       name = IR[0];
@@ -71,7 +71,8 @@ var ColorSpace = (function colorSpaceColorSpace() {
     return null;
   }
 
-  constructor.parseToIR = function colorspace_parse(cs, xref, res, parseOnly) {
+  constructor.parseToIR = function colorSpaceParseToIR(cs, xref, res,
+                                                       parseOnly) {
     if (isName(cs)) {
       var colorSpaces = xref.fetchIfRef(res.get('ColorSpace'));
       if (isDict(colorSpaces)) {
@@ -397,5 +398,7 @@ var DeviceCmykCS = (function deviceCmykCS() {
       return rgbBuf;
     }
   };
+
   return constructor;
 })();
+

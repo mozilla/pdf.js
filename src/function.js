@@ -3,14 +3,15 @@
 
 'use strict';
 
-var PDFFunction = (function() {
+var PDFFunction = (function pdfFunction() {
   var CONSTRUCT_SAMPLED = 0;
   var CONSTRUCT_INTERPOLATED = 2;
   var CONSTRUCT_STICHED = 3;
   var CONSTRUCT_POSTSCRIPT = 4;
 
   return {
-    getSampleArray: function(size, outputSize, bps, str) {
+    getSampleArray: function pdfFunctionGetSampleArray(size, outputSize, bps,
+                                                       str) {
       var length = 1;
       for (var i = 0; i < size.length; i++)
         length *= size[i];
@@ -35,7 +36,7 @@ var PDFFunction = (function() {
       return array;
     },
 
-    getIR: function(xref, fn) {
+    getIR: function pdfFunctionGetIR(xref, fn) {
       var dict = fn.dict;
       if (!dict)
         dict = fn;
@@ -54,7 +55,7 @@ var PDFFunction = (function() {
       return typeFn.call(this, fn, dict, xref);
     },
 
-    fromIR: function(IR) {
+    fromIR: function pdfFunctionFromIR(IR) {
       var type = IR[0];
       switch (type) {
         case CONSTRUCT_SAMPLED:
@@ -69,12 +70,12 @@ var PDFFunction = (function() {
       }
     },
 
-    parse: function(xref, fn) {
+    parse: function pdfFunctionParse(xref, fn) {
       var IR = this.getIR(xref, fn);
       return this.fromIR(IR);
     },
 
-    constructSampled: function(str, dict) {
+    constructSampled: function pdfFunctionConstructSampled(str, dict) {
       var domain = dict.get('Domain');
       var range = dict.get('Range');
 
@@ -116,7 +117,7 @@ var PDFFunction = (function() {
       ];
     },
 
-    constructSampledFromIR: function(IR) {
+    constructSampledFromIR: function pdfFunctionConstructSampledFromIR(IR) {
       var inputSize = IR[1];
       var domain = IR[2];
       var encode = IR[3];
@@ -127,8 +128,8 @@ var PDFFunction = (function() {
       var bps = IR[8];
       var range = IR[9];
 
-      return function(args) {
-        var clip = function(v, min, max) {
+      return function constructSampledFromIRResult(args) {
+        var clip = function constructSampledFromIRClip(v, min, max) {
           if (v > max)
             v = max;
           else if (v < min)
@@ -212,7 +213,7 @@ var PDFFunction = (function() {
 
       var length = diff.length;
 
-      return function(args) {
+      return function constructInterpolatedFromIRResult(args) {
         var x = n == 1 ? args[0] : Math.pow(args[0], n);
 
         var out = [];
@@ -257,8 +258,8 @@ var PDFFunction = (function() {
         fns.push(PDFFunction.fromIR(fnsIR[i]));
       }
 
-      return function(args) {
-        var clip = function(v, min, max) {
+      return function constructStichedFromIRResult(args) {
+        var clip = function constructStichedFromIRClip(v, min, max) {
           if (v > max)
             v = max;
           else if (v < min)
@@ -298,9 +299,10 @@ var PDFFunction = (function() {
 
     constructPostScriptFromIR: function pdfFunctionConstructPostScriptFromIR() {
       TODO('unhandled type of function');
-      return function() {
+      return function constructPostScriptFromIRResult() {
         return [255, 105, 180];
       };
     }
   };
 })();
+
