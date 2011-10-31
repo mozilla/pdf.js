@@ -32,6 +32,9 @@ pdfContentHandler.prototype = {
     if (!(aRequest instanceof Ci.nsIChannel))
       throw NS_ERROR_WONT_HANDLE_CONTENT;
 
+    if (!Services.prefs.getBoolPref('extensions.pdf.js.active'))
+      throw NS_ERROR_WONT_HANDLE_CONTENT;
+
     let window = null;
     let callbacks = aRequest.notificationCallbacks ||
                     aRequest.loadGroup.notificationCallbacks;
