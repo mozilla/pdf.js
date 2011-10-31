@@ -33,6 +33,9 @@ var CanvasExtraState = (function canvasExtraState() {
     // Default fore and background colors
     this.fillColor = '#000000';
     this.strokeColor = '#000000';
+    // Note: fill alpha applies to all non-stroking operations
+    this.fillAlpha = 1;
+    this.strokeAlpha = 1;
 
     this.old = old;
   }
@@ -211,6 +214,13 @@ var CanvasGraphics = (function canvasGraphics() {
           case 'Font':
             this.setFont(state[1], state[2]);
             break;
+          case 'CA':
+            this.current.strokeAlpha = state[1];
+            break;
+          case 'ca':
+            this.current.fillAlpha = state[1];
+            this.ctx.globalAlpha = state[1];
+            break;
         }
       }
     },
@@ -259,9 +269,13 @@ var CanvasGraphics = (function canvasGraphics() {
     rectangle: function canvasGraphicsRectangle(x, y, width, height) {
       this.ctx.rect(x, y, width, height);
     },
-    stroke: function canvasGraphicsStroke() {
+    stroke: function canvasGraphicsStroke(consumePath) {
+      consumePath = typeof consumePath !== 'undefined' ? consumePath : true;
       var ctx = this.ctx;
       var strokeColor = this.current.strokeColor;
+      // For stroke we want to temporarily change the global alpha to the
+      // stroking alpha.
+      ctx.globalAlpha = this.current.strokeAlpha;
       if (strokeColor && strokeColor.hasOwnProperty('type') &&
           strokeColor.type === 'Pattern') {
         // for patterns, we transform to pattern space, calculate
@@ -273,14 +287,17 @@ var CanvasGraphics = (function canvasGraphics() {
       } else {
         ctx.stroke();
       }
-
-      this.consumePath();
+      if (consumePath)
+        this.consumePath();
+      // Restore the global alpha to the fill alpha
+      ctx.globalAlpha = this.current.fillAlpha;
     },
     closeStroke: function canvasGraphicsCloseStroke() {
       this.closePath();
       this.stroke();
     },
-    fill: function canvasGraphicsFill() {
+    fill: function canvasGraphicsFill(consumePath) {
+      consumePath = typeof consumePath !== 'undefined' ? consumePath : true;
       var ctx = this.ctx;
       var fillColor = this.current.fillColor;
 
@@ -293,8 +310,8 @@ var CanvasGraphics = (function canvasGraphics() {
       } else {
         ctx.fill();
       }
-
-      this.consumePath();
+      if (consumePath)
+        this.consumePath();
     },
     eoFill: function canvasGraphicsEoFill() {
       var savedFillRule = this.setEOFillRule();
@@ -302,29 +319,8 @@ var CanvasGraphics = (function canvasGraphics() {
       this.restoreFillRule(savedFillRule);
     },
     fillStroke: function canvasGraphicsFillStroke() {
-      var ctx = this.ctx;
-
-      var fillColor = this.current.fillColor;
-      if (fillColor && fillColor.hasOwnProperty('type') &&
-          fillColor.type === 'Pattern') {
-        ctx.save();
-        ctx.fillStyle = fillColor.getPattern(ctx);
-        ctx.fill();
-        ctx.restore();
-      } else {
-        ctx.fill();
-      }
-
-      var strokeColor = this.current.strokeColor;
-      if (strokeColor && strokeColor.hasOwnProperty('type') &&
-          strokeColor.type === 'Pattern') {
-        ctx.save();
-        ctx.strokeStyle = strokeColor.getPattern(ctx);
-        ctx.stroke();
-        ctx.restore();
-      } else {
-        ctx.stroke();
-      }
+      this.fill(false);
+      this.stroke(false);
 
       this.consumePath();
     },

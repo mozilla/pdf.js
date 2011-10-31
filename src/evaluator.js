@@ -405,6 +405,8 @@ var PartialEvaluator = (function partialEvaluator() {
                     case 'D':
                     case 'RI':
                     case 'FL':
+                    case 'CA':
+                    case 'ca':
                       gsStateObj.push([key, value]);
                       break;
                     case 'Font':
@@ -428,8 +430,6 @@ var PartialEvaluator = (function partialEvaluator() {
                     case 'SA':
                     case 'BM':
                     case 'SMask':
-                    case 'CA':
-                    case 'ca':
                     case 'AIS':
                     case 'TK':
                       TODO('graphic state operator ' + key);
