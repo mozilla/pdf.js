@@ -3,7 +3,7 @@
 <head>
   <meta charset='utf-8'>
 
-  <title>andreasgal/pdf.js @ GitHub</title>
+  <title>mozilla/pdf.js @ GitHub</title>
 
   <style type="text/css">
     body {
@@ -31,18 +31,18 @@
 </head>
 
 <body>
-  <a href="http://github.com/andreasgal/pdf.js"><img style="position: absolute; top: 0; right: 0; border: 0;" src="http://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png" alt="Fork me on GitHub" /></a>
+  <a href="http://github.com/mozilla/pdf.js"><img style="position: absolute; top: 0; right: 0; border: 0;" src="http://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png" alt="Fork me on GitHub" /></a>
 
   <div id="container">
 
     <div class="download">
-      <a href="http://github.com/andreasgal/pdf.js/zipball/master">
+      <a href="http://github.com/mozilla/pdf.js/zipball/master">
         <img border="0" width="90" src="http://github.com/images/modules/download/zip.png"></a>
-      <a href="http://github.com/andreasgal/pdf.js/tarball/master">
+      <a href="http://github.com/mozilla/pdf.js/tarball/master">
         <img border="0" width="90" src="http://github.com/images/modules/download/tar.png"></a>
     </div>
 
-    <h1><a href="http://github.com/andreasgal/pdf.js">pdf.js</a>
+    <h1><a href="http://github.com/mozilla/pdf.js">pdf.js</a>
       <span class="small">by <a href="http://github.com/andreasgal">andreasgal</a></span></h1>
 
     <div class="description">
@@ -69,16 +69,16 @@
     <h2>Download</h2>
     <p>
       You can download this project in either
-      <a href="http://github.com/andreasgal/pdf.js/zipball/master">zip</a> or
-      <a href="http://github.com/andreasgal/pdf.js/tarball/master">tar</a> formats.
+      <a href="http://github.com/mozilla/pdf.js/zipball/master">zip</a> or
+      <a href="http://github.com/mozilla/pdf.js/tarball/master">tar</a> formats.
     </p>
     <p>You can also clone the project with <a href="http://git-scm.com">Git</a>
       by running:
-      <pre>$ git clone git://github.com/andreasgal/pdf.js</pre>
+      <pre>$ git clone git://github.com/mozilla/pdf.js</pre>
     </p>
 
     <div class="footer">
-      get the source code on GitHub : <a href="http://github.com/andreasgal/pdf.js">andreasgal/pdf.js</a>
+      get the source code on GitHub : <a href="http://github.com/mozilla/pdf.js">mozilla/pdf.js</a>
     </div>
 
   </div>
