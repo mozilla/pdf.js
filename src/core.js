@@ -545,7 +545,7 @@ var PDFDoc = (function pdfDoc() {
           case 'JpegStream':
             var IR = data[2];
             new JpegImage(id, IR, this.objs);
-          break;
+            break;
           case 'Font':
             var name = data[2];
             var file = data[3];
@@ -575,7 +575,7 @@ var PDFDoc = (function pdfDoc() {
               file: file,
               properties: properties
             });
-          break;
+            break;
           default:
             throw 'Got unkown object type ' + type;
         }
