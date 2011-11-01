@@ -143,7 +143,7 @@ against reference images before merging pull requests.
 
 See the bot repo for details:
 
-+ https://github.com/arturadib/pdf.js-bot
++ https://github.com/mozilla/pdf.js-bot
 
 
 ## Additional resources
