@@ -47,6 +47,10 @@ var WorkerProcessorHandler = {
   setup: function wphSetup(handler) {
     var pdfDoc = null;
 
+    handler.on('test', function wphSetupTest(data) {
+      handler.send('test', data instanceof Uint8Array);
+    });
+
     handler.on('workerSrc', function wphSetupWorkerSrc(data) {
       // In development, the `workerSrc` message is handled in the
       // `worker_loader.js` file. In production the workerProcessHandler is
