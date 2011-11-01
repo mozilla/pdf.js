@@ -61,7 +61,7 @@ production-extension: | bundle
 	@echo "Preparing web/viewer-production.html for extension"; \
 	cd web; \
 	sed '/PDFJSSCRIPT_REMOVE/d' viewer.html > viewer-1.tmp; \
-	sed '/PDFJSSCRIPT_REMOVE_EXTENSION/d' viewer-1.tmp > viewer-2.tmp; \
+	sed '/PDFJSSCRIPT_EXTENSION_REMOVE/d' viewer-1.tmp > viewer-2.tmp; \
 	sed '/PDFJSSCRIPT_INCLUDE_BUILD/ r viewer-snippet.html' viewer-2.tmp > viewer-production.html; \
 	rm -f *.tmp; \
 	cd ..
