@@ -471,26 +471,18 @@ var PDFDoc = (function() {
     this.pageCache = [];
 
     if (useWorker) {
-      var worker;
-      if (typeof PDFJS_WORKER_DIR !== 'undefined') {
-        // If `PDFJS_WORKER_DIR` is specified, we assume the pdf.js files
-        // located all in that directory. Create a new worker and tell him
-        // the directory, such that he can load the scripts from there.
-        worker = new Worker(PDFJS_WORKER_DIR + 'worker_loader.js');
-        console.log('main: post dir');
-
-        worker.postMessage(PDFJS_WORKER_DIR);
-      } else if (typeof PDFJS_WORKER_FILE !== 'undefined') {
-        // If we build the worker using a worker file, then we assume, that
-        // everything the worker needs is already included in that file.
-        // Therefore the worker doesn't have to call `importScripts` to load
-        // all the single files and therefore it's not necessary to tell the
-        // worker a directory to laod the js files from.
-        // (Which is different from the PDFJS_WORKER_DIR case above.)
-        worker = new Worker(PDFJS_WORKER_FILE);
-      } else {
-        throw 'No worker file or directory specified.';
+      var workerSrc = PDFJS.workerSrc;
+      if (typeof workerSrc === 'undefined') {
+        throw 'No PDFJS.workerSrc specified';
       }
+
+      var worker = new Worker(workerSrc);
+
+      // Tell the worker the file it was created from.
+      worker.postMessage({
+        action: 'workerSrc',
+        data: workerSrc
+      });
     } else {
       // If we don't use a worker, just post/sendMessage to the main thread.
       var worker = {

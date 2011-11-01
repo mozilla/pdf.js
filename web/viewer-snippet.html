@@ -1,7 +1,6 @@
 <!-- This snippet is used in production, see Makefile -->
 <script type="text/javascript" src="../build/pdf.js"></script>
 <script type="text/javascript">
-  // This specifies the location of the pdf.js file. This is necessary to
-  // spawn the web worker.
-  var PDFJS_WORKER_FILE = "../build/pdf.js";
+  // This specifies the location of the pdf.js file.
+  PDFJS.workerSrc = "../build/pdf.js";
 </script>

@@ -7,11 +7,19 @@ this.onmessage = function(evt) {
   // Reset the `onmessage` function as it was only set to call
   // this function the first time a message is passed to the worker
   // but shouldn't get called anytime afterwards.
-  delete this.onmessage;
+  this.onmessage = null;
 
-  // Directory the include files are contained is send as the
-  // first message to the worker.
-  var dir = evt.data;
+  if (evt.data.action !== 'workerSrc') {
+    throw 'Worker expects first message to be `workerSrc`';
+  }
+
+  // Content of `PDFJS.workerSrc` as defined on the main thread.
+  var workerSrc = evt.data.data;
+
+  // Extract the directory that contains the source files to load.
+  // Assuming the source files have the same relative possition as the
+  // `workerSrc` file.
+  var dir = workerSrc.substring(0, workerSrc.lastIndexOf('/') + 1);
 
   // List of files to include;
   var files = [

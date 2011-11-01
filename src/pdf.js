@@ -10,5 +10,5 @@ var PDFJS = {};
   // Files are inserted below - see Makefile
   /* PDFJSSCRIPT_INCLUDE_ALL */
 
-})();
+}).call((typeof window === 'undefined') ? this : window);
 
