@@ -39,7 +39,7 @@ However, note that the extension might not reflect the latest source in our mast
 
 To get a local copy of the current code, clone it using git:
 
-    $ git clone git://github.com/andreasgal/pdf.js.git pdfjs
+    $ git clone git://github.com/mozilla/pdf.js.git pdfjs
     $ cd pdfjs
 
 Next, you need to start a local web server as some browsers don't allow opening
@@ -73,7 +73,7 @@ Additional resources are available in a separate section below.
 
 For a "hello world" example, take a look at:
 
-+ [examples/helloworld/hello.js](https://github.com/andreasgal/pdf.js/blob/master/examples/helloworld/hello.js)
++ [examples/helloworld/hello.js](https://github.com/mozilla/pdf.js/blob/master/examples/helloworld/hello.js)
 
 This example illustrates the bare minimum ingredients for integrating pdf.js
 in a custom project.
@@ -92,10 +92,10 @@ workings of PDF and pdf.js:
 
 pdf.js is a community-driven project, so contributors are always welcome. 
 Simply fork our repo and contribute away. A great place to start is our
-[open issues](https://github.com/andreasgal/pdf.js/issues). For better consistency and 
+[open issues](https://github.com/mozilla/pdf.js/issues). For better consistency and 
 long-term stability, please do look around the code and try to follow our conventions.
 More information about the contributor process can be found on the 
-[contributor wiki page](https://github.com/andreasgal/pdf.js/wiki/Contributing).
+[contributor wiki page](https://github.com/mozilla/pdf.js/wiki/Contributing).
 
 If you don't want to hack on the project or have little spare time, __you still
 can help!__ Just open PDFs in the 
@@ -104,7 +104,7 @@ any breakage in rendering.
 
 Our Github contributors so far:
 
-+ https://github.com/andreasgal/pdf.js/contributors
++ https://github.com/mozilla/pdf.js/contributors
 
 You can add your name to it! :)
 
