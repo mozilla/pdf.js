@@ -58,11 +58,11 @@ production: | bundle
 # Create production output for extension use (pdf.js, and corresponding changes to web files)
 #
 production-extension: | bundle
-	@echo "Preparing web/viewer-production.html for extension"; \
+	@echo "Preparing web/viewer-extension.html for extension"; \
 	cd web; \
 	sed '/PDFJSSCRIPT_REMOVE/d' viewer.html > viewer-1.tmp; \
-	sed '/PDFJSSCRIPT_EXTENSION_REMOVE/d' viewer-1.tmp > viewer-2.tmp; \
-	sed '/PDFJSSCRIPT_INCLUDE_BUILD/ r viewer-snippet.html' viewer-2.tmp > viewer-production.html; \
+	sed '/PDFJSEXTENSION_REMOVE/d' viewer-1.tmp > viewer-2.tmp; \
+	sed '/PDFJSSCRIPT_INCLUDE_BUILD/ r viewer-snippet.html' viewer-2.tmp > viewer-extension.html; \
 	rm -f *.tmp; \
 	cd ..
 
@@ -216,7 +216,7 @@ PDF_WEB_FILES = \
 	web/compatibility.js \
 	web/viewer.css \
 	web/viewer.js \
-	web/viewer-production.html \
+	web/viewer-extension.html \
 	$(NULL)
 extension: | production-extension
 	# Copy a standalone version of pdf.js inside the content directory
@@ -225,7 +225,7 @@ extension: | production-extension
 	@mkdir -p $(EXTENSION_SRC)/$(CONTENT_DIR)/web
 	@cp $(BUILD_TARGET) $(EXTENSION_SRC)/$(CONTENT_DIR)/$(BUILD_DIR)
 	@cp -r $(PDF_WEB_FILES) $(EXTENSION_SRC)/$(CONTENT_DIR)/web/
-	@mv -f $(EXTENSION_SRC)/$(CONTENT_DIR)/web/viewer-production.html $(EXTENSION_SRC)/$(CONTENT_DIR)/web/viewer.html
+	@mv -f $(EXTENSION_SRC)/$(CONTENT_DIR)/web/viewer-extension.html $(EXTENSION_SRC)/$(CONTENT_DIR)/web/viewer.html
 
 	# Create the xpi
 	@cd $(EXTENSION_SRC); zip -r $(EXTENSION_NAME) *
