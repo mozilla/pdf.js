@@ -19,6 +19,6 @@
     <em:unpack>true</em:unpack>
     <em:creator>Vivien Nicolas</em:creator>
     <em:description>pdf.js uri loader</em:description>
-    <em:homepageURL>https://github.com/andreasgal/pdf.js/</em:homepageURL>
+    <em:homepageURL>https://github.com/mozilla/pdf.js/</em:homepageURL>
   </Description>
 </RDF>

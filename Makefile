@@ -1,4 +1,4 @@
-REPO = git@github.com:andreasgal/pdf.js.git
+REPO = git@github.com:mozilla/pdf.js.git
 BUILD_DIR := build
 BUILD_TARGET := $(BUILD_DIR)/pdf.js
 DEFAULT_BROWSERS := resources/browser_manifests/browser_manifest.json
