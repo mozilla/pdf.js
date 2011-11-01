@@ -55,6 +55,18 @@ production: | bundle
 	cd ..
 
 #
+# Create production output for extension use (pdf.js, and corresponding changes to web files)
+#
+production-extension: | bundle
+	@echo "Preparing web/viewer-production.html for extension"; \
+	cd web; \
+	sed '/PDFJSSCRIPT_REMOVE/d' viewer.html > viewer-1.tmp; \
+	sed '/PDFJSSCRIPT_REMOVE_EXTENSION/d' viewer-1.tmp > viewer-2.tmp; \
+	sed '/PDFJSSCRIPT_INCLUDE_BUILD/ r viewer-snippet.html' viewer-2.tmp > viewer-production.html; \
+	rm -f *.tmp; \
+	cd ..
+
+#
 # Bundle pdf.js
 #
 bundle: | $(BUILD_DIR)
@@ -206,7 +218,7 @@ PDF_WEB_FILES = \
 	web/viewer.js \
 	web/viewer-production.html \
 	$(NULL)
-extension: | production
+extension: | production-extension
 	# Copy a standalone version of pdf.js inside the content directory
 	@rm -Rf $(EXTENSION_SRC)/$(CONTENT_DIR)/
 	@mkdir -p $(EXTENSION_SRC)/$(CONTENT_DIR)/$(BUILD_DIR)
