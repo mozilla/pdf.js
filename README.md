@@ -22,7 +22,7 @@ successful.
 
 For an online demo, visit:
 
-+ http://andreasgal.github.com/pdf.js/web/viewer.html
++ http://mozilla.github.com/pdf.js/web/viewer.html
 
 This demo provides an interactive interface for displaying and browsing PDFs
 using the pdf.js API.
@@ -31,7 +31,7 @@ using the pdf.js API.
 
 A Firefox extension is also available:
 
-+ http://andreasgal.github.com/pdf.js/extensions/firefox/pdf.js.xpi
++ http://mozilla.github.com/pdf.js/extensions/firefox/pdf.js.xpi
 
 However, note that the extension might not reflect the latest source in our master branch.
 
@@ -99,7 +99,7 @@ More information about the contributor process can be found on the
 
 If you don't want to hack on the project or have little spare time, __you still
 can help!__ Just open PDFs in the 
-[online demo](http://andreasgal.github.com/pdf.js/web/viewer.html) and report 
+[online demo](http://mozilla.github.com/pdf.js/web/viewer.html) and report 
 any breakage in rendering.
 
 Our Github contributors so far:
@@ -150,7 +150,7 @@ See the bot repo for details:
 
 Our demo site is here:
 
-+ http://andreasgal.github.com/pdf.js/web/viewer.html
++ http://mozilla.github.com/pdf.js/web/viewer.html
 
 You can read more about pdf.js here:
 
