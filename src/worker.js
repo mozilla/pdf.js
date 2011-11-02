@@ -47,6 +47,13 @@ var WorkerProcessorHandler = {
   setup: function wphSetup(handler) {
     var pdfDoc = null;
 
+    handler.on('workerSrc', function wphSetupWorkerSrc(data) {
+      // In development, the `workerSrc` message is handled in the
+      // `worker_loader.js` file. In production the workerProcessHandler is
+      // called for this. This servers as a dummy to prevent calling an
+      // undefined action `workerSrc`.
+    });
+
     handler.on('doc', function wphSetupDoc(data) {
       // Create only the model of the PDFDoc, which is enough for
       // processing the content of the pdf.
@@ -176,8 +183,7 @@ var workerConsole = {
 if (typeof window === 'undefined') {
   globalScope.console = workerConsole;
 
-  // Listen for messages from the main thread.
-  var handler = new MessageHandler('worker_processor', globalScope);
+  var handler = new MessageHandler('worker_processor', this);
   WorkerProcessorHandler.setup(handler);
 }
 
