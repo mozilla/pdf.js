@@ -97,7 +97,7 @@ Shadings.RadialAxial = (function radialAxialShading() {
     this.colorStops = colorStops;
   }
 
-  constructor.fromIR = function(ctx, raw) {
+  constructor.fromIR = function radialAxialShadingGetIR(ctx, raw) {
     var type = raw[1];
     var colorStops = raw[2];
     var p0 = raw[3];
@@ -129,7 +129,7 @@ Shadings.RadialAxial = (function radialAxialShading() {
   }
 
   constructor.prototype = {
-    getIR: function RadialAxialShading_getIR() {
+    getIR: function radialAxialShadingGetIR() {
       var coordsArr = this.coordsArr;
       var type = this.shadingType;
       if (type == 2) {
@@ -164,12 +164,12 @@ Shadings.Dummy = (function dummyShading() {
     this.type = 'Pattern';
   }
 
-  constructor.fromIR = function() {
+  constructor.fromIR = function dummyShadingFromIR() {
     return 'hotpink';
   }
 
   constructor.prototype = {
-    getIR: function dummpy_getir() {
+    getIR: function dummyShadingGetIR() {
       return ['Dummy'];
     }
   };
@@ -287,3 +287,4 @@ var TilingPattern = (function tilingPattern() {
 
   return TilingPattern;
 })();
+

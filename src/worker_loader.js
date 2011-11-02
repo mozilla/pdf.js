@@ -21,3 +21,4 @@ importScripts('../src/parser.js');
 importScripts('../src/pattern.js');
 importScripts('../src/stream.js');
 importScripts('../src/worker.js');
+

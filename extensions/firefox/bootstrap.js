@@ -16,21 +16,31 @@ function log(str) {
 
 function startup(aData, aReason) {
   let manifestPath = 'chrome.manifest';
-  let file = Cc['@mozilla.org/file/local;1'].createInstance(Ci.nsILocalFile);
+  let manifest = Cc['@mozilla.org/file/local;1']
+                   .createInstance(Ci.nsILocalFile);
   try {
-    file.initWithPath(aData.installPath.path);
-    file.append(manifestPath);
-    Cm.QueryInterface(Ci.nsIComponentRegistrar).autoRegister(file);
+    manifest.initWithPath(aData.installPath.path);
+    manifest.append(manifestPath);
+    Cm.QueryInterface(Ci.nsIComponentRegistrar).autoRegister(manifest);
+    Services.prefs.setBoolPref('extensions.pdf.js.active', true);
   } catch (e) {
     log(e);
   }
 }
 
 function shutdown(aData, aReason) {
+  if (Services.prefs.getBoolPref('extensions.pdf.js.active'))
+    Services.prefs.setBoolPref('extensions.pdf.js.active', false);
 }
 
 function install(aData, aReason) {
   let url = 'chrome://pdf.js/content/web/viewer.html?file=%s';
   Services.prefs.setCharPref('extensions.pdf.js.url', url);
+  Services.prefs.setBoolPref('extensions.pdf.js.active', false);
+}
+
+function uninstall(aData, aReason) {
+  Services.prefs.clearUserPref('extensions.pdf.js.url');
+  Services.prefs.clearUserPref('extensions.pdf.js.active');
 }
 
