@@ -472,7 +472,18 @@ var PDFDoc = (function pdfDoc() {
     this.pageCache = [];
 
     if (useWorker) {
-      var worker = new Worker('../src/worker_loader.js');
+      var workerSrc = PDFJS.workerSrc;
+      if (typeof workerSrc === 'undefined') {
+        throw 'No PDFJS.workerSrc specified';
+      }
+
+      var worker = new Worker(workerSrc);
+
+      // Tell the worker the file it was created from.
+      worker.postMessage({
+        action: 'workerSrc',
+        data: workerSrc
+      });
     } else {
       // If we don't use a worker, just post/sendMessage to the main thread.
       var worker = {

@@ -3,22 +3,50 @@
 
 'use strict';
 
-importScripts('../src/core.js');
-importScripts('../src/util.js');
-importScripts('../src/canvas.js');
-importScripts('../src/obj.js');
-importScripts('../src/function.js');
-importScripts('../src/charsets.js');
-importScripts('../src/cidmaps.js');
-importScripts('../src/colorspace.js');
-importScripts('../src/crypto.js');
-importScripts('../src/evaluator.js');
-importScripts('../src/fonts.js');
-importScripts('../src/glyphlist.js');
-importScripts('../src/image.js');
-importScripts('../src/metrics.js');
-importScripts('../src/parser.js');
-importScripts('../src/pattern.js');
-importScripts('../src/stream.js');
-importScripts('../src/worker.js');
+function onMessageLoader(evt) {
+  // Reset the `onmessage` function as it was only set to call
+  // this function the first time a message is passed to the worker
+  // but shouldn't get called anytime afterwards.
+  this.onmessage = null;
 
+  if (evt.data.action !== 'workerSrc') {
+    throw 'Worker expects first message to be `workerSrc`';
+  }
+
+  // Content of `PDFJS.workerSrc` as defined on the main thread.
+  var workerSrc = evt.data.data;
+
+  // Extract the directory that contains the source files to load.
+  // Assuming the source files have the same relative possition as the
+  // `workerSrc` file.
+  var dir = workerSrc.substring(0, workerSrc.lastIndexOf('/') + 1);
+
+  // List of files to include;
+  var files = [
+    'core.js',
+    'util.js',
+    'canvas.js',
+    'obj.js',
+    'function.js',
+    'charsets.js',
+    'cidmaps.js',
+    'colorspace.js',
+    'crypto.js',
+    'evaluator.js',
+    'fonts.js',
+    'glyphlist.js',
+    'image.js',
+    'metrics.js',
+    'parser.js',
+    'pattern.js',
+    'stream.js',
+    'worker.js'
+  ];
+
+  // Load all the files.
+  for (var i = 0; i < files.length; i++) {
+    importScripts(dir + files[i]);
+  }
+}
+
+this.onmessage = onMessageLoader.bind(this);

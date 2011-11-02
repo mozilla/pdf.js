@@ -3,10 +3,10 @@
     <head>
         <title>Simple pdf.js page viewer</title>
         <link rel="stylesheet" href="viewer.css"/>
+
         <script type="text/javascript" src="compatibility.js"></script>
-        
+
         <!-- PDFJSSCRIPT_INCLUDE_BUILD -->
-        
         <script type="text/javascript" src="../src/core.js"></script> <!-- PDFJSSCRIPT_REMOVE -->
         <script type="text/javascript" src="../src/util.js"></script>  <!-- PDFJSSCRIPT_REMOVE -->
         <script type="text/javascript" src="../src/canvas.js"></script>  <!-- PDFJSSCRIPT_REMOVE -->
@@ -25,6 +25,8 @@
         <script type="text/javascript" src="../src/pattern.js"></script>  <!-- PDFJSSCRIPT_REMOVE -->
         <script type="text/javascript" src="../src/stream.js"></script>  <!-- PDFJSSCRIPT_REMOVE -->
         <script type="text/javascript" src="../src/worker.js"></script>  <!-- PDFJSSCRIPT_REMOVE -->
+
+        <script type="text/javascript">PDFJS.workerSrc = '../src/worker_loader.js';</script> <!-- PDFJSSCRIPT_REMOVE -->
 
         <script type="text/javascript" src="viewer.js"></script>
   </head>
@@ -114,7 +116,7 @@
         </div>
      </div>
     </div>
-    
+
     <div id="loading">Loading... 0%</div>
     <div id="viewer"></div>
   </body>
