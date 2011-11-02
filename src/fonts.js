@@ -1729,7 +1729,7 @@ var Font = (function Font() {
       }
 
       encoding[0] = { unicode: 0, width: 0 };
-      var glyph = 1, i, j, k, cidLength;
+      var glyph = 1, i, j, k, cidLength, ii;
       for (i = 0, ii = cidToUnicode.length; i < ii; ++i) {
         var unicode = cidToUnicode[i];
         var width;
