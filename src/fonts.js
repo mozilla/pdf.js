@@ -393,7 +393,7 @@ var FontLoader = {
 
   bind: function fontLoaderBind(fonts, callback) {
     function checkFontsLoaded() {
-      for (var i = 0, objsLength = objs.length; i < objsLength; i++) {
+      for (var i = 0, ii = objs.length; i < ii; i++) {
         var fontObj = objs[i];
         if (fontObj.loading) {
           return false;
@@ -409,7 +409,7 @@ var FontLoader = {
 
     var rules = [], names = [], objs = [];
 
-    for (var i = 0, fontsLength = fonts.length; i < fontsLength; i++) {
+    for (var i = 0, ii = fonts.length; i < ii; i++) {
       var font = fonts[i];
 
       // If there is already a fontObj on the font, then it was loaded/attached
@@ -490,7 +490,7 @@ var FontLoader = {
                        'width: 10px; height: 10px;' +
                        'position: absolute; top: 0px; left: 0px;');
       var html = '';
-      for (var i = 0, namesLength = names.length; i < namesLength; ++i) {
+      for (var i = 0, ii = names.length; i < ii; ++i) {
         html += '<span style="font-family:' + names[i] + '">Hi</span>';
       }
       div.innerHTML = html;
@@ -501,7 +501,7 @@ var FontLoader = {
           'message',
           function fontLoaderMessage(e) {
             var fontNames = JSON.parse(e.data);
-            for (var i = 0, objsLength = objs.length; i < objsLength; ++i) {
+            for (var i = 0, ii = objs.length; i < ii; ++i) {
               var font = objs[i];
               font.loading = false;
             }
@@ -517,13 +517,13 @@ var FontLoader = {
       // pdfjsFontLoadFailed?
       var src = '<!DOCTYPE HTML><html><head>';
       src += '<style type="text/css">';
-      for (var i = 0, rulesLength = rules.length; i < rulesLength; ++i) {
+      for (var i = 0, ii = rules.length; i < ii; ++i) {
         src += rules[i];
       }
       src += '</style>';
       src += '<script type="application/javascript">';
       var fontNamesArray = '';
-      for (var i = 0, namesLength = names.length; i < namesLength; ++i) {
+      for (var i = 0, ii = names.length; i < ii; ++i) {
         fontNamesArray += '"' + names[i] + '", ';
       }
       src += '  var fontNames=[' + fontNamesArray + '];\n';
@@ -531,7 +531,7 @@ var FontLoader = {
       src += '    parent.postMessage(JSON.stringify(fontNames), "*");\n';
       src += '  }';
       src += '</script></head><body>';
-      for (var i = 0, namesLength = names.length; i < namesLength; ++i) {
+      for (var i = 0, ii = names.length; i < ii; ++i) {
         src += '<p style="font-family:\'' + names[i] + '\'">Hi</p>';
       }
       src += '</body></html>';
@@ -782,7 +782,7 @@ var Font = (function Font() {
 
   function stringToArray(str) {
     var array = [];
-    for (var i = 0, strLength = str.length; i < strLength; ++i)
+    for (var i = 0, ii = str.length; i < ii; ++i)
       array[i] = str.charCodeAt(i);
 
     return array;
@@ -790,7 +790,7 @@ var Font = (function Font() {
 
   function arrayToString(arr) {
     var str = '';
-    for (var i = 0, arrLength = arr.length; i < arrLength; ++i)
+    for (var i = 0, ii = arr.length; i < ii; ++i)
       str += String.fromCharCode(arr[i]);
 
     return str;
@@ -1116,11 +1116,11 @@ var Font = (function Font() {
     // Mac want 1-byte per character strings while Windows want
     // 2-bytes per character, so duplicate the names table
     var stringsUnicode = [];
-    for (var i = 0, stringsLength = strings.length; i < stringsLength; i++) {
+    for (var i = 0, ii = strings.length; i < ii; i++) {
       var str = strings[i];
 
       var strUnicode = '';
-      for (var j = 0, strLength = str.length; j < strLength; j++)
+      for (var j = 0, jj = str.length; j < jj; j++)
         strUnicode += string16(str.charCodeAt(j));
       stringsUnicode.push(strUnicode);
     }
@@ -1138,9 +1138,9 @@ var Font = (function Font() {
 
     // Build the name records field
     var strOffset = 0;
-    for (var i = 0, platfLength = platforms.length; i < platfLength; i++) {
+    for (var i = 0, ii = platforms.length; i < ii; i++) {
       var strs = names[i];
-      for (var j = 0, strsLength = strs.length; j < strsLength; j++) {
+      for (var j = 0, jj = strs.length; j < jj; j++) {
         var str = strs[j];
         var nameRecord =
           platforms[i] + // platform ID
@@ -1258,7 +1258,7 @@ var Font = (function Font() {
                     string32(table.offset);
           }
 
-          for (var i = 0, dataLength = data.length; i < dataLength; i++)
+          for (var i = 0, ii = data.length; i < ii; i++)
             cmap.data[i] = data.charCodeAt(i);
         }
 
@@ -1345,7 +1345,7 @@ var Font = (function Font() {
         if (numMissing > 0) {
           font.pos = (font.start ? font.start : 0) + metrics.offset;
           var entries = '';
-          for (var i = 0, hmtxLength = hmtx.length; i < hmtxLength; i++)
+          for (var i = 0, ii = hmtx.length; i < ii; i++)
             entries += String.fromCharCode(font.getByte());
           for (var i = 0; i < numMissing; i++)
             entries += '\x00\x00';
@@ -1549,18 +1549,18 @@ var Font = (function Font() {
       });
 
       // rewrite the tables but tweak offsets
-      for (var i = 0, tablesLength = tables.length; i < tablesLength; i++) {
+      for (var i = 0, ii = tables.length; i < ii; i++) {
         var table = tables[i];
         var data = [];
 
         var tableData = table.data;
-        for (var j = 0, dataLength = tableData.length; j < dataLength; j++)
+        for (var j = 0, jj = tableData.length; j < jj; j++)
           data.push(tableData[j]);
         createTableEntry(ttf, table.tag, data);
       }
 
       // Add the table datas
-      for (var i = 0, tablesLength = tables.length; i < tablesLength; i++) {
+      for (var i = 0, ii = tables.length; i < ii; i++) {
         var table = tables[i];
         var tableData = table.data;
         ttf.file += arrayToString(tableData);
@@ -1575,7 +1575,7 @@ var Font = (function Font() {
 
     convert: function font_convert(fontName, font, properties) {
       function isFixedPitch(glyphs) {
-        for (var i = 0, glyphsMax = glyphs.length - 1; i < glyphsMax; i++) {
+        for (var i = 0, ii = glyphs.length - 1; i < ii; i++) {
           if (glyphs[i] != glyphs[i + 1])
             return false;
         }
@@ -1657,7 +1657,7 @@ var Font = (function Font() {
         // Horizontal metrics
         'hmtx': (function fontFieldsHmtx() {
           var hmtx = '\x00\x00\x00\x00'; // Fake .notdef
-          for (var i = 0, cstrMax = charstrings.length; i < cstrMax; i++) {
+          for (var i = 0, ii = charstrings.length; i < ii; i++) {
             hmtx += string16(charstrings[i].width) + string16(0);
           }
           return stringToArray(hmtx);
@@ -1730,7 +1730,7 @@ var Font = (function Font() {
 
       encoding[0] = { unicode: 0, width: 0 };
       var glyph = 1, i, j, k, cidLength;
-      for (i = 0, cidLength = cidToUnicode.length; i < cidLength; ++i) {
+      for (i = 0, ii = cidToUnicode.length; i < ii; ++i) {
         var unicode = cidToUnicode[i];
         var width;
         if (isArray(unicode)) {
@@ -1844,7 +1844,7 @@ var Font = (function Font() {
         }
       }
       else {
-        for (var i = 0, charsLength = chars.length; i < charsLength; ++i) {
+        for (var i = 0, ii = chars.length; i < ii; ++i) {
           var charcode = chars.charCodeAt(i);
           var glyph = encoding[charcode];
           if ('undefined' == typeof(glyph)) {
@@ -2142,7 +2142,7 @@ var Type1Parser = function type1Parser() {
       count++;
 
     var array = str.substr(start, count).split(' ');
-    for (var i = 0, arrayLength = array.length; i < arrayLength; i++)
+    for (var i = 0, ii = array.length; i < ii; i++)
       array[i] = parseFloat(array[i] || 0);
     return array;
   }
@@ -2167,7 +2167,7 @@ var Type1Parser = function type1Parser() {
   this.extractFontProgram = function t1_extractFontProgram(stream) {
     var eexec = decrypt(stream, kEexecEncryptionKey, 4);
     var eexecStr = '';
-    for (var i = 0, eexecLength = eexec.length; i < eexecLength; i++)
+    for (var i = 0, ii = eexec.length; i < ii; i++)
       eexecStr += String.fromCharCode(eexec[i]);
 
     var glyphsSection = false, subrsSection = false;
@@ -2291,7 +2291,7 @@ var Type1Parser = function type1Parser() {
 
   this.extractFontHeader = function t1_extractFontHeader(stream, properties) {
     var headerString = '';
-    for (var i = 0, streamLength = stream.length; i < streamLength; i++)
+    for (var i = 0, ii = stream.length; i < ii; i++)
       headerString += String.fromCharCode(stream[i]);
 
     var token = '';
@@ -2318,7 +2318,7 @@ var Type1Parser = function type1Parser() {
             var matrix = readNumberArray(headerString, i + 1);
 
             // The FontMatrix is in unitPerEm, so make it pixels
-            for (var j = 0, matLength = matrix.length; j < matLength; j++)
+            for (var j = 0, jj = matrix.length; j < jj; j++)
               matrix[j] *= 1000;
 
             // Make the angle into the right direction
@@ -2479,7 +2479,7 @@ CFF.prototype = {
     }
 
     for (var i = 0; i < count; i++) {
-      for (var j = 0, objLength = objects[i].length; j < objLength; j++)
+      for (var j = 0, jj = objects[i].length; j < jj; j++)
         data += isByte ? String.fromCharCode(objects[i][j] & 0xFF) :
                 objects[i][j];
     }
@@ -2507,7 +2507,7 @@ CFF.prototype = {
     var charstrings = [];
     var missings = [];
 
-    for (var i = 0, glLength = glyphs.length; i < glLength; i++) {
+    for (var i = 0, ii = glyphs.length; i < ii; i++) {
       var glyph = glyphs[i];
       var mapping = properties.glyphs[glyph.glyph];
       if (!mapping) {
@@ -2642,7 +2642,7 @@ CFF.prototype = {
               '\x1c\x00\x00\x10'; // Encoding
 
           var boundingBox = properties.bbox;
-          for (var i = 0, boxLength = boundingBox.length; i < boxLength; i++)
+          for (var i = 0, ii = boundingBox.length; i < ii; i++)
             dict += self.encodeNumber(boundingBox[i]);
           dict += '\x05'; // FontBBox;
 
@@ -2732,7 +2732,7 @@ CFF.prototype = {
 
           if (isArray(value)) {
             data += self.encodeNumber(value[0]);
-            for (var i = 1, valLength = value.length; i < valLength; i++)
+            for (var i = 1, ii = value.length; i < ii; i++)
               data += self.encodeNumber(value[i] - value[i - 1]);
           } else {
             data += self.encodeNumber(value);
@@ -2753,7 +2753,7 @@ CFF.prototype = {
     var cff = [];
     for (var index in fields) {
       var field = fields[index];
-      for (var i = 0, fLength = field.length; i < fLength; i++)
+      for (var i = 0, ii = field.length; i < ii; i++)
         cff.push(field.charCodeAt(i));
     }
 
@@ -2850,7 +2850,7 @@ var Type2CFF = (function type2CFF() {
 
       // create the mapping between charstring and glyph id
       var glyphIds = [];
-      for (var i = 0, cstrLength = charstrings.length; i < cstrLength; i++)
+      for (var i = 0, ii = charstrings.length; i < ii; i++)
         glyphIds.push(charstrings[i].gid);
 
       this.charstrings = charstrings;
@@ -2868,7 +2868,7 @@ var Type2CFF = (function type2CFF() {
       var charstrings = [];
       var firstChar = properties.firstChar;
       var glyphMap = {};
-      for (var i = 0, csetLength = charsets.length; i < csetLength; i++) {
+      for (var i = 0, ii = charsets.length; i < ii; i++) {
         var glyph = charsets[i];
         for (var charcode in encoding) {
           if (encoding[charcode] == i)
@@ -2877,7 +2877,7 @@ var Type2CFF = (function type2CFF() {
       }
 
       var differences = properties.differences;
-      for (var i = 0, diffLength = differences.length; i < diffLength; ++i) {
+      for (var i = 0, ii = differences.length; i < ii; ++i) {
         var glyph = differences[i];
         if (!glyph)
           continue;
@@ -2888,7 +2888,7 @@ var Type2CFF = (function type2CFF() {
       }
 
       var glyphs = properties.glyphs;
-      for (var i = 1, csetLength = charsets.length; i < csetLength; i++) {
+      for (var i = 1, ii = charsets.length; i < ii; i++) {
         var glyph = charsets[i];
         var code = glyphMap[glyph] || 0;
 
@@ -2922,7 +2922,7 @@ var Type2CFF = (function type2CFF() {
       //   properties.glyphs[code] || properties.glyphs[glyph]
       var nextUnusedUnicode = kCmapGlyphOffset + 0x0020;
       var lastUnicode = charstrings[0].unicode, wasModified = false;
-      for (var i = 1, cstrLength = charstrings.length; i < cstrLength; ++i) {
+      for (var i = 1, ii = charstrings.length; i < ii; ++i) {
         if (lastUnicode != charstrings[i].unicode) {
           lastUnicode = charstrings[i].unicode;
           continue;
@@ -2967,7 +2967,7 @@ var Type2CFF = (function type2CFF() {
         var gid = 1;
         var baseEncoding = pos ? Encodings.ExpertEncoding.slice() :
                                  Encodings.StandardEncoding.slice();
-        for (var i = 0, csetLength = charset.length; i < csetLength; i++) {
+        for (var i = 0, ii = charset.length; i < ii; i++) {
           var index = baseEncoding.indexOf(charset[i]);
           if (index != -1)
             encoding[index] = gid++;
@@ -3118,16 +3118,16 @@ var Type2CFF = (function type2CFF() {
     getStrings: function cff_getStrings(stringIndex) {
       function bytesToString(bytesArray) {
         var str = '';
-        for (var i = 0, length = bytesArray.length; i < length; i++)
+        for (var i = 0, ii = bytesArray.length; i < ii; i++)
           str += String.fromCharCode(bytesArray[i]);
         return str;
       }
 
       var stringArray = [];
-      for (var i = 0, length = CFFStrings.length; i < length; i++)
+      for (var i = 0, ii = CFFStrings.length; i < ii; i++)
         stringArray.push(CFFStrings[i]);
 
-      for (var i = 0, length = stringIndex.length; i < length; i++)
+      for (var i = 0, ii = stringIndex.length; i < ii; i++)
         stringArray.push(bytesToString(stringIndex.get(i).data));
 
       return stringArray;
