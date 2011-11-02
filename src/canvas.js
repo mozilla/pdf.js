@@ -106,7 +106,7 @@ var CanvasGraphics = (function canvasGraphics() {
       this.ctx.scale(cw / mediaBox.width, ch / mediaBox.height);
       this.textDivs = [];
       this.textLayerQueue = [];
-      // Prevent textLayerQueue to be rendered while rendering a new page
+      // Prevent textLayerQueue from being rendered while rendering a new page
       if (this.textLayerTimer)
         clearTimeout(this.textLayerTimer);
     },
@@ -166,7 +166,7 @@ var CanvasGraphics = (function canvasGraphics() {
       var self = this;
       this.ctx.restore();
 
-      var textLayer = self.textLayer;
+      var textLayer = this.textLayer;
       if (textLayer) {
         var renderTextLayer = function canvasRenderTextLayer() {          
           var textDivs = self.textDivs;
@@ -557,10 +557,10 @@ var CanvasGraphics = (function canvasGraphics() {
         ctx.translate(current.x, -1 * current.y);
         ctx.transform.apply(ctx, font.fontMatrix || IDENTITY_MATRIX);
         ctx.scale(1 / textHScale, 1);
-        var inv = ctx.mozCurrentTransform;
-        if (inv) {
-          var bl = Util.applyTransform([0, 0], inv);
-          var tr = Util.applyTransform([1, 1], inv);
+        var ctxMatrix = ctx.mozCurrentTransform;
+        if (ctxMatrix) {
+          var bl = Util.applyTransform([0, 0], ctxMatrix);
+          var tr = Util.applyTransform([1, 1], ctxMatrix);
           text.geom.x = bl[0];
           text.geom.y = bl[1];
           text.geom.xFactor = tr[0] - bl[0];
@@ -601,7 +601,7 @@ var CanvasGraphics = (function canvasGraphics() {
           malformed('TJ array element ' + e + ' is not string or num');
         }
       }
-      
+
       if (textLayer) {
         var div = document.createElement('div');
         var fontHeight = text.geom.yFactor * fontSize;
