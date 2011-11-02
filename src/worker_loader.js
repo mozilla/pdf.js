@@ -3,7 +3,7 @@
 
 'use strict';
 
-this.onmessage = function(evt) {
+function onMessageLoader(evt) {
   // Reset the `onmessage` function as it was only set to call
   // this function the first time a message is passed to the worker
   // but shouldn't get called anytime afterwards.
@@ -47,4 +47,6 @@ this.onmessage = function(evt) {
   for (var i = 0; i < files.length; i++) {
     importScripts(dir + files[i]);
   }
-}.bind(this);
+}
+
+this.onmessage = onMessageLoader.bind(this);
