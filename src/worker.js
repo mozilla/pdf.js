@@ -43,7 +43,7 @@ MessageHandler.prototype = {
   }
 };
 
-var WorkerProcessorHandler = {
+var WorkerMessageHandler = {
   setup: function wphSetup(handler) {
     var pdfDoc = null;
 
@@ -188,6 +188,6 @@ if (typeof window === 'undefined') {
   globalScope.console = workerConsole;
 
   var handler = new MessageHandler('worker_processor', this);
-  WorkerProcessorHandler.setup(handler);
+  WorkerMessageHandler.setup(handler);
 }
 

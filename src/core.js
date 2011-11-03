@@ -484,22 +484,22 @@ var PDFDoc = (function pdfDoc() {
 
       var worker = new Worker(workerSrc);
 
-      var processorHandler = new MessageHandler('main', worker);
+      var messageHandler = new MessageHandler('main', worker);
 
       // Tell the worker the file it was created from.
-      processorHandler.send('workerSrc', workerSrc);
+      messageHandler.send('workerSrc', workerSrc);
 
-      processorHandler.on('test', function pdfDocTest(supportTypedArray) {
+      messageHandler.on('test', function pdfDocTest(supportTypedArray) {
         if (supportTypedArray) {
           this.worker = worker;
-          this.setupProcessorHandler(processorHandler);
+          this.setupMessageHandler(messageHandler);
         } else {
           this.setupFakeWorker();
         }
       }.bind(this));
 
       var testObj = new Uint8Array(1);
-      processorHandler.send('test', testObj);
+      messageHandler.send('test', testObj);
     } else {
       this.setupFakeWorker();
     }
@@ -517,19 +517,19 @@ var PDFDoc = (function pdfDoc() {
         terminate: function pdfDocTerminate() {}
       };
 
-      var processorHandler = new MessageHandler('main', fakeWorker);
-      this.setupProcessorHandler(processorHandler);
+      var messageHandler = new MessageHandler('main', fakeWorker);
+      this.setupMessageHandler(messageHandler);
 
       // If the main thread is our worker, setup the handling for the messages
       // the main thread sends to it self.
-      WorkerProcessorHandler.setup(processorHandler);
+      WorkerMessageHandler.setup(messageHandler);
     },
 
 
-    setupProcessorHandler: function(processorHandler) {
-      this.processorHandler = processorHandler;
+    setupMessageHandler: function(messageHandler) {
+      this.messageHandler = messageHandler;
 
-      processorHandler.on('page', function pdfDocPage(data) {
+      messageHandler.on('page', function pdfDocPage(data) {
         var pageNum = data.pageNum;
         var page = this.pageCache[pageNum];
         var depFonts = data.depFonts;
@@ -537,7 +537,7 @@ var PDFDoc = (function pdfDoc() {
         page.startRenderingFromIRQueue(data.IRQueue, depFonts);
       }, this);
 
-      processorHandler.on('obj', function pdfDocObj(data) {
+      messageHandler.on('obj', function pdfDocObj(data) {
         var id = data[0];
         var type = data[1];
 
@@ -581,7 +581,7 @@ var PDFDoc = (function pdfDoc() {
         }
       }, this);
 
-      processorHandler.on('font_ready', function pdfDocFontReady(data) {
+      messageHandler.on('font_ready', function pdfDocFontReady(data) {
         var id = data[0];
         var font = new FontShape(data[1]);
 
@@ -594,7 +594,7 @@ var PDFDoc = (function pdfDoc() {
       }.bind(this));
 
       setTimeout(function pdfDocFontReadySetTimeout() {
-        processorHandler.send('doc', this.data);
+        messageHandler.send('doc', this.data);
         this.workerReadyPromise.resolve(true);
       }.bind(this));
     },
@@ -606,7 +606,7 @@ var PDFDoc = (function pdfDoc() {
     startRendering: function pdfDocStartRendering(page) {
       // The worker might not be ready to receive the page request yet.
       this.workerReadyPromise.then(function pdfDocStartRenderingThen() {
-        this.processorHandler.send('page_request', page.pageNumber + 1);
+        this.messageHandler.send('page_request', page.pageNumber + 1);
       }.bind(this));
     },
 
