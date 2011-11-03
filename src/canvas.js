@@ -24,9 +24,9 @@ var CanvasExtraState = (function canvasExtraState() {
     this.wordSpacing = 0;
     this.textHScale = 1;
     // Color spaces
-    this.fillColorSpace = new DeviceGrayCS;
+    this.fillColorSpace = new DeviceGrayCS();
     this.fillColorSpaceObj = null;
-    this.strokeColorSpace = new DeviceGrayCS;
+    this.strokeColorSpace = new DeviceGrayCS();
     this.strokeColorSpaceObj = null;
     this.fillColorObj = null;
     this.strokeColorObj = null;
