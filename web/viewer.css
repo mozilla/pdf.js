@@ -231,6 +231,23 @@ canvas {
   -webkit-box-shadow: 0px 2px 10px #ff0;
 }
 
+.page > .inputHint {
+  opacity: 0.2;
+  background: #ccc;
+  position: absolute;
+}
+
+.page > .inputControl {
+  background: transparent;
+  border: 0px none;
+  position: absolute;
+  margin: auto;
+}
+
+.page > .inputControl[type='checkbox'] {
+  margin: 0px;
+}
+
 #viewer {
   margin: 44px 0px 0px;
   padding: 8px 0px;
@@ -280,6 +297,10 @@ canvas {
   .page[data-loaded] {
     display: block;
     page-break-after: always;
+  }
+
+  .inputHint {
+    display: none;
   }
 }
 

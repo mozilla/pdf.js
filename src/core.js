@@ -265,46 +265,87 @@ var Page = (function pagePage() {
       }
     },
     getLinks: function pageGetLinks() {
+      var links = [];
+      var annotations = pageGetAnnotations();
+      var i, n = annotations.length;
+      for (i = 0; i < n; ++i) {
+        if (annotations[i].type != 'Link')
+          continue;
+        links.push(annotations[i]);
+      }
+      return links;
+    },
+    getAnnotations: function pageGetAnnotations() {
       var xref = this.xref;
       var annotations = xref.fetchIfRef(this.annotations) || [];
       var i, n = annotations.length;
-      var links = [];
+      var items = [];
       for (i = 0; i < n; ++i) {
         var annotation = xref.fetch(annotations[i]);
         if (!isDict(annotation))
           continue;
         var subtype = annotation.get('Subtype');
-        if (!isName(subtype) || subtype.name != 'Link')
+        if (!isName(subtype))
           continue;
         var rect = annotation.get('Rect');
         var topLeftCorner = this.rotatePoint(rect[0], rect[1]);
         var bottomRightCorner = this.rotatePoint(rect[2], rect[3]);
 
-        var link = {};
-        link.x = Math.min(topLeftCorner.x, bottomRightCorner.x);
-        link.y = Math.min(topLeftCorner.y, bottomRightCorner.y);
-        link.width = Math.abs(topLeftCorner.x - bottomRightCorner.x);
-        link.height = Math.abs(topLeftCorner.y - bottomRightCorner.y);
-        var a = this.xref.fetchIfRef(annotation.get('A'));
-        if (a) {
-          switch (a.get('S').name) {
-            case 'URI':
-              link.url = a.get('URI');
+        var item = {};
+        item.type = subtype.name;
+        item.x = Math.min(topLeftCorner.x, bottomRightCorner.x);
+        item.y = Math.min(topLeftCorner.y, bottomRightCorner.y);
+        item.width = Math.abs(topLeftCorner.x - bottomRightCorner.x);
+        item.height = Math.abs(topLeftCorner.y - bottomRightCorner.y);
+        switch (subtype.name) {
+          case 'Link':
+            var a = this.xref.fetchIfRef(annotation.get('A'));
+            if (a) {
+              switch (a.get('S').name) {
+                case 'URI':
+                  link.url = a.get('URI');
+                  break;
+                case 'GoTo':
+                  link.dest = a.get('D');
+                  break;
+                default:
+                  TODO('other link types');
+              }
+            } else if (annotation.has('Dest')) {
+              // simple destination link
+              var dest = annotation.get('Dest');
+              link.dest = isName(dest) ? dest.name : dest;
+            }
+            break;
+          case 'Widget':
+            var fieldType = annotation.get('FT');
+            if (!isName(fieldType))
               break;
-            case 'GoTo':
-              link.dest = a.get('D');
-              break;
-            default:
-              TODO('other link types');
-          }
-        } else if (annotation.has('Dest')) {
-          // simple destination link
-          var dest = annotation.get('Dest');
-          link.dest = isName(dest) ? dest.name : dest;
+            item.fieldType = fieldType.name;
+            var fieldName = [];
+            var name = stringToPDFString(annotation.get('T'));
+            if (name)
+              fieldName.push(name)
+            var parent = xref.fetchIfRef(annotation.get('Parent'));
+            while (parent) {
+              name = stringToPDFString(parent.get('T'));
+              if (name)
+                fieldName.unshift(name);
+              parent = xref.fetchIfRef(parent.get('Parent'));
+            }
+            item.fullName = fieldName.join('.');
+            var alternativeText = stringToPDFString(annotation.get('TU') || '');
+            item.alternativeText = alternativeText;
+            var da = annotation.get('DA') || '';
+            var m = /([\d\.]+)\sTf/.exec(da);
+            if (m)
+              item.fontSize = parseFloat(m[1]);
+            item.flags = annotation.get('Ff') || 0;
+            break;
         }
-        links.push(link);
+        items.push(item);
       }
-      return links;
+      return items;
     },
     startRendering: function pageStartRendering(ctx, callback)  {
       this.ctx = ctx;
@@ -342,6 +383,7 @@ var PDFDocModel = (function pdfDoc() {
     assertWellFormed(stream.length > 0, 'stream must have data');
     this.stream = stream;
     this.setup();
+    this.acroForm = this.xref.fetchIfRef(this.catalog.catDict.get('AcroForm'));
   }
 
   function find(stream, needle, limit, backwards) {
