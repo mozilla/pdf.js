@@ -325,7 +325,7 @@ var Page = (function pagePage() {
             var fieldName = [];
             var name = stringToPDFString(annotation.get('T'));
             if (name)
-              fieldName.push(name)
+              fieldName.push(name);
             var parent = xref.fetchIfRef(annotation.get('Parent'));
             while (parent) {
               name = stringToPDFString(parent.get('T'));
