@@ -199,8 +199,8 @@ var Page = (function pagePage() {
       var pe = this.pe = new PartialEvaluator(
                                 xref, handler, 'p' + this.pageNumber + '_');
       var IRQueue = {};
-      return this.IRQueue = pe.getIRQueue(
-                                content, resources, IRQueue, dependency);
+      return (this.IRQueue = pe.getIRQueue(content, resources, IRQueue,
+                                           dependency));
     },
 
     ensureFonts: function pageEnsureFonts(fonts, callback) {
@@ -598,7 +598,7 @@ var PDFDoc = (function pdfDoc() {
       // to the CanvasGraphics and so on.
       page.objs = this.objs;
       page.pdf = this;
-      return this.pageCache[n] = page;
+      return (this.pageCache[n] = page);
     },
 
     destroy: function pdfDocDestroy() {
