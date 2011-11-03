@@ -340,6 +340,7 @@ var Page = (function pagePage() {
             var m = /([\d\.]+)\sTf/.exec(da);
             if (m)
               item.fontSize = parseFloat(m[1]);
+            item.textAlignment = annotation.get('Q');
             item.flags = annotation.get('Ff') || 0;
             break;
         }

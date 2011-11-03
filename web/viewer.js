@@ -398,7 +398,18 @@ var PageView = function pageView(container, content, id, pageWidth, pageHeight,
     function assignFontStyle(element, item) {
       var fontStyles = '';
       if ('fontSize' in item)
-        fontStyles += 'font-size: ' + Math.round(item.fontSize * scale) + 'px';
+        fontStyles += 'font-size: ' + Math.round(item.fontSize * scale) + 'px;';
+      switch (item.textAlignment) {
+        case 0:
+          fontStyles += 'text-align: left;';
+          break;
+        case 1:
+          fontStyles += 'text-align: center;';
+          break;
+        case 2:
+          fontStyles += 'text-align: right;';
+          break;
+      }
       element.setAttribute('style', element.getAttribute('style') + fontStyles);
     }
 
