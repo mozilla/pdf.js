@@ -506,17 +506,17 @@ def maybeUpdateRefImages(options, browser):
             print '  Yes!  The references in tmp/ can be synced with ref/.'
             if options.reftest:                                                                                                              
                 startReftest(browser, options)
-            if options.noPrompts or not prompt('Would you like to update the master copy in ref/?'):
-                print '  OK, not updating.'
-            else:
+            if options.noPrompts or prompt('Would you like to update the master copy in ref/?'):
                 sys.stdout.write('  Updating ref/ ... ')
 
                 # XXX unclear what to do on errors here ...
                 # NB: do *NOT* pass --delete to rsync.  That breaks this
                 # entire scheme.
-                subprocess.check_call(( 'rsync', '-arv', 'tmp/', 'ref/' ))
+                subprocess.check_call(( 'rsync', '-arvq', 'tmp/', 'ref/' ))
 
                 print 'done'
+            else:
+                print '  OK, not updating.'
 
 def startReftest(browser, options):
     url = "http://%s:%s" % (SERVER_HOST, options.port)
