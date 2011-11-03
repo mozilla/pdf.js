@@ -512,7 +512,7 @@ def maybeUpdateRefImages(options, browser):
                 # XXX unclear what to do on errors here ...
                 # NB: do *NOT* pass --delete to rsync.  That breaks this
                 # entire scheme.
-                subprocess.check_call(( 'rsync', '-arv', 'tmp/', 'ref/' ))
+                subprocess.check_call(( 'rsync', '-arvq', 'tmp/', 'ref/' ))
 
                 print 'done'
             else:
