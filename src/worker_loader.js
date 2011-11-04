@@ -49,4 +49,4 @@ function onMessageLoader(evt) {
   }
 }
 
-this.onmessage = onMessageLoader.bind(this);
+this.onmessage = onMessageLoader;
