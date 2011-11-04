@@ -27,8 +27,6 @@ function load() {
   var manifestFile = params.manifestFile;
   appPath = params.path;
 
-  canvas = document.createElement('canvas');
-  canvas.mozOpaque = true;
   stdout = document.getElementById('stdout');
 
   log('load...\n');
@@ -105,6 +103,8 @@ function canvasToDataURL() {
 
 function nextPage(task, loadError) {
   var failure = loadError || '';
+  canvas = document.createElement('canvas');
+  canvas.mozOpaque = true;
 
   if (!task.pdfDoc) {
     sendTaskResult(canvasToDataURL(), task, failure);
