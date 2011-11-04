@@ -3,6 +3,29 @@
 
 'use strict';
 
+// Some browsers can use UInt8Array directly as imageData.
+PDFJS.FEATURE_CANVAS_UINT_IMAGE_DATA = false;
+if (typeof window !== 'undefined') {
+  window.addEventListener('load', function featureCanvasUIntImgaData() {
+    var canvas = document.createElement('canvas');
+    canvas.width = 1;
+    canvas.height = 1;
+    var ctx = canvas.getContext('2d');
+
+    try {
+      ctx.putImageData({
+        width: 1,
+        height: 1,
+        data: new Uint8Array(4)
+      }, 0, 0);
+    } catch (e) {
+      return;
+    }
+
+    PDFJS.FEATURE_CANVAS_UINT_IMAGE_DATA = true;
+  });
+}
+
 // <canvas> contexts store most of the state we need natively.
 // However, PDF needs a bit more state, which we store here.
 
@@ -789,17 +812,18 @@ var CanvasGraphics = (function canvasGraphics() {
       var tmpCtx = tmpCanvas.getContext('2d');
       var tmpImgData;
 
-      // Some browsers can set an UInt8Array directly as imageData, some
-      // can't. As long as we don't have proper feature detection, just
-      // copy over each pixel and set the imageData that way.
-      tmpImgData = tmpCtx.getImageData(0, 0, w, h);
+      if (PDFJS.FEATURE_CANVAS_UINT_IMAGE_DATA) {
+        tmpImgData = imgData;
+      } else {
+        tmpImgData = tmpCtx.getImageData(0, 0, w, h);
 
-      // Copy over the imageData.
-      var tmpImgDataPixels = tmpImgData.data;
-      var len = tmpImgDataPixels.length;
+        // Copy over the imageData pixel by pixel.
+        var tmpImgDataPixels = tmpImgData.data;
+        var len = tmpImgDataPixels.length;
 
-      while (len--) {
-        tmpImgDataPixels[len] = imgData.data[len];
+        while (len--) {
+          tmpImgDataPixels[len] = imgData.data[len];
+        }
       }
 
       tmpCtx.putImageData(tmpImgData, 0, 0);
