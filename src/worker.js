@@ -43,9 +43,13 @@ MessageHandler.prototype = {
   }
 };
 
-var WorkerProcessorHandler = {
+var WorkerMessageHandler = {
   setup: function wphSetup(handler) {
     var pdfDoc = null;
+
+    handler.on('test', function wphSetupTest(data) {
+      handler.send('test', data instanceof Uint8Array);
+    });
 
     handler.on('workerSrc', function wphSetupWorkerSrc(data) {
       // In development, the `workerSrc` message is handled in the
@@ -184,6 +188,6 @@ if (typeof window === 'undefined') {
   globalScope.console = workerConsole;
 
   var handler = new MessageHandler('worker_processor', this);
-  WorkerProcessorHandler.setup(handler);
+  WorkerMessageHandler.setup(handler);
 }
 
