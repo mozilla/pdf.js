@@ -159,7 +159,7 @@ web: | production extension compiler pages-repo \
 # everything with data from the master repo. The 'make web' target
 # then uses 'git add -A' to track additions, modifications, moves,
 # and deletions.
-pages-repo: | $(BUILD_DIR)
+pages-repo: | $(BUILD_DIR) 
 	@if [ ! -d "$(GH_PAGES)" ]; then \
 	git clone -b gh-pages $(REPO) $(GH_PAGES); \
 	rm -rf $(GH_PAGES)/*; \
@@ -169,8 +169,9 @@ pages-repo: | $(BUILD_DIR)
 	@mkdir -p $(GH_PAGES)/build;
 	@mkdir -p $(GH_PAGES)/$(EXTENSION_SRC);
 
-$(GH_PAGES)/$(BUILD_DIR)/%.js: build/%.js
-	@cp $< $@
+$(GH_PAGES)/$(BUILD_DIR)/pdf.js: 
+	@mkdir -p $(GH_PAGES)/$(BUILD_DIR)
+	@cp build/pdf.js $(GH_PAGES)/$(BUILD_DIR)
 
 $(GH_PAGES)/web/%: web/%
 	@cp $< $@
