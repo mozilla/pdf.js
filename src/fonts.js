@@ -1787,12 +1787,11 @@ var Font = (function Font() {
       var url = ('url(data:' + this.mimetype + ';base64,' +
                  window.btoa(data) + ');');
       var rule = "@font-face { font-family:'" + fontName + "';src:" + url + '}';
-      var styleSheet = document.styleSheets[0];
-      if (!styleSheet) {
-        document.documentElement.firstChild.appendChild(
-          document.createElement('style'));
-        styleSheet = document.styleSheets[0];
-      }
+
+      document.documentElement.firstChild.appendChild(
+        document.createElement('style'));
+
+      var styleSheet = document.styleSheets[document.styleSheets.length - 1];
       styleSheet.insertRule(rule, styleSheet.cssRules.length);
 
       return rule;

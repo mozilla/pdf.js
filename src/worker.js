@@ -43,9 +43,20 @@ MessageHandler.prototype = {
   }
 };
 
-var WorkerProcessorHandler = {
+var WorkerMessageHandler = {
   setup: function wphSetup(handler) {
     var pdfDoc = null;
+
+    handler.on('test', function wphSetupTest(data) {
+      handler.send('test', data instanceof Uint8Array);
+    });
+
+    handler.on('workerSrc', function wphSetupWorkerSrc(data) {
+      // In development, the `workerSrc` message is handled in the
+      // `worker_loader.js` file. In production the workerProcessHandler is
+      // called for this. This servers as a dummy to prevent calling an
+      // undefined action `workerSrc`.
+    });
 
     handler.on('doc', function wphSetupDoc(data) {
       // Create only the model of the PDFDoc, which is enough for
@@ -176,8 +187,7 @@ var workerConsole = {
 if (typeof window === 'undefined') {
   globalScope.console = workerConsole;
 
-  // Listen for messages from the main thread.
-  var handler = new MessageHandler('worker_processor', globalScope);
-  WorkerProcessorHandler.setup(handler);
+  var handler = new MessageHandler('worker_processor', this);
+  WorkerMessageHandler.setup(handler);
 }
 
