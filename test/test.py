@@ -1,4 +1,4 @@
-import json, platform, os, shutil, sys, subprocess, tempfile, threading, time, urllib, urllib2
+import json, platform, os, shutil, sys, subprocess, tempfile, threading, time, urllib, urllib2, hashlib
 from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
 import SocketServer
 from optparse import OptionParser
@@ -316,6 +316,28 @@ def downloadLinkedPDFs(manifestList):
 
             print 'done'
 
+def verifyPDFs(manifestList):
+    error = False
+    for item in manifestList:
+        f = item['file']
+        if os.access(f, os.R_OK):
+            fileMd5 = hashlib.md5(open(f).read()).hexdigest()
+            if 'md5' not in item:
+                print 'ERROR: Missing md5 for file "' + f + '".',
+                print 'Hash for current file is "' + fileMd5 + '"'
+                error = True
+                continue
+            md5 = item['md5']
+            if fileMd5 != md5:
+                print 'ERROR: MD5 of file "' + f + '" does not match file.',
+                print 'Expected "' + md5 + '" computed "' + fileMd5 + '"'
+                error = True
+                continue
+        else:
+            print 'ERROR: Unable to open file for reading "' + f + '".'
+            error = True
+    return not error
+
 def setUp(options):
     # Only serve files from a pdf.js clone
     assert not ANAL or os.path.isfile('../src/pdf.js') and os.path.isdir('../.git')
@@ -341,6 +363,9 @@ def setUp(options):
         manifestList = json.load(mf)
 
     downloadLinkedPDFs(manifestList)
+
+    if not verifyPDFs(manifestList):
+        raise Exception('ERROR: failed to verify pdfs.')
 
     for b in testBrowsers:
         State.taskResults[b.name] = { }
