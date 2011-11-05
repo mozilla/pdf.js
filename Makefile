@@ -151,12 +151,11 @@ lint:
 # TODO: Use the Closure compiler to optimize the pdf.js files.
 #
 GH_PAGES = $(BUILD_DIR)/gh-pages
-web: | production extension compiler pages-repo \
-	$(addprefix $(GH_PAGES)/, $(BUILD_TARGET)) \
-	$(addprefix $(GH_PAGES)/, $(wildcard web/*.*)) \
-	$(addprefix $(GH_PAGES)/, $(wildcard web/images/*.*)) \
-	$(addprefix $(GH_PAGES)/, $(wildcard $(EXTENSION_SRC)/*.xpi))
-
+web: | production extension compiler pages-repo
+	@cp $(BUILD_TARGET) $(GH_PAGES)/$(BUILD_TARGET)
+	@cp -R web/* $(GH_PAGES)/web
+	@cp web/images/* $(GH_PAGES)/web/images
+	@cp $(EXTENSION_SRC)/*.xpi $(GH_PAGES)/$(EXTENSION_SRC)
 	@cp $(GH_PAGES)/web/index.html.template $(GH_PAGES)/index.html;
 	@mv -f $(GH_PAGES)/web/viewer-production.html $(GH_PAGES)/web/viewer.html;
 	@cd $(GH_PAGES); git add -A;
@@ -180,18 +179,6 @@ pages-repo: | $(BUILD_DIR)
 	@mkdir -p $(GH_PAGES)/web/images;
 	@mkdir -p $(GH_PAGES)/build;
 	@mkdir -p $(GH_PAGES)/$(EXTENSION_SRC);
-
-$(GH_PAGES)/$(BUILD_DIR)/%.js: build/%.js
-	@cp $< $@
-
-$(GH_PAGES)/web/%: web/%
-	@cp $< $@
-
-$(GH_PAGES)/web/images/%: web/images/%
-	@cp $< $@
-
-$(GH_PAGES)/$(EXTENSION_SRC)/%: $(EXTENSION_SRC)/%
-	@cp -R $< $@
 
 # # make compiler
 # #
