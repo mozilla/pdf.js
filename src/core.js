@@ -15,6 +15,10 @@ if (!globalScope.PDFJS) {
   globalScope.PDFJS = {};
 }
 
+// Temporarily disabling workers until 'localhost' FF bugfix lands:
+// https://bugzilla.mozilla.org/show_bug.cgi?id=683280
+globalScope.PDFJS.disableWorker = true;
+
 // getPdf()
 // Convenience function to perform binary Ajax GET
 // Usage: getPdf('http://...', callback)
