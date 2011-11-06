@@ -15,6 +15,10 @@ if (!globalScope.PDFJS) {
   globalScope.PDFJS = {};
 }
 
+// Temporarily disabling workers until 'localhost' FF bugfix lands:
+// https://bugzilla.mozilla.org/show_bug.cgi?id=683280
+globalScope.PDFJS.disableWorker = true;
+
 // getPdf()
 // Convenience function to perform binary Ajax GET
 // Usage: getPdf('http://...', callback)
@@ -204,7 +208,7 @@ var Page = (function pagePage() {
 
     ensureFonts: function pageEnsureFonts(fonts, callback) {
       // Convert the font names to the corresponding font obj.
-      for (var i = 0; i < fonts.length; i++) {
+      for (var i = 0, ii = fonts.length; i < ii; i++) {
         fonts[i] = this.objs.objs[fonts[i]].data;
       }
 

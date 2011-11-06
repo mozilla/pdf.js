@@ -13,7 +13,7 @@ var PDFFunction = (function pdfFunction() {
     getSampleArray: function pdfFunctionGetSampleArray(size, outputSize, bps,
                                                        str) {
       var length = 1;
-      for (var i = 0; i < size.length; i++)
+      for (var i = 0, ii = size.length; i < ii; i++)
         length *= size[i];
       length *= outputSize;
 
@@ -254,7 +254,7 @@ var PDFFunction = (function pdfFunction() {
       var fnsIR = IR[4];
       var fns = [];
 
-      for (var i = 0; i < fnsIR.length; i++) {
+      for (var i = 0, ii = fnsIR.length; i < ii; i++) {
         fns.push(PDFFunction.fromIR(fnsIR[i]));
       }
 
