@@ -230,25 +230,20 @@ var PDFImage = (function pdfImage() {
 })();
 
 var JpegImage = (function jpegImage() {
-  function JpegImage(objId, imageData, objs) {
-    var src = 'data:image/jpeg;base64,' + window.btoa(imageData);
-
+  function JpegImage(jpegData, callback) {
     var img = new Image();
     img.onload = (function jpegImageOnload() {
       this.loaded = true;
-
-      objs.resolve(objId, this);
-
-      if (this.onLoad)
-        this.onLoad();
+      callback(this);
     }).bind(this);
-    img.src = src;
-    this.domImage = img;
+
+    img.src = 'data:image/jpeg;base64,' + window.btoa(jpegData);
+    this._image = img;
   }
 
   JpegImage.prototype = {
     getImage: function jpegImageGetImage() {
-      return this.domImage;
+      return this._image;
     }
   };
 
