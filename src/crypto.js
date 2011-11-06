@@ -338,7 +338,7 @@ var AES128Cipher = (function aes128Cipher() {
   }
 
   function decryptBlock2(data) {
-    var i, j, sourceLength = data.length,
+    var i, j, ii, sourceLength = data.length,
         buffer = this.buffer, bufferLength = this.bufferPosition,
         result = [], iv = this.iv;
     for (i = 0; i < sourceLength; ++i) {
@@ -366,7 +366,7 @@ var AES128Cipher = (function aes128Cipher() {
       return result[0];
     // combining plain text blocks into one
     var output = new Uint8Array(16 * result.length);
-    for (i = 0, j = 0; i < result.length; ++i, j += 16)
+    for (i = 0, j = 0, ii = result.length; i < ii; ++i, j += 16)
       output.set(result[i], j);
     return output;
   }
@@ -595,3 +595,4 @@ var CipherTransformFactory = (function cipherTransformFactory() {
 
   return constructor;
 })();
+

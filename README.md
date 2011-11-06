@@ -22,16 +22,24 @@ successful.
 
 For an online demo, visit:
 
-+ http://andreasgal.github.com/pdf.js/web/viewer.html
++ http://mozilla.github.com/pdf.js/web/viewer.html
 
 This demo provides an interactive interface for displaying and browsing PDFs
 using the pdf.js API.
+
+### Extension
+
+A Firefox extension is also available:
+
++ http://mozilla.github.com/pdf.js/extensions/firefox/pdf.js.xpi
+
+However, note that the extension might not reflect the latest source in our master branch.
 
 ### Getting the code
 
 To get a local copy of the current code, clone it using git:
 
-    $ git clone git://github.com/andreasgal/pdf.js.git pdfjs
+    $ git clone git://github.com/mozilla/pdf.js.git pdfjs
     $ cd pdfjs
 
 Next, you need to start a local web server as some browsers don't allow opening
@@ -47,10 +55,28 @@ You can also view all the test pdf files on the right side serving
 
 + http://localhost:8888/test/pdfs/?frame
 
-### Learning
+### Building pdf.js
+
+In order to bundle all `src/` files into a final `pdf.js`, issue:
+
+    $ make
+
+This will generate the file `build/pdf.js` that can be included in your final project. (WARNING: That's a large file! Consider minifying it).
+
+
+## Learning
 
 Here are some initial pointers to help contributors get off the ground. 
 Additional resources are available in a separate section below.
+
+#### Hello world
+
+For a "hello world" example, take a look at:
+
++ [examples/helloworld/hello.js](https://github.com/mozilla/pdf.js/blob/master/examples/helloworld/hello.js)
+
+This example illustrates the bare minimum ingredients for integrating pdf.js
+in a custom project.
 
 #### Introductory video
 
@@ -59,14 +85,6 @@ workings of PDF and pdf.js:
 
 + http://www.youtube.com/watch?v=Iv15UY-4Fg8
 
-#### Hello world
-
-For a "hello world" example, take a look at:
-
-+ [examples/helloworld/hello.js](https://github.com/andreasgal/pdf.js/blob/master/examples/helloworld/hello.js)
-
-This example illustrates the bare minimum ingredients for integrating pdf.js
-in a custom project.
 
 
 
@@ -74,19 +92,19 @@ in a custom project.
 
 pdf.js is a community-driven project, so contributors are always welcome. 
 Simply fork our repo and contribute away. A great place to start is our
-[open issues](https://github.com/andreasgal/pdf.js/issues). For better consistency and 
+[open issues](https://github.com/mozilla/pdf.js/issues). For better consistency and 
 long-term stability, please do look around the code and try to follow our conventions.
 More information about the contributor process can be found on the 
-[contributor wiki page](https://github.com/andreasgal/pdf.js/wiki/Contributing).
+[contributor wiki page](https://github.com/mozilla/pdf.js/wiki/Contributing).
 
 If you don't want to hack on the project or have little spare time, __you still
 can help!__ Just open PDFs in the 
-[online demo](http://andreasgal.github.com/pdf.js/web/viewer.html) and report 
+[online demo](http://mozilla.github.com/pdf.js/web/viewer.html) and report 
 any breakage in rendering.
 
 Our Github contributors so far:
 
-+ https://github.com/andreasgal/pdf.js/contributors
++ https://github.com/mozilla/pdf.js/contributors
 
 You can add your name to it! :)
 
@@ -125,14 +143,14 @@ against reference images before merging pull requests.
 
 See the bot repo for details:
 
-+ https://github.com/arturadib/pdf.js-bot
++ https://github.com/mozilla/pdf.js-bot
 
 
 ## Additional resources
 
 Our demo site is here:
 
-+ http://andreasgal.github.com/pdf.js/web/viewer.html
++ http://mozilla.github.com/pdf.js/web/viewer.html
 
 You can read more about pdf.js here:
 

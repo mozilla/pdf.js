@@ -38,10 +38,10 @@ var PDFView = {
     var pages = this.pages;
     for (var i = 0; i < pages.length; i++)
       pages[i].update(val * kCssUnits);
-    this.currentScale = val;
 
-    this.pages[this.page - 1].scrollIntoView();
-    this.pages[this.page - 1].draw();
+    if (this.currentScale != val)
+      this.pages[this.page - 1].scrollIntoView();
+    this.currentScale = val;
 
     var event = document.createEvent('UIEvents');
     event.initUIEvent('scalechange', false, false, window, 0);
@@ -107,6 +107,10 @@ var PDFView = {
     if (updateViewarea.inProgress)
       return;
 
+    // Avoid scrolling the first page during loading
+    if (this.loading && val == 1)
+      return;
+
     pages[val - 1].scrollIntoView();
   },
 
@@ -117,17 +121,20 @@ var PDFView = {
   open: function pdfViewOpen(url, scale) {
     document.title = this.url = url;
 
-    getPdf(
+    var self = this;
+    PDFJS.getPdf(
       {
         url: url,
         progress: function getPdfProgress(evt) {
           if (evt.lengthComputable)
-            PDFView.progress(evt.loaded / evt.total);
+            self.progress(evt.loaded / evt.total);
         },
-        error: PDFView.error
+        error: self.error
       },
       function getPdfLoad(data) {
-        PDFView.load(data, scale);
+        self.loading = true;
+        self.load(data, scale);
+        self.loading = false;
       });
   },
 
@@ -202,7 +209,7 @@ var PDFView = {
     while (container.hasChildNodes())
       container.removeChild(container.lastChild);
 
-    var pdf = new PDFDoc(data);
+    var pdf = new PDFJS.PDFDoc(data);
     var pagesCount = pdf.numPages;
     document.getElementById('numPages').innerHTML = pagesCount;
     document.getElementById('pageNumber').max = pagesCount;
@@ -267,7 +274,7 @@ var PDFView = {
           var currentPage = this.pages[pageNumber - 1];
           currentPage.scrollIntoView(dest);
         } else
-          this.page = page; // simple page
+          this.page = params.page; // simple page
         return;
       }
     } else if (/^\d+$/.test(hash)) // page number
@@ -466,11 +473,11 @@ var PageView = function pageView(container, content, id, pageWidth, pageHeight,
     var canvas = document.createElement('canvas');
     canvas.id = 'page' + this.id;
     canvas.mozOpaque = true;
+    div.appendChild(canvas);
 
     var scale = this.scale;
     canvas.width = pageWidth * scale;
     canvas.height = pageHeight * scale;
-    div.appendChild(canvas);
 
     var ctx = canvas.getContext('2d');
     ctx.save();
@@ -596,6 +603,10 @@ window.addEventListener('load', function webViewerLoad(evt) {
     document.getElementById('fileInput').setAttribute('hidden', 'true');
   else
     document.getElementById('fileInput').value = null;
+}, true);
+
+window.addEventListener('unload', function webViewerUnload(evt) {
+  window.scrollTo(0, 0);
 }, true);
 
 function updateViewarea() {
