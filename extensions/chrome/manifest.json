@@ -1,0 +1,11 @@
+{
+  "name": "uriloader@pdf.js",
+  "version": "0.1",
+  "description": "Read PDF Document",
+  "permissions": [
+    "experimental",
+    "http://*/*.pdf",
+    "file:///*/*.pdf"
+  ],
+  "background_page": "pdfHandler.html"
+}
