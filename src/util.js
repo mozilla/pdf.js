@@ -261,7 +261,7 @@ var Promise = (function promise() {
       this.data = data;
       var callbacks = this.callbacks;
 
-      for (var i = 0; i < callbacks.length; i++) {
+      for (var i = 0, ii = callbacks.length; i < ii; i++) {
         callbacks[i].call(null, data);
       }
     },

@@ -86,7 +86,7 @@ var WorkerMessageHandler = {
 
       // Filter the dependecies for fonts.
       var fonts = {};
-      for (var i = 0; i < dependency.length; i++) {
+      for (var i = 0, ii = dependency.length; i < ii; i++) {
         var dep = dependency[i];
         if (dep.indexOf('font_') == 0) {
           fonts[dep] = true;

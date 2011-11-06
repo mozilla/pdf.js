@@ -208,7 +208,7 @@ var Page = (function pagePage() {
 
     ensureFonts: function pageEnsureFonts(fonts, callback) {
       // Convert the font names to the corresponding font obj.
-      for (var i = 0; i < fonts.length; i++) {
+      for (var i = 0, ii = fonts.length; i < ii; i++) {
         fonts[i] = this.objs.objs[fonts[i]].data;
       }
 
