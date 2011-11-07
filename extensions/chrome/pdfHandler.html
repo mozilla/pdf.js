@@ -2,7 +2,8 @@
 <script>
 chrome.experimental.webRequest.onBeforeRequest.addListener(
   function(details) {
-    var url = chrome.extension.getURL('') + 'web/viewer.html?file=' + details.url;
+    var viewerPage = 'content/web/viewer.html';
+    var url = chrome.extension.getURL(viewerPage) + '?file=' + details.url;
     return { redirectUrl: url };
   },
   {
