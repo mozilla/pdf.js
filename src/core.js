@@ -161,7 +161,6 @@ var Page = (function pagePage() {
       var self = this;
       this.IRQueue = IRQueue;
       var gfx = new CanvasGraphics(this.ctx, this.objs);
-      var startTime = Date.now();
 
       var displayContinuation = function pageDisplayContinuation() {
         // Always defer call to display() to work around bug in
@@ -242,7 +241,6 @@ var Page = (function pagePage() {
       var IRQueue = this.IRQueue;
 
       var self = this;
-      var startTime = Date.now();
       function next() {
         startIdx = gfx.executeIRQueue(IRQueue, startIdx, next);
         if (startIdx == length) {
