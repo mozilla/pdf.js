@@ -4,8 +4,9 @@ BUILD_TARGET := $(BUILD_DIR)/pdf.js
 DEFAULT_BROWSERS := resources/browser_manifests/browser_manifest.json
 DEFAULT_TESTS := test_manifest.json
 
-EXTENSION_SRC := ./extensions/firefox
-EXTENSION_NAME := pdf.js.xpi
+EXTENSION_SRC := ./extensions/
+FIREFOX_EXTENSION_NAME := pdf.js.xpi
+CHROME_EXTENSION_NAME := pdf.js.crx
 
 all: bundle
 
@@ -125,7 +126,7 @@ browser-test:
 #
 # <http://code.google.com/closure/utilities/docs/linter_howto.html>
 SRC_DIRS := . src utils web test examples/helloworld extensions/firefox \
-            extensions/firefox/components
+            extensions/firefox/components extensions/chrome
 GJSLINT_FILES = $(foreach DIR,$(SRC_DIRS),$(wildcard $(DIR)/*.js))
 lint:
 	gjslint --nojsdoc $(GJSLINT_FILES)
@@ -143,7 +144,7 @@ web: | production extension compiler pages-repo
 	@cp $(BUILD_TARGET) $(GH_PAGES)/$(BUILD_TARGET)
 	@cp -R web/* $(GH_PAGES)/web
 	@cp web/images/* $(GH_PAGES)/web/images
-	@cp $(EXTENSION_SRC)/*.xpi $(GH_PAGES)/$(EXTENSION_SRC)
+	@cp $(EXTENSION_SRC)/firefox/*.xpi $(GH_PAGES)/$(EXTENSION_SRC)/firefox/
 	@cp $(GH_PAGES)/web/index.html.template $(GH_PAGES)/index.html;
 	@mv -f $(GH_PAGES)/web/viewer-production.html $(GH_PAGES)/web/viewer.html;
 	@cd $(GH_PAGES); git add -A;
@@ -166,7 +167,7 @@ pages-repo: | $(BUILD_DIR)
 	@mkdir -p $(GH_PAGES)/web;
 	@mkdir -p $(GH_PAGES)/web/images;
 	@mkdir -p $(GH_PAGES)/build;
-	@mkdir -p $(GH_PAGES)/$(EXTENSION_SRC);
+	@mkdir -p $(GH_PAGES)/$(EXTENSION_SRC)/firefox;
 
 # # make compiler
 # #
@@ -186,6 +187,8 @@ pages-repo: | $(BUILD_DIR)
 # This target produce a restartless firefox extension containing a
 # copy of the pdf.js source.
 CONTENT_DIR := content
+FIREFOX_CONTENT_DIR := $(EXTENSION_SRC)/firefox/$(CONTENT_DIR)/
+CHROME_CONTENT_DIR := $(EXTENSION_SRC)/chrome/$(CONTENT_DIR)/
 PDF_WEB_FILES = \
 	web/images \
 	web/compatibility.js \
@@ -195,16 +198,28 @@ PDF_WEB_FILES = \
 	$(NULL)
 extension: | production
 	# Copy a standalone version of pdf.js inside the content directory
-	@rm -Rf $(EXTENSION_SRC)/$(CONTENT_DIR)/
-	@mkdir -p $(EXTENSION_SRC)/$(CONTENT_DIR)/$(BUILD_DIR)
-	@mkdir -p $(EXTENSION_SRC)/$(CONTENT_DIR)/web
-	@cp $(BUILD_TARGET) $(EXTENSION_SRC)/$(CONTENT_DIR)/$(BUILD_DIR)
-	@cp -r $(PDF_WEB_FILES) $(EXTENSION_SRC)/$(CONTENT_DIR)/web/
-	@mv -f $(EXTENSION_SRC)/$(CONTENT_DIR)/web/viewer-production.html $(EXTENSION_SRC)/$(CONTENT_DIR)/web/viewer.html
+	@rm -Rf $(FIREFOX_CONTENT_DIR)
+	@mkdir -p $(FIREFOX_CONTENT_DIR)/$(BUILD_DIR)
+	@mkdir -p $(FIREFOX_CONTENT_DIR)/web
+	@cp $(BUILD_TARGET) $(FIREFOX_CONTENT_DIR)/$(BUILD_DIR)
+	@cp -r $(PDF_WEB_FILES) $(FIREFOX_CONTENT_DIR)/web/
+	@mv -f $(FIREFOX_CONTENT_DIR)/web/viewer-production.html $(FIREFOX_CONTENT_DIR)/web/viewer.html
 
 	# Create the xpi
-	@cd $(EXTENSION_SRC); zip -r $(EXTENSION_NAME) *
-	@echo "extension created: " $(EXTENSION_NAME)
+	@cd $(EXTENSION_SRC)/firefox; zip -r $(FIREFOX_EXTENSION_NAME) *
+	@echo "extension created: " $(FIREFOX_EXTENSION_NAME)
+
+  # Copy a standalone version of pdf.js inside the extension directory
+	@rm -Rf $(CHROME_CONTENT_DIR)
+	@mkdir -p $(CHROME_CONTENT_DIR)/$(BUILD_DIR)
+	@mkdir -p $(CHROME_CONTENT_DIR)/web
+	@cp $(BUILD_TARGET) $(CHROME_CONTENT_DIR)/$(BUILD_DIR)
+	@cp -r $(PDF_WEB_FILES) $(CHROME_CONTENT_DIR)/web/
+	@mv -f $(CHROME_CONTENT_DIR)/web/viewer-production.html $(CHROME_CONTENT_DIR)/web/viewer.html
+
+  # Create the crx
+  #TODO
+
 
 
 # Make sure there's a build directory.
