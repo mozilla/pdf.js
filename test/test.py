@@ -321,7 +321,7 @@ def verifyPDFs(manifestList):
     for item in manifestList:
         f = item['file']
         if os.access(f, os.R_OK):
-            fileMd5 = hashlib.md5(open(f).read()).hexdigest()
+            fileMd5 = hashlib.md5(open(f, 'rb').read()).hexdigest()
             if 'md5' not in item:
                 print 'ERROR: Missing md5 for file "' + f + '".',
                 print 'Hash for current file is "' + fileMd5 + '"'
