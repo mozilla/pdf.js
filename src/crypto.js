@@ -26,7 +26,6 @@ var ARCFourCipher = (function arcFourCipher() {
       var a = this.a, b = this.b, s = this.s;
       var output = new Uint8Array(n);
       for (i = 0; i < n; ++i) {
-        var tmp;
         a = (a + 1) & 0xFF;
         tmp = s[a];
         b = (b + tmp) & 0xFF;
@@ -75,8 +74,8 @@ var calculateMD5 = (function calculateMD5() {
       padded[i] = data[offset++];
     padded[i++] = 0x80;
     n = paddedLength - 8;
-    for (; i < n; ++i)
-      padded[i] = 0;
+    while (i < n)
+      padded[i++] = 0;
     padded[i++] = (length << 3) & 0xFF;
     padded[i++] = (length >> 5) & 0xFF;
     padded[i++] = (length >> 13) & 0xFF;
@@ -322,12 +321,12 @@ var AES128Cipher = (function aes128Cipher() {
     state[10] = state[2]; state[6] = t; state[2] = u;
     t = state[15]; u = state[11]; v = state[7]; state[15] = state[3];
     state[11] = t; state[7] = u; state[3] = v;
-    // InvSubBytes
-    for (j = 0; j < 16; ++j)
+    for (j = 0; j < 16; ++j) {
+      // InvSubBytes
       state[j] = inv_s[state[j]];
-    // AddRoundKey
-    for (j = 0; j < 16; ++j)
+      // AddRoundKey
       state[j] ^= key[j];
+    }
     return state;
   }
 
@@ -338,7 +337,7 @@ var AES128Cipher = (function aes128Cipher() {
   }
 
   function decryptBlock2(data) {
-    var i, j, sourceLength = data.length,
+    var i, j, ii, sourceLength = data.length,
         buffer = this.buffer, bufferLength = this.bufferPosition,
         result = [], iv = this.iv;
     for (i = 0; i < sourceLength; ++i) {
@@ -366,7 +365,7 @@ var AES128Cipher = (function aes128Cipher() {
       return result[0];
     // combining plain text blocks into one
     var output = new Uint8Array(16 * result.length);
-    for (i = 0, j = 0; i < result.length; ++i, j += 16)
+    for (i = 0, j = 0, ii = result.length; i < ii; ++i, j += 16)
       output.set(result[i], j);
     return output;
   }
@@ -471,11 +470,11 @@ var CipherTransformFactory = (function cipherTransformFactory() {
       cipher = new ARCFourCipher(encryptionKey);
       var checkData = cipher.encryptBlock(calculateMD5(hashData, 0, i));
       n = encryptionKey.length;
-      var derrivedKey = new Uint8Array(n), k;
+      var derivedKey = new Uint8Array(n), k;
       for (j = 1; j <= 19; ++j) {
         for (k = 0; k < n; ++k)
-          derrivedKey[k] = encryptionKey[k] ^ j;
-        cipher = new ARCFourCipher(derrivedKey);
+          derivedKey[k] = encryptionKey[k] ^ j;
+        cipher = new ARCFourCipher(derivedKey);
         checkData = cipher.encryptBlock(checkData);
       }
     } else {

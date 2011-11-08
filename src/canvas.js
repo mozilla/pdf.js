@@ -24,9 +24,9 @@ var CanvasExtraState = (function canvasExtraState() {
     this.wordSpacing = 0;
     this.textHScale = 1;
     // Color spaces
-    this.fillColorSpace = new DeviceGrayCS;
+    this.fillColorSpace = new DeviceGrayCS();
     this.fillColorSpaceObj = null;
-    this.strokeColorSpace = new DeviceGrayCS;
+    this.strokeColorSpace = new DeviceGrayCS();
     this.strokeColorSpaceObj = null;
     this.fillColorObj = null;
     this.strokeColorObj = null;
@@ -131,7 +131,7 @@ var CanvasGraphics = (function canvasGraphics() {
             this[fnArray[i]].apply(this, argsArray[i]);
           } else {
             var deps = argsArray[i];
-            for (var n = 0; n < deps.length; n++) {
+            for (var n = 0, nn = deps.length; n < nn; n++) {
               var depObjId = deps[n];
 
               // If the promise isn't resolved yet, add the continueCallback
@@ -221,7 +221,7 @@ var CanvasGraphics = (function canvasGraphics() {
       TODO('set flatness: ' + flatness);
     },
     setGState: function canvasGraphicsSetGState(states) {
-      for (var i = 0; i < states.length; i++) {
+      for (var i = 0, ii = states.length; i < ii; i++) {
         var state = states[i];
         var key = state[0];
         var value = state[1];

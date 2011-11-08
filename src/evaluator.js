@@ -123,7 +123,7 @@ var PartialEvaluator = (function partialEvaluator() {
       function insertDependency(depList) {
         fnArray.push('dependency');
         argsArray.push(depList);
-        for (var i = 0; i < depList.length; i++) {
+        for (var i = 0, ii = depList.length; i < ii; i++) {
           var dep = depList[i];
           if (dependency.indexOf(dep) == -1) {
             dependency.push(depList[i]);
@@ -145,12 +145,12 @@ var PartialEvaluator = (function partialEvaluator() {
         var font = xref.fetchIfRef(fontRef);
         assertWellFormed(isDict(font));
         if (!font.translated) {
-          font.translated = self.translateFont(font, xref, resources, handler,
-                        uniquePrefix, dependency);
+          font.translated = self.translateFont(font, xref, resources,
+                                               dependency);
           if (font.translated) {
             // keep track of each font we translated so the caller can
             // load them asynchronously before calling display on a page
-            loadedName = 'font_' + uniquePrefix + ++self.objIdCounter;
+            loadedName = 'font_' + uniquePrefix + (++self.objIdCounter);
             font.translated.properties.loadedName = loadedName;
             font.loadedName = loadedName;
 
@@ -180,7 +180,7 @@ var PartialEvaluator = (function partialEvaluator() {
         var h = dict.get('Height', 'H');
 
         if (image instanceof JpegStream) {
-          var objId = 'img_' + uniquePrefix + ++self.objIdCounter;
+          var objId = 'img_' + uniquePrefix + (++self.objIdCounter);
           handler.send('obj', [objId, 'JpegStream', image.getIR()]);
 
           // Add the dependency on the image object.
@@ -470,11 +470,11 @@ var PartialEvaluator = (function partialEvaluator() {
         var glyphsWidths = {};
         var widths = xref.fetchIfRef(dict.get('W'));
         if (widths) {
-          var start = 0, end = 0;
-          for (var i = 0; i < widths.length; i++) {
+          var start = 0;
+          for (var i = 0, ii = widths.length; i < ii; i++) {
             var code = widths[i];
             if (isArray(code)) {
-              for (var j = 0; j < code.length; j++)
+              for (var j = 0, jj = code.length; j < jj; j++)
                 glyphsWidths[start++] = code[j];
               start = 0;
             } else if (start) {
@@ -515,7 +515,7 @@ var PartialEvaluator = (function partialEvaluator() {
 
         // Set encoding 0 to later verify the font has an encoding
         encoding[0] = { unicode: 0, width: 0 };
-        for (var j = 0; j < glyphsData.length; j++) {
+        for (var j = 0, jj = glyphsData.length; j < jj; j++) {
           var glyphID = (glyphsData[j++] << 8) | glyphsData[j];
           if (glyphID == 0)
             continue;
@@ -545,7 +545,7 @@ var PartialEvaluator = (function partialEvaluator() {
           if (encoding.has('Differences')) {
             var diffEncoding = encoding.get('Differences');
             var index = 0;
-            for (var j = 0; j < diffEncoding.length; j++) {
+            for (var j = 0, jj = diffEncoding.length; j < jj; j++) {
               var data = diffEncoding[j];
               if (isNum(data))
                 index = data;
@@ -623,7 +623,7 @@ var PartialEvaluator = (function partialEvaluator() {
           var beginArrayToken = {};
 
           var cmap = cmapObj.getBytes(cmapObj.length);
-          for (var i = 0; i < cmap.length; i++) {
+          for (var i = 0, ii = cmap.length; i < ii; i++) {
             var byte = cmap[i];
             if (byte == 0x20 || byte == 0x0D || byte == 0x0A ||
                 byte == 0x3C || byte == 0x5B || byte == 0x5D) {
@@ -642,7 +642,7 @@ var PartialEvaluator = (function partialEvaluator() {
 
                 case 'endcidrange':
                 case 'endbfrange':
-                  for (var j = 0; j < tokens.length; j += 3) {
+                  for (var j = 0, jj = tokens.length; j < jj; j += 3) {
                     var startRange = tokens[j];
                     var endRange = tokens[j + 1];
                     var code = tokens[j + 2];
@@ -657,7 +657,7 @@ var PartialEvaluator = (function partialEvaluator() {
 
                 case 'endcidchar':
                 case 'endbfchar':
-                  for (var j = 0; j < tokens.length; j += 2) {
+                  for (var j = 0, jj = tokens.length; j < jj; j += 2) {
                     var index = tokens[j];
                     var code = tokens[j + 1];
                     var mapping = map[index] || {};
@@ -710,7 +710,8 @@ var PartialEvaluator = (function partialEvaluator() {
         // special case for symbols
         var encoding = Encodings.symbolsEncoding.slice();
         for (var i = 0, n = encoding.length, j; i < n; i++) {
-          if (!(j = encoding[i]))
+          j = encoding[i];
+          if (!j)
             continue;
           map[i] = GlyphsUnicode[j] || 0;
         }
@@ -731,7 +732,7 @@ var PartialEvaluator = (function partialEvaluator() {
     },
 
     translateFont: function partialEvaluatorTranslateFont(dict, xref, resources,
-                                    queue, handler, uniquePrefix, dependency) {
+                                                          dependency) {
       var baseDict = dict;
       var type = dict.get('Subtype');
       assertWellFormed(isName(type), 'invalid font Subtype');
@@ -807,7 +808,7 @@ var PartialEvaluator = (function partialEvaluator() {
       var encoding = {};
       var widths = xref.fetchIfRef(dict.get('Widths'));
       if (widths) {
-        for (var i = 0, j = firstChar; i < widths.length; i++, j++)
+        for (var i = 0, j = firstChar, ii = widths.length; i < ii; i++, j++)
           glyphWidths[j] = widths[i];
         defaultWidth = parseFloat(descriptor.get('MissingWidth')) || 0;
       } else {

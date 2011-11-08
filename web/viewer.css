@@ -18,11 +18,11 @@ body {
   background: -moz-linear-gradient(center bottom, #eee 0%, #fff 100%);
   background: -webkit-gradient(linear, left bottom, left top, color-stop(0.0, #ddd), color-stop(1.0, #fff));
   border-bottom: 1px solid #666;
-  padding: 4px;
+  padding: 3px;
   position: fixed;
   left: 0px;
   top: 0px;
-  height: 40px;
+  height: 24px;
   width: 100%;
   z-index: 1;
   white-space:nowrap;
@@ -33,22 +33,23 @@ body {
   display: inline;
   border-left: 1px solid #d3d3d3;
   border-right: 1px solid #fff;
-  height: 32px;
+  height: 16px;
   width:0px;
   margin: 4px;
 }
 
 #controls > a > img {
-  margin: 2px;
+    margin: 4px;
+    height: 16px;
 }
 
 #controls > button {
-  line-height: 32px;
+  line-height: 16px;
 }
 
 #controls > button > img {
-  width: 32px;
-  height: 32px;
+  width: 16px;
+  height: 16px;
 }
 
 #controls > button[disabled] > img {
@@ -60,7 +61,7 @@ body {
 }
 
 #fileInput {
-  line-height: 32px;
+  line-height: 16px;
 }
 
 span#info {

@@ -29,11 +29,15 @@ using the pdf.js API.
 
 ### Extension
 
-A Firefox extension is also available:
+A up-to-date Firefox extension is also available:
 
 + http://mozilla.github.com/pdf.js/extensions/firefox/pdf.js.xpi
 
-However, note that the extension might not reflect the latest source in our master branch.
+(The above link is updated upon every merge to our master branch).
+
+For an experimental Chrome extension, get the code as explained below and issue `make extension`. 
+Then open Chrome with the flag `--enable-experimental-extension-apis`, go to `Tools > Extension`
+and load the (unpackaged) extension from the directory `extensions/chrome`.
 
 ### Getting the code
 

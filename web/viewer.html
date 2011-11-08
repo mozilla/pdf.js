@@ -3,10 +3,10 @@
     <head>
         <title>Simple pdf.js page viewer</title>
         <link rel="stylesheet" href="viewer.css"/>
+
         <script type="text/javascript" src="compatibility.js"></script>
-        
+
         <!-- PDFJSSCRIPT_INCLUDE_BUILD -->
-        
         <script type="text/javascript" src="../src/core.js"></script> <!-- PDFJSSCRIPT_REMOVE -->
         <script type="text/javascript" src="../src/util.js"></script>  <!-- PDFJSSCRIPT_REMOVE -->
         <script type="text/javascript" src="../src/canvas.js"></script>  <!-- PDFJSSCRIPT_REMOVE -->
@@ -26,18 +26,20 @@
         <script type="text/javascript" src="../src/stream.js"></script>  <!-- PDFJSSCRIPT_REMOVE -->
         <script type="text/javascript" src="../src/worker.js"></script>  <!-- PDFJSSCRIPT_REMOVE -->
 
+        <script type="text/javascript">PDFJS.workerSrc = '../src/worker_loader.js';</script> <!-- PDFJSSCRIPT_REMOVE -->
+
         <script type="text/javascript" src="viewer.js"></script>
   </head>
 
   <body>
     <div id="controls">
       <button id="previous" onclick="PDFView.page--;" oncontextmenu="return false;">
-        <img src="images/go-up.svg" align="top" height="32"/>
+        <img src="images/go-up.svg" align="top" height="16"/>
         Previous
       </button>
 
       <button id="next" onclick="PDFView.page++;" oncontextmenu="return false;">
-        <img src="images/go-down.svg" align="top" height="32"/>
+        <img src="images/go-down.svg" align="top" height="16"/>
         Next
       </button>
 
@@ -51,10 +53,10 @@
       <div class="separator"></div>
 
       <button id="zoomOut" title="Zoom Out" onclick="PDFView.zoomOut();" oncontextmenu="return false;">
-        <img src="images/zoom-out.svg" align="top" height="32"/>
+        <img src="images/zoom-out.svg" align="top" height="16"/>
       </button>
       <button id="zoomIn" title="Zoom In" onclick="PDFView.zoomIn();" oncontextmenu="return false;">
-        <img src="images/zoom-in.svg" align="top" height="32"/>
+        <img src="images/zoom-in.svg" align="top" height="16"/>
       </button>
 
       <div class="separator"></div>
@@ -74,12 +76,12 @@
       <div class="separator"></div>
 
       <button id="print" onclick="window.print();" oncontextmenu="return false;">
-        <img src="images/document-print.svg" align="top" height="32"/>
+        <img src="images/document-print.svg" align="top" height="16"/>
         Print
       </button>
 
       <button id="download" title="Download" onclick="PDFView.download();" oncontextmenu="return false;">
-        <img src="images/download.svg" align="top" height="32"/>
+        <img src="images/download.svg" align="top" height="16"/>
         Download
       </button>
 
@@ -89,8 +91,8 @@
 
       <div class="separator"></div>
 
-      <a href="#" id="viewBookmark" title="Current View (bookmark or copy the location)">
-        <img src="images/bookmark.svg" alt="Bookmark" align="top" height="32"/>
+      <a href="#" id="viewBookmark" title="Bookmark (or copy) current location">
+        <img src="images/bookmark.svg" alt="Bookmark" align="top" height="16"/>
       </a>
 
       <span id="info">--</span>
@@ -106,15 +108,15 @@
         </div>
         <div id="sidebarControls">
           <button id="thumbsSwitch" title="Show Thumbnails" onclick="PDFView.switchSidebarView('thumbs')" data-selected>
-            <img src="images/nav-thumbs.svg" align="top" height="32" alt="Thumbs" />
+            <img src="images/nav-thumbs.svg" align="top" height="16" alt="Thumbs" />
           </button>
           <button id="outlineSwitch" title="Show Document Outline" onclick="PDFView.switchSidebarView('outline')" disabled>
-            <img src="images/nav-outline.svg" align="top" height="32" alt="Document Outline" />
+            <img src="images/nav-outline.svg" align="top" height="16" alt="Document Outline" />
           </button>
         </div>
      </div>
     </div>
-    
+
     <div id="loading">Loading... 0%</div>
     <div id="viewer"></div>
   </body>
