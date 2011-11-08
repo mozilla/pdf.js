@@ -331,11 +331,12 @@ var PDFView = {
   },
 
   sidebarToggle: function pdfViewSidebarToggle() {
+    var self = this;
     var viewer = document.getElementById('viewer');
     var sidebar = document.getElementById('sidebar');
     var container = document.getElementById('sidebarView');
-    var pageIndex = 0;
     var pagesCount = PDFView.pages.length;
+    this.currentThumbnail = this.currentThumbnail || 0;
 
     if (sidebar.classList.contains('visible')) {
       // Hide sidebar
@@ -348,11 +349,11 @@ var PDFView = {
       sidebar.classList.add('visible');
       // TODO: Thumbnails should be rendered on-demand instead of linearly
       container._interval = window.setInterval(function interval() {
-        if (pageIndex >= pagesCount) {
+        if (self.currentThumbnail >= pagesCount) {
           window.clearInterval(container._interval);
           return;
         }
-        PDFView.thumbnails[pageIndex++].draw();
+        PDFView.thumbnails[self.currentThumbnail++].draw();
       }, 500);
     }
   }
