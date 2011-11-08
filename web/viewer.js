@@ -328,6 +328,33 @@ var PDFView = {
       currentHeight += singlePage.height * singlePage.scale + kBottomMargin;
     }
     return visiblePages;
+  },
+
+  sidebarToggle: function pdfViewSidebarToggle() {
+    var viewer = document.getElementById('viewer');
+    var sidebar = document.getElementById('sidebar');
+    var container = document.getElementById('sidebarView');
+    var pageIndex = 0;
+    var pagesCount = PDFView.pages.length;
+
+    if (sidebar.style.display) {
+      // Hide sidebar
+      viewer.style.marginLeft = '0px';
+      sidebar.style.display = ''; // none
+      window.clearInterval(container._interval);
+    } else {
+      // Show sidebar, render thumbnails
+      viewer.style.marginLeft = '300px';
+      sidebar.style.display = 'block';
+      // TODO: Thumbnails should be rendered on-demand instead of linearly
+      container._interval = window.setInterval(function interval() {
+        if (pageIndex >= pagesCount) {
+          window.clearInterval(container._interval);
+          return;
+        }
+        PDFView.thumbnails[pageIndex++].draw();
+      }, 500);
+    }
   }
 };
 
@@ -679,21 +706,6 @@ window.addEventListener('change', function webViewerChange(evt) {
   // URL does not reflect proper document location - hiding some icons.
   document.getElementById('viewBookmark').setAttribute('hidden', 'true');
   document.getElementById('download').setAttribute('hidden', 'true');
-}, true);
-
-window.addEventListener('transitionend', function webViewerTransitionend(evt) {
-  var pageIndex = 0;
-  var pagesCount = PDFView.pages.length;
-
-  var container = document.getElementById('sidebarView');
-  container._interval = window.setInterval(function interval() {
-    if (pageIndex >= pagesCount) {
-      window.clearInterval(container._interval);
-      return;
-    }
-
-    PDFView.thumbnails[pageIndex++].draw();
-  }, 500);
 }, true);
 
 window.addEventListener('scalechange', function scalechange(evt) {
