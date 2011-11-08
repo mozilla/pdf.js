@@ -776,25 +776,6 @@ var JpegStream = (function jpegStream() {
     return false;
   }
 
-  function isCmykAdobe(bytes) {
-    var maxBytesScanned = Math.max(bytes.length - 16, 1024);
-    // Looking for APP14, 'Adobe'
-    for (var i = 0; i < maxBytesScanned; ++i) {
-      if (bytes[i] == 0xFF && bytes[i + 1] == 0xEE &&
-          bytes[i + 2] == 0x00 && bytes[i + 3] == 0x0E &&
-          bytes[i + 4] == 0x41 && bytes[i + 5] == 0x64 &&
-          bytes[i + 6] == 0x6F && bytes[i + 7] == 0x62 &&
-          bytes[i + 8] == 0x65 && bytes[i + 9] == 0 &&
-          bytes[i + 15] == 2 ) {
-            return true;
-          }
-      // scanning until frame tag
-      if (bytes[i] == 0xFF && bytes[i + 1] == 0xC0)
-        break;
-    }
-    return false;
-  }
-
   function fixAdobeImage(bytes) {
     // Inserting 'EMBED' marker after JPEG signature
     var embedMarker = new Uint8Array([0xFF, 0xEC, 0, 8, 0x45, 0x4D, 0x42, 0x45,
@@ -821,7 +802,6 @@ var JpegStream = (function jpegStream() {
       // normal cmyk and then we won't have to the following
       var cs = xref.fetchIfRef(dict.get('ColorSpace'));
       if (isName(cs) && cs.name === 'DeviceCMYK') {
-      //if (isCmykAdobe(bytes)) {
         this.isNative = false;
         this.bytes = bytes;
       } else {
