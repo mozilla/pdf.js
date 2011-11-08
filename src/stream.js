@@ -793,6 +793,8 @@ var JpegStream = (function jpegStream() {
     // TODO: per poppler, some images may have 'junk' before that
     // need to be removed
     this.dict = dict;
+    
+    // Flag indicating wether the image can be natively loaded.
     this.isNative = true;
 
     if (isAdobeImage(bytes)) {
