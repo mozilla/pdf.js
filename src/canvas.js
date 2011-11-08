@@ -494,7 +494,7 @@ var CanvasGraphics = (function canvasGraphics() {
       var fontHeight = text.geom.vScale * fontSize;
 
       div.style.fontSize = fontHeight + 'px';
-      div.style.fontFamily = this.current.font.loadedName || 'serif';
+      div.style.fontFamily = this.current.font.loadedName || 'sans-serif';
       div.style.left = text.geom.x + 'px';
       div.style.top = (text.geom.y - fontHeight) + 'px';
       div.innerHTML = text.str;
