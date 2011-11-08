@@ -337,15 +337,15 @@ var PDFView = {
     var pageIndex = 0;
     var pagesCount = PDFView.pages.length;
 
-    if (sidebar.style.display) {
+    if (sidebar.classList.contains('visible')) {
       // Hide sidebar
-      viewer.style.marginLeft = '0px';
-      sidebar.style.display = ''; // none
+      viewer.classList.remove('withSidebar');
+      sidebar.classList.remove('visible');
       window.clearInterval(container._interval);
     } else {
       // Show sidebar, render thumbnails
-      viewer.style.marginLeft = '300px';
-      sidebar.style.display = 'block';
+      viewer.classList.add('withSidebar');
+      sidebar.classList.add('visible');
       // TODO: Thumbnails should be rendered on-demand instead of linearly
       container._interval = window.setInterval(function interval() {
         if (pageIndex >= pagesCount) {

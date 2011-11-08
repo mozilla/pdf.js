@@ -84,6 +84,10 @@ span#info {
   z-index: 1;
 }
 
+#sidebar.visible {
+  display: block;
+}
+
 #sidebarBox {
   background-color: #eee;
   width: 300px;
@@ -222,6 +226,10 @@ canvas {
 #viewer {
   margin: 44px 0px 0px 0px;
   padding: 8px 0px;
+}
+
+#viewer.withSidebar {
+  margin-left: 330px;
 }
 
 #sidebarView canvas:hover {
