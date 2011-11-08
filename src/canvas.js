@@ -494,9 +494,7 @@ var CanvasGraphics = (function canvasGraphics() {
       var fontHeight = text.geom.vScale * fontSize;
 
       div.style.fontSize = fontHeight + 'px';
-      // TODO: family should be '= font.loadedName', but some fonts don't 
-      // have spacing info (cf. fonts.js > Font > fields > htmx)
-      div.style.fontFamily = 'serif'; 
+      div.style.fontFamily = this.current.font.loadedName || 'serif';
       div.style.left = text.geom.x + 'px';
       div.style.top = (text.geom.y - fontHeight) + 'px';
       div.innerHTML = text.str;
@@ -560,8 +558,8 @@ var CanvasGraphics = (function canvasGraphics() {
           current.x += charWidth;
 
           text.str += unicodeToChar(glyph.unicode);
-          text.canvasWidth += charWidth;
           text.length++;
+          text.canvasWidth += charWidth;
         }
         ctx.restore();
       } else {
@@ -582,9 +580,9 @@ var CanvasGraphics = (function canvasGraphics() {
           ctx.fillText(char, width, 0);
           width += charWidth;
           
-          text.str += char;
-          text.canvasWidth += charWidth;
+          text.str += char === ' ' ? '&nbsp;' : char;
           text.length++;
+          text.canvasWidth += charWidth;
         }
 
         current.x += width;
