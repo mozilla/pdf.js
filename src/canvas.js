@@ -453,7 +453,58 @@ var CanvasGraphics = (function canvasGraphics() {
     nextLine: function canvasGraphicsNextLine() {
       this.moveText(0, this.current.leading);
     },
-    showText: function canvasGraphicsShowText(text) {
+    applyTextTransforms: function canvasApplyTransforms() {
+      var ctx = this.ctx;
+      var current = this.current;
+      var textHScale = current.textHScale;
+      var font = current.font;
+
+      ctx.transform.apply(ctx, current.textMatrix);
+      ctx.scale(1, -1);
+      ctx.translate(current.x, -1 * current.y);
+      ctx.transform.apply(ctx, font.fontMatrix || IDENTITY_MATRIX);
+      ctx.scale(1 / textHScale, 1);
+    },
+    getTextGeometry: function canvasGetTextGeometry() {
+      var geom = {};
+      var ctx = this.ctx;
+      var font = this.current.font;
+      var ctxMatrix = ctx.mozCurrentTransform;
+      if (ctxMatrix) {
+        var bl = Util.applyTransform([0, 0], ctxMatrix);
+        var tr = Util.applyTransform([1, 1], ctxMatrix);
+        geom.x = bl[0];
+        geom.y = bl[1];
+        geom.hScale = tr[0] - bl[0];
+        geom.vScale = tr[1] - bl[1];
+      }
+      var spaceGlyph = font.charsToGlyphs(' ', true);
+      // Hack (sometimes space is not encoded)
+      if (spaceGlyph.length === 0 || spaceGlyph[0].width === 0)
+        spaceGlyph = font.charsToGlyphs('i', true);
+      // Fallback
+      if (spaceGlyph.length === 0 || spaceGlyph[0].width === 0)
+        spaceGlyph = [ {width:0} ];
+      geom.spaceWidth = spaceGlyph[0].width;
+      return geom;
+    },
+    pushTextDivs: function canvasGraphicsPushTextDivs(text) {
+      var div = document.createElement('div');
+      var fontSize = this.current.fontSize;
+      var fontHeight = text.geom.vScale * fontSize;
+
+      div.style.fontSize = fontHeight + 'px';
+      // TODO: family should be '= font.loadedName', but some fonts don't 
+      // have spacing info (cf. fonts.js > Font > fields > htmx)
+      div.style.fontFamily = 'serif'; 
+      div.style.left = text.geom.x + 'px';
+      div.style.top = (text.geom.y - fontHeight) + 'px';
+      div.innerHTML = text.str;
+      div.dataset.canvasWidth = text.canvasWidth * text.geom.hScale;
+      div.dataset.textLength = text.length;
+      this.textDivs.push(div);
+    },
+    showText: function canvasGraphicsShowText(str, skipTextSelection) {
       function unicodeToChar(unicode) {
         return (unicode >= 0x10000) ?
           String.fromCharCode(0xD800 | ((unicode - 0x10000) >> 10),
@@ -463,14 +514,24 @@ var CanvasGraphics = (function canvasGraphics() {
       var ctx = this.ctx;
       var current = this.current;
       var font = current.font;
-      var glyphs = font.charsToGlyphs(text);
+      var glyphs = font.charsToGlyphs(str);
       var fontSize = current.fontSize;
       var charSpacing = current.charSpacing;
       var wordSpacing = current.wordSpacing;
       var textHScale = current.textHScale;
       var glyphsLength = glyphs.length;
-      var text = { chars:'', width:0 };
+      var textLayer = this.textLayer;
+      var text = { str:'', length:0, canvasWidth:0, geom:{}};
+      var textSelection = textLayer && !skipTextSelection ? true : false;
+
+      if (textSelection) {
+        ctx.save();
+        this.applyTextTransforms();
+        text.geom = this.getTextGeometry();
+        ctx.restore();
+      }
       
+      // Type3 fonts - each glyph is a "mini-PDF"
       if (font.coded) {
         ctx.save();
         ctx.transform.apply(ctx, current.textMatrix);
@@ -498,17 +559,14 @@ var CanvasGraphics = (function canvasGraphics() {
           ctx.translate(charWidth, 0);
           current.x += charWidth;
 
-          text.chars += unicodeToChar(glyph.unicode);
-          text.width += charWidth;
+          text.str += unicodeToChar(glyph.unicode);
+          text.canvasWidth += charWidth;
+          text.length++;
         }
         ctx.restore();
       } else {
         ctx.save();
-        ctx.transform.apply(ctx, current.textMatrix);
-        ctx.scale(1, -1);
-        ctx.translate(current.x, -1 * current.y);
-        ctx.transform.apply(ctx, font.fontMatrix || IDENTITY_MATRIX);
-        ctx.scale(1 / textHScale, 1);
+        this.applyTextTransforms();
 
         var width = 0;
         for (var i = 0; i < glyphsLength; ++i) {
@@ -524,12 +582,18 @@ var CanvasGraphics = (function canvasGraphics() {
           ctx.fillText(char, width, 0);
           width += charWidth;
           
-          text.chars += char;
-          text.width += charWidth;
+          text.str += char;
+          text.canvasWidth += charWidth;
+          text.length++;
         }
+
         current.x += width;
         ctx.restore();
       }
+
+      if (textSelection) 
+        this.pushTextDivs(text);
+
       return text;
     },
     showSpacedText: function canvasGraphicsShowSpacedText(arr) {
@@ -540,32 +604,13 @@ var CanvasGraphics = (function canvasGraphics() {
       var arrLength = arr.length;
       var textLayer = this.textLayer;
       var font = current.font;
-      var text = {str:'', length:0, canvasWidth:0, spaceWidth:0, geom:{}};
+      var text = {str:'', length:0, canvasWidth:0, geom:{}};
+      var textSelection = textLayer ? true : false;
 
-      if (textLayer) {
-        text.spaceWidth = this.current.font.charsToGlyphs(' ')[0].width;
-        if (!text.spaceWidth>0) {
-          // Hack (space is sometimes not encoded)
-          text.spaceWidth = this.current.font.charsToGlyphs('i')[0].width;
-        }
-
-        // Compute text.geom
-        // TODO: refactor the series of transformations below, and share it with showText()
+      if (textSelection) {
         ctx.save();
-        ctx.transform.apply(ctx, current.textMatrix);
-        ctx.scale(1, -1);
-        ctx.translate(current.x, -1 * current.y);
-        ctx.transform.apply(ctx, font.fontMatrix || IDENTITY_MATRIX);
-        ctx.scale(1 / textHScale, 1);
-        var ctxMatrix = ctx.mozCurrentTransform;
-        if (ctxMatrix) {
-          var bl = Util.applyTransform([0, 0], ctxMatrix);
-          var tr = Util.applyTransform([1, 1], ctxMatrix);
-          text.geom.x = bl[0];
-          text.geom.y = bl[1];
-          text.geom.xFactor = tr[0] - bl[0];
-          text.geom.yFactor = tr[1] - bl[1];
-        }
+        this.applyTextTransforms();
+        text.geom = this.getTextGeometry();
         ctx.restore();
       }
       
@@ -575,47 +620,35 @@ var CanvasGraphics = (function canvasGraphics() {
           var spacingLength = -e * 0.001 * fontSize * textHScale;
           current.x += spacingLength;
 
-          if (textLayer) {
+          if (textSelection) {
             // Emulate precise spacing via HTML spaces
             text.canvasWidth += spacingLength;
-            if (e<0 && text.spaceWidth>0) { // avoid div by zero
-              var numFakeSpaces = Math.round(-e / text.spaceWidth);
+            if (e<0 && text.geom.spaceWidth>0) { // avoid div by zero
+              var numFakeSpaces = Math.round(-e / text.geom.spaceWidth);
               for (var j = 0; j < numFakeSpaces; ++j)
                 text.str += '&nbsp;';
               text.length += numFakeSpaces>0 ? 1 : 0;
             }
           }
         } else if (isString(e)) {
-          var shownText = this.showText(e);
+          var shownText = this.showText(e, true);
 
-          if (textLayer) {
-            if (shownText.chars === ' ') {
-              text.str += '&nbsp;';        
+          if (textSelection) {
+            if (shownText.str === ' ') {
+              text.str += '&nbsp;';
             } else {
-              text.str += shownText.chars;
+              text.str += shownText.str;
             }
-            text.canvasWidth += shownText.width;
+            text.canvasWidth += shownText.canvasWidth;
             text.length += e.length;
           }
         } else {
           malformed('TJ array element ' + e + ' is not string or num');
         }
       }
-
-      if (textLayer) {
-        var div = document.createElement('div');
-        var fontHeight = text.geom.yFactor * fontSize;
-        div.style.fontSize = fontHeight + 'px';
-        // TODO: family should be '= font.loadedName', but some fonts don't 
-        // have spacing info (cf. fonts.js > Font > fields > htmx)
-        div.style.fontFamily = 'serif'; 
-        div.style.left = text.geom.x + 'px';
-        div.style.top = (text.geom.y - fontHeight) + 'px';
-        div.innerHTML = text.str;
-        div.dataset.canvasWidth = text.canvasWidth * text.geom.xFactor;
-        div.dataset.textLength = text.length;
-        this.textDivs.push(div);                
-      }      
+      
+      if (textSelection) 
+        this.pushTextDivs(text);
     },
     nextLineShowText: function canvasGraphicsNextLineShowText(text) {
       this.nextLine();

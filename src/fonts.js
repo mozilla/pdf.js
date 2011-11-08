@@ -1797,7 +1797,7 @@ var Font = (function Font() {
       return rule;
     },
 
-    charsToGlyphs: function fonts_chars2Glyphs(chars) {
+    charsToGlyphs: function fonts_chars2Glyphs(chars, suppressWarnings) {
       var charsCache = this.charsCache;
       var glyphs;
 
@@ -1830,7 +1830,8 @@ var Font = (function Font() {
           var charcode = int16([chars.charCodeAt(i++), chars.charCodeAt(i)]);
           var glyph = encoding[charcode];
           if ('undefined' == typeof(glyph)) {
-            warn('Unencoded charcode ' + charcode);
+            if (!suppressWarnings)
+              warn('Unencoded charcode ' + charcode);
             glyph = {
               unicode: charcode,
               width: this.defaultWidth
@@ -1847,7 +1848,8 @@ var Font = (function Font() {
           var charcode = chars.charCodeAt(i);
           var glyph = encoding[charcode];
           if ('undefined' == typeof(glyph)) {
-            warn('Unencoded charcode ' + charcode);
+            if (!suppressWarnings)
+              warn('Unencoded charcode ' + charcode);
             glyph = {
               unicode: charcode,
               width: this.defaultWidth
