@@ -179,7 +179,7 @@ var PartialEvaluator = (function partialEvaluator() {
         var w = dict.get('Width', 'W');
         var h = dict.get('Height', 'H');
 
-        if (image instanceof JpegStream) {
+        if (image instanceof JpegStream && image.isNative) {
           var objId = 'img_' + uniquePrefix + (++self.objIdCounter);
           handler.send('obj', [objId, 'JpegStream', image.getIR()]);
 

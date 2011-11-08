@@ -793,20 +793,46 @@ var JpegStream = (function jpegStream() {
     // TODO: per poppler, some images may have 'junk' before that
     // need to be removed
     this.dict = dict;
+    this.isNative = true;
 
-    if (isAdobeImage(bytes))
-      bytes = fixAdobeImage(bytes);
+    if (isAdobeImage(bytes)) {
+      // when bug 674619 land, let's check if browser can do
+      // normal cmyk and then we won't have to the following
+      var cs = dict.get('ColorSpace');
+      if (isName(cs) && cs.name === 'DeviceCMYK') {
+        this.isNative = false;
+        this.bytes = bytes;
+      } else {
+        bytes = fixAdobeImage(bytes);
+        this.src = bytesToString(bytes);
+      }
+    } else {
+      this.src = bytesToString(bytes);
+    }
 
-    this.src = bytesToString(bytes);
+    DecodeStream.call(this);
   }
 
-  constructor.prototype = {
-    getIR: function jpegStreamGetIR() {
-      return this.src;
-    },
-    getChar: function jpegStreamGetChar() {
+  constructor.prototype = Object.create(DecodeStream.prototype);
+
+  constructor.prototype.ensureBuffer = function jpegStreamEnsureBuffer(req) {
+    if (this.bufferLength)
+      return;
+    var jpegImage = new JpegImage();
+    jpegImage.parse(this.bytes);
+    var width = jpegImage.width;
+    var height = jpegImage.height;
+    var dataLength = width * height * 4;
+    var data = new Uint8Array(dataLength);
+    jpegImage.getData(data, width, height);
+    this.buffer = data;
+    this.bufferLength = data.length;
+  };
+  constructor.prototype.getIR = function jpegStreamGetIR() {
+    return this.src;
+  };
+  constructor.prototype.getChar = function jpegStreamGetChar() {
       error('internal error: getChar is not valid on JpegStream');
-    }
   };
 
   return constructor;
