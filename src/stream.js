@@ -829,9 +829,7 @@ var JpegStream = (function jpegStream() {
     jpegImage.parse(this.bytes);
     var width = jpegImage.width;
     var height = jpegImage.height;
-    var dataLength = width * height * 4;
-    var data = new Uint8Array(dataLength);
-    jpegImage.getData(data, width, height, true);
+    var data = jpegImage.getData(width, height);
     this.buffer = data;
     this.bufferLength = data.length;
   };
