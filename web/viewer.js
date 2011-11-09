@@ -421,7 +421,9 @@ var PageView = function pageView(container, content, id, pageWidth, pageHeight,
 
   this.scrollIntoView = function pageViewScrollIntoView(dest) {
       if (!dest) {
+        var leftPos = document.documentElement.scrollLeft;
         div.scrollIntoView(true);
+        document.documentElement.scrollLeft = leftPos;
         return;
       }
 

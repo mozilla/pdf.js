@@ -78,8 +78,8 @@ span#info {
 #sidebar {
   position: fixed;
   width: 350px;
-  top: 32px;
-  bottom: 2px;
+  top: 40px;
+  bottom: 10px;
   display: none;
   z-index: 1;
 }
