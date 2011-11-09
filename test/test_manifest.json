@@ -268,5 +268,12 @@
        "link": false,
        "rounds": 1,
        "type": "eq"
+    },
+    {  "id": "cmykjpeg",
+       "file": "pdfs/cmykjpeg.pdf",
+       "md5": "8307472972ba962d86d2f60d2ced9a97",
+       "link": false,
+       "rounds": 1,
+       "type": "eq"
     }
 ]
