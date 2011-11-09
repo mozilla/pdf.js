@@ -268,12 +268,5 @@
        "link": false,
        "rounds": 1,
        "type": "eq"
-    },
-    {  "id": "1040",
-       "file": "pdfs/1040.pdf",
-       "md5": "7323b50c6d28d959b8b4b92c469b2469",
-       "link": false,
-       "rounds": 1,
-       "type": "eq"
     }
 ]
