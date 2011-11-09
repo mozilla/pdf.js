@@ -797,16 +797,21 @@ var JpegStream = (function jpegStream() {
     // Flag indicating wether the image can be natively loaded.
     this.isNative = true;
 
+    this.colorTransform = -1;
+
     if (isAdobeImage(bytes)) {
       // when bug 674619 land, let's check if browser can do
       // normal cmyk and then we won't have to the following
       var cs = xref.fetchIfRef(dict.get('ColorSpace'));
-      if (isName(cs) && cs.name === 'DeviceCMYK') {
-        this.isNative = false;
-        this.bytes = bytes;
-      } else {
+
+      // DeviceRGB and DeviceGray are the only Adobe images that work natively
+      if (isName(cs) && (cs.name === 'DeviceRGB' || cs.name === 'DeviceGray')) {
         bytes = fixAdobeImage(bytes);
         this.src = bytesToString(bytes);
+      } else {
+        this.colorTransform = dict.get('ColorTransform');
+        this.isNative = false;
+        this.bytes = bytes;
       }
     } else {
       this.src = bytesToString(bytes);
@@ -820,7 +825,7 @@ var JpegStream = (function jpegStream() {
   constructor.prototype.ensureBuffer = function jpegStreamEnsureBuffer(req) {
     if (this.bufferLength)
       return;
-    var jpegImage = new JpegImage();
+    var jpegImage = new JpegImage(this.colorTransform);
     jpegImage.parse(this.bytes);
     var width = jpegImage.width;
     var height = jpegImage.height;
