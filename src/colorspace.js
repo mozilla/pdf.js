@@ -137,8 +137,14 @@ var ColorSpace = (function colorSpaceColorSpace() {
           var alt = ColorSpace.parseToIR(cs[2], xref, res);
           var tintFnIR = PDFFunction.getIR(xref, xref.fetchIfRef(cs[3]));
           return ['SeparationCS', alt, tintFnIR];
-        case 'Lab':
         case 'DeviceN':
+          if (cs.length > 4)
+            TODO('devicen color with n channels');
+          debugger;
+          var alt = ColorSpace.parseToIR(cs[2], xref, res);
+          var tintFnIR = PDFFunction.getIR(xref, xref.fetchIfRef(cs[3]));
+          return ['SeparationCS', alt, tintFnIR];
+        case 'Lab':
         default:
           error('unimplemented color space object "' + mode + '"');
       }
