@@ -158,11 +158,19 @@ var ColorSpace = (function colorSpaceColorSpace() {
   return constructor;
 })();
 
+/**
+ * Alternate color space handles both Separation and DeviceN color spaces.  A
+ * Separation color space is actually just a DeviceN with one color component.
+ * Both color spaces use a tinting function to convert colors to a base color
+ * space.
+ */
 var AlternateCS = (function alternateCS() {
   function constructor(numComps, base, tintFn) {
     this.name = 'Alternate';
     this.numComps = numComps;
-    this.defaultColor = [1];
+    this.defaultColor = [];
+    for (var i = 0; i < numComps; ++i)
+      this.defaultColor.push(1);
     this.base = base;
     this.tintFn = tintFn;
   }
