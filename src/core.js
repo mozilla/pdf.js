@@ -15,10 +15,6 @@ if (!globalScope.PDFJS) {
   globalScope.PDFJS = {};
 }
 
-// Temporarily disabling workers until 'localhost' FF bugfix lands:
-// https://bugzilla.mozilla.org/show_bug.cgi?id=683280
-globalScope.PDFJS.disableWorker = true;
-
 // getPdf()
 // Convenience function to perform binary Ajax GET
 // Usage: getPdf('http://...', callback)
@@ -161,7 +157,6 @@ var Page = (function pagePage() {
       var self = this;
       this.IRQueue = IRQueue;
       var gfx = new CanvasGraphics(this.ctx, this.objs);
-      var startTime = Date.now();
 
       var displayContinuation = function pageDisplayContinuation() {
         // Always defer call to display() to work around bug in
@@ -242,7 +237,6 @@ var Page = (function pagePage() {
       var IRQueue = this.IRQueue;
 
       var self = this;
-      var startTime = Date.now();
       function next() {
         startIdx = gfx.executeIRQueue(IRQueue, startIdx, next);
         if (startIdx == length) {
@@ -473,6 +467,7 @@ var PDFDoc = (function pdfDoc() {
     this.objs = new PDFObjects();
 
     this.pageCache = [];
+    this.fontsLoading = {};
     this.workerReadyPromise = new Promise('workerReady');
 
     // If worker support isn't disabled explicit and the browser has worker
@@ -486,7 +481,16 @@ var PDFDoc = (function pdfDoc() {
         throw 'No PDFJS.workerSrc specified';
       }
 
-      var worker = new Worker(workerSrc);
+      var worker
+      try {
+        worker = new Worker(workerSrc);
+      } catch (e) {
+        // Some versions of FF can't create a worker on localhost, see:
+        // https://bugzilla.mozilla.org/show_bug.cgi?id=683280
+        globalScope.PDFJS.disableWorker = true;
+        this.setupFakeWorker();
+        return;
+      }
 
       var messageHandler = new MessageHandler('main', worker);
 
@@ -507,8 +511,6 @@ var PDFDoc = (function pdfDoc() {
     } else {
       this.setupFakeWorker();
     }
-
-    this.fontsLoading = {};
   }
 
   constructor.prototype = {

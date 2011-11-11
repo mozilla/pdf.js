@@ -145,12 +145,12 @@ var PartialEvaluator = (function partialEvaluator() {
         var font = xref.fetchIfRef(fontRef);
         assertWellFormed(isDict(font));
         if (!font.translated) {
-          font.translated = self.translateFont(font, xref, resources, handler,
-                        uniquePrefix, dependency);
+          font.translated = self.translateFont(font, xref, resources,
+                                               dependency);
           if (font.translated) {
             // keep track of each font we translated so the caller can
             // load them asynchronously before calling display on a page
-            loadedName = 'font_' + uniquePrefix + ++self.objIdCounter;
+            loadedName = 'font_' + uniquePrefix + (++self.objIdCounter);
             font.translated.properties.loadedName = loadedName;
             font.loadedName = loadedName;
 
@@ -180,7 +180,7 @@ var PartialEvaluator = (function partialEvaluator() {
         var h = dict.get('Height', 'H');
 
         if (image instanceof JpegStream) {
-          var objId = 'img_' + uniquePrefix + ++self.objIdCounter;
+          var objId = 'img_' + uniquePrefix + (++self.objIdCounter);
           handler.send('obj', [objId, 'JpegStream', image.getIR()]);
 
           // Add the dependency on the image object.
@@ -470,7 +470,7 @@ var PartialEvaluator = (function partialEvaluator() {
         var glyphsWidths = {};
         var widths = xref.fetchIfRef(dict.get('W'));
         if (widths) {
-          var start = 0, end = 0;
+          var start = 0;
           for (var i = 0, ii = widths.length; i < ii; i++) {
             var code = widths[i];
             if (isArray(code)) {
@@ -710,7 +710,8 @@ var PartialEvaluator = (function partialEvaluator() {
         // special case for symbols
         var encoding = Encodings.symbolsEncoding.slice();
         for (var i = 0, n = encoding.length, j; i < n; i++) {
-          if (!(j = encoding[i]))
+          j = encoding[i];
+          if (!j)
             continue;
           map[i] = GlyphsUnicode[j] || 0;
         }
@@ -731,7 +732,7 @@ var PartialEvaluator = (function partialEvaluator() {
     },
 
     translateFont: function partialEvaluatorTranslateFont(dict, xref, resources,
-                                    queue, handler, uniquePrefix, dependency) {
+                                                          dependency) {
       var baseDict = dict;
       var type = dict.get('Subtype');
       assertWellFormed(isName(type), 'invalid font Subtype');
