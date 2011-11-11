@@ -268,5 +268,12 @@
        "link": false,
        "rounds": 1,
        "type": "eq"
+    },
+    {  "id": "devicen",
+       "file": "pdfs/devicen.pdf",
+       "md5": "b9dbf00ec6bf02fcbefbb40332713aad",
+       "link": false,
+       "rounds": 1,
+       "type": "eq"
     }
 ]
