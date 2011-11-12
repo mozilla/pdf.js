@@ -274,11 +274,22 @@ var Page = (function pagePage() {
     },
     getAnnotations: function pageGetAnnotations() {
       var xref = this.xref;
+      function getInheritableProperty(annotation, name) {
+        var item = annotation;
+        while (item && !item.has(name)) {
+          item = xref.fetchIfRef(item.get('Parent'));
+        }
+        if (!item)
+          return null;
+        return item.get(name);
+      }
+
       var annotations = xref.fetchIfRef(this.annotations) || [];
       var i, n = annotations.length;
       var items = [];
       for (i = 0; i < n; ++i) {
-        var annotation = xref.fetch(annotations[i]);
+        var annotationRef = annotations[i];
+        var annotation = xref.fetch(annotationRef);
         if (!isDict(annotation))
           continue;
         var subtype = annotation.get('Subtype');
@@ -315,30 +326,46 @@ var Page = (function pagePage() {
             }
             break;
           case 'Widget':
-            var fieldType = annotation.get('FT');
+            var fieldType = getInheritableProperty(annotation, 'FT');
             if (!isName(fieldType))
               break;
             item.fieldType = fieldType.name;
+            // Building the full field name by collecting the field and
+            // its ancestors 'T' properties and joining them using '.'.
             var fieldName = [];
-            var name = stringToPDFString(annotation.get('T'));
-            if (name)
-              fieldName.push(name);
-            var parent = xref.fetchIfRef(annotation.get('Parent'));
-            while (parent) {
-              name = stringToPDFString(parent.get('T'));
+            var namedItem = annotation, ref = annotationRef;
+            while (namedItem) {
+              var parentRef = namedItem.get('Parent');
+              var parent = xref.fetchIfRef(parentRef);
+              var name = namedItem.get('T');
               if (name)
-                fieldName.unshift(name);
-              parent = xref.fetchIfRef(parent.get('Parent'));
+                fieldName.unshift(stringToPDFString(name));
+              else {
+                // The field name is absent, that means more than one field
+                // with the same name may exist. Replacing the empty name
+                // with the '`' plus index in the parent's 'Kids' array.
+                // This is not in the PDF spec but necessary to id the
+                // the input controls.
+                var kids = xref.fetchIfRef(parent.get('Kids'));
+                var j, jj;
+                for (j = 0, jj = kids.length; j < jj; j++) {
+                  if (kids[j].num == ref.num && kids[j].gen == ref.gen)
+                    break;
+                }
+                fieldName.unshift('`' + j);
+              }
+              namedItem = parent;
+              ref = parentRef;
             }
             item.fullName = fieldName.join('.');
             var alternativeText = stringToPDFString(annotation.get('TU') || '');
             item.alternativeText = alternativeText;
-            var da = annotation.get('DA') || '';
+            var da = getInheritableProperty(annotation, 'DA') || '';
             var m = /([\d\.]+)\sTf/.exec(da);
             if (m)
               item.fontSize = parseFloat(m[1]);
-            item.textAlignment = annotation.get('Q');
-            item.flags = annotation.get('Ff') || 0;
+            item.textAlignment = getInheritableProperty(annotation, 'Q');
+            item.flags = getInheritableProperty(annotation, 'Ff') || 0;
             break;
         }
         items.push(item);
