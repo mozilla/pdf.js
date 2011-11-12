@@ -178,7 +178,7 @@ var Catalog = (function catalogCatalog() {
       var kids = pagesDict.get('Kids');
       assertWellFormed(isArray(kids),
                        'page dictionary kids object is not an array');
-      for (var i = 0; i < kids.length; ++i) {
+      for (var i = 0, ii = kids.length; i < ii; ++i) {
         var kid = kids[i];
         assertWellFormed(isRef(kid),
                          'page dictionary kid is not a reference');
@@ -490,12 +490,12 @@ var XRef = (function xRefXRef() {
           position += token.length + 1;
       }
       // reading XRef streams
-      for (var i = 0; i < xrefStms.length; ++i) {
+      for (var i = 0, ii = xrefStms.length; i < ii; ++i) {
           this.readXRef(xrefStms[i]);
       }
       // finding main trailer
       var dict;
-      for (var i = 0; i < trailers.length; ++i) {
+      for (var i = 0, ii = trailers.length; i < ii; ++i) {
         stream.pos = trailers[i];
         var parser = new Parser(new Lexer(stream), true);
         var obj = parser.getObj();
@@ -642,7 +642,7 @@ var XRef = (function xRefXRef() {
  * inside of a worker. The `PDFObjects` implements some basic functions to
  * manage these objects.
  */
-var PDFObjects = (function() {
+var PDFObjects = (function pdfObjects() {
   function PDFObjects() {
     this.objs = {};
   }
@@ -655,7 +655,7 @@ var PDFObjects = (function() {
      * Ensures there is an object defined for `objId`. Stores `data` on the
      * object *if* it is created.
      */
-    ensureObj: function(objId, data) {
+    ensureObj: function pdfObjectsEnsureObj(objId, data) {
       if (this.objs[objId])
         return this.objs[objId];
       return this.objs[objId] = new Promise(objId, data);
@@ -670,7 +670,7 @@ var PDFObjects = (function() {
      * function and the object is already resolved, the callback gets called
      * right away.
      */
-    get: function(objId, callback) {
+    get: function pdfObjectsGet(objId, callback) {
       // If there is a callback, then the get can be async and the object is
       // not required to be resolved right now
       if (callback) {
@@ -695,7 +695,7 @@ var PDFObjects = (function() {
     /**
      * Resolves the object `objId` with optional `data`.
      */
-    resolve: function(objId, data) {
+    resolve: function pdfObjectsResolve(objId, data) {
       var objs = this.objs;
 
       // In case there is a promise already on this object, just resolve it.
@@ -706,11 +706,11 @@ var PDFObjects = (function() {
       }
     },
 
-    onData: function(objId, callback) {
+    onData: function pdfObjectsOnData(objId, callback) {
       this.ensureObj(objId).onData(callback);
     },
 
-    isResolved: function(objId) {
+    isResolved: function pdfObjectsIsResolved(objId) {
       var objs = this.objs;
       if (!objs[objId]) {
         return false;
@@ -719,7 +719,7 @@ var PDFObjects = (function() {
       }
     },
 
-    hasData: function(objId) {
+    hasData: function pdfObjectsHasData(objId) {
       var objs = this.objs;
       if (!objs[objId]) {
         return false;
@@ -731,7 +731,7 @@ var PDFObjects = (function() {
     /**
      * Sets the data of an object but *doesn't* resolve it.
      */
-    setData: function(objId, data) {
+    setData: function pdfObjectsSetData(objId, data) {
       // Watchout! If you call `this.ensureObj(objId, data)` you're going to
       // create a *resolved* promise which shouldn't be the case!
       this.ensureObj(objId).data = data;

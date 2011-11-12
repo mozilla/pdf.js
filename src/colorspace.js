@@ -12,31 +12,26 @@ var ColorSpace = (function colorSpaceColorSpace() {
   constructor.prototype = {
     // Input: array of size numComps representing color component values
     // Output: array of rgb values, each value ranging from [0.1]
-    getRgb: function cs_getRgb(color) {
+    getRgb: function colorSpaceGetRgb(color) {
       error('Should not call ColorSpace.getRgb: ' + color);
     },
     // Input: Uint8Array of component values, each value scaled to [0,255]
     // Output: Uint8Array of rgb values, each value scaled to [0,255]
-    getRgbBuffer: function cs_getRgbBuffer(input) {
+    getRgbBuffer: function colorSpaceGetRgbBuffer(input) {
       error('Should not call ColorSpace.getRgbBuffer: ' + input);
     }
   };
 
-  constructor.parse = function colorspace_parse(cs, xref, res) {
-    var IR = constructor.parseToIR(cs, xref, res, true);
+  constructor.parse = function colorSpaceParse(cs, xref, res) {
+    var IR = constructor.parseToIR(cs, xref, res);
     if (IR instanceof SeparationCS)
       return IR;
 
     return constructor.fromIR(IR);
   };
 
-  constructor.fromIR = function(IR) {
-    var name;
-    if (isArray(IR)) {
-      name = IR[0];
-    } else {
-      name = IR;
-    }
+  constructor.fromIR = function colorSpaceFromIR(IR) {
+    var name = isArray(IR) ? IR[0] : IR;
 
     switch (name) {
       case 'DeviceGrayCS':
@@ -46,32 +41,28 @@ var ColorSpace = (function colorSpaceColorSpace() {
       case 'DeviceCmykCS':
         return new DeviceCmykCS();
       case 'PatternCS':
-        var baseCS = IR[1];
-        if (baseCS == null) {
-          return new PatternCS(null);
-        } else {
-          return new PatternCS(ColorSpace.fromIR(baseCS));
-        }
+        var basePatternCS = IR[1];
+        if (basePatternCS)
+          basePatternCS = ColorSpace.fromIR(basePatternCS);
+        return new PatternCS(basePatternCS);
       case 'IndexedCS':
-        var baseCS = IR[1];
+        var baseIndexedCS = IR[1];
         var hiVal = IR[2];
         var lookup = IR[3];
-        return new IndexedCS(ColorSpace.fromIR(baseCS), hiVal, lookup);
+        return new IndexedCS(ColorSpace.fromIR(baseIndexedCS), hiVal, lookup);
       case 'SeparationCS':
         var alt = IR[1];
         var tintFnIR = IR[2];
 
-        return new SeparationCS(
-          ColorSpace.fromIR(alt),
-          PDFFunction.fromIR(tintFnIR)
-        );
+        return new SeparationCS(ColorSpace.fromIR(alt),
+                                PDFFunction.fromIR(tintFnIR));
       default:
         error('Unkown name ' + name);
     }
     return null;
-  }
+  };
 
-  constructor.parseToIR = function colorspace_parse(cs, xref, res, parseOnly) {
+  constructor.parseToIR = function colorSpaceParseToIR(cs, xref, res) {
     if (isName(cs)) {
       var colorSpaces = xref.fetchIfRef(res.get('ColorSpace'));
       if (isDict(colorSpaces)) {
@@ -82,9 +73,10 @@ var ColorSpace = (function colorSpaceColorSpace() {
     }
 
     cs = xref.fetchIfRef(cs);
+    var mode;
 
     if (isName(cs)) {
-      var mode = cs.name;
+      mode = cs.name;
       this.mode = mode;
 
       switch (mode) {
@@ -103,7 +95,7 @@ var ColorSpace = (function colorSpaceColorSpace() {
           error('unrecognized colorspace ' + mode);
       }
     } else if (isArray(cs)) {
-      var mode = cs[0].name;
+      mode = cs[0].name;
       this.mode = mode;
 
       switch (mode) {
@@ -132,15 +124,15 @@ var ColorSpace = (function colorSpaceColorSpace() {
             return 'DeviceCmykCS';
           break;
         case 'Pattern':
-          var baseCS = cs[1];
-          if (baseCS)
-            baseCS = ColorSpace.parseToIR(baseCS, xref, res);
-          return ['PatternCS', baseCS];
+          var basePatternCS = cs[1];
+          if (basePatternCS)
+            basePatternCS = ColorSpace.parseToIR(basePatternCS, xref, res);
+          return ['PatternCS', basePatternCS];
         case 'Indexed':
-          var baseCS = ColorSpace.parseToIR(cs[1], xref, res);
+          var baseIndexedCS = ColorSpace.parseToIR(cs[1], xref, res);
           var hiVal = cs[2] + 1;
           var lookup = xref.fetchIfRef(cs[3]);
-          return ['IndexedCS', baseCS, hiVal, lookup];
+          return ['IndexedCS', baseIndexedCS, hiVal, lookup];
         case 'Separation':
           var alt = ColorSpace.parseToIR(cs[2], xref, res);
           var tintFnIR = PDFFunction.getIR(xref, xref.fetchIfRef(cs[3]));
@@ -164,7 +156,6 @@ var SeparationCS = (function separationCS() {
     this.name = 'Separation';
     this.numComps = 1;
     this.defaultColor = [1];
-
     this.base = base;
     this.tintFn = tintFn;
   }
@@ -178,12 +169,11 @@ var SeparationCS = (function separationCS() {
       var tintFn = this.tintFn;
       var base = this.base;
       var scale = 1 / ((1 << bits) - 1);
-
       var length = input.length;
       var pos = 0;
-
       var numComps = base.numComps;
       var baseBuf = new Uint8Array(numComps * length);
+
       for (var i = 0; i < length; ++i) {
         var scaled = input[i] * scale;
         var tinted = tintFn([scaled]);
@@ -212,13 +202,13 @@ var IndexedCS = (function indexedCS() {
     this.name = 'Indexed';
     this.numComps = 1;
     this.defaultColor = [0];
-
     this.base = base;
-    var baseNumComps = base.numComps;
     this.highVal = highVal;
 
+    var baseNumComps = base.numComps;
     var length = baseNumComps * highVal;
     var lookupArray = new Uint8Array(length);
+
     if (isStream(lookup)) {
       var bytes = lookup.getBytes(length);
       lookupArray.set(bytes);
@@ -234,7 +224,6 @@ var IndexedCS = (function indexedCS() {
   constructor.prototype = {
     getRgb: function indexcs_getRgb(color) {
       var numComps = this.base.numComps;
-
       var start = color[0] * numComps;
       var c = [];
 
@@ -248,9 +237,9 @@ var IndexedCS = (function indexedCS() {
       var numComps = base.numComps;
       var lookup = this.lookup;
       var length = input.length;
-
       var baseBuf = new Uint8Array(length * numComps);
       var baseBufPos = 0;
+
       for (var i = 0; i < length; ++i) {
         var lookupPos = input[i] * numComps;
         for (var j = 0; j < numComps; ++j) {
@@ -293,7 +282,7 @@ var DeviceGrayCS = (function deviceGrayCS() {
 })();
 
 var DeviceRgbCS = (function deviceRgbCS() {
-  function constructor(bits) {
+  function constructor() {
     this.name = 'DeviceRGB';
     this.numComps = 3;
     this.defaultColor = [0, 0, 0];
@@ -336,41 +325,41 @@ var DeviceCmykCS = (function deviceCmykCS() {
       r += 0.1373 * x;
       g += 0.1216 * x;
       b += 0.1255 * x;
-      x = c1 * m1 * y * k1; // 0 0 1 0
+      x = c1 * m1 * y * k1;  // 0 0 1 0
       r += x;
       g += 0.9490 * x;
-      x = c1 * m1 * y * k;  // 0 0 1 1
+      x = c1 * m1 * y * k;   // 0 0 1 1
       r += 0.1098 * x;
       g += 0.1020 * x;
-      x = c1 * m * y1 * k1; // 0 1 0 0
+      x = c1 * m * y1 * k1;  // 0 1 0 0
       r += 0.9255 * x;
       b += 0.5490 * x;
-      x = c1 * m * y1 * k;  // 0 1 0 1
+      x = c1 * m * y1 * k;   // 0 1 0 1
       r += 0.1412 * x;
-      x = c1 * m * y * k1; // 0 1 1 0
+      x = c1 * m * y * k1;   // 0 1 1 0
       r += 0.9294 * x;
       g += 0.1098 * x;
       b += 0.1412 * x;
-      x = c1 * m * y * k;  // 0 1 1 1
+      x = c1 * m * y * k;    // 0 1 1 1
       r += 0.1333 * x;
-      x = c * m1 * y1 * k1; // 1 0 0 0
+      x = c * m1 * y1 * k1;  // 1 0 0 0
       g += 0.6784 * x;
       b += 0.9373 * x;
-      x = c * m1 * y1 * k;  // 1 0 0 1
+      x = c * m1 * y1 * k;   // 1 0 0 1
       g += 0.0588 * x;
       b += 0.1412 * x;
-      x = c * m1 * y * k1; // 1 0 1 0
+      x = c * m1 * y * k1;   // 1 0 1 0
       g += 0.6510 * x;
       b += 0.3137 * x;
-      x = c * m1 * y * k;  // 1 0 1 1
+      x = c * m1 * y * k;    // 1 0 1 1
       g += 0.0745 * x;
-      x = c * m * y1 * k1; // 1 1 0 0
+      x = c * m * y1 * k1;   // 1 1 0 0
       r += 0.1804 * x;
       g += 0.1922 * x;
       b += 0.5725 * x;
-      x = c * m * y1 * k;  // 1 1 0 1
+      x = c * m * y1 * k;    // 1 1 0 1
       b += 0.0078 * x;
-      x = c * m * y * k1; // 1 1 1 0
+      x = c * m * y * k1;    // 1 1 1 0
       r += 0.2118 * x;
       g += 0.2119 * x;
       b += 0.2235 * x;

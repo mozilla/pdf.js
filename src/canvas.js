@@ -24,13 +24,18 @@ var CanvasExtraState = (function canvasExtraState() {
     this.wordSpacing = 0;
     this.textHScale = 1;
     // Color spaces
+    this.fillColorSpace = new DeviceGrayCS();
     this.fillColorSpaceObj = null;
+    this.strokeColorSpace = new DeviceGrayCS();
     this.strokeColorSpaceObj = null;
     this.fillColorObj = null;
     this.strokeColorObj = null;
     // Default fore and background colors
     this.fillColor = '#000000';
     this.strokeColor = '#000000';
+    // Note: fill alpha applies to all non-stroking operations
+    this.fillAlpha = 1;
+    this.strokeAlpha = 1;
 
     this.old = old;
   }
@@ -120,7 +125,7 @@ var CanvasGraphics = (function canvasGraphics() {
             this[fnArray[i]].apply(this, argsArray[i]);
           } else {
             var deps = argsArray[i];
-            for (var n = 0; n < deps.length; n++) {
+            for (var n = 0, nn = deps.length; n < nn; n++) {
               var depObjId = deps[n];
 
               // If the promise isn't resolved yet, add the continueCallback
@@ -179,7 +184,7 @@ var CanvasGraphics = (function canvasGraphics() {
       TODO('set flatness: ' + flatness);
     },
     setGState: function canvasGraphicsSetGState(states) {
-      for (var i = 0; i < states.length; i++) {
+      for (var i = 0, ii = states.length; i < ii; i++) {
         var state = states[i];
         var key = state[0];
         var value = state[1];
@@ -208,6 +213,13 @@ var CanvasGraphics = (function canvasGraphics() {
             break;
           case 'Font':
             this.setFont(state[1], state[2]);
+            break;
+          case 'CA':
+            this.current.strokeAlpha = state[1];
+            break;
+          case 'ca':
+            this.current.fillAlpha = state[1];
+            this.ctx.globalAlpha = state[1];
             break;
         }
       }
@@ -257,9 +269,13 @@ var CanvasGraphics = (function canvasGraphics() {
     rectangle: function canvasGraphicsRectangle(x, y, width, height) {
       this.ctx.rect(x, y, width, height);
     },
-    stroke: function canvasGraphicsStroke() {
+    stroke: function canvasGraphicsStroke(consumePath) {
+      consumePath = typeof consumePath !== 'undefined' ? consumePath : true;
       var ctx = this.ctx;
       var strokeColor = this.current.strokeColor;
+      // For stroke we want to temporarily change the global alpha to the
+      // stroking alpha.
+      ctx.globalAlpha = this.current.strokeAlpha;
       if (strokeColor && strokeColor.hasOwnProperty('type') &&
           strokeColor.type === 'Pattern') {
         // for patterns, we transform to pattern space, calculate
@@ -271,14 +287,17 @@ var CanvasGraphics = (function canvasGraphics() {
       } else {
         ctx.stroke();
       }
-
-      this.consumePath();
+      if (consumePath)
+        this.consumePath();
+      // Restore the global alpha to the fill alpha
+      ctx.globalAlpha = this.current.fillAlpha;
     },
     closeStroke: function canvasGraphicsCloseStroke() {
       this.closePath();
       this.stroke();
     },
-    fill: function canvasGraphicsFill() {
+    fill: function canvasGraphicsFill(consumePath) {
+      consumePath = typeof consumePath !== 'undefined' ? consumePath : true;
       var ctx = this.ctx;
       var fillColor = this.current.fillColor;
 
@@ -291,8 +310,8 @@ var CanvasGraphics = (function canvasGraphics() {
       } else {
         ctx.fill();
       }
-
-      this.consumePath();
+      if (consumePath)
+        this.consumePath();
     },
     eoFill: function canvasGraphicsEoFill() {
       var savedFillRule = this.setEOFillRule();
@@ -300,29 +319,8 @@ var CanvasGraphics = (function canvasGraphics() {
       this.restoreFillRule(savedFillRule);
     },
     fillStroke: function canvasGraphicsFillStroke() {
-      var ctx = this.ctx;
-
-      var fillColor = this.current.fillColor;
-      if (fillColor && fillColor.hasOwnProperty('type') &&
-          fillColor.type === 'Pattern') {
-        ctx.save();
-        ctx.fillStyle = fillColor.getPattern(ctx);
-        ctx.fill();
-        ctx.restore();
-      } else {
-        ctx.fill();
-      }
-
-      var strokeColor = this.current.strokeColor;
-      if (strokeColor && strokeColor.hasOwnProperty('type') &&
-          strokeColor.type === 'Pattern') {
-        ctx.save();
-        ctx.strokeStyle = strokeColor.getPattern(ctx);
-        ctx.stroke();
-        ctx.restore();
-      } else {
-        ctx.stroke();
-      }
+      this.fill(false);
+      this.stroke(false);
 
       this.consumePath();
     },
@@ -332,10 +330,12 @@ var CanvasGraphics = (function canvasGraphics() {
       this.restoreFillRule(savedFillRule);
     },
     closeFillStroke: function canvasGraphicsCloseFillStroke() {
-      return this.fillStroke();
+      this.closePath();
+      this.fillStroke();
     },
     closeEOFillStroke: function canvasGraphicsCloseEOFillStroke() {
       var savedFillRule = this.setEOFillRule();
+      this.closePath();
       this.fillStroke();
       this.restoreFillRule(savedFillRule);
     },
@@ -537,8 +537,7 @@ var CanvasGraphics = (function canvasGraphics() {
     },
 
     // Color
-    setStrokeColorSpace:
-    function canvasGraphicsSetStrokeColorSpacefunction(raw) {
+    setStrokeColorSpace: function canvasGraphicsSetStrokeColorSpace(raw) {
       this.current.strokeColorSpace = ColorSpace.fromIR(raw);
     },
     setFillColorSpace: function canvasGraphicsSetFillColorSpace(raw) {
@@ -549,7 +548,7 @@ var CanvasGraphics = (function canvasGraphics() {
       var color = cs.getRgb(arguments);
       this.setStrokeRGBColor.apply(this, color);
     },
-    getColorN_IR_Pattern: function(IR, cs) {
+    getColorN_IR_Pattern: function canvasGraphicsGetColorN_IR_Pattern(IR, cs) {
       if (IR[0] == 'TilingPattern') {
         var args = IR[1];
         var base = cs.base;
@@ -665,8 +664,8 @@ var CanvasGraphics = (function canvasGraphics() {
       error('Should not call beginImageData');
     },
 
-    paintFormXObjectBegin:
-    function canvasGraphicsPaintFormXObject(matrix, bbox) {
+    paintFormXObjectBegin: function canvasGraphicsPaintFormXObjectBegin(matrix,
+                                                                        bbox) {
       this.save();
 
       if (matrix && isArray(matrix) && 6 == matrix.length)
@@ -681,11 +680,11 @@ var CanvasGraphics = (function canvasGraphics() {
       }
     },
 
-    paintFormXObjectEnd: function() {
+    paintFormXObjectEnd: function canvasGraphicsPaintFormXObjectEnd() {
       this.restore();
     },
 
-    paintJpegXObject: function(objId, w, h) {
+    paintJpegXObject: function canvasGraphicsPaintJpegXObject(objId, w, h) {
       var image = this.objs.get(objId);
       if (!image) {
         error('Dependent image isn\'t ready yet');
@@ -704,7 +703,8 @@ var CanvasGraphics = (function canvasGraphics() {
       this.restore();
     },
 
-    paintImageMaskXObject: function(imgArray, inverseDecode, width, height) {
+    paintImageMaskXObject: function canvasGraphicsPaintImageMaskXObject(
+                             imgArray, inverseDecode, width, height) {
       function applyStencilMask(buffer, inverseDecode) {
         var imgArrayPos = 0;
         var i, j, mask, buf;
@@ -752,7 +752,7 @@ var CanvasGraphics = (function canvasGraphics() {
       this.restore();
     },
 
-    paintImageXObject: function(imgData) {
+    paintImageXObject: function canvasGraphicsPaintImageXObject(imgData) {
       this.save();
       var ctx = this.ctx;
       var w = imgData.width;

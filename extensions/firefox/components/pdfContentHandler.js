@@ -32,6 +32,9 @@ pdfContentHandler.prototype = {
     if (!(aRequest instanceof Ci.nsIChannel))
       throw NS_ERROR_WONT_HANDLE_CONTENT;
 
+    if (!Services.prefs.getBoolPref('extensions.pdf.js.active'))
+      throw NS_ERROR_WONT_HANDLE_CONTENT;
+
     let window = null;
     let callbacks = aRequest.notificationCallbacks ||
                     aRequest.loadGroup.notificationCallbacks;
@@ -49,11 +52,11 @@ pdfContentHandler.prototype = {
     }
 
     let targetUrl = aRequest.URI.spec;
-    if (targetUrl.indexOf('?pdfjs.action=download') >= 0)
+    if (targetUrl.indexOf('#pdfjs.action=download') >= 0)
       throw NS_ERROR_WONT_HANDLE_CONTENT;
 
     aRequest.cancel(Cr.NS_BINDING_ABORTED);
-    window.location = url.replace('%s', targetUrl);
+    window.location = url.replace('%s', encodeURIComponent(targetUrl));
   },
 
   classID: Components.ID('{2278dfd0-b75c-11e0-8257-1ba3d93c9f1a}'),
