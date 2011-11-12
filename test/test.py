@@ -363,9 +363,7 @@ def setUp(options):
         manifestList = json.load(mf)
 
     downloadLinkedPDFs(manifestList)
-
-    if not verifyPDFs(manifestList):
-        raise Exception('ERROR: failed to verify pdfs.')
+    verifyPDFs(manifestList)
 
     for b in testBrowsers:
         State.taskResults[b.name] = { }
