@@ -178,7 +178,7 @@ var Catalog = (function catalogCatalog() {
       var kids = pagesDict.get('Kids');
       assertWellFormed(isArray(kids),
                        'page dictionary kids object is not an array');
-      for (var i = 0; i < kids.length; ++i) {
+      for (var i = 0, ii = kids.length; i < ii; ++i) {
         var kid = kids[i];
         assertWellFormed(isRef(kid),
                          'page dictionary kid is not a reference');
@@ -490,12 +490,12 @@ var XRef = (function xRefXRef() {
           position += token.length + 1;
       }
       // reading XRef streams
-      for (var i = 0; i < xrefStms.length; ++i) {
+      for (var i = 0, ii = xrefStms.length; i < ii; ++i) {
           this.readXRef(xrefStms[i]);
       }
       // finding main trailer
       var dict;
-      for (var i = 0; i < trailers.length; ++i) {
+      for (var i = 0, ii = trailers.length; i < ii; ++i) {
         stream.pos = trailers[i];
         var parser = new Parser(new Lexer(stream), true);
         var obj = parser.getObj();

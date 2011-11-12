@@ -52,7 +52,7 @@ pdfContentHandler.prototype = {
     }
 
     let targetUrl = aRequest.URI.spec;
-    if (targetUrl.indexOf('?pdfjs.action=download') >= 0)
+    if (targetUrl.indexOf('#pdfjs.action=download') >= 0)
       throw NS_ERROR_WONT_HANDLE_CONTENT;
 
     aRequest.cancel(Cr.NS_BINDING_ABORTED);

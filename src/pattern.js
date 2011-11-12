@@ -19,10 +19,10 @@ var Pattern = (function patternPattern() {
 
   constructor.shadingFromIR = function pattern_shadingFromIR(ctx, raw) {
     return Shadings[raw[0]].fromIR(ctx, raw);
-  }
+  };
 
-  constructor.parseShading = function pattern_shading(shading, matrix,
-      xref, res, ctx) {
+  constructor.parseShading = function pattern_shading(shading, matrix, xref,
+                                                      res, ctx) {
 
     var dict = isStream(shading) ? shading.dict : shading;
     var type = dict.get('ShadingType');
@@ -116,17 +116,18 @@ Shadings.RadialAxial = (function radialAxialShading() {
       p1 = Util.applyTransform(p1, userMatrix);
     }
 
+    var grad;
     if (type == 2)
-      var grad = ctx.createLinearGradient(p0[0], p0[1], p1[0], p1[1]);
+      grad = ctx.createLinearGradient(p0[0], p0[1], p1[0], p1[1]);
     else if (type == 3)
-      var grad = ctx.createRadialGradient(p0[0], p0[1], r0, p1[0], p1[1], r1);
+      grad = ctx.createRadialGradient(p0[0], p0[1], r0, p1[0], p1[1], r1);
 
     for (var i = 0, ii = colorStops.length; i < ii; ++i) {
       var c = colorStops[i];
       grad.addColorStop(c[0], c[1]);
     }
     return grad;
-  }
+  };
 
   constructor.prototype = {
     getIR: function radialAxialShadingGetIR() {
@@ -166,7 +167,7 @@ Shadings.Dummy = (function dummyShading() {
 
   constructor.fromIR = function dummyShadingFromIR() {
     return 'hotpink';
-  }
+  };
 
   constructor.prototype = {
     getIR: function dummyShadingGetIR() {
@@ -242,9 +243,9 @@ var TilingPattern = (function tilingPattern() {
     graphics.transform.apply(graphics, tmpTranslate);
 
     if (bbox && isArray(bbox) && 4 == bbox.length) {
-      var bboxWidth = bbox[2] - bbox[0];
-      var bboxHeight = bbox[3] - bbox[1];
-      graphics.rectangle(bbox[0], bbox[1], bboxWidth, bboxHeight);
+      var bboxWidth = x1 - x0;
+      var bboxHeight = y1 - y0;
+      graphics.rectangle(x0, y0, bboxWidth, bboxHeight);
       graphics.clip();
       graphics.endPath();
     }
@@ -264,7 +265,7 @@ var TilingPattern = (function tilingPattern() {
     return [
       'TilingPattern', args, codeIR, matrix, bbox, xstep, ystep, paintType
     ];
-  }
+  };
 
   TilingPattern.prototype = {
     getPattern: function tiling_getPattern() {

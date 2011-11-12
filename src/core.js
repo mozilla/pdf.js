@@ -7,7 +7,6 @@ var globalScope = (typeof window === 'undefined') ? this : window;
 
 var ERRORS = 0, WARNINGS = 1, TODOS = 5;
 var verbosity = WARNINGS;
-var useWorker = false;
 
 // The global PDFJS object exposes the API
 // In production, it will be declared outside a global wrapper
@@ -158,7 +157,6 @@ var Page = (function pagePage() {
       var self = this;
       this.IRQueue = IRQueue;
       var gfx = new CanvasGraphics(this.ctx, this.objs);
-      var startTime = Date.now();
 
       var displayContinuation = function pageDisplayContinuation() {
         // Always defer call to display() to work around bug in
@@ -199,13 +197,13 @@ var Page = (function pagePage() {
       var pe = this.pe = new PartialEvaluator(
                                 xref, handler, 'p' + this.pageNumber + '_');
       var IRQueue = {};
-      return this.IRQueue = pe.getIRQueue(
-                                content, resources, IRQueue, dependency);
+      return (this.IRQueue = pe.getIRQueue(content, resources, IRQueue,
+                                           dependency));
     },
 
     ensureFonts: function pageEnsureFonts(fonts, callback) {
       // Convert the font names to the corresponding font obj.
-      for (var i = 0; i < fonts.length; i++) {
+      for (var i = 0, ii = fonts.length; i < ii; i++) {
         fonts[i] = this.objs.objs[fonts[i]].data;
       }
 
@@ -239,7 +237,6 @@ var Page = (function pagePage() {
       var IRQueue = this.IRQueue;
 
       var self = this;
-      var startTime = Date.now();
       function next() {
         startIdx = gfx.executeIRQueue(IRQueue, startIdx, next);
         if (startIdx == length) {
@@ -513,103 +510,144 @@ var PDFDoc = (function pdfDoc() {
     this.objs = new PDFObjects();
 
     this.pageCache = [];
-
-    if (useWorker) {
-      var worker = new Worker('../src/worker_loader.js');
-    } else {
-      // If we don't use a worker, just post/sendMessage to the main thread.
-      var worker = {
-        postMessage: function pdfDocPostMessage(obj) {
-          worker.onmessage({data: obj});
-        },
-        terminate: function pdfDocTerminate() {}
-      };
-    }
-    this.worker = worker;
-
     this.fontsLoading = {};
-
-    var processorHandler = this.processorHandler =
-                                        new MessageHandler('main', worker);
-
-    processorHandler.on('page', function pdfDocPage(data) {
-      var pageNum = data.pageNum;
-      var page = this.pageCache[pageNum];
-      var depFonts = data.depFonts;
-
-      page.startRenderingFromIRQueue(data.IRQueue, depFonts);
-    }, this);
-
-    processorHandler.on('obj', function pdfDocObj(data) {
-      var id = data[0];
-      var type = data[1];
-
-      switch (type) {
-        case 'JpegStream':
-          var IR = data[2];
-          new JpegImage(id, IR, this.objs);
-        break;
-        case 'Font':
-          var name = data[2];
-          var file = data[3];
-          var properties = data[4];
-
-          if (file) {
-            var fontFileDict = new Dict();
-            fontFileDict.map = file.dict.map;
-
-            var fontFile = new Stream(file.bytes, file.start,
-                                      file.end - file.start, fontFileDict);
-
-            // Check if this is a FlateStream. Otherwise just use the created
-            // Stream one. This makes complex_ttf_font.pdf work.
-            var cmf = file.bytes[0];
-            if ((cmf & 0x0f) == 0x08) {
-              file = new FlateStream(fontFile);
-            } else {
-              file = fontFile;
-            }
-          }
-
-          // For now, resolve the font object here direclty. The real font
-          // object is then created in FontLoader.bind().
-          this.objs.resolve(id, {
-            name: name,
-            file: file,
-            properties: properties
-          });
-        break;
-        default:
-          throw 'Got unkown object type ' + type;
-      }
-    }, this);
-
-    processorHandler.on('font_ready', function pdfDocFontReady(data) {
-      var id = data[0];
-      var font = new FontShape(data[1]);
-
-      // If there is no string, then there is nothing to attach to the DOM.
-      if (!font.str) {
-        this.objs.resolve(id, font);
-      } else {
-        this.objs.setData(id, font);
-      }
-    }.bind(this));
-
-    if (!useWorker) {
-      // If the main thread is our worker, setup the handling for the messages
-      // the main thread sends to it self.
-      WorkerProcessorHandler.setup(processorHandler);
-    }
-
     this.workerReadyPromise = new Promise('workerReady');
-    setTimeout(function pdfDocFontReadySetTimeout() {
-      processorHandler.send('doc', this.data);
-      this.workerReadyPromise.resolve(true);
-    }.bind(this));
+
+    // If worker support isn't disabled explicit and the browser has worker
+    // support, create a new web worker and test if it/the browser fullfills
+    // all requirements to run parts of pdf.js in a web worker.
+    // Right now, the requirement is, that an Uint8Array is still an Uint8Array
+    // as it arrives on the worker. Chrome added this with version 15.
+    if (!globalScope.PDFJS.disableWorker && typeof Worker !== 'undefined') {
+      var workerSrc = PDFJS.workerSrc;
+      if (typeof workerSrc === 'undefined') {
+        throw 'No PDFJS.workerSrc specified';
+      }
+
+      var worker
+      try {
+        worker = new Worker(workerSrc);
+      } catch (e) {
+        // Some versions of FF can't create a worker on localhost, see:
+        // https://bugzilla.mozilla.org/show_bug.cgi?id=683280
+        globalScope.PDFJS.disableWorker = true;
+        this.setupFakeWorker();
+        return;
+      }
+
+      var messageHandler = new MessageHandler('main', worker);
+
+      // Tell the worker the file it was created from.
+      messageHandler.send('workerSrc', workerSrc);
+
+      messageHandler.on('test', function pdfDocTest(supportTypedArray) {
+        if (supportTypedArray) {
+          this.worker = worker;
+          this.setupMessageHandler(messageHandler);
+        } else {
+          this.setupFakeWorker();
+        }
+      }.bind(this));
+
+      var testObj = new Uint8Array(1);
+      messageHandler.send('test', testObj);
+    } else {
+      this.setupFakeWorker();
+    }
   }
 
   constructor.prototype = {
+    setupFakeWorker: function() {
+      // If we don't use a worker, just post/sendMessage to the main thread.
+      var fakeWorker = {
+        postMessage: function pdfDocPostMessage(obj) {
+          fakeWorker.onmessage({data: obj});
+        },
+        terminate: function pdfDocTerminate() {}
+      };
+
+      var messageHandler = new MessageHandler('main', fakeWorker);
+      this.setupMessageHandler(messageHandler);
+
+      // If the main thread is our worker, setup the handling for the messages
+      // the main thread sends to it self.
+      WorkerMessageHandler.setup(messageHandler);
+    },
+
+
+    setupMessageHandler: function(messageHandler) {
+      this.messageHandler = messageHandler;
+
+      messageHandler.on('page', function pdfDocPage(data) {
+        var pageNum = data.pageNum;
+        var page = this.pageCache[pageNum];
+        var depFonts = data.depFonts;
+
+        page.startRenderingFromIRQueue(data.IRQueue, depFonts);
+      }, this);
+
+      messageHandler.on('obj', function pdfDocObj(data) {
+        var id = data[0];
+        var type = data[1];
+
+        switch (type) {
+          case 'JpegStream':
+            var IR = data[2];
+            new JpegImage(id, IR, this.objs);
+            break;
+          case 'Font':
+            var name = data[2];
+            var file = data[3];
+            var properties = data[4];
+
+            if (file) {
+              var fontFileDict = new Dict();
+              fontFileDict.map = file.dict.map;
+
+              var fontFile = new Stream(file.bytes, file.start,
+                                        file.end - file.start, fontFileDict);
+
+              // Check if this is a FlateStream. Otherwise just use the created
+              // Stream one. This makes complex_ttf_font.pdf work.
+              var cmf = file.bytes[0];
+              if ((cmf & 0x0f) == 0x08) {
+                file = new FlateStream(fontFile);
+              } else {
+                file = fontFile;
+              }
+            }
+
+            // For now, resolve the font object here direclty. The real font
+            // object is then created in FontLoader.bind().
+            this.objs.resolve(id, {
+              name: name,
+              file: file,
+              properties: properties
+            });
+            break;
+          default:
+            throw 'Got unkown object type ' + type;
+        }
+      }, this);
+
+      messageHandler.on('font_ready', function pdfDocFontReady(data) {
+        var id = data[0];
+        var font = new FontShape(data[1]);
+
+        // If there is no string, then there is nothing to attach to the DOM.
+        if (!font.str) {
+          this.objs.resolve(id, font);
+        } else {
+          this.objs.setData(id, font);
+        }
+      }.bind(this));
+
+      setTimeout(function pdfDocFontReadySetTimeout() {
+        messageHandler.send('doc', this.data);
+        this.workerReadyPromise.resolve(true);
+      }.bind(this));
+    },
+
     get numPages() {
       return this.pdf.numPages;
     },
@@ -617,7 +655,7 @@ var PDFDoc = (function pdfDoc() {
     startRendering: function pdfDocStartRendering(page) {
       // The worker might not be ready to receive the page request yet.
       this.workerReadyPromise.then(function pdfDocStartRenderingThen() {
-        this.processorHandler.send('page_request', page.pageNumber + 1);
+        this.messageHandler.send('page_request', page.pageNumber + 1);
       }.bind(this));
     },
 
@@ -630,7 +668,7 @@ var PDFDoc = (function pdfDoc() {
       // to the CanvasGraphics and so on.
       page.objs = this.objs;
       page.pdf = this;
-      return this.pageCache[n] = page;
+      return (this.pageCache[n] = page);
     },
 
     destroy: function pdfDocDestroy() {
