@@ -481,7 +481,7 @@ var PDFDoc = (function pdfDoc() {
         throw 'No PDFJS.workerSrc specified';
       }
 
-      var worker
+      var worker;
       try {
         worker = new Worker(workerSrc);
       } catch (e) {
