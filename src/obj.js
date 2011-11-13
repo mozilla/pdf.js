@@ -3,34 +3,34 @@
 
 'use strict';
 
-var Name = (function nameName() {
-  function nameConstructor(name) {
+var Name = (function NameConstructor() {
+  function Name(name) {
     this.name = name;
   }
 
-  nameConstructor.prototype = {
+  Name.prototype = {
   };
 
-  return nameConstructor;
+  return Name;
 })();
 
-var Cmd = (function cmdCmd() {
-  function cmdConstructor(cmd) {
+var Cmd = (function CmdConstructor() {
+  function Cmd(cmd) {
     this.cmd = cmd;
   }
 
-  cmdConstructor.prototype = {
+  Cmd.prototype = {
   };
 
-  return cmdConstructor;
+  return Cmd;
 })();
 
-var Dict = (function dictDict() {
-  function dictConstructor() {
+var Dict = (function DictConstructor() {
+  function Dict() {
     this.map = Object.create(null);
   }
 
-  dictConstructor.prototype = {
+  Dict.prototype = {
     get: function dictGet(key1, key2, key3) {
       var value;
       if (typeof (value = this.map[key1]) != 'undefined' || key1 in this.map ||
@@ -60,29 +60,29 @@ var Dict = (function dictDict() {
     }
   };
 
-  return dictConstructor;
+  return Dict;
 })();
 
-var Ref = (function refRef() {
-  function refConstructor(num, gen) {
+var Ref = (function RefConstructor() {
+  function Ref(num, gen) {
     this.num = num;
     this.gen = gen;
   }
 
-  refConstructor.prototype = {
+  Ref.prototype = {
   };
 
-  return refConstructor;
+  return Ref;
 })();
 
 // The reference is identified by number and generation,
 // this structure stores only one instance of the reference.
-var RefSet = (function refSet() {
-  function refSetConstructor() {
+var RefSet = (function RefSetConstructor() {
+  function RefSet() {
     this.dict = {};
   }
 
-  refSetConstructor.prototype = {
+  RefSet.prototype = {
     has: function refSetHas(ref) {
       return !!this.dict['R' + ref.num + '.' + ref.gen];
     },
@@ -92,18 +92,18 @@ var RefSet = (function refSet() {
     }
   };
 
-  return refSetConstructor;
+  return RefSet;
 })();
 
-var Catalog = (function catalogCatalog() {
-  function catalogConstructor(xref) {
+var Catalog = (function CatalogConstructor() {
+  function Catalog(xref) {
     this.xref = xref;
     var obj = xref.getCatalogObj();
     assertWellFormed(isDict(obj), 'catalog object is not a dictionary');
     this.catDict = obj;
   }
 
-  catalogConstructor.prototype = {
+  Catalog.prototype = {
     get toplevelPagesDict() {
       var pagesObj = this.catDict.get('Pages');
       assertWellFormed(isRef(pagesObj), 'invalid top-level pages reference');
@@ -253,11 +253,11 @@ var Catalog = (function catalogCatalog() {
     }
   };
 
-  return catalogConstructor;
+  return Catalog;
 })();
 
-var XRef = (function xRefXRef() {
-  function xRefConstructor(stream, startXRef, mainXRefEntriesOffset) {
+var XRef = (function XRefConstructor() {
+  function XRef(stream, startXRef, mainXRefEntriesOffset) {
     this.stream = stream;
     this.entries = [];
     this.xrefstms = {};
@@ -278,7 +278,7 @@ var XRef = (function xRefXRef() {
       error('Invalid root reference');
   }
 
-  xRefConstructor.prototype = {
+  XRef.prototype = {
     readXRefTable: function readXRefTable(parser) {
       var obj;
       while (true) {
@@ -633,7 +633,7 @@ var XRef = (function xRefXRef() {
     }
   };
 
-  return xRefConstructor;
+  return XRef;
 })();
 
 /**
@@ -642,12 +642,12 @@ var XRef = (function xRefXRef() {
  * inside of a worker. The `PDFObjects` implements some basic functions to
  * manage these objects.
  */
-var PDFObjects = (function pdfObjects() {
-  function pdfObjectsConstructor() {
+var PDFObjects = (function PdfObjectsConstructor() {
+  function PdfObjects() {
     this.objs = {};
   }
 
-  pdfObjectsConstructor.prototype = {
+  PdfObjects.prototype = {
     objs: null,
 
     /**
@@ -737,6 +737,7 @@ var PDFObjects = (function pdfObjects() {
       this.ensureObj(objId).data = data;
     }
   };
-  return pdfObjectsConstructor;
+
+  return PdfObjects;
 })();
 
