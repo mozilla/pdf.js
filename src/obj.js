@@ -642,12 +642,12 @@ var XRef = (function XRefConstructor() {
  * inside of a worker. The `PDFObjects` implements some basic functions to
  * manage these objects.
  */
-var PDFObjects = (function PdfObjectsConstructor() {
-  function PdfObjects() {
+var PDFObjects = (function PDFObjectsConstructor() {
+  function PDFObjects() {
     this.objs = {};
   }
 
-  PdfObjects.prototype = {
+  PDFObjects.prototype = {
     objs: null,
 
     /**
@@ -738,6 +738,6 @@ var PDFObjects = (function PdfObjectsConstructor() {
     }
   };
 
-  return PdfObjects;
+  return PDFObjects;
 })();
 
