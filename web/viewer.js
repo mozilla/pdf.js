@@ -328,6 +328,34 @@ var PDFView = {
       currentHeight += singlePage.height * singlePage.scale + kBottomMargin;
     }
     return visiblePages;
+  },
+
+  sidebarToggle: function pdfViewSidebarToggle() {
+    var self = this;
+    var viewer = document.getElementById('viewer');
+    var sidebar = document.getElementById('sidebar');
+    var container = document.getElementById('sidebarView');
+    var pagesCount = PDFView.pages.length;
+    this.currentThumbnail = this.currentThumbnail || 0;
+
+    if (sidebar.classList.contains('visible')) {
+      // Hide sidebar
+      viewer.classList.remove('withSidebar');
+      sidebar.classList.remove('visible');
+      window.clearInterval(container._interval);
+    } else {
+      // Show sidebar, render thumbnails
+      viewer.classList.add('withSidebar');
+      sidebar.classList.add('visible');
+      // TODO: Thumbnails should be rendered on-demand instead of linearly
+      container._interval = window.setInterval(function interval() {
+        if (self.currentThumbnail >= pagesCount) {
+          window.clearInterval(container._interval);
+          return;
+        }
+        PDFView.thumbnails[self.currentThumbnail++].draw();
+      }, 500);
+    }
   }
 };
 
@@ -393,7 +421,9 @@ var PageView = function pageView(container, content, id, pageWidth, pageHeight,
 
   this.scrollIntoView = function pageViewScrollIntoView(dest) {
       if (!dest) {
+        var leftPos = document.documentElement.scrollLeft;
         div.scrollIntoView(true);
+        document.documentElement.scrollLeft = leftPos;
         return;
       }
 
@@ -679,21 +709,6 @@ window.addEventListener('change', function webViewerChange(evt) {
   // URL does not reflect proper document location - hiding some icons.
   document.getElementById('viewBookmark').setAttribute('hidden', 'true');
   document.getElementById('download').setAttribute('hidden', 'true');
-}, true);
-
-window.addEventListener('transitionend', function webViewerTransitionend(evt) {
-  var pageIndex = 0;
-  var pagesCount = PDFView.pages.length;
-
-  var container = document.getElementById('sidebarView');
-  container._interval = window.setInterval(function interval() {
-    if (pageIndex >= pagesCount) {
-      window.clearInterval(container._interval);
-      return;
-    }
-
-    PDFView.thumbnails[pageIndex++].draw();
-  }, 500);
 }, true);
 
 window.addEventListener('scalechange', function scalechange(evt) {

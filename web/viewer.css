@@ -78,35 +78,26 @@ span#info {
 #sidebar {
   position: fixed;
   width: 350px;
-  top: 62px;
-  bottom: 18px;
-  left: -290px;
-  transition: left 0.25s ease-in-out 1s;
-  -moz-transition: left 0.25s ease-in-out 1s;
-  -webkit-transition: left 0.25s ease-in-out 1s;
+  top: 40px;
+  bottom: 10px;
+  display: none;
   z-index: 1;
 }
 
-#sidebar:hover {
-  left: 0px;
-  transition: left 0.25s ease-in-out 0s;
-  -moz-transition: left 0.25s ease-in-out 0s;
-  -webkit-transition: left 0.25s ease-in-out 0s;
+#sidebar.visible {
+  display: block;
 }
 
 #sidebarBox {
-  background-color: rgba(0, 0, 0, 0.7);
+  background-color: #eee;
   width: 300px;
   height: 100%;
-  border-top-right-radius: 8px;
-  border-bottom-right-radius: 8px;
-  -moz-border-radius-topright: 8px;
-  -moz-border-radius-bottomright: 8px;
-  -webkit-border-top-right-radius: 8px;
-  -webkit-border-bottom-right-radius: 8px;
-  box-shadow: 0px 2px 8px #000;
-  -moz-box-shadow: 0px 2px 8px #000;
-  -webkit-box-shadow: 0px 2px 8px #000;
+  border-top-right-radius: 4px;
+  border-bottom-right-radius: 4px;
+  -moz-border-radius-topright: 4px;
+  -moz-border-radius-bottomright: 4px;
+  -webkit-border-top-right-radius: 4px;
+  -webkit-border-bottom-right-radius: 4px;
 }
 
 #sidebarScrollView {
@@ -233,8 +224,12 @@ canvas {
 }
 
 #viewer {
-  margin: 44px 0px 0px;
+  margin: 44px 0px 0px 0px;
   padding: 8px 0px;
+}
+
+#viewer.withSidebar {
+  margin-left: 330px;
 }
 
 #sidebarView canvas:hover {

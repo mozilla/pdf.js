@@ -33,6 +33,7 @@
 
   <body>
     <div id="controls">
+
       <button id="previous" onclick="PDFView.page--;" oncontextmenu="return false;">
         <img src="images/go-up.svg" align="top" height="16"/>
         Previous
@@ -43,12 +44,15 @@
         Next
       </button>
 
-      <div class="separator"></div>
-
       <input type="number" id="pageNumber" onchange="PDFView.page = this.value;" value="1" size="4" min="1" />
 
       <span>/</span>
       <span id="numPages">--</span>
+
+      <button id="sidebarToggle" title="Thumbnails and index browser" onclick="PDFView.sidebarToggle();" oncontextmenu="return false;">
+        <img src="images/document.svg" align="top" height="16"/>
+        Browse
+      </button>
 
       <div class="separator"></div>
 
@@ -58,8 +62,6 @@
       <button id="zoomIn" title="Zoom In" onclick="PDFView.zoomIn();" oncontextmenu="return false;">
         <img src="images/zoom-in.svg" align="top" height="16"/>
       </button>
-
-      <div class="separator"></div>
 
       <select id="scaleSelect" onchange="PDFView.parseScale(this.value);" oncontextmenu="return false;">
         <option id="customScaleOption" value="custom"></option>
