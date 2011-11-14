@@ -139,7 +139,7 @@ var PDFView = {
   },
 
   download: function pdfViewDownload() {
-    window.open(this.url + '?pdfjs.action=download', '_parent');
+    window.open(this.url + '#pdfjs.action=download', '_parent');
   },
 
   navigateTo: function pdfViewNavigateTo(dest) {

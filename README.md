@@ -29,7 +29,7 @@ using the pdf.js API.
 
 ### Extension
 
-A up-to-date Firefox extension is also available:
+An up-to-date Firefox extension is also available:
 
 + http://mozilla.github.com/pdf.js/extensions/firefox/pdf.js.xpi
 
