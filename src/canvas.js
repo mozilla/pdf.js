@@ -478,10 +478,10 @@ var CanvasGraphics = (function canvasGraphics() {
         geom.hScale = tr[0] - bl[0];
         geom.vScale = tr[1] - bl[1];
       }
-      var spaceGlyph = font.charsToGlyphs(' ', true);
+      var spaceGlyph = font.charsToGlyphs(' ');
       // Hack (sometimes space is not encoded)
       if (spaceGlyph.length === 0 || spaceGlyph[0].width === 0)
-        spaceGlyph = font.charsToGlyphs('i', true);
+        spaceGlyph = font.charsToGlyphs('i');
       // Fallback
       if (spaceGlyph.length === 0 || spaceGlyph[0].width === 0)
         spaceGlyph = [ {width:0} ];
