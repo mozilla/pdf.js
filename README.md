@@ -45,8 +45,6 @@ To get a local copy of the current code, clone it using git:
 
     $ git clone git://github.com/mozilla/pdf.js.git pdfjs
     $ cd pdfjs
-    $ git submodule init
-    $ git submodule update
 
 Next, you need to start a local web server as some browsers don't allow opening
 PDF files for a file:// url:
