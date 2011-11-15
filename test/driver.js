@@ -59,12 +59,10 @@ function cleanup() {
   // Clear out all the stylesheets since a new one is created for each font.
   while (document.styleSheets.length > 0) {
     var styleSheet = document.styleSheets[0];
-    if (styleSheet) {
-      while (styleSheet.cssRules.length > 0)
-        styleSheet.deleteRule(0);
-    }
-    var parent = styleSheet.ownerNode.parentNode;
-    parent.removeChild(styleSheet.ownerNode);
+    while (styleSheet.cssRules.length > 0)
+      styleSheet.deleteRule(0);
+    var ownerNode = styleSheet.ownerNode;
+    ownerNode.parentNode.removeChild(ownerNode);
   }
   var guard = document.getElementById('content-end');
   var body = document.body;
@@ -75,7 +73,7 @@ function cleanup() {
   for (var i = 0; i < manifest.length; i++) {
     if (manifest[i].pdfDoc) {
       manifest[i].pdfDoc.destroy();
-      delete manifest[i].pdfDoc
+      delete manifest[i].pdfDoc;
     }
   }
 }
