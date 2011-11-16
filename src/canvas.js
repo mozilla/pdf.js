@@ -594,27 +594,45 @@ var CanvasGraphics = (function canvasGraphics() {
       }
     },
     setStrokeGray: function canvasGraphicsSetStrokeGray(gray) {
+      if (!(this.current.strokeColorSpace instanceof DeviceGrayCS))
+        this.current.strokeColorSpace = new DeviceGrayCS();
+
       this.setStrokeRGBColor(gray, gray, gray);
     },
     setFillGray: function canvasGraphicsSetFillGray(gray) {
+      if (!(this.current.fillColorSpace instanceof DeviceGrayCS))
+        this.current.fillColorSpace = new DeviceGrayCS();
+
       this.setFillRGBColor(gray, gray, gray);
     },
     setStrokeRGBColor: function canvasGraphicsSetStrokeRGBColor(r, g, b) {
+      if (!(this.current.strokeColorSpace instanceof DeviceRgbCS))
+        this.current.strokeColorSpace = new DeviceRgbCS();
+
       var color = Util.makeCssRgb(r, g, b);
       this.ctx.strokeStyle = color;
       this.current.strokeColor = color;
     },
     setFillRGBColor: function canvasGraphicsSetFillRGBColor(r, g, b) {
+      if (!(this.current.fillColorSpace instanceof DeviceRgbCS))
+        this.current.fillColorSpace = new DeviceRgbCS();
+
       var color = Util.makeCssRgb(r, g, b);
       this.ctx.fillStyle = color;
       this.current.fillColor = color;
     },
     setStrokeCMYKColor: function canvasGraphicsSetStrokeCMYKColor(c, m, y, k) {
+      if (!(this.current.strokeColorSpace instanceof DeviceCmykCS))
+        this.current.strokeColorSpace = new DeviceCmykCS();
+
       var color = Util.makeCssCmyk(c, m, y, k);
       this.ctx.strokeStyle = color;
       this.current.strokeColor = color;
     },
     setFillCMYKColor: function canvasGraphicsSetFillCMYKColor(c, m, y, k) {
+      if (!(this.current.fillColorSpace instanceof DeviceCmykCS))
+        this.current.fillColorSpace = new DeviceCmykCS();
+
       var color = Util.makeCssCmyk(c, m, y, k);
       this.ctx.fillStyle = color;
       this.current.fillColor = color;

@@ -522,7 +522,9 @@ var PartialEvaluator = (function partialEvaluator() {
       var cmapObj = xref.fetchIfRef(toUnicode);
       var charToUnicode = [];
       if (isName(cmapObj)) {
-        error('ToUnicode file cmap translation not implemented');
+        var isIdentityMap = cmapObj.name.substr(0, 9) == 'Identity-';
+        if (!isIdentityMap)
+          error('ToUnicode file cmap translation not implemented');
       } else if (isStream(cmapObj)) {
         var tokens = [];
         var token = '';
