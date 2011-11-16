@@ -756,8 +756,13 @@ var PredictorStream = (function predictorStream() {
   return constructor;
 })();
 
-// A JpegStream can't be read directly. We use the platform to render
-// the underlying JPEG data for us.
+/**
+ * Depending on the type of JPEG a JpegStream is handled in different ways. For
+ * JPEG's that are supported natively such as DeviceGray and DeviceRGB the image
+ * data is stored and then loaded by the browser.  For unsupported JPEG's we use
+ * a library to decode these images and the stream behaves like all the other
+ * DecodeStreams.
+ */
 var JpegStream = (function jpegStream() {
   function isAdobeImage(bytes) {
     var maxBytesScanned = Math.max(bytes.length - 16, 1024);
