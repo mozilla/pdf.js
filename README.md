@@ -152,9 +152,9 @@ See the bot repo for details:
 
 ## Additional resources
 
-Our demo site is here:
+Gallery of user projects and modifications:
 
-+ http://mozilla.github.com/pdf.js/web/viewer.html
++ https://github.com/mozilla/pdf.js/wiki/Gallery-of-user-projects-and-modifications
 
 You can read more about pdf.js here:
 
