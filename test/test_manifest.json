@@ -44,13 +44,6 @@
        "rounds": 1,
        "type": "eq"
     },
-    {  "id": "openweb-cover",
-       "file": "pdfs/openweb_tm-PRINT.pdf",
-       "md5": "53f611dfc19ddfb50554c21c4af465c0",
-       "link": true,
-       "rounds": 1,
-       "type": "eq"
-    },
     {  "id": "plusminus",
        "file": "pdfs/Test-plusminus.pdf",
        "md5": "1ec7ade5b95ac9aaba3a618af28d34c7",
