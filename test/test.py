@@ -323,18 +323,18 @@ def verifyPDFs(manifestList):
         if os.access(f, os.R_OK):
             fileMd5 = hashlib.md5(open(f, 'rb').read()).hexdigest()
             if 'md5' not in item:
-                print 'ERROR: Missing md5 for file "' + f + '".',
+                print 'WARNING: Missing md5 for file "' + f + '".',
                 print 'Hash for current file is "' + fileMd5 + '"'
                 error = True
                 continue
             md5 = item['md5']
             if fileMd5 != md5:
-                print 'ERROR: MD5 of file "' + f + '" does not match file.',
+                print 'WARNING: MD5 of file "' + f + '" does not match file.',
                 print 'Expected "' + md5 + '" computed "' + fileMd5 + '"'
                 error = True
                 continue
         else:
-            print 'ERROR: Unable to open file for reading "' + f + '".'
+            print 'WARNING: Unable to open file for reading "' + f + '".'
             error = True
     return not error
 
@@ -365,7 +365,8 @@ def setUp(options):
     downloadLinkedPDFs(manifestList)
 
     if not verifyPDFs(manifestList):
-        raise Exception('ERROR: failed to verify pdfs.')
+      print 'Unable to verify the checksum for the files that are used for testing.'
+      print 'Please re-download the files, or adjust the MD5 checksum in the manifest for the files listed above.\n'
 
     for b in testBrowsers:
         State.taskResults[b.name] = { }
