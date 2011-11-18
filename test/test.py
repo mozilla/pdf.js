@@ -1,4 +1,4 @@
-import json, platform, os, shutil, sys, subprocess, tempfile, threading, time, urllib, urllib2, hashlib
+import json, platform, os, shutil, sys, subprocess, tempfile, threading, time, urllib, urllib2
 from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
 import SocketServer
 from optparse import OptionParser
@@ -299,45 +299,6 @@ def makeBrowserCommands(browserManifestFile):
         browsers = [makeBrowserCommand(browser) for browser in json.load(bmf)]
     return browsers
 
-def downloadLinkedPDFs(manifestList):
-    for item in manifestList:
-        f, isLink = item['file'], item.get('link', False)
-        if isLink and not os.access(f, os.R_OK):
-            linkFile = open(f +'.link')
-            link = linkFile.read()
-            linkFile.close()
-
-            sys.stdout.write('Downloading '+ link +' to '+ f +' ...')
-            sys.stdout.flush()
-            response = urllib2.urlopen(link)
-
-            with open(f, 'wb') as out:
-                out.write(response.read())
-
-            print 'done'
-
-def verifyPDFs(manifestList):
-    error = False
-    for item in manifestList:
-        f = item['file']
-        if os.access(f, os.R_OK):
-            fileMd5 = hashlib.md5(open(f, 'rb').read()).hexdigest()
-            if 'md5' not in item:
-                print 'ERROR: Missing md5 for file "' + f + '".',
-                print 'Hash for current file is "' + fileMd5 + '"'
-                error = True
-                continue
-            md5 = item['md5']
-            if fileMd5 != md5:
-                print 'ERROR: MD5 of file "' + f + '" does not match file.',
-                print 'Expected "' + md5 + '" computed "' + fileMd5 + '"'
-                error = True
-                continue
-        else:
-            print 'ERROR: Unable to open file for reading "' + f + '".'
-            error = True
-    return not error
-
 def setUp(options):
     # Only serve files from a pdf.js clone
     assert not ANAL or os.path.isfile('../src/pdf.js') and os.path.isdir('../.git')
@@ -361,11 +322,6 @@ def setUp(options):
 
     with open(options.manifestFile) as mf:
         manifestList = json.load(mf)
-
-    downloadLinkedPDFs(manifestList)
-
-    if not verifyPDFs(manifestList):
-        raise Exception('ERROR: failed to verify pdfs.')
 
     for b in testBrowsers:
         State.taskResults[b.name] = { }
