@@ -3,7 +3,7 @@
 
 'use strict';
 
-var Name = (function NameConstructor() {
+var Name = (function NameClosure() {
   function Name(name) {
     this.name = name;
   }
@@ -14,7 +14,7 @@ var Name = (function NameConstructor() {
   return Name;
 })();
 
-var Cmd = (function CmdConstructor() {
+var Cmd = (function CmdClosure() {
   function Cmd(cmd) {
     this.cmd = cmd;
   }
@@ -25,7 +25,7 @@ var Cmd = (function CmdConstructor() {
   return Cmd;
 })();
 
-var Dict = (function DictConstructor() {
+var Dict = (function DictClosure() {
   function Dict() {
     this.map = Object.create(null);
   }
@@ -63,7 +63,7 @@ var Dict = (function DictConstructor() {
   return Dict;
 })();
 
-var Ref = (function RefConstructor() {
+var Ref = (function RefClosure() {
   function Ref(num, gen) {
     this.num = num;
     this.gen = gen;
@@ -77,7 +77,7 @@ var Ref = (function RefConstructor() {
 
 // The reference is identified by number and generation,
 // this structure stores only one instance of the reference.
-var RefSet = (function RefSetConstructor() {
+var RefSet = (function RefSetClosure() {
   function RefSet() {
     this.dict = {};
   }
@@ -95,7 +95,7 @@ var RefSet = (function RefSetConstructor() {
   return RefSet;
 })();
 
-var Catalog = (function CatalogConstructor() {
+var Catalog = (function CatalogClosure() {
   function Catalog(xref) {
     this.xref = xref;
     var obj = xref.getCatalogObj();
@@ -256,7 +256,7 @@ var Catalog = (function CatalogConstructor() {
   return Catalog;
 })();
 
-var XRef = (function XRefConstructor() {
+var XRef = (function XRefClosure() {
   function XRef(stream, startXRef, mainXRefEntriesOffset) {
     this.stream = stream;
     this.entries = [];
@@ -642,7 +642,7 @@ var XRef = (function XRefConstructor() {
  * inside of a worker. The `PDFObjects` implements some basic functions to
  * manage these objects.
  */
-var PDFObjects = (function PDFObjectsConstructor() {
+var PDFObjects = (function PDFObjectsClosure() {
   function PDFObjects() {
     this.objs = {};
   }
