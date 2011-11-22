@@ -236,7 +236,7 @@ var Parser = (function parserParser() {
         return new LZWStream(stream, earlyChange);
       } else if (name == 'DCTDecode' || name == 'DCT') {
         var bytes = stream.getBytes(length);
-        return new JpegStream(bytes, stream.dict);
+        return new JpegStream(bytes, stream.dict, this.xref);
       } else if (name == 'ASCII85Decode' || name == 'A85') {
         return new Ascii85Stream(stream);
       } else if (name == 'ASCIIHexDecode' || name == 'AHx') {

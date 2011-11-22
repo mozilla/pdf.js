@@ -20,6 +20,7 @@
     {  "id": "intelisa-load",
        "file": "pdfs/intelisa.pdf",
        "md5": "f5712097d29287a97f1278839814f682",
+       "md5": "f3ed5487d1afa34d8b77c0c734a95c79",
        "link": true,
        "rounds": 1,
        "type": "load"
@@ -41,13 +42,6 @@
     {  "id": "sizes",
        "file": "pdfs/sizes.pdf",
        "md5": "c101ba7b44aee36048e1ac7b98f302ea",
-       "rounds": 1,
-       "type": "eq"
-    },
-    {  "id": "openweb-cover",
-       "file": "pdfs/openweb_tm-PRINT.pdf",
-       "md5": "53f611dfc19ddfb50554c21c4af465c0",
-       "link": true,
        "rounds": 1,
        "type": "eq"
     },
@@ -272,6 +266,13 @@
     {  "id": "devicen",
        "file": "pdfs/devicen.pdf",
        "md5": "aac6a91725435d1376c6ff492dc5cb75",
+       "link": false,
+       "rounds": 1,
+       "type": "eq"
+    },
+    {  "id": "cmykjpeg",
+       "file": "pdfs/cmykjpeg.pdf",
+       "md5": "85d162b48ce98503a382d96f574f70a2",
        "link": false,
        "rounds": 1,
        "type": "eq"
