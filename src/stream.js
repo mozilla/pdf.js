@@ -830,7 +830,8 @@ var JpegStream = (function jpegStream() {
   constructor.prototype.ensureBuffer = function jpegStreamEnsureBuffer(req) {
     if (this.bufferLength)
       return;
-    var jpegImage = new JpegImage(this.colorTransform);
+    var jpegImage = new JpegImage();
+    jpegImage.colorTransform = this.colorTransform;
     jpegImage.parse(this.bytes);
     var width = jpegImage.width;
     var height = jpegImage.height;
