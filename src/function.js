@@ -20,6 +20,7 @@ var PDFFunction = (function pdfFunction() {
       var array = [];
       var codeSize = 0;
       var codeBuf = 0;
+      // 32 is a valid bps so shifting won't work
       var sampleMul = 1.0 / (Math.pow(2.0, bps) - 1);
 
       var strBytes = str.getBytes((length * bps + 7) / 8);
