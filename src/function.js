@@ -20,6 +20,8 @@ var PDFFunction = (function pdfFunction() {
       var array = [];
       var codeSize = 0;
       var codeBuf = 0;
+      // 32 is a valid bps so shifting won't work
+      var sampleMul = 1.0 / (Math.pow(2.0, bps) - 1);
 
       var strBytes = str.getBytes((length * bps + 7) / 8);
       var strIdx = 0;
@@ -30,7 +32,7 @@ var PDFFunction = (function pdfFunction() {
           codeSize += 8;
         }
         codeSize -= bps;
-        array.push(codeBuf >> codeSize);
+        array.push((codeBuf >> codeSize) * sampleMul);
         codeBuf &= (1 << codeSize) - 1;
       }
       return array;
@@ -76,6 +78,17 @@ var PDFFunction = (function pdfFunction() {
     },
 
     constructSampled: function pdfFunctionConstructSampled(str, dict) {
+      function toMultiArray(arr) {
+        var inputLength = arr.length;
+        var outputLength = arr.length / 2;
+        var out = new Array(outputLength);
+        var index = 0;
+        for (var i = 0; i < inputLength; i += 2) {
+          out[index] = [arr[i], arr[i + 1]];
+          ++index;
+        }
+        return out;
+      }
       var domain = dict.get('Domain');
       var range = dict.get('Range');
 
@@ -85,9 +98,8 @@ var PDFFunction = (function pdfFunction() {
       var inputSize = domain.length / 2;
       var outputSize = range.length / 2;
 
-      if (inputSize != 1)
-        error('No support for multi-variable inputs to functions: ' +
-              inputSize);
+      domain = toMultiArray(domain);
+      range = toMultiArray(range);
 
       var size = dict.get('Size');
       var bps = dict.get('BitsPerSample');
@@ -105,15 +117,36 @@ var PDFFunction = (function pdfFunction() {
           encode.push(size[i] - 1);
         }
       }
+      encode = toMultiArray(encode);
+
       var decode = dict.get('Decode');
       if (!decode)
         decode = range;
+      else
+        decode = toMultiArray(decode);
+
+      // Precalc the multipliers
+      var inputMul = new Float64Array(inputSize);
+      for (var i = 0; i < inputSize; ++i) {
+        inputMul[i] = (encode[i][1] - encode[i][0]) /
+                  (domain[i][1] - domain[i][0]);
+      }
+
+      var idxMul = new Int32Array(inputSize);
+      idxMul[0] = outputSize;
+      for (i = 1; i < inputSize; ++i) {
+        idxMul[i] = idxMul[i - 1] * size[i - 1];
+      }
+
+      var nSamples = outputSize;
+      for (i = 0; i < inputSize; ++i)
+          nSamples *= size[i];
 
       var samples = this.getSampleArray(size, outputSize, bps, str);
 
       return [
         CONSTRUCT_SAMPLED, inputSize, domain, encode, decode, samples, size,
-        outputSize, bps, range
+        outputSize, bps, range, inputMul, idxMul, nSamples
       ];
     },
 
@@ -127,64 +160,74 @@ var PDFFunction = (function pdfFunction() {
       var outputSize = IR[7];
       var bps = IR[8];
       var range = IR[9];
+      var inputMul = IR[10];
+      var idxMul = IR[11];
+      var nSamples = IR[12];
 
       return function constructSampledFromIRResult(args) {
-        var clip = function constructSampledFromIRClip(v, min, max) {
-          if (v > max)
-            v = max;
-          else if (v < min)
-            v = min;
-          return v;
-        };
-
         if (inputSize != args.length)
           error('Incorrect number of arguments: ' + inputSize + ' != ' +
                 args.length);
+        // Most of the below is a port of Poppler's implementation.
+        // TODO: There's a few other ways to do multilinear interpolation such
+        // as piecewise, which is much faster but an approximation.
+        var out = new Float64Array(outputSize);
+        var x;
+        var e = new Array(inputSize);
+        var efrac0 = new Float64Array(inputSize);
+        var efrac1 = new Float64Array(inputSize);
+        var sBuf = new Float64Array(1 << inputSize);
+        var i, j, k, idx, t;
 
-        for (var i = 0; i < inputSize; i++) {
-          var i2 = i * 2;
-
-          // clip to the domain
-          var v = clip(args[i], domain[i2], domain[i2 + 1]);
-
-          // encode
-          v = encode[i2] + ((v - domain[i2]) *
-                            (encode[i2 + 1] - encode[i2]) /
-                            (domain[i2 + 1] - domain[i2]));
-
-          // clip to the size
-          args[i] = clip(v, 0, size[i] - 1);
+        // map input values into sample array
+        for (i = 0; i < inputSize; ++i) {
+          x = (args[i] - domain[i][0]) * inputMul[i] + encode[i][0];
+          if (x < 0) {
+            x = 0;
+          } else if (x > size[i] - 1) {
+            x = size[i] - 1;
+          }
+          e[i] = [Math.floor(x), 0];
+          if ((e[i][1] = e[i][0] + 1) >= size[i]) {
+            // this happens if in[i] = domain[i][1]
+            e[i][1] = e[i][0];
+          }
+          efrac1[i] = x - e[i][0];
+          efrac0[i] = 1 - efrac1[i];
         }
 
-        // interpolate to table
-        TODO('Multi-dimensional interpolation');
-        var floor = Math.floor(args[0]);
-        var ceil = Math.ceil(args[0]);
-        var scale = args[0] - floor;
+        // for each output, do m-linear interpolation
+        for (i = 0; i < outputSize; ++i) {
 
-        floor *= outputSize;
-        ceil *= outputSize;
-
-        var output = [], v = 0;
-        for (var i = 0; i < outputSize; ++i) {
-          if (ceil == floor) {
-            v = samples[ceil + i];
-          } else {
-            var low = samples[floor + i];
-            var high = samples[ceil + i];
-            v = low * scale + high * (1 - scale);
+          // pull 2^m values out of the sample array
+          for (j = 0; j < (1 << inputSize); ++j) {
+            idx = i;
+            for (k = 0, t = j; k < inputSize; ++k, t >>= 1) {
+              idx += idxMul[k] * (e[k][t & 1]);
+            }
+            if (idx >= 0 && idx < nSamples) {
+              sBuf[j] = samples[idx];
+            } else {
+              sBuf[j] = 0; // TODO Investigate if this is what Adobe does
+            }
           }
 
-          var i2 = i * 2;
-          // decode
-          v = decode[i2] + (v * (decode[i2 + 1] - decode[i2]) /
-                            ((1 << bps) - 1));
+          // do m sets of interpolations
+          for (j = 0, t = (1 << inputSize); j < inputSize; ++j, t >>= 1) {
+            for (k = 0; k < t; k += 2) {
+              sBuf[k >> 1] = efrac0[j] * sBuf[k] + efrac1[j] * sBuf[k + 1];
+            }
+          }
 
-          // clip to the domain
-          output.push(clip(v, range[i2], range[i2 + 1]));
+          // map output value to range
+          out[i] = (sBuf[0] * (decode[i][1] - decode[i][0]) + decode[i][0]);
+          if (out[i] < range[i][0]) {
+            out[i] = range[i][0];
+          } else if (out[i] > range[i][1]) {
+            out[i] = range[i][1];
+          }
         }
-
-        return output;
+        return out;
       }
     },
 
