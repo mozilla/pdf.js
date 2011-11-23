@@ -33,6 +33,7 @@ PDF_JS_FILES = \
   pattern.js \
   stream.js \
   worker.js \
+  ../external/jpgjs/jpg.js \
 	$(NULL)
 
 # make server
