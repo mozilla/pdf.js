@@ -19,7 +19,7 @@
     },
     {  "id": "intelisa-load",
        "file": "pdfs/intelisa.pdf",
-       "md5": "f3ed5487d1afa34d8b77c0c734a95c79",
+       "md5": "f5712097d29287a97f1278839814f682",
        "link": true,
        "rounds": 1,
        "type": "load"
@@ -194,7 +194,7 @@
     },
     {  "id": "f1040",
        "file": "pdfs/f1040.pdf",
-       "md5": "7323b50c6d28d959b8b4b92c469b2469",
+       "md5": "b59272ce19b4a0c5808c8861441b0741",
        "link": true,
        "rounds": 1,
        "type": "load"
@@ -265,6 +265,13 @@
     {  "id": "alphatrans",
        "file": "pdfs/alphatrans.pdf",
        "md5": "5ca2d3da0c5f20b3a5a14e895ad24b65",
+       "link": false,
+       "rounds": 1,
+       "type": "eq"
+    },
+    {  "id": "devicen",
+       "file": "pdfs/devicen.pdf",
+       "md5": "aac6a91725435d1376c6ff492dc5cb75",
        "link": false,
        "rounds": 1,
        "type": "eq"
