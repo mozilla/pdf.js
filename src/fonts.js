@@ -771,7 +771,6 @@ var Font = (function Font() {
     this.widths = properties.widths;
     this.defaultWidth = properties.defaultWidth;
     this.composite = properties.composite;
-    this.toUnicode = properties.toUnicode;
     this.hasEncoding = properties.hasEncoding;
 
     this.fontMatrix = properties.fontMatrix;
@@ -780,6 +779,11 @@ var Font = (function Font() {
 
     // Trying to fix encoding using glyph CIDSystemInfo.
     this.loadCidToUnicode(properties);
+
+    if (properties.toUnicode)
+      this.toUnicode = properties.toUnicode;
+    else
+      this.rebuildToUnicode(properties);
 
     if (!file) {
       // The file data is not specified. Trying to fix the font name
@@ -1898,6 +1902,29 @@ var Font = (function Font() {
       return stringToArray(otf.file);
     },
 
+    rebuildToUnicode: function font_rebuildToUnicode(properties) {
+      var map = [];
+      if (properties.composite) {
+        for (var i = properties.firstChar, ii = properties.lastChar; i <= ii; i++) {
+          // TODO missing map the character according font's CMap
+          var cid = i;
+          map[i] = this.cidToUnicode[cid];
+        }
+      } else {
+        for (var i = properties.firstChar, ii = properties.lastChar; i <= ii; i++) {
+          var glyph = properties.differences[i];
+          if (!glyph)
+            glyph = properties.baseEncoding[i];
+          if (!!glyph && (glyph in GlyphsUnicode))
+            map[i] = GlyphsUnicode[glyph]
+        }
+      }
+      this.toUnicode = map;
+      this.refreshToUnicode = function refreshToUnicode() {
+        this.font_rebuildToUnicode(properties);
+      };
+    },
+
     loadCidToUnicode: function font_loadCidToUnicode(properties) {
       if (properties.cidToGidMap) {
         this.cidToUnicode = properties.cidToGidMap;
@@ -2039,8 +2066,18 @@ var Font = (function Font() {
           warn('Unsupported font type: ' + this.type);
           break;
       }
+
+      var unicodeChars = this.toUnicode ? this.toUnicode[charcode] : charcode;
+      if (typeof unicodeChars === 'number') {
+        unicodeChars = (unicodeChars >= 0x10000) ?
+            String.fromCharCode(0xD800 | ((unicodeChars - 0x10000) >> 10),
+            0xDC00 | (unicodeChars & 0x3FF)) : String.fromCharCode(unicodeChars);
+        // TODO we probably don't need convert high/low surrogate... keeping for now
+      }
+
       return {
-        unicode: unicode,
+        fontChar: String.fromCharCode(unicode),
+        unicode: unicodeChars,
         width: isNum(width) ? width : this.defaultWidth,
         codeIRQueue: codeIRQueue
       };
