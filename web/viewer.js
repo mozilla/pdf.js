@@ -193,6 +193,13 @@ var PDFView = {
   },
 
   load: function pdfViewLoad(data, scale) {
+    function bindOnAfterDraw(pageView, thumbnailView) {
+      // when page is painted, using the image as thumbnail base
+      pageView.onAfterDraw = function pdfViewLoadOnAfterDraw() {
+        thumbnailView.setImage(pageView.canvas);
+      };
+    }
+
     var loadingIndicator = document.getElementById('loading');
     loadingIndicator.setAttribute('hidden', 'true');
 
@@ -219,10 +226,14 @@ var PDFView = {
     var thumbnails = this.thumbnails = [];
     for (var i = 1; i <= pagesCount; i++) {
       var page = pdf.getPage(i);
-      pages.push(new PageView(container, page, i, page.width, page.height,
-                              page.stats, this.navigateTo.bind(this)));
-      thumbnails.push(new ThumbnailView(sidebar, page, i,
-                                        page.width / page.height));
+      var pageView = new PageView(container, page, i, page.width, page.height,
+                                  page.stats, this.navigateTo.bind(this));
+      var thumbnailView = new ThumbnailView(sidebar, page, i,
+                                            page.width / page.height);
+      bindOnAfterDraw(pageView, thumbnailView);
+
+      pages.push(pageView);
+      thumbnails.push(thumbnailView);
       var pageRef = page.ref;
       pagesRefMap[pageRef.num + ' ' + pageRef.gen + ' R'] = i;
     }
@@ -360,6 +371,8 @@ var PageView = function pageView(container, content, id, pageWidth, pageHeight,
     while (div.hasChildNodes())
       div.removeChild(div.lastChild);
     div.removeAttribute('data-loaded');
+
+    delete this.canvas;
   };
 
   function setupLinks(content, scale) {
@@ -474,6 +487,7 @@ var PageView = function pageView(container, content, id, pageWidth, pageHeight,
     canvas.id = 'page' + this.id;
     canvas.mozOpaque = true;
     div.appendChild(canvas);
+    this.canvas = canvas;
 
     var scale = this.scale;
     canvas.width = pageWidth * scale;
@@ -487,7 +501,11 @@ var PageView = function pageView(container, content, id, pageWidth, pageHeight,
     ctx.translate(-this.x * scale, -this.y * scale);
 
     stats.begin = Date.now();
-    this.content.startRendering(ctx, this.updateStats);
+    this.content.startRendering(ctx, (function pageViewDrawCallback() {
+      this.updateStats();
+      if (this.onAfterDraw)
+        this.onAfterDraw();
+    }).bind(this));
 
     setupLinks(this.content, this.scale);
     div.setAttribute('data-loaded', true);
@@ -518,10 +536,9 @@ var ThumbnailView = function thumbnailView(container, page, id, pageRatio) {
   anchor.appendChild(div);
   container.appendChild(anchor);
 
-  this.draw = function thumbnailViewDraw() {
-    if (div.hasChildNodes())
-      return;
+  this.hasImage = false;
 
+  function getPageDrawContext() {
     var canvas = document.createElement('canvas');
     canvas.id = 'thumbnail' + id;
     canvas.mozOpaque = true;
@@ -549,7 +566,28 @@ var ThumbnailView = function thumbnailView(container, page, id, pageRatio) {
     div.style.height = (view.height * scaleY) + 'px';
     div.style.lineHeight = (view.height * scaleY) + 'px';
 
+    return ctx;
+  }
+
+  this.draw = function thumbnailViewDraw() {
+    if (this.hasImage)
+      return;
+
+    var ctx = getPageDrawContext();
     page.startRendering(ctx, function thumbnailViewDrawStartRendering() {});
+
+    this.hasImage = true;
+  };
+
+  this.setImage = function thumbnailViewSetImage(img) {
+    if (this.hasImage)
+      return;
+
+    var ctx = getPageDrawContext();
+    ctx.drawImage(img, 0, 0, img.width, img.height,
+                  0, 0, ctx.canvas.width, ctx.canvas.height);
+
+    this.hasImage = true;
   };
 };
 
@@ -687,6 +725,10 @@ window.addEventListener('transitionend', function webViewerTransitionend(evt) {
 
   var container = document.getElementById('sidebarView');
   container._interval = window.setInterval(function interval() {
+    // skipping the thumbnails with set images
+    while (pageIndex < pagesCount && PDFView.thumbnails[pageIndex].hasImage)
+      pageIndex++;
+
     if (pageIndex >= pagesCount) {
       window.clearInterval(container._interval);
       return;
