@@ -43,7 +43,10 @@ PDF_JS_FILES = \
 server:
 	@cd test; python test.py --port=8888;
 
-test: shell-test browser-test
+# make test
+#
+# This target runs all the tests. This can be used for testing all browsers.
+test: unit-test shell-test browser-test
 
 #
 # Create production output (pdf.js, and corresponding changes to web files)
@@ -67,6 +70,14 @@ bundle: | $(BUILD_DIR)
 	sed -i '' "s/PDFJSSCRIPT_BUNDLE_VER/`git log --format="%H" -n 1`/" ../$(BUILD_TARGET); \
 	rm -f *.tmp; \
 	cd ..
+
+# make unit-test
+#
+# This target runs in-browser unit tests with js-test-driver and jasmine unit
+# test framework.
+
+unit-test:
+	@cd test/unit/ ; make ;
 
 # make browser-test
 #
