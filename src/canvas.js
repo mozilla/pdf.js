@@ -59,7 +59,7 @@ function ScratchCanvas(width, height) {
   return canvas;
 }
 
-function addCtxCurrentTransform(ctx) {
+function addContextCurrentTransform(ctx) {
   // If the context doesn't expose a `mozCurrentTransform`, add a JS based on.
   if (!ctx.mozCurrentTransform) {
     // Store the original context
@@ -73,12 +73,14 @@ function addCtxCurrentTransform(ctx) {
     ctx._transformMatrix = [1, 0, 0, 1, 0, 0];
     ctx._transformStack = [];
 
-    ctx.__defineGetter__('mozCurrentTransform', function getCurrentTransform() {
-      return this._transformMatrix;
+    Object.defineProperty(ctx, 'mozCurrentTransform', {
+      get: function getCurrentTransform() {
+        return this._transformMatrix;
+      }
     });
 
-    ctx.__defineGetter__('mozCurrentTransformInverse',
-      function getCurrentTransformInverse() {
+    Object.defineProperty(ctx, 'mozCurrentTransformInverse', {
+      get: function getCurrentTransformInverse() {
         // Calculation done using WolframAlpha:
         // http://www.wolframalpha.com/input/?
         //   i=Inverse+{{a%2C+c%2C+e}%2C+{b%2C+d%2C+f}%2C+{0%2C+0%2C+1}}
@@ -86,16 +88,19 @@ function addCtxCurrentTransform(ctx) {
         var m = this._transformMatrix;
         var a = m[0], b = m[1], c = m[2], d = m[3], e = m[4], f = m[5];
 
+        var ad_bc = a * d - b * c;
+        var bc_ad = b * c - a * d;
+
         return [
-          d / (a * d - b * c),
-          b / (b * c - a * d),
-          c / (b * c - a * d),
-          a / (a * d - b * c),
-          (d * e - c * f) / (b * c - a * d),
-          (b * e - a * f) / (a * d - b * c)
+          d / ad_bc,
+          b / bc_ad,
+          c / bc_ad,
+          a / ad_bc,
+          (d * e - c * f) / bc_ad,
+          (b * e - a * f) / ad_bc
         ];
       }
-    );
+    });
 
     ctx.save = function ctxSave() {
       var old = this._transformMatrix;
@@ -111,7 +116,7 @@ function addCtxCurrentTransform(ctx) {
         this._transformMatrix = prev;
         this._originalRestore();
       }
-    }
+    };
 
     ctx.translate = function ctxTranslate(x, y) {
       var m = this._transformMatrix;
@@ -119,7 +124,7 @@ function addCtxCurrentTransform(ctx) {
       m[5] = m[1] * x + m[3] * y + m[5];
 
       this._originalTranslate(x, y);
-    }
+    };
 
     ctx.scale = function ctxScale(x, y) {
       var m = this._transformMatrix;
@@ -129,7 +134,7 @@ function addCtxCurrentTransform(ctx) {
       m[3] = m[3] * y;
 
       this._originalScale(x, y);
-    }
+    };
 
     ctx.transform = function ctxTransform(a, b, c, d, e, f) {
       var m = this._transformMatrix;
@@ -143,7 +148,7 @@ function addCtxCurrentTransform(ctx) {
       ];
 
       ctx._originalTransform(a, b, c, d, e, f);
-    }
+    };
 
     ctx.rotate = function ctxRotate(angle) {
       var cosValue = Math.cos(angle);
@@ -160,7 +165,7 @@ function addCtxCurrentTransform(ctx) {
       ];
 
       this._originalRotate(angle);
-    }
+    };
   }
 }
 
@@ -184,7 +189,7 @@ var CanvasGraphics = (function canvasGraphics() {
     this.objs = objs;
 
     if (canvasCtx) {
-      addCtxCurrentTransform(canvasCtx);
+      addContextCurrentTransform(canvasCtx);
     }
   }
 
