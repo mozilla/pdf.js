@@ -64,10 +64,6 @@ var CanvasGraphics = (function canvasGraphics() {
   // before it stops and shedules a continue of execution.
   var kExecutionTime = 50;
 
-  // Number of IR commands to execute before checking
-  // if we execute longer then `kExecutionTime`.
-  var kExecutionTimeCheck = 500;
-
   function constructor(canvasCtx, objs) {
     this.ctx = canvasCtx;
     this.current = new CanvasExtraState();
@@ -112,31 +108,33 @@ var CanvasGraphics = (function canvasGraphics() {
       var i = executionStartIdx || 0;
       var argsArrayLen = argsArray.length;
 
+      // Sometimes the IRQueue to execute is empty.
+      if (argsArrayLen == i) {
+        return i;
+      }
+
       var executionEndIdx;
       var startTime = Date.now();
 
       var objs = this.objs;
 
-      do {
-        executionEndIdx = Math.min(argsArrayLen, i + kExecutionTimeCheck);
+      while (true) {
+        if (fnArray[i] !== 'dependency') {
+          this[fnArray[i]].apply(this, argsArray[i]);
+        } else {
+          var deps = argsArray[i];
+          for (var n = 0, nn = deps.length; n < nn; n++) {
+            var depObjId = deps[n];
 
-        for (i; i < executionEndIdx; i++) {
-          if (fnArray[i] !== 'dependency') {
-            this[fnArray[i]].apply(this, argsArray[i]);
-          } else {
-            var deps = argsArray[i];
-            for (var n = 0, nn = deps.length; n < nn; n++) {
-              var depObjId = deps[n];
-
-              // If the promise isn't resolved yet, add the continueCallback
-              // to the promise and bail out.
-              if (!objs.isResolved(depObjId)) {
-                objs.get(depObjId, continueCallback);
-                return i;
-              }
+            // If the promise isn't resolved yet, add the continueCallback
+            // to the promise and bail out.
+            if (!objs.isResolved(depObjId)) {
+              objs.get(depObjId, continueCallback);
+              return i;
             }
           }
         }
+        i++;
 
         // If the entire IRQueue was executed, stop as were done.
         if (i == argsArrayLen) {
@@ -153,7 +151,7 @@ var CanvasGraphics = (function canvasGraphics() {
 
         // If the IRQueue isn't executed completly yet OR the execution time
         // was short enough, do another execution round.
-      } while (true);
+      }
     },
 
     endDrawing: function canvasGraphicsEndDrawing() {
