@@ -552,7 +552,7 @@ var PDFDoc = (function pdfDoc() {
         switch (type) {
           case 'JpegStream':
             var IR = data[2];
-            new JpegImage(id, IR, this.objs);
+            new JpegImageLoader(id, IR, this.objs);
             break;
           case 'Font':
             var name = data[2];
