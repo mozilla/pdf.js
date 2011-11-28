@@ -103,6 +103,7 @@ var CanvasGraphics = (function canvasGraphics() {
           this.ctx.transform(0, -1, -1, 0, cw, ch);
           break;
       }
+      // Scale so that canvas units are the same as PDF user space units
       this.ctx.scale(cw / mediaBox.width, ch / mediaBox.height);
       this.textDivs = [];
       this.textLayerQueue = [];
@@ -491,14 +492,18 @@ var CanvasGraphics = (function canvasGraphics() {
     pushTextDivs: function canvasGraphicsPushTextDivs(text) {
       var div = document.createElement('div');
       var fontSize = this.current.fontSize;
-      var fontHeight = text.geom.vScale * fontSize;
+
+      // vScale and hScale already contain the scaling to pixel units
+      // as mozCurrentTransform reflects ctx.scale() changes
+      // (see beginDrawing())
+      var fontHeight = fontSize * text.geom.vScale;
+      div.dataset.canvasWidth = text.canvasWidth * text.geom.hScale;
 
       div.style.fontSize = fontHeight + 'px';
       div.style.fontFamily = this.current.font.loadedName || 'sans-serif';
       div.style.left = text.geom.x + 'px';
       div.style.top = (text.geom.y - fontHeight) + 'px';
       div.innerHTML = text.str;
-      div.dataset.canvasWidth = text.canvasWidth * text.geom.hScale;
       div.dataset.textLength = text.length;
       this.textDivs.push(div);
     },
