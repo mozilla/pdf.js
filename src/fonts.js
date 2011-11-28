@@ -719,20 +719,10 @@ function getUnicodeRangeFor(value) {
   return -1;
 }
 
-function adaptUnicode(unicode) {
-  return (unicode <= 0x1F || (unicode >= 127 && unicode < kSizeOfGlyphArea)) ?
-    unicode + kCmapGlyphOffset : unicode;
-}
-
-function isAdaptedUnicode(unicode) {
-  return unicode >= kCmapGlyphOffset &&
-    unicode < kCmapGlyphOffset + kSizeOfGlyphArea;
-}
-
 function isSpecialUnicode(unicode) {
   return (unicode <= 0x1F || (unicode >= 127 && unicode < kSizeOfGlyphArea)) ||
-    unicode >= kCmapGlyphOffset &&
-    unicode < kCmapGlyphOffset + kSizeOfGlyphArea;
+    (unicode >= kCmapGlyphOffset &&
+    unicode < kCmapGlyphOffset + kSizeOfGlyphArea);
 }
 
 /**
@@ -965,15 +955,15 @@ var Font = (function Font() {
     var ranges = [];
     for (var n = 0; n < length; ) {
       var start = codes[n].unicode;
-      var startCode = codes[n].code;
+      var codeIndices = [codes[n].code];
       ++n;
       var end = start;
       while (n < length && end + 1 == codes[n].unicode) {
+        codeIndices.push(codes[n].code);
         ++end;
         ++n;
       }
-      var endCode = codes[n - 1].code;
-      ranges.push([start, end, startCode, endCode]);
+      ranges.push([start, end, codeIndices]);
     }
 
     return ranges;
@@ -1016,17 +1006,16 @@ var Font = (function Font() {
         idDeltas += string16(0);
         idRangeOffsets += string16(offset);
 
-        var startCode = range[2];
-        var endCode = range[3];
-        for (var j = startCode; j <= endCode; ++j)
-          glyphsIds += string16(deltas[j]);
+        var codes = range[2];
+        for (var j = 0, jj = codes.length; j < jj; ++j)
+          glyphsIds += string16(deltas[codes[j]]);
       }
     } else {
       for (var i = 0; i < segCount - 1; i++) {
         var range = ranges[i];
         var start = range[0];
         var end = range[1];
-        var startCode = range[2];
+        var startCode = range[2][0];
 
         startCount += string16(start);
         endCount += string16(end);
@@ -1303,7 +1292,7 @@ var Font = (function Font() {
           properties.baseEncoding = encoding;
       }
 
-      function replaceCMapTable(cmap, font, properties) {
+      function readCMapTable(cmap, font) {
         var start = (font.start ? font.start : 0) + cmap.offset;
         font.pos = start;
 
@@ -1320,7 +1309,7 @@ var Font = (function Font() {
         }
 
         // Check that table are sorted by platformID then encodingID,
-        records.sort(function fontReplaceCMapTableSort(a, b) {
+        records.sort(function fontReadCMapTableSort(a, b) {
           return ((a.platformID << 16) + a.encodingID) -
                  ((b.platformID << 16) + b.encodingID);
         });
@@ -1375,16 +1364,15 @@ var Font = (function Font() {
             for (var j = 0; j < 256; j++) {
               var index = font.getByte();
               if (index) {
-                var unicode = adaptUnicode(j);
-                glyphs.push({ unicode: unicode, code: j });
+                glyphs.push({ unicode: j, code: j });
                 ids.push(index);
               }
             }
-
-            properties.hasShortCmap = true;
-
-            createGlyphNameMap(glyphs, ids, properties);
-            return cmap.data = createCMapTable(glyphs, ids);
+            return {
+              glyphs: glyphs,
+              ids: ids,
+              hasShortCmap: true
+            };
           } else if (format == 4) {
             // re-creating the table in format 4 since the encoding
             // might be changed
@@ -1436,17 +1424,18 @@ var Font = (function Font() {
                 var glyphCode = offsetIndex < 0 ? j :
                   offsets[offsetIndex + j - start];
                 glyphCode = (glyphCode + delta) & 0xFFFF;
-                if (glyphCode == 0 || isAdaptedUnicode(j))
+                if (glyphCode == 0)
                   continue;
 
-                var unicode = adaptUnicode(j);
-                glyphs.push({ unicode: unicode, code: j });
+                glyphs.push({ unicode: j, code: j });
                 ids.push(glyphCode);
               }
             }
 
-            createGlyphNameMap(glyphs, ids, properties);
-            return cmap.data = createCMapTable(glyphs, ids);
+            return {
+              glyphs: glyphs,
+              ids: ids
+            };
           } else if (format == 6) {
             // Format 6 is a 2-bytes dense mapping, which means the font data
             // lives glue together even if they are pretty far in the unicode
@@ -1461,19 +1450,18 @@ var Font = (function Font() {
             for (var j = 0; j < entryCount; j++) {
               var glyphCode = int16(font.getBytes(2));
               var code = firstCode + j;
-              if (isAdaptedUnicode(glyphCode))
-                continue;
 
-              var unicode = adaptUnicode(code);
-              glyphs.push({ unicode: unicode, code: code });
+              glyphs.push({ unicode: code, code: code });
               ids.push(glyphCode);
             }
 
-            createGlyphNameMap(glyphs, ids, properties);
-            return cmap.data = createCMapTable(glyphs, ids);
+            return {
+              glyphs: glyphs,
+              ids: ids
+            };
           }
         }
-        return cmap.data;
+        error('Unsupported cmap table format');
       };
 
       function sanitizeMetrics(font, header, metrics, numGlyphs) {
@@ -1712,17 +1700,60 @@ var Font = (function Font() {
           tables.push(cmap);
         }
 
-        var glyphs = [];
+        var glyphs = [], ids = [];
+        var usedUnicodes = [], unusedUnicode = kCmapGlyphOffset;
+        var cidToGidMap = properties.cidToGidMap;
         for (i = 1; i < numGlyphs; i++) {
-          if (isAdaptedUnicode(i))
-            continue;
-
-          glyphs.push({ unicode: adaptUnicode(i) });
+          var cid = cidToGidMap ? cidToGidMap.indexOf(i) : i;
+          var unicode = this.toUnicode[cid];
+          if (!unicode || isSpecialUnicode(unicode) ||
+              unicode in usedUnicodes) {
+            // overriding the special special symbols mapping
+            while (unusedUnicode in usedUnicodes)
+              unusedUnicode++;
+            this.toUnicode[cid] = unicode = unusedUnicode++;
+            if (unusedUnicode >= kCmapGlyphOffset + kSizeOfGlyphArea) {
+              // overflow of the user defined symblos range
+              // using symbols that a little bit lower than this range
+              unusedUnicode = kCmapGlyphOffset - numGlyphs;
+            }
+          }
+          usedUnicodes[unicode] = true;
+          glyphs.push({ unicode: unicode, code: cid });
+          ids.push(i);
         }
-        cmap.data = createCMapTable(glyphs);
+        cmap.data = createCMapTable(glyphs, ids);
       } else {
-        replaceCMapTable(cmap, font, properties);
+        var cmapTable = readCMapTable(cmap, font);
+        var glyphs = cmapTable.glyphs;
+        var ids = cmapTable.ids;
+        var hasShortCmap = !!cmapTable.hasShortCmap;
+        var toUnicode = this.toUnicode;
+
+        if (hasShortCmap && toUnicode) {
+          // checking if cmap is just identity map
+          var isIdentity = true;
+          for (var i = 0, ii = glyphs.length; i < ii; i++) {
+            if (glyphs[i].unicode != i + 1) {
+              isIdentity = false;
+              break;
+            }
+          }
+          // if it is, replacing with meaningful toUnicode values
+          if (isIdentity) {
+            for (var i = 0, ii = glyphs.length; i < ii; i++) {
+              var unicode = toUnicode[i + 1] || i + 1;
+              glyphs[i].unicode = unicode;
+            }
+            this.useToUnicode = true;
+          }
+        }
+        properties.hasShortCmap = hasShortCmap;
+
+        createGlyphNameMap(glyphs, ids, properties);
         this.glyphNameMap = properties.glyphNameMap;
+
+        cmap.data = createCMapTable(glyphs, ids);
       }
 
       // Rewrite the 'post' table if needed
@@ -1812,6 +1843,14 @@ var Font = (function Font() {
         }
         properties.baseEncoding = encoding;
       }
+      if (properties.subtype == 'CIDFontType0C') {
+        var toUnicode = [];
+        for (var i = 0; i < charstrings.length; ++i) {
+          var charstring = charstrings[i];
+          toUnicode[charstring.code] = charstring.unicode;
+        }
+        this.toUnicode = toUnicode;
+      }
 
       var fields = {
         // PostScript Font Program
@@ -1872,8 +1911,11 @@ var Font = (function Font() {
         // Horizontal metrics
         'hmtx': (function fontFieldsHmtx() {
           var hmtx = '\x00\x00\x00\x00'; // Fake .notdef
-          for (var i = 0, ii = charstrings.length; i < ii; i++)
-            hmtx += string16(charstrings[i].width) + string16(0);
+          for (var i = 0, ii = charstrings.length; i < ii; i++) {
+            var charstring = charstrings[i];
+            var width = 'width' in charstring ? charstring.width : 0;
+            hmtx += string16(width) + string16(0);
+          }
           return stringToArray(hmtx);
         })(),
 
@@ -1903,20 +1945,22 @@ var Font = (function Font() {
     },
 
     rebuildToUnicode: function font_rebuildToUnicode(properties) {
+      var firstChar = properties.firstChar, lastChar = properties.lastChar;
       var map = [];
       if (properties.composite) {
-        for (var i = properties.firstChar, ii = properties.lastChar; i <= ii; i++) {
+        var isIdentityMap = this.cidToUnicode.length == 0;
+        for (var i = firstChar, ii = lastChar; i <= ii; i++) {
           // TODO missing map the character according font's CMap
           var cid = i;
-          map[i] = this.cidToUnicode[cid];
+          map[i] = isIdentityMap ? cid : this.cidToUnicode[cid];
         }
       } else {
-        for (var i = properties.firstChar, ii = properties.lastChar; i <= ii; i++) {
+        for (var i = firstChar, ii = lastChar; i <= ii; i++) {
           var glyph = properties.differences[i];
           if (!glyph)
             glyph = properties.baseEncoding[i];
           if (!!glyph && (glyph in GlyphsUnicode))
-            map[i] = GlyphsUnicode[glyph]
+            map[i] = GlyphsUnicode[glyph];
         }
       }
       this.toUnicode = map;
@@ -1926,16 +1970,12 @@ var Font = (function Font() {
     },
 
     loadCidToUnicode: function font_loadCidToUnicode(properties) {
-      if (properties.cidToGidMap) {
-        this.cidToUnicode = properties.cidToGidMap;
-        return;
-      }
-
       if (!properties.cidSystemInfo)
         return;
 
-      var cidToUnicodeMap = [];
+      var cidToUnicodeMap = [], unicodeToCIDMap = [];
       this.cidToUnicode = cidToUnicodeMap;
+      this.unicodeToCID = unicodeToCIDMap;
 
       var cidSystemInfo = properties.cidSystemInfo;
       var cidToUnicode;
@@ -1947,28 +1987,34 @@ var Font = (function Font() {
       if (!cidToUnicode)
         return; // identity encoding
 
-      var glyph = 1, i, j, k, ii;
+      var cid = 1, i, j, k, ii;
       for (i = 0, ii = cidToUnicode.length; i < ii; ++i) {
         var unicode = cidToUnicode[i];
         if (isArray(unicode)) {
           var length = unicode.length;
-          for (j = 0; j < length; j++)
-            cidToUnicodeMap[unicode[j]] = glyph;
-          glyph++;
+          for (j = 0; j < length; j++) {
+            cidToUnicodeMap[cid] = unicode[j];
+            unicodeToCIDMap[unicode[j]] = cid;
+          }
+          cid++;
         } else if (typeof unicode === 'object') {
           var fillLength = unicode.f;
           if (fillLength) {
             k = unicode.c;
             for (j = 0; j < fillLength; ++j) {
-              cidToUnicodeMap[k] = glyph++;
+              cidToUnicodeMap[cid] = k;
+              unicodeToCIDMap[k] = cid;
+              cid++;
               k++;
             }
           } else
-            glyph += unicode.s;
+            cid += unicode.s;
         } else if (unicode) {
-          cidToUnicodeMap[unicode] = glyph++;
+          cidToUnicodeMap[cid] = unicode;
+          unicodeToCIDMap[unicode] = cid;
+          cid++;
         } else
-          glyph++;
+          cid++;
       }
     },
 
@@ -2008,19 +2054,19 @@ var Font = (function Font() {
       switch (this.type) {
         case 'CIDFontType0':
           if (this.noUnicodeAdaptation) {
-            width = this.widths[this.cidToUnicode[charcode]];
+            width = this.widths[this.unicodeToCID[charcode] || charcode];
             unicode = charcode;
             break;
           }
-          unicode = adaptUnicode(this.cidToUnicode[charcode] || charcode);
+          unicode = this.toUnicode[charcode] || charcode;
           break;
         case 'CIDFontType2':
           if (this.noUnicodeAdaptation) {
-            width = this.widths[this.cidToUnicode[charcode]];
+            width = this.widths[this.unicodeToCID[charcode] || charcode];
             unicode = charcode;
             break;
           }
-          unicode = adaptUnicode(this.cidToUnicode[charcode] || charcode);
+          unicode = this.toUnicode[charcode] || charcode;
           break;
         case 'Type1':
           var glyphName = this.differences[charcode] || this.encoding[charcode];
@@ -2031,7 +2077,7 @@ var Font = (function Font() {
             break;
           }
           unicode = this.glyphNameMap[glyphName] ||
-            adaptUnicode(GlyphsUnicode[glyphName] || charcode);
+            GlyphsUnicode[glyphName] || charcode;
           break;
         case 'Type3':
           var glyphName = this.differences[charcode] || this.encoding[charcode];
@@ -2049,16 +2095,16 @@ var Font = (function Font() {
             break;
           }
           if (!this.hasEncoding) {
-            unicode = adaptUnicode(charcode);
+            unicode = this.useToUnicode ? this.toUnicode[charcode] : charcode;
             break;
           }
-          if (this.hasShortCmap) {
+          if (this.hasShortCmap && false) {
             var j = Encodings.MacRomanEncoding.indexOf(glyphName);
-            unicode = j >= 0 && !isSpecialUnicode(j) ? j :
+            unicode = j >= 0 ? j :
               this.glyphNameMap[glyphName];
           } else {
             unicode = glyphName in GlyphsUnicode ?
-              adaptUnicode(GlyphsUnicode[glyphName]) :
+              GlyphsUnicode[glyphName] :
               this.glyphNameMap[glyphName];
           }
           break;
@@ -2068,12 +2114,8 @@ var Font = (function Font() {
       }
 
       var unicodeChars = this.toUnicode ? this.toUnicode[charcode] : charcode;
-      if (typeof unicodeChars === 'number') {
-        unicodeChars = (unicodeChars >= 0x10000) ?
-            String.fromCharCode(0xD800 | ((unicodeChars - 0x10000) >> 10),
-            0xDC00 | (unicodeChars & 0x3FF)) : String.fromCharCode(unicodeChars);
-        // TODO we probably don't need convert high/low surrogate... keeping for now
-      }
+      if (typeof unicodeChars === 'number')
+        unicodeChars = String.fromCharCode(unicodeChars);
 
       return {
         fontChar: String.fromCharCode(unicode),
@@ -2790,22 +2832,13 @@ CFF.prototype = {
   getOrderedCharStrings: function cff_getOrderedCharStrings(glyphs,
                                                             properties) {
     var charstrings = [];
-    var reverseMapping = {};
-    var encoding = properties.baseEncoding;
     var i, length, glyphName;
-    for (i = 0, length = encoding.length; i < length; ++i) {
-      glyphName = encoding[i];
-      if (!glyphName || isSpecialUnicode(i))
-        continue;
-      reverseMapping[glyphName] = i;
-    }
-    reverseMapping['.notdef'] = 0;
     var unusedUnicode = kCmapGlyphOffset;
     for (i = 0, length = glyphs.length; i < length; i++) {
       var item = glyphs[i];
       var glyphName = item.glyph;
-      var unicode = glyphName in reverseMapping ?
-        reverseMapping[glyphName] : unusedUnicode++;
+      var unicode = glyphName in GlyphsUnicode ?
+        GlyphsUnicode[glyphName] : unusedUnicode++;
       charstrings.push({
         glyph: glyphName,
         unicode: unicode,
@@ -3092,16 +3125,14 @@ var Type2CFF = (function type2CFF() {
       }
 
       var charStrings = this.parseIndex(topDict.CharStrings);
-      var charset = this.parseCharsets(topDict.charset,
-                                       charStrings.length, strings);
-      var encoding = this.parseEncoding(topDict.Encoding, properties,
-                                             strings, charset);
 
       var charset, encoding;
       var isCIDFont = properties.subtype == 'CIDFontType0C';
       if (isCIDFont) {
-        charset = [];
-        charset.length = charStrings.length;
+        charset = ['.notdef'];
+        for (var i = 1, ii = charStrings.length; i < ii; ++i)
+          charset.push('glyph' + i);
+
         encoding = this.parseCidMap(topDict.charset,
                                     charStrings.length);
       } else {
@@ -3170,38 +3201,44 @@ var Type2CFF = (function type2CFF() {
       var charstrings = [];
       var unicodeUsed = [];
       var unassignedUnicodeItems = [];
+      var inverseEncoding = [];
+      for (var charcode in encoding)
+        inverseEncoding[encoding[charcode]] = charcode | 0;
       for (var i = 0, ii = charsets.length; i < ii; i++) {
         var glyph = charsets[i];
-        var encodingFound = false;
-        for (var charcode in encoding) {
-          if (encoding[charcode] == i) {
-            var code = charcode | 0;
-            charstrings.push({
-              unicode: adaptUnicode(code),
-              code: code,
-              gid: i,
-              glyph: glyph
-            });
-            unicodeUsed[code] = true;
-            encodingFound = true;
-            break;
-          }
+        if (glyph == '.notdef') {
+          charstrings.push({
+            unicode: 0,
+            code: 0,
+            gid: i,
+            glyph: glyph
+          });
+          continue;
         }
-        if (!encodingFound) {
+        var code = inverseEncoding[i];
+        if (!code || isSpecialUnicode(code)) {
           unassignedUnicodeItems.push(i);
+          continue;
         }
+        charstrings.push({
+          unicode: code,
+          code: code,
+          gid: i,
+          glyph: glyph
+        });
+        unicodeUsed[code] = true;
       }
 
-      var nextUnusedUnicode = 0x21;
+      var nextUnusedUnicode = kCmapGlyphOffset;
       for (var j = 0, jj = unassignedUnicodeItems.length; j < jj; ++j) {
         var i = unassignedUnicodeItems[j];
         // giving unicode value anyway
-        while (unicodeUsed[nextUnusedUnicode])
+        while (nextUnusedUnicode in unicodeUsed)
           nextUnusedUnicode++;
-        var code = nextUnusedUnicode++;
+        var unicode = nextUnusedUnicode++;
         charstrings.push({
-          unicode: adaptUnicode(code),
-          code: code,
+          unicode: unicode,
+          code: inverseEncoding[i] || 0,
           gid: i,
           glyph: charsets[i]
         });

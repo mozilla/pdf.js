@@ -555,9 +555,21 @@ var PartialEvaluator = (function partialEvaluator() {
                   var startRange = tokens[j];
                   var endRange = tokens[j + 1];
                   var code = tokens[j + 2];
-                  while (startRange <= endRange) {
-                    charToUnicode[startRange] = code++;
-                    ++startRange;
+                  if (code == 0xFFFF) {
+                    // CMap is broken, assuming code == startRange
+                    code = startRange;
+                  }
+                  if (isArray(code)) {
+                    var codeindex = 0;
+                    while (startRange <= endRange) {
+                      charToUnicode[startRange] = code[codeindex++];
+                      ++startRange;
+                    }
+                  } else {
+                    while (startRange <= endRange) {
+                      charToUnicode[startRange] = code++;
+                      ++startRange;
+                    }
                   }
                 }
                 break;
