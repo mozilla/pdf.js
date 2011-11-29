@@ -1701,26 +1701,36 @@ var Font = (function Font() {
         }
 
         var glyphs = [], ids = [];
-        var usedUnicodes = [], unusedUnicode = kCmapGlyphOffset;
+        var usedUnicodes = [];
         var cidToGidMap = properties.cidToGidMap;
-        for (i = 1; i < numGlyphs; i++) {
+        var unassignedUnicodeItems = [];
+        for (var i = 1; i < numGlyphs; i++) {
           var cid = cidToGidMap ? cidToGidMap.indexOf(i) : i;
           var unicode = this.toUnicode[cid];
           if (!unicode || isSpecialUnicode(unicode) ||
               unicode in usedUnicodes) {
-            // overriding the special special symbols mapping
-            while (unusedUnicode in usedUnicodes)
-              unusedUnicode++;
-            this.toUnicode[cid] = unicode = unusedUnicode++;
-            if (unusedUnicode >= kCmapGlyphOffset + kSizeOfGlyphArea) {
-              // overflow of the user defined symblos range
-              // using symbols that a little bit lower than this range
-              unusedUnicode = kCmapGlyphOffset - numGlyphs;
-            }
+            unassignedUnicodeItems.push(i);
+            continue;
           }
           usedUnicodes[unicode] = true;
           glyphs.push({ unicode: unicode, code: cid });
           ids.push(i);
+        }
+        // checking if unassigned symbols will fit the user defined symbols
+        // if those symbols too many, probably they will not be used anyway
+        if (unassignedUnicodeItems.length <= kSizeOfGlyphArea) {
+          var unusedUnicode = kCmapGlyphOffset;
+          for (var j = 0, jj = unassignedUnicodeItems.length; j < jj; j++) {
+            var i = unassignedUnicodeItems[j];
+            var cid = cidToGidMap ? cidToGidMap.indexOf(i) : i;
+            while (unusedUnicode in usedUnicodes)
+              unusedUnicode++;
+            var unicode = unusedUnicode++;
+            this.toUnicode[cid] = unicode;
+            usedUnicodes[unicode] = true;
+            glyphs.push({ unicode: unicode, code: cid });
+            ids.push(i);
+          }
         }
         cmap.data = createCMapTable(glyphs, ids);
       } else {
