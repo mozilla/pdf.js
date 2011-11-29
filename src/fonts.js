@@ -1974,9 +1974,6 @@ var Font = (function Font() {
         }
       }
       this.toUnicode = map;
-      this.refreshToUnicode = function refreshToUnicode() {
-        this.font_rebuildToUnicode(properties);
-      };
     },
 
     loadCidToUnicode: function font_loadCidToUnicode(properties) {
