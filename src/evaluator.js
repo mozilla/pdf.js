@@ -512,6 +512,7 @@ var PartialEvaluator = (function partialEvaluator() {
           error('Encoding is not a Name nor a Dict');
         }
       }
+
       properties.differences = differences;
       properties.baseEncoding = baseEncoding;
       properties.hasEncoding = hasEncoding;
@@ -554,9 +555,21 @@ var PartialEvaluator = (function partialEvaluator() {
                   var startRange = tokens[j];
                   var endRange = tokens[j + 1];
                   var code = tokens[j + 2];
-                  while (startRange <= endRange) {
-                    charToUnicode[startRange] = code++;
-                    ++startRange;
+                  if (code == 0xFFFF) {
+                    // CMap is broken, assuming code == startRange
+                    code = startRange;
+                  }
+                  if (isArray(code)) {
+                    var codeindex = 0;
+                    while (startRange <= endRange) {
+                      charToUnicode[startRange] = code[codeindex++];
+                      ++startRange;
+                    }
+                  } else {
+                    while (startRange <= endRange) {
+                      charToUnicode[startRange] = code++;
+                      ++startRange;
+                    }
                   }
                 }
                 break;
@@ -595,9 +608,18 @@ var PartialEvaluator = (function partialEvaluator() {
             }
           } else if (byte == 0x3E) {
             if (token.length) {
-              // parsing hex number
-              tokens.push(parseInt(token, 16));
-              token = '';
+              if (token.length <= 4) {
+                // parsing hex number
+                tokens.push(parseInt(token, 16));
+                token = '';
+              } else {
+                // parsing hex UTF-16BE numbers
+                var str = [];
+                for (var i = 0, ii = token.length; i < ii; i += 4)
+                  str.push(parseInt(token.substr(i, 4), 16));
+                tokens.push(String.fromCharCode.apply(String, str));
+                token = '';
+              }
             }
           } else {
             token += String.fromCharCode(byte);

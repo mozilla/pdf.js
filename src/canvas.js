@@ -619,12 +619,6 @@ var CanvasGraphics = (function canvasGraphics() {
       this.textDivs.push(div);
     },
     showText: function canvasGraphicsShowText(str, skipTextSelection) {
-      function unicodeToChar(unicode) {
-        return (unicode >= 0x10000) ?
-          String.fromCharCode(0xD800 | ((unicode - 0x10000) >> 10),
-          0xDC00 | (unicode & 0x3FF)) : String.fromCharCode(unicode);
-      };
-
       var ctx = this.ctx;
       var current = this.current;
       var font = current.font;
@@ -673,7 +667,7 @@ var CanvasGraphics = (function canvasGraphics() {
           ctx.translate(charWidth, 0);
           current.x += charWidth;
 
-          text.str += unicodeToChar(glyph.unicode);
+          text.str += glyph.fontChar;
           text.length++;
           text.canvasWidth += charWidth;
         }
@@ -691,7 +685,7 @@ var CanvasGraphics = (function canvasGraphics() {
             continue;
           }
 
-          var char = unicodeToChar(glyph.unicode);
+          var char = glyph.fontChar;
           var charWidth = glyph.width * fontSize * 0.001 + charSpacing;
           ctx.fillText(char, width, 0);
           width += charWidth;
