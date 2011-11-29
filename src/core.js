@@ -613,7 +613,7 @@ var PDFDoc = (function pdfDoc() {
       messageHandler.on('page_error', function pdfDocError(data) {
         var page = this.pageCache[data.pageNum];
         if (page.errorback)
-          page.errorback(data.error)
+          page.errorback(data.error);
         else
           throw data.error;
       }, this);

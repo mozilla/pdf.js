@@ -79,7 +79,7 @@ var WorkerMessageHandler = {
         var page = pdfDoc.getPage(pageNum);
         // Pre compile the pdf page and fetch the fonts/images.
         var IRQueue = page.getIRQueue(handler, dependency);
-      } catch(e) {
+      } catch (e) {
         // Turn the error into an obj that can be serialized
         e = {
           message: e.message,

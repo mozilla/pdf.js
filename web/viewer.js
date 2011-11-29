@@ -553,7 +553,7 @@ var PageView = function pageView(container, content, id, pageWidth, pageHeight,
     ctx.translate(-this.x * scale, -this.y * scale);
 
     stats.begin = Date.now();
-    this.content.startRendering(ctx, 
+    this.content.startRendering(ctx,
       (function pageViewDrawCallback() {
         this.updateStats();
         if (this.onAfterDraw)
