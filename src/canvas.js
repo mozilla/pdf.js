@@ -280,29 +280,28 @@ var CanvasGraphics = (function canvasGraphics() {
 
       var textLayer = this.textLayer;
       if (textLayer) {
-        var renderTextLayer = function canvasRenderTextLayer() {          
+        var renderTextLayer = function canvasRenderTextLayer() {
           var textDivs = self.textDivs;
           for (var i = 0, length = textDivs.length; i < length; ++i) {
-            if (textDivs[i].dataset.textLength>1) { // avoid div by zero
+            if (textDivs[i].dataset.textLength > 1) { // avoid div by zero
               textLayer.appendChild(textDivs[i]);
               // Adjust div width (via letterSpacing) to match canvas text
               // Due to the .offsetWidth calls, this is slow
               textDivs[i].style.letterSpacing =
-                ((textDivs[i].dataset.canvasWidth
-                - textDivs[i].offsetWidth)/(textDivs[i].dataset.textLength-1))
-                + 'px';
+                ((textDivs[i].dataset.canvasWidth - textDivs[i].offsetWidth) /
+                 (textDivs[i].dataset.textLength - 1)) + 'px';
             }
-          }          
+          }
         }
         var textLayerQueue = self.textLayerQueue;
         textLayerQueue.push(renderTextLayer);
-        
+
         // Lazy textLayer rendering (to prevent UI hangs)
         // Only render queue if activity has stopped, where "no activity" ==
         // "no beginDrawing() calls in the last N ms"
-        self.textLayerTimer = setTimeout(function renderTextLayerQueue(){
+        self.textLayerTimer = setTimeout(function renderTextLayerQueue() {
           // Render most recent (==most relevant) layers first
-          for (var i=textLayerQueue.length-1; i>=0; i--) {
+          for (var i = textLayerQueue.length - 1; i >= 0; i--) {
             textLayerQueue.pop().call();
           }
         }, 500);
@@ -596,7 +595,7 @@ var CanvasGraphics = (function canvasGraphics() {
         spaceGlyph = font.charsToGlyphs('i');
       // Fallback
       if (spaceGlyph.length === 0 || spaceGlyph[0].width === 0)
-        spaceGlyph = [ {width:0} ];
+        spaceGlyph = [{width: 0}];
       geom.spaceWidth = spaceGlyph[0].width;
       return geom;
     },
@@ -629,7 +628,7 @@ var CanvasGraphics = (function canvasGraphics() {
       var textHScale = current.textHScale;
       var glyphsLength = glyphs.length;
       var textLayer = this.textLayer;
-      var text = { str:'', length:0, canvasWidth:0, geom:{}};
+      var text = {str: '', length: 0, canvasWidth: 0, geom: {}};
       var textSelection = textLayer && !skipTextSelection ? true : false;
 
       if (textSelection) {
@@ -638,7 +637,7 @@ var CanvasGraphics = (function canvasGraphics() {
         text.geom = this.getTextGeometry();
         ctx.restore();
       }
-      
+
       // Type3 fonts - each glyph is a "mini-PDF"
       if (font.coded) {
         ctx.save();
@@ -689,7 +688,7 @@ var CanvasGraphics = (function canvasGraphics() {
           var charWidth = glyph.width * fontSize * 0.001 + charSpacing;
           ctx.fillText(char, width, 0);
           width += charWidth;
-          
+
           text.str += char === ' ' ? '&nbsp;' : char;
           text.length++;
           text.canvasWidth += charWidth;
@@ -699,7 +698,7 @@ var CanvasGraphics = (function canvasGraphics() {
         ctx.restore();
       }
 
-      if (textSelection) 
+      if (textSelection)
         this.pushTextDivs(text);
 
       return text;
@@ -712,7 +711,7 @@ var CanvasGraphics = (function canvasGraphics() {
       var arrLength = arr.length;
       var textLayer = this.textLayer;
       var font = current.font;
-      var text = {str:'', length:0, canvasWidth:0, geom:{}};
+      var text = {str: '', length: 0, canvasWidth: 0, geom: {}};
       var textSelection = textLayer ? true : false;
 
       if (textSelection) {
@@ -721,7 +720,7 @@ var CanvasGraphics = (function canvasGraphics() {
         text.geom = this.getTextGeometry();
         ctx.restore();
       }
-      
+
       for (var i = 0; i < arrLength; ++i) {
         var e = arr[i];
         if (isNum(e)) {
@@ -731,11 +730,11 @@ var CanvasGraphics = (function canvasGraphics() {
           if (textSelection) {
             // Emulate precise spacing via HTML spaces
             text.canvasWidth += spacingLength;
-            if (e<0 && text.geom.spaceWidth>0) { // avoid div by zero
+            if (e < 0 && text.geom.spaceWidth > 0) { // avoid div by zero
               var numFakeSpaces = Math.round(-e / text.geom.spaceWidth);
               for (var j = 0; j < numFakeSpaces; ++j)
                 text.str += '&nbsp;';
-              text.length += numFakeSpaces>0 ? 1 : 0;
+              text.length += numFakeSpaces > 0 ? 1 : 0;
             }
           }
         } else if (isString(e)) {
@@ -754,8 +753,8 @@ var CanvasGraphics = (function canvasGraphics() {
           malformed('TJ array element ' + e + ' is not string or num');
         }
       }
-      
-      if (textSelection) 
+
+      if (textSelection)
         this.pushTextDivs(text);
     },
     nextLineShowText: function canvasGraphicsNextLineShowText(text) {
