@@ -155,6 +155,11 @@ var PartialEvaluator = (function partialEvaluator() {
             font.loadedName = loadedName;
 
             var translated = font.translated;
+            // Convert the file to an ArrayBuffer which will be turned back into
+            // a Stream in the main thread.
+            if (translated.file)
+              translated.file = translated.file.getBytes();
+
             handler.send('obj', [
                 loadedName,
                 'Font',
