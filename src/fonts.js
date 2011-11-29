@@ -1700,12 +1700,19 @@ var Font = (function Font() {
           tables.push(cmap);
         }
 
+        var cidToGidMap = properties.cidToGidMap || [];
+        var gidToCidMap = [0];
+        for (var j = cidToGidMap.length - 1; j >= 0; j--) {
+          var gid = cidToGidMap[j];
+          if (gid)
+            gidToCidMap[gid] = j;
+        }
+
         var glyphs = [], ids = [];
         var usedUnicodes = [];
-        var cidToGidMap = properties.cidToGidMap;
         var unassignedUnicodeItems = [];
         for (var i = 1; i < numGlyphs; i++) {
-          var cid = cidToGidMap ? cidToGidMap.indexOf(i) : i;
+          var cid = gidToCidMap[i] || i;
           var unicode = this.toUnicode[cid];
           if (!unicode || isSpecialUnicode(unicode) ||
               unicode in usedUnicodes) {
@@ -1716,21 +1723,21 @@ var Font = (function Font() {
           glyphs.push({ unicode: unicode, code: cid });
           ids.push(i);
         }
-        // checking if unassigned symbols will fit the user defined symbols
-        // if those symbols too many, probably they will not be used anyway
-        if (unassignedUnicodeItems.length <= kSizeOfGlyphArea) {
-          var unusedUnicode = kCmapGlyphOffset;
-          for (var j = 0, jj = unassignedUnicodeItems.length; j < jj; j++) {
-            var i = unassignedUnicodeItems[j];
-            var cid = cidToGidMap ? cidToGidMap.indexOf(i) : i;
-            while (unusedUnicode in usedUnicodes)
-              unusedUnicode++;
-            var unicode = unusedUnicode++;
-            this.toUnicode[cid] = unicode;
-            usedUnicodes[unicode] = true;
-            glyphs.push({ unicode: unicode, code: cid });
-            ids.push(i);
-          }
+        // trying to fit as many unassigned symbols as we can
+        // in the range allocated for the user defined symbols
+        var unusedUnicode = kCmapGlyphOffset;
+        for (var j = 0, jj = unassignedUnicodeItems.length; j < jj; j++) {
+          var i = unassignedUnicodeItems[j];
+          var cid = gidToCidMap[i] || i;
+          while (unusedUnicode in usedUnicodes)
+            unusedUnicode++;
+          if (unusedUnicode >= kCmapGlyphOffset + kSizeOfGlyphArea)
+            break;
+          var unicode = unusedUnicode++;
+          this.toUnicode[cid] = unicode;
+          usedUnicodes[unicode] = true;
+          glyphs.push({ unicode: unicode, code: cid });
+          ids.push(i);
         }
         cmap.data = createCMapTable(glyphs, ids);
       } else {
