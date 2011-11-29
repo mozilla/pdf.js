@@ -181,9 +181,34 @@ var PDFView = {
     return '';
   },
 
-  error: function pdfViewError() {
-    var loadingIndicator = document.getElementById('loading');
-    loadingIndicator.innerHTML = 'Error';
+  error: function pdfViewError(message, error) {
+    var errorWrapper = document.getElementById('errorWrapper');
+    errorWrapper.removeAttribute('hidden');
+
+    var errorMessage = document.getElementById('errorMessage');
+    errorMessage.innerHTML = message;
+
+    if (error) {
+      var errorMoreInfo = document.getElementById('errorMoreInfo');
+      var moreInfoButton = document.getElementById('errorShowMore');
+      var lessInfoButton = document.getElementById('errorShowLess');
+      var closeButton = document.getElementById('errorClose');
+      moreInfoButton.onclick = function() {
+        errorMoreInfo.removeAttribute('hidden');
+        moreInfoButton.setAttribute('hidden', 'true');
+        lessInfoButton.removeAttribute('hidden');
+      };
+      lessInfoButton.onclick = function() {
+        errorMoreInfo.setAttribute('hidden', 'true');
+        moreInfoButton.removeAttribute('hidden');
+        lessInfoButton.setAttribute('hidden', 'true');
+      };
+      closeButton.onclick = function() {
+        errorWrapper.setAttribute('hidden', 'true');
+      };
+      moreInfoButton.removeAttribute('hidden');
+      errorMoreInfo.innerHTML = error.message + '\n' + error.stack;
+    }
   },
 
   progress: function pdfViewProgress(level) {
@@ -487,7 +512,9 @@ var PageView = function pageView(container, content, id, pageWidth, pageHeight,
     ctx.translate(-this.x * scale, -this.y * scale);
 
     stats.begin = Date.now();
-    this.content.startRendering(ctx, this.updateStats);
+    this.content.startRendering(ctx, this.updateStats, function(e) {
+      PDFView.error('An error occured while rendering the page.', e);
+    });
 
     setupLinks(this.content, this.scale);
     div.setAttribute('data-loaded', true);

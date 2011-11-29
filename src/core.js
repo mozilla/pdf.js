@@ -63,6 +63,10 @@ var Page = (function pagePage() {
     };
     this.xref = xref;
     this.ref = ref;
+
+    this.ctx = null;
+    this.callback = null;
+    this.errorback = null;
   }
 
   constructor.prototype = {
@@ -165,8 +169,10 @@ var Page = (function pagePage() {
           try {
             self.display(gfx, self.callback);
           } catch (e) {
-            if (self.callback) self.callback(e.toString());
-            throw e;
+            if (self.errorback)
+              self.errorback(e);
+            else
+              throw e;
           }
         });
       };
@@ -303,9 +309,10 @@ var Page = (function pagePage() {
       }
       return links;
     },
-    startRendering: function pageStartRendering(ctx, callback)  {
+    startRendering: function pageStartRendering(ctx, callback, errorback)  {
       this.ctx = ctx;
       this.callback = callback;
+      this.errorback = errorback;
 
       this.startRenderingTime = Date.now();
       this.pdf.startRendering(this);
@@ -598,6 +605,14 @@ var PDFDoc = (function pdfDoc() {
           this.objs.setData(id, font);
         }
       }.bind(this));
+
+      messageHandler.on('page_error', function pdfDocError(data) {
+        var page = this.pageCache[data.pageNum];
+        if (page.errorback)
+          page.errorback(data.error)
+        else
+          throw data.error;
+      }, this);
 
       setTimeout(function pdfDocFontReadySetTimeout() {
         messageHandler.send('doc', this.data);
