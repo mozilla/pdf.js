@@ -261,6 +261,7 @@ canvas {
   top: 30px;
   z-index: 1000;
   padding: 3px;
+  font-size: 0.8em;
 }
 
 #errorMessageLeft {
