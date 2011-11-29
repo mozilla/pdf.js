@@ -39,11 +39,15 @@ function getPdf(arg, callback) {
   if ('error' in params)
     xhr.onerror = params.error || undefined;
 
-  xhr.onreadystatechange = function getPdfOnreadystatechange() {
-    if (xhr.readyState === 4 && xhr.status === xhr.expected) {
-      var data = (xhr.mozResponseArrayBuffer || xhr.mozResponse ||
-                  xhr.responseArrayBuffer || xhr.response);
-      callback(data);
+  xhr.onreadystatechange = function getPdfOnreadystatechange(e) {
+    if (xhr.readyState === 4) {
+      if (xhr.status === xhr.expected) {
+        var data = (xhr.mozResponseArrayBuffer || xhr.mozResponse ||
+                    xhr.responseArrayBuffer || xhr.response);
+        callback(data);
+      } else {
+        params.error(e);
+      }
     }
   };
   xhr.send(null);

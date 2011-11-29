@@ -129,7 +129,14 @@ var PDFView = {
           if (evt.lengthComputable)
             self.progress(evt.loaded / evt.total);
         },
-        error: self.error
+        error: function getPdfError(e) {
+          var loadingIndicator = document.getElementById('loading');
+          loadingIndicator.innerHTML = 'Error';
+          var moreInfo = {
+            message: 'Unexpected server response of ' + e.target.status + '.'
+          };
+          self.error('An error occurred while loading the PDF.', moreInfo);
+        }
       },
       function getPdfLoad(data) {
         self.loading = true;
@@ -181,33 +188,46 @@ var PDFView = {
     return '';
   },
 
-  error: function pdfViewError(message, error) {
+  /**
+   * Show the error box.
+   * @param {String} message A message that is human readable.
+   * @param {Object} moreInfo (optional) Further information about the error
+   *                            that is more technical.  Should have a 'message'
+   *                            and optionally a 'stack' property.
+   */
+  error: function pdfViewError(message, moreInfo) {
     var errorWrapper = document.getElementById('errorWrapper');
     errorWrapper.removeAttribute('hidden');
 
     var errorMessage = document.getElementById('errorMessage');
     errorMessage.innerHTML = message;
 
-    if (error) {
-      var errorMoreInfo = document.getElementById('errorMoreInfo');
-      var moreInfoButton = document.getElementById('errorShowMore');
-      var lessInfoButton = document.getElementById('errorShowLess');
-      var closeButton = document.getElementById('errorClose');
-      moreInfoButton.onclick = function() {
-        errorMoreInfo.removeAttribute('hidden');
-        moreInfoButton.setAttribute('hidden', 'true');
-        lessInfoButton.removeAttribute('hidden');
-      };
-      lessInfoButton.onclick = function() {
-        errorMoreInfo.setAttribute('hidden', 'true');
-        moreInfoButton.removeAttribute('hidden');
-        lessInfoButton.setAttribute('hidden', 'true');
-      };
-      closeButton.onclick = function() {
-        errorWrapper.setAttribute('hidden', 'true');
-      };
+    var closeButton = document.getElementById('errorClose');
+    closeButton.onclick = function() {
+      errorWrapper.setAttribute('hidden', 'true');
+    };
+
+    var errorMoreInfo = document.getElementById('errorMoreInfo');
+    var moreInfoButton = document.getElementById('errorShowMore');
+    var lessInfoButton = document.getElementById('errorShowLess');
+    moreInfoButton.onclick = function() {
+      errorMoreInfo.removeAttribute('hidden');
+      moreInfoButton.setAttribute('hidden', 'true');
+      lessInfoButton.removeAttribute('hidden');
+    };
+    lessInfoButton.onclick = function() {
+      errorMoreInfo.setAttribute('hidden', 'true');
       moreInfoButton.removeAttribute('hidden');
-      errorMoreInfo.innerHTML = error.message + '\n' + error.stack;
+      lessInfoButton.setAttribute('hidden', 'true');
+    };
+    moreInfoButton.removeAttribute('hidden');
+    lessInfoButton.setAttribute('hidden', 'true');
+    errorMoreInfo.innerHTML = 'PDF.JS Build: ' + PDFJS.build + '\n';
+
+    if (moreInfo) {
+      errorMoreInfo.innerHTML += 'Message: ' + moreInfo.message;
+      if (moreInfo.stack)
+        errorMoreInfo.innerHTML += '\n' + 'Stack: ' + moreInfo.stack;
     }
   },
 
@@ -225,6 +245,9 @@ var PDFView = {
       };
     }
 
+    var errorWrapper = document.getElementById('errorWrapper');
+    errorWrapper.setAttribute('hidden', 'true');
+
     var loadingIndicator = document.getElementById('loading');
     loadingIndicator.setAttribute('hidden', 'true');
 
@@ -241,7 +264,11 @@ var PDFView = {
     while (container.hasChildNodes())
       container.removeChild(container.lastChild);
 
-    var pdf = new PDFJS.PDFDoc(data);
+    try {
+      var pdf = new PDFJS.PDFDoc(data);
+    } catch (e) {
+      this.error('An error occurred while reading the PDF.', e);
+    }
     var pagesCount = pdf.numPages;
     document.getElementById('numPages').innerHTML = pagesCount;
     document.getElementById('pageNumber').max = pagesCount;
@@ -533,7 +560,7 @@ var PageView = function pageView(container, content, id, pageWidth, pageHeight,
           this.onAfterDraw();
       }).bind(this),
       function pageViewErrorback(e) {
-        PDFView.error('An error occured while rendering the page.', e);
+        PDFView.error('An error occurred while rendering the page.', e);
       }
     );
 
