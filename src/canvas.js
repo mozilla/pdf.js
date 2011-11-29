@@ -172,7 +172,7 @@ function addContextCurrentTransform(ctx) {
 var CanvasGraphics = (function canvasGraphics() {
   // Defines the time the executeIRQueue is going to be executing
   // before it stops and shedules a continue of execution.
-  var kExecutionTime = 50;
+  var kExecutionTime = 25;
 
   function constructor(canvasCtx, objs) {
     this.ctx = canvasCtx;
