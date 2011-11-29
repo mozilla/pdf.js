@@ -586,13 +586,11 @@ var CanvasGraphics = (function canvasGraphics() {
             continue;
           }
 
-          var unicode = glyph.unicode;
-          var char = (unicode >= 0x10000) ?
-            String.fromCharCode(0xD800 | ((unicode - 0x10000) >> 10),
-            0xDC00 | (unicode & 0x3FF)) : String.fromCharCode(unicode);
-
+          var char = glyph.fontChar;
           ctx.fillText(char, width, 0);
           width += glyph.width * fontSize * 0.001 + charSpacing;
+
+          // TODO actual characters can be extracted from the glyph.unicode
         }
         current.x += width;
 
