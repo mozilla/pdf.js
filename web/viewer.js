@@ -568,8 +568,8 @@ var ThumbnailView = function thumbnailView(container, page, id, pageRatio) {
     maxThumbSize * pageRatio;
   var canvasHeight = pageRatio <= 1 ? maxThumbSize :
     maxThumbSize / pageRatio;
-  this.scaleX = (canvasWidth / this.width);
-  this.scaleY = (canvasHeight / this.height);
+  var scaleX = this.scaleX = (canvasWidth / this.width);
+  var scaleY = this.scaleY = (canvasHeight / this.height);
 
   var div = document.createElement('div');
   div.id = 'thumbnailContainer' + id;
@@ -598,8 +598,6 @@ var ThumbnailView = function thumbnailView(container, page, id, pageRatio) {
     ctx.restore();
 
     var view = page.view;
-    var scaleX = this.scaleX;
-    var scaleY = this.scaleY;
     ctx.translate(-view.x * scaleX, -view.y * scaleY);
     div.style.width = (view.width * scaleX) + 'px';
     div.style.height = (view.height * scaleY) + 'px';
