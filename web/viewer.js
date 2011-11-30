@@ -701,13 +701,9 @@ function updateThumbViewArea() {
   }, delay);
 }
 
-sidebarScrollView.addEventListener('scroll', function thumbViewScroll(evt) {
-  updateThumbViewArea();
-}, true);
-
-window.addEventListener('transitionend', function webViewerTransitionend(evt) {
-  updateThumbViewArea();
-}, true);
+sidebarScrollView.addEventListener('scroll', updateThumbViewArea, true);
+window.addEventListener('transitionend', updateThumbViewArea, true);
+window.addEventListener('webkitTransitionEnd', updateThumbViewArea, true);
 
 window.addEventListener('resize', function webViewerResize(evt) {
   if (document.getElementById('pageWidthOption').selected ||
