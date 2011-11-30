@@ -498,6 +498,8 @@ var PartialEvaluator = (function partialEvaluator() {
           var baseName = encoding.get('BaseEncoding');
           if (baseName)
             baseEncoding = Encodings[baseName.name];
+          else
+            hasEncoding = false; // base encoding was not provided
 
           // Load the differences between the base and original
           if (encoding.has('Differences')) {

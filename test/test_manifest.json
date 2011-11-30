@@ -283,5 +283,12 @@
        "link": true,
        "rounds": 1,
        "type": "eq"
+    },
+    {  "id": "piperine",
+       "file": "pdfs/piperine.pdf",
+       "md5": "603ca43dc5732dbba1579f122958c0c2",
+       "link": true,
+       "rounds": 1,
+       "type": "eq"
     }
 ]

@@ -764,6 +764,7 @@ var Font = (function Font() {
     this.hasEncoding = properties.hasEncoding;
 
     this.fontMatrix = properties.fontMatrix;
+    this.widthMultiplier = 1.0;
     if (properties.type == 'Type3')
       return;
 
@@ -826,6 +827,8 @@ var Font = (function Font() {
 
     this.data = data;
     this.fontMatrix = properties.fontMatrix;
+    this.widthMultiplier = !properties.fontMatrix ? 1.0 :
+      1.0 / properties.fontMatrix[0];
     this.encoding = properties.baseEncoding;
     this.hasShortCmap = properties.hasShortCmap;
     this.loadedName = getUniqueName();
@@ -2131,10 +2134,12 @@ var Font = (function Font() {
       if (typeof unicodeChars === 'number')
         unicodeChars = String.fromCharCode(unicodeChars);
 
+      width = (isNum(width) ? width : this.defaultWidth) * this.widthMultiplier;
+
       return {
         fontChar: String.fromCharCode(unicode),
         unicode: unicodeChars,
-        width: isNum(width) ? width : this.defaultWidth,
+        width: width,
         codeIRQueue: codeIRQueue
       };
     },
