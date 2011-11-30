@@ -13,6 +13,19 @@ var kMinScale = 0.25;
 var kMaxScale = 4.0;
 
 
+var Cache = function cacheCache(size) {
+  var data = [];
+  this.push = function cachePush(view) {
+    var i = data.indexOf(view);
+    if (i >= 0)
+      data.splice(i);
+    data.push(view);
+    if (data.length > size)
+      data.shift().update();
+  };
+};
+
+var cache = new Cache(kCacheSize);
 var currentPageNumber = 1;
 
 var PDFView = {
@@ -639,7 +652,8 @@ function updateViewarea() {
   var visiblePages = PDFView.getVisiblePages();
   for (var i = 0; i < visiblePages.length; i++) {
     var page = visiblePages[i];
-    PDFView.pages[page.id - 1].draw();
+    if (PDFView.pages[page.id - 1].draw())
+      cache.push(page.view);
   }
 
   if (!visiblePages.length)
