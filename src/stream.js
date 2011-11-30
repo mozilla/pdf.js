@@ -756,8 +756,13 @@ var PredictorStream = (function predictorStream() {
   return constructor;
 })();
 
-// A JpegStream can't be read directly. We use the platform to render
-// the underlying JPEG data for us.
+/**
+ * Depending on the type of JPEG a JpegStream is handled in different ways. For
+ * JPEG's that are supported natively such as DeviceGray and DeviceRGB the image
+ * data is stored and then loaded by the browser.  For unsupported JPEG's we use
+ * a library to decode these images and the stream behaves like all the other
+ * DecodeStreams.
+ */
 var JpegStream = (function jpegStream() {
   function isAdobeImage(bytes) {
     var maxBytesScanned = Math.max(bytes.length - 16, 1024);
@@ -789,24 +794,56 @@ var JpegStream = (function jpegStream() {
     return newBytes;
   }
 
-  function constructor(bytes, dict) {
+  function constructor(bytes, dict, xref) {
     // TODO: per poppler, some images may have 'junk' before that
     // need to be removed
     this.dict = dict;
 
-    if (isAdobeImage(bytes))
-      bytes = fixAdobeImage(bytes);
+    // Flag indicating wether the image can be natively loaded.
+    this.isNative = true;
 
-    this.src = bytesToString(bytes);
+    this.colorTransform = -1;
+
+    if (isAdobeImage(bytes)) {
+      // when bug 674619 land, let's check if browser can do
+      // normal cmyk and then we won't have to the following
+      var cs = xref.fetchIfRef(dict.get('ColorSpace'));
+
+      // DeviceRGB and DeviceGray are the only Adobe images that work natively
+      if (isName(cs) && (cs.name === 'DeviceRGB' || cs.name === 'DeviceGray')) {
+        bytes = fixAdobeImage(bytes);
+        this.src = bytesToString(bytes);
+      } else {
+        this.colorTransform = dict.get('ColorTransform');
+        this.isNative = false;
+        this.bytes = bytes;
+      }
+    } else {
+      this.src = bytesToString(bytes);
+    }
+
+    DecodeStream.call(this);
   }
 
-  constructor.prototype = {
-    getIR: function jpegStreamGetIR() {
-      return this.src;
-    },
-    getChar: function jpegStreamGetChar() {
+  constructor.prototype = Object.create(DecodeStream.prototype);
+
+  constructor.prototype.ensureBuffer = function jpegStreamEnsureBuffer(req) {
+    if (this.bufferLength)
+      return;
+    var jpegImage = new JpegImage();
+    jpegImage.colorTransform = this.colorTransform;
+    jpegImage.parse(this.bytes);
+    var width = jpegImage.width;
+    var height = jpegImage.height;
+    var data = jpegImage.getData(width, height);
+    this.buffer = data;
+    this.bufferLength = data.length;
+  };
+  constructor.prototype.getIR = function jpegStreamGetIR() {
+    return this.src;
+  };
+  constructor.prototype.getChar = function jpegStreamGetChar() {
       error('internal error: getChar is not valid on JpegStream');
-    }
   };
 
   return constructor;

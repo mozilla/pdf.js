@@ -24,7 +24,7 @@ var ColorSpace = (function colorSpaceColorSpace() {
 
   constructor.parse = function colorSpaceParse(cs, xref, res) {
     var IR = constructor.parseToIR(cs, xref, res);
-    if (IR instanceof SeparationCS)
+    if (IR instanceof AlternateCS)
       return IR;
 
     return constructor.fromIR(IR);
@@ -50,11 +50,12 @@ var ColorSpace = (function colorSpaceColorSpace() {
         var hiVal = IR[2];
         var lookup = IR[3];
         return new IndexedCS(ColorSpace.fromIR(baseIndexedCS), hiVal, lookup);
-      case 'SeparationCS':
-        var alt = IR[1];
-        var tintFnIR = IR[2];
+      case 'AlternateCS':
+        var numComps = IR[1];
+        var alt = IR[2];
+        var tintFnIR = IR[3];
 
-        return new SeparationCS(ColorSpace.fromIR(alt),
+        return new AlternateCS(numComps, ColorSpace.fromIR(alt),
                                 PDFFunction.fromIR(tintFnIR));
       default:
         error('Unkown name ' + name);
@@ -134,11 +135,17 @@ var ColorSpace = (function colorSpaceColorSpace() {
           var lookup = xref.fetchIfRef(cs[3]);
           return ['IndexedCS', baseIndexedCS, hiVal, lookup];
         case 'Separation':
+        case 'DeviceN':
+          var name = cs[1];
+          var numComps = 1;
+          if (isName(name))
+            numComps = 1;
+          else if (isArray(name))
+            numComps = name.length;
           var alt = ColorSpace.parseToIR(cs[2], xref, res);
           var tintFnIR = PDFFunction.getIR(xref, xref.fetchIfRef(cs[3]));
-          return ['SeparationCS', alt, tintFnIR];
+          return ['AlternateCS', numComps, alt, tintFnIR];
         case 'Lab':
-        case 'DeviceN':
         default:
           error('unimplemented color space object "' + mode + '"');
       }
@@ -151,33 +158,45 @@ var ColorSpace = (function colorSpaceColorSpace() {
   return constructor;
 })();
 
-var SeparationCS = (function separationCS() {
-  function constructor(base, tintFn) {
-    this.name = 'Separation';
-    this.numComps = 1;
-    this.defaultColor = [1];
+/**
+ * Alternate color space handles both Separation and DeviceN color spaces.  A
+ * Separation color space is actually just a DeviceN with one color component.
+ * Both color spaces use a tinting function to convert colors to a base color
+ * space.
+ */
+var AlternateCS = (function alternateCS() {
+  function constructor(numComps, base, tintFn) {
+    this.name = 'Alternate';
+    this.numComps = numComps;
+    this.defaultColor = [];
+    for (var i = 0; i < numComps; ++i)
+      this.defaultColor.push(1);
     this.base = base;
     this.tintFn = tintFn;
   }
 
   constructor.prototype = {
-    getRgb: function sepcs_getRgb(color) {
+    getRgb: function altcs_getRgb(color) {
       var tinted = this.tintFn(color);
       return this.base.getRgb(tinted);
     },
-    getRgbBuffer: function sepcs_getRgbBuffer(input, bits) {
+    getRgbBuffer: function altcs_getRgbBuffer(input, bits) {
       var tintFn = this.tintFn;
       var base = this.base;
       var scale = 1 / ((1 << bits) - 1);
       var length = input.length;
       var pos = 0;
-      var numComps = base.numComps;
-      var baseBuf = new Uint8Array(numComps * length);
+      var baseNumComps = base.numComps;
+      var baseBuf = new Uint8Array(baseNumComps * length);
+      var numComps = this.numComps;
+      var scaled = new Array(numComps);
 
-      for (var i = 0; i < length; ++i) {
-        var scaled = input[i] * scale;
-        var tinted = tintFn([scaled]);
-        for (var j = 0; j < numComps; ++j)
+      for (var i = 0; i < length; i += numComps) {
+        for (var z = 0; z < numComps; ++z)
+          scaled[z] = input[i + z] * scale;
+
+        var tinted = tintFn(scaled);
+        for (var j = 0; j < baseNumComps; ++j)
           baseBuf[pos++] = 255 * tinted[j];
       }
       return base.getRgbBuffer(baseBuf, 8);
