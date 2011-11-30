@@ -6,7 +6,7 @@
   <Description about="urn:mozilla:install-manifest">
     <em:id>uriloader@pdf.js</em:id>
     <em:name>pdf.js</em:name>
-    <em:version>0.1</em:version>
+    <em:version>0.1.0</em:version>
 	  <em:iconURL>chrome://pdf.js/skin/logo.png</em:iconURL>
     <em:targetApplication>
       <Description>
