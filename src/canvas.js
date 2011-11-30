@@ -537,13 +537,14 @@ var CanvasGraphics = (function canvasGraphics() {
       var charSpacing = current.charSpacing;
       var wordSpacing = current.wordSpacing;
       var textHScale = current.textHScale;
+      var fontMatrix = font.fontMatrix || IDENTITY_MATRIX;
+      var textHScale2 = textHScale * fontMatrix[0];
       var glyphsLength = glyphs.length;
       if (font.coded) {
         ctx.save();
         ctx.transform.apply(ctx, current.textMatrix);
         ctx.translate(current.x, current.y);
 
-        var fontMatrix = font.fontMatrix || IDENTITY_MATRIX;
         ctx.scale(1 / textHScale, 1);
         for (var i = 0; i < glyphsLength; ++i) {
 
@@ -564,7 +565,7 @@ var CanvasGraphics = (function canvasGraphics() {
           var width = transformed[0] * fontSize + charSpacing;
 
           ctx.translate(width, 0);
-          current.x += width;
+          current.x += width * textHScale2;
 
         }
         ctx.restore();
@@ -573,7 +574,7 @@ var CanvasGraphics = (function canvasGraphics() {
         ctx.transform.apply(ctx, current.textMatrix);
         ctx.scale(1, -1);
         ctx.translate(current.x, -1 * current.y);
-        ctx.transform.apply(ctx, font.fontMatrix || IDENTITY_MATRIX);
+        ctx.transform.apply(ctx, fontMatrix);
 
         ctx.scale(1 / textHScale, 1);
 
@@ -592,7 +593,7 @@ var CanvasGraphics = (function canvasGraphics() {
 
           // TODO actual characters can be extracted from the glyph.unicode
         }
-        current.x += width;
+        current.x += width * textHScale2;
 
         ctx.restore();
       }
@@ -602,12 +603,13 @@ var CanvasGraphics = (function canvasGraphics() {
       var ctx = this.ctx;
       var current = this.current;
       var fontSize = current.fontSize;
-      var textHScale = current.textHScale;
+      var textHScale2 = current.textHScale *
+        (current.font.fontMatrix || IDENTITY_MATRIX)[0];
       var arrLength = arr.length;
       for (var i = 0; i < arrLength; ++i) {
         var e = arr[i];
         if (isNum(e)) {
-          current.x -= e * 0.001 * fontSize * textHScale;
+          current.x -= e * 0.001 * fontSize * textHScale2;
         } else if (isString(e)) {
           this.showText(e);
         } else {

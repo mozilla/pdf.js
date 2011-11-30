@@ -4287,6 +4287,7 @@ var GlyphsUnicode = {
   zretroflexhook: 0x0290,
   zstroke: 0x01B6,
   zuhiragana: 0x305A,
-  zukatakana: 0x30BA
+  zukatakana: 0x30BA,
+  '.notdef': 0x0000
 };
 
