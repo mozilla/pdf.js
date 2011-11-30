@@ -558,20 +558,9 @@ var PDFDoc = (function pdfDoc() {
             var properties = data[4];
 
             if (file) {
+              // Rewrap the ArrayBuffer in a stream.
               var fontFileDict = new Dict();
-              fontFileDict.map = file.dict.map;
-
-              var fontFile = new Stream(file.bytes, file.start,
-                                        file.end - file.start, fontFileDict);
-
-              // Check if this is a FlateStream. Otherwise just use the created
-              // Stream one. This makes complex_ttf_font.pdf work.
-              var cmf = file.bytes[0];
-              if ((cmf & 0x0f) == 0x08) {
-                file = new FlateStream(fontFile);
-              } else {
-                file = fontFile;
-              }
+              file = new Stream(file, 0, file.length, fontFileDict);
             }
 
             // For now, resolve the font object here direclty. The real font
