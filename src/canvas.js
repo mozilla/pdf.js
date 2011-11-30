@@ -195,6 +195,35 @@ var CanvasGraphics = (function canvasGraphics() {
   var EO_CLIP = {};
 
   constructor.prototype = {
+    slowCommands: {
+      'stroke': true,
+      'closeStroke': true,
+      'fill': true,
+      'eoFill': true,
+      'fillStroke': true,
+      'eoFillStroke': true,
+      'closeFillStroke': true,
+      'closeEOFillStroke': true,
+      'showText': true,
+      'showSpacedText': true,
+      'setStrokeColorSpace': true,
+      'setFillColorSpace': true,
+      'setStrokeColor': true,
+      'setStrokeColorN': true,
+      'setFillColor': true,
+      'setFillColorN_IR': true,
+      'setStrokeGray': true,
+      'setFillGray': true,
+      'setStrokeRGBColor': true,
+      'setFillRGBColor': true,
+      'setStrokeCMYKColor': true,
+      'setFillCMYKColor': true,
+      'paintJpegXObject': true,
+      'paintImageXObject': true,
+      'paintImageMaskXObject': true,
+      'shadingFill': true
+    },
+
     beginDrawing: function canvasGraphicsBeginDrawing(mediaBox) {
       var cw = this.ctx.canvas.width, ch = this.ctx.canvas.height;
       this.ctx.save();
@@ -228,13 +257,17 @@ var CanvasGraphics = (function canvasGraphics() {
       }
 
       var executionEndIdx;
-      var startTime = Date.now();
+      var endTime = Date.now() + kExecutionTime;
 
       var objs = this.objs;
+      var fnName;
+      var slowCommands = this.slowCommands;
 
       while (true) {
-        if (fnArray[i] !== 'dependency') {
-          this[fnArray[i]].apply(this, argsArray[i]);
+        fnName = fnArray[i];
+
+        if (fnName !== 'dependency') {
+          this[fnName].apply(this, argsArray[i]);
         } else {
           var deps = argsArray[i];
           for (var n = 0, nn = deps.length; n < nn; n++) {
@@ -248,6 +281,7 @@ var CanvasGraphics = (function canvasGraphics() {
             }
           }
         }
+
         i++;
 
         // If the entire IRQueue was executed, stop as were done.
@@ -258,7 +292,7 @@ var CanvasGraphics = (function canvasGraphics() {
         // If the execution took longer then a certain amount of time, shedule
         // to continue exeution after a short delay.
         // However, this is only possible if a 'continueCallback' is passed in.
-        if (continueCallback && (Date.now() - startTime) > kExecutionTime) {
+        if (continueCallback && slowCommands[fnName] && Date.now() > endTime) {
           setTimeout(continueCallback, 0);
           return i;
         }
