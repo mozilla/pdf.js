@@ -174,7 +174,7 @@ var CanvasGraphics = (function canvasGraphics() {
   // before it stops and shedules a continue of execution.
   var kExecutionTime = 50;
 
-  function constructor(canvasCtx, objs) {
+  function constructor(canvasCtx, objs, textLayer) {
     this.ctx = canvasCtx;
     this.current = new CanvasExtraState();
     this.stateStack = [];
@@ -183,7 +183,7 @@ var CanvasGraphics = (function canvasGraphics() {
     this.xobjs = null;
     this.ScratchCanvas = ScratchCanvas;
     this.objs = objs;
-
+    this.textLayer = textLayer;
     if (canvasCtx) {
       addContextCurrentTransform(canvasCtx);
     }
@@ -212,7 +212,13 @@ var CanvasGraphics = (function canvasGraphics() {
           this.ctx.transform(0, -1, -1, 0, cw, ch);
           break;
       }
+      // Scale so that canvas units are the same as PDF user space units
       this.ctx.scale(cw / mediaBox.width, ch / mediaBox.height);
+      this.textDivs = [];
+      this.textLayerQueue = [];
+      // Prevent textLayerQueue from being rendered while rendering a new page
+      if (this.textLayerTimer)
+        clearTimeout(this.textLayerTimer);
     },
 
     executeIRQueue: function canvasGraphicsExecuteIRQueue(codeIR,
@@ -270,6 +276,37 @@ var CanvasGraphics = (function canvasGraphics() {
 
     endDrawing: function canvasGraphicsEndDrawing() {
       this.ctx.restore();
+
+      var textLayer = this.textLayer;
+      if (!textLayer)
+        return;
+
+      var self = this;
+      var renderTextLayer = function canvasRenderTextLayer() {
+        var textDivs = self.textDivs;
+        for (var i = 0, length = textDivs.length; i < length; ++i) {
+          if (textDivs[i].dataset.textLength > 1) { // avoid div by zero
+            textLayer.appendChild(textDivs[i]);
+            // Adjust div width (via letterSpacing) to match canvas text
+            // Due to the .offsetWidth calls, this is slow
+            textDivs[i].style.letterSpacing =
+              ((textDivs[i].dataset.canvasWidth - textDivs[i].offsetWidth) /
+               (textDivs[i].dataset.textLength - 1)) + 'px';
+          }
+        }
+      }
+      var textLayerQueue = this.textLayerQueue;
+      textLayerQueue.push(renderTextLayer);
+
+      // Lazy textLayer rendering (to prevent UI hangs)
+      // Only render queue if activity has stopped, where "no activity" ==
+      // "no beginDrawing() calls in the last N ms"
+      this.textLayerTimer = setTimeout(function renderTextLayerQueue() {
+        // Render most recent (==most relevant) layers first
+        for (var i = textLayerQueue.length - 1; i >= 0; i--) {
+          textLayerQueue.pop().call();
+        }
+      }, 500);
     },
 
     // Graphics state
@@ -528,11 +565,68 @@ var CanvasGraphics = (function canvasGraphics() {
     nextLine: function canvasGraphicsNextLine() {
       this.moveText(0, this.current.leading);
     },
-    showText: function canvasGraphicsShowText(text) {
+    applyTextTransforms: function canvasApplyTransforms() {
+      var ctx = this.ctx;
+      var current = this.current;
+      var textHScale = current.textHScale;
+      var fontMatrix = current.font.fontMatrix || IDENTITY_MATRIX;
+
+      ctx.transform.apply(ctx, current.textMatrix);
+      ctx.scale(1, -1);
+      ctx.translate(current.x, -1 * current.y);
+      ctx.transform.apply(ctx, fontMatrix);
+      ctx.scale(1 / textHScale, 1);
+    },
+    getTextGeometry: function canvasGetTextGeometry() {
+      var geometry = {};
+      var ctx = this.ctx;
+      var font = this.current.font;
+      var ctxMatrix = ctx.mozCurrentTransform;
+      if (ctxMatrix) {
+        var bl = Util.applyTransform([0, 0], ctxMatrix);
+        var tr = Util.applyTransform([1, 1], ctxMatrix);
+        geometry.x = bl[0];
+        geometry.y = bl[1];
+        geometry.hScale = tr[0] - bl[0];
+        geometry.vScale = tr[1] - bl[1];
+      }
+      var spaceGlyph = font.charsToGlyphs(' ');
+
+      // Hack (sometimes space is not encoded)
+      if (spaceGlyph.length === 0 || spaceGlyph[0].width === 0)
+        spaceGlyph = font.charsToGlyphs('i');
+
+      // Fallback
+      if (spaceGlyph.length === 0 || spaceGlyph[0].width === 0)
+        spaceGlyph = [{width: 0}];
+
+      geometry.spaceWidth = spaceGlyph[0].width;
+      return geometry;
+    },
+
+    pushTextDivs: function canvasGraphicsPushTextDivs(text) {
+      var div = document.createElement('div');
+      var fontSize = this.current.fontSize;
+
+      // vScale and hScale already contain the scaling to pixel units
+      // as mozCurrentTransform reflects ctx.scale() changes
+      // (see beginDrawing())
+      var fontHeight = fontSize * text.geom.vScale;
+      div.dataset.canvasWidth = text.canvasWidth * text.geom.hScale;
+
+      div.style.fontSize = fontHeight + 'px';
+      div.style.fontFamily = this.current.font.loadedName || 'sans-serif';
+      div.style.left = text.geom.x + 'px';
+      div.style.top = (text.geom.y - fontHeight) + 'px';
+      div.innerHTML = text.str;
+      div.dataset.textLength = text.length;
+      this.textDivs.push(div);
+    },
+    showText: function canvasGraphicsShowText(str, skipTextSelection) {
       var ctx = this.ctx;
       var current = this.current;
       var font = current.font;
-      var glyphs = font.charsToGlyphs(text);
+      var glyphs = font.charsToGlyphs(str);
       var fontSize = current.fontSize;
       var charSpacing = current.charSpacing;
       var wordSpacing = current.wordSpacing;
@@ -540,6 +634,18 @@ var CanvasGraphics = (function canvasGraphics() {
       var fontMatrix = font.fontMatrix || IDENTITY_MATRIX;
       var textHScale2 = textHScale * fontMatrix[0];
       var glyphsLength = glyphs.length;
+      var textLayer = this.textLayer;
+      var text = {str: '', length: 0, canvasWidth: 0, geom: {}};
+      var textSelection = textLayer && !skipTextSelection ? true : false;
+
+      if (textSelection) {
+        ctx.save();
+        this.applyTextTransforms();
+        text.geom = this.getTextGeometry();
+        ctx.restore();
+      }
+
+      // Type3 fonts - each glyph is a "mini-PDF"
       if (font.coded) {
         ctx.save();
         ctx.transform.apply(ctx, current.textMatrix);
@@ -567,16 +673,14 @@ var CanvasGraphics = (function canvasGraphics() {
           ctx.translate(width, 0);
           current.x += width * textHScale2;
 
+          text.str += glyph.unicode;
+          text.length++;
+          text.canvasWidth += width;
         }
         ctx.restore();
       } else {
         ctx.save();
-        ctx.transform.apply(ctx, current.textMatrix);
-        ctx.scale(1, -1);
-        ctx.translate(current.x, -1 * current.y);
-        ctx.transform.apply(ctx, fontMatrix);
-
-        ctx.scale(1 / textHScale, 1);
+        this.applyTextTransforms();
 
         var width = 0;
         for (var i = 0; i < glyphsLength; ++i) {
@@ -588,17 +692,23 @@ var CanvasGraphics = (function canvasGraphics() {
           }
 
           var char = glyph.fontChar;
+          var charWidth = glyph.width * fontSize * 0.001 + charSpacing;
           ctx.fillText(char, width, 0);
-          width += glyph.width * fontSize * 0.001 + charSpacing;
+          width += charWidth;
 
-          // TODO actual characters can be extracted from the glyph.unicode
+          text.str += glyph.unicode === ' ' ? '&nbsp;' : glyph.unicode;
+          text.length++;
+          text.canvasWidth += charWidth;
         }
         current.x += width * textHScale2;
-
         ctx.restore();
       }
-    },
 
+      if (textSelection)
+        this.pushTextDivs(text);
+
+      return text;
+    },
     showSpacedText: function canvasGraphicsShowSpacedText(arr) {
       var ctx = this.ctx;
       var current = this.current;
@@ -606,16 +716,53 @@ var CanvasGraphics = (function canvasGraphics() {
       var textHScale2 = current.textHScale *
         (current.font.fontMatrix || IDENTITY_MATRIX)[0];
       var arrLength = arr.length;
+      var textLayer = this.textLayer;
+      var font = current.font;
+      var text = {str: '', length: 0, canvasWidth: 0, geom: {}};
+      var textSelection = textLayer ? true : false;
+
+      if (textSelection) {
+        ctx.save();
+        this.applyTextTransforms();
+        text.geom = this.getTextGeometry();
+        ctx.restore();
+      }
+
       for (var i = 0; i < arrLength; ++i) {
         var e = arr[i];
         if (isNum(e)) {
-          current.x -= e * 0.001 * fontSize * textHScale2;
+          var spacingLength = -e * 0.001 * fontSize * textHScale2;
+          current.x += spacingLength;
+
+          if (textSelection) {
+            // Emulate precise spacing via HTML spaces
+            text.canvasWidth += spacingLength;
+            if (e < 0 && text.geom.spaceWidth > 0) { // avoid div by zero
+              var numFakeSpaces = Math.round(-e / text.geom.spaceWidth);
+              for (var j = 0; j < numFakeSpaces; ++j)
+                text.str += '&nbsp;';
+              text.length += numFakeSpaces > 0 ? 1 : 0;
+            }
+          }
         } else if (isString(e)) {
-          this.showText(e);
+          var shownText = this.showText(e, true);
+
+          if (textSelection) {
+            if (shownText.str === ' ') {
+              text.str += '&nbsp;';
+            } else {
+              text.str += shownText.str;
+            }
+            text.canvasWidth += shownText.canvasWidth;
+            text.length += e.length;
+          }
         } else {
           malformed('TJ array element ' + e + ' is not string or num');
         }
       }
+
+      if (textSelection)
+        this.pushTextDivs(text);
     },
     nextLineShowText: function canvasGraphicsNextLineShowText(text) {
       this.nextLine();

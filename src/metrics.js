@@ -3,6 +3,9 @@
 
 'use strict';
 
+// The Metrics object contains glyph widths (in glyph space units).
+// As per PDF spec, for most fonts (Type 3 being an exception) a glyph
+// space unit corresponds to 1/1000th of text space unit.
 var Metrics = {
   'Courier': 600,
   'Courier-Bold': 600,

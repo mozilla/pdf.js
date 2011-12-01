@@ -232,6 +232,27 @@ canvas {
   -webkit-box-shadow: 0px 2px 10px #ff0;
 }
 
+.textLayer {
+  position: absolute;
+  left: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  color: #000;
+}
+
+.textLayer > div {
+  color: transparent;
+  position: absolute;
+  line-height:1.3;
+}
+
+/* TODO: file FF bug to support ::-moz-selection:window-inactive
+   so we can override the opaque grey background when the window is inactive;
+   see https://bugzilla.mozilla.org/show_bug.cgi?id=706209 */
+::selection { background:rgba(0,0,255,0.3); }
+::-moz-selection { background:rgba(0,0,255,0.3); }
+
 #viewer {
   margin: 44px 0px 0px;
   padding: 8px 0px;
