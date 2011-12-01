@@ -489,6 +489,10 @@ var PageView = function pageView(container, content, id, pageWidth, pageHeight,
     div.appendChild(canvas);
     this.canvas = canvas;
 
+    var textLayer = document.createElement('div');
+    textLayer.className = 'textLayer';
+    div.appendChild(textLayer);
+
     var scale = this.scale;
     canvas.width = pageWidth * scale;
     canvas.height = pageHeight * scale;
@@ -505,7 +509,7 @@ var PageView = function pageView(container, content, id, pageWidth, pageHeight,
       this.updateStats();
       if (this.onAfterDraw)
         this.onAfterDraw();
-    }).bind(this));
+    }).bind(this), textLayer);
 
     setupLinks(this.content, this.scale);
     div.setAttribute('data-loaded', true);

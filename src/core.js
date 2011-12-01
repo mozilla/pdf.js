@@ -156,7 +156,7 @@ var Page = (function pagePage() {
                                                 IRQueue, fonts) {
       var self = this;
       this.IRQueue = IRQueue;
-      var gfx = new CanvasGraphics(this.ctx, this.objs);
+      var gfx = new CanvasGraphics(this.ctx, this.objs, this.textLayer);
 
       var displayContinuation = function pageDisplayContinuation() {
         // Always defer call to display() to work around bug in
@@ -241,6 +241,7 @@ var Page = (function pagePage() {
         startIdx = gfx.executeIRQueue(IRQueue, startIdx, next);
         if (startIdx == length) {
           self.stats.render = Date.now();
+          gfx.endDrawing();
           if (callback) callback();
         }
       }
@@ -303,9 +304,10 @@ var Page = (function pagePage() {
       }
       return links;
     },
-    startRendering: function pageStartRendering(ctx, callback)  {
+    startRendering: function pageStartRendering(ctx, callback, textLayer)  {
       this.ctx = ctx;
       this.callback = callback;
+      this.textLayer = textLayer;
 
       this.startRenderingTime = Date.now();
       this.pdf.startRendering(this);
