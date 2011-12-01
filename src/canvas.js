@@ -568,12 +568,12 @@ var CanvasGraphics = (function canvasGraphics() {
       var ctx = this.ctx;
       var current = this.current;
       var textHScale = current.textHScale;
-      var font = current.font;
+      var fontMatrix = current.font.fontMatrix || IDENTITY_MATRIX;
 
       ctx.transform.apply(ctx, current.textMatrix);
       ctx.scale(1, -1);
       ctx.translate(current.x, -1 * current.y);
-      ctx.transform.apply(ctx, font.fontMatrix || IDENTITY_MATRIX);
+      ctx.transform.apply(ctx, fontMatrix);
       ctx.scale(1 / textHScale, 1);
     },
     getTextGeometry: function canvasGetTextGeometry() {
@@ -626,6 +626,8 @@ var CanvasGraphics = (function canvasGraphics() {
       var charSpacing = current.charSpacing;
       var wordSpacing = current.wordSpacing;
       var textHScale = current.textHScale;
+      var fontMatrix = font.fontMatrix || IDENTITY_MATRIX;
+      var textHScale2 = textHScale * fontMatrix[0];
       var glyphsLength = glyphs.length;
       var textLayer = this.textLayer;
       var text = {str: '', length: 0, canvasWidth: 0, geom: {}};
@@ -644,7 +646,6 @@ var CanvasGraphics = (function canvasGraphics() {
         ctx.transform.apply(ctx, current.textMatrix);
         ctx.translate(current.x, current.y);
 
-        var fontMatrix = font.fontMatrix || IDENTITY_MATRIX;
         ctx.scale(1 / textHScale, 1);
         for (var i = 0; i < glyphsLength; ++i) {
 
@@ -662,13 +663,14 @@ var CanvasGraphics = (function canvasGraphics() {
           this.restore();
 
           var transformed = Util.applyTransform([glyph.width, 0], fontMatrix);
-          var charWidth = transformed[0] * fontSize + charSpacing;
-          ctx.translate(charWidth, 0);
-          current.x += charWidth;
+          var width = transformed[0] * fontSize + charSpacing;
 
-          text.str += glyph.fontChar;
+          ctx.translate(width, 0);
+          current.x += width * textHScale2;
+
+          text.str += glyph.unicode;
           text.length++;
-          text.canvasWidth += charWidth;
+          text.canvasWidth += width;
         }
         ctx.restore();
       } else {
@@ -689,12 +691,11 @@ var CanvasGraphics = (function canvasGraphics() {
           ctx.fillText(char, width, 0);
           width += charWidth;
 
-          text.str += char === ' ' ? '&nbsp;' : char;
+          text.str += glyph.unicode === ' ' ? '&nbsp;' : glyph.unicode;
           text.length++;
           text.canvasWidth += charWidth;
         }
-
-        current.x += width;
+        current.x += width * textHScale2;
         ctx.restore();
       }
 
@@ -707,7 +708,8 @@ var CanvasGraphics = (function canvasGraphics() {
       var ctx = this.ctx;
       var current = this.current;
       var fontSize = current.fontSize;
-      var textHScale = current.textHScale;
+      var textHScale2 = current.textHScale *
+        (current.font.fontMatrix || IDENTITY_MATRIX)[0];
       var arrLength = arr.length;
       var textLayer = this.textLayer;
       var font = current.font;
@@ -724,7 +726,7 @@ var CanvasGraphics = (function canvasGraphics() {
       for (var i = 0; i < arrLength; ++i) {
         var e = arr[i];
         if (isNum(e)) {
-          var spacingLength = -e * 0.001 * fontSize * textHScale;
+          var spacingLength = -e * 0.001 * fontSize * textHScale2;
           current.x += spacingLength;
 
           if (textSelection) {

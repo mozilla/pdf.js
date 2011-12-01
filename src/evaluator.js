@@ -155,6 +155,11 @@ var PartialEvaluator = (function partialEvaluator() {
             font.loadedName = loadedName;
 
             var translated = font.translated;
+            // Convert the file to an ArrayBuffer which will be turned back into
+            // a Stream in the main thread.
+            if (translated.file)
+              translated.file = translated.file.getBytes();
+
             handler.send('obj', [
                 loadedName,
                 'Font',
@@ -493,6 +498,8 @@ var PartialEvaluator = (function partialEvaluator() {
           var baseName = encoding.get('BaseEncoding');
           if (baseName)
             baseEncoding = Encodings[baseName.name];
+          else
+            hasEncoding = false; // base encoding was not provided
 
           // Load the differences between the base and original
           if (encoding.has('Differences')) {
