@@ -275,37 +275,38 @@ var CanvasGraphics = (function canvasGraphics() {
     },
 
     endDrawing: function canvasGraphicsEndDrawing() {
-      var self = this;
       this.ctx.restore();
 
       var textLayer = this.textLayer;
-      if (textLayer) {
-        var renderTextLayer = function canvasRenderTextLayer() {
-          var textDivs = self.textDivs;
-          for (var i = 0, length = textDivs.length; i < length; ++i) {
-            if (textDivs[i].dataset.textLength > 1) { // avoid div by zero
-              textLayer.appendChild(textDivs[i]);
-              // Adjust div width (via letterSpacing) to match canvas text
-              // Due to the .offsetWidth calls, this is slow
-              textDivs[i].style.letterSpacing =
-                ((textDivs[i].dataset.canvasWidth - textDivs[i].offsetWidth) /
-                 (textDivs[i].dataset.textLength - 1)) + 'px';
-            }
+      if (!textLayer)
+        return;
+
+      var self = this;
+      var renderTextLayer = function canvasRenderTextLayer() {
+        var textDivs = self.textDivs;
+        for (var i = 0, length = textDivs.length; i < length; ++i) {
+          if (textDivs[i].dataset.textLength > 1) { // avoid div by zero
+            textLayer.appendChild(textDivs[i]);
+            // Adjust div width (via letterSpacing) to match canvas text
+            // Due to the .offsetWidth calls, this is slow
+            textDivs[i].style.letterSpacing =
+              ((textDivs[i].dataset.canvasWidth - textDivs[i].offsetWidth) /
+               (textDivs[i].dataset.textLength - 1)) + 'px';
           }
         }
-        var textLayerQueue = self.textLayerQueue;
-        textLayerQueue.push(renderTextLayer);
-
-        // Lazy textLayer rendering (to prevent UI hangs)
-        // Only render queue if activity has stopped, where "no activity" ==
-        // "no beginDrawing() calls in the last N ms"
-        self.textLayerTimer = setTimeout(function renderTextLayerQueue() {
-          // Render most recent (==most relevant) layers first
-          for (var i = textLayerQueue.length - 1; i >= 0; i--) {
-            textLayerQueue.pop().call();
-          }
-        }, 500);
       }
+      var textLayerQueue = this.textLayerQueue;
+      textLayerQueue.push(renderTextLayer);
+
+      // Lazy textLayer rendering (to prevent UI hangs)
+      // Only render queue if activity has stopped, where "no activity" ==
+      // "no beginDrawing() calls in the last N ms"
+      this.textLayerTimer = setTimeout(function renderTextLayerQueue() {
+        // Render most recent (==most relevant) layers first
+        for (var i = textLayerQueue.length - 1; i >= 0; i--) {
+          textLayerQueue.pop().call();
+        }
+      }, 500);
     },
 
     // Graphics state
@@ -577,28 +578,32 @@ var CanvasGraphics = (function canvasGraphics() {
       ctx.scale(1 / textHScale, 1);
     },
     getTextGeometry: function canvasGetTextGeometry() {
-      var geom = {};
+      var geometry = {};
       var ctx = this.ctx;
       var font = this.current.font;
       var ctxMatrix = ctx.mozCurrentTransform;
       if (ctxMatrix) {
         var bl = Util.applyTransform([0, 0], ctxMatrix);
         var tr = Util.applyTransform([1, 1], ctxMatrix);
-        geom.x = bl[0];
-        geom.y = bl[1];
-        geom.hScale = tr[0] - bl[0];
-        geom.vScale = tr[1] - bl[1];
+        geometry.x = bl[0];
+        geometry.y = bl[1];
+        geometry.hScale = tr[0] - bl[0];
+        geometry.vScale = tr[1] - bl[1];
       }
       var spaceGlyph = font.charsToGlyphs(' ');
+
       // Hack (sometimes space is not encoded)
       if (spaceGlyph.length === 0 || spaceGlyph[0].width === 0)
         spaceGlyph = font.charsToGlyphs('i');
+
       // Fallback
       if (spaceGlyph.length === 0 || spaceGlyph[0].width === 0)
         spaceGlyph = [{width: 0}];
-      geom.spaceWidth = spaceGlyph[0].width;
-      return geom;
+
+      geometry.spaceWidth = spaceGlyph[0].width;
+      return geometry;
     },
+
     pushTextDivs: function canvasGraphicsPushTextDivs(text) {
       var div = document.createElement('div');
       var fontSize = this.current.fontSize;
