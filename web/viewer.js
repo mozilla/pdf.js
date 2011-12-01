@@ -238,10 +238,10 @@ var PDFView = {
       pagesRefMap[pageRef.num + ' ' + pageRef.gen + ' R'] = i;
     }
 
-    this.setScale(scale || kDefaultScale, true);
-
     this.pagesRefMap = pagesRefMap;
     this.destinations = pdf.catalog.destinations;
+    this.setScale(scale || kDefaultScale, true);
+
     if (pdf.catalog.documentOutline) {
       this.outline = new DocumentOutlineView(pdf.catalog.documentOutline);
       var outlineSwitchButton = document.getElementById('outlineSwitch');
