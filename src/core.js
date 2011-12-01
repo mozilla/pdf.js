@@ -45,7 +45,7 @@ function getPdf(arg, callback) {
         var data = (xhr.mozResponseArrayBuffer || xhr.mozResponse ||
                     xhr.responseArrayBuffer || xhr.response);
         callback(data);
-      } else {
+      } else if (params.error) {
         params.error(e);
       }
     }
