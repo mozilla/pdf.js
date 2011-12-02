@@ -575,7 +575,7 @@ var CanvasGraphics = (function canvasGraphics() {
       ctx.scale(1, -1);
       ctx.translate(current.x, -1 * current.y);
       ctx.transform.apply(ctx, fontMatrix);
-      ctx.scale(1 / textHScale, 1);
+      ctx.scale(textHScale, 1);
     },
     getTextGeometry: function canvasGetTextGeometry() {
       var geometry = {};
@@ -651,7 +651,7 @@ var CanvasGraphics = (function canvasGraphics() {
         ctx.transform.apply(ctx, current.textMatrix);
         ctx.translate(current.x, current.y);
 
-        ctx.scale(1 / textHScale, 1);
+        ctx.scale(textHScale, 1);
         for (var i = 0; i < glyphsLength; ++i) {
 
           var glyph = glyphs[i];

@@ -290,5 +290,11 @@
        "link": true,
        "rounds": 1,
        "type": "eq"
+    },
+    {  "id": "issue840",
+       "file": "pdfs/issue840.pdf",
+       "md5": "20d88011dd7e3c4fb5274979094dab93",
+       "rounds": 1,
+       "type": "eq"
     }
 ]
