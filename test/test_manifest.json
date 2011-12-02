@@ -276,5 +276,25 @@
        "link": false,
        "rounds": 1,
        "type": "eq"
+    },
+    {  "id": "protectip",
+       "file": "pdfs/protectip.pdf",
+       "md5": "676e7a7b8f96d04825361832b1838a93",
+       "link": true,
+       "rounds": 1,
+       "type": "eq"
+    },
+    {  "id": "piperine",
+       "file": "pdfs/piperine.pdf",
+       "md5": "603ca43dc5732dbba1579f122958c0c2",
+       "link": true,
+       "rounds": 1,
+       "type": "eq"
+    },
+    {  "id": "issue840",
+       "file": "pdfs/issue840.pdf",
+       "md5": "20d88011dd7e3c4fb5274979094dab93",
+       "rounds": 1,
+       "type": "eq"
     }
 ]

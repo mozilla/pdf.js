@@ -263,7 +263,7 @@ var PDFView = {
     var container = document.getElementById('viewer');
     while (container.hasChildNodes())
       container.removeChild(container.lastChild);
-    
+
     var pdf;
     try {
       pdf = new PDFJS.PDFDoc(data);
@@ -291,10 +291,10 @@ var PDFView = {
       pagesRefMap[pageRef.num + ' ' + pageRef.gen + ' R'] = i;
     }
 
-    this.setScale(scale || kDefaultScale, true);
-
     this.pagesRefMap = pagesRefMap;
     this.destinations = pdf.catalog.destinations;
+    this.setScale(scale || kDefaultScale, true);
+
     if (pdf.catalog.documentOutline) {
       this.outline = new DocumentOutlineView(pdf.catalog.documentOutline);
       var outlineSwitchButton = document.getElementById('outlineSwitch');
@@ -542,6 +542,10 @@ var PageView = function pageView(container, content, id, pageWidth, pageHeight,
     div.appendChild(canvas);
     this.canvas = canvas;
 
+    var textLayer = document.createElement('div');
+    textLayer.className = 'textLayer';
+    div.appendChild(textLayer);
+
     var scale = this.scale;
     canvas.width = pageWidth * scale;
     canvas.height = pageHeight * scale;
@@ -555,14 +559,13 @@ var PageView = function pageView(container, content, id, pageWidth, pageHeight,
 
     stats.begin = Date.now();
     this.content.startRendering(ctx,
-      (function pageViewDrawCallback() {
+      (function pageViewDrawCallback(error) {
+        if (error)
+          PDFView.error('An error occurred while rendering the page.', error);
         this.updateStats();
         if (this.onAfterDraw)
           this.onAfterDraw();
-      }).bind(this),
-      function pageViewErrorback(e) {
-        PDFView.error('An error occurred while rendering the page.', e);
-      }
+      }).bind(this), textLayer
     );
 
     setupLinks(this.content, this.scale);
