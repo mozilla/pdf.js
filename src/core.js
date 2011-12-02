@@ -384,7 +384,7 @@ var PDFDocModel = (function pdfDoc() {
         // Find startxref at the end of the file.
         var found = false, pos = stream.end;
         while(!found && pos > 0) {
-          pos -= 1024;
+          pos -= 1024 - 9;
           if (pos < 0)
             pos = 0;
           stream.pos = pos;
