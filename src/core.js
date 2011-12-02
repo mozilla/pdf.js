@@ -39,11 +39,15 @@ function getPdf(arg, callback) {
   if ('error' in params)
     xhr.onerror = params.error || undefined;
 
-  xhr.onreadystatechange = function getPdfOnreadystatechange() {
-    if (xhr.readyState === 4 && xhr.status === xhr.expected) {
-      var data = (xhr.mozResponseArrayBuffer || xhr.mozResponse ||
-                  xhr.responseArrayBuffer || xhr.response);
-      callback(data);
+  xhr.onreadystatechange = function getPdfOnreadystatechange(e) {
+    if (xhr.readyState === 4) {
+      if (xhr.status === xhr.expected) {
+        var data = (xhr.mozResponseArrayBuffer || xhr.mozResponse ||
+                    xhr.responseArrayBuffer || xhr.response);
+        callback(data);
+      } else if (params.error) {
+        params.error(e);
+      }
     }
   };
   xhr.send(null);
@@ -63,6 +67,9 @@ var Page = (function pagePage() {
     };
     this.xref = xref;
     this.ref = ref;
+
+    this.ctx = null;
+    this.callback = null;
   }
 
   constructor.prototype = {
@@ -165,8 +172,10 @@ var Page = (function pagePage() {
           try {
             self.display(gfx, self.callback);
           } catch (e) {
-            if (self.callback) self.callback(e.toString());
-            throw e;
+            if (self.callback)
+              self.callback(e);
+            else
+              throw e;
           }
         });
       };
@@ -589,6 +598,14 @@ var PDFDoc = (function pdfDoc() {
           this.objs.setData(id, font);
         }
       }.bind(this));
+
+      messageHandler.on('page_error', function pdfDocError(data) {
+        var page = this.pageCache[data.pageNum];
+        if (page.callback)
+          page.callback(data.error);
+        else
+          throw data.error;
+      }, this);
 
       setTimeout(function pdfDocFontReadySetTimeout() {
         messageHandler.send('doc', this.data);

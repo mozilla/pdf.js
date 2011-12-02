@@ -162,9 +162,11 @@ function nextPage(task, loadError) {
 
       page.startRendering(
         ctx,
-        function nextPageStartRendering(e) {
-          snapshotCurrentPage(task, (!failure && e) ?
-            ('render : ' + e) : failure);
+        function nextPageStartRendering(error) {
+          var failureMessage = false;
+          if (error)
+            failureMessage = 'render : ' + error.message;
+          snapshotCurrentPage(task, failureMessage);
         }
       );
     } catch (e) {

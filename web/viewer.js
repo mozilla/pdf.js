@@ -129,7 +129,14 @@ var PDFView = {
           if (evt.lengthComputable)
             self.progress(evt.loaded / evt.total);
         },
-        error: self.error
+        error: function getPdfError(e) {
+          var loadingIndicator = document.getElementById('loading');
+          loadingIndicator.innerHTML = 'Error';
+          var moreInfo = {
+            message: 'Unexpected server response of ' + e.target.status + '.'
+          };
+          self.error('An error occurred while loading the PDF.', moreInfo);
+        }
       },
       function getPdfLoad(data) {
         self.loading = true;
@@ -181,9 +188,47 @@ var PDFView = {
     return '';
   },
 
-  error: function pdfViewError() {
-    var loadingIndicator = document.getElementById('loading');
-    loadingIndicator.innerHTML = 'Error';
+  /**
+   * Show the error box.
+   * @param {String} message A message that is human readable.
+   * @param {Object} moreInfo (optional) Further information about the error
+   *                            that is more technical.  Should have a 'message'
+   *                            and optionally a 'stack' property.
+   */
+  error: function pdfViewError(message, moreInfo) {
+    var errorWrapper = document.getElementById('errorWrapper');
+    errorWrapper.removeAttribute('hidden');
+
+    var errorMessage = document.getElementById('errorMessage');
+    errorMessage.innerHTML = message;
+
+    var closeButton = document.getElementById('errorClose');
+    closeButton.onclick = function() {
+      errorWrapper.setAttribute('hidden', 'true');
+    };
+
+    var errorMoreInfo = document.getElementById('errorMoreInfo');
+    var moreInfoButton = document.getElementById('errorShowMore');
+    var lessInfoButton = document.getElementById('errorShowLess');
+    moreInfoButton.onclick = function() {
+      errorMoreInfo.removeAttribute('hidden');
+      moreInfoButton.setAttribute('hidden', 'true');
+      lessInfoButton.removeAttribute('hidden');
+    };
+    lessInfoButton.onclick = function() {
+      errorMoreInfo.setAttribute('hidden', 'true');
+      moreInfoButton.removeAttribute('hidden');
+      lessInfoButton.setAttribute('hidden', 'true');
+    };
+    moreInfoButton.removeAttribute('hidden');
+    lessInfoButton.setAttribute('hidden', 'true');
+    errorMoreInfo.innerHTML = 'PDF.JS Build: ' + PDFJS.build + '\n';
+
+    if (moreInfo) {
+      errorMoreInfo.innerHTML += 'Message: ' + moreInfo.message;
+      if (moreInfo.stack)
+        errorMoreInfo.innerHTML += '\n' + 'Stack: ' + moreInfo.stack;
+    }
   },
 
   progress: function pdfViewProgress(level) {
@@ -199,6 +244,9 @@ var PDFView = {
         thumbnailView.setImage(pageView.canvas);
       };
     }
+
+    var errorWrapper = document.getElementById('errorWrapper');
+    errorWrapper.setAttribute('hidden', 'true');
 
     var loadingIndicator = document.getElementById('loading');
     loadingIndicator.setAttribute('hidden', 'true');
@@ -216,7 +264,12 @@ var PDFView = {
     while (container.hasChildNodes())
       container.removeChild(container.lastChild);
 
-    var pdf = new PDFJS.PDFDoc(data);
+    var pdf;
+    try {
+      pdf = new PDFJS.PDFDoc(data);
+    } catch (e) {
+      this.error('An error occurred while reading the PDF.', e);
+    }
     var pagesCount = pdf.numPages;
     document.getElementById('numPages').innerHTML = pagesCount;
     document.getElementById('pageNumber').max = pagesCount;
@@ -505,11 +558,15 @@ var PageView = function pageView(container, content, id, pageWidth, pageHeight,
     ctx.translate(-this.x * scale, -this.y * scale);
 
     stats.begin = Date.now();
-    this.content.startRendering(ctx, (function pageViewDrawCallback() {
-      this.updateStats();
-      if (this.onAfterDraw)
-        this.onAfterDraw();
-    }).bind(this), textLayer);
+    this.content.startRendering(ctx,
+      (function pageViewDrawCallback(error) {
+        if (error)
+          PDFView.error('An error occurred while rendering the page.', error);
+        this.updateStats();
+        if (this.onAfterDraw)
+          this.onAfterDraw();
+      }).bind(this), textLayer
+    );
 
     setupLinks(this.content, this.scale);
     div.setAttribute('data-loaded', true);

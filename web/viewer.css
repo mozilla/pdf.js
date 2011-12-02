@@ -273,6 +273,38 @@ canvas {
   display: none;
 }
 
+#errorWrapper {
+  background: none repeat scroll 0 0 #FF5555;
+  color: white;
+  left: 0;
+  position: fixed;
+  right: 0;
+  top: 30px;
+  z-index: 1000;
+  padding: 3px;
+  font-size: 0.8em;
+}
+
+#errorMessageLeft {
+  float: left;
+}
+
+#errorMessageRight {
+  float: right;
+}
+
+#errorMoreInfo {
+  background-color: #FFFFFF;
+  color: black;
+  padding: 3px;
+  margin: 3px;
+  white-space: pre;
+}
+
+.clearBoth {
+  clear: both;
+}
+
 /* === Printed media overrides === */
 @media print {
   #sidebar {
