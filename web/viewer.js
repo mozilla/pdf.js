@@ -263,9 +263,10 @@ var PDFView = {
     var container = document.getElementById('viewer');
     while (container.hasChildNodes())
       container.removeChild(container.lastChild);
-
+    
+    var pdf;
     try {
-      var pdf = new PDFJS.PDFDoc(data);
+      pdf = new PDFJS.PDFDoc(data);
     } catch (e) {
       this.error('An error occurred while reading the PDF.', e);
     }
