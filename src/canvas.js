@@ -23,6 +23,7 @@ var CanvasExtraState = (function canvasExtraState() {
     this.charSpacing = 0;
     this.wordSpacing = 0;
     this.textHScale = 1;
+    this.textRenderingMode = 0;
     // Color spaces
     this.fillColorSpace = new DeviceGrayCS();
     this.fillColorSpaceObj = null;
@@ -543,7 +544,9 @@ var CanvasGraphics = (function canvasGraphics() {
       this.ctx.font = rule;
     },
     setTextRenderingMode: function canvasGraphicsSetTextRenderingMode(mode) {
-      TODO('text rendering mode: ' + mode);
+      if (mode != 0 && mode != 3)
+        TODO('unsupported text rendering mode: ' + mode);
+      this.current.textRenderingMode = mode;
     },
     setTextRise: function canvasGraphicsSetTextRise(rise) {
       TODO('text rise: ' + rise);
@@ -637,6 +640,7 @@ var CanvasGraphics = (function canvasGraphics() {
       var textLayer = this.textLayer;
       var text = {str: '', length: 0, canvasWidth: 0, geom: {}};
       var textSelection = textLayer && !skipTextSelection ? true : false;
+      var textRenderingMode = current.textRenderingMode;
 
       if (textSelection) {
         ctx.save();
@@ -693,7 +697,15 @@ var CanvasGraphics = (function canvasGraphics() {
 
           var char = glyph.fontChar;
           var charWidth = glyph.width * fontSize * 0.001 + charSpacing;
-          ctx.fillText(char, width, 0);
+
+          switch (textRenderingMode) {
+            default: // unsupported rendering mode
+            case 0:  // fill
+              ctx.fillText(char, width, 0);
+              break;
+            case 3:  // invisible
+          }
+
           width += charWidth;
 
           text.str += glyph.unicode === ' ' ? '&nbsp;' : glyph.unicode;
