@@ -518,20 +518,29 @@ var XRef = (function xRefXRef() {
     readXRef: function readXref(startXRef) {
       var stream = this.stream;
       stream.pos = startXRef;
-      var parser = new Parser(new Lexer(stream), true);
-      var obj = parser.getObj();
-      // parse an old-style xref table
-      if (isCmd(obj, 'xref'))
-        return this.readXRefTable(parser);
-      // parse an xref stream
-      if (isInt(obj)) {
-        if (!isInt(parser.getObj()) ||
-            !isCmd(parser.getObj(), 'obj') ||
-            !isStream(obj = parser.getObj())) {
-          error('Invalid XRef stream');
+
+      try {
+        var parser = new Parser(new Lexer(stream), true);
+        var obj = parser.getObj();
+
+        // parse an old-style xref table
+        if (isCmd(obj, 'xref'))
+          return this.readXRefTable(parser);
+
+        // parse an xref stream
+        if (isInt(obj)) {
+          if (!isInt(parser.getObj()) ||
+              !isCmd(parser.getObj(), 'obj') ||
+              !isStream(obj = parser.getObj())) {
+            error('Invalid XRef stream');
+          }
+          return this.readXRefStream(obj);
         }
-        return this.readXRefStream(obj);
+      } catch (e) {
+        log('Reading of the xref table/stream failed: ' + e);
       }
+
+      warn('Indexing all PDF objects');
       return this.indexObjects();
     },
     getEntry: function xRefGetEntry(i) {
