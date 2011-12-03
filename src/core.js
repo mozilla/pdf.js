@@ -526,6 +526,8 @@ var PDFDoc = (function pdfDoc() {
 
   constructor.prototype = {
     setupFakeWorker: function() {
+      throw "Don't use workers!";
+
       // If we don't use a worker, just post/sendMessage to the main thread.
       var fakeWorker = {
         postMessage: function pdfDocPostMessage(obj) {

@@ -10,7 +10,7 @@
 // Disable worker support for running test as
 //   https://github.com/mozilla/pdf.js/pull/764#issuecomment-2638944
 //   "firefox-bin: Fatal IO error 12 (Cannot allocate memory) on X server :1."
-PDFJS.disableWorker = true;
+// PDFJS.disableWorker = true;
 
 var appPath, browser, canvas, currentTaskIdx, manifest, stdout;
 var inFlightRequests = 0;
