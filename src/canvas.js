@@ -6,6 +6,17 @@
 // <canvas> contexts store most of the state we need natively.
 // However, PDF needs a bit more state, which we store here.
 
+var TextRenderingMode = {
+  FILL: 0,
+  STROKE: 1,
+  FILL_STROKE: 2,
+  INVISIBLE: 3,
+  FILL_ADD_TO_PATH: 4,
+  STROKE_ADD_TO_PATH: 5,
+  FILL_STROKE_ADD_TO_PATH: 6,
+  ADD_TO_PATH: 7
+};
+
 var CanvasExtraState = (function canvasExtraState() {
   function constructor(old) {
     // Are soft masks and alpha values shapes or opacities?
@@ -23,7 +34,7 @@ var CanvasExtraState = (function canvasExtraState() {
     this.charSpacing = 0;
     this.wordSpacing = 0;
     this.textHScale = 1;
-    this.textRenderingMode = 0;
+    this.textRenderingMode = TextRenderingMode.FILL;
     // Color spaces
     this.fillColorSpace = new DeviceGrayCS();
     this.fillColorSpaceObj = null;
@@ -544,7 +555,7 @@ var CanvasGraphics = (function canvasGraphics() {
       this.ctx.font = rule;
     },
     setTextRenderingMode: function canvasGraphicsSetTextRenderingMode(mode) {
-      if (mode != 0 && mode != 3)
+      if (mode >= TextRenderingMode.FILL_ADD_TO_PATH)
         TODO('unsupported text rendering mode: ' + mode);
       this.current.textRenderingMode = mode;
     },
@@ -699,11 +710,22 @@ var CanvasGraphics = (function canvasGraphics() {
           var charWidth = glyph.width * fontSize * 0.001 + charSpacing;
 
           switch (textRenderingMode) {
-            default: // unsupported rendering mode
-            case 0:  // fill
+            default: // other unsupported rendering modes
+            case TextRenderingMode.FILL:
+            case TextRenderingMode.FILL_ADD_TO_PATH:
               ctx.fillText(char, width, 0);
               break;
-            case 3:  // invisible
+            case TextRenderingMode.STROKE:
+            case TextRenderingMode.STROKE_ADD_TO_PATH:
+              ctx.strokeText(char, width, 0);
+              break;
+            case TextRenderingMode.FILL_STROKE:
+            case TextRenderingMode.FILL_STROKE_ADD_TO_PATH:
+              ctx.fillText(char, width, 0);
+              ctx.strokeText(char, width, 0);
+              break;
+            case TextRenderingMode.INVISIBLE:
+              break;
           }
 
           width += charWidth;
