@@ -381,14 +381,15 @@ var PDFDocModel = (function pdfDoc() {
         if (find(stream, 'endobj', 1024))
           startXRef = stream.pos + 6;
       } else {
-        // Find startxref at the end of the file.
+        // Find startxref by jumping backward from the end of the file.
+        var step = 1024;
         var found = false, pos = stream.end;
-        while(!found && pos > 0) {
-          pos -= 1024 - 9;
+        while (!found && pos > 0) {
+          pos -= step - 'startxref'.length;
           if (pos < 0)
             pos = 0;
           stream.pos = pos;
-          found = find(stream, 'startxref', 1024, true);
+          found = find(stream, 'startxref', step, true);
         }
         if (found) {
           stream.skip(9);
