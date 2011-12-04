@@ -167,7 +167,8 @@ function nextPage(task, loadError) {
           if (error)
             failureMessage = 'render : ' + error.message;
           snapshotCurrentPage(task, failureMessage);
-        }
+        },
+        true
       );
     } catch (e) {
       failure = 'page setup : ' + e.toString();
