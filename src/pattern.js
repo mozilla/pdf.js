@@ -3,8 +3,10 @@
 
 'use strict';
 
-var AXIAL_PATTERN_TYPE = 2;
-var RADIAL_PATTERN_TYPE = 3;
+var PatternType = {
+  AXIAL: 2,
+  RADIAL: 3
+};
 
 var Pattern = (function patternPattern() {
   // Constructor should define this.getPattern
@@ -31,8 +33,8 @@ var Pattern = (function patternPattern() {
     var type = dict.get('ShadingType');
 
     switch (type) {
-      case AXIAL_PATTERN_TYPE:
-      case RADIAL_PATTERN_TYPE:
+      case PatternType.AXIAL:
+      case PatternType.RADIAL:
         // Both radial and axial shadings are handled by RadialAxial shading.
         return new Shadings.RadialAxial(dict, matrix, xref, res, ctx);
       default:
@@ -120,9 +122,9 @@ Shadings.RadialAxial = (function radialAxialShading() {
     }
 
     var grad;
-    if (type == AXIAL_PATTERN_TYPE)
+    if (type == PatternType.AXIAL)
       grad = ctx.createLinearGradient(p0[0], p0[1], p1[0], p1[1]);
-    else if (type == RADIAL_PATTERN_TYPE)
+    else if (type == PatternType.RADIAL)
       grad = ctx.createRadialGradient(p0[0], p0[1], r0, p1[0], p1[1], r1);
 
     for (var i = 0, ii = colorStops.length; i < ii; ++i) {
@@ -136,12 +138,12 @@ Shadings.RadialAxial = (function radialAxialShading() {
     getIR: function radialAxialShadingGetIR() {
       var coordsArr = this.coordsArr;
       var type = this.shadingType;
-      if (type == AXIAL_PATTERN_TYPE) {
+      if (type == PatternType.AXIAL) {
         var p0 = [coordsArr[0], coordsArr[1]];
         var p1 = [coordsArr[2], coordsArr[3]];
         var r0 = null;
         var r1 = null;
-      } else if (type == RADIAL_PATTERN_TYPE) {
+      } else if (type == PatternType.RADIAL) {
         var p0 = [coordsArr[0], coordsArr[1]];
         var p1 = [coordsArr[3], coordsArr[4]];
         var r0 = coordsArr[2];
