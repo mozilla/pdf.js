@@ -296,5 +296,17 @@
        "md5": "20d88011dd7e3c4fb5274979094dab93",
        "rounds": 1,
        "type": "eq"
+    },
+    {  "id": "bwsampleissue828und863",
+       "file": "pdfs/ccittg4compression1bpp.pdf",
+       "md5": "d2de76ff3de6eb0fb7cfc12b2fdbbb4e",
+       "rounds": 1,
+       "type": "eq"
+    },
+    {  "id": "colorsampleissue828",
+       "file": "pdfs/jpgcompression24bpp.pdf",
+       "md5": "9870f70f022515d7208ac16c13210b21",
+       "rounds": 1,
+       "type": "eq"
     }
 ]
