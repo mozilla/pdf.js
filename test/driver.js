@@ -160,6 +160,10 @@ function nextPage(task, loadError) {
       canvas.height = pageHeight * pdfToCssUnitsCoef;
       clear(ctx);
 
+      // using non-attached to the document div to test
+      // text layer creation operations
+      var textLayer = document.createElement('div');
+
       page.startRendering(
         ctx,
         function nextPageStartRendering(error) {
@@ -168,7 +172,7 @@ function nextPage(task, loadError) {
             failureMessage = 'render : ' + error.message;
           snapshotCurrentPage(task, failureMessage);
         },
-        true
+        textLayer
       );
     } catch (e) {
       failure = 'page setup : ' + e.toString();
