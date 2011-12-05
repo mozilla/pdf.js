@@ -969,8 +969,8 @@ var CanvasGraphics = (function canvasGraphics() {
     },
 
     paintJpegXObject: function canvasGraphicsPaintJpegXObject(objId, w, h) {
-      var image = this.objs.get(objId);
-      if (!image) {
+      var domImage = this.objs.get(objId);
+      if (!domImage) {
         error('Dependent image isn\'t ready yet');
       }
 
@@ -980,7 +980,6 @@ var CanvasGraphics = (function canvasGraphics() {
       // scale the image to the unit square
       ctx.scale(1 / w, -1 / h);
 
-      var domImage = image.getImage();
       ctx.drawImage(domImage, 0, 0, domImage.width, domImage.height,
                     0, -h, w, h);
 

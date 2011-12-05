@@ -589,7 +589,7 @@ var XRef = (function xRefXRef() {
           e = parser.getObj();
         }
         // Don't cache streams since they are mutable (except images).
-        if (!isStream(e) || e.getImage)
+        if (!isStream(e) || e.src)
           this.cache[num] = e;
         return e;
       }
