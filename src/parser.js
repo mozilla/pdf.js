@@ -225,7 +225,8 @@ var Parser = (function parserParser() {
           return new PredictorStream(new FlateStream(stream), params);
         }
         return new FlateStream(stream);
-      } else if (name == 'LZWDecode' || name == 'LZW') {
+      }
+      if (name == 'LZWDecode' || name == 'LZW') {
         var earlyChange = 1;
         if (params) {
           if (params.has('EarlyChange'))
@@ -234,18 +235,21 @@ var Parser = (function parserParser() {
             new LZWStream(stream, earlyChange), params);
         }
         return new LZWStream(stream, earlyChange);
-      } else if (name == 'DCTDecode' || name == 'DCT') {
+      }
+      if (name == 'DCTDecode' || name == 'DCT') {
         var bytes = stream.getBytes(length);
         return new JpegStream(bytes, stream.dict, this.xref);
-      } else if (name == 'ASCII85Decode' || name == 'A85') {
-        return new Ascii85Stream(stream);
-      } else if (name == 'ASCIIHexDecode' || name == 'AHx') {
-        return new AsciiHexStream(stream);
-      } else if (name == 'CCITTFaxDecode' || name == 'CCF') {
-        return new CCITTFaxStream(stream, params);
-      } else {
-        TODO('filter "' + name + '" not supported yet');
       }
+      if (name == 'ASCII85Decode' || name == 'A85') {
+        return new Ascii85Stream(stream);
+      }
+      if (name == 'ASCIIHexDecode' || name == 'AHx') {
+        return new AsciiHexStream(stream);
+      }
+      if (name == 'CCITTFaxDecode' || name == 'CCF') {
+        return new CCITTFaxStream(stream, params);
+      }
+      TODO('filter "' + name + '" not supported yet');
       return stream;
     }
   };
