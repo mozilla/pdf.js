@@ -296,5 +296,12 @@
        "md5": "20d88011dd7e3c4fb5274979094dab93",
        "rounds": 1,
        "type": "eq"
+    },
+    {  "id": "tutorial",
+       "file": "pdfs/tutorial.pdf",
+       "md5": "6e122f618c27f3aa9a689423e3be6b8d",
+       "link": true,
+       "rounds": 1,
+       "type": "eq"
     }
 ]
