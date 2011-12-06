@@ -1114,24 +1114,14 @@ var CanvasGraphics = (function canvasGraphics() {
 
       var tmpCanvas = new this.ScratchCanvas(w, h);
       var tmpCtx = tmpCanvas.getContext('2d');
-      var tmpImgData;
+      this.putBinaryImageData(tmpCtx, imgData, w, h);
 
-      // Some browsers can set an UInt8Array directly as imageData, some
-      // can't. As long as we don't have proper feature detection, just
-      // copy over each pixel and set the imageData that way.
-      tmpImgData = tmpCtx.getImageData(0, 0, w, h);
-
-      // Copy over the imageData.
-      var tmpImgDataPixels = tmpImgData.data;
-      var len = tmpImgDataPixels.length;
-
-      while (len--) {
-        tmpImgDataPixels[len] = imgData.data[len];
-      }
-
-      tmpCtx.putImageData(tmpImgData, 0, 0);
       ctx.drawImage(tmpCanvas, 0, -h);
       this.restore();
+    },
+
+    putBinaryImageData: function canvasPutBinaryImageData() {
+      //
     },
 
     // Marked content
@@ -1194,3 +1184,38 @@ var CanvasGraphics = (function canvasGraphics() {
   return constructor;
 })();
 
+if (!isWorker) {
+  // Feature detection if the browser can use an Uint8Array directly as imgData.
+  var canvas = document.createElement('canvas');
+  canvas.width = 1;
+  canvas.height = 1;
+  var ctx = canvas.getContext('2d');
+
+  try {
+    ctx.putImageData({
+      width: 1,
+      height: 1,
+      data: new Uint8Array(4)
+    }, 0, 0);
+
+    CanvasGraphics.prototype.putBinaryImageData =
+      function CanvasGraphicsPutBinaryImageDataNative(ctx, imgData) {
+        ctx.putImageData(imgData, 0, 0);
+      };
+  } catch (e) {
+    CanvasGraphics.prototype.putBinaryImageData =
+      function CanvasGraphicsPutBinaryImageDataShim(ctx, imgData, w, h) {
+        var tmpImgData = ctx.getImageData(0, 0, w, h);
+
+        // Copy over the imageData pixel by pixel.
+        var tmpImgDataPixels = tmpImgData.data;
+        var len = tmpImgDataPixels.length;
+
+        while (len--) {
+          tmpImgDataPixels[len] = imgData.data[len];
+        }
+
+        ctx.putImageData(tmpImgData, 0, 0);
+      };
+  }
+}
