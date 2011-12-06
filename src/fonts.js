@@ -1758,7 +1758,7 @@ var Font = (function Font() {
         var hasShortCmap = !!cmapTable.hasShortCmap;
         var toUnicode = this.toUnicode;
 
-        if (hasShortCmap && toUnicode) {
+        if (toUnicode) {
           // checking if cmap is just identity map
           var isIdentity = true;
           for (var i = 0, ii = glyphs.length; i < ii; i++) {
@@ -2110,6 +2110,10 @@ var Font = (function Font() {
           unicode = charcode;
           break;
         case 'TrueType':
+          if (this.useToUnicode) {
+            unicode = this.toUnicode[charcode] || charcode;
+            break;
+          }
           var glyphName = this.differences[charcode] || this.encoding[charcode];
           if (!glyphName)
             glyphName = Encodings.StandardEncoding[charcode];
