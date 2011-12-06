@@ -20,7 +20,6 @@
     {  "id": "intelisa-load",
        "file": "pdfs/intelisa.pdf",
        "md5": "f5712097d29287a97f1278839814f682",
-       "md5": "f3ed5487d1afa34d8b77c0c734a95c79",
        "link": true,
        "rounds": 1,
        "type": "load"
