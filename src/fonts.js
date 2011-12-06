@@ -3,8 +3,6 @@
 
 'use strict';
 
-var isWorker = (typeof window == 'undefined');
-
 /**
  * Maximum time to wait for a font to be loaded by font-face rules.
  */
