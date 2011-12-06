@@ -557,7 +557,7 @@ var ThumbnailView = function thumbnailView(container, page, id, pageRatio) {
     PDFView.page = id;
     return false;
   };
-  
+
   var view = page.view;
   this.width = view.width;
   this.height = view.height;
@@ -728,7 +728,7 @@ function updateThumbViewArea() {
   if (thumbnailTimer)
     clearTimeout(thumbnailTimer);
 
-  thumbnailTimer = setTimeout(function(){
+  thumbnailTimer = setTimeout(function() {
     var visibleThumbs = PDFView.getVisibleThumbs();
     for (var i = 0; i < visibleThumbs.length; i++) {
       var thumb = visibleThumbs[i];
