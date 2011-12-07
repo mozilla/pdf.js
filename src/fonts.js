@@ -884,6 +884,13 @@ var Font = (function Font() {
            String.fromCharCode(value & 0xff);
   };
 
+  function safeString16(value) {
+    // clamp value to the 16-bit int range
+    value = value > 0x7FFF ? 0x7FFF : value < -0x8000 ? -0x8000 : value;
+    return String.fromCharCode((value >> 8) & 0xff) +
+           String.fromCharCode(value & 0xff);
+  };
+
   function string32(value) {
     return String.fromCharCode((value >> 24) & 0xff) +
            String.fromCharCode((value >> 16) & 0xff) +
@@ -1903,9 +1910,9 @@ var Font = (function Font() {
               '\x00\x00\x00\x00\x9e\x0b\x7e\x27' + // creation date
               '\x00\x00\x00\x00\x9e\x0b\x7e\x27' + // modifification date
               '\x00\x00' + // xMin
-              string16(properties.descent) + // yMin
+              safeString16(properties.descent) + // yMin
               '\x0F\xFF' + // xMax
-              string16(properties.ascent) + // yMax
+              safeString16(properties.ascent) + // yMax
               string16(properties.italicAngle ? 2 : 0) + // macStyle
               '\x00\x11' + // lowestRecPPEM
               '\x00\x00' + // fontDirectionHint
@@ -1917,15 +1924,15 @@ var Font = (function Font() {
         'hhea': (function fontFieldsHhea() {
           return stringToArray(
               '\x00\x01\x00\x00' + // Version number
-              string16(properties.ascent) + // Typographic Ascent
-              string16(properties.descent) + // Typographic Descent
+              safeString16(properties.ascent) + // Typographic Ascent
+              safeString16(properties.descent) + // Typographic Descent
               '\x00\x00' + // Line Gap
               '\xFF\xFF' + // advanceWidthMax
               '\x00\x00' + // minLeftSidebearing
               '\x00\x00' + // minRightSidebearing
               '\x00\x00' + // xMaxExtent
-              string16(properties.capHeight) + // caretSlopeRise
-              string16(Math.tan(properties.italicAngle) *
+              safeString16(properties.capHeight) + // caretSlopeRise
+              safeString16(Math.tan(properties.italicAngle) *
                        properties.xHeight) + // caretSlopeRun
               '\x00\x00' + // caretOffset
               '\x00\x00' + // -reserved-
@@ -1942,7 +1949,7 @@ var Font = (function Font() {
           for (var i = 0, ii = charstrings.length; i < ii; i++) {
             var charstring = charstrings[i];
             var width = 'width' in charstring ? charstring.width : 0;
-            hmtx += string16(width) + string16(0);
+            hmtx += safeString16(width) + string16(0);
           }
           return stringToArray(hmtx);
         })(),
@@ -3153,29 +3160,19 @@ var Type2CFF = (function type2CFF() {
 
       var charStrings = this.parseIndex(topDict.CharStrings);
 
-      var charset, encoding;
+      var charstrings;
       var isCIDFont = properties.subtype == 'CIDFontType0C';
       if (isCIDFont) {
-        charset = ['.notdef'];
-        for (var i = 1, ii = charStrings.length; i < ii; ++i)
-          charset.push('glyph' + i);
-
-        encoding = this.parseCidMap(topDict.charset,
-                                    charStrings.length);
+        charstrings = this.parseCidMap(topDict.charset,
+                                       charStrings.length);
       } else {
-        charset = this.parseCharsets(topDict.charset,
+        var charset = this.parseCharsets(topDict.charset,
                                      charStrings.length, strings);
-        encoding = this.parseEncoding(topDict.Encoding, properties,
+        var encoding = this.parseEncoding(topDict.Encoding, properties,
                                       strings, charset);
+        charstrings = this.getCharStrings(charset, encoding,
+                                          privateDict, this.properties);
       }
-
-      // The font sanitizer does not support CFF encoding with a
-      // supplement, since the encoding is not really use to map
-      // between gid to glyph, let's overwrite what is declared in
-      // the top dictionary to let the sanitizer think the font use
-      // StandardEncoding, that's a lie but that's ok.
-      if (encoding.hasSupplement)
-        bytes[topDict.Encoding] &= 0x7F;
 
       // The CFF specification state that the 'dotsection' command
       // (12, 0) is deprecated and treated as a no-op, but all Type2
@@ -3204,11 +3201,6 @@ var Type2CFF = (function type2CFF() {
         }
       }
 
-      // charstrings contains info about glyphs (one element per glyph
-      // containing mappings for {unicode, width})
-      var charstrings = this.getCharStrings(charset, encoding.encoding,
-                                            privateDict, this.properties);
-
       // create the mapping between charstring and glyph id
       var glyphIds = [];
       for (var i = 0, ii = charstrings.length; i < ii; i++)
@@ -3236,7 +3228,6 @@ var Type2CFF = (function type2CFF() {
         if (glyph == '.notdef') {
           charstrings.push({
             unicode: 0,
-            code: 0,
             gid: i,
             glyph: glyph
           });
@@ -3249,7 +3240,6 @@ var Type2CFF = (function type2CFF() {
         }
         charstrings.push({
           unicode: code,
-          code: code,
           gid: i,
           glyph: glyph
         });
@@ -3265,7 +3255,6 @@ var Type2CFF = (function type2CFF() {
         var unicode = nextUnusedUnicode++;
         charstrings.push({
           unicode: unicode,
-          code: inverseEncoding[i] || 0,
           gid: i,
           glyph: charsets[i]
         });
@@ -3282,10 +3271,6 @@ var Type2CFF = (function type2CFF() {
                                               charset) {
       var encoding = {};
       var bytes = this.bytes;
-      var result = {
-        encoding: encoding,
-        hasSupplement: false
-      };
 
       function readSupplement() {
         var supplementsCount = bytes[pos++];
@@ -3331,10 +3316,17 @@ var Type2CFF = (function type2CFF() {
         }
         if (format & 0x80) {
           readSupplement();
-          result.hasSupplement = true;
+
+          // The font sanitizer does not support CFF encoding with a
+          // supplement, since the encoding is not really use to map
+          // between gid to glyph, let's overwrite what is declared in
+          // the top dictionary to let the sanitizer think the font use
+          // StandardEncoding, that's a lie but that's ok.
+          bytes[startOffset] &= 0x7F;
         }
       }
-      return result;
+
+      return encoding;
     },
 
     parseCharsets: function cff_parsecharsets(pos, length, strings) {
@@ -3386,39 +3378,60 @@ var Type2CFF = (function type2CFF() {
       var bytes = this.bytes;
       var format = bytes[pos++];
 
-      var encoding = {};
-      var map = {encoding: encoding};
-
-      encoding[0] = 0;
+      var charstrings = [];
+      charstrings.push({
+        unicode: 0,
+        gid: 0,
+        glyph: '.notdef'
+      });
 
       var gid = 1;
       switch (format) {
         case 0:
           while (gid < length) {
             var cid = (bytes[pos++] << 8) | bytes[pos++];
-            encoding[cid] = gid++;
+            charstrings.push({
+              unicode: cid,
+              gid: gid++,
+              glyph: 'glyph' + cid
+            });
           }
           break;
         case 1:
           while (gid < length) {
             var cid = (bytes[pos++] << 8) | bytes[pos++];
             var count = bytes[pos++];
-            for (var i = 0; i <= count; i++)
-              encoding[cid++] = gid++;
+            for (var i = 0; i <= count; i++) {
+              charstrings.push({
+                unicode: cid++,
+                gid: gid++,
+                glyph: 'glyph' + cid
+              });
+            }
           }
           break;
         case 2:
           while (gid < length) {
             var cid = (bytes[pos++] << 8) | bytes[pos++];
             var count = (bytes[pos++] << 8) | bytes[pos++];
-            for (var i = 0; i <= count; i++)
-              encoding[cid++] = gid++;
+            for (var i = 0; i <= count; i++) {
+              charstrings.push({
+                unicode: cid++,
+                gid: gid++,
+                glyph: 'glyph' + cid
+              });
+            }
           }
           break;
         default:
           error('Unknown charset format');
       }
-      return map;
+
+      // sort the array by the unicode value (again)
+      charstrings.sort(function type2CFFGetCharStringsSort(a, b) {
+        return a.unicode - b.unicode;
+      });
+      return charstrings;
     },
 
     getPrivDict: function cff_getprivdict(baseDict, strings) {
