@@ -884,6 +884,13 @@ var Font = (function Font() {
            String.fromCharCode(value & 0xff);
   };
 
+  function safeString16(value) {
+    // clamp value to the 16-bit int range
+    value = value > 0x7FFF ? 0x7FFF : value < -0x8000 ? -0x8000 : value;
+    return String.fromCharCode((value >> 8) & 0xff) +
+           String.fromCharCode(value & 0xff);
+  };
+
   function string32(value) {
     return String.fromCharCode((value >> 24) & 0xff) +
            String.fromCharCode((value >> 16) & 0xff) +
@@ -1903,9 +1910,9 @@ var Font = (function Font() {
               '\x00\x00\x00\x00\x9e\x0b\x7e\x27' + // creation date
               '\x00\x00\x00\x00\x9e\x0b\x7e\x27' + // modifification date
               '\x00\x00' + // xMin
-              string16(properties.descent) + // yMin
+              safeString16(properties.descent) + // yMin
               '\x0F\xFF' + // xMax
-              string16(properties.ascent) + // yMax
+              safeString16(properties.ascent) + // yMax
               string16(properties.italicAngle ? 2 : 0) + // macStyle
               '\x00\x11' + // lowestRecPPEM
               '\x00\x00' + // fontDirectionHint
@@ -1917,15 +1924,15 @@ var Font = (function Font() {
         'hhea': (function fontFieldsHhea() {
           return stringToArray(
               '\x00\x01\x00\x00' + // Version number
-              string16(properties.ascent) + // Typographic Ascent
-              string16(properties.descent) + // Typographic Descent
+              safeString16(properties.ascent) + // Typographic Ascent
+              safeString16(properties.descent) + // Typographic Descent
               '\x00\x00' + // Line Gap
               '\xFF\xFF' + // advanceWidthMax
               '\x00\x00' + // minLeftSidebearing
               '\x00\x00' + // minRightSidebearing
               '\x00\x00' + // xMaxExtent
-              string16(properties.capHeight) + // caretSlopeRise
-              string16(Math.tan(properties.italicAngle) *
+              safeString16(properties.capHeight) + // caretSlopeRise
+              safeString16(Math.tan(properties.italicAngle) *
                        properties.xHeight) + // caretSlopeRun
               '\x00\x00' + // caretOffset
               '\x00\x00' + // -reserved-
@@ -1942,7 +1949,7 @@ var Font = (function Font() {
           for (var i = 0, ii = charstrings.length; i < ii; i++) {
             var charstring = charstrings[i];
             var width = 'width' in charstring ? charstring.width : 0;
-            hmtx += string16(width) + string16(0);
+            hmtx += safeString16(width) + string16(0);
           }
           return stringToArray(hmtx);
         })(),
