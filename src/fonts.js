@@ -1949,7 +1949,7 @@ var Font = (function Font() {
           for (var i = 0, ii = charstrings.length; i < ii; i++) {
             var charstring = charstrings[i];
             var width = 'width' in charstring ? charstring.width : 0;
-            hmtx += safeString16(width) + string16(0);
+            hmtx += string16(width) + string16(0);
           }
           return stringToArray(hmtx);
         })(),
