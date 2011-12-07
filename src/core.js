@@ -561,14 +561,7 @@ var PDFDoc = (function pdfDoc() {
         switch (type) {
           case 'JpegStream':
             var imageData = data[2];
-
-            var src = 'data:image/jpeg;base64,' + window.btoa(imageData);
-            var img = new Image();
-            img.onload = (function jpegImageLoaderOnload() {
-              this.objs.resolve(id, img);
-            }).bind(this);
-            img.src = src;
-
+            loadJpegStream(id, imageData, this.objs);
             break;
           case 'Font':
             var name = data[2];

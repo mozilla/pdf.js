@@ -228,3 +228,11 @@ var PDFImage = (function pdfImage() {
   };
   return constructor;
 })();
+
+function loadJpegStream(id, imageData, objs) {
+  var img = new Image();
+  img.onload = (function jpegImageLoaderOnload() {
+    objs.resolve(id, img);
+  });
+  img.src = 'data:image/jpeg;base64,' + window.btoa(imageData);
+}
