@@ -678,6 +678,9 @@ window.addEventListener('load', function webViewerLoad(evt) {
     document.getElementById('fileInput').setAttribute('hidden', 'true');
   else
     document.getElementById('fileInput').value = null;
+
+  var sidebarScrollView = document.getElementById('sidebarScrollView');
+  sidebarScrollView.addEventListener('scroll', updateThumbViewArea, true);
 }, true);
 
 window.addEventListener('unload', function webViewerUnload(evt) {
@@ -717,7 +720,6 @@ window.addEventListener('scroll', function webViewerScroll(evt) {
 }, true);
 
 
-var sidebarScrollView = document.getElementById('sidebarScrollView');
 var thumbnailTimer;
 
 function updateThumbViewArea() {
@@ -737,7 +739,6 @@ function updateThumbViewArea() {
   }, delay);
 }
 
-sidebarScrollView.addEventListener('scroll', updateThumbViewArea, true);
 window.addEventListener('transitionend', updateThumbViewArea, true);
 window.addEventListener('webkitTransitionEnd', updateThumbViewArea, true);
 
