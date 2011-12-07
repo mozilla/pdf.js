@@ -227,7 +227,7 @@ extension: | production-extension
 	@mkdir -p $(CHROME_CONTENT_DIR)/web
 	@cp $(BUILD_TARGET) $(CHROME_CONTENT_DIR)/$(BUILD_DIR)
 	@cp -r $(PDF_WEB_FILES) $(CHROME_CONTENT_DIR)/web/
-	@mv -f $(CHROME_CONTENT_DIR)/web/viewer-production.html $(CHROME_CONTENT_DIR)/web/viewer.html
+	@mv -f $(CHROME_CONTENT_DIR)/web/viewer-extension.html $(CHROME_CONTENT_DIR)/web/viewer.html
 
   # Create the crx
   #TODO
