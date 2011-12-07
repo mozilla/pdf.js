@@ -229,12 +229,12 @@ var PDFImage = (function pdfImage() {
   return constructor;
 })();
 
-var JpegImage = (function jpegImage() {
-  function JpegImage(objId, imageData, objs) {
+var JpegImageLoader = (function jpegImage() {
+  function JpegImageLoader(objId, imageData, objs) {
     var src = 'data:image/jpeg;base64,' + window.btoa(imageData);
 
     var img = new Image();
-    img.onload = (function jpegImageOnload() {
+    img.onload = (function jpegImageLoaderOnload() {
       this.loaded = true;
 
       objs.resolve(objId, this);
@@ -246,12 +246,12 @@ var JpegImage = (function jpegImage() {
     this.domImage = img;
   }
 
-  JpegImage.prototype = {
-    getImage: function jpegImageGetImage() {
+  JpegImageLoader.prototype = {
+    getImage: function jpegImageLoaderGetImage() {
       return this.domImage;
     }
   };
 
-  return JpegImage;
+  return JpegImageLoader;
 })();
 

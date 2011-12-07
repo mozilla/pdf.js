@@ -5,3 +5,17 @@ openweb_tm-PRINT.pdf
 local.mk
 build/
 
+
+/extensions/chrome/content/web/compatibility.js
+/extensions/chrome/content/web/images/bookmark.svg
+/extensions/chrome/content/web/images/document-print.svg
+/extensions/chrome/content/web/images/download.svg
+/extensions/chrome/content/web/images/go-down.svg
+/extensions/chrome/content/web/images/go-up.svg
+/extensions/chrome/content/web/images/nav-outline.svg
+/extensions/chrome/content/web/images/nav-thumbs.svg
+/extensions/chrome/content/web/images/zoom-in.svg
+/extensions/chrome/content/web/images/zoom-out.svg
+/extensions/chrome/content/web/viewer.css
+/extensions/chrome/content/web/viewer.html
+/extensions/chrome/content/web/viewer.js

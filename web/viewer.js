@@ -129,7 +129,14 @@ var PDFView = {
           if (evt.lengthComputable)
             self.progress(evt.loaded / evt.total);
         },
-        error: self.error
+        error: function getPdfError(e) {
+          var loadingIndicator = document.getElementById('loading');
+          loadingIndicator.innerHTML = 'Error';
+          var moreInfo = {
+            message: 'Unexpected server response of ' + e.target.status + '.'
+          };
+          self.error('An error occurred while loading the PDF.', moreInfo);
+        }
       },
       function getPdfLoad(data) {
         self.loading = true;
@@ -168,7 +175,8 @@ var PDFView = {
         (destRef + 1);
       if (pageNumber) {
         var pdfOpenParams = '#page=' + pageNumber;
-        if (isName(dest[1], 'XYZ')) {
+        var destKind = dest[1];
+        if ('name' in destKind && destKind.name == 'XYZ') {
           var scale = (dest[4] || this.currentScale);
           pdfOpenParams += '&zoom=' + (scale * 100);
           if (dest[2] || dest[3]) {
@@ -181,9 +189,47 @@ var PDFView = {
     return '';
   },
 
-  error: function pdfViewError() {
-    var loadingIndicator = document.getElementById('loading');
-    loadingIndicator.innerHTML = 'Error';
+  /**
+   * Show the error box.
+   * @param {String} message A message that is human readable.
+   * @param {Object} moreInfo (optional) Further information about the error
+   *                            that is more technical.  Should have a 'message'
+   *                            and optionally a 'stack' property.
+   */
+  error: function pdfViewError(message, moreInfo) {
+    var errorWrapper = document.getElementById('errorWrapper');
+    errorWrapper.removeAttribute('hidden');
+
+    var errorMessage = document.getElementById('errorMessage');
+    errorMessage.innerHTML = message;
+
+    var closeButton = document.getElementById('errorClose');
+    closeButton.onclick = function() {
+      errorWrapper.setAttribute('hidden', 'true');
+    };
+
+    var errorMoreInfo = document.getElementById('errorMoreInfo');
+    var moreInfoButton = document.getElementById('errorShowMore');
+    var lessInfoButton = document.getElementById('errorShowLess');
+    moreInfoButton.onclick = function() {
+      errorMoreInfo.removeAttribute('hidden');
+      moreInfoButton.setAttribute('hidden', 'true');
+      lessInfoButton.removeAttribute('hidden');
+    };
+    lessInfoButton.onclick = function() {
+      errorMoreInfo.setAttribute('hidden', 'true');
+      moreInfoButton.removeAttribute('hidden');
+      lessInfoButton.setAttribute('hidden', 'true');
+    };
+    moreInfoButton.removeAttribute('hidden');
+    lessInfoButton.setAttribute('hidden', 'true');
+    errorMoreInfo.innerHTML = 'PDF.JS Build: ' + PDFJS.build + '\n';
+
+    if (moreInfo) {
+      errorMoreInfo.innerHTML += 'Message: ' + moreInfo.message;
+      if (moreInfo.stack)
+        errorMoreInfo.innerHTML += '\n' + 'Stack: ' + moreInfo.stack;
+    }
   },
 
   progress: function pdfViewProgress(level) {
@@ -193,6 +239,16 @@ var PDFView = {
   },
 
   load: function pdfViewLoad(data, scale) {
+    function bindOnAfterDraw(pageView, thumbnailView) {
+      // when page is painted, using the image as thumbnail base
+      pageView.onAfterDraw = function pdfViewLoadOnAfterDraw() {
+        thumbnailView.setImage(pageView.canvas);
+      };
+    }
+
+    var errorWrapper = document.getElementById('errorWrapper');
+    errorWrapper.setAttribute('hidden', 'true');
+
     var loadingIndicator = document.getElementById('loading');
     loadingIndicator.setAttribute('hidden', 'true');
 
@@ -209,7 +265,12 @@ var PDFView = {
     while (container.hasChildNodes())
       container.removeChild(container.lastChild);
 
-    var pdf = new PDFJS.PDFDoc(data);
+    var pdf;
+    try {
+      pdf = new PDFJS.PDFDoc(data);
+    } catch (e) {
+      this.error('An error occurred while reading the PDF.', e);
+    }
     var pagesCount = pdf.numPages;
     document.getElementById('numPages').innerHTML = pagesCount;
     document.getElementById('pageNumber').max = pagesCount;
@@ -219,18 +280,22 @@ var PDFView = {
     var thumbnails = this.thumbnails = [];
     for (var i = 1; i <= pagesCount; i++) {
       var page = pdf.getPage(i);
-      pages.push(new PageView(container, page, i, page.width, page.height,
-                              page.stats, this.navigateTo.bind(this)));
-      thumbnails.push(new ThumbnailView(sidebar, page, i,
-                                        page.width / page.height));
+      var pageView = new PageView(container, page, i, page.width, page.height,
+                                  page.stats, this.navigateTo.bind(this));
+      var thumbnailView = new ThumbnailView(sidebar, page, i,
+                                            page.width / page.height);
+      bindOnAfterDraw(pageView, thumbnailView);
+
+      pages.push(pageView);
+      thumbnails.push(thumbnailView);
       var pageRef = page.ref;
       pagesRefMap[pageRef.num + ' ' + pageRef.gen + ' R'] = i;
     }
 
-    this.setScale(scale || kDefaultScale, true);
-
     this.pagesRefMap = pagesRefMap;
     this.destinations = pdf.catalog.destinations;
+    this.setScale(scale || kDefaultScale, true);
+
     if (pdf.catalog.documentOutline) {
       this.outline = new DocumentOutlineView(pdf.catalog.documentOutline);
       var outlineSwitchButton = document.getElementById('outlineSwitch');
@@ -360,6 +425,8 @@ var PageView = function pageView(container, content, id, pageWidth, pageHeight,
     while (div.hasChildNodes())
       div.removeChild(div.lastChild);
     div.removeAttribute('data-loaded');
+
+    delete this.canvas;
   };
 
   function setupLinks(content, scale) {
@@ -474,6 +541,11 @@ var PageView = function pageView(container, content, id, pageWidth, pageHeight,
     canvas.id = 'page' + this.id;
     canvas.mozOpaque = true;
     div.appendChild(canvas);
+    this.canvas = canvas;
+
+    var textLayer = document.createElement('div');
+    textLayer.className = 'textLayer';
+    div.appendChild(textLayer);
 
     var scale = this.scale;
     canvas.width = pageWidth * scale;
@@ -487,7 +559,15 @@ var PageView = function pageView(container, content, id, pageWidth, pageHeight,
     ctx.translate(-this.x * scale, -this.y * scale);
 
     stats.begin = Date.now();
-    this.content.startRendering(ctx, this.updateStats);
+    this.content.startRendering(ctx,
+      (function pageViewDrawCallback(error) {
+        if (error)
+          PDFView.error('An error occurred while rendering the page.', error);
+        this.updateStats();
+        if (this.onAfterDraw)
+          this.onAfterDraw();
+      }).bind(this), textLayer
+    );
 
     setupLinks(this.content, this.scale);
     div.setAttribute('data-loaded', true);
@@ -518,10 +598,9 @@ var ThumbnailView = function thumbnailView(container, page, id, pageRatio) {
   anchor.appendChild(div);
   container.appendChild(anchor);
 
-  this.draw = function thumbnailViewDraw() {
-    if (div.hasChildNodes())
-      return;
+  this.hasImage = false;
 
+  function getPageDrawContext() {
     var canvas = document.createElement('canvas');
     canvas.id = 'thumbnail' + id;
     canvas.mozOpaque = true;
@@ -549,7 +628,28 @@ var ThumbnailView = function thumbnailView(container, page, id, pageRatio) {
     div.style.height = (view.height * scaleY) + 'px';
     div.style.lineHeight = (view.height * scaleY) + 'px';
 
+    return ctx;
+  }
+
+  this.draw = function thumbnailViewDraw() {
+    if (this.hasImage)
+      return;
+
+    var ctx = getPageDrawContext();
     page.startRendering(ctx, function thumbnailViewDrawStartRendering() {});
+
+    this.hasImage = true;
+  };
+
+  this.setImage = function thumbnailViewSetImage(img) {
+    if (this.hasImage)
+      return;
+
+    var ctx = getPageDrawContext();
+    ctx.drawImage(img, 0, 0, img.width, img.height,
+                  0, 0, ctx.canvas.width, ctx.canvas.height);
+
+    this.hasImage = true;
   };
 };
 
@@ -687,6 +787,10 @@ window.addEventListener('transitionend', function webViewerTransitionend(evt) {
 
   var container = document.getElementById('sidebarView');
   container._interval = window.setInterval(function interval() {
+    // skipping the thumbnails with set images
+    while (pageIndex < pagesCount && PDFView.thumbnails[pageIndex].hasImage)
+      pageIndex++;
+
     if (pageIndex >= pagesCount) {
       window.clearInterval(container._interval);
       return;

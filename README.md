@@ -1,6 +1,6 @@
 # pdf.js
 
-
+ 
 
 ## Overview
 
@@ -95,9 +95,17 @@ workings of PDF and pdf.js:
 ## Contributing
 
 pdf.js is a community-driven project, so contributors are always welcome. 
-Simply fork our repo and contribute away. A great place to start is our
-[open issues](https://github.com/mozilla/pdf.js/issues). For better consistency and 
-long-term stability, please do look around the code and try to follow our conventions.
+Simply fork our repo and contribute away. Good starting places for picking
+a bug are the top error messages and TODOs in our corpus report:
+
++ http://people.mozilla.com/~bdahl/corpusreport/test/ref/
+
+and of course our open Github issues:
+
++ https://github.com/mozilla/pdf.js/issues 
+
+For better consistency and long-term stability, please do look around the 
+code and try to follow our conventions.
 More information about the contributor process can be found on the 
 [contributor wiki page](https://github.com/mozilla/pdf.js/wiki/Contributing).
 
@@ -152,9 +160,9 @@ See the bot repo for details:
 
 ## Additional resources
 
-Our demo site is here:
+Gallery of user projects and modifications:
 
-+ http://mozilla.github.com/pdf.js/web/viewer.html
++ https://github.com/mozilla/pdf.js/wiki/Gallery-of-user-projects-and-modifications
 
 You can read more about pdf.js here:
 

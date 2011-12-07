@@ -14,7 +14,6 @@ function MessageHandler(name, comObj) {
   ah['console_error'] = [function ahConsoleError(data) {
       console.error.apply(console, data);
   }];
-
   comObj.onmessage = function messageHandlerComObjOnMessage(event) {
     var data = event.data;
     if (data.action in ah) {
@@ -67,7 +66,6 @@ var WorkerMessageHandler = {
     handler.on('page_request', function wphSetupPageRequest(pageNum) {
       pageNum = parseInt(pageNum);
 
-      var page = pdfDoc.getPage(pageNum);
 
       // The following code does quite the same as
       // Page.prototype.startRendering, but stops at one point and sends the
@@ -77,9 +75,23 @@ var WorkerMessageHandler = {
       var start = Date.now();
 
       var dependency = [];
-
-      // Pre compile the pdf page and fetch the fonts/images.
-      var IRQueue = page.getIRQueue(handler, dependency);
+      var IRQueue = null;
+      try {
+        var page = pdfDoc.getPage(pageNum);
+        // Pre compile the pdf page and fetch the fonts/images.
+        IRQueue = page.getIRQueue(handler, dependency);
+      } catch (e) {
+        // Turn the error into an obj that can be serialized
+        e = {
+          message: e.message,
+          stack: e.stack
+        };
+        handler.send('page_error', {
+          pageNum: pageNum,
+          error: e
+        });
+        return;
+      }
 
       console.log('page=%d - getIRQueue: time=%dms, len=%d', pageNum,
                                   Date.now() - start, IRQueue.fnArray.length);

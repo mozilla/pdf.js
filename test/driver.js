@@ -56,23 +56,29 @@ function load() {
 }
 
 function cleanup() {
-  var styleSheet = document.styleSheets[0];
-  if (styleSheet) {
+  // Clear out all the stylesheets since a new one is created for each font.
+  while (document.styleSheets.length > 0) {
+    var styleSheet = document.styleSheets[0];
     while (styleSheet.cssRules.length > 0)
       styleSheet.deleteRule(0);
+    var ownerNode = styleSheet.ownerNode;
+    ownerNode.parentNode.removeChild(ownerNode);
   }
   var guard = document.getElementById('content-end');
   var body = document.body;
   while (body.lastChild !== guard)
     body.removeChild(body.lastChild);
+
+  // Wipe out the link to the pdfdoc so it can be GC'ed.
+  for (var i = 0; i < manifest.length; i++) {
+    if (manifest[i].pdfDoc) {
+      manifest[i].pdfDoc.destroy();
+      delete manifest[i].pdfDoc;
+    }
+  }
 }
 
 function nextTask() {
-  // If there is a pdfDoc on the last task executed, destroy it to free memory.
-  if (task && task.pdfDoc) {
-    task.pdfDoc.destroy();
-    delete task.pdfDoc;
-  }
   cleanup();
 
   if (currentTaskIdx == manifest.length) {
@@ -154,12 +160,19 @@ function nextPage(task, loadError) {
       canvas.height = pageHeight * pdfToCssUnitsCoef;
       clear(ctx);
 
+      // using non-attached to the document div to test
+      // text layer creation operations
+      var textLayer = document.createElement('div');
+
       page.startRendering(
         ctx,
-        function nextPageStartRendering(e) {
-          snapshotCurrentPage(task, (!failure && e) ?
-            ('render : ' + e) : failure);
-        }
+        function nextPageStartRendering(error) {
+          var failureMessage = false;
+          if (error)
+            failureMessage = 'render : ' + error.message;
+          snapshotCurrentPage(task, failureMessage);
+        },
+        textLayer
       );
     } catch (e) {
       failure = 'page setup : ' + e.toString();
