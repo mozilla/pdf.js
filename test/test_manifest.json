@@ -302,5 +302,14 @@
        "link": true,
        "rounds": 1,
        "type": "eq"
+    },
+    {  "id": "geothermal.pdf",
+       "file": "pdfs/geothermal.pdf",
+       "md5": "ecffc0ce38ffdf1e90dc952f186e9a91",
+       "rounds": 1,
+       "link": true,
+       "pageLimit": 5,
+       "skipPages": [1],
+       "type": "eq"
     }
 ]
