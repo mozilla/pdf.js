@@ -2142,7 +2142,8 @@ var Font = (function Font() {
           break;
       }
 
-      var unicodeChars = this.toUnicode ? this.toUnicode[charcode] : charcode;
+      var unicodeChars = !('toUnicode' in this) ? charcode :
+        this.toUnicode[charcode] || charcode;
       if (typeof unicodeChars === 'number')
         unicodeChars = String.fromCharCode(unicodeChars);
 
