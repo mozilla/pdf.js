@@ -985,9 +985,9 @@ var CanvasGraphics = (function canvasGraphics() {
         var height = canvas.height;
 
         var bl = Util.applyTransform([0, 0], inv);
-        var br = Util.applyTransform([0, width], inv);
-        var ul = Util.applyTransform([height, 0], inv);
-        var ur = Util.applyTransform([height, width], inv);
+        var br = Util.applyTransform([0, height], inv);
+        var ul = Util.applyTransform([width, 0], inv);
+        var ur = Util.applyTransform([width, height], inv);
 
         var x0 = Math.min(bl[0], br[0], ul[0], ur[0]);
         var y0 = Math.min(bl[1], br[1], ul[1], ur[1]);
