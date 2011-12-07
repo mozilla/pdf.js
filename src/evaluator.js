@@ -179,21 +179,24 @@ var PartialEvaluator = (function partialEvaluator() {
         return loadedName;
       }
 
-      function buildPaintImageXObject(image, inline) {
+      function buildPaintImageXObject(image, inline) {        
         var dict = image.dict;
         var w = dict.get('Width', 'W');
         var h = dict.get('Height', 'H');
+        fn = 'paintImageXObject';
 
         if (image instanceof JpegStream && image.isNative) {
           var objId = 'img_' + uniquePrefix + (++self.objIdCounter);
-          handler.send('obj', [objId, 'JpegStream', image.getIR()]);
+          debugger;
+          handler.send('jpeg_decode', [image.getIR()], function(data) {
+            handler.send('obj', [objId, 'Jpeg', data]);
+          });
 
           // Add the dependency on the image object.
           insertDependency([objId]);
 
           // The normal fn.
-          fn = 'paintJpegXObject';
-          args = [objId, w, h];
+          args = ['jpeg', [objId, w, h]];
 
           return;
         }
@@ -220,8 +223,7 @@ var PartialEvaluator = (function partialEvaluator() {
           var pixels = imgData.data;
           imageObj.fillRgbaBuffer(pixels, imageObj.decode);
 
-          fn = 'paintImageXObject';
-          args = [imgData];
+          args = ['normal', [imgData]];
           return;
         }
 
@@ -230,7 +232,6 @@ var PartialEvaluator = (function partialEvaluator() {
         // data can't be done here. Instead of creating a
         // complete PDFImage, only read the information needed
         // for later.
-        fn = 'paintImageMaskXObject';
 
         var width = dict.get('Width', 'W');
         var height = dict.get('Height', 'H');
@@ -239,7 +240,7 @@ var PartialEvaluator = (function partialEvaluator() {
         var decode = dict.get('Decode', 'D');
         var inverseDecode = !!decode && decode[0] > 0;
 
-        args = [imgArray, inverseDecode, width, height];
+        args = ['imageMask', [imgArray, inverseDecode, width, height]];
       }
 
       uniquePrefix = uniquePrefix || '';

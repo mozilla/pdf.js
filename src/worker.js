@@ -6,6 +6,8 @@
 function MessageHandler(name, comObj) {
   this.name = name;
   this.comObj = comObj;
+  this.callbackIndex = 1;
+  this.callbacks = {};
   var ah = this.actionHandler = {};
 
   ah['console_log'] = [function ahConsoleLog(data) {
@@ -14,11 +16,38 @@ function MessageHandler(name, comObj) {
   ah['console_error'] = [function ahConsoleError(data) {
       console.error.apply(console, data);
   }];
+  ah['__resolve__'] = [ function(data) {
+      var callbackId = data.callbackId;
+      if (data.callbackId in this.callbacks) {
+        var callback = this.callbacks[callbackId];
+        delete this.callbacks[callbackId];
+        callback(data.data);
+      } else {
+        throw 'Cannot resolve callback ' + callbackId;
+      }
+  }, this];
+
   comObj.onmessage = function messageHandlerComObjOnMessage(event) {
     var data = event.data;
     if (data.action in ah) {
       var action = ah[data.action];
-      action[0].call(action[1], data.data);
+      if (data.callbackId) {
+        action[0].call(action[1], {
+          data: data.data,
+          resolve: (function(callbackId) {
+            return function(resolvedData) {
+            comObj.postMessage({
+              action: '__resolve__',
+              data: {
+                data: resolvedData,
+                callbackId: data.callbackId
+              }
+            });
+          }})(data.callbackId)
+        });  
+      } else {
+        action[0].call(action[1], data.data);
+      }
     } else {
       throw 'Unkown action from worker: ' + data.action;
     }
@@ -34,11 +63,17 @@ MessageHandler.prototype = {
     ah[actionName] = [handler, scope];
   },
 
-  send: function messageHandlerSend(actionName, data) {
-    this.comObj.postMessage({
+  send: function messageHandlerSend(actionName, data, callback) {
+    var message = {
       action: actionName,
       data: data
-    });
+    };
+    if (callback) {
+      var callbackId = this.callbackIndex++;
+      this.callbacks[callbackId] = callback;
+      message.callbackId = callbackId;
+    }
+    this.comObj.postMessage(message);
   }
 };
 
@@ -160,6 +195,13 @@ var WorkerMessageHandler = {
 
       handler.send('font_ready', [objId, obj]);
     });
+
+    handler.on('jpeg_decoded', function jpegDecoded(data) {
+      var objId = data[0];
+      var imageData = data[1];
+      console.log('worker recieved decoded jpeg');
+      debugger;
+    }, this);
   }
 };
 

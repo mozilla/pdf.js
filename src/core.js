@@ -6,7 +6,7 @@
 var globalScope = (typeof window === 'undefined') ? this : window;
 
 var ERRORS = 0, WARNINGS = 1, TODOS = 5;
-var verbosity = WARNINGS;
+var verbosity = TODOS;
 
 // The global PDFJS object exposes the API
 // In production, it will be declared outside a global wrapper
@@ -14,7 +14,7 @@ var verbosity = WARNINGS;
 if (!globalScope.PDFJS) {
   globalScope.PDFJS = {};
 }
-
+PDFJS.disableWorker = true;
 // getPdf()
 // Convenience function to perform binary Ajax GET
 // Usage: getPdf('http://...', callback)
@@ -440,6 +440,7 @@ var PDFDocModel = (function pdfDoc() {
                            this.startXRef,
                            this.mainXRefEntriesOffset);
       this.catalog = new Catalog(this.xref);
+      this.objs = new PDFObjects();
     },
     get numPages() {
       var linearization = this.linearization;
@@ -559,9 +560,9 @@ var PDFDoc = (function pdfDoc() {
         var type = data[1];
 
         switch (type) {
-          case 'JpegStream':
-            var IR = data[2];
-            new JpegImageLoader(id, IR, this.objs);
+          case 'Jpeg':
+            var imageData = data[2];
+            this.objs.resolve(id, imageData);
             break;
           case 'Font':
             var name = data[2];
@@ -606,6 +607,30 @@ var PDFDoc = (function pdfDoc() {
         else
           throw data.error;
       }, this);
+
+      messageHandler.on('jpeg_decode', function(message) {
+        var imageData = message.data[0];
+        var img = new Image();
+        img.onload = (function jpegImageLoaderOnload() {
+          var width = img.width;
+          var height = img.height;
+          var length = width * height * 4;
+          var buf = new Uint8Array(length);
+          var tempCanvas = new ScratchCanvas(width, height);
+          var tempCtx = tempCanvas.getContext('2d');
+          tempCtx.drawImage(img, 0, 0);
+          var data = tempCtx.getImageData(0, 0, width, height).data;
+          for (var i = 0; i < length; i += 4) {
+            buf[i] = data[i];
+            buf[i + 1] = data[i + 1];
+            buf[i + 2] = data[i + 2];
+            buf[i + 3] = data[i + 3];
+          }
+          message.resolve({ data: buf, width: width, height: height});
+        }).bind(this);
+        var src = 'data:image/jpeg;base64,' + window.btoa(imageData);
+        img.src = src;
+      });
 
       setTimeout(function pdfDocFontReadySetTimeout() {
         messageHandler.send('doc', this.data);

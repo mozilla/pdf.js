@@ -1038,21 +1038,24 @@ var CanvasGraphics = (function canvasGraphics() {
 
     paintJpegXObject: function canvasGraphicsPaintJpegXObject(objId, w, h) {
       var image = this.objs.get(objId);
+      debugger;
       if (!image) {
         error('Dependent image isn\'t ready yet');
       }
 
+
+      this.paintNormalImageXObject(image);
+      /*
       this.save();
 
       var ctx = this.ctx;
       // scale the image to the unit square
       ctx.scale(1 / w, -1 / h);
 
-      var domImage = image.getImage();
-      ctx.drawImage(domImage, 0, 0, domImage.width, domImage.height,
+      ctx.drawImage(image.data, 0, 0, image.width, image.height,
                     0, -h, w, h);
 
-      this.restore();
+      this.restore(); */
     },
 
     paintImageMaskXObject: function canvasGraphicsPaintImageMaskXObject(
@@ -1104,7 +1107,7 @@ var CanvasGraphics = (function canvasGraphics() {
       this.restore();
     },
 
-    paintImageXObject: function canvasGraphicsPaintImageXObject(imgData) {
+    paintNormalImageXObject: function canvasGraphicsPaintImageXObject(imgData) {
       this.save();
       var ctx = this.ctx;
       var w = imgData.width;
@@ -1132,6 +1135,21 @@ var CanvasGraphics = (function canvasGraphics() {
       tmpCtx.putImageData(tmpImgData, 0, 0);
       ctx.drawImage(tmpCanvas, 0, -h);
       this.restore();
+    },
+
+    paintImageXObject: function canvasGraphicsPaintImageXObject(type, data) {
+      debugger;
+      switch(type) {
+        case 'jpeg':
+          this.paintJpegXObject.apply(this, data);
+          break;
+        case 'imageMask':
+          this.paintImageMaskXObject.apply(this, data);
+          break;
+        default:
+          this.paintNormalImageXObject.apply(this, data);
+          break;
+      }
     },
 
     // Marked content

@@ -228,30 +228,3 @@ var PDFImage = (function pdfImage() {
   };
   return constructor;
 })();
-
-var JpegImageLoader = (function jpegImage() {
-  function JpegImageLoader(objId, imageData, objs) {
-    var src = 'data:image/jpeg;base64,' + window.btoa(imageData);
-
-    var img = new Image();
-    img.onload = (function jpegImageLoaderOnload() {
-      this.loaded = true;
-
-      objs.resolve(objId, this);
-
-      if (this.onLoad)
-        this.onLoad();
-    }).bind(this);
-    img.src = src;
-    this.domImage = img;
-  }
-
-  JpegImageLoader.prototype = {
-    getImage: function jpegImageLoaderGetImage() {
-      return this.domImage;
-    }
-  };
-
-  return JpegImageLoader;
-})();
-
