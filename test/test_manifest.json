@@ -87,6 +87,13 @@
        "rounds": 1,
        "type": "eq"
     },
+    {  "id": "freeculture",
+       "file": "pdfs/freeculture.pdf",
+       "md5": "dcdf3a8268e6a18938a42d5149efcfca",
+       "rounds": 1,
+       "pageLimit": 5,
+       "type": "eq"
+    },
     {  "id": "wnv_chinese-pdf",
        "file": "pdfs/wnv_chinese.pdf",
        "md5": "db682638e68391125e8982d3c984841e",

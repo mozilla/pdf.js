@@ -1785,6 +1785,12 @@ var Font = (function Font() {
         }
         properties.hasShortCmap = hasShortCmap;
 
+        // remove glyph references outside range of avaialable glyphs
+        for (var i = 0, ii = ids.length; i < ii; i++) {
+          if (ids[i] >= numGlyphs)
+            ids[i] = 0;
+        }
+
         createGlyphNameMap(glyphs, ids, properties);
         this.glyphNameMap = properties.glyphNameMap;
 
