@@ -183,7 +183,11 @@ Shadings.Dummy = (function DummyClosure() {
 })();
 
 var TilingPattern = (function TilingPatternClosure() {
-  var PAINT_TYPE_COLORED = 1, PAINT_TYPE_UNCOLORED = 2;
+  var PaintType = {
+    COLORED: 1,
+    UNCOLORED: 2
+  };
+  var MAX_PATTERN_SIZE = 512;
 
   function TilingPattern(IR, color, ctx, objs) {
     var IRQueue = IR[2];
@@ -209,13 +213,13 @@ var TilingPattern = (function TilingPatternClosure() {
     var width = botRight[0] - topLeft[0];
     var height = botRight[1] - topLeft[1];
 
-    // TODO: hack to avoid OOM, we would idealy compute the tiling
+    // TODO: hack to avoid OOM, we would ideally compute the tiling
     // pattern to be only as large as the acual size in device space
     // This could be computed with .mozCurrentTransform, but still
     // needs to be implemented
-    while (Math.abs(width) > 512 || Math.abs(height) > 512) {
-      width = 512;
-      height = 512;
+    while (Math.abs(width) > MAX_PATTERN_SIZE ||
+           Math.abs(height) > MAX_PATTERN_SIZE) {
+      width = height = MAX_PATTERN_SIZE;
     }
 
     var tmpCanvas = new ScratchCanvas(width, height);
@@ -225,11 +229,11 @@ var TilingPattern = (function TilingPatternClosure() {
     var graphics = new CanvasGraphics(tmpCtx, objs);
 
     switch (paintType) {
-      case PAINT_TYPE_COLORED:
+      case PaintType.COLORED:
         tmpCtx.fillStyle = ctx.fillStyle;
         tmpCtx.strokeStyle = ctx.strokeStyle;
         break;
-      case PAINT_TYPE_UNCOLORED:
+      case PaintType.UNCOLORED:
         color = Util.makeCssRgb.apply(this, color);
         tmpCtx.fillStyle = color;
         tmpCtx.strokeStyle = color;

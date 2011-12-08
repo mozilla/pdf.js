@@ -562,8 +562,8 @@ var PDFDoc = (function PDFDocClosure() {
 
         switch (type) {
           case 'JpegStream':
-            var IR = data[2];
-            new JpegImageLoader(id, IR, this.objs);
+            var imageData = data[2];
+            loadJpegStream(id, imageData, this.objs);
             break;
           case 'Font':
             var name = data[2];
