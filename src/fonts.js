@@ -2102,9 +2102,9 @@ var Font = (function Font() {
           break;
         case 'Type1':
           var glyphName = this.differences[charcode] || this.encoding[charcode];
+          if (!isNum(width))
+            width = this.widths[glyphName];
           if (this.noUnicodeAdaptation) {
-            if (!isNum(width))
-              width = this.widths[glyphName];
             unicode = GlyphsUnicode[glyphName] || charcode;
             break;
           }

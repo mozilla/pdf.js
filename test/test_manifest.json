@@ -296,6 +296,14 @@
        "rounds": 1,
        "type": "eq"
     },
+    {  "id": "bpl13210",
+       "file": "pdfs/bpl13210.pdf",
+       "md5": "8a08512baa9fa95378d9ad4b995947c7",
+       "link": true,
+       "pageLimit": 5,
+       "rounds": 1,
+       "type": "eq"
+    },
     {  "id": "tutorial",
        "file": "pdfs/tutorial.pdf",
        "md5": "6e122f618c27f3aa9a689423e3be6b8d",
