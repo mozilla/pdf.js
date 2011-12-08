@@ -238,7 +238,7 @@ var PDFImage = (function pdfImage() {
       return this.imageReady && this.smaskReady;
     },
     fireReady: function fireReady() {
-      for (var i = 0; i < this.callbacks.length; ++i) {
+      for (var i = 0; i < this.callbacks.length; ++i)
         this.callbacks[i]();
       this.callbacks = [];
     },
