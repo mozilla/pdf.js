@@ -200,7 +200,7 @@ var PDFImage = (function pdfImage() {
 
       // Is there a one-to-one correspondence between pixels in the loop below?
       if (length !== 4*comps.length/3)
-        error('Number of image pixels mismatch');
+        error('Number of image pixels mismatch (RGB)');
 
       for (var i = 0; i < length; i += 4) {
         buffer[i] = comps[compsPos++];
@@ -225,6 +225,10 @@ var PDFImage = (function pdfImage() {
 
       var comps = this.getComponents(imgArray);
       var length = width * height;
+
+      // Is there a one-to-one correspondence between pixels in the loop below?
+      if (length !== comps.length)
+        error('Number of image pixels mismatch (Gray)');
 
       for (var i = 0; i < length; ++i)
         buffer[i] = comps[i];
