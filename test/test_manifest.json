@@ -311,5 +311,13 @@
        "pageLimit": 5,
        "skipPages": [1],
        "type": "eq"
+    },
+    {  "id": "lista_preliminar",
+       "file": "pdfs/lista_preliminar.pdf",
+       "md5": "4eff251319eeb660ba8a7a5cfac7787d",
+       "rounds": 1,
+       "link": true,
+       "pageLimit": 3,
+       "type": "eq"
     }
 ]
