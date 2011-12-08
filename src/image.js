@@ -4,8 +4,12 @@
 'use strict';
 
 var PDFImage = (function pdfImage() {
-  function constructor(xref, res, image, inline) {
+  function constructor(xref, res, image, inline, handler) {
     this.image = image;
+    this.imageReady = true;
+    this.smaskReady = true;
+    this.callbacks = [];
+
     if (image.getParams) {
       // JPX/JPEG2000 streams directly contain bits per component
       // and color space mode information.
@@ -56,7 +60,24 @@ var PDFImage = (function pdfImage() {
     if (mask) {
       TODO('masked images');
     } else if (smask) {
-      this.smask = new PDFImage(xref, res, smask);
+      this.smaskReady = false;
+      this.smask = new PDFImage(xref, res, smask, false, handler);
+      this.smask.ready(function() {
+        this.smaskReady = true;
+        if (this.isReady())
+          this.fireReady();
+      }.bind(this));
+    }
+
+    if (image instanceof JpegStream && image.isNative) {
+      this.imageReady = false;
+      handler.send('jpeg_decode', [image.getIR(), this.numComps], function(message) {
+        var data = message.data;
+        this.image = new Stream(data, 0, data.length);
+        this.imageReady = true;
+        if (this.isReady())
+          this.fireReady();
+      }.bind(this));
     }
   }
 
@@ -130,18 +151,6 @@ var PDFImage = (function pdfImage() {
       var buf = new Uint8Array(width * height);
 
       if (smask) {
-        if (smask.image.getImage) {
-          // smask is a DOM image
-          var tempCanvas = new ScratchCanvas(width, height);
-          var tempCtx = tempCanvas.getContext('2d');
-          var domImage = smask.image.getImage();
-          tempCtx.drawImage(domImage, 0, 0, domImage.width, domImage.height,
-            0, 0, width, height);
-          var data = tempCtx.getImageData(0, 0, width, height).data;
-          for (var i = 0, j = 0, ii = width * height; i < ii; ++i, j += 4)
-            buf[i] = data[j]; // getting first component value
-          return buf;
-        }
         var sw = smask.width;
         var sh = smask.height;
         if (sw != this.width || sh != this.height)
@@ -224,6 +233,19 @@ var PDFImage = (function pdfImage() {
 
       for (var i = 0; i < length; ++i)
         buffer[i] = comps[i];
+    },
+    isReady: function isReady() {
+      return this.imageReady && this.smaskReady;
+    },
+    fireReady: function fireReady() {
+      for (var i = 0; i < this.callbacks.length; ++i) {
+        this.callbacks[i]();
+      this.callbacks = [];
+    },
+    ready: function ready(callback) {
+      this.callbacks.push(callback);
+      if (this.isReady())
+        this.fireReady();
     }
   };
   return constructor;

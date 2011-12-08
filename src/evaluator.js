@@ -183,38 +183,42 @@ var PartialEvaluator = (function partialEvaluator() {
         var dict = image.dict;
         var w = dict.get('Width', 'W');
         var h = dict.get('Height', 'H');
-        fn = 'paintImageXObject';
 
-        if (image instanceof JpegStream && image.isNative) {
-          var objId = 'img_' + uniquePrefix + (++self.objIdCounter);
-          debugger;
-          handler.send('jpeg_decode', [image.getIR()], function(data) {
-            handler.send('obj', [objId, 'Jpeg', data]);
-          });
+        var imageMask = dict.get('ImageMask', 'IM') || false;
+        if (imageMask) {
+          // This depends on a tmpCanvas beeing filled with the
+          // current fillStyle, such that processing the pixel
+          // data can't be done here. Instead of creating a
+          // complete PDFImage, only read the information needed
+          // for later.
 
-          // Add the dependency on the image object.
-          insertDependency([objId]);
+          var width = dict.get('Width', 'W');
+          var height = dict.get('Height', 'H');
+          var bitStrideLength = (width + 7) >> 3;
+          var imgArray = image.getBytes(bitStrideLength * height);
+          var decode = dict.get('Decode', 'D');
+          var inverseDecode = !!decode && decode[0] > 0;
 
-          // The normal fn.
-          args = ['jpeg', [objId, w, h]];
-
+          fn = 'paintImageMaskXObject';
+          args = [imgArray, inverseDecode, width, height];
           return;
         }
 
-        // Needs to be rendered ourself.
-
-        // Figure out if the image has an imageMask.
-        var imageMask = dict.get('ImageMask', 'IM') || false;
-
         // If there is no imageMask, create the PDFImage and a lot
         // of image processing can be done here.
-        if (!imageMask) {
-          var imageObj = new PDFImage(xref, resources, image, inline);
+        var objId = 'img_' + uniquePrefix + (++self.objIdCounter);
+        insertDependency([objId]);
+        fn = 'paintImageXObject';
+        args = [objId, w, h];
+        var resolve = (function(objId) {
+          return function resolve(data) {
+            handler.send('obj', [objId, 'Image', data]);
+          };
+        })(objId);
 
-          if (imageObj.imageMask) {
-            throw 'Can\'t handle this in the web worker :/';
-          }
+        var imageObj = new PDFImage(xref, resources, image, inline, handler);
 
+        imageObj.ready(function() {
           var imgData = {
             width: w,
             height: h,
@@ -222,25 +226,8 @@ var PartialEvaluator = (function partialEvaluator() {
           };
           var pixels = imgData.data;
           imageObj.fillRgbaBuffer(pixels, imageObj.decode);
-
-          args = ['normal', [imgData]];
-          return;
-        }
-
-        // This depends on a tmpCanvas beeing filled with the
-        // current fillStyle, such that processing the pixel
-        // data can't be done here. Instead of creating a
-        // complete PDFImage, only read the information needed
-        // for later.
-
-        var width = dict.get('Width', 'W');
-        var height = dict.get('Height', 'H');
-        var bitStrideLength = (width + 7) >> 3;
-        var imgArray = image.getBytes(bitStrideLength * height);
-        var decode = dict.get('Decode', 'D');
-        var inverseDecode = !!decode && decode[0] > 0;
-
-        args = ['imageMask', [imgArray, inverseDecode, width, height]];
+          resolve(imgData);
+        });
       }
 
       uniquePrefix = uniquePrefix || '';

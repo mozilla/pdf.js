@@ -1036,28 +1036,6 @@ var CanvasGraphics = (function canvasGraphics() {
       this.restore();
     },
 
-    paintJpegXObject: function canvasGraphicsPaintJpegXObject(objId, w, h) {
-      var image = this.objs.get(objId);
-      debugger;
-      if (!image) {
-        error('Dependent image isn\'t ready yet');
-      }
-
-
-      this.paintNormalImageXObject(image);
-      /*
-      this.save();
-
-      var ctx = this.ctx;
-      // scale the image to the unit square
-      ctx.scale(1 / w, -1 / h);
-
-      ctx.drawImage(image.data, 0, 0, image.width, image.height,
-                    0, -h, w, h);
-
-      this.restore(); */
-    },
-
     paintImageMaskXObject: function canvasGraphicsPaintImageMaskXObject(
                              imgArray, inverseDecode, width, height) {
       function applyStencilMask(buffer, inverseDecode) {
@@ -1107,7 +1085,11 @@ var CanvasGraphics = (function canvasGraphics() {
       this.restore();
     },
 
-    paintNormalImageXObject: function canvasGraphicsPaintImageXObject(imgData) {
+    paintImageXObject: function canvasGraphicsPaintImageXObject(objId) {
+      var imgData = this.objs.get(objId);
+      if (!imgData) {
+        error('Dependent image isn\'t ready yet');
+      }
       this.save();
       var ctx = this.ctx;
       var w = imgData.width;
@@ -1135,21 +1117,6 @@ var CanvasGraphics = (function canvasGraphics() {
       tmpCtx.putImageData(tmpImgData, 0, 0);
       ctx.drawImage(tmpCanvas, 0, -h);
       this.restore();
-    },
-
-    paintImageXObject: function canvasGraphicsPaintImageXObject(type, data) {
-      debugger;
-      switch(type) {
-        case 'jpeg':
-          this.paintJpegXObject.apply(this, data);
-          break;
-        case 'imageMask':
-          this.paintImageMaskXObject.apply(this, data);
-          break;
-        default:
-          this.paintNormalImageXObject.apply(this, data);
-          break;
-      }
     },
 
     // Marked content

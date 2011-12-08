@@ -560,7 +560,7 @@ var PDFDoc = (function pdfDoc() {
         var type = data[1];
 
         switch (type) {
-          case 'Jpeg':
+          case 'Image':
             var imageData = data[2];
             this.objs.resolve(id, imageData);
             break;
@@ -610,21 +610,32 @@ var PDFDoc = (function pdfDoc() {
 
       messageHandler.on('jpeg_decode', function(message) {
         var imageData = message.data[0];
+        var components = message.data[1];
+        if (components != 3 && components != 1)
+          error('Only 3 component or 1 component can be returned');
+
         var img = new Image();
         img.onload = (function jpegImageLoaderOnload() {
           var width = img.width;
           var height = img.height;
-          var length = width * height * 4;
-          var buf = new Uint8Array(length);
+          var size = width * height;
+          var rgbaLength = size * 4;
+          var buf = new Uint8Array(size * components);
           var tempCanvas = new ScratchCanvas(width, height);
           var tempCtx = tempCanvas.getContext('2d');
           tempCtx.drawImage(img, 0, 0);
           var data = tempCtx.getImageData(0, 0, width, height).data;
-          for (var i = 0; i < length; i += 4) {
-            buf[i] = data[i];
-            buf[i + 1] = data[i + 1];
-            buf[i + 2] = data[i + 2];
-            buf[i + 3] = data[i + 3];
+
+          if (components == 3) {
+            for (var i = 0, j = 0; i < rgbaLength; i += 4, j += 3) {
+              buf[j] = data[i];
+              buf[j + 1] = data[i + 1];
+              buf[j + 2] = data[i + 2];
+            }
+          } else if(components == 1) {
+            for (var i = 0, j = 0; i < rgbaLength; i += 4, j++) {
+              buf[j] = data[i];
+            }
           }
           message.resolve({ data: buf, width: width, height: height});
         }).bind(this);
