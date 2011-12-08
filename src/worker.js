@@ -3,11 +3,35 @@
 
 'use strict';
 
+function Message(data) {
+  this.data = data;
+  this.allowsReply = false;
+  this.messager;
+  this.id;
+}
+Message.prototype = {
+  reply: function messageReply(data) {
+    if (!this.allowsReply)
+      error('This message does not accept replies.');
+
+    this.messager({
+      isReply: true,
+      callbackId: this.id,
+      data: data
+    });
+  },
+  setupReply: function setupReply(messager, id) {
+    this.allowsReply = true;
+    this.messager = messager;
+    this.id = id;
+  }
+}
+
 function MessageHandler(name, comObj) {
   this.name = name;
   this.comObj = comObj;
   this.callbackIndex = 1;
-  this.callbacks = {};
+  var callbacks = this.callbacks = {};
   var ah = this.actionHandler = {};
 
   ah['console_log'] = [function ahConsoleLog(data) {
@@ -16,38 +40,25 @@ function MessageHandler(name, comObj) {
   ah['console_error'] = [function ahConsoleError(data) {
       console.error.apply(console, data);
   }];
-  ah['__resolve__'] = [ function(data) {
+
+  comObj.onmessage = function messageHandlerComObjOnMessage(event) {
+    var data = event.data;
+    if (data.isReply) {
       var callbackId = data.callbackId;
-      if (data.callbackId in this.callbacks) {
-        var callback = this.callbacks[callbackId];
-        delete this.callbacks[callbackId];
+      if (data.callbackId in callbacks) {
+        var callback = callbacks[callbackId];
+        delete callbacks[callbackId];
         callback(data.data);
       } else {
         throw 'Cannot resolve callback ' + callbackId;
       }
-  }, this];
-
-  comObj.onmessage = function messageHandlerComObjOnMessage(event) {
-    var data = event.data;
-    if (data.action in ah) {
+    } else if (data.action in ah) {
       var action = ah[data.action];
-      if (data.callbackId) {
-        action[0].call(action[1], {
-          data: data.data,
-          resolve: (function(callbackId) {
-            return function(resolvedData) {
-            comObj.postMessage({
-              action: '__resolve__',
-              data: {
-                data: resolvedData,
-                callbackId: data.callbackId
-              }
-            });
-          }})(data.callbackId)
-        });  
-      } else {
-        action[0].call(action[1], data.data);
-      }
+      var message = new Message(data.data);
+      if (data.callbackId)
+        message.setupReply(this.postMessage, data.callbackId);
+
+      action[0].call(action[1], message);
     } else {
       throw 'Unkown action from worker: ' + data.action;
     }
@@ -81,7 +92,8 @@ var WorkerMessageHandler = {
   setup: function wphSetup(handler) {
     var pdfDoc = null;
 
-    handler.on('test', function wphSetupTest(data) {
+    handler.on('test', function wphSetupTest(message) {
+      var data = message.data;
       handler.send('test', data instanceof Uint8Array);
     });
 
@@ -92,13 +104,15 @@ var WorkerMessageHandler = {
       // undefined action `workerSrc`.
     });
 
-    handler.on('doc', function wphSetupDoc(data) {
+    handler.on('doc', function wphSetupDoc(message) {
+      var data = message.data;
       // Create only the model of the PDFDoc, which is enough for
       // processing the content of the pdf.
       pdfDoc = new PDFDocModel(new Stream(data));
     });
 
-    handler.on('page_request', function wphSetupPageRequest(pageNum) {
+    handler.on('page_request', function wphSetupPageRequest(message) {
+      var pageNum = message.data;
       pageNum = parseInt(pageNum);
 
 
@@ -147,7 +161,8 @@ var WorkerMessageHandler = {
       });
     }, this);
 
-    handler.on('font', function wphSetupFont(data) {
+    handler.on('font', function wphSetupFont(message) {
+      var data = message.data;
       var objId = data[0];
       var name = data[1];
       var file = data[2];
@@ -195,13 +210,6 @@ var WorkerMessageHandler = {
 
       handler.send('font_ready', [objId, obj]);
     });
-
-    handler.on('jpeg_decoded', function jpegDecoded(data) {
-      var objId = data[0];
-      var imageData = data[1];
-      console.log('worker recieved decoded jpeg');
-      debugger;
-    }, this);
   }
 };
 

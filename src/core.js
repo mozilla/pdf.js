@@ -509,7 +509,8 @@ var PDFDoc = (function pdfDoc() {
       // Tell the worker the file it was created from.
       messageHandler.send('workerSrc', workerSrc);
 
-      messageHandler.on('test', function pdfDocTest(supportTypedArray) {
+      messageHandler.on('test', function pdfDocTest(message) {
+        var supportTypedArray = message.data;
         if (supportTypedArray) {
           this.worker = worker;
           this.setupMessageHandler(messageHandler);
@@ -547,7 +548,8 @@ var PDFDoc = (function pdfDoc() {
     setupMessageHandler: function(messageHandler) {
       this.messageHandler = messageHandler;
 
-      messageHandler.on('page', function pdfDocPage(data) {
+      messageHandler.on('page', function pdfDocPage(message) {
+        var data = message.data;
         var pageNum = data.pageNum;
         var page = this.pageCache[pageNum];
         var depFonts = data.depFonts;
@@ -555,7 +557,8 @@ var PDFDoc = (function pdfDoc() {
         page.startRenderingFromIRQueue(data.IRQueue, depFonts);
       }, this);
 
-      messageHandler.on('obj', function pdfDocObj(data) {
+      messageHandler.on('obj', function pdfDocObj(message) {
+        var data = message.data;
         var id = data[0];
         var type = data[1];
 
@@ -588,7 +591,8 @@ var PDFDoc = (function pdfDoc() {
         }
       }, this);
 
-      messageHandler.on('font_ready', function pdfDocFontReady(data) {
+      messageHandler.on('font_ready', function pdfDocFontReady(message) {
+        var data = message.data;
         var id = data[0];
         var font = new FontShape(data[1]);
 
@@ -600,7 +604,8 @@ var PDFDoc = (function pdfDoc() {
         }
       }.bind(this));
 
-      messageHandler.on('page_error', function pdfDocError(data) {
+      messageHandler.on('page_error', function pdfDocError(message) {
+        var data = message.data;
         var page = this.pageCache[data.pageNum];
         if (page.callback)
           page.callback(data.error);
@@ -637,7 +642,7 @@ var PDFDoc = (function pdfDoc() {
               buf[j] = data[i];
             }
           }
-          message.resolve({ data: buf, width: width, height: height});
+          message.reply({ data: buf, width: width, height: height});
         }).bind(this);
         var src = 'data:image/jpeg;base64,' + window.btoa(imageData);
         img.src = src;
