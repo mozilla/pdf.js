@@ -198,6 +198,10 @@ var PDFImage = (function pdfImage() {
       var opacityPos = 0;
       var length = width * height * 4;
 
+      // Is there a one-to-one correspondence between pixels in the loop below?
+      if (length !== 4*comps.length/3)
+        error('Number of image pixels mismatch');
+
       for (var i = 0; i < length; i += 4) {
         buffer[i] = comps[compsPos++];
         buffer[i + 1] = comps[compsPos++];
