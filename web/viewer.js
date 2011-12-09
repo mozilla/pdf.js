@@ -703,6 +703,9 @@ window.addEventListener('load', function webViewerLoad(evt) {
     document.getElementById('fileInput').setAttribute('hidden', 'true');
   else
     document.getElementById('fileInput').value = null;
+
+  if ('disableWorker' in params)
+    PDFJS.disableWorker = params['disableWorker'] === 'true' ? true : false;
 }, true);
 
 window.addEventListener('unload', function webViewerUnload(evt) {
