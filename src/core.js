@@ -56,8 +56,8 @@ function getPdf(arg, callback) {
 }
 globalScope.PDFJS.getPdf = getPdf;
 
-var Page = (function pagePage() {
-  function constructor(xref, pageNumber, pageDict, ref) {
+var Page = (function PageClosure() {
+  function Page(xref, pageNumber, pageDict, ref) {
     this.pageNumber = pageNumber;
     this.pageDict = pageDict;
     this.stats = {
@@ -74,7 +74,7 @@ var Page = (function pagePage() {
     this.callback = null;
   }
 
-  constructor.prototype = {
+  Page.prototype = {
     getPageProp: function pageGetPageProp(key) {
       return this.xref.fetchIfRef(this.pageDict.get(key));
     },
@@ -325,7 +325,7 @@ var Page = (function pagePage() {
     }
   };
 
-  return constructor;
+  return Page;
 })();
 
 /**
@@ -338,8 +338,8 @@ var Page = (function pagePage() {
  * need for the `PDFDocModel` anymore and there is only one object on the
  * main thread and not one entire copy on each worker instance.
  */
-var PDFDocModel = (function pdfDoc() {
-  function constructor(arg, callback) {
+var PDFDocModel = (function PDFDocModelClosure() {
+  function PDFDocModel(arg, callback) {
     if (isStream(arg))
       init.call(this, arg);
     else if (isArrayBuffer(arg))
@@ -370,7 +370,7 @@ var PDFDocModel = (function pdfDoc() {
     return true; /* found */
   }
 
-  constructor.prototype = {
+  PDFDocModel.prototype = {
     get linearization() {
       var length = this.stream.length;
       var linearization = false;
@@ -459,11 +459,11 @@ var PDFDocModel = (function pdfDoc() {
     }
   };
 
-  return constructor;
+  return PDFDocModel;
 })();
 
-var PDFDoc = (function pdfDoc() {
-  function constructor(arg, callback) {
+var PDFDoc = (function PDFDocClosure() {
+  function PDFDoc(arg, callback) {
     var stream = null;
     var data = null;
 
@@ -531,7 +531,7 @@ var PDFDoc = (function pdfDoc() {
     }
   }
 
-  constructor.prototype = {
+  PDFDoc.prototype = {
     setupFakeWorker: function() {
       // If we don't use a worker, just post/sendMessage to the main thread.
       var fakeWorker = {
@@ -660,7 +660,7 @@ var PDFDoc = (function pdfDoc() {
     }
   };
 
-  return constructor;
+  return PDFDoc;
 })();
 
 globalScope.PDFJS.PDFDoc = PDFDoc;

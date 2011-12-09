@@ -3,8 +3,8 @@
 
 'use strict';
 
-var PartialEvaluator = (function partialEvaluator() {
-  function constructor(xref, handler, uniquePrefix) {
+var PartialEvaluator = (function PartialEvaluatorClosure() {
+  function PartialEvaluator(xref, handler, uniquePrefix) {
     this.state = new EvalState();
     this.stateStack = [];
 
@@ -111,7 +111,7 @@ var PartialEvaluator = (function partialEvaluator() {
     EX: 'endCompat'
   };
 
-  constructor.prototype = {
+  PartialEvaluator.prototype = {
     getIRQueue: function partialEvaluatorGetIRQueue(stream, resources,
                                     queue, dependency) {
 
@@ -858,11 +858,11 @@ var PartialEvaluator = (function partialEvaluator() {
     }
   };
 
-  return constructor;
+  return PartialEvaluator;
 })();
 
-var EvalState = (function evalState() {
-  function constructor() {
+var EvalState = (function EvalStateClosure() {
+  function EvalState() {
     // Are soft masks and alpha values shapes or opacities?
     this.alphaIsShape = false;
     this.fontSize = 0;
@@ -879,8 +879,8 @@ var EvalState = (function evalState() {
     this.fillColorSpace = null;
     this.strokeColorSpace = null;
   }
-  constructor.prototype = {
+  EvalState.prototype = {
   };
-  return constructor;
+  return EvalState;
 })();
 
