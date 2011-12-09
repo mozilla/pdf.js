@@ -227,6 +227,12 @@
        "rounds": 1,
        "type": "load"
     },
+    {  "id": "scan-bad",
+       "file": "pdfs/scan-bad.pdf",
+       "md5": "4cf988f01ab83f61aca57f406dfd6584",
+       "rounds": 1,
+       "type": "load"
+    },
     {  "id": "ibwa-bad",
        "file": "pdfs/ibwa-bad.pdf",
        "md5": "6ca059d32b74ac2688ae06f727fee755",
