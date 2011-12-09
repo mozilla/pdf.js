@@ -83,8 +83,8 @@ var WorkerMessageHandler = {
       } catch (e) {
         // Turn the error into an obj that can be serialized
         e = {
-          message: e.message,
-          stack: e.stack
+          message: typeof e === 'object' ? e.message : e,
+          stack: typeof e === 'object' ? e.stack : null
         };
         handler.send('page_error', {
           pageNum: pageNum,

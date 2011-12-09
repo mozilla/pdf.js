@@ -731,8 +731,8 @@ function isSpecialUnicode(unicode) {
  *   var type1Font = new Font("MyFontName", binaryFile, propertiesObject);
  *   type1Font.bind();
  */
-var Font = (function Font() {
-  var constructor = function font_constructor(name, file, properties) {
+var Font = (function FontClosure() {
+  function Font(name, file, properties) {
     this.name = name;
     this.coded = properties.coded;
     this.charProcIRQueues = properties.charProcIRQueues;
@@ -1229,7 +1229,7 @@ var Font = (function Font() {
     return nameTable;
   }
 
-  constructor.prototype = {
+  Font.prototype = {
     name: null,
     font: null,
     mimetype: null,
@@ -2218,7 +2218,7 @@ var Font = (function Font() {
     }
   };
 
-  return constructor;
+  return Font;
 })();
 
 /*
@@ -3128,9 +3128,9 @@ CFF.prototype = {
   }
 };
 
-var Type2CFF = (function type2CFF() {
+var Type2CFF = (function Type2CFFClosure() {
   // TODO: replace parsing code with the Type2Parser in font_utils.js
-  function constructor(file, properties) {
+  function Type2CFF(file, properties) {
     var bytes = file.getBytes();
     this.bytes = bytes;
     this.properties = properties;
@@ -3138,7 +3138,7 @@ var Type2CFF = (function type2CFF() {
     this.data = this.parse();
   }
 
-  constructor.prototype = {
+  Type2CFF.prototype = {
     parse: function cff_parse() {
       var header = this.parseHeader();
       var properties = this.properties;
@@ -3682,6 +3682,6 @@ var Type2CFF = (function type2CFF() {
     }
   };
 
-  return constructor;
+  return Type2CFF;
 })();
 
