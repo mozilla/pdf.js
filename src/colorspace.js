@@ -3,13 +3,13 @@
 
 'use strict';
 
-var ColorSpace = (function colorSpaceColorSpace() {
+var ColorSpace = (function ColorSpaceClosure() {
   // Constructor should define this.numComps, this.defaultColor, this.name
-  function constructor() {
+  function ColorSpace() {
     error('should not call ColorSpace constructor');
   }
 
-  constructor.prototype = {
+  ColorSpace.prototype = {
     // Input: array of size numComps representing color component values
     // Output: array of rgb values, each value ranging from [0.1]
     getRgb: function colorSpaceGetRgb(color) {
@@ -22,15 +22,15 @@ var ColorSpace = (function colorSpaceColorSpace() {
     }
   };
 
-  constructor.parse = function colorSpaceParse(cs, xref, res) {
-    var IR = constructor.parseToIR(cs, xref, res);
+  ColorSpace.parse = function colorSpaceParse(cs, xref, res) {
+    var IR = ColorSpace.parseToIR(cs, xref, res);
     if (IR instanceof AlternateCS)
       return IR;
 
-    return constructor.fromIR(IR);
+    return ColorSpace.fromIR(IR);
   };
 
-  constructor.fromIR = function colorSpaceFromIR(IR) {
+  ColorSpace.fromIR = function colorSpaceFromIR(IR) {
     var name = isArray(IR) ? IR[0] : IR;
 
     switch (name) {
@@ -63,7 +63,7 @@ var ColorSpace = (function colorSpaceColorSpace() {
     return null;
   };
 
-  constructor.parseToIR = function colorSpaceParseToIR(cs, xref, res) {
+  ColorSpace.parseToIR = function colorSpaceParseToIR(cs, xref, res) {
     if (isName(cs)) {
       var colorSpaces = xref.fetchIfRef(res.get('ColorSpace'));
       if (isDict(colorSpaces)) {
@@ -155,7 +155,7 @@ var ColorSpace = (function colorSpaceColorSpace() {
     return null;
   };
 
-  return constructor;
+  return ColorSpace;
 })();
 
 /**
@@ -164,8 +164,8 @@ var ColorSpace = (function colorSpaceColorSpace() {
  * Both color spaces use a tinting function to convert colors to a base color
  * space.
  */
-var AlternateCS = (function alternateCS() {
-  function constructor(numComps, base, tintFn) {
+var AlternateCS = (function AlternateCSClosure() {
+  function AlternateCS(numComps, base, tintFn) {
     this.name = 'Alternate';
     this.numComps = numComps;
     this.defaultColor = [];
@@ -175,7 +175,7 @@ var AlternateCS = (function alternateCS() {
     this.tintFn = tintFn;
   }
 
-  constructor.prototype = {
+  AlternateCS.prototype = {
     getRgb: function altcs_getRgb(color) {
       var tinted = this.tintFn(color);
       return this.base.getRgb(tinted);
@@ -203,21 +203,21 @@ var AlternateCS = (function alternateCS() {
     }
   };
 
-  return constructor;
+  return AlternateCS;
 })();
 
-var PatternCS = (function patternCS() {
-  function constructor(baseCS) {
+var PatternCS = (function PatternCSClosure() {
+  function PatternCS(baseCS) {
     this.name = 'Pattern';
     this.base = baseCS;
   }
-  constructor.prototype = {};
+  PatternCS.prototype = {};
 
-  return constructor;
+  return PatternCS;
 })();
 
-var IndexedCS = (function indexedCS() {
-  function constructor(base, highVal, lookup) {
+var IndexedCS = (function IndexedCSClosure() {
+  function IndexedCS(base, highVal, lookup) {
     this.name = 'Indexed';
     this.numComps = 1;
     this.defaultColor = [0];
@@ -240,7 +240,7 @@ var IndexedCS = (function indexedCS() {
     this.lookup = lookupArray;
   }
 
-  constructor.prototype = {
+  IndexedCS.prototype = {
     getRgb: function indexcs_getRgb(color) {
       var numComps = this.base.numComps;
       var start = color[0] * numComps;
@@ -269,17 +269,17 @@ var IndexedCS = (function indexedCS() {
       return base.getRgbBuffer(baseBuf, 8);
     }
   };
-  return constructor;
+  return IndexedCS;
 })();
 
-var DeviceGrayCS = (function deviceGrayCS() {
-  function constructor() {
+var DeviceGrayCS = (function DeviceGrayCSClosure() {
+  function DeviceGrayCS() {
     this.name = 'DeviceGray';
     this.numComps = 1;
     this.defaultColor = [0];
   }
 
-  constructor.prototype = {
+  DeviceGrayCS.prototype = {
     getRgb: function graycs_getRgb(color) {
       var c = color[0];
       return [c, c, c];
@@ -297,16 +297,16 @@ var DeviceGrayCS = (function deviceGrayCS() {
       return rgbBuf;
     }
   };
-  return constructor;
+  return DeviceGrayCS;
 })();
 
-var DeviceRgbCS = (function deviceRgbCS() {
-  function constructor() {
+var DeviceRgbCS = (function DeviceRgbCSClosure() {
+  function DeviceRgbCS() {
     this.name = 'DeviceRGB';
     this.numComps = 3;
     this.defaultColor = [0, 0, 0];
   }
-  constructor.prototype = {
+  DeviceRgbCS.prototype = {
     getRgb: function rgbcs_getRgb(color) {
       return color;
     },
@@ -321,16 +321,16 @@ var DeviceRgbCS = (function deviceRgbCS() {
       return rgbBuf;
     }
   };
-  return constructor;
+  return DeviceRgbCS;
 })();
 
-var DeviceCmykCS = (function deviceCmykCS() {
-  function constructor() {
+var DeviceCmykCS = (function DeviceCmykCSClosure() {
+  function DeviceCmykCS() {
     this.name = 'DeviceCMYK';
     this.numComps = 4;
     this.defaultColor = [0, 0, 0, 1];
   }
-  constructor.prototype = {
+  DeviceCmykCS.prototype = {
     getRgb: function cmykcs_getRgb(color) {
       var c = color[0], m = color[1], y = color[2], k = color[3];
       var c1 = 1 - c, m1 = 1 - m, y1 = 1 - y, k1 = 1 - k;
@@ -406,6 +406,6 @@ var DeviceCmykCS = (function deviceCmykCS() {
     }
   };
 
-  return constructor;
+  return DeviceCmykCS;
 })();
 

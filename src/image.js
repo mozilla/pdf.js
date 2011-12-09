@@ -3,8 +3,8 @@
 
 'use strict';
 
-var PDFImage = (function pdfImage() {
-  function constructor(xref, res, image, inline) {
+var PDFImage = (function PDFImageClosure() {
+  function PDFImage(xref, res, image, inline) {
     this.image = image;
     if (image.getParams) {
       // JPX/JPEG2000 streams directly contain bits per component
@@ -60,7 +60,7 @@ var PDFImage = (function pdfImage() {
     }
   }
 
-  constructor.prototype = {
+  PDFImage.prototype = {
     getComponents: function getComponents(buffer, decodeMap) {
       var bpc = this.bpc;
       if (bpc == 8)
@@ -226,7 +226,7 @@ var PDFImage = (function pdfImage() {
         buffer[i] = comps[i];
     }
   };
-  return constructor;
+  return PDFImage;
 })();
 
 function loadJpegStream(id, imageData, objs) {
@@ -236,3 +236,4 @@ function loadJpegStream(id, imageData, objs) {
   });
   img.src = 'data:image/jpeg;base64,' + window.btoa(imageData);
 }
+
