@@ -741,6 +741,9 @@ window.addEventListener('load', function webViewerLoad(evt) {
   else
     document.getElementById('fileInput').value = null;
 
+  if ('disableWorker' in params)
+    PDFJS.disableWorker = params['disableWorker'] === 'true' ? true : false;
+
   var sidebarScrollView = document.getElementById('sidebarScrollView');
   sidebarScrollView.addEventListener('scroll', updateThumbViewArea, true);
 }, true);
