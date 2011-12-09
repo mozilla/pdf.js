@@ -3,8 +3,8 @@
 
 'use strict';
 
-var PDFImage = (function pdfImage() {
-  function constructor(xref, res, image, inline) {
+var PDFImage = (function PDFImageClosure() {
+  function PDFImage(xref, res, image, inline) {
     this.image = image;
     if (image.getParams) {
       // JPX/JPEG2000 streams directly contain bits per component
@@ -60,7 +60,7 @@ var PDFImage = (function pdfImage() {
     }
   }
 
-  constructor.prototype = {
+  PDFImage.prototype = {
     getComponents: function getComponents(buffer, decodeMap) {
       var bpc = this.bpc;
       if (bpc == 8)
@@ -130,11 +130,11 @@ var PDFImage = (function pdfImage() {
       var buf = new Uint8Array(width * height);
 
       if (smask) {
-        if (smask.image.getImage) {
+        if (smask.image.src) {
           // smask is a DOM image
           var tempCanvas = new ScratchCanvas(width, height);
           var tempCtx = tempCanvas.getContext('2d');
-          var domImage = smask.image.getImage();
+          var domImage = smask.image;
           tempCtx.drawImage(domImage, 0, 0, domImage.width, domImage.height,
             0, 0, width, height);
           var data = tempCtx.getImageData(0, 0, width, height).data;
@@ -226,32 +226,14 @@ var PDFImage = (function pdfImage() {
         buffer[i] = comps[i];
     }
   };
-  return constructor;
+  return PDFImage;
 })();
 
-var JpegImageLoader = (function jpegImage() {
-  function JpegImageLoader(objId, imageData, objs) {
-    var src = 'data:image/jpeg;base64,' + window.btoa(imageData);
-
-    var img = new Image();
-    img.onload = (function jpegImageLoaderOnload() {
-      this.loaded = true;
-
-      objs.resolve(objId, this);
-
-      if (this.onLoad)
-        this.onLoad();
-    }).bind(this);
-    img.src = src;
-    this.domImage = img;
-  }
-
-  JpegImageLoader.prototype = {
-    getImage: function jpegImageLoaderGetImage() {
-      return this.domImage;
-    }
-  };
-
-  return JpegImageLoader;
-})();
+function loadJpegStream(id, imageData, objs) {
+  var img = new Image();
+  img.onload = (function jpegImageLoaderOnload() {
+    objs.resolve(id, img);
+  });
+  img.src = 'data:image/jpeg;base64,' + window.btoa(imageData);
+}
 

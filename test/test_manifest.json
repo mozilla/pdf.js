@@ -20,7 +20,6 @@
     {  "id": "intelisa-load",
        "file": "pdfs/intelisa.pdf",
        "md5": "f5712097d29287a97f1278839814f682",
-       "md5": "f3ed5487d1afa34d8b77c0c734a95c79",
        "link": true,
        "rounds": 1,
        "type": "load"
@@ -86,6 +85,13 @@
        "file": "pdfs/ThuluthFeatures.pdf",
        "md5": "b7e18bf7a3d6a9c82aefa12d721072fc",
        "rounds": 1,
+       "type": "eq"
+    },
+    {  "id": "freeculture",
+       "file": "pdfs/freeculture.pdf",
+       "md5": "dcdf3a8268e6a18938a42d5149efcfca",
+       "rounds": 1,
+       "pageLimit": 5,
        "type": "eq"
     },
     {  "id": "wnv_chinese-pdf",
@@ -221,6 +227,12 @@
        "rounds": 1,
        "type": "load"
     },
+    {  "id": "scan-bad",
+       "file": "pdfs/scan-bad.pdf",
+       "md5": "4cf988f01ab83f61aca57f406dfd6584",
+       "rounds": 1,
+       "type": "load"
+    },
     {  "id": "ibwa-bad",
        "file": "pdfs/ibwa-bad.pdf",
        "md5": "6ca059d32b74ac2688ae06f727fee755",
@@ -295,6 +307,30 @@
        "file": "pdfs/issue840.pdf",
        "md5": "20d88011dd7e3c4fb5274979094dab93",
        "rounds": 1,
+       "type": "eq"
+    },
+    {  "id": "bpl13210",
+       "file": "pdfs/bpl13210.pdf",
+       "md5": "8a08512baa9fa95378d9ad4b995947c7",
+       "link": true,
+       "pageLimit": 5,
+       "rounds": 1,
+       "type": "eq"
+    },
+    {  "id": "tutorial",
+       "file": "pdfs/tutorial.pdf",
+       "md5": "6e122f618c27f3aa9a689423e3be6b8d",
+       "link": true,
+       "rounds": 1,
+       "type": "eq"
+    },
+    {  "id": "geothermal.pdf",
+       "file": "pdfs/geothermal.pdf",
+       "md5": "ecffc0ce38ffdf1e90dc952f186e9a91",
+       "rounds": 1,
+       "link": true,
+       "pageLimit": 5,
+       "skipPages": [1],
        "type": "eq"
     }
 ]

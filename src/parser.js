@@ -9,8 +9,8 @@ function isEOF(v) {
   return v == EOF;
 }
 
-var Parser = (function parserParser() {
-  function constructor(lexer, allowStreams, xref) {
+var Parser = (function ParserClosure() {
+  function Parser(lexer, allowStreams, xref) {
     this.lexer = lexer;
     this.allowStreams = allowStreams;
     this.xref = xref;
@@ -18,7 +18,7 @@ var Parser = (function parserParser() {
     this.refill();
   }
 
-  constructor.prototype = {
+  Parser.prototype = {
     refill: function parserRefill() {
       this.buf1 = this.lexer.getObj();
       this.buf2 = this.lexer.getObj();
@@ -225,7 +225,8 @@ var Parser = (function parserParser() {
           return new PredictorStream(new FlateStream(stream), params);
         }
         return new FlateStream(stream);
-      } else if (name == 'LZWDecode' || name == 'LZW') {
+      }
+      if (name == 'LZWDecode' || name == 'LZW') {
         var earlyChange = 1;
         if (params) {
           if (params.has('EarlyChange'))
@@ -234,34 +235,38 @@ var Parser = (function parserParser() {
             new LZWStream(stream, earlyChange), params);
         }
         return new LZWStream(stream, earlyChange);
-      } else if (name == 'DCTDecode' || name == 'DCT') {
+      }
+      if (name == 'DCTDecode' || name == 'DCT') {
         var bytes = stream.getBytes(length);
         return new JpegStream(bytes, stream.dict, this.xref);
-      } else if (name == 'JPXDecode' || name == 'JPX') {
+      } 
+      if (name == 'JPXDecode' || name == 'JPX') {
         var bytes = stream.getBytes(length);
         return new JpxStream(bytes, stream.dict);
-      } else if (name == 'ASCII85Decode' || name == 'A85') {
+      } 
+      if (name == 'ASCII85Decode' || name == 'A85') {
         return new Ascii85Stream(stream);
-      } else if (name == 'ASCIIHexDecode' || name == 'AHx') {
-        return new AsciiHexStream(stream);
-      } else if (name == 'CCITTFaxDecode' || name == 'CCF') {
-        return new CCITTFaxStream(stream, params);
-      } else {
-        TODO('filter "' + name + '" not supported yet');
       }
+      if (name == 'ASCIIHexDecode' || name == 'AHx') {
+        return new AsciiHexStream(stream);
+      }
+      if (name == 'CCITTFaxDecode' || name == 'CCF') {
+        return new CCITTFaxStream(stream, params);
+      }
+      TODO('filter "' + name + '" not supported yet');
       return stream;
     }
   };
 
-  return constructor;
+  return Parser;
 })();
 
-var Lexer = (function lexer() {
-  function constructor(stream) {
+var Lexer = (function LexerClosure() {
+  function Lexer(stream) {
     this.stream = stream;
   }
 
-  constructor.isSpace = function lexerIsSpace(ch) {
+  Lexer.isSpace = function lexerIsSpace(ch) {
     return ch == ' ' || ch == '\t' || ch == '\x0d' || ch == '\x0a';
   };
 
@@ -295,7 +300,7 @@ var Lexer = (function lexer() {
     return -1;
   }
 
-  constructor.prototype = {
+  Lexer.prototype = {
     getNumber: function lexerGetNumber(ch) {
       var floating = false;
       var str = ch;
@@ -557,11 +562,11 @@ var Lexer = (function lexer() {
     }
   };
 
-  return constructor;
+  return Lexer;
 })();
 
-var Linearization = (function linearizationLinearization() {
-  function constructor(stream) {
+var Linearization = (function LinearizationClosure() {
+  function Linearization(stream) {
     this.parser = new Parser(new Lexer(stream), false);
     var obj1 = this.parser.getObj();
     var obj2 = this.parser.getObj();
@@ -575,7 +580,7 @@ var Linearization = (function linearizationLinearization() {
     }
   }
 
-  constructor.prototype = {
+  Linearization.prototype = {
     getInt: function linearizationGetInt(name) {
       var linDict = this.linDict;
       var obj;
@@ -634,6 +639,6 @@ var Linearization = (function linearizationLinearization() {
     }
   };
 
-  return constructor;
+  return Linearization;
 })();
 

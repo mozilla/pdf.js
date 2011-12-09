@@ -6,8 +6,19 @@
 // <canvas> contexts store most of the state we need natively.
 // However, PDF needs a bit more state, which we store here.
 
-var CanvasExtraState = (function canvasExtraState() {
-  function constructor(old) {
+var TextRenderingMode = {
+  FILL: 0,
+  STROKE: 1,
+  FILL_STROKE: 2,
+  INVISIBLE: 3,
+  FILL_ADD_TO_PATH: 4,
+  STROKE_ADD_TO_PATH: 5,
+  FILL_STROKE_ADD_TO_PATH: 6,
+  ADD_TO_PATH: 7
+};
+
+var CanvasExtraState = (function CanvasExtraStateClosure() {
+  function CanvasExtraState(old) {
     // Are soft masks and alpha values shapes or opacities?
     this.alphaIsShape = false;
     this.fontSize = 0;
@@ -23,6 +34,7 @@ var CanvasExtraState = (function canvasExtraState() {
     this.charSpacing = 0;
     this.wordSpacing = 0;
     this.textHScale = 1;
+    this.textRenderingMode = TextRenderingMode.FILL;
     // Color spaces
     this.fillColorSpace = new DeviceGrayCS();
     this.fillColorSpaceObj = null;
@@ -40,7 +52,7 @@ var CanvasExtraState = (function canvasExtraState() {
     this.old = old;
   }
 
-  constructor.prototype = {
+  CanvasExtraState.prototype = {
     clone: function canvasextra_clone() {
       return Object.create(this);
     },
@@ -49,7 +61,7 @@ var CanvasExtraState = (function canvasExtraState() {
       this.y = y;
     }
   };
-  return constructor;
+  return CanvasExtraState;
 })();
 
 function ScratchCanvas(width, height) {
@@ -169,12 +181,12 @@ function addContextCurrentTransform(ctx) {
   }
 }
 
-var CanvasGraphics = (function canvasGraphics() {
+var CanvasGraphics = (function CanvasGraphicsClosure() {
   // Defines the time the executeIRQueue is going to be executing
   // before it stops and shedules a continue of execution.
   var kExecutionTime = 50;
 
-  function constructor(canvasCtx, objs, textLayer) {
+  function CanvasGraphics(canvasCtx, objs, textLayer) {
     this.ctx = canvasCtx;
     this.current = new CanvasExtraState();
     this.stateStack = [];
@@ -194,7 +206,36 @@ var CanvasGraphics = (function canvasGraphics() {
   var NORMAL_CLIP = {};
   var EO_CLIP = {};
 
-  constructor.prototype = {
+  CanvasGraphics.prototype = {
+    slowCommands: {
+      'stroke': true,
+      'closeStroke': true,
+      'fill': true,
+      'eoFill': true,
+      'fillStroke': true,
+      'eoFillStroke': true,
+      'closeFillStroke': true,
+      'closeEOFillStroke': true,
+      'showText': true,
+      'showSpacedText': true,
+      'setStrokeColorSpace': true,
+      'setFillColorSpace': true,
+      'setStrokeColor': true,
+      'setStrokeColorN': true,
+      'setFillColor': true,
+      'setFillColorN_IR': true,
+      'setStrokeGray': true,
+      'setFillGray': true,
+      'setStrokeRGBColor': true,
+      'setFillRGBColor': true,
+      'setStrokeCMYKColor': true,
+      'setFillCMYKColor': true,
+      'paintJpegXObject': true,
+      'paintImageXObject': true,
+      'paintImageMaskXObject': true,
+      'shadingFill': true
+    },
+
     beginDrawing: function canvasGraphicsBeginDrawing(mediaBox) {
       var cw = this.ctx.canvas.width, ch = this.ctx.canvas.height;
       this.ctx.save();
@@ -234,13 +275,17 @@ var CanvasGraphics = (function canvasGraphics() {
       }
 
       var executionEndIdx;
-      var startTime = Date.now();
+      var endTime = Date.now() + kExecutionTime;
 
       var objs = this.objs;
+      var fnName;
+      var slowCommands = this.slowCommands;
 
       while (true) {
-        if (fnArray[i] !== 'dependency') {
-          this[fnArray[i]].apply(this, argsArray[i]);
+        fnName = fnArray[i];
+
+        if (fnName !== 'dependency') {
+          this[fnName].apply(this, argsArray[i]);
         } else {
           var deps = argsArray[i];
           for (var n = 0, nn = deps.length; n < nn; n++) {
@@ -254,6 +299,7 @@ var CanvasGraphics = (function canvasGraphics() {
             }
           }
         }
+
         i++;
 
         // If the entire IRQueue was executed, stop as were done.
@@ -264,7 +310,7 @@ var CanvasGraphics = (function canvasGraphics() {
         // If the execution took longer then a certain amount of time, shedule
         // to continue exeution after a short delay.
         // However, this is only possible if a 'continueCallback' is passed in.
-        if (continueCallback && (Date.now() - startTime) > kExecutionTime) {
+        if (continueCallback && slowCommands[fnName] && Date.now() > endTime) {
           setTimeout(continueCallback, 0);
           return i;
         }
@@ -543,7 +589,9 @@ var CanvasGraphics = (function canvasGraphics() {
       this.ctx.font = rule;
     },
     setTextRenderingMode: function canvasGraphicsSetTextRenderingMode(mode) {
-      TODO('text rendering mode: ' + mode);
+      if (mode >= TextRenderingMode.FILL_ADD_TO_PATH)
+        TODO('unsupported text rendering mode: ' + mode);
+      this.current.textRenderingMode = mode;
     },
     setTextRise: function canvasGraphicsSetTextRise(rise) {
       TODO('text rise: ' + rise);
@@ -637,6 +685,7 @@ var CanvasGraphics = (function canvasGraphics() {
       var textLayer = this.textLayer;
       var text = {str: '', length: 0, canvasWidth: 0, geom: {}};
       var textSelection = textLayer && !skipTextSelection ? true : false;
+      var textRenderingMode = current.textRenderingMode;
 
       if (textSelection) {
         ctx.save();
@@ -693,7 +742,26 @@ var CanvasGraphics = (function canvasGraphics() {
 
           var char = glyph.fontChar;
           var charWidth = glyph.width * fontSize * 0.001 + charSpacing;
-          ctx.fillText(char, width, 0);
+
+          switch (textRenderingMode) {
+            default: // other unsupported rendering modes
+            case TextRenderingMode.FILL:
+            case TextRenderingMode.FILL_ADD_TO_PATH:
+              ctx.fillText(char, width, 0);
+              break;
+            case TextRenderingMode.STROKE:
+            case TextRenderingMode.STROKE_ADD_TO_PATH:
+              ctx.strokeText(char, width, 0);
+              break;
+            case TextRenderingMode.FILL_STROKE:
+            case TextRenderingMode.FILL_STROKE_ADD_TO_PATH:
+              ctx.fillText(char, width, 0);
+              ctx.strokeText(char, width, 0);
+              break;
+            case TextRenderingMode.INVISIBLE:
+              break;
+          }
+
           width += charWidth;
 
           text.str += glyph.unicode === ' ' ? '&nbsp;' : glyph.unicode;
@@ -917,9 +985,9 @@ var CanvasGraphics = (function canvasGraphics() {
         var height = canvas.height;
 
         var bl = Util.applyTransform([0, 0], inv);
-        var br = Util.applyTransform([0, width], inv);
-        var ul = Util.applyTransform([height, 0], inv);
-        var ur = Util.applyTransform([height, width], inv);
+        var br = Util.applyTransform([0, height], inv);
+        var ul = Util.applyTransform([width, 0], inv);
+        var ur = Util.applyTransform([width, height], inv);
 
         var x0 = Math.min(bl[0], br[0], ul[0], ur[0]);
         var y0 = Math.min(bl[1], br[1], ul[1], ur[1]);
@@ -969,8 +1037,8 @@ var CanvasGraphics = (function canvasGraphics() {
     },
 
     paintJpegXObject: function canvasGraphicsPaintJpegXObject(objId, w, h) {
-      var image = this.objs.get(objId);
-      if (!image) {
+      var domImage = this.objs.get(objId);
+      if (!domImage) {
         error('Dependent image isn\'t ready yet');
       }
 
@@ -980,7 +1048,6 @@ var CanvasGraphics = (function canvasGraphics() {
       // scale the image to the unit square
       ctx.scale(1 / w, -1 / h);
 
-      var domImage = image.getImage();
       ctx.drawImage(domImage, 0, 0, domImage.width, domImage.height,
                     0, -h, w, h);
 
@@ -1046,24 +1113,14 @@ var CanvasGraphics = (function canvasGraphics() {
 
       var tmpCanvas = new this.ScratchCanvas(w, h);
       var tmpCtx = tmpCanvas.getContext('2d');
-      var tmpImgData;
+      this.putBinaryImageData(tmpCtx, imgData, w, h);
 
-      // Some browsers can set an UInt8Array directly as imageData, some
-      // can't. As long as we don't have proper feature detection, just
-      // copy over each pixel and set the imageData that way.
-      tmpImgData = tmpCtx.getImageData(0, 0, w, h);
-
-      // Copy over the imageData.
-      var tmpImgDataPixels = tmpImgData.data;
-      var len = tmpImgDataPixels.length;
-
-      while (len--) {
-        tmpImgDataPixels[len] = imgData.data[len];
-      }
-
-      tmpCtx.putImageData(tmpImgData, 0, 0);
       ctx.drawImage(tmpCanvas, 0, -h);
       this.restore();
+    },
+
+    putBinaryImageData: function canvasPutBinaryImageData() {
+      //
     },
 
     // Marked content
@@ -1123,6 +1180,41 @@ var CanvasGraphics = (function canvasGraphics() {
     }
   };
 
-  return constructor;
+  return CanvasGraphics;
 })();
 
+if (!isWorker) {
+  // Feature detection if the browser can use an Uint8Array directly as imgData.
+  var canvas = document.createElement('canvas');
+  canvas.width = 1;
+  canvas.height = 1;
+  var ctx = canvas.getContext('2d');
+
+  try {
+    ctx.putImageData({
+      width: 1,
+      height: 1,
+      data: new Uint8Array(4)
+    }, 0, 0);
+
+    CanvasGraphics.prototype.putBinaryImageData =
+      function CanvasGraphicsPutBinaryImageDataNative(ctx, imgData) {
+        ctx.putImageData(imgData, 0, 0);
+      };
+  } catch (e) {
+    CanvasGraphics.prototype.putBinaryImageData =
+      function CanvasGraphicsPutBinaryImageDataShim(ctx, imgData, w, h) {
+        var tmpImgData = ctx.getImageData(0, 0, w, h);
+
+        // Copy over the imageData pixel by pixel.
+        var tmpImgDataPixels = tmpImgData.data;
+        var len = tmpImgDataPixels.length;
+
+        while (len--) {
+          tmpImgDataPixels[len] = imgData.data[len];
+        }
+
+        ctx.putImageData(tmpImgData, 0, 0);
+      };
+  }
+}

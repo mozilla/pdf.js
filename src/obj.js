@@ -3,34 +3,34 @@
 
 'use strict';
 
-var Name = (function nameName() {
-  function constructor(name) {
+var Name = (function NameClosure() {
+  function Name(name) {
     this.name = name;
   }
 
-  constructor.prototype = {
+  Name.prototype = {
   };
 
-  return constructor;
+  return Name;
 })();
 
-var Cmd = (function cmdCmd() {
-  function constructor(cmd) {
+var Cmd = (function CmdClosure() {
+  function Cmd(cmd) {
     this.cmd = cmd;
   }
 
-  constructor.prototype = {
+  Cmd.prototype = {
   };
 
-  return constructor;
+  return Cmd;
 })();
 
-var Dict = (function dictDict() {
-  function constructor() {
+var Dict = (function DictClosure() {
+  function Dict() {
     this.map = Object.create(null);
   }
 
-  constructor.prototype = {
+  Dict.prototype = {
     get: function dictGet(key1, key2, key3) {
       var value;
       if (typeof (value = this.map[key1]) != 'undefined' || key1 in this.map ||
@@ -60,29 +60,29 @@ var Dict = (function dictDict() {
     }
   };
 
-  return constructor;
+  return Dict;
 })();
 
-var Ref = (function refRef() {
-  function constructor(num, gen) {
+var Ref = (function RefClosure() {
+  function Ref(num, gen) {
     this.num = num;
     this.gen = gen;
   }
 
-  constructor.prototype = {
+  Ref.prototype = {
   };
 
-  return constructor;
+  return Ref;
 })();
 
 // The reference is identified by number and generation,
 // this structure stores only one instance of the reference.
-var RefSet = (function refSet() {
-  function constructor() {
+var RefSet = (function RefSetClosure() {
+  function RefSet() {
     this.dict = {};
   }
 
-  constructor.prototype = {
+  RefSet.prototype = {
     has: function refSetHas(ref) {
       return !!this.dict['R' + ref.num + '.' + ref.gen];
     },
@@ -92,18 +92,18 @@ var RefSet = (function refSet() {
     }
   };
 
-  return constructor;
+  return RefSet;
 })();
 
-var Catalog = (function catalogCatalog() {
-  function constructor(xref) {
+var Catalog = (function CatalogClosure() {
+  function Catalog(xref) {
     this.xref = xref;
     var obj = xref.getCatalogObj();
     assertWellFormed(isDict(obj), 'catalog object is not a dictionary');
     this.catDict = obj;
   }
 
-  constructor.prototype = {
+  Catalog.prototype = {
     get toplevelPagesDict() {
       var pagesObj = this.catDict.get('Pages');
       assertWellFormed(isRef(pagesObj), 'invalid top-level pages reference');
@@ -253,11 +253,11 @@ var Catalog = (function catalogCatalog() {
     }
   };
 
-  return constructor;
+  return Catalog;
 })();
 
-var XRef = (function xRefXRef() {
-  function constructor(stream, startXRef, mainXRefEntriesOffset) {
+var XRef = (function XRefClosure() {
+  function XRef(stream, startXRef, mainXRefEntriesOffset) {
     this.stream = stream;
     this.entries = [];
     this.xrefstms = {};
@@ -278,7 +278,7 @@ var XRef = (function xRefXRef() {
       error('Invalid root reference');
   }
 
-  constructor.prototype = {
+  XRef.prototype = {
     readXRefTable: function readXRefTable(parser) {
       var obj;
       while (true) {
@@ -518,20 +518,29 @@ var XRef = (function xRefXRef() {
     readXRef: function readXref(startXRef) {
       var stream = this.stream;
       stream.pos = startXRef;
-      var parser = new Parser(new Lexer(stream), true);
-      var obj = parser.getObj();
-      // parse an old-style xref table
-      if (isCmd(obj, 'xref'))
-        return this.readXRefTable(parser);
-      // parse an xref stream
-      if (isInt(obj)) {
-        if (!isInt(parser.getObj()) ||
-            !isCmd(parser.getObj(), 'obj') ||
-            !isStream(obj = parser.getObj())) {
-          error('Invalid XRef stream');
+
+      try {
+        var parser = new Parser(new Lexer(stream), true);
+        var obj = parser.getObj();
+
+        // parse an old-style xref table
+        if (isCmd(obj, 'xref'))
+          return this.readXRefTable(parser);
+
+        // parse an xref stream
+        if (isInt(obj)) {
+          if (!isInt(parser.getObj()) ||
+              !isCmd(parser.getObj(), 'obj') ||
+              !isStream(obj = parser.getObj())) {
+            error('Invalid XRef stream');
+          }
+          return this.readXRefStream(obj);
         }
-        return this.readXRefStream(obj);
+      } catch (e) {
+        log('Reading of the xref table/stream failed: ' + e);
       }
+
+      warn('Indexing all PDF objects');
       return this.indexObjects();
     },
     getEntry: function xRefGetEntry(i) {
@@ -589,7 +598,7 @@ var XRef = (function xRefXRef() {
           e = parser.getObj();
         }
         // Don't cache streams since they are mutable (except images).
-        if (!isStream(e) || e.getImage)
+        if (!isStream(e) || e instanceof JpegStream)
           this.cache[num] = e;
         return e;
       }
@@ -633,7 +642,7 @@ var XRef = (function xRefXRef() {
     }
   };
 
-  return constructor;
+  return XRef;
 })();
 
 /**
@@ -642,7 +651,7 @@ var XRef = (function xRefXRef() {
  * inside of a worker. The `PDFObjects` implements some basic functions to
  * manage these objects.
  */
-var PDFObjects = (function pdfObjects() {
+var PDFObjects = (function PDFObjectsClosure() {
   function PDFObjects() {
     this.objs = {};
   }
