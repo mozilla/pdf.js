@@ -563,6 +563,10 @@ var PDFDoc = (function pdfDoc() {
         var type = data[1];
 
         switch (type) {
+          case 'JpegStream':
+            var imageData = data[2];
+            loadJpegStream(id, imageData, this.objs);
+            break;
           case 'Image':
             var imageData = data[2];
             this.objs.resolve(id, imageData);

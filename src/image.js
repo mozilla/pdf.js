@@ -151,6 +151,8 @@ var PDFImage = (function pdfImage() {
       var buf = new Uint8Array(width * height);
 
       if (smask) {
+        if (!smask.isReady())
+          error('Soft mask is not ready.');
         var sw = smask.width;
         var sh = smask.height;
         if (sw != this.width || sh != this.height)
@@ -168,8 +170,7 @@ var PDFImage = (function pdfImage() {
     applyStencilMask: function applyStencilMask(buffer, inverseDecode) {
       var width = this.width, height = this.height;
       var bitStrideLength = (width + 7) >> 3;
-      this.image.reset();
-      var imgArray = this.image.getBytes(bitStrideLength * height);
+      var imgArray = this.getImageBytes(bitStrideLength * height);
       var imgArrayPos = 0;
       var i, j, mask, buf;
       // removing making non-masked pixels transparent
@@ -197,8 +198,7 @@ var PDFImage = (function pdfImage() {
 
       // rows start at byte boundary;
       var rowBytes = (width * numComps * bpc + 7) >> 3;
-      this.image.reset();
-      var imgArray = this.image.getBytes(height * rowBytes);
+      var imgArray = this.getImageBytes(height * rowBytes);
 
       var comps = this.colorSpace.getRgbBuffer(
         this.getComponents(imgArray, decodeMap), bpc);
@@ -225,14 +225,19 @@ var PDFImage = (function pdfImage() {
 
       // rows start at byte boundary;
       var rowBytes = (width * numComps * bpc + 7) >> 3;
-      this.image.reset();
-      var imgArray = this.image.getBytes(height * rowBytes);
+      var imgArray = this.getImageBytes(height * rowBytes);
 
       var comps = this.getComponents(imgArray);
       var length = width * height;
 
       for (var i = 0; i < length; ++i)
         buffer[i] = comps[i];
+    },
+    getImageBytes: function getImageBytes(length) {
+      if (!this.isReady())
+        error('Image is not ready to be read.');
+      this.image.reset();
+      return this.image.getBytes(length);
     },
     isReady: function isReady() {
       return this.imageReady && this.smaskReady;
@@ -250,3 +255,10 @@ var PDFImage = (function pdfImage() {
   };
   return constructor;
 })();
+function loadJpegStream(id, imageData, objs) {
+  var img = new Image();
+  img.onload = (function jpegImageLoaderOnload() {
+    objs.resolve(id, img);
+  });
+  img.src = 'data:image/jpeg;base64,' + window.btoa(imageData);
+}

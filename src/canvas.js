@@ -1036,6 +1036,23 @@ var CanvasGraphics = (function canvasGraphics() {
       this.restore();
     },
 
+    paintJpegXObject: function canvasGraphicsPaintJpegXObject(objId, w, h) {
+      var domImage = this.objs.get(objId);
+      if (!domImage) {
+        error('Dependent image isn\'t ready yet');
+      }
+
+      this.save();
+
+      var ctx = this.ctx;
+      // scale the image to the unit square
+      ctx.scale(1 / w, -1 / h);
+
+      ctx.drawImage(domImage, 0, 0, domImage.width, domImage.height,
+                    0, -h, w, h);
+
+      this.restore();
+    },
     paintImageMaskXObject: function canvasGraphicsPaintImageMaskXObject(
                              imgArray, inverseDecode, width, height) {
       function applyStencilMask(buffer, inverseDecode) {

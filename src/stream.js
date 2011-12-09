@@ -804,8 +804,6 @@ var JpegStream = (function jpegStream() {
 
     this.colorTransform = -1;
 
-    this.bytes = bytes;
-
     if (isAdobeImage(bytes)) {
       // when bug 674619 land, let's check if browser can do
       // normal cmyk and then we won't have to the following

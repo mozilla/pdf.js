@@ -208,26 +208,31 @@ var PartialEvaluator = (function partialEvaluator() {
         // of image processing can be done here.
         var objId = 'img_' + uniquePrefix + (++self.objIdCounter);
         insertDependency([objId]);
-        fn = 'paintImageXObject';
         args = [objId, w, h];
-        var resolve = (function(objId) {
-          return function resolve(data) {
-            handler.send('obj', [objId, 'Image', data]);
-          };
-        })(objId);
 
+        var softMask = dict.get('SMask', 'IM') || false;
+        if (!softMask && image instanceof JpegStream && image.isNative) {
+          // These JPEGs don't need any more processing so we can just send it.
+          fn = 'paintJpegXObject';
+          handler.send('obj', [objId, 'JpegStream', image.getIR()]);
+          return;
+        }
+
+        fn = 'paintImageXObject';
         var imageObj = new PDFImage(xref, resources, image, inline, handler);
 
-        imageObj.ready(function() {
-          var imgData = {
-            width: w,
-            height: h,
-            data: new Uint8Array(w * h * 4)
+        imageObj.ready((function() {
+          return function(data) {
+            var imgData = {
+              width: w,
+              height: h,
+              data: new Uint8Array(w * h * 4)
+            };
+            var pixels = imgData.data;
+            imageObj.fillRgbaBuffer(pixels, imageObj.decode);
+            handler.send('obj', [objId, 'Image', imgData]);
           };
-          var pixels = imgData.data;
-          imageObj.fillRgbaBuffer(pixels, imageObj.decode);
-          resolve(imgData);
-        });
+        })(objId));
       }
 
       uniquePrefix = uniquePrefix || '';
