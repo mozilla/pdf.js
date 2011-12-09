@@ -41,7 +41,8 @@ function onMessageLoader(evt) {
     'pattern.js',
     'stream.js',
     'worker.js',
-    '../external/jpgjs/jpg.js'
+    '../external/jpgjs/jpg.js',
+    '../external/j2k.js/openjpeg.js'
   ];
 
   // Load all the files.
