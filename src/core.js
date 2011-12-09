@@ -5,6 +5,8 @@
 
 var globalScope = (typeof window === 'undefined') ? this : window;
 
+var isWorker = (typeof window == 'undefined');
+
 var ERRORS = 0, WARNINGS = 1, TODOS = 5;
 var verbosity = WARNINGS;
 
@@ -31,7 +33,7 @@ function getPdf(arg, callback) {
   var xhr = new XMLHttpRequest();
   xhr.open('GET', params.url);
   xhr.mozResponseType = xhr.responseType = 'arraybuffer';
-  xhr.expected = (document.URL.indexOf('file:') === 0) ? 0 : 200;
+  xhr.expected = (params.url.indexOf('file:') === 0) ? 0 : 200;
 
   if ('progress' in params)
     xhr.onprogress = params.progress || undefined;
@@ -39,11 +41,15 @@ function getPdf(arg, callback) {
   if ('error' in params)
     xhr.onerror = params.error || undefined;
 
-  xhr.onreadystatechange = function getPdfOnreadystatechange() {
-    if (xhr.readyState === 4 && xhr.status === xhr.expected) {
-      var data = (xhr.mozResponseArrayBuffer || xhr.mozResponse ||
-                  xhr.responseArrayBuffer || xhr.response);
-      callback(data);
+  xhr.onreadystatechange = function getPdfOnreadystatechange(e) {
+    if (xhr.readyState === 4) {
+      if (xhr.status === xhr.expected) {
+        var data = (xhr.mozResponseArrayBuffer || xhr.mozResponse ||
+                    xhr.responseArrayBuffer || xhr.response);
+        callback(data);
+      } else if (params.error) {
+        params.error(e);
+      }
     }
   };
   xhr.send(null);
@@ -63,6 +69,9 @@ var Page = (function pagePage() {
     };
     this.xref = xref;
     this.ref = ref;
+
+    this.ctx = null;
+    this.callback = null;
   }
 
   constructor.prototype = {
@@ -165,8 +174,10 @@ var Page = (function pagePage() {
           try {
             self.display(gfx, self.callback);
           } catch (e) {
-            if (self.callback) self.callback(e.toString());
-            throw e;
+            if (self.callback)
+              self.callback(e);
+            else
+              throw e;
           }
         });
       };
@@ -556,8 +567,8 @@ var PDFDoc = (function pdfDoc() {
 
         switch (type) {
           case 'JpegStream':
-            var IR = data[2];
-            new JpegImageLoader(id, IR, this.objs);
+            var imageData = data[2];
+            loadJpegStream(id, imageData, this.objs);
             break;
           case 'Font':
             var name = data[2];
@@ -594,6 +605,14 @@ var PDFDoc = (function pdfDoc() {
           this.objs.setData(id, font);
         }
       }.bind(this));
+
+      messageHandler.on('page_error', function pdfDocError(data) {
+        var page = this.pageCache[data.pageNum];
+        if (page.callback)
+          page.callback(data.error);
+        else
+          throw data.error;
+      }, this);
 
       setTimeout(function pdfDocFontReadySetTimeout() {
         messageHandler.send('doc', this.data);

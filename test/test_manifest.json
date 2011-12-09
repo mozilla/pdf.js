@@ -20,7 +20,6 @@
     {  "id": "intelisa-load",
        "file": "pdfs/intelisa.pdf",
        "md5": "f5712097d29287a97f1278839814f682",
-       "md5": "f3ed5487d1afa34d8b77c0c734a95c79",
        "link": true,
        "rounds": 1,
        "type": "load"
@@ -301,6 +300,22 @@
        "file": "pdfs/issue840.pdf",
        "md5": "20d88011dd7e3c4fb5274979094dab93",
        "rounds": 1,
+       "type": "eq"
+    },
+    {  "id": "tutorial",
+       "file": "pdfs/tutorial.pdf",
+       "md5": "6e122f618c27f3aa9a689423e3be6b8d",
+       "link": true,
+       "rounds": 1,
+       "type": "eq"
+    },
+    {  "id": "geothermal.pdf",
+       "file": "pdfs/geothermal.pdf",
+       "md5": "ecffc0ce38ffdf1e90dc952f186e9a91",
+       "rounds": 1,
+       "link": true,
+       "pageLimit": 5,
+       "skipPages": [1],
        "type": "eq"
     }
 ]
