@@ -1779,7 +1779,7 @@ var Font = (function Font() {
             var usedUnicodes = [], unassignedUnicodeItems = [];
             for (var i = 0, ii = glyphs.length; i < ii; i++) {
               var unicode = toUnicode[i + 1];
-              if (!unicode || usedUnicodes[unicode]) {
+              if (!unicode || unicode in usedUnicodes) {
                 unassignedUnicodeItems.push(i);
                 continue;
               }
@@ -1789,7 +1789,7 @@ var Font = (function Font() {
             var unusedUnicode = kCmapGlyphOffset;
             for (var j = 0, jj = unassignedUnicodeItems.length; j < jj; j++) {
               var i = unassignedUnicodeItems[j];
-              while (usedUnicodes[unusedUnicode])
+              while (unusedUnicode in usedUnicodes)
                 unusedUnicode++;
               glyphs[i].unicode = unusedUnicode++;
             }
