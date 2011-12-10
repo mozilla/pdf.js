@@ -1765,7 +1765,7 @@ var Font = (function FontClosure() {
         var hasShortCmap = !!cmapTable.hasShortCmap;
         var toUnicode = this.toUnicode;
 
-        if (toUnicode) {
+        if (toUnicode && toUnicode.length > 0) {
           // checking if cmap is just identity map
           var isIdentity = true;
           for (var i = 0, ii = glyphs.length; i < ii; i++) {
@@ -1776,9 +1776,22 @@ var Font = (function FontClosure() {
           }
           // if it is, replacing with meaningful toUnicode values
           if (isIdentity) {
+            var usedUnicodes = [], unassignedUnicodeItems = [];
             for (var i = 0, ii = glyphs.length; i < ii; i++) {
-              var unicode = toUnicode[i + 1] || i + 1;
+              var unicode = toUnicode[i + 1];
+              if (!unicode || unicode in usedUnicodes) {
+                unassignedUnicodeItems.push(i);
+                continue;
+              }
               glyphs[i].unicode = unicode;
+              usedUnicodes[unicode] = true;
+            }
+            var unusedUnicode = kCmapGlyphOffset;
+            for (var j = 0, jj = unassignedUnicodeItems.length; j < jj; j++) {
+              var i = unassignedUnicodeItems[j];
+              while (unusedUnicode in usedUnicodes)
+                unusedUnicode++;
+              glyphs[i].unicode = unusedUnicode++;
             }
             this.useToUnicode = true;
           }
