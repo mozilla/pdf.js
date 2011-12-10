@@ -1791,6 +1791,10 @@ var Font = (function FontClosure() {
               var i = unassignedUnicodeItems[j];
               while (unusedUnicode in usedUnicodes)
                 unusedUnicode++;
+              var cid = i + 1;
+              // override only if unicode mapping is not specified
+              if (!(cid in toUnicode))
+                toUnicode[cid] = unusedUnicode;
               glyphs[i].unicode = unusedUnicode++;
             }
             this.useToUnicode = true;
