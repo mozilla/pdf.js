@@ -160,6 +160,28 @@ var WorkerMessageHandler = {
 
       handler.send('font_ready', [objId, obj]);
     });
+
+    handler.on('extract_text', function wphExtractText() {
+      var numPages = pdfDoc.numPages;
+      var index = [];
+      for (var i = 0; i < numPages; i++) {
+        var start = Date.now();
+
+        var textContent = '';
+        try {
+          var page = pdfDoc.getPage(i + 1);
+          textContent = page.extractTextContent();
+        } catch (e) {
+          // Skip errored pages
+        }
+
+        index.push(textContent);
+      }
+
+      console.log('text indexing=: time=%dms', Date.now() - start);
+
+      handler.send('text_extracted', { index: index });
+    });
   }
 };
 

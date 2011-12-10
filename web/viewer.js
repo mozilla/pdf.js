@@ -309,6 +309,17 @@ var PDFView = {
     }
     else
       this.page = 1;
+
+    setTimeout((function loadStartTextExtraction() {
+      this.startTextExtraction(pdf);
+    }).bind(this), 500);
+  },
+
+  startTextExtraction: function(pdf) {
+    pdf.textExtracted = function pdfTextExtracted(index) {
+      console.log(index.join());
+    };
+    pdf.extractText();
   },
 
   setHash: function pdfViewSetHash(hash) {
