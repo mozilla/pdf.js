@@ -139,6 +139,11 @@ function nextPage(task, loadError) {
   if (task.skipPages && task.skipPages.indexOf(task.pageNum) >= 0) {
     log(' skipping page ' + task.pageNum + '/' + task.pdfDoc.numPages +
         '... ');
+    // empty the canvas
+    canvas.width = 1;
+    canvas.height = 1;
+    clear(canvas.getContext('2d'));
+
     snapshotCurrentPage(task, '');
     return;
   }

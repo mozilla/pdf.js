@@ -17,8 +17,8 @@ var TextRenderingMode = {
   ADD_TO_PATH: 7
 };
 
-var CanvasExtraState = (function canvasExtraState() {
-  function constructor(old) {
+var CanvasExtraState = (function CanvasExtraStateClosure() {
+  function CanvasExtraState(old) {
     // Are soft masks and alpha values shapes or opacities?
     this.alphaIsShape = false;
     this.fontSize = 0;
@@ -52,7 +52,7 @@ var CanvasExtraState = (function canvasExtraState() {
     this.old = old;
   }
 
-  constructor.prototype = {
+  CanvasExtraState.prototype = {
     clone: function canvasextra_clone() {
       return Object.create(this);
     },
@@ -61,7 +61,7 @@ var CanvasExtraState = (function canvasExtraState() {
       this.y = y;
     }
   };
-  return constructor;
+  return CanvasExtraState;
 })();
 
 function ScratchCanvas(width, height) {
@@ -181,12 +181,12 @@ function addContextCurrentTransform(ctx) {
   }
 }
 
-var CanvasGraphics = (function canvasGraphics() {
+var CanvasGraphics = (function CanvasGraphicsClosure() {
   // Defines the time the executeIRQueue is going to be executing
   // before it stops and shedules a continue of execution.
   var kExecutionTime = 50;
 
-  function constructor(canvasCtx, objs, textLayer) {
+  function CanvasGraphics(canvasCtx, objs, textLayer) {
     this.ctx = canvasCtx;
     this.current = new CanvasExtraState();
     this.stateStack = [];
@@ -206,7 +206,7 @@ var CanvasGraphics = (function canvasGraphics() {
   var NORMAL_CLIP = {};
   var EO_CLIP = {};
 
-  constructor.prototype = {
+  CanvasGraphics.prototype = {
     slowCommands: {
       'stroke': true,
       'closeStroke': true,
@@ -1037,8 +1037,8 @@ var CanvasGraphics = (function canvasGraphics() {
     },
 
     paintJpegXObject: function canvasGraphicsPaintJpegXObject(objId, w, h) {
-      var image = this.objs.get(objId);
-      if (!image) {
+      var domImage = this.objs.get(objId);
+      if (!domImage) {
         error('Dependent image isn\'t ready yet');
       }
 
@@ -1048,7 +1048,6 @@ var CanvasGraphics = (function canvasGraphics() {
       // scale the image to the unit square
       ctx.scale(1 / w, -1 / h);
 
-      var domImage = image.getImage();
       ctx.drawImage(domImage, 0, 0, domImage.width, domImage.height,
                     0, -h, w, h);
 
@@ -1181,7 +1180,7 @@ var CanvasGraphics = (function canvasGraphics() {
     }
   };
 
-  return constructor;
+  return CanvasGraphics;
 })();
 
 if (!isWorker) {

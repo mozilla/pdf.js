@@ -731,8 +731,8 @@ function isSpecialUnicode(unicode) {
  *   var type1Font = new Font("MyFontName", binaryFile, propertiesObject);
  *   type1Font.bind();
  */
-var Font = (function Font() {
-  var constructor = function font_constructor(name, file, properties) {
+var Font = (function FontClosure() {
+  function Font(name, file, properties) {
     this.name = name;
     this.coded = properties.coded;
     this.charProcIRQueues = properties.charProcIRQueues;
@@ -1229,7 +1229,7 @@ var Font = (function Font() {
     return nameTable;
   }
 
-  constructor.prototype = {
+  Font.prototype = {
     name: null,
     font: null,
     mimetype: null,
@@ -1765,7 +1765,7 @@ var Font = (function Font() {
         var hasShortCmap = !!cmapTable.hasShortCmap;
         var toUnicode = this.toUnicode;
 
-        if (toUnicode) {
+        if (toUnicode && toUnicode.length > 0) {
           // checking if cmap is just identity map
           var isIdentity = true;
           for (var i = 0, ii = glyphs.length; i < ii; i++) {
@@ -1776,14 +1776,33 @@ var Font = (function Font() {
           }
           // if it is, replacing with meaningful toUnicode values
           if (isIdentity) {
+            var usedUnicodes = [], unassignedUnicodeItems = [];
             for (var i = 0, ii = glyphs.length; i < ii; i++) {
-              var unicode = toUnicode[i + 1] || i + 1;
+              var unicode = toUnicode[i + 1];
+              if (!unicode || unicode in usedUnicodes) {
+                unassignedUnicodeItems.push(i);
+                continue;
+              }
               glyphs[i].unicode = unicode;
+              usedUnicodes[unicode] = true;
+            }
+            var unusedUnicode = kCmapGlyphOffset;
+            for (var j = 0, jj = unassignedUnicodeItems.length; j < jj; j++) {
+              var i = unassignedUnicodeItems[j];
+              while (unusedUnicode in usedUnicodes)
+                unusedUnicode++;
+              glyphs[i].unicode = unusedUnicode++;
             }
             this.useToUnicode = true;
           }
         }
         properties.hasShortCmap = hasShortCmap;
+
+        // remove glyph references outside range of avaialable glyphs
+        for (var i = 0, ii = ids.length; i < ii; i++) {
+          if (ids[i] >= numGlyphs)
+            ids[i] = 0;
+        }
 
         createGlyphNameMap(glyphs, ids, properties);
         this.glyphNameMap = properties.glyphNameMap;
@@ -2102,9 +2121,9 @@ var Font = (function Font() {
           break;
         case 'Type1':
           var glyphName = this.differences[charcode] || this.encoding[charcode];
+          if (!isNum(width))
+            width = this.widths[glyphName];
           if (this.noUnicodeAdaptation) {
-            if (!isNum(width))
-              width = this.widths[glyphName];
             unicode = GlyphsUnicode[glyphName] || charcode;
             break;
           }
@@ -2212,7 +2231,7 @@ var Font = (function Font() {
     }
   };
 
-  return constructor;
+  return Font;
 })();
 
 /*
@@ -3122,9 +3141,9 @@ CFF.prototype = {
   }
 };
 
-var Type2CFF = (function type2CFF() {
+var Type2CFF = (function Type2CFFClosure() {
   // TODO: replace parsing code with the Type2Parser in font_utils.js
-  function constructor(file, properties) {
+  function Type2CFF(file, properties) {
     var bytes = file.getBytes();
     this.bytes = bytes;
     this.properties = properties;
@@ -3132,7 +3151,7 @@ var Type2CFF = (function type2CFF() {
     this.data = this.parse();
   }
 
-  constructor.prototype = {
+  Type2CFF.prototype = {
     parse: function cff_parse() {
       var header = this.parseHeader();
       var properties = this.properties;
@@ -3676,6 +3695,6 @@ var Type2CFF = (function type2CFF() {
     }
   };
 
-  return constructor;
+  return Type2CFF;
 })();
 

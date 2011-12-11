@@ -87,6 +87,13 @@
        "rounds": 1,
        "type": "eq"
     },
+    {  "id": "freeculture",
+       "file": "pdfs/freeculture.pdf",
+       "md5": "dcdf3a8268e6a18938a42d5149efcfca",
+       "rounds": 1,
+       "pageLimit": 5,
+       "type": "eq"
+    },
     {  "id": "wnv_chinese-pdf",
        "file": "pdfs/wnv_chinese.pdf",
        "md5": "db682638e68391125e8982d3c984841e",
@@ -220,6 +227,12 @@
        "rounds": 1,
        "type": "load"
     },
+    {  "id": "scan-bad",
+       "file": "pdfs/scan-bad.pdf",
+       "md5": "4cf988f01ab83f61aca57f406dfd6584",
+       "rounds": 1,
+       "type": "load"
+    },
     {  "id": "ibwa-bad",
        "file": "pdfs/ibwa-bad.pdf",
        "md5": "6ca059d32b74ac2688ae06f727fee755",
@@ -296,6 +309,14 @@
        "rounds": 1,
        "type": "eq"
     },
+    {  "id": "bpl13210",
+       "file": "pdfs/bpl13210.pdf",
+       "md5": "8a08512baa9fa95378d9ad4b995947c7",
+       "link": true,
+       "pageLimit": 5,
+       "rounds": 1,
+       "type": "eq"
+    },
     {  "id": "tutorial",
        "file": "pdfs/tutorial.pdf",
        "md5": "6e122f618c27f3aa9a689423e3be6b8d",
@@ -310,6 +331,14 @@
        "link": true,
        "pageLimit": 5,
        "skipPages": [1],
+       "type": "eq"
+    },
+    {  "id": "lista_preliminar",
+       "file": "pdfs/lista_preliminar.pdf",
+       "md5": "4eff251319eeb660ba8a7a5cfac7787d",
+       "rounds": 1,
+       "link": true,
+       "pageLimit": 3,
        "type": "eq"
     }
 ]
