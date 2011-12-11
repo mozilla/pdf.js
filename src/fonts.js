@@ -723,6 +723,48 @@ function isSpecialUnicode(unicode) {
     unicode < kCmapGlyphOffset + kSizeOfGlyphArea);
 }
 
+function fontCharsToUnicode(charCodes, fontProperties) {
+  var toUnicode = fontProperties.toUnicode;
+  var composite = fontProperties.composite;
+  var encoding, differences, cidToUnicode;
+  var result = '';
+  if (composite) {
+    cidToUnicode = fontProperties.cidToUnicode
+    for (var i = 0, ii = charCodes.length; i < ii; i += 2) {
+      var charCode = (charCodes.charCodeAt(i) << 8) | charCodes.charCodeAt(i + 1);
+      if (toUnicode && charCode in toUnicode) {
+        var unicode = toUnicode[charCode];
+        result += typeof unicode !== 'number' ? unicode :
+          String.fromCharCode(unicode);
+        continue;
+      }
+      result += String.fromCharCode(!cidToUnicode ? charCode :
+        cidToUnicode[charCode] || charCode)
+    }
+  } else {
+    differences = fontProperties.differences;
+    encoding = fontProperties.baseEncoding;
+    for (var i = 0, ii = charCodes.length; i < ii; i++) {
+      var charCode = charCodes.charCodeAt(i);
+      if (toUnicode && charCode in toUnicode) {
+        var unicode = toUnicode[charCode];
+        result += typeof unicode !== 'number' ? unicode :
+          String.fromCharCode(unicode);
+        continue;
+      }
+
+      var glyphName = charCode in differences ? differences[charCode] :
+        encoding[charCode];
+      if (glyphName in GlyphsUnicode) {
+        result += String.fromCharCode(GlyphsUnicode[glyphName]);
+        continue;
+      }
+      result += String.fromCharCode(charCode)
+    }
+  }
+  return result;
+}
+
 /**
  * 'Font' is the class the outside world should use, it encapsulate all the font
  * decoding logics whatever type it is (assuming the font type is supported).
@@ -2098,7 +2140,7 @@ var Font = (function FontClosure() {
     },
 
     charToGlyph: function fonts_charToGlyph(charcode) {
-      var unicode, width, codeIRQueue;
+      var fontChar, width, codeIRQueue;
 
       var width = this.widths[charcode];
 
@@ -2106,38 +2148,38 @@ var Font = (function FontClosure() {
         case 'CIDFontType0':
           if (this.noUnicodeAdaptation) {
             width = this.widths[this.unicodeToCID[charcode] || charcode];
-            unicode = charcode;
+            fontChar = charcode;
             break;
           }
-          unicode = this.toUnicode[charcode] || charcode;
+          fontChar = this.toUnicode[charcode] || charcode;
           break;
         case 'CIDFontType2':
           if (this.noUnicodeAdaptation) {
             width = this.widths[this.unicodeToCID[charcode] || charcode];
-            unicode = charcode;
+            fontChar = charcode;
             break;
           }
-          unicode = this.toUnicode[charcode] || charcode;
+          fontChar = this.toUnicode[charcode] || charcode;
           break;
         case 'Type1':
           var glyphName = this.differences[charcode] || this.encoding[charcode];
           if (!isNum(width))
             width = this.widths[glyphName];
           if (this.noUnicodeAdaptation) {
-            unicode = GlyphsUnicode[glyphName] || charcode;
+            fontChar = GlyphsUnicode[glyphName] || charcode;
             break;
           }
-          unicode = this.glyphNameMap[glyphName] ||
+          fontChar = this.glyphNameMap[glyphName] ||
             GlyphsUnicode[glyphName] || charcode;
           break;
         case 'Type3':
           var glyphName = this.differences[charcode] || this.encoding[charcode];
           codeIRQueue = this.charProcIRQueues[glyphName];
-          unicode = charcode;
+          fontChar = charcode;
           break;
         case 'TrueType':
           if (this.useToUnicode) {
-            unicode = this.toUnicode[charcode] || charcode;
+            fontChar = this.toUnicode[charcode] || charcode;
             break;
           }
           var glyphName = this.differences[charcode] || this.encoding[charcode];
@@ -2146,19 +2188,19 @@ var Font = (function FontClosure() {
           if (!isNum(width))
             width = this.widths[glyphName];
           if (this.noUnicodeAdaptation) {
-            unicode = GlyphsUnicode[glyphName] || charcode;
+            fontChar = GlyphsUnicode[glyphName] || charcode;
             break;
           }
           if (!this.hasEncoding) {
-            unicode = this.useToUnicode ? this.toUnicode[charcode] : charcode;
+            fontChar = this.useToUnicode ? this.toUnicode[charcode] : charcode;
             break;
           }
           if (this.hasShortCmap && false) {
             var j = Encodings.MacRomanEncoding.indexOf(glyphName);
-            unicode = j >= 0 ? j :
+            fontChar = j >= 0 ? j :
               this.glyphNameMap[glyphName];
           } else {
-            unicode = glyphName in GlyphsUnicode ?
+            fontChar = glyphName in GlyphsUnicode ?
               GlyphsUnicode[glyphName] :
               this.glyphNameMap[glyphName];
           }
@@ -2168,15 +2210,15 @@ var Font = (function FontClosure() {
           break;
       }
 
-      var unicodeChars = !('toUnicode' in this) ? charcode :
-        this.toUnicode[charcode] || charcode;
+      var unicodeChars = !('toUnicode' in this) ? fontChar :
+        this.toUnicode[charcode] || fontChar;
       if (typeof unicodeChars === 'number')
         unicodeChars = String.fromCharCode(unicodeChars);
 
       width = (isNum(width) ? width : this.defaultWidth) * this.widthMultiplier;
 
       return {
-        fontChar: String.fromCharCode(unicode),
+        fontChar: String.fromCharCode(fontChar),
         unicode: unicodeChars,
         width: width,
         codeIRQueue: codeIRQueue

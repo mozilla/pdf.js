@@ -505,11 +505,11 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
               var items = args[0];
               for (var j = 0, jj = items.length; j < jj; j++) {
                 if (typeof items[j] === 'string')
-                  text += items[j];
+                  text += fontCharsToUnicode(items[j], font.translated.properties);
               }
               break;
             case 'Tj':
-              text += args[0];
+              text += fontCharsToUnicode(args[0], font.translated.properties);;
               break;
           } // switch
 
