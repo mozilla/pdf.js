@@ -310,16 +310,67 @@ var PDFView = {
     else
       this.page = 1;
 
+    // loosing pdf reference here, starting text indexing in 500ms
     setTimeout((function loadStartTextExtraction() {
       this.startTextExtraction(pdf);
     }).bind(this), 500);
+    delete PDFView.extractedText;
   },
 
-  startTextExtraction: function(pdf) {
+  startTextExtraction: function pdfViewStartTextExtraction(pdf) {
+    var searchResults = document.getElementById('searchResults');
+    searchResults.textContent = '';
+
     pdf.textExtracted = function pdfTextExtracted(index) {
-      console.log(index.join());
+      PDFView.extractedText = index;
     };
     pdf.extractText();
+  },
+
+  search: function pdfViewStartSearch() {
+    function bindLink(link, pageNumber) {
+      link.href = '#' + pageNumber;
+      link.onclick = function searchBindLink() {
+        PDFView.page = pageNumber;
+        return false;
+      };
+    }
+
+    var searchResults = document.getElementById('searchResults');
+    if (!('extractedText' in PDFView)) {
+      // not indexed yet, repeat in 1 second
+      searchResults.textContent = 'Searching...';
+      setTimeout(this.search.bind(this), 1000);
+      return;
+    }
+
+    var searchTermsInput = document.getElementById('searchTermsInput');
+    searchResults.removeAttribute('hidden');
+    searchResults.textContent = '';
+
+    var terms = searchTermsInput.value;
+    // simple search: removing spaces and hyphens, then scanning every
+    terms = terms.replace(/\s-/g, '').toLowerCase();
+    var index = PDFView.extractedText;
+    var pageFound = false;
+    for (var i = 0, ii = index.length; i < ii; i++) {
+      var pageText = index[i].replace(/\s-/g, '').toLowerCase();
+      var j = pageText.indexOf(terms);
+      if (j < 0)
+        continue;
+
+      var pageNumber = i + 1;
+      var textSample = index[i].substr(j, 50);
+      var link = document.createElement('a');
+      bindLink(link, pageNumber);
+      link.textContent = 'Page ' + pageNumber + ': ' + textSample;
+      searchResults.appendChild(link);
+
+      pageFound = true;
+    }
+    if (!pageFound) {
+      searchResults.textContent = '(Not found)';
+    }
   },
 
   setHash: function pdfViewSetHash(hash) {
@@ -361,23 +412,36 @@ var PDFView = {
 
   switchSidebarView: function pdfViewSwitchSidebarView(view) {
     var thumbsScrollView = document.getElementById('sidebarScrollView');
-    var outlineScrollView = document.getElementById('outlineScrollView');
     var thumbsSwitchButton = document.getElementById('thumbsSwitch');
+    if (view == 'thumbs') {
+      thumbsScrollView.removeAttribute('hidden');
+      thumbsSwitchButton.setAttribute('data-selected', true);
+    } else {
+      thumbsScrollView.setAttribute('hidden', 'true');
+      thumbsSwitchButton.removeAttribute('data-selected');
+    }
+
+    var outlineScrollView = document.getElementById('outlineScrollView');
     var outlineSwitchButton = document.getElementById('outlineSwitch');
-    switch (view) {
-      case 'thumbs':
-        thumbsScrollView.removeAttribute('hidden');
-        outlineScrollView.setAttribute('hidden', 'true');
-        thumbsSwitchButton.setAttribute('data-selected', true);
-        outlineSwitchButton.removeAttribute('data-selected');
-        updateThumbViewArea();
-        break;
-      case 'outline':
-        thumbsScrollView.setAttribute('hidden', 'true');
-        outlineScrollView.removeAttribute('hidden');
-        thumbsSwitchButton.removeAttribute('data-selected');
-        outlineSwitchButton.setAttribute('data-selected', true);
-        break;
+    if (view == 'outline') {
+      outlineScrollView.removeAttribute('hidden');
+      outlineSwitchButton.setAttribute('data-selected', true);
+    } else {
+      outlineScrollView.setAttribute('hidden', 'true');
+      outlineSwitchButton.removeAttribute('data-selected');
+    }
+
+    var searchScrollView = document.getElementById('searchScrollView');
+    var searchSwitchButton = document.getElementById('searchSwitch');
+    if (view == 'search') {
+      searchScrollView.removeAttribute('hidden');
+      searchSwitchButton.setAttribute('data-selected', true);
+
+      var searchTermsInput = document.getElementById('searchTermsInput');
+      searchTermsInput.focus();
+    } else {
+      searchScrollView.setAttribute('hidden', 'true');
+      searchSwitchButton.removeAttribute('data-selected');
     }
   },
 
