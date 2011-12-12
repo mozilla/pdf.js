@@ -870,7 +870,14 @@ var JpxStream = (function jpxStream() {
   constructor.prototype.ensureBuffer = function jpxStreamEnsureBuffer(req) {
     if (this.bufferLength)
       return;
-    var jpxImage = openjpeg(this.bytes);
+    var jpxImage;
+    
+    try {
+      jpxImage = openjpeg(this.bytes, 'j2k');
+    } catch (e) {
+      console.log('hello', e);
+      // jpxImage = openjpeg(this.bytes, 'jp2');
+    }
     var width = jpxImage.width;
     var height = jpxImage.height;
     var data = jpxImage.data;
