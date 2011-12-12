@@ -4,11 +4,28 @@
 'use strict';
 
 var PDFImage = (function pdfImage() {
-  function constructor(xref, res, image, inline, handler) {
+  /**
+   * Decode the image in the main thread if it supported. Resovles the promise
+   * when the image data is ready.
+   */
+  function handleImageData(handler, xref, res, image, promise) {
+    if (image instanceof JpegStream && image.isNative) {
+      // For natively supported jpegs send them to the main thread for decoding.
+      var dict = image.dict;
+      var colorSpace = dict.get('ColorSpace', 'CS');
+      colorSpace =  ColorSpace.parse(colorSpace, xref, res);
+      var numComps = colorSpace.numComps;
+      handler.send('jpeg_decode', [image.getIR(), numComps], function(message) {
+        var data = message.data;
+        var stream = new Stream(data, 0, data.length, image.dict);
+        promise.resolve(stream);
+      });
+    } else {
+      promise.resolve(image);
+    }
+  }
+  function constructor(xref, res, image, inline, smask) {
     this.image = image;
-    this.imageReady = true;
-    this.smaskReady = true;
-    this.callbacks = [];
 
     if (image.getParams) {
       // JPX/JPEG2000 streams directly contain bits per component
@@ -55,31 +72,37 @@ var PDFImage = (function pdfImage() {
     this.decode = dict.get('Decode', 'D');
 
     var mask = xref.fetchIfRef(dict.get('Mask'));
-    var smask = xref.fetchIfRef(dict.get('SMask'));
 
     if (mask) {
       TODO('masked images');
     } else if (smask) {
-      this.smaskReady = false;
-      this.smask = new PDFImage(xref, res, smask, false, handler);
-      this.smask.ready(function() {
-        this.smaskReady = true;
-        if (this.isReady())
-          this.fireReady();
-      }.bind(this));
-    }
-
-    if (image instanceof JpegStream && image.isNative) {
-      this.imageReady = false;
-      handler.send('jpeg_decode', [image.getIR(), this.numComps], function(message) {
-        var data = message.data;
-        this.image = new Stream(data, 0, data.length);
-        this.imageReady = true;
-        if (this.isReady())
-          this.fireReady();
-      }.bind(this));
+      this.smask = new PDFImage(xref, res, smask, false);
     }
   }
+  /**
+   * Handles processing of image data and calls the callback with an argument
+   * of a PDFImage when the image is ready to be used.
+   */
+  constructor.buildImage = function buildImage(callback, handler, xref, res,
+                                               image, inline) {
+    var promise = new Promise();
+    var smaskPromise = new Promise();
+    var promises = [promise, smaskPromise];
+    // The image data and smask data may not be ready yet, wait till both are
+    // resolved.
+    Promise.all(promises).then(function(results) {
+      var image = new PDFImage(xref, res, results[0], inline, results[1]);
+      callback(image);
+    });
+
+    handleImageData(handler, xref, res, image, promise);
+
+    var smask = xref.fetchIfRef(image.dict.get('SMask'));
+    if (smask)
+      handleImageData(handler, xref, res, smask, smaskPromise);
+    else
+      smaskPromise.resolve(null);
+  };
 
   constructor.prototype = {
     getComponents: function getComponents(buffer, decodeMap) {
@@ -151,8 +174,6 @@ var PDFImage = (function pdfImage() {
       var buf = new Uint8Array(width * height);
 
       if (smask) {
-        if (!smask.isReady())
-          error('Soft mask is not ready.');
         var sw = smask.width;
         var sh = smask.height;
         if (sw != this.width || sh != this.height)
@@ -234,23 +255,8 @@ var PDFImage = (function pdfImage() {
         buffer[i] = comps[i];
     },
     getImageBytes: function getImageBytes(length) {
-      if (!this.isReady())
-        error('Image is not ready to be read.');
       this.image.reset();
       return this.image.getBytes(length);
-    },
-    isReady: function isReady() {
-      return this.imageReady && this.smaskReady;
-    },
-    fireReady: function fireReady() {
-      for (var i = 0; i < this.callbacks.length; ++i)
-        this.callbacks[i]();
-      this.callbacks = [];
-    },
-    ready: function ready(callback) {
-      this.callbacks.push(callback);
-      if (this.isReady())
-        this.fireReady();
     }
   };
   return constructor;

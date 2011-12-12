@@ -219,10 +219,8 @@ var PartialEvaluator = (function partialEvaluator() {
         }
 
         fn = 'paintImageXObject';
-        var imageObj = new PDFImage(xref, resources, image, inline, handler);
 
-        imageObj.ready((function() {
-          return function(data) {
+        PDFImage.buildImage(function(imageObj) {
             var imgData = {
               width: w,
               height: h,
@@ -231,8 +229,7 @@ var PartialEvaluator = (function partialEvaluator() {
             var pixels = imgData.data;
             imageObj.fillRgbaBuffer(pixels, imageObj.decode);
             handler.send('obj', [objId, 'Image', imgData]);
-          };
-        })(objId));
+          }, handler, xref, resources, image, inline);
       }
 
       uniquePrefix = uniquePrefix || '';
