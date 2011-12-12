@@ -84,17 +84,17 @@ var PDFImage = (function PDFImageClosure() {
    */
   PDFImage.buildImage = function buildImage(callback, handler, xref, res,
                                                image, inline) {
-    var promise = new Promise();
+    var imageDataPromise = new Promise();
     var smaskPromise = new Promise();
-    var promises = [promise, smaskPromise];
     // The image data and smask data may not be ready yet, wait till both are
     // resolved.
-    Promise.all(promises).then(function(results) {
-      var image = new PDFImage(xref, res, results[0], inline, results[1]);
+    Promise.all([imageDataPromise, smaskPromise]).then(function(results) {
+      var imageData = results[0], smaskData = results[1];
+      var image = new PDFImage(xref, res, imageData, inline, smaskData);
       callback(image);
     });
 
-    handleImageData(handler, xref, res, image, promise);
+    handleImageData(handler, xref, res, image, imageDataPromise);
 
     var smask = xref.fetchIfRef(image.dict.get('SMask'));
     if (smask)

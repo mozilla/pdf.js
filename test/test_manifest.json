@@ -340,5 +340,13 @@
        "link": true,
        "pageLimit": 3,
        "type": "eq"
+    },
+    {
+      "id": "aboutstacks",
+      "file": "pdfs/aboutstacks.pdf",
+      "md5": "6e7c8416a293ba2d83bc8dd20c6ccf51",
+      "rounds": 1,
+      "link": true,
+      "type": "eq"
     }
 ]

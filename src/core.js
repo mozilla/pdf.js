@@ -636,10 +636,10 @@ var PDFDoc = (function PDFDocClosure() {
           var size = width * height;
           var rgbaLength = size * 4;
           var buf = new Uint8Array(size * components);
-          var tempCanvas = new ScratchCanvas(width, height);
-          var tempCtx = tempCanvas.getContext('2d');
-          tempCtx.drawImage(img, 0, 0);
-          var data = tempCtx.getImageData(0, 0, width, height).data;
+          var tmpCanvas = new ScratchCanvas(width, height);
+          var tmpCtx = tmpCanvas.getContext('2d');
+          tmpCtx.drawImage(img, 0, 0);
+          var data = tmpCtx.getImageData(0, 0, width, height).data;
 
           if (components == 3) {
             for (var i = 0, j = 0; i < rgbaLength; i += 4, j += 3) {
