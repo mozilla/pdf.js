@@ -872,16 +872,26 @@ var JpxStream = (function jpxStream() {
       return;
     var jpxImage;
     
-    try {
-      jpxImage = openjpeg(this.bytes, 'j2k');
-    } catch (e) {
-      console.log('hello', e);
-      // jpxImage = openjpeg(this.bytes, 'jp2');
-    }
+    jpxImage = openjpeg(this.bytes, 'jp2');
     var width = jpxImage.width;
     var height = jpxImage.height;
-    var data = jpxImage.data;
-    this.buffer = data;
+    var data = jpxImage.data instanceof Uint8Array ? jpxImage.data :
+              new Uint8Array(jpxImage.data);
+
+    // openjpeg() returns planar RGB data. converts to alternating
+    // components
+    var pixelsPerChannel = width*height;
+    var _data = new Uint8Array(data.length);
+    var i = 0, j = 0;
+    while (i < _data.length && j < pixelsPerChannel) {
+      _data[i] = data[j];
+      _data[i+1] = data[j + pixelsPerChannel];
+      _data[i+2] = data[j + 2*pixelsPerChannel];
+      i += 3;
+      j++;
+    }
+
+    this.buffer = _data;
     this.bufferLength = data.length;
   };
   constructor.prototype.getIR = function jpxStreamGetIR() {
