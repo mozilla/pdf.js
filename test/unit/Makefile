@@ -11,6 +11,7 @@ PROG=java \
 -Xms512m \
 -Xmx1024m \
 -jar ../../external/jsTestDriver/JsTestDriver-1.3.3d.jar \
+--config ./jsTestDriver.conf \
 --reset \
 --port 4224 \
 --browser $(BROWSERS) \
