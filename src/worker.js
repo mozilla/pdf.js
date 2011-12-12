@@ -3,6 +3,9 @@
 
 'use strict';
 
+/**
+ * A wrapper for data to facilitate adding functionality to messages.
+ */
 function Message(data) {
   this.data = data;
   this.allowsReply = false;
@@ -10,6 +13,9 @@ function Message(data) {
   this.id;
 }
 Message.prototype = {
+  /**
+   * Reply to the action handler that sent the message.
+   */
   reply: function messageReply(data) {
     if (!this.allowsReply)
       error('This message does not accept replies.');
@@ -20,6 +26,11 @@ Message.prototype = {
       data: data
     });
   },
+  /**
+   * Setup the message to allow a reply.
+   * @param {function} messager A function that takes a JSON reply.
+   * @param {String} id The id to identify this message.
+   */
   setupReply: function setupReply(messager, id) {
     this.allowsReply = true;
     this.messager = messager;
@@ -73,7 +84,12 @@ MessageHandler.prototype = {
     }
     ah[actionName] = [handler, scope];
   },
-
+  /**
+   * Sends a message to the comObj to invoke the action with the supplied data.
+   * @param {String} actionName Action to call.
+   * @param {JSON} data JSON data to send.
+   * @param {function} [callback] Optional callback that will handle a reply.
+   */
   send: function messageHandlerSend(actionName, data, callback) {
     var message = {
       action: actionName,
