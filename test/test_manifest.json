@@ -340,5 +340,13 @@
        "link": true,
        "pageLimit": 3,
        "type": "eq"
+    },
+    {  "id": "issue919",
+       "file": "pdfs/issue919.pdf",
+       "md5": "3a1716a512aca4d7a8d6106bd4885d14",
+       "rounds": 1,
+       "link": true,
+       "pageLimit": 3,
+       "type": "eq"
     }
 ]
