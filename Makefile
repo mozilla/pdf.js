@@ -45,8 +45,9 @@ server:
 
 # make test
 #
-# This target runs all the tests. This can be used for testing all browsers.
-test: unit-test shell-test browser-test
+# This target runs all the tests excluding the unit-test. This can be used for
+# testing all browsers.
+test: shell-test browser-test
 
 #
 # Create production output (pdf.js, and corresponding changes to web files)
@@ -75,7 +76,6 @@ bundle: | $(BUILD_DIR)
 #
 # This target runs in-browser unit tests with js-test-driver and jasmine unit
 # test framework.
-
 unit-test:
 	@cd test/unit/ ; make ;
 
