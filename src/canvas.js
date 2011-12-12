@@ -1053,6 +1053,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
 
       this.restore();
     },
+
     paintImageMaskXObject: function canvasGraphicsPaintImageMaskXObject(
                              imgArray, inverseDecode, width, height) {
       function applyStencilMask(buffer, inverseDecode) {

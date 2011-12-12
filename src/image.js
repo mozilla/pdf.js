@@ -26,7 +26,6 @@ var PDFImage = (function PDFImageClosure() {
   }
   function PDFImage(xref, res, image, inline, smask) {
     this.image = image;
-
     if (image.getParams) {
       // JPX/JPEG2000 streams directly contain bits per component
       // and color space mode information.

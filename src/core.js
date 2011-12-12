@@ -16,6 +16,7 @@ var verbosity = WARNINGS;
 if (!globalScope.PDFJS) {
   globalScope.PDFJS = {};
 }
+
 // getPdf()
 // Convenience function to perform binary Ajax GET
 // Usage: getPdf('http://...', callback)
@@ -446,7 +447,6 @@ var PDFDocModel = (function PDFDocModelClosure() {
                            this.startXRef,
                            this.mainXRefEntriesOffset);
       this.catalog = new Catalog(this.xref);
-      this.objs = new PDFObjects();
     },
     get numPages() {
       var linearization = this.linearization;
