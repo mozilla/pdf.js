@@ -17,8 +17,8 @@ var TextRenderingMode = {
   ADD_TO_PATH: 7
 };
 
-var CanvasExtraState = (function canvasExtraState() {
-  function constructor(old) {
+var CanvasExtraState = (function CanvasExtraStateClosure() {
+  function CanvasExtraState(old) {
     // Are soft masks and alpha values shapes or opacities?
     this.alphaIsShape = false;
     this.fontSize = 0;
@@ -52,7 +52,7 @@ var CanvasExtraState = (function canvasExtraState() {
     this.old = old;
   }
 
-  constructor.prototype = {
+  CanvasExtraState.prototype = {
     clone: function canvasextra_clone() {
       return Object.create(this);
     },
@@ -61,7 +61,7 @@ var CanvasExtraState = (function canvasExtraState() {
       this.y = y;
     }
   };
-  return constructor;
+  return CanvasExtraState;
 })();
 
 function ScratchCanvas(width, height) {
@@ -181,12 +181,12 @@ function addContextCurrentTransform(ctx) {
   }
 }
 
-var CanvasGraphics = (function canvasGraphics() {
+var CanvasGraphics = (function CanvasGraphicsClosure() {
   // Defines the time the executeIRQueue is going to be executing
   // before it stops and shedules a continue of execution.
   var kExecutionTime = 50;
 
-  function constructor(canvasCtx, objs, textLayer) {
+  function CanvasGraphics(canvasCtx, objs, textLayer) {
     this.ctx = canvasCtx;
     this.current = new CanvasExtraState();
     this.stateStack = [];
@@ -206,7 +206,7 @@ var CanvasGraphics = (function canvasGraphics() {
   var NORMAL_CLIP = {};
   var EO_CLIP = {};
 
-  constructor.prototype = {
+  CanvasGraphics.prototype = {
     slowCommands: {
       'stroke': true,
       'closeStroke': true,
@@ -985,9 +985,9 @@ var CanvasGraphics = (function canvasGraphics() {
         var height = canvas.height;
 
         var bl = Util.applyTransform([0, 0], inv);
-        var br = Util.applyTransform([0, width], inv);
-        var ul = Util.applyTransform([height, 0], inv);
-        var ur = Util.applyTransform([height, width], inv);
+        var br = Util.applyTransform([0, height], inv);
+        var ul = Util.applyTransform([width, 0], inv);
+        var ur = Util.applyTransform([width, height], inv);
 
         var x0 = Math.min(bl[0], br[0], ul[0], ur[0]);
         var y0 = Math.min(bl[1], br[1], ul[1], ur[1]);
@@ -1116,24 +1116,14 @@ var CanvasGraphics = (function canvasGraphics() {
 
       var tmpCanvas = new this.ScratchCanvas(w, h);
       var tmpCtx = tmpCanvas.getContext('2d');
-      var tmpImgData;
+      this.putBinaryImageData(tmpCtx, imgData, w, h);
 
-      // Some browsers can set an UInt8Array directly as imageData, some
-      // can't. As long as we don't have proper feature detection, just
-      // copy over each pixel and set the imageData that way.
-      tmpImgData = tmpCtx.getImageData(0, 0, w, h);
-
-      // Copy over the imageData.
-      var tmpImgDataPixels = tmpImgData.data;
-      var len = tmpImgDataPixels.length;
-
-      while (len--) {
-        tmpImgDataPixels[len] = imgData.data[len];
-      }
-
-      tmpCtx.putImageData(tmpImgData, 0, 0);
       ctx.drawImage(tmpCanvas, 0, -h);
       this.restore();
+    },
+
+    putBinaryImageData: function canvasPutBinaryImageData() {
+      //
     },
 
     // Marked content
@@ -1193,6 +1183,41 @@ var CanvasGraphics = (function canvasGraphics() {
     }
   };
 
-  return constructor;
+  return CanvasGraphics;
 })();
 
+if (!isWorker) {
+  // Feature detection if the browser can use an Uint8Array directly as imgData.
+  var canvas = document.createElement('canvas');
+  canvas.width = 1;
+  canvas.height = 1;
+  var ctx = canvas.getContext('2d');
+
+  try {
+    ctx.putImageData({
+      width: 1,
+      height: 1,
+      data: new Uint8Array(4)
+    }, 0, 0);
+
+    CanvasGraphics.prototype.putBinaryImageData =
+      function CanvasGraphicsPutBinaryImageDataNative(ctx, imgData) {
+        ctx.putImageData(imgData, 0, 0);
+      };
+  } catch (e) {
+    CanvasGraphics.prototype.putBinaryImageData =
+      function CanvasGraphicsPutBinaryImageDataShim(ctx, imgData, w, h) {
+        var tmpImgData = ctx.getImageData(0, 0, w, h);
+
+        // Copy over the imageData pixel by pixel.
+        var tmpImgDataPixels = tmpImgData.data;
+        var len = tmpImgDataPixels.length;
+
+        while (len--) {
+          tmpImgDataPixels[len] = imgData.data[len];
+        }
+
+        ctx.putImageData(tmpImgData, 0, 0);
+      };
+  }
+}

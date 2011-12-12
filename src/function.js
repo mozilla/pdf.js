@@ -3,7 +3,7 @@
 
 'use strict';
 
-var PDFFunction = (function pdfFunction() {
+var PDFFunction = (function PDFFunctionClosure() {
   var CONSTRUCT_SAMPLED = 0;
   var CONSTRUCT_INTERPOLATED = 2;
   var CONSTRUCT_STICHED = 3;

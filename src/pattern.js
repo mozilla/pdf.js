@@ -8,13 +8,13 @@ var PatternType = {
   RADIAL: 3
 };
 
-var Pattern = (function patternPattern() {
+var Pattern = (function PatternClosure() {
   // Constructor should define this.getPattern
-  function constructor() {
+  function Pattern() {
     error('should not call Pattern constructor');
   }
 
-  constructor.prototype = {
+  Pattern.prototype = {
     // Input: current Canvas context
     // Output: the appropriate fillStyle or strokeStyle
     getPattern: function pattern_getStyle(ctx) {
@@ -22,11 +22,11 @@ var Pattern = (function patternPattern() {
     }
   };
 
-  constructor.shadingFromIR = function pattern_shadingFromIR(ctx, raw) {
+  Pattern.shadingFromIR = function pattern_shadingFromIR(ctx, raw) {
     return Shadings[raw[0]].fromIR(ctx, raw);
   };
 
-  constructor.parseShading = function pattern_shading(shading, matrix, xref,
+  Pattern.parseShading = function pattern_shading(shading, matrix, xref,
                                                       res, ctx) {
 
     var dict = isStream(shading) ? shading.dict : shading;
@@ -41,15 +41,15 @@ var Pattern = (function patternPattern() {
         return new Shadings.Dummy();
     }
   };
-  return constructor;
+  return Pattern;
 })();
 
 var Shadings = {};
 
 // Radial and axial shading have very similar implementations
 // If needed, the implementations can be broken into two classes
-Shadings.RadialAxial = (function radialAxialShading() {
-  function constructor(dict, matrix, xref, res, ctx) {
+Shadings.RadialAxial = (function RadialAxialClosure() {
+  function RadialAxial(dict, matrix, xref, res, ctx) {
     this.matrix = matrix;
     this.coordsArr = dict.get('Coords');
     this.shadingType = dict.get('ShadingType');
@@ -102,7 +102,7 @@ Shadings.RadialAxial = (function radialAxialShading() {
     this.colorStops = colorStops;
   }
 
-  constructor.fromIR = function radialAxialShadingGetIR(ctx, raw) {
+  RadialAxial.fromIR = function radialAxialShadingGetIR(ctx, raw) {
     var type = raw[1];
     var colorStops = raw[2];
     var p0 = raw[3];
@@ -134,7 +134,7 @@ Shadings.RadialAxial = (function radialAxialShading() {
     return grad;
   };
 
-  constructor.prototype = {
+  RadialAxial.prototype = {
     getIR: function radialAxialShadingGetIR() {
       var coordsArr = this.coordsArr;
       var type = this.shadingType;
@@ -162,28 +162,32 @@ Shadings.RadialAxial = (function radialAxialShading() {
     }
   };
 
-  return constructor;
+  return RadialAxial;
 })();
 
-Shadings.Dummy = (function dummyShading() {
-  function constructor() {
+Shadings.Dummy = (function DummyClosure() {
+  function Dummy() {
     this.type = 'Pattern';
   }
 
-  constructor.fromIR = function dummyShadingFromIR() {
+  Dummy.fromIR = function dummyShadingFromIR() {
     return 'hotpink';
   };
 
-  constructor.prototype = {
+  Dummy.prototype = {
     getIR: function dummyShadingGetIR() {
       return ['Dummy'];
     }
   };
-  return constructor;
+  return Dummy;
 })();
 
-var TilingPattern = (function tilingPattern() {
-  var PAINT_TYPE_COLORED = 1, PAINT_TYPE_UNCOLORED = 2;
+var TilingPattern = (function TilingPatternClosure() {
+  var PaintType = {
+    COLORED: 1,
+    UNCOLORED: 2
+  };
+  var MAX_PATTERN_SIZE = 512;
 
   function TilingPattern(IR, color, ctx, objs) {
     var IRQueue = IR[2];
@@ -209,13 +213,13 @@ var TilingPattern = (function tilingPattern() {
     var width = botRight[0] - topLeft[0];
     var height = botRight[1] - topLeft[1];
 
-    // TODO: hack to avoid OOM, we would idealy compute the tiling
+    // TODO: hack to avoid OOM, we would ideally compute the tiling
     // pattern to be only as large as the acual size in device space
     // This could be computed with .mozCurrentTransform, but still
     // needs to be implemented
-    while (Math.abs(width) > 512 || Math.abs(height) > 512) {
-      width = 512;
-      height = 512;
+    while (Math.abs(width) > MAX_PATTERN_SIZE ||
+           Math.abs(height) > MAX_PATTERN_SIZE) {
+      width = height = MAX_PATTERN_SIZE;
     }
 
     var tmpCanvas = new ScratchCanvas(width, height);
@@ -225,11 +229,11 @@ var TilingPattern = (function tilingPattern() {
     var graphics = new CanvasGraphics(tmpCtx, objs);
 
     switch (paintType) {
-      case PAINT_TYPE_COLORED:
+      case PaintType.COLORED:
         tmpCtx.fillStyle = ctx.fillStyle;
         tmpCtx.strokeStyle = ctx.strokeStyle;
         break;
-      case PAINT_TYPE_UNCOLORED:
+      case PaintType.UNCOLORED:
         color = Util.makeCssRgb.apply(this, color);
         tmpCtx.fillStyle = color;
         tmpCtx.strokeStyle = color;

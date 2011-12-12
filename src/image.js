@@ -3,7 +3,7 @@
 
 'use strict';
 
-var PDFImage = (function pdfImage() {
+var PDFImage = (function PDFImageClosure() {
   /**
    * Decode the image in the main thread if it supported. Resovles the promise
    * when the image data is ready.
@@ -24,7 +24,7 @@ var PDFImage = (function pdfImage() {
       promise.resolve(image);
     }
   }
-  function constructor(xref, res, image, inline, smask) {
+  function PDFImage(xref, res, image, inline, smask) {
     this.image = image;
 
     if (image.getParams) {
@@ -83,7 +83,7 @@ var PDFImage = (function pdfImage() {
    * Handles processing of image data and calls the callback with an argument
    * of a PDFImage when the image is ready to be used.
    */
-  constructor.buildImage = function buildImage(callback, handler, xref, res,
+  PDFImage.buildImage = function buildImage(callback, handler, xref, res,
                                                image, inline) {
     var promise = new Promise();
     var smaskPromise = new Promise();
@@ -104,7 +104,7 @@ var PDFImage = (function pdfImage() {
       smaskPromise.resolve(null);
   };
 
-  constructor.prototype = {
+  PDFImage.prototype = {
     getComponents: function getComponents(buffer, decodeMap) {
       var bpc = this.bpc;
       if (bpc == 8)
@@ -259,8 +259,9 @@ var PDFImage = (function pdfImage() {
       return this.image.getBytes(length);
     }
   };
-  return constructor;
+  return PDFImage;
 })();
+
 function loadJpegStream(id, imageData, objs) {
   var img = new Image();
   img.onload = (function jpegImageLoaderOnload() {
@@ -268,3 +269,4 @@ function loadJpegStream(id, imageData, objs) {
   });
   img.src = 'data:image/jpeg;base64,' + window.btoa(imageData);
 }
+

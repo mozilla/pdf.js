@@ -5,6 +5,8 @@
 
 var globalScope = (typeof window === 'undefined') ? this : window;
 
+var isWorker = (typeof window == 'undefined');
+
 var ERRORS = 0, WARNINGS = 1, TODOS = 5;
 var verbosity = TODOS;
 
@@ -31,7 +33,7 @@ function getPdf(arg, callback) {
   var xhr = new XMLHttpRequest();
   xhr.open('GET', params.url);
   xhr.mozResponseType = xhr.responseType = 'arraybuffer';
-  xhr.expected = (document.URL.indexOf('file:') === 0) ? 0 : 200;
+  xhr.expected = (params.url.indexOf('file:') === 0) ? 0 : 200;
 
   if ('progress' in params)
     xhr.onprogress = params.progress || undefined;
@@ -54,8 +56,8 @@ function getPdf(arg, callback) {
 }
 globalScope.PDFJS.getPdf = getPdf;
 
-var Page = (function pagePage() {
-  function constructor(xref, pageNumber, pageDict, ref) {
+var Page = (function PageClosure() {
+  function Page(xref, pageNumber, pageDict, ref) {
     this.pageNumber = pageNumber;
     this.pageDict = pageDict;
     this.stats = {
@@ -72,7 +74,7 @@ var Page = (function pagePage() {
     this.callback = null;
   }
 
-  constructor.prototype = {
+  Page.prototype = {
     getPageProp: function pageGetPageProp(key) {
       return this.xref.fetchIfRef(this.pageDict.get(key));
     },
@@ -323,7 +325,7 @@ var Page = (function pagePage() {
     }
   };
 
-  return constructor;
+  return Page;
 })();
 
 /**
@@ -336,8 +338,8 @@ var Page = (function pagePage() {
  * need for the `PDFDocModel` anymore and there is only one object on the
  * main thread and not one entire copy on each worker instance.
  */
-var PDFDocModel = (function pdfDoc() {
-  function constructor(arg, callback) {
+var PDFDocModel = (function PDFDocModelClosure() {
+  function PDFDocModel(arg, callback) {
     if (isStream(arg))
       init.call(this, arg);
     else if (isArrayBuffer(arg))
@@ -368,7 +370,7 @@ var PDFDocModel = (function pdfDoc() {
     return true; /* found */
   }
 
-  constructor.prototype = {
+  PDFDocModel.prototype = {
     get linearization() {
       var length = this.stream.length;
       var linearization = false;
@@ -390,12 +392,17 @@ var PDFDocModel = (function pdfDoc() {
         if (find(stream, 'endobj', 1024))
           startXRef = stream.pos + 6;
       } else {
-        // Find startxref at the end of the file.
-        var start = stream.end - 1024;
-        if (start < 0)
-          start = 0;
-        stream.pos = start;
-        if (find(stream, 'startxref', 1024, true)) {
+        // Find startxref by jumping backward from the end of the file.
+        var step = 1024;
+        var found = false, pos = stream.end;
+        while (!found && pos > 0) {
+          pos -= step - 'startxref'.length;
+          if (pos < 0)
+            pos = 0;
+          stream.pos = pos;
+          found = find(stream, 'startxref', step, true);
+        }
+        if (found) {
           stream.skip(9);
           var ch;
           do {
@@ -453,11 +460,11 @@ var PDFDocModel = (function pdfDoc() {
     }
   };
 
-  return constructor;
+  return PDFDocModel;
 })();
 
-var PDFDoc = (function pdfDoc() {
-  function constructor(arg, callback) {
+var PDFDoc = (function PDFDocClosure() {
+  function PDFDoc(arg, callback) {
     var stream = null;
     var data = null;
 
@@ -526,7 +533,7 @@ var PDFDoc = (function pdfDoc() {
     }
   }
 
-  constructor.prototype = {
+  PDFDoc.prototype = {
     setupFakeWorker: function() {
       // If we don't use a worker, just post/sendMessage to the main thread.
       var fakeWorker = {
@@ -698,7 +705,7 @@ var PDFDoc = (function pdfDoc() {
     }
   };
 
-  return constructor;
+  return PDFDoc;
 })();
 
 globalScope.PDFJS.PDFDoc = PDFDoc;
