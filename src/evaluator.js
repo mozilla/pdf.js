@@ -179,7 +179,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         return loadedName;
       }
 
-      function buildPaintImageXObject(image, inline) {        
+      function buildPaintImageXObject(image, inline) {
         var dict = image.dict;
         var w = dict.get('Width', 'W');
         var h = dict.get('Height', 'H');

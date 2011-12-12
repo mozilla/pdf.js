@@ -13,7 +13,7 @@ var PDFImage = (function PDFImageClosure() {
       // For natively supported jpegs send them to the main thread for decoding.
       var dict = image.dict;
       var colorSpace = dict.get('ColorSpace', 'CS');
-      colorSpace =  ColorSpace.parse(colorSpace, xref, res);
+      colorSpace = ColorSpace.parse(colorSpace, xref, res);
       var numComps = colorSpace.numComps;
       handler.send('jpeg_decode', [image.getIR(), numComps], function(message) {
         var data = message.data;

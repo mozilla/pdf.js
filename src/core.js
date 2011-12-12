@@ -647,7 +647,7 @@ var PDFDoc = (function PDFDocClosure() {
               buf[j + 1] = data[i + 1];
               buf[j + 2] = data[i + 2];
             }
-          } else if(components == 1) {
+          } else if (components == 1) {
             for (var i = 0, j = 0; i < rgbaLength; i += 4, j++) {
               buf[j] = data[i];
             }

@@ -220,8 +220,8 @@ var Promise = (function PromiseClosure() {
   /**
    * Builds a promise that is resolved when all the passed in promises are
    * resolved.
-   * @param Array promises
-   * @return Promise
+   * @param {Promise[]} promises Array of promises to wait for.
+   * @return {Promise} New dependant promise.
    */
   Promise.all = function(promises) {
     var deferred = new Promise();

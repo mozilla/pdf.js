@@ -25,7 +25,7 @@ Message.prototype = {
     this.messager = messager;
     this.id = id;
   }
-}
+};
 
 function MessageHandler(name, comObj) {
   this.name = name;
