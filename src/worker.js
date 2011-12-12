@@ -164,23 +164,34 @@ var WorkerMessageHandler = {
     handler.on('extract_text', function wphExtractText() {
       var numPages = pdfDoc.numPages;
       var index = [];
-      for (var i = 0; i < numPages; i++) {
-        var start = Date.now();
+      var start = Date.now();
+
+      function indexPage(pageNum) {
+        if (pageNum > numPages) {
+          console.log('text indexing=: time=%dms', Date.now() - start);
+
+          handler.send('text_extracted', { index: index });
+          return;
+        }
 
         var textContent = '';
         try {
-          var page = pdfDoc.getPage(i + 1);
+          var page = pdfDoc.getPage(pageNum);
           textContent = page.extractTextContent();
         } catch (e) {
           // Skip errored pages
         }
 
         index.push(textContent);
+
+        // processing one page, interrupting thread to process
+        // other requests
+        setTimeout(function extractTextNextPage() {
+          indexPage(pageNum + 1);
+        }, 0);
       }
 
-      console.log('text indexing=: time=%dms', Date.now() - start);
-
-      handler.send('text_extracted', { index: index });
+      indexPage(1);
     });
   }
 };

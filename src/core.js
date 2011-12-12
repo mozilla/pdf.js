@@ -205,7 +205,7 @@ var Page = (function PageClosure() {
           streams.push(xref.fetchIfRef(content[i]));
         content = new StreamsSequenceStream(streams);
       } else if (isStream(content))
-        content.pos = 0;
+        content.reset();
 
       var pe = this.pe = new PartialEvaluator(
                                 xref, handler, 'p' + this.pageNumber + '_');
@@ -236,7 +236,7 @@ var Page = (function PageClosure() {
           streams.push(xref.fetchIfRef(content[i]));
         content = new StreamsSequenceStream(streams);
       } else if (isStream(content))
-        content.pos = 0;
+        content.reset();
 
       var pe = new PartialEvaluator(
                      xref, handler, 'p' + this.pageNumber + '_');
