@@ -9,7 +9,7 @@
 function Message(data) {
   this.data = data;
   this.allowsReply = false;
-  this.messager;
+  this.combObj;
   this.id;
 }
 Message.prototype = {
@@ -20,7 +20,7 @@ Message.prototype = {
     if (!this.allowsReply)
       error('This message does not accept replies.');
 
-    this.messager({
+    this.combObj.postMessage({
       isReply: true,
       callbackId: this.id,
       data: data
@@ -28,12 +28,12 @@ Message.prototype = {
   },
   /**
    * Setup the message to allow a reply.
-   * @param {function} messager A function that takes a JSON reply.
+   * @param {Object} combObj The handler that has a postMessage function.
    * @param {String} id The id to identify this message.
    */
-  setupReply: function setupReply(messager, id) {
+  setupReply: function setupReply(combObj, id) {
     this.allowsReply = true;
-    this.messager = messager;
+    this.combObj = combObj;
     this.id = id;
   }
 };
@@ -67,7 +67,7 @@ function MessageHandler(name, comObj) {
       var action = ah[data.action];
       var message = new Message(data.data);
       if (data.callbackId)
-        message.setupReply(this.postMessage, data.callbackId);
+        message.setupReply(comObj, data.callbackId);
 
       action[0].call(action[1], message);
     } else {
