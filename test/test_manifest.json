@@ -348,5 +348,11 @@
        "link": true,
        "pageLimit": 3,
        "type": "eq"
+    },
+    {  "id": "issue918",
+       "file": "pdfs/issue918.pdf",
+       "md5": "d582cc0f2592ae82936589ced2a47e55",
+       "rounds": 1,
+       "type": "eq"
     }
 ]
