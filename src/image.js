@@ -104,10 +104,13 @@ var PDFImage = (function PDFImageClosure() {
   };
 
   PDFImage.prototype = {
-    getComponents: function getComponents(buffer, decodeMap) {
+    getComponents: function getComponents(buffer) {
       var bpc = this.bpc;
-      if (bpc == 8)
-        return buffer;
+      var decodeMap = this.decode;
+      //if (decodeMap)
+      //  debugger;
+      //if (bpc == 8)
+      //  return buffer;
 
       var width = this.width;
       var height = this.height;
@@ -160,6 +163,14 @@ var PDFImage = (function PDFImageClosure() {
 
           var remainingBits = bits - bpc;
           output[i] = buf >> remainingBits;
+          if (decodeMap) {
+            var x = output[i];
+            var dmin = decodeMap[0];
+            var dmax = decodeMap[1];
+            var max = Math.pow(2, bpc) - 1;
+            var val = max * (dmin + x * ((dmax - dmin)/(max)));
+            output[i] = val;
+          }
           buf = buf & ((1 << remainingBits) - 1);
           bits = remainingBits;
         }
@@ -210,7 +221,7 @@ var PDFImage = (function PDFImageClosure() {
         }
       }
     },
-    fillRgbaBuffer: function fillRgbaBuffer(buffer, decodeMap) {
+    fillRgbaBuffer: function fillRgbaBuffer(buffer) {
       var numComps = this.numComps;
       var width = this.width;
       var height = this.height;
@@ -221,7 +232,7 @@ var PDFImage = (function PDFImageClosure() {
       var imgArray = this.getImageBytes(height * rowBytes);
 
       var comps = this.colorSpace.getRgbBuffer(
-        this.getComponents(imgArray, decodeMap), bpc);
+        this.getComponents(imgArray), bpc);
       var compsPos = 0;
       var opacity = this.getOpacity();
       var opacityPos = 0;
