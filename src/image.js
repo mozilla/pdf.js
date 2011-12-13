@@ -25,11 +25,10 @@ var PDFImage = (function PDFImageClosure() {
     }
   }
   /**
-   * Decode and clamp a value.
+   * Decode and clamp a value. The formula is different from the spec because we
+   * don't decode to float range [0,1], we decode it in the [0,max] range.
    */
-  function decode(value, addend, coefficient, max) {
-    // This formula is different from the spec because we don't decode to
-    // float range [0,1], we decode it in the [0,max] range.
+  function decodeAndClamp(value, addend, coefficient, max) {
     value = addend + value * coefficient;
     // Clamp the value to the range
     return value < 0 ? 0 : value > max ? max : value;
@@ -79,7 +78,10 @@ var PDFImage = (function PDFImageClosure() {
     }
 
     this.decode = dict.get('Decode', 'D');
-    if (this.decode && !this.hasDefaultDecode()) {
+    this.needsDecode = false;
+    if (this.decode && this.colorSpace &&
+        !this.colorSpace.isDefaultDecode(this.decode)) {
+      this.needsDecode = true;
       // Do some preprocessing to avoid more math.
       var max = (1 << bitsPerComponent) - 1;
       this.decodeCoefficients = [];
@@ -128,12 +130,13 @@ var PDFImage = (function PDFImageClosure() {
   PDFImage.prototype = {
     getComponents: function getComponents(buffer) {
       var bpc = this.bpc;
-      var defaultDecode = this.hasDefaultDecode();
+      var needsDecode = this.needsDecode;
       var decodeMap = this.decode;
-      if (decodeMap) console.time('getComps');
-      // This image doesn't require extra work
-      if (bpc == 8 && defaultDecode)
+
+      // This image doesn't require any extra work.
+      if (bpc == 8 && !needsDecode)
         return buffer;
+
       var bufferLength = buffer.length;
       var width = this.width;
       var height = this.height;
@@ -145,7 +148,7 @@ var PDFImage = (function PDFImageClosure() {
         bpc <= 16 ? new Uint16Array(length) : new Uint32Array(length);
       var rowComps = width * numComps;
       var decodeAddends, decodeCoefficients;
-      if (!defaultDecode) {
+      if (needsDecode) {
         decodeAddends = this.decodeAddends;
         decodeCoefficients = this.decodeCoefficients;
       }
@@ -156,7 +159,7 @@ var PDFImage = (function PDFImageClosure() {
         for (var i = 0, ii = length; i < ii; ++i) {
           var compIndex = i % numComps;
           var value = buffer[i];
-          value = decode(value, decodeAddends[compIndex],
+          value = decodeAndClamp(value, decodeAddends[compIndex],
                           decodeCoefficients[compIndex], max);
           output[i] = value;
         }
@@ -201,9 +204,9 @@ var PDFImage = (function PDFImageClosure() {
 
           var remainingBits = bits - bpc;
           var value = buf >> remainingBits;
-          if (!defaultDecode) {
+          if (needsDecode) {
             var compIndex = i % numComps;
-            value = decode(value, decodeAddends[compIndex],
+            value = decodeAndClamp(value, decodeAddends[compIndex],
                             decodeCoefficients[compIndex], max);
           }
           output[i] = value;
@@ -304,22 +307,6 @@ var PDFImage = (function PDFImageClosure() {
     getImageBytes: function getImageBytes(length) {
       this.image.reset();
       return this.image.getBytes(length);
-    },
-    hasDefaultDecode: function hasDefaultDecode() {
-      // TODO lab color as a way different decode map
-      if (!this.decode)
-        return true;
-      var numComps = this.numComps;
-      var decode = this.decode;
-      if (numComps * 2 !== decode.length) {
-        warning('The decode map is not the correct length');
-        return true;
-      }
-      for (var i = 0, ii = decode.length; i < ii; i += 2) {
-        if (decode[i] != 0 || decode[i + 1] != 1)
-          return false;
-      }
-      return true;
     }
   };
   return PDFImage;
