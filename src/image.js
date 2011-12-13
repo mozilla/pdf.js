@@ -24,6 +24,16 @@ var PDFImage = (function PDFImageClosure() {
       promise.resolve(image);
     }
   }
+  /**
+   * Decode and clamp a value.
+   */
+  function decode(value, addend, coefficient, max) {
+    // This formula is different from the spec because we don't decode to
+    // float range [0,1], we decode it in the [0,max] range.
+    value = addend + value * coefficient;
+    // Clamp the value to the range
+    return value < 0 ? 0 : value > max ? max : value;
+  }
   function PDFImage(xref, res, image, inline, smask) {
     this.image = image;
     if (image.getParams) {
@@ -69,6 +79,18 @@ var PDFImage = (function PDFImageClosure() {
     }
 
     this.decode = dict.get('Decode', 'D');
+    if (this.decode && !this.hasDefaultDecode()) {
+      // Do some preprocessing to avoid more math.
+      var max = (1 << bitsPerComponent) - 1;
+      this.decodeCoefficients = [];
+      this.decodeAddends = [];
+      for (var i = 0, j = 0; i < this.decode.length; i += 2, ++j) {
+        var dmin = this.decode[i];
+        var dmax = this.decode[i + 1];
+        this.decodeCoefficients[j] = dmax - dmin;
+        this.decodeAddends[j] = max * dmin;
+      }
+    }
 
     var mask = xref.fetchIfRef(dict.get('Mask'));
 
@@ -106,23 +128,40 @@ var PDFImage = (function PDFImageClosure() {
   PDFImage.prototype = {
     getComponents: function getComponents(buffer) {
       var bpc = this.bpc;
+      var defaultDecode = this.hasDefaultDecode();
       var decodeMap = this.decode;
-      //if (decodeMap)
-      //  debugger;
-      //if (bpc == 8)
-      //  return buffer;
-
+      if (decodeMap) console.time('getComps');
+      // This image doesn't require extra work
+      if (bpc == 8 && defaultDecode)
+        return buffer;
+      var bufferLength = buffer.length;
       var width = this.width;
       var height = this.height;
       var numComps = this.numComps;
 
-      var length = width * height;
+      var length = width * height * numComps;
       var bufferPos = 0;
       var output = bpc <= 8 ? new Uint8Array(length) :
         bpc <= 16 ? new Uint16Array(length) : new Uint32Array(length);
       var rowComps = width * numComps;
+      var decodeAddends, decodeCoefficients;
+      if (!defaultDecode) {
+        decodeAddends = this.decodeAddends;
+        decodeCoefficients = this.decodeCoefficients;
+      }
+      var max = (1 << bpc) - 1;
 
-      if (bpc == 1) {
+      if (bpc == 8) {
+        // Optimization for reading 8 bpc images that have a decode.
+        for (var i = 0, ii = length; i < ii; ++i) {
+          var compIndex = i % numComps;
+          var value = buffer[i];
+          value = decode(value, decodeAddends[compIndex],
+                          decodeCoefficients[compIndex], max);
+          output[i] = value;
+        }
+      } else if (bpc == 1) {
+        // Optimization for reading 1 bpc images.
         var valueZero = 0, valueOne = 1;
         if (decodeMap) {
           valueZero = decodeMap[0] ? 1 : 0;
@@ -147,8 +186,7 @@ var PDFImage = (function PDFImageClosure() {
           output[i] = !(buf & mask) ? valueZero : valueOne;
         }
       } else {
-        if (decodeMap != null)
-          TODO('interpolate component values');
+        // The general case that handles all other bpc values.
         var bits = 0, buf = 0;
         for (var i = 0, ii = length; i < ii; ++i) {
           if (i % rowComps == 0) {
@@ -162,19 +200,18 @@ var PDFImage = (function PDFImageClosure() {
           }
 
           var remainingBits = bits - bpc;
-          output[i] = buf >> remainingBits;
-          if (decodeMap) {
-            var x = output[i];
-            var dmin = decodeMap[0];
-            var dmax = decodeMap[1];
-            var max = Math.pow(2, bpc) - 1;
-            var val = max * (dmin + x * ((dmax - dmin)/(max)));
-            output[i] = val;
+          var value = buf >> remainingBits;
+          if (!defaultDecode) {
+            var compIndex = i % numComps;
+            value = decode(value, decodeAddends[compIndex],
+                            decodeCoefficients[compIndex], max);
           }
+          output[i] = value;
           buf = buf & ((1 << remainingBits) - 1);
           bits = remainingBits;
         }
       }
+      if(decodeMap) console.timeEnd('getComps');
       return output;
     },
     getOpacity: function getOpacity() {
@@ -267,6 +304,22 @@ var PDFImage = (function PDFImageClosure() {
     getImageBytes: function getImageBytes(length) {
       this.image.reset();
       return this.image.getBytes(length);
+    },
+    hasDefaultDecode: function hasDefaultDecode() {
+      // TODO lab color as a way different decode map
+      if (!this.decode)
+        return true;
+      var numComps = this.numComps;
+      var decode = this.decode;
+      if (numComps * 2 !== decode.length) {
+        warning('The decode map is not the correct length');
+        return true;
+      }
+      for (var i = 0, ii = decode.length; i < ii; i += 2) {
+        if (decode[i] != 0 || decode[i + 1] != 1)
+          return false;
+      }
+      return true;
     }
   };
   return PDFImage;
