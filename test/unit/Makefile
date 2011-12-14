@@ -21,7 +21,7 @@ BROWSERS:=$(shell echo `\
   sed 's/\(Aurora\.app\)/\1\/Contents\/MacOS\/firefox-bin/' | \
   sed 's/\(Firefox[ Beta]*\.app\)/\1\/Contents\/MacOS\/firefox-bin/' | \
   sed "s|\(irefox[.exe\-bin]*\)\"|\1;$(FIREFOX_ARGS)\"|g" | \
-  sed "s|\(hrome*\)\"|\1;$(CHROME_ARGS)\"|g" \
+  sed "s|\(hrome[.exe]*\)\"|\1;$(CHROME_ARGS)\"|g" \
 `)
 
 # This is the command to invoke the unit test.
