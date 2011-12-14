@@ -687,8 +687,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
 
         if (textSelection) {
           this.save();
-          ctx.scale(fontSize, fontSize);
-          ctx.transform.apply(ctx, fontMatrix);
+          ctx.scale(1, -1);
           text.geom = this.getTextGeometry();
           this.restore();
         }
@@ -785,6 +784,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
 
       if (textSelection) {
         ctx.save();
+        // Type3 fonts - each glyph is a "mini-PDF" (see also showText)
         if (font.coded) {
           ctx.transform.apply(ctx, current.textMatrix);
           ctx.scale(1, -1);

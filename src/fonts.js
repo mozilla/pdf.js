@@ -2103,7 +2103,7 @@ var Font = (function FontClosure() {
 
     get spaceWidth() {
       // trying to estimate space character width
-      var possibleSpaceReplacements = ['space', 'minus', '1', 'i'];
+      var possibleSpaceReplacements = ['space', 'minus', 'one', 'i'];
       var width;
       for (var i = 0, ii = possibleSpaceReplacements.length; i < ii; i++) {
         var glyphName = possibleSpaceReplacements[i];
