@@ -3,41 +3,6 @@
 
 'use strict';
 
-/**
- * A wrapper for data to facilitate adding functionality to messages.
- */
-function Message(data) {
-  this.data = data;
-  this.allowsReply = false;
-  this.combObj;
-  this.id;
-}
-Message.prototype = {
-  /**
-   * Reply to the action handler that sent the message.
-   */
-  reply: function messageReply(data) {
-    if (!this.allowsReply)
-      error('This message does not accept replies.');
-
-    this.combObj.postMessage({
-      isReply: true,
-      callbackId: this.id,
-      data: data
-    });
-  },
-  /**
-   * Setup the message to allow a reply.
-   * @param {Object} combObj The handler that has a postMessage function.
-   * @param {String} id The id to identify this message.
-   */
-  setupReply: function setupReply(combObj, id) {
-    this.allowsReply = true;
-    this.combObj = combObj;
-    this.id = id;
-  }
-};
-
 function MessageHandler(name, comObj) {
   this.name = name;
   this.comObj = comObj;
@@ -65,11 +30,19 @@ function MessageHandler(name, comObj) {
       }
     } else if (data.action in ah) {
       var action = ah[data.action];
-      var message = new Message(data.data);
-      if (data.callbackId)
-        message.setupReply(comObj, data.callbackId);
-
-      action[0].call(action[1], message);
+      if (data.callbackId) {
+        var promise = new Promise();
+        promise.then(function(resolvedData) {
+          comObj.postMessage({
+            isReply: true,
+            callbackId: data.callbackId,
+            data: resolvedData
+          });
+        });
+        action[0].call(action[1], data.data, promise);
+      } else {
+        action[0].call(action[1], data.data);
+      }
     } else {
       throw 'Unkown action from worker: ' + data.action;
     }
@@ -108,8 +81,7 @@ var WorkerMessageHandler = {
   setup: function wphSetup(handler) {
     var pdfDoc = null;
 
-    handler.on('test', function wphSetupTest(message) {
-      var data = message.data;
+    handler.on('test', function wphSetupTest(data) {
       handler.send('test', data instanceof Uint8Array);
     });
 
@@ -120,15 +92,13 @@ var WorkerMessageHandler = {
       // undefined action `workerSrc`.
     });
 
-    handler.on('doc', function wphSetupDoc(message) {
-      var data = message.data;
+    handler.on('doc', function wphSetupDoc(data) {
       // Create only the model of the PDFDoc, which is enough for
       // processing the content of the pdf.
       pdfDoc = new PDFDocModel(new Stream(data));
     });
 
-    handler.on('page_request', function wphSetupPageRequest(message) {
-      var pageNum = message.data;
+    handler.on('page_request', function wphSetupPageRequest(pageNum) {
       pageNum = parseInt(pageNum);
 
 
@@ -177,8 +147,7 @@ var WorkerMessageHandler = {
       });
     }, this);
 
-    handler.on('font', function wphSetupFont(message) {
-      var data = message.data;
+    handler.on('font', function wphSetupFont(data) {
       var objId = data[0];
       var name = data[1];
       var file = data[2];
