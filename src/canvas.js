@@ -259,7 +259,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       this.textLayerQueue = [];
       // Prevent textLayerQueue from being rendered while rendering a new page
       if (this.textLayerTimer)
-        clearTimeout(this.textLayerTimer);
+        clearInterval(this.textLayerTimer);
     },
 
     executeIRQueue: function canvasGraphicsExecuteIRQueue(codeIR,
@@ -329,17 +329,21 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
 
       var self = this;
       var renderTextLayer = function canvasRenderTextLayer() {
+        var finished = true;
         var textDivs = self.textDivs;
-        for (var i = 0, length = textDivs.length; i < length; ++i) {
-          if (textDivs[i].dataset.textLength > 1) { // avoid div by zero
-            textLayer.appendChild(textDivs[i]);
+        if (textDivs.length > 0) {
+          var textDiv = textDivs.shift();
+          if (textDiv.dataset.textLength > 1) { // avoid div by zero
+            textLayer.appendChild(textDiv);
             // Adjust div width (via letterSpacing) to match canvas text
             // Due to the .offsetWidth calls, this is slow
-            textDivs[i].style.letterSpacing =
-              ((textDivs[i].dataset.canvasWidth - textDivs[i].offsetWidth) /
-               (textDivs[i].dataset.textLength - 1)) + 'px';
+            textDiv.style.letterSpacing =
+              ((textDiv.dataset.canvasWidth - textDiv.offsetWidth) /
+               (textDiv.dataset.textLength - 1)) + 'px';
           }
+          finished = false;
         }
+        return finished;
       }
       var textLayerQueue = this.textLayerQueue;
       textLayerQueue.push(renderTextLayer);
@@ -347,12 +351,16 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       // Lazy textLayer rendering (to prevent UI hangs)
       // Only render queue if activity has stopped, where "no activity" ==
       // "no beginDrawing() calls in the last N ms"
-      this.textLayerTimer = setTimeout(function renderTextLayerQueue() {
+      this.textLayerTimer = setInterval(function renderTextLayerQueue() {
         // Render most recent (==most relevant) layers first
         for (var i = textLayerQueue.length - 1; i >= 0; i--) {
-          textLayerQueue.pop().call();
+          var finished = textLayerQueue[i].call();
+          if (finished)
+            textLayerQueue.splice(i,1);
         }
-      }, 500);
+        if (textLayerQueue.length == 0)
+          clearInterval(this.textLayerTimer);
+      }, 1);
     },
 
     // Graphics state
