@@ -354,8 +354,7 @@ var DeviceRgbCS = (function DeviceRgbCSClosure() {
       return rgbBuf;
     },
     isDefaultDecode: function rgbcs_isDefaultDecode(decodeMap) {
-      return 0 == decodeMap[0] == decodeMap[2] == decodeMap[4] &&
-             1 == decodeMap[1] == decodeMap[3] == decoeMap[5];
+      ColorSpace.isDefaultDecode(decodeMap, this.numComps);
     }
   };
   return DeviceRgbCS;
