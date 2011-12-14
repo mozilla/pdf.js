@@ -127,6 +127,31 @@ var PDFImage = (function PDFImageClosure() {
       smaskPromise.resolve(null);
   };
 
+  /**
+   * Resize an image using the nearest neighbor algorithm.  Currently only
+   * supports one component images.
+   * @param {TypedArray} pixels The original image with one component.
+   * @param {Number} w1 Original width.
+   * @param {Number} h1 Original height.
+   * @param {Number} w2 New width.
+   * @param {Number} h2 New height.
+   * @return {TypedArray} Resized image data.
+   */
+  PDFImage.resize = function resize(pixels, w1, h1, w2, h2) {
+    var temp = new Uint8Array(w2 * h2);
+    var xRatio = w1 / w2;
+    var yRatio = h1 / h2;
+    var px, py;
+    for (var i = 0; i < h2; i++) {
+      for (var j = 0; j < w2; j++) {
+        px = Math.floor(j * xRatio);
+        py = Math.floor(i * yRatio);
+        temp[(i * w2) + j] = pixels[((py * w1) + px)];
+      }
+    }
+    return temp;
+  };
+
   PDFImage.prototype = {
     getComponents: function getComponents(buffer) {
       var bpc = this.bpc;
@@ -221,18 +246,18 @@ var PDFImage = (function PDFImageClosure() {
       var smask = this.smask;
       var width = this.width;
       var height = this.height;
-      var buf = new Uint8Array(width * height);
+      var buf;
 
       if (smask) {
         var sw = smask.width;
         var sh = smask.height;
-        if (sw != this.width || sh != this.height)
-          error('smask dimensions do not match image dimensions: ' + sw +
-                ' != ' + this.width + ', ' + sh + ' != ' + this.height);
-
+        buf = new Uint8Array(sw * sh)
         smask.fillGrayBuffer(buf);
+        if (sw != this.width || sh != this.height)
+          buf = PDFImage.resize(buf, sw, sh, this.width, this.height);
         return buf;
       } else {
+        buf = new Uint8Array(width * height)
         for (var i = 0, ii = width * height; i < ii; ++i)
           buf[i] = 255;
       }
