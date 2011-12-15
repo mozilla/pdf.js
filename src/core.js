@@ -221,8 +221,8 @@ var Page = (function PageClosure() {
       }
 
       var handler = {
-        on: function () {},
-        send: function() {}
+        on: function nullHandlerOn() {},
+        send: function nullHandlerSend() {}
       };
 
       var xref = this.xref;

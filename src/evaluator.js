@@ -494,12 +494,18 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
             case 'TJ':
               var items = args[0];
               for (var j = 0, jj = items.length; j < jj; j++) {
-                if (typeof items[j] === 'string')
-                  text += fontCharsToUnicode(items[j], font.translated.properties);
+                if (typeof items[j] === 'string') {
+                  text += fontCharsToUnicode(items[j],
+                    font.translated.properties);
+                } else if (items[j] < 0) {
+                  // making all negative offsets a space - better to have
+                  // a space in incorrect place than not have them at all
+                  text += ' ';
+                }
               }
               break;
             case 'Tj':
-              text += fontCharsToUnicode(args[0], font.translated.properties);;
+              text += fontCharsToUnicode(args[0], font.translated.properties);
               break;
           } // switch
 
@@ -889,7 +895,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         // read char procs only if dependency is specified
         if (dependency) {
           var charProcs = xref.fetchIfRef(dict.get('CharProcs'));
-          var fontResources = xref.fetchIfRef(dict.get('Resources')) || resources;
+          var fontResources = xref.fetchIfRef(dict.get('Resources')) ||
+            resources;
           properties.resources = fontResources;
           properties.charProcIRQueues = {};
           for (var key in charProcs.map) {
