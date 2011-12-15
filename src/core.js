@@ -8,7 +8,7 @@ var globalScope = (typeof window === 'undefined') ? this : window;
 var isWorker = (typeof window == 'undefined');
 
 var ERRORS = 0, WARNINGS = 1, TODOS = 5;
-var verbosity = TODOS;
+var verbosity = WARNINGS;
 
 // The global PDFJS object exposes the API
 // In production, it will be declared outside a global wrapper
@@ -20,11 +20,10 @@ if (!globalScope.PDFJS) {
 // getPdf()
 // Convenience function to perform binary Ajax GET
 // Usage: getPdf('http://...', callback)
-// getPdf({
-// url:String ,
-// [,progress:Function, error:Function]
-// },
-// callback)
+//        getPdf({
+//                  url:String ,
+//                  [,progress:Function, error:Function]
+//               }, callback)
 function getPdf(arg, callback) {
   var params = arg;
   if (typeof arg === 'string')

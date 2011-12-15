@@ -257,7 +257,6 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       var TILING_PATTERN = 1, SHADING_PATTERN = 2;
 
       while (!isEOF(obj = parser.getObj())) {
-        //console.log("ob")
         if (isCmd(obj)) {
           var cmd = obj.cmd;
           var fn = OP_MAP[cmd];

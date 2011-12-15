@@ -48,7 +48,7 @@ var PDFView = {
     event.initUIEvent('scalechange', false, false, window, 0);
     event.scale = val;
     event.resetAutoSettings = resetAutoSettings;
-    window.dispatchEvent(event); // <------------------------------------- MAGI
+    window.dispatchEvent(event);
   },
 
   parseScale: function pdfViewParseScale(value, resetAutoSettings) {
@@ -505,7 +505,10 @@ var PageView = function pageView(container, content, id, pageWidth, pageHeight,
       // Button Element, right now instead of an image
       var button = document.createElement('button');
       button.innerHTML = '+';
-      button.style.width = el.width + 'px';
+      if(el.width > 25) {
+        button.style.width = el.width + 'px';
+      }
+      
       button.style.left = (Math.floor(el.x-view.x)*scale) + 'px';
       button.style.top = (Math.floor(el.y-view.y)*scale) + 'px';
       button.style.position = 'absolute';
@@ -983,7 +986,7 @@ window.addEventListener('scalechange', function scalechange(evt) {
     customScaleOption.selected = true;
   }
 
-  updateViewarea(); // <----------------------- MAGI
+  updateViewarea();
 }, true);
 
 window.addEventListener('pagechange', function pagechange(evt) {

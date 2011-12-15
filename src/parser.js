@@ -75,7 +75,6 @@ var Parser = (function ParserClosure() {
           return ret;
         }
         this.shift();
-        //console.log("Dict:", dict);
         return dict;
       }
       if (isInt(this.buf1)) { // indirect reference or integer
@@ -99,7 +98,6 @@ var Parser = (function ParserClosure() {
 
       // simple object
       var obj = this.buf1;
-      //console.log("Object", this.buf1);
       this.shift();
       return obj;
     },
