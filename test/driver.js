@@ -139,6 +139,11 @@ function nextPage(task, loadError) {
   if (task.skipPages && task.skipPages.indexOf(task.pageNum) >= 0) {
     log(' skipping page ' + task.pageNum + '/' + task.pdfDoc.numPages +
         '... ');
+    // empty the canvas
+    canvas.width = 1;
+    canvas.height = 1;
+    clear(canvas.getContext('2d'));
+
     snapshotCurrentPage(task, '');
     return;
   }
@@ -160,6 +165,10 @@ function nextPage(task, loadError) {
       canvas.height = pageHeight * pdfToCssUnitsCoef;
       clear(ctx);
 
+      // using non-attached to the document div to test
+      // text layer creation operations
+      var textLayer = document.createElement('div');
+
       page.startRendering(
         ctx,
         function nextPageStartRendering(error) {
@@ -167,7 +176,8 @@ function nextPage(task, loadError) {
           if (error)
             failureMessage = 'render : ' + error.message;
           snapshotCurrentPage(task, failureMessage);
-        }
+        },
+        textLayer
       );
     } catch (e) {
       failure = 'page setup : ' + e.toString();

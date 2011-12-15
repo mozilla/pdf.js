@@ -360,6 +360,7 @@ var PDFView = {
         outlineScrollView.setAttribute('hidden', 'true');
         thumbsSwitchButton.setAttribute('data-selected', true);
         outlineSwitchButton.removeAttribute('data-selected');
+        updateThumbViewArea();
         break;
       case 'outline':
         thumbsScrollView.setAttribute('hidden', 'true');
@@ -394,6 +395,34 @@ var PDFView = {
       currentHeight += singlePage.height * singlePage.scale + kBottomMargin;
     }
     return visiblePages;
+  },
+
+  getVisibleThumbs: function pdfViewGetVisibleThumbs() {
+    var thumbs = this.thumbnails;
+    var kBottomMargin = 5;
+    var visibleThumbs = [];
+
+    var view = document.getElementById('sidebarScrollView');
+    var currentHeight = kBottomMargin;
+    var top = view.scrollTop;
+    for (var i = 1; i <= thumbs.length; ++i) {
+      var thumb = thumbs[i - 1];
+      var thumbHeight = thumb.height * thumb.scaleY + kBottomMargin;
+      if (currentHeight + thumbHeight > top)
+        break;
+
+      currentHeight += thumbHeight;
+    }
+
+    var bottom = top + view.clientHeight;
+    for (; i <= thumbs.length && currentHeight < bottom; ++i) {
+      var singleThumb = thumbs[i - 1];
+      visibleThumbs.push({ id: singleThumb.id, y: currentHeight,
+                          view: singleThumb });
+      currentHeight += singleThumb.height * singleThumb.scaleY + kBottomMargin;
+    }
+
+    return visibleThumbs;
   }
 };
 
@@ -584,7 +613,7 @@ var PageView = function pageView(container, content, id, pageWidth, pageHeight,
       ];
 
       if (scale && scale !== PDFView.currentScale)
-        PDFView.setScale(scale, true);
+        PDFView.parseScale(scale, true);
 
       setTimeout(function pageViewScrollIntoViewRelayout() {
         // letting page to re-layout before scrolling
@@ -667,6 +696,19 @@ var ThumbnailView = function thumbnailView(container, page, id, pageRatio) {
     return false;
   };
 
+  var view = page.view;
+  this.width = view.width;
+  this.height = view.height;
+  this.id = id;
+
+  var maxThumbSize = 134;
+  var canvasWidth = pageRatio >= 1 ? maxThumbSize :
+    maxThumbSize * pageRatio;
+  var canvasHeight = pageRatio <= 1 ? maxThumbSize :
+    maxThumbSize / pageRatio;
+  var scaleX = this.scaleX = (canvasWidth / this.width);
+  var scaleY = this.scaleY = (canvasHeight / this.height);
+
   var div = document.createElement('div');
   div.id = 'thumbnailContainer' + id;
   div.className = 'thumbnail';
@@ -681,11 +723,8 @@ var ThumbnailView = function thumbnailView(container, page, id, pageRatio) {
     canvas.id = 'thumbnail' + id;
     canvas.mozOpaque = true;
 
-    var maxThumbSize = 134;
-    canvas.width = pageRatio >= 1 ? maxThumbSize :
-      maxThumbSize * pageRatio;
-    canvas.height = pageRatio <= 1 ? maxThumbSize :
-      maxThumbSize / pageRatio;
+    canvas.width = canvasWidth;
+    canvas.height = canvasHeight;
 
     div.setAttribute('data-loaded', true);
     div.appendChild(canvas);
@@ -697,8 +736,6 @@ var ThumbnailView = function thumbnailView(container, page, id, pageRatio) {
     ctx.restore();
 
     var view = page.view;
-    var scaleX = (canvas.width / page.width);
-    var scaleY = (canvas.height / page.height);
     ctx.translate(-view.x * scaleX, -view.y * scaleY);
     div.style.width = (view.width * scaleX) + 'px';
     div.style.height = (view.height * scaleY) + 'px';
@@ -779,6 +816,12 @@ window.addEventListener('load', function webViewerLoad(evt) {
     document.getElementById('fileInput').setAttribute('hidden', 'true');
   else
     document.getElementById('fileInput').value = null;
+
+  if ('disableWorker' in params)
+    PDFJS.disableWorker = params['disableWorker'] === 'true' ? true : false;
+
+  var sidebarScrollView = document.getElementById('sidebarScrollView');
+  sidebarScrollView.addEventListener('scroll', updateThumbViewArea, true);
 }, true);
 
 window.addEventListener('unload', function webViewerUnload(evt) {
@@ -816,6 +859,29 @@ function updateViewarea() {
 window.addEventListener('scroll', function webViewerScroll(evt) {
   updateViewarea();
 }, true);
+
+
+var thumbnailTimer;
+
+function updateThumbViewArea() {
+  // Only render thumbs after pausing scrolling for this amount of time
+  // (makes UI more responsive)
+  var delay = 50; // in ms
+
+  if (thumbnailTimer)
+    clearTimeout(thumbnailTimer);
+
+  thumbnailTimer = setTimeout(function() {
+    var visibleThumbs = PDFView.getVisibleThumbs();
+    for (var i = 0; i < visibleThumbs.length; i++) {
+      var thumb = visibleThumbs[i];
+      PDFView.thumbnails[thumb.id - 1].draw();
+    }
+  }, delay);
+}
+
+window.addEventListener('transitionend', updateThumbViewArea, true);
+window.addEventListener('webkitTransitionEnd', updateThumbViewArea, true);
 
 window.addEventListener('resize', function webViewerResize(evt) {
   if (document.getElementById('pageWidthOption').selected ||
@@ -855,25 +921,6 @@ window.addEventListener('change', function webViewerChange(evt) {
   // URL does not reflect proper document location - hiding some icons.
   document.getElementById('viewBookmark').setAttribute('hidden', 'true');
   document.getElementById('download').setAttribute('hidden', 'true');
-}, true);
-
-window.addEventListener('transitionend', function webViewerTransitionend(evt) {
-  var pageIndex = 0;
-  var pagesCount = PDFView.pages.length;
-
-  var container = document.getElementById('sidebarView');
-  container._interval = window.setInterval(function interval() {
-    // skipping the thumbnails with set images
-    while (pageIndex < pagesCount && PDFView.thumbnails[pageIndex].hasImage)
-      pageIndex++;
-
-    if (pageIndex >= pagesCount) {
-      window.clearInterval(container._interval);
-      return;
-    }
-
-    PDFView.thumbnails[pageIndex++].draw();
-  }, 500);
 }, true);
 
 window.addEventListener('scalechange', function scalechange(evt) {

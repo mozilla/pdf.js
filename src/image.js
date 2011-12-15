@@ -3,8 +3,28 @@
 
 'use strict';
 
-var PDFImage = (function pdfImage() {
-  function constructor(xref, res, image, inline) {
+var PDFImage = (function PDFImageClosure() {
+  /**
+   * Decode the image in the main thread if it supported. Resovles the promise
+   * when the image data is ready.
+   */
+  function handleImageData(handler, xref, res, image, promise) {
+    if (image instanceof JpegStream && image.isNative) {
+      // For natively supported jpegs send them to the main thread for decoding.
+      var dict = image.dict;
+      var colorSpace = dict.get('ColorSpace', 'CS');
+      colorSpace = ColorSpace.parse(colorSpace, xref, res);
+      var numComps = colorSpace.numComps;
+      handler.send('jpeg_decode', [image.getIR(), numComps], function(message) {
+        var data = message.data;
+        var stream = new Stream(data, 0, data.length, image.dict);
+        promise.resolve(stream);
+      });
+    } else {
+      promise.resolve(image);
+    }
+  }
+  function PDFImage(xref, res, image, inline, smask) {
     this.image = image;
     if (image.getParams) {
       // JPX/JPEG2000 streams directly contain bits per component
@@ -51,16 +71,39 @@ var PDFImage = (function pdfImage() {
     this.decode = dict.get('Decode', 'D');
 
     var mask = xref.fetchIfRef(dict.get('Mask'));
-    var smask = xref.fetchIfRef(dict.get('SMask'));
 
     if (mask) {
       TODO('masked images');
     } else if (smask) {
-      this.smask = new PDFImage(xref, res, smask);
+      this.smask = new PDFImage(xref, res, smask, false);
     }
   }
+  /**
+   * Handles processing of image data and calls the callback with an argument
+   * of a PDFImage when the image is ready to be used.
+   */
+  PDFImage.buildImage = function buildImage(callback, handler, xref, res,
+                                               image, inline) {
+    var imageDataPromise = new Promise();
+    var smaskPromise = new Promise();
+    // The image data and smask data may not be ready yet, wait till both are
+    // resolved.
+    Promise.all([imageDataPromise, smaskPromise]).then(function(results) {
+      var imageData = results[0], smaskData = results[1];
+      var image = new PDFImage(xref, res, imageData, inline, smaskData);
+      callback(image);
+    });
 
-  constructor.prototype = {
+    handleImageData(handler, xref, res, image, imageDataPromise);
+
+    var smask = xref.fetchIfRef(image.dict.get('SMask'));
+    if (smask)
+      handleImageData(handler, xref, res, smask, smaskPromise);
+    else
+      smaskPromise.resolve(null);
+  };
+
+  PDFImage.prototype = {
     getComponents: function getComponents(buffer, decodeMap) {
       var bpc = this.bpc;
       if (bpc == 8)
@@ -130,18 +173,6 @@ var PDFImage = (function pdfImage() {
       var buf = new Uint8Array(width * height);
 
       if (smask) {
-        if (smask.image.getImage) {
-          // smask is a DOM image
-          var tempCanvas = new ScratchCanvas(width, height);
-          var tempCtx = tempCanvas.getContext('2d');
-          var domImage = smask.image.getImage();
-          tempCtx.drawImage(domImage, 0, 0, domImage.width, domImage.height,
-            0, 0, width, height);
-          var data = tempCtx.getImageData(0, 0, width, height).data;
-          for (var i = 0, j = 0, ii = width * height; i < ii; ++i, j += 4)
-            buf[i] = data[j]; // getting first component value
-          return buf;
-        }
         var sw = smask.width;
         var sh = smask.height;
         if (sw != this.width || sh != this.height)
@@ -159,8 +190,7 @@ var PDFImage = (function pdfImage() {
     applyStencilMask: function applyStencilMask(buffer, inverseDecode) {
       var width = this.width, height = this.height;
       var bitStrideLength = (width + 7) >> 3;
-      this.image.reset();
-      var imgArray = this.image.getBytes(bitStrideLength * height);
+      var imgArray = this.getImageBytes(bitStrideLength * height);
       var imgArrayPos = 0;
       var i, j, mask, buf;
       // removing making non-masked pixels transparent
@@ -188,8 +218,7 @@ var PDFImage = (function pdfImage() {
 
       // rows start at byte boundary;
       var rowBytes = (width * numComps * bpc + 7) >> 3;
-      this.image.reset();
-      var imgArray = this.image.getBytes(height * rowBytes);
+      var imgArray = this.getImageBytes(height * rowBytes);
 
       var comps = this.colorSpace.getRgbBuffer(
         this.getComponents(imgArray, decodeMap), bpc);
@@ -216,42 +245,27 @@ var PDFImage = (function pdfImage() {
 
       // rows start at byte boundary;
       var rowBytes = (width * numComps * bpc + 7) >> 3;
-      this.image.reset();
-      var imgArray = this.image.getBytes(height * rowBytes);
+      var imgArray = this.getImageBytes(height * rowBytes);
 
       var comps = this.getComponents(imgArray);
       var length = width * height;
 
       for (var i = 0; i < length; ++i)
         buffer[i] = comps[i];
+    },
+    getImageBytes: function getImageBytes(length) {
+      this.image.reset();
+      return this.image.getBytes(length);
     }
   };
-  return constructor;
+  return PDFImage;
 })();
 
-var JpegImageLoader = (function jpegImage() {
-  function JpegImageLoader(objId, imageData, objs) {
-    var src = 'data:image/jpeg;base64,' + window.btoa(imageData);
-
-    var img = new Image();
-    img.onload = (function jpegImageLoaderOnload() {
-      this.loaded = true;
-
-      objs.resolve(objId, this);
-
-      if (this.onLoad)
-        this.onLoad();
-    }).bind(this);
-    img.src = src;
-    this.domImage = img;
-  }
-
-  JpegImageLoader.prototype = {
-    getImage: function jpegImageLoaderGetImage() {
-      return this.domImage;
-    }
-  };
-
-  return JpegImageLoader;
-})();
+function loadJpegStream(id, imageData, objs) {
+  var img = new Image();
+  img.onload = (function jpegImageLoaderOnload() {
+    objs.resolve(id, img);
+  });
+  img.src = 'data:image/jpeg;base64,' + window.btoa(imageData);
+}
 

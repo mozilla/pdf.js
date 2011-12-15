@@ -17,8 +17,8 @@ var TextRenderingMode = {
   ADD_TO_PATH: 7
 };
 
-var CanvasExtraState = (function canvasExtraState() {
-  function constructor(old) {
+var CanvasExtraState = (function CanvasExtraStateClosure() {
+  function CanvasExtraState(old) {
     // Are soft masks and alpha values shapes or opacities?
     this.alphaIsShape = false;
     this.fontSize = 0;
@@ -52,7 +52,7 @@ var CanvasExtraState = (function canvasExtraState() {
     this.old = old;
   }
 
-  constructor.prototype = {
+  CanvasExtraState.prototype = {
     clone: function canvasextra_clone() {
       return Object.create(this);
     },
@@ -61,7 +61,7 @@ var CanvasExtraState = (function canvasExtraState() {
       this.y = y;
     }
   };
-  return constructor;
+  return CanvasExtraState;
 })();
 
 function ScratchCanvas(width, height) {
@@ -181,12 +181,12 @@ function addContextCurrentTransform(ctx) {
   }
 }
 
-var CanvasGraphics = (function canvasGraphics() {
+var CanvasGraphics = (function CanvasGraphicsClosure() {
   // Defines the time the executeIRQueue is going to be executing
   // before it stops and shedules a continue of execution.
   var kExecutionTime = 50;
 
-  function constructor(canvasCtx, objs, textLayer) {
+  function CanvasGraphics(canvasCtx, objs, textLayer) {
     this.ctx = canvasCtx;
     this.current = new CanvasExtraState();
     this.stateStack = [];
@@ -206,7 +206,7 @@ var CanvasGraphics = (function canvasGraphics() {
   var NORMAL_CLIP = {};
   var EO_CLIP = {};
 
-  constructor.prototype = {
+  CanvasGraphics.prototype = {
     slowCommands: {
       'stroke': true,
       'closeStroke': true,
@@ -638,17 +638,7 @@ var CanvasGraphics = (function canvasGraphics() {
         geometry.hScale = tr[0] - bl[0];
         geometry.vScale = tr[1] - bl[1];
       }
-      var spaceGlyph = font.charsToGlyphs(' ');
-
-      // Hack (sometimes space is not encoded)
-      if (spaceGlyph.length === 0 || spaceGlyph[0].width === 0)
-        spaceGlyph = font.charsToGlyphs('i');
-
-      // Fallback
-      if (spaceGlyph.length === 0 || spaceGlyph[0].width === 0)
-        spaceGlyph = [{width: 0}];
-
-      geometry.spaceWidth = spaceGlyph[0].width;
+      geometry.spaceWidth = font.spaceWidth;
       return geometry;
     },
 
@@ -687,13 +677,6 @@ var CanvasGraphics = (function canvasGraphics() {
       var textSelection = textLayer && !skipTextSelection ? true : false;
       var textRenderingMode = current.textRenderingMode;
 
-      if (textSelection) {
-        ctx.save();
-        this.applyTextTransforms();
-        text.geom = this.getTextGeometry();
-        ctx.restore();
-      }
-
       // Type3 fonts - each glyph is a "mini-PDF"
       if (font.coded) {
         ctx.save();
@@ -701,6 +684,13 @@ var CanvasGraphics = (function canvasGraphics() {
         ctx.translate(current.x, current.y);
 
         ctx.scale(textHScale, 1);
+
+        if (textSelection) {
+          this.save();
+          ctx.scale(1, -1);
+          text.geom = this.getTextGeometry();
+          this.restore();
+        }
         for (var i = 0; i < glyphsLength; ++i) {
 
           var glyph = glyphs[i];
@@ -720,7 +710,7 @@ var CanvasGraphics = (function canvasGraphics() {
           var width = transformed[0] * fontSize + charSpacing;
 
           ctx.translate(width, 0);
-          current.x += width * textHScale2;
+          current.x += width * textHScale;
 
           text.str += glyph.unicode;
           text.length++;
@@ -730,6 +720,8 @@ var CanvasGraphics = (function canvasGraphics() {
       } else {
         ctx.save();
         this.applyTextTransforms();
+        if (textSelection)
+          text.geom = this.getTextGeometry();
 
         var width = 0;
         for (var i = 0; i < glyphsLength; ++i) {
@@ -780,18 +772,26 @@ var CanvasGraphics = (function canvasGraphics() {
     showSpacedText: function canvasGraphicsShowSpacedText(arr) {
       var ctx = this.ctx;
       var current = this.current;
+      var font = current.font;
       var fontSize = current.fontSize;
-      var textHScale2 = current.textHScale *
-        (current.font.fontMatrix || IDENTITY_MATRIX)[0];
+      var textHScale = current.textHScale;
+      if (!font.coded)
+        textHScale *= (font.fontMatrix || IDENTITY_MATRIX)[0];
       var arrLength = arr.length;
       var textLayer = this.textLayer;
-      var font = current.font;
       var text = {str: '', length: 0, canvasWidth: 0, geom: {}};
       var textSelection = textLayer ? true : false;
 
       if (textSelection) {
         ctx.save();
-        this.applyTextTransforms();
+        // Type3 fonts - each glyph is a "mini-PDF" (see also showText)
+        if (font.coded) {
+          ctx.transform.apply(ctx, current.textMatrix);
+          ctx.scale(1, -1);
+          ctx.translate(current.x, -1 * current.y);
+          ctx.scale(textHScale, 1);
+        } else
+          this.applyTextTransforms();
         text.geom = this.getTextGeometry();
         ctx.restore();
       }
@@ -799,7 +799,7 @@ var CanvasGraphics = (function canvasGraphics() {
       for (var i = 0; i < arrLength; ++i) {
         var e = arr[i];
         if (isNum(e)) {
-          var spacingLength = -e * 0.001 * fontSize * textHScale2;
+          var spacingLength = -e * 0.001 * fontSize * textHScale;
           current.x += spacingLength;
 
           if (textSelection) {
@@ -807,9 +807,10 @@ var CanvasGraphics = (function canvasGraphics() {
             text.canvasWidth += spacingLength;
             if (e < 0 && text.geom.spaceWidth > 0) { // avoid div by zero
               var numFakeSpaces = Math.round(-e / text.geom.spaceWidth);
-              for (var j = 0; j < numFakeSpaces; ++j)
+              if (numFakeSpaces > 0) {
                 text.str += '&nbsp;';
-              text.length += numFakeSpaces > 0 ? 1 : 0;
+                text.length++;
+              }
             }
           }
         } else if (isString(e)) {
@@ -985,9 +986,9 @@ var CanvasGraphics = (function canvasGraphics() {
         var height = canvas.height;
 
         var bl = Util.applyTransform([0, 0], inv);
-        var br = Util.applyTransform([0, width], inv);
-        var ul = Util.applyTransform([height, 0], inv);
-        var ur = Util.applyTransform([height, width], inv);
+        var br = Util.applyTransform([0, height], inv);
+        var ul = Util.applyTransform([width, 0], inv);
+        var ur = Util.applyTransform([width, height], inv);
 
         var x0 = Math.min(bl[0], br[0], ul[0], ur[0]);
         var y0 = Math.min(bl[1], br[1], ul[1], ur[1]);
@@ -1037,8 +1038,8 @@ var CanvasGraphics = (function canvasGraphics() {
     },
 
     paintJpegXObject: function canvasGraphicsPaintJpegXObject(objId, w, h) {
-      var image = this.objs.get(objId);
-      if (!image) {
+      var domImage = this.objs.get(objId);
+      if (!domImage) {
         error('Dependent image isn\'t ready yet');
       }
 
@@ -1048,7 +1049,6 @@ var CanvasGraphics = (function canvasGraphics() {
       // scale the image to the unit square
       ctx.scale(1 / w, -1 / h);
 
-      var domImage = image.getImage();
       ctx.drawImage(domImage, 0, 0, domImage.width, domImage.height,
                     0, -h, w, h);
 
@@ -1104,7 +1104,11 @@ var CanvasGraphics = (function canvasGraphics() {
       this.restore();
     },
 
-    paintImageXObject: function canvasGraphicsPaintImageXObject(imgData) {
+    paintImageXObject: function canvasGraphicsPaintImageXObject(objId) {
+      var imgData = this.objs.get(objId);
+      if (!imgData) {
+        error('Dependent image isn\'t ready yet');
+      }
       this.save();
       var ctx = this.ctx;
       var w = imgData.width;
@@ -1114,24 +1118,14 @@ var CanvasGraphics = (function canvasGraphics() {
 
       var tmpCanvas = new this.ScratchCanvas(w, h);
       var tmpCtx = tmpCanvas.getContext('2d');
-      var tmpImgData;
+      this.putBinaryImageData(tmpCtx, imgData, w, h);
 
-      // Some browsers can set an UInt8Array directly as imageData, some
-      // can't. As long as we don't have proper feature detection, just
-      // copy over each pixel and set the imageData that way.
-      tmpImgData = tmpCtx.getImageData(0, 0, w, h);
-
-      // Copy over the imageData.
-      var tmpImgDataPixels = tmpImgData.data;
-      var len = tmpImgDataPixels.length;
-
-      while (len--) {
-        tmpImgDataPixels[len] = imgData.data[len];
-      }
-
-      tmpCtx.putImageData(tmpImgData, 0, 0);
       ctx.drawImage(tmpCanvas, 0, -h);
       this.restore();
+    },
+
+    putBinaryImageData: function canvasPutBinaryImageData() {
+      //
     },
 
     // Marked content
@@ -1191,6 +1185,41 @@ var CanvasGraphics = (function canvasGraphics() {
     }
   };
 
-  return constructor;
+  return CanvasGraphics;
 })();
 
+if (!isWorker) {
+  // Feature detection if the browser can use an Uint8Array directly as imgData.
+  var canvas = document.createElement('canvas');
+  canvas.width = 1;
+  canvas.height = 1;
+  var ctx = canvas.getContext('2d');
+
+  try {
+    ctx.putImageData({
+      width: 1,
+      height: 1,
+      data: new Uint8Array(4)
+    }, 0, 0);
+
+    CanvasGraphics.prototype.putBinaryImageData =
+      function CanvasGraphicsPutBinaryImageDataNative(ctx, imgData) {
+        ctx.putImageData(imgData, 0, 0);
+      };
+  } catch (e) {
+    CanvasGraphics.prototype.putBinaryImageData =
+      function CanvasGraphicsPutBinaryImageDataShim(ctx, imgData, w, h) {
+        var tmpImgData = ctx.getImageData(0, 0, w, h);
+
+        // Copy over the imageData pixel by pixel.
+        var tmpImgDataPixels = tmpImgData.data;
+        var len = tmpImgDataPixels.length;
+
+        while (len--) {
+          tmpImgDataPixels[len] = imgData.data[len];
+        }
+
+        ctx.putImageData(tmpImgData, 0, 0);
+      };
+  }
+}
