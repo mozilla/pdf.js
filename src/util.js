@@ -217,7 +217,33 @@ var Promise = (function PromiseClosure() {
     }
     this.callbacks = [];
   };
-
+  /**
+   * Builds a promise that is resolved when all the passed in promises are
+   * resolved.
+   * @param {Promise[]} promises Array of promises to wait for.
+   * @return {Promise} New dependant promise.
+   */
+  Promise.all = function(promises) {
+    var deferred = new Promise();
+    var unresolved = promises.length;
+    var results = [];
+    if (unresolved === 0) {
+      deferred.resolve(results);
+      return deferred;
+    }
+    for (var i = 0; i < unresolved; ++i) {
+      var promise = promises[i];
+      promise.then((function(i) {
+        return function(value) {
+          results[i] = value;
+          unresolved--;
+          if (unresolved === 0)
+            deferred.resolve(results);
+        };
+      })(i));
+    }
+    return deferred;
+  };
   Promise.prototype = {
     hasData: false,
 
