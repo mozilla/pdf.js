@@ -356,7 +356,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
         for (var i = textLayerQueue.length - 1; i >= 0; i--) {
           var finished = textLayerQueue[i].call();
           if (finished)
-            textLayerQueue.splice(i,1);
+            textLayerQueue.splice(i, 1);
         }
         if (textLayerQueue.length == 0)
           clearInterval(this.textLayerTimer);
