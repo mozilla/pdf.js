@@ -328,11 +328,12 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
         return;
 
       var self = this;
+      var textDivIndex = 0;
       var renderTextLayer = function canvasRenderTextLayer() {
-        var finished = true;
+        var finished = false;
         var textDivs = self.textDivs;
-        if (textDivs.length > 0) {
-          var textDiv = textDivs.shift();
+        if (textDivIndex < textDivs.length) {
+          var textDiv = textDivs[textDivIndex++];
           if (textDiv.dataset.textLength > 1) { // avoid div by zero
             textLayer.appendChild(textDiv);
             // Adjust div width (via letterSpacing) to match canvas text
@@ -341,8 +342,9 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
               ((textDiv.dataset.canvasWidth - textDiv.offsetWidth) /
                (textDiv.dataset.textLength - 1)) + 'px';
           }
-          finished = false;
         }
+        else
+          finished = true;
         return finished;
       }
       var textLayerQueue = this.textLayerQueue;
