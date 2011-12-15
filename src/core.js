@@ -8,7 +8,7 @@ var globalScope = (typeof window === 'undefined') ? this : window;
 var isWorker = (typeof window == 'undefined');
 
 var ERRORS = 0, WARNINGS = 1, TODOS = 5;
-var verbosity = WARNINGS;
+var verbosity = TODOS;
 
 // The global PDFJS object exposes the API
 // In production, it will be declared outside a global wrapper
@@ -20,11 +20,11 @@ if (!globalScope.PDFJS) {
 // getPdf()
 // Convenience function to perform binary Ajax GET
 // Usage: getPdf('http://...', callback)
-//        getPdf({
-//                 url:String ,
-//                 [,progress:Function, error:Function]
-//               },
-//               callback)
+// getPdf({
+// url:String ,
+// [,progress:Function, error:Function]
+// },
+// callback)
 function getPdf(arg, callback) {
   var params = arg;
   if (typeof arg === 'string')
@@ -315,6 +315,100 @@ var Page = (function PageClosure() {
       }
       return links;
     },
+    getAnnotations: function pageGetAnnotations() {
+      var xref = this.xref;
+      var annotations = xref.fetchIfRef(this.annotations) || [];
+      var i, n = annotations.length;
+      var items = [];
+      
+      for (i = 0; i < n; ++i) {
+        var annotation = xref.fetch(annotations[i]);
+        if (!isDict(annotation))
+          continue;
+        var subtype = annotation.get('Subtype'), name = annotation.get('Name');
+        if (!isName(subtype))
+          continue;
+        
+        var rect = annotation.get('Rect');
+        var topLeftCorner = this.rotatePoint(rect[0], rect[1]);
+        var bottomRightCorner = this.rotatePoint(rect[2], rect[3]);
+
+        var item = {};
+        item.type = subtype.name;
+        item.x = Math.min(topLeftCorner.x, bottomRightCorner.x);
+        item.y = Math.min(topLeftCorner.y, bottomRightCorner.y);
+        item.width = Math.abs(topLeftCorner.x - bottomRightCorner.x);
+        item.height = Math.abs(topLeftCorner.y - bottomRightCorner.y);
+        switch(subtype.name) {
+        case 'Link': {
+          var a = this.xref.fetchIfRef(annotation.get('A'));
+          if(a) {
+            switch(a.get('S').name) {
+            case 'URI': {
+              item.url = a.get('URI');
+            } break;
+            
+            case 'GoTo': {
+              item.dest = a.get('D');
+            } break;
+            
+            default: {
+              TODO('other link types');
+            } break;
+            }
+          } else if(annotation.has('Dest')) {
+            var dest = annotation.get('Dest');
+            item.dest = isName(dest) ? dest.name : dest;
+          }
+        } break;
+        
+        case 'Widget': {
+          var fieldType = annotation.get('FT');
+          if(!isName(fieldType))
+            break;
+          
+          item.fieldType = fieldType.name;
+          fieldName = [];
+          var name = stringToPDFString(annotation.get('T'));
+          if(name) 
+            fieldName.push(name);
+          
+          var parent = xref.fetchIfRef(annotation.get('Parent'))
+          while (parent) {
+            name = stringToPDFString(parent.get('T'));
+            if (name)
+              fieldName.unshift(name);
+            
+            parent = xref.fetchIfRef(parent.get('Parent'));
+          }
+          item.fullName = fieldName.join('.');
+          var alternativeText = stringToPDFString(annotation.get('TU') || '');
+          item.alternativeText = alternativeText;
+          var da = annotation.get('DA') || '';
+          var m = /([\d\.]+)\sTf/.exec(da);
+          if (m) 
+            item.fontSize = parseFloat(m[1]);
+          
+          item.flags = annotation.get('Ff') || 0;
+        } break;
+        
+        case 'Text': {
+          var content = annotation.get('Contents');
+          var title = annotation.get('T');
+          
+          item.content = content;
+          item.title = title;
+        } break;
+        
+        default: {
+          TODO('unimplemented annotation type: ' + subtype.name);
+        } break;
+        }
+        
+        items.push(item);
+      }
+      return items;
+    },
     startRendering: function pageStartRendering(ctx, callback, textLayer)  {
       this.ctx = ctx;
       this.callback = callback;
@@ -330,13 +424,12 @@ var Page = (function PageClosure() {
 
 /**
  * The `PDFDocModel` holds all the data of the PDF file. Compared to the
- * `PDFDoc`, this one doesn't have any job management code.
- * Right now there exists one PDFDocModel on the main thread + one object
- * for each worker. If there is no worker support enabled, there are two
- * `PDFDocModel` objects on the main thread created.
- * TODO: Refactor the internal object structure, such that there is no
- * need for the `PDFDocModel` anymore and there is only one object on the
- * main thread and not one entire copy on each worker instance.
+ * `PDFDoc`, this one doesn't have any job management code. Right now there
+ * exists one PDFDocModel on the main thread + one object for each worker. If
+ * there is no worker support enabled, there are two `PDFDocModel` objects on
+ * the main thread created. TODO: Refactor the internal object structure, such
+ * that there is no need for the `PDFDocModel` anymore and there is only one
+ * object on the main thread and not one entire copy on each worker instance.
  */
 var PDFDocModel = (function PDFDocModelClosure() {
   function PDFDocModel(arg, callback) {
@@ -352,6 +445,7 @@ var PDFDocModel = (function PDFDocModelClosure() {
     assertWellFormed(stream.length > 0, 'stream must have data');
     this.stream = stream;
     this.setup();
+    this.acroForm = this.xref.fetchIfRef(this.catalog.catDict.get('AcroForm'));
   }
 
   function find(stream, needle, limit, backwards) {

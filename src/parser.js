@@ -69,10 +69,13 @@ var Parser = (function ParserClosure() {
         // stream objects are not allowed inside content streams or
         // object streams
         if (isCmd(this.buf2, 'stream')) {
-          return this.allowStreams ?
-            this.makeStream(dict, cipherTransform) : dict;
+          var ret = this.allowStreams ?
+              this.makeStream(dict, cipherTransform) : dict;
+
+          return ret;
         }
         this.shift();
+        //console.log("Dict:", dict);
         return dict;
       }
       if (isInt(this.buf1)) { // indirect reference or integer
@@ -96,6 +99,7 @@ var Parser = (function ParserClosure() {
 
       // simple object
       var obj = this.buf1;
+      //console.log("Object", this.buf1);
       this.shift();
       return obj;
     },
@@ -191,6 +195,7 @@ var Parser = (function ParserClosure() {
       stream = stream.makeSubStream(pos, length, dict);
       if (cipherTransform)
         stream = cipherTransform.createStream(stream);
+      
       stream = this.filter(stream, dict, length);
       stream.parameters = dict;
       return stream;
@@ -211,6 +216,7 @@ var Parser = (function ParserClosure() {
             params = null;
             if (isArray(paramsArray) && (i in paramsArray))
               params = paramsArray[i];
+            
             stream = this.makeFilter(stream, filter.name, length, params);
             // after the first stream the length variable is invalid
             length = null;

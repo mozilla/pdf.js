@@ -232,6 +232,23 @@ canvas {
   -webkit-box-shadow: 0px 2px 10px #ff0;
 }
 
+.page > .inputHint {
+	opacity: 0.2;
+	background: #CCCCCC;
+	position: absolute;
+}
+
+.page > inputControl {
+	background: transparent;
+	border: 0px none;
+	position: absolute;
+	margin: auto;
+}
+
+.page > inputControl[type='checkbox'] {
+	margin: 0px;
+}
+
 .textLayer {
   position: absolute;
   left: 0;
@@ -305,6 +322,23 @@ canvas {
   clear: both;
 }
 
+.annotComment {
+	position: absolute;
+	background-color: #EEFFD3;
+	box-shadow: 0px 2px 8px #000;
+  -moz-box-shadow: 0px 2px 8px #000;
+  -webkit-box-shadow: 0px 2px 8px #000;
+  z-index: 0;
+  display: none;
+  padding: 0.2em;
+}
+
+.annotComment h2 {
+	font-weight: normal;
+	font-size: 1em;
+	border-bottom: 1px solid #000000;
+}
+
 /* === Printed media overrides === */
 @media print {
   #sidebar {
@@ -335,6 +369,10 @@ canvas {
     display: block;
     page-break-after: always;
   }
+}
+
+.inputHint {
+	display: none;
 }
 
 #loading {
