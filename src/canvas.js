@@ -361,7 +361,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
             textLayerQueue.splice(i, 1);
         }
         if (textLayerQueue.length == 0)
-          clearInterval(this.textLayerTimer);
+          clearInterval(self.textLayerTimer);
       }, 1);
     },
 
