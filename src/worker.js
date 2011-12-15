@@ -6,6 +6,8 @@
 function MessageHandler(name, comObj) {
   this.name = name;
   this.comObj = comObj;
+  this.callbackIndex = 1;
+  var callbacks = this.callbacks = {};
   var ah = this.actionHandler = {};
 
   ah['console_log'] = [function ahConsoleLog(data) {
@@ -14,11 +16,33 @@ function MessageHandler(name, comObj) {
   ah['console_error'] = [function ahConsoleError(data) {
       console.error.apply(console, data);
   }];
+
   comObj.onmessage = function messageHandlerComObjOnMessage(event) {
     var data = event.data;
-    if (data.action in ah) {
+    if (data.isReply) {
+      var callbackId = data.callbackId;
+      if (data.callbackId in callbacks) {
+        var callback = callbacks[callbackId];
+        delete callbacks[callbackId];
+        callback(data.data);
+      } else {
+        throw 'Cannot resolve callback ' + callbackId;
+      }
+    } else if (data.action in ah) {
       var action = ah[data.action];
-      action[0].call(action[1], data.data);
+      if (data.callbackId) {
+        var promise = new Promise();
+        promise.then(function(resolvedData) {
+          comObj.postMessage({
+            isReply: true,
+            callbackId: data.callbackId,
+            data: resolvedData
+          });
+        });
+        action[0].call(action[1], data.data, promise);
+      } else {
+        action[0].call(action[1], data.data);
+      }
     } else {
       throw 'Unkown action from worker: ' + data.action;
     }
@@ -33,12 +57,23 @@ MessageHandler.prototype = {
     }
     ah[actionName] = [handler, scope];
   },
-
-  send: function messageHandlerSend(actionName, data) {
-    this.comObj.postMessage({
+  /**
+   * Sends a message to the comObj to invoke the action with the supplied data.
+   * @param {String} actionName Action to call.
+   * @param {JSON} data JSON data to send.
+   * @param {function} [callback] Optional callback that will handle a reply.
+   */
+  send: function messageHandlerSend(actionName, data, callback) {
+    var message = {
       action: actionName,
       data: data
-    });
+    };
+    if (callback) {
+      var callbackId = this.callbackIndex++;
+      this.callbacks[callbackId] = callback;
+      message.callbackId = callbackId;
+    }
+    this.comObj.postMessage(message);
   }
 };
 
@@ -170,7 +205,7 @@ var WorkerMessageHandler = {
         if (pageNum > numPages) {
           console.log('text indexing=: time=%dms', Date.now() - start);
 
-          handler.send('text_extracted', { index: index });
+          handler.send('text_extracted', [index]);
           return;
         }
 

@@ -1833,6 +1833,10 @@ var Font = (function FontClosure() {
               var i = unassignedUnicodeItems[j];
               while (unusedUnicode in usedUnicodes)
                 unusedUnicode++;
+              var cid = i + 1;
+              // override only if unicode mapping is not specified
+              if (!(cid in toUnicode))
+                toUnicode[cid] = unusedUnicode;
               glyphs[i].unicode = unusedUnicode++;
             }
             this.useToUnicode = true;
@@ -2137,6 +2141,37 @@ var Font = (function FontClosure() {
       styleSheet.insertRule(rule, styleSheet.cssRules.length);
 
       return rule;
+    },
+
+    get spaceWidth() {
+      // trying to estimate space character width
+      var possibleSpaceReplacements = ['space', 'minus', 'one', 'i'];
+      var width;
+      for (var i = 0, ii = possibleSpaceReplacements.length; i < ii; i++) {
+        var glyphName = possibleSpaceReplacements[i];
+        // if possible, getting width by glyph name
+        if (glyphName in this.widths) {
+          width = this.widths[glyphName];
+          break;
+        }
+        var glyphUnicode = GlyphsUnicode[glyphName];
+        // finding the charcode via unicodeToCID map
+        var charcode = 0;
+        if (this.composite)
+          charcode = this.unicodeToCID[glyphUnicode];
+        // ... via toUnicode map
+        if (!charcode && 'toUnicode' in this)
+          charcode = this.toUnicode.indexOf(glyphUnicode);
+        // setting it to unicode if negative or undefined
+        if (!(charcode > 0))
+          charcode = glyphUnicode;
+        // trying to get width via charcode
+        width = this.widths[charcode];
+        if (width)
+          break; // the non-zero width found
+      }
+      width = (width || this.defaultWidth) * this.widthMultiplier;
+      return shadow(this, 'spaceWidth', width);
     },
 
     charToGlyph: function fonts_charToGlyph(charcode) {

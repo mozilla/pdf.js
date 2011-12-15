@@ -340,5 +340,26 @@
        "link": true,
        "pageLimit": 3,
        "type": "eq"
+    },
+    {  "id": "issue919",
+       "file": "pdfs/issue919.pdf",
+       "md5": "3a1716a512aca4d7a8d6106bd4885d14",
+       "rounds": 1,
+       "link": true,
+       "pageLimit": 3,
+       "type": "eq"
+    },
+    {  "id": "issue918",
+       "file": "pdfs/issue918.pdf",
+       "md5": "d582cc0f2592ae82936589ced2a47e55",
+       "rounds": 1,
+       "type": "eq"
+    },
+    {  "id": "aboutstacks",
+      "file": "pdfs/aboutstacks.pdf",
+      "md5": "6e7c8416a293ba2d83bc8dd20c6ccf51",
+      "rounds": 1,
+      "link": true,
+      "type": "eq"
     }
 ]
