@@ -227,7 +227,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
               data: new Uint8Array(w * h * 4)
             };
             var pixels = imgData.data;
-            imageObj.fillRgbaBuffer(pixels, imageObj.decode);
+            imageObj.fillRgbaBuffer(pixels);
             handler.send('obj', [objId, 'Image', imgData]);
           }, handler, xref, resources, image, inline);
       }
