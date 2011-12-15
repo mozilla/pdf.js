@@ -239,7 +239,6 @@ var PDFImage = (function PDFImageClosure() {
           bits = remainingBits;
         }
       }
-      if(decodeMap) console.timeEnd('getComps');
       return output;
     },
     getOpacity: function getOpacity() {

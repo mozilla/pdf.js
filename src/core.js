@@ -515,8 +515,7 @@ var PDFDoc = (function PDFDocClosure() {
       // Tell the worker the file it was created from.
       messageHandler.send('workerSrc', workerSrc);
 
-      messageHandler.on('test', function pdfDocTest(message) {
-        var supportTypedArray = message.data;
+      messageHandler.on('test', function pdfDocTest(supportTypedArray) {
         if (supportTypedArray) {
           this.worker = worker;
           this.setupMessageHandler(messageHandler);
@@ -554,8 +553,7 @@ var PDFDoc = (function PDFDocClosure() {
     setupMessageHandler: function(messageHandler) {
       this.messageHandler = messageHandler;
 
-      messageHandler.on('page', function pdfDocPage(message) {
-        var data = message.data;
+      messageHandler.on('page', function pdfDocPage(data) {
         var pageNum = data.pageNum;
         var page = this.pageCache[pageNum];
         var depFonts = data.depFonts;
@@ -563,8 +561,7 @@ var PDFDoc = (function PDFDocClosure() {
         page.startRenderingFromIRQueue(data.IRQueue, depFonts);
       }, this);
 
-      messageHandler.on('obj', function pdfDocObj(message) {
-        var data = message.data;
+      messageHandler.on('obj', function pdfDocObj(data) {
         var id = data[0];
         var type = data[1];
 
@@ -601,8 +598,7 @@ var PDFDoc = (function PDFDocClosure() {
         }
       }, this);
 
-      messageHandler.on('font_ready', function pdfDocFontReady(message) {
-        var data = message.data;
+      messageHandler.on('font_ready', function pdfDocFontReady(data) {
         var id = data[0];
         var font = new FontShape(data[1]);
 
@@ -614,8 +610,7 @@ var PDFDoc = (function PDFDocClosure() {
         }
       }.bind(this));
 
-      messageHandler.on('page_error', function pdfDocError(message) {
-        var data = message.data;
+      messageHandler.on('page_error', function pdfDocError(data) {
         var page = this.pageCache[data.pageNum];
         if (page.callback)
           page.callback(data.error);
@@ -623,9 +618,9 @@ var PDFDoc = (function PDFDocClosure() {
           throw data.error;
       }, this);
 
-      messageHandler.on('jpeg_decode', function(message) {
-        var imageData = message.data[0];
-        var components = message.data[1];
+      messageHandler.on('jpeg_decode', function(data, promise) {
+        var imageData = data[0];
+        var components = data[1];
         if (components != 3 && components != 1)
           error('Only 3 component or 1 component can be returned');
 
@@ -652,7 +647,7 @@ var PDFDoc = (function PDFDocClosure() {
               buf[j] = data[i];
             }
           }
-          message.reply({ data: buf, width: width, height: height});
+          promise.resolve({ data: buf, width: width, height: height});
         }).bind(this);
         var src = 'data:image/jpeg;base64,' + window.btoa(imageData);
         img.src = src;
