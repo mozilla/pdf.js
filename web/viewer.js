@@ -537,7 +537,7 @@ var PageView = function pageView(container, content, id, pageWidth, pageHeight,
       ];
 
       if (scale && scale !== PDFView.currentScale)
-        PDFView.setScale(scale, true);
+        PDFView.parseScale(scale, true);
 
       setTimeout(function pageViewScrollIntoViewRelayout() {
         // letting page to re-layout before scrolling
