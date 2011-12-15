@@ -354,5 +354,12 @@
        "md5": "d582cc0f2592ae82936589ced2a47e55",
        "rounds": 1,
        "type": "eq"
+    },
+    {  "id": "aboutstacks",
+      "file": "pdfs/aboutstacks.pdf",
+      "md5": "6e7c8416a293ba2d83bc8dd20c6ccf51",
+      "rounds": 1,
+      "link": true,
+      "type": "eq"
     }
 ]
