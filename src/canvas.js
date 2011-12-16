@@ -1106,9 +1106,9 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
 
     paintImageXObject: function canvasGraphicsPaintImageXObject(objId) {
       var imgData = this.objs.get(objId);
-      if (!imgData) {
+      if (!imgData)
         error('Dependent image isn\'t ready yet');
-      }
+
       this.save();
       var ctx = this.ctx;
       var w = imgData.width;
