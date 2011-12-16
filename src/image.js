@@ -250,13 +250,13 @@ var PDFImage = (function PDFImageClosure() {
       if (smask) {
         var sw = smask.width;
         var sh = smask.height;
-        buf = new Uint8Array(sw * sh)
+        buf = new Uint8Array(sw * sh);
         smask.fillGrayBuffer(buf);
         if (sw != this.width || sh != this.height)
           buf = PDFImage.resize(buf, sw, sh, this.width, this.height);
         return buf;
       } else {
-        buf = new Uint8Array(width * height)
+        buf = new Uint8Array(width * height);
         for (var i = 0, ii = width * height; i < ii; ++i)
           buf[i] = 255;
       }
