@@ -257,9 +257,6 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       this.ctx.scale(cw / mediaBox.width, ch / mediaBox.height);
       this.textDivs = [];
       this.textLayerQueue = [];
-      // Prevent textLayerQueue from being rendered while rendering a new page
-      if (this.textLayerTimer)
-        clearInterval(this.textLayerTimer);
     },
 
     executeIRQueue: function canvasGraphicsExecuteIRQueue(codeIR,
@@ -328,41 +325,22 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
         return;
 
       var self = this;
-      var textDivIndex = 0;
-      var renderTextLayer = function canvasRenderTextLayer() {
-        var finished = false;
-        var textDivs = self.textDivs;
-        if (textDivIndex < textDivs.length) {
-          var textDiv = textDivs[textDivIndex++];
-          if (textDiv.dataset.textLength > 1) { // avoid div by zero
-            textLayer.appendChild(textDiv);
-            // Adjust div width (via letterSpacing) to match canvas text
-            // Due to the .offsetWidth calls, this is slow
-            textDiv.style.letterSpacing =
-              ((textDiv.dataset.canvasWidth - textDiv.offsetWidth) /
-               (textDiv.dataset.textLength - 1)) + 'px';
-          }
-        }
-        else
-          finished = true;
-        return finished;
-      }
-      var textLayerQueue = this.textLayerQueue;
-      textLayerQueue.push(renderTextLayer);
-
-      // Lazy textLayer rendering (to prevent UI hangs)
-      // Only render queue if activity has stopped, where "no activity" ==
-      // "no beginDrawing() calls in the last N ms"
-      this.textLayerTimer = setInterval(function renderTextLayerQueue() {
-        // Render most recent (==most relevant) layers first
-        for (var i = textLayerQueue.length - 1; i >= 0; i--) {
-          var finished = textLayerQueue[i].call();
-          if (finished)
-            textLayerQueue.splice(i, 1);
-        }
-        if (textLayerQueue.length == 0)
+      var textDivs = this.textDivs;
+      this.textLayerTimer = setInterval(function renderTextLayer() {
+        if (textDivs.length === 0) {
           clearInterval(self.textLayerTimer);
-      }, 1);
+          return;
+        }
+        var textDiv = textDivs.shift();
+        if (textDiv.dataset.textLength > 1) { // avoid div by zero
+          textLayer.appendChild(textDiv);
+          // Adjust div width (via letterSpacing) to match canvas text
+          // Due to the .offsetWidth calls, this is slow
+          textDiv.style.letterSpacing =
+            ((textDiv.dataset.canvasWidth - textDiv.offsetWidth) /
+              (textDiv.dataset.textLength - 1)) + 'px';
+        }
+      }, 0);
     },
 
     // Graphics state
