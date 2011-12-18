@@ -22,6 +22,17 @@ var Cmd = (function CmdClosure() {
   Cmd.prototype = {
   };
 
+
+  var cmdCache = {};
+
+  Cmd.get = function(cmd) {
+    if (cmdCache[cmd]) {
+      return cmdCache[cmd];
+    } else {
+      return cmdCache[cmd] = new Cmd(cmd);
+    }
+  }
+
   return Cmd;
 })();
 
