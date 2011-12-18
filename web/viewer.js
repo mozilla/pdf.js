@@ -4,7 +4,7 @@
 'use strict';
 
 var kDefaultURL = 'compressed.tracemonkey-pldi-09.pdf';
-var kDefaultScale = 1.5;
+var kDefaultScale = 'page-width';
 var kDefaultScaleDelta = 1.1;
 var kCacheSize = 20;
 var kCssUnits = 96.0 / 72.0;
@@ -73,6 +73,8 @@ var PDFView = {
       this.setScale(
         Math.min(pageWidthScale, pageHeightScale), resetAutoSettings);
     }
+
+    selectScaleOption(value);
   },
 
   zoomIn: function pdfViewZoomIn() {
@@ -294,7 +296,7 @@ var PDFView = {
 
     this.pagesRefMap = pagesRefMap;
     this.destinations = pdf.catalog.destinations;
-    this.setScale(scale || kDefaultScale, true);
+    this.parseScale(scale || kDefaultScale, true);
 
     if (pdf.catalog.documentOutline) {
       this.outline = new DocumentOutlineView(pdf.catalog.documentOutline);
@@ -734,7 +736,7 @@ window.addEventListener('load', function webViewerLoad(evt) {
   }
 
   var scale = ('scale' in params) ? params.scale : kDefaultScale;
-  PDFView.open(params.file || kDefaultURL, parseFloat(scale));
+  PDFView.open(params.file || kDefaultURL, scale);
 
   if (!window.File || !window.FileReader || !window.FileList || !window.Blob)
     document.getElementById('fileInput').setAttribute('hidden', 'true');
@@ -847,6 +849,21 @@ window.addEventListener('change', function webViewerChange(evt) {
   document.getElementById('download').setAttribute('hidden', 'true');
 }, true);
 
+function selectScaleOption(value) {
+  var options = document.getElementById('scaleSelect').options;
+
+  for (var i = 0; i < options.length; i++) {
+    var option = options[i];
+    if (option.value != value) {
+      option.selected = false;
+      continue;
+    }
+    option.selected = true;
+    return true;
+  }
+  return false;
+}
+
 window.addEventListener('scalechange', function scalechange(evt) {
   var customScaleOption = document.getElementById('customScaleOption');
   customScaleOption.selected = false;
@@ -858,18 +875,8 @@ window.addEventListener('scalechange', function scalechange(evt) {
       return;
   }
 
-  var options = document.getElementById('scaleSelect').options;
-  var predefinedValueFound = false;
-  var value = '' + evt.scale;
-  for (var i = 0; i < options.length; i++) {
-    var option = options[i];
-    if (option.value != value) {
-      option.selected = false;
-      continue;
-    }
-    option.selected = true;
-    predefinedValueFound = true;
-  }
+  var value = '' + (evt.scale || evt.scaleValue);
+  var predefinedValueFound = selectScaleOption(value);
 
   if (!predefinedValueFound) {
     customScaleOption.textContent = Math.round(evt.scale * 10000) / 100 + '%';
