@@ -895,18 +895,26 @@ window.addEventListener('keydown', function keydown(evt) {
       return; // ignoring if the 'controls' element is focused
     curElement = curElement.parentNode;
   }
+  var handled = false;
   switch (evt.keyCode) {
     case 61: // FF/Mac '='
     case 107: // FF '+' and '='
     case 187: // Chrome '+'
       PDFView.zoomIn();
+      handled = true;
       break;
     case 109: // FF '-'
     case 189: // Chrome '-'
       PDFView.zoomOut();
+      handled = true;
       break;
     case 48: // '0'
       PDFView.setScale(kDefaultScale, true);
+      handled = true;
       break;
+  }
+
+  if (handled) {
+    evt.preventDefault();
   }
 });
