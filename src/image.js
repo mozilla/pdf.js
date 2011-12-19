@@ -129,7 +129,7 @@ var PDFImage = (function PDFImageClosure() {
 
   /**
    * Resize an image using the nearest neighbor algorithm.  Currently only
-   * supports one component images.
+   * supports one and three component images.
    * @param {TypedArray} pixels The original image with one component.
    * @param {Number} bpc Number of bits per component.
    * @param {Number} components Number of color components, 1 or 3 is supported.
