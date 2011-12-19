@@ -916,13 +916,13 @@ window.addEventListener('keydown', function keydown(evt) {
     case 75: // 'k'
     case 80: // 'p'
       PDFView.page--;
-      handle = true;
+      handled = true;
       break;
     case 39: // right arrow
     case 74: // 'j'
     case 78: // 'n'
       PDFView.page++;
-      handle = true;
+      handled = true;
       break;
   }
 
