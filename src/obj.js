@@ -25,13 +25,13 @@ var Cmd = (function CmdClosure() {
 
   var cmdCache = {};
 
-  Cmd.get = function(cmd) {
-    if (cmdCache[cmd]) {
-      return cmdCache[cmd];
-    } else {
-      return cmdCache[cmd] = new Cmd(cmd);
-    }
-  }
+  Cmd.get = function cmdGet(cmd) {
+    var cmdValue = cmdCache[cmd];
+    if (cmdValue)
+      return cmdValue;
+
+    return cmdCache[cmd] = new Cmd(cmd);
+  };
 
   return Cmd;
 })();
