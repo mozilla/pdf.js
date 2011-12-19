@@ -222,12 +222,12 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
 
         PDFImage.buildImage(function(imageObj) {
             var imgData = {
-              width: w,
-              height: h,
-              data: new Uint8Array(w * h * 4)
+              width: imageObj.maxWidth,
+              height: imageObj.maxHeight,
+              data: new Uint8Array(imageObj.maxWidth * imageObj.maxHeight * 4)
             };
             var pixels = imgData.data;
-            imageObj.fillRgbaBuffer(pixels);
+            imageObj.fillRgbaBuffer(pixels, imageObj.maxWidth, imageObj.maxHeight);
             handler.send('obj', [objId, 'Image', imgData]);
           }, handler, xref, resources, image, inline);
       }
