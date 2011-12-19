@@ -154,7 +154,7 @@ var PDFImage = (function PDFImageClosure() {
         oldIndex = ((py * w1) + px);
         if (components === 1) {
           temp[newIndex] = pixels[oldIndex];
-        } else if(components === 3) {
+        } else if (components === 3) {
           newIndex *= 3;
           oldIndex *= 3;
           temp[newIndex] = pixels[oldIndex];
@@ -321,8 +321,8 @@ var PDFImage = (function PDFImageClosure() {
       var comps = this.colorSpace.getRgbBuffer(
         this.getComponents(imgArray), bpc);
       if (originalWidth != width || originalHeight != height)
-        comps = PDFImage.resize(comps, this.bpc, 3, originalWidth, originalHeight,
-                                  width, height);
+        comps = PDFImage.resize(comps, this.bpc, 3, originalWidth,
+                                originalHeight, width, height);
       var compsPos = 0;
       var opacity = this.getOpacity(width, height);
       var opacityPos = 0;
