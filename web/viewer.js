@@ -913,10 +913,12 @@ window.addEventListener('keydown', function keydown(evt) {
       handled = true;
       break;
     case 37: // left arrow
+    case 75: // 'k'
       PDFView.page--;
       handle = true;
       break;
     case 39: // right arrow
+    case 74: // 'j'
       PDFView.page++;
       handle = true;
       break;
