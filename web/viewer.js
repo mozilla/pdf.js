@@ -912,6 +912,14 @@ window.addEventListener('keydown', function keydown(evt) {
       PDFView.setScale(kDefaultScale, true);
       handled = true;
       break;
+    case 37: // left arrow
+      PDFView.page--;
+      handle = true;
+      break;
+    case 39: // right arrow
+      PDFView.page++;
+      handle = true;
+      break;
   }
 
   if (handled) {
