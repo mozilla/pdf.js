@@ -257,9 +257,6 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       this.ctx.scale(cw / mediaBox.width, ch / mediaBox.height);
       this.textDivs = [];
       this.textLayerQueue = [];
-      // Prevent textLayerQueue from being rendered while rendering a new page
-      if (this.textLayerTimer)
-        clearTimeout(this.textLayerTimer);
     },
 
     executeIRQueue: function canvasGraphicsExecuteIRQueue(codeIR,
@@ -328,31 +325,22 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
         return;
 
       var self = this;
-      var renderTextLayer = function canvasRenderTextLayer() {
-        var textDivs = self.textDivs;
-        for (var i = 0, length = textDivs.length; i < length; ++i) {
-          if (textDivs[i].dataset.textLength > 1) { // avoid div by zero
-            textLayer.appendChild(textDivs[i]);
-            // Adjust div width (via letterSpacing) to match canvas text
-            // Due to the .offsetWidth calls, this is slow
-            textDivs[i].style.letterSpacing =
-              ((textDivs[i].dataset.canvasWidth - textDivs[i].offsetWidth) /
-               (textDivs[i].dataset.textLength - 1)) + 'px';
-          }
+      var textDivs = this.textDivs;
+      this.textLayerTimer = setInterval(function renderTextLayer() {
+        if (textDivs.length === 0) {
+          clearInterval(self.textLayerTimer);
+          return;
         }
-      }
-      var textLayerQueue = this.textLayerQueue;
-      textLayerQueue.push(renderTextLayer);
-
-      // Lazy textLayer rendering (to prevent UI hangs)
-      // Only render queue if activity has stopped, where "no activity" ==
-      // "no beginDrawing() calls in the last N ms"
-      this.textLayerTimer = setTimeout(function renderTextLayerQueue() {
-        // Render most recent (==most relevant) layers first
-        for (var i = textLayerQueue.length - 1; i >= 0; i--) {
-          textLayerQueue.pop().call();
+        var textDiv = textDivs.shift();
+        if (textDiv.dataset.textLength > 1) { // avoid div by zero
+          textLayer.appendChild(textDiv);
+          // Adjust div width (via letterSpacing) to match canvas text
+          // Due to the .offsetWidth calls, this is slow
+          textDiv.style.letterSpacing =
+            ((textDiv.dataset.canvasWidth - textDiv.offsetWidth) /
+              (textDiv.dataset.textLength - 1)) + 'px';
         }
-      }, 500);
+      }, 0);
     },
 
     // Graphics state
@@ -1106,9 +1094,9 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
 
     paintImageXObject: function canvasGraphicsPaintImageXObject(objId) {
       var imgData = this.objs.get(objId);
-      if (!imgData) {
+      if (!imgData)
         error('Dependent image isn\'t ready yet');
-      }
+
       this.save();
       var ctx = this.ctx;
       var w = imgData.width;
