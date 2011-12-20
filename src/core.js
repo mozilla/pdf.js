@@ -650,7 +650,7 @@ var PDFDoc = (function PDFDocClosure() {
           throw data.error;
       }, this);
 
-      messageHandler.on('text_extracted', function pdfDocError(data) {
+      messageHandler.on('text_extracted', function pdfTextExtracted(data) {
         var index = data[0];
         if (this.textExtracted)
           this.textExtracted(index);

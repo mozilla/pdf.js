@@ -203,7 +203,7 @@ var WorkerMessageHandler = {
 
       function indexPage(pageNum) {
         if (pageNum > numPages) {
-          console.log('text indexing=: time=%dms', Date.now() - start);
+          console.log('text indexing: time=%dms', Date.now() - start);
 
           handler.send('text_extracted', [index]);
           return;
