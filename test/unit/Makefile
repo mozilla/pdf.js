@@ -1,22 +1,22 @@
 # Create temporary profile directory name.
-TEMP_PROFILE_DIR=./test_reports/temp_profile
+TEMP_PROFILE_DIR:=./test_reports/temp_profile
 
 # These are the Firefox command line arguments.
-FIREFOX_ARGS=-no-remote -profile $(TEMP_PROFILE_DIR)
+FIREFOX_ARGS:=-no-remote -profile $(TEMP_PROFILE_DIR)
 
 # These are the Chrome command line arguments.
-CHROME_ARGS=--user-data-dir=$(TEMP_PROFILE_DIR) --no-first-run --disable-sync
+CHROME_ARGS:=--user-data-dir=$(TEMP_PROFILE_DIR) --no-first-run --disable-sync
 
 # Unit test uses the manifest from ref test to determine which browsers will
 # be used for running the unit tests.
-MANIFEST=../resources/browser_manifests/browser_manifest.json
+MANIFEST:=../resources/browser_manifests/browser_manifest.json
 
 # Fetch the paths to browsers that are going to be used in testing.
 # For OS X the path to the binary needs to be added.
 # Add the browser arguments for each browser.
 # Create random profile directory for each browser.
 # Replace " with @@@@ so that echoing do not destroy the quotation marks.
-BROWSERS_WITH_UKNOWN_RANDOM_PROFILE_PATHS=$(shell echo `\
+BROWSERS_WITH_UKNOWN_RANDOM_PROFILE_PATHS:=$(shell echo `\
   sed -n 's|.*"path":\(.*\)|\1,|p' $(MANIFEST) | \
   sed 's|\(Aurora\.app\)|\1/Contents/MacOS/firefox-bin|' | \
   sed 's|\(Firefox.*\.app\)|\1/Contents/MacOS/firefox-bin|' | \
