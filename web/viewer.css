@@ -238,17 +238,6 @@ canvas {
   position: absolute;
 }
 
-.page > .inputControl {
-  background: transparent;
-  border: 0px none;
-  position: absolute;
-  margin: auto;
-}
-
-.page > .inputControl[type='checkbox'] {
-  margin: 0px;
-}
-
 .textLayer {
   position: absolute;
   left: 0;

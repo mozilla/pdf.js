@@ -33,7 +33,6 @@ var PDFView = {
   thumbnails: [],
   currentScale: kDefaultScale,
   initialBookmark: document.location.hash.substring(1),
-  formFields: [],
 
   setScale: function pdfViewSetScale(val, resetAutoSettings) {
     var pages = this.pages;
@@ -468,21 +467,6 @@ var PageView = function pageView(container, content, id, pageWidth, pageHeight,
         return false;
       };
     }
-    function bindInputItem(input, item) {
-      if (input.name in PDFView.formFields) {
-        var value = PDFView.formFields[input.name];
-        if (input.type == 'checkbox')
-          input.checked = value;
-        else if (!input.type || input.type == 'text')
-          input.value = value;
-      }
-      input.onchange = function pageViewSetupInputOnBlur() {
-        if (input.type == 'checkbox')
-          PDFView.formFields[input.name] = input.checked;
-        else if (!input.type || input.type == 'text')
-          PDFView.formFields[input.name] = input.value;
-      };
-    }
     function createElementWithStyle(tagName, item) {
       var element = document.createElement(tagName);
       element.style.left = (Math.floor(item.x - view.x) * scale) + 'px';
@@ -490,23 +474,6 @@ var PageView = function pageView(container, content, id, pageWidth, pageHeight,
       element.style.width = Math.ceil(item.width * scale) + 'px';
       element.style.height = Math.ceil(item.height * scale) + 'px';
       return element;
-    }
-    function assignFontStyle(element, item) {
-      var fontStyles = '';
-      if ('fontSize' in item)
-        fontStyles += 'font-size: ' + Math.round(item.fontSize * scale) + 'px;';
-      switch (item.textAlignment) {
-        case 0:
-          fontStyles += 'text-align: left;';
-          break;
-        case 1:
-          fontStyles += 'text-align: center;';
-          break;
-        case 2:
-          fontStyles += 'text-align: right;';
-          break;
-      }
-      element.setAttribute('style', element.getAttribute('style') + fontStyles);
     }
 
     var items = content.getAnnotations();
@@ -519,40 +486,6 @@ var PageView = function pageView(container, content, id, pageWidth, pageHeight,
           if (!item.url)
             bindLink(link, ('dest' in item) ? item.dest : null);
           div.appendChild(link);
-          break;
-        case 'Widget':
-          if (item.fieldType != 'Tx' && item.fieldType != 'Btn' &&
-              item.fieldType != 'Ch')
-            break;
-          var inputDiv = createElementWithStyle('div', item);
-          inputDiv.className = 'inputHint';
-          div.appendChild(inputDiv);
-          var input;
-          if (item.fieldType == 'Tx') {
-            input = createElementWithStyle('input', item);
-          }
-          if (item.fieldType == 'Btn') {
-            input = createElementWithStyle('input', item);
-            if (item.flags & 32768) {
-              input.type = 'radio';
-              TODO('radio button is not supported');
-            } else if (item.flags & 65536) {
-              input.type = 'button';
-              TODO('pushbutton is not supported');
-            } else {
-              input.type = 'checkbox';
-            }
-          }
-          if (item.fieldType == 'Ch') {
-            input = createElementWithStyle('select', item);
-            TODO('select box is not supported');
-          }
-          input.className = 'inputControl';
-          input.name = item.fullName;
-          input.title = item.alternativeText;
-          assignFontStyle(input, item);
-          bindInputItem(input, item);
-          div.appendChild(input);
           break;
       }
     }
