@@ -225,7 +225,7 @@ var AlternateCS = (function AlternateCSClosure() {
       return base.getRgbBuffer(baseBuf, 8);
     },
     isDefaultDecode: function altcs_isDefaultDecode(decodeMap) {
-      ColorSpace.isDefaultDecode(decodeMap, this.numComps);
+      return ColorSpace.isDefaultDecode(decodeMap, this.numComps);
     }
   };
 
@@ -327,7 +327,7 @@ var DeviceGrayCS = (function DeviceGrayCSClosure() {
       return rgbBuf;
     },
     isDefaultDecode: function graycs_isDefaultDecode(decodeMap) {
-      ColorSpace.isDefaultDecode(decodeMap, this.numComps);
+      return ColorSpace.isDefaultDecode(decodeMap, this.numComps);
     }
   };
   return DeviceGrayCS;
@@ -354,7 +354,7 @@ var DeviceRgbCS = (function DeviceRgbCSClosure() {
       return rgbBuf;
     },
     isDefaultDecode: function rgbcs_isDefaultDecode(decodeMap) {
-      ColorSpace.isDefaultDecode(decodeMap, this.numComps);
+      return ColorSpace.isDefaultDecode(decodeMap, this.numComps);
     }
   };
   return DeviceRgbCS;
@@ -441,7 +441,7 @@ var DeviceCmykCS = (function DeviceCmykCSClosure() {
       return rgbBuf;
     },
     isDefaultDecode: function cmykcs_isDefaultDecode(decodeMap) {
-      ColorSpace.isDefaultDecode(decodeMap, this.numComps);
+      return ColorSpace.isDefaultDecode(decodeMap, this.numComps);
     }
   };
 

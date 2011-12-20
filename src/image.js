@@ -127,7 +127,56 @@ var PDFImage = (function PDFImageClosure() {
       smaskPromise.resolve(null);
   };
 
+  /**
+   * Resize an image using the nearest neighbor algorithm.  Currently only
+   * supports one and three component images.
+   * @param {TypedArray} pixels The original image with one component.
+   * @param {Number} bpc Number of bits per component.
+   * @param {Number} components Number of color components, 1 or 3 is supported.
+   * @param {Number} w1 Original width.
+   * @param {Number} h1 Original height.
+   * @param {Number} w2 New width.
+   * @param {Number} h2 New height.
+   * @return {TypedArray} Resized image data.
+   */
+  PDFImage.resize = function resize(pixels, bpc, components, w1, h1, w2, h2) {
+    var length = w2 * h2 * components;
+    var temp = bpc <= 8 ? new Uint8Array(length) :
+        bpc <= 16 ? new Uint16Array(length) : new Uint32Array(length);
+    var xRatio = w1 / w2;
+    var yRatio = h1 / h2;
+    var px, py, newIndex, oldIndex;
+    for (var i = 0; i < h2; i++) {
+      for (var j = 0; j < w2; j++) {
+        px = Math.floor(j * xRatio);
+        py = Math.floor(i * yRatio);
+        newIndex = (i * w2) + j;
+        oldIndex = ((py * w1) + px);
+        if (components === 1) {
+          temp[newIndex] = pixels[oldIndex];
+        } else if (components === 3) {
+          newIndex *= 3;
+          oldIndex *= 3;
+          temp[newIndex] = pixels[oldIndex];
+          temp[newIndex + 1] = pixels[oldIndex + 1];
+          temp[newIndex + 2] = pixels[oldIndex + 2];
+        }
+      }
+    }
+    return temp;
+  };
+
   PDFImage.prototype = {
+    get drawWidth() {
+      if (!this.smask)
+        return this.width;
+      return Math.max(this.width, this.smask.width);
+    },
+    get drawHeight() {
+      if (!this.smask)
+        return this.height;
+      return Math.max(this.height, this.smask.height);
+    },
     getComponents: function getComponents(buffer) {
       var bpc = this.bpc;
       var needsDecode = this.needsDecode;
@@ -216,22 +265,21 @@ var PDFImage = (function PDFImageClosure() {
       }
       return output;
     },
-    getOpacity: function getOpacity() {
+    getOpacity: function getOpacity(width, height) {
       var smask = this.smask;
-      var width = this.width;
-      var height = this.height;
-      var buf = new Uint8Array(width * height);
+      var originalWidth = this.width;
+      var originalHeight = this.height;
+      var buf;
 
       if (smask) {
         var sw = smask.width;
         var sh = smask.height;
-        if (sw != this.width || sh != this.height)
-          error('smask dimensions do not match image dimensions: ' + sw +
-                ' != ' + this.width + ', ' + sh + ' != ' + this.height);
-
+        buf = new Uint8Array(sw * sh);
         smask.fillGrayBuffer(buf);
-        return buf;
+        if (sw != width || sh != height)
+          buf = PDFImage.resize(buf, smask.bps, 1, sw, sh, width, height);
       } else {
+        buf = new Uint8Array(width * height);
         for (var i = 0, ii = width * height; i < ii; ++i)
           buf[i] = 255;
       }
@@ -260,20 +308,23 @@ var PDFImage = (function PDFImageClosure() {
         }
       }
     },
-    fillRgbaBuffer: function fillRgbaBuffer(buffer) {
+    fillRgbaBuffer: function fillRgbaBuffer(buffer, width, height) {
       var numComps = this.numComps;
-      var width = this.width;
-      var height = this.height;
+      var originalWidth = this.width;
+      var originalHeight = this.height;
       var bpc = this.bpc;
 
       // rows start at byte boundary;
-      var rowBytes = (width * numComps * bpc + 7) >> 3;
-      var imgArray = this.getImageBytes(height * rowBytes);
+      var rowBytes = (originalWidth * numComps * bpc + 7) >> 3;
+      var imgArray = this.getImageBytes(originalHeight * rowBytes);
 
       var comps = this.colorSpace.getRgbBuffer(
         this.getComponents(imgArray), bpc);
+      if (originalWidth != width || originalHeight != height)
+        comps = PDFImage.resize(comps, this.bpc, 3, originalWidth,
+                                originalHeight, width, height);
       var compsPos = 0;
-      var opacity = this.getOpacity();
+      var opacity = this.getOpacity(width, height);
       var opacityPos = 0;
       var length = width * height * 4;
 
@@ -299,9 +350,10 @@ var PDFImage = (function PDFImageClosure() {
 
       var comps = this.getComponents(imgArray);
       var length = width * height;
-
+      // we aren't using a colorspace so we need to scale the value
+      var scale = 255 / ((1 << bpc) - 1);
       for (var i = 0; i < length; ++i)
-        buffer[i] = comps[i];
+        buffer[i] = (scale * comps[i]) | 0;
     },
     getImageBytes: function getImageBytes(length) {
       this.image.reset();
