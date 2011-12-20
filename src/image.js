@@ -167,12 +167,12 @@ var PDFImage = (function PDFImageClosure() {
   };
 
   PDFImage.prototype = {
-    get maxWidth() {
+    get drawWidth() {
       if (!this.smask)
         return this.width;
       return Math.max(this.width, this.smask.width);
     },
-    get maxHeight() {
+    get drawHeight() {
       if (!this.smask)
         return this.height;
       return Math.max(this.height, this.smask.height);
