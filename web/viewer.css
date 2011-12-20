@@ -232,12 +232,6 @@ canvas {
   -webkit-box-shadow: 0px 2px 10px #ff0;
 }
 
-.page > .inputHint {
-  opacity: 0.2;
-  background: #ccc;
-  position: absolute;
-}
-
 .textLayer {
   position: absolute;
   left: 0;
@@ -340,10 +334,6 @@ canvas {
   .page[data-loaded] {
     display: block;
     page-break-after: always;
-  }
-
-  .inputHint {
-    display: none;
   }
 }
 
