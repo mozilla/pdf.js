@@ -33,16 +33,17 @@ var PDFView = {
   thumbnails: [],
   currentScale: kDefaultScale,
   initialBookmark: document.location.hash.substring(1),
-
+  formFields: [],
+  
   setScale: function pdfViewSetScale(val, resetAutoSettings) {
     var pages = this.pages;
+    
     for (var i = 0; i < pages.length; i++)
-      pages[i].update(val * kCssUnits);
-
+      pages[i].update(val * kCssUnits); 
+    
     if (this.currentScale != val)
       this.pages[this.page - 1].scrollIntoView();
     this.currentScale = val;
-
     var event = document.createEvent('UIEvents');
     event.initUIEvent('scalechange', false, false, window, 0);
     event.scale = val;
@@ -271,6 +272,8 @@ var PDFView = {
     } catch (e) {
       this.error('An error occurred while reading the PDF.', e);
     }
+
+    window.apdf = pdf;
     var pagesCount = pdf.numPages;
     document.getElementById('numPages').innerHTML = pagesCount;
     document.getElementById('pageNumber').max = pagesCount;
@@ -295,7 +298,6 @@ var PDFView = {
     this.pagesRefMap = pagesRefMap;
     this.destinations = pdf.catalog.destinations;
     this.setScale(scale || kDefaultScale, true);
-
     if (pdf.catalog.documentOutline) {
       this.outline = new DocumentOutlineView(pdf.catalog.documentOutline);
       var outlineSwitchButton = document.getElementById('outlineSwitch');
@@ -309,6 +311,7 @@ var PDFView = {
     }
     else
       this.page = 1;
+
   },
 
   setHash: function pdfViewSetHash(hash) {
@@ -429,7 +432,7 @@ var PageView = function pageView(container, content, id, pageWidth, pageHeight,
                                  stats, navigateTo) {
   this.id = id;
   this.content = content;
-
+  var self = this;
   var view = this.content.view;
   this.x = view.x;
   this.y = view.y;
@@ -458,7 +461,7 @@ var PageView = function pageView(container, content, id, pageWidth, pageHeight,
     delete this.canvas;
   };
 
-  function setupLinks(content, scale) {
+  function setupAnnotations(content, scale) {
     function bindLink(link, dest) {
       link.href = PDFView.getDestinationHash(dest);
       link.onclick = function pageViewSetupLinksOnclick() {
@@ -467,18 +470,128 @@ var PageView = function pageView(container, content, id, pageWidth, pageHeight,
         return false;
       };
     }
+    function bindInputItem(input, item) {
+      if (input.name in PDFView.formFields) {
+        var value = PDFView.formFields[input.name];
+        if (input.type == 'checkbox')
+          input.checked = value;
+        else if (!input.type || input.type == 'text')
+          input.value = value;
+      }
+      input.onchange = function pageViewSetupInputOnBlur() {
+        if (input.type == 'checkbox')
+          PDFView.formFields[input.name] = input.checked;
+        else if (!input.type || input.type == 'text')
+          PDFView.formFields[input.name] = input.value;
+      };
+    }
+    function createElementWithStyle(tagName, item) {
+      var element = document.createElement(tagName);
+      element.style.left = (Math.floor(item.x - view.x) * scale) + 'px';
+      element.style.top = (Math.floor(item.y - view.y) * scale) + 'px';
+      element.style.width = Math.ceil(item.width * scale) + 'px';
+      element.style.height = Math.ceil(item.height * scale) + 'px';
+      return element;
+    }
+    function assignFontStyle(element, item) {
+      var fontStyles = '';
+      if ('fontSize' in item)
+        fontStyles += 'font-size: ' + Math.round(item.fontSize * scale) + 'px';
+      element.setAttribute('style', element.getAttribute('style') + fontStyles);
+    }
+    function createComment(el) {
+      var comment = document.createElement('div');
+      
+      // Button Element, right now instead of an image
+      var button = document.createElement('button');
+      button.innerHTML = '+';
+      if(el.width > 25) {
+        button.style.width = el.width + 'px';
+      }
+      
+      button.style.left = (Math.floor(el.x-view.x)*scale) + 'px';
+      button.style.top = (Math.floor(el.y-view.y)*scale) + 'px';
+      button.style.position = 'absolute';
+      
+      var content = (el.title) ? '<h2>'+el.title+'</h2>' : '';
+      content += el.content;
+      
+      content = content.replace(/\u00FF/g, '').replace(/\u00FE/g, '').replace(/\n/g, '<br />');
+      
+      // Overlay element
+      var text = document.createElement('div');
+      text.className = 'annotComment';
+      text.innerHTML = content;
+      text.style.left = ((Math.floor(el.x-view.x) + el.width) * scale) + 'px';
+      text.style.top = (Math.floor(el.y-view.y) *scale) + 'px';
+      text.style.display = 'none';
+      
+      button.addEventListener('click', function(e) {
+        var textNote = e.target.nextSibling;
+        if(text.style.display == 'none') {
+          text.style.display = 'block';
+        } else {
+          text.style.display = 'none';
+        }
+      }, true);
+      
+      comment.appendChild(button);
+      comment.appendChild(text);
+      return comment;
+    }
 
-    var links = content.getLinks();
-    for (var i = 0; i < links.length; i++) {
-      var link = document.createElement('a');
-      link.style.left = (Math.floor(links[i].x - view.x) * scale) + 'px';
-      link.style.top = (Math.floor(links[i].y - view.y) * scale) + 'px';
-      link.style.width = Math.ceil(links[i].width * scale) + 'px';
-      link.style.height = Math.ceil(links[i].height * scale) + 'px';
-      link.href = links[i].url || '';
-      if (!links[i].url)
-        bindLink(link, ('dest' in links[i]) ? links[i].dest : null);
-      div.appendChild(link);
+    var items = content.getAnnotations();
+    for (var i = 0; i < items.length; i++) {
+      var item = items[i];
+      switch (item.type) {
+        case 'Link': {
+          var link = createElementWithStyle('a', item);
+          link.href = item.url || '';
+          if (!item.url)
+            bindLink(link, ('dest' in item) ? item.dest : null);
+          div.appendChild(link);
+        } break;
+        
+        case 'Widget': {
+          if (item.fieldType != 'Tx' && item.fieldType != 'Btn' &&
+              item.fieldType != 'Ch')
+            break;
+          var inputDiv = createElementWithStyle('div', item);
+          inputDiv.className = 'inputHint';
+          div.appendChild(inputDiv);
+          var input;
+          if (item.fieldType == 'Tx') {
+            input = createElementWithStyle('input', item);
+          }
+          if (item.fieldType == 'Btn') {
+            input = createElementWithStyle('input', item);
+            if (item.flags & 32768) {
+              input.type = 'radio';
+              TODO('radio button is not supported');
+            } else if (item.flags & 65536) {
+              input.type = 'button';
+              TODO('pushbutton is not supported');
+            } else {
+              input.type = 'checkbox';
+            }
+          }
+          if (item.fieldType == 'Ch') {
+            input = createElementWithStyle('select', item);
+            TODO('select box is not supported');
+          }
+          input.className = 'inputControl';
+          input.name = item.fullName;
+          input.title = item.alternativeText;
+          assignFontStyle(input, item);
+          bindInputItem(input, item);
+          div.appendChild(input);
+        } break;
+          
+        case 'Text': {
+          var comment = createComment(item);
+          div.appendChild(comment);
+        } break;
+      }
     }
   }
 
@@ -586,7 +699,6 @@ var PageView = function pageView(container, content, id, pageWidth, pageHeight,
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     ctx.restore();
     ctx.translate(-this.x * scale, -this.y * scale);
-
     stats.begin = Date.now();
     this.content.startRendering(ctx,
       (function pageViewDrawCallback(error) {
@@ -598,7 +710,7 @@ var PageView = function pageView(container, content, id, pageWidth, pageHeight,
       }).bind(this), textLayer
     );
 
-    setupLinks(this.content, this.scale);
+    setupAnnotations(this.content, this.scale);
     div.setAttribute('data-loaded', true);
 
     return true;
@@ -762,7 +874,6 @@ function updateViewarea() {
 
   if (!visiblePages.length)
     return;
-
   updateViewarea.inProgress = true; // used in "set page"
   var currentId = PDFView.page;
   var firstPage = visiblePages[0];
@@ -870,7 +981,6 @@ window.addEventListener('scalechange', function scalechange(evt) {
     option.selected = true;
     predefinedValueFound = true;
   }
-
   if (!predefinedValueFound) {
     customScaleOption.textContent = Math.round(evt.scale * 10000) / 100 + '%';
     customScaleOption.selected = true;
@@ -889,6 +999,9 @@ window.addEventListener('pagechange', function pagechange(evt) {
 
 window.addEventListener('keydown', function keydown(evt) {
   var curElement = document.activeElement;
+  if (curElement && curElement.tagName == 'INPUT')
+    return;
+  
   var controlsElement = document.getElementById('controls');
   while (curElement) {
     if (curElement === controlsElement)

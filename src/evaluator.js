@@ -251,6 +251,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       var parser = new Parser(new Lexer(stream), false);
       var res = resources;
       var args = [], obj;
+
       var getObjBt = function getObjBt() {
         parser = this.oldParser;
         return { name: 'BT' };
