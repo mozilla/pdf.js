@@ -476,7 +476,7 @@ var PageView = function pageView(container, content, id, pageWidth, pageHeight,
       return element;
     }
     function createCommentAnnotation(type, item) {
-      var annotContainer = document.createElement('section'); 
+      var annotContainer = document.createElement('section');
       annotContainer.className = 'annotComment';
 
       var annotImage = createElementWithStyle('div', item);
@@ -486,20 +486,21 @@ var PageView = function pageView(container, content, id, pageWidth, pageHeight,
       var annotTitle = document.createElement('h1');
       var annotContent = document.createElement('p');
 
-      annotDetails.style.left = (Math.floor(item.x - view.x + item.width) * scale) + 'px';
+      var offsetPos = Math.floor(item.x - view.x + item.width);
+      annotDetails.style.left = (offsetPos * scale) + 'px';
       annotDetails.style.top = (Math.floor(item.y - view.y) * scale) + 'px';
       annotTitle.textContent = item.title;
 
-      if(!item.content) {
+      if (!item.content) {
         annotContent.style.display = 'none';
       } else {
         annotContent.innerHTML = item.content.replace('\n', '<br />');
         annotImage.addEventListener('mouseover', function() {
-           this.nextSibling.style.display = 'block'; 
+           this.nextSibling.style.display = 'block';
         }, true);
 
         annotImage.addEventListener('mouseout', function() {
-           this.nextSibling.style.display = 'none'; 
+           this.nextSibling.style.display = 'none';
         }, true);
       }
 
@@ -526,7 +527,7 @@ var PageView = function pageView(container, content, id, pageWidth, pageHeight,
         case 'Text':
         case 'Check':
           var comment = createCommentAnnotation(item.name, item);
-          if(comment)
+          if (comment)
             div.appendChild(comment);
           break;
       }

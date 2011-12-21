@@ -383,12 +383,12 @@ var Page = (function PageClosure() {
           case 'Text':
             var content = annotation.get('Contents');
             var title = annotation.get('T');
-            item.content = (typeof content == 'string') ? stringToPDFString(content) : null;
-            item.title = (typeof title == 'string') ? stringToPDFString(title) : null;
+            item.content = stringToPDFString(content || '');
+            item.title = stringToPDFString(title || '');
             item.name = annotation.get('Name').name;
             break;
 
-          default: 
+          default:
             TODO('unimplemented annotation type: ' + subtype.name);
             break;
         }
