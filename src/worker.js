@@ -195,6 +195,39 @@ var WorkerMessageHandler = {
 
       handler.send('font_ready', [objId, obj]);
     });
+
+    handler.on('extract_text', function wphExtractText() {
+      var numPages = pdfDoc.numPages;
+      var index = [];
+      var start = Date.now();
+
+      function indexPage(pageNum) {
+        if (pageNum > numPages) {
+          console.log('text indexing: time=%dms', Date.now() - start);
+
+          handler.send('text_extracted', [index]);
+          return;
+        }
+
+        var textContent = '';
+        try {
+          var page = pdfDoc.getPage(pageNum);
+          textContent = page.extractTextContent();
+        } catch (e) {
+          // Skip errored pages
+        }
+
+        index.push(textContent);
+
+        // processing one page, interrupting thread to process
+        // other requests
+        setTimeout(function extractTextNextPage() {
+          indexPage(pageNum + 1);
+        }, 0);
+      }
+
+      indexPage(1);
+    });
   }
 };
 

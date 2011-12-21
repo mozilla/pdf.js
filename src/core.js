@@ -200,16 +200,48 @@ var Page = (function PageClosure() {
       if (isArray(content)) {
         // fetching items
         var i, n = content.length;
+        var streams = [];
         for (i = 0; i < n; ++i)
-          content[i] = xref.fetchIfRef(content[i]);
-        content = new StreamsSequenceStream(content);
-      }
+          streams.push(xref.fetchIfRef(content[i]));
+        content = new StreamsSequenceStream(streams);
+      } else if (isStream(content))
+        content.reset();
 
       var pe = this.pe = new PartialEvaluator(
                                 xref, handler, 'p' + this.pageNumber + '_');
       var IRQueue = {};
       return (this.IRQueue = pe.getIRQueue(content, resources, IRQueue,
                                            dependency));
+    },
+
+    extractTextContent: function pageExtractPageContent() {
+      if ('textContent' in this) {
+        // text content was extracted
+        return this.textContent;
+      }
+
+      var handler = {
+        on: function nullHandlerOn() {},
+        send: function nullHandlerSend() {}
+      };
+
+      var xref = this.xref;
+      var content = xref.fetchIfRef(this.content);
+      var resources = xref.fetchIfRef(this.resources);
+      if (isArray(content)) {
+        // fetching items
+        var i, n = content.length;
+        var streams = [];
+        for (i = 0; i < n; ++i)
+          streams.push(xref.fetchIfRef(content[i]));
+        content = new StreamsSequenceStream(streams);
+      } else if (isStream(content))
+        content.reset();
+
+      var pe = new PartialEvaluator(
+                     xref, handler, 'p' + this.pageNumber + '_');
+      var text = pe.getTextContent(content, resources);
+      return (this.textContent = text);
     },
 
     ensureFonts: function pageEnsureFonts(fonts, callback) {
@@ -688,6 +720,12 @@ var PDFDoc = (function PDFDocClosure() {
           throw data.error;
       }, this);
 
+      messageHandler.on('text_extracted', function pdfTextExtracted(data) {
+        var index = data[0];
+        if (this.textExtracted)
+          this.textExtracted(index);
+      }, this);
+
       messageHandler.on('jpeg_decode', function(data, promise) {
         var imageData = data[0];
         var components = data[1];
@@ -750,6 +788,12 @@ var PDFDoc = (function PDFDocClosure() {
       page.objs = this.objs;
       page.pdf = this;
       return (this.pageCache[n] = page);
+    },
+
+    extractText: function pdfDocExtractExtractText() {
+      this.workerReadyPromise.then(function pdfDocStartRenderingThen() {
+        this.messageHandler.send('extract_text');
+      }.bind(this));
     },
 
     destroy: function pdfDocDestroy() {
