@@ -964,6 +964,8 @@ window.addEventListener('pagechange', function pagechange(evt) {
 
 window.addEventListener('keydown', function keydown(evt) {
   var curElement = document.activeElement;
+  if (curElement && curElement.tagName == 'INPUT')
+    return;
   var controlsElement = document.getElementById('controls');
   while (curElement) {
     if (curElement === controlsElement)
