@@ -361,5 +361,11 @@
       "rounds": 1,
       "link": true,
       "type": "eq"
+    },
+    {  "id": "smaskdim",
+      "file": "pdfs/smaskdim.pdf",
+      "md5": "de80aeca7cbf79940189fd34d59671ee",
+      "rounds": 1,
+      "type": "eq"
     }
 ]
