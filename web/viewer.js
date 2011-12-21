@@ -475,6 +475,41 @@ var PageView = function pageView(container, content, id, pageWidth, pageHeight,
       element.style.height = Math.ceil(item.height * scale) + 'px';
       return element;
     }
+    function createCommentAnnotation(type, item) {
+      var annotContainer = document.createElement('section'); 
+      annotContainer.className = 'annotComment';
+
+      var annotImage = createElementWithStyle('div', item);
+      annotImage.className = 'annotImage annotImage' + type;
+      var annotDetails = document.createElement('div');
+      annotDetails.className = 'annotDetails';
+      var annotTitle = document.createElement('h1');
+      var annotContent = document.createElement('p');
+
+      annotDetails.style.left = (Math.floor(item.x - view.x + item.width) * scale) + 'px';
+      annotDetails.style.top = (Math.floor(item.y - view.y) * scale) + 'px';
+      annotTitle.textContent = item.title;
+
+      if(!item.content) {
+        annotContent.style.display = 'none';
+      } else {
+        annotContent.innerHTML = item.content.replace('\n', '<br />');
+        annotImage.addEventListener('mouseover', function() {
+           this.nextSibling.style.display = 'block'; 
+        }, true);
+
+        annotImage.addEventListener('mouseout', function() {
+           this.nextSibling.style.display = 'none'; 
+        }, true);
+      }
+
+      annotDetails.appendChild(annotTitle);
+      annotDetails.appendChild(annotContent);
+      annotContainer.appendChild(annotImage);
+      annotContainer.appendChild(annotDetails);
+
+      return annotContainer;
+    }
 
     var items = content.getAnnotations();
     for (var i = 0; i < items.length; i++) {
@@ -486,6 +521,13 @@ var PageView = function pageView(container, content, id, pageWidth, pageHeight,
           if (!item.url)
             bindLink(link, ('dest' in item) ? item.dest : null);
           div.appendChild(link);
+          break;
+
+        case 'Text':
+        case 'Check':
+          var comment = createCommentAnnotation(item.name, item);
+          if(comment)
+            div.appendChild(comment);
           break;
       }
     }
