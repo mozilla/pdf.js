@@ -458,7 +458,7 @@ var PageView = function pageView(container, content, id, pageWidth, pageHeight,
     delete this.canvas;
   };
 
-  function setupLinks(content, scale) {
+  function setupAnnotations(content, scale) {
     function bindLink(link, dest) {
       link.href = PDFView.getDestinationHash(dest);
       link.onclick = function pageViewSetupLinksOnclick() {
@@ -467,18 +467,27 @@ var PageView = function pageView(container, content, id, pageWidth, pageHeight,
         return false;
       };
     }
+    function createElementWithStyle(tagName, item) {
+      var element = document.createElement(tagName);
+      element.style.left = (Math.floor(item.x - view.x) * scale) + 'px';
+      element.style.top = (Math.floor(item.y - view.y) * scale) + 'px';
+      element.style.width = Math.ceil(item.width * scale) + 'px';
+      element.style.height = Math.ceil(item.height * scale) + 'px';
+      return element;
+    }
 
-    var links = content.getLinks();
-    for (var i = 0; i < links.length; i++) {
-      var link = document.createElement('a');
-      link.style.left = (Math.floor(links[i].x - view.x) * scale) + 'px';
-      link.style.top = (Math.floor(links[i].y - view.y) * scale) + 'px';
-      link.style.width = Math.ceil(links[i].width * scale) + 'px';
-      link.style.height = Math.ceil(links[i].height * scale) + 'px';
-      link.href = links[i].url || '';
-      if (!links[i].url)
-        bindLink(link, ('dest' in links[i]) ? links[i].dest : null);
-      div.appendChild(link);
+    var items = content.getAnnotations();
+    for (var i = 0; i < items.length; i++) {
+      var item = items[i];
+      switch (item.type) {
+        case 'Link':
+          var link = createElementWithStyle('a', item);
+          link.href = item.url || '';
+          if (!item.url)
+            bindLink(link, ('dest' in item) ? item.dest : null);
+          div.appendChild(link);
+          break;
+      }
     }
   }
 
@@ -598,7 +607,7 @@ var PageView = function pageView(container, content, id, pageWidth, pageHeight,
       }).bind(this), textLayer
     );
 
-    setupLinks(this.content, this.scale);
+    setupAnnotations(this.content, this.scale);
     div.setAttribute('data-loaded', true);
 
     return true;
@@ -889,6 +898,8 @@ window.addEventListener('pagechange', function pagechange(evt) {
 
 window.addEventListener('keydown', function keydown(evt) {
   var curElement = document.activeElement;
+  if (curElement && curElement.tagName == 'INPUT')
+    return;
   var controlsElement = document.getElementById('controls');
   while (curElement) {
     if (curElement === controlsElement)
