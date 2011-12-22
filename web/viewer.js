@@ -11,7 +11,7 @@ var kCssUnits = 96.0 / 72.0;
 var kScrollbarPadding = 40;
 var kMinScale = 0.25;
 var kMaxScale = 4.0;
-
+var kImageDirectory = './images/';
 
 var Cache = function cacheCache(size) {
   var data = [];
@@ -480,7 +480,7 @@ var PageView = function pageView(container, content, id, pageWidth, pageHeight,
       container.className = 'annotComment';
 
       var image = createElementWithStyle('img', item);
-      image.src = './images/' + type.toLowerCase() + '.svg';
+      image.src = kImageDirectory + type.toLowerCase() + '.svg';
       var content = document.createElement('div');
       content.setAttribute('hidden', true);
       var title = document.createElement('h1');
