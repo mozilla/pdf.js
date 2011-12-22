@@ -347,7 +347,7 @@ var PDFView = {
       pagesRefMap[pageRef.num + ' ' + pageRef.gen + ' R'] = i;
     }
 
-    var id = pdf.fileID;
+    var id = pdf.fingerprint;
     if (id) {
       var scroll = Settings.get(id + '.scroll', -1);
       if (scroll != -1) {
@@ -895,9 +895,9 @@ function updateViewarea() {
 
 window.addEventListener('scroll', function webViewerScroll(evt) {
   updateViewarea();
-  var fileID;
-  if((fileID = PDFView.pages[0].content.pdf.fileID)) {
-    Settings.set(fileID+'.scroll', window.pageYOffset);
+  var id;
+  if((id = PDFView.pages[0].content.pdf.fingerprint)) {
+    Settings.set(id+'.scroll', window.pageYOffset);
   }
 }, true);
 
