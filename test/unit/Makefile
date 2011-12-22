@@ -57,8 +57,19 @@ PROG:=java \
 --testOutput ./test_reports/
 
 test:
+	@echo 'Debug random profile paths: $(BROWSERS_WITH_UKNOWN_RANDOM_PROFILE_PATHS)'
+	@echo
+	@echo 'Debug browsers: $(BROWSERS)'
+	@echo
+	@echo 'Debug profiles: $(PROFILES)'
+	@echo
+	@echo 'About to run command: mkdir -p $(PROFILES)'
 	@mkdir -p $(PROFILES)
+	@echo
+	@echo 'About to run command: $(PROG)'
 	$(PROG)
+	@echo
+	@echo 'About to run command: @rm -rf $(PROFILES)'
 	@rm -rf $(PROFILES)
 
 .phony:: test
