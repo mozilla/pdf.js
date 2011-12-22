@@ -190,9 +190,8 @@ var PDFView = {
       this.setScale(
         Math.min(pageWidthScale, pageHeightScale), resetAutoSettings);
     }
-    if ('auto' == value) {
+    if ('auto' == value)
       this.setScale(Math.min(1.0, pageWidthScale), resetAutoSettings);
-    }
 
     selectScaleOption(value);
   },
