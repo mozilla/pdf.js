@@ -323,10 +323,10 @@ var Page = (function PageClosure() {
             if (a) {
               switch (a.get('S').name) {
                 case 'URI':
-                  link.url = a.get('URI');
+                  item.url = a.get('URI');
                   break;
                 case 'GoTo':
-                  link.dest = a.get('D');
+                  item.dest = a.get('D');
                   break;
                 default:
                   TODO('other link types');
@@ -334,7 +334,7 @@ var Page = (function PageClosure() {
             } else if (annotation.has('Dest')) {
               // simple destination link
               var dest = annotation.get('Dest');
-              link.dest = isName(dest) ? dest.name : dest;
+              item.dest = isName(dest) ? dest.name : dest;
             }
             break;
           case 'Widget':
@@ -378,6 +378,16 @@ var Page = (function PageClosure() {
               item.fontSize = parseFloat(m[1]);
             item.textAlignment = getInheritableProperty(annotation, 'Q');
             item.flags = getInheritableProperty(annotation, 'Ff') || 0;
+            break;
+          case 'Text':
+            var content = annotation.get('Contents');
+            var title = annotation.get('T');
+            item.content = stringToPDFString(content || '');
+            item.title = stringToPDFString(title || '');
+            item.name = annotation.get('Name').name;
+            break;
+          default:
+            TODO('unimplemented annotation type: ' + subtype.name);
             break;
         }
         items.push(item);
