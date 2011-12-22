@@ -85,13 +85,6 @@ var WorkerMessageHandler = {
       handler.send('test', data instanceof Uint8Array);
     });
 
-    handler.on('workerSrc', function wphSetupWorkerSrc(data) {
-      // In development, the `workerSrc` message is handled in the
-      // `worker_loader.js` file. In production the workerProcessHandler is
-      // called for this. This servers as a dummy to prevent calling an
-      // undefined action `workerSrc`.
-    });
-
     handler.on('doc', function wphSetupDoc(data) {
       // Create only the model of the PDFDoc, which is enough for
       // processing the content of the pdf.
