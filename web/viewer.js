@@ -4,7 +4,7 @@
 'use strict';
 
 var kDefaultURL = 'compressed.tracemonkey-pldi-09.pdf';
-var kDefaultScale = 1.5;
+var kDefaultScale = 'auto';
 var kDefaultScaleDelta = 1.1;
 var kCacheSize = 20;
 var kCssUnits = 96.0 / 72.0;
@@ -187,6 +187,11 @@ var PDFView = {
       this.setScale(
         Math.min(pageWidthScale, pageHeightScale), resetAutoSettings);
     }
+    if ('auto' == value) {
+      this.setScale(Math.min(1.0, pageWidthScale), resetAutoSettings);
+    }
+
+    selectScaleOption(value);
   },
 
   zoomIn: function pdfViewZoomIn() {
@@ -1000,7 +1005,8 @@ window.addEventListener('webkitTransitionEnd', updateThumbViewArea, true);
 
 window.addEventListener('resize', function webViewerResize(evt) {
   if (document.getElementById('pageWidthOption').selected ||
-      document.getElementById('pageFitOption').selected)
+      document.getElementById('pageFitOption').selected ||
+      document.getElementById('pageAutoOption').selected)
       PDFView.parseScale(document.getElementById('scaleSelect').value);
   updateViewarea();
 });
