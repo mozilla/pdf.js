@@ -25,6 +25,61 @@ var Cache = function cacheCache(size) {
   };
 };
 
+// Settings Manager - This is a utility for saving settings
+// First we see if localStorage is available, which isn't pt. in FF due to bug #495747
+// If not, we use FUEL in FF and fallback to Cookies for other browsers.
+(function(parent) {
+var COOKIE_WORKS = (function() {
+  document.cookie = 'they=work';
+  return document.cookie.length > 0;
+})();
+
+var LOCALSTORAGE_WORKS = (function() {
+  try {
+    if(typeof localStorage != 'undefined') {
+      return true;
+    }
+  } catch(e) {
+    return false;
+  }
+  return true;
+})();
+
+var extPrefix = 'extensions.uriloader@pdf.js';
+
+var Settings = {
+  set: function(name, val) {
+    if(location.protocol == 'chrome:' && !LOCALSTORAGE_WORKS) {
+      Application.prefs.setValue(extPrefix + '.' + name, val); 
+    } else if(LOCALSTORAGE_WORKS) {
+      localStorage.setItem(name, val);
+    } else if(COOKIE_WORKS) {
+      var cookieString = name + '=' + escape(val);
+      var expire = (new Date((new Date().getTime())+1000*60*60*24*365)).toGMTString();
+      cookieString += '; expires='+expire;
+      document.cookie = cookieString; 
+    } 
+  },
+
+  get: function(name, defaultValue) {
+    if(location.protocol == 'chrome:' && !LOCALSTORAGE_WORKS) {
+      return Application.prefs.getValue(extPrefix + '.' + name, defaultValue); 
+    } else if(LOCALSTORAGE_WORKS) {
+      return localStorage.getItem(name) || defaultValue;
+    } else if(COOKIE_WORKS) {
+      var res = document.cookie.match ( '(^|;) ?' + name + '=([^;]*)(;|$)' );
+      if (res) {
+       return unescape(res[2]);
+      } else {
+       return fallback;
+      }
+    }
+  }
+};
+
+parent.Settings = Settings;
+})(this);
+
 var cache = new Cache(kCacheSize);
 var currentPageNumber = 1;
 
@@ -292,6 +347,15 @@ var PDFView = {
       pagesRefMap[pageRef.num + ' ' + pageRef.gen + ' R'] = i;
     }
 
+    var id = pdf.fileID;
+    if (id) {
+      var scroll = Settings.get(id + '.scroll', -1);
+      if (scroll != -1) {
+        setTimeout(function scrollWindow() {
+          window.scrollTo(0, scroll);
+        }, 0);
+      }
+    }
     this.pagesRefMap = pagesRefMap;
     this.destinations = pdf.catalog.destinations;
     this.setScale(scale || kDefaultScale, true);
@@ -831,6 +895,10 @@ function updateViewarea() {
 
 window.addEventListener('scroll', function webViewerScroll(evt) {
   updateViewarea();
+  var fileID;
+  if((fileID = PDFView.pages[0].content.pdf.fileID)) {
+    Settings.set(fileID+'.scroll', window.pageYOffset);
+  }
 }, true);
 
 
@@ -888,7 +956,6 @@ window.addEventListener('change', function webViewerChange(evt) {
   // implemented in Firefox.
   var file = files[0];
   fileReader.readAsBinaryString(file);
-
   document.title = file.name;
 
   // URL does not reflect proper document location - hiding some icons.

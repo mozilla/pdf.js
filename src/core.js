@@ -527,6 +527,14 @@ var PDFDocModel = (function PDFDocModelClosure() {
                            this.startXRef,
                            this.mainXRefEntriesOffset);
       this.catalog = new Catalog(this.xref);
+      
+      if(this.xref.trailer && this.xref.trailer.has('ID')) {
+        var fileID = '';
+        this.xref.trailer.get('ID')[0].split('').forEach(function(el) {
+          fileID += Number(el.charCodeAt(0)).toString(16);
+        });
+        this.fileID = fileID;
+      }
     },
     get numPages() {
       var linearization = this.linearization;
@@ -560,7 +568,7 @@ var PDFDoc = (function PDFDocClosure() {
     this.data = data;
     this.stream = stream;
     this.pdf = new PDFDocModel(stream);
-
+    this.fileID = this.pdf.fileID;
     this.catalog = this.pdf.catalog;
     this.objs = new PDFObjects();
 
