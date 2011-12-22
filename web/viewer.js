@@ -149,6 +149,9 @@ var PDFView = {
   initialBookmark: document.location.hash.substring(1),
 
   setScale: function pdfViewSetScale(val, resetAutoSettings) {
+    if (val == this.currentScale)
+      return;
+
     var pages = this.pages;
     for (var i = 0; i < pages.length; i++)
       pages[i].update(val * kCssUnits);
