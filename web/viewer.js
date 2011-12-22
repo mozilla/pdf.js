@@ -11,7 +11,7 @@ var kCssUnits = 96.0 / 72.0;
 var kScrollbarPadding = 40;
 var kMinScale = 0.25;
 var kMaxScale = 4.0;
-
+var kImageDirectory = './images/';
 
 var Cache = function cacheCache(size) {
   var data = [];
@@ -475,6 +475,41 @@ var PageView = function pageView(container, content, id, pageWidth, pageHeight,
       element.style.height = Math.ceil(item.height * scale) + 'px';
       return element;
     }
+    function createCommentAnnotation(type, item) {
+      var container = document.createElement('section');
+      container.className = 'annotComment';
+
+      var image = createElementWithStyle('img', item);
+      image.src = kImageDirectory + type.toLowerCase() + '.svg';
+      var content = document.createElement('div');
+      content.setAttribute('hidden', true);
+      var title = document.createElement('h1');
+      var text = document.createElement('p');
+      var offsetPos = Math.floor(item.x - view.x + item.width);
+      content.style.left = (offsetPos * scale) + 'px';
+      content.style.top = (Math.floor(item.y - view.y) * scale) + 'px';
+      title.textContent = item.title;
+
+      if (!item.content) {
+        content.setAttribute('hidden', true);
+      } else {
+        text.innerHTML = item.content.replace('\n', '<br />');
+        image.addEventListener('mouseover', function annotationImageOver() {
+           this.nextSibling.removeAttribute('hidden');
+        }, false);
+
+        image.addEventListener('mouseout', function annotationImageOut() {
+           this.nextSibling.setAttribute('hidden', true);
+        }, false);
+      }
+
+      content.appendChild(title);
+      content.appendChild(text);
+      container.appendChild(image);
+      container.appendChild(content);
+
+      return container;
+    }
 
     var items = content.getAnnotations();
     for (var i = 0; i < items.length; i++) {
@@ -486,6 +521,11 @@ var PageView = function pageView(container, content, id, pageWidth, pageHeight,
           if (!item.url)
             bindLink(link, ('dest' in item) ? item.dest : null);
           div.appendChild(link);
+          break;
+        case 'Text':
+          var comment = createCommentAnnotation(item.name, item);
+          if (comment)
+            div.appendChild(comment);
           break;
       }
     }
