@@ -251,29 +251,25 @@ canvas {
   position: absolute;
 }
 
-.annotComment > .annotImageComment {
-  background: transparent url('./images/text.svg') no-repeat left top;
-  background-size: 75% 75%;
+.annotComment > img {
+  position: absolute;
 }
 
-.annotComment > .annotImageCheck {
-  background: transparent url('./images/check.svg') no-repeat left top;
-  background-size: 75% 75%;
-}
-
-.annotComment > .annotImage:hover {
+.annotComment > img:hover {
   cursor: pointer;
   opacity: 0.7;
 }
 
-.annotComment > .annotDetails {
-  display: none;
+.annotComment > div {
   padding: 0.2em;
   max-width: 20em;
   background-color: #F1E47B;
+  box-shadow: 0px 2px 10px #333;
+  -moz-box-shadow: 0px 2px 10px #333;
+  -webkit-box-shadow: 0px 2px 10px #333;
 }
 
-.annotComment > .annotDetails > h1 {
+.annotComment > div > h1 {
   font-weight: normal;
   font-size: 1.2em;
   border-bottom: 1px solid #000000;

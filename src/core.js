@@ -379,7 +379,6 @@ var Page = (function PageClosure() {
             item.textAlignment = getInheritableProperty(annotation, 'Q');
             item.flags = getInheritableProperty(annotation, 'Ff') || 0;
             break;
-
           case 'Text':
             var content = annotation.get('Contents');
             var title = annotation.get('T');
@@ -387,7 +386,6 @@ var Page = (function PageClosure() {
             item.title = stringToPDFString(title || '');
             item.name = annotation.get('Name').name;
             break;
-
           default:
             TODO('unimplemented annotation type: ' + subtype.name);
             break;

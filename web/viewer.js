@@ -476,40 +476,39 @@ var PageView = function pageView(container, content, id, pageWidth, pageHeight,
       return element;
     }
     function createCommentAnnotation(type, item) {
-      var annotContainer = document.createElement('section');
-      annotContainer.className = 'annotComment';
+      var container = document.createElement('section');
+      container.className = 'annotComment';
 
-      var annotImage = createElementWithStyle('div', item);
-      annotImage.className = 'annotImage annotImage' + type;
-      var annotDetails = document.createElement('div');
-      annotDetails.className = 'annotDetails';
-      var annotTitle = document.createElement('h1');
-      var annotContent = document.createElement('p');
-
+      var image = createElementWithStyle('img', item);
+      image.src = './images/' + type.toLowerCase() + '.svg';
+      var content = document.createElement('div');
+      content.setAttribute('hidden', true);
+      var title = document.createElement('h1');
+      var text = document.createElement('p');
       var offsetPos = Math.floor(item.x - view.x + item.width);
-      annotDetails.style.left = (offsetPos * scale) + 'px';
-      annotDetails.style.top = (Math.floor(item.y - view.y) * scale) + 'px';
-      annotTitle.textContent = item.title;
+      content.style.left = (offsetPos * scale) + 'px';
+      content.style.top = (Math.floor(item.y - view.y) * scale) + 'px';
+      title.textContent = item.title;
 
       if (!item.content) {
-        annotContent.style.display = 'none';
+        content.setAttribute('hidden', true);
       } else {
-        annotContent.innerHTML = item.content.replace('\n', '<br />');
-        annotImage.addEventListener('mouseover', function() {
-           this.nextSibling.style.display = 'block';
-        }, true);
+        text.innerHTML = item.content.replace('\n', '<br />');
+        image.addEventListener('mouseover', function annotationImageOver() {
+           this.nextSibling.removeAttribute('hidden');
+        }, false);
 
-        annotImage.addEventListener('mouseout', function() {
-           this.nextSibling.style.display = 'none';
-        }, true);
+        image.addEventListener('mouseout', function annotationImageOut() {
+           this.nextSibling.setAttribute('hidden', true);
+        }, false);
       }
 
-      annotDetails.appendChild(annotTitle);
-      annotDetails.appendChild(annotContent);
-      annotContainer.appendChild(annotImage);
-      annotContainer.appendChild(annotDetails);
+      content.appendChild(title);
+      content.appendChild(text);
+      container.appendChild(image);
+      container.appendChild(content);
 
-      return annotContainer;
+      return container;
     }
 
     var items = content.getAnnotations();
@@ -523,9 +522,7 @@ var PageView = function pageView(container, content, id, pageWidth, pageHeight,
             bindLink(link, ('dest' in item) ? item.dest : null);
           div.appendChild(link);
           break;
-
         case 'Text':
-        case 'Check':
           var comment = createCommentAnnotation(item.name, item);
           if (comment)
             div.appendChild(comment);
