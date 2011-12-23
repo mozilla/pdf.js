@@ -26,7 +26,7 @@ var Cache = function cacheCache(size) {
 };
 
 // Settings Manager - This is a utility for saving settings
-// First we see if localStorage is available, which isn't pt. in FF due to bug #495747
+// First we see if localStorage is available, FF bug #495747
 // If not, we use FUEL in FF and fallback to Cookies for other browsers.
 var Settings = (function settingsClosure() {
   var isCookiesEnabled = (function() {
@@ -37,7 +37,7 @@ var Settings = (function settingsClosure() {
   var isLocalStorageEnabled = (function localStorageEnabledTest() {
     try {
       localStorage;
-    } catch(e) {
+    } catch (e) {
       return false;
     }
     return true;
@@ -47,25 +47,27 @@ var Settings = (function settingsClosure() {
 
   return {
     set: function settingsSet(name, val) {
-      if(location.protocol == 'chrome:' && !isLocalStorageEnabled) {
-        Application.prefs.setValue(extPrefix + '.' + name, val); 
-      } else if(isLocalStorageEnabled) {
+      if (location.protocol == 'chrome:' && !isLocalStorageEnabled) {
+        Application.prefs.setValue(extPrefix + '.' + name, val);
+      } else if (isLocalStorageEnabled) {
         localStorage.setItem(name, val);
-      } else if(isCookiesEnabled) {
+      } else if (isCookiesEnabled) {
         var cookieString = name + '=' + escape(val);
-        var expire = (new Date((new Date().getTime())+1000*60*60*24*365)).toGMTString();
-        cookieString += '; expires='+expire;
-        document.cookie = cookieString; 
-      } 
+        var expire = new Date();
+        expire.setTime(expire.getTime() + 1000 * 60 * 60 * 24 * 365);
+        cookieString += '; expires=' + expire.toGMTString();
+        document.cookie = cookieString;
+      }
     },
 
     get: function settingsGet(name, defaultValue) {
-      if(location.protocol == 'chrome:' && !isLocalStorageEnabled) {
-        return Application.prefs.getValue(extPrefix + '.' + name, defaultValue); 
-      } else if(isLocalStorageEnabled) {
+      if (location.protocol == 'chrome:' && !isLocalStorageEnabled) {
+        var preferenceName = extPrefix + '.' + name;
+        return Application.prefs.getValue(preferenceName, defaultValue);
+      } else if (isLocalStorageEnabled) {
         return localStorage.getItem(name) || defaultValue;
-      } else if(isCookiesEnabled) {
-        var res = document.cookie.match ( '(^|;) ?' + name + '=([^;]*)(;|$)' );
+      } else if (isCookiesEnabled) {
+        var res = document.cookie.match('(^|;) ?' + name + '=([^;]*)(;|$)');
         return res ? unescape(res[2]) : defaultValue;
       }
     }
@@ -360,7 +362,7 @@ var PDFView = {
         setTimeout(function scrollWindow() {
           window.scrollTo(0, scroll);
         }, 0);
-      } else 
+      } else
         this.page = 1;
     }
   },
@@ -885,10 +887,8 @@ function updateViewarea() {
 
 window.addEventListener('scroll', function webViewerScroll(evt) {
   updateViewarea();
-  var id;
-  if((id = PDFView.pages[0].content.pdf.fingerprint)) {
-    Settings.set(id+'.scroll', window.pageYOffset);
-  }
+  var fingerprint = PDFView.pages[0].content.pdf.fingerprint;
+  Settings.set(fingerprint + '.scroll', window.pageYOffset);
 }, true);
 
 
