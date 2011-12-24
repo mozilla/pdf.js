@@ -336,16 +336,519 @@ var PDFFunction = (function PDFFunctionClosure() {
       };
     },
 
-    constructPostScript: function pdfFunctionConstructPostScript() {
-      return [CONSTRUCT_POSTSCRIPT];
+    constructPostScript: function pdfFunctionConstructPostScript(fn, dict, xref) {
+      var domain = dict.get('Domain');
+      var range = dict.get('Range');
+
+      if (!domain)
+        error('No domain.');
+
+      if(!range)
+        error('No range.')
+
+      var lexer = new PostScriptLexer(fn);
+      var parser = new PostScriptParser(lexer);
+      var code = parser.parse();
+
+      return [CONSTRUCT_POSTSCRIPT, domain, range, code];
     },
 
-    constructPostScriptFromIR: function pdfFunctionConstructPostScriptFromIR() {
-      TODO('unhandled type of function');
-      return function constructPostScriptFromIRResult() {
-        return [255, 105, 180];
+    constructPostScriptFromIR:
+                          function pdfFunctionConstructPostScriptFromIR(IR) {
+      var domain = IR[1];
+      var range = IR[2];
+      var code = IR[3];
+      var numOutputs = range.length / 2;
+      var evaluator = new PostScriptEvaluator(code);
+      // Cache the values for a big speed up, the cache size is limited though
+      // since the number of possible values can be huge from a PS function.
+      var cache = new FunctionCache();
+      return function constructPostScriptFromIRResult(args) {
+        var initialStack = [];
+        for (var i = 0, ii = (domain.length / 2); i < ii; ++i) {
+          initialStack.push(args[i]);
+        }
+
+        var key = initialStack.join('_');
+        if (cache.has(key))
+          return cache.get(key);
+
+        var stack = evaluator.execute(initialStack);
+        var transformed = new Array(numOutputs);
+        for (i = numOutputs - 1; i >= 0; --i) {
+          var out = stack.pop();
+          var rangeIndex = 2 * i;
+          if (out < range[rangeIndex])
+            out = range[rangeIndex];
+          else if (out > range[rangeIndex + 1])
+            out = range[rangeIndex + 1];
+          transformed[i] = out;
+        }
+        cache.set(key, transformed);
+        return transformed;
       };
     }
   };
+})();
+
+var FunctionCache = (function FunctionCache() {
+  var MAX_CACHE_SIZE = 1024;
+  function FunctionCache() {
+    this.cache = {};
+    this.total = 0;
+  }
+  FunctionCache.prototype = {
+    has: function(key) {
+      return key in this.cache
+    },
+    get: function(key) {
+      return this.cache[key];
+    },
+    set: function(key, value) {
+      if (this.total < MAX_CACHE_SIZE) {
+        this.cache[key] = value;
+        this.total++;
+      }
+    }
+  };
+  return FunctionCache;
+})();
+
+var PostScriptStack = (function PostScriptStack() {
+  var MAX_STACK_SIZE = 100;
+  function PostScriptStack(initialStack) {
+    this.stack = initialStack || [];
+  }
+
+  PostScriptStack.prototype = {
+    push: function push(value) {
+      if (this.stack.length >= MAX_STACK_SIZE)
+        error('PostScript function stack overflow.');
+      this.stack.push(value);
+    },
+    pop: function pop() {
+      if (this.stack.length <= 0)
+        error('PostScript function stack underflow.');
+      return this.stack.pop();
+    },
+    copy: function copy(n) {
+      if (this.stack.length + n >= MAX_STACK_SIZE)
+        error('PostScript function stack overflow.');
+      var part = this.stack.slice(this.stack.length - n);
+      this.stack = this.stack.concat(part);
+    },
+    index: function index(n) {
+      this.push(this.stack[this.stack.length - n - 1]);
+    },
+    roll: function roll(n, p) {
+      // rotate the last n stack elements p times
+      var a = this.stack.splice(this.stack.length - n, n);
+      // algorithm from http://jsfromhell.com/array/rotate
+      var l = a.length, p = (Math.abs(p) >= l && (p %= l),
+              p < 0 && (p += l), p), i, x;
+      for(; p; p = (Math.ceil(l / p) - 1) * p - l + (l = p))
+        for(i = l; i > p; x = a[--i], a[i] = a[i - p], a[i - p] = x);
+      this.stack = this.stack.concat(a);
+    }
+  };
+  return PostScriptStack;
+})();
+var PostScriptEvaluator = (function PostScriptEvaluator() {
+  function PostScriptEvaluator(code) {
+    this.code = code;
+    console.log(code);
+  }
+  PostScriptEvaluator.prototype = {
+    execute: function(initialStack) {
+      var stack = new PostScriptStack(initialStack);
+      var counter = 0;
+      var code = this.code;
+      var a, b;
+      while (counter < this.code.length) {
+        var instruction = this.code[counter++];
+        var operator = instruction[0];
+        switch (operator) {
+          // non standard ps operators
+          case 'push':
+            stack.push(instruction[1]);
+            break;
+          case 'jz': // jump if false
+            a = stack.pop();
+            if (!a)
+              counter = instruction[1];
+            break;
+          case 'j': // jump
+            counter = instruction[1];
+            break;
+
+          // all ps operators in alphabetical order (excluding if/ifelse)
+          case 'abs':
+            a = stack.pop();
+            stack.push(Math.abs(a));
+            break;
+          case 'add':
+            b = stack.pop();
+            a = stack.pop();
+            stack.push(a + b);
+            break;
+          case 'and':
+            b = stack.pop();
+            a = stack.pop();
+            if (isBool(a) && isBool(b))
+              stack.push(a && b);
+            else
+              stack.push(a & b);
+            break;
+          case 'atan':
+            a = stack.pop();
+            stack.push(Math.atan(a));
+            break;
+          case 'bitshift':
+            b = stack.pop();
+            a = stack.pop();
+            if (a > 0)
+              stack.push(a << b);
+            else
+              stack.push(a >> b);
+            break;
+          case 'ceiling':
+            a = stack.pop();
+            stack.push(Math.ceil(a));
+            break;
+          case 'copy':
+            a = stack.pop();
+            stack.copy(a);
+            break;
+          case 'cos':
+            a = stack.pop();
+            stack.push(Math.cos(a));
+            break;
+          case 'cvi':
+            a = stack.pop();
+            if (a >= 0)
+              stack.push(Math.floor(a));
+            else
+              stack.push(Math.ceil(a));
+            break;
+          case 'cvr':
+            // noop
+            break;
+          case 'div':
+            b = stack.pop();
+            a = stack.pop();
+            stack.push(a / b);
+            break;
+          case 'dup':
+            stack.copy(1);
+            break;
+          case 'eq':
+            b = stack.pop();
+            a = stack.pop();
+            stack.push(a == b);
+            break;
+          case 'exch':
+            stack.roll(2, 1);
+            break;
+          case 'exp':
+            b = stack.pop();
+            a = stack.pop();
+            stack.push(Math.pow(a, b));
+            break;
+          case 'false':
+            stack.push(false);
+            break;
+          case 'floor':
+            a = stack.pop();
+            stack.push(Math.floor(a));
+            break;
+          case 'ge':
+            b = stack.pop();
+            a = stack.pop();
+            stack.push(a >= b);
+            break;
+          case 'gt':
+            b = stack.pop();
+            a = stack.pop();
+            stack.push(a > b);
+            break;
+          case 'idiv':
+            b = stack.pop();
+            a = stack.pop();
+            stack.push(Math.floor(a / b));
+            break;
+          case 'index':
+            a = stack.pop();
+            stack.index(a);
+            break;
+          case 'le':
+            b = stack.pop();
+            a = stack.pop();
+            stack.push(a <= b);
+            break;
+          case 'ln':
+            a = stack.pop();
+            stack.push(Math.log(a));
+            break;
+          case 'log':
+            a = stack.pop();
+            stack.push(Math.log(a) / Math.LN10);
+            break;
+          case 'lt':
+            b = stack.pop();
+            a = stack.pop();
+            stack.push(a < b);
+            break;
+          case 'mod':
+            b = stack.pop();
+            a = stack.pop();
+            stack.push(a % b);
+            break;
+          case 'mul':
+            b = stack.pop();
+            a = stack.pop();
+            stack.push(a * b);
+            break;
+          case 'ne':
+            b = stack.pop();
+            a = stack.pop();
+            stack.push(a != b);
+            break;
+          case 'neg':
+            a = stack.pop();
+            stack.push(-1 * b);
+            break;
+          case 'not':
+            a = stack.pop();
+            if (isBool(a) && isBool(b))
+              stack.push(a && b);
+            else
+              stack.push(a & b);
+            break;
+          case 'or':
+            b = stack.pop();
+            a = stack.pop();
+            if (isBool(a) && isBool(b))
+              stack.push(a || b);
+            else
+              stack.push(a | b);
+            break;
+          case 'pop':
+            stack.pop();
+            break;
+          case 'roll':
+            b = stack.pop();
+            a = stack.pop();
+            stack.roll(a, b);
+            break;
+          case 'round':
+            a = stack.pop();
+            stack.push(Math.round(a));
+            break;
+          case 'sin':
+            a = stack.pop();
+            stack.push(Math.sin(a));
+            break;
+          case 'sqrt':
+            a = stack.pop();
+            stack.push(Math.sqrt(a));
+            break;
+          case 'sub':
+            b = stack.pop();
+            a = stack.pop();
+            stack.push(a - b);
+            break;
+          case 'true':
+            stack.push(true);
+            break;
+          case 'truncate':
+            a = stack.pop();
+            if (a >= 0)
+              stack.push(Math.floor(a));
+            else
+              stack.push(Math.ceil(a));
+            break;
+          case 'xor':
+            b = stack.pop();
+            a = stack.pop();
+            if (isBool(a) && isBool(b))
+              stack.push((a ^ b) ? true : false);
+            else
+              stack.push(a ^ b);
+            break;
+          default:
+            error('Unknown operator ' + operator);
+            break
+        }
+      }
+      return stack.stack;
+    }
+  }
+  return PostScriptEvaluator;
+})();
+
+var PostScriptParser = (function PostScriptParser() {
+  function PostScriptParser(lexer) {
+    this.lexer = lexer;
+    this.code = [];
+    this.token;
+    this.prev;
+  }
+  PostScriptParser.prototype = {
+    nextToken: function nextToken() {
+      this.prev = this.token;
+      this.token = this.lexer.getToken();
+    },
+    accept: function accept(type) {
+      if (this.token.type == type) {
+        this.nextToken();
+        return true;
+      }
+      return false;
+    },
+    expect: function expect(type) {
+      if (this.accept(type))
+        return true;
+      error('Unexpected symbol: found ' + this.token.type + ' expected ' +
+            type + '.');
+    },
+    parse: function parse() {
+      this.nextToken();
+      this.expect(PostScriptTokenTypes.LBRACE);
+      this.parseBlock();
+      this.expect(PostScriptTokenTypes.RBRACE);
+      return this.code;
+    },
+    parseBlock: function parseBlock() {
+      while (true) {
+        if (this.accept(PostScriptTokenTypes.NUMBER)) {
+          this.code.push(['push', this.prev.value]);
+        } else if (this.accept(PostScriptTokenTypes.OPERATOR)) {
+          this.code.push([this.prev.value]);
+        } else if (this.accept(PostScriptTokenTypes.LBRACE)) {
+          this.parseCondition();
+        } else {
+          return;
+        }
+      }
+    },
+    parseCondition: function parseCondition() {
+      var counter = this.code.length - 1;
+      var condition = [];
+      this.code.push(condition);
+      this.parseBlock();
+      this.expect(PostScriptTokenTypes.RBRACE);
+      if (this.accept(PostScriptTokenTypes.IF)) {
+        // The true block is right after the 'if' so it just falls through on
+        // true else it jumps and skips the true block.
+        condition.push('jz', this.code.length);
+      } else if(this.accept(PostScriptTokenTypes.LBRACE)) {
+        var jump = [];
+        this.code.push(jump);
+        var endOfTrue = this.code.length;
+        this.parseBlock();
+        this.expect(PostScriptTokenTypes.RBRACE);
+        this.expect(PostScriptTokenTypes.IFELSE);
+        // The jump is added at the end of the true block to skip the false
+        // block.
+        jump.push('j', this.code.length);
+        condition.push('jz', endOfTrue);
+      } else {
+        error('PS Function: error parsing conditional.');
+      }
+    }
+  };
+  return PostScriptParser;
+})();
+
+var PostScriptTokenTypes = {
+  LBRACE: 0,
+  RBRACE: 1,
+  NUMBER: 2,
+  OPERATOR: 3,
+  IF: 4,
+  IFELSE: 5
+};
+
+var PostScriptToken = (function PostScriptToken() {
+  function PostScriptToken(type, value) {
+    this.type = type;
+    this.value = value;
+  }
+  return PostScriptToken;
+})();
+
+var PostScriptLexer = (function PostScriptLexer() {
+  function PostScriptLexer(stream) {
+    this.stream = stream;
+  }
+  PostScriptLexer.prototype = {
+    getToken: function getToken() {
+      var s = '';
+      var ch;
+      var comment = false;
+      var stream = this.stream;
+
+      // skip comments
+      while (true) {
+        if (!(ch = stream.getChar()))
+          return EOF;
+
+        if (comment) {
+          if (ch == '\x0a' || ch == '\x0d')
+            comment = false;
+        } else if (ch == '%') {
+          comment = true;
+        } else if (!Lexer.isSpace(ch)) {
+          break;
+        }
+      }
+      switch (ch) {
+        case '0': case '1': case '2': case '3': case '4':
+        case '5': case '6': case '7': case '8': case '9':
+        case '+': case '-': case '.':
+          return new PostScriptToken(PostScriptTokenTypes.NUMBER,
+                                      this.getNumber(ch));
+        case '{':
+          return new PostScriptToken(PostScriptTokenTypes.LBRACE, '{');
+        case '}':
+          return new PostScriptToken(PostScriptTokenTypes.RBRACE, '}');
+      }
+      // operator
+      var str = ch.toLowerCase();
+      while (true) {
+        ch = stream.lookChar().toLowerCase();
+        if (ch >= 'a' && ch <= 'z')
+          str += ch;
+        else
+          break;
+        stream.skip();
+      }
+      switch (str) {
+        case 'if':
+          return new PostScriptToken(PostScriptTokenTypes.IF, str);
+        case 'ifelse':
+          return new PostScriptToken(PostScriptTokenTypes.IFELSE, str);
+        default:
+          return new PostScriptToken(PostScriptTokenTypes.OPERATOR, str);
+      }
+    },
+    getNumber: function getNumber(ch) {
+      var str = ch;
+      var stream = this.stream;
+      while (true) {
+        ch = stream.lookChar();
+        if ((ch >= '0' && ch <= '9') || ch == '-' || ch == '.')
+          str += ch;
+        else
+          break;
+        stream.skip();
+      }
+      var value = parseFloat(str);
+      if (isNaN(value))
+        error('Invalid floating point number: ' + value);
+      return value;
+    }
+  };
+  return PostScriptLexer;
 })();
 
