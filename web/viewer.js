@@ -11,7 +11,7 @@ var kCssUnits = 96.0 / 72.0;
 var kScrollbarPadding = 40;
 var kMinScale = 0.25;
 var kMaxScale = 4.0;
-
+var kImageDirectory = './images/';
 
 var Cache = function cacheCache(size) {
   var data = [];
@@ -458,7 +458,7 @@ var PageView = function pageView(container, content, id, pageWidth, pageHeight,
     delete this.canvas;
   };
 
-  function setupLinks(content, scale) {
+  function setupAnnotations(content, scale) {
     function bindLink(link, dest) {
       link.href = PDFView.getDestinationHash(dest);
       link.onclick = function pageViewSetupLinksOnclick() {
@@ -467,18 +467,67 @@ var PageView = function pageView(container, content, id, pageWidth, pageHeight,
         return false;
       };
     }
+    function createElementWithStyle(tagName, item) {
+      var element = document.createElement(tagName);
+      element.style.left = (Math.floor(item.x - view.x) * scale) + 'px';
+      element.style.top = (Math.floor(item.y - view.y) * scale) + 'px';
+      element.style.width = Math.ceil(item.width * scale) + 'px';
+      element.style.height = Math.ceil(item.height * scale) + 'px';
+      return element;
+    }
+    function createCommentAnnotation(type, item) {
+      var container = document.createElement('section');
+      container.className = 'annotComment';
 
-    var links = content.getLinks();
-    for (var i = 0; i < links.length; i++) {
-      var link = document.createElement('a');
-      link.style.left = (Math.floor(links[i].x - view.x) * scale) + 'px';
-      link.style.top = (Math.floor(links[i].y - view.y) * scale) + 'px';
-      link.style.width = Math.ceil(links[i].width * scale) + 'px';
-      link.style.height = Math.ceil(links[i].height * scale) + 'px';
-      link.href = links[i].url || '';
-      if (!links[i].url)
-        bindLink(link, ('dest' in links[i]) ? links[i].dest : null);
-      div.appendChild(link);
+      var image = createElementWithStyle('img', item);
+      image.src = kImageDirectory + type.toLowerCase() + '.svg';
+      var content = document.createElement('div');
+      content.setAttribute('hidden', true);
+      var title = document.createElement('h1');
+      var text = document.createElement('p');
+      var offsetPos = Math.floor(item.x - view.x + item.width);
+      content.style.left = (offsetPos * scale) + 'px';
+      content.style.top = (Math.floor(item.y - view.y) * scale) + 'px';
+      title.textContent = item.title;
+
+      if (!item.content) {
+        content.setAttribute('hidden', true);
+      } else {
+        text.innerHTML = item.content.replace('\n', '<br />');
+        image.addEventListener('mouseover', function annotationImageOver() {
+           this.nextSibling.removeAttribute('hidden');
+        }, false);
+
+        image.addEventListener('mouseout', function annotationImageOut() {
+           this.nextSibling.setAttribute('hidden', true);
+        }, false);
+      }
+
+      content.appendChild(title);
+      content.appendChild(text);
+      container.appendChild(image);
+      container.appendChild(content);
+
+      return container;
+    }
+
+    var items = content.getAnnotations();
+    for (var i = 0; i < items.length; i++) {
+      var item = items[i];
+      switch (item.type) {
+        case 'Link':
+          var link = createElementWithStyle('a', item);
+          link.href = item.url || '';
+          if (!item.url)
+            bindLink(link, ('dest' in item) ? item.dest : null);
+          div.appendChild(link);
+          break;
+        case 'Text':
+          var comment = createCommentAnnotation(item.name, item);
+          if (comment)
+            div.appendChild(comment);
+          break;
+      }
     }
   }
 
@@ -537,7 +586,7 @@ var PageView = function pageView(container, content, id, pageWidth, pageHeight,
       ];
 
       if (scale && scale !== PDFView.currentScale)
-        PDFView.setScale(scale, true);
+        PDFView.parseScale(scale, true);
 
       setTimeout(function pageViewScrollIntoViewRelayout() {
         // letting page to re-layout before scrolling
@@ -598,7 +647,7 @@ var PageView = function pageView(container, content, id, pageWidth, pageHeight,
       }).bind(this), textLayer
     );
 
-    setupLinks(this.content, this.scale);
+    setupAnnotations(this.content, this.scale);
     div.setAttribute('data-loaded', true);
 
     return true;
@@ -889,24 +938,46 @@ window.addEventListener('pagechange', function pagechange(evt) {
 
 window.addEventListener('keydown', function keydown(evt) {
   var curElement = document.activeElement;
+  if (curElement && curElement.tagName == 'INPUT')
+    return;
   var controlsElement = document.getElementById('controls');
   while (curElement) {
     if (curElement === controlsElement)
       return; // ignoring if the 'controls' element is focused
     curElement = curElement.parentNode;
   }
+  var handled = false;
   switch (evt.keyCode) {
     case 61: // FF/Mac '='
     case 107: // FF '+' and '='
     case 187: // Chrome '+'
       PDFView.zoomIn();
+      handled = true;
       break;
     case 109: // FF '-'
     case 189: // Chrome '-'
       PDFView.zoomOut();
+      handled = true;
       break;
     case 48: // '0'
       PDFView.setScale(kDefaultScale, true);
+      handled = true;
       break;
+    case 37: // left arrow
+    case 75: // 'k'
+    case 80: // 'p'
+      PDFView.page--;
+      handled = true;
+      break;
+    case 39: // right arrow
+    case 74: // 'j'
+    case 78: // 'n'
+      PDFView.page++;
+      handled = true;
+      break;
+  }
+
+  if (handled) {
+    evt.preventDefault();
   }
 });

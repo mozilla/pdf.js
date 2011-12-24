@@ -154,6 +154,29 @@ var ColorSpace = (function ColorSpaceClosure() {
     }
     return null;
   };
+  /**
+   * Checks if a decode map matches the default decode map for a color space.
+   * This handles the general decode maps where there are two values per
+   * component. e.g. [0, 1, 0, 1, 0, 1] for a RGB color.
+   * This does not handle Lab, Indexed, or Pattern decode maps since they are
+   * slightly different.
+   * @param {Array} decode Decode map (usually from an image).
+   * @param {Number} n Number of components the color space has.
+   */
+  ColorSpace.isDefaultDecode = function colorSpaceIsDefaultDecode(decode, n) {
+    if (!decode)
+      return true;
+
+    if (n * 2 !== decode.length) {
+      warning('The decode map is not the correct length');
+      return true;
+    }
+    for (var i = 0, ii = decode.length; i < ii; i += 2) {
+      if (decode[i] != 0 || decode[i + 1] != 1)
+        return false;
+    }
+    return true;
+  };
 
   return ColorSpace;
 })();
@@ -200,6 +223,9 @@ var AlternateCS = (function AlternateCSClosure() {
           baseBuf[pos++] = 255 * tinted[j];
       }
       return base.getRgbBuffer(baseBuf, 8);
+    },
+    isDefaultDecode: function altcs_isDefaultDecode(decodeMap) {
+      return ColorSpace.isDefaultDecode(decodeMap, this.numComps);
     }
   };
 
@@ -267,6 +293,10 @@ var IndexedCS = (function IndexedCSClosure() {
       }
 
       return base.getRgbBuffer(baseBuf, 8);
+    },
+    isDefaultDecode: function indexcs_isDefaultDecode(decodeMap) {
+      // indexed color maps shouldn't be changed
+      return true;
     }
   };
   return IndexedCS;
@@ -295,6 +325,9 @@ var DeviceGrayCS = (function DeviceGrayCSClosure() {
         rgbBuf[j++] = c;
       }
       return rgbBuf;
+    },
+    isDefaultDecode: function graycs_isDefaultDecode(decodeMap) {
+      return ColorSpace.isDefaultDecode(decodeMap, this.numComps);
     }
   };
   return DeviceGrayCS;
@@ -319,6 +352,9 @@ var DeviceRgbCS = (function DeviceRgbCSClosure() {
       for (i = 0; i < length; ++i)
         rgbBuf[i] = (scale * input[i]) | 0;
       return rgbBuf;
+    },
+    isDefaultDecode: function rgbcs_isDefaultDecode(decodeMap) {
+      return ColorSpace.isDefaultDecode(decodeMap, this.numComps);
     }
   };
   return DeviceRgbCS;
@@ -403,6 +439,9 @@ var DeviceCmykCS = (function DeviceCmykCSClosure() {
       }
 
       return rgbBuf;
+    },
+    isDefaultDecode: function cmykcs_isDefaultDecode(decodeMap) {
+      return ColorSpace.isDefaultDecode(decodeMap, this.numComps);
     }
   };
 
