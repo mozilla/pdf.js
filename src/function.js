@@ -336,15 +336,16 @@ var PDFFunction = (function PDFFunctionClosure() {
       };
     },
 
-    constructPostScript: function pdfFunctionConstructPostScript(fn, dict, xref) {
+    constructPostScript: function pdfFunctionConstructPostScript(fn, dict,
+                                                                  xref) {
       var domain = dict.get('Domain');
       var range = dict.get('Range');
 
       if (!domain)
         error('No domain.');
 
-      if(!range)
-        error('No range.')
+      if (!range)
+        error('No range.');
 
       var lexer = new PostScriptLexer(fn);
       var parser = new PostScriptParser(lexer);
@@ -399,7 +400,7 @@ var FunctionCache = (function FunctionCache() {
   }
   FunctionCache.prototype = {
     has: function(key) {
-      return key in this.cache
+      return key in this.cache;
     },
     get: function(key) {
       return this.cache[key];
@@ -446,8 +447,8 @@ var PostScriptStack = (function PostScriptStack() {
       // algorithm from http://jsfromhell.com/array/rotate
       var l = a.length, p = (Math.abs(p) >= l && (p %= l),
               p < 0 && (p += l), p), i, x;
-      for(; p; p = (Math.ceil(l / p) - 1) * p - l + (l = p))
-        for(i = l; i > p; x = a[--i], a[i] = a[i - p], a[i - p] = x);
+      for (; p; p = (Math.ceil(l / p) - 1) * p - l + (l = p))
+        for (i = l; i > p; x = a[--i], a[i] = a[i - p], a[i - p] = x);
       this.stack = this.stack.concat(a);
     }
   };
@@ -677,12 +678,12 @@ var PostScriptEvaluator = (function PostScriptEvaluator() {
             break;
           default:
             error('Unknown operator ' + operator);
-            break
+            break;
         }
       }
       return stack.stack;
     }
-  }
+  };
   return PostScriptEvaluator;
 })();
 
@@ -741,7 +742,7 @@ var PostScriptParser = (function PostScriptParser() {
         // The true block is right after the 'if' so it just falls through on
         // true else it jumps and skips the true block.
         condition.push('jz', this.code.length);
-      } else if(this.accept(PostScriptTokenTypes.LBRACE)) {
+      } else if (this.accept(PostScriptTokenTypes.LBRACE)) {
         var jump = [];
         this.code.push(jump);
         var endOfTrue = this.code.length;
