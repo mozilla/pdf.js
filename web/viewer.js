@@ -937,6 +937,8 @@ window.addEventListener('pagechange', function pagechange(evt) {
 }, true);
 
 window.addEventListener('keydown', function keydown(evt) {
+  if (evt.ctrlKey || evt.altKey || evt.shiftKey || evt.metaKey)
+    return;
   var curElement = document.activeElement;
   if (curElement && curElement.tagName == 'INPUT')
     return;
