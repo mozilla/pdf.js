@@ -334,7 +334,7 @@ var PDFView = {
         if ('zoom' in params) {
           var zoomArgs = params.zoom.split(','); // scale,left,top
           // building destination array
-          var dest = [null, new Name('XYZ'), (zoomArgs[1] | 0),
+          var dest = [null, {name: 'XYZ'}, (zoomArgs[1] | 0),
             (zoomArgs[2] | 0), (zoomArgs[0] | 0) / 100];
           var currentPage = this.pages[pageNumber - 1];
           currentPage.scrollIntoView(dest);
