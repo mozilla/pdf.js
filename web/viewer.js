@@ -321,8 +321,21 @@ var PDFView = {
       this.error('An error occurred while reading the PDF.', e);
     }
     var pagesCount = pdf.numPages;
+    var id = pdf.fingerprint;
+    var storedHash = null;
     document.getElementById('numPages').innerHTML = pagesCount;
     document.getElementById('pageNumber').max = pagesCount;
+    PDFView.documentFingerprint = id;
+
+    if (Settings.get(id + '.exists', false)) {
+      var page = Settings.get(id + '.page', '1');
+      var zoom = Settings.get(id + '.zoom', PDFView.currentScale);
+      var left = Settings.get(id + '.scrollLeft', '0');
+      var top = Settings.get(id + '.scrollTop', '0');
+
+      storedHash = 'page=' + page + '&zoom=' + Math.round(zoom * 100);
+      storedHash += ',' + left + ',' + top;
+    }
 
     var pages = this.pages = [];
     var pagesRefMap = {};
@@ -356,14 +369,8 @@ var PDFView = {
       this.setHash(this.initialBookmark);
       this.initialBookmark = null;
     }
-    else {
-      var scroll = Settings.get(pdf.fingerprint + '.scroll', -1);
-      if (scroll != -1) {
-        setTimeout(function scrollWindow() {
-          window.scrollTo(0, scroll);
-        }, 0);
-      } else
-        this.page = 1;
+    else if (storedHash) {
+     this.setHash(storedHash);
     }
   },
 
@@ -390,7 +397,7 @@ var PDFView = {
         if ('zoom' in params) {
           var zoomArgs = params.zoom.split(','); // scale,left,top
           // building destination array
-          var dest = [null, new Name('XYZ'), (zoomArgs[1] | 0),
+          var dest = [null, {name: 'XYZ'}, (zoomArgs[1] | 0),
             (zoomArgs[2] | 0), (zoomArgs[0] | 0) / 100];
           var currentPage = this.pages[pageNumber - 1];
           currentPage.scrollIntoView(dest);
@@ -882,13 +889,19 @@ function updateViewarea() {
   var topLeft = currentPage.getPagePoint(window.pageXOffset,
     window.pageYOffset - firstPage.y - kViewerTopMargin);
   pdfOpenParams += ',' + Math.round(topLeft.x) + ',' + Math.round(topLeft.y);
+
+  var id = PDFView.documentFingerprint;
+  Settings.set(id + '.exists', true);
+  Settings.set(id + '.page', pageNumber);
+  Settings.set(id + '.zoom', PDFView.currentScale);
+  Settings.set(id + '.scrollLeft', Math.round(topLeft.x));
+  Settings.set(id + '.scrollTop', Math.round(topLeft.y));
+
   document.getElementById('viewBookmark').href = pdfOpenParams;
 }
 
 window.addEventListener('scroll', function webViewerScroll(evt) {
   updateViewarea();
-  var fingerprint = PDFView.pages[0].content.pdf.fingerprint;
-  Settings.set(fingerprint + '.scroll', window.pageYOffset);
 }, true);
 
 
