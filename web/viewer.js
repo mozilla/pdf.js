@@ -29,7 +29,7 @@ var Cache = function cacheCache(size) {
 // First we see if localStorage is available, FF bug #495747
 // If not, we use FUEL in FF and fallback to Cookies for other browsers.
 var Settings = (function settingsClosure() {
-  var isCookiesEnabled = (function() {
+  var isCookiesEnabled = (function cookiesEnabledTest() {
     document.cookie = 'they=work';
     return document.cookie.length > 0;
   })();
