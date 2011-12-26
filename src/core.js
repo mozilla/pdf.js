@@ -527,8 +527,7 @@ var PDFDocModel = (function PDFDocModelClosure() {
                            this.startXRef,
                            this.mainXRefEntriesOffset);
       this.catalog = new Catalog(this.xref);
-      
-      if(this.xref.trailer && this.xref.trailer.has('ID')) {
+      if (this.xref.trailer && this.xref.trailer.has('ID')) {
         var fileID = '';
         this.xref.trailer.get('ID')[0].split('').forEach(function(el) {
           fileID += Number(el.charCodeAt(0)).toString(16);
@@ -543,14 +542,15 @@ var PDFDocModel = (function PDFDocModelClosure() {
       return shadow(this, 'numPages', num);
     },
     getFingerprint: function pdfDocGetFingerprint() {
-      if(this.fileID) {
+      if (this.fileID) {
         return this.fileID;
       } else {
-        // If we got no fileID, then we generate one, from the first 100 bytes of PDF
+        // If we got no fileID, then we generate one,
+        // from the first 100 bytes of PDF
         var data = this.stream.bytes.subarray(0, 100);
         var hash = calculateMD5(data, 0, data.length);
         var strHash = '';
-        for(var i = 0, length = hash.length; i < length; i++) {
+        for (var i = 0, length = hash.length; i < length; i++) {
           strHash += Number(hash[i]).toString(16);
         }
 

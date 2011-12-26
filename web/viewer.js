@@ -28,12 +28,7 @@ var Cache = function cacheCache(size) {
 // Settings Manager - This is a utility for saving settings
 // First we see if localStorage is available, FF bug #495747
 // If not, we use FUEL in FF and fallback to Cookies for other browsers.
-var Settings = (function settingsClosure() {
-  var isCookiesEnabled = (function cookiesEnabledTest() {
-    document.cookie = 'they=work';
-    return document.cookie.length > 0;
-  })();
-
+var Settings = (function SettingsClosure() {
   var isLocalStorageEnabled = (function localStorageEnabledTest() {
     try {
       localStorage;
@@ -42,36 +37,60 @@ var Settings = (function settingsClosure() {
     }
     return true;
   })();
-
   var extPrefix = 'extensions.uriloader@pdf.js';
+  var isExtension = location.protocol == 'chrome:' && !isLocalStorageEnabled;
 
-  return {
-    set: function settingsSet(name, val) {
-      if (location.protocol == 'chrome:' && !isLocalStorageEnabled) {
-        Application.prefs.setValue(extPrefix + '.' + name, val);
-      } else if (isLocalStorageEnabled) {
-        localStorage.setItem(name, val);
-      } else if (isCookiesEnabled) {
-        var cookieString = name + '=' + escape(val);
-        var expire = new Date();
-        expire.setTime(expire.getTime() + 1000 * 60 * 60 * 24 * 365);
-        cookieString += '; expires=' + expire.toGMTString();
-        document.cookie = cookieString;
+  function Settings(fingerprint) {
+    var database = null;
+    var index;
+    if (isExtension)
+      database = Application.prefs.getValue(extPrefix + '.database', '{}');
+    else if (isLocalStorageEnabled)
+      database = localStorage.getItem('database') || '{}';
+    else
+      return false;
+
+    database = JSON.parse(database);
+    if (!('files' in database))
+      database.files = [];
+    if (database.files.length >= 20)
+      database.files.shift();
+    for (var i = 0, length = database.files.length; i < length; i++) {
+      var branch = database.files[i];
+      if (branch.fingerprint == fingerprint) {
+        index = i;
+        break;
       }
+    }
+    if (typeof index != 'number')
+      index = database.files.push({fingerprint: fingerprint}) - 1;
+    this.file = database.files[index];
+    this.database = database;
+    if (isExtension)
+      Application.prefs.setValue(extPrefix + '.database',
+          JSON.stringify(database));
+    else if (isLocalStorageEnabled)
+      localStorage.setItem('database', JSON.stringify(database));
+  }
+
+  Settings.prototype = {
+    set: function settingsSet(name, val) {
+      var file = this.file;
+      file[name] = val;
+      if (isExtension) {
+        Application.prefs.setValue(extPrefix + '.database',
+            JSON.stringify(this.database));
+      }
+      else if (isLocalStorageEnabled)
+        localStorage.setItem('database', JSON.stringify(this.database));
     },
 
     get: function settingsGet(name, defaultValue) {
-      if (location.protocol == 'chrome:' && !isLocalStorageEnabled) {
-        var preferenceName = extPrefix + '.' + name;
-        return Application.prefs.getValue(preferenceName, defaultValue);
-      } else if (isLocalStorageEnabled) {
-        return localStorage.getItem(name) || defaultValue;
-      } else if (isCookiesEnabled) {
-        var res = document.cookie.match('(^|;) ?' + name + '=([^;]*)(;|$)');
-        return res ? unescape(res[2]) : defaultValue;
-      }
+      return this.file[name] || defaultValue;
     }
   };
+
+  return Settings;
 })();
 
 var cache = new Cache(kCacheSize);
@@ -326,15 +345,14 @@ var PDFView = {
     document.getElementById('numPages').innerHTML = pagesCount;
     document.getElementById('pageNumber').max = pagesCount;
     PDFView.documentFingerprint = id;
+    var store = PDFView.store = new Settings(id);
+    if (store.get('exists', false)) {
+      var page = store.get('page', '1');
+      var zoom = store.get('zoom', PDFView.currentScale);
+      var left = store.get('scrollLeft', '0');
+      var top = store.get('scrollTop', '0');
 
-    if (Settings.get(id + '.exists', false)) {
-      var page = Settings.get(id + '.page', '1');
-      var zoom = Settings.get(id + '.zoom', PDFView.currentScale);
-      var left = Settings.get(id + '.scrollLeft', '0');
-      var top = Settings.get(id + '.scrollTop', '0');
-
-      storedHash = 'page=' + page + '&zoom=' + Math.round(zoom * 100);
-      storedHash += ',' + left + ',' + top;
+      storedHash = 'page=' + page + '&zoom=' + zoom + ',' + left + ',' + top;
     }
 
     var pages = this.pages = [];
@@ -371,7 +389,8 @@ var PDFView = {
     }
     else if (storedHash) {
      this.setHash(storedHash);
-    }
+    } else
+      window.scrollTo(0, 0); // Scroll to top is default.
   },
 
   setHash: function pdfViewSetHash(hash) {
@@ -890,12 +909,12 @@ function updateViewarea() {
     window.pageYOffset - firstPage.y - kViewerTopMargin);
   pdfOpenParams += ',' + Math.round(topLeft.x) + ',' + Math.round(topLeft.y);
 
-  var id = PDFView.documentFingerprint;
-  Settings.set(id + '.exists', true);
-  Settings.set(id + '.page', pageNumber);
-  Settings.set(id + '.zoom', PDFView.currentScale);
-  Settings.set(id + '.scrollLeft', Math.round(topLeft.x));
-  Settings.set(id + '.scrollTop', Math.round(topLeft.y));
+  var store = PDFView.store;
+  store.set('exists', true);
+  store.set('page', pageNumber);
+  store.set('zoom', Math.round(PDFView.currentScale * 100));
+  store.set('scrollLeft', Math.round(topLeft.x));
+  store.set('scrollTop', Math.round(topLeft.y));
 
   document.getElementById('viewBookmark').href = pdfOpenParams;
 }
