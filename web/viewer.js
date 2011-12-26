@@ -27,7 +27,7 @@ var Cache = function cacheCache(size) {
 
 // Settings Manager - This is a utility for saving settings
 // First we see if localStorage is available, FF bug #495747
-// If not, we use FUEL in FF and fallback to Cookies for other browsers.
+// If not, we use FUEL in FF
 var Settings = (function SettingsClosure() {
   var isLocalStorageEnabled = (function localStorageEnabledTest() {
     try {
@@ -390,7 +390,7 @@ var PDFView = {
     else if (storedHash) {
      this.setHash(storedHash);
     } else
-      window.scrollTo(0, 0); // Scroll to top is default.
+      this.page = 1;
   },
 
   setHash: function pdfViewSetHash(hash) {
