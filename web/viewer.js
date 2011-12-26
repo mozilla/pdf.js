@@ -40,11 +40,19 @@ var Settings = (function SettingsClosure() {
   })();
   var extPrefix = 'extensions.uriloader@pdf.js';
   var isExtension = location.protocol == 'chrome:' && !isLocalStorageEnabled;
+  var inPrivateBrowsing = false;
+  if (isExtension) {
+    var pbs = Components.classes['@mozilla.org/privatebrowsing;1']
+              .getService(Components.interfaces.nsIPrivateBrowsingService);
+    inPrivateBrowsing = pbs.privateBrowsingEnabled;
+  }
 
   function Settings(fingerprint) {
     var database = null;
     var index;
-    if (isExtension)
+    if (inPrivateBrowsing)
+      return false;
+    else if (isExtension)
       database = Application.prefs.getValue(extPrefix + '.database', '{}');
     else if (isLocalStorageEnabled)
       database = localStorage.getItem('database') || '{}';
@@ -76,6 +84,8 @@ var Settings = (function SettingsClosure() {
 
   Settings.prototype = {
     set: function settingsSet(name, val) {
+      if (inPrivateBrowsing)
+        return false;
       var file = this.file;
       file[name] = val;
       if (isExtension)
@@ -86,7 +96,10 @@ var Settings = (function SettingsClosure() {
     },
 
     get: function settingsGet(name, defaultValue) {
-      return this.file[name] || defaultValue;
+      if (inPrivateBrowsing)
+        return defaultValue;
+      else
+        return this.file[name] || defaultValue;
     }
   };
 
