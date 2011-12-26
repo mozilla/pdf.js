@@ -12,6 +12,7 @@ var kScrollbarPadding = 40;
 var kMinScale = 0.25;
 var kMaxScale = 4.0;
 var kImageDirectory = './images/';
+var kSettingsMemory = 20;
 
 var Cache = function cacheCache(size) {
   var data = [];
@@ -53,7 +54,7 @@ var Settings = (function SettingsClosure() {
     database = JSON.parse(database);
     if (!('files' in database))
       database.files = [];
-    if (database.files.length >= 20)
+    if (database.files.length >= kSettingsMemory)
       database.files.shift();
     for (var i = 0, length = database.files.length; i < length; i++) {
       var branch = database.files[i];
@@ -77,10 +78,9 @@ var Settings = (function SettingsClosure() {
     set: function settingsSet(name, val) {
       var file = this.file;
       file[name] = val;
-      if (isExtension) {
+      if (isExtension)
         Application.prefs.setValue(extPrefix + '.database',
             JSON.stringify(this.database));
-      }
       else if (isLocalStorageEnabled)
         localStorage.setItem('database', JSON.stringify(this.database));
     },
@@ -387,9 +387,9 @@ var PDFView = {
       this.setHash(this.initialBookmark);
       this.initialBookmark = null;
     }
-    else if (storedHash) {
+    else if (storedHash)
      this.setHash(storedHash);
-    } else
+    else
       this.page = 1;
   },
 
