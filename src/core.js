@@ -603,7 +603,7 @@ var PDFDoc = (function PDFDocClosure() {
         return;
       } catch (e) {}
     }
-    // Either workers are disabled, not suppored or have thrown an exception.
+    // Either workers are disabled, not supported or have thrown an exception.
     // Thus, we fallback to a faked worker.
     globalScope.PDFJS.disableWorker = true;
     this.setupFakeWorker();
