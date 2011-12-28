@@ -605,7 +605,13 @@ var PDFDoc = (function PDFDocClosure() {
       }.bind(this));
 
       var testObj = new Uint8Array(1);
-      messageHandler.send('test', testObj);
+      // Some versions of Opera throw a DATA_CLONE_ERR on serializing the typed array.
+      // If such an error occurs, we fallback to a faked worker.
+      try {
+        messageHandler.send('test', testObj);
+      } catch (e) {
+        this.setupFakeWorker();
+      }
     } else {
       this.setupFakeWorker();
     }
