@@ -583,7 +583,7 @@ var PDFDoc = (function PDFDocClosure() {
         // Some versions of FF can't create a worker on localhost, see:
         // https://bugzilla.mozilla.org/show_bug.cgi?id=683280
         var worker = new Worker(workerSrc);
-        
+
         var messageHandler = new MessageHandler('main', worker);
         // Tell the worker the file it was created from.
         messageHandler.send('workerSrc', workerSrc);
@@ -598,7 +598,8 @@ var PDFDoc = (function PDFDocClosure() {
         }.bind(this));
 
         var testObj = new Uint8Array(1);
-        // Some versions of Opera throw a DATA_CLONE_ERR on serializing the typed array.
+        // Some versions of Opera throw a DATA_CLONE_ERR on 
+        // serializing the typed array.
         messageHandler.send('test', testObj);
         return;
       } catch (e) {}
