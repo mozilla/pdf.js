@@ -598,7 +598,7 @@ var PDFDoc = (function PDFDocClosure() {
         }.bind(this));
 
         var testObj = new Uint8Array(1);
-        // Some versions of Opera throw a DATA_CLONE_ERR on 
+        // Some versions of Opera throw a DATA_CLONE_ERR on
         // serializing the typed array.
         messageHandler.send('test', testObj);
         return;
