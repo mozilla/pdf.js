@@ -579,36 +579,35 @@ var PDFDoc = (function PDFDocClosure() {
         throw 'No PDFJS.workerSrc specified';
       }
 
-      var worker;
       try {
-        worker = new Worker(workerSrc);
-      } catch (e) {
         // Some versions of FF can't create a worker on localhost, see:
         // https://bugzilla.mozilla.org/show_bug.cgi?id=683280
-        globalScope.PDFJS.disableWorker = true;
-        this.setupFakeWorker();
+        var worker = new Worker(workerSrc);
+
+        var messageHandler = new MessageHandler('main', worker);
+        // Tell the worker the file it was created from.
+        messageHandler.send('workerSrc', workerSrc);
+        messageHandler.on('test', function pdfDocTest(supportTypedArray) {
+          if (supportTypedArray) {
+            this.worker = worker;
+            this.setupMessageHandler(messageHandler);
+          } else {
+            globalScope.PDFJS.disableWorker = true;
+            this.setupFakeWorker();
+          }
+        }.bind(this));
+
+        var testObj = new Uint8Array(1);
+        // Some versions of Opera throw a DATA_CLONE_ERR on
+        // serializing the typed array.
+        messageHandler.send('test', testObj);
         return;
-      }
-
-      var messageHandler = new MessageHandler('main', worker);
-
-      // Tell the worker the file it was created from.
-      messageHandler.send('workerSrc', workerSrc);
-
-      messageHandler.on('test', function pdfDocTest(supportTypedArray) {
-        if (supportTypedArray) {
-          this.worker = worker;
-          this.setupMessageHandler(messageHandler);
-        } else {
-          this.setupFakeWorker();
-        }
-      }.bind(this));
-
-      var testObj = new Uint8Array(1);
-      messageHandler.send('test', testObj);
-    } else {
-      this.setupFakeWorker();
+      } catch (e) {}
     }
+    // Either workers are disabled, not supported or have thrown an exception.
+    // Thus, we fallback to a faked worker.
+    globalScope.PDFJS.disableWorker = true;
+    this.setupFakeWorker();
   }
 
   PDFDoc.prototype = {
