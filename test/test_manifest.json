@@ -17,12 +17,13 @@
        "rounds": 1,
        "type": "load"
     },
-    {  "id": "intelisa-load",
+    {  "id": "intelisa-eq",
        "file": "pdfs/intelisa.pdf",
        "md5": "f5712097d29287a97f1278839814f682",
        "link": true,
+       "pageLimit": 100,
        "rounds": 1,
-       "type": "load"
+       "type": "eq"
     },
     {  "id": "pdfspec-load",
        "file": "pdfs/pdf.pdf",
