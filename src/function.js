@@ -360,7 +360,7 @@ var PDFFunction = (function PDFFunctionClosure() {
       var range = IR[2];
       var code = IR[3];
       var numOutputs = range.length / 2;
-      var evaluator = new PostScriptEvaluator(code);
+      var evaluator = new PostScriptEvaluator(code[0], code[1]);
       // Cache the values for a big speed up, the cache size is limited though
       // since the number of possible values can be huge from a PS function.
       var cache = new FunctionCache();
@@ -455,31 +455,36 @@ var PostScriptStack = (function PostScriptStack() {
   return PostScriptStack;
 })();
 var PostScriptEvaluator = (function PostScriptEvaluator() {
-  function PostScriptEvaluator(code) {
-    this.code = code;
-    console.log(code);
+  function PostScriptEvaluator(operators, operands) {
+    this.operators = operators;
+    this.operands = operands;
   }
   PostScriptEvaluator.prototype = {
     execute: function(initialStack) {
       var stack = new PostScriptStack(initialStack);
       var counter = 0;
-      var code = this.code;
-      var a, b;
-      while (counter < this.code.length) {
-        var instruction = this.code[counter++];
-        var operator = instruction[0];
+      var operators = this.operators;
+      var operands = this.operands;
+      var length = operators.length;
+      var a, b, operand;
+      while (counter < length) {
+        var operator = operators[counter];
+        ++counter;
         switch (operator) {
           // non standard ps operators
           case 'push':
-            stack.push(instruction[1]);
+            operand = operands[counter - 1];
+            stack.push(operand);
             break;
           case 'jz': // jump if false
+            operand = operands[counter - 1];
             a = stack.pop();
             if (!a)
-              counter = instruction[1];
+              counter = operand;
             break;
           case 'j': // jump
-            counter = instruction[1];
+            operand = operands[counter - 1];
+            counter = operand;
             break;
 
           // all ps operators in alphabetical order (excluding if/ifelse)
@@ -690,7 +695,8 @@ var PostScriptEvaluator = (function PostScriptEvaluator() {
 var PostScriptParser = (function PostScriptParser() {
   function PostScriptParser(lexer) {
     this.lexer = lexer;
-    this.code = [];
+    this.operators = [];
+    this.operands = [];
     this.token;
     this.prev;
   }
@@ -717,14 +723,16 @@ var PostScriptParser = (function PostScriptParser() {
       this.expect(PostScriptTokenTypes.LBRACE);
       this.parseBlock();
       this.expect(PostScriptTokenTypes.RBRACE);
-      return this.code;
+      return [this.operators, this.operands];
     },
     parseBlock: function parseBlock() {
       while (true) {
         if (this.accept(PostScriptTokenTypes.NUMBER)) {
-          this.code.push(['push', this.prev.value]);
+          this.operators.push('push');
+          this.operands.push(this.prev.value);
         } else if (this.accept(PostScriptTokenTypes.OPERATOR)) {
-          this.code.push([this.prev.value]);
+          this.operators.push(this.prev.value);
+          this.operands.push(null);
         } else if (this.accept(PostScriptTokenTypes.LBRACE)) {
           this.parseCondition();
         } else {
@@ -733,26 +741,33 @@ var PostScriptParser = (function PostScriptParser() {
       }
     },
     parseCondition: function parseCondition() {
-      var counter = this.code.length - 1;
-      var condition = [];
-      this.code.push(condition);
+      // Add two place holders that will be updated later
+      var conditionLocation = this.operators.length;
+      this.operators.push(null);
+      this.operands.push(null);
+
       this.parseBlock();
       this.expect(PostScriptTokenTypes.RBRACE);
       if (this.accept(PostScriptTokenTypes.IF)) {
         // The true block is right after the 'if' so it just falls through on
         // true else it jumps and skips the true block.
-        condition.push('jz', this.code.length);
+        this.operators[conditionLocation] = 'jz';
+        this.operands[conditionLocation] = this.operators.length;
       } else if (this.accept(PostScriptTokenTypes.LBRACE)) {
-        var jump = [];
-        this.code.push(jump);
-        var endOfTrue = this.code.length;
+        var jumpLocation = this.operators.length;
+        this.operators.push(null);
+        this.operands.push(null);
+        var endOfTrue = this.operators.length;
         this.parseBlock();
         this.expect(PostScriptTokenTypes.RBRACE);
         this.expect(PostScriptTokenTypes.IFELSE);
         // The jump is added at the end of the true block to skip the false
         // block.
-        jump.push('j', this.code.length);
-        condition.push('jz', endOfTrue);
+        this.operators[jumpLocation] = 'j';
+        this.operands[jumpLocation] = this.operands.length;
+
+        this.operators[conditionLocation] = 'jz';
+        this.operands[conditionLocation] = endOfTrue;
       } else {
         error('PS Function: error parsing conditional.');
       }
