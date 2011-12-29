@@ -20,7 +20,6 @@ describe('obj', function() {
       expect(cmd.cmd).toEqual(givenCmd);
     });
 
-
     it('should create only one object for a command and cache it', function() {
       var firstBT = Cmd.get('BT');
       var secondBT = Cmd.get('BT');
@@ -33,47 +32,55 @@ describe('obj', function() {
   });
 
   describe('Dict', function() {
-    beforeEach(function() {
-      this.checkInvalidHasValues = function(dict, key) {
-        expect(dict.has()).toBeFalsy();
-        expect(dict.has(key)).toBeFalsy();
-      };
-      this.checkInvalidKeyValues = function(dict, key) {
-        expect(dict.get()).toBeUndefined();
-        expect(dict.get(key)).toBeUndefined();
-        expect(dict.get('Prev', 'Root')).toBeUndefined();
+    var checkInvalidHasValues = function(dict) {
+      expect(dict.has()).toBeFalsy();
+      expect(dict.has('Prev')).toBeFalsy();
+    };
 
-        // Note that the getter with three arguments breaks the pattern here.
-        expect(dict.get('Encrypt', 'Info', 'ID')).toBeNull();
-      };
+    var checkInvalidKeyValues = function(dict) {
+      expect(dict.get()).toBeUndefined();
+      expect(dict.get('Prev')).toBeUndefined();
+      expect(dict.get('Decode', 'D')).toBeUndefined();
+
+      // Note that the getter with three arguments breaks the pattern here.
+      expect(dict.get('FontFile', 'FontFile2', 'FontFile3')).toBeNull();
+    };
+
+    var emptyDict, dictWithSizeKey, dictWithManyKeys;
+    var storedSize = 42;
+    var testFontFile = 'file1';
+    var testFontFile2 = 'file2';
+    var testFontFile3 = 'file3';
+
+    beforeEach(function() {
+      emptyDict = new Dict();
+
+      dictWithSizeKey = new Dict();
+      dictWithSizeKey.set('Size', storedSize);
+
+      dictWithManyKeys = new Dict();
+      dictWithManyKeys.set('FontFile', testFontFile);
+      dictWithManyKeys.set('FontFile2', testFontFile2);
+      dictWithManyKeys.set('FontFile3', testFontFile3);
     });
 
     it('should return invalid values for unknown keys', function() {
-      var dict = new Dict();
-      this.checkInvalidHasValues(dict, 'Size');
-      this.checkInvalidKeyValues(dict, 'Size');
+      checkInvalidHasValues(emptyDict);
+      checkInvalidKeyValues(emptyDict);
     });
 
     it('should return correct value for stored Size key', function() {
-      var dict = new Dict();
-      var storedSize = 42;
-      dict.set('Size', storedSize);
+      expect(dictWithSizeKey.has('Size')).toBeTruthy();
 
-      expect(dict.has('Size')).toBeTruthy();
-
-      expect(dict.get('Size')).toEqual(storedSize);
-      expect(dict.get('Prev', 'Size')).toEqual(storedSize);
-      expect(dict.get('Prev', 'Root', 'Size')).toEqual(storedSize);
+      expect(dictWithSizeKey.get('Size')).toEqual(storedSize);
+      expect(dictWithSizeKey.get('Prev', 'Size')).toEqual(storedSize);
+      expect(dictWithSizeKey.get('Prev', 'Root', 'Size')).toEqual(storedSize);
     });
 
     it('should return invalid values for unknown keys when Size key is stored',
        function() {
-      var dict = new Dict();
-      var storedSize = 42;
-      dict.set('Size', storedSize);
-
-      this.checkInvalidHasValues(dict, 'Prev');
-      this.checkInvalidKeyValues(dict, 'Prev');
+      checkInvalidHasValues(dictWithSizeKey);
+      checkInvalidKeyValues(dictWithSizeKey);
     });
 
     it('should return correct value for stored Size key with undefined value',
@@ -83,54 +90,38 @@ describe('obj', function() {
 
       expect(dict.has('Size')).toBeTruthy();
 
-      this.checkInvalidKeyValues(dict, 'Size');
+      checkInvalidKeyValues(dict);
     });
 
     it('should return correct values for multiple stored keys', function() {
-      var dict = new Dict();
-      var storedSize = 42;
-      var storedPrev = 4;
-      var storedID = '[<06316BB1DF26984E89AFA8619B8722ED>' +
-                     '<5E07F5458646544588630F1FD634FF2C>]';
-      dict.set('Size', storedSize);
-      dict.set('Prev', storedPrev);
-      dict.set('ID', storedID);
+      expect(dictWithManyKeys.has('FontFile')).toBeTruthy();
+      expect(dictWithManyKeys.has('FontFile2')).toBeTruthy();
+      expect(dictWithManyKeys.has('FontFile3')).toBeTruthy();
 
-      expect(dict.has('Size')).toBeTruthy();
-      expect(dict.has('Prev')).toBeTruthy();
-      expect(dict.has('ID')).toBeTruthy();
-
-      expect(dict.get('ID')).toEqual(storedID);
-      expect(dict.get('Prev', 'ID')).toEqual(storedPrev);
-      expect(dict.get('Size', 'Prev', 'ID')).toEqual(storedSize);
+      expect(dictWithManyKeys.get('FontFile3')).toEqual(testFontFile3);
+      expect(dictWithManyKeys.get('FontFile2', 'FontFile3'))
+                             .toEqual(testFontFile2);
+      expect(dictWithManyKeys.get('FontFile', 'FontFile2', 'FontFile3'))
+                             .toEqual(testFontFile);
     });
 
     it('should callback for each stored key', function() {
-      var dict = new Dict();
-      var storedSize = 42;
-      var storedPrev = 4;
-      var storedID = '[<06316BB1DF26984E89AFA8619B8722ED>' +
-                     '<5E07F5458646544588630F1FD634FF2C>]';
-      dict.set('Size', storedSize);
-      dict.set('Prev', storedPrev);
-      dict.set('ID', storedID);
-
       var callbackSpy = jasmine.createSpy('spy on callback in dictionary');
 
-      dict.forEach(callbackSpy);
+      dictWithManyKeys.forEach(callbackSpy);
 
       expect(callbackSpy).wasCalled();
-      expect(callbackSpy.argsForCall[0]).toEqual(['Size', storedSize]);
-      expect(callbackSpy.argsForCall[1]).toEqual(['Prev', storedPrev]);
-      expect(callbackSpy.argsForCall[2]).toEqual(['ID', storedID]);
+      expect(callbackSpy.argsForCall[0]).toEqual(['FontFile', testFontFile]);
+      expect(callbackSpy.argsForCall[1]).toEqual(['FontFile2', testFontFile2]);
+      expect(callbackSpy.argsForCall[2]).toEqual(['FontFile3', testFontFile3]);
       expect(callbackSpy.callCount).toEqual(3);
     });
   });
 
   describe('Ref', function() {
     it('should retain the stored values', function() {
-      var storedNum = 42;
-      var storedGen = "fortytwo";
+      var storedNum = 4;
+      var storedGen = 2;
       var ref = new Ref(storedNum, storedGen);
       expect(ref.num).toEqual(storedNum);
       expect(ref.gen).toEqual(storedGen);
