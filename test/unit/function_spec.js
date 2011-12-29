@@ -38,51 +38,39 @@ describe('function', function() {
     }
     it('parses empty programs', function() {
       var output = parse('{}');
-      expect(output[0].length).toEqual(0);
+      expect(output.length).toEqual(0);
     });
     it('parses positive numbers', function() {
       var number = 999;
       var program = parse('{ ' + number + ' }');
-      var expectedProgram = [
-        ['push'], [number]
-      ];
+      var expectedProgram = [number];
       expect(program).toMatchArray(expectedProgram);
     });
     it('parses negative numbers', function() {
       var number = -999;
       var program = parse('{ ' + number + ' }');
-      var expectedProgram = [
-        ['push'], [number]
-      ];
+      var expectedProgram = [number];
       expect(program).toMatchArray(expectedProgram);
     });
     it('parses negative floats', function() {
       var number = 3.3;
       var program = parse('{ ' + number + ' }');
-      var expectedProgram = [
-        ['push'], [number]
-      ];
+      var expectedProgram = [number];
       expect(program).toMatchArray(expectedProgram);
     });
     it('parses operators', function() {
       var program = parse('{ sub }');
-      var expectedProgram = [
-        ['sub'], [null]
-      ];
+      var expectedProgram = ['sub'];
       expect(program).toMatchArray(expectedProgram);
     });
     it('parses if statements', function() {
       var program = parse('{ { 99 } if }');
-      var expectedProgram = [
-        ['jz', 'push'], [2, 99]
-      ];
+      var expectedProgram = [3, 'jz', 99];
       expect(program).toMatchArray(expectedProgram);
     });
     it('parses ifelse statements', function() {
       var program = parse('{ { 99 } { 44 } ifelse }');
-      var expectedProgram = [
-        ['jz', 'push', 'j', 'push'], [3, 99, 4, 44]
-      ];
+      var expectedProgram = [5, 'jz', 99, 6, 'j', 44];
       expect(program).toMatchArray(expectedProgram);
     });
     it('handles missing brackets', function() {
@@ -96,10 +84,11 @@ describe('function', function() {
       var stream = new StringStream(program);
       var parser = new PostScriptParser(new PostScriptLexer(stream));
       var code = parser.parse();
-      var evaluator = new PostScriptEvaluator(code[0], code[1]);
+      var evaluator = new PostScriptEvaluator(code);
       var output = evaluator.execute();
       return output;
     }
+
     it('pushes stack', function() {
       var stack = evaluate('{ 99 }');
       var expectedStack = [99];
