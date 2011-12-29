@@ -17,12 +17,13 @@
        "rounds": 1,
        "type": "load"
     },
-    {  "id": "intelisa-load",
+    {  "id": "intelisa-eq",
        "file": "pdfs/intelisa.pdf",
        "md5": "f5712097d29287a97f1278839814f682",
        "link": true,
+       "pageLimit": 100,
        "rounds": 1,
-       "type": "load"
+       "type": "eq"
     },
     {  "id": "pdfspec-load",
        "file": "pdfs/pdf.pdf",
@@ -360,6 +361,12 @@
       "md5": "6e7c8416a293ba2d83bc8dd20c6ccf51",
       "rounds": 1,
       "link": true,
+      "type": "eq"
+    },
+    {  "id": "smaskdim",
+      "file": "pdfs/smaskdim.pdf",
+      "md5": "de80aeca7cbf79940189fd34d59671ee",
+      "rounds": 1,
       "type": "eq"
     }
 ]

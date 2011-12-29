@@ -205,3 +205,15 @@
   });
 })();
 
+// HTMLElement dataset property
+(function checkDatasetProperty() {
+  var div = document.createElement('div');
+  if ('dataset' in div)
+    return; // dataset property exists
+  Object.defineProperty(HTMLElement.prototype, 'dataset', {
+    get: function htmlElementDatasetGetter() {
+      // adding dataset field to the actual object
+      return (this.dataset = {});
+    }
+  });
+})();

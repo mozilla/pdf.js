@@ -221,13 +221,15 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         fn = 'paintImageXObject';
 
         PDFImage.buildImage(function(imageObj) {
+            var drawWidth = imageObj.drawWidth;
+            var drawHeight = imageObj.drawHeight;
             var imgData = {
-              width: w,
-              height: h,
-              data: new Uint8Array(w * h * 4)
+              width: drawWidth,
+              height: drawHeight,
+              data: new Uint8Array(drawWidth * drawHeight * 4)
             };
             var pixels = imgData.data;
-            imageObj.fillRgbaBuffer(pixels);
+            imageObj.fillRgbaBuffer(pixels, drawWidth, drawHeight);
             handler.send('obj', [objId, 'Image', imgData]);
           }, handler, xref, resources, image, inline);
       }
