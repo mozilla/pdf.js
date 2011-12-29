@@ -26,6 +26,39 @@ var Cache = function cacheCache(size) {
   };
 };
 
+var RenderingQueue = (function RenderingQueueClosure() {
+  function RenderingQueue() {
+    this.busy = false;
+    this.items = [];
+  }
+
+  RenderingQueue.prototype = {
+    enqueueDraw: function RenderingQueueEnqueueDraw(item) {
+      if ('rendering' in item)
+        return; // is already in the queue
+
+      item.rendering = true;
+      this.items.push(item);
+      if (this.items.length > 1)
+        return; // not first item
+
+      item.draw(this.continueExecution.bind(this));
+    },
+    continueExecution: function RenderingQueueContinueExecution() {
+      var item = this.items.shift();
+      delete item.rendering;
+
+      if (this.items.length == 0)
+        return; // queue is empty
+
+      item = this.items[0];
+      item.draw(this.continueExecution.bind(this));
+    }
+  };
+
+  return RenderingQueue;
+})();
+
 // Settings Manager - This is a utility for saving settings
 // First we see if localStorage is available, FF bug #495747
 // If not, we use FUEL in FF
@@ -107,12 +140,13 @@ var Settings = (function SettingsClosure() {
 })();
 
 var cache = new Cache(kCacheSize);
+var renderingQueue = new RenderingQueue();
 var currentPageNumber = 1;
 
 var PDFView = {
   pages: [],
   thumbnails: [],
-  currentScale: kDefaultScale,
+  currentScale: 0,
   initialBookmark: document.location.hash.substring(1),
 
   setScale: function pdfViewSetScale(val, resetAutoSettings) {
@@ -387,7 +421,6 @@ var PDFView = {
 
     this.pagesRefMap = pagesRefMap;
     this.destinations = pdf.catalog.destinations;
-    this.setScale(scale || kDefaultScale, true);
 
     if (pdf.catalog.documentOutline) {
       this.outline = new DocumentOutlineView(pdf.catalog.documentOutline);
@@ -401,9 +434,11 @@ var PDFView = {
       this.initialBookmark = null;
     }
     else if (storedHash)
-     this.setHash(storedHash);
-    else
+      this.setHash(storedHash);
+    else {
+      this.setScale(scale || kDefaultScale, true);
       this.page = 1;
+    }
   },
 
   setHash: function pdfViewSetHash(hash) {
@@ -704,10 +739,11 @@ var PageView = function pageView(container, content, id, pageWidth, pageHeight,
       }, 0);
   };
 
-  this.draw = function pageviewDraw() {
+  this.draw = function pageviewDraw(callback) {
     if (div.hasChildNodes()) {
       this.updateStats();
-      return false;
+      callback();
+      return;
     }
 
     var canvas = document.createElement('canvas');
@@ -739,13 +775,14 @@ var PageView = function pageView(container, content, id, pageWidth, pageHeight,
         this.updateStats();
         if (this.onAfterDraw)
           this.onAfterDraw();
+
+        cache.push(this);
+        callback();
       }).bind(this), textLayer
     );
 
     setupAnnotations(this.content, this.scale);
     div.setAttribute('data-loaded', true);
-
-    return true;
   };
 
   this.updateStats = function pageViewUpdateStats() {
@@ -812,12 +849,16 @@ var ThumbnailView = function thumbnailView(container, page, id, pageRatio) {
     return ctx;
   }
 
-  this.draw = function thumbnailViewDraw() {
-    if (this.hasImage)
+  this.draw = function thumbnailViewDraw(callback) {
+    if (this.hasImage) {
+      callback();
       return;
+    }
 
     var ctx = getPageDrawContext();
-    page.startRendering(ctx, function thumbnailViewDrawStartRendering() {});
+    page.startRendering(ctx, function thumbnailViewDrawStartRendering() {
+      callback();
+    });
 
     this.hasImage = true;
   };
@@ -900,8 +941,7 @@ function updateViewarea() {
   var visiblePages = PDFView.getVisiblePages();
   for (var i = 0; i < visiblePages.length; i++) {
     var page = visiblePages[i];
-    if (PDFView.pages[page.id - 1].draw())
-      cache.push(page.view);
+    renderingQueue.enqueueDraw(PDFView.pages[page.id - 1]);
   }
 
   if (!visiblePages.length)
@@ -951,7 +991,7 @@ function updateThumbViewArea() {
     var visibleThumbs = PDFView.getVisibleThumbs();
     for (var i = 0; i < visibleThumbs.length; i++) {
       var thumb = visibleThumbs[i];
-      PDFView.thumbnails[thumb.id - 1].draw();
+      renderingQueue.enqueueDraw(PDFView.thumbnails[thumb.id - 1]);
     }
   }, delay);
 }
