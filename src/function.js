@@ -392,7 +392,7 @@ var PDFFunction = (function PDFFunctionClosure() {
   };
 })();
 
-var FunctionCache = (function FunctionCache() {
+var FunctionCache = (function FunctionCacheClosure() {
   // Of 10 PDF's with type4 functions the maxium number of distinct values seen
   // was 256. This still may need some tweaking in the future though.
   var MAX_CACHE_SIZE = 1024;
@@ -401,13 +401,13 @@ var FunctionCache = (function FunctionCache() {
     this.total = 0;
   }
   FunctionCache.prototype = {
-    has: function(key) {
+    has: function has(key) {
       return key in this.cache;
     },
-    get: function(key) {
+    get: function get(key) {
       return this.cache[key];
     },
-    set: function(key, value) {
+    set: function set(key, value) {
       if (this.total < MAX_CACHE_SIZE) {
         this.cache[key] = value;
         this.total++;
@@ -417,7 +417,7 @@ var FunctionCache = (function FunctionCache() {
   return FunctionCache;
 })();
 
-var PostScriptStack = (function PostScriptStack() {
+var PostScriptStack = (function PostScriptStackClosure() {
   var MAX_STACK_SIZE = 100;
   function PostScriptStack(initialStack) {
     this.stack = initialStack || [];
@@ -445,24 +445,29 @@ var PostScriptStack = (function PostScriptStack() {
     },
     // rotate the last n stack elements p times
     roll: function roll(n, p) {
-      var a = this.stack.splice(this.stack.length - n, n);
-      // algorithm from http://jsfromhell.com/array/rotate
-      var l = a.length, p = (Math.abs(p) >= l && (p %= l),
-              p < 0 && (p += l), p), i, x;
-      for (; p; p = (Math.ceil(l / p) - 1) * p - l + (l = p))
-        for (i = l; i > p; x = a[--i], a[i] = a[i - p], a[i - p] = x);
-      this.stack = this.stack.concat(a);
+      var stack = this.stack;
+      var l = stack.length - n;
+      var r = stack.length - 1, c = l + (p - Math.floor(p / n) * n), i, j, t;
+      for (i = l, j = r; i < j; i++, j--) {
+        t = stack[i]; stack[i] = stack[j]; stack[j] = t;
+      }
+      for (i = l, j = c - 1; i < j; i++, j--) {
+        t = stack[i]; stack[i] = stack[j]; stack[j] = t;
+      }
+      for (i = c, j = r; i < j; i++, j--) {
+        t = stack[i]; stack[i] = stack[j]; stack[j] = t;
+      }
     }
   };
   return PostScriptStack;
 })();
-var PostScriptEvaluator = (function PostScriptEvaluator() {
+var PostScriptEvaluator = (function PostScriptEvaluatorClosure() {
   function PostScriptEvaluator(operators, operands) {
     this.operators = operators;
     this.operands = operands;
   }
   PostScriptEvaluator.prototype = {
-    execute: function(initialStack) {
+    execute: function execute(initialStack) {
       var stack = new PostScriptStack(initialStack);
       var counter = 0;
       var operators = this.operators;
@@ -531,11 +536,8 @@ var PostScriptEvaluator = (function PostScriptEvaluator() {
             stack.push(Math.cos(a));
             break;
           case 'cvi':
-            a = stack.pop();
-            if (a >= 0)
-              stack.push(Math.floor(a));
-            else
-              stack.push(Math.ceil(a));
+            a |= stack.pop();
+            stack.push(a);
             break;
           case 'cvr':
             // noop
@@ -622,7 +624,7 @@ var PostScriptEvaluator = (function PostScriptEvaluator() {
             break;
           case 'neg':
             a = stack.pop();
-            stack.push(-1 * b);
+            stack.push(-b);
             break;
           case 'not':
             a = stack.pop();
@@ -678,7 +680,7 @@ var PostScriptEvaluator = (function PostScriptEvaluator() {
             b = stack.pop();
             a = stack.pop();
             if (isBool(a) && isBool(b))
-              stack.push((a ^ b) ? true : false);
+              stack.push(a != b);
             else
               stack.push(a ^ b);
             break;
@@ -693,7 +695,7 @@ var PostScriptEvaluator = (function PostScriptEvaluator() {
   return PostScriptEvaluator;
 })();
 
-var PostScriptParser = (function PostScriptParser() {
+var PostScriptParser = (function PostScriptParserClosure() {
   function PostScriptParser(lexer) {
     this.lexer = lexer;
     this.operators = [];
@@ -781,15 +783,33 @@ var PostScriptTokenTypes = {
   IFELSE: 5
 };
 
-var PostScriptToken = (function PostScriptToken() {
+var PostScriptToken = (function PostScriptTokenClosure() {
   function PostScriptToken(type, value) {
     this.type = type;
     this.value = value;
   }
+
+  var opCache = {};
+
+  PostScriptToken.getOperator = function getOperator(op) {
+    var opValue = opCache[op];
+    if (opValue)
+      return opValue;
+
+    return opCache[op] = new PostScriptToken(PostScriptTokenTypes.OPERATOR, op);
+  };
+
+  PostScriptToken.LBRACE = new PostScriptToken(PostScriptTokenTypes.LBRACE,
+                                                '{');
+  PostScriptToken.RBRACE = new PostScriptToken(PostScriptTokenTypes.RBRACE,
+                                                '}');
+  PostScriptToken.IF = new PostScriptToken(PostScriptTokenTypes.IF, 'IF');
+  PostScriptToken.IFELSE = new PostScriptToken(PostScriptTokenTypes.IFELSE,
+                                                'IFELSE');
   return PostScriptToken;
 })();
 
-var PostScriptLexer = (function PostScriptLexer() {
+var PostScriptLexer = (function PostScriptLexerClosure() {
   function PostScriptLexer(stream) {
     this.stream = stream;
   }
@@ -821,9 +841,9 @@ var PostScriptLexer = (function PostScriptLexer() {
           return new PostScriptToken(PostScriptTokenTypes.NUMBER,
                                       this.getNumber(ch));
         case '{':
-          return new PostScriptToken(PostScriptTokenTypes.LBRACE, '{');
+          return PostScriptToken.LBRACE;
         case '}':
-          return new PostScriptToken(PostScriptTokenTypes.RBRACE, '}');
+          return PostScriptToken.RBRACE;
       }
       // operator
       var str = ch.toLowerCase();
@@ -837,11 +857,11 @@ var PostScriptLexer = (function PostScriptLexer() {
       }
       switch (str) {
         case 'if':
-          return new PostScriptToken(PostScriptTokenTypes.IF, str);
+          return PostScriptToken.IF;
         case 'ifelse':
-          return new PostScriptToken(PostScriptTokenTypes.IFELSE, str);
+          return PostScriptToken.IFELSE;
         default:
-          return new PostScriptToken(PostScriptTokenTypes.OPERATOR, str);
+          return PostScriptToken.getOperator(str);
       }
     },
     getNumber: function getNumber(ch) {

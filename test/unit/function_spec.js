@@ -145,7 +145,16 @@ describe('function', function() {
     // TODO ceiling
     // TODO copy
     // TODO cos
-    // TODO cvi
+    it('converts to int', function() {
+      var stack = evaluate('{ 9.9 cvi }');
+      var expectedStack = [9];
+      expect(stack).toMatchArray(expectedStack);
+    });
+    it('converts negatives to int', function() {
+      var stack = evaluate('{ -9.9 cvi }');
+      var expectedStack = [-9];
+      expect(stack).toMatchArray(expectedStack);
+    });
     // TODO cvr
     // TODO div
     it('duplicates', function() {

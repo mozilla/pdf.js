@@ -369,7 +369,7 @@
       "rounds": 1,
       "type": "eq"
     },
-    {  "id": "smaskdim",
+    {  "id": "type4psfunc",
       "file": "pdfs/type4psfunc.pdf",
       "md5": "7e6027a02ff78577f74dccdf84e37189",
       "rounds": 1,
