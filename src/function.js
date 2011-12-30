@@ -671,10 +671,8 @@ var PostScriptEvaluator = (function PostScriptEvaluatorClosure() {
             break;
           case 'truncate':
             a = stack.pop();
-            if (a >= 0)
-              stack.push(Math.floor(a));
-            else
-              stack.push(Math.ceil(a));
+            a = a < 0 ? Math.ceil(a) : Math.floor(a);
+            stack.push(a);
             break;
           case 'xor':
             b = stack.pop();
