@@ -437,8 +437,9 @@ var PostScriptStack = (function PostScriptStackClosure() {
     copy: function copy(n) {
       if (this.stack.length + n >= MAX_STACK_SIZE)
         error('PostScript function stack overflow.');
-      var part = this.stack.slice(this.stack.length - n);
-      this.stack = this.stack.concat(part);
+      var stack = this.stack;
+      for (var i = stack.length - n, j = n - 1; j >= 0; j--, i++)
+        stack.push(stack[i]);
     },
     index: function index(n) {
       this.push(this.stack[this.stack.length - n - 1]);
