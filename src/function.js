@@ -536,7 +536,7 @@ var PostScriptEvaluator = (function PostScriptEvaluatorClosure() {
             stack.push(Math.cos(a));
             break;
           case 'cvi':
-            a |= stack.pop();
+            a = stack.pop() | 0;
             stack.push(a);
             break;
           case 'cvr':
@@ -583,7 +583,7 @@ var PostScriptEvaluator = (function PostScriptEvaluatorClosure() {
           case 'idiv':
             b = stack.pop();
             a = stack.pop();
-            stack.push(Math.floor(a / b));
+            stack.push((a / b) | 0);
             break;
           case 'index':
             a = stack.pop();

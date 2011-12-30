@@ -173,7 +173,16 @@ describe('function', function() {
     // TODO floor
     // TODO ge
     // TODO gt
-    // TODO idiv
+    it('divides to integer', function() {
+      var stack = evaluate('{ 2 3 idiv }');
+      var expectedStack = [0];
+      expect(stack).toMatchArray(expectedStack);
+    });
+    it('divides to negative integer', function() {
+      var stack = evaluate('{ -2 3 idiv }');
+      var expectedStack = [0];
+      expect(stack).toMatchArray(expectedStack);
+    });
     it('duplicates index', function() {
       var stack = evaluate('{ 4 3 2 1 2 index }');
       var expectedStack = [4, 3, 2, 1, 3];
