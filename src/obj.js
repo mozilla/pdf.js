@@ -269,7 +269,7 @@ var XRef = (function XRefClosure() {
     this.entries = [];
     this.xrefstms = {};
     var trailerDict = this.readXRef(startXRef);
-
+    this.trailer = trailerDict;
     // prepare the XRef cache
     this.cache = [];
 
