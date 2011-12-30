@@ -28,7 +28,6 @@ var Cache = function cacheCache(size) {
 
 var RenderingQueue = (function RenderingQueueClosure() {
   function RenderingQueue() {
-    this.busy = false;
     this.items = [];
   }
 
