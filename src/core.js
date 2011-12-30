@@ -527,12 +527,35 @@ var PDFDocModel = (function PDFDocModelClosure() {
                            this.startXRef,
                            this.mainXRefEntriesOffset);
       this.catalog = new Catalog(this.xref);
+      if (this.xref.trailer && this.xref.trailer.has('ID')) {
+        var fileID = '';
+        this.xref.trailer.get('ID')[0].split('').forEach(function(el) {
+          fileID += Number(el.charCodeAt(0)).toString(16);
+        });
+        this.fileID = fileID;
+      }
     },
     get numPages() {
       var linearization = this.linearization;
       var num = linearization ? linearization.numPages : this.catalog.numPages;
       // shadow the prototype getter
       return shadow(this, 'numPages', num);
+    },
+    getFingerprint: function pdfDocGetFingerprint() {
+      if (this.fileID) {
+        return this.fileID;
+      } else {
+        // If we got no fileID, then we generate one,
+        // from the first 100 bytes of PDF
+        var data = this.stream.bytes.subarray(0, 100);
+        var hash = calculateMD5(data, 0, data.length);
+        var strHash = '';
+        for (var i = 0, length = hash.length; i < length; i++) {
+          strHash += Number(hash[i]).toString(16);
+        }
+
+        return strHash;
+      }
     },
     getPage: function pdfDocGetPage(n) {
       return this.catalog.getPage(n);
@@ -560,7 +583,7 @@ var PDFDoc = (function PDFDocClosure() {
     this.data = data;
     this.stream = stream;
     this.pdf = new PDFDocModel(stream);
-
+    this.fingerprint = this.pdf.getFingerprint();
     this.catalog = this.pdf.catalog;
     this.objs = new PDFObjects();
 
