@@ -157,7 +157,7 @@ var Parser = (function ParserClosure() {
       imageStream = this.filter(imageStream, dict, length);
       imageStream.parameters = dict;
 
-      this.buf2 = new Cmd('EI');
+      this.buf2 = Cmd.get('EI');
       this.shift();
 
       return imageStream;
@@ -496,14 +496,14 @@ var Lexer = (function LexerClosure() {
         // array punctuation
         case '[':
         case ']':
-          return new Cmd(ch);
+          return Cmd.get(ch);
         // hex string or dict punctuation
         case '<':
           ch = stream.lookChar();
           if (ch == '<') {
             // dict punctuation
             stream.skip();
-            return new Cmd('<<');
+            return Cmd.get('<<');
           }
           return this.getHexString(ch);
         // dict punctuation
@@ -511,11 +511,11 @@ var Lexer = (function LexerClosure() {
           ch = stream.lookChar();
           if (ch == '>') {
             stream.skip();
-            return new Cmd('>>');
+            return Cmd.get('>>');
           }
         case '{':
         case '}':
-          return new Cmd(ch);
+          return Cmd.get(ch);
         // fall through
         case ')':
           error('Illegal character: ' + ch);
@@ -538,7 +538,7 @@ var Lexer = (function LexerClosure() {
         return false;
       if (str == 'null')
         return null;
-      return new Cmd(str);
+      return Cmd.get(str);
     },
     skipToNextLine: function lexerSkipToNextLine() {
       var stream = this.stream;

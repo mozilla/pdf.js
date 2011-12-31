@@ -8,8 +8,7 @@ var Name = (function NameClosure() {
     this.name = name;
   }
 
-  Name.prototype = {
-  };
+  Name.prototype = {};
 
   return Name;
 })();
@@ -19,7 +18,16 @@ var Cmd = (function CmdClosure() {
     this.cmd = cmd;
   }
 
-  Cmd.prototype = {
+  Cmd.prototype = {};
+
+  var cmdCache = {};
+
+  Cmd.get = function cmdGet(cmd) {
+    var cmdValue = cmdCache[cmd];
+    if (cmdValue)
+      return cmdValue;
+
+    return cmdCache[cmd] = new Cmd(cmd);
   };
 
   return Cmd;
@@ -69,8 +77,7 @@ var Ref = (function RefClosure() {
     this.gen = gen;
   }
 
-  Ref.prototype = {
-  };
+  Ref.prototype = {};
 
   return Ref;
 })();
@@ -262,7 +269,7 @@ var XRef = (function XRefClosure() {
     this.entries = [];
     this.xrefstms = {};
     var trailerDict = this.readXRef(startXRef);
-
+    this.trailer = trailerDict;
     // prepare the XRef cache
     this.cache = [];
 

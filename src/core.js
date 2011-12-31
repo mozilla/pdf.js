@@ -274,46 +274,125 @@ var Page = (function PageClosure() {
       }
     },
     getLinks: function pageGetLinks() {
+      var links = [];
+      var annotations = pageGetAnnotations();
+      var i, n = annotations.length;
+      for (i = 0; i < n; ++i) {
+        if (annotations[i].type != 'Link')
+          continue;
+        links.push(annotations[i]);
+      }
+      return links;
+    },
+    getAnnotations: function pageGetAnnotations() {
       var xref = this.xref;
+      function getInheritableProperty(annotation, name) {
+        var item = annotation;
+        while (item && !item.has(name)) {
+          item = xref.fetchIfRef(item.get('Parent'));
+        }
+        if (!item)
+          return null;
+        return item.get(name);
+      }
+
       var annotations = xref.fetchIfRef(this.annotations) || [];
       var i, n = annotations.length;
-      var links = [];
+      var items = [];
       for (i = 0; i < n; ++i) {
-        var annotation = xref.fetch(annotations[i]);
+        var annotationRef = annotations[i];
+        var annotation = xref.fetch(annotationRef);
         if (!isDict(annotation))
           continue;
         var subtype = annotation.get('Subtype');
-        if (!isName(subtype) || subtype.name != 'Link')
+        if (!isName(subtype))
           continue;
         var rect = annotation.get('Rect');
         var topLeftCorner = this.rotatePoint(rect[0], rect[1]);
         var bottomRightCorner = this.rotatePoint(rect[2], rect[3]);
 
-        var link = {};
-        link.x = Math.min(topLeftCorner.x, bottomRightCorner.x);
-        link.y = Math.min(topLeftCorner.y, bottomRightCorner.y);
-        link.width = Math.abs(topLeftCorner.x - bottomRightCorner.x);
-        link.height = Math.abs(topLeftCorner.y - bottomRightCorner.y);
-        var a = this.xref.fetchIfRef(annotation.get('A'));
-        if (a) {
-          switch (a.get('S').name) {
-            case 'URI':
-              link.url = a.get('URI');
+        var item = {};
+        item.type = subtype.name;
+        item.x = Math.min(topLeftCorner.x, bottomRightCorner.x);
+        item.y = Math.min(topLeftCorner.y, bottomRightCorner.y);
+        item.width = Math.abs(topLeftCorner.x - bottomRightCorner.x);
+        item.height = Math.abs(topLeftCorner.y - bottomRightCorner.y);
+        switch (subtype.name) {
+          case 'Link':
+            var a = this.xref.fetchIfRef(annotation.get('A'));
+            if (a) {
+              switch (a.get('S').name) {
+                case 'URI':
+                  item.url = a.get('URI');
+                  break;
+                case 'GoTo':
+                  item.dest = a.get('D');
+                  break;
+                default:
+                  TODO('other link types');
+              }
+            } else if (annotation.has('Dest')) {
+              // simple destination link
+              var dest = annotation.get('Dest');
+              item.dest = isName(dest) ? dest.name : dest;
+            }
+            break;
+          case 'Widget':
+            var fieldType = getInheritableProperty(annotation, 'FT');
+            if (!isName(fieldType))
               break;
-            case 'GoTo':
-              link.dest = a.get('D');
-              break;
-            default:
-              TODO('other link types');
-          }
-        } else if (annotation.has('Dest')) {
-          // simple destination link
-          var dest = annotation.get('Dest');
-          link.dest = isName(dest) ? dest.name : dest;
+            item.fieldType = fieldType.name;
+            // Building the full field name by collecting the field and
+            // its ancestors 'T' properties and joining them using '.'.
+            var fieldName = [];
+            var namedItem = annotation, ref = annotationRef;
+            while (namedItem) {
+              var parentRef = namedItem.get('Parent');
+              var parent = xref.fetchIfRef(parentRef);
+              var name = namedItem.get('T');
+              if (name)
+                fieldName.unshift(stringToPDFString(name));
+              else {
+                // The field name is absent, that means more than one field
+                // with the same name may exist. Replacing the empty name
+                // with the '`' plus index in the parent's 'Kids' array.
+                // This is not in the PDF spec but necessary to id the
+                // the input controls.
+                var kids = xref.fetchIfRef(parent.get('Kids'));
+                var j, jj;
+                for (j = 0, jj = kids.length; j < jj; j++) {
+                  if (kids[j].num == ref.num && kids[j].gen == ref.gen)
+                    break;
+                }
+                fieldName.unshift('`' + j);
+              }
+              namedItem = parent;
+              ref = parentRef;
+            }
+            item.fullName = fieldName.join('.');
+            var alternativeText = stringToPDFString(annotation.get('TU') || '');
+            item.alternativeText = alternativeText;
+            var da = getInheritableProperty(annotation, 'DA') || '';
+            var m = /([\d\.]+)\sTf/.exec(da);
+            if (m)
+              item.fontSize = parseFloat(m[1]);
+            item.textAlignment = getInheritableProperty(annotation, 'Q');
+            item.flags = getInheritableProperty(annotation, 'Ff') || 0;
+            break;
+          case 'Text':
+            var content = annotation.get('Contents');
+            var title = annotation.get('T');
+            item.content = stringToPDFString(content || '');
+            item.title = stringToPDFString(title || '');
+            item.name = annotation.get('Name').name;
+            break;
+          default:
+            TODO('unimplemented annotation type: ' + subtype.name);
+            break;
         }
-        links.push(link);
+        items.push(item);
       }
-      return links;
+      return items;
     },
     startRendering: function pageStartRendering(ctx, callback, textLayer)  {
       this.ctx = ctx;
@@ -352,6 +431,7 @@ var PDFDocModel = (function PDFDocModelClosure() {
     assertWellFormed(stream.length > 0, 'stream must have data');
     this.stream = stream;
     this.setup();
+    this.acroForm = this.xref.fetchIfRef(this.catalog.catDict.get('AcroForm'));
   }
 
   function find(stream, needle, limit, backwards) {
@@ -447,12 +527,35 @@ var PDFDocModel = (function PDFDocModelClosure() {
                            this.startXRef,
                            this.mainXRefEntriesOffset);
       this.catalog = new Catalog(this.xref);
+      if (this.xref.trailer && this.xref.trailer.has('ID')) {
+        var fileID = '';
+        this.xref.trailer.get('ID')[0].split('').forEach(function(el) {
+          fileID += Number(el.charCodeAt(0)).toString(16);
+        });
+        this.fileID = fileID;
+      }
     },
     get numPages() {
       var linearization = this.linearization;
       var num = linearization ? linearization.numPages : this.catalog.numPages;
       // shadow the prototype getter
       return shadow(this, 'numPages', num);
+    },
+    getFingerprint: function pdfDocGetFingerprint() {
+      if (this.fileID) {
+        return this.fileID;
+      } else {
+        // If we got no fileID, then we generate one,
+        // from the first 100 bytes of PDF
+        var data = this.stream.bytes.subarray(0, 100);
+        var hash = calculateMD5(data, 0, data.length);
+        var strHash = '';
+        for (var i = 0, length = hash.length; i < length; i++) {
+          strHash += Number(hash[i]).toString(16);
+        }
+
+        return strHash;
+      }
     },
     getPage: function pdfDocGetPage(n) {
       return this.catalog.getPage(n);
@@ -480,7 +583,7 @@ var PDFDoc = (function PDFDocClosure() {
     this.data = data;
     this.stream = stream;
     this.pdf = new PDFDocModel(stream);
-
+    this.fingerprint = this.pdf.getFingerprint();
     this.catalog = this.pdf.catalog;
     this.objs = new PDFObjects();
 
@@ -499,36 +602,35 @@ var PDFDoc = (function PDFDocClosure() {
         throw 'No PDFJS.workerSrc specified';
       }
 
-      var worker;
       try {
-        worker = new Worker(workerSrc);
-      } catch (e) {
         // Some versions of FF can't create a worker on localhost, see:
         // https://bugzilla.mozilla.org/show_bug.cgi?id=683280
-        globalScope.PDFJS.disableWorker = true;
-        this.setupFakeWorker();
+        var worker = new Worker(workerSrc);
+
+        var messageHandler = new MessageHandler('main', worker);
+        // Tell the worker the file it was created from.
+        messageHandler.send('workerSrc', workerSrc);
+        messageHandler.on('test', function pdfDocTest(supportTypedArray) {
+          if (supportTypedArray) {
+            this.worker = worker;
+            this.setupMessageHandler(messageHandler);
+          } else {
+            globalScope.PDFJS.disableWorker = true;
+            this.setupFakeWorker();
+          }
+        }.bind(this));
+
+        var testObj = new Uint8Array(1);
+        // Some versions of Opera throw a DATA_CLONE_ERR on
+        // serializing the typed array.
+        messageHandler.send('test', testObj);
         return;
-      }
-
-      var messageHandler = new MessageHandler('main', worker);
-
-      // Tell the worker the file it was created from.
-      messageHandler.send('workerSrc', workerSrc);
-
-      messageHandler.on('test', function pdfDocTest(supportTypedArray) {
-        if (supportTypedArray) {
-          this.worker = worker;
-          this.setupMessageHandler(messageHandler);
-        } else {
-          this.setupFakeWorker();
-        }
-      }.bind(this));
-
-      var testObj = new Uint8Array(1);
-      messageHandler.send('test', testObj);
-    } else {
-      this.setupFakeWorker();
+      } catch (e) {}
     }
+    // Either workers are disabled, not supported or have thrown an exception.
+    // Thus, we fallback to a faked worker.
+    globalScope.PDFJS.disableWorker = true;
+    this.setupFakeWorker();
   }
 
   PDFDoc.prototype = {

@@ -11,7 +11,8 @@ var kCssUnits = 96.0 / 72.0;
 var kScrollbarPadding = 40;
 var kMinScale = 0.25;
 var kMaxScale = 4.0;
-
+var kImageDirectory = './images/';
+var kSettingsMemory = 20;
 
 var Cache = function cacheCache(size) {
   var data = [];
@@ -25,13 +26,126 @@ var Cache = function cacheCache(size) {
   };
 };
 
+var RenderingQueue = (function RenderingQueueClosure() {
+  function RenderingQueue() {
+    this.items = [];
+  }
+
+  RenderingQueue.prototype = {
+    enqueueDraw: function RenderingQueueEnqueueDraw(item) {
+      if ('rendering' in item)
+        return; // is already in the queue
+
+      item.rendering = true;
+      this.items.push(item);
+      if (this.items.length > 1)
+        return; // not first item
+
+      item.draw(this.continueExecution.bind(this));
+    },
+    continueExecution: function RenderingQueueContinueExecution() {
+      var item = this.items.shift();
+      delete item.rendering;
+
+      if (this.items.length == 0)
+        return; // queue is empty
+
+      item = this.items[0];
+      item.draw(this.continueExecution.bind(this));
+    }
+  };
+
+  return RenderingQueue;
+})();
+
+// Settings Manager - This is a utility for saving settings
+// First we see if localStorage is available, FF bug #495747
+// If not, we use FUEL in FF
+var Settings = (function SettingsClosure() {
+  var isLocalStorageEnabled = (function localStorageEnabledTest() {
+    try {
+      localStorage;
+    } catch (e) {
+      return false;
+    }
+    return true;
+  })();
+  var extPrefix = 'extensions.uriloader@pdf.js';
+  var isExtension = location.protocol == 'chrome:' && !isLocalStorageEnabled;
+  var inPrivateBrowsing = false;
+  if (isExtension) {
+    var pbs = Components.classes['@mozilla.org/privatebrowsing;1']
+              .getService(Components.interfaces.nsIPrivateBrowsingService);
+    inPrivateBrowsing = pbs.privateBrowsingEnabled;
+  }
+
+  function Settings(fingerprint) {
+    var database = null;
+    var index;
+    if (inPrivateBrowsing)
+      return false;
+    else if (isExtension)
+      database = Application.prefs.getValue(extPrefix + '.database', '{}');
+    else if (isLocalStorageEnabled)
+      database = localStorage.getItem('database') || '{}';
+    else
+      return false;
+
+    database = JSON.parse(database);
+    if (!('files' in database))
+      database.files = [];
+    if (database.files.length >= kSettingsMemory)
+      database.files.shift();
+    for (var i = 0, length = database.files.length; i < length; i++) {
+      var branch = database.files[i];
+      if (branch.fingerprint == fingerprint) {
+        index = i;
+        break;
+      }
+    }
+    if (typeof index != 'number')
+      index = database.files.push({fingerprint: fingerprint}) - 1;
+    this.file = database.files[index];
+    this.database = database;
+    if (isExtension)
+      Application.prefs.setValue(extPrefix + '.database',
+          JSON.stringify(database));
+    else if (isLocalStorageEnabled)
+      localStorage.setItem('database', JSON.stringify(database));
+  }
+
+  Settings.prototype = {
+    set: function settingsSet(name, val) {
+      if (inPrivateBrowsing)
+        return false;
+      var file = this.file;
+      file[name] = val;
+      if (isExtension)
+        Application.prefs.setValue(extPrefix + '.database',
+            JSON.stringify(this.database));
+      else if (isLocalStorageEnabled)
+        localStorage.setItem('database', JSON.stringify(this.database));
+    },
+
+    get: function settingsGet(name, defaultValue) {
+      if (inPrivateBrowsing)
+        return defaultValue;
+      else
+        return this.file[name] || defaultValue;
+    }
+  };
+
+  return Settings;
+})();
+
 var cache = new Cache(kCacheSize);
+var renderingQueue = new RenderingQueue();
 var currentPageNumber = 1;
 
 var PDFView = {
   pages: [],
   thumbnails: [],
-  currentScale: kDefaultScale,
+  currentScale: 0,
   initialBookmark: document.location.hash.substring(1),
 
   setScale: function pdfViewSetScale(val, resetAutoSettings) {
@@ -272,8 +386,20 @@ var PDFView = {
       this.error('An error occurred while reading the PDF.', e);
     }
     var pagesCount = pdf.numPages;
+    var id = pdf.fingerprint;
+    var storedHash = null;
     document.getElementById('numPages').innerHTML = pagesCount;
     document.getElementById('pageNumber').max = pagesCount;
+    PDFView.documentFingerprint = id;
+    var store = PDFView.store = new Settings(id);
+    if (store.get('exists', false)) {
+      var page = store.get('page', '1');
+      var zoom = store.get('zoom', PDFView.currentScale);
+      var left = store.get('scrollLeft', '0');
+      var top = store.get('scrollTop', '0');
+
+      storedHash = 'page=' + page + '&zoom=' + zoom + ',' + left + ',' + top;
+    }
 
     var pages = this.pages = [];
     var pagesRefMap = {};
@@ -294,7 +420,6 @@ var PDFView = {
 
     this.pagesRefMap = pagesRefMap;
     this.destinations = pdf.catalog.destinations;
-    this.setScale(scale || kDefaultScale, true);
 
     if (pdf.catalog.documentOutline) {
       this.outline = new DocumentOutlineView(pdf.catalog.documentOutline);
@@ -307,8 +432,12 @@ var PDFView = {
       this.setHash(this.initialBookmark);
       this.initialBookmark = null;
     }
-    else
+    else if (storedHash)
+      this.setHash(storedHash);
+    else {
+      this.setScale(scale || kDefaultScale, true);
       this.page = 1;
+    }
   },
 
   setHash: function pdfViewSetHash(hash) {
@@ -334,7 +463,7 @@ var PDFView = {
         if ('zoom' in params) {
           var zoomArgs = params.zoom.split(','); // scale,left,top
           // building destination array
-          var dest = [null, new Name('XYZ'), (zoomArgs[1] | 0),
+          var dest = [null, {name: 'XYZ'}, (zoomArgs[1] | 0),
             (zoomArgs[2] | 0), (zoomArgs[0] | 0) / 100];
           var currentPage = this.pages[pageNumber - 1];
           currentPage.scrollIntoView(dest);
@@ -458,7 +587,7 @@ var PageView = function pageView(container, content, id, pageWidth, pageHeight,
     delete this.canvas;
   };
 
-  function setupLinks(content, scale) {
+  function setupAnnotations(content, scale) {
     function bindLink(link, dest) {
       link.href = PDFView.getDestinationHash(dest);
       link.onclick = function pageViewSetupLinksOnclick() {
@@ -467,18 +596,67 @@ var PageView = function pageView(container, content, id, pageWidth, pageHeight,
         return false;
       };
     }
+    function createElementWithStyle(tagName, item) {
+      var element = document.createElement(tagName);
+      element.style.left = (Math.floor(item.x - view.x) * scale) + 'px';
+      element.style.top = (Math.floor(item.y - view.y) * scale) + 'px';
+      element.style.width = Math.ceil(item.width * scale) + 'px';
+      element.style.height = Math.ceil(item.height * scale) + 'px';
+      return element;
+    }
+    function createCommentAnnotation(type, item) {
+      var container = document.createElement('section');
+      container.className = 'annotComment';
 
-    var links = content.getLinks();
-    for (var i = 0; i < links.length; i++) {
-      var link = document.createElement('a');
-      link.style.left = (Math.floor(links[i].x - view.x) * scale) + 'px';
-      link.style.top = (Math.floor(links[i].y - view.y) * scale) + 'px';
-      link.style.width = Math.ceil(links[i].width * scale) + 'px';
-      link.style.height = Math.ceil(links[i].height * scale) + 'px';
-      link.href = links[i].url || '';
-      if (!links[i].url)
-        bindLink(link, ('dest' in links[i]) ? links[i].dest : null);
-      div.appendChild(link);
+      var image = createElementWithStyle('img', item);
+      image.src = kImageDirectory + type.toLowerCase() + '.svg';
+      var content = document.createElement('div');
+      content.setAttribute('hidden', true);
+      var title = document.createElement('h1');
+      var text = document.createElement('p');
+      var offsetPos = Math.floor(item.x - view.x + item.width);
+      content.style.left = (offsetPos * scale) + 'px';
+      content.style.top = (Math.floor(item.y - view.y) * scale) + 'px';
+      title.textContent = item.title;
+
+      if (!item.content) {
+        content.setAttribute('hidden', true);
+      } else {
+        text.innerHTML = item.content.replace('\n', '<br />');
+        image.addEventListener('mouseover', function annotationImageOver() {
+           this.nextSibling.removeAttribute('hidden');
+        }, false);
+
+        image.addEventListener('mouseout', function annotationImageOut() {
+           this.nextSibling.setAttribute('hidden', true);
+        }, false);
+      }
+
+      content.appendChild(title);
+      content.appendChild(text);
+      container.appendChild(image);
+      container.appendChild(content);
+
+      return container;
+    }
+
+    var items = content.getAnnotations();
+    for (var i = 0; i < items.length; i++) {
+      var item = items[i];
+      switch (item.type) {
+        case 'Link':
+          var link = createElementWithStyle('a', item);
+          link.href = item.url || '';
+          if (!item.url)
+            bindLink(link, ('dest' in item) ? item.dest : null);
+          div.appendChild(link);
+          break;
+        case 'Text':
+          var comment = createCommentAnnotation(item.name, item);
+          if (comment)
+            div.appendChild(comment);
+          break;
+      }
     }
   }
 
@@ -560,10 +738,11 @@ var PageView = function pageView(container, content, id, pageWidth, pageHeight,
       }, 0);
   };
 
-  this.draw = function pageviewDraw() {
+  this.draw = function pageviewDraw(callback) {
     if (div.hasChildNodes()) {
       this.updateStats();
-      return false;
+      callback();
+      return;
     }
 
     var canvas = document.createElement('canvas');
@@ -595,13 +774,14 @@ var PageView = function pageView(container, content, id, pageWidth, pageHeight,
         this.updateStats();
         if (this.onAfterDraw)
           this.onAfterDraw();
+
+        cache.push(this);
+        callback();
       }).bind(this), new TextLayerBuilder(textLayer)
     );
 
-    setupLinks(this.content, this.scale);
+    setupAnnotations(this.content, this.scale);
     div.setAttribute('data-loaded', true);
-
-    return true;
   };
 
   this.updateStats = function pageViewUpdateStats() {
@@ -668,12 +848,16 @@ var ThumbnailView = function thumbnailView(container, page, id, pageRatio) {
     return ctx;
   }
 
-  this.draw = function thumbnailViewDraw() {
-    if (this.hasImage)
+  this.draw = function thumbnailViewDraw(callback) {
+    if (this.hasImage) {
+      callback();
       return;
+    }
 
     var ctx = getPageDrawContext();
-    page.startRendering(ctx, function thumbnailViewDrawStartRendering() {});
+    page.startRendering(ctx, function thumbnailViewDrawStartRendering() {
+      callback();
+    });
 
     this.hasImage = true;
   };
@@ -803,8 +987,7 @@ function updateViewarea() {
   var visiblePages = PDFView.getVisiblePages();
   for (var i = 0; i < visiblePages.length; i++) {
     var page = visiblePages[i];
-    if (PDFView.pages[page.id - 1].draw())
-      cache.push(page.view);
+    renderingQueue.enqueueDraw(PDFView.pages[page.id - 1]);
   }
 
   if (!visiblePages.length)
@@ -824,6 +1007,14 @@ function updateViewarea() {
   var topLeft = currentPage.getPagePoint(window.pageXOffset,
     window.pageYOffset - firstPage.y - kViewerTopMargin);
   pdfOpenParams += ',' + Math.round(topLeft.x) + ',' + Math.round(topLeft.y);
+
+  var store = PDFView.store;
+  store.set('exists', true);
+  store.set('page', pageNumber);
+  store.set('zoom', Math.round(PDFView.currentScale * 100));
+  store.set('scrollLeft', Math.round(topLeft.x));
+  store.set('scrollTop', Math.round(topLeft.y));
+
   document.getElementById('viewBookmark').href = pdfOpenParams;
 }
 
@@ -846,7 +1037,7 @@ function updateThumbViewArea() {
     var visibleThumbs = PDFView.getVisibleThumbs();
     for (var i = 0; i < visibleThumbs.length; i++) {
       var thumb = visibleThumbs[i];
-      PDFView.thumbnails[thumb.id - 1].draw();
+      renderingQueue.enqueueDraw(PDFView.thumbnails[thumb.id - 1]);
     }
   }, delay);
 }
@@ -886,7 +1077,6 @@ window.addEventListener('change', function webViewerChange(evt) {
   // implemented in Firefox.
   var file = files[0];
   fileReader.readAsBinaryString(file);
-
   document.title = file.name;
 
   // URL does not reflect proper document location - hiding some icons.
@@ -935,25 +1125,49 @@ window.addEventListener('pagechange', function pagechange(evt) {
 }, true);
 
 window.addEventListener('keydown', function keydown(evt) {
+  if (evt.ctrlKey || evt.altKey || evt.shiftKey || evt.metaKey)
+    return;
   var curElement = document.activeElement;
+  if (curElement && curElement.tagName == 'INPUT')
+    return;
   var controlsElement = document.getElementById('controls');
   while (curElement) {
     if (curElement === controlsElement)
       return; // ignoring if the 'controls' element is focused
     curElement = curElement.parentNode;
   }
+  var handled = false;
   switch (evt.keyCode) {
     case 61: // FF/Mac '='
     case 107: // FF '+' and '='
     case 187: // Chrome '+'
       PDFView.zoomIn();
+      handled = true;
       break;
     case 109: // FF '-'
     case 189: // Chrome '-'
       PDFView.zoomOut();
+      handled = true;
       break;
     case 48: // '0'
       PDFView.setScale(kDefaultScale, true);
+      handled = true;
       break;
+    case 37: // left arrow
+    case 75: // 'k'
+    case 80: // 'p'
+      PDFView.page--;
+      handled = true;
+      break;
+    case 39: // right arrow
+    case 74: // 'j'
+    case 78: // 'n'
+      PDFView.page++;
+      handled = true;
+      break;
+  }
+
+  if (handled) {
+    evt.preventDefault();
   }
 });
