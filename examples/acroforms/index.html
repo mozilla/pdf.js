@@ -1,19 +1,9 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
+
 <head>
-  <title>pdf.js unit test</title>
-
-  <link rel="shortcut icon" type="image/png" href="../../external/jasmine/jasmine_favicon.png">
-  <link rel="stylesheet" type="text/css" href="../../external/jasmine/jasmine.css">
-
-  <script type="text/javascript" src="../../external/jasmine/jasmine.js"></script>
-  <script type="text/javascript" src="../../external/jasmine/jasmine-html.js"></script>
-
-  <!-- include spec files here... -->
-  <script type="text/javascript" src="obj_spec.js"></script>
-  <script type="text/javascript" src="function_spec.js"></script>
-
-  <!-- include source files here... -->
+  <!-- In production, only one script (pdf.js) is necessary -->
+  <!-- In production, change the content of PDFJS.workerSrc below -->
   <script type="text/javascript" src="../../src/core.js"></script>
   <script type="text/javascript" src="../../src/util.js"></script>
   <script type="text/javascript" src="../../src/canvas.js"></script>
@@ -35,36 +25,28 @@
   <script type="text/javascript" src="../../external/jpgjs/jpg.js"></script>
 
   <script type="text/javascript">
-    'use strict';
+    // Specify the main script used to create a new PDF.JS web worker.
+    // In production, change this to point to the combined `pdf.js` file.
+    PDFJS.workerSrc = '../../src/worker_loader.js';
 
-    (function pdfJsUnitTest() {
-      var jasmineEnv = jasmine.getEnv();
-      jasmineEnv.updateInterval = 1000;
-
-      var trivialReporter = new jasmine.TrivialReporter();
-
-      jasmineEnv.addReporter(trivialReporter);
-
-      jasmineEnv.specFilter = function pdfJsUnitTestSpecFilter(spec) {
-        return trivialReporter.specFilter(spec);
-      };
-
-      var currentWindowOnload = window.onload;
-
-      window.onload = function pdfJsUnitTestOnload() {
-        if (currentWindowOnload) {
-          currentWindowOnload();
-        }
-        execJasmine();
-      };
-
-      function execJasmine() {
-        jasmineEnv.execute();
-      }
-    })();
+    // Specify the PDF with AcroForm here
+    var pdfWithFormsPath = '../../test/pdfs/f1040.pdf';
   </script>
-</head>
-<body>
-</body>
-</html>
+  
+  <style>
+  .pdfpage { position:relative; top: 0; left: 0; border: solid 1px black; margin: 10px; }
+  .pdfpage > canvas { position: absolute; top: 0; left: 0; }
+  .pdfpage > div { position: absolute; top: 0; left: 0; }
+  .inputControl { background: transparent; border: 0px none; position: absolute; margin: auto; }
+  .inputControl[type='checkbox'] { margin: 0px; }
+  .inputHint { opacity: 0.2; background: #ccc; position: absolute; }
+  </style>
 
+  <script type="text/javascript" src="forms.js"></script>
+</head>
+
+<body>
+  <div id="viewer"></div>
+</body>
+
+</html>

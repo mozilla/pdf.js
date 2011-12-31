@@ -8,8 +8,7 @@ var Name = (function NameClosure() {
     this.name = name;
   }
 
-  Name.prototype = {
-  };
+  Name.prototype = {};
 
   return Name;
 })();
@@ -19,9 +18,7 @@ var Cmd = (function CmdClosure() {
     this.cmd = cmd;
   }
 
-  Cmd.prototype = {
-  };
-
+  Cmd.prototype = {};
 
   var cmdCache = {};
 
@@ -80,8 +77,7 @@ var Ref = (function RefClosure() {
     this.gen = gen;
   }
 
-  Ref.prototype = {
-  };
+  Ref.prototype = {};
 
   return Ref;
 })();
@@ -273,7 +269,7 @@ var XRef = (function XRefClosure() {
     this.entries = [];
     this.xrefstms = {};
     var trailerDict = this.readXRef(startXRef);
-
+    this.trailer = trailerDict;
     // prepare the XRef cache
     this.cache = [];
 
