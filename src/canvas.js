@@ -255,6 +255,8 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       }
       // Scale so that canvas units are the same as PDF user space units
       this.ctx.scale(cw / mediaBox.width, ch / mediaBox.height);
+      // Move the media left-top corner to the (0,0) canvas position
+      this.ctx.translate(-mediaBox.x, -mediaBox.y);
       this.textDivs = [];
       this.textLayerQueue = [];
     },
