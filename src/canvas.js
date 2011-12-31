@@ -711,7 +711,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
 
           width += charWidth;
 
-          text.str += glyph.unicode === ' ' ? '&nbsp;' : glyph.unicode;
+          text.str += glyph.unicode === ' ' ? '\u00A0' : glyph.unicode;
           text.length++;
           text.canvasWidth += charWidth;
         }
@@ -763,7 +763,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
             if (e < 0 && text.geom.spaceWidth > 0) { // avoid div by zero
               var numFakeSpaces = Math.round(-e / text.geom.spaceWidth);
               if (numFakeSpaces > 0) {
-                text.str += '&nbsp;';
+                text.str += '\u00A0';
                 text.length++;
               }
             }
@@ -773,7 +773,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
 
           if (textSelection) {
             if (shownText.str === ' ') {
-              text.str += '&nbsp;';
+              text.str += '\u00A0';
             } else {
               text.str += shownText.str;
             }
