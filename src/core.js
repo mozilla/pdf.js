@@ -110,9 +110,11 @@ var Page = (function PageClosure() {
         width: this.width,
         height: this.height
       };
+      var mediaBox = this.mediaBox;
+      var offsetX = mediaBox[0], offsetY = mediaBox[1];
       if (isArray(obj) && obj.length == 4) {
-        var tl = this.rotatePoint(obj[0], obj[1]);
-        var br = this.rotatePoint(obj[2], obj[3]);
+        var tl = this.rotatePoint(obj[0] - offsetX, obj[1] - offsetY);
+        var br = this.rotatePoint(obj[2] - offsetX, obj[3] - offsetY);
         view.x = Math.min(tl.x, br.x);
         view.y = Math.min(tl.y, br.y);
         view.width = Math.abs(tl.x - br.x);
