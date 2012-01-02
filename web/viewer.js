@@ -146,6 +146,7 @@ var PDFView = {
   pages: [],
   thumbnails: [],
   currentScale: 0,
+  currentScaleValue: null,
   initialBookmark: document.location.hash.substring(1),
 
   setScale: function pdfViewSetScale(val, resetAutoSettings) {
@@ -172,6 +173,7 @@ var PDFView = {
       return;
 
     var scale = parseFloat(value);
+    this.currentScaleValue = value;
     if (scale) {
       this.setScale(scale, true);
       return;
@@ -470,8 +472,16 @@ var PDFView = {
         if ('zoom' in params) {
           var zoomArgs = params.zoom.split(','); // scale,left,top
           // building destination array
+
+          // If the zoom value, it has to get divided by 100. If it is a string,
+          // it should stay as it is.
+          var zoomArg = zoomArgs[0];
+          var zoomArgNumber = parseFloat(zoomArg);
+          if (zoomArgNumber)
+            zoomArg = zoomArgNumber / 100;
+
           var dest = [null, {name: 'XYZ'}, (zoomArgs[1] | 0),
-            (zoomArgs[2] | 0), (zoomArgs[0] | 0) / 100];
+            (zoomArgs[2] | 0), zoomArg];
           var currentPage = this.pages[pageNumber - 1];
           currentPage.scrollIntoView(dest);
         } else
@@ -959,10 +969,15 @@ function updateViewarea() {
   PDFView.page = firstPage.id;
   updateViewarea.inProgress = false;
 
+  var currentScale = PDFView.currentScale;
+  var currentScaleValue = PDFView.currentScaleValue;
+  var normalizedScaleValue = currentScaleValue == currentScale ?
+    currentScale * 100 : currentScaleValue;
+
   var kViewerTopMargin = 52;
   var pageNumber = firstPage.id;
   var pdfOpenParams = '#page=' + pageNumber;
-  pdfOpenParams += '&zoom=' + Math.round(PDFView.currentScale * 100);
+  pdfOpenParams += '&zoom=' + normalizedScaleValue;
   var currentPage = PDFView.pages[pageNumber - 1];
   var topLeft = currentPage.getPagePoint(window.pageXOffset,
     window.pageYOffset - firstPage.y - kViewerTopMargin);
@@ -971,7 +986,7 @@ function updateViewarea() {
   var store = PDFView.store;
   store.set('exists', true);
   store.set('page', pageNumber);
-  store.set('zoom', Math.round(PDFView.currentScale * 100));
+  store.set('zoom', normalizedScaleValue);
   store.set('scrollLeft', Math.round(topLeft.x));
   store.set('scrollTop', Math.round(topLeft.y));
 
