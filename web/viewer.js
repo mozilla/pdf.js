@@ -1045,6 +1045,21 @@ window.addEventListener('change', function webViewerChange(evt) {
   document.getElementById('download').setAttribute('hidden', 'true');
 }, true);
 
+function selectScaleOption(value) {
+  var options = document.getElementById('scaleSelect').options;
+  var predefinedValueFound = false;
+  for (var i = 0; i < options.length; i++) {
+    var option = options[i];
+    if (option.value != value) {
+      option.selected = false;
+      continue;
+    }
+    option.selected = true;
+    predefinedValueFound = true;
+  }
+  return predefinedValueFound;
+}
+
 window.addEventListener('scalechange', function scalechange(evt) {
   var customScaleOption = document.getElementById('customScaleOption');
   customScaleOption.selected = false;
@@ -1056,19 +1071,7 @@ window.addEventListener('scalechange', function scalechange(evt) {
       return;
   }
 
-  var options = document.getElementById('scaleSelect').options;
-  var predefinedValueFound = false;
-  var value = '' + evt.scale;
-  for (var i = 0; i < options.length; i++) {
-    var option = options[i];
-    if (option.value != value) {
-      option.selected = false;
-      continue;
-    }
-    option.selected = true;
-    predefinedValueFound = true;
-  }
-
+  var predefinedValueFound =  selectScaleOption('' + evt.scale);
   if (!predefinedValueFound) {
     customScaleOption.textContent = Math.round(evt.scale * 10000) / 100 + '%';
     customScaleOption.selected = true;
