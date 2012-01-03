@@ -803,28 +803,15 @@ var JpegStream = (function JpegStreamClosure() {
     // need to be removed
     this.dict = dict;
 
-    // Flag indicating wether the image can be natively loaded.
-    this.isNative = true;
-
-    this.colorTransform = -1;
+    this.colorTransform = dict.get('ColorTransform') || -1;
+    this.isAdobeImage = false;
 
     if (isAdobeImage(bytes)) {
-      // when bug 674619 land, let's check if browser can do
-      // normal cmyk and then we won't have to the following
-      var cs = xref.fetchIfRef(dict.get('ColorSpace'));
-
-      // DeviceRGB and DeviceGray are the only Adobe images that work natively
-      if (isName(cs) && (cs.name === 'DeviceRGB' || cs.name === 'DeviceGray')) {
-        bytes = fixAdobeImage(bytes);
-        this.src = bytesToString(bytes);
-      } else {
-        this.colorTransform = dict.get('ColorTransform');
-        this.isNative = false;
-        this.bytes = bytes;
-      }
-    } else {
-      this.src = bytesToString(bytes);
+      this.isAdobeImage = true;
+      bytes = fixAdobeImage(bytes);
     }
+
+    this.bytes = bytes;
 
     DecodeStream.call(this);
   }
@@ -832,6 +819,7 @@ var JpegStream = (function JpegStreamClosure() {
   JpegStream.prototype = Object.create(DecodeStream.prototype);
 
   JpegStream.prototype.ensureBuffer = function jpegStreamEnsureBuffer(req) {
+    // todo make sure this isn't called on natively supported jpegs
     if (this.bufferLength)
       return;
     var jpegImage = new JpegImage();
@@ -844,10 +832,35 @@ var JpegStream = (function JpegStreamClosure() {
     this.bufferLength = data.length;
   };
   JpegStream.prototype.getIR = function jpegStreamGetIR() {
-    return this.src;
+    return bytesToString(this.bytes);
   };
   JpegStream.prototype.getChar = function jpegStreamGetChar() {
       error('internal error: getChar is not valid on JpegStream');
+  };
+  /**
+   * Checks if the image can be decoded and displayed by the browser without any
+   * further processing such as color space conversions.
+   */
+  JpegStream.prototype.isNativelySupported = function isNativelySupported(xref,
+                                                                          res) {
+    var cs = ColorSpace.parse(this.dict.get('ColorSpace'), xref, res);
+    if (cs.name === 'DeviceGray' || cs.name === 'DeviceRGB')
+      return true;
+    if (cs.name === 'DeviceCMYK' && !this.isAdobeImage &&
+        this.colorTransform < 1)
+      return true;
+    return false;
+  };
+  /**
+   * Checks if the image can be decoded by the browser.
+   */
+  JpegStream.prototype.isNativelyDecodable = function isNativelyDecodable(xref,
+                                                                          res) {
+    var cs = ColorSpace.parse(this.dict.get('ColorSpace'), xref, res);
+    if (cs.numComps == 1 || cs.numComps == 3)
+      return true;
+
+    return false;
   };
 
   return JpegStream;

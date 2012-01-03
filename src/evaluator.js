@@ -211,7 +211,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         args = [objId, w, h];
 
         var softMask = dict.get('SMask', 'IM') || false;
-        if (!softMask && image instanceof JpegStream && image.isNative) {
+        if (!softMask && image instanceof JpegStream &&
+            image.isNativelySupported(xref, resources)) {
           // These JPEGs don't need any more processing so we can just send it.
           fn = 'paintJpegXObject';
           handler.send('obj', [objId, 'JpegStream', image.getIR()]);
