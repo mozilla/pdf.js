@@ -284,7 +284,7 @@ var Promise = (function PromiseClosure() {
       }
 
       this.isResolved = true;
-      this.data = data;
+      this.data = data || null;
       var callbacks = this.callbacks;
 
       for (var i = 0, ii = callbacks.length; i < ii; i++) {
