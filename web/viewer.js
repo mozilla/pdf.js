@@ -1086,7 +1086,7 @@ window.addEventListener('scalechange', function scalechange(evt) {
       return;
   }
 
-  var predefinedValueFound =  selectScaleOption('' + evt.scale);
+  var predefinedValueFound = selectScaleOption('' + evt.scale);
   if (!predefinedValueFound) {
     customScaleOption.textContent = Math.round(evt.scale * 10000) / 100 + '%';
     customScaleOption.selected = true;
