@@ -255,6 +255,8 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       }
       // Scale so that canvas units are the same as PDF user space units
       this.ctx.scale(cw / mediaBox.width, ch / mediaBox.height);
+      // Move the media left-top corner to the (0,0) canvas position
+      this.ctx.translate(-mediaBox.x, -mediaBox.y);
       this.textDivs = [];
       this.textLayerQueue = [];
     },
@@ -672,6 +674,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
         ctx.translate(current.x, current.y);
 
         ctx.scale(textHScale, 1);
+        ctx.lineWidth /= current.textMatrix[0];
 
         if (textSelection) {
           this.save();
@@ -708,6 +711,8 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       } else {
         ctx.save();
         this.applyTextTransforms();
+        ctx.lineWidth /= current.textMatrix[0] * fontMatrix[0];
+
         if (textSelection)
           text.geom = this.getTextGeometry();
 

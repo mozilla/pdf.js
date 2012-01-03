@@ -110,9 +110,11 @@ var Page = (function PageClosure() {
         width: this.width,
         height: this.height
       };
+      var mediaBox = this.mediaBox;
+      var offsetX = mediaBox[0], offsetY = mediaBox[1];
       if (isArray(obj) && obj.length == 4) {
-        var tl = this.rotatePoint(obj[0], obj[1]);
-        var br = this.rotatePoint(obj[2], obj[3]);
+        var tl = this.rotatePoint(obj[0] - offsetX, obj[1] - offsetY);
+        var br = this.rotatePoint(obj[2] - offsetX, obj[3] - offsetY);
         view.x = Math.min(tl.x, br.x);
         view.y = Math.min(tl.y, br.y);
         view.width = Math.abs(tl.x - br.x);
@@ -527,12 +529,35 @@ var PDFDocModel = (function PDFDocModelClosure() {
                            this.startXRef,
                            this.mainXRefEntriesOffset);
       this.catalog = new Catalog(this.xref);
+      if (this.xref.trailer && this.xref.trailer.has('ID')) {
+        var fileID = '';
+        this.xref.trailer.get('ID')[0].split('').forEach(function(el) {
+          fileID += Number(el.charCodeAt(0)).toString(16);
+        });
+        this.fileID = fileID;
+      }
     },
     get numPages() {
       var linearization = this.linearization;
       var num = linearization ? linearization.numPages : this.catalog.numPages;
       // shadow the prototype getter
       return shadow(this, 'numPages', num);
+    },
+    getFingerprint: function pdfDocGetFingerprint() {
+      if (this.fileID) {
+        return this.fileID;
+      } else {
+        // If we got no fileID, then we generate one,
+        // from the first 100 bytes of PDF
+        var data = this.stream.bytes.subarray(0, 100);
+        var hash = calculateMD5(data, 0, data.length);
+        var strHash = '';
+        for (var i = 0, length = hash.length; i < length; i++) {
+          strHash += Number(hash[i]).toString(16);
+        }
+
+        return strHash;
+      }
     },
     getPage: function pdfDocGetPage(n) {
       return this.catalog.getPage(n);
@@ -560,7 +585,7 @@ var PDFDoc = (function PDFDocClosure() {
     this.data = data;
     this.stream = stream;
     this.pdf = new PDFDocModel(stream);
-
+    this.fingerprint = this.pdf.getFingerprint();
     this.catalog = this.pdf.catalog;
     this.objs = new PDFObjects();
 
@@ -579,36 +604,35 @@ var PDFDoc = (function PDFDocClosure() {
         throw 'No PDFJS.workerSrc specified';
       }
 
-      var worker;
       try {
-        worker = new Worker(workerSrc);
-      } catch (e) {
         // Some versions of FF can't create a worker on localhost, see:
         // https://bugzilla.mozilla.org/show_bug.cgi?id=683280
-        globalScope.PDFJS.disableWorker = true;
-        this.setupFakeWorker();
+        var worker = new Worker(workerSrc);
+
+        var messageHandler = new MessageHandler('main', worker);
+        // Tell the worker the file it was created from.
+        messageHandler.send('workerSrc', workerSrc);
+        messageHandler.on('test', function pdfDocTest(supportTypedArray) {
+          if (supportTypedArray) {
+            this.worker = worker;
+            this.setupMessageHandler(messageHandler);
+          } else {
+            globalScope.PDFJS.disableWorker = true;
+            this.setupFakeWorker();
+          }
+        }.bind(this));
+
+        var testObj = new Uint8Array(1);
+        // Some versions of Opera throw a DATA_CLONE_ERR on
+        // serializing the typed array.
+        messageHandler.send('test', testObj);
         return;
-      }
-
-      var messageHandler = new MessageHandler('main', worker);
-
-      // Tell the worker the file it was created from.
-      messageHandler.send('workerSrc', workerSrc);
-
-      messageHandler.on('test', function pdfDocTest(supportTypedArray) {
-        if (supportTypedArray) {
-          this.worker = worker;
-          this.setupMessageHandler(messageHandler);
-        } else {
-          this.setupFakeWorker();
-        }
-      }.bind(this));
-
-      var testObj = new Uint8Array(1);
-      messageHandler.send('test', testObj);
-    } else {
-      this.setupFakeWorker();
+      } catch (e) {}
     }
+    // Either workers are disabled, not supported or have thrown an exception.
+    // Thus, we fallback to a faked worker.
+    globalScope.PDFJS.disableWorker = true;
+    this.setupFakeWorker();
   }
 
   PDFDoc.prototype = {

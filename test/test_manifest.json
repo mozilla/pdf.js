@@ -17,12 +17,13 @@
        "rounds": 1,
        "type": "load"
     },
-    {  "id": "intelisa-load",
+    {  "id": "intelisa-eq",
        "file": "pdfs/intelisa.pdf",
        "md5": "f5712097d29287a97f1278839814f682",
        "link": true,
+       "pageLimit": 100,
        "rounds": 1,
-       "type": "load"
+       "type": "eq"
     },
     {  "id": "pdfspec-load",
        "file": "pdfs/pdf.pdf",
@@ -355,6 +356,13 @@
        "rounds": 1,
        "type": "eq"
     },
+    {  "id": "issue1001",
+      "file": "pdfs/issue1001.pdf",
+      "md5": "0f1496e80a82a923e91d9e74c55ad94e",
+      "rounds": 1,
+      "link": true,
+      "type": "eq"
+    },
     {  "id": "aboutstacks",
       "file": "pdfs/aboutstacks.pdf",
       "md5": "6e7c8416a293ba2d83bc8dd20c6ccf51",
@@ -365,6 +373,12 @@
     {  "id": "smaskdim",
       "file": "pdfs/smaskdim.pdf",
       "md5": "de80aeca7cbf79940189fd34d59671ee",
+      "rounds": 1,
+      "type": "eq"
+    },
+    {  "id": "type4psfunc",
+      "file": "pdfs/type4psfunc.pdf",
+      "md5": "7e6027a02ff78577f74dccdf84e37189",
       "rounds": 1,
       "type": "eq"
     }
