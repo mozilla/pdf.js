@@ -1860,7 +1860,6 @@ var CCITTFaxStream = (function CCITTFaxStreamClosure() {
     function ccittFaxStreamFindTableCode(start, end, table, limit) {
 
     var limitValue = limit || 0;
-
     for (var i = start; i <= end; ++i) {
       var code = this.lookBits(i);
       if (code == EOF)
@@ -1920,7 +1919,7 @@ var CCITTFaxStream = (function CCITTFaxStreamClosure() {
         return p[1];
       }
     } else {
-      var result = this.findTableCode.call(1, 9, whiteTable2);
+      var result = this.findTableCode(1, 9, whiteTable2);
       if (result[0])
         return result[1];
 
