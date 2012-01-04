@@ -4,7 +4,7 @@
 'use strict';
 
 var kDefaultURL = 'compressed.tracemonkey-pldi-09.pdf';
-var kDefaultScale = 1.5;
+var kDefaultScale = 'auto';
 var kDefaultScaleDelta = 1.1;
 var kCacheSize = 20;
 var kCssUnits = 96.0 / 72.0;
@@ -146,9 +146,13 @@ var PDFView = {
   pages: [],
   thumbnails: [],
   currentScale: 0,
+  currentScaleValue: null,
   initialBookmark: document.location.hash.substring(1),
 
   setScale: function pdfViewSetScale(val, resetAutoSettings) {
+    if (val == this.currentScale)
+      return;
+
     var pages = this.pages;
     for (var i = 0; i < pages.length; i++)
       pages[i].update(val * kCssUnits);
@@ -169,6 +173,7 @@ var PDFView = {
       return;
 
     var scale = parseFloat(value);
+    this.currentScaleValue = value;
     if (scale) {
       this.setScale(scale, true);
       return;
@@ -187,6 +192,10 @@ var PDFView = {
       this.setScale(
         Math.min(pageWidthScale, pageHeightScale), resetAutoSettings);
     }
+    if ('auto' == value)
+      this.setScale(Math.min(1.0, pageWidthScale), resetAutoSettings);
+
+    selectScaleOption(value);
   },
 
   zoomIn: function pdfViewZoomIn() {
@@ -428,6 +437,10 @@ var PDFView = {
       this.switchSidebarView('outline');
     }
 
+    // Reset the current scale, as otherwise the page's scale might not get
+    // updated if the zoom level stayed the same.
+    this.currentScale = 0;
+    this.currentScaleValue = null;
     if (this.initialBookmark) {
       this.setHash(this.initialBookmark);
       this.initialBookmark = null;
@@ -435,7 +448,7 @@ var PDFView = {
     else if (storedHash)
       this.setHash(storedHash);
     else {
-      this.setScale(scale || kDefaultScale, true);
+      this.parseScale(scale || kDefaultScale, true);
       this.page = 1;
     }
   },
@@ -463,8 +476,16 @@ var PDFView = {
         if ('zoom' in params) {
           var zoomArgs = params.zoom.split(','); // scale,left,top
           // building destination array
+
+          // If the zoom value, it has to get divided by 100. If it is a string,
+          // it should stay as it is.
+          var zoomArg = zoomArgs[0];
+          var zoomArgNumber = parseFloat(zoomArg);
+          if (zoomArgNumber)
+            zoomArg = zoomArgNumber / 100;
+
           var dest = [null, {name: 'XYZ'}, (zoomArgs[1] | 0),
-            (zoomArgs[2] | 0), (zoomArgs[0] | 0) / 100];
+            (zoomArgs[2] | 0), zoomArg];
           var currentPage = this.pages[pageNumber - 1];
           currentPage.scrollIntoView(dest);
         } else
@@ -917,7 +938,7 @@ window.addEventListener('load', function webViewerLoad(evt) {
     params[unescape(param[0])] = unescape(param[1]);
   }
 
-  var scale = ('scale' in params) ? params.scale : kDefaultScale;
+  var scale = ('scale' in params) ? params.scale : 0;
   PDFView.open(params.file || kDefaultURL, parseFloat(scale));
 
   if (!window.File || !window.FileReader || !window.FileList || !window.Blob)
@@ -952,10 +973,15 @@ function updateViewarea() {
   PDFView.page = firstPage.id;
   updateViewarea.inProgress = false;
 
+  var currentScale = PDFView.currentScale;
+  var currentScaleValue = PDFView.currentScaleValue;
+  var normalizedScaleValue = currentScaleValue == currentScale ?
+    currentScale * 100 : currentScaleValue;
+
   var kViewerTopMargin = 52;
   var pageNumber = firstPage.id;
   var pdfOpenParams = '#page=' + pageNumber;
-  pdfOpenParams += '&zoom=' + Math.round(PDFView.currentScale * 100);
+  pdfOpenParams += '&zoom=' + normalizedScaleValue;
   var currentPage = PDFView.pages[pageNumber - 1];
   var topLeft = currentPage.getPagePoint(window.pageXOffset,
     window.pageYOffset - firstPage.y - kViewerTopMargin);
@@ -964,7 +990,7 @@ function updateViewarea() {
   var store = PDFView.store;
   store.set('exists', true);
   store.set('page', pageNumber);
-  store.set('zoom', Math.round(PDFView.currentScale * 100));
+  store.set('zoom', normalizedScaleValue);
   store.set('scrollLeft', Math.round(topLeft.x));
   store.set('scrollTop', Math.round(topLeft.y));
 
@@ -1000,7 +1026,8 @@ window.addEventListener('webkitTransitionEnd', updateThumbViewArea, true);
 
 window.addEventListener('resize', function webViewerResize(evt) {
   if (document.getElementById('pageWidthOption').selected ||
-      document.getElementById('pageFitOption').selected)
+      document.getElementById('pageFitOption').selected ||
+      document.getElementById('pageAutoOption').selected)
       PDFView.parseScale(document.getElementById('scaleSelect').value);
   updateViewarea();
 });
@@ -1037,20 +1064,9 @@ window.addEventListener('change', function webViewerChange(evt) {
   document.getElementById('download').setAttribute('hidden', 'true');
 }, true);
 
-window.addEventListener('scalechange', function scalechange(evt) {
-  var customScaleOption = document.getElementById('customScaleOption');
-  customScaleOption.selected = false;
-
-  if (!evt.resetAutoSettings &&
-       (document.getElementById('pageWidthOption').selected ||
-        document.getElementById('pageFitOption').selected)) {
-      updateViewarea();
-      return;
-  }
-
+function selectScaleOption(value) {
   var options = document.getElementById('scaleSelect').options;
   var predefinedValueFound = false;
-  var value = '' + evt.scale;
   for (var i = 0; i < options.length; i++) {
     var option = options[i];
     if (option.value != value) {
@@ -1060,7 +1076,22 @@ window.addEventListener('scalechange', function scalechange(evt) {
     option.selected = true;
     predefinedValueFound = true;
   }
+  return predefinedValueFound;
+}
 
+window.addEventListener('scalechange', function scalechange(evt) {
+  var customScaleOption = document.getElementById('customScaleOption');
+  customScaleOption.selected = false;
+
+  if (!evt.resetAutoSettings &&
+       (document.getElementById('pageWidthOption').selected ||
+        document.getElementById('pageFitOption').selected ||
+        document.getElementById('pageAutoOption').selected)) {
+      updateViewarea();
+      return;
+  }
+
+  var predefinedValueFound = selectScaleOption('' + evt.scale);
   if (!predefinedValueFound) {
     customScaleOption.textContent = Math.round(evt.scale * 10000) / 100 + '%';
     customScaleOption.selected = true;

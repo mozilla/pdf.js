@@ -2092,7 +2092,7 @@ var Font = (function FontClosure() {
                  window.btoa(data) + ');');
       var rule = "@font-face { font-family:'" + fontName + "';src:" + url + '}';
 
-      document.documentElement.firstChild.appendChild(
+      document.documentElement.getElementsByTagName('head')[0].appendChild(
         document.createElement('style'));
 
       var styleSheet = document.styleSheets[document.styleSheets.length - 1];
