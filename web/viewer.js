@@ -437,6 +437,10 @@ var PDFView = {
       this.switchSidebarView('outline');
     }
 
+    // Reset the current scale, as otherwise the page's scale might not get
+    // updated if the zoom level stayed the same.
+    this.currentScale = 0;
+    this.currentScaleValue = null;
     if (this.initialBookmark) {
       this.setHash(this.initialBookmark);
       this.initialBookmark = null;
