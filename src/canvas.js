@@ -255,6 +255,8 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       }
       // Scale so that canvas units are the same as PDF user space units
       this.ctx.scale(cw / mediaBox.width, ch / mediaBox.height);
+      // Move the media left-top corner to the (0,0) canvas position
+      this.ctx.translate(-mediaBox.x, -mediaBox.y);
 
       if (this.textLayer)
         this.textLayer.beginLayout();
@@ -341,6 +343,8 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
     setDash: function canvasGraphicsSetDash(dashArray, dashPhase) {
       this.ctx.mozDash = dashArray;
       this.ctx.mozDashOffset = dashPhase;
+      this.ctx.webkitLineDash = dashArray;
+      this.ctx.webkitLineDashOffset = dashPhase;
     },
     setRenderingIntent: function canvasGraphicsSetRenderingIntent(intent) {
       TODO('set rendering intent: ' + intent);

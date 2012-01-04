@@ -270,7 +270,6 @@ var PDFFunction = (function PDFFunctionClosure() {
 
     constructStiched: function pdfFunctionConstructStiched(fn, dict, xref) {
       var domain = dict.get('Domain');
-      var range = dict.get('Range');
 
       if (!domain)
         error('No domain');
@@ -279,13 +278,13 @@ var PDFFunction = (function PDFFunctionClosure() {
       if (inputSize != 1)
         error('Bad domain for stiched function');
 
-      var fnRefs = dict.get('Functions');
+      var fnRefs = xref.fetchIfRef(dict.get('Functions'));
       var fns = [];
       for (var i = 0, ii = fnRefs.length; i < ii; ++i)
         fns.push(PDFFunction.getIR(xref, xref.fetchIfRef(fnRefs[i])));
 
-      var bounds = dict.get('Bounds');
-      var encode = dict.get('Encode');
+      var bounds = xref.fetchIfRef(dict.get('Bounds'));
+      var encode = xref.fetchIfRef(dict.get('Encode'));
 
       return [CONSTRUCT_STICHED, domain, bounds, encode, fns];
     },

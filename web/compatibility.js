@@ -5,8 +5,13 @@
 
 // Checking if the typed arrays are supported
 (function checkTypedArrayCompatibility() {
-  if (typeof Uint8Array !== 'undefined')
+  if (typeof Uint8Array !== 'undefined') {
+    // some mobile version might not support Float64Array
+    if (typeof Float64Array === 'undefined')
+      window.Float64Array = Float32Array;
+
     return;
+  }
 
   function subarray(start, end) {
     return this.slice(start, end);
@@ -46,6 +51,8 @@
   window.Uint32Array = TypedArray;
   window.Int32Array = TypedArray;
   window.Uint16Array = TypedArray;
+  window.Float32Array = TypedArray;
+  window.Float64Array = TypedArray;
 })();
 
 // Object.create() ?
