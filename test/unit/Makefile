@@ -72,7 +72,7 @@ BROWSERS:=$(shell echo "$(BROWSERS_WITH_UKNOWN_RANDOM_PROFILE_PATHS)" | \
 # do not need it.
 PROFILES:=$(TEMP_PROFILE) $(shell echo '$(BROWSERS)' | \
   $(SPLIT_LINES) | \
-  sed -n "s|.*\($(TEMP_PROFILE)_[0-9]\+\).*|\1 |p" | \
+  sed -n "s|.*\( $(TEMP_PROFILE)_[0-9]\+\).*|\1|p" | \
   $(JOIN_LINES) \
 )
 
