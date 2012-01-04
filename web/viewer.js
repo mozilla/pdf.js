@@ -772,9 +772,12 @@ var PageView = function pageView(container, content, id, pageWidth, pageHeight,
     div.appendChild(canvas);
     this.canvas = canvas;
 
-    var textLayer = document.createElement('div');
-    textLayer.className = 'textLayer';
-    div.appendChild(textLayer);
+    var textLayer = null;
+    if (!PDFJS.disableTextLayer) {
+      textLayer = document.createElement('div');
+      textLayer.className = 'textLayer';
+      div.appendChild(textLayer);
+    }
 
     var scale = this.scale;
     canvas.width = pageWidth * scale;
@@ -948,6 +951,10 @@ window.addEventListener('load', function webViewerLoad(evt) {
 
   if ('disableWorker' in params)
     PDFJS.disableWorker = params['disableWorker'] === 'true' ? true : false;
+
+  if ('disableTextLayer' in params)
+    PDFJS.disableTextLayer = params['disableTextLayer'] === 'true' ?
+        true : false;
 
   var sidebarScrollView = document.getElementById('sidebarScrollView');
   sidebarScrollView.addEventListener('scroll', updateThumbViewArea, true);
