@@ -330,7 +330,7 @@ canvas {
   color: black;
   padding: 3px;
   margin: 3px;
-  white-space: pre;
+  width: 98%;
 }
 
 .clearBoth {
