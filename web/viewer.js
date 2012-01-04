@@ -798,7 +798,7 @@ var PageView = function pageView(container, content, id, pageWidth, pageHeight,
 
         cache.push(this);
         callback();
-      }).bind(this), textLayer
+      }).bind(this), new TextLayerBuilder(textLayer)
     );
 
     setupAnnotations(this.content, this.scale);
@@ -929,6 +929,53 @@ var DocumentOutlineView = function documentOutlineView(outline) {
       levelData.parent.appendChild(div);
     }
   }
+};
+
+var TextLayerBuilder = function textLayerBuilder(textLayerDiv) {
+  this.textLayerDiv = textLayerDiv;
+
+  this.beginLayout = function textLayerBuilderBeginLayout() {
+    this.textDivs = [];
+    this.textLayerQueue = [];
+  };
+
+  this.endLayout = function textLayerBuilderEndLayout() {
+    var self = this;
+    var textDivs = this.textDivs;
+    var textLayerDiv = this.textLayerDiv;
+    this.textLayerTimer = setInterval(function renderTextLayer() {
+      if (textDivs.length === 0) {
+        clearInterval(self.textLayerTimer);
+        return;
+      }
+      var textDiv = textDivs.shift();
+      if (textDiv.dataset.textLength >= 1) { // avoid div by zero
+        textLayerDiv.appendChild(textDiv);
+        // Adjust div width (via letterSpacing) to match canvas text
+        // Due to the .offsetWidth calls, this is slow
+        textDiv.style.letterSpacing =
+          ((textDiv.dataset.canvasWidth - textDiv.offsetWidth) /
+            (textDiv.dataset.textLength - 1)) + 'px';
+      }
+    }, 0);
+  };
+
+  this.appendText = function textLayerBuilderAppendText(text,
+                                                        fontName, fontSize) {
+    var textDiv = document.createElement('div');
+
+    // vScale and hScale already contain the scaling to pixel units
+    var fontHeight = fontSize * text.geom.vScale;
+    textDiv.dataset.canvasWidth = text.canvasWidth * text.geom.hScale;
+
+    textDiv.style.fontSize = fontHeight + 'px';
+    textDiv.style.fontFamily = fontName || 'sans-serif';
+    textDiv.style.left = text.geom.x + 'px';
+    textDiv.style.top = (text.geom.y - fontHeight) + 'px';
+    textDiv.textContent = text.str;
+    textDiv.dataset.textLength = text.length;
+    this.textDivs.push(textDiv);
+  };
 };
 
 window.addEventListener('load', function webViewerLoad(evt) {
