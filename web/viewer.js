@@ -444,7 +444,7 @@ var PDFView = {
     else if (storedHash)
       this.setHash(storedHash);
     else {
-      this.setScale(scale || kDefaultScale, true);
+      this.parseScale(scale || kDefaultScale, true);
       this.page = 1;
     }
   },
@@ -934,7 +934,7 @@ window.addEventListener('load', function webViewerLoad(evt) {
     params[unescape(param[0])] = unescape(param[1]);
   }
 
-  var scale = ('scale' in params) ? params.scale : kDefaultScale;
+  var scale = ('scale' in params) ? params.scale : 0;
   PDFView.open(params.file || kDefaultURL, parseFloat(scale));
 
   if (!window.File || !window.FileReader || !window.FileList || !window.Blob)
@@ -1081,7 +1081,8 @@ window.addEventListener('scalechange', function scalechange(evt) {
 
   if (!evt.resetAutoSettings &&
        (document.getElementById('pageWidthOption').selected ||
-        document.getElementById('pageFitOption').selected)) {
+        document.getElementById('pageFitOption').selected ||
+        document.getElementById('pageAutoOption').selected)) {
       updateViewarea();
       return;
   }
