@@ -11,11 +11,11 @@ CHROME_ARGS:=--user-data-dir=$(TEMP_PROFILE) --no-first-run --disable-sync
 # be used for running the unit tests.
 MANIFEST:=../resources/browser_manifests/browser_manifest.json
 
-# This is a helper function to separate multiple browsers to their own lines
+# This is a helper command to separate multiple browsers to their own lines
 # for an easier sed operation.
-SPLIT_LINES:=sed 's|,|,\n|g'
+SPLIT_LINES:=sed 's|,|,@|g' | tr '@' '\n'
 
-# This is a helper function to join multiple lines together.
+# This is a helper command to join multiple lines together.
 JOIN_LINES:=tr -d '\n'
 
 # Fetch the paths to browsers that are going to be used in testing.
@@ -41,7 +41,7 @@ BROWSERS_PATHS_WITH_MAC_CORRECTION:=$(shell echo '$(BROWSERS_PATHS)' | \
 QUOTATION_MARK:=\"
 SUBSTITUTE_FOR_QUOTATION_MARK:=@@@@
 
-# Each of the browser can have their ow separate arguments.
+# Each of the browser can have their own separate arguments.
 BROWSERS_WITH_ARGUMENTS:=$(shell echo '$(BROWSERS_PATHS_WITH_MAC_CORRECTION)' | \
   $(SPLIT_LINES) | \
   sed "s|\(irefox.*\)\($(QUOTATION_MARK)\),|\1;$(FIREFOX_ARGS)\2,|" | \
@@ -55,7 +55,7 @@ BROWSERS_WITH_ARGUMENTS:=$(shell echo '$(BROWSERS_PATHS_WITH_MAC_CORRECTION)' | 
 # directories.
 BROWSERS_WITH_UKNOWN_RANDOM_PROFILE_PATHS:=$(shell echo '$(BROWSERS_WITH_ARGUMENTS)' | \
   $(SPLIT_LINES) | \
-  sed 's|\(temp_profile\)|\1_$$(echo $$RANDOM$$RANDOM)|' | \
+  sed 's|\(temp_profile\)|\1_$$RANDOM$$RANDOM|' | \
   sed "s|$(QUOTATION_MARK)|$(SUBSTITUTE_FOR_QUOTATION_MARK)|g" | \
   $(JOIN_LINES) \
 )
@@ -72,7 +72,7 @@ BROWSERS:=$(shell echo "$(BROWSERS_WITH_UKNOWN_RANDOM_PROFILE_PATHS)" | \
 # do not need it.
 PROFILES:=$(TEMP_PROFILE) $(shell echo '$(BROWSERS)' | \
   $(SPLIT_LINES) | \
-  sed -n "s|.*\(\..*_[0-9]\+\).*|\1 |p" | \
+  sed -n "s|.*\($(TEMP_PROFILE)_[0-9]\+\).*|\1 |p" | \
   $(JOIN_LINES) \
 )
 
