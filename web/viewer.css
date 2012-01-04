@@ -15,6 +15,7 @@ body {
 /* === Toolbar === */
 #controls {
   background-color: #eee;
+  background: -o-linear-gradient(bottom,#eee 0%,#fff 100%);
   background: -moz-linear-gradient(center bottom, #eee 0%, #fff 100%);
   background: -webkit-gradient(linear, left bottom, left top, color-stop(0.0, #ddd), color-stop(1.0, #fff));
   border-bottom: 1px solid #666;
@@ -82,6 +83,7 @@ span#info {
   bottom: 18px;
   left: -290px;
   transition: left 0.25s ease-in-out 1s;
+  -o-transition: left 0.25s ease-in-out 1s;
   -moz-transition: left 0.25s ease-in-out 1s;
   -webkit-transition: left 0.25s ease-in-out 1s;
   z-index: 1;
@@ -90,6 +92,7 @@ span#info {
 #sidebar:hover {
   left: 0px;
   transition: left 0.25s ease-in-out 0s;
+  -o-transition: left 0.25s ease-in-out 0s;
   -moz-transition: left 0.25s ease-in-out 0s;
   -webkit-transition: left 0.25s ease-in-out 0s;
 }
