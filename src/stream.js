@@ -819,7 +819,6 @@ var JpegStream = (function JpegStreamClosure() {
   JpegStream.prototype = Object.create(DecodeStream.prototype);
 
   JpegStream.prototype.ensureBuffer = function jpegStreamEnsureBuffer(req) {
-    // todo make sure this isn't called on natively supported jpegs
     if (this.bufferLength)
       return;
     var jpegImage = new JpegImage();
@@ -844,6 +843,8 @@ var JpegStream = (function JpegStreamClosure() {
   JpegStream.prototype.isNativelySupported = function isNativelySupported(xref,
                                                                           res) {
     var cs = ColorSpace.parse(this.dict.get('ColorSpace'), xref, res);
+    // when bug 674619 lands, let's check if browser can do
+    // normal cmyk and then we won't need to decode in JS
     if (cs.name === 'DeviceGray' || cs.name === 'DeviceRGB')
       return true;
     if (cs.name === 'DeviceCMYK' && !this.isAdobeImage &&
