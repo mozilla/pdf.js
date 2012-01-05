@@ -1856,10 +1856,10 @@ var CCITTFaxStream = (function CCITTFaxStreamClosure() {
   // values. The first array element indicates whether a valid code is being
   // returned. The second array element is the actual code. The third array
   // element indicates whether EOF was reached.
-  var findTableCode = function ccittFaxStreamFindTableCode(start, end, table,
-                                                           limit) {
-    var limitValue = limit || 0;
+  CCITTFaxStream.prototype.findTableCode =
+    function ccittFaxStreamFindTableCode(start, end, table, limit) {
 
+    var limitValue = limit || 0;
     for (var i = start; i <= end; ++i) {
       var code = this.lookBits(i);
       if (code == EOF)
@@ -1890,7 +1890,7 @@ var CCITTFaxStream = (function CCITTFaxStreamClosure() {
         return p[1];
       }
     } else {
-      var result = findTableCode(1, 7, twoDimTable);
+      var result = this.findTableCode(1, 7, twoDimTable);
       if (result[0] && result[2])
         return result[1];
     }
@@ -1919,11 +1919,11 @@ var CCITTFaxStream = (function CCITTFaxStreamClosure() {
         return p[1];
       }
     } else {
-      var result = findTableCode(1, 9, whiteTable2);
+      var result = this.findTableCode(1, 9, whiteTable2);
       if (result[0])
         return result[1];
 
-      result = findTableCode(11, 12, whiteTable1);
+      result = this.findTableCode(11, 12, whiteTable1);
       if (result[0])
         return result[1];
     }
@@ -1952,15 +1952,15 @@ var CCITTFaxStream = (function CCITTFaxStreamClosure() {
         return p[1];
       }
     } else {
-      var result = findTableCode(2, 6, blackTable3);
+      var result = this.findTableCode(2, 6, blackTable3);
       if (result[0])
         return result[1];
 
-      result = findTableCode(7, 12, blackTable2, 64);
+      result = this.findTableCode(7, 12, blackTable2, 64);
       if (result[0])
         return result[1];
 
-      result = findTableCode(10, 13, blackTable1);
+      result = this.findTableCode(10, 13, blackTable1);
       if (result[0])
         return result[1];
     }
