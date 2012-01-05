@@ -33,6 +33,9 @@ var RenderingQueue = (function RenderingQueueClosure() {
 
   RenderingQueue.prototype = {
     enqueueDraw: function RenderingQueueEnqueueDraw(item) {
+      if (!item.drawingRequired())
+        return; // as no redraw required, no need for queueing.
+
       if ('rendering' in item)
         return; // is already in the queue
 
@@ -346,13 +349,14 @@ var PDFView = {
     };
     moreInfoButton.removeAttribute('hidden');
     lessInfoButton.setAttribute('hidden', 'true');
-    errorMoreInfo.innerHTML = 'PDF.JS Build: ' + PDFJS.build + '\n';
+    errorMoreInfo.value = 'PDF.JS Build: ' + PDFJS.build + '\n';
 
     if (moreInfo) {
-      errorMoreInfo.innerHTML += 'Message: ' + moreInfo.message;
+      errorMoreInfo.value += 'Message: ' + moreInfo.message;
       if (moreInfo.stack)
-        errorMoreInfo.innerHTML += '\n' + 'Stack: ' + moreInfo.stack;
+        errorMoreInfo.value += '\n' + 'Stack: ' + moreInfo.stack;
     }
+    errorMoreInfo.rows = errorMoreInfo.value.split('\n').length - 1;
   },
 
   progress: function pdfViewProgress(level) {
@@ -366,6 +370,7 @@ var PDFView = {
       // when page is painted, using the image as thumbnail base
       pageView.onAfterDraw = function pdfViewLoadOnAfterDraw() {
         thumbnailView.setImage(pageView.canvas);
+        preDraw();
       };
     }
 
@@ -759,8 +764,12 @@ var PageView = function pageView(container, content, id, pageWidth, pageHeight,
       }, 0);
   };
 
+  this.drawingRequired = function() {
+    return !div.hasChildNodes();
+  };
+
   this.draw = function pageviewDraw(callback) {
-    if (div.hasChildNodes()) {
+    if (!this.drawingRequired()) {
       this.updateStats();
       callback();
       return;
@@ -1011,15 +1020,48 @@ window.addEventListener('unload', function webViewerUnload(evt) {
   window.scrollTo(0, 0);
 }, true);
 
+/**
+ * Render the next not yet visible page already such that it is
+ * hopefully ready once the user scrolls to it.
+ */
+function preDraw() {
+  var pages = PDFView.pages;
+  var visible = PDFView.getVisiblePages();
+  var last = visible[visible.length - 1];
+  // PageView.id is the actual page number, which is + 1 compared
+  // to the index in `pages`. That means, pages[last.id] is the next
+  // PageView instance.
+  if (pages[last.id] && pages[last.id].drawingRequired()) {
+    renderingQueue.enqueueDraw(pages[last.id]);
+    return;
+  }
+  // If there is nothing to draw on the next page, maybe the user
+  // is scrolling up, so, let's try to render the next page *before*
+  // the first visible page
+  if (pages[visible[0].id - 2]) {
+    renderingQueue.enqueueDraw(pages[visible[0].id - 2]);
+  }
+}
+
 function updateViewarea() {
   var visiblePages = PDFView.getVisiblePages();
+  var pageToDraw;
   for (var i = 0; i < visiblePages.length; i++) {
     var page = visiblePages[i];
-    renderingQueue.enqueueDraw(PDFView.pages[page.id - 1]);
+    var pageObj = PDFView.pages[page.id - 1];
+
+    pageToDraw |= pageObj.drawingRequired();
+    renderingQueue.enqueueDraw(pageObj);
   }
 
   if (!visiblePages.length)
     return;
+
+  // If there is no need to draw a page that is currenlty visible, preDraw the
+  // next page the user might scroll to.
+  if (!pageToDraw) {
+    preDraw();
+  }
 
   updateViewarea.inProgress = true; // used in "set page"
   var currentId = PDFView.page;
