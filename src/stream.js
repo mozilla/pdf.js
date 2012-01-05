@@ -803,8 +803,8 @@ var JpegStream = (function JpegStreamClosure() {
     // need to be removed
     this.dict = dict;
 
-    this.colorTransform = dict.get('ColorTransform') || -1;
     this.isAdobeImage = false;
+    this.colorTransform = dict.get('ColorTransform') || -1;
 
     if (isAdobeImage(bytes)) {
       this.isAdobeImage = true;
@@ -822,7 +822,8 @@ var JpegStream = (function JpegStreamClosure() {
     if (this.bufferLength)
       return;
     var jpegImage = new JpegImage();
-    jpegImage.colorTransform = this.colorTransform;
+    if (this.colorTransform != -1)
+      jpegImage.colorTransform = this.colorTransform;
     jpegImage.parse(this.bytes);
     var width = jpegImage.width;
     var height = jpegImage.height;
@@ -858,7 +859,8 @@ var JpegStream = (function JpegStreamClosure() {
   JpegStream.prototype.isNativelyDecodable = function isNativelyDecodable(xref,
                                                                           res) {
     var cs = ColorSpace.parse(this.dict.get('ColorSpace'), xref, res);
-    if (cs.numComps == 1 || cs.numComps == 3)
+    var numComps = cs.numComps;
+    if (numComps == 1 || numComps == 3)
       return true;
 
     return false;
