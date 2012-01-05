@@ -381,5 +381,12 @@
       "md5": "7e6027a02ff78577f74dccdf84e37189",
       "rounds": 1,
       "type": "eq"
+    },
+    {  "id": "ocs",
+      "file": "pdfs/ocs.pdf",
+      "md5": "2ade57e954ae7632749cf328daeaa7a8",
+      "rounds": 1,
+      "link": true,
+      "type": "load"
     }
 ]
