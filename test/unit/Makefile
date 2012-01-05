@@ -1,5 +1,5 @@
 # Create temporary profile directory name.
-TEMP_PROFILE:=./test_reports/temp_profile
+TEMP_PROFILE:=$(shell echo `pwd`)/test_reports/temp_profile
 
 # These are the Firefox command line arguments.
 FIREFOX_ARGS:=-no-remote -profile $(TEMP_PROFILE)
