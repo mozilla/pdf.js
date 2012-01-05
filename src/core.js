@@ -398,17 +398,25 @@ var Page = (function PageClosure() {
       }
 
       // Once the IRQueue and fonts are loaded, perform the actual rendering.
-      this.displayReadyPromise.then(function pageDisplayReadyPromise() {
-        var gfx = new CanvasGraphics(ctx, this.objs, textLayer);
-        try {
-          this.display(gfx, callback);
-        } catch (e) {
-          if (self.callback)
-            self.callback(e);
+      this.displayReadyPromise.then(
+        function pageDisplayReadyPromise() {
+          var gfx = new CanvasGraphics(ctx, this.objs, textLayer);
+          try {
+            this.display(gfx, callback);
+          } catch (e) {
+            if (callback)
+              callback(e);
+            else
+              throw e;
+          }
+        }.bind(this),
+        function pageDisplayReadPromiseError(reason) {
+          if (callback)
+            callback(reason);
           else
-            throw e;
+            throw reason;
         }
-      }.bind(this));
+      );
     }
   };
 
@@ -722,8 +730,8 @@ var PDFDoc = (function PDFDocClosure() {
 
       messageHandler.on('page_error', function pdfDocError(data) {
         var page = this.pageCache[data.pageNum];
-        if (page.callback)
-          page.callback(data.error);
+        if (page.displayReadyPromise)
+          page.displayReadyPromise.reject(data.error);
         else
           throw data.error;
       }, this);
