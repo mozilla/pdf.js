@@ -346,13 +346,14 @@ var PDFView = {
     };
     moreInfoButton.removeAttribute('hidden');
     lessInfoButton.setAttribute('hidden', 'true');
-    errorMoreInfo.innerHTML = 'PDF.JS Build: ' + PDFJS.build + '\n';
+    errorMoreInfo.value = 'PDF.JS Build: ' + PDFJS.build + '\n';
 
     if (moreInfo) {
-      errorMoreInfo.innerHTML += 'Message: ' + moreInfo.message;
+      errorMoreInfo.value += 'Message: ' + moreInfo.message;
       if (moreInfo.stack)
-        errorMoreInfo.innerHTML += '\n' + 'Stack: ' + moreInfo.stack;
+        errorMoreInfo.value += '\n' + 'Stack: ' + moreInfo.stack;
     }
+    errorMoreInfo.rows = errorMoreInfo.value.split('\n').length - 1;
   },
 
   progress: function pdfViewProgress(level) {
