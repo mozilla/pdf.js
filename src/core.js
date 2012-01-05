@@ -730,8 +730,8 @@ var PDFDoc = (function PDFDocClosure() {
 
       messageHandler.on('page_error', function pdfDocError(data) {
         var page = this.pageCache[data.pageNum];
-        if (page.displayReadyPromise) {
-          page.displayReadyPromise.reject(data.error);}
+        if (page.displayReadyPromise)
+          page.displayReadyPromise.reject(data.error);
         else
           throw data.error;
       }, this);
