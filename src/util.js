@@ -76,24 +76,24 @@ function stringToBytes(str) {
 
 var IDENTITY_MATRIX = [1, 0, 0, 1, 0, 0];
 
-var Util = (function utilUtil() {
-  function constructor() {}
-  constructor.makeCssRgb = function makergb(r, g, b) {
+var Util = (function UtilClosure() {
+  function Util() {}
+  Util.makeCssRgb = function makergb(r, g, b) {
     var ri = (255 * r) | 0, gi = (255 * g) | 0, bi = (255 * b) | 0;
     return 'rgb(' + ri + ',' + gi + ',' + bi + ')';
   };
-  constructor.makeCssCmyk = function makecmyk(c, m, y, k) {
+  Util.makeCssCmyk = function makecmyk(c, m, y, k) {
     c = (new DeviceCmykCS()).getRgb([c, m, y, k]);
     var ri = (255 * c[0]) | 0, gi = (255 * c[1]) | 0, bi = (255 * c[2]) | 0;
     return 'rgb(' + ri + ',' + gi + ',' + bi + ')';
   };
-  constructor.applyTransform = function apply(p, m) {
+  Util.applyTransform = function apply(p, m) {
     var xt = p[0] * m[0] + p[1] * m[2] + m[4];
     var yt = p[0] * m[1] + p[1] * m[3] + m[5];
     return [xt, yt];
   };
 
-  return constructor;
+  return Util;
 })();
 
 var PDFStringTranslateTable = [
@@ -197,7 +197,7 @@ function isPDFFunction(v) {
  * can be set. If any of these happens twice or the data is required before
  * it was set, an exception is throw.
  */
-var Promise = (function promise() {
+var Promise = (function PromiseClosure() {
   var EMPTY_PROMISE = {};
 
   /**
@@ -206,6 +206,8 @@ var Promise = (function promise() {
    */
   function Promise(name, data) {
     this.name = name;
+    this.isRejected = false;
+    this.error = null;
     // If you build a promise and pass in some data it's already resolved.
     if (data != null) {
       this.isResolved = true;
@@ -216,8 +218,35 @@ var Promise = (function promise() {
       this._data = EMPTY_PROMISE;
     }
     this.callbacks = [];
+    this.errbacks = [];
   };
-
+  /**
+   * Builds a promise that is resolved when all the passed in promises are
+   * resolved.
+   * @param {Promise[]} promises Array of promises to wait for.
+   * @return {Promise} New dependant promise.
+   */
+  Promise.all = function(promises) {
+    var deferred = new Promise();
+    var unresolved = promises.length;
+    var results = [];
+    if (unresolved === 0) {
+      deferred.resolve(results);
+      return deferred;
+    }
+    for (var i = 0; i < unresolved; ++i) {
+      var promise = promises[i];
+      promise.then((function(i) {
+        return function(value) {
+          results[i] = value;
+          unresolved--;
+          if (unresolved === 0)
+            deferred.resolve(results);
+        };
+      })(i));
+    }
+    return deferred;
+  };
   Promise.prototype = {
     hasData: false,
 
@@ -256,9 +285,12 @@ var Promise = (function promise() {
       if (this.isResolved) {
         throw 'A Promise can be resolved only once ' + this.name;
       }
+      if (this.isRejected) {
+        throw 'The Promise was already rejected ' + this.name;
+      }
 
       this.isResolved = true;
-      this.data = data;
+      this.data = data || null;
       var callbacks = this.callbacks;
 
       for (var i = 0, ii = callbacks.length; i < ii; i++) {
@@ -266,7 +298,24 @@ var Promise = (function promise() {
       }
     },
 
-    then: function promiseThen(callback) {
+    reject: function proimseReject(reason) {
+      if (this.isRejected) {
+        throw 'A Promise can be rejected only once ' + this.name;
+      }
+      if (this.isResolved) {
+        throw 'The Promise was already resolved ' + this.name;
+      }
+
+      this.isRejected = true;
+      this.error = reason || null;
+      var errbacks = this.errbacks;
+
+      for (var i = 0, ii = errbacks.length; i < ii; i++) {
+        errbacks[i].call(null, reason);
+      }
+    },
+
+    then: function promiseThen(callback, errback) {
       if (!callback) {
         throw 'Requiring callback' + this.name;
       }
@@ -275,8 +324,13 @@ var Promise = (function promise() {
       if (this.isResolved) {
         var data = this.data;
         callback.call(null, data);
+      } else if (this.isRejected && errorback) {
+        var error = this.error;
+        errback.call(null, error);
       } else {
         this.callbacks.push(callback);
+        if (errback)
+          this.errbacks.push(errback);
       }
     }
   };

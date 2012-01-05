@@ -3,8 +3,8 @@
 
 'use strict';
 
-var PartialEvaluator = (function partialEvaluator() {
-  function constructor(xref, handler, uniquePrefix) {
+var PartialEvaluator = (function PartialEvaluatorClosure() {
+  function PartialEvaluator(xref, handler, uniquePrefix) {
     this.state = new EvalState();
     this.stateStack = [];
 
@@ -111,7 +111,7 @@ var PartialEvaluator = (function partialEvaluator() {
     EX: 'endCompat'
   };
 
-  constructor.prototype = {
+  PartialEvaluator.prototype = {
     getIRQueue: function partialEvaluatorGetIRQueue(stream, resources,
                                     queue, dependency) {
 
@@ -155,6 +155,11 @@ var PartialEvaluator = (function partialEvaluator() {
             font.loadedName = loadedName;
 
             var translated = font.translated;
+            // Convert the file to an ArrayBuffer which will be turned back into
+            // a Stream in the main thread.
+            if (translated.file)
+              translated.file = translated.file.getBytes();
+
             handler.send('obj', [
                 loadedName,
                 'Font',
@@ -179,62 +184,54 @@ var PartialEvaluator = (function partialEvaluator() {
         var w = dict.get('Width', 'W');
         var h = dict.get('Height', 'H');
 
-        if (image instanceof JpegStream && image.isNative) {
-          var objId = 'img_' + uniquePrefix + (++self.objIdCounter);
-          handler.send('obj', [objId, 'JpegStream', image.getIR()]);
+        var imageMask = dict.get('ImageMask', 'IM') || false;
+        if (imageMask) {
+          // This depends on a tmpCanvas beeing filled with the
+          // current fillStyle, such that processing the pixel
+          // data can't be done here. Instead of creating a
+          // complete PDFImage, only read the information needed
+          // for later.
 
-          // Add the dependency on the image object.
-          insertDependency([objId]);
+          var width = dict.get('Width', 'W');
+          var height = dict.get('Height', 'H');
+          var bitStrideLength = (width + 7) >> 3;
+          var imgArray = image.getBytes(bitStrideLength * height);
+          var decode = dict.get('Decode', 'D');
+          var inverseDecode = !!decode && decode[0] > 0;
 
-          // The normal fn.
-          fn = 'paintJpegXObject';
-          args = [objId, w, h];
-
+          fn = 'paintImageMaskXObject';
+          args = [imgArray, inverseDecode, width, height];
           return;
         }
-
-        // Needs to be rendered ourself.
-
-        // Figure out if the image has an imageMask.
-        var imageMask = dict.get('ImageMask', 'IM') || false;
 
         // If there is no imageMask, create the PDFImage and a lot
         // of image processing can be done here.
-        if (!imageMask) {
-          var imageObj = new PDFImage(xref, resources, image, inline);
+        var objId = 'img_' + uniquePrefix + (++self.objIdCounter);
+        insertDependency([objId]);
+        args = [objId, w, h];
 
-          if (imageObj.imageMask) {
-            throw 'Can\'t handle this in the web worker :/';
-          }
-
-          var imgData = {
-            width: w,
-            height: h,
-            data: new Uint8Array(w * h * 4)
-          };
-          var pixels = imgData.data;
-          imageObj.fillRgbaBuffer(pixels, imageObj.decode);
-
-          fn = 'paintImageXObject';
-          args = [imgData];
+        var softMask = dict.get('SMask', 'IM') || false;
+        if (!softMask && image instanceof JpegStream && image.isNative) {
+          // These JPEGs don't need any more processing so we can just send it.
+          fn = 'paintJpegXObject';
+          handler.send('obj', [objId, 'JpegStream', image.getIR()]);
           return;
         }
 
-        // This depends on a tmpCanvas beeing filled with the
-        // current fillStyle, such that processing the pixel
-        // data can't be done here. Instead of creating a
-        // complete PDFImage, only read the information needed
-        // for later.
-        fn = 'paintImageMaskXObject';
+        fn = 'paintImageXObject';
 
-        var width = dict.get('Width', 'W');
-        var height = dict.get('Height', 'H');
-        var bitStrideLength = (width + 7) >> 3;
-        var imgArray = image.getBytes(bitStrideLength * height);
-        var decode = dict.get('Decode', 'D');
-        var inverseDecode = !!decode && decode[0] > 0;
-
-        args = [imgArray, inverseDecode, width, height];
+        PDFImage.buildImage(function(imageObj) {
+            var drawWidth = imageObj.drawWidth;
+            var drawHeight = imageObj.drawHeight;
+            var imgData = {
+              width: drawWidth,
+              height: drawHeight,
+              data: new Uint8Array(drawWidth * drawHeight * 4)
+            };
+            var pixels = imgData.data;
+            imageObj.fillRgbaBuffer(pixels, drawWidth, drawHeight);
+            handler.send('obj', [objId, 'Image', imgData]);
+          }, handler, xref, resources, image, inline);
       }
 
       uniquePrefix = uniquePrefix || '';
@@ -493,6 +490,8 @@ var PartialEvaluator = (function partialEvaluator() {
           var baseName = encoding.get('BaseEncoding');
           if (baseName)
             baseEncoding = Encodings[baseName.name];
+          else
+            hasEncoding = false; // base encoding was not provided
 
           // Load the differences between the base and original
           if (encoding.has('Differences')) {
@@ -512,6 +511,7 @@ var PartialEvaluator = (function partialEvaluator() {
           error('Encoding is not a Name nor a Dict');
         }
       }
+
       properties.differences = differences;
       properties.baseEncoding = baseEncoding;
       properties.hasEncoding = hasEncoding;
@@ -554,9 +554,21 @@ var PartialEvaluator = (function partialEvaluator() {
                   var startRange = tokens[j];
                   var endRange = tokens[j + 1];
                   var code = tokens[j + 2];
-                  while (startRange <= endRange) {
-                    charToUnicode[startRange] = code++;
-                    ++startRange;
+                  if (code == 0xFFFF) {
+                    // CMap is broken, assuming code == startRange
+                    code = startRange;
+                  }
+                  if (isArray(code)) {
+                    var codeindex = 0;
+                    while (startRange <= endRange) {
+                      charToUnicode[startRange] = code[codeindex++];
+                      ++startRange;
+                    }
+                  } else {
+                    while (startRange <= endRange) {
+                      charToUnicode[startRange] = code++;
+                      ++startRange;
+                    }
                   }
                 }
                 break;
@@ -595,9 +607,18 @@ var PartialEvaluator = (function partialEvaluator() {
             }
           } else if (byte == 0x3E) {
             if (token.length) {
-              // parsing hex number
-              tokens.push(parseInt(token, 16));
-              token = '';
+              if (token.length <= 4) {
+                // parsing hex number
+                tokens.push(parseInt(token, 16));
+                token = '';
+              } else {
+                // parsing hex UTF-16BE numbers
+                var str = [];
+                for (var i = 0, ii = token.length; i < ii; i += 4)
+                  str.push(parseInt(token.substr(i, 4), 16));
+                tokens.push(String.fromCharCode.apply(String, str));
+                token = '';
+              }
             }
           } else {
             token += String.fromCharCode(byte);
@@ -829,11 +850,11 @@ var PartialEvaluator = (function partialEvaluator() {
     }
   };
 
-  return constructor;
+  return PartialEvaluator;
 })();
 
-var EvalState = (function evalState() {
-  function constructor() {
+var EvalState = (function EvalStateClosure() {
+  function EvalState() {
     // Are soft masks and alpha values shapes or opacities?
     this.alphaIsShape = false;
     this.fontSize = 0;
@@ -850,8 +871,8 @@ var EvalState = (function evalState() {
     this.fillColorSpace = null;
     this.strokeColorSpace = null;
   }
-  constructor.prototype = {
+  EvalState.prototype = {
   };
-  return constructor;
+  return EvalState;
 })();
 

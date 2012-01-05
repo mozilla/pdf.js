@@ -139,6 +139,11 @@ function nextPage(task, loadError) {
   if (task.skipPages && task.skipPages.indexOf(task.pageNum) >= 0) {
     log(' skipping page ' + task.pageNum + '/' + task.pdfDoc.numPages +
         '... ');
+    // empty the canvas
+    canvas.width = 1;
+    canvas.height = 1;
+    clear(canvas.getContext('2d'));
+
     snapshotCurrentPage(task, '');
     return;
   }
@@ -160,12 +165,24 @@ function nextPage(task, loadError) {
       canvas.height = pageHeight * pdfToCssUnitsCoef;
       clear(ctx);
 
+      // using the text layer builder that does nothing to test
+      // text layer creation operations
+      var textLayerBuilder = {
+        beginLayout: function nullTextLayerBuilderBeginLayout() {},
+        endLayout: function nullTextLayerBuilderEndLayout() {},
+        appendText: function nullTextLayerBuilderAppendText(text, fontName,
+                                                            fontSize) {}
+      };
+
       page.startRendering(
         ctx,
-        function nextPageStartRendering(e) {
-          snapshotCurrentPage(task, (!failure && e) ?
-            ('render : ' + e) : failure);
-        }
+        function nextPageStartRendering(error) {
+          var failureMessage = false;
+          if (error)
+            failureMessage = 'render : ' + error.message;
+          snapshotCurrentPage(task, failureMessage);
+        },
+        textLayerBuilder
       );
     } catch (e) {
       failure = 'page setup : ' + e.toString();

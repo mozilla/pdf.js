@@ -1,0 +1,52 @@
+<!doctype html>
+<html>
+
+<head>
+  <!-- In production, only one script (pdf.js) is necessary -->
+  <!-- In production, change the content of PDFJS.workerSrc below -->
+  <script type="text/javascript" src="../../src/core.js"></script>
+  <script type="text/javascript" src="../../src/util.js"></script>
+  <script type="text/javascript" src="../../src/canvas.js"></script>
+  <script type="text/javascript" src="../../src/obj.js"></script>
+  <script type="text/javascript" src="../../src/function.js"></script>
+  <script type="text/javascript" src="../../src/charsets.js"></script>
+  <script type="text/javascript" src="../../src/cidmaps.js"></script>
+  <script type="text/javascript" src="../../src/colorspace.js"></script>
+  <script type="text/javascript" src="../../src/crypto.js"></script>
+  <script type="text/javascript" src="../../src/evaluator.js"></script>
+  <script type="text/javascript" src="../../src/fonts.js"></script>
+  <script type="text/javascript" src="../../src/glyphlist.js"></script>
+  <script type="text/javascript" src="../../src/image.js"></script>
+  <script type="text/javascript" src="../../src/metrics.js"></script>
+  <script type="text/javascript" src="../../src/parser.js"></script>
+  <script type="text/javascript" src="../../src/pattern.js"></script>
+  <script type="text/javascript" src="../../src/stream.js"></script>
+  <script type="text/javascript" src="../../src/worker.js"></script>
+  <script type="text/javascript" src="../../external/jpgjs/jpg.js"></script>
+
+  <script type="text/javascript">
+    // Specify the main script used to create a new PDF.JS web worker.
+    // In production, change this to point to the combined `pdf.js` file.
+    PDFJS.workerSrc = '../../src/worker_loader.js';
+
+    // Specify the PDF with AcroForm here
+    var pdfWithFormsPath = '../../test/pdfs/f1040.pdf';
+  </script>
+  
+  <style>
+  .pdfpage { position:relative; top: 0; left: 0; border: solid 1px black; margin: 10px; }
+  .pdfpage > canvas { position: absolute; top: 0; left: 0; }
+  .pdfpage > div { position: absolute; top: 0; left: 0; }
+  .inputControl { background: transparent; border: 0px none; position: absolute; margin: auto; }
+  .inputControl[type='checkbox'] { margin: 0px; }
+  .inputHint { opacity: 0.2; background: #ccc; position: absolute; }
+  </style>
+
+  <script type="text/javascript" src="forms.js"></script>
+</head>
+
+<body>
+  <div id="viewer"></div>
+</body>
+
+</html>

@@ -68,7 +68,8 @@ bundle: | $(BUILD_DIR)
 	@cd src; \
 	cat $(PDF_JS_FILES) > all_files.tmp; \
 	sed '/PDFJSSCRIPT_INCLUDE_ALL/ r all_files.tmp' pdf.js > ../$(BUILD_TARGET); \
-	sed -i '' "s/PDFJSSCRIPT_BUNDLE_VER/`git log --format="%H" -n 1`/" ../$(BUILD_TARGET); \
+	sed -i.bak "s/PDFJSSCRIPT_BUNDLE_VER/`git log --format="%h" -n 1`/" ../$(BUILD_TARGET); \
+	rm -f ../$(BUILD_TARGET).bak
 	rm -f *.tmp; \
 	cd ..
 
@@ -138,8 +139,8 @@ browser-test:
 # To install gjslint, see:
 #
 # <http://code.google.com/closure/utilities/docs/linter_howto.html>
-SRC_DIRS := . src utils web test test/unit examples/helloworld \
-            extensions/firefox extensions/firefox/components extensions/chrome
+SRC_DIRS := . src utils web test examples/helloworld extensions/firefox \
+            extensions/firefox/components extensions/chrome test/unit
 GJSLINT_FILES = $(foreach DIR,$(SRC_DIRS),$(wildcard $(DIR)/*.js))
 lint:
 	gjslint --nojsdoc $(GJSLINT_FILES)

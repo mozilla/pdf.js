@@ -5,11 +5,16 @@
 
 // Checking if the typed arrays are supported
 (function checkTypedArrayCompatibility() {
-  if (typeof Uint8Array !== 'undefined')
+  if (typeof Uint8Array !== 'undefined') {
+    // some mobile version might not support Float64Array
+    if (typeof Float64Array === 'undefined')
+      window.Float64Array = Float32Array;
+
     return;
+  }
 
   function subarray(start, end) {
-    return this.slice(start, end);
+    return new TypedArray(this.slice(start, end));
   }
 
   function setArrayOffset(array, offset) {
@@ -46,6 +51,8 @@
   window.Uint32Array = TypedArray;
   window.Int32Array = TypedArray;
   window.Uint16Array = TypedArray;
+  window.Float32Array = TypedArray;
+  window.Float64Array = TypedArray;
 })();
 
 // Object.create() ?
@@ -205,3 +212,15 @@
   });
 })();
 
+// HTMLElement dataset property
+(function checkDatasetProperty() {
+  var div = document.createElement('div');
+  if ('dataset' in div)
+    return; // dataset property exists
+  Object.defineProperty(HTMLElement.prototype, 'dataset', {
+    get: function htmlElementDatasetGetter() {
+      // adding dataset field to the actual object
+      return (this.dataset = {});
+    }
+  });
+})();
