@@ -165,9 +165,14 @@ function nextPage(task, loadError) {
       canvas.height = pageHeight * pdfToCssUnitsCoef;
       clear(ctx);
 
-      // using non-attached to the document div to test
+      // using the text layer builder that does nothing to test
       // text layer creation operations
-      var textLayer = document.createElement('div');
+      var textLayerBuilder = {
+        beginLayout: function nullTextLayerBuilderBeginLayout() {},
+        endLayout: function nullTextLayerBuilderEndLayout() {},
+        appendText: function nullTextLayerBuilderAppendText(text, fontName,
+                                                            fontSize) {}
+      };
 
       page.startRendering(
         ctx,
@@ -177,7 +182,7 @@ function nextPage(task, loadError) {
             failureMessage = 'render : ' + error.message;
           snapshotCurrentPage(task, failureMessage);
         },
-        textLayer
+        textLayerBuilder
       );
     } catch (e) {
       failure = 'page setup : ' + e.toString();

@@ -346,13 +346,14 @@ var PDFView = {
     };
     moreInfoButton.removeAttribute('hidden');
     lessInfoButton.setAttribute('hidden', 'true');
-    errorMoreInfo.innerHTML = 'PDF.JS Build: ' + PDFJS.build + '\n';
+    errorMoreInfo.value = 'PDF.JS Build: ' + PDFJS.build + '\n';
 
     if (moreInfo) {
-      errorMoreInfo.innerHTML += 'Message: ' + moreInfo.message;
+      errorMoreInfo.value += 'Message: ' + moreInfo.message;
       if (moreInfo.stack)
-        errorMoreInfo.innerHTML += '\n' + 'Stack: ' + moreInfo.stack;
+        errorMoreInfo.value += '\n' + 'Stack: ' + moreInfo.stack;
     }
+    errorMoreInfo.rows = errorMoreInfo.value.split('\n').length - 1;
   },
 
   progress: function pdfViewProgress(level) {
@@ -437,6 +438,10 @@ var PDFView = {
       this.switchSidebarView('outline');
     }
 
+    // Reset the current scale, as otherwise the page's scale might not get
+    // updated if the zoom level stayed the same.
+    this.currentScale = 0;
+    this.currentScaleValue = null;
     if (this.initialBookmark) {
       this.setHash(this.initialBookmark);
       this.initialBookmark = null;
@@ -444,7 +449,7 @@ var PDFView = {
     else if (storedHash)
       this.setHash(storedHash);
     else {
-      this.setScale(scale || kDefaultScale, true);
+      this.parseScale(scale || kDefaultScale, true);
       this.page = 1;
     }
   },
@@ -794,7 +799,7 @@ var PageView = function pageView(container, content, id, pageWidth, pageHeight,
 
         cache.push(this);
         callback();
-      }).bind(this), textLayer
+      }).bind(this), new TextLayerBuilder(textLayer)
     );
 
     setupAnnotations(this.content, this.scale);
@@ -927,6 +932,53 @@ var DocumentOutlineView = function documentOutlineView(outline) {
   }
 };
 
+var TextLayerBuilder = function textLayerBuilder(textLayerDiv) {
+  this.textLayerDiv = textLayerDiv;
+
+  this.beginLayout = function textLayerBuilderBeginLayout() {
+    this.textDivs = [];
+    this.textLayerQueue = [];
+  };
+
+  this.endLayout = function textLayerBuilderEndLayout() {
+    var self = this;
+    var textDivs = this.textDivs;
+    var textLayerDiv = this.textLayerDiv;
+    this.textLayerTimer = setInterval(function renderTextLayer() {
+      if (textDivs.length === 0) {
+        clearInterval(self.textLayerTimer);
+        return;
+      }
+      var textDiv = textDivs.shift();
+      if (textDiv.dataset.textLength >= 1) { // avoid div by zero
+        textLayerDiv.appendChild(textDiv);
+        // Adjust div width (via letterSpacing) to match canvas text
+        // Due to the .offsetWidth calls, this is slow
+        textDiv.style.letterSpacing =
+          ((textDiv.dataset.canvasWidth - textDiv.offsetWidth) /
+            (textDiv.dataset.textLength - 1)) + 'px';
+      }
+    }, 0);
+  };
+
+  this.appendText = function textLayerBuilderAppendText(text,
+                                                        fontName, fontSize) {
+    var textDiv = document.createElement('div');
+
+    // vScale and hScale already contain the scaling to pixel units
+    var fontHeight = fontSize * text.geom.vScale;
+    textDiv.dataset.canvasWidth = text.canvasWidth * text.geom.hScale;
+
+    textDiv.style.fontSize = fontHeight + 'px';
+    textDiv.style.fontFamily = fontName || 'sans-serif';
+    textDiv.style.left = text.geom.x + 'px';
+    textDiv.style.top = (text.geom.y - fontHeight) + 'px';
+    textDiv.textContent = text.str;
+    textDiv.dataset.textLength = text.length;
+    this.textDivs.push(textDiv);
+  };
+};
+
 window.addEventListener('load', function webViewerLoad(evt) {
   var params = document.location.search.substring(1).split('&');
   for (var i = 0; i < params.length; i++) {
@@ -934,7 +986,7 @@ window.addEventListener('load', function webViewerLoad(evt) {
     params[unescape(param[0])] = unescape(param[1]);
   }
 
-  var scale = ('scale' in params) ? params.scale : kDefaultScale;
+  var scale = ('scale' in params) ? params.scale : 0;
   PDFView.open(params.file || kDefaultURL, parseFloat(scale));
 
   if (!window.File || !window.FileReader || !window.FileList || !window.Blob)
@@ -1081,7 +1133,8 @@ window.addEventListener('scalechange', function scalechange(evt) {
 
   if (!evt.resetAutoSettings &&
        (document.getElementById('pageWidthOption').selected ||
-        document.getElementById('pageFitOption').selected)) {
+        document.getElementById('pageFitOption').selected ||
+        document.getElementById('pageAutoOption').selected)) {
       updateViewarea();
       return;
   }

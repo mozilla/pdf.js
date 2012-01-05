@@ -14,7 +14,7 @@
   }
 
   function subarray(start, end) {
-    return this.slice(start, end);
+    return new TypedArray(this.slice(start, end));
   }
 
   function setArrayOffset(array, offset) {

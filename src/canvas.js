@@ -257,8 +257,9 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       this.ctx.scale(cw / mediaBox.width, ch / mediaBox.height);
       // Move the media left-top corner to the (0,0) canvas position
       this.ctx.translate(-mediaBox.x, -mediaBox.y);
-      this.textDivs = [];
-      this.textLayerQueue = [];
+
+      if (this.textLayer)
+        this.textLayer.beginLayout();
     },
 
     executeIRQueue: function canvasGraphicsExecuteIRQueue(codeIR,
@@ -322,27 +323,8 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
     endDrawing: function canvasGraphicsEndDrawing() {
       this.ctx.restore();
 
-      var textLayer = this.textLayer;
-      if (!textLayer)
-        return;
-
-      var self = this;
-      var textDivs = this.textDivs;
-      this.textLayerTimer = setInterval(function renderTextLayer() {
-        if (textDivs.length === 0) {
-          clearInterval(self.textLayerTimer);
-          return;
-        }
-        var textDiv = textDivs.shift();
-        if (textDiv.dataset.textLength > 1) { // avoid div by zero
-          textLayer.appendChild(textDiv);
-          // Adjust div width (via letterSpacing) to match canvas text
-          // Due to the .offsetWidth calls, this is slow
-          textDiv.style.letterSpacing =
-            ((textDiv.dataset.canvasWidth - textDiv.offsetWidth) /
-              (textDiv.dataset.textLength - 1)) + 'px';
-        }
-      }, 0);
+      if (this.textLayer)
+        this.textLayer.endLayout();
     },
 
     // Graphics state
@@ -634,24 +616,6 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       return geometry;
     },
 
-    pushTextDivs: function canvasGraphicsPushTextDivs(text) {
-      var div = document.createElement('div');
-      var fontSize = this.current.fontSize;
-
-      // vScale and hScale already contain the scaling to pixel units
-      // as mozCurrentTransform reflects ctx.scale() changes
-      // (see beginDrawing())
-      var fontHeight = fontSize * text.geom.vScale;
-      div.dataset.canvasWidth = text.canvasWidth * text.geom.hScale;
-
-      div.style.fontSize = fontHeight + 'px';
-      div.style.fontFamily = this.current.font.loadedName || 'sans-serif';
-      div.style.left = text.geom.x + 'px';
-      div.style.top = (text.geom.y - fontHeight) + 'px';
-      div.innerHTML = text.str;
-      div.dataset.textLength = text.length;
-      this.textDivs.push(div);
-    },
     showText: function canvasGraphicsShowText(str, skipTextSelection) {
       var ctx = this.ctx;
       var current = this.current;
@@ -751,7 +715,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
 
           width += charWidth;
 
-          text.str += glyph.unicode === ' ' ? '&nbsp;' : glyph.unicode;
+          text.str += glyph.unicode === ' ' ? '\u00A0' : glyph.unicode;
           text.length++;
           text.canvasWidth += charWidth;
         }
@@ -760,7 +724,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       }
 
       if (textSelection)
-        this.pushTextDivs(text);
+        this.textLayer.appendText(text, font.loadedName, fontSize);
 
       return text;
     },
@@ -803,7 +767,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
             if (e < 0 && text.geom.spaceWidth > 0) { // avoid div by zero
               var numFakeSpaces = Math.round(-e / text.geom.spaceWidth);
               if (numFakeSpaces > 0) {
-                text.str += '&nbsp;';
+                text.str += '\u00A0';
                 text.length++;
               }
             }
@@ -813,7 +777,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
 
           if (textSelection) {
             if (shownText.str === ' ') {
-              text.str += '&nbsp;';
+              text.str += '\u00A0';
             } else {
               text.str += shownText.str;
             }
@@ -826,7 +790,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       }
 
       if (textSelection)
-        this.pushTextDivs(text);
+        this.textLayer.appendText(text, font.loadedName, fontSize);
     },
     nextLineShowText: function canvasGraphicsNextLineShowText(text) {
       this.nextLine();

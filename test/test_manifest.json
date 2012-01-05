@@ -388,5 +388,12 @@
       "rounds": 1,
       "link": true,
       "type": "load"
+    },
+    {  "id": "issue1015",
+      "file": "pdfs/issue1015.pdf",
+      "md5": "b61503d1b445742b665212866afb60e2",
+      "rounds": 1,
+      "link": true,
+      "type": "eq"
     }
 ]
