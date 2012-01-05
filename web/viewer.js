@@ -781,12 +781,13 @@ var PageView = function pageView(container, content, id, pageWidth, pageHeight,
     div.appendChild(canvas);
     this.canvas = canvas;
 
-    var textLayer = null;
+    var textLayerDiv = null;
     if (!PDFJS.disableTextLayer) {
-      textLayer = document.createElement('div');
-      textLayer.className = 'textLayer';
-      div.appendChild(textLayer);
+      textLayerDiv = document.createElement('div');
+      textLayerDiv.className = 'textLayer';
+      div.appendChild(textLayerDiv);
     }
+    var textLayer = textLayerDiv ? new TextLayerBuilder(textLayerDiv) : null;
 
     var scale = this.scale;
     canvas.width = pageWidth * scale;
@@ -810,7 +811,7 @@ var PageView = function pageView(container, content, id, pageWidth, pageHeight,
 
         cache.push(this);
         callback();
-      }).bind(this), new TextLayerBuilder(textLayer)
+      }).bind(this), textLayer
     );
 
     setupAnnotations(this.content, this.scale);
