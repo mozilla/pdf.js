@@ -1007,11 +1007,10 @@ window.addEventListener('load', function webViewerLoad(evt) {
     document.getElementById('fileInput').value = null;
 
   if ('disableWorker' in params)
-    PDFJS.disableWorker = params['disableWorker'] === 'true' ? true : false;
+    PDFJS.disableWorker = (params['disableWorker'] === 'true');
 
   if ('disableTextLayer' in params)
-    PDFJS.disableTextLayer = params['disableTextLayer'] === 'true' ?
-        true : false;
+    PDFJS.disableTextLayer = (params['disableTextLayer'] === 'true');
 
   var sidebarScrollView = document.getElementById('sidebarScrollView');
   sidebarScrollView.addEventListener('scroll', updateThumbViewArea, true);
