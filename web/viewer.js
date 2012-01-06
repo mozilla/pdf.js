@@ -882,6 +882,10 @@ var ThumbnailView = function thumbnailView(container, page, id, pageRatio) {
     return ctx;
   }
 
+  this.drawingRequired = function thumbnailViewDrawingRequired() {
+    return !this.hasImage;
+  };
+
   this.draw = function thumbnailViewDraw(callback) {
     if (this.hasImage) {
       callback();
