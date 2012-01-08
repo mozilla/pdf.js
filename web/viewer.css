@@ -16,6 +16,7 @@ body {
 #controls {
   background: rgb(238, 238, 238);
   background-color: rgba(238,238,238,0.5);
+  background: -o-linear-gradient(bottom,#eee 0%,#fff 100%);
   background: -moz-linear-gradient(center bottom, rgba(238,238,238,0.5) 0%, rgba(255,255,255,0.5) 100%);
   background: -webkit-gradient(linear, left bottom, left top, color-stop(0.0, rgba(200,200,200,0.5)), color-stop(1.0, rgba(255,255,255,0.5)));
   border-top: 1px solid #999;
@@ -110,6 +111,7 @@ span#info {
   bottom: 18px;
   left: -290px;
   transition: left 0.25s ease-in-out 1s;
+  -o-transition: left 0.25s ease-in-out 1s;
   -moz-transition: left 0.25s ease-in-out 1s;
   -webkit-transition: left 0.25s ease-in-out 1s;
   z-index: 1;
@@ -118,6 +120,7 @@ span#info {
 #sidebar:hover {
   left: 0px;
   transition: left 0.25s ease-in-out 0s;
+  -o-transition: left 0.25s ease-in-out 0s;
   -moz-transition: left 0.25s ease-in-out 0s;
   -webkit-transition: left 0.25s ease-in-out 0s;
 }
@@ -355,7 +358,7 @@ canvas {
   color: black;
   padding: 3px;
   margin: 3px;
-  white-space: pre;
+  width: 98%;
 }
 
 .clearBoth {

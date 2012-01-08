@@ -9,7 +9,7 @@ var PDFImage = (function PDFImageClosure() {
    * when the image data is ready.
    */
   function handleImageData(handler, xref, res, image, promise) {
-    if (image instanceof JpegStream && image.isNative) {
+    if (image instanceof JpegStream && image.isNativelyDecodable(xref, res)) {
       // For natively supported jpegs send them to the main thread for decoding.
       var dict = image.dict;
       var colorSpace = dict.get('ColorSpace', 'CS');
