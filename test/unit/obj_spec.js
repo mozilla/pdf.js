@@ -127,5 +127,23 @@ describe('obj', function() {
       expect(ref.gen).toEqual(storedGen);
     });
   });
+
+  describe('RefSet', function() {
+    it('should have a stored value', function() {
+      var ref = new Ref(4, 2);
+      var refset = new RefSet();
+      refset.put(ref);
+      expect(refset.has(ref)).toBeTruthy();
+    });
+    it('should not have an unknown value', function() {
+      var ref = new Ref(4, 2);
+      var refset = new RefSet();
+      expect(refset.has(ref)).toBeFalsy();
+
+      refset.put(ref);
+      var anotherRef = new Ref(2, 4);
+      expect(refset.has(anotherRef)).toBeFalsy();
+    });
+  });
 });
 
