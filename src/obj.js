@@ -120,11 +120,11 @@ var Catalog = (function CatalogClosure() {
       return shadow(this, 'toplevelPagesDict', xrefObj);
     },
     get documentOutline() {
-      var obj = this.catDict.get('Outlines');
       var xref = this.xref;
+      var obj = xref.fetchIfRef(this.catDict.get('Outlines'));
       var root = { items: [] };
-      if (isRef(obj)) {
-        obj = xref.fetch(obj).get('First');
+      if (isDict(obj)) {
+        obj = obj.get('First');
         var processed = new RefSet();
         if (isRef(obj)) {
           var queue = [{obj: obj, parent: root}];
@@ -552,9 +552,7 @@ var XRef = (function XRefClosure() {
     },
     getEntry: function xRefGetEntry(i) {
       var e = this.entries[i];
-      if (e.free)
-        error('reading an XRef stream not implemented yet');
-      return e;
+      return e.free ? null : e; // returns null is the entry is free
     },
     fetchIfRef: function xRefFetchIfRef(obj) {
       if (!isRef(obj))
@@ -563,11 +561,15 @@ var XRef = (function XRefClosure() {
     },
     fetch: function xRefFetch(ref, suppressEncryption) {
       var num = ref.num;
-      var e = this.cache[num];
-      if (e)
-        return e;
+      if (num in this.cache)
+        return this.cache[num];
 
-      e = this.getEntry(num);
+      var e = this.getEntry(num);
+
+      // the referenced entry can be free
+      if (e === null)
+        return (this.cache[num] = e);
+
       var gen = ref.gen;
       var stream, parser;
       if (e.uncompressed) {
