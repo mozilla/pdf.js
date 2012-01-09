@@ -88,7 +88,9 @@ PROG:=java \
 --tests all \
 --testOutput ./test_reports/
 
-test:
+# In case this Makefile needs to be debugged then this rule will provide all
+# the information from intermediate steps.
+debug:
 	@echo 'Debug browsers paths: $(BROWSERS_PATHS)'
 	@echo
 	@echo 'Debug browsers paths with mac correction: $(BROWSERS_PATHS_WITH_MAC_CORRECTION)'
@@ -101,13 +103,13 @@ test:
 	@echo
 	@echo 'Debug profiles: $(PROFILES)'
 	@echo
-	@echo 'About to run command: mkdir -p $(PROFILES)'
+	@echo 'Command to be run: $(PROG)'
+	@echo
+
+# This rule runs the unit tests with the constructed command.
+test:
 	@mkdir -p $(PROFILES)
-	@echo
-	@echo 'About to run command: $(PROG)'
 	$(PROG)
-	@echo
-	@echo 'About to run command: @rm -rf $(PROFILES)'
 	@rm -rf $(PROFILES)
 
 .phony:: test
