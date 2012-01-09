@@ -781,9 +781,13 @@ var PageView = function pageView(container, content, id, pageWidth, pageHeight,
     div.appendChild(canvas);
     this.canvas = canvas;
 
-    var textLayer = document.createElement('div');
-    textLayer.className = 'textLayer';
-    div.appendChild(textLayer);
+    var textLayerDiv = null;
+    if (!PDFJS.disableTextLayer) {
+      textLayerDiv = document.createElement('div');
+      textLayerDiv.className = 'textLayer';
+      div.appendChild(textLayerDiv);
+    }
+    var textLayer = textLayerDiv ? new TextLayerBuilder(textLayerDiv) : null;
 
     var scale = this.scale;
     canvas.width = pageWidth * scale;
@@ -807,7 +811,7 @@ var PageView = function pageView(container, content, id, pageWidth, pageHeight,
 
         cache.push(this);
         callback();
-      }).bind(this), new TextLayerBuilder(textLayer)
+      }).bind(this), textLayer
     );
 
     setupAnnotations(this.content, this.scale);
@@ -877,6 +881,10 @@ var ThumbnailView = function thumbnailView(container, page, id, pageRatio) {
 
     return ctx;
   }
+
+  this.drawingRequired = function thumbnailViewDrawingRequired() {
+    return !this.hasImage;
+  };
 
   this.draw = function thumbnailViewDraw(callback) {
     if (this.hasImage) {
@@ -1003,7 +1011,10 @@ window.addEventListener('load', function webViewerLoad(evt) {
     document.getElementById('fileInput').value = null;
 
   if ('disableWorker' in params)
-    PDFJS.disableWorker = params['disableWorker'] === 'true' ? true : false;
+    PDFJS.disableWorker = (params['disableWorker'] === 'true');
+
+  if ('disableTextLayer' in params)
+    PDFJS.disableTextLayer = (params['disableTextLayer'] === 'true');
 
   var sidebarScrollView = document.getElementById('sidebarScrollView');
   sidebarScrollView.addEventListener('scroll', updateThumbViewArea, true);
