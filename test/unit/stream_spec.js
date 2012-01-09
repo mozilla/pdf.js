@@ -1,0 +1,25 @@
+/* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
+
+'use strict';
+
+describe('stream', function() {
+
+  describe('PredictorStream', function() {
+    it('should decode simple predictor data', function() {
+      var dict = new Dict();
+      dict.set('Predictor', 12);
+      dict.set('Colors', 1);
+      dict.set('BitsPerComponent', 8);
+      dict.set('Columns', 2);
+
+      var input = new Stream(new Uint8Array([2, 100, 3, 2, 1, 255, 2, 1, 255]),
+        0, 9, dict);
+      var predictor = new PredictorStream(input, dict);
+      var result = predictor.getBytes(6);
+
+      expect(result).toEqual(new Uint8Array([100, 3, 101, 2, 102, 1]));
+    });
+  });
+});
+
