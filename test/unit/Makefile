@@ -88,6 +88,12 @@ PROG:=java \
 --tests all \
 --testOutput ./test_reports/
 
+# This default rule runs the unit tests with the constructed command.
+test:
+	@mkdir -p $(PROFILES)
+	$(PROG)
+	@rm -rf $(PROFILES)
+
 # In case this Makefile needs to be debugged then this rule will provide all
 # the information from intermediate steps.
 debug:
@@ -105,12 +111,6 @@ debug:
 	@echo
 	@echo 'Command to be run: $(PROG)'
 	@echo
-
-# This rule runs the unit tests with the constructed command.
-test:
-	@mkdir -p $(PROFILES)
-	$(PROG)
-	@rm -rf $(PROFILES)
 
 .phony:: test
 
