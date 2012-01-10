@@ -395,5 +395,13 @@
       "rounds": 1,
       "link": true,
       "type": "eq"
+    },
+    {  "id": "liveprogramming",
+      "file": "pdfs/liveprogramming.pdf",
+      "md5": "7bd4dad1188232ef597d36fd72c33e52",
+      "rounds": 1,
+      "pageLimit": 3,
+      "link": true,
+      "type": "load"
     }
 ]
