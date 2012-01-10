@@ -1022,7 +1022,7 @@ function updateViewarea() {
 
   var currentScale = PDFView.currentScale;
   var currentScaleValue = PDFView.currentScaleValue;
-  var normalizedScaleValue = currentScaleValue == currentScale ?
+  var normalizedScaleValue = currentScaleValue == currentScale != null ?
     currentScale * 100 : currentScaleValue;
 
   var kViewerTopMargin = 52;
