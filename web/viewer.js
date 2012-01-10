@@ -1021,9 +1021,7 @@ function updateViewarea() {
   updateViewarea.inProgress = false;
 
   var currentScale = PDFView.currentScale;
-  var currentScaleValue = PDFView.currentScaleValue;
-  var normalizedScaleValue = currentScaleValue == currentScale != null ?
-    currentScale * 100 : currentScaleValue;
+  var normalizedScaleValue = currentScale * 100;
 
   var kViewerTopMargin = 52;
   var pageNumber = firstPage.id;
