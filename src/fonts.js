@@ -339,6 +339,57 @@ var stdFontMap = {
   'TimesNewRomanPSMT-Italic': 'Times-Italic'
 };
 
+var serifFonts = {
+  'Adobe Jenson': true, 'Adobe Text': true, 'Albertus': true,
+  'Aldus': true, 'Alexandria': true, 'Algerian': true,
+  'American Typewriter': true, 'Antiqua': true, 'Apex': true,
+  'Arno': true, 'Aster': true, 'Aurora': true,
+  'Baskerville': true, 'Bell': true, 'Bembo': true,
+  'Bembo Schoolbook': true, 'Benguiat': true, 'Berkeley Old Style': true,
+  'Bernhard Modern': true, 'Berthold City': true, 'Bodoni': true,
+  'Bauer Bodoni': true, 'Book Antiqua': true, 'Bookman': true,
+  'Bordeaux Roman': true, 'Californian FB': true, 'Calisto': true,
+  'Calvert': true, 'Capitals': true, 'Cambria': true,
+  'Cartier': true, 'Caslon': true, 'Catull': true,
+  'Centaur': true, 'Century Old Style': true, 'Century Schoolbook': true,
+  'Chaparral': true, 'Charis SIL': true, 'Cheltenham': true,
+  'Cholla Slab': true, 'Clarendon': true, 'Clearface': true,
+  'Cochin': true, 'Colonna': true, 'Computer Modern': true,
+  'Concrete Roman': true, 'Constantia': true, 'Cooper Black': true,
+  'Corona': true, 'Ecotype': true, 'Egyptienne': true,
+  'Elephant': true, 'Excelsior': true, 'Fairfield': true,
+  'FF Scala': true, 'Folkard': true, 'Footlight': true,
+  'FreeSerif': true, 'Friz Quadrata': true, 'Garamond': true,
+  'Gentium': true, 'Georgia': true, 'Gloucester': true,
+  'Goudy Old Style': true, 'Goudy Schoolbook': true, 'Goudy Pro Font': true,
+  'Granjon': true, 'Guardian Egyptian': true, 'Heather': true,
+  'Hercules': true, 'High Tower Text': true, 'Hiroshige': true,
+  'Hoefler Text': true, 'Humana Serif': true, 'Imprint': true,
+  'Ionic No. 5': true, 'Janson': true, 'Joanna': true,
+  'Korinna': true, 'Lexicon': true, 'Liberation Serif': true,
+  'Linux Libertine': true, 'Literaturnaya': true, 'Lucida': true,
+  'Lucida Bright': true, 'Melior': true, 'Memphis': true,
+  'Miller': true, 'Minion': true, 'Modern': true,
+  'Mona Lisa': true, 'Mrs Eaves': true, 'MS Serif': true,
+  'Museo Slab': true, 'New York': true, 'Nimbus Roman': true,
+  'NPS Rawlinson Roadway': true, 'Palatino': true, 'Perpetua': true,
+  'Plantin': true, 'Plantin Schoolbook': true, 'Playbill': true,
+  'Poor Richard': true, 'Rawlinson Roadway': true, 'Renault': true,
+  'Requiem': true, 'Rockwell': true, 'Roman': true,
+  'Rotis Serif': true, 'Sabon': true, 'Scala': true,
+  'Seagull': true, 'Sistina': true, 'Souvenir': true,
+  'STIX': true, 'Stone Informal': true, 'Stone Serif': true,
+  'Sylfaen': true, 'Times': true, 'Trajan': true,
+  'Trinité': true, 'Trump Mediaeval': true, 'Utopia': true,
+  'Vale Type': true, 'Bitstream Vera': true, 'Vera Serif': true,
+  'Versailles': true, 'Wanted': true, 'Weiss': true,
+  'Wide Latin': true, 'Windsor': true, 'XITS': true
+};
+
+var symbolsFonts = {
+  'Dingbats': true, 'Symbol': true, 'ZapfDingbats': true
+};
+
 var FontLoader = {
   listeningForFontLoad: false,
 
