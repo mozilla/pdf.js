@@ -557,7 +557,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
                                  (fontObj.bold ? 'bold' : 'normal');
 
       var italic = fontObj.italic ? 'italic' : 'normal';
-      var serif = fontObj.serif ? 'serif' : 'sans-serif';
+      var serif = fontObj.isSerifFont ? 'serif' : 'sans-serif';
       var typeface = '"' + name + '", ' + serif;
       var rule = italic + ' ' + bold + ' ' + size + 'px ' + typeface;
       this.ctx.font = rule;
