@@ -835,7 +835,6 @@ var Font = (function FontClosure() {
     this.widthMultiplier = !properties.fontMatrix ? 1.0 :
       1.0 / properties.fontMatrix[0];
     this.encoding = properties.baseEncoding;
-    this.hasShortCmap = properties.hasShortCmap;
     this.loadedName = getUniqueName();
     this.loading = true;
   };
@@ -1805,7 +1804,20 @@ var Font = (function FontClosure() {
             this.useToUnicode = true;
           }
         }
-        properties.hasShortCmap = hasShortCmap;
+
+        if (hasShortCmap && this.hasEncoding && !this.isSymbolicFont) {
+          // Re-encode short map encoding to unicode -- that simplifies the
+          // resolution of MacRoman encoded glyphs logic for TrueType fonts.
+          for (var i = 0, ii = glyphs.length; i < ii; i++) {
+            var code = glyphs[i].unicode;
+            var glyphName = properties.baseEncoding[code];
+            if (!glyphName)
+              continue;
+            if (!(glyphName in GlyphsUnicode))
+              continue;
+            glyphs[i].unicode = GlyphsUnicode[glyphName];
+          }
+        }
 
         // remove glyph references outside range of avaialable glyphs
         for (var i = 0, ii = ids.length; i < ii; i++) {
@@ -2193,15 +2205,11 @@ var Font = (function FontClosure() {
             unicode = this.useToUnicode ? this.toUnicode[charcode] : charcode;
             break;
           }
-          if (this.hasShortCmap) {
-            var j = this.encoding.indexOf(glyphName);
-            unicode = j >= 0 ? j :
-              this.glyphNameMap[glyphName];
-          } else {
-            unicode = glyphName in GlyphsUnicode ?
-              GlyphsUnicode[glyphName] :
-              this.glyphNameMap[glyphName];
-          }
+
+          // MacRoman encoding address by re-encoding the cmap table
+          unicode = glyphName in GlyphsUnicode ?
+            GlyphsUnicode[glyphName] :
+            this.glyphNameMap[glyphName];
           break;
         default:
           warn('Unsupported font type: ' + this.type);
