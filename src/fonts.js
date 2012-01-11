@@ -1807,15 +1807,27 @@ var Font = (function FontClosure() {
 
         if (hasShortCmap && this.hasEncoding && !this.isSymbolicFont) {
           // Re-encode short map encoding to unicode -- that simplifies the
-          // resolution of MacRoman encoded glyphs logic for TrueType fonts.
+          // resolution of MacRoman encoded glyphs logic for TrueType fonts:
+          // copying all characters to private use area, all mapping all known
+          // glyphs to the unicodes. The glyphs and ids arrays will grow.
+          var usedUnicodes = [];
           for (var i = 0, ii = glyphs.length; i < ii; i++) {
             var code = glyphs[i].unicode;
+            glyphs[i].unicode += kCmapGlyphOffset;
+
             var glyphName = properties.baseEncoding[code];
-            if (!glyphName)
-              continue;
-            if (!(glyphName in GlyphsUnicode))
-              continue;
-            glyphs[i].unicode = GlyphsUnicode[glyphName];
+            if (glyphName in GlyphsUnicode) {
+              var unicode = GlyphsUnicode[glyphName];
+              if (unicode in usedUnicodes)
+                continue;
+
+              usedUnicodes[unicode] = true;
+              glyphs.push({
+                unicode: unicode,
+                code: glyphs[i].code
+              });
+              ids.push(ids[i]);
+            }
           }
         }
 
