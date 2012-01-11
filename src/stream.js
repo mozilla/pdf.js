@@ -869,6 +869,57 @@ var JpegStream = (function JpegStreamClosure() {
   return JpegStream;
 })();
 
+/**
+ * For JPEG 200's we use a library to decode these images and
+ * the stream behaves like all the other DecodeStreams.
+ */
+var JpxStream = (function jpxStream() {
+  function constructor(bytes, dict) {
+    this.dict = dict;
+    this.bytes = bytes;
+
+    DecodeStream.call(this);
+  }
+
+  constructor.prototype = Object.create(DecodeStream.prototype);
+
+  constructor.prototype.ensureBuffer = function jpxStreamEnsureBuffer(req) {
+    if (this.bufferLength)
+      return;
+    var jpxImage;
+    
+    jpxImage = openjpeg(this.bytes, 'jp2');
+    var width = jpxImage.width;
+    var height = jpxImage.height;
+    var data = jpxImage.data instanceof Uint8Array ? jpxImage.data :
+              new Uint8Array(jpxImage.data);
+
+    // openjpeg() returns planar RGB data. converts to alternating
+    // components
+    var pixelsPerChannel = width*height;
+    var _data = new Uint8Array(data.length);
+    var i = 0, j = 0;
+    while (i < _data.length && j < pixelsPerChannel) {
+      _data[i] = data[j];
+      _data[i+1] = data[j + pixelsPerChannel];
+      _data[i+2] = data[j + 2*pixelsPerChannel];
+      i += 3;
+      j++;
+    }
+
+    this.buffer = _data;
+    this.bufferLength = data.length;
+  };
+  constructor.prototype.getIR = function jpxStreamGetIR() {
+    return this.src;
+  };
+  constructor.prototype.getChar = function jpxStreamGetChar() {
+      error('internal error: getChar is not valid on JpxStream');
+  };
+
+  return constructor;
+})();
+
 var DecryptStream = (function DecryptStreamClosure() {
   function DecryptStream(str, decrypt) {
     this.str = str;
