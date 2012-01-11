@@ -196,6 +196,9 @@ var Page = (function PageClosure() {
         for (i = 0; i < n; ++i)
           content[i] = xref.fetchIfRef(content[i]);
         content = new StreamsSequenceStream(content);
+      } else if (!content) {
+        // replacing non-existent page content with empty one
+        content = new Stream(new Uint8Array(0));
       }
 
       var pe = this.pe = new PartialEvaluator(
