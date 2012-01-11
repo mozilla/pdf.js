@@ -960,9 +960,14 @@ var TextLayerBuilder = function textLayerBuilder(textLayerDiv) {
     var self = this;
     var textDivs = this.textDivs;
     var textLayerDiv = this.textLayerDiv;
-    this.textLayerTimer = setInterval(function renderTextLayer() {
+    var renderTimer = null;
+    var renderingDone = false;
+
+    // Render the text layer, one div at a time
+    var renderTextLayer = function textLayerRender() {
       if (textDivs.length === 0) {
-        clearInterval(self.textLayerTimer);
+        clearInterval(renderTimer);
+        renderingDone = true;
         return;
       }
       var textDiv = textDivs.shift();
@@ -974,7 +979,32 @@ var TextLayerBuilder = function textLayerBuilder(textLayerDiv) {
           ((textDiv.dataset.canvasWidth - textDiv.offsetWidth) /
             (textDiv.dataset.textLength - 1)) + 'px';
       }
-    }, 0);
+    }
+    renderTimer = setInterval(renderTextLayer, 0);
+
+    var scrollTimer = null;
+    if (window.onscroll)
+      var oldScrollHandler = window.onscroll;
+
+    // Stop rendering when user scrolls. Resume after XXX milliseconds
+    // of no scroll events
+    window.onscroll = function textLayerOnScroll() {
+      if (oldScrollHandler)
+        oldScrollHandler.apply(window, arguments);
+
+      // This avoids handler wrapper bloat
+      if (renderingDone)
+        window.onscroll = oldScrollHandler;
+
+      // Immediately pause rendering
+      clearInterval(renderTimer);
+
+      clearTimeout(scrollTimer);
+      scrollTimer = setTimeout(function() {
+        // Resume rendering
+        renderTimer = setInterval(renderTextLayer, 0);
+      }, 500);
+    }
   };
 
   this.appendText = function textLayerBuilderAppendText(text,
