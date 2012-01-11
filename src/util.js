@@ -206,6 +206,8 @@ var Promise = (function PromiseClosure() {
    */
   function Promise(name, data) {
     this.name = name;
+    this.isRejected = false;
+    this.error = null;
     // If you build a promise and pass in some data it's already resolved.
     if (data != null) {
       this.isResolved = true;
@@ -216,6 +218,7 @@ var Promise = (function PromiseClosure() {
       this._data = EMPTY_PROMISE;
     }
     this.callbacks = [];
+    this.errbacks = [];
   };
   /**
    * Builds a promise that is resolved when all the passed in promises are
@@ -282,9 +285,12 @@ var Promise = (function PromiseClosure() {
       if (this.isResolved) {
         throw 'A Promise can be resolved only once ' + this.name;
       }
+      if (this.isRejected) {
+        throw 'The Promise was already rejected ' + this.name;
+      }
 
       this.isResolved = true;
-      this.data = data;
+      this.data = data || null;
       var callbacks = this.callbacks;
 
       for (var i = 0, ii = callbacks.length; i < ii; i++) {
@@ -292,7 +298,24 @@ var Promise = (function PromiseClosure() {
       }
     },
 
-    then: function promiseThen(callback) {
+    reject: function proimseReject(reason) {
+      if (this.isRejected) {
+        throw 'A Promise can be rejected only once ' + this.name;
+      }
+      if (this.isResolved) {
+        throw 'The Promise was already resolved ' + this.name;
+      }
+
+      this.isRejected = true;
+      this.error = reason || null;
+      var errbacks = this.errbacks;
+
+      for (var i = 0, ii = errbacks.length; i < ii; i++) {
+        errbacks[i].call(null, reason);
+      }
+    },
+
+    then: function promiseThen(callback, errback) {
       if (!callback) {
         throw 'Requiring callback' + this.name;
       }
@@ -301,8 +324,13 @@ var Promise = (function PromiseClosure() {
       if (this.isResolved) {
         var data = this.data;
         callback.call(null, data);
+      } else if (this.isRejected && errorback) {
+        var error = this.error;
+        errback.call(null, error);
       } else {
         this.callbacks.push(callback);
+        if (errback)
+          this.errbacks.push(errback);
       }
     }
   };

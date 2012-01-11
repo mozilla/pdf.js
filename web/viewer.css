@@ -15,6 +15,7 @@ body {
 /* === Toolbar === */
 #controls {
   background-color: #eee;
+  background: -o-linear-gradient(bottom,#eee 0%,#fff 100%);
   background: -moz-linear-gradient(center bottom, #eee 0%, #fff 100%);
   background: -webkit-gradient(linear, left bottom, left top, color-stop(0.0, #ddd), color-stop(1.0, #fff));
   border-bottom: 1px solid #666;
@@ -82,6 +83,7 @@ span#info {
   bottom: 18px;
   left: -290px;
   transition: left 0.25s ease-in-out 1s;
+  -o-transition: left 0.25s ease-in-out 1s;
   -moz-transition: left 0.25s ease-in-out 1s;
   -webkit-transition: left 0.25s ease-in-out 1s;
   z-index: 1;
@@ -90,6 +92,7 @@ span#info {
 #sidebar:hover {
   left: 0px;
   transition: left 0.25s ease-in-out 0s;
+  -o-transition: left 0.25s ease-in-out 0s;
   -moz-transition: left 0.25s ease-in-out 0s;
   -webkit-transition: left 0.25s ease-in-out 0s;
 }
@@ -247,6 +250,35 @@ canvas {
   line-height:1.3;
 }
 
+.annotComment > div {
+  position: absolute;
+}
+
+.annotComment > img {
+  position: absolute;
+}
+
+.annotComment > img:hover {
+  cursor: pointer;
+  opacity: 0.7;
+}
+
+.annotComment > div {
+  padding: 0.2em;
+  max-width: 20em;
+  background-color: #F1E47B;
+  box-shadow: 0px 2px 10px #333;
+  -moz-box-shadow: 0px 2px 10px #333;
+  -webkit-box-shadow: 0px 2px 10px #333;
+}
+
+.annotComment > div > h1 {
+  font-weight: normal;
+  font-size: 1.2em;
+  border-bottom: 1px solid #000000;
+  margin: 0px;
+}
+
 /* TODO: file FF bug to support ::-moz-selection:window-inactive
    so we can override the opaque grey background when the window is inactive;
    see https://bugzilla.mozilla.org/show_bug.cgi?id=706209 */
@@ -298,7 +330,7 @@ canvas {
   color: black;
   padding: 3px;
   margin: 3px;
-  white-space: pre;
+  width: 98%;
 }
 
 .clearBoth {

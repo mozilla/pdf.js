@@ -70,8 +70,7 @@ var Page = (function PageClosure() {
     this.xref = xref;
     this.ref = ref;
 
-    this.ctx = null;
-    this.callback = null;
+    this.displayReadyPromise = null;
   }
 
   Page.prototype = {
@@ -110,9 +109,11 @@ var Page = (function PageClosure() {
         width: this.width,
         height: this.height
       };
+      var mediaBox = this.mediaBox;
+      var offsetX = mediaBox[0], offsetY = mediaBox[1];
       if (isArray(obj) && obj.length == 4) {
-        var tl = this.rotatePoint(obj[0], obj[1]);
-        var br = this.rotatePoint(obj[2], obj[3]);
+        var tl = this.rotatePoint(obj[0] - offsetX, obj[1] - offsetY);
+        var br = this.rotatePoint(obj[2] - offsetX, obj[3] - offsetY);
         view.x = Math.min(tl.x, br.x);
         view.y = Math.min(tl.y, br.y);
         view.width = Math.abs(tl.x - br.x);
@@ -165,20 +166,12 @@ var Page = (function PageClosure() {
                                                 IRQueue, fonts) {
       var self = this;
       this.IRQueue = IRQueue;
-      var gfx = new CanvasGraphics(this.ctx, this.objs, this.textLayer);
 
       var displayContinuation = function pageDisplayContinuation() {
         // Always defer call to display() to work around bug in
         // Firefox error reporting from XHR callbacks.
         setTimeout(function pageSetTimeout() {
-          try {
-            self.display(gfx, self.callback);
-          } catch (e) {
-            if (self.callback)
-              self.callback(e);
-            else
-              throw e;
-          }
+          self.displayReadyPromise.resolve();
         });
       };
 
@@ -323,10 +316,10 @@ var Page = (function PageClosure() {
             if (a) {
               switch (a.get('S').name) {
                 case 'URI':
-                  link.url = a.get('URI');
+                  item.url = a.get('URI');
                   break;
                 case 'GoTo':
-                  link.dest = a.get('D');
+                  item.dest = a.get('D');
                   break;
                 default:
                   TODO('other link types');
@@ -334,7 +327,7 @@ var Page = (function PageClosure() {
             } else if (annotation.has('Dest')) {
               // simple destination link
               var dest = annotation.get('Dest');
-              link.dest = isName(dest) ? dest.name : dest;
+              item.dest = isName(dest) ? dest.name : dest;
             }
             break;
           case 'Widget':
@@ -379,18 +372,51 @@ var Page = (function PageClosure() {
             item.textAlignment = getInheritableProperty(annotation, 'Q');
             item.flags = getInheritableProperty(annotation, 'Ff') || 0;
             break;
+          case 'Text':
+            var content = annotation.get('Contents');
+            var title = annotation.get('T');
+            item.content = stringToPDFString(content || '');
+            item.title = stringToPDFString(title || '');
+            item.name = annotation.get('Name').name;
+            break;
+          default:
+            TODO('unimplemented annotation type: ' + subtype.name);
+            break;
         }
         items.push(item);
       }
       return items;
     },
     startRendering: function pageStartRendering(ctx, callback, textLayer)  {
-      this.ctx = ctx;
-      this.callback = callback;
-      this.textLayer = textLayer;
-
       this.startRenderingTime = Date.now();
-      this.pdf.startRendering(this);
+
+      // If there is no displayReadyPromise yet, then the IRQueue was never
+      // requested before. Make the request and create the promise.
+      if (!this.displayReadyPromise) {
+        this.pdf.startRendering(this);
+        this.displayReadyPromise = new Promise();
+      }
+
+      // Once the IRQueue and fonts are loaded, perform the actual rendering.
+      this.displayReadyPromise.then(
+        function pageDisplayReadyPromise() {
+          var gfx = new CanvasGraphics(ctx, this.objs, textLayer);
+          try {
+            this.display(gfx, callback);
+          } catch (e) {
+            if (callback)
+              callback(e);
+            else
+              throw e;
+          }
+        }.bind(this),
+        function pageDisplayReadPromiseError(reason) {
+          if (callback)
+            callback(reason);
+          else
+            throw reason;
+        }
+      );
     }
   };
 
@@ -513,16 +539,41 @@ var PDFDocModel = (function PDFDocModelClosure() {
     },
     setup: function pdfDocSetup(ownerPassword, userPassword) {
       this.checkHeader();
-      this.xref = new XRef(this.stream,
-                           this.startXRef,
-                           this.mainXRefEntriesOffset);
-      this.catalog = new Catalog(this.xref);
+      var xref = new XRef(this.stream,
+                          this.startXRef,
+                          this.mainXRefEntriesOffset);
+      this.xref = xref;
+      this.catalog = new Catalog(xref);
+      if (xref.trailer && xref.trailer.has('ID')) {
+        var fileID = '';
+        var id = xref.fetchIfRef(xref.trailer.get('ID'))[0];
+        id.split('').forEach(function(el) {
+          fileID += Number(el.charCodeAt(0)).toString(16);
+        });
+        this.fileID = fileID;
+      }
     },
     get numPages() {
       var linearization = this.linearization;
       var num = linearization ? linearization.numPages : this.catalog.numPages;
       // shadow the prototype getter
       return shadow(this, 'numPages', num);
+    },
+    getFingerprint: function pdfDocGetFingerprint() {
+      if (this.fileID) {
+        return this.fileID;
+      } else {
+        // If we got no fileID, then we generate one,
+        // from the first 100 bytes of PDF
+        var data = this.stream.bytes.subarray(0, 100);
+        var hash = calculateMD5(data, 0, data.length);
+        var strHash = '';
+        for (var i = 0, length = hash.length; i < length; i++) {
+          strHash += Number(hash[i]).toString(16);
+        }
+
+        return strHash;
+      }
     },
     getPage: function pdfDocGetPage(n) {
       return this.catalog.getPage(n);
@@ -550,7 +601,7 @@ var PDFDoc = (function PDFDocClosure() {
     this.data = data;
     this.stream = stream;
     this.pdf = new PDFDocModel(stream);
-
+    this.fingerprint = this.pdf.getFingerprint();
     this.catalog = this.pdf.catalog;
     this.objs = new PDFObjects();
 
@@ -569,33 +620,34 @@ var PDFDoc = (function PDFDocClosure() {
         throw 'No PDFJS.workerSrc specified';
       }
 
-      var worker;
       try {
-        worker = new Worker(workerSrc);
-      } catch (e) {
         // Some versions of FF can't create a worker on localhost, see:
         // https://bugzilla.mozilla.org/show_bug.cgi?id=683280
-        globalScope.PDFJS.disableWorker = true;
-        this.setupFakeWorker();
+        var worker = new Worker(workerSrc);
+
+        var messageHandler = new MessageHandler('main', worker);
+
+        messageHandler.on('test', function pdfDocTest(supportTypedArray) {
+          if (supportTypedArray) {
+            this.worker = worker;
+            this.setupMessageHandler(messageHandler);
+          } else {
+            globalScope.PDFJS.disableWorker = true;
+            this.setupFakeWorker();
+          }
+        }.bind(this));
+
+        var testObj = new Uint8Array(1);
+        // Some versions of Opera throw a DATA_CLONE_ERR on
+        // serializing the typed array.
+        messageHandler.send('test', testObj);
         return;
-      }
-
-      var messageHandler = new MessageHandler('main', worker);
-
-      messageHandler.on('test', function pdfDocTest(supportTypedArray) {
-        if (supportTypedArray) {
-          this.worker = worker;
-          this.setupMessageHandler(messageHandler);
-        } else {
-          this.setupFakeWorker();
-        }
-      }.bind(this));
-
-      var testObj = new Uint8Array(1);
-      messageHandler.send('test', testObj);
-    } else {
-      this.setupFakeWorker();
+      } catch (e) {}
     }
+    // Either workers are disabled, not supported or have thrown an exception.
+    // Thus, we fallback to a faked worker.
+    globalScope.PDFJS.disableWorker = true;
+    this.setupFakeWorker();
   }
 
   PDFDoc.prototype = {
@@ -679,8 +731,8 @@ var PDFDoc = (function PDFDocClosure() {
 
       messageHandler.on('page_error', function pdfDocError(data) {
         var page = this.pageCache[data.pageNum];
-        if (page.callback)
-          page.callback(data.error);
+        if (page.displayReadyPromise)
+          page.displayReadyPromise.reject(data.error);
         else
           throw data.error;
       }, this);

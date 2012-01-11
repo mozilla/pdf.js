@@ -43,6 +43,10 @@ PDF_JS_FILES = \
 server:
 	@cd test; python test.py --port=8888;
 
+# make test
+#
+# This target runs all the tests excluding the unit-test. This can be used for
+# testing all browsers.
 test: shell-test browser-test
 
 #
@@ -68,6 +72,13 @@ bundle: | $(BUILD_DIR)
 	rm -f ../$(BUILD_TARGET).bak
 	rm -f *.tmp; \
 	cd ..
+
+# make unit-test
+#
+# This target runs in-browser unit tests with js-test-driver and jasmine unit
+# test framework.
+unit-test:
+	@cd test/unit/ ; make ;
 
 # make browser-test
 #
@@ -129,7 +140,7 @@ browser-test:
 #
 # <http://code.google.com/closure/utilities/docs/linter_howto.html>
 SRC_DIRS := . src utils web test examples/helloworld extensions/firefox \
-            extensions/firefox/components extensions/chrome
+            extensions/firefox/components extensions/chrome test/unit
 GJSLINT_FILES = $(foreach DIR,$(SRC_DIRS),$(wildcard $(DIR)/*.js))
 lint:
 	gjslint --nojsdoc $(GJSLINT_FILES)

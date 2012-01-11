@@ -118,7 +118,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       var self = this;
       var xref = this.xref;
       var handler = this.handler;
-      var uniquePrefix = this.uniquePrefix;
+      var uniquePrefix = this.uniquePrefix || '';
 
       function insertDependency(depList) {
         fnArray.push('dependency');
@@ -211,7 +211,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         args = [objId, w, h];
 
         var softMask = dict.get('SMask', 'IM') || false;
-        if (!softMask && image instanceof JpegStream && image.isNative) {
+        if (!softMask && image instanceof JpegStream &&
+            image.isNativelySupported(xref, resources)) {
           // These JPEGs don't need any more processing so we can just send it.
           fn = 'paintJpegXObject';
           handler.send('obj', [objId, 'JpegStream', image.getIR()]);
@@ -234,7 +235,6 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           }, handler, xref, resources, image, inline);
       }
 
-      uniquePrefix = uniquePrefix || '';
       if (!queue.argsArray) {
         queue.argsArray = [];
       }
