@@ -23,7 +23,8 @@ var files = [
   'pattern.js',
   'stream.js',
   'worker.js',
-  '../external/jpgjs/jpg.js'
+  '../external/jpgjs/jpg.js',
+  'jpx.js'
 ];
 
 // Load all the files.

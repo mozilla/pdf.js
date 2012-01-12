@@ -869,6 +869,77 @@ var JpegStream = (function JpegStreamClosure() {
   return JpegStream;
 })();
 
+/**
+ * For JPEG 2000's we use a library to decode these images and
+ * the stream behaves like all the other DecodeStreams.
+ */
+var JpxStream = (function jpxStream() {
+  function constructor(bytes, dict) {
+    this.dict = dict;
+    this.bytes = bytes;
+
+    DecodeStream.call(this);
+  }
+
+  constructor.prototype = Object.create(DecodeStream.prototype);
+
+  constructor.prototype.ensureBuffer = function jpxStreamEnsureBuffer(req) {
+    if (this.bufferLength)
+      return;
+
+    var jpxImage = new JpxImage();
+    jpxImage.parse(this.bytes);
+
+    var width = jpxImage.width;
+    var height = jpxImage.height;
+    var componentsCount = jpxImage.componentsCount;
+    if (componentsCount != 1 && componentsCount != 3 && componentsCount != 4)
+      error('JPX with ' + componentsCount + ' components is not supported');
+
+    var data = new Uint8Array(width * height * componentsCount);
+
+    for (var k = 0, kk = jpxImage.tiles.length; k < kk; k++) {
+      var tile = jpxImage.tiles[k];
+      var tileWidth = tile[0].width;
+      var tileHeight = tile[0].height;
+      var tileLeft = tile[0].left;
+      var tileTop = tile[0].top;
+
+      var data0 = tile[0].items;
+      var data1 = componentsCount > 1 ? tile[1].items : null;
+      var data2 = componentsCount > 1 ? tile[2].items : null;
+      var data3 = componentsCount > 3 ? tile[3].items : null;
+
+      var dataPosition = (width * tileTop + tileLeft) * componentsCount;
+      var sourcePosition = 0;
+      for (var j = 0; j < tileHeight; j++) {
+        for (var i = 0; i < tileWidth; i++) {
+          data[dataPosition++] = data0[sourcePosition];
+          if (componentsCount > 1) {
+            data[dataPosition++] = data1[sourcePosition];
+            data[dataPosition++] = data2[sourcePosition];
+            if (componentsCount > 3)
+              data[dataPosition++] = data3[sourcePosition];
+          }
+          sourcePosition++;
+        }
+        dataPosition += componentsCount * (width - tileWidth);
+      }
+    }
+
+    this.buffer = data;
+    this.bufferLength = data.length;
+  };
+  constructor.prototype.getIR = function jpxStreamGetIR() {
+    return this.src;
+  };
+  constructor.prototype.getChar = function jpxStreamGetChar() {
+      error('internal error: getChar is not valid on JpxStream');
+  };
+
+  return constructor;
+})();
+
 var DecryptStream = (function DecryptStreamClosure() {
   function DecryptStream(str, decrypt) {
     this.str = str;
