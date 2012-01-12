@@ -4,7 +4,7 @@
 'use strict';
 
 var PartialEvaluator = (function PartialEvaluatorClosure() {
-  function PartialEvaluator(xref, handler, uniquePrefix) {
+  function PartialEvaluator(xref, handler, pageResources, uniquePrefix) {
     this.state = new EvalState();
     this.stateStack = [];
 
@@ -12,6 +12,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
     this.handler = handler;
     this.uniquePrefix = uniquePrefix;
     this.objIdCounter = 0;
+    this.pageResources = pageResources;
   }
 
   var OP_MAP = {
@@ -117,6 +118,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
 
       var self = this;
       var xref = this.xref;
+      var pageResources = this.pageResources;
       var handler = this.handler;
       var uniquePrefix = this.uniquePrefix || '';
 
@@ -233,7 +235,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
             imageObj.fillRgbaBuffer(pixels, drawWidth, drawHeight);
             handler.send('obj', [objId, 'Image', imgData]);
           }, handler, xref, resources, image, inline);
-      }
+      } // buildPaintImageXObject
 
       if (!queue.argsArray) {
         queue.argsArray = [];
@@ -247,6 +249,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
 
       resources = xref.fetchIfRef(resources) || new Dict();
       var xobjs = xref.fetchIfRef(resources.get('XObject')) || new Dict();
+      var xobjsPage = xref.fetchIfRef(pageResources.get('XObject')) ||
+                      new Dict();
       var patterns = xref.fetchIfRef(resources.get('Pattern')) || new Dict();
       var parser = new Parser(new Lexer(stream), false);
       var res = resources;
@@ -274,7 +278,6 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           }
           assertWellFormed(fn, 'Unknown command "' + cmd + '"');
           // TODO figure out how to type-check vararg functions
-
           if ((cmd == 'SCN' || cmd == 'scn') && !args[args.length - 1].code) {
             // Use the IR version for setStroke/FillColorN.
             fn += '_IR';
@@ -316,7 +319,13 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
             // eagerly compile XForm objects
             var name = args[0].name;
             var xobj = xobjs.get(name);
-            if (xobj) {
+            // Fall back to page resources if not present in current XObject
+            // (PDF 1.1 spec)
+            if (!xobj)
+              xobj = xobjsPage.get(name);
+            if (!xobj) {
+              error('Could not find xobj with name: ' + args[0].name);
+            } else {
               xobj = xref.fetchIfRef(xobj);
               assertWellFormed(isStream(xobj), 'XObject should be a stream');
 
@@ -350,7 +359,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
               } else {
                 error('Unhandled XObject subtype ' + type.name);
               }
-            }
+            } // if xobj
           } else if (cmd == 'Tf') { // eagerly collect all fonts
             args[0] = handleSetFont(args[0].name);
           } else if (cmd == 'EI') {

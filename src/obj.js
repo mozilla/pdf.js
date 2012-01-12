@@ -39,6 +39,9 @@ var Dict = (function DictClosure() {
   }
 
   Dict.prototype = {
+    // Allow multiple key search (boolean OR) since objects have abbreviations
+    // and/or synonyms. E.g. 'DecodeParms' is sometimes abbreviated as 'DP',
+    // so one can do get('DecodeParms', 'DP') in one line.
     get: function dictGet(key1, key2, key3) {
       var value;
       if (typeof (value = this.map[key1]) != 'undefined' || key1 in this.map ||
