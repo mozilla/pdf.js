@@ -160,7 +160,10 @@ web: | production extension compiler pages-repo
 	@cp $(BUILD_TARGET) $(GH_PAGES)/$(BUILD_TARGET)
 	@cp -R web/* $(GH_PAGES)/web
 	@cp web/images/* $(GH_PAGES)/web/images
-	@cp $(FIREFOX_BUILD_DIR)/$(FIREFOX_EXTENSION_NAME) $(FIREFOX_BUILD_DIR)/update.rdf $(GH_PAGES)/$(EXTENSION_SRC)/firefox/
+	@cp $(FIREFOX_BUILD_DIR)/$(FIREFOX_EXTENSION_NAME) \
+		$(FIREFOX_BUILD_DIR)/$(FIREFOX_AMO_EXTENSION_NAME) \
+		$(FIREFOX_BUILD_DIR)/update.rdf \
+		$(GH_PAGES)/$(EXTENSION_SRC)/firefox/
 	@cp $(GH_PAGES)/web/index.html.template $(GH_PAGES)/index.html;
 	@mv -f $(GH_PAGES)/web/viewer-production.html $(GH_PAGES)/web/viewer.html;
 	@cd $(GH_PAGES); git add -A;
