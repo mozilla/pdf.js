@@ -338,3 +338,55 @@ var Promise = (function PromiseClosure() {
   return Promise;
 })();
 
+var Bench = (function BenchClosure() {
+  function rpad(str, pad, length) {
+    while (str.length < length)
+      str += pad;
+    return str;
+  }
+  function Bench() {
+    this.started = {};
+    this.times = [];
+    this.enabled = true;
+  }
+  Bench.prototype = {
+    time: function benchTime(name) {
+      if (!this.enabled)
+        return;
+      if (name in this.started)
+        throw 'Timer is already running for ' + name;
+      this.started[name] = Date.now();
+    },
+    timeEnd: function benchTimeEnd(name) {
+      if (!this.enabled)
+        return;
+      if (!(name in this.started))
+        throw 'Timer has not been started for ' + name;
+      this.times.push({
+        'name': name,
+        'start': this.started[name],
+        'end': Date.now()
+      });
+      // Remove timer from started so it can be called again.
+      delete this.started[name];
+    },
+    toString: function benchToString() {
+      var times = this.times;
+      var out = '';
+      // Find the longest name for padding purposes.
+      var longest = 0;
+      for (var i = 0, ii = times.length; i < ii; ++i) {
+        var name = times[i]['name'];
+        if (name.length > longest)
+          longest = name.length;
+      }
+      for (var i = 0, ii = times.length; i < ii; ++i) {
+        var span = times[i];
+        var duration = span.end - span.start;
+        out += rpad(span['name'], ' ', longest) + ' ' + duration + 'ms\n';
+      }
+      return out;
+    }
+  }
+  return Bench;
+})();

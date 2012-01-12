@@ -222,6 +222,7 @@ var PDFView = {
       return;
     }
 
+    pages[val - 1].updateStats();
     currentPageNumber = val;
     var event = document.createEvent('UIEvents');
     event.initUIEvent('pagechange', false, false, window, 0);
@@ -421,7 +422,7 @@ var PDFView = {
     for (var i = 1; i <= pagesCount; i++) {
       var page = pdf.getPage(i);
       var pageView = new PageView(container, page, i, page.width, page.height,
-                                  page.stats, this.navigateTo.bind(this));
+                                  page.bench, this.navigateTo.bind(this));
       var thumbnailView = new ThumbnailView(sidebar, page, i,
                                             page.width / page.height);
       bindOnAfterDraw(pageView, thumbnailView);
@@ -581,7 +582,7 @@ var PDFView = {
 };
 
 var PageView = function pageView(container, content, id, pageWidth, pageHeight,
-                                 stats, navigateTo) {
+                                 bench, navigateTo) {
   this.id = id;
   this.content = content;
 
@@ -800,11 +801,11 @@ var PageView = function pageView(container, content, id, pageWidth, pageHeight,
     ctx.restore();
     ctx.translate(-this.x * scale, -this.y * scale);
 
-    stats.begin = Date.now();
     this.content.startRendering(ctx,
       (function pageViewDrawCallback(error) {
         if (error)
           PDFView.error('An error occurred while rendering the page.', error);
+        this.stats = content.bench;
         this.updateStats();
         if (this.onAfterDraw)
           this.onAfterDraw();
@@ -819,10 +820,12 @@ var PageView = function pageView(container, content, id, pageWidth, pageHeight,
   };
 
   this.updateStats = function pageViewUpdateStats() {
-    var t1 = stats.compile, t2 = stats.fonts, t3 = stats.render;
-    var str = 'Time to compile/fonts/render: ' +
-              (t1 - stats.begin) + '/' + (t2 - t1) + '/' + (t3 - t2) + ' ms';
-    document.getElementById('info').innerHTML = str;
+    if (!PDFJS.enableBench || !this.stats || PDFView.page != this.id)
+      return;
+    var stats = this.stats;
+    var statsHtml = 'Page ' + this.id + '\n';
+    statsHtml += stats.toString().replace(/\n/g, '<br>');
+    document.getElementById('info').innerHTML = statsHtml;
   };
 };
 
@@ -1015,6 +1018,11 @@ window.addEventListener('load', function webViewerLoad(evt) {
 
   if ('disableTextLayer' in params)
     PDFJS.disableTextLayer = (params['disableTextLayer'] === 'true');
+
+  if ('enableBench' in params)
+    PDFJS.enableBench = (params['enableBench'] === 'true');
+  if (PDFJS.enableBench)
+    document.getElementById('info').style.display = 'block';
 
   var sidebarScrollView = document.getElementById('sidebarScrollView');
   sidebarScrollView.addEventListener('scroll', updateThumbViewArea, true);

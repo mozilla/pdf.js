@@ -67,6 +67,12 @@ body {
 
 span#info {
   display: none;
+  position: fixed;
+  top: 32px;
+  right: 0px;
+  font-size: 10px;
+  white-space: pre;
+  font-family: courier;
 }
 
 @-moz-document regexp("http:.*debug=1.*") {

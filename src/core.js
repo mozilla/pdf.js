@@ -60,13 +60,8 @@ var Page = (function PageClosure() {
   function Page(xref, pageNumber, pageDict, ref) {
     this.pageNumber = pageNumber;
     this.pageDict = pageDict;
-    this.stats = {
-      create: Date.now(),
-      compile: 0.0,
-      fonts: 0.0,
-      images: 0.0,
-      render: 0.0
-    };
+    this.bench = new Bench();
+    this.bench.enabled = !!globalScope.PDFJS.enableBench;
     this.xref = xref;
     this.ref = ref;
 
@@ -187,6 +182,8 @@ var Page = (function PageClosure() {
         return this.IRQueue;
       }
 
+      this.bench.time('Build IR Queue');
+
       var xref = this.xref;
       var content = xref.fetchIfRef(this.content);
       var resources = xref.fetchIfRef(this.resources);
@@ -201,11 +198,14 @@ var Page = (function PageClosure() {
       var pe = this.pe = new PartialEvaluator(
                                 xref, handler, 'p' + this.pageNumber + '_');
       var IRQueue = {};
-      return (this.IRQueue = pe.getIRQueue(content, resources, IRQueue,
-                                           dependency));
+      this.IRQueue = pe.getIRQueue(content, resources, IRQueue, dependency);
+
+      this.bench.timeEnd('Build IR Queue');
+      return this.IRQueue;
     },
 
     ensureFonts: function pageEnsureFonts(fonts, callback) {
+      this.bench.time('Font Loading');
       // Convert the font names to the corresponding font obj.
       for (var i = 0, ii = fonts.length; i < ii; i++) {
         fonts[i] = this.objs.objs[fonts[i]].data;
@@ -215,7 +215,7 @@ var Page = (function PageClosure() {
       var fontObjs = FontLoader.bind(
         fonts,
         function pageEnsureFontsFontObjs(fontObjs) {
-          this.stats.fonts = Date.now();
+          this.bench.timeEnd('Font Loading');
 
           callback.call(this);
         }.bind(this),
@@ -224,6 +224,8 @@ var Page = (function PageClosure() {
     },
 
     display: function pageDisplay(gfx, callback) {
+      var bench = this.bench;
+      bench.time('Rendering');
       var xref = this.xref;
       var resources = xref.fetchIfRef(this.resources);
       var mediaBox = xref.fetchIfRef(this.mediaBox);
@@ -244,8 +246,9 @@ var Page = (function PageClosure() {
       function next() {
         startIdx = gfx.executeIRQueue(IRQueue, startIdx, next);
         if (startIdx == length) {
-          self.stats.render = Date.now();
           gfx.endDrawing();
+          bench.timeEnd('Rendering');
+          bench.timeEnd('Overall');
           if (callback) callback();
         }
       }
@@ -388,15 +391,14 @@ var Page = (function PageClosure() {
       return items;
     },
     startRendering: function pageStartRendering(ctx, callback, textLayer)  {
-      this.startRenderingTime = Date.now();
-
+      var bench = this.bench;
+      bench.time('Overall');
       // If there is no displayReadyPromise yet, then the IRQueue was never
       // requested before. Make the request and create the promise.
       if (!this.displayReadyPromise) {
         this.pdf.startRendering(this);
         this.displayReadyPromise = new Promise();
       }
-
       // Once the IRQueue and fonts are loaded, perform the actual rendering.
       this.displayReadyPromise.then(
         function pageDisplayReadyPromise() {
@@ -677,7 +679,7 @@ var PDFDoc = (function PDFDocClosure() {
         var pageNum = data.pageNum;
         var page = this.pageCache[pageNum];
         var depFonts = data.depFonts;
-
+        page.bench.timeEnd('Page Request');
         page.startRenderingFromIRQueue(data.IRQueue, depFonts);
       }, this);
 
@@ -786,6 +788,7 @@ var PDFDoc = (function PDFDocClosure() {
     startRendering: function pdfDocStartRendering(page) {
       // The worker might not be ready to receive the page request yet.
       this.workerReadyPromise.then(function pdfDocStartRenderingThen() {
+        page.bench.time('Page Request');
         this.messageHandler.send('page_request', page.pageNumber + 1);
       }.bind(this));
     },
