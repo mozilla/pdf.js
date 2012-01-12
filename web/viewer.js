@@ -962,9 +962,11 @@ var TextLayerBuilder = function textLayerBuilder(textLayerDiv) {
     var textLayerDiv = this.textLayerDiv;
     var renderTimer = null;
     var renderingDone = false;
+    var renderInterval = 0;
+    var resumeInterval = 500; // in ms
 
     // Render the text layer, one div at a time
-    var renderTextLayer = function textLayerRender() {
+    function renderTextLayer() {
       if (textDivs.length === 0) {
         clearInterval(renderTimer);
         renderingDone = true;
@@ -980,21 +982,16 @@ var TextLayerBuilder = function textLayerBuilder(textLayerDiv) {
             (textDiv.dataset.textLength - 1)) + 'px';
       }
     }
-    renderTimer = setInterval(renderTextLayer, 0);
-
-    var scrollTimer = null;
-    if (window.onscroll)
-      var oldScrollHandler = window.onscroll;
+    renderTimer = setInterval(renderTextLayer, renderInterval);
 
     // Stop rendering when user scrolls. Resume after XXX milliseconds
     // of no scroll events
-    window.onscroll = function textLayerOnScroll() {
-      if (oldScrollHandler)
-        oldScrollHandler.apply(window, arguments);
-
-      // This avoids handler wrapper bloat
-      if (renderingDone)
-        window.onscroll = oldScrollHandler;
+    var scrollTimer = null;
+    function textLayerOnScroll() {
+      if (renderingDone) {
+        window.removeEventListener('scroll', textLayerOnScroll, false);
+        return;
+      }
 
       // Immediately pause rendering
       clearInterval(renderTimer);
@@ -1002,10 +999,12 @@ var TextLayerBuilder = function textLayerBuilder(textLayerDiv) {
       clearTimeout(scrollTimer);
       scrollTimer = setTimeout(function() {
         // Resume rendering
-        renderTimer = setInterval(renderTextLayer, 0);
-      }, 500);
-    }
-  };
+        renderTimer = setInterval(renderTextLayer, renderInterval);
+      }, resumeInterval);
+    }; // textLayerOnScroll
+
+    window.addEventListener('scroll', textLayerOnScroll, false);
+  }; // endLayout
 
   this.appendText = function textLayerBuilderAppendText(text,
                                                         fontName, fontSize) {
