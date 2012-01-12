@@ -17,7 +17,8 @@ REFDIR = 'ref'
 TMPDIR = 'tmp'
 VERBOSE = False
 
-SERVER_HOST = "localhost"
+# setting to 0.0.0.0 will allow access by ip address
+SERVER_HOST = "0.0.0.0"
 
 class TestOptions(OptionParser):
     def __init__(self, **kwargs):
