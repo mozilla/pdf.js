@@ -403,5 +403,11 @@
       "pageLimit": 3,
       "link": true,
       "type": "load"
+    },
+    {  "id": "S2-eq",
+       "file": "pdfs/S2.pdf",
+       "md5": "d0b6137846df6e0fe058f234a87fb588",
+       "rounds": 1,
+       "type": "eq"
     }
 ]
