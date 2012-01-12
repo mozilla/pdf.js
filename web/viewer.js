@@ -973,7 +973,7 @@ var TextLayerBuilder = function textLayerBuilder(textLayerDiv) {
         return;
       }
       var textDiv = textDivs.shift();
-      if (textDiv.dataset.textLength >= 1) { // avoid div by zero
+      if (textDiv.dataset.textLength > 1) { // avoid div by zero
         textLayerDiv.appendChild(textDiv);
         // Adjust div width (via letterSpacing) to match canvas text
         // Due to the .offsetWidth calls, this is slow
