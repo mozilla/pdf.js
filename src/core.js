@@ -629,8 +629,7 @@ var PDFDoc = (function PDFDocClosure() {
         var worker = new Worker(workerSrc);
 
         var messageHandler = new MessageHandler('main', worker);
-        // Tell the worker the file it was created from.
-        messageHandler.send('workerSrc', workerSrc);
+
         messageHandler.on('test', function pdfDocTest(supportTypedArray) {
           if (supportTypedArray) {
             this.worker = worker;
