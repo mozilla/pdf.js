@@ -351,8 +351,6 @@ var JpxImage = (function JpxImageClosure() {
     ];
 
     function BitModel(width, height, subband, zeroBitPlanes) {
-      // TODO do we need to know offsets of the coefficients (not only width
-      // and height) ?
       this.width = width;
       this.height = height;
 
@@ -1405,7 +1403,7 @@ var JpxImage = (function JpxImageClosure() {
         if (!scalarExpounded) {
           // formula E-5
           mu = spqcds[0].mu;
-          epsilon = spqcds[0].epsilon + (i > 0 ?  1 - i : 0);
+          epsilon = spqcds[0].epsilon + (i > 0 ? 1 - i : 0);
         } else {
           mu = spqcds[b].mu;
           epsilon = spqcds[b].epsilon;
