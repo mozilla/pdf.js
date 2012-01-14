@@ -438,10 +438,10 @@ var JpxImage = (function JpxImageClosure() {
               if (i >= height)
                 break;
 
-              var contextLabel = labels[neighborsSignificance[index]];
-              if (coefficentsMagnitude[index] || !contextLabel)
+              if (coefficentsMagnitude[index] || !neighborsSignificance[index])
                 continue;
 
+              var contextLabel = labels[neighborsSignificance[index]];
               var cx = contexts[contextLabel];
               var decision = decoder.readBit(cx);
               if (decision) {
@@ -538,18 +538,23 @@ var JpxImage = (function JpxImageClosure() {
         var processingFlags = this.processingFlags;
         var processedMask = 1;
         var firstMagnitudeBitMask = 2;
+        var oneRowDown = width;
+        var twoRowsDown = width * 2;
+        var threeRowsDown = width * 3;
         for (var i0 = 0; i0 < height; i0 += 4) {
           for (var j = 0; j < width; j++) {
             var index0 = i0 * width + j;
+            // using the property: labels[neighborsSignificance[index]] == 0
+            // when neighborsSignificance[index] == 0
             var allEmpty = i0 + 3 < height &&
               processingFlags[index0] == 0 &&
-              processingFlags[index0 + width] == 0 &&
-              processingFlags[index0 + 2 * width] == 0 &&
-              processingFlags[index0 + 3 * width] == 0 &&
-              labels[neighborsSignificance[index0]] == 0 &&
-              labels[neighborsSignificance[index0 + width]] == 0 &&
-              labels[neighborsSignificance[index0 + 2 * width]] == 0 &&
-              labels[neighborsSignificance[index0 + 3 * width]] == 0;
+              processingFlags[index0 + oneRowDown] == 0 &&
+              processingFlags[index0 + twoRowsDown] == 0 &&
+              processingFlags[index0 + threeRowsDown] == 0 &&
+              neighborsSignificance[index0] == 0 &&
+              neighborsSignificance[index0 + oneRowDown] == 0 &&
+              neighborsSignificance[index0 + twoRowsDown] == 0 &&
+              neighborsSignificance[index0 + threeRowsDown] == 0;
             var i1 = 0, index = index0;
             var cx, i;
             if (allEmpty) {
@@ -557,9 +562,9 @@ var JpxImage = (function JpxImageClosure() {
               var hasSignificantCoefficent = decoder.readBit(cx);
               if (!hasSignificantCoefficent) {
                 bitsDecoded[index0]++;
-                bitsDecoded[index0 + width]++;
-                bitsDecoded[index0 + 2 * width]++;
-                bitsDecoded[index0 + 3 * width]++;
+                bitsDecoded[index0 + oneRowDown]++;
+                bitsDecoded[index0 + twoRowsDown]++;
+                bitsDecoded[index0 + threeRowsDown]++;
                 continue; // next column
               }
               cx = this.uniformContext;
@@ -584,11 +589,11 @@ var JpxImage = (function JpxImageClosure() {
               if (i >= height)
                 break;
 
-              var contextLabel = labels[neighborsSignificance[index]];
               if (coefficentsMagnitude[index] ||
                 (processingFlags[index] & processedMask) != 0)
                 continue;
 
+              var contextLabel = labels[neighborsSignificance[index]];
               cx = contexts[contextLabel];
               var decision = decoder.readBit(cx);
               if (decision == 1) {
@@ -623,29 +628,34 @@ var JpxImage = (function JpxImageClosure() {
     };
     Transform.prototype.iterate = function transformIterate(ll, hl, lh, hh,
                                                             u0, v0) {
+      var llWidth = ll.width, llHeight = ll.height, llItems = ll.items;
+      var hlWidth = hl.width, hlHeight = hl.height, hlItems = hl.items;
+      var lhWidth = lh.width, lhHeight = lh.height, lhItems = lh.items;
+      var hhWidth = hh.width, hhHeight = hh.height, hhItems = hh.items;
+
       // Section F.3.3 interleave
-      var width = ll.width + hl.width;
-      var height = ll.height + lh.height;
+      var width = llWidth + hlWidth;
+      var height = llHeight + lhHeight;
       var items = new Float32Array(width * height);
-      for (var i = 0, ii = ll.height; i < ii; i++) {
-        var k = i * ll.width, l = i * 2 * width;
-        for (var j = 0, jj = ll.width; j < jj; j++, k++, l += 2)
-          items[l] = ll.items[k];
+      for (var i = 0, ii = llHeight; i < ii; i++) {
+        var k = i * llWidth, l = i * 2 * width;
+        for (var j = 0, jj = llWidth; j < jj; j++, k++, l += 2)
+          items[l] = llItems[k];
       }
-      for (var i = 0, ii = hl.height; i < ii; i++) {
-        var k = i * hl.width, l = i * 2 * width + 1;
-        for (var j = 0, jj = hl.width; j < jj; j++, k++, l += 2)
-          items[l] = hl.items[k];
+      for (var i = 0, ii = hlHeight; i < ii; i++) {
+        var k = i * hlWidth, l = i * 2 * width + 1;
+        for (var j = 0, jj = hlWidth; j < jj; j++, k++, l += 2)
+          items[l] = hlItems[k];
       }
-      for (var i = 0, ii = lh.height; i < ii; i++) {
-        var k = i * lh.width, l = (i * 2 + 1) * width;
-        for (var j = 0, jj = lh.width; j < jj; j++, k++, l += 2)
-          items[l] = lh.items[k];
+      for (var i = 0, ii = lhHeight; i < ii; i++) {
+        var k = i * lhWidth, l = (i * 2 + 1) * width;
+        for (var j = 0, jj = lhWidth; j < jj; j++, k++, l += 2)
+          items[l] = lhItems[k];
       }
-      for (var i = 0, ii = hh.height; i < ii; i++) {
-        var k = i * hh.width, l = (i * 2 + 1) * width + 1;
-        for (var j = 0, jj = hh.width; j < jj; j++, k++, l += 2)
-          items[l] = hh.items[k];
+      for (var i = 0, ii = hhHeight; i < ii; i++) {
+        var k = i * hhWidth, l = (i * 2 + 1) * width + 1;
+        for (var j = 0, jj = hhWidth; j < jj; j++, k++, l += 2)
+          items[l] = hhItems[k];
       }
 
       var bufferPadding = 4;
