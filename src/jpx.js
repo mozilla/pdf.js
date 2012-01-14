@@ -81,42 +81,44 @@ var JpxImage = (function JpxImageClosure() {
   })();
 
   var InclusionTree = (function InclusionTreeClosure() {
-    function InclusionTree(width, height) {
+    function InclusionTree(width, height,  defaultValue) {
       var levelsLength = log2(Math.max(width, height)) + 1;
       this.levels = [];
       for (var i = 0; i < levelsLength; i++) {
+        var items = new Uint8Array(width * height);
+        for (var j = 0, jj = items.length; j < jj; j++)
+          items[j] = defaultValue;
+
         var level = {
           width: width,
           height: height,
-          items: new Uint8Array(width * height)
+          items: items
         };
         this.levels.push(level);
+
         width = Math.ceil(width / 2);
         height = Math.ceil(height / 2);
       }
-      this.value = 0;
     }
     InclusionTree.prototype = {
-      incrementValue: function inclusionTreeIncrementValue() {
-        this.value++;
-      },
-      reset: function inclusionTreeReset(i, j) {
-        var currentLevel = 0, currentValue = this.value;
+      reset: function inclusionTreeReset(i, j, stopValue) {
+        var currentLevel = 0;
         while (currentLevel < this.levels.length) {
           var level = this.levels[currentLevel];
           var index = i + j * level.width;
+          level.index = index;
           var value = level.items[index];
 
-          if (value == currentValue + 1) {
-            this.currentLevel = currentLevel - 1;
-            // already know about this one, skiping values
-            this.skipValue();
-            return false;
-          }
-          if (value != currentValue)
+          if (value == 0xFF)
             break;
 
-          level.index = index;
+          if (value > stopValue) {
+            this.currentLevel = currentLevel;
+            // already know about this one, propagating the value to top levels
+            this.propagateValues();
+            return false;
+          }
+
           i >>= 1;
           j >>= 1;
           currentLevel++;
@@ -124,20 +126,33 @@ var JpxImage = (function JpxImageClosure() {
         this.currentLevel = currentLevel - 1;
         return true;
       },
-      skipValue: function inclusionTreeSetValue() {
+      incrementValue: function inclusionTreeIncrementValue(stopValue) {
+        var level = this.levels[this.currentLevel];
+        level.items[level.index] = stopValue + 1;
+        this.propagateValues();
+      },
+      propagateValues: function inclusionTreePropagateValues() {
         var levelIndex = this.currentLevel;
-        var currentValue = this.value + 1;
-        while (levelIndex >= 0) {
+        var level = this.levels[levelIndex];
+        var currentValue = level.items[level.index];
+        while (--levelIndex >= 0) {
           var level = this.levels[levelIndex];
           level.items[level.index] = currentValue;
-          levelIndex--;
         }
       },
       nextLevel: function inclusionTreeNextLevel() {
-        var level = this.levels[this.currentLevel];
-        level.items[level.index] |= 0x80;
-        this.currentLevel--;
-        return this.currentLevel >= 0;
+        var currentLevel = this.currentLevel;
+        var level = this.levels[currentLevel];
+        var value = level.items[level.index];
+        level.items[level.index] = 0xFF;
+        currentLevel--;
+        if (currentLevel < 0)
+          return false;
+
+        this.currentLevel = currentLevel;
+        var level = this.levels[currentLevel];
+        level.items[level.index] = value;
+        return true;
       }
     };
     return InclusionTree;
@@ -979,15 +994,7 @@ var JpxImage = (function JpxImageClosure() {
       var codeblock = codeblocks[i];
       var precinctNumber = codeblock.precinctNumber;
     }
-    // building inclusion and zero bit-planes trees
     subband.precincts = precincts;
-    for (var i in precincts) {
-      var precinct = precincts[i];
-      var width = precinct.cbxMax - precinct.cbxMin + 1;
-      var height = precinct.cbyMax - precinct.cbyMin + 1;
-      precinct.inclusionTree = new InclusionTree(width, height);
-      precinct.zeroBitPlanesTree = new TagTree(width, height);
-    }
   }
   function createPacket(resolution, precinctNumber, layerNumber) {
     var precinctCodeblocks = [];
@@ -1207,7 +1214,10 @@ var JpxImage = (function JpxImageClosure() {
     }
     function alignToByte() {
       bufferSize = 0;
-      skipNextBit = false;
+      if (skipNextBit) {
+        position++;
+        skipNextBit = false;
+      }
     }
     function readCodingpasses() {
       var value = readBits(1);
@@ -1248,10 +1258,20 @@ var JpxImage = (function JpxImageClosure() {
         } else {
           // reading inclusion tree
           var precinct = codeblock.precinct;
-          var inclusionTree = precinct.inclusionTree;
-          while (inclusionTree.value < layerNumber)
-            inclusionTree.incrementValue();
-          if (inclusionTree.reset(codeblockColumn, codeblockRow)) {
+          var inclusionTree, zeroBitPlanesTree;
+          if ('inclusionTree' in precinct) {
+            inclusionTree = precinct.inclusionTree;
+          } else {
+            // building inclusion and zero bit-planes trees
+            var width = precinct.cbxMax - precinct.cbxMin + 1;
+            var height = precinct.cbyMax - precinct.cbyMin + 1;
+            inclusionTree = new InclusionTree(width, height, layerNumber);
+            zeroBitPlanesTree = new TagTree(width, height);
+            precinct.inclusionTree = inclusionTree;
+            precinct.zeroBitPlanesTree = zeroBitPlanesTree;
+          }
+
+          if (inclusionTree.reset(codeblockColumn, codeblockRow, layerNumber)) {
             while (true) {
               if (readBits(1)) {
                 var valueReady = !inclusionTree.nextLevel();
@@ -1261,7 +1281,7 @@ var JpxImage = (function JpxImageClosure() {
                   break;
                 }
               } else {
-                inclusionTree.skipValue();
+                inclusionTree.incrementValue(layerNumber);
                 break;
               }
             }
@@ -1270,7 +1290,7 @@ var JpxImage = (function JpxImageClosure() {
         if (!codeblockIncluded)
           continue;
         if (firstTimeInclusion) {
-          var zeroBitPlanesTree = precinct.zeroBitPlanesTree;
+          zeroBitPlanesTree = precinct.zeroBitPlanesTree;
           zeroBitPlanesTree.reset(codeblockColumn, codeblockRow);
           while (true) {
             if (readBits(1)) {
