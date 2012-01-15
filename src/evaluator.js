@@ -758,10 +758,17 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           baseFontName = baseFontName.name.replace(/[,_]/g, '-');
           var metrics = this.getBaseFontMetrics(baseFontName);
 
+          // Simulating descriptor flags attribute
+          var fontNameWoStyle = baseFontName.split('-')[0];
+          var flags = (serifFonts[fontNameWoStyle] ||
+            (fontNameWoStyle.search(/serif/gi) != -1) ? 2 : 0) |
+            (symbolsFonts[fontNameWoStyle] ? 4 : 32);
+
           var properties = {
             type: type.name,
             widths: metrics.widths,
             defaultWidth: metrics.defaultWidth,
+            flags: flags,
             firstChar: 0,
             lastChar: maxCharIndex
           };

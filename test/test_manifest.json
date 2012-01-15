@@ -19,7 +19,7 @@
     },
     {  "id": "intelisa-eq",
        "file": "pdfs/intelisa.pdf",
-       "md5": "f5712097d29287a97f1278839814f682",
+       "md5": "83032ccbfdc5a66269b1403971110abe",
        "link": true,
        "pageLimit": 100,
        "rounds": 1,
@@ -389,11 +389,26 @@
       "link": true,
       "type": "load"
     },
+    {  "id": "issue1010",
+      "file": "pdfs/issue1010.pdf",
+      "md5": "f991ef093484a107fe9f59dff18fc155",
+      "rounds": 1,
+      "link": true,
+      "type": "eq"
+    },
     {  "id": "issue1015",
       "file": "pdfs/issue1015.pdf",
       "md5": "b61503d1b445742b665212866afb60e2",
       "rounds": 1,
       "link": true,
       "type": "eq"
+    },
+    {  "id": "liveprogramming",
+      "file": "pdfs/liveprogramming.pdf",
+      "md5": "7bd4dad1188232ef597d36fd72c33e52",
+      "rounds": 1,
+      "pageLimit": 3,
+      "link": true,
+      "type": "load"
     }
 ]

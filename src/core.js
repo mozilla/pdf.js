@@ -196,6 +196,9 @@ var Page = (function PageClosure() {
         for (i = 0; i < n; ++i)
           content[i] = xref.fetchIfRef(content[i]);
         content = new StreamsSequenceStream(content);
+      } else if (!content) {
+        // replacing non-existent page content with empty one
+        content = new Stream(new Uint8Array(0));
       }
 
       var pe = this.pe = new PartialEvaluator(
@@ -626,8 +629,7 @@ var PDFDoc = (function PDFDocClosure() {
         var worker = new Worker(workerSrc);
 
         var messageHandler = new MessageHandler('main', worker);
-        // Tell the worker the file it was created from.
-        messageHandler.send('workerSrc', workerSrc);
+
         messageHandler.on('test', function pdfDocTest(supportTypedArray) {
           if (supportTypedArray) {
             this.worker = worker;

@@ -205,4 +205,3 @@ a "PDF Reference" from Adobe:
 
 Recommended chapters to read: "2. Overview", "3.4 File Structure", 
 "4.1 Graphics Objects" that lists the PDF commands.
-
