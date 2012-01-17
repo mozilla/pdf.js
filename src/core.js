@@ -201,8 +201,8 @@ var Page = (function PageClosure() {
         content = new Stream(new Uint8Array(0));
       }
 
-      var pe = this.pe = new PartialEvaluator(
-                                xref, handler, 'p' + this.pageNumber + '_');
+      var pe = this.pe = new PartialEvaluator(xref, handler, resources,
+          'p' + this.pageNumber + '_');
       var IRQueue = {};
       return (this.IRQueue = pe.getIRQueue(content, resources, IRQueue,
                                            dependency));
