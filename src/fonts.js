@@ -339,6 +339,21 @@ var stdFontMap = {
   'TimesNewRomanPSMT-Italic': 'Times-Italic'
 };
 
+/**
+ * Holds the map of the non-standard fonts that might be included as a standard
+ * fonts without glyph data.
+ */
+var nonStdFontMap = {
+  'ComicSansMS': 'Comic Sans MS',
+  'ComicSansMS-Bold': 'Comic Sans MS-Bold',
+  'ComicSansMS-BoldItalic': 'Comic Sans MS-BoldItalic',
+  'ComicSansMS-Italic': 'Comic Sans MS-Italic',
+  'LucidaConsole': 'Courier',
+  'LucidaConsole-Bold': 'Courier-Bold',
+  'LucidaConsole-BoldItalic': 'Courier-BoldOblique',
+  'LucidaConsole-Italic': 'Courier-Oblique'
+};
+
 var serifFonts = {
   'Adobe Jenson': true, 'Adobe Text': true, 'Albertus': true,
   'Aldus': true, 'Alexandria': true, 'Algerian': true,
@@ -785,7 +800,7 @@ var Font = (function FontClosure() {
       // The file data is not specified. Trying to fix the font name
       // to be used with the canvas.font.
       var fontName = name.replace(/[,_]/g, '-');
-      fontName = stdFontMap[fontName] || fontName;
+      fontName = stdFontMap[fontName] || nonStdFontMap[fontName] || fontName;
 
       this.bold = (fontName.search(/bold/gi) != -1);
       this.italic = (fontName.search(/oblique/gi) != -1) ||
