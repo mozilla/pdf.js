@@ -71,7 +71,7 @@ bundle: | $(BUILD_DIR)
 	cat $(PDF_JS_FILES) > all_files.tmp; \
 	sed '/PDFJSSCRIPT_INCLUDE_ALL/ r all_files.tmp' pdf.js > ../$(BUILD_TARGET); \
 	sed -i.bak "s/PDFJSSCRIPT_BUNDLE_VER/`git log --format="%h" -n 1`/" ../$(BUILD_TARGET); \
-	rm -f ../$(BUILD_TARGET).bak
+	rm -f ../$(BUILD_TARGET).bak; \
 	rm -f *.tmp; \
 	cd ..
 
