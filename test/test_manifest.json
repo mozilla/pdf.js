@@ -403,5 +403,12 @@
       "pageLimit": 3,
       "link": true,
       "type": "load"
+    },
+    {  "id": "issue1055",
+      "file": "pdfs/issue1055.pdf",
+      "md5": "3ba56c2e48dce81da8669b1b9cf98ff0",
+      "rounds": 1,
+      "link": true,
+      "type": "eq"
     }
 ]
