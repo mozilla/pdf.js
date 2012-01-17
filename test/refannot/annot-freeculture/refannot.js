@@ -1,0 +1,16 @@
+{ "5":[{"markup": ["THE PENGUIN PRESS"], "type": "Highlight"}],
+  "7":[{"markup": ["Excerpt from an editorial titled “The Coming of Copyright Perpetuity,”",
+                   "The New York Times, January 16, 2003."], "type": "Highlight"}],
+  "13":[{"markup": ["But unlike Code, the argument here is not much about the Internet",
+                    "itself. It is instead about the consequence of the Internet to a part of",
+                    "our tradition that is much more fundamental, and, as hard as this is for",
+                    "a geek-wanna-be to admit, much more important."], "type": "Highlight"},
+        {"markup": ["But it does so indirectly by limit-",
+                    "ing the reach of those rights, to guarantee that follow-on creators and",
+                    "innovators remain as free as possible from the control of the past."], "type": "Highlight"},
+        {"markup": ["Not “we”",
+                    "on the Left or “you” on the Right, but we who have no stake in the",
+                    "particular industries of culture that deﬁned the twentieth century."], "type": "Underline"},
+        {"markup": ["We saw a glimpse of this bipartisan outrage in the early summer of", "2003."], 
+         "type": "Highlight"}]
+}

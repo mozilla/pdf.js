@@ -249,6 +249,8 @@ function done() {
 }
 
 function sendTaskResult(snapshot, task, failure) {
+  var annots = task.pdfDoc ?
+               task.pdfDoc.getPage(task.pageNum).getAnnotations() : [];
   var result = { browser: browser,
                  id: task.id,
                  numPages: task.pdfDoc ?
@@ -257,7 +259,8 @@ function sendTaskResult(snapshot, task, failure) {
                  file: task.file,
                  round: task.round,
                  page: task.pageNum,
-                 snapshot: snapshot };
+                 snapshot: snapshot,
+                 annotations: annots };
 
   var r = new XMLHttpRequest();
   // (The POST URI is ignored atm.)
