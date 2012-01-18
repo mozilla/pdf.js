@@ -973,14 +973,18 @@ var TextLayerBuilder = function textLayerBuilder(textLayerDiv) {
         return;
       }
       var textDiv = textDivs.shift();
-      if (textDiv.dataset.textLength > 1) { // avoid div by zero
-        // Adjust div width (via letterSpacing) to match canvas text
-        // Due to the .offsetWidth calls, this is slow
-        textDiv.style.letterSpacing =
-          ((textDiv.dataset.canvasWidth - textDiv.offsetWidth) /
-            (textDiv.dataset.textLength - 1)) + 'px';
-      }
-      textLayerDiv.appendChild(textDiv);
+      if (textDiv.dataset.textLength > 0) {
+        textLayerDiv.appendChild(textDiv);
+
+        if (textDiv.dataset.textLength > 1) { // avoid div by zero
+          // Adjust div width (via letterSpacing) to match canvas text
+          // Due to the .offsetWidth calls, this is slow
+          // **This needs to come after appending to the DOM**
+          textDiv.style.letterSpacing =
+            ((textDiv.dataset.canvasWidth - textDiv.offsetWidth) /
+              (textDiv.dataset.textLength - 1)) + 'px';
+        }
+      } // textLength > 0
     }
     renderTimer = setInterval(renderTextLayer, renderInterval);
 
