@@ -2136,10 +2136,11 @@ var Font = (function FontClosure() {
                  window.btoa(data) + ');');
       var rule = "@font-face { font-family:'" + fontName + "';src:" + url + '}';
 
+      var styleElement = document.createElement('style');
       document.documentElement.getElementsByTagName('head')[0].appendChild(
-        document.createElement('style'));
+        styleElement);
 
-      var styleSheet = document.styleSheets[document.styleSheets.length - 1];
+      var styleSheet = styleElement.sheet;
       styleSheet.insertRule(rule, styleSheet.cssRules.length);
 
       return rule;
