@@ -974,13 +974,13 @@ var TextLayerBuilder = function textLayerBuilder(textLayerDiv) {
       }
       var textDiv = textDivs.shift();
       if (textDiv.dataset.textLength > 1) { // avoid div by zero
-        textLayerDiv.appendChild(textDiv);
         // Adjust div width (via letterSpacing) to match canvas text
         // Due to the .offsetWidth calls, this is slow
         textDiv.style.letterSpacing =
           ((textDiv.dataset.canvasWidth - textDiv.offsetWidth) /
             (textDiv.dataset.textLength - 1)) + 'px';
       }
+      textLayerDiv.appendChild(textDiv);
     }
     renderTimer = setInterval(renderTextLayer, renderInterval);
 
