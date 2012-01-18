@@ -292,8 +292,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                   // Create an IR of the pattern code.
                   var depIdx = dependencyArray.length;
                   var queueObj = {};
-                  var codeIR = this.getIRQueue(pattern, dict.get('Resources'),
-                                               queueObj, dependencyArray);
+                  var codeIR = this.getIRQueue(pattern, dict.get('Resources') ||
+                      resources, queueObj, dependencyArray);
 
                   // Add the dependencies that are required to execute the
                   // codeIR.
@@ -336,8 +336,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                 // This adds the IRQueue of the xObj to the current queue.
                 var depIdx = dependencyArray.length;
 
-                this.getIRQueue(xobj, xobj.dict.get('Resources'), queue,
-                                dependencyArray);
+                this.getIRQueue(xobj, xobj.dict.get('Resources') || resources,
+                    queue, dependencyArray);
 
                // Add the dependencies that are required to execute the
                // codeIR.
