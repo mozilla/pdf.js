@@ -417,5 +417,12 @@
       "rounds": 1,
       "link": true,
       "type": "eq"
+    },
+    {  "id": "zerowidthline",
+      "file": "pdfs/zerowidthline.pdf",
+      "md5": "295d26e61a85635433f8e4b768953f60",
+      "rounds": 1,
+      "link": false,
+      "type": "eq"
     }
 ]
