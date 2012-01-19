@@ -1074,9 +1074,7 @@ function updateViewarea() {
   updateViewarea.inProgress = false;
 
   var currentScale = PDFView.currentScale;
-  var currentScaleValue = PDFView.currentScaleValue;
-  var normalizedScaleValue = currentScaleValue == currentScale ?
-    currentScale * 100 : currentScaleValue;
+  var normalizedScaleValue = isStringScaleSelected() ? PDFView.currentScaleValue : currentScale * 100;
 
   var kViewerTopMargin = 52;
   var pageNumber = firstPage.id;
@@ -1125,9 +1123,7 @@ window.addEventListener('transitionend', updateThumbViewArea, true);
 window.addEventListener('webkitTransitionEnd', updateThumbViewArea, true);
 
 window.addEventListener('resize', function webViewerResize(evt) {
-  if (document.getElementById('pageWidthOption').selected ||
-      document.getElementById('pageFitOption').selected ||
-      document.getElementById('pageAutoOption').selected)
+  if (isStringScaleSelected())
       PDFView.parseScale(document.getElementById('scaleSelect').value);
   updateViewarea();
 });
@@ -1179,14 +1175,18 @@ function selectScaleOption(value) {
   return predefinedValueFound;
 }
 
+function isStringScaleSelected() {
+	 return (document.getElementById('pageWidthOption').selected ||
+             document.getElementById('pageFitOption').selected ||
+             document.getElementById('pageAutoOption').selected);
+}
+
 window.addEventListener('scalechange', function scalechange(evt) {
   var customScaleOption = document.getElementById('customScaleOption');
   customScaleOption.selected = false;
 
   if (!evt.resetAutoSettings &&
-       (document.getElementById('pageWidthOption').selected ||
-        document.getElementById('pageFitOption').selected ||
-        document.getElementById('pageAutoOption').selected)) {
+       isStringScaleSelected()) {
       updateViewarea();
       return;
   }
