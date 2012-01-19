@@ -979,7 +979,7 @@ var TextLayerBuilder = function textLayerBuilder(textLayerDiv) {
         if (textDiv.dataset.textLength > 1) { // avoid div by zero
           // Adjust div width (via letterSpacing) to match canvas text
           // Due to the .offsetWidth calls, this is slow
-          // **This needs to come after appending to the DOM**
+          // This needs to come after appending to the DOM
           textDiv.style.letterSpacing =
             ((textDiv.dataset.canvasWidth - textDiv.offsetWidth) /
               (textDiv.dataset.textLength - 1)) + 'px';
@@ -1001,7 +1001,7 @@ var TextLayerBuilder = function textLayerBuilder(textLayerDiv) {
       clearInterval(renderTimer);
 
       clearTimeout(scrollTimer);
-      scrollTimer = setTimeout(function() {
+      scrollTimer = setTimeout(function textLayerScrollTimer() {
         // Resume rendering
         renderTimer = setInterval(renderTextLayer, renderInterval);
       }, resumeInterval);
