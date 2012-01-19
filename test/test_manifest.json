@@ -176,7 +176,6 @@
        "md5": "eb7b224107205db4fea9f7df0185f77d",
        "link": true,
        "rounds": 1,
-       "skipPages": [12,31],
        "type": "eq"
     },
     {  "id": "fips197",
