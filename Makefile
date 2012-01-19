@@ -43,7 +43,7 @@ PDF_JS_FILES = \
 # This target starts a local web server at localhost:8888. This can be
 # used for testing all browsers.
 server:
-	@cd test; python test.py --port=8888;
+	@cd test; python2 test.py --port=8888;
 
 # make test
 #
@@ -106,7 +106,7 @@ browser-test:
 	fi;
 
 	cd test; \
-	python test.py --reftest \
+	python2 test.py --reftest \
 	--browserManifestFile=$(PDF_BROWSERS) \
 	--manifestFile=$(PDF_TESTS)
 
