@@ -176,7 +176,6 @@
        "md5": "eb7b224107205db4fea9f7df0185f77d",
        "link": true,
        "rounds": 1,
-       "skipPages": [12,31],
        "type": "eq"
     },
     {  "id": "fips197",
@@ -410,5 +409,19 @@
       "pageLimit": 3,
       "link": true,
       "type": "load"
+    },
+    {  "id": "issue1055",
+      "file": "pdfs/issue1055.pdf",
+      "md5": "3ba56c2e48dce81da8669b1b9cf98ff0",
+      "rounds": 1,
+      "link": true,
+      "type": "eq"
+    },
+    {  "id": "zerowidthline",
+      "file": "pdfs/zerowidthline.pdf",
+      "md5": "295d26e61a85635433f8e4b768953f60",
+      "rounds": 1,
+      "link": false,
+      "type": "eq"
     }
 ]
