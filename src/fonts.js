@@ -3340,15 +3340,9 @@ var Type2CFF = (function Type2CFFClosure() {
         inverseEncoding[encoding[charcode]] = charcode | 0;
       for (var i = 0, ii = charsets.length; i < ii; i++) {
         var glyph = charsets[i];
-        if (glyph == '.notdef') {
-          charstrings.push({
-            unicode: 0,
-            code: 0,
-            gid: i,
-            glyph: glyph
-          });
+        if (glyph == '.notdef')
           continue;
-        }
+
         var code = inverseEncoding[i];
         if (!code || isSpecialUnicode(code)) {
           unassignedUnicodeItems.push(i);
