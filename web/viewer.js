@@ -960,22 +960,55 @@ var TextLayerBuilder = function textLayerBuilder(textLayerDiv) {
     var self = this;
     var textDivs = this.textDivs;
     var textLayerDiv = this.textLayerDiv;
-    this.textLayerTimer = setInterval(function renderTextLayer() {
+    var renderTimer = null;
+    var renderingDone = false;
+    var renderInterval = 0;
+    var resumeInterval = 500; // in ms
+
+    // Render the text layer, one div at a time
+    function renderTextLayer() {
       if (textDivs.length === 0) {
-        clearInterval(self.textLayerTimer);
+        clearInterval(renderTimer);
+        renderingDone = true;
         return;
       }
       var textDiv = textDivs.shift();
-      if (textDiv.dataset.textLength >= 1) { // avoid div by zero
+      if (textDiv.dataset.textLength > 0) {
         textLayerDiv.appendChild(textDiv);
-        // Adjust div width (via letterSpacing) to match canvas text
-        // Due to the .offsetWidth calls, this is slow
-        textDiv.style.letterSpacing =
-          ((textDiv.dataset.canvasWidth - textDiv.offsetWidth) /
-            (textDiv.dataset.textLength - 1)) + 'px';
+
+        if (textDiv.dataset.textLength > 1) { // avoid div by zero
+          // Adjust div width (via letterSpacing) to match canvas text
+          // Due to the .offsetWidth calls, this is slow
+          // This needs to come after appending to the DOM
+          textDiv.style.letterSpacing =
+            ((textDiv.dataset.canvasWidth - textDiv.offsetWidth) /
+              (textDiv.dataset.textLength - 1)) + 'px';
+        }
+      } // textLength > 0
+    }
+    renderTimer = setInterval(renderTextLayer, renderInterval);
+
+    // Stop rendering when user scrolls. Resume after XXX milliseconds
+    // of no scroll events
+    var scrollTimer = null;
+    function textLayerOnScroll() {
+      if (renderingDone) {
+        window.removeEventListener('scroll', textLayerOnScroll, false);
+        return;
       }
-    }, 0);
-  };
+
+      // Immediately pause rendering
+      clearInterval(renderTimer);
+
+      clearTimeout(scrollTimer);
+      scrollTimer = setTimeout(function textLayerScrollTimer() {
+        // Resume rendering
+        renderTimer = setInterval(renderTextLayer, renderInterval);
+      }, resumeInterval);
+    }; // textLayerOnScroll
+
+    window.addEventListener('scroll', textLayerOnScroll, false);
+  }; // endLayout
 
   this.appendText = function textLayerBuilderAppendText(text,
                                                         fontName, fontSize) {
