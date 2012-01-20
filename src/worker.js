@@ -127,7 +127,7 @@ var WorkerMessageHandler = {
           e = {
             message: 'Unknown exception type: ' + (typeof e),
             stack: minimumStackMessage
-          }
+          };
         }
 
         handler.send('page_error', {

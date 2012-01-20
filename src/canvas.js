@@ -554,7 +554,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       // A valid matrix needs all main diagonal elements to be non-zero
       // This also ensures we bypass FF bugzilla bug #719844.
       if (fontObj.fontMatrix[0] === 0 ||
-          fontObj.fontMatrix[3] === 0 ) {
+          fontObj.fontMatrix[3] === 0) {
         warn('Invalid font matrix for font ' + fontRefName);
 
         // Fallback
