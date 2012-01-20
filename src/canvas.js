@@ -703,12 +703,12 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
         if (textSelection)
           text.geom = this.getTextGeometry();
 
-        var width = 0;
+        var x = 0;
         for (var i = 0; i < glyphsLength; ++i) {
           var glyph = glyphs[i];
           if (glyph === null) {
             // word break
-            width += wordSpacing;
+            x += wordSpacing;
             continue;
           }
 
@@ -719,28 +719,28 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
             default: // other unsupported rendering modes
             case TextRenderingMode.FILL:
             case TextRenderingMode.FILL_ADD_TO_PATH:
-              ctx.fillText(char, width, 0);
+              ctx.fillText(char, x, 0);
               break;
             case TextRenderingMode.STROKE:
             case TextRenderingMode.STROKE_ADD_TO_PATH:
-              ctx.strokeText(char, width, 0);
+              ctx.strokeText(char, x, 0);
               break;
             case TextRenderingMode.FILL_STROKE:
             case TextRenderingMode.FILL_STROKE_ADD_TO_PATH:
-              ctx.fillText(char, width, 0);
-              ctx.strokeText(char, width, 0);
+              ctx.fillText(char, x, 0);
+              ctx.strokeText(char, x, 0);
               break;
             case TextRenderingMode.INVISIBLE:
               break;
           }
 
-          width += charWidth;
+          x += charWidth;
 
           text.str += glyph.unicode === ' ' ? '\u00A0' : glyph.unicode;
           text.length++;
           text.canvasWidth += charWidth;
         }
-        current.x += width * textHScale2;
+        current.x += x * textHScale2;
         ctx.restore();
       }
 
