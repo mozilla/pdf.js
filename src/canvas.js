@@ -551,6 +551,16 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
         throw 'Can\'t find font for ' + fontRefName;
       }
 
+      // If any of the diagonal elements of a transformation matrix are null
+      // ctx.restore() will fail in FF. See bugzilla bug #719844.
+      if (fontObj.fontMatrix[0] === 0 ||
+          fontObj.fontMatrix[3] === 0 ) {
+        warn('Invalid font matrix for font ' + fontRefName);
+
+        // Fallback
+        fontObj.fontMatrix = IDENTITY_MATRIX;
+      }
+
       var name = fontObj.loadedName || 'sans-serif';
 
       this.current.font = fontObj;
