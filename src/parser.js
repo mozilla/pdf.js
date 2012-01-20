@@ -240,6 +240,10 @@ var Parser = (function ParserClosure() {
         var bytes = stream.getBytes(length);
         return new JpegStream(bytes, stream.dict, this.xref);
       }
+      if (name == 'JPXDecode' || name == 'JPX') {
+        var bytes = stream.getBytes(length);
+        return new JpxStream(bytes, stream.dict);
+      }
       if (name == 'ASCII85Decode' || name == 'A85') {
         return new Ascii85Stream(stream);
       }
