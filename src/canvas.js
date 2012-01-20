@@ -551,8 +551,8 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
         throw 'Can\'t find font for ' + fontRefName;
       }
 
-      // If any of the diagonal elements of a transformation matrix are null
-      // ctx.restore() will fail in FF. See bugzilla bug #719844.
+      // A valid matrix needs all main diagonal elements to be non-zero
+      // This also ensures we bypass FF bugzilla bug #719844.
       if (fontObj.fontMatrix[0] === 0 ||
           fontObj.fontMatrix[3] === 0 ) {
         warn('Invalid font matrix for font ' + fontRefName);
@@ -563,8 +563,22 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
 
       var name = fontObj.loadedName || 'sans-serif';
 
+      // Clone fontMatrix so we can manipulate it without affecting original
+      this.current.fontMatrix = fontObj.fontMatrix.slice(0);
+
+      // The spec for Tf (setFont) says that 'size' specifies the font 'scale',
+      // and in some docs this can be negative. We implement this in fontMatrix.
+      if (size < 0) {
+        size = -size;
+        this.current.fontMatrix[0] = -fontObj.fontMatrix[0];
+        this.current.fontMatrix[3] = -fontObj.fontMatrix[3];
+      }
+
       this.current.font = fontObj;
       this.current.fontSize = size;
+
+      // Cache font matrix sign
+      this.current.fontMatrixXSign = this.current.fontMatrix[0] > 0 ? 1 : -1;
 
       var name = fontObj.loadedName || 'sans-serif';
       var bold = fontObj.black ? (fontObj.bold ? 'bolder' : 'bold') :
@@ -605,7 +619,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       var ctx = this.ctx;
       var current = this.current;
       var textHScale = current.textHScale;
-      var fontMatrix = current.font.fontMatrix || IDENTITY_MATRIX;
+      var fontMatrix = current.fontMatrix || IDENTITY_MATRIX;
 
       ctx.transform.apply(ctx, current.textMatrix);
       ctx.scale(1, -1);
@@ -639,7 +653,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       var charSpacing = current.charSpacing;
       var wordSpacing = current.wordSpacing;
       var textHScale = current.textHScale;
-      var fontMatrix = font.fontMatrix || IDENTITY_MATRIX;
+      var fontMatrix = current.fontMatrix || IDENTITY_MATRIX;
       var textHScale2 = textHScale * fontMatrix[0];
       var glyphsLength = glyphs.length;
       var textLayer = this.textLayer;
@@ -677,7 +691,8 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
           this.restore();
 
           var transformed = Util.applyTransform([glyph.width, 0], fontMatrix);
-          var width = transformed[0] * fontSize + charSpacing;
+          var width = transformed[0] * fontSize +
+              current.fontMatrixXSign * charSpacing;
 
           ctx.translate(width, 0);
           current.x += width * textHScale;
@@ -708,12 +723,13 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
           var glyph = glyphs[i];
           if (glyph === null) {
             // word break
-            x += wordSpacing;
+            x += current.fontMatrixXSign * wordSpacing;
             continue;
           }
 
           var char = glyph.fontChar;
-          var charWidth = glyph.width * fontSize * 0.001 + charSpacing;
+          var charWidth = glyph.width * fontSize * 0.001 +
+              current.fontMatrixXSign * charSpacing;
 
           switch (textRenderingMode) {
             default: // other unsupported rendering modes
@@ -756,7 +772,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       var fontSize = current.fontSize;
       var textHScale = current.textHScale;
       if (!font.coded)
-        textHScale *= (font.fontMatrix || IDENTITY_MATRIX)[0];
+        textHScale *= (current.fontMatrix || IDENTITY_MATRIX)[0];
       var arrLength = arr.length;
       var textLayer = this.textLayer;
       var text = {str: '', length: 0, canvasWidth: 0, geom: {}};
