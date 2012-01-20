@@ -257,7 +257,7 @@ var PDFView = {
         },
         error: function getPdfError(e) {
           var loadingIndicator = document.getElementById('loading');
-          loadingIndicator.innerHTML = 'Error';
+          loadingIndicator.textContent = 'Error';
           var moreInfo = {
             message: 'Unexpected server response of ' + e.target.status + '.'
           };
@@ -327,7 +327,7 @@ var PDFView = {
     errorWrapper.removeAttribute('hidden');
 
     var errorMessage = document.getElementById('errorMessage');
-    errorMessage.innerHTML = message;
+    errorMessage.textContent = message;
 
     var closeButton = document.getElementById('errorClose');
     closeButton.onclick = function() {
@@ -362,7 +362,7 @@ var PDFView = {
   progress: function pdfViewProgress(level) {
     var percent = Math.round(level * 100);
     var loadingIndicator = document.getElementById('loading');
-    loadingIndicator.innerHTML = 'Loading... ' + percent + '%';
+    loadingIndicator.textContent = 'Loading... ' + percent + '%';
   },
 
   load: function pdfViewLoad(data, scale) {
@@ -402,7 +402,7 @@ var PDFView = {
     var pagesCount = pdf.numPages;
     var id = pdf.fingerprint;
     var storedHash = null;
-    document.getElementById('numPages').innerHTML = pagesCount;
+    document.getElementById('numPages').textContent = pagesCount;
     document.getElementById('pageNumber').max = pagesCount;
     PDFView.documentFingerprint = id;
     var store = PDFView.store = new Settings(id);
@@ -648,7 +648,15 @@ var PageView = function pageView(container, content, id, pageWidth, pageHeight,
       if (!item.content) {
         content.setAttribute('hidden', true);
       } else {
-        text.innerHTML = item.content.replace('\n', '<br />');
+        var e = document.createElement('span');
+        var lines = item.content.split('\n');
+        for (var i = 0, ii = lines.length; i < ii; ++i) {
+          var line = lines[i];
+          e.appendChild(document.createTextNode(line));
+          if (i < (ii - 1))
+            e.appendChild(document.createElement('br'));
+        }
+        text.appendChild(e);
         image.addEventListener('mouseover', function annotationImageOver() {
            this.nextSibling.removeAttribute('hidden');
         }, false);
@@ -822,7 +830,7 @@ var PageView = function pageView(container, content, id, pageWidth, pageHeight,
     var t1 = stats.compile, t2 = stats.fonts, t3 = stats.render;
     var str = 'Time to compile/fonts/render: ' +
               (t1 - stats.begin) + '/' + (t2 - t1) + '/' + (t3 - t2) + ' ms';
-    document.getElementById('info').innerHTML = str;
+    document.getElementById('info').textContent = str;
   };
 };
 

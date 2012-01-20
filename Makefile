@@ -207,9 +207,8 @@ pages-repo: | $(BUILD_DIR)
 # copy of the pdf.js source.
 CONTENT_DIR := content
 BUILD_NUMBER := `git log --format=oneline $(EXTENSION_BASE_VERSION).. | wc -l | awk '{print $$1}'`
-PDF_WEB_FILES = \
+EXTENSION_WEB_FILES = \
 	web/images \
-	web/compatibility.js \
 	web/viewer.css \
 	web/viewer.js \
 	web/viewer-production.html \
@@ -249,7 +248,7 @@ extension: | production
 	@cd extensions/firefox; cp -r $(FIREFOX_EXTENSION_FILES_TO_COPY) ../../$(FIREFOX_BUILD_DIR)/
 	# Copy a standalone version of pdf.js inside the content directory
 	@cp $(BUILD_TARGET) $(FIREFOX_BUILD_CONTENT)/$(BUILD_DIR)/
-	@cp -r $(PDF_WEB_FILES) $(FIREFOX_BUILD_CONTENT)/web/
+	@cp -r $(EXTENSION_WEB_FILES) $(FIREFOX_BUILD_CONTENT)/web/
 	@mv -f $(FIREFOX_BUILD_CONTENT)/web/viewer-production.html $(FIREFOX_BUILD_CONTENT)/web/viewer.html
 	# Update the build version number
 	@sed -i.bak "s/PDFJSSCRIPT_BUILD/$(BUILD_NUMBER)/" $(FIREFOX_BUILD_DIR)/install.rdf
@@ -272,7 +271,7 @@ extension: | production
 	@cp -R $(CHROME_EXTENSION_FILES) $(CHROME_BUILD_DIR)/
 	# Copy a standalone version of pdf.js inside the content directory
 	@cp $(BUILD_TARGET) $(CHROME_BUILD_CONTENT)/$(BUILD_DIR)/
-	@cp -r $(PDF_WEB_FILES) $(CHROME_BUILD_CONTENT)/web/
+	@cp -r $(EXTENSION_WEB_FILES) $(CHROME_BUILD_CONTENT)/web/
 	@mv -f $(CHROME_BUILD_CONTENT)/web/viewer-production.html $(CHROME_BUILD_CONTENT)/web/viewer.html
 
   # Create the crx
