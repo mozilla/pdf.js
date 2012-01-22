@@ -36,6 +36,7 @@ PDF_JS_FILES = \
   stream.js \
   worker.js \
   ../external/jpgjs/jpg.js \
+  jpx.js \
 	$(NULL)
 
 # make server
