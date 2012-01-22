@@ -2235,9 +2235,8 @@ var Font = (function FontClosure() {
           }
 
           // MacRoman encoding address by re-encoding the cmap table
-          unicode = glyphName in GlyphsUnicode ?
-            GlyphsUnicode[glyphName] :
-            this.glyphNameMap[glyphName];
+          unicode = glyphName in this.glyphNameMap ?
+            this.glyphNameMap[glyphName] : GlyphsUnicode[glyphName];
           break;
         default:
           warn('Unsupported font type: ' + this.type);
