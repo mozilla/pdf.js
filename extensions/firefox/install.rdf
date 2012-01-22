@@ -6,7 +6,7 @@
   <Description about="urn:mozilla:install-manifest">
     <em:id>uriloader@pdf.js</em:id>
     <em:name>pdf.js</em:name>
-    <em:version>0.1.0</em:version>
+    <em:version>0.2.PDFJSSCRIPT_BUILD</em:version>
 	  <em:iconURL>chrome://pdf.js/skin/logo.png</em:iconURL>
     <em:targetApplication>
       <Description>
@@ -17,9 +17,11 @@
     </em:targetApplication>
     <em:bootstrap>true</em:bootstrap>
     <em:unpack>true</em:unpack>
-    <em:creator>Vivien Nicolas</em:creator>
+    <em:creator>Mozilla Labs</em:creator>
     <em:description>pdf.js uri loader</em:description>
     <em:homepageURL>https://github.com/mozilla/pdf.js/</em:homepageURL>
     <em:type>2</em:type>
+    <!-- Use the raw link for updates so we we can use SSL. -->
+    <em:updateURL>https://github.com/mozilla/pdf.js/raw/gh-pages/extensions/firefox/update.rdf</em:updateURL>
   </Description>
 </RDF>

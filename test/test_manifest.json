@@ -19,7 +19,7 @@
     },
     {  "id": "intelisa-eq",
        "file": "pdfs/intelisa.pdf",
-       "md5": "f5712097d29287a97f1278839814f682",
+       "md5": "83032ccbfdc5a66269b1403971110abe",
        "link": true,
        "pageLimit": 100,
        "rounds": 1,
@@ -176,7 +176,6 @@
        "md5": "eb7b224107205db4fea9f7df0185f77d",
        "link": true,
        "rounds": 1,
-       "skipPages": [12,31],
        "type": "eq"
     },
     {  "id": "fips197",
@@ -380,6 +379,55 @@
       "file": "pdfs/type4psfunc.pdf",
       "md5": "7e6027a02ff78577f74dccdf84e37189",
       "rounds": 1,
+      "type": "eq"
+    },
+    {  "id": "ocs",
+      "file": "pdfs/ocs.pdf",
+      "md5": "2ade57e954ae7632749cf328daeaa7a8",
+      "rounds": 1,
+      "link": true,
+      "type": "load"
+    },
+    {  "id": "issue1010",
+      "file": "pdfs/issue1010.pdf",
+      "md5": "f991ef093484a107fe9f59dff18fc155",
+      "rounds": 1,
+      "link": true,
+      "type": "eq"
+    },
+    {  "id": "issue1015",
+      "file": "pdfs/issue1015.pdf",
+      "md5": "b61503d1b445742b665212866afb60e2",
+      "rounds": 1,
+      "link": true,
+      "type": "eq"
+    },
+    {  "id": "liveprogramming",
+      "file": "pdfs/liveprogramming.pdf",
+      "md5": "7bd4dad1188232ef597d36fd72c33e52",
+      "rounds": 1,
+      "pageLimit": 3,
+      "link": true,
+      "type": "load"
+    },
+    {  "id": "S2-eq",
+       "file": "pdfs/S2.pdf",
+       "md5": "d0b6137846df6e0fe058f234a87fb588",
+       "rounds": 1,
+       "type": "eq"
+    },
+    {  "id": "issue1055",
+      "file": "pdfs/issue1055.pdf",
+      "md5": "3ba56c2e48dce81da8669b1b9cf98ff0",
+      "rounds": 1,
+      "link": true,
+      "type": "eq"
+    },
+    {  "id": "zerowidthline",
+      "file": "pdfs/zerowidthline.pdf",
+      "md5": "295d26e61a85635433f8e4b768953f60",
+      "rounds": 1,
+      "link": false,
       "type": "eq"
     }
 ]

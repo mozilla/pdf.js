@@ -118,7 +118,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       var self = this;
       var xref = this.xref;
       var handler = this.handler;
-      var uniquePrefix = this.uniquePrefix;
+      var uniquePrefix = this.uniquePrefix || '';
 
       function insertDependency(depList) {
         fnArray.push('dependency');
@@ -211,7 +211,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         args = [objId, w, h];
 
         var softMask = dict.get('SMask', 'IM') || false;
-        if (!softMask && image instanceof JpegStream && image.isNative) {
+        if (!softMask && image instanceof JpegStream &&
+            image.isNativelySupported(xref, resources)) {
           // These JPEGs don't need any more processing so we can just send it.
           fn = 'paintJpegXObject';
           handler.send('obj', [objId, 'JpegStream', image.getIR()]);
@@ -234,7 +235,6 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           }, handler, xref, resources, image, inline);
       }
 
-      uniquePrefix = uniquePrefix || '';
       if (!queue.argsArray) {
         queue.argsArray = [];
       }
@@ -292,8 +292,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                   // Create an IR of the pattern code.
                   var depIdx = dependencyArray.length;
                   var queueObj = {};
-                  var codeIR = this.getIRQueue(pattern, dict.get('Resources'),
-                                               queueObj, dependencyArray);
+                  var codeIR = this.getIRQueue(pattern, dict.get('Resources') ||
+                      resources, queueObj, dependencyArray);
 
                   // Add the dependencies that are required to execute the
                   // codeIR.
@@ -336,8 +336,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                 // This adds the IRQueue of the xObj to the current queue.
                 var depIdx = dependencyArray.length;
 
-                this.getIRQueue(xobj, xobj.dict.get('Resources'), queue,
-                                dependencyArray);
+                this.getIRQueue(xobj, xobj.dict.get('Resources') || resources,
+                    queue, dependencyArray);
 
                // Add the dependencies that are required to execute the
                // codeIR.
@@ -823,10 +823,17 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           baseFontName = baseFontName.name.replace(/[,_]/g, '-');
           var metrics = this.getBaseFontMetrics(baseFontName);
 
+          // Simulating descriptor flags attribute
+          var fontNameWoStyle = baseFontName.split('-')[0];
+          var flags = (serifFonts[fontNameWoStyle] ||
+            (fontNameWoStyle.search(/serif/gi) != -1) ? 2 : 0) |
+            (symbolsFonts[fontNameWoStyle] ? 4 : 32);
+
           var properties = {
             type: type.name,
             widths: metrics.widths,
             defaultWidth: metrics.defaultWidth,
+            flags: flags,
             firstChar: 0,
             lastChar: maxCharIndex
           };

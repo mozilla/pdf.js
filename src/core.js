@@ -70,8 +70,7 @@ var Page = (function PageClosure() {
     this.xref = xref;
     this.ref = ref;
 
-    this.ctx = null;
-    this.callback = null;
+    this.displayReadyPromise = null;
   }
 
   Page.prototype = {
@@ -167,20 +166,12 @@ var Page = (function PageClosure() {
                                                 IRQueue, fonts) {
       var self = this;
       this.IRQueue = IRQueue;
-      var gfx = new CanvasGraphics(this.ctx, this.objs, this.textLayer);
 
       var displayContinuation = function pageDisplayContinuation() {
         // Always defer call to display() to work around bug in
         // Firefox error reporting from XHR callbacks.
         setTimeout(function pageSetTimeout() {
-          try {
-            self.display(gfx, self.callback);
-          } catch (e) {
-            if (self.callback)
-              self.callback(e);
-            else
-              throw e;
-          }
+          self.displayReadyPromise.resolve();
         });
       };
 
@@ -206,8 +197,12 @@ var Page = (function PageClosure() {
         for (i = 0; i < n; ++i)
           streams.push(xref.fetchIfRef(content[i]));
         content = new StreamsSequenceStream(streams);
-      } else if (isStream(content))
+      } else if (isStream(content)) {
         content.reset();
+      } else if (!content) {
+        // replacing non-existent page content with empty one
+        content = new Stream(new Uint8Array(0));
+      }
 
       var pe = this.pe = new PartialEvaluator(
                                 xref, handler, 'p' + this.pageNumber + '_');
@@ -429,12 +424,35 @@ var Page = (function PageClosure() {
       return items;
     },
     startRendering: function pageStartRendering(ctx, callback, textLayer)  {
-      this.ctx = ctx;
-      this.callback = callback;
-      this.textLayer = textLayer;
-
       this.startRenderingTime = Date.now();
-      this.pdf.startRendering(this);
+
+      // If there is no displayReadyPromise yet, then the IRQueue was never
+      // requested before. Make the request and create the promise.
+      if (!this.displayReadyPromise) {
+        this.pdf.startRendering(this);
+        this.displayReadyPromise = new Promise();
+      }
+
+      // Once the IRQueue and fonts are loaded, perform the actual rendering.
+      this.displayReadyPromise.then(
+        function pageDisplayReadyPromise() {
+          var gfx = new CanvasGraphics(ctx, this.objs, textLayer);
+          try {
+            this.display(gfx, callback);
+          } catch (e) {
+            if (callback)
+              callback(e);
+            else
+              throw e;
+          }
+        }.bind(this),
+        function pageDisplayReadPromiseError(reason) {
+          if (callback)
+            callback(reason);
+          else
+            throw reason;
+        }
+      );
     }
   };
 
@@ -557,13 +575,15 @@ var PDFDocModel = (function PDFDocModelClosure() {
     },
     setup: function pdfDocSetup(ownerPassword, userPassword) {
       this.checkHeader();
-      this.xref = new XRef(this.stream,
-                           this.startXRef,
-                           this.mainXRefEntriesOffset);
-      this.catalog = new Catalog(this.xref);
-      if (this.xref.trailer && this.xref.trailer.has('ID')) {
+      var xref = new XRef(this.stream,
+                          this.startXRef,
+                          this.mainXRefEntriesOffset);
+      this.xref = xref;
+      this.catalog = new Catalog(xref);
+      if (xref.trailer && xref.trailer.has('ID')) {
         var fileID = '';
-        this.xref.trailer.get('ID')[0].split('').forEach(function(el) {
+        var id = xref.fetchIfRef(xref.trailer.get('ID'))[0];
+        id.split('').forEach(function(el) {
           fileID += Number(el.charCodeAt(0)).toString(16);
         });
         this.fileID = fileID;
@@ -642,8 +662,7 @@ var PDFDoc = (function PDFDocClosure() {
         var worker = new Worker(workerSrc);
 
         var messageHandler = new MessageHandler('main', worker);
-        // Tell the worker the file it was created from.
-        messageHandler.send('workerSrc', workerSrc);
+
         messageHandler.on('test', function pdfDocTest(supportTypedArray) {
           if (supportTypedArray) {
             this.worker = worker;
@@ -748,8 +767,8 @@ var PDFDoc = (function PDFDocClosure() {
 
       messageHandler.on('page_error', function pdfDocError(data) {
         var page = this.pageCache[data.pageNum];
-        if (page.callback)
-          page.callback(data.error);
+        if (page.displayReadyPromise)
+          page.displayReadyPromise.reject(data.error);
         else
           throw data.error;
       }, this);

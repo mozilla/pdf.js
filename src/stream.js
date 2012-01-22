@@ -803,28 +803,15 @@ var JpegStream = (function JpegStreamClosure() {
     // need to be removed
     this.dict = dict;
 
-    // Flag indicating wether the image can be natively loaded.
-    this.isNative = true;
-
-    this.colorTransform = -1;
+    this.isAdobeImage = false;
+    this.colorTransform = dict.get('ColorTransform') || -1;
 
     if (isAdobeImage(bytes)) {
-      // when bug 674619 land, let's check if browser can do
-      // normal cmyk and then we won't have to the following
-      var cs = xref.fetchIfRef(dict.get('ColorSpace'));
-
-      // DeviceRGB and DeviceGray are the only Adobe images that work natively
-      if (isName(cs) && (cs.name === 'DeviceRGB' || cs.name === 'DeviceGray')) {
-        bytes = fixAdobeImage(bytes);
-        this.src = bytesToString(bytes);
-      } else {
-        this.colorTransform = dict.get('ColorTransform');
-        this.isNative = false;
-        this.bytes = bytes;
-      }
-    } else {
-      this.src = bytesToString(bytes);
+      this.isAdobeImage = true;
+      bytes = fixAdobeImage(bytes);
     }
+
+    this.bytes = bytes;
 
     DecodeStream.call(this);
   }
@@ -835,7 +822,8 @@ var JpegStream = (function JpegStreamClosure() {
     if (this.bufferLength)
       return;
     var jpegImage = new JpegImage();
-    jpegImage.colorTransform = this.colorTransform;
+    if (this.colorTransform != -1)
+      jpegImage.colorTransform = this.colorTransform;
     jpegImage.parse(this.bytes);
     var width = jpegImage.width;
     var height = jpegImage.height;
@@ -844,13 +832,142 @@ var JpegStream = (function JpegStreamClosure() {
     this.bufferLength = data.length;
   };
   JpegStream.prototype.getIR = function jpegStreamGetIR() {
-    return this.src;
+    return bytesToString(this.bytes);
   };
   JpegStream.prototype.getChar = function jpegStreamGetChar() {
-      error('internal error: getChar is not valid on JpegStream');
+    error('internal error: getChar is not valid on JpegStream');
+  };
+  /**
+   * Checks if the image can be decoded and displayed by the browser without any
+   * further processing such as color space conversions.
+   */
+  JpegStream.prototype.isNativelySupported = function isNativelySupported(xref,
+                                                                          res) {
+    var cs = ColorSpace.parse(this.dict.get('ColorSpace'), xref, res);
+    // when bug 674619 lands, let's check if browser can do
+    // normal cmyk and then we won't need to decode in JS
+    if (cs.name === 'DeviceGray' || cs.name === 'DeviceRGB')
+      return true;
+    if (cs.name === 'DeviceCMYK' && !this.isAdobeImage &&
+        this.colorTransform < 1)
+      return true;
+    return false;
+  };
+  /**
+   * Checks if the image can be decoded by the browser.
+   */
+  JpegStream.prototype.isNativelyDecodable = function isNativelyDecodable(xref,
+                                                                          res) {
+    var cs = ColorSpace.parse(this.dict.get('ColorSpace'), xref, res);
+    var numComps = cs.numComps;
+    if (numComps == 1 || numComps == 3)
+      return true;
+
+    return false;
   };
 
   return JpegStream;
+})();
+
+/**
+ * For JPEG 2000's we use a library to decode these images and
+ * the stream behaves like all the other DecodeStreams.
+ */
+var JpxStream = (function JpxStreamClosure() {
+  function JpxStream(bytes, dict) {
+    this.dict = dict;
+    this.bytes = bytes;
+
+    DecodeStream.call(this);
+  }
+
+  JpxStream.prototype = Object.create(DecodeStream.prototype);
+
+  JpxStream.prototype.ensureBuffer = function jpxStreamEnsureBuffer(req) {
+    if (this.bufferLength)
+      return;
+
+    var jpxImage = new JpxImage();
+    jpxImage.parse(this.bytes);
+
+    var width = jpxImage.width;
+    var height = jpxImage.height;
+    var componentsCount = jpxImage.componentsCount;
+    if (componentsCount != 1 && componentsCount != 3 && componentsCount != 4)
+      error('JPX with ' + componentsCount + ' components is not supported');
+
+    var data = new Uint8Array(width * height * componentsCount);
+
+    for (var k = 0, kk = jpxImage.tiles.length; k < kk; k++) {
+      var tileCompoments = jpxImage.tiles[k];
+      var tileWidth = tileCompoments[0].width;
+      var tileHeight = tileCompoments[0].height;
+      var tileLeft = tileCompoments[0].left;
+      var tileTop = tileCompoments[0].top;
+
+      var dataPosition, sourcePosition, data0, data1, data2, data3, rowFeed;
+      switch (componentsCount) {
+        case 1:
+          data0 = tileCompoments[0].items;
+
+          dataPosition = width * tileTop + tileLeft;
+          rowFeed = width - tileWidth;
+          sourcePosition = 0;
+          for (var j = 0; j < tileHeight; j++) {
+            for (var i = 0; i < tileWidth; i++)
+              data[dataPosition++] = data0[sourcePosition++];
+            dataPosition += rowFeed;
+          }
+          break;
+        case 3:
+          data0 = tileCompoments[0].items;
+          data1 = tileCompoments[1].items;
+          data2 = tileCompoments[2].items;
+
+          dataPosition = (width * tileTop + tileLeft) * 3;
+          rowFeed = (width - tileWidth) * 3;
+          sourcePosition = 0;
+          for (var j = 0; j < tileHeight; j++) {
+            for (var i = 0; i < tileWidth; i++) {
+              data[dataPosition++] = data0[sourcePosition];
+              data[dataPosition++] = data1[sourcePosition];
+              data[dataPosition++] = data2[sourcePosition];
+              sourcePosition++;
+            }
+            dataPosition += rowFeed;
+          }
+          break;
+        case 4:
+          data0 = tileCompoments[0].items;
+          data1 = tileCompoments[1].items;
+          data2 = tileCompoments[2].items;
+          data3 = tileCompoments[3].items;
+
+          dataPosition = (width * tileTop + tileLeft) * 4;
+          rowFeed = (width - tileWidth) * 4;
+          sourcePosition = 0;
+          for (var j = 0; j < tileHeight; j++) {
+            for (var i = 0; i < tileWidth; i++) {
+              data[dataPosition++] = data0[sourcePosition];
+              data[dataPosition++] = data1[sourcePosition];
+              data[dataPosition++] = data2[sourcePosition];
+              data[dataPosition++] = data3[sourcePosition];
+              sourcePosition++;
+            }
+            dataPosition += rowFeed;
+          }
+          break;
+      }
+    }
+
+    this.buffer = data;
+    this.bufferLength = data.length;
+  };
+  JpxStream.prototype.getChar = function jpxStreamGetChar() {
+    error('internal error: getChar is not valid on JpxStream');
+  };
+
+  return JpxStream;
 })();
 
 var DecryptStream = (function DecryptStreamClosure() {
@@ -1023,6 +1140,51 @@ var AsciiHexStream = (function AsciiHexStreamClosure() {
   };
 
   return AsciiHexStream;
+})();
+
+var RunLengthStream = (function RunLengthStreamClosure() {
+  function RunLengthStream(str) {
+    this.str = str;
+    this.dict = str.dict;
+
+    DecodeStream.call(this);
+  }
+
+  RunLengthStream.prototype = Object.create(DecodeStream.prototype);
+
+  RunLengthStream.prototype.readBlock = function runLengthStreamReadBlock() {
+    // The repeatHeader has following format. The first byte defines type of run
+    // and amount of bytes to repeat/copy: n = 0 through 127 - copy next n bytes
+    // (in addition to the second byte from the header), n = 129 through 255 -
+    // duplicate the second byte from the header (257 - n) times, n = 128 - end.
+    var repeatHeader = this.str.getBytes(2);
+    if (!repeatHeader || repeatHeader.length < 2 || repeatHeader[0] == 128) {
+      this.eof = true;
+      return;
+    }
+
+    var bufferLength = this.bufferLength;
+    var n = repeatHeader[0];
+    if (n < 128) {
+      // copy n bytes
+      var buffer = this.ensureBuffer(bufferLength + n + 1);
+      buffer[bufferLength++] = repeatHeader[1];
+      if (n > 0) {
+        var source = this.str.getBytes(n);
+        buffer.set(source, bufferLength);
+        bufferLength += n;
+      }
+    } else {
+      n = 257 - n;
+      var b = repeatHeader[1];
+      var buffer = this.ensureBuffer(bufferLength + n + 1);
+      for (var i = 0; i < n; i++)
+        buffer[bufferLength++] = b;
+    }
+    this.bufferLength = bufferLength;
+  };
+
+  return RunLengthStream;
 })();
 
 var CCITTFaxStream = (function CCITTFaxStreamClosure() {
@@ -1856,10 +2018,10 @@ var CCITTFaxStream = (function CCITTFaxStreamClosure() {
   // values. The first array element indicates whether a valid code is being
   // returned. The second array element is the actual code. The third array
   // element indicates whether EOF was reached.
-  var findTableCode = function ccittFaxStreamFindTableCode(start, end, table,
-                                                           limit) {
-    var limitValue = limit || 0;
+  CCITTFaxStream.prototype.findTableCode =
+    function ccittFaxStreamFindTableCode(start, end, table, limit) {
 
+    var limitValue = limit || 0;
     for (var i = start; i <= end; ++i) {
       var code = this.lookBits(i);
       if (code == EOF)
@@ -1890,7 +2052,7 @@ var CCITTFaxStream = (function CCITTFaxStreamClosure() {
         return p[1];
       }
     } else {
-      var result = findTableCode(1, 7, twoDimTable);
+      var result = this.findTableCode(1, 7, twoDimTable);
       if (result[0] && result[2])
         return result[1];
     }
@@ -1919,11 +2081,11 @@ var CCITTFaxStream = (function CCITTFaxStreamClosure() {
         return p[1];
       }
     } else {
-      var result = findTableCode(1, 9, whiteTable2);
+      var result = this.findTableCode(1, 9, whiteTable2);
       if (result[0])
         return result[1];
 
-      result = findTableCode(11, 12, whiteTable1);
+      result = this.findTableCode(11, 12, whiteTable1);
       if (result[0])
         return result[1];
     }
@@ -1952,15 +2114,15 @@ var CCITTFaxStream = (function CCITTFaxStreamClosure() {
         return p[1];
       }
     } else {
-      var result = findTableCode(2, 6, blackTable3);
+      var result = this.findTableCode(2, 6, blackTable3);
       if (result[0])
         return result[1];
 
-      result = findTableCode(7, 12, blackTable2, 64);
+      result = this.findTableCode(7, 12, blackTable2, 64);
       if (result[0])
         return result[1];
 
-      result = findTableCode(10, 13, blackTable1);
+      result = this.findTableCode(10, 13, blackTable1);
       if (result[0])
         return result[1];
     }
