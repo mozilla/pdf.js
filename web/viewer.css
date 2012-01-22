@@ -175,9 +175,47 @@ span#info {
   box-shadow: 0px 2px 10px #ff0;
 }
 
+#searchScrollView {
+  position: absolute;
+  top: 10px;
+  bottom: 10px;
+  left: 10px;
+  width: 280px;
+}
+
+#searchToolbar {
+  padding-left: 0px;
+  right: 0px;
+  padding-top: 0px;
+  padding-bottom: 5px;
+}
+
+#searchToolbar > input {
+  width: 220px;
+}
+
+#searchResults {
+  overflow: auto;
+  background-color: #fff;
+  position: absolute;
+  top: 30px;
+  bottom: 0px;
+  left: 0px;
+  right: 0;
+  font-size: smaller;
+  opacity: 0.7;
+}
+
+#searchResults a {
+  display: block;
+  white-space: pre;
+  text-decoration: none;
+  color: black;
+}
+
 #sidebarControls {
   position:absolute;
-  width: 120px;
+  width: 180px;
   height: 32px;
   left: 15px;
   bottom: 35px;

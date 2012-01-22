@@ -126,12 +126,22 @@
         <div id="outlineScrollView" hidden='true'>
           <div id="outlineView"></div>
         </div>
+        <div id="searchScrollView" hidden='true'>
+          <div id="searchToolbar">
+            <input id="searchTermsInput" onkeydown='if (event.keyCode == 13) PDFView.search()'>
+            <button id="searchButton" onclick='PDFView.search()'>Find</button>
+          </div>
+          <div id="searchResults"></div>
+        </div>
         <div id="sidebarControls">
           <button id="thumbsSwitch" title="Show Thumbnails" onclick="PDFView.switchSidebarView('thumbs')" data-selected>
             <img src="images/nav-thumbs.svg" align="top" height="16" alt="Thumbs" />
           </button>
           <button id="outlineSwitch" title="Show Document Outline" onclick="PDFView.switchSidebarView('outline')" disabled>
             <img src="images/nav-outline.svg" align="top" height="16" alt="Document Outline" />
+          </button>
+          <button id="searchSwitch" title="Show Search" onclick="PDFView.switchSidebarView('search')">
+            <img src="images/edit-find.svg" align="top" height="16" alt="Search Document" />
           </button>
         </div>
      </div>

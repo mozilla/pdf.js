@@ -144,7 +144,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         fontRef = fontRef || fontRes.get(fontName);
         var font = xref.fetchIfRef(fontRef);
         assertWellFormed(isDict(font));
-        if (!font.translated) {
+        if (!font.loadedName) {
           font.translated = self.translateFont(font, xref, resources,
                                                dependency);
           if (font.translated) {
@@ -454,6 +454,71 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         fnArray: fnArray,
         argsArray: argsArray
       };
+    },
+
+    getTextContent: function partialEvaluatorGetIRQueue(stream, resources) {
+
+      var self = this;
+      var xref = this.xref;
+
+      function handleSetFont(fontName, fontRef) {
+        var fontRes = resources.get('Font');
+
+        // TODO: TOASK: Is it possible to get here? If so, what does
+        // args[0].name should be like???
+        assert(fontRes, 'fontRes not available');
+
+        fontRes = xref.fetchIfRef(fontRes);
+        fontRef = fontRef || fontRes.get(fontName);
+        var font = xref.fetchIfRef(fontRef), tra;
+        assertWellFormed(isDict(font));
+        if (!font.translated) {
+          font.translated = self.translateFont(font, xref, resources);
+        }
+        return font;
+      }
+
+      resources = xref.fetchIfRef(resources) || new Dict();
+
+      var parser = new Parser(new Lexer(stream), false);
+      var res = resources;
+      var args = [], obj;
+
+      var text = '';
+      var font = null;
+      while (!isEOF(obj = parser.getObj())) {
+        if (isCmd(obj)) {
+          var cmd = obj.cmd;
+          switch (cmd) {
+            case 'Tf':
+              font = handleSetFont(args[0].name);
+              break;
+            case 'TJ':
+              var items = args[0];
+              for (var j = 0, jj = items.length; j < jj; j++) {
+                if (typeof items[j] === 'string') {
+                  text += fontCharsToUnicode(items[j],
+                    font.translated.properties);
+                } else if (items[j] < 0) {
+                  // making all negative offsets a space - better to have
+                  // a space in incorrect place than not have them at all
+                  text += ' ';
+                }
+              }
+              break;
+            case 'Tj':
+              text += fontCharsToUnicode(args[0], font.translated.properties);
+              break;
+          } // switch
+
+          args = [];
+        } else if (obj != null) {
+          assertWellFormed(args.length <= 33, 'Too many arguments');
+          args.push(obj);
+        }
+      }
+
+      return text;
     },
 
     extractDataStructures: function
@@ -836,15 +901,19 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
 
       if (type.name === 'Type3') {
         properties.coded = true;
-        var charProcs = xref.fetchIfRef(dict.get('CharProcs'));
-        var fontResources = xref.fetchIfRef(dict.get('Resources')) || resources;
-        properties.resources = fontResources;
-        properties.charProcIRQueues = {};
-        for (var key in charProcs.map) {
-          var glyphStream = xref.fetchIfRef(charProcs.map[key]);
-          var queueObj = {};
-          properties.charProcIRQueues[key] =
-            this.getIRQueue(glyphStream, fontResources, queueObj, dependency);
+        // read char procs only if dependency is specified
+        if (dependency) {
+          var charProcs = xref.fetchIfRef(dict.get('CharProcs'));
+          var fontResources = xref.fetchIfRef(dict.get('Resources')) ||
+            resources;
+          properties.resources = fontResources;
+          properties.charProcIRQueues = {};
+          for (var key in charProcs.map) {
+            var glyphStream = xref.fetchIfRef(charProcs.map[key]);
+            var queueObj = {};
+            properties.charProcIRQueues[key] =
+              this.getIRQueue(glyphStream, fontResources, queueObj, dependency);
+          }
         }
       }
 
