@@ -23,6 +23,7 @@ var CanvasExtraState = (function CanvasExtraStateClosure() {
     this.alphaIsShape = false;
     this.fontSize = 0;
     this.textMatrix = IDENTITY_MATRIX;
+    this.fontMatrix = IDENTITY_MATRIX;
     this.leading = 0;
     // Current point (in user coordinates)
     this.x = 0;
@@ -546,39 +547,35 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
     },
     setFont: function canvasGraphicsSetFont(fontRefName, size) {
       var fontObj = this.objs.get(fontRefName).fontObj;
+      var current = this.current;
 
-      if (!fontObj) {
+      if (!fontObj)
         throw 'Can\'t find font for ' + fontRefName;
-      }
+
+      // Slice-clone matrix so we can manipulate it without affecting original
+      if (fontObj.fontMatrix)
+        current.fontMatrix = fontObj.fontMatrix.slice(0);
+      else
+        current.fontMatrix = IDENTITY_MATRIX.slice(0);
 
       // A valid matrix needs all main diagonal elements to be non-zero
       // This also ensures we bypass FF bugzilla bug #719844.
-      if (fontObj.fontMatrix[0] === 0 ||
-          fontObj.fontMatrix[3] === 0) {
+      if (current.fontMatrix[0] === 0 ||
+          current.fontMatrix[3] === 0) {
         warn('Invalid font matrix for font ' + fontRefName);
-
-        // Fallback
-        fontObj.fontMatrix = IDENTITY_MATRIX;
       }
 
-      var name = fontObj.loadedName || 'sans-serif';
-
-      // Clone fontMatrix so we can manipulate it without affecting original
-      this.current.fontMatrix = fontObj.fontMatrix.slice(0);
-
       // The spec for Tf (setFont) says that 'size' specifies the font 'scale',
-      // and in some docs this can be negative. We implement this in fontMatrix.
+      // and in some docs this can be negative (inverted x-y axes).
+      // We implement this condition with fontMatrix.
       if (size < 0) {
         size = -size;
-        this.current.fontMatrix[0] = -fontObj.fontMatrix[0];
-        this.current.fontMatrix[3] = -fontObj.fontMatrix[3];
+        current.fontMatrix[0] *= -1;
+        current.fontMatrix[3] *= -1;
       }
 
       this.current.font = fontObj;
       this.current.fontSize = size;
-
-      // Cache font matrix sign
-      this.current.fontMatrixXSign = this.current.fontMatrix[0] > 0 ? 1 : -1;
 
       var name = fontObj.loadedName || 'sans-serif';
       var bold = fontObj.black ? (fontObj.bold ? 'bolder' : 'bold') :
@@ -692,7 +689,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
 
           var transformed = Util.applyTransform([glyph.width, 0], fontMatrix);
           var width = transformed[0] * fontSize +
-              current.fontMatrixXSign * charSpacing;
+              Util.sign(current.fontMatrix[0]) * charSpacing;
 
           ctx.translate(width, 0);
           current.x += width * textHScale;
@@ -723,13 +720,13 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
           var glyph = glyphs[i];
           if (glyph === null) {
             // word break
-            x += current.fontMatrixXSign * wordSpacing;
+            x += Util.sign(current.fontMatrix[0]) * wordSpacing;
             continue;
           }
 
           var char = glyph.fontChar;
           var charWidth = glyph.width * fontSize * 0.001 +
-              current.fontMatrixXSign * charSpacing;
+              Util.sign(current.fontMatrix[0]) * charSpacing;
 
           switch (textRenderingMode) {
             default: // other unsupported rendering modes

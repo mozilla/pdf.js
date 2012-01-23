@@ -93,6 +93,10 @@ var Util = (function UtilClosure() {
     return [xt, yt];
   };
 
+  Util.sign = function sign(num) {
+    return num < 0 ? -1 : 1;
+  };
+
   return Util;
 })();
 
