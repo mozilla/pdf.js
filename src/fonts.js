@@ -2596,9 +2596,7 @@ var Type1Parser = function type1Parser() {
 
     str = str.substr(start, count);
 
-    // Trim
-    str = str.replace(/^\s+/, '');
-    str = str.replace(/\s+$/, '');
+    str = str.trim();
     // Remove adjacent spaces
     str = str.replace(/\s+/g, ' ');
 
