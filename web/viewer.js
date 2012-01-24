@@ -995,10 +995,14 @@ window.addEventListener('load', function webViewerLoad(evt) {
               window.location.toString() : params.file || kDefaultURL;
   PDFView.open(file, parseFloat(scale));
 
-  if (!window.File || !window.FileReader || !window.FileList || !window.Blob)
+  if (PDFJS.isFirefoxExtension || !window.File || !window.FileReader ||
+      !window.FileList || !window.Blob) {
     document.getElementById('fileInput').setAttribute('hidden', 'true');
-  else
+    document.getElementById('fileInputSeperator')
+                              .setAttribute('hidden', 'true');
+  } else {
     document.getElementById('fileInput').value = null;
+  }
 
   if ('disableWorker' in params)
     PDFJS.disableWorker = (params['disableWorker'] === 'true');
