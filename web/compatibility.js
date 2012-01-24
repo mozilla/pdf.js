@@ -224,3 +224,10 @@
     }
   });
 })();
+
+//IE9 console
+(function checkConsoleCompatibility() {
+  if (typeof console == "undefined") {
+    console = {log: function() {}};
+  }
+})();
