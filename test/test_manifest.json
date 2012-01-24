@@ -429,5 +429,48 @@
       "rounds": 1,
       "link": false,
       "type": "eq"
+    },
+    {  "id": "annot-genderdifferences",
+       "file": "pdfs/annot-genderdifferences.pdf",
+       "md5": "3e01b11611aebb5d01b3d529efbfdded",
+       "rounds": 1,
+       "type": "eq"
+    },
+    {  "id": "annot-html5-canvas-cheat-sheet",
+       "file": "pdfs/annot-canvas.pdf",
+       "md5": "660bb120f74e888be328762173ef5b73",
+       "rounds": 1,
+       "type": "eq"
+    },
+    {  "id": "annot-freeculture",
+       "file": "pdfs/annot-freeculture.pdf",
+       "md5": "31a0233f06c7e45662929f23efa8396d",
+       "rounds": 1,
+       "pageLimit": 15,
+       "type": "eq"
+    },
+    {  "id": "annot-issue918",
+       "file": "pdfs/annot-issue918.pdf",
+       "md5": "e4236db19de2550848b87203f98bbdda",
+       "rounds": 1,
+       "type": "eq"
+    },
+    {  "id": "annot-rotation",
+       "file": "pdfs/annot-rotation.pdf",
+       "md5": "8b21d53b977f95354d0a9acdc84fac55",
+       "rounds": 1,
+       "type": "eq"
+    },
+    {  "id": "annot-tracemonkey-eq",
+       "file": "pdfs/annot-tracemonkey.pdf",
+       "md5": "38d405739ccf394976e2ec7f70da9b7f",
+       "rounds": 1,
+       "type": "eq"
+    },
+    {  "id": "annot-chart",
+       "file": "pdfs/annot-chart.pdf",
+       "md5": "8209f6113142926442dc357e273a0a43",
+       "rounds": 1,
+       "type": "eq"
     }
 ]
