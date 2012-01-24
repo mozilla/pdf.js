@@ -21,47 +21,74 @@ function log(aMsg) {
 }
 
 const NS_ERROR_WONT_HANDLE_CONTENT = 0x805d0001;
+
 function pdfContentHandler() {
-}
+};
 
 pdfContentHandler.prototype = {
-  handleContent: function handleContent(aMimetype, aContext, aRequest) {
-    if (aMimetype != PDF_CONTENT_TYPE)
-      throw NS_ERROR_WONT_HANDLE_CONTENT;
 
-    if (!(aRequest instanceof Ci.nsIChannel))
-      throw NS_ERROR_WONT_HANDLE_CONTENT;
+  // properties required for XPCOM registration:
+  classID: Components.ID('{2278dfd0-b75c-11e0-8257-1ba3d93c9f1a}'),
+  classDescription: 'pdf.js Component',
+  contractID: '@mozilla.org/streamconv;1?from=application/pdf&to=*/*',
+  
+  QueryInterface: XPCOMUtils.generateQI([
+      Ci.nsISupports,
+      Ci.nsIStreamConverter,
+      Ci.nsIStreamListener,
+      Ci.nsIRequestObserver
+  ]),
 
-    if (!Services.prefs.getBoolPref('extensions.pdf.js.active'))
-      throw NS_ERROR_WONT_HANDLE_CONTENT;
+  /*
+   * This component works as such:
+   * 1. asyncConvertData stores the listener
+   * 2. onStartRequest creates a new channel, streams the viewer and cancels
+   *    the request so pdf.js can do the request
+   * Since the request is cancelled onDataAvailable should not be called. The
+   * onStopRequest does nothing. The convert function just returns the stream,
+   * it's just the synchronous version of asyncConvertData.
+   */
 
-    let window = null;
-    let callbacks = aRequest.notificationCallbacks ||
-                    aRequest.loadGroup.notificationCallbacks;
-    if (!callbacks)
-      return;
-
-    window = callbacks.getInterface(Ci.nsIDOMWindow);
-
-    let url = null;
-    try {
-      url = Services.prefs.getCharPref('extensions.pdf.js.url');
-    } catch (e) {
-      log('Error retrieving the pdf.js base url - ' + e);
-      throw NS_ERROR_WONT_HANDLE_CONTENT;
-    }
-
-    let targetUrl = aRequest.URI.spec;
-    if (targetUrl.indexOf('#pdfjs.action=download') >= 0)
-      throw NS_ERROR_WONT_HANDLE_CONTENT;
-
-    aRequest.cancel(Cr.NS_BINDING_ABORTED);
-    window.location = url.replace('%s', encodeURIComponent(targetUrl));
+  // nsIStreamConverter::convert
+  convert: function (aFromStream, aFromType, aToType, aCtxt) {
+      return aFromStream;
   },
 
-  classID: Components.ID('{2278dfd0-b75c-11e0-8257-1ba3d93c9f1a}'),
-  QueryInterface: XPCOMUtils.generateQI([Ci.nsIContentHandler])
+  // nsIStreamConverter::asyncConvertData
+  asyncConvertData: function (aFromType, aToType, aListener, aCtxt) {
+    // Store the listener passed to us
+    this.listener = aListener;
+  },
+
+  // nsIStreamListener::onDataAvailable
+  onDataAvailable: function (aRequest, aContext, aInputStream, aOffset, aCount) {
+    // Do nothing since all the data loading is handled by the viewer.
+    log("SANITY CHECK: onDataAvailable SHOULD NOT BE CALLED!");
+  },
+
+  // nsIRequestObserver::onStartRequest
+  onStartRequest: function (aRequest, aContext) {
+    // Setup the request so we can use it below.
+    aRequest.QueryInterface(Ci.nsIChannel);
+
+    // Create a new channel that is viewer loaded as a resource.
+    var ioService = Cc["@mozilla.org/network/io-service;1"]
+                      .getService(Ci.nsIIOService);
+    var channel = ioService.newChannel(
+                    'resource://pdf.js/web/viewer.html', null, null);
+    // Keep the URL the same so the browser sees it as the same.
+    channel.originalURI = aRequest.originalURI;
+    channel.asyncOpen(this.listener, aContext);
+
+    // Cancel the request so the viewer can handle it.
+    aRequest.cancel(Cr.NS_BINDING_ABORTED);
+  },
+
+  // nsIRequestObserver::onStopRequest
+  onStopRequest: function (aRequest, aContext, aStatusCode) {
+    // Do nothing.
+    return;
+  }
 };
 
 var NSGetFactory = XPCOMUtils.generateNSGetFactory([pdfContentHandler]);
-

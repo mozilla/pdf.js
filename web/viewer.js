@@ -73,23 +73,11 @@ var Settings = (function SettingsClosure() {
     }
     return true;
   })();
-  var extPrefix = 'extensions.uriloader@pdf.js';
-  var isExtension = location.protocol == 'chrome:' && !isLocalStorageEnabled;
-  var inPrivateBrowsing = false;
-  if (isExtension) {
-    var pbs = Components.classes['@mozilla.org/privatebrowsing;1']
-              .getService(Components.interfaces.nsIPrivateBrowsingService);
-    inPrivateBrowsing = pbs.privateBrowsingEnabled;
-  }
 
   function Settings(fingerprint) {
     var database = null;
     var index;
-    if (inPrivateBrowsing)
-      return false;
-    else if (isExtension)
-      database = Application.prefs.getValue(extPrefix + '.database', '{}');
-    else if (isLocalStorageEnabled)
+    if (isLocalStorageEnabled)
       database = localStorage.getItem('database') || '{}';
     else
       return false;
@@ -110,31 +98,20 @@ var Settings = (function SettingsClosure() {
       index = database.files.push({fingerprint: fingerprint}) - 1;
     this.file = database.files[index];
     this.database = database;
-    if (isExtension)
-      Application.prefs.setValue(extPrefix + '.database',
-          JSON.stringify(database));
-    else if (isLocalStorageEnabled)
+    if (isLocalStorageEnabled)
       localStorage.setItem('database', JSON.stringify(database));
   }
 
   Settings.prototype = {
     set: function settingsSet(name, val) {
-      if (inPrivateBrowsing)
-        return false;
       var file = this.file;
       file[name] = val;
-      if (isExtension)
-        Application.prefs.setValue(extPrefix + '.database',
-            JSON.stringify(this.database));
-      else if (isLocalStorageEnabled)
+      if (isLocalStorageEnabled)
         localStorage.setItem('database', JSON.stringify(this.database));
     },
 
     get: function settingsGet(name, defaultValue) {
-      if (inPrivateBrowsing)
-        return defaultValue;
-      else
-        return this.file[name] || defaultValue;
+      return this.file[name] || defaultValue;
     }
   };
 
@@ -1011,7 +988,9 @@ window.addEventListener('load', function webViewerLoad(evt) {
   }
 
   var scale = ('scale' in params) ? params.scale : 0;
-  PDFView.open(params.file || kDefaultURL, parseFloat(scale));
+  var file = PDFJS.isFirefoxExtension ?
+              window.location.toString() : params.file || kDefaultURL;
+  PDFView.open(file, parseFloat(scale));
 
   if (!window.File || !window.FileReader || !window.FileList || !window.Blob)
     document.getElementById('fileInput').setAttribute('hidden', 'true');
