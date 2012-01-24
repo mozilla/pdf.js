@@ -255,8 +255,8 @@ var Promise = (function PromiseClosure() {
         return;
       }
       if (this._data !== EMPTY_PROMISE) {
-        throw 'Promise ' + this.name +
-                                ': Cannot set the data of a promise twice';
+        error('Promise ' + this.name +
+              ': Cannot set the data of a promise twice');
       }
       this._data = value;
       this.hasData = true;
@@ -268,7 +268,7 @@ var Promise = (function PromiseClosure() {
 
     get data() {
       if (this._data === EMPTY_PROMISE) {
-        throw 'Promise ' + this.name + ': Cannot get data that isn\'t set';
+        error('Promise ' + this.name + ': Cannot get data that isn\'t set');
       }
       return this._data;
     },
@@ -283,10 +283,10 @@ var Promise = (function PromiseClosure() {
 
     resolve: function promiseResolve(data) {
       if (this.isResolved) {
-        throw 'A Promise can be resolved only once ' + this.name;
+        error('A Promise can be resolved only once ' + this.name);
       }
       if (this.isRejected) {
-        throw 'The Promise was already rejected ' + this.name;
+        error('The Promise was already rejected ' + this.name);
       }
 
       this.isResolved = true;
@@ -300,10 +300,10 @@ var Promise = (function PromiseClosure() {
 
     reject: function proimseReject(reason) {
       if (this.isRejected) {
-        throw 'A Promise can be rejected only once ' + this.name;
+        error('A Promise can be rejected only once ' + this.name);
       }
       if (this.isResolved) {
-        throw 'The Promise was already resolved ' + this.name;
+        error('The Promise was already resolved ' + this.name);
       }
 
       this.isRejected = true;
@@ -317,7 +317,7 @@ var Promise = (function PromiseClosure() {
 
     then: function promiseThen(callback, errback) {
       if (!callback) {
-        throw 'Requiring callback' + this.name;
+        error('Requiring callback' + this.name);
       }
 
       // If the promise is already resolved, call the callback directly.

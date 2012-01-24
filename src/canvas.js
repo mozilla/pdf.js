@@ -548,7 +548,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       var fontObj = this.objs.get(fontRefName).fontObj;
 
       if (!fontObj) {
-        throw 'Can\'t find font for ' + fontRefName;
+        error('Can\'t find font for ' + fontRefName);
       }
 
       var name = fontObj.loadedName || 'sans-serif';
@@ -866,7 +866,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       } else if (IR[0] == 'RadialAxial' || IR[0] == 'Dummy') {
         var pattern = Pattern.shadingFromIR(this.ctx, IR);
       } else {
-        throw 'Unkown IR type';
+        error('Unkown IR type ' + IR[0]);
       }
       return pattern;
     },
