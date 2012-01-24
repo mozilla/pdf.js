@@ -23,7 +23,7 @@ function log(aMsg) {
 const NS_ERROR_WONT_HANDLE_CONTENT = 0x805d0001;
 
 function pdfContentHandler() {
-};
+}
 
 pdfContentHandler.prototype = {
 
@@ -31,7 +31,7 @@ pdfContentHandler.prototype = {
   classID: Components.ID('{2278dfd0-b75c-11e0-8257-1ba3d93c9f1a}'),
   classDescription: 'pdf.js Component',
   contractID: '@mozilla.org/streamconv;1?from=application/pdf&to=*/*',
-  
+
   QueryInterface: XPCOMUtils.generateQI([
       Ci.nsISupports,
       Ci.nsIStreamConverter,
@@ -50,29 +50,29 @@ pdfContentHandler.prototype = {
    */
 
   // nsIStreamConverter::convert
-  convert: function (aFromStream, aFromType, aToType, aCtxt) {
+  convert: function(aFromStream, aFromType, aToType, aCtxt) {
       return aFromStream;
   },
 
   // nsIStreamConverter::asyncConvertData
-  asyncConvertData: function (aFromType, aToType, aListener, aCtxt) {
+  asyncConvertData: function(aFromType, aToType, aListener, aCtxt) {
     // Store the listener passed to us
     this.listener = aListener;
   },
 
   // nsIStreamListener::onDataAvailable
-  onDataAvailable: function (aRequest, aContext, aInputStream, aOffset, aCount) {
+  onDataAvailable: function(aRequest, aContext, aInputStream, aOffset, aCount) {
     // Do nothing since all the data loading is handled by the viewer.
-    log("SANITY CHECK: onDataAvailable SHOULD NOT BE CALLED!");
+    log('SANITY CHECK: onDataAvailable SHOULD NOT BE CALLED!');
   },
 
   // nsIRequestObserver::onStartRequest
-  onStartRequest: function (aRequest, aContext) {
+  onStartRequest: function(aRequest, aContext) {
     // Setup the request so we can use it below.
     aRequest.QueryInterface(Ci.nsIChannel);
 
     // Create a new channel that is viewer loaded as a resource.
-    var ioService = Cc["@mozilla.org/network/io-service;1"]
+    var ioService = Cc['@mozilla.org/network/io-service;1']
                       .getService(Ci.nsIIOService);
     var channel = ioService.newChannel(
                     'resource://pdf.js/web/viewer.html', null, null);
@@ -85,7 +85,7 @@ pdfContentHandler.prototype = {
   },
 
   // nsIRequestObserver::onStopRequest
-  onStopRequest: function (aRequest, aContext, aStatusCode) {
+  onStopRequest: function(aRequest, aContext, aStatusCode) {
     // Do nothing.
     return;
   }

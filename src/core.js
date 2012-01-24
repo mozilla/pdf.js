@@ -656,7 +656,7 @@ var PDFDoc = (function PDFDocClosure() {
         messageHandler.send('test', testObj);
         return;
       } catch (e) {
-        warn('The worker has been disabled.')
+        warn('The worker has been disabled.');
       }
     }
     // Either workers are disabled, not supported or have thrown an exception.
