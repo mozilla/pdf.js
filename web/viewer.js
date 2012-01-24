@@ -269,18 +269,15 @@ var PDFView = {
   },
 
   getDestinationHash: function pdfViewGetDestinationHash(dest) {
-    // We add the full url for the extension so the anchor links don't come up
-    // as resource:// urls and so open in new tab/window works.
-    var url = PDFJS.isFirefoxExtension ? this.url.split('#')[0] : '';
     if (typeof dest === 'string')
-      return url + '#' + escape(dest);
+      return PDFView.getAnchorUrl('#' + escape(dest));
     if (dest instanceof Array) {
       var destRef = dest[0]; // see navigateTo method for dest format
       var pageNumber = destRef instanceof Object ?
         this.pagesRefMap[destRef.num + ' ' + destRef.gen + ' R'] :
         (destRef + 1);
       if (pageNumber) {
-        var pdfOpenParams = url + '#page=' + pageNumber;
+        var pdfOpenParams = PDFView.getAnchorUrl('#page=' + pageNumber);
         var destKind = dest[1];
         if ('name' in destKind && destKind.name == 'XYZ') {
           var scale = (dest[4] || this.currentScale);
@@ -293,6 +290,17 @@ var PDFView = {
       }
     }
     return '';
+  },
+
+  /**
+   * For the firefox extension we prefix the full url on anchor links so they
+   * don't come up as resource:// urls and so open in new tab/window works.
+   * @param {String} anchor The anchor hash include the #.
+   */
+  getAnchorUrl: function getAnchorUrl(anchor) {
+    if (PDFJS.isFirefoxExtension)
+      return this.url.split('#')[0] + anchor;
+    return anchor;
   },
 
   /**
@@ -1087,8 +1095,8 @@ function updateViewarea() {
   store.set('zoom', normalizedScaleValue);
   store.set('scrollLeft', Math.round(topLeft.x));
   store.set('scrollTop', Math.round(topLeft.y));
-
-  document.getElementById('viewBookmark').href = pdfOpenParams;
+  var href = PDFView.getAnchorUrl(pdfOpenParams);
+  document.getElementById('viewBookmark').href = href;
 }
 
 window.addEventListener('scroll', function webViewerScroll(evt) {
