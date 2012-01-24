@@ -269,15 +269,18 @@ var PDFView = {
   },
 
   getDestinationHash: function pdfViewGetDestinationHash(dest) {
+    // We add the full url for the extension so the anchor links don't come up
+    // as resource:// urls and so open in new tab/window works.
+    var url = PDFJS.isFirefoxExtension ? this.url.split('#')[0] : '';
     if (typeof dest === 'string')
-      return '#' + escape(dest);
+      return url + '#' + escape(dest);
     if (dest instanceof Array) {
       var destRef = dest[0]; // see navigateTo method for dest format
       var pageNumber = destRef instanceof Object ?
         this.pagesRefMap[destRef.num + ' ' + destRef.gen + ' R'] :
         (destRef + 1);
       if (pageNumber) {
-        var pdfOpenParams = '#page=' + pageNumber;
+        var pdfOpenParams = url + '#page=' + pageNumber;
         var destKind = dest[1];
         if ('name' in destKind && destKind.name == 'XYZ') {
           var scale = (dest[4] || this.currentScale);
