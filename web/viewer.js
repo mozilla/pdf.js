@@ -66,12 +66,12 @@ var RenderingQueue = (function RenderingQueueClosure() {
 // If not, we use FUEL in FF
 var Settings = (function SettingsClosure() {
   var isLocalStorageEnabled = (function localStorageEnabledTest() {
+    // Feature test as per http://diveintohtml5.info/storage.html
     try {
-      localStorage;
+      return 'localStorage' in window && window['localStorage'] !== null;
     } catch (e) {
       return false;
     }
-    return true;
   })();
   var extPrefix = 'extensions.uriloader@pdf.js';
   var isExtension = location.protocol == 'chrome:' && !isLocalStorageEnabled;
@@ -119,8 +119,9 @@ var Settings = (function SettingsClosure() {
 
   Settings.prototype = {
     set: function settingsSet(name, val) {
-      if (inPrivateBrowsing)
+      if (inPrivateBrowsing || !('file' in this))
         return false;
+
       var file = this.file;
       file[name] = val;
       if (isExtension)
@@ -131,10 +132,10 @@ var Settings = (function SettingsClosure() {
     },
 
     get: function settingsGet(name, defaultValue) {
-      if (inPrivateBrowsing)
+      if (inPrivateBrowsing || !('file' in this))
         return defaultValue;
-      else
-        return this.file[name] || defaultValue;
+
+      return this.file[name] || defaultValue;
     }
   };
 
