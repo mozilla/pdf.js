@@ -225,9 +225,9 @@
   });
 })();
 
-//IE9 console
+// Check console compatability
 (function checkConsoleCompatibility() {
-  if (typeof console == "undefined") {
+  if (typeof console == 'undefined') {
     console = {log: function() {}};
   }
 })();
