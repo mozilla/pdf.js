@@ -692,8 +692,10 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
             charDims.x > annot.markupGeom[quad].brx + charDims.spaceWidth) {
           annot.markup[quad] += ' ';
         }
-        annot.markupGeom[quad].brx = charDims.x + charDims.width;
-        annot.markup[quad] += character;
+        if (annot.markupGeom[quad].brx < charDims.x + charDims.width) {
+          annot.markupGeom[quad].brx = charDims.x + charDims.width;
+          annot.markup[quad] += character;
+        }
       }
     },
     showText: function canvasGraphicsShowText(str, skipTextSelection) {
