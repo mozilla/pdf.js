@@ -62,13 +62,16 @@ var RenderingQueue = (function RenderingQueueClosure() {
 })();
 
 // Settings Manager - This is a utility for saving settings
-// First we see if localStorage is available, FF bug #495747
+// First we see if localStorage is available
 // If not, we use FUEL in FF
 var Settings = (function SettingsClosure() {
   var isLocalStorageEnabled = (function localStorageEnabledTest() {
     // Feature test as per http://diveintohtml5.info/storage.html
+    // The additional localStorage call is to get around a FF quirk, see
+    // bug #495747 in bugzilla
     try {
-      return 'localStorage' in window && window['localStorage'] !== null;
+      return 'localStorage' in window && window['localStorage'] !== null &&
+          localStorage;
     } catch (e) {
       return false;
     }
