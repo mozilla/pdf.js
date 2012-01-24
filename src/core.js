@@ -399,9 +399,10 @@ var Page = (function PageClosure() {
           case 'Text':
             var content = annotation.get('Contents');
             var title = annotation.get('T');
+            var name = annotation.get('Name');
             item.content = stringToPDFString(content || '');
             item.title = stringToPDFString(title || '');
-            item.name = annotation.get('Name').name;
+            item.name = name ? name.name : 'Note';
             break;
           case 'Highlight':
           case 'Underline':
