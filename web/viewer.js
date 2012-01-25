@@ -249,7 +249,14 @@ var PDFView = {
   },
 
   download: function pdfViewDownload() {
-    window.open(this.url + '#pdfjs.action=download', '_parent');
+    var url = this.url.split('#')[0];
+    // For the extension we add an extra '?' to force the page to reload, its
+    // stripped off by the extension.
+    if (PDFJS.isFirefoxExtension)
+      url += '?#pdfjs.action=download';
+    else
+      url += '#pdfjs.action=download', '_parent';
+    window.open(url, '_parent');
   },
 
   navigateTo: function pdfViewNavigateTo(dest) {

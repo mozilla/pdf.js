@@ -70,6 +70,17 @@ pdfContentHandler.prototype = {
   onStartRequest: function(aRequest, aContext) {
     // Setup the request so we can use it below.
     aRequest.QueryInterface(Ci.nsIChannel);
+    // Cancel the request so the viewer can handle it.
+    aRequest.cancel(Cr.NS_BINDING_ABORTED);
+
+    // Check if we should download.
+    var targetUrl = aRequest.originalURI.spec;
+    var downloadHash = targetUrl.indexOf('?#pdfjs.action=download');
+    if (downloadHash >= 0) {
+      targetUrl = targetUrl.substring(0, downloadHash);
+      Services.wm.getMostRecentWindow("navigator:browser").saveURL(targetUrl);
+      return;
+    }
 
     // Create a new channel that is viewer loaded as a resource.
     var ioService = Cc['@mozilla.org/network/io-service;1']
@@ -79,9 +90,6 @@ pdfContentHandler.prototype = {
     // Keep the URL the same so the browser sees it as the same.
     channel.originalURI = aRequest.originalURI;
     channel.asyncOpen(this.listener, aContext);
-
-    // Cancel the request so the viewer can handle it.
-    aRequest.cancel(Cr.NS_BINDING_ABORTED);
   },
 
   // nsIRequestObserver::onStopRequest
