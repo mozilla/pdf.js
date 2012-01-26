@@ -6,6 +6,7 @@
 var kDefaultURL = 'compressed.tracemonkey-pldi-09.pdf';
 var kDefaultScale = 'auto';
 var kDefaultScaleDelta = 1.1;
+var kUnknownScale = 0;
 var kCacheSize = 20;
 var kCssUnits = 96.0 / 72.0;
 var kScrollbarPadding = 40;
@@ -148,7 +149,7 @@ var currentPageNumber = 1;
 var PDFView = {
   pages: [],
   thumbnails: [],
-  currentScale: 0,
+  currentScale: kUnknownScale,
   currentScaleValue: null,
   initialBookmark: document.location.hash.substring(1),
 
@@ -452,9 +453,15 @@ var PDFView = {
     }
     else if (storedHash)
       this.setHash(storedHash);
-    else {
-      this.parseScale(scale || kDefaultScale, true);
+    else if (scale) {
+      this.parseScale(scale, true);
       this.page = 1;
+    }
+
+    if (PDFView.currentScale === kUnknownScale) {
+      // Scale was not initialized: invalid bookmark or scale was not specified.
+      // Setting the default one.
+      this.parseScale(kDefaultScale, true);
     }
   },
 
@@ -742,6 +749,8 @@ var PageView = function pageView(container, content, id, pageWidth, pageHeight,
 
       if (scale && scale !== PDFView.currentScale)
         PDFView.parseScale(scale, true);
+      else if (PDFView.currentScale === kUnknownScale)
+        PDFView.parseScale(kDefaultScale, true);
 
       setTimeout(function pageViewScrollIntoViewRelayout() {
         // letting page to re-layout before scrolling
