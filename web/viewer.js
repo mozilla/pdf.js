@@ -61,6 +61,31 @@ var RenderingQueue = (function RenderingQueueClosure() {
   return RenderingQueue;
 })();
 
+var FirefoxCom = (function FirefoxComClosure() {
+  return {
+    /**
+     * Creates an event that hopefully the extension is listening for and will
+     * synchronously respond to.
+     * @param {String} action The action to trigger.
+     * @param {String} data Optional data to send.
+     * @return {*} The response.
+     */
+    request: function(action, data) {
+      var request = document.createTextNode('');
+      request.setUserData('action', action, null);
+      request.setUserData('data', data, null);
+      document.documentElement.appendChild(request);
+
+      var sender = document.createEvent('Events');
+      sender.initEvent('pdf.js.message', true, false);
+      request.dispatchEvent(sender);
+      var response = request.getUserData('response');
+      document.documentElement.removeChild(request);
+      return response;
+    }
+  };
+})();
+
 // Settings Manager - This is a utility for saving settings
 // First we see if localStorage is available, FF bug #495747
 // If not, we use FUEL in FF
@@ -74,10 +99,14 @@ var Settings = (function SettingsClosure() {
     return true;
   })();
 
+  var isFirefoxExtension = PDFJS.isFirefoxExtension;
+
   function Settings(fingerprint) {
     var database = null;
     var index;
-    if (isLocalStorageEnabled)
+    if (isFirefoxExtension)
+      database = FirefoxCom.request('getDatabase', null);
+    else if (isLocalStorageEnabled)
       database = localStorage.getItem('database') || '{}';
     else
       return false;
@@ -106,8 +135,11 @@ var Settings = (function SettingsClosure() {
     set: function settingsSet(name, val) {
       var file = this.file;
       file[name] = val;
-      if (isLocalStorageEnabled)
-        localStorage.setItem('database', JSON.stringify(this.database));
+      var database = JSON.stringify(this.database);
+      if (isFirefoxExtension)
+        FirefoxCom.request('setDatabase', database);
+      else if (isLocalStorageEnabled)
+        localStorage.setItem('database', database);
     },
 
     get: function settingsGet(name, defaultValue) {
@@ -250,13 +282,12 @@ var PDFView = {
 
   download: function pdfViewDownload() {
     var url = this.url.split('#')[0];
-    // For the extension we add an extra '?' to force the page to reload, its
-    // stripped off by the extension.
-    if (PDFJS.isFirefoxExtension)
-      url += '?#pdfjs.action=download';
-    else
+    if (PDFJS.isFirefoxExtension) {
+      FirefoxCom.request('download', url);
+    } else {
       url += '#pdfjs.action=download', '_parent';
-    window.open(url, '_parent');
+      window.open(url, '_parent');
+    }
   },
 
   navigateTo: function pdfViewNavigateTo(dest) {
