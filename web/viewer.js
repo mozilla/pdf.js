@@ -203,12 +203,12 @@ var PDFView = {
 
   zoomIn: function pdfViewZoomIn() {
     var newScale = Math.min(kMaxScale, this.currentScale * kDefaultScaleDelta);
-    this.setScale(newScale, true);
+    this.parseScale(newScale, true);
   },
 
   zoomOut: function pdfViewZoomOut() {
     var newScale = Math.max(kMinScale, this.currentScale / kDefaultScaleDelta);
-    this.setScale(newScale, true);
+    this.parseScale(newScale, true);
   },
 
   set page(val) {
@@ -1267,7 +1267,7 @@ window.addEventListener('keydown', function keydown(evt) {
       handled = true;
       break;
     case 48: // '0'
-      PDFView.setScale(kDefaultScale, true);
+      PDFView.parseScale(kDefaultScale, true);
       handled = true;
       break;
     case 37: // left arrow
