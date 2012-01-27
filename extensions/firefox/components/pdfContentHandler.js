@@ -7,8 +7,10 @@ const Cc = Components.classes;
 const Ci = Components.interfaces;
 const Cr = Components.results;
 const Cu = Components.utils;
-
+const PDFJS_EVENT_ID = 'pdf.js.message';
 const PDF_CONTENT_TYPE = 'application/pdf';
+const NS_ERROR_NOT_IMPLEMENTED = 0x80004001;
+const EXT_PREFIX = 'extensions.uriloader@pdf.js';
 
 Cu.import('resource://gre/modules/XPCOMUtils.jsm');
 Cu.import('resource://gre/modules/Services.jsm');
@@ -19,8 +21,50 @@ function log(aMsg) {
                                      .logStringMessage(msg);
   dump(msg + '\n');
 }
+let application = Cc['@mozilla.org/fuel/application;1']
+                    .getService(Ci.fuelIApplication);
+let privateBrowsing = Cc['@mozilla.org/privatebrowsing;1']
+                        .getService(Ci.nsIPrivateBrowsingService);
+let inPrivateBrowswing = privateBrowsing.privateBrowsingEnabled;
 
-const NS_ERROR_NOT_IMPLEMENTED = 0x80004001;
+// All the priviledged actions.
+function ChromeActions() {
+  this.inPrivateBrowswing = privateBrowsing.privateBrowsingEnabled;
+}
+ChromeActions.prototype = {
+  download: function(data) {
+    Services.wm.getMostRecentWindow('navigator:browser').saveURL(data);
+  },
+  setDatabase: function() {
+    if (this.inPrivateBrowswing)
+      return;
+    application.prefs.setValue(EXT_PREFIX + '.database', data);
+  },
+  getDatabase: function() {
+    if (this.inPrivateBrowswing)
+      return '{}';
+    return application.prefs.getValue(EXT_PREFIX + '.database', '{}');
+  }
+};
+
+// Event listener to trigger chrome privedged code.
+function RequestListener(actions) {
+  this.actions = actions;
+}
+// Recieves an event and synchronously responds.
+RequestListener.prototype.recieve = function(event) {
+  var message = event.target;
+  var action = message.getUserData('action');
+  var data = message.getUserData('data');
+  var actions = this.actions;
+  if (!(action in actions)) {
+    log('Unknown action: ' + action);
+    return;
+  }
+  var response = actions[action].call(this.actions, data);
+  message.setUserData('response', response, null);
+};
+
 
 function pdfContentHandler() {
 }
@@ -70,6 +114,7 @@ pdfContentHandler.prototype = {
 
   // nsIRequestObserver::onStartRequest
   onStartRequest: function(aRequest, aContext) {
+
     // Setup the request so we can use it below.
     aRequest.QueryInterface(Ci.nsIChannel);
     // Cancel the request so the viewer can handle it.
@@ -80,15 +125,34 @@ pdfContentHandler.prototype = {
                       .getService(Ci.nsIIOService);
     var channel = ioService.newChannel(
                     'resource://pdf.js/web/viewer.html', null, null);
+
     // Keep the URL the same so the browser sees it as the same.
     channel.originalURI = aRequest.originalURI;
     channel.asyncOpen(this.listener, aContext);
+
+    // Setup a global listener waiting for the next DOM to be created and verfiy
+    // that its the one we want by its URL. When the correct DOM is found create
+    // an event listener on that window for the pdf.js events that require
+    // chrome priviledges.
+    var url = aRequest.originalURI.spec;
+    var gb = Services.wm.getMostRecentWindow('navigator:browser');
+    var domListener = function domListener(event) {
+      var doc = event.originalTarget;
+      var win = doc.defaultView;
+      if (doc.location.href === url) {
+        gb.removeEventListener('DOMContentLoaded', domListener);
+        var requestListener = new RequestListener(new ChromeActions());
+        win.addEventListener(PDFJS_EVENT_ID, function(event) {
+          requestListener.recieve(event);
+        }, false, true);
+      }
+    };
+    gb.addEventListener('DOMContentLoaded', domListener, false);
   },
 
   // nsIRequestObserver::onStopRequest
   onStopRequest: function(aRequest, aContext, aStatusCode) {
     // Do nothing.
-    return;
   }
 };
 
