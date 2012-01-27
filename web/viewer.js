@@ -862,7 +862,7 @@ var PageView = function pageView(container, content, id, pageWidth, pageHeight,
 
 var ThumbnailView = function thumbnailView(container, page, id, pageRatio) {
   var anchor = document.createElement('a');
-  anchor.href = '#' + id;
+  anchor.href = PDFView.getAnchorUrl('#page=' + id);
   anchor.onclick = function stopNivigation() {
     PDFView.page = id;
     return false;
