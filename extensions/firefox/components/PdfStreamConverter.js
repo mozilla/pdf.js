@@ -16,7 +16,7 @@ Cu.import('resource://gre/modules/XPCOMUtils.jsm');
 Cu.import('resource://gre/modules/Services.jsm');
 
 function log(aMsg) {
-  let msg = 'pdfContentHandler.js: ' + (aMsg.join ? aMsg.join('') : aMsg);
+  let msg = 'PdfStreamConverter.js: ' + (aMsg.join ? aMsg.join('') : aMsg);
   Cc['@mozilla.org/consoleservice;1'].getService(Ci.nsIConsoleService)
                                      .logStringMessage(msg);
   dump(msg + '\n');
@@ -66,13 +66,13 @@ RequestListener.prototype.recieve = function(event) {
 };
 
 
-function pdfContentHandler() {
+function PdfStreamConverter() {
 }
 
-pdfContentHandler.prototype = {
+PdfStreamConverter.prototype = {
 
   // properties required for XPCOM registration:
-  classID: Components.ID('{2278dfd0-b75c-11e0-8257-1ba3d93c9f1a}'),
+  classID: Components.ID('{6457a96b-2d68-439a-bcfa-44465fbcdbb1}'),
   classDescription: 'pdf.js Component',
   contractID: '@mozilla.org/streamconv;1?from=application/pdf&to=*/*',
 
@@ -156,4 +156,4 @@ pdfContentHandler.prototype = {
   }
 };
 
-var NSGetFactory = XPCOMUtils.generateNSGetFactory([pdfContentHandler]);
+var NSGetFactory = XPCOMUtils.generateNSGetFactory([PdfStreamConverter]);
