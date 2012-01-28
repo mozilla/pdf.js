@@ -19,6 +19,18 @@ var kPDFGlyphSpaceUnits = 1000;
 // Until hinting is fully supported this constant can be used
 var kHintingEnabled = false;
 
+var FontFlags = {
+  FixedPitch: 1,
+  Serif: 2,
+  Symbolic: 4,
+  Script: 8,
+  Nonsymbolic: 32,
+  Italic: 64,
+  AllCap: 65536,
+  SmallCap: 131072,
+  ForceBold: 262144
+};
+
 var Encodings = {
   get ExpertEncoding() {
     return shadow(this, 'ExpertEncoding', ['', '', '', '', '', '', '', '', '',
@@ -762,8 +774,8 @@ var Font = (function FontClosure() {
     var names = name.split('+');
     names = names.length > 1 ? names[1] : names[0];
     names = names.split(/[-,_]/g)[0];
-    this.isSerifFont = !!(properties.flags & 2);
-    this.isSymbolicFont = !!(properties.flags & 4);
+    this.isSerifFont = !!(properties.flags & FontFlags.Serif);
+    this.isSymbolicFont = !!(properties.flags & FontFlags.Symbolic);
 
     var type = properties.type;
     this.type = type;
