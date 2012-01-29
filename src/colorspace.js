@@ -371,14 +371,14 @@ var DeviceCmykCS = (function DeviceCmykCSClosure() {
       var c = color[0], m = color[1], y = color[2], k = color[3];
 
       // CMYK -> CMY: http://www.easyrgb.com/index.php?X=MATH&H=14#text14
-      c = (c * (1-k) + k);
-      m = (m * (1-k) + k);
-      y = (y * (1-k) + k);
+      c = (c * (1 - k) + k);
+      m = (m * (1 - k) + k);
+      y = (y * (1 - k) + k);
 
       // CMY -> RGB: http://www.easyrgb.com/index.php?X=MATH&H=12#text12
-      r = (1-c);
-      g = (1-m);
-      b = (1-y);
+      var r = (1 - c);
+      var g = (1 - m);
+      var b = (1 - y);
 
       return [r, g, b];
     },
