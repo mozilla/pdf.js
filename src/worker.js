@@ -208,6 +208,7 @@ var workerConsole = {
       action: 'console_error',
       data: args
     });
+    throw 'pdf.js execution error';
   },
 
   time: function time(name) {

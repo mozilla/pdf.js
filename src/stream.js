@@ -832,7 +832,7 @@ var JpegStream = (function JpegStreamClosure() {
       this.buffer = data;
       this.bufferLength = data.length;
     } catch (e) {
-      error(e);
+      error('JPEG error: ' + e);
     }
   };
   JpegStream.prototype.getIR = function jpegStreamGetIR() {
