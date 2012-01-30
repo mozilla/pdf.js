@@ -783,8 +783,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
             dict: baseDict,
             properties: properties
           };
-        } // if (type.name == 'Type3')
-      } // if (!descriptor)
+        }
+      }
 
       // According to the spec if 'FontDescriptor' is declared, 'FirstChar',
       // 'LastChar' and 'Widths' should exist too, but some PDF encoders seem

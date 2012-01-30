@@ -358,7 +358,7 @@ var PDFView = {
       } else {
         if (moreInfo.filename)
           errorMoreInfo.value += '\n' + 'File: ' + moreInfo.filename;
-        if (moreInfo.filename)
+        if (moreInfo.lineNumber)
           errorMoreInfo.value += '\n' + 'Line: ' + moreInfo.lineNumber;
       }
     }
