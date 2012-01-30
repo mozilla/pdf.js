@@ -821,15 +821,19 @@ var JpegStream = (function JpegStreamClosure() {
   JpegStream.prototype.ensureBuffer = function jpegStreamEnsureBuffer(req) {
     if (this.bufferLength)
       return;
-    var jpegImage = new JpegImage();
-    if (this.colorTransform != -1)
-      jpegImage.colorTransform = this.colorTransform;
-    jpegImage.parse(this.bytes);
-    var width = jpegImage.width;
-    var height = jpegImage.height;
-    var data = jpegImage.getData(width, height);
-    this.buffer = data;
-    this.bufferLength = data.length;
+    try {
+      var jpegImage = new JpegImage();
+      if (this.colorTransform != -1)
+        jpegImage.colorTransform = this.colorTransform;
+      jpegImage.parse(this.bytes);
+      var width = jpegImage.width;
+      var height = jpegImage.height;
+      var data = jpegImage.getData(width, height);
+      this.buffer = data;
+      this.bufferLength = data.length;
+    } catch (e) {
+      error('JPEG error: ' + e);
+    }
   };
   JpegStream.prototype.getIR = function jpegStreamGetIR() {
     return bytesToString(this.bytes);
