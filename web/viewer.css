@@ -245,10 +245,6 @@ canvas {
   background: url('images/loading-icon.gif') center no-repeat; */
 }
 
-.loadingIcon.hide {
-  display: none;
-}
-
 .textLayer {
   position: absolute;
   left: 0;

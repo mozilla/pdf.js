@@ -818,7 +818,7 @@ var PageView = function pageView(container, content, id, pageWidth, pageHeight,
     var self = this;
     stats.begin = Date.now();
     this.content.startRendering(ctx, function pageViewDrawCallback(error) {
-      self.loadingIconDiv.classList.add('hide');
+      div.removeChild(self.loadingIconDiv);
 
       if (error)
         PDFView.error('An error occurred while rendering the page.', error);
