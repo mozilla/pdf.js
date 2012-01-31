@@ -574,7 +574,7 @@ var XRef = (function XRefClosure() {
       var stream, parser;
       if (e.uncompressed) {
         if (e.gen != gen)
-          throw ('inconsistent generation in XRef');
+          error('inconsistent generation in XRef');
         stream = this.stream.makeSubStream(e.offset);
         parser = new Parser(new Lexer(stream), true, this);
         var obj1 = parser.getObj();
@@ -703,7 +703,7 @@ var PDFObjects = (function PDFObjectsClosure() {
       // If there isn't an object yet or the object isn't resolved, then the
       // data isn't ready yet!
       if (!obj || !obj.isResolved) {
-        throw 'Requesting object that isn\'t resolved yet ' + objId;
+        error('Requesting object that isn\'t resolved yet ' + objId);
         return null;
       } else {
         return obj.data;
