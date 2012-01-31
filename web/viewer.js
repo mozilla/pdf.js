@@ -6,6 +6,7 @@
 var kDefaultURL = 'compressed.tracemonkey-pldi-09.pdf';
 var kDefaultScale = 'auto';
 var kDefaultScaleDelta = 1.1;
+var kUnknownScale = 0;
 var kCacheSize = 20;
 var kCssUnits = 96.0 / 72.0;
 var kScrollbarPadding = 40;
@@ -148,7 +149,7 @@ var currentPageNumber = 1;
 var PDFView = {
   pages: [],
   thumbnails: [],
-  currentScale: 0,
+  currentScale: kUnknownScale,
   currentScaleValue: null,
   initialBookmark: document.location.hash.substring(1),
 
@@ -203,12 +204,12 @@ var PDFView = {
 
   zoomIn: function pdfViewZoomIn() {
     var newScale = Math.min(kMaxScale, this.currentScale * kDefaultScaleDelta);
-    this.setScale(newScale, true);
+    this.parseScale(newScale, true);
   },
 
   zoomOut: function pdfViewZoomOut() {
     var newScale = Math.max(kMinScale, this.currentScale / kDefaultScaleDelta);
-    this.setScale(newScale, true);
+    this.parseScale(newScale, true);
   },
 
   set page(val) {
@@ -458,9 +459,15 @@ var PDFView = {
     }
     else if (storedHash)
       this.setHash(storedHash);
-    else {
-      this.parseScale(scale || kDefaultScale, true);
+    else if (scale) {
+      this.parseScale(scale, true);
       this.page = 1;
+    }
+
+    if (PDFView.currentScale === kUnknownScale) {
+      // Scale was not initialized: invalid bookmark or scale was not specified.
+      // Setting the default one.
+      this.parseScale(kDefaultScale, true);
     }
   },
 
@@ -748,6 +755,8 @@ var PageView = function pageView(container, content, id, pageWidth, pageHeight,
 
       if (scale && scale !== PDFView.currentScale)
         PDFView.parseScale(scale, true);
+      else if (PDFView.currentScale === kUnknownScale)
+        PDFView.parseScale(kDefaultScale, true);
 
       setTimeout(function pageViewScrollIntoViewRelayout() {
         // letting page to re-layout before scrolling
@@ -966,22 +975,55 @@ var TextLayerBuilder = function textLayerBuilder(textLayerDiv) {
     var self = this;
     var textDivs = this.textDivs;
     var textLayerDiv = this.textLayerDiv;
-    this.textLayerTimer = setInterval(function renderTextLayer() {
+    var renderTimer = null;
+    var renderingDone = false;
+    var renderInterval = 0;
+    var resumeInterval = 500; // in ms
+
+    // Render the text layer, one div at a time
+    function renderTextLayer() {
       if (textDivs.length === 0) {
-        clearInterval(self.textLayerTimer);
+        clearInterval(renderTimer);
+        renderingDone = true;
         return;
       }
       var textDiv = textDivs.shift();
-      if (textDiv.dataset.textLength >= 1) { // avoid div by zero
+      if (textDiv.dataset.textLength > 0) {
         textLayerDiv.appendChild(textDiv);
-        // Adjust div width (via letterSpacing) to match canvas text
-        // Due to the .offsetWidth calls, this is slow
-        textDiv.style.letterSpacing =
-          ((textDiv.dataset.canvasWidth - textDiv.offsetWidth) /
-            (textDiv.dataset.textLength - 1)) + 'px';
+
+        if (textDiv.dataset.textLength > 1) { // avoid div by zero
+          // Adjust div width (via letterSpacing) to match canvas text
+          // Due to the .offsetWidth calls, this is slow
+          // This needs to come after appending to the DOM
+          textDiv.style.letterSpacing =
+            ((textDiv.dataset.canvasWidth - textDiv.offsetWidth) /
+              (textDiv.dataset.textLength - 1)) + 'px';
+        }
+      } // textLength > 0
+    }
+    renderTimer = setInterval(renderTextLayer, renderInterval);
+
+    // Stop rendering when user scrolls. Resume after XXX milliseconds
+    // of no scroll events
+    var scrollTimer = null;
+    function textLayerOnScroll() {
+      if (renderingDone) {
+        window.removeEventListener('scroll', textLayerOnScroll, false);
+        return;
       }
-    }, 0);
-  };
+
+      // Immediately pause rendering
+      clearInterval(renderTimer);
+
+      clearTimeout(scrollTimer);
+      scrollTimer = setTimeout(function textLayerScrollTimer() {
+        // Resume rendering
+        renderTimer = setInterval(renderTextLayer, renderInterval);
+      }, resumeInterval);
+    }; // textLayerOnScroll
+
+    window.addEventListener('scroll', textLayerOnScroll, false);
+  }; // endLayout
 
   this.appendText = function textLayerBuilderAppendText(text,
                                                         fontName, fontSize) {
@@ -1240,7 +1282,7 @@ window.addEventListener('keydown', function keydown(evt) {
       handled = true;
       break;
     case 48: // '0'
-      PDFView.setScale(kDefaultScale, true);
+      PDFView.parseScale(kDefaultScale, true);
       handled = true;
       break;
     case 37: // left arrow

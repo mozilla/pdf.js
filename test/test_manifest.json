@@ -402,6 +402,14 @@
       "link": true,
       "type": "eq"
     },
+    {  "id": "issue1096",
+      "file": "pdfs/issue1096.pdf",
+      "md5": "7f75d2b4b93c78d401ff39e8c1b00612",
+      "rounds": 1,
+      "pageLimit": 10,
+      "link": true,
+      "type": "eq"
+    },
     {  "id": "liveprogramming",
       "file": "pdfs/liveprogramming.pdf",
       "md5": "7bd4dad1188232ef597d36fd72c33e52",
@@ -409,6 +417,12 @@
       "pageLimit": 3,
       "link": true,
       "type": "load"
+    },
+    {  "id": "S2-eq",
+       "file": "pdfs/S2.pdf",
+       "md5": "d0b6137846df6e0fe058f234a87fb588",
+       "rounds": 1,
+       "type": "eq"
     },
     {  "id": "issue1055",
       "file": "pdfs/issue1055.pdf",

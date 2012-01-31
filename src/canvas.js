@@ -550,7 +550,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       var current = this.current;
 
       if (!fontObj)
-        throw 'Can\'t find font for ' + fontRefName;
+        error('Can\'t find font for ' + fontRefName);
 
       // Slice-clone matrix so we can manipulate it without affecting original
       if (fontObj.fontMatrix)
@@ -889,7 +889,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       } else if (IR[0] == 'RadialAxial' || IR[0] == 'Dummy') {
         var pattern = Pattern.shadingFromIR(this.ctx, IR);
       } else {
-        throw 'Unkown IR type';
+        error('Unkown IR type ' + IR[0]);
       }
       return pattern;
     },
