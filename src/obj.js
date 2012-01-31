@@ -303,32 +303,32 @@ var XRef = (function XRefClosure() {
         var count = parser.getObj();
 
         if (!isInt(first) || !isInt(count))
-          error('Invalid XRef table');
+          error('Invalid XRef table: wrong types in subsection header');
 
         // Inner loop is over objects themselves
-        for (var i = first; i < first + count; ++i) {
+        for (var i = 0; i < count; i++) {
           var entry = {};          
           entry.offset = parser.getObj();
           entry.gen = parser.getObj();
           var type = parser.getObj();
 
-          if (type === 'f')
+          if (isCmd(type, 'f'))
             entry.free = true;
-          else if (type === 'n')
+          else if (isCmd(type, 'n'))
             entry.uncompressed = true;
 
           // Validate entry obj
           if ( !isInt(entry.offset) || !isInt(entry.gen) || 
-              !(('free' in entry) || ('uncompressed' in entry)) ) {
+              !(entry.free || entry.uncompressed) ) {
             error('Invalid XRef table: ' + first + ', ' + count);
           }
         
-          if (!this.entries[i])
-            this.entries[i] = entry;
+          if (!this.entries[i + first])
+            this.entries[i + first] = entry;
         }
 
         // No objects added?
-        if (i - first <= 0)
+        if (!(i > 0))
           error('Invalid XRef table: ' + first + ', ' + count);
       }
 
@@ -339,7 +339,7 @@ var XRef = (function XRefClosure() {
 
       // get the 'Prev' pointer
       var prev;
-      obj = dict.get('Prev');
+      var obj = dict.get('Prev');
       if (isInt(obj)) {
         prev = obj;
       } else if (isRef(obj)) {
