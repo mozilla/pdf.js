@@ -561,8 +561,7 @@ var XRef = (function XRefClosure() {
 
         return dict;
       } catch (e) {
-        // log('(while reading XRef): ' + e);
-error('(while reading XRef): ' + e);
+        log('(while reading XRef): ' + e);
       }
 
       warn('Indexing all PDF objects');
