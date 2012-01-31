@@ -292,11 +292,11 @@ var XRef = (function XRefClosure() {
       // 0 1                    <-- subsection header (first obj #, obj count)
       // 0000000000 65535 f     <-- actual object (offset, generation #, f/n)
       // 23 2                   <-- subsection header ... and so on ...
-      // 0000025518 00002 n     
+      // 0000025518 00002 n
       // 0000025635 00000 n
       // trailer
       // ...
-      
+
       // Outer loop is over subsection headers
       var obj;
       while (!isCmd(obj = parser.getObj(), 'trailer')) {
@@ -308,7 +308,7 @@ var XRef = (function XRefClosure() {
 
         // Inner loop is over objects themselves
         for (var i = 0; i < count; i++) {
-          var entry = {};          
+          var entry = {};
           entry.offset = parser.getObj();
           entry.gen = parser.getObj();
           var type = parser.getObj();
@@ -319,19 +319,19 @@ var XRef = (function XRefClosure() {
             entry.uncompressed = true;
 
           // Validate entry obj
-          if ( !isInt(entry.offset) || !isInt(entry.gen) || 
-              !(entry.free || entry.uncompressed) ) {
+          if (!isInt(entry.offset) || !isInt(entry.gen) ||
+              !(entry.free || entry.uncompressed)) {
             error('Invalid entry in XRef subsection: ' + first + ', ' + count);
           }
-        
+
           if (!this.entries[i + first])
             this.entries[i + first] = entry;
         }
       }
 
       // Sanity check: as per spec, first object must have these properties
-      if ( this.entries[0] && 
-          !(this.entries[0].gen === 65535 && this.entries[0].free) )
+      if (this.entries[0] &&
+          !(this.entries[0].gen === 65535 && this.entries[0].free))
         error('Invalid XRef table: unexpected first object');
 
       // Sanity check
@@ -532,7 +532,7 @@ var XRef = (function XRefClosure() {
           obj = dict.get('XRefStm');
           if (isInt(obj)) {
             var pos = obj;
-            // ignore previously loaded xref streams 
+            // ignore previously loaded xref streams
             // (possible infinite recursion)
             if (!(pos in this.xrefstms)) {
               this.xrefstms[pos] = 1;
