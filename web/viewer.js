@@ -618,6 +618,10 @@ var PageView = function pageView(container, content, id, pageWidth, pageHeight,
     div.removeAttribute('data-loaded');
 
     delete this.canvas;
+
+    this.loadingIconDiv = document.createElement('div');
+    this.loadingIconDiv.className = 'loadingIcon';
+    div.appendChild(this.loadingIconDiv);
   };
 
   function setupAnnotations(content, scale) {
@@ -774,7 +778,7 @@ var PageView = function pageView(container, content, id, pageWidth, pageHeight,
   };
 
   this.drawingRequired = function() {
-    return !div.hasChildNodes();
+    return !div.querySelector('canvas');
   };
 
   this.draw = function pageviewDraw(callback) {
@@ -789,10 +793,6 @@ var PageView = function pageView(container, content, id, pageWidth, pageHeight,
     canvas.mozOpaque = true;
     div.appendChild(canvas);
     this.canvas = canvas;
-
-    var loadingIconDiv = document.createElement('div');
-    loadingIconDiv.className = 'loadingIcon';
-    div.appendChild(loadingIconDiv);
 
     var textLayerDiv = null;
     if (!PDFJS.disableTextLayer) {
@@ -816,16 +816,9 @@ var PageView = function pageView(container, content, id, pageWidth, pageHeight,
     // Rendering area
 
     var self = this;
-
-    // Display loading icon if page hasn't finished rendering after XXXX ms
-    var loadingTimer = setTimeout(function loadingTimerCallback() {
-      loadingIconDiv.classList.add('show');
-    }, 1000);
-
     stats.begin = Date.now();
     this.content.startRendering(ctx, function pageViewDrawCallback(error) {
-      clearTimeout(loadingTimer);
-      loadingIconDiv.classList.remove('show');
+      self.loadingIconDiv.classList.add('hide');
 
       if (error)
         PDFView.error('An error occurred while rendering the page.', error);

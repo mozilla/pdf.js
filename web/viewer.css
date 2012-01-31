@@ -237,7 +237,7 @@ canvas {
 
 .loadingIcon {
   position: absolute;
-  display: none;
+  display: block;
   left: 0;
   top: 0;
   right: 0;
@@ -245,8 +245,8 @@ canvas {
   background: url('images/loading-icon.gif') center no-repeat; */
 }
 
-.loadingIcon.show {
-  display: block;
+.loadingIcon.hide {
+  display: none;
 }
 
 .textLayer {
