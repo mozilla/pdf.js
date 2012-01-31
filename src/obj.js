@@ -287,44 +287,49 @@ var XRef = (function XRefClosure() {
 
   XRef.prototype = {
     readXRefTable: function readXRefTable(parser) {
-      var obj;
-      while (true) {
-        if (isCmd(obj = parser.getObj(), 'trailer'))
-          break;
-        if (!isInt(obj))
+      // Example of cross-reference table:
+      // xref
+      // 0 1                    <-- subsection header (first obj #, obj count)
+      // 0000000000 65535 f     <-- actual object (offset, generation #, f/n)
+      // 23 2                   <-- subsection header ... and so on ...
+      // 0000025518 00002 n     
+      // 0000025635 00000 n
+      // trailer
+      // ...
+      
+      // Outer loop is over subsection headers
+      var first;
+      while (!isCmd(first = parser.getObj(), 'trailer')) {
+        var count = parser.getObj();
+
+        if (!isInt(first) || !isInt(count))
           error('Invalid XRef table');
-        var first = obj;
-        if (!isInt(obj = parser.getObj()))
-          error('Invalid XRef table');
-        var n = obj;
-        if (first < 0 || n < 0 || (first + n) != ((first + n) | 0))
-          error('Invalid XRef table: ' + first + ', ' + n);
-        for (var i = first; i < first + n; ++i) {
-          var entry = {};
-          if (!isInt(obj = parser.getObj()))
-            error('Invalid XRef table: ' + first + ', ' + n);
-          entry.offset = obj;
-          if (!isInt(obj = parser.getObj()))
-            error('Invalid XRef table: ' + first + ', ' + n);
-          entry.gen = obj;
-          obj = parser.getObj();
-          if (isCmd(obj, 'n')) {
-            entry.uncompressed = true;
-          } else if (isCmd(obj, 'f')) {
+
+        // Inner loop is over objects themselves
+        for (var i = first; i < first + count; ++i) {
+          var entry = {};          
+          entry.offset = parser.getObj();
+          entry.gen = parser.getObj();
+          var type = parser.getObj();
+
+          if (type === 'f')
             entry.free = true;
-          } else {
-            error('Invalid XRef table: ' + first + ', ' + n);
+          else if (type === 'n')
+            entry.uncompressed = true;
+
+          // Validate entry obj
+          if ( !isInt(entry.offset) || !isInt(entry.gen) || 
+              !(('free' in entry) || ('uncompressed' in entry)) ) {
+            error('Invalid XRef table: ' + first + ', ' + count);
           }
-          if (!this.entries[i]) {
-            // In some buggy PDF files the xref table claims to start at 1
-            // instead of 0.
-            if (i == 1 && first == 1 &&
-                entry.offset == 0 && entry.gen == 65535 && entry.free) {
-              i = first = 0;
-            }
+        
+          if (!this.entries[i])
             this.entries[i] = entry;
-          }
         }
+
+        // No objects added?
+        if (i - first <= 0)
+          error('Invalid XRef table: ' + first + ', ' + count);
       }
 
       // read the trailer dictionary
