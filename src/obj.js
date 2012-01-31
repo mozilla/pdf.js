@@ -298,9 +298,10 @@ var XRef = (function XRefClosure() {
       // ...
       
       // Outer loop is over subsection headers
-      var first;
-      while (!isCmd(first = parser.getObj(), 'trailer')) {
-        var count = parser.getObj();
+      var obj;
+      while (!isCmd(obj = parser.getObj(), 'trailer')) {
+        var first = obj,
+            count = parser.getObj();
 
         if (!isInt(first) || !isInt(count))
           error('Invalid XRef table: wrong types in subsection header');
@@ -320,46 +321,35 @@ var XRef = (function XRefClosure() {
           // Validate entry obj
           if ( !isInt(entry.offset) || !isInt(entry.gen) || 
               !(entry.free || entry.uncompressed) ) {
-            error('Invalid XRef table: ' + first + ', ' + count);
+            error('Invalid entry in XRef subsection: ' + first + ', ' + count);
           }
         
           if (!this.entries[i + first])
             this.entries[i + first] = entry;
         }
-
-        // No objects added?
-        if (!(i > 0))
-          error('Invalid XRef table: ' + first + ', ' + count);
       }
 
-      // read the trailer dictionary
-      var dict;
-      if (!isDict(dict = parser.getObj()))
-        error('Invalid XRef table');
+      // Sanity check: as per spec, first object must have these properties
+      if ( this.entries[0] && 
+          !(this.entries[0].gen === 65535 && this.entries[0].free) )
+        error('Invalid XRef table: unexpected first object');
 
-      // get the 'Prev' pointer
-      var prev;
-      var obj = dict.get('Prev');
-      if (isInt(obj)) {
-        prev = obj;
-      } else if (isRef(obj)) {
-        // certain buggy PDF generators generate "/Prev NNN 0 R" instead
-        // of "/Prev NNN"
-        prev = obj.num;
-      }
-      if (prev) {
-        this.readXRef(prev);
-      }
+      // Sanity check
+      if (!isCmd(obj, 'trailer'))
+        error('Invalid XRef table: could not find trailer dictionary');
 
-      // check for 'XRefStm' key
-      if (isInt(obj = dict.get('XRefStm'))) {
-        var pos = obj;
-        // ignore previously loaded xref streams (possible infinite recursion)
-        if (!(pos in this.xrefstms)) {
-          this.xrefstms[pos] = 1;
-          this.readXRef(pos);
-        }
-      }
+      // Read trailer dictionary, e.g.
+      // trailer
+      //    << /Size 22
+      //      /Root 20R
+      //      /Info 10R
+      //      /ID [ <81b14aafa313db63dbd6f981e49f94f4> ]
+      //    >>
+      // The parser goes through the entire stream << ... >> and provides
+      // a getter interface for the key-value table
+      var dict = parser.getObj();
+      if (!isDict(dict))
+        error('Invalid XRef table: could not parse trailer dictionary');
 
       return dict;
     },
@@ -412,9 +402,6 @@ var XRef = (function XRefClosure() {
         }
         range.splice(0, 2);
       }
-      var prev = streamParameters.get('Prev');
-      if (isInt(prev))
-        this.readXRef(prev);
       return streamParameters;
     },
     indexObjects: function indexObjects() {
@@ -534,22 +521,48 @@ var XRef = (function XRefClosure() {
       try {
         var parser = new Parser(new Lexer(stream), true);
         var obj = parser.getObj();
+        var dict;
 
-        // parse an old-style xref table
-        if (isCmd(obj, 'xref'))
-          return this.readXRefTable(parser);
+        // Get dictionary
+        if (isCmd(obj, 'xref')) {
+          // Parse end-of-file XRef
+          dict = this.readXRefTable(parser);
 
-        // parse an xref stream
-        if (isInt(obj)) {
+          // Recursively get other XRefs 'XRefStm', if any
+          obj = dict.get('XRefStm');
+          if (isInt(obj)) {
+            var pos = obj;
+            // ignore previously loaded xref streams 
+            // (possible infinite recursion)
+            if (!(pos in this.xrefstms)) {
+              this.xrefstms[pos] = 1;
+              this.readXRef(pos);
+            }
+          }
+        } else if (isInt(obj)) {
+          // Parse in-stream XRef
           if (!isInt(parser.getObj()) ||
               !isCmd(parser.getObj(), 'obj') ||
               !isStream(obj = parser.getObj())) {
             error('Invalid XRef stream');
           }
-          return this.readXRefStream(obj);
+          dict = this.readXRefStream(obj);
         }
+
+        // Recursively get previous dictionary, if any
+        obj = dict.get('Prev');
+        if (isInt(obj))
+          this.readXRef(obj);
+        else if (isRef(obj)) {
+          // The spec says Prev must not be a reference, i.e. "/Prev NNN"
+          // This is a fallback for non-compliant PDFs, i.e. "/Prev NNN 0 R"
+          this.readXRef(obj.num);
+        }
+
+        return dict;
       } catch (e) {
-        log('Reading of the xref table/stream failed: ' + e);
+        // log('(while reading XRef): ' + e);
+error('(while reading XRef): ' + e);
       }
 
       warn('Indexing all PDF objects');
