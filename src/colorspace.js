@@ -58,7 +58,10 @@ var ColorSpace = (function ColorSpaceClosure() {
         return new AlternateCS(numComps, ColorSpace.fromIR(alt),
                                 PDFFunction.fromIR(tintFnIR));
       case 'LabCS':
-        return new LabCS();
+        var whitePoint = IR[1].WhitePoint;
+        var blackPoint = IR[1].BlackPoint;
+        var range = IR[1].Range;
+        return new LabCS(whitePoint, blackPoint, range);
       default:
         error('Unkown name ' + name);
     }
@@ -148,7 +151,8 @@ var ColorSpace = (function ColorSpaceClosure() {
           var tintFnIR = PDFFunction.getIR(xref, xref.fetchIfRef(cs[3]));
           return ['AlternateCS', numComps, alt, tintFnIR];
         case 'Lab':
-          return 'LabCS';
+          var params = cs[1].map;
+          return ['LabCS', params];
         default:
           error('unimplemented color space object "' + mode + '"');
       }
@@ -413,10 +417,13 @@ var DeviceCmykCS = (function DeviceCmykCSClosure() {
 })();
 
 var LabCS = (function LabCSClosure() {
-  function LabCS() {
+  function LabCS(whitePoint, blackPoint, range) {
     this.name = 'Lab';
     this.numComps = 3;
     this.defaultColor = [0, 0, 0];
+    this.whitePoint = whitePoint;
+    this.blackPoint = blackPoint;
+    this.range = range;
   }
   LabCS.prototype = {
     getRgb: function labcs_getRgb(color) {
