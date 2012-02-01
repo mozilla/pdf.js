@@ -156,33 +156,65 @@ var PDFFunction = (function PDFFunctionClosure() {
                 args.length);
 
         var x = args;
-        var y = new Float64Array(n * m);
 
+        // Building the cube vertices: its part and sample index
+        // http://rjwagner49.com/Mathematics/Interpolation.pdf
+        var cubeVertices = 1 << m;
+        var cubeN = new Float64Array(cubeVertices);
+        var cubeVertex = new Uint32Array(cubeVertices);
+        for (var j = 0; j < cubeVertices; j++)
+          cubeN[j] = 1;
+
+        var k = n, pos = 1;
         // Map x_i to y_j for 0 <= i < m using the sampled function.
         for (var i = 0; i < m; ++i) {
           // x_i' = min(max(x_i, Domain_2i), Domain_2i+1)
-          var domain_2i = domain[2 * i];
-          var domain_2i_1 = domain[2 * i + 1];
+          var domain_2i = domain[i][0];
+          var domain_2i_1 = domain[i][1];
           var xi = Math.min(Math.max(x[i], domain_2i), domain_2i_1);
 
-          // e_i = Interpolate(x_i', Domain_2i, Domain_2i+1, Encode_2i, Encode_2i+1)
-          var e = interpolate(xi, domain_2i, domain_2i_1, encode[2 * i], encode[2 * i + 1]);
+          // e_i = Interpolate(x_i', Domain_2i, Domain_2i+1,
+          //                   Encode_2i, Encode_2i+1)
+          var e = interpolate(xi, domain_2i, domain_2i_1,
+                              encode[i][0], encode[i][1]);
 
           // e_i' = min(max(e_i, 0), Size_i - 1)
-          e = Math.min(Math.max(e, 0), size[i] - 1);
+          var size_i = size[i];
+          e = Math.min(Math.max(e, 0), size_i - 1);
 
-          var in = i * n;
-
-          for (var j = 0; j < n; ++j) {
-            // average the two nearest neighbors in the sampling table
-            var rj = (samples[Math.floor(e) * n + j] + samples[Math.ceil(e) * n + j]) / 2;
-
-            // r_j' = Interpolate(r_j, 0, 2^BitsPerSample - 1, Decode_2j, Decode_2j+1)
-            rj = interpolate(rj, 0, mask, 1, decode[2 * j], decode[2 * j + 1]);
-
-            // y_j = min(max(r_j, range_2j, range_2j+1)
-            y[in + j] = Math.min(Math.max(rj, range[2 * j], range[2 * j + 1]));
+          // Adjusting the cube: N and vertex sample index
+          var e0 = e < size_i - 1 ? Math.floor(e) : e - 1; // e1 = e0 + 1;
+          var n0 = e0 + 1 - e; // (e1 - e) / (e1 - e0);
+          var n1 = e - e0; // (e - e0) / (e1 - e0);
+          var offset0 = e0 * k;
+          var offset1 = offset0 + k; // e1 * k
+          for (var j = 0; j < cubeVertices; j++) {
+            if (j & pos) {
+              cubeN[j] *= n1;
+              cubeVertex[j] += offset1;
+            } else {
+              cubeN[j] *= n0;
+              cubeVertex[j] += offset0;
+            }
           }
+
+          k *= size_i;
+          pos <<= 1;
+        }
+
+        var y = new Float64Array(n);
+        for (var j = 0; j < n; ++j) {
+          // Sum all cube vertices' samples portions
+          var rj = 0;
+          for (var i = 0; i < cubeVertices; i++)
+            rj += samples[cubeVertex[i] + j] * cubeN[i];
+
+          // r_j' = Interpolate(r_j, 0, 2^BitsPerSample - 1,
+          //                    Decode_2j, Decode_2j+1)
+          rj = interpolate(rj, 0, 1, decode[j][0], decode[j][1]);
+
+          // y_j = min(max(r_j, range_2j), range_2j+1)
+          y[j] = Math.min(Math.max(rj, range[j][0]), range[j][1]);
         }
 
         return y;
