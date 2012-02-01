@@ -410,14 +410,14 @@ var Page = (function PageClosure() {
             if (callback)
               callback(e);
             else
-              throw e;
+              error(e);
           }
         }.bind(this),
         function pageDisplayReadPromiseError(reason) {
           if (callback)
             callback(reason);
           else
-            throw reason;
+            error(reason);
         }
       );
     }
@@ -620,13 +620,23 @@ var PDFDoc = (function PDFDocClosure() {
     if (!globalScope.PDFJS.disableWorker && typeof Worker !== 'undefined') {
       var workerSrc = PDFJS.workerSrc;
       if (typeof workerSrc === 'undefined') {
-        throw 'No PDFJS.workerSrc specified';
+        error('No PDFJS.workerSrc specified');
       }
 
       try {
-        // Some versions of FF can't create a worker on localhost, see:
-        // https://bugzilla.mozilla.org/show_bug.cgi?id=683280
-        var worker = new Worker(workerSrc);
+        var worker;
+        if (PDFJS.isFirefoxExtension) {
+          // The firefox extension can't load the worker from the resource://
+          // url so we have to inline the script and then use the blob loader.
+          var bb = new MozBlobBuilder();
+          bb.append(document.querySelector('#PDFJS_SCRIPT_TAG').textContent);
+          var blobUrl = window.URL.createObjectURL(bb.getBlob());
+          worker = new Worker(blobUrl);
+        } else {
+          // Some versions of FF can't create a worker on localhost, see:
+          // https://bugzilla.mozilla.org/show_bug.cgi?id=683280
+          worker = new Worker(workerSrc);
+        }
 
         var messageHandler = new MessageHandler('main', worker);
 
@@ -645,7 +655,9 @@ var PDFDoc = (function PDFDocClosure() {
         // serializing the typed array.
         messageHandler.send('test', testObj);
         return;
-      } catch (e) {}
+      } catch (e) {
+        warn('The worker has been disabled.');
+      }
     }
     // Either workers are disabled, not supported or have thrown an exception.
     // Thus, we fallback to a faked worker.
@@ -716,7 +728,7 @@ var PDFDoc = (function PDFDocClosure() {
             });
             break;
           default:
-            throw 'Got unkown object type ' + type;
+            error('Got unkown object type ' + type);
         }
       }, this);
 
@@ -737,7 +749,7 @@ var PDFDoc = (function PDFDocClosure() {
         if (page.displayReadyPromise)
           page.displayReadyPromise.reject(data.error);
         else
-          throw data.error;
+          error(data.error);
       }, this);
 
       messageHandler.on('jpeg_decode', function(data, promise) {

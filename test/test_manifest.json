@@ -402,6 +402,21 @@
       "link": true,
       "type": "eq"
     },
+    {  "id": "issue1096",
+      "file": "pdfs/issue1096.pdf",
+      "md5": "7f75d2b4b93c78d401ff39e8c1b00612",
+      "rounds": 1,
+      "pageLimit": 10,
+      "link": true,
+      "type": "eq"
+    },
+    {  "id": "issue1127",
+      "file": "pdfs/issue1127.pdf",
+      "md5": "4fb2be5ffefeafda4ba977de2a1bb4d8",
+      "rounds": 1,
+      "link": true,
+      "type": "eq"
+    },
     {  "id": "liveprogramming",
       "file": "pdfs/liveprogramming.pdf",
       "md5": "7bd4dad1188232ef597d36fd72c33e52",

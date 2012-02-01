@@ -1,0 +1,14 @@
+<!-- This snippet is used in firefox extension, see Makefile -->
+<base href="resource://pdf.js/web/" />
+<script type="text/javascript" id="PDFJS_SCRIPT_TAG">
+<!--
+// pdf.js is inlined here because resource:// urls won't work
+// for loading workers.
+/* PDFJSSCRIPT_INCLUDE_BUNDLE */
+-->
+</script>
+<script type="text/javascript">
+  // This specifies the location of the pdf.js file.
+  PDFJS.isFirefoxExtension = true;
+  PDFJS.workerSrc = 'none';
+</script>
