@@ -57,6 +57,8 @@ var ColorSpace = (function ColorSpaceClosure() {
 
         return new AlternateCS(numComps, ColorSpace.fromIR(alt),
                                 PDFFunction.fromIR(tintFnIR));
+      case 'LabCS':
+        return new LabCS();
       default:
         error('Unkown name ' + name);
     }
@@ -146,6 +148,7 @@ var ColorSpace = (function ColorSpaceClosure() {
           var tintFnIR = PDFFunction.getIR(xref, xref.fetchIfRef(cs[3]));
           return ['AlternateCS', numComps, alt, tintFnIR];
         case 'Lab':
+          return 'LabCS';
         default:
           error('unimplemented color space object "' + mode + '"');
       }
@@ -409,3 +412,32 @@ var DeviceCmykCS = (function DeviceCmykCSClosure() {
   return DeviceCmykCS;
 })();
 
+var LabCS = (function LabCSClosure() {
+  function LabCS() {
+    this.name = 'Lab';
+    this.numComps = 3;
+    this.defaultColor = [0, 0, 0];
+  }
+  LabCS.prototype = {
+    getRgb: function labcs_getRgb(color) {
+      return [0, 0, 0];
+    },
+    getRgbBuffer: function labcs_getRgbBuffer(input, bits) {
+      if (bits == 8)
+        return input;
+      var scale = 255 / ((1 << bits) - 1);
+      var i, length = input.length;
+      var rgbBuf = new Uint8Array(length);
+
+      for (i = 0; i < length; ++i)
+        rgbBuf[i] = 0;
+
+      return rgbBuf;
+    },
+    isDefaultDecode: function labcs_isDefaultDecode(decodeMap) {
+      // TODO: not sure about this yet
+      return true;
+    }
+  };
+  return LabCS;
+})();
