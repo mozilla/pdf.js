@@ -410,14 +410,14 @@ var Page = (function PageClosure() {
             if (callback)
               callback(e);
             else
-              throw e;
+              error(e);
           }
         }.bind(this),
         function pageDisplayReadPromiseError(reason) {
           if (callback)
             callback(reason);
           else
-            throw reason;
+            error(reason);
         }
       );
     }
@@ -620,7 +620,7 @@ var PDFDoc = (function PDFDocClosure() {
     if (!globalScope.PDFJS.disableWorker && typeof Worker !== 'undefined') {
       var workerSrc = PDFJS.workerSrc;
       if (typeof workerSrc === 'undefined') {
-        throw 'No PDFJS.workerSrc specified';
+        error('No PDFJS.workerSrc specified');
       }
 
       try {
@@ -728,7 +728,7 @@ var PDFDoc = (function PDFDocClosure() {
             });
             break;
           default:
-            throw 'Got unkown object type ' + type;
+            error('Got unkown object type ' + type);
         }
       }, this);
 
@@ -749,7 +749,7 @@ var PDFDoc = (function PDFDocClosure() {
         if (page.displayReadyPromise)
           page.displayReadyPromise.reject(data.error);
         else
-          throw data.error;
+          error(data.error);
       }, this);
 
       messageHandler.on('jpeg_decode', function(data, promise) {

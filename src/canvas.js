@@ -48,6 +48,7 @@ var CanvasExtraState = (function CanvasExtraStateClosure() {
     // Note: fill alpha applies to all non-stroking operations
     this.fillAlpha = 1;
     this.strokeAlpha = 1;
+    this.lineWidth = 1;
 
     this.old = old;
   }
@@ -329,6 +330,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
 
     // Graphics state
     setLineWidth: function canvasGraphicsSetLineWidth(width) {
+      this.current.lineWidth = width;
       this.ctx.lineWidth = width;
     },
     setLineCap: function canvasGraphicsSetLineCap(style) {
@@ -442,6 +444,8 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       consumePath = typeof consumePath !== 'undefined' ? consumePath : true;
       var ctx = this.ctx;
       var strokeColor = this.current.strokeColor;
+      if (this.current.lineWidth === 0)
+        ctx.lineWidth = this.getSinglePixelWidth();
       // For stroke we want to temporarily change the global alpha to the
       // stroking alpha.
       ctx.globalAlpha = this.current.strokeAlpha;
@@ -544,7 +548,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       var fontObj = this.objs.get(fontRefName).fontObj;
 
       if (!fontObj) {
-        throw 'Can\'t find font for ' + fontRefName;
+        error('Can\'t find font for ' + fontRefName);
       }
 
       var name = fontObj.loadedName || 'sans-serif';
@@ -640,7 +644,6 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
         ctx.translate(current.x, current.y);
 
         ctx.scale(textHScale, 1);
-        ctx.lineWidth /= current.textMatrix[0];
 
         if (textSelection) {
           this.save();
@@ -677,7 +680,15 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       } else {
         ctx.save();
         this.applyTextTransforms();
-        ctx.lineWidth /= current.textMatrix[0] * fontMatrix[0];
+
+        var lineWidth = current.lineWidth;
+        var scale = Math.abs(current.textMatrix[0] * fontMatrix[0]);
+        if (scale == 0 || lineWidth == 0)
+          lineWidth = this.getSinglePixelWidth();
+        else
+          lineWidth /= scale;
+
+        ctx.lineWidth = lineWidth;
 
         if (textSelection)
           text.geom = this.getTextGeometry();
@@ -855,7 +866,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       } else if (IR[0] == 'RadialAxial' || IR[0] == 'Dummy') {
         var pattern = Pattern.shadingFromIR(this.ctx, IR);
       } else {
-        throw 'Unkown IR type';
+        error('Unkown IR type ' + IR[0]);
       }
       return pattern;
     },
@@ -1142,6 +1153,10 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
     },
     restoreFillRule: function canvasGraphicsRestoreFillRule(rule) {
       this.ctx.mozFillRule = rule;
+    },
+    getSinglePixelWidth: function getSinglePixelWidth(scale) {
+      var inverse = this.ctx.mozCurrentTransformInverse;
+      return Math.abs(inverse[0] + inverse[2]);
     }
   };
 
