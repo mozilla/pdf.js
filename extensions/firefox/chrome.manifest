@@ -1,5 +1,5 @@
-content pdf.js content/
+resource pdf.js content/
 
-component {2278dfd0-b75c-11e0-8257-1ba3d93c9f1a} components/pdfContentHandler.js
-contract @mozilla.org/uriloader/content-handler;1?type=application/pdf {2278dfd0-b75c-11e0-8257-1ba3d93c9f1a}
+component {6457a96b-2d68-439a-bcfa-44465fbcdbb1} components/PdfStreamConverter.js
+contract @mozilla.org/streamconv;1?from=application/pdf&to=*/* {6457a96b-2d68-439a-bcfa-44465fbcdbb1}
 

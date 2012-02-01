@@ -3,6 +3,8 @@
 
 'use strict';
 
+const EXT_PREFIX = 'extensions.uriloader@pdf.js';
+const PDFJS_EVENT_ID = 'pdf.js.message';
 let Cc = Components.classes;
 let Ci = Components.interfaces;
 let Cm = Components.manager;
@@ -13,6 +15,7 @@ Cu.import('resource://gre/modules/Services.jsm');
 function log(str) {
   dump(str + '\n');
 }
+
 
 function startup(aData, aReason) {
   let manifestPath = 'chrome.manifest';
@@ -34,13 +37,11 @@ function shutdown(aData, aReason) {
 }
 
 function install(aData, aReason) {
-  let url = 'chrome://pdf.js/content/web/viewer.html?file=%s';
-  Services.prefs.setCharPref('extensions.pdf.js.url', url);
   Services.prefs.setBoolPref('extensions.pdf.js.active', false);
 }
 
 function uninstall(aData, aReason) {
-  Services.prefs.clearUserPref('extensions.pdf.js.url');
   Services.prefs.clearUserPref('extensions.pdf.js.active');
+  application.prefs.setValue(EXT_PREFIX + '.database', '{}');
 }
 
