@@ -35,7 +35,7 @@ ChromeActions.prototype = {
   download: function(data) {
     Services.wm.getMostRecentWindow('navigator:browser').saveURL(data);
   },
-  setDatabase: function() {
+  setDatabase: function(data) {
     if (this.inPrivateBrowswing)
       return;
     application.prefs.setValue(EXT_PREFIX + '.database', data);
@@ -51,8 +51,8 @@ ChromeActions.prototype = {
 function RequestListener(actions) {
   this.actions = actions;
 }
-// Recieves an event and synchronously responds.
-RequestListener.prototype.recieve = function(event) {
+// Receive an event and synchronously responds.
+RequestListener.prototype.receive = function(event) {
   var message = event.target;
   var action = message.getUserData('action');
   var data = message.getUserData('data');
@@ -143,7 +143,7 @@ PdfStreamConverter.prototype = {
         gb.removeEventListener('DOMContentLoaded', domListener);
         var requestListener = new RequestListener(new ChromeActions());
         win.addEventListener(PDFJS_EVENT_ID, function(event) {
-          requestListener.recieve(event);
+          requestListener.receive(event);
         }, false, true);
       }
     };

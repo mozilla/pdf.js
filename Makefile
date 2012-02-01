@@ -252,16 +252,16 @@ extension: | production
 	@cp -r $(EXTENSION_WEB_FILES) $(FIREFOX_BUILD_CONTENT)/web/
 	@rm $(FIREFOX_BUILD_CONTENT)/web/viewer-production.html
 	# Copy over the firefox extension snippet so we can inline pdf.js in it
-	cp web/viewer-snippet-firefox-extension.html $(FIREFOX_BUILD_CONTENT)/web/
+	@cp web/viewer-snippet-firefox-extension.html $(FIREFOX_BUILD_CONTENT)/web/
 	# Modify the viewer so it does all the extension only stuff.
-	cd $(FIREFOX_BUILD_CONTENT)/web; \
+	@cd $(FIREFOX_BUILD_CONTENT)/web; \
 	sed -i.bak '/PDFJSSCRIPT_INCLUDE_BUNDLE/ r ../build/pdf.js' viewer-snippet-firefox-extension.html; \
 	sed -i.bak '/PDFJSSCRIPT_REMOVE/d' viewer.html; \
 	sed -i.bak '/PDFJSSCRIPT_REMOVE_FIREFOX_EXTENSION/d' viewer.html; \
 	sed -i.bak '/PDFJSSCRIPT_INCLUDE_FIREFOX_EXTENSION/ r viewer-snippet-firefox-extension.html' viewer.html; \
 	rm -f *.bak;
 	# We don't need pdf.js anymore since its inlined
-	rm -Rf $(FIREFOX_BUILD_CONTENT)/$(BUILD_DIR)/;
+	@rm -Rf $(FIREFOX_BUILD_CONTENT)/$(BUILD_DIR)/;
 	# Update the build version number
 	@sed -i.bak "s/PDFJSSCRIPT_BUILD/$(BUILD_NUMBER)/" $(FIREFOX_BUILD_DIR)/install.rdf
 	@sed -i.bak "s/PDFJSSCRIPT_BUILD/$(BUILD_NUMBER)/" $(FIREFOX_BUILD_DIR)/update.rdf
