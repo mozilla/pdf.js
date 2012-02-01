@@ -644,6 +644,10 @@ var PageView = function pageView(container, content, id, pageWidth, pageHeight,
     div.removeAttribute('data-loaded');
 
     delete this.canvas;
+
+    this.loadingIconDiv = document.createElement('div');
+    this.loadingIconDiv.className = 'loadingIcon';
+    div.appendChild(this.loadingIconDiv);
   };
 
   function setupAnnotations(content, scale) {
@@ -808,7 +812,7 @@ var PageView = function pageView(container, content, id, pageWidth, pageHeight,
   };
 
   this.drawingRequired = function() {
-    return !div.hasChildNodes();
+    return !div.querySelector('canvas');
   };
 
   this.draw = function pageviewDraw(callback) {
@@ -843,19 +847,23 @@ var PageView = function pageView(container, content, id, pageWidth, pageHeight,
     ctx.restore();
     ctx.translate(-this.x * scale, -this.y * scale);
 
-    stats.begin = Date.now();
-    this.content.startRendering(ctx,
-      (function pageViewDrawCallback(error) {
-        if (error)
-          PDFView.error('An error occurred while rendering the page.', error);
-        this.updateStats();
-        if (this.onAfterDraw)
-          this.onAfterDraw();
+    // Rendering area
 
-        cache.push(this);
-        callback();
-      }).bind(this), textLayer
-    );
+    var self = this;
+    stats.begin = Date.now();
+    this.content.startRendering(ctx, function pageViewDrawCallback(error) {
+      div.removeChild(self.loadingIconDiv);
+
+      if (error)
+        PDFView.error('An error occurred while rendering the page.', error);
+
+      self.updateStats();
+      if (self.onAfterDraw)
+        self.onAfterDraw();
+
+      cache.push(self);
+      callback();
+    }, textLayer);
 
     setupAnnotations(this.content, this.scale);
     div.setAttribute('data-loaded', true);
