@@ -235,6 +235,16 @@ canvas {
   -webkit-box-shadow: 0px 2px 10px #ff0;
 }
 
+.loadingIcon {
+  position: absolute;
+  display: block;
+  left: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  background: url('images/loading-icon.gif') center no-repeat;
+}
+
 .textLayer {
   position: absolute;
   left: 0;
