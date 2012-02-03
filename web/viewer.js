@@ -88,16 +88,19 @@ var FirefoxCom = (function FirefoxComClosure() {
 })();
 
 // Settings Manager - This is a utility for saving settings
-// First we see if localStorage is available, FF bug #495747
+// First we see if localStorage is available
 // If not, we use FUEL in FF
 var Settings = (function SettingsClosure() {
   var isLocalStorageEnabled = (function localStorageEnabledTest() {
+    // Feature test as per http://diveintohtml5.info/storage.html
+    // The additional localStorage call is to get around a FF quirk, see
+    // bug #495747 in bugzilla
     try {
-      localStorage;
+      return 'localStorage' in window && window['localStorage'] !== null &&
+          localStorage;
     } catch (e) {
       return false;
     }
-    return true;
   })();
 
   var isFirefoxExtension = PDFJS.isFirefoxExtension;
@@ -134,6 +137,9 @@ var Settings = (function SettingsClosure() {
 
   Settings.prototype = {
     set: function settingsSet(name, val) {
+      if (!('file' in this))
+        return false;
+
       var file = this.file;
       file[name] = val;
       var database = JSON.stringify(this.database);
@@ -144,6 +150,9 @@ var Settings = (function SettingsClosure() {
     },
 
     get: function settingsGet(name, defaultValue) {
+      if (!('file' in this))
+        return defaultValue;
+
       return this.file[name] || defaultValue;
     }
   };
