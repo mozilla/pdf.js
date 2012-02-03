@@ -444,5 +444,12 @@
       "rounds": 1,
       "link": false,
       "type": "eq"
+    },
+    {  "id": "issue1049",
+      "file": "pdfs/issue1049.pdf",
+      "md5": "15473fffcdde9fb8f3756a4cf1aab347",
+      "rounds": 1,
+      "link": true,
+      "type": "eq"
     }
 ]
