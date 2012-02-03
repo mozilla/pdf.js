@@ -271,7 +271,7 @@ var Page = (function PageClosure() {
     },
     getLinks: function pageGetLinks() {
       var links = [];
-      var annotations = pageGetAnnotations();
+      var annotations = this.getAnnotations();
       var i, n = annotations.length;
       for (i = 0; i < n; ++i) {
         if (annotations[i].type != 'Link')
@@ -281,6 +281,8 @@ var Page = (function PageClosure() {
       return links;
     },
     getAnnotations: function pageGetAnnotations() {
+      if (this.annotationsList) return this.annotationsList;
+
       var xref = this.xref;
       function getInheritableProperty(annotation, name) {
         var item = annotation;
@@ -303,16 +305,35 @@ var Page = (function PageClosure() {
         var subtype = annotation.get('Subtype');
         if (!isName(subtype))
           continue;
-        var rect = annotation.get('Rect');
-        var topLeftCorner = this.rotatePoint(rect[0], rect[1]);
-        var bottomRightCorner = this.rotatePoint(rect[2], rect[3]);
 
         var item = {};
         item.type = subtype.name;
+
+        // list of quad regions
+        item.quadPoints = [];
+        var quadpts = annotation.get('QuadPoints') || [];
+        for (var j = 0; j < quadpts.length; j += 8) {
+          // NB: we don't transform the quadpoints here, but later once we know
+          // the user space => device space transformation.
+          var topLeft = {x: quadpts[j + 4], y: quadpts[j + 5]};
+          var bottomRight = {x: quadpts[j + 2], y: quadpts[j + 3]};
+          var quad = {};
+          quad.x = Math.min(topLeft.x, bottomRight.x);
+          quad.y = Math.min(topLeft.y, bottomRight.y);
+          quad.width = Math.abs(topLeft.x - bottomRight.x);
+          quad.height = Math.abs(topLeft.y - bottomRight.y);
+          item.quadPoints.push(quad);
+        }
+
+        // bounding box coordinates
+        var rect = annotation.get('Rect');
+        var topLeftCorner = this.rotatePoint(rect[0], rect[1]);
+        var bottomRightCorner = this.rotatePoint(rect[2], rect[3]);
         item.x = Math.min(topLeftCorner.x, bottomRightCorner.x);
         item.y = Math.min(topLeftCorner.y, bottomRightCorner.y);
         item.width = Math.abs(topLeftCorner.x - bottomRightCorner.x);
         item.height = Math.abs(topLeftCorner.y - bottomRightCorner.y);
+
         switch (subtype.name) {
           case 'Link':
             var a = this.xref.fetchIfRef(annotation.get('A'));
@@ -378,9 +399,18 @@ var Page = (function PageClosure() {
           case 'Text':
             var content = annotation.get('Contents');
             var title = annotation.get('T');
+            var name = annotation.get('Name');
             item.content = stringToPDFString(content || '');
             item.title = stringToPDFString(title || '');
-            item.name = annotation.get('Name').name;
+            item.name = name ? name.name : 'Note';
+            break;
+          case 'Highlight':
+          case 'Underline':
+            var content = annotation.get('Contents');
+            var title = annotation.get('T');
+            // sometimes there's no content, only markup
+            if (content) item.content = stringToPDFString(content);
+            item.title = stringToPDFString(title || '');
             break;
           default:
             TODO('unimplemented annotation type: ' + subtype.name);
@@ -388,7 +418,17 @@ var Page = (function PageClosure() {
         }
         items.push(item);
       }
-      return items;
+
+      // sort items in visual order: top->bottom, left->right
+      function sortAnnotations(a, b) {
+        if (a.y < b.y) return -1;
+        else if (a.y == b.y) return a.x - b.x;
+        else /* a.y > b.y */ return 1;
+      }
+      items.sort(sortAnnotations);
+
+      this.annotationsList = items;
+      return this.annotationsList;
     },
     startRendering: function pageStartRendering(ctx, callback, textLayer)  {
       this.startRenderingTime = Date.now();
@@ -403,7 +443,8 @@ var Page = (function PageClosure() {
       // Once the IRQueue and fonts are loaded, perform the actual rendering.
       this.displayReadyPromise.then(
         function pageDisplayReadyPromise() {
-          var gfx = new CanvasGraphics(ctx, this.objs, textLayer);
+          var gfx = new CanvasGraphics(ctx, this.objs, textLayer,
+                                       this.getAnnotations());
           try {
             this.display(gfx, callback);
           } catch (e) {

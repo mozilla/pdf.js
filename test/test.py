@@ -14,6 +14,7 @@ DEFAULT_MANIFEST_FILE = 'test_manifest.json'
 EQLOG_FILE = 'eq.log'
 BROWSERLOG_FILE = 'browser.log'
 REFDIR = 'ref'
+REFANNOTDIR = 'refannot'
 TMPDIR = 'tmp'
 VERBOSE = False
 
@@ -83,10 +84,11 @@ class State:
     eqLog = None
 
 class Result:
-    def __init__(self, snapshot, failure, page):
+    def __init__(self, snapshot, failure, page, annotations):
         self.snapshot = snapshot
         self.failure = failure
         self.page = page
+        self.annotations = annotations
 
 class TestServer(SocketServer.TCPServer):
     allow_reuse_address = True
@@ -177,9 +179,9 @@ class PDFTestHandler(BaseHTTPRequestHandler):
             return
 
         result = json.loads(self.rfile.read(numBytes))
-        browser, id, failure, round, page, snapshot = result['browser'], result['id'], result['failure'], result['round'], result['page'], result['snapshot']
+        browser, id, failure, round, page, snapshot, annotations = result['browser'], result['id'], result['failure'], result['round'], result['page'], result['snapshot'], result['annotations']
         taskResults = State.taskResults[browser][id]
-        taskResults[round].append(Result(snapshot, failure, page))
+        taskResults[round].append(Result(snapshot, failure, page, annotations))
 
         def isTaskDone():
             numPages = result["numPages"]
@@ -438,6 +440,13 @@ def checkEq(task, results, browser, masterMode):
     results = results[0]
     taskId = task['id']
 
+    refAnnotPath = os.path.join(REFANNOTDIR, taskId, 'refannot.js')
+    docRefAnnots = None
+    if os.access(refAnnotPath, os.R_OK):
+        f = open(refAnnotPath)
+        docRefAnnots = json.loads(f.read())
+        f.close()
+
     passed = True
     for page in xrange(len(results)):
         snapshot = results[page].snapshot
@@ -484,6 +493,38 @@ def checkEq(task, results, browser, masterMode):
             of.write(snapshot)
             of.close()
 
+        # check annotations output
+        if not masterMode:
+            testAnnots = [
+                # remove extraneous keys from each annotation object
+                dict((k,v) for k,v in a.iteritems() if k in ('type','markup','content'))
+                # keep only annotations we extracted text from
+                for a in results[page].annotations if a['type'] in ('Highlight','Underline','Text') ]
+            refAnnots = []
+            if docRefAnnots:
+                refAnnots = docRefAnnots.get(str(page+1), [])
+                
+            if refAnnots != testAnnots:
+                def hashify(x):
+                    "Make a data structure hashable. Convert dicts to tuples of (key,value) pairs, and lists to tuples."
+                    if isinstance(x,dict):
+                        return tuple([ (k,hashify(v)) for k,v in x.iteritems() ])
+                    elif isinstance(x,list):
+                        return tuple([ hashify(e) for e in x ])
+                    else:
+                        return x
+                if passed != False: # if we passed the image eq test above
+                    State.numEqFailures += 1
+                    passed = False
+                if refAnnots == []:
+                    print 'TEST-UNEXPECTED-FAIL | eq', taskId, '| in', browser, '| no reference annotations for page', page + 1, 'but annotations were found anyway |', testAnnots
+
+                else:
+                    print 'TEST-UNEXPECTED-FAIL | eq', taskId, '| in', browser, '| annotations for page', page + 1, '!= reference annotations.'
+                    print '  FOUND:', testAnnots
+                    print '  EXPECTED:', refAnnots
+                    print '  DIFF:', [dict(d) for d in set(hashify(refAnnots)) ^ set(hashify(testAnnots))]
+ 
     if passed:
         print 'TEST-PASS | eq test', task['id'], '| in', browser
 
