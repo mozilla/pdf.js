@@ -127,14 +127,14 @@ PdfStreamConverter.prototype = {
                     'resource://pdf.js/web/viewer.html', null, null);
 
     // Keep the URL the same so the browser sees it as the same.
-    channel.originalURI = aRequest.originalURI;
+    channel.originalURI = aRequest.URI;
     channel.asyncOpen(this.listener, aContext);
 
     // Setup a global listener waiting for the next DOM to be created and verfiy
     // that its the one we want by its URL. When the correct DOM is found create
     // an event listener on that window for the pdf.js events that require
     // chrome priviledges.
-    var url = aRequest.originalURI.spec;
+    var url = aRequest.URI.spec;
     var gb = Services.wm.getMostRecentWindow('navigator:browser');
     var domListener = function domListener(event) {
       var doc = event.originalTarget;
