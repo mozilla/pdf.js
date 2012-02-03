@@ -380,8 +380,14 @@ var PDFView = {
 
     if (moreInfo) {
       errorMoreInfo.value += 'Message: ' + moreInfo.message;
-      if (moreInfo.stack)
+      if (moreInfo.stack) {
         errorMoreInfo.value += '\n' + 'Stack: ' + moreInfo.stack;
+      } else {
+        if (moreInfo.filename)
+          errorMoreInfo.value += '\n' + 'File: ' + moreInfo.filename;
+        if (moreInfo.lineNumber)
+          errorMoreInfo.value += '\n' + 'Line: ' + moreInfo.lineNumber;
+      }
     }
     errorMoreInfo.rows = errorMoreInfo.value.split('\n').length - 1;
   },

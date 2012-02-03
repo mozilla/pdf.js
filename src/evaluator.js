@@ -159,6 +159,10 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
             // a Stream in the main thread.
             if (translated.file)
               translated.file = translated.file.getBytes();
+            if (translated.properties.file) {
+              translated.properties.file =
+                  translated.properties.file.getBytes();
+            }
 
             handler.send('obj', [
                 loadedName,
@@ -783,11 +787,10 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
             properties: properties
           };
         }
-
       }
 
       // According to the spec if 'FontDescriptor' is declared, 'FirstChar',
-      // 'LastChar' and 'Widths' should exists too, but some PDF encoders seems
+      // 'LastChar' and 'Widths' should exist too, but some PDF encoders seem
       // to ignore this rule when a variant of a standart font is used.
       // TODO Fill the width array depending on which of the base font this is
       // a variant.
