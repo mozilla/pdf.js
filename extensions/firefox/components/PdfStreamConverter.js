@@ -17,8 +17,7 @@ Cu.import('resource://gre/modules/Services.jsm');
 
 function log(aMsg) {
   let msg = 'PdfStreamConverter.js: ' + (aMsg.join ? aMsg.join('') : aMsg);
-  Cc['@mozilla.org/consoleservice;1'].getService(Ci.nsIConsoleService)
-                                     .logStringMessage(msg);
+  Services.console.logStringMessage(msg);
   dump(msg + '\n');
 }
 let application = Cc['@mozilla.org/fuel/application;1']
@@ -121,8 +120,7 @@ PdfStreamConverter.prototype = {
     aRequest.cancel(Cr.NS_BINDING_ABORTED);
 
     // Create a new channel that is viewer loaded as a resource.
-    var ioService = Cc['@mozilla.org/network/io-service;1']
-                      .getService(Ci.nsIIOService);
+    var ioService = Services.io;
     var channel = ioService.newChannel(
                     'resource://pdf.js/web/viewer.html', null, null);
 
