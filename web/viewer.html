@@ -37,38 +37,38 @@
 	
 	<script type="text/javascript">
 	
-	function pinCleanup() {
-		var sidebarClass = document.getElementById("sidebar").className;
-		sidebarClass = sidebarClass.replace( /(?:^|\s)released(?!\S)/ , '' );
-		sidebarClass = sidebarClass.replace( /(?:^|\s)pinned(?!\S)/ , '' );	
-		document.getElementById("sidebar").className = sidebarClass;
-		
-		var iconClass = document.getElementById("pinIcon").className;
-		iconClass = iconClass.replace( /(?:^|\s)released(?!\S)/ , '' );
-		iconClass = iconClass.replace( /(?:^|\s)pinned(?!\S)/ , '' );	
-		document.getElementById("pinIcon").className = iconClass;
+	function pinCleanup(sidebar, pinIcon) {
+		sidebar.className = sidebar.className.replace( /(?:^|\s)released(?!\S)/ , '' );
+		sidebar.className = sidebar.className.replace( /(?:^|\s)pinned(?!\S)/ , '' );		
+		pinIcon.className = pinIcon.className.replace( /(?:^|\s)released(?!\S)/ , '' );
+		pinIcon.className = pinIcon.className.replace( /(?:^|\s)pinned(?!\S)/ , '' );
 	}
 	
-	function pinActivate() {
-		pinCleanup();
-		
-		document.getElementById("sidebar").className = (document.getElementById("sidebar").className + " pinned").trim();
-		document.getElementById("pinIcon").className = (document.getElementById("pinIcon").className + " pinned").trim();
+	function pinActivate(sidebar, pinIcon) {		
+		sidebar.className += " pinned";
+		pinIcon.className += " pinned";
 	}
 
-	function pinDeactivate() {
-		pinCleanup();
-		
-		document.getElementById("sidebar").className = (document.getElementById("sidebar").className + " released").trim();
-		document.getElementById("pinIcon").className = (document.getElementById("pinIcon").className + " released").trim();	
+	function pinDeactivate(sidebar, pinIcon) {		
+		sidebar.className += " released";
+		pinIcon.className += " released";	
 	}
 	
 	function pinToggle() {
-		var iconClass = document.getElementById("pinIcon").className;
-		if(iconClass == "pinned")
-			pinDeactivate();
+		var sidebar = document.getElementById("sidebar");
+		var pinIcon = document.getElementById("pinIcon");
+		
+		var pinState = pinIcon.className;
+		
+		pinCleanup(sidebar, pinIcon);
+		
+		if (pinState == "pinned")
+			pinDeactivate(sidebar, pinIcon);
 		else
-			pinActivate();
+			pinActivate(sidebar, pinIcon);
+
+		sidebar.className = sidebar.className.trim();
+		pinIcon.className = pinIcon.className.trim();
 	}
 
 	</script>
