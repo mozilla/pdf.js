@@ -9,7 +9,6 @@ const Cr = Components.results;
 const Cu = Components.utils;
 const PDFJS_EVENT_ID = 'pdf.js.message';
 const PDF_CONTENT_TYPE = 'application/pdf';
-const NS_ERROR_NOT_IMPLEMENTED = 0x80004001;
 const EXT_PREFIX = 'extensions.uriloader@pdf.js';
 
 Cu.import('resource://gre/modules/XPCOMUtils.jsm');
@@ -94,13 +93,13 @@ PdfStreamConverter.prototype = {
 
   // nsIStreamConverter::convert
   convert: function(aFromStream, aFromType, aToType, aCtxt) {
-    return aFromStream;
+    throw Cr.NS_ERROR_NOT_IMPLEMENTED;
   },
 
   // nsIStreamConverter::asyncConvertData
   asyncConvertData: function(aFromType, aToType, aListener, aCtxt) {
     if (!Services.prefs.getBoolPref('extensions.pdf.js.active'))
-      throw NS_ERROR_NOT_IMPLEMENTED;
+      throw Cr.NS_ERROR_NOT_IMPLEMENTED;
     // Store the listener passed to us
     this.listener = aListener;
   },
