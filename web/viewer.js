@@ -88,16 +88,19 @@ var FirefoxCom = (function FirefoxComClosure() {
 })();
 
 // Settings Manager - This is a utility for saving settings
-// First we see if localStorage is available, FF bug #495747
+// First we see if localStorage is available
 // If not, we use FUEL in FF
 var Settings = (function SettingsClosure() {
   var isLocalStorageEnabled = (function localStorageEnabledTest() {
+    // Feature test as per http://diveintohtml5.info/storage.html
+    // The additional localStorage call is to get around a FF quirk, see
+    // bug #495747 in bugzilla
     try {
-      localStorage;
+      return 'localStorage' in window && window['localStorage'] !== null &&
+          localStorage;
     } catch (e) {
       return false;
     }
-    return true;
   })();
 
   var isFirefoxExtension = PDFJS.isFirefoxExtension;
@@ -134,6 +137,9 @@ var Settings = (function SettingsClosure() {
 
   Settings.prototype = {
     set: function settingsSet(name, val) {
+      if (!('file' in this))
+        return false;
+
       var file = this.file;
       file[name] = val;
       var database = JSON.stringify(this.database);
@@ -144,6 +150,9 @@ var Settings = (function SettingsClosure() {
     },
 
     get: function settingsGet(name, defaultValue) {
+      if (!('file' in this))
+        return defaultValue;
+
       return this.file[name] || defaultValue;
     }
   };
@@ -380,8 +389,14 @@ var PDFView = {
 
     if (moreInfo) {
       errorMoreInfo.value += 'Message: ' + moreInfo.message;
-      if (moreInfo.stack)
+      if (moreInfo.stack) {
         errorMoreInfo.value += '\n' + 'Stack: ' + moreInfo.stack;
+      } else {
+        if (moreInfo.filename)
+          errorMoreInfo.value += '\n' + 'File: ' + moreInfo.filename;
+        if (moreInfo.lineNumber)
+          errorMoreInfo.value += '\n' + 'Line: ' + moreInfo.lineNumber;
+      }
     }
     errorMoreInfo.rows = errorMoreInfo.value.split('\n').length - 1;
   },
@@ -644,6 +659,10 @@ var PageView = function pageView(container, content, id, pageWidth, pageHeight,
     div.removeAttribute('data-loaded');
 
     delete this.canvas;
+
+    this.loadingIconDiv = document.createElement('div');
+    this.loadingIconDiv.className = 'loadingIcon';
+    div.appendChild(this.loadingIconDiv);
   };
 
   function setupAnnotations(content, scale) {
@@ -808,7 +827,7 @@ var PageView = function pageView(container, content, id, pageWidth, pageHeight,
   };
 
   this.drawingRequired = function() {
-    return !div.hasChildNodes();
+    return !div.querySelector('canvas');
   };
 
   this.draw = function pageviewDraw(callback) {
@@ -843,19 +862,23 @@ var PageView = function pageView(container, content, id, pageWidth, pageHeight,
     ctx.restore();
     ctx.translate(-this.x * scale, -this.y * scale);
 
-    stats.begin = Date.now();
-    this.content.startRendering(ctx,
-      (function pageViewDrawCallback(error) {
-        if (error)
-          PDFView.error('An error occurred while rendering the page.', error);
-        this.updateStats();
-        if (this.onAfterDraw)
-          this.onAfterDraw();
+    // Rendering area
 
-        cache.push(this);
-        callback();
-      }).bind(this), textLayer
-    );
+    var self = this;
+    stats.begin = Date.now();
+    this.content.startRendering(ctx, function pageViewDrawCallback(error) {
+      div.removeChild(self.loadingIconDiv);
+
+      if (error)
+        PDFView.error('An error occurred while rendering the page.', error);
+
+      self.updateStats();
+      if (self.onAfterDraw)
+        self.onAfterDraw();
+
+      cache.push(self);
+      callback();
+    }, textLayer);
 
     setupAnnotations(this.content, this.scale);
     div.setAttribute('data-loaded', true);

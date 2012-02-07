@@ -111,6 +111,10 @@ var Util = (function UtilClosure() {
     ];
   }
 
+  Util.sign = function sign(num) {
+    return num < 0 ? -1 : 1;
+  };
+
   return Util;
 })();
 

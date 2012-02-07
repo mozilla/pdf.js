@@ -109,11 +109,27 @@ var WorkerMessageHandler = {
         // Pre compile the pdf page and fetch the fonts/images.
         IRQueue = page.getIRQueue(handler, dependency);
       } catch (e) {
+        var minimumStackMessage =
+            'worker.js: while trying to getPage() and getIRQueue()';
+
         // Turn the error into an obj that can be serialized
-        e = {
-          message: typeof e === 'object' ? e.message : e,
-          stack: typeof e === 'object' ? e.stack : null
-        };
+        if (typeof e === 'string') {
+          e = {
+            message: e,
+            stack: minimumStackMessage
+          };
+        } else if (typeof e === 'object') {
+          e = {
+            message: e.message || e.toString(),
+            stack: e.stack || minimumStackMessage
+          };
+        } else {
+          e = {
+            message: 'Unknown exception type: ' + (typeof e),
+            stack: minimumStackMessage
+          };
+        }
+
         handler.send('page_error', {
           pageNum: pageNum,
           error: e

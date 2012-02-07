@@ -33,7 +33,9 @@ function getPdf(arg, callback) {
   var xhr = new XMLHttpRequest();
   xhr.open('GET', params.url);
   xhr.mozResponseType = xhr.responseType = 'arraybuffer';
-  xhr.expected = (params.url.indexOf('file:') === 0) ? 0 : 200;
+  var protocol = params.url.indexOf(':') < 0 ? window.location.protocol :
+    params.url.substring(0, params.url.indexOf(':') + 1);
+  xhr.expected = (protocol === 'http:' || protocol === 'https:') ? 200 : 0;
 
   if ('progress' in params)
     xhr.onprogress = params.progress || undefined;
