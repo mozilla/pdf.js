@@ -517,8 +517,14 @@ var LabCS = (function LabCSClosure() {
       return rgbBuf;
     },
     isDefaultDecode: function labcs_isDefaultDecode(decodeMap) {
-      // TODO: not sure about this yet
-      return true;
+      // From Table 90 in Adobe's:
+      // "Document management - Portable document format", 1st ed, 2008
+      if (decodeMap[0] === 0 && decodeMap[1] === 100 &&
+          decodeMap[2] === this.amin && decodeMap[3] === this.amax &&
+          decodeMap[4] === this.bmin && decodeMap[5] === this.bmax)
+        return true;
+      else
+        return false;
     }
   };
   return LabCS;
