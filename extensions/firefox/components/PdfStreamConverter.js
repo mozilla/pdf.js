@@ -19,6 +19,18 @@ function log(aMsg) {
   Services.console.logStringMessage(msg);
   dump(msg + '\n');
 }
+function getWindow(top, id) top.QueryInterface(Ci.nsIInterfaceRequestor)
+                              .getInterface(Ci.nsIDOMWindowUtils)
+                              .getOuterWindowWithId(id);
+function windowID(win) win.QueryInterface(Ci.nsIInterfaceRequestor)
+                        .getInterface(Ci.nsIDOMWindowUtils)
+                        .outerWindowID;
+function topWindow(win) win.QueryInterface(Ci.nsIInterfaceRequestor)
+                          .getInterface(Ci.nsIWebNavigation)
+                          .QueryInterface(Ci.nsIDocShellTreeItem)
+                          .rootTreeItem
+                          .QueryInterface(Ci.nsIInterfaceRequestor)
+                          .getInterface(Ci.nsIDOMWindow);
 let application = Cc['@mozilla.org/fuel/application;1']
                     .getService(Ci.fuelIApplication);
 let privateBrowsing = Cc['@mozilla.org/privatebrowsing;1']
@@ -131,20 +143,30 @@ PdfStreamConverter.prototype = {
     // that its the one we want by its URL. When the correct DOM is found create
     // an event listener on that window for the pdf.js events that require
     // chrome priviledges.
-    var url = aRequest.URI.spec;
-    var gb = Services.wm.getMostRecentWindow('navigator:browser');
-    var domListener = function domListener(event) {
-      var doc = event.originalTarget;
-      var win = doc.defaultView;
-      if (doc.location.href === url) {
-        gb.removeEventListener('DOMContentLoaded', domListener);
-        var requestListener = new RequestListener(new ChromeActions());
-        win.addEventListener(PDFJS_EVENT_ID, function(event) {
-          requestListener.receive(event);
-        }, false, true);
+    let window = aRequest.loadGroup.groupObserver
+                  .QueryInterface(Ci.nsIWebProgress)
+                  .DOMWindow;
+    let top = topWindow(window);
+    let id = windowID(window);
+    window = null;
+
+    top.addEventListener('DOMWindowCreated', function onDOMWinCreated(event) {
+      let doc = event.originalTarget;
+      let win = doc.defaultView;
+
+      if (id == windowID(win)) {
+          top.removeEventListener('DOMWindowCreated', onDOMWinCreated, true);
+          if (!doc.documentURIObject.equals(aRequest.URI))
+            return;
+
+          let requestListener = new RequestListener(new ChromeActions);
+          win.addEventListener(PDFJS_EVENT_ID, function(event) {
+            requestListener.receive(event);
+          }, false, true);
+      } else if (!getWindow(top, id)) {
+        top.removeEventListener('DOMWindowCreated', onDOMWinCreated, true);
       }
-    };
-    gb.addEventListener('DOMContentLoaded', domListener, false);
+    }, true);
   },
 
   // nsIRequestObserver::onStopRequest
