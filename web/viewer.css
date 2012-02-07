@@ -103,24 +103,24 @@ span#info {
 }
 
 #pinIcon {
-	position: absolute;
-	top: 4px;
-	right: 55px;
-	width: 15px;
-	height: 15px;
-	background: center no-repeat;
+  position: absolute;
+  top: 4px;
+  right: 55px;
+  width: 15px;
+  height: 15px;
+  background: center no-repeat;
 }
 
 #pinIcon:hover {
-	background-color: rgba(255,255,255,0.35);
+  background-color: rgba(255,255,255,0.35);
 }
 
 #pinIcon.released {
-	background-image: url('images/pin_up.png');
+  background-image: url('images/pin_up.png');
 }
 
 #pinIcon.pinned {
-	background-image: url('images/pin_down.png');
+  background-image: url('images/pin_down.png');
 }
 
 #sidebarBox {
@@ -406,6 +406,6 @@ canvas {
 }
 
 #loading {
-	margin: 100px 0;
-	text-align: center;
+  margin: 100px 0;
+  text-align: center;
 }
