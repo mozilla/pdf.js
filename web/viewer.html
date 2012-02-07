@@ -34,45 +34,6 @@
 
     </head>
 	
-	
-	<script type="text/javascript">
-	
-	function pinCleanup(sidebar, pinIcon) {
-		sidebar.className = sidebar.className.replace( /(?:^|\s)released(?!\S)/ , '' );
-		sidebar.className = sidebar.className.replace( /(?:^|\s)pinned(?!\S)/ , '' );		
-		pinIcon.className = pinIcon.className.replace( /(?:^|\s)released(?!\S)/ , '' );
-		pinIcon.className = pinIcon.className.replace( /(?:^|\s)pinned(?!\S)/ , '' );
-	}
-	
-	function pinActivate(sidebar, pinIcon) {		
-		sidebar.className += " pinned";
-		pinIcon.className += " pinned";
-	}
-
-	function pinDeactivate(sidebar, pinIcon) {		
-		sidebar.className += " released";
-		pinIcon.className += " released";	
-	}
-	
-	function pinToggle() {
-		var sidebar = document.getElementById("sidebar");
-		var pinIcon = document.getElementById("pinIcon");
-		
-		var pinState = pinIcon.className;
-		
-		pinCleanup(sidebar, pinIcon);
-		
-		if (pinState == "pinned")
-			pinDeactivate(sidebar, pinIcon);
-		else
-			pinActivate(sidebar, pinIcon);
-
-		sidebar.className = sidebar.className.trim();
-		pinIcon.className = pinIcon.className.trim();
-	}
-
-	</script>
-
   <body>
     <div id="controls">
       <button id="previous" onclick="PDFView.page--;" oncontextmenu="return false;">
@@ -161,7 +122,7 @@
 
     <div id="sidebar" class="released">
       <div id="sidebarBox">
-	    <div id="pinIcon" class="released" onClick="javascript:pinToggle()"></div>
+	    <div id="pinIcon" class="released" onClick="PDFView.pinSidebar()"></div>
 	    <div id="sidebarScrollView">
           <div id="sidebarView"></div>
         </div>

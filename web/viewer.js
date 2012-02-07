@@ -170,6 +170,7 @@ var PDFView = {
   currentScale: kUnknownScale,
   currentScaleValue: null,
   initialBookmark: document.location.hash.substring(1),
+  pinState: false,
 
   setScale: function pdfViewSetScale(val, resetAutoSettings) {
     if (val == this.currentScale)
@@ -571,6 +572,24 @@ var PDFView = {
         outlineSwitchButton.setAttribute('data-selected', true);
         break;
     }
+  },
+  
+  pinSidebar: function pdfViewPinSidebar() {
+  
+    var sidebar = document.getElementById("sidebar");
+    var pinIcon = document.getElementById("pinIcon");
+
+    sidebar.className = sidebar.className.replace( /(?:^|\s)released(?!\S)/ , '' );
+    sidebar.className = sidebar.className.replace( /(?:^|\s)pinned(?!\S)/ , '' );
+    pinIcon.className = pinIcon.className.replace( /(?:^|\s)released(?!\S)/ , '' );
+    pinIcon.className = pinIcon.className.replace( /(?:^|\s)pinned(?!\S)/ , '' );
+    
+    var newClass = this.pinState ? " pinned" : " released";
+    
+    sidebar.className += newClass;
+    pinIcon.className += newClass;
+    
+    this.pinState = !this.pinState;
   },
 
   getVisiblePages: function pdfViewGetVisiblePages() {

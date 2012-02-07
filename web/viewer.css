@@ -82,6 +82,7 @@ span#info {
   width: 350px;
   top: 62px;
   bottom: 18px;
+  z-index: 1;
 }
 
 #sidebar.released {
@@ -90,7 +91,6 @@ span#info {
   -o-transition: left 0.25s ease-in-out 1s;
   -moz-transition: left 0.25s ease-in-out 1s;
   -webkit-transition: left 0.25s ease-in-out 1s;
-  z-index: 1;
 }
 
 #sidebar.pinned,
@@ -105,9 +105,14 @@ span#info {
 #pinIcon {
 	position: absolute;
 	top: 4px;
-	right: 56px;
-	width: 11px;
-	height: 12px;
+	right: 55px;
+	width: 15px;
+	height: 15px;
+	background: center no-repeat;
+}
+
+#pinIcon:hover {
+	background-color: rgba(255,255,255,0.35);
 }
 
 #pinIcon.released {
