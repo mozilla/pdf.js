@@ -48,6 +48,9 @@ ChromeActions.prototype = {
   setDatabase: function(data) {
     if (this.inPrivateBrowswing)
       return;
+    // Protect against something sending tons of data to setDatabase.
+    if (data.length > 4096)
+      return;
     application.prefs.setValue(EXT_PREFIX + '.database', data);
   },
   getDatabase: function() {
@@ -142,7 +145,7 @@ PdfStreamConverter.prototype = {
     // Setup a global listener waiting for the next DOM to be created and verfiy
     // that its the one we want by its URL. When the correct DOM is found create
     // an event listener on that window for the pdf.js events that require
-    // chrome priviledges.
+    // chrome priviledges. Code snippet from John Galt.
     let window = aRequest.loadGroup.groupObserver
                   .QueryInterface(Ci.nsIWebProgress)
                   .DOMWindow;
