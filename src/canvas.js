@@ -728,7 +728,8 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
         if (textSelection)
           text.geom = this.getTextGeometry();
 
-        ctx.scale(fontSizeScale, fontSizeScale);
+        if (fontSizeScale != 1.0)
+          ctx.scale(fontSizeScale, fontSizeScale);
 
         var x = 0;
         for (var i = 0; i < glyphsLength; ++i) {
