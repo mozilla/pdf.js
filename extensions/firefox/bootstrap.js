@@ -49,6 +49,8 @@ let Factory = {
   }
 };
 
+let pdfStreamConverterUrl = null;
+
 // As of Firefox 13 bootstrapped add-ons don't support automatic registering and
 // unregistering of resource urls and components/contracts. Until then we do
 // it programatically. See ManifestDirective ManifestParser.cpp for support.
@@ -67,7 +69,9 @@ function startup(aData, aReason) {
   resProt.setSubstitution(RESOURCE_NAME, aliasURI);
 
   // Load the component and register it.
-  Cu.import(aData.resourceURI.spec + 'components/PdfStreamConverter.js');
+  pdfStreamConverterUrl = aData.resourceURI.spec +
+                          'components/PdfStreamConverter.js';
+  Cu.import(pdfStreamConverterUrl);
   Factory.register(PdfStreamConverter);
   Services.prefs.setBoolPref('extensions.pdf.js.active', true);
 }
@@ -82,6 +86,11 @@ function shutdown(aData, aReason) {
   resProt.setSubstitution(RESOURCE_NAME, null);
   // Remove the contract/component.
   Factory.unregister();
+  // Unload the converter
+  if (pdfStreamConverterUrl) {
+    Cu.unload(pdfStreamConverterUrl);
+    pdfStreamConverterUrl = null;
+  }
 }
 
 function install(aData, aReason) {
