@@ -223,14 +223,12 @@ FIREFOX_CONTENT_DIR := $(EXTENSION_SRC)/firefox/$(CONTENT_DIR)/
 FIREFOX_EXTENSION_FILES_TO_COPY = \
 	*.js \
 	*.rdf \
-	chrome.manifest \
 	components \
 	$(NULL)
 FIREFOX_EXTENSION_FILES = \
 	content \
 	*.js \
 	install.rdf \
-	chrome.manifest \
 	components \
 	content \
 	$(NULL)
