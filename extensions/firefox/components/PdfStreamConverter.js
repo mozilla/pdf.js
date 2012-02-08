@@ -3,6 +3,8 @@
 
 'use strict';
 
+var EXPORTED_SYMBOLS = ['PdfStreamConverter'];
+
 const Cc = Components.classes;
 const Ci = Components.interfaces;
 const Cr = Components.results;
