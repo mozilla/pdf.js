@@ -12,6 +12,7 @@ const Cu = Components.utils;
 const PDFJS_EVENT_ID = 'pdf.js.message';
 const PDF_CONTENT_TYPE = 'application/pdf';
 const EXT_PREFIX = 'extensions.uriloader@pdf.js';
+const MAX_DATABASE_LENGTH = 4096;
 
 Cu.import('resource://gre/modules/XPCOMUtils.jsm');
 Cu.import('resource://gre/modules/Services.jsm');
@@ -51,7 +52,7 @@ ChromeActions.prototype = {
     if (this.inPrivateBrowswing)
       return;
     // Protect against something sending tons of data to setDatabase.
-    if (data.length > 4096)
+    if (data.length > MAX_DATABASE_LENGTH)
       return;
     application.prefs.setValue(EXT_PREFIX + '.database', data);
   },
