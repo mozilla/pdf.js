@@ -22,18 +22,24 @@ function log(aMsg) {
   Services.console.logStringMessage(msg);
   dump(msg + '\n');
 }
-function getWindow(top, id) top.QueryInterface(Ci.nsIInterfaceRequestor)
-                              .getInterface(Ci.nsIDOMWindowUtils)
-                              .getOuterWindowWithId(id);
-function windowID(win) win.QueryInterface(Ci.nsIInterfaceRequestor)
-                        .getInterface(Ci.nsIDOMWindowUtils)
-                        .outerWindowID;
-function topWindow(win) win.QueryInterface(Ci.nsIInterfaceRequestor)
-                          .getInterface(Ci.nsIWebNavigation)
-                          .QueryInterface(Ci.nsIDocShellTreeItem)
-                          .rootTreeItem
-                          .QueryInterface(Ci.nsIInterfaceRequestor)
-                          .getInterface(Ci.nsIDOMWindow);
+function getWindow(top, id) {
+  return top.QueryInterface(Ci.nsIInterfaceRequestor)
+            .getInterface(Ci.nsIDOMWindowUtils)
+            .getOuterWindowWithId(id);
+}
+function windowID(win) {
+  return win.QueryInterface(Ci.nsIInterfaceRequestor)
+            .getInterface(Ci.nsIDOMWindowUtils)
+            .outerWindowID;
+}
+function topWindow(win) {
+  return win.QueryInterface(Ci.nsIInterfaceRequestor)
+            .getInterface(Ci.nsIWebNavigation)
+            .QueryInterface(Ci.nsIDocShellTreeItem)
+            .rootTreeItem
+            .QueryInterface(Ci.nsIInterfaceRequestor)
+            .getInterface(Ci.nsIDOMWindow);
+}
 let application = Cc['@mozilla.org/fuel/application;1']
                     .getService(Ci.fuelIApplication);
 let privateBrowsing = Cc['@mozilla.org/privatebrowsing;1']
@@ -150,8 +156,8 @@ PdfStreamConverter.prototype = {
     // an event listener on that window for the pdf.js events that require
     // chrome priviledges. Code snippet from John Galt.
     let window = aRequest.loadGroup.groupObserver
-                  .QueryInterface(Ci.nsIWebProgress)
-                  .DOMWindow;
+                         .QueryInterface(Ci.nsIWebProgress)
+                         .DOMWindow;
     let top = topWindow(window);
     let id = windowID(window);
     window = null;
@@ -161,14 +167,14 @@ PdfStreamConverter.prototype = {
       let win = doc.defaultView;
 
       if (id == windowID(win)) {
-          top.removeEventListener('DOMWindowCreated', onDOMWinCreated, true);
-          if (!doc.documentURIObject.equals(aRequest.URI))
-            return;
+        top.removeEventListener('DOMWindowCreated', onDOMWinCreated, true);
+        if (!doc.documentURIObject.equals(aRequest.URI))
+          return;
 
-          let requestListener = new RequestListener(new ChromeActions);
-          win.addEventListener(PDFJS_EVENT_ID, function(event) {
-            requestListener.receive(event);
-          }, false, true);
+        let requestListener = new RequestListener(new ChromeActions);
+        win.addEventListener(PDFJS_EVENT_ID, function(event) {
+          requestListener.receive(event);
+        }, false, true);
       } else if (!getWindow(top, id)) {
         top.removeEventListener('DOMWindowCreated', onDOMWinCreated, true);
       }
