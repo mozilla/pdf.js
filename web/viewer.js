@@ -887,9 +887,9 @@ var PageView = function pageView(container, content, id, pageWidth, pageHeight,
     if (!PDFJS.enableBench || !this.stats || PDFView.page != this.id)
       return;
     var stats = this.stats;
-    var statsHtml = 'Page ' + this.id + '\n';
-    statsHtml += stats.toString().replace(/\n/g, '<br>');
-    document.getElementById('info').innerHTML = statsHtml;
+    var statsText = 'Page ' + this.id + '\n';
+    statsText += stats.toString();
+    document.getElementById('info').textContent = statsText;
   };
 };
 

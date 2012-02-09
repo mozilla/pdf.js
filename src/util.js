@@ -409,6 +409,6 @@ var Bench = (function BenchClosure() {
       }
       return out;
     }
-  }
+  };
   return Bench;
 })();
