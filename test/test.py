@@ -9,7 +9,7 @@ USAGE_EXAMPLE = "%prog"
 # The local web server uses the git repo as the document root.
 DOC_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__),".."))
 
-ANAL = True
+GIT_CLONE_CHECK = True
 DEFAULT_MANIFEST_FILE = 'test_manifest.json'
 EQLOG_FILE = 'eq.log'
 BROWSERLOG_FILE = 'browser.log'
@@ -344,7 +344,7 @@ def verifyPDFs(manifestList):
 
 def setUp(options):
     # Only serve files from a pdf.js clone
-    assert not ANAL or os.path.isfile('../src/pdf.js') and os.path.isdir('../.git')
+    assert not GIT_CLONE_CHECK or os.path.isfile('../src/pdf.js') and os.path.isdir('../.git')
 
     if options.masterMode and os.path.isdir(TMPDIR):
         print 'Temporary snapshot dir tmp/ is still around.'

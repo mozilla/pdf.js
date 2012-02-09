@@ -78,6 +78,14 @@ function cleanup() {
   }
 }
 
+function exceptionToString(e) {
+  if (typeof e !== 'object')
+    return String(e);
+  if (!('message' in e))
+    return JSON.stringify(e);
+  return e.message + ('stack' in e ? ' at ' + e.stack.split('\n')[0] : '');
+}
+
 function nextTask() {
   cleanup();
 
@@ -95,7 +103,7 @@ function nextTask() {
     try {
       task.pdfDoc = new PDFJS.PDFDoc(data);
     } catch (e) {
-      failure = 'load PDF doc : ' + e.toString();
+      failure = 'load PDF doc : ' + exceptionToString(e);
     }
     task.pageNum = task.firstPage || 1;
     nextPage(task, failure);
@@ -185,7 +193,7 @@ function nextPage(task, loadError) {
         textLayerBuilder
       );
     } catch (e) {
-      failure = 'page setup : ' + e.toString();
+      failure = 'page setup : ' + exceptionToString(e);
     }
   }
 

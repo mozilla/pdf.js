@@ -94,9 +94,9 @@ Shadings.RadialAxial = (function RadialAxialClosure() {
 
     var colorStops = [];
     for (var i = t0; i <= t1; i += step) {
-      var color = fn([i]);
-      var rgbColor = Util.makeCssRgb.apply(this, cs.getRgb(color));
-      colorStops.push([(i - t0) / diff, rgbColor]);
+      var rgbColor = cs.getRgb(fn([i]));
+      var cssColor = Util.makeCssRgb(rgbColor[0], rgbColor[1], rgbColor[2]);
+      colorStops.push([(i - t0) / diff, cssColor]);
     }
 
     this.colorStops = colorStops;
@@ -234,9 +234,9 @@ var TilingPattern = (function TilingPatternClosure() {
         tmpCtx.strokeStyle = ctx.strokeStyle;
         break;
       case PaintType.UNCOLORED:
-        color = Util.makeCssRgb.apply(this, color);
-        tmpCtx.fillStyle = color;
-        tmpCtx.strokeStyle = color;
+        var cssColor = Util.makeCssRgb(this, color[0], color[1], color[2]);
+        tmpCtx.fillStyle = cssColor;
+        tmpCtx.strokeStyle = cssColor;
         break;
       default:
         error('Unsupported paint type: ' + paintType);

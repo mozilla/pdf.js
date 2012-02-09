@@ -1,8 +1,5 @@
-# pdf.js
+# PDF.JS
 
-
-
-## Overview
 
 pdf.js is an HTML5 technology experiment that explores building a faithful
 and efficient Portable Document Format (PDF) renderer without native code 
@@ -14,9 +11,9 @@ rendering PDFs, and eventually release a PDF reader extension powered by
 pdf.js. Integration with Firefox is a possibility if the experiment proves 
 successful.
 
+ 
 
-
-## Getting started
+# Getting started
 
 ### Online demo
 
@@ -29,11 +26,15 @@ using the pdf.js API.
 
 ### Extension
 
-An up-to-date Firefox extension is also available:
+A Firefox extension is availble in two places:
 
-+ http://mozilla.github.com/pdf.js/extensions/firefox/pdf.js.xpi
++ Stable Version: https://addons.mozilla.org/en-US/firefox/addon/pdfjs
++ Development Version: http://mozilla.github.com/pdf.js/extensions/firefox/pdf.js.xpi
 
-(The above link is updated upon every merge to our master branch).
+The development extension should be quite stable but still might break from time to time.
+Also, note that the development extension is updated on every merge and by default Firefox will
+auto-update extensions on a daily basis (you can change this through the 
+`extensions.update.interval` option in `about:config`).
 
 For an experimental Chrome extension, get the code as explained below and issue `make extension`. 
 Then open Chrome with the flag `--enable-experimental-extension-apis`, go to `Tools > Extension`
@@ -68,12 +69,12 @@ In order to bundle all `src/` files into a final `pdf.js`, issue:
 This will generate the file `build/pdf.js` that can be included in your final project. (WARNING: That's a large file! Consider minifying it).
 
 
-## Learning
+# Learning
 
 Here are some initial pointers to help contributors get off the ground. 
 Additional resources are available in a separate section below.
 
-#### Hello world
+### Hello world
 
 For a "hello world" example, take a look at:
 
@@ -82,7 +83,7 @@ For a "hello world" example, take a look at:
 This example illustrates the bare minimum ingredients for integrating pdf.js
 in a custom project.
 
-#### Introductory video
+### Introductory video
 
 Check out the presentation by our contributor Julian Viereck on the inner 
 workings of PDF and pdf.js:
@@ -92,7 +93,7 @@ workings of PDF and pdf.js:
 
 
 
-## Contributing
+# Contributing
 
 pdf.js is a community-driven project, so contributors are always welcome. 
 Simply fork our repo and contribute away. Good starting places for picking
@@ -122,7 +123,7 @@ You can add your name to it! :)
 
 
 
-## Running the tests
+# Running the tests
 
 pdf.js comes with browser-level regression tests that allow one to probe 
 whether it's able to successfully parse PDFs, as well as compare its output
@@ -148,7 +149,7 @@ images. The test type `load` simply tests whether the file loads without
 raising any errors.
 
 
-## Running tests through our bot
+### Running tests through our bot
 
 If you are a reviewer, you can use our remote bot to issue comprehensive tests 
 against reference images before merging pull requests.
@@ -158,7 +159,7 @@ See the bot repo for details:
 + https://github.com/mozilla/pdf.js-bot
 
 
-## Additional resources
+# Additional resources
 
 Gallery of user projects and modifications:
 
@@ -188,7 +189,7 @@ Follow us on twitter: @pdfjs
   
   
   
-## PDF-related resources
+### PDF-related resources
 
 A really basic overview of PDF is described here:
 
@@ -205,4 +206,3 @@ a "PDF Reference" from Adobe:
 
 Recommended chapters to read: "2. Overview", "3.4 File Structure", 
 "4.1 Graphics Objects" that lists the PDF commands.
-

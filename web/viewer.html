@@ -2,9 +2,11 @@
 <html>
     <head>
         <title>Simple pdf.js page viewer</title>
+        <!-- PDFJSSCRIPT_INCLUDE_FIREFOX_EXTENSION -->
+
         <link rel="stylesheet" href="viewer.css"/>
 
-        <script type="text/javascript" src="compatibility.js"></script>
+        <script type="text/javascript" src="compatibility.js"></script> <!-- PDFJSSCRIPT_REMOVE_FIREFOX_EXTENSION -->
 
         <!-- PDFJSSCRIPT_INCLUDE_BUILD -->
         <script type="text/javascript" src="../src/core.js"></script> <!-- PDFJSSCRIPT_REMOVE -->
@@ -26,6 +28,7 @@
         <script type="text/javascript" src="../src/stream.js"></script>  <!-- PDFJSSCRIPT_REMOVE -->
         <script type="text/javascript" src="../src/worker.js"></script>  <!-- PDFJSSCRIPT_REMOVE -->
         <script type="text/javascript" src="../external/jpgjs/jpg.js"></script>  <!-- PDFJSSCRIPT_REMOVE -->
+        <script type="text/javascript" src="../src/jpx.js"></script>  <!-- PDFJSSCRIPT_REMOVE -->
         <script type="text/javascript">PDFJS.workerSrc = '../src/worker_loader.js';</script> <!-- PDFJSSCRIPT_REMOVE -->
         <script type="text/javascript" src="viewer.js"></script>
 
@@ -90,7 +93,7 @@
 
       <input id="fileInput" type="file" oncontextmenu="return false;"/>
 
-      <div class="separator"></div>
+      <div id="fileInputSeperator" class="separator"></div>
 
       <a href="#" id="viewBookmark" title="Bookmark (or copy) current location">
         <img src="images/bookmark.svg" alt="Bookmark" align="top" height="16"/>

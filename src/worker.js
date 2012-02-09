@@ -26,7 +26,7 @@ function MessageHandler(name, comObj) {
         delete callbacks[callbackId];
         callback(data.data);
       } else {
-        throw 'Cannot resolve callback ' + callbackId;
+        error('Cannot resolve callback ' + callbackId);
       }
     } else if (data.action in ah) {
       var action = ah[data.action];
@@ -44,7 +44,7 @@ function MessageHandler(name, comObj) {
         action[0].call(action[1], data.data);
       }
     } else {
-      throw 'Unkown action from worker: ' + data.action;
+      error('Unkown action from worker: ' + data.action);
     }
   };
 }
@@ -53,7 +53,7 @@ MessageHandler.prototype = {
   on: function messageHandlerOn(actionName, handler, scope) {
     var ah = this.actionHandler;
     if (ah[actionName]) {
-      throw 'There is already an actionName called "' + actionName + '"';
+      error('There is already an actionName called "' + actionName + '"');
     }
     ah[actionName] = [handler, scope];
   },
@@ -85,13 +85,6 @@ var WorkerMessageHandler = {
       handler.send('test', data instanceof Uint8Array);
     });
 
-    handler.on('workerSrc', function wphSetupWorkerSrc(data) {
-      // In development, the `workerSrc` message is handled in the
-      // `worker_loader.js` file. In production the workerProcessHandler is
-      // called for this. This servers as a dummy to prevent calling an
-      // undefined action `workerSrc`.
-    });
-
     handler.on('doc', function wphSetupDoc(data) {
       // Create only the model of the PDFDoc, which is enough for
       // processing the content of the pdf.
@@ -116,11 +109,27 @@ var WorkerMessageHandler = {
         // Pre compile the pdf page and fetch the fonts/images.
         IRQueue = page.getIRQueue(handler, dependency);
       } catch (e) {
+        var minimumStackMessage =
+            'worker.js: while trying to getPage() and getIRQueue()';
+
         // Turn the error into an obj that can be serialized
-        e = {
-          message: typeof e === 'object' ? e.message : e,
-          stack: typeof e === 'object' ? e.stack : null
-        };
+        if (typeof e === 'string') {
+          e = {
+            message: e,
+            stack: minimumStackMessage
+          };
+        } else if (typeof e === 'object') {
+          e = {
+            message: e.message || e.toString(),
+            stack: e.stack || minimumStackMessage
+          };
+        } else {
+          e = {
+            message: 'Unknown exception type: ' + (typeof e),
+            stack: minimumStackMessage
+          };
+        }
+
         handler.send('page_error', {
           pageNum: pageNum,
           error: e
@@ -215,6 +224,7 @@ var workerConsole = {
       action: 'console_error',
       data: args
     });
+    throw 'pdf.js execution error';
   },
 
   time: function time(name) {
@@ -224,7 +234,7 @@ var workerConsole = {
   timeEnd: function timeEnd(name) {
     var time = consoleTimer[name];
     if (time == null) {
-      throw 'Unkown timer name ' + name;
+      error('Unkown timer name ' + name);
     }
     this.log('Timer:', name, Date.now() - time);
   }
