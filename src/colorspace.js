@@ -57,6 +57,11 @@ var ColorSpace = (function ColorSpaceClosure() {
 
         return new AlternateCS(numComps, ColorSpace.fromIR(alt),
                                 PDFFunction.fromIR(tintFnIR));
+      case 'LabCS':
+        var whitePoint = IR[1].WhitePoint;
+        var blackPoint = IR[1].BlackPoint;
+        var range = IR[1].Range;
+        return new LabCS(whitePoint, blackPoint, range);
       default:
         error('Unkown name ' + name);
     }
@@ -146,6 +151,8 @@ var ColorSpace = (function ColorSpaceClosure() {
           var tintFnIR = PDFFunction.getIR(xref, xref.fetchIfRef(cs[3]));
           return ['AlternateCS', numComps, alt, tintFnIR];
         case 'Lab':
+          var params = cs[1].map;
+          return ['LabCS', params];
         default:
           error('unimplemented color space object "' + mode + '"');
       }
@@ -409,3 +416,116 @@ var DeviceCmykCS = (function DeviceCmykCSClosure() {
   return DeviceCmykCS;
 })();
 
+//
+// LabCS: Based on "PDF Reference, Sixth Ed", p.250
+//
+var LabCS = (function LabCSClosure() {
+  function LabCS(whitePoint, blackPoint, range) {
+    this.name = 'Lab';
+    this.numComps = 3;
+    this.defaultColor = [0, 0, 0];
+
+    if (!whitePoint)
+      error('WhitePoint missing - required for color space Lab');
+    blackPoint = blackPoint || [0, 0, 0];
+    range = range || [-100, 100, -100, 100];
+
+    // Translate args to spec variables
+    this.XW = whitePoint[0];
+    this.YW = whitePoint[1];
+    this.ZW = whitePoint[2];
+    this.amin = range[0];
+    this.amax = range[1];
+    this.bmin = range[2];
+    this.bmax = range[3];
+
+    // These are here just for completeness - the spec doesn't offer any
+    // formulas that use BlackPoint in Lab
+    this.XB = blackPoint[0];
+    this.YB = blackPoint[1];
+    this.ZB = blackPoint[2];
+
+    // Validate vars as per spec
+    if (this.XW < 0 || this.ZW < 0 || this.YW !== 1)
+      error('Invalid WhitePoint components, no fallback available');
+
+    if (this.XB < 0 || this.YB < 0 || this.ZB < 0) {
+      warn('Invalid BlackPoint, falling back to default');
+      this.XB = this.YB = this.ZB = 0;
+    }
+
+    if (this.amin > this.amax || this.bmin > this.bmax) {
+      warn('Invalid Range, falling back to defaults');
+      this.amin = -100;
+      this.amax = 100;
+      this.bmin = -100;
+      this.bmax = 100;
+    }
+  };
+
+  // Function g(x) from spec
+  function g(x) {
+    if (x >= 6 / 29)
+      return x * x * x;
+    else
+      return (108 / 841) * (x - 4 / 29);
+  }
+
+  LabCS.prototype = {
+    getRgb: function labcs_getRgb(color) {
+      // Ls,as,bs <---> L*,a*,b* in the spec
+      var Ls = color[0], as = color[1], bs = color[2];
+
+      // Adjust limits of 'as' and 'bs'
+      as = as > this.amax ? this.amax : as;
+      as = as < this.amin ? this.amin : as;
+      bs = bs > this.bmax ? this.bmax : bs;
+      bs = bs < this.bmin ? this.bmin : bs;
+
+      // Computes intermediate variables X,Y,Z as per spec
+      var M = (Ls + 16) / 116;
+      var L = M + (as / 500);
+      var N = M - (bs / 200);
+      var X = this.XW * g(L);
+      var Y = this.YW * g(M);
+      var Z = this.ZW * g(N);
+
+      // XYZ to RGB 3x3 matrix, from:
+      // http://www.poynton.com/notes/colour_and_gamma/ColorFAQ.html#RTFToC18
+      var XYZtoRGB = [3.240479, -1.537150, -0.498535,
+                      -0.969256, 1.875992, 0.041556,
+                      0.055648, -0.204043, 1.057311];
+
+      return Util.apply3dTransform(XYZtoRGB, [X, Y, Z]);
+    },
+    getRgbBuffer: function labcs_getRgbBuffer(input, bits) {
+      if (bits == 8)
+        return input;
+      var scale = 255 / ((1 << bits) - 1);
+      var i, length = input.length / 3;
+      var rgbBuf = new Uint8Array(length);
+
+      var j = 0;
+      for (i = 0; i < length; ++i) {
+        // Convert L*, a*, s* into RGB
+        var rgb = this.getRgb([input[i], input[i + 1], input[i + 2]]);
+        rgbBuf[j++] = rgb[0];
+        rgbBuf[j++] = rgb[1];
+        rgbBuf[j++] = rgb[2];
+      }
+
+      return rgbBuf;
+    },
+    isDefaultDecode: function labcs_isDefaultDecode(decodeMap) {
+      // From Table 90 in Adobe's:
+      // "Document management - Portable document format", 1st ed, 2008
+      if (decodeMap[0] === 0 && decodeMap[1] === 100 &&
+          decodeMap[2] === this.amin && decodeMap[3] === this.amax &&
+          decodeMap[4] === this.bmin && decodeMap[5] === this.bmax)
+        return true;
+      else
+        return false;
+    }
+  };
+  return LabCS;
+})();

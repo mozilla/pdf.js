@@ -109,7 +109,7 @@ var Settings = (function SettingsClosure() {
     var database = null;
     var index;
     if (isFirefoxExtension)
-      database = FirefoxCom.request('getDatabase', null);
+      database = FirefoxCom.request('getDatabase', null) || '{}';
     else if (isLocalStorageEnabled)
       database = localStorage.getItem('database') || '{}';
     else
@@ -131,8 +131,6 @@ var Settings = (function SettingsClosure() {
       index = database.files.push({fingerprint: fingerprint}) - 1;
     this.file = database.files[index];
     this.database = database;
-    if (isLocalStorageEnabled)
-      localStorage.setItem('database', JSON.stringify(database));
   }
 
   Settings.prototype = {
