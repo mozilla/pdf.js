@@ -83,9 +83,6 @@ span#info {
   top: 62px;
   bottom: 18px;
   z-index: 1;
-}
-
-#sidebar {
   left: -290px;
   transition: left 0.25s ease-in-out 1s;
   -o-transition: left 0.25s ease-in-out 1s;
