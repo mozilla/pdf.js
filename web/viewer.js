@@ -1083,7 +1083,6 @@ var TextLayerBuilder = function textLayerBuilder(textLayerDiv) {
     textDiv.dataset.canvasWidth = text.canvasWidth * text.geom.hScale;
 
     textDiv.style.fontSize = fontHeight + 'px';
-    textDiv.style.fontFamily = fontName || 'sans-serif';
     textDiv.style.left = text.geom.x + 'px';
     textDiv.style.top = (text.geom.y - fontHeight) + 'px';
     textDiv.textContent = text.str;
