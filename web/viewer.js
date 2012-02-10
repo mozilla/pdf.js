@@ -1085,8 +1085,10 @@ var TextLayerBuilder = function textLayerBuilder(textLayerCanvas) {
       if (e.button === 0) {
         holdingButton = false;
 
-        if (selectionArr.length === 0)
+        if (selectionArr.length === 0) {
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
           return;
+        }
 
         var selectionText = '';
         for (var i = 0; i < selectionArr.length; i++) {
