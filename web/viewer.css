@@ -76,18 +76,17 @@ span#info {
 }
 
 /* === Sidebar === */
-
 #sidebar {
   position: fixed;
   width: 350px;
   top: 62px;
   bottom: 18px;
-  z-index: 1;
   left: -290px;
   transition: left 0.25s ease-in-out 1s;
   -o-transition: left 0.25s ease-in-out 1s;
   -moz-transition: left 0.25s ease-in-out 1s;
   -webkit-transition: left 0.25s ease-in-out 1s;
+  z-index: 1;
 }
 
 #sidebar:hover,
