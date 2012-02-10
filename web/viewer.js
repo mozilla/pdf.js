@@ -841,14 +841,6 @@ var PageView = function pageView(container, content, id, pageWidth, pageHeight,
     div.appendChild(canvas);
     this.canvas = canvas;
 
-    var textLayerDiv = null;
-    if (!PDFJS.disableTextLayer) {
-      textLayerDiv = document.createElement('div');
-      textLayerDiv.className = 'textLayer';
-      div.appendChild(textLayerDiv);
-    }
-    var textLayer = textLayerDiv ? new TextLayerBuilder(textLayerDiv) : null;
-
     var scale = this.scale;
     canvas.width = pageWidth * scale;
     canvas.height = pageHeight * scale;
@@ -859,6 +851,17 @@ var PageView = function pageView(container, content, id, pageWidth, pageHeight,
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     ctx.restore();
     ctx.translate(-this.x * scale, -this.y * scale);
+
+    var textLayerCanvas = null;
+    if (!PDFJS.disableTextLayer) {
+      textLayerCanvas = document.createElement('canvas');
+      textLayerCanvas.className = 'textLayer';
+      textLayerCanvas.width = pageWidth * scale;
+      textLayerCanvas.height = pageHeight * scale;
+      div.appendChild(textLayerCanvas);
+    }
+    var textLayer = textLayerCanvas ? 
+        new TextLayerBuilder(textLayerCanvas) : null;
 
     // Rendering area
 
@@ -1012,83 +1015,115 @@ var DocumentOutlineView = function documentOutlineView(outline) {
   }
 };
 
-var TextLayerBuilder = function textLayerBuilder(textLayerDiv) {
-  this.textLayerDiv = textLayerDiv;
+var TextLayerBuilder = function textLayerBuilder(textLayerCanvas) {  
+  var canvas = textLayerCanvas,
+      ctx = textLayerCanvas.getContext('2d'),      
+      textData = [],
+      holdingButton = false,
+      pos0 = {
+        x: 0,
+        y: 0
+      },
+      selectionArr = [];
 
-  this.beginLayout = function textLayerBuilderBeginLayout() {
-    this.textDivs = [];
-    this.textLayerQueue = [];
-  };
+  function getMousePos(canvas, evt){
+      // get canvas position
+      var obj = canvas;
+      var top = 0;
+      var left = 0;
+      while (obj && obj.tagName != 'BODY') {
+          top += obj.offsetTop;
+          left += obj.offsetLeft;
+          obj = obj.offsetParent;
+      }
+   
+      // return relative mouse position
+      var mouseX = evt.clientX - left + window.pageXOffset;
+      var mouseY = evt.clientY - top + window.pageYOffset;
+      return {
+          x: mouseX,
+          y: mouseY
+      };
+  }
+
+  function isInsideRect(obj, rect) {
+    var top = rect.y0,
+        left = rect.x0,
+        bottom = rect.y1,
+        right = rect.x1;
+    
+    if (rect.x0 > rect.x1) {
+      left = rect.x1;
+      right = rect.x0;
+    }
+    if (rect.y0 > rect.y1) {
+      top = rect.y1;
+      bottom = rect.y0;
+    }
+
+    if (obj.x > left && obj.x < right &&
+        obj.y > top && obj.y < bottom)
+      return true;
+    else
+      return false;
+  }
+
+  // Methods
+  this.beginLayout = function textLayerBuilderBeginLayout() {};
 
   this.endLayout = function textLayerBuilderEndLayout() {
-    var self = this;
-    var textDivs = this.textDivs;
-    var textLayerDiv = this.textLayerDiv;
-    var renderTimer = null;
-    var renderingDone = false;
-    var renderInterval = 0;
-    var resumeInterval = 500; // in ms
-
-    // Render the text layer, one div at a time
-    function renderTextLayer() {
-      if (textDivs.length === 0) {
-        clearInterval(renderTimer);
-        renderingDone = true;
-        return;
+    canvas.addEventListener('mousedown', function(e) {
+      if (e.button === 0) {
+        holdingButton = true;
+        pos0 = getMousePos(canvas, e);
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        selectionArr = [];
       }
-      var textDiv = textDivs.shift();
-      if (textDiv.dataset.textLength > 0) {
-        textLayerDiv.appendChild(textDiv);
+    });
+  
+    canvas.addEventListener('mouseup', function(e) {
+      if (e.button === 0) {
+        holdingButton = false;
+        var selectionText = '';
+        for (var i = 0; i < selectionArr.length; i++) {
+          if (i > 0 && selectionArr[i - 1].y < selectionArr[i].y)
+            selectionText += ' ';
+          selectionText += selectionArr[i].char;
+        };
+        window.prompt("Copy to clipboard: Ctrl+C, Enter", selectionText);
+      }
+    });
 
-        if (textDiv.dataset.textLength > 1) { // avoid div by zero
-          // Adjust div width (via letterSpacing) to match canvas text
-          // Due to the .offsetWidth calls, this is slow
-          // This needs to come after appending to the DOM
-          textDiv.style.letterSpacing =
-            ((textDiv.dataset.canvasWidth - textDiv.offsetWidth) /
-              (textDiv.dataset.textLength - 1)) + 'px';
+    canvas.addEventListener('mousemove', function(e) {
+      if (!holdingButton)
+        return;
+
+      selectionArr = [];
+
+      // Render bounding box
+      var pos1 = getMousePos(canvas, e);
+      ctx.save();
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = 'rgba(0, 0, 255, 0.2)';
+      ctx.fillRect(pos0.x, pos0.y, pos1.x - pos0.x, pos1.y - pos0.y);
+      ctx.restore();
+
+      // Highlight letters
+      ctx.save();
+      ctx.fillStyle = 'rgba(0, 0, 255, 0.5)';
+      var rect = { x0: pos0.x, y0: pos0.y, x1: pos1.x, y1: pos1.y };
+      textData.forEach(function(text) {
+        if (isInsideRect(text, rect)) {
+          ctx.fillRect(text.x, text.y - text.height, text.width, text.height);
+          selectionArr.push(text);
         }
-      } // textLength > 0
-    }
-    renderTimer = setInterval(renderTextLayer, renderInterval);
+      });
+      ctx.restore();
+    });
+  };
 
-    // Stop rendering when user scrolls. Resume after XXX milliseconds
-    // of no scroll events
-    var scrollTimer = null;
-    function textLayerOnScroll() {
-      if (renderingDone) {
-        window.removeEventListener('scroll', textLayerOnScroll, false);
-        return;
-      }
-
-      // Immediately pause rendering
-      clearInterval(renderTimer);
-
-      clearTimeout(scrollTimer);
-      scrollTimer = setTimeout(function textLayerScrollTimer() {
-        // Resume rendering
-        renderTimer = setInterval(renderTextLayer, renderInterval);
-      }, resumeInterval);
-    }; // textLayerOnScroll
-
-    window.addEventListener('scroll', textLayerOnScroll, false);
-  }; // endLayout
-
-  this.appendText = function textLayerBuilderAppendText(text,
-                                                        fontName, fontSize) {
-    var textDiv = document.createElement('div');
-
-    // vScale and hScale already contain the scaling to pixel units
-    var fontHeight = fontSize * text.geom.vScale;
-    textDiv.dataset.canvasWidth = text.canvasWidth * text.geom.hScale;
-
-    textDiv.style.fontSize = fontHeight + 'px';
-    textDiv.style.fontFamily = fontName || 'sans-serif';
-    textDiv.style.left = text.geom.x + 'px';
-    textDiv.style.top = (text.geom.y - fontHeight) + 'px';
-    textDiv.textContent = text.str;
-    textDiv.dataset.textLength = text.length;
-    this.textDivs.push(textDiv);
+  this.appendTextData = function textLayerBuilderAppendText(aTextData) {
+    textData.push.apply(textData, aTextData);
   };
 };
 
