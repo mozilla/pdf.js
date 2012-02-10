@@ -1095,6 +1095,7 @@ var TextLayerBuilder = function textLayerBuilder(textLayerCanvas) {
           selectionText += selectionArr[i].char;
         };
         window.prompt("Copy to clipboard: Ctrl+C, Enter", selectionText);
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
       }
     });
 
