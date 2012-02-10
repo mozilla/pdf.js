@@ -217,12 +217,15 @@
   var div = document.createElement('div');
   if ('dataset' in div)
     return; // dataset property exists
-  Object.defineProperty(HTMLElement.prototype, 'dataset', {
-    get: function htmlElementDatasetGetter() {
-      // adding dataset field to the actual object
-      return (this.dataset = {});
+  var oldCreateElement = document.createElement;
+  document.createElement = function newCreateElement() {
+    var result = oldCreateElement.apply(document, arguments);
+    if (arguments[0] === 'div') {
+      // creating dataset property for the div elements
+      result.dataset = {};
     }
-  });
+    return result;
+  };
 })();
 
 // Check console compatability
