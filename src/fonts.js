@@ -823,6 +823,13 @@ var Font = (function FontClosure() {
     else
       this.rebuildToUnicode(properties);
 
+    this.toUnicodeOriginal = this.toUnicode.slice();
+    for (var i = 0, j = 0xE000; i < this.toUnicode.length; i++) {
+      if (typeof this.toUnicode[i] == 'number')
+        break;
+      this.toUnicode[i] = j++;
+    }
+
     if (!file) {
       // The file data is not specified. Trying to fix the font name
       // to be used with the canvas.font.
@@ -1778,7 +1785,7 @@ var Font = (function FontClosure() {
         for (var i = 1; i < numGlyphs; i++) {
           var cid = gidToCidMap[i] || i;
           var unicode = this.toUnicode[cid];
-          if (!unicode || isSpecialUnicode(unicode) ||
+          if (!unicode || typeof unicode !== 'number' || isSpecialUnicode(unicode) ||
               unicode in usedUnicodes) {
             unassignedUnicodeItems.push(i);
             continue;
@@ -1825,7 +1832,7 @@ var Font = (function FontClosure() {
             var usedUnicodes = [], unassignedUnicodeItems = [];
             for (var i = 0, ii = glyphs.length; i < ii; i++) {
               var unicode = toUnicode[i + 1];
-              if (!unicode || unicode in usedUnicodes) {
+              if (!unicode || typeof unicode !== 'number' || unicode in usedUnicodes) {
                 unassignedUnicodeItems.push(i);
                 continue;
               }
@@ -1972,7 +1979,7 @@ var Font = (function FontClosure() {
         }
         properties.baseEncoding = encoding;
       }
-      if (properties.subtype == 'CIDFontType0C') {
+      if (false && properties.subtype == 'CIDFontType0C') {
         var toUnicode = [];
         for (var i = 0; i < charstrings.length; ++i) {
           var charstring = charstrings[i];
@@ -2270,8 +2277,8 @@ var Font = (function FontClosure() {
           break;
       }
 
-      var unicodeChars = !('toUnicode' in this) ? charcode :
-        this.toUnicode[charcode] || charcode;
+      var unicodeChars = !('toUnicodeOriginal' in this) ? charcode :
+        this.toUnicodeOriginal[charcode] || charcode;
       if (typeof unicodeChars === 'number')
         unicodeChars = String.fromCharCode(unicodeChars);
 
