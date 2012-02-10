@@ -85,7 +85,7 @@ span#info {
   z-index: 1;
 }
 
-#sidebar.released {
+#sidebar {
   left: -290px;
   transition: left 0.25s ease-in-out 1s;
   -o-transition: left 0.25s ease-in-out 1s;
@@ -93,8 +93,8 @@ span#info {
   -webkit-transition: left 0.25s ease-in-out 1s;
 }
 
-#sidebar.pinned,
-#sidebar.released:hover {
+#sidebar:hover,
+#sidebar.pinned {
   left: 0px;
   transition: left 0.25s ease-in-out 0s;
   -o-transition: left 0.25s ease-in-out 0s;
@@ -109,17 +109,14 @@ span#info {
   width: 15px;
   height: 15px;
   background: center no-repeat;
+  background-image: url('images/pin_up.png');
 }
 
 #pinIcon:hover {
   background-color: rgba(255,255,255,0.35);
 }
 
-#pinIcon.released {
-  background-image: url('images/pin_up.png');
-}
-
-#pinIcon.pinned {
+#sidebar.pinned #pinIcon {
   background-image: url('images/pin_down.png');
 }
 

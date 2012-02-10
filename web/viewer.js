@@ -168,7 +168,6 @@ var PDFView = {
   currentScale: kUnknownScale,
   currentScaleValue: null,
   initialBookmark: document.location.hash.substring(1),
-  pinState: false,
 
   setScale: function pdfViewSetScale(val, resetAutoSettings) {
     if (val == this.currentScale)
@@ -573,23 +572,7 @@ var PDFView = {
   },
 
   pinSidebar: function pdfViewPinSidebar() {
-    var sidebar = document.getElementById('sidebar');
-    var pinIcon = document.getElementById('pinIcon');
-
-    var oldClass = 'released';
-    var newClass = 'pinned';
-
-    if (this.pinState) {
-      oldClass = 'pinned';
-      newClass = 'released';
-    }
-
-    sidebar.classList.remove(oldClass);
-    pinIcon.classList.remove(oldClass);
-    sidebar.classList.add(newClass);
-    pinIcon.classList.add(newClass);
-
-    this.pinState = !this.pinState;
+    document.getElementById('sidebar').classList.toggle('pinned');
   },
 
   getVisiblePages: function pdfViewGetVisiblePages() {
