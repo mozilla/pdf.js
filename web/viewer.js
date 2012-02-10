@@ -576,25 +576,18 @@ var PDFView = {
     var sidebar = document.getElementById('sidebar');
     var pinIcon = document.getElementById('pinIcon');
 
-    sidebar.className = sidebar.className.replace(
-                          /(?:^|\s)released(?!\S)/ ,
-                          '');
-    sidebar.className = sidebar.className.replace(
-                          /(?:^|\s)pinned(?!\S)/ ,
-                          '');
-    pinIcon.className = pinIcon.className.replace(
-                          /(?:^|\s)released(?!\S)/ ,
-                          '');
-    pinIcon.className = pinIcon.className.replace(
-                          /(?:^|\s)pinned(?!\S)/ ,
-                          '');
-
-    var newClass = this.pinState ? ' pinned' : ' released';
-
-    sidebar.className += newClass;
-    pinIcon.className += newClass;
+    sidebar.classList.remove('released');
+    pinIcon.classList.remove('released');
+    sidebar.classList.remove('pinned');
+    pinIcon.classList.remove('pinned');
 
     this.pinState = !this.pinState;
+
+    var newClass = this.pinState ? 'pinned' : 'released';
+
+    sidebar.classList.add(newClass);
+    pinIcon.classList.add(newClass);
+
   },
 
   getVisiblePages: function pdfViewGetVisiblePages() {
