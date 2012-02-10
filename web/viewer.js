@@ -576,18 +576,20 @@ var PDFView = {
     var sidebar = document.getElementById('sidebar');
     var pinIcon = document.getElementById('pinIcon');
 
-    sidebar.classList.remove('released');
-    pinIcon.classList.remove('released');
-    sidebar.classList.remove('pinned');
-    pinIcon.classList.remove('pinned');
+    var oldClass = 'released';
+    var newClass = 'pinned';
 
-    this.pinState = !this.pinState;
+    if (this.pinState) {
+      oldClass = 'pinned';
+      newClass = 'released';
+    }
 
-    var newClass = this.pinState ? 'pinned' : 'released';
-
+    sidebar.classList.remove(oldClass);
+    pinIcon.classList.remove(oldClass);
     sidebar.classList.add(newClass);
     pinIcon.classList.add(newClass);
 
+    this.pinState = !this.pinState;
   },
 
   getVisiblePages: function pdfViewGetVisiblePages() {
