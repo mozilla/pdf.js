@@ -749,8 +749,16 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
 
           x += charWidth;
 
-          text.str += glyph.unicode === ' ' ? '\u00A0' : glyph.unicode;
-          text.length++;
+          var glyphUnicode = glyph.unicode === ' ' ? '\u00A0' : glyph.unicode;
+          var glyphUniLen = glyphUnicode.length;
+          //reverse an arabic ligature
+          if (glyphUniLen > 1 && isRTLRangeFor(glyphUnicode.charCodeAt(0)))
+          {
+            for (var ii = glyphUniLen - 1; ii >= 0; ii--)
+              text.str += glyphUnicode[ii];
+          } else
+            text.str += glyphUnicode;
+          text.length += glyphUniLen;
           text.canvasWidth += charWidth;
         }
         current.x += x * textHScale2;
@@ -823,8 +831,11 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
         }
       }
 
-      if (textSelection)
+      if (textSelection) {
+        if (isRTLRangeFor(text.str.charCodeAt(0))) //first char is rtl
+         text.str = bidi(null, text.str, 1);
         this.textLayer.appendText(text, font.loadedName, fontSize);
+      }
     },
     nextLineShowText: function canvasGraphicsNextLineShowText(text) {
       this.nextLine();

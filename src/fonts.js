@@ -763,6 +763,16 @@ function getUnicodeRangeFor(value) {
   return -1;
 }
 
+function isRTLRangeFor(value) {
+  var range = UnicodeRanges[13];
+  if (value >= range.begin && value < range.end)
+    return true;
+  range = UnicodeRanges[11];
+  if (value >= range.begin && value < range.end)
+    return true;
+  return false;
+}
+
 function isSpecialUnicode(unicode) {
   return (unicode <= 0x1F || (unicode >= 127 && unicode < kSizeOfGlyphArea)) ||
     (unicode >= kCmapGlyphOffset &&
