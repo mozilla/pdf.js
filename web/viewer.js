@@ -1084,6 +1084,10 @@ var TextLayerBuilder = function textLayerBuilder(textLayerCanvas) {
     canvas.addEventListener('mouseup', function(e) {
       if (e.button === 0) {
         holdingButton = false;
+
+        if (selectionArr.length === 0)
+          return;
+
         var selectionText = '';
         for (var i = 0; i < selectionArr.length; i++) {
           if (i > 0 && selectionArr[i - 1].y < selectionArr[i].y)
@@ -1110,7 +1114,7 @@ var TextLayerBuilder = function textLayerBuilder(textLayerCanvas) {
 
       // Highlight letters
       ctx.save();
-      ctx.fillStyle = 'rgba(0, 0, 255, 0.5)';
+      ctx.fillStyle = 'rgba(0, 0, 255, 0.4)';
       var rect = { x0: pos0.x, y0: pos0.y, x1: pos1.x, y1: pos1.y };
       textData.forEach(function(text) {
         if (isInsideRect(text, rect)) {
