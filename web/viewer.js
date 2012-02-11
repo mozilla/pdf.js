@@ -852,8 +852,13 @@ var PageView = function pageView(container, content, id, pageWidth, pageHeight,
     ctx.restore();
     ctx.translate(-this.x * scale, -this.y * scale);
 
-    var selectionLayerCanvas = null;
+    var selectionLayerCanvas = null,
+        textLayerDiv = null;    
     if (!PDFJS.disableSelectionLayer) {
+      textLayerDiv = document.createElement('div');
+      textLayerDiv.className = 'selectionTextLayer';
+      div.appendChild(textLayerDiv);
+
       selectionLayerCanvas = document.createElement('canvas');
       selectionLayerCanvas.className = 'selectionLayer';
       selectionLayerCanvas.width = pageWidth * scale;
@@ -861,7 +866,7 @@ var PageView = function pageView(container, content, id, pageWidth, pageHeight,
       div.appendChild(selectionLayerCanvas);
     }
     var selectionLayer = selectionLayerCanvas ? 
-        new SelectionLayerBuilder(selectionLayerCanvas) : null;
+        new SelectionLayerBuilder(selectionLayerCanvas, textLayerDiv) : null;
 
     // Rendering area
 
@@ -1015,7 +1020,8 @@ var DocumentOutlineView = function documentOutlineView(outline) {
   }
 };
 
-var SelectionLayerBuilder = function selectionLayerBuilder(selectionLayerCanvas) {  
+var SelectionLayerBuilder = 
+function selectionLayerBuilder(selectionLayerCanvas, textLayerDiv) {  
   var canvas = selectionLayerCanvas,
       ctx = selectionLayerCanvas.getContext('2d'),      
       textData = [],
@@ -1073,32 +1079,40 @@ var SelectionLayerBuilder = function selectionLayerBuilder(selectionLayerCanvas)
 
   this.endLayout = function selectionLayerBuilderEndLayout() {
     canvas.addEventListener('mousedown', function(e) {
-      if (e.button === 0) {
-        holdingButton = true;
-        pos0 = getMousePos(canvas, e);
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        selectionArr = [];
-      }
+      if (e.button !== 0)
+        return;
+
+      holdingButton = true;
+      pos0 = getMousePos(canvas, e);
+
+      // Reset everything
+      textLayerDiv.textContent = '';
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      selectionArr = [];
     });
   
     canvas.addEventListener('mouseup', function(e) {
-      if (e.button === 0) {
-        holdingButton = false;
+      if (e.button !== 0)
+        return;
+      
+      holdingButton = false;
 
-        if (selectionArr.length === 0) {
-          ctx.clearRect(0, 0, canvas.width, canvas.height);
-          return;
-        }
-
-        var selectionText = '';
-        for (var i = 0; i < selectionArr.length; i++) {
-          if (i > 0 && selectionArr[i - 1].y < selectionArr[i].y)
-            selectionText += ' ';
-          selectionText += selectionArr[i].char;
-        };
-        window.prompt("Copy to clipboard: Ctrl+C, Enter", selectionText);
+      if (selectionArr.length === 0) {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
+        return;
       }
+
+      var selectionText = '';
+      for (var i = 0; i < selectionArr.length; i++) {
+        if (i > 0 && selectionArr[i - 1].y < selectionArr[i].y)
+          selectionText += ' ';
+        selectionText += selectionArr[i].char;
+      };
+      
+      textLayerDiv.textContent = selectionText;
+      var range = document.createRange();
+      range.selectNode(textLayerDiv);
+      window.getSelection().addRange(range);
     });
 
     canvas.addEventListener('mousemove', function(e) {

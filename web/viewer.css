@@ -251,6 +251,15 @@ canvas {
   top: 0;
 }
 
+.selectionTextLayer {
+  position: absolute;
+  opacity: 0;
+  left: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+}
+
 .annotComment > div {
   position: absolute;
 }
@@ -279,12 +288,6 @@ canvas {
   border-bottom: 1px solid #000000;
   margin: 0px;
 }
-
-/* TODO: file FF bug to support ::-moz-selection:window-inactive
-   so we can override the opaque grey background when the window is inactive;
-   see https://bugzilla.mozilla.org/show_bug.cgi?id=706209 */
-::selection { background:rgba(0,0,255,0.3); }
-::-moz-selection { background:rgba(0,0,255,0.3); }
 
 #viewer {
   margin: 44px 0px 0px;
