@@ -1109,19 +1109,27 @@ var SelectionHandler =
           return;
         
         self.holdingButton = false;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        if (self.selectionArr.length === 0) {
-          ctx.clearRect(0, 0, canvas.width, canvas.height);
+        // No text at all under box?
+        if (self.selectionArr.length === 0)
           return;
-        }
 
+        // Extract text from selectionArr, highlight it
         var selectionText = '';
+        ctx.fillStyle = 'rgba(0, 0, 255, 0.4)';
         for (var i = 0; i < self.selectionArr.length; i++) {
+          // Introduce space if previous letter comes from a different line
           if (i > 0 && self.selectionArr[i - 1].y < self.selectionArr[i].y)
             selectionText += ' ';
           selectionText += self.selectionArr[i].char;
+
+          // Leaves the text highlighted
+          var text = self.selectionArr[i];
+          ctx.fillRect(text.x, text.y - text.height, text.width, text.height);
         };
         
+        // Copy and select text to selectionDiv
         self.selectionDiv.textContent = selectionText;
         var range = document.createRange();
         range.selectNode(self.selectionDiv);
