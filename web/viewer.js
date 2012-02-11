@@ -1025,18 +1025,19 @@ var DocumentOutlineView = function documentOutlineView(outline) {
 };
 
 var SelectionHandler =
-function selectionHandler(selectionCanvas, selectionDiv) {  
-  var canvas = selectionCanvas,
-      ctx = selectionCanvas.getContext('2d'),      
-      textData = [],
-      holdingButton = false,
-      pos0 = {
-        x: 0,
-        y: 0
-      },
-      selectionArr = [];
+(function SelectionHandlerClosure() {
+  function SelectionHandler(selectionCanvas, selectionDiv) {
+    this.canvas = selectionCanvas;
+    this.selectionDiv = selectionDiv;
+    this.ctx = selectionCanvas.getContext('2d');
+    this.textData = [];
+    this.holdingButton = false;
+    this.pos0 = { x: 0, y: 0 };
+    this.selectionArr = [];
+  }
 
-  function getMousePos(canvas, evt){
+  // Get mouse position relative to the element that emitted the event
+  function getMousePos(canvas, evt) {
       // get canvas position
       var obj = canvas;
       var top = 0;
@@ -1056,6 +1057,8 @@ function selectionHandler(selectionCanvas, selectionDiv) {
       };
   }
 
+  // True if obj inside rect, false otherwise
+  // obj format is { x, y }, rect is { x0, y0, y1, y1 }
   function isInsideRect(obj, rect) {
     var top = rect.y0,
         left = rect.x0,
@@ -1079,79 +1082,89 @@ function selectionHandler(selectionCanvas, selectionDiv) {
   }
 
   // Methods
-  this.beginLayout = function selectionHandlerBeginLayout() {};
+  SelectionHandler.prototype = {
+    beginLayout: function selectionHandlerBeginLayout() {},
 
-  this.endLayout = function selectionHandlerEndLayout() {
-    canvas.addEventListener('mousedown', function(e) {
-      if (e.button !== 0)
-        return;
+    endLayout: function selectionHandlerEndLayout() {
+      var canvas = this.canvas,
+          ctx = this.ctx,
+          self = this;
 
-      holdingButton = true;
-      pos0 = getMousePos(canvas, e);
+      canvas.addEventListener('mousedown', function(e) {
+        if (e.button !== 0)
+          return;
 
-      // Reset everything
-      selectionDiv.textContent = '';
-      window.getSelection().removeAllRanges();
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      selectionArr = [];
-    });
-  
-    canvas.addEventListener('mouseup', function(e) {
-      if (e.button !== 0)
-        return;
-      
-      holdingButton = false;
+        self.holdingButton = true;
+        self.pos0 = getMousePos(canvas, e);
 
-      if (selectionArr.length === 0) {
+        // Reset everything
+        self.selectionDiv.textContent = '';
+        window.getSelection().removeAllRanges();
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        return;
-      }
-
-      var selectionText = '';
-      for (var i = 0; i < selectionArr.length; i++) {
-        if (i > 0 && selectionArr[i - 1].y < selectionArr[i].y)
-          selectionText += ' ';
-        selectionText += selectionArr[i].char;
-      };
-      
-      selectionDiv.textContent = selectionText;
-      var range = document.createRange();
-      range.selectNode(selectionDiv);
-      window.getSelection().addRange(range);
-    });
-
-    canvas.addEventListener('mousemove', function(e) {
-      if (!holdingButton)
-        return;
-
-      selectionArr = [];
-
-      // Render bounding box
-      var pos1 = getMousePos(canvas, e);
-      ctx.save();
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.fillStyle = 'rgba(0, 0, 255, 0.2)';
-      ctx.fillRect(pos0.x, pos0.y, pos1.x - pos0.x, pos1.y - pos0.y);
-      ctx.restore();
-
-      // Highlight letters
-      ctx.save();
-      ctx.fillStyle = 'rgba(0, 0, 255, 0.4)';
-      var rect = { x0: pos0.x, y0: pos0.y, x1: pos1.x, y1: pos1.y };
-      textData.forEach(function(text) {
-        if (isInsideRect(text, rect)) {
-          ctx.fillRect(text.x, text.y - text.height, text.width, text.height);
-          selectionArr.push(text);
-        }
+        self.selectionArr = [];
       });
-      ctx.restore();
-    });
+    
+      canvas.addEventListener('mouseup', function(e) {
+        if (e.button !== 0)
+          return;
+        
+        self.holdingButton = false;
+
+        if (self.selectionArr.length === 0) {
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          return;
+        }
+
+        var selectionText = '';
+        for (var i = 0; i < self.selectionArr.length; i++) {
+          if (i > 0 && self.selectionArr[i - 1].y < self.selectionArr[i].y)
+            selectionText += ' ';
+          selectionText += self.selectionArr[i].char;
+        };
+        
+        self.selectionDiv.textContent = selectionText;
+        var range = document.createRange();
+        range.selectNode(self.selectionDiv);
+        window.getSelection().addRange(range);
+      });
+
+      canvas.addEventListener('mousemove', function(e) {
+        if (!self.holdingButton)
+          return;
+
+        self.selectionArr = [];
+
+        // Render bounding box
+        var pos1 = getMousePos(canvas, e);
+        ctx.save();
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = 'rgba(0, 0, 255, 0.2)';
+        ctx.fillRect(self.pos0.x, self.pos0.y, 
+                     pos1.x - self.pos0.x, pos1.y - self.pos0.y);
+        ctx.restore();
+
+        // Highlight letters
+        ctx.save();
+        ctx.fillStyle = 'rgba(0, 0, 255, 0.4)';
+        var rect = { x0: self.pos0.x, y0: self.pos0.y, 
+                     x1: pos1.x, y1: pos1.y };
+        self.textData.forEach(function(text) {
+          if (isInsideRect(text, rect)) {
+            ctx.fillRect(text.x, text.y - text.height, text.width, text.height);
+            self.selectionArr.push(text);
+          }
+        });
+        ctx.restore();
+      });
+    },
+
+    appendTextData: function selectionHandlerAppendText(aTextData) {
+      this.textData.push.apply(this.textData, aTextData);
+    }
   };
 
-  this.appendTextData = function selectionHandlerAppendText(aTextData) {
-    textData.push.apply(textData, aTextData);
-  };
-};
+  return SelectionHandler;
+})();
 
 window.addEventListener('load', function webViewerLoad(evt) {
   var params = document.location.search.substring(1).split('&');
