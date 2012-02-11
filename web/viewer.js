@@ -1024,6 +1024,9 @@ var DocumentOutlineView = function documentOutlineView(outline) {
   }
 };
 
+// SelectionHandler is the text selection backend
+// Data entry is via appendTextData(), which expects an array of text objects 
+// containing { char, x, y, width, height }
 var SelectionHandler =
 (function SelectionHandlerClosure() {
   function SelectionHandler(selectionCanvas, selectionDiv) {
@@ -1037,7 +1040,7 @@ var SelectionHandler =
   }
 
   // Get mouse position relative to the element that emitted the event
-  function getMousePos(canvas, evt) {
+  var getMousePos = function SelGetMousePos(canvas, evt) {
       // get canvas position
       var obj = canvas;
       var top = 0;
@@ -1057,9 +1060,9 @@ var SelectionHandler =
       };
   }
 
-  // True if obj inside rect, false otherwise
-  // obj format is { x, y }, rect is { x0, y0, y1, y1 }
-  function isInsideRect(obj, rect) {
+  // True if obj intersects rect, false otherwise.
+  // Obj format is { x, y, width, height }, rect is { x0, y0, y1, y1 }
+  var intersectsRect = function SelIntersectsRect(obj, rect) {
     var top = rect.y0,
         left = rect.x0,
         bottom = rect.y1,
@@ -1074,23 +1077,27 @@ var SelectionHandler =
       bottom = rect.y0;
     }
 
-    if (obj.x > left && obj.x < right &&
-        obj.y > top && obj.y < bottom)
+    if (obj.x < right && obj.x + obj.width > left &&
+        obj.y < bottom && obj.y + obj.height > top)
       return true;
-    else
-      return false;
+
+    return false;
   }
 
   // Methods
   SelectionHandler.prototype = {
-    beginLayout: function selectionHandlerBeginLayout() {},
+    appendTextData: function SelAppendText(aTextData) {
+      this.textData.push.apply(this.textData, aTextData);
+    },
 
-    endLayout: function selectionHandlerEndLayout() {
+    begin: function SelBegin() {},
+
+    end: function SelEnd() {
       var canvas = this.canvas,
           ctx = this.ctx,
           self = this;
 
-      canvas.addEventListener('mousedown', function(e) {
+      canvas.addEventListener('mousedown', function SelMouseDownHandler(e) {
         if (e.button !== 0)
           return;
 
@@ -1104,30 +1111,31 @@ var SelectionHandler =
         self.selectionArr = [];
       });
     
-      canvas.addEventListener('mouseup', function(e) {
+      canvas.addEventListener('mouseup', function SelMouseUpHandler(e) {
         if (e.button !== 0)
           return;
         
+        var selectionArr = self.selectionArr;
         self.holdingButton = false;
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
         // No text at all under box?
-        if (self.selectionArr.length === 0)
+        if (selectionArr.length === 0)
           return;
 
         // Extract text from selectionArr, highlight it
         var selectionText = '';
+        ctx.save();
         ctx.fillStyle = 'rgba(0, 0, 255, 0.4)';
-        for (var i = 0; i < self.selectionArr.length; i++) {
+        for (var i = 0; i < selectionArr.length; i++) {
           // Introduce space if previous letter comes from a different line
-          if (i > 0 && self.selectionArr[i - 1].y < self.selectionArr[i].y)
+          if (i > 0 && selectionArr[i - 1].y < selectionArr[i].y)
             selectionText += ' ';
-          selectionText += self.selectionArr[i].char;
-
-          // Leaves the text highlighted
-          var text = self.selectionArr[i];
-          ctx.fillRect(text.x, text.y - text.height, text.width, text.height);
+          selectionText += selectionArr[i].char;
+          ctx.fillRect(selectionArr[i].x, selectionArr[i].y, 
+                       selectionArr[i].width, selectionArr[i].height);
         };
+        ctx.restore();
         
         // Copy and select text to selectionDiv
         self.selectionDiv.textContent = selectionText;
@@ -1136,38 +1144,68 @@ var SelectionHandler =
         window.getSelection().addRange(range);
       });
 
-      canvas.addEventListener('mousemove', function(e) {
+      canvas.addEventListener('mousemove', function SelMouseMoveHandler(e) {
         if (!self.holdingButton)
           return;
 
-        self.selectionArr = [];
+        var pos1 = getMousePos(canvas, e),
+            pos0 = self.pos0;
 
-        // Render bounding box
-        var pos1 = getMousePos(canvas, e);
-        ctx.save();
+        self.selectionArr = [];
         ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Find range of user-selected letters
+        // At this point firstLetter, lastLetter are the first and last letters
+        // that fall inside the selection rectangle
+        var rect = { x0: pos0.x, y0: pos0.y, 
+                     x1: pos1.x, y1: pos1.y },
+            textData = self.textData,
+            firstLetter = null,
+            lastLetter = null;
+        for (var i = 0; i < textData.length; i++) {
+          if (intersectsRect(textData[i], rect)) {
+            firstLetter = i;
+            break;
+          }
+        }
+        if (firstLetter === null)
+          return;
+        for (var i = textData.length - 1; i >= 0; i--) {
+          if (intersectsRect(textData[i], rect)) {
+            lastLetter = i;
+            break;
+          }
+        }
+        if (lastLetter === null)
+          return;
+
+        // Fix firstLetter/lastLetter by adding adjacent letters that belong 
+        // to the same line (if cursor is above the letters)
+
+        if (pos0.y < textData[firstLetter].y) {
+          var i = firstLetter;
+          while (i > 0 && textData[i - 1].y === textData[i].y)
+            i--;
+          firstLetter = i;
+        }
+
+        // Draw selection box
+        ctx.save();
         ctx.fillStyle = 'rgba(0, 0, 255, 0.2)';
-        ctx.fillRect(self.pos0.x, self.pos0.y, 
-                     pos1.x - self.pos0.x, pos1.y - self.pos0.y);
+        ctx.fillRect(pos0.x, pos0.y, 
+                     pos1.x - pos0.x, pos1.y - pos0.y);
         ctx.restore();
 
-        // Highlight letters
+        // Highlight and push letters from firstLetter-lastLatter
         ctx.save();
         ctx.fillStyle = 'rgba(0, 0, 255, 0.4)';
-        var rect = { x0: self.pos0.x, y0: self.pos0.y, 
-                     x1: pos1.x, y1: pos1.y };
-        self.textData.forEach(function(text) {
-          if (isInsideRect(text, rect)) {
-            ctx.fillRect(text.x, text.y - text.height, text.width, text.height);
-            self.selectionArr.push(text);
-          }
-        });
+        for (var i = firstLetter; i <= lastLetter; i++) {
+          self.selectionArr.push(textData[i]);
+          ctx.fillRect(textData[i].x, textData[i].y, 
+                       textData[i].width, textData[i].height);
+        }
         ctx.restore();
       });
-    },
-
-    appendTextData: function selectionHandlerAppendText(aTextData) {
-      this.textData.push.apply(this.textData, aTextData);
     }
   };
 

@@ -261,7 +261,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       this.ctx.translate(-mediaBox.x, -mediaBox.y);
 
       if (this.selectionHandler)
-        this.selectionHandler.beginLayout();
+        this.selectionHandler.begin();
     },
 
     executeIRQueue: function canvasGraphicsExecuteIRQueue(codeIR,
@@ -326,7 +326,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       this.ctx.restore();
 
       if (this.selectionHandler)
-        this.selectionHandler.endLayout();
+        this.selectionHandler.end();
     },
 
     // Graphics state
@@ -744,12 +744,12 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
             textData.push({
               char: char, 
               x: geom.x + x * geom.hScale,
-              y: geom.y,
+              y: geom.y - fontSize * geom.vScale,
               width: charWidth * geom.hScale,
               height: fontSize * geom.vScale
             });
           }
-          
+
           x += charWidth;
 
           // text.str += glyph.unicode === ' ' ? '\u00A0' : glyph.unicode;
@@ -789,7 +789,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
             selectionHandler.appendTextData([{
               char: ' ',
               x: geom.x,
-              y: geom.y,
+              y: geom.y - fontSize * geom.vScale,
               width: spacingLength * geom.hScale,
               height: fontSize * geom.vScale
             }]);
