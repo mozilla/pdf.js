@@ -852,21 +852,25 @@ var PageView = function pageView(container, content, id, pageWidth, pageHeight,
     ctx.restore();
     ctx.translate(-this.x * scale, -this.y * scale);
 
-    var selectionLayerCanvas = null,
-        textLayerDiv = null;    
-    if (!PDFJS.disableSelectionLayer) {
-      textLayerDiv = document.createElement('div');
-      textLayerDiv.className = 'selectionTextLayer';
-      div.appendChild(textLayerDiv);
+    // Set up text selection
+    var selectionCanvas = null,
+        selectionDiv = null,
+        selectionHandler = null;
+    
+    if (!PDFJS.disableSelection) {
+      selectionDiv = document.createElement('div');
+      selectionDiv.className = 'selectionDiv';
+      div.appendChild(selectionDiv);
 
-      selectionLayerCanvas = document.createElement('canvas');
-      selectionLayerCanvas.className = 'selectionLayer';
-      selectionLayerCanvas.width = pageWidth * scale;
-      selectionLayerCanvas.height = pageHeight * scale;
-      div.appendChild(selectionLayerCanvas);
+      selectionCanvas = document.createElement('canvas');
+      selectionCanvas.className = 'selectionCanvas';
+      selectionCanvas.width = pageWidth * scale;
+      selectionCanvas.height = pageHeight * scale;
+      div.appendChild(selectionCanvas);
+
+      selectionHandler =
+        new SelectionHandler(selectionCanvas, selectionDiv);
     }
-    var selectionLayer = selectionLayerCanvas ? 
-        new SelectionLayerBuilder(selectionLayerCanvas, textLayerDiv) : null;
 
     // Rendering area
 
@@ -884,7 +888,7 @@ var PageView = function pageView(container, content, id, pageWidth, pageHeight,
 
       cache.push(self);
       callback();
-    }, selectionLayer);
+    }, selectionHandler);
 
     setupAnnotations(this.content, this.scale);
     div.setAttribute('data-loaded', true);
@@ -1020,10 +1024,10 @@ var DocumentOutlineView = function documentOutlineView(outline) {
   }
 };
 
-var SelectionLayerBuilder = 
-function selectionLayerBuilder(selectionLayerCanvas, textLayerDiv) {  
-  var canvas = selectionLayerCanvas,
-      ctx = selectionLayerCanvas.getContext('2d'),      
+var SelectionHandler =
+function selectionHandler(selectionCanvas, selectionDiv) {  
+  var canvas = selectionCanvas,
+      ctx = selectionCanvas.getContext('2d'),      
       textData = [],
       holdingButton = false,
       pos0 = {
@@ -1075,9 +1079,9 @@ function selectionLayerBuilder(selectionLayerCanvas, textLayerDiv) {
   }
 
   // Methods
-  this.beginLayout = function selectionLayerBuilderBeginLayout() {};
+  this.beginLayout = function selectionHandlerBeginLayout() {};
 
-  this.endLayout = function selectionLayerBuilderEndLayout() {
+  this.endLayout = function selectionHandlerEndLayout() {
     canvas.addEventListener('mousedown', function(e) {
       if (e.button !== 0)
         return;
@@ -1086,7 +1090,8 @@ function selectionLayerBuilder(selectionLayerCanvas, textLayerDiv) {
       pos0 = getMousePos(canvas, e);
 
       // Reset everything
-      textLayerDiv.textContent = '';
+      selectionDiv.textContent = '';
+      window.getSelection().removeAllRanges();
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       selectionArr = [];
     });
@@ -1109,9 +1114,9 @@ function selectionLayerBuilder(selectionLayerCanvas, textLayerDiv) {
         selectionText += selectionArr[i].char;
       };
       
-      textLayerDiv.textContent = selectionText;
+      selectionDiv.textContent = selectionText;
       var range = document.createRange();
-      range.selectNode(textLayerDiv);
+      range.selectNode(selectionDiv);
       window.getSelection().addRange(range);
     });
 
@@ -1143,7 +1148,7 @@ function selectionLayerBuilder(selectionLayerCanvas, textLayerDiv) {
     });
   };
 
-  this.appendTextData = function selectionLayerBuilderAppendText(aTextData) {
+  this.appendTextData = function selectionHandlerAppendText(aTextData) {
     textData.push.apply(textData, aTextData);
   };
 };
@@ -1172,8 +1177,8 @@ window.addEventListener('load', function webViewerLoad(evt) {
   if ('disableWorker' in params)
     PDFJS.disableWorker = (params['disableWorker'] === 'true');
 
-  if ('disableSelectionLayer' in params)
-    PDFJS.disableSelectionLayer = (params['disableSelectionLayer'] === 'true');
+  if ('disableSelection' in params)
+    PDFJS.disableSelection = (params['disableSelection'] === 'true');
 
   var sidebarScrollView = document.getElementById('sidebarScrollView');
   sidebarScrollView.addEventListener('scroll', updateThumbViewArea, true);

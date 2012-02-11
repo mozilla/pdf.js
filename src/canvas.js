@@ -188,7 +188,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
   // before it stops and shedules a continue of execution.
   var kExecutionTime = 50;
 
-  function CanvasGraphics(canvasCtx, objs, selectionLayer) {
+  function CanvasGraphics(canvasCtx, objs, selectionHandler) {
     this.ctx = canvasCtx;
     this.current = new CanvasExtraState();
     this.stateStack = [];
@@ -197,7 +197,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
     this.xobjs = null;
     this.ScratchCanvas = ScratchCanvas;
     this.objs = objs;
-    this.selectionLayer = selectionLayer;
+    this.selectionHandler = selectionHandler;
     if (canvasCtx) {
       addContextCurrentTransform(canvasCtx);
     }
@@ -260,8 +260,8 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       // Move the media left-top corner to the (0,0) canvas position
       this.ctx.translate(-mediaBox.x, -mediaBox.y);
 
-      if (this.selectionLayer)
-        this.selectionLayer.beginLayout();
+      if (this.selectionHandler)
+        this.selectionHandler.beginLayout();
     },
 
     executeIRQueue: function canvasGraphicsExecuteIRQueue(codeIR,
@@ -325,8 +325,8 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
     endDrawing: function canvasGraphicsEndDrawing() {
       this.ctx.restore();
 
-      if (this.selectionLayer)
-        this.selectionLayer.endLayout();
+      if (this.selectionHandler)
+        this.selectionHandler.endLayout();
     },
 
     // Graphics state
@@ -654,10 +654,8 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       var textHScale2 = textHScale * fontMatrix[0];
       var glyphsLength = glyphs.length;
       var textRenderingMode = current.textRenderingMode;
-      var selectionLayer = this.selectionLayer;
+      var selectionHandler = this.selectionHandler;
       var textData = [];
-      // var text = {str: '', length: 0, canvasWidth: 0, geom: {}};
-      // var textSelection = selectionLayer && !skipTextSelection ? true : false;
 
       // Type3 fonts - each glyph is a "mini-PDF"
       if (font.coded) {
@@ -667,12 +665,6 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
 
         ctx.scale(textHScale, 1);
 
-        // if (textSelection) {
-        //   this.save();
-        //   ctx.scale(1, -1);
-        //   text.geom = this.getTextGeometry();
-        //   this.restore();
-        // }
         for (var i = 0; i < glyphsLength; ++i) {
 
           var glyph = glyphs[i];
@@ -713,7 +705,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
 
         ctx.lineWidth = lineWidth;
 
-        if (selectionLayer)
+        if (selectionHandler)
           var geom = this.getTextGeometry();
 
         var x = 0;
@@ -748,13 +740,16 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
               break;
           }
 
-          textData.push({
-            char: char, 
-            x: geom.x + x * geom.hScale,
-            y: geom.y,
-            width: charWidth * geom.hScale,
-            height: fontSize * geom.vScale
-          });
+          if (selectionHandler) {
+            textData.push({
+              char: char, 
+              x: geom.x + x * geom.hScale,
+              y: geom.y,
+              width: charWidth * geom.hScale,
+              height: fontSize * geom.vScale
+            });
+          }
+          
           x += charWidth;
 
           // text.str += glyph.unicode === ' ' ? '\u00A0' : glyph.unicode;
@@ -765,8 +760,8 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
         ctx.restore();
       }
 
-      if (selectionLayer)
-        selectionLayer.appendTextData(textData);
+      if (selectionHandler)
+        selectionHandler.appendTextData(textData);
     },
     showSpacedText: function canvasGraphicsShowSpacedText(arr) {
       var ctx = this.ctx;
@@ -777,7 +772,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       if (!font.coded)
         textHScale *= (current.fontMatrix || IDENTITY_MATRIX)[0];
       var arrLength = arr.length;
-      var selectionLayer = this.selectionLayer;
+      var selectionHandler = this.selectionHandler;
 
       for (var i = 0; i < arrLength; ++i) {
         var e = arr[i];
@@ -785,13 +780,13 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
           // Space
           var spacingLength = -e * 0.001 * fontSize * textHScale;
   
-          if (selectionLayer && spacingLength > 0) {
+          if (selectionHandler && spacingLength > 0) {
             ctx.save();
             this.applyTextTransforms();
             var geom = this.getTextGeometry();
             ctx.restore();
 
-            selectionLayer.appendTextData([{
+            selectionHandler.appendTextData([{
               char: ' ',
               x: geom.x,
               y: geom.y,

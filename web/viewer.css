@@ -245,13 +245,13 @@ canvas {
   background: url('images/loading-icon.gif') center no-repeat;
 }
 
-.selectionLayer {
+.selectionCanvas {
   position: absolute;
   left: 0;
   top: 0;
 }
 
-.selectionTextLayer {
+.selectionDiv {
   position: absolute;
   opacity: 0;
   left: 0;
