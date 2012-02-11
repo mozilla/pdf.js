@@ -188,7 +188,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
   // before it stops and shedules a continue of execution.
   var kExecutionTime = 50;
 
-  function CanvasGraphics(canvasCtx, objs, textLayer) {
+  function CanvasGraphics(canvasCtx, objs, selectionLayer) {
     this.ctx = canvasCtx;
     this.current = new CanvasExtraState();
     this.stateStack = [];
@@ -197,7 +197,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
     this.xobjs = null;
     this.ScratchCanvas = ScratchCanvas;
     this.objs = objs;
-    this.textLayer = textLayer;
+    this.selectionLayer = selectionLayer;
     if (canvasCtx) {
       addContextCurrentTransform(canvasCtx);
     }
@@ -260,8 +260,8 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       // Move the media left-top corner to the (0,0) canvas position
       this.ctx.translate(-mediaBox.x, -mediaBox.y);
 
-      if (this.textLayer)
-        this.textLayer.beginLayout();
+      if (this.selectionLayer)
+        this.selectionLayer.beginLayout();
     },
 
     executeIRQueue: function canvasGraphicsExecuteIRQueue(codeIR,
@@ -325,8 +325,8 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
     endDrawing: function canvasGraphicsEndDrawing() {
       this.ctx.restore();
 
-      if (this.textLayer)
-        this.textLayer.endLayout();
+      if (this.selectionLayer)
+        this.selectionLayer.endLayout();
     },
 
     // Graphics state
@@ -654,10 +654,10 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       var textHScale2 = textHScale * fontMatrix[0];
       var glyphsLength = glyphs.length;
       var textRenderingMode = current.textRenderingMode;
-      var textLayer = this.textLayer;
+      var selectionLayer = this.selectionLayer;
       var textData = [];
       // var text = {str: '', length: 0, canvasWidth: 0, geom: {}};
-      // var textSelection = textLayer && !skipTextSelection ? true : false;
+      // var textSelection = selectionLayer && !skipTextSelection ? true : false;
 
       // Type3 fonts - each glyph is a "mini-PDF"
       if (font.coded) {
@@ -713,7 +713,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
 
         ctx.lineWidth = lineWidth;
 
-        if (textLayer)
+        if (selectionLayer)
           var geom = this.getTextGeometry();
 
         var x = 0;
@@ -765,8 +765,8 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
         ctx.restore();
       }
 
-      if (textLayer)
-        textLayer.appendTextData(textData);
+      if (selectionLayer)
+        selectionLayer.appendTextData(textData);
     },
     showSpacedText: function canvasGraphicsShowSpacedText(arr) {
       var ctx = this.ctx;
@@ -777,7 +777,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       if (!font.coded)
         textHScale *= (current.fontMatrix || IDENTITY_MATRIX)[0];
       var arrLength = arr.length;
-      var textLayer = this.textLayer;
+      var selectionLayer = this.selectionLayer;
 
       for (var i = 0; i < arrLength; ++i) {
         var e = arr[i];
@@ -785,13 +785,13 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
           // Space
           var spacingLength = -e * 0.001 * fontSize * textHScale;
   
-          if (textLayer && spacingLength > 0) {
+          if (selectionLayer && spacingLength > 0) {
             ctx.save();
             this.applyTextTransforms();
             var geom = this.getTextGeometry();
             ctx.restore();
 
-            textLayer.appendTextData([{
+            selectionLayer.appendTextData([{
               char: ' ',
               x: geom.x,
               y: geom.y,

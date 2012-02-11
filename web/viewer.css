@@ -245,7 +245,7 @@ canvas {
   background: url('images/loading-icon.gif') center no-repeat;
 }
 
-.textLayer {
+.selectionLayer {
   position: absolute;
   left: 0;
   top: 0;
