@@ -1041,12 +1041,11 @@ var TextLayerBuilder = function textLayerBuilder(textLayerDiv) {
         textLayerDiv.appendChild(textDiv);
 
         if (textDiv.dataset.textLength > 1) { // avoid div by zero
-          // Adjust div width (via letterSpacing) to match canvas text
+          // Adjust div width to match canvas text
           // Due to the .offsetWidth calls, this is slow
           // This needs to come after appending to the DOM
-          textDiv.style.letterSpacing =
-            ((textDiv.dataset.canvasWidth - textDiv.offsetWidth) /
-              (textDiv.dataset.textLength - 1)) + 'px';
+          textDiv.style.MozTransform = 'scale(' + textDiv.dataset.canvasWidth/textDiv.offsetWidth + ',1)';
+          textDiv.style.MozTransformOrigin = '0% 0%';
         }
       } // textLength > 0
     }
