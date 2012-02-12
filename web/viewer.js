@@ -1024,19 +1024,21 @@ var DocumentOutlineView = function documentOutlineView(outline) {
   }
 };
 
-// SelectionHandler is the text selection backend
+// Text selection backend, based on Canvas
 // Data entry is via appendTextData(), which expects an array of text objects 
 // containing { char, x, y, width, height }
 var SelectionHandler =
 (function SelectionHandlerClosure() {
+  var holdingButton = false;
+
   function SelectionHandler(selectionCanvas, selectionDiv) {
     this.canvas = selectionCanvas;
     this.selectionDiv = selectionDiv;
     this.ctx = selectionCanvas.getContext('2d');
     this.textData = [];
-    this.holdingButton = false;
     this.pos0 = { x: 0, y: 0 };
     this.selectionArr = [];
+    this.scrollTimer = null;
   }
 
   // Get mouse position relative to the element that emitted the event
@@ -1097,12 +1099,18 @@ var SelectionHandler =
           ctx = this.ctx,
           self = this;
 
-      canvas.addEventListener('mousedown', function SelMouseDownHandler(e) {
-        if (e.button !== 0)
+      document.addEventListener('mousedown', function SelMouseDownHandler(e) {
+        if (e.button !== 0 || e.target.tagName !== 'CANVAS')
           return;
 
-        self.holdingButton = true;
+        holdingButton = true;
         self.pos0 = getMousePos(canvas, e);
+
+        // Click from another page?
+        if (self.pos0.y < 0)
+          self.pos0 = { x: 0, y: 0 };
+        if (self.pos0.y > canvas.height)
+          self.pos0 = { x: canvas.width, y: canvas.height };
 
         // Reset everything
         self.selectionDiv.textContent = '';
@@ -1111,12 +1119,15 @@ var SelectionHandler =
         self.selectionArr = [];
       });
     
-      canvas.addEventListener('mouseup', function SelMouseUpHandler(e) {
-        if (e.button !== 0)
+      document.addEventListener('mouseup', function SelMouseUpHandler(e) {
+        clearInterval(self.scrollTimer);
+        self.scrollTimer = null;
+
+        if (e.button !== 0 || !holdingButton)
           return;
-        
+
         var selectionArr = self.selectionArr;
-        self.holdingButton = false;
+        holdingButton = false;
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
         // No text at all under box?
@@ -1145,8 +1156,28 @@ var SelectionHandler =
       });
 
       canvas.addEventListener('mousemove', function SelMouseMoveHandler(e) {
-        if (!self.holdingButton)
+        if (!holdingButton)
           return;
+
+        // Set up scroll timer if mouse reached bottom of screen
+        var distFromEdge = window.innerHeight - e.clientY,
+            slowBoundary = 70,
+            fastBoundary = 30;
+
+        if (distFromEdge < fastBoundary && !self.scrollTimer) {
+          self.scrollTimer = setInterval(function SelScrollTimer() {
+            window.scrollBy(0, 20);
+            SelMouseMoveHandler(e);
+          }, 50);
+        } else if (distFromEdge < slowBoundary && !self.scrollTimer) {
+          self.scrollTimer = setInterval(function SelScrollTimer() {
+            window.scrollBy(0, 10);
+            SelMouseMoveHandler(e);
+          }, 50);
+        } else if (distFromEdge > slowBoundary && self.scrollTimer) {          
+          clearInterval(self.scrollTimer);
+          self.scrollTimer = null;
+        }
 
         var pos1 = getMousePos(canvas, e),
             pos0 = self.pos0;
@@ -1190,11 +1221,11 @@ var SelectionHandler =
         }
 
         // Draw selection box
-        ctx.save();
-        ctx.fillStyle = 'rgba(0, 0, 255, 0.2)';
-        ctx.fillRect(pos0.x, pos0.y, 
-                     pos1.x - pos0.x, pos1.y - pos0.y);
-        ctx.restore();
+        // ctx.save();
+        // ctx.fillStyle = 'rgba(0, 0, 255, 0.2)';
+        // ctx.fillRect(pos0.x, pos0.y, 
+        //              pos1.x - pos0.x, pos1.y - pos0.y);
+        // ctx.restore();
 
         // Highlight and push letters from firstLetter-lastLatter
         ctx.save();
