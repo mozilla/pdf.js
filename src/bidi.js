@@ -359,7 +359,7 @@ function bidi(text, startLevel) {
    directionality of that character is R.
    */
 
-  //dont mirror as this is already in the pdf
+  //dont mirror as characters are already mirrored in the pdf
 
   // Finally, return string
 
