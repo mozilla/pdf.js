@@ -89,12 +89,31 @@ span#info {
   z-index: 1;
 }
 
-#sidebar:hover {
+#sidebar:hover,
+#sidebar.pinned {
   left: 0px;
   transition: left 0.25s ease-in-out 0s;
   -o-transition: left 0.25s ease-in-out 0s;
   -moz-transition: left 0.25s ease-in-out 0s;
   -webkit-transition: left 0.25s ease-in-out 0s;
+}
+
+#pinIcon {
+  position: absolute;
+  top: 4px;
+  right: 55px;
+  width: 15px;
+  height: 15px;
+  background: center no-repeat;
+  background-image: url('images/pin_up.png');
+}
+
+#pinIcon:hover {
+  background-color: rgba(255,255,255,0.35);
+}
+
+#sidebar.pinned #pinIcon {
+  background-image: url('images/pin_down.png');
 }
 
 #sidebarBox {
@@ -116,7 +135,7 @@ span#info {
   position: absolute;
   overflow: hidden;
   overflow-y: auto;
-  top: 10px;
+  top: 20px;
   bottom: 10px;
   left: 10px;
   width: 280px;
@@ -147,7 +166,7 @@ span#info {
   position: absolute;
   background-color: #fff;
   overflow: auto;
-  top: 10px;
+  top: 20px;
   bottom: 10px;
   left: 10px;
   width: 280px;
@@ -381,6 +400,6 @@ canvas {
 }
 
 #loading {
-	margin: 100px 0;
-	text-align: center;
+  margin: 100px 0;
+  text-align: center;
 }
