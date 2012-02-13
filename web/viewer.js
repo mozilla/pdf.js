@@ -1185,9 +1185,9 @@ var SelectionHandler =
         self.selectionArr = [];
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        // Find range of user-selected letters
-        // At this point firstLetter, lastLetter are the first and last letters
-        // that fall inside the selection rectangle
+        // Compute firstLetter, lastLetter:
+        // These are the first and last letters that fall inside the 
+        // selection rectangle
         var rect = { x0: pos0.x, y0: pos0.y, 
                      x1: pos1.x, y1: pos1.y },
             textData = self.textData,
@@ -1210,22 +1210,29 @@ var SelectionHandler =
         if (lastLetter === null)
           return;
 
-        // Fix firstLetter/lastLetter by adding adjacent letters that belong 
-        // to the same line (if cursor is above the letters)
-
+        // If firstLetter is below pos0, move firstLetter backwards (in the
+        // PDF order) until it crosses pos0.y or is no longer going up
         if (pos0.y < textData[firstLetter].y) {
           var i = firstLetter;
-          while (i > 0 && textData[i - 1].y === textData[i].y)
+          while (i > 0 && textData[i - 1].y <= textData[i].y &&
+                 textData[i - 1].y > pos0.y)
             i--;
           firstLetter = i;
         }
 
+        // Selection is from top to bottom
+        if (pos1.y > pos0.y) {
+          // Replace selection pos0 to that of firstLetter
+          self.pos0 = { x: textData[firstLetter].x, 
+                        y: textData[firstLetter].y };
+        }
+        
         // Draw selection box
-        // ctx.save();
-        // ctx.fillStyle = 'rgba(0, 0, 255, 0.2)';
-        // ctx.fillRect(pos0.x, pos0.y, 
-        //              pos1.x - pos0.x, pos1.y - pos0.y);
-        // ctx.restore();
+        ctx.save();
+        ctx.fillStyle = 'rgba(0, 0, 255, 0.2)';
+        ctx.fillRect(pos0.x, pos0.y, 
+                     pos1.x - pos0.x, pos1.y - pos0.y);
+        ctx.restore();
 
         // Highlight and push letters from firstLetter-lastLatter
         ctx.save();
