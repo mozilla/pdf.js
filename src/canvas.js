@@ -824,18 +824,15 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
               text.str += shownText.str;
             }
             text.canvasWidth += shownText.canvasWidth;
-            text.length += e.length;
+            text.length += shownText.length;
           }
         } else {
           malformed('TJ array element ' + e + ' is not string or num');
         }
       }
 
-      if (textSelection) {
-        if (isRTLRangeFor(text.str.charCodeAt(0))) //first char is rtl
-         text.str = bidi(null, text.str, 1);
+      if (textSelection)
         this.textLayer.appendText(text, font.loadedName, fontSize);
-      }
     },
     nextLineShowText: function canvasGraphicsNextLineShowText(text) {
       this.nextLine();
