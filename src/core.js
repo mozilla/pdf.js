@@ -244,10 +244,16 @@ var Page = (function PageClosure() {
       var startIdx = 0;
       var length = this.IRQueue.fnArray.length;
       var IRQueue = this.IRQueue;
+      var stepper = null;
+      if (PDFJS.pdfBug && Debugger.enabled) {
+        stepper = Debugger.create(this.pageNumber);
+        stepper.init(IRQueue);
+        stepper.nextBreakPoint = stepper.getNextBreakPoint();
+      }
 
       var self = this;
       function next() {
-        startIdx = gfx.executeIRQueue(IRQueue, startIdx, next);
+        startIdx = gfx.executeIRQueue(IRQueue, startIdx, next, stepper);
         if (startIdx == length) {
           self.stats.render = Date.now();
           gfx.endDrawing();

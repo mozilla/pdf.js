@@ -1119,6 +1119,20 @@ window.addEventListener('load', function webViewerLoad(evt) {
   if ('disableTextLayer' in params)
     PDFJS.disableTextLayer = (params['disableTextLayer'] === 'true');
 
+  if ('PDFBug' in params)
+    PDFJS.pdfBug = (params['PDFBug'] === 'true');
+
+  if (PDFJS.pdfBug) {
+    var debugTools = PDFBug.tools;
+    for (var i = 0; i < debugTools.length; ++i) {
+      var tool = debugTools[i];
+      var key = 'PDFBug_' + tool.id;
+      if (key in params)
+        tool.enabled = (params[key] === 'true');
+    }
+    PDFBug.init();
+  }
+
   var sidebarScrollView = document.getElementById('sidebarScrollView');
   sidebarScrollView.addEventListener('scroll', updateThumbViewArea, true);
 }, true);

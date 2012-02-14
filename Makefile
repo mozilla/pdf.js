@@ -36,6 +36,7 @@ PDF_JS_FILES = \
   pattern.js \
   stream.js \
   worker.js \
+  debugger.js \
   ../external/jpgjs/jpg.js \
   jpx.js \
 	$(NULL)
