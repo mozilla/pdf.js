@@ -49,6 +49,7 @@ var FontInspector = (function FontInspectorClosure() {
     }
   }
   return {
+    // Poperties/functions needed by PDFBug.
     id: 'FontInspector',
     name: 'Font Inspector',
     panel: null,
@@ -78,6 +79,7 @@ var FontInspector = (function FontInspectorClosure() {
         removeSelection();
       }
     },
+    // FontInspector specific functions.
     fontAdded: function fontAdded(fontObj, url) {
       function properties(obj, list) {
         var moreInfo = document.createElement('table');
@@ -125,7 +127,7 @@ var FontInspector = (function FontInspectorClosure() {
       font.appendChild(logIt);
       font.appendChild(moreInfo);
       fonts.appendChild(font);
-      // Somewhat of a hack, shoudl probably add a hook for when the text layer
+      // Somewhat of a hack, should probably add a hook for when the text layer
       // is done rendering.
       setTimeout(function() {
         if (this.active)
@@ -136,13 +138,14 @@ var FontInspector = (function FontInspectorClosure() {
 })();
 
 // Manages all the page steppers.
-var Debugger = (function PdfDeuggerClosure() {
+var Debugger = (function DeuggerClosure() {
   var steppers = [];
   var stepperDiv = null;
   var stepperControls = null;
   var stepperChooser = null;
   var breakPoints = {};
   return {
+    // Poperties/functions needed by PDFBug.
     id: 'Debugger',
     name: 'Debugger',
     panel: null,
@@ -164,6 +167,7 @@ var Debugger = (function PdfDeuggerClosure() {
     },
     enabled: false,
     active: false,
+    // Debugger specific functions.
     create: function create(pageNumber) {
       var debug = document.createElement('div');
       debug.id = 'stepper' + pageNumber;
