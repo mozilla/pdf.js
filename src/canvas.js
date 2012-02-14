@@ -285,7 +285,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       var slowCommands = this.slowCommands;
 
       while (true) {
-        if (stepper !== null && i === stepper.nextBreakPoint) {
+        if (stepper && i === stepper.nextBreakPoint) {
           stepper.breakIt(i, continueCallback);
           return i;
         }
