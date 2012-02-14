@@ -571,6 +571,10 @@ var PDFView = {
     }
   },
 
+  pinSidebar: function pdfViewPinSidebar() {
+    document.getElementById('sidebar').classList.toggle('pinned');
+  },
+
   getVisiblePages: function pdfViewGetVisiblePages() {
     var pages = this.pages;
     var kBottomMargin = 10;
