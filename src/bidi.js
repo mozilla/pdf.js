@@ -1,71 +1,54 @@
+/* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
+
+'use strict';
+
+// Character types for symbols from 0000 to 00FF.
 var baseTypes = [
-  "BN", "BN", "BN", "BN", "BN", "BN", "BN", "BN", "BN", "S", "B", "S", "WS",
-  "B", "BN", "BN", /*U+000*/
-  "BN", "BN", "BN", "BN", "BN", "BN", "BN", "BN", "BN", "BN", "BN", "BN", "B",
-  "B", "B", "S", /*U+001*/
-  "WS", "ON", "ON", "ET", "ET", "ET", "ON", "ON", "ON", "ON", "ON", "ON", "CS",
-  "ON", "CS", "ON", /*U+002*/
-  "EN", "EN", "EN", "EN", "EN", "EN", "EN", "EN", "EN", "EN", "ON", "ON", "ON",
-  "ON", "ON", "ON", /*U+003*/
-  "ON", "L", "L", "L", "L", "L", "L", "L", "L", "L", "L", "L", "L", "L", "L",
-  "L", /*U+004*/
-  "L", "L", "L", "L", "L", "L", "L", "L", "L", "L", "L", "ON", "ON", "ON", "ON",
-  "ON", /*U+005*/
-  "ON", "L", "L", "L", "L", "L", "L", "L", "L", "L", "L", "L", "L", "L", "L",
-  "L", /*U+006*/
-  "L", "L", "L", "L", "L", "L", "L", "L", "L", "L", "L", "ON", "ON", "ON", "ON",
-  "BN", /*U+007*/
-  "BN", "BN", "BN", "BN", "BN", "B", "BN", "BN", "BN", "BN", "BN", "BN", "BN",
-  "BN", "BN", "BN", /*U+008*/
-  "BN", "BN", "BN", "BN", "BN", "BN", "BN", "BN", "BN", "BN", "BN", "BN", "BN",
-  "BN", "BN", "BN", /*U+009*/
-  "CS", "ON", "ET", "ET", "ET", "ET", "ON", "ON", "ON", "ON", "L", "ON", "ON",
-  "ON", "ON", "ON", /*U+00a*/
-  "ET", "ET", "EN", "EN", "ON", "L", "ON", "ON", "ON", "EN", "L", "ON", "ON",
-  "ON", "ON", "ON", /*U+00b*/
-  "L", "L", "L", "L", "L", "L", "L", "L", "L", "L", "L", "L", "L", "L", "L",
-  "L", /*U+00c*/
-  "L", "L", "L", "L", "L", "L", "L", "ON", "L", "L", "L", "L", "L", "L", "L",
-  "L", /*U+00d*/
-  "L", "L", "L", "L", "L", "L", "L", "L", "L", "L", "L", "L", "L", "L", "L",
-  "L", /*U+00e*/
-  "L", "L", "L", "L", "L", "L", "L", "ON", "L", "L", "L", "L", "L", "L", "L",
-  "L"   /*U+00f*/
+  'BN', 'BN', 'BN', 'BN', 'BN', 'BN', 'BN', 'BN', 'BN', 'S', 'B', 'S', 'WS',
+  'B', 'BN', 'BN', 'BN', 'BN', 'BN', 'BN', 'BN', 'BN', 'BN', 'BN', 'BN', 'BN',
+  'BN', 'BN', 'B', 'B', 'B', 'S', 'WS', 'ON', 'ON', 'ET', 'ET', 'ET', 'ON',
+  'ON', 'ON', 'ON', 'ON', 'ON', 'CS', 'ON', 'CS', 'ON', 'EN', 'EN', 'EN', 'EN',
+  'EN', 'EN', 'EN', 'EN', 'EN', 'EN', 'ON', 'ON', 'ON', 'ON', 'ON', 'ON', 'ON',
+  'L', 'L', 'L', 'L', 'L', 'L', 'L', 'L', 'L', 'L', 'L', 'L', 'L', 'L', 'L',
+  'L', 'L', 'L', 'L', 'L', 'L', 'L', 'L', 'L', 'L', 'L', 'ON', 'ON', 'ON', 'ON',
+  'ON', 'ON', 'L', 'L', 'L', 'L', 'L', 'L', 'L', 'L', 'L', 'L', 'L', 'L', 'L',
+  'L', 'L', 'L', 'L', 'L', 'L', 'L', 'L', 'L', 'L', 'L', 'L', 'L', 'ON', 'ON',
+  'ON', 'ON', 'BN', 'BN', 'BN', 'BN', 'BN', 'BN', 'B', 'BN', 'BN', 'BN', 'BN',
+  'BN', 'BN', 'BN', 'BN', 'BN', 'BN', 'BN', 'BN', 'BN', 'BN', 'BN', 'BN', 'BN',
+  'BN', 'BN', 'BN', 'BN', 'BN', 'BN', 'BN', 'BN', 'BN', 'CS', 'ON', 'ET', 'ET',
+  'ET', 'ET', 'ON', 'ON', 'ON', 'ON', 'L', 'ON', 'ON', 'ON', 'ON', 'ON', 'ET',
+  'ET', 'EN', 'EN', 'ON', 'L', 'ON', 'ON', 'ON', 'EN', 'L', 'ON', 'ON', 'ON',
+  'ON', 'ON', 'L', 'L', 'L', 'L', 'L', 'L', 'L', 'L', 'L', 'L', 'L', 'L', 'L',
+  'L', 'L', 'L', 'L', 'L', 'L', 'L', 'L', 'L', 'L', 'ON', 'L', 'L', 'L', 'L',
+  'L', 'L', 'L', 'L', 'L', 'L', 'L', 'L', 'L', 'L', 'L', 'L', 'L', 'L', 'L',
+  'L', 'L', 'L', 'L', 'L', 'L', 'L', 'L', 'L', 'L', 'L', 'L', 'ON', 'L', 'L',
+  'L', 'L', 'L', 'L', 'L', 'L'
 ];
 
+// Character types for symbols from 0600 to 06FF
 var arabicTypes = [
-  "AL", "AL", "AL", "AL", "AL", "AL", "AL", "AL", "AL", "AL", "AL", "AL", "CS",
-  "AL", "ON", "ON", //60
-  "NSM", "NSM", "NSM", "NSM", "NSM", "NSM", "AL", "AL", "AL", "AL", "AL", "AL",
-  "AL", "AL", "AL", "AL", //61
-  "AL", "AL", "AL", "AL", "AL", "AL", "AL", "AL", "AL", "AL", "AL", "AL", "AL",
-  "AL", "AL", "AL", //62
-  "AL", "AL", "AL", "AL", "AL", "AL", "AL", "AL", "AL", "AL", "AL", "AL", "AL",
-  "AL", "AL", "AL", //63
-  "AL", "AL", "AL", "AL", "AL", "AL", "AL", "AL", "AL", "AL", "AL", "NSM",
-  "NSM", "NSM", "NSM", "NSM", //64
-  "NSM", "NSM", "NSM", "NSM", "NSM", "NSM", "NSM", "NSM", "NSM", "AL", "AL",
-  "AL", "AL", "AL", "AL", "AL", //65
-  "AN", "AN", "AN", "AN", "AN", "AN", "AN", "AN", "AN", "AN", "ET", "AN", "AN",
-  "AL", "AL", "AL", //66
-  "NSM", "AL", "AL", "AL", "AL", "AL", "AL", "AL", "AL", "AL", "AL", "AL", "AL",
-  "AL", "AL", "AL", //67
-  "AL", "AL", "AL", "AL", "AL", "AL", "AL", "AL", "AL", "AL", "AL", "AL", "AL",
-  "AL", "AL", "AL", //68
-  "AL", "AL", "AL", "AL", "AL", "AL", "AL", "AL", "AL", "AL", "AL", "AL", "AL",
-  "AL", "AL", "AL", //69
-  "AL", "AL", "AL", "AL", "AL", "AL", "AL", "AL", "AL", "AL", "AL", "AL", "AL",
-  "AL", "AL", "AL", //6a
-  "AL", "AL", "AL", "AL", "AL", "AL", "AL", "AL", "AL", "AL", "AL", "AL", "AL",
-  "AL", "AL", "AL", //6b
-  "AL", "AL", "AL", "AL", "AL", "AL", "AL", "AL", "AL", "AL", "AL", "AL", "AL",
-  "AL", "AL", "AL", //6c
-  "AL", "AL", "AL", "AL", "AL", "AL", "NSM", "NSM", "NSM", "NSM", "NSM", "NSM",
-  "NSM", "NSM", "NSM", "NSM", //6d
-  "NSM", "NSM", "NSM", "NSM", "NSM", "NSM", "NSM", "NSM", "NSM", "ON", "NSM",
-  "NSM", "NSM", "NSM", "AL", "AL", //6e
-  "AL", "AL", "AL", "AL", "AL", "AL", "AL", "AL", "AL", "AL", "AL", "AL", "AL",
-  "AL", "AL", "AL"  //6f
+  'AL', 'AL', 'AL', 'AL', 'AL', 'AL', 'AL', 'AL', 'AL', 'AL', 'AL', 'AL', 'CS',
+  'AL', 'ON', 'ON', 'NSM', 'NSM', 'NSM', 'NSM', 'NSM', 'NSM', 'AL', 'AL', 'AL',
+  'AL', 'AL', 'AL', 'AL', 'AL', 'AL', 'AL', 'AL', 'AL', 'AL', 'AL', 'AL', 'AL',
+  'AL', 'AL', 'AL', 'AL', 'AL', 'AL', 'AL', 'AL', 'AL', 'AL', 'AL', 'AL', 'AL',
+  'AL', 'AL', 'AL', 'AL', 'AL', 'AL', 'AL', 'AL', 'AL', 'AL', 'AL', 'AL', 'AL',
+  'AL', 'AL', 'AL', 'AL', 'AL', 'AL', 'AL', 'AL', 'AL', 'AL', 'AL', 'NSM',
+  'NSM', 'NSM', 'NSM', 'NSM', 'NSM', 'NSM', 'NSM', 'NSM', 'NSM', 'NSM', 'NSM',
+  'NSM', 'NSM', 'AL', 'AL', 'AL', 'AL', 'AL', 'AL', 'AL', 'AN', 'AN', 'AN',
+  'AN', 'AN', 'AN', 'AN', 'AN', 'AN', 'AN', 'ET', 'AN', 'AN', 'AL', 'AL', 'AL',
+  'NSM', 'AL', 'AL', 'AL', 'AL', 'AL', 'AL', 'AL', 'AL', 'AL', 'AL', 'AL', 'AL',
+  'AL', 'AL', 'AL', 'AL', 'AL', 'AL', 'AL', 'AL', 'AL', 'AL', 'AL', 'AL', 'AL',
+  'AL', 'AL', 'AL', 'AL', 'AL', 'AL', 'AL', 'AL', 'AL', 'AL', 'AL', 'AL', 'AL',
+  'AL', 'AL', 'AL', 'AL', 'AL', 'AL', 'AL', 'AL', 'AL', 'AL', 'AL', 'AL', 'AL',
+  'AL', 'AL', 'AL', 'AL', 'AL', 'AL', 'AL', 'AL', 'AL', 'AL', 'AL', 'AL', 'AL',
+  'AL', 'AL', 'AL', 'AL', 'AL', 'AL', 'AL', 'AL', 'AL', 'AL', 'AL', 'AL', 'AL',
+  'AL', 'AL', 'AL', 'AL', 'AL', 'AL', 'AL', 'AL', 'AL', 'AL', 'AL', 'AL', 'AL',
+  'AL', 'AL', 'AL', 'AL', 'AL', 'AL', 'AL', 'AL', 'AL', 'AL', 'AL', 'NSM',
+  'NSM', 'NSM', 'NSM', 'NSM', 'NSM', 'NSM', 'NSM', 'NSM', 'NSM', 'NSM', 'NSM',
+  'NSM', 'NSM', 'NSM', 'NSM', 'NSM', 'NSM', 'NSM', 'ON', 'NSM', 'NSM', 'NSM',
+  'NSM', 'AL', 'AL', 'AL', 'AL', 'AL', 'AL', 'AL', 'AL', 'AL', 'AL', 'AL', 'AL',
+  'AL', 'AL', 'AL', 'AL', 'AL', 'AL'
 ];
 
 function bidi(text, startLevel) {
@@ -81,23 +64,23 @@ function bidi(text, startLevel) {
   var numBidi = 0;
 
   for (var i = 0; i < strLength; ++i) {
-    var c = str.charAt(i);
-    chars[i] = c;
+    chars[i] = str.charAt(i);
 
-    var t = "L";
-    if (c <= '\u00ff')
-      t = baseTypes[c.charCodeAt(0)];
-    else if ('\u0590' <= c && c <= '\u05f4')
-      t = "R";
-    else if ('\u0600' <= c && c <= '\u06ff')
-      t = arabicTypes[c.charCodeAt(0) & 0xff];
-    else if ('\u0700' <= c && c <= '\u08AC')
-      t = "AL";
+    var charCode = str.charCodeAt(i);
+    var charType = 'L';
+    if (charCode <= 0x00ff)
+      charType = baseTypes[charCode];
+    else if (0x0590 <= charCode && charCode <= 0x05f4)
+      charType = 'R';
+    else if (0x0600 <= charCode && charCode <= 0x06ff)
+      charType = arabicTypes[charCode & 0xff];
+    else if (0x0700 <= charCode && charCode <= 0x08AC)
+      charType = 'AL';
 
-    if (t == "R" || t == "AL" || t == "AN")
+    if (charType == 'R' || charType == 'AL' || charType == 'AN')
       numBidi++;
 
-    oldtypes[i] = types[i] = t;
+    oldtypes[i] = types[i] = charType;
   }
 
   // detect the bidi method
@@ -132,7 +115,7 @@ function bidi(text, startLevel) {
    X1-X10: skip most of this, since we are NOT doing the embeddings.
    */
 
-  var e = isOdd(startLevel) ? "R" : "L";
+  var e = isOdd(startLevel) ? 'R' : 'L';
   var sor = e;
   var eor = sor;
 
@@ -144,7 +127,7 @@ function bidi(text, startLevel) {
 
   var lastType = sor;
   for (var i = 0; i < strLength; ++i) {
-    if (types[i] == "NSM") types[i] = lastType;
+    if (types[i] == 'NSM') types[i] = lastType;
     else lastType = types[i];
   }
 
@@ -157,9 +140,9 @@ function bidi(text, startLevel) {
   var lastType = sor;
   for (var i = 0; i < strLength; ++i) {
     var t = types[i];
-    if (t == "EN")
-      types[i] = (lastType == "AL") ? "AN" : "EN";
-    else if (t == "R" || t == "L" || t == "AL")
+    if (t == 'EN')
+      types[i] = (lastType == 'AL') ? 'AN' : 'EN';
+    else if (t == 'R' || t == 'L' || t == 'AL')
       lastType = t;
   }
 
@@ -169,7 +152,7 @@ function bidi(text, startLevel) {
 
   for (var i = 0; i < strLength; ++i) {
     var t = types[i];
-    if (t == "AL") types[i] = "R";
+    if (t == 'AL') types[i] = 'R';
   }
 
   /*
@@ -179,9 +162,9 @@ function bidi(text, startLevel) {
    */
 
   for (var i = 1; i < strLength - 1; ++i) {
-    if (types[i] == "ES" && types[i - 1] == "EN" && types[i + 1] == "EN")
-      types[i] = "EN";
-    if (types[i] == "CS" && (types[i - 1] == "EN" || types[i - 1] == "AN") &&
+    if (types[i] == 'ES' && types[i - 1] == 'EN' && types[i + 1] == 'EN')
+      types[i] = 'EN';
+    if (types[i] == 'CS' && (types[i - 1] == 'EN' || types[i - 1] == 'AN') &&
         types[i + 1] == types[i - 1])
       types[i] = types[i - 1];
   }
@@ -192,17 +175,17 @@ function bidi(text, startLevel) {
    */
 
   for (var i = 0; i < strLength; ++i) {
-    if (types[i] == "EN") {
+    if (types[i] == 'EN') {
       // do before
-      for (j = i - 1; j >= 0; --j) {
-        if (types[j] == "ET")
-          types[j] = "EN";
+      for (var j = i - 1; j >= 0; --j) {
+        if (types[j] == 'ET')
+          types[j] = 'EN';
         else break;
       }
       // do after
-      for (j = i + 1; j < strLength; --j) {
-        if (types[j] == "ET")
-          types[j] = "EN";
+      for (var j = i + 1; j < strLength; --j) {
+        if (types[j] == 'ET')
+          types[j] = 'EN';
         else break;
       }
     }
@@ -214,8 +197,8 @@ function bidi(text, startLevel) {
 
   for (var i = 0; i < strLength; ++i) {
     var t = types[i];
-    if (t == "WS" || t == "ES" || t == "ET" || t == "CS")
-      types[i] = "ON";
+    if (t == 'WS' || t == 'ES' || t == 'ET' || t == 'CS')
+      types[i] = 'ON';
   }
 
   /*
@@ -227,9 +210,9 @@ function bidi(text, startLevel) {
   var lastType = sor;
   for (var i = 0; i < strLength; ++i) {
     var t = types[i];
-    if (t == "EN")
-      types[i] = (lastType == "L") ? "L" : "EN";
-    else if (t == "R" || t == "L")
+    if (t == 'EN')
+      types[i] = (lastType == 'L') ? 'L' : 'EN';
+    else if (t == 'R' || t == 'L')
       lastType = t;
   }
 
@@ -241,18 +224,18 @@ function bidi(text, startLevel) {
    */
 
   for (var i = 0; i < strLength; ++i) {
-    if (types[i] == "ON") {
-      var end = findUnequal(types, i + 1, "ON");
+    if (types[i] == 'ON') {
+      var end = findUnequal(types, i + 1, 'ON');
       var before = sor;
       if (i > 0)
         before = types[i - 1];
       var after = eor;
       if (end + 1 < strLength)
         after = types[end + 1];
-      if (before != "L")
-        before = "R";
-      if (after != "L")
-        after = "R";
+      if (before != 'L')
+        before = 'R';
+      if (after != 'L')
+        after = 'R';
       if (before == after)
         setValues(types, i, end, before);
       i = end - 1; // reset to end (-1 so next iteration is ok)
@@ -264,7 +247,7 @@ function bidi(text, startLevel) {
    */
 
   for (var i = 0; i < strLength; ++i) {
-    if (types[i] == "ON")
+    if (types[i] == 'ON')
       types[i] = e;
   }
 
@@ -278,15 +261,15 @@ function bidi(text, startLevel) {
   for (var i = 0; i < strLength; ++i) {
     var t = types[i];
     if (isEven(levels[i])) {
-      if (t == "R") {
+      if (t == 'R') {
         levels[i] += 1;
       }
-      else if (t == "AN" || t == "EN") {
+      else if (t == 'AN' || t == 'EN') {
         levels[i] += 2;
       }
     }
     else { // isOdd, so
-      if (t == "L" || t == "AN" || t == "EN") {
+      if (t == 'L' || t == 'AN' || t == 'EN') {
         levels[i] += 1;
       }
     }
@@ -303,7 +286,7 @@ function bidi(text, startLevel) {
    of the line.
    */
 
-  //dont bother as text is only single line
+  // don't bother as text is only single line
 
   /*
    L2. From the highest level found in the text to the lowest odd level on each
@@ -315,7 +298,7 @@ function bidi(text, startLevel) {
 
   var highestLevel = -1;
   var lowestOddLevel = 99;
-  for (var i = 0; i < levels.length; ++i) {
+  for (var i = 0, ii = levels.length; i < ii; ++i) {
     var level = levels[i];
     if (highestLevel < level)
       highestLevel = level;
@@ -359,20 +342,18 @@ function bidi(text, startLevel) {
    directionality of that character is R.
    */
 
-  //dont mirror as characters are already mirrored in the pdf
+  // don't mirror as characters are already mirrored in the pdf
 
   // Finally, return string
 
-  var result = "";
-  for (var i = 0; i < chars.length; ++i) {
+  var result = '';
+  for (var i = 0, ii = chars.length; i < ii; ++i) {
     var ch = chars[i];
     if (ch != '<' && ch != '>')
       result += ch;
   }
   return result;
 }
-
-// UTILITIES
 
 function isOdd(i) {
   return (i & 1) != 0;
@@ -435,10 +416,10 @@ function mirrorGlyphs(c) {
       return '{';
     case '{':
       return '}';
-    case '�':
-      return '�';
-    case '�':
-      return '�';
+    case '\u00AB':
+      return '\u00BB';
+    case '\u00BB':
+      return '\u00AB';
     default:
       return c;
   }
