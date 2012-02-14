@@ -3,7 +3,7 @@
   "version": "0.1",
   "description": "Read PDF Document",
   "permissions": [
-    "experimental",
+    "webRequest", "webRequestBlocking",
     "http://*/*.pdf",
     "file:///*/*.pdf"
   ],

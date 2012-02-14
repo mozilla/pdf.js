@@ -37,8 +37,8 @@ auto-update extensions on a daily basis (you can change this through the
 `extensions.update.interval` option in `about:config`).
 
 For an experimental Chrome extension, get the code as explained below and issue `make extension`. 
-Then open Chrome with the flag `--enable-experimental-extension-apis`, go to `Tools > Extension`
-and load the (unpackaged) extension from the directory `extensions/chrome`.
+Then open Chrome, go to `Tools > Extension` and load the (unpackaged) extension
+from the directory `build/chrome`.
 
 ### Getting the code
 
