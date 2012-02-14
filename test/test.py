@@ -65,6 +65,7 @@ MIMEs = {
     '.pdf': 'application/pdf',
     '.xhtml': 'application/xhtml+xml',
     '.ico': 'image/x-icon',
+    '.gif': 'image/gif',
     '.log': 'text/plain'
 }
 
