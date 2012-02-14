@@ -17,11 +17,15 @@ var TextRenderingMode = {
   ADD_TO_PATH: 7
 };
 
+// Minimal font size that would be used during canvas fillText operations.
+var MIN_FONT_SIZE = 1;
+
 var CanvasExtraState = (function CanvasExtraStateClosure() {
   function CanvasExtraState(old) {
     // Are soft masks and alpha values shapes or opacities?
     this.alphaIsShape = false;
     this.fontSize = 0;
+    this.fontSizeScale = 1;
     this.textMatrix = IDENTITY_MATRIX;
     this.fontMatrix = IDENTITY_MATRIX;
     this.leading = 0;
@@ -577,6 +581,9 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       this.current.font = fontObj;
       this.current.fontSize = size;
 
+      if (fontObj.coded)
+        return; // we don't need ctx.font for Type3 fonts
+
       var name = fontObj.loadedName || 'sans-serif';
       var bold = fontObj.black ? (fontObj.bold ? 'bolder' : 'bold') :
                                  (fontObj.bold ? 'bold' : 'normal');
@@ -584,7 +591,16 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       var italic = fontObj.italic ? 'italic' : 'normal';
       var serif = fontObj.isSerifFont ? 'serif' : 'sans-serif';
       var typeface = '"' + name + '", ' + serif;
-      var rule = italic + ' ' + bold + ' ' + size + 'px ' + typeface;
+
+      // Some font backends cannot handle fonts below certain size.
+      // Keeping the font at minimal size and using the fontSizeScale to change
+      // the current transformation matrix before the fillText/strokeText.
+      // See https://bugzilla.mozilla.org/show_bug.cgi?id=726227
+      var browserFontSize = size >= MIN_FONT_SIZE ? size : MIN_FONT_SIZE;
+      this.current.fontSizeScale = browserFontSize != MIN_FONT_SIZE ? 1.0 :
+                                   size / MIN_FONT_SIZE;
+
+      var rule = italic + ' ' + bold + ' ' + browserFontSize + 'px ' + typeface;
       this.ctx.font = rule;
     },
     setTextRenderingMode: function canvasGraphicsSetTextRenderingMode(mode) {
@@ -647,6 +663,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       var font = current.font;
       var glyphs = font.charsToGlyphs(str);
       var fontSize = current.fontSize;
+      var fontSizeScale = current.fontSizeScale;
       var charSpacing = current.charSpacing;
       var wordSpacing = current.wordSpacing;
       var textHScale = current.textHScale;
@@ -710,10 +727,15 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
         else
           lineWidth /= scale;
 
-        ctx.lineWidth = lineWidth;
-
         if (textSelection)
           text.geom = this.getTextGeometry();
+
+        if (fontSizeScale != 1.0) {
+          ctx.scale(fontSizeScale, fontSizeScale);
+          lineWidth /= fontSizeScale;
+        }
+
+        ctx.lineWidth = lineWidth;
 
         var x = 0;
         for (var i = 0; i < glyphsLength; ++i) {
@@ -728,20 +750,21 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
           var charWidth = glyph.width * fontSize * 0.001 +
               Util.sign(current.fontMatrix[0]) * charSpacing;
 
+          var scaledX = x / fontSizeScale;
           switch (textRenderingMode) {
             default: // other unsupported rendering modes
             case TextRenderingMode.FILL:
             case TextRenderingMode.FILL_ADD_TO_PATH:
-              ctx.fillText(char, x, 0);
+              ctx.fillText(char, scaledX, 0);
               break;
             case TextRenderingMode.STROKE:
             case TextRenderingMode.STROKE_ADD_TO_PATH:
-              ctx.strokeText(char, x, 0);
+              ctx.strokeText(char, scaledX, 0);
               break;
             case TextRenderingMode.FILL_STROKE:
             case TextRenderingMode.FILL_STROKE_ADD_TO_PATH:
-              ctx.fillText(char, x, 0);
-              ctx.strokeText(char, x, 0);
+              ctx.fillText(char, scaledX, 0);
+              ctx.strokeText(char, scaledX, 0);
               break;
             case TextRenderingMode.INVISIBLE:
               break;

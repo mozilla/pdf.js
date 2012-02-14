@@ -438,6 +438,13 @@
       "link": true,
       "type": "eq"
     },
+    {  "id": "issue1169",
+      "file": "pdfs/issue1169.pdf",
+      "md5": "3df3ed21fd43ac7fdb21e2015c8a7809",
+      "rounds": 1,
+      "link": true,
+      "type": "eq"
+    },
     {  "id": "zerowidthline",
       "file": "pdfs/zerowidthline.pdf",
       "md5": "295d26e61a85635433f8e4b768953f60",
