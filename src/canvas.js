@@ -18,7 +18,7 @@ var TextRenderingMode = {
 };
 
 // Minimal font size that would be used during canvas fillText operations.
-var MIN_FONT_SIZE = 5;
+var MIN_FONT_SIZE = 8;
 
 var CanvasExtraState = (function CanvasExtraStateClosure() {
   function CanvasExtraState(old) {
@@ -721,7 +721,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
         if (scale == 0 || lineWidth == 0)
           lineWidth = this.getSinglePixelWidth();
         else
-          lineWidth /= scale;
+          lineWidth /= scale * fontSizeScale;
 
         ctx.lineWidth = lineWidth;
 
