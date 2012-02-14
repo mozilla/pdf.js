@@ -18,7 +18,7 @@ var TextRenderingMode = {
 };
 
 // Minimal font size that would be used during canvas fillText operations.
-var MIN_FONT_SIZE = 2;
+var MIN_FONT_SIZE = 1;
 
 var CanvasExtraState = (function CanvasExtraStateClosure() {
   function CanvasExtraState(old) {
@@ -592,6 +592,10 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       var serif = fontObj.isSerifFont ? 'serif' : 'sans-serif';
       var typeface = '"' + name + '", ' + serif;
 
+      // Some font backends cannot handle fonts below certain size.
+      // Keeping the font at minimal size and using the fontSizeScale to change
+      // the current transformation matrix before the fillText/strokeText.
+      // See https://bugzilla.mozilla.org/show_bug.cgi?id=726227
       var browserFontSize = size >= MIN_FONT_SIZE ? size : MIN_FONT_SIZE;
       this.current.fontSizeScale = browserFontSize != MIN_FONT_SIZE ? 1.0 :
                                    size / MIN_FONT_SIZE;
