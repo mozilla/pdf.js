@@ -675,6 +675,8 @@ var PredictorStream = (function PredictorStreamClosure() {
         (inbuf & ((1 << (8 - outbits)) - 1));
       }
     }
+    // HACK for TypedArray-less browsers
+    buffer.set(currentRow, bufferLength);
     this.bufferLength += rowBytes;
   };
 
@@ -754,6 +756,8 @@ var PredictorStream = (function PredictorStreamClosure() {
       default:
         error('Unsupported predictor: ' + predictor);
     }
+    // HACK for TypedArray-less browsers
+    buffer.set(currentRow, bufferLength);
     this.bufferLength += rowBytes;
   };
 
