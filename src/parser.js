@@ -196,8 +196,9 @@ var Parser = (function ParserClosure() {
       return stream;
     },
     filter: function parserFilter(stream, dict, length) {
-      var filter = dict.get('Filter', 'F');
-      var params = dict.get('DecodeParms', 'DP');
+      var xref = this.xref;
+      var filter = xref.fetchIfRef(dict.get('Filter', 'F'));
+      var params = xref.fetchIfRef(dict.get('DecodeParms', 'DP'));
       if (isName(filter))
         return this.makeFilter(stream, filter.name, length, params);
       if (isArray(filter)) {
