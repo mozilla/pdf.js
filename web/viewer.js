@@ -571,6 +571,10 @@ var PDFView = {
     }
   },
 
+  pinSidebar: function pdfViewPinSidebar() {
+    document.getElementById('sidebar').classList.toggle('pinned');
+  },
+
   getVisiblePages: function pdfViewGetVisiblePages() {
     var pages = this.pages;
     var kBottomMargin = 10;
@@ -1083,7 +1087,6 @@ var TextLayerBuilder = function textLayerBuilder(textLayerDiv) {
     textDiv.dataset.canvasWidth = text.canvasWidth * text.geom.hScale;
 
     textDiv.style.fontSize = fontHeight + 'px';
-    textDiv.style.fontFamily = fontName || 'sans-serif';
     textDiv.style.left = text.geom.x + 'px';
     textDiv.style.top = (text.geom.y - fontHeight) + 'px';
     textDiv.textContent = text.str;

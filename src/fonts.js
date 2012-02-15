@@ -1553,6 +1553,61 @@ var Font = (function FontClosure() {
         }
       };
 
+      function sanitizeGlyph(source, sourceStart, sourceEnd, dest, destStart) {
+        if (sourceEnd - sourceStart <= 12) {
+          // glyph with data less than 12 is invalid one
+          return 0;
+        }
+        var glyf = source.subarray(sourceStart, sourceEnd);
+        var contoursCount = (glyf[0] << 8) | glyf[1];
+        if (contoursCount & 0x8000) {
+          // complex glyph, writing as is
+          dest.set(glyf, destStart);
+          return glyf.length;
+        }
+
+        var j = 10, flagsCount = 0;
+        for (var i = 0; i < contoursCount; i++) {
+          var endPoint = (glyf[j] << 8) | glyf[j + 1];
+          flagsCount = endPoint + 1;
+          j += 2;
+        }
+        // skipping instructions
+        var instructionsLength = (glyf[j] << 8) | glyf[j + 1];
+        j += 2 + instructionsLength;
+        // validating flags
+        var coordinatesLength = 0;
+        for (var i = 0; i < flagsCount; i++) {
+          var flag = glyf[j++];
+          if (flag & 0xC0) {
+            // reserved flags must be zero, rejecting
+            return 0;
+          }
+          var xyLength = ((flag & 2) ? 1 : (flag & 16) ? 0 : 2) +
+                         ((flag & 4) ? 1 : (flag & 32) ? 0 : 2);
+          coordinatesLength += xyLength;
+          if (flag & 8) {
+            var repeat = glyf[j++];
+            i += repeat;
+            coordinatesLength += repeat * xyLength;
+          }
+        }
+        var glyphDataLength = j + coordinatesLength;
+        if (glyphDataLength > glyf.length) {
+          // not enough data for coordinates
+          return 0;
+        }
+        if (glyf.length - glyphDataLength > 3) {
+          // truncating and aligning to 4 bytes the long glyph data
+          glyphDataLength = (glyphDataLength + 3) & ~3;
+          dest.set(glyf.subarray(0, glyphDataLength), destStart);
+          return glyphDataLength;
+        }
+        // glyph data is fine
+        dest.set(glyf, destStart);
+        return glyf.length;
+      }
+
       function sanitizeGlyphLocations(loca, glyf, numGlyphs,
                                       isGlyphLocationsLong) {
         var itemSize, itemDecode, itemEncode;
@@ -1579,21 +1634,21 @@ var Font = (function FontClosure() {
           };
         }
         var locaData = loca.data;
+        // removing the invalid glyphs
+        var oldGlyfData = glyf.data;
+        var newGlyfData = new Uint8Array(oldGlyfData.length);
         var startOffset = itemDecode(locaData, 0);
-        var firstOffset = itemDecode(locaData, itemSize);
-        if (firstOffset - startOffset < 12 || startOffset > 0) {
-          // removing first glyph
-          glyf.data = glyf.data.subarray(firstOffset);
-          glyf.length -= firstOffset;
-
-          itemEncode(locaData, 0, 0);
-          var i, pos = itemSize;
-          for (i = 1; i <= numGlyphs; ++i) {
-            itemEncode(locaData, pos,
-              itemDecode(locaData, pos) - firstOffset);
-            pos += itemSize;
-          }
+        var writeOffset = 0;
+        itemEncode(locaData, 0, writeOffset);
+        for (var i = 0, j = itemSize; i < numGlyphs; i++, j += itemSize) {
+          var endOffset = itemDecode(locaData, j);
+          var newLength = sanitizeGlyph(oldGlyfData, startOffset, endOffset,
+                                        newGlyfData, writeOffset);
+          writeOffset += newLength;
+          itemEncode(locaData, j, writeOffset);
+          startOffset = endOffset;
         }
+        glyf.data = newGlyfData.subarray(0, writeOffset);
       }
 
       function readGlyphNameMap(post, properties) {

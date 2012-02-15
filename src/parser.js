@@ -162,6 +162,10 @@ var Parser = (function ParserClosure() {
 
       return imageStream;
     },
+    fetchIfRef: function parserFetchIfRef(obj) {
+      // not relying on the xref.fetchIfRef -- xref might not be set
+      return isRef(obj) ? this.xref.fetch(obj) : obj;
+    },
     makeStream: function parserMakeStream(dict, cipherTransform) {
       var lexer = this.lexer;
       var stream = lexer.stream;
@@ -171,10 +175,7 @@ var Parser = (function ParserClosure() {
       var pos = stream.pos;
 
       // get length
-      var length = dict.get('Length');
-      var xref = this.xref;
-      if (xref)
-        length = xref.fetchIfRef(length);
+      var length = this.fetchIfRef(dict.get('Length'));
       if (!isInt(length)) {
         error('Bad ' + length + ' attribute in stream');
         length = 0;
@@ -196,8 +197,8 @@ var Parser = (function ParserClosure() {
       return stream;
     },
     filter: function parserFilter(stream, dict, length) {
-      var filter = dict.get('Filter', 'F');
-      var params = dict.get('DecodeParms', 'DP');
+      var filter = this.fetchIfRef(dict.get('Filter', 'F'));
+      var params = this.fetchIfRef(dict.get('DecodeParms', 'DP'));
       if (isName(filter))
         return this.makeFilter(stream, filter.name, length, params);
       if (isArray(filter)) {

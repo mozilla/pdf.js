@@ -64,7 +64,9 @@ MIMEs = {
     '.svg': 'image/svg+xml',
     '.pdf': 'application/pdf',
     '.xhtml': 'application/xhtml+xml',
+    '.gif': 'image/gif',
     '.ico': 'image/x-icon',
+    '.png': 'image/png',
     '.log': 'text/plain'
 }
 
