@@ -1044,9 +1044,9 @@ var TextLayerBuilder = function textLayerBuilder(textLayerDiv) {
           // Adjust div width to match canvas text
           // Due to the .offsetWidth calls, this is slow
           // This needs to come after appending to the DOM
-          CustomStyle.setProp('transform' , textDiv, 'scale('
-            + textDiv.dataset.canvasWidth/textDiv.offsetWidth
-            + ',1)');
+          var textScale = textDiv.dataset.canvasWidth / textDiv.offsetWidth;
+          CustomStyle.setProp('transform' , textDiv,
+            'scale(' + textScale + ', 1)');
           CustomStyle.setProp('transformOrigin' , textDiv, '0% 0%');
         }
       } // textLength > 0

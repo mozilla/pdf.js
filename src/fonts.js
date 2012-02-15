@@ -1790,8 +1790,8 @@ var Font = (function FontClosure() {
         for (var i = 1; i < numGlyphs; i++) {
           var cid = gidToCidMap[i] || i;
           var unicode = this.toFontChar[cid];
-          if (!unicode || typeof unicode !== 'number' || isSpecialUnicode(unicode) ||
-              unicode in usedUnicodes) {
+          if (!unicode || typeof unicode !== 'number' ||
+              isSpecialUnicode(unicode) || unicode in usedUnicodes) {
             unassignedUnicodeItems.push(i);
             continue;
           }
@@ -1837,7 +1837,8 @@ var Font = (function FontClosure() {
             var usedUnicodes = [], unassignedUnicodeItems = [];
             for (var i = 0, ii = glyphs.length; i < ii; i++) {
               var unicode = toFontChar[i + 1];
-              if (!unicode || typeof unicode !== 'number' || unicode in usedUnicodes) {
+              if (!unicode || typeof unicode !== 'number' ||
+                  unicode in usedUnicodes) {
                 unassignedUnicodeItems.push(i);
                 continue;
               }
