@@ -36,7 +36,6 @@ PDF_JS_FILES = \
   pattern.js \
   stream.js \
   worker.js \
-  debugger.js \
   ../external/jpgjs/jpg.js \
   jpx.js \
 	$(NULL)
@@ -216,6 +215,7 @@ EXTENSION_WEB_FILES = \
 	web/viewer.js \
 	web/viewer.html \
 	web/viewer-production.html \
+	web/debugger.js \
 	$(NULL)
 
 FIREFOX_BUILD_DIR := $(BUILD_DIR)/firefox

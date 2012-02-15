@@ -24,8 +24,7 @@ var files = [
   'stream.js',
   'worker.js',
   '../external/jpgjs/jpg.js',
-  'jpx.js',
-  'debugger.js'
+  'jpx.js'
 ];
 
 // Load all the files.
