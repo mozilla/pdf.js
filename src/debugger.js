@@ -7,31 +7,26 @@ var FontInspector = (function FontInspectorClosure() {
   var fonts;
   var panelWidth = 300;
   var active = false;
+  var fontAttribute = 'data-font-name';
   function removeSelection() {
-    var divs = document.getElementsByTagName('div');
+    var divs = document.querySelectorAll('div[' + fontAttribute + ']');
     for (var i = 0; i < divs.length; ++i) {
-      var div = divs[i], style = div.getAttribute('style');
-      if (!style || style.indexOf('pdfFont') < 0) continue;
-      var m = /(pdfFont\d+)/.exec(style);
-      div.dataset.fontName = '';
+      var div = divs[i];
       div.className = '';
     }
   }
   function resetSelection() {
-    var divs = document.getElementsByTagName('div');
+    var divs = document.querySelectorAll('div[' + fontAttribute + ']');
     for (var i = 0; i < divs.length; ++i) {
-      var div = divs[i], style = div.getAttribute('style');
-      if (!style || style.indexOf('pdfFont') < 0) continue;
-      var m = /(pdfFont\d+)/.exec(style);
-      div.dataset.fontName = m[1];
+      var div = divs[i];
       div.className = 'debuggerHideText';
     }
   }
   function selectFont(fontName, show) {
-    var divs = document.getElementsByTagName('div');
+    var divs = document.querySelectorAll('div[' + fontAttribute + '=' +
+                                         fontName + ']');
     for (var i = 0; i < divs.length; ++i) {
-      var div = divs[i], style = div.getAttribute('style');
-      if (div.dataset.fontName != fontName) continue;
+      var div = divs[i];
       div.className = show ? 'debuggerShowText' : 'debuggerHideText';
     }
   }
@@ -75,7 +70,7 @@ var FontInspector = (function FontInspectorClosure() {
         document.body.addEventListener('click', textLayerClick, true);
         resetSelection();
       } else {
-        document.body.removeEventListener('click', textLayerClick);
+        document.body.removeEventListener('click', textLayerClick, true);
         removeSelection();
       }
     },
