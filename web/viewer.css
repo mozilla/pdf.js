@@ -404,7 +404,7 @@ canvas {
   text-align: center;
 }
 
-#debugger {
+#PDFBug {
   font-size: 10px;
   position: fixed;
   top: 35px;
@@ -415,12 +415,12 @@ canvas {
   border: 1px solid #666;
   padding: 0;
 }
-#debugger .controls {
+#PDFBug .controls {
   border-bottom: 1px solid #666;
   padding: 3px;
   background: -moz-linear-gradient(center bottom, #eee 0%, #fff 100%);
 }
-#debugger .panels {
+#PDFBug .panels {
   overflow: auto;
   position: absolute;
   top: 27px;
@@ -428,7 +428,7 @@ canvas {
   right: 0;
   bottom: 0;
 }
-#debugger button.active {
+#PDFBug button.active {
   font-weight: bold;
 }
 .debuggerShowText {

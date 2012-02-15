@@ -138,7 +138,7 @@ var FontInspector = (function FontInspectorClosure() {
 })();
 
 // Manages all the page steppers.
-var Debugger = (function DeuggerClosure() {
+var StepperManager = (function StepperManagerClosure() {
   var steppers = [];
   var stepperDiv = null;
   var stepperControls = null;
@@ -146,8 +146,8 @@ var Debugger = (function DeuggerClosure() {
   var breakPoints = {};
   return {
     // Poperties/functions needed by PDFBug.
-    id: 'Debugger',
-    name: 'Debugger',
+    id: 'Stepper',
+    name: 'Stepper',
     panel: null,
     manager: null,
     init: function init() {
@@ -167,7 +167,7 @@ var Debugger = (function DeuggerClosure() {
     },
     enabled: false,
     active: false,
-    // Debugger specific functions.
+    // Stepper specific functions.
     create: function create(pageNumber) {
       var debug = document.createElement('div');
       debug.id = 'stepper' + pageNumber;
@@ -179,12 +179,11 @@ var Debugger = (function DeuggerClosure() {
       b.value = pageNumber;
       stepperChooser.appendChild(b);
       var initBreakPoints = breakPoints[pageNumber] || [];
-      var pdfDebuggerStepper = new DebuggerStepper(debug, pageNumber,
-                                                      initBreakPoints);
-      steppers.push(pdfDebuggerStepper);
+      var stepper = new Stepper(debug, pageNumber, initBreakPoints);
+      steppers.push(stepper);
       if (steppers.length === 1)
         this.selectStepper(pageNumber, false);
-      return pdfDebuggerStepper;
+      return stepper;
     },
     selectStepper: function selectStepper(pageNumber, selectPanel) {
       if (selectPanel)
@@ -205,8 +204,8 @@ var Debugger = (function DeuggerClosure() {
 })();
 
 // The stepper for each page's IRQueue.
-var DebuggerStepper = (function DebuggerStepperClosure() {
-  function DebuggerStepper(panel, pageNumber, initialBreakPoints) {
+var Stepper = (function StepperClosure() {
+  function Stepper(panel, pageNumber, initialBreakPoints) {
     this.panel = panel;
     this.len;
     this.breakPoint = 0;
@@ -215,7 +214,7 @@ var DebuggerStepper = (function DebuggerStepperClosure() {
     this.breakPoints = initialBreakPoints;
     this.currentIdx = -1;
   }
-  DebuggerStepper.prototype = {
+  Stepper.prototype = {
     init: function init(IRQueue) {
       function c(tag, textContent) {
         var d = document.createElement(tag);
@@ -256,7 +255,7 @@ var DebuggerStepper = (function DebuggerStepperClosure() {
               self.breakPoints.push(x);
             else
               self.breakPoints.splice(self.breakPoints.indexOf(x), 1);
-            Debugger.saveBreakPoints(self.pageNumber, self.breakPoints);
+            StepperManager.saveBreakPoints(self.pageNumber, self.breakPoints);
           }
         })(i);
 
@@ -278,7 +277,7 @@ var DebuggerStepper = (function DebuggerStepperClosure() {
       return null;
     },
     breakIt: function breakIt(idx, callback) {
-      Debugger.selectStepper(this.pageNumber, true);
+      StepperManager.selectStepper(this.pageNumber, true);
       var self = this;
       var dom = document;
       self.currentIdx = idx;
@@ -314,7 +313,7 @@ var DebuggerStepper = (function DebuggerStepperClosure() {
       }
     }
   };
-  return DebuggerStepper;
+  return Stepper;
 })();
 
 // Manages all the debugging tools.
@@ -326,12 +325,12 @@ var PDFBug = (function PDFBugClosure() {
   return {
     tools: [
       FontInspector,
-      Debugger
+      StepperManager
     ],
     init: function init() {
       /*
        * Basic Layout:
-       * Debugger
+       * PDFBug
        *  Controls
        *  Panels
        *    Panel
@@ -339,7 +338,7 @@ var PDFBug = (function PDFBugClosure() {
        *    ...
        */
       var ui = document.createElement('div');
-      ui.id = 'debugger';
+      ui.id = 'PDFBug';
 
       var controls = document.createElement('div');
       controls.setAttribute('class', 'controls');

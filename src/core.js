@@ -245,8 +245,8 @@ var Page = (function PageClosure() {
       var length = this.IRQueue.fnArray.length;
       var IRQueue = this.IRQueue;
       var stepper = null;
-      if (PDFJS.pdfBug && Debugger.enabled) {
-        stepper = Debugger.create(this.pageNumber);
+      if (PDFJS.pdfBug && StepperManager.enabled) {
+        stepper = StepperManager.create(this.pageNumber);
         stepper.init(IRQueue);
         stepper.nextBreakPoint = stepper.getNextBreakPoint();
       }
