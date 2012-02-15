@@ -1122,16 +1122,19 @@ window.addEventListener('load', function webViewerLoad(evt) {
   if ('disableTextLayer' in params)
     PDFJS.disableTextLayer = (params['disableTextLayer'] === 'true');
 
-  if ('PDFBug' in params)
-    PDFJS.pdfBug = (params['PDFBug'] === 'true');
-
-  if (PDFJS.pdfBug) {
+  if ('pdfBug' in params) {
+    PDFJS.pdfBug = true;
+    var pdfBug = params['pdfBug'];
+    var all = false, enabled = [];
+    if (pdfBug === 'all')
+      all = true;
+    else
+      enabled = pdfBug.split(',');
     var debugTools = PDFBug.tools;
     for (var i = 0; i < debugTools.length; ++i) {
       var tool = debugTools[i];
-      var key = 'PDFBug_' + tool.id;
-      if (key in params)
-        tool.enabled = (params[key] === 'true');
+      if (all || enabled.indexOf(tool.id) !== -1)
+        tool.enabled = true;
     }
     PDFBug.init();
   }

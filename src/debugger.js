@@ -374,8 +374,8 @@ var PDFBug = (function PDFBugClosure() {
           tool.init();
         else
           panel.textContent = tool.name + ' is disabled. To enable add ' +
-                              ' PDFBug_' + tool.id + '=true to the url query ' +
-                              'parameters and refresh.';
+                              ' "' + tool.id + '" to the pdfBug parameter ' +
+                              'and refresh (seperate multiple by commas).';
         buttons.push(panelButton);
       }
       this.selectPanel(0);
