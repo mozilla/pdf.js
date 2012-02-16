@@ -112,7 +112,7 @@ var Page = (function PageClosure() {
         height: this.height
       };
       if (!isArray(cropBox) || cropBox.length !== 4)
-        return shadow(this, 'cropBox', view);
+        return shadow(this, 'view', view);
 
       var mediaBox = this.mediaBox;
       var offsetX = mediaBox[0], offsetY = mediaBox[1];
@@ -123,7 +123,7 @@ var Page = (function PageClosure() {
       // effectively reduced to their intersection with the media box."
       cropBox = Util.intersect(cropBox, mediaBox);
       if (!cropBox)
-        return shadow(this, 'cropBox', view);
+        return shadow(this, 'view', view);
 
       var tl = this.rotatePoint(cropBox[0] - offsetX, cropBox[1] - offsetY);
       var br = this.rotatePoint(cropBox[2] - offsetX, cropBox[3] - offsetY);
@@ -132,7 +132,7 @@ var Page = (function PageClosure() {
       view.width = Math.abs(tl.x - br.x);
       view.height = Math.abs(tl.y - br.y);
 
-      return shadow(this, 'cropBox', view);
+      return shadow(this, 'view', view);
     },
     get annotations() {
       return shadow(this, 'annotations', this.inheritPageProp('Annots'));
