@@ -405,3 +405,40 @@ canvas {
   margin: 100px 0;
   text-align: center;
 }
+
+#PDFBug {
+  font-size: 10px;
+  position: fixed;
+  top: 35px;
+  bottom: 5px;
+  right: 2px;
+  width: 300px;
+  background: white;
+  border: 1px solid #666;
+  padding: 0;
+}
+#PDFBug .controls {
+  border-bottom: 1px solid #666;
+  padding: 3px;
+  background: -moz-linear-gradient(center bottom, #eee 0%, #fff 100%);
+}
+#PDFBug .panels {
+  overflow: auto;
+  position: absolute;
+  top: 27px;
+  left: 0;
+  right: 0;
+  bottom: 0;
+}
+#PDFBug button.active {
+  font-weight: bold;
+}
+.debuggerShowText {
+  background: yellow;
+  color: blue;
+  opacity: 0.3;
+}
+.debuggerHideText:hover {
+  background: yellow;
+  opacity: 0.3;
+}
