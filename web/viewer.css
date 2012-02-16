@@ -105,7 +105,8 @@ span#info {
   width: 15px;
   height: 15px;
   background: center no-repeat;
-  background-image: url('images/pin_up.png');
+  background-image: url('images/pin-up.svg');
+  background-size: 15px 15px;
 }
 
 #pinIcon:hover {
@@ -113,7 +114,8 @@ span#info {
 }
 
 #sidebar.pinned #pinIcon {
-  background-image: url('images/pin_down.png');
+  background-image: url('images/pin-down.svg');
+  background-size: 15px 15px;
 }
 
 #sidebarBox {
