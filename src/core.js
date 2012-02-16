@@ -104,25 +104,35 @@ var Page = (function PageClosure() {
       return shadow(this, 'mediaBox', obj);
     },
     get view() {
-      var obj = this.inheritPageProp('CropBox');
+      var cropBox = this.inheritPageProp('CropBox');
       var view = {
         x: 0,
         y: 0,
         width: this.width,
         height: this.height
       };
+      if (!isArray(cropBox) || cropBox.length !== 4)
+        return shadow(this, 'view', view);
+
       var mediaBox = this.mediaBox;
       var offsetX = mediaBox[0], offsetY = mediaBox[1];
-      if (isArray(obj) && obj.length == 4) {
-        var tl = this.rotatePoint(obj[0] - offsetX, obj[1] - offsetY);
-        var br = this.rotatePoint(obj[2] - offsetX, obj[3] - offsetY);
-        view.x = Math.min(tl.x, br.x);
-        view.y = Math.min(tl.y, br.y);
-        view.width = Math.abs(tl.x - br.x);
-        view.height = Math.abs(tl.y - br.y);
-      }
 
-      return shadow(this, 'cropBox', view);
+      // From the spec, 6th ed., p.963:
+      // "The crop, bleed, trim, and art boxes should not ordinarily
+      // extend beyond the boundaries of the media box. If they do, they are
+      // effectively reduced to their intersection with the media box."
+      cropBox = Util.intersect(cropBox, mediaBox);
+      if (!cropBox)
+        return shadow(this, 'view', view);
+
+      var tl = this.rotatePoint(cropBox[0] - offsetX, cropBox[1] - offsetY);
+      var br = this.rotatePoint(cropBox[2] - offsetX, cropBox[3] - offsetY);
+      view.x = Math.min(tl.x, br.x);
+      view.y = Math.min(tl.y, br.y);
+      view.width = Math.abs(tl.x - br.x);
+      view.height = Math.abs(tl.y - br.y);
+
+      return shadow(this, 'view', view);
     },
     get annotations() {
       return shadow(this, 'annotations', this.inheritPageProp('Annots'));
