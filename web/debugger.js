@@ -10,14 +10,14 @@ var FontInspector = (function FontInspectorClosure() {
   var fontAttribute = 'data-font-name';
   function removeSelection() {
     var divs = document.querySelectorAll('div[' + fontAttribute + ']');
-    for (var i = 0; i < divs.length; ++i) {
+    for (var i = 0, ii = divs.length; i < ii; ++i) {
       var div = divs[i];
       div.className = '';
     }
   }
   function resetSelection() {
     var divs = document.querySelectorAll('div[' + fontAttribute + ']');
-    for (var i = 0; i < divs.length; ++i) {
+    for (var i = 0, ii = divs.length; i < ii; ++i) {
       var div = divs[i];
       div.className = 'debuggerHideText';
     }
@@ -25,7 +25,7 @@ var FontInspector = (function FontInspectorClosure() {
   function selectFont(fontName, show) {
     var divs = document.querySelectorAll('div[' + fontAttribute + '=' +
                                          fontName + ']');
-    for (var i = 0; i < divs.length; ++i) {
+    for (var i = 0, ii = divs.length; i < ii; ++i) {
       var div = divs[i];
       div.className = show ? 'debuggerShowText' : 'debuggerHideText';
     }
@@ -211,6 +211,7 @@ var Stepper = (function StepperClosure() {
   }
   Stepper.prototype = {
     init: function init(IRQueue) {
+      // Shorter way to create element and optionally set textContent.
       function c(tag, textContent) {
         var d = document.createElement(tag);
         if (textContent)
@@ -219,7 +220,7 @@ var Stepper = (function StepperClosure() {
       }
       var panel = this.panel;
       this.len = IRQueue.fnArray.length;
-      var content = c('div', 'c=contine, s=step');
+      var content = c('div', 'c=continue, s=step');
       var table = c('table');
       content.appendChild(table);
       table.cellSpacing = 0;
