@@ -645,7 +645,7 @@ var PredictorStream = (function PredictorStreamClosure() {
       }
     } else if (bits === 8) {
       for (var i = 0; i < colors; ++i)
-        buffer[pos++]  = rawBytes[i];
+        buffer[pos++] = rawBytes[i];
       for (; i < rowBytes; ++i) {
         buffer[pos] = buffer[pos - colors] + rawBytes[i];
         pos++;
