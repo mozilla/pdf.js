@@ -621,7 +621,7 @@ var PDFView = {
   // Helper function to parse query string (e.g. ?param1=value&parm2=...).
   parseQueryString: function pdfViewParseQueryString(query) {
     var parts = query.split('&');
-    var params = [];
+    var params = {};
     for (var i = 0, ii = parts.length; i < parts.length; ++i) {
       var param = parts[i].split('=');
       var key = param[0];
