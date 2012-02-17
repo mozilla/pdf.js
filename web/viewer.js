@@ -37,10 +37,6 @@ var RenderingQueue = (function RenderingQueueClosure() {
       if (!item.drawingRequired())
         return; // as no redraw required, no need for queueing.
 
-      if ('rendering' in item)
-        return; // is already in the queue
-
-      item.rendering = true;
       this.items.push(item);
       if (this.items.length > 1)
         return; // not first item
@@ -49,7 +45,6 @@ var RenderingQueue = (function RenderingQueueClosure() {
     },
     continueExecution: function RenderingQueueContinueExecution() {
       var item = this.items.shift();
-      delete item.rendering;
 
       if (this.items.length == 0)
         return; // queue is empty
@@ -510,13 +505,7 @@ var PDFView = {
       return;
 
     if (hash.indexOf('=') >= 0) {
-      // parsing query string
-      var paramsPairs = hash.split('&');
-      var params = {};
-      for (var i = 0; i < paramsPairs.length; ++i) {
-        var paramPair = paramsPairs[i].split('=');
-        params[paramPair[0]] = paramPair[1];
-      }
+      var params = PDFView.parseQueryString(hash);
       // borrowing syntax from "Parameters for Opening PDF Files"
       if ('nameddest' in params) {
         PDFView.navigateTo(params.nameddest);
@@ -572,6 +561,10 @@ var PDFView = {
     }
   },
 
+  pinSidebar: function pdfViewPinSidebar() {
+    document.getElementById('sidebar').classList.toggle('pinned');
+  },
+
   getVisiblePages: function pdfViewGetVisiblePages() {
     var pages = this.pages;
     var kBottomMargin = 10;
@@ -624,6 +617,16 @@ var PDFView = {
     }
 
     return visibleThumbs;
+  },
+
+  // Helper function to parse query string (e.g. ?param1=value&parm2=...).
+  parseQueryString: function pdfViewParseQueryString(query) {
+    var params = query.split('&');
+    for (var i = 0; i < params.length; i++) {
+      var param = params[i].split('=');
+      params[unescape(param[0])] = unescape(param[1]);
+    }
+    return params;
   }
 };
 
@@ -865,7 +868,10 @@ var PageView = function pageView(container, content, id, pageWidth, pageHeight,
 
     var self = this;
     this.content.startRendering(ctx, function pageViewDrawCallback(error) {
-      div.removeChild(self.loadingIconDiv);
+      if (self.loadingIconDiv) {
+        div.removeChild(self.loadingIconDiv);
+        delete self.loadingIconDiv;
+      }
 
       if (error)
         PDFView.error('An error occurred while rendering the page.', error);
@@ -968,7 +974,7 @@ var ThumbnailView = function thumbnailView(container, page, id, pageRatio) {
   };
 
   this.setImage = function thumbnailViewSetImage(img) {
-    if (this.hasImage)
+    if (this.hasImage || !img)
       return;
 
     var ctx = getPageDrawContext();
@@ -1084,9 +1090,9 @@ var TextLayerBuilder = function textLayerBuilder(textLayerDiv) {
     // vScale and hScale already contain the scaling to pixel units
     var fontHeight = fontSize * text.geom.vScale;
     textDiv.dataset.canvasWidth = text.canvasWidth * text.geom.hScale;
+    textDiv.dataset.fontName = fontName;
 
     textDiv.style.fontSize = fontHeight + 'px';
-    textDiv.style.fontFamily = fontName || 'sans-serif';
     textDiv.style.left = text.geom.x + 'px';
     textDiv.style.top = (text.geom.y - fontHeight) + 'px';
     textDiv.textContent = text.str;
@@ -1096,16 +1102,11 @@ var TextLayerBuilder = function textLayerBuilder(textLayerDiv) {
 };
 
 window.addEventListener('load', function webViewerLoad(evt) {
-  var params = document.location.search.substring(1).split('&');
-  for (var i = 0; i < params.length; i++) {
-    var param = params[i].split('=');
-    params[unescape(param[0])] = unescape(param[1]);
-  }
+  var params = PDFView.parseQueryString(document.location.search.substring(1));
 
-  var scale = ('scale' in params) ? params.scale : 0;
   var file = PDFJS.isFirefoxExtension ?
               window.location.toString() : params.file || kDefaultURL;
-  PDFView.open(file, parseFloat(scale));
+  PDFView.open(file, 0);
 
   if (PDFJS.isFirefoxExtension || !window.File || !window.FileReader ||
       !window.FileList || !window.Blob) {
@@ -1116,11 +1117,32 @@ window.addEventListener('load', function webViewerLoad(evt) {
     document.getElementById('fileInput').value = null;
   }
 
-  if ('disableWorker' in params)
-    PDFJS.disableWorker = (params['disableWorker'] === 'true');
+  // Special debugging flags in the hash section of the URL.
+  var hash = document.location.hash.substring(1);
+  var hashParams = PDFView.parseQueryString(hash);
 
-  if ('disableTextLayer' in params)
-    PDFJS.disableTextLayer = (params['disableTextLayer'] === 'true');
+  if ('disableWorker' in hashParams)
+    PDFJS.disableWorker = (hashParams['disableWorker'] === 'true');
+
+  if ('disableTextLayer' in hashParams)
+    PDFJS.disableTextLayer = (hashParams['disableTextLayer'] === 'true');
+
+  if ('pdfBug' in hashParams) {
+    PDFJS.pdfBug = true;
+    var pdfBug = hashParams['pdfBug'];
+    var all = false, enabled = [];
+    if (pdfBug === 'all')
+      all = true;
+    else
+      enabled = pdfBug.split(',');
+    var debugTools = PDFBug.tools;
+    for (var i = 0; i < debugTools.length; ++i) {
+      var tool = debugTools[i];
+      if (all || enabled.indexOf(tool.id) !== -1)
+        tool.enabled = true;
+    }
+    PDFBug.init();
+  }
 
   if ('enableBench' in params)
     PDFJS.enableBench = (params['enableBench'] === 'true');
@@ -1211,7 +1233,6 @@ function updateViewarea() {
 window.addEventListener('scroll', function webViewerScroll(evt) {
   updateViewarea();
 }, true);
-
 
 var thumbnailTimer;
 

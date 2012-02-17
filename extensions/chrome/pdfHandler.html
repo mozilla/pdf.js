@@ -1,6 +1,6 @@
 <!doctype html>
 <script>
-chrome.experimental.webRequest.onBeforeRequest.addListener(
+chrome.webRequest.onBeforeRequest.addListener(
   function(details) {
     var viewerPage = 'content/web/viewer.html';
     var url = chrome.extension.getURL(viewerPage) + '?file=' + details.url;
