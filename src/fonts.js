@@ -1940,10 +1940,11 @@ var Font = (function FontClosure() {
           }
         }
 
-        // If font is symbolic and cmap (3,0) present, the characters are
-        // located in 0xF000 - 0xF0FF range
-        this.symbolicGlyphsOffset =
-          this.isSymbolicFont && !hasShortCmap ? 0xF000 : 0;
+        // If font is symbolic and cmap (3,0) present, the characters can be
+        // located in 0xF000 - 0xF0FF range. Using the first glyph code
+        // to detect the base glyphs offset.
+        this.symbolicGlyphsOffset = this.isSymbolicFont && !hasShortCmap ?
+          (glyphs[i].unicode & 0xFF00) : 0;
 
         // remove glyph references outside range of avaialable glyphs
         for (var i = 0, ii = ids.length; i < ii; i++) {
