@@ -1648,6 +1648,18 @@ var Font = (function FontClosure() {
           itemEncode(locaData, j, writeOffset);
           startOffset = endOffset;
         }
+
+        if (writeOffset == 0) {
+          // glyf table cannot be empty -- redoing the glyf and loca tables
+          // to have single glyph with one point
+          var simpleGlyph = new Uint8Array(
+            [0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 49, 0]);
+          for (var i = 0, j = itemSize; i < numGlyphs; i++, j += itemSize)
+            itemEncode(locaData, j, simpleGlyph.length);
+          glyf.data = simpleGlyph;
+          return;
+        }
+
         glyf.data = newGlyfData.subarray(0, writeOffset);
       }
 
@@ -1927,6 +1939,11 @@ var Font = (function FontClosure() {
             }
           }
         }
+
+        // If font is symbolic and cmap (3,0) present, the characters are
+        // located in 0xF000 - 0xF0FF range
+        this.symbolicGlyphsOffset =
+          this.isSymbolicFont && !hasShortCmap ? 0xF000 : 0;
 
         // remove glyph references outside range of avaialable glyphs
         for (var i = 0, ii = ids.length; i < ii; i++) {
@@ -2315,7 +2332,8 @@ var Font = (function FontClosure() {
             break;
           }
           if (!this.hasEncoding || this.isSymbolicFont) {
-            unicode = this.useToUnicode ? this.toUnicode[charcode] : charcode;
+            unicode = this.useToUnicode ? this.toUnicode[charcode] :
+              (this.symbolicGlyphsOffset + charcode);
             break;
           }
 
