@@ -320,7 +320,8 @@ var PDFView = {
       if (pageNumber) {
         var pdfOpenParams = PDFView.getAnchorUrl('#page=' + pageNumber);
         var destKind = dest[1];
-        if ('name' in destKind && destKind.name == 'XYZ') {
+        if (typeof destKind === 'object' && 'name' in destKind &&
+            destKind.name == 'XYZ') {
           var scale = (dest[4] || this.currentScale);
           pdfOpenParams += '&zoom=' + (scale * 100);
           if (dest[2] || dest[3]) {
