@@ -563,6 +563,7 @@ def startReftest(browser, options):
 
 def runBrowserTests(options, browser):
     State.remaining = State.testCount
+    State.done = False
 
     t1 = time.time()
     try:
