@@ -227,16 +227,23 @@ var Page = (function PageClosure() {
         fonts[i] = this.objs.objs[fonts[i]].data;
       }
 
-      // Load all the fonts
-      var fontObjs = FontLoader.bind(
-        fonts,
-        function pageEnsureFontsFontObjs(fontObjs) {
-          this.stats.fonts = Date.now();
+      var idx = 0;
+      var objs = this.objs;
+      var self = this;
 
-          callback.call(this);
-        }.bind(this),
-        this.objs
-      );
+      function bindNext() {
+        if (idx < fonts.length) {
+          FontLoader.bind(
+            [ fonts[idx++] ],
+            bindNext,
+            objs
+          );
+        } else {
+          self.stats.fonts = Date.now();
+          callback.call(self);
+        }
+      }
+      bindNext();
     },
 
     display: function pageDisplay(gfx, callback) {

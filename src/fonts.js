@@ -485,15 +485,18 @@ var FontLoader = {
       }
     }
 
-    this.listeningForFontLoad = false;
-    if (!isWorker && rules.length) {
-      FontLoader.prepareFontLoadEvent(rules, names, objs);
-    }
+    // Defere adding the load-detection-iframe.
+    setTimeout(function() {
+      this.listeningForFontLoad = false;
+      if (!isWorker && rules.length) {
+        FontLoader.prepareFontLoadEvent(rules, names, objs);
+      }
 
-    if (!checkFontsLoaded()) {
-      document.documentElement.addEventListener(
-        'pdfjsFontLoad', checkFontsLoaded, false);
-    }
+      if (!checkFontsLoaded()) {
+        document.documentElement.addEventListener(
+          'pdfjsFontLoad', checkFontsLoaded, false);
+      }
+    }.bind(this), 1);
 
     return objs;
   },
