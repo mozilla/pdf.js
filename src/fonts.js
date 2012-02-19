@@ -1944,7 +1944,7 @@ var Font = (function FontClosure() {
         // located in 0xF000 - 0xF0FF range. Using the first glyph code
         // to detect the base glyphs offset.
         this.symbolicGlyphsOffset = this.isSymbolicFont && !hasShortCmap ?
-          (glyphs[i].unicode & 0xFF00) : 0;
+          (glyphs[0].unicode & 0xFF00) : 0;
 
         // remove glyph references outside range of avaialable glyphs
         for (var i = 0, ii = ids.length; i < ii; i++) {
