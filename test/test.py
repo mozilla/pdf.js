@@ -384,28 +384,26 @@ def setUp(options):
                 taskResults.append([ ])
             State.taskResults[b.name][id] = taskResults
 
-    State.remaining = len(testBrowsers) * len(manifestList)
+    State.testCount = len(manifestList)
 
     return testBrowsers
 
-def startBrowsers(browsers, options):
-    for b in browsers:
-        b.setup()
-        print 'Launching', b.name
-        host = 'http://%s:%s' % (SERVER_HOST, options.port) 
-        path = '/test/test_slave.html?'
-        qs = 'browser='+ urllib.quote(b.name) +'&manifestFile='+ urllib.quote(options.manifestFile)
-        qs += '&path=' + b.path
-        b.start(host + path + qs)
+def startBrowser(b, options):
+    b.setup()
+    print 'Launching', b.name
+    host = 'http://%s:%s' % (SERVER_HOST, options.port)
+    path = '/test/test_slave.html?'
+    qs = 'browser='+ urllib.quote(b.name) +'&manifestFile='+ urllib.quote(options.manifestFile)
+    qs += '&path=' + b.path
+    b.start(host + path + qs)
 
-def teardownBrowsers(browsers):
-    for b in browsers:
-        try:
-            b.teardown()
-        except:
-            print "Error cleaning up after browser at ", b.path
-            print "Temp dir was ", b.tempDir
-            print "Error:", sys.exc_info()[0]
+def teardownBrowser(b):
+    try:
+        b.teardown()
+    except:
+        print "Error cleaning up after browser at ", b.path
+        print "Temp dir was ", b.tempDir
+        print "Error:", sys.exc_info()[0]
 
 def check(task, results, browser, masterMode):
     failed = False
@@ -563,17 +561,25 @@ def startReftest(browser, options):
         teardownBrowsers([browser])
     print "Completed reftest usage."
 
-def runTests(options, browsers):
+def runBrowserTests(options, browser):
+    State.remaining = State.testCount
+
     t1 = time.time()
     try:
-        startBrowsers(browsers, options)
+        startBrowser(browser, options)
         while not State.done:
             time.sleep(1)
-        processResults()
     finally:
-        teardownBrowsers(browsers)
+        teardownBrowser(browser)
     t2 = time.time()
-    print "Runtime was", int(t2 - t1), "seconds"
+    print "Runtime was", int(t2 - t1), "seconds\n"
+
+def runTests(options, browsers):
+    for b in browsers:
+        runBrowserTests(options, b)
+
+    processResults()
+
     if State.eqLog:
         State.eqLog.close();
     if options.masterMode:
