@@ -159,6 +159,10 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
             // a Stream in the main thread.
             if (translated.file)
               translated.file = translated.file.getBytes();
+            if (translated.properties.file) {
+              translated.properties.file =
+                  translated.properties.file.getBytes();
+            }
 
             handler.send('obj', [
                 loadedName,
@@ -481,8 +485,10 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           properties.cidToGidMap = this.readCidToGidMap(cidToGidMap);
       }
 
+      var flags = properties.flags;
       var differences = [];
-      var baseEncoding = Encodings.StandardEncoding;
+      var baseEncoding = !!(flags & FontFlags.Symbolic) ?
+                         Encodings.symbolsEncoding : Encodings.StandardEncoding;
       var hasEncoding = dict.has('Encoding');
       if (hasEncoding) {
         var encoding = xref.fetchIfRef(dict.get('Encoding'));
@@ -761,8 +767,9 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           // Simulating descriptor flags attribute
           var fontNameWoStyle = baseFontName.split('-')[0];
           var flags = (serifFonts[fontNameWoStyle] ||
-            (fontNameWoStyle.search(/serif/gi) != -1) ? 2 : 0) |
-            (symbolsFonts[fontNameWoStyle] ? 4 : 32);
+            (fontNameWoStyle.search(/serif/gi) != -1) ? FontFlags.Serif : 0) |
+            (symbolsFonts[fontNameWoStyle] ? FontFlags.Symbolic :
+            FontFlags.Nonsymbolic);
 
           var properties = {
             type: type.name,
@@ -780,11 +787,10 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
             properties: properties
           };
         }
-
       }
 
       // According to the spec if 'FontDescriptor' is declared, 'FirstChar',
-      // 'LastChar' and 'Widths' should exists too, but some PDF encoders seems
+      // 'LastChar' and 'Widths' should exist too, but some PDF encoders seem
       // to ignore this rule when a variant of a standart font is used.
       // TODO Fill the width array depending on which of the base font this is
       // a variant.

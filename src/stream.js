@@ -623,7 +623,6 @@ var PredictorStream = (function PredictorStreamClosure() {
 
     var bufferLength = this.bufferLength;
     var buffer = this.ensureBuffer(bufferLength + rowBytes);
-    var currentRow = buffer.subarray(bufferLength, bufferLength + rowBytes);
 
     var bits = this.bits;
     var colors = this.colors;
@@ -632,6 +631,7 @@ var PredictorStream = (function PredictorStreamClosure() {
 
     var inbuf = 0, outbuf = 0;
     var inbits = 0, outbits = 0;
+    var pos = bufferLength;
 
     if (bits === 1) {
       for (var i = 0; i < rowBytes; ++i) {
@@ -639,19 +639,21 @@ var PredictorStream = (function PredictorStreamClosure() {
         inbuf = (inbuf << 8) | c;
         // bitwise addition is exclusive or
         // first shift inbuf and then add
-        currentRow[i] = (c ^ (inbuf >> colors)) & 0xFF;
+        buffer[pos++] = (c ^ (inbuf >> colors)) & 0xFF;
         // truncate inbuf (assumes colors < 16)
         inbuf &= 0xFFFF;
       }
     } else if (bits === 8) {
       for (var i = 0; i < colors; ++i)
-        currentRow[i] = rawBytes[i];
-      for (; i < rowBytes; ++i)
-        currentRow[i] = currentRow[i - colors] + rawBytes[i];
+        buffer[pos++] = rawBytes[i];
+      for (; i < rowBytes; ++i) {
+        buffer[pos] = buffer[pos - colors] + rawBytes[i];
+        pos++;
+      }
     } else {
       var compArray = new Uint8Array(colors + 1);
       var bitMask = (1 << bits) - 1;
-      var j = 0, k = 0;
+      var j = 0, k = bufferLength;
       var columns = this.columns;
       for (var i = 0; i < columns; ++i) {
         for (var kk = 0; kk < colors; ++kk) {
@@ -665,13 +667,13 @@ var PredictorStream = (function PredictorStreamClosure() {
           outbuf = (outbuf << bits) | compArray[kk];
           outbits += bits;
           if (outbits >= 8) {
-            currentRow[k++] = (outbuf >> (outbits - 8)) & 0xFF;
+            buffer[k++] = (outbuf >> (outbits - 8)) & 0xFF;
             outbits -= 8;
           }
         }
       }
       if (outbits > 0) {
-        currentRow[k++] = (outbuf << (8 - outbits)) +
+        buffer[k++] = (outbuf << (8 - outbits)) +
         (inbuf & ((1 << (8 - outbits)) - 1));
       }
     }
@@ -690,32 +692,35 @@ var PredictorStream = (function PredictorStreamClosure() {
     var bufferLength = this.bufferLength;
     var buffer = this.ensureBuffer(bufferLength + rowBytes);
 
-    var currentRow = buffer.subarray(bufferLength, bufferLength + rowBytes);
     var prevRow = buffer.subarray(bufferLength - rowBytes, bufferLength);
     if (prevRow.length == 0)
       prevRow = new Uint8Array(rowBytes);
 
+    var j = bufferLength;
     switch (predictor) {
       case 0:
         for (var i = 0; i < rowBytes; ++i)
-          currentRow[i] = rawBytes[i];
+          buffer[j++] = rawBytes[i];
         break;
       case 1:
         for (var i = 0; i < pixBytes; ++i)
-          currentRow[i] = rawBytes[i];
-        for (; i < rowBytes; ++i)
-          currentRow[i] = (currentRow[i - pixBytes] + rawBytes[i]) & 0xFF;
+          buffer[j++] = rawBytes[i];
+        for (; i < rowBytes; ++i) {
+          buffer[j] = (buffer[j - pixBytes] + rawBytes[i]) & 0xFF;
+          j++;
+        }
         break;
       case 2:
         for (var i = 0; i < rowBytes; ++i)
-          currentRow[i] = (prevRow[i] + rawBytes[i]) & 0xFF;
+          buffer[j++] = (prevRow[i] + rawBytes[i]) & 0xFF;
         break;
       case 3:
         for (var i = 0; i < pixBytes; ++i)
-          currentRow[i] = (prevRow[i] >> 1) + rawBytes[i];
+          buffer[j++] = (prevRow[i] >> 1) + rawBytes[i];
         for (; i < rowBytes; ++i) {
-          currentRow[i] = (((prevRow[i] + currentRow[i - pixBytes]) >> 1) +
+          buffer[j] = (((prevRow[i] + buffer[j - pixBytes]) >> 1) +
                            rawBytes[i]) & 0xFF;
+          j++;
         }
         break;
       case 4:
@@ -724,12 +729,12 @@ var PredictorStream = (function PredictorStreamClosure() {
         for (var i = 0; i < pixBytes; ++i) {
           var up = prevRow[i];
           var c = rawBytes[i];
-          currentRow[i] = up + c;
+          buffer[j++] = up + c;
         }
         for (; i < rowBytes; ++i) {
           var up = prevRow[i];
           var upLeft = prevRow[i - pixBytes];
-          var left = currentRow[i - pixBytes];
+          var left = buffer[j - pixBytes];
           var p = left + up - upLeft;
 
           var pa = p - left;
@@ -744,11 +749,11 @@ var PredictorStream = (function PredictorStreamClosure() {
 
           var c = rawBytes[i];
           if (pa <= pb && pa <= pc)
-            currentRow[i] = left + c;
+            buffer[j++] = left + c;
           else if (pb <= pc)
-            currentRow[i] = up + c;
+            buffer[j++] = up + c;
           else
-            currentRow[i] = upLeft + c;
+            buffer[j++] = upLeft + c;
         }
         break;
       default:
@@ -821,15 +826,19 @@ var JpegStream = (function JpegStreamClosure() {
   JpegStream.prototype.ensureBuffer = function jpegStreamEnsureBuffer(req) {
     if (this.bufferLength)
       return;
-    var jpegImage = new JpegImage();
-    if (this.colorTransform != -1)
-      jpegImage.colorTransform = this.colorTransform;
-    jpegImage.parse(this.bytes);
-    var width = jpegImage.width;
-    var height = jpegImage.height;
-    var data = jpegImage.getData(width, height);
-    this.buffer = data;
-    this.bufferLength = data.length;
+    try {
+      var jpegImage = new JpegImage();
+      if (this.colorTransform != -1)
+        jpegImage.colorTransform = this.colorTransform;
+      jpegImage.parse(this.bytes);
+      var width = jpegImage.width;
+      var height = jpegImage.height;
+      var data = jpegImage.getData(width, height);
+      this.buffer = data;
+      this.bufferLength = data.length;
+    } catch (e) {
+      error('JPEG error: ' + e);
+    }
   };
   JpegStream.prototype.getIR = function jpegStreamGetIR() {
     return bytesToString(this.bytes);

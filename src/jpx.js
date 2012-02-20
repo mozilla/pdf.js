@@ -1052,7 +1052,7 @@ var JpxImage = (function JpxImageClosure() {
         }
         r = 0;
       }
-      throw 'Out of packets';
+      error('JPX error: Out of packets');
     };
   }
   function ResolutionLayerComponentPositionIterator(context) {
@@ -1091,7 +1091,7 @@ var JpxImage = (function JpxImageClosure() {
         }
         l = 0;
       }
-      throw 'Out of packets';
+      error('JPX error: Out of packets');
     };
   }
   function buildPackets(context) {
@@ -1187,7 +1187,7 @@ var JpxImage = (function JpxImageClosure() {
           new ResolutionLayerComponentPositionIterator(context);
         break;
       default:
-        throw 'Unsupported progression order';
+        error('JPX error: Unsupported progression order ' + progressionOrder);
     }
   }
   function parseTilePackets(context, data, offset, dataLength) {
@@ -1589,7 +1589,7 @@ var JpxImage = (function JpxImageClosure() {
         if (lbox == 0)
           lbox = length - position + headerSize;
         if (lbox < headerSize)
-          throw 'Invalid box field size';
+          error('JPX error: Invalid box field size');
         var dataLength = lbox - headerSize;
         var jumpDataLength = true;
         switch (tbox) {
@@ -1675,7 +1675,7 @@ var JpxImage = (function JpxImageClosure() {
                 scalarExpounded = true;
                 break;
               default:
-                throw 'Invalid SQcd value';
+                error('JPX error: Invalid SQcd value ' + sqcd);
             }
             qcd.noQuantization = spqcdSize == 8;
             qcd.scalarExpounded = scalarExpounded;
@@ -1728,7 +1728,7 @@ var JpxImage = (function JpxImageClosure() {
                 scalarExpounded = true;
                 break;
               default:
-                throw 'Invalid SQcd value';
+                error('JPX error: Invalid SQcd value ' + sqcd);
             }
             qcc.noQuantization = spqcdSize == 8;
             qcc.scalarExpounded = scalarExpounded;
@@ -1795,7 +1795,7 @@ var JpxImage = (function JpxImageClosure() {
                 cod.terminationOnEachCodingPass ||
                 cod.verticalyStripe || cod.predictableTermination ||
                 cod.segmentationSymbolUsed)
-              throw 'Unsupported COD options: ' + uneval(cod);
+              error('JPX error: Unsupported COD options: ' + uneval(cod));
 
             if (context.mainHeader)
               context.COD = cod;
@@ -1840,7 +1840,7 @@ var JpxImage = (function JpxImageClosure() {
             // skipping content
             break;
           default:
-            throw 'Unknown codestream code: ' + code.toString(16);
+            error('JPX error: Unknown codestream code: ' + code.toString(16));
         }
         position += length;
       }

@@ -3,6 +3,7 @@ BUILD_DIR := build
 BUILD_TARGET := $(BUILD_DIR)/pdf.js
 DEFAULT_BROWSERS := resources/browser_manifests/browser_manifest.json
 DEFAULT_TESTS := test_manifest.json
+DEFAULT_PYTHON := python2.7
 
 EXTENSION_SRC := ./extensions/
 EXTENSION_BASE_VERSION := 4bb289ec499013de66eb421737a4dbb4a9273eda
@@ -44,7 +45,7 @@ PDF_JS_FILES = \
 # This target starts a local web server at localhost:8888. This can be
 # used for testing all browsers.
 server:
-	@cd test; python test.py --port=8888;
+	@cd test; $(DEFAULT_PYTHON) test.py --port=8888;
 
 # make test
 #
@@ -58,20 +59,8 @@ test: shell-test browser-test
 production: | bundle
 	@echo "Preparing web/viewer-production.html"; \
 	cd web; \
-	sed '/PDFJSSCRIPT_REMOVE/d' viewer.html > viewer-1.tmp; \
+	sed '/PDFJSSCRIPT_REMOVE_CORE/d' viewer.html > viewer-1.tmp; \
 	sed '/PDFJSSCRIPT_INCLUDE_BUILD/ r viewer-snippet.html' viewer-1.tmp > viewer-production.html; \
-	rm -f *.tmp; \
-	cd ..
-
-#
-# Create production output for extension use (pdf.js, and corresponding changes to web files)
-#
-production-extension: | bundle
-	@echo "Preparing web/viewer-extension.html for extension"; \
-	cd web; \
-	sed '/PDFJSSCRIPT_REMOVE/d' viewer.html > viewer-1.tmp; \
-	sed '/PDFJSEXTENSION_REMOVE/d' viewer-1.tmp > viewer-2.tmp; \
-	sed '/PDFJSSCRIPT_INCLUDE_BUILD/ r viewer-snippet.html' viewer-2.tmp > viewer-extension.html; \
 	rm -f *.tmp; \
 	cd ..
 
@@ -119,7 +108,7 @@ browser-test:
 	fi;
 
 	cd test; \
-	python test.py --reftest \
+	$(DEFAULT_PYTHON) test.py --reftest \
 	--browserManifestFile=$(PDF_BROWSERS) \
 	--manifestFile=$(PDF_TESTS)
 
@@ -220,12 +209,13 @@ pages-repo: | $(BUILD_DIR)
 # copy of the pdf.js source.
 CONTENT_DIR := content
 BUILD_NUMBER := `git log --format=oneline $(EXTENSION_BASE_VERSION).. | wc -l | awk '{print $$1}'`
-PDF_WEB_FILES = \
+EXTENSION_WEB_FILES = \
 	web/images \
-	web/compatibility.js \
 	web/viewer.css \
 	web/viewer.js \
-	web/viewer-extension.html \
+	web/viewer.html \
+	web/viewer-production.html \
+	web/debugger.js \
 	$(NULL)
 
 FIREFOX_BUILD_DIR := $(BUILD_DIR)/firefox
@@ -234,14 +224,12 @@ FIREFOX_CONTENT_DIR := $(EXTENSION_SRC)/firefox/$(CONTENT_DIR)/
 FIREFOX_EXTENSION_FILES_TO_COPY = \
 	*.js \
 	*.rdf \
-	chrome.manifest \
 	components \
 	$(NULL)
 FIREFOX_EXTENSION_FILES = \
 	content \
 	*.js \
 	install.rdf \
-	chrome.manifest \
 	components \
 	content \
 	$(NULL)
@@ -253,7 +241,7 @@ CHROME_EXTENSION_FILES = \
 	extensions/chrome/*.json \
 	extensions/chrome/*.html \
 	$(NULL)
-extension: | production-extension
+extension: | production
 	# Clear out everything in the firefox extension build directory
 	@rm -Rf $(FIREFOX_BUILD_DIR)
 	@mkdir -p $(FIREFOX_BUILD_CONTENT)
@@ -262,8 +250,19 @@ extension: | production-extension
 	@cd extensions/firefox; cp -r $(FIREFOX_EXTENSION_FILES_TO_COPY) ../../$(FIREFOX_BUILD_DIR)/
 	# Copy a standalone version of pdf.js inside the content directory
 	@cp $(BUILD_TARGET) $(FIREFOX_BUILD_CONTENT)/$(BUILD_DIR)/
-	@cp -r $(PDF_WEB_FILES) $(FIREFOX_BUILD_CONTENT)/web/
-	@mv -f $(FIREFOX_BUILD_CONTENT)/web/viewer-extension.html $(FIREFOX_BUILD_CONTENT)/web/viewer.html
+	@cp -r $(EXTENSION_WEB_FILES) $(FIREFOX_BUILD_CONTENT)/web/
+	@rm $(FIREFOX_BUILD_CONTENT)/web/viewer-production.html
+	# Copy over the firefox extension snippet so we can inline pdf.js in it
+	@cp web/viewer-snippet-firefox-extension.html $(FIREFOX_BUILD_CONTENT)/web/
+	# Modify the viewer so it does all the extension only stuff.
+	@cd $(FIREFOX_BUILD_CONTENT)/web; \
+	sed -i.bak '/PDFJSSCRIPT_INCLUDE_BUNDLE/ r ../build/pdf.js' viewer-snippet-firefox-extension.html; \
+	sed -i.bak '/PDFJSSCRIPT_REMOVE_CORE/d' viewer.html; \
+	sed -i.bak '/PDFJSSCRIPT_REMOVE_FIREFOX_EXTENSION/d' viewer.html; \
+	sed -i.bak '/PDFJSSCRIPT_INCLUDE_FIREFOX_EXTENSION/ r viewer-snippet-firefox-extension.html' viewer.html; \
+	rm -f *.bak;
+	# We don't need pdf.js anymore since its inlined
+	@rm -Rf $(FIREFOX_BUILD_CONTENT)/$(BUILD_DIR)/;
 	# Update the build version number
 	@sed -i.bak "s/PDFJSSCRIPT_BUILD/$(BUILD_NUMBER)/" $(FIREFOX_BUILD_DIR)/install.rdf
 	@sed -i.bak "s/PDFJSSCRIPT_BUILD/$(BUILD_NUMBER)/" $(FIREFOX_BUILD_DIR)/update.rdf
@@ -285,8 +284,8 @@ extension: | production-extension
 	@cp -R $(CHROME_EXTENSION_FILES) $(CHROME_BUILD_DIR)/
 	# Copy a standalone version of pdf.js inside the content directory
 	@cp $(BUILD_TARGET) $(CHROME_BUILD_CONTENT)/$(BUILD_DIR)/
-	@cp -r $(PDF_WEB_FILES) $(CHROME_BUILD_CONTENT)/web/
-	@mv -f $(CHROME_BUILD_CONTENT)/web/viewer-extension.html $(CHROME_BUILD_CONTENT)/web/viewer.html
+	@cp -r $(EXTENSION_WEB_FILES) $(CHROME_BUILD_CONTENT)/web/
+	@mv -f $(CHROME_BUILD_CONTENT)/web/viewer-production.html $(CHROME_BUILD_CONTENT)/web/viewer.html
 
   # Create the crx
   #TODO

@@ -19,6 +19,18 @@ var kPDFGlyphSpaceUnits = 1000;
 // Until hinting is fully supported this constant can be used
 var kHintingEnabled = false;
 
+var FontFlags = {
+  FixedPitch: 1,
+  Serif: 2,
+  Symbolic: 4,
+  Script: 8,
+  Nonsymbolic: 32,
+  Italic: 64,
+  AllCap: 65536,
+  SmallCap: 131072,
+  ForceBold: 262144
+};
+
 var Encodings = {
   get ExpertEncoding() {
     return shadow(this, 'ExpertEncoding', ['', '', '', '', '', '', '', '', '',
@@ -160,19 +172,20 @@ var Encodings = {
       'bracketleft', 'backslash', 'bracketright', 'asciicircum', 'underscore',
       'quoteleft', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l',
       'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
-      'braceleft', 'bar', 'braceright', 'asciitilde', '', '', 'exclamdown',
-      'cent', 'sterling', 'fraction', 'yen', 'florin', 'section', 'currency',
-      'quotesingle', 'quotedblleft', 'guillemotleft', 'guilsinglleft',
-      'guilsinglright', 'fi', 'fl', '', 'endash', 'dagger', 'daggerdbl',
-      'periodcentered', '', 'paragraph', 'bullet', 'quotesinglbase',
-      'quotedblbase', 'quotedblright', 'guillemotright', 'ellipsis',
-      'perthousand', '', 'questiondown', '', 'grave', 'acute', 'circumflex',
-      'tilde', 'macron', 'breve', 'dotaccent', 'dieresis', '', 'ring',
-      'cedilla', '', 'hungarumlaut', 'ogonek', 'caron', 'emdash', '', '', '',
-      '', '', '', '', '', '', '', '', '', '', '', '', '', 'AE', '',
-      'ordfeminine', '', '', '', '', 'Lslash', 'Oslash', 'OE', 'ordmasculine',
-      '', '', '', '', '', 'ae', '', '', '', 'dotlessi', '', '', 'lslash',
-      'oslash', 'oe', 'germandbls'
+      'braceleft', 'bar', 'braceright', 'asciitilde', '', '', '', '', '', '',
+      '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '',
+      '', '', '', '', '', '', '', '', '', '', 'exclamdown', 'cent', 'sterling',
+      'fraction', 'yen', 'florin', 'section', 'currency', 'quotesingle',
+      'quotedblleft', 'guillemotleft', 'guilsinglleft', 'guilsinglright', 'fi',
+      'fl', '', 'endash', 'dagger', 'daggerdbl', 'periodcentered', '',
+      'paragraph', 'bullet', 'quotesinglbase', 'quotedblbase', 'quotedblright',
+      'guillemotright', 'ellipsis', 'perthousand', '', 'questiondown', '',
+      'grave', 'acute', 'circumflex', 'tilde', 'macron', 'breve', 'dotaccent',
+      'dieresis', '', 'ring', 'cedilla', '', 'hungarumlaut', 'ogonek', 'caron',
+      'emdash', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '',
+      'AE', '', 'ordfeminine', '', '', '', '', 'Lslash', 'Oslash', 'OE',
+      'ordmasculine', '', '', '', '', '', 'ae', '', '', '', 'dotlessi', '', '',
+      'lslash', 'oslash', 'oe', 'germandbls'
     ]);
   },
   get WinAnsiEncoding() {
@@ -405,6 +418,19 @@ var symbolsFonts = {
   'Dingbats': true, 'Symbol': true, 'ZapfDingbats': true
 };
 
+// Some characters, e.g. copyrightserif, mapped to the private use area and
+// might not be displayed using standard fonts. Mapping/hacking well-known chars
+// to the similar equivalents in the normal characters range.
+function mapPrivateUseChars(code) {
+  switch (code) {
+    case 0xF8E9: // copyrightsans
+    case 0xF6D9: // copyrightserif
+      return 0x00A9; // copyright
+    default:
+      return code;
+  }
+}
+
 var FontLoader = {
   listeningForFontLoad: false,
 
@@ -547,7 +573,8 @@ var FontLoader = {
       src += '  window.onload = function fontLoaderOnload() {\n';
       src += '    parent.postMessage(JSON.stringify(fontNames), "*");\n';
       src += '  }';
-      src += '</script></head><body>';
+      // Hack so the end script tag isn't counted if this is inline JS.
+      src += '</scr' + 'ipt></head><body>';
       for (var i = 0, ii = names.length; i < ii; ++i) {
         src += '<p style="font-family:\'' + names[i] + '\'">Hi</p>';
       }
@@ -761,8 +788,8 @@ var Font = (function FontClosure() {
     var names = name.split('+');
     names = names.length > 1 ? names[1] : names[0];
     names = names.split(/[-,_]/g)[0];
-    this.isSerifFont = !!(properties.flags & 2);
-    this.isSymbolicFont = !!(properties.flags & 4);
+    this.isSerifFont = !!(properties.flags & FontFlags.Serif);
+    this.isSymbolicFont = !!(properties.flags & FontFlags.Symbolic);
 
     var type = properties.type;
     this.type = type;
@@ -1526,6 +1553,61 @@ var Font = (function FontClosure() {
         }
       };
 
+      function sanitizeGlyph(source, sourceStart, sourceEnd, dest, destStart) {
+        if (sourceEnd - sourceStart <= 12) {
+          // glyph with data less than 12 is invalid one
+          return 0;
+        }
+        var glyf = source.subarray(sourceStart, sourceEnd);
+        var contoursCount = (glyf[0] << 8) | glyf[1];
+        if (contoursCount & 0x8000) {
+          // complex glyph, writing as is
+          dest.set(glyf, destStart);
+          return glyf.length;
+        }
+
+        var j = 10, flagsCount = 0;
+        for (var i = 0; i < contoursCount; i++) {
+          var endPoint = (glyf[j] << 8) | glyf[j + 1];
+          flagsCount = endPoint + 1;
+          j += 2;
+        }
+        // skipping instructions
+        var instructionsLength = (glyf[j] << 8) | glyf[j + 1];
+        j += 2 + instructionsLength;
+        // validating flags
+        var coordinatesLength = 0;
+        for (var i = 0; i < flagsCount; i++) {
+          var flag = glyf[j++];
+          if (flag & 0xC0) {
+            // reserved flags must be zero, rejecting
+            return 0;
+          }
+          var xyLength = ((flag & 2) ? 1 : (flag & 16) ? 0 : 2) +
+                         ((flag & 4) ? 1 : (flag & 32) ? 0 : 2);
+          coordinatesLength += xyLength;
+          if (flag & 8) {
+            var repeat = glyf[j++];
+            i += repeat;
+            coordinatesLength += repeat * xyLength;
+          }
+        }
+        var glyphDataLength = j + coordinatesLength;
+        if (glyphDataLength > glyf.length) {
+          // not enough data for coordinates
+          return 0;
+        }
+        if (glyf.length - glyphDataLength > 3) {
+          // truncating and aligning to 4 bytes the long glyph data
+          glyphDataLength = (glyphDataLength + 3) & ~3;
+          dest.set(glyf.subarray(0, glyphDataLength), destStart);
+          return glyphDataLength;
+        }
+        // glyph data is fine
+        dest.set(glyf, destStart);
+        return glyf.length;
+      }
+
       function sanitizeGlyphLocations(loca, glyf, numGlyphs,
                                       isGlyphLocationsLong) {
         var itemSize, itemDecode, itemEncode;
@@ -1552,21 +1634,21 @@ var Font = (function FontClosure() {
           };
         }
         var locaData = loca.data;
+        // removing the invalid glyphs
+        var oldGlyfData = glyf.data;
+        var newGlyfData = new Uint8Array(oldGlyfData.length);
         var startOffset = itemDecode(locaData, 0);
-        var firstOffset = itemDecode(locaData, itemSize);
-        if (firstOffset - startOffset < 12 || startOffset > 0) {
-          // removing first glyph
-          glyf.data = glyf.data.subarray(firstOffset);
-          glyf.length -= firstOffset;
-
-          itemEncode(locaData, 0, 0);
-          var i, pos = itemSize;
-          for (i = 1; i <= numGlyphs; ++i) {
-            itemEncode(locaData, pos,
-              itemDecode(locaData, pos) - firstOffset);
-            pos += itemSize;
-          }
+        var writeOffset = 0;
+        itemEncode(locaData, 0, writeOffset);
+        for (var i = 0, j = itemSize; i < numGlyphs; i++, j += itemSize) {
+          var endOffset = itemDecode(locaData, j);
+          var newLength = sanitizeGlyph(oldGlyfData, startOffset, endOffset,
+                                        newGlyfData, writeOffset);
+          writeOffset += newLength;
+          itemEncode(locaData, j, writeOffset);
+          startOffset = endOffset;
         }
+        glyf.data = newGlyfData.subarray(0, writeOffset);
       }
 
       function readGlyphNameMap(post, properties) {
@@ -2143,6 +2225,9 @@ var Font = (function FontClosure() {
       var styleSheet = styleElement.sheet;
       styleSheet.insertRule(rule, styleSheet.cssRules.length);
 
+      if (PDFJS.pdfBug && FontInspector.enabled)
+        FontInspector.fontAdded(this, url);
+
       return rule;
     },
 
@@ -2186,7 +2271,7 @@ var Font = (function FontClosure() {
         case 'CIDFontType0':
           if (this.noUnicodeAdaptation) {
             width = this.widths[this.unicodeToCID[charcode] || charcode];
-            unicode = charcode;
+            unicode = mapPrivateUseChars(charcode);
             break;
           }
           unicode = this.toUnicode[charcode] || charcode;
@@ -2194,7 +2279,7 @@ var Font = (function FontClosure() {
         case 'CIDFontType2':
           if (this.noUnicodeAdaptation) {
             width = this.widths[this.unicodeToCID[charcode] || charcode];
-            unicode = charcode;
+            unicode = mapPrivateUseChars(charcode);
             break;
           }
           unicode = this.toUnicode[charcode] || charcode;
@@ -2204,7 +2289,7 @@ var Font = (function FontClosure() {
           if (!isNum(width))
             width = this.widths[glyphName];
           if (this.noUnicodeAdaptation) {
-            unicode = GlyphsUnicode[glyphName] || charcode;
+            unicode = mapPrivateUseChars(GlyphsUnicode[glyphName] || charcode);
             break;
           }
           unicode = this.glyphNameMap[glyphName] ||
@@ -2235,9 +2320,8 @@ var Font = (function FontClosure() {
           }
 
           // MacRoman encoding address by re-encoding the cmap table
-          unicode = glyphName in GlyphsUnicode ?
-            GlyphsUnicode[glyphName] :
-            this.glyphNameMap[glyphName];
+          unicode = glyphName in this.glyphNameMap ?
+            this.glyphNameMap[glyphName] : GlyphsUnicode[glyphName];
           break;
         default:
           warn('Unsupported font type: ' + this.type);
@@ -2594,7 +2678,13 @@ var Type1Parser = function type1Parser() {
     while (str[index++] != ']')
       count++;
 
-    var array = str.substr(start, count).split(' ');
+    str = str.substr(start, count);
+
+    str = str.trim();
+    // Remove adjacent spaces
+    str = str.replace(/\s+/g, ' ');
+
+    var array = str.split(' ');
     for (var i = 0, ii = array.length; i < ii; i++)
       array[i] = parseFloat(array[i] || 0);
     return array;
@@ -3595,7 +3685,7 @@ var Type2CFF = (function Type2CFFClosure() {
             dict['cidOperatorPresent'] = true;
             break;
           default:
-            TODO('interpret top dict key');
+            TODO('interpret top dict key: ' + key);
         }
       }
       return dict;

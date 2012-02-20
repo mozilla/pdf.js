@@ -17,12 +17,17 @@ var TextRenderingMode = {
   ADD_TO_PATH: 7
 };
 
+// Minimal font size that would be used during canvas fillText operations.
+var MIN_FONT_SIZE = 1;
+
 var CanvasExtraState = (function CanvasExtraStateClosure() {
   function CanvasExtraState(old) {
     // Are soft masks and alpha values shapes or opacities?
     this.alphaIsShape = false;
     this.fontSize = 0;
+    this.fontSizeScale = 1;
     this.textMatrix = IDENTITY_MATRIX;
+    this.fontMatrix = IDENTITY_MATRIX;
     this.leading = 0;
     // Current point (in user coordinates)
     this.x = 0;
@@ -264,7 +269,8 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
     },
 
     executeIRQueue: function canvasGraphicsExecuteIRQueue(codeIR,
-                                  executionStartIdx, continueCallback) {
+                                  executionStartIdx, continueCallback,
+                                  stepper) {
       var argsArray = codeIR.argsArray;
       var fnArray = codeIR.fnArray;
       var i = executionStartIdx || 0;
@@ -283,6 +289,11 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       var slowCommands = this.slowCommands;
 
       while (true) {
+        if (stepper && i === stepper.nextBreakPoint) {
+          stepper.breakIt(i, continueCallback);
+          return i;
+        }
+
         fnName = fnArray[i];
 
         if (fnName !== 'dependency') {
@@ -546,15 +557,38 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
     },
     setFont: function canvasGraphicsSetFont(fontRefName, size) {
       var fontObj = this.objs.get(fontRefName).fontObj;
+      var current = this.current;
 
-      if (!fontObj) {
-        throw 'Can\'t find font for ' + fontRefName;
+      if (!fontObj)
+        error('Can\'t find font for ' + fontRefName);
+
+      // Slice-clone matrix so we can manipulate it without affecting original
+      if (fontObj.fontMatrix)
+        current.fontMatrix = fontObj.fontMatrix.slice(0);
+      else
+        current.fontMatrix = IDENTITY_MATRIX.slice(0);
+
+      // A valid matrix needs all main diagonal elements to be non-zero
+      // This also ensures we bypass FF bugzilla bug #719844.
+      if (current.fontMatrix[0] === 0 ||
+          current.fontMatrix[3] === 0) {
+        warn('Invalid font matrix for font ' + fontRefName);
       }
 
-      var name = fontObj.loadedName || 'sans-serif';
+      // The spec for Tf (setFont) says that 'size' specifies the font 'scale',
+      // and in some docs this can be negative (inverted x-y axes).
+      // We implement this condition with fontMatrix.
+      if (size < 0) {
+        size = -size;
+        current.fontMatrix[0] *= -1;
+        current.fontMatrix[3] *= -1;
+      }
 
       this.current.font = fontObj;
       this.current.fontSize = size;
+
+      if (fontObj.coded)
+        return; // we don't need ctx.font for Type3 fonts
 
       var name = fontObj.loadedName || 'sans-serif';
       var bold = fontObj.black ? (fontObj.bold ? 'bolder' : 'bold') :
@@ -563,7 +597,16 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       var italic = fontObj.italic ? 'italic' : 'normal';
       var serif = fontObj.isSerifFont ? 'serif' : 'sans-serif';
       var typeface = '"' + name + '", ' + serif;
-      var rule = italic + ' ' + bold + ' ' + size + 'px ' + typeface;
+
+      // Some font backends cannot handle fonts below certain size.
+      // Keeping the font at minimal size and using the fontSizeScale to change
+      // the current transformation matrix before the fillText/strokeText.
+      // See https://bugzilla.mozilla.org/show_bug.cgi?id=726227
+      var browserFontSize = size >= MIN_FONT_SIZE ? size : MIN_FONT_SIZE;
+      this.current.fontSizeScale = browserFontSize != MIN_FONT_SIZE ? 1.0 :
+                                   size / MIN_FONT_SIZE;
+
+      var rule = italic + ' ' + bold + ' ' + browserFontSize + 'px ' + typeface;
       this.ctx.font = rule;
     },
     setTextRenderingMode: function canvasGraphicsSetTextRenderingMode(mode) {
@@ -595,7 +638,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       var ctx = this.ctx;
       var current = this.current;
       var textHScale = current.textHScale;
-      var fontMatrix = current.font.fontMatrix || IDENTITY_MATRIX;
+      var fontMatrix = current.fontMatrix || IDENTITY_MATRIX;
 
       ctx.transform.apply(ctx, current.textMatrix);
       ctx.scale(1, -1);
@@ -626,10 +669,11 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       var font = current.font;
       var glyphs = font.charsToGlyphs(str);
       var fontSize = current.fontSize;
+      var fontSizeScale = current.fontSizeScale;
       var charSpacing = current.charSpacing;
       var wordSpacing = current.wordSpacing;
       var textHScale = current.textHScale;
-      var fontMatrix = font.fontMatrix || IDENTITY_MATRIX;
+      var fontMatrix = current.fontMatrix || IDENTITY_MATRIX;
       var textHScale2 = textHScale * fontMatrix[0];
       var glyphsLength = glyphs.length;
       var textLayer = this.textLayer;
@@ -667,7 +711,8 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
           this.restore();
 
           var transformed = Util.applyTransform([glyph.width, 0], fontMatrix);
-          var width = transformed[0] * fontSize + charSpacing;
+          var width = transformed[0] * fontSize +
+              Util.sign(current.fontMatrix[0]) * charSpacing;
 
           ctx.translate(width, 0);
           current.x += width * textHScale;
@@ -688,49 +733,56 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
         else
           lineWidth /= scale;
 
-        ctx.lineWidth = lineWidth;
-
         if (textSelection)
           text.geom = this.getTextGeometry();
 
-        var width = 0;
+        if (fontSizeScale != 1.0) {
+          ctx.scale(fontSizeScale, fontSizeScale);
+          lineWidth /= fontSizeScale;
+        }
+
+        ctx.lineWidth = lineWidth;
+
+        var x = 0;
         for (var i = 0; i < glyphsLength; ++i) {
           var glyph = glyphs[i];
           if (glyph === null) {
             // word break
-            width += wordSpacing;
+            x += Util.sign(current.fontMatrix[0]) * wordSpacing;
             continue;
           }
 
           var char = glyph.fontChar;
-          var charWidth = glyph.width * fontSize * 0.001 + charSpacing;
+          var charWidth = glyph.width * fontSize * 0.001 +
+              Util.sign(current.fontMatrix[0]) * charSpacing;
 
+          var scaledX = x / fontSizeScale;
           switch (textRenderingMode) {
             default: // other unsupported rendering modes
             case TextRenderingMode.FILL:
             case TextRenderingMode.FILL_ADD_TO_PATH:
-              ctx.fillText(char, width, 0);
+              ctx.fillText(char, scaledX, 0);
               break;
             case TextRenderingMode.STROKE:
             case TextRenderingMode.STROKE_ADD_TO_PATH:
-              ctx.strokeText(char, width, 0);
+              ctx.strokeText(char, scaledX, 0);
               break;
             case TextRenderingMode.FILL_STROKE:
             case TextRenderingMode.FILL_STROKE_ADD_TO_PATH:
-              ctx.fillText(char, width, 0);
-              ctx.strokeText(char, width, 0);
+              ctx.fillText(char, scaledX, 0);
+              ctx.strokeText(char, scaledX, 0);
               break;
             case TextRenderingMode.INVISIBLE:
               break;
           }
 
-          width += charWidth;
+          x += charWidth;
 
           text.str += glyph.unicode === ' ' ? '\u00A0' : glyph.unicode;
           text.length++;
           text.canvasWidth += charWidth;
         }
-        current.x += width * textHScale2;
+        current.x += x * textHScale2;
         ctx.restore();
       }
 
@@ -746,7 +798,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       var fontSize = current.fontSize;
       var textHScale = current.textHScale;
       if (!font.coded)
-        textHScale *= (font.fontMatrix || IDENTITY_MATRIX)[0];
+        textHScale *= (current.fontMatrix || IDENTITY_MATRIX)[0];
       var arrLength = arr.length;
       var textLayer = this.textLayer;
       var text = {str: '', length: 0, canvasWidth: 0, geom: {}};
@@ -866,7 +918,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       } else if (IR[0] == 'RadialAxial' || IR[0] == 'Dummy') {
         var pattern = Pattern.shadingFromIR(this.ctx, IR);
       } else {
-        throw 'Unkown IR type';
+        error('Unkown IR type ' + IR[0]);
       }
       return pattern;
     },

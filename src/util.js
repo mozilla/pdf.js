@@ -78,19 +78,97 @@ var IDENTITY_MATRIX = [1, 0, 0, 1, 0, 0];
 
 var Util = (function UtilClosure() {
   function Util() {}
+
   Util.makeCssRgb = function makergb(r, g, b) {
     var ri = (255 * r) | 0, gi = (255 * g) | 0, bi = (255 * b) | 0;
     return 'rgb(' + ri + ',' + gi + ',' + bi + ')';
   };
+
   Util.makeCssCmyk = function makecmyk(c, m, y, k) {
     c = (new DeviceCmykCS()).getRgb([c, m, y, k]);
     var ri = (255 * c[0]) | 0, gi = (255 * c[1]) | 0, bi = (255 * c[2]) | 0;
     return 'rgb(' + ri + ',' + gi + ',' + bi + ')';
   };
+
+  // For 2d affine transforms
   Util.applyTransform = function apply(p, m) {
     var xt = p[0] * m[0] + p[1] * m[2] + m[4];
     var yt = p[0] * m[1] + p[1] * m[3] + m[5];
     return [xt, yt];
+  };
+
+  // Apply a generic 3d matrix M on a 3-vector v:
+  //   | a b c |   | X |
+  //   | d e f | x | Y |
+  //   | g h i |   | Z |
+  // M is assumed to be serialized as [a,b,c,d,e,f,g,h,i],
+  // with v as [X,Y,Z]
+  Util.apply3dTransform = function apply3d(m, v) {
+    return [
+      m[0] * v[0] + m[1] * v[1] + m[2] * v[2],
+      m[3] * v[0] + m[4] * v[1] + m[5] * v[2],
+      m[6] * v[0] + m[7] * v[1] + m[8] * v[2]
+    ];
+  }
+
+  // Normalize rectangle rect=[x1, y1, x2, y2] so that (x1,y1) < (x2,y2)
+  // For coordinate systems whose origin lies in the bottom-left, this
+  // means normalization to (BL,TR) ordering. For systems with origin in the
+  // top-left, this means (TL,BR) ordering.
+  Util.normalizeRect = function normalizeRect(rect) {
+    var r = rect.slice(0); // clone rect
+    if (rect[0] > rect[2]) {
+      r[0] = rect[2];
+      r[2] = rect[0];
+    }
+    if (rect[1] > rect[3]) {
+      r[1] = rect[3];
+      r[3] = rect[1];
+    }
+    return r;
+  }
+
+  // Returns a rectangle [x1, y1, x2, y2] corresponding to the
+  // intersection of rect1 and rect2. If no intersection, returns 'false'
+  // The rectangle coordinates of rect1, rect2 should be [x1, y1, x2, y2]
+  Util.intersect = function intersect(rect1, rect2) {
+    function compare(a, b) {
+      return a - b;
+    };
+
+    // Order points along the axes
+    var orderedX = [rect1[0], rect1[2], rect2[0], rect2[2]].sort(compare),
+        orderedY = [rect1[1], rect1[3], rect2[1], rect2[3]].sort(compare),
+        result = [];
+
+    rect1 = Util.normalizeRect(rect1);
+    rect2 = Util.normalizeRect(rect2);
+
+    // X: first and second points belong to different rectangles?
+    if ((orderedX[0] === rect1[0] && orderedX[1] === rect2[0]) ||
+        (orderedX[0] === rect2[0] && orderedX[1] === rect1[0])) {
+      // Intersection must be between second and third points
+      result[0] = orderedX[1];
+      result[2] = orderedX[2];
+    } else {
+      return false;
+    }
+
+    // Y: first and second points belong to different rectangles?
+    if ((orderedY[0] === rect1[1] && orderedY[1] === rect2[1]) ||
+        (orderedY[0] === rect2[1] && orderedY[1] === rect1[1])) {
+      // Intersection must be between second and third points
+      result[1] = orderedY[1];
+      result[3] = orderedY[2];
+    } else {
+      return false;
+    }
+
+    return result;
+  }
+
+  Util.sign = function sign(num) {
+    return num < 0 ? -1 : 1;
   };
 
   return Util;
@@ -255,8 +333,8 @@ var Promise = (function PromiseClosure() {
         return;
       }
       if (this._data !== EMPTY_PROMISE) {
-        throw 'Promise ' + this.name +
-                                ': Cannot set the data of a promise twice';
+        error('Promise ' + this.name +
+              ': Cannot set the data of a promise twice');
       }
       this._data = value;
       this.hasData = true;
@@ -268,7 +346,7 @@ var Promise = (function PromiseClosure() {
 
     get data() {
       if (this._data === EMPTY_PROMISE) {
-        throw 'Promise ' + this.name + ': Cannot get data that isn\'t set';
+        error('Promise ' + this.name + ': Cannot get data that isn\'t set');
       }
       return this._data;
     },
@@ -283,10 +361,10 @@ var Promise = (function PromiseClosure() {
 
     resolve: function promiseResolve(data) {
       if (this.isResolved) {
-        throw 'A Promise can be resolved only once ' + this.name;
+        error('A Promise can be resolved only once ' + this.name);
       }
       if (this.isRejected) {
-        throw 'The Promise was already rejected ' + this.name;
+        error('The Promise was already rejected ' + this.name);
       }
 
       this.isResolved = true;
@@ -300,10 +378,10 @@ var Promise = (function PromiseClosure() {
 
     reject: function proimseReject(reason) {
       if (this.isRejected) {
-        throw 'A Promise can be rejected only once ' + this.name;
+        error('A Promise can be rejected only once ' + this.name);
       }
       if (this.isResolved) {
-        throw 'The Promise was already resolved ' + this.name;
+        error('The Promise was already resolved ' + this.name);
       }
 
       this.isRejected = true;
@@ -317,7 +395,7 @@ var Promise = (function PromiseClosure() {
 
     then: function promiseThen(callback, errback) {
       if (!callback) {
-        throw 'Requiring callback' + this.name;
+        error('Requiring callback' + this.name);
       }
 
       // If the promise is already resolved, call the callback directly.

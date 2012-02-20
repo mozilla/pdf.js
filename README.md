@@ -11,7 +11,7 @@ rendering PDFs, and eventually release a PDF reader extension powered by
 pdf.js. Integration with Firefox is a possibility if the experiment proves 
 successful.
 
-
+ 
 
 # Getting started
 
@@ -26,16 +26,19 @@ using the pdf.js API.
 
 ### Extension
 
-A Firefox extension is also available:
+A Firefox extension is availble in two places:
 
-+ http://mozilla.github.com/pdf.js/extensions/firefox/pdf.js.xpi
++ Stable Version: https://addons.mozilla.org/en-US/firefox/addon/pdfjs
++ Development Version: http://mozilla.github.com/pdf.js/extensions/firefox/pdf.js.xpi
 
-Note that this extension is self-updating, and by default Firefox will auto-update extensions on a 
-daily basis (you can change this through the `extensions.update.interval` option in `about:config`).
+The development extension should be quite stable but still might break from time to time.
+Also, note that the development extension is updated on every merge and by default Firefox will
+auto-update extensions on a daily basis (you can change this through the 
+`extensions.update.interval` option in `about:config`).
 
 For an experimental Chrome extension, get the code as explained below and issue `make extension`. 
-Then open Chrome with the flag `--enable-experimental-extension-apis`, go to `Tools > Extension`
-and load the (unpackaged) extension from the directory `extensions/chrome`.
+Then open Chrome, go to `Tools > Extension` and load the (unpackaged) extension
+from the directory `build/chrome`.
 
 ### Getting the code
 

@@ -9,7 +9,7 @@ body {
 }
 
 [hidden] {
-  display: none;
+  display: none !important;
 }
 
 /* === Toolbar === */
@@ -117,12 +117,33 @@ span#info {
   z-index: 1;
 }
 
-#sidebar:hover {
+#sidebar:hover,
+#sidebar.pinned {
   left: 0px;
   transition: left 0.25s ease-in-out 0s;
   -o-transition: left 0.25s ease-in-out 0s;
   -moz-transition: left 0.25s ease-in-out 0s;
   -webkit-transition: left 0.25s ease-in-out 0s;
+}
+
+#pinIcon {
+  position: absolute;
+  top: 4px;
+  right: 55px;
+  width: 15px;
+  height: 15px;
+  background: center no-repeat;
+  background-image: url('images/pin-up.svg');
+  background-size: 15px 15px;
+}
+
+#pinIcon:hover {
+  background-color: rgba(255,255,255,0.35);
+}
+
+#sidebar.pinned #pinIcon {
+  background-image: url('images/pin-down.svg');
+  background-size: 15px 15px;
 }
 
 #sidebarBox {
@@ -144,7 +165,7 @@ span#info {
   position: absolute;
   overflow: hidden;
   overflow-y: auto;
-  top: 10px;
+  top: 20px;
   bottom: 10px;
   left: 10px;
   width: 280px;
@@ -175,7 +196,7 @@ span#info {
   position: absolute;
   background-color: #fff;
   overflow: auto;
-  top: 10px;
+  top: 20px;
   bottom: 10px;
   left: 10px;
   width: 280px;
@@ -263,6 +284,16 @@ canvas {
   -webkit-box-shadow: 0px 2px 10px #ff0;
 }
 
+.loadingIcon {
+  position: absolute;
+  display: block;
+  left: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  background: url('images/loading-icon.gif') center no-repeat;
+}
+
 .textLayer {
   position: absolute;
   left: 0;
@@ -270,6 +301,7 @@ canvas {
   right: 0;
   bottom: 0;
   color: #000;
+  font-family: sans-serif;
 }
 
 .textLayer > div {
@@ -398,6 +430,43 @@ canvas {
 }
 
 #loading {
-	margin: 100px 0;
-	text-align: center;
+  margin: 100px 0;
+  text-align: center;
+}
+
+#PDFBug {
+  font-size: 10px;
+  position: fixed;
+  top: 35px;
+  bottom: 5px;
+  right: 2px;
+  width: 300px;
+  background: white;
+  border: 1px solid #666;
+  padding: 0;
+}
+#PDFBug .controls {
+  border-bottom: 1px solid #666;
+  padding: 3px;
+  background: -moz-linear-gradient(center bottom, #eee 0%, #fff 100%);
+}
+#PDFBug .panels {
+  overflow: auto;
+  position: absolute;
+  top: 27px;
+  left: 0;
+  right: 0;
+  bottom: 0;
+}
+#PDFBug button.active {
+  font-weight: bold;
+}
+.debuggerShowText {
+  background: yellow;
+  color: blue;
+  opacity: 0.3;
+}
+.debuggerHideText:hover {
+  background: yellow;
+  opacity: 0.3;
 }

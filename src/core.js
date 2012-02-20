@@ -33,7 +33,9 @@ function getPdf(arg, callback) {
   var xhr = new XMLHttpRequest();
   xhr.open('GET', params.url);
   xhr.mozResponseType = xhr.responseType = 'arraybuffer';
-  xhr.expected = (params.url.indexOf('file:') === 0) ? 0 : 200;
+  var protocol = params.url.indexOf(':') < 0 ? window.location.protocol :
+    params.url.substring(0, params.url.indexOf(':') + 1);
+  xhr.expected = (protocol === 'http:' || protocol === 'https:') ? 200 : 0;
 
   if ('progress' in params)
     xhr.onprogress = params.progress || undefined;
@@ -55,6 +57,7 @@ function getPdf(arg, callback) {
   xhr.send(null);
 }
 globalScope.PDFJS.getPdf = getPdf;
+globalScope.PDFJS.pdfBug = false;
 
 var Page = (function PageClosure() {
   function Page(xref, pageNumber, pageDict, ref) {
@@ -102,25 +105,35 @@ var Page = (function PageClosure() {
       return shadow(this, 'mediaBox', obj);
     },
     get view() {
-      var obj = this.inheritPageProp('CropBox');
+      var cropBox = this.inheritPageProp('CropBox');
       var view = {
         x: 0,
         y: 0,
         width: this.width,
         height: this.height
       };
+      if (!isArray(cropBox) || cropBox.length !== 4)
+        return shadow(this, 'view', view);
+
       var mediaBox = this.mediaBox;
       var offsetX = mediaBox[0], offsetY = mediaBox[1];
-      if (isArray(obj) && obj.length == 4) {
-        var tl = this.rotatePoint(obj[0] - offsetX, obj[1] - offsetY);
-        var br = this.rotatePoint(obj[2] - offsetX, obj[3] - offsetY);
-        view.x = Math.min(tl.x, br.x);
-        view.y = Math.min(tl.y, br.y);
-        view.width = Math.abs(tl.x - br.x);
-        view.height = Math.abs(tl.y - br.y);
-      }
 
-      return shadow(this, 'cropBox', view);
+      // From the spec, 6th ed., p.963:
+      // "The crop, bleed, trim, and art boxes should not ordinarily
+      // extend beyond the boundaries of the media box. If they do, they are
+      // effectively reduced to their intersection with the media box."
+      cropBox = Util.intersect(cropBox, mediaBox);
+      if (!cropBox)
+        return shadow(this, 'view', view);
+
+      var tl = this.rotatePoint(cropBox[0] - offsetX, cropBox[1] - offsetY);
+      var br = this.rotatePoint(cropBox[2] - offsetX, cropBox[3] - offsetY);
+      view.x = Math.min(tl.x, br.x);
+      view.y = Math.min(tl.y, br.y);
+      view.width = Math.abs(tl.x - br.x);
+      view.height = Math.abs(tl.y - br.y);
+
+      return shadow(this, 'view', view);
     },
     get annotations() {
       return shadow(this, 'annotations', this.inheritPageProp('Annots'));
@@ -242,10 +255,16 @@ var Page = (function PageClosure() {
       var startIdx = 0;
       var length = this.IRQueue.fnArray.length;
       var IRQueue = this.IRQueue;
+      var stepper = null;
+      if (PDFJS.pdfBug && StepperManager.enabled) {
+        stepper = StepperManager.create(this.pageNumber);
+        stepper.init(IRQueue);
+        stepper.nextBreakPoint = stepper.getNextBreakPoint();
+      }
 
       var self = this;
       function next() {
-        startIdx = gfx.executeIRQueue(IRQueue, startIdx, next);
+        startIdx = gfx.executeIRQueue(IRQueue, startIdx, next, stepper);
         if (startIdx == length) {
           self.stats.render = Date.now();
           gfx.endDrawing();
@@ -410,14 +429,14 @@ var Page = (function PageClosure() {
             if (callback)
               callback(e);
             else
-              throw e;
+              error(e);
           }
         }.bind(this),
         function pageDisplayReadPromiseError(reason) {
           if (callback)
             callback(reason);
           else
-            throw reason;
+            error(reason);
         }
       );
     }
@@ -620,13 +639,23 @@ var PDFDoc = (function PDFDocClosure() {
     if (!globalScope.PDFJS.disableWorker && typeof Worker !== 'undefined') {
       var workerSrc = PDFJS.workerSrc;
       if (typeof workerSrc === 'undefined') {
-        throw 'No PDFJS.workerSrc specified';
+        error('No PDFJS.workerSrc specified');
       }
 
       try {
-        // Some versions of FF can't create a worker on localhost, see:
-        // https://bugzilla.mozilla.org/show_bug.cgi?id=683280
-        var worker = new Worker(workerSrc);
+        var worker;
+        if (PDFJS.isFirefoxExtension) {
+          // The firefox extension can't load the worker from the resource://
+          // url so we have to inline the script and then use the blob loader.
+          var bb = new MozBlobBuilder();
+          bb.append(document.querySelector('#PDFJS_SCRIPT_TAG').textContent);
+          var blobUrl = window.URL.createObjectURL(bb.getBlob());
+          worker = new Worker(blobUrl);
+        } else {
+          // Some versions of FF can't create a worker on localhost, see:
+          // https://bugzilla.mozilla.org/show_bug.cgi?id=683280
+          worker = new Worker(workerSrc);
+        }
 
         var messageHandler = new MessageHandler('main', worker);
 
@@ -645,7 +674,9 @@ var PDFDoc = (function PDFDocClosure() {
         // serializing the typed array.
         messageHandler.send('test', testObj);
         return;
-      } catch (e) {}
+      } catch (e) {
+        warn('The worker has been disabled.');
+      }
     }
     // Either workers are disabled, not supported or have thrown an exception.
     // Thus, we fallback to a faked worker.
@@ -716,7 +747,7 @@ var PDFDoc = (function PDFDocClosure() {
             });
             break;
           default:
-            throw 'Got unkown object type ' + type;
+            error('Got unkown object type ' + type);
         }
       }, this);
 
@@ -737,7 +768,7 @@ var PDFDoc = (function PDFDocClosure() {
         if (page.displayReadyPromise)
           page.displayReadyPromise.reject(data.error);
         else
-          throw data.error;
+          error(data.error);
       }, this);
 
       messageHandler.on('jpeg_decode', function(data, promise) {
