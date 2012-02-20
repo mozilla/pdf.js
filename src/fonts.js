@@ -2040,7 +2040,7 @@ var Font = (function FontClosure() {
         }
         properties.baseEncoding = encoding;
       }
-      if (false && properties.subtype == 'CIDFontType0C') {
+      if (properties.subtype == 'CIDFontType0C') {
         var toFontChar = [];
         for (var i = 0; i < charstrings.length; ++i) {
           var charstring = charstrings[i];
