@@ -3699,10 +3699,30 @@ var Type2CFF = (function Type2CFFClosure() {
         var length = data.length;
         if (length > 127)
           warn('Font had name longer than 127 chars, will be rejected.');
-        // Only certain chars are permitted in the font name.  Set them all to
-        // 'A' to avoid being rejected.
-        for (var j = 0; j < length; ++j)
-          data[j] = 65;
+        // Only certain chars are permitted in the font name.
+        for (var j = 0; j < length; ++j) {
+          var c = data[j];
+          if (j === 0 && c === 0)
+            continue;
+          if (c < 33 || c > 126) {
+            data[j] = 95;
+            continue;
+          }
+          switch (c) {
+            case 91:  // [
+            case 93:  // ]
+            case 40:  // (
+            case 41:  // )
+            case 123: // {
+            case 125: // }
+            case 60:  // <
+            case 62:  // >
+            case 47:  // /
+            case 37:  // %
+              data[j] = 95;
+              break;
+          }
+        }
       }
     },
     getStrings: function cff_getStrings(stringIndex) {
