@@ -460,6 +460,13 @@
       "link": true,
       "type": "eq"
     },
+    {  "id": "issue925",
+      "file": "pdfs/issue925.pdf",
+      "md5": "f58fe943090aff89dcc8e771bc0db4c2",
+      "rounds": 1,
+      "link": true,
+      "type": "eq"
+    },
     {  "id": "issue1133",
       "file": "pdfs/issue1133.pdf",
       "md5": "d1b61580cb100e3df93d33703af1773a",
