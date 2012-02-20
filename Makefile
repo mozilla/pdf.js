@@ -60,7 +60,7 @@ test: shell-test browser-test
 production: | bundle
 	@echo "Preparing web/viewer-production.html"; \
 	cd web; \
-	sed '/PDFJSSCRIPT_REMOVE/d' viewer.html > viewer-1.tmp; \
+	sed '/PDFJSSCRIPT_REMOVE_CORE/d' viewer.html > viewer-1.tmp; \
 	sed '/PDFJSSCRIPT_INCLUDE_BUILD/ r viewer-snippet.html' viewer-1.tmp > viewer-production.html; \
 	rm -f *.tmp; \
 	cd ..
@@ -216,6 +216,7 @@ EXTENSION_WEB_FILES = \
 	web/viewer.js \
 	web/viewer.html \
 	web/viewer-production.html \
+	web/debugger.js \
 	$(NULL)
 
 FIREFOX_BUILD_DIR := $(BUILD_DIR)/firefox
@@ -257,7 +258,7 @@ extension: | production
 	# Modify the viewer so it does all the extension only stuff.
 	@cd $(FIREFOX_BUILD_CONTENT)/web; \
 	sed -i.bak '/PDFJSSCRIPT_INCLUDE_BUNDLE/ r ../build/pdf.js' viewer-snippet-firefox-extension.html; \
-	sed -i.bak '/PDFJSSCRIPT_REMOVE/d' viewer.html; \
+	sed -i.bak '/PDFJSSCRIPT_REMOVE_CORE/d' viewer.html; \
 	sed -i.bak '/PDFJSSCRIPT_REMOVE_FIREFOX_EXTENSION/d' viewer.html; \
 	sed -i.bak '/PDFJSSCRIPT_INCLUDE_FIREFOX_EXTENSION/ r viewer-snippet-firefox-extension.html' viewer.html; \
 	rm -f *.bak;
