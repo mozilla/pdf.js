@@ -11,6 +11,7 @@ var kMaxWaitForFontFace = 1000;
 // Unicode Private Use Area
 var kCmapGlyphOffset = 0xE000;
 var kSizeOfGlyphArea = 0x1900;
+var kSymbolicFontGlyphOffset = 0xF000;
 
 // PDF Glyph Space Units are one Thousandth of a TextSpace Unit
 // except for Type 3 fonts
@@ -1888,7 +1889,7 @@ var Font = (function FontClosure() {
             }
           }
           // if it is, replacing with meaningful toUnicode values
-          if (isIdentity) {
+          if (isIdentity && !this.isSymbolicFont) {
             var usedUnicodes = [], unassignedUnicodeItems = [];
             for (var i = 0, ii = glyphs.length; i < ii; i++) {
               var unicode = toUnicode[i + 1];
@@ -1940,11 +1941,15 @@ var Font = (function FontClosure() {
           }
         }
 
-        // If font is symbolic and cmap (3,0) present, the characters can be
-        // located in 0xF000 - 0xF0FF range. Using the first glyph code
-        // to detect the base glyphs offset.
-        this.symbolicGlyphsOffset = this.isSymbolicFont && !hasShortCmap ?
-          (glyphs[0].unicode & 0xFF00) : 0;
+        // Moving all symbolic font glyphs into 0xF000 - 0xF0FF range.
+        this.symbolicGlyphsOffset = 0;
+        if (this.isSymbolicFont) {
+          for (var i = 0, ii = glyphs.length; i < ii; i++) {
+            var code = glyphs[i].unicode;
+            glyphs[i].unicode = kSymbolicFontGlyphOffset | (code & 0xFF);
+          }
+          this.symbolicGlyphsOffset = kSymbolicFontGlyphOffset;
+        }
 
         // remove glyph references outside range of avaialable glyphs
         for (var i = 0, ii = ids.length; i < ii; i++) {
