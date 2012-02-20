@@ -2147,8 +2147,9 @@ var Font = (function FontClosure() {
       for (var i = 0, ii = toUnicode.length; i < ii; i++) {
         var unicode = toUnicode[i];
         var fontCharCode = typeof unicode === 'object' ? unusedUnicode++ :
-           unicode;
-        result.push(fontCharCode);
+          unicode;
+        if (typeof unicode !== 'undefined')
+          result[i] = fontCharCode;
       }
       return result;
     },
