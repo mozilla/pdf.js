@@ -199,7 +199,6 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
     this.pendingClip = null;
     this.res = null;
     this.xobjs = null;
-    this.ScratchCanvas = ScratchCanvas;
     this.objs = objs;
     this.textLayer = textLayer;
     if (canvasCtx) {
@@ -1116,7 +1115,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       // scale the image to the unit square
       ctx.scale(1 / w, -1 / h);
 
-      var tmpCanvas = new this.ScratchCanvas(w, h);
+      var tmpCanvas = new ScratchCanvas(w, h);
       var tmpCtx = tmpCanvas.getContext('2d');
 
       var fillColor = this.current.fillColor;
@@ -1147,7 +1146,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       // scale the image to the unit square
       ctx.scale(1 / w, -1 / h);
 
-      var tmpCanvas = new this.ScratchCanvas(w, h);
+      var tmpCanvas = new ScratchCanvas(w, h);
       var tmpCtx = tmpCanvas.getContext('2d');
       this.putBinaryImageData(tmpCtx, imgData, w, h);
 
