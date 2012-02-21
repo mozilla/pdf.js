@@ -113,7 +113,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
 
   PartialEvaluator.prototype = {
     getIRQueue: function partialEvaluatorGetIRQueue(stream, resources,
-                                    queue, dependency) {
+                                                      dependency, queue) {
 
       var self = this;
       var xref = this.xref;
@@ -136,8 +136,6 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
 
         var fontRes = resources.get('Font');
 
-        // TODO: TOASK: Is it possible to get here? If so, what does
-        // args[0].name should be like???
         assert(fontRes, 'fontRes not available');
 
         fontRes = xref.fetchIfRef(fontRes);
@@ -177,7 +175,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
 
         // Ensure the font is ready before the font is set
         // and later on used for drawing.
-        // TODO: This should get insert to the IRQueue only once per
+        // OPTIMIZE: This should get insert to the IRQueue only once per
         // page.
         insertDependency([loadedName]);
         return loadedName;
@@ -239,6 +237,9 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           }, handler, xref, resources, image, inline);
       }
 
+      if (!queue)
+        queue = {};
+
       if (!queue.argsArray) {
         queue.argsArray = [];
       }
@@ -295,9 +296,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                 if (typeNum == TILING_PATTERN) {
                   // Create an IR of the pattern code.
                   var depIdx = dependencyArray.length;
-                  var queueObj = {};
                   var codeIR = this.getIRQueue(pattern, dict.get('Resources') ||
-                      resources, queueObj, dependencyArray);
+                      resources, dependencyArray);
 
                   // Add the dependencies that are required to execute the
                   // codeIR.
@@ -340,8 +340,11 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                 // This adds the IRQueue of the xObj to the current queue.
                 var depIdx = dependencyArray.length;
 
+                // Pass in the current `queue` object. That means the `fnArray`
+                // and the `argsArray` in this scope is reused and new commands
+                // are added to them.
                 this.getIRQueue(xobj, xobj.dict.get('Resources') || resources,
-                    queue, dependencyArray);
+                    dependencyArray, queue);
 
                // Add the dependencies that are required to execute the
                // codeIR.
@@ -454,10 +457,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         }
       }
 
-      return {
-        fnArray: fnArray,
-        argsArray: argsArray
-      };
+      return queue;
     },
 
     extractDataStructures: function
@@ -858,9 +858,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         properties.charProcIRQueues = {};
         for (var key in charProcs.map) {
           var glyphStream = xref.fetchIfRef(charProcs.map[key]);
-          var queueObj = {};
           properties.charProcIRQueues[key] =
-            this.getIRQueue(glyphStream, fontResources, queueObj, dependency);
+            this.getIRQueue(glyphStream, fontResources, dependency);
         }
       }
 

@@ -213,9 +213,8 @@ var Page = (function PageClosure() {
 
       var pe = this.pe = new PartialEvaluator(
                                 xref, handler, 'p' + this.pageNumber + '_');
-      var IRQueue = {};
-      this.IRQueue = pe.getIRQueue(content, resources, IRQueue, dependency);
 
+      this.IRQueue = pe.getIRQueue(content, resources, dependency);
       this.stats.timeEnd('Build IR Queue');
       return this.IRQueue;
     },
