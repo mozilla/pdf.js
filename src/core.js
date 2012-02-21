@@ -228,14 +228,13 @@ var Page = (function PageClosure() {
       }
 
       // Load all the fonts
-      var fontObjs = FontLoader.bind(
+      FontLoader.bind(
         fonts,
         function pageEnsureFontsFontObjs(fontObjs) {
           this.stats.timeEnd('Font Loading');
 
           callback.call(this);
-        }.bind(this),
-        this.objs
+        }.bind(this)
       );
     },
 
@@ -761,30 +760,15 @@ var PDFDoc = (function PDFDocClosure() {
               file = new Stream(file, 0, file.length, fontFileDict);
             }
 
-            // For now, resolve the font object here direclty. The real font
-            // object is then created in FontLoader.bind().
-            this.objs.resolve(id, {
-              name: name,
-              file: file,
-              properties: properties
-            });
+            // At this point, only the font object is created but the font is not
+            // yet attached to the DOM. This is done in `FontLoader.bind`.
+            var font = new Font(name, file, properties);
+            this.objs.resolve(id, font);
             break;
           default:
             error('Got unkown object type ' + type);
         }
       }, this);
-
-      messageHandler.on('font_ready', function pdfDocFontReady(data) {
-        var id = data[0];
-        var font = new FontShape(data[1]);
-
-        // If there is no string, then there is nothing to attach to the DOM.
-        if (!font.str) {
-          this.objs.resolve(id, font);
-        } else {
-          this.objs.setData(id, font);
-        }
-      }.bind(this));
 
       messageHandler.on('page_error', function pdfDocError(data) {
         var page = this.pageCache[data.pageNum];

@@ -556,7 +556,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       this.current.leading = -leading;
     },
     setFont: function canvasGraphicsSetFont(fontRefName, size) {
-      var fontObj = this.objs.get(fontRefName).fontObj;
+      var fontObj = this.objs.get(fontRefName);
       var current = this.current;
 
       if (!fontObj)
