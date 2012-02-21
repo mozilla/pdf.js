@@ -416,26 +416,26 @@ var Promise = (function PromiseClosure() {
   return Promise;
 })();
 
-var Bench = (function BenchClosure() {
+var StatTimer = (function StatTimerClosure() {
   function rpad(str, pad, length) {
     while (str.length < length)
       str += pad;
     return str;
   }
-  function Bench() {
+  function StatTimer() {
     this.started = {};
     this.times = [];
     this.enabled = true;
   }
-  Bench.prototype = {
-    time: function benchTime(name) {
+  StatTimer.prototype = {
+    time: function statTimerTime(name) {
       if (!this.enabled)
         return;
       if (name in this.started)
         throw 'Timer is already running for ' + name;
       this.started[name] = Date.now();
     },
-    timeEnd: function benchTimeEnd(name) {
+    timeEnd: function statTimerTimeEnd(name) {
       if (!this.enabled)
         return;
       if (!(name in this.started))
@@ -448,7 +448,7 @@ var Bench = (function BenchClosure() {
       // Remove timer from started so it can be called again.
       delete this.started[name];
     },
-    toString: function benchToString() {
+    toString: function statTimerToString() {
       var times = this.times;
       var out = '';
       // Find the longest name for padding purposes.
@@ -466,5 +466,5 @@ var Bench = (function BenchClosure() {
       return out;
     }
   };
-  return Bench;
+  return StatTimer;
 })();

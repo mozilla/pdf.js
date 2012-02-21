@@ -458,7 +458,7 @@ var PDFView = {
     for (var i = 1; i <= pagesCount; i++) {
       var page = pdf.getPage(i);
       var pageView = new PageView(container, page, i, page.width, page.height,
-                                  page.bench, this.navigateTo.bind(this));
+                                  page.stats, this.navigateTo.bind(this));
       var thumbnailView = new ThumbnailView(sidebar, page, i,
                                             page.width / page.height);
       bindOnAfterDraw(pageView, thumbnailView);
@@ -635,7 +635,7 @@ var PDFView = {
 };
 
 var PageView = function pageView(container, content, id, pageWidth, pageHeight,
-                                 bench, navigateTo) {
+                                 stats, navigateTo) {
   this.id = id;
   this.content = content;
 
@@ -880,7 +880,7 @@ var PageView = function pageView(container, content, id, pageWidth, pageHeight,
       if (error)
         PDFView.error('An error occurred while rendering the page.', error);
 
-      self.stats = content.bench;
+      self.stats = content.stats;
       self.updateStats();
       if (self.onAfterDraw)
         self.onAfterDraw();
@@ -894,12 +894,10 @@ var PageView = function pageView(container, content, id, pageWidth, pageHeight,
   };
 
   this.updateStats = function pageViewUpdateStats() {
-    if (!PDFJS.enableBench || !this.stats || PDFView.page != this.id)
-      return;
-    var stats = this.stats;
-    var statsText = 'Page ' + this.id + '\n';
-    statsText += stats.toString();
-    document.getElementById('info').textContent = statsText;
+    if (PDFJS.pdfBug && Stats.enabled) {
+      var stats = this.stats;
+      Stats.add(this.id, stats);
+    }
   };
 };
 
@@ -1134,24 +1132,10 @@ window.addEventListener('load', function webViewerLoad(evt) {
   if ('pdfBug' in hashParams) {
     PDFJS.pdfBug = true;
     var pdfBug = hashParams['pdfBug'];
-    var all = false, enabled = [];
-    if (pdfBug === 'all')
-      all = true;
-    else
-      enabled = pdfBug.split(',');
-    var debugTools = PDFBug.tools;
-    for (var i = 0; i < debugTools.length; ++i) {
-      var tool = debugTools[i];
-      if (all || enabled.indexOf(tool.id) !== -1)
-        tool.enabled = true;
-    }
+    var enabled = pdfBug.split(',');
+    PDFBug.enable(enabled);
     PDFBug.init();
   }
-
-  if ('enableBench' in params)
-    PDFJS.enableBench = (params['enableBench'] === 'true');
-  if (PDFJS.enableBench)
-    document.getElementById('info').style.display = 'block';
 
   var sidebarScrollView = document.getElementById('sidebarScrollView');
   sidebarScrollView.addEventListener('scroll', updateThumbViewArea, true);

@@ -65,22 +65,6 @@ body {
   line-height: 16px;
 }
 
-span#info {
-  display: none;
-  position: fixed;
-  top: 32px;
-  right: 0px;
-  font-size: 10px;
-  white-space: pre;
-  font-family: courier;
-}
-
-@-moz-document regexp("http:.*debug=1.*") {
-  span#info {
-    display: inline-block;
-  }
-}
-
 /* === Sidebar === */
 #sidebar {
   position: fixed;
@@ -447,4 +431,12 @@ canvas {
 .debuggerHideText:hover {
   background: yellow;
   opacity: 0.3;
+}
+#PDFBug .stats {
+  font-size: 10px;
+  white-space: pre;
+  font-family: courier;
+}
+#PDFBug .stats .title {
+  font-weight: bold;
 }
