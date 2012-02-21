@@ -281,9 +281,6 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           // TODO figure out how to type-check vararg functions
 
           if ((cmd == 'SCN' || cmd == 'scn') && !args[args.length - 1].code) {
-            // Use the IR version for setStroke/FillColorN.
-            fn += '_IR';
-
             // compile tiling patterns
             var patternName = args[args.length - 1];
             // SCN/scn applies patterns along with normal colors

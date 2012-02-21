@@ -228,7 +228,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       'setStrokeColor': true,
       'setStrokeColorN': true,
       'setFillColor': true,
-      'setFillColorN_IR': true,
+      'setFillColorN': true,
       'setStrokeGray': true,
       'setFillGray': true,
       'setStrokeRGBColor': true,
@@ -907,7 +907,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       this.ctx.strokeStyle = color;
       this.current.strokeColor = color;
     },
-    getColorN_IR_Pattern: function canvasGraphicsGetColorN_IR_Pattern(IR, cs) {
+    getColorN_Pattern: function canvasGraphicsGetColorN_Pattern(IR, cs) {
       if (IR[0] == 'TilingPattern') {
         var args = IR[1];
         var base = cs.base;
@@ -929,11 +929,11 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       }
       return pattern;
     },
-    setStrokeColorN_IR: function canvasGraphicsSetStrokeColorN(/*...*/) {
+    setStrokeColorN: function canvasGraphicsSetStrokeColorN(/*...*/) {
       var cs = this.current.strokeColorSpace;
 
       if (cs.name == 'Pattern') {
-        this.current.strokeColor = this.getColorN_IR_Pattern(arguments, cs);
+        this.current.strokeColor = this.getColorN_Pattern(arguments, cs);
       } else {
         this.setStrokeColor.apply(this, arguments);
       }
@@ -945,11 +945,11 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       this.ctx.fillStyle = color;
       this.current.fillColor = color;
     },
-    setFillColorN_IR: function canvasGraphicsSetFillColorN(/*...*/) {
+    setFillColorN: function canvasGraphicsSetFillColorN(/*...*/) {
       var cs = this.current.fillColorSpace;
 
       if (cs.name == 'Pattern') {
-        this.current.fillColor = this.getColorN_IR_Pattern(arguments, cs);
+        this.current.fillColor = this.getColorN_Pattern(arguments, cs);
       } else {
         this.setFillColor.apply(this, arguments);
       }
