@@ -11,6 +11,7 @@ var kMaxWaitForFontFace = 1000;
 // Unicode Private Use Area
 var kCmapGlyphOffset = 0xE000;
 var kSizeOfGlyphArea = 0x1900;
+var kSymbolicFontGlyphOffset = 0xF000;
 
 // PDF Glyph Space Units are one Thousandth of a TextSpace Unit
 // except for Type 3 fonts
@@ -1648,6 +1649,18 @@ var Font = (function FontClosure() {
           itemEncode(locaData, j, writeOffset);
           startOffset = endOffset;
         }
+
+        if (writeOffset == 0) {
+          // glyf table cannot be empty -- redoing the glyf and loca tables
+          // to have single glyph with one point
+          var simpleGlyph = new Uint8Array(
+            [0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 49, 0]);
+          for (var i = 0, j = itemSize; i < numGlyphs; i++, j += itemSize)
+            itemEncode(locaData, j, simpleGlyph.length);
+          glyf.data = simpleGlyph;
+          return;
+        }
+
         glyf.data = newGlyfData.subarray(0, writeOffset);
       }
 
@@ -1876,7 +1889,7 @@ var Font = (function FontClosure() {
             }
           }
           // if it is, replacing with meaningful toUnicode values
-          if (isIdentity) {
+          if (isIdentity && !this.isSymbolicFont) {
             var usedUnicodes = [], unassignedUnicodeItems = [];
             for (var i = 0, ii = glyphs.length; i < ii; i++) {
               var unicode = toUnicode[i + 1];
@@ -1926,6 +1939,16 @@ var Font = (function FontClosure() {
               ids.push(ids[i]);
             }
           }
+        }
+
+        // Moving all symbolic font glyphs into 0xF000 - 0xF0FF range.
+        this.symbolicGlyphsOffset = 0;
+        if (this.isSymbolicFont) {
+          for (var i = 0, ii = glyphs.length; i < ii; i++) {
+            var code = glyphs[i].unicode;
+            glyphs[i].unicode = kSymbolicFontGlyphOffset | (code & 0xFF);
+          }
+          this.symbolicGlyphsOffset = kSymbolicFontGlyphOffset;
         }
 
         // remove glyph references outside range of avaialable glyphs
@@ -2315,7 +2338,8 @@ var Font = (function FontClosure() {
             break;
           }
           if (!this.hasEncoding || this.isSymbolicFont) {
-            unicode = this.useToUnicode ? this.toUnicode[charcode] : charcode;
+            unicode = this.useToUnicode ? this.toUnicode[charcode] :
+              (this.symbolicGlyphsOffset + charcode);
             break;
           }
 
