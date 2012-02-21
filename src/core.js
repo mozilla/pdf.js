@@ -473,9 +473,6 @@ var Page = (function PageClosure() {
  * Right now there exists one PDFDocModel on the main thread + one object
  * for each worker. If there is no worker support enabled, there are two
  * `PDFDocModel` objects on the main thread created.
- * TODO: Refactor the internal object structure, such that there is no
- * need for the `PDFDocModel` anymore and there is only one object on the
- * main thread and not one entire copy on each worker instance.
  */
 var PDFDocModel = (function PDFDocModelClosure() {
   function PDFDocModel(arg, callback) {
@@ -644,9 +641,9 @@ var PDFDoc = (function PDFDocClosure() {
 
     this.data = data;
     this.stream = stream;
-    this.pdf = new PDFDocModel(stream);
-    this.fingerprint = this.pdf.getFingerprint();
-    this.catalog = this.pdf.catalog;
+    this.pdfModel = new PDFDocModel(stream);
+    this.fingerprint = this.pdfModel.getFingerprint();
+    this.catalog = this.pdfModel.catalog;
     this.objs = new PDFObjects();
 
     this.pageCache = [];
@@ -820,7 +817,7 @@ var PDFDoc = (function PDFDocClosure() {
     },
 
     get numPages() {
-      return this.pdf.numPages;
+      return this.pdfModel.numPages;
     },
 
     startRendering: function pdfDocStartRendering(page) {
@@ -835,7 +832,7 @@ var PDFDoc = (function PDFDocClosure() {
       if (this.pageCache[n])
         return this.pageCache[n];
 
-      var page = this.pdf.getPage(n);
+      var page = this.pdfModel.getPage(n);
       // Add a reference to the objects such that Page can forward the reference
       // to the CanvasGraphics and so on.
       page.objs = this.objs;

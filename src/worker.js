@@ -79,7 +79,7 @@ MessageHandler.prototype = {
 
 var WorkerMessageHandler = {
   setup: function wphSetup(handler) {
-    var pdfDoc = null;
+    var pdfModel = null;
 
     handler.on('test', function wphSetupTest(data) {
       handler.send('test', data instanceof Uint8Array);
@@ -88,7 +88,7 @@ var WorkerMessageHandler = {
     handler.on('doc', function wphSetupDoc(data) {
       // Create only the model of the PDFDoc, which is enough for
       // processing the content of the pdf.
-      pdfDoc = new PDFDocModel(new Stream(data));
+      pdfModel = new PDFDocModel(new Stream(data));
     });
 
     handler.on('page_request', function wphSetupPageRequest(pageNum) {
@@ -105,7 +105,7 @@ var WorkerMessageHandler = {
       var dependency = [];
       var IRQueue = null;
       try {
-        var page = pdfDoc.getPage(pageNum);
+        var page = pdfModel.getPage(pageNum);
         // Pre compile the pdf page and fetch the fonts/images.
         IRQueue = page.getIRQueue(handler, dependency);
       } catch (e) {
