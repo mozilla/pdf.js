@@ -180,7 +180,7 @@ var StepperManager = (function StepperManagerClosure() {
         this.selectStepper(pageNumber, false);
       return stepper;
     },
-    selectStepper: function selectStepper(pageNumber, selectPanel, change) {
+    selectStepper: function selectStepper(pageNumber, selectPanel) {
       if (selectPanel)
         this.manager.selectPanel(1);
       for (var i = 0; i < steppers.length; ++i) {
