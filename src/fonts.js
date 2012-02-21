@@ -3321,7 +3321,9 @@ var Type2CFF = (function Type2CFFClosure() {
     parse: function cff_parse() {
       var header = this.parseHeader();
       var properties = this.properties;
+
       var nameIndex = this.parseIndex(header.endPos);
+      this.sanitizeName(nameIndex);
 
       var dictIndex = this.parseIndex(nameIndex.endPos);
       if (dictIndex.length != 1)
@@ -3689,6 +3691,39 @@ var Type2CFF = (function Type2CFFClosure() {
         }
       }
       return dict;
+    },
+    sanitizeName: function cff_sanitizeName(nameIndex) {
+      // There should really only be one font, but loop to make sure.
+      for (var i = 0, ii = nameIndex.length; i < ii; ++i) {
+        var data = nameIndex.get(i).data;
+        var length = data.length;
+        if (length > 127)
+          warn('Font had name longer than 127 chars, will be rejected.');
+        // Only certain chars are permitted in the font name.
+        for (var j = 0; j < length; ++j) {
+          var c = data[j];
+          if (j === 0 && c === 0)
+            continue;
+          if (c < 33 || c > 126) {
+            data[j] = 95;
+            continue;
+          }
+          switch (c) {
+            case 91:  // [
+            case 93:  // ]
+            case 40:  // (
+            case 41:  // )
+            case 123: // {
+            case 125: // }
+            case 60:  // <
+            case 62:  // >
+            case 47:  // /
+            case 37:  // %
+              data[j] = 95;
+              break;
+          }
+        }
+      }
     },
     getStrings: function cff_getStrings(stringIndex) {
       function bytesToString(bytesArray) {

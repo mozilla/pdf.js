@@ -321,7 +321,8 @@ var PDFView = {
       if (pageNumber) {
         var pdfOpenParams = PDFView.getAnchorUrl('#page=' + pageNumber);
         var destKind = dest[1];
-        if ('name' in destKind && destKind.name == 'XYZ') {
+        if (typeof destKind === 'object' && 'name' in destKind &&
+            destKind.name == 'XYZ') {
           var scale = (dest[4] || this.currentScale);
           pdfOpenParams += '&zoom=' + (scale * 100);
           if (dest[2] || dest[3]) {
@@ -621,10 +622,13 @@ var PDFView = {
 
   // Helper function to parse query string (e.g. ?param1=value&parm2=...).
   parseQueryString: function pdfViewParseQueryString(query) {
-    var params = query.split('&');
-    for (var i = 0; i < params.length; i++) {
-      var param = params[i].split('=');
-      params[unescape(param[0])] = unescape(param[1]);
+    var parts = query.split('&');
+    var params = {};
+    for (var i = 0, ii = parts.length; i < parts.length; ++i) {
+      var param = parts[i].split('=');
+      var key = param[0];
+      var value = param.length > 1 ? param[1] : null;
+      params[unescape(key)] = unescape(value);
     }
     return params;
   }
