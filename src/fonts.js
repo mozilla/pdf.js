@@ -1957,10 +1957,9 @@ var Font = (function FontClosure() {
         // Moving all symbolic font glyphs into 0xF000 - 0xF0FF range.
         if (this.isSymbolicFont) {
           for (var i = 0, ii = glyphs.length; i < ii; i++) {
-            var cid = i + 1;
-            var code = glyphs[i].unicode;
-            code = kSymbolicFontGlyphOffset | (code & 0xFF);
-            glyphs[i].unicode = toFontChar[cid] = code;
+            var code = glyphs[i].unicode & 0xFF;
+            var fontCharCode = kSymbolicFontGlyphOffset | code;
+            glyphs[i].unicode = toFontChar[code] = fontCharCode;
           }
           this.useToFontChar = true;
         }
