@@ -11,6 +11,7 @@ var kMaxWaitForFontFace = 1000;
 // Unicode Private Use Area
 var kCmapGlyphOffset = 0xE000;
 var kSizeOfGlyphArea = 0x1900;
+var kSymbolicFontGlyphOffset = 0xF000;
 
 // PDF Glyph Space Units are one Thousandth of a TextSpace Unit
 // except for Type 3 fonts
@@ -1660,6 +1661,18 @@ var Font = (function FontClosure() {
           itemEncode(locaData, j, writeOffset);
           startOffset = endOffset;
         }
+
+        if (writeOffset == 0) {
+          // glyf table cannot be empty -- redoing the glyf and loca tables
+          // to have single glyph with one point
+          var simpleGlyph = new Uint8Array(
+            [0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 49, 0]);
+          for (var i = 0, j = itemSize; i < numGlyphs; i++, j += itemSize)
+            itemEncode(locaData, j, simpleGlyph.length);
+          glyf.data = simpleGlyph;
+          return;
+        }
+
         glyf.data = newGlyfData.subarray(0, writeOffset);
       }
 
@@ -1887,8 +1900,8 @@ var Font = (function FontClosure() {
               break;
             }
           }
-          // if it is, replacing with meaningful toFontChar values
-          if (isIdentity) {
+          // if it is, replacing with meaningful toUnicode values
+          if (isIdentity && !this.isSymbolicFont) {
             var usedUnicodes = [], unassignedUnicodeItems = [];
             for (var i = 0, ii = glyphs.length; i < ii; i++) {
               var unicode = toFontChar[i + 1];
@@ -1939,6 +1952,16 @@ var Font = (function FontClosure() {
               ids.push(ids[i]);
             }
           }
+        }
+
+        // Moving all symbolic font glyphs into 0xF000 - 0xF0FF range.
+        if (this.isSymbolicFont) {
+          for (var i = 0, ii = glyphs.length; i < ii; i++) {
+            var code = glyphs[i].unicode;
+            code = kSymbolicFontGlyphOffset | (code & 0xFF);
+            glyphs[i].unicode = toFontChar[i] = code;
+          }
+          this.useToFontChar = true;
         }
 
         // remove glyph references outside range of avaialable glyphs
@@ -3349,7 +3372,9 @@ var Type2CFF = (function Type2CFFClosure() {
     parse: function cff_parse() {
       var header = this.parseHeader();
       var properties = this.properties;
+
       var nameIndex = this.parseIndex(header.endPos);
+      this.sanitizeName(nameIndex);
 
       var dictIndex = this.parseIndex(nameIndex.endPos);
       if (dictIndex.length != 1)
@@ -3717,6 +3742,39 @@ var Type2CFF = (function Type2CFFClosure() {
         }
       }
       return dict;
+    },
+    sanitizeName: function cff_sanitizeName(nameIndex) {
+      // There should really only be one font, but loop to make sure.
+      for (var i = 0, ii = nameIndex.length; i < ii; ++i) {
+        var data = nameIndex.get(i).data;
+        var length = data.length;
+        if (length > 127)
+          warn('Font had name longer than 127 chars, will be rejected.');
+        // Only certain chars are permitted in the font name.
+        for (var j = 0; j < length; ++j) {
+          var c = data[j];
+          if (j === 0 && c === 0)
+            continue;
+          if (c < 33 || c > 126) {
+            data[j] = 95;
+            continue;
+          }
+          switch (c) {
+            case 91:  // [
+            case 93:  // ]
+            case 40:  // (
+            case 41:  // )
+            case 123: // {
+            case 125: // }
+            case 60:  // <
+            case 62:  // >
+            case 47:  // /
+            case 37:  // %
+              data[j] = 95;
+              break;
+          }
+        }
+      }
     },
     getStrings: function cff_getStrings(stringIndex) {
       function bytesToString(bytesArray) {
