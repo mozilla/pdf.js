@@ -779,15 +779,15 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
           x += charWidth;
 
           var glyphUnicode = glyph.unicode === ' ' ? '\u00A0' : glyph.unicode;
-          var glyphUniLen = glyphUnicode.length;
+          var glyphUnicodeLength = glyphUnicode.length;
           //reverse an arabic ligature
-          if (glyphUniLen > 1 && isRTLRangeFor(glyphUnicode.charCodeAt(0)))
-          {
-            for (var ii = glyphUniLen - 1; ii >= 0; ii--)
+          if (glyphUnicodeLength > 1 &&
+              isRTLRangeFor(glyphUnicode.charCodeAt(0))) {
+            for (var ii = glyphUnicodeLength - 1; ii >= 0; ii--)
               text.str += glyphUnicode[ii];
           } else
             text.str += glyphUnicode;
-          text.length += glyphUniLen;
+          text.length += glyphUnicodeLength;
           text.canvasWidth += charWidth;
         }
         current.x += x * textHScale2;

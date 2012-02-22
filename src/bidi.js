@@ -52,9 +52,81 @@ var arabicTypes = [
 ];
 
 function bidi(text, startLevel) {
+  function isOdd(i) {
+    return (i & 1) != 0;
+  }
+
+  function isEven(i) {
+    return (i & 1) == 0;
+  }
+
+  function findUnequal(arr, start, value) {
+    var j;
+    for (var j = start, jj = arr.length; j < jj; ++j) {
+      if (arr[j] != value)
+        return j;
+    }
+    return j;
+  }
+
+  function setValues(arr, start, end, value) {
+    for (var j = start; j < end; ++j) {
+      arr[j] = value;
+    }
+  }
+
+  function reverseValues(arr, start, end) {
+    for (var i = start, j = end - 1; i < j; ++i, --j) {
+      var temp = arr[i];
+      arr[i] = arr[j];
+      arr[j] = temp;
+    }
+  }
+
+  function mirrorGlyphs(c) {
+    /*
+     # BidiMirroring-1.txt
+     0028; 0029 # LEFT PARENTHESIS
+     0029; 0028 # RIGHT PARENTHESIS
+     003C; 003E # LESS-THAN SIGN
+     003E; 003C # GREATER-THAN SIGN
+     005B; 005D # LEFT SQUARE BRACKET
+     005D; 005B # RIGHT SQUARE BRACKET
+     007B; 007D # LEFT CURLY BRACKET
+     007D; 007B # RIGHT CURLY BRACKET
+     00AB; 00BB # LEFT-POINTING DOUBLE ANGLE QUOTATION MARK
+     00BB; 00AB # RIGHT-POINTING DOUBLE ANGLE QUOTATION MARK
+     */
+    switch (c) {
+      case '(':
+        return ')';
+      case ')':
+        return '(';
+      case '<':
+        return '>';
+      case '>':
+        return '<';
+      case ']':
+        return '[';
+      case '[':
+        return ']';
+      case '}':
+        return '{';
+      case '{':
+        return '}';
+      case '\u00AB':
+        return '\u00BB';
+      case '\u00BB':
+        return '\u00AB';
+      default:
+        return c;
+    }
+  }
+
   var str = text.str;
   var strLength = str.length;
-  if (strLength == 0) return str;
+  if (strLength == 0)
+    return str;
 
   // get types, fill arrays
 
@@ -91,7 +163,8 @@ function bidi(text, startLevel) {
     text.direction = 'ltr';
     return str;
   }
-  else if (startLevel == -1) {
+
+  if (startLevel == -1) {
     if ((strLength / numBidi) < 0.3) {
       text.direction = 'ltr';
       startLevel = 0;
@@ -127,8 +200,10 @@ function bidi(text, startLevel) {
 
   var lastType = sor;
   for (var i = 0; i < strLength; ++i) {
-    if (types[i] == 'NSM') types[i] = lastType;
-    else lastType = types[i];
+    if (types[i] == 'NSM')
+      types[i] = lastType;
+    else
+      lastType = types[i];
   }
 
   /*
@@ -152,7 +227,8 @@ function bidi(text, startLevel) {
 
   for (var i = 0; i < strLength; ++i) {
     var t = types[i];
-    if (t == 'AL') types[i] = 'R';
+    if (t == 'AL')
+      types[i] = 'R';
   }
 
   /*
@@ -178,15 +254,15 @@ function bidi(text, startLevel) {
     if (types[i] == 'EN') {
       // do before
       for (var j = i - 1; j >= 0; --j) {
-        if (types[j] == 'ET')
-          types[j] = 'EN';
-        else break;
+        if (types[j] != 'ET')
+          break;
+        types[j] = 'EN';
       }
       // do after
       for (var j = i + 1; j < strLength; --j) {
-        if (types[j] == 'ET')
-          types[j] = 'EN';
-        else break;
+        if (types[j] != 'ET')
+          break;
+        types[j] = 'EN';
       }
     }
   }
@@ -263,12 +339,10 @@ function bidi(text, startLevel) {
     if (isEven(levels[i])) {
       if (t == 'R') {
         levels[i] += 1;
-      }
-      else if (t == 'AN' || t == 'EN') {
+      } else if (t == 'AN' || t == 'EN') {
         levels[i] += 2;
       }
-    }
-    else { // isOdd, so
+    } else { // isOdd, so
       if (t == 'L' || t == 'AN' || t == 'EN') {
         levels[i] += 1;
       }
@@ -311,14 +385,13 @@ function bidi(text, startLevel) {
   for (var level = highestLevel; level >= lowestOddLevel; --level) {
     // find segments to reverse
     var start = -1;
-    for (var i = 0; i < levels.length; ++i) {
+    for (var i = 0, ii = levels.length; i < ii; ++i) {
       if (levels[i] < level) {
         if (start >= 0) {
           reverseValues(chars, start, i);
           start = -1;
         }
-      }
-      else if (start < 0) {
+      } else if (start < 0) {
         start = i;
       }
     }
@@ -354,74 +427,3 @@ function bidi(text, startLevel) {
   }
   return result;
 }
-
-function isOdd(i) {
-  return (i & 1) != 0;
-}
-
-function isEven(i) {
-  return (i & 1) == 0;
-}
-
-function findUnequal(arr, start, value) {
-  var j;
-  for (var j = start; j < arr.length; ++j) {
-    if (arr[j] != value) return j;
-  }
-  return j;
-}
-
-function setValues(arr, start, end, value) {
-  for (var j = start; j < end; ++j) {
-    arr[j] = value;
-  }
-}
-
-function reverseValues(arr, start, end) {
-  for (var i = start, j = end - 1; i < j; ++i, --j) {
-    var temp = arr[i];
-    arr[i] = arr[j];
-    arr[j] = temp;
-  }
-}
-
-function mirrorGlyphs(c) {
-  /*
-   # BidiMirroring-1.txt
-   0028; 0029 # LEFT PARENTHESIS
-   0029; 0028 # RIGHT PARENTHESIS
-   003C; 003E # LESS-THAN SIGN
-   003E; 003C # GREATER-THAN SIGN
-   005B; 005D # LEFT SQUARE BRACKET
-   005D; 005B # RIGHT SQUARE BRACKET
-   007B; 007D # LEFT CURLY BRACKET
-   007D; 007B # RIGHT CURLY BRACKET
-   00AB; 00BB # LEFT-POINTING DOUBLE ANGLE QUOTATION MARK
-   00BB; 00AB # RIGHT-POINTING DOUBLE ANGLE QUOTATION MARK
-   */
-  switch (c) {
-    case '(':
-      return ')';
-    case ')':
-      return '(';
-    case '<':
-      return '>';
-    case '>':
-      return '<';
-    case ']':
-      return '[';
-    case '[':
-      return ']';
-    case '}':
-      return '{';
-    case '{':
-      return '}';
-    case '\u00AB':
-      return '\u00BB';
-    case '\u00BB':
-      return '\u00AB';
-    default:
-      return c;
-  }
-}
-
