@@ -190,6 +190,11 @@ var StepperManager = (function StepperManagerClosure() {
         else
           stepper.panel.setAttribute('hidden', true);
       }
+      var options = stepperChooser.options;
+      for (var i = 0; i < options.length; ++i) {
+        var option = options[i];
+        option.selected = option.value == pageNumber;
+      }
     },
     saveBreakPoints: function saveBreakPoints(pageNumber, bps) {
       breakPoints[pageNumber] = bps;
@@ -234,7 +239,7 @@ var Stepper = (function StepperClosure() {
       for (var i = 0; i < IRQueue.fnArray.length; i++) {
         var line = c('tr');
         line.className = 'line';
-        line.id = 'idx' + i;
+        line.dataset.idx = i;
         table.appendChild(line);
         var checked = this.breakPoints.indexOf(i) != -1;
         var args = IRQueue.argsArray[i] ? IRQueue.argsArray[i] : [];
@@ -299,13 +304,14 @@ var Stepper = (function StepperClosure() {
     },
     goTo: function goTo(idx) {
       var allRows = this.panel.getElementsByClassName('line');
-      for (var x = 0; x < allRows.length; x++) {
-        allRows[x].style.backgroundColor = null;
-      }
-      var row = document.getElementById('idx' + idx);
-      if (row) {
-        row.style.backgroundColor = 'rgb(251,250,207)';
-        row.scrollIntoView();
+      for (var x = 0, xx = allRows.length; x < xx; ++x) {
+        var row = allRows[x];
+        if (row.dataset.idx == idx) {
+          row.style.backgroundColor = 'rgb(251,250,207)';
+          row.scrollIntoView();
+        } else {
+          row.style.backgroundColor = null;
+        }
       }
     }
   };
