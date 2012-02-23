@@ -620,8 +620,18 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
               } else {
                 // parsing hex UTF-16BE numbers
                 var str = [];
-                for (var i = 0, ii = token.length; i < ii; i += 4)
-                  str.push(parseInt(token.substr(i, 4), 16));
+                for (var k = 0, kk = token.length; k < kk; k += 4) {
+                  var b = parseInt(token.substr(k, 4), 16);
+                  if (b <= 0x10) {
+                    k += 4;
+                    b = (b << 16) | parseInt(token.substr(k, 4), 16);
+                    b -= 0x10000;
+                    str.push(0xD800 | (b >> 10));
+                    str.push(0xDC00 | (b & 0x3FF));
+                    break;
+                  }
+                  str.push(b);
+                }
                 tokens.push(String.fromCharCode.apply(String, str));
                 token = '';
               }

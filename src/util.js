@@ -111,11 +111,118 @@ var Util = (function UtilClosure() {
     ];
   }
 
+  // Normalize rectangle rect=[x1, y1, x2, y2] so that (x1,y1) < (x2,y2)
+  // For coordinate systems whose origin lies in the bottom-left, this
+  // means normalization to (BL,TR) ordering. For systems with origin in the
+  // top-left, this means (TL,BR) ordering.
+  Util.normalizeRect = function normalizeRect(rect) {
+    var r = rect.slice(0); // clone rect
+    if (rect[0] > rect[2]) {
+      r[0] = rect[2];
+      r[2] = rect[0];
+    }
+    if (rect[1] > rect[3]) {
+      r[1] = rect[3];
+      r[3] = rect[1];
+    }
+    return r;
+  }
+
+  // Returns a rectangle [x1, y1, x2, y2] corresponding to the
+  // intersection of rect1 and rect2. If no intersection, returns 'false'
+  // The rectangle coordinates of rect1, rect2 should be [x1, y1, x2, y2]
+  Util.intersect = function intersect(rect1, rect2) {
+    function compare(a, b) {
+      return a - b;
+    };
+
+    // Order points along the axes
+    var orderedX = [rect1[0], rect1[2], rect2[0], rect2[2]].sort(compare),
+        orderedY = [rect1[1], rect1[3], rect2[1], rect2[3]].sort(compare),
+        result = [];
+
+    rect1 = Util.normalizeRect(rect1);
+    rect2 = Util.normalizeRect(rect2);
+
+    // X: first and second points belong to different rectangles?
+    if ((orderedX[0] === rect1[0] && orderedX[1] === rect2[0]) ||
+        (orderedX[0] === rect2[0] && orderedX[1] === rect1[0])) {
+      // Intersection must be between second and third points
+      result[0] = orderedX[1];
+      result[2] = orderedX[2];
+    } else {
+      return false;
+    }
+
+    // Y: first and second points belong to different rectangles?
+    if ((orderedY[0] === rect1[1] && orderedY[1] === rect2[1]) ||
+        (orderedY[0] === rect2[1] && orderedY[1] === rect1[1])) {
+      // Intersection must be between second and third points
+      result[1] = orderedY[1];
+      result[3] = orderedY[2];
+    } else {
+      return false;
+    }
+
+    return result;
+  }
+
   Util.sign = function sign(num) {
     return num < 0 ? -1 : 1;
   };
 
   return Util;
+})();
+
+// optimised CSS custom property getter/setter
+var CustomStyle = (function CustomStyleClosure() {
+
+  // As noted on: http://www.zachstronaut.com/posts/2009/02/17/
+  //              animate-css-transforms-firefox-webkit.html
+  // in some versions of IE9 it is critical that ms appear in this list
+  // before Moz
+  var prefixes = ['ms', 'Moz', 'Webkit', 'O'];
+  var _cache = { };
+
+  function CustomStyle() {
+  }
+
+  CustomStyle.getProp = function get(propName, element) {
+    // check cache only when no element is given
+    if (arguments.length == 1 && typeof _cache[propName] == 'string') {
+      return _cache[propName];
+    }
+
+    element = element || document.documentElement;
+    var style = element.style, prefixed, uPropName;
+
+    // test standard property first
+    if (typeof style[propName] == 'string') {
+      return (_cache[propName] = propName);
+    }
+
+    // capitalize
+    uPropName = propName.charAt(0).toUpperCase() + propName.slice(1);
+
+    // test vendor specific properties
+    for (var i = 0, l = prefixes.length; i < l; i++) {
+      prefixed = prefixes[i] + uPropName;
+      if (typeof style[prefixed] == 'string') {
+        return (_cache[propName] = prefixed);
+      }
+    }
+
+    //if all fails then set to undefined
+    return (_cache[propName] = 'undefined');
+  }
+
+  CustomStyle.setProp = function set(propName, element, str) {
+    var prop = this.getProp(propName);
+    if (prop != 'undefined')
+      element.style[prop] = str;
+  }
+
+  return CustomStyle;
 })();
 
 var PDFStringTranslateTable = [

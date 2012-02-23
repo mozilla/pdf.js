@@ -269,7 +269,8 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
     },
 
     executeIRQueue: function canvasGraphicsExecuteIRQueue(codeIR,
-                                  executionStartIdx, continueCallback) {
+                                  executionStartIdx, continueCallback,
+                                  stepper) {
       var argsArray = codeIR.argsArray;
       var fnArray = codeIR.fnArray;
       var i = executionStartIdx || 0;
@@ -288,6 +289,11 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       var slowCommands = this.slowCommands;
 
       while (true) {
+        if (stepper && i === stepper.nextBreakPoint) {
+          stepper.breakIt(i, continueCallback);
+          return i;
+        }
+
         fnName = fnArray[i];
 
         if (fnName !== 'dependency') {
@@ -772,8 +778,16 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
 
           x += charWidth;
 
-          text.str += glyph.unicode === ' ' ? '\u00A0' : glyph.unicode;
-          text.length++;
+          var glyphUnicode = glyph.unicode === ' ' ? '\u00A0' : glyph.unicode;
+          var glyphUnicodeLength = glyphUnicode.length;
+          //reverse an arabic ligature
+          if (glyphUnicodeLength > 1 &&
+              isRTLRangeFor(glyphUnicode.charCodeAt(0))) {
+            for (var ii = glyphUnicodeLength - 1; ii >= 0; ii--)
+              text.str += glyphUnicode[ii];
+          } else
+            text.str += glyphUnicode;
+          text.length += glyphUnicodeLength;
           text.canvasWidth += charWidth;
         }
         current.x += x * textHScale2;
@@ -839,7 +853,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
               text.str += shownText.str;
             }
             text.canvasWidth += shownText.canvasWidth;
-            text.length += e.length;
+            text.length += shownText.length;
           }
         } else {
           malformed('TJ array element ' + e + ' is not string or num');
