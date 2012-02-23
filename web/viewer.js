@@ -1051,12 +1051,13 @@ var TextLayerBuilder = function textLayerBuilder(textLayerDiv) {
         textLayerDiv.appendChild(textDiv);
 
         if (textDiv.dataset.textLength > 1) { // avoid div by zero
-          // Adjust div width (via letterSpacing) to match canvas text
+          // Adjust div width to match canvas text
           // Due to the .offsetWidth calls, this is slow
           // This needs to come after appending to the DOM
-          textDiv.style.letterSpacing =
-            ((textDiv.dataset.canvasWidth - textDiv.offsetWidth) /
-              (textDiv.dataset.textLength - 1)) + 'px';
+          var textScale = textDiv.dataset.canvasWidth / textDiv.offsetWidth;
+          CustomStyle.setProp('transform' , textDiv,
+            'scale(' + textScale + ', 1)');
+          CustomStyle.setProp('transformOrigin' , textDiv, '0% 0%');
         }
       } // textLength > 0
     }
@@ -1096,7 +1097,8 @@ var TextLayerBuilder = function textLayerBuilder(textLayerDiv) {
     textDiv.style.fontSize = fontHeight + 'px';
     textDiv.style.left = text.geom.x + 'px';
     textDiv.style.top = (text.geom.y - fontHeight) + 'px';
-    textDiv.textContent = text.str;
+    textDiv.textContent = bidi(text, -1);
+    textDiv.dir = text.direction;
     textDiv.dataset.textLength = text.length;
     this.textDivs.push(textDiv);
   };
