@@ -1097,7 +1097,7 @@ var TextLayerBuilder = function textLayerBuilder(textLayerDiv) {
     textDiv.style.fontSize = fontHeight + 'px';
     textDiv.style.left = text.geom.x + 'px';
     textDiv.style.top = (text.geom.y - fontHeight) + 'px';
-    textDiv.textContent = bidi(text, -1);
+    textDiv.textContent = PDFJS.bidi(text, -1);
     textDiv.dir = text.direction;
     textDiv.dataset.textLength = text.length;
     this.textDivs.push(textDiv);
