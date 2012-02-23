@@ -756,8 +756,8 @@ var PDFDoc = (function PDFDocClosure() {
               file = new Stream(file, 0, file.length, fontFileDict);
             }
 
-            // At this point, only the font object is created but the font is not
-            // yet attached to the DOM. This is done in `FontLoader.bind`.
+            // At this point, only the font object is created but the font is
+            // not yet attached to the DOM. This is done in `FontLoader.bind`.
             var font = new Font(name, file, properties);
             this.objs.resolve(id, font);
             break;
@@ -787,7 +787,7 @@ var PDFDoc = (function PDFDocClosure() {
           var size = width * height;
           var rgbaLength = size * 4;
           var buf = new Uint8Array(size * components);
-          var tmpCanvas = new ScratchCanvas(width, height);
+          var tmpCanvas = createScratchCanvas(width, height);
           var tmpCtx = tmpCanvas.getContext('2d');
           tmpCtx.drawImage(img, 0, 0);
           var data = tmpCtx.getImageData(0, 0, width, height).data;

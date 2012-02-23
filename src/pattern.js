@@ -222,7 +222,7 @@ var TilingPattern = (function TilingPatternClosure() {
       width = height = MAX_PATTERN_SIZE;
     }
 
-    var tmpCanvas = new ScratchCanvas(width, height);
+    var tmpCanvas = createScratchCanvas(width, height);
 
     // set the new canvas element context as the graphics context
     var tmpCtx = tmpCanvas.getContext('2d');

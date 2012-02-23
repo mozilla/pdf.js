@@ -70,7 +70,7 @@ var CanvasExtraState = (function CanvasExtraStateClosure() {
   return CanvasExtraState;
 })();
 
-function ScratchCanvas(width, height) {
+function createScratchCanvas(width, height) {
   var canvas = document.createElement('canvas');
   canvas.width = width;
   canvas.height = height;
@@ -1115,7 +1115,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       // scale the image to the unit square
       ctx.scale(1 / w, -1 / h);
 
-      var tmpCanvas = new ScratchCanvas(w, h);
+      var tmpCanvas = createScratchCanvas(w, h);
       var tmpCtx = tmpCanvas.getContext('2d');
 
       var fillColor = this.current.fillColor;
@@ -1146,7 +1146,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       // scale the image to the unit square
       ctx.scale(1 / w, -1 / h);
 
-      var tmpCanvas = new ScratchCanvas(w, h);
+      var tmpCanvas = createScratchCanvas(w, h);
       var tmpCtx = tmpCanvas.getContext('2d');
       this.putBinaryImageData(tmpCtx, imgData, w, h);
 
