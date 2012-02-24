@@ -429,7 +429,7 @@ global.grep = wrap('grep', function(regex, filesStr) {
 global.exit = process.exit;
 
 //@
-//@ #### env.VAR_NAME
+//@ #### env['VAR_NAME']
 //@ Object containing environment variables (both getter and setter). Shortcut to process.env.
 global.env = process.env;
 
@@ -449,7 +449,12 @@ global.env = process.env;
 //@ #### external('command', options)
 //@ Checks that the external `command` exists either as an absolute path or in the system `PATH`, 
 //@ and returns a callable function `function([args] [,options] [,callback])` that executes the 
-//@ command synchronously (default) or asynchronously. 
+//@ command. Example:
+//@
+//@ ```javascript
+//@ var git = external('git'),
+//@     gitVersion = git('--version').output;
+//@ ```
 //@
 //@ Available options:
 //@
@@ -510,10 +515,22 @@ global.external = wrap('external', function(cmd, opts) {
 
   // Callable function
   return function(args, options2, callback) {
-    if (typeof args === 'function')
-        callback = args;
-    if (typeof options2 === 'function')
-        callback = options2;
+    if (typeof args === 'string' && typeof options2 === 'object' && typeof callback === 'function') {
+      // nothing to do
+    } else if (typeof args === 'function') {
+      callback = args;
+      args = '';
+      options2 = {};
+    } else if (typeof options2 === 'function') {
+      callback = options2;
+      if (typeof args === 'object') {
+        options2 = args;
+        args = '';
+      }
+    } else if (typeof args === 'object') {
+      options2 = args;
+      args = '';
+    }
 
     var thisOpts = extend({}, options); // clone 'global' opts
     thisOpts = extend(thisOpts, options2); // override global opts with local opts

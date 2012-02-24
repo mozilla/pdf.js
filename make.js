@@ -9,9 +9,23 @@ var ROOT_DIR = pwd(),
 // make all
 //
 target.all = function() {
-  echo('Available make targets:');
+  echo('Please specify a target. Available targets:');
   for (t in target)
     if (t !== 'all') echo('  ' + t);
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////
+//
+// Bundling
+//
+
+//
+// make production
+// Create production output (pdf.js, and corresponding changes to web files)
+//
+target.production = function() {
+  target.bundle();
+  target.viewer();
 }
 
 //
@@ -21,7 +35,7 @@ target.all = function() {
 target.bundle = function() {
   cd(ROOT_DIR);
   echo('###');
-  echo('### Bundling files into pdf.js...');
+  echo('### Bundling files into pdf.js');
   echo('###');
 
   cd('src');
@@ -41,18 +55,26 @@ target.bundle = function() {
 }
 
 //
-// make server
+// make viewer
+// Change development <script> tags in our web viewer to use only 'pdf.js'
 //
-target.server = function() {
+target.viewer = function() {
   cd(ROOT_DIR);
   echo('###');
-  echo('### Starting local server');
+  echo('### Generating web/viewer-production.html');
   echo('###');
 
-  var python = external('python2.7', {required:true});
-  cd('test');
-  python('-u test.py --port=8888', {async:true});
+  cd('web');
+  // Remove development lines
+  sed(/.*PDFJSSCRIPT_REMOVE_CORE.*\n/g, '', 'viewer.html').to('viewer-production.html');
+  // Introduce snippet
+  sed(/.*PDFJSSCRIPT_INCLUDE_BUILD.*\n/g, cat('viewer-snippet.html'), 'viewer-production.html').to('viewer-production.html');
 }
+
+///////////////////////////////////////////////////////////////////////////////////////////
+//
+// Tests
+//
 
 //
 // make test
@@ -89,4 +111,31 @@ target.browsertest = function() {
 // make unittest
 //
 target.unittest = function() {
+  cd(ROOT_DIR);
+  echo('###');
+  echo('### Running unit tests');
+  echo('###');
+
+  var make = external('make', {required:true}); // competition!
+  cd('test/unit');
+  make({async:true});
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////
+//
+// Other
+//
+
+//
+// make server
+//
+target.server = function() {
+  cd(ROOT_DIR);
+  echo('###');
+  echo('### Starting local server');
+  echo('###');
+
+  var python = external('python2.7', {required:true});
+  cd('test');
+  python('-u test.py --port=8888', {async:true});
 }
