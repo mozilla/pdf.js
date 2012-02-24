@@ -1,9 +1,7 @@
 #!/usr/bin/env node
 require('./maker');
 
-var ROOT_DIR = pwd(),
-    BUILD_DIR = ROOT_DIR + '/build',
-    BUILD_TARGET = BUILD_DIR + '/pdf.js';
+var ROOT_DIR = pwd();
 
 //
 // make all
@@ -14,10 +12,15 @@ target.all = function() {
     if (t !== 'all') echo('  ' + t);
 }
 
+
+
 ///////////////////////////////////////////////////////////////////////////////////////////
 //
-// Bundling
+// Production stuff
 //
+
+var BUILD_DIR = ROOT_DIR + '/build',
+    BUILD_TARGET = BUILD_DIR + '/pdf.js';
 
 //
 // make production
@@ -50,7 +53,7 @@ target.bundle = function() {
       git = external('git', {required:true}),
       bundleVersion = git('log --format="%h" -n 1', {silent:true}).output.replace('\n', '');
 
-  sed('PDFJSSCRIPT_INCLUDE_ALL', bundle, 'pdf.js').to(BUILD_TARGET);
+  sed(/.*PDFJSSCRIPT_INCLUDE_ALL.*\n/, bundle, 'pdf.js').to(BUILD_TARGET);
   sed('PDFJSSCRIPT_BUNDLE_VER', bundleVersion, BUILD_TARGET).to(BUILD_TARGET);
 }
 
@@ -71,9 +74,12 @@ target.viewer = function() {
   sed(/.*PDFJSSCRIPT_INCLUDE_BUILD.*\n/g, cat('viewer-snippet.html'), 'viewer-production.html').to('viewer-production.html');
 }
 
+
+
+
 ///////////////////////////////////////////////////////////////////////////////////////////
 //
-// Tests
+// Test stuff
 //
 
 //
@@ -116,10 +122,13 @@ target.unittest = function() {
   echo('### Running unit tests');
   echo('###');
 
-  var make = external('make', {required:true}); // competition!
+  var make = external('make', {required:true});
   cd('test/unit');
   make({async:true});
 }
+
+
+
 
 ///////////////////////////////////////////////////////////////////////////////////////////
 //
@@ -138,4 +147,25 @@ target.server = function() {
   var python = external('python2.7', {required:true});
   cd('test');
   python('-u test.py --port=8888', {async:true});
+}
+
+//
+// make lint
+//
+target.lint = function() {
+  cd(ROOT_DIR);
+  echo('###');
+  echo('### Linting JS files');
+  echo('###');
+
+  var LINT_FILES = 'src/*.js web/*.js test/*.js test/unit/*.js extensions/firefox/*.js extensions/firefox/components/*.js extensions/chrome/*.js',
+      gjslint = external('gjslint', {required:true});
+
+  // Lint all files in parallel (speedup factor = #CPUs)
+  for (file in ls(LINT_FILES)) {
+    gjslint('--nojsdoc '+file, {async:true, silent:true}, function(output, code) {
+      if (code !== 0)
+        echo(output);
+    });
+  }
 }
