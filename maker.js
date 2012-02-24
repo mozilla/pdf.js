@@ -428,6 +428,10 @@ global.grep = wrap('grep', function(regex, filesStr) {
 //@ Exits the current process with the given exit code.
 global.exit = process.exit;
 
+//@
+//@ #### env.VAR_NAME
+//@ Object containing environment variables (both getter and setter). Shortcut to process.env.
+global.env = process.env;
 
 
 
