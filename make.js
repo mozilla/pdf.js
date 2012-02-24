@@ -9,7 +9,9 @@ var ROOT_DIR = pwd(),
 // make all
 //
 target.all = function() {
-  target.bundle();
+  echo('Available make targets:');
+  for (t in target)
+    if (t !== 'all') echo('  ' + t);
 }
 
 //
