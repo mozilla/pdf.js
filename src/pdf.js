@@ -17,6 +17,6 @@ var PDFJS = {};
   PDFJS.build = 'PDFJSSCRIPT_BUNDLE_VER';
 
   // Files are inserted below - see Makefile
-  /* PDFJSSCRIPT_INCLUDE_ALL */
+  PDFJSSCRIPT_INCLUDE_ALL
 
 }).call((typeof window === 'undefined') ? this : window);

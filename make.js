@@ -1,31 +1,53 @@
 #!/usr/bin/env node
 require('./maker');
 
-var node = external('node', {required:true});
-var ROOT = pwd();
+var ROOT_DIR = pwd(),
+    BUILD_DIR = ROOT_DIR + '/build',
+    BUILD_TARGET = BUILD_DIR + '/pdf.js';
 
 //
-// 'all'
-// Default is to bundle code into 'pdf.js'
+// make all
 //
 target.all = function() {
   target.bundle();
 }
 
 //
-// 'bundle'
-// Bundles all source files into one 'pdf.js' file
+// make bundle
+// Bundles all source files into one wrapper 'pdf.js' file, in the given order.
 //
 target.bundle = function() {
-  echo('>>> Bundling files into pdf.js...');
-  cd(ROOT + '/src');
+  cd(ROOT_DIR);
+  echo('###');
+  echo('### Bundling files into pdf.js...');
+  echo('###');
+
+  cd('src');
+  if (!exists('build'))
+    mkdir('build');
 
   // File order matters, so we list them manually
   var files = 'core.js util.js canvas.js obj.js function.js charsets.js cidmaps.js \
                colorspace.js crypto.js evaluator.js fonts.js glyphlist.js image.js metrics.js \
-               parser.js pattern.js stream.js worker.js ../external/jpgjs/jpg.js jpx.js';
+               parser.js pattern.js stream.js worker.js ../external/jpgjs/jpg.js jpx.js bidi.js',
+      bundle = cat(files),
+      git = external('git', {required:true}),
+      bundleVersion = git('log --format="%h" -n 1', {silent:true}).output.replace('\n', '');
 
-  var bundle = cat(files);
+  sed('PDFJSSCRIPT_INCLUDE_ALL', bundle, 'pdf.js').to(BUILD_TARGET);
+  sed('PDFJSSCRIPT_BUNDLE_VER', bundleVersion, BUILD_TARGET).to(BUILD_TARGET);
+}
 
-  console.log(bundle);
+//
+// make server
+//
+target.server = function() {
+  cd(ROOT_DIR);
+  echo('###');
+  echo('### Starting local server');
+  echo('###');
+
+  var python = external('python2.7', {required:true});
+  cd('test');
+  python('-u test.py --port=8888', {async:true});
 }

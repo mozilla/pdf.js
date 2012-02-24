@@ -1,69 +1,10 @@
 //
 // maker.js
-// Zero-dependency Make utility with built-in Unix-like commands
+// Make tool for Node.js with built-in Unix-like commands
 //
-// Copyright (c) Artur Adib, 2012
+// Copyright (c) 2012 Artur Adib
 // http://github.com/arturadib/maker.js
 //
-
-//@ # maker.js
-//@
-//@ Maker.js is:
-//@
-//@ + **A Make-like utility for Node.js** (lots of projects do this already)
-//@ + **A collection of Unix-like commands for Node.js** (not many projects do this)
-//@ + **All in one small file** (so you can bundle it without much footprint)
-//@
-//@ It works out of the box on both Unix and Windows platforms, with no dependencies other than Node.js itself. All commands are synchronous, so your code reads like a linear Makefile.
-//@
-//@
-//@ ### Example
-//@
-//@ Where you once had a `Makefile`:
-//@
-//@ ```makefile
-//@ all: build test
-//@
-//@ build:
-//@     cd src/
-//@     rm -f .hidden-files*
-//@     node bundle.js
-//@     mv target ../build
-//@
-//@ test:
-//@     cd test/
-//@     for f in *.js  ; do \
-//@         node $$f ; \
-//@     done
-//@
-//@ .PHONY: build test
-//@ ```
-//@
-//@ You can now have a `make.js`:
-//@
-//@ ```javascript
-//@ require('maker');
-//@
-//@ var node = external('node');
-//@
-//@ target.all = function() {
-//@   target.build();
-//@   target.test();
-//@ }
-//@
-//@ target.build = function() {
-//@   cd('src');
-//@   rm('-f .hidden-files*');
-//@   node('bundle.js');
-//@   mv('target ../build');
-//@ }
-//@
-//@ target.test = function() {
-//@   cd('test');
-//@   for (f in ls('*.js'))
-//@     node(f);
-//@ }
-//@ ```
 
 var fs = require('fs'),
     path = require('path'),
@@ -72,6 +13,9 @@ var fs = require('fs'),
     child = require('child_process'),
     os = require('os');
 
+// Node shims for < v0.7
+fs.existsSync = fs.existsSync || path.existsSync;
+
 var state = {
       error: null,
       fatal: false,
@@ -79,7 +23,10 @@ var state = {
       currentCmd: 'maker.js',
       tempDir: null
     },
-    platform = os.platform().match(/^win/) ? 'win' : 'unix';
+    platform = os.type().match(/^Win/) ? 'win' : 'unix';
+
+
+
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -88,21 +35,28 @@ var state = {
 //
 
 //@
-//@ ## API reference
-//@
-
-//@ ### target = {}
-//@ All desired target functions should be added to this object. 
+//@ #### target = {}
+//@ Main JS object. All desired target functions should be added as properties to this object.
 //@ The target `target.all` is executed if no command line arguments are given, otherwise the target
 //@ with the given name will be executed.
 global.target = {};
 
-//@ ### echo('message' [, 'message' [...]])
+
+
+
+
+//@
+//@ ## Unix-like commands
+//@
+
+//@
+//@ #### echo('message' [, 'message' ...])
 global.echo = wrap('echo', function() {
   console.log.apply(this, arguments);
 });
 
-//@ ### ls('[path]')
+//@
+//@ #### ls('path [path ...]')
 //@ Returns list of files in the given path, or in current directory if no path provided.
 //@ Format returned is a hash object e.g. `{ 'file1': null, 'file2': null, ... }`.
 function _ls(str) {
@@ -113,7 +67,7 @@ function _ls(str) {
   paths = paths.length > 0 ? paths : ['.'];
 
   paths.forEach(function(p) {
-    if (path.existsSync(p)) {
+    if (fs.existsSync(p)) {
       // Simple file?
       if (fs.statSync(p).isFile()) {
         list.push(p);
@@ -133,7 +87,7 @@ function _ls(str) {
     var dirname = path.dirname(p);
 
     // Wildcard present on an existing dir? (e.g. '/tmp/*.js')
-    if (basename.search(/\*/) > -1 && path.existsSync(dirname) && fs.statSync(dirname).isDirectory) {
+    if (basename.search(/\*/) > -1 && fs.existsSync(dirname) && fs.statSync(dirname).isDirectory) {
       // Escape special regular expression chars
       var regexp = basename.replace(/(\^|\$|\(|\)|\<|\>|\[|\]|\{|\}|\.|\+|\?)/g, '\\$1');
       // Translates wildcard into regex
@@ -156,7 +110,8 @@ function _ls(str) {
 };
 global.ls = wrap('ls', _ls);
 
-//@ ### cd('dir')
+//@
+//@ #### cd('dir')
 //@ Changes to directory `dir` for the duration of the script
 global.cd = wrap('cd', function(str) {
   var options = parseOptions(str, {});
@@ -165,25 +120,29 @@ global.cd = wrap('cd', function(str) {
   if (!dir)
     error('directory not specified');
 
-  if (!path.existsSync(dir))
+  if (!fs.existsSync(dir))
     error('no such file or directory: ' + dir);
 
-  if (path.existsSync(dir) && !fs.statSync(dir).isDirectory())
+  if (fs.existsSync(dir) && !fs.statSync(dir).isDirectory())
     error('not a directory: ' + dir);
 
   process.chdir(dir);
 });
 
-//@ ### pwd()
+//@
+//@ #### pwd()
 //@ Returns the current directory.
 global.pwd = wrap('pwd', function() {
   return path.resolve(process.cwd());
 });
 
-//@ ### cp('[-options] source [source [...]] dest')
+//@
+//@ #### cp('[-options] source [source ...] dest')
 //@ Available options:
 //@
 //@ + `f`: force
+//@
+//@ The wildcard `*` is accepted.
 global.cp = wrap('cp', function(str) {
   var options = parseOptions(str, {
     'f': 'force'
@@ -200,17 +159,17 @@ global.cp = wrap('cp', function(str) {
   }
 
   // Dest is not existing dir, but multiple sources given
-  if ((!path.existsSync(dest) || fs.statSync(dest).isFile()) && sources.length > 1)
+  if ((!fs.existsSync(dest) || fs.statSync(dest).isFile()) && sources.length > 1)
     error('too many sources');
 
   // Dest is an existing file, but no -f given
-  if (path.existsSync(dest) && fs.statSync(dest).isFile() && !options.force)
+  if (fs.existsSync(dest) && fs.statSync(dest).isFile() && !options.force)
     error('dest file already exists: ' + dest);
 
   sources = expand(sources);
 
   sources.forEach(function(src) {
-    if (!path.existsSync(src)) {
+    if (!fs.existsSync(src)) {
       error('no such file or directory: '+src, true);
       return; // skip file
     }
@@ -225,10 +184,10 @@ global.cp = wrap('cp', function(str) {
     // When copying to '/path/dir':
     //    thisDest = '/path/dir/file1'
     var thisDest = dest;
-    if (path.existsSync(dest) && fs.statSync(dest).isDirectory())
+    if (fs.existsSync(dest) && fs.statSync(dest).isDirectory())
       thisDest = path.normalize(dest + '/' + path.basename(src));
 
-    if (path.existsSync(thisDest) && !options.force) {
+    if (fs.existsSync(thisDest) && !options.force) {
       error('dest file already exists: ' + thisDest, true);
       return; // skip file
     }
@@ -237,11 +196,14 @@ global.cp = wrap('cp', function(str) {
   }); // forEach(src)
 }); // cp
 
-//@ ### rm('[-options] file [file [...]]')
+//@
+//@ #### rm('[-options] file [file ...]')
 //@ Available options:
 //@
 //@ + `f`: force
 //@ + `r, R`: recursive
+//@
+//@ The wildcard `*` is accepted.
 global.rm = wrap('rm', function(str) {
   var options = parseOptions(str, {
     'f': 'force',
@@ -256,7 +218,7 @@ global.rm = wrap('rm', function(str) {
   files = expand(files);
 
   files.forEach(function(file) {
-    if (!path.existsSync(file)) {
+    if (!fs.existsSync(file)) {
       // Path does not exist, no force flag given
       if (!options.force)
         error('no such file or directory: '+file, true);
@@ -285,10 +247,13 @@ global.rm = wrap('rm', function(str) {
   }); // forEach(file)
 }); // rm
 
-//@ ### mv('source [source [...]] dest')
+//@
+//@ #### mv('source [source ...] dest')
 //@ Available options:
 //@
 //@ + `f`: force
+//@
+//@ The wildcard `*` is accepted.
 global.mv = wrap('mv', function(str) {
   var options = parseOptions(str, {
     'f': 'force'
@@ -307,15 +272,15 @@ global.mv = wrap('mv', function(str) {
   sources = expand(sources);
 
   // Dest is not existing dir, but multiple sources given
-  if ((!path.existsSync(dest) || fs.statSync(dest).isFile()) && sources.length > 1)
+  if ((!fs.existsSync(dest) || fs.statSync(dest).isFile()) && sources.length > 1)
     error('too many sources (dest is a file)');
 
   // Dest is an existing file, but no -f given
-  if (path.existsSync(dest) && fs.statSync(dest).isFile() && !options.force)
+  if (fs.existsSync(dest) && fs.statSync(dest).isFile() && !options.force)
     error('dest file already exists: ' + dest);
 
   sources.forEach(function(src) {
-    if (!path.existsSync(src)) {
+    if (!fs.existsSync(src)) {
       error('no such file or directory: '+src, true);
       return; // skip file
     }
@@ -325,10 +290,10 @@ global.mv = wrap('mv', function(str) {
     // When copying to '/path/dir':
     //    thisDest = '/path/dir/file1'
     var thisDest = dest;
-    if (path.existsSync(dest) && fs.statSync(dest).isDirectory())
+    if (fs.existsSync(dest) && fs.statSync(dest).isDirectory())
       thisDest = path.normalize(dest + '/' + path.basename(src));
 
-    if (path.existsSync(thisDest) && !options.force) {
+    if (fs.existsSync(thisDest) && !options.force) {
       error('dest file already exists: ' + thisDest, true);
       return; // skip file
     }
@@ -337,7 +302,8 @@ global.mv = wrap('mv', function(str) {
   }); // forEach(src)
 }); // mv
 
-//@ ### mkdir('[-options] dir [dir [...]]')
+//@
+//@ #### mkdir('[-options] dir [dir ...]')
 //@ Available options:
 //@
 //@ + `p`: full path (will create intermediate dirs if necessary)
@@ -351,14 +317,15 @@ global.mkdir = wrap('mkdir', function(str) {
     error('no directories given');
 
   dirs.forEach(function(dir) {
-    if (path.existsSync(dir)) {
-      error('path already exists: ' + dir, true);
+    if (fs.existsSync(dir)) {
+      if (!options.fullpath)
+          error('path already exists: ' + dir, true);
       return; // skip dir
     }
 
     // Base dir does not exist, and no -p option given
     var baseDir = path.dirname(dir);
-    if (!path.existsSync(baseDir) && !options.fullpath) {
+    if (!fs.existsSync(baseDir) && !options.fullpath) {
       error('no such file or directory: ' + baseDir, true);
       return; // skip dir
     }
@@ -366,23 +333,25 @@ global.mkdir = wrap('mkdir', function(str) {
     if (options.fullpath)
       mkdirSyncRecursive(dir);
     else
-      fs.mkdirSync(dir);
+      fs.mkdirSync(dir, 0777);
   });
 }); // rm
 
-//@ ### read('file [file ...]'), cat('file [file ...]')
+//@
+//@ #### cat('file [file ...]')
 //@ Returns a string containing the given file, or a concatenated string
 //@ containing the files if more than one file is given (a new line character is
-//@ introduced between each file)
+//@ introduced between each file). Wildcards are accepted.
 global.cat = wrap('cat', function(str) {
   var files = parsePaths(str),
       cat = '';
 
+  files = expand(files);
   if (files.length === 0)
     error('no files given');
 
   files.forEach(function(file) {
-    if (!path.existsSync(file))
+    if (!fs.existsSync(file))
       error('no such file or directory: ' + file);
 
     cat += fs.readFileSync(file, 'utf8') + '\n';
@@ -393,57 +362,117 @@ global.cat = wrap('cat', function(str) {
 
 global.read = global.cat;
 
-//@ ### write(str, 'file')
-//@ Writes the string `str` to the given file. This will overwrite any existing file.
-global.write = wrap('write', function(str, file) {
-  if (!str || !file)
+//@
+//@ #### 'any string'.to('file')
+//@ Analogous to the redirection operator `>` in Unix, but works with JavaScript strings. 
+//@ For example, to redirect the output of `cat()` to a file, use: `cat('input.txt').to('output.txt')`. 
+//@ _Like Unix redirections, `to()` will overwrite any existing file!_
+String.prototype.to = wrap('to', function(file) {
+  if (!file)
     error('wrong arguments');
 
-  fs.writeFileSync(file, str, 'utf8');
+  if (!fs.existsSync( path.dirname(file) ))
+      error('no such file or directory: ' + path.dirname(file));
+
+  fs.writeFileSync(file, this.toString(), 'utf8');
 });
 
-//@ ### exists('path [path [...]]')
-//@ Returns true if all given paths exist.
-global.exists = wrap('exists', function(str) {
-  var options = parseOptions(str, {});
-  var paths = parsePaths(str);
+//@
+//@ #### sed(search_regex, 'replace_str', 'file')
+//@ Reads an input string from `file` and performs a JavaScript `replace()` on the input
+//@ using the given search regex and replacement string. Returns the modified string.
+global.sed = wrap('sed', function(regex, replacement, file) {
+  if (typeof replacement !== 'string')
+    error('invalid replacement string');
 
-  if (paths.length === 0)
-    error('no paths given');
+  if (!file)
+    error('no file given');
 
-  var exists = true;
-  paths.forEach(function(p) {
-    if (!path.existsSync(p))
-      exists = false;
+  if (!fs.existsSync(file))
+    error('no such file or directory: ' + file);
+
+  return fs.readFileSync(file, 'utf8').replace(regex, replacement);
+});
+
+//@
+//@ #### grep(regex_filter, 'file [file ...]')
+//@ Reads input string from given files and returns a string containing all lines of the 
+//@ file that match the given `regex_filter`. Wildcards are accepted for file names.
+global.grep = wrap('grep', function(regex, filesStr) {
+  if (!filesStr)
+    error('no file given');
+
+  var files = parsePaths(filesStr);
+  files = expand(files);
+
+  var grep = '';
+  files.forEach(function(file) {
+    if (!fs.existsSync(file)) {
+      error('no such file or directory: ' + file, true);
+      return;
+    }
+
+    var contents = fs.readFileSync(file, 'utf8'),
+        lines = contents.split(/\r*\n/);
+    lines.forEach(function(line) {
+      if (line.match(regex))
+        grep += line + '\n';
+    });
   });
 
-  return exists;
+  return grep;
 });
 
-//@ ### external('command', options)
+//@
+//@ #### exit(code)
+//@ Exits the current process with the given exit code.
+global.exit = process.exit;
+
+
+
+
+
+
+//@
+//@ ## Other commands
+//@
+
+
+
+
+
+//@
+//@ #### external('command', options)
 //@ Checks that the external `command` exists either as an absolute path or in the system `PATH`, 
-//@ and returns a callable function `fn(args, options)` that executes the command. Available options:
+//@ and returns a callable function `function([args] [,options] [,callback])` that executes the 
+//@ command synchronously (default) or asynchronously. 
 //@
-//@ + `required`: If `true`, will throw an error when command cannot be found. Default is `false`.
-//@ + `silent`: If `true` will suppress all output from command, otherwise both `stdout` and `stderr`
-//@ will be piped to the console.
+//@ Available options:
 //@
-//@ The callable function `fn()` returns a `Boolean()` object that is true if there were any errors,
-//@ and containing the additional properties: `{ output:..., code:... }`.
+//@ + `required`: (Default is `false`) If `true`, will throw an error when command cannot be found.
+//@ + `silent`: (Default is `false`) If `true` will suppress all output from command, otherwise both `stdout` and `stderr`
+//@ will be redirected to the console.
+//@ + `async`: (Default is `false`) If `true` will call the optional `callback` argument to the 
+//@ callable function when the command is done, instead of blocking execution.
+//@
+//@ When in synchronous mode the callable function returns the object `{ output:..., code:... }`, 
+//@ containing the program's `output` (stdout + stderr)  and its exit `code`. 
+//@ Otherwise the `callback` gets the arguments `(output, code)`.
 global.external = wrap('external', function(cmd, opts) {
   if (!cmd)
     error('must specify command');
 
   var options = extend({
     silent: false,
-    required: false
+    required: false,
+    async: false
   }, opts);
 
   var pathEnv = process.env.path || process.env.Path || process.env.PATH,
       pathArray = splitPath(pathEnv),
       where = null;
 
-  log('Checking for external command availability: ' + cmd);
+  write('Checking for external command availability: ' + cmd + ' ... ');
 
   if (platform === 'win' && !cmd.match(/\.exe$/i))
     cmd += '.exe';
@@ -456,53 +485,86 @@ global.external = wrap('external', function(cmd, opts) {
         return; // already found it
 
       var attempt = path.resolve(dir + '/' + cmd);
-      if (path.existsSync(attempt))
+      if (fs.existsSync(attempt))
         where = attempt;
     });
   }
     
   // Command not found anywhere?
-  if (!path.existsSync(cmd) && !where) {
+  if (!fs.existsSync(cmd) && !where) {
     state.fatal = options.required;
+    log('NO');
+
     if (state.fatal)
-      error('   Fatal: could not find required command in any known path');
-    else
-      error('   could not find command in any known path', true);
+      error('Fatal: could not find required command');
+
     return null;
   }
 
+  log('OK');
   where = where || path.resolve(cmd);
 
-  return function(args, options2) {
+  // Callable function
+  return function(args, options2, callback) {
+    if (typeof args === 'function')
+        callback = args;
+    if (typeof options2 === 'function')
+        callback = options2;
+
     var thisOpts = extend({}, options); // clone 'global' opts
     thisOpts = extend(thisOpts, options2); // override global opts with local opts
-    return execSync(where, args, thisOpts);
-  }
+  
+    if (thisOpts.async)
+      execAsync(where, args, thisOpts, callback);
+    else
+      return execSync(where, args, thisOpts);
+
+  } // callable function
 });
 
-//@ ### exit(code)
-//@ Shortcut to `process.exit(code)`
-global.exit = process.exit;
+//@
+//@ #### exists('path [path ...]')
+//@ Returns true if all the given paths exist.
+global.exists = wrap('exists', function(str) {
+  var options = parseOptions(str, {});
+  var paths = parsePaths(str);
 
-//@ ### tempdir()
-//@ Returns a writeable, platform-dependent temporary directory
+  if (paths.length === 0)
+    error('no paths given');
+
+  var exists = true;
+  paths.forEach(function(p) {
+    if (!fs.existsSync(p))
+      exists = false;
+  });
+
+  return exists;
+});
+
+//@
+//@ #### tempdir()
+//@ Searches and returns string containing a writeable, platform-dependent temporary directory.
+//@ We follow Python's [tempfile algorithm](http://docs.python.org/library/tempfile.html#tempfile.tempdir).
 global.tempdir = tempDir;
 
-//@ ### error()
-//@ Returns `null` if no error occurred in the last command. Otherwise returns a string
+//@
+//@ #### error()
+//@ Tests if error occurred. Returns `null` if no error occurred in the last command. Otherwise returns a string
 //@ explaining the error
 global.error = function() {
   return state.error;
 }
 
-//@ ### verbose()
+//@
+//@ #### verbose()
 //@ Enables all output (default)
 global.verbose = function() {
   state.silent = false;
 }
 
-//@ ### silent()
-//@ Suppress all output, except for explict `echo()` calls
+//@
+//@ #### silent()
+//@ Suppresses all output, except for explict `echo()` calls
 global.silent = function() {
   state.silent = true;
 }
@@ -526,15 +588,27 @@ var args = process.argv.slice(2);
 // been evaluated
 setTimeout(function() {
 
+  if (args.length === 1 && args[0] === '--help') {
+    console.log('Available targets:');
+    for (target in global.target)
+      console.log('  ' + target);
+    return;
+  }
+
   // Execute desired targets
   if (args.length > 0) {
     args.forEach(function(arg) {
-      if (arg in global.target) target[arg]();
+      if (arg in global.target) 
+        target[arg]();
+      else {
+        log('no such target: ' + arg);
+        exit(1);
+      }
     });
   } else if ('all' in target) {
     target.all();
   }
-  
+
 }, 0);
 
 
@@ -556,13 +630,18 @@ function log(msg) {
     console.log(msg);
 }
 
+function write(msg) {
+  if (!state.silent)
+    process.stdout.write(msg);
+}
+
 // Shows error message. Throws unless '_continue = true'.
 function error(msg, _continue) {
   if (state.error === null)
     state.error = '';
   state.error += state.currentCmd + ': ' + msg + '\n';
   
-  log(msg);
+  log(state.error);
 
   if (!_continue)
     throw '';
@@ -651,17 +730,17 @@ function wrap(cmd, fn) {
 
 // Simple file copy, synchronous
 function copyFileSync(srcFile, destFile) {
-  if (!path.existsSync(srcFile))
+  if (!fs.existsSync(srcFile))
     error('copyFileSync: no such file or directory: ' + srcFile);
 
   var BUF_LENGTH = 64*1024,
       buf = new Buffer(BUF_LENGTH),
       fdr = fs.openSync(srcFile, 'r'),
       fdw = fs.openSync(destFile, 'w'),
-      bytesRead = 1,
+      bytesRead = BUF_LENGTH,
       pos = 0;
 
-  while (bytesRead > 0) {
+  while (bytesRead === BUF_LENGTH) {
     bytesRead = fs.readSync(fdr, buf, 0, BUF_LENGTH, pos);
     fs.writeSync(fdw, buf, 0, bytesRead);
     pos += bytesRead;
@@ -702,8 +781,8 @@ function mkdirSyncRecursive(dir) {
   var baseDir = path.dirname(dir);
 
   // Base dir exists, no recursion necessary
-  if (path.existsSync(baseDir)) {
-    fs.mkdirSync(dir);
+  if (fs.existsSync(baseDir)) {
+    fs.mkdirSync(dir, 0777);
     return;
   }
 
@@ -711,7 +790,7 @@ function mkdirSyncRecursive(dir) {
   mkdirSyncRecursive(baseDir);
 
   // Base dir created, can create dir
-  fs.mkdirSync(dir);
+  fs.mkdirSync(dir, 0777);
 };
 
 // e.g. 'makerjs_a5f185d0443ca...'
@@ -732,7 +811,7 @@ function randomFileName() {
 
 // Returns false if 'dir' is not a writeable directory, 'dir' otherwise
 function writeableDir(dir) {
-  if (!dir || !path.existsSync(dir))
+  if (!dir || !fs.existsSync(dir))
     return false;
 
   if (!fs.statSync(dir).isDirectory())
@@ -740,7 +819,7 @@ function writeableDir(dir) {
 
   var testFile = dir+'/'+randomFileName();
   try {
-    fs.writeFileSync(testFile);
+    fs.writeFileSync(testFile, ' ');
     fs.unlinkSync(testFile);
     return dir;
   } catch (e) {
@@ -771,8 +850,30 @@ function tempDir() {
   return state.tempDir;
 }
 
+// Wrapper around exec() to enable echoing output to console in real time
+function execAsync(cmd, args, opts, callback) {
+  var output = '';
+  
+  var c = child.exec(formCommandLine(cmd, args), {env: process.env}, function(err) {
+    if (callback) 
+      callback(output, err ? err.code : 0);
+  });
+
+  c.stdout.on('data', function(data) {
+    output += data;
+    if (!opts.silent)
+      write(data);
+  });
+
+  c.stderr.on('data', function(data) {
+    output += data;
+    if (!opts.silent)
+      write(data);
+  });
+}
+
 // Hack to run child_process.exec() synchronously (sync avoids callback hell)
-// Uses a wait loop that checks for a flag file, created when the child process is done.
+// Uses a custom wait loop that checks for a flag file, created when the child process is done.
 // (Can't do a wait loop that checks for internal Node variables/messages as
 // Node is single-threaded; callbacks and other internal state changes are done in the 
 // event loop).
@@ -788,7 +889,7 @@ function execSync(cmd, args, opts) {
   var previousStdoutContent = '';
   // Echoes stdout changes from running process, if not silent
   function updateStdout() {
-    if (state.silent || options.silent || !path.existsSync(stdoutFile))
+    if (state.silent || options.silent || !fs.existsSync(stdoutFile))
       return;
 
     var stdoutContent = fs.readFileSync(stdoutFile, 'utf8');
@@ -806,27 +907,19 @@ function execSync(cmd, args, opts) {
     return str;
   }
     
-  if (platform === 'win')
-    cmd = '\"'+cmd+'\"'; // wrap in quotes to avoid issues with space
-
-  var cmdLine = cmd + (args ? ' '+args : '');
-  
-  // Pipe output to output file
-  if (platform === 'win')
-    cmdLine += ' > '+stdoutFile;
-  else
-    cmdLine += ' 1>'+stdoutFile + ' 2>'+stdoutFile;
+  var cmdLine = formCommandLine(cmd, args);  
+  cmdLine += ' > '+stdoutFile+' 2>&1'; // works on both win/unix
 
   var script = 
    "var child = require('child_process'), \
         fs = require('fs'); \
-    child.exec('"+escape(cmdLine)+"', {env: process.env}, function(err, stdout, stderr) { \
-      fs.writeFileSync('"+escape(codeFile)+"', err ? err.code : '0'); \
+    child.exec('"+escape(cmdLine)+"', {env: process.env}, function(err) { \
+      fs.writeFileSync('"+escape(codeFile)+"', err ? err.code.toString() : '0'); \
     });";
 
-  if (path.existsSync(scriptFile)) fs.unlinkSync(scriptFile);
-  if (path.existsSync(stdoutFile)) fs.unlinkSync(stdoutFile);
-  if (path.existsSync(codeFile)) fs.unlinkSync(codeFile);
+  if (fs.existsSync(scriptFile)) fs.unlinkSync(scriptFile);
+  if (fs.existsSync(stdoutFile)) fs.unlinkSync(stdoutFile);
+  if (fs.existsSync(codeFile)) fs.unlinkSync(codeFile);
 
   fs.writeFileSync(scriptFile, script);
   child.exec('node '+scriptFile, { 
@@ -835,8 +928,8 @@ function execSync(cmd, args, opts) {
   });
 
   // The wait loop
-  while (!path.existsSync(codeFile)) { updateStdout(); };
-  while (!path.existsSync(stdoutFile)) { updateStdout(); };
+  while (!fs.existsSync(codeFile)) { updateStdout(); };
+  while (!fs.existsSync(stdoutFile)) { updateStdout(); };
 
   // At this point codeFile exists, but it's not necessarily flushed yet.
   // Keep reading it until it is.
@@ -850,15 +943,18 @@ function execSync(cmd, args, opts) {
   fs.unlinkSync(stdoutFile);
   fs.unlinkSync(codeFile);
 
-  // True if failed, false if not
-  var obj = new Boolean(code === 0 ? false : true);
-  obj.output = stdout;
-  obj.code = code;
+  // True if successful, false if not
+  var obj = {
+    code: code,
+    output: stdout
+  };
   return obj;
 } // execSync()
 
-// Expands wildcards. For a given array of file names 'list', returns another array 
-// containing all matching file names, e.g. expand(['file*.js']) = ['file1.js', 'file2.js', ...]
+// Expands wildcards with matching file names. For a given array of file names 'list', returns 
+// another array containing all file names as per ls(list[i]). 
+// For example: expand(['file*.js']) = ['file1.js', 'file2.js', ...]
+// (if the files 'file1.js', 'file2.js', etc, exist in the current dir)
 function expand(list) {
   var expanded = [];
   list.forEach(function(listEl) {
@@ -896,4 +992,12 @@ function extend(target) {
   });
   
   return target;
+}
+
+// Normalize platform-dependent command line
+function formCommandLine(cmd, args) {
+  if (platform === 'win')
+    cmd = '\"'+cmd+'\"'; // wrap in quotes to avoid issues with space
+
+  return cmd + (args ? ' '+args : '');
 }
