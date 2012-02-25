@@ -29,25 +29,95 @@ var state = {
 
 
 
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////
+//
+// Evaluate script, execute targets
+//
+
+//@
+//@ #### target = {}
+//@ Main JS object. All desired target functions should be added as properties to this object, e.g.
+//@
+//@ ```javascript
+//@ target.all = function() { target.docs(); }
+//@ target.docs = function() { /* generate docs */ }
+//@ ```
+//@
+//@ The target `target.all` is executed even if no targets are given in the command line.
+//@ To prevent duplicate execution due to multiple entry points, targets are only executed once per 
+//@ session even if called multiple times. 
+//@ To override this, call your target with a `true` argument, e.g.: `target.docs(true);`.
+global.target = {};
+
+
+// This ensures we only execute the script targets after the entire script has
+// been evaluated
+var args = process.argv.slice(2);
+setTimeout(function() {
+
+  if (args.length === 1 && args[0] === '--help') {
+    console.log('Available targets:');
+    for (t in target)
+      console.log('  ' + t);
+    return;
+  }
+
+  // Wrap targets to prevent duplicate execution
+  for (t in target) {
+    (function(t, oldTarget){
+
+      // Wrap it
+      target[t] = function(force) {
+        if (oldTarget.done && !force)
+          return;
+        oldTarget.done = true;
+        return oldTarget(arguments);
+      }
+
+    })(t, target[t]);
+  }
+
+  // Execute desired targets
+  if (args.length > 0) {
+    args.forEach(function(arg) {
+      if (arg in target) 
+        target[arg]();
+      else {
+        log('no such target: ' + arg);
+        exit(1);
+      }
+    });
+  } else if ('all' in target) {
+    target.all();
+  }
+
+}, 0);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 ////////////////////////////////////////////////////////////////////////////////////////////////
 //
 // Commands to be exported
 //
 
-//@
-//@ #### target = {}
-//@ Main JS object. All desired target functions should be added as properties to this object.
-//@ The target `target.all` is executed if no command line arguments are given, otherwise the target
-//@ with the given name will be executed.
-global.target = {};
-
-
-
-
 
 //@
-//@ ## Unix-like commands
+//@ ## Unix shell commands
 //@
+
 
 //@
 //@ #### echo('message' [, 'message' ...])
@@ -56,13 +126,21 @@ global.echo = wrap('echo', function() {
 });
 
 //@
-//@ #### ls('path [path ...]')
+//@ #### ls('[-options] [path] [path ...]')
+//@ Available options:
+//@
+//@ + `R`: recursive
+//@
 //@ Returns list of files in the given path, or in current directory if no path provided.
-//@ Format returned is a hash object e.g. `{ 'file1': null, 'file2': null, ... }`.
+//@ For convenient iteration via `for (file in ls())`, the format returned is a hash object:
+//@ `{ 'file1':null, 'dir1/file2':null, ...}`.
 function _ls(str) {
-  var options = parseOptions(str, {}),
-      paths = parsePaths(str),
-      list = [];
+  var options = parseOptions(str, {
+    'R': 'recursive'
+  });
+
+  var paths = parsePaths(str),
+      hash = {};
 
   paths = paths.length > 0 ? paths : ['.'];
 
@@ -70,22 +148,31 @@ function _ls(str) {
     if (fs.existsSync(p)) {
       // Simple file?
       if (fs.statSync(p).isFile()) {
-        list.push(p);
+        hash[p] = null;
         return; // continue
       }
       
       // Simple dir?
       if (fs.statSync(p).isDirectory()) {
-        list.push.apply(list, fs.readdirSync(p)); // add dir contents
+        // Iterate over p contents
+        fs.readdirSync(p).forEach(function(file) {
+          hash[file] = null;
+
+          // Recursive
+          var oldDir = pwd();
+          cd(p);
+          if (fs.statSync(file).isDirectory() && options.recursive)
+            hash = extend(hash, _ls('-R '+file+'/*'));
+          cd(oldDir);
+        });
         return; // continue
       }
     }
 
-    // p does not exist
+    // p does not exist - possible wildcard present
 
     var basename = path.basename(p);
     var dirname = path.dirname(p);
-
     // Wildcard present on an existing dir? (e.g. '/tmp/*.js')
     if (basename.search(/\*/) > -1 && fs.existsSync(dirname) && fs.statSync(dirname).isDirectory) {
       // Escape special regular expression chars
@@ -93,19 +180,21 @@ function _ls(str) {
       // Translates wildcard into regex
       regexp = regexp.replace(/\*/g, '.*');
       fs.readdirSync(dirname).forEach(function(file) {
-        if (file.match(new RegExp(regexp)))
-          list.push(dirname === '.' ? file : dirname+'/'+file);
-      });
+        if (file.match(new RegExp(regexp))) {
+          hash[path.normalize(dirname+'/'+file)] = null;
+
+          // Recursive
+          var pp = dirname + '/' + file;
+          if (fs.statSync(pp).isDirectory() && options.recursive)
+            hash = extend(hash, _ls('-R '+pp+'/*'));
+        }
+      }); // forEach
       return;
     }
 
     error('no such file or directory: ' + p, true);
   });
 
-  var hash = {};
-  list.forEach(function(file) {
-    hash[file] = null;
-  });
   return hash;
 };
 global.ls = wrap('ls', _ls);
@@ -141,11 +230,13 @@ global.pwd = wrap('pwd', function() {
 //@ Available options:
 //@
 //@ + `f`: force
+//@ + `R`: recursive
 //@
 //@ The wildcard `*` is accepted.
 global.cp = wrap('cp', function(str) {
   var options = parseOptions(str, {
-    'f': 'force'
+    'f': 'force',
+    'R': 'recursive'
   });
   var files = parsePaths(str);
 
@@ -159,8 +250,8 @@ global.cp = wrap('cp', function(str) {
   }
 
   // Dest is not existing dir, but multiple sources given
-  if ((!fs.existsSync(dest) || fs.statSync(dest).isFile()) && sources.length > 1)
-    error('too many sources');
+  if ((!fs.existsSync(dest) || !fs.statSync(dest).isDirectory()) && sources.length > 1)
+    error('dest is not a directory (too many sources)');
 
   // Dest is an existing file, but no -f given
   if (fs.existsSync(dest) && fs.statSync(dest).isFile() && !options.force)
@@ -177,9 +268,26 @@ global.cp = wrap('cp', function(str) {
     // If here, src exists
 
     if (fs.statSync(src).isDirectory()) {
-      log(src + ' is a directory (not copied)', true);
-      return; // skip dir
+      if (!options.recursive) {
+        // Non-Recursive
+        log(src + ' is a directory (not copied)');
+      } else {
+        // Recursive
+        // 'cp /a/source dest' should create 'source' in 'dest'
+        var newDest = dest+'/'+path.basename(src),
+            checkDir = fs.statSync(src);
+        try {
+          fs.mkdirSync(newDest, checkDir.mode);
+        } catch (e) {
+          //if the directory already exists, that's okay
+          if (e.code !== 'EEXIST') throw e;
+        }
+        cpdirSyncRecursive(src, newDest, {force: options.force});
+      }
+      return; // done with dir
     }
+
+    // If here, src is a file
 
     // When copying to '/path/dir':
     //    thisDest = '/path/dir/file1'
@@ -272,8 +380,8 @@ global.mv = wrap('mv', function(str) {
   sources = expand(sources);
 
   // Dest is not existing dir, but multiple sources given
-  if ((!fs.existsSync(dest) || fs.statSync(dest).isFile()) && sources.length > 1)
-    error('too many sources (dest is a file)');
+  if ((!fs.existsSync(dest) || !fs.statSync(dest).isDirectory()) && sources.length > 1)
+    error('dest is not a directory (too many sources)');
 
   // Dest is an existing file, but no -f given
   if (fs.existsSync(dest) && fs.statSync(dest).isFile() && !options.force)
@@ -335,7 +443,7 @@ global.mkdir = wrap('mkdir', function(str) {
     else
       fs.mkdirSync(dir, 0777);
   });
-}); // rm
+}); // mkdir
 
 //@
 //@ #### cat('file [file ...]')
@@ -356,6 +464,9 @@ global.cat = wrap('cat', function(str) {
 
     cat += fs.readFileSync(file, 'utf8') + '\n';
   });
+
+  if (cat[cat.length-1] === '\n')
+    cat = cat.substring(0, cat.length-1);
 
   return cat;
 });
@@ -378,10 +489,15 @@ String.prototype.to = wrap('to', function(file) {
 });
 
 //@
-//@ #### sed(search_regex, 'replace_str', 'file')
+//@ #### sed(search_regex, 'replace_str', 'file' [, options])
+//@ Available options:
+//@
+//@ + `inplace`: (Default is `false`) If `true` will replace contents of 'file' with 
+//@ the modified string. _Note that no backups will be created!_
+//@
 //@ Reads an input string from `file` and performs a JavaScript `replace()` on the input
 //@ using the given search regex and replacement string. Returns the modified string.
-global.sed = wrap('sed', function(regex, replacement, file) {
+global.sed = wrap('sed', function(regex, replacement, file, options) {
   if (typeof replacement !== 'string')
     error('invalid replacement string');
 
@@ -391,7 +507,11 @@ global.sed = wrap('sed', function(regex, replacement, file) {
   if (!fs.existsSync(file))
     error('no such file or directory: ' + file);
 
-  return fs.readFileSync(file, 'utf8').replace(regex, replacement);
+  var result = fs.readFileSync(file, 'utf8').replace(regex, replacement);
+  if (options && options.inplace)
+    result.to(file);
+
+  return result;
 });
 
 //@
@@ -598,44 +718,6 @@ global.silent = function() {
 
 
 
-////////////////////////////////////////////////////////////////////////////////////////////////
-//
-// Evaluate script, execute targets
-//
-
-var args = process.argv.slice(2);
-
-// This ensures we only execute the script targets after the entire script has
-// been evaluated
-setTimeout(function() {
-
-  if (args.length === 1 && args[0] === '--help') {
-    console.log('Available targets:');
-    for (target in global.target)
-      console.log('  ' + target);
-    return;
-  }
-
-  // Execute desired targets
-  if (args.length > 0) {
-    args.forEach(function(arg) {
-      if (arg in global.target) 
-        target[arg]();
-      else {
-        log('no such target: ' + arg);
-        exit(1);
-      }
-    });
-  } else if ('all' in target) {
-    target.all();
-  }
-
-}, 0);
-
-
-
-
-
 
 
 
@@ -749,7 +831,9 @@ function wrap(cmd, fn) {
   }
 } // wrap
 
-// Simple file copy, synchronous
+// Buffered file copy, synchronous
+// (Using readFileSync() + writeFileSync() could easily cause a memory overflow
+//  with large files)
 function copyFileSync(srcFile, destFile) {
   if (!fs.existsSync(srcFile))
     error('copyFileSync: no such file or directory: ' + srcFile);
@@ -771,8 +855,57 @@ function copyFileSync(srcFile, destFile) {
   fs.closeSync(fdw);
 }
 
-// Recursively deletes 'dir'
+// Recursively copies 'sourceDir' into 'destDir'
 // Adapted from https://github.com/ryanmcgrath/wrench-js
+//
+// Copyright (c) 2010 Ryan McGrath
+// Copyright (c) 2012 Artur Adib
+//
+// Licensed under the MIT License
+// http://www.opensource.org/licenses/mit-license.php
+function cpdirSyncRecursive(sourceDir, destDir, opts) {
+  if (!opts) opts = {};
+
+  /* Create the directory where all our junk is moving to; read the mode of the source directory and mirror it */
+  var checkDir = fs.statSync(sourceDir);
+  try {
+    fs.mkdirSync(destDir, checkDir.mode);
+  } catch (e) {
+    //if the directory already exists, that's okay
+    if (e.code !== 'EEXIST') throw e;
+  }
+
+  var files = fs.readdirSync(sourceDir);
+
+  for(var i = 0; i < files.length; i++) {
+    var currFile = fs.lstatSync(sourceDir + "/" + files[i]);
+
+    if (currFile.isDirectory()) {
+      /* recursion this thing right on back. */
+      cpdirSyncRecursive(sourceDir + "/" + files[i], destDir + "/" + files[i], opts);
+    } else if (currFile.isSymbolicLink()) {
+      var symlinkFull = fs.readlinkSync(sourceDir + "/" + files[i]);
+      fs.symlinkSync(symlinkFull, destDir + "/" + files[i]);
+    } else {
+      /* At this point, we've hit a file actually worth copying... so copy it on over. */
+      if (fs.existsSync(destDir + "/" + files[i]) && !opts.force) {
+        log('skipping existing file: ' + files[i]);
+      } else {
+        copyFileSync(sourceDir + "/" + files[i], destDir + "/" + files[i]);
+      }
+    }
+
+  } // for files
+}; // cpdirSyncRecursive
+
+// Recursively removes 'dir'
+// Adapted from https://github.com/ryanmcgrath/wrench-js
+//
+// Copyright (c) 2010 Ryan McGrath
+// Copyright (c) 2012 Artur Adib
+//
+// Licensed under the MIT License
+// http://www.opensource.org/licenses/mit-license.php
 function rmdirSyncRecursive(dir) {
   var files;
 
