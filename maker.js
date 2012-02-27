@@ -230,13 +230,14 @@ global.pwd = wrap('pwd', function() {
 //@ Available options:
 //@
 //@ + `f`: force
-//@ + `R`: recursive
+//@ + `r, R`: recursive
 //@
 //@ The wildcard `*` is accepted.
 global.cp = wrap('cp', function(str) {
   var options = parseOptions(str, {
     'f': 'force',
-    'R': 'recursive'
+    'R': 'recursive',
+    'r': 'recursive'
   });
   var files = parsePaths(str);
 
@@ -498,7 +499,11 @@ String.prototype.to = wrap('to', function(file) {
 //@ Reads an input string from `file` and performs a JavaScript `replace()` on the input
 //@ using the given search regex and replacement string. Returns the modified string.
 global.sed = wrap('sed', function(regex, replacement, file, options) {
-  if (typeof replacement !== 'string')
+  if (typeof replacement === 'string')
+    replacement = replacement; // no-op
+  else if (typeof replacement === 'number')
+    replacement = replacement.toString(); // fallback
+  else
     error('invalid replacement string');
 
   if (!file)
@@ -603,9 +608,6 @@ global.external = wrap('external', function(cmd, opts) {
 
   write('Checking for external command availability: ' + cmd + ' ... ');
 
-  if (platform === 'win' && !cmd.match(/\.exe$/i))
-    cmd += '.exe';
-
   // No relative/absolute paths provided?
   if (cmd.search(/\//) === -1) {
     // Search for command in PATH
@@ -614,8 +616,29 @@ global.external = wrap('external', function(cmd, opts) {
         return; // already found it
 
       var attempt = path.resolve(dir + '/' + cmd);
-      if (fs.existsSync(attempt))
+      if (fs.existsSync(attempt)) {
         where = attempt;
+        return;
+      }
+
+      if (platform === 'win') {
+        var baseAttempt = attempt;
+        attempt = baseAttempt + '.exe';
+        if (fs.existsSync(attempt)) {
+          where = attempt;
+          return;
+        }
+        attempt = baseAttempt + '.cmd';
+        if (fs.existsSync(attempt)) {
+          where = attempt;
+          return;
+        }
+        attempt = baseAttempt + '.bat';
+        if (fs.existsSync(attempt)) {
+          where = attempt;
+          return;
+        }
+      } // if 'win'
     });
   }
     
@@ -685,7 +708,7 @@ global.exists = wrap('exists', function(str) {
 //@
 //@ #### tempdir()
 //@ Searches and returns string containing a writeable, platform-dependent temporary directory.
-//@ We follow Python's [tempfile algorithm](http://docs.python.org/library/tempfile.html#tempfile.tempdir).
+//@ Follows Python's [tempfile algorithm](http://docs.python.org/library/tempfile.html#tempfile.tempdir).
 global.tempdir = tempDir;
 
 //@

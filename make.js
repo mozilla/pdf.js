@@ -19,8 +19,8 @@ target.all = function() {
 // Production stuff
 //
 
-var BUILD_DIR = ROOT_DIR + '/build',
-    BUILD_TARGET = BUILD_DIR + '/pdf.js';
+var BUILD_DIR = ROOT_DIR + '/build', // absolute path
+    BUILD_TARGET = BUILD_DIR + '/pdf.js'; // absolute path
 
 //
 // make web
@@ -48,6 +48,10 @@ target.production = function() {
 //
 
 target.bundle = function() {
+  cd(ROOT_DIR);
+  echo();
+  echo('### Bundling files into pdf.js');
+
   // File order matters
   var SRC_FILES = 
         'core.js \
@@ -72,19 +76,13 @@ target.bundle = function() {
          jpx.js \
          bidi.js';
 
-  cd(ROOT_DIR);
-  echo();
-  echo('###');
-  echo('### Bundling files into pdf.js');
-  echo('###');
-
   if (!exists('build'))
     mkdir('build');
 
   cd('src');
   var bundle = cat(SRC_FILES),
-      git = external('git', {required:true}),
-      bundleVersion = git('log --format="%h" -n 1', {silent:true}).output.replace('\n', '');
+      git = external('git', {required:true, silent:true}),
+      bundleVersion = git('log --format="%h" -n 1').output.replace('\n', '');
 
   sed(/.*PDFJSSCRIPT_INCLUDE_ALL.*\n/, bundle, 'pdf.js').to(BUILD_TARGET);
   sed('PDFJSSCRIPT_BUNDLE_VER', bundleVersion, BUILD_TARGET, {inplace:true});
@@ -98,9 +96,7 @@ target.bundle = function() {
 target.viewer = function() {
   cd(ROOT_DIR);
   echo();
-  echo('###');
-  echo('### Generating production viewer');
-  echo('###');
+  echo('### Generating production-level viewer');
 
   cd('web');
   // Remove development lines
@@ -124,27 +120,43 @@ var EXTENSION_WEB_FILES =
        web/viewer-production.html',
     EXTENSION_SRC = ROOT_DIR+'/extensions',
     EXTENSION_BASE_VERSION = '4bb289ec499013de66eb421737a4dbb4a9273eda',
-    EXTENSION_BUILD_NUMBER = '';
+    EXTENSION_BUILD_NUMBER;
 
 //
 // make extension
 //
 target.extension = function() {
-  var git = external('git', {required:true, silent:true});
-
-  // Build number is the number of commits since base version
-  EXTENSION_BUILD_NUMBER = git('log --format=oneline '+EXTENSION_BASE_VERSION+'..')
-    .output.match(/\n/g).length; // get # of lines in git output
+  cd(ROOT_DIR);
+  echo();
+  echo('### Building extensions');
 
   target.production();
   target.firefox();
   target.chrome();
 }
 
+target.buildnumber = function() {
+  cd(ROOT_DIR);
+  echo();
+  echo('### Getting extension build number');
+
+  var git = external('git', {required:true, silent:true});
+
+  // Build number is the number of commits since base version
+  EXTENSION_BUILD_NUMBER = git('log --format=oneline '+EXTENSION_BASE_VERSION+'..')
+    .output.match(/\n/g).length; // get # of lines in git output
+  
+  echo('Extension build number: ' + EXTENSION_BUILD_NUMBER);  
+}
+
 //
 // make firefox
 //
 target.firefox = function() {
+  cd(ROOT_DIR);
+  echo();
+  echo('### Building Firefox extension');
+
   var FIREFOX_BUILD_DIR = BUILD_DIR+'/firefox',
       FIREFOX_BUILD_CONTENT = FIREFOX_BUILD_DIR+'/content',
       FIREFOX_CONTENT_DIR = EXTENSION_SRC+'/firefox/content',
@@ -163,12 +175,8 @@ target.firefox = function() {
       zip = external('zip', {required:true});
 
   target.production();
-
+  target.buildnumber();
   cd(ROOT_DIR);
-  echo();
-  echo('###');
-  echo('### Building Firefox extension');
-  echo('###');
 
   // Clear out everything in the firefox extension build directory
   rm('-rf '+FIREFOX_BUILD_DIR);
@@ -221,13 +229,34 @@ target.firefox = function() {
 // make chrome
 //
 target.chrome = function() {
-  target.production();
-
   cd(ROOT_DIR);
   echo();
-  echo('###');
   echo('### Building Chrome extension');
-  echo('###');
+
+  var CHROME_BUILD_DIR = BUILD_DIR+'/chrome',
+      CHROME_CONTENT_DIR = EXTENSION_SRC+'/chrome/content',
+      CHROME_BUILD_CONTENT = CHROME_BUILD_DIR+'/content',
+      CHROME_EXTENSION_FILES =
+        'extensions/chrome/*.json \
+         extensions/chrome/*.html';
+
+  target.production();
+  target.buildnumber();
+  cd(ROOT_DIR);
+
+  // Clear out everything in the chrome extension build directory
+  rm('-Rf '+CHROME_BUILD_DIR);
+  mkdir('-p '+CHROME_BUILD_CONTENT);
+  mkdir('-p '+CHROME_BUILD_CONTENT+'/build');
+  mkdir('-p '+CHROME_BUILD_CONTENT+'/web');
+
+  // Copy extension files  
+  cp('-R '+CHROME_EXTENSION_FILES+' '+CHROME_BUILD_DIR);
+
+  // Copy a standalone version of pdf.js inside the content directory
+  cp(BUILD_TARGET+' '+CHROME_BUILD_CONTENT+'/build');
+  cp('-R '+EXTENSION_WEB_FILES+' '+CHROME_BUILD_CONTENT+'/web');
+  mv('-f '+CHROME_BUILD_CONTENT+'/web/viewer-production.html '+CHROME_BUILD_CONTENT+'/web/viewer.html');
 }
 
 
@@ -250,9 +279,7 @@ target.test = function() {
 target.browsertest = function() {
   cd(ROOT_DIR);
   echo();
-  echo('###');
   echo('### Running browser tests');
-  echo('###');
 
   var PDF_TEST = env['PDF_TEST'] || 'test_manifest.json',
       PDF_BROWSERS = env['PDF_BROWSERS'] || 'resources/browser_manifests/browser_manifest.json',
@@ -274,9 +301,7 @@ target.browsertest = function() {
 target.unittest = function() {
   cd(ROOT_DIR);
   echo();
-  echo('###');
   echo('### Running unit tests');
-  echo('###');
 
   var make = external('make', {required:true});
   cd('test/unit');
@@ -297,9 +322,7 @@ target.unittest = function() {
 target.server = function() {
   cd(ROOT_DIR);
   echo();
-  echo('###');
   echo('### Starting local server');
-  echo('###');
 
   var python = external('python2.7', {required:true});
   cd('test');
@@ -312,9 +335,7 @@ target.server = function() {
 target.lint = function() {
   cd(ROOT_DIR);
   echo();
-  echo('###');
   echo('### Linting JS files');
-  echo('###');
 
   var LINT_FILES = 'src/*.js web/*.js test/*.js test/unit/*.js extensions/firefox/*.js extensions/firefox/components/*.js extensions/chrome/*.js',
       gjslint = external('gjslint', {required:true});
