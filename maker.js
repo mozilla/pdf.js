@@ -130,17 +130,30 @@ global.echo = wrap('echo', function() {
 //@ Available options:
 //@
 //@ + `R`: recursive
+//@ + `a`: all files (include hidden, i.e. those beginning with `.`)
 //@
 //@ Returns list of files in the given path, or in current directory if no path provided.
 //@ For convenient iteration via `for (file in ls())`, the format returned is a hash object:
 //@ `{ 'file1':null, 'dir1/file2':null, ...}`.
 function _ls(str) {
   var options = parseOptions(str, {
-    'R': 'recursive'
+    'R': 'recursive',
+    'a': 'all'
   });
 
   var paths = parsePaths(str),
       hash = {};
+
+  function pushHash(file, query) {
+    // hidden file?
+    if (path.basename(file)[0] === '.') {
+      // not explicitly asking for hidden files?
+      if (!options.all && !(path.basename(query)[0] === '.' && path.basename(query).length > 1))
+        return;
+    }
+
+    hash[file] = null;
+  }
 
   paths = paths.length > 0 ? paths : ['.'];
 
@@ -148,7 +161,7 @@ function _ls(str) {
     if (fs.existsSync(p)) {
       // Simple file?
       if (fs.statSync(p).isFile()) {
-        hash[p] = null;
+        pushHash(p, p);
         return; // continue
       }
       
@@ -156,7 +169,7 @@ function _ls(str) {
       if (fs.statSync(p).isDirectory()) {
         // Iterate over p contents
         fs.readdirSync(p).forEach(function(file) {
-          hash[file] = null;
+          pushHash(file, p);
 
           // Recursive
           var oldDir = pwd();
@@ -178,10 +191,11 @@ function _ls(str) {
       // Escape special regular expression chars
       var regexp = basename.replace(/(\^|\$|\(|\)|\<|\>|\[|\]|\{|\}|\.|\+|\?)/g, '\\$1');
       // Translates wildcard into regex
-      regexp = regexp.replace(/\*/g, '.*');
+      regexp = '^' + regexp.replace(/\*/g, '.*');
+      // Iterate over directory contents
       fs.readdirSync(dirname).forEach(function(file) {
         if (file.match(new RegExp(regexp))) {
-          hash[path.normalize(dirname+'/'+file)] = null;
+          pushHash(path.normalize(dirname+'/'+file), basename);
 
           // Recursive
           var pp = dirname + '/' + file;
@@ -407,6 +421,11 @@ global.mv = wrap('mv', function(str) {
       return; // skip file
     }
 
+    if (path.resolve(src) === path.dirname(path.resolve(thisDest))) {
+      error('cannot move to self: '+src, true);
+      return; // skip file
+    }
+
     fs.renameSync(src, thisDest);
   }); // forEach(src)
 }); // mv
@@ -589,9 +608,9 @@ global.env = process.env;
 //@ + `async`: (Default is `false`) If `true` will call the optional `callback` argument to the 
 //@ callable function when the command is done, instead of blocking execution.
 //@
-//@ When in synchronous mode the callable function returns the object `{ output:..., code:... }`, 
+//@ When in synchronous mode the callable function returns the object `{ code:..., output:... }`, 
 //@ containing the program's `output` (stdout + stderr)  and its exit `code`. 
-//@ Otherwise the `callback` gets the arguments `(output, code)`.
+//@ Otherwise the `callback` gets the arguments `(code, output)`.
 global.external = wrap('external', function(cmd, opts) {
   if (!cmd)
     error('must specify command');
@@ -1033,7 +1052,7 @@ function execAsync(cmd, args, opts, callback) {
   
   var c = child.exec(formCommandLine(cmd, args), {env: process.env}, function(err) {
     if (callback) 
-      callback(output, err ? err.code : 0);
+      callback(err ? err.code : 0, output);
   });
 
   c.stdout.on('data', function(data) {

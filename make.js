@@ -20,7 +20,10 @@ target.all = function() {
 //
 
 var BUILD_DIR = ROOT_DIR + '/build', // absolute path
-    BUILD_TARGET = BUILD_DIR + '/pdf.js'; // absolute path
+    BUILD_TARGET = BUILD_DIR + '/pdf.js', // absolute path
+    GH_PAGES_DIR = BUILD_DIR + '/gh-pages', // absolute path
+    REPO = 'git@github.com:mozilla/pdf.js.git';
+
 
 //
 // make web
@@ -76,8 +79,8 @@ target.bundle = function() {
          jpx.js \
          bidi.js';
 
-  if (!exists('build'))
-    mkdir('build');
+  if (!exists(BUILD_DIR))
+    mkdir(BUILD_DIR);
 
   cd('src');
   var bundle = cat(SRC_FILES),
@@ -105,6 +108,36 @@ target.viewer = function() {
   sed(/.*PDFJSSCRIPT_INCLUDE_BUILD.*\n/g, cat('viewer-snippet.html'), 'viewer-production.html', {inplace:true});
 }
 
+//
+// make pagesrepo
+//
+// This target clones the gh-pages repo into the build directory. It deletes the current contents 
+// of the repo, since we overwrite everything with data from the master repo. The 'make web' target
+// then uses 'git add -A' to track additions, modifications, moves, and deletions.
+target.pagesrepo = function() {
+  cd(ROOT_DIR);
+  echo();
+  echo('### Creating fresh clone of gh-pages');
+
+  var git = external('git', {required:true, silent:true});
+
+  if (!exists(BUILD_DIR))
+    mkdir(BUILD_DIR);
+
+  if (!exists(GH_PAGES_DIR)) {
+    echo();
+    echo('Cloning project repo in '+GH_PAGES_DIR+'...');
+    echo('(This operation can take a while, depending on network conditions)');
+    git('clone -b gh-pages --depth=1 '+REPO+' '+GH_PAGES_DIR);
+    echo('Done.');
+    rm('-rf '+GH_PAGES_DIR+'/*');
+  }
+
+  mkdir('-p '+GH_PAGES_DIR+'/web');
+  mkdir('-p '+GH_PAGES_DIR+'/web/images');
+  mkdir('-p '+GH_PAGES_DIR+'/build');
+  mkdir('-p '+GH_PAGES_DIR+'/'+EXTENSION_SRC+'/firefox');
+}
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////
