@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-require('./maker');
+require('./external/makerjs/maker');
 
 var ROOT_DIR = pwd()+'/', // current absolute path
     BUILD_DIR = 'build/',
