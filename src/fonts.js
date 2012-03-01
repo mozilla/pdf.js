@@ -1870,6 +1870,9 @@ var Font = (function FontClosure() {
             ids[i] = i;
         }
 
+        var unusedUnicode = kCmapGlyphOffset;
+        var glyphNames = properties.glyphNames || [];
+        var encoding = properties.baseEncoding;
         if (toFontChar && toFontChar.length > 0) {
           // checking if cmap is just identity map
           var isIdentity = true;
@@ -1892,7 +1895,6 @@ var Font = (function FontClosure() {
               glyphs[i].unicode = unicode;
               usedUnicodes[unicode] = true;
             }
-            var unusedUnicode = kCmapGlyphOffset;
             for (var j = 0, jj = unassignedUnicodeItems.length; j < jj; j++) {
               var i = unassignedUnicodeItems[j];
               while (unusedUnicode in usedUnicodes)
@@ -1913,14 +1915,13 @@ var Font = (function FontClosure() {
           // copying all characters to private use area, all mapping all known
           // glyphs to the unicodes. The glyphs and ids arrays will grow.
           var usedUnicodes = [];
-          var glyphNames = properties.glyphNames || [];
           for (var i = 0, ii = glyphs.length; i < ii; i++) {
             var code = glyphs[i].unicode;
             var gid = ids[i];
             glyphs[i].unicode += kCmapGlyphOffset;
             toFontChar[code] = glyphs[i].unicode;
 
-            var glyphName = glyphNames[gid] || properties.baseEncoding[code];
+            var glyphName = glyphNames[gid] || encoding[code];
             if (glyphName in GlyphsUnicode) {
               var unicode = GlyphsUnicode[glyphName];
               if (unicode in usedUnicodes)
@@ -1936,6 +1937,57 @@ var Font = (function FontClosure() {
             }
           }
           this.useToFontChar = true;
+        } else if (!this.isSymbolicFont &&
+                   (this.hasEncoding || properties.glyphNames)) {
+          // Re-encode cmap encoding to unicode, based on the 'post' table data
+          // or base encoding
+          var reverseMap = [];
+          for (var i = 0, ii = glyphs.length; i < ii; i++)
+            reverseMap[glyphs[i].unicode] = i;
+
+          for (var i = 0, ii = glyphs.length; i < ii; i++) {
+            var code = glyphs[i].unicode;
+            var gid = ids[i]
+
+            var glyphName = glyphNames[gid] || encoding[code];
+            if (glyphName in GlyphsUnicode) {
+              var unicode = GlyphsUnicode[glyphName];
+              if (!unicode || reverseMap[unicode] === i)
+                continue; // unknown glyph name or in its own place
+
+              var destination = reverseMap[unicode];
+              var j = i;
+              // Flipping unicodes while next destination unicode has assigned
+              // glyph and future glyph can be assigned to unicode.
+              while (typeof destination === 'number') {
+                glyphs[j].unicode = unicode;
+                reverseMap[unicode] = j;
+
+                code = glyphs[destination].unicode;
+                gid = ids[destination];
+                glyphName = glyphNames[gid] || encoding[code];
+
+                unicode = GlyphsUnicode[glyphName];
+                if (!unicode || reverseMap[unicode] === j) {
+                  unicode = 0;
+                  break; // unknown glyph name or in its own place
+                }
+
+                j = destination;
+                destination = reverseMap[unicode];
+              }
+
+              if (!unicode) {
+                // Future glyph cannot be assigned to unicode, generate new one.
+                while (reverseMap[unusedUnicode])
+                  unusedUnicode++;
+                unicode = unusedUnicode++;
+              }
+
+              glyphs[j].unicode = unicode;
+              reverseMap[unicode] = j;
+            }
+          }
         }
 
         // Moving all symbolic font glyphs into 0xF000 - 0xF0FF range.
