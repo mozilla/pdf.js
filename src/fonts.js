@@ -1947,7 +1947,7 @@ var Font = (function FontClosure() {
 
           for (var i = 0, ii = glyphs.length; i < ii; i++) {
             var code = glyphs[i].unicode;
-            var gid = ids[i]
+            var gid = ids[i];
 
             var glyphName = glyphNames[gid] || encoding[code];
             if (glyphName in GlyphsUnicode) {
