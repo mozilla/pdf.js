@@ -1206,13 +1206,10 @@ var Font = (function FontClosure() {
       'Original licence',  // 0.Copyright
       name,                // 1.Font family
       'Unknown',           // 2.Font subfamily (font weight)
-      'uniqueID',          // 3.Unique ID
+      name,                // 3.Unique ID
       name,                // 4.Full font name
       'Version 0.11',      // 5.Version
-      '',                  // 6.Postscript name
-      'Unknown',           // 7.Trademark
-      'Unknown',           // 8.Manufacturer
-      'Unknown'            // 9.Designer
+      name                 // 6.Postscript name
     ];
 
     // Mac want 1-byte per character strings while Windows want
