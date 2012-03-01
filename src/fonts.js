@@ -1871,6 +1871,13 @@ var Font = (function FontClosure() {
         var hasShortCmap = !!cmapTable.hasShortCmap;
         var toFontChar = this.toFontChar;
 
+        if (hasShortCmap && ids.length == numGlyphs) {
+          // Fixes the short cmap tables -- some generators use incorrect
+          // glyph id.
+          for (var i = 0, ii = ids.length; i < ii; i++)
+            ids[i] = i;
+        }
+
         if (toFontChar && toFontChar.length > 0) {
           // checking if cmap is just identity map
           var isIdentity = true;
@@ -1914,11 +1921,14 @@ var Font = (function FontClosure() {
           // copying all characters to private use area, all mapping all known
           // glyphs to the unicodes. The glyphs and ids arrays will grow.
           var usedUnicodes = [];
+          var glyphNames = properties.glyphNames || [];
           for (var i = 0, ii = glyphs.length; i < ii; i++) {
             var code = glyphs[i].unicode;
+            var gid = ids[i];
             glyphs[i].unicode += kCmapGlyphOffset;
+            toFontChar[code] = glyphs[i].unicode;
 
-            var glyphName = properties.baseEncoding[code];
+            var glyphName = glyphNames[gid] || properties.baseEncoding[code];
             if (glyphName in GlyphsUnicode) {
               var unicode = GlyphsUnicode[glyphName];
               if (unicode in usedUnicodes)
@@ -1929,9 +1939,11 @@ var Font = (function FontClosure() {
                 unicode: unicode,
                 code: glyphs[i].code
               });
-              ids.push(ids[i]);
+              ids.push(gid);
+              toFontChar[code] = unicode;
             }
           }
+          this.useToFontChar = true;
         }
 
         // Moving all symbolic font glyphs into 0xF000 - 0xF0FF range.
