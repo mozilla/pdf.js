@@ -1881,6 +1881,7 @@ var Font = (function FontClosure() {
         var unusedUnicode = kCmapGlyphOffset;
         var glyphNames = properties.glyphNames || [];
         var encoding = properties.baseEncoding;
+        var differences = properties.differences;
         if (toFontChar && toFontChar.length > 0) {
           // checking if cmap is just identity map
           var isIdentity = true;
@@ -1945,35 +1946,51 @@ var Font = (function FontClosure() {
             }
           }
           this.useToFontChar = true;
-        } else if (!this.isSymbolicFont &&
-                   (this.hasEncoding || properties.glyphNames)) {
+        } else if (!this.isSymbolicFont && (this.hasEncoding ||
+                    properties.glyphNames || differences.length > 0)) {
           // Re-encode cmap encoding to unicode, based on the 'post' table data
-          // or base encoding
+          // diffrence array or base encoding
           var reverseMap = [];
           for (var i = 0, ii = glyphs.length; i < ii; i++)
             reverseMap[glyphs[i].unicode] = i;
 
           for (var i = 0, ii = glyphs.length; i < ii; i++) {
             var code = glyphs[i].unicode;
+            var changeCode = false;
             var gid = ids[i];
 
-            var glyphName = glyphNames[gid] || encoding[code];
+            var glyphName = glyphNames[gid];
+            if (!glyphName) {
+              glyphName = differences[code] || encoding[code];
+              changeCode = true;
+            }
             if (glyphName in GlyphsUnicode) {
               var unicode = GlyphsUnicode[glyphName];
               if (!unicode || reverseMap[unicode] === i)
                 continue; // unknown glyph name or in its own place
 
               var destination = reverseMap[unicode];
+              if (typeof destination === 'number' && destination > i)
+                continue;
+
               var j = i;
               // Flipping unicodes while next destination unicode has assigned
               // glyph and future glyph can be assigned to unicode.
               while (typeof destination === 'number') {
                 glyphs[j].unicode = unicode;
                 reverseMap[unicode] = j;
+                if (changeCode) {
+                  toFontChar[code] = unicode;
+                  changeCode = false;
+                }
 
                 code = glyphs[destination].unicode;
                 gid = ids[destination];
-                glyphName = glyphNames[gid] || encoding[code];
+                glyphName = glyphNames[gid];
+                if (!glyphName) {
+                  glyphName = differences[code] || encoding[code];
+                  changeCode = true;
+                }
 
                 unicode = GlyphsUnicode[glyphName];
                 if (!unicode || reverseMap[unicode] === j) {
@@ -1994,7 +2011,10 @@ var Font = (function FontClosure() {
 
               glyphs[j].unicode = unicode;
               reverseMap[unicode] = j;
+              if (changeCode)
+                toFontChar[code] = unicode;
             }
+            this.useToFontChar = true;
           }
         }
 
