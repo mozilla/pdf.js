@@ -1,0 +1,10 @@
+{ "name": "shell.js"
+, "version": "0.0.1"
+, "author": "Artur Adib"
+, "description": "Unix shell commands on top of the Node.js API"
+, "homepage": "http://github.com/arturadib/shell.js"
+, "main": "./shell.js"
+, "scripts": {
+    "test": "node scripts/run-tests"
+  }
+}

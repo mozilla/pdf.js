@@ -1,6 +1,13 @@
 /* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 /* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
 
+//
+// This file is used in production only, where it is filled with all other
+// source files.
+//
+// For development use one <script> per source file, see e.g. examples.
+//
+
 var PDFJS = {};
 
 (function pdfjsWrapper() {
