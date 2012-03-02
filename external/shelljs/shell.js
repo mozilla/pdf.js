@@ -1,9 +1,9 @@
 //
-// maker.js
-// Make tool for Node.js with built-in Unix-like commands
+// shell.js
+// Unix shell commands on top of Node's API
 //
 // Copyright (c) 2012 Artur Adib
-// http://github.com/arturadib/maker.js
+// http://github.com/arturadib/shell.js
 //
 
 var fs = require('fs'),
@@ -20,129 +20,76 @@ var state = {
       error: null,
       fatal: false,
       silent: false,
-      currentCmd: 'maker.js',
+      currentCmd: 'shell.js',
       tempDir: null
     },
     platform = os.type().match(/^Win/) ? 'win' : 'unix';
 
 
-
-
-
-
-
-////////////////////////////////////////////////////////////////////////////////////////////////
-//
-// Evaluate script, execute targets
-//
-
 //@
-//@ #### target = {}
-//@ Main JS object. All desired target functions should be added as properties to this object, e.g.
-//@
-//@ ```javascript
-//@ target.all = function() { target.docs(); }
-//@ target.docs = function() { /* generate docs */ }
-//@ ```
-//@
-//@ The target `target.all` is executed even if no targets are given in the command line.
-//@ To prevent duplicate execution due to multiple entry points, targets are only executed once per 
-//@ session even if called multiple times. 
-//@ To override this, call your target with a `true` argument, e.g.: `target.docs(true);`.
-global.target = {};
-
-
-// This ensures we only execute the script targets after the entire script has
-// been evaluated
-var args = process.argv.slice(2);
-setTimeout(function() {
-
-  if (args.length === 1 && args[0] === '--help') {
-    console.log('Available targets:');
-    for (t in target)
-      console.log('  ' + t);
-    return;
-  }
-
-  // Wrap targets to prevent duplicate execution
-  for (t in target) {
-    (function(t, oldTarget){
-
-      // Wrap it
-      target[t] = function(force) {
-        if (oldTarget.done && !force)
-          return;
-        oldTarget.done = true;
-        return oldTarget(arguments);
-      }
-
-    })(t, target[t]);
-  }
-
-  // Execute desired targets
-  if (args.length > 0) {
-    args.forEach(function(arg) {
-      if (arg in target) 
-        target[arg]();
-      else {
-        log('no such target: ' + arg);
-        exit(1);
-      }
-    });
-  } else if ('all' in target) {
-    target.all();
-  }
-
-}, 0);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-////////////////////////////////////////////////////////////////////////////////////////////////
-//
-// Commands to be exported
-//
+//@ All commands run synchronously, unless otherwise stated.
+//@ 
 
 
 //@
-//@ ## Unix shell commands
-//@
+//@ #### cd('dir')
+//@ Changes to directory `dir` for the duration of the script
+function _cd(options, dir) {
+  if (!dir)
+    error('directory not specified');
 
+  if (!fs.existsSync(dir))
+    error('no such file or directory: ' + dir);
+
+  if (fs.existsSync(dir) && !fs.statSync(dir).isDirectory())
+    error('not a directory: ' + dir);
+
+  process.chdir(dir);
+};
+exports.cd = wrap('cd', _cd);
 
 //@
-//@ #### echo('message' [, 'message' ...])
-global.echo = wrap('echo', function() {
-  console.log.apply(this, arguments);
-});
+//@ #### pwd()
+//@ Returns the current directory.
+function _pwd(options) {
+  var pwd = path.resolve(process.cwd());
+  return ShellString(pwd);
+};
+exports.pwd = wrap('pwd', _pwd);
 
 //@
-//@ #### ls('[-options] [path] [path ...]')
+//@ #### ls([options ,] path [,path ...])
+//@ #### ls([options ,] path_array)
 //@ Available options:
 //@
-//@ + `R`: recursive
-//@ + `a`: all files (include hidden, i.e. those beginning with `.`)
+//@ + `-R`: recursive
+//@ + `-a`: all files (include files beginning with `.`)
+//@
+//@ Examples:
+//@
+//@ ```javascript
+//@ ls('projs/*.js');
+//@ ls('-R', '/users/me', '/tmp');
+//@ ls('-R', ['/users/me', '/tmp']); // same as above
+//@ ```
 //@
 //@ Returns list of files in the given path, or in current directory if no path provided.
 //@ For convenient iteration via `for (file in ls())`, the format returned is a hash object:
 //@ `{ 'file1':null, 'dir1/file2':null, ...}`.
-function _ls(str) {
-  var options = parseOptions(str, {
+function _ls(options, paths) {
+  options = parseOptions(options, {
     'R': 'recursive',
     'a': 'all'
   });
 
-  var paths = parsePaths(str),
-      hash = {};
+  if (!paths)
+    paths = ['.'];
+  else if (typeof paths === 'object')
+    paths = paths; // assume array
+  else if (typeof paths === 'string')
+    paths = [].slice.call(arguments, 1);
+
+  var hash = {};
 
   function pushHash(file, query) {
     // hidden file?
@@ -154,8 +101,6 @@ function _ls(str) {
 
     hash[file] = null;
   }
-
-  paths = paths.length > 0 ? paths : ['.'];
 
   paths.forEach(function(p) {
     if (fs.existsSync(p)) {
@@ -172,11 +117,11 @@ function _ls(str) {
           pushHash(file, p);
 
           // Recursive
-          var oldDir = pwd();
-          cd(p);
+          var oldDir = _pwd();
+          _cd('', p);
           if (fs.statSync(file).isDirectory() && options.recursive)
-            hash = extend(hash, _ls('-R '+file+'/*'));
-          cd(oldDir);
+            hash = extend(hash, _ls('-R', file+'/*'));
+          _cd('', oldDir);
         });
         return; // continue
       }
@@ -200,7 +145,7 @@ function _ls(str) {
           // Recursive
           var pp = dirname + '/' + file;
           if (fs.statSync(pp).isDirectory() && options.recursive)
-            hash = extend(hash, _ls('-R '+pp+'/*'));
+            hash = extend(hash, _ls('-R', pp+'/*'));
         }
       }); // forEach
       return;
@@ -211,57 +156,45 @@ function _ls(str) {
 
   return hash;
 };
-global.ls = wrap('ls', _ls);
+exports.ls = wrap('ls', _ls);
+
 
 //@
-//@ #### cd('dir')
-//@ Changes to directory `dir` for the duration of the script
-global.cd = wrap('cd', function(str) {
-  var options = parseOptions(str, {});
-  var dir = parsePaths(str)[0];
-
-  if (!dir)
-    error('directory not specified');
-
-  if (!fs.existsSync(dir))
-    error('no such file or directory: ' + dir);
-
-  if (fs.existsSync(dir) && !fs.statSync(dir).isDirectory())
-    error('not a directory: ' + dir);
-
-  process.chdir(dir);
-});
-
-//@
-//@ #### pwd()
-//@ Returns the current directory.
-global.pwd = wrap('pwd', function() {
-  return path.resolve(process.cwd());
-});
-
-//@
-//@ #### cp('[-options] source [source ...] dest')
+//@ #### cp('[options ,] source [,source ...], dest')
+//@ #### cp('[options ,] source_array, dest')
 //@ Available options:
 //@
-//@ + `f`: force
-//@ + `r, R`: recursive
+//@ + `-f`: force
+//@ + `-r, -R`: recursive
 //@
-//@ The wildcard `*` is accepted.
-global.cp = wrap('cp', function(str) {
-  var options = parseOptions(str, {
+//@ Examples:
+//@
+//@ ```javascript
+//@ cp('file1', 'dir1');
+//@ cp('-Rf', '/tmp/*', '/usr/local/*', '/home/tmp');
+//@ cp('-Rf', ['/tmp/*', '/usr/local/*'], '/home/tmp'); // same as above
+//@ ```
+//@
+//@ Copies files. The wildcard `*` is accepted.
+function _cp(options, sources, dest) {
+  options = parseOptions(options, {
     'f': 'force',
     'R': 'recursive',
     'r': 'recursive'
   });
-  var files = parsePaths(str);
 
   // Get sources, dest
-  var sources, dest;
-  if (files.length < 2) {
+  if (arguments.length < 3) {
     error('missing <source> and/or <dest>');
+  } else if (arguments.length > 3) {
+    sources = [].slice.call(arguments, 1, arguments.length - 1);
+    dest = arguments[arguments.length - 1];
+  } else if (typeof sources === 'string') {
+    sources = [sources];
+  } else if ('length' in sources) {
+    sources = sources; // no-op for array
   } else {
-    sources = files.slice(0, files.length - 1);
-    dest = files[files.length - 1];
+    error('invalid arguments');
   }
 
   // Dest is not existing dir, but multiple sources given
@@ -317,26 +250,38 @@ global.cp = wrap('cp', function(str) {
 
     copyFileSync(src, thisDest);
   }); // forEach(src)
-}); // cp
+}; // cp
+exports.cp = wrap('cp', _cp);
 
 //@
-//@ #### rm('[-options] file [file ...]')
+//@ #### rm([options ,] file [, file ...])
+//@ #### rm([options ,] file_array)
 //@ Available options:
 //@
-//@ + `f`: force
-//@ + `r, R`: recursive
+//@ + `-f`: force
+//@ + `-r, -R`: recursive
 //@
-//@ The wildcard `*` is accepted.
-global.rm = wrap('rm', function(str) {
-  var options = parseOptions(str, {
+//@ Examples:
+//@
+//@ ```javascript
+//@ rm('-rf', '/tmp/*');
+//@ rm('some_file.txt', 'another_file.txt');
+//@ rm(['some_file.txt', 'another_file.txt']); // same as above
+//@ ```
+//@
+//@ Removes files. The wildcard `*` is accepted. 
+function _rm(options, files) {
+  options = parseOptions(options, {
     'f': 'force',
     'r': 'recursive',
     'R': 'recursive'
   });
-  var files = parsePaths(str);
-
-  if (files.length === 0)
+  if (!files)
     error('no paths given');
+
+  if (typeof files === 'string')
+    files = [].slice.call(arguments, 1);
+  // if it's array leave it as it is
 
   files = expand(files);
 
@@ -368,28 +313,42 @@ global.rm = wrap('rm', function(str) {
       rmdirSyncRecursive(file);
     }
   }); // forEach(file)
-}); // rm
+}; // rm
+exports.rm = wrap('rm', _rm);
 
 //@
-//@ #### mv('source [source ...] dest')
+//@ #### mv(source [, source ...], dest')
+//@ #### mv(source_array, dest')
 //@ Available options:
 //@
 //@ + `f`: force
 //@
-//@ The wildcard `*` is accepted.
-global.mv = wrap('mv', function(str) {
-  var options = parseOptions(str, {
+//@ Examples:
+//@
+//@ ```javascript
+//@ mv('-f', 'file', 'dir/');
+//@ mv('file1', 'file2', 'dir/');
+//@ mv(['file1', 'file2'], 'dir/'); // same as above
+//@ ```
+//@
+//@ Moves files. The wildcard `*` is accepted.
+function _mv(options, sources, dest) {
+  options = parseOptions(options, {
     'f': 'force'
   });
-  var files = parsePaths(str);
 
   // Get sources, dest
-  var sources, dest;
-  if (files.length < 2) {
+  if (arguments.length < 3) {
     error('missing <source> and/or <dest>');
+  } else if (arguments.length > 3) {
+    sources = [].slice.call(arguments, 1, arguments.length - 1);
+    dest = arguments[arguments.length - 1];
+  } else if (typeof sources === 'string') {
+    sources = [sources];
+  } else if ('length' in sources) {
+    sources = sources; // no-op for array
   } else {
-    sources = files.slice(0, files.length - 1);
-    dest = files[files.length - 1];
+    error('invalid arguments');
   }
 
   sources = expand(sources);
@@ -428,21 +387,34 @@ global.mv = wrap('mv', function(str) {
 
     fs.renameSync(src, thisDest);
   }); // forEach(src)
-}); // mv
+}; // mv
+exports.mv = wrap('mv', _mv);
 
 //@
-//@ #### mkdir('[-options] dir [dir ...]')
+//@ #### mkdir([options ,] dir [, dir ...])
+//@ #### mkdir([options ,] dir_array)
 //@ Available options:
 //@
 //@ + `p`: full path (will create intermediate dirs if necessary)
-global.mkdir = wrap('mkdir', function(str) {
-  var options = parseOptions(str, {
+//@
+//@ Examples:
+//@
+//@ ```javascript
+//@ mkdir('-p', '/tmp/a/b/c/d', '/tmp/e/f/g');
+//@ mkdir('-p', ['/tmp/a/b/c/d', '/tmp/e/f/g']); // same as above
+//@ ```
+//@
+//@ Creates directories.
+function _mkdir(options, dirs) {
+  options = parseOptions(options, {
     'p': 'fullpath'
   });
-  var dirs = parsePaths(str);
+  if (!dirs)
+    error('no paths given');
 
-  if (dirs.length === 0)
-    error('no directories given');
+  if (typeof dirs === 'string')
+    dirs = [].slice.call(arguments, 1);
+  // if it's array leave it as it is
 
   dirs.forEach(function(dir) {
     if (fs.existsSync(dir)) {
@@ -463,20 +435,35 @@ global.mkdir = wrap('mkdir', function(str) {
     else
       fs.mkdirSync(dir, 0777);
   });
-}); // mkdir
+}; // mkdir
+exports.mkdir = wrap('mkdir', _mkdir);
 
 //@
-//@ #### cat('file [file ...]')
+//@ #### cat(file [, file ...])
+//@ #### cat(file_array)
+//@
+//@ Examples:
+//@
+//@ ```javascript
+//@ var str = cat('file*.txt');
+//@ var str = cat('file1', 'file2');
+//@ var str = cat(['file1', 'file2']); // same as above
+//@ ```
+//@
 //@ Returns a string containing the given file, or a concatenated string
 //@ containing the files if more than one file is given (a new line character is
-//@ introduced between each file). Wildcards are accepted.
-global.cat = wrap('cat', function(str) {
-  var files = parsePaths(str),
-      cat = '';
+//@ introduced between each file). Wildcard `*` accepted.
+function _cat(options, files) {
+  var cat = '';
+
+  if (!files)
+    error('no paths given');
+
+  if (typeof files === 'string')
+    files = [].slice.call(arguments, 1);
+  // if it's array leave it as it is
 
   files = expand(files);
-  if (files.length === 0)
-    error('no files given');
 
   files.forEach(function(file) {
     if (!fs.existsSync(file))
@@ -488,17 +475,22 @@ global.cat = wrap('cat', function(str) {
   if (cat[cat.length-1] === '\n')
     cat = cat.substring(0, cat.length-1);
 
-  return cat;
-});
-
-global.read = global.cat;
+  return ShellString(cat);
+};
+exports.cat = wrap('cat', _cat);
 
 //@
-//@ #### 'any string'.to('file')
-//@ Analogous to the redirection operator `>` in Unix, but works with JavaScript strings. 
-//@ For example, to redirect the output of `cat()` to a file, use: `cat('input.txt').to('output.txt')`. 
-//@ _Like Unix redirections, `to()` will overwrite any existing file!_
-String.prototype.to = wrap('to', function(file) {
+//@ #### 'string'.to(file)
+//@
+//@ Examples:
+//@
+//@ ```javascript
+//@ cat('input.txt').to('output.txt');
+//@ ```
+//@
+//@ Analogous to the redirection operator `>` in Unix, but works with JavaScript strings (such as
+//@ those returned by `cat`, `grep`, etc). _Like Unix redirections, `to()` will overwrite any existing file!_
+function _to(options, file) {
   if (!file)
     error('wrong arguments');
 
@@ -506,18 +498,34 @@ String.prototype.to = wrap('to', function(file) {
       error('no such file or directory: ' + path.dirname(file));
 
   fs.writeFileSync(file, this.toString(), 'utf8');
-});
+};
+// In the future, when Proxies are default, we can add methods like `.to()` to primitive strings. 
+// For now, this is a dummy function to bookmark places we need such strings
+function ShellString(str) {
+  return str;
+}
+String.prototype.to = wrap('to', _to);
 
 //@
-//@ #### sed(search_regex, 'replace_str', 'file' [, options])
+//@ #### sed([options ,] search_regex, replace_str, file)
 //@ Available options:
 //@
-//@ + `inplace`: (Default is `false`) If `true` will replace contents of 'file' with 
-//@ the modified string. _Note that no backups will be created!_
+//@ + `-i`: Replace contents of 'file' in-place. _Note that no backups will be created!_
+//@
+//@ Examples:
+//@
+//@ ```javascript
+//@ sed('-i', 'PROGRAM_VERSION', 'v0.1.3', 'source.js');
+//@ sed(/.*DELETE_THIS_LINE.*\n/, '', 'source.js');
+//@ ```
 //@
 //@ Reads an input string from `file` and performs a JavaScript `replace()` on the input
-//@ using the given search regex and replacement string. Returns the modified string.
-global.sed = wrap('sed', function(regex, replacement, file, options) {
+//@ using the given search regex and replacement string. Returns the new string after replacement.
+function _sed(options, regex, replacement, file) {
+  options = parseOptions(options, {
+    'i': 'inplace'
+  });
+
   if (typeof replacement === 'string')
     replacement = replacement; // no-op
   else if (typeof replacement === 'number')
@@ -532,21 +540,33 @@ global.sed = wrap('sed', function(regex, replacement, file, options) {
     error('no such file or directory: ' + file);
 
   var result = fs.readFileSync(file, 'utf8').replace(regex, replacement);
-  if (options && options.inplace)
-    result.to(file);
+  if (options.inplace)
+    fs.writeFileSync(file, result, 'utf8');
 
-  return result;
-});
+  return ShellString(result);
+};
+exports.sed = wrap('sed', _sed);
 
 //@
-//@ #### grep(regex_filter, 'file [file ...]')
+//@ #### grep(regex_filter, file [, file ...])
+//@ #### grep(regex_filter, file_array)
+//@
+//@ Examples:
+//@
+//@ ```javascript
+//@ grep('GLOBAL_VARIABLE', '*.js');
+//@ ```
+//@
 //@ Reads input string from given files and returns a string containing all lines of the 
-//@ file that match the given `regex_filter`. Wildcards are accepted for file names.
-global.grep = wrap('grep', function(regex, filesStr) {
-  if (!filesStr)
-    error('no file given');
+//@ file that match the given `regex_filter`. Wildcard `*` accepted.
+function _grep(options, regex, files) {
+  if (!files)
+    error('no paths given');
 
-  var files = parsePaths(filesStr);
+  if (typeof files === 'string')
+    files = [].slice.call(arguments, 2);
+  // if it's array leave it as it is
+
   files = expand(files);
 
   var grep = '';
@@ -564,68 +584,29 @@ global.grep = wrap('grep', function(regex, filesStr) {
     });
   });
 
-  return grep;
-});
-
-//@
-//@ #### exit(code)
-//@ Exits the current process with the given exit code.
-global.exit = process.exit;
-
-//@
-//@ #### env['VAR_NAME']
-//@ Object containing environment variables (both getter and setter). Shortcut to process.env.
-global.env = process.env;
-
-
-
+  return ShellString(grep);
+};
+exports.grep = wrap('grep', _grep);
 
 
 //@
-//@ ## Other commands
+//@ #### which(command)
 //@
-
-
-
-
-
-//@
-//@ #### external('command', options)
-//@ Checks that the external `command` exists either as an absolute path or in the system `PATH`, 
-//@ and returns a callable function `function([args] [,options] [,callback])` that executes the 
-//@ command. Example:
+//@ Examples:
 //@
 //@ ```javascript
-//@ var git = external('git'),
-//@     gitVersion = git('--version').output;
+//@ var nodeExec = which('node');
 //@ ```
 //@
-//@ Available options:
-//@
-//@ + `required`: (Default is `false`) If `true`, will throw an error when command cannot be found.
-//@ + `silent`: (Default is `false`) If `true` will suppress all output from command, otherwise both `stdout` and `stderr`
-//@ will be redirected to the console.
-//@ + `async`: (Default is `false`) If `true` will call the optional `callback` argument to the 
-//@ callable function when the command is done, instead of blocking execution.
-//@
-//@ When in synchronous mode the callable function returns the object `{ code:..., output:... }`, 
-//@ containing the program's `output` (stdout + stderr)  and its exit `code`. 
-//@ Otherwise the `callback` gets the arguments `(code, output)`.
-global.external = wrap('external', function(cmd, opts) {
+//@ Searches for `command` in the system's PATH. On Windows looks for `.exe`, `.cmd`, and `.bat` extensions.
+//@ Returns string containing the absolute path to the command.
+function _which(options, cmd) {
   if (!cmd)
     error('must specify command');
-
-  var options = extend({
-    silent: false,
-    required: false,
-    async: false
-  }, opts);
 
   var pathEnv = process.env.path || process.env.Path || process.env.PATH,
       pathArray = splitPath(pathEnv),
       where = null;
-
-  write('Checking for external command availability: ' + cmd + ' ... ');
 
   // No relative/absolute paths provided?
   if (cmd.search(/\//) === -1) {
@@ -662,58 +643,111 @@ global.external = wrap('external', function(cmd, opts) {
   }
     
   // Command not found anywhere?
-  if (!fs.existsSync(cmd) && !where) {
-    state.fatal = options.required;
-    log('NO');
-
-    if (state.fatal)
-      error('Fatal: could not find required command');
-
+  if (!fs.existsSync(cmd) && !where)
     return null;
-  }
 
-  log('OK');
   where = where || path.resolve(cmd);
 
-  // Callable function
-  return function(args, options2, callback) {
-    if (typeof args === 'string' && typeof options2 === 'object' && typeof callback === 'function') {
-      // nothing to do
-    } else if (typeof args === 'function') {
-      callback = args;
-      args = '';
-      options2 = {};
-    } else if (typeof options2 === 'function') {
-      callback = options2;
-      if (typeof args === 'object') {
-        options2 = args;
-        args = '';
-      }
-    } else if (typeof args === 'object') {
-      options2 = args;
-      args = '';
-    }
-
-    var thisOpts = extend({}, options); // clone 'global' opts
-    thisOpts = extend(thisOpts, options2); // override global opts with local opts
-  
-    if (thisOpts.async)
-      execAsync(where, args, thisOpts, callback);
-    else
-      return execSync(where, args, thisOpts);
-
-  } // callable function
-});
+  return ShellString(where);
+};
+exports.which = wrap('which', _which);
 
 //@
-//@ #### exists('path [path ...]')
-//@ Returns true if all the given paths exist.
-global.exists = wrap('exists', function(str) {
-  var options = parseOptions(str, {});
-  var paths = parsePaths(str);
+//@ #### echo(string [,string ...])
+//@
+//@ Examples:
+//@
+//@ ```javascript
+//@ echo('hello world');
+//@ var str = echo('hello world');
+//@ ```
+//@
+//@ Prints string to stdout, and returns string with additional utility methods
+//@ like `.to()`.
+function _echo(options) {
+  var messages = [].slice.call(arguments, 1);
+  log.apply(this, messages);
+  return ShellString(messages.join(' '));
+};
+exports.echo = wrap('echo', _echo);
 
-  if (paths.length === 0)
+//@
+//@ #### exit(code)
+//@ Exits the current process with the given exit code.
+exports.exit = process.exit;
+
+//@
+//@ #### env['VAR_NAME']
+//@ Object containing environment variables (both getter and setter). Shortcut to process.env.
+exports.env = process.env;
+
+//@
+//@ #### exec(command [, options] [, callback])
+//@ Available options (all `false` by default):
+//@
+//@ + `async`: Asynchronous execution. Needs callback.
+//@ + `silent`: Do not echo program output to console.
+//@
+//@ Examples:
+//@
+//@ ```javascript
+//@ var version = exec('node --version', {silent:true}).output;
+//@ ```
+//@
+//@ Executes the given `command` _synchronously_, unless otherwise specified. 
+//@ When in synchronous mode returns the object `{ code:..., output:... }`, containing the program's 
+//@ `output` (stdout + stderr)  and its exit `code`. Otherwise the `callback` gets the 
+//@ arguments `(code, output)`.
+function _exec(command, options, callback) {
+  if (!command)
+    error('must specify command');
+
+  if (typeof options === 'function') {
+    callback = options;
+    options = {};
+  }
+
+  options = extend({
+    silent: false,
+    async: false
+  }, options);
+
+  if (options.async)
+    execAsync(command, options, callback);
+  else
+    return execSync(command, options);
+};
+exports.exec = wrap('exec', _exec, {notUnix:true});
+
+
+
+
+//@
+//@ ## Non-Unix commands
+//@
+
+
+
+
+
+
+//@
+//@ #### tempdir()
+//@ Searches and returns string containing a writeable, platform-dependent temporary directory.
+//@ Follows Python's [tempfile algorithm](http://docs.python.org/library/tempfile.html#tempfile.tempdir).
+exports.tempdir = wrap('tempdir', tempDir);
+
+//@
+//@ #### exists(path [, path ...])
+//@ #### exists(path_array)
+//@ Returns true if all the given paths exist.
+function _exists(options, paths) {
+  if (!paths)
     error('no paths given');
+
+  if (typeof paths === 'string')
+    paths = [].slice.call(arguments, 1);
+  // if it's array leave it as it is
 
   var exists = true;
   paths.forEach(function(p) {
@@ -722,33 +756,28 @@ global.exists = wrap('exists', function(str) {
   });
 
   return exists;
-});
-
-//@
-//@ #### tempdir()
-//@ Searches and returns string containing a writeable, platform-dependent temporary directory.
-//@ Follows Python's [tempfile algorithm](http://docs.python.org/library/tempfile.html#tempfile.tempdir).
-global.tempdir = tempDir;
+};
+exports.exists = wrap('exists', _exists);
 
 //@
 //@ #### error()
-//@ Tests if error occurred. Returns `null` if no error occurred in the last command. Otherwise returns a string
-//@ explaining the error
-global.error = function() {
+//@ Tests if error occurred in the last command. Returns `null` if no error occurred,
+//@ otherwise returns string explaining the error
+exports.error = function() {
   return state.error;
 }
 
 //@
 //@ #### verbose()
 //@ Enables all output (default)
-global.verbose = function() {
+exports.verbose = function() {
   state.silent = false;
 }
 
 //@
 //@ #### silent()
 //@ Suppresses all output, except for explict `echo()` calls
-global.silent = function() {
+exports.silent = function() {
   state.silent = true;
 }
 
@@ -770,9 +799,9 @@ global.silent = function() {
 // Auxiliary functions (internal use only)
 //
 
-function log(msg) {
+function log() {
   if (!state.silent)
-    console.log(msg);
+    console.log.apply(this, arguments);
 }
 
 function write(msg) {
@@ -793,7 +822,7 @@ function error(msg, _continue) {
 }
 
 // Returns {'alice': true, 'bob': false} when passed:
-//   parseOptions('-a file1 file2 ...', {'a':'alice', 'b':'bob'});
+//   parseOptions('-a', {'a':'alice', 'b':'bob'});
 function parseOptions(str, map) {
   if (!map)
     error('parseOptions() internal error: no map given');
@@ -809,15 +838,12 @@ function parseOptions(str, map) {
   if (typeof str !== 'string')
     error('parseOptions() internal error: wrong str');
 
-  // args = ['-ab', 'file1', 'file2']
-  var args = str.trim().split(/\s+/);
-
-  // match[1] = 'ab'
-  var match = args[0].match(/^\-(.+)/);
+  // e.g. match[1] = 'Rf' for str = '-Rf'
+  var match = str.match(/^\-(.+)/);
   if (!match)
     return options;
 
-  // chars = ['a', 'b']
+  // e.g. chars = ['R', 'f']
   var chars = match[1].split('');
 
   chars.forEach(function(char) {
@@ -830,25 +856,8 @@ function parseOptions(str, map) {
   return options;
 }
 
-// Returns ['path1', 'path2', ...] for a string like '-Abc path1 path2 ...'
-function parsePaths(str) {
-  if (!str)
-    return [];
-
-  if (typeof str !== 'string')
-    error('parsePaths() internal error: wrong str');
-
-  // args = ['-Abc', 'file1', 'file2']
-  var args = str.trim().split(/\s+/);
-  
-  if (args[0][0] === '-') // options?
-    return args.slice(1); // skip options
-  else
-    return args;
-}
-
 // Common wrapper for all Unix-like commands
-function wrap(cmd, fn) {
+function wrap(cmd, fn, options) {
   return function() {
     var retValue = null;
 
@@ -856,7 +865,15 @@ function wrap(cmd, fn) {
     state.error = null;
 
     try {
-      retValue = fn.apply(this, arguments);
+      var args = [].slice.call(arguments, 0);
+
+      if (options && options.notUnix) {
+        retValue = fn.apply(this, args);
+      } else {
+        if (args.length === 0 || typeof args[0] !== 'string' || args[0][0] !== '-')
+          args.unshift(''); // only add dummy option if '-option' not already present
+        retValue = fn.apply(this, args);
+      }
     } catch (e) {
       if (!state.error) {
         // If state.error hasn't been set it's an error thrown by Node, not us - probably a bug...
@@ -1047,10 +1064,10 @@ function tempDir() {
 }
 
 // Wrapper around exec() to enable echoing output to console in real time
-function execAsync(cmd, args, opts, callback) {
+function execAsync(cmd, opts, callback) {
   var output = '';
   
-  var c = child.exec(formCommandLine(cmd, args), {env: process.env}, function(err) {
+  var c = child.exec(cmd, {env: process.env}, function(err) {
     if (callback) 
       callback(err ? err.code : 0, output);
   });
@@ -1073,7 +1090,7 @@ function execAsync(cmd, args, opts, callback) {
 // (Can't do a wait loop that checks for internal Node variables/messages as
 // Node is single-threaded; callbacks and other internal state changes are done in the 
 // event loop).
-function execSync(cmd, args, opts) {
+function execSync(cmd, opts) {
   var stdoutFile = path.resolve(tempDir()+'/'+randomFileName()),
       codeFile = path.resolve(tempDir()+'/'+randomFileName()),
       scriptFile = path.resolve(tempDir()+'/'+randomFileName());
@@ -1103,13 +1120,12 @@ function execSync(cmd, args, opts) {
     return str;
   }
     
-  var cmdLine = formCommandLine(cmd, args);  
-  cmdLine += ' > '+stdoutFile+' 2>&1'; // works on both win/unix
+  cmd += ' > '+stdoutFile+' 2>&1'; // works on both win/unix
 
   var script = 
    "var child = require('child_process'), \
         fs = require('fs'); \
-    child.exec('"+escape(cmdLine)+"', {env: process.env}, function(err) { \
+    child.exec('"+escape(cmd)+"', {env: process.env}, function(err) { \
       fs.writeFileSync('"+escape(codeFile)+"', err ? err.code.toString() : '0'); \
     });";
 
@@ -1120,7 +1136,7 @@ function execSync(cmd, args, opts) {
   fs.writeFileSync(scriptFile, script);
   child.exec('node '+scriptFile, { 
     env: process.env,
-    cwd: global.pwd()
+    cwd: exports.pwd()
   });
 
   // The wait loop
@@ -1156,7 +1172,7 @@ function expand(list) {
   list.forEach(function(listEl) {
     // Wildcard present? 
     if (listEl.search(/\*/) > -1) {
-      for (file in _ls(listEl))
+      for (file in _ls('', listEl))
         expanded.push(file);
     } else {
       expanded.push(listEl);
@@ -1188,12 +1204,4 @@ function extend(target) {
   });
   
   return target;
-}
-
-// Normalize platform-dependent command line
-function formCommandLine(cmd, args) {
-  if (platform === 'win')
-    cmd = '\"'+cmd+'\"'; // wrap in quotes to avoid issues with space
-
-  return cmd + (args ? ' '+args : '');
 }

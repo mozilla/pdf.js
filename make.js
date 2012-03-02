@@ -1,21 +1,13 @@
 #!/usr/bin/env node
-require('./external/makerjs/maker');
+require('./external/shelljs/make');
 
-var ROOT_DIR = pwd()+'/', // current absolute path
+var ROOT_DIR = __dirname+'/', // absolute path to project's root
     BUILD_DIR = 'build/',
     BUILD_TARGET = BUILD_DIR+'pdf.js',
     FIREFOX_BUILD_DIR = BUILD_DIR+'/firefox/',
     EXTENSION_SRC_DIR = 'extensions/',
     GH_PAGES_DIR = BUILD_DIR+'gh-pages/',
-    REPO = 'git@github.com:mozilla/pdf.js.git',
-    EXTENSION_WEB_FILES =
-      'web/images \
-       web/viewer.css \
-       web/viewer.js \
-       web/viewer.html \
-       web/viewer-production.html',
-    EXTENSION_BASE_VERSION = '4bb289ec499013de66eb421737a4dbb4a9273eda',
-    EXTENSION_BUILD_NUMBER;
+    REPO = 'git@github.com:mozilla/pdf.js.git';
 
 //
 // make all
@@ -44,21 +36,18 @@ target.web = function() {
   echo();
   echo('### Creating web site');
 
-  var git = external('git', {required:true, silent:true});
-
   target.production();
   target.extension();
   target.pagesrepo();
   
   cd(ROOT_DIR);
-  cp(BUILD_TARGET+' '+GH_PAGES_DIR+BUILD_TARGET);
-  cp('-R web/* '+GH_PAGES_DIR+'/web');
-  cp(FIREFOX_BUILD_DIR+'/*.xpi '+FIREFOX_BUILD_DIR+'/*.rdf '+
-     GH_PAGES_DIR+EXTENSION_SRC_DIR+'firefox/');
-  cp(GH_PAGES_DIR+'/web/index.html.template '+GH_PAGES_DIR+'/index.html');
-  mv('-f '+GH_PAGES_DIR+'/web/viewer-production.html '+GH_PAGES_DIR+'/web/viewer.html');
+  cp(BUILD_TARGET, GH_PAGES_DIR+BUILD_TARGET);
+  cp('-R', 'web/*', GH_PAGES_DIR+'/web');
+  cp(FIREFOX_BUILD_DIR+'/*.xpi', FIREFOX_BUILD_DIR+'/*.rdf', GH_PAGES_DIR+EXTENSION_SRC_DIR+'firefox/');
+  cp(GH_PAGES_DIR+'/web/index.html.template', GH_PAGES_DIR+'/index.html');
+  mv('-f', GH_PAGES_DIR+'/web/viewer-production.html', GH_PAGES_DIR+'/web/viewer.html');
   cd(GH_PAGES_DIR);
-  git('add -A');
+  exec('git add -A');
   
   echo();
   echo("Website built in "+GH_PAGES_DIR);
@@ -86,38 +75,37 @@ target.bundle = function() {
 
   // File order matters
   var SRC_FILES = 
-        'core.js \
-         util.js \
-         canvas.js \
-         obj.js \
-         function.js \
-         charsets.js \
-         cidmaps.js \
-         colorspace.js \
-         crypto.js \
-         evaluator.js \
-         fonts.js \
-         glyphlist.js \
-         image.js \
-         metrics.js \
-         parser.js \
-         pattern.js \
-         stream.js \
-         worker.js \
-         ../external/jpgjs/jpg.js \
-         jpx.js \
-         bidi.js';
+       ['core.js',
+        'util.js',
+        'canvas.js',
+        'obj.js',
+        'function.js',
+        'charsets.js',
+        'cidmaps.js',
+        'colorspace.js',
+        'crypto.js',
+        'evaluator.js',
+        'fonts.js',
+        'glyphlist.js',
+        'image.js',
+        'metrics.js',
+        'parser.js',
+        'pattern.js',
+        'stream.js',
+        'worker.js',
+        '../external/jpgjs/jpg.js',
+        'jpx.js',
+        'bidi.js'];
 
   if (!exists(BUILD_DIR))
     mkdir(BUILD_DIR);
 
   cd('src');
   var bundle = cat(SRC_FILES),
-      git = external('git', {required:true, silent:true}),
-      bundleVersion = git('log --format="%h" -n 1').output.replace('\n', '');
+      bundleVersion = exec('git log --format="%h" -n 1', {silent:true}).output.replace('\n', '');
 
   sed(/.*PDFJSSCRIPT_INCLUDE_ALL.*\n/, bundle, 'pdf.js').to(ROOT_DIR+BUILD_TARGET);
-  sed('PDFJSSCRIPT_BUNDLE_VER', bundleVersion, ROOT_DIR+BUILD_TARGET, {inplace:true});
+  sed('-i', 'PDFJSSCRIPT_BUNDLE_VER', bundleVersion, ROOT_DIR+BUILD_TARGET);
 }
 
 //
@@ -134,7 +122,7 @@ target.viewer = function() {
   // Remove development lines
   sed(/.*PDFJSSCRIPT_REMOVE_CORE.*\n/g, '', 'viewer.html').to('viewer-production.html');
   // Introduce snippet
-  sed(/.*PDFJSSCRIPT_INCLUDE_BUILD.*\n/g, cat('viewer-snippet.html'), 'viewer-production.html', {inplace:true});
+  sed('-i', /.*PDFJSSCRIPT_INCLUDE_BUILD.*\n/g, cat('viewer-snippet.html'), 'viewer-production.html');
 }
 
 //
@@ -148,8 +136,6 @@ target.pagesrepo = function() {
   echo();
   echo('### Creating fresh clone of gh-pages');
 
-  var git = external('git', {required:true, silent:true});
-
   if (!exists(BUILD_DIR))
     mkdir(BUILD_DIR);
 
@@ -157,15 +143,15 @@ target.pagesrepo = function() {
     echo();
     echo('Cloning project repo...');
     echo('(This operation can take a while, depending on network conditions)');
-    git('clone -b gh-pages --depth=1 '+REPO+' '+GH_PAGES_DIR);
+    exec('git clone -b gh-pages --depth=1 '+REPO+' '+GH_PAGES_DIR, {silent:true});
     echo('Done.');
-    rm('-rf '+GH_PAGES_DIR+'/*');
+    rm('-rf', GH_PAGES_DIR+'/*');
   }
 
-  mkdir('-p '+GH_PAGES_DIR+'/web');
-  mkdir('-p '+GH_PAGES_DIR+'/web/images');
-  mkdir('-p '+GH_PAGES_DIR+BUILD_DIR);
-  mkdir('-p '+GH_PAGES_DIR+EXTENSION_SRC_DIR+'/firefox');
+  mkdir('-p', GH_PAGES_DIR+'/web');
+  mkdir('-p', GH_PAGES_DIR+'/web/images');
+  mkdir('-p', GH_PAGES_DIR+BUILD_DIR);
+  mkdir('-p', GH_PAGES_DIR+EXTENSION_SRC_DIR+'/firefox');
 }
 
 
@@ -173,6 +159,15 @@ target.pagesrepo = function() {
 //
 // Extension stuff
 //
+
+var EXTENSION_WEB_FILES =
+      ['web/images',
+       'web/viewer.css',
+       'web/viewer.js',
+       'web/viewer.html',
+       'web/viewer-production.html'],
+    EXTENSION_BASE_VERSION = '4bb289ec499013de66eb421737a4dbb4a9273eda',
+    EXTENSION_BUILD_NUMBER;
 
 //
 // make extension
@@ -192,10 +187,8 @@ target.buildnumber = function() {
   echo();
   echo('### Getting extension build number');
 
-  var git = external('git', {required:true, silent:true});
-
   // Build number is the number of commits since base version
-  EXTENSION_BUILD_NUMBER = git('log --format=oneline '+EXTENSION_BASE_VERSION+'..')
+  EXTENSION_BUILD_NUMBER = exec('git log --format=oneline '+EXTENSION_BASE_VERSION+'..', {silent:true})
     .output.match(/\n/g).length; // get # of lines in git output
   
   echo('Extension build number: ' + EXTENSION_BUILD_NUMBER);  
@@ -212,67 +205,66 @@ target.firefox = function() {
   var FIREFOX_BUILD_CONTENT_DIR = FIREFOX_BUILD_DIR+'/content/',
       FIREFOX_CONTENT_DIR = EXTENSION_SRC_DIR+'/firefox/content/',
       FIREFOX_EXTENSION_FILES_TO_COPY =
-        '*.js \
-        *.rdf \
-        components',
+        ['*.js',
+         '*.rdf',
+         'components'];
       FIREFOX_EXTENSION_FILES =
-        'content \
-        *.js \
-        install.rdf \
-        components \
-        content',
+        ['content',
+         '*.js',
+         'install.rdf',
+         'components',
+         'content'];
       FIREFOX_EXTENSION_NAME = 'pdf.js.xpi',
-      FIREFOX_AMO_EXTENSION_NAME = 'pdf.js.amo.xpi',
-      zip = external('zip', {required:true});
+      FIREFOX_AMO_EXTENSION_NAME = 'pdf.js.amo.xpi';
 
   target.production();
   target.buildnumber();
   cd(ROOT_DIR);
 
   // Clear out everything in the firefox extension build directory
-  rm('-rf '+FIREFOX_BUILD_DIR);
-  mkdir('-p '+FIREFOX_BUILD_CONTENT_DIR);
-  mkdir('-p '+FIREFOX_BUILD_CONTENT_DIR+BUILD_DIR);
-  mkdir('-p '+FIREFOX_BUILD_CONTENT_DIR+'/web');
+  rm('-rf', FIREFOX_BUILD_DIR);
+  mkdir('-p', FIREFOX_BUILD_CONTENT_DIR);
+  mkdir('-p', FIREFOX_BUILD_CONTENT_DIR+BUILD_DIR);
+  mkdir('-p', FIREFOX_BUILD_CONTENT_DIR+'/web');
   
   // Copy extension files  
   cd('extensions/firefox');
-  cp('-R '+FIREFOX_EXTENSION_FILES_TO_COPY+' '+ROOT_DIR+FIREFOX_BUILD_DIR);
+  cp('-R', FIREFOX_EXTENSION_FILES_TO_COPY, ROOT_DIR+FIREFOX_BUILD_DIR);
   cd(ROOT_DIR);
 
   // Copy a standalone version of pdf.js inside the content directory
-  cp(BUILD_TARGET+' '+FIREFOX_BUILD_CONTENT_DIR+BUILD_DIR);
-  cp('-R '+EXTENSION_WEB_FILES+' '+FIREFOX_BUILD_CONTENT_DIR+'/web');
+  cp(BUILD_TARGET, FIREFOX_BUILD_CONTENT_DIR+BUILD_DIR);
+  cp('-R', EXTENSION_WEB_FILES, FIREFOX_BUILD_CONTENT_DIR+'/web');
   rm(FIREFOX_BUILD_CONTENT_DIR+'/web/viewer-production.html');
 
   // Copy over the firefox extension snippet so we can inline pdf.js in it
-  cp('web/viewer-snippet-firefox-extension.html '+FIREFOX_BUILD_CONTENT_DIR+'/web');
+  cp('web/viewer-snippet-firefox-extension.html', FIREFOX_BUILD_CONTENT_DIR+'/web');
 
-  // Modify the viewer so it does all the extension only stuff.
+  // Modify the viewer so it does all the extension-only stuff.
   cd(FIREFOX_BUILD_CONTENT_DIR+'/web');
-  sed(/.*PDFJSSCRIPT_INCLUDE_BUNDLE.*\n/, cat(ROOT_DIR+BUILD_TARGET), 'viewer-snippet-firefox-extension.html', {inplace:true});
-  sed(/.*PDFJSSCRIPT_REMOVE_CORE.*\n/g, '', 'viewer.html', {inplace:true});
-  sed(/.*PDFJSSCRIPT_REMOVE_FIREFOX_EXTENSION.*\n/g, '', 'viewer.html', {inplace:true});
-  sed(/.*PDFJSSCRIPT_INCLUDE_FIREFOX_EXTENSION.*\n/, cat('viewer-snippet-firefox-extension.html'), 'viewer.html', {inplace:true});
+  sed('-i', /.*PDFJSSCRIPT_INCLUDE_BUNDLE.*\n/, cat(ROOT_DIR+BUILD_TARGET), 'viewer-snippet-firefox-extension.html');
+  sed('-i', /.*PDFJSSCRIPT_REMOVE_CORE.*\n/g, '', 'viewer.html');
+  sed('-i', /.*PDFJSSCRIPT_REMOVE_FIREFOX_EXTENSION.*\n/g, '', 'viewer.html');
+  sed('-i', /.*PDFJSSCRIPT_INCLUDE_FIREFOX_EXTENSION.*\n/, cat('viewer-snippet-firefox-extension.html'), 'viewer.html');
   cd(ROOT_DIR);
 
   // We don't need pdf.js anymore since its inlined
-  rm('-Rf '+FIREFOX_BUILD_CONTENT_DIR+BUILD_DIR);
+  rm('-Rf', FIREFOX_BUILD_CONTENT_DIR+BUILD_DIR);
 
   // Update the build version number
-  sed(/PDFJSSCRIPT_BUILD/, EXTENSION_BUILD_NUMBER, FIREFOX_BUILD_DIR+'/install.rdf', {inplace:true});
-  sed(/PDFJSSCRIPT_BUILD/, EXTENSION_BUILD_NUMBER, FIREFOX_BUILD_DIR+'/update.rdf', {inplace:true});
+  sed('-i', /PDFJSSCRIPT_BUILD/, EXTENSION_BUILD_NUMBER, FIREFOX_BUILD_DIR+'/install.rdf');
+  sed('-i', /PDFJSSCRIPT_BUILD/, EXTENSION_BUILD_NUMBER, FIREFOX_BUILD_DIR+'/update.rdf');
 
   // Create the xpi
   cd(FIREFOX_BUILD_DIR);
-  zip('-r '+FIREFOX_EXTENSION_NAME+' '+FIREFOX_EXTENSION_FILES);
+  exec('zip -r '+FIREFOX_EXTENSION_NAME+' '+FIREFOX_EXTENSION_FILES.join(' '));
   echo('extension created: ' + FIREFOX_EXTENSION_NAME);
   cd(ROOT_DIR);
 
   // Build the amo extension too (remove the updateUrl)
   cd(FIREFOX_BUILD_DIR);
-  sed(/.*updateURL.*\n/, '', 'install.rdf', {inplace:true});
-  zip('-r '+FIREFOX_AMO_EXTENSION_NAME+' '+FIREFOX_EXTENSION_FILES);
+  sed('-i', /.*updateURL.*\n/, '', 'install.rdf');
+  exec('zip -r '+FIREFOX_AMO_EXTENSION_NAME+' '+FIREFOX_EXTENSION_FILES.join(' '));
   echo('AMO extension created: ' + FIREFOX_AMO_EXTENSION_NAME);
   cd(ROOT_DIR);
 }
@@ -289,26 +281,26 @@ target.chrome = function() {
       CHROME_CONTENT_DIR = EXTENSION_SRC_DIR+'/chrome/content/',
       CHROME_BUILD_CONTENT_DIR = CHROME_BUILD_DIR+'/content/',
       CHROME_EXTENSION_FILES =
-        'extensions/chrome/*.json \
-         extensions/chrome/*.html';
+        ['extensions/chrome/*.json',
+         'extensions/chrome/*.html'];
 
   target.production();
   target.buildnumber();
   cd(ROOT_DIR);
 
   // Clear out everything in the chrome extension build directory
-  rm('-Rf '+CHROME_BUILD_DIR);
-  mkdir('-p '+CHROME_BUILD_CONTENT_DIR);
-  mkdir('-p '+CHROME_BUILD_CONTENT_DIR+BUILD_DIR);
-  mkdir('-p '+CHROME_BUILD_CONTENT_DIR+'/web');
+  rm('-Rf', CHROME_BUILD_DIR);
+  mkdir('-p', CHROME_BUILD_CONTENT_DIR);
+  mkdir('-p', CHROME_BUILD_CONTENT_DIR+BUILD_DIR);
+  mkdir('-p', CHROME_BUILD_CONTENT_DIR+'/web');
 
   // Copy extension files  
-  cp('-R '+CHROME_EXTENSION_FILES+' '+CHROME_BUILD_DIR);
+  cp('-R', CHROME_EXTENSION_FILES, CHROME_BUILD_DIR);
 
   // Copy a standalone version of pdf.js inside the content directory
-  cp(BUILD_TARGET+' '+CHROME_BUILD_CONTENT_DIR+BUILD_DIR);
-  cp('-R '+EXTENSION_WEB_FILES+' '+CHROME_BUILD_CONTENT_DIR+'/web');
-  mv('-f '+CHROME_BUILD_CONTENT_DIR+'/web/viewer-production.html '+CHROME_BUILD_CONTENT_DIR+'/web/viewer.html');
+  cp(BUILD_TARGET, CHROME_BUILD_CONTENT_DIR+BUILD_DIR);
+  cp('-R', EXTENSION_WEB_FILES, CHROME_BUILD_CONTENT_DIR+'/web');
+  mv('-f', CHROME_BUILD_CONTENT_DIR+'/web/viewer-production.html', CHROME_BUILD_CONTENT_DIR+'/web/viewer.html');
 }
 
 
@@ -334,8 +326,7 @@ target.browsertest = function() {
   echo('### Running browser tests');
 
   var PDF_TEST = env['PDF_TEST'] || 'test_manifest.json',
-      PDF_BROWSERS = env['PDF_BROWSERS'] || 'resources/browser_manifests/browser_manifest.json',
-      python = external('python2.7', {required:true});
+      PDF_BROWSERS = env['PDF_BROWSERS'] || 'resources/browser_manifests/browser_manifest.json';
 
   if (!exists('test/'+PDF_BROWSERS)) {
     echo('Browser manifest file test/'+PDF_BROWSERS+' does not exist.');
@@ -344,7 +335,7 @@ target.browsertest = function() {
   }
 
   cd('test');
-  python('test.py --reftest --browserManifestFile='+PDF_BROWSERS+' --manifestFile='+PDF_TEST, {async:true});
+  exec('python2.7 test.py --reftest --browserManifestFile='+PDF_BROWSERS+' --manifestFile='+PDF_TEST, {async:true});
 }
 
 //
@@ -355,9 +346,8 @@ target.unittest = function() {
   echo();
   echo('### Running unit tests');
 
-  var make = external('make', {required:true});
   cd('test/unit');
-  make({async:true});
+  exec('make', {async:true});
 }
 
 
@@ -376,9 +366,8 @@ target.server = function() {
   echo();
   echo('### Starting local server');
 
-  var python = external('python2.7', {required:true});
   cd('test');
-  python('-u test.py --port=8888', {async:true});
+  exec('python2.7 -u test.py --port=8888', {async:true});
 }
 
 //
@@ -389,10 +378,15 @@ target.lint = function() {
   echo();
   echo('### Linting JS files (this can take a while!)');
 
-  var LINT_FILES = 'src/*.js web/*.js test/*.js test/unit/*.js extensions/firefox/*.js extensions/firefox/components/*.js extensions/chrome/*.js',
-      gjslint = external('gjslint', {required:true});
+  var LINT_FILES = 'src/*.js \
+                    web/*.js \
+                    test/*.js \
+                    test/unit/*.js \
+                    extensions/firefox/*.js \
+                    extensions/firefox/components/*.js \
+                    extensions/chrome/*.js';
 
-  gjslint('--nojsdoc '+LINT_FILES);
+  exec('gjslint --nojsdoc '+LINT_FILES);
 }
 
 //
@@ -403,5 +397,5 @@ target.clean = function() {
   echo();
   echo('### Cleaning up project builds');
 
-  rm('-rf '+BUILD_DIR);
+  rm('-rf', BUILD_DIR);
 }
