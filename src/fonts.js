@@ -1966,51 +1966,11 @@ var Font = (function FontClosure() {
             }
             if (glyphName in GlyphsUnicode) {
               var unicode = GlyphsUnicode[glyphName];
-              if (!unicode || reverseMap[unicode] === i)
-                continue; // unknown glyph name or in its own place
+              if (!unicode || (unicode in reverseMap))
+                continue; // unknown glyph name or its place is taken
 
-              var destination = reverseMap[unicode];
-              if (typeof destination === 'number' && destination > i)
-                continue;
-
-              var j = i;
-              // Flipping unicodes while next destination unicode has assigned
-              // glyph and future glyph can be assigned to unicode.
-              while (typeof destination === 'number') {
-                glyphs[j].unicode = unicode;
-                reverseMap[unicode] = j;
-                if (changeCode) {
-                  toFontChar[code] = unicode;
-                  changeCode = false;
-                }
-
-                code = glyphs[destination].unicode;
-                gid = ids[destination];
-                glyphName = glyphNames[gid];
-                if (!glyphName) {
-                  glyphName = differences[code] || encoding[code];
-                  changeCode = true;
-                }
-
-                unicode = GlyphsUnicode[glyphName];
-                if (!unicode || reverseMap[unicode] === j) {
-                  unicode = 0;
-                  break; // unknown glyph name or in its own place
-                }
-
-                j = destination;
-                destination = reverseMap[unicode];
-              }
-
-              if (!unicode) {
-                // Future glyph cannot be assigned to unicode, generate new one.
-                while (reverseMap[unusedUnicode])
-                  unusedUnicode++;
-                unicode = unusedUnicode++;
-              }
-
-              glyphs[j].unicode = unicode;
-              reverseMap[unicode] = j;
+              glyphs[i].unicode = unicode;
+              reverseMap[unicode] = i;
               if (changeCode)
                 toFontChar[code] = unicode;
             }
