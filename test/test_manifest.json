@@ -466,6 +466,12 @@
       "link": true,
       "type": "eq"
     },
+    {  "id": "pdfkit_compressed",
+      "file": "pdfs/pdfkit_compressed.pdf",
+      "md5": "ffe9c571d0a1572e234253e6c7cdee6c",
+      "rounds": 1,
+      "type": "eq"
+    },
     {  "id": "issue925",
       "file": "pdfs/issue925.pdf",
       "md5": "f58fe943090aff89dcc8e771bc0db4c2",
