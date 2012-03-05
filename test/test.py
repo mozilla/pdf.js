@@ -280,6 +280,21 @@ class ChromeBrowserCommand(BaseBrowserCommand):
                      "--no-first-run", "--disable-sync", url])
         self.process = subprocess.Popen(cmds, stdout = self.browserLog, stderr = self.browserLog)
 
+class OperaBrowserCommand(BaseBrowserCommand):
+    def _fixupMacPath(self):
+        self.path = os.path.join(self.path, "Contents", "MacOS", "Opera")
+
+    def setup(self):
+        super(OperaBrowserCommand, self).setup()
+        shutil.copytree(os.path.join(DOC_ROOT, "test", "resources", "opera"),
+                        self.profileDir)
+
+    def start(self, url):
+        cmds = [self.path]
+        cmds.extend(["-pd", self.profileDir, "-nosession",  url])
+        print repr(cmds)
+        self.process = subprocess.Popen(cmds, stdout = self.browserLog, stderr = self.browserLog)
+
 def makeBrowserCommand(browser):
     path = browser["path"].lower()
     name = browser["name"]
@@ -287,7 +302,8 @@ def makeBrowserCommand(browser):
         name = name.lower()
 
     types = {"firefox": FirefoxBrowserCommand,
-             "chrome": ChromeBrowserCommand }
+             "chrome": ChromeBrowserCommand,
+             "opera": OperaBrowserCommand }
     command = None
     for key in types.keys():
         if (name and name.find(key) > -1) or path.find(key) > -1:
