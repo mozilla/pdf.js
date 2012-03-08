@@ -1691,7 +1691,7 @@ var Font = (function FontClosure() {
           return;
 
         // Create new name table
-        nameTable.data = createNameTable(fontName);
+        nameTable.data = stringToArray(createNameTable(fontName));
       }
 
       function readGlyphNameMap(post, properties) {
