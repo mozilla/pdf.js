@@ -1747,7 +1747,8 @@ var Font = (function FontClosure() {
       var header = readOpenTypeHeader(font);
       var numTables = header.numTables;
 
-      var cmap, post, maxp, hhea, hmtx, vhea, vmtx, head, loca, glyf, name;
+      var cmap, post, maxp, hhea, hmtx, vhea, vmtx, head, loca, glyf;
+      var nameTable;
       var tables = [];
       for (var i = 0; i < numTables; i++) {
         var table = readTableEntry(font);
@@ -1766,7 +1767,7 @@ var Font = (function FontClosure() {
           else if (table.tag == 'head')
             head = table;
           else if (table.tag == 'name')
-            name = table;
+            nameTable = table;
 
           requiredTables.splice(index, 1);
         } else {
@@ -1828,8 +1829,8 @@ var Font = (function FontClosure() {
       }
 
       // The name table might not be populate for Windows platform
-      if (name)
-        sanitizeNameTable(name, this.name);
+      if (nameTable)
+        sanitizeNameTable(nameTable, this.name);
 
       // Sanitizer reduces the glyph advanceWidth to the maxAdvanceWidth
       // Sometimes it's 0. That needs to be fixed
