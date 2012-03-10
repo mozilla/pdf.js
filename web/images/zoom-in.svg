@@ -419,12 +419,12 @@
        d="M 33.278212 34.94062 A 10.31934 2.320194 0 1 1  12.639532,34.94062 A 10.31934 2.320194 0 1 1  33.278212 34.94062 z"
        transform="matrix(1.550487,0,0,1.978714,-12.4813,-32.49103)" />
     <path
-       style="font-size:59.901077px;font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;text-align:start;line-height:125.00000%;writing-mode:lr-tb;text-anchor:start;fill:#75a1d0;fill-opacity:1.0000000;stroke:#3465a4;stroke-width:1.0000004px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1.0000000;font-family:Bitstream Vera Sans"
+       style="fill:#75a1d0;fill-opacity:1.0000000;stroke:#3465a4;stroke-width:1.0000004px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1.0000000"
        d="M 27.514356,37.542682 L 27.514356,28.515722 L 37.492820,28.475543 L 37.492820,21.480219 L 27.523285,21.480219 L 27.514356,11.520049 L 20.498082,11.531210 L 20.502546,21.462362 L 10.512920,21.536022 L 10.477206,28.504561 L 20.511475,28.475543 L 20.518171,37.515896 L 27.514356,37.542682 z "
        id="text1314"
        sodipodi:nodetypes="ccccccccccccc" />
     <path
-       style="font-size:59.901077px;font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;text-align:start;line-height:125.00000%;writing-mode:lr-tb;text-anchor:start;opacity:0.40860215;fill:url(#linearGradient4975);fill-opacity:1.0000000;stroke:url(#linearGradient7922);stroke-width:1.0000006px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1.0000000;font-family:Bitstream Vera Sans"
+       style="opacity:0.40860215;fill:url(#linearGradient4975);fill-opacity:1.0000000;stroke:url(#linearGradient7922);stroke-width:1.0000006px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1.0000000"
        d="M 26.498702,36.533920 L 26.498702,27.499738 L 36.501304,27.499738 L 36.494607,22.475309 L 26.507630,22.475309 L 26.507630,12.480335 L 21.512796,12.498193 L 21.521725,22.475309 L 11.495536,22.493166 L 11.468750,27.466256 L 21.533143,27.475185 L 21.519750,36.502670 L 26.498702,36.533920 z "
        id="path7076"
        sodipodi:nodetypes="ccccccccccccc" />
