@@ -839,7 +839,7 @@ var Font = (function FontClosure() {
 
         var subtype = properties.subtype;
         var cff = (subtype == 'Type1C' || subtype == 'CIDFontType0C') ?
-          new CFF(file, properties) : new Type1Font(name, file, properties);
+          new CFFFont(file, properties) : new Type1Font(name, file, properties);
 
         // Wrap the CFF data inside an OTF font file
         data = this.convert(name, cff, properties);
@@ -3384,8 +3384,8 @@ Type1Font.prototype = {
   }
 };
 
-var CFF = (function CFFClosure() {
-  function CFF(file, properties) {
+var CFFFont = (function CFFFontClosure() {
+  function CFFFont(file, properties) {
     this.properties = properties;
 
     var parser = new CFFParser(file, properties);
@@ -3402,7 +3402,7 @@ var CFF = (function CFFClosure() {
     }
   }
 
-  CFF.prototype = {
+  CFFFont.prototype = {
     readExtra: function readExtra(cff) {
       // charstrings contains info about glyphs (one element per glyph
       // containing mappings for {unicode, width})
@@ -3471,7 +3471,7 @@ var CFF = (function CFFClosure() {
     }
   };
 
-  return CFF;
+  return CFFFont;
 })();
 
 var CFFParser = (function CFFParserClosure() {
@@ -3482,7 +3482,7 @@ var CFFParser = (function CFFParserClosure() {
   CFFParser.prototype = {
     parse: function parse() {
       var properties = this.properties;
-      var cff = new CFFTable();
+      var cff = new CFF();
       this.cff = cff;
 
       // The first five sections must be in order, all the others are reached
@@ -3927,8 +3927,8 @@ var CFFParser = (function CFFParserClosure() {
 })();
 
 // Compact Font Format
-var CFFTable = (function CFFTableClosure() {
-  function CFFTable() {
+var CFF = (function CFFClosure() {
+  function CFF() {
     this.header = null;
     this.names = [];
     this.topDict = null;
@@ -3945,7 +3945,7 @@ var CFFTable = (function CFFTableClosure() {
 
     this.isCIDFont = false;
   }
-  return CFFTable;
+  return CFF;
 })();
 
 var CFFHeader = (function CFFHeader() {
