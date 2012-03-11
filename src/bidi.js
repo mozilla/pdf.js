@@ -3,7 +3,7 @@
 
 'use strict';
 
-var bidi = (function bidiClosure() {
+var bidi = PDFJS.bidi = (function bidiClosure() {
   // Character types for symbols from 0000 to 00FF.
   var baseTypes = [
     'BN', 'BN', 'BN', 'BN', 'BN', 'BN', 'BN', 'BN', 'BN', 'S', 'B', 'S', 'WS',

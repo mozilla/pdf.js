@@ -417,6 +417,12 @@
       "link": true,
       "type": "eq"
     },
+    {  "id": "issue1249-load",
+      "file": "pdfs/issue1249.pdf",
+      "md5": "4f81339fa09422a7db980f34ea963609",
+      "rounds": 1,
+      "type": "load"
+    },
     {  "id": "liveprogramming",
       "file": "pdfs/liveprogramming.pdf",
       "md5": "7bd4dad1188232ef597d36fd72c33e52",
@@ -458,6 +464,12 @@
       "rounds": 1,
       "pageLimit": 7,
       "link": true,
+      "type": "eq"
+    },
+    {  "id": "pdfkit_compressed",
+      "file": "pdfs/pdfkit_compressed.pdf",
+      "md5": "ffe9c571d0a1572e234253e6c7cdee6c",
+      "rounds": 1,
       "type": "eq"
     },
     {  "id": "issue925",

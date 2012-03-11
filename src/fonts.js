@@ -1622,12 +1622,20 @@ var Font = (function FontClosure() {
         var locaData = loca.data;
         // removing the invalid glyphs
         var oldGlyfData = glyf.data;
-        var newGlyfData = new Uint8Array(oldGlyfData.length);
+        var oldGlyfDataLength = oldGlyfData.length;
+        var newGlyfData = new Uint8Array(oldGlyfDataLength);
         var startOffset = itemDecode(locaData, 0);
         var writeOffset = 0;
         itemEncode(locaData, 0, writeOffset);
         for (var i = 0, j = itemSize; i < numGlyphs; i++, j += itemSize) {
           var endOffset = itemDecode(locaData, j);
+          if (endOffset > oldGlyfDataLength) {
+            // glyph end offset points outside glyf data, rejecting the glyph
+            itemEncode(locaData, j, writeOffset);
+            startOffset = endOffset;
+            continue;
+          }
+
           var newLength = sanitizeGlyph(oldGlyfData, startOffset, endOffset,
                                         newGlyfData, writeOffset);
           writeOffset += newLength;
@@ -1864,6 +1872,17 @@ var Font = (function FontClosure() {
         var hasShortCmap = !!cmapTable.hasShortCmap;
         var toFontChar = this.toFontChar;
 
+        if (hasShortCmap && ids.length == numGlyphs) {
+          // Fixes the short cmap tables -- some generators use incorrect
+          // glyph id.
+          for (var i = 0, ii = ids.length; i < ii; i++)
+            ids[i] = i;
+        }
+
+        var unusedUnicode = kCmapGlyphOffset;
+        var glyphNames = properties.glyphNames || [];
+        var encoding = properties.baseEncoding;
+        var differences = properties.differences;
         if (toFontChar && toFontChar.length > 0) {
           // checking if cmap is just identity map
           var isIdentity = true;
@@ -1886,7 +1905,6 @@ var Font = (function FontClosure() {
               glyphs[i].unicode = unicode;
               usedUnicodes[unicode] = true;
             }
-            var unusedUnicode = kCmapGlyphOffset;
             for (var j = 0, jj = unassignedUnicodeItems.length; j < jj; j++) {
               var i = unassignedUnicodeItems[j];
               while (unusedUnicode in usedUnicodes)
@@ -1909,9 +1927,11 @@ var Font = (function FontClosure() {
           var usedUnicodes = [];
           for (var i = 0, ii = glyphs.length; i < ii; i++) {
             var code = glyphs[i].unicode;
+            var gid = ids[i];
             glyphs[i].unicode += kCmapGlyphOffset;
+            toFontChar[code] = glyphs[i].unicode;
 
-            var glyphName = properties.baseEncoding[code];
+            var glyphName = glyphNames[gid] || encoding[code];
             if (glyphName in GlyphsUnicode) {
               var unicode = GlyphsUnicode[glyphName];
               if (unicode in usedUnicodes)
@@ -1922,8 +1942,40 @@ var Font = (function FontClosure() {
                 unicode: unicode,
                 code: glyphs[i].code
               });
-              ids.push(ids[i]);
+              ids.push(gid);
+              toFontChar[code] = unicode;
             }
+          }
+          this.useToFontChar = true;
+        } else if (!this.isSymbolicFont && (this.hasEncoding ||
+                    properties.glyphNames || differences.length > 0)) {
+          // Re-encode cmap encoding to unicode, based on the 'post' table data
+          // diffrence array or base encoding
+          var reverseMap = [];
+          for (var i = 0, ii = glyphs.length; i < ii; i++)
+            reverseMap[glyphs[i].unicode] = i;
+
+          for (var i = 0, ii = glyphs.length; i < ii; i++) {
+            var code = glyphs[i].unicode;
+            var changeCode = false;
+            var gid = ids[i];
+
+            var glyphName = glyphNames[gid];
+            if (!glyphName) {
+              glyphName = differences[code] || encoding[code];
+              changeCode = true;
+            }
+            if (glyphName in GlyphsUnicode) {
+              var unicode = GlyphsUnicode[glyphName];
+              if (!unicode || (unicode in reverseMap))
+                continue; // unknown glyph name or its place is taken
+
+              glyphs[i].unicode = unicode;
+              reverseMap[unicode] = i;
+              if (changeCode)
+                toFontChar[code] = unicode;
+            }
+            this.useToFontChar = true;
           }
         }
 

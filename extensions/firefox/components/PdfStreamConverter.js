@@ -124,6 +124,19 @@ PdfStreamConverter.prototype = {
   asyncConvertData: function(aFromType, aToType, aListener, aCtxt) {
     if (!Services.prefs.getBoolPref('extensions.pdf.js.active'))
       throw Cr.NS_ERROR_NOT_IMPLEMENTED;
+
+    // Ignoring HTTP POST requests -- pdf.js has to repeat the request.
+    var skipConversion = false;
+    try {
+      var request = aCtxt;
+      request.QueryInterface(Ci.nsIHttpChannel);
+      skipConversion = (request.requestMethod === 'POST');
+    } catch (e) {
+      // Non-HTTP request... continue normally.
+    }
+    if (skipConversion)
+      throw Cr.NS_ERROR_NOT_IMPLEMENTED;
+
     // Store the listener passed to us
     this.listener = aListener;
   },
