@@ -191,7 +191,7 @@ describe('font', function() {
                                   0x09, // font dict 1 id
                                   0x00, 0x02, // nex gid
                                   0x0a, // font dict 2 gid
-                                  0x00, 0x04, // sentinel (last gid)
+                                  0x00, 0x04 // sentinel (last gid)
                                 ]);
       parser.bytes = bytes;
       var fdSelect = parser.parseFDSelect(0, 2);
