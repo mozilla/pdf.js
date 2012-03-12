@@ -310,6 +310,22 @@ var Page = (function PageClosure() {
           return null;
         return item.get(name);
       }
+      function isValidUrl(url) {
+        if (!url)
+          return false;
+        var colon = url.indexOf(':');
+        if (colon < 0)
+          return false;
+        var protocol = url.substr(0, colon);
+        switch (protocol) {
+          case 'http':
+          case 'https':
+          case 'ftp':
+            return true;
+          default:
+            return false;
+        }
+      }
 
       var annotations = xref.fetchIfRef(this.annotations) || [];
       var i, n = annotations.length;
@@ -338,7 +354,12 @@ var Page = (function PageClosure() {
             if (a) {
               switch (a.get('S').name) {
                 case 'URI':
-                  item.url = a.get('URI');
+                  var url = a.get('URI');
+                  // TODO: pdf spec mentions urls can be relative to a Base
+                  // entry in the dictionary.
+                  if (!isValidUrl(url))
+                    url = '';
+                  item.url = url;
                   break;
                 case 'GoTo':
                   item.dest = a.get('D');
