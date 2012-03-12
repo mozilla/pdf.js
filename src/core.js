@@ -338,7 +338,13 @@ var Page = (function PageClosure() {
             if (a) {
               switch (a.get('S').name) {
                 case 'URI':
-                  item.url = a.get('URI');
+                  var url = a.get('URI');
+                  // TODO: pdf spec mentions urls can be relative to a Base
+                  // entry in the dictionary.
+                  // For now only allow http and https schemes.
+                  if (url.search(/^https?\:/) !== 0)
+                    url = '';
+                  item.url = url;
                   break;
                 case 'GoTo':
                   item.dest = a.get('D');
