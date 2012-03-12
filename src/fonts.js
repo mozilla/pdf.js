@@ -4091,7 +4091,7 @@ var CFFTopDict = (function CFFTopDictClosure() {
     [[12, 4], 'UnderlineThickness', 'num', 50],
     [[12, 5], 'PaintType', 'num', 0],
     [[12, 6], 'CharstringType', 'num', 2],
-    [[12, 7], 'FontMatrix', ['num', 'num', 'num', 'num'],
+    [[12, 7], 'FontMatrix', ['num', 'num', 'num', 'num', 'num', 'num'],
                             [.001, 0, 0, .001, 0, 0]],
     [13, 'UniqueID', 'num', null],
     [5, 'FontBBox', ['num', 'num', 'num', 'num'], [0, 0, 0, 0]],
@@ -4456,7 +4456,6 @@ var CFFCompiler = (function CFFCompilerClosure() {
         var key = order[i];
         if (!(key in dict.values))
           continue;
-        //console.log('dict order: ' + dict.keyToNameMap[key]);
         var values = dict.values[key];
         var types = dict.types[key];
         if (!isArray(types)) types = [types];
