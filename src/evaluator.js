@@ -853,7 +853,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         var charProcs = xref.fetchIfRef(dict.get('CharProcs'));
         var fontResources = xref.fetchIfRef(dict.get('Resources')) || resources;
         properties.resources = fontResources;
-        properties.charProcOperatorLists = {};
+        properties.charProcOperatorList = {};
         for (var key in charProcs.map) {
           var glyphStream = xref.fetchIfRef(charProcs.map[key]);
           properties.charProcOperatorList[key] =
