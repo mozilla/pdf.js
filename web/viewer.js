@@ -1023,6 +1023,57 @@ var DocumentOutlineView = function documentOutlineView(outline) {
   }
 };
 
+// optimised CSS custom property getter/setter
+var CustomStyle = (function CustomStyleClosure() {
+
+  // As noted on: http://www.zachstronaut.com/posts/2009/02/17/
+  //              animate-css-transforms-firefox-webkit.html
+  // in some versions of IE9 it is critical that ms appear in this list
+  // before Moz
+  var prefixes = ['ms', 'Moz', 'Webkit', 'O'];
+  var _cache = { };
+
+  function CustomStyle() {
+  }
+
+  CustomStyle.getProp = function get(propName, element) {
+    // check cache only when no element is given
+    if (arguments.length == 1 && typeof _cache[propName] == 'string') {
+      return _cache[propName];
+    }
+
+    element = element || document.documentElement;
+    var style = element.style, prefixed, uPropName;
+
+    // test standard property first
+    if (typeof style[propName] == 'string') {
+      return (_cache[propName] = propName);
+    }
+
+    // capitalize
+    uPropName = propName.charAt(0).toUpperCase() + propName.slice(1);
+
+    // test vendor specific properties
+    for (var i = 0, l = prefixes.length; i < l; i++) {
+      prefixed = prefixes[i] + uPropName;
+      if (typeof style[prefixed] == 'string') {
+        return (_cache[propName] = prefixed);
+      }
+    }
+
+    //if all fails then set to undefined
+    return (_cache[propName] = 'undefined');
+  }
+
+  CustomStyle.setProp = function set(propName, element, str) {
+    var prop = this.getProp(propName);
+    if (prop != 'undefined')
+      element.style[prop] = str;
+  }
+
+  return CustomStyle;
+})();
+
 var TextLayerBuilder = function textLayerBuilder(textLayerDiv) {
   this.textLayerDiv = textLayerDiv;
 
@@ -1052,12 +1103,13 @@ var TextLayerBuilder = function textLayerBuilder(textLayerDiv) {
         textLayerDiv.appendChild(textDiv);
 
         if (textDiv.dataset.textLength > 1) { // avoid div by zero
-          // Adjust div width (via letterSpacing) to match canvas text
+          // Adjust div width to match canvas text
           // Due to the .offsetWidth calls, this is slow
           // This needs to come after appending to the DOM
-          textDiv.style.letterSpacing =
-            ((textDiv.dataset.canvasWidth - textDiv.offsetWidth) /
-              (textDiv.dataset.textLength - 1)) + 'px';
+          var textScale = textDiv.dataset.canvasWidth / textDiv.offsetWidth;
+          CustomStyle.setProp('transform' , textDiv,
+            'scale(' + textScale + ', 1)');
+          CustomStyle.setProp('transformOrigin' , textDiv, '0% 0%');
         }
       } // textLength > 0
     }
@@ -1097,7 +1149,8 @@ var TextLayerBuilder = function textLayerBuilder(textLayerDiv) {
     textDiv.style.fontSize = fontHeight + 'px';
     textDiv.style.left = text.geom.x + 'px';
     textDiv.style.top = (text.geom.y - fontHeight) + 'px';
-    textDiv.textContent = text.str;
+    textDiv.textContent = PDFJS.bidi(text, -1);
+    textDiv.dir = text.direction;
     textDiv.dataset.textLength = text.length;
     this.textDivs.push(textDiv);
   };

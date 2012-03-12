@@ -1052,7 +1052,7 @@ var JpxImage = (function JpxImageClosure() {
         }
         r = 0;
       }
-      error('JPX error: Out of packets');
+      throw 'Out of packets';
     };
   }
   function ResolutionLayerComponentPositionIterator(context) {
@@ -1091,7 +1091,7 @@ var JpxImage = (function JpxImageClosure() {
         }
         l = 0;
       }
-      error('JPX error: Out of packets');
+      throw 'Out of packets';
     };
   }
   function buildPackets(context) {
@@ -1187,7 +1187,7 @@ var JpxImage = (function JpxImageClosure() {
           new ResolutionLayerComponentPositionIterator(context);
         break;
       default:
-        error('JPX error: Unsupported progression order ' + progressionOrder);
+        throw 'Unsupported progression order ' + progressionOrder;
     }
   }
   function parseTilePackets(context, data, offset, dataLength) {
@@ -1553,6 +1553,7 @@ var JpxImage = (function JpxImageClosure() {
   }
 
   function JpxImage() {
+    this.failOnCorruptedImage = false;
   }
   JpxImage.prototype = {
     load: function jpxImageLoad(url) {
@@ -1612,237 +1613,244 @@ var JpxImage = (function JpxImageClosure() {
     },
     parseCodestream: function jpxImageParseCodestream(data, start, end) {
       var context = {};
-      var position = start;
-      while (position < end) {
-        var code = readUint16(data, position);
-        position += 2;
+      try {
+        var position = start;
+        while (position < end) {
+          var code = readUint16(data, position);
+          position += 2;
 
-        var length = 0, j;
-        switch (code) {
-          case 0xFF4F: // Start of codestream (SOC)
-            context.mainHeader = true;
-            break;
-          case 0xFFD9: // End of codestream (EOC)
-            break;
-          case 0xFF51: // Image and tile size (SIZ)
-            length = readUint16(data, position);
-            var siz = {};
-            siz.Xsiz = readUint32(data, position + 4);
-            siz.Ysiz = readUint32(data, position + 8);
-            siz.XOsiz = readUint32(data, position + 12);
-            siz.YOsiz = readUint32(data, position + 16);
-            siz.XTsiz = readUint32(data, position + 20);
-            siz.YTsiz = readUint32(data, position + 24);
-            siz.XTOsiz = readUint32(data, position + 28);
-            siz.YTOsiz = readUint32(data, position + 32);
-            var componentsCount = readUint16(data, position + 36);
-            siz.Csiz = componentsCount;
-            var components = [];
-            j = position + 38;
-            for (var i = 0; i < componentsCount; i++) {
-              var component = {
-                precision: (data[j] & 0x7F) + 1,
-                isSigned: !!(data[j] & 0x80),
-                XRsiz: data[j + 1],
-                YRsiz: data[j + 1]
-              };
-              calculateComponentDimensions(component, siz);
-              components.push(component);
-            }
-            context.SIZ = siz;
-            context.components = components;
-            calculateTileGrids(context, components);
-            context.QCC = [];
-            context.COC = [];
-            break;
-          case 0xFF5C: // Quantization default (QCD)
-            length = readUint16(data, position);
-            var qcd = {};
-            j = position + 2;
-            var sqcd = data[j++];
-            var spqcdSize, scalarExpounded;
-            switch (sqcd & 0x1F) {
-              case 0:
-                spqcdSize = 8;
-                scalarExpounded = true;
-                break;
-              case 1:
-                spqcdSize = 16;
-                scalarExpounded = false;
-                break;
-              case 2:
-                spqcdSize = 16;
-                scalarExpounded = true;
-                break;
-              default:
-                error('JPX error: Invalid SQcd value ' + sqcd);
-            }
-            qcd.noQuantization = spqcdSize == 8;
-            qcd.scalarExpounded = scalarExpounded;
-            qcd.guardBits = sqcd >> 5;
-            var spqcds = [];
-            while (j < length + position) {
-              var spqcd = {};
-              if (spqcdSize == 8) {
-                spqcd.epsilon = data[j++] >> 3;
-                spqcd.mu = 0;
-              } else {
-                spqcd.epsilon = data[j] >> 3;
-                spqcd.mu = ((data[j] & 0x7) << 8) | data[j + 1];
-                j += 2;
+          var length = 0, j;
+          switch (code) {
+            case 0xFF4F: // Start of codestream (SOC)
+              context.mainHeader = true;
+              break;
+            case 0xFFD9: // End of codestream (EOC)
+              break;
+            case 0xFF51: // Image and tile size (SIZ)
+              length = readUint16(data, position);
+              var siz = {};
+              siz.Xsiz = readUint32(data, position + 4);
+              siz.Ysiz = readUint32(data, position + 8);
+              siz.XOsiz = readUint32(data, position + 12);
+              siz.YOsiz = readUint32(data, position + 16);
+              siz.XTsiz = readUint32(data, position + 20);
+              siz.YTsiz = readUint32(data, position + 24);
+              siz.XTOsiz = readUint32(data, position + 28);
+              siz.YTOsiz = readUint32(data, position + 32);
+              var componentsCount = readUint16(data, position + 36);
+              siz.Csiz = componentsCount;
+              var components = [];
+              j = position + 38;
+              for (var i = 0; i < componentsCount; i++) {
+                var component = {
+                  precision: (data[j] & 0x7F) + 1,
+                  isSigned: !!(data[j] & 0x80),
+                  XRsiz: data[j + 1],
+                  YRsiz: data[j + 1]
+                };
+                calculateComponentDimensions(component, siz);
+                components.push(component);
               }
-              spqcds.push(spqcd);
-            }
-            qcd.SPqcds = spqcds;
-            if (context.mainHeader)
-              context.QCD = qcd;
-            else {
-              context.currentTile.QCD = qcd;
-              context.currentTile.QCC = [];
-            }
-            break;
-          case 0xFF5D: // Quantization component (QCC)
-            length = readUint16(data, position);
-            var qcc = {};
-            j = position + 2;
-            var cqcc;
-            if (context.SIZ.Csiz < 257)
-              cqcc = data[j++];
-            else {
-              cqcc = readUint16(data, j);
-              j += 2;
-            }
-            var sqcd = data[j++];
-            var spqcdSize, scalarExpounded;
-            switch (sqcd & 0x1F) {
-              case 0:
-                spqcdSize = 8;
-                scalarExpounded = true;
-                break;
-              case 1:
-                spqcdSize = 16;
-                scalarExpounded = false;
-                break;
-              case 2:
-                spqcdSize = 16;
-                scalarExpounded = true;
-                break;
-              default:
-                error('JPX error: Invalid SQcd value ' + sqcd);
-            }
-            qcc.noQuantization = spqcdSize == 8;
-            qcc.scalarExpounded = scalarExpounded;
-            qcc.guardBits = sqcd >> 5;
-            var spqcds = [];
-            while (j < length + position) {
-              var spqcd = {};
-              if (spqcdSize == 8) {
-                spqcd.epsilon = data[j++] >> 3;
-                spqcd.mu = 0;
-              } else {
-                spqcd.epsilon = data[j] >> 3;
-                spqcd.mu = ((data[j] & 0x7) << 8) | data[j + 1];
-                j += 2;
+              context.SIZ = siz;
+              context.components = components;
+              calculateTileGrids(context, components);
+              context.QCC = [];
+              context.COC = [];
+              break;
+            case 0xFF5C: // Quantization default (QCD)
+              length = readUint16(data, position);
+              var qcd = {};
+              j = position + 2;
+              var sqcd = data[j++];
+              var spqcdSize, scalarExpounded;
+              switch (sqcd & 0x1F) {
+                case 0:
+                  spqcdSize = 8;
+                  scalarExpounded = true;
+                  break;
+                case 1:
+                  spqcdSize = 16;
+                  scalarExpounded = false;
+                  break;
+                case 2:
+                  spqcdSize = 16;
+                  scalarExpounded = true;
+                  break;
+                default:
+                  throw 'Invalid SQcd value ' + sqcd;
               }
-              spqcds.push(spqcd);
-            }
-            qcc.SPqcds = spqcds;
-            if (context.mainHeader)
-              context.QCC[cqcc] = qcc;
-            else
-              context.currentTile.QCC[cqcc] = qcc;
-            break;
-          case 0xFF52: // Coding style default (COD)
-            length = readUint16(data, position);
-            var cod = {};
-            j = position + 2;
-            var scod = data[j++];
-            cod.entropyCoderWithCustomPrecincts = !!(scod & 1);
-            cod.sopMarkerUsed = !!(scod & 2);
-            cod.ephMarkerUsed = !!(scod & 4);
-            var codingStyle = {};
-            cod.progressionOrder = data[j++];
-            cod.layersCount = readUint16(data, j);
-            j += 2;
-            cod.multipleComponentTransform = data[j++];
-
-            cod.decompositionLevelsCount = data[j++];
-            cod.xcb = (data[j++] & 0xF) + 2;
-            cod.ycb = (data[j++] & 0xF) + 2;
-            var blockStyle = data[j++];
-            cod.selectiveArithmeticCodingBypass = !!(blockStyle & 1);
-            cod.resetContextProbabilities = !!(blockStyle & 2);
-            cod.terminationOnEachCodingPass = !!(blockStyle & 4);
-            cod.verticalyStripe = !!(blockStyle & 8);
-            cod.predictableTermination = !!(blockStyle & 16);
-            cod.segmentationSymbolUsed = !!(blockStyle & 32);
-            cod.transformation = data[j++];
-            if (cod.entropyCoderWithCustomPrecincts) {
-              var precinctsSizes = {};
+              qcd.noQuantization = spqcdSize == 8;
+              qcd.scalarExpounded = scalarExpounded;
+              qcd.guardBits = sqcd >> 5;
+              var spqcds = [];
               while (j < length + position) {
-                var precinctsSize = data[j];
-                precinctsSizes.push({
-                  PPx: precinctsSize & 0xF,
-                  PPy: precinctsSize >> 4
-                });
+                var spqcd = {};
+                if (spqcdSize == 8) {
+                  spqcd.epsilon = data[j++] >> 3;
+                  spqcd.mu = 0;
+                } else {
+                  spqcd.epsilon = data[j] >> 3;
+                  spqcd.mu = ((data[j] & 0x7) << 8) | data[j + 1];
+                  j += 2;
+                }
+                spqcds.push(spqcd);
               }
-              cod.precinctsSizes = precinctsSizes;
-            }
+              qcd.SPqcds = spqcds;
+              if (context.mainHeader)
+                context.QCD = qcd;
+              else {
+                context.currentTile.QCD = qcd;
+                context.currentTile.QCC = [];
+              }
+              break;
+            case 0xFF5D: // Quantization component (QCC)
+              length = readUint16(data, position);
+              var qcc = {};
+              j = position + 2;
+              var cqcc;
+              if (context.SIZ.Csiz < 257)
+                cqcc = data[j++];
+              else {
+                cqcc = readUint16(data, j);
+                j += 2;
+              }
+              var sqcd = data[j++];
+              var spqcdSize, scalarExpounded;
+              switch (sqcd & 0x1F) {
+                case 0:
+                  spqcdSize = 8;
+                  scalarExpounded = true;
+                  break;
+                case 1:
+                  spqcdSize = 16;
+                  scalarExpounded = false;
+                  break;
+                case 2:
+                  spqcdSize = 16;
+                  scalarExpounded = true;
+                  break;
+                default:
+                  throw 'Invalid SQcd value ' + sqcd;
+              }
+              qcc.noQuantization = spqcdSize == 8;
+              qcc.scalarExpounded = scalarExpounded;
+              qcc.guardBits = sqcd >> 5;
+              var spqcds = [];
+              while (j < length + position) {
+                var spqcd = {};
+                if (spqcdSize == 8) {
+                  spqcd.epsilon = data[j++] >> 3;
+                  spqcd.mu = 0;
+                } else {
+                  spqcd.epsilon = data[j] >> 3;
+                  spqcd.mu = ((data[j] & 0x7) << 8) | data[j + 1];
+                  j += 2;
+                }
+                spqcds.push(spqcd);
+              }
+              qcc.SPqcds = spqcds;
+              if (context.mainHeader)
+                context.QCC[cqcc] = qcc;
+              else
+                context.currentTile.QCC[cqcc] = qcc;
+              break;
+            case 0xFF52: // Coding style default (COD)
+              length = readUint16(data, position);
+              var cod = {};
+              j = position + 2;
+              var scod = data[j++];
+              cod.entropyCoderWithCustomPrecincts = !!(scod & 1);
+              cod.sopMarkerUsed = !!(scod & 2);
+              cod.ephMarkerUsed = !!(scod & 4);
+              var codingStyle = {};
+              cod.progressionOrder = data[j++];
+              cod.layersCount = readUint16(data, j);
+              j += 2;
+              cod.multipleComponentTransform = data[j++];
 
-            if (cod.sopMarkerUsed || cod.ephMarkerUsed ||
-                cod.selectiveArithmeticCodingBypass ||
-                cod.resetContextProbabilities ||
-                cod.terminationOnEachCodingPass ||
-                cod.verticalyStripe || cod.predictableTermination ||
-                cod.segmentationSymbolUsed)
-              error('JPX error: Unsupported COD options: ' + uneval(cod));
+              cod.decompositionLevelsCount = data[j++];
+              cod.xcb = (data[j++] & 0xF) + 2;
+              cod.ycb = (data[j++] & 0xF) + 2;
+              var blockStyle = data[j++];
+              cod.selectiveArithmeticCodingBypass = !!(blockStyle & 1);
+              cod.resetContextProbabilities = !!(blockStyle & 2);
+              cod.terminationOnEachCodingPass = !!(blockStyle & 4);
+              cod.verticalyStripe = !!(blockStyle & 8);
+              cod.predictableTermination = !!(blockStyle & 16);
+              cod.segmentationSymbolUsed = !!(blockStyle & 32);
+              cod.transformation = data[j++];
+              if (cod.entropyCoderWithCustomPrecincts) {
+                var precinctsSizes = {};
+                while (j < length + position) {
+                  var precinctsSize = data[j];
+                  precinctsSizes.push({
+                    PPx: precinctsSize & 0xF,
+                    PPy: precinctsSize >> 4
+                  });
+                }
+                cod.precinctsSizes = precinctsSizes;
+              }
 
-            if (context.mainHeader)
-              context.COD = cod;
-            else {
-              context.currentTile.COD = cod;
-              context.currentTile.COC = [];
-            }
-            break;
-          case 0xFF90: // Start of tile-part (SOT)
-            length = readUint16(data, position);
-            var tile = {};
-            tile.index = readUint16(data, position + 2);
-            tile.length = readUint32(data, position + 4);
-            tile.dataEnd = tile.length + position - 2;
-            tile.partIndex = data[position + 8];
-            tile.partsCount = data[position + 9];
+              if (cod.sopMarkerUsed || cod.ephMarkerUsed ||
+                  cod.selectiveArithmeticCodingBypass ||
+                  cod.resetContextProbabilities ||
+                  cod.terminationOnEachCodingPass ||
+                  cod.verticalyStripe || cod.predictableTermination ||
+                  cod.segmentationSymbolUsed)
+                throw 'Unsupported COD options: ' + uneval(cod);
 
-            context.mainHeader = false;
-            if (tile.partIndex == 0) {
-              // reset component specific settings
-              tile.COD = context.COD;
-              tile.COC = context.COC.slice(0); // clone of the global COC
-              tile.QCD = context.QCD;
-              tile.QCC = context.QCC.slice(0); // clone of the global COC
-            }
-            context.currentTile = tile;
-            break;
-          case 0xFF93: // Start of data (SOD)
-            var tile = context.currentTile;
-            if (tile.partIndex == 0) {
-              initializeTile(context, tile.index);
-              buildPackets(context);
-            }
+              if (context.mainHeader)
+                context.COD = cod;
+              else {
+                context.currentTile.COD = cod;
+                context.currentTile.COC = [];
+              }
+              break;
+            case 0xFF90: // Start of tile-part (SOT)
+              length = readUint16(data, position);
+              var tile = {};
+              tile.index = readUint16(data, position + 2);
+              tile.length = readUint32(data, position + 4);
+              tile.dataEnd = tile.length + position - 2;
+              tile.partIndex = data[position + 8];
+              tile.partsCount = data[position + 9];
 
-            // moving to the end of the data
-            length = tile.dataEnd - position;
+              context.mainHeader = false;
+              if (tile.partIndex == 0) {
+                // reset component specific settings
+                tile.COD = context.COD;
+                tile.COC = context.COC.slice(0); // clone of the global COC
+                tile.QCD = context.QCD;
+                tile.QCC = context.QCC.slice(0); // clone of the global COC
+              }
+              context.currentTile = tile;
+              break;
+            case 0xFF93: // Start of data (SOD)
+              var tile = context.currentTile;
+              if (tile.partIndex == 0) {
+                initializeTile(context, tile.index);
+                buildPackets(context);
+              }
 
-            parseTilePackets(context, data, position, length);
-            break;
-          case 0xFF64: // Comment (COM)
-            length = readUint16(data, position);
-            // skipping content
-            break;
-          default:
-            error('JPX error: Unknown codestream code: ' + code.toString(16));
+              // moving to the end of the data
+              length = tile.dataEnd - position;
+
+              parseTilePackets(context, data, position, length);
+              break;
+            case 0xFF64: // Comment (COM)
+              length = readUint16(data, position);
+              // skipping content
+              break;
+            default:
+              throw 'Unknown codestream code: ' + code.toString(16);
+          }
+          position += length;
         }
-        position += length;
+      } catch (e) {
+        if (this.failOnCorruptedImage)
+          error('JPX error: ' + e);
+        else
+          warn('JPX error: ' + e + '. Trying to recover');
       }
       this.tiles = transformComponents(context);
       this.width = context.SIZ.Xsiz - context.SIZ.XOsiz;
