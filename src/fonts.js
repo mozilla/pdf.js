@@ -757,7 +757,7 @@ var Font = (function FontClosure() {
   function Font(name, file, properties) {
     this.name = name;
     this.coded = properties.coded;
-    this.charProcIRQueues = properties.charProcIRQueues;
+    this.charProcOperatorList = properties.charProcOperatorList;
     this.resources = properties.resources;
     this.sizes = [];
 
@@ -2318,7 +2318,7 @@ var Font = (function FontClosure() {
     },
 
     charToGlyph: function fonts_charToGlyph(charcode) {
-      var fontCharCode, width, codeIRQueue;
+      var fontCharCode, width, operatorList;
 
       var width = this.widths[charcode];
 
@@ -2353,7 +2353,7 @@ var Font = (function FontClosure() {
           break;
         case 'Type3':
           var glyphName = this.differences[charcode] || this.encoding[charcode];
-          codeIRQueue = this.charProcIRQueues[glyphName];
+          operatorList = this.charProcOperatorList[glyphName];
           fontCharCode = charcode;
           break;
         case 'TrueType':
@@ -2396,7 +2396,7 @@ var Font = (function FontClosure() {
         fontChar: String.fromCharCode(fontCharCode),
         unicode: unicodeChars,
         width: width,
-        codeIRQueue: codeIRQueue
+        operatorList: operatorList
       };
     },
 

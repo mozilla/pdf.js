@@ -170,10 +170,10 @@ var Page = (function PageClosure() {
       return shadow(this, 'rotate', rotate);
     },
 
-    startRenderingFromIRQueue: function pageStartRenderingFromIRQueue(
-                                                IRQueue, fonts) {
+    startRenderingFromOperatorList: function pageStartRenderingFromOperatorList(
+                                                operatorList, fonts) {
       var self = this;
-      this.IRQueue = IRQueue;
+      this.operatorList = operatorList;
 
       var displayContinuation = function pageDisplayContinuation() {
         // Always defer call to display() to work around bug in
@@ -184,15 +184,16 @@ var Page = (function PageClosure() {
       };
 
       this.ensureFonts(fonts,
-                       function pageStartRenderingFromIRQueueEnsureFonts() {
-        displayContinuation();
-      });
+        function pageStartRenderingFromOperatorListEnsureFonts() {
+          displayContinuation();
+        }
+      );
     },
 
-    getIRQueue: function pageGetIRQueue(handler, dependency) {
-      if (this.IRQueue) {
+    getOperatorList: function pageGetOperatorList(handler, dependency) {
+      if (this.operatorList) {
         // content was compiled
-        return this.IRQueue;
+        return this.operatorList;
       }
 
       this.stats.time('Build IR Queue');
@@ -214,9 +215,9 @@ var Page = (function PageClosure() {
       var pe = this.pe = new PartialEvaluator(
                                 xref, handler, 'p' + this.pageNumber + '_');
 
-      this.IRQueue = pe.getIRQueue(content, resources, dependency);
+      this.operatorList = pe.getOperatorList(content, resources, dependency));
       this.stats.timeEnd('Build IR Queue');
-      return this.IRQueue;
+      return this.operatorList;
     },
 
     ensureFonts: function pageEnsureFonts(fonts, callback) {
@@ -253,18 +254,19 @@ var Page = (function PageClosure() {
             rotate: this.rotate });
 
       var startIdx = 0;
-      var length = this.IRQueue.fnArray.length;
-      var IRQueue = this.IRQueue;
+      var length = this.operatorList.fnArray.length;
+      var operatorList = this.operatorList;
       var stepper = null;
       if (PDFJS.pdfBug && StepperManager.enabled) {
         stepper = StepperManager.create(this.pageNumber);
-        stepper.init(IRQueue);
+        stepper.init(operatorList);
         stepper.nextBreakPoint = stepper.getNextBreakPoint();
       }
 
       var self = this;
       function next() {
-        startIdx = gfx.executeIRQueue(IRQueue, startIdx, next, stepper);
+        startIdx =
+          gfx.executeOperatorList(operatorList, startIdx, next, stepper);
         if (startIdx == length) {
           gfx.endDrawing();
           stats.timeEnd('Rendering');
@@ -434,13 +436,14 @@ var Page = (function PageClosure() {
     startRendering: function pageStartRendering(ctx, callback, textLayer)  {
       var stats = this.stats;
       stats.time('Overall');
-      // If there is no displayReadyPromise yet, then the IRQueue was never
+      // If there is no displayReadyPromise yet, then the operatorList was never
       // requested before. Make the request and create the promise.
       if (!this.displayReadyPromise) {
         this.pdf.startRendering(this);
         this.displayReadyPromise = new Promise();
       }
-      // Once the IRQueue and fonts are loaded, perform the actual rendering.
+
+      // Once the operatorList and fonts are loaded, do the actual rendering.
       this.displayReadyPromise.then(
         function pageDisplayReadyPromise() {
           var gfx = new CanvasGraphics(ctx, this.objs, textLayer);
@@ -728,8 +731,9 @@ var PDFDoc = (function PDFDocClosure() {
         var pageNum = data.pageNum;
         var page = this.pageCache[pageNum];
         var depFonts = data.depFonts;
+
         page.stats.timeEnd('Page Request');
-        page.startRenderingFromIRQueue(data.IRQueue, depFonts);
+        page.startRenderingFromOperatorList(data.operatorList, depFonts);
       }, this);
 
       messageHandler.on('obj', function pdfDocObj(data) {

@@ -103,14 +103,14 @@ var WorkerMessageHandler = {
       var start = Date.now();
 
       var dependency = [];
-      var IRQueue = null;
+      var operatorList = null;
       try {
         var page = pdfModel.getPage(pageNum);
         // Pre compile the pdf page and fetch the fonts/images.
-        IRQueue = page.getIRQueue(handler, dependency);
+        operatorList = page.getOperatorList(handler, dependency);
       } catch (e) {
         var minimumStackMessage =
-            'worker.js: while trying to getPage() and getIRQueue()';
+            'worker.js: while trying to getPage() and getOperatorList()';
 
         // Turn the error into an obj that can be serialized
         if (typeof e === 'string') {
@@ -137,8 +137,8 @@ var WorkerMessageHandler = {
         return;
       }
 
-      console.log('page=%d - getIRQueue: time=%dms, len=%d', pageNum,
-                                  Date.now() - start, IRQueue.fnArray.length);
+      console.log('page=%d - getOperatorList: time=%dms, len=%d', pageNum,
+                              Date.now() - start, operatorList.fnArray.length);
 
       // Filter the dependecies for fonts.
       var fonts = {};
@@ -151,7 +151,7 @@ var WorkerMessageHandler = {
 
       handler.send('page', {
         pageNum: pageNum,
-        IRQueue: IRQueue,
+        operatorList: operatorList,
         depFonts: Object.keys(fonts)
       });
     }, this);

@@ -112,7 +112,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
   };
 
   PartialEvaluator.prototype = {
-    getIRQueue: function partialEvaluatorGetIRQueue(stream, resources,
+    getOperatorList: function partialEvaluatorGetOperatorList(stream, resources,
                                                       dependency, queue) {
 
       var self = this;
@@ -175,7 +175,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
 
         // Ensure the font is ready before the font is set
         // and later on used for drawing.
-        // OPTIMIZE: This should get insert to the IRQueue only once per
+        // OPTIMIZE: This should get insert to the operatorList only once per
         // page.
         insertDependency([loadedName]);
         return loadedName;
@@ -293,14 +293,14 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                 if (typeNum == TILING_PATTERN) {
                   // Create an IR of the pattern code.
                   var depIdx = dependencyArray.length;
-                  var codeIR = this.getIRQueue(pattern, dict.get('Resources') ||
-                      resources, dependencyArray);
+                  var operatorList = this.getOperatorList(pattern,
+                      dict.get('Resources') || resources, dependencyArray);
 
                   // Add the dependencies that are required to execute the
-                  // codeIR.
+                  // operatorList.
                   insertDependency(dependencyArray.slice(depIdx));
 
-                  args = TilingPattern.getIR(codeIR, dict, args);
+                  args = TilingPattern.getIR(operatorList, dict, args);
                 }
                 else if (typeNum == SHADING_PATTERN) {
                   var shading = xref.fetchIfRef(dict.get('Shading'));
@@ -334,17 +334,18 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                 fnArray.push('paintFormXObjectBegin');
                 argsArray.push([matrix, bbox]);
 
-                // This adds the IRQueue of the xObj to the current queue.
+                // This adds the operatorList of the xObj to the current queue.
                 var depIdx = dependencyArray.length;
 
                 // Pass in the current `queue` object. That means the `fnArray`
                 // and the `argsArray` in this scope is reused and new commands
                 // are added to them.
-                this.getIRQueue(xobj, xobj.dict.get('Resources') || resources,
+                this.getOperatorList(xobj,
+                    xobj.dict.get('Resources') || resources,
                     dependencyArray, queue);
 
                // Add the dependencies that are required to execute the
-               // codeIR.
+               // operatorList.
                insertDependency(dependencyArray.slice(depIdx));
 
                 fn = 'paintFormXObjectEnd';
@@ -852,11 +853,11 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         var charProcs = xref.fetchIfRef(dict.get('CharProcs'));
         var fontResources = xref.fetchIfRef(dict.get('Resources')) || resources;
         properties.resources = fontResources;
-        properties.charProcIRQueues = {};
+        properties.charProcOperatorLists = {};
         for (var key in charProcs.map) {
           var glyphStream = xref.fetchIfRef(charProcs.map[key]);
-          properties.charProcIRQueues[key] =
-            this.getIRQueue(glyphStream, fontResources, dependency);
+          properties.charProcOperatorList[key] =
+            this.getOperatorList(glyphStream, fontResources, dependency);
         }
       }
 
