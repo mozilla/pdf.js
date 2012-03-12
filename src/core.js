@@ -310,6 +310,22 @@ var Page = (function PageClosure() {
           return null;
         return item.get(name);
       }
+      function isValidUrl(url) {
+        if (!url)
+          return false;
+        var colon = url.indexOf(':');
+        if (colon < 0)
+          return false;
+        var protocol = url.substr(0, colon);
+        switch (protocol) {
+          case 'http':
+          case 'https':
+          case 'ftp':
+            return true;
+          default:
+            return false;
+        }
+      }
 
       var annotations = xref.fetchIfRef(this.annotations) || [];
       var i, n = annotations.length;
@@ -341,8 +357,7 @@ var Page = (function PageClosure() {
                   var url = a.get('URI');
                   // TODO: pdf spec mentions urls can be relative to a Base
                   // entry in the dictionary.
-                  // For now only allow http and https schemes.
-                  if (url.search(/^https?\:/) !== 0)
+                  if (!isValidUrl(url))
                     url = '';
                   item.url = url;
                   break;
