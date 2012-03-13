@@ -234,6 +234,7 @@ var PDFView = {
       return;
     }
 
+    pages[val - 1].updateStats();
     currentPageNumber = val;
     var event = document.createEvent('UIEvents');
     event.initUIEvent('pagechange', false, false, window, 0);
@@ -870,7 +871,6 @@ var PageView = function pageView(container, content, id, pageWidth, pageHeight,
     // Rendering area
 
     var self = this;
-    stats.begin = Date.now();
     this.content.startRendering(ctx, function pageViewDrawCallback(error) {
       if (self.loadingIconDiv) {
         div.removeChild(self.loadingIconDiv);
@@ -880,6 +880,7 @@ var PageView = function pageView(container, content, id, pageWidth, pageHeight,
       if (error)
         PDFView.error('An error occurred while rendering the page.', error);
 
+      self.stats = content.stats;
       self.updateStats();
       if (self.onAfterDraw)
         self.onAfterDraw();
@@ -893,10 +894,10 @@ var PageView = function pageView(container, content, id, pageWidth, pageHeight,
   };
 
   this.updateStats = function pageViewUpdateStats() {
-    var t1 = stats.compile, t2 = stats.fonts, t3 = stats.render;
-    var str = 'Time to compile/fonts/render: ' +
-              (t1 - stats.begin) + '/' + (t2 - t1) + '/' + (t3 - t2) + ' ms';
-    document.getElementById('info').textContent = str;
+    if (PDFJS.pdfBug && Stats.enabled) {
+      var stats = this.stats;
+      Stats.add(this.id, stats);
+    }
   };
 };
 
@@ -1184,17 +1185,8 @@ window.addEventListener('load', function webViewerLoad(evt) {
   if ('pdfBug' in hashParams) {
     PDFJS.pdfBug = true;
     var pdfBug = hashParams['pdfBug'];
-    var all = false, enabled = [];
-    if (pdfBug === 'all')
-      all = true;
-    else
-      enabled = pdfBug.split(',');
-    var debugTools = PDFBug.tools;
-    for (var i = 0; i < debugTools.length; ++i) {
-      var tool = debugTools[i];
-      if (all || enabled.indexOf(tool.id) !== -1)
-        tool.enabled = true;
-    }
+    var enabled = pdfBug.split(',');
+    PDFBug.enable(enabled);
     PDFBug.init();
   }
 
