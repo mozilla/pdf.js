@@ -134,37 +134,39 @@ var Catalog = (function CatalogClosure() {
           while (queue.length > 0) {
             var i = queue.shift();
             var outlineDict = xref.fetch(i.obj);
-            if (!outlineDict.has('Title'))
-              error('Invalid outline item');
-            var dest = outlineDict.get('A');
-            if (dest)
-              dest = xref.fetchIfRef(dest).get('D');
-            else if (outlineDict.has('Dest')) {
-              dest = outlineDict.get('Dest');
-              if (isName(dest))
-                dest = dest.name;
-            }
-            var title = xref.fetchIfRef(outlineDict.get('Title'));
-            var outlineItem = {
-              dest: dest,
-              title: stringToPDFString(title),
-              color: outlineDict.get('C') || [0, 0, 0],
-              count: outlineDict.get('Count'),
-              bold: !!(outlineDict.get('F') & 2),
-              italic: !!(outlineDict.get('F') & 1),
-              items: []
-            };
-            i.parent.items.push(outlineItem);
-            obj = outlineDict.get('First');
-            if (isRef(obj) && !processed.has(obj)) {
-              queue.push({obj: obj, parent: outlineItem});
-              processed.put(obj);
-            }
-            obj = outlineDict.get('Next');
-            if (isRef(obj) && !processed.has(obj)) {
-              queue.push({obj: obj, parent: i.parent});
-              processed.put(obj);
-            }
+			if(outlineDict != null){
+				if (!outlineDict.has('Title'))
+				  error('Invalid outline item');
+				var dest = outlineDict.get('A');
+				if (dest)
+				  dest = xref.fetchIfRef(dest).get('D');
+				else if (outlineDict.has('Dest')) {
+				  dest = outlineDict.get('Dest');
+				  if (isName(dest))
+					dest = dest.name;
+				}
+				var title = xref.fetchIfRef(outlineDict.get('Title'));
+				var outlineItem = {
+				  dest: dest,
+				  title: stringToPDFString(title),
+				  color: outlineDict.get('C') || [0, 0, 0],
+				  count: outlineDict.get('Count'),
+				  bold: !!(outlineDict.get('F') & 2),
+				  italic: !!(outlineDict.get('F') & 1),
+				  items: []
+				};
+				i.parent.items.push(outlineItem);
+				obj = outlineDict.get('First');
+				if (isRef(obj) && !processed.has(obj)) {
+				  queue.push({obj: obj, parent: outlineItem});
+				  processed.put(obj);
+				}
+				obj = outlineDict.get('Next');
+				if (isRef(obj) && !processed.has(obj)) {
+				  queue.push({obj: obj, parent: i.parent});
+				  processed.put(obj);
+				}			
+			}
           }
         }
       }
@@ -569,6 +571,8 @@ var XRef = (function XRefClosure() {
     },
     getEntry: function xRefGetEntry(i) {
       var e = this.entries[i];
+	  if(e == null)
+		return null;
       return e.free ? null : e; // returns null is the entry is free
     },
     fetchIfRef: function xRefFetchIfRef(obj) {
