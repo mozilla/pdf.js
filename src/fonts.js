@@ -1656,6 +1656,30 @@ var Font = (function FontClosure() {
         glyf.data = newGlyfData.subarray(0, writeOffset);
       }
 
+      function findEmptyGlyphs(locaTable, isGlyphLocationsLong, emptyGlyphIds) {
+        var itemSize, itemDecode;
+        if (isGlyphLocationsLong) {
+          itemSize = 4;
+          itemDecode = function fontItemDecodeLong(data, offset) {
+            return (data[offset] << 24) | (data[offset + 1] << 16) |
+                   (data[offset + 2] << 8) | data[offset + 3];
+          };
+        } else {
+          itemSize = 2;
+          itemDecode = function fontItemDecode(data, offset) {
+            return (data[offset] << 9) | (data[offset + 1] << 1);
+          };
+        }
+        var data = locaTable.data, length = data.length;
+        var lastOffset = itemDecode(data, 0);
+        for (var i = itemSize, j = 0; i < length; i += itemSize, j++) {
+          var offset = itemDecode(data, i);
+          if (offset == lastOffset)
+            emptyGlyphIds[j] = true;
+          lastOffset = offset;
+        }
+      }
+
       function readGlyphNameMap(post, properties) {
         var start = (font.start ? font.start : 0) + post.offset;
         font.pos = start;
@@ -1782,10 +1806,14 @@ var Font = (function FontClosure() {
       sanitizeMetrics(font, hhea, hmtx, numGlyphs);
       sanitizeMetrics(font, vhea, vmtx, numGlyphs);
 
+      var isGlyphLocationsLong = int16([head.data[50], head.data[51]]);
       if (head && loca && glyf) {
-        var isGlyphLocationsLong = int16([head.data[50], head.data[51]]);
         sanitizeGlyphLocations(loca, glyf, numGlyphs, isGlyphLocationsLong);
       }
+
+      var emptyGlyphIds = [];
+      if (glyf)
+        findEmptyGlyphs(loca, isGlyphLocationsLong, emptyGlyphIds);
 
       // Sanitizer reduces the glyph advanceWidth to the maxAdvanceWidth
       // Sometimes it's 0. That needs to be fixed
@@ -1918,6 +1946,15 @@ var Font = (function FontClosure() {
           }
         }
 
+        // remove glyph references outside range of avaialable glyphs or empty
+        for (var i = ids.length - 1; i >= 0; i--) {
+          if (ids[i] < numGlyphs &&
+              (!emptyGlyphIds[ids[i]] || this.isSymbolicFont))
+            continue;
+          ids.splice(i, 1);
+          glyphs.splice(i, 1);
+        }
+
         if (hasShortCmap && this.hasEncoding && !this.isSymbolicFont) {
           // Re-encode short map encoding to unicode -- that simplifies the
           // resolution of MacRoman encoded glyphs logic for TrueType fonts:
@@ -1951,9 +1988,11 @@ var Font = (function FontClosure() {
           // Re-encode cmap encoding to unicode, based on the 'post' table data
           // diffrence array or base encoding
           var reverseMap = [];
-          for (var i = 0, ii = glyphs.length; i < ii; i++)
+          for (var i = 0, ii = glyphs.length; i < ii; i++) {
             reverseMap[glyphs[i].unicode] = i;
+          }
 
+          var backtrackReplacements = [];
           for (var i = 0, ii = glyphs.length; i < ii; i++) {
             var code = glyphs[i].unicode;
             var changeCode = false;
@@ -1966,13 +2005,36 @@ var Font = (function FontClosure() {
             }
             if (glyphName in GlyphsUnicode) {
               var unicode = GlyphsUnicode[glyphName];
-              if (!unicode || (unicode in reverseMap))
-                continue; // unknown glyph name or its place is taken
+              if (!unicode || reverseMap[unicode] === i)
+                continue; // unknown glyph name or in its own place
 
-              glyphs[i].unicode = unicode;
-              reverseMap[unicode] = i;
-              if (changeCode)
-                toFontChar[code] = unicode;
+              if (unicode in reverseMap) {
+                backtrackReplacements[unicode] = {
+                  index: i,
+                  code: code,
+                  changeCode: changeCode
+                };
+                continue; // its place is taken
+              }
+
+              var index = i;
+              while (true) {
+                glyphs[index].unicode = unicode;
+                reverseMap[unicode] = index;
+                if (changeCode)
+                  toFontChar[code] = unicode;
+
+                // checking if available place can be used by other glyph
+                var backtrack = backtrackReplacements[code];
+                if (!backtrack)
+                  break;
+
+                delete backtrackReplacements[code];
+                index = backtrack.index;
+                code = backtrack.code;
+                changeCode = backtrack.changeCode;
+                unicode = code;
+              }
             }
             this.useToFontChar = true;
           }
@@ -1986,12 +2048,6 @@ var Font = (function FontClosure() {
             glyphs[i].unicode = toFontChar[code] = fontCharCode;
           }
           this.useToFontChar = true;
-        }
-
-        // remove glyph references outside range of avaialable glyphs
-        for (var i = 0, ii = ids.length; i < ii; i++) {
-          if (ids[i] >= numGlyphs)
-            ids[i] = 0;
         }
 
         createGlyphNameMap(glyphs, ids, properties);
