@@ -318,6 +318,58 @@ var Stepper = (function StepperClosure() {
   return Stepper;
 })();
 
+var Stats = (function Stats() {
+  var stats = [];
+  function clear(node) {
+    while (node.hasChildNodes())
+      node.removeChild(node.lastChild);
+  }
+  function getStatIndex(pageNumber) {
+    for (var i = 0, ii = stats.length; i < ii; ++i)
+      if (stats[i].pageNumber === pageNumber)
+        return i;
+    return false;
+  }
+  return {
+    // Poperties/functions needed by PDFBug.
+    id: 'Stats',
+    name: 'Stats',
+    panel: null,
+    manager: null,
+    init: function init() {
+      this.panel.setAttribute('style', 'padding: 5px;');
+      PDFJS.enableStats = true;
+    },
+    enabled: false,
+    active: false,
+    // Stats specific functions.
+    add: function(pageNumber, stat) {
+      if (!stat)
+        return;
+      var statsIndex = getStatIndex(pageNumber);
+      if (statsIndex !== false) {
+        var b = stats[statsIndex];
+        this.panel.removeChild(b.div);
+        stats.splice(statsIndex, 1);
+      }
+      var wrapper = document.createElement('div');
+      wrapper.className = 'stats';
+      var title = document.createElement('div');
+      title.className = 'title';
+      title.textContent = 'Page: ' + pageNumber;
+      var statsDiv = document.createElement('div');
+      statsDiv.textContent = stat.toString();
+      wrapper.appendChild(title);
+      wrapper.appendChild(statsDiv);
+      stats.push({ pageNumber: pageNumber, div: wrapper });
+      stats.sort(function(a, b) { return a.pageNumber - b.pageNumber});
+      clear(this.panel);
+      for (var i = 0, ii = stats.length; i < ii; ++i)
+        this.panel.appendChild(stats[i].div);
+    }
+  };
+})();
+
 // Manages all the debugging tools.
 var PDFBug = (function PDFBugClosure() {
   var panelWidth = 300;
@@ -327,8 +379,29 @@ var PDFBug = (function PDFBugClosure() {
   return {
     tools: [
       FontInspector,
-      StepperManager
+      StepperManager,
+      Stats
     ],
+    enable: function(ids) {
+      var all = false, tools = this.tools;
+      if (ids.length === 1 && ids[0] === 'all')
+        all = true;
+      for (var i = 0; i < tools.length; ++i) {
+        var tool = tools[i];
+        if (all || ids.indexOf(tool.id) !== -1)
+          tool.enabled = true;
+      }
+      if (!all) {
+        // Sort the tools by the order they are enabled.
+        tools.sort(function(a, b) {
+          var indexA = ids.indexOf(a.id);
+          indexA = indexA < 0 ? tools.length : indexA;
+          var indexB = ids.indexOf(b.id);
+          indexB = indexB < 0 ? tools.length : indexB;
+          return indexA - indexB;
+        });
+      }
+    },
     init: function init() {
       /*
        * Basic Layout:
