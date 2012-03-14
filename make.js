@@ -174,7 +174,9 @@ var EXTENSION_WEB_FILES =
        'web/viewer.html',
        'web/viewer-production.html'],
     EXTENSION_BASE_VERSION = '4bb289ec499013de66eb421737a4dbb4a9273eda',
-    EXTENSION_BUILD_NUMBER;
+    EXTENSION_VERSION_PREFIX = '0.2.',
+    EXTENSION_BUILD_NUMBER,
+    EXTENSION_VERSION;
 
 //
 // make extension
@@ -200,6 +202,8 @@ target.buildnumber = function() {
     .output.match(/\n/g).length; // get # of lines in git output
 
   echo('Extension build number: ' + EXTENSION_BUILD_NUMBER);
+
+  EXTENSION_VERSION = EXTENSION_VERSION_PREFIX + EXTENSION_BUILD_NUMBER;
 };
 
 //
@@ -215,13 +219,15 @@ target.firefox = function() {
       FIREFOX_EXTENSION_FILES_TO_COPY =
         ['*.js',
          '*.rdf',
-         'components'];
+         'README.mozilla',
+         'components',
+         '../../LICENSE'];
       FIREFOX_EXTENSION_FILES =
-        ['content',
-         '*.js',
+        ['bootstrap.js',
          'install.rdf',
          'components',
-         'content'];
+         'content',
+         'LICENSE'];
       FIREFOX_EXTENSION_NAME = 'pdf.js.xpi',
       FIREFOX_AMO_EXTENSION_NAME = 'pdf.js.amo.xpi';
 
@@ -258,10 +264,13 @@ target.firefox = function() {
 
   // We don't need pdf.js anymore since its inlined
   rm('-Rf', FIREFOX_BUILD_CONTENT_DIR + BUILD_DIR);
+  // TODO remove '.DS_Store' and other hidden files
+  // `find $(FIREFOX_BUILD_DIR) -name ".*" -delete`
 
   // Update the build version number
-  sed('-i', /PDFJSSCRIPT_BUILD/, EXTENSION_BUILD_NUMBER, FIREFOX_BUILD_DIR + '/install.rdf');
-  sed('-i', /PDFJSSCRIPT_BUILD/, EXTENSION_BUILD_NUMBER, FIREFOX_BUILD_DIR + '/update.rdf');
+  sed('-i', /PDFJSSCRIPT_VERSION/, EXTENSION_VERSION, FIREFOX_BUILD_DIR + '/install.rdf');
+  sed('-i', /PDFJSSCRIPT_VERSION/, EXTENSION_VERSION, FIREFOX_BUILD_DIR + '/update.rdf');
+  sed('-i', /PDFJSSCRIPT_VERSION/, EXTENSION_VERSION, FIREFOX_BUILD_DIR + '/README.mozilla');
 
   // Create the xpi
   cd(FIREFOX_BUILD_DIR);
@@ -275,6 +284,9 @@ target.firefox = function() {
   exec('zip -r ' + FIREFOX_AMO_EXTENSION_NAME + ' ' + FIREFOX_EXTENSION_FILES.join(' '));
   echo('AMO extension created: ' + FIREFOX_AMO_EXTENSION_NAME);
   cd(ROOT_DIR);
+
+  // TODO List all files for mozilla-central
+  // `@cd $(FIREFOX_BUILD_DIR); find $(FIREFOX_EXTENSION_FILES) -type f > extension-files`
 };
 
 //
