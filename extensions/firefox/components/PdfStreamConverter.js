@@ -66,6 +66,9 @@ ChromeActions.prototype = {
     if (this.inPrivateBrowswing)
       return '{}';
     return application.prefs.getValue(EXT_PREFIX + '.database', '{}');
+  },
+  pdfBugEnabled: function() {
+    return application.prefs.getValue(EXT_PREFIX + '.pdfBugEnabled', false);
   }
 };
 
