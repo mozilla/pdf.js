@@ -144,7 +144,7 @@ var Catalog = (function CatalogClosure() {
             else if (outlineDict.has('Dest')) {
               dest = outlineDict.get('Dest');
               if (isName(dest))
-            	dest = dest.name;
+                dest = dest.name;
             }
             var title = xref.fetchIfRef(outlineDict.get('Title'));
             var outlineItem = {
@@ -166,7 +166,7 @@ var Catalog = (function CatalogClosure() {
             if (isRef(obj) && !processed.has(obj)) {
               queue.push({obj: obj, parent: i.parent});
               processed.put(obj);
-      			}
+            }
           }
         }
       }
