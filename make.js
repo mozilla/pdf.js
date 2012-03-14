@@ -149,7 +149,7 @@ target.pagesrepo = function() {
     echo();
     echo('Cloning project repo...');
     echo('(This operation can take a while, depending on network conditions)');
-    exec('git clone -b gh-pages --depth=1 ' + REPO + ' ' + ßGH_PAGES_DIR,
+    exec('git clone -b gh-pages --depth=1 ' + REPO + ' ' + GH_PAGES_DIR,
       {silent: true});
     echo('Done.');
   }
