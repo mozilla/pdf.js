@@ -1182,7 +1182,8 @@ window.addEventListener('load', function webViewerLoad(evt) {
   if ('disableTextLayer' in hashParams)
     PDFJS.disableTextLayer = (hashParams['disableTextLayer'] === 'true');
 
-  if ('pdfBug' in hashParams) {
+  if ('pdfBug' in hashParams &&
+      (!PDFJS.isFirefoxExtension || FirefoxCom.request('pdfBugEnabled'))) {
     PDFJS.pdfBug = true;
     var pdfBug = hashParams['pdfBug'];
     var enabled = pdfBug.split(',');
