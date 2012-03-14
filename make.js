@@ -168,7 +168,8 @@ target.pagesrepo = function() {
 //
 
 var EXTENSION_WEB_FILES =
-      ['web/images',
+      ['web/debugger.js',
+       'web/images',
        'web/viewer.css',
        'web/viewer.js',
        'web/viewer.html',
@@ -264,8 +265,11 @@ target.firefox = function() {
 
   // We don't need pdf.js anymore since its inlined
   rm('-Rf', FIREFOX_BUILD_CONTENT_DIR + BUILD_DIR);
-  // TODO remove '.DS_Store' and other hidden files
-  // `find $(FIREFOX_BUILD_DIR) -name ".*" -delete`
+  // Remove '.DS_Store' and other hidden files
+  for (file in find(FIREFOX_BUILD_DIR)) {
+    if (file.match(/^\./))
+      rm('-f', file);
+  }
 
   // Update the build version number
   sed('-i', /PDFJSSCRIPT_VERSION/, EXTENSION_VERSION, FIREFOX_BUILD_DIR + '/install.rdf');
@@ -285,8 +289,14 @@ target.firefox = function() {
   echo('AMO extension created: ' + FIREFOX_AMO_EXTENSION_NAME);
   cd(ROOT_DIR);
 
-  // TODO List all files for mozilla-central
-  // `@cd $(FIREFOX_BUILD_DIR); find $(FIREFOX_EXTENSION_FILES) -type f > extension-files`
+  // List all files for mozilla-central
+  cd(FIREFOX_BUILD_DIR);
+  var extensionFiles = '';
+  for (file in find(FIREFOX_EXTENSION_FILES)) {
+    if (test('-f', file))
+      extensionFiles += file+'\n';
+  }
+  extensionFiles.to('extension-files');
 };
 
 //
