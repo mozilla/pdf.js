@@ -133,7 +133,7 @@ PdfStreamConverter.prototype = {
     try {
       var request = aCtxt;
       request.QueryInterface(Ci.nsIHttpChannel);
-      skipConversion = (request.requestMethod === 'POST');
+      skipConversion = (request.requestMethod !== 'GET');
     } catch (e) {
       // Non-HTTP request... continue normally.
     }
