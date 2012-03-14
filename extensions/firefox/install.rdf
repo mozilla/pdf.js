@@ -6,13 +6,13 @@
   <Description about="urn:mozilla:install-manifest">
     <em:id>uriloader@pdf.js</em:id>
     <em:name>pdf.js</em:name>
-    <em:version>0.2.PDFJSSCRIPT_BUILD</em:version>
+    <em:version>PDFJSSCRIPT_VERSION</em:version>
 	  <em:iconURL>chrome://pdf.js/skin/logo.png</em:iconURL>
     <em:targetApplication>
       <Description>
        <em:id>{ec8030f7-c20a-464f-9b0e-13a3a9e97384}</em:id>
        <em:minVersion>6.0</em:minVersion>
-       <em:maxVersion>13.0a1</em:maxVersion>
+       <em:maxVersion>14.0a1</em:maxVersion>
      </Description>
     </em:targetApplication>
     <em:bootstrap>true</em:bootstrap>
