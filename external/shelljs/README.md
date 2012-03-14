@@ -1,8 +1,10 @@
 # ShellJS - Unix shell commands for Node.js [![Build Status](https://secure.travis-ci.org/arturadib/shelljs.png)](http://travis-ci.org/arturadib/shelljs)
 
+_This project is young and experimental. Use at your own risk._
+
 ShellJS is a **portable** (Windows included) implementation of Unix shell commands on top of the Node.js API. You can use it to eliminate your shell script's dependency on Unix while still keeping its familiar and powerful commands.
 
-The project is both [unit-tested](http://travis-ci.org/arturadib/shelljs) and battle-tested at Mozilla's [pdf.js](http://github.com/mozilla/pdf.js).
+The project is [unit-tested](http://travis-ci.org/arturadib/shelljs) and is being used at Mozilla's [pdf.js](http://github.com/mozilla/pdf.js).
 
 
 ### Example
@@ -12,7 +14,7 @@ require('shelljs/global');
 
 // Copy files to release dir
 mkdir('-p', 'out/Release');
-cp('-R', 'lib/*.js', 'out/Release');
+cp('-R', 'stuff/*', 'out/Release');
 
 // Replace macros in each .js file
 cd('lib');
@@ -130,6 +132,27 @@ Returns list of files in the given path, or in current directory if no path prov
 For convenient iteration via `for (file in ls())`, the format returned is a hash object:
 `{ 'file1':null, 'dir1/file2':null, ...}`.
 
+#### find(path [,path ...])
+#### find(path_array)
+Examples:
+
+```javascript
+find('src', 'lib');
+find(['src', 'lib']); // same as above
+for (file in find('.')) {
+if (!file.match(/\.js$/))
+continue;
+// all files at this point end in '.js'
+}
+```
+
+Returns list of all files (however deep) in the given paths. For convenient iteration 
+via `for (file in find(...))`, the format returned is a hash object:
+`{ 'file1':null, 'dir1/file2':null, ...}`.
+
+The main difference with respect to `ls('-R', path)` is that the resulting file names 
+include the base directories, e.g. `lib/resources/file1` instead of just `file1`.
+
 #### cp('[options ,] source [,source ...], dest')
 #### cp('[options ,] source_array, dest')
 Available options:
@@ -194,6 +217,21 @@ mkdir('-p', ['/tmp/a/b/c/d', '/tmp/e/f/g']); // same as above
 ```
 
 Creates directories.
+
+#### test(expression)
+Available expression primaries:
+
++ `'-d', 'path'`: true if path is a directory
++ `'-f', 'path'`: true if path is a regular file
+
+Examples:
+
+```javascript
+if (test('-d', path)) { /* do something with dir */ };
+if (!test('-f', path)) continue; // skip if it's a regular file
+```
+
+Evaluates expression using the available primaries and returns corresponding value.
 
 #### cat(file [, file ...])
 #### cat(file_array)

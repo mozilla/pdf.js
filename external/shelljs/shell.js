@@ -57,6 +57,7 @@ function _pwd(options) {
 };
 exports.pwd = wrap('pwd', _pwd);
 
+
 //@
 //@ #### ls([options ,] path [,path ...])
 //@ #### ls([options ,] path_array)
@@ -157,6 +158,54 @@ function _ls(options, paths) {
   return hash;
 };
 exports.ls = wrap('ls', _ls);
+
+
+//@
+//@ #### find(path [,path ...])
+//@ #### find(path_array)
+//@ Examples:
+//@
+//@ ```javascript
+//@ find('src', 'lib');
+//@ find(['src', 'lib']); // same as above
+//@ for (file in find('.')) {
+//@   if (!file.match(/\.js$/))
+//@     continue;
+//@   // all files at this point end in '.js'
+//@ }
+//@ ```
+//@
+//@ Returns list of all files (however deep) in the given paths. For convenient iteration 
+//@ via `for (file in find(...))`, the format returned is a hash object:
+//@ `{ 'file1':null, 'dir1/file2':null, ...}`.
+//@
+//@ The main difference from `ls('-R', path)` is that the resulting file names 
+//@ include the base directories, e.g. `lib/resources/file1` instead of just `file1`.
+function _find(options, paths) {
+  if (!paths)
+    error('no path specified');
+  else if (typeof paths === 'object')
+    paths = paths; // assume array
+  else if (typeof paths === 'string')
+    paths = [].slice.call(arguments, 1);
+
+  var hash = {};
+
+  // why not simply do ls('-R', paths)? because the output wouldn't give the base dirs
+  // to get the base dir in the output, we need instead ls('-R', 'dir/*') for every directory
+
+  paths.forEach(function(file){
+    hash[file] = null;
+
+    if (fs.statSync(file).isDirectory()) {
+      for (subfile in _ls('-Ra', file+'/*'))
+        hash[subfile] = null;
+    }
+  });
+
+  return hash;
+}
+exports.find = wrap('find', _find);
 
 
 //@
@@ -437,6 +486,42 @@ function _mkdir(options, dirs) {
   });
 }; // mkdir
 exports.mkdir = wrap('mkdir', _mkdir);
+
+//@
+//@ #### test(expression)
+//@ Available expression primaries:
+//@
+//@ + `'-d', 'path'`: true if path is a directory
+//@ + `'-f', 'path'`: true if path is a regular file
+//@
+//@ Examples:
+//@
+//@ ```javascript
+//@ if (test('-d', path)) { /* do something with dir */ };
+//@ if (!test('-f', path)) continue; // skip if it's a regular file
+//@ ```
+//@
+//@ Evaluates expression using the available primaries and returns corresponding value.
+function _test(options, path) {
+  if (!path)
+    error('no path given');
+
+  // hack - only works with unary primaries
+  options = parseOptions(options, {
+    'd': 'directory',
+    'f': 'file'
+  });
+  if (!options.directory && !options.file)
+    error('could not interpret expression');
+
+  if (options.directory)
+    return fs.existsSync(path) && fs.statSync(path).isDirectory();
+
+  if (options.file)
+    return fs.existsSync(path) && fs.statSync(path).isFile();
+}; // test
+exports.test = wrap('test', _test);
+
 
 //@
 //@ #### cat(file [, file ...])
