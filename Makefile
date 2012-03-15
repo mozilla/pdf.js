@@ -283,6 +283,9 @@ extension: | production
 	@echo "AMO extension created: " $(FIREFOX_AMO_EXTENSION_NAME)
 	# List all files for mozilla-central
 	@cd $(FIREFOX_BUILD_DIR); find $(FIREFOX_EXTENSION_FILES) -type f > extension-files
+	# <em:maxVersion> must be set to "*" for mozilla-central
+	@sed -i.bak "s/em:maxVersion>[^<]*/em:maxVersion>*/" $(FIREFOX_BUILD_DIR)/install.rdf
+	@rm -f $(FIREFOX_BUILD_DIR)/*.bak
 
 	# Clear out everything in the chrome extension build directory
 	@rm -Rf $(CHROME_BUILD_DIR)

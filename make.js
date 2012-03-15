@@ -297,6 +297,8 @@ target.firefox = function() {
       extensionFiles += file+'\n';
   }
   extensionFiles.to('extension-files');
+  // <em:maxVersion> must be set to "*" for mozilla-central
+  sed('-i', /em:maxVersion>[^<]*/, 'em:maxVersion>*', 'install.rdf');
 };
 
 //
