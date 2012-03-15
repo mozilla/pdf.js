@@ -402,7 +402,7 @@ var Promise = (function PromiseClosure() {
       if (this.isResolved) {
         var data = this.data;
         callback.call(null, data);
-      } else if (this.isRejected && errorback) {
+      } else if (this.isRejected && errback) {
         var error = this.error;
         errback.call(null, error);
       } else {
