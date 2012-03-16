@@ -7,64 +7,147 @@ body {
   margin: 0px;
   padding: 0px;
 }
-
 [hidden] {
   display: none !important;
 }
-
 /* === Toolbar === */
-#controls {
-  background-color: #eee;
-  background: -o-linear-gradient(bottom,#eee 0%,#fff 100%);
-  background: -moz-linear-gradient(center bottom, #eee 0%, #fff 100%);
-  background: -webkit-gradient(linear, left bottom, left top, color-stop(0.0, #ddd), color-stop(1.0, #fff));
-  border-bottom: 1px solid #666;
-  padding: 3px;
+#controlsWrapper {
   position: fixed;
-  left: 0px;
-  top: 0px;
+  left: 0;
+  top: 0;
   height: 24px;
-  width: 100%;
   z-index: 1;
-  white-space:nowrap;
+  width: 100%;
+}
+#controls {
+  background-color: rgba(0, 0, 0, 0.7);
+  -webkit-border-radius: 0 0 8px 8px;
+  -moz-border-radius: 0 0 8px 8px;
+  border-radius: 0 0 8px 8px;
+  -webkit-box-shadow: 0px 2px 8px #000000;
+  -moz-box-shadow: 0px 2px 8px #000000;
+  box-shadow: 0px 2px 8px #000000;
+  padding: 3px;
+  white-space: nowrap;
   overflow: hidden;
+  color: #FFF;
 }
-
+.outerCenter {
+  float: right;
+  right: 50%;
+  position: relative;
+}
+.innerCenter {
+  float: right;
+  right: -50%;
+  position: relative;
+}
 .separator {
+  background-color: #222222;
+  border-right: 1px solid #444444;
+  height: 40px;
+  margin: 0 9px;
+  overflow: hidden;
+  width: 1px;
   display: inline;
-  border-left: 1px solid #d3d3d3;
-  border-right: 1px solid #fff;
-  height: 16px;
-  width:0px;
-  margin: 4px;
 }
-
 #controls > a > img {
-    margin: 4px;
-    height: 16px;
+  margin: 4px;
+  height: 16px;
 }
-
-#controls > button {
+button {
   line-height: 16px;
+  color: white;
+  background-color: #414141;
+  background-image: -moz-linear-gradient(top, #555555, #222222);
+  background-image: -ms-linear-gradient(top, #555555, #222222);
+  background-image: -webkit-gradient(linear, 0 0, 0 100%, from(#555555), to(#222222));
+  background-image: -webkit-linear-gradient(top, #555555, #222222);
+  background-image: -o-linear-gradient(top, #555555, #222222);
+  background-image: linear-gradient(top, #555555, #222222);
+  background-repeat: repeat-x;
+  filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#555555', endColorstr='#222222', GradientType=0);
+  border-color: #222222 #222222 #000000;
+  border-color: rgba(0, 0, 0, 0.1) rgba(0, 0, 0, 0.1) rgba(0, 0, 0, 0.25);
+  -webkit-border-radius: 6px;
+  -moz-border-radius: 6px;
+  border-radius: 6px;
+  padding: 2px;
+  display: inline-block;
+  border-width: 1px;
+  border-style: solid;
 }
-
-#controls > button > img {
+button:hover {
+  background-color: #222222;
+  background-position: 0 -15px;
+  -webkit-transition: background-position 0.1s linear;
+  -moz-transition: background-position 0.1s linear;
+  -ms-transition: background-position 0.1s linear;
+  -o-transition: background-position 0.1s linear;
+  transition: background-position 0.1s linear;
+}
+button:active,
+button[data-selected] {
+  background-image: none;
+  background-color: #222222;
+}
+button > img {
   width: 16px;
   height: 16px;
 }
-
-#controls > button[disabled] > img {
+button[disabled] {
   opacity: 0.5;
+  background-image: none;
+  background-color: #222222;
 }
-
 #pageNumber {
   text-align: right;
+  background-color: #000;
+  border: 1px solid #444444;
+  color: #FFF;
 }
-
+#numPages {
+  font-size: smaller;
+}
+#scaleSelect {
+  background-color: #000;
+  border: 1px solid #444444;
+  color: #FFF;
+}
 #fileInput {
   line-height: 16px;
 }
-
+.btnGroup {
+  display: inline;
+}
+.btnGroup button:first-child {
+  -webkit-border-bottom-left-radius: 4px;
+  -moz-border-radius-bottomleft: 4px;
+  border-bottom-left-radius: 4px;
+  -webkit-border-top-left-radius: 4px;
+  -moz-border-radius-topleft: 4px;
+  border-top-left-radius: 4px;
+  margin-left: 0;
+  border-right: 1px solid #444444;
+}
+.btnGroup button {
+  -webkit-border-radius: 0;
+  -moz-border-radius: 0;
+  border-radius: 0;
+  margin-left: -5px;
+  margin-right: 0;
+}
+.btnGroup button:last-child {
+  -webkit-border-bottom-right-radius: 4px;
+  -moz-border-radius-bottomright: 4px;
+  border-bottom-right-radius: 4px;
+  -webkit-border-top-right-radius: 4px;
+  -moz-border-radius-topright: 4px;
+  border-top-right-radius: 4px;
+}
+.btnGroup button:not(:last-child) {
+  border-right: 1px solid #666;
+}
 /* === Sidebar === */
 #sidebar {
   position: fixed;
@@ -72,22 +155,22 @@ body {
   top: 62px;
   bottom: 18px;
   left: -290px;
-  transition: left 0.25s ease-in-out 1s;
-  -o-transition: left 0.25s ease-in-out 1s;
-  -moz-transition: left 0.25s ease-in-out 1s;
   -webkit-transition: left 0.25s ease-in-out 1s;
+  -moz-transition: left 0.25s ease-in-out 1s;
+  -ms-transition: left 0.25s ease-in-out 1s;
+  -o-transition: left 0.25s ease-in-out 1s;
+  transition: left 0.25s ease-in-out 1s;
   z-index: 1;
 }
-
 #sidebar:hover,
 #sidebar.pinned {
   left: 0px;
-  transition: left 0.25s ease-in-out 0s;
-  -o-transition: left 0.25s ease-in-out 0s;
-  -moz-transition: left 0.25s ease-in-out 0s;
   -webkit-transition: left 0.25s ease-in-out 0s;
+  -moz-transition: left 0.25s ease-in-out 0s;
+  -ms-transition: left 0.25s ease-in-out 0s;
+  -o-transition: left 0.25s ease-in-out 0s;
+  transition: left 0.25s ease-in-out 0s;
 }
-
 #pinIcon {
   position: absolute;
   top: 4px;
@@ -98,72 +181,62 @@ body {
   background-image: url('images/pin-up.svg');
   background-size: 15px 15px;
 }
-
 #pinIcon:hover {
-  background-color: rgba(255,255,255,0.35);
+  background-color: rgba(255, 255, 255, 0.35);
 }
-
 #sidebar.pinned #pinIcon {
   background-image: url('images/pin-down.svg');
   background-size: 15px 15px;
 }
-
 #sidebarBox {
   background-color: rgba(0, 0, 0, 0.7);
   width: 300px;
   height: 100%;
-  border-top-right-radius: 8px;
-  border-bottom-right-radius: 8px;
-  -moz-border-radius-topright: 8px;
-  -moz-border-radius-bottomright: 8px;
   -webkit-border-top-right-radius: 8px;
+  -moz-border-radius-topright: 8px;
+  border-top-right-radius: 8px;
   -webkit-border-bottom-right-radius: 8px;
-  box-shadow: 0px 2px 8px #000;
-  -moz-box-shadow: 0px 2px 8px #000;
-  -webkit-box-shadow: 0px 2px 8px #000;
+  -moz-border-radius-bottomright: 8px;
+  border-bottom-right-radius: 8px;
+  -webkit-box-shadow: 0px 2px 8px #000000;
+  -moz-box-shadow: 0px 2px 8px #000000;
+  box-shadow: 0px 2px 8px #000000;
 }
-
 #sidebarScrollView {
   position: absolute;
   overflow: hidden;
   overflow-y: auto;
-  top: 20px;
+  top: 34px;
   bottom: 10px;
   left: 10px;
   width: 280px;
 }
-
 .thumbnail {
   width: 134px;
   height: 134px;
   margin-top: 5px;
   margin-bottom: 5px;
-  margin-left:auto;
-  margin-right:auto;
+  margin-left: auto;
+  margin-right: auto;
   line-height: 134px;
   text-align: center;
   overflow: hidden;
 }
-
 .thumbnail:not([data-loaded]) {
   background-color: gray;
 }
-
 .thumbnail > canvas {
   vertical-align: middle;
   display: inline-block;
 }
-
 #outlineScrollView {
   position: absolute;
-  background-color: #fff;
   overflow: auto;
-  top: 20px;
+  top: 34px;
   bottom: 10px;
   left: 10px;
   width: 280px;
 }
-
 #outlineView {
   padding-top: 4px;
   padding-bottom: 100px;
@@ -171,81 +244,47 @@ body {
   padding-right: 6px;
   font-size: smaller;
 }
-
 .outlineItem > .outlineItems {
   margin-left: 20px;
 }
-
 .outlineItem > a {
   text-decoration: none;
-  color: black;
+  color: white;
+  text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.25);
 }
-
 .outlineItem > a:hover {
-  background: #ff0;
-  box-shadow: 0px 2px 10px #ff0;
+  text-shadow: 0px 2px 10px #fff;
 }
-
 #sidebarControls {
-  position:absolute;
-  width: 120px;
-  height: 32px;
-  left: 15px;
-  bottom: 35px;
+  padding: 5px;
 }
-
-#sidebarControls > button {
-  box-shadow: 0px 4px 10px #000;
-  -moz-box-shadow: 0px 4px 10px #000;
-  -webkit-box-shadow: 0px 4px 10px #000;
-}
-
-#sidebarControls > button > img {
-  width: 32px;
-  height: 32px;
-}
-
-#sidebarControls > button[disabled] > img {
-  opacity: 0.5;
-}
-
-#sidebarControls > button[data-selected] {
-  box-shadow: 0px 4px 10px #ff0;
-  -moz-box-shadow: 0px 4px 10px #ff0;
-  -webkit-box-shadow: 0px 4px 10px #ff0;
-}
-
 /* === Content view === */
 canvas {
   margin: auto;
   display: block;
 }
-
 .page {
   width: 816px;
   height: 1056px;
   margin: 10px auto;
   position: relative;
   overflow: hidden;
-  box-shadow: 0px 4px 10px #000;
-  -moz-box-shadow: 0px 4px 10px #000;
-  -webkit-box-shadow: 0px 4px 10px #000;
+  -webkit-box-shadow: 0px 4px 10px #000000;
+  -moz-box-shadow: 0px 4px 10px #000000;
+  box-shadow: 0px 4px 10px #000000;
   background-color: white;
 }
-
 .page > a {
   display: block;
   position: absolute;
 }
-
 .page > a:hover {
   opacity: 0.2;
   background: #ff0;
-  box-shadow: 0px 2px 10px #ff0;
-  -moz-box-shadow: 0px 2px 10px #ff0;
-  -webkit-box-shadow: 0px 2px 10px #ff0;
+  -webkit-box-shadow: 0px 2px 10px #ffff00;
+  -moz-box-shadow: 0px 2px 10px #ffff00;
+  box-shadow: 0px 2px 10px #ffff00;
 }
-
 .loadingIcon {
   position: absolute;
   display: block;
@@ -255,7 +294,6 @@ canvas {
   bottom: 0;
   background: url('images/loading-icon.gif') center no-repeat;
 }
-
 .textLayer {
   position: absolute;
   left: 0;
@@ -265,88 +303,80 @@ canvas {
   color: #000;
   font-family: sans-serif;
 }
-
 .textLayer > div {
   color: transparent;
   position: absolute;
-  line-height:1.3;
+  line-height: 1.3;
 }
-
 .annotComment > div {
   position: absolute;
 }
-
 .annotComment > img {
   position: absolute;
 }
-
 .annotComment > img:hover {
   cursor: pointer;
   opacity: 0.7;
 }
-
 .annotComment > div {
   padding: 0.2em;
   max-width: 20em;
   background-color: #F1E47B;
-  box-shadow: 0px 2px 10px #333;
-  -moz-box-shadow: 0px 2px 10px #333;
-  -webkit-box-shadow: 0px 2px 10px #333;
+  -webkit-box-shadow: 0px 2px 10px #333333;
+  -moz-box-shadow: 0px 2px 10px #333333;
+  box-shadow: 0px 2px 10px #333333;
 }
-
 .annotComment > div > h1 {
   font-weight: normal;
   font-size: 1.2em;
   border-bottom: 1px solid #000000;
   margin: 0px;
 }
-
 /* TODO: file FF bug to support ::-moz-selection:window-inactive
    so we can override the opaque grey background when the window is inactive;
    see https://bugzilla.mozilla.org/show_bug.cgi?id=706209 */
-::selection { background:rgba(0,0,255,0.3); }
-::-moz-selection { background:rgba(0,0,255,0.3); }
-
+::selection {
+  background: rgba(0, 0, 255, 0.3);
+}
+::-moz-selection {
+  background: rgba(0, 0, 255, 0.3);
+}
 #viewer {
   margin: 44px 0px 0px;
   padding: 8px 0px;
 }
-
 #sidebarView canvas:hover {
   background: #ff0;
-  box-shadow: 0px 2px 10px #ff0;
-  -moz-box-shadow: 0px 2px 10px #ff0;
-  -webkit-box-shadow: 0px 2px 10px #ff0;
+  -webkit-box-shadow: 0px 2px 10px #ffff00;
+  -moz-box-shadow: 0px 2px 10px #ffff00;
+  box-shadow: 0px 2px 10px #ffff00;
 }
-
 #pageWidthOption {
-  border-top: 1px solid black;
+  border-top: 1px solid #444444;
 }
-
 #customScaleOption {
   display: none;
 }
-
 #errorWrapper {
   background: none repeat scroll 0 0 #FF5555;
   color: white;
-  left: 0;
+  left: 10px;
   position: fixed;
-  right: 0;
+  right: 10px;
   top: 30px;
   z-index: 1000;
   padding: 3px;
   font-size: 0.8em;
+  -webkit-border-radius: 6px;
+  -moz-border-radius: 6px;
+  border-radius: 6px;
 }
-
 #errorMessageLeft {
   float: left;
 }
-
 #errorMessageRight {
   float: right;
 }
-
 #errorMoreInfo {
   background-color: #FFFFFF;
   color: black;
@@ -354,48 +384,39 @@ canvas {
   margin: 3px;
   width: 98%;
 }
-
 .clearBoth {
   clear: both;
 }
-
 /* === Printed media overrides === */
 @media print {
   #sidebar {
     display: none;
   }
-
   #controls {
     display: none;
   }
-
   #viewer {
     margin: 0;
     padding: 0;
   }
-
   .page {
     display: none;
     margin: 0;
   }
-
   .page canvas {
-    box-shadow: none;
-    -moz-box-shadow: none;
     -webkit-box-shadow: none;
+    -moz-box-shadow: none;
+    box-shadow: none;
   }
-
   .page[data-loaded] {
     display: block;
     page-break-after: always;
   }
 }
-
 #loading {
   margin: 100px 0;
   text-align: center;
 }
-
 #PDFBug {
   font-size: 10px;
   position: fixed;
@@ -410,7 +431,7 @@ canvas {
 #PDFBug .controls {
   border-bottom: 1px solid #666;
   padding: 3px;
-  background: -moz-linear-gradient(center bottom, #eee 0%, #fff 100%);
+  background: -moz-linear-gradient(center bottom, #eeeeee 0%, #ffffff 100%);
 }
 #PDFBug .panels {
   overflow: auto;

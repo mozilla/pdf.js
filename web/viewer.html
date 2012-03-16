@@ -38,71 +38,76 @@
     </head>
 
   <body>
-    <div id="controls">
-      <button id="previous" onclick="PDFView.page--;" oncontextmenu="return false;">
-        <img src="images/go-up.svg" align="top" height="16"/>
-        Previous
-      </button>
+    <div id="controlsWrapper">
+      <div class="outerCenter">
+        <div id="controls" class="innerCenter controls">
+          <div class="btnGroup">
+            <button id="previous" onclick="PDFView.page--;" oncontextmenu="return false;">
+              <img src="images/go-up.svg" align="top" height="16"/>
+              Previous
+            </button>
 
-      <button id="next" onclick="PDFView.page++;" oncontextmenu="return false;">
-        <img src="images/go-down.svg" align="top" height="16"/>
-        Next
-      </button>
+            <button id="next" onclick="PDFView.page++;" oncontextmenu="return false;">
+              <img src="images/go-down.svg" align="top" height="16"/>
+              Next
+            </button>
+          </div>
 
-      <div class="separator"></div>
+          <input type="number" id="pageNumber" onchange="PDFView.page = this.value;" value="1" size="4" min="1" />
 
-      <input type="number" id="pageNumber" onchange="PDFView.page = this.value;" value="1" size="4" min="1" />
+          <span>/</span>
+          <span id="numPages">--</span>
 
-      <span>/</span>
-      <span id="numPages">--</span>
+          <div class="separator"></div>
 
-      <div class="separator"></div>
+          <div class="btnGroup">
+            <button id="zoomOut" title="Zoom Out" onclick="PDFView.zoomOut();" oncontextmenu="return false;">
+              <img src="images/zoom-out.svg" align="top" height="16"/>
+            </button>
+            <button id="zoomIn" title="Zoom In" onclick="PDFView.zoomIn();" oncontextmenu="return false;">
+              <img src="images/zoom-in.svg" align="top" height="16"/>
+            </button>
+          </div>
 
-      <button id="zoomOut" title="Zoom Out" onclick="PDFView.zoomOut();" oncontextmenu="return false;">
-        <img src="images/zoom-out.svg" align="top" height="16"/>
-      </button>
-      <button id="zoomIn" title="Zoom In" onclick="PDFView.zoomIn();" oncontextmenu="return false;">
-        <img src="images/zoom-in.svg" align="top" height="16"/>
-      </button>
+          <select id="scaleSelect" onchange="PDFView.parseScale(this.value);" oncontextmenu="return false;">
+            <option id="customScaleOption" value="custom"></option>
+            <option value="0.5">50%</option>
+            <option value="0.75">75%</option>
+            <option value="1">100%</option>
+            <option value="1.25">125%</option>
+            <option value="1.5">150%</option>
+            <option value="2">200%</option>
+            <option id="pageWidthOption" value="page-width">Page Width</option>
+            <option id="pageFitOption" value="page-fit">Page Fit</option>
+            <option id="pageAutoOption" value="auto" selected="selected">Auto</option>
+          </select>
 
-      <div class="separator"></div>
+          <div class="separator"></div>
 
-      <select id="scaleSelect" onchange="PDFView.parseScale(this.value);" oncontextmenu="return false;">
-        <option id="customScaleOption" value="custom"></option>
-        <option value="0.5">50%</option>
-        <option value="0.75">75%</option>
-        <option value="1">100%</option>
-        <option value="1.25">125%</option>
-        <option value="1.5">150%</option>
-        <option value="2">200%</option>
-        <option id="pageWidthOption" value="page-width">Page Width</option>
-        <option id="pageFitOption" value="page-fit">Page Fit</option>
-        <option id="pageAutoOption" value="auto" selected="selected">Auto</option>
-      </select>
+          <button id="print" onclick="window.print();" oncontextmenu="return false;">
+            <img src="images/document-print.svg" align="top" height="16"/>
+            Print
+          </button>
 
-      <div class="separator"></div>
+          <button id="download" title="Download" onclick="PDFView.download();" oncontextmenu="return false;">
+            <img src="images/download.svg" align="top" height="16"/>
+            Download
+          </button>
 
-      <button id="print" onclick="window.print();" oncontextmenu="return false;">
-        <img src="images/document-print.svg" align="top" height="16"/>
-        Print
-      </button>
+          <div class="separator"></div>
 
-      <button id="download" title="Download" onclick="PDFView.download();" oncontextmenu="return false;">
-        <img src="images/download.svg" align="top" height="16"/>
-        Download
-      </button>
+          <input id="fileInput" type="file" oncontextmenu="return false;" hidden='true'/>
 
-      <div class="separator"></div>
+          <div id="fileInputSeperator" class="separator" hidden='true'></div>
 
-      <input id="fileInput" type="file" oncontextmenu="return false;"/>
+          <a href="#" id="viewBookmark" title="Bookmark (or copy) current location">
+            <img src="images/bookmark.svg" alt="Bookmark" align="top" height="16"/>
+          </a>
 
-      <div id="fileInputSeperator" class="separator"></div>
-
-      <a href="#" id="viewBookmark" title="Bookmark (or copy) current location">
-        <img src="images/bookmark.svg" alt="Bookmark" align="top" height="16"/>
-      </a>
-
+        </div>
+      </div>
     </div>
+
     <div id="errorWrapper" hidden='true'>
       <div id="errorMessageLeft">
         <span id="errorMessage"></span>
@@ -125,19 +130,22 @@
     <div id="sidebar">
       <div id="sidebarBox">
         <div id="pinIcon" onClick="PDFView.pinSidebar()"></div>
+        <div id="sidebarControls" class="controls">
+          <div class="btnGroup">
+            <button id="thumbsSwitch" title="Show Thumbnails" onclick="PDFView.switchSidebarView('thumbs')" data-selected>
+              <img src="images/nav-thumbs.svg" align="top" height="16"/>Thumbnails
+            </button>
+            <button id="outlineSwitch" title="Show Document Outline" onclick="PDFView.switchSidebarView('outline')" disabled>
+              <img src="images/nav-outline.svg" align="top" height="16"/>
+              Outline
+            </button>
+          </div>
+        </div>
         <div id="sidebarScrollView">
           <div id="sidebarView"></div>
         </div>
         <div id="outlineScrollView" hidden='true'>
           <div id="outlineView"></div>
-        </div>
-        <div id="sidebarControls">
-          <button id="thumbsSwitch" title="Show Thumbnails" onclick="PDFView.switchSidebarView('thumbs')" data-selected>
-            <img src="images/nav-thumbs.svg" align="top" height="16" alt="Thumbs" />
-          </button>
-          <button id="outlineSwitch" title="Show Document Outline" onclick="PDFView.switchSidebarView('outline')" disabled>
-            <img src="images/nav-outline.svg" align="top" height="16" alt="Document Outline" />
-          </button>
         </div>
       </div>
     </div>
