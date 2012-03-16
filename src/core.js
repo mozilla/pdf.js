@@ -215,7 +215,7 @@ var Page = (function PageClosure() {
       var pe = this.pe = new PartialEvaluator(
                                 xref, handler, 'p' + this.pageNumber + '_');
 
-      this.operatorList = pe.getOperatorList(content, resources, dependency));
+      this.operatorList = pe.getOperatorList(content, resources, dependency);
       this.stats.timeEnd('Build IR Queue');
       return this.operatorList;
     },
