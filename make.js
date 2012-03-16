@@ -220,12 +220,18 @@ target.firefox = function() {
       FIREFOX_EXTENSION_FILES_TO_COPY =
         ['*.js',
          '*.rdf',
+         'install.rdf.in',
          'README.mozilla',
          'components',
          '../../LICENSE'];
       FIREFOX_EXTENSION_FILES =
         ['bootstrap.js',
          'install.rdf',
+         'components',
+         'content',
+         'LICENSE'];
+      FIREFOX_MC_EXTENSION_FILES =
+        ['bootstrap.js',
          'components',
          'content',
          'LICENSE'];
@@ -274,6 +280,7 @@ target.firefox = function() {
   // Update the build version number
   sed('-i', /PDFJSSCRIPT_VERSION/, EXTENSION_VERSION, FIREFOX_BUILD_DIR + '/install.rdf');
   sed('-i', /PDFJSSCRIPT_VERSION/, EXTENSION_VERSION, FIREFOX_BUILD_DIR + '/update.rdf');
+  sed('-i', /PDFJSSCRIPT_VERSION/, EXTENSION_VERSION, FIREFOX_BUILD_DIR + '/update.rdf.in');
   sed('-i', /PDFJSSCRIPT_VERSION/, EXTENSION_VERSION, FIREFOX_BUILD_DIR + '/README.mozilla');
 
   // Create the xpi
@@ -292,13 +299,11 @@ target.firefox = function() {
   // List all files for mozilla-central
   cd(FIREFOX_BUILD_DIR);
   var extensionFiles = '';
-  for (file in find(FIREFOX_EXTENSION_FILES)) {
+  for (file in find(FIREFOX_MC_EXTENSION_FILES)) {
     if (test('-f', file))
       extensionFiles += file+'\n';
   }
   extensionFiles.to('extension-files');
-  // <em:maxVersion> must be set to "*" for mozilla-central
-  sed('-i', /em:maxVersion>[^<]*/, 'em:maxVersion>*', 'install.rdf');
 };
 
 //
