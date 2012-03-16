@@ -500,6 +500,12 @@ var FontLoader = {
       // The postMessage() hackery was added to work around chrome bug
       // 82402.
 
+      // Validate the names parameter -- the values can used to construct HTML.
+      if (!/^\w+$/.test(names.join(''))) {
+        error('Invalid font name(s): ' + names.join());
+        return; // Keep the return in case if error() did not throw.
+      }
+
       var div = document.createElement('div');
       div.setAttribute('style',
                        'visibility: hidden;' +
