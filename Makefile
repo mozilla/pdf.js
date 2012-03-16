@@ -226,6 +226,7 @@ FIREFOX_CONTENT_DIR := $(EXTENSION_SRC)/firefox/$(CONTENT_DIR)/
 FIREFOX_EXTENSION_FILES_TO_COPY = \
 	*.js \
 	*.rdf \
+	install.rdf.in \
 	README.mozilla \
 	components \
 	../../LICENSE \
@@ -233,6 +234,12 @@ FIREFOX_EXTENSION_FILES_TO_COPY = \
 FIREFOX_EXTENSION_FILES = \
 	bootstrap.js \
 	install.rdf \
+	components \
+	content \
+	LICENSE \
+	$(NULL)
+FIREFOX_MC_EXTENSION_FILES = \
+	bootstrap.js \
 	components \
 	content \
 	LICENSE \
@@ -269,6 +276,7 @@ extension: | production
 	@rm -Rf $(FIREFOX_BUILD_CONTENT)/$(BUILD_DIR)/;
 	# Update the build version number
 	@sed -i.bak "s/PDFJSSCRIPT_VERSION/$(PDFJSSCRIPT_VERSION)/" $(FIREFOX_BUILD_DIR)/install.rdf
+	@sed -i.bak "s/PDFJSSCRIPT_VERSION/$(PDFJSSCRIPT_VERSION)/" $(FIREFOX_BUILD_DIR)/install.rdf.in
 	@sed -i.bak "s/PDFJSSCRIPT_VERSION/$(PDFJSSCRIPT_VERSION)/" $(FIREFOX_BUILD_DIR)/update.rdf
 	@sed -i.bak "s/PDFJSSCRIPT_VERSION/$(PDFJSSCRIPT_VERSION)/" $(FIREFOX_BUILD_DIR)/README.mozilla
 	@rm -f $(FIREFOX_BUILD_DIR)/*.bak
@@ -282,10 +290,7 @@ extension: | production
 	@cd $(FIREFOX_BUILD_DIR); zip -r $(FIREFOX_AMO_EXTENSION_NAME) $(FIREFOX_EXTENSION_FILES)
 	@echo "AMO extension created: " $(FIREFOX_AMO_EXTENSION_NAME)
 	# List all files for mozilla-central
-	@cd $(FIREFOX_BUILD_DIR); find $(FIREFOX_EXTENSION_FILES) -type f > extension-files
-	# <em:maxVersion> must be set to "*" for mozilla-central
-	@sed -i.bak "s/em:maxVersion>[^<]*/em:maxVersion>*/" $(FIREFOX_BUILD_DIR)/install.rdf
-	@rm -f $(FIREFOX_BUILD_DIR)/*.bak
+	@cd $(FIREFOX_BUILD_DIR); find $(FIREFOX_MC_EXTENSION_FILES) -type f > extension-files
 
 	# Clear out everything in the chrome extension build directory
 	@rm -Rf $(CHROME_BUILD_DIR)

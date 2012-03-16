@@ -1,5 +1,7 @@
 <?xml version="1.0"?>
 
+#filter substitution
+
 <RDF xmlns="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
      xmlns:em="http://www.mozilla.org/2004/em-rdf#">
 
@@ -11,8 +13,9 @@
     <em:targetApplication>
       <Description>
        <em:id>{ec8030f7-c20a-464f-9b0e-13a3a9e97384}</em:id>
-       <em:minVersion>6.0</em:minVersion>
-       <em:maxVersion>14.0a1</em:maxVersion>
+       <em:minVersion>@FIREFOX_VERSION@</em:minVersion>
+       <em:maxVersion>@FIREFOX_VERSION@</em:maxVersion>
+       <em:strictCompatibility>true</em:strictCompatibility>
      </Description>
     </em:targetApplication>
     <em:bootstrap>true</em:bootstrap>
@@ -21,7 +24,5 @@
     <em:description>pdf.js uri loader</em:description>
     <em:homepageURL>https://github.com/mozilla/pdf.js/</em:homepageURL>
     <em:type>2</em:type>
-    <!-- Use the raw link for updates so we we can use SSL. -->
-    <em:updateURL>https://github.com/mozilla/pdf.js/raw/gh-pages/extensions/firefox/update.rdf</em:updateURL>
   </Description>
 </RDF>
