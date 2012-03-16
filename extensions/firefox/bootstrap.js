@@ -79,6 +79,8 @@ function startup(aData, aReason) {
 function shutdown(aData, aReason) {
   if (Services.prefs.getBoolPref('extensions.pdf.js.active'))
     Services.prefs.setBoolPref('extensions.pdf.js.active', false);
+  if (aReason == APP_SHUTDOWN)
+    return;
   var ioService = Services.io;
   var resProt = ioService.getProtocolHandler('resource')
                   .QueryInterface(Ci.nsIResProtocolHandler);
