@@ -807,6 +807,9 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       var firstChar = xref.fetchIfRef(dict.get('FirstChar')) || 0;
       var lastChar = xref.fetchIfRef(dict.get('LastChar')) || maxCharIndex;
       var fontName = xref.fetchIfRef(descriptor.get('FontName'));
+      // Some bad pdf's have a string as the font name.
+      if (isString(fontName))
+        fontName = new Name(fontName);
       assertWellFormed(isName(fontName), 'invalid font name');
 
       var fontFile = descriptor.get('FontFile', 'FontFile2', 'FontFile3');
