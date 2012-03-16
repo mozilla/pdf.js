@@ -9,7 +9,7 @@
     <em:id>uriloader@pdf.js</em:id>
     <em:name>pdf.js</em:name>
     <em:version>PDFJSSCRIPT_VERSION</em:version>
-	  <em:iconURL>chrome://pdf.js/skin/logo.png</em:iconURL>
+    <em:iconURL>chrome://pdf.js/skin/logo.png</em:iconURL>
     <em:targetApplication>
       <Description>
        <em:id>{ec8030f7-c20a-464f-9b0e-13a3a9e97384}</em:id>
