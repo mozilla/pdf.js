@@ -174,7 +174,6 @@ var Encodings = {
     '', '', 'Lslash', 'Oslash', 'OE', 'ordmasculine', '', '', '', '', '', 'ae',
     '', '', '', 'dotlessi', '', '', 'lslash', 'oslash', 'oe', 'germandbls'],
   WinAnsiEncoding: ['', '', '', '', '', '', '', '', '', '', '', '', '', '', '',
-
     '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '',
     'space', 'exclam', 'quotedbl', 'numbersign', 'dollar', 'percent',
     'ampersand', 'quotesingle', 'parenleft', 'parenright', 'asterisk', 'plus',
@@ -1947,12 +1946,22 @@ var Font = (function FontClosure() {
         }
 
         // remove glyph references outside range of avaialable glyphs or empty
+        var glyphsRemoved = 0;
         for (var i = ids.length - 1; i >= 0; i--) {
           if (ids[i] < numGlyphs &&
               (!emptyGlyphIds[ids[i]] || this.isSymbolicFont))
             continue;
           ids.splice(i, 1);
           glyphs.splice(i, 1);
+          glyphsRemoved++;
+        }
+
+        // heuristics: if removed more than 2 glyphs encoding WinAnsiEncoding
+        // does not set properly
+        if (glyphsRemoved > 2) {
+          warn('Switching TrueType encoding to MacRomanEncoding for ' +
+               this.name + ' font');
+          encoding = Encodings.MacRomanEncoding;
         }
 
         if (hasShortCmap && this.hasEncoding && !this.isSymbolicFont) {
@@ -1992,7 +2001,7 @@ var Font = (function FontClosure() {
             reverseMap[glyphs[i].unicode] = i;
           }
 
-          var backtrackReplacements = [];
+          var newGlyphUnicodes = [];
           for (var i = 0, ii = glyphs.length; i < ii; i++) {
             var code = glyphs[i].unicode;
             var changeCode = false;
@@ -2008,36 +2017,23 @@ var Font = (function FontClosure() {
               if (!unicode || reverseMap[unicode] === i)
                 continue; // unknown glyph name or in its own place
 
-              if (unicode in reverseMap) {
-                backtrackReplacements[unicode] = {
-                  index: i,
-                  code: code,
-                  changeCode: changeCode
-                };
-                continue; // its place is taken
-              }
-
-              var index = i;
-              while (true) {
-                glyphs[index].unicode = unicode;
-                reverseMap[unicode] = index;
-                if (changeCode)
-                  toFontChar[code] = unicode;
-
-                // checking if available place can be used by other glyph
-                var backtrack = backtrackReplacements[code];
-                if (!backtrack)
-                  break;
-
-                delete backtrackReplacements[code];
-                index = backtrack.index;
-                code = backtrack.code;
-                changeCode = backtrack.changeCode;
-                unicode = code;
-              }
+              newGlyphUnicodes[i] = unicode;
+              if (changeCode)
+                toFontChar[code] = unicode;
+              delete reverseMap[code];
             }
-            this.useToFontChar = true;
           }
+          for (var index in newGlyphUnicodes) {
+            var unicode = newGlyphUnicodes[index];
+            if (reverseMap[unicode]) {
+              // avoiding assigning to the same unicode
+              glyphs[index].unicode = unusedUnicode++;
+              continue;
+            }
+            glyphs[index].unicode = unicode;
+            reverseMap[unicode] = index;
+          }
+          this.useToFontChar = true;
         }
 
         // Moving all symbolic font glyphs into 0xF000 - 0xF0FF range.
