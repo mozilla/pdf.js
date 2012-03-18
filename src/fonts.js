@@ -1997,9 +1997,8 @@ var Font = (function FontClosure() {
           // Re-encode cmap encoding to unicode, based on the 'post' table data
           // diffrence array or base encoding
           var reverseMap = [];
-          for (var i = 0, ii = glyphs.length; i < ii; i++) {
+          for (var i = 0, ii = glyphs.length; i < ii; i++)
             reverseMap[glyphs[i].unicode] = i;
-          }
 
           var newGlyphUnicodes = [];
           for (var i = 0, ii = glyphs.length; i < ii; i++) {
