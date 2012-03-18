@@ -170,10 +170,10 @@ var Page = (function PageClosure() {
       return shadow(this, 'rotate', rotate);
     },
 
-    startRenderingFromIRQueue: function pageStartRenderingFromIRQueue(
-                                                IRQueue, fonts) {
+    startRenderingFromOperatorList: function pageStartRenderingFromOperatorList(
+                                                operatorList, fonts) {
       var self = this;
-      this.IRQueue = IRQueue;
+      this.operatorList = operatorList;
 
       var displayContinuation = function pageDisplayContinuation() {
         // Always defer call to display() to work around bug in
@@ -184,15 +184,16 @@ var Page = (function PageClosure() {
       };
 
       this.ensureFonts(fonts,
-                       function pageStartRenderingFromIRQueueEnsureFonts() {
-        displayContinuation();
-      });
+        function pageStartRenderingFromOperatorListEnsureFonts() {
+          displayContinuation();
+        }
+      );
     },
 
-    getIRQueue: function pageGetIRQueue(handler, dependency) {
-      if (this.IRQueue) {
+    getOperatorList: function pageGetOperatorList(handler, dependency) {
+      if (this.operatorList) {
         // content was compiled
-        return this.IRQueue;
+        return this.operatorList;
       }
 
       this.stats.time('Build IR Queue');
@@ -213,11 +214,10 @@ var Page = (function PageClosure() {
 
       var pe = this.pe = new PartialEvaluator(
                                 xref, handler, 'p' + this.pageNumber + '_');
-      var IRQueue = {};
-      this.IRQueue = pe.getIRQueue(content, resources, IRQueue, dependency);
 
+      this.operatorList = pe.getOperatorList(content, resources, dependency);
       this.stats.timeEnd('Build IR Queue');
-      return this.IRQueue;
+      return this.operatorList;
     },
 
     ensureFonts: function pageEnsureFonts(fonts, callback) {
@@ -228,14 +228,13 @@ var Page = (function PageClosure() {
       }
 
       // Load all the fonts
-      var fontObjs = FontLoader.bind(
+      FontLoader.bind(
         fonts,
         function pageEnsureFontsFontObjs(fontObjs) {
           this.stats.timeEnd('Font Loading');
 
           callback.call(this);
-        }.bind(this),
-        this.objs
+        }.bind(this)
       );
     },
 
@@ -255,18 +254,19 @@ var Page = (function PageClosure() {
             rotate: this.rotate });
 
       var startIdx = 0;
-      var length = this.IRQueue.fnArray.length;
-      var IRQueue = this.IRQueue;
+      var length = this.operatorList.fnArray.length;
+      var operatorList = this.operatorList;
       var stepper = null;
       if (PDFJS.pdfBug && StepperManager.enabled) {
         stepper = StepperManager.create(this.pageNumber);
-        stepper.init(IRQueue);
+        stepper.init(operatorList);
         stepper.nextBreakPoint = stepper.getNextBreakPoint();
       }
 
       var self = this;
       function next() {
-        startIdx = gfx.executeIRQueue(IRQueue, startIdx, next, stepper);
+        startIdx =
+          gfx.executeOperatorList(operatorList, startIdx, next, stepper);
         if (startIdx == length) {
           gfx.endDrawing();
           stats.timeEnd('Rendering');
@@ -436,13 +436,14 @@ var Page = (function PageClosure() {
     startRendering: function pageStartRendering(ctx, callback, textLayer)  {
       var stats = this.stats;
       stats.time('Overall');
-      // If there is no displayReadyPromise yet, then the IRQueue was never
+      // If there is no displayReadyPromise yet, then the operatorList was never
       // requested before. Make the request and create the promise.
       if (!this.displayReadyPromise) {
         this.pdf.startRendering(this);
         this.displayReadyPromise = new Promise();
       }
-      // Once the IRQueue and fonts are loaded, perform the actual rendering.
+
+      // Once the operatorList and fonts are loaded, do the actual rendering.
       this.displayReadyPromise.then(
         function pageDisplayReadyPromise() {
           var gfx = new CanvasGraphics(ctx, this.objs, textLayer);
@@ -474,9 +475,6 @@ var Page = (function PageClosure() {
  * Right now there exists one PDFDocModel on the main thread + one object
  * for each worker. If there is no worker support enabled, there are two
  * `PDFDocModel` objects on the main thread created.
- * TODO: Refactor the internal object structure, such that there is no
- * need for the `PDFDocModel` anymore and there is only one object on the
- * main thread and not one entire copy on each worker instance.
  */
 var PDFDocModel = (function PDFDocModelClosure() {
   function PDFDocModel(arg, callback) {
@@ -645,9 +643,9 @@ var PDFDoc = (function PDFDocClosure() {
 
     this.data = data;
     this.stream = stream;
-    this.pdf = new PDFDocModel(stream);
-    this.fingerprint = this.pdf.getFingerprint();
-    this.catalog = this.pdf.catalog;
+    this.pdfModel = new PDFDocModel(stream);
+    this.fingerprint = this.pdfModel.getFingerprint();
+    this.catalog = this.pdfModel.catalog;
     this.objs = new PDFObjects();
 
     this.pageCache = [];
@@ -733,8 +731,9 @@ var PDFDoc = (function PDFDocClosure() {
         var pageNum = data.pageNum;
         var page = this.pageCache[pageNum];
         var depFonts = data.depFonts;
+
         page.stats.timeEnd('Page Request');
-        page.startRenderingFromIRQueue(data.IRQueue, depFonts);
+        page.startRenderingFromOperatorList(data.operatorList, depFonts);
       }, this);
 
       messageHandler.on('obj', function pdfDocObj(data) {
@@ -761,30 +760,15 @@ var PDFDoc = (function PDFDocClosure() {
               file = new Stream(file, 0, file.length, fontFileDict);
             }
 
-            // For now, resolve the font object here direclty. The real font
-            // object is then created in FontLoader.bind().
-            this.objs.resolve(id, {
-              name: name,
-              file: file,
-              properties: properties
-            });
+            // At this point, only the font object is created but the font is
+            // not yet attached to the DOM. This is done in `FontLoader.bind`.
+            var font = new Font(name, file, properties);
+            this.objs.resolve(id, font);
             break;
           default:
             error('Got unkown object type ' + type);
         }
       }, this);
-
-      messageHandler.on('font_ready', function pdfDocFontReady(data) {
-        var id = data[0];
-        var font = new FontShape(data[1]);
-
-        // If there is no string, then there is nothing to attach to the DOM.
-        if (!font.str) {
-          this.objs.resolve(id, font);
-        } else {
-          this.objs.setData(id, font);
-        }
-      }.bind(this));
 
       messageHandler.on('page_error', function pdfDocError(data) {
         var page = this.pageCache[data.pageNum];
@@ -807,7 +791,7 @@ var PDFDoc = (function PDFDocClosure() {
           var size = width * height;
           var rgbaLength = size * 4;
           var buf = new Uint8Array(size * components);
-          var tmpCanvas = new ScratchCanvas(width, height);
+          var tmpCanvas = createScratchCanvas(width, height);
           var tmpCtx = tmpCanvas.getContext('2d');
           tmpCtx.drawImage(img, 0, 0);
           var data = tmpCtx.getImageData(0, 0, width, height).data;
@@ -836,7 +820,7 @@ var PDFDoc = (function PDFDocClosure() {
     },
 
     get numPages() {
-      return this.pdf.numPages;
+      return this.pdfModel.numPages;
     },
 
     startRendering: function pdfDocStartRendering(page) {
@@ -851,7 +835,7 @@ var PDFDoc = (function PDFDocClosure() {
       if (this.pageCache[n])
         return this.pageCache[n];
 
-      var page = this.pdf.getPage(n);
+      var page = this.pdfModel.getPage(n);
       // Add a reference to the objects such that Page can forward the reference
       // to the CanvasGraphics and so on.
       page.objs = this.objs;
