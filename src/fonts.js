@@ -3948,7 +3948,7 @@ var CFF = (function CFFClosure() {
   return CFF;
 })();
 
-var CFFHeader = (function CFFHeader() {
+var CFFHeader = (function CFFHeaderClosure() {
   function CFFHeader(major, minor, hdrSize, offSize) {
     this.major = major;
     this.minor = minor;
@@ -3958,7 +3958,7 @@ var CFFHeader = (function CFFHeader() {
   return CFFHeader;
 })();
 
-var CFFStrings = (function CFFStrings() {
+var CFFStrings = (function CFFStringsClosure() {
   function CFFStrings() {
     this.strings = [];
   }
@@ -3980,7 +3980,7 @@ var CFFStrings = (function CFFStrings() {
   return CFFStrings;
 })();
 
-var CFFIndex = (function() {
+var CFFIndex = (function CFFIndexClosure() {
   function CFFIndex() {
     this.objects = [];
     this.length = 0;
@@ -4039,16 +4039,6 @@ var CFFDict = (function CFFDictClosure() {
     },
     removeByName: function removeByName(name) {
       delete this.values[this.nameToKeyMap[name]];
-    },
-    dump: function dump(title) {
-      console.log('----' + title + ' Dictionary Dump------');
-      for (var key in this.values) {
-        if (key in this.keyToNameMap)
-          console.log(this.keyToNameMap[key] + '(' + key + '): ' +
-                      this.values[key]);
-        else
-          console.log('Unknown(' + key + '): ' + this.values[key]);
-      }
     }
   };
   CFFDict.createTables = function createTables(layout) {
