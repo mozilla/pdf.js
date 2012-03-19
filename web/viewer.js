@@ -224,6 +224,7 @@ var PDFView = {
   },
 
   set page(val) {
+    console.log("set page", val);
     var pages = this.pages;
     var input = document.getElementById('pageNumber');
     if (!(0 < val && val <= pages.length)) {
@@ -631,6 +632,55 @@ var PDFView = {
       params[unescape(key)] = unescape(value);
     }
     return params;
+  },
+
+  fullscreen: function pdfViewFullscreen() {
+    var isFullscreen = document.fullscreen || document.mozFullScreen ||
+      document.webkitIsFullScreen;
+
+    if(isFullscreen) {
+      return false;
+    }
+
+    if (document.documentElement.requestFullScreen) {  
+      document.documentElement.requestFullScreen();  
+    } else if (document.documentElement.mozRequestFullScreen) {  
+      document.documentElement.mozRequestFullScreen();  
+    } else if (document.documentElement.webkitRequestFullScreen) {  
+      document.documentElement.webkitRequestFullScreen(Element.ALLOW_KEYBOARD_INPUT);  
+    } else {
+      return false;
+    }
+
+    this.isFullscreen = true;
+    var controlsElement = document.getElementById('controls');
+    var sidebarElement = document.getElementById('sidebar');
+    var viewer = document.getElementById('viewer');
+    controlsElement.setAttribute('hidden', 'true');
+    sidebarElement.setAttribute('hidden', 'true');
+    viewer.style.margin = '0pt 0 0';
+
+    document.body.style.overflow = 'hidden';
+
+    var currentPage = this.pages[this.page - 1];
+    var pageWidthScale = (window.outerHeight) /
+                          currentPage.width / kCssUnits;
+    var pageHeightScale = (window.outerHeight) /
+                           currentPage.height / kCssUnits;
+    var scale = Math.min(pageWidthScale, pageHeightScale);
+    this.setScale(scale, true);
+    console.log(scale, currentPage.height*scale, window.innerHeight, window.outerHeight);
+
+    return true;
+  },
+
+  exitFullscreen: function pdfViewExitFullscreen() {
+    this.isFullscreen = false; 
+    var controlsElement = document.getElementById('controls');
+    var sidebarElement = document.getElementById('sidebar');
+    controlsElement.removeAttribute('hidden');
+    sidebarElement.removeAttribute('hidden');
+    document.body.style.overflow = '';
   }
 };
 
@@ -1193,6 +1243,13 @@ window.addEventListener('load', function webViewerLoad(evt) {
 
   var sidebarScrollView = document.getElementById('sidebarScrollView');
   sidebarScrollView.addEventListener('scroll', updateThumbViewArea, true);
+
+  var fullscreenButton = document.getElementById('fullscreen');
+  var docEl = document.documentElement;
+  if(!docEl.requestFullscreen && !docEl.mozRequestFullScreen &&
+      !docEl.webkitRequestFullScreen) {
+    fullscreenButton.setAttribute('hidden', 'true');
+  }
 }, true);
 
 window.addEventListener('unload', function webViewerUnload(evt) {
@@ -1390,7 +1447,7 @@ window.addEventListener('keydown', function keydown(evt) {
     return;
   var controlsElement = document.getElementById('controls');
   while (curElement) {
-    if (curElement === controlsElement)
+    if (curElement === controlsElement && !PDFView.isFullscreen)
       return; // ignoring if the 'controls' element is focused
     curElement = curElement.parentNode;
   }
@@ -1429,3 +1486,19 @@ window.addEventListener('keydown', function keydown(evt) {
     evt.preventDefault();
   }
 });
+
+(function fullscreenClosure() {
+  function fullscreenChange(e) {
+    var isFullscreen = document.fullscreen || document.mozFullScreen ||
+      document.webkitIsFullScreen;
+
+    if(!isFullscreen) {
+      PDFView.exitFullscreen();
+    }
+  }
+
+  window.addEventListener('fullscreenchange', fullscreenChange, false);
+  window.addEventListener('mozfullscreenchange', fullscreenChange, false);
+  window.addEventListener('webkitfullscreenchange', fullscreenChange, false);
+})();
+
