@@ -1,7 +1,6 @@
 /* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 /* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
 
-'use strict';
 
 var kDefaultURL = 'compressed.tracemonkey-pldi-09.pdf';
 var kDefaultScale = 'auto';
@@ -224,6 +223,7 @@ var PDFView = {
   },
 
   set page(val) {
+    console.log("1) Setting page", val, arguments.callee.caller);
     var pages = this.pages;
     var input = document.getElementById('pageNumber');
     if (!(0 < val && val <= pages.length)) {
@@ -245,12 +245,11 @@ var PDFView = {
     // avoiding the creation of two "set page" method (internal and public)
     if (updateViewarea.inProgress)
       return;
-
+    console.log("2) Setting page", val);
     // Avoid scrolling the first page during loading
     if (this.loading && val == 1)
       return;
 
-    console.log("Calling scrollIntoView");
     pages[val - 1].scrollIntoView();
   },
 
@@ -572,6 +571,16 @@ var PDFView = {
     var kBottomMargin = 10;
     var visiblePages = [];
 
+    if(this.isFullscreen) {
+      var view = pages[this.page - 1];
+      visiblePages.push({
+        id: view.id,
+        view: view
+      });
+
+      return visiblePages;
+    }
+
     var currentHeight = kBottomMargin;
     var windowTop = window.pageYOffset;
     for (var i = 1; i <= pages.length; ++i) {
@@ -642,25 +651,18 @@ var PDFView = {
       return false;
     }
 
+    var wrapper = document.getElementById('fullscreenwrapper');
     if (document.documentElement.requestFullScreen) {  
-      document.documentElement.requestFullScreen();  
+      wrapper.requestFullScreen();  
     } else if (document.documentElement.mozRequestFullScreen) {  
-      document.documentElement.mozRequestFullScreen();  
+      wrapper.mozRequestFullScreen();  
     } else if (document.documentElement.webkitRequestFullScreen) {  
-      document.documentElement.webkitRequestFullScreen(Element.ALLOW_KEYBOARD_INPUT);  
+      wrapper.webkitRequestFullScreen(Element.ALLOW_KEYBOARD_INPUT);  
     } else {
       return false;
     }
 
     this.isFullscreen = true;
-    var controlsElement = document.getElementById('controls');
-    var sidebarElement = document.getElementById('sidebar');
-    var viewer = document.getElementById('viewer');
-    controlsElement.setAttribute('hidden', 'true');
-    sidebarElement.setAttribute('hidden', 'true');
-    viewer.style.margin = '0pt 0 0';
-
-    document.body.style.overflow = 'hidden';
 
     var currentPage = this.pages[this.page - 1];
     var pageWidthScale = (window.outerHeight) /
@@ -669,18 +671,18 @@ var PDFView = {
                            currentPage.height / kCssUnits;
     var scale = Math.min(pageWidthScale, pageHeightScale);
     this.setScale(scale, true);
-    console.log(scale, currentPage.height*scale, window.innerHeight, window.outerHeight);
+
+    // Wait for the fullscreen change
+    setTimeout(function() {
+      currentPage.scrollIntoView();
+    }, 0);
 
     return true;
   },
 
   exitFullscreen: function pdfViewExitFullscreen() {
     this.isFullscreen = false; 
-    var controlsElement = document.getElementById('controls');
-    var sidebarElement = document.getElementById('sidebar');
-    controlsElement.removeAttribute('hidden');
-    sidebarElement.removeAttribute('hidden');
-    document.body.style.overflow = '';
+    this.page = this.page;
   }
 };
 
@@ -808,13 +810,12 @@ var PageView = function pageView(container, content, id, pageWidth, pageHeight,
   };
 
   this.scrollIntoView = function pageViewScrollIntoView(dest) {
-    console.log("Scroll", dest);
+    console.log("Scroll Into View", arguments.callee.caller);
       if (!dest) {
         div.scrollIntoView(true);
         return;
       }
 
-      console.log("further");
       var x = 0, y = 0;
       var width = 0, height = 0, widthScale, heightScale;
       var scale = 0;
@@ -850,7 +851,6 @@ var PageView = function pageView(container, content, id, pageWidth, pageHeight,
           scale = Math.min(widthScale, heightScale);
           break;
         default:
-          console.log("what");
           return;
       }
 
@@ -864,9 +864,7 @@ var PageView = function pageView(container, content, id, pageWidth, pageHeight,
       else if (PDFView.currentScale === kUnknownScale)
         PDFView.parseScale(kDefaultScale, true);
 
-      console.log("timeout");
       setTimeout(function pageViewScrollIntoViewRelayout() {
-        console.log("the timeout");
         // letting page to re-layout before scrolling
         var scale = PDFView.currentScale;
         var x = Math.min(boundingRect[0].x, boundingRect[1].x);
@@ -1291,6 +1289,7 @@ function updateViewarea() {
     var page = visiblePages[i];
     var pageObj = PDFView.pages[page.id - 1];
 
+    console.log(page.id, pageObj.drawingRequired());
     pageToDraw |= pageObj.drawingRequired();
     renderingQueue.enqueueDraw(pageObj);
   }
@@ -1304,11 +1303,14 @@ function updateViewarea() {
     preDraw();
   }
 
-  updateViewarea.inProgress = true; // used in "set page"
   var currentId = PDFView.page;
   var firstPage = visiblePages[0];
-  PDFView.page = firstPage.id;
-  updateViewarea.inProgress = false;
+
+  if(!PDFView.isFullscreen) {
+    updateViewarea.inProgress = true; // used in "set page"
+    PDFView.page = firstPage.id;
+    updateViewarea.inProgress = false;
+  }
 
   var currentScale = PDFView.currentScale;
   var currentScaleValue = PDFView.currentScaleValue;
@@ -1476,12 +1478,14 @@ window.addEventListener('keydown', function keydown(evt) {
     case 37: // left arrow
     case 75: // 'k'
     case 80: // 'p'
+      console.log("This was page nr.:", PDFView.page);
       PDFView.page--;
       handled = true;
       break;
     case 39: // right arrow
     case 74: // 'j'
     case 78: // 'n'
+      console.log("This was page nr.:", PDFView.page);
       PDFView.page++;
       handled = true;
       break;

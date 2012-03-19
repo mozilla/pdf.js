@@ -1,6 +1,32 @@
 /* -*- Mode: Java; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- /
 /* vim: set shiftwidth=4 tabstop=8 autoindent cindent expandtab: */
 
+#fullscreenwrapper {
+  background-color: #929292;
+  width: 100%;
+  height: 100%;
+}
+:-webkit-full-screen #fullscreenwrapper {
+  overflow: hidden;
+}
+:-moz-full-screen #viewer, #fullscreenwrapper {
+  overflow: hidden;
+}
+
+:-webkit-full-screen #viewer {
+  margin: 0pt;
+  padding: 4pt;
+}
+
+:-moz-full-screen #viewer {
+  margin: 0pt;
+  padding: 4pt;
+}
+
+:-moz-full-screen .page {
+  margin: 4pt auto;
+}
+
 body {
   background-color: #929292;
   font-family: 'Lucida Grande', 'Lucida Sans Unicode', Helvetica, Arial, Verdana, sans-serif;
