@@ -40,8 +40,22 @@ function topWindow(win) {
             .QueryInterface(Ci.nsIInterfaceRequestor)
             .getInterface(Ci.nsIDOMWindow);
 }
-let application = Cc['@mozilla.org/fuel/application;1']
+
+let host = Cc['@mozilla.org/xre/app-info;1']
+              .getService(Ci.nsIXULAppInfo);
+let application;
+
+if (host.name === 'Firefox') {
+  application = Cc['@mozilla.org/fuel/application;1']
                     .getService(Ci.fuelIApplication);
+} else if (host.name === 'Thunderbird') {
+  application = Cc['@mozilla.org/steel/application;1']
+                    .getService(Ci.steelIApplication);
+} else if (host.name === 'SeaMonkey') {
+  application = Cc['@mozilla.org/smile/application;1']
+                    .getService(Ci.smileIApplication);
+}
+
 let privateBrowsing = Cc['@mozilla.org/privatebrowsing;1']
                         .getService(Ci.nsIPrivateBrowsingService);
 let inPrivateBrowswing = privateBrowsing.privateBrowsingEnabled;
