@@ -472,6 +472,14 @@
       "rounds": 1,
       "type": "eq"
     },
+    {  "id": "tamreview",
+      "file": "pdfs/TAMReview.pdf",
+      "md5": "8039aba56790d3597d2bc8c794a51301",
+      "rounds": 1,
+      "pageLimit": 5,
+      "link": true,
+      "type": "eq"
+    },
     {  "id": "issue925",
       "file": "pdfs/issue925.pdf",
       "md5": "f58fe943090aff89dcc8e771bc0db4c2",
