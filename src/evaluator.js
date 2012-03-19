@@ -112,8 +112,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
   };
 
   PartialEvaluator.prototype = {
-    getIRQueue: function partialEvaluatorGetIRQueue(stream, resources,
-                                    queue, dependency) {
+    getOperatorList: function partialEvaluatorGetOperatorList(stream, resources,
+                                                      dependency, queue) {
 
       var self = this;
       var xref = this.xref;
@@ -136,8 +136,6 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
 
         var fontRes = resources.get('Font');
 
-        // TODO: TOASK: Is it possible to get here? If so, what does
-        // args[0].name should be like???
         assert(fontRes, 'fontRes not available');
 
         fontRes = xref.fetchIfRef(fontRes);
@@ -177,7 +175,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
 
         // Ensure the font is ready before the font is set
         // and later on used for drawing.
-        // TODO: This should get insert to the IRQueue only once per
+        // OPTIMIZE: This should get insert to the operatorList only once per
         // page.
         insertDependency([loadedName]);
         return loadedName;
@@ -239,6 +237,9 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           }, handler, xref, resources, image, inline);
       }
 
+      if (!queue)
+        queue = {};
+
       if (!queue.argsArray) {
         queue.argsArray = [];
       }
@@ -280,9 +281,6 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           // TODO figure out how to type-check vararg functions
 
           if ((cmd == 'SCN' || cmd == 'scn') && !args[args.length - 1].code) {
-            // Use the IR version for setStroke/FillColorN.
-            fn += '_IR';
-
             // compile tiling patterns
             var patternName = args[args.length - 1];
             // SCN/scn applies patterns along with normal colors
@@ -295,15 +293,14 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                 if (typeNum == TILING_PATTERN) {
                   // Create an IR of the pattern code.
                   var depIdx = dependencyArray.length;
-                  var queueObj = {};
-                  var codeIR = this.getIRQueue(pattern, dict.get('Resources') ||
-                      resources, queueObj, dependencyArray);
+                  var operatorList = this.getOperatorList(pattern,
+                      dict.get('Resources') || resources, dependencyArray);
 
                   // Add the dependencies that are required to execute the
-                  // codeIR.
+                  // operatorList.
                   insertDependency(dependencyArray.slice(depIdx));
 
-                  args = TilingPattern.getIR(codeIR, dict, args);
+                  args = TilingPattern.getIR(operatorList, dict, args);
                 }
                 else if (typeNum == SHADING_PATTERN) {
                   var shading = xref.fetchIfRef(dict.get('Shading'));
@@ -337,14 +334,18 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                 fnArray.push('paintFormXObjectBegin');
                 argsArray.push([matrix, bbox]);
 
-                // This adds the IRQueue of the xObj to the current queue.
+                // This adds the operatorList of the xObj to the current queue.
                 var depIdx = dependencyArray.length;
 
-                this.getIRQueue(xobj, xobj.dict.get('Resources') || resources,
-                    queue, dependencyArray);
+                // Pass in the current `queue` object. That means the `fnArray`
+                // and the `argsArray` in this scope is reused and new commands
+                // are added to them.
+                this.getOperatorList(xobj,
+                    xobj.dict.get('Resources') || resources,
+                    dependencyArray, queue);
 
                // Add the dependencies that are required to execute the
-               // codeIR.
+               // operatorList.
                insertDependency(dependencyArray.slice(depIdx));
 
                 fn = 'paintFormXObjectEnd';
@@ -454,10 +455,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         }
       }
 
-      return {
-        fnArray: fnArray,
-        argsArray: argsArray
-      };
+      return queue;
     },
 
     extractDataStructures: function
@@ -858,12 +856,11 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         var charProcs = xref.fetchIfRef(dict.get('CharProcs'));
         var fontResources = xref.fetchIfRef(dict.get('Resources')) || resources;
         properties.resources = fontResources;
-        properties.charProcIRQueues = {};
+        properties.charProcOperatorList = {};
         for (var key in charProcs.map) {
           var glyphStream = xref.fetchIfRef(charProcs.map[key]);
-          var queueObj = {};
-          properties.charProcIRQueues[key] =
-            this.getIRQueue(glyphStream, fontResources, queueObj, dependency);
+          properties.charProcOperatorList[key] =
+            this.getOperatorList(glyphStream, fontResources, dependency);
         }
       }
 
