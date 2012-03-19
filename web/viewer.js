@@ -224,7 +224,6 @@ var PDFView = {
   },
 
   set page(val) {
-    console.log("set page", val);
     var pages = this.pages;
     var input = document.getElementById('pageNumber');
     if (!(0 < val && val <= pages.length)) {
@@ -251,6 +250,7 @@ var PDFView = {
     if (this.loading && val == 1)
       return;
 
+    console.log("Calling scrollIntoView");
     pages[val - 1].scrollIntoView();
   },
 
@@ -808,11 +808,13 @@ var PageView = function pageView(container, content, id, pageWidth, pageHeight,
   };
 
   this.scrollIntoView = function pageViewScrollIntoView(dest) {
+    console.log("Scroll", dest);
       if (!dest) {
         div.scrollIntoView(true);
         return;
       }
 
+      console.log("further");
       var x = 0, y = 0;
       var width = 0, height = 0, widthScale, heightScale;
       var scale = 0;
@@ -848,6 +850,7 @@ var PageView = function pageView(container, content, id, pageWidth, pageHeight,
           scale = Math.min(widthScale, heightScale);
           break;
         default:
+          console.log("what");
           return;
       }
 
@@ -861,7 +864,9 @@ var PageView = function pageView(container, content, id, pageWidth, pageHeight,
       else if (PDFView.currentScale === kUnknownScale)
         PDFView.parseScale(kDefaultScale, true);
 
+      console.log("timeout");
       setTimeout(function pageViewScrollIntoViewRelayout() {
+        console.log("the timeout");
         // letting page to re-layout before scrolling
         var scale = PDFView.currentScale;
         var x = Math.min(boundingRect[0].x, boundingRect[1].x);
