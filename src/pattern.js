@@ -82,7 +82,7 @@ Shadings.RadialAxial = (function RadialAxialClosure() {
     fnObj = xref.fetchIfRef(fnObj);
     if (isArray(fnObj))
       error('No support for array of functions');
-    else if (!isPDFFunction(fnObj))
+    if (!isPDFFunction(fnObj))
       error('Invalid function');
     var fn = PDFFunction.parse(xref, fnObj);
 
