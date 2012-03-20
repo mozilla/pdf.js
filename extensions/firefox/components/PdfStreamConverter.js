@@ -17,7 +17,15 @@ const MAX_DATABASE_LENGTH = 4096;
 Cu.import('resource://gre/modules/XPCOMUtils.jsm');
 Cu.import('resource://gre/modules/Services.jsm');
 
+let application = Cc['@mozilla.org/fuel/application;1']
+                    .getService(Ci.fuelIApplication);
+let privateBrowsing = Cc['@mozilla.org/privatebrowsing;1']
+                        .getService(Ci.nsIPrivateBrowsingService);
+let inPrivateBrowswing = privateBrowsing.privateBrowsingEnabled;
+
 function log(aMsg) {
+  if (!application.prefs.getValue(EXT_PREFIX + '.pdfBugEnabled', false))
+    return;
   let msg = 'PdfStreamConverter.js: ' + (aMsg.join ? aMsg.join('') : aMsg);
   Services.console.logStringMessage(msg);
   dump(msg + '\n');
@@ -40,11 +48,6 @@ function topWindow(win) {
             .QueryInterface(Ci.nsIInterfaceRequestor)
             .getInterface(Ci.nsIDOMWindow);
 }
-let application = Cc['@mozilla.org/fuel/application;1']
-                    .getService(Ci.fuelIApplication);
-let privateBrowsing = Cc['@mozilla.org/privatebrowsing;1']
-                        .getService(Ci.nsIPrivateBrowsingService);
-let inPrivateBrowswing = privateBrowsing.privateBrowsingEnabled;
 
 // All the priviledged actions.
 function ChromeActions() {
@@ -125,9 +128,6 @@ PdfStreamConverter.prototype = {
 
   // nsIStreamConverter::asyncConvertData
   asyncConvertData: function(aFromType, aToType, aListener, aCtxt) {
-    if (!Services.prefs.getBoolPref('extensions.pdf.js.active'))
-      throw Cr.NS_ERROR_NOT_IMPLEMENTED;
-
     // Ignoring HTTP POST requests -- pdf.js has to repeat the request.
     var skipConversion = false;
     try {
