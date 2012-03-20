@@ -494,8 +494,13 @@ var FontLoader = {
       // 82402.
 
       // Validate the names parameter -- the values can used to construct HTML.
-      if (!/^\w+$/.test(names.join('')))
+      if (!/^\w+$/.test(names.join(''))) {
         error('Invalid font name(s): ' + names.join());
+
+        // Normally the error-function throws. But if a malicious code
+        // intercepts the function call then the return is needed.
+        return;
+      }
 
       var div = document.createElement('div');
       div.setAttribute('style',
