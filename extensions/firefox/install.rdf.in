@@ -7,22 +7,20 @@
 
   <Description about="urn:mozilla:install-manifest">
     <em:id>uriloader@pdf.js</em:id>
-    <em:name>pdf.js</em:name>
+    <em:name>PDF Viewer</em:name>
     <em:version>PDFJSSCRIPT_VERSION</em:version>
-    <em:iconURL>chrome://pdf.js/skin/logo.png</em:iconURL>
     <em:targetApplication>
       <Description>
        <em:id>{ec8030f7-c20a-464f-9b0e-13a3a9e97384}</em:id>
        <em:minVersion>@FIREFOX_VERSION@</em:minVersion>
        <em:maxVersion>@FIREFOX_VERSION@</em:maxVersion>
-       <em:strictCompatibility>true</em:strictCompatibility>
      </Description>
     </em:targetApplication>
+    <em:strictCompatibility>true</em:strictCompatibility>
     <em:bootstrap>true</em:bootstrap>
-    <em:unpack>true</em:unpack>
-    <em:creator>Mozilla Labs</em:creator>
-    <em:description>pdf.js uri loader</em:description>
-    <em:homepageURL>https://github.com/mozilla/pdf.js/</em:homepageURL>
+    <em:creator>Mozilla</em:creator>
+    <em:description>Uses HTML5 to display PDF files directly in Firefox.</em:description>
+    <em:homepageURL>http://support.mozilla.org/kb/using-mozilla-pdf-viewer</em:homepageURL>
     <em:type>2</em:type>
   </Description>
 </RDF>
