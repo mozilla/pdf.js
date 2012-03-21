@@ -401,12 +401,17 @@ canvas {
   border: 1px solid black;
   clear: both;
   padding: 1px;
-  margin:0px;
+  line-height: 0;
 }
 
 #loadingBar #progress {
-  background-color: green;
   display: inline-block;
+  background: -moz-linear-gradient(top, #b4e391 0%, #61c419 50%, #b4e391 100%);
+  background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,#b4e391), color-stop(50%,#61c419), color-stop(100%,#b4e391));
+  background: -webkit-linear-gradient(top, #b4e391 0%,#61c419 50%,#b4e391 100%);
+  background: -o-linear-gradient(top, #b4e391 0%,#61c419 50%,#b4e391 100%);
+  background: -ms-linear-gradient(top, #b4e391 0%,#61c419 50%,#b4e391 100%);
+  background: linear-gradient(top, #b4e391 0%,#61c419 50%,#b4e391 100%);  
 }
 
 #loadingBar #remaining {
