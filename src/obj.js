@@ -514,7 +514,6 @@ var XRef = (function XRefClosure() {
         return dict;
       // nothing helps
       error('Invalid PDF structure');
-      return null;
     },
     readXRef: function readXref(startXRef) {
       var stream = this.stream;
@@ -723,12 +722,10 @@ var PDFObjects = (function PDFObjectsClosure() {
 
       // If there isn't an object yet or the object isn't resolved, then the
       // data isn't ready yet!
-      if (!obj || !obj.isResolved) {
+      if (!obj || !obj.isResolved)
         error('Requesting object that isn\'t resolved yet ' + objId);
-        return null;
-      } else {
-        return obj.data;
-      }
+
+      return obj.data;
     },
 
     /**
