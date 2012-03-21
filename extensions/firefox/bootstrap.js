@@ -10,10 +10,14 @@ let Cc = Components.classes;
 let Ci = Components.interfaces;
 let Cm = Components.manager;
 let Cu = Components.utils;
+let application = Cc['@mozilla.org/fuel/application;1']
+                    .getService(Ci.fuelIApplication);
 
 Cu.import('resource://gre/modules/Services.jsm');
 
 function log(str) {
+  if (!application.prefs.getValue(EXT_PREFIX + '.pdfBugEnabled', false))
+    return;
   dump(str + '\n');
 }
 
@@ -60,12 +64,7 @@ function startup(aData, aReason) {
   var ioService = Services.io;
   var resProt = ioService.getProtocolHandler('resource')
                   .QueryInterface(Ci.nsIResProtocolHandler);
-  var aliasFile = Cc['@mozilla.org/file/local;1']
-                    .createInstance(Ci.nsILocalFile);
-  var componentPath = aData.installPath.clone();
-  componentPath.append('content');
-  aliasFile.initWithPath(componentPath.path);
-  var aliasURI = ioService.newFileURI(aliasFile);
+  var aliasURI = ioService.newURI('content/', 'UTF-8', aData.resourceURI);
   resProt.setSubstitution(RESOURCE_NAME, aliasURI);
 
   // Load the component and register it.
@@ -73,12 +72,11 @@ function startup(aData, aReason) {
                           'components/PdfStreamConverter.js';
   Cu.import(pdfStreamConverterUrl);
   Factory.register(PdfStreamConverter);
-  Services.prefs.setBoolPref('extensions.pdf.js.active', true);
 }
 
 function shutdown(aData, aReason) {
-  if (Services.prefs.getBoolPref('extensions.pdf.js.active'))
-    Services.prefs.setBoolPref('extensions.pdf.js.active', false);
+  if (aReason == APP_SHUTDOWN)
+    return;
   var ioService = Services.io;
   var resProt = ioService.getProtocolHandler('resource')
                   .QueryInterface(Ci.nsIResProtocolHandler);
@@ -87,18 +85,14 @@ function shutdown(aData, aReason) {
   // Remove the contract/component.
   Factory.unregister();
   // Unload the converter
-  if (pdfStreamConverterUrl) {
-    Cu.unload(pdfStreamConverterUrl);
-    pdfStreamConverterUrl = null;
-  }
+  Cu.unload(pdfStreamConverterUrl);
+  pdfStreamConverterUrl = null;
 }
 
 function install(aData, aReason) {
-  Services.prefs.setBoolPref('extensions.pdf.js.active', false);
 }
 
 function uninstall(aData, aReason) {
-  Services.prefs.clearUserPref('extensions.pdf.js.active');
   application.prefs.setValue(EXT_PREFIX + '.database', '{}');
 }
 

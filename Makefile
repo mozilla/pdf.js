@@ -210,6 +210,7 @@ pages-repo: | $(BUILD_DIR)
 # copy of the pdf.js source.
 CONTENT_DIR := content
 BUILD_NUMBER := `git log --format=oneline $(EXTENSION_BASE_VERSION).. | wc -l | awk '{print $$1}'`
+PDFJSSCRIPT_VERSION := 0.2.$(BUILD_NUMBER)
 EXTENSION_WEB_FILES = \
 	web/images \
 	web/viewer.css \
@@ -225,14 +226,28 @@ FIREFOX_CONTENT_DIR := $(EXTENSION_SRC)/firefox/$(CONTENT_DIR)/
 FIREFOX_EXTENSION_FILES_TO_COPY = \
 	*.js \
 	*.rdf \
+	*.png \
+	install.rdf.in \
+	README.mozilla \
 	components \
+	../../LICENSE \
 	$(NULL)
 FIREFOX_EXTENSION_FILES = \
-	content \
-	*.js \
+	bootstrap.js \
 	install.rdf \
+	icon.png \
+	icon64.png \
 	components \
 	content \
+	LICENSE \
+	$(NULL)
+FIREFOX_MC_EXTENSION_FILES = \
+	bootstrap.js \
+	icon.png \
+	icon64.png \
+	components \
+	content \
+	LICENSE \
 	$(NULL)
 
 CHROME_BUILD_DIR := $(BUILD_DIR)/chrome
@@ -265,9 +280,12 @@ extension: | production
 	# We don't need pdf.js anymore since its inlined
 	@rm -Rf $(FIREFOX_BUILD_CONTENT)/$(BUILD_DIR)/;
 	# Update the build version number
-	@sed -i.bak "s/PDFJSSCRIPT_BUILD/$(BUILD_NUMBER)/" $(FIREFOX_BUILD_DIR)/install.rdf
-	@sed -i.bak "s/PDFJSSCRIPT_BUILD/$(BUILD_NUMBER)/" $(FIREFOX_BUILD_DIR)/update.rdf
+	@sed -i.bak "s/PDFJSSCRIPT_VERSION/$(PDFJSSCRIPT_VERSION)/" $(FIREFOX_BUILD_DIR)/install.rdf
+	@sed -i.bak "s/PDFJSSCRIPT_VERSION/$(PDFJSSCRIPT_VERSION)/" $(FIREFOX_BUILD_DIR)/install.rdf.in
+	@sed -i.bak "s/PDFJSSCRIPT_VERSION/$(PDFJSSCRIPT_VERSION)/" $(FIREFOX_BUILD_DIR)/update.rdf
+	@sed -i.bak "s/PDFJSSCRIPT_VERSION/$(PDFJSSCRIPT_VERSION)/" $(FIREFOX_BUILD_DIR)/README.mozilla
 	@rm -f $(FIREFOX_BUILD_DIR)/*.bak
+	@find $(FIREFOX_BUILD_DIR) -name ".*" -delete
 	# Create the xpi
 	@cd $(FIREFOX_BUILD_DIR); zip -r $(FIREFOX_EXTENSION_NAME) $(FIREFOX_EXTENSION_FILES)
 	@echo "extension created: " $(FIREFOX_EXTENSION_NAME)
@@ -276,6 +294,8 @@ extension: | production
 	@rm -f $(FIREFOX_BUILD_DIR)/*.bak
 	@cd $(FIREFOX_BUILD_DIR); zip -r $(FIREFOX_AMO_EXTENSION_NAME) $(FIREFOX_EXTENSION_FILES)
 	@echo "AMO extension created: " $(FIREFOX_AMO_EXTENSION_NAME)
+	# List all files for mozilla-central
+	@cd $(FIREFOX_BUILD_DIR); find $(FIREFOX_MC_EXTENSION_FILES) -type f > extension-files
 
 	# Clear out everything in the chrome extension build directory
 	@rm -Rf $(CHROME_BUILD_DIR)

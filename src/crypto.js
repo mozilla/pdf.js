@@ -570,7 +570,6 @@ var CipherTransformFactory = (function CipherTransformFactoryClosure() {
       };
     }
     error('Unknown crypto method');
-    return null;
   }
 
   CipherTransformFactory.prototype = {

@@ -409,8 +409,8 @@ var FontLoader = {
 
   bind: function fontLoaderBind(fonts, callback) {
     function checkFontsLoaded() {
-      for (var i = 0, ii = objs.length; i < ii; i++) {
-        var fontObj = objs[i];
+      for (var i = 0, ii = fonts.length; i < ii; i++) {
+        var fontObj = fonts[i];
         if (fontObj.loading) {
           return false;
         }
@@ -423,52 +423,45 @@ var FontLoader = {
       return true;
     }
 
-    var rules = [], names = [], objs = [];
+    var rules = [], names = [], fontsToLoad = [];
+    var fontCreateTimer = 0;
 
     for (var i = 0, ii = fonts.length; i < ii; i++) {
       var font = fonts[i];
 
-      // If there is already a fontObj on the font, then it was loaded/attached
-      // to the page already and we don't have to do anything for this font
-      // here future.
-      if (font.fontObj) {
+      // Add the font to the DOM only once or skip if the font
+      // is already loaded.
+      if (font.attached || font.loading == false) {
         continue;
       }
+      font.attached = true;
 
-      var obj = new Font(font.name, font.file, font.properties);
-
-      // Store the fontObj on the font such that `setFont` in CanvasGraphics
-      // can reuse it later again.
-      font.fontObj = obj;
-
-      objs.push(obj);
+      fontsToLoad.push(font);
 
       var str = '';
-      var data = obj.data;
+      var data = font.data;
       if (data) {
         var length = data.length;
         for (var j = 0; j < length; j++)
           str += String.fromCharCode(data[j]);
 
-        var rule = isWorker ? obj.bindWorker(str) : obj.bindDOM(str);
+        var rule = font.bindDOM(str);
         if (rule) {
           rules.push(rule);
-          names.push(obj.loadedName);
+          names.push(font.loadedName);
         }
       }
     }
 
     this.listeningForFontLoad = false;
     if (!isWorker && rules.length) {
-      FontLoader.prepareFontLoadEvent(rules, names, objs);
+      FontLoader.prepareFontLoadEvent(rules, names, fontsToLoad);
     }
 
     if (!checkFontsLoaded()) {
       document.documentElement.addEventListener(
         'pdfjsFontLoad', checkFontsLoaded, false);
     }
-
-    return objs;
   },
   // Set things up so that at least one pdfjsFontLoad event is
   // dispatched when all the @font-face |rules| for |names| have been
@@ -476,7 +469,7 @@ var FontLoader = {
   // has already started in this (outer) document, so that they should
   // be ordered before the load in the subdocument.
   prepareFontLoadEvent: function fontLoaderPrepareFontLoadEvent(rules, names,
-                                                                objs) {
+                                                                fonts) {
       /** Hack begin */
       // There's no event when a font has finished downloading so the
       // following code is a dirty hack to 'guess' when a font is
@@ -500,6 +493,15 @@ var FontLoader = {
       // The postMessage() hackery was added to work around chrome bug
       // 82402.
 
+      // Validate the names parameter -- the values can used to construct HTML.
+      if (!/^\w+$/.test(names.join(''))) {
+        error('Invalid font name(s): ' + names.join());
+
+        // Normally the error-function throws. But if a malicious code
+        // intercepts the function call then the return is needed.
+        return;
+      }
+
       var div = document.createElement('div');
       div.setAttribute('style',
                        'visibility: hidden;' +
@@ -517,8 +519,8 @@ var FontLoader = {
           'message',
           function fontLoaderMessage(e) {
             var fontNames = JSON.parse(e.data);
-            for (var i = 0, ii = objs.length; i < ii; ++i) {
-              var font = objs[i];
+            for (var i = 0, ii = fonts.length; i < ii; ++i) {
+              var font = fonts[i];
               font.loading = false;
             }
             var evt = document.createEvent('Events');
@@ -764,7 +766,7 @@ var Font = (function FontClosure() {
   function Font(name, file, properties) {
     this.name = name;
     this.coded = properties.coded;
-    this.charProcIRQueues = properties.charProcIRQueues;
+    this.charProcOperatorList = properties.charProcOperatorList;
     this.resources = properties.resources;
     this.sizes = [];
 
@@ -829,8 +831,6 @@ var Font = (function FontClosure() {
       return;
     }
 
-    this.loadedName = getUniqueName();
-    properties.id = this.loadedName;
     var data;
     switch (type) {
       case 'Type1':
@@ -864,6 +864,7 @@ var Font = (function FontClosure() {
     this.widthMultiplier = !properties.fontMatrix ? 1.0 :
       1.0 / properties.fontMatrix[0];
     this.encoding = properties.baseEncoding;
+    this.loadedName = properties.loadedName;
     this.loading = true;
   };
 
@@ -2273,17 +2274,6 @@ var Font = (function FontClosure() {
       }
     },
 
-    bindWorker: function font_bindWorker(data) {
-      postMessage({
-        action: 'font',
-        data: {
-          raw: data,
-          fontName: this.loadedName,
-          mimetype: this.mimetype
-        }
-      });
-    },
-
     bindDOM: function font_bindDom(data) {
       var fontName = this.loadedName;
 
@@ -2337,7 +2327,7 @@ var Font = (function FontClosure() {
     },
 
     charToGlyph: function fonts_charToGlyph(charcode) {
-      var fontCharCode, width, codeIRQueue;
+      var fontCharCode, width, operatorList;
 
       var width = this.widths[charcode];
 
@@ -2372,7 +2362,7 @@ var Font = (function FontClosure() {
           break;
         case 'Type3':
           var glyphName = this.differences[charcode] || this.encoding[charcode];
-          codeIRQueue = this.charProcIRQueues[glyphName];
+          operatorList = this.charProcOperatorList[glyphName];
           fontCharCode = charcode;
           break;
         case 'TrueType':
@@ -2415,7 +2405,7 @@ var Font = (function FontClosure() {
         fontChar: String.fromCharCode(fontCharCode),
         unicode: unicodeChars,
         width: width,
-        codeIRQueue: codeIRQueue
+        operatorList: operatorList
       };
     },
 

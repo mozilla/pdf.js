@@ -63,13 +63,8 @@ var Page = (function PageClosure() {
   function Page(xref, pageNumber, pageDict, ref) {
     this.pageNumber = pageNumber;
     this.pageDict = pageDict;
-    this.stats = {
-      create: Date.now(),
-      compile: 0.0,
-      fonts: 0.0,
-      images: 0.0,
-      render: 0.0
-    };
+    this.stats = new StatTimer();
+    this.stats.enabled = !!globalScope.PDFJS.enableStats;
     this.xref = xref;
     this.ref = ref;
 
@@ -175,10 +170,10 @@ var Page = (function PageClosure() {
       return shadow(this, 'rotate', rotate);
     },
 
-    startRenderingFromIRQueue: function pageStartRenderingFromIRQueue(
-                                                IRQueue, fonts) {
+    startRenderingFromOperatorList: function pageStartRenderingFromOperatorList(
+                                                operatorList, fonts) {
       var self = this;
-      this.IRQueue = IRQueue;
+      this.operatorList = operatorList;
 
       var displayContinuation = function pageDisplayContinuation() {
         // Always defer call to display() to work around bug in
@@ -189,16 +184,19 @@ var Page = (function PageClosure() {
       };
 
       this.ensureFonts(fonts,
-                       function pageStartRenderingFromIRQueueEnsureFonts() {
-        displayContinuation();
-      });
+        function pageStartRenderingFromOperatorListEnsureFonts() {
+          displayContinuation();
+        }
+      );
     },
 
-    getIRQueue: function pageGetIRQueue(handler, dependency) {
-      if (this.IRQueue) {
+    getOperatorList: function pageGetOperatorList(handler, dependency) {
+      if (this.operatorList) {
         // content was compiled
-        return this.IRQueue;
+        return this.operatorList;
       }
+
+      this.stats.time('Build IR Queue');
 
       var xref = this.xref;
       var content = xref.fetchIfRef(this.content);
@@ -216,30 +214,33 @@ var Page = (function PageClosure() {
 
       var pe = this.pe = new PartialEvaluator(
                                 xref, handler, 'p' + this.pageNumber + '_');
-      var IRQueue = {};
-      return (this.IRQueue = pe.getIRQueue(content, resources, IRQueue,
-                                           dependency));
+
+      this.operatorList = pe.getOperatorList(content, resources, dependency);
+      this.stats.timeEnd('Build IR Queue');
+      return this.operatorList;
     },
 
     ensureFonts: function pageEnsureFonts(fonts, callback) {
+      this.stats.time('Font Loading');
       // Convert the font names to the corresponding font obj.
       for (var i = 0, ii = fonts.length; i < ii; i++) {
         fonts[i] = this.objs.objs[fonts[i]].data;
       }
 
       // Load all the fonts
-      var fontObjs = FontLoader.bind(
+      FontLoader.bind(
         fonts,
         function pageEnsureFontsFontObjs(fontObjs) {
-          this.stats.fonts = Date.now();
+          this.stats.timeEnd('Font Loading');
 
           callback.call(this);
-        }.bind(this),
-        this.objs
+        }.bind(this)
       );
     },
 
     display: function pageDisplay(gfx, callback) {
+      var stats = this.stats;
+      stats.time('Rendering');
       var xref = this.xref;
       var resources = xref.fetchIfRef(this.resources);
       var mediaBox = xref.fetchIfRef(this.mediaBox);
@@ -253,21 +254,23 @@ var Page = (function PageClosure() {
             rotate: this.rotate });
 
       var startIdx = 0;
-      var length = this.IRQueue.fnArray.length;
-      var IRQueue = this.IRQueue;
+      var length = this.operatorList.fnArray.length;
+      var operatorList = this.operatorList;
       var stepper = null;
       if (PDFJS.pdfBug && StepperManager.enabled) {
         stepper = StepperManager.create(this.pageNumber);
-        stepper.init(IRQueue);
+        stepper.init(operatorList);
         stepper.nextBreakPoint = stepper.getNextBreakPoint();
       }
 
       var self = this;
       function next() {
-        startIdx = gfx.executeIRQueue(IRQueue, startIdx, next, stepper);
+        startIdx =
+          gfx.executeOperatorList(operatorList, startIdx, next, stepper);
         if (startIdx == length) {
-          self.stats.render = Date.now();
           gfx.endDrawing();
+          stats.timeEnd('Rendering');
+          stats.timeEnd('Overall');
           if (callback) callback();
         }
       }
@@ -310,6 +313,22 @@ var Page = (function PageClosure() {
           return null;
         return item.get(name);
       }
+      function isValidUrl(url) {
+        if (!url)
+          return false;
+        var colon = url.indexOf(':');
+        if (colon < 0)
+          return false;
+        var protocol = url.substr(0, colon);
+        switch (protocol) {
+          case 'http':
+          case 'https':
+          case 'ftp':
+            return true;
+          default:
+            return false;
+        }
+      }
 
       var annotations = xref.fetchIfRef(this.annotations) || [];
       var i, n = annotations.length;
@@ -338,7 +357,12 @@ var Page = (function PageClosure() {
             if (a) {
               switch (a.get('S').name) {
                 case 'URI':
-                  item.url = a.get('URI');
+                  var url = a.get('URI');
+                  // TODO: pdf spec mentions urls can be relative to a Base
+                  // entry in the dictionary.
+                  if (!isValidUrl(url))
+                    url = '';
+                  item.url = url;
                   break;
                 case 'GoTo':
                   item.dest = a.get('D');
@@ -410,16 +434,16 @@ var Page = (function PageClosure() {
       return items;
     },
     startRendering: function pageStartRendering(ctx, callback, textLayer)  {
-      this.startRenderingTime = Date.now();
-
-      // If there is no displayReadyPromise yet, then the IRQueue was never
+      var stats = this.stats;
+      stats.time('Overall');
+      // If there is no displayReadyPromise yet, then the operatorList was never
       // requested before. Make the request and create the promise.
       if (!this.displayReadyPromise) {
         this.pdf.startRendering(this);
         this.displayReadyPromise = new Promise();
       }
 
-      // Once the IRQueue and fonts are loaded, perform the actual rendering.
+      // Once the operatorList and fonts are loaded, do the actual rendering.
       this.displayReadyPromise.then(
         function pageDisplayReadyPromise() {
           var gfx = new CanvasGraphics(ctx, this.objs, textLayer);
@@ -451,9 +475,6 @@ var Page = (function PageClosure() {
  * Right now there exists one PDFDocModel on the main thread + one object
  * for each worker. If there is no worker support enabled, there are two
  * `PDFDocModel` objects on the main thread created.
- * TODO: Refactor the internal object structure, such that there is no
- * need for the `PDFDocModel` anymore and there is only one object on the
- * main thread and not one entire copy on each worker instance.
  */
 var PDFDocModel = (function PDFDocModelClosure() {
   function PDFDocModel(arg, callback) {
@@ -622,9 +643,9 @@ var PDFDoc = (function PDFDocClosure() {
 
     this.data = data;
     this.stream = stream;
-    this.pdf = new PDFDocModel(stream);
-    this.fingerprint = this.pdf.getFingerprint();
-    this.catalog = this.pdf.catalog;
+    this.pdfModel = new PDFDocModel(stream);
+    this.fingerprint = this.pdfModel.getFingerprint();
+    this.catalog = this.pdfModel.catalog;
     this.objs = new PDFObjects();
 
     this.pageCache = [];
@@ -711,7 +732,8 @@ var PDFDoc = (function PDFDocClosure() {
         var page = this.pageCache[pageNum];
         var depFonts = data.depFonts;
 
-        page.startRenderingFromIRQueue(data.IRQueue, depFonts);
+        page.stats.timeEnd('Page Request');
+        page.startRenderingFromOperatorList(data.operatorList, depFonts);
       }, this);
 
       messageHandler.on('obj', function pdfDocObj(data) {
@@ -738,30 +760,15 @@ var PDFDoc = (function PDFDocClosure() {
               file = new Stream(file, 0, file.length, fontFileDict);
             }
 
-            // For now, resolve the font object here direclty. The real font
-            // object is then created in FontLoader.bind().
-            this.objs.resolve(id, {
-              name: name,
-              file: file,
-              properties: properties
-            });
+            // At this point, only the font object is created but the font is
+            // not yet attached to the DOM. This is done in `FontLoader.bind`.
+            var font = new Font(name, file, properties);
+            this.objs.resolve(id, font);
             break;
           default:
             error('Got unkown object type ' + type);
         }
       }, this);
-
-      messageHandler.on('font_ready', function pdfDocFontReady(data) {
-        var id = data[0];
-        var font = new FontShape(data[1]);
-
-        // If there is no string, then there is nothing to attach to the DOM.
-        if (!font.str) {
-          this.objs.resolve(id, font);
-        } else {
-          this.objs.setData(id, font);
-        }
-      }.bind(this));
 
       messageHandler.on('page_error', function pdfDocError(data) {
         var page = this.pageCache[data.pageNum];
@@ -784,7 +791,7 @@ var PDFDoc = (function PDFDocClosure() {
           var size = width * height;
           var rgbaLength = size * 4;
           var buf = new Uint8Array(size * components);
-          var tmpCanvas = new ScratchCanvas(width, height);
+          var tmpCanvas = createScratchCanvas(width, height);
           var tmpCtx = tmpCanvas.getContext('2d');
           tmpCtx.drawImage(img, 0, 0);
           var data = tmpCtx.getImageData(0, 0, width, height).data;
@@ -813,12 +820,13 @@ var PDFDoc = (function PDFDocClosure() {
     },
 
     get numPages() {
-      return this.pdf.numPages;
+      return this.pdfModel.numPages;
     },
 
     startRendering: function pdfDocStartRendering(page) {
       // The worker might not be ready to receive the page request yet.
       this.workerReadyPromise.then(function pdfDocStartRenderingThen() {
+        page.stats.time('Page Request');
         this.messageHandler.send('page_request', page.pageNumber + 1);
       }.bind(this));
     },
@@ -827,7 +835,7 @@ var PDFDoc = (function PDFDocClosure() {
       if (this.pageCache[n])
         return this.pageCache[n];
 
-      var page = this.pdf.getPage(n);
+      var page = this.pdfModel.getPage(n);
       // Add a reference to the objects such that Page can forward the reference
       // to the CanvasGraphics and so on.
       page.objs = this.objs;

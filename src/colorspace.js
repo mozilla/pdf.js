@@ -135,6 +135,7 @@ var ColorSpace = (function ColorSpaceClosure() {
             basePatternCS = ColorSpace.parseToIR(basePatternCS, xref, res);
           return ['PatternCS', basePatternCS];
         case 'Indexed':
+        case 'I':
           var baseIndexedCS = ColorSpace.parseToIR(cs[1], xref, res);
           var hiVal = cs[2] + 1;
           var lookup = xref.fetchIfRef(cs[3]);

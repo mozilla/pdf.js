@@ -149,7 +149,7 @@ target.pagesrepo = function() {
     echo();
     echo('Cloning project repo...');
     echo('(This operation can take a while, depending on network conditions)');
-    exec('git clone -b gh-pages --depth=1 ' + REPO + ' ' + ßGH_PAGES_DIR,
+    exec('git clone -b gh-pages --depth=1 ' + REPO + ' ' + GH_PAGES_DIR,
       {silent: true});
     echo('Done.');
   }
@@ -168,13 +168,16 @@ target.pagesrepo = function() {
 //
 
 var EXTENSION_WEB_FILES =
-      ['web/images',
+      ['web/debugger.js',
+       'web/images',
        'web/viewer.css',
        'web/viewer.js',
        'web/viewer.html',
        'web/viewer-production.html'],
     EXTENSION_BASE_VERSION = '4bb289ec499013de66eb421737a4dbb4a9273eda',
-    EXTENSION_BUILD_NUMBER;
+    EXTENSION_VERSION_PREFIX = '0.2.',
+    EXTENSION_BUILD_NUMBER,
+    EXTENSION_VERSION;
 
 //
 // make extension
@@ -200,6 +203,8 @@ target.buildnumber = function() {
     .output.match(/\n/g).length; // get # of lines in git output
 
   echo('Extension build number: ' + EXTENSION_BUILD_NUMBER);
+
+  EXTENSION_VERSION = EXTENSION_VERSION_PREFIX + EXTENSION_BUILD_NUMBER;
 };
 
 //
@@ -215,13 +220,26 @@ target.firefox = function() {
       FIREFOX_EXTENSION_FILES_TO_COPY =
         ['*.js',
          '*.rdf',
-         'components'];
-      FIREFOX_EXTENSION_FILES =
-        ['content',
-         '*.js',
-         'install.rdf',
+         '*.png',
+         'install.rdf.in',
+         'README.mozilla',
          'components',
-         'content'];
+         '../../LICENSE'];
+      FIREFOX_EXTENSION_FILES =
+        ['bootstrap.js',
+         'install.rdf',
+         'icon.png',
+         'icon64.png',
+         'components',
+         'content',
+         'LICENSE'];
+      FIREFOX_MC_EXTENSION_FILES =
+        ['bootstrap.js',
+         'icon.png',
+         'icon64.png',
+         'components',
+         'content',
+         'LICENSE'];
       FIREFOX_EXTENSION_NAME = 'pdf.js.xpi',
       FIREFOX_AMO_EXTENSION_NAME = 'pdf.js.amo.xpi';
 
@@ -258,10 +276,17 @@ target.firefox = function() {
 
   // We don't need pdf.js anymore since its inlined
   rm('-Rf', FIREFOX_BUILD_CONTENT_DIR + BUILD_DIR);
+  // Remove '.DS_Store' and other hidden files
+  for (file in find(FIREFOX_BUILD_DIR)) {
+    if (file.match(/^\./))
+      rm('-f', file);
+  }
 
   // Update the build version number
-  sed('-i', /PDFJSSCRIPT_BUILD/, EXTENSION_BUILD_NUMBER, FIREFOX_BUILD_DIR + '/install.rdf');
-  sed('-i', /PDFJSSCRIPT_BUILD/, EXTENSION_BUILD_NUMBER, FIREFOX_BUILD_DIR + '/update.rdf');
+  sed('-i', /PDFJSSCRIPT_VERSION/, EXTENSION_VERSION, FIREFOX_BUILD_DIR + '/install.rdf');
+  sed('-i', /PDFJSSCRIPT_VERSION/, EXTENSION_VERSION, FIREFOX_BUILD_DIR + '/update.rdf');
+  sed('-i', /PDFJSSCRIPT_VERSION/, EXTENSION_VERSION, FIREFOX_BUILD_DIR + '/install.rdf.in');
+  sed('-i', /PDFJSSCRIPT_VERSION/, EXTENSION_VERSION, FIREFOX_BUILD_DIR + '/README.mozilla');
 
   // Create the xpi
   cd(FIREFOX_BUILD_DIR);
@@ -275,6 +300,15 @@ target.firefox = function() {
   exec('zip -r ' + FIREFOX_AMO_EXTENSION_NAME + ' ' + FIREFOX_EXTENSION_FILES.join(' '));
   echo('AMO extension created: ' + FIREFOX_AMO_EXTENSION_NAME);
   cd(ROOT_DIR);
+
+  // List all files for mozilla-central
+  cd(FIREFOX_BUILD_DIR);
+  var extensionFiles = '';
+  for (file in find(FIREFOX_MC_EXTENSION_FILES)) {
+    if (test('-f', file))
+      extensionFiles += file+'\n';
+  }
+  extensionFiles.to('extension-files');
 };
 
 //
