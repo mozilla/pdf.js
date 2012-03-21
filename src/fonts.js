@@ -3773,13 +3773,13 @@ var CFFParser = (function CFFParserClosure() {
     parseCharsets: function parsecharsets(pos, length, strings, cid) {
       if (pos == 0) {
         return new CFFCharset(true, CFFCharsetPredefinedTypes.ISO_ADOBE,
-                              ISOAdobeCharset.slice());
+                              ISOAdobeCharset);
       } else if (pos == 1) {
         return new CFFCharset(true, CFFCharsetPredefinedTypes.EXPERT,
-                              ExpertCharset.slice());
+                              ExpertCharset);
       } else if (pos == 2) {
         return new CFFCharset(true, CFFCharsetPredefinedTypes.EXPERT_SUBSET,
-                              ExpertSubsetCharset.slice());
+                              ExpertSubsetCharset);
       }
 
       var bytes = this.bytes;
