@@ -391,9 +391,27 @@ canvas {
   }
 }
 
-#loading {
+#loadingBox {
   margin: 100px 0;
   text-align: center;
+}
+
+#loadingBar {
+  display: inline-block;
+  border: 1px solid black;
+  clear: both;
+  padding: 1px;
+  margin:0px;
+}
+
+#loadingBar #progress {
+  background-color: green;
+  display: inline-block;
+}
+
+#loadingBar #remaining {
+  background-color: #333;
+  display: inline-block;
 }
 
 #PDFBug {

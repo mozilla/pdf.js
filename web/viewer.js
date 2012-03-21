@@ -27,6 +27,49 @@ var Cache = function cacheCache(size) {
   };
 };
 
+var ProgressBar = (function ProgressBarClosure() {
+
+    function clamp(v, min, max) {
+        return Math.min(Math.max(v, min), max);
+    }
+    
+    function sizeBar(bar, num, width, height, units) {
+        var progress = bar.querySelector('#progress');
+        var remaining = bar.querySelector('#remaining');
+        progress.style.height=height + units;
+        remaining.style.height=height + units;
+        progress.style.width=num + units;
+        remaining.style.width=(width - num) + units;
+    }
+
+    function ProgressBar(element, min, max, width, height, units) {
+        this.element = element;
+        this.min = min;
+        this.max = max;
+        this.width = width;
+        this.height = height;
+        this.units = units;
+        this.value = min;
+        sizeBar(element, 0, this.width, this.height, this.units);
+    }
+
+    ProgressBar.prototype = {
+        constructor: ProgressBar,
+
+        get value() {
+            return this._value;
+        },
+
+        set value(val) {
+            this._value = clamp(val, this.min, this.max);
+            var num = this.width * (val - this.min) / (this.max - this.min);
+            sizeBar(this.element, num, this.width, this.height, this.units);
+        }
+    };
+
+    return ProgressBar;
+})();
+
 var RenderingQueue = (function RenderingQueueClosure() {
   function RenderingQueue() {
     this.items = [];
@@ -260,6 +303,11 @@ var PDFView = {
   open: function pdfViewOpen(url, scale) {
     document.title = this.url = url;
 
+    // FIXME: Probably needs a better place to get initialized
+    if(!PDFView.loadingProgress) {
+      PDFView.loadingProgress = new ProgressBar(document.getElementById('loadingBar'), 0, 100, 15, 1.5, 'em');
+    }
+
     var self = this;
     PDFJS.getPdf(
       {
@@ -400,6 +448,8 @@ var PDFView = {
     var percent = Math.round(level * 100);
     var loadingIndicator = document.getElementById('loading');
     loadingIndicator.textContent = 'Loading... ' + percent + '%';
+
+    PDFView.loadingProgress.value = percent;
   },
 
   load: function pdfViewLoad(data, scale) {
@@ -414,8 +464,8 @@ var PDFView = {
     var errorWrapper = document.getElementById('errorWrapper');
     errorWrapper.setAttribute('hidden', 'true');
 
-    var loadingIndicator = document.getElementById('loading');
-    loadingIndicator.setAttribute('hidden', 'true');
+    var loadingBox = document.getElementById('loadingBox');
+    loadingBox.setAttribute('hidden', 'true');
 
     var sidebar = document.getElementById('sidebarView');
     sidebar.parentNode.scrollTop = 0;
