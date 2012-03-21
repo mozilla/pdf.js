@@ -400,7 +400,6 @@ canvas {
   display: inline-block;
   border: 1px solid black;
   clear: both;
-  padding: 1px;
   line-height: 0;
 }
 

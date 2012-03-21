@@ -32,14 +32,14 @@ var ProgressBar = (function ProgressBarClosure() {
     function clamp(v, min, max) {
         return Math.min(Math.max(v, min), max);
     }
-    
+
     function sizeBar(bar, num, width, height, units) {
         var progress = bar.querySelector('#progress');
         var remaining = bar.querySelector('#remaining');
-        progress.style.height=height + units;
-        remaining.style.height=height + units;
-        progress.style.width=num + units;
-        remaining.style.width=(width - num) + units;
+        progress.style.height = height + units;
+        remaining.style.height = height + units;
+        progress.style.width = num + units;
+        remaining.style.width = (width - num) + units;
     }
 
     function ProgressBar(element, min, max, width, height, units) {
@@ -304,8 +304,10 @@ var PDFView = {
     document.title = this.url = url;
 
     // FIXME: Probably needs a better place to get initialized
-    if(!PDFView.loadingProgress) {
-      PDFView.loadingProgress = new ProgressBar(document.getElementById('loadingBar'), 0, 100, 15, 1.5, 'em');
+    if (!PDFView.loadingProgress) {
+      PDFView.loadingProgress = new ProgressBar(
+            document.getElementById('loadingBar'),
+            0, 100, 15, 1.5, 'em');
     }
 
     var self = this;
