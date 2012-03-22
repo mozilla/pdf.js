@@ -74,9 +74,7 @@ exports.pwd = wrap('pwd', _pwd);
 //@ ls('-R', ['/users/me', '/tmp']); // same as above
 //@ ```
 //@
-//@ Returns list of files in the given path, or in current directory if no path provided.
-//@ For convenient iteration via `for (file in ls())`, the format returned is a hash object:
-//@ `{ 'file1':null, 'dir1/file2':null, ...}`.
+//@ Returns array of files in the given path, or in current directory if no path provided.
 function _ls(options, paths) {
   options = parseOptions(options, {
     'R': 'recursive',
@@ -90,9 +88,11 @@ function _ls(options, paths) {
   else if (typeof paths === 'string')
     paths = [].slice.call(arguments, 1);
 
-  var hash = {};
+  var list = [];
 
-  function pushHash(file, query) {
+  // Conditionally pushes file to list 
+  // (e.g. prevents hidden files to be included unless explicitly told so)
+  function pushFile(file, query) {
     // hidden file?
     if (path.basename(file)[0] === '.') {
       // not explicitly asking for hidden files?
@@ -100,14 +100,14 @@ function _ls(options, paths) {
         return;
     }
 
-    hash[file] = null;
+    list.push(file);
   }
 
   paths.forEach(function(p) {
     if (fs.existsSync(p)) {
       // Simple file?
       if (fs.statSync(p).isFile()) {
-        pushHash(p, p);
+        pushFile(p, p);
         return; // continue
       }
       
@@ -115,13 +115,13 @@ function _ls(options, paths) {
       if (fs.statSync(p).isDirectory()) {
         // Iterate over p contents
         fs.readdirSync(p).forEach(function(file) {
-          pushHash(file, p);
+          pushFile(file, p);
 
           // Recursive
           var oldDir = _pwd();
           _cd('', p);
           if (fs.statSync(file).isDirectory() && options.recursive)
-            hash = extend(hash, _ls('-R', file+'/*'));
+            list = list.concat(_ls('-R', file+'/*'));
           _cd('', oldDir);
         });
         return; // continue
@@ -137,16 +137,16 @@ function _ls(options, paths) {
       // Escape special regular expression chars
       var regexp = basename.replace(/(\^|\$|\(|\)|\<|\>|\[|\]|\{|\}|\.|\+|\?)/g, '\\$1');
       // Translates wildcard into regex
-      regexp = '^' + regexp.replace(/\*/g, '.*');
+      regexp = '^' + regexp.replace(/\*/g, '.*') + '$';
       // Iterate over directory contents
       fs.readdirSync(dirname).forEach(function(file) {
         if (file.match(new RegExp(regexp))) {
-          pushHash(path.normalize(dirname+'/'+file), basename);
+          pushFile(path.normalize(dirname+'/'+file), basename);
 
           // Recursive
           var pp = dirname + '/' + file;
           if (fs.statSync(pp).isDirectory() && options.recursive)
-            hash = extend(hash, _ls('-R', pp+'/*'));
+            list = list.concat(_ls('-R', pp+'/*'));
         }
       }); // forEach
       return;
@@ -155,7 +155,7 @@ function _ls(options, paths) {
     error('no such file or directory: ' + p, true);
   });
 
-  return hash;
+  return list;
 };
 exports.ls = wrap('ls', _ls);
 
@@ -168,16 +168,10 @@ exports.ls = wrap('ls', _ls);
 //@ ```javascript
 //@ find('src', 'lib');
 //@ find(['src', 'lib']); // same as above
-//@ for (file in find('.')) {
-//@   if (!file.match(/\.js$/))
-//@     continue;
-//@   // all files at this point end in '.js'
-//@ }
+//@ find('.').filter(function(file) { return file.match(/\.js$/); });
 //@ ```
 //@
-//@ Returns list of all files (however deep) in the given paths. For convenient iteration 
-//@ via `for (file in find(...))`, the format returned is a hash object:
-//@ `{ 'file1':null, 'dir1/file2':null, ...}`.
+//@ Returns array of all files (however deep) in the given paths.
 //@
 //@ The main difference from `ls('-R', path)` is that the resulting file names 
 //@ include the base directories, e.g. `lib/resources/file1` instead of just `file1`.
@@ -189,21 +183,22 @@ function _find(options, paths) {
   else if (typeof paths === 'string')
     paths = [].slice.call(arguments, 1);
 
-  var hash = {};
+  var list = [];
 
   // why not simply do ls('-R', paths)? because the output wouldn't give the base dirs
   // to get the base dir in the output, we need instead ls('-R', 'dir/*') for every directory
 
   paths.forEach(function(file){
-    hash[file] = null;
+    list.push(file);
 
     if (fs.statSync(file).isDirectory()) {
-      for (subfile in _ls('-Ra', file+'/*'))
-        hash[subfile] = null;
+      _ls('-Ra', file+'/*').forEach(function(subfile) {
+        list.push(subfile);
+      });
     }
   });
 
-  return hash;
+  return list;
 }
 exports.find = wrap('find', _find);
 
@@ -793,7 +788,7 @@ function _exec(command, options, callback) {
   }
 
   options = extend({
-    silent: false,
+    silent: state.silent,
     async: false
   }, options);
 
@@ -822,11 +817,52 @@ exports.exec = wrap('exec', _exec, {notUnix:true});
 //@ Follows Python's [tempfile algorithm](http://docs.python.org/library/tempfile.html#tempfile.tempdir).
 exports.tempdir = wrap('tempdir', tempDir);
 
+
+//@
+//@ #### error()
+//@ Tests if error occurred in the last command. Returns `null` if no error occurred,
+//@ otherwise returns string explaining the error
+exports.error = function() {
+  return state.error;
+}
+
+//@
+//@ #### silent([state])
+//@ Example:
+//@
+//@ ```javascript
+//@ var silentState = silent();
+//@ silent(true);
+//@ /* ... */
+//@ silent(silentState); // restore old silent state
+//@ ```
+//@
+//@ Suppresses all output if `state = true`. Returns state if no arguments given.
+exports.silent = function(_state) {
+  if (typeof _state !== 'boolean')
+    return state.silent;
+  
+  state.silent = _state;
+}
+
+
+//@
+//@ ## Deprecated
+//@
+
+
+
+
 //@
 //@ #### exists(path [, path ...])
 //@ #### exists(path_array)
+//@
+//@ _This function is being deprecated. Use `test()` instead._
+//@
 //@ Returns true if all the given paths exist.
 function _exists(options, paths) {
+  deprecate('exists', 'Use test() instead.');
+
   if (!paths)
     error('no paths given');
 
@@ -844,31 +880,18 @@ function _exists(options, paths) {
 };
 exports.exists = wrap('exists', _exists);
 
-//@
-//@ #### error()
-//@ Tests if error occurred in the last command. Returns `null` if no error occurred,
-//@ otherwise returns string explaining the error
-exports.error = function() {
-  return state.error;
-}
 
 //@
 //@ #### verbose()
+//@
+//@ _This function is being deprecated. Use `silent(false) instead.`_
+//@
 //@ Enables all output (default)
 exports.verbose = function() {
+  deprecate('verbose', 'Use silent(false) instead.');
+
   state.silent = false;
 }
-
-//@
-//@ #### silent()
-//@ Suppresses all output, except for explict `echo()` calls
-exports.silent = function() {
-  state.silent = true;
-}
-
-
-
-
 
 
 
@@ -887,6 +910,10 @@ exports.silent = function() {
 function log() {
   if (!state.silent)
     console.log.apply(this, arguments);
+}
+
+function deprecate(what, msg) {
+  console.log('*** ShellJS.'+what+': This function is deprecated.', msg);
 }
 
 function write(msg) {
@@ -984,10 +1011,22 @@ function copyFileSync(srcFile, destFile) {
 
   var BUF_LENGTH = 64*1024,
       buf = new Buffer(BUF_LENGTH),
-      fdr = fs.openSync(srcFile, 'r'),
-      fdw = fs.openSync(destFile, 'w'),
       bytesRead = BUF_LENGTH,
-      pos = 0;
+      pos = 0,
+      fdr = null,
+      fdw = null;
+
+  try {
+    fdr = fs.openSync(srcFile, 'r');
+  } catch(e) {
+    error('copyFileSync: could not read src file ('+srcFile+')');
+  }
+
+  try {
+    fdw = fs.openSync(destFile, 'w');
+  } catch(e) {
+    error('copyFileSync: could not write to dest file ('+destFile+')');
+  }
 
   while (bytesRead === BUF_LENGTH) {
     bytesRead = fs.readSync(fdr, buf, 0, BUF_LENGTH, pos);
@@ -1150,7 +1189,8 @@ function tempDir() {
 
 // Wrapper around exec() to enable echoing output to console in real time
 function execAsync(cmd, opts, callback) {
-  var output = '';
+  var output = '',
+      silent = 'silent' in opts ? opts.silent : state.silent;
   
   var c = child.exec(cmd, {env: process.env}, function(err) {
     if (callback) 
@@ -1159,13 +1199,13 @@ function execAsync(cmd, opts, callback) {
 
   c.stdout.on('data', function(data) {
     output += data;
-    if (!opts.silent)
+    if (!silent)
       write(data);
   });
 
   c.stderr.on('data', function(data) {
     output += data;
-    if (!opts.silent)
+    if (!silent)
       write(data);
   });
 }
@@ -1178,16 +1218,17 @@ function execAsync(cmd, opts, callback) {
 function execSync(cmd, opts) {
   var stdoutFile = path.resolve(tempDir()+'/'+randomFileName()),
       codeFile = path.resolve(tempDir()+'/'+randomFileName()),
-      scriptFile = path.resolve(tempDir()+'/'+randomFileName());
+      scriptFile = path.resolve(tempDir()+'/'+randomFileName()),
+      sleepFile = path.resolve(tempDir()+'/'+randomFileName());
 
   var options = extend({
-    silent: false
+    silent: state.silent
   }, opts);
 
   var previousStdoutContent = '';
   // Echoes stdout changes from running process, if not silent
   function updateStdout() {
-    if (state.silent || options.silent || !fs.existsSync(stdoutFile))
+    if (options.silent || !fs.existsSync(stdoutFile))
       return;
 
     var stdoutContent = fs.readFileSync(stdoutFile, 'utf8');
@@ -1225,8 +1266,11 @@ function execSync(cmd, opts) {
   });
 
   // The wait loop
-  while (!fs.existsSync(codeFile)) { updateStdout(); };
-  while (!fs.existsSync(stdoutFile)) { updateStdout(); };
+  // sleepFile is used as a dummy I/O op to mitigate unnecessary CPU usage
+  // (tried many I/O sync ops, writeFileSync() seems to be only one that is effective in reducing
+  // CPU usage, though apparently not so much on Windows)
+  while (!fs.existsSync(codeFile)) { updateStdout(); fs.writeFileSync(sleepFile, 'a'); };
+  while (!fs.existsSync(stdoutFile)) { updateStdout(); fs.writeFileSync(sleepFile, 'a'); };
 
   // At this point codeFile exists, but it's not necessarily flushed yet.
   // Keep reading it until it is.
@@ -1239,6 +1283,7 @@ function execSync(cmd, opts) {
   fs.unlinkSync(scriptFile);
   fs.unlinkSync(stdoutFile);
   fs.unlinkSync(codeFile);
+  fs.unlinkSync(sleepFile);
 
   // True if successful, false if not
   var obj = {
@@ -1257,8 +1302,9 @@ function expand(list) {
   list.forEach(function(listEl) {
     // Wildcard present? 
     if (listEl.search(/\*/) > -1) {
-      for (file in _ls('', listEl))
+      _ls('', listEl).forEach(function(file) {
         expanded.push(file);
+      });
     } else {
       expanded.push(listEl);
     }
