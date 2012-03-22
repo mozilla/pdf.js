@@ -569,7 +569,7 @@ var PDFView = {
     var kBottomMargin = 10;
     var visiblePages = [];
 
-    if(this.isFullscreen) {
+    if (this.isFullscreen) {
       var view = pages[this.page - 1];
       visiblePages.push({
         id: view.id,
@@ -645,17 +645,17 @@ var PDFView = {
     var isFullscreen = document.fullscreen || document.mozFullScreen ||
       document.webkitIsFullScreen;
 
-    if(isFullscreen) {
+    if (isFullscreen) {
       return false;
     }
 
     var wrapper = document.getElementById('fullscreenwrapper');
-    if (document.documentElement.requestFullScreen) {  
-      wrapper.requestFullScreen();  
-    } else if (document.documentElement.mozRequestFullScreen) {  
-      wrapper.mozRequestFullScreen();  
-    } else if (document.documentElement.webkitRequestFullScreen) {  
-      wrapper.webkitRequestFullScreen(Element.ALLOW_KEYBOARD_INPUT);  
+    if (document.documentElement.requestFullScreen) {
+      wrapper.requestFullScreen();
+    } else if (document.documentElement.mozRequestFullScreen) {
+      wrapper.mozRequestFullScreen();
+    } else if (document.documentElement.webkitRequestFullScreen) {
+      wrapper.webkitRequestFullScreen(Element.ALLOW_KEYBOARD_INPUT);
     } else {
       return false;
     }
@@ -679,7 +679,7 @@ var PDFView = {
   },
 
   exitFullscreen: function pdfViewExitFullscreen() {
-    this.isFullscreen = false; 
+    this.isFullscreen = false;
     this.page = this.page;
   }
 };
@@ -1246,7 +1246,7 @@ window.addEventListener('load', function webViewerLoad(evt) {
 
   var fullscreenButton = document.getElementById('fullscreen');
   var docEl = document.documentElement;
-  if(!docEl.requestFullscreen && !docEl.mozRequestFullScreen &&
+  if (!docEl.requestFullscreen && !docEl.mozRequestFullScreen &&
       !docEl.webkitRequestFullScreen) {
     fullscreenButton.setAttribute('hidden', 'true');
   }
@@ -1302,7 +1302,7 @@ function updateViewarea() {
   var currentId = PDFView.page;
   var firstPage = visiblePages[0];
 
-  if(!PDFView.isFullscreen) {
+  if (!PDFView.isFullscreen) {
     updateViewarea.inProgress = true; // used in "set page"
     PDFView.page = firstPage.id;
     updateViewarea.inProgress = false;
@@ -1483,6 +1483,12 @@ window.addEventListener('keydown', function keydown(evt) {
       PDFView.page++;
       handled = true;
       break;
+    case 32: // spacebar
+      if (PDFView.isFullscreen) {
+        PDFView.page++;
+        handled = true;
+      }
+      break;
   }
 
   if (handled) {
@@ -1495,7 +1501,7 @@ window.addEventListener('keydown', function keydown(evt) {
     var isFullscreen = document.fullscreen || document.mozFullScreen ||
       document.webkitIsFullScreen;
 
-    if(!isFullscreen) {
+    if (!isFullscreen) {
       PDFView.exitFullscreen();
     }
   }
