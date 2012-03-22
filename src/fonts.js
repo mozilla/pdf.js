@@ -3652,7 +3652,7 @@ var CFFParser = (function CFFParserClosure() {
         var name = index.get(i);
         // OTS doesn't allow names to be over 127 characters.
         var length = Math.min(name.length, 127);
-        var data = new Array(length);
+        var data = [];
         // OTS also only permits certain characters in the name.
         for (var j = 0; j < length; ++j) {
           var c = name[j];
@@ -4502,7 +4502,7 @@ var CFFCompiler = (function CFFCompilerClosure() {
       return this.compileTypedArray(fdSelect);
     },
     compileTypedArray: function compileTypedArray(data) {
-      var out = new Array(data.length);
+      var out = [];
       for (var i = 0, ii = data.length; i < ii; ++i)
         out[i] = data[i];
       return out;

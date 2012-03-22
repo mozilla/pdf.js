@@ -132,9 +132,9 @@ var bidi = PDFJS.bidi = (function bidiClosure() {
 
     // get types, fill arrays
 
-    var chars = new Array(strLength);
-    var types = new Array(strLength);
-    var oldtypes = new Array(strLength);
+    var chars = [];
+    var types = [];
+    var oldtypes = [];
     var numBidi = 0;
 
     for (var i = 0; i < strLength; ++i) {
@@ -176,15 +176,11 @@ var bidi = PDFJS.bidi = (function bidiClosure() {
       }
     }
 
-    var levels = new Array(strLength);
+    var levels = [];
 
     for (var i = 0; i < strLength; ++i) {
       levels[i] = startLevel;
     }
-
-    var diffChars = new Array(strLength);
-    var diffLevels = new Array(strLength);
-    var diffTypes = new Array(strLength);
 
     /*
      X1-X10: skip most of this, since we are NOT doing the embeddings.

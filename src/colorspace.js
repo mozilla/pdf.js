@@ -220,7 +220,7 @@ var AlternateCS = (function AlternateCSClosure() {
       var baseNumComps = base.numComps;
       var baseBuf = new Uint8Array(baseNumComps * length);
       var numComps = this.numComps;
-      var scaled = new Array(numComps);
+      var scaled = [];
 
       for (var i = 0; i < length; i += numComps) {
         for (var z = 0; z < numComps; ++z)
