@@ -124,7 +124,7 @@ var bidi = PDFJS.bidi = (function bidiClosure() {
     }
   }
 
-  return (function bidi(text, startLevel) {
+  function bidi(text, startLevel) {
     var str = text.str;
     var strLength = str.length;
     if (strLength == 0)
@@ -429,5 +429,8 @@ var bidi = PDFJS.bidi = (function bidiClosure() {
         result += ch;
     }
     return result;
-  });
+  }
+
+  return bidi;
 })();
+
