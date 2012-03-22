@@ -1436,8 +1436,8 @@ window.addEventListener('keydown', function keydown(evt) {
     var now = Date.now();
     if (lastClick && now - lastClick <= kDoubleClickInterval) {
       PDFView.setScale(PDFView.currentScale * 1.2);
-      var y = e.pageY*1.2 - window.innerHeight/2;
-      var x = e.pageX*1.2 - window.innerWidth/2;
+      var y = e.pageY * 1.2 - window.innerHeight / 2;
+      var x = e.pageX * 1.2 - window.innerWidth / 2;
       y = (y > 0) ? y : 0;
       x = (x > 0) ? x : 0;
       window.scrollTo(x, y);
