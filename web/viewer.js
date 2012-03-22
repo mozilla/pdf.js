@@ -43,7 +43,7 @@ var ProgressBar = (function ProgressBarClosure() {
     this.height = opts.height || 1;
     this.width = opts.width || 15;
     this.units = opts.units || 'em';
-    this.percent = opts.progress || 0;
+    this.percent = opts.percent || 0;
 
     // Initialize heights
     this.progressDiv.style.height = this.height + this.units;
