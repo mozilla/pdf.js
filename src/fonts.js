@@ -1658,6 +1658,44 @@ var Font = (function FontClosure() {
         glyf.data = newGlyfData.subarray(0, writeOffset);
       }
 
+      function sanitizeNameTable(nameTable, fontName) {
+        var data = nameTable.data, length = data.length;
+        var isValid = false;
+
+        if (length >= 6 && data[0] == 0 &&
+            (data[1] == 0 || data[1] == 1)) {
+          var count = (data[2] << 8) | data[3];
+          var offset = (data[4] << 8) | data[5];
+          var position = 6;
+          // Checking if necessary names present for different platforms:
+          // family(1), subfamily(2), full name(4), version(5), postscript(6)
+          var presence = {
+            '\x00\x01\x00\x00\x00\x00': 0x76,
+            '\x00\x03\x00\x01\x04\x09': 0x76
+          };
+          for (var i = 0; i < count; i++, position += 12) {
+            var pel = String.fromCharCode(data[position], data[position + 1],
+              data[position + 2], data[position + 3], data[position + 4],
+              data[position + 5]);
+            var nameId = (data[position + 6] << 8) | data[position + 7];
+            if (!(pel in presence) || nameId > 6)
+              continue;
+            // Marking that the particular name exists for specific platform,
+            // encoding, and language.
+            presence[pel] &= ~(1 << nameId);
+          }
+          // All platform, encoding, and language items must be 0.
+          isValid = presence['\x00\x01\x00\x00\x00\x00'] === 0 &&
+            presence['\x00\x03\x00\x01\x04\x09'] === 0;
+        }
+
+        if (isValid)
+          return;
+
+        // Create new name table
+        nameTable.data = stringToArray(createNameTable(fontName));
+      }
+
       function readGlyphNameMap(post, properties) {
         var start = (font.start ? font.start : 0) + post.offset;
         font.pos = start;
@@ -1712,6 +1750,7 @@ var Font = (function FontClosure() {
       var numTables = header.numTables;
 
       var cmap, post, maxp, hhea, hmtx, vhea, vmtx, head, loca, glyf;
+      var nameTable;
       var tables = [];
       for (var i = 0; i < numTables; i++) {
         var table = readTableEntry(font);
@@ -1729,6 +1768,8 @@ var Font = (function FontClosure() {
             hmtx = table;
           else if (table.tag == 'head')
             head = table;
+          else if (table.tag == 'name')
+            nameTable = table;
 
           requiredTables.splice(index, 1);
         } else {
@@ -1788,6 +1829,10 @@ var Font = (function FontClosure() {
         var isGlyphLocationsLong = int16([head.data[50], head.data[51]]);
         sanitizeGlyphLocations(loca, glyf, numGlyphs, isGlyphLocationsLong);
       }
+
+      // The name table might not be populate for Windows platform
+      if (nameTable)
+        sanitizeNameTable(nameTable, this.name);
 
       // Sanitizer reduces the glyph advanceWidth to the maxAdvanceWidth
       // Sometimes it's 0. That needs to be fixed
