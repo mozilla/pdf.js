@@ -223,7 +223,6 @@ var PDFView = {
   },
 
   set page(val) {
-    console.log("1) Setting page", val, arguments.callee.caller);
     var pages = this.pages;
     var input = document.getElementById('pageNumber');
     if (!(0 < val && val <= pages.length)) {
@@ -245,7 +244,6 @@ var PDFView = {
     // avoiding the creation of two "set page" method (internal and public)
     if (updateViewarea.inProgress)
       return;
-    console.log("2) Setting page", val);
     // Avoid scrolling the first page during loading
     if (this.loading && val == 1)
       return;
@@ -810,7 +808,6 @@ var PageView = function pageView(container, content, id, pageWidth, pageHeight,
   };
 
   this.scrollIntoView = function pageViewScrollIntoView(dest) {
-    console.log("Scroll Into View", arguments.callee.caller);
       if (!dest) {
         div.scrollIntoView(true);
         return;
@@ -1289,7 +1286,6 @@ function updateViewarea() {
     var page = visiblePages[i];
     var pageObj = PDFView.pages[page.id - 1];
 
-    console.log(page.id, pageObj.drawingRequired());
     pageToDraw |= pageObj.drawingRequired();
     renderingQueue.enqueueDraw(pageObj);
   }
@@ -1478,14 +1474,12 @@ window.addEventListener('keydown', function keydown(evt) {
     case 37: // left arrow
     case 75: // 'k'
     case 80: // 'p'
-      console.log("This was page nr.:", PDFView.page);
       PDFView.page--;
       handled = true;
       break;
     case 39: // right arrow
     case 74: // 'j'
     case 78: // 'n'
-      console.log("This was page nr.:", PDFView.page);
       PDFView.page++;
       handled = true;
       break;

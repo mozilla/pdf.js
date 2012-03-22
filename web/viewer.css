@@ -7,7 +7,7 @@
   height: 100%;
 }
 :-webkit-full-screen #fullscreenwrapper {
-  overflow: hidden;
+  overflow: auto;
 }
 :-moz-full-screen #viewer, #fullscreenwrapper {
   overflow: hidden;
@@ -15,16 +15,15 @@
 
 :-webkit-full-screen #viewer {
   margin: 0pt;
-  padding: 4pt;
+  padding: 0pt;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
 }
 
 :-moz-full-screen #viewer {
   margin: 0pt;
-  padding: 4pt;
-}
-
-:-moz-full-screen .page {
-  margin: 4pt auto;
+  padding: 0pt;
 }
 
 body {
