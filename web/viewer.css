@@ -400,22 +400,32 @@ canvas {
   display: inline-block;
   border: 1px solid black;
   clear: both;
+  margin:0px;
   line-height: 0;
+  border-radius: 4px;
 }
 
-#loadingBar #progress {
+#loadingBar .progress {
+  background-color: green;
   display: inline-block;
+  
+  background: #b4e391;
   background: -moz-linear-gradient(top, #b4e391 0%, #61c419 50%, #b4e391 100%);
   background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,#b4e391), color-stop(50%,#61c419), color-stop(100%,#b4e391));
   background: -webkit-linear-gradient(top, #b4e391 0%,#61c419 50%,#b4e391 100%);
   background: -o-linear-gradient(top, #b4e391 0%,#61c419 50%,#b4e391 100%);
   background: -ms-linear-gradient(top, #b4e391 0%,#61c419 50%,#b4e391 100%);
-  background: linear-gradient(top, #b4e391 0%,#61c419 50%,#b4e391 100%);  
+  background: linear-gradient(top, #b4e391 0%,#61c419 50%,#b4e391 100%);    
+
+  border-top-left-radius: 3px;
+  border-bottom-left-radius: 3px;
 }
 
-#loadingBar #remaining {
+#loadingBar .remaining {
   background-color: #333;
   display: inline-block;
+  border-top-right-radius: 3px;
+  border-bottom-right-radius: 3px;
 }
 
 #PDFBug {

@@ -29,45 +29,49 @@ var Cache = function cacheCache(size) {
 
 var ProgressBar = (function ProgressBarClosure() {
 
-    function clamp(v, min, max) {
-        return Math.min(Math.max(v, min), max);
+  function clamp(v, min, max) {
+    return Math.min(Math.max(v, min), max);
+  }
+
+  function ProgressBar(id, opts) {
+
+    // Fetch the sub-elements for later
+    this.progressDiv = document.querySelector(id + ' .progress');
+    this.remainingDiv = document.querySelector(id + ' .remaining');
+
+    // Get options, with sensible defaults
+    this.height = opts.height || 1;
+    this.width = opts.width || 15;
+    this.units = opts.units || 'em';
+    this.percent = opts.progress || 0;
+
+    // Initialize heights
+    this.progressDiv.style.height = this.height + this.units;
+    this.remainingDiv.style.height = this.height + this.units;
+  }
+
+  ProgressBar.prototype = {
+    constructor: ProgressBar,
+
+    updateBar: function ProgressBar_updateBar() {
+      var progressSize = this.width * this._percent / 100;
+      var remainingSize = (this.width - progressSize);
+
+      this.progressDiv.style.width = progressSize + this.units;
+      this.remainingDiv.style.width = remainingSize + this.units;
+    },
+
+    get percent() {
+      return this._percent;
+    },
+
+    set percent(val) {
+      this._percent = clamp(val, 0, 100);
+      this.updateBar();
     }
+  };
 
-    function sizeBar(bar, num, width, height, units) {
-        var progress = bar.querySelector('#progress');
-        var remaining = bar.querySelector('#remaining');
-        progress.style.height = height + units;
-        remaining.style.height = height + units;
-        progress.style.width = num + units;
-        remaining.style.width = (width - num) + units;
-    }
-
-    function ProgressBar(element, min, max, width, height, units) {
-        this.element = element;
-        this.min = min;
-        this.max = max;
-        this.width = width;
-        this.height = height;
-        this.units = units;
-        this.value = min;
-        sizeBar(element, 0, this.width, this.height, this.units);
-    }
-
-    ProgressBar.prototype = {
-        constructor: ProgressBar,
-
-        get value() {
-            return this._value;
-        },
-
-        set value(val) {
-            this._value = clamp(val, this.min, this.max);
-            var num = this.width * (val - this.min) / (this.max - this.min);
-            sizeBar(this.element, num, this.width, this.height, this.units);
-        }
-    };
-
-    return ProgressBar;
+  return ProgressBar;
 })();
 
 var RenderingQueue = (function RenderingQueueClosure() {
@@ -304,10 +308,9 @@ var PDFView = {
     document.title = this.url = url;
 
     // FIXME: Probably needs a better place to get initialized
-    if (!PDFView.loadingProgress) {
-      PDFView.loadingProgress = new ProgressBar(
-            document.getElementById('loadingBar'),
-            0, 100, 15, 1.5, 'em');
+    if (!PDFView.loadingBar) {
+      PDFView.loadingBar = new ProgressBar('#loadingBar', {
+        width: 15, height: 1.5, units: 'em'});
     }
 
     var self = this;
@@ -451,7 +454,7 @@ var PDFView = {
     var loadingIndicator = document.getElementById('loading');
     loadingIndicator.textContent = 'Loading... ' + percent + '%';
 
-    PDFView.loadingProgress.value = percent;
+    PDFView.loadingBar.percent = percent;
   },
 
   load: function pdfViewLoad(data, scale) {
