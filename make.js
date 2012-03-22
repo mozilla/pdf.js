@@ -220,6 +220,7 @@ target.firefox = function() {
       FIREFOX_EXTENSION_FILES_TO_COPY =
         ['*.js',
          '*.rdf',
+         '*.png',
          'install.rdf.in',
          'README.mozilla',
          'components',
@@ -227,11 +228,15 @@ target.firefox = function() {
       FIREFOX_EXTENSION_FILES =
         ['bootstrap.js',
          'install.rdf',
+         'icon.png',
+         'icon64.png',
          'components',
          'content',
          'LICENSE'];
       FIREFOX_MC_EXTENSION_FILES =
         ['bootstrap.js',
+         'icon.png',
+         'icon64.png',
          'components',
          'content',
          'LICENSE'];

@@ -226,6 +226,7 @@ FIREFOX_CONTENT_DIR := $(EXTENSION_SRC)/firefox/$(CONTENT_DIR)/
 FIREFOX_EXTENSION_FILES_TO_COPY = \
 	*.js \
 	*.rdf \
+	*.png \
 	install.rdf.in \
 	README.mozilla \
 	components \
@@ -234,12 +235,16 @@ FIREFOX_EXTENSION_FILES_TO_COPY = \
 FIREFOX_EXTENSION_FILES = \
 	bootstrap.js \
 	install.rdf \
+	icon.png \
+	icon64.png \
 	components \
 	content \
 	LICENSE \
 	$(NULL)
 FIREFOX_MC_EXTENSION_FILES = \
 	bootstrap.js \
+	icon.png \
+	icon64.png \
 	components \
 	content \
 	LICENSE \

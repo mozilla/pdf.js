@@ -70,7 +70,7 @@ var CanvasExtraState = (function CanvasExtraStateClosure() {
   return CanvasExtraState;
 })();
 
-function ScratchCanvas(width, height) {
+function createScratchCanvas(width, height) {
   var canvas = document.createElement('canvas');
   canvas.width = width;
   canvas.height = height;
@@ -188,9 +188,9 @@ function addContextCurrentTransform(ctx) {
 }
 
 var CanvasGraphics = (function CanvasGraphicsClosure() {
-  // Defines the time the executeIRQueue is going to be executing
+  // Defines the time the executeOperatorList is going to be executing
   // before it stops and shedules a continue of execution.
-  var kExecutionTime = 50;
+  var kExecutionTime = 15;
 
   function CanvasGraphics(canvasCtx, objs, textLayer) {
     this.ctx = canvasCtx;
@@ -199,7 +199,6 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
     this.pendingClip = null;
     this.res = null;
     this.xobjs = null;
-    this.ScratchCanvas = ScratchCanvas;
     this.objs = objs;
     this.textLayer = textLayer;
     if (canvasCtx) {
@@ -229,7 +228,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       'setStrokeColor': true,
       'setStrokeColorN': true,
       'setFillColor': true,
-      'setFillColorN_IR': true,
+      'setFillColorN': true,
       'setStrokeGray': true,
       'setFillGray': true,
       'setStrokeRGBColor': true,
@@ -268,15 +267,16 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
         this.textLayer.beginLayout();
     },
 
-    executeIRQueue: function canvasGraphicsExecuteIRQueue(codeIR,
-                                  executionStartIdx, continueCallback,
-                                  stepper) {
-      var argsArray = codeIR.argsArray;
-      var fnArray = codeIR.fnArray;
+    executeOperatorList: function canvasGraphicsExecuteOperatorList(
+                                    operatorList,
+                                    executionStartIdx, continueCallback,
+                                    stepper) {
+      var argsArray = operatorList.argsArray;
+      var fnArray = operatorList.fnArray;
       var i = executionStartIdx || 0;
       var argsArrayLen = argsArray.length;
 
-      // Sometimes the IRQueue to execute is empty.
+      // Sometimes the OperatorList to execute is empty.
       if (argsArrayLen == i) {
         return i;
       }
@@ -314,7 +314,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
 
         i++;
 
-        // If the entire IRQueue was executed, stop as were done.
+        // If the entire operatorList was executed, stop as were done.
         if (i == argsArrayLen) {
           return i;
         }
@@ -327,8 +327,8 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
           return i;
         }
 
-        // If the IRQueue isn't executed completly yet OR the execution time
-        // was short enough, do another execution round.
+        // If the operatorList isn't executed completely yet OR the execution
+        // time was short enough, do another execution round.
       }
     },
 
@@ -556,7 +556,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       this.current.leading = -leading;
     },
     setFont: function canvasGraphicsSetFont(fontRefName, size) {
-      var fontObj = this.objs.get(fontRefName).fontObj;
+      var fontObj = this.objs.get(fontRefName);
       var current = this.current;
 
       if (!fontObj)
@@ -707,7 +707,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
           this.save();
           ctx.scale(fontSize, fontSize);
           ctx.transform.apply(ctx, fontMatrix);
-          this.executeIRQueue(glyph.codeIRQueue);
+          this.executeOperatorList(glyph.operatorList);
           this.restore();
 
           var transformed = Util.applyTransform([glyph.width, 0], fontMatrix);
@@ -908,7 +908,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       this.ctx.strokeStyle = color;
       this.current.strokeColor = color;
     },
-    getColorN_IR_Pattern: function canvasGraphicsGetColorN_IR_Pattern(IR, cs) {
+    getColorN_Pattern: function canvasGraphicsGetColorN_Pattern(IR, cs) {
       if (IR[0] == 'TilingPattern') {
         var args = IR[1];
         var base = cs.base;
@@ -930,11 +930,11 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       }
       return pattern;
     },
-    setStrokeColorN_IR: function canvasGraphicsSetStrokeColorN(/*...*/) {
+    setStrokeColorN: function canvasGraphicsSetStrokeColorN(/*...*/) {
       var cs = this.current.strokeColorSpace;
 
       if (cs.name == 'Pattern') {
-        this.current.strokeColor = this.getColorN_IR_Pattern(arguments, cs);
+        this.current.strokeColor = this.getColorN_Pattern(arguments, cs);
       } else {
         this.setStrokeColor.apply(this, arguments);
       }
@@ -946,11 +946,11 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       this.ctx.fillStyle = color;
       this.current.fillColor = color;
     },
-    setFillColorN_IR: function canvasGraphicsSetFillColorN(/*...*/) {
+    setFillColorN: function canvasGraphicsSetFillColorN(/*...*/) {
       var cs = this.current.fillColorSpace;
 
       if (cs.name == 'Pattern') {
-        this.current.fillColor = this.getColorN_IR_Pattern(arguments, cs);
+        this.current.fillColor = this.getColorN_Pattern(arguments, cs);
       } else {
         this.setFillColor.apply(this, arguments);
       }
@@ -1116,7 +1116,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       // scale the image to the unit square
       ctx.scale(1 / w, -1 / h);
 
-      var tmpCanvas = new this.ScratchCanvas(w, h);
+      var tmpCanvas = createScratchCanvas(w, h);
       var tmpCtx = tmpCanvas.getContext('2d');
 
       var fillColor = this.current.fillColor;
@@ -1147,7 +1147,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       // scale the image to the unit square
       ctx.scale(1 / w, -1 / h);
 
-      var tmpCanvas = new this.ScratchCanvas(w, h);
+      var tmpCanvas = createScratchCanvas(w, h);
       var tmpCtx = tmpCanvas.getContext('2d');
       this.putBinaryImageData(tmpCtx, imgData, w, h);
 
