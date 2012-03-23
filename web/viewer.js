@@ -163,6 +163,7 @@ var PDFView = {
   currentScale: kUnknownScale,
   currentScaleValue: null,
   initialBookmark: document.location.hash.substring(1),
+  bookmarkUrl: null,
 
   setScale: function pdfViewSetScale(val, resetAutoSettings) {
     if (val == this.currentScale)
@@ -562,8 +563,16 @@ var PDFView = {
     }
   },
 
+  pinControls: function pdfViewPinControls() {
+    document.getElementById('controlsWrapper').classList.toggle('pinned');
+  },
+
   pinSidebar: function pdfViewPinSidebar() {
     document.getElementById('sidebar').classList.toggle('pinned');
+  },
+
+  bookmark: function pdfViewBookmark() {
+    window.location = this.bookmarkUrl;
   },
 
   getVisiblePages: function pdfViewGetVisiblePages() {
@@ -1192,6 +1201,14 @@ window.addEventListener('load', function webViewerLoad(evt) {
 
   var sidebarScrollView = document.getElementById('sidebarScrollView');
   sidebarScrollView.addEventListener('scroll', updateThumbViewArea, true);
+
+  // Show the top controls so the user knows they're there.
+  var controls = document.getElementById('controlsWrapper');
+  controls.classList.add('init');
+  setTimeout(function() {
+    controls.classList.remove('init');
+  }, 1000);
+
 }, true);
 
 window.addEventListener('unload', function webViewerUnload(evt) {
@@ -1268,7 +1285,7 @@ function updateViewarea() {
   store.set('scrollLeft', Math.round(topLeft.x));
   store.set('scrollTop', Math.round(topLeft.y));
   var href = PDFView.getAnchorUrl(pdfOpenParams);
-  document.getElementById('viewBookmark').href = href;
+  PDFView.bookmarkUrl = href;
 }
 
 window.addEventListener('scroll', function webViewerScroll(evt) {

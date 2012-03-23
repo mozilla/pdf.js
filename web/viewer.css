@@ -1,6 +1,5 @@
 /* -*- Mode: Java; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- /
 /* vim: set shiftwidth=4 tabstop=8 autoindent cindent expandtab: */
-
 body {
   background-color: #929292;
   font-family: 'Lucida Grande', 'Lucida Sans Unicode', Helvetica, Arial, Verdana, sans-serif;
@@ -15,9 +14,25 @@ body {
   position: fixed;
   left: 0;
   top: 0;
-  height: 24px;
+  height: 44px;
   z-index: 1;
   width: 100%;
+  opacity: 0;
+  -webkit-transition: opacity 0.25s ease-in-out 1s;
+  -moz-transition: opacity 0.25s ease-in-out 1s;
+  -ms-transition: opacity 0.25s ease-in-out 1s;
+  -o-transition: opacity 0.25s ease-in-out 1s;
+  transition: opacity 0.25s ease-in-out 1s;
+}
+#controlsWrapper:hover,
+#controlsWrapper.pinned,
+#controlsWrapper.init {
+  opacity: 1;
+  -webkit-transition: opacity 300ms linear;
+  -moz-transition: opacity 300ms linear;
+  -ms-transition: opacity 300ms linear;
+  -o-transition: opacity 300ms linear;
+  transition: opacity 300ms linear;
 }
 #controls {
   background-color: rgba(0, 0, 0, 0.7);
@@ -27,7 +42,7 @@ body {
   -webkit-box-shadow: 0px 2px 8px #000000;
   -moz-box-shadow: 0px 2px 8px #000000;
   box-shadow: 0px 2px 8px #000000;
-  padding: 3px;
+  padding: 5px;
   white-space: nowrap;
   overflow: hidden;
   color: #FFF;
@@ -76,6 +91,7 @@ button {
   display: inline-block;
   border-width: 1px;
   border-style: solid;
+  cursor: pointer;
 }
 button:hover {
   background-color: #222222;
@@ -99,6 +115,7 @@ button[disabled] {
   opacity: 0.5;
   background-image: none;
   background-color: #222222;
+  cursor: default;
 }
 #pageNumber {
   text-align: right;
@@ -155,11 +172,11 @@ button[disabled] {
   top: 62px;
   bottom: 18px;
   left: -290px;
-  -webkit-transition: left 0.25s ease-in-out 1s;
-  -moz-transition: left 0.25s ease-in-out 1s;
-  -ms-transition: left 0.25s ease-in-out 1s;
-  -o-transition: left 0.25s ease-in-out 1s;
-  transition: left 0.25s ease-in-out 1s;
+  -webkit-transition: left 0.25s ease-in-out 1.5s;
+  -moz-transition: left 0.25s ease-in-out 1.5s;
+  -ms-transition: left 0.25s ease-in-out 1.5s;
+  -o-transition: left 0.25s ease-in-out 1.5s;
+  transition: left 0.25s ease-in-out 1.5s;
   z-index: 1;
 }
 #sidebar:hover,
@@ -171,22 +188,28 @@ button[disabled] {
   -o-transition: left 0.25s ease-in-out 0s;
   transition: left 0.25s ease-in-out 0s;
 }
-#pinIcon {
+.pinIcon {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  background: center no-repeat;
+  background-image: url('images/pin-up.svg');
+  background-size: 16px 16px;
+  cursor: pointer;
+  vertical-align: middle;
+  margin-bottom: 2px;
+}
+.pinIcon:hover {
+  background-color: rgba(255, 255, 255, 0.35);
+}
+.pinned .pinIcon {
+  background-image: url('images/pin-down.svg');
+  background-size: 16px 16px;
+}
+#pinSidebarIcon {
   position: absolute;
   top: 4px;
   right: 55px;
-  width: 15px;
-  height: 15px;
-  background: center no-repeat;
-  background-image: url('images/pin-up.svg');
-  background-size: 15px 15px;
-}
-#pinIcon:hover {
-  background-color: rgba(255, 255, 255, 0.35);
-}
-#sidebar.pinned #pinIcon {
-  background-image: url('images/pin-down.svg');
-  background-size: 15px 15px;
 }
 #sidebarBox {
   background-color: rgba(0, 0, 0, 0.7);

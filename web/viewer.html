@@ -44,12 +44,10 @@
           <div class="btnGroup">
             <button id="previous" onclick="PDFView.page--;" oncontextmenu="return false;">
               <img src="images/go-up.svg" align="top" height="16"/>
-              Previous
             </button>
 
             <button id="next" onclick="PDFView.page++;" oncontextmenu="return false;">
               <img src="images/go-down.svg" align="top" height="16"/>
-              Next
             </button>
           </div>
 
@@ -86,24 +84,20 @@
 
           <button id="print" onclick="window.print();" oncontextmenu="return false;">
             <img src="images/document-print.svg" align="top" height="16"/>
-            Print
           </button>
 
           <button id="download" title="Download" onclick="PDFView.download();" oncontextmenu="return false;">
             <img src="images/download.svg" align="top" height="16"/>
-            Download
           </button>
-
-          <div class="separator"></div>
 
           <input id="fileInput" type="file" oncontextmenu="return false;" hidden='true'/>
 
-          <div id="fileInputSeperator" class="separator" hidden='true'></div>
-
-          <a href="#" id="viewBookmark" title="Bookmark (or copy) current location">
+          <button id="viewBookmark" title="Bookmark (or copy) current location" onClick="PDFView.bookmark();">
             <img src="images/bookmark.svg" alt="Bookmark" align="top" height="16"/>
-          </a>
+          </button>
 
+          <div class="separator"></div>
+          <a id="pinControlsIcon" class="pinIcon" title="Pin Control Bar" onClick="PDFView.pinControls();"></a>
         </div>
       </div>
     </div>
@@ -129,15 +123,14 @@
 
     <div id="sidebar">
       <div id="sidebarBox">
-        <div id="pinIcon" onClick="PDFView.pinSidebar()"></div>
+        <a id="pinSidebarIcon" class="pinIcon" title="Pin Control Sidebar"  onClick="PDFView.pinSidebar();"></a>
         <div id="sidebarControls" class="controls">
           <div class="btnGroup">
             <button id="thumbsSwitch" title="Show Thumbnails" onclick="PDFView.switchSidebarView('thumbs')" data-selected>
-              <img src="images/nav-thumbs.svg" align="top" height="16"/>Thumbnails
+              <img src="images/nav-thumbs.svg" align="top" height="16"/>
             </button>
             <button id="outlineSwitch" title="Show Document Outline" onclick="PDFView.switchSidebarView('outline')" disabled>
               <img src="images/nav-outline.svg" align="top" height="16"/>
-              Outline
             </button>
           </div>
         </div>
