@@ -258,7 +258,9 @@ var PDFView = {
   },
 
   open: function pdfViewOpen(url, scale) {
-    document.title = this.url = url;
+    this.url = url;
+
+    document.title = (url.substring(url.lastIndexOf('/')+1)) || url;
 
     var self = this;
     PDFJS.getPdf(
