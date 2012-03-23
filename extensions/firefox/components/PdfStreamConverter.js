@@ -63,11 +63,6 @@ ChromeActions.prototype = {
   }
 };
 
-function getDOMWindow(aChannel) {
-  var requestor = aChannel.notificationCallbacks;
-  var win = requestor.getInterface(Components.interfaces.nsIDOMWindow);
-  return win;
-}
 
 // Event listener to trigger chrome privedged code.
 function RequestListener(actions) {
