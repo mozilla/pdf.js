@@ -164,10 +164,13 @@ PdfStreamConverter.prototype = {
       },
       onStopRequest: function() {
         var domWindow = getDOMWindow(channel);
-        let requestListener = new RequestListener(new ChromeActions);
-        domWindow.addEventListener(PDFJS_EVENT_ID, function(event) {
-          requestListener.receive(event);
-        }, false, true);
+        // Double check the url is still the correct one.
+        if (domWindow.document.documentURIObject.equals(aRequest.URI)) {
+          let requestListener = new RequestListener(new ChromeActions);
+          domWindow.addEventListener(PDFJS_EVENT_ID, function(event) {
+            requestListener.receive(event);
+          }, false, true);
+        }
         listener.onStopRequest.apply(listener, arguments);
       }
     };
