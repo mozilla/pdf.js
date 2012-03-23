@@ -15,6 +15,18 @@ var kMaxScale = 4.0;
 var kImageDirectory = './images/';
 var kSettingsMemory = 20;
 
+var Util = {
+  getFileName: function Util_getFileName(url) {
+    var anchor = url.indexOf("#");
+    var query = url.indexOf("?");
+    var s = url.lastIndexOf("/") + 1;
+    var e = url.length;
+    if (anchor > 0) e=Math.min(anchor,e);
+    if (query > 0) e=Math.min(query,e);
+    return url.substring(url.lastIndexOf("/") + 1, e);
+  }
+};
+
 var Cache = function cacheCache(size) {
   var data = [];
   this.push = function cachePush(view) {
@@ -260,7 +272,7 @@ var PDFView = {
   open: function pdfViewOpen(url, scale) {
     this.url = url;
 
-    document.title = (url.substring(url.lastIndexOf('/')+1)) || url;
+    document.title = Util.getFileName(url) || url;
 
     var self = this;
     PDFJS.getPdf(
