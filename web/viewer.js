@@ -499,6 +499,14 @@ var PDFView = {
       // Setting the default one.
       this.parseScale(kDefaultScale, true);
     }
+
+    var metadata = pdf.catalog.metadata;
+    if (metadata) {
+      this.metadata = metadata = new Metadata(metadata);
+      if (metadata.has('title')) {
+        document.title = metadata.get('title');
+      }
+    }
   },
 
   setHash: function pdfViewSetHash(hash) {
