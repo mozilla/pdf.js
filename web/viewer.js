@@ -17,13 +17,12 @@ var kSettingsMemory = 20;
 
 var Util = {
   getFileName: function Util_getFileName(url) {
-    var anchor = url.indexOf("#");
-    var query = url.indexOf("?");
-    var s = url.lastIndexOf("/") + 1;
-    var e = url.length;
-    if (anchor > 0) e=Math.min(anchor,e);
-    if (query > 0) e=Math.min(query,e);
-    return url.substring(url.lastIndexOf("/") + 1, e);
+    var anchor = url.indexOf('#');
+    var query = url.indexOf('?');
+    var end = url.length;
+    if (anchor > 0) end = Math.min(anchor, end);
+    if (query > 0) end = Math.min(query, end);
+    return url.substring(url.lastIndexOf('/') + 1, end);
   }
 };
 
