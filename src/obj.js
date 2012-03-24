@@ -125,7 +125,7 @@ var Catalog = (function CatalogClosure() {
 
         if (isName(type) && isName(subtype) &&
             type.name === 'Metadata' && subtype.name === 'XML') {
-          var metadata = stringToPDFString(bytesToString(stream.getbytes()));
+          var metadata = stringToPDFString(bytesToString(stream.getBytes()));
           return metadata;
         }
       }
