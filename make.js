@@ -277,10 +277,10 @@ target.firefox = function() {
   // We don't need pdf.js anymore since its inlined
   rm('-Rf', FIREFOX_BUILD_CONTENT_DIR + BUILD_DIR);
   // Remove '.DS_Store' and other hidden files
-  for (file in find(FIREFOX_BUILD_DIR)) {
+  find(FIREFOX_BUILD_DIR).forEach(function(file) {
     if (file.match(/^\./))
       rm('-f', file);
-  }
+  });
 
   // Update the build version number
   sed('-i', /PDFJSSCRIPT_VERSION/, EXTENSION_VERSION, FIREFOX_BUILD_DIR + '/install.rdf');
@@ -304,10 +304,10 @@ target.firefox = function() {
   // List all files for mozilla-central
   cd(FIREFOX_BUILD_DIR);
   var extensionFiles = '';
-  for (file in find(FIREFOX_MC_EXTENSION_FILES)) {
+  find(FIREFOX_MC_EXTENSION_FILES).forEach(function(file){
     if (test('-f', file))
       extensionFiles += file+'\n';
-  }
+  });
   extensionFiles.to('extension-files');
 };
 
