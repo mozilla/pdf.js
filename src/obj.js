@@ -123,7 +123,7 @@ var Catalog = (function CatalogClosure() {
         var type = dict.get('Type');
         var subtype = dict.get('Subtype');
 
-        if(isName(type) && isName(subtype) &&
+        if (isName(type) && isName(subtype) &&
             type.name === 'Metadata' && subtype.name === 'XML') {
           var metadata = stringToPDFString(bytesToString(stream.getbytes()));
           return metadata;
