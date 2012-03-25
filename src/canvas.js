@@ -751,31 +751,31 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
             x += Util.sign(current.fontMatrix[0]) * wordSpacing;
             continue;
           }
-          if (glyph.disabled)
-            continue;
 
           var char = glyph.fontChar;
           var charWidth = glyph.width * fontSize * 0.001 +
               Util.sign(current.fontMatrix[0]) * charSpacing;
 
-          var scaledX = x / fontSizeScale;
-          switch (textRenderingMode) {
-            default: // other unsupported rendering modes
-            case TextRenderingMode.FILL:
-            case TextRenderingMode.FILL_ADD_TO_PATH:
-              ctx.fillText(char, scaledX, 0);
-              break;
-            case TextRenderingMode.STROKE:
-            case TextRenderingMode.STROKE_ADD_TO_PATH:
-              ctx.strokeText(char, scaledX, 0);
-              break;
-            case TextRenderingMode.FILL_STROKE:
-            case TextRenderingMode.FILL_STROKE_ADD_TO_PATH:
-              ctx.fillText(char, scaledX, 0);
-              ctx.strokeText(char, scaledX, 0);
-              break;
-            case TextRenderingMode.INVISIBLE:
-              break;
+          if (!glyph.disabled) {
+            var scaledX = x / fontSizeScale;
+            switch (textRenderingMode) {
+              default: // other unsupported rendering modes
+              case TextRenderingMode.FILL:
+              case TextRenderingMode.FILL_ADD_TO_PATH:
+                ctx.fillText(char, scaledX, 0);
+                break;
+              case TextRenderingMode.STROKE:
+              case TextRenderingMode.STROKE_ADD_TO_PATH:
+                ctx.strokeText(char, scaledX, 0);
+                break;
+              case TextRenderingMode.FILL_STROKE:
+              case TextRenderingMode.FILL_STROKE_ADD_TO_PATH:
+                ctx.fillText(char, scaledX, 0);
+                ctx.strokeText(char, scaledX, 0);
+                break;
+              case TextRenderingMode.INVISIBLE:
+                break;
+            }
           }
 
           x += charWidth;
