@@ -1828,8 +1828,9 @@ var Font = (function FontClosure() {
         readGlyphNameMap(post, properties);
       }
 
-      // Replace the old CMAP table with a shiny new one
+      var glyphs, ids;
       if (properties.type == 'CIDFontType2') {
+        // Replace the old CMAP table with a shiny new one
         // Type2 composite fonts map characters directly to glyphs so the cmap
         // table must be replaced.
         // canvas fillText will reencode some characters even if the font has a
@@ -1861,7 +1862,9 @@ var Font = (function FontClosure() {
           }
         }
 
-        var glyphs = [], ids = [];
+        glyphs = [];
+        ids = [];
+
         var usedUnicodes = [];
         var unassignedUnicodeItems = [];
         for (var i = 1; i < numGlyphs; i++) {
@@ -1892,11 +1895,12 @@ var Font = (function FontClosure() {
           glyphs.push({ unicode: unicode, code: cid });
           ids.push(i);
         }
-        cmap.data = createCMapTable(glyphs, ids);
       } else {
         var cmapTable = readCMapTable(cmap, font);
-        var glyphs = cmapTable.glyphs;
-        var ids = cmapTable.ids;
+
+        glyphs = cmapTable.glyphs;
+        ids = cmapTable.ids;
+
         var hasShortCmap = !!cmapTable.hasShortCmap;
         var toFontChar = this.toFontChar;
 
@@ -2049,9 +2053,15 @@ var Font = (function FontClosure() {
 
         createGlyphNameMap(glyphs, ids, properties);
         this.glyphNameMap = properties.glyphNameMap;
-
-        cmap.data = createCMapTable(glyphs, ids);
       }
+
+      // Converting glyphs and ids into font's cmap table
+      cmap.data = createCMapTable(glyphs, ids);
+      var unicodeIsEnabled = [];
+      for (var i = 0, ii = glyphs.length; i < ii; i++) {
+        unicodeIsEnabled[glyphs[i].unicode] = true;
+      }
+      this.unicodeIsEnabled = unicodeIsEnabled;
 
       // Rewrite the 'post' table if needed
       if (requiredTables.indexOf('post') != -1) {
@@ -2378,7 +2388,7 @@ var Font = (function FontClosure() {
     },
 
     charToGlyph: function fonts_charToGlyph(charcode) {
-      var fontCharCode, width, operatorList;
+      var fontCharCode, width, operatorList, disabled;
 
       var width = this.widths[charcode];
 
@@ -2451,11 +2461,14 @@ var Font = (function FontClosure() {
         unicodeChars = String.fromCharCode(unicodeChars);
 
       width = (isNum(width) ? width : this.defaultWidth) * this.widthMultiplier;
+      disabled = this.unicodeIsEnabled ?
+        !this.unicodeIsEnabled[fontCharCode] : false;
 
       return {
         fontChar: String.fromCharCode(fontCharCode),
         unicode: unicodeChars,
         width: width,
+        disabled: disabled,
         operatorList: operatorList
       };
     },

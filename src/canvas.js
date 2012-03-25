@@ -751,6 +751,8 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
             x += Util.sign(current.fontMatrix[0]) * wordSpacing;
             continue;
           }
+          if (glyph.disabled)
+            continue;
 
           var char = glyph.fontChar;
           var charWidth = glyph.width * fontSize * 0.001 +
