@@ -1958,6 +1958,19 @@ var Font = (function FontClosure() {
           glyphsRemoved++;
         }
 
+        // checking if it's a "true" symbolic font
+        if (this.isSymbolicFont) {
+          var minUnicode = 0xFFFF, maxUnicode = 0;
+          for (var i = 0, ii = glyphs.length; i < ii; i++) {
+            var unicode = glyphs[i].unicode;
+            minUnicode = Math.min(minUnicode, unicode);
+            maxUnicode = Math.max(maxUnicode, unicode);
+          }
+          // high byte must be the same for min and max unicodes
+          if ((maxUnicode & 0xFF00) != (minUnicode & 0xFF00))
+            this.isSymbolicFont = false;
+        }
+
         // heuristics: if removed more than 2 glyphs encoding WinAnsiEncoding
         // does not set properly
         if (glyphsRemoved > 2) {
