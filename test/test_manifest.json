@@ -530,5 +530,19 @@
       "pageLimit": 2,
       "link": true,
       "type": "eq"
+    },
+    {  "id": "issue1309",
+      "file": "pdfs/issue1309.pdf",
+      "md5": "e835fb7f3dab3073ad37d0bd3c6399fa",
+      "rounds": 1,
+      "link": true,
+      "type": "eq"
+    },
+    {  "id": "issue1317",
+      "file": "pdfs/issue1317.pdf",
+      "md5": "6fb46275b30c48c8985617d4f86199e3",
+      "rounds": 1,
+      "link": true,
+      "type": "eq"
     }
 ]

@@ -174,7 +174,6 @@ var Encodings = {
     '', '', 'Lslash', 'Oslash', 'OE', 'ordmasculine', '', '', '', '', '', 'ae',
     '', '', '', 'dotlessi', '', '', 'lslash', 'oslash', 'oe', 'germandbls'],
   WinAnsiEncoding: ['', '', '', '', '', '', '', '', '', '', '', '', '', '', '',
-
     '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '',
     'space', 'exclam', 'quotedbl', 'numbersign', 'dollar', 'percent',
     'ampersand', 'quotesingle', 'parenleft', 'parenright', 'asterisk', 'plus',
@@ -1658,6 +1657,30 @@ var Font = (function FontClosure() {
         glyf.data = newGlyfData.subarray(0, writeOffset);
       }
 
+      function findEmptyGlyphs(locaTable, isGlyphLocationsLong, emptyGlyphIds) {
+        var itemSize, itemDecode;
+        if (isGlyphLocationsLong) {
+          itemSize = 4;
+          itemDecode = function fontItemDecodeLong(data, offset) {
+            return (data[offset] << 24) | (data[offset + 1] << 16) |
+                   (data[offset + 2] << 8) | data[offset + 3];
+          };
+        } else {
+          itemSize = 2;
+          itemDecode = function fontItemDecode(data, offset) {
+            return (data[offset] << 9) | (data[offset + 1] << 1);
+          };
+        }
+        var data = locaTable.data, length = data.length;
+        var lastOffset = itemDecode(data, 0);
+        for (var i = itemSize, j = 0; i < length; i += itemSize, j++) {
+          var offset = itemDecode(data, i);
+          if (offset == lastOffset)
+            emptyGlyphIds[j] = true;
+          lastOffset = offset;
+        }
+      }
+
       function readGlyphNameMap(post, properties) {
         var start = (font.start ? font.start : 0) + post.offset;
         font.pos = start;
@@ -1784,10 +1807,14 @@ var Font = (function FontClosure() {
       sanitizeMetrics(font, hhea, hmtx, numGlyphs);
       sanitizeMetrics(font, vhea, vmtx, numGlyphs);
 
+      var isGlyphLocationsLong = int16([head.data[50], head.data[51]]);
       if (head && loca && glyf) {
-        var isGlyphLocationsLong = int16([head.data[50], head.data[51]]);
         sanitizeGlyphLocations(loca, glyf, numGlyphs, isGlyphLocationsLong);
       }
+
+      var emptyGlyphIds = [];
+      if (glyf)
+        findEmptyGlyphs(loca, isGlyphLocationsLong, emptyGlyphIds);
 
       // Sanitizer reduces the glyph advanceWidth to the maxAdvanceWidth
       // Sometimes it's 0. That needs to be fixed
@@ -1920,6 +1947,25 @@ var Font = (function FontClosure() {
           }
         }
 
+        // remove glyph references outside range of avaialable glyphs or empty
+        var glyphsRemoved = 0;
+        for (var i = ids.length - 1; i >= 0; i--) {
+          if (ids[i] < numGlyphs &&
+              (!emptyGlyphIds[ids[i]] || this.isSymbolicFont))
+            continue;
+          ids.splice(i, 1);
+          glyphs.splice(i, 1);
+          glyphsRemoved++;
+        }
+
+        // heuristics: if removed more than 2 glyphs encoding WinAnsiEncoding
+        // does not set properly
+        if (glyphsRemoved > 2) {
+          warn('Switching TrueType encoding to MacRomanEncoding for ' +
+               this.name + ' font');
+          encoding = Encodings.MacRomanEncoding;
+        }
+
         if (hasShortCmap && this.hasEncoding && !this.isSymbolicFont) {
           // Re-encode short map encoding to unicode -- that simplifies the
           // resolution of MacRoman encoded glyphs logic for TrueType fonts:
@@ -1956,6 +2002,7 @@ var Font = (function FontClosure() {
           for (var i = 0, ii = glyphs.length; i < ii; i++)
             reverseMap[glyphs[i].unicode] = i;
 
+          var newGlyphUnicodes = [];
           for (var i = 0, ii = glyphs.length; i < ii; i++) {
             var code = glyphs[i].unicode;
             var changeCode = false;
@@ -1968,16 +2015,26 @@ var Font = (function FontClosure() {
             }
             if (glyphName in GlyphsUnicode) {
               var unicode = GlyphsUnicode[glyphName];
-              if (!unicode || (unicode in reverseMap))
-                continue; // unknown glyph name or its place is taken
+              if (!unicode || reverseMap[unicode] === i)
+                continue; // unknown glyph name or in its own place
 
-              glyphs[i].unicode = unicode;
-              reverseMap[unicode] = i;
+              newGlyphUnicodes[i] = unicode;
               if (changeCode)
                 toFontChar[code] = unicode;
+              delete reverseMap[code];
             }
-            this.useToFontChar = true;
           }
+          for (var index in newGlyphUnicodes) {
+            var unicode = newGlyphUnicodes[index];
+            if (reverseMap[unicode]) {
+              // avoiding assigning to the same unicode
+              glyphs[index].unicode = unusedUnicode++;
+              continue;
+            }
+            glyphs[index].unicode = unicode;
+            reverseMap[unicode] = index;
+          }
+          this.useToFontChar = true;
         }
 
         // Moving all symbolic font glyphs into 0xF000 - 0xF0FF range.
@@ -1988,12 +2045,6 @@ var Font = (function FontClosure() {
             glyphs[i].unicode = toFontChar[code] = fontCharCode;
           }
           this.useToFontChar = true;
-        }
-
-        // remove glyph references outside range of avaialable glyphs
-        for (var i = 0, ii = ids.length; i < ii; i++) {
-          if (ids[i] >= numGlyphs)
-            ids[i] = 0;
         }
 
         createGlyphNameMap(glyphs, ids, properties);
@@ -3652,7 +3703,7 @@ var CFFParser = (function CFFParserClosure() {
         var name = index.get(i);
         // OTS doesn't allow names to be over 127 characters.
         var length = Math.min(name.length, 127);
-        var data = new Array(length);
+        var data = [];
         // OTS also only permits certain characters in the name.
         for (var j = 0; j < length; ++j) {
           var c = name[j];
@@ -4502,7 +4553,7 @@ var CFFCompiler = (function CFFCompilerClosure() {
       return this.compileTypedArray(fdSelect);
     },
     compileTypedArray: function compileTypedArray(data) {
-      var out = new Array(data.length);
+      var out = [];
       for (var i = 0, ii = data.length; i < ii; ++i)
         out[i] = data[i];
       return out;
