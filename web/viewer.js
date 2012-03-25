@@ -663,11 +663,11 @@ var PDFView = {
     this.isFullscreen = true;
 
     var currentPage = this.pages[this.page - 1];
-    var pageWidthScale = (window.outerHeight) /
-                          currentPage.width / kCssUnits;
-    var pageHeightScale = (window.outerHeight) /
-                           currentPage.height / kCssUnits;
+    var pageWidthScale = window.outerHeight / currentPage.width / kCssUnits;
+    var pageHeightScale = window.outerHeight / currentPage.height / kCssUnits;
     var scale = Math.min(pageWidthScale, pageHeightScale);
+
+    this.previousScale = this.currentScaleValue;
     this.setScale(scale, true);
 
     // Wait for the fullscreen change
@@ -681,6 +681,7 @@ var PDFView = {
   exitFullscreen: function pdfViewExitFullscreen() {
     this.isFullscreen = false;
     this.page = this.page;
+    this.parseScale(this.previousScale);
   }
 };
 
