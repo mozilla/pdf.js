@@ -99,7 +99,7 @@ target.bundle = function() {
         'jpx.js',
         'bidi.js'];
 
-  if (!exists(BUILD_DIR))
+  if (!test('-d', BUILD_DIR))
     mkdir(BUILD_DIR);
 
   cd('src');
@@ -142,10 +142,10 @@ target.pagesrepo = function() {
   echo();
   echo('### Creating fresh clone of gh-pages');
 
-  if (!exists(BUILD_DIR))
+  if (!test('-d', BUILD_DIR))
     mkdir(BUILD_DIR);
 
-  if (!exists(GH_PAGES_DIR)) {
+  if (!test('-d', GH_PAGES_DIR)) {
     echo();
     echo('Cloning project repo...');
     echo('(This operation can take a while, depending on network conditions)');
@@ -277,10 +277,10 @@ target.firefox = function() {
   // We don't need pdf.js anymore since its inlined
   rm('-Rf', FIREFOX_BUILD_CONTENT_DIR + BUILD_DIR);
   // Remove '.DS_Store' and other hidden files
-  for (file in find(FIREFOX_BUILD_DIR)) {
+  find(FIREFOX_BUILD_DIR).forEach(function(file) {
     if (file.match(/^\./))
       rm('-f', file);
-  }
+  });
 
   // Update the build version number
   sed('-i', /PDFJSSCRIPT_VERSION/, EXTENSION_VERSION, FIREFOX_BUILD_DIR + '/install.rdf');
@@ -304,10 +304,10 @@ target.firefox = function() {
   // List all files for mozilla-central
   cd(FIREFOX_BUILD_DIR);
   var extensionFiles = '';
-  for (file in find(FIREFOX_MC_EXTENSION_FILES)) {
+  find(FIREFOX_MC_EXTENSION_FILES).forEach(function(file){
     if (test('-f', file))
       extensionFiles += file+'\n';
-  }
+  });
   extensionFiles.to('extension-files');
 };
 
@@ -357,7 +357,7 @@ target.chrome = function() {
 //
 target.test = function() {
   target.browsertest();
-  target.unittest();
+//  target.unittest();
 };
 
 //
@@ -371,14 +371,14 @@ target.browsertest = function() {
   var PDF_TEST = env['PDF_TEST'] || 'test_manifest.json',
       PDF_BROWSERS = env['PDF_BROWSERS'] || 'resources/browser_manifests/browser_manifest.json';
 
-  if (!exists('test/' + PDF_BROWSERS)) {
+  if (!test('-f', 'test/' + PDF_BROWSERS)) {
     echo('Browser manifest file test/' + PDF_BROWSERS + ' does not exist.');
     echo('Try copying one of the examples in test/resources/browser_manifests/');
     exit(1);
   }
 
   cd('test');
-  exec(PYTHON_BIN + ' test.py --reftest --browserManifestFile=' + PDF_BROWSERS +
+  exec(PYTHON_BIN + ' -u test.py --reftest --browserManifestFile=' + PDF_BROWSERS +
     ' --manifestFile=' + PDF_TEST, {async: true});
 };
 
@@ -390,8 +390,35 @@ target.unittest = function() {
   echo();
   echo('### Running unit tests');
 
+  if (!which('make')) {
+    echo('make not found. Skipping unit tests...');
+    return;
+  }
+
   cd('test/unit');
   exec('make', {async: true});
+};
+
+//
+// make makeref
+//
+target.makeref = function() {
+  cd(ROOT_DIR);
+  echo();
+  echo('### Creating reference images');
+
+  var PDF_TEST = env['PDF_TEST'] || 'test_manifest.json',
+      PDF_BROWSERS = env['PDF_BROWSERS'] || 'resources/browser_manifests/browser_manifest.json';
+
+  if (!test('-f', 'test/' + PDF_BROWSERS)) {
+    echo('Browser manifest file test/' + PDF_BROWSERS + ' does not exist.');
+    echo('Try copying one of the examples in test/resources/browser_manifests/');
+    exit(1);
+  }
+
+  cd('test');
+  exec(PYTHON_BIN + ' -u test.py --masterMode --noPrompts --browserManifestFile=' + PDF_BROWSERS,
+    {async: true});
 };
 
 

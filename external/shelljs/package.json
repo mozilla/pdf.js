@@ -1,5 +1,5 @@
 { "name": "shelljs"
-, "version": "0.0.2pre1"
+, "version": "0.0.5pre2"
 , "author": "Artur Adib <aadib@mozilla.com>"
 , "description": "Portable Unix shell commands for Node.js"
 , "keywords": ["unix", "shell", "makefile", "make", "jake", "synchronous"]
