@@ -113,24 +113,19 @@ var Catalog = (function CatalogClosure() {
   Catalog.prototype = {
     get metadata() {
       var ref = this.catDict.get('Metadata');
-      if (!ref) {
-        return null;
-      }
-
-      var stream = this.xref.fetch(ref);
-      var dict = stream.dict;
-      if (isDict(dict)) {
-        var type = dict.get('Type');
-        var subtype = dict.get('Subtype');
+      var stream = this.xref.fetchIfRef(ref);
+      var metadata;
+      if (stream && isDict(stream.dict)) {
+        var type = stream.dict.get('Type');
+        var subtype = stream.dict.get('Subtype');
 
         if (isName(type) && isName(subtype) &&
             type.name === 'Metadata' && subtype.name === 'XML') {
-          var metadata = stringToPDFString(bytesToString(stream.getBytes()));
-          return metadata;
+          metadata = stringToPDFString(bytesToString(stream.getBytes()));
         }
       }
 
-      return null;
+      return shadow(this, 'metadata', metadata);
     },
     get toplevelPagesDict() {
       var pagesObj = this.catDict.get('Pages');
