@@ -511,7 +511,7 @@ var PDFView = {
       }
     }
 
-    if (info && info.has('Title') && !pdfTitle) {
+    if (!pdfTitle && info && info.has('Title')) {
       pdfTitle = info.get('Title');
     }
 
