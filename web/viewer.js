@@ -14,6 +14,7 @@ var kMinScale = 0.25;
 var kMaxScale = 4.0;
 var kImageDirectory = './images/';
 var kSettingsMemory = 20;
+var kDoubleClickInterval = 350;
 
 var Cache = function cacheCache(size) {
   var data = [];
@@ -172,8 +173,6 @@ var PDFView = {
     for (var i = 0; i < pages.length; i++)
       pages[i].update(val * kCssUnits);
 
-    if (this.currentScale != val)
-      this.pages[this.page - 1].scrollIntoView();
     this.currentScale = val;
 
     var event = document.createEvent('UIEvents');
@@ -1429,3 +1428,21 @@ window.addEventListener('keydown', function keydown(evt) {
     evt.preventDefault();
   }
 });
+
+(function doubleClickClosure() {
+  var lastClick;
+
+  window.addEventListener('click', function doubleclick(e) {
+    var now = Date.now();
+    if (lastClick && now - lastClick <= kDoubleClickInterval) {
+      PDFView.setScale(PDFView.currentScale * 1.2);
+      var y = e.pageY * 1.2 - window.innerHeight / 2;
+      var x = e.pageX * 1.2 - window.innerWidth / 2;
+      y = (y > 0) ? y : 0;
+      x = (x > 0) ? x : 0;
+      window.scrollTo(x, y);
+    }
+
+    lastClick = now;
+  }, true);
+})();
