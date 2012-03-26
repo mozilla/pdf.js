@@ -595,9 +595,12 @@ var PDFDocModel = (function PDFDocModelClosure() {
       return shadow(this, 'numPages', num);
     },
     getDocumentInfo: function pdfDocGetDocumentInfo() {
+      var info;
       if (this.xref.trailer.has('Info')) {
-        return this.xref.fetch(this.xref.trailer.get('Info'));
+        info = this.xref.fetch(this.xref.trailer.get('Info'));
       }
+
+      return shadow(this, 'getDocumentInfo', info);
     },
     getFingerprint: function pdfDocGetFingerprint() {
       var xref = this.xref, fileID;
