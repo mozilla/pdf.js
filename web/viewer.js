@@ -501,11 +501,22 @@ var PDFView = {
     }
 
     var metadata = pdf.catalog.metadata;
+    var info = pdf.info;
+    var pdfTitle;
+
     if (metadata) {
       this.metadata = metadata = new Metadata(metadata);
-      if (metadata.has('title')) {
-        document.title = metadata.get('title');
+      if (metadata.has('dc:title')) {
+        pdfTitle = metadata.get('dc:title');
       }
+    }
+
+    if (info && info.has('Title') && !pdfTitle) {
+      pdfTitle = info.get('Title');
+    }
+
+    if (pdfTitle) {
+      document.title = pdfTitle;
     }
   },
 

@@ -44,25 +44,7 @@ var Metadata = (function MetadataClosure() {
         for (ii = 0, iLength = entries.length; ii < iLength; ii++) {
           var entry = entries[ii];
           var name = entry.nodeName.toLowerCase();
-          var entryName = name.split(':');
-          entryName = (entryName.length > 1) ? entryName[1] : entryName[0];
-          switch (name) {
-            case 'pdf:moddate':
-            case 'xap:createdate':
-            case 'xap:metadatadate':
-            case 'xap:modifydate':
-              this.metadata[entryName] = new Date(entry.textContent.trim());
-              break;
-
-            default:
-              // For almost all entries we just add them to the metadata object
-              if (this.metadata[entryName]) {
-                this.metadata[name] = entry.textContent.trim();
-              } else {
-                this.metadata[entryName] = entry.textContent.trim();
-              }
-              break;
-          }
+          this.metadata[name] = entry.textContent.trim();
         }
       }
     },

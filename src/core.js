@@ -587,13 +587,15 @@ var PDFDocModel = (function PDFDocModelClosure() {
                           this.mainXRefEntriesOffset);
       this.xref = xref;
       this.catalog = new Catalog(xref);
-      if (xref.trailer && xref.trailer.has('ID')) {
-        var fileID = '';
-        var id = xref.fetchIfRef(xref.trailer.get('ID'))[0];
-        id.split('').forEach(function(el) {
-          fileID += Number(el.charCodeAt(0)).toString(16);
-        });
-        this.fileID = fileID;
+      if (xref.trailer) {
+        if (xref.trailer.has('ID')) {
+          var fileID = '';
+          var id = xref.fetchIfRef(xref.trailer.get('ID'))[0];
+          id.split('').forEach(function(el) {
+            fileID += Number(el.charCodeAt(0)).toString(16);
+          });
+          this.fileID = fileID;
+        }
       }
     },
     get numPages() {
@@ -601,6 +603,11 @@ var PDFDocModel = (function PDFDocModelClosure() {
       var num = linearization ? linearization.numPages : this.catalog.numPages;
       // shadow the prototype getter
       return shadow(this, 'numPages', num);
+    },
+    getDocumentInfo: function pdfDocGetDocumentInfo() {
+      if (this.xref.trailer.has('Info')) {
+        return this.xref.fetch(this.xref.trailer.get('Info'));
+      }
     },
     getFingerprint: function pdfDocGetFingerprint() {
       if (this.fileID) {
@@ -645,6 +652,7 @@ var PDFDoc = (function PDFDocClosure() {
     this.stream = stream;
     this.pdfModel = new PDFDocModel(stream);
     this.fingerprint = this.pdfModel.getFingerprint();
+    this.info = this.pdfModel.getDocumentInfo();
     this.catalog = this.pdfModel.catalog;
     this.objs = new PDFObjects();
 
