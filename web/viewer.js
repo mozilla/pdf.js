@@ -36,29 +36,24 @@ var ProgressBar = (function ProgressBarClosure() {
   function ProgressBar(id, opts) {
 
     // Fetch the sub-elements for later
-    this.progressDiv = document.querySelector(id + ' .progress');
-    this.remainingDiv = document.querySelector(id + ' .remaining');
+    this.div = document.querySelector(id + ' .progress');
 
     // Get options, with sensible defaults
-    this.height = opts.height || 1;
-    this.width = opts.width || 15;
-    this.units = opts.units || 'em';
+    this.height = opts.height || 100;
+    this.width = opts.width || 100;
+    this.units = opts.units || '%';
     this.percent = opts.percent || 0;
 
     // Initialize heights
-    this.progressDiv.style.height = this.height + this.units;
-    this.remainingDiv.style.height = this.height + this.units;
+    this.div.style.height = this.height + this.units;
   }
 
   ProgressBar.prototype = {
-    constructor: ProgressBar,
 
     updateBar: function ProgressBar_updateBar() {
       var progressSize = this.width * this._percent / 100;
-      var remainingSize = (this.width - progressSize);
 
-      this.progressDiv.style.width = progressSize + this.units;
-      this.remainingDiv.style.width = remainingSize + this.units;
+      this.div.style.width = progressSize + this.units;
     },
 
     get percent() {
@@ -307,10 +302,8 @@ var PDFView = {
   open: function pdfViewOpen(url, scale) {
     document.title = this.url = url;
 
-    // FIXME: Probably needs a better place to get initialized
     if (!PDFView.loadingBar) {
-      PDFView.loadingBar = new ProgressBar('#loadingBar', {
-        width: 15, height: 1.5, units: 'em'});
+      PDFView.loadingBar = new ProgressBar('#loadingBar', {});
     }
 
     var self = this;
