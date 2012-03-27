@@ -596,9 +596,8 @@ var PDFDocModel = (function PDFDocModelClosure() {
     },
     getDocumentInfo: function pdfDocGetDocumentInfo() {
       var info;
-      if (this.xref.trailer.has('Info')) {
+      if (this.xref.trailer.has('Info'))
         info = this.xref.fetch(this.xref.trailer.get('Info'));
-      }
 
       return shadow(this, 'getDocumentInfo', info);
     },

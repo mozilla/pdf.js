@@ -506,18 +506,16 @@ var PDFView = {
 
     if (metadata) {
       this.metadata = metadata = new Metadata(metadata);
-      if (metadata.has('dc:title')) {
+
+      if (metadata.has('dc:title'))
         pdfTitle = metadata.get('dc:title');
-      }
     }
 
-    if (!pdfTitle && info && info.has('Title')) {
+    if (!pdfTitle && info && info.has('Title'))
       pdfTitle = info.get('Title');
-    }
 
-    if (pdfTitle) {
+    if (pdfTitle)
       document.title = pdfTitle;
-    }
   },
 
   setHash: function pdfViewSetHash(hash) {
