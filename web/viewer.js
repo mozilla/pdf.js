@@ -1078,6 +1078,7 @@ var TextLayerBuilder = function textLayerBuilder(textLayerDiv) {
   this.textLayerDiv = textLayerDiv;
 
   this.beginLayout = function textLayerBuilderBeginLayout() {
+    this.appendTextDivs = [];
     this.textDivs = [];
     this.textLayerQueue = [];
   };
@@ -1086,32 +1087,46 @@ var TextLayerBuilder = function textLayerBuilder(textLayerDiv) {
     var self = this;
     var textDivs = this.textDivs;
     var textLayerDiv = this.textLayerDiv;
+    var appendTextDivs = this.appendTextDivs;
     var renderTimer = null;
     var renderingDone = false;
     var renderInterval = 0;
     var resumeInterval = 500; // in ms
+    var maxDivsToAppend = 50;
+    var maxDivsToProcess = 10;
 
-    // Render the text layer, one div at a time
+    // Render the text layer, several divs at a time. First the portion of divs
+    // is appended to let layout engine detect the divs width, then based on the
+    // div width the character spacing will be adjusted.
     function renderTextLayer() {
-      if (textDivs.length === 0) {
+      if (textDivs.length === 0 && appendTextDivs.length === 0) {
         clearInterval(renderTimer);
         renderingDone = true;
         return;
       }
-      var textDiv = textDivs.shift();
-      if (textDiv.dataset.textLength > 0) {
-        textLayerDiv.appendChild(textDiv);
 
-        if (textDiv.dataset.textLength > 1) { // avoid div by zero
-          // Adjust div width to match canvas text
-          // Due to the .offsetWidth calls, this is slow
-          // This needs to come after appending to the DOM
-          var textScale = textDiv.dataset.canvasWidth / textDiv.offsetWidth;
-          CustomStyle.setProp('transform' , textDiv,
-            'scale(' + textScale + ', 1)');
-          CustomStyle.setProp('transformOrigin' , textDiv, '0% 0%');
-        }
-      } // textLength > 0
+      var textDivsCount = Math.min(textDivs.length, maxDivsToProcess);
+      for (var i = 0; i < textDivsCount; i++) {
+        var textDiv = textDivs.shift();
+        var textDivWidth = textDiv.offsetWidth;
+        if (textDivWidth === 0)
+          continue; // avoiding div by zero
+
+        // Adjust div width to match canvas text
+        // Due to the .offsetWidth calls, this is slow
+        // This needs to come after appending to the DOM
+        var textScale = textDiv.dataset.canvasWidth / textDivWidth;
+        CustomStyle.setProp('transform' , textDiv,
+          'scale(' + textScale + ', 1)');
+      }
+
+      var appendTextDivsCount = Math.min(appendTextDivs.length,
+        maxDivsToAppend);
+      for (var i = 0; i < appendTextDivsCount; i++) {
+        var textDiv = appendTextDivs.shift();
+        textLayerDiv.appendChild(textDiv);
+        textDivs.push(textDiv);
+      }
     }
     renderTimer = setInterval(renderTextLayer, renderInterval);
 
@@ -1139,20 +1154,24 @@ var TextLayerBuilder = function textLayerBuilder(textLayerDiv) {
 
   this.appendText = function textLayerBuilderAppendText(text,
                                                         fontName, fontSize) {
+    if (text.length < 1)
+      return;
+
     var textDiv = document.createElement('div');
 
     // vScale and hScale already contain the scaling to pixel units
     var fontHeight = fontSize * text.geom.vScale;
     textDiv.dataset.canvasWidth = text.canvasWidth * text.geom.hScale;
     textDiv.dataset.fontName = fontName;
+    textDiv.dataset.textLength = text.length;
 
     textDiv.style.fontSize = fontHeight + 'px';
     textDiv.style.left = text.geom.x + 'px';
     textDiv.style.top = (text.geom.y - fontHeight) + 'px';
     textDiv.textContent = PDFJS.bidi(text, -1);
     textDiv.dir = text.direction;
-    textDiv.dataset.textLength = text.length;
-    this.textDivs.push(textDiv);
+    CustomStyle.setProp('transformOrigin' , textDiv, '0% 0%');
+    this.appendTextDivs.push(textDiv);
   };
 };
 
