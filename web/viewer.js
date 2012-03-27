@@ -1,6 +1,7 @@
 /* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 /* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
 
+'use strict';
 
 var kDefaultURL = 'compressed.tracemonkey-pldi-09.pdf';
 var kDefaultScale = 'auto';
@@ -162,6 +163,7 @@ var PDFView = {
   currentScale: kUnknownScale,
   currentScaleValue: null,
   initialBookmark: document.location.hash.substring(1),
+  isFullscreen: false,
 
   setScale: function pdfViewSetScale(val, resetAutoSettings) {
     if (val == this.currentScale)
