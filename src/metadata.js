@@ -18,27 +18,24 @@ var Metadata = (function MetadataClosure() {
       var rdf = doc.documentElement;
       if (rdf.tagName.toLowerCase() !== 'rdf:rdf') { // Wrapped in <xmpmeta>
         rdf = rdf.firstChild;
-        while (rdf.nodeName && rdf.nodeName.toLowerCase() !== 'rdf:rdf') {
+        while (rdf.nodeName && rdf.nodeName.toLowerCase() !== 'rdf:rdf')
           rdf = rdf.nextSibling;
-        }
       }
-      if (rdf.nodeName.toLowerCase() !== 'rdf:rdf' || !rdf.hasChildNodes()) {
+
+      if (rdf.nodeName.toLowerCase() !== 'rdf:rdf' || !rdf.hasChildNodes())
         return;
-      }
 
       var childNodes = rdf.childNodes, desc, namespace, entries, entry;
 
       for (var i = 0, length = childNodes.length; i < length; i++) {
         desc = childNodes[i];
-        if (desc.nodeName.toLowerCase() !== 'rdf:description') {
+        if (desc.nodeName.toLowerCase() !== 'rdf:description')
           continue;
-        }
 
         entries = [];
         for (var ii = 0, iLength = desc.childNodes.length; ii < iLength; ii++) {
-          if (desc.childNodes[ii].nodeName.toLowerCase() !== '#text') {
+          if (desc.childNodes[ii].nodeName.toLowerCase() !== '#text')
             entries.push(desc.childNodes[ii]);
-          }
         }
 
         for (ii = 0, iLength = entries.length; ii < iLength; ii++) {
