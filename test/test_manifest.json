@@ -488,6 +488,12 @@
       "link": true,
       "type": "eq"
     },
+    {  "id": "issue1350",
+      "file": "pdfs/issue1350.pdf",
+      "md5": "92f72a04a4d9d05b2dd433b51f32ab1f",
+      "rounds": 1,
+      "type": "eq"
+    },
     {  "id": "issue925",
       "file": "pdfs/issue925.pdf",
       "md5": "f58fe943090aff89dcc8e771bc0db4c2",
