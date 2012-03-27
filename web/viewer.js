@@ -15,16 +15,14 @@ var kMaxScale = 4.0;
 var kImageDirectory = './images/';
 var kSettingsMemory = 20;
 
-var Util = {
-  getFileName: function Util_getFileName(url) {
-    var anchor = url.indexOf('#');
-    var query = url.indexOf('?');
-    var end = url.length;
-    if (anchor > 0) end = Math.min(anchor, end);
-    if (query > 0) end = Math.min(query, end);
-    return url.substring(url.lastIndexOf('/') + 1, end);
-  }
-};
+function getFileName(url) {
+  var anchor = url.indexOf('#');
+  var query = url.indexOf('?');
+  var end = Math.min(
+    anchor > 0 ? anchor : url.length,
+    query > 0 ? query : url.length);
+  return url.substring(url.lastIndexOf('/', end) + 1, end);
+}
 
 var Cache = function cacheCache(size) {
   var data = [];
@@ -271,7 +269,7 @@ var PDFView = {
   open: function pdfViewOpen(url, scale) {
     this.url = url;
 
-    document.title = Util.getFileName(url) || url;
+    document.title = getFileName(url) || url;
 
     var self = this;
     PDFJS.getPdf(
