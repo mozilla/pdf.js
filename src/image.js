@@ -365,7 +365,7 @@ var PDFImage = (function PDFImageClosure() {
 
 function loadJpegStream(id, imageData, objs) {
   var img = new Image();
-  img.onload = (function jpegImageLoaderOnload() {
+  img.onload = (function loadJpegStream_onloadClosure() {
     objs.resolve(id, img);
   });
   img.src = 'data:image/jpeg;base64,' + window.btoa(imageData);
