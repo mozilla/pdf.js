@@ -785,7 +785,7 @@ var PDFDoc = (function PDFDocClosure() {
           error('Only 3 component or 1 component can be returned');
 
         var img = new Image();
-        img.onload = (function jpegImageLoaderOnload() {
+        img.onload = (function messageHandler_onloadClosure() {
           var width = img.width;
           var height = img.height;
           var size = width * height;
