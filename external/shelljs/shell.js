@@ -777,7 +777,7 @@ exports.which = wrap('which', _which);
 //@ like `.to()`.
 function _echo(options) {
   var messages = [].slice.call(arguments, 1);
-  log.apply(this, messages);
+  console.log.apply(this, messages);
   return ShellString(messages.join(' '));
 };
 exports.echo = wrap('echo', _echo);
@@ -809,6 +809,10 @@ exports.env = process.env;
 //@ When in synchronous mode returns the object `{ code:..., output:... }`, containing the program's 
 //@ `output` (stdout + stderr)  and its exit `code`. Otherwise the `callback` gets the 
 //@ arguments `(code, output)`.
+//@
+//@ **Note:** For long-lived processes, it's best to run `exec()` asynchronously as
+//@ the current synchronous implementation uses a lot of CPU. This should be getting
+//@ fixed soon.
 function _exec(command, options, callback) {
   if (!command)
     error('must specify command');
@@ -868,7 +872,8 @@ exports.error = function() {
 //@ silent(silentState); // restore old silent state
 //@ ```
 //@
-//@ Suppresses all output if `state = true`. Returns state if no arguments given.
+//@ Suppresses all command output if `state = true`, except for `echo()` calls. 
+//@ Returns state if no arguments given.
 exports.silent = function(_state) {
   if (typeof _state !== 'boolean')
     return state.silent;
@@ -1020,7 +1025,7 @@ function wrap(cmd, fn, options) {
     } catch (e) {
       if (!state.error) {
         // If state.error hasn't been set it's an error thrown by Node, not us - probably a bug...
-        console.log('maker.js: internal error');
+        console.log('shell.js: internal error');
         console.log(e.stack || e);
         process.exit(1);
       }
@@ -1028,7 +1033,7 @@ function wrap(cmd, fn, options) {
         throw e;
     }
 
-    state.currentCmd = 'maker.js';
+    state.currentCmd = 'shell.js';
     return retValue;
   }
 } // wrap
@@ -1151,8 +1156,7 @@ function rmdirSyncRecursive(dir, force) {
   try {
     result = fs.rmdirSync(dir);
   } catch(e) {
-    if (e.code === 'ENOTEMPTY')
-      error('directory not empty: ' + dir, true);
+    error('could not remove directory (code '+e.code+'): ' + dir, true);
   }
 
   return result;
@@ -1234,8 +1238,11 @@ function tempDir() {
 
 // Wrapper around exec() to enable echoing output to console in real time
 function execAsync(cmd, opts, callback) {
-  var output = '',
-      silent = 'silent' in opts ? opts.silent : state.silent;
+  var output = '';
+
+  var options = extend({
+    silent: state.silent
+  }, opts);
   
   var c = child.exec(cmd, {env: process.env}, function(err) {
     if (callback) 
@@ -1244,14 +1251,14 @@ function execAsync(cmd, opts, callback) {
 
   c.stdout.on('data', function(data) {
     output += data;
-    if (!silent)
-      write(data);
+    if (!options.silent)
+      process.stdout.write(data);
   });
 
   c.stderr.on('data', function(data) {
     output += data;
-    if (!silent)
-      write(data);
+    if (!options.silent)
+      process.stdout.write(data);
   });
 }
 
@@ -1325,11 +1332,12 @@ function execSync(cmd, opts) {
 
   var stdout = fs.readFileSync(stdoutFile, 'utf8');
 
-  _unlinkSync(scriptFile);
-  _unlinkSync(stdoutFile);
-  _unlinkSync(codeFile);
-  _unlinkSync(sleepFile);
-
+  // No biggie if we can't erase the files now -- they're in a temp dir anyway
+  try { _unlinkSync(scriptFile); } catch(e) {};
+  try { _unlinkSync(stdoutFile); } catch(e) {};
+  try { _unlinkSync(codeFile); } catch(e) {};
+  try { _unlinkSync(sleepFile); } catch(e) {};
+  
   // True if successful, false if not
   var obj = {
     code: code,

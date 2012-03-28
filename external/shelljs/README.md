@@ -138,7 +138,7 @@ Examples:
 ```javascript
 find('src', 'lib');
 find(['src', 'lib']); // same as above
-find('.').filter(function(file) { return file.match(/\.js$/); })
+find('.').filter(function(file) { return file.match(/\.js$/); });
 ```
 
 Returns array of all files (however deep) in the given paths.
@@ -325,6 +325,10 @@ When in synchronous mode returns the object `{ code:..., output:... }`, containi
 `output` (stdout + stderr)  and its exit `code`. Otherwise the `callback` gets the 
 arguments `(code, output)`.
 
+**Note:** For long-lived processes, it's best to run `exec()` asynchronously as
+the current synchronous implementation uses a lot of CPU. This should be getting
+fixed soon.
+
 ## Non-Unix commands
 
 
@@ -346,7 +350,8 @@ silent(true);
 silent(silentState); // restore old silent state
 ```
 
-Suppresses all output if `state = true`. Returns state if no arguments given.
+Suppresses all command output if `state = true`, except for `echo()` calls. 
+Returns state if no arguments given.
 
 ## Deprecated
 
