@@ -587,14 +587,6 @@ var PDFDocModel = (function PDFDocModelClosure() {
                           this.mainXRefEntriesOffset);
       this.xref = xref;
       this.catalog = new Catalog(xref);
-      if (xref.trailer && xref.trailer.has('ID')) {
-        var fileID = '';
-        var id = xref.fetchIfRef(xref.trailer.get('ID'))[0];
-        id.split('').forEach(function(el) {
-          fileID += Number(el.charCodeAt(0)).toString(16);
-        });
-        this.fileID = fileID;
-      }
     },
     get numPages() {
       var linearization = this.linearization;
@@ -602,21 +594,33 @@ var PDFDocModel = (function PDFDocModelClosure() {
       // shadow the prototype getter
       return shadow(this, 'numPages', num);
     },
+    getDocumentInfo: function pdfDocGetDocumentInfo() {
+      var info;
+      if (this.xref.trailer.has('Info'))
+        info = this.xref.fetch(this.xref.trailer.get('Info'));
+
+      return shadow(this, 'getDocumentInfo', info);
+    },
     getFingerprint: function pdfDocGetFingerprint() {
-      if (this.fileID) {
-        return this.fileID;
+      var xref = this.xref, fileID;
+      if (xref.trailer.has('ID')) {
+        fileID = '';
+        var id = xref.fetchIfRef(xref.trailer.get('ID'))[0];
+        id.split('').forEach(function(el) {
+          fileID += Number(el.charCodeAt(0)).toString(16);
+        });
       } else {
         // If we got no fileID, then we generate one,
         // from the first 100 bytes of PDF
         var data = this.stream.bytes.subarray(0, 100);
         var hash = calculateMD5(data, 0, data.length);
-        var strHash = '';
+        fileID = '';
         for (var i = 0, length = hash.length; i < length; i++) {
-          strHash += Number(hash[i]).toString(16);
+          fileID += Number(hash[i]).toString(16);
         }
-
-        return strHash;
       }
+
+      return shadow(this, 'getFingerprint', fileID);
     },
     getPage: function pdfDocGetPage(n) {
       return this.catalog.getPage(n);
@@ -645,6 +649,7 @@ var PDFDoc = (function PDFDocClosure() {
     this.stream = stream;
     this.pdfModel = new PDFDocModel(stream);
     this.fingerprint = this.pdfModel.getFingerprint();
+    this.info = this.pdfModel.getDocumentInfo();
     this.catalog = this.pdfModel.catalog;
     this.objs = new PDFObjects();
 

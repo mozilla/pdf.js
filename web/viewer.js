@@ -499,6 +499,24 @@ var PDFView = {
       // Setting the default one.
       this.parseScale(kDefaultScale, true);
     }
+
+    this.metadata = null;
+    var metadata = pdf.catalog.metadata;
+    var info = this.documentInfo = pdf.info;
+    var pdfTitle;
+
+    if (metadata) {
+      this.metadata = metadata = new PDFJS.Metadata(metadata);
+
+      if (metadata.has('dc:title'))
+        pdfTitle = metadata.get('dc:title');
+    }
+
+    if (!pdfTitle && info && info.has('Title'))
+      pdfTitle = info.get('Title');
+
+    if (pdfTitle)
+      document.title = pdfTitle;
   },
 
   setHash: function pdfViewSetHash(hash) {
