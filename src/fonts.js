@@ -4247,7 +4247,7 @@ var CFFFDSelect = (function CFFFDSelectClosure() {
 
 // Helper class to keep track of where an offset is within the data and helps
 // filling in that offset once it's known.
-var CFFOffsetTracker = (function CFFOffsetTracker() {
+var CFFOffsetTracker = (function CFFOffsetTrackerClosure() {
   function CFFOffsetTracker() {
     this.offsets = {};
   }
