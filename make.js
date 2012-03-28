@@ -97,7 +97,8 @@ target.bundle = function() {
         'worker.js',
         '../external/jpgjs/jpg.js',
         'jpx.js',
-        'bidi.js'];
+        'bidi.js',
+        'metadata.js'];
 
   if (!exists(BUILD_DIR))
     mkdir(BUILD_DIR);

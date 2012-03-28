@@ -39,6 +39,7 @@ PDF_JS_FILES = \
   ../external/jpgjs/jpg.js \
   jpx.js \
   bidi.js \
+  metadata.js \
 	$(NULL)
 
 # make server
