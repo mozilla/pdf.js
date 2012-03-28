@@ -357,13 +357,22 @@ target.chrome = function() {
 //
 target.test = function() {
   target.browsertest();
-//  target.unittest();
+  target.unittest();
+};
+
+//
+// make bottest
+// (Special tests for the Github bot)
+//
+target.bottest = function() {
+  target.browsertest({noreftest: true});
+  // target.unittest();
 };
 
 //
 // make browsertest
 //
-target.browsertest = function() {
+target.browsertest = function(options) {
   cd(ROOT_DIR);
   echo();
   echo('### Running browser tests');
@@ -377,8 +386,10 @@ target.browsertest = function() {
     exit(1);
   }
 
+  var reftest = options.noreftest ? '' : '--reftest';
+
   cd('test');
-  exec(PYTHON_BIN + ' -u test.py --reftest --browserManifestFile=' + PDF_BROWSERS +
+  exec(PYTHON_BIN + ' -u test.py '+reftest+' --browserManifestFile=' + PDF_BROWSERS +
     ' --manifestFile=' + PDF_TEST, {async: true});
 };
 
