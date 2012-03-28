@@ -502,7 +502,7 @@ var PDFView = {
 
     this.metadata = null;
     var metadata = pdf.catalog.metadata;
-    var info = pdf.info;
+    var info = this.documentInfo = pdf.info;
     var pdfTitle;
 
     if (metadata) {
