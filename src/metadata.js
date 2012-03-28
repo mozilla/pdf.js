@@ -1,4 +1,6 @@
-var Metadata = (function MetadataClosure() {
+'use strict';
+
+var Metadata = PDFJS.Metadata = (function MetadataClosure() {
   function Metadata(meta) {
     if (typeof meta === 'string') {
       var parser = new DOMParser();

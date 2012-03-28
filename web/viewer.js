@@ -506,7 +506,7 @@ var PDFView = {
     var pdfTitle;
 
     if (metadata) {
-      this.metadata = metadata = new Metadata(metadata);
+      this.metadata = metadata = new PDFJS.Metadata(metadata);
 
       if (metadata.has('dc:title'))
         pdfTitle = metadata.get('dc:title');
