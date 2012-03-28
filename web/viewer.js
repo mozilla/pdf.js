@@ -1195,10 +1195,6 @@ window.addEventListener('load', function webViewerLoad(evt) {
   sidebarScrollView.addEventListener('scroll', updateThumbViewArea, true);
 }, true);
 
-window.addEventListener('unload', function webViewerUnload(evt) {
-  window.scrollTo(0, 0);
-}, true);
-
 /**
  * Render the next not yet visible page already such that it is
  * hopefully ready once the user scrolls to it.
