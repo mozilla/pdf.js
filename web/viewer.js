@@ -500,6 +500,7 @@ var PDFView = {
       this.parseScale(kDefaultScale, true);
     }
 
+    this.metadata = null;
     var metadata = pdf.catalog.metadata;
     var info = pdf.info;
     var pdfTitle;

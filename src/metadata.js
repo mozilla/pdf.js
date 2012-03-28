@@ -16,13 +16,15 @@ var Metadata = (function MetadataClosure() {
     parse: function() {
       var doc = this.metaDocument;
       var rdf = doc.documentElement;
-      if (rdf.tagName.toLowerCase() !== 'rdf:rdf') { // Wrapped in <xmpmeta>
+
+      if (rdf.nodeName.toLowerCase() !== 'rdf:rdf') { // Wrapped in <xmpmeta>
         rdf = rdf.firstChild;
-        while (rdf.nodeName && rdf.nodeName.toLowerCase() !== 'rdf:rdf')
+        while (rdf && rdf.nodeName.toLowerCase() !== 'rdf:rdf')
           rdf = rdf.nextSibling;
       }
 
-      if (rdf.nodeName.toLowerCase() !== 'rdf:rdf' || !rdf.hasChildNodes())
+      var nodeName = (rdf) ? rdf.nodeName.toLowerCase() : null;
+      if (!rdf || nodeName !== 'rdf:rdf' || !rdf.hasChildNodes())
         return;
 
       var childNodes = rdf.childNodes, desc, namespace, entries, entry;
