@@ -27,6 +27,48 @@ var Cache = function cacheCache(size) {
   };
 };
 
+var ProgressBar = (function ProgressBarClosure() {
+
+  function clamp(v, min, max) {
+    return Math.min(Math.max(v, min), max);
+  }
+
+  function ProgressBar(id, opts) {
+
+    // Fetch the sub-elements for later
+    this.div = document.querySelector(id + ' .progress');
+
+    // Get options, with sensible defaults
+    this.height = opts.height || 100;
+    this.width = opts.width || 100;
+    this.units = opts.units || '%';
+    this.percent = opts.percent || 0;
+
+    // Initialize heights
+    this.div.style.height = this.height + this.units;
+  }
+
+  ProgressBar.prototype = {
+
+    updateBar: function ProgressBar_updateBar() {
+      var progressSize = this.width * this._percent / 100;
+
+      this.div.style.width = progressSize + this.units;
+    },
+
+    get percent() {
+      return this._percent;
+    },
+
+    set percent(val) {
+      this._percent = clamp(val, 0, 100);
+      this.updateBar();
+    }
+  };
+
+  return ProgressBar;
+})();
+
 var RenderingQueue = (function RenderingQueueClosure() {
   function RenderingQueue() {
     this.items = [];
@@ -260,6 +302,10 @@ var PDFView = {
   open: function pdfViewOpen(url, scale) {
     document.title = this.url = url;
 
+    if (!PDFView.loadingBar) {
+      PDFView.loadingBar = new ProgressBar('#loadingBar', {});
+    }
+
     var self = this;
     PDFJS.getPdf(
       {
@@ -400,6 +446,8 @@ var PDFView = {
     var percent = Math.round(level * 100);
     var loadingIndicator = document.getElementById('loading');
     loadingIndicator.textContent = 'Loading... ' + percent + '%';
+
+    PDFView.loadingBar.percent = percent;
   },
 
   load: function pdfViewLoad(data, scale) {
@@ -414,8 +462,8 @@ var PDFView = {
     var errorWrapper = document.getElementById('errorWrapper');
     errorWrapper.setAttribute('hidden', 'true');
 
-    var loadingIndicator = document.getElementById('loading');
-    loadingIndicator.setAttribute('hidden', 'true');
+    var loadingBox = document.getElementById('loadingBox');
+    loadingBox.setAttribute('hidden', 'true');
 
     var sidebar = document.getElementById('sidebarView');
     sidebar.parentNode.scrollTop = 0;
