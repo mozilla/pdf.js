@@ -13,22 +13,10 @@
    height="48px"
    id="svg3007"
    version="1.1"
-   inkscape:version="0.48.1 r9760"
+   inkscape:version="0.48.2 r9819"
    sodipodi:docname="nav-thumbs.svg">
   <defs
      id="defs3009">
-    <filter
-       inkscape:collect="always"
-       id="filter5333"
-       x="-0.16623206"
-       width="1.3324641"
-       y="-0.030014125"
-       height="1.0600282">
-      <feGaussianBlur
-         inkscape:collect="always"
-         stdDeviation="0.47888561"
-         id="feGaussianBlur5335" />
-    </filter>
     <filter
        inkscape:collect="always"
        id="filter5966">
@@ -52,8 +40,8 @@
      showgrid="true"
      inkscape:grid-bbox="true"
      inkscape:document-units="px"
-     inkscape:window-width="1440"
-     inkscape:window-height="773"
+     inkscape:window-width="1595"
+     inkscape:window-height="1003"
      inkscape:window-x="0"
      inkscape:window-y="0"
      inkscape:window-maximized="0" />
@@ -73,13 +61,6 @@
      id="layer1"
      inkscape:label="Layer 1"
      inkscape:groupmode="layer">
-    <rect
-       style="fill:#484848;fill-rule:evenodd;stroke:#808080;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:round;stroke-opacity:1;fill-opacity:1"
-       id="rect3783"
-       width="46.16272"
-       height="45.59861"
-       x="1.0341953"
-       y="0.99112236" />
     <rect
        y="4.7876148"
        x="14.359808"
