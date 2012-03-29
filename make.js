@@ -386,7 +386,7 @@ target.browsertest = function(options) {
     exit(1);
   }
 
-  var reftest = options.noreftest ? '' : '--reftest';
+  var reftest = (options && options.noreftest) ? '' : '--reftest';
 
   cd('test');
   exec(PYTHON_BIN + ' -u test.py '+reftest+' --browserManifestFile=' + PDF_BROWSERS +
@@ -414,6 +414,28 @@ target.unittest = function() {
 // make makeref
 //
 target.makeref = function() {
+  cd(ROOT_DIR);
+  echo();
+  echo('### Creating reference images');
+
+  var PDF_TEST = env['PDF_TEST'] || 'test_manifest.json',
+      PDF_BROWSERS = env['PDF_BROWSERS'] || 'resources/browser_manifests/browser_manifest.json';
+
+  if (!test('-f', 'test/' + PDF_BROWSERS)) {
+    echo('Browser manifest file test/' + PDF_BROWSERS + ' does not exist.');
+    echo('Try copying one of the examples in test/resources/browser_manifests/');
+    exit(1);
+  }
+
+  cd('test');
+  exec(PYTHON_BIN + ' -u test.py --masterMode --browserManifestFile=' + PDF_BROWSERS,
+    {async: true});
+};
+
+//
+// make botmakeref
+//
+target.botmakeref = function() {
   cd(ROOT_DIR);
   echo();
   echo('### Creating reference images');
