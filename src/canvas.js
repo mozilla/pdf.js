@@ -924,7 +924,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
         }
         var pattern = new TilingPattern(IR, color, this.ctx, this.objs);
       } else if (IR[0] == 'RadialAxial' || IR[0] == 'Dummy') {
-        var pattern = Pattern.shadingFromIR(this.ctx, IR);
+        var pattern = Pattern.shadingFromIR(IR);
       } else {
         error('Unkown IR type ' + IR[0]);
       }
@@ -1008,7 +1008,8 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       var ctx = this.ctx;
 
       this.save();
-      ctx.fillStyle = Pattern.shadingFromIR(ctx, patternIR);
+      var pattern = Pattern.shadingFromIR(patternIR);
+      ctx.fillStyle = pattern.getPattern(ctx);
 
       var inv = ctx.mozCurrentTransformInverse;
       if (inv) {
