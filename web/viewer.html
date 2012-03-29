@@ -93,6 +93,8 @@
         Download
       </button>
 
+      <button id="fullscreen" title="Fullscreen" onclick="PDFView.fullscreen();" oncontextmenu="return false;">Fullscreen</button>
+
       <div class="separator"></div>
 
       <input id="fileInput" type="file" oncontextmenu="return false;"/>
@@ -144,6 +146,8 @@
     </div>
 
     <div id="loading">Loading... 0%</div>
-    <div id="viewer"></div>
+    <div id="fullscreenwrapper">
+      <div id="viewer"></div>
+    </div>
   </body>
 </html>

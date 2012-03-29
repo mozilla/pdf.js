@@ -163,6 +163,7 @@ var PDFView = {
   currentScale: kUnknownScale,
   currentScaleValue: null,
   initialBookmark: document.location.hash.substring(1),
+  isFullscreen: false,
 
   setScale: function pdfViewSetScale(val, resetAutoSettings) {
     if (val == this.currentScale)
@@ -245,7 +246,6 @@ var PDFView = {
     // avoiding the creation of two "set page" method (internal and public)
     if (updateViewarea.inProgress)
       return;
-
     // Avoid scrolling the first page during loading
     if (this.loading && val == 1)
       return;
@@ -589,6 +589,16 @@ var PDFView = {
     var kBottomMargin = 10;
     var visiblePages = [];
 
+    if (this.isFullscreen) {
+      var view = pages[this.page - 1];
+      visiblePages.push({
+        id: view.id,
+        view: view
+      });
+
+      return visiblePages;
+    }
+
     var currentHeight = kBottomMargin;
     var windowTop = window.pageYOffset;
     for (var i = 1; i <= pages.length; ++i) {
@@ -649,6 +659,49 @@ var PDFView = {
       params[unescape(key)] = unescape(value);
     }
     return params;
+  },
+
+  fullscreen: function pdfViewFullscreen() {
+    var isFullscreen = document.fullscreen || document.mozFullScreen ||
+      document.webkitIsFullScreen;
+
+    if (isFullscreen) {
+      return false;
+    }
+
+    var wrapper = document.getElementById('fullscreenwrapper');
+    if (document.documentElement.requestFullScreen) {
+      wrapper.requestFullScreen();
+    } else if (document.documentElement.mozRequestFullScreen) {
+      wrapper.mozRequestFullScreen();
+    } else if (document.documentElement.webkitRequestFullScreen) {
+      wrapper.webkitRequestFullScreen(Element.ALLOW_KEYBOARD_INPUT);
+    } else {
+      return false;
+    }
+
+    this.isFullscreen = true;
+
+    var currentPage = this.pages[this.page - 1];
+    var pageWidthScale = window.outerHeight / currentPage.width / kCssUnits;
+    var pageHeightScale = window.outerHeight / currentPage.height / kCssUnits;
+    var scale = Math.min(pageWidthScale, pageHeightScale);
+
+    this.previousScale = this.currentScaleValue;
+    this.setScale(scale, true);
+
+    // Wait for the fullscreen change
+    setTimeout(function() {
+      currentPage.scrollIntoView();
+    }, 0);
+
+    return true;
+  },
+
+  exitFullscreen: function pdfViewExitFullscreen() {
+    this.isFullscreen = false;
+    this.page = this.page;
+    this.parseScale(this.previousScale);
   }
 };
 
@@ -1211,6 +1264,13 @@ window.addEventListener('load', function webViewerLoad(evt) {
 
   var sidebarScrollView = document.getElementById('sidebarScrollView');
   sidebarScrollView.addEventListener('scroll', updateThumbViewArea, true);
+
+  var fullscreenButton = document.getElementById('fullscreen');
+  var docEl = document.documentElement;
+  if (!docEl.requestFullscreen && !docEl.mozRequestFullScreen &&
+      !docEl.webkitRequestFullScreen) {
+    fullscreenButton.setAttribute('hidden', 'true');
+  }
 }, true);
 
 /**
@@ -1256,11 +1316,14 @@ function updateViewarea() {
     preDraw();
   }
 
-  updateViewarea.inProgress = true; // used in "set page"
   var currentId = PDFView.page;
   var firstPage = visiblePages[0];
-  PDFView.page = firstPage.id;
-  updateViewarea.inProgress = false;
+
+  if (!PDFView.isFullscreen) {
+    updateViewarea.inProgress = true; // used in "set page"
+    PDFView.page = firstPage.id;
+    updateViewarea.inProgress = false;
+  }
 
   var currentScale = PDFView.currentScale;
   var currentScaleValue = PDFView.currentScaleValue;
@@ -1404,7 +1467,7 @@ window.addEventListener('keydown', function keydown(evt) {
     return;
   var controlsElement = document.getElementById('controls');
   while (curElement) {
-    if (curElement === controlsElement)
+    if (curElement === controlsElement && !PDFView.isFullscreen)
       return; // ignoring if the 'controls' element is focused
     curElement = curElement.parentNode;
   }
@@ -1437,9 +1500,31 @@ window.addEventListener('keydown', function keydown(evt) {
       PDFView.page++;
       handled = true;
       break;
+    case 32: // spacebar
+      if (PDFView.isFullscreen) {
+        PDFView.page++;
+        handled = true;
+      }
+      break;
   }
 
   if (handled) {
     evt.preventDefault();
   }
 });
+
+(function fullscreenClosure() {
+  function fullscreenChange(e) {
+    var isFullscreen = document.fullscreen || document.mozFullScreen ||
+      document.webkitIsFullScreen;
+
+    if (!isFullscreen) {
+      PDFView.exitFullscreen();
+    }
+  }
+
+  window.addEventListener('fullscreenchange', fullscreenChange, false);
+  window.addEventListener('mozfullscreenchange', fullscreenChange, false);
+  window.addEventListener('webkitfullscreenchange', fullscreenChange, false);
+})();
+
