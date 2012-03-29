@@ -4362,16 +4362,18 @@ var CFFCompiler = (function CFFCompilerClosure() {
       output.add(charStrings);
 
       if (cff.isCIDFont) {
+        // For some reason FDSelect must be in front of FDArray on windows. OSX
+        // and linux don't seem to care.
+        topDictTracker.setEntryLocation('FDSelect', [output.length], output);
+        var fdSelect = this.compileFDSelect(cff.fdSelect.raw);
+        output.add(fdSelect);
+
         var compiled = this.compileTopDicts(cff.fdArray, output.length);
         topDictTracker.setEntryLocation('FDArray', [output.length], output);
         output.add(compiled.output);
         var fontDictTrackers = compiled.trackers;
 
         this.compilePrivateDicts(cff.fdArray, fontDictTrackers, output);
-
-        topDictTracker.setEntryLocation('FDSelect', [output.length], output);
-        var fdSelect = this.compileFDSelect(cff.fdSelect.raw);
-        output.add(fdSelect);
       }
 
       this.compilePrivateDicts([cff.topDict], [topDictTracker], output);
