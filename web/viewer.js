@@ -311,7 +311,7 @@ var PDFView = {
   open: function pdfViewOpen(url, scale) {
     this.url = url;
 
-    document.title = getFileName(url) || url;
+    document.title = decodeURIComponent(getFileName(url)) || url;
 
     if (!PDFView.loadingBar) {
       PDFView.loadingBar = new ProgressBar('#loadingBar', {});
