@@ -2056,7 +2056,7 @@ var CCITTFaxStream = (function CCITTFaxStreamClosure() {
     if (this.eoblock) {
       code = this.lookBits(7);
       p = twoDimTable[code];
-      if (p[0] > 0) {
+      if (p && p[0] > 0) {
         this.eatBits(p[0]);
         return p[1];
       }

@@ -111,6 +111,22 @@ var Catalog = (function CatalogClosure() {
   }
 
   Catalog.prototype = {
+    get metadata() {
+      var ref = this.catDict.get('Metadata');
+      var stream = this.xref.fetchIfRef(ref);
+      var metadata;
+      if (stream && isDict(stream.dict)) {
+        var type = stream.dict.get('Type');
+        var subtype = stream.dict.get('Subtype');
+
+        if (isName(type) && isName(subtype) &&
+            type.name === 'Metadata' && subtype.name === 'XML') {
+          metadata = stringToPDFString(bytesToString(stream.getBytes()));
+        }
+      }
+
+      return shadow(this, 'metadata', metadata);
+    },
     get toplevelPagesDict() {
       var pagesObj = this.catDict.get('Pages');
       assertWellFormed(isRef(pagesObj), 'invalid top-level pages reference');

@@ -81,7 +81,7 @@ var PDFFunction = (function PDFFunctionClosure() {
       function toMultiArray(arr) {
         var inputLength = arr.length;
         var outputLength = arr.length / 2;
-        var out = new Array(outputLength);
+        var out = [];
         var index = 0;
         for (var i = 0; i < inputLength; i += 2) {
           out[index] = [arr[i], arr[i + 1]];
@@ -364,7 +364,7 @@ var PDFFunction = (function PDFFunctionClosure() {
           return cache.get(key);
 
         var stack = evaluator.execute(initialStack);
-        var transformed = new Array(numOutputs);
+        var transformed = [];
         for (i = numOutputs - 1; i >= 0; --i) {
           var out = stack.pop();
           var rangeIndex = 2 * i;

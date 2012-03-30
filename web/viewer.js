@@ -36,6 +36,48 @@ var Cache = function cacheCache(size) {
   };
 };
 
+var ProgressBar = (function ProgressBarClosure() {
+
+  function clamp(v, min, max) {
+    return Math.min(Math.max(v, min), max);
+  }
+
+  function ProgressBar(id, opts) {
+
+    // Fetch the sub-elements for later
+    this.div = document.querySelector(id + ' .progress');
+
+    // Get options, with sensible defaults
+    this.height = opts.height || 100;
+    this.width = opts.width || 100;
+    this.units = opts.units || '%';
+    this.percent = opts.percent || 0;
+
+    // Initialize heights
+    this.div.style.height = this.height + this.units;
+  }
+
+  ProgressBar.prototype = {
+
+    updateBar: function ProgressBar_updateBar() {
+      var progressSize = this.width * this._percent / 100;
+
+      this.div.style.width = progressSize + this.units;
+    },
+
+    get percent() {
+      return this._percent;
+    },
+
+    set percent(val) {
+      this._percent = clamp(val, 0, 100);
+      this.updateBar();
+    }
+  };
+
+  return ProgressBar;
+})();
+
 var RenderingQueue = (function RenderingQueueClosure() {
   function RenderingQueue() {
     this.items = [];
@@ -271,6 +313,10 @@ var PDFView = {
 
     document.title = getFileName(url) || url;
 
+    if (!PDFView.loadingBar) {
+      PDFView.loadingBar = new ProgressBar('#loadingBar', {});
+    }
+
     var self = this;
     PDFJS.getPdf(
       {
@@ -411,6 +457,8 @@ var PDFView = {
     var percent = Math.round(level * 100);
     var loadingIndicator = document.getElementById('loading');
     loadingIndicator.textContent = 'Loading... ' + percent + '%';
+
+    PDFView.loadingBar.percent = percent;
   },
 
   load: function pdfViewLoad(data, scale) {
@@ -425,8 +473,8 @@ var PDFView = {
     var errorWrapper = document.getElementById('errorWrapper');
     errorWrapper.setAttribute('hidden', 'true');
 
-    var loadingIndicator = document.getElementById('loading');
-    loadingIndicator.setAttribute('hidden', 'true');
+    var loadingBox = document.getElementById('loadingBox');
+    loadingBox.setAttribute('hidden', 'true');
 
     var sidebar = document.getElementById('sidebarView');
     sidebar.parentNode.scrollTop = 0;
@@ -510,6 +558,24 @@ var PDFView = {
       // Setting the default one.
       this.parseScale(kDefaultScale, true);
     }
+
+    this.metadata = null;
+    var metadata = pdf.catalog.metadata;
+    var info = this.documentInfo = pdf.info;
+    var pdfTitle;
+
+    if (metadata) {
+      this.metadata = metadata = new PDFJS.Metadata(metadata);
+
+      if (metadata.has('dc:title'))
+        pdfTitle = metadata.get('dc:title');
+    }
+
+    if (!pdfTitle && info && info.has('Title'))
+      pdfTitle = info.get('Title');
+
+    if (pdfTitle)
+      document.title = pdfTitle;
   },
 
   setHash: function pdfViewSetHash(hash) {
@@ -1204,10 +1270,6 @@ window.addEventListener('load', function webViewerLoad(evt) {
 
   var sidebarScrollView = document.getElementById('sidebarScrollView');
   sidebarScrollView.addEventListener('scroll', updateThumbViewArea, true);
-}, true);
-
-window.addEventListener('unload', function webViewerUnload(evt) {
-  window.scrollTo(0, 0);
 }, true);
 
 /**

@@ -1,12 +1,29 @@
-{ "name": "shelljs"
-, "version": "0.0.2pre1"
-, "author": "Artur Adib <aadib@mozilla.com>"
-, "description": "Portable Unix shell commands for Node.js"
-, "keywords": ["unix", "shell", "makefile", "make", "jake", "synchronous"]
-, "repository": "git://github.com/arturadib/shelljs"
-, "homepage": "http://github.com/arturadib/shelljs"
-, "main": "./shell.js"
-, "scripts": {
+{
+  "name": "shelljs",
+  "version": "0.0.5pre4",
+  "author": "Artur Adib <aadib@mozilla.com>",
+  "description": "Portable Unix shell commands for Node.js",
+  "keywords": [
+    "unix",
+    "shell",
+    "makefile",
+    "make",
+    "jake",
+    "synchronous"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/arturadib/shelljs.git"
+  },
+  "homepage": "http://github.com/arturadib/shelljs",
+  "main": "./shell.js",
+  "scripts": {
     "test": "node scripts/run-tests"
+  },
+  "dependencies": {},
+  "devDependencies": {},
+  "optionalDependencies": {},
+  "engines": {
+    "node": "*"
   }
 }
