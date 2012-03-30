@@ -27,7 +27,7 @@ var Parser = (function ParserClosure() {
       if (isCmd(this.buf2, 'ID')) {
         this.buf1 = this.buf2;
         this.buf2 = null;
-        // skip byte after ID
+        // skip octet after ID
         this.lexer.skip();
       } else {
         this.buf1 = this.buf2;
@@ -424,7 +424,7 @@ var Lexer = (function LexerClosure() {
             stream.skip();
             var x2 = toHexDigit(stream.getChar());
             if (x2 == -1)
-              error('Illegal digit in hex char in name: ' + x2);
+              error('Illegal digit in hex character in name: ' + x2);
             str += String.fromCharCode((x << 4) | x2);
           } else {
             str += '#';

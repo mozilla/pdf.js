@@ -1162,10 +1162,10 @@ var RunLengthStream = (function RunLengthStreamClosure() {
   RunLengthStream.prototype = Object.create(DecodeStream.prototype);
 
   RunLengthStream.prototype.readBlock = function runLengthStreamReadBlock() {
-    // The repeatHeader has following format. The first byte defines type of run
+    // The repeatHeader has following format. The first octet defines type of run
     // and amount of bytes to repeat/copy: n = 0 through 127 - copy next n bytes
-    // (in addition to the second byte from the header), n = 129 through 255 -
-    // duplicate the second byte from the header (257 - n) times, n = 128 - end.
+    // (in addition to the second octet from the header), n = 129 through 255 -
+    // duplicate the second octet from the header (257 - n) times, n = 128 - end.
     var repeatHeader = this.str.getBytes(2);
     if (!repeatHeader || repeatHeader.length < 2 || repeatHeader[0] == 128) {
       this.eof = true;

@@ -122,9 +122,9 @@ function readFontDictData(aString, aMap) {
       token = '';
       var parsed = false;
       while (!parsed) {
-        var byte = aString[i++];
+        var octet = aString[i++];
 
-        var nibbles = [parseInt(byte / 16, 10), parseInt(byte % 16, 10)];
+        var nibbles = [parseInt(octet / 16, 10), parseInt(octet % 16, 10)];
         for (var j = 0; j < nibbles.length; j++) {
           var nibble = nibbles[j];
           switch (nibble) {
@@ -175,7 +175,7 @@ function readFontDictData(aString, aMap) {
  * In CFF an INDEX is a structure with the following format:
  *  {
  *    count: 2 bytes (Number of objects stored in INDEX),
- *    offsize: 1 byte (Offset array element size),
+ *    offsize: 1 octet (Offset array element size),
  *    offset: [count + 1] bytes (Offsets array),
  *    data: - (Objects data)
  *  }
@@ -336,7 +336,7 @@ var Type2Parser = function type2Parser(aFilePath) {
     var privateDict = [];
     for (var i = 0; i < priv.size; i++)
       privateDict.push(aStream.getByte());
-    dump('private:' + privateDict);
+    dump('privateData:' + privateDict);
     parseAsToken(privateDict, CFFDictPrivateDataMap);
 
     for (var p in font.map)

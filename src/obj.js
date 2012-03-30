@@ -438,7 +438,7 @@ var XRef = (function XRefClosure() {
       function skipUntil(data, offset, what) {
         var length = what.length, dataLength = data.length;
         var skipped = 0;
-        // finding byte sequence
+        // finding octet sequence
         while (offset < dataLength) {
           var i = 0;
           while (i < length && data[offset + i] == what[i])
@@ -494,7 +494,7 @@ var XRef = (function XRefClosure() {
           var content = buffer.subarray(position, position + contentLength);
 
           // checking XRef stream suspect
-          // (it shall have '/XRef' and next char is not a letter)
+          // (it shall have '/XRef' and next character is not a letter)
           var xrefTagOffset = skipUntil(content, 0, xrefBytes);
           if (xrefTagOffset < contentLength &&
               content[xrefTagOffset + 5] < 64) {

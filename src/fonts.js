@@ -390,7 +390,7 @@ var symbolsFonts = {
   'Dingbats': true, 'Symbol': true, 'ZapfDingbats': true
 };
 
-// Some characters, e.g. copyrightserif, mapped to the private use area and
+// Some characters, e.g. copyrightserif, mapped to the privateData use area and
 // might not be displayed using standard fonts. Mapping/hacking well-known chars
 // to the similar equivalents in the normal characters range.
 function mapPrivateUseChars(code) {
@@ -1216,7 +1216,7 @@ var Font = (function FontClosure() {
       'Unknown'            // 9.Designer
     ];
 
-    // Mac want 1-byte per character strings while Windows want
+    // Mac want 1-octet per character strings while Windows want
     // 2-bytes per character, so duplicate the names table
     var stringsUnicode = [];
     for (var i = 0, ii = strings.length; i < ii; i++) {
@@ -1970,7 +1970,7 @@ var Font = (function FontClosure() {
             minUnicode = Math.min(minUnicode, unicode);
             maxUnicode = Math.max(maxUnicode, unicode);
           }
-          // high byte must be the same for min and max unicodes
+          // high octet must be the same for min and max unicodes
           if ((maxUnicode & 0xFF00) != (minUnicode & 0xFF00))
             this.isSymbolicFont = false;
         }
@@ -1986,7 +1986,7 @@ var Font = (function FontClosure() {
         if (hasShortCmap && this.hasEncoding && !this.isSymbolicFont) {
           // Re-encode short map encoding to unicode -- that simplifies the
           // resolution of MacRoman encoded glyphs logic for TrueType fonts:
-          // copying all characters to private use area, all mapping all known
+          // copying all characters to privateData use area, all mapping all known
           // glyphs to the unicodes. The glyphs and ids arrays will grow.
           var usedUnicodes = [];
           for (var i = 0, ii = glyphs.length; i < ii; i++) {
@@ -2114,7 +2114,7 @@ var Font = (function FontClosure() {
         var tableData = table.data;
         ttf.file += arrayToString(tableData);
 
-        // 4-byte aligned data
+        // 4-octet aligned data
         while (ttf.file.length & 3)
           ttf.file += String.fromCharCode(0);
       }
@@ -2504,12 +2504,12 @@ var Font = (function FontClosure() {
       glyphs = [];
 
       if (this.composite) {
-        // composite fonts have multi-byte strings convert the string from
-        // single-byte to multi-byte
-        // XXX assuming CIDFonts are two-byte - later need to extract the
-        // correct byte encoding according to the PDF spec
+        // composite fonts have multi-octet strings convert the string from
+        // single-octet to multi-octet
+        // XXX assuming CIDFonts are two-octet - later need to extract the
+        // correct octet encoding according to the PDF spec
         var length = chars.length - 1; // looping over two bytes at a time so
-                                       // loop should never end on the last byte
+                                       // loop should never end on the last octet
         for (var i = 0; i < length; i++) {
           var charcode = int16([chars.charCodeAt(i++), chars.charCodeAt(i)]);
           var glyph = this.charToGlyph(charcode);
@@ -2568,37 +2568,37 @@ var Type1Parser = function type1Parser() {
   /*
    * CharStrings are encoded following the the CharString Encoding sequence
    * describe in Chapter 6 of the "Adobe Type1 Font Format" specification.
-   * The value in a byte indicates a command, a number, or subsequent bytes
+   * The value in a octet indicates a command, a number, or subsequent bytes
    * that are to be interpreted in a special way.
    *
    * CharString Number Encoding:
-   *  A CharString byte containing the values from 32 through 255 inclusive
+   *  A CharString octet containing the values from 32 through 255 inclusive
    *  indicate an integer. These values are decoded in four ranges.
    *
-   * 1. A CharString byte containing a value, v, between 32 and 246 inclusive,
+   * 1. A CharString octet containing a value, v, between 32 and 246 inclusive,
    * indicate the integer v - 139. Thus, the integer values from -107 through
-   * 107 inclusive may be encoded in single byte.
+   * 107 inclusive may be encoded in single octet.
    *
-   * 2. A CharString byte containing a value, v, between 247 and 250 inclusive,
-   * indicates an integer involving the next byte, w, according to the formula:
+   * 2. A CharString octet containing a value, v, between 247 and 250 inclusive,
+   * indicates an integer involving the next octet, w, according to the formula:
    * [(v - 247) x 256] + w + 108
    *
-   * 3. A CharString byte containing a value, v, between 251 and 254 inclusive,
-   * indicates an integer involving the next byte, w, according to the formula:
+   * 3. A CharString octet containing a value, v, between 251 and 254 inclusive,
+   * indicates an integer involving the next octet, w, according to the formula:
    * -[(v - 251) * 256] - w - 108
    *
    * 4. A CharString containing the value 255 indicates that the next 4 bytes
    * are a two complement signed integer. The first of these bytes contains the
-   * highest order bits, the second byte contains the next higher order bits
-   * and the fourth byte contain the lowest order bits.
+   * highest order bits, the second octet contains the next higher order bits
+   * and the fourth octet contain the lowest order bits.
    *
    *
    * CharString Command Encoding:
    *  CharStrings commands are encoded in 1 or 2 bytes.
    *
-   *  Single byte commands are encoded in 1 byte that contains a value between
+   *  Single octet commands are encoded in 1 octet that contains a value between
    *  0 and 31 inclusive.
-   *  If a command byte contains the value 12, then the value in the next byte
+   *  If a command octet contains the value 12, then the value in the next octet
    *  indicates a command. This "escape" mechanism allows many extra commands
    * to be encoded and this encoding technique helps to minimize the length of
    * the charStrings.
@@ -2861,7 +2861,7 @@ var Type1Parser = function type1Parser() {
       subrs: [],
       charstrings: [],
       properties: {
-        'private': {
+        'privateData': {
           'lenIV': 4
         }
       }
@@ -2890,7 +2890,7 @@ var Type1Parser = function type1Parser() {
           (token == 'RD' || token == '-|')) {
         i++;
         var data = eexec.slice(i, i + length);
-        var lenIV = program.properties.private['lenIV'];
+        var lenIV = program.properties.privateData['lenIV'];
         var encoded = decrypt(data, kCharStringsEncryptionKey, lenIV);
         var str = decodeCharString(encoded);
 
@@ -2930,7 +2930,7 @@ var Type1Parser = function type1Parser() {
                 var length = parseInt(getToken(), 10);
                 getToken(); // read in 'RD'
                 var data = eexec.slice(i + 1, i + 1 + length);
-                var lenIV = program.properties.private['lenIV'];
+                var lenIV = program.properties.privateData['lenIV'];
                 var encoded = decrypt(data, kCharStringsEncryptionKey, lenIV);
                 var str = decodeCharString(encoded);
                 i = i + 1 + length;
@@ -2946,12 +2946,12 @@ var Type1Parser = function type1Parser() {
             case '/FamilyOtherBlues':
             case '/StemSnapH':
             case '/StemSnapV':
-              program.properties.private[token.substring(1)] =
+              program.properties.privateData[token.substring(1)] =
                 readNumberArray(eexecStr, i + 1);
               break;
             case '/StdHW':
             case '/StdVW':
-              program.properties.private[token.substring(1)] =
+              program.properties.privateData[token.substring(1)] =
                 readNumberArray(eexecStr, i + 2)[0];
               break;
             case '/BlueShift':
@@ -2960,7 +2960,7 @@ var Type1Parser = function type1Parser() {
             case '/BlueScale':
             case '/LanguageGroup':
             case '/ExpansionFactor':
-              program.properties.private[token.substring(1)] =
+              program.properties.privateData[token.substring(1)] =
                 readNumber(eexecStr, i + 1);
               break;
           }
@@ -2984,14 +2984,14 @@ var Type1Parser = function type1Parser() {
     var count = headerString.length;
     for (var i = 0; i < count; i++) {
       var getToken = function getToken() {
-        var char = headerString[i];
-        while (i < count && (isSeparator(char) || char == '/'))
-          char = headerString[++i];
+        var character = headerString[i];
+        while (i < count && (isSeparator(character) || character == '/'))
+          character = headerString[++i];
 
         var token = '';
-        while (i < count && !(isSeparator(char) || char == '/')) {
-          token += char;
-          char = headerString[++i];
+        while (i < count && !(isSeparator(character) || character == '/')) {
+          token += character;
+          character = headerString[++i];
         }
 
         return token;
@@ -3148,13 +3148,13 @@ Type1Font.prototype = {
     var count = objects.length;
 
     // If there is no object, just create an array saying that with another
-    // offset byte.
+    // offset octet.
     if (count == 0)
       return '\x00\x00\x00';
 
     var data = String.fromCharCode((count >> 8) & 0xFF, count & 0xff);
 
-    // Next byte contains the offset size use to reference object in the file
+    // Next octet contains the offset size use to reference object in the file
     // Actually we're using 0x04 to be sure to be able to store everything
     // without thinking of it while coding.
     data += '\x04';
@@ -3357,7 +3357,7 @@ Type1Font.prototype = {
           dict += self.encodeNumber(offset) + '\x11'; // Charstrings
 
           offset = offset + fields.charstrings.length;
-          dict += self.encodeNumber(fields.private.length);
+          dict += self.encodeNumber(fields.privateData.length);
           dict += self.encodeNumber(offset) + '\x12'; // Private
 
           return header + String.fromCharCode(dict.length + 1) + dict;
@@ -3398,7 +3398,7 @@ Type1Font.prototype = {
       'charstrings': this.createCFFIndexHeader([[0x8B, 0x0E]].concat(glyphs),
                                                true),
 
-      'private': (function cffWrapPrivate(self) {
+      'privateData': (function cffWrapPrivate(self) {
         var data =
             '\x8b\x14' + // defaultWidth
             '\x8b\x15';  // nominalWidth
@@ -3416,9 +3416,9 @@ Type1Font.prototype = {
           ExpansionFactor: '\x0c\x18'
         };
         for (var field in fieldMap) {
-          if (!properties.private.hasOwnProperty(field))
+          if (!properties.privateData.hasOwnProperty(field))
             continue;
-          var value = properties.private[field];
+          var value = properties.privateData[field];
 
           if (isArray(value)) {
             data += self.encodeNumber(value[0]);
@@ -3800,7 +3800,7 @@ var CFFParser = (function CFFParserClosure() {
       return charStrings;
     },
     parsePrivateDict: function parsePrivateDict(parentDict) {
-      // no private dict, do nothing
+      // no privateData dict, do nothing
       if (!parentDict.hasName('Private'))
         return;
       var privateOffset = parentDict.getByName('Private');
@@ -3824,7 +3824,7 @@ var CFFParser = (function CFFParserClosure() {
                                         parentDict.strings);
       parentDict.privateDict = privateDict;
 
-      // Parse the Subrs index also since it's relative to the private dict.
+      // Parse the Subrs index also since it's relative to the privateData dict.
       if (!privateDict.getByName('Subrs'))
         return;
       var subrsOffset = privateDict.getByName('Subrs');
@@ -4611,7 +4611,7 @@ var CFFCompiler = (function CFFCompilerClosure() {
       else
         offsetSize = 4;
 
-      // Next byte contains the offset size use to reference object in the file
+      // Next octet contains the offset size use to reference object in the file
       data.push(offsetSize);
 
       // Add another offset after this one because we need a new offset
