@@ -314,7 +314,7 @@ var PDFImage = (function PDFImageClosure() {
       var originalHeight = this.height;
       var bpc = this.bpc;
 
-      // rows start at octet boundary;
+      // rows start at byte boundary;
       var rowBytes = (originalWidth * numComps * bpc + 7) >> 3;
       var imgArray = this.getImageBytes(originalHeight * rowBytes);
 
@@ -344,7 +344,7 @@ var PDFImage = (function PDFImageClosure() {
       var height = this.height;
       var bpc = this.bpc;
 
-      // rows start at octet boundary;
+      // rows start at byte boundary;
       var rowBytes = (width * numComps * bpc + 7) >> 3;
       var imgArray = this.getImageBytes(height * rowBytes);
 

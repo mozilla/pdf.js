@@ -175,7 +175,7 @@ function readFontDictData(aString, aMap) {
  * In CFF an INDEX is a structure with the following format:
  *  {
  *    count: 2 bytes (Number of objects stored in INDEX),
- *    offsize: 1 octet (Offset array element size),
+ *    offsize: 1 byte (Offset array element size),
  *    offset: [count + 1] bytes (Offsets array),
  *    data: - (Objects data)
  *  }
