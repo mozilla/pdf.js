@@ -558,13 +558,5 @@
       "rounds": 1,
       "link": true,
       "type": "eq"
-    },
-    {  "id": "issue1422",
-      "file": "pdfs/issue1422.pdf",
-      "md5": "f7a732a86960b330b8108d5cdece19e3",
-      "rounds": 1,
-      "pageLimit": 1,
-      "link": true,
-      "type": "eq"
     }
 ]
