@@ -536,9 +536,9 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
 
         var cmap = cmapObj.getBytes(cmapObj.length);
         for (var i = 0, ii = cmap.length; i < ii; i++) {
-          var byte = cmap[i];
-          if (byte == 0x20 || byte == 0x0D || byte == 0x0A ||
-              byte == 0x3C || byte == 0x5B || byte == 0x5D) {
+          var octet = cmap[i];
+          if (octet == 0x20 || octet == 0x0D || octet == 0x0A ||
+              octet == 0x3C || octet == 0x5B || octet == 0x5D) {
             switch (token) {
               case 'usecmap':
                 error('usecmap is not implemented');
@@ -595,7 +595,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                 tokens.push(token);
                 token = '';
             }
-            switch (byte) {
+            switch (octet) {
               case 0x5B:
                 // begin list parsing
                 tokens.push(beginArrayToken);
@@ -609,7 +609,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                 tokens.push(items);
                 break;
             }
-          } else if (byte == 0x3E) {
+          } else if (octet == 0x3E) {
             if (token.length) {
               if (token.length <= 4) {
                 // parsing hex number
@@ -635,7 +635,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
               }
             }
           } else {
-            token += String.fromCharCode(byte);
+            token += String.fromCharCode(octet);
           }
         }
       }

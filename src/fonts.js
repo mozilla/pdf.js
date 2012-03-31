@@ -2861,7 +2861,7 @@ var Type1Parser = function type1Parser() {
       subrs: [],
       charstrings: [],
       properties: {
-        'private': {
+        'privateData': {
           'lenIV': 4
         }
       }
@@ -2890,7 +2890,7 @@ var Type1Parser = function type1Parser() {
           (token == 'RD' || token == '-|')) {
         i++;
         var data = eexec.slice(i, i + length);
-        var lenIV = program.properties.private['lenIV'];
+        var lenIV = program.properties.privateData['lenIV'];
         var encoded = decrypt(data, kCharStringsEncryptionKey, lenIV);
         var str = decodeCharString(encoded);
 
@@ -2930,7 +2930,7 @@ var Type1Parser = function type1Parser() {
                 var length = parseInt(getToken(), 10);
                 getToken(); // read in 'RD'
                 var data = eexec.slice(i + 1, i + 1 + length);
-                var lenIV = program.properties.private['lenIV'];
+                var lenIV = program.properties.privateData['lenIV'];
                 var encoded = decrypt(data, kCharStringsEncryptionKey, lenIV);
                 var str = decodeCharString(encoded);
                 i = i + 1 + length;
@@ -2946,12 +2946,12 @@ var Type1Parser = function type1Parser() {
             case '/FamilyOtherBlues':
             case '/StemSnapH':
             case '/StemSnapV':
-              program.properties.private[token.substring(1)] =
+              program.properties.privateData[token.substring(1)] =
                 readNumberArray(eexecStr, i + 1);
               break;
             case '/StdHW':
             case '/StdVW':
-              program.properties.private[token.substring(1)] =
+              program.properties.privateData[token.substring(1)] =
                 readNumberArray(eexecStr, i + 2)[0];
               break;
             case '/BlueShift':
@@ -2960,7 +2960,7 @@ var Type1Parser = function type1Parser() {
             case '/BlueScale':
             case '/LanguageGroup':
             case '/ExpansionFactor':
-              program.properties.private[token.substring(1)] =
+              program.properties.privateData[token.substring(1)] =
                 readNumber(eexecStr, i + 1);
               break;
           }
@@ -2984,14 +2984,14 @@ var Type1Parser = function type1Parser() {
     var count = headerString.length;
     for (var i = 0; i < count; i++) {
       var getToken = function getToken() {
-        var char = headerString[i];
-        while (i < count && (isSeparator(char) || char == '/'))
-          char = headerString[++i];
+        var character = headerString[i];
+        while (i < count && (isSeparator(character) || character == '/'))
+          character = headerString[++i];
 
         var token = '';
-        while (i < count && !(isSeparator(char) || char == '/')) {
-          token += char;
-          char = headerString[++i];
+        while (i < count && !(isSeparator(character) || character == '/')) {
+          token += character;
+          character = headerString[++i];
         }
 
         return token;
@@ -3357,7 +3357,7 @@ Type1Font.prototype = {
           dict += self.encodeNumber(offset) + '\x11'; // Charstrings
 
           offset = offset + fields.charstrings.length;
-          dict += self.encodeNumber(fields.private.length);
+          dict += self.encodeNumber(fields.privateData.length);
           dict += self.encodeNumber(offset) + '\x12'; // Private
 
           return header + String.fromCharCode(dict.length + 1) + dict;
@@ -3398,7 +3398,7 @@ Type1Font.prototype = {
       'charstrings': this.createCFFIndexHeader([[0x8B, 0x0E]].concat(glyphs),
                                                true),
 
-      'private': (function cffWrapPrivate(self) {
+      'privateData': (function cffWrapPrivate(self) {
         var data =
             '\x8b\x14' + // defaultWidth
             '\x8b\x15';  // nominalWidth
@@ -3416,9 +3416,9 @@ Type1Font.prototype = {
           ExpansionFactor: '\x0c\x18'
         };
         for (var field in fieldMap) {
-          if (!properties.private.hasOwnProperty(field))
+          if (!properties.privateData.hasOwnProperty(field))
             continue;
-          var value = properties.private[field];
+          var value = properties.privateData[field];
 
           if (isArray(value)) {
             data += self.encodeNumber(value[0]);
