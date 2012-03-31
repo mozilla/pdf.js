@@ -752,7 +752,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
             continue;
           }
 
-          var char = glyph.fontChar;
+          var character = glyph.fontChar;
           var charWidth = glyph.width * fontSize * 0.001 +
               Util.sign(current.fontMatrix[0]) * charSpacing;
 
@@ -762,16 +762,16 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
               default: // other unsupported rendering modes
               case TextRenderingMode.FILL:
               case TextRenderingMode.FILL_ADD_TO_PATH:
-                ctx.fillText(char, scaledX, 0);
+                ctx.fillText(character, scaledX, 0);
                 break;
               case TextRenderingMode.STROKE:
               case TextRenderingMode.STROKE_ADD_TO_PATH:
-                ctx.strokeText(char, scaledX, 0);
+                ctx.strokeText(character, scaledX, 0);
                 break;
               case TextRenderingMode.FILL_STROKE:
               case TextRenderingMode.FILL_STROKE_ADD_TO_PATH:
-                ctx.fillText(char, scaledX, 0);
-                ctx.strokeText(char, scaledX, 0);
+                ctx.fillText(character, scaledX, 0);
+                ctx.strokeText(character, scaledX, 0);
                 break;
               case TextRenderingMode.INVISIBLE:
                 break;
