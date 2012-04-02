@@ -1506,12 +1506,7 @@ window.addEventListener('keydown', function keydown(evt) {
 ///////////////////////////////////////////////////////// Temp
 // TODO: Refactor into a class
 
-var VanillaRunOnDomReady = function () {
-  function getRect(o) {
-    var br = o.getBoundingClientRect();
-    return {x:br.left, y:br.top, w:br.width, h:br.height};
-  }
-
+var VanillaRunOnDomReady = function() {
   var side = -1;
   var lastX = 0;
   var lastY = 0;
@@ -1521,57 +1516,57 @@ var VanillaRunOnDomReady = function () {
 
   function updatePanel() {
 
-    var inv = document.getElementById("invisible");
-    inv.style.display = "block";
-    var viewport = getRect(inv);
-    inv.style.display = "none";
+    var inv = document.getElementById('invisible');
+    inv.style.display = 'block';
+    var viewport = inv.getBoundingClientRect();
+    inv.style.display = 'none';
 
-    var viewer = document.getElementById("viewer");
-    var toolbar = document.getElementById("controls");
+    var viewer = document.getElementById('viewer');
+    var toolbar = document.getElementById('controls');
 
-    var viewerRect = getRect(viewer);
-    var toolbarRect = getRect(toolbar);
+    var viewerRect = viewer.getBoundingClientRect();
+    var toolbarRect = toolbar.getBoundingClientRect();
 
-    viewport.x = window.pageXOffset;
-    viewport.y = window.pageYOffset;
+    viewport.left = window.pageXOffset;
+    viewport.top = window.pageYOffset;
 
-    offX = viewport.x;
-    offY = viewport.y;
+    offX = viewport.left;
+    offY = viewport.top;
 
-    var x = (lastX - viewerRect.x) * 2 / viewerRect.w - 1;
-    var y = (lastY - viewerRect.y) * 2 / viewerRect.h - 1;
+    var x = (lastX - viewerRect.left) * 2 / viewerRect.width - 1;
+    var y = (lastY - viewerRect.top) * 2 / viewerRect.height - 1;
 
     if (x < -0.5) side = -1;
     if (x > 0.5) side = 1;
 
     var xx, yy;
     if (side < 0) {
-      xx = (viewerRect.x - toolbarRect.w - marginAdd);
-      yy = (lastY - toolbarRect.h / 2);
+      xx = (viewerRect.left - toolbarRect.width - marginAdd);
+      yy = (lastY - toolbarRect.height / 2);
     } else {
-      xx = (viewerRect.x + viewerRect.w + marginAdd);
-      yy = (lastY - toolbarRect.h / 2);
+      xx = (viewerRect.left + viewerRect.width + marginAdd);
+      yy = (lastY - toolbarRect.height / 2);
     }
 
-    if (xx < viewport.x) {
-      xx = viewport.x;
+    if (xx < viewport.left) {
+      xx = viewport.left;
     }
-    if (yy < viewport.y) {
-      yy = viewport.y;
-    }
-
-    if (xx + toolbarRect.w > viewport.w + viewport.x) {
-      xx = viewport.w + viewport.x - toolbarRect.w;
-    }
-    if (yy + toolbarRect.h > viewport.h + viewport.y) {
-      yy = viewport.h + viewport.y - toolbarRect.h;
+    if (yy < viewport.top) {
+      yy = viewport.top;
     }
 
-    toolbar.style.left = xx + "px";
-    toolbar.style.top = yy + "px";
+    if (xx + toolbarRect.width > viewport.width + viewport.left) {
+      xx = viewport.width + viewport.left - toolbarRect.width;
+    }
+    if (yy + toolbarRect.height > viewport.height + viewport.top) {
+      yy = viewport.height + viewport.top - toolbarRect.height;
+    }
+
+    toolbar.style.left = xx + 'px';
+    toolbar.style.top = yy + 'px';
   }
 
-  document.getElementById("viewer").onmousemove = function (e) {
+  document.getElementById('viewer').onmousemove = function(e) {
 
     if (window.event) {
       e = window.event;
@@ -1583,11 +1578,11 @@ var VanillaRunOnDomReady = function () {
     updatePanel();
   };
 
-  window.onscroll = function (e) {
+  window.onscroll = function(e) {
 
     var pg = {
-      x:window.pageXOffset,
-      y:window.pageYOffset
+      x: window.pageXOffset,
+      y: window.pageYOffset
     };
 
     lastX = lastX - offX + pg.x;
@@ -1599,25 +1594,26 @@ var VanillaRunOnDomReady = function () {
   updatePanel();
 };
 
-// onDomReady "hack" from jsfiddle
+// onDomReady 'hack' from jsfiddle
 var alreadyrunflag = 0;
 
 if (document.addEventListener)
-  document.addEventListener("DOMContentLoaded", function () {
+  document.addEventListener('DOMContentLoaded', function() {
     alreadyrunflag = 1;
     VanillaRunOnDomReady();
   }, false);
 else if (document.all && !window.opera) {
-  document.write('<script type="text/javascript" id="contentloadtag" defer="defer" src="javascript:void(0)"><\/script>');
-  var contentloadtag = document.getElementById("contentloadtag")
-  contentloadtag.onreadystatechange = function () {
-    if (this.readyState == "complete") {
+  document.write('<script type="text/javascript" id="contentloadtag"' +
+      ' defer="defer" src="javascript:void(0)"><\/script>');
+  var contentloadtag = document.getElementById('contentloadtag');
+  contentloadtag.onreadystatechange = function() {
+    if (this.readyState == 'complete') {
       alreadyrunflag = 1;
       VanillaRunOnDomReady();
     }
-  }
+  };
 }
 
-window.onload = function () {
-  setTimeout("if (!alreadyrunflag){VanillaRunOnDomReady();}", 0);
+window.onload = function() {
+  setTimeout('if (!alreadyrunflag){VanillaRunOnDomReady();}', 0);
 };
