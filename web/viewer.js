@@ -1507,6 +1507,11 @@ window.addEventListener('keydown', function keydown(evt) {
 // TODO: Refactor into a class
 
 var VanillaRunOnDomReady = function() {
+  function getRect(o) {
+    var br = o.getBoundingClientRect();
+    return {x: br.left, y: br.top, w: br.width, h: br.height};
+  }
+
   var side = -1;
   var lastX = 0;
   var lastY = 0;
@@ -1518,48 +1523,48 @@ var VanillaRunOnDomReady = function() {
 
     var inv = document.getElementById('invisible');
     inv.style.display = 'block';
-    var viewport = inv.getBoundingClientRect();
+    var viewport = getRect(inv);
     inv.style.display = 'none';
 
     var viewer = document.getElementById('viewer');
     var toolbar = document.getElementById('controls');
 
-    var viewerRect = viewer.getBoundingClientRect();
-    var toolbarRect = toolbar.getBoundingClientRect();
+    var viewerRect = getRect(viewer);
+    var toolbarRect = getRect(toolbar);
 
-    viewport.left = window.pageXOffset;
-    viewport.top = window.pageYOffset;
+    viewport.x = window.pageXOffset;
+    viewport.y = window.pageYOffset;
 
-    offX = viewport.left;
-    offY = viewport.top;
+    offX = viewport.x;
+    offY = viewport.y;
 
-    var x = (lastX - viewerRect.left) * 2 / viewerRect.width - 1;
-    var y = (lastY - viewerRect.top) * 2 / viewerRect.height - 1;
+    var x = (lastX - viewerRect.x) * 2 / viewerRect.w - 1;
+    var y = (lastY - viewerRect.y) * 2 / viewerRect.h - 1;
 
     if (x < -0.5) side = -1;
     if (x > 0.5) side = 1;
 
     var xx, yy;
     if (side < 0) {
-      xx = (viewerRect.left - toolbarRect.width - marginAdd);
-      yy = (lastY - toolbarRect.height / 2);
+      xx = (viewerRect.x - toolbarRect.w - marginAdd);
+      yy = (lastY - toolbarRect.h / 2);
     } else {
-      xx = (viewerRect.left + viewerRect.width + marginAdd);
-      yy = (lastY - toolbarRect.height / 2);
+      xx = (viewerRect.x + viewerRect.w + marginAdd);
+      yy = (lastY - toolbarRect.h / 2);
     }
 
-    if (xx < viewport.left) {
-      xx = viewport.left;
+    if (xx < viewport.x) {
+      xx = viewport.x;
     }
-    if (yy < viewport.top) {
-      yy = viewport.top;
+    if (yy < viewport.y) {
+      yy = viewport.y;
     }
 
-    if (xx + toolbarRect.width > viewport.width + viewport.left) {
-      xx = viewport.width + viewport.left - toolbarRect.width;
+    if (xx + toolbarRect.w > viewport.w + viewport.x) {
+      xx = viewport.w + viewport.x - toolbarRect.w;
     }
-    if (yy + toolbarRect.height > viewport.height + viewport.top) {
-      yy = viewport.height + viewport.top - toolbarRect.height;
+    if (yy + toolbarRect.h > viewport.h + viewport.y) {
+      yy = viewport.h + viewport.y - toolbarRect.h;
     }
 
     toolbar.style.left = xx + 'px';
@@ -1594,7 +1599,7 @@ var VanillaRunOnDomReady = function() {
   updatePanel();
 };
 
-// onDomReady 'hack' from jsfiddle
+// onDomReady "hack" from jsfiddle
 var alreadyrunflag = 0;
 
 if (document.addEventListener)
