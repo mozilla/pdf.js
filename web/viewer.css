@@ -12,40 +12,42 @@ body {
   display: none !important;
 }
 
+#invisible {
+  display: none;
+  position: fixed;
+  top: 0px;
+  left: 0px;
+  right: 0px;
+  bottom: 0px;
+}
+
 /* === Toolbar === */
 #controls {
-  background-color: #eee;
-  background: -o-linear-gradient(bottom,#eee 0%,#fff 100%);
-  background: -moz-linear-gradient(center bottom, #eee 0%, #fff 100%);
-  background: -webkit-gradient(linear, left bottom, left top, color-stop(0.0, #ddd), color-stop(1.0, #fff));
-  border-bottom: 1px solid #666;
-  padding: 3px;
-  position: fixed;
+  background-color: rgba(224,224,224,0.5);
+  border: 1px solid black;
+  position: absolute;
   left: 0px;
   top: 0px;
-  height: 24px;
-  width: 100%;
+  width: 120px;
+  border-radius: 4px;
+  padding: 4px;
+  font-family: DejaVu Sans, Lucida Sans, Arial, Helvetica, sans-serif;
+  text-align: center;
+  font-size: 75%;
   z-index: 1;
-  white-space:nowrap;
-  overflow: hidden;
 }
 
 .separator {
-  display: inline;
-  border-left: 1px solid #d3d3d3;
-  border-right: 1px solid #fff;
-  height: 16px;
-  width:0px;
+  border-top: 1px solid #d3d3d3;
+  border-bottom: 1px solid #fff;
+  height: 0px;
+  width: 100%;
   margin: 4px;
 }
 
-#controls > a > img {
-    margin: 4px;
-    height: 16px;
-}
-
-#controls > button {
+#controls button {
   line-height: 16px;
+  width: 100%;
 }
 
 #controls > button > img {
@@ -63,6 +65,20 @@ body {
 
 #fileInput {
   line-height: 16px;
+}
+
+#scaleSelect {
+  width: 96%;
+  margin: 2px;
+}
+
+#pageNumber {
+  width: 48%;
+  margin: 2px;
+}
+
+#pageSelector {
+  text-align: left;
 }
 
 /* === Sidebar === */
@@ -307,9 +323,13 @@ canvas {
 ::selection { background:rgba(0,0,255,0.3); }
 ::-moz-selection { background:rgba(0,0,255,0.3); }
 
-#viewer {
-  margin: 44px 0px 0px;
+#viewerContainer {
+  margin: 0px 0px 0px;
   padding: 8px 0px;
+}
+
+#viewer {
+    display: inline;
 }
 
 #sidebarView canvas:hover {
