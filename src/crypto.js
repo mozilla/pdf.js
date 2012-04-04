@@ -21,7 +21,7 @@ var ARCFourCipher = (function ARCFourCipherClosure() {
   }
 
   ARCFourCipher.prototype = {
-    encryptBlock: function arcFourCipherEncryptBlock(data) {
+    encryptBlock: function ARCFourCipher_encryptBlock(data) {
       var i, n = data.length, tmp, tmp2;
       var a = this.a, b = this.b, s = this.s;
       var output = new Uint8Array(n);
@@ -133,7 +133,7 @@ var NullCipher = (function NullCipherClosure() {
   }
 
   NullCipher.prototype = {
-    decryptBlock: function nullCipherDecryptBlock(data) {
+    decryptBlock: function NullCipher_decryptBlock(data) {
       return data;
     }
   };
@@ -371,7 +371,7 @@ var AES128Cipher = (function AES128CipherClosure() {
   }
 
   AES128Cipher.prototype = {
-    decryptBlock: function aes128CipherDecryptBlock(data) {
+    decryptBlock: function AES128Cipher_decryptBlock(data) {
       var i, sourceLength = data.length;
       var buffer = this.buffer, bufferLength = this.bufferPosition;
       // waiting for IV values -- they are at the start of the stream
@@ -400,7 +400,7 @@ var CipherTransform = (function CipherTransformClosure() {
     this.streamCipherConstructor = streamCipherConstructor;
   }
   CipherTransform.prototype = {
-    createStream: function cipherTransformCreateStream(stream) {
+    createStream: function CipherTransform_createStream(stream) {
       var cipher = new this.streamCipherConstructor();
       return new DecryptStream(stream,
         function cipherTransformDecryptStream(data) {
@@ -408,7 +408,7 @@ var CipherTransform = (function CipherTransformClosure() {
         }
       );
     },
-    decryptString: function cipherTransformDecryptString(s) {
+    decryptString: function CipherTransform_decryptString(s) {
       var cipher = new this.stringCipherConstructor();
       var data = stringToBytes(s);
       data = cipher.decryptBlock(data);
@@ -573,8 +573,8 @@ var CipherTransformFactory = (function CipherTransformFactoryClosure() {
   }
 
   CipherTransformFactory.prototype = {
-    createCipherTransform: function buildCipherCreateCipherTransform(num,
-                                                                     gen) {
+    createCipherTransform:
+      function CipherTransformFactory_createCipherTransform(num, gen) {
       if (this.algorithm == 4) {
         return new CipherTransform(
           buildCipherConstructor(this.cf, this.stmf,
