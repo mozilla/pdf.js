@@ -2850,7 +2850,7 @@ var Type1Parser = function type1Parser() {
     return c == ' ' || c == '\n' || c == '\x0d';
   }
 
-  this.extractFontProgram = function Font_extractFontProgram(stream) {
+  this.extractFontProgram = function Type1Parser_extractFontProgram(stream) {
     var eexec = decrypt(stream, kEexecEncryptionKey, 4);
     var eexecStr = '';
     for (var i = 0, ii = eexec.length; i < ii; i++)
@@ -2975,7 +2975,7 @@ var Type1Parser = function type1Parser() {
     return program;
   };
 
-  this.extractFontHeader = function Font_extractFontHeader(stream, properties) {
+  this.extractFontHeader = function Type1Parser_extractFontHeader(stream, properties) {
     var headerString = '';
     for (var i = 0, ii = stream.length; i < ii; i++)
       headerString += String.fromCharCode(stream[i]);
@@ -3143,7 +3143,7 @@ var Type1Font = function Type1Font(name, file, properties) {
 };
 
 Type1Font.prototype = {
-  createCFFIndexHeader: function Font_createCFFIndexHeader(objects, isByte) {
+  createCFFIndexHeader: function Type1Font_createCFFIndexHeader(objects, isByte) {
     // First 2 bytes contains the number of objects contained into this index
     var count = objects.length;
 
@@ -3179,7 +3179,7 @@ Type1Font.prototype = {
     return data;
   },
 
-  encodeNumber: function Font_encodeNumber(value) {
+  encodeNumber: function Type1Font_encodeNumber(value) {
     // some of the fonts has ouf-of-range values
     // they are just arithmetic overflows
     // make sanitizer happy
@@ -3197,7 +3197,7 @@ Type1Font.prototype = {
     }
   },
 
-  getOrderedCharStrings: function Font_getOrderedCharStrings(glyphs,
+  getOrderedCharStrings: function Type1Font_getOrderedCharStrings(glyphs,
                                                             properties) {
     var charstrings = [];
     var i, length, glyphName;
@@ -3223,7 +3223,7 @@ Type1Font.prototype = {
     return charstrings;
   },
 
-  getType2Charstrings: function Font_getType2Charstrings(type1Charstrings) {
+  getType2Charstrings: function Type1Font_getType2Charstrings(type1Charstrings) {
     var type2Charstrings = [];
     var count = type1Charstrings.length;
     for (var i = 0; i < count; i++) {
@@ -3234,7 +3234,7 @@ Type1Font.prototype = {
     return type2Charstrings;
   },
 
-  getType2Subrs: function Font_getType2Subrs(type1Subrs) {
+  getType2Subrs: function Type1Font_getType2Subrs(type1Subrs) {
     var bias = 0;
     var count = type1Subrs.length;
     if (count < 1240)
@@ -3286,7 +3286,7 @@ Type1Font.prototype = {
     'hvcurveto': 31
   },
 
-  flattenCharstring: function Font_flattenCharstring(charstring, map) {
+  flattenCharstring: function Type1Font_flattenCharstring(charstring, map) {
     // charstring changes size - can't cache .length in loop
     for (var i = 0; i < charstring.length; i++) {
       var command = charstring[i];
@@ -3313,7 +3313,7 @@ Type1Font.prototype = {
     return charstring;
   },
 
-  wrap: function Font_wrap(name, glyphs, charstrings, subrs, properties) {
+  wrap: function Type1Font_wrap(name, glyphs, charstrings, subrs, properties) {
     var fields = {
       // major version, minor version, header size, offset size
       'header': '\x01\x00\x04\x04',
