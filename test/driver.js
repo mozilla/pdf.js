@@ -266,6 +266,9 @@ function sendTaskResult(snapshot, task, failure) {
   r.onreadystatechange = function sendTaskResultOnreadystatechange(e) {
     if (r.readyState == 4) {
       inFlightRequests--;
+      // Retry until successful
+      if (r.status !== 200)
+        sendTaskResult(snapshot, task, failure);
     }
   };
   document.getElementById('inFlightCount').innerHTML = inFlightRequests++;
