@@ -647,9 +647,17 @@ var PDFDoc = (function PDFDocClosure() {
 
     this.data = data;
     this.stream = stream;
-    this.pdfModel = new PDFDocModel(stream);
+    var model = this.pdfModel = new PDFDocModel(stream);
     this.fingerprint = this.pdfModel.getFingerprint();
-    this.info = this.pdfModel.getDocumentInfo();
+    var info = this.info = this.pdfModel.getDocumentInfo();
+    if (isDict(info)) {
+      // Iterate values so that values, which are references
+      // will be translated to the real value
+      info.forEach(function(key, val) {
+        if (isRef(val))
+          info.set(key, model.xref.fetch(val));
+      });
+    }
     this.catalog = this.pdfModel.catalog;
     this.objs = new PDFObjects();
 
