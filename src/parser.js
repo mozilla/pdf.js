@@ -51,7 +51,7 @@ var Parser = (function ParserClosure() {
       }
       if (isCmd(this.buf1, '<<')) { // dictionary or stream
         this.shift();
-        var dict = new Dict();
+        var dict = new Dict(this.xref);
         while (!isCmd(this.buf1, '>>') && !isEOF(this.buf1)) {
           if (!isName(this.buf1))
             error('Dictionary key must be a name object');
@@ -564,7 +564,7 @@ var Lexer = (function LexerClosure() {
 
 var Linearization = (function LinearizationClosure() {
   function Linearization(stream) {
-    this.parser = new Parser(new Lexer(stream), false);
+    this.parser = new Parser(new Lexer(stream), false, null);
     var obj1 = this.parser.getObj();
     var obj2 = this.parser.getObj();
     var obj3 = this.parser.getObj();

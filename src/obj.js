@@ -34,23 +34,39 @@ var Cmd = (function CmdClosure() {
 })();
 
 var Dict = (function DictClosure() {
-  function Dict() {
+  // xref is optional
+  function Dict(xref) {
+    // Map should only be used internally, use functions below to access.
     this.map = Object.create(null);
+    this.xref = xref;
   }
 
   Dict.prototype = {
+    // automatically dereferences Ref objects
     get: function dictGet(key1, key2, key3) {
       var value;
+      var xref = this.xref;
       if (typeof (value = this.map[key1]) != 'undefined' || key1 in this.map ||
           typeof key2 == 'undefined') {
-        return value;
+        return xref ? this.xref.fetchIfRef(value) : value;
       }
       if (typeof (value = this.map[key2]) != 'undefined' || key2 in this.map ||
           typeof key3 == 'undefined') {
-        return value;
+        return xref ? this.xref.fetchIfRef(value) : value;
       }
-
-      return this.map[key3] || null;
+      value = this.map[key3] || null;
+      return xref ? this.xref.fetchIfRef(value) : value;
+    },
+    // no dereferencing
+    getRaw: function dictGetRaw(key) {
+      return this.map[key];
+    },
+    // creates new map and dereferences all Refs
+    getAll: function dictGetAll() {
+      var all = {};
+      for (var key in this.map)
+        all[key] = this.get(key);
+      return all;
     },
 
     set: function dictSet(key, value) {
@@ -63,7 +79,7 @@ var Dict = (function DictClosure() {
 
     forEach: function dictForEach(callback) {
       for (var key in this.map) {
-        callback(key, this.map[key]);
+        callback(key, this.get(key));
       }
     }
   };
@@ -112,8 +128,7 @@ var Catalog = (function CatalogClosure() {
 
   Catalog.prototype = {
     get metadata() {
-      var ref = this.catDict.get('Metadata');
-      var stream = this.xref.fetchIfRef(ref);
+      var stream = this.catDict.get('Metadata');
       var metadata;
       if (stream && isDict(stream.dict)) {
         var type = stream.dict.get('Type');
@@ -129,40 +144,39 @@ var Catalog = (function CatalogClosure() {
     },
     get toplevelPagesDict() {
       var pagesObj = this.catDict.get('Pages');
-      assertWellFormed(isRef(pagesObj), 'invalid top-level pages reference');
-      var xrefObj = this.xref.fetch(pagesObj);
-      assertWellFormed(isDict(xrefObj), 'invalid top-level pages dictionary');
+      assertWellFormed(isDict(pagesObj), 'invalid top-level pages dictionary');
       // shadow the prototype getter
-      return shadow(this, 'toplevelPagesDict', xrefObj);
+      return shadow(this, 'toplevelPagesDict', pagesObj);
     },
     get documentOutline() {
       var xref = this.xref;
-      var obj = xref.fetchIfRef(this.catDict.get('Outlines'));
+      var obj = this.catDict.get('Outlines');
       var root = { items: [] };
       if (isDict(obj)) {
+        var ref = obj.getRaw('First');
         obj = obj.get('First');
         var processed = new RefSet();
-        if (isRef(obj)) {
+        if (isRef(ref)) {
           var queue = [{obj: obj, parent: root}];
           // to avoid recursion keeping track of the items
           // in the processed dictionary
-          processed.put(obj);
+          processed.put(ref);
           while (queue.length > 0) {
             var i = queue.shift();
-            var outlineDict = xref.fetch(i.obj);
+            var outlineDict = i.obj;
             if (outlineDict === null)
               continue;
             if (!outlineDict.has('Title'))
               error('Invalid outline item');
             var dest = outlineDict.get('A');
             if (dest)
-              dest = xref.fetchIfRef(dest).get('D');
+              dest = dest.get('D');
             else if (outlineDict.has('Dest')) {
-              dest = outlineDict.get('Dest');
+              dest = outlineDict.getRaw('Dest');
               if (isName(dest))
                 dest = dest.name;
             }
-            var title = xref.fetchIfRef(outlineDict.get('Title'));
+            var title = outlineDict.get('Title');
             var outlineItem = {
               dest: dest,
               title: stringToPDFString(title),
@@ -173,15 +187,17 @@ var Catalog = (function CatalogClosure() {
               items: []
             };
             i.parent.items.push(outlineItem);
-            obj = outlineDict.get('First');
-            if (isRef(obj) && !processed.has(obj)) {
+            ref = outlineDict.getRaw('First');
+            if (isRef(ref) && !processed.has(ref)) {
+              obj = outlineDict.get('First');
               queue.push({obj: obj, parent: outlineItem});
-              processed.put(obj);
+              processed.put(ref);
             }
-            obj = outlineDict.get('Next');
-            if (isRef(obj) && !processed.has(obj)) {
+            ref = outlineDict.getRaw('Next');
+            if (isRef(ref) && !processed.has(ref)) {
+              obj = outlineDict.get('Next');
               queue.push({obj: obj, parent: i.parent});
-              processed.put(obj);
+              processed.put(ref);
             }
           }
         }
@@ -206,7 +222,7 @@ var Catalog = (function CatalogClosure() {
       for (var i = 0, ii = kids.length; i < ii; ++i) {
         var kid = kids[i];
         assertWellFormed(isRef(kid),
-                         'page dictionary kid is not a reference');
+                        'page dictionary kid is not a reference');
         var obj = this.xref.fetch(kid);
         if (isDict(obj, 'Page') || (isDict(obj) && !obj.has('Kids'))) {
           pageCache.push(new Page(this.xref, pageCache.length, obj, kid));
@@ -221,7 +237,7 @@ var Catalog = (function CatalogClosure() {
     },
     get destinations() {
       function fetchDestination(xref, ref) {
-        var dest = xref.fetchIfRef(ref);
+        var dest = ref;
         return isDict(dest) ? dest.get('D') : dest;
       }
 
@@ -229,13 +245,13 @@ var Catalog = (function CatalogClosure() {
       var dests = {}, nameTreeRef, nameDictionaryRef;
       var obj = this.catDict.get('Names');
       if (obj)
-        nameTreeRef = xref.fetchIfRef(obj).get('Dests');
+        nameTreeRef = obj.getRaw('Dests');
       else if (this.catDict.has('Dests'))
         nameDictionaryRef = this.catDict.get('Dests');
 
       if (nameDictionaryRef) {
         // reading simple destination dictionary
-        obj = xref.fetchIfRef(nameDictionaryRef);
+        obj = nameDictionaryRef;
         obj.forEach(function catalogForEach(key, value) {
           if (!value) return;
           dests[key] = fetchDestination(xref, value);
@@ -287,6 +303,7 @@ var XRef = (function XRefClosure() {
     this.entries = [];
     this.xrefstms = {};
     var trailerDict = this.readXRef(startXRef);
+    trailerDict.xref = this;
     this.trailer = trailerDict;
     // prepare the XRef cache
     this.cache = [];
@@ -294,12 +311,12 @@ var XRef = (function XRefClosure() {
     var encrypt = trailerDict.get('Encrypt');
     if (encrypt) {
       var fileId = trailerDict.get('ID');
-      this.encrypt = new CipherTransformFactory(this.fetch(encrypt),
+      this.encrypt = new CipherTransformFactory(encrypt,
                                                 fileId[0] /*, password */);
     }
 
     // get the root dictionary (catalog) object
-    if (!isRef(this.root = trailerDict.get('Root')))
+    if (!(this.root = trailerDict.get('Root')))
       error('Invalid root reference');
   }
 
@@ -514,7 +531,7 @@ var XRef = (function XRefClosure() {
       var dict;
       for (var i = 0, ii = trailers.length; i < ii; ++i) {
         stream.pos = trailers[i];
-        var parser = new Parser(new Lexer(stream), true);
+        var parser = new Parser(new Lexer(stream), true, null);
         var obj = parser.getObj();
         if (!isCmd(obj, 'trailer'))
           continue;
@@ -536,7 +553,7 @@ var XRef = (function XRefClosure() {
       stream.pos = startXRef;
 
       try {
-        var parser = new Parser(new Lexer(stream), true);
+        var parser = new Parser(new Lexer(stream), true, null);
         var obj = parser.getObj();
         var dict;
 
@@ -596,6 +613,7 @@ var XRef = (function XRefClosure() {
       return this.fetch(obj);
     },
     fetch: function xRefFetch(ref, suppressEncryption) {
+      assertWellFormed(isRef(ref), 'ref object is not a reference');
       var num = ref.num;
       if (num in this.cache)
         return this.cache[num];
@@ -657,7 +675,7 @@ var XRef = (function XRefClosure() {
       if (!isInt(first) || !isInt(n)) {
         error('invalid first and n parameters for ObjStm stream');
       }
-      parser = new Parser(new Lexer(stream), false);
+      parser = new Parser(new Lexer(stream), false, this);
       var i, entries = [], nums = [];
       // read the object numbers to populate cache
       for (i = 0; i < n; ++i) {
@@ -683,7 +701,7 @@ var XRef = (function XRefClosure() {
       return e;
     },
     getCatalogObj: function xRefGetCatalogObj() {
-      return this.fetch(this.root);
+      return this.root;
     }
   };
 
