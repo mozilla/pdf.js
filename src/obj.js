@@ -153,17 +153,16 @@ var Catalog = (function CatalogClosure() {
       var obj = this.catDict.get('Outlines');
       var root = { items: [] };
       if (isDict(obj)) {
-        var ref = obj.getRaw('First');
-        obj = obj.get('First');
+        obj = obj.getRaw('First');
         var processed = new RefSet();
-        if (isRef(ref)) {
+        if (isRef(obj)) {
           var queue = [{obj: obj, parent: root}];
           // to avoid recursion keeping track of the items
           // in the processed dictionary
-          processed.put(ref);
+          processed.put(obj);
           while (queue.length > 0) {
             var i = queue.shift();
-            var outlineDict = i.obj;
+            var outlineDict = xref.fetchIfRef(i.obj);
             if (outlineDict === null)
               continue;
             if (!outlineDict.has('Title'))
@@ -187,17 +186,15 @@ var Catalog = (function CatalogClosure() {
               items: []
             };
             i.parent.items.push(outlineItem);
-            ref = outlineDict.getRaw('First');
-            if (isRef(ref) && !processed.has(ref)) {
-              obj = outlineDict.get('First');
+            obj = outlineDict.getRaw('First');
+            if (isRef(obj) && !processed.has(obj)) {
               queue.push({obj: obj, parent: outlineItem});
-              processed.put(ref);
+              processed.put(obj);
             }
-            ref = outlineDict.getRaw('Next');
-            if (isRef(ref) && !processed.has(ref)) {
-              obj = outlineDict.get('Next');
+            obj = outlineDict.getRaw('Next');
+            if (isRef(obj) && !processed.has(obj)) {
               queue.push({obj: obj, parent: i.parent});
-              processed.put(ref);
+              processed.put(obj);
             }
           }
         }
@@ -236,8 +233,7 @@ var Catalog = (function CatalogClosure() {
       }
     },
     get destinations() {
-      function fetchDestination(xref, ref) {
-        var dest = ref;
+      function fetchDestination(dest) {
         return isDict(dest) ? dest.get('D') : dest;
       }
 
@@ -254,7 +250,7 @@ var Catalog = (function CatalogClosure() {
         obj = nameDictionaryRef;
         obj.forEach(function catalogForEach(key, value) {
           if (!value) return;
-          dests[key] = fetchDestination(xref, value);
+          dests[key] = fetchDestination(value);
         });
       }
       if (nameTreeRef) {
@@ -278,7 +274,7 @@ var Catalog = (function CatalogClosure() {
           }
           var names = obj.get('Names');
           for (i = 0, n = names.length; i < n; i += 2) {
-            dests[names[i]] = fetchDestination(xref, names[i + 1]);
+            dests[names[i]] = fetchDestination(xref.fetchIfRef(names[i + 1]));
           }
         }
       }
