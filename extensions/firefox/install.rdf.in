@@ -20,7 +20,7 @@
     <em:bootstrap>true</em:bootstrap>
     <em:creator>Mozilla</em:creator>
     <em:description>Uses HTML5 to display PDF files directly in Firefox.</em:description>
-    <em:homepageURL>http://support.mozilla.org/kb/using-mozilla-pdf-viewer</em:homepageURL>
+    <em:homepageURL>https://support.mozilla.org/kb/Opening%20PDF%20files%20within%20Firefox</em:homepageURL>
     <em:type>2</em:type>
   </Description>
 </RDF>
