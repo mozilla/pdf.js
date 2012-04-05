@@ -697,7 +697,7 @@ var XRef = (function XRefClosure() {
       return e;
     },
     getCatalogObj: function XRef_getCatalogObj() {
-      return this.this.root;
+      return this.root;
     }
   };
 
