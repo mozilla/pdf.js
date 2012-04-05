@@ -122,41 +122,14 @@ Our Github contributors so far:
 You can add your name to it! :)
 
 
-
 # Running the tests
 
-pdf.js comes with browser-level regression tests that allow one to probe 
+pdf.js comes with browser-level regression tests that allow one to probe
 whether it's able to successfully parse PDFs, as well as compare its output
 against reference images, pixel-by-pixel.
 
-To run the tests, first configure the browser manifest file at:
-
-    test/resources/browser_manifests/browser_manifest.json
-
-Sample manifests for different platforms are provided in that directory.
-
-To run all the bundled tests, type:
-
-    $ make test
-
-and cross your fingers. Different types of tests are available, see the test
-manifest file at:
-
-    test/test_manifest.json
-
-The test type `eq` tests whether the output images are identical to reference 
-images. The test type `load` simply tests whether the file loads without 
-raising any errors.
-
-
-### Running tests through our bot
-
-If you are a reviewer, you can use our remote bot to issue comprehensive tests 
-against reference images before merging pull requests.
-
-See the bot repo for details:
-
-+ https://github.com/mozilla/pdf.js-bot
+More information about running the tests can be found on the
+[contributor wiki page](https://github.com/mozilla/pdf.js/wiki/Contributing).
 
 
 # Additional resources

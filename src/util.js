@@ -79,19 +79,19 @@ var IDENTITY_MATRIX = [1, 0, 0, 1, 0, 0];
 var Util = (function UtilClosure() {
   function Util() {}
 
-  Util.makeCssRgb = function makergb(r, g, b) {
+  Util.makeCssRgb = function Util_makeCssRgb(r, g, b) {
     var ri = (255 * r) | 0, gi = (255 * g) | 0, bi = (255 * b) | 0;
     return 'rgb(' + ri + ',' + gi + ',' + bi + ')';
   };
 
-  Util.makeCssCmyk = function makecmyk(c, m, y, k) {
+  Util.makeCssCmyk = function Util_makeCssCmyk(c, m, y, k) {
     c = (new DeviceCmykCS()).getRgb([c, m, y, k]);
     var ri = (255 * c[0]) | 0, gi = (255 * c[1]) | 0, bi = (255 * c[2]) | 0;
     return 'rgb(' + ri + ',' + gi + ',' + bi + ')';
   };
 
   // For 2d affine transforms
-  Util.applyTransform = function apply(p, m) {
+  Util.applyTransform = function Util_applyTransform(p, m) {
     var xt = p[0] * m[0] + p[1] * m[2] + m[4];
     var yt = p[0] * m[1] + p[1] * m[3] + m[5];
     return [xt, yt];
@@ -103,7 +103,7 @@ var Util = (function UtilClosure() {
   //   | g h i |   | Z |
   // M is assumed to be serialized as [a,b,c,d,e,f,g,h,i],
   // with v as [X,Y,Z]
-  Util.apply3dTransform = function apply3d(m, v) {
+  Util.apply3dTransform = function Util_apply3dTransform(m, v) {
     return [
       m[0] * v[0] + m[1] * v[1] + m[2] * v[2],
       m[3] * v[0] + m[4] * v[1] + m[5] * v[2],
@@ -115,7 +115,7 @@ var Util = (function UtilClosure() {
   // For coordinate systems whose origin lies in the bottom-left, this
   // means normalization to (BL,TR) ordering. For systems with origin in the
   // top-left, this means (TL,BR) ordering.
-  Util.normalizeRect = function normalizeRect(rect) {
+  Util.normalizeRect = function Util_normalizeRect(rect) {
     var r = rect.slice(0); // clone rect
     if (rect[0] > rect[2]) {
       r[0] = rect[2];
@@ -131,7 +131,7 @@ var Util = (function UtilClosure() {
   // Returns a rectangle [x1, y1, x2, y2] corresponding to the
   // intersection of rect1 and rect2. If no intersection, returns 'false'
   // The rectangle coordinates of rect1, rect2 should be [x1, y1, x2, y2]
-  Util.intersect = function intersect(rect1, rect2) {
+  Util.intersect = function Util_intersect(rect1, rect2) {
     function compare(a, b) {
       return a - b;
     };
@@ -167,7 +167,7 @@ var Util = (function UtilClosure() {
     return result;
   }
 
-  Util.sign = function sign(num) {
+  Util.sign = function Util_sign(num) {
     return num < 0 ? -1 : 1;
   };
 
@@ -304,7 +304,7 @@ var Promise = (function PromiseClosure() {
    * @param {Promise[]} promises Array of promises to wait for.
    * @return {Promise} New dependant promise.
    */
-  Promise.all = function(promises) {
+  Promise.all = function Promise_all(promises) {
     var deferred = new Promise();
     var unresolved = promises.length;
     var results = [];
@@ -351,7 +351,7 @@ var Promise = (function PromiseClosure() {
       return this._data;
     },
 
-    onData: function promiseOnData(callback) {
+    onData: function Promise_onData(callback) {
       if (this._data !== EMPTY_PROMISE) {
         callback(this._data);
       } else {
@@ -359,7 +359,7 @@ var Promise = (function PromiseClosure() {
       }
     },
 
-    resolve: function promiseResolve(data) {
+    resolve: function Promise_resolve(data) {
       if (this.isResolved) {
         error('A Promise can be resolved only once ' + this.name);
       }
@@ -376,7 +376,7 @@ var Promise = (function PromiseClosure() {
       }
     },
 
-    reject: function proimseReject(reason) {
+    reject: function Promise_reject(reason) {
       if (this.isRejected) {
         error('A Promise can be rejected only once ' + this.name);
       }
@@ -393,7 +393,7 @@ var Promise = (function PromiseClosure() {
       }
     },
 
-    then: function promiseThen(callback, errback) {
+    then: function Promise_then(callback, errback) {
       if (!callback) {
         error('Requiring callback' + this.name);
       }
@@ -428,14 +428,14 @@ var StatTimer = (function StatTimerClosure() {
     this.enabled = true;
   }
   StatTimer.prototype = {
-    time: function statTimerTime(name) {
+    time: function StatTimer_time(name) {
       if (!this.enabled)
         return;
       if (name in this.started)
         throw 'Timer is already running for ' + name;
       this.started[name] = Date.now();
     },
-    timeEnd: function statTimerTimeEnd(name) {
+    timeEnd: function StatTimer_timeEnd(name) {
       if (!this.enabled)
         return;
       if (!(name in this.started))
@@ -448,7 +448,7 @@ var StatTimer = (function StatTimerClosure() {
       // Remove timer from started so it can be called again.
       delete this.started[name];
     },
-    toString: function statTimerToString() {
+    toString: function StatTimer_toString() {
       var times = this.times;
       var out = '';
       // Find the longest name for padding purposes.
