@@ -94,7 +94,7 @@ var PDFImage = (function PDFImageClosure() {
       }
     }
 
-    var mask = xref.fetchIfRef(dict.get('Mask'));
+    var mask = dict.get('Mask');
 
     if (mask) {
       TODO('masked images');
@@ -120,7 +120,7 @@ var PDFImage = (function PDFImageClosure() {
 
     handleImageData(handler, xref, res, image, imageDataPromise);
 
-    var smask = xref.fetchIfRef(image.dict.get('SMask'));
+    var smask = image.dict.get('SMask');
     if (smask)
       handleImageData(handler, xref, res, smask, smaskPromise);
     else
