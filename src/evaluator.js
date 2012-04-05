@@ -112,8 +112,10 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
   };
 
   PartialEvaluator.prototype = {
-    getOperatorList: function partialEvaluatorGetOperatorList(stream, resources,
-                                                      dependency, queue) {
+    getOperatorList: function PartialEvaluator_getOperatorList(stream,
+                                                               resources,
+                                                               dependency,
+                                                               queue) {
 
       var self = this;
       var xref = this.xref;
@@ -521,8 +523,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       properties.hasEncoding = hasEncoding;
     },
 
-    readToUnicode:
-      function partialEvaluatorReadToUnicode(toUnicode, xref) {
+    readToUnicode: function PartialEvaluator_readToUnicode(toUnicode, xref) {
       var cmapObj = xref.fetchIfRef(toUnicode);
       var charToUnicode = [];
       if (isName(cmapObj)) {
@@ -641,8 +642,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       }
       return charToUnicode;
     },
-    readCidToGidMap:
-      function partialEvaluatorReadCidToGidMap(cidToGidStream) {
+    readCidToGidMap: function PartialEvaluator_readCidToGidMap(cidToGidStream) {
       // Extract the encoding from the CIDToGIDMap
       var glyphsData = cidToGidStream.getBytes();
 
@@ -659,7 +659,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       return result;
     },
 
-    extractWidths: function partialEvaluatorWidths(dict,
+    extractWidths: function PartialEvaluator_extractWidths(dict,
                                                    xref,
                                                    descriptor,
                                                    properties) {
@@ -711,7 +711,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       properties.widths = glyphsWidths;
     },
 
-    getBaseFontMetrics: function getBaseFontMetrics(name) {
+    getBaseFontMetrics: function PartialEvaluator_getBaseFontMetrics(name) {
       var defaultWidth = 0, widths = [];
       var glyphWidths = Metrics[stdFontMap[name] || name];
       if (isNum(glyphWidths)) {
@@ -726,8 +726,10 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       };
     },
 
-    translateFont: function partialEvaluatorTranslateFont(dict, xref, resources,
-                                                          dependency) {
+    translateFont: function PartialEvaluator_translateFont(dict,
+                                                           xref,
+                                                           resources,
+                                                           dependency) {
       var baseDict = dict;
       var type = dict.get('Subtype');
       assertWellFormed(isName(type), 'invalid font Subtype');
