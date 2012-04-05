@@ -12,17 +12,17 @@ var ColorSpace = (function ColorSpaceClosure() {
   ColorSpace.prototype = {
     // Input: array of size numComps representing color component values
     // Output: array of rgb values, each value ranging from [0.1]
-    getRgb: function colorSpaceGetRgb(color) {
+    getRgb: function ColorSpace_getRgb(color) {
       error('Should not call ColorSpace.getRgb: ' + color);
     },
     // Input: Uint8Array of component values, each value scaled to [0,255]
     // Output: Uint8Array of rgb values, each value scaled to [0,255]
-    getRgbBuffer: function colorSpaceGetRgbBuffer(input) {
+    getRgbBuffer: function ColorSpace_getRgbBuffer(input) {
       error('Should not call ColorSpace.getRgbBuffer: ' + input);
     }
   };
 
-  ColorSpace.parse = function colorSpaceParse(cs, xref, res) {
+  ColorSpace.parse = function ColorSpace_parse(cs, xref, res) {
     var IR = ColorSpace.parseToIR(cs, xref, res);
     if (IR instanceof AlternateCS)
       return IR;
@@ -30,7 +30,7 @@ var ColorSpace = (function ColorSpaceClosure() {
     return ColorSpace.fromIR(IR);
   };
 
-  ColorSpace.fromIR = function colorSpaceFromIR(IR) {
+  ColorSpace.fromIR = function ColorSpace_fromIR(IR) {
     var name = isArray(IR) ? IR[0] : IR;
 
     switch (name) {
@@ -68,9 +68,9 @@ var ColorSpace = (function ColorSpaceClosure() {
     return null;
   };
 
-  ColorSpace.parseToIR = function colorSpaceParseToIR(cs, xref, res) {
+  ColorSpace.parseToIR = function ColorSpace_parseToIR(cs, xref, res) {
     if (isName(cs)) {
-      var colorSpaces = xref.fetchIfRef(res.get('ColorSpace'));
+      var colorSpaces = res.get('ColorSpace');
       if (isDict(colorSpaces)) {
         var refcs = colorSpaces.get(cs.name);
         if (refcs)
@@ -152,7 +152,7 @@ var ColorSpace = (function ColorSpaceClosure() {
           var tintFnIR = PDFFunction.getIR(xref, xref.fetchIfRef(cs[3]));
           return ['AlternateCS', numComps, alt, tintFnIR];
         case 'Lab':
-          var params = cs[1].map;
+          var params = cs[1].getAll();
           return ['LabCS', params];
         default:
           error('unimplemented color space object "' + mode + '"');
@@ -171,7 +171,7 @@ var ColorSpace = (function ColorSpaceClosure() {
    * @param {Array} decode Decode map (usually from an image).
    * @param {Number} n Number of components the color space has.
    */
-  ColorSpace.isDefaultDecode = function colorSpaceIsDefaultDecode(decode, n) {
+  ColorSpace.isDefaultDecode = function ColorSpace_isDefaultDecode(decode, n) {
     if (!decode)
       return true;
 
@@ -207,11 +207,11 @@ var AlternateCS = (function AlternateCSClosure() {
   }
 
   AlternateCS.prototype = {
-    getRgb: function altcs_getRgb(color) {
+    getRgb: function AlternateCS_getRgb(color) {
       var tinted = this.tintFn(color);
       return this.base.getRgb(tinted);
     },
-    getRgbBuffer: function altcs_getRgbBuffer(input, bits) {
+    getRgbBuffer: function AlternateCS_getRgbBuffer(input, bits) {
       var tintFn = this.tintFn;
       var base = this.base;
       var scale = 1 / ((1 << bits) - 1);
@@ -232,7 +232,7 @@ var AlternateCS = (function AlternateCSClosure() {
       }
       return base.getRgbBuffer(baseBuf, 8);
     },
-    isDefaultDecode: function altcs_isDefaultDecode(decodeMap) {
+    isDefaultDecode: function AlternateCS_isDefaultDecode(decodeMap) {
       return ColorSpace.isDefaultDecode(decodeMap, this.numComps);
     }
   };
@@ -275,7 +275,7 @@ var IndexedCS = (function IndexedCSClosure() {
   }
 
   IndexedCS.prototype = {
-    getRgb: function indexcs_getRgb(color) {
+    getRgb: function IndexedCS_getRgb(color) {
       var numComps = this.base.numComps;
       var start = color[0] * numComps;
       var c = [];
@@ -285,7 +285,7 @@ var IndexedCS = (function IndexedCSClosure() {
 
       return this.base.getRgb(c);
     },
-    getRgbBuffer: function indexcs_getRgbBuffer(input) {
+    getRgbBuffer: function IndexedCS_getRgbBuffer(input) {
       var base = this.base;
       var numComps = base.numComps;
       var lookup = this.lookup;
@@ -302,7 +302,7 @@ var IndexedCS = (function IndexedCSClosure() {
 
       return base.getRgbBuffer(baseBuf, 8);
     },
-    isDefaultDecode: function indexcs_isDefaultDecode(decodeMap) {
+    isDefaultDecode: function IndexedCS_isDefaultDecode(decodeMap) {
       // indexed color maps shouldn't be changed
       return true;
     }
@@ -318,11 +318,11 @@ var DeviceGrayCS = (function DeviceGrayCSClosure() {
   }
 
   DeviceGrayCS.prototype = {
-    getRgb: function graycs_getRgb(color) {
+    getRgb: function DeviceGrayCS_getRgb(color) {
       var c = color[0];
       return [c, c, c];
     },
-    getRgbBuffer: function graycs_getRgbBuffer(input, bits) {
+    getRgbBuffer: function DeviceGrayCS_getRgbBuffer(input, bits) {
       var scale = 255 / ((1 << bits) - 1);
       var length = input.length;
       var rgbBuf = new Uint8Array(length * 3);
@@ -334,7 +334,7 @@ var DeviceGrayCS = (function DeviceGrayCSClosure() {
       }
       return rgbBuf;
     },
-    isDefaultDecode: function graycs_isDefaultDecode(decodeMap) {
+    isDefaultDecode: function DeviceGrayCS_isDefaultDecode(decodeMap) {
       return ColorSpace.isDefaultDecode(decodeMap, this.numComps);
     }
   };
@@ -348,10 +348,10 @@ var DeviceRgbCS = (function DeviceRgbCSClosure() {
     this.defaultColor = [0, 0, 0];
   }
   DeviceRgbCS.prototype = {
-    getRgb: function rgbcs_getRgb(color) {
+    getRgb: function DeviceRgbCS_getRgb(color) {
       return color;
     },
-    getRgbBuffer: function rgbcs_getRgbBuffer(input, bits) {
+    getRgbBuffer: function DeviceRgbCS_getRgbBuffer(input, bits) {
       if (bits == 8)
         return input;
       var scale = 255 / ((1 << bits) - 1);
@@ -361,7 +361,7 @@ var DeviceRgbCS = (function DeviceRgbCSClosure() {
         rgbBuf[i] = (scale * input[i]) | 0;
       return rgbBuf;
     },
-    isDefaultDecode: function rgbcs_isDefaultDecode(decodeMap) {
+    isDefaultDecode: function DeviceRgbCS_isDefaultDecode(decodeMap) {
       return ColorSpace.isDefaultDecode(decodeMap, this.numComps);
     }
   };
@@ -375,7 +375,7 @@ var DeviceCmykCS = (function DeviceCmykCSClosure() {
     this.defaultColor = [0, 0, 0, 1];
   }
   DeviceCmykCS.prototype = {
-    getRgb: function cmykcs_getRgb(color) {
+    getRgb: function DeviceCmykCS_getRgb(color) {
       var c = color[0], m = color[1], y = color[2], k = color[3];
 
       // CMYK -> CMY: http://www.easyrgb.com/index.php?X=MATH&H=14#text14
@@ -390,7 +390,7 @@ var DeviceCmykCS = (function DeviceCmykCSClosure() {
 
       return [r, g, b];
     },
-    getRgbBuffer: function cmykcs_getRgbBuffer(colorBuf, bits) {
+    getRgbBuffer: function DeviceCmykCS_getRgbBuffer(colorBuf, bits) {
       var scale = 1 / ((1 << bits) - 1);
       var length = colorBuf.length / 4;
       var rgbBuf = new Uint8Array(length * 3);
@@ -409,7 +409,7 @@ var DeviceCmykCS = (function DeviceCmykCSClosure() {
 
       return rgbBuf;
     },
-    isDefaultDecode: function cmykcs_isDefaultDecode(decodeMap) {
+    isDefaultDecode: function DeviceCmykCS_isDefaultDecode(decodeMap) {
       return ColorSpace.isDefaultDecode(decodeMap, this.numComps);
     }
   };
@@ -473,7 +473,7 @@ var LabCS = (function LabCSClosure() {
   }
 
   LabCS.prototype = {
-    getRgb: function labcs_getRgb(color) {
+    getRgb: function LabCS_getRgb(color) {
       // Ls,as,bs <---> L*,a*,b* in the spec
       var Ls = color[0], as = color[1], bs = color[2];
 
@@ -499,7 +499,7 @@ var LabCS = (function LabCSClosure() {
 
       return Util.apply3dTransform(XYZtoRGB, [X, Y, Z]);
     },
-    getRgbBuffer: function labcs_getRgbBuffer(input, bits) {
+    getRgbBuffer: function LabCS_getRgbBuffer(input, bits) {
       if (bits == 8)
         return input;
       var scale = 255 / ((1 << bits) - 1);
@@ -517,7 +517,7 @@ var LabCS = (function LabCSClosure() {
 
       return rgbBuf;
     },
-    isDefaultDecode: function labcs_isDefaultDecode(decodeMap) {
+    isDefaultDecode: function LabCS_isDefaultDecode(decodeMap) {
       // From Table 90 in Adobe's:
       // "Document management - Portable document format", 1st ed, 2008
       if (decodeMap[0] === 0 && decodeMap[1] === 100 &&

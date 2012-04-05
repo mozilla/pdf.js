@@ -17,16 +17,16 @@ var Pattern = (function PatternClosure() {
   Pattern.prototype = {
     // Input: current Canvas context
     // Output: the appropriate fillStyle or strokeStyle
-    getPattern: function pattern_getStyle(ctx) {
+    getPattern: function Pattern_getPattern(ctx) {
       error('Should not call Pattern.getStyle: ' + ctx);
     }
   };
 
-  Pattern.shadingFromIR = function pattern_shadingFromIR(raw) {
+  Pattern.shadingFromIR = function Pattern_shadingFromIR(raw) {
     return Shadings[raw[0]].fromIR(raw);
   };
 
-  Pattern.parseShading = function pattern_shading(shading, matrix, xref, res) {
+  Pattern.parseShading = function Pattern_parseShading(shading, matrix, xref, res) {
 
     var dict = isStream(shading) ? shading.dict : shading;
     var type = dict.get('ShadingType');
@@ -78,7 +78,6 @@ Shadings.RadialAxial = (function RadialAxialClosure() {
     this.extendEnd = extendEnd;
 
     var fnObj = dict.get('Function');
-    fnObj = xref.fetchIfRef(fnObj);
     if (isArray(fnObj))
       error('No support for array of functions');
     if (!isPDFFunction(fnObj))
@@ -101,7 +100,7 @@ Shadings.RadialAxial = (function RadialAxialClosure() {
     this.colorStops = colorStops;
   }
 
-  RadialAxial.fromIR = function radialAxialShadingGetIR(raw) {
+  RadialAxial.fromIR = function RadialAxial_fromIR(raw) {
     var type = raw[1];
     var colorStops = raw[2];
     var p0 = raw[3];
@@ -138,7 +137,7 @@ Shadings.RadialAxial = (function RadialAxialClosure() {
   };
 
   RadialAxial.prototype = {
-    getIR: function radialAxialShadingGetIR() {
+    getIR: function RadialAxial_getIR() {
       var coordsArr = this.coordsArr;
       var type = this.shadingType;
       if (type == PatternType.AXIAL) {
@@ -173,12 +172,12 @@ Shadings.Dummy = (function DummyClosure() {
     this.type = 'Pattern';
   }
 
-  Dummy.fromIR = function dummyShadingFromIR() {
+  Dummy.fromIR = function Dummy_fromIR() {
     return 'hotpink';
   };
 
   Dummy.prototype = {
-    getIR: function dummyShadingGetIR() {
+    getIR: function Dummy_getIR() {
       return ['Dummy'];
     }
   };
@@ -267,7 +266,7 @@ var TilingPattern = (function TilingPatternClosure() {
     this.canvas = tmpCanvas;
   }
 
-  TilingPattern.getIR = function tiling_getIR(operatorList, dict, args) {
+  TilingPattern.getIR = function TilingPattern_getIR(operatorList, dict, args) {
     var matrix = dict.get('Matrix');
     var bbox = dict.get('BBox');
     var xstep = dict.get('XStep');
@@ -280,7 +279,7 @@ var TilingPattern = (function TilingPatternClosure() {
   };
 
   TilingPattern.prototype = {
-    getPattern: function tiling_getPattern() {
+    getPattern: function TilingPattern_getPattern() {
       var matrix = this.matrix;
       var curMatrix = this.curMatrix;
       var ctx = this.ctx;

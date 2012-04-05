@@ -72,14 +72,14 @@ var Page = (function PageClosure() {
   }
 
   Page.prototype = {
-    getPageProp: function pageGetPageProp(key) {
-      return this.xref.fetchIfRef(this.pageDict.get(key));
+    getPageProp: function Page_getPageProp(key) {
+      return this.pageDict.get(key);
     },
-    inheritPageProp: function pageInheritPageProp(key) {
+    inheritPageProp: function Page_inheritPageProp(key) {
       var dict = this.pageDict;
       var obj = dict.get(key);
       while (obj === undefined) {
-        dict = this.xref.fetchIfRef(dict.get('Parent'));
+        dict = dict.get('Parent');
         if (!dict)
           break;
         obj = dict.get(key);
@@ -170,8 +170,8 @@ var Page = (function PageClosure() {
       return shadow(this, 'rotate', rotate);
     },
 
-    startRenderingFromOperatorList: function pageStartRenderingFromOperatorList(
-                                                operatorList, fonts) {
+    startRenderingFromOperatorList:
+      function Page_startRenderingFromOperatorList(operatorList, fonts) {
       var self = this;
       this.operatorList = operatorList;
 
@@ -190,7 +190,7 @@ var Page = (function PageClosure() {
       );
     },
 
-    getOperatorList: function pageGetOperatorList(handler, dependency) {
+    getOperatorList: function Page_getOperatorList(handler, dependency) {
       if (this.operatorList) {
         // content was compiled
         return this.operatorList;
@@ -199,8 +199,8 @@ var Page = (function PageClosure() {
       this.stats.time('Build IR Queue');
 
       var xref = this.xref;
-      var content = xref.fetchIfRef(this.content);
-      var resources = xref.fetchIfRef(this.resources);
+      var content = this.content;
+      var resources = this.resources;
       if (isArray(content)) {
         // fetching items
         var i, n = content.length;
@@ -220,7 +220,7 @@ var Page = (function PageClosure() {
       return this.operatorList;
     },
 
-    ensureFonts: function pageEnsureFonts(fonts, callback) {
+    ensureFonts: function Page_ensureFonts(fonts, callback) {
       this.stats.time('Font Loading');
       // Convert the font names to the corresponding font obj.
       for (var i = 0, ii = fonts.length; i < ii; i++) {
@@ -238,12 +238,12 @@ var Page = (function PageClosure() {
       );
     },
 
-    display: function pageDisplay(gfx, callback) {
+    display: function Page_display(gfx, callback) {
       var stats = this.stats;
       stats.time('Rendering');
       var xref = this.xref;
-      var resources = xref.fetchIfRef(this.resources);
-      var mediaBox = xref.fetchIfRef(this.mediaBox);
+      var resources = this.resources;
+      var mediaBox = this.mediaBox;
       assertWellFormed(isDict(resources), 'invalid page resources');
 
       gfx.xref = xref;
@@ -276,7 +276,7 @@ var Page = (function PageClosure() {
       }
       next();
     },
-    rotatePoint: function pageRotatePoint(x, y, reverse) {
+    rotatePoint: function Page_rotatePoint(x, y, reverse) {
       var rotate = reverse ? (360 - this.rotate) : this.rotate;
       switch (rotate) {
         case 180:
@@ -291,7 +291,7 @@ var Page = (function PageClosure() {
           return {x: x, y: this.height - y};
       }
     },
-    getLinks: function pageGetLinks() {
+    getLinks: function Page_getLinks() {
       var links = [];
       var annotations = pageGetAnnotations();
       var i, n = annotations.length;
@@ -302,12 +302,12 @@ var Page = (function PageClosure() {
       }
       return links;
     },
-    getAnnotations: function pageGetAnnotations() {
+    getAnnotations: function Page_getAnnotations() {
       var xref = this.xref;
       function getInheritableProperty(annotation, name) {
         var item = annotation;
         while (item && !item.has(name)) {
-          item = xref.fetchIfRef(item.get('Parent'));
+          item = item.get('Parent');
         }
         if (!item)
           return null;
@@ -330,7 +330,7 @@ var Page = (function PageClosure() {
         }
       }
 
-      var annotations = xref.fetchIfRef(this.annotations) || [];
+      var annotations = this.annotations || [];
       var i, n = annotations.length;
       var items = [];
       for (i = 0; i < n; ++i) {
@@ -353,7 +353,7 @@ var Page = (function PageClosure() {
         item.height = Math.abs(topLeftCorner.y - bottomRightCorner.y);
         switch (subtype.name) {
           case 'Link':
-            var a = this.xref.fetchIfRef(annotation.get('A'));
+            var a = annotation.get('A');
             if (a) {
               switch (a.get('S').name) {
                 case 'URI':
@@ -386,21 +386,22 @@ var Page = (function PageClosure() {
             var fieldName = [];
             var namedItem = annotation, ref = annotationRef;
             while (namedItem) {
-              var parentRef = namedItem.get('Parent');
-              var parent = xref.fetchIfRef(parentRef);
+              var parent = namedItem.get('Parent');
+              var parentRef = namedItem.getRaw('Parent');
               var name = namedItem.get('T');
-              if (name)
+              if (name) {
                 fieldName.unshift(stringToPDFString(name));
-              else {
+              } else {
                 // The field name is absent, that means more than one field
                 // with the same name may exist. Replacing the empty name
                 // with the '`' plus index in the parent's 'Kids' array.
                 // This is not in the PDF spec but necessary to id the
                 // the input controls.
-                var kids = xref.fetchIfRef(parent.get('Kids'));
+                var kids = parent.get('Kids');
                 var j, jj;
                 for (j = 0, jj = kids.length; j < jj; j++) {
-                  if (kids[j].num == ref.num && kids[j].gen == ref.gen)
+                  var kidRef = kids[j];
+                  if (kidRef.num == ref.num && kidRef.gen == ref.gen)
                     break;
                 }
                 fieldName.unshift('`' + j);
@@ -433,7 +434,7 @@ var Page = (function PageClosure() {
       }
       return items;
     },
-    startRendering: function pageStartRendering(ctx, callback, textLayer)  {
+    startRendering: function Page_startRendering(ctx, callback, textLayer)  {
       var stats = this.stats;
       stats.time('Overall');
       // If there is no displayReadyPromise yet, then the operatorList was never
@@ -490,7 +491,7 @@ var PDFDocModel = (function PDFDocModelClosure() {
     assertWellFormed(stream.length > 0, 'stream must have data');
     this.stream = stream;
     this.setup();
-    this.acroForm = this.xref.fetchIfRef(this.catalog.catDict.get('AcroForm'));
+    this.acroForm = this.catalog.catDict.get('AcroForm');
   }
 
   function find(stream, needle, limit, backwards) {
@@ -570,7 +571,7 @@ var PDFDocModel = (function PDFDocModelClosure() {
     },
     // Find the header, remove leading garbage and setup the stream
     // starting from the header.
-    checkHeader: function pdfDocCheckHeader() {
+    checkHeader: function PDFDocModel_checkHeader() {
       var stream = this.stream;
       stream.reset();
       if (find(stream, '%PDF-', 1024)) {
@@ -580,21 +581,13 @@ var PDFDocModel = (function PDFDocModelClosure() {
       }
       // May not be a PDF file, continue anyway.
     },
-    setup: function pdfDocSetup(ownerPassword, userPassword) {
+    setup: function PDFDocModel_setup(ownerPassword, userPassword) {
       this.checkHeader();
       var xref = new XRef(this.stream,
                           this.startXRef,
                           this.mainXRefEntriesOffset);
       this.xref = xref;
       this.catalog = new Catalog(xref);
-      if (xref.trailer && xref.trailer.has('ID')) {
-        var fileID = '';
-        var id = xref.fetchIfRef(xref.trailer.get('ID'))[0];
-        id.split('').forEach(function(el) {
-          fileID += Number(el.charCodeAt(0)).toString(16);
-        });
-        this.fileID = fileID;
-      }
     },
     get numPages() {
       var linearization = this.linearization;
@@ -602,23 +595,35 @@ var PDFDocModel = (function PDFDocModelClosure() {
       // shadow the prototype getter
       return shadow(this, 'numPages', num);
     },
-    getFingerprint: function pdfDocGetFingerprint() {
-      if (this.fileID) {
-        return this.fileID;
+    getDocumentInfo: function PDFDocModel_getDocumentInfo() {
+      var info;
+      if (this.xref.trailer.has('Info'))
+        info = this.xref.trailer.get('Info');
+
+      return shadow(this, 'getDocumentInfo', info);
+    },
+    getFingerprint: function PDFDocModel_getFingerprint() {
+      var xref = this.xref, fileID;
+      if (xref.trailer.has('ID')) {
+        fileID = '';
+        var id = xref.trailer.get('ID')[0];
+        id.split('').forEach(function(el) {
+          fileID += Number(el.charCodeAt(0)).toString(16);
+        });
       } else {
         // If we got no fileID, then we generate one,
         // from the first 100 bytes of PDF
         var data = this.stream.bytes.subarray(0, 100);
         var hash = calculateMD5(data, 0, data.length);
-        var strHash = '';
+        fileID = '';
         for (var i = 0, length = hash.length; i < length; i++) {
-          strHash += Number(hash[i]).toString(16);
+          fileID += Number(hash[i]).toString(16);
         }
-
-        return strHash;
       }
+
+      return shadow(this, 'getFingerprint', fileID);
     },
-    getPage: function pdfDocGetPage(n) {
+    getPage: function PDFDocModel_getPage(n) {
       return this.catalog.getPage(n);
     }
   };
@@ -645,6 +650,7 @@ var PDFDoc = (function PDFDocClosure() {
     this.stream = stream;
     this.pdfModel = new PDFDocModel(stream);
     this.fingerprint = this.pdfModel.getFingerprint();
+    this.info = this.pdfModel.getDocumentInfo();
     this.catalog = this.pdfModel.catalog;
     this.objs = new PDFObjects();
 
@@ -706,13 +712,13 @@ var PDFDoc = (function PDFDocClosure() {
   }
 
   PDFDoc.prototype = {
-    setupFakeWorker: function() {
+    setupFakeWorker: function PDFDoc_setupFakeWorker() {
       // If we don't use a worker, just post/sendMessage to the main thread.
       var fakeWorker = {
-        postMessage: function pdfDocPostMessage(obj) {
+        postMessage: function PDFDoc_postMessage(obj) {
           fakeWorker.onmessage({data: obj});
         },
-        terminate: function pdfDocTerminate() {}
+        terminate: function PDFDoc_terminate() {}
       };
 
       var messageHandler = new MessageHandler('main', fakeWorker);
@@ -724,7 +730,7 @@ var PDFDoc = (function PDFDocClosure() {
     },
 
 
-    setupMessageHandler: function(messageHandler) {
+    setupMessageHandler: function PDFDoc_setupMessageHandler(messageHandler) {
       this.messageHandler = messageHandler;
 
       messageHandler.on('page', function pdfDocPage(data) {
@@ -823,7 +829,7 @@ var PDFDoc = (function PDFDocClosure() {
       return this.pdfModel.numPages;
     },
 
-    startRendering: function pdfDocStartRendering(page) {
+    startRendering: function PDFDoc_startRendering(page) {
       // The worker might not be ready to receive the page request yet.
       this.workerReadyPromise.then(function pdfDocStartRenderingThen() {
         page.stats.time('Page Request');
@@ -831,7 +837,7 @@ var PDFDoc = (function PDFDocClosure() {
       }.bind(this));
     },
 
-    getPage: function pdfDocGetPage(n) {
+    getPage: function PDFDoc_getPage(n) {
       if (this.pageCache[n])
         return this.pageCache[n];
 
@@ -843,7 +849,7 @@ var PDFDoc = (function PDFDocClosure() {
       return (this.pageCache[n] = page);
     },
 
-    destroy: function pdfDocDestroy() {
+    destroy: function PDFDoc_destroy() {
       if (this.worker)
         this.worker.terminate();
 

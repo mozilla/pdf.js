@@ -11,6 +11,7 @@
         <!-- PDFJSSCRIPT_INCLUDE_BUILD -->
         <script type="text/javascript" src="../src/core.js"></script> <!-- PDFJSSCRIPT_REMOVE_CORE -->
         <script type="text/javascript" src="../src/util.js"></script>  <!-- PDFJSSCRIPT_REMOVE_CORE -->
+        <script type="text/javascript" src="../src/metadata.js"></script>  <!-- PDFJSSCRIPT_REMOVE_CORE -->
         <script type="text/javascript" src="../src/canvas.js"></script>  <!-- PDFJSSCRIPT_REMOVE_CORE -->
         <script type="text/javascript" src="../src/obj.js"></script>  <!-- PDFJSSCRIPT_REMOVE_CORE -->
         <script type="text/javascript" src="../src/function.js"></script> <!-- PDFJSSCRIPT_REMOVE_CORE -->
@@ -142,7 +143,10 @@
       </div>
     </div>
 
-    <div id="loading">Loading... 0%</div>
+    <div id="loadingBox">
+        <div id="loading">Loading... 0%</div>
+        <div id="loadingBar"><div class="progress"></div></div>
+    </div>
     <div id="viewer"></div>
   </body>
 </html>

@@ -23,7 +23,7 @@ setTimeout(function() {
         if (oldTarget.done && !force)
           return;
         oldTarget.done = true;
-        return oldTarget(arguments);
+        return oldTarget.apply(oldTarget, arguments);
       }
 
     })(t, target[t]);
