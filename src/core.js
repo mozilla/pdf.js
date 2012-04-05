@@ -73,13 +73,13 @@ var Page = (function PageClosure() {
 
   Page.prototype = {
     getPageProp: function pageGetPageProp(key) {
-      return this.xref.fetchIfRef(this.pageDict.get(key));
+      return this.pageDict.get(key);
     },
     inheritPageProp: function pageInheritPageProp(key) {
       var dict = this.pageDict;
       var obj = dict.get(key);
       while (obj === undefined) {
-        dict = this.xref.fetchIfRef(dict.get('Parent'));
+        dict = dict.get('Parent');
         if (!dict)
           break;
         obj = dict.get(key);
@@ -199,8 +199,8 @@ var Page = (function PageClosure() {
       this.stats.time('Build IR Queue');
 
       var xref = this.xref;
-      var content = xref.fetchIfRef(this.content);
-      var resources = xref.fetchIfRef(this.resources);
+      var content = this.content;
+      var resources = this.resources;
       if (isArray(content)) {
         // fetching items
         var i, n = content.length;
@@ -242,8 +242,8 @@ var Page = (function PageClosure() {
       var stats = this.stats;
       stats.time('Rendering');
       var xref = this.xref;
-      var resources = xref.fetchIfRef(this.resources);
-      var mediaBox = xref.fetchIfRef(this.mediaBox);
+      var resources = this.resources;
+      var mediaBox = this.mediaBox;
       assertWellFormed(isDict(resources), 'invalid page resources');
 
       gfx.xref = xref;
@@ -307,7 +307,7 @@ var Page = (function PageClosure() {
       function getInheritableProperty(annotation, name) {
         var item = annotation;
         while (item && !item.has(name)) {
-          item = xref.fetchIfRef(item.get('Parent'));
+          item = item.get('Parent');
         }
         if (!item)
           return null;
@@ -330,7 +330,7 @@ var Page = (function PageClosure() {
         }
       }
 
-      var annotations = xref.fetchIfRef(this.annotations) || [];
+      var annotations = this.annotations || [];
       var i, n = annotations.length;
       var items = [];
       for (i = 0; i < n; ++i) {
@@ -353,7 +353,7 @@ var Page = (function PageClosure() {
         item.height = Math.abs(topLeftCorner.y - bottomRightCorner.y);
         switch (subtype.name) {
           case 'Link':
-            var a = this.xref.fetchIfRef(annotation.get('A'));
+            var a = annotation.get('A');
             if (a) {
               switch (a.get('S').name) {
                 case 'URI':
@@ -386,21 +386,22 @@ var Page = (function PageClosure() {
             var fieldName = [];
             var namedItem = annotation, ref = annotationRef;
             while (namedItem) {
-              var parentRef = namedItem.get('Parent');
-              var parent = xref.fetchIfRef(parentRef);
+              var parent = namedItem.get('Parent');
+              var parentRef = namedItem.getRaw('Parent');
               var name = namedItem.get('T');
-              if (name)
+              if (name) {
                 fieldName.unshift(stringToPDFString(name));
-              else {
+              } else {
                 // The field name is absent, that means more than one field
                 // with the same name may exist. Replacing the empty name
                 // with the '`' plus index in the parent's 'Kids' array.
                 // This is not in the PDF spec but necessary to id the
                 // the input controls.
-                var kids = xref.fetchIfRef(parent.get('Kids'));
+                var kids = parent.get('Kids');
                 var j, jj;
                 for (j = 0, jj = kids.length; j < jj; j++) {
-                  if (kids[j].num == ref.num && kids[j].gen == ref.gen)
+                  var kidRef = kids[j];
+                  if (kidRef.num == ref.num && kidRef.gen == ref.gen)
                     break;
                 }
                 fieldName.unshift('`' + j);
@@ -490,7 +491,7 @@ var PDFDocModel = (function PDFDocModelClosure() {
     assertWellFormed(stream.length > 0, 'stream must have data');
     this.stream = stream;
     this.setup();
-    this.acroForm = this.xref.fetchIfRef(this.catalog.catDict.get('AcroForm'));
+    this.acroForm = this.catalog.catDict.get('AcroForm');
   }
 
   function find(stream, needle, limit, backwards) {
@@ -597,7 +598,7 @@ var PDFDocModel = (function PDFDocModelClosure() {
     getDocumentInfo: function pdfDocGetDocumentInfo() {
       var info;
       if (this.xref.trailer.has('Info'))
-        info = this.xref.fetch(this.xref.trailer.get('Info'));
+        info = this.xref.trailer.get('Info');
 
       return shadow(this, 'getDocumentInfo', info);
     },
@@ -605,7 +606,7 @@ var PDFDocModel = (function PDFDocModelClosure() {
       var xref = this.xref, fileID;
       if (xref.trailer.has('ID')) {
         fileID = '';
-        var id = xref.fetchIfRef(xref.trailer.get('ID'))[0];
+        var id = xref.trailer.get('ID')[0];
         id.split('').forEach(function(el) {
           fileID += Number(el.charCodeAt(0)).toString(16);
         });
