@@ -18,7 +18,7 @@ var Metadata = PDFJS.Metadata = (function MetadataClosure() {
   }
 
   Metadata.prototype = {
-    parse: function() {
+    parse: function Metadata_parse() {
       var doc = this.metaDocument;
       var rdf = doc.documentElement;
 
@@ -53,11 +53,11 @@ var Metadata = PDFJS.Metadata = (function MetadataClosure() {
       }
     },
 
-    get: function(name) {
+    get: function Metadata_get(name) {
       return this.metadata[name] || null;
     },
 
-    has: function(name) {
+    has: function Metadata_has(name) {
       return typeof this.metadata[name] !== 'undefined';
     }
   };
