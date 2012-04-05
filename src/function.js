@@ -268,13 +268,13 @@ var PDFFunction = (function PDFFunctionClosure() {
       if (inputSize != 1)
         error('Bad domain for stiched function');
 
-      var fnRefs = xref.fetchIfRef(dict.get('Functions'));
+      var fnRefs = dict.get('Functions');
       var fns = [];
       for (var i = 0, ii = fnRefs.length; i < ii; ++i)
         fns.push(PDFFunction.getIR(xref, xref.fetchIfRef(fnRefs[i])));
 
-      var bounds = xref.fetchIfRef(dict.get('Bounds'));
-      var encode = xref.fetchIfRef(dict.get('Encode'));
+      var bounds = dict.get('Bounds');
+      var encode = dict.get('Encode');
 
       return [CONSTRUCT_STICHED, domain, bounds, encode, fns];
     },
