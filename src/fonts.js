@@ -2975,7 +2975,8 @@ var Type1Parser = function type1Parser() {
     return program;
   };
 
-  this.extractFontHeader = function Type1Parser_extractFontHeader(stream, properties) {
+  this.extractFontHeader = function Type1Parser_extractFontHeader(stream,
+                                                                  properties) {
     var headerString = '';
     for (var i = 0, ii = stream.length; i < ii; i++)
       headerString += String.fromCharCode(stream[i]);
@@ -3143,7 +3144,8 @@ var Type1Font = function Type1Font(name, file, properties) {
 };
 
 Type1Font.prototype = {
-  createCFFIndexHeader: function Type1Font_createCFFIndexHeader(objects, isByte) {
+  createCFFIndexHeader: function Type1Font_createCFFIndexHeader(objects,
+                                                                isByte) {
     // First 2 bytes contains the number of objects contained into this index
     var count = objects.length;
 
@@ -3223,7 +3225,8 @@ Type1Font.prototype = {
     return charstrings;
   },
 
-  getType2Charstrings: function Type1Font_getType2Charstrings(type1Charstrings) {
+  getType2Charstrings: function Type1Font_getType2Charstrings(
+                                  type1Charstrings) {
     var type2Charstrings = [];
     var count = type1Charstrings.length;
     for (var i = 0; i < count; i++) {
