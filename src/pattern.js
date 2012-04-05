@@ -26,7 +26,8 @@ var Pattern = (function PatternClosure() {
     return Shadings[raw[0]].fromIR(raw);
   };
 
-  Pattern.parseShading = function Pattern_parseShading(shading, matrix, xref, res) {
+  Pattern.parseShading = function Pattern_parseShading(shading, matrix, xref,
+                                                       res) {
 
     var dict = isStream(shading) ? shading.dict : shading;
     var type = dict.get('ShadingType');
