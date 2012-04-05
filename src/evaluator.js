@@ -133,16 +133,14 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         }
       }
 
-      function handleSetFont(fontName, fontRef) {
+      function handleSetFont(fontName, font) {
         var loadedName = null;
 
         var fontRes = resources.get('Font');
 
         assert(fontRes, 'fontRes not available');
 
-        fontRes = xref.fetchIfRef(fontRes);
-        fontRef = fontRef || fontRes.get(fontName);
-        var font = xref.fetchIfRef(fontRef);
+        font = xref.fetchIfRef(font) || fontRes.get(fontName);
         assertWellFormed(isDict(font));
         if (!font.translated) {
           font.translated = self.translateFont(font, xref, resources,
@@ -252,10 +250,10 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       var fnArray = queue.fnArray, argsArray = queue.argsArray;
       var dependencyArray = dependency || [];
 
-      resources = xref.fetchIfRef(resources) || new Dict();
-      var xobjs = xref.fetchIfRef(resources.get('XObject')) || new Dict();
-      var patterns = xref.fetchIfRef(resources.get('Pattern')) || new Dict();
-      var parser = new Parser(new Lexer(stream), false);
+      resources = resources || new Dict();
+      var xobjs = resources.get('XObject') || new Dict();
+      var patterns = resources.get('Pattern') || new Dict();
+      var parser = new Parser(new Lexer(stream), false, xref);
       var res = resources;
       var args = [], obj;
       var getObjBt = function getObjBt() {
@@ -287,7 +285,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
             var patternName = args[args.length - 1];
             // SCN/scn applies patterns along with normal colors
             if (isName(patternName)) {
-              var pattern = xref.fetchIfRef(patterns.get(patternName.name));
+              var pattern = patterns.get(patternName.name);
               if (pattern) {
                 var dict = isStream(pattern) ? pattern.dict : pattern;
                 var typeNum = dict.get('PatternType');
@@ -305,7 +303,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                   args = TilingPattern.getIR(operatorList, dict, args);
                 }
                 else if (typeNum == SHADING_PATTERN) {
-                  var shading = xref.fetchIfRef(dict.get('Shading'));
+                  var shading = dict.get('Shading');
                   var matrix = dict.get('Matrix');
                   var pattern = Pattern.parseShading(shading, matrix, xref, res,
                                                                   null /*ctx*/);
@@ -320,7 +318,6 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
             var name = args[0].name;
             var xobj = xobjs.get(name);
             if (xobj) {
-              xobj = xref.fetchIfRef(xobj);
               assertWellFormed(isStream(xobj), 'XObject should be a stream');
 
               var type = xobj.dict.get('Subtype');
@@ -371,11 +368,11 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
               args = [ColorSpace.parseToIR(args[0], xref, resources)];
               break;
             case 'shadingFill':
-              var shadingRes = xref.fetchIfRef(res.get('Shading'));
+              var shadingRes = res.get('Shading');
               if (!shadingRes)
                 error('No shading resource found');
 
-              var shading = xref.fetchIfRef(shadingRes.get(args[0].name));
+              var shading = shadingRes.get(args[0].name);
               if (!shading)
                 error('No shading object found');
 
@@ -387,12 +384,12 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
               break;
             case 'setGState':
               var dictName = args[0];
-              var extGState = xref.fetchIfRef(resources.get('ExtGState'));
+              var extGState = resources.get('ExtGState');
 
               if (!isDict(extGState) || !extGState.has(dictName.name))
                 break;
 
-              var gsState = xref.fetchIfRef(extGState.get(dictName.name));
+              var gsState = extGState.get(dictName.name);
 
               // This array holds the converted/processed state data.
               var gsStateObj = [];
@@ -471,7 +468,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
 
       if (properties.composite) {
         // CIDSystemInfo helps to match CID to glyphs
-        var cidSystemInfo = xref.fetchIfRef(dict.get('CIDSystemInfo'));
+        var cidSystemInfo = dict.get('CIDSystemInfo');
         if (isDict(cidSystemInfo)) {
           properties.cidSystemInfo = {
             registry: cidSystemInfo.get('Registry'),
@@ -480,7 +477,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           };
         }
 
-        var cidToGidMap = xref.fetchIfRef(dict.get('CIDToGIDMap'));
+        var cidToGidMap = dict.get('CIDToGIDMap');
         if (isStream(cidToGidMap))
           properties.cidToGidMap = this.readCidToGidMap(cidToGidMap);
       }
@@ -491,7 +488,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                          Encodings.symbolsEncoding : Encodings.StandardEncoding;
       var hasEncoding = dict.has('Encoding');
       if (hasEncoding) {
-        var encoding = xref.fetchIfRef(dict.get('Encoding'));
+        var encoding = dict.get('Encoding');
         if (isDict(encoding)) {
           var baseName = encoding.get('BaseEncoding');
           if (baseName)
@@ -524,7 +521,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
     },
 
     readToUnicode: function PartialEvaluator_readToUnicode(toUnicode, xref) {
-      var cmapObj = xref.fetchIfRef(toUnicode);
+      var cmapObj = toUnicode;
       var charToUnicode = [];
       if (isName(cmapObj)) {
         var isIdentityMap = cmapObj.name.substr(0, 9) == 'Identity-';
@@ -666,9 +663,9 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       var glyphsWidths = [];
       var defaultWidth = 0;
       if (properties.composite) {
-        defaultWidth = xref.fetchIfRef(dict.get('DW')) || 1000;
+        defaultWidth = dict.get('DW') || 1000;
 
-        var widths = xref.fetchIfRef(dict.get('W'));
+        var widths = dict.get('W');
         if (widths) {
           var start = 0, end = 0;
           for (var i = 0, ii = widths.length; i < ii; i++) {
@@ -689,7 +686,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         }
       } else {
         var firstChar = properties.firstChar;
-        var widths = xref.fetchIfRef(dict.get('Widths'));
+        var widths = dict.get('Widths');
         if (widths) {
           var j = firstChar;
           for (var i = 0, ii = widths.length; i < ii; i++)
@@ -744,10 +741,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         if (!df)
           return null;
 
-        if (isRef(df))
-          df = xref.fetch(df);
-
-        dict = xref.fetchIfRef(isRef(df) ? df : df[0]);
+        dict = isArray(df) ? xref.fetchIfRef(df[0]) : df;
 
         type = dict.get('Subtype');
         assertWellFormed(isName(type), 'invalid font Subtype');
@@ -755,7 +749,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       }
       var maxCharIndex = composite ? 0xFFFF : 0xFF;
 
-      var descriptor = xref.fetchIfRef(dict.get('FontDescriptor'));
+      var descriptor = dict.get('FontDescriptor');
       if (!descriptor) {
         if (type.name == 'Type3') {
           // FontDescriptor is only required for Type3 fonts when the document
@@ -804,9 +798,9 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       // to ignore this rule when a variant of a standart font is used.
       // TODO Fill the width array depending on which of the base font this is
       // a variant.
-      var firstChar = xref.fetchIfRef(dict.get('FirstChar')) || 0;
-      var lastChar = xref.fetchIfRef(dict.get('LastChar')) || maxCharIndex;
-      var fontName = xref.fetchIfRef(descriptor.get('FontName'));
+      var firstChar = dict.get('FirstChar') || 0;
+      var lastChar = dict.get('LastChar') || maxCharIndex;
+      var fontName = descriptor.get('FontName');
       // Some bad pdf's have a string as the font name.
       if (isString(fontName))
         fontName = new Name(fontName);
@@ -814,19 +808,14 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
 
       var fontFile = descriptor.get('FontFile', 'FontFile2', 'FontFile3');
       if (fontFile) {
-        fontFile = xref.fetchIfRef(fontFile);
         if (fontFile.dict) {
           var subtype = fontFile.dict.get('Subtype');
           if (subtype)
             subtype = subtype.name;
 
           var length1 = fontFile.dict.get('Length1');
-          if (!isInt(length1))
-            length1 = xref.fetchIfRef(length1);
 
           var length2 = fontFile.dict.get('Length2');
-          if (!isInt(length2))
-            length2 = xref.fetchIfRef(length2);
         }
       }
 
@@ -855,12 +844,12 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
 
       if (type.name === 'Type3') {
         properties.coded = true;
-        var charProcs = xref.fetchIfRef(dict.get('CharProcs'));
-        var fontResources = xref.fetchIfRef(dict.get('Resources')) || resources;
+        var charProcs = dict.get('CharProcs').getAll();
+        var fontResources = dict.get('Resources') || resources;
         properties.resources = fontResources;
         properties.charProcOperatorList = {};
-        for (var key in charProcs.map) {
-          var glyphStream = xref.fetchIfRef(charProcs.map[key]);
+        for (var key in charProcs) {
+          var glyphStream = charProcs[key];
           properties.charProcOperatorList[key] =
             this.getOperatorList(glyphStream, fontResources, dependency);
         }

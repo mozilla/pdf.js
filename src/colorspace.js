@@ -70,7 +70,7 @@ var ColorSpace = (function ColorSpaceClosure() {
 
   ColorSpace.parseToIR = function ColorSpace_parseToIR(cs, xref, res) {
     if (isName(cs)) {
-      var colorSpaces = xref.fetchIfRef(res.get('ColorSpace'));
+      var colorSpaces = res.get('ColorSpace');
       if (isDict(colorSpaces)) {
         var refcs = colorSpaces.get(cs.name);
         if (refcs)
@@ -152,7 +152,7 @@ var ColorSpace = (function ColorSpaceClosure() {
           var tintFnIR = PDFFunction.getIR(xref, xref.fetchIfRef(cs[3]));
           return ['AlternateCS', numComps, alt, tintFnIR];
         case 'Lab':
-          var params = cs[1].map;
+          var params = cs[1].getAll();
           return ['LabCS', params];
         default:
           error('unimplemented color space object "' + mode + '"');
