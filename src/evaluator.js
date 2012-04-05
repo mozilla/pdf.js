@@ -322,8 +322,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                 else if (typeNum == SHADING_PATTERN) {
                   var shading = dict.get('Shading');
                   var matrix = dict.get('Matrix');
-                  var pattern = Pattern.parseShading(shading, matrix, xref, res,
-                                                                  null /*ctx*/);
+                  var pattern = Pattern.parseShading(shading, matrix, xref,
+                                                     res);
                   args = pattern.getIR();
                 } else {
                   error('Unkown PatternType ' + typeNum);
@@ -393,8 +393,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
               if (!shading)
                 error('No shading object found');
 
-              var shadingFill = Pattern.parseShading(shading, null, xref, res,
-                                                      null);
+              var shadingFill = Pattern.parseShading(shading, null, xref, res);
               var patternIR = shadingFill.getIR();
               args = [patternIR];
               fn = 'shadingFill';

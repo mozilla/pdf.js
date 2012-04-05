@@ -565,5 +565,11 @@
       "rounds": 1,
       "link": true,
       "type": "eq"
+    },
+    {  "id": "gradientfill",
+      "file": "pdfs/gradientfill.pdf",
+      "md5": "cbc1988e4803f647fa83467a85f0e231",
+      "rounds": 1,
+      "type": "eq"
     }
 ]
