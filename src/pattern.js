@@ -22,12 +22,12 @@ var Pattern = (function PatternClosure() {
     }
   };
 
-  Pattern.shadingFromIR = function Pattern_shadingFromIR(ctx, raw) {
-    return Shadings[raw[0]].fromIR(ctx, raw);
+  Pattern.shadingFromIR = function Pattern_shadingFromIR(raw) {
+    return Shadings[raw[0]].fromIR(raw);
   };
 
   Pattern.parseShading = function Pattern_parseShading(shading, matrix, xref,
-                                                      res, ctx) {
+                                                       res) {
 
     var dict = isStream(shading) ? shading.dict : shading;
     var type = dict.get('ShadingType');
@@ -36,7 +36,7 @@ var Pattern = (function PatternClosure() {
       case PatternType.AXIAL:
       case PatternType.RADIAL:
         // Both radial and axial shadings are handled by RadialAxial shading.
-        return new Shadings.RadialAxial(dict, matrix, xref, res, ctx);
+        return new Shadings.RadialAxial(dict, matrix, xref, res);
       default:
         return new Shadings.Dummy();
     }
@@ -101,36 +101,40 @@ Shadings.RadialAxial = (function RadialAxialClosure() {
     this.colorStops = colorStops;
   }
 
-  RadialAxial.fromIR = function RadialAxial_fromIR(ctx, raw) {
+  RadialAxial.fromIR = function RadialAxial_fromIR(raw) {
     var type = raw[1];
     var colorStops = raw[2];
     var p0 = raw[3];
     var p1 = raw[4];
     var r0 = raw[5];
     var r1 = raw[6];
+    return {
+      type: 'Pattern',
+      getPattern: function(ctx) {
+        var curMatrix = ctx.mozCurrentTransform;
+        if (curMatrix) {
+          var userMatrix = ctx.mozCurrentTransformInverse;
 
-    var curMatrix = ctx.mozCurrentTransform;
-    if (curMatrix) {
-      var userMatrix = ctx.mozCurrentTransformInverse;
+          p0 = Util.applyTransform(p0, curMatrix);
+          p0 = Util.applyTransform(p0, userMatrix);
 
-      p0 = Util.applyTransform(p0, curMatrix);
-      p0 = Util.applyTransform(p0, userMatrix);
+          p1 = Util.applyTransform(p1, curMatrix);
+          p1 = Util.applyTransform(p1, userMatrix);
+        }
 
-      p1 = Util.applyTransform(p1, curMatrix);
-      p1 = Util.applyTransform(p1, userMatrix);
-    }
+        var grad;
+        if (type == PatternType.AXIAL)
+          grad = ctx.createLinearGradient(p0[0], p0[1], p1[0], p1[1]);
+        else if (type == PatternType.RADIAL)
+          grad = ctx.createRadialGradient(p0[0], p0[1], r0, p1[0], p1[1], r1);
 
-    var grad;
-    if (type == PatternType.AXIAL)
-      grad = ctx.createLinearGradient(p0[0], p0[1], p1[0], p1[1]);
-    else if (type == PatternType.RADIAL)
-      grad = ctx.createRadialGradient(p0[0], p0[1], r0, p1[0], p1[1], r1);
-
-    for (var i = 0, ii = colorStops.length; i < ii; ++i) {
-      var c = colorStops[i];
-      grad.addColorStop(c[0], c[1]);
-    }
-    return grad;
+        for (var i = 0, ii = colorStops.length; i < ii; ++i) {
+          var c = colorStops[i];
+          grad.addColorStop(c[0], c[1]);
+        }
+        return grad;
+      }
+    };
   };
 
   RadialAxial.prototype = {
