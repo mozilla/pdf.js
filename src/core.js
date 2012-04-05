@@ -596,8 +596,15 @@ var PDFDocModel = (function PDFDocModelClosure() {
     },
     getDocumentInfo: function PDFDocModel_getDocumentInfo() {
       var info;
-      if (this.xref.trailer.has('Info'))
-        info = this.xref.fetch(this.xref.trailer.get('Info'));
+      if (this.xref.trailer.has('Info')) {
+        var infoDict = this.xref.fetch(this.xref.trailer.get('Info'));
+
+        info = {};
+        infoDict.forEach(function(key, value) {
+          info[key] = typeof value !== 'string' ? value :
+            stringToPDFString(value);
+        });
+      }
 
       return shadow(this, 'getDocumentInfo', info);
     },
