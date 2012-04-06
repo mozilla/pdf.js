@@ -575,7 +575,7 @@ var PDFView = {
       pdfTitle = info['Title'];
 
     if (pdfTitle)
-      document.title = pdfTitle;
+      document.title = pdfTitle + ' - ' + document.title;
   },
 
   setHash: function pdfViewSetHash(hash) {
