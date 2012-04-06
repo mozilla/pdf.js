@@ -310,8 +310,9 @@ var PDFView = {
 
   open: function pdfViewOpen(url, scale) {
     this.url = url;
+    var filename = decodeURIComponent(getFileName(url)) || url;
 
-    document.title = decodeURIComponent(getFileName(url)) || url;
+    document.title = filename;
 
     if (!PDFView.loadingBar) {
       PDFView.loadingBar = new ProgressBar('#loadingBar', {});
@@ -571,11 +572,12 @@ var PDFView = {
         pdfTitle = metadata.get('dc:title');
     }
 
-    if (!pdfTitle && info && info['Title'])
+    if ((!pdfTitle || pdfTitle === '()') && info && info['Title'])
       pdfTitle = info['Title'];
 
-    if (pdfTitle)
-      document.title = pdfTitle;
+    if (pdfTitle) {
+      document.title = (pdfTitle === '()') ? filename : pdfTitle;
+    }
   },
 
   setHash: function pdfViewSetHash(hash) {
