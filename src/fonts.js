@@ -1727,6 +1727,16 @@ var Font = (function FontClosure() {
         properties.glyphNames = glyphNames;
       }
 
+      function isOS2Valid(os2Table) {
+        var data = os2Table.data;
+        // usWinAscent == 0 makes font unreadable by windows
+        var usWinAscent = (data[74] << 8) | data[75];
+        if (usWinAscent == 0)
+          return false;
+
+        return true;
+      }
+
       // Check that required tables are present
       var requiredTables = ['OS/2', 'cmap', 'head', 'hhea',
                              'hmtx', 'maxp', 'name', 'post'];
@@ -1734,7 +1744,7 @@ var Font = (function FontClosure() {
       var header = readOpenTypeHeader(font);
       var numTables = header.numTables;
 
-      var cmap, post, maxp, hhea, hmtx, vhea, vmtx, head, loca, glyf;
+      var cmap, post, maxp, hhea, hmtx, vhea, vmtx, head, loca, glyf, os2;
       var tables = [];
       for (var i = 0; i < numTables; i++) {
         var table = readTableEntry(font);
@@ -1752,6 +1762,8 @@ var Font = (function FontClosure() {
             hmtx = table;
           else if (table.tag == 'head')
             head = table;
+          else if (table.tag == 'OS/2')
+            os2 = table;
 
           requiredTables.splice(index, 1);
         } else {
@@ -1767,7 +1779,7 @@ var Font = (function FontClosure() {
         tables.push(table);
       }
 
-      var numTables = header.numTables + requiredTables.length;
+      var numTables = tables.length + requiredTables.length;
 
       // header and new offsets. Table entry information is appended to the
       // end of file. The virtualOffset represents where to put the actual
@@ -1781,21 +1793,10 @@ var Font = (function FontClosure() {
       // of missing tables
       createOpenTypeHeader(header.version, ttf, numTables);
 
-      if (requiredTables.indexOf('OS/2') != -1) {
-        // extract some more font properties from the OpenType head and
-        // hhea tables; yMin and descent value are always negative
-        var override = {
-          unitsPerEm: int16([head.data[18], head.data[19]]),
-          yMax: int16([head.data[42], head.data[43]]),
-          yMin: int16([head.data[38], head.data[39]]) - 0x10000,
-          ascent: int16([hhea.data[4], hhea.data[5]]),
-          descent: int16([hhea.data[6], hhea.data[7]]) - 0x10000
-        };
-
-        tables.push({
-          tag: 'OS/2',
-          data: stringToArray(createOS2Table(properties, null, override))
-        });
+      // Invalid OS/2 can break the font for the Windows
+      if (os2 && !isOS2Valid(os2)) {
+        tables.splice(tables.indexOf(os2), 1);
+        os2 = null;
       }
 
       // Ensure the [h/v]mtx tables contains the advance width and
@@ -2075,6 +2076,23 @@ var Font = (function FontClosure() {
         unicodeIsEnabled[glyphs[i].unicode] = true;
       }
       this.unicodeIsEnabled = unicodeIsEnabled;
+
+      if (!os2) {
+        // extract some more font properties from the OpenType head and
+        // hhea tables; yMin and descent value are always negative
+        var override = {
+          unitsPerEm: int16([head.data[18], head.data[19]]),
+          yMax: int16([head.data[42], head.data[43]]),
+          yMin: int16([head.data[38], head.data[39]]) - 0x10000,
+          ascent: int16([hhea.data[4], hhea.data[5]]),
+          descent: int16([hhea.data[6], hhea.data[7]]) - 0x10000
+        };
+
+        tables.push({
+          tag: 'OS/2',
+          data: stringToArray(createOS2Table(properties, glyphs, override))
+        });
+      }
 
       // Rewrite the 'post' table if needed
       if (requiredTables.indexOf('post') != -1) {
