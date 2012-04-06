@@ -572,11 +572,11 @@ var PDFView = {
         pdfTitle = metadata.get('dc:title');
     }
 
-    if ((!pdfTitle || pdfTitle === '()') && info && info['Title'])
+    if (!pdfTitle && info && info['Title'])
       pdfTitle = info['Title'];
 
     if (pdfTitle) {
-      document.title = (pdfTitle === '()') ? filename : pdfTitle;
+      document.title = pdfTitle + ' - ' + document.title;
     }
   },
 
