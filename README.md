@@ -71,22 +71,16 @@ This will generate the file `build/pdf.js` that can be included in your final pr
 
 # Learning
 
-Here are some initial pointers to help contributors get off the ground. 
-Additional resources are available in a separate section below.
+You can play with the PDF.js API directly from your browser through the live demos below:
 
-### Hello world
++ Hello world: http://jsbin.com/pdfjs-helloworld/edit#html,live
++ Simple reader with prev/next page controls: http://jsbin.com/pdfjs-prevnext/edit#html,live
 
-For a "hello world" example, take a look at:
+The repo contains a hello world example that you can run locally:
 
 + [examples/helloworld/hello.js](https://github.com/mozilla/pdf.js/blob/master/examples/helloworld/hello.js)
 
-This example illustrates the bare minimum ingredients for integrating pdf.js
-in a custom project.
-
-### Introductory video
-
-Check out the presentation by our contributor Julian Viereck on the inner 
-workings of PDF and pdf.js:
+For an introduction to the PDF.js code, check out the presentation by our contributor Julian Viereck:
 
 + http://www.youtube.com/watch?v=Iv15UY-4Fg8
 
