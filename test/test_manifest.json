@@ -19,7 +19,7 @@
     },
     {  "id": "intelisa-eq",
        "file": "pdfs/intelisa.pdf",
-       "md5": "83032ccbfdc5a66269b1403971110abe",
+       "md5": "c1444b7ccd935c0577d094297e1a6448",
        "link": true,
        "pageLimit": 100,
        "rounds": 1,
@@ -34,7 +34,7 @@
     },
     {  "id": "shavian-load",
        "file": "pdfs/shavian.pdf",
-       "md5": "4fabf0a03e82693007435020bc446f9b",
+       "md5": "79253352f48b55b7fa28a2586875d8b7",
        "link": true,
        "rounds": 1,
        "type": "load"
@@ -243,7 +243,7 @@
     },
     {  "id": "tcpdf_033",
        "file": "pdfs/tcpdf_033.pdf",
-       "md5": "861294df58d185aae80919173f2732ff",
+       "md5": "d7d9165a5e37029a67308a4dec3a8aeb",
        "link": true,
        "rounds": 1,
        "type": "eq"
