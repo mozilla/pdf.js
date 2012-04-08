@@ -248,16 +248,21 @@ function done() {
   }
 }
 
-function sendTaskResult(snapshot, task, failure) {
-  var result = { browser: browser,
-                 id: task.id,
-                 numPages: task.pdfDoc ?
-                           (task.pageLimit || task.pdfDoc.numPages) : 0,
-                 failure: failure,
-                 file: task.file,
-                 round: task.round,
-                 page: task.pageNum,
-                 snapshot: snapshot };
+function sendTaskResult(snapshot, task, failure, result) {
+  // Optional result argument is for retrying XHR requests - see below
+  if (!result) {
+    result = JSON.stringify({
+      browser: browser,
+      id: task.id,
+      numPages: task.pdfDoc ?
+               (task.pageLimit || task.pdfDoc.numPages) : 0,
+      failure: failure,
+      file: task.file,
+      round: task.round,
+      page: task.pageNum,
+      snapshot: snapshot
+    });
+  }
 
   var r = new XMLHttpRequest();
   // (The POST URI is ignored atm.)
@@ -266,10 +271,13 @@ function sendTaskResult(snapshot, task, failure) {
   r.onreadystatechange = function sendTaskResultOnreadystatechange(e) {
     if (r.readyState == 4) {
       inFlightRequests--;
+      // Retry until successful
+      if (r.status !== 200)
+        sendTaskResult(null, null, null, result);
     }
   };
   document.getElementById('inFlightCount').innerHTML = inFlightRequests++;
-  r.send(JSON.stringify(result));
+  r.send(result);
 }
 
 function clear(ctx) {

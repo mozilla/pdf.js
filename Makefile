@@ -38,6 +38,8 @@ PDF_JS_FILES = \
   worker.js \
   ../external/jpgjs/jpg.js \
   jpx.js \
+  bidi.js \
+  metadata.js \
 	$(NULL)
 
 # make server
@@ -59,7 +61,7 @@ test: shell-test browser-test
 production: | bundle
 	@echo "Preparing web/viewer-production.html"; \
 	cd web; \
-	sed '/PDFJSSCRIPT_REMOVE/d' viewer.html > viewer-1.tmp; \
+	sed '/PDFJSSCRIPT_REMOVE_CORE/d' viewer.html > viewer-1.tmp; \
 	sed '/PDFJSSCRIPT_INCLUDE_BUILD/ r viewer-snippet.html' viewer-1.tmp > viewer-production.html; \
 	rm -f *.tmp; \
 	cd ..
@@ -143,9 +145,9 @@ browser-test:
 # To install gjslint, see:
 #
 # <http://code.google.com/closure/utilities/docs/linter_howto.html>
-SRC_DIRS := . src utils web test examples/helloworld extensions/firefox \
+SRC_DIRS := src utils web test examples/helloworld extensions/firefox \
             extensions/firefox/components extensions/chrome test/unit
-GJSLINT_FILES = $(foreach DIR,$(SRC_DIRS),$(wildcard $(DIR)/*.js))
+GJSLINT_FILES = $(foreach DIR, $(SRC_DIRS), $(wildcard $(DIR)/*.js))
 lint:
 	gjslint --nojsdoc $(GJSLINT_FILES)
 
@@ -209,12 +211,14 @@ pages-repo: | $(BUILD_DIR)
 # copy of the pdf.js source.
 CONTENT_DIR := content
 BUILD_NUMBER := `git log --format=oneline $(EXTENSION_BASE_VERSION).. | wc -l | awk '{print $$1}'`
-PDF_WEB_FILES = \
+PDFJSSCRIPT_VERSION := 0.2.$(BUILD_NUMBER)
+EXTENSION_WEB_FILES = \
 	web/images \
-	web/compatibility.js \
 	web/viewer.css \
 	web/viewer.js \
+	web/viewer.html \
 	web/viewer-production.html \
+	web/debugger.js \
 	$(NULL)
 
 FIREFOX_BUILD_DIR := $(BUILD_DIR)/firefox
@@ -223,16 +227,28 @@ FIREFOX_CONTENT_DIR := $(EXTENSION_SRC)/firefox/$(CONTENT_DIR)/
 FIREFOX_EXTENSION_FILES_TO_COPY = \
 	*.js \
 	*.rdf \
-	chrome.manifest \
+	*.png \
+	install.rdf.in \
+	README.mozilla \
 	components \
+	../../LICENSE \
 	$(NULL)
 FIREFOX_EXTENSION_FILES = \
-	content \
-	*.js \
+	bootstrap.js \
 	install.rdf \
-	chrome.manifest \
+	icon.png \
+	icon64.png \
 	components \
 	content \
+	LICENSE \
+	$(NULL)
+FIREFOX_MC_EXTENSION_FILES = \
+	bootstrap.js \
+	icon.png \
+	icon64.png \
+	components \
+	content \
+	LICENSE \
 	$(NULL)
 
 CHROME_BUILD_DIR := $(BUILD_DIR)/chrome
@@ -251,12 +267,26 @@ extension: | production
 	@cd extensions/firefox; cp -r $(FIREFOX_EXTENSION_FILES_TO_COPY) ../../$(FIREFOX_BUILD_DIR)/
 	# Copy a standalone version of pdf.js inside the content directory
 	@cp $(BUILD_TARGET) $(FIREFOX_BUILD_CONTENT)/$(BUILD_DIR)/
-	@cp -r $(PDF_WEB_FILES) $(FIREFOX_BUILD_CONTENT)/web/
-	@mv -f $(FIREFOX_BUILD_CONTENT)/web/viewer-production.html $(FIREFOX_BUILD_CONTENT)/web/viewer.html
+	@cp -r $(EXTENSION_WEB_FILES) $(FIREFOX_BUILD_CONTENT)/web/
+	@rm $(FIREFOX_BUILD_CONTENT)/web/viewer-production.html
+	# Copy over the firefox extension snippet so we can inline pdf.js in it
+	@cp web/viewer-snippet-firefox-extension.html $(FIREFOX_BUILD_CONTENT)/web/
+	# Modify the viewer so it does all the extension only stuff.
+	@cd $(FIREFOX_BUILD_CONTENT)/web; \
+	sed -i.bak '/PDFJSSCRIPT_INCLUDE_BUNDLE/ r ../build/pdf.js' viewer-snippet-firefox-extension.html; \
+	sed -i.bak '/PDFJSSCRIPT_REMOVE_CORE/d' viewer.html; \
+	sed -i.bak '/PDFJSSCRIPT_REMOVE_FIREFOX_EXTENSION/d' viewer.html; \
+	sed -i.bak '/PDFJSSCRIPT_INCLUDE_FIREFOX_EXTENSION/ r viewer-snippet-firefox-extension.html' viewer.html; \
+	rm -f *.bak;
+	# We don't need pdf.js anymore since its inlined
+	@rm -Rf $(FIREFOX_BUILD_CONTENT)/$(BUILD_DIR)/;
 	# Update the build version number
-	@sed -i.bak "s/PDFJSSCRIPT_BUILD/$(BUILD_NUMBER)/" $(FIREFOX_BUILD_DIR)/install.rdf
-	@sed -i.bak "s/PDFJSSCRIPT_BUILD/$(BUILD_NUMBER)/" $(FIREFOX_BUILD_DIR)/update.rdf
+	@sed -i.bak "s/PDFJSSCRIPT_VERSION/$(PDFJSSCRIPT_VERSION)/" $(FIREFOX_BUILD_DIR)/install.rdf
+	@sed -i.bak "s/PDFJSSCRIPT_VERSION/$(PDFJSSCRIPT_VERSION)/" $(FIREFOX_BUILD_DIR)/install.rdf.in
+	@sed -i.bak "s/PDFJSSCRIPT_VERSION/$(PDFJSSCRIPT_VERSION)/" $(FIREFOX_BUILD_DIR)/update.rdf
+	@sed -i.bak "s/PDFJSSCRIPT_VERSION/$(PDFJSSCRIPT_VERSION)/" $(FIREFOX_BUILD_DIR)/README.mozilla
 	@rm -f $(FIREFOX_BUILD_DIR)/*.bak
+	@find $(FIREFOX_BUILD_DIR) -name ".*" -delete
 	# Create the xpi
 	@cd $(FIREFOX_BUILD_DIR); zip -r $(FIREFOX_EXTENSION_NAME) $(FIREFOX_EXTENSION_FILES)
 	@echo "extension created: " $(FIREFOX_EXTENSION_NAME)
@@ -265,6 +295,8 @@ extension: | production
 	@rm -f $(FIREFOX_BUILD_DIR)/*.bak
 	@cd $(FIREFOX_BUILD_DIR); zip -r $(FIREFOX_AMO_EXTENSION_NAME) $(FIREFOX_EXTENSION_FILES)
 	@echo "AMO extension created: " $(FIREFOX_AMO_EXTENSION_NAME)
+	# List all files for mozilla-central
+	@cd $(FIREFOX_BUILD_DIR); find $(FIREFOX_MC_EXTENSION_FILES) -type f > extension-files
 
 	# Clear out everything in the chrome extension build directory
 	@rm -Rf $(CHROME_BUILD_DIR)
@@ -274,7 +306,7 @@ extension: | production
 	@cp -R $(CHROME_EXTENSION_FILES) $(CHROME_BUILD_DIR)/
 	# Copy a standalone version of pdf.js inside the content directory
 	@cp $(BUILD_TARGET) $(CHROME_BUILD_CONTENT)/$(BUILD_DIR)/
-	@cp -r $(PDF_WEB_FILES) $(CHROME_BUILD_CONTENT)/web/
+	@cp -r $(EXTENSION_WEB_FILES) $(CHROME_BUILD_CONTENT)/web/
 	@mv -f $(CHROME_BUILD_CONTENT)/web/viewer-production.html $(CHROME_BUILD_CONTENT)/web/viewer.html
 
   # Create the crx

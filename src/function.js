@@ -10,7 +10,7 @@ var PDFFunction = (function PDFFunctionClosure() {
   var CONSTRUCT_POSTSCRIPT = 4;
 
   return {
-    getSampleArray: function pdfFunctionGetSampleArray(size, outputSize, bps,
+    getSampleArray: function PDFFunction_getSampleArray(size, outputSize, bps,
                                                        str) {
       var length = 1;
       for (var i = 0, ii = size.length; i < ii; i++)
@@ -38,7 +38,7 @@ var PDFFunction = (function PDFFunctionClosure() {
       return array;
     },
 
-    getIR: function pdfFunctionGetIR(xref, fn) {
+    getIR: function PDFFunction_getIR(xref, fn) {
       var dict = fn.dict;
       if (!dict)
         dict = fn;
@@ -57,7 +57,7 @@ var PDFFunction = (function PDFFunctionClosure() {
       return typeFn.call(this, fn, dict, xref);
     },
 
-    fromIR: function pdfFunctionFromIR(IR) {
+    fromIR: function PDFFunction_fromIR(IR) {
       var type = IR[0];
       switch (type) {
         case CONSTRUCT_SAMPLED:
@@ -72,16 +72,16 @@ var PDFFunction = (function PDFFunctionClosure() {
       }
     },
 
-    parse: function pdfFunctionParse(xref, fn) {
+    parse: function PDFFunction_parse(xref, fn) {
       var IR = this.getIR(xref, fn);
       return this.fromIR(IR);
     },
 
-    constructSampled: function pdfFunctionConstructSampled(str, dict) {
+    constructSampled: function PDFFunction_constructSampled(str, dict) {
       function toMultiArray(arr) {
         var inputLength = arr.length;
         var outputLength = arr.length / 2;
-        var out = new Array(outputLength);
+        var out = [];
         var index = 0;
         for (var i = 0; i < inputLength; i += 2) {
           out[index] = [arr[i], arr[i + 1]];
@@ -125,114 +125,104 @@ var PDFFunction = (function PDFFunctionClosure() {
       else
         decode = toMultiArray(decode);
 
-      // Precalc the multipliers
-      var inputMul = new Float64Array(inputSize);
-      for (var i = 0; i < inputSize; ++i) {
-        inputMul[i] = (encode[i][1] - encode[i][0]) /
-                  (domain[i][1] - domain[i][0]);
-      }
-
-      var idxMul = new Int32Array(inputSize);
-      idxMul[0] = outputSize;
-      for (i = 1; i < inputSize; ++i) {
-        idxMul[i] = idxMul[i - 1] * size[i - 1];
-      }
-
-      var nSamples = outputSize;
-      for (i = 0; i < inputSize; ++i)
-          nSamples *= size[i];
-
       var samples = this.getSampleArray(size, outputSize, bps, str);
 
       return [
         CONSTRUCT_SAMPLED, inputSize, domain, encode, decode, samples, size,
-        outputSize, bps, range, inputMul, idxMul, nSamples
+        outputSize, Math.pow(2, bps) - 1, range
       ];
     },
 
-    constructSampledFromIR: function pdfFunctionConstructSampledFromIR(IR) {
-      var inputSize = IR[1];
-      var domain = IR[2];
-      var encode = IR[3];
-      var decode = IR[4];
-      var samples = IR[5];
-      var size = IR[6];
-      var outputSize = IR[7];
-      var bps = IR[8];
-      var range = IR[9];
-      var inputMul = IR[10];
-      var idxMul = IR[11];
-      var nSamples = IR[12];
+    constructSampledFromIR: function PDFFunction_constructSampledFromIR(IR) {
+      // See chapter 3, page 109 of the PDF reference
+      function interpolate(x, xmin, xmax, ymin, ymax) {
+        return ymin + ((x - xmin) * ((ymax - ymin) / (xmax - xmin)));
+      }
 
       return function constructSampledFromIRResult(args) {
-        if (inputSize != args.length)
+        // See chapter 3, page 110 of the PDF reference.
+        var m = IR[1];
+        var domain = IR[2];
+        var encode = IR[3];
+        var decode = IR[4];
+        var samples = IR[5];
+        var size = IR[6];
+        var n = IR[7];
+        var mask = IR[8];
+        var range = IR[9];
+
+        if (m != args.length)
           error('Incorrect number of arguments: ' + inputSize + ' != ' +
                 args.length);
-        // Most of the below is a port of Poppler's implementation.
-        // TODO: There's a few other ways to do multilinear interpolation such
-        // as piecewise, which is much faster but an approximation.
-        var out = new Float64Array(outputSize);
-        var x;
-        var e = new Array(inputSize);
-        var efrac0 = new Float64Array(inputSize);
-        var efrac1 = new Float64Array(inputSize);
-        var sBuf = new Float64Array(1 << inputSize);
-        var i, j, k, idx, t;
 
-        // map input values into sample array
-        for (i = 0; i < inputSize; ++i) {
-          x = (args[i] - domain[i][0]) * inputMul[i] + encode[i][0];
-          if (x < 0) {
-            x = 0;
-          } else if (x > size[i] - 1) {
-            x = size[i] - 1;
-          }
-          e[i] = [Math.floor(x), 0];
-          if ((e[i][1] = e[i][0] + 1) >= size[i]) {
-            // this happens if in[i] = domain[i][1]
-            e[i][1] = e[i][0];
-          }
-          efrac1[i] = x - e[i][0];
-          efrac0[i] = 1 - efrac1[i];
-        }
+        var x = args;
 
-        // for each output, do m-linear interpolation
-        for (i = 0; i < outputSize; ++i) {
+        // Building the cube vertices: its part and sample index
+        // http://rjwagner49.com/Mathematics/Interpolation.pdf
+        var cubeVertices = 1 << m;
+        var cubeN = new Float64Array(cubeVertices);
+        var cubeVertex = new Uint32Array(cubeVertices);
+        for (var j = 0; j < cubeVertices; j++)
+          cubeN[j] = 1;
 
-          // pull 2^m values out of the sample array
-          for (j = 0; j < (1 << inputSize); ++j) {
-            idx = i;
-            for (k = 0, t = j; k < inputSize; ++k, t >>= 1) {
-              idx += idxMul[k] * (e[k][t & 1]);
-            }
-            if (idx >= 0 && idx < nSamples) {
-              sBuf[j] = samples[idx];
+        var k = n, pos = 1;
+        // Map x_i to y_j for 0 <= i < m using the sampled function.
+        for (var i = 0; i < m; ++i) {
+          // x_i' = min(max(x_i, Domain_2i), Domain_2i+1)
+          var domain_2i = domain[i][0];
+          var domain_2i_1 = domain[i][1];
+          var xi = Math.min(Math.max(x[i], domain_2i), domain_2i_1);
+
+          // e_i = Interpolate(x_i', Domain_2i, Domain_2i+1,
+          //                   Encode_2i, Encode_2i+1)
+          var e = interpolate(xi, domain_2i, domain_2i_1,
+                              encode[i][0], encode[i][1]);
+
+          // e_i' = min(max(e_i, 0), Size_i - 1)
+          var size_i = size[i];
+          e = Math.min(Math.max(e, 0), size_i - 1);
+
+          // Adjusting the cube: N and vertex sample index
+          var e0 = e < size_i - 1 ? Math.floor(e) : e - 1; // e1 = e0 + 1;
+          var n0 = e0 + 1 - e; // (e1 - e) / (e1 - e0);
+          var n1 = e - e0; // (e - e0) / (e1 - e0);
+          var offset0 = e0 * k;
+          var offset1 = offset0 + k; // e1 * k
+          for (var j = 0; j < cubeVertices; j++) {
+            if (j & pos) {
+              cubeN[j] *= n1;
+              cubeVertex[j] += offset1;
             } else {
-              sBuf[j] = 0; // TODO Investigate if this is what Adobe does
+              cubeN[j] *= n0;
+              cubeVertex[j] += offset0;
             }
           }
 
-          // do m sets of interpolations
-          for (j = 0, t = (1 << inputSize); j < inputSize; ++j, t >>= 1) {
-            for (k = 0; k < t; k += 2) {
-              sBuf[k >> 1] = efrac0[j] * sBuf[k] + efrac1[j] * sBuf[k + 1];
-            }
-          }
-
-          // map output value to range
-          out[i] = (sBuf[0] * (decode[i][1] - decode[i][0]) + decode[i][0]);
-          if (out[i] < range[i][0]) {
-            out[i] = range[i][0];
-          } else if (out[i] > range[i][1]) {
-            out[i] = range[i][1];
-          }
+          k *= size_i;
+          pos <<= 1;
         }
-        return out;
+
+        var y = new Float64Array(n);
+        for (var j = 0; j < n; ++j) {
+          // Sum all cube vertices' samples portions
+          var rj = 0;
+          for (var i = 0; i < cubeVertices; i++)
+            rj += samples[cubeVertex[i] + j] * cubeN[i];
+
+          // r_j' = Interpolate(r_j, 0, 2^BitsPerSample - 1,
+          //                    Decode_2j, Decode_2j+1)
+          rj = interpolate(rj, 0, 1, decode[j][0], decode[j][1]);
+
+          // y_j = min(max(r_j, range_2j), range_2j+1)
+          y[j] = Math.min(Math.max(rj, range[j][0]), range[j][1]);
+        }
+
+        return y;
       }
     },
 
-    constructInterpolated:
-    function pdfFunctionConstructInterpolated(str, dict) {
+    constructInterpolated: function PDFFunction_constructInterpolated(str,
+                                                                      dict) {
       var c0 = dict.get('C0') || [0];
       var c1 = dict.get('C1') || [1];
       var n = dict.get('N');
@@ -249,7 +239,7 @@ var PDFFunction = (function PDFFunctionClosure() {
     },
 
     constructInterpolatedFromIR:
-    function pdfFunctionconstructInterpolatedFromIR(IR) {
+      function PDFFunction_constructInterpolatedFromIR(IR) {
       var c0 = IR[1];
       var diff = IR[2];
       var n = IR[3];
@@ -268,7 +258,7 @@ var PDFFunction = (function PDFFunctionClosure() {
       }
     },
 
-    constructStiched: function pdfFunctionConstructStiched(fn, dict, xref) {
+    constructStiched: function PDFFunction_constructStiched(fn, dict, xref) {
       var domain = dict.get('Domain');
 
       if (!domain)
@@ -278,18 +268,18 @@ var PDFFunction = (function PDFFunctionClosure() {
       if (inputSize != 1)
         error('Bad domain for stiched function');
 
-      var fnRefs = xref.fetchIfRef(dict.get('Functions'));
+      var fnRefs = dict.get('Functions');
       var fns = [];
       for (var i = 0, ii = fnRefs.length; i < ii; ++i)
         fns.push(PDFFunction.getIR(xref, xref.fetchIfRef(fnRefs[i])));
 
-      var bounds = xref.fetchIfRef(dict.get('Bounds'));
-      var encode = xref.fetchIfRef(dict.get('Encode'));
+      var bounds = dict.get('Bounds');
+      var encode = dict.get('Encode');
 
       return [CONSTRUCT_STICHED, domain, bounds, encode, fns];
     },
 
-    constructStichedFromIR: function pdfFunctionConstructStichedFromIR(IR) {
+    constructStichedFromIR: function PDFFunction_constructStichedFromIR(IR) {
       var domain = IR[1];
       var bounds = IR[2];
       var encode = IR[3];
@@ -335,7 +325,7 @@ var PDFFunction = (function PDFFunctionClosure() {
       };
     },
 
-    constructPostScript: function pdfFunctionConstructPostScript(fn, dict,
+    constructPostScript: function PDFFunction_constructPostScript(fn, dict,
                                                                   xref) {
       var domain = dict.get('Domain');
       var range = dict.get('Range');
@@ -353,8 +343,8 @@ var PDFFunction = (function PDFFunctionClosure() {
       return [CONSTRUCT_POSTSCRIPT, domain, range, code];
     },
 
-    constructPostScriptFromIR:
-                          function pdfFunctionConstructPostScriptFromIR(IR) {
+    constructPostScriptFromIR: function PDFFunction_constructPostScriptFromIR(
+                                          IR) {
       var domain = IR[1];
       var range = IR[2];
       var code = IR[3];
@@ -374,7 +364,7 @@ var PDFFunction = (function PDFFunctionClosure() {
           return cache.get(key);
 
         var stack = evaluator.execute(initialStack);
-        var transformed = new Array(numOutputs);
+        var transformed = [];
         for (i = numOutputs - 1; i >= 0; --i) {
           var out = stack.pop();
           var rangeIndex = 2 * i;
@@ -400,13 +390,13 @@ var FunctionCache = (function FunctionCacheClosure() {
     this.total = 0;
   }
   FunctionCache.prototype = {
-    has: function has(key) {
+    has: function FunctionCache_has(key) {
       return key in this.cache;
     },
-    get: function get(key) {
+    get: function FunctionCache_get(key) {
       return this.cache[key];
     },
-    set: function set(key, value) {
+    set: function FunctionCache_set(key, value) {
       if (this.total < MAX_CACHE_SIZE) {
         this.cache[key] = value;
         this.total++;
@@ -423,28 +413,28 @@ var PostScriptStack = (function PostScriptStackClosure() {
   }
 
   PostScriptStack.prototype = {
-    push: function push(value) {
+    push: function PostScriptStack_push(value) {
       if (this.stack.length >= MAX_STACK_SIZE)
         error('PostScript function stack overflow.');
       this.stack.push(value);
     },
-    pop: function pop() {
+    pop: function PostScriptStack_pop() {
       if (this.stack.length <= 0)
         error('PostScript function stack underflow.');
       return this.stack.pop();
     },
-    copy: function copy(n) {
+    copy: function PostScriptStack_copy(n) {
       if (this.stack.length + n >= MAX_STACK_SIZE)
         error('PostScript function stack overflow.');
       var stack = this.stack;
       for (var i = stack.length - n, j = n - 1; j >= 0; j--, i++)
         stack.push(stack[i]);
     },
-    index: function index(n) {
+    index: function PostScriptStack_index(n) {
       this.push(this.stack[this.stack.length - n - 1]);
     },
     // rotate the last n stack elements p times
-    roll: function roll(n, p) {
+    roll: function PostScriptStack_roll(n, p) {
       var stack = this.stack;
       var l = stack.length - n;
       var r = stack.length - 1, c = l + (p - Math.floor(p / n) * n), i, j, t;
@@ -467,7 +457,7 @@ var PostScriptEvaluator = (function PostScriptEvaluatorClosure() {
     this.operands = operands;
   }
   PostScriptEvaluator.prototype = {
-    execute: function execute(initialStack) {
+    execute: function PostScriptEvaluator_execute(initialStack) {
       var stack = new PostScriptStack(initialStack);
       var counter = 0;
       var operators = this.operators;
@@ -701,31 +691,31 @@ var PostScriptParser = (function PostScriptParserClosure() {
     this.prev;
   }
   PostScriptParser.prototype = {
-    nextToken: function nextToken() {
+    nextToken: function PostScriptParser_nextToken() {
       this.prev = this.token;
       this.token = this.lexer.getToken();
     },
-    accept: function accept(type) {
+    accept: function PostScriptParser_accept(type) {
       if (this.token.type == type) {
         this.nextToken();
         return true;
       }
       return false;
     },
-    expect: function expect(type) {
+    expect: function PostScriptParser_expect(type) {
       if (this.accept(type))
         return true;
       error('Unexpected symbol: found ' + this.token.type + ' expected ' +
             type + '.');
     },
-    parse: function parse() {
+    parse: function PostScriptParser_parse() {
       this.nextToken();
       this.expect(PostScriptTokenTypes.LBRACE);
       this.parseBlock();
       this.expect(PostScriptTokenTypes.RBRACE);
       return this.operators;
     },
-    parseBlock: function parseBlock() {
+    parseBlock: function PostScriptParser_parseBlock() {
       while (true) {
         if (this.accept(PostScriptTokenTypes.NUMBER)) {
           this.operators.push(this.prev.value);
@@ -738,7 +728,7 @@ var PostScriptParser = (function PostScriptParserClosure() {
         }
       }
     },
-    parseCondition: function parseCondition() {
+    parseCondition: function PostScriptParser_parseCondition() {
       // Add two place holders that will be updated later
       var conditionLocation = this.operators.length;
       this.operators.push(null, null);
@@ -789,7 +779,7 @@ var PostScriptToken = (function PostScriptTokenClosure() {
 
   var opCache = {};
 
-  PostScriptToken.getOperator = function getOperator(op) {
+  PostScriptToken.getOperator = function PostScriptToken_getOperator(op) {
     var opValue = opCache[op];
     if (opValue)
       return opValue;
@@ -812,7 +802,7 @@ var PostScriptLexer = (function PostScriptLexerClosure() {
     this.stream = stream;
   }
   PostScriptLexer.prototype = {
-    getToken: function getToken() {
+    getToken: function PostScriptLexer_getToken() {
       var s = '';
       var ch;
       var comment = false;
@@ -862,7 +852,7 @@ var PostScriptLexer = (function PostScriptLexerClosure() {
           return PostScriptToken.getOperator(str);
       }
     },
-    getNumber: function getNumber(ch) {
+    getNumber: function PostScriptLexer_getNumber(ch) {
       var str = ch;
       var stream = this.stream;
       while (true) {
