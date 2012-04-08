@@ -576,21 +576,34 @@ var PDFView = {
 
     if (pdfTitle)
       document.title = pdfTitle + ' - ' + document.title;
+
+    pdf.textExtracted = (function pdfTextExtracted(pageIdx, content) {
+      this.search();
+    }).bind(this);
   },
 
   startTextExtraction: function pdfViewStartTextExtraction(pdf) {
     var searchResults = document.getElementById('searchResults');
     searchResults.textContent = '';
 
-    pdf.textExtracted = (function pdfTextExtracted(pageIdx, content) {
-      this.search();
-    }).bind(this);
-    pdf.extractText();
-
-    this.pdfDoc = pdf;
+    this.pdfDoc.extractText();
   },
 
   search: function pdfViewStartSearch() {
+    // Limit this function to run every <SEARCH_TIMEOUT>ms.
+    var SEARCH_TIMEOUT = 250;
+    var lastSeach = this.lastSearch;
+    var now = Date.now();
+    if (lastSeach && (now - lastSeach) < SEARCH_TIMEOUT) {
+      if (!this.searchTimer)
+        this.searchTimer =
+          setTimeout(this.search, SEARCH_TIMEOUT - (now - lastSeach));
+
+      return;
+    }
+    this.searchTimer = null;
+    this.lastSearch = now;
+
     function bindLink(link, pageNumber) {
       link.href = '#' + pageNumber;
       link.onclick = function searchBindLink() {
