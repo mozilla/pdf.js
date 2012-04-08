@@ -94,7 +94,6 @@ var WorkerMessageHandler = {
     handler.on('page_request', function wphSetupPageRequest(pageNum) {
       pageNum = parseInt(pageNum);
 
-
       // The following code does quite the same as
       // Page.prototype.startRendering, but stops at one point and sends the
       // result back to the main thread.
@@ -156,37 +155,20 @@ var WorkerMessageHandler = {
       });
     }, this);
 
-    handler.on('extract_text', function wphExtractText() {
-      var numPages = pdfModel.numPages;
-      var index = [];
+    handler.on('extract_text', function wphExtractText(pageNum) {
       var start = Date.now();
 
-      function indexPage(pageNum) {
-        if (pageNum > numPages) {
-          console.log('text indexing: time=%dms', Date.now() - start);
-
-          handler.send('text_extracted', [index]);
-          return;
-        }
-
-        var textContent = '';
-        // try {
-          var page = pdfModel.getPage(pageNum);
-          textContent = page.extractTextContent();
-        // } catch (e) {
-        //   // Skip errored pages
-        // }
-
-        index.push(textContent);
-
-        // processing one page, interrupting thread to process
-        // other requests
-        setTimeout(function extractTextNextPage() {
-          indexPage(pageNum + 1);
-        }, 0);
+      var textContent = '';
+      try {
+        var page = pdfModel.getPage(pageNum);
+        textContent = page.extractTextContent();
+      } catch (e) {
+        // Skip errored pages
       }
 
-      indexPage(1);
+      console.log('text indexing: page=%d - time=%dms',
+                      pageNum, Date.now() - start);
+      handler.send('text_extracted', [pageNum, textContent]);
     });
   }
 };

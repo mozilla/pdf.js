@@ -491,7 +491,7 @@ var PDFView = {
 
     var pdf;
     try {
-      pdf = new PDFJS.PDFDoc(data);
+      this.pdfDoc = pdf = new PDFJS.PDFDoc(data);
     } catch (e) {
       this.error('An error occurred while reading the PDF.', e);
     }
@@ -576,22 +576,18 @@ var PDFView = {
 
     if (pdfTitle)
       document.title = pdfTitle + ' - ' + document.title;
-
-    // loosing pdf reference here, starting text indexing in 500ms
-    setTimeout((function loadStartTextExtraction() {
-      this.startTextExtraction(pdf);
-    }).bind(this), 500);
-    delete PDFView.extractedText;
   },
 
   startTextExtraction: function pdfViewStartTextExtraction(pdf) {
     var searchResults = document.getElementById('searchResults');
     searchResults.textContent = '';
 
-    pdf.textExtracted = function pdfTextExtracted(index) {
-      PDFView.extractedText = index;
-    };
+    pdf.textExtracted = (function pdfTextExtracted(pageIdx, content) {
+      this.search();
+    }).bind(this);
     pdf.extractText();
+
+    this.pdfDoc = pdf;
   },
 
   search: function pdfViewStartSearch() {
@@ -604,21 +600,19 @@ var PDFView = {
     }
 
     var searchResults = document.getElementById('searchResults');
-    if (!('extractedText' in PDFView)) {
-      // not indexed yet, repeat in 1 second
-      searchResults.textContent = 'Searching...';
-      setTimeout(this.search.bind(this), 1000);
-      return;
-    }
 
     var searchTermsInput = document.getElementById('searchTermsInput');
     searchResults.removeAttribute('hidden');
     searchResults.textContent = '';
 
     var terms = searchTermsInput.value;
+
+    if (!terms)
+      return;
+
     // simple search: removing spaces and hyphens, then scanning every
     terms = terms.replace(/\s-/g, '').toLowerCase();
-    var index = PDFView.extractedText;
+    var index = PDFView.pdfDoc.pageText;
     var pageFound = false;
     for (var i = 0, ii = index.length; i < ii; i++) {
       var pageText = index[i].replace(/\s-/g, '').toLowerCase();
@@ -708,6 +702,9 @@ var PDFView = {
 
       var searchTermsInput = document.getElementById('searchTermsInput');
       searchTermsInput.focus();
+
+      // Start text extraction as soon as the search gets displayed.
+      this.pdfDoc.extractText();
     } else {
       searchScrollView.setAttribute('hidden', 'true');
       searchSwitchButton.removeAttribute('data-selected');

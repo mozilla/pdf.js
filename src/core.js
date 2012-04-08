@@ -698,6 +698,9 @@ var PDFDoc = (function PDFDocClosure() {
     this.fontsLoading = {};
     this.workerReadyPromise = new Promise('workerReady');
 
+    this.pageText = [];
+    this.startedTextExtraction = false;
+
     // If worker support isn't disabled explicit and the browser has worker
     // support, create a new web worker and test if it/the browser fullfills
     // all requirements to run parts of pdf.js in a web worker.
@@ -769,7 +772,6 @@ var PDFDoc = (function PDFDocClosure() {
       WorkerMessageHandler.setup(messageHandler);
     },
 
-
     setupMessageHandler: function PDFDoc_setupMessageHandler(messageHandler) {
       this.messageHandler = messageHandler;
 
@@ -825,9 +827,18 @@ var PDFDoc = (function PDFDocClosure() {
       }, this);
 
       messageHandler.on('text_extracted', function pdfTextExtracted(data) {
-        var index = data[0];
+        var pageNum = data[0];
+        var content = data[1];
+        if (pageNum !== this.pageText.length + 1)
+          error('pdfTextExtracted: pageIdx and pageText length got to fit');
+
+        this.pageText.push(content);
+
         if (this.textExtracted)
-          this.textExtracted(index);
+          this.textExtracted(pageNum, content);
+
+        if (pageNum < this.numPages)
+          this.extractTextPage(pageNum + 1);
       }, this);
 
       messageHandler.on('jpeg_decode', function(data, promise) {
@@ -895,9 +906,19 @@ var PDFDoc = (function PDFDocClosure() {
       return (this.pageCache[n] = page);
     },
 
+    extractTextPage: function PDFDoc_extractTextPage(pageNum) {
+      this.messageHandler.send('extract_text', pageNum);
+    },
+
     extractText: function PDFDoc_extractText() {
+      if (this.startedTextExtraction)
+        return;
+
+      this.startedTextExtraction = true;
+
       this.workerReadyPromise.then(function pdfDocStartRenderingThen() {
-        this.messageHandler.send('extract_text');
+        // Start the text extraction process.
+        this.extractTextPage(1);
       }.bind(this));
     },
 
