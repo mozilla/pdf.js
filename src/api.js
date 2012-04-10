@@ -67,7 +67,7 @@
       return this.pdf.numPages;
     },
     get fingerprint() {
-      return this.pdf.fingerPrint;
+      return this.pdf.fingerprint;
     },
     getPage: function(number) {
       var promise = new PDFJS.Promise();
