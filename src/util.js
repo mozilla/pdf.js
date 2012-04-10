@@ -275,7 +275,7 @@ function isPDFFunction(v) {
  * can be set. If any of these happens twice or the data is required before
  * it was set, an exception is throw.
  */
-var Promise = (function PromiseClosure() {
+var Promise = PDFJS.Promise = (function PromiseClosure() {
   var EMPTY_PROMISE = {};
 
   /**
@@ -297,6 +297,7 @@ var Promise = (function PromiseClosure() {
     }
     this.callbacks = [];
     this.errbacks = [];
+    this.progressbacks = [];
   };
   /**
    * Builds a promise that is resolved when all the passed in promises are
@@ -312,7 +313,7 @@ var Promise = (function PromiseClosure() {
       deferred.resolve(results);
       return deferred;
     }
-    for (var i = 0; i < unresolved; ++i) {
+    for (var i = 0, ii = promises.length; i < ii; ++i) {
       var promise = promises[i];
       promise.then((function(i) {
         return function(value) {
@@ -376,6 +377,13 @@ var Promise = (function PromiseClosure() {
       }
     },
 
+    progress: function Promise_progress(data) {
+      var callbacks = this.progressbacks;
+      for (var i = 0, ii = callbacks.length; i < ii; i++) {
+        callbacks[i].call(null, data);
+      }
+    },
+
     reject: function Promise_reject(reason) {
       if (this.isRejected) {
         error('A Promise can be rejected only once ' + this.name);
@@ -393,7 +401,7 @@ var Promise = (function PromiseClosure() {
       }
     },
 
-    then: function Promise_then(callback, errback) {
+    then: function Promise_then(callback, errback, progressback) {
       if (!callback) {
         error('Requiring callback' + this.name);
       }
@@ -410,6 +418,9 @@ var Promise = (function PromiseClosure() {
         if (errback)
           this.errbacks.push(errback);
       }
+
+      if (progressback)
+        this.progressbacks.push(progressback);
     }
   };
 

@@ -318,27 +318,25 @@ var PDFView = {
     }
 
     var self = this;
-    PDFJS.getPdf(
-      {
-        url: url,
-        progress: function getPdfProgress(evt) {
-          if (evt.lengthComputable)
-            self.progress(evt.loaded / evt.total);
-        },
-        error: function getPdfError(e) {
-          var loadingIndicator = document.getElementById('loading');
-          loadingIndicator.textContent = 'Error';
-          var moreInfo = {
-            message: 'Unexpected server response of ' + e.target.status + '.'
-          };
-          self.error('An error occurred while loading the PDF.', moreInfo);
-        }
-      },
-      function getPdfLoad(data) {
-        self.loading = true;
-        self.load(data, scale);
+    self.loading = true;
+    PDFJS.getDocument(url).then(
+      function getDocumentCallback(pdfDocument) {
+        self.load(pdfDocument, scale);
         self.loading = false;
-      });
+      },
+      function getDocumentError(message, exception) {
+        var loadingIndicator = document.getElementById('loading');
+        loadingIndicator.textContent = 'Error';
+        var moreInfo = {
+          message: message
+        };
+        self.error('An error occurred while loading the PDF.', moreInfo);
+        self.loading = false;
+      },
+      function getDocumentProgress(progressData) {
+        self.progress(progressData.loaded / progressData.total);
+      }
+    );
   },
 
   download: function pdfViewDownload() {
@@ -461,7 +459,7 @@ var PDFView = {
     PDFView.loadingBar.percent = percent;
   },
 
-  load: function pdfViewLoad(data, scale) {
+  load: function pdfViewLoad(pdfDocument, scale) {
     function bindOnAfterDraw(pageView, thumbnailView) {
       // when page is painted, using the image as thumbnail base
       pageView.onAfterDraw = function pdfViewLoadOnAfterDraw() {
@@ -489,14 +487,8 @@ var PDFView = {
     while (container.hasChildNodes())
       container.removeChild(container.lastChild);
 
-    var pdf;
-    try {
-      pdf = new PDFJS.PDFDoc(data);
-    } catch (e) {
-      this.error('An error occurred while reading the PDF.', e);
-    }
-    var pagesCount = pdf.numPages;
-    var id = pdf.fingerprint;
+    var pagesCount = pdfDocument.numPages;
+    var id = pdfDocument.fingerprint;
     var storedHash = null;
     document.getElementById('numPages').textContent = pagesCount;
     document.getElementById('pageNumber').max = pagesCount;
@@ -514,30 +506,68 @@ var PDFView = {
     var pages = this.pages = [];
     var pagesRefMap = {};
     var thumbnails = this.thumbnails = [];
-    for (var i = 1; i <= pagesCount; i++) {
-      var page = pdf.getPage(i);
-      var pageView = new PageView(container, page, i, page.width, page.height,
-                                  page.stats, this.navigateTo.bind(this));
-      var thumbnailView = new ThumbnailView(sidebar, page, i,
-                                            page.width / page.height);
-      bindOnAfterDraw(pageView, thumbnailView);
+    var pagePromises = [];
+    for (var i = 1; i <= pagesCount; i++)
+      pagePromises.push(pdfDocument.getPage(i));
+    var self = this;
+    var pagesPromise = PDFJS.Promise.all(pagePromises);
+    pagesPromise.then(function(promisedPages) {
+      for (var i = 1; i <= pagesCount; i++) {
+        var page = promisedPages[i - 1];
+        var pageView = new PageView(container, page, i, page.width, page.height,
+                                    page.stats, self.navigateTo.bind(self));
+        var thumbnailView = new ThumbnailView(sidebar, page, i,
+                                              page.width / page.height);
+        bindOnAfterDraw(pageView, thumbnailView);
 
-      pages.push(pageView);
-      thumbnails.push(thumbnailView);
-      var pageRef = page.ref;
-      pagesRefMap[pageRef.num + ' ' + pageRef.gen + ' R'] = i;
-    }
+        pages.push(pageView);
+        thumbnails.push(thumbnailView);
+        var pageRef = page.ref;
+        pagesRefMap[pageRef.num + ' ' + pageRef.gen + ' R'] = i;
+      }
 
-    this.pagesRefMap = pagesRefMap;
-    this.destinations = pdf.catalog.destinations;
+      self.pagesRefMap = pagesRefMap;
+    });
 
-    if (pdf.catalog.documentOutline) {
-      this.outline = new DocumentOutlineView(pdf.catalog.documentOutline);
-      var outlineSwitchButton = document.getElementById('outlineSwitch');
-      outlineSwitchButton.removeAttribute('disabled');
-      this.switchSidebarView('outline');
-    }
+    var destinationsPromise = pdfDocument.getDestinations();
+    destinationsPromise.then(function(destinations) {
+      self.destinations = destinations;
+    });
 
+    // outline and initial view depends on destinations and pagesRefMap
+    PDFJS.Promise.all([pagesPromise, destinationsPromise]).then(function() {
+      pdfDocument.getOutline().then(function(outline) {
+        if (!outline)
+          return;
+
+        self.outline = new DocumentOutlineView(outline);
+        var outlineSwitchButton = document.getElementById('outlineSwitch');
+        outlineSwitchButton.removeAttribute('disabled');
+        self.switchSidebarView('outline');
+      });
+
+      self.setInitialView(storedHash, scale);
+    });
+
+    pdfDocument.getMetadata().then(function(info, metadata) {
+      self.documentInfo = info;
+      self.metadata = metadata;
+
+      var pdfTitle;
+      if (metadata) {
+        if (metadata.has('dc:title'))
+          pdfTitle = metadata.get('dc:title');
+      }
+
+      if (!pdfTitle && info && info['Title'])
+        pdfTitle = info['Title'];
+
+      if (pdfTitle)
+        document.title = pdfTitle + ' - ' + document.title;
+    });
+  },
+
+  setInitialView: function pdfViewSetInitialView(storedHash, scale) {
     // Reset the current scale, as otherwise the page's scale might not get
     // updated if the zoom level stayed the same.
     this.currentScale = 0;
@@ -558,24 +588,6 @@ var PDFView = {
       // Setting the default one.
       this.parseScale(kDefaultScale, true);
     }
-
-    this.metadata = null;
-    var metadata = pdf.catalog.metadata;
-    var info = this.documentInfo = pdf.info;
-    var pdfTitle;
-
-    if (metadata) {
-      this.metadata = metadata = new PDFJS.Metadata(metadata);
-
-      if (metadata.has('dc:title'))
-        pdfTitle = metadata.get('dc:title');
-    }
-
-    if (!pdfTitle && info && info['Title'])
-      pdfTitle = info['Title'];
-
-    if (pdfTitle)
-      document.title = pdfTitle + ' - ' + document.title;
   },
 
   setHash: function pdfViewSetHash(hash) {
@@ -711,12 +723,12 @@ var PDFView = {
   }
 };
 
-var PageView = function pageView(container, content, id, pageWidth, pageHeight,
+var PageView = function pageView(container, pdfPage, id, pageWidth, pageHeight,
                                  stats, navigateTo) {
   this.id = id;
-  this.content = content;
+  this.pdfPage = pdfPage;
 
-  var view = this.content.view;
+  var view = pdfPage.view;
   this.x = view.x;
   this.y = view.y;
   this.width = view.width;
@@ -748,7 +760,7 @@ var PageView = function pageView(container, content, id, pageWidth, pageHeight,
     div.appendChild(this.loadingIconDiv);
   };
 
-  function setupAnnotations(content, scale) {
+  function setupAnnotations(pdfPage, scale) {
     function bindLink(link, dest) {
       link.href = PDFView.getDestinationHash(dest);
       link.onclick = function pageViewSetupLinksOnclick() {
@@ -809,29 +821,30 @@ var PageView = function pageView(container, content, id, pageWidth, pageHeight,
       return container;
     }
 
-    var items = content.getAnnotations();
-    for (var i = 0; i < items.length; i++) {
-      var item = items[i];
-      switch (item.type) {
-        case 'Link':
-          var link = createElementWithStyle('a', item);
-          link.href = item.url || '';
-          if (!item.url)
-            bindLink(link, ('dest' in item) ? item.dest : null);
-          div.appendChild(link);
-          break;
-        case 'Text':
-          var comment = createCommentAnnotation(item.name, item);
-          if (comment)
-            div.appendChild(comment);
-          break;
+    pdfPage.getAnnotations().then(function(items) {
+      for (var i = 0; i < items.length; i++) {
+        var item = items[i];
+        switch (item.type) {
+          case 'Link':
+            var link = createElementWithStyle('a', item);
+            link.href = item.url || '';
+            if (!item.url)
+              bindLink(link, ('dest' in item) ? item.dest : null);
+            div.appendChild(link);
+            break;
+          case 'Text':
+            var comment = createCommentAnnotation(item.name, item);
+            if (comment)
+              div.appendChild(comment);
+            break;
+        }
       }
-    }
+    });
   }
 
   this.getPagePoint = function pageViewGetPagePoint(x, y) {
     var scale = PDFView.currentScale;
-    return this.content.rotatePoint(x / scale, y / scale);
+    return this.pdfPage.rotatePoint(x / scale, y / scale);
   };
 
   this.scrollIntoView = function pageViewScrollIntoView(dest) {
@@ -879,8 +892,8 @@ var PageView = function pageView(container, content, id, pageWidth, pageHeight,
       }
 
       var boundingRect = [
-        this.content.rotatePoint(x, y),
-        this.content.rotatePoint(x + width, y + height)
+        this.pdfPage.rotatePoint(x, y),
+        this.pdfPage.rotatePoint(x + width, y + height)
       ];
 
       if (scale && scale !== PDFView.currentScale)
@@ -948,7 +961,7 @@ var PageView = function pageView(container, content, id, pageWidth, pageHeight,
     // Rendering area
 
     var self = this;
-    this.content.startRendering(ctx, function pageViewDrawCallback(error) {
+    function pageViewDrawCallback(error) {
       if (self.loadingIconDiv) {
         div.removeChild(self.loadingIconDiv);
         delete self.loadingIconDiv;
@@ -964,9 +977,22 @@ var PageView = function pageView(container, content, id, pageWidth, pageHeight,
 
       cache.push(self);
       callback();
-    }, textLayer);
+    }
 
-    setupAnnotations(this.content, this.scale);
+    var renderContext = {
+      canvasContext: ctx,
+      textLayer: textLayer
+    };
+    this.pdfPage.render(renderContext).then(
+      function pdfPageRenderCallback() {
+        pageViewDrawCallback(null);
+      },
+      function pdfPageRenderError(error) {
+        pageViewDrawCallback(error);
+      }
+    );
+
+    setupAnnotations(this.pdfPage, this.scale);
     div.setAttribute('data-loaded', true);
   };
 
@@ -1397,7 +1423,11 @@ window.addEventListener('change', function webViewerChange(evt) {
 
     for (var i = 0; i < data.length; i++)
       uint8Array[i] = data.charCodeAt(i);
-    PDFView.load(uint8Array);
+
+    // TODO using blob instead?
+    PDFJS.getDocument(uint8Array).then(function(pdfDocument) {
+      PDFView.load(pdfDocument);
+    });
   };
 
   // Read as a binary string since "readAsArrayBuffer" is not yet
