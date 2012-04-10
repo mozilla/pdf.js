@@ -1456,8 +1456,6 @@ window.addEventListener('pagechange', function pagechange(evt) {
 }, true);
 
 window.addEventListener('keydown', function keydown(evt) {
-  if (evt.ctrlKey || evt.altKey || evt.shiftKey || evt.metaKey)
-    return;
   var curElement = document.activeElement;
   if (curElement && curElement.tagName == 'INPUT')
     return;
@@ -1467,35 +1465,48 @@ window.addEventListener('keydown', function keydown(evt) {
       return; // ignoring if the 'controls' element is focused
     curElement = curElement.parentNode;
   }
+
+  var cmd = 0;
+  if (evt.ctrlKey)  cmd |= 1;
+  if (evt.altKey)   cmd |= 2;
+  if (evt.shiftKey) cmd |= 4;
+  if (evt.metaKey)  cmd |= 8; 
+
   var handled = false;
-  switch (evt.keyCode) {
-    case 61: // FF/Mac '='
-    case 107: // FF '+' and '='
-    case 187: // Chrome '+'
-      PDFView.zoomIn();
-      handled = true;
-      break;
-    case 109: // FF '-'
-    case 189: // Chrome '-'
-      PDFView.zoomOut();
-      handled = true;
-      break;
-    case 48: // '0'
-      PDFView.parseScale(kDefaultScale, true);
-      handled = true;
-      break;
-    case 37: // left arrow
-    case 75: // 'k'
-    case 80: // 'p'
-      PDFView.page--;
-      handled = true;
-      break;
-    case 39: // right arrow
-    case 74: // 'j'
-    case 78: // 'n'
-      PDFView.page++;
-      handled = true;
-      break;
+  if (cmd == 0) { // no control key pressed at all.
+    switch (evt.keyCode) {
+      case 37: // left arrow
+      case 75: // 'k'
+      case 80: // 'p'
+        PDFView.page--;
+        handled = true;
+        break;
+      case 39: // right arrow
+      case 74: // 'j'
+      case 78: // 'n'
+        PDFView.page++;
+        handled = true;
+        break;
+    }
+  }
+  else if (cmd == 1 || cmd == 8) { // either CTRL or META key.
+    switch (evt.keyCode) {
+      case 61: // FF/Mac '='
+      case 107: // FF '+' and '='
+      case 187: // Chrome '+'
+        PDFView.zoomIn();
+        handled = true;
+        break;
+      case 109: // FF '-'
+      case 189: // Chrome '-'
+        PDFView.zoomOut();
+        handled = true;
+        break;
+      case 48: // '0'
+        PDFView.parseScale(kDefaultScale, true);
+        handled = true;
+        break;
+    }
   }
 
   if (handled) {
