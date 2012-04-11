@@ -85,7 +85,7 @@ var WorkerMessageHandler = {
       handler.send('test', data instanceof Uint8Array);
     });
 
-    handler.on('doc', function wphSetupDoc(data) {
+    handler.on('doc_request', function wphSetupDoc(data) {
       // Create only the model of the PDFDoc, which is enough for
       // processing the content of the pdf.
       pdfModel = new PDFDocModel(new Stream(data));
@@ -100,8 +100,8 @@ var WorkerMessageHandler = {
       handler.send('doc', {pdfInfo: doc});
     });
 
-    handler.on('getpage', function wphSetupTest(data) {
-      var pdfPage = pdfModel.getPage(data.pageNumber);
+    handler.on('getpage_request', function wphSetupTest(data) {
+      var pdfPage = pdfModel.getPage(data.pageNumber + 1);
       var page = {
         pageNumber: data.pageNumber,
         rotate: pdfPage.rotate,

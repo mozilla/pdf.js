@@ -35,6 +35,7 @@
     // all requirements to run parts of pdf.js in a web worker.
     // Right now, the requirement is, that an Uint8Array is still an Uint8Array
     // as it arrives on the worker. Chrome added this with version 15.
+    globalScope.PDFJS.disableWorker = true;
     if (!globalScope.PDFJS.disableWorker && typeof Worker !== 'undefined') {
       var workerSrc = PDFJS.workerSrc;
       if (typeof workerSrc === 'undefined') {
@@ -57,6 +58,7 @@
         }
 
         var messageHandler = new MessageHandler('main', worker);
+        this.messageHandler = messageHandler;
 
         messageHandler.on('test', function pdfDocTest(supportTypedArray) {
           if (supportTypedArray) {
@@ -112,20 +114,20 @@
 
       messageHandler.on('getpage', function pdfDocPage(data) {
         var pageInfo = data.pageInfo;
-        var page = new PdfPageWrapper(pageInfo, transport);
-        this.pageCache[pageInfo.pageNumber] = pageInfo;
+        var page = new PdfPageWrapper(pageInfo, this);
+        this.pageCache[pageInfo.pageNumber] = page;
         var promises = this.pagePromises[pageInfo.pageNumber];
         delete this.pagePromises[pageInfo.pageNumber];
         for (var i = 0, ii = promises.length; i < ii; ++i)
-          promises.resolve(page);
+          promises[i].resolve(page);
       }, this);
 
       messageHandler.on('page', function pdfDocPage(data) {
         var pageNum = data.pageNum;
-        var page = this.pageCache[pageNum];
+        var page = this.pageCache[pageNum - 1];
         var depFonts = data.depFonts;
 
-        page.stats.timeEnd('Page Request');
+        //page.stats.timeEnd('Page Request');
         page.startRenderingFromOperatorList(data.operatorList, depFonts);
       }, this);
 
@@ -208,26 +210,26 @@
     },
 
     sendData: function WorkerTransport_sendData(data) {
-      this.messageHandler.send('doc', data);
+      this.messageHandler.send('doc_request', data);
     },
 
     getPage: function WorkerTransport_getPage(n, promise) {
-      if (this.pageCache[n]) {
-         promise.resolve(pageCache[n]);
+      if (this.pageCache[n - 1]) {
+         promise.resolve(pageCache[n - 1]);
          return;
       }
-      if (n in this.pagePromises) {
-        this.pagePromises[n].push(promise);
+      if ((n - 1) in this.pagePromises) {
+        this.pagePromises[n - 1].push(promise);
         return;
       }
-      this.pagePromises[n] = [promise];
-      this.messageHandler.send('getpage', {page: n});
+      this.pagePromises[n - 1] = [promise];
+      this.messageHandler.send('getpage_request', {pageNumber: n - 1});
     }
   };
-  function PdfPageWrapper(page, transport) {
+  function PdfPageWrapper(pageInfo, transport) {
     this.pageInfo = pageInfo;
     this.transport = transport;
-    this.stats = new StatTimer();
+    this._stats = new StatTimer();
     this.objs = transport.objs;
   }
   PdfPageWrapper.prototype = {
@@ -238,7 +240,7 @@
       return this.pageInfo.rotate;
     },
     get stats() {
-      return this.stats;
+      return this._stats;
     },
     get ref() {
       return this.pageInfo.ref;
@@ -258,18 +260,17 @@
       return promise;
     },
     render: function(renderContext) {
-      var promise;
+      var promise = new Promise();
       var stats = this.stats;
       stats.time('Overall');
       // If there is no displayReadyPromise yet, then the operatorList was never
       // requested before. Make the request and create the promise.
       if (!this.displayReadyPromise) {
-        this.displayReadyPromise = promise = new Promise();
+        this.displayReadyPromise = new Promise();
 
-        this.stats.time('Page Request');
-        this.messageHandler.send('page_request', this.pageNumber + 1);
-      } else
-        promise = this.displayReadyPromise;
+        //this.stats.time('Page Request');
+        this.transport.messageHandler.send('page_request', this.pageNumber + 1);
+      }
 
       var callback = (function complete(error) {
           if (error)
@@ -345,14 +346,14 @@
       var stats = this.stats;
       stats.time('Rendering');
 
-/* REMOVE ??? */
+/* REMOVE ??? 
       var xref = this.xref;
       var resources = this.resources;
       assertWellFormed(isDict(resources), 'invalid page resources');
 
       gfx.xref = xref;
       gfx.res = resources;
-/* REMOVE END */
+ REMOVE END */
 
       gfx.beginDrawing(viewport);
 

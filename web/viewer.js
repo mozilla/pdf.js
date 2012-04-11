@@ -986,7 +986,7 @@ var PageView = function pageView(container, pdfPage, id, scale,
       if (error)
         PDFView.error('An error occurred while rendering the page.', error);
 
-      self.stats = content.stats;
+      self.stats = pdfPage.stats;
       self.updateStats();
       if (self.onAfterDraw)
         self.onAfterDraw();
