@@ -19,7 +19,7 @@
       return this.page.view;
     },
     getViewport: function(scale, rotate) {
-      if (arguments < 2)
+      if (arguments.length < 2)
         rotate = this.rotate;
       return new PDFJS.PageViewport(this.view, scale, rotate, 0, 0);
     },

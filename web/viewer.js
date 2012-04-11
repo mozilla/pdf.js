@@ -747,8 +747,6 @@ var PageView = function pageView(container, pdfPage, id, scale,
     var viewport = this.pdfPage.getViewport(this.scale);
 
     this.viewport = viewport;
-    this.width = viewport.width;
-    this.height = viewport.height;
     div.style.width = viewport.width + 'px';
     div.style.height = viewport.height + 'px';
 
@@ -762,6 +760,20 @@ var PageView = function pageView(container, pdfPage, id, scale,
     this.loadingIconDiv.className = 'loadingIcon';
     div.appendChild(this.loadingIconDiv);
   };
+
+  Object.defineProperty(this, 'width', {
+    get: function PageView_getWidth() {
+      return this.viewport.width;
+    },
+    enumerable: true
+  });
+
+  Object.defineProperty(this, 'height', {
+    get: function PageView_getHeight() {
+      return this.viewport.height;
+    },
+    enumerable: true
+  });
 
   function setupAnnotations(pdfPage, viewport) {
     function bindLink(link, dest) {
