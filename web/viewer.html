@@ -1,44 +1,120 @@
-<!DOCTYPE html>
 <html>
-    <head>
-        <title>Simple pdf.js page viewer</title>
-        <!-- PDFJSSCRIPT_INCLUDE_FIREFOX_EXTENSION -->
+  <head>
+    <title>PDF viewer</title>
+    <!-- PDFJSSCRIPT_INCLUDE_FIREFOX_EXTENSION -->
 
-        <link rel="stylesheet" href="viewer.css"/>
+    <link rel="stylesheet" href="viewer.css"/>
 
-        <script type="text/javascript" src="compatibility.js"></script> <!-- PDFJSSCRIPT_REMOVE_FIREFOX_EXTENSION -->
+    <script type="text/javascript" src="compatibility.js"></script> <!-- PDFJSSCRIPT_REMOVE_FIREFOX_EXTENSION -->
 
-        <!-- PDFJSSCRIPT_INCLUDE_BUILD -->
-        <script type="text/javascript" src="../src/core.js"></script> <!-- PDFJSSCRIPT_REMOVE_CORE -->
-        <script type="text/javascript" src="../src/util.js"></script>  <!-- PDFJSSCRIPT_REMOVE_CORE -->
-        <script type="text/javascript" src="../src/metadata.js"></script>  <!-- PDFJSSCRIPT_REMOVE_CORE -->
-        <script type="text/javascript" src="../src/canvas.js"></script>  <!-- PDFJSSCRIPT_REMOVE_CORE -->
-        <script type="text/javascript" src="../src/obj.js"></script>  <!-- PDFJSSCRIPT_REMOVE_CORE -->
-        <script type="text/javascript" src="../src/function.js"></script> <!-- PDFJSSCRIPT_REMOVE_CORE -->
-        <script type="text/javascript" src="../src/charsets.js"></script>  <!-- PDFJSSCRIPT_REMOVE_CORE -->
-        <script type="text/javascript" src="../src/cidmaps.js"></script>  <!-- PDFJSSCRIPT_REMOVE_CORE -->
-        <script type="text/javascript" src="../src/colorspace.js"></script>  <!-- PDFJSSCRIPT_REMOVE_CORE -->
-        <script type="text/javascript" src="../src/crypto.js"></script>  <!-- PDFJSSCRIPT_REMOVE_CORE -->
-        <script type="text/javascript" src="../src/evaluator.js"></script>  <!-- PDFJSSCRIPT_REMOVE_CORE -->
-        <script type="text/javascript" src="../src/fonts.js"></script>  <!-- PDFJSSCRIPT_REMOVE_CORE -->
-        <script type="text/javascript" src="../src/glyphlist.js"></script>  <!-- PDFJSSCRIPT_REMOVE_CORE -->
-        <script type="text/javascript" src="../src/image.js"></script>  <!-- PDFJSSCRIPT_REMOVE_CORE -->
-        <script type="text/javascript" src="../src/metrics.js"></script>  <!-- PDFJSSCRIPT_REMOVE_CORE -->
-        <script type="text/javascript" src="../src/parser.js"></script>  <!-- PDFJSSCRIPT_REMOVE_CORE -->
-        <script type="text/javascript" src="../src/pattern.js"></script>  <!-- PDFJSSCRIPT_REMOVE_CORE -->
-        <script type="text/javascript" src="../src/stream.js"></script>  <!-- PDFJSSCRIPT_REMOVE_CORE -->
-        <script type="text/javascript" src="../src/worker.js"></script>  <!-- PDFJSSCRIPT_REMOVE_CORE -->
-        <script type="text/javascript" src="../external/jpgjs/jpg.js"></script>  <!-- PDFJSSCRIPT_REMOVE_CORE -->
-        <script type="text/javascript" src="../src/jpx.js"></script>  <!-- PDFJSSCRIPT_REMOVE_CORE -->
-        <script type="text/javascript" src="../src/bidi.js"></script>  <!-- PDFJSSCRIPT_REMOVE_CORE -->
-        <script type="text/javascript">PDFJS.workerSrc = '../src/worker_loader.js';</script> <!-- PDFJSSCRIPT_REMOVE_CORE -->
-        <script type="text/javascript" src="debugger.js"></script>
-        <script type="text/javascript" src="viewer.js"></script>
-
-
-    </head>
-
+    <!-- PDFJSSCRIPT_INCLUDE_BUILD -->
+    <script type="text/javascript" src="../src/core.js"></script> <!-- PDFJSSCRIPT_REMOVE_CORE -->
+    <script type="text/javascript" src="../src/util.js"></script>  <!-- PDFJSSCRIPT_REMOVE_CORE -->
+    <script type="text/javascript" src="../src/metadata.js"></script>  <!-- PDFJSSCRIPT_REMOVE_CORE -->
+    <script type="text/javascript" src="../src/canvas.js"></script>  <!-- PDFJSSCRIPT_REMOVE_CORE -->
+    <script type="text/javascript" src="../src/obj.js"></script>  <!-- PDFJSSCRIPT_REMOVE_CORE -->
+    <script type="text/javascript" src="../src/function.js"></script> <!-- PDFJSSCRIPT_REMOVE_CORE -->
+    <script type="text/javascript" src="../src/charsets.js"></script>  <!-- PDFJSSCRIPT_REMOVE_CORE -->
+    <script type="text/javascript" src="../src/cidmaps.js"></script>  <!-- PDFJSSCRIPT_REMOVE_CORE -->
+    <script type="text/javascript" src="../src/colorspace.js"></script>  <!-- PDFJSSCRIPT_REMOVE_CORE -->
+    <script type="text/javascript" src="../src/crypto.js"></script>  <!-- PDFJSSCRIPT_REMOVE_CORE -->
+    <script type="text/javascript" src="../src/evaluator.js"></script>  <!-- PDFJSSCRIPT_REMOVE_CORE -->
+    <script type="text/javascript" src="../src/fonts.js"></script>  <!-- PDFJSSCRIPT_REMOVE_CORE -->
+    <script type="text/javascript" src="../src/glyphlist.js"></script>  <!-- PDFJSSCRIPT_REMOVE_CORE -->
+    <script type="text/javascript" src="../src/image.js"></script>  <!-- PDFJSSCRIPT_REMOVE_CORE -->
+    <script type="text/javascript" src="../src/metrics.js"></script>  <!-- PDFJSSCRIPT_REMOVE_CORE -->
+    <script type="text/javascript" src="../src/parser.js"></script>  <!-- PDFJSSCRIPT_REMOVE_CORE -->
+    <script type="text/javascript" src="../src/pattern.js"></script>  <!-- PDFJSSCRIPT_REMOVE_CORE -->
+    <script type="text/javascript" src="../src/stream.js"></script>  <!-- PDFJSSCRIPT_REMOVE_CORE -->
+    <script type="text/javascript" src="../src/worker.js"></script>  <!-- PDFJSSCRIPT_REMOVE_CORE -->
+    <script type="text/javascript" src="../external/jpgjs/jpg.js"></script>  <!-- PDFJSSCRIPT_REMOVE_CORE -->
+    <script type="text/javascript" src="../src/jpx.js"></script>  <!-- PDFJSSCRIPT_REMOVE_CORE -->
+    <script type="text/javascript" src="../src/bidi.js"></script>  <!-- PDFJSSCRIPT_REMOVE_CORE -->
+    <script type="text/javascript">PDFJS.workerSrc = '../src/worker_loader.js';</script> <!-- PDFJSSCRIPT_REMOVE_CORE -->
+    <script type="text/javascript" src="debugger.js"></script>
+    <script type="text/javascript" src="viewer.js"></script>
+  </head>
+  
   <body>
+    
+    <div id="outerContainer">
+
+      <div class="toolbar">
+        <div id="toolbarContainer">
+          <div id="toolbarSidebar">
+            <div class="splitToolbarButton toggled">
+              <div class="toolbarButton viewThumbnail toggled" title="Show Thumbnails"></div>
+              <div class="splitToolbarButtonSeparator"></div>
+              <div class="toolbarButton viewOutline" title="Show Document Outline"></div>
+            </div>
+          </div>
+          <div id="toolbarViewer">
+            <div class="toolbarButton sidebarToggle toggled" title="Toggle Sidebar"></div>
+            <div class="toolbarButtonSpacer"></div>
+            <div class="splitToolbarButton">
+              <div class="toolbarButton pageUp" title="Previous Page"></div>
+              <div class="splitToolbarButtonSeparator"></div>
+              <div class="toolbarButton pageDown" title="Next Page"></div>
+            </div>
+            <div id="pageNumber" class="toolbarField" contentEditable="true">1</div>
+            <div id="numPages" class="toolbarLabel"></div>
+            <div class="toolbarButtonFlexibleSpacer"></div>
+            <div class="splitToolbarButton">
+              <div class="toolbarButton zoomOut" title="Zoom Out"></div>
+              <div class="splitToolbarButtonSeparator"></div>
+              <div class="toolbarButton zoomIn" title="Zoom In"></div>
+            </div>
+            <div class="dropdownToolbarButton">Auto</div>
+            <div class="toolbarButtonFlexibleSpacer"></div>
+            <div class="toolbarButton print" title="Print"></div>
+            <div class="toolbarButton download"  title="Download"></div>
+            <div class="toolbarButtonSpacer"></div>
+            <div class="toolbarButton bookmark" title="Bookmark (or copy) current location"></div>
+          </div>
+        </div>
+      </div>
+
+      <div id="sidebarContainer">
+        <div id="thumbnailView">
+          <div class="thumbnail selected">
+            <div class="thumbnailImage"></div>
+            <div class="thumbnailSelectionRing"></div>
+          </div>
+          <div class="thumbnail">
+            <div class="thumbnailImage"></div>
+            <div class="thumbnailSelectionRing"></div>
+          </div>
+          <div class="thumbnail">
+            <div class="thumbnailImage"></div>
+            <div class="thumbnailSelectionRing"></div>
+          </div>
+          <div class="thumbnail">
+            <div class="thumbnailImage"></div>
+            <div class="thumbnailSelectionRing"></div>
+          </div>
+          <div class="thumbnail">
+            <div class="thumbnailImage"></div>
+            <div class="thumbnailSelectionRing"></div>
+          </div>
+        </div>
+        <div id="outlineView">
+          <div class="outlineEntry selected">Page 1</div>
+          <div class="outlineEntry">Page 2</div>
+          <div class="outlineEntry">Page 3</div>
+          <div class="outlineEntry">Page 4</div>
+          <div class="outlineEntry">Page 5</div>
+        </div>
+      </div>
+
+      <div id="viewerContainer">
+        <div id="viewer" />
+      </div>
+
+    </div> <!-- outerContainer -->
+
+
+<div style="display:none;">
+
     <div id="controls">
       <button id="previous" onclick="PDFView.page--;" oncontextmenu="return false;">
         <img src="images/go-up.svg" align="top" height="16"/>
@@ -147,6 +223,8 @@
         <div id="loading">Loading... 0%</div>
         <div id="loadingBar"><div class="progress"></div></div>
     </div>
-    <div id="viewer"></div>
+
+</div> <!-- display none -->
+
   </body>
 </html>

@@ -1,221 +1,480 @@
-/* -*- Mode: Java; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- /
-/* vim: set shiftwidth=4 tabstop=8 autoindent cindent expandtab: */
+* {
+  padding: 0;
+  margin: 0;
+  -moz-user-select:none;
+  cursor: default;
+}
+
+html {
+  height: 100%;
+}
 
 body {
-  background-color: #929292;
-  font-family: 'Lucida Grande', 'Lucida Sans Unicode', Helvetica, Arial, Verdana, sans-serif;
-  margin: 0px;
-  padding: 0px;
-}
-
-[hidden] {
-  display: none !important;
-}
-
-/* === Toolbar === */
-#controls {
-  background-color: #eee;
-  background: -o-linear-gradient(bottom,#eee 0%,#fff 100%);
-  background: -moz-linear-gradient(center bottom, #eee 0%, #fff 100%);
-  background: -webkit-gradient(linear, left bottom, left top, color-stop(0.0, #ddd), color-stop(1.0, #fff));
-  border-bottom: 1px solid #666;
-  padding: 3px;
-  position: fixed;
-  left: 0px;
-  top: 0px;
-  height: 24px;
-  width: 100%;
-  z-index: 1;
-  white-space:nowrap;
-  overflow: hidden;
-}
-
-.separator {
-  display: inline;
-  border-left: 1px solid #d3d3d3;
-  border-right: 1px solid #fff;
-  height: 16px;
-  width:0px;
-  margin: 4px;
-}
-
-#controls > a > img {
-    margin: 4px;
-    height: 16px;
-}
-
-#controls > button {
-  line-height: 16px;
-}
-
-#controls > button > img {
-  width: 16px;
-  height: 16px;
-}
-
-#controls > button[disabled] > img {
-  opacity: 0.5;
-}
-
-#pageNumber {
-  text-align: right;
-}
-
-#fileInput {
-  line-height: 16px;
-}
-
-/* === Sidebar === */
-#sidebar {
-  position: fixed;
-  width: 350px;
-  top: 62px;
-  bottom: 18px;
-  left: -290px;
-  transition: left 0.25s ease-in-out 1s;
-  -o-transition: left 0.25s ease-in-out 1s;
-  -moz-transition: left 0.25s ease-in-out 1s;
-  -webkit-transition: left 0.25s ease-in-out 1s;
-  z-index: 1;
-}
-
-#sidebar:hover,
-#sidebar.pinned {
-  left: 0px;
-  transition: left 0.25s ease-in-out 0s;
-  -o-transition: left 0.25s ease-in-out 0s;
-  -moz-transition: left 0.25s ease-in-out 0s;
-  -webkit-transition: left 0.25s ease-in-out 0s;
-}
-
-#pinIcon {
-  position: absolute;
-  top: 4px;
-  right: 55px;
-  width: 15px;
-  height: 15px;
-  background: center no-repeat;
-  background-image: url('images/pin-up.svg');
-  background-size: 15px 15px;
-}
-
-#pinIcon:hover {
-  background-color: rgba(255,255,255,0.35);
-}
-
-#sidebar.pinned #pinIcon {
-  background-image: url('images/pin-down.svg');
-  background-size: 15px 15px;
-}
-
-#sidebarBox {
-  background-color: rgba(0, 0, 0, 0.7);
-  width: 300px;
   height: 100%;
-  border-top-right-radius: 8px;
-  border-bottom-right-radius: 8px;
-  -moz-border-radius-topright: 8px;
-  -moz-border-radius-bottomright: 8px;
-  -webkit-border-top-right-radius: 8px;
-  -webkit-border-bottom-right-radius: 8px;
-  box-shadow: 0px 2px 8px #000;
-  -moz-box-shadow: 0px 2px 8px #000;
-  -webkit-box-shadow: 0px 2px 8px #000;
+  background-color: #404040;
+  background-image: url(images/texture.png);
+  font-family: Segoe UI, Verdana, sans-serif;
 }
 
-#sidebarScrollView {
-  position: absolute;
-  overflow: hidden;
-  overflow-y: auto;
-  top: 20px;
-  bottom: 10px;
-  left: 10px;
-  width: 280px;
+#outerContainer {
+  display: -moz-box;
+  -moz-box-orient: horizontal;
+  width: 100%;
+  height: 100%;
+  -moz-user-select:none;
+  cursor: default;
+}
+
+#sidebarContainer {
+  width: 200px;
+  height: 100%;
+  background-color: hsla(0,0%,0%,.1);
+  box-shadow: inset -1px 0 0 hsla(0,0%,0%,.25);
+  overflow: auto;
+}
+
+#viewerContainer {
+  -moz-box-flex: 1;
+  height: 100%;
+  box-shadow: inset 1px 0 0 hsla(0,0%,100%,.05);
+}
+
+.toolbar {
+  position: fixed;
+  width: 100%;
+  height: 32px;
+  z-index: 9999;
+  -moz-user-select:none;
+  cursor: default;
+}
+
+#toolbarContainer {
+  display: -moz-box;
+  width: 100%;
+}
+
+#toolbarSidebar {
+  display: -moz-box;
+  width: 200px;
+  height: 32px;
+  background-image: url(images/texture.png),
+                    -moz-linear-gradient(hsla(0,0%,30%,.99), hsla(0,0%,25%,.95));
+  box-shadow: inset -2px 0 0 hsla(0,0%,100%,.08),
+              inset 0 1px 1px hsla(0,0%,0%,.15),
+              inset 0 -1px 0 hsla(0,0%,100%,.05),
+              0 1px 0 hsla(0,0%,0%,.15),
+              0 1px 1px hsla(0,0%,0%,.1);
+}
+
+#toolbarViewer {
+  display: -moz-box;
+  -moz-box-flex: 1;
+  margin-left: -1px;
+  height: 32px;
+  background-image: url(images/texture.png),
+                    -moz-linear-gradient(hsla(0,0%,32%,.99), hsla(0,0%,27%,.95));
+  border-left: 1px solid hsla(0,0%,0%,.5);
+  box-shadow: inset 1px 0 0 hsla(0,0%,100%,.08),
+              inset 0 1px 1px hsla(0,0%,0%,.15),
+              inset 0 -1px 0 hsla(0,0%,100%,.05),
+              0 1px 0 hsla(0,0%,0%,.15),
+              0 1px 1px hsla(0,0%,0%,.1);
+}
+
+.splitToolbarButton {
+  margin: 4px 2px 4px 0;
+  display: -moz-box;
+}
+.splitToolbarButton > .toolbarButton {
+  position: relative;
+  margin: 0 -1px;
+  padding: 3px 6px;
+  border-radius: 0;
+}
+.splitToolbarButton:hover > .toolbarButton,
+.splitToolbarButton.toggled > .toolbarButton {
+  background-color: hsla(0,0%,0%,.12);
+  background-image: -moz-linear-gradient(hsla(0,0%,100%,.05), hsla(0,0%,100%,0));
+  background-clip: padding-box;
+  border: 1px solid hsla(0,0%,0%,.35);
+  border-color: hsla(0,0%,0%,.32) hsla(0,0%,0%,.38) hsla(0,0%,0%,.42);
+  box-shadow: 0 1px 0 hsla(0,0%,100%,.05) inset,
+              0 0 1px hsla(0,0%,100%,.15) inset,
+              0 1px 0 hsla(0,0%,100%,.05);
+  -moz-transition-property: background-color, border-color, box-shadow;
+  -moz-transition-duration: 150ms;
+  -moz-transition-timing-function: ease;
+}
+.splitToolbarButton > .toolbarButton:hover,
+.dropdownToolbarButton:hover {
+  background-color: hsla(0,0%,0%,.2);
+  box-shadow: 0 1px 0 hsla(0,0%,100%,.05) inset,
+              0 0 1px hsla(0,0%,100%,.15) inset,
+              0 0 1px hsla(0,0%,0%,.05);
+  z-index: 199;
+}
+.splitToolbarButton > .toolbarButton:first-child  {
+  position: relative;
+  margin: 0;
+  margin-right: -1px;
+  border-top-left-radius: 2px;
+  border-bottom-left-radius: 2px;
+  border-right-color: transparent;
+}
+.splitToolbarButton > .toolbarButton:last-child  {
+  position: relative;
+  margin: 0;
+  margin-left: -1px;
+  border-top-right-radius: 2px;
+  border-bottom-right-radius: 2px;
+  border-left-color: transparent;
+}
+.splitToolbarButtonSeparator {
+  margin: 4px 0;
+  width: 1px;
+  background-color: hsla(0,0%,00%,.5);
+  z-index: 99;
+  box-shadow: 0 0 0 1px hsla(0,0%,100%,.08);
+}
+.splitToolbarButton:hover > .splitToolbarButtonSeparator,
+.splitToolbarButton.toggled > .splitToolbarButtonSeparator {
+  margin: 1px 0;
+  box-shadow: 0 0 0 1px hsla(0,0%,100%,.03);
+  -moz-transition-property: margin;
+  -moz-transition-duration: 10ms;
+  -moz-transition-timing-function: ease;
+}
+
+.toolbarButton,
+.dropdownToolbarButton {
+  -moz-box-flex: 0;
+  min-width: 16px;
+  padding: 3px 7px;
+  margin: 4px 2px 4px 0;
+  border: 1px solid transparent;
+  border-radius: 2px;
+  color: hsl(0,0%,95%);
+  font-size: 12px;
+  line-height: 14px;
+  -moz-user-select:none;
+  cursor: default;
+  -moz-transition-property: background-color, border-color, box-shadow;
+  -moz-transition-duration: 150ms;
+  -moz-transition-timing-function: ease;
+}
+
+.toolbarButton:hover,
+.dropdownToolbarButton {
+  background-color: hsla(0,0%,0%,.12);
+  background-image: -moz-linear-gradient(hsla(0,0%,100%,.05), hsla(0,0%,100%,0));
+  background-clip: padding-box;
+  border: 1px solid hsla(0,0%,0%,.35);
+  border-color: hsla(0,0%,0%,.32) hsla(0,0%,0%,.38) hsla(0,0%,0%,.42);
+  box-shadow: 0 1px 0 hsla(0,0%,100%,.05) inset,
+              0 0 1px hsla(0,0%,100%,.15) inset,
+              0 1px 0 hsla(0,0%,100%,.05);
+}
+
+.toolbarButton:hover:active,
+.dropdownToolbarButton:hover:active {
+  background-color: hsla(0,0%,0%,.2);
+  background-image: -moz-linear-gradient(hsla(0,0%,100%,.05), hsla(0,0%,100%,0));
+  border-color: hsla(0,0%,0%,.35) hsla(0,0%,0%,.4) hsla(0,0%,0%,.45);
+  box-shadow: 0 1px 1px hsla(0,0%,0%,.1) inset,
+              0 0 1px hsla(0,0%,0%,.2) inset,
+              0 1px 0 hsla(0,0%,100%,.05);
+  -moz-transition-property: background-color, border-color, box-shadow;
+  -moz-transition-duration: 10ms;
+  -moz-transition-timing-function: linear;
+}
+
+.toolbarButton.toggled,
+.splitToolbarButton.toggled > .toolbarButton.toggled {
+  background-color: hsla(0,0%,0%,.3);
+  background-image: -moz-linear-gradient(hsla(0,0%,100%,.05), hsla(0,0%,100%,0));
+  border-color: hsla(0,0%,0%,.4) hsla(0,0%,0%,.45) hsla(0,0%,0%,.5);
+  box-shadow: 0 1px 1px hsla(0,0%,0%,.1) inset,
+              0 0 1px hsla(0,0%,0%,.2) inset,
+              0 1px 0 hsla(0,0%,100%,.05);
+  -moz-transition-property: background-color, border-color, box-shadow;
+  -moz-transition-duration: 10ms;
+  -moz-transition-timing-function: linear;
+}
+
+.toolbarButton.toggled:hover:active,
+.splitToolbarButton.toggled > .toolbarButton.toggled:hover:active {
+  background-color: hsla(0,0%,0%,.4);
+  border-color: hsla(0,0%,0%,.4) hsla(0,0%,0%,.5) hsla(0,0%,0%,.55);
+  box-shadow: 0 1px 1px hsla(0,0%,0%,.2) inset,
+              0 0 1px hsla(0,0%,0%,.3) inset,
+              0 1px 0 hsla(0,0%,100%,.05);
+}
+
+.dropdownToolbarButton {
+  min-width: 124px;
+}
+.dropdownToolbarButton::after {
+  display: inline-block;
+  float: right;
+  content: url(images/toolbarButton-menuArrows.png);
+}
+
+.splitToolbarButton:first-child,
+.toolbarButton:first-child {
+  margin-left: 4px;
+}
+.splitToolbarButton:last-child,
+.toolbarButton:last-child {
+  margin-right: 4px;
+}
+
+.toolbarButtonSpacer {
+  width: 30px;
+}
+
+.toolbarButtonFlexibleSpacer {
+  -moz-box-flex: 1;
+  min-width: 30px;
+}
+
+.toolbarButton.sidebarToggle::before {
+  display: inline-block;
+  content: url(images/toolbarButton-sidebarToggle.png);
+}
+    
+.toolbarButton.pageUp::before {
+  display: inline-block;
+  content: url(images/toolbarButton-pageUp.png);
+}
+    
+.toolbarButton.pageDown::before {
+  display: inline-block;
+  content: url(images/toolbarButton-pageDown.png);
+}
+
+.toolbarButton.zoomOut::before {
+  display: inline-block;
+  content: url(images/toolbarButton-zoomOut.png);
+}
+    
+.toolbarButton.zoomIn::before {
+  display: inline-block;
+  content: url(images/toolbarButton-zoomIn.png);
+}
+
+.toolbarButton.print::before {
+  display: inline-block;
+  content: url(images/toolbarButton-print.png);
+}
+
+.toolbarButton.download::before {
+  display: inline-block;
+  content: url(images/toolbarButton-download.png);
+}
+
+.toolbarButton.bookmark::before {
+  display: inline-block;
+  content: url(images/toolbarButton-bookmark.png);
+}
+    
+.toolbarButton.viewThumbnail::before {
+  display: inline-block;
+  content: url(images/toolbarButton-viewThumbnail.png);
+}
+    
+.toolbarButton.viewOutline::before {
+  display: inline-block;
+  content: url(images/toolbarButton-viewOutline.png);
+}
+
+.toolbarField {
+  min-width: 16px;
+  width: 32px;
+  padding: 3px 6px;
+  margin: 4px 0 4px 0;
+  border: 1px solid transparent;
+  border-radius: 2px;
+  background-color: hsla(0,0%,100%,.09);
+  background-image: -moz-linear-gradient(hsla(0,0%,100%,.05), hsla(0,0%,100%,0));
+  background-clip: padding-box;
+  border: 1px solid hsla(0,0%,0%,.35);
+  border-color: hsla(0,0%,0%,.32) hsla(0,0%,0%,.38) hsla(0,0%,0%,.42);
+  box-shadow: 0 1px 0 hsla(0,0%,0%,.05) inset,
+              0 1px 0 hsla(0,0%,100%,.05);
+  color: hsl(0,0%,95%);
+  font-size: 12px;
+  line-height: 14px;
+  text-align: right;
+  outline-style: none;
+  -moz-user-select:none;
+  cursor: default;
+  -moz-transition-property: background-color, border-color, box-shadow;
+  -moz-transition-duration: 150ms;
+  -moz-transition-timing-function: ease;
+}
+
+.toolbarField:hover {
+  background-color: hsla(0,0%,100%,.11);
+  border-color: hsla(0,0%,0%,.4) hsla(0,0%,0%,.43) hsla(0,0%,0%,.45);
+}
+
+.toolbarField:focus {
+  background-color: hsla(0,0%,100%,.15);
+  border-color: hsla(204,100%,65%,.8) hsla(204,100%,65%,.85) hsla(204,100%,65%,.9);
+}
+
+.toolbarLabel {
+  min-width: 16px;
+  padding: 3px 6px 3px 2px;
+  margin: 4px 2px 4px 0;
+  border: 1px solid transparent;
+  border-radius: 2px;
+  color: hsl(0,0%,85%);
+  font-size: 12px;
+  line-height: 14px;
+  text-align: left;
+  -moz-user-select:none;
+  cursor: default;
+}
+
+.viewer {
+  width: 100%;
+  height: 100%;
+  margin-top: -27px;
+  -moz-user-select:none;
+  cursor: default;
+}
+
+.viewerImage {
+/*         width: 50%; */
+  margin: 80px 20px 20px;
+  box-shadow: 0 0 0 1px hsla(0,0%,0%,.5),
+              0 2px 8px hsla(0,0%,0%,.3);
+
+}
+
+
+#thumbnailView {
+  position: fixed;
+  width: 120px;
+  height: 100%;
+  padding: 51px 40px 0;
+  overflow: auto;
 }
 
 .thumbnail {
-  width: 134px;
-  height: 134px;
-  margin-top: 5px;
-  margin-bottom: 5px;
-  margin-left:auto;
-  margin-right:auto;
-  line-height: 134px;
-  text-align: center;
-  overflow: hidden;
+  position: relative;
+  float: left;
+  width: 120px;
+  height: 150px;
+
+/*
+  width: 98px;
+  height: 128px;
+  margin: 0 10px 20px;
+  background-color: white;
+  background-image: url(images/thumbnail.png);
+  border: 1px solid transparent;
+  box-shadow: 0 0 0 1px hsla(0,0%,0%,.5),
+              0 2px 8px hsla(0,0%,0%,.3);
+  opacity: .8;
+  -moz-transition-duration: 150ms;
+*/
 }
 
-.thumbnail:not([data-loaded]) {
-  background-color: gray;
-}
-
-.thumbnail > canvas {
-  vertical-align: middle;
-  display: inline-block;
-}
-
-#outlineScrollView {
+.thumbnailImage {
   position: absolute;
-  background-color: #fff;
-  overflow: auto;
-  top: 20px;
-  bottom: 10px;
+  top: 10px;
   left: 10px;
-  width: 280px;
+  width: 98px;
+  height: 128px;
+/*  background-image: url(images/thumbnail.png);*/
+  border: 1px solid transparent;
+  box-shadow: 0 0 0 1px hsla(0,0%,0%,.5),
+              0 2px 8px hsla(0,0%,0%,.3);
+  opacity: .8;
+  z-index: 99;
+  -moz-transition-duration: 150ms;
+}
+.thumbnailSelectionRing {
+  position: absolute;
+  width: 112px;
+  height: 142px;
+  margin: 4px;
+  border-radius: 2px;
+  -moz-transition-duration: 150ms;
+}
+    
+.thumbnail:hover > .thumbnailImage {
+  opacity: .9;
+}
+
+.thumbnail:hover > .thumbnailSelectionRing {
+  background-color: hsla(0,0%,100%,.15);
+  background-image: -moz-linear-gradient(hsla(0,0%,100%,.05), hsla(0,0%,100%,0));
+  background-clip: padding-box;
+  box-shadow: 0 1px 0 hsla(0,0%,100%,.05) inset,
+              0 0 1px hsla(0,0%,100%,.2) inset,
+              0 0 1px hsla(0,0%,0%,.2);
+  color: hsla(0,0%,100%,.9);
+}
+
+.thumbnail.selected > .thumbnailImage {
+  box-shadow: 0 0 0 1px hsla(0,0%,0%,.5);
+  opacity: 1;
+}
+
+.thumbnail.selected > .thumbnailSelectionRing {
+  background-color: hsla(0,0%,100%,.3);
+  background-image: -moz-linear-gradient(hsla(0,0%,100%,.05), hsla(0,0%,100%,0));
+  background-clip: padding-box;
+  box-shadow: 0 1px 0 hsla(0,0%,100%,.05) inset,
+              0 0 1px hsla(0,0%,100%,.1) inset,
+              0 0 1px hsla(0,0%,0%,.2);
+  color: hsla(0,0%,100%,1);
 }
 
 #outlineView {
-  padding-top: 4px;
-  padding-bottom: 100px;
-  padding-left: 6px;
-  padding-right: 6px;
-  font-size: smaller;
+  position: fixed;
+  width: 188px;
+  height: 100%;
+  padding: 52px 4px 0;
+  overflow: auto;
 }
 
-.outlineItem > .outlineItems {
-  margin-left: 20px;
+.outlineEntry {
+  width: -moz-calc(100% - 8px);
+  height: 20px;
+  padding: 2px 0 0 10px;
+  margin-bottom: 1px;
+  border-radius: 2px;
+  color: hsla(0,0%,100%,.8);
+  font-size: 13px;
+  line-height: 15px;
+  -moz-user-select:none;
+  cursor: default;
 }
 
-.outlineItem > a {
-  text-decoration: none;
-  color: black;
+.outlineEntry:hover {
+  background-color: hsla(0,0%,100%,.02);
+  background-image: -moz-linear-gradient(hsla(0,0%,100%,.05), hsla(0,0%,100%,0));
+  background-clip: padding-box;
+  box-shadow: 0 1px 0 hsla(0,0%,100%,.05) inset,
+              0 0 1px hsla(0,0%,100%,.2) inset,
+              0 0 1px hsla(0,0%,0%,.2);
+  color: hsla(0,0%,100%,.9);
 }
 
-.outlineItem > a:hover {
-  background: #ff0;
-  box-shadow: 0px 2px 10px #ff0;
+.outlineEntry.selected {
+  background-color: hsla(0,0%,100%,.08);
+  background-image: -moz-linear-gradient(hsla(0,0%,100%,.05), hsla(0,0%,100%,0));
+  background-clip: padding-box;
+  box-shadow: 0 1px 0 hsla(0,0%,100%,.05) inset,
+              0 0 1px hsla(0,0%,100%,.1) inset,
+              0 0 1px hsla(0,0%,0%,.2);
+  color: hsla(0,0%,100%,1);
 }
 
-#sidebarControls {
-  position:absolute;
-  width: 120px;
-  height: 32px;
-  left: 15px;
-  bottom: 35px;
-}
-
-#sidebarControls > button {
-  box-shadow: 0px 4px 10px #000;
-  -moz-box-shadow: 0px 4px 10px #000;
-  -webkit-box-shadow: 0px 4px 10px #000;
-}
-
-#sidebarControls > button > img {
-  width: 32px;
-  height: 32px;
-}
-
-#sidebarControls > button[disabled] > img {
-  opacity: 0.5;
-}
-
-#sidebarControls > button[data-selected] {
-  box-shadow: 0px 4px 10px #ff0;
-  -moz-box-shadow: 0px 4px 10px #ff0;
-  -webkit-box-shadow: 0px 4px 10px #ff0;
-}
-
-/* === Content view === */
 canvas {
   margin: auto;
   display: block;
@@ -244,231 +503,4 @@ canvas {
   box-shadow: 0px 2px 10px #ff0;
   -moz-box-shadow: 0px 2px 10px #ff0;
   -webkit-box-shadow: 0px 2px 10px #ff0;
-}
-
-.loadingIcon {
-  position: absolute;
-  display: block;
-  left: 0;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  background: url('images/loading-icon.gif') center no-repeat;
-}
-
-.textLayer {
-  position: absolute;
-  left: 0;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  color: #000;
-  font-family: sans-serif;
-}
-
-.textLayer > div {
-  color: transparent;
-  position: absolute;
-  line-height:1.3;
-}
-
-.annotComment > div {
-  position: absolute;
-}
-
-.annotComment > img {
-  position: absolute;
-}
-
-.annotComment > img:hover {
-  cursor: pointer;
-  opacity: 0.7;
-}
-
-.annotComment > div {
-  padding: 0.2em;
-  max-width: 20em;
-  background-color: #F1E47B;
-  box-shadow: 0px 2px 10px #333;
-  -moz-box-shadow: 0px 2px 10px #333;
-  -webkit-box-shadow: 0px 2px 10px #333;
-}
-
-.annotComment > div > h1 {
-  font-weight: normal;
-  font-size: 1.2em;
-  border-bottom: 1px solid #000000;
-  margin: 0px;
-}
-
-/* TODO: file FF bug to support ::-moz-selection:window-inactive
-   so we can override the opaque grey background when the window is inactive;
-   see https://bugzilla.mozilla.org/show_bug.cgi?id=706209 */
-::selection { background:rgba(0,0,255,0.3); }
-::-moz-selection { background:rgba(0,0,255,0.3); }
-
-#viewer {
-  margin: 44px 0px 0px;
-  padding: 8px 0px;
-}
-
-#sidebarView canvas:hover {
-  background: #ff0;
-  box-shadow: 0px 2px 10px #ff0;
-  -moz-box-shadow: 0px 2px 10px #ff0;
-  -webkit-box-shadow: 0px 2px 10px #ff0;
-}
-
-#pageWidthOption {
-  border-top: 1px solid black;
-}
-
-#customScaleOption {
-  display: none;
-}
-
-#errorWrapper {
-  background: none repeat scroll 0 0 #FF5555;
-  color: white;
-  left: 0;
-  position: fixed;
-  right: 0;
-  top: 30px;
-  z-index: 1000;
-  padding: 3px;
-  font-size: 0.8em;
-}
-
-#errorMessageLeft {
-  float: left;
-}
-
-#errorMessageRight {
-  float: right;
-}
-
-#errorMoreInfo {
-  background-color: #FFFFFF;
-  color: black;
-  padding: 3px;
-  margin: 3px;
-  width: 98%;
-}
-
-.clearBoth {
-  clear: both;
-}
-
-/* === Printed media overrides === */
-@media print {
-  #sidebar {
-    display: none;
-  }
-
-  #controls {
-    display: none;
-  }
-
-  #viewer {
-    margin: 0;
-    padding: 0;
-  }
-
-  .page {
-    display: none;
-    margin: 0;
-  }
-
-  .page canvas {
-    box-shadow: none;
-    -moz-box-shadow: none;
-    -webkit-box-shadow: none;
-  }
-
-  .page[data-loaded] {
-    display: block;
-    page-break-after: always;
-  }
-}
-
-#loadingBox {
-  margin: 100px 0;
-  text-align: center;
-}
-
-#loadingBar {
-  background-color: #333;
-  display: inline-block;
-  border: 1px solid black;
-  clear: both;
-  margin:0px;
-  line-height: 0;
-  border-radius: 4px;
-  width: 15em;
-  height: 1.5em;
-}
-
-#loadingBar .progress {
-  background-color: green;
-  display: inline-block;
-  float: left;
-
-  background: #b4e391;
-  background: -moz-linear-gradient(top, #b4e391 0%, #61c419 50%, #b4e391 100%);
-  background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,#b4e391), color-stop(50%,#61c419), color-stop(100%,#b4e391));
-  background: -webkit-linear-gradient(top, #b4e391 0%,#61c419 50%,#b4e391 100%);
-  background: -o-linear-gradient(top, #b4e391 0%,#61c419 50%,#b4e391 100%);
-  background: -ms-linear-gradient(top, #b4e391 0%,#61c419 50%,#b4e391 100%);
-  background: linear-gradient(top, #b4e391 0%,#61c419 50%,#b4e391 100%);    
-
-  border-top-left-radius: 3px;
-  border-bottom-left-radius: 3px;
-
-  width: 0%;
-  height: 100%;
-}
-
-#PDFBug {
-  font-size: 10px;
-  position: fixed;
-  top: 35px;
-  bottom: 5px;
-  right: 2px;
-  width: 300px;
-  background: white;
-  border: 1px solid #666;
-  padding: 0;
-}
-#PDFBug .controls {
-  border-bottom: 1px solid #666;
-  padding: 3px;
-  background: -moz-linear-gradient(center bottom, #eee 0%, #fff 100%);
-}
-#PDFBug .panels {
-  overflow: auto;
-  position: absolute;
-  top: 27px;
-  left: 0;
-  right: 0;
-  bottom: 0;
-}
-#PDFBug button.active {
-  font-weight: bold;
-}
-.debuggerShowText {
-  background: yellow;
-  color: blue;
-  opacity: 0.3;
-}
-.debuggerHideText:hover {
-  background: yellow;
-  opacity: 0.3;
-}
-#PDFBug .stats {
-  font-size: 10px;
-  white-space: pre;
-  font-family: courier;
-}
-#PDFBug .stats .title {
-  font-weight: bold;
 }
