@@ -1456,16 +1456,6 @@ window.addEventListener('pagechange', function pagechange(evt) {
 }, true);
 
 window.addEventListener('keydown', function keydown(evt) {
-  var curElement = document.activeElement;
-  if (curElement && curElement.tagName == 'INPUT')
-    return;
-  var controlsElement = document.getElementById('controls');
-  while (curElement) {
-    if (curElement === controlsElement)
-      return; // ignoring if the 'controls' element is focused
-    curElement = curElement.parentNode;
-  }
-
   var cmd = 0;
   if (evt.ctrlKey)  cmd |= 1;
   if (evt.altKey)   cmd |= 2;
@@ -1473,23 +1463,10 @@ window.addEventListener('keydown', function keydown(evt) {
   if (evt.metaKey)  cmd |= 8; 
 
   var handled = false;
-  if (cmd == 0) { // no control key pressed at all.
-    switch (evt.keyCode) {
-      case 37: // left arrow
-      case 75: // 'k'
-      case 80: // 'p'
-        PDFView.page--;
-        handled = true;
-        break;
-      case 39: // right arrow
-      case 74: // 'j'
-      case 78: // 'n'
-        PDFView.page++;
-        handled = true;
-        break;
-    }
-  }
-  else if (cmd == 1 || cmd == 8) { // either CTRL or META key.
+
+  // First, handle the key bindings that are independent whether an input
+  // control is selected or not.
+  if (cmd == 1 || cmd == 8) { // either CTRL or META key.
     switch (evt.keyCode) {
       case 61: // FF/Mac '='
       case 107: // FF '+' and '='
@@ -1504,6 +1481,40 @@ window.addEventListener('keydown', function keydown(evt) {
         break;
       case 48: // '0'
         PDFView.parseScale(kDefaultScale, true);
+        handled = true;
+        break;
+    }
+  }
+
+  if (handled) {
+    evt.preventDefault();
+    return;
+  }
+
+  // Some shortcuts should not get handled if a control/input element
+  // is selected.
+  var curElement = document.activeElement;
+  if (curElement && curElement.tagName == 'INPUT')
+    return;
+  var controlsElement = document.getElementById('controls');
+  while (curElement) {
+    if (curElement === controlsElement)
+      return; // ignoring if the 'controls' element is focused
+    curElement = curElement.parentNode;
+  }
+
+  if (cmd == 0) { // no control key pressed at all.
+    switch (evt.keyCode) {
+      case 37: // left arrow
+      case 75: // 'k'
+      case 80: // 'p'
+        PDFView.page--;
+        handled = true;
+        break;
+      case 39: // right arrow
+      case 74: // 'j'
+      case 78: // 'n'
+        PDFView.page++;
         handled = true;
         break;
     }
