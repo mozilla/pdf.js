@@ -89,6 +89,27 @@ var WorkerMessageHandler = {
       // Create only the model of the PDFDoc, which is enough for
       // processing the content of the pdf.
       pdfModel = new PDFDocModel(new Stream(data));
+      var doc = {
+        numPages: pdfModel.numPages,
+        fingerprint: pdfModel.fingerprint,
+        destinations: pdfModel.catalog.destinations,
+        outline: pdfModel.catalog.documentOutline,
+        info: pdfModel.info,
+        metadata: pdfModel.catalog.metadata
+      };
+      handler.send('doc', {pdfInfo: doc});
+    });
+
+    handler.on('getpage', function wphSetupTest(data) {
+      var pdfPage = pdfModel.getPage(data.pageNumber);
+      var page = {
+        pageNumber: data.pageNumber,
+        rotate: pdfPage.rotate,
+        ref: pdfPage.ref,
+        view: pdfPage.view,
+        annotations: pdfPage.getAnnotations(), // REMOVE
+      };
+      handler.send('getpage', {pageInfo: page});
     });
 
     handler.on('page_request', function wphSetupPageRequest(pageNum) {

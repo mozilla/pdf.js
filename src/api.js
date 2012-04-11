@@ -1,22 +1,250 @@
 /* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 /* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
 
+/*
+  PDFDoc.prototype = {
+    destroy: function PDFDoc_destroy() {
+      if (this.worker)
+        this.worker.terminate();
+
+      if (this.fontWorker)
+        this.fontWorker.terminate();
+
+      for (var n in this.pageCache)
+        delete this.pageCache[n];
+
+      delete this.data;
+      delete this.stream;
+      delete this.pdf;
+      delete this.catalog;
+    }
+  };
+*/
+
 (function pdfApiWrapper() {
-  function PdfPageWrapper(page) {
-    this.page = page;
+  function WorkerTransport(promise) {
+    this.workerReadyPromise = promise;
+    this.objs = new PDFObjects();
+
+    this.pageCache = [];
+    this.pagePromises = [];
+    this.fontsLoading = {};
+
+    // If worker support isn't disabled explicit and the browser has worker
+    // support, create a new web worker and test if it/the browser fullfills
+    // all requirements to run parts of pdf.js in a web worker.
+    // Right now, the requirement is, that an Uint8Array is still an Uint8Array
+    // as it arrives on the worker. Chrome added this with version 15.
+    if (!globalScope.PDFJS.disableWorker && typeof Worker !== 'undefined') {
+      var workerSrc = PDFJS.workerSrc;
+      if (typeof workerSrc === 'undefined') {
+        error('No PDFJS.workerSrc specified');
+      }
+
+      try {
+        var worker;
+        if (PDFJS.isFirefoxExtension) {
+          // The firefox extension can't load the worker from the resource://
+          // url so we have to inline the script and then use the blob loader.
+          var bb = new MozBlobBuilder();
+          bb.append(document.querySelector('#PDFJS_SCRIPT_TAG').textContent);
+          var blobUrl = window.URL.createObjectURL(bb.getBlob());
+          worker = new Worker(blobUrl);
+        } else {
+          // Some versions of FF can't create a worker on localhost, see:
+          // https://bugzilla.mozilla.org/show_bug.cgi?id=683280
+          worker = new Worker(workerSrc);
+        }
+
+        var messageHandler = new MessageHandler('main', worker);
+
+        messageHandler.on('test', function pdfDocTest(supportTypedArray) {
+          if (supportTypedArray) {
+            this.worker = worker;
+            this.setupMessageHandler(messageHandler);
+          } else {
+            globalScope.PDFJS.disableWorker = true;
+            this.setupFakeWorker();
+          }
+        }.bind(this));
+
+        var testObj = new Uint8Array(1);
+        // Some versions of Opera throw a DATA_CLONE_ERR on
+        // serializing the typed array.
+        messageHandler.send('test', testObj);
+        return;
+      } catch (e) {
+        warn('The worker has been disabled.');
+      }
+    }
+    // Either workers are disabled, not supported or have thrown an exception.
+    // Thus, we fallback to a faked worker.
+    globalScope.PDFJS.disableWorker = true;
+    this.setupFakeWorker();
+  }
+  WorkerTransport.prototype = {
+    setupFakeWorker: function WorkerTransport_setupFakeWorker() {
+      // If we don't use a worker, just post/sendMessage to the main thread.
+      var fakeWorker = {
+        postMessage: function WorkerTransport_postMessage(obj) {
+          fakeWorker.onmessage({data: obj});
+        },
+        terminate: function WorkerTransport_terminate() {}
+      };
+
+      var messageHandler = new MessageHandler('main', fakeWorker);
+      this.setupMessageHandler(messageHandler);
+
+      // If the main thread is our worker, setup the handling for the messages
+      // the main thread sends to it self.
+      WorkerMessageHandler.setup(messageHandler);
+    },
+
+    setupMessageHandler: function WorkerTransport_setupMessageHandler(messageHandler) {
+      this.messageHandler = messageHandler;
+
+      messageHandler.on('doc', function pdfDocPage(data) {
+        var pdfInfo = data.pdfInfo;
+        var pdfDocument = new PdfDocumentWrapper(pdfInfo, this);
+        this.pdfDocument = pdfDocument;
+        this.workerReadyPromise.resolve(pdfDocument)
+      }, this);
+
+      messageHandler.on('getpage', function pdfDocPage(data) {
+        var pageInfo = data.pageInfo;
+        var page = new PdfPageWrapper(pageInfo, transport);
+        this.pageCache[pageInfo.pageNumber] = pageInfo;
+        var promises = this.pagePromises[pageInfo.pageNumber];
+        delete this.pagePromises[pageInfo.pageNumber];
+        for (var i = 0, ii = promises.length; i < ii; ++i)
+          promises.resolve(page);
+      }, this);
+
+      messageHandler.on('page', function pdfDocPage(data) {
+        var pageNum = data.pageNum;
+        var page = this.pageCache[pageNum];
+        var depFonts = data.depFonts;
+
+        page.stats.timeEnd('Page Request');
+        page.startRenderingFromOperatorList(data.operatorList, depFonts);
+      }, this);
+
+      messageHandler.on('obj', function pdfDocObj(data) {
+        var id = data[0];
+        var type = data[1];
+
+        switch (type) {
+          case 'JpegStream':
+            var imageData = data[2];
+            loadJpegStream(id, imageData, this.objs);
+            break;
+          case 'Image':
+            var imageData = data[2];
+            this.objs.resolve(id, imageData);
+            break;
+          case 'Font':
+            var name = data[2];
+            var file = data[3];
+            var properties = data[4];
+
+            if (file) {
+              // Rewrap the ArrayBuffer in a stream.
+              var fontFileDict = new Dict();
+              file = new Stream(file, 0, file.length, fontFileDict);
+            }
+
+            // At this point, only the font object is created but the font is
+            // not yet attached to the DOM. This is done in `FontLoader.bind`.
+            var font = new Font(name, file, properties);
+            this.objs.resolve(id, font);
+            break;
+          default:
+            error('Got unkown object type ' + type);
+        }
+      }, this);
+
+      messageHandler.on('page_error', function pdfDocError(data) {
+        var page = this.pageCache[data.pageNum];
+        if (page.displayReadyPromise)
+          page.displayReadyPromise.reject(data.error);
+        else
+          error(data.error);
+      }, this);
+
+      messageHandler.on('jpeg_decode', function(data, promise) {
+        var imageData = data[0];
+        var components = data[1];
+        if (components != 3 && components != 1)
+          error('Only 3 component or 1 component can be returned');
+
+        var img = new Image();
+        img.onload = (function messageHandler_onloadClosure() {
+          var width = img.width;
+          var height = img.height;
+          var size = width * height;
+          var rgbaLength = size * 4;
+          var buf = new Uint8Array(size * components);
+          var tmpCanvas = createScratchCanvas(width, height);
+          var tmpCtx = tmpCanvas.getContext('2d');
+          tmpCtx.drawImage(img, 0, 0);
+          var data = tmpCtx.getImageData(0, 0, width, height).data;
+
+          if (components == 3) {
+            for (var i = 0, j = 0; i < rgbaLength; i += 4, j += 3) {
+              buf[j] = data[i];
+              buf[j + 1] = data[i + 1];
+              buf[j + 2] = data[i + 2];
+            }
+          } else if (components == 1) {
+            for (var i = 0, j = 0; i < rgbaLength; i += 4, j++) {
+              buf[j] = data[i];
+            }
+          }
+          promise.resolve({ data: buf, width: width, height: height});
+        }).bind(this);
+        var src = 'data:image/jpeg;base64,' + window.btoa(imageData);
+        img.src = src;
+      });
+    },
+
+    sendData: function WorkerTransport_sendData(data) {
+      this.messageHandler.send('doc', data);
+    },
+
+    getPage: function WorkerTransport_getPage(n, promise) {
+      if (this.pageCache[n]) {
+         promise.resolve(pageCache[n]);
+         return;
+      }
+      if (n in this.pagePromises) {
+        this.pagePromises[n].push(promise);
+        return;
+      }
+      this.pagePromises[n] = [promise];
+      this.messageHandler.send('getpage', {page: n});
+    }
+  };
+  function PdfPageWrapper(page, transport) {
+    this.pageInfo = pageInfo;
+    this.transport = transport;
+    this.stats = new StatTimer();
+    this.objs = transport.objs;
   }
   PdfPageWrapper.prototype = {
+    get pageNumber() {
+      return this.pageInfo.pageNumber;
+    },
     get rotate() {
-      return this.page.rotate;
+      return this.pageInfo.rotate;
     },
     get stats() {
-      return this.page.stats;
+      return this.stats;
     },
     get ref() {
-      return this.page.ref;
+      return this.pageInfo.ref;
     },
     get view() {
-      return this.page.view;
+      return this.pageInfo.view;
     },
     getViewport: function(scale, rotate) {
       if (arguments.length < 2)
@@ -25,23 +253,133 @@
     },
     getAnnotations: function() {
       var promise = new PDFJS.Promise();
-      var annotations = this.page.getAnnotations();
+      var annotations = this.pageInfo.annotations;
       promise.resolve(annotations);
       return promise;
     },
     render: function(renderContext) {
-      var promise = new PDFJS.Promise();
-      this.page.startRendering(renderContext.canvasContext,
-        renderContext.viewport,
-        function complete(error) {
+      var promise;
+      var stats = this.stats;
+      stats.time('Overall');
+      // If there is no displayReadyPromise yet, then the operatorList was never
+      // requested before. Make the request and create the promise.
+      if (!this.displayReadyPromise) {
+        this.displayReadyPromise = promise = new Promise();
+
+        this.stats.time('Page Request');
+        this.messageHandler.send('page_request', this.pageNumber + 1);
+      } else
+        promise = this.displayReadyPromise;
+
+      var callback = (function complete(error) {
           if (error)
             promise.reject(error);
           else
             promise.resolve();
-        },
-        renderContext.textLayer);
+        });
+
+      // Once the operatorList and fonts are loaded, do the actual rendering.
+      this.displayReadyPromise.then(
+        function pageDisplayReadyPromise() {
+          var gfx = new CanvasGraphics(renderContext.canvasContext,
+            this.objs, renderContext.textLayer);
+          try {
+            this.display(gfx, renderContext.viewport, callback);
+          } catch (e) {
+            if (callback)
+              callback(e);
+            else
+              error(e);
+          }
+        }.bind(this),
+        function pageDisplayReadPromiseError(reason) {
+          if (callback)
+            callback(reason);
+          else
+            error(reason);
+        }
+      );
+
       return promise;
     },
+
+    startRenderingFromOperatorList:
+      function Page_startRenderingFromOperatorList(operatorList, fonts) {
+      var self = this;
+      this.operatorList = operatorList;
+
+      var displayContinuation = function pageDisplayContinuation() {
+        // Always defer call to display() to work around bug in
+        // Firefox error reporting from XHR callbacks.
+        setTimeout(function pageSetTimeout() {
+          self.displayReadyPromise.resolve();
+        });
+      };
+
+      this.ensureFonts(fonts,
+        function pageStartRenderingFromOperatorListEnsureFonts() {
+          displayContinuation();
+        }
+      );
+    },
+
+    ensureFonts: function Page_ensureFonts(fonts, callback) {
+      this.stats.time('Font Loading');
+      // Convert the font names to the corresponding font obj.
+      for (var i = 0, ii = fonts.length; i < ii; i++) {
+        fonts[i] = this.objs.objs[fonts[i]].data;
+      }
+
+      // Load all the fonts
+      FontLoader.bind(
+        fonts,
+        function pageEnsureFontsFontObjs(fontObjs) {
+          this.stats.timeEnd('Font Loading');
+
+          callback.call(this);
+        }.bind(this)
+      );
+    },
+
+    display: function Page_display(gfx, viewport, callback) {
+      var stats = this.stats;
+      stats.time('Rendering');
+
+/* REMOVE ??? */
+      var xref = this.xref;
+      var resources = this.resources;
+      assertWellFormed(isDict(resources), 'invalid page resources');
+
+      gfx.xref = xref;
+      gfx.res = resources;
+/* REMOVE END */
+
+      gfx.beginDrawing(viewport);
+
+      var startIdx = 0;
+      var length = this.operatorList.fnArray.length;
+      var operatorList = this.operatorList;
+      var stepper = null;
+      if (PDFJS.pdfBug && StepperManager.enabled) {
+        stepper = StepperManager.create(this.pageNumber);
+        stepper.init(operatorList);
+        stepper.nextBreakPoint = stepper.getNextBreakPoint();
+      }
+
+      var self = this;
+      function next() {
+        startIdx =
+          gfx.executeOperatorList(operatorList, startIdx, next, stepper);
+        if (startIdx == length) {
+          gfx.endDrawing();
+          stats.timeEnd('Rendering');
+          stats.timeEnd('Overall');
+          if (callback) callback();
+        }
+      }
+      next();
+    },
+
     getTextContent: function() {
       var promise = new PDFJS.Promise();
       var textContent = 'page text'; // not implemented
@@ -59,45 +397,49 @@
     }
   };
 
-  function PdfDocumentWrapper(pdf) {
-    this.pdf = pdf;
+  function PdfDocumentWrapper(pdfInfo, transport) {
+    this.pdfInfo = pdfInfo;
+    this.transport = transport;
   }
   PdfDocumentWrapper.prototype = {
     get numPages() {
-      return this.pdf.numPages;
+      return this.pdfInfo.numPages;
     },
     get fingerprint() {
-      return this.pdf.fingerprint;
+      return this.pdfInfo.fingerprint;
     },
     getPage: function(number) {
       var promise = new PDFJS.Promise();
-      var page = this.pdf.getPage(number);
-      promise.resolve(new PdfPageWrapper(page));
+      this.transport.getPage(number, promise);
       return promise;
     },
     getDestinations: function() {
       var promise = new PDFJS.Promise();
-      var destinations = this.pdf.catalog.destinations;
+      var destinations = this.pdfInfo.destinations;
       promise.resolve(destinations);
       return promise;
     },
     getOutline: function() {
       var promise = new PDFJS.Promise();
-      var outline = this.pdf.catalog.documentOutline;
+      var outline = this.pdfInfo.documentOutline;
       promise.resolve(outline);
       return promise;
     },
     getMetadata: function() {
       var promise = new PDFJS.Promise();
-      var info = this.pdf.info;
-      var metadata = this.pdf.catalog.metadata;
-      promise.resolve(info, metadata ? new PDFJS.Metadata(metadata) : null);
+      var info = this.pdfInfo.info;
+      var metadata = this.pdfInfo.metadata;
+      promise.resolve({
+        info: info,
+        metadata: metadata ? new PDFJS.Metadata(metadata) : null
+      });
       return promise;
     }
   };
 
   PDFJS.getDocument = function getDocument(source) {
     var promise = new PDFJS.Promise();
+    var transport = new WorkerTransport(promise);
     if (typeof source === 'string') {
       // fetch url
       PDFJS.getPdf(
@@ -116,26 +458,13 @@
           }
         },
         function getPdfLoad(data) {
-          var pdf = null;
-          try {
-            pdf = new PDFJS.PDFDoc(data);
-          } catch (e) {
-            promise.reject('An error occurred while reading the PDF.', e);
-          }
-          if (pdf)
-            promise.resolve(new PdfDocumentWrapper(pdf));
+          transport.sendData(data);
         });
     } else {
       // assuming the source is array, instantiating directly from it
-      var pdf = null;
-      try {
-        pdf = new PDFJS.PDFDoc(source);
-      } catch (e) {
-        promise.reject('An error occurred while reading the PDF.', e);
-      }
-      if (pdf)
-        promise.resolve(new PdfDocumentWrapper(pdf));
+      transport.sendData(source);
     }
     return promise;
   };
 })();
+
