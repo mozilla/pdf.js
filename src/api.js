@@ -6,11 +6,8 @@
     this.page = page;
   }
   PdfPageWrapper.prototype = {
-    get width() {
-      return this.page.width;
-    },
-    get height() {
-      return this.page.height;
+    get rotate() {
+      return this.page.rotate;
     },
     get stats() {
       return this.page.stats;
@@ -21,8 +18,10 @@
     get view() {
       return this.page.view;
     },
-    rotatePoint: function(x, y) {
-      return this.page.rotatePoint(x, y);
+    getViewport: function(scale, rotate) {
+      if (arguments < 2)
+        rotate = this.rotate;
+      return new PDFJS.PageViewport(this.view, scale, rotate, 0, 0);
     },
     getAnnotations: function() {
       var promise = new PDFJS.Promise();
@@ -33,6 +32,7 @@
     render: function(renderContext) {
       var promise = new PDFJS.Promise();
       this.page.startRendering(renderContext.canvasContext,
+        renderContext.viewport,
         function complete(error) {
           if (error)
             promise.reject(error);

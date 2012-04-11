@@ -100,18 +100,10 @@ var Page = (function PageClosure() {
       return shadow(this, 'mediaBox', obj);
     },
     get view() {
-      var cropBox = this.inheritPageProp('CropBox');
-      var view = {
-        x: 0,
-        y: 0,
-        width: this.width,
-        height: this.height
-      };
-      if (!isArray(cropBox) || cropBox.length !== 4)
-        return shadow(this, 'view', view);
-
       var mediaBox = this.mediaBox;
-      var offsetX = mediaBox[0], offsetY = mediaBox[1];
+      var cropBox = this.inheritPageProp('CropBox');
+      if (!isArray(cropBox) || cropBox.length !== 4)
+        return shadow(this, 'view', mediaBox);
 
       // From the spec, 6th ed., p.963:
       // "The crop, bleed, trim, and art boxes should not ordinarily
@@ -119,41 +111,12 @@ var Page = (function PageClosure() {
       // effectively reduced to their intersection with the media box."
       cropBox = Util.intersect(cropBox, mediaBox);
       if (!cropBox)
-        return shadow(this, 'view', view);
+        return shadow(this, 'view', mediaBox);
 
-      var tl = this.rotatePoint(cropBox[0] - offsetX, cropBox[1] - offsetY);
-      var br = this.rotatePoint(cropBox[2] - offsetX, cropBox[3] - offsetY);
-      view.x = Math.min(tl.x, br.x);
-      view.y = Math.min(tl.y, br.y);
-      view.width = Math.abs(tl.x - br.x);
-      view.height = Math.abs(tl.y - br.y);
-
-      return shadow(this, 'view', view);
+      return shadow(this, 'view', cropBox);
     },
     get annotations() {
       return shadow(this, 'annotations', this.inheritPageProp('Annots'));
-    },
-    get width() {
-      var mediaBox = this.mediaBox;
-      var rotate = this.rotate;
-      var width;
-      if (rotate == 0 || rotate == 180) {
-        width = (mediaBox[2] - mediaBox[0]);
-      } else {
-        width = (mediaBox[3] - mediaBox[1]);
-      }
-      return shadow(this, 'width', width);
-    },
-    get height() {
-      var mediaBox = this.mediaBox;
-      var rotate = this.rotate;
-      var height;
-      if (rotate == 0 || rotate == 180) {
-        height = (mediaBox[3] - mediaBox[1]);
-      } else {
-        height = (mediaBox[2] - mediaBox[0]);
-      }
-      return shadow(this, 'height', height);
     },
     get rotate() {
       var rotate = this.inheritPageProp('Rotate') || 0;
@@ -238,7 +201,7 @@ var Page = (function PageClosure() {
       );
     },
 
-    display: function Page_display(gfx, callback) {
+    display: function Page_display(gfx, viewport, callback) {
       var stats = this.stats;
       stats.time('Rendering');
       var xref = this.xref;
@@ -248,10 +211,7 @@ var Page = (function PageClosure() {
 
       gfx.xref = xref;
       gfx.res = resources;
-      gfx.beginDrawing({ x: mediaBox[0], y: mediaBox[1],
-            width: this.width,
-            height: this.height,
-            rotate: this.rotate });
+      gfx.beginDrawing(viewport);
 
       var startIdx = 0;
       var length = this.operatorList.fnArray.length;
@@ -275,21 +235,6 @@ var Page = (function PageClosure() {
         }
       }
       next();
-    },
-    rotatePoint: function Page_rotatePoint(x, y, reverse) {
-      var rotate = reverse ? (360 - this.rotate) : this.rotate;
-      switch (rotate) {
-        case 180:
-          return {x: this.width - x, y: y};
-        case 90:
-          return {x: this.width - y, y: this.height - x};
-        case 270:
-          return {x: y, y: x};
-        case 360:
-        case 0:
-        default:
-          return {x: x, y: this.height - y};
-      }
     },
     getLinks: function Page_getLinks() {
       var links = [];
@@ -342,15 +287,10 @@ var Page = (function PageClosure() {
         if (!isName(subtype))
           continue;
         var rect = annotation.get('Rect');
-        var topLeftCorner = this.rotatePoint(rect[0], rect[1]);
-        var bottomRightCorner = this.rotatePoint(rect[2], rect[3]);
 
         var item = {};
         item.type = subtype.name;
-        item.x = Math.min(topLeftCorner.x, bottomRightCorner.x);
-        item.y = Math.min(topLeftCorner.y, bottomRightCorner.y);
-        item.width = Math.abs(topLeftCorner.x - bottomRightCorner.x);
-        item.height = Math.abs(topLeftCorner.y - bottomRightCorner.y);
+        item.rect = rect;
         switch (subtype.name) {
           case 'Link':
             var a = annotation.get('A');
@@ -434,7 +374,8 @@ var Page = (function PageClosure() {
       }
       return items;
     },
-    startRendering: function Page_startRendering(ctx, callback, textLayer)  {
+    startRendering: function Page_startRendering(ctx, viewport,
+                                                 callback, textLayer)  {
       var stats = this.stats;
       stats.time('Overall');
       // If there is no displayReadyPromise yet, then the operatorList was never
@@ -449,7 +390,7 @@ var Page = (function PageClosure() {
         function pageDisplayReadyPromise() {
           var gfx = new CanvasGraphics(ctx, this.objs, textLayer);
           try {
-            this.display(gfx, callback);
+            this.display(gfx, viewport, callback);
           } catch (e) {
             if (callback)
               callback(e);

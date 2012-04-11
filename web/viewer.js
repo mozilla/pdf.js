@@ -358,6 +358,8 @@ var PDFView = {
     var destRef = dest[0];
     var pageNumber = destRef instanceof Object ?
       this.pagesRefMap[destRef.num + ' ' + destRef.gen + ' R'] : (destRef + 1);
+    if (pageNumber > this.pages.length)
+      pageNumber = this.pages.length;
     if (pageNumber) {
       this.page = pageNumber;
       var currentPage = this.pages[pageNumber - 1];
@@ -514,10 +516,9 @@ var PDFView = {
     pagesPromise.then(function(promisedPages) {
       for (var i = 1; i <= pagesCount; i++) {
         var page = promisedPages[i - 1];
-        var pageView = new PageView(container, page, i, page.width, page.height,
+        var pageView = new PageView(container, page, i, scale,
                                     page.stats, self.navigateTo.bind(self));
-        var thumbnailView = new ThumbnailView(sidebar, page, i,
-                                              page.width / page.height);
+        var thumbnailView = new ThumbnailView(sidebar, page, i);
         bindOnAfterDraw(pageView, thumbnailView);
 
         pages.push(pageView);
@@ -664,7 +665,7 @@ var PDFView = {
     var windowTop = window.pageYOffset;
     for (var i = 1; i <= pages.length; ++i) {
       var page = pages[i - 1];
-      var pageHeight = page.height * page.scale + kBottomMargin;
+      var pageHeight = page.height + kBottomMargin;
       if (currentHeight + pageHeight > windowTop)
         break;
 
@@ -723,16 +724,13 @@ var PDFView = {
   }
 };
 
-var PageView = function pageView(container, pdfPage, id, pageWidth, pageHeight,
+var PageView = function pageView(container, pdfPage, id, scale,
                                  stats, navigateTo) {
   this.id = id;
   this.pdfPage = pdfPage;
 
-  var view = pdfPage.view;
-  this.x = view.x;
-  this.y = view.y;
-  this.width = view.width;
-  this.height = view.height;
+  this.scale = scale || 1.0;
+  this.viewport = this.pdfPage.getViewport(scale);
 
   var anchor = document.createElement('a');
   anchor.name = '' + this.id;
@@ -746,8 +744,13 @@ var PageView = function pageView(container, pdfPage, id, pageWidth, pageHeight,
 
   this.update = function pageViewUpdate(scale) {
     this.scale = scale || this.scale;
-    div.style.width = (this.width * this.scale) + 'px';
-    div.style.height = (this.height * this.scale) + 'px';
+    var viewport = this.pdfPage.getViewport(this.scale);
+
+    this.viewport = viewport;
+    this.width = viewport.width;
+    this.height = viewport.height;
+    div.style.width = viewport.width + 'px';
+    div.style.height = viewport.height + 'px';
 
     while (div.hasChildNodes())
       div.removeChild(div.lastChild);
@@ -760,7 +763,7 @@ var PageView = function pageView(container, pdfPage, id, pageWidth, pageHeight,
     div.appendChild(this.loadingIconDiv);
   };
 
-  function setupAnnotations(pdfPage, scale) {
+  function setupAnnotations(pdfPage, viewport) {
     function bindLink(link, dest) {
       link.href = PDFView.getDestinationHash(dest);
       link.onclick = function pageViewSetupLinksOnclick() {
@@ -770,11 +773,13 @@ var PageView = function pageView(container, pdfPage, id, pageWidth, pageHeight,
       };
     }
     function createElementWithStyle(tagName, item) {
+      var rect = viewport.convertRectangleToViewport(item.rect);
+      rect = Util.normalizeRect(rect);
       var element = document.createElement(tagName);
-      element.style.left = (Math.floor(item.x - view.x) * scale) + 'px';
-      element.style.top = (Math.floor(item.y - view.y) * scale) + 'px';
-      element.style.width = Math.ceil(item.width * scale) + 'px';
-      element.style.height = Math.ceil(item.height * scale) + 'px';
+      element.style.left = Math.floor(rect[0]) + 'px';
+      element.style.top = Math.floor(rect[1]) + 'px';
+      element.style.width = Math.ceil(rect[2] - rect[0]) + 'px';
+      element.style.height = Math.ceil(rect[3] - rect[1]) + 'px';
       return element;
     }
     function createCommentAnnotation(type, item) {
@@ -844,7 +849,7 @@ var PageView = function pageView(container, pdfPage, id, pageWidth, pageHeight,
 
   this.getPagePoint = function pageViewGetPagePoint(x, y) {
     var scale = PDFView.currentScale;
-    return this.pdfPage.rotatePoint(x / scale, y / scale);
+    return this.viewport.convertPointToViewport(x, y);
   };
 
   this.scrollIntoView = function pageViewScrollIntoView(dest) {
@@ -892,8 +897,8 @@ var PageView = function pageView(container, pdfPage, id, pageWidth, pageHeight,
       }
 
       var boundingRect = [
-        this.pdfPage.rotatePoint(x, y),
-        this.pdfPage.rotatePoint(x + width, y + height)
+        this.viewport.convertPointToViewport(x, y),
+        this.viewport.convertPointToViewport(x + width, y + height)
       ];
 
       if (scale && scale !== PDFView.currentScale)
@@ -904,18 +909,18 @@ var PageView = function pageView(container, pdfPage, id, pageWidth, pageHeight,
       setTimeout(function pageViewScrollIntoViewRelayout() {
         // letting page to re-layout before scrolling
         var scale = PDFView.currentScale;
-        var x = Math.min(boundingRect[0].x, boundingRect[1].x);
-        var y = Math.min(boundingRect[0].y, boundingRect[1].y);
-        var width = Math.abs(boundingRect[0].x - boundingRect[1].x);
-        var height = Math.abs(boundingRect[0].y - boundingRect[1].y);
+        var x = Math.min(boundingRect[0][0], boundingRect[1][0]);
+        var y = Math.min(boundingRect[0][1], boundingRect[1][1]);
+        var width = Math.abs(boundingRect[0][0] - boundingRect[1][0]);
+        var height = Math.abs(boundingRect[0][1] - boundingRect[1][1]);
 
         // using temporary div to scroll it into view
         var tempDiv = document.createElement('div');
         tempDiv.style.position = 'absolute';
-        tempDiv.style.left = Math.floor(x * scale) + 'px';
-        tempDiv.style.top = Math.floor(y * scale) + 'px';
-        tempDiv.style.width = Math.ceil(width * scale) + 'px';
-        tempDiv.style.height = Math.ceil(height * scale) + 'px';
+        tempDiv.style.left = Math.floor(x) + 'px';
+        tempDiv.style.top = Math.floor(y) + 'px';
+        tempDiv.style.width = Math.ceil(width) + 'px';
+        tempDiv.style.height = Math.ceil(height) + 'px';
         div.appendChild(tempDiv);
         tempDiv.scrollIntoView(true);
         div.removeChild(tempDiv);
@@ -947,16 +952,15 @@ var PageView = function pageView(container, pdfPage, id, pageWidth, pageHeight,
     }
     var textLayer = textLayerDiv ? new TextLayerBuilder(textLayerDiv) : null;
 
-    var scale = this.scale;
-    canvas.width = pageWidth * scale;
-    canvas.height = pageHeight * scale;
+    var scale = this.scale, viewport = this.viewport;
+    canvas.width = viewport.width;
+    canvas.height = viewport.height;
 
     var ctx = canvas.getContext('2d');
     ctx.save();
     ctx.fillStyle = 'rgb(255, 255, 255)';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     ctx.restore();
-    ctx.translate(-this.x * scale, -this.y * scale);
 
     // Rendering area
 
@@ -981,6 +985,7 @@ var PageView = function pageView(container, pdfPage, id, pageWidth, pageHeight,
 
     var renderContext = {
       canvasContext: ctx,
+      viewport: this.viewport,
       textLayer: textLayer
     };
     this.pdfPage.render(renderContext).then(
@@ -992,7 +997,7 @@ var PageView = function pageView(container, pdfPage, id, pageWidth, pageHeight,
       }
     );
 
-    setupAnnotations(this.pdfPage, this.scale);
+    setupAnnotations(this.pdfPage, this.viewport);
     div.setAttribute('data-loaded', true);
   };
 
@@ -1004,7 +1009,7 @@ var PageView = function pageView(container, pdfPage, id, pageWidth, pageHeight,
   };
 };
 
-var ThumbnailView = function thumbnailView(container, page, id, pageRatio) {
+var ThumbnailView = function thumbnailView(container, pdfPage, id) {
   var anchor = document.createElement('a');
   anchor.href = PDFView.getAnchorUrl('#page=' + id);
   anchor.onclick = function stopNivigation() {
@@ -1012,9 +1017,10 @@ var ThumbnailView = function thumbnailView(container, page, id, pageRatio) {
     return false;
   };
 
-  var view = page.view;
-  this.width = view.width;
-  this.height = view.height;
+  var viewport = pdfPage.getViewport(1);
+  var pageWidth = viewport.width;
+  var pageHeight = viewport.height;
+  var pageRatio = pageWidth / pageHeight;
   this.id = id;
 
   var maxThumbSize = 134;
@@ -1022,8 +1028,8 @@ var ThumbnailView = function thumbnailView(container, page, id, pageRatio) {
     maxThumbSize * pageRatio;
   var canvasHeight = pageRatio <= 1 ? maxThumbSize :
     maxThumbSize / pageRatio;
-  var scaleX = this.scaleX = (canvasWidth / this.width);
-  var scaleY = this.scaleY = (canvasHeight / this.height);
+  var scaleX = this.scaleX = (canvasWidth / pageWidth);
+  var scaleY = this.scaleY = (canvasHeight / pageHeight);
 
   var div = document.createElement('div');
   div.id = 'thumbnailContainer' + id;
@@ -1048,15 +1054,8 @@ var ThumbnailView = function thumbnailView(container, page, id, pageRatio) {
     var ctx = canvas.getContext('2d');
     ctx.save();
     ctx.fillStyle = 'rgb(255, 255, 255)';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillRect(0, 0, canvasWidth, canvasHeight);
     ctx.restore();
-
-    var view = page.view;
-    ctx.translate(-view.x * scaleX, -view.y * scaleY);
-    div.style.width = (view.width * scaleX) + 'px';
-    div.style.height = (view.height * scaleY) + 'px';
-    div.style.lineHeight = (view.height * scaleY) + 'px';
-
     return ctx;
   }
 
@@ -1071,9 +1070,11 @@ var ThumbnailView = function thumbnailView(container, page, id, pageRatio) {
     }
 
     var ctx = getPageDrawContext();
-    page.startRendering(ctx, function thumbnailViewDrawStartRendering() {
-      callback();
-    });
+    var drawViewport = pdfPage.getViewport(scaleX);
+    page.startRendering(ctx, drawViewport,
+      function thumbnailViewDrawStartRendering() {
+        callback();
+      });
 
     this.hasImage = true;
   };
@@ -1359,7 +1360,7 @@ function updateViewarea() {
   var currentPage = PDFView.pages[pageNumber - 1];
   var topLeft = currentPage.getPagePoint(window.pageXOffset,
     window.pageYOffset - firstPage.y - kViewerTopMargin);
-  pdfOpenParams += ',' + Math.round(topLeft.x) + ',' + Math.round(topLeft.y);
+  pdfOpenParams += ',' + Math.round(topLeft[0]) + ',' + Math.round(topLeft[1]);
 
   var store = PDFView.store;
   store.set('exists', true);
