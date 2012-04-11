@@ -730,7 +730,7 @@ var PageView = function pageView(container, pdfPage, id, scale,
   this.pdfPage = pdfPage;
 
   this.scale = scale || 1.0;
-  this.viewport = this.pdfPage.getViewport(scale);
+  this.viewport = this.pdfPage.getViewport(this.scale);
 
   var anchor = document.createElement('a');
   anchor.name = '' + this.id;
@@ -785,7 +785,7 @@ var PageView = function pageView(container, pdfPage, id, scale,
       };
     }
     function createElementWithStyle(tagName, item) {
-      var rect = viewport.convertRectangleToViewport(item.rect);
+      var rect = viewport.convertToViewportRectangle(item.rect);
       rect = Util.normalizeRect(rect);
       var element = document.createElement(tagName);
       element.style.left = Math.floor(rect[0]) + 'px';
@@ -861,7 +861,7 @@ var PageView = function pageView(container, pdfPage, id, scale,
 
   this.getPagePoint = function pageViewGetPagePoint(x, y) {
     var scale = PDFView.currentScale;
-    return this.viewport.convertPointToViewport(x, y);
+    return this.viewport.convertToPdfPoint(x, y);
   };
 
   this.scrollIntoView = function pageViewScrollIntoView(dest) {
@@ -909,8 +909,8 @@ var PageView = function pageView(container, pdfPage, id, scale,
       }
 
       var boundingRect = [
-        this.viewport.convertPointToViewport(x, y),
-        this.viewport.convertPointToViewport(x + width, y + height)
+        this.viewport.convertToViewportPoint(x, y),
+        this.viewport.convertToViewportPoint(x + width, y + height)
       ];
 
       if (scale && scale !== PDFView.currentScale)
@@ -1378,8 +1378,8 @@ function updateViewarea() {
   store.set('exists', true);
   store.set('page', pageNumber);
   store.set('zoom', normalizedScaleValue);
-  store.set('scrollLeft', Math.round(topLeft.x));
-  store.set('scrollTop', Math.round(topLeft.y));
+  store.set('scrollLeft', Math.round(topLeft[0]));
+  store.set('scrollTop', Math.round(topLeft[1]));
   var href = PDFView.getAnchorUrl(pdfOpenParams);
   document.getElementById('viewBookmark').href = href;
 }

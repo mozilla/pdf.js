@@ -244,16 +244,16 @@ var PageViewport = PDFJS.PageViewport = (function PageViewportClosure() {
     this.height = height;
   }
   PageViewport.prototype = {
-    convertPointToViewport: function PageViewport_convertPointToViewport(x, y) {
+    convertToViewportPoint: function PageViewport_convertToViewportPoint(x, y) {
       return Util.applyTransform([x, y], this.transform);
     },
-    convertRectangleToViewport:
-      function PageViewport_convertRectangeToViewport(rect) {
+    convertToViewportRectangle:
+      function PageViewport_convertToViewportRectangle(rect) {
       var tl = Util.applyTransform([rect[0], rect[1]], this.transform);
       var br = Util.applyTransform([rect[2], rect[3]], this.transform);
       return [tl[0], tl[1], br[0], br[1]];
     },
-    convertViewportToPoint: function PageViewport_convertViewportToPoint(x, y) {
+    convertToPdfPoint: function PageViewport_convertToPdfPoint(x, y) {
       return Util.applyInverseTransform([x, y], this.transform);
     }
   };
