@@ -79,8 +79,8 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
   function PDFPageProxy(pageInfo, transport) {
     this.pageInfo = pageInfo;
     this.transport = transport;
-    this._stats = new StatTimer();
-    this._stats.enabled = !!globalScope.PDFJS.enableStats;
+    this.stats = new StatTimer();
+    this.stats.enabled = !!globalScope.PDFJS.enableStats;
     this.objs = transport.objs;
   }
   PDFPageProxy.prototype = {
@@ -89,9 +89,6 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
     },
     get rotate() {
       return this.pageInfo.rotate;
-    },
-    get stats() {
-      return this._stats;
     },
     get ref() {
       return this.pageInfo.ref;
@@ -125,12 +122,12 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
         });
       }
 
-      var callback = (function complete(error) {
-          if (error)
-            promise.reject(error);
-          else
-            promise.resolve();
-        });
+      function complete(error) {
+        if (error)
+          promise.reject(error);
+        else
+          promise.resolve();
+      };
 
       // Once the operatorList and fonts are loaded, do the actual rendering.
       this.displayReadyPromise.then(
@@ -138,19 +135,13 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
           var gfx = new CanvasGraphics(renderContext.canvasContext,
             this.objs, renderContext.textLayer);
           try {
-            this.display(gfx, renderContext.viewport, callback);
+            this.display(gfx, renderContext.viewport, complete);
           } catch (e) {
-            if (callback)
-              callback(e);
-            else
-              error(e);
+            complete(e);
           }
         }.bind(this),
         function pageDisplayReadPromiseError(reason) {
-          if (callback)
-            callback(reason);
-          else
-            error(reason);
+          complete(reason);
         }
       );
 
