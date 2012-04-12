@@ -986,7 +986,7 @@ var PageView = function pageView(container, pdfPage, id, scale,
       if (error)
         PDFView.error('An error occurred while rendering the page.', error);
 
-      self.stats = content.stats;
+      self.stats = pdfPage.stats;
       self.updateStats();
       if (self.onAfterDraw)
         self.onAfterDraw();
@@ -1036,9 +1036,9 @@ var ThumbnailView = function thumbnailView(container, pdfPage, id) {
   this.id = id;
 
   var maxThumbSize = 134;
-  var canvasWidth = pageRatio >= 1 ? maxThumbSize :
+  var canvasWidth = this.width = pageRatio >= 1 ? maxThumbSize :
     maxThumbSize * pageRatio;
-  var canvasHeight = pageRatio <= 1 ? maxThumbSize :
+  var canvasHeight = this.height = pageRatio <= 1 ? maxThumbSize :
     maxThumbSize / pageRatio;
   var scaleX = this.scaleX = (canvasWidth / pageWidth);
   var scaleY = this.scaleY = (canvasHeight / pageHeight);
@@ -1083,11 +1083,18 @@ var ThumbnailView = function thumbnailView(container, pdfPage, id) {
 
     var ctx = getPageDrawContext();
     var drawViewport = pdfPage.getViewport(scaleX);
-    page.startRendering(ctx, drawViewport,
-      function thumbnailViewDrawStartRendering() {
+    var renderContext = {
+      canvasContext: ctx,
+      viewport: drawViewport
+    };
+    pdfPage.render(renderContext).then(
+      function pdfPageRenderCallback() {
         callback();
-      });
-
+      },
+      function pdfPageRenderError(error) {
+        callback();
+      }
+    );
     this.hasImage = true;
   };
 

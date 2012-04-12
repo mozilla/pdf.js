@@ -85,14 +85,36 @@ var WorkerMessageHandler = {
       handler.send('test', data instanceof Uint8Array);
     });
 
-    handler.on('doc', function wphSetupDoc(data) {
+    handler.on('GetDocRequest', function wphSetupDoc(data) {
       // Create only the model of the PDFDoc, which is enough for
       // processing the content of the pdf.
-      pdfModel = new PDFDocModel(new Stream(data));
+      pdfModel = new PDFDocument(new Stream(data));
+      var doc = {
+        numPages: pdfModel.numPages,
+        fingerprint: pdfModel.fingerprint,
+        destinations: pdfModel.catalog.destinations,
+        outline: pdfModel.catalog.documentOutline,
+        info: pdfModel.info,
+        metadata: pdfModel.catalog.metadata
+      };
+      handler.send('GetDoc', {pdfInfo: doc});
     });
 
-    handler.on('page_request', function wphSetupPageRequest(pageNum) {
-      pageNum = parseInt(pageNum);
+    handler.on('GetPageRequest', function wphSetupTest(data) {
+      var pageNumber = data.pageIndex + 1;
+      var pdfPage = pdfModel.getPage(pageNumber);
+      var page = {
+        pageIndex: data.pageIndex,
+        rotate: pdfPage.rotate,
+        ref: pdfPage.ref,
+        view: pdfPage.view,
+        annotations: pdfPage.getAnnotations()
+      };
+      handler.send('GetPage', {pageInfo: page});
+    });
+
+    handler.on('RenderPageRequest', function wphSetupPageRequest(data) {
+      var pageNum = data.pageIndex + 1;
 
 
       // The following code does quite the same as
@@ -130,7 +152,7 @@ var WorkerMessageHandler = {
           };
         }
 
-        handler.send('page_error', {
+        handler.send('PageError', {
           pageNum: pageNum,
           error: e
         });
@@ -149,8 +171,8 @@ var WorkerMessageHandler = {
         }
       }
 
-      handler.send('page', {
-        pageNum: pageNum,
+      handler.send('RenderPage', {
+        pageIndex: data.pageIndex,
         operatorList: operatorList,
         depFonts: Object.keys(fonts)
       });
