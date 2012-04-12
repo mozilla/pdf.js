@@ -533,7 +533,7 @@ var PDFView = {
 
     if (pdf.catalog.documentOutline) {
       this.outline = new DocumentOutlineView(pdf.catalog.documentOutline);
-      var outlineSwitchButton = document.getElementById('outlineSwitch');
+      var outlineSwitchButton = document.getElementById('viewOutline');
       outlineSwitchButton.removeAttribute('disabled');
       this.switchSidebarView('outline');
     }
@@ -620,8 +620,8 @@ var PDFView = {
   switchSidebarView: function pdfViewSwitchSidebarView(view) {
     var thumbsView = document.getElementById('thumbnailView');
     var outlineView = document.getElementById('outlineView');
-    var thumbsSwitchButton = document.getElementById('thumbsSwitch');
-    var outlineSwitchButton = document.getElementById('outlineSwitch');
+    var thumbsSwitchButton = document.getElementById('viewThumbnail');
+    var outlineSwitchButton = document.getElementById('viewOutline');
 
     if (outlineSwitchButton.getAttribute('disabled'))
       return;
