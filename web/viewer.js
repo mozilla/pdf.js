@@ -860,7 +860,6 @@ var PageView = function pageView(container, pdfPage, id, scale,
   }
 
   this.getPagePoint = function pageViewGetPagePoint(x, y) {
-    var scale = PDFView.currentScale;
     return this.viewport.convertToPdfPoint(x, y);
   };
 

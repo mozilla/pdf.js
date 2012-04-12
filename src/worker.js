@@ -91,7 +91,7 @@ var WorkerMessageHandler = {
       pdfModel = new PDFDocument(new Stream(data));
       var doc = {
         numPages: pdfModel.numPages,
-        fingerprint: pdfModel.fingerprint,
+        fingerprint: pdfModel.getFingerprint(),
         destinations: pdfModel.catalog.destinations,
         outline: pdfModel.catalog.documentOutline,
         info: pdfModel.info,
