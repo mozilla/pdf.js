@@ -300,10 +300,6 @@ var Page = (function PageClosure() {
         items.push(item);
       }
       return items;
-    },
-    startRendering: function Page_startRendering(ctx, viewport,
-                                                 callback, textLayer)  {
-/// DELETE
     }
   };
 
