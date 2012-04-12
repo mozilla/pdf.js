@@ -94,7 +94,7 @@ var WorkerMessageHandler = {
         fingerprint: pdfModel.getFingerprint(),
         destinations: pdfModel.catalog.destinations,
         outline: pdfModel.catalog.documentOutline,
-        info: pdfModel.info,
+        info: pdfModel.getDocumentInfo(),
         metadata: pdfModel.catalog.metadata
       };
       handler.send('GetDoc', {pdfInfo: doc});

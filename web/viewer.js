@@ -550,7 +550,8 @@ var PDFView = {
       self.setInitialView(storedHash, scale);
     });
 
-    pdfDocument.getMetadata().then(function(info, metadata) {
+    pdfDocument.getMetadata().then(function(data) {
+      var info = data.info, metadata = data.metadata;
       self.documentInfo = info;
       self.metadata = metadata;
 
