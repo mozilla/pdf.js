@@ -85,10 +85,10 @@ var WorkerMessageHandler = {
       handler.send('test', data instanceof Uint8Array);
     });
 
-    handler.on('getdoc_request', function wphSetupDoc(data) {
+    handler.on('GetDocRequest', function wphSetupDoc(data) {
       // Create only the model of the PDFDoc, which is enough for
       // processing the content of the pdf.
-      pdfModel = new PDFDocModel(new Stream(data));
+      pdfModel = new PDFDocument(new Stream(data));
       var doc = {
         numPages: pdfModel.numPages,
         fingerprint: pdfModel.fingerprint,
@@ -97,10 +97,10 @@ var WorkerMessageHandler = {
         info: pdfModel.info,
         metadata: pdfModel.catalog.metadata
       };
-      handler.send('getdoc', {pdfInfo: doc});
+      handler.send('GetDoc', {pdfInfo: doc});
     });
 
-    handler.on('getpage_request', function wphSetupTest(data) {
+    handler.on('GetPageRequest', function wphSetupTest(data) {
       var pageNumber = data.pageIndex + 1;
       var pdfPage = pdfModel.getPage(pageNumber);
       var page = {
@@ -110,10 +110,10 @@ var WorkerMessageHandler = {
         view: pdfPage.view,
         annotations: pdfPage.getAnnotations()
       };
-      handler.send('getpage', {pageInfo: page});
+      handler.send('GetPage', {pageInfo: page});
     });
 
-    handler.on('renderpage_request', function wphSetupPageRequest(data) {
+    handler.on('RenderPageRequest', function wphSetupPageRequest(data) {
       var pageNum = data.pageIndex + 1;
 
 
@@ -152,7 +152,7 @@ var WorkerMessageHandler = {
           };
         }
 
-        handler.send('page_error', {
+        handler.send('PageError', {
           pageNum: pageNum,
           error: e
         });
@@ -171,7 +171,7 @@ var WorkerMessageHandler = {
         }
       }
 
-      handler.send('renderpage', {
+      handler.send('RenderPage', {
         pageIndex: data.pageIndex,
         operatorList: operatorList,
         depFonts: Object.keys(fonts)

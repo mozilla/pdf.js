@@ -311,20 +311,20 @@ var Page = (function PageClosure() {
 })();
 
 /**
- * The `PDFDocModel` holds all the data of the PDF file. Compared to the
+ * The `PDFDocument` holds all the data of the PDF file. Compared to the
  * `PDFDoc`, this one doesn't have any job management code.
- * Right now there exists one PDFDocModel on the main thread + one object
+ * Right now there exists one PDFDocument on the main thread + one object
  * for each worker. If there is no worker support enabled, there are two
- * `PDFDocModel` objects on the main thread created.
+ * `PDFDocument` objects on the main thread created.
  */
-var PDFDocModel = (function PDFDocModelClosure() {
-  function PDFDocModel(arg, callback) {
+var PDFDocument = (function PDFDocumentClosure() {
+  function PDFDocument(arg, callback) {
     if (isStream(arg))
       init.call(this, arg);
     else if (isArrayBuffer(arg))
       init.call(this, new Stream(arg));
     else
-      error('PDFDocModel: Unknown argument type');
+      error('PDFDocument: Unknown argument type');
   }
 
   function init(stream) {
@@ -350,7 +350,7 @@ var PDFDocModel = (function PDFDocModelClosure() {
     return true; /* found */
   }
 
-  PDFDocModel.prototype = {
+  PDFDocument.prototype = {
     get linearization() {
       var length = this.stream.length;
       var linearization = false;
@@ -411,7 +411,7 @@ var PDFDocModel = (function PDFDocModelClosure() {
     },
     // Find the header, remove leading garbage and setup the stream
     // starting from the header.
-    checkHeader: function PDFDocModel_checkHeader() {
+    checkHeader: function PDFDocument_checkHeader() {
       var stream = this.stream;
       stream.reset();
       if (find(stream, '%PDF-', 1024)) {
@@ -421,7 +421,7 @@ var PDFDocModel = (function PDFDocModelClosure() {
       }
       // May not be a PDF file, continue anyway.
     },
-    setup: function PDFDocModel_setup(ownerPassword, userPassword) {
+    setup: function PDFDocument_setup(ownerPassword, userPassword) {
       this.checkHeader();
       var xref = new XRef(this.stream,
                           this.startXRef,
@@ -435,7 +435,7 @@ var PDFDocModel = (function PDFDocModelClosure() {
       // shadow the prototype getter
       return shadow(this, 'numPages', num);
     },
-    getDocumentInfo: function PDFDocModel_getDocumentInfo() {
+    getDocumentInfo: function PDFDocument_getDocumentInfo() {
       var info;
       if (this.xref.trailer.has('Info')) {
         var infoDict = this.xref.trailer.get('Info');
@@ -449,7 +449,7 @@ var PDFDocModel = (function PDFDocModelClosure() {
 
       return shadow(this, 'getDocumentInfo', info);
     },
-    getFingerprint: function PDFDocModel_getFingerprint() {
+    getFingerprint: function PDFDocument_getFingerprint() {
       var xref = this.xref, fileID;
       if (xref.trailer.has('ID')) {
         fileID = '';
@@ -470,10 +470,10 @@ var PDFDocModel = (function PDFDocModelClosure() {
 
       return shadow(this, 'getFingerprint', fileID);
     },
-    getPage: function PDFDocModel_getPage(n) {
+    getPage: function PDFDocument_getPage(n) {
       return this.catalog.getPage(n);
     }
   };
 
-  return PDFDocModel;
+  return PDFDocument;
 })();
