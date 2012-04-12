@@ -15,7 +15,6 @@
     // all requirements to run parts of pdf.js in a web worker.
     // Right now, the requirement is, that an Uint8Array is still an Uint8Array
     // as it arrives on the worker. Chrome added this with version 15.
-    globalScope.PDFJS.disableWorker = true;
     if (!globalScope.PDFJS.disableWorker && typeof Worker !== 'undefined') {
       var workerSrc = PDFJS.workerSrc;
       if (typeof workerSrc === 'undefined') {
@@ -203,7 +202,7 @@
 
     getPage: function WorkerTransport_getPage(n, promise) {
       if (this.pageCache[n - 1]) {
-         promise.resolve(pageCache[n - 1]);
+         promise.resolve(this.pageCache[n - 1]);
          return;
       }
       if ((n - 1) in this.pagePromises) {
