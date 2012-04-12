@@ -68,8 +68,8 @@
       if (this.worker)
         this.worker.terminate();
 
-      for (var n in this.pageCache)
-        delete this.pageCache[n];
+      this.pageCache = [];
+      this.pagePromises = [];
     },
     setupFakeWorker: function WorkerTransport_setupFakeWorker() {
       // If we don't use a worker, just post/sendMessage to the main thread.
@@ -92,7 +92,7 @@
       function WorkerTransport_setupMessageHandler(messageHandler) {
       this.messageHandler = messageHandler;
 
-      messageHandler.on('doc', function transportPage(data) {
+      messageHandler.on('getdoc', function transportDoc(data) {
         var pdfInfo = data.pdfInfo;
         var pdfDocument = new PdfDocumentWrapper(pdfInfo, this);
         this.pdfDocument = pdfDocument;
@@ -102,19 +102,16 @@
       messageHandler.on('getpage', function transportPage(data) {
         var pageInfo = data.pageInfo;
         var page = new PdfPageWrapper(pageInfo, this);
-        this.pageCache[pageInfo.pageNumber] = page;
-        var promises = this.pagePromises[pageInfo.pageNumber];
-        delete this.pagePromises[pageInfo.pageNumber];
-        for (var i = 0, ii = promises.length; i < ii; ++i)
-          promises[i].resolve(page);
+        this.pageCache[pageInfo.pageIndex] = page;
+        var promise = this.pagePromises[pageInfo.pageIndex];
+        promise.resolve(page);
       }, this);
 
-      messageHandler.on('page', function transportPage(data) {
-        var pageNum = data.pageNum;
-        var page = this.pageCache[pageNum - 1];
+      messageHandler.on('renderpage', function transportRender(data) {
+        var page = this.pageCache[data.pageIndex];
         var depFonts = data.depFonts;
 
-        //page.stats.timeEnd('Page Request');
+        page.stats.timeEnd('Page Request');
         page.startRenderingFromOperatorList(data.operatorList, depFonts);
       }, this);
 
@@ -197,20 +194,17 @@
     },
 
     sendData: function WorkerTransport_sendData(data) {
-      this.messageHandler.send('doc_request', data);
+      this.messageHandler.send('getdoc_request', data);
     },
 
-    getPage: function WorkerTransport_getPage(n, promise) {
-      if (this.pageCache[n - 1]) {
-         promise.resolve(this.pageCache[n - 1]);
-         return;
-      }
-      if ((n - 1) in this.pagePromises) {
-        this.pagePromises[n - 1].push(promise);
-        return;
-      }
-      this.pagePromises[n - 1] = [promise];
-      this.messageHandler.send('getpage_request', {pageNumber: n - 1});
+    getPage: function WorkerTransport_getPage(pageNumber, promise) {
+      var pageIndex = pageNumber - 1;
+      if (pageIndex in this.pagePromises)
+        return this.pagePromises[pageIndex];
+      var promise = new PDFJS.Promise('Page ' + pageNumber);
+      this.pagePromises[pageIndex] = promise;
+      this.messageHandler.send('getpage_request', { pageIndex: pageIndex });
+      return promise;
     }
   };
   function PdfPageWrapper(pageInfo, transport) {
@@ -221,7 +215,7 @@
   }
   PdfPageWrapper.prototype = {
     get pageNumber() {
-      return this.pageInfo.pageNumber;
+      return this.pageInfo.pageIndex + 1;
     },
     get rotate() {
       return this.pageInfo.rotate;
@@ -255,8 +249,10 @@
       if (!this.displayReadyPromise) {
         this.displayReadyPromise = new Promise();
 
-        //this.stats.time('Page Request');
-        this.transport.messageHandler.send('page_request', this.pageNumber + 1);
+        this.stats.time('Page Request');
+        this.transport.messageHandler.send('renderpage_request', {
+          pageIndex: this.pageNumber - 1
+        });
       }
 
       var callback = (function complete(error) {
@@ -389,9 +385,7 @@
       return this.pdfInfo.fingerprint;
     },
     getPage: function(number) {
-      var promise = new PDFJS.Promise();
-      this.transport.getPage(number, promise);
-      return promise;
+      return this.transport.getPage(number);
     },
     getDestinations: function() {
       var promise = new PDFJS.Promise();
