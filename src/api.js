@@ -80,6 +80,7 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
     this.pageInfo = pageInfo;
     this.transport = transport;
     this.stats = new StatTimer();
+    this.stats.enabled = !!globalScope.PDFJS.enableStats;
     this.objs = transport.objs;
   }
   PDFPageProxy.prototype = {
@@ -197,7 +198,7 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
       var operatorList = this.operatorList;
       var stepper = null;
       if (PDFJS.pdfBug && StepperManager.enabled) {
-        stepper = StepperManager.create(this.pageNumber);
+        stepper = StepperManager.create(this.pageNumber - 1);
         stepper.init(operatorList);
         stepper.nextBreakPoint = stepper.getNextBreakPoint();
       }

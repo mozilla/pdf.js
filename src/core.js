@@ -63,8 +63,6 @@ var Page = (function PageClosure() {
   function Page(xref, pageNumber, pageDict, ref) {
     this.pageNumber = pageNumber;
     this.pageDict = pageDict;
-    this.stats = new StatTimer();
-    this.stats.enabled = !!globalScope.PDFJS.enableStats;
     this.xref = xref;
     this.ref = ref;
 
@@ -139,8 +137,6 @@ var Page = (function PageClosure() {
         return this.operatorList;
       }
 
-      this.stats.time('Build IR Queue');
-
       var xref = this.xref;
       var content = this.content;
       var resources = this.resources;
@@ -159,7 +155,6 @@ var Page = (function PageClosure() {
                                 xref, handler, 'p' + this.pageNumber + '_');
 
       this.operatorList = pe.getOperatorList(content, resources, dependency);
-      this.stats.timeEnd('Build IR Queue');
       return this.operatorList;
     },
 
