@@ -192,7 +192,7 @@ function nextPage(task, loadError) {
         var renderContext = {
           canvasContext: ctx,
           textLayer: textLayerBuilder,
-          viewport: page.getViewport(1)
+          viewport: viewport
         };
         page.render(renderContext).then(function() {
           snapshotCurrentPage(task, false);
