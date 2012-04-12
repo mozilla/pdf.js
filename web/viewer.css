@@ -31,7 +31,6 @@ body {
   background-color: hsla(0,0%,0%,.1);
   box-shadow: inset -1px 0 0 hsla(0,0%,0%,.25);
   overflow: auto;
-  padding-top: 33px;
 }
 #sidebarContainer.hidden {
   display:none;
@@ -348,7 +347,8 @@ body {
 #thumbnailView {
   position: fixed;
   width: 120px;
-  height: 100%;
+  top: 33px;
+  bottom: 0;
   padding: 10px 40px 0;
   overflow: auto;
 }
@@ -406,7 +406,8 @@ body {
 #outlineView {
   position: fixed;
   width: 188px;
-  height: 100%;
+  top: 33px;
+  bottom: 0;
   padding: 52px 4px 0;
   overflow: auto;
 }
