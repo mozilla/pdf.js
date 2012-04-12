@@ -41,20 +41,20 @@
 
       <div class="toolbar">
         <div id="toolbarContainer">
-          <div id="toolbarSidebar">
+          <div id="toolbarSidebar" class="hidden">
             <div class="splitToolbarButton toggled">
-              <div class="toolbarButton viewThumbnail toggled" title="Show Thumbnails"></div>
+              <div id="viewThumbnail" class="toolbarButton toggled" title="Show Thumbnails" onclick="PDFView.switchSidebarView('thumbs')"></div>
               <div class="splitToolbarButtonSeparator"></div>
-              <div class="toolbarButton viewOutline" title="Show Document Outline"></div>
+              <div id="viewOutline" class="toolbarButton" title="Show Document Outline" onclick="PDFView.switchSidebarView('outline')" disabled></div>
             </div>
           </div>
           <div id="toolbarViewer">
             <div id="sidebarToggle" class="toolbarButton toggled" title="Toggle Sidebar"></div>
             <div class="toolbarButtonSpacer"></div>
             <div class="splitToolbarButton">
-              <div class="toolbarButton pageUp" title="Previous Page"></div>
+              <div class="toolbarButton pageUp" title="Previous Page" onclick="PDFView.page--"></div>
               <div class="splitToolbarButtonSeparator"></div>
-              <div class="toolbarButton pageDown" title="Next Page"></div>
+              <div class="toolbarButton pageDown" title="Next Page" onclick="PDFView.page++"></div>
             </div>
             <div id="pageNumber" class="toolbarField" contentEditable="true">1</div>
             <div id="numPages" class="toolbarLabel"></div>
@@ -74,7 +74,7 @@
         </div>
       </div>
 
-      <div id="sidebarContainer">
+      <div id="sidebarContainer" class="hidden">
         <div id="thumbnailView">
         </div>
 
@@ -91,8 +91,12 @@
         <div id="viewer" />
       </div>
 
-    </div> <!-- outerContainer -->
+      <div id="loadingBox">
+          <div id="loading">Loading... 0%</div>
+          <div id="loadingBar"><div class="progress"></div></div>
+      </div>
 
+    </div> <!-- outerContainer -->
 
 
 
@@ -206,11 +210,11 @@
       </div>
     </div>
  -->
-    <div id="loadingBox">
+<!--     <div id="loadingBox">
         <div id="loading">Loading... 0%</div>
         <div id="loadingBar"><div class="progress"></div></div>
     </div>
-
+ -->
 </div> <!-- display none -->
 
   </body>

@@ -498,7 +498,7 @@ var PDFView = {
     var pagesCount = pdf.numPages;
     var id = pdf.fingerprint;
     var storedHash = null;
-    document.getElementById('numPages').textContent = pagesCount;
+    document.getElementById('numPages').textContent = '/ '+pagesCount;
     document.getElementById('pageNumber').max = pagesCount;
     PDFView.documentFingerprint = id;
     var store = PDFView.store = new Settings(id);
@@ -618,23 +618,24 @@ var PDFView = {
   },
 
   switchSidebarView: function pdfViewSwitchSidebarView(view) {
-    var thumbsScrollView = document.getElementById('thumbnailView');
-    var outlineScrollView = document.getElementById('outlineScrollView');
+    var thumbsView = document.getElementById('thumbnailView');
+    var outlineView = document.getElementById('outlineView');
     var thumbsSwitchButton = document.getElementById('thumbsSwitch');
     var outlineSwitchButton = document.getElementById('outlineSwitch');
+
+    if (outlineSwitchButton.getAttribute('disabled'))
+      return;
+
+    thumbsView.classList.toggle('hidden');
+    outlineView.classList.toggle('hidden');
+    document.getElementById('viewThumbnail').classList.toggle('toggled');
+    document.getElementById('viewOutline').classList.toggle('toggled');
+
     switch (view) {
       case 'thumbs':
-        thumbsScrollView.removeAttribute('hidden');
-        outlineScrollView.setAttribute('hidden', 'true');
-        thumbsSwitchButton.setAttribute('data-selected', true);
-        outlineSwitchButton.removeAttribute('data-selected');
         updateThumbViewArea();
         break;
       case 'outline':
-        thumbsScrollView.setAttribute('hidden', 'true');
-        outlineScrollView.removeAttribute('hidden');
-        thumbsSwitchButton.removeAttribute('data-selected');
-        outlineSwitchButton.setAttribute('data-selected', true);
         break;
     }
   },
