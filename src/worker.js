@@ -85,7 +85,7 @@ var WorkerMessageHandler = {
       handler.send('test', data instanceof Uint8Array);
     });
 
-    handler.on('doc_request', function wphSetupDoc(data) {
+    handler.on('getdoc_request', function wphSetupDoc(data) {
       // Create only the model of the PDFDoc, which is enough for
       // processing the content of the pdf.
       pdfModel = new PDFDocModel(new Stream(data));
@@ -97,13 +97,14 @@ var WorkerMessageHandler = {
         info: pdfModel.info,
         metadata: pdfModel.catalog.metadata
       };
-      handler.send('doc', {pdfInfo: doc});
+      handler.send('getdoc', {pdfInfo: doc});
     });
 
     handler.on('getpage_request', function wphSetupTest(data) {
-      var pdfPage = pdfModel.getPage(data.pageNumber + 1);
+      var pageNumber = data.pageIndex + 1;
+      var pdfPage = pdfModel.getPage(pageNumber);
       var page = {
-        pageNumber: data.pageNumber,
+        pageIndex: data.pageIndex,
         rotate: pdfPage.rotate,
         ref: pdfPage.ref,
         view: pdfPage.view,
@@ -112,8 +113,8 @@ var WorkerMessageHandler = {
       handler.send('getpage', {pageInfo: page});
     });
 
-    handler.on('page_request', function wphSetupPageRequest(pageNum) {
-      pageNum = parseInt(pageNum);
+    handler.on('renderpage_request', function wphSetupPageRequest(data) {
+      var pageNum = data.pageIndex + 1;
 
 
       // The following code does quite the same as
@@ -170,8 +171,8 @@ var WorkerMessageHandler = {
         }
       }
 
-      handler.send('page', {
-        pageNum: pageNum,
+      handler.send('renderpage', {
+        pageIndex: data.pageIndex,
         operatorList: operatorList,
         depFonts: Object.keys(fonts)
       });
