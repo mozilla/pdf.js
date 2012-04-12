@@ -176,11 +176,9 @@ function nextPage(task, loadError) {
       var ctx = canvas.getContext('2d');
       task.pdfDoc.getPage(task.pageNum).then(function(page) {
         var pdfToCssUnitsCoef = 96.0 / 72.0;
-        // using mediaBox for the canvas size
-        var pageWidth = page.width;
-        var pageHeight = page.height;
-        canvas.width = pageWidth * pdfToCssUnitsCoef;
-        canvas.height = pageHeight * pdfToCssUnitsCoef;
+        var viewport = page.getViewport(pdfToCssUnitsCoef);
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
         clear(ctx);
 
         // using the text layer builder that does nothing to test

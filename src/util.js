@@ -242,6 +242,7 @@ var PageViewport = PDFJS.PageViewport = (function PageViewportClosure() {
     this.offsetY = offsetY;
     this.width = width;
     this.height = height;
+    this.fontScale = scale;
   }
   PageViewport.prototype = {
     convertToViewportPoint: function PageViewport_convertToViewportPoint(x, y) {
