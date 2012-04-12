@@ -107,7 +107,7 @@ var WorkerMessageHandler = {
         rotate: pdfPage.rotate,
         ref: pdfPage.ref,
         view: pdfPage.view,
-        annotations: pdfPage.getAnnotations(), // REMOVE
+        annotations: pdfPage.getAnnotations()
       };
       handler.send('getpage', {pageInfo: page});
     });

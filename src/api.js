@@ -1,26 +1,6 @@
 /* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 /* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
 
-/*
-  PDFDoc.prototype = {
-    destroy: function PDFDoc_destroy() {
-      if (this.worker)
-        this.worker.terminate();
-
-      if (this.fontWorker)
-        this.fontWorker.terminate();
-
-      for (var n in this.pageCache)
-        delete this.pageCache[n];
-
-      delete this.data;
-      delete this.stream;
-      delete this.pdf;
-      delete this.catalog;
-    }
-  };
-*/
-
 (function pdfApiWrapper() {
   function WorkerTransport(promise) {
     this.workerReadyPromise = promise;
@@ -60,7 +40,7 @@
         var messageHandler = new MessageHandler('main', worker);
         this.messageHandler = messageHandler;
 
-        messageHandler.on('test', function pdfDocTest(supportTypedArray) {
+        messageHandler.on('test', function transportTest(supportTypedArray) {
           if (supportTypedArray) {
             this.worker = worker;
             this.setupMessageHandler(messageHandler);
@@ -85,6 +65,13 @@
     this.setupFakeWorker();
   }
   WorkerTransport.prototype = {
+    destroy: function WorkerTransport_destroy() {
+      if (this.worker)
+        this.worker.terminate();
+
+      for (var n in this.pageCache)
+        delete this.pageCache[n];
+    },
     setupFakeWorker: function WorkerTransport_setupFakeWorker() {
       // If we don't use a worker, just post/sendMessage to the main thread.
       var fakeWorker = {
@@ -102,17 +89,18 @@
       WorkerMessageHandler.setup(messageHandler);
     },
 
-    setupMessageHandler: function WorkerTransport_setupMessageHandler(messageHandler) {
+    setupMessageHandler:
+      function WorkerTransport_setupMessageHandler(messageHandler) {
       this.messageHandler = messageHandler;
 
-      messageHandler.on('doc', function pdfDocPage(data) {
+      messageHandler.on('doc', function transportPage(data) {
         var pdfInfo = data.pdfInfo;
         var pdfDocument = new PdfDocumentWrapper(pdfInfo, this);
         this.pdfDocument = pdfDocument;
-        this.workerReadyPromise.resolve(pdfDocument)
+        this.workerReadyPromise.resolve(pdfDocument);
       }, this);
 
-      messageHandler.on('getpage', function pdfDocPage(data) {
+      messageHandler.on('getpage', function transportPage(data) {
         var pageInfo = data.pageInfo;
         var page = new PdfPageWrapper(pageInfo, this);
         this.pageCache[pageInfo.pageNumber] = page;
@@ -122,7 +110,7 @@
           promises[i].resolve(page);
       }, this);
 
-      messageHandler.on('page', function pdfDocPage(data) {
+      messageHandler.on('page', function transportPage(data) {
         var pageNum = data.pageNum;
         var page = this.pageCache[pageNum - 1];
         var depFonts = data.depFonts;
@@ -131,7 +119,7 @@
         page.startRenderingFromOperatorList(data.operatorList, depFonts);
       }, this);
 
-      messageHandler.on('obj', function pdfDocObj(data) {
+      messageHandler.on('obj', function transportObj(data) {
         var id = data[0];
         var type = data[1];
 
@@ -165,7 +153,7 @@
         }
       }, this);
 
-      messageHandler.on('page_error', function pdfDocError(data) {
+      messageHandler.on('page_error', function transportError(data) {
         var page = this.pageCache[data.pageNum];
         if (page.displayReadyPromise)
           page.displayReadyPromise.reject(data.error);
@@ -305,7 +293,8 @@
     },
 
     startRenderingFromOperatorList:
-      function Page_startRenderingFromOperatorList(operatorList, fonts) {
+      function PdfPageWrapper_startRenderingFromOperatorList(operatorList,
+                                                             fonts) {
       var self = this;
       this.operatorList = operatorList;
 
@@ -324,7 +313,7 @@
       );
     },
 
-    ensureFonts: function Page_ensureFonts(fonts, callback) {
+    ensureFonts: function PdfPageWrapper_ensureFonts(fonts, callback) {
       this.stats.time('Font Loading');
       // Convert the font names to the corresponding font obj.
       for (var i = 0, ii = fonts.length; i < ii; i++) {
@@ -342,18 +331,9 @@
       );
     },
 
-    display: function Page_display(gfx, viewport, callback) {
+    display: function PdfPageWrapper_display(gfx, viewport, callback) {
       var stats = this.stats;
       stats.time('Rendering');
-
-/* REMOVE ??? 
-      var xref = this.xref;
-      var resources = this.resources;
-      assertWellFormed(isDict(resources), 'invalid page resources');
-
-      gfx.xref = xref;
-      gfx.res = resources;
- REMOVE END */
 
       gfx.beginDrawing(viewport);
 
@@ -422,7 +402,7 @@
     },
     getOutline: function() {
       var promise = new PDFJS.Promise();
-      var outline = this.pdfInfo.documentOutline;
+      var outline = this.pdfInfo.outline;
       promise.resolve(outline);
       return promise;
     },
@@ -435,6 +415,9 @@
         metadata: metadata ? new PDFJS.Metadata(metadata) : null
       });
       return promise;
+    },
+    destroy: function() {
+      this.transport.destroy();
     }
   };
 
