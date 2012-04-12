@@ -41,7 +41,7 @@
 
       <div class="toolbar">
         <div id="toolbarContainer">
-          <div id="toolbarSidebar">
+          <div id="toolbarSidebar" class="hidden">
             <div class="splitToolbarButton toggled">
               <div class="toolbarButton viewThumbnail toggled" title="Show Thumbnails"></div>
               <div class="splitToolbarButtonSeparator"></div>
@@ -49,7 +49,7 @@
             </div>
           </div>
           <div id="toolbarViewer">
-            <div class="toolbarButton sidebarToggle toggled" title="Toggle Sidebar"></div>
+            <div id="sidebarToggle" class="toolbarButton toggled" title="Toggle Sidebar"></div>
             <div class="toolbarButtonSpacer"></div>
             <div class="splitToolbarButton">
               <div class="toolbarButton pageUp" title="Previous Page"></div>
@@ -74,30 +74,11 @@
         </div>
       </div>
 
-      <div id="sidebarContainer">
+      <div id="sidebarContainer" class="hidden">
         <div id="thumbnailView">
-          <div class="thumbnail selected">
-            <div class="thumbnailImage"></div>
-            <div class="thumbnailSelectionRing"></div>
-          </div>
-          <div class="thumbnail">
-            <div class="thumbnailImage"></div>
-            <div class="thumbnailSelectionRing"></div>
-          </div>
-          <div class="thumbnail">
-            <div class="thumbnailImage"></div>
-            <div class="thumbnailSelectionRing"></div>
-          </div>
-          <div class="thumbnail">
-            <div class="thumbnailImage"></div>
-            <div class="thumbnailSelectionRing"></div>
-          </div>
-          <div class="thumbnail">
-            <div class="thumbnailImage"></div>
-            <div class="thumbnailSelectionRing"></div>
-          </div>
         </div>
-        <div id="outlineView">
+
+        <div id="outlineView" class="hidden">
           <div class="outlineEntry selected">Page 1</div>
           <div class="outlineEntry">Page 2</div>
           <div class="outlineEntry">Page 3</div>
@@ -111,6 +92,12 @@
       </div>
 
     </div> <!-- outerContainer -->
+
+
+
+
+
+<!-- ................ OLD ................ -->
 
 
 <div style="display:none;">
@@ -199,7 +186,7 @@
       <textarea id="errorMoreInfo" hidden='true' readonly="readonly"></textarea>
     </div>
 
-    <div id="sidebar">
+<!--     <div id="sidebar">
       <div id="sidebarBox">
         <div id="pinIcon" onClick="PDFView.pinSidebar()"></div>
         <div id="sidebarScrollView">
@@ -218,7 +205,7 @@
         </div>
       </div>
     </div>
-
+ -->
     <div id="loadingBox">
         <div id="loading">Loading... 0%</div>
         <div id="loadingBar"><div class="progress"></div></div>

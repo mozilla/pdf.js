@@ -476,14 +476,14 @@ var PDFView = {
     var loadingBox = document.getElementById('loadingBox');
     loadingBox.setAttribute('hidden', 'true');
 
-    var sidebar = document.getElementById('sidebarView');
-    sidebar.parentNode.scrollTop = 0;
+    var thumbsView = document.getElementById('thumbnailView');
+    thumbsView.parentNode.scrollTop = 0;
 
-    while (sidebar.hasChildNodes())
-      sidebar.removeChild(sidebar.lastChild);
+    while (thumbsView.hasChildNodes())
+      thumbsView.removeChild(thumbsView.lastChild);
 
-    if ('_loadingInterval' in sidebar)
-      clearInterval(sidebar._loadingInterval);
+    if ('_loadingInterval' in thumbsView)
+      clearInterval(thumbsView._loadingInterval);
 
     var container = document.getElementById('viewer');
     while (container.hasChildNodes())
@@ -518,7 +518,7 @@ var PDFView = {
       var page = pdf.getPage(i);
       var pageView = new PageView(container, page, i, page.width, page.height,
                                   page.stats, this.navigateTo.bind(this));
-      var thumbnailView = new ThumbnailView(sidebar, page, i,
+      var thumbnailView = new ThumbnailView(thumbsView, page, i,
                                             page.width / page.height);
       bindOnAfterDraw(pageView, thumbnailView);
 
@@ -618,7 +618,7 @@ var PDFView = {
   },
 
   switchSidebarView: function pdfViewSwitchSidebarView(view) {
-    var thumbsScrollView = document.getElementById('sidebarScrollView');
+    var thumbsScrollView = document.getElementById('thumbnailView');
     var outlineScrollView = document.getElementById('outlineScrollView');
     var thumbsSwitchButton = document.getElementById('thumbsSwitch');
     var outlineSwitchButton = document.getElementById('outlineSwitch');
@@ -637,10 +637,6 @@ var PDFView = {
         outlineSwitchButton.setAttribute('data-selected', true);
         break;
     }
-  },
-
-  pinSidebar: function pdfViewPinSidebar() {
-    document.getElementById('sidebar').classList.toggle('pinned');
   },
 
   getVisiblePages: function pdfViewGetVisiblePages() {
@@ -674,9 +670,10 @@ var PDFView = {
     var kBottomMargin = 5;
     var visibleThumbs = [];
 
-    var view = document.getElementById('sidebarScrollView');
+    var view = document.getElementById('thumbnailView');
     var currentHeight = kBottomMargin;
     var top = view.scrollTop;
+
     for (var i = 1; i <= thumbs.length; ++i) {
       var thumb = thumbs[i - 1];
       var thumbHeight = thumb.height * thumb.scaleY + kBottomMargin;
@@ -687,6 +684,7 @@ var PDFView = {
     }
 
     var bottom = top + view.clientHeight;
+
     for (; i <= thumbs.length && currentHeight < bottom; ++i) {
       var singleThumb = thumbs[i - 1];
       visibleThumbs.push({ id: singleThumb.id, y: currentHeight,
@@ -1268,8 +1266,15 @@ window.addEventListener('load', function webViewerLoad(evt) {
     PDFBug.init();
   }
 
-  var sidebarScrollView = document.getElementById('sidebarScrollView');
-  sidebarScrollView.addEventListener('scroll', updateThumbViewArea, true);
+  var thumbsView = document.getElementById('thumbnailView');
+  thumbsView.addEventListener('scroll', updateThumbViewArea, true);
+
+  document.getElementById('sidebarToggle').addEventListener('click',
+    function() {
+      document.getElementById('toolbarSidebar').classList.toggle('hidden');
+      document.getElementById('sidebarContainer').classList.toggle('hidden');
+      updateThumbViewArea();
+    });
 }, true);
 
 /**
@@ -1367,9 +1372,6 @@ function updateThumbViewArea() {
     }
   }, delay);
 }
-
-window.addEventListener('transitionend', updateThumbViewArea, true);
-window.addEventListener('webkitTransitionEnd', updateThumbViewArea, true);
 
 window.addEventListener('resize', function webViewerResize(evt) {
   if (document.getElementById('pageWidthOption').selected ||
