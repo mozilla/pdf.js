@@ -385,7 +385,7 @@ var WorkerTransport = (function WorkerTransportClosure() {
       }, this);
 
       messageHandler.on('PageError', function transportError(data) {
-        var page = this.pageCache[data.pageNum];
+        var page = this.pageCache[data.pageNum - 1];
         if (page.displayReadyPromise)
           page.displayReadyPromise.reject(data.error);
         else
