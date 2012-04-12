@@ -2,32 +2,39 @@
 <html>
     <head>
         <title>Simple pdf.js page viewer</title>
+        <!-- PDFJSSCRIPT_INCLUDE_FIREFOX_EXTENSION -->
+
         <link rel="stylesheet" href="viewer.css"/>
 
-        <script type="text/javascript" src="compatibility.js"></script>
+        <script type="text/javascript" src="compatibility.js"></script> <!-- PDFJSSCRIPT_REMOVE_FIREFOX_EXTENSION -->
 
         <!-- PDFJSSCRIPT_INCLUDE_BUILD -->
-        <script type="text/javascript" src="../src/core.js"></script> <!-- PDFJSSCRIPT_REMOVE -->
-        <script type="text/javascript" src="../src/util.js"></script>  <!-- PDFJSSCRIPT_REMOVE -->
-        <script type="text/javascript" src="../src/canvas.js"></script>  <!-- PDFJSSCRIPT_REMOVE -->
-        <script type="text/javascript" src="../src/obj.js"></script>  <!-- PDFJSSCRIPT_REMOVE -->
-        <script type="text/javascript" src="../src/function.js"></script> <!-- PDFJSSCRIPT_REMOVE -->
-        <script type="text/javascript" src="../src/charsets.js"></script>  <!-- PDFJSSCRIPT_REMOVE -->
-        <script type="text/javascript" src="../src/cidmaps.js"></script>  <!-- PDFJSSCRIPT_REMOVE -->
-        <script type="text/javascript" src="../src/colorspace.js"></script>  <!-- PDFJSSCRIPT_REMOVE -->
-        <script type="text/javascript" src="../src/crypto.js"></script>  <!-- PDFJSSCRIPT_REMOVE -->
-        <script type="text/javascript" src="../src/evaluator.js"></script>  <!-- PDFJSSCRIPT_REMOVE -->
-        <script type="text/javascript" src="../src/fonts.js"></script>  <!-- PDFJSSCRIPT_REMOVE -->
-        <script type="text/javascript" src="../src/glyphlist.js"></script>  <!-- PDFJSSCRIPT_REMOVE -->
-        <script type="text/javascript" src="../src/image.js"></script>  <!-- PDFJSSCRIPT_REMOVE -->
-        <script type="text/javascript" src="../src/metrics.js"></script>  <!-- PDFJSSCRIPT_REMOVE -->
-        <script type="text/javascript" src="../src/parser.js"></script>  <!-- PDFJSSCRIPT_REMOVE -->
-        <script type="text/javascript" src="../src/pattern.js"></script>  <!-- PDFJSSCRIPT_REMOVE -->
-        <script type="text/javascript" src="../src/stream.js"></script>  <!-- PDFJSSCRIPT_REMOVE -->
-        <script type="text/javascript" src="../src/worker.js"></script>  <!-- PDFJSSCRIPT_REMOVE -->
-        <script type="text/javascript" src="../external/jpgjs/jpg.js"></script>  <!-- PDFJSSCRIPT_REMOVE -->
-        <script type="text/javascript">PDFJS.workerSrc = '../src/worker_loader.js';</script> <!-- PDFJSSCRIPT_REMOVE -->
+        <script type="text/javascript" src="../src/core.js"></script> <!-- PDFJSSCRIPT_REMOVE_CORE -->
+        <script type="text/javascript" src="../src/util.js"></script>  <!-- PDFJSSCRIPT_REMOVE_CORE -->
+        <script type="text/javascript" src="../src/metadata.js"></script>  <!-- PDFJSSCRIPT_REMOVE_CORE -->
+        <script type="text/javascript" src="../src/canvas.js"></script>  <!-- PDFJSSCRIPT_REMOVE_CORE -->
+        <script type="text/javascript" src="../src/obj.js"></script>  <!-- PDFJSSCRIPT_REMOVE_CORE -->
+        <script type="text/javascript" src="../src/function.js"></script> <!-- PDFJSSCRIPT_REMOVE_CORE -->
+        <script type="text/javascript" src="../src/charsets.js"></script>  <!-- PDFJSSCRIPT_REMOVE_CORE -->
+        <script type="text/javascript" src="../src/cidmaps.js"></script>  <!-- PDFJSSCRIPT_REMOVE_CORE -->
+        <script type="text/javascript" src="../src/colorspace.js"></script>  <!-- PDFJSSCRIPT_REMOVE_CORE -->
+        <script type="text/javascript" src="../src/crypto.js"></script>  <!-- PDFJSSCRIPT_REMOVE_CORE -->
+        <script type="text/javascript" src="../src/evaluator.js"></script>  <!-- PDFJSSCRIPT_REMOVE_CORE -->
+        <script type="text/javascript" src="../src/fonts.js"></script>  <!-- PDFJSSCRIPT_REMOVE_CORE -->
+        <script type="text/javascript" src="../src/glyphlist.js"></script>  <!-- PDFJSSCRIPT_REMOVE_CORE -->
+        <script type="text/javascript" src="../src/image.js"></script>  <!-- PDFJSSCRIPT_REMOVE_CORE -->
+        <script type="text/javascript" src="../src/metrics.js"></script>  <!-- PDFJSSCRIPT_REMOVE_CORE -->
+        <script type="text/javascript" src="../src/parser.js"></script>  <!-- PDFJSSCRIPT_REMOVE_CORE -->
+        <script type="text/javascript" src="../src/pattern.js"></script>  <!-- PDFJSSCRIPT_REMOVE_CORE -->
+        <script type="text/javascript" src="../src/stream.js"></script>  <!-- PDFJSSCRIPT_REMOVE_CORE -->
+        <script type="text/javascript" src="../src/worker.js"></script>  <!-- PDFJSSCRIPT_REMOVE_CORE -->
+        <script type="text/javascript" src="../external/jpgjs/jpg.js"></script>  <!-- PDFJSSCRIPT_REMOVE_CORE -->
+        <script type="text/javascript" src="../src/jpx.js"></script>  <!-- PDFJSSCRIPT_REMOVE_CORE -->
+        <script type="text/javascript" src="../src/bidi.js"></script>  <!-- PDFJSSCRIPT_REMOVE_CORE -->
+        <script type="text/javascript">PDFJS.workerSrc = '../src/worker_loader.js';</script> <!-- PDFJSSCRIPT_REMOVE_CORE -->
+        <script type="text/javascript" src="debugger.js"></script>
         <script type="text/javascript" src="viewer.js"></script>
+
 
     </head>
 
@@ -67,10 +74,11 @@
         <option value="0.75">75%</option>
         <option value="1">100%</option>
         <option value="1.25">125%</option>
-        <option value="1.5" selected="selected">150%</option>
+        <option value="1.5">150%</option>
         <option value="2">200%</option>
         <option id="pageWidthOption" value="page-width">Page Width</option>
         <option id="pageFitOption" value="page-fit">Page Fit</option>
+        <option id="pageAutoOption" value="auto" selected="selected">Auto</option>
       </select>
 
       <div class="separator"></div>
@@ -89,13 +97,12 @@
 
       <input id="fileInput" type="file" oncontextmenu="return false;"/>
 
-      <div class="separator"></div>
+      <div id="fileInputSeperator" class="separator"></div>
 
       <a href="#" id="viewBookmark" title="Bookmark (or copy) current location">
         <img src="images/bookmark.svg" alt="Bookmark" align="top" height="16"/>
       </a>
 
-      <span id="info">--</span>
     </div>
     <div id="errorWrapper" hidden='true'>
       <div id="errorMessageLeft">
@@ -113,11 +120,12 @@
         </button>
       </div>
       <div class="clearBoth"></div>
-      <div id="errorMoreInfo" hidden='true'></div>
+      <textarea id="errorMoreInfo" hidden='true' readonly="readonly"></textarea>
     </div>
 
     <div id="sidebar">
       <div id="sidebarBox">
+        <div id="pinIcon" onClick="PDFView.pinSidebar()"></div>
         <div id="sidebarScrollView">
           <div id="sidebarView"></div>
         </div>
@@ -132,10 +140,13 @@
             <img src="images/nav-outline.svg" align="top" height="16" alt="Document Outline" />
           </button>
         </div>
-     </div>
+      </div>
     </div>
 
-    <div id="loading">Loading... 0%</div>
+    <div id="loadingBox">
+        <div id="loading">Loading... 0%</div>
+        <div id="loadingBar"><div class="progress"></div></div>
+    </div>
     <div id="viewer"></div>
   </body>
 </html>

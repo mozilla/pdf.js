@@ -9,7 +9,7 @@ var PDFImage = (function PDFImageClosure() {
    * when the image data is ready.
    */
   function handleImageData(handler, xref, res, image, promise) {
-    if (image instanceof JpegStream && image.isNative) {
+    if (image instanceof JpegStream && image.isNativelyDecodable(xref, res)) {
       // For natively supported jpegs send them to the main thread for decoding.
       var dict = image.dict;
       var colorSpace = dict.get('ColorSpace', 'CS');
@@ -94,7 +94,7 @@ var PDFImage = (function PDFImageClosure() {
       }
     }
 
-    var mask = xref.fetchIfRef(dict.get('Mask'));
+    var mask = dict.get('Mask');
 
     if (mask) {
       TODO('masked images');
@@ -106,8 +106,8 @@ var PDFImage = (function PDFImageClosure() {
    * Handles processing of image data and calls the callback with an argument
    * of a PDFImage when the image is ready to be used.
    */
-  PDFImage.buildImage = function buildImage(callback, handler, xref, res,
-                                               image, inline) {
+  PDFImage.buildImage = function PDFImage_buildImage(callback, handler, xref,
+                                                     res, image, inline) {
     var imageDataPromise = new Promise();
     var smaskPromise = new Promise();
     // The image data and smask data may not be ready yet, wait till both are
@@ -120,7 +120,7 @@ var PDFImage = (function PDFImageClosure() {
 
     handleImageData(handler, xref, res, image, imageDataPromise);
 
-    var smask = xref.fetchIfRef(image.dict.get('SMask'));
+    var smask = image.dict.get('SMask');
     if (smask)
       handleImageData(handler, xref, res, smask, smaskPromise);
     else
@@ -139,7 +139,8 @@ var PDFImage = (function PDFImageClosure() {
    * @param {Number} h2 New height.
    * @return {TypedArray} Resized image data.
    */
-  PDFImage.resize = function resize(pixels, bpc, components, w1, h1, w2, h2) {
+  PDFImage.resize = function PDFImage_resize(pixels, bpc, components,
+                                             w1, h1, w2, h2) {
     var length = w2 * h2 * components;
     var temp = bpc <= 8 ? new Uint8Array(length) :
         bpc <= 16 ? new Uint16Array(length) : new Uint32Array(length);
@@ -177,7 +178,7 @@ var PDFImage = (function PDFImageClosure() {
         return this.height;
       return Math.max(this.height, this.smask.height);
     },
-    getComponents: function getComponents(buffer) {
+    getComponents: function PDFImage_getComponents(buffer) {
       var bpc = this.bpc;
       var needsDecode = this.needsDecode;
       var decodeMap = this.decode;
@@ -265,7 +266,7 @@ var PDFImage = (function PDFImageClosure() {
       }
       return output;
     },
-    getOpacity: function getOpacity(width, height) {
+    getOpacity: function PDFImage_getOpacity(width, height) {
       var smask = this.smask;
       var originalWidth = this.width;
       var originalHeight = this.height;
@@ -285,7 +286,8 @@ var PDFImage = (function PDFImageClosure() {
       }
       return buf;
     },
-    applyStencilMask: function applyStencilMask(buffer, inverseDecode) {
+    applyStencilMask: function PDFImage_applyStencilMask(buffer,
+                                                         inverseDecode) {
       var width = this.width, height = this.height;
       var bitStrideLength = (width + 7) >> 3;
       var imgArray = this.getImageBytes(bitStrideLength * height);
@@ -308,7 +310,7 @@ var PDFImage = (function PDFImageClosure() {
         }
       }
     },
-    fillRgbaBuffer: function fillRgbaBuffer(buffer, width, height) {
+    fillRgbaBuffer: function PDFImage_fillRgbaBuffer(buffer, width, height) {
       var numComps = this.numComps;
       var originalWidth = this.width;
       var originalHeight = this.height;
@@ -335,7 +337,7 @@ var PDFImage = (function PDFImageClosure() {
         buffer[i + 3] = opacity[opacityPos++];
       }
     },
-    fillGrayBuffer: function fillGrayBuffer(buffer) {
+    fillGrayBuffer: function PDFImage_fillGrayBuffer(buffer) {
       var numComps = this.numComps;
       if (numComps != 1)
         error('Reading gray scale from a color image: ' + numComps);
@@ -355,7 +357,7 @@ var PDFImage = (function PDFImageClosure() {
       for (var i = 0; i < length; ++i)
         buffer[i] = (scale * comps[i]) | 0;
     },
-    getImageBytes: function getImageBytes(length) {
+    getImageBytes: function PDFImage_getImageBytes(length) {
       this.image.reset();
       return this.image.getBytes(length);
     }
@@ -365,7 +367,7 @@ var PDFImage = (function PDFImageClosure() {
 
 function loadJpegStream(id, imageData, objs) {
   var img = new Image();
-  img.onload = (function jpegImageLoaderOnload() {
+  img.onload = (function loadJpegStream_onloadClosure() {
     objs.resolve(id, img);
   });
   img.src = 'data:image/jpeg;base64,' + window.btoa(imageData);

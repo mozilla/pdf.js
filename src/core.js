@@ -33,7 +33,9 @@ function getPdf(arg, callback) {
   var xhr = new XMLHttpRequest();
   xhr.open('GET', params.url);
   xhr.mozResponseType = xhr.responseType = 'arraybuffer';
-  xhr.expected = (params.url.indexOf('file:') === 0) ? 0 : 200;
+  var protocol = params.url.indexOf(':') < 0 ? window.location.protocol :
+    params.url.substring(0, params.url.indexOf(':') + 1);
+  xhr.expected = (protocol === 'http:' || protocol === 'https:') ? 200 : 0;
 
   if ('progress' in params)
     xhr.onprogress = params.progress || undefined;
@@ -55,34 +57,29 @@ function getPdf(arg, callback) {
   xhr.send(null);
 }
 globalScope.PDFJS.getPdf = getPdf;
+globalScope.PDFJS.pdfBug = false;
 
 var Page = (function PageClosure() {
   function Page(xref, pageNumber, pageDict, ref) {
     this.pageNumber = pageNumber;
     this.pageDict = pageDict;
-    this.stats = {
-      create: Date.now(),
-      compile: 0.0,
-      fonts: 0.0,
-      images: 0.0,
-      render: 0.0
-    };
+    this.stats = new StatTimer();
+    this.stats.enabled = !!globalScope.PDFJS.enableStats;
     this.xref = xref;
     this.ref = ref;
 
-    this.ctx = null;
-    this.callback = null;
+    this.displayReadyPromise = null;
   }
 
   Page.prototype = {
-    getPageProp: function pageGetPageProp(key) {
-      return this.xref.fetchIfRef(this.pageDict.get(key));
+    getPageProp: function Page_getPageProp(key) {
+      return this.pageDict.get(key);
     },
-    inheritPageProp: function pageInheritPageProp(key) {
+    inheritPageProp: function Page_inheritPageProp(key) {
       var dict = this.pageDict;
       var obj = dict.get(key);
       while (obj === undefined) {
-        dict = this.xref.fetchIfRef(dict.get('Parent'));
+        dict = dict.get('Parent');
         if (!dict)
           break;
         obj = dict.get(key);
@@ -103,23 +100,35 @@ var Page = (function PageClosure() {
       return shadow(this, 'mediaBox', obj);
     },
     get view() {
-      var obj = this.inheritPageProp('CropBox');
+      var cropBox = this.inheritPageProp('CropBox');
       var view = {
         x: 0,
         y: 0,
         width: this.width,
         height: this.height
       };
-      if (isArray(obj) && obj.length == 4) {
-        var tl = this.rotatePoint(obj[0], obj[1]);
-        var br = this.rotatePoint(obj[2], obj[3]);
-        view.x = Math.min(tl.x, br.x);
-        view.y = Math.min(tl.y, br.y);
-        view.width = Math.abs(tl.x - br.x);
-        view.height = Math.abs(tl.y - br.y);
-      }
+      if (!isArray(cropBox) || cropBox.length !== 4)
+        return shadow(this, 'view', view);
 
-      return shadow(this, 'cropBox', view);
+      var mediaBox = this.mediaBox;
+      var offsetX = mediaBox[0], offsetY = mediaBox[1];
+
+      // From the spec, 6th ed., p.963:
+      // "The crop, bleed, trim, and art boxes should not ordinarily
+      // extend beyond the boundaries of the media box. If they do, they are
+      // effectively reduced to their intersection with the media box."
+      cropBox = Util.intersect(cropBox, mediaBox);
+      if (!cropBox)
+        return shadow(this, 'view', view);
+
+      var tl = this.rotatePoint(cropBox[0] - offsetX, cropBox[1] - offsetY);
+      var br = this.rotatePoint(cropBox[2] - offsetX, cropBox[3] - offsetY);
+      view.x = Math.min(tl.x, br.x);
+      view.y = Math.min(tl.y, br.y);
+      view.width = Math.abs(tl.x - br.x);
+      view.height = Math.abs(tl.y - br.y);
+
+      return shadow(this, 'view', view);
     },
     get annotations() {
       return shadow(this, 'annotations', this.inheritPageProp('Annots'));
@@ -161,79 +170,80 @@ var Page = (function PageClosure() {
       return shadow(this, 'rotate', rotate);
     },
 
-    startRenderingFromIRQueue: function pageStartRenderingFromIRQueue(
-                                                IRQueue, fonts) {
+    startRenderingFromOperatorList:
+      function Page_startRenderingFromOperatorList(operatorList, fonts) {
       var self = this;
-      this.IRQueue = IRQueue;
-      var gfx = new CanvasGraphics(this.ctx, this.objs, this.textLayer);
+      this.operatorList = operatorList;
 
       var displayContinuation = function pageDisplayContinuation() {
         // Always defer call to display() to work around bug in
         // Firefox error reporting from XHR callbacks.
         setTimeout(function pageSetTimeout() {
-          try {
-            self.display(gfx, self.callback);
-          } catch (e) {
-            if (self.callback)
-              self.callback(e);
-            else
-              throw e;
-          }
+          self.displayReadyPromise.resolve();
         });
       };
 
       this.ensureFonts(fonts,
-                       function pageStartRenderingFromIRQueueEnsureFonts() {
-        displayContinuation();
-      });
+        function pageStartRenderingFromOperatorListEnsureFonts() {
+          displayContinuation();
+        }
+      );
     },
 
-    getIRQueue: function pageGetIRQueue(handler, dependency) {
-      if (this.IRQueue) {
+    getOperatorList: function Page_getOperatorList(handler, dependency) {
+      if (this.operatorList) {
         // content was compiled
-        return this.IRQueue;
+        return this.operatorList;
       }
 
+      this.stats.time('Build IR Queue');
+
       var xref = this.xref;
-      var content = xref.fetchIfRef(this.content);
-      var resources = xref.fetchIfRef(this.resources);
+      var content = this.content;
+      var resources = this.resources;
       if (isArray(content)) {
         // fetching items
         var i, n = content.length;
         for (i = 0; i < n; ++i)
           content[i] = xref.fetchIfRef(content[i]);
         content = new StreamsSequenceStream(content);
+      } else if (!content) {
+        // replacing non-existent page content with empty one
+        content = new Stream(new Uint8Array(0));
       }
 
       var pe = this.pe = new PartialEvaluator(
                                 xref, handler, 'p' + this.pageNumber + '_');
-      var IRQueue = {};
-      return (this.IRQueue = pe.getIRQueue(content, resources, IRQueue,
-                                           dependency));
+
+      this.operatorList = pe.getOperatorList(content, resources, dependency);
+      this.stats.timeEnd('Build IR Queue');
+      return this.operatorList;
     },
 
-    ensureFonts: function pageEnsureFonts(fonts, callback) {
+    ensureFonts: function Page_ensureFonts(fonts, callback) {
+      this.stats.time('Font Loading');
       // Convert the font names to the corresponding font obj.
       for (var i = 0, ii = fonts.length; i < ii; i++) {
         fonts[i] = this.objs.objs[fonts[i]].data;
       }
 
       // Load all the fonts
-      var fontObjs = FontLoader.bind(
+      FontLoader.bind(
         fonts,
         function pageEnsureFontsFontObjs(fontObjs) {
-          this.stats.fonts = Date.now();
+          this.stats.timeEnd('Font Loading');
 
           callback.call(this);
-        }.bind(this),
-        this.objs
+        }.bind(this)
       );
     },
 
-    display: function pageDisplay(gfx, callback) {
+    display: function Page_display(gfx, callback) {
+      var stats = this.stats;
+      stats.time('Rendering');
       var xref = this.xref;
-      var resources = xref.fetchIfRef(this.resources);
-      var mediaBox = xref.fetchIfRef(this.mediaBox);
+      var resources = this.resources;
+      var mediaBox = this.mediaBox;
       assertWellFormed(isDict(resources), 'invalid page resources');
 
       gfx.xref = xref;
@@ -244,21 +254,29 @@ var Page = (function PageClosure() {
             rotate: this.rotate });
 
       var startIdx = 0;
-      var length = this.IRQueue.fnArray.length;
-      var IRQueue = this.IRQueue;
+      var length = this.operatorList.fnArray.length;
+      var operatorList = this.operatorList;
+      var stepper = null;
+      if (PDFJS.pdfBug && StepperManager.enabled) {
+        stepper = StepperManager.create(this.pageNumber);
+        stepper.init(operatorList);
+        stepper.nextBreakPoint = stepper.getNextBreakPoint();
+      }
 
       var self = this;
       function next() {
-        startIdx = gfx.executeIRQueue(IRQueue, startIdx, next);
+        startIdx =
+          gfx.executeOperatorList(operatorList, startIdx, next, stepper);
         if (startIdx == length) {
-          self.stats.render = Date.now();
           gfx.endDrawing();
+          stats.timeEnd('Rendering');
+          stats.timeEnd('Overall');
           if (callback) callback();
         }
       }
       next();
     },
-    rotatePoint: function pageRotatePoint(x, y, reverse) {
+    rotatePoint: function Page_rotatePoint(x, y, reverse) {
       var rotate = reverse ? (360 - this.rotate) : this.rotate;
       switch (rotate) {
         case 180:
@@ -273,7 +291,7 @@ var Page = (function PageClosure() {
           return {x: x, y: this.height - y};
       }
     },
-    getLinks: function pageGetLinks() {
+    getLinks: function Page_getLinks() {
       var links = [];
       var annotations = pageGetAnnotations();
       var i, n = annotations.length;
@@ -284,19 +302,35 @@ var Page = (function PageClosure() {
       }
       return links;
     },
-    getAnnotations: function pageGetAnnotations() {
+    getAnnotations: function Page_getAnnotations() {
       var xref = this.xref;
       function getInheritableProperty(annotation, name) {
         var item = annotation;
         while (item && !item.has(name)) {
-          item = xref.fetchIfRef(item.get('Parent'));
+          item = item.get('Parent');
         }
         if (!item)
           return null;
         return item.get(name);
       }
+      function isValidUrl(url) {
+        if (!url)
+          return false;
+        var colon = url.indexOf(':');
+        if (colon < 0)
+          return false;
+        var protocol = url.substr(0, colon);
+        switch (protocol) {
+          case 'http':
+          case 'https':
+          case 'ftp':
+            return true;
+          default:
+            return false;
+        }
+      }
 
-      var annotations = xref.fetchIfRef(this.annotations) || [];
+      var annotations = this.annotations || [];
       var i, n = annotations.length;
       var items = [];
       for (i = 0; i < n; ++i) {
@@ -319,11 +353,16 @@ var Page = (function PageClosure() {
         item.height = Math.abs(topLeftCorner.y - bottomRightCorner.y);
         switch (subtype.name) {
           case 'Link':
-            var a = this.xref.fetchIfRef(annotation.get('A'));
+            var a = annotation.get('A');
             if (a) {
               switch (a.get('S').name) {
                 case 'URI':
-                  item.url = a.get('URI');
+                  var url = a.get('URI');
+                  // TODO: pdf spec mentions urls can be relative to a Base
+                  // entry in the dictionary.
+                  if (!isValidUrl(url))
+                    url = '';
+                  item.url = url;
                   break;
                 case 'GoTo':
                   item.dest = a.get('D');
@@ -347,21 +386,22 @@ var Page = (function PageClosure() {
             var fieldName = [];
             var namedItem = annotation, ref = annotationRef;
             while (namedItem) {
-              var parentRef = namedItem.get('Parent');
-              var parent = xref.fetchIfRef(parentRef);
+              var parent = namedItem.get('Parent');
+              var parentRef = namedItem.getRaw('Parent');
               var name = namedItem.get('T');
-              if (name)
+              if (name) {
                 fieldName.unshift(stringToPDFString(name));
-              else {
+              } else {
                 // The field name is absent, that means more than one field
                 // with the same name may exist. Replacing the empty name
                 // with the '`' plus index in the parent's 'Kids' array.
                 // This is not in the PDF spec but necessary to id the
                 // the input controls.
-                var kids = xref.fetchIfRef(parent.get('Kids'));
+                var kids = parent.get('Kids');
                 var j, jj;
                 for (j = 0, jj = kids.length; j < jj; j++) {
-                  if (kids[j].num == ref.num && kids[j].gen == ref.gen)
+                  var kidRef = kids[j];
+                  if (kidRef.num == ref.num && kidRef.gen == ref.gen)
                     break;
                 }
                 fieldName.unshift('`' + j);
@@ -394,13 +434,36 @@ var Page = (function PageClosure() {
       }
       return items;
     },
-    startRendering: function pageStartRendering(ctx, callback, textLayer)  {
-      this.ctx = ctx;
-      this.callback = callback;
-      this.textLayer = textLayer;
+    startRendering: function Page_startRendering(ctx, callback, textLayer)  {
+      var stats = this.stats;
+      stats.time('Overall');
+      // If there is no displayReadyPromise yet, then the operatorList was never
+      // requested before. Make the request and create the promise.
+      if (!this.displayReadyPromise) {
+        this.pdf.startRendering(this);
+        this.displayReadyPromise = new Promise();
+      }
 
-      this.startRenderingTime = Date.now();
-      this.pdf.startRendering(this);
+      // Once the operatorList and fonts are loaded, do the actual rendering.
+      this.displayReadyPromise.then(
+        function pageDisplayReadyPromise() {
+          var gfx = new CanvasGraphics(ctx, this.objs, textLayer);
+          try {
+            this.display(gfx, callback);
+          } catch (e) {
+            if (callback)
+              callback(e);
+            else
+              error(e);
+          }
+        }.bind(this),
+        function pageDisplayReadPromiseError(reason) {
+          if (callback)
+            callback(reason);
+          else
+            error(reason);
+        }
+      );
     }
   };
 
@@ -413,9 +476,6 @@ var Page = (function PageClosure() {
  * Right now there exists one PDFDocModel on the main thread + one object
  * for each worker. If there is no worker support enabled, there are two
  * `PDFDocModel` objects on the main thread created.
- * TODO: Refactor the internal object structure, such that there is no
- * need for the `PDFDocModel` anymore and there is only one object on the
- * main thread and not one entire copy on each worker instance.
  */
 var PDFDocModel = (function PDFDocModelClosure() {
   function PDFDocModel(arg, callback) {
@@ -431,7 +491,7 @@ var PDFDocModel = (function PDFDocModelClosure() {
     assertWellFormed(stream.length > 0, 'stream must have data');
     this.stream = stream;
     this.setup();
-    this.acroForm = this.xref.fetchIfRef(this.catalog.catDict.get('AcroForm'));
+    this.acroForm = this.catalog.catDict.get('AcroForm');
   }
 
   function find(stream, needle, limit, backwards) {
@@ -511,7 +571,7 @@ var PDFDocModel = (function PDFDocModelClosure() {
     },
     // Find the header, remove leading garbage and setup the stream
     // starting from the header.
-    checkHeader: function pdfDocCheckHeader() {
+    checkHeader: function PDFDocModel_checkHeader() {
       var stream = this.stream;
       stream.reset();
       if (find(stream, '%PDF-', 1024)) {
@@ -521,12 +581,13 @@ var PDFDocModel = (function PDFDocModelClosure() {
       }
       // May not be a PDF file, continue anyway.
     },
-    setup: function pdfDocSetup(ownerPassword, userPassword) {
+    setup: function PDFDocModel_setup(ownerPassword, userPassword) {
       this.checkHeader();
-      this.xref = new XRef(this.stream,
-                           this.startXRef,
-                           this.mainXRefEntriesOffset);
-      this.catalog = new Catalog(this.xref);
+      var xref = new XRef(this.stream,
+                          this.startXRef,
+                          this.mainXRefEntriesOffset);
+      this.xref = xref;
+      this.catalog = new Catalog(xref);
     },
     get numPages() {
       var linearization = this.linearization;
@@ -534,7 +595,42 @@ var PDFDocModel = (function PDFDocModelClosure() {
       // shadow the prototype getter
       return shadow(this, 'numPages', num);
     },
-    getPage: function pdfDocGetPage(n) {
+    getDocumentInfo: function PDFDocModel_getDocumentInfo() {
+      var info;
+      if (this.xref.trailer.has('Info')) {
+        var infoDict = this.xref.trailer.get('Info');
+
+        info = {};
+        infoDict.forEach(function(key, value) {
+          info[key] = typeof value !== 'string' ? value :
+            stringToPDFString(value);
+        });
+      }
+
+      return shadow(this, 'getDocumentInfo', info);
+    },
+    getFingerprint: function PDFDocModel_getFingerprint() {
+      var xref = this.xref, fileID;
+      if (xref.trailer.has('ID')) {
+        fileID = '';
+        var id = xref.trailer.get('ID')[0];
+        id.split('').forEach(function(el) {
+          fileID += Number(el.charCodeAt(0)).toString(16);
+        });
+      } else {
+        // If we got no fileID, then we generate one,
+        // from the first 100 bytes of PDF
+        var data = this.stream.bytes.subarray(0, 100);
+        var hash = calculateMD5(data, 0, data.length);
+        fileID = '';
+        for (var i = 0, length = hash.length; i < length; i++) {
+          fileID += Number(hash[i]).toString(16);
+        }
+      }
+
+      return shadow(this, 'getFingerprint', fileID);
+    },
+    getPage: function PDFDocModel_getPage(n) {
       return this.catalog.getPage(n);
     }
   };
@@ -559,9 +655,10 @@ var PDFDoc = (function PDFDocClosure() {
 
     this.data = data;
     this.stream = stream;
-    this.pdf = new PDFDocModel(stream);
-
-    this.catalog = this.pdf.catalog;
+    this.pdfModel = new PDFDocModel(stream);
+    this.fingerprint = this.pdfModel.getFingerprint();
+    this.info = this.pdfModel.getDocumentInfo();
+    this.catalog = this.pdfModel.catalog;
     this.objs = new PDFObjects();
 
     this.pageCache = [];
@@ -576,49 +673,59 @@ var PDFDoc = (function PDFDocClosure() {
     if (!globalScope.PDFJS.disableWorker && typeof Worker !== 'undefined') {
       var workerSrc = PDFJS.workerSrc;
       if (typeof workerSrc === 'undefined') {
-        throw 'No PDFJS.workerSrc specified';
+        error('No PDFJS.workerSrc specified');
       }
 
-      var worker;
       try {
-        worker = new Worker(workerSrc);
-      } catch (e) {
-        // Some versions of FF can't create a worker on localhost, see:
-        // https://bugzilla.mozilla.org/show_bug.cgi?id=683280
-        globalScope.PDFJS.disableWorker = true;
-        this.setupFakeWorker();
-        return;
-      }
-
-      var messageHandler = new MessageHandler('main', worker);
-
-      // Tell the worker the file it was created from.
-      messageHandler.send('workerSrc', workerSrc);
-
-      messageHandler.on('test', function pdfDocTest(supportTypedArray) {
-        if (supportTypedArray) {
-          this.worker = worker;
-          this.setupMessageHandler(messageHandler);
+        var worker;
+        if (PDFJS.isFirefoxExtension) {
+          // The firefox extension can't load the worker from the resource://
+          // url so we have to inline the script and then use the blob loader.
+          var bb = new MozBlobBuilder();
+          bb.append(document.querySelector('#PDFJS_SCRIPT_TAG').textContent);
+          var blobUrl = window.URL.createObjectURL(bb.getBlob());
+          worker = new Worker(blobUrl);
         } else {
-          this.setupFakeWorker();
+          // Some versions of FF can't create a worker on localhost, see:
+          // https://bugzilla.mozilla.org/show_bug.cgi?id=683280
+          worker = new Worker(workerSrc);
         }
-      }.bind(this));
 
-      var testObj = new Uint8Array(1);
-      messageHandler.send('test', testObj);
-    } else {
-      this.setupFakeWorker();
+        var messageHandler = new MessageHandler('main', worker);
+
+        messageHandler.on('test', function pdfDocTest(supportTypedArray) {
+          if (supportTypedArray) {
+            this.worker = worker;
+            this.setupMessageHandler(messageHandler);
+          } else {
+            globalScope.PDFJS.disableWorker = true;
+            this.setupFakeWorker();
+          }
+        }.bind(this));
+
+        var testObj = new Uint8Array(1);
+        // Some versions of Opera throw a DATA_CLONE_ERR on
+        // serializing the typed array.
+        messageHandler.send('test', testObj);
+        return;
+      } catch (e) {
+        warn('The worker has been disabled.');
+      }
     }
+    // Either workers are disabled, not supported or have thrown an exception.
+    // Thus, we fallback to a faked worker.
+    globalScope.PDFJS.disableWorker = true;
+    this.setupFakeWorker();
   }
 
   PDFDoc.prototype = {
-    setupFakeWorker: function() {
+    setupFakeWorker: function PDFDoc_setupFakeWorker() {
       // If we don't use a worker, just post/sendMessage to the main thread.
       var fakeWorker = {
-        postMessage: function pdfDocPostMessage(obj) {
+        postMessage: function PDFDoc_postMessage(obj) {
           fakeWorker.onmessage({data: obj});
         },
-        terminate: function pdfDocTerminate() {}
+        terminate: function PDFDoc_terminate() {}
       };
 
       var messageHandler = new MessageHandler('main', fakeWorker);
@@ -630,7 +737,7 @@ var PDFDoc = (function PDFDocClosure() {
     },
 
 
-    setupMessageHandler: function(messageHandler) {
+    setupMessageHandler: function PDFDoc_setupMessageHandler(messageHandler) {
       this.messageHandler = messageHandler;
 
       messageHandler.on('page', function pdfDocPage(data) {
@@ -638,7 +745,8 @@ var PDFDoc = (function PDFDocClosure() {
         var page = this.pageCache[pageNum];
         var depFonts = data.depFonts;
 
-        page.startRenderingFromIRQueue(data.IRQueue, depFonts);
+        page.stats.timeEnd('Page Request');
+        page.startRenderingFromOperatorList(data.operatorList, depFonts);
       }, this);
 
       messageHandler.on('obj', function pdfDocObj(data) {
@@ -665,37 +773,22 @@ var PDFDoc = (function PDFDocClosure() {
               file = new Stream(file, 0, file.length, fontFileDict);
             }
 
-            // For now, resolve the font object here direclty. The real font
-            // object is then created in FontLoader.bind().
-            this.objs.resolve(id, {
-              name: name,
-              file: file,
-              properties: properties
-            });
+            // At this point, only the font object is created but the font is
+            // not yet attached to the DOM. This is done in `FontLoader.bind`.
+            var font = new Font(name, file, properties);
+            this.objs.resolve(id, font);
             break;
           default:
-            throw 'Got unkown object type ' + type;
+            error('Got unkown object type ' + type);
         }
       }, this);
 
-      messageHandler.on('font_ready', function pdfDocFontReady(data) {
-        var id = data[0];
-        var font = new FontShape(data[1]);
-
-        // If there is no string, then there is nothing to attach to the DOM.
-        if (!font.str) {
-          this.objs.resolve(id, font);
-        } else {
-          this.objs.setData(id, font);
-        }
-      }.bind(this));
-
       messageHandler.on('page_error', function pdfDocError(data) {
         var page = this.pageCache[data.pageNum];
-        if (page.callback)
-          page.callback(data.error);
+        if (page.displayReadyPromise)
+          page.displayReadyPromise.reject(data.error);
         else
-          throw data.error;
+          error(data.error);
       }, this);
 
       messageHandler.on('jpeg_decode', function(data, promise) {
@@ -705,13 +798,13 @@ var PDFDoc = (function PDFDocClosure() {
           error('Only 3 component or 1 component can be returned');
 
         var img = new Image();
-        img.onload = (function jpegImageLoaderOnload() {
+        img.onload = (function messageHandler_onloadClosure() {
           var width = img.width;
           var height = img.height;
           var size = width * height;
           var rgbaLength = size * 4;
           var buf = new Uint8Array(size * components);
-          var tmpCanvas = new ScratchCanvas(width, height);
+          var tmpCanvas = createScratchCanvas(width, height);
           var tmpCtx = tmpCanvas.getContext('2d');
           tmpCtx.drawImage(img, 0, 0);
           var data = tmpCtx.getImageData(0, 0, width, height).data;
@@ -740,21 +833,22 @@ var PDFDoc = (function PDFDocClosure() {
     },
 
     get numPages() {
-      return this.pdf.numPages;
+      return this.pdfModel.numPages;
     },
 
-    startRendering: function pdfDocStartRendering(page) {
+    startRendering: function PDFDoc_startRendering(page) {
       // The worker might not be ready to receive the page request yet.
       this.workerReadyPromise.then(function pdfDocStartRenderingThen() {
+        page.stats.time('Page Request');
         this.messageHandler.send('page_request', page.pageNumber + 1);
       }.bind(this));
     },
 
-    getPage: function pdfDocGetPage(n) {
+    getPage: function PDFDoc_getPage(n) {
       if (this.pageCache[n])
         return this.pageCache[n];
 
-      var page = this.pdf.getPage(n);
+      var page = this.pdfModel.getPage(n);
       // Add a reference to the objects such that Page can forward the reference
       // to the CanvasGraphics and so on.
       page.objs = this.objs;
@@ -762,7 +856,7 @@ var PDFDoc = (function PDFDocClosure() {
       return (this.pageCache[n] = page);
     },
 
-    destroy: function pdfDocDestroy() {
+    destroy: function PDFDoc_destroy() {
       if (this.worker)
         this.worker.terminate();
 

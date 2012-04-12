@@ -78,6 +78,14 @@ function cleanup() {
   }
 }
 
+function exceptionToString(e) {
+  if (typeof e !== 'object')
+    return String(e);
+  if (!('message' in e))
+    return JSON.stringify(e);
+  return e.message + ('stack' in e ? ' at ' + e.stack.split('\n')[0] : '');
+}
+
 function nextTask() {
   cleanup();
 
@@ -95,7 +103,7 @@ function nextTask() {
     try {
       task.pdfDoc = new PDFJS.PDFDoc(data);
     } catch (e) {
-      failure = 'load PDF doc : ' + e.toString();
+      failure = 'load PDF doc : ' + exceptionToString(e);
     }
     task.pageNum = task.firstPage || 1;
     nextPage(task, failure);
@@ -165,9 +173,14 @@ function nextPage(task, loadError) {
       canvas.height = pageHeight * pdfToCssUnitsCoef;
       clear(ctx);
 
-      // using non-attached to the document div to test
+      // using the text layer builder that does nothing to test
       // text layer creation operations
-      var textLayer = document.createElement('div');
+      var textLayerBuilder = {
+        beginLayout: function nullTextLayerBuilderBeginLayout() {},
+        endLayout: function nullTextLayerBuilderEndLayout() {},
+        appendText: function nullTextLayerBuilderAppendText(text, fontName,
+                                                            fontSize) {}
+      };
 
       page.startRendering(
         ctx,
@@ -177,10 +190,10 @@ function nextPage(task, loadError) {
             failureMessage = 'render : ' + error.message;
           snapshotCurrentPage(task, failureMessage);
         },
-        textLayer
+        textLayerBuilder
       );
     } catch (e) {
-      failure = 'page setup : ' + e.toString();
+      failure = 'page setup : ' + exceptionToString(e);
     }
   }
 
@@ -235,16 +248,21 @@ function done() {
   }
 }
 
-function sendTaskResult(snapshot, task, failure) {
-  var result = { browser: browser,
-                 id: task.id,
-                 numPages: task.pdfDoc ?
-                           (task.pageLimit || task.pdfDoc.numPages) : 0,
-                 failure: failure,
-                 file: task.file,
-                 round: task.round,
-                 page: task.pageNum,
-                 snapshot: snapshot };
+function sendTaskResult(snapshot, task, failure, result) {
+  // Optional result argument is for retrying XHR requests - see below
+  if (!result) {
+    result = JSON.stringify({
+      browser: browser,
+      id: task.id,
+      numPages: task.pdfDoc ?
+               (task.pageLimit || task.pdfDoc.numPages) : 0,
+      failure: failure,
+      file: task.file,
+      round: task.round,
+      page: task.pageNum,
+      snapshot: snapshot
+    });
+  }
 
   var r = new XMLHttpRequest();
   // (The POST URI is ignored atm.)
@@ -253,10 +271,13 @@ function sendTaskResult(snapshot, task, failure) {
   r.onreadystatechange = function sendTaskResultOnreadystatechange(e) {
     if (r.readyState == 4) {
       inFlightRequests--;
+      // Retry until successful
+      if (r.status !== 200)
+        sendTaskResult(null, null, null, result);
     }
   };
   document.getElementById('inFlightCount').innerHTML = inFlightRequests++;
-  r.send(JSON.stringify(result));
+  r.send(result);
 }
 
 function clear(ctx) {
