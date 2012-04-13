@@ -4,6 +4,8 @@
 'use strict';
 
 describe('api', function() {
+  // TODO run with worker enabled
+  PDFJS.disableWorker = true;
   var basicApiUrl = '/basicapi.pdf';
   function waitsForPromise(promise) {
     waitsFor(function() {
