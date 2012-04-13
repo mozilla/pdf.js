@@ -213,12 +213,20 @@ body {
 }
 
 .dropdownToolbarButton {
-  min-width: 124px;
+  min-width: 100px;
+  max-width: 100px;
+  overflow: hidden;
+  background: url(images/toolbarButton-menuArrows.png) no-repeat 95%;
 }
-.dropdownToolbarButton::after {
-  display: inline-block;
-  float: right;
-  content: url(images/toolbarButton-menuArrows.png);
+
+.dropdownToolbarButton select {
+  min-width: 120px;
+  font-size: 12px;
+  color: hsl(0,0%,95%);
+  margin:0;
+  padding:0;
+  border:none;
+  background: transparent;
 }
 
 .splitToolbarButton:first-child,
@@ -590,4 +598,36 @@ canvas {
   font-size: 1.2em;
   border-bottom: 1px solid #000000;
   margin: 0px;
+}
+
+#errorWrapper {
+  background: none repeat scroll 0 0 #FF5555;
+  color: white;
+  left: 0;
+  position: fixed;
+  right: 0;
+  top: 30px;
+  z-index: 1000;
+  padding: 3px;
+  font-size: 0.8em;
+}
+
+#errorMessageLeft {
+  float: left;
+}
+
+#errorMessageRight {
+  float: right;
+}
+
+#errorMoreInfo {
+  background-color: #FFFFFF;
+  color: black;
+  padding: 3px;
+  margin: 3px;
+  width: 98%;
+}
+
+.clearBoth {
+  clear: both;
 }
