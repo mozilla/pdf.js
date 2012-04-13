@@ -498,7 +498,7 @@ var PDFView = {
     var pagesCount = pdf.numPages;
     var id = pdf.fingerprint;
     var storedHash = null;
-    document.getElementById('numPages').textContent = '/ '+pagesCount;
+    document.getElementById('numPages').textContent = '/ ' + pagesCount;
     document.getElementById('pageNumber').max = pagesCount;
     PDFView.documentFingerprint = id;
     var store = PDFView.store = new Settings(id);
@@ -1456,7 +1456,8 @@ window.addEventListener('pagechange', function pagechange(evt) {
     var selected = document.querySelector('.thumbnail.selected');
     if (selected)
       selected.classList.remove('selected');
-    document.getElementById('thumbnailContainer' + page).classList.add('selected');
+    document.getElementById('thumbnailContainer' + page)
+            .classList.add('selected');
   }
   document.getElementById('previous').disabled = (page <= 1);
   document.getElementById('next').disabled = (page >= PDFView.pages.length);
