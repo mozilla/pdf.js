@@ -1,6 +1,16 @@
 /* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 /* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
 
+/**
+ * This is the main entry point for loading a PDF and interacting with it.
+ * NOTE: If a URL is used to fetch the PDF data a standard XMLHttpRequest(XHR)
+ * is used, which means it must follow the same origin rules that any XHR does
+ * e.g. No cross domain requests without CORS.
+ *
+ * @param {string|TypedAray} source Either a url to a PDF is located or a
+ * typed array already populated with data.
+ * @return {Promise} A promise that is resolved with {PDFDocumentProxy} object.
+ */
 PDFJS.getDocument = function getDocument(source) {
   var promise = new PDFJS.Promise();
   var transport = new WorkerTransport(promise);
@@ -31,33 +41,74 @@ PDFJS.getDocument = function getDocument(source) {
   return promise;
 };
 
+/**
+ * Proxy to a PDFDocument in the worker thread. Also, contains commonly used
+ * properties that can be read synchronously.
+ */
 var PDFDocumentProxy = (function() {
   function PDFDocumentProxy(pdfInfo, transport) {
     this.pdfInfo = pdfInfo;
     this.transport = transport;
   }
   PDFDocumentProxy.prototype = {
+    /**
+     * @return {number} Total number of pages the PDF contains.
+     */
     get numPages() {
       return this.pdfInfo.numPages;
     },
+    /**
+     * @return {string} A unique ID to identify a PDF. Not guaranteed to be
+     * unique.
+     */
     get fingerprint() {
       return this.pdfInfo.fingerprint;
     },
+    /**
+     * @param {number} The page number to get. The first page is 1.
+     * @return {Promise} A promise that is resolved with a {PDFPageProxy}
+     * object.
+     */
     getPage: function(number) {
       return this.transport.getPage(number);
     },
+    /**
+     * @return {Promise} A promise that is resolved with a lookup table for
+     * mapping named destinations to reference numbers.
+     */
     getDestinations: function() {
       var promise = new PDFJS.Promise();
       var destinations = this.pdfInfo.destinations;
       promise.resolve(destinations);
       return promise;
     },
+    /**
+     * @return {Promise} A promise that is resolved with an {array} that is a
+     * tree outline (if it has one) of the PDF. The tree is in the format of:
+     * [
+     *  {
+     *   title: string,
+     *   bold: boolean,
+     *   italic: boolean,
+     *   color: rgb array,
+     *   dest: dest obj,
+     *   items: array of more items like this
+     *  },
+     *  ...
+     * ].
+     */
     getOutline: function() {
       var promise = new PDFJS.Promise();
       var outline = this.pdfInfo.outline;
       promise.resolve(outline);
       return promise;
     },
+    /**
+     * @return {Promise} A promise that is resolved with an {object} that has
+     * info and metadata properties.  Info is an {object} filled with anything
+     * available in the information dictionary and similarly metadata is a
+     * {Metadata} object with information from the metadata section of the PDF.
+     */
     getMetadata: function() {
       var promise = new PDFJS.Promise();
       var info = this.pdfInfo.info;
@@ -84,30 +135,66 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
     this.objs = transport.objs;
   }
   PDFPageProxy.prototype = {
+    /**
+     * @return {number} Page number of the page. First page is 1.
+     */
     get pageNumber() {
       return this.pageInfo.pageIndex + 1;
     },
+    /**
+     * @return {number} The number of degrees the page is rotated clockwise.
+     */
     get rotate() {
       return this.pageInfo.rotate;
     },
+    /**
+     * @return {object} The reference that points to this page. It has 'num' and
+     * 'gen' properties.
+     */
     get ref() {
       return this.pageInfo.ref;
     },
+    /**
+     * @return {array} An array of the visible portion of the PDF page in the
+     * user space units - [x1, y1, x2, y2].
+     */
     get view() {
       return this.pageInfo.view;
     },
+    /**
+     * @param {number} scale The desired scale of the viewport.
+     * @param {number} rotate Degrees to rotate the viewport. If omitted this
+     * defaults to the page rotation.
+     * @return {PageViewport} Contains 'width' and 'height' properties along
+     * with transforms required for rendering.
+     */
     getViewport: function(scale, rotate) {
       if (arguments.length < 2)
         rotate = this.rotate;
       return new PDFJS.PageViewport(this.view, scale, rotate, 0, 0);
     },
+    /**
+     * @return {Promise} A promise that is resolved with an {array} of the
+     * annotation objects.
+     */
     getAnnotations: function() {
       var promise = new PDFJS.Promise();
       var annotations = this.pageInfo.annotations;
       promise.resolve(annotations);
       return promise;
     },
-    render: function(renderContext) {
+    /**
+     * Begins the process of rendering a page to the desired context.
+     * @param {object} params A parameter object that supports:
+     * {
+     *   canvasContext(required): A 2D context of a DOM Canvas object.,
+     *   textLayer(optional): An object that has beginLayout, endLayout, and
+     *                        appendText functions.
+     * }
+     * @return {Promise} A promise that is resolved when the page finishes
+     * rendering.
+     */
+    render: function(params) {
       var promise = new Promise();
       var stats = this.stats;
       stats.time('Overall');
@@ -132,10 +219,10 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
       // Once the operatorList and fonts are loaded, do the actual rendering.
       this.displayReadyPromise.then(
         function pageDisplayReadyPromise() {
-          var gfx = new CanvasGraphics(renderContext.canvasContext,
-            this.objs, renderContext.textLayer);
+          var gfx = new CanvasGraphics(params.canvasContext,
+            this.objs, params.textLayer);
           try {
-            this.display(gfx, renderContext.viewport, complete);
+            this.display(gfx, params.viewport, complete);
           } catch (e) {
             complete(e);
           }
@@ -147,7 +234,9 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
 
       return promise;
     },
-
+    /**
+     * For internal use only.
+     */
     startRenderingFromOperatorList:
       function PDFPageWrapper_startRenderingFromOperatorList(operatorList,
                                                              fonts) {
@@ -168,7 +257,9 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
         }
       );
     },
-
+    /**
+     * For internal use only.
+     */
     ensureFonts: function PDFPageWrapper_ensureFonts(fonts, callback) {
       this.stats.time('Font Loading');
       // Convert the font names to the corresponding font obj.
@@ -186,7 +277,9 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
         }.bind(this)
       );
     },
-
+    /**
+     * For internal use only.
+     */
     display: function PDFPageWrapper_display(gfx, viewport, callback) {
       var stats = this.stats;
       stats.time('Rendering');
@@ -216,13 +309,18 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
       }
       next();
     },
-
+    /**
+     * Stub for future feature.
+     */
     getTextContent: function() {
       var promise = new PDFJS.Promise();
       var textContent = 'page text'; // not implemented
       promise.resolve(textContent);
       return promise;
     },
+    /**
+     * Stub for future feature.
+     */
     getOperationList: function() {
       var promise = new PDFJS.Promise();
       var operationList = { // not implemented
@@ -235,7 +333,9 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
   };
   return PDFPageProxy;
 })();
-
+/**
+ * For internal use only.
+ */
 var WorkerTransport = (function WorkerTransportClosure() {
   function WorkerTransport(promise) {
     this.workerReadyPromise = promise;
