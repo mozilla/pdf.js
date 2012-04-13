@@ -276,7 +276,7 @@ var PDFView = {
 
   set page(val) {
     var pages = this.pages;
-    var input = document.getElementById('pageNumber');
+    var input = parseInt(document.getElementById('pageNumber'));
     if (!(0 < val && val <= pages.length)) {
       var event = document.createEvent('UIEvents');
       event.initUIEvent('pagechange', false, false, window, 0);
@@ -499,7 +499,6 @@ var PDFView = {
     var id = pdf.fingerprint;
     var storedHash = null;
     document.getElementById('numPages').textContent = '/ '+pagesCount;
-    document.getElementById('pageNumber').max = pagesCount;
     PDFView.documentFingerprint = id;
     var store = PDFView.store = new Settings(id);
     if (store.get('exists', false)) {
@@ -1452,8 +1451,8 @@ window.addEventListener('scalechange', function scalechange(evt) {
 
 window.addEventListener('pagechange', function pagechange(evt) {
   var page = evt.pageNumber;
-  if (document.getElementById('pageNumber').value != page)
-    document.getElementById('pageNumber').value = page;
+  if (parseInt(document.getElementById('pageNumber').textContent) != page)
+    document.getElementById('pageNumber').textContent = page;
   document.getElementById('previous').disabled = (page <= 1);
   document.getElementById('next').disabled = (page >= PDFView.pages.length);
 }, true);
