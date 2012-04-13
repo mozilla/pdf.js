@@ -407,14 +407,14 @@ body {
   width: 188px;
   top: 33px;
   bottom: 0;
-  padding: 52px 4px 0;
+  padding: 16px 4px 0;
   overflow: auto;
 }
 #outlineView.hidden {
   display:none;
 }
 
-.outlineEntry {
+/*.outlineItem {
   width: -moz-calc(100% - 8px);
   height: 20px;
   padding: 2px 0 0 10px;
@@ -427,7 +427,7 @@ body {
   cursor: default;
 }
 
-.outlineEntry:hover {
+.outlineItem:hover {
   background-color: hsla(0,0%,100%,.02);
   background-image: -moz-linear-gradient(hsla(0,0%,100%,.05), hsla(0,0%,100%,0));
   background-clip: padding-box;
@@ -437,7 +437,7 @@ body {
   color: hsla(0,0%,100%,.9);
 }
 
-.outlineEntry.selected {
+.outlineItem.selected {
   background-color: hsla(0,0%,100%,.08);
   background-image: -moz-linear-gradient(hsla(0,0%,100%,.05), hsla(0,0%,100%,0));
   background-clip: padding-box;
@@ -446,6 +446,25 @@ body {
               0 0 1px hsla(0,0%,0%,.2);
   color: hsla(0,0%,100%,1);
 }
+*/
+
+
+.outlineItem > .outlineItems {
+  margin-left: 20px;
+}
+
+.outlineItem > a {
+  text-decoration: none;
+  color: hsla(0,0%,100%,.8);
+  font-size: 12px;
+}
+
+.outlineItem > a:hover {
+  background-color: hsla(0,0%,100%,.1);
+  color: hsla(0,0%,100%,.9);
+}
+
+
 
 canvas {
   margin: auto;
