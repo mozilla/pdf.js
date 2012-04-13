@@ -3,7 +3,7 @@
 
 'use strict';
 
-var kDefaultURL = 'file:///Users/Steffen/GitHub Projects/pdf.js/web/compressed.tracemonkey-pldi-09.pdf';
+var kDefaultURL = 'compressed.tracemonkey-pldi-09.pdf';
 var kDefaultScale = 'auto';
 var kDefaultScaleDelta = 1.1;
 var kUnknownScale = 0;
