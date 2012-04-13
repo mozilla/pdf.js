@@ -56,13 +56,14 @@
               <div class="splitToolbarButtonSeparator"></div>
               <div class="toolbarButton pageDown" title="Next Page" onclick="PDFView.page++"></div>
             </div>
-            <div id="pageNumber" class="toolbarField" contentEditable="true"></div>
+            <input type="number" id="pageNumber" class="toolbarField" onchange="PDFView.page = this.value;" value="1" size="4" min="1">
+            </input>
             <div id="numPages" class="toolbarLabel"></div>
             <div class="toolbarButtonFlexibleSpacer"></div>
             <div class="splitToolbarButton">
-              <div class="toolbarButton zoomOut" title="Zoom Out"></div>
+              <div class="toolbarButton zoomOut" title="Zoom Out" onclick="PDFView.zoomOut();"></div>
               <div class="splitToolbarButtonSeparator"></div>
-              <div class="toolbarButton zoomIn" title="Zoom In"></div>
+              <div class="toolbarButton zoomIn" title="Zoom In" onclick="PDFView.zoomIn();"></div>
             </div>
             <div class="dropdownToolbarButton">Auto</div>
             <div class="toolbarButtonFlexibleSpacer"></div>
@@ -121,13 +122,13 @@
 
       <div class="separator"></div>
 
-      <button id="zoomOut" title="Zoom Out" onclick="PDFView.zoomOut();" oncontextmenu="return false;">
+<!--       <button id="zoomOut" title="Zoom Out" onclick="PDFView.zoomOut();" oncontextmenu="return false;">
         <img src="images/zoom-out.svg" align="top" height="16"/>
       </button>
       <button id="zoomIn" title="Zoom In" onclick="PDFView.zoomIn();" oncontextmenu="return false;">
         <img src="images/zoom-in.svg" align="top" height="16"/>
       </button>
-
+ -->
       <div class="separator"></div>
 
       <select id="scaleSelect" onchange="PDFView.parseScale(this.value);" oncontextmenu="return false;">
