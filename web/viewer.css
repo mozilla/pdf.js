@@ -409,6 +409,7 @@ body {
   bottom: 0;
   padding: 16px 4px 0;
   overflow: auto;
+  -moz-user-select:none;
 }
 #outlineView.hidden {
   display:none;
