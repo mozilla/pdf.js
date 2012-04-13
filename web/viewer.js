@@ -990,11 +990,8 @@ var ThumbnailView = function thumbnailView(container, page, id, pageRatio) {
   this.height = view.height;
   this.id = id;
 
-  var maxThumbSize = 134;
-  var canvasWidth = pageRatio >= 1 ? maxThumbSize :
-    maxThumbSize * pageRatio;
-  var canvasHeight = pageRatio <= 1 ? maxThumbSize :
-    maxThumbSize / pageRatio;
+  var canvasWidth = 98;
+  var canvasHeight = canvasWidth / this.width * this.height;
   var scaleX = this.scaleX = (canvasWidth / this.width);
   var scaleY = this.scaleY = (canvasHeight / this.height);
 
@@ -1014,9 +1011,14 @@ var ThumbnailView = function thumbnailView(container, page, id, pageRatio) {
 
     canvas.width = canvasWidth;
     canvas.height = canvasHeight;
+    canvas.className = 'thumbnailImage';
 
     div.setAttribute('data-loaded', true);
-    div.appendChild(canvas);
+
+    var ring = document.createElement('div');
+    ring.className = 'thumbnailSelectionRing';
+    ring.appendChild(canvas);
+    div.appendChild(ring);
 
     var ctx = canvas.getContext('2d');
     ctx.save();
@@ -1026,10 +1028,6 @@ var ThumbnailView = function thumbnailView(container, page, id, pageRatio) {
 
     var view = page.view;
     ctx.translate(-view.x * scaleX, -view.y * scaleY);
-    div.style.width = (view.width * scaleX) + 'px';
-    div.style.height = (view.height * scaleY) + 'px';
-    div.style.lineHeight = (view.height * scaleY) + 'px';
-
     return ctx;
   }
 
@@ -1272,6 +1270,7 @@ window.addEventListener('load', function webViewerLoad(evt) {
 
   document.getElementById('sidebarToggle').addEventListener('click',
     function() {
+      this.classList.toggle('toggled');
       document.getElementById('toolbarSidebar').classList.toggle('hidden');
       document.getElementById('sidebarContainer').classList.toggle('hidden');
       updateThumbViewArea();
@@ -1452,8 +1451,13 @@ window.addEventListener('scalechange', function scalechange(evt) {
 
 window.addEventListener('pagechange', function pagechange(evt) {
   var page = evt.pageNumber;
-  if (document.getElementById('pageNumber').value != page)
+  if (document.getElementById('pageNumber').value != page) {
     document.getElementById('pageNumber').value = page;
+    var selected = document.querySelector('.thumbnail.selected');
+    if (selected)
+      selected.classList.remove('selected');
+    document.getElementById('thumbnailContainer' + page).classList.add('selected');
+  }
   document.getElementById('previous').disabled = (page <= 1);
   document.getElementById('next').disabled = (page >= PDFView.pages.length);
 }, true);
