@@ -102,9 +102,12 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
       return new PDFJS.PageViewport(this.view, scale, rotate, 0, 0);
     },
     getAnnotations: function() {
+      if (this.annotationsPromise)
+        return this.annotationsPromise;
+
       var promise = new PDFJS.Promise();
-      var annotations = this.pageInfo.annotations;
-      promise.resolve(annotations);
+      this.annotationsPromise = promise;
+      this.transport.getAnnotations(this.pageInfo.pageIndex);
       return promise;
     },
     render: function(renderContext) {
@@ -209,6 +212,7 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
           gfx.executeOperatorList(operatorList, startIdx, next, stepper);
         if (startIdx == length) {
           gfx.endDrawing();
+          delete this.operatorList;
           stats.timeEnd('Rendering');
           stats.timeEnd('Overall');
           if (callback) callback();
@@ -342,6 +346,12 @@ var WorkerTransport = (function WorkerTransportClosure() {
         promise.resolve(page);
       }, this);
 
+      messageHandler.on('GetAnnotations', function transportAnnotations(data) {
+        var annotations = data.annotations;
+        var promise = this.pageCache[data.pageIndex].annotationsPromise;
+        promise.resolve(annotations);
+      }, this);
+
       messageHandler.on('RenderPage', function transportRender(data) {
         var page = this.pageCache[data.pageIndex];
         var depFonts = data.depFonts;
@@ -440,6 +450,11 @@ var WorkerTransport = (function WorkerTransportClosure() {
       this.pagePromises[pageIndex] = promise;
       this.messageHandler.send('GetPageRequest', { pageIndex: pageIndex });
       return promise;
+    },
+
+    getAnnotations: function WorkerTransport_getAnnotations(pageIndex) {
+      this.messageHandler.send('GetAnnotationsRequest',
+        { pageIndex: pageIndex });
     }
   };
   return WorkerTransport;

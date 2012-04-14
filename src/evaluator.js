@@ -466,7 +466,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           args = [];
         } else if (obj != null) {
           assertWellFormed(args.length <= 33, 'Too many arguments');
-          args.push(obj);
+          args.push(obj instanceof Dict ? obj.getAll() : obj);
         }
       }
 
