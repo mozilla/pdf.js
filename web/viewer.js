@@ -1284,7 +1284,6 @@ window.addEventListener('load', function webViewerLoad(evt) {
 
   var file = PDFJS.isFirefoxExtension ?
               window.location.toString() : params.file || kDefaultURL;
-  PDFView.open(file, 0);
 
   if (PDFJS.isFirefoxExtension || !window.File || !window.FileReader ||
       !window.FileList || !window.Blob) {
@@ -1316,6 +1315,7 @@ window.addEventListener('load', function webViewerLoad(evt) {
 
   var sidebarScrollView = document.getElementById('sidebarScrollView');
   sidebarScrollView.addEventListener('scroll', updateThumbViewArea, true);
+  PDFView.open(file, 0);
 }, true);
 
 /**
