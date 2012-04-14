@@ -415,11 +415,6 @@ var WorkerTransport = (function WorkerTransportClosure() {
       var fakeWorker = {
         postMessage: function WorkerTransport_postMessage(obj) {
           fakeWorker.onmessage({data: obj});
-          try {
-          testF.contentWindow.postMessage(obj, "*");
-          } catch(e) {
-          debugger;
-          }
         },
         terminate: function WorkerTransport_terminate() {}
       };
