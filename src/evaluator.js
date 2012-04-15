@@ -862,7 +862,6 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         properties.coded = true;
         var charProcs = dict.get('CharProcs').getAll();
         var fontResources = dict.get('Resources') || resources;
-        properties.resources = fontResources;
         properties.charProcOperatorList = {};
         for (var key in charProcs) {
           var glyphStream = charProcs[key];

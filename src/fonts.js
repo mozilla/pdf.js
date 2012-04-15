@@ -766,7 +766,6 @@ var Font = (function FontClosure() {
     this.name = name;
     this.coded = properties.coded;
     this.charProcOperatorList = properties.charProcOperatorList;
-    this.resources = properties.resources;
     this.sizes = [];
 
     var names = name.split('+');

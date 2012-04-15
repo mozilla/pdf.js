@@ -193,7 +193,7 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
      *   canvasContext(required): A 2D context of a DOM Canvas object.,
      *   textLayer(optional): An object that has beginLayout, endLayout, and
      *                        appendText functions.
-     * }
+     * }.
      * @return {Promise} A promise that is resolved when the page finishes
      * rendering.
      */
@@ -415,6 +415,11 @@ var WorkerTransport = (function WorkerTransportClosure() {
       var fakeWorker = {
         postMessage: function WorkerTransport_postMessage(obj) {
           fakeWorker.onmessage({data: obj});
+          try {
+          testF.contentWindow.postMessage(obj, "*");
+          } catch(e) {
+          debugger;
+          }
         },
         terminate: function WorkerTransport_terminate() {}
       };
