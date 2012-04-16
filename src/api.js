@@ -305,7 +305,7 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
           gfx.executeOperatorList(operatorList, startIdx, next, stepper);
         if (startIdx == length) {
           gfx.endDrawing();
-          delete this.operatorList;
+          delete self.operatorList;
           stats.timeEnd('Rendering');
           stats.timeEnd('Overall');
           if (callback) callback();
