@@ -233,6 +233,11 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
       // Once the operatorList and fonts are loaded, do the actual rendering.
       this.displayReadyPromise.then(
         function pageDisplayReadyPromise() {
+          if (self.destroyed) {
+            complete();
+            return;
+          }
+
           var gfx = new CanvasGraphics(params.canvasContext,
             this.objs, params.textLayer);
           try {
@@ -351,8 +356,8 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
       this.destroyed = true;
 
       if (!this.renderInProgress) {
-        delete self.operatorList;
-        delete self.displayReadyPromise;
+        delete this.operatorList;
+        delete this.displayReadyPromise;
       }
     }
   };

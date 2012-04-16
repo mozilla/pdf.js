@@ -137,10 +137,13 @@ var Page = (function PageClosure() {
       var resources = this.resources;
       if (isArray(content)) {
         // fetching items
+        var streams = [];
         var i, n = content.length;
         for (i = 0; i < n; ++i)
-          content[i] = xref.fetchIfRef(content[i]);
-        content = new StreamsSequenceStream(content);
+          streams.push(xref.fetchIfRef(content[i]));
+        content = new StreamsSequenceStream(streams);
+      } else if (isStream(content)) {
+        content.reset();
       } else if (!content) {
         // replacing non-existent page content with empty one
         content = new Stream(new Uint8Array(0));
