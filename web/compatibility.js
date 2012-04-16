@@ -235,7 +235,7 @@
   }
 })();
 
-// Check console compatability
+// Check onclick compatibility in Opera
 (function checkOnClickCompatibility() {
   // workaround for reported Opera bug DSK-354448:
   // onclick fires on disabled buttons with opaque content
