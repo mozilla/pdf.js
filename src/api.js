@@ -133,7 +133,7 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
     this.stats = new StatTimer();
     this.stats.enabled = !!globalScope.PDFJS.enableStats;
     this.objs = transport.objs;
-    this.renderRequests = 0;
+    this.renderInProgress = false;
   }
   PDFPageProxy.prototype = {
     /**
@@ -199,7 +199,7 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
      * rendering.
      */
     render: function(params) {
-      this.renderRequests++;
+      this.renderInProgress = true;
 
       var promise = new Promise();
       var stats = this.stats;
@@ -218,8 +218,8 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
 
       var self = this;
       function complete(error) {
-        self.renderRequests--;
-        if (self.destroyed && self.renderRequests == 0) {
+        self.renderInProgress = false;
+        if (self.destroyed) {
           delete self.operatorList;
           delete self.displayReadyPromise;
         }
@@ -350,7 +350,7 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
     destroy: function() {
       this.destroyed = true;
 
-      if (this.renderRequests == 0) {
+      if (!this.renderInProgress) {
         delete self.operatorList;
         delete self.displayReadyPromise;
       }
