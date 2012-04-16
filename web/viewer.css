@@ -282,6 +282,10 @@ body {
   content: url(images/toolbarButton-download.png);
 }
 
+.toolbarButton.bookmark {
+  display: block;
+}
+
 .toolbarButton.bookmark::before {
   display: inline-block;
   content: url(images/toolbarButton-bookmark.png);
