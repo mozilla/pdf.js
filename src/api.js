@@ -489,6 +489,8 @@ var WorkerTransport = (function WorkerTransportClosure() {
       messageHandler.on('obj', function transportObj(data) {
         var id = data[0];
         var type = data[1];
+        if (this.objs.hasData(id))
+          return;
 
         switch (type) {
           case 'JpegStream':

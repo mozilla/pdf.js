@@ -194,13 +194,15 @@ function nextPage(task, loadError) {
           textLayer: textLayerBuilder,
           viewport: viewport
         };
-        page.render(renderContext).then(function() {
+        var completeRender = (function(error) {
           page.destroy();
-          snapshotCurrentPage(task, false);
+          snapshotCurrentPage(task, error);
+        });
+        page.render(renderContext).then(function() {
+          completeRender(false);
         },
         function(error) {
-          page.destroy();
-          snapshotCurrentPage(task, 'render : ' + error);
+          completeRender('render : ' + error);
         });
       },
       function(error) {
