@@ -100,20 +100,27 @@ var WorkerMessageHandler = {
       handler.send('GetDoc', {pdfInfo: doc});
     });
 
-    handler.on('GetPageRequest', function wphSetupTest(data) {
+    handler.on('GetPageRequest', function wphSetupGetPage(data) {
       var pageNumber = data.pageIndex + 1;
       var pdfPage = pdfModel.getPage(pageNumber);
       var page = {
         pageIndex: data.pageIndex,
         rotate: pdfPage.rotate,
         ref: pdfPage.ref,
-        view: pdfPage.view,
-        annotations: pdfPage.getAnnotations()
+        view: pdfPage.view
       };
       handler.send('GetPage', {pageInfo: page});
     });
 
-    handler.on('RenderPageRequest', function wphSetupPageRequest(data) {
+    handler.on('GetAnnotationsRequest', function wphSetupGetAnnotations(data) {
+      var pdfPage = pdfModel.getPage(data.pageIndex + 1);
+      handler.send('GetAnnotations', {
+        pageIndex: data.pageIndex,
+        annotations: pdfPage.getAnnotations()
+      });
+    });
+
+    handler.on('RenderPageRequest', function wphSetupRenderPage(data) {
       var pageNum = data.pageIndex + 1;
 
 
@@ -170,7 +177,6 @@ var WorkerMessageHandler = {
           fonts[dep] = true;
         }
       }
-
       handler.send('RenderPage', {
         pageIndex: data.pageIndex,
         operatorList: operatorList,

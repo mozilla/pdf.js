@@ -37,51 +37,55 @@ var Dict = (function DictClosure() {
   // xref is optional
   function Dict(xref) {
     // Map should only be used internally, use functions below to access.
-    this.map = Object.create(null);
-    this.xref = xref;
-  }
+    var map = Object.create(null);
 
-  Dict.prototype = {
+    this.assignXref = function Dict_assingXref(newXref) {
+      xref = newXref;
+    };
+
     // automatically dereferences Ref objects
-    get: function Dict_get(key1, key2, key3) {
+    this.get = function Dict_get(key1, key2, key3) {
       var value;
-      var xref = this.xref;
-      if (typeof (value = this.map[key1]) != 'undefined' || key1 in this.map ||
+      if (typeof (value = map[key1]) != 'undefined' || key1 in map ||
           typeof key2 == 'undefined') {
-        return xref ? this.xref.fetchIfRef(value) : value;
+        return xref ? xref.fetchIfRef(value) : value;
       }
-      if (typeof (value = this.map[key2]) != 'undefined' || key2 in this.map ||
+      if (typeof (value = map[key2]) != 'undefined' || key2 in map ||
           typeof key3 == 'undefined') {
-        return xref ? this.xref.fetchIfRef(value) : value;
+        return xref ? xref.fetchIfRef(value) : value;
       }
-      value = this.map[key3] || null;
-      return xref ? this.xref.fetchIfRef(value) : value;
-    },
+      value = map[key3] || null;
+      return xref ? xref.fetchIfRef(value) : value;
+    };
+
     // no dereferencing
-    getRaw: function Dict_getRaw(key) {
-      return this.map[key];
-    },
+    this.getRaw = function Dict_getRaw(key) {
+      return map[key];
+    };
+
     // creates new map and dereferences all Refs
-    getAll: function Dict_getAll() {
+    this.getAll = function Dict_getAll() {
       var all = {};
-      for (var key in this.map)
-        all[key] = this.get(key);
+      for (var key in map) {
+        var obj = this.get(key);
+        all[key] = obj instanceof Dict ? obj.getAll() : obj;
+      }
       return all;
-    },
+    };
 
-    set: function Dict_set(key, value) {
-      this.map[key] = value;
-    },
+    this.set = function Dict_set(key, value) {
+      map[key] = value;
+    };
 
-    has: function Dict_has(key) {
-      return key in this.map;
-    },
+    this.has = function Dict_has(key) {
+      return key in map;
+    };
 
-    forEach: function Dict_forEach(callback) {
-      for (var key in this.map) {
+    this.forEach = function Dict_forEach(callback) {
+      for (var key in map) {
         callback(key, this.get(key));
       }
-    }
+    };
   };
 
   return Dict;
@@ -299,7 +303,7 @@ var XRef = (function XRefClosure() {
     this.entries = [];
     this.xrefstms = {};
     var trailerDict = this.readXRef(startXRef);
-    trailerDict.xref = this;
+    trailerDict.assignXref(this);
     this.trailer = trailerDict;
     // prepare the XRef cache
     this.cache = [];

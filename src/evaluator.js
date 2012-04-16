@@ -466,7 +466,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           args = [];
         } else if (obj != null) {
           assertWellFormed(args.length <= 33, 'Too many arguments');
-          args.push(obj);
+          args.push(obj instanceof Dict ? obj.getAll() : obj);
         }
       }
 
@@ -862,7 +862,6 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         properties.coded = true;
         var charProcs = dict.get('CharProcs').getAll();
         var fontResources = dict.get('Resources') || resources;
-        properties.resources = fontResources;
         properties.charProcOperatorList = {};
         for (var key in charProcs) {
           var glyphStream = charProcs[key];
