@@ -29,6 +29,7 @@
        "file": "pdfs/pdf.pdf",
        "md5": "dbdb23c939d2be09b43126c3c56060c7",
        "link": true,
+       "pageLimit": 500,
        "rounds": 1,
        "type": "load"
     },

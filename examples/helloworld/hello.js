@@ -7,25 +7,31 @@
 
 'use strict';
 
-PDFJS.getPdf('helloworld.pdf', function getPdfHelloWorld(data) {
-  //
-  // Instantiate PDFDoc with PDF data
-  //
-  var pdf = new PDFJS.PDFDoc(data);
-  var page = pdf.getPage(1);
-  var scale = 1.5;
+//
+// Fetch the PDF document from the URL using promices
+//
+PDFJS.getDocument('helloworld.pdf').then(function(pdf) {
+  // Using promise to fetch the page
+  pdf.getPage(1).then(function(page) {
+    var scale = 1.5;
+    var viewport = page.getViewport(scale);
 
-  //
-  // Prepare canvas using PDF page dimensions
-  //
-  var canvas = document.getElementById('the-canvas');
-  var context = canvas.getContext('2d');
-  canvas.height = page.height * scale;
-  canvas.width = page.width * scale;
+    //
+    // Prepare canvas using PDF page dimensions
+    //
+    var canvas = document.getElementById('the-canvas');
+    var context = canvas.getContext('2d');
+    canvas.height = viewport.height;
+    canvas.width = viewport.width;
 
-  //
-  // Render PDF page into canvas context
-  //
-  page.startRendering(context);
+    //
+    // Render PDF page into canvas context
+    //
+    var renderContext = {
+      canvasContext: context,
+      viewport: viewport
+    };
+    page.render(renderContext);
+  });
 });
 
