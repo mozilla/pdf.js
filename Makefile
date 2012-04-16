@@ -20,6 +20,7 @@ all: bundle
 PDF_JS_FILES = \
   core.js \
   util.js \
+  api.js \
   canvas.js \
   obj.js \
   function.js \

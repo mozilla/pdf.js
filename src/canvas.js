@@ -241,27 +241,10 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       'shadingFill': true
     },
 
-    beginDrawing: function CanvasGraphics_beginDrawing(mediaBox) {
-      var cw = this.ctx.canvas.width, ch = this.ctx.canvas.height;
+    beginDrawing: function CanvasGraphics_beginDrawing(viewport) {
+      var transform = viewport.transform;
       this.ctx.save();
-      switch (mediaBox.rotate) {
-        case 0:
-          this.ctx.transform(1, 0, 0, -1, 0, ch);
-          break;
-        case 90:
-          this.ctx.transform(0, 1, 1, 0, 0, 0);
-          break;
-        case 180:
-          this.ctx.transform(-1, 0, 0, 1, cw, 0);
-          break;
-        case 270:
-          this.ctx.transform(0, -1, -1, 0, cw, ch);
-          break;
-      }
-      // Scale so that canvas units are the same as PDF user space units
-      this.ctx.scale(cw / mediaBox.width, ch / mediaBox.height);
-      // Move the media left-top corner to the (0,0) canvas position
-      this.ctx.translate(-mediaBox.x, -mediaBox.y);
+      this.ctx.transform.apply(this.ctx, transform);
 
       if (this.textLayer)
         this.textLayer.beginLayout();

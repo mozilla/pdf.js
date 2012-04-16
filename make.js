@@ -79,6 +79,7 @@ target.bundle = function() {
   var SRC_FILES =
        ['core.js',
         'util.js',
+        'api.js',
         'canvas.js',
         'obj.js',
         'function.js',
