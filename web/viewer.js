@@ -787,7 +787,7 @@ var PageView = function pageView(container, pdfPage, id, scale,
     }
     function createElementWithStyle(tagName, item) {
       var rect = viewport.convertToViewportRectangle(item.rect);
-      rect = Util.normalizeRect(rect);
+      rect = PDFJS.Util.normalizeRect(rect);
       var element = document.createElement(tagName);
       element.style.left = Math.floor(rect[0]) + 'px';
       element.style.top = Math.floor(rect[1]) + 'px';
