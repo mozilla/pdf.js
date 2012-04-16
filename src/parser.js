@@ -249,7 +249,7 @@ var Parser = (function ParserClosure() {
       if (name == 'CCITTFaxDecode' || name == 'CCF') {
         return new CCITTFaxStream(stream, params);
       }
-      if (name == 'RunLengthDecode') {
+      if (name == 'RunLengthDecode' || name == 'RL') {
         return new RunLengthStream(stream);
       }
       if (name == 'JBIG2Decode') {
