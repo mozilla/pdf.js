@@ -358,27 +358,25 @@ body {
 }
 
 .thumbnail {
-  width: 134px;
-  height: 134px;
-  margin-top: 15px;
   margin-bottom: 15px;
-  margin-left:auto;
-  margin-right:auto;
-  line-height: 134px;
-  text-align: center;
-  overflow: hidden;
+  float: left;
+}
+
+.thumbnailImage {
+  -moz-transition-duration: 150ms;
+  border: 1px solid transparent;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.5), 0 2px 8px rgba(0, 0, 0, 0.3);
+  opacity: 0.8;
+  z-index: 99;
 }
 
 .thumbnailSelectionRing {
-  position: absolute;
-  width: 112px;
-  height: 142px;
-  margin: 4px;
   border-radius: 2px;
+  padding: 7px;
   -moz-transition-duration: 150ms;
 }
     
-.thumbnail:hover > .thumbnailImage {
+.thumbnail:hover > .thumbnailSelectionRing > .thumbnailImage {
   opacity: .9;
 }
 
@@ -392,7 +390,7 @@ body {
   color: hsla(0,0%,100%,.9);
 }
 
-.thumbnail.selected > .thumbnailImage {
+.thumbnail.selected > .thumbnailSelectionRing > .thumbnailImage {
   box-shadow: 0 0 0 1px hsla(0,0%,0%,.5);
   opacity: 1;
 }
