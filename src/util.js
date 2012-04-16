@@ -76,7 +76,7 @@ function stringToBytes(str) {
 
 var IDENTITY_MATRIX = [1, 0, 0, 1, 0, 0];
 
-var Util = (function UtilClosure() {
+var Util = PDFJS.Util = (function UtilClosure() {
   function Util() {}
 
   Util.makeCssRgb = function Util_makeCssRgb(r, g, b) {
