@@ -345,7 +345,7 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
       return promise;
     },
     /**
-     * Destroys allocated by page resources.
+     * Destroys resources allocated by the page.
      */
     destroy: function() {
       this.destroyed = true;
