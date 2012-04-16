@@ -32,7 +32,7 @@ var Cache = function cacheCache(size) {
       data.splice(i);
     data.push(view);
     if (data.length > size)
-      data.shift().update();
+      data.shift().destroy();
   };
 };
 
@@ -743,6 +743,11 @@ var PageView = function pageView(container, pdfPage, id, scale,
   container.appendChild(anchor);
   container.appendChild(div);
 
+  this.destroy = function pageViewDestroy() {
+    this.update();
+    this.pdfPage.destroy();
+  };
+
   this.update = function pageViewUpdate(scale) {
     this.scale = scale || this.scale;
     var viewport = this.pdfPage.getViewport(this.scale);
@@ -756,7 +761,6 @@ var PageView = function pageView(container, pdfPage, id, scale,
     div.removeAttribute('data-loaded');
 
     delete this.canvas;
-    this.pdfPage.destroy();
 
     this.loadingIconDiv = document.createElement('div');
     this.loadingIconDiv.className = 'loadingIcon';

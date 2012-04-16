@@ -132,11 +132,6 @@ var Page = (function PageClosure() {
     },
 
     getOperatorList: function Page_getOperatorList(handler, dependency) {
-      if (this.operatorList) {
-        // content was compiled
-        return this.operatorList;
-      }
-
       var xref = this.xref;
       var content = this.content;
       var resources = this.resources;
@@ -154,8 +149,7 @@ var Page = (function PageClosure() {
       var pe = this.pe = new PartialEvaluator(
                                 xref, handler, 'p' + this.pageNumber + '_');
 
-      this.operatorList = pe.getOperatorList(content, resources, dependency);
-      return this.operatorList;
+      return pe.getOperatorList(content, resources, dependency);
     },
 
     getLinks: function Page_getLinks() {
