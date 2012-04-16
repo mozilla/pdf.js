@@ -176,8 +176,8 @@ var EXTENSION_WEB_FILES =
        'web/viewer.js',
        'web/viewer.html',
        'web/viewer-production.html'],
-    EXTENSION_BASE_VERSION = '4bb289ec499013de66eb421737a4dbb4a9273eda',
-    EXTENSION_VERSION_PREFIX = '0.2.',
+    EXTENSION_BASE_VERSION = 'f0f0418a9c6637981fe1182b9212c2d592774c7d',
+    EXTENSION_VERSION_PREFIX = '0.3.',
     EXTENSION_BUILD_NUMBER,
     EXTENSION_VERSION;
 
