@@ -133,6 +133,7 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
     this.stats = new StatTimer();
     this.stats.enabled = !!globalScope.PDFJS.enableStats;
     this.objs = transport.objs;
+    this.renderRequests = 0;
   }
   PDFPageProxy.prototype = {
     /**
@@ -198,12 +199,14 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
      * rendering.
      */
     render: function(params) {
+      this.renderRequests++;
+
       var promise = new Promise();
       var stats = this.stats;
       stats.time('Overall');
       // If there is no displayReadyPromise yet, then the operatorList was never
       // requested before. Make the request and create the promise.
-      if (!this.displayReadyPromise || this.destroyed) {
+      if (!this.displayReadyPromise) {
         this.displayReadyPromise = new Promise();
         this.destroyed = false;
 
@@ -213,7 +216,14 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
         });
       }
 
+      var self = this;
       function complete(error) {
+        self.renderRequests--;
+        if (self.destroyed && self.renderRequests == 0) {
+          delete self.operatorList;
+          delete self.displayReadyPromise;
+        }
+
         if (error)
           promise.reject(error);
         else
@@ -251,7 +261,6 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
         // Always defer call to display() to work around bug in
         // Firefox error reporting from XHR callbacks.
         setTimeout(function pageSetTimeout() {
-          delete self.operatorList;
           self.displayReadyPromise.resolve();
         });
       };
@@ -340,6 +349,11 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
      */
     destroy: function() {
       this.destroyed = true;
+
+      if (this.renderRequests == 0) {
+        delete self.operatorList;
+        delete self.displayReadyPromise;
+      }
     }
   };
   return PDFPageProxy;

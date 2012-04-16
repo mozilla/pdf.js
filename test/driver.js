@@ -195,9 +195,11 @@ function nextPage(task, loadError) {
           viewport: viewport
         };
         page.render(renderContext).then(function() {
+          page.destroy();
           snapshotCurrentPage(task, false);
         },
         function(error) {
+          page.destroy();
           snapshotCurrentPage(task, 'render : ' + error);
         });
       },
