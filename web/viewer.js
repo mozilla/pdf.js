@@ -756,6 +756,7 @@ var PageView = function pageView(container, pdfPage, id, scale,
     div.removeAttribute('data-loaded');
 
     delete this.canvas;
+    this.pdfPage.destroy();
 
     this.loadingIconDiv = document.createElement('div');
     this.loadingIconDiv.className = 'loadingIcon';

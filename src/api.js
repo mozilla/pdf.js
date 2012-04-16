@@ -203,8 +203,9 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
       stats.time('Overall');
       // If there is no displayReadyPromise yet, then the operatorList was never
       // requested before. Make the request and create the promise.
-      if (!this.displayReadyPromise) {
+      if (!this.displayReadyPromise || this.destroyed) {
         this.displayReadyPromise = new Promise();
+        this.destroyed = false;
 
         this.stats.time('Page Request');
         this.transport.messageHandler.send('RenderPageRequest', {
@@ -250,6 +251,7 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
         // Always defer call to display() to work around bug in
         // Firefox error reporting from XHR callbacks.
         setTimeout(function pageSetTimeout() {
+          delete self.operatorList;
           self.displayReadyPromise.resolve();
         });
       };
@@ -305,7 +307,6 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
           gfx.executeOperatorList(operatorList, startIdx, next, stepper);
         if (startIdx == length) {
           gfx.endDrawing();
-          delete self.operatorList;
           stats.timeEnd('Rendering');
           stats.timeEnd('Overall');
           if (callback) callback();
@@ -333,6 +334,12 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
       };
       promise.resolve(operationList);
       return promise;
+    },
+    /**
+     * Destroys allocated by page resources.
+     */
+    destroy: function() {
+      this.destroyed = true;
     }
   };
   return PDFPageProxy;
