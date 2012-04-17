@@ -133,6 +133,7 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
     this.stats = new StatTimer();
     this.stats.enabled = !!globalScope.PDFJS.enableStats;
     this.objs = transport.objs;
+    this.renderInProgress = false;
   }
   PDFPageProxy.prototype = {
     /**
@@ -198,6 +199,8 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
      * rendering.
      */
     render: function(params) {
+      this.renderInProgress = true;
+
       var promise = new Promise();
       var stats = this.stats;
       stats.time('Overall');
@@ -205,6 +208,7 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
       // requested before. Make the request and create the promise.
       if (!this.displayReadyPromise) {
         this.displayReadyPromise = new Promise();
+        this.destroyed = false;
 
         this.stats.time('Page Request');
         this.transport.messageHandler.send('RenderPageRequest', {
@@ -212,7 +216,14 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
         });
       }
 
+      var self = this;
       function complete(error) {
+        self.renderInProgress = false;
+        if (self.destroyed) {
+          delete self.operatorList;
+          delete self.displayReadyPromise;
+        }
+
         if (error)
           promise.reject(error);
         else
@@ -222,6 +233,11 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
       // Once the operatorList and fonts are loaded, do the actual rendering.
       this.displayReadyPromise.then(
         function pageDisplayReadyPromise() {
+          if (self.destroyed) {
+            complete();
+            return;
+          }
+
           var gfx = new CanvasGraphics(params.canvasContext,
             this.objs, params.textLayer);
           try {
@@ -305,7 +321,6 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
           gfx.executeOperatorList(operatorList, startIdx, next, stepper);
         if (startIdx == length) {
           gfx.endDrawing();
-          delete this.operatorList;
           stats.timeEnd('Rendering');
           stats.timeEnd('Overall');
           if (callback) callback();
@@ -333,6 +348,17 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
       };
       promise.resolve(operationList);
       return promise;
+    },
+    /**
+     * Destroys resources allocated by the page.
+     */
+    destroy: function() {
+      this.destroyed = true;
+
+      if (!this.renderInProgress) {
+        delete this.operatorList;
+        delete this.displayReadyPromise;
+      }
     }
   };
   return PDFPageProxy;
@@ -463,6 +489,8 @@ var WorkerTransport = (function WorkerTransportClosure() {
       messageHandler.on('obj', function transportObj(data) {
         var id = data[0];
         var type = data[1];
+        if (this.objs.hasData(id))
+          return;
 
         switch (type) {
           case 'JpegStream':
