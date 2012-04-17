@@ -153,13 +153,14 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
 
         font = xref.fetchIfRef(font) || fontRes.get(fontName);
         assertWellFormed(isDict(font));
+        ++self.objIdCounter;
         if (!font.translated) {
           font.translated = self.translateFont(font, xref, resources,
                                                dependency);
           if (font.translated) {
             // keep track of each font we translated so the caller can
             // load them asynchronously before calling display on a page
-            loadedName = 'font_' + uniquePrefix + (++self.objIdCounter);
+            loadedName = 'font_' + uniquePrefix + self.objIdCounter;
             font.translated.properties.loadedName = loadedName;
             font.loadedName = loadedName;
 
@@ -466,7 +467,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           args = [];
         } else if (obj != null) {
           assertWellFormed(args.length <= 33, 'Too many arguments');
-          args.push(obj);
+          args.push(obj instanceof Dict ? obj.getAll() : obj);
         }
       }
 
@@ -862,7 +863,6 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         properties.coded = true;
         var charProcs = dict.get('CharProcs').getAll();
         var fontResources = dict.get('Resources') || resources;
-        properties.resources = fontResources;
         properties.charProcOperatorList = {};
         for (var key in charProcs) {
           var glyphStream = charProcs[key];

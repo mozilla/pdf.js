@@ -29,6 +29,7 @@
        "file": "pdfs/pdf.pdf",
        "md5": "dbdb23c939d2be09b43126c3c56060c7",
        "link": true,
+       "pageLimit": 500,
        "rounds": 1,
        "type": "load"
     },
@@ -241,10 +242,10 @@
        "skipPages": [ 16 ],
        "type": "load"
     },
-    {  "id": "tcpdf_033",
-       "file": "pdfs/tcpdf_033.pdf",
-       "md5": "d7d9165a5e37029a67308a4dec3a8aeb",
-       "link": true,
+    {  "id": "mixedfonts",
+       "file": "pdfs/mixedfonts.pdf",
+       "md5": "a582b83fa1b3a25a6f13803a367c71ec",
+       "link": false,
        "rounds": 1,
        "type": "eq"
     },

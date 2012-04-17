@@ -10,7 +10,7 @@
 // Disable worker support for running test as
 //   https://github.com/mozilla/pdf.js/pull/764#issuecomment-2638944
 //   "firefox-bin: Fatal IO error 12 (Cannot allocate memory) on X server :1."
-PDFJS.disableWorker = true;
+// PDFJS.disableWorker = true;
 
 var appPath, browser, canvas, currentTaskIdx, manifest, stdout;
 var inFlightRequests = 0;
@@ -100,13 +100,24 @@ function nextTask() {
 
   getPdf(task.file, function nextTaskGetPdf(data) {
     var failure;
+    function continuation() {
+      task.pageNum = task.firstPage || 1;
+      nextPage(task, failure);
+    }
     try {
-      task.pdfDoc = new PDFJS.PDFDoc(data);
+      var promise = PDFJS.getDocument(data);
+      promise.then(function(doc) {
+        task.pdfDoc = doc;
+        continuation();
+      }, function(e) {
+        failure = 'load PDF doc : ' + e;
+        continuation();
+      });
+      return;
     } catch (e) {
       failure = 'load PDF doc : ' + exceptionToString(e);
     }
-    task.pageNum = task.firstPage || 1;
-    nextPage(task, failure);
+    continuation();
   });
 }
 
@@ -163,44 +174,44 @@ function nextPage(task, loadError) {
       log(' loading page ' + task.pageNum + '/' + task.pdfDoc.numPages +
           '... ');
       var ctx = canvas.getContext('2d');
-      page = task.pdfDoc.getPage(task.pageNum);
+      task.pdfDoc.getPage(task.pageNum).then(function(page) {
+        var pdfToCssUnitsCoef = 96.0 / 72.0;
+        var viewport = page.getViewport(pdfToCssUnitsCoef);
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
+        clear(ctx);
 
-      var pdfToCssUnitsCoef = 96.0 / 72.0;
-      // using mediaBox for the canvas size
-      var pageWidth = page.width;
-      var pageHeight = page.height;
-      canvas.width = pageWidth * pdfToCssUnitsCoef;
-      canvas.height = pageHeight * pdfToCssUnitsCoef;
-      clear(ctx);
-
-      // using the text layer builder that does nothing to test
-      // text layer creation operations
-      var textLayerBuilder = {
-        beginLayout: function nullTextLayerBuilderBeginLayout() {},
-        endLayout: function nullTextLayerBuilderEndLayout() {},
-        appendText: function nullTextLayerBuilderAppendText(text, fontName,
-                                                            fontSize) {}
-      };
-
-      page.startRendering(
-        ctx,
-        function nextPageStartRendering(error) {
-          var failureMessage = false;
-          if (error)
-            failureMessage = 'render : ' + error.message;
-          snapshotCurrentPage(task, failureMessage);
+        // using the text layer builder that does nothing to test
+        // text layer creation operations
+        var textLayerBuilder = {
+          beginLayout: function nullTextLayerBuilderBeginLayout() {},
+          endLayout: function nullTextLayerBuilderEndLayout() {},
+          appendText: function nullTextLayerBuilderAppendText(text, fontName,
+                                                              fontSize) {}
+        };
+        var renderContext = {
+          canvasContext: ctx,
+          textLayer: textLayerBuilder,
+          viewport: viewport
+        };
+        var completeRender = (function(error) {
+          page.destroy();
+          snapshotCurrentPage(task, error);
+        });
+        page.render(renderContext).then(function() {
+          completeRender(false);
         },
-        textLayerBuilder
-      );
+        function(error) {
+          completeRender('render : ' + error);
+        });
+      },
+      function(error) {
+        snapshotCurrentPage(task, 'render : ' + error);
+      });
     } catch (e) {
       failure = 'page setup : ' + exceptionToString(e);
+      snapshotCurrentPage(task, failure);
     }
-  }
-
-  if (failure) {
-    // Skip right to snapshotting if there was a failure, since the
-    // fonts might be in an inconsistent state.
-    snapshotCurrentPage(task, failure);
   }
 }
 
