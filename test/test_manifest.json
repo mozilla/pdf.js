@@ -242,10 +242,10 @@
        "skipPages": [ 16 ],
        "type": "load"
     },
-    {  "id": "tcpdf_033",
-       "file": "pdfs/tcpdf_033.pdf",
-       "md5": "861294df58d185aae80919173f2732ff",
-       "link": true,
+    {  "id": "mixedfonts",
+       "file": "pdfs/mixedfonts.pdf",
+       "md5": "a582b83fa1b3a25a6f13803a367c71ec",
+       "link": false,
        "rounds": 1,
        "type": "eq"
     },
