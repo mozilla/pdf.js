@@ -81,12 +81,13 @@
             </div>
 
             <div class="toolbarButtonFlexibleSpacer"></div>
+
             <input id="fileInput" class="toolbarButton fileInput" type="file" oncontextmenu="return false;"/>
 
             <div class="toolbarButtonSpacer"></div>
 
             <!-- <div class="toolbarButton print" title="Print"></div> -->
-            <div class="toolbarButton download" title="Download" onclick="PDFView.download();"></div>
+            <div id="download" class="toolbarButton download" title="Download" onclick="PDFView.download();"></div>
             <a href="#" id="viewBookmark" class="toolbarButton bookmark" title="Bookmark (or copy) current location">
             </a>
           </div>

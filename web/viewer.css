@@ -17,6 +17,8 @@ body {
 #outerContainer {
   display: -moz-box;
   -moz-box-orient: horizontal;
+  display: -webkit-box;
+  -webkit-box-orient: horizontal;
   width: 100%;
   height: 100%;
 }
@@ -34,6 +36,7 @@ body {
 
 #viewerContainer {
   -moz-box-flex: 1;
+  -webkit-box-flex: 1;
   height: 100%;
   box-shadow: inset 1px 0 0 hsla(0,0%,100%,.05);
   padding-top: 30px;
@@ -49,15 +52,19 @@ body {
 
 #toolbarContainer {
   display: -moz-box;
+  display: -webkit-box;
   width: 100%;
 }
 
 #toolbarSidebar {
   display: -moz-box;
+  display: -webkit-box;
   width: 200px;
   height: 32px;
   background-image: url(images/texture.png),
                     -moz-linear-gradient(hsla(0,0%,30%,.99), hsla(0,0%,25%,.95));
+  background-image: url(images/texture.png),
+                    -webkit-linear-gradient(hsla(0,0%,30%,.99), hsla(0,0%,25%,.95));
   box-shadow: inset -2px 0 0 hsla(0,0%,100%,.08),
               inset 0 1px 1px hsla(0,0%,0%,.15),
               inset 0 -1px 0 hsla(0,0%,100%,.05),
@@ -71,10 +78,14 @@ body {
 #toolbarViewer {
   display: -moz-box;
   -moz-box-flex: 1;
+  display: -webkit-box;
+  -webkit-box-flex: 1;
   margin-left: -1px;
   height: 32px;
   background-image: url(images/texture.png),
                     -moz-linear-gradient(hsla(0,0%,32%,.99), hsla(0,0%,27%,.95));
+  background-image: url(images/texture.png),
+                    -webkit-linear-gradient(hsla(0,0%,32%,.99), hsla(0,0%,27%,.95));
   border-left: 1px solid hsla(0,0%,0%,.5);
   box-shadow: inset 1px 0 0 hsla(0,0%,100%,.08),
               inset 0 1px 1px hsla(0,0%,0%,.15),
@@ -86,6 +97,7 @@ body {
 .splitToolbarButton {
   margin: 4px 2px 4px 0;
   display: -moz-box;
+  display: -webkit-box;
 }
 .splitToolbarButton > .toolbarButton {
   position: relative;
@@ -93,10 +105,18 @@ body {
   padding: 3px 6px;
   border-radius: 0;
 }
+
+.toolbarButton {
+  margin: 4px 2px 4px 0;
+  display: -moz-box;
+  display: -webkit-box;
+}
+
 .splitToolbarButton:hover > .toolbarButton,
 .splitToolbarButton.toggled > .toolbarButton {
   background-color: hsla(0,0%,0%,.12);
   background-image: -moz-linear-gradient(hsla(0,0%,100%,.05), hsla(0,0%,100%,0));
+  background-image: -webkit-linear-gradient(hsla(0,0%,100%,.05), hsla(0,0%,100%,0));
   background-clip: padding-box;
   border: 1px solid hsla(0,0%,0%,.35);
   border-color: hsla(0,0%,0%,.32) hsla(0,0%,0%,.38) hsla(0,0%,0%,.42);
@@ -106,6 +126,9 @@ body {
   -moz-transition-property: background-color, border-color, box-shadow;
   -moz-transition-duration: 150ms;
   -moz-transition-timing-function: ease;
+  -webkit-transition-property: background-color, border-color, box-shadow;
+  -webkit-transition-duration: 150ms;
+  -webkit-transition-timing-function: ease;
 }
 .splitToolbarButton > .toolbarButton:hover,
 .dropdownToolbarButton:hover {
@@ -145,11 +168,15 @@ body {
   -moz-transition-property: margin;
   -moz-transition-duration: 10ms;
   -moz-transition-timing-function: ease;
+  -webkit-transition-property: margin;
+  -webkit-transition-duration: 10ms;
+  -webkit-transition-timing-function: ease;
 }
 
 .toolbarButton,
 .dropdownToolbarButton {
   -moz-box-flex: 0;
+  -webkit-box-flex: 1;
   min-width: 16px;
   padding: 3px 7px;
   margin: 4px 2px 4px 0;
@@ -159,16 +186,21 @@ body {
   font-size: 12px;
   line-height: 14px;
   -moz-user-select:none;
+  -webkit-user-select:none;
   cursor: default;
   -moz-transition-property: background-color, border-color, box-shadow;
   -moz-transition-duration: 150ms;
   -moz-transition-timing-function: ease;
+  -webkit-transition-property: background-color, border-color, box-shadow;
+  -webkit-transition-duration: 150ms;
+  -webkit-transition-timing-function: ease;
 }
 
 .toolbarButton:hover,
 .dropdownToolbarButton {
   background-color: hsla(0,0%,0%,.12);
   background-image: -moz-linear-gradient(hsla(0,0%,100%,.05), hsla(0,0%,100%,0));
+  background-image: -webkit-linear-gradient(hsla(0,0%,100%,.05), hsla(0,0%,100%,0));
   background-clip: padding-box;
   border: 1px solid hsla(0,0%,0%,.35);
   border-color: hsla(0,0%,0%,.32) hsla(0,0%,0%,.38) hsla(0,0%,0%,.42);
@@ -181,6 +213,7 @@ body {
 .dropdownToolbarButton:hover:active {
   background-color: hsla(0,0%,0%,.2);
   background-image: -moz-linear-gradient(hsla(0,0%,100%,.05), hsla(0,0%,100%,0));
+  background-image: -webkit-linear-gradient(hsla(0,0%,100%,.05), hsla(0,0%,100%,0));
   border-color: hsla(0,0%,0%,.35) hsla(0,0%,0%,.4) hsla(0,0%,0%,.45);
   box-shadow: 0 1px 1px hsla(0,0%,0%,.1) inset,
               0 0 1px hsla(0,0%,0%,.2) inset,
@@ -188,12 +221,16 @@ body {
   -moz-transition-property: background-color, border-color, box-shadow;
   -moz-transition-duration: 10ms;
   -moz-transition-timing-function: linear;
+  -webkit-transition-property: background-color, border-color, box-shadow;
+  -webkit-transition-duration: 10ms;
+  -webkit-transition-timing-function: linear;
 }
 
 .toolbarButton.toggled,
 .splitToolbarButton.toggled > .toolbarButton.toggled {
   background-color: hsla(0,0%,0%,.3);
   background-image: -moz-linear-gradient(hsla(0,0%,100%,.05), hsla(0,0%,100%,0));
+  background-image: -webkit-linear-gradient(hsla(0,0%,100%,.05), hsla(0,0%,100%,0));
   border-color: hsla(0,0%,0%,.4) hsla(0,0%,0%,.45) hsla(0,0%,0%,.5);
   box-shadow: 0 1px 1px hsla(0,0%,0%,.1) inset,
               0 0 1px hsla(0,0%,0%,.2) inset,
@@ -201,6 +238,9 @@ body {
   -moz-transition-property: background-color, border-color, box-shadow;
   -moz-transition-duration: 10ms;
   -moz-transition-timing-function: linear;
+  -webkit-transition-property: background-color, border-color, box-shadow;
+  -webkit-transition-duration: 10ms;
+  -webkit-transition-timing-function: linear;
 }
 
 .toolbarButton.toggled:hover:active,
@@ -219,7 +259,9 @@ body {
   background: url(images/toolbarButton-menuArrows.png) no-repeat 95%;
 }
 
-.dropdownToolbarButton select {
+.dropdownToolbarButton > select {
+  -moz-appearance: none; /* in the future this might matter, see bugzilla bug #649849 */
+  -webkit-appearance: none;
   min-width: 120px;
   font-size: 12px;
   color: hsl(0,0%,95%);
@@ -244,6 +286,7 @@ body {
 
 .toolbarButtonFlexibleSpacer {
   -moz-box-flex: 1;
+  -webkit-box-flex: 1;
   min-width: 30px;
 }
 
@@ -346,6 +389,7 @@ body {
   line-height: 14px;
   text-align: left;
   -moz-user-select:none;
+  -webkit-user-select:none;
   cursor: default;
 }
 
@@ -417,6 +461,7 @@ body {
   padding: 16px 4px 0;
   overflow: auto;
   -moz-user-select:none;
+  -webkit-user-select:none;
 }
 #outlineView.hidden {
   display:none;
@@ -632,4 +677,9 @@ canvas {
 
 .clearBoth {
   clear: both;
+}
+
+.fileInput {
+  background: white;
+  color: black;
 }
