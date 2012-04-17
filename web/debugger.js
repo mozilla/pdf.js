@@ -163,29 +163,29 @@ var StepperManager = (function StepperManagerClosure() {
     enabled: false,
     active: false,
     // Stepper specific functions.
-    create: function create(pageNumber) {
+    create: function create(pageIndex) {
       var debug = document.createElement('div');
-      debug.id = 'stepper' + pageNumber;
+      debug.id = 'stepper' + pageIndex;
       debug.setAttribute('hidden', true);
       debug.className = 'stepper';
       stepperDiv.appendChild(debug);
       var b = document.createElement('option');
-      b.textContent = 'Page ' + (pageNumber + 1);
-      b.value = pageNumber;
+      b.textContent = 'Page ' + (pageIndex + 1);
+      b.value = pageIndex;
       stepperChooser.appendChild(b);
-      var initBreakPoints = breakPoints[pageNumber] || [];
-      var stepper = new Stepper(debug, pageNumber, initBreakPoints);
+      var initBreakPoints = breakPoints[pageIndex] || [];
+      var stepper = new Stepper(debug, pageIndex, initBreakPoints);
       steppers.push(stepper);
       if (steppers.length === 1)
-        this.selectStepper(pageNumber, false);
+        this.selectStepper(pageIndex, false);
       return stepper;
     },
-    selectStepper: function selectStepper(pageNumber, selectPanel) {
+    selectStepper: function selectStepper(pageIndex, selectPanel) {
       if (selectPanel)
         this.manager.selectPanel(1);
       for (var i = 0; i < steppers.length; ++i) {
         var stepper = steppers[i];
-        if (stepper.pageNumber == pageNumber)
+        if (stepper.pageIndex == pageIndex)
           stepper.panel.removeAttribute('hidden');
         else
           stepper.panel.setAttribute('hidden', true);
@@ -193,11 +193,11 @@ var StepperManager = (function StepperManagerClosure() {
       var options = stepperChooser.options;
       for (var i = 0; i < options.length; ++i) {
         var option = options[i];
-        option.selected = option.value == pageNumber;
+        option.selected = option.value == pageIndex;
       }
     },
-    saveBreakPoints: function saveBreakPoints(pageNumber, bps) {
-      breakPoints[pageNumber] = bps;
+    saveBreakPoints: function saveBreakPoints(pageIndex, bps) {
+      breakPoints[pageIndex] = bps;
       sessionStorage.setItem('pdfjsBreakPoints', JSON.stringify(breakPoints));
     }
   };
@@ -205,12 +205,12 @@ var StepperManager = (function StepperManagerClosure() {
 
 // The stepper for each page's IRQueue.
 var Stepper = (function StepperClosure() {
-  function Stepper(panel, pageNumber, initialBreakPoints) {
+  function Stepper(panel, pageIndex, initialBreakPoints) {
     this.panel = panel;
     this.len;
     this.breakPoint = 0;
     this.nextBreakPoint = null;
-    this.pageNumber = pageNumber;
+    this.pageIndex = pageIndex;
     this.breakPoints = initialBreakPoints;
     this.currentIdx = -1;
   }
@@ -256,7 +256,7 @@ var Stepper = (function StepperClosure() {
               self.breakPoints.push(x);
             else
               self.breakPoints.splice(self.breakPoints.indexOf(x), 1);
-            StepperManager.saveBreakPoints(self.pageNumber, self.breakPoints);
+            StepperManager.saveBreakPoints(self.pageIndex, self.breakPoints);
           }
         })(i);
 
@@ -278,7 +278,7 @@ var Stepper = (function StepperClosure() {
       return null;
     },
     breakIt: function breakIt(idx, callback) {
-      StepperManager.selectStepper(this.pageNumber, true);
+      StepperManager.selectStepper(this.pageIndex, true);
       var self = this;
       var dom = document;
       self.currentIdx = idx;

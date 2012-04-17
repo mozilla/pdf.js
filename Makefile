@@ -6,7 +6,7 @@ DEFAULT_TESTS := test_manifest.json
 DEFAULT_PYTHON := python2.7
 
 EXTENSION_SRC := ./extensions/
-EXTENSION_BASE_VERSION := 4bb289ec499013de66eb421737a4dbb4a9273eda
+EXTENSION_BASE_VERSION := f0f0418a9c6637981fe1182b9212c2d592774c7d
 FIREFOX_EXTENSION_NAME := pdf.js.xpi
 FIREFOX_AMO_EXTENSION_NAME := pdf.js.amo.xpi
 CHROME_EXTENSION_NAME := pdf.js.crx
@@ -20,6 +20,7 @@ all: bundle
 PDF_JS_FILES = \
   core.js \
   util.js \
+  api.js \
   canvas.js \
   obj.js \
   function.js \
@@ -211,7 +212,7 @@ pages-repo: | $(BUILD_DIR)
 # copy of the pdf.js source.
 CONTENT_DIR := content
 BUILD_NUMBER := `git log --format=oneline $(EXTENSION_BASE_VERSION).. | wc -l | awk '{print $$1}'`
-PDFJSSCRIPT_VERSION := 0.2.$(BUILD_NUMBER)
+PDFJSSCRIPT_VERSION := 0.3.$(BUILD_NUMBER)
 EXTENSION_WEB_FILES = \
 	web/images \
 	web/viewer.css \

@@ -76,7 +76,7 @@ function stringToBytes(str) {
 
 var IDENTITY_MATRIX = [1, 0, 0, 1, 0, 0];
 
-var Util = (function UtilClosure() {
+var Util = PDFJS.Util = (function UtilClosure() {
   function Util() {}
 
   Util.makeCssRgb = function Util_makeCssRgb(r, g, b) {
@@ -95,6 +95,19 @@ var Util = (function UtilClosure() {
     var xt = p[0] * m[0] + p[1] * m[2] + m[4];
     var yt = p[0] * m[1] + p[1] * m[3] + m[5];
     return [xt, yt];
+  };
+
+  Util.applyInverseTransform = function Util_applyTransform(p, m) {
+    var d = m[0] * m[3] - m[1] * m[2];
+    var xt = (p[0] * m[3] - p[1] * m[2] + m[2] * m[5] - m[4] * m[3]) / d;
+    var yt = (-p[0] * m[1] + p[1] * m[0] + m[4] * m[1] - m[5] * m[0]) / d;
+    return [xt, yt];
+  };
+
+  Util.inverseTransform = function Util_inverseTransform(m) {
+    var d = m[0] * m[3] - m[1] * m[2];
+    return [m[3] / d, -m[1] / d, -m[2] / d, m[0] / d,
+      (m[2] * m[5] - m[4] * m[3]) / d, (m[4] * m[1] - m[5] * m[0]) / d];
   };
 
   // Apply a generic 3d matrix M on a 3-vector v:
@@ -165,13 +178,87 @@ var Util = (function UtilClosure() {
     }
 
     return result;
-  }
+  };
 
   Util.sign = function Util_sign(num) {
     return num < 0 ? -1 : 1;
   };
 
   return Util;
+})();
+
+var PageViewport = PDFJS.PageViewport = (function PageViewportClosure() {
+  function PageViewport(viewBox, scale, rotate, offsetX, offsetY) {
+    // creating transform to convert pdf coordinate system to the normal
+    // canvas like coordinates taking in account scale and rotation
+    var centerX = (viewBox[2] + viewBox[0]) / 2;
+    var centerY = (viewBox[3] + viewBox[1]) / 2;
+    var rotateA, rotateB, rotateC, rotateD;
+    switch (rotate) {
+      case -180:
+      case 180:
+        rotateA = -1; rotateB = 0; rotateC = 0; rotateD = 1;
+        break;
+      case -270:
+      case 90:
+        rotateA = 0; rotateB = 1; rotateC = 1; rotateD = 0;
+        break;
+      case -90:
+      case 270:
+        rotateA = 0; rotateB = -1; rotateC = -1; rotateD = 0;
+        break;
+      case 360:
+      case 0:
+      default:
+        rotateA = 1; rotateB = 0; rotateC = 0; rotateD = -1;
+        break;
+    }
+    var offsetCanvasX, offsetCanvasY;
+    var width, height;
+    if (rotateA == 0) {
+      offsetCanvasX = Math.abs(centerY - viewBox[1]) * scale + offsetX;
+      offsetCanvasY = Math.abs(centerX - viewBox[0]) * scale + offsetY;
+      width = Math.abs(viewBox[3] - viewBox[1]) * scale;
+      height = Math.abs(viewBox[2] - viewBox[0]) * scale;
+    } else {
+      offsetCanvasX = Math.abs(centerX - viewBox[0]) * scale + offsetX;
+      offsetCanvasY = Math.abs(centerY - viewBox[1]) * scale + offsetY;
+      width = Math.abs(viewBox[2] - viewBox[0]) * scale;
+      height = Math.abs(viewBox[3] - viewBox[1]) * scale;
+    }
+    // creating transform for the following operations:
+    // translate(-centerX, -centerY), rotate and flip vertically,
+    // scale, and translate(offsetCanvasX, offsetCanvasY)
+    this.transform = [
+      rotateA * scale,
+      rotateB * scale,
+      rotateC * scale,
+      rotateD * scale,
+      offsetCanvasX - rotateA * scale * centerX - rotateC * scale * centerY,
+      offsetCanvasY - rotateB * scale * centerX - rotateD * scale * centerY
+    ];
+
+    this.offsetX = offsetX;
+    this.offsetY = offsetY;
+    this.width = width;
+    this.height = height;
+    this.fontScale = scale;
+  }
+  PageViewport.prototype = {
+    convertToViewportPoint: function PageViewport_convertToViewportPoint(x, y) {
+      return Util.applyTransform([x, y], this.transform);
+    },
+    convertToViewportRectangle:
+      function PageViewport_convertToViewportRectangle(rect) {
+      var tl = Util.applyTransform([rect[0], rect[1]], this.transform);
+      var br = Util.applyTransform([rect[2], rect[3]], this.transform);
+      return [tl[0], tl[1], br[0], br[1]];
+    },
+    convertToPdfPoint: function PageViewport_convertToPdfPoint(x, y) {
+      return Util.applyInverseTransform([x, y], this.transform);
+    }
+  };
+  return PageViewport;
 })();
 
 var PDFStringTranslateTable = [
@@ -275,7 +362,7 @@ function isPDFFunction(v) {
  * can be set. If any of these happens twice or the data is required before
  * it was set, an exception is throw.
  */
-var Promise = (function PromiseClosure() {
+var Promise = PDFJS.Promise = (function PromiseClosure() {
   var EMPTY_PROMISE = {};
 
   /**
@@ -297,6 +384,7 @@ var Promise = (function PromiseClosure() {
     }
     this.callbacks = [];
     this.errbacks = [];
+    this.progressbacks = [];
   };
   /**
    * Builds a promise that is resolved when all the passed in promises are
@@ -312,7 +400,7 @@ var Promise = (function PromiseClosure() {
       deferred.resolve(results);
       return deferred;
     }
-    for (var i = 0; i < unresolved; ++i) {
+    for (var i = 0, ii = promises.length; i < ii; ++i) {
       var promise = promises[i];
       promise.then((function(i) {
         return function(value) {
@@ -376,6 +464,13 @@ var Promise = (function PromiseClosure() {
       }
     },
 
+    progress: function Promise_progress(data) {
+      var callbacks = this.progressbacks;
+      for (var i = 0, ii = callbacks.length; i < ii; i++) {
+        callbacks[i].call(null, data);
+      }
+    },
+
     reject: function Promise_reject(reason) {
       if (this.isRejected) {
         error('A Promise can be rejected only once ' + this.name);
@@ -393,7 +488,7 @@ var Promise = (function PromiseClosure() {
       }
     },
 
-    then: function Promise_then(callback, errback) {
+    then: function Promise_then(callback, errback, progressback) {
       if (!callback) {
         error('Requiring callback' + this.name);
       }
@@ -410,6 +505,9 @@ var Promise = (function PromiseClosure() {
         if (errback)
           this.errbacks.push(errback);
       }
+
+      if (progressback)
+        this.progressbacks.push(progressback);
     }
   };
 
