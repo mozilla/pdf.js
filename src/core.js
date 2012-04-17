@@ -283,7 +283,8 @@ var Page = (function PageClosure() {
             var title = annotation.get('T');
             item.content = stringToPDFString(content || '');
             item.title = stringToPDFString(title || '');
-            item.name = annotation.get('Name').name;
+            item.name = !annotation.has('Name') ? 'Note' :
+              annotation.get('Name').name;
             break;
           default:
             TODO('unimplemented annotation type: ' + subtype.name);
