@@ -16,6 +16,7 @@ BROWSERLOG_FILE = 'browser.log'
 REFDIR = 'ref'
 TMPDIR = 'tmp'
 VERBOSE = False
+BROWSER_TIMEOUT = 60
 
 SERVER_HOST = "localhost"
 
@@ -74,7 +75,7 @@ class State:
     browsers = [ ]
     manifest = { }
     taskResults = { }
-    remaining = 0
+    remaining = { }
     results = { }
     done = False
     numErrors = 0
@@ -83,6 +84,7 @@ class State:
     numFBFFailures = 0
     numLoadFailures = 0
     eqLog = None
+    lastPost = { }
 
 class Result:
     def __init__(self, snapshot, failure, page):
@@ -180,6 +182,7 @@ class PDFTestHandler(BaseHTTPRequestHandler):
 
         result = json.loads(self.rfile.read(numBytes))
         browser, id, failure, round, page, snapshot = result['browser'], result['id'], result['failure'], result['round'], result['page'], result['snapshot']
+        State.lastPost[browser] = int(time.time())
         taskResults = State.taskResults[browser][id]
         taskResults[round].append(Result(snapshot, failure, page))
 
@@ -199,9 +202,16 @@ class PDFTestHandler(BaseHTTPRequestHandler):
                   self.server.masterMode)
             # Please oh please GC this ...
             del State.taskResults[browser][id]
-            State.remaining -= 1
+            State.remaining[browser] -= 1
 
-        State.done = (0 == State.remaining)
+            checkIfDone()
+
+def checkIfDone():
+    State.done = True
+    for key in State.remaining:
+        if State.remaining[key] != 0:
+            State.done = False
+            return
 
 # Applescript hack to quit Chrome on Mac
 def tellAppToQuit(path, query):
@@ -376,6 +386,8 @@ def setUp(options):
 
     for b in testBrowsers:
         State.taskResults[b.name] = { }
+        State.remaining[b.name] = len(manifestList)
+        State.lastPost[b.name] = int(time.time())
         for item in manifestList:
             id, rounds = item['id'], int(item['rounds'])
             State.manifest[id] = item
@@ -383,8 +395,6 @@ def setUp(options):
             for r in xrange(rounds):
                 taskResults.append([ ])
             State.taskResults[b.name][id] = taskResults
-
-    State.remaining = len(testBrowsers) * len(manifestList)
 
     return testBrowsers
 
@@ -568,6 +578,12 @@ def runTests(options, browsers):
     try:
         startBrowsers(browsers, options)
         while not State.done:
+            for b in State.lastPost:
+                if State.remaining[b] > 0 and int(time.time()) - State.lastPost[b] > BROWSER_TIMEOUT:
+                    print 'TEST-UNEXPECTED-FAIL | test failed', b, "has not responded in", BROWSER_TIMEOUT, "s"
+                    State.numErrors += State.remaining[b]
+                    State.remaining[b] = 0
+                    checkIfDone()
             time.sleep(1)
         processResults()
     finally:
