@@ -805,17 +805,20 @@ var PageView = function pageView(container, pdfPage, id, scale,
       container.className = 'annotComment';
 
       var image = createElementWithStyle('img', item);
+      var type = item.type;
+      var rect = viewport.convertToViewportRectangle(item.rect);
+      rect = PDFJS.Util.normalizeRect(rect);
       image.src = kImageDirectory + type.toLowerCase() + '.svg';
+      image.alt = '[' + type + ' Annotation]';
       var content = document.createElement('div');
       content.setAttribute('hidden', true);
       var title = document.createElement('h1');
       var text = document.createElement('p');
-      var offsetPos = Math.floor(item.x - view.x + item.width);
-      content.style.left = (offsetPos * scale) + 'px';
-      content.style.top = (Math.floor(item.y - view.y) * scale) + 'px';
+      content.style.left = Math.floor(rect[2]) + 'px';
+      content.style.top = Math.floor(rect[1]) + 'px';
       title.textContent = item.title;
 
-      if (!item.content) {
+      if (!item.content && !item.title) {
         content.setAttribute('hidden', true);
       } else {
         var e = document.createElement('span');
@@ -828,11 +831,11 @@ var PageView = function pageView(container, pdfPage, id, scale,
         }
         text.appendChild(e);
         image.addEventListener('mouseover', function annotationImageOver() {
-           this.nextSibling.removeAttribute('hidden');
+           content.removeAttribute('hidden');
         }, false);
 
         image.addEventListener('mouseout', function annotationImageOut() {
-           this.nextSibling.setAttribute('hidden', true);
+           content.setAttribute('hidden', true);
         }, false);
       }
 
