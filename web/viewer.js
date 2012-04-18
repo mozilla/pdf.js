@@ -1036,8 +1036,8 @@ var ThumbnailView = function thumbnailView(container, pdfPage, id) {
   };
 
   var viewport = pdfPage.getViewport(1);
-  var pageWidth = viewport.width;
-  var pageHeight = viewport.height;
+  var pageWidth = this.width = viewport.width;
+  var pageHeight = this.height = viewport.height;
   var pageRatio = pageWidth / pageHeight;
   this.id = id;
 
