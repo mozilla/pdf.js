@@ -249,8 +249,11 @@ var Parser = (function ParserClosure() {
       if (name == 'CCITTFaxDecode' || name == 'CCF') {
         return new CCITTFaxStream(stream, params);
       }
-      if (name == 'RunLengthDecode') {
+      if (name == 'RunLengthDecode' || name == 'RL') {
         return new RunLengthStream(stream);
+      }
+      if (name == 'JBIG2Decode') {
+        error('JBIG2 image format is not currently supprted.');
       }
       warn('filter "' + name + '" not supported yet');
       return stream;

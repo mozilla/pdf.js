@@ -9,7 +9,7 @@
 
 var formFields = {};
 
-function setupForm(div, content, scale) {
+function setupForm(div, content, viewport) {
   function bindInputItem(input, item) {
     if (input.name in formFields) {
       var value = formFields[input.name];
@@ -27,16 +27,20 @@ function setupForm(div, content, scale) {
   }
   function createElementWithStyle(tagName, item) {
     var element = document.createElement(tagName);
-    element.style.left = (item.x * scale) + 'px';
-    element.style.top = (item.y * scale) + 'px';
-    element.style.width = Math.ceil(item.width * scale) + 'px';
-    element.style.height = Math.ceil(item.height * scale) + 'px';
+    var rect = Util.normalizeRect(
+      viewport.convertToViewportRectangle(item.rect));
+    element.style.left = Math.floor(rect[0]) + 'px';
+    element.style.top = Math.floor(rect[1]) + 'px';
+    element.style.width = Math.ceil(rect[2] - rect[0]) + 'px';
+    element.style.height = Math.ceil(rect[3] - rect[1]) + 'px';
     return element;
   }
   function assignFontStyle(element, item) {
     var fontStyles = '';
-    if ('fontSize' in item)
-      fontStyles += 'font-size: ' + Math.round(item.fontSize * scale) + 'px;';
+    if ('fontSize' in item) {
+      fontStyles += 'font-size: ' + Math.round(item.fontSize *
+        viewport.fontScale) + 'px;';
+    }
     switch (item.textAlignment) {
       case 0:
         fontStyles += 'text-align: left;';
@@ -51,83 +55,88 @@ function setupForm(div, content, scale) {
     element.setAttribute('style', element.getAttribute('style') + fontStyles);
   }
 
-  var items = content.getAnnotations();
-  for (var i = 0; i < items.length; i++) {
-    var item = items[i];
-    switch (item.type) {
-      case 'Widget':
-        if (item.fieldType != 'Tx' && item.fieldType != 'Btn' &&
-            item.fieldType != 'Ch')
-          break;
-        var inputDiv = createElementWithStyle('div', item);
-        inputDiv.className = 'inputHint';
-        div.appendChild(inputDiv);
-        var input;
-        if (item.fieldType == 'Tx') {
-          input = createElementWithStyle('input', item);
-        }
-        if (item.fieldType == 'Btn') {
-          input = createElementWithStyle('input', item);
-          if (item.flags & 32768) {
-            input.type = 'radio';
-             // radio button is not supported
-          } else if (item.flags & 65536) {
-            input.type = 'button';
-            // pushbutton is not supported
-          } else {
-            input.type = 'checkbox';
+  content.getAnnotations().then(function(items) {
+    for (var i = 0; i < items.length; i++) {
+      var item = items[i];
+      switch (item.type) {
+        case 'Widget':
+          if (item.fieldType != 'Tx' && item.fieldType != 'Btn' &&
+              item.fieldType != 'Ch')
+            break;
+          var inputDiv = createElementWithStyle('div', item);
+          inputDiv.className = 'inputHint';
+          div.appendChild(inputDiv);
+          var input;
+          if (item.fieldType == 'Tx') {
+            input = createElementWithStyle('input', item);
           }
-        }
-        if (item.fieldType == 'Ch') {
-          input = createElementWithStyle('select', item);
-          // select box is not supported
-        }
-        input.className = 'inputControl';
-        input.name = item.fullName;
-        input.title = item.alternativeText;
-        assignFontStyle(input, item);
-        bindInputItem(input, item);
-        div.appendChild(input);
-        break;
+          if (item.fieldType == 'Btn') {
+            input = createElementWithStyle('input', item);
+            if (item.flags & 32768) {
+              input.type = 'radio';
+               // radio button is not supported
+            } else if (item.flags & 65536) {
+              input.type = 'button';
+              // pushbutton is not supported
+            } else {
+              input.type = 'checkbox';
+            }
+          }
+          if (item.fieldType == 'Ch') {
+            input = createElementWithStyle('select', item);
+            // select box is not supported
+          }
+          input.className = 'inputControl';
+          input.name = item.fullName;
+          input.title = item.alternativeText;
+          assignFontStyle(input, item);
+          bindInputItem(input, item);
+          div.appendChild(input);
+          break;
+      }
     }
-  }
+  });
 }
 
 function renderPage(div, pdf, pageNumber, callback) {
-  var page = pdf.getPage(pageNumber);
-  var scale = 1.5;
+  pdf.getPage(pageNumber).then(function(page) {
+    var scale = 1.5;
+    var viewport = page.getViewport(scale);
 
-  var pageDisplayWidth = page.width * scale;
-  var pageDisplayHeight = page.height * scale;
+    var pageDisplayWidth = viewport.width;
+    var pageDisplayHeight = viewport.height;
 
-  var pageDivHolder = document.createElement('div');
-  pageDivHolder.className = 'pdfpage';
-  pageDivHolder.style.width = pageDisplayWidth + 'px';
-  pageDivHolder.style.height = pageDisplayHeight + 'px';
-  div.appendChild(pageDivHolder);
+    var pageDivHolder = document.createElement('div');
+    pageDivHolder.className = 'pdfpage';
+    pageDivHolder.style.width = pageDisplayWidth + 'px';
+    pageDivHolder.style.height = pageDisplayHeight + 'px';
+    div.appendChild(pageDivHolder);
 
-  // Prepare canvas using PDF page dimensions
-  var canvas = document.createElement('canvas');
-  var context = canvas.getContext('2d');
-  canvas.width = pageDisplayWidth;
-  canvas.height = pageDisplayHeight;
-  pageDivHolder.appendChild(canvas);
+    // Prepare canvas using PDF page dimensions
+    var canvas = document.createElement('canvas');
+    var context = canvas.getContext('2d');
+    canvas.width = pageDisplayWidth;
+    canvas.height = pageDisplayHeight;
+    pageDivHolder.appendChild(canvas);
 
 
-  // Render PDF page into canvas context
-  page.startRendering(context, callback);
+    // Render PDF page into canvas context
+    var renderContext = {
+      canvasContext: context,
+      viewport: viewport
+    };
+    page.render(renderContext).then(callback);
 
-  // Prepare and populate form elements layer
-  var formDiv = document.createElement('div');
-  pageDivHolder.appendChild(formDiv);
+    // Prepare and populate form elements layer
+    var formDiv = document.createElement('div');
+    pageDivHolder.appendChild(formDiv);
 
-  setupForm(formDiv, page, scale);
+    setupForm(formDiv, page, viewport);
+  });
 }
 
-PDFJS.getPdf(pdfWithFormsPath, function getPdfForm(data) {
-  // Instantiate PDFDoc with PDF data
-  var pdf = new PDFJS.PDFDoc(data);
-  
+// Fetch the PDF document from the URL using promices
+PDFJS.getDocument(pdfWithFormsPath).then(function getPdfForm(pdf) {
   // Rendering all pages starting from first
   var viewer = document.getElementById('viewer');
   var pageNumber = 1;

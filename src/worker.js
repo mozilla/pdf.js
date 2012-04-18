@@ -85,14 +85,43 @@ var WorkerMessageHandler = {
       handler.send('test', data instanceof Uint8Array);
     });
 
-    handler.on('doc', function wphSetupDoc(data) {
+    handler.on('GetDocRequest', function wphSetupDoc(data) {
       // Create only the model of the PDFDoc, which is enough for
       // processing the content of the pdf.
-      pdfModel = new PDFDocModel(new Stream(data));
+      pdfModel = new PDFDocument(new Stream(data));
+      var doc = {
+        numPages: pdfModel.numPages,
+        fingerprint: pdfModel.getFingerprint(),
+        destinations: pdfModel.catalog.destinations,
+        outline: pdfModel.catalog.documentOutline,
+        info: pdfModel.getDocumentInfo(),
+        metadata: pdfModel.catalog.metadata
+      };
+      handler.send('GetDoc', {pdfInfo: doc});
     });
 
-    handler.on('page_request', function wphSetupPageRequest(pageNum) {
-      pageNum = parseInt(pageNum);
+    handler.on('GetPageRequest', function wphSetupGetPage(data) {
+      var pageNumber = data.pageIndex + 1;
+      var pdfPage = pdfModel.getPage(pageNumber);
+      var page = {
+        pageIndex: data.pageIndex,
+        rotate: pdfPage.rotate,
+        ref: pdfPage.ref,
+        view: pdfPage.view
+      };
+      handler.send('GetPage', {pageInfo: page});
+    });
+
+    handler.on('GetAnnotationsRequest', function wphSetupGetAnnotations(data) {
+      var pdfPage = pdfModel.getPage(data.pageIndex + 1);
+      handler.send('GetAnnotations', {
+        pageIndex: data.pageIndex,
+        annotations: pdfPage.getAnnotations()
+      });
+    });
+
+    handler.on('RenderPageRequest', function wphSetupRenderPage(data) {
+      var pageNum = data.pageIndex + 1;
 
 
       // The following code does quite the same as
@@ -130,7 +159,7 @@ var WorkerMessageHandler = {
           };
         }
 
-        handler.send('page_error', {
+        handler.send('PageError', {
           pageNum: pageNum,
           error: e
         });
@@ -148,9 +177,8 @@ var WorkerMessageHandler = {
           fonts[dep] = true;
         }
       }
-
-      handler.send('page', {
-        pageNum: pageNum,
+      handler.send('RenderPage', {
+        pageIndex: data.pageIndex,
         operatorList: operatorList,
         depFonts: Object.keys(fonts)
       });

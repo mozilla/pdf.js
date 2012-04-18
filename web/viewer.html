@@ -1,6 +1,6 @@
 <html>
   <head>
-    <title>PDF viewer</title>
+    <title>PDF.js viewer</title>
     <!-- PDFJSSCRIPT_INCLUDE_FIREFOX_EXTENSION -->
 
     <link rel="stylesheet" href="viewer.css"/>
@@ -10,6 +10,7 @@
     <!-- PDFJSSCRIPT_INCLUDE_BUILD -->
     <script type="text/javascript" src="../src/core.js"></script> <!-- PDFJSSCRIPT_REMOVE_CORE -->
     <script type="text/javascript" src="../src/util.js"></script>  <!-- PDFJSSCRIPT_REMOVE_CORE -->
+    <script type="text/javascript" src="../src/api.js"></script>  <!-- PDFJSSCRIPT_REMOVE_CORE -->
     <script type="text/javascript" src="../src/metadata.js"></script>  <!-- PDFJSSCRIPT_REMOVE_CORE -->
     <script type="text/javascript" src="../src/canvas.js"></script>  <!-- PDFJSSCRIPT_REMOVE_CORE -->
     <script type="text/javascript" src="../src/obj.js"></script>  <!-- PDFJSSCRIPT_REMOVE_CORE -->
@@ -34,9 +35,8 @@
     <script type="text/javascript" src="debugger.js"></script>
     <script type="text/javascript" src="viewer.js"></script>
   </head>
-  
+
   <body>
-    
     <div id="outerContainer">
 
       <div class="toolbar">

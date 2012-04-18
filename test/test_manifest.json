@@ -19,7 +19,7 @@
     },
     {  "id": "intelisa-eq",
        "file": "pdfs/intelisa.pdf",
-       "md5": "83032ccbfdc5a66269b1403971110abe",
+       "md5": "c1444b7ccd935c0577d094297e1a6448",
        "link": true,
        "pageLimit": 100,
        "rounds": 1,
@@ -29,12 +29,13 @@
        "file": "pdfs/pdf.pdf",
        "md5": "dbdb23c939d2be09b43126c3c56060c7",
        "link": true,
+       "pageLimit": 500,
        "rounds": 1,
        "type": "load"
     },
     {  "id": "shavian-load",
        "file": "pdfs/shavian.pdf",
-       "md5": "4fabf0a03e82693007435020bc446f9b",
+       "md5": "79253352f48b55b7fa28a2586875d8b7",
        "link": true,
        "rounds": 1,
        "type": "load"
@@ -241,10 +242,10 @@
        "skipPages": [ 16 ],
        "type": "load"
     },
-    {  "id": "tcpdf_033",
-       "file": "pdfs/tcpdf_033.pdf",
-       "md5": "861294df58d185aae80919173f2732ff",
-       "link": true,
+    {  "id": "mixedfonts",
+       "file": "pdfs/mixedfonts.pdf",
+       "md5": "a582b83fa1b3a25a6f13803a367c71ec",
+       "link": false,
        "rounds": 1,
        "type": "eq"
     },
