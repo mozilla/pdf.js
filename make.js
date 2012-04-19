@@ -368,9 +368,8 @@ target.test = function() {
 // (Special tests for the Github bot)
 //
 target.bottest = function() {
-  target.unittest();
-  target.browsertest({noreftest: true}, function() {
-    target.browsertest();
+  target.unittest({}, function() {
+    target.browsertest({noreftest: true});
   });
 };
 
