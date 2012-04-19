@@ -408,6 +408,8 @@ body {
 .thumbnail {
   margin-bottom: 15px;
   float: left;
+  width: 114px;
+  height: 142px;
 }
 
 .thumbnailImage {
