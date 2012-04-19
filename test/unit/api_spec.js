@@ -6,11 +6,11 @@
 describe('api', function() {
   // TODO run with worker enabled
   PDFJS.disableWorker = true;
-  var basicApiUrl = '/basicapi.pdf';
+  var basicApiUrl = '../pdfs/basicapi.pdf';
   function waitsForPromise(promise) {
     waitsFor(function() {
       return promise.isResolved || promise.isRejected;
-    }, 250);
+    }, 1000);
   }
   function expectAfterPromise(promise, successCallback) {
     waitsForPromise(promise);
@@ -25,8 +25,6 @@ describe('api', function() {
   describe('PDFJS', function() {
     describe('getDocument', function() {
       it('creates pdf doc from URL', function() {
-        console.log('what is');
-        debugger;
         var promise = PDFJS.getDocument(basicApiUrl);
         expectAfterPromise(promise, function(data) {
           expect(true).toEqual(true);
