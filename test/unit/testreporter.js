@@ -66,6 +66,7 @@ var TestReporter = function(browser, appPath) {
   this.reportSuiteResults = function(suite) { };
 
   this.reportRunnerResults = function(runner) {
-    sendQuitRequest();
+    // Give the test.py some time process any queued up requests
+    setTimeout(sendQuitRequest, 500);
   };
 };
