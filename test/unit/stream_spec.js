@@ -32,7 +32,9 @@ describe('stream', function() {
       var predictor = new PredictorStream(input, dict);
       var result = predictor.getBytes(6);
 
-      expect(result).toMatchTypedArray(new Uint8Array([100, 3, 101, 2, 102, 1]));
+      expect(result).toMatchTypedArray(
+        new Uint8Array([100, 3, 101, 2, 102, 1])
+      );
     });
   });
 });
