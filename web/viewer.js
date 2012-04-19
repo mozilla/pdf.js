@@ -1456,13 +1456,11 @@ window.addEventListener('pagechange', function pagechange(evt) {
 }, true);
 
 window.addEventListener('keydown', function keydown(evt) {
-  var cmd = 0;
-  if (evt.ctrlKey)  cmd |= 1;
-  if (evt.altKey)   cmd |= 2;
-  if (evt.shiftKey) cmd |= 4;
-  if (evt.metaKey)  cmd |= 8; 
-
   var handled = false;
+  var cmd = (evt.ctrlKey ? 1 : 0) |
+            (evt.altKey ? 2 : 0) |
+            (evt.shiftKey ? 4 : 0) |
+            (evt.metaKey ? 8 : 0);
 
   // First, handle the key bindings that are independent whether an input
   // control is selected or not.
