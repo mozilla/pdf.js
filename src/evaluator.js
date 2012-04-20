@@ -112,13 +112,28 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
   };
 
   function splitCombinedOperations(operations) {
-    // Two operations can be combined together, trying to find which two
+    // Two or more operations can be combined together, trying to find which 
     // operations were concatenated.
-    for (var i = operations.length - 1; i > 0; i--) {
-      var op1 = operations.substring(0, i), op2 = operations.substring(i);
-      if (op1 in OP_MAP && op2 in OP_MAP)
-        return [op1, op2]; // operations found
+
+    if (operations == null) {
+      return null;
     }
+
+    for (var i = operations.length - 1; i > 0; i--) {
+      var op = operations.substring(0, i);
+      if (op in OP_MAP) {
+        var firstOp = [op];
+        var nextOps = splitCombinedOperations(operations.substring(i));
+
+        if (nextOps != null) {
+          return firstOp.concat(nextOps); // operations found
+        }
+        else {
+          return firstOp;
+        }
+      }
+    }
+
     return null;
   }
 
@@ -327,7 +342,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                                                      res);
                   args = pattern.getIR();
                 } else {
-                  error('Unkown PatternType ' + typeNum);
+                  error('Unknown pattern type ' + typeNum);
                 }
               }
             }
