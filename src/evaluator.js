@@ -114,20 +114,32 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
   function splitCombinedOperations(operations) {
     // Two or more operations can be combined together, trying to find which 
     // operations were concatenated.
+
     if (operations == null) {
       return null;
+    }
+
+    if (operations.length >= 128) {
+      assertWellFormed(fn, 'Unknown command "' + cmd + '"');
     }
 
     for (var i = operations.length - 1; i > 0; i--) {
       var op = operations.substring(0, i);
       if (op in OP_MAP) {
         var firstOp = [op];
-        var nextOps = splitCombinedOperations(operations.substring(i));
+        var nextOp = operations.substring(i);
+
+        if (nextOp in OP_MAP) {
+          return [op, nextOp];
+        }
+
+        var nextOps = splitCombinedOperations(nextOp);
 
         if (nextOps != null) {
           return firstOp.concat(nextOps); // operations found
-        } else {
-          return firstOp;
+        }
+        else {
+          return null;
         }
       }
     }
@@ -280,14 +292,14 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       var patterns = resources.get('Pattern') || new Dict();
       var parser = new Parser(new Lexer(stream), false, xref);
       var res = resources;
-      var hasNextObj = false, nextObj;
+      var hasNextObj = false, nextObjs;
       var args = [], obj;
       var TILING_PATTERN = 1, SHADING_PATTERN = 2;
 
       while (true) {
         if (hasNextObj) {
-          obj = nextObj;
-          hasNextObj = false;
+          obj = nextObjs.pop();
+          hasNextObj = (nextObjs.length > 0);
         } else {
           obj = parser.getObj();
           if (isEOF(obj))
@@ -303,9 +315,12 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
             if (cmds) {
               cmd = cmds[0];
               fn = OP_MAP[cmd];
-              // feeding other command on the next interation
+              // feeding other command on the next iteration
               hasNextObj = true;
-              nextObj = Cmd.get(cmds[1]);
+              nextObjs = new Array();
+              for (var idx = 1; idx < cmds.length; idx++) {
+                 nextObjs.push(Cmd.get(cmds[idx]));
+              }
             }
           }
           assertWellFormed(fn, 'Unknown command "' + cmd + '"');
