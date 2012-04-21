@@ -137,8 +137,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
 
         if (nextOps != null) {
           return firstOp.concat(nextOps); // operations found
-        }
-        else {
+        } else {
           return null;
         }
       }
