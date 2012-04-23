@@ -587,7 +587,7 @@ def processResults():
     print ''
     numFatalFailures = (State.numErrors + State.numFBFFailures)
     if 0 == State.numEqFailures and 0 == numFatalFailures:
-        print 'All tests passed.'
+        print 'All regression tests passed.'
     else:
         print 'OHNOES!  Some tests failed!'
         if 0 < State.numErrors:
