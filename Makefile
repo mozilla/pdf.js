@@ -83,10 +83,12 @@ bundle: | $(BUILD_DIR)
 
 # make unit-test
 #
-# This target runs in-browser unit tests with js-test-driver and jasmine unit
-# test framework.
+# This target runs in-browser unit tests with our test framework and the
+# jasmine unit test framework.
 unit-test:
-	@cd test/unit/ ; make ;
+	cd test; \
+	$(DEFAULT_PYTHON) test.py --unitTest \
+	--browserManifestFile=$(PDF_BROWSERS)
 
 # make browser-test
 #

@@ -39,9 +39,13 @@ class TestOptions(OptionParser):
                         default=False)
         self.add_option("--port", action="store", dest="port", type="int",
                         help="The port the HTTP server should listen on.", default=8080)
+        self.add_option("--unitTest", action="store_true", dest="unitTest",
+                        help="Run the unit tests.", default=False)
         self.set_usage(USAGE_EXAMPLE)
 
     def verifyOptions(self, options):
+        if options.reftest and options.unitTest:
+            self.error("--reftest and --unitTest must not be specified at the same time.")
         if options.masterMode and options.manifestFile:
             self.error("--masterMode and --manifestFile must not be specified at the same time.")
         if not options.manifestFile:
@@ -50,6 +54,7 @@ class TestOptions(OptionParser):
             print "Warning: ignoring browser argument since manifest file was also supplied"
         if not options.browser and not options.browserManifestFile:
             print "Starting server on port %s." % options.port
+
         return options
         
 def prompt(question):
@@ -86,6 +91,13 @@ class State:
     eqLog = None
     lastPost = { }
 
+class UnitTestState:
+    browsers = [ ]
+    browsersRunning = 0
+    lastPost = { }
+    numErrors = 0
+    numRun = 0
+
 class Result:
     def __init__(self, snapshot, failure, page):
         self.snapshot = snapshot
@@ -95,8 +107,7 @@ class Result:
 class TestServer(SocketServer.TCPServer):
     allow_reuse_address = True
 
-class PDFTestHandler(BaseHTTPRequestHandler):
-
+class TestHandlerBase(BaseHTTPRequestHandler):
     # Disable annoying noise by default
     def log_request(code=0, size=0):
         if VERBOSE:
@@ -109,34 +120,6 @@ class PDFTestHandler(BaseHTTPRequestHandler):
         self.end_headers()
         with open(path, "rb") as f:
             self.wfile.write(f.read())
-
-    def sendIndex(self, path, query):
-        if not path.endswith("/"):
-          # we need trailing slash
-          self.send_response(301)
-          redirectLocation = path + "/"
-          if query:
-            redirectLocation += "?" + query
-          self.send_header("Location",  redirectLocation)
-          self.end_headers()
-          return
-
-        self.send_response(200)
-        self.send_header("Content-Type", "text/html")
-        self.end_headers()
-        if query == "frame":
-          self.wfile.write("<html><frameset cols=*,200><frame name=pdf>" +
-            "<frame src='" + path + "'></frameset></html>")
-          return
-
-        location = os.path.abspath(os.path.realpath(DOC_ROOT + os.sep + path))
-        self.wfile.write("<html><body><h1>PDFs of " + path + "</h1>\n")
-        for filename in os.listdir(location):
-          if filename.lower().endswith('.pdf'):
-            self.wfile.write("<a href='/web/viewer.html?file=" +
-              urllib.quote_plus(path + filename, '/') + "' target=pdf>" +
-              filename + "</a><br>\n")
-        self.wfile.write("</body></html>")
 
     def do_GET(self):
         url = urlparse(self.path)
@@ -167,6 +150,70 @@ class PDFTestHandler(BaseHTTPRequestHandler):
             return
 
         self.sendFile(path, ext)
+
+class UnitTestHandler(TestHandlerBase):
+    def sendIndex(self, path, query):
+        print "send index"
+    def do_POST(self):
+        numBytes = int(self.headers['Content-Length'])
+
+        self.send_response(200)
+        self.send_header('Content-Type', 'text/plain')
+        self.end_headers()
+
+        url = urlparse(self.path)
+        result = json.loads(self.rfile.read(numBytes))
+        browser = result['browser']
+        UnitTestState.lastPost[browser] = int(time.time())
+        if url.path == "/tellMeToQuit":
+            tellAppToQuit(url.path, url.query)
+            UnitTestState.browsersRunning -= 1
+            UnitTestState.lastPost[browser] = None
+            return
+        elif url.path == '/info':
+            print result['message']
+        elif url.path == '/submit_task_results':
+            status, description = result['status'], result['description']
+            UnitTestState.numRun += 1
+            if status == 'TEST-UNEXPECTED-FAIL':
+                UnitTestState.numErrors += 1
+            message = status + ' | ' + description + ' | in ' + browser
+            if 'error' in result:
+                message += ' | ' + result['error']
+            print message
+        else:
+            print 'Error: uknown action' + url.path
+
+class PDFTestHandler(TestHandlerBase):
+
+    def sendIndex(self, path, query):
+        if not path.endswith("/"):
+          # we need trailing slash
+          self.send_response(301)
+          redirectLocation = path + "/"
+          if query:
+            redirectLocation += "?" + query
+          self.send_header("Location",  redirectLocation)
+          self.end_headers()
+          return
+
+        self.send_response(200)
+        self.send_header("Content-Type", "text/html")
+        self.end_headers()
+        if query == "frame":
+          self.wfile.write("<html><frameset cols=*,200><frame name=pdf>" +
+            "<frame src='" + path + "'></frameset></html>")
+          return
+
+        location = os.path.abspath(os.path.realpath(DOC_ROOT + os.sep + path))
+        self.wfile.write("<html><body><h1>PDFs of " + path + "</h1>\n")
+        for filename in os.listdir(location):
+          if filename.lower().endswith('.pdf'):
+            self.wfile.write("<a href='/web/viewer.html?file=" +
+              urllib.quote_plus(path + filename, '/') + "' target=pdf>" +
+              filename + "</a><br>\n")
+        self.wfile.write("</body></html>")
+
 
     def do_POST(self):
         numBytes = int(self.headers['Content-Length'])
@@ -354,6 +401,17 @@ def verifyPDFs(manifestList):
             error = True
     return not error
 
+def getTestBrowsers(options):
+    testBrowsers = []
+    if options.browserManifestFile:
+        testBrowsers = makeBrowserCommands(options.browserManifestFile)
+    elif options.browser:
+        testBrowsers = [makeBrowserCommand({"path":options.browser, "name":None})]
+
+    if options.browserManifestFile or options.browser:
+        assert len(testBrowsers) > 0
+    return testBrowsers
+
 def setUp(options):
     # Only serve files from a pdf.js clone
     assert not GIT_CLONE_CHECK or os.path.isfile('../src/pdf.js') and os.path.isdir('../.git')
@@ -366,14 +424,7 @@ def setUp(options):
 
     assert not os.path.isdir(TMPDIR)
 
-    testBrowsers = []
-    if options.browserManifestFile:
-        testBrowsers = makeBrowserCommands(options.browserManifestFile)
-    elif options.browser:
-        testBrowsers = [makeBrowserCommand({"path":options.browser, "name":None})]
-
-    if options.browserManifestFile or options.browser:
-        assert len(testBrowsers) > 0
+    testBrowsers = getTestBrowsers(options)
 
     with open(options.manifestFile) as mf:
         manifestList = json.load(mf)
@@ -398,13 +449,23 @@ def setUp(options):
 
     return testBrowsers
 
-def startBrowsers(browsers, options):
+def setUpUnitTests(options):
+    # Only serve files from a pdf.js clone
+    assert not GIT_CLONE_CHECK or os.path.isfile('../src/pdf.js') and os.path.isdir('../.git')
+
+    testBrowsers = getTestBrowsers(options)
+
+    UnitTestState.browsersRunning = len(testBrowsers)
+    for b in testBrowsers:
+        UnitTestState.lastPost[b.name] = int(time.time())
+    return testBrowsers
+
+def startBrowsers(browsers, options, path):
     for b in browsers:
         b.setup()
         print 'Launching', b.name
         host = 'http://%s:%s' % (SERVER_HOST, options.port) 
-        path = '/test/test_slave.html?'
-        qs = 'browser='+ urllib.quote(b.name) +'&manifestFile='+ urllib.quote(options.manifestFile)
+        qs = '?browser='+ urllib.quote(b.name) +'&manifestFile='+ urllib.quote(options.manifestFile)
         qs += '&path=' + b.path
         b.start(host + path + qs)
 
@@ -526,7 +587,7 @@ def processResults():
     print ''
     numFatalFailures = (State.numErrors + State.numFBFFailures)
     if 0 == State.numEqFailures and 0 == numFatalFailures:
-        print 'All tests passed.'
+        print 'All regression tests passed.'
     else:
         print 'OHNOES!  Some tests failed!'
         if 0 < State.numErrors:
@@ -576,7 +637,7 @@ def startReftest(browser, options):
 def runTests(options, browsers):
     t1 = time.time()
     try:
-        startBrowsers(browsers, options)
+        startBrowsers(browsers, options, '/test/test_slave.html')
         while not State.done:
             for b in State.lastPost:
                 if State.remaining[b] > 0 and int(time.time()) - State.lastPost[b] > BROWSER_TIMEOUT:
@@ -598,6 +659,30 @@ def runTests(options, browsers):
         print "\nStarting reftest harness to examine %d eq test failures." % State.numEqFailures
         startReftest(browsers[0], options)
 
+def runUnitTests(options, browsers):
+    t1 = time.time()
+    try:
+        startBrowsers(browsers, options, '/test/unit/unit_test.html')
+        while UnitTestState.browsersRunning > 0:
+            for b in UnitTestState.lastPost:
+                if UnitTestState.lastPost[b] != None and int(time.time()) - UnitTestState.lastPost[b] > BROWSER_TIMEOUT:
+                    print 'TEST-UNEXPECTED-FAIL | test failed', b, "has not responded in", BROWSER_TIMEOUT, "s"
+                    UnitTestState.lastPost[b] = None
+                    UnitTestState.browsersRunning -= 1
+                    UnitTestState.numErrors += 1
+            time.sleep(1)
+        print ''
+        print 'Ran', UnitTestState.numRun, 'tests'
+        if UnitTestState.numErrors > 0:
+            print 'OHNOES!  Some tests failed!'
+            print '  ', UnitTestState.numErrors, 'of', UnitTestState.numRun, 'failed'
+        else:
+            print 'All unit tests passed.'
+    finally:
+        teardownBrowsers(browsers)
+    t2 = time.time()
+    print "Unit test Runtime was", int(t2 - t1), "seconds"
+
 def main():
     optionParser = TestOptions()
     options, args = optionParser.parse_args()
@@ -605,23 +690,33 @@ def main():
     if options == None:
         sys.exit(1)
 
-    httpd = TestServer((SERVER_HOST, options.port), PDFTestHandler)
-    httpd.masterMode = options.masterMode
-    httpd_thread = threading.Thread(target=httpd.serve_forever)
-    httpd_thread.setDaemon(True)
-    httpd_thread.start()
+    if options.unitTest:
+        httpd = TestServer((SERVER_HOST, options.port), UnitTestHandler)
+        httpd_thread = threading.Thread(target=httpd.serve_forever)
+        httpd_thread.setDaemon(True)
+        httpd_thread.start()
 
-    browsers = setUp(options)
-    if len(browsers) > 0:
-        runTests(options, browsers)
+        browsers = setUpUnitTests(options)
+        if len(browsers) > 0:
+            runUnitTests(options, browsers)
     else:
-        # just run the server
-        print "Running HTTP server. Press Ctrl-C to quit."
-        try:
-            while True:
-                time.sleep(1)
-        except (KeyboardInterrupt):
-            print "\nExiting."
+        httpd = TestServer((SERVER_HOST, options.port), PDFTestHandler)
+        httpd.masterMode = options.masterMode
+        httpd_thread = threading.Thread(target=httpd.serve_forever)
+        httpd_thread.setDaemon(True)
+        httpd_thread.start()
+
+        browsers = setUp(options)
+        if len(browsers) > 0:
+            runTests(options, browsers)
+        else:
+            # just run the server
+            print "Running HTTP server. Press Ctrl-C to quit."
+            try:
+                while True:
+                    time.sleep(1)
+            except (KeyboardInterrupt):
+                print "\nExiting."
 
 if __name__ == '__main__':
     main()

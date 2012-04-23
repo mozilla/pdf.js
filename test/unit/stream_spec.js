@@ -4,7 +4,21 @@
 'use strict';
 
 describe('stream', function() {
-
+  beforeEach(function() {
+    this.addMatchers({
+      toMatchTypedArray: function(expected) {
+        var actual = this.actual;
+        if (actual.length != expected.length)
+          return false;
+        for (var i = 0, ii = expected.length; i < ii; i++) {
+          var a = actual[i], b = expected[i];
+          if (a !== b)
+            return false;
+        }
+        return true;
+      }
+    });
+  });
   describe('PredictorStream', function() {
     it('should decode simple predictor data', function() {
       var dict = new Dict();
@@ -18,7 +32,9 @@ describe('stream', function() {
       var predictor = new PredictorStream(input, dict);
       var result = predictor.getBytes(6);
 
-      expect(result).toEqual(new Uint8Array([100, 3, 101, 2, 102, 1]));
+      expect(result).toMatchTypedArray(
+        new Uint8Array([100, 3, 101, 2, 102, 1])
+      );
     });
   });
 });
