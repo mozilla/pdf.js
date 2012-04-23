@@ -156,11 +156,6 @@ var Page = (function PageClosure() {
       return pe.getOperatorList(content, resources, dependency);
     },
     extractTextContent: function Page_extractTextContent() {
-      if ('textContent' in this) {
-        // text content was extracted
-        return this.textContent;
-      }
-
       var handler = {
         on: function nullHandlerOn() {},
         send: function nullHandlerSend() {}
@@ -176,13 +171,13 @@ var Page = (function PageClosure() {
         for (i = 0; i < n; ++i)
           streams.push(xref.fetchIfRef(content[i]));
         content = new StreamsSequenceStream(streams);
-      } else if (isStream(content))
+      } else if (isStream(content)) {
         content.reset();
+      }
 
       var pe = new PartialEvaluator(
                      xref, handler, 'p' + this.pageNumber + '_');
-      var text = pe.getTextContent(content, resources);
-      return (this.textContent = text);
+      return pe.getTextContent(content, resources);
     },
 
     ensureFonts: function Page_ensureFonts(fonts, callback) {
