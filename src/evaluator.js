@@ -114,36 +114,31 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
   function splitCombinedOperations(operations) {
     // Two or more operations can be combined together, trying to find which
     // operations were concatenated.
-
     if (operations == null) {
       return null;
     }
 
-    if (operations.length >= 128) {
-      assertWellFormed(fn, 'Unknown command "' + cmd + '"');
-    }
+    var opIndex = 0;
+    var result = [];
 
-    for (var i = operations.length - 1; i > 0; i--) {
-      var op = operations.substring(0, i);
-      if (op in OP_MAP) {
-        var firstOp = [op];
-        var nextOp = operations.substring(i);
-
-        if (nextOp in OP_MAP) {
-          return [op, nextOp];
+    while (opIndex < operations.length) {
+      var currentOp = '';
+      for (var op in OP_MAP) {
+        if (op == operations.substr(opIndex, op.length) &&
+            op.length > currentOp.length) {
+          currentOp = op;
         }
+      }
 
-        var nextOps = splitCombinedOperations(nextOp);
-
-        if (nextOps != null) {
-          return firstOp.concat(nextOps); // operations found
-        } else {
-          return null;
-        }
+      if (currentOp.length > 0) {
+        result = result.concat([operations.substr(opIndex, currentOp.length)]);
+        opIndex += currentOp.length;
+      } else {
+        return null;
       }
     }
 
-    return null;
+    return result.length > 0 ? result : null;
   }
 
   PartialEvaluator.prototype = {
