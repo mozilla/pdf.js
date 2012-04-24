@@ -363,6 +363,13 @@
       "link": true,
       "type": "eq"
     },
+    {  "id": "issue1586",
+      "file": "pdfs/issue1586.pdf",
+      "md5": "80d396cb306014b24ca82ceb68958fb5",
+      "rounds": 1,
+      "link": true,
+      "type": "load"
+    },
     {  "id": "aboutstacks",
       "file": "pdfs/aboutstacks.pdf",
       "md5": "6e7c8416a293ba2d83bc8dd20c6ccf51",
