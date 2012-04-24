@@ -508,6 +508,8 @@ var PDFView = {
     }
 
     var pages = this.pages = [];
+    this.pageText = [];
+    this.startedTextExtraction = false;
     var pagesRefMap = {};
     var thumbnails = this.thumbnails = [];
     var pagePromises = [];
