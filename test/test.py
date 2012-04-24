@@ -292,6 +292,8 @@ class BaseBrowserCommand(object):
         self.browserLog = open(BROWSERLOG_FILE, "w")
 
     def teardown(self):
+        self.process.terminate()
+
         # If the browser is still running, wait up to ten seconds for it to quit
         if self.process and self.process.poll() is None:
             checks = 0
@@ -302,6 +304,7 @@ class BaseBrowserCommand(object):
             if self.process.poll() is None:
                 print "Process %s is still running. Killing." % self.name
                 self.process.kill()
+                self.process.wait()
             
         if self.tempDir is not None and os.path.exists(self.tempDir):
             shutil.rmtree(self.tempDir)
