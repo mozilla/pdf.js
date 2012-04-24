@@ -114,12 +114,12 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
   function splitCombinedOperations(operations) {
     // Two or more operations can be combined together, trying to find which
     // operations were concatenated.
-    if (operations == null) {
-      return null;
-    }
-
-    var opIndex = 0;
     var result = [];
+    var opIndex = 0;
+
+    if (!operations) {
+      return result;
+    }
 
     while (opIndex < operations.length) {
       var currentOp = '';
@@ -131,14 +131,14 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       }
 
       if (currentOp.length > 0) {
-        result = result.concat([operations.substr(opIndex, currentOp.length)]);
+        result.push(operations.substr(opIndex, currentOp.length));
         opIndex += currentOp.length;
       } else {
-        return null;
+        return [];
       }
     }
 
-    return result.length > 0 ? result : null;
+    return result;
   }
 
   PartialEvaluator.prototype = {
@@ -311,7 +311,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
               fn = OP_MAP[cmd];
               // feeding other command on the next iteration
               hasNextObj = true;
-              nextObjs = new Array();
+              nextObjs = [];
               for (var idx = 1; idx < cmds.length; idx++) {
                  nextObjs.push(Cmd.get(cmds[idx]));
               }
