@@ -504,6 +504,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       var args = [], obj;
 
       var text = '';
+      var chunk = null;
       var font = null;
       while (!isEOF(obj = parser.getObj())) {
         if (isCmd(obj)) {
@@ -516,19 +517,28 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
               var items = args[0];
               for (var j = 0, jj = items.length; j < jj; j++) {
                 if (typeof items[j] === 'string') {
-                  text += fontCharsToUnicode(items[j],
-                    font.translated.properties);
+                  chunk += items[j];
                 } else if (items[j] < 0) {
                   // making all negative offsets a space - better to have
                   // a space in incorrect place than not have them at all
-                  text += ' ';
+                  chunk += ' ';
                 }
               }
               break;
             case 'Tj':
-              text += fontCharsToUnicode(args[0], font.translated.properties);
+              chunk += args[0];
+              break;
+            case "'":
+              text += args[0] + ' ';
+              break;
+            case '"':
+              text += args[2] + ' ';
               break;
           } // switch
+          if (chunk !== null) {
+            text += fontCharsToUnicode(chunk, font.translated.properties);
+            chunk = null;
+          }
 
           args = [];
         } else if (obj != null) {
