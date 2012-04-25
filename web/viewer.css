@@ -35,7 +35,7 @@ body {
   position: absolute;
   top: 0;
   bottom: 0;
-  left: 0;
+  left: -200px;
   width: 200px;
   -moz-transition-property: left;
   -moz-transition-duration: 200ms;
@@ -44,8 +44,8 @@ body {
   -webkit-transition-duration: 200ms;
   -webkit-transition-timing-function: ease;
 }
-#sidebarContainer.hidden {
-  left: -200px;
+#outerContainer.sideBarOpen > #sidebarContainer {
+  left: 0px;
 }
 
 #mainContainer {
@@ -61,7 +61,7 @@ body {
   -webkit-transition-duration: 200ms;
   -webkit-transition-timing-function: ease;
 }
-#mainContainer.sideBarOpen {
+#outerContainer.sideBarOpen > #mainContainer {
   left: 200px;
 }
 

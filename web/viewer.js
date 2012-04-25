@@ -1342,8 +1342,8 @@ window.addEventListener('load', function webViewerLoad(evt) {
   document.getElementById('sidebarToggle').addEventListener('click',
     function() {
       this.classList.toggle('toggled');
-      document.getElementById('sidebarContainer').classList.toggle('hidden');
-      mainContainer.classList.toggle('sideBarOpen');
+      console.log('toggling');
+      document.getElementById('outerContainer').classList.toggle('sidebarOpen');
       updateThumbViewArea();
     });
 
