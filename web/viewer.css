@@ -14,51 +14,95 @@ body {
   font-family: Segoe UI, Verdana, sans-serif;
 }
 
+/* outer/inner center provides horizontal center */
+.outerCenter {
+  float: right;
+  position: relative;
+  right: 50%;
+}
+.innerCenter {
+  float: right;
+  position: relative;
+  right: -50%;
+}
+
 #outerContainer {
-  display: -moz-box;
-  -moz-box-orient: horizontal;
-  display: -webkit-box;
-  -webkit-box-orient: horizontal;
   width: 100%;
   height: 100%;
 }
 
 #sidebarContainer {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
   width: 200px;
-  height: 100%;
-  background-color: hsla(0,0%,0%,.1);
-  box-shadow: inset -1px 0 0 hsla(0,0%,0%,.25);
-  overflow: auto;
+  -moz-transition-property: left;
+  -moz-transition-duration: 200ms;
+  -moz-transition-timing-function: ease;
+  -webkit-transition-property: left;
+  -webkit-transition-duration: 200ms;
+  -webkit-transition-timing-function: ease;
 }
 #sidebarContainer.hidden {
-  display:none;
+  left: -200px;
+}
+
+#mainContainer {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  -moz-transition-property: left;
+  -moz-transition-duration: 200ms;
+  -moz-transition-timing-function: ease;
+  -webkit-transition-property: left;
+  -webkit-transition-duration: 200ms;
+  -webkit-transition-timing-function: ease;
+}
+#mainContainer.sideBarOpen {
+  left: 200px;
+}
+
+#sidebarContent {
+  top: 0;
+  left: 0;
+  bottom: 0;
+  height: 100%;
+  overflow: auto;
+  position: absolute;
+  width: 200px;
+
+  background-color: hsla(0,0%,0%,.1);
+  box-shadow: inset -1px 0 0 hsla(0,0%,0%,.25);
 }
 
 #viewerContainer {
-  -moz-box-flex: 1;
-  -webkit-box-flex: 1;
-  height: 100%;
+  overflow: auto;
   box-shadow: inset 1px 0 0 hsla(0,0%,100%,.05);
   padding-top: 30px;
+  position: absolute;
+  top: 32px;
+  right: 0;
+  bottom: 0;
+  left: 0;
 }
 
 .toolbar {
-  position: fixed;
-  width: 100%;
+  position: absolute;
+  left: 0;
+  right: 0;
   height: 32px;
   z-index: 9999;
   cursor: default;
 }
 
 #toolbarContainer {
-  display: -moz-box;
-  display: -webkit-box;
   width: 100%;
 }
 
 #toolbarSidebar {
-  display: -moz-box;
-  display: -webkit-box;
   width: 200px;
   height: 32px;
   background-image: url(images/texture.png),
@@ -71,15 +115,9 @@ body {
               0 1px 0 hsla(0,0%,0%,.15),
               0 1px 1px hsla(0,0%,0%,.1);
 }
-#toolbarSidebar.hidden {
-  display:none;
-}
 
 #toolbarViewer {
-  display: -moz-box;
-  -moz-box-flex: 1;
-  display: -webkit-box;
-  -webkit-box-flex: 1;
+  position: relative;
   margin-left: -1px;
   height: 32px;
   background-image: url(images/texture.png),
@@ -94,22 +132,34 @@ body {
               0 1px 1px hsla(0,0%,0%,.1);
 }
 
+#toolbarViewerLeft {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+#toolbarViewerRight {
+  position: absolute;
+  top: 0;
+  right: 0;
+}
+#toolbarViewerLeft > *,
+#toolbarViewerMiddle > *,
+#toolbarViewerRight > * {
+  float: left;
+}
+
 .splitToolbarButton {
-  margin: 4px 2px 4px 0;
-  display: -moz-box;
-  display: -webkit-box;
+  margin: 3px 2px 4px 0;
+  display: inline-block;
 }
 .splitToolbarButton > .toolbarButton {
-  position: relative;
-  margin: 0 -1px;
-  padding: 3px 6px;
   border-radius: 0;
+  float: left;
 }
 
 .toolbarButton {
-  margin: 4px 2px 4px 0;
-  display: -moz-box;
-  display: -webkit-box;
+  border: 0 none;
+  background-color: rgba(0, 0, 0, 0);
 }
 
 .splitToolbarButton:hover > .toolbarButton,
@@ -155,31 +205,33 @@ body {
   border-left-color: transparent;
 }
 .splitToolbarButtonSeparator {
-  margin: 4px 0;
+  padding: 8px 0;
   width: 1px;
   background-color: hsla(0,0%,00%,.5);
   z-index: 99;
   box-shadow: 0 0 0 1px hsla(0,0%,100%,.08);
+  display: inline-block;
+  margin: 5px 0;
+  float:left;
 }
 .splitToolbarButton:hover > .splitToolbarButtonSeparator,
 .splitToolbarButton.toggled > .splitToolbarButtonSeparator {
-  margin: 1px 0;
+  padding: 13px 0;
+  margin: 0;
   box-shadow: 0 0 0 1px hsla(0,0%,100%,.03);
-  -moz-transition-property: margin;
+  -moz-transition-property: padding;
   -moz-transition-duration: 10ms;
   -moz-transition-timing-function: ease;
-  -webkit-transition-property: margin;
+  -webkit-transition-property: padding;
   -webkit-transition-duration: 10ms;
   -webkit-transition-timing-function: ease;
 }
 
 .toolbarButton,
 .dropdownToolbarButton {
-  -moz-box-flex: 0;
-  -webkit-box-flex: 1;
   min-width: 16px;
-  padding: 3px 7px;
-  margin: 4px 2px 4px 0;
+  padding: 3px;
+  margin: 3px 2px 4px 0;
   border: 1px solid transparent;
   border-radius: 2px;
   color: hsl(0,0%,95%);
@@ -282,6 +334,8 @@ body {
 
 .toolbarButtonSpacer {
   width: 30px;
+  display: inline-block;
+  height: 1px;
 }
 
 .toolbarButtonFlexibleSpacer {
@@ -326,11 +380,9 @@ body {
 }
 
 .toolbarButton.bookmark {
-  display: block;
 }
 
 .toolbarButton.bookmark::before {
-  display: inline-block;
   content: url(images/toolbarButton-bookmark.png);
 }
     
@@ -410,6 +462,10 @@ body {
   float: left;
   width: 114px;
   height: 142px;
+}
+
+.thumbnail:not([data-loaded]) {
+  border: 1px dashed rgba(255, 255, 255, 0.5);
 }
 
 .thumbnailImage {
