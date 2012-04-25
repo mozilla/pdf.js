@@ -188,6 +188,7 @@ var Page = (function PageClosure() {
           case 'http':
           case 'https':
           case 'ftp':
+          case 'mailto':
             return true;
           default:
             return false;
