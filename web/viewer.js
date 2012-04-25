@@ -217,6 +217,11 @@ var PDFView = {
   currentScale: kUnknownScale,
   currentScaleValue: null,
   initialBookmark: document.location.hash.substring(1),
+  container: null,
+  // called once when the document is loaded
+  init: function pdfViewInit() {
+    this.container = document.getElementById('viewerContainer');
+  },
 
   setScale: function pdfViewSetScale(val, resetAutoSettings) {
     if (val == this.currentScale)
@@ -248,10 +253,11 @@ var PDFView = {
       return;
     }
 
+    var container = this.container;
     var currentPage = this.pages[this.page - 1];
-    var pageWidthScale = (window.innerWidth - kScrollbarPadding) /
+    var pageWidthScale = (container.clientWidth - kScrollbarPadding) /
                           currentPage.width * currentPage.scale / kCssUnits;
-    var pageHeightScale = (window.innerHeight - kScrollbarPadding) /
+    var pageHeightScale = (container.clientHeight - kScrollbarPadding) /
                            currentPage.height * currentPage.scale / kCssUnits;
     if ('page-width' == value)
       this.setScale(pageWidthScale, resetAutoSettings);
@@ -663,18 +669,19 @@ var PDFView = {
     var visiblePages = [];
 
     var currentHeight = kBottomMargin;
-    var windowTop = window.pageYOffset;
+    var container = this.container;
+    var containerTop = container.scrollTop;
     for (var i = 1; i <= pages.length; ++i) {
       var page = pages[i - 1];
       var pageHeight = page.height + kBottomMargin;
-      if (currentHeight + pageHeight > windowTop)
+      if (currentHeight + pageHeight > containerTop)
         break;
 
       currentHeight += pageHeight;
     }
 
-    var windowBottom = window.pageYOffset + window.innerHeight;
-    for (; i <= pages.length && currentHeight < windowBottom; ++i) {
+    var containerBottom = containerTop + container.clientHeight;
+    for (; i <= pages.length && currentHeight < containerBottom; ++i) {
       var singlePage = pages[i - 1];
       visiblePages.push({ id: singlePage.id, y: currentHeight,
                           view: singlePage });
@@ -690,8 +697,8 @@ var PDFView = {
 
     var view = document.getElementById('thumbnailView');
     var currentHeight = kBottomMargin;
-    
-    var top = view.scrollTop;    
+
+    var top = view.scrollTop;
     for (var i = 1; i <= thumbs.length; ++i) {
       var thumb = thumbs[i - 1];
       var thumbHeight = thumb.height * thumb.scaleY + kBottomMargin;
@@ -1068,7 +1075,7 @@ var ThumbnailView = function thumbnailView(container, pdfPage, id) {
     canvas.className = 'thumbnailImage';
 
     div.setAttribute('data-loaded', true);
-    
+
     var ring = document.createElement('div');
     ring.className = 'thumbnailSelectionRing';
     ring.appendChild(canvas);
@@ -1291,6 +1298,7 @@ var TextLayerBuilder = function textLayerBuilder(textLayerDiv) {
 };
 
 window.addEventListener('load', function webViewerLoad(evt) {
+  PDFView.init();
   var params = PDFView.parseQueryString(document.location.search.substring(1));
 
   var file = PDFJS.isFirefoxExtension ?
@@ -1325,11 +1333,20 @@ window.addEventListener('load', function webViewerLoad(evt) {
   var thumbsView = document.getElementById('thumbnailView');
   thumbsView.addEventListener('scroll', updateThumbViewArea, true);
 
+  var mainContainer = document.getElementById('mainContainer');
+  mainContainer.addEventListener('transitionend', function(e) {
+    if (e.target == mainContainer) {
+        var event = document.createEvent('UIEvents');
+        event.initUIEvent('resize', false, false, window, 0);
+        window.dispatchEvent(event);
+    }
+  }, true);
+
   document.getElementById('sidebarToggle').addEventListener('click',
     function() {
       this.classList.toggle('toggled');
-      document.getElementById('toolbarSidebar').classList.toggle('hidden');
-      document.getElementById('sidebarContainer').classList.toggle('hidden');
+      console.log('toggling');
+      document.getElementById('outerContainer').classList.toggle('sidebarOpen');
       updateThumbViewArea();
     });
 

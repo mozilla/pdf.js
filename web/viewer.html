@@ -39,78 +39,84 @@
   <body>
     <div id="outerContainer">
 
-      <div class="toolbar">
-        <div id="toolbarContainer">
-          <div id="toolbarSidebar" class="hidden">
-            <div class="splitToolbarButton toggled">
-              <div id="viewThumbnail" class="toolbarButton toggled" title="Show Thumbnails" onclick="PDFView.switchSidebarView('thumbs')"></div>
-              <div class="splitToolbarButtonSeparator"></div>
-              <div id="viewOutline" class="toolbarButton" title="Show Document Outline" onclick="PDFView.switchSidebarView('outline')" disabled></div>
-            </div>
-          </div>
-          <div id="toolbarViewer">
-            <div id="sidebarToggle" class="toolbarButton" title="Toggle Sidebar"></div>
-            <div class="toolbarButtonSpacer"></div>
-            <div class="splitToolbarButton">
-              <div class="toolbarButton pageUp" title="Previous Page" onclick="PDFView.page--"></div>
-              <div class="splitToolbarButtonSeparator"></div>
-              <div class="toolbarButton pageDown" title="Next Page" onclick="PDFView.page++"></div>
-            </div>
-            <div class="toolbarLabel">Page: </div>
-            <input type="number" id="pageNumber" class="toolbarField pageNumber" onchange="PDFView.page = this.value;" value="1" size="4" min="1">
-            </input> 
-            <div id="numPages" class="toolbarLabel" style="margin-left:5px;"></div>
-            <div class="toolbarButtonFlexibleSpacer"></div>
-            <div class="splitToolbarButton">
-              <div class="toolbarButton zoomOut" title="Zoom Out" onclick="PDFView.zoomOut();"></div>
-              <div class="splitToolbarButtonSeparator"></div>
-              <div class="toolbarButton zoomIn" title="Zoom In" onclick="PDFView.zoomIn();"></div>
-            </div>
-            <div class="dropdownToolbarButton">
-               <select id="scaleSelect" onchange="PDFView.parseScale(this.value);" oncontextmenu="return false;">
-                <option id="customScaleOption" value="custom"></option>
-                <option value="0.5">50%</option>
-                <option value="0.75">75%</option>
-                <option value="1">100%</option>
-                <option value="1.25">125%</option>
-                <option value="1.5">150%</option>
-                <option value="2">200%</option>
-                <option id="pageWidthOption" value="page-width">Page Width</option>
-                <option id="pageFitOption" value="page-fit">Page Fit</option>
-                <option id="pageAutoOption" value="auto" selected="selected">Auto</option>
-              </select>
-            </div>
-
-            <div class="toolbarButtonFlexibleSpacer"></div>
-
-            <input id="fileInput" class="toolbarButton fileInput" type="file" oncontextmenu="return false;"/>
-
-            <div class="toolbarButtonSpacer"></div>
-
-            <!-- <div class="toolbarButton print" title="Print"></div> -->
-            <div id="download" class="toolbarButton download" title="Download" onclick="PDFView.download();"></div>
-            <a href="#" id="viewBookmark" class="toolbarButton bookmark" title="Bookmark (or copy) current location">
-            </a>
+      <div id="sidebarContainer">
+        <div id="toolbarSidebar">
+          <div class="splitToolbarButton toggled">
+            <button id="viewThumbnail" class="toolbarButton toggled" title="Show Thumbnails" onclick="PDFView.switchSidebarView('thumbs')"></button>
+            <button id="viewOutline" class="toolbarButton" title="Show Document Outline" onclick="PDFView.switchSidebarView('outline')" disabled></button>
           </div>
         </div>
-      </div>
+        <div id="sidebarContent">
+          <div id="thumbnailView">
+          </div>
+          <div id="outlineView" class="hidden">
+          </div>
+        </div>
+      </div>  <!-- sidebarContainer -->
 
-      <div id="sidebarContainer" class="hidden">
-        <div id="thumbnailView">
+      <div id="mainContainer">
+        <div class="toolbar">
+          <div id="toolbarContainer">
+
+            <div id="toolbarViewer">
+              <div id="toolbarViewerLeft">
+                <button id="sidebarToggle" class="toolbarButton" title="Toggle Sidebar"></button>
+                <div class="toolbarButtonSpacer"></div>
+                <div class="splitToolbarButton">
+                  <button class="toolbarButton pageUp" title="Previous Page" onclick="PDFView.page--" id="previous"></button>
+                  <div class="splitToolbarButtonSeparator"></div>
+                  <button class="toolbarButton pageDown" title="Next Page" onclick="PDFView.page++" id="next"></button>
+                </div>
+                <div class="toolbarLabel">Page: </div>
+                <input type="number" id="pageNumber" class="toolbarField pageNumber" onchange="PDFView.page = this.value;" value="1" size="4" min="1">
+                </input>
+                <span id="numPages" class="toolbarLabel"></span>
+              </div>
+              <div id="toolbarViewerRight">
+                <input id="fileInput" class="toolbarButton fileInput" type="file" oncontextmenu="return false;" style="display: none"/>
+
+                <button id="print" class="toolbarButton print" title="Print" onclick="window.print()"></button>
+                <button id="download" class="toolbarButton download" title="Download" onclick="PDFView.download();"></button>
+                <div class="toolbarButtonSpacer"></div>
+                <a href="#" id="viewBookmark" class="toolbarButton bookmark" title="Bookmark (or copy) current location">
+                </a>
+              </div>
+              <div class="outerCenter">
+                <div class="innerCenter" id="toolbarViewerMiddle">
+                  <div class="splitToolbarButton">
+                    <button class="toolbarButton zoomOut" title="Zoom Out" onclick="PDFView.zoomOut();"></button>
+                    <div class="splitToolbarButtonSeparator"></div>
+                    <button class="toolbarButton zoomIn" title="Zoom In" onclick="PDFView.zoomIn();"></button>
+                  </div>
+                  <span class="dropdownToolbarButton">
+                     <select id="scaleSelect" onchange="PDFView.parseScale(this.value);" oncontextmenu="return false;">
+                      <option id="customScaleOption" value="custom"></option>
+                      <option value="0.5">50%</option>
+                      <option value="0.75">75%</option>
+                      <option value="1">100%</option>
+                      <option value="1.25">125%</option>
+                      <option value="1.5">150%</option>
+                      <option value="2">200%</option>
+                      <option id="pageWidthOption" value="page-width">Page Width</option>
+                      <option id="pageFitOption" value="page-fit">Page Fit</option>
+                      <option id="pageAutoOption" value="auto" selected="selected">Auto</option>
+                    </select>
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
-        <div id="outlineView" class="hidden">
+        <div id="viewerContainer">
+          <div id="viewer" />
         </div>
-      </div>
 
-      <div id="viewerContainer">
-        <div id="viewer" />
-      </div>
-
-      <div id="loadingBox">
-          <div id="loading">Loading... 0%</div>
-          <div id="loadingBar"><div class="progress"></div></div>
-      </div>
+        <div id="loadingBox">
+            <div id="loading">Loading... 0%</div>
+            <div id="loadingBar"><div class="progress"></div></div>
+        </div>
+      </div> <!-- mainContainer -->
 
     </div> <!-- outerContainer -->
 
