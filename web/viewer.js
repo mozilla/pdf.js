@@ -62,6 +62,9 @@ var ProgressBar = (function ProgressBarClosure() {
     updateBar: function ProgressBar_updateBar() {
       var progressSize = this.width * this._percent / 100;
 
+      if (this._percent > 95)
+        this.div.classList.add('full');
+
       this.div.style.width = progressSize + this.units;
     },
 
