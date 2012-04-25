@@ -369,7 +369,7 @@ body {
 }
 
 .toolbarField.pageNumber {
-  width: 50px;
+  width: 40px;
 }
 
 .toolbarField.pageNumber::-webkit-inner-spin-button,
