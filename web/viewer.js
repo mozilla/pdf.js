@@ -492,7 +492,7 @@ var PDFView = {
     var pagesCount = pdfDocument.numPages;
     var id = pdfDocument.fingerprint;
     var storedHash = null;
-    document.getElementById('numPages').textContent = ' of ' + pagesCount;
+    document.getElementById('numPages').textContent = 'of ' + pagesCount;
     document.getElementById('pageNumber').max = pagesCount;
     PDFView.documentFingerprint = id;
     var store = PDFView.store = new Settings(id);
