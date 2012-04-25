@@ -161,6 +161,10 @@ body {
   background-color: rgba(0, 0, 0, 0);
 }
 
+.toolbarButton[disabled] {
+  opacity: .5;
+}
+
 .splitToolbarButton:hover > .toolbarButton,
 .splitToolbarButton.toggled > .toolbarButton {
   background-color: hsla(0,0%,0%,.12);
