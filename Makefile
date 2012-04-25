@@ -75,17 +75,20 @@ bundle: | $(BUILD_DIR)
 	@cd src; \
 	cat $(PDF_JS_FILES) > all_files.tmp; \
 	sed '/PDFJSSCRIPT_INCLUDE_ALL/ r all_files.tmp' pdf.js > ../$(BUILD_TARGET); \
-	sed -i.bak "s/PDFJSSCRIPT_BUNDLE_VER/`git log --format="%h" -n 1`/" ../$(BUILD_TARGET); \
+	cp ../$(BUILD_TARGET) ../$(BUILD_TARGET).bak; \
+	sed "s/PDFJSSCRIPT_BUNDLE_VER/`git log --format="%h" -n 1`/" ../$(BUILD_TARGET).bak > ../$(BUILD_TARGET); \
 	rm -f ../$(BUILD_TARGET).bak; \
 	rm -f *.tmp; \
 	cd ..
 
 # make unit-test
 #
-# This target runs in-browser unit tests with js-test-driver and jasmine unit
-# test framework.
+# This target runs in-browser unit tests with our test framework and the
+# jasmine unit test framework.
 unit-test:
-	@cd test/unit/ ; make ;
+	cd test; \
+	$(DEFAULT_PYTHON) test.py --unitTest \
+	--browserManifestFile=$(PDF_BROWSERS)
 
 # make browser-test
 #
@@ -185,7 +188,7 @@ web: | production extension compiler pages-repo
 # and deletions.
 pages-repo: | $(BUILD_DIR)
 	@if [ ! -d "$(GH_PAGES)" ]; then \
-	git clone -b gh-pages $(REPO) $(GH_PAGES); \
+	git clone --depth 1 -b gh-pages $(REPO) $(GH_PAGES); \
 	rm -rf $(GH_PAGES)/*; \
 	fi;
 	@mkdir -p $(GH_PAGES)/web;
@@ -274,25 +277,34 @@ extension: | production
 	@cp web/viewer-snippet-firefox-extension.html $(FIREFOX_BUILD_CONTENT)/web/
 	# Modify the viewer so it does all the extension only stuff.
 	@cd $(FIREFOX_BUILD_CONTENT)/web; \
-	sed -i.bak '/PDFJSSCRIPT_INCLUDE_BUNDLE/ r ../build/pdf.js' viewer-snippet-firefox-extension.html; \
-	sed -i.bak '/PDFJSSCRIPT_REMOVE_CORE/d' viewer.html; \
-	sed -i.bak '/PDFJSSCRIPT_REMOVE_FIREFOX_EXTENSION/d' viewer.html; \
-	sed -i.bak '/PDFJSSCRIPT_INCLUDE_FIREFOX_EXTENSION/ r viewer-snippet-firefox-extension.html' viewer.html; \
+	cp viewer-snippet-firefox-extension.html viewer-snippet-firefox-extension.html.bak; \
+	sed '/PDFJSSCRIPT_INCLUDE_BUNDLE/ r ../build/pdf.js' viewer-snippet-firefox-extension.html.bak > viewer-snippet-firefox-extension.html; \
+	cp viewer.html viewer.html.bak; \
+	sed '/PDFJSSCRIPT_REMOVE_CORE/d' viewer.html.bak > viewer.html; \
+	cp viewer.html viewer.html.bak; \
+	sed '/PDFJSSCRIPT_REMOVE_FIREFOX_EXTENSION/d' viewer.html.bak > viewer.html; \
+	cp viewer.html viewer.html.bak; \
+	sed '/PDFJSSCRIPT_INCLUDE_FIREFOX_EXTENSION/ r viewer-snippet-firefox-extension.html' viewer.html.bak > viewer.html; \
 	rm -f *.bak;
 	# We don't need pdf.js anymore since its inlined
 	@rm -Rf $(FIREFOX_BUILD_CONTENT)/$(BUILD_DIR)/;
 	# Update the build version number
-	@sed -i.bak "s/PDFJSSCRIPT_VERSION/$(PDFJSSCRIPT_VERSION)/" $(FIREFOX_BUILD_DIR)/install.rdf
-	@sed -i.bak "s/PDFJSSCRIPT_VERSION/$(PDFJSSCRIPT_VERSION)/" $(FIREFOX_BUILD_DIR)/install.rdf.in
-	@sed -i.bak "s/PDFJSSCRIPT_VERSION/$(PDFJSSCRIPT_VERSION)/" $(FIREFOX_BUILD_DIR)/update.rdf
-	@sed -i.bak "s/PDFJSSCRIPT_VERSION/$(PDFJSSCRIPT_VERSION)/" $(FIREFOX_BUILD_DIR)/README.mozilla
+	cp $(FIREFOX_BUILD_DIR)/install.rdf $(FIREFOX_BUILD_DIR)/install.rdf.bak
+	@sed "s/PDFJSSCRIPT_VERSION/$(PDFJSSCRIPT_VERSION)/" $(FIREFOX_BUILD_DIR)/install.rdf.bak > $(FIREFOX_BUILD_DIR)/install.rdf
+	cp $(FIREFOX_BUILD_DIR)/install.rdf.in $(FIREFOX_BUILD_DIR)/install.rdf.in.bak
+	@sed "s/PDFJSSCRIPT_VERSION/$(PDFJSSCRIPT_VERSION)/" $(FIREFOX_BUILD_DIR)/install.rdf.in.bak > $(FIREFOX_BUILD_DIR)/install.rdf.in
+	cp $(FIREFOX_BUILD_DIR)/update.rdf $(FIREFOX_BUILD_DIR)/update.rdf.bak
+	@sed "s/PDFJSSCRIPT_VERSION/$(PDFJSSCRIPT_VERSION)/" $(FIREFOX_BUILD_DIR)/update.rdf.bak > $(FIREFOX_BUILD_DIR)/update.rdf
+	cp $(FIREFOX_BUILD_DIR)/README.mozilla $(FIREFOX_BUILD_DIR)/README.mozilla.bak
+	@sed "s/PDFJSSCRIPT_VERSION/$(PDFJSSCRIPT_VERSION)/" $(FIREFOX_BUILD_DIR)/README.mozilla.bak > $(FIREFOX_BUILD_DIR)/README.mozilla
 	@rm -f $(FIREFOX_BUILD_DIR)/*.bak
 	@find $(FIREFOX_BUILD_DIR) -name ".*" -delete
 	# Create the xpi
 	@cd $(FIREFOX_BUILD_DIR); zip -r $(FIREFOX_EXTENSION_NAME) $(FIREFOX_EXTENSION_FILES)
 	@echo "extension created: " $(FIREFOX_EXTENSION_NAME)
 	# Build the amo extension too (remove the updateUrl)
-	@sed -i.bak "/updateURL/d" $(FIREFOX_BUILD_DIR)/install.rdf
+	cp $(FIREFOX_BUILD_DIR)/install.rdf $(FIREFOX_BUILD_DIR)/install.rdf.bak
+	@sed "/updateURL/d" $(FIREFOX_BUILD_DIR)/install.rdf.bak > $(FIREFOX_BUILD_DIR)/install.rdf
 	@rm -f $(FIREFOX_BUILD_DIR)/*.bak
 	@cd $(FIREFOX_BUILD_DIR); zip -r $(FIREFOX_AMO_EXTENSION_NAME) $(FIREFOX_EXTENSION_FILES)
 	@echo "AMO extension created: " $(FIREFOX_AMO_EXTENSION_NAME)

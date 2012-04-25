@@ -836,7 +836,10 @@ var PostScriptLexer = (function PostScriptLexerClosure() {
       // operator
       var str = ch.toLowerCase();
       while (true) {
-        ch = stream.lookChar().toLowerCase();
+        ch = stream.lookChar();
+        if (ch === null)
+          break;
+        ch = ch.toLowerCase();
         if (ch >= 'a' && ch <= 'z')
           str += ch;
         else

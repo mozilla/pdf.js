@@ -32,7 +32,7 @@ var Cache = function cacheCache(size) {
       data.splice(i);
     data.push(view);
     if (data.length > size)
-      data.shift().update();
+      data.shift().destroy();
   };
 };
 
@@ -247,9 +247,9 @@ var PDFView = {
 
     var currentPage = this.pages[this.page - 1];
     var pageWidthScale = (window.innerWidth - kScrollbarPadding) /
-                          currentPage.width / kCssUnits;
+                          currentPage.width * currentPage.scale / kCssUnits;
     var pageHeightScale = (window.innerHeight - kScrollbarPadding) /
-                           currentPage.height / kCssUnits;
+                           currentPage.height * currentPage.scale / kCssUnits;
     if ('page-width' == value)
       this.setScale(pageWidthScale, resetAutoSettings);
     if ('page-height' == value)
@@ -743,6 +743,11 @@ var PageView = function pageView(container, pdfPage, id, scale,
   container.appendChild(anchor);
   container.appendChild(div);
 
+  this.destroy = function pageViewDestroy() {
+    this.update();
+    this.pdfPage.destroy();
+  };
+
   this.update = function pageViewUpdate(scale) {
     this.scale = scale || this.scale;
     var viewport = this.pdfPage.getViewport(this.scale);
@@ -800,17 +805,20 @@ var PageView = function pageView(container, pdfPage, id, scale,
       container.className = 'annotComment';
 
       var image = createElementWithStyle('img', item);
+      var type = item.type;
+      var rect = viewport.convertToViewportRectangle(item.rect);
+      rect = PDFJS.Util.normalizeRect(rect);
       image.src = kImageDirectory + type.toLowerCase() + '.svg';
+      image.alt = '[' + type + ' Annotation]';
       var content = document.createElement('div');
       content.setAttribute('hidden', true);
       var title = document.createElement('h1');
       var text = document.createElement('p');
-      var offsetPos = Math.floor(item.x - view.x + item.width);
-      content.style.left = (offsetPos * scale) + 'px';
-      content.style.top = (Math.floor(item.y - view.y) * scale) + 'px';
+      content.style.left = Math.floor(rect[2]) + 'px';
+      content.style.top = Math.floor(rect[1]) + 'px';
       title.textContent = item.title;
 
-      if (!item.content) {
+      if (!item.content && !item.title) {
         content.setAttribute('hidden', true);
       } else {
         var e = document.createElement('span');
@@ -823,11 +831,11 @@ var PageView = function pageView(container, pdfPage, id, scale,
         }
         text.appendChild(e);
         image.addEventListener('mouseover', function annotationImageOver() {
-           this.nextSibling.removeAttribute('hidden');
+           content.removeAttribute('hidden');
         }, false);
 
         image.addEventListener('mouseout', function annotationImageOut() {
-           this.nextSibling.setAttribute('hidden', true);
+           content.setAttribute('hidden', true);
         }, false);
       }
 
@@ -1506,8 +1514,41 @@ window.addEventListener('pagechange', function pagechange(evt) {
 }, true);
 
 window.addEventListener('keydown', function keydown(evt) {
-  if (evt.ctrlKey || evt.altKey || evt.shiftKey || evt.metaKey)
+  var handled = false;
+  var cmd = (evt.ctrlKey ? 1 : 0) |
+            (evt.altKey ? 2 : 0) |
+            (evt.shiftKey ? 4 : 0) |
+            (evt.metaKey ? 8 : 0);
+
+  // First, handle the key bindings that are independent whether an input
+  // control is selected or not.
+  if (cmd == 1 || cmd == 8) { // either CTRL or META key.
+    switch (evt.keyCode) {
+      case 61: // FF/Mac '='
+      case 107: // FF '+' and '='
+      case 187: // Chrome '+'
+        PDFView.zoomIn();
+        handled = true;
+        break;
+      case 109: // FF '-'
+      case 189: // Chrome '-'
+        PDFView.zoomOut();
+        handled = true;
+        break;
+      case 48: // '0'
+        PDFView.parseScale(kDefaultScale, true);
+        handled = true;
+        break;
+    }
+  }
+
+  if (handled) {
+    evt.preventDefault();
     return;
+  }
+
+  // Some shortcuts should not get handled if a control/input element
+  // is selected.
   var curElement = document.activeElement;
   if (curElement && curElement.tagName == 'INPUT')
     return;
@@ -1517,35 +1558,22 @@ window.addEventListener('keydown', function keydown(evt) {
       return; // ignoring if the 'controls' element is focused
     curElement = curElement.parentNode;
   }
-  var handled = false;
-  switch (evt.keyCode) {
-    case 61: // FF/Mac '='
-    case 107: // FF '+' and '='
-    case 187: // Chrome '+'
-      PDFView.zoomIn();
-      handled = true;
-      break;
-    case 109: // FF '-'
-    case 189: // Chrome '-'
-      PDFView.zoomOut();
-      handled = true;
-      break;
-    case 48: // '0'
-      PDFView.parseScale(kDefaultScale, true);
-      handled = true;
-      break;
-    case 37: // left arrow
-    case 75: // 'k'
-    case 80: // 'p'
-      PDFView.page--;
-      handled = true;
-      break;
-    case 39: // right arrow
-    case 74: // 'j'
-    case 78: // 'n'
-      PDFView.page++;
-      handled = true;
-      break;
+
+  if (cmd == 0) { // no control key pressed at all.
+    switch (evt.keyCode) {
+      case 37: // left arrow
+      case 75: // 'k'
+      case 80: // 'p'
+        PDFView.page--;
+        handled = true;
+        break;
+      case 39: // right arrow
+      case 74: // 'j'
+      case 78: // 'n'
+        PDFView.page++;
+        handled = true;
+        break;
+    }
   }
 
   if (handled) {

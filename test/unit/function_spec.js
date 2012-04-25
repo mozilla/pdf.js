@@ -77,6 +77,12 @@ describe('function', function() {
       expect(function() { parse('{'); }).toThrow(
                   new Error('Unexpected symbol: found undefined expected 1.'));
     });
+    it('handles junk after the end', function() {
+      var number = 3.3;
+      var program = parse('{ ' + number + ' }#');
+      var expectedProgram = [number];
+      expect(program).toMatchArray(expectedProgram);
+    });
   });
 
   describe('PostScriptEvaluator', function() {

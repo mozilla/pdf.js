@@ -358,8 +358,9 @@ target.chrome = function() {
 // make test
 //
 target.test = function() {
-  target.browsertest();
-  target.unittest();
+  target.unittest({}, function() {
+    target.browsertest();
+  });
 };
 
 //
@@ -367,8 +368,9 @@ target.test = function() {
 // (Special tests for the Github bot)
 //
 target.bottest = function() {
-  target.browsertest({noreftest: true});
-  // target.unittest();
+  target.unittest({}, function() {
+    target.browsertest({noreftest: true});
+  });
 };
 
 //
@@ -398,18 +400,22 @@ target.browsertest = function(options) {
 //
 // make unittest
 //
-target.unittest = function() {
+target.unittest = function(options, callback) {
   cd(ROOT_DIR);
   echo();
   echo('### Running unit tests');
 
-  if (!which('make')) {
-    echo('make not found. Skipping unit tests...');
-    return;
-  }
+  var PDF_BROWSERS = env['PDF_BROWSERS'] || 'resources/browser_manifests/browser_manifest.json';
 
-  cd('test/unit');
-  exec('make', {async: true});
+  if (!test('-f', 'test/' + PDF_BROWSERS)) {
+    echo('Browser manifest file test/' + PDF_BROWSERS + ' does not exist.');
+    echo('Try copying one of the examples in test/resources/browser_manifests/');
+    exit(1);
+  }
+  callback = callback || function() {};
+  cd('test');
+  exec(PYTHON_BIN + ' -u test.py --unitTest --browserManifestFile=' + PDF_BROWSERS,
+    {async: true}, callback);
 };
 
 //

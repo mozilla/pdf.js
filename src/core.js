@@ -132,20 +132,18 @@ var Page = (function PageClosure() {
     },
 
     getOperatorList: function Page_getOperatorList(handler, dependency) {
-      if (this.operatorList) {
-        // content was compiled
-        return this.operatorList;
-      }
-
       var xref = this.xref;
       var content = this.content;
       var resources = this.resources;
       if (isArray(content)) {
         // fetching items
+        var streams = [];
         var i, n = content.length;
         for (i = 0; i < n; ++i)
-          content[i] = xref.fetchIfRef(content[i]);
-        content = new StreamsSequenceStream(content);
+          streams.push(xref.fetchIfRef(content[i]));
+        content = new StreamsSequenceStream(streams);
+      } else if (isStream(content)) {
+        content.reset();
       } else if (!content) {
         // replacing non-existent page content with empty one
         content = new Stream(new Uint8Array(0));
@@ -154,8 +152,7 @@ var Page = (function PageClosure() {
       var pe = this.pe = new PartialEvaluator(
                                 xref, handler, 'p' + this.pageNumber + '_');
 
-      this.operatorList = pe.getOperatorList(content, resources, dependency);
-      return this.operatorList;
+      return pe.getOperatorList(content, resources, dependency);
     },
 
     getLinks: function Page_getLinks() {
@@ -286,7 +283,8 @@ var Page = (function PageClosure() {
             var title = annotation.get('T');
             item.content = stringToPDFString(content || '');
             item.title = stringToPDFString(title || '');
-            item.name = annotation.get('Name').name;
+            item.name = !annotation.has('Name') ? 'Note' :
+              annotation.get('Name').name;
             break;
           default:
             TODO('unimplemented annotation type: ' + subtype.name);
