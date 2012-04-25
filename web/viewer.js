@@ -259,27 +259,37 @@ var PDFView = {
                           currentPage.width * currentPage.scale / kCssUnits;
     var pageHeightScale = (container.clientHeight - kScrollbarPadding) /
                            currentPage.height * currentPage.scale / kCssUnits;
-    if ('page-width' == value)
-      this.setScale(pageWidthScale, resetAutoSettings);
-    if ('page-height' == value)
-      this.setScale(pageHeightScale, resetAutoSettings);
-    if ('page-fit' == value) {
-      this.setScale(
-        Math.min(pageWidthScale, pageHeightScale), resetAutoSettings);
+    switch (value) {
+      case 'page-actual':
+        this.setScale(1, resetAutoSettings);
+        break;
+      case 'page-width':
+        this.setScale(pageWidthScale, resetAutoSettings);
+        break;
+      case 'page-height':
+        this.setScale(pageHeightScale, resetAutoSettings);
+        break;
+      case 'page-fit':
+        this.setScale(
+            Math.min(pageWidthScale, pageHeightScale), resetAutoSettings);
+        break;
+      case 'auto':
+        this.setScale(Math.min(1.0, pageWidthScale), resetAutoSettings);
+        break;
     }
-    if ('auto' == value)
-      this.setScale(Math.min(1.0, pageWidthScale), resetAutoSettings);
 
     selectScaleOption(value);
   },
 
   zoomIn: function pdfViewZoomIn() {
-    var newScale = Math.min(kMaxScale, this.currentScale * kDefaultScaleDelta);
+    var newScale = (this.currentScale * kDefaultScaleDelta).toFixed(2);
+    newScale = Math.min(kMaxScale, newScale);
     this.parseScale(newScale, true);
   },
 
   zoomOut: function pdfViewZoomOut() {
-    var newScale = Math.max(kMinScale, this.currentScale / kDefaultScaleDelta);
+    var newScale = (this.currentScale / kDefaultScaleDelta).toFixed(2);
+    newScale = Math.max(kMinScale, newScale);
     this.parseScale(newScale, true);
   },
 
@@ -1345,7 +1355,6 @@ window.addEventListener('load', function webViewerLoad(evt) {
   document.getElementById('sidebarToggle').addEventListener('click',
     function() {
       this.classList.toggle('toggled');
-      console.log('toggling');
       document.getElementById('outerContainer').classList.toggle('sidebarOpen');
       updateThumbViewArea();
     });

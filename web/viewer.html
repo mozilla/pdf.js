@@ -90,6 +90,10 @@
                   </div>
                   <span class="dropdownToolbarButton">
                      <select id="scaleSelect" onchange="PDFView.parseScale(this.value);" oncontextmenu="return false;">
+                      <option id="pageAutoOption" value="auto" selected="selected">Automatic Zoom</option>
+                      <option value="page-actual">Actual Size</option>
+                      <option id="pageFitOption" value="page-fit">Fit Page</option>
+                      <option id="pageWidthOption" value="page-width">Full Width</option>
                       <option id="customScaleOption" value="custom"></option>
                       <option value="0.5">50%</option>
                       <option value="0.75">75%</option>
@@ -97,9 +101,6 @@
                       <option value="1.25">125%</option>
                       <option value="1.5">150%</option>
                       <option value="2">200%</option>
-                      <option id="pageWidthOption" value="page-width">Page Width</option>
-                      <option id="pageFitOption" value="page-fit">Page Fit</option>
-                      <option id="pageAutoOption" value="auto" selected="selected">Auto</option>
                     </select>
                   </span>
                 </div>
