@@ -420,6 +420,16 @@ body {
   -moz-transition-timing-function: ease;
 }
 
+.toolbarField.pageNumber {
+  width: 40px;
+}
+
+.toolbarField.pageNumber::-webkit-inner-spin-button,
+.toolbarField.pageNumber::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
 .toolbarField:hover {
   background-color: hsla(0,0%,100%,.11);
   border-color: hsla(0,0%,0%,.4) hsla(0,0%,0%,.43) hsla(0,0%,0%,.45);
