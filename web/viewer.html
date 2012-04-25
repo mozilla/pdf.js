@@ -56,7 +56,8 @@
               <div class="splitToolbarButtonSeparator"></div>
               <div class="toolbarButton pageDown" title="Next Page" onclick="PDFView.page++"></div>
             </div>
-            <input type="number" id="pageNumber" class="toolbarField" onchange="PDFView.page = this.value;" value="1" size="4" min="1">
+            <div class="toolbarLabel">Page: </div>
+            <input type="number" id="pageNumber" class="toolbarField pageNumber" onchange="PDFView.page = this.value;" value="1" size="4" min="1">
             </input>
             <div id="numPages" class="toolbarLabel"></div>
             <div class="toolbarButtonFlexibleSpacer"></div>

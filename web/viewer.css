@@ -368,6 +368,10 @@ body {
   -moz-transition-timing-function: ease;
 }
 
+.toolbarField.pageNumber {
+  width: 50px;
+}
+
 .toolbarField:hover {
   background-color: hsla(0,0%,100%,.11);
   border-color: hsla(0,0%,0%,.4) hsla(0,0%,0%,.43) hsla(0,0%,0%,.45);
