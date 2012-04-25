@@ -530,10 +530,10 @@ body {
 
 #outlineView {
   position: fixed;
-  width: 188px;
+  width: 192px;
   top: 33px;
   bottom: 0;
-  padding: 16px 4px 0;
+  padding: 4px 4px 0;
   overflow: auto;
   -moz-user-select:none;
   -webkit-user-select:none;
@@ -542,8 +542,13 @@ body {
   display:none;
 }
 
-/*.outlineItem {
-  width: -moz-calc(100% - 8px);
+.outlineItem > .outlineItems {
+  margin-left: 20px;
+}
+
+.outlineItem > a {
+  text-decoration: none;
+  display: block;
   height: 20px;
   padding: 2px 0 0 10px;
   margin-bottom: 1px;
@@ -553,9 +558,10 @@ body {
   line-height: 15px;
   -moz-user-select:none;
   cursor: default;
+  white-space: nowrap;
 }
 
-.outlineItem:hover {
+.outlineItem > a:hover {
   background-color: hsla(0,0%,100%,.02);
   background-image: -moz-linear-gradient(hsla(0,0%,100%,.05), hsla(0,0%,100%,0));
   background-clip: padding-box;
@@ -574,22 +580,11 @@ body {
               0 0 1px hsla(0,0%,0%,.2);
   color: hsla(0,0%,100%,1);
 }
-*/
 
-
-.outlineItem > .outlineItems {
-  margin-left: 20px;
-}
-
-.outlineItem > a {
-  text-decoration: none;
-  color: hsla(0,0%,100%,.8);
+.noOutline {
   font-size: 12px;
-}
-
-.outlineItem > a:hover {
-  background-color: hsla(0,0%,100%,.1);
-  color: hsla(0,0%,100%,.9);
+  color: hsla(0,0%,100%,.8);
+  font-style: italic;
 }
 
 

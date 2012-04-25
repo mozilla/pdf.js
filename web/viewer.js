@@ -557,13 +557,7 @@ var PDFView = {
     // outline and initial view depends on destinations and pagesRefMap
     PDFJS.Promise.all([pagesPromise, destinationsPromise]).then(function() {
       pdfDocument.getOutline().then(function(outline) {
-        if (!outline)
-          return;
-
         self.outline = new DocumentOutlineView(outline);
-        var outlineSwitchButton = document.getElementById('viewOutline');
-        outlineSwitchButton.removeAttribute('disabled');
-        self.switchSidebarView('outline');
       });
 
       self.setInitialView(storedHash, scale);
@@ -1147,6 +1141,14 @@ var DocumentOutlineView = function documentOutlineView(outline) {
       PDFView.navigateTo(item.dest);
       return false;
     };
+  }
+
+  if (!outline) {
+    var noOutline = document.createElement('div');
+    noOutline.classList.add('noOutline');
+    noOutline.textContent = 'No Outline Available';
+    outlineView.appendChild(noOutline);
+    return;
   }
 
   var queue = [{parent: outlineView, items: outline}];
