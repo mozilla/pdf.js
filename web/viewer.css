@@ -66,10 +66,9 @@ body {
 }
 
 #sidebarContent {
-  top: 0;
+  top: 32px;
   left: 0;
   bottom: 0;
-  height: 100%;
   overflow: auto;
   position: absolute;
   width: 200px;
