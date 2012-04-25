@@ -694,8 +694,8 @@ var PDFView = {
 
     var view = document.getElementById('thumbnailView');
     var currentHeight = kBottomMargin;
-    
-    var top = view.scrollTop;    
+
+    var top = view.scrollTop;
     for (var i = 1; i <= thumbs.length; ++i) {
       var thumb = thumbs[i - 1];
       var thumbHeight = thumb.height * thumb.scaleY + kBottomMargin;
@@ -1072,7 +1072,7 @@ var ThumbnailView = function thumbnailView(container, pdfPage, id) {
     canvas.className = 'thumbnailImage';
 
     div.setAttribute('data-loaded', true);
-    
+
     var ring = document.createElement('div');
     ring.className = 'thumbnailSelectionRing';
     ring.appendChild(canvas);
