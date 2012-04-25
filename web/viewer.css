@@ -44,7 +44,7 @@ body {
   -webkit-transition-duration: 200ms;
   -webkit-transition-timing-function: ease;
 }
-#outerContainer.sideBarOpen > #sidebarContainer {
+#outerContainer.sidebarOpen > #sidebarContainer {
   left: 0px;
 }
 
@@ -61,7 +61,7 @@ body {
   -webkit-transition-duration: 200ms;
   -webkit-transition-timing-function: ease;
 }
-#outerContainer.sideBarOpen > #mainContainer {
+#outerContainer.sidebarOpen > #mainContainer {
   left: 200px;
 }
 
