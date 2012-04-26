@@ -154,8 +154,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         font = xref.fetchIfRef(font) || fontRes.get(fontName);
         assertWellFormed(isDict(font));
 
+        ++self.objIdCounter;
         if (!font.loadedName) {
-          ++self.objIdCounter;
           font.translated = self.translateFont(font, xref, resources,
                                                dependency);
           if (font.translated) {
