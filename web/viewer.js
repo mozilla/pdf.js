@@ -696,7 +696,7 @@ var PDFView = {
 
   getVisibleThumbs: function pdfViewGetVisibleThumbs() {
     var thumbs = this.thumbnails;
-    var kBottomMargin = 5;
+    var kBottomMargin = 15;
     var visibleThumbs = [];
 
     var view = document.getElementById('thumbnailView');
@@ -1547,8 +1547,20 @@ window.addEventListener('pagechange', function pagechange(evt) {
     var selected = document.querySelector('.thumbnail.selected');
     if (selected)
       selected.classList.remove('selected');
-    document.getElementById('thumbnailContainer' + page)
-            .classList.add('selected');
+    var thumbnail = document.getElementById('thumbnailContainer' + page);
+    thumbnail.classList.add('selected');
+    var visibleThumbs = PDFView.getVisibleThumbs();
+    var numVisibleThumbs = visibleThumbs.length;
+    // If the thumbnail isn't currently visible scroll it into view.
+    if (numVisibleThumbs > 0) {
+      var first = visibleThumbs[0].id;
+      // Account for only one thumbnail being visible.
+      var last = numVisibleThumbs > 1 ?
+                  visibleThumbs[numVisibleThumbs - 1].id : first;
+      if (page <= first || page >= last)
+        thumbnail.scrollIntoView();
+    }
+
   }
   document.getElementById('previous').disabled = (page <= 1);
   document.getElementById('next').disabled = (page >= PDFView.pages.length);
