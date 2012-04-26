@@ -423,8 +423,9 @@ var PDFBug = (function PDFBugClosure() {
       panels.setAttribute('class', 'panels');
       ui.appendChild(panels);
 
-      document.body.appendChild(ui);
-      document.body.style.paddingRight = panelWidth + 'px';
+      var container = document.getElementById('viewerContainer');
+      container.appendChild(ui);
+      container.style.right = panelWidth + 'px';
 
       // Initialize all the debugging tools.
       var tools = this.tools;

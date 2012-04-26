@@ -765,3 +765,51 @@ canvas {
   background: white;
   color: black;
 }
+
+#PDFBug {
+  background: none repeat scroll 0 0 white;
+  border: 1px solid #666666;
+  position: fixed;
+  top: 32px;
+  right: 0;
+  bottom: 0;
+  font-size: 10px;
+  padding: 0;
+  width: 300px;
+}
+#PDFBug .controls {
+    background:#EEEEEE;
+    border-bottom: 1px solid #666666;
+    padding: 3px;
+}
+#PDFBug .panels {
+  bottom: 0;
+  left: 0;
+  overflow: auto;
+  position: absolute;
+  right: 0;
+  top: 27px;
+}
+#PDFBug button.active {
+  font-weight: bold;
+}
+.debuggerShowText {
+  background: none repeat scroll 0 0 yellow;
+  color: blue;
+  opacity: 0.3;
+}
+.debuggerHideText:hover {
+  background: none repeat scroll 0 0 yellow;
+  opacity: 0.3;
+}
+#PDFBug .stats {
+  font-family: courier;
+  font-size: 10px;
+  white-space: pre;
+}
+#PDFBug .stats .title {
+    font-weight: bold;
+}
+#PDFBug table {
+  font-size: 10px;
+}
