@@ -504,7 +504,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       var args = [], obj;
 
       var text = '';
-      var chunk = null;
+      var chunk = '';
       var font = null;
       while (!isEOF(obj = parser.getObj())) {
         if (isCmd(obj)) {
@@ -529,15 +529,15 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
               chunk += args[0];
               break;
             case "'":
-              text += args[0] + ' ';
+              chunk += args[0] + ' ';
               break;
             case '"':
-              text += args[2] + ' ';
+              chunk += args[2] + ' ';
               break;
           } // switch
-          if (chunk !== null) {
+          if (chunk !== '') {
             text += fontCharsToUnicode(chunk, font.translated.properties);
-            chunk = null;
+            chunk = '';
           }
 
           args = [];
