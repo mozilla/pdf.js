@@ -166,6 +166,8 @@ body {
 .toolbarButton {
   border: 0 none;
   background-color: rgba(0, 0, 0, 0);
+  width: 32px;
+  height: 25px;
 }
 
 .toolbarButton[disabled] {
@@ -226,7 +228,7 @@ body {
 }
 .splitToolbarButton:hover > .splitToolbarButtonSeparator,
 .splitToolbarButton.toggled > .splitToolbarButtonSeparator {
-  padding: 13px 0;
+  padding: 12px 0;
   margin: 0;
   box-shadow: 0 0 0 1px hsla(0,0%,100%,.03);
   -moz-transition-property: padding;
@@ -240,7 +242,7 @@ body {
 .toolbarButton,
 .dropdownToolbarButton {
   min-width: 16px;
-  padding: 3px;
+  padding: 2px 6px 0;
   margin: 3px 2px 4px 0;
   border: 1px solid transparent;
   border-radius: 2px;
@@ -317,6 +319,7 @@ body {
 .dropdownToolbarButton {
   min-width: 120px;
   max-width: 120px;
+  padding: 3px 2px 2px;
   overflow: hidden;
   background: url(images/toolbarButton-menuArrows.png) no-repeat 95%;
 }
@@ -398,6 +401,9 @@ body {
 }
 
 .toolbarButton.bookmark {
+  -moz-box-sizing: border-box;
+  -webkit-box-sizing: border-box;
+  box-sizing: border-box;
 }
 
 .toolbarButton.bookmark::before {
