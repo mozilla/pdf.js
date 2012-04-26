@@ -110,35 +110,34 @@
         </div>
 
         <div id="viewerContainer">
-          <div id="viewer" />
+          <div id="viewer"></div>
         </div>
 
         <div id="loadingBox">
             <div id="loading">Loading... 0%</div>
             <div id="loadingBar"><div class="progress"></div></div>
         </div>
+
+        <div id="errorWrapper" hidden='true'>
+          <div id="errorMessageLeft">
+            <span id="errorMessage"></span>
+            <button id="errorShowMore" onclick="" oncontextmenu="return false;">
+              More Information
+            </button>
+            <button id="errorShowLess" onclick="" oncontextmenu="return false;" hidden='true'>
+              Less Information
+            </button>
+          </div>
+          <div id="errorMessageRight">
+            <button id="errorClose" oncontextmenu="return false;">
+              Close
+            </button>
+          </div>
+          <div class="clearBoth"></div>
+          <textarea id="errorMoreInfo" hidden='true' readonly="readonly"></textarea>
+        </div>
       </div> <!-- mainContainer -->
 
     </div> <!-- outerContainer -->
-
-    <div id="errorWrapper" hidden='true'>
-      <div id="errorMessageLeft">
-        <span id="errorMessage"></span>
-        <button id="errorShowMore" onclick="" oncontextmenu="return false;">
-          More Information
-        </button>
-        <button id="errorShowLess" onclick="" oncontextmenu="return false;" hidden='true'>
-          Less Information
-        </button>
-      </div>
-      <div id="errorMessageRight">
-        <button id="errorClose" oncontextmenu="return false;">
-          Close
-        </button>
-      </div>
-      <div class="clearBoth"></div>
-      <textarea id="errorMoreInfo" hidden='true' readonly="readonly"></textarea>
-    </div>
-
   </body>
 </html>

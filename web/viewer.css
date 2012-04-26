@@ -14,6 +14,13 @@ body {
   font-family: Segoe UI, Verdana, sans-serif;
 }
 
+.hidden {
+  display: none;
+}
+[hidden] {
+  display: none !important;
+}
+
 /* outer/inner center provides horizontal center */
 .outerCenter {
   float: right;
@@ -474,9 +481,6 @@ body {
   padding: 10px 40px 0;
   overflow: auto;
 }
-#thumbnailView.hidden {
-  display:none;
-}
 
 .thumbnail {
   margin-bottom: 15px;
@@ -541,9 +545,6 @@ body {
   overflow: auto;
   -moz-user-select:none;
   -webkit-user-select:none;
-}
-#outlineView.hidden {
-  display:none;
 }
 
 .outlineItem > .outlineItems {
@@ -732,9 +733,9 @@ canvas {
   background: none repeat scroll 0 0 #FF5555;
   color: white;
   left: 0;
-  position: fixed;
+  position: absolute;
   right: 0;
-  top: 30px;
+  top: 32px;
   z-index: 1000;
   padding: 3px;
   font-size: 0.8em;
