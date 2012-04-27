@@ -670,9 +670,10 @@ var PDFView = {
   getVisiblePages: function pdfViewGetVisiblePages() {
     var pages = this.pages;
     var kBottomMargin = 10;
+    var kTopPadding = 30;
     var visiblePages = [];
 
-    var currentHeight = kBottomMargin;
+    var currentHeight = kTopPadding + kBottomMargin;
     var container = this.container;
     var containerTop = container.scrollTop;
     for (var i = 1; i <= pages.length; ++i) {
@@ -689,7 +690,7 @@ var PDFView = {
       var singlePage = pages[i - 1];
       visiblePages.push({ id: singlePage.id, y: currentHeight,
                           view: singlePage });
-      currentHeight += singlePage.height * singlePage.scale + kBottomMargin;
+      currentHeight += page.height + kBottomMargin;
     }
     return visiblePages;
   },
@@ -918,9 +919,9 @@ var PageView = function pageView(container, pdfPage, id, scale,
           y = dest[3];
           width = dest[4] - x;
           height = dest[5] - y;
-          widthScale = (window.innerWidth - kScrollbarPadding) /
+          widthScale = (this.container.clientWidth - kScrollbarPadding) /
             width / kCssUnits;
-          heightScale = (window.innerHeight - kScrollbarPadding) /
+          heightScale = (this.container.clientHeight - kScrollbarPadding) /
             height / kCssUnits;
           scale = Math.min(widthScale, heightScale);
           break;
@@ -928,16 +929,15 @@ var PageView = function pageView(container, pdfPage, id, scale,
           return;
       }
 
-      var boundingRect = [
-        this.viewport.convertToViewportPoint(x, y),
-        this.viewport.convertToViewportPoint(x + width, y + height)
-      ];
-
       if (scale && scale !== PDFView.currentScale)
         PDFView.parseScale(scale, true);
       else if (PDFView.currentScale === kUnknownScale)
         PDFView.parseScale(kDefaultScale, true);
 
+      var boundingRect = [
+        this.viewport.convertToViewportPoint(x, y),
+        this.viewport.convertToViewportPoint(x + width, y + height)
+      ];
       setTimeout(function pageViewScrollIntoViewRelayout() {
         // letting page to re-layout before scrolling
         var scale = PDFView.currentScale;
@@ -1420,13 +1420,12 @@ function updateViewarea() {
   var normalizedScaleValue = currentScaleValue == currentScale ?
     currentScale * 100 : currentScaleValue;
 
-  var kViewerTopMargin = 52;
   var pageNumber = firstPage.id;
   var pdfOpenParams = '#page=' + pageNumber;
   pdfOpenParams += '&zoom=' + normalizedScaleValue;
   var currentPage = PDFView.pages[pageNumber - 1];
-  var topLeft = currentPage.getPagePoint(window.pageXOffset,
-    window.pageYOffset - firstPage.y - kViewerTopMargin);
+  var topLeft = currentPage.getPagePoint(PDFView.container.scrollLeft,
+    (PDFView.container.scrollTop - firstPage.y));
   pdfOpenParams += ',' + Math.round(topLeft[0]) + ',' + Math.round(topLeft[1]);
 
   var store = PDFView.store;
