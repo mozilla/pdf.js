@@ -118,7 +118,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
     var opIndex = 0;
 
     if (!operations) {
-      return result;
+      return null;
     }
 
     while (opIndex < operations.length) {
@@ -134,7 +134,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         result.push(operations.substr(opIndex, currentOp.length));
         opIndex += currentOp.length;
       } else {
-        return [];
+        return null;
       }
     }
 

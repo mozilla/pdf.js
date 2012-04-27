@@ -181,7 +181,7 @@
     },
     {  "id": "fips197",
        "file": "pdfs/fips197.pdf",
-       "md5": "374800cf78ce4b4abd02cd10a856b57f",
+       "md5": "4742c3f470cd8c4686a0dbb3da808b71",
        "link": true,
        "rounds": 1,
        "type": "eq"
@@ -570,6 +570,12 @@
     {  "id": "gradientfill",
       "file": "pdfs/gradientfill.pdf",
       "md5": "cbc1988e4803f647fa83467a85f0e231",
+      "rounds": 1,
+      "type": "eq"
+    },
+    {  "id": "US W-4",
+      "file": "pdfs/US_W4.pdf",
+      "md5": "537262aff3f0acd00bfe84f74f6c9b93",
       "rounds": 1,
       "type": "eq"
     }
