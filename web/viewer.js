@@ -1134,6 +1134,8 @@ var ThumbnailView = function thumbnailView(container, pdfPage, id) {
 
 var DocumentOutlineView = function documentOutlineView(outline) {
   var outlineView = document.getElementById('outlineView');
+  while (outlineView.firstChild)
+    outlineView.removeChild(outlineView.firstChild);
 
   function bindItemLink(domObj, item) {
     domObj.href = PDFView.getDestinationHash(item.dest);

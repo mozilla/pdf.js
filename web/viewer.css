@@ -166,6 +166,8 @@ body {
 .toolbarButton {
   border: 0 none;
   background-color: rgba(0, 0, 0, 0);
+  width: 32px;
+  height: 25px;
 }
 
 .toolbarButton[disabled] {
@@ -226,7 +228,7 @@ body {
 }
 .splitToolbarButton:hover > .splitToolbarButtonSeparator,
 .splitToolbarButton.toggled > .splitToolbarButtonSeparator {
-  padding: 13px 0;
+  padding: 12px 0;
   margin: 0;
   box-shadow: 0 0 0 1px hsla(0,0%,100%,.03);
   -moz-transition-property: padding;
@@ -240,7 +242,7 @@ body {
 .toolbarButton,
 .dropdownToolbarButton {
   min-width: 16px;
-  padding: 3px;
+  padding: 2px 6px 0;
   margin: 3px 2px 4px 0;
   border: 1px solid transparent;
   border-radius: 2px;
@@ -317,6 +319,7 @@ body {
 .dropdownToolbarButton {
   min-width: 120px;
   max-width: 120px;
+  padding: 3px 2px 2px;
   overflow: hidden;
   background: url(images/toolbarButton-menuArrows.png) no-repeat 95%;
 }
@@ -398,6 +401,9 @@ body {
 }
 
 .toolbarButton.bookmark {
+  -moz-box-sizing: border-box;
+  -webkit-box-sizing: border-box;
+  box-sizing: border-box;
 }
 
 .toolbarButton.bookmark::before {
@@ -764,4 +770,52 @@ canvas {
 .fileInput {
   background: white;
   color: black;
+}
+
+#PDFBug {
+  background: none repeat scroll 0 0 white;
+  border: 1px solid #666666;
+  position: fixed;
+  top: 32px;
+  right: 0;
+  bottom: 0;
+  font-size: 10px;
+  padding: 0;
+  width: 300px;
+}
+#PDFBug .controls {
+    background:#EEEEEE;
+    border-bottom: 1px solid #666666;
+    padding: 3px;
+}
+#PDFBug .panels {
+  bottom: 0;
+  left: 0;
+  overflow: auto;
+  position: absolute;
+  right: 0;
+  top: 27px;
+}
+#PDFBug button.active {
+  font-weight: bold;
+}
+.debuggerShowText {
+  background: none repeat scroll 0 0 yellow;
+  color: blue;
+  opacity: 0.3;
+}
+.debuggerHideText:hover {
+  background: none repeat scroll 0 0 yellow;
+  opacity: 0.3;
+}
+#PDFBug .stats {
+  font-family: courier;
+  font-size: 10px;
+  white-space: pre;
+}
+#PDFBug .stats .title {
+    font-weight: bold;
+}
+#PDFBug table {
+  font-size: 10px;
 }
