@@ -675,7 +675,10 @@ var PDFView = {
 
     var currentHeight = kTopPadding + kBottomMargin;
     var container = this.container;
-    var containerTop = container.scrollTop;
+    // Add 1px to the scrolltop to give a little wiggle room if the math is off,
+    // this won't be needed if we calc current page number based off the middle
+    // of the screen instead of the top.
+    var containerTop = container.scrollTop + 1;
     for (var i = 1; i <= pages.length; ++i) {
       var page = pages[i - 1];
       var pageHeight = page.height + kBottomMargin;
