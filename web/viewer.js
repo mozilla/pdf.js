@@ -1355,9 +1355,9 @@ window.addEventListener('load', function webViewerLoad(evt) {
   var mainContainer = document.getElementById('mainContainer');
   mainContainer.addEventListener('transitionend', function(e) {
     if (e.target == mainContainer) {
-        var event = document.createEvent('UIEvents');
-        event.initUIEvent('resize', false, false, window, 0);
-        window.dispatchEvent(event);
+      var event = document.createEvent('UIEvents');
+      event.initUIEvent('resize', false, false, window, 0);
+      window.dispatchEvent(event);
     }
   }, true);
 
