@@ -1151,6 +1151,34 @@ var AsciiHexStream = (function AsciiHexStreamClosure() {
   return AsciiHexStream;
 })();
 
+var JBig2Stream = (function JBig2StreamClosure() {
+  function JBig2Stream(str) {
+    this.str = str;
+    this.dict = str.dict;
+    DecodeStream.call(this);
+  }
+
+  JBig2Stream.prototype = Object.create(DecodeStream.prototype);
+
+  JBig2Stream.prototype.readBlock = function JBig2Stream_readBlock() {
+    var bytes = this.str.getBytes();
+
+    warn('About to process ' + bytes.length + ' bytes of data...');
+
+    var image = JBig2Decode.process(bytes);
+
+    assert(image, 'JBig2Decode failed to decode the stream.');
+
+    var buffer = this.ensureBuffer(image.pixels.length);
+
+    this.buffer = image.pixels;
+    this.bufferLength = image.pixels.length;
+
+  };
+
+  return JBig2Stream;
+})();
+
 var RunLengthStream = (function RunLengthStreamClosure() {
   function RunLengthStream(str) {
     this.str = str;

@@ -253,7 +253,7 @@ var Parser = (function ParserClosure() {
         return new RunLengthStream(stream);
       }
       if (name == 'JBIG2Decode') {
-        error('JBIG2 image format is not currently supprted.');
+        return new JBig2Stream(stream);
       }
       warn('filter "' + name + '" not supported yet');
       return stream;

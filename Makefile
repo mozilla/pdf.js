@@ -38,6 +38,7 @@ PDF_JS_FILES = \
   stream.js \
   worker.js \
   ../external/jpgjs/jpg.js \
+  ../external/jbig2dec/jbig2dec.js \
   jpx.js \
   bidi.js \
   metadata.js \
