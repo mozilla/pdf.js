@@ -771,6 +771,7 @@ canvas {
 .fileInput {
   background: white;
   color: black;
+  margin-top: 5px;
 }
 
 #PDFBug {
