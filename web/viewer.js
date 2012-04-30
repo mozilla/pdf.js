@@ -1163,7 +1163,7 @@ var DocumentOutlineView = function documentOutlineView(outline) {
   if (!outline) {
     var noOutline = document.createElement('div');
     noOutline.classList.add('noOutline');
-    noOutline.textContent = 'No Outline Available';
+    noOutline.textContent = mozL10n.get('no_outline');
     outlineView.appendChild(noOutline);
     return;
   }
