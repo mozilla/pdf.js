@@ -1580,3 +1580,123 @@ window.addEventListener('keydown', function keydown(evt) {
     evt.preventDefault();
   }
 });
+
+///////////////////////////////////////////////////////// Temp
+// TODO: Refactor into a class
+
+var VanillaRunOnDomReady = function() {
+  function getRect(o) {
+    var br = o.getBoundingClientRect();
+    return {x: br.left, y: br.top, w: br.width, h: br.height};
+  }
+
+  var side = -1;
+  var lastX = 0;
+  var lastY = 0;
+  var offX = 0;
+  var offY = 0;
+  var marginAdd = 8;
+
+  function updatePanel() {
+
+    var inv = document.getElementById('invisible');
+    inv.style.display = 'block';
+    var viewport = getRect(inv);
+    inv.style.display = 'none';
+
+    var viewer = document.getElementById('viewer');
+    var toolbar = document.getElementById('controls');
+
+    var viewerRect = getRect(viewer);
+    var toolbarRect = getRect(toolbar);
+
+    viewport.x = window.pageXOffset;
+    viewport.y = window.pageYOffset;
+
+    offX = viewport.x;
+    offY = viewport.y;
+
+    var x = (lastX - viewerRect.x) * 2 / viewerRect.w - 1;
+    var y = (lastY - viewerRect.y) * 2 / viewerRect.h - 1;
+
+    if (x < -0.5) side = -1;
+    if (x > 0.5) side = 1;
+
+    var xx, yy;
+    if (side < 0) {
+      xx = (viewerRect.x - toolbarRect.w - marginAdd);
+      yy = (lastY - toolbarRect.h / 2);
+    } else {
+      xx = (viewerRect.x + viewerRect.w + marginAdd);
+      yy = (lastY - toolbarRect.h / 2);
+    }
+
+    if (xx < viewport.x) {
+      xx = viewport.x;
+    }
+    if (yy < viewport.y) {
+      yy = viewport.y;
+    }
+
+    if (xx + toolbarRect.w > viewport.w + viewport.x) {
+      xx = viewport.w + viewport.x - toolbarRect.w;
+    }
+    if (yy + toolbarRect.h > viewport.h + viewport.y) {
+      yy = viewport.h + viewport.y - toolbarRect.h;
+    }
+
+    toolbar.style.left = xx + 'px';
+    toolbar.style.top = yy + 'px';
+  }
+
+  document.getElementById('viewer').onmousemove = function(e) {
+
+    if (window.event) {
+      e = window.event;
+    }
+
+    lastX = e.pageX;
+    lastY = e.pageY;
+
+    updatePanel();
+  };
+
+  window.onscroll = function(e) {
+
+    var pg = {
+      x: window.pageXOffset,
+      y: window.pageYOffset
+    };
+
+    lastX = lastX - offX + pg.x;
+    lastY = lastY - offY + pg.y;
+
+    updatePanel();
+  };
+
+  updatePanel();
+};
+
+// onDomReady "hack" from jsfiddle
+var alreadyrunflag = 0;
+
+if (document.addEventListener)
+  document.addEventListener('DOMContentLoaded', function() {
+    alreadyrunflag = 1;
+    VanillaRunOnDomReady();
+  }, false);
+else if (document.all && !window.opera) {
+  document.write('<script type="text/javascript" id="contentloadtag"' +
+      ' defer="defer" src="javascript:void(0)"><\/script>');
+  var contentloadtag = document.getElementById('contentloadtag');
+  contentloadtag.onreadystatechange = function() {
+    if (this.readyState == 'complete') {
+      alreadyrunflag = 1;
+      VanillaRunOnDomReady();
+    }
+  };
+}
+
+window.onload = function() {
+  setTimeout('if (!alreadyrunflag){VanillaRunOnDomReady();}', 0);
+};
