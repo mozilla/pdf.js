@@ -1469,9 +1469,10 @@ function updateThumbViewArea() {
 }
 
 window.addEventListener('resize', function webViewerResize(evt) {
-  if (document.getElementById('pageWidthOption').selected ||
+  if (PDFView.initialized &&
+      (document.getElementById('pageWidthOption').selected ||
       document.getElementById('pageFitOption').selected ||
-      document.getElementById('pageAutoOption').selected)
+      document.getElementById('pageAutoOption').selected))
       PDFView.parseScale(document.getElementById('scaleSelect').value);
   updateViewarea();
 });
