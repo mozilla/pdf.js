@@ -153,8 +153,9 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
 
         font = xref.fetchIfRef(font) || fontRes.get(fontName);
         assertWellFormed(isDict(font));
+
         ++self.objIdCounter;
-        if (!font.translated) {
+        if (!font.loadedName) {
           font.translated = self.translateFont(font, xref, resources,
                                                dependency);
           if (font.translated) {
@@ -472,6 +473,81 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       }
 
       return queue;
+    },
+
+    getTextContent: function partialEvaluatorGetIRQueue(stream, resources) {
+
+      var self = this;
+      var xref = this.xref;
+
+      function handleSetFont(fontName, fontRef) {
+        var fontRes = resources.get('Font');
+
+        // TODO: TOASK: Is it possible to get here? If so, what does
+        // args[0].name should be like???
+        assert(fontRes, 'fontRes not available');
+
+        fontRes = xref.fetchIfRef(fontRes);
+        fontRef = fontRef || fontRes.get(fontName);
+        var font = xref.fetchIfRef(fontRef), tra;
+        assertWellFormed(isDict(font));
+        if (!font.translated) {
+          font.translated = self.translateFont(font, xref, resources);
+        }
+        return font;
+      }
+
+      resources = xref.fetchIfRef(resources) || new Dict();
+
+      var parser = new Parser(new Lexer(stream), false);
+      var res = resources;
+      var args = [], obj;
+
+      var text = '';
+      var chunk = '';
+      var font = null;
+      while (!isEOF(obj = parser.getObj())) {
+        if (isCmd(obj)) {
+          var cmd = obj.cmd;
+          switch (cmd) {
+            case 'Tf':
+              font = handleSetFont(args[0].name);
+              break;
+            case 'TJ':
+              var items = args[0];
+              for (var j = 0, jj = items.length; j < jj; j++) {
+                if (typeof items[j] === 'string') {
+                  chunk += items[j];
+                } else if (items[j] < 0) {
+                  // making all negative offsets a space - better to have
+                  // a space in incorrect place than not have them at all
+                  chunk += ' ';
+                }
+              }
+              break;
+            case 'Tj':
+              chunk += args[0];
+              break;
+            case "'":
+              chunk += args[0] + ' ';
+              break;
+            case '"':
+              chunk += args[2] + ' ';
+              break;
+          } // switch
+          if (chunk !== '') {
+            text += fontCharsToUnicode(chunk, font.translated.properties);
+            chunk = '';
+          }
+
+          args = [];
+        } else if (obj != null) {
+          assertWellFormed(args.length <= 33, 'Too many arguments');
+          args.push(obj);
+        }
+      }
+
+      return text;
     },
 
     extractDataStructures: function

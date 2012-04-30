@@ -214,6 +214,8 @@ var PDFView = {
   currentScale: kUnknownScale,
   currentScaleValue: null,
   initialBookmark: document.location.hash.substring(1),
+  startedTextExtraction: false,
+  pageText: [],
 
   setScale: function pdfViewSetScale(val, resetAutoSettings) {
     if (val == this.currentScale)
@@ -506,6 +508,8 @@ var PDFView = {
     }
 
     var pages = this.pages = [];
+    this.pageText = [];
+    this.startedTextExtraction = false;
     var pagesRefMap = {};
     var thumbnails = this.thumbnails = [];
     var pagePromises = [];
@@ -592,6 +596,67 @@ var PDFView = {
     }
   },
 
+  search: function pdfViewStartSearch() {
+    // Limit this function to run every <SEARCH_TIMEOUT>ms.
+    var SEARCH_TIMEOUT = 250;
+    var lastSeach = this.lastSearch;
+    var now = Date.now();
+    if (lastSeach && (now - lastSeach) < SEARCH_TIMEOUT) {
+      if (!this.searchTimer) {
+        this.searchTimer = setTimeout(function resumeSearch() {
+            PDFView.search();
+          },
+          SEARCH_TIMEOUT - (now - lastSeach)
+        );
+      }
+      return;
+    }
+    this.searchTimer = null;
+    this.lastSearch = now;
+
+    function bindLink(link, pageNumber) {
+      link.href = '#' + pageNumber;
+      link.onclick = function searchBindLink() {
+        PDFView.page = pageNumber;
+        return false;
+      };
+    }
+
+    var searchResults = document.getElementById('searchResults');
+
+    var searchTermsInput = document.getElementById('searchTermsInput');
+    searchResults.removeAttribute('hidden');
+    searchResults.textContent = '';
+
+    var terms = searchTermsInput.value;
+
+    if (!terms)
+      return;
+
+    // simple search: removing spaces and hyphens, then scanning every
+    terms = terms.replace(/\s-/g, '').toLowerCase();
+    var index = PDFView.pageText;
+    var pageFound = false;
+    for (var i = 0, ii = index.length; i < ii; i++) {
+      var pageText = index[i].replace(/\s-/g, '').toLowerCase();
+      var j = pageText.indexOf(terms);
+      if (j < 0)
+        continue;
+
+      var pageNumber = i + 1;
+      var textSample = index[i].substr(j, 50);
+      var link = document.createElement('a');
+      bindLink(link, pageNumber);
+      link.textContent = 'Page ' + pageNumber + ': ' + textSample;
+      searchResults.appendChild(link);
+
+      pageFound = true;
+    }
+    if (!pageFound) {
+      searchResults.textContent = '(Not found)';
+    }
+  },
+
   setHash: function pdfViewSetHash(hash) {
     if (!hash)
       return;
@@ -633,24 +698,58 @@ var PDFView = {
 
   switchSidebarView: function pdfViewSwitchSidebarView(view) {
     var thumbsScrollView = document.getElementById('sidebarScrollView');
-    var outlineScrollView = document.getElementById('outlineScrollView');
     var thumbsSwitchButton = document.getElementById('thumbsSwitch');
-    var outlineSwitchButton = document.getElementById('outlineSwitch');
-    switch (view) {
-      case 'thumbs':
-        thumbsScrollView.removeAttribute('hidden');
-        outlineScrollView.setAttribute('hidden', 'true');
-        thumbsSwitchButton.setAttribute('data-selected', true);
-        outlineSwitchButton.removeAttribute('data-selected');
-        updateThumbViewArea();
-        break;
-      case 'outline':
-        thumbsScrollView.setAttribute('hidden', 'true');
-        outlineScrollView.removeAttribute('hidden');
-        thumbsSwitchButton.removeAttribute('data-selected');
-        outlineSwitchButton.setAttribute('data-selected', true);
-        break;
+    if (view == 'thumbs') {
+      thumbsScrollView.removeAttribute('hidden');
+      thumbsSwitchButton.setAttribute('data-selected', true);
+    } else {
+      thumbsScrollView.setAttribute('hidden', 'true');
+      thumbsSwitchButton.removeAttribute('data-selected');
     }
+
+    var outlineScrollView = document.getElementById('outlineScrollView');
+    var outlineSwitchButton = document.getElementById('outlineSwitch');
+    if (view == 'outline') {
+      outlineScrollView.removeAttribute('hidden');
+      outlineSwitchButton.setAttribute('data-selected', true);
+    } else {
+      outlineScrollView.setAttribute('hidden', 'true');
+      outlineSwitchButton.removeAttribute('data-selected');
+    }
+
+    var searchScrollView = document.getElementById('searchScrollView');
+    var searchSwitchButton = document.getElementById('searchSwitch');
+    if (view == 'search') {
+      searchScrollView.removeAttribute('hidden');
+      searchSwitchButton.setAttribute('data-selected', true);
+
+      var searchTermsInput = document.getElementById('searchTermsInput');
+      searchTermsInput.focus();
+
+      // Start text extraction as soon as the search gets displayed.
+      this.extractText();
+    } else {
+      searchScrollView.setAttribute('hidden', 'true');
+      searchSwitchButton.removeAttribute('data-selected');
+    }
+  },
+
+  extractText: function() {
+    if (this.startedTextExtraction)
+      return;
+    this.startedTextExtraction = true;
+    var self = this;
+    function extractPageText(pageIndex) {
+      self.pages[pageIndex].pdfPage.getTextContent().then(
+        function textContentResolved(textContent) {
+          self.pageText[pageIndex] = textContent;
+          self.search();
+          if ((pageIndex + 1) < self.pages.length)
+            extractPageText(pageIndex + 1);
+        }
+      );
+    };
+    extractPageText(0);
   },
 
   pinSidebar: function pdfViewPinSidebar() {
