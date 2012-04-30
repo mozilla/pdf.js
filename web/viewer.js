@@ -218,9 +218,11 @@ var PDFView = {
   currentScaleValue: null,
   initialBookmark: document.location.hash.substring(1),
   container: null,
+  initialized: false,
   // called once when the document is loaded
-  init: function pdfViewInit() {
+  initialize: function pdfViewInitialize() {
     this.container = document.getElementById('viewerContainer');
+    this.initialized = true;
   },
 
   setScale: function pdfViewSetScale(val, resetAutoSettings) {
@@ -1315,7 +1317,7 @@ var TextLayerBuilder = function textLayerBuilder(textLayerDiv) {
 };
 
 window.addEventListener('load', function webViewerLoad(evt) {
-  PDFView.init();
+  PDFView.initialize();
   var params = PDFView.parseQueryString(document.location.search.substring(1));
 
   var file = PDFJS.isFirefoxExtension ?
@@ -1393,6 +1395,8 @@ function preDraw() {
 }
 
 function updateViewarea() {
+  if (!PDFView.initialized)
+    return;
   var visiblePages = PDFView.getVisiblePages();
   var pageToDraw;
   for (var i = 0; i < visiblePages.length; i++) {
