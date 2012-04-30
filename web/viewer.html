@@ -5,6 +5,7 @@
         <!-- PDFJSSCRIPT_INCLUDE_FIREFOX_EXTENSION -->
 
         <link rel="stylesheet" href="viewer.css"/>
+        <link rel="resource" type="application/l10n" href="locale.properties"/>
 
         <script type="text/javascript" src="compatibility.js"></script> <!-- PDFJSSCRIPT_REMOVE_FIREFOX_EXTENSION -->
 
@@ -33,22 +34,21 @@
         <script type="text/javascript" src="../src/jpx.js"></script>  <!-- PDFJSSCRIPT_REMOVE_CORE -->
         <script type="text/javascript" src="../src/bidi.js"></script>  <!-- PDFJSSCRIPT_REMOVE_CORE -->
         <script type="text/javascript">PDFJS.workerSrc = '../src/worker_loader.js';</script> <!-- PDFJSSCRIPT_REMOVE_CORE -->
+        <script type="text/javascript" src="../external/webL10n/l10n.js"></script><!-- PDFJSSCRIPT_REMOVE_CORE -->
         <script type="text/javascript" src="debugger.js"></script>
         <script type="text/javascript" src="viewer.js"></script>
-
-
     </head>
 
   <body>
     <div id="controls">
       <button id="previous" onclick="PDFView.page--;" oncontextmenu="return false;">
         <img src="images/go-up.svg" align="top" height="16"/>
-        Previous
+        <span data-l10n-id="previous_label">Previous</span>
       </button>
 
       <button id="next" onclick="PDFView.page++;" oncontextmenu="return false;">
         <img src="images/go-down.svg" align="top" height="16"/>
-        Next
+        <span data-l10n-id="next_label">Next</span>
       </button>
 
       <div class="separator"></div>
@@ -60,10 +60,10 @@
 
       <div class="separator"></div>
 
-      <button id="zoomOut" title="Zoom Out" onclick="PDFView.zoomOut();" oncontextmenu="return false;">
+      <button id="zoomOut" title="Zoom Out" onclick="PDFView.zoomOut();" oncontextmenu="return false;" data-l10n-id="zoom_out">
         <img src="images/zoom-out.svg" align="top" height="16"/>
       </button>
-      <button id="zoomIn" title="Zoom In" onclick="PDFView.zoomIn();" oncontextmenu="return false;">
+      <button id="zoomIn" title="Zoom In" onclick="PDFView.zoomIn();" oncontextmenu="return false;" data-l10n-id="zoom_in">
         <img src="images/zoom-in.svg" align="top" height="16"/>
       </button>
 
@@ -77,21 +77,21 @@
         <option value="1.25">125%</option>
         <option value="1.5">150%</option>
         <option value="2">200%</option>
-        <option id="pageWidthOption" value="page-width">Page Width</option>
-        <option id="pageFitOption" value="page-fit">Page Fit</option>
-        <option id="pageAutoOption" value="auto" selected="selected">Auto</option>
+        <option id="pageWidthOption" value="page-width" data-l10n-id="page_scale_width">Page Width</option>
+        <option id="pageFitOption" value="page-fit" data-l10n-id="page_scale_fit">Page Fit</option>
+        <option id="pageAutoOption" value="auto" data-l10n-id="page_scale_auto" selected="selected">Auto</option>
       </select>
 
       <div class="separator"></div>
 
       <button id="print" onclick="window.print();" oncontextmenu="return false;">
         <img src="images/document-print.svg" align="top" height="16"/>
-        Print
+        <span data-l10n-id="print_label">Print</span>
       </button>
 
       <button id="download" title="Download" onclick="PDFView.download();" oncontextmenu="return false;">
         <img src="images/download.svg" align="top" height="16"/>
-        Download
+        <span data-l10n-id="download_label">Download</span>
       </button>
 
       <div class="separator"></div>
@@ -100,23 +100,23 @@
 
       <div id="fileInputSeperator" class="separator"></div>
 
-      <a href="#" id="viewBookmark" title="Bookmark (or copy) current location">
-        <img src="images/bookmark.svg" alt="Bookmark" align="top" height="16"/>
+      <a href="#" id="viewBookmark" data-l10n-id="bookmark" title="Bookmark (or copy) current location">
+        <img src="images/bookmark.svg" data-l10n-id="bookmark_icon" alt="Bookmark" align="top" height="16"/>
       </a>
 
     </div>
     <div id="errorWrapper" hidden='true'>
       <div id="errorMessageLeft">
         <span id="errorMessage"></span>
-        <button id="errorShowMore" onclick="" oncontextmenu="return false;">
+        <button id="errorShowMore" onclick="" oncontextmenu="return false;" data-l10n-id="error_more_info">
           More Information
         </button>
-        <button id="errorShowLess" onclick="" oncontextmenu="return false;" hidden='true'>
+        <button id="errorShowLess" onclick="" oncontextmenu="return false;" data-l10n-id="error_less_info" hidden='true'>
           Less Information
         </button>
       </div>
       <div id="errorMessageRight">
-        <button id="errorClose" oncontextmenu="return false;">
+        <button id="errorClose" oncontextmenu="return false;" data-l10n-id="error_close">
           Close
         </button>
       </div>
@@ -134,18 +134,18 @@
           <div id="outlineView"></div>
         </div>
         <div id="sidebarControls">
-          <button id="thumbsSwitch" title="Show Thumbnails" onclick="PDFView.switchSidebarView('thumbs')" data-selected>
-            <img src="images/nav-thumbs.svg" align="top" height="16" alt="Thumbs" />
+          <button id="thumbsSwitch" title="Show Thumbnails" onclick="PDFView.switchSidebarView('thumbs')" data-l10n-id="thumbs" data-selected>
+            <img src="images/nav-thumbs.svg" align="top" height="16" alt="Thumbs" data-l10n-id="thumbs_icon"/>
           </button>
-          <button id="outlineSwitch" title="Show Document Outline" onclick="PDFView.switchSidebarView('outline')" disabled>
-            <img src="images/nav-outline.svg" align="top" height="16" alt="Document Outline" />
+          <button id="outlineSwitch" title="Show Document Outline" onclick="PDFView.switchSidebarView('outline')" data-l10n-id="outline" disabled>
+            <img src="images/nav-outline.svg" align="top" height="16" alt="Document Outline" data-l10n-id="outline_icon"/>
           </button>
         </div>
       </div>
     </div>
 
     <div id="loadingBox">
-        <div id="loading">Loading... 0%</div>
+        <div id="loading" data-l10n-id="loading" data-l10n-args='{"percent": 0}'>Loading... 0%</div>
         <div id="loadingBar"><div class="progress"></div></div>
     </div>
     <div id="viewer"></div>
