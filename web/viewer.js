@@ -1541,6 +1541,10 @@ function selectScaleOption(value) {
   return predefinedValueFound;
 }
 
+window.addEventListener('localized', function localized(evt) {
+  document.getElementsByTagName('html')[0].dir = mozL10n.language.direction;
+}, true);
+
 window.addEventListener('scalechange', function scalechange(evt) {
   var customScaleOption = document.getElementById('customScaleOption');
   customScaleOption.selected = false;
