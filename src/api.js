@@ -45,7 +45,7 @@ PDFJS.getDocument = function getDocument(source) {
  * Proxy to a PDFDocument in the worker thread. Also, contains commonly used
  * properties that can be read synchronously.
  */
-var PDFDocumentProxy = (function() {
+var PDFDocumentProxy = (function PDFDocumentProxyClosure() {
   function PDFDocumentProxy(pdfInfo, transport) {
     this.pdfInfo = pdfInfo;
     this.transport = transport;
