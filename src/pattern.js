@@ -110,7 +110,7 @@ Shadings.RadialAxial = (function RadialAxialClosure() {
     var r1 = raw[6];
     return {
       type: 'Pattern',
-      getPattern: function(ctx) {
+      getPattern: function RadialAxial_getPattern(ctx) {
         var curMatrix = ctx.mozCurrentTransform;
         if (curMatrix) {
           var userMatrix = ctx.mozCurrentTransformInverse;
