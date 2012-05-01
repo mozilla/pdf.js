@@ -52,6 +52,9 @@ body {
   -webkit-transition-duration: 200ms;
   -webkit-transition-timing-function: ease;
 }
+#outerContainer.sidebarMoving > #sidebarContainer {
+  visibility: visible;
+}
 #outerContainer.sidebarOpen > #sidebarContainer {
   visibility: visible;
   left: 0px;

@@ -1353,18 +1353,21 @@ window.addEventListener('load', function webViewerLoad(evt) {
   thumbsView.addEventListener('scroll', updateThumbViewArea, true);
 
   var mainContainer = document.getElementById('mainContainer');
+  var outerContainer = document.getElementById('outerContainer');
   mainContainer.addEventListener('transitionend', function(e) {
     if (e.target == mainContainer) {
       var event = document.createEvent('UIEvents');
       event.initUIEvent('resize', false, false, window, 0);
       window.dispatchEvent(event);
+      outerContainer.classList.remove('sidebarMoving');
     }
   }, true);
 
   document.getElementById('sidebarToggle').addEventListener('click',
     function() {
       this.classList.toggle('toggled');
-      document.getElementById('outerContainer').classList.toggle('sidebarOpen');
+      outerContainer.classList.add('sidebarMoving');
+      outerContainer.classList.toggle('sidebarOpen');
       updateThumbViewArea();
     });
 
