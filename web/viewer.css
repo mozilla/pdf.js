@@ -53,20 +53,27 @@ html[dir='rtl'] .innerCenter {
   top: 0;
   bottom: 0;
   width: 200px;
-  -moz-transition-property: left;
+  visibility: hidden;
   -moz-transition-duration: 200ms;
   -moz-transition-timing-function: ease;
-  -webkit-transition-property: left;
   -webkit-transition-duration: 200ms;
   -webkit-transition-timing-function: ease;
 }
 html[dir='ltr'] #sidebarContainer {
+  -moz-transition-property: left;
+  -webkit-transition-property: left;
   left: -200px;
 }
 html[dir='rtl'] #sidebarContainer {
+  -moz-transition-property: right;
+  -webkit-transition-property: right;
   right: -200px;
 }
 
+#outerContainer.sidebarMoving > #sidebarContainer,
+#outerContainer.sidebarOpen > #sidebarContainer {
+  visibility: visible;
+}
 html[dir='ltr'] #outerContainer.sidebarOpen > #sidebarContainer {
   left: 0px;
 }
@@ -80,17 +87,19 @@ html[dir='rtl'] #outerContainer.sidebarOpen > #sidebarContainer {
   right: 0;
   bottom: 0;
   left: 0;
-  -moz-transition-property: left;
   -moz-transition-duration: 200ms;
   -moz-transition-timing-function: ease;
-  -webkit-transition-property: left;
   -webkit-transition-duration: 200ms;
   -webkit-transition-timing-function: ease;
 }
 html[dir='ltr'] #outerContainer.sidebarOpen > #mainContainer {
+  -moz-transition-property: left;
+  -webkit-transition-property: left;
   left: 200px;
 }
 html[dir='rtl'] #outerContainer.sidebarOpen > #mainContainer {
+  -moz-transition-property: right;
+  -webkit-transition-property: right;
   right: 200px;
 }
 
@@ -218,6 +227,7 @@ html[dir='rtl'] .splitToolbarButton > .toolbarButton {
 }
 
 .splitToolbarButton:hover > .toolbarButton,
+.splitToolbarButton:focus > .toolbarButton,
 .splitToolbarButton.toggled > .toolbarButton {
   background-color: hsla(0,0%,0%,.12);
   background-image: -moz-linear-gradient(hsla(0,0%,100%,.05), hsla(0,0%,100%,0));
@@ -236,6 +246,7 @@ html[dir='rtl'] .splitToolbarButton > .toolbarButton {
   -webkit-transition-timing-function: ease;
 }
 .splitToolbarButton > .toolbarButton:hover,
+.splitToolbarButton > .toolbarButton:focus,
 .dropdownToolbarButton:hover {
   background-color: hsla(0,0%,0%,.2);
   box-shadow: 0 1px 0 hsla(0,0%,100%,.05) inset,
@@ -319,6 +330,7 @@ html[dir='rtl'] .dropdownToolbarButton {
 }
 
 .toolbarButton:hover,
+.toolbarButton:focus,
 .dropdownToolbarButton {
   background-color: hsla(0,0%,0%,.12);
   background-image: -moz-linear-gradient(hsla(0,0%,100%,.05), hsla(0,0%,100%,0));
@@ -583,10 +595,12 @@ html[dir='rtl'] .toolbarButton:first-child {
   -moz-transition-duration: 150ms;
 }
     
+a:focus > .thumbnail > .thumbnailSelectionRing > .thumbnailImage,
 .thumbnail:hover > .thumbnailSelectionRing > .thumbnailImage {
   opacity: .9;
 }
 
+a:focus > .thumbnail > .thumbnailSelectionRing,
 .thumbnail:hover > .thumbnailSelectionRing {
   background-color: hsla(0,0%,100%,.15);
   background-image: -moz-linear-gradient(hsla(0,0%,100%,.05), hsla(0,0%,100%,0));
