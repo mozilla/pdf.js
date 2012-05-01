@@ -43,8 +43,8 @@
       <div id="sidebarContainer">
         <div id="toolbarSidebar">
           <div class="splitToolbarButton toggled">
-            <button id="viewThumbnail" class="toolbarButton toggled" title="Show Thumbnails" onclick="PDFView.switchSidebarView('thumbs')"></button>
-            <button id="viewOutline" class="toolbarButton" title="Show Document Outline" onclick="PDFView.switchSidebarView('outline')"></button>
+            <button id="viewThumbnail" class="toolbarButton toggled" title="Show Thumbnails" onclick="PDFView.switchSidebarView('thumbs')" tabindex="1"></button>
+            <button id="viewOutline" class="toolbarButton" title="Show Document Outline" onclick="PDFView.switchSidebarView('outline')" tabindex="2"></button>
           </div>
         </div>
         <div id="sidebarContent">
@@ -61,36 +61,39 @@
 
             <div id="toolbarViewer">
               <div id="toolbarViewerLeft">
-                <button id="sidebarToggle" class="toolbarButton" title="Toggle Sidebar"></button>
+                <button id="sidebarToggle" class="toolbarButton" title="Toggle Sidebar" tabindex="3"></button>
                 <div class="toolbarButtonSpacer"></div>
                 <div class="splitToolbarButton">
-                  <button class="toolbarButton pageUp" title="Previous Page" onclick="PDFView.page--" id="previous"></button>
+                  <button class="toolbarButton pageUp" title="Previous Page" onclick="PDFView.page--" id="previous" tabindex="4"></button>
                   <div class="splitToolbarButtonSeparator"></div>
-                  <button class="toolbarButton pageDown" title="Next Page" onclick="PDFView.page++" id="next"></button>
+                  <button class="toolbarButton pageDown" title="Next Page" onclick="PDFView.page++" id="next" tabindex="5"></button>
                 </div>
                 <div class="toolbarLabel">Page: </div>
-                <input type="number" id="pageNumber" class="toolbarField pageNumber" onchange="PDFView.page = this.value;" value="1" size="4" min="1">
+                <input type="number" id="pageNumber" class="toolbarField pageNumber" onchange="PDFView.page = this.value;" value="1" size="4" min="1" tabindex="6">
                 </input>
                 <span id="numPages" class="toolbarLabel"></span>
               </div>
               <div id="toolbarViewerRight">
-                <input id="fileInput" class="fileInput" type="file" oncontextmenu="return false;"/>
+                <input id="fileInput" class="fileInput" type="file" oncontextmenu="return false;" tabindex="10" />
 
-                <!-- <button id="print" class="toolbarButton print" title="Print" onclick="window.print()"></button> -->
-                <button id="download" class="toolbarButton download" title="Download" onclick="PDFView.download();"></button>
+                <!-- <input id="fileInput" class="fileInput" type="file" oncontextmenu="return false;" style="visibility: hidden; position: fixed; right: 0; top: 0" /> -->
+                <!-- <button id="openFile" class="toolbarButton print" title="Open" tabindex="10" onclick="document.getElementById('fileInput').click()"></button> -->
+
+                <!-- <button id="print" class="toolbarButton print" title="Print" tabindex="11" onclick="window.print()"></button> -->
+                <button id="download" class="toolbarButton download" title="Download" onclick="PDFView.download();" tabindex="12"></button>
                 <!-- <div class="toolbarButtonSpacer"></div> -->
-                <a href="#" id="viewBookmark" class="toolbarButton bookmark" title="Bookmark (or copy) current location">
+                <a href="#" id="viewBookmark" class="toolbarButton bookmark" title="Bookmark (or copy) current location" tabindex="13">
                 </a>
               </div>
               <div class="outerCenter">
                 <div class="innerCenter" id="toolbarViewerMiddle">
                   <div class="splitToolbarButton">
-                    <button class="toolbarButton zoomOut" title="Zoom Out" onclick="PDFView.zoomOut();"></button>
+                    <button class="toolbarButton zoomOut" title="Zoom Out" onclick="PDFView.zoomOut();" tabindex="7"></button>
                     <div class="splitToolbarButtonSeparator"></div>
-                    <button class="toolbarButton zoomIn" title="Zoom In" onclick="PDFView.zoomIn();"></button>
+                    <button class="toolbarButton zoomIn" title="Zoom In" onclick="PDFView.zoomIn();" tabindex="8"></button>
                   </div>
                   <span class="dropdownToolbarButton">
-                     <select id="scaleSelect" onchange="PDFView.parseScale(this.value);" oncontextmenu="return false;">
+                     <select id="scaleSelect" onchange="PDFView.parseScale(this.value);" oncontextmenu="return false;" tabindex="9">
                       <option id="pageAutoOption" value="auto" selected="selected">Automatic Zoom</option>
                       <option value="page-actual">Actual Size</option>
                       <option id="pageFitOption" value="page-fit">Fit Page</option>
