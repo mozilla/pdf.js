@@ -131,7 +131,10 @@
     // check all <link type="application/l10n" href="..." /> nodes
     // and load the resource files
     var langLinks = document.querySelectorAll('link[type="application/l10n"]');
-    var langCount = langLinks.length;
+    var langLinksCount = langLinks.length;
+    var langScripts = document.querySelectorAll('script[type="application/l10n"]');
+    var langScriptCount = langScripts.length;
+    var langCount = langLinksCount + langScriptCount;
 
     // start the callback when all resources are loaded
     var onResourceLoaded = null;
@@ -165,11 +168,16 @@
     }
 
     gLanguage = lang;
-    for (var i = 0; i < langCount; i++) {
+    for (var i = 0; i < langLinksCount; i++) {
       var resource = new l10nResourceLink(langLinks[i]);
       var rv = resource.load(lang, onResourceLoaded);
       if (rv != lang) // lang not found, used default resource instead
         gLanguage = '';
+    }
+    for (var i = 0; i < langScriptCount; i++) {
+      var scriptText = langScripts[i].text;
+      parse(scriptText, lang);
+      onResourceLoaded();
     }
   }
 

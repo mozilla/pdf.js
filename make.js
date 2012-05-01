@@ -252,6 +252,8 @@ target.firefox = function() {
       FIREFOX_EXTENSION_NAME = 'pdf.js.xpi',
       FIREFOX_AMO_EXTENSION_NAME = 'pdf.js.amo.xpi';
 
+  var LOCALE_CONTENT = cat('web/locale.properties');
+
   target.production();
   target.buildnumber();
   cd(ROOT_DIR);
@@ -278,6 +280,8 @@ target.firefox = function() {
   // Modify the viewer so it does all the extension-only stuff.
   cd(FIREFOX_BUILD_CONTENT_DIR + '/web');
   sed('-i', /.*PDFJSSCRIPT_INCLUDE_BUNDLE.*\n/, cat(ROOT_DIR + BUILD_TARGET), 'viewer-snippet-firefox-extension.html');
+  sed('-i', /.*PDFJSSCRIPT_OTHER_SCRIPTS.*\n/, cat(ROOT_DIR + 'external/webL10n/l10n.js'), 'viewer-snippet-firefox-extension.html');
+  sed('-i', /PDFJSSCRIPT_LOCALE_DATA/, JSON.stringify({text: LOCALE_CONTENT}), 'viewer-snippet-firefox-extension.html');
   sed('-i', /.*PDFJSSCRIPT_REMOVE_CORE.*\n/g, '', 'viewer.html');
   sed('-i', /.*PDFJSSCRIPT_REMOVE_FIREFOX_EXTENSION.*\n/g, '', 'viewer.html');
   sed('-i', /.*PDFJSSCRIPT_INCLUDE_FIREFOX_EXTENSION.*\n/, cat('viewer-snippet-firefox-extension.html'), 'viewer.html');

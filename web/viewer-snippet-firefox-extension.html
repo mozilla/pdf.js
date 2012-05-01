@@ -1,6 +1,18 @@
 <!-- This snippet is used in firefox extension, see Makefile -->
 <base href="resource://pdf.js/web/" />
-<script type="text/javascript" src="l10n.js"></script>
+<script type="text/javascript">
+(function() {
+   // doning script creation here since resource:// urls won't work
+   // for content loading.
+   var localeData = PDFJSSCRIPT_LOCALE_DATA;
+   var script = document.createElement('script');
+   script.type = 'application/l10n';
+   script.text = localeData.text;
+   document.getElementsByTagName('head')[0].appendChild(script);
+})();
+
+/* PDFJSSCRIPT_OTHER_SCRIPTS */
+</script>
 <script type="text/javascript" id="PDFJS_SCRIPT_TAG">
 <!--
 // pdf.js is inlined here because resource:// urls won't work
