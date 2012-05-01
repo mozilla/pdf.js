@@ -44,6 +44,7 @@ body {
   bottom: 0;
   left: -200px;
   width: 200px;
+  visibility: hidden;
   -moz-transition-property: left;
   -moz-transition-duration: 200ms;
   -moz-transition-timing-function: ease;
@@ -51,7 +52,11 @@ body {
   -webkit-transition-duration: 200ms;
   -webkit-transition-timing-function: ease;
 }
+#outerContainer.sidebarMoving > #sidebarContainer {
+  visibility: visible;
+}
 #outerContainer.sidebarOpen > #sidebarContainer {
+  visibility: visible;
   left: 0px;
 }
 
@@ -175,6 +180,7 @@ body {
 }
 
 .splitToolbarButton:hover > .toolbarButton,
+.splitToolbarButton:focus > .toolbarButton,
 .splitToolbarButton.toggled > .toolbarButton {
   background-color: hsla(0,0%,0%,.12);
   background-image: -moz-linear-gradient(hsla(0,0%,100%,.05), hsla(0,0%,100%,0));
@@ -193,6 +199,7 @@ body {
   -webkit-transition-timing-function: ease;
 }
 .splitToolbarButton > .toolbarButton:hover,
+.splitToolbarButton > .toolbarButton:focus,
 .dropdownToolbarButton:hover {
   background-color: hsla(0,0%,0%,.2);
   box-shadow: 0 1px 0 hsla(0,0%,100%,.05) inset,
@@ -261,6 +268,7 @@ body {
 }
 
 .toolbarButton:hover,
+.toolbarButton:focus,
 .dropdownToolbarButton {
   background-color: hsla(0,0%,0%,.12);
   background-image: -moz-linear-gradient(hsla(0,0%,100%,.05), hsla(0,0%,100%,0));
@@ -515,10 +523,12 @@ body {
   -moz-transition-duration: 150ms;
 }
     
+a:focus > .thumbnail > .thumbnailSelectionRing > .thumbnailImage,
 .thumbnail:hover > .thumbnailSelectionRing > .thumbnailImage {
   opacity: .9;
 }
 
+a:focus > .thumbnail > .thumbnailSelectionRing,
 .thumbnail:hover > .thumbnailSelectionRing {
   background-color: hsla(0,0%,100%,.15);
   background-image: -moz-linear-gradient(hsla(0,0%,100%,.05), hsla(0,0%,100%,0));
