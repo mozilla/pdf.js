@@ -40,8 +40,13 @@ target.web = function() {
   echo();
   echo('### Creating web site');
 
+  var GH_PAGES_SRC_FILES = [
+    'web/*',
+    'external/webL10n/l10n.js'
+  ];
+
   cp(BUILD_TARGET, GH_PAGES_DIR + BUILD_TARGET);
-  cp('-R', 'web/*', GH_PAGES_DIR + '/web');
+  cp('-R', GH_PAGES_SRC_FILES, GH_PAGES_DIR + '/web');
   cp(FIREFOX_BUILD_DIR + '/*.xpi', FIREFOX_BUILD_DIR + '/*.rdf',
     GH_PAGES_DIR + EXTENSION_SRC_DIR + 'firefox/');
   cp(GH_PAGES_DIR + '/web/index.html.template', GH_PAGES_DIR + '/index.html');
@@ -175,6 +180,8 @@ var EXTENSION_WEB_FILES =
        'web/viewer.css',
        'web/viewer.js',
        'web/viewer.html',
+       'external/webL10n/l10n.js',
+       'web/locale.properties',
        'web/viewer-production.html'],
     EXTENSION_BASE_VERSION = 'f0f0418a9c6637981fe1182b9212c2d592774c7d',
     EXTENSION_VERSION_PREFIX = '0.3.',

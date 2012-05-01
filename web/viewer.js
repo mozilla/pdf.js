@@ -15,6 +15,8 @@ var kMaxScale = 4.0;
 var kImageDirectory = './images/';
 var kSettingsMemory = 20;
 
+var mozL10n = document.mozL10n || document.webL10n;
+
 function getFileName(url) {
   var anchor = url.indexOf('#');
   var query = url.indexOf('?');
@@ -347,11 +349,11 @@ var PDFView = {
       },
       function getDocumentError(message, exception) {
         var loadingIndicator = document.getElementById('loading');
-        loadingIndicator.textContent = 'Error';
+        loadingIndicator.textContent = mozL10n.get('loading_error_indicator');
         var moreInfo = {
           message: message
         };
-        self.error('An error occurred while loading the PDF.', moreInfo);
+        self.error(mozL10n.get('loading_error'), moreInfo);
         self.loading = false;
       },
       function getDocumentProgress(progressData) {
@@ -458,17 +460,24 @@ var PDFView = {
     };
     moreInfoButton.removeAttribute('hidden');
     lessInfoButton.setAttribute('hidden', 'true');
-    errorMoreInfo.value = 'PDF.JS Build: ' + PDFJS.build + '\n';
+    errorMoreInfo.value =
+      mozL10n.get('error_build', {build: PDFJS.build}) + '\n';
 
     if (moreInfo) {
-      errorMoreInfo.value += 'Message: ' + moreInfo.message;
+      errorMoreInfo.value +=
+        mozL10n.get('error_message', {message: moreInfo.message});
       if (moreInfo.stack) {
-        errorMoreInfo.value += '\n' + 'Stack: ' + moreInfo.stack;
+        errorMoreInfo.value += '\n' +
+          mozL10n.get('error_stack', {stack: moreInfo.stack});
       } else {
-        if (moreInfo.filename)
-          errorMoreInfo.value += '\n' + 'File: ' + moreInfo.filename;
-        if (moreInfo.lineNumber)
-          errorMoreInfo.value += '\n' + 'Line: ' + moreInfo.lineNumber;
+        if (moreInfo.filename) {
+          errorMoreInfo.value += '\n' +
+            mozL10n.get('error_file', {file: moreInfo.filename});
+        }
+        if (moreInfo.lineNumber) {
+          errorMoreInfo.value += '\n' +
+            mozL10n.get('error_line', {line: moreInfo.lineNumber});
+        }
       }
     }
     errorMoreInfo.rows = errorMoreInfo.value.split('\n').length - 1;
@@ -477,7 +486,7 @@ var PDFView = {
   progress: function pdfViewProgress(level) {
     var percent = Math.round(level * 100);
     var loadingIndicator = document.getElementById('loading');
-    loadingIndicator.textContent = 'Loading... ' + percent + '%';
+    loadingIndicator.textContent = mozL10n.get('loading', {percent: percent});
 
     PDFView.loadingBar.percent = percent;
   },
@@ -513,7 +522,8 @@ var PDFView = {
     var pagesCount = pdfDocument.numPages;
     var id = pdfDocument.fingerprint;
     var storedHash = null;
-    document.getElementById('numPages').textContent = 'of ' + pagesCount;
+    document.getElementById('numPages').textContent =
+      mozL10n.get('page_of', {pageCount: pagesCount});
     document.getElementById('pageNumber').max = pagesCount;
     PDFView.documentFingerprint = id;
     var store = PDFView.store = new Settings(id);
@@ -1009,7 +1019,7 @@ var PageView = function pageView(container, pdfPage, id, scale,
       }
 
       if (error)
-        PDFView.error('An error occurred while rendering the page.', error);
+        PDFView.error(mozL10n.get('rendering_error'), error);
 
       self.stats = pdfPage.stats;
       self.updateStats();
@@ -1336,6 +1346,9 @@ window.addEventListener('load', function webViewerLoad(evt) {
 
   if ('disableWorker' in hashParams)
     PDFJS.disableWorker = (hashParams['disableWorker'] === 'true');
+
+  if ('locale' in hashParams)
+    mozL10n.language.code = hashParams['locale'];
 
   if ('disableTextLayer' in hashParams)
     PDFJS.disableTextLayer = (hashParams['disableTextLayer'] === 'true');

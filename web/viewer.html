@@ -5,8 +5,10 @@
     <!-- PDFJSSCRIPT_INCLUDE_FIREFOX_EXTENSION -->
 
     <link rel="stylesheet" href="viewer.css"/>
+    <link rel="resource" type="application/l10n" href="locale.properties"/>
 
     <script type="text/javascript" src="compatibility.js"></script> <!-- PDFJSSCRIPT_REMOVE_FIREFOX_EXTENSION -->
+    <script type="text/javascript" src="../external/webL10n/l10n.js"></script><!-- PDFJSSCRIPT_REMOVE_CORE -->
 
     <!-- PDFJSSCRIPT_INCLUDE_BUILD -->
     <script type="text/javascript" src="../src/core.js"></script> <!-- PDFJSSCRIPT_REMOVE_CORE -->
@@ -43,8 +45,8 @@
       <div id="sidebarContainer">
         <div id="toolbarSidebar">
           <div class="splitToolbarButton toggled">
-            <button id="viewThumbnail" class="toolbarButton toggled" title="Show Thumbnails" onclick="PDFView.switchSidebarView('thumbs')"></button>
-            <button id="viewOutline" class="toolbarButton" title="Show Document Outline" onclick="PDFView.switchSidebarView('outline')"></button>
+            <button id="viewThumbnail" class="toolbarButton toggled" title="Show Thumbnails" onclick="PDFView.switchSidebarView('thumbs')" data-l10n-id="thumbs"></button>
+            <button id="viewOutline" class="toolbarButton" title="Show Document Outline" onclick="PDFView.switchSidebarView('outline')" data-l10n-id="outline"></button>
           </div>
         </div>
         <div id="sidebarContent">
@@ -61,14 +63,14 @@
 
             <div id="toolbarViewer">
               <div id="toolbarViewerLeft">
-                <button id="sidebarToggle" class="toolbarButton" title="Toggle Sidebar"></button>
+                <button id="sidebarToggle" class="toolbarButton" title="Toggle Sidebar" data-l10n-id="toggle_slider"></button>
                 <div class="toolbarButtonSpacer"></div>
                 <div class="splitToolbarButton">
-                  <button class="toolbarButton pageUp" title="Previous Page" onclick="PDFView.page--" id="previous"></button>
+                  <button class="toolbarButton pageUp" title="Previous Page" onclick="PDFView.page--" id="previous" data-l10n-id="previous"></button>
                   <div class="splitToolbarButtonSeparator"></div>
-                  <button class="toolbarButton pageDown" title="Next Page" onclick="PDFView.page++" id="next"></button>
+                  <button class="toolbarButton pageDown" title="Next Page" onclick="PDFView.page++" id="next" data-l10n-id="next"></button>
                 </div>
-                <div class="toolbarLabel">Page: </div>
+                <div class="toolbarLabel" data-l10n-id="page_label">Page: </div>
                 <input type="number" id="pageNumber" class="toolbarField pageNumber" onchange="PDFView.page = this.value;" value="1" size="4" min="1">
                 </input>
                 <span id="numPages" class="toolbarLabel"></span>
@@ -77,24 +79,24 @@
                 <input id="fileInput" class="fileInput" type="file" oncontextmenu="return false;"/>
 
                 <!-- <button id="print" class="toolbarButton print" title="Print" onclick="window.print()"></button> -->
-                <button id="download" class="toolbarButton download" title="Download" onclick="PDFView.download();"></button>
+                <button id="download" class="toolbarButton download" title="Download" onclick="PDFView.download();" data-l10n-id="download"></button>
                 <!-- <div class="toolbarButtonSpacer"></div> -->
-                <a href="#" id="viewBookmark" class="toolbarButton bookmark" title="Bookmark (or copy) current location">
+                <a href="#" id="viewBookmark" class="toolbarButton bookmark" title="Bookmark (or copy) current location" data-l10n-id="bookmark">
                 </a>
               </div>
               <div class="outerCenter">
                 <div class="innerCenter" id="toolbarViewerMiddle">
                   <div class="splitToolbarButton">
-                    <button class="toolbarButton zoomOut" title="Zoom Out" onclick="PDFView.zoomOut();"></button>
+                    <button class="toolbarButton zoomOut" title="Zoom Out" onclick="PDFView.zoomOut();" data-l10n-id="zoom_out"></button>
                     <div class="splitToolbarButtonSeparator"></div>
-                    <button class="toolbarButton zoomIn" title="Zoom In" onclick="PDFView.zoomIn();"></button>
+                    <button class="toolbarButton zoomIn" title="Zoom In" onclick="PDFView.zoomIn();" data-l10n-id="zoom_in"></button>
                   </div>
                   <span class="dropdownToolbarButton">
                      <select id="scaleSelect" onchange="PDFView.parseScale(this.value);" oncontextmenu="return false;">
-                      <option id="pageAutoOption" value="auto" selected="selected">Automatic Zoom</option>
-                      <option value="page-actual">Actual Size</option>
-                      <option id="pageFitOption" value="page-fit">Fit Page</option>
-                      <option id="pageWidthOption" value="page-width">Full Width</option>
+                      <option id="pageAutoOption" value="auto" selected="selected" data-l10n-id="page_scale_auto">Automatic Zoom</option>
+                      <option id="pageActualOption" value="page-actual" data-l10n-id="page_scale_actual">Actual Size</option>
+                      <option id="pageFitOption" value="page-fit" data-l10n-id="page_scale_fit">Fit Page</option>
+                      <option id="pageWidthOption" value="page-width" data-l10n-id="page_scale_width">Full Width</option>
                       <option id="customScaleOption" value="custom"></option>
                       <option value="0.5">50%</option>
                       <option value="0.75">75%</option>
@@ -115,22 +117,22 @@
         </div>
 
         <div id="loadingBox">
-            <div id="loading">Loading... 0%</div>
+            <div id="loading" data-l10n-id="loading" data-l10n-args='{"percent": 0}'>Loading... 0%</div>
             <div id="loadingBar"><div class="progress"></div></div>
         </div>
 
         <div id="errorWrapper" hidden='true'>
           <div id="errorMessageLeft">
             <span id="errorMessage"></span>
-            <button id="errorShowMore" onclick="" oncontextmenu="return false;">
+            <button id="errorShowMore" onclick="" oncontextmenu="return false;" data-l10n-id="error_more_info">
               More Information
             </button>
-            <button id="errorShowLess" onclick="" oncontextmenu="return false;" hidden='true'>
+            <button id="errorShowLess" onclick="" oncontextmenu="return false;" data-l10n-id="error_less_info" hidden='true'>
               Less Information
             </button>
           </div>
           <div id="errorMessageRight">
-            <button id="errorClose" oncontextmenu="return false;">
+            <button id="errorClose" oncontextmenu="return false;" data-l10n-id="error_close">
               Close
             </button>
           </div>
