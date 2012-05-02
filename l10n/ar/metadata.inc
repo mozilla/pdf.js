@@ -1,8 +1,8 @@
     <em:localized>
       <Description>
         <em:locale>ar</em:locale>
-        <em:name>PDF Viewer</em:name>
-        <em:description>Uses HTML5 to display PDF files directly in Firefox.</em:description>
+        <em:name>عارض PDF</em:name>
+        <em:description>يستخدم HTML5 لعرض ملفات PDF مباشره من خلال Firefox.</em:description>
       </Description>
     </em:localized>
 
