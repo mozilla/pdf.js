@@ -836,8 +836,8 @@ var PageView = function pageView(container, pdfPage, id, scale,
       var type = item.type;
       var rect = viewport.convertToViewportRectangle(item.rect);
       rect = PDFJS.Util.normalizeRect(rect);
-      image.src = kImageDirectory + type.toLowerCase() + '.svg';
-      image.alt = '[' + type + ' Annotation]';
+      image.src = kImageDirectory + 'annotation-' + type.toLowerCase() + '.svg';
+      image.alt = mozL10n.get('text_annotation_type', {type: type});
       var content = document.createElement('div');
       content.setAttribute('hidden', true);
       var title = document.createElement('h1');
@@ -1347,8 +1347,11 @@ window.addEventListener('load', function webViewerLoad(evt) {
   if ('disableWorker' in hashParams)
     PDFJS.disableWorker = (hashParams['disableWorker'] === 'true');
 
+  var locale = !PDFJS.isFirefoxExtension ? navigator.language :
+    FirefoxCom.request('getLocale', null);
   if ('locale' in hashParams)
-    mozL10n.language.code = hashParams['locale'];
+    locale = hashParams['locale'];
+  mozL10n.language.code = locale;
 
   if ('disableTextLayer' in hashParams)
     PDFJS.disableTextLayer = (hashParams['disableTextLayer'] === 'true');
@@ -1366,18 +1369,21 @@ window.addEventListener('load', function webViewerLoad(evt) {
   thumbsView.addEventListener('scroll', updateThumbViewArea, true);
 
   var mainContainer = document.getElementById('mainContainer');
+  var outerContainer = document.getElementById('outerContainer');
   mainContainer.addEventListener('transitionend', function(e) {
     if (e.target == mainContainer) {
       var event = document.createEvent('UIEvents');
       event.initUIEvent('resize', false, false, window, 0);
       window.dispatchEvent(event);
+      outerContainer.classList.remove('sidebarMoving');
     }
   }, true);
 
   document.getElementById('sidebarToggle').addEventListener('click',
     function() {
       this.classList.toggle('toggled');
-      document.getElementById('outerContainer').classList.toggle('sidebarOpen');
+      outerContainer.classList.add('sidebarMoving');
+      outerContainer.classList.toggle('sidebarOpen');
       updateThumbViewArea();
     });
 
@@ -1540,6 +1546,10 @@ function selectScaleOption(value) {
   }
   return predefinedValueFound;
 }
+
+window.addEventListener('localized', function localized(evt) {
+  document.getElementsByTagName('html')[0].dir = mozL10n.language.direction;
+}, true);
 
 window.addEventListener('scalechange', function scalechange(evt) {
   var customScaleOption = document.getElementById('customScaleOption');

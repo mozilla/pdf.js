@@ -5,6 +5,7 @@
 
   <Description about="urn:mozilla:install-manifest">
     <em:id>uriloader@pdf.js</em:id>
+    <!-- PDFJS_LOCALIZED_METADATA -->
     <em:name>PDF Viewer</em:name>
     <em:version>PDFJSSCRIPT_VERSION</em:version>
     <em:targetApplication>
