@@ -160,7 +160,6 @@ html[dir='rtl'] #sidebarContent {
 
 #toolbarViewer {
   position: relative;
-  margin-left: -1px;
   height: 32px;
   background-image: url(images/texture.png),
                     -moz-linear-gradient(hsla(0,0%,32%,.99), hsla(0,0%,27%,.95));
@@ -172,6 +171,12 @@ html[dir='rtl'] #sidebarContent {
               inset 0 -1px 0 hsla(0,0%,100%,.05),
               0 1px 0 hsla(0,0%,0%,.15),
               0 1px 1px hsla(0,0%,0%,.1);
+}
+html[dir='ltr'] #toolbarViewerLeft {
+  margin-left: -1px;
+}
+html[dir='rtl'] #toolbarViewerRight {
+  margin-left: -1px;
 }
 
 
@@ -450,14 +455,24 @@ html[dir='rtl'] .toolbarButton:first-child {
   content: url(images/toolbarButton-sidebarToggle.png);
 }
     
-.toolbarButton.pageUp::before {
+html[dir='ltr'] .toolbarButton.pageUp::before {
   display: inline-block;
   content: url(images/toolbarButton-pageUp.png);
 }
+
+html[dir='rtl'] .toolbarButton.pageUp::before {
+  display: inline-block;
+  content: url(images/toolbarButton-pageUp-rtl.png);
+}
     
-.toolbarButton.pageDown::before {
+html[dir='ltr'] .toolbarButton.pageDown::before {
   display: inline-block;
   content: url(images/toolbarButton-pageDown.png);
+}
+
+html[dir='rtl'] .toolbarButton.pageDown::before {
+  display: inline-block;
+  content: url(images/toolbarButton-pageDown-rtl.png);
 }
 
 .toolbarButton.zoomOut::before {
@@ -690,6 +705,7 @@ canvas {
 }
 
 .page {
+  direction: ltr;
   width: 816px;
   height: 1056px;
   margin: 10px auto;
