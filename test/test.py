@@ -73,7 +73,8 @@ MIMEs = {
     '.gif': 'image/gif',
     '.ico': 'image/x-icon',
     '.png': 'image/png',
-    '.log': 'text/plain'
+    '.log': 'text/plain',
+    '.properties': 'text/plain'
 }
 
 class State:
