@@ -39,7 +39,7 @@ var Dict = (function DictClosure() {
     // Map should only be used internally, use functions below to access.
     var map = Object.create(null);
 
-    this.assignXref = function Dict_assingXref(newXref) {
+    this.assignXref = function Dict_assignXref(newXref) {
       xref = newXref;
     };
 

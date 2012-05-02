@@ -97,7 +97,7 @@ var Util = PDFJS.Util = (function UtilClosure() {
     return [xt, yt];
   };
 
-  Util.applyInverseTransform = function Util_applyTransform(p, m) {
+  Util.applyInverseTransform = function Util_applyInverseTransform(p, m) {
     var d = m[0] * m[3] - m[1] * m[2];
     var xt = (p[0] * m[3] - p[1] * m[2] + m[2] * m[5] - m[4] * m[3]) / d;
     var yt = (-p[0] * m[1] + p[1] * m[0] + m[4] * m[1] - m[5] * m[0]) / d;
