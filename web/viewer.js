@@ -826,7 +826,7 @@ var PageView = function pageView(container, pdfPage, id, scale,
       var type = item.type;
       var rect = viewport.convertToViewportRectangle(item.rect);
       rect = PDFJS.Util.normalizeRect(rect);
-      image.src = kImageDirectory + type.toLowerCase() + '.svg';
+      image.src = kImageDirectory + 'annotation-' + type.toLowerCase() + '.svg';
       image.alt = '[' + type + ' Annotation]';
       var content = document.createElement('div');
       content.setAttribute('hidden', true);
