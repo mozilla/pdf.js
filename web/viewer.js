@@ -1347,8 +1347,11 @@ window.addEventListener('load', function webViewerLoad(evt) {
   if ('disableWorker' in hashParams)
     PDFJS.disableWorker = (hashParams['disableWorker'] === 'true');
 
+  var locale = !PDFJS.isFirefoxExtension ? navigator.language :
+    FirefoxCom.request('getLocale', null);
   if ('locale' in hashParams)
-    mozL10n.language.code = hashParams['locale'];
+    locale = hashParams['locale'];
+  mozL10n.language.code = locale;
 
   if ('disableTextLayer' in hashParams)
     PDFJS.disableTextLayer = (hashParams['disableTextLayer'] === 'true');

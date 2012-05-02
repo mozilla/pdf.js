@@ -18,7 +18,11 @@
   * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
   * IN THE SOFTWARE.
   */
-
+/*
+  Additional modifications for PDF.js project:
+    - Loading resources from <script type='application/l10n'>;
+    - Disabling language assignment on page loading.
+*/
 'use strict';
 
 (function(window) {
@@ -271,6 +275,7 @@
     gLanguage = '';
   }
 
+  /*
   // load the default locale on startup
   window.addEventListener('DOMContentLoaded', function() {
     var lang = navigator.language;
@@ -286,6 +291,7 @@
       loadLocale(lang, translateFragment);
     }
   });
+  */
 
   // Public API
   document.mozL10n = {
