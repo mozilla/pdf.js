@@ -837,7 +837,7 @@ var PageView = function pageView(container, pdfPage, id, scale,
       var rect = viewport.convertToViewportRectangle(item.rect);
       rect = PDFJS.Util.normalizeRect(rect);
       image.src = kImageDirectory + type.toLowerCase() + '.svg';
-      image.alt = '[' + type + ' Annotation]';
+      image.alt = mozL10n.get('text_annotation_type', {type: type});
       var content = document.createElement('div');
       content.setAttribute('hidden', true);
       var title = document.createElement('h1');
