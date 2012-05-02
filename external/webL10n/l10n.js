@@ -69,7 +69,8 @@
       if (reSection.test(line)) {
         match = reSection.exec(line);
         currentLang = match[1];
-        skipLang = (currentLang != lang) && (currentLang != '*');
+        skipLang = (currentLang != lang) && (currentLang != '*') &&
+          (currentLang != lang.substring(0, 2));
         continue;
       } else if (skipLang) {
         continue;
