@@ -33,6 +33,7 @@ target.all = function() {
 //
 target.web = function() {
   target.production();
+  target.locale();
   target.extension();
   target.pagesrepo();
 
@@ -59,6 +60,52 @@ target.web = function() {
   echo("Website built in " + GH_PAGES_DIR);
   echo("Don't forget to cd into " + GH_PAGES_DIR +
     " and issue 'git commit' to push changes.");
+};
+
+//
+// make locale
+// Creates localized resources for the viewer and extension.
+//
+target.locale = function() {
+  var L10N_PATH = 'l10n';
+  var METADATA_OUTPUT = 'extensions/firefox/metadata.inc';
+  var VIEWER_OUTPUT = 'web/locale.properties';
+  var DEFAULT_LOCALE = 'en-US';
+
+  cd(ROOT_DIR);
+  echo();
+  echo('### Building localization files');
+
+  var subfolders = ls(L10N_PATH);
+  subfolders.sort();
+  var metadataContent = '';
+  var viewerOutput = '';
+  for (var i = 0; i < subfolders.length; i++) {
+    var locale = subfolders[i];
+    var path = L10N_PATH + '/' + locale;
+    if (!test('-d', path))
+      continue;
+
+    if (!/^[a-z][a-z](-[A-Z][A-Z])?$/.test(locale)) {
+      echo('Skipping invalid locale: ' + locale);
+      continue;
+    }
+
+    if (test('-f', path + '/viewer.properties')) {
+      var properties = cat(path + '/viewer.properties');
+      if (locale == DEFAULT_LOCALE)
+        viewerOutput = '[*]\n' + properties + '\n' + viewerOutput;
+      else
+        viewerOutput = viewerOutput + '[' + locale + ']\n' + properties + '\n';
+    }
+
+    if (test('-f', path + '/metadata.inc')) {
+      var metadata = cat(path + '/metadata.inc');
+      metadataContent += metadata;
+    }
+  }
+  viewerOutput.to(VIEWER_OUTPUT);
+  metadataContent.to(METADATA_OUTPUT);
 };
 
 //
@@ -301,6 +348,11 @@ target.firefox = function() {
   sed('-i', /PDFJSSCRIPT_VERSION/, EXTENSION_VERSION, FIREFOX_BUILD_DIR + '/update.rdf');
   sed('-i', /PDFJSSCRIPT_VERSION/, EXTENSION_VERSION, FIREFOX_BUILD_DIR + '/install.rdf.in');
   sed('-i', /PDFJSSCRIPT_VERSION/, EXTENSION_VERSION, FIREFOX_BUILD_DIR + '/README.mozilla');
+
+  // Update localized metadata
+  var localizedMetadata = cat(EXTENSION_SRC_DIR + '/firefox/metadata.inc');
+  sed('-i', /.*PDFJS_LOCALIZED_METADATA.*\n/, localizedMetadata, FIREFOX_BUILD_DIR + '/install.rdf');
+  sed('-i', /.*PDFJS_LOCALIZED_METADATA.*\n/, localizedMetadata, FIREFOX_BUILD_DIR + '/install.rdf.in');
 
   // Create the xpi
   cd(FIREFOX_BUILD_DIR);
