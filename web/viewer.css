@@ -175,6 +175,13 @@ body {
   height: 25px;
 }
 
+.toolbarButton > span {
+  display: inline-block;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+}
+
 .toolbarButton[disabled] {
   opacity: .5;
 }
