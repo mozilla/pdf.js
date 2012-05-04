@@ -22,15 +22,25 @@ body {
 }
 
 /* outer/inner center provides horizontal center */
-.outerCenter {
+html[dir='ltr'] .outerCenter {
   float: right;
   position: relative;
   right: 50%;
 }
-.innerCenter {
+html[dir='rtl'] .outerCenter {
+  float: left;
+  position: relative;
+  left: 50%;
+}
+html[dir='ltr'] .innerCenter {
   float: right;
   position: relative;
   right: -50%;
+}
+html[dir='rtl'] .innerCenter {
+  float: left;
+  position: relative;
+  left: -50%;
 }
 
 #outerContainer {
@@ -42,22 +52,33 @@ body {
   position: absolute;
   top: 0;
   bottom: 0;
-  left: -200px;
   width: 200px;
   visibility: hidden;
-  -moz-transition-property: left;
   -moz-transition-duration: 200ms;
   -moz-transition-timing-function: ease;
-  -webkit-transition-property: left;
   -webkit-transition-duration: 200ms;
   -webkit-transition-timing-function: ease;
 }
-#outerContainer.sidebarMoving > #sidebarContainer {
-  visibility: visible;
+html[dir='ltr'] #sidebarContainer {
+  -moz-transition-property: left;
+  -webkit-transition-property: left;
+  left: -200px;
 }
+html[dir='rtl'] #sidebarContainer {
+  -moz-transition-property: right;
+  -webkit-transition-property: right;
+  right: -200px;
+}
+
+#outerContainer.sidebarMoving > #sidebarContainer,
 #outerContainer.sidebarOpen > #sidebarContainer {
   visibility: visible;
+}
+html[dir='ltr'] #outerContainer.sidebarOpen > #sidebarContainer {
   left: 0px;
+}
+html[dir='rtl'] #outerContainer.sidebarOpen > #sidebarContainer {
+  right: 0px;
 }
 
 #mainContainer {
@@ -66,20 +87,24 @@ body {
   right: 0;
   bottom: 0;
   left: 0;
-  -moz-transition-property: left;
   -moz-transition-duration: 200ms;
   -moz-transition-timing-function: ease;
-  -webkit-transition-property: left;
   -webkit-transition-duration: 200ms;
   -webkit-transition-timing-function: ease;
 }
-#outerContainer.sidebarOpen > #mainContainer {
+html[dir='ltr'] #outerContainer.sidebarOpen > #mainContainer {
+  -moz-transition-property: left;
+  -webkit-transition-property: left;
   left: 200px;
+}
+html[dir='rtl'] #outerContainer.sidebarOpen > #mainContainer {
+  -moz-transition-property: right;
+  -webkit-transition-property: right;
+  right: 200px;
 }
 
 #sidebarContent {
   top: 32px;
-  left: 0;
   bottom: 0;
   overflow: auto;
   position: absolute;
@@ -87,6 +112,12 @@ body {
 
   background-color: hsla(0,0%,0%,.1);
   box-shadow: inset -1px 0 0 hsla(0,0%,0%,.25);
+}
+html[dir='ltr'] #sidebarContent {
+  left: 0;
+}
+html[dir='rtl'] #sidebarContent {
+  right: 0;
 }
 
 #viewerContainer {
@@ -129,7 +160,6 @@ body {
 
 #toolbarViewer {
   position: relative;
-  margin-left: -1px;
   height: 32px;
   background-image: url(images/texture.png),
                     -moz-linear-gradient(hsla(0,0%,32%,.99), hsla(0,0%,27%,.95));
@@ -142,30 +172,52 @@ body {
               0 1px 0 hsla(0,0%,0%,.15),
               0 1px 1px hsla(0,0%,0%,.1);
 }
+html[dir='ltr'] #toolbarViewerLeft {
+  margin-left: -1px;
+}
+html[dir='rtl'] #toolbarViewerRight {
+  margin-left: -1px;
+}
 
-#toolbarViewerLeft {
+
+html[dir='ltr'] #toolbarViewerLeft,
+html[dir='rtl'] #toolbarViewerRight {
   position: absolute;
   top: 0;
   left: 0;
 }
-#toolbarViewerRight {
+html[dir='ltr'] #toolbarViewerRight,
+html[dir='rtl'] #toolbarViewerLeft {
   position: absolute;
   top: 0;
   right: 0;
 }
-#toolbarViewerLeft > *,
-#toolbarViewerMiddle > *,
-#toolbarViewerRight > * {
+html[dir='ltr'] #toolbarViewerLeft > *,
+html[dir='ltr'] #toolbarViewerMiddle > *,
+html[dir='ltr'] #toolbarViewerRight > * {
   float: left;
 }
+html[dir='rtl'] #toolbarViewerLeft > *,
+html[dir='rtl'] #toolbarViewerMiddle > *,
+html[dir='rtl'] #toolbarViewerRight > * {
+  float: right;
+}
 
-.splitToolbarButton {
+html[dir='ltr'] .splitToolbarButton {
   margin: 3px 2px 4px 0;
   display: inline-block;
 }
-.splitToolbarButton > .toolbarButton {
+html[dir='rtl'] .splitToolbarButton {
+  margin: 3px 0 4px 2px;
+  display: inline-block;
+}
+html[dir='ltr'] .splitToolbarButton > .toolbarButton {
   border-radius: 0;
   float: left;
+}
+html[dir='rtl'] .splitToolbarButton > .toolbarButton {
+  border-radius: 0;
+  float: right;
 }
 
 .toolbarButton {
@@ -214,7 +266,8 @@ body {
               0 0 1px hsla(0,0%,0%,.05);
   z-index: 199;
 }
-.splitToolbarButton > .toolbarButton:first-child  {
+html[dir='ltr'] .splitToolbarButton > .toolbarButton:first-child,
+html[dir='rtl'] .splitToolbarButton > .toolbarButton:last-child {
   position: relative;
   margin: 0;
   margin-right: -1px;
@@ -222,7 +275,8 @@ body {
   border-bottom-left-radius: 2px;
   border-right-color: transparent;
 }
-.splitToolbarButton > .toolbarButton:last-child  {
+html[dir='ltr'] .splitToolbarButton > .toolbarButton:last-child,
+html[dir='rtl'] .splitToolbarButton > .toolbarButton:first-child {
   position: relative;
   margin: 0;
   margin-left: -1px;
@@ -238,7 +292,12 @@ body {
   box-shadow: 0 0 0 1px hsla(0,0%,100%,.08);
   display: inline-block;
   margin: 5px 0;
+}
+html[dir='ltr'] .splitToolbarButtonSeparator {
   float:left;
+}
+html[dir='rtl'] .splitToolbarButtonSeparator {
+  float:right;
 }
 .splitToolbarButton:hover > .splitToolbarButtonSeparator,
 .splitToolbarButton.toggled > .splitToolbarButtonSeparator {
@@ -257,7 +316,6 @@ body {
 .dropdownToolbarButton {
   min-width: 16px;
   padding: 2px 6px 0;
-  margin: 3px 2px 4px 0;
   border: 1px solid transparent;
   border-radius: 2px;
   color: hsl(0,0%,95%);
@@ -272,6 +330,15 @@ body {
   -webkit-transition-property: background-color, border-color, box-shadow;
   -webkit-transition-duration: 150ms;
   -webkit-transition-timing-function: ease;
+}
+
+html[dir='ltr'] .toolbarButton,
+html[dir='ltr'] .dropdownToolbarButton {
+  margin: 3px 2px 4px 0;
+}
+html[dir='rtl'] .toolbarButton,
+html[dir='rtl'] .dropdownToolbarButton {
+  margin: 3px 0 4px 2px;
 }
 
 .toolbarButton:hover,
@@ -336,7 +403,13 @@ body {
   max-width: 120px;
   padding: 3px 2px 2px;
   overflow: hidden;
-  background: url(images/toolbarButton-menuArrows.png) no-repeat 95%;
+  background: url(images/toolbarButton-menuArrows.png) no-repeat;
+}
+html[dir='ltr'] .dropdownToolbarButton {
+  background-position: 95%;
+}
+html[dir='rtl'] .dropdownToolbarButton {
+  background-position: 5%;
 }
 
 .dropdownToolbarButton > select {
@@ -359,12 +432,16 @@ body {
   border-bottom: 1px rgba(255, 255, 255, .5) solid;
 }
 
-.splitToolbarButton:first-child,
-.toolbarButton:first-child {
+html[dir='ltr'] .splitToolbarButton:first-child,
+html[dir='ltr'] .toolbarButton:first-child,
+html[dir='rtl'] .splitToolbarButton:last-child,
+html[dir='rtl'] .toolbarButton:last-child {
   margin-left: 4px;
 }
-.splitToolbarButton:last-child,
-.toolbarButton:last-child {
+html[dir='ltr'] .splitToolbarButton:last-child,
+html[dir='ltr'] .toolbarButton:last-child,
+html[dir='rtl'] .splitToolbarButton:first-child,
+html[dir='rtl'] .toolbarButton:first-child {
   margin-right: 4px;
 }
 
@@ -385,14 +462,24 @@ body {
   content: url(images/toolbarButton-sidebarToggle.png);
 }
     
-.toolbarButton.pageUp::before {
+html[dir='ltr'] .toolbarButton.pageUp::before {
   display: inline-block;
   content: url(images/toolbarButton-pageUp.png);
 }
+
+html[dir='rtl'] .toolbarButton.pageUp::before {
+  display: inline-block;
+  content: url(images/toolbarButton-pageUp-rtl.png);
+}
     
-.toolbarButton.pageDown::before {
+html[dir='ltr'] .toolbarButton.pageDown::before {
   display: inline-block;
   content: url(images/toolbarButton-pageDown.png);
+}
+
+html[dir='rtl'] .toolbarButton.pageDown::before {
+  display: inline-block;
+  content: url(images/toolbarButton-pageDown-rtl.png);
 }
 
 .toolbarButton.zoomOut::before {
@@ -625,6 +712,7 @@ canvas {
 }
 
 .page {
+  direction: ltr;
   width: 816px;
   height: 1056px;
   margin: 10px auto;

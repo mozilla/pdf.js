@@ -1,12 +1,15 @@
 <!DOCTYPE html>
-<html>
+<html dir="ltr">
   <head>
+    <meta charset="utf-8">
     <title>PDF.js viewer</title>
     <!-- PDFJSSCRIPT_INCLUDE_FIREFOX_EXTENSION -->
 
     <link rel="stylesheet" href="viewer.css"/>
+    <link rel="resource" type="application/l10n" href="locale.properties"/><!-- PDFJSSCRIPT_REMOVE_CORE -->
 
     <script type="text/javascript" src="compatibility.js"></script> <!-- PDFJSSCRIPT_REMOVE_FIREFOX_EXTENSION -->
+    <script type="text/javascript" src="../external/webL10n/l10n.js"></script><!-- PDFJSSCRIPT_REMOVE_CORE -->
 
     <!-- PDFJSSCRIPT_INCLUDE_BUILD -->
     <script type="text/javascript" src="../src/core.js"></script> <!-- PDFJSSCRIPT_REMOVE_CORE -->
@@ -43,11 +46,11 @@
       <div id="sidebarContainer">
         <div id="toolbarSidebar">
           <div class="splitToolbarButton toggled">
-            <button id="viewThumbnail" class="toolbarButton toggled" title="Show Thumbnails" onclick="PDFView.switchSidebarView('thumbs')" tabindex="1">
-               <span>Thumbnails</span>
+            <button id="viewThumbnail" class="toolbarButton toggled" title="Show Thumbnails" onclick="PDFView.switchSidebarView('thumbs')" tabindex="1" data-l10n-id="thumbs">
+               <span data-l10n-id="thumbs_label">Thumbnails</span>
             </button>
-            <button id="viewOutline" class="toolbarButton" title="Show Document Outline" onclick="PDFView.switchSidebarView('outline')" tabindex="2">
-               <span>Document Outline</span>
+            <button id="viewOutline" class="toolbarButton" title="Show Document Outline" onclick="PDFView.switchSidebarView('outline')" tabindex="2" data-l10n-id="outline">
+               <span data-l10n-id="outline_label">Document Outline</span>
             </button>
           </div>
         </div>
@@ -65,20 +68,20 @@
 
             <div id="toolbarViewer">
               <div id="toolbarViewerLeft">
-                <button id="sidebarToggle" class="toolbarButton" title="Toggle Sidebar" tabindex="3">
-                  <span>Toggle Sidebar</span>
+                <button id="sidebarToggle" class="toolbarButton" title="Toggle Sidebar" tabindex="3" data-l10n-id="toggle_slider">
+                  <span data-l10n-id="toggle_slider_label">Toggle Sidebar</span>
                 </button>
                 <div class="toolbarButtonSpacer"></div>
                 <div class="splitToolbarButton">
-                  <button class="toolbarButton pageUp" title="Previous Page" onclick="PDFView.page--" id="previous" tabindex="4">
-                    <span>Previous</span>
+                  <button class="toolbarButton pageUp" title="Previous Page" onclick="PDFView.page--" id="previous" tabindex="4" data-l10n-id="previous">
+                    <span data-l10n-id="previous_label">Previous</span>
                   </button>
                   <div class="splitToolbarButtonSeparator"></div>
-                  <button class="toolbarButton pageDown" title="Next Page" onclick="PDFView.page++" id="next" tabindex="5">
-                    <span>Next</span>
+                  <button class="toolbarButton pageDown" title="Next Page" onclick="PDFView.page++" id="next" tabindex="5" data-l10n-id="next">
+                    <span data-l10n-id="next_label">Next</span>
                   </button>
                 </div>
-                <label class="toolbarLabel" for="pageNumber">Page: </label>
+                <label class="toolbarLabel" for="pageNumber" data-l10n-id="page_label">Page: </label>
                 <input type="number" id="pageNumber" class="toolbarField pageNumber" onchange="PDFView.page = this.value;" value="1" size="4" min="1" tabindex="6">
                 </input>
                 <span id="numPages" class="toolbarLabel"></span>
@@ -88,40 +91,40 @@
 
                 <!--
                 <input id="fileInput" class="fileInput" type="file" oncontextmenu="return false;" style="visibility: hidden; position: fixed; right: 0; top: 0" />
-                <button id="openFile" class="toolbarButton print" title="Open" tabindex="10" onclick="document.getElementById('fileInput').click()">
-                   <span>Open</span>
+                <button id="openFile" class="toolbarButton print" title="Open File" tabindex="10" data-l10n-id="open_file" onclick="document.getElementById('fileInput').click()">
+                   <span data-l10n-id="open_file_label">Open</span>
                 </button>
                 -->
 
                 <!--
-                <button id="print" class="toolbarButton print" title="Print" tabindex="11" onclick="window.print()">
-                  <span>Print</span>
+                <button id="print" class="toolbarButton print" title="Print" tabindex="11" data-l10n-id="print" onclick="window.print()">
+                  <span data-l10n-id="print_label">Print</span>
                 </button>
                 -->
 
-                <button id="download" class="toolbarButton download" title="Download" onclick="PDFView.download();" tabindex="12">
-                  <span>Download</span>
+                <button id="download" class="toolbarButton download" title="Download" onclick="PDFView.download();" tabindex="12" data-l10n-id="download">
+                  <span data-l10n-id="download_label">Download</span>
                 </button>
                 <!-- <div class="toolbarButtonSpacer"></div> -->
-                <a href="#" id="viewBookmark" class="toolbarButton bookmark" title="Bookmark (or copy) current location" tabindex="13"><span>Bookmark</span></a>
+                <a href="#" id="viewBookmark" class="toolbarButton bookmark" title="Current view (copy or open in new window)" tabindex="13" data-l10n-id="bookmark"><span data-l10n-id="bookmark_label">Current View</span></a>
               </div>
               <div class="outerCenter">
                 <div class="innerCenter" id="toolbarViewerMiddle">
                   <div class="splitToolbarButton">
-                    <button class="toolbarButton zoomOut" title="Zoom Out" onclick="PDFView.zoomOut();" tabindex="7">
-                      <span>Zoom Out</span>
+                    <button class="toolbarButton zoomOut" title="Zoom Out" onclick="PDFView.zoomOut();" tabindex="7" data-l10n-id="zoom_out">
+                      <span data-l10n-id="zoom_out_label">Zoom Out</span>
                     </button>
                     <div class="splitToolbarButtonSeparator"></div>
-                    <button class="toolbarButton zoomIn" title="Zoom In" onclick="PDFView.zoomIn();" tabindex="8">
-                      <span>Zoom In</span>
+                    <button class="toolbarButton zoomIn" title="Zoom In" onclick="PDFView.zoomIn();" tabindex="8" data-l10n-id="zoom_in">
+                      <span data-l10n-id="zoom_in_label">Zoom In</span>
                      </button>
                   </div>
                   <span class="dropdownToolbarButton">
-                     <select id="scaleSelect" onchange="PDFView.parseScale(this.value);" title="Zoom" oncontextmenu="return false;" tabindex="9">
-                      <option id="pageAutoOption" value="auto" selected="selected">Automatic Zoom</option>
-                      <option value="page-actual">Actual Size</option>
-                      <option id="pageFitOption" value="page-fit">Fit Page</option>
-                      <option id="pageWidthOption" value="page-width">Full Width</option>
+                     <select id="scaleSelect" onchange="PDFView.parseScale(this.value);" title="Zoom" oncontextmenu="return false;" tabindex="9" data-l10n-id="zoom">
+                      <option id="pageAutoOption" value="auto" selected="selected" data-l10n-id="page_scale_auto">Automatic Zoom</option>
+                      <option id="pageActualOption" value="page-actual" data-l10n-id="page_scale_actual">Actual Size</option>
+                      <option id="pageFitOption" value="page-fit" data-l10n-id="page_scale_fit">Fit Page</option>
+                      <option id="pageWidthOption" value="page-width" data-l10n-id="page_scale_width">Full Width</option>
                       <option id="customScaleOption" value="custom"></option>
                       <option value="0.5">50%</option>
                       <option value="0.75">75%</option>
@@ -142,22 +145,22 @@
         </div>
 
         <div id="loadingBox">
-            <div id="loading">Loading... 0%</div>
+            <div id="loading" data-l10n-id="loading" data-l10n-args='{"percent": 0}'>Loading... 0%</div>
             <div id="loadingBar"><div class="progress"></div></div>
         </div>
 
         <div id="errorWrapper" hidden='true'>
           <div id="errorMessageLeft">
             <span id="errorMessage"></span>
-            <button id="errorShowMore" onclick="" oncontextmenu="return false;">
+            <button id="errorShowMore" onclick="" oncontextmenu="return false;" data-l10n-id="error_more_info">
               More Information
             </button>
-            <button id="errorShowLess" onclick="" oncontextmenu="return false;" hidden='true'>
+            <button id="errorShowLess" onclick="" oncontextmenu="return false;" data-l10n-id="error_less_info" hidden='true'>
               Less Information
             </button>
           </div>
           <div id="errorMessageRight">
-            <button id="errorClose" oncontextmenu="return false;">
+            <button id="errorClose" oncontextmenu="return false;" data-l10n-id="error_close">
               Close
             </button>
           </div>
