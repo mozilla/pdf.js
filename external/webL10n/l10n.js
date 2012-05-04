@@ -21,7 +21,8 @@
 /*
   Additional modifications for PDF.js project:
     - Loading resources from <script type='application/l10n'>;
-    - Disabling language assignment on page loading.
+    - Disabling language initialization on page loading;
+    - Add fallback argument to the translateString.
 */
 'use strict';
 
@@ -221,8 +222,10 @@
   }
 
   // translate a string
-  function translateString(key, args) {
+  function translateString(key, args, fallback) {
     var data = getL10nData(key);
+    if (!data && fallback)
+      data = {textContent: fallback};
     if (!data)
       return '{{' + key + '}}';
     return substArguments(data.textContent, args);
