@@ -15,6 +15,8 @@ var kMaxScale = 4.0;
 var kImageDirectory = './images/';
 var kSettingsMemory = 20;
 
+var mozL10n = document.mozL10n || document.webL10n;
+
 function getFileName(url) {
   var anchor = url.indexOf('#');
   var query = url.indexOf('?');
@@ -347,11 +349,13 @@ var PDFView = {
       },
       function getDocumentError(message, exception) {
         var loadingIndicator = document.getElementById('loading');
-        loadingIndicator.textContent = 'Error';
+        loadingIndicator.textContent = mozL10n.get('loading_error_indicator',
+          null, 'Error');
         var moreInfo = {
           message: message
         };
-        self.error('An error occurred while loading the PDF.', moreInfo);
+        self.error(mozL10n.get('loading_error', null,
+          'An error occurred while loading the PDF.'), moreInfo);
         self.loading = false;
       },
       function getDocumentProgress(progressData) {
@@ -458,17 +462,29 @@ var PDFView = {
     };
     moreInfoButton.removeAttribute('hidden');
     lessInfoButton.setAttribute('hidden', 'true');
-    errorMoreInfo.value = 'PDF.JS Build: ' + PDFJS.build + '\n';
+    errorMoreInfo.value =
+      mozL10n.get('error_build', {build: PDFJS.build},
+      'PDF.JS Build: {{build}}') + '\n';
 
     if (moreInfo) {
-      errorMoreInfo.value += 'Message: ' + moreInfo.message;
+      errorMoreInfo.value +=
+        mozL10n.get('error_message', {message: moreInfo.message},
+        'Message: {{message}}');
       if (moreInfo.stack) {
-        errorMoreInfo.value += '\n' + 'Stack: ' + moreInfo.stack;
+        errorMoreInfo.value += '\n' +
+          mozL10n.get('error_stack', {stack: moreInfo.stack},
+          'Stack: {{stack}}');
       } else {
-        if (moreInfo.filename)
-          errorMoreInfo.value += '\n' + 'File: ' + moreInfo.filename;
-        if (moreInfo.lineNumber)
-          errorMoreInfo.value += '\n' + 'Line: ' + moreInfo.lineNumber;
+        if (moreInfo.filename) {
+          errorMoreInfo.value += '\n' +
+            mozL10n.get('error_file', {file: moreInfo.filename},
+            'File: {{file}}');
+        }
+        if (moreInfo.lineNumber) {
+          errorMoreInfo.value += '\n' +
+            mozL10n.get('error_line', {line: moreInfo.lineNumber},
+            'Line: {{line}}');
+        }
       }
     }
     errorMoreInfo.rows = errorMoreInfo.value.split('\n').length - 1;
@@ -477,7 +493,8 @@ var PDFView = {
   progress: function pdfViewProgress(level) {
     var percent = Math.round(level * 100);
     var loadingIndicator = document.getElementById('loading');
-    loadingIndicator.textContent = 'Loading... ' + percent + '%';
+    loadingIndicator.textContent = mozL10n.get('loading', {percent: percent},
+      'Loading... {{percent}}%');
 
     PDFView.loadingBar.percent = percent;
   },
@@ -513,7 +530,8 @@ var PDFView = {
     var pagesCount = pdfDocument.numPages;
     var id = pdfDocument.fingerprint;
     var storedHash = null;
-    document.getElementById('numPages').textContent = 'of ' + pagesCount;
+    document.getElementById('numPages').textContent =
+      mozL10n.get('page_of', {pageCount: pagesCount}, 'of {{pageCount}}');
     document.getElementById('pageNumber').max = pagesCount;
     PDFView.documentFingerprint = id;
     var store = PDFView.store = new Settings(id);
@@ -827,7 +845,8 @@ var PageView = function pageView(container, pdfPage, id, scale,
       var rect = viewport.convertToViewportRectangle(item.rect);
       rect = PDFJS.Util.normalizeRect(rect);
       image.src = kImageDirectory + 'annotation-' + type.toLowerCase() + '.svg';
-      image.alt = '[' + type + ' Annotation]';
+      image.alt = mozL10n.get('text_annotation_type', {type: type},
+        '[{{type}} Annotation]');
       var content = document.createElement('div');
       content.setAttribute('hidden', true);
       var title = document.createElement('h1');
@@ -1008,8 +1027,10 @@ var PageView = function pageView(container, pdfPage, id, scale,
         delete self.loadingIconDiv;
       }
 
-      if (error)
-        PDFView.error('An error occurred while rendering the page.', error);
+      if (error) {
+        PDFView.error(mozL10n.get('rendering_error', null,
+          'An error occurred while rendering the page.'), error);
+      }
 
       self.stats = pdfPage.stats;
       self.updateStats();
@@ -1153,7 +1174,8 @@ var DocumentOutlineView = function documentOutlineView(outline) {
   if (!outline) {
     var noOutline = document.createElement('div');
     noOutline.classList.add('noOutline');
-    noOutline.textContent = 'No Outline Available';
+    noOutline.textContent = mozL10n.get('no_outline', null,
+      'No Outline Available');
     outlineView.appendChild(noOutline);
     return;
   }
@@ -1336,6 +1358,12 @@ window.addEventListener('load', function webViewerLoad(evt) {
 
   if ('disableWorker' in hashParams)
     PDFJS.disableWorker = (hashParams['disableWorker'] === 'true');
+
+  var locale = !PDFJS.isFirefoxExtension ? navigator.language :
+    FirefoxCom.request('getLocale', null);
+  if ('locale' in hashParams)
+    locale = hashParams['locale'];
+  mozL10n.language.code = locale;
 
   if ('disableTextLayer' in hashParams)
     PDFJS.disableTextLayer = (hashParams['disableTextLayer'] === 'true');
@@ -1530,6 +1558,10 @@ function selectScaleOption(value) {
   }
   return predefinedValueFound;
 }
+
+window.addEventListener('localized', function localized(evt) {
+  document.getElementsByTagName('html')[0].dir = mozL10n.language.direction;
+}, true);
 
 window.addEventListener('scalechange', function scalechange(evt) {
   var customScaleOption = document.getElementById('customScaleOption');
