@@ -175,6 +175,10 @@ body {
   height: 25px;
 }
 
+.toolbarButton > span {
+  display: none;
+}
+
 .toolbarButton[disabled] {
   opacity: .5;
 }
