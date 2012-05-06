@@ -31,6 +31,11 @@ function getPdf(arg, callback) {
     params = { url: arg };
 
   var xhr = new XMLHttpRequest();
+  
+  if(params.headers){
+    //TODO: Code this, use xhr.setRequestHeader(key, value);
+  }
+  
   xhr.open('GET', params.url);
   xhr.mozResponseType = xhr.responseType = 'arraybuffer';
   var protocol = params.url.indexOf(':') < 0 ? window.location.protocol :
