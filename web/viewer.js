@@ -1070,7 +1070,8 @@ var PageView = function pageView(container, pdfPage, id, scale,
 var ThumbnailView = function thumbnailView(container, pdfPage, id) {
   var anchor = document.createElement('a');
   anchor.href = PDFView.getAnchorUrl('#page=' + id);
-  anchor.onclick = function stopNivigation() {
+  anchor.title = mozL10n.get('thumb_page_title', {page: id}, 'Page {{page}}');
+  anchor.onclick = function stopNavigation() {
     PDFView.page = id;
     return false;
   };
@@ -1103,6 +1104,8 @@ var ThumbnailView = function thumbnailView(container, pdfPage, id) {
     canvas.width = canvasWidth;
     canvas.height = canvasHeight;
     canvas.className = 'thumbnailImage';
+    canvas.setAttribute('aria-label', mozL10n.get('thumb_page_canvas',
+      {page: id}, 'Thumbnail of Page {{page}}'));
 
     div.setAttribute('data-loaded', true);
 
