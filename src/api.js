@@ -10,7 +10,7 @@
  * @param {string|TypedAray} source Either a url to a PDF is located or a
  * typed array (Uint8Array) already populated with data.
  * @param {Object} headers An object containing the http headers like this:
- * { Authorization: "BASIC XXX" }
+ * { Authorization: "BASIC XXX" }.
  * @return {Promise} A promise that is resolved with {PDFDocumentProxy} object.
  */
 PDFJS.getDocument = function getDocument(source, headers) {
@@ -32,7 +32,7 @@ PDFJS.getDocument = function getDocument(source, headers) {
           promise.reject('Unexpected server response of ' +
             e.target.status + '.');
         },
-	headers: headers
+        headers: headers
       },
       function getPDFLoad(data) {
         transport.sendData(data);
