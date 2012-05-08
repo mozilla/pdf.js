@@ -58,6 +58,9 @@ ChromeActions.prototype = {
       return '{}';
     return application.prefs.getValue(EXT_PREFIX + '.database', '{}');
   },
+  getLocale: function() {
+    return application.prefs.getValue('general.useragent.locale', 'en-US');
+  },
   pdfBugEnabled: function() {
     return application.prefs.getValue(EXT_PREFIX + '.pdfBugEnabled', false);
   }

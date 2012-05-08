@@ -557,7 +557,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       var toUnicode = dict.get('ToUnicode') ||
         baseDict.get('ToUnicode');
       if (toUnicode)
-        properties.toUnicode = this.readToUnicode(toUnicode, xref);
+        properties.toUnicode = this.readToUnicode(toUnicode, xref, properties);
 
       if (properties.composite) {
         // CIDSystemInfo helps to match CID to glyphs
@@ -613,7 +613,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       properties.hasEncoding = hasEncoding;
     },
 
-    readToUnicode: function PartialEvaluator_readToUnicode(toUnicode, xref) {
+    readToUnicode: function PartialEvaluator_readToUnicode(toUnicode, xref,
+                                                           properties) {
       var cmapObj = toUnicode;
       var charToUnicode = [];
       if (isName(cmapObj)) {
@@ -702,6 +703,10 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
             }
           } else if (octet == 0x3E) {
             if (token.length) {
+              // XXX guessing chars size by checking number size in the CMap
+              if (token.length <= 2 && properties.composite)
+                properties.wideChars = false;
+
               if (token.length <= 4) {
                 // parsing hex number
                 tokens.push(parseInt(token, 16));
@@ -919,6 +924,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         length1: length1,
         length2: length2,
         composite: composite,
+        wideChars: composite,
         fixedPitch: false,
         fontMatrix: dict.get('FontMatrix') || IDENTITY_MATRIX,
         firstChar: firstChar || 0,

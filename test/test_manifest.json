@@ -363,6 +363,12 @@
       "link": true,
       "type": "eq"
     },
+    {  "id": "issue1586",
+      "file": "pdfs/pdfjsbad1586.pdf",
+      "md5": "793d0870f0b0c613799b0677d64daca4",
+      "rounds": 1,
+      "type": "load"
+    },
     {  "id": "aboutstacks",
       "file": "pdfs/aboutstacks.pdf",
       "md5": "6e7c8416a293ba2d83bc8dd20c6ccf51",
@@ -556,6 +562,13 @@
     {  "id": "issue1309",
       "file": "pdfs/issue1309.pdf",
       "md5": "e835fb7f3dab3073ad37d0bd3c6399fa",
+      "rounds": 1,
+      "link": true,
+      "type": "eq"
+    },
+    {  "id": "issue1597",
+      "file": "pdfs/issue1597.pdf",
+      "md5": "a5ebef467fd6e2fc0aeb56c9eb725ae3",
       "rounds": 1,
       "link": true,
       "type": "eq"

@@ -1,163 +1,182 @@
 <!DOCTYPE html>
-<html>
-    <head>
-        <title>Simple pdf.js page viewer</title>
-        <!-- PDFJSSCRIPT_INCLUDE_FIREFOX_EXTENSION -->
+<html dir="ltr">
+  <head>
+    <meta charset="utf-8">
+    <title>PDF.js viewer</title>
+    <!-- PDFJSSCRIPT_INCLUDE_FIREFOX_EXTENSION -->
 
-        <link rel="stylesheet" href="viewer.css"/>
+    <link rel="stylesheet" href="viewer.css"/>
+    <link rel="resource" type="application/l10n" href="locale.properties"/><!-- PDFJSSCRIPT_REMOVE_CORE -->
 
-        <script type="text/javascript" src="compatibility.js"></script> <!-- PDFJSSCRIPT_REMOVE_FIREFOX_EXTENSION -->
+    <script type="text/javascript" src="compatibility.js"></script> <!-- PDFJSSCRIPT_REMOVE_FIREFOX_EXTENSION -->
+    <script type="text/javascript" src="../external/webL10n/l10n.js"></script><!-- PDFJSSCRIPT_REMOVE_CORE -->
 
-        <!-- PDFJSSCRIPT_INCLUDE_BUILD -->
-        <script type="text/javascript" src="../src/core.js"></script> <!-- PDFJSSCRIPT_REMOVE_CORE -->
-        <script type="text/javascript" src="../src/util.js"></script>  <!-- PDFJSSCRIPT_REMOVE_CORE -->
-        <script type="text/javascript" src="../src/api.js"></script>  <!-- PDFJSSCRIPT_REMOVE_CORE -->
-        <script type="text/javascript" src="../src/metadata.js"></script>  <!-- PDFJSSCRIPT_REMOVE_CORE -->
-        <script type="text/javascript" src="../src/canvas.js"></script>  <!-- PDFJSSCRIPT_REMOVE_CORE -->
-        <script type="text/javascript" src="../src/obj.js"></script>  <!-- PDFJSSCRIPT_REMOVE_CORE -->
-        <script type="text/javascript" src="../src/function.js"></script> <!-- PDFJSSCRIPT_REMOVE_CORE -->
-        <script type="text/javascript" src="../src/charsets.js"></script>  <!-- PDFJSSCRIPT_REMOVE_CORE -->
-        <script type="text/javascript" src="../src/cidmaps.js"></script>  <!-- PDFJSSCRIPT_REMOVE_CORE -->
-        <script type="text/javascript" src="../src/colorspace.js"></script>  <!-- PDFJSSCRIPT_REMOVE_CORE -->
-        <script type="text/javascript" src="../src/crypto.js"></script>  <!-- PDFJSSCRIPT_REMOVE_CORE -->
-        <script type="text/javascript" src="../src/evaluator.js"></script>  <!-- PDFJSSCRIPT_REMOVE_CORE -->
-        <script type="text/javascript" src="../src/fonts.js"></script>  <!-- PDFJSSCRIPT_REMOVE_CORE -->
-        <script type="text/javascript" src="../src/glyphlist.js"></script>  <!-- PDFJSSCRIPT_REMOVE_CORE -->
-        <script type="text/javascript" src="../src/image.js"></script>  <!-- PDFJSSCRIPT_REMOVE_CORE -->
-        <script type="text/javascript" src="../src/metrics.js"></script>  <!-- PDFJSSCRIPT_REMOVE_CORE -->
-        <script type="text/javascript" src="../src/parser.js"></script>  <!-- PDFJSSCRIPT_REMOVE_CORE -->
-        <script type="text/javascript" src="../src/pattern.js"></script>  <!-- PDFJSSCRIPT_REMOVE_CORE -->
-        <script type="text/javascript" src="../src/stream.js"></script>  <!-- PDFJSSCRIPT_REMOVE_CORE -->
-        <script type="text/javascript" src="../src/worker.js"></script>  <!-- PDFJSSCRIPT_REMOVE_CORE -->
-        <script type="text/javascript" src="../external/jpgjs/jpg.js"></script>  <!-- PDFJSSCRIPT_REMOVE_CORE -->
-        <script type="text/javascript" src="../src/jpx.js"></script>  <!-- PDFJSSCRIPT_REMOVE_CORE -->
-        <script type="text/javascript" src="../src/bidi.js"></script>  <!-- PDFJSSCRIPT_REMOVE_CORE -->
-        <script type="text/javascript">PDFJS.workerSrc = '../src/worker_loader.js';</script> <!-- PDFJSSCRIPT_REMOVE_CORE -->
-        <script type="text/javascript" src="debugger.js"></script>
-        <script type="text/javascript" src="viewer.js"></script>
-
-
-    </head>
+    <!-- PDFJSSCRIPT_INCLUDE_BUILD -->
+    <script type="text/javascript" src="../src/core.js"></script> <!-- PDFJSSCRIPT_REMOVE_CORE -->
+    <script type="text/javascript" src="../src/util.js"></script>  <!-- PDFJSSCRIPT_REMOVE_CORE -->
+    <script type="text/javascript" src="../src/api.js"></script>  <!-- PDFJSSCRIPT_REMOVE_CORE -->
+    <script type="text/javascript" src="../src/metadata.js"></script>  <!-- PDFJSSCRIPT_REMOVE_CORE -->
+    <script type="text/javascript" src="../src/canvas.js"></script>  <!-- PDFJSSCRIPT_REMOVE_CORE -->
+    <script type="text/javascript" src="../src/obj.js"></script>  <!-- PDFJSSCRIPT_REMOVE_CORE -->
+    <script type="text/javascript" src="../src/function.js"></script> <!-- PDFJSSCRIPT_REMOVE_CORE -->
+    <script type="text/javascript" src="../src/charsets.js"></script>  <!-- PDFJSSCRIPT_REMOVE_CORE -->
+    <script type="text/javascript" src="../src/cidmaps.js"></script>  <!-- PDFJSSCRIPT_REMOVE_CORE -->
+    <script type="text/javascript" src="../src/colorspace.js"></script>  <!-- PDFJSSCRIPT_REMOVE_CORE -->
+    <script type="text/javascript" src="../src/crypto.js"></script>  <!-- PDFJSSCRIPT_REMOVE_CORE -->
+    <script type="text/javascript" src="../src/evaluator.js"></script>  <!-- PDFJSSCRIPT_REMOVE_CORE -->
+    <script type="text/javascript" src="../src/fonts.js"></script>  <!-- PDFJSSCRIPT_REMOVE_CORE -->
+    <script type="text/javascript" src="../src/glyphlist.js"></script>  <!-- PDFJSSCRIPT_REMOVE_CORE -->
+    <script type="text/javascript" src="../src/image.js"></script>  <!-- PDFJSSCRIPT_REMOVE_CORE -->
+    <script type="text/javascript" src="../src/metrics.js"></script>  <!-- PDFJSSCRIPT_REMOVE_CORE -->
+    <script type="text/javascript" src="../src/parser.js"></script>  <!-- PDFJSSCRIPT_REMOVE_CORE -->
+    <script type="text/javascript" src="../src/pattern.js"></script>  <!-- PDFJSSCRIPT_REMOVE_CORE -->
+    <script type="text/javascript" src="../src/stream.js"></script>  <!-- PDFJSSCRIPT_REMOVE_CORE -->
+    <script type="text/javascript" src="../src/worker.js"></script>  <!-- PDFJSSCRIPT_REMOVE_CORE -->
+    <script type="text/javascript" src="../external/jpgjs/jpg.js"></script>  <!-- PDFJSSCRIPT_REMOVE_CORE -->
+    <script type="text/javascript" src="../src/jpx.js"></script>  <!-- PDFJSSCRIPT_REMOVE_CORE -->
+    <script type="text/javascript" src="../src/bidi.js"></script>  <!-- PDFJSSCRIPT_REMOVE_CORE -->
+    <script type="text/javascript">PDFJS.workerSrc = '../src/worker_loader.js';</script> <!-- PDFJSSCRIPT_REMOVE_CORE -->
+    <script type="text/javascript" src="debugger.js"></script>
+    <script type="text/javascript" src="viewer.js"></script>
+  </head>
 
   <body>
-    <div id="controls">
-      <button id="previous" onclick="PDFView.page--;" oncontextmenu="return false;">
-        <img src="images/go-up.svg" align="top" height="16"/>
-        Previous
-      </button>
+    <div id="outerContainer">
 
-      <button id="next" onclick="PDFView.page++;" oncontextmenu="return false;">
-        <img src="images/go-down.svg" align="top" height="16"/>
-        Next
-      </button>
-
-      <div class="separator"></div>
-
-      <input type="number" id="pageNumber" onchange="PDFView.page = this.value;" value="1" size="4" min="1" />
-
-      <span>/</span>
-      <span id="numPages">--</span>
-
-      <div class="separator"></div>
-
-      <button id="zoomOut" title="Zoom Out" onclick="PDFView.zoomOut();" oncontextmenu="return false;">
-        <img src="images/zoom-out.svg" align="top" height="16"/>
-      </button>
-      <button id="zoomIn" title="Zoom In" onclick="PDFView.zoomIn();" oncontextmenu="return false;">
-        <img src="images/zoom-in.svg" align="top" height="16"/>
-      </button>
-
-      <div class="separator"></div>
-
-      <select id="scaleSelect" onchange="PDFView.parseScale(this.value);" oncontextmenu="return false;">
-        <option id="customScaleOption" value="custom"></option>
-        <option value="0.5">50%</option>
-        <option value="0.75">75%</option>
-        <option value="1">100%</option>
-        <option value="1.25">125%</option>
-        <option value="1.5">150%</option>
-        <option value="2">200%</option>
-        <option id="pageWidthOption" value="page-width">Page Width</option>
-        <option id="pageFitOption" value="page-fit">Page Fit</option>
-        <option id="pageAutoOption" value="auto" selected="selected">Auto</option>
-      </select>
-
-      <div class="separator"></div>
-
-      <button id="print" onclick="window.print();" oncontextmenu="return false;">
-        <img src="images/document-print.svg" align="top" height="16"/>
-        Print
-      </button>
-
-      <button id="download" title="Download" onclick="PDFView.download();" oncontextmenu="return false;">
-        <img src="images/download.svg" align="top" height="16"/>
-        Download
-      </button>
-
-      <div class="separator"></div>
-
-      <input id="fileInput" type="file" oncontextmenu="return false;"/>
-
-      <div id="fileInputSeperator" class="separator"></div>
-
-      <a href="#" id="viewBookmark" title="Bookmark (or copy) current location">
-        <img src="images/bookmark.svg" alt="Bookmark" align="top" height="16"/>
-      </a>
-
-    </div>
-    <div id="errorWrapper" hidden='true'>
-      <div id="errorMessageLeft">
-        <span id="errorMessage"></span>
-        <button id="errorShowMore" onclick="" oncontextmenu="return false;">
-          More Information
-        </button>
-        <button id="errorShowLess" onclick="" oncontextmenu="return false;" hidden='true'>
-          Less Information
-        </button>
-      </div>
-      <div id="errorMessageRight">
-        <button id="errorClose" oncontextmenu="return false;">
-          Close
-        </button>
-      </div>
-      <div class="clearBoth"></div>
-      <textarea id="errorMoreInfo" hidden='true' readonly="readonly"></textarea>
-    </div>
-
-    <div id="sidebar">
-      <div id="sidebarBox">
-        <div id="pinIcon" onClick="PDFView.pinSidebar()"></div>
-        <div id="sidebarScrollView">
-          <div id="sidebarView"></div>
+      <div id="sidebarContainer">
+        <div id="toolbarSidebar">
+          <button id="viewThumbnail" class="toolbarButton group toggled" title="Show Thumbnails" onclick="PDFView.switchSidebarView('thumbs')" tabindex="1" data-l10n-id="thumbs">
+             <span data-l10n-id="thumbs_label">Thumbnails</span>
+          </button>
+          <button id="viewOutline" class="toolbarButton group" title="Show Document Outline" onclick="PDFView.switchSidebarView('outline')" tabindex="2" data-l10n-id="outline">
+             <span data-l10n-id="outline_label">Document Outline</span>
+          </button>
+          <button id="viewSearch" class="toolbarButton group" title="Search Document" onclick="PDFView.switchSidebarView('search')" tabindex="3" data-l10n-id="search">
+             <span data-l10n-id="search_label">Search Document</span>
+          </button>
         </div>
-        <div id="outlineScrollView" hidden='true'>
-          <div id="outlineView"></div>
-        </div>
-        <div id="searchScrollView" hidden='true'>
-          <div id="searchToolbar">
-            <input id="searchTermsInput" onkeydown='if (event.keyCode == 13) PDFView.search()'>
-            <button id="searchButton" onclick='PDFView.search()'>Find</button>
+        <div id="sidebarContent">
+          <div id="thumbnailView">
           </div>
-          <div id="searchResults"></div>
+          <div id="outlineView" class="hidden">
+          </div>
+          <div id="searchView" class="hidden">
+            <div id="searchToolbar">
+              <input id="searchTermsInput" onkeydown='if (event.keyCode == 13) PDFView.search()'>
+              <button id="searchButton" onclick='PDFView.search()'>Find</button>
+            </div>
+            <div id="searchResults"></div>
+          </div>
         </div>
-        <div id="sidebarControls">
-          <button id="thumbsSwitch" title="Show Thumbnails" onclick="PDFView.switchSidebarView('thumbs')" data-selected>
-            <img src="images/nav-thumbs.svg" align="top" height="16" alt="Thumbs" />
-          </button>
-          <button id="outlineSwitch" title="Show Document Outline" onclick="PDFView.switchSidebarView('outline')" disabled>
-            <img src="images/nav-outline.svg" align="top" height="16" alt="Document Outline" />
-          </button>
-          <button id="searchSwitch" title="Show Search" onclick="PDFView.switchSidebarView('search')">
-            <img src="images/edit-find.svg" align="top" height="16" alt="Search Document" />
-          </button>
-        </div>
-      </div>
-    </div>
+      </div>  <!-- sidebarContainer -->
 
-    <div id="loadingBox">
-        <div id="loading">Loading... 0%</div>
-        <div id="loadingBar"><div class="progress"></div></div>
-    </div>
-    <div id="viewer"></div>
+      <div id="mainContainer">
+        <div class="toolbar">
+          <div id="toolbarContainer">
+
+            <div id="toolbarViewer">
+              <div id="toolbarViewerLeft">
+                <button id="sidebarToggle" class="toolbarButton" title="Toggle Sidebar" tabindex="3" data-l10n-id="toggle_slider">
+                  <span data-l10n-id="toggle_slider_label">Toggle Sidebar</span>
+                </button>
+                <div class="toolbarButtonSpacer"></div>
+                <div class="splitToolbarButton">
+                  <button class="toolbarButton pageUp" title="Previous Page" onclick="PDFView.page--" id="previous" tabindex="4" data-l10n-id="previous">
+                    <span data-l10n-id="previous_label">Previous</span>
+                  </button>
+                  <div class="splitToolbarButtonSeparator"></div>
+                  <button class="toolbarButton pageDown" title="Next Page" onclick="PDFView.page++" id="next" tabindex="5" data-l10n-id="next">
+                    <span data-l10n-id="next_label">Next</span>
+                  </button>
+                </div>
+                <label class="toolbarLabel" for="pageNumber" data-l10n-id="page_label">Page: </label>
+                <input type="number" id="pageNumber" class="toolbarField pageNumber" onchange="PDFView.page = this.value;" value="1" size="4" min="1" tabindex="6">
+                </input>
+                <span id="numPages" class="toolbarLabel"></span>
+              </div>
+              <div id="toolbarViewerRight">
+                <input id="fileInput" class="fileInput" type="file" oncontextmenu="return false;" tabindex="10" />
+
+                <!--
+                <input id="fileInput" class="fileInput" type="file" oncontextmenu="return false;" style="visibility: hidden; position: fixed; right: 0; top: 0" />
+                <button id="openFile" class="toolbarButton print" title="Open File" tabindex="10" data-l10n-id="open_file" onclick="document.getElementById('fileInput').click()">
+                   <span data-l10n-id="open_file_label">Open</span>
+                </button>
+                -->
+
+                <!--
+                <button id="print" class="toolbarButton print" title="Print" tabindex="11" data-l10n-id="print" onclick="window.print()">
+                  <span data-l10n-id="print_label">Print</span>
+                </button>
+                -->
+
+                <button id="download" class="toolbarButton download" title="Download" onclick="PDFView.download();" tabindex="12" data-l10n-id="download">
+                  <span data-l10n-id="download_label">Download</span>
+                </button>
+                <!-- <div class="toolbarButtonSpacer"></div> -->
+                <a href="#" id="viewBookmark" class="toolbarButton bookmark" title="Current view (copy or open in new window)" tabindex="13" data-l10n-id="bookmark"><span data-l10n-id="bookmark_label">Current View</span></a>
+              </div>
+              <div class="outerCenter">
+                <div class="innerCenter" id="toolbarViewerMiddle">
+                  <div class="splitToolbarButton">
+                    <button class="toolbarButton zoomOut" title="Zoom Out" onclick="PDFView.zoomOut();" tabindex="7" data-l10n-id="zoom_out">
+                      <span data-l10n-id="zoom_out_label">Zoom Out</span>
+                    </button>
+                    <div class="splitToolbarButtonSeparator"></div>
+                    <button class="toolbarButton zoomIn" title="Zoom In" onclick="PDFView.zoomIn();" tabindex="8" data-l10n-id="zoom_in">
+                      <span data-l10n-id="zoom_in_label">Zoom In</span>
+                     </button>
+                  </div>
+                  <span class="dropdownToolbarButton">
+                     <select id="scaleSelect" onchange="PDFView.parseScale(this.value);" title="Zoom" oncontextmenu="return false;" tabindex="9" data-l10n-id="zoom">
+                      <option id="pageAutoOption" value="auto" selected="selected" data-l10n-id="page_scale_auto">Automatic Zoom</option>
+                      <option id="pageActualOption" value="page-actual" data-l10n-id="page_scale_actual">Actual Size</option>
+                      <option id="pageFitOption" value="page-fit" data-l10n-id="page_scale_fit">Fit Page</option>
+                      <option id="pageWidthOption" value="page-width" data-l10n-id="page_scale_width">Full Width</option>
+                      <option id="customScaleOption" value="custom"></option>
+                      <option value="0.5">50%</option>
+                      <option value="0.75">75%</option>
+                      <option value="1">100%</option>
+                      <option value="1.25">125%</option>
+                      <option value="1.5">150%</option>
+                      <option value="2">200%</option>
+                    </select>
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div id="viewerContainer">
+          <div id="viewer"></div>
+        </div>
+
+        <div id="loadingBox">
+            <div id="loading" data-l10n-id="loading" data-l10n-args='{"percent": 0}'>Loading... 0%</div>
+            <div id="loadingBar"><div class="progress"></div></div>
+        </div>
+
+        <div id="errorWrapper" hidden='true'>
+          <div id="errorMessageLeft">
+            <span id="errorMessage"></span>
+            <button id="errorShowMore" onclick="" oncontextmenu="return false;" data-l10n-id="error_more_info">
+              More Information
+            </button>
+            <button id="errorShowLess" onclick="" oncontextmenu="return false;" data-l10n-id="error_less_info" hidden='true'>
+              Less Information
+            </button>
+          </div>
+          <div id="errorMessageRight">
+            <button id="errorClose" oncontextmenu="return false;" data-l10n-id="error_close">
+              Close
+            </button>
+          </div>
+          <div class="clearBoth"></div>
+          <textarea id="errorMoreInfo" hidden='true' readonly="readonly"></textarea>
+        </div>
+      </div> <!-- mainContainer -->
+
+    </div> <!-- outerContainer -->
   </body>
 </html>

@@ -36,7 +36,7 @@ Also, note that the development extension is updated on every merge and by defau
 auto-update extensions on a daily basis (you can change this through the 
 `extensions.update.interval` option in `about:config`).
 
-For an experimental Chrome extension, get the code as explained below and issue `make extension`. 
+For an experimental Chrome extension, get the code as explained below and issue `node make extension`. 
 Then open Chrome, go to `Tools > Extension` and load the (unpackaged) extension
 from the directory `build/chrome`.
 
@@ -50,9 +50,10 @@ To get a local copy of the current code, clone it using git:
 Next, you need to start a local web server as some browsers don't allow opening
 PDF files for a file:// url:
 
-    $ make server
+    $ node make server
 
-If everything worked out, you can now serve 
+You can install Node via [nvm](https://github.com/creationix/nvm) or the 
+[official package](http://nodejs.org). If everything worked out, you can now serve 
 
 + http://localhost:8888/web/viewer.html
 
@@ -64,7 +65,7 @@ You can also view all the test pdf files on the right side serving
 
 In order to bundle all `src/` files into a final `pdf.js`, issue:
 
-    $ make
+    $ node make bundle
 
 This will generate the file `build/pdf.js` that can be included in your final project. (WARNING: That's a large file! Consider minifying it).
 
@@ -73,8 +74,8 @@ This will generate the file `build/pdf.js` that can be included in your final pr
 
 You can play with the PDF.js API directly from your browser through the live demos below:
 
-+ Hello world: http://jsbin.com/pdfjs-helloworld/edit#html,live
-+ Simple reader with prev/next page controls: http://jsbin.com/pdfjs-prevnext/edit#html,live
++ Hello world: http://jsbin.com/pdfjs-helloworld-v2/edit#html,live
++ Simple reader with prev/next page controls: http://jsbin.com/pdfjs-prevnext-v2/edit#html,live
 
 The repo contains a hello world example that you can run locally:
 
