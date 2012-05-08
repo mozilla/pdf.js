@@ -44,42 +44,37 @@ function ChromeActions() {
 }
 ChromeActions.prototype = {
   download: function(data) {
-    Services.wm.getMostRecentWindow('navigator:browser').saveURL(data);
-  },
-  fallback: function(data) {
     let mimeService = Cc['@mozilla.org/mime;1'].getService(Ci.nsIMIMEService);
     var handlerInfo = mimeService.
                         getFromTypeAndExtension('application/pdf', 'pdf');
     var uri = NetUtil.newURI(data);
-    var filename = Services.wm.getMostRecentWindow('navigator:browser').
-                      getDefaultFileName('document.pdf', uri);
-    // Create a temporary file to output to.
-    var file = Cc['@mozilla.org/file/directory_service;1'].
-                getService(Ci.nsIProperties).
-                get('TmpD', Ci.nsIFile);
-    file.append(filename);
-    file.createUnique(Ci.nsIFile.NORMAL_FILE_TYPE, parseInt('0666', 8));
 
-    var ostream = Cc['@mozilla.org/network/file-output-stream;1'].
-                    createInstance(Ci.nsIFileOutputStream);
-    ostream.init(file, -1, -1, 0);
-
-    // Fetch the file and once it's ready attempt to open it with the system's
-    // default pdf handler.
-    NetUtil.asyncFetch(uri, function(istream, aResult) {
-      if (!Components.isSuccessCode(aResult)) {
-        log('Error: Fetching file failed with code ' + aResult);
-        return;
+    var extHelperAppSvc =
+          Cc['@mozilla.org/uriloader/external-helper-app-service;1'].
+            getService(Ci.nsIExternalHelperAppService);
+    var frontWindow = Cc['@mozilla.org/embedcomp/window-watcher;1'].
+                        getService(Ci.nsIWindowWatcher).activeWindow;
+    var ioService = Services.io;
+    var channel = ioService.newChannel(data, null, null);
+    var listener = {
+      extListener: null,
+      onStartRequest: function(aRequest, aContext) {
+        this.extListener = extHelperAppSvc.doContent('application/pdf',
+                              aRequest, frontWindow, false);
+        this.extListener.onStartRequest(aRequest, aContext);
+      },
+      onStopRequest: function(aRequest, aContext, aStatusCode) {
+        if (this.extListener)
+          this.extListener.onStopRequest(aRequest, aContext, aStatusCode);
+      },
+      onDataAvailable: function(aRequest, aContext, aInputStream, aOffset,
+                                aCount) {
+        this.extListener.onDataAvailable(aRequest, aContext, aInputStream,
+                                         aOffset, aCount);
       }
-      NetUtil.asyncCopy(istream, ostream, function(aResult) {
-        if (!Components.isSuccessCode(aResult)) {
-          log('Error: Copying file failed with code: ' + aResult);
-          return;
-        }
-        handlerInfo.preferredAction = Ci.nsIHandlerInfo.useSystemDefault;
-        handlerInfo.launchWithFile(file);
-      });
-    });
+    };
+
+    channel.asyncOpen(listener, null);
   },
   setDatabase: function(data) {
     if (this.inPrivateBrowswing)

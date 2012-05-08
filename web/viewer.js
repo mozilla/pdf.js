@@ -375,9 +375,9 @@ var PDFView = {
   },
 
   fallback: function pdfViewDownload() {
+    var url = this.url.split('#')[0];
     if (!PDFJS.isFirefoxExtension)
       return; // can't do this with regular viewer
-    var url = this.url.split('#')[0];
     FirefoxCom.request('fallback', url);
   },
 
@@ -1358,9 +1358,6 @@ window.addEventListener('load', function webViewerLoad(evt) {
   } else {
     document.getElementById('fileInput').value = null;
   }
-
-  if (PDFJS.isFirefoxExtension)
-    document.getElementById('fallback').removeAttribute('hidden');
 
   // Special debugging flags in the hash section of the URL.
   var hash = document.location.hash.substring(1);
