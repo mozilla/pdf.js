@@ -16,6 +16,7 @@ const MAX_DATABASE_LENGTH = 4096;
 
 Cu.import('resource://gre/modules/XPCOMUtils.jsm');
 Cu.import('resource://gre/modules/Services.jsm');
+Cu.import('resource://gre/modules/NetUtil.jsm');
 
 let application = Cc['@mozilla.org/fuel/application;1']
                     .getService(Ci.fuelIApplication);
@@ -44,6 +45,41 @@ function ChromeActions() {
 ChromeActions.prototype = {
   download: function(data) {
     Services.wm.getMostRecentWindow('navigator:browser').saveURL(data);
+  },
+  fallback: function(data) {
+    let mimeService = Cc['@mozilla.org/mime;1'].getService(Ci.nsIMIMEService);
+    var handlerInfo = mimeService.
+                        getFromTypeAndExtension('application/pdf', 'pdf');
+    var uri = NetUtil.newURI(data);
+    var filename = Services.wm.getMostRecentWindow('navigator:browser').
+                      getDefaultFileName('document.pdf', uri);
+    // Create a temporary file to output to.
+    var file = Cc['@mozilla.org/file/directory_service;1'].
+                getService(Ci.nsIProperties).
+                get('TmpD', Ci.nsIFile);
+    file.append(filename);
+    file.createUnique(Ci.nsIFile.NORMAL_FILE_TYPE, parseInt('0666', 8));
+
+    var ostream = Cc['@mozilla.org/network/file-output-stream;1'].
+                    createInstance(Ci.nsIFileOutputStream);
+    ostream.init(file, -1, -1, 0);
+
+    // Fetch the file and once it's ready attempt to open it with the system's
+    // default pdf handler.
+    NetUtil.asyncFetch(uri, function(istream, aResult) {
+      if (!Components.isSuccessCode(aResult)) {
+        log('Error: Fetching file failed with code ' + aResult);
+        return;
+      }
+      NetUtil.asyncCopy(istream, ostream, function(aResult) {
+        if (!Components.isSuccessCode(aResult)) {
+          log('Error: Copying file failed with code: ' + aResult);
+          return;
+        }
+        handlerInfo.preferredAction = Ci.nsIHandlerInfo.useSystemDefault;
+        handlerInfo.launchWithFile(file);
+      });
+    });
   },
   setDatabase: function(data) {
     if (this.inPrivateBrowswing)
