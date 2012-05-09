@@ -14,6 +14,7 @@ var kMinScale = 0.25;
 var kMaxScale = 4.0;
 var kImageDirectory = './images/';
 var kSettingsMemory = 20;
+var kScrollLimit = 100; // ms throttle scroll events
 
 var mozL10n = document.mozL10n || document.webL10n;
 
@@ -1479,7 +1480,12 @@ function updateViewarea() {
   document.getElementById('viewBookmark').href = href;
 }
 
+var lastScrollEvent = Date.now();
 window.addEventListener('scroll', function webViewerScroll(evt) {
+  var now = Date.now();
+  if (now - lastScrollEvent < kScrollLimit)
+    return;
+  lastScrollEvent = now;
   updateViewarea();
 }, true);
 
