@@ -13,16 +13,16 @@ let Cu = Components.utils;
 
 Cu.import('resource://gre/modules/Services.jsm');
 
-function getBoolPref(pref, default) {
+function getBoolPref(pref, def) {
   try {
     return Services.prefs.getBoolPref(pref);
   } catch (ex) {
-    return default;
+    return def;
   }
 }
 
 function setStringPref(pref, value) {
-  let str = Cc["@mozilla.org/supports-string;1"]
+  let str = Cc['@mozilla.org/supports-string;1']
               .createInstance(Ci.nsISupportsString);
   str.data = value;
   Services.prefs.setComplexValue(pref, Ci.nsISupportsString, str);
