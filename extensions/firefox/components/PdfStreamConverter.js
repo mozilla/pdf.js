@@ -16,6 +16,7 @@ const MAX_DATABASE_LENGTH = 4096;
 
 Cu.import('resource://gre/modules/XPCOMUtils.jsm');
 Cu.import('resource://gre/modules/Services.jsm');
+Cu.import('resource://gre/modules/NetUtil.jsm');
 
 let privateBrowsing = Cc['@mozilla.org/privatebrowsing;1']
                         .getService(Ci.nsIPrivateBrowsingService);
@@ -64,7 +65,37 @@ function ChromeActions() {
 }
 ChromeActions.prototype = {
   download: function(data) {
-    Services.wm.getMostRecentWindow('navigator:browser').saveURL(data);
+    let mimeService = Cc['@mozilla.org/mime;1'].getService(Ci.nsIMIMEService);
+    var handlerInfo = mimeService.
+                        getFromTypeAndExtension('application/pdf', 'pdf');
+    var uri = NetUtil.newURI(data);
+
+    var extHelperAppSvc =
+          Cc['@mozilla.org/uriloader/external-helper-app-service;1'].
+            getService(Ci.nsIExternalHelperAppService);
+    var frontWindow = Cc['@mozilla.org/embedcomp/window-watcher;1'].
+                        getService(Ci.nsIWindowWatcher).activeWindow;
+    var ioService = Services.io;
+    var channel = ioService.newChannel(data, null, null);
+    var listener = {
+      extListener: null,
+      onStartRequest: function(aRequest, aContext) {
+        this.extListener = extHelperAppSvc.doContent('application/pdf',
+                              aRequest, frontWindow, false);
+        this.extListener.onStartRequest(aRequest, aContext);
+      },
+      onStopRequest: function(aRequest, aContext, aStatusCode) {
+        if (this.extListener)
+          this.extListener.onStopRequest(aRequest, aContext, aStatusCode);
+      },
+      onDataAvailable: function(aRequest, aContext, aInputStream, aOffset,
+                                aCount) {
+        this.extListener.onDataAvailable(aRequest, aContext, aInputStream,
+                                         aOffset, aCount);
+      }
+    };
+
+    channel.asyncOpen(listener, null);
   },
   setDatabase: function(data) {
     if (this.inPrivateBrowswing)
