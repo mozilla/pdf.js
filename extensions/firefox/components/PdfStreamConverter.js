@@ -11,12 +11,14 @@ const Cr = Components.results;
 const Cu = Components.utils;
 const PDFJS_EVENT_ID = 'pdf.js.message';
 const PDF_CONTENT_TYPE = 'application/pdf';
-const EXT_PREFIX = 'extensions.uriloader@pdf.js';
+const EXT_ID = 'uriloader@pdf.js';
+const EXT_PREFIX = 'extensions.' + EXT_ID;
 const MAX_DATABASE_LENGTH = 4096;
 
 Cu.import('resource://gre/modules/XPCOMUtils.jsm');
 Cu.import('resource://gre/modules/Services.jsm');
 Cu.import('resource://gre/modules/NetUtil.jsm');
+Cu.import('resource://gre/modules/AddonManager.jsm');
 
 let privateBrowsing = Cc['@mozilla.org/privatebrowsing;1']
                         .getService(Ci.nsIPrivateBrowsingService);
@@ -58,6 +60,13 @@ function getDOMWindow(aChannel) {
   var win = requestor.getInterface(Components.interfaces.nsIDOMWindow);
   return win;
 }
+
+// Fake l10n until we get the real l10n sorted out.
+var mozL10n = {
+  get: function(key, args, fallback) {
+    return fallback;
+  }
+};
 
 // All the priviledged actions.
 function ChromeActions() {
@@ -115,9 +124,35 @@ ChromeActions.prototype = {
   },
   pdfBugEnabled: function() {
     return getBoolPref(EXT_PREFIX + '.pdfBugEnabled', false);
+  },
+  fallback: function(url) {
+    var self = this;
+    var message = mozL10n.get('unsupported_feature', null,
+                  'An unsupported feature was detected in this PDF document.');
+    var win = Services.wm.getMostRecentWindow('navigator:browser');
+    var notificationBox = win.gBrowser.getNotificationBox();
+    var buttons = [{
+      label: mozL10n.get('download_document', null, 'Download Document'),
+      accessKey: null,
+      callback: function() {
+        self.download(url);
+      }
+    }, {
+      label: mozL10n.get('disable_pdfjs', null,
+                         'Disable Mozilla PDF Viewer'),
+      accessKey: null,
+      callback: function() {
+        AddonManager.getAddonByID(EXT_ID, function(aAddon) {
+          aAddon.userDisabled = true;
+          win.gBrowser.contentWindow.location.reload();
+        });
+      }
+    }];
+    notificationBox.appendNotification(message, 'pdfjs-fallback', null,
+                                       notificationBox.PRIORITY_WARNING_LOW,
+                                       buttons);
   }
 };
-
 
 // Event listener to trigger chrome privedged code.
 function RequestListener(actions) {
