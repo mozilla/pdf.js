@@ -17,14 +17,35 @@ const MAX_DATABASE_LENGTH = 4096;
 Cu.import('resource://gre/modules/XPCOMUtils.jsm');
 Cu.import('resource://gre/modules/Services.jsm');
 
-let application = Cc['@mozilla.org/fuel/application;1']
-                    .getService(Ci.fuelIApplication);
 let privateBrowsing = Cc['@mozilla.org/privatebrowsing;1']
                         .getService(Ci.nsIPrivateBrowsingService);
 let inPrivateBrowswing = privateBrowsing.privateBrowsingEnabled;
 
+function getBoolPref(pref, def) {
+  try {
+    return Services.prefs.getBoolPref(pref);
+  } catch (ex) {
+    return def;
+  }
+}
+
+function setStringPref(pref, value) {
+  let str = Cc['@mozilla.org/supports-string;1']
+              .createInstance(Ci.nsISupportsString);
+  str.data = value;
+  Services.prefs.setComplexValue(pref, Ci.nsISupportsString, str);
+}
+
+function getStringPref(pref, def) {
+  try {
+    return Services.prefs.getComplexValue(pref, Ci.nsISupportsString).data;
+  } catch (ex) {
+    return def;
+  }
+}
+
 function log(aMsg) {
-  if (!application.prefs.getValue(EXT_PREFIX + '.pdfBugEnabled', false))
+  if (!getBoolPref(EXT_PREFIX + '.pdfBugEnabled', false))
     return;
   let msg = 'PdfStreamConverter.js: ' + (aMsg.join ? aMsg.join('') : aMsg);
   Services.console.logStringMessage(msg);
@@ -51,18 +72,18 @@ ChromeActions.prototype = {
     // Protect against something sending tons of data to setDatabase.
     if (data.length > MAX_DATABASE_LENGTH)
       return;
-    application.prefs.setValue(EXT_PREFIX + '.database', data);
+    setStringPref(EXT_PREFIX + '.database', data);
   },
   getDatabase: function() {
     if (this.inPrivateBrowswing)
       return '{}';
-    return application.prefs.getValue(EXT_PREFIX + '.database', '{}');
+    return getStringPref(EXT_PREFIX + '.database', '{}');
   },
   getLocale: function() {
-    return application.prefs.getValue('general.useragent.locale', 'en-US');
+    return getStringPref('general.useragent.locale', 'en-US');
   },
   pdfBugEnabled: function() {
-    return application.prefs.getValue(EXT_PREFIX + '.pdfBugEnabled', false);
+    return getBoolPref(EXT_PREFIX + '.pdfBugEnabled', false);
   }
 };
 
