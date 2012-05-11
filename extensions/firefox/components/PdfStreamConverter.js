@@ -60,9 +60,9 @@ function getDOMWindow(aChannel) {
 }
 
 function getLocalizedStrings(path) {
-  var stringBundle = Cc["@mozilla.org/intl/stringbundle;1"].
+  var stringBundle = Cc['@mozilla.org/intl/stringbundle;1'].
       getService(Ci.nsIStringBundleService).
-      createBundle("chrome://pdfviewer/locale/" + path);
+      createBundle('chrome://pdfviewer/locale/' + path);
 
   var map = {};
   var enumerator = stringBundle.getSimpleEnumeration();
@@ -142,7 +142,7 @@ ChromeActions.prototype = {
         this.localizedStrings = getLocalizedStrings('viewer.properties');
 
       var result = this.localizedStrings[data];
-      return JSON.stringify(result || null)
+      return JSON.stringify(result || null);
     } catch (e) {
       log('Unable to retrive localized strings: ' + e);
       return 'null';
