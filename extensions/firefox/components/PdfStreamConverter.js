@@ -4,10 +4,6 @@
 'use strict';
 
 var EXPORTED_SYMBOLS = ['PdfStreamConverter'];
-var DEFAULT_LOCALE = 'en-US';
-
-var IS_MOZCENTRAL = false; // PDFJS_SUPPORTED_LOCALES
-var SUPPORTED_LOCALES = [DEFAULT_LOCALE]; // PDFJS_SUPPORTED_LOCALES
 
 const Cc = Components.classes;
 const Ci = Components.interfaces;
