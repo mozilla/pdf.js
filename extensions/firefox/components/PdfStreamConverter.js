@@ -62,7 +62,7 @@ function getDOMWindow(aChannel) {
 function getLocalizedStrings(path) {
   var stringBundle = Cc['@mozilla.org/intl/stringbundle;1'].
       getService(Ci.nsIStringBundleService).
-      createBundle('chrome://pdfviewer/locale/' + path);
+      createBundle('chrome://pdf.js/locale/' + path);
 
   var map = {};
   var enumerator = stringBundle.getSimpleEnumeration();

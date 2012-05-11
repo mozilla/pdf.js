@@ -98,7 +98,7 @@ target.locale = function() {
     }
 
     mkdir('-p', EXTENSION_LOCALE_OUTPUT + '/' + locale);
-    chromeManifestContent += 'locale  pdfviewer  ' + locale + '  locale/' + locale + '/\n';
+    chromeManifestContent += 'locale  pdf.js  ' + locale + '  locale/' + locale + '/\n';
 
     if (test('-f', path + '/viewer.properties')) {
       var properties = cat(path + '/viewer.properties');
