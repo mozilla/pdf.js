@@ -250,6 +250,7 @@ target.extension = function() {
   echo();
   echo('### Building extensions');
 
+  target.locale();
   target.production();
   target.firefox();
   target.chrome();
@@ -302,6 +303,7 @@ target.firefox = function() {
       FIREFOX_EXTENSION_NAME = 'pdf.js.xpi',
       FIREFOX_AMO_EXTENSION_NAME = 'pdf.js.amo.xpi';
 
+  target.locale();
   target.production();
   target.buildnumber();
   cd(ROOT_DIR);
