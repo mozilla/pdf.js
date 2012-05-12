@@ -8,11 +8,22 @@
     <!-- PDFJS_LOCALIZED_METADATA -->
     <em:name>PDF Viewer</em:name>
     <em:version>PDFJSSCRIPT_VERSION</em:version>
+
+    <!-- Firefox -->
     <em:targetApplication>
       <Description>
        <em:id>{ec8030f7-c20a-464f-9b0e-13a3a9e97384}</em:id>
        <em:minVersion>6.0</em:minVersion>
        <em:maxVersion>14.0a1</em:maxVersion>
+     </Description>
+    </em:targetApplication>
+
+    <!-- SeaMonkey -->
+    <em:targetApplication>
+      <Description>
+       <em:id>{92650c4d-4b8e-4d2a-b7eb-24ecf4f6b63a}</em:id>
+       <em:minVersion>2.1.*</em:minVersion>
+       <em:maxVersion>2.9.*</em:maxVersion>
      </Description>
     </em:targetApplication>
     <em:bootstrap>true</em:bootstrap>

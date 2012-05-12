@@ -13,14 +13,25 @@ const PDFJS_EVENT_ID = 'pdf.js.message';
 const PDF_CONTENT_TYPE = 'application/pdf';
 const EXT_PREFIX = 'extensions.uriloader@pdf.js';
 const MAX_DATABASE_LENGTH = 4096;
+const FIREFOX_ID = '{ec8030f7-c20a-464f-9b0e-13a3a9e97384}';
+const SEAMONKEY_ID = '{92650c4d-4b8e-4d2a-b7eb-24ecf4f6b63a}';
 
 Cu.import('resource://gre/modules/XPCOMUtils.jsm');
 Cu.import('resource://gre/modules/Services.jsm');
 Cu.import('resource://gre/modules/NetUtil.jsm');
 
-let privateBrowsing = Cc['@mozilla.org/privatebrowsing;1']
-                        .getService(Ci.nsIPrivateBrowsingService);
-let inPrivateBrowswing = privateBrowsing.privateBrowsingEnabled;
+let appInfo = Cc['@mozilla.org/xre/app-info;1']
+                  .getService(Ci.nsIXULAppInfo);
+let privateBrowsing, inPrivateBrowsing;
+
+if (appInfo.ID === FIREFOX_ID) {
+  privateBrowsing = Cc['@mozilla.org/privatebrowsing;1']
+                          .getService(Ci.nsIPrivateBrowsingService);
+  inPrivateBrowsing = privateBrowsing.privateBrowsingEnabled;
+} else if (appInfo.ID === SEAMONKEY_ID) {
+  privateBrowsing = null;
+  inPrivateBrowsing = false;
+}
 
 function getBoolPref(pref, def) {
   try {
@@ -61,8 +72,8 @@ function getDOMWindow(aChannel) {
 
 // All the priviledged actions.
 function ChromeActions() {
-  this.inPrivateBrowswing = privateBrowsing.privateBrowsingEnabled;
 }
+
 ChromeActions.prototype = {
   download: function(data) {
     let mimeService = Cc['@mozilla.org/mime;1'].getService(Ci.nsIMIMEService);
@@ -98,7 +109,7 @@ ChromeActions.prototype = {
     channel.asyncOpen(listener, null);
   },
   setDatabase: function(data) {
-    if (this.inPrivateBrowswing)
+    if (inPrivateBrowsing)
       return;
     // Protect against something sending tons of data to setDatabase.
     if (data.length > MAX_DATABASE_LENGTH)
@@ -106,7 +117,7 @@ ChromeActions.prototype = {
     setStringPref(EXT_PREFIX + '.database', data);
   },
   getDatabase: function() {
-    if (this.inPrivateBrowswing)
+    if (inPrivateBrowsing)
       return '{}';
     return getStringPref(EXT_PREFIX + '.database', '{}');
   },
