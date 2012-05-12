@@ -20,6 +20,9 @@ var kPDFGlyphSpaceUnits = 1000;
 // Until hinting is fully supported this constant can be used
 var kHintingEnabled = false;
 
+// A reference to a reusable style sheet.
+var styleSheet;
+
 var FontFlags = {
   FixedPitch: 1,
   Serif: 2,
@@ -2374,11 +2377,14 @@ var Font = (function FontClosure() {
                  window.btoa(data) + ');');
       var rule = "@font-face { font-family:'" + fontName + "';src:" + url + '}';
 
-      var styleElement = document.createElement('style');
-      document.documentElement.getElementsByTagName('head')[0].appendChild(
-        styleElement);
 
-      var styleSheet = styleElement.sheet;
+      if(!styleSheet) {
+        var styleElement = document.createElement('style');
+        document.documentElement.getElementsByTagName('head')[0].appendChild(
+          styleElement);
+
+        styleSheet = styleElement.sheet;
+      }
       styleSheet.insertRule(rule, styleSheet.cssRules.length);
 
       if (PDFJS.pdfBug && FontInspector.enabled)
