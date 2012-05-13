@@ -556,7 +556,9 @@ var CipherTransformFactory = (function CipherTransformFactoryClosure() {
     var encryptionKey = prepareKeyData(fileIdBytes, passwordBytes,
                                        ownerPassword, userPassword, flags,
                                        revision, keyLength, encryptMetadata);
-    if (!encryptionKey && password) {
+    if (!encryptionKey && !password) {
+      throw new PasswordException('No password given', 'needpassword');
+    } else if (!encryptionKey && password) {
       // Attempting use the password as an owner password
       var decodedPassword = decodeUserPassword(passwordBytes, ownerPassword,
                                                revision, keyLength);

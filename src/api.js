@@ -11,7 +11,8 @@
  * typed array already populated with data.
  * @return {Promise} A promise that is resolved with {PDFDocumentProxy} object.
  */
-PDFJS.getDocument = function getDocument(source) {
+PDFJS.getDocument = function getDocument(source, params) {
+  var password = (params && params.password) ? params.password : null;
   var promise = new PDFJS.Promise();
   var transport = new WorkerTransport(promise);
   if (typeof source === 'string') {
@@ -32,11 +33,11 @@ PDFJS.getDocument = function getDocument(source) {
         }
       },
       function getPDFLoad(data) {
-        transport.sendData(data);
+        transport.sendData(data, params);
       });
   } else {
     // assuming the source is array, instantiating directly from it
-    transport.sendData(source);
+    transport.sendData(source, params);
   }
   return promise;
 };
@@ -117,6 +118,10 @@ var PDFDocumentProxy = (function PDFDocumentProxyClosure() {
         info: info,
         metadata: metadata ? new PDFJS.Metadata(metadata) : null
       });
+      return promise;
+    },
+    isEncrypted: function PDFDocumentProxy_isEncrypted() {
+      var promise = new PDFJS.Promise();
       return promise;
     },
     destroy: function PDFDocumentProxy_destroy() {
@@ -464,6 +469,10 @@ var WorkerTransport = (function WorkerTransportClosure() {
         this.workerReadyPromise.resolve(pdfDocument);
       }, this);
 
+      messageHandler.on('NeedPassword', function transportPassword(data) {
+        this.workerReadyPromise.reject(data.exception.message, data.exception);
+      }, this);
+
       messageHandler.on('GetPage', function transportPage(data) {
         var pageInfo = data.pageInfo;
         var page = new PDFPageProxy(pageInfo, this);
@@ -566,8 +575,8 @@ var WorkerTransport = (function WorkerTransportClosure() {
       });
     },
 
-    sendData: function WorkerTransport_sendData(data) {
-      this.messageHandler.send('GetDocRequest', data);
+    sendData: function WorkerTransport_sendData(data, params) {
+      this.messageHandler.send('GetDocRequest', {data: data, params: params});
     },
 
     getPage: function WorkerTransport_getPage(pageNumber, promise) {

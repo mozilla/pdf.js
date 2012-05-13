@@ -331,10 +331,11 @@ var PDFView = {
     return currentPageNumber;
   },
 
-  open: function pdfViewOpen(url, scale) {
-    this.url = url;
-
-    document.title = decodeURIComponent(getFileName(url)) || url;
+  open: function pdfViewOpen(url, scale, password) {
+    if (typeof url === 'string') {
+      this.url = url;
+      document.title = decodeURIComponent(getFileName(url)) || url;
+    }
 
     if (!PDFView.loadingBar) {
       PDFView.loadingBar = new ProgressBar('#loadingBar', {});
@@ -342,12 +343,19 @@ var PDFView = {
 
     var self = this;
     self.loading = true;
-    PDFJS.getDocument(url).then(
+    var parameters = (password) ? {password: password} : {};
+    PDFJS.getDocument(url, parameters).then(
       function getDocumentCallback(pdfDocument) {
         self.load(pdfDocument, scale);
         self.loading = false;
       },
       function getDocumentError(message, exception) {
+        if (exception && exception.name === 'PasswordException') {
+          password = prompt("PDF Protected by password:");
+          if (password && password.length > 0) {
+            return PDFView.open(url, scale, password);
+          }
+        }
         var loadingIndicator = document.getElementById('loading');
         loadingIndicator.textContent = mozL10n.get('loading_error_indicator',
           null, 'Error');
@@ -1531,9 +1539,7 @@ window.addEventListener('change', function webViewerChange(evt) {
       uint8Array[i] = data.charCodeAt(i);
 
     // TODO using blob instead?
-    PDFJS.getDocument(uint8Array).then(function(pdfDocument) {
-      PDFView.load(pdfDocument);
-    });
+    PDFView.open(uint8Array, 0);
   };
 
   // Read as a binary string since "readAsArrayBuffer" is not yet
