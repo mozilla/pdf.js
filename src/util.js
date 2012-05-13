@@ -58,6 +58,14 @@ function shadow(obj, prop, value) {
   return value;
 }
 
+function PasswordException(message, code) {
+  this.name = "PasswordException";
+  this.message = message;
+  this.code = code;
+}
+PasswordException.prototype = new Error();
+PasswordException.constructor = PasswordException;
+
 function bytesToString(bytes) {
   var str = '';
   var length = bytes.length;
@@ -456,7 +464,7 @@ var Promise = PDFJS.Promise = (function PromiseClosure() {
       }
 
       this.isResolved = true;
-      this.data = data || null;
+      this.data = (typeof data !== 'undefined') ? data : null;
       var callbacks = this.callbacks;
 
       for (var i = 0, ii = callbacks.length; i < ii; i++) {
@@ -471,7 +479,7 @@ var Promise = PDFJS.Promise = (function PromiseClosure() {
       }
     },
 
-    reject: function Promise_reject(reason) {
+    reject: function Promise_reject(reason, exception) {
       if (this.isRejected) {
         error('A Promise can be rejected only once ' + this.name);
       }
@@ -484,7 +492,7 @@ var Promise = PDFJS.Promise = (function PromiseClosure() {
       var errbacks = this.errbacks;
 
       for (var i = 0, ii = errbacks.length; i < ii; i++) {
-        errbacks[i].call(null, reason);
+        errbacks[i].call(null, reason, exception);
       }
     },
 

@@ -88,14 +88,30 @@ var WorkerMessageHandler = {
     handler.on('GetDocRequest', function wphSetupDoc(data) {
       // Create only the model of the PDFDoc, which is enough for
       // processing the content of the pdf.
-      pdfModel = new PDFDocument(new Stream(data));
+      var pdfData = data.data;
+      var password = data.params.password;
+      try {
+        pdfModel = new PDFDocument(new Stream(pdfData), password);
+      } catch(e) {
+        if (e instanceof PasswordException) {
+          handler.send('NeedPassword', {
+            exception: e,
+            reason: 'needPassword'
+          });
+
+          return;
+        } else {
+          throw e;
+        }
+      }
       var doc = {
         numPages: pdfModel.numPages,
         fingerprint: pdfModel.getFingerprint(),
         destinations: pdfModel.catalog.destinations,
         outline: pdfModel.catalog.documentOutline,
         info: pdfModel.getDocumentInfo(),
-        metadata: pdfModel.catalog.metadata
+        metadata: pdfModel.catalog.metadata,
+        encrypted: !!pdfModel.xref.encrypt
       };
       handler.send('GetDoc', {pdfInfo: doc});
     });
