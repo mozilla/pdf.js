@@ -351,11 +351,12 @@ var PDFView = {
       },
       function getDocumentError(message, exception) {
         if (exception && exception.name === 'PasswordException') {
-          password = prompt("PDF Protected by password:");
+          password = prompt(mozL10n.get('password_request', null, 'PDF is protected by a password:'));
           if (password && password.length > 0) {
             return PDFView.open(url, scale, password);
           }
         }
+
         var loadingIndicator = document.getElementById('loading');
         loadingIndicator.textContent = mozL10n.get('loading_error_indicator',
           null, 'Error');

@@ -110,7 +110,8 @@ var WorkerMessageHandler = {
         destinations: pdfModel.catalog.destinations,
         outline: pdfModel.catalog.documentOutline,
         info: pdfModel.getDocumentInfo(),
-        metadata: pdfModel.catalog.metadata
+        metadata: pdfModel.catalog.metadata,
+        encrypted: !!pdfModel.xref.encrypt
       };
       handler.send('GetDoc', {pdfInfo: doc});
     });

@@ -122,6 +122,7 @@ var PDFDocumentProxy = (function PDFDocumentProxyClosure() {
     },
     isEncrypted: function PDFDocumentProxy_isEncrypted() {
       var promise = new PDFJS.Promise();
+      promise.resolve(this.pdfInfo.encrypted);
       return promise;
     },
     destroy: function PDFDocumentProxy_destroy() {
