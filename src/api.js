@@ -20,7 +20,7 @@
 PDFJS.getDocument = function getDocument(source) {
   var url, data, headers, password, parameters = {};
   if (typeof source === 'string') {
-    url = params;
+    url = source;
   } else if (isArrayBuffer(source)) {
     data = source;
   } else if (typeof source === 'object') {
