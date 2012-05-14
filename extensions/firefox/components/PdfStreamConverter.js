@@ -70,6 +70,28 @@ function getDOMWindow(aChannel) {
   return win;
 }
 
+function getLocalizedStrings(path) {
+  var stringBundle = Cc['@mozilla.org/intl/stringbundle;1'].
+      getService(Ci.nsIStringBundleService).
+      createBundle('chrome://pdf.js/locale/' + path);
+
+  var map = {};
+  var enumerator = stringBundle.getSimpleEnumeration();
+  while (enumerator.hasMoreElements()) {
+    var string = enumerator.getNext().QueryInterface(Ci.nsIPropertyElement);
+    var key = string.key, property = 'textContent';
+    var i = key.lastIndexOf('.');
+    if (i >= 0) {
+      property = key.substring(i + 1);
+      key = key.substring(0, i);
+    }
+    if (!(key in map))
+      map[key] = {};
+    map[key][property] = string.value;
+  }
+  return map;
+}
+
 // All the priviledged actions.
 function ChromeActions() {
 }
@@ -123,6 +145,19 @@ ChromeActions.prototype = {
   },
   getLocale: function() {
     return getStringPref('general.useragent.locale', 'en-US');
+  },
+  getStrings: function(data) {
+    try {
+      // Lazy initialization of localizedStrings
+      if (!('localizedStrings' in this))
+        this.localizedStrings = getLocalizedStrings('viewer.properties');
+
+      var result = this.localizedStrings[data];
+      return JSON.stringify(result || null);
+    } catch (e) {
+      log('Unable to retrive localized strings: ' + e);
+      return 'null';
+    }
   },
   pdfBugEnabled: function() {
     return getBoolPref(EXT_PREFIX + '.pdfBugEnabled', false);
