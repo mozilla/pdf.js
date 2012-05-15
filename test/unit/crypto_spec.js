@@ -185,3 +185,66 @@ describe('crypto', function() {
   });
 });
 
+describe('CipherTransformFactory', function() {
+  function DictMock(map) {
+    this.map = map;
+  }
+  DictMock.prototype = {
+    get: function(key) {
+      return this.map[key];
+    }
+  };
+
+  var map1 = {
+    Filter: new Name('Standard'),
+    V: 2,
+    Length: 128,
+    O: unescape('%80%C3%04%96%91o%20sl%3A%E6%1B%13T%91%F2%0DV%12%E3%FF%5E%BB%' +
+                'E9VO%D8k%9A%CA%7C%5D'),
+    U: unescape('j%0C%8D%3EY%19%00%BCjd%7D%91%BD%AA%00%18%00%00%00%00%00%00%0' +
+                '0%00%00%00%00%00%00%00%00%00'),
+    P: -1028,
+    R: 3
+  };
+  var fileID1 = unescape('%F6%C6%AF%17%F3rR%8DRM%9A%80%D1%EF%DF%18');
+
+  var map2 = {
+    Filter: new Name('Standard'),
+    V: 4,
+    Length: 128,
+    O: unescape('sF%14v.y5%27%DB%97%0A5%22%B3%E1%D4%AD%BD%9B%3C%B4%A5%89u%15%' +
+                'B2Y%F1h%D9%E9%F4'),
+    U: unescape('%93%04%89%A9%BF%8AE%A6%88%A2%DB%C2%A0%A8gn%00%00%00%00%00%00' +
+                '%00%00%00%00%00%00%00%00%00%00'),
+    P: -1084,
+    R: 4
+  };
+  var fileID2 = unescape('%3CL_%3AD%96%AF@%9A%9D%B3%3Cx%1Cv%AC');
+
+  describe('#ctor', function() {
+    it('should accept user password', function() {
+      var factory = new CipherTransformFactory(new DictMock(map1), fileID1,
+        '123456');
+    });
+
+    it('should accept owner password', function() {
+      var factory = new CipherTransformFactory(new DictMock(map1), fileID1,
+        '654321');
+    });
+
+    it('should not accept wrong password', function() {
+      var thrown = false;
+      try {
+        var factory = new CipherTransformFactory(new DictMock(map1), fileID1,
+          'wrong');
+      } catch (e) {
+        thrown = true;
+      }
+      expect(thrown).toEqual(true);
+    });
+
+    it('should accept no password', function() {
+      var factory = new CipherTransformFactory(new DictMock(map2), fileID2);
+    });
+  });
+});
