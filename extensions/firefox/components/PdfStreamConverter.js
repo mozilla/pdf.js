@@ -14,15 +14,26 @@ const PDF_CONTENT_TYPE = 'application/pdf';
 const EXT_ID = 'uriloader@pdf.js';
 const EXT_PREFIX = 'extensions.' + EXT_ID;
 const MAX_DATABASE_LENGTH = 4096;
+const FIREFOX_ID = '{ec8030f7-c20a-464f-9b0e-13a3a9e97384}';
+const SEAMONKEY_ID = '{92650c4d-4b8e-4d2a-b7eb-24ecf4f6b63a}';
 
 Cu.import('resource://gre/modules/XPCOMUtils.jsm');
 Cu.import('resource://gre/modules/Services.jsm');
 Cu.import('resource://gre/modules/NetUtil.jsm');
 Cu.import('resource://gre/modules/AddonManager.jsm');
 
-let privateBrowsing = Cc['@mozilla.org/privatebrowsing;1']
-                        .getService(Ci.nsIPrivateBrowsingService);
-let inPrivateBrowswing = privateBrowsing.privateBrowsingEnabled;
+let appInfo = Cc['@mozilla.org/xre/app-info;1']
+                  .getService(Ci.nsIXULAppInfo);
+let privateBrowsing, inPrivateBrowsing;
+
+if (appInfo.ID === FIREFOX_ID) {
+  privateBrowsing = Cc['@mozilla.org/privatebrowsing;1']
+                          .getService(Ci.nsIPrivateBrowsingService);
+  inPrivateBrowsing = privateBrowsing.privateBrowsingEnabled;
+} else if (appInfo.ID === SEAMONKEY_ID) {
+  privateBrowsing = null;
+  inPrivateBrowsing = false;
+}
 
 function getBoolPref(pref, def) {
   try {
@@ -61,17 +72,37 @@ function getDOMWindow(aChannel) {
   return win;
 }
 
-// Fake l10n until we get the real l10n sorted out.
-var mozL10n = {
-  get: function(key, args, fallback) {
-    return fallback;
+function getLocalizedStrings(path) {
+  var stringBundle = Cc['@mozilla.org/intl/stringbundle;1'].
+      getService(Ci.nsIStringBundleService).
+      createBundle('chrome://pdf.js/locale/' + path);
+
+  var map = {};
+  var enumerator = stringBundle.getSimpleEnumeration();
+  while (enumerator.hasMoreElements()) {
+    var string = enumerator.getNext().QueryInterface(Ci.nsIPropertyElement);
+    var key = string.key, property = 'textContent';
+    var i = key.lastIndexOf('.');
+    if (i >= 0) {
+      property = key.substring(i + 1);
+      key = key.substring(0, i);
+    }
+    if (!(key in map))
+      map[key] = {};
+    map[key][property] = string.value;
   }
-};
+  return map;
+}
+function getLocalizedString(strings, id) {
+  if (id in strings)
+    return strings[id]['textContent'];
+  return id;
+}
 
 // All the priviledged actions.
 function ChromeActions() {
-  this.inPrivateBrowswing = privateBrowsing.privateBrowsingEnabled;
 }
+
 ChromeActions.prototype = {
   download: function(data) {
     let mimeService = Cc['@mozilla.org/mime;1'].getService(Ci.nsIMIMEService);
@@ -107,7 +138,7 @@ ChromeActions.prototype = {
     channel.asyncOpen(listener, null);
   },
   setDatabase: function(data) {
-    if (this.inPrivateBrowswing)
+    if (inPrivateBrowsing)
       return;
     // Protect against something sending tons of data to setDatabase.
     if (data.length > MAX_DATABASE_LENGTH)
@@ -115,31 +146,43 @@ ChromeActions.prototype = {
     setStringPref(EXT_PREFIX + '.database', data);
   },
   getDatabase: function() {
-    if (this.inPrivateBrowswing)
+    if (inPrivateBrowsing)
       return '{}';
     return getStringPref(EXT_PREFIX + '.database', '{}');
   },
   getLocale: function() {
     return getStringPref('general.useragent.locale', 'en-US');
   },
+  getStrings: function(data) {
+    try {
+      // Lazy initialization of localizedStrings
+      if (!('localizedStrings' in this))
+        this.localizedStrings = getLocalizedStrings('viewer.properties');
+
+      var result = this.localizedStrings[data];
+      return JSON.stringify(result || null);
+    } catch (e) {
+      log('Unable to retrive localized strings: ' + e);
+      return 'null';
+    }
+  },
   pdfBugEnabled: function() {
     return getBoolPref(EXT_PREFIX + '.pdfBugEnabled', false);
   },
   fallback: function(url) {
+    var strings = getLocalizedStrings('chrome.properties');
     var self = this;
-    var message = mozL10n.get('unsupported_feature', null,
-                  'An unsupported feature was detected in this PDF document.');
+    var message = getLocalizedString(strings, 'unsupported_feature');
     var win = Services.wm.getMostRecentWindow('navigator:browser');
     var notificationBox = win.gBrowser.getNotificationBox();
     var buttons = [{
-      label: mozL10n.get('download_document', null, 'Download Document'),
+      label: getLocalizedString(strings, 'download_document'),
       accessKey: null,
       callback: function() {
         self.download(url);
       }
     }, {
-      label: mozL10n.get('disable_viewer', null,
-                         'Disable Mozilla PDF Viewer'),
+      label: getLocalizedString(strings, 'disable_viewer'),
       accessKey: null,
       callback: function() {
         AddonManager.getAddonByID(EXT_ID, function(aAddon) {

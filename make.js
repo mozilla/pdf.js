@@ -6,6 +6,7 @@ var ROOT_DIR = __dirname + '/', // absolute path to project's root
     BUILD_TARGET = BUILD_DIR + 'pdf.js',
     FIREFOX_BUILD_DIR = BUILD_DIR + '/firefox/',
     EXTENSION_SRC_DIR = 'extensions/',
+    LOCALE_SRC_DIR = 'l10n/',
     GH_PAGES_DIR = BUILD_DIR + 'gh-pages/',
     REPO = 'git@github.com:mozilla/pdf.js.git',
     PYTHON_BIN = 'python2.7';
@@ -67,8 +68,9 @@ target.web = function() {
 // Creates localized resources for the viewer and extension.
 //
 target.locale = function() {
-  var L10N_PATH = 'l10n';
   var METADATA_OUTPUT = 'extensions/firefox/metadata.inc';
+  var CHROME_MANIFEST_OUTPUT = 'extensions/firefox/chrome.manifest.inc';
+  var EXTENSION_LOCALE_OUTPUT = 'extensions/firefox/locale';
   var VIEWER_OUTPUT = 'web/locale.properties';
   var DEFAULT_LOCALE = 'en-US';
 
@@ -76,13 +78,17 @@ target.locale = function() {
   echo();
   echo('### Building localization files');
 
-  var subfolders = ls(L10N_PATH);
+  rm('-rf', EXTENSION_LOCALE_OUTPUT);
+  mkdir('-p', EXTENSION_LOCALE_OUTPUT);
+
+  var subfolders = ls(LOCALE_SRC_DIR);
   subfolders.sort();
   var metadataContent = '';
+  var chromeManifestContent = '';
   var viewerOutput = '';
   for (var i = 0; i < subfolders.length; i++) {
     var locale = subfolders[i];
-    var path = L10N_PATH + '/' + locale;
+    var path = LOCALE_SRC_DIR + locale;
     if (!test('-d', path))
       continue;
 
@@ -91,12 +97,17 @@ target.locale = function() {
       continue;
     }
 
+    mkdir('-p', EXTENSION_LOCALE_OUTPUT + '/' + locale);
+    chromeManifestContent += 'locale  pdf.js  ' + locale + '  locale/' + locale + '/\n';
+
     if (test('-f', path + '/viewer.properties')) {
       var properties = cat(path + '/viewer.properties');
-      if (locale == DEFAULT_LOCALE)
-        viewerOutput = '[*]\n' + properties + '\n' + viewerOutput;
-      else
-        viewerOutput = viewerOutput + '[' + locale + ']\n' + properties + '\n';
+      viewerOutput += '[' + locale + ']\n' + properties + '\n';
+      cp(path + '/viewer.properties', EXTENSION_LOCALE_OUTPUT + '/' + locale);
+    }
+
+    if (test('-f', path + '/chrome.properties')) {
+      cp(path + '/chrome.properties', EXTENSION_LOCALE_OUTPUT + '/' + locale);
     }
 
     if (test('-f', path + '/metadata.inc')) {
@@ -106,6 +117,7 @@ target.locale = function() {
   }
   viewerOutput.to(VIEWER_OUTPUT);
   metadataContent.to(METADATA_OUTPUT);
+  chromeManifestContent.to(CHROME_MANIFEST_OUTPUT);
 };
 
 //
@@ -227,7 +239,7 @@ var EXTENSION_WEB_FILES =
        'web/viewer.css',
        'web/viewer.js',
        'web/viewer.html',
-       'external/webL10n/l10n.js',
+       'extensions/firefox/tools/l10n.js',
        'web/viewer-production.html'],
     EXTENSION_BASE_VERSION = 'f0f0418a9c6637981fe1182b9212c2d592774c7d',
     EXTENSION_VERSION_PREFIX = '0.3.',
@@ -242,6 +254,7 @@ target.extension = function() {
   echo();
   echo('### Building extensions');
 
+  target.locale();
   target.production();
   target.firefox();
   target.chrome();
@@ -277,21 +290,24 @@ target.firefox = function() {
          '*.rdf',
          '*.svg',
          '*.png',
+         '*.manifest',
          'components',
+         'locale',
          '../../LICENSE'],
       FIREFOX_EXTENSION_FILES =
         ['bootstrap.js',
          'install.rdf',
+         'chrome.manifest',
          'icon.png',
          'icon64.png',
          'components',
          'content',
+         'locale',
          'LICENSE'],
       FIREFOX_EXTENSION_NAME = 'pdf.js.xpi',
       FIREFOX_AMO_EXTENSION_NAME = 'pdf.js.amo.xpi';
 
-  var LOCALE_CONTENT = cat('web/locale.properties');
-
+  target.locale();
   target.production();
   target.buildnumber();
   cd(ROOT_DIR);
@@ -310,7 +326,6 @@ target.firefox = function() {
   // Copy a standalone version of pdf.js inside the content directory
   cp(BUILD_TARGET, FIREFOX_BUILD_CONTENT_DIR + BUILD_DIR);
   cp('-R', EXTENSION_WEB_FILES, FIREFOX_BUILD_CONTENT_DIR + '/web');
-  cp('web/locale.properties', FIREFOX_BUILD_CONTENT_DIR + '/web');
   rm(FIREFOX_BUILD_CONTENT_DIR + '/web/viewer-production.html');
 
   // Copy over the firefox extension snippet so we can inline pdf.js in it
@@ -319,7 +334,6 @@ target.firefox = function() {
   // Modify the viewer so it does all the extension-only stuff.
   cd(FIREFOX_BUILD_CONTENT_DIR + '/web');
   sed('-i', /.*PDFJSSCRIPT_INCLUDE_BUNDLE.*\n/, cat(ROOT_DIR + BUILD_TARGET), 'viewer-snippet-firefox-extension.html');
-  sed('-i', /.*PDFJSSCRIPT_LOCALE_DATA.*\n/, LOCALE_CONTENT, 'viewer-snippet-firefox-extension.html');
   sed('-i', /.*PDFJSSCRIPT_REMOVE_CORE.*\n/g, '', 'viewer.html');
   sed('-i', /.*PDFJSSCRIPT_REMOVE_FIREFOX_EXTENSION.*\n/g, '', 'viewer.html');
   sed('-i', /.*PDFJSSCRIPT_INCLUDE_FIREFOX_EXTENSION.*\n/, cat('viewer-snippet-firefox-extension.html'), 'viewer.html');
@@ -328,7 +342,6 @@ target.firefox = function() {
   // We don't need pdf.js anymore since its inlined
   rm('-Rf', FIREFOX_BUILD_CONTENT_DIR + BUILD_DIR);
   rm(FIREFOX_BUILD_CONTENT_DIR + '/web/viewer-snippet-firefox-extension.html');
-  rm(FIREFOX_BUILD_CONTENT_DIR + '/web/locale.properties');
   // Remove '.DS_Store' and other hidden files
   find(FIREFOX_BUILD_DIR).forEach(function(file) {
     if (file.match(/^\./))
@@ -342,6 +355,8 @@ target.firefox = function() {
   // Update localized metadata
   var localizedMetadata = cat(EXTENSION_SRC_DIR + '/firefox/metadata.inc');
   sed('-i', /.*PDFJS_LOCALIZED_METADATA.*\n/, localizedMetadata, FIREFOX_BUILD_DIR + '/install.rdf');
+  var chromeManifest = cat(EXTENSION_SRC_DIR + '/firefox/chrome.manifest.inc');
+  sed('-i', /.*PDFJS_SUPPORTED_LOCALES.*\n/, chromeManifest, FIREFOX_BUILD_DIR + '/chrome.manifest');
 
   // Create the xpi
   cd(FIREFOX_BUILD_DIR);
@@ -365,25 +380,27 @@ target.mozcentral = function() {
   echo();
   echo('### Building mozilla-central extension');
 
-  var MOZCENTRAL_DIR = BUILD_DIR + '/mozcentral',
-      MOZCENTRAL_CONTENT_DIR = MOZCENTRAL_DIR + '/content/',
-      MOZCENTRAL_L10N_DIR = MOZCENTRAL_DIR + '/l10n/',
+  var MOZCENTRAL_DIR = BUILD_DIR + 'mozcentral/',
+      MOZCENTRAL_EXTENSION_DIR = MOZCENTRAL_DIR + 'browser/app/profile/extensions/uriloader@pdf.js/',
+      MOZCENTRAL_CONTENT_DIR = MOZCENTRAL_EXTENSION_DIR + 'content/',
+      MOZCENTRAL_L10N_DIR = MOZCENTRAL_DIR + 'browser/locales/en-US/pdfviewer/',
       FIREFOX_CONTENT_DIR = EXTENSION_SRC_DIR + '/firefox/content/',
       FIREFOX_EXTENSION_FILES_TO_COPY =
         ['*.js',
          '*.svg',
          '*.png',
+         '*.manifest',
          'install.rdf.in',
          'README.mozilla',
          'components',
          '../../LICENSE'],
       DEFAULT_LOCALE_FILES =
-        ['l10n/en-US/viewer.properties',
-         'l10n/en-US/metadata.inc'],
+        [LOCALE_SRC_DIR + 'en-US/viewer.properties'],
       FIREFOX_MC_EXTENSION_FILES =
         ['bootstrap.js',
          'icon.png',
          'icon64.png',
+         'chrome.manifest',
          'components',
          'content',
          'LICENSE'];
@@ -401,7 +418,7 @@ target.mozcentral = function() {
 
   // Copy extension files
   cd('extensions/firefox');
-  cp('-R', FIREFOX_EXTENSION_FILES_TO_COPY, ROOT_DIR + MOZCENTRAL_DIR);
+  cp('-R', FIREFOX_EXTENSION_FILES_TO_COPY, ROOT_DIR + MOZCENTRAL_EXTENSION_DIR);
   cd(ROOT_DIR);
 
   // Copy a standalone version of pdf.js inside the content directory
@@ -433,11 +450,11 @@ target.mozcentral = function() {
   cp(DEFAULT_LOCALE_FILES, MOZCENTRAL_L10N_DIR);
 
   // Update the build version number
-  sed('-i', /PDFJSSCRIPT_VERSION/, EXTENSION_VERSION, MOZCENTRAL_DIR + '/install.rdf.in');
-  sed('-i', /PDFJSSCRIPT_VERSION/, EXTENSION_VERSION, MOZCENTRAL_DIR + '/README.mozilla');
+  sed('-i', /PDFJSSCRIPT_VERSION/, EXTENSION_VERSION, MOZCENTRAL_EXTENSION_DIR + 'install.rdf.in');
+  sed('-i', /PDFJSSCRIPT_VERSION/, EXTENSION_VERSION, MOZCENTRAL_EXTENSION_DIR + 'README.mozilla');
 
   // List all files for mozilla-central
-  cd(MOZCENTRAL_DIR);
+  cd(MOZCENTRAL_EXTENSION_DIR);
   var extensionFiles = '';
   find(FIREFOX_MC_EXTENSION_FILES).forEach(function(file){
     if (test('-f', file))
