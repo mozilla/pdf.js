@@ -456,6 +456,18 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                         value[1]
                       ]);
                       break;
+                    case 'BM':
+                      // We support the default so don't trigger the TODO.
+                      if (!isName(value) || value.name != 'Normal')
+                        TODO('graphic state operator ' + key);
+                      break;
+                    case 'SMask':
+                      // We support the default so don't trigger the TODO.
+                      if (!isName(value) || value.name != 'None')
+                        TODO('graphic state operator ' + key);
+                      break;
+                    // Only generate info log messages for the following since
+                    // they are unlikey to have a big impact on the rendering.
                     case 'OP':
                     case 'op':
                     case 'OPM':
@@ -468,11 +480,9 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                     case 'HT':
                     case 'SM':
                     case 'SA':
-                    case 'BM':
-                    case 'SMask':
                     case 'AIS':
                     case 'TK':
-                      TODO('graphic state operator ' + key);
+                      info('graphic state operator ' + key);
                       break;
                     default:
                       info('Unknown graphic state operator ' + key);
