@@ -453,7 +453,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                       TODO('graphic state operator ' + key);
                       break;
                     default:
-                      warn('Unknown graphic state operator ' + key);
+                      info('Unknown graphic state operator ' + key);
                       break;
                   }
                 }

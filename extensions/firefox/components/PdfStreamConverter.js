@@ -138,7 +138,7 @@ ChromeActions.prototype = {
         self.download(url);
       }
     }, {
-      label: mozL10n.get('disable_pdfjs', null,
+      label: mozL10n.get('disable_viewer', null,
                          'Disable Mozilla PDF Viewer'),
       accessKey: null,
       callback: function() {
