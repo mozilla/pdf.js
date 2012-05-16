@@ -13,18 +13,51 @@ const PDFJS_EVENT_ID = 'pdf.js.message';
 const PDF_CONTENT_TYPE = 'application/pdf';
 const EXT_PREFIX = 'extensions.uriloader@pdf.js';
 const MAX_DATABASE_LENGTH = 4096;
+const FIREFOX_ID = '{ec8030f7-c20a-464f-9b0e-13a3a9e97384}';
+const SEAMONKEY_ID = '{92650c4d-4b8e-4d2a-b7eb-24ecf4f6b63a}';
 
 Cu.import('resource://gre/modules/XPCOMUtils.jsm');
 Cu.import('resource://gre/modules/Services.jsm');
+Cu.import('resource://gre/modules/NetUtil.jsm');
 
-let application = Cc['@mozilla.org/fuel/application;1']
-                    .getService(Ci.fuelIApplication);
-let privateBrowsing = Cc['@mozilla.org/privatebrowsing;1']
-                        .getService(Ci.nsIPrivateBrowsingService);
-let inPrivateBrowswing = privateBrowsing.privateBrowsingEnabled;
+let appInfo = Cc['@mozilla.org/xre/app-info;1']
+                  .getService(Ci.nsIXULAppInfo);
+let privateBrowsing, inPrivateBrowsing;
+
+if (appInfo.ID === FIREFOX_ID) {
+  privateBrowsing = Cc['@mozilla.org/privatebrowsing;1']
+                          .getService(Ci.nsIPrivateBrowsingService);
+  inPrivateBrowsing = privateBrowsing.privateBrowsingEnabled;
+} else if (appInfo.ID === SEAMONKEY_ID) {
+  privateBrowsing = null;
+  inPrivateBrowsing = false;
+}
+
+function getBoolPref(pref, def) {
+  try {
+    return Services.prefs.getBoolPref(pref);
+  } catch (ex) {
+    return def;
+  }
+}
+
+function setStringPref(pref, value) {
+  let str = Cc['@mozilla.org/supports-string;1']
+              .createInstance(Ci.nsISupportsString);
+  str.data = value;
+  Services.prefs.setComplexValue(pref, Ci.nsISupportsString, str);
+}
+
+function getStringPref(pref, def) {
+  try {
+    return Services.prefs.getComplexValue(pref, Ci.nsISupportsString).data;
+  } catch (ex) {
+    return def;
+  }
+}
 
 function log(aMsg) {
-  if (!application.prefs.getValue(EXT_PREFIX + '.pdfBugEnabled', false))
+  if (!getBoolPref(EXT_PREFIX + '.pdfBugEnabled', false))
     return;
   let msg = 'PdfStreamConverter.js: ' + (aMsg.join ? aMsg.join('') : aMsg);
   Services.console.logStringMessage(msg);
@@ -37,32 +70,97 @@ function getDOMWindow(aChannel) {
   return win;
 }
 
+function getLocalizedStrings(path) {
+  var stringBundle = Cc['@mozilla.org/intl/stringbundle;1'].
+      getService(Ci.nsIStringBundleService).
+      createBundle('chrome://pdf.js/locale/' + path);
+
+  var map = {};
+  var enumerator = stringBundle.getSimpleEnumeration();
+  while (enumerator.hasMoreElements()) {
+    var string = enumerator.getNext().QueryInterface(Ci.nsIPropertyElement);
+    var key = string.key, property = 'textContent';
+    var i = key.lastIndexOf('.');
+    if (i >= 0) {
+      property = key.substring(i + 1);
+      key = key.substring(0, i);
+    }
+    if (!(key in map))
+      map[key] = {};
+    map[key][property] = string.value;
+  }
+  return map;
+}
+
 // All the priviledged actions.
 function ChromeActions() {
-  this.inPrivateBrowswing = privateBrowsing.privateBrowsingEnabled;
 }
+
 ChromeActions.prototype = {
   download: function(data) {
-    Services.wm.getMostRecentWindow('navigator:browser').saveURL(data);
+    let mimeService = Cc['@mozilla.org/mime;1'].getService(Ci.nsIMIMEService);
+    var handlerInfo = mimeService.
+                        getFromTypeAndExtension('application/pdf', 'pdf');
+    var uri = NetUtil.newURI(data);
+
+    var extHelperAppSvc =
+          Cc['@mozilla.org/uriloader/external-helper-app-service;1'].
+            getService(Ci.nsIExternalHelperAppService);
+    var frontWindow = Cc['@mozilla.org/embedcomp/window-watcher;1'].
+                        getService(Ci.nsIWindowWatcher).activeWindow;
+    var ioService = Services.io;
+    var channel = ioService.newChannel(data, null, null);
+    var listener = {
+      extListener: null,
+      onStartRequest: function(aRequest, aContext) {
+        this.extListener = extHelperAppSvc.doContent('application/pdf',
+                              aRequest, frontWindow, false);
+        this.extListener.onStartRequest(aRequest, aContext);
+      },
+      onStopRequest: function(aRequest, aContext, aStatusCode) {
+        if (this.extListener)
+          this.extListener.onStopRequest(aRequest, aContext, aStatusCode);
+      },
+      onDataAvailable: function(aRequest, aContext, aInputStream, aOffset,
+                                aCount) {
+        this.extListener.onDataAvailable(aRequest, aContext, aInputStream,
+                                         aOffset, aCount);
+      }
+    };
+
+    channel.asyncOpen(listener, null);
   },
   setDatabase: function(data) {
-    if (this.inPrivateBrowswing)
+    if (inPrivateBrowsing)
       return;
     // Protect against something sending tons of data to setDatabase.
     if (data.length > MAX_DATABASE_LENGTH)
       return;
-    application.prefs.setValue(EXT_PREFIX + '.database', data);
+    setStringPref(EXT_PREFIX + '.database', data);
   },
   getDatabase: function() {
-    if (this.inPrivateBrowswing)
+    if (inPrivateBrowsing)
       return '{}';
-    return application.prefs.getValue(EXT_PREFIX + '.database', '{}');
+    return getStringPref(EXT_PREFIX + '.database', '{}');
   },
   getLocale: function() {
-    return application.prefs.getValue('general.useragent.locale', 'en-US');
+    return getStringPref('general.useragent.locale', 'en-US');
+  },
+  getStrings: function(data) {
+    try {
+      // Lazy initialization of localizedStrings
+      if (!('localizedStrings' in this))
+        this.localizedStrings = getLocalizedStrings('viewer.properties');
+
+      var result = this.localizedStrings[data];
+      return JSON.stringify(result || null);
+    } catch (e) {
+      log('Unable to retrive localized strings: ' + e);
+      return 'null';
+    }
   },
   pdfBugEnabled: function() {
-    return application.prefs.getValue(EXT_PREFIX + '.pdfBugEnabled', false);
+    return getBoolPref(EXT_PREFIX + '.pdfBugEnabled', false);
   }
 };
 

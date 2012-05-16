@@ -112,14 +112,33 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
   };
 
   function splitCombinedOperations(operations) {
-    // Two operations can be combined together, trying to find which two
+    // Two or more operations can be combined together, trying to find which
     // operations were concatenated.
-    for (var i = operations.length - 1; i > 0; i--) {
-      var op1 = operations.substring(0, i), op2 = operations.substring(i);
-      if (op1 in OP_MAP && op2 in OP_MAP)
-        return [op1, op2]; // operations found
+    var result = [];
+    var opIndex = 0;
+
+    if (!operations) {
+      return null;
     }
-    return null;
+
+    while (opIndex < operations.length) {
+      var currentOp = '';
+      for (var op in OP_MAP) {
+        if (op == operations.substr(opIndex, op.length) &&
+            op.length > currentOp.length) {
+          currentOp = op;
+        }
+      }
+
+      if (currentOp.length > 0) {
+        result.push(operations.substr(opIndex, currentOp.length));
+        opIndex += currentOp.length;
+      } else {
+        return null;
+      }
+    }
+
+    return result;
   }
 
   PartialEvaluator.prototype = {
@@ -268,14 +287,14 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       var patterns = resources.get('Pattern') || new Dict();
       var parser = new Parser(new Lexer(stream), false, xref);
       var res = resources;
-      var hasNextObj = false, nextObj;
+      var hasNextObj = false, nextObjs;
       var args = [], obj;
       var TILING_PATTERN = 1, SHADING_PATTERN = 2;
 
       while (true) {
         if (hasNextObj) {
-          obj = nextObj;
-          hasNextObj = false;
+          obj = nextObjs.pop();
+          hasNextObj = (nextObjs.length > 0);
         } else {
           obj = parser.getObj();
           if (isEOF(obj))
@@ -291,9 +310,12 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
             if (cmds) {
               cmd = cmds[0];
               fn = OP_MAP[cmd];
-              // feeding other command on the next interation
+              // feeding other command on the next iteration
               hasNextObj = true;
-              nextObj = Cmd.get(cmds[1]);
+              nextObjs = [];
+              for (var idx = 1; idx < cmds.length; idx++) {
+                 nextObjs.push(Cmd.get(cmds[idx]));
+              }
             }
           }
           assertWellFormed(fn, 'Unknown command "' + cmd + '"');
