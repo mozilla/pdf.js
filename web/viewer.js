@@ -333,11 +333,11 @@ var PDFView = {
 
   open: function pdfViewOpen(url, scale, password) {
     var parameters = {password: password};
-    if (typeof url === 'string') {
+    if (typeof url === 'string') { // URL
       this.url = url;
       document.title = decodeURIComponent(getFileName(url)) || url;
       parameters.url = url;
-    } else if (isArrayBuffer(url)) {
+    } else if (url && 'byteLength' in url) { // ArrayBuffer
       parameters.data = url;
     }
 
