@@ -58,13 +58,18 @@ function shadow(obj, prop, value) {
   return value;
 }
 
-function PasswordException(msg, code) {
-  this.name = 'PasswordException';
-  this.message = msg;
-  this.code = code;
-}
-PasswordException.prototype = new Error();
-PasswordException.constructor = PasswordException;
+var PasswordException = (function PasswordExceptionClosure() {
+  function PasswordException(msg, code) {
+    this.name = 'PasswordException';
+    this.message = msg;
+    this.code = code;
+  }
+
+  PasswordException.prototype = new Error();
+  PasswordException.constructor = PasswordException;
+
+  return PasswordException;
+})();
 
 function bytesToString(bytes) {
   var str = '';
