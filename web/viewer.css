@@ -424,6 +424,10 @@ html[dir='rtl'] .dropdownToolbarButton {
   background: transparent;
 }
 
+.dropdownToolbarButton > select > option {
+  background: hsl(0,0%,24%);
+}
+
 #customScaleOption {
   display: none;
 }
