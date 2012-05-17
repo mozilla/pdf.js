@@ -120,6 +120,9 @@
         return new Uint8Array(new VBArray(this.responseBody).toArray());
       }
     });
+    Object.defineProperty(xhrPrototype, 'overrideMimeType', {
+      value: function xmlHttpRequestOverrideMimeType(mimeType) {}
+    });
     return;
   }
 
@@ -217,15 +220,84 @@
   var div = document.createElement('div');
   if ('dataset' in div)
     return; // dataset property exists
-  var oldCreateElement = document.createElement;
-  document.createElement = function newCreateElement() {
-    var result = oldCreateElement.apply(document, arguments);
-    if (arguments[0] === 'div') {
-      // creating dataset property for the div elements
-      result.dataset = {};
+
+  Object.defineProperty(HTMLElement.prototype, 'dataset', {
+    get: function() {
+      if (this._dataset)
+        return this._dataset;
+
+      var dataset = {};
+      for (var j = 0, jj = this.attributes.length; j < jj; j++) {
+        var attribute = this.attributes[j];
+        if (attribute.name.substring(0, 5) != 'data-')
+          continue;
+        var key = attribute.name.substring(5).replace(/\-([a-z])/g,
+          function(all, ch) { return ch.toUpperCase(); });
+        dataset[key] = attribute.value;
+      }
+
+      Object.defineProperty(this, '_dataset', {
+        value: dataset,
+        writable: false,
+        enumerable: false
+      });
+      return dataset;
+    },
+    enumerable: true
+  });
+})();
+
+// HTMLElement classList property
+(function checkClassListProperty() {
+  var div = document.createElement('div');
+  if ('classList' in div)
+    return; // classList property exists
+
+  function changeList(element, itemName, add, remove) {
+    var s = element.className || '';
+    var list = s.split(/\s+/g);
+    if (list[0] == '') list.shift();
+    var index = list.indexOf(itemName);
+    if (index < 0 && add)
+      list.push(itemName);
+    if (index >= 0 && remove)
+      list.splice(index, 1);
+    element.className = list.join(' ');
+  }
+
+  var classListPrototype = {
+    add: function(name) {
+      changeList(this.element, name, true, false);
+    },
+    remove: function(name) {
+      changeList(this.element, name, false, true);
+    },
+    toggle: function(name) {
+      changeList(this.element, name, true, true);
     }
-    return result;
   };
+
+  Object.defineProperty(HTMLElement.prototype, 'classList', {
+    get: function() {
+      if (this._classList)
+        return this._classList;
+
+      var classList = Object.create(classListPrototype, {
+        element: {
+          value: this,
+          writable: false,
+          enumerable: true
+        }
+      });
+      Object.defineProperty(this, '_classList', {
+        value: classList,
+        writable: false,
+        enumerable: false
+      });
+      return classList;
+    },
+    enumerable: true
+  });
 })();
 
 // Check console compatability
@@ -251,4 +323,18 @@
     // use browser detection since we cannot feature-check this bug
     document.addEventListener('click', ignoreIfTargetDisabled, true);
   }
+})();
+
+// Checks if navigator.language is supported
+(function checkNavigatorLanguage() {
+  if ('language' in navigator)
+    return;
+  Object.defineProperty(navigator, 'language', {
+    get: function navigatorLanguage() {
+      var language = navigator.userLanguage || 'en-US';
+      return language.substring(0, 2).toLowerCase() +
+        language.substring(2).toUpperCase();
+    },
+    enumerable: true
+  });
 })();
