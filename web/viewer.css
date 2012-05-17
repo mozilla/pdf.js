@@ -927,3 +927,47 @@ canvas {
 #PDFBug table {
   font-size: 10px;
 }
+
+@media all and (max-width: 770px) {
+  #scaleSelectContainer, #fileInput, #pageNumberLabel {
+    display: none;
+  }
+
+  #sidebarContainer {
+    top: 33px;
+    z-index: 100;
+  }
+  #sidebarContent {
+    top: 33px;
+    background-color: hsla(0,0%,0%,.7);
+  }
+  #thumbnailView, #outlineView {
+    top: 66px;
+  }
+
+  html[dir='ltr'] #outerContainer.sidebarOpen > #mainContainer {
+    left: 0px;
+  }
+  html[dir='rtl'] #outerContainer.sidebarOpen > #mainContainer {
+    right: 0px;
+  }
+
+  #pageNumber {
+    width: 30px;
+  }
+}
+
+@media all and (max-width: 500px) {
+  #viewBookmark {
+    display: none;
+  }
+
+  html[dir='ltr'] .outerCenter {
+    float: left;
+    left: 180px;
+  }
+  html[dir='rtl'] .outerCenter {
+    float: right;
+    right: 180px;
+  }
+}
