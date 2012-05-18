@@ -490,6 +490,9 @@ target.chrome = function() {
   // Copy a standalone version of pdf.js inside the content directory
   cp(BUILD_TARGET, CHROME_BUILD_CONTENT_DIR + BUILD_DIR);
   cp('-R', EXTENSION_WEB_FILES, CHROME_BUILD_CONTENT_DIR + '/web');
+  // Replacing the l10n.js file with regular gh-pages one
+  rm(CHROME_BUILD_CONTENT_DIR + '/web/l10n.js');
+  cp('external/webL10n/l10n.js', CHROME_BUILD_CONTENT_DIR + '/web');
   cp('web/locale.properties', CHROME_BUILD_CONTENT_DIR + '/web');
   mv('-f', CHROME_BUILD_CONTENT_DIR + '/web/viewer-production.html',
     CHROME_BUILD_CONTENT_DIR + '/web/viewer.html');
