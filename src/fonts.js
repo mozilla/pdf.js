@@ -1976,9 +1976,9 @@ var Font = (function FontClosure() {
             this.isSymbolicFont = false;
         }
 
-        // heuristics: if removed more than 2 glyphs encoding WinAnsiEncoding
-        // does not set properly
-        if (glyphsRemoved > 2) {
+        // heuristics: if removed more than 10 glyphs encoding WinAnsiEncoding
+        // does not set properly (broken PDFs have about 100 removed glyphs)
+        if (glyphsRemoved > 10) {
           warn('Switching TrueType encoding to MacRomanEncoding for ' +
                this.name + ' font');
           encoding = Encodings.MacRomanEncoding;
