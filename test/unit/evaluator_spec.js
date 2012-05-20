@@ -108,6 +108,24 @@ describe('evaluator', function() {
       expect(result.argsArray[1].length).toEqual(1);
       expect(result.argsArray[1][0]).toEqual(5);
     });
+
+    it('should handle glued operations and literals', function() {
+      var evaluator = new PartialEvaluator(new XrefMock(), new HandlerMock(),
+                                           'prefix');
+      var stream = new StringStream('trueifalserinulli');
+      var result = evaluator.getOperatorList(stream, new ResourcesMock(), []);
+
+      expect(!!result.fnArray && !!result.argsArray).toEqual(true);
+      expect(result.fnArray.length).toEqual(3);
+      expect(result.fnArray[0]).toEqual('setFlatness');
+      expect(result.fnArray[1]).toEqual('setRenderingIntent');
+      expect(result.fnArray[2]).toEqual('setFlatness');
+      expect(result.argsArray.length).toEqual(3);
+      expect(result.argsArray[0].length).toEqual(1);
+      expect(result.argsArray[0][0]).toEqual(true);
+      expect(result.argsArray[1].length).toEqual(1);
+      expect(result.argsArray[1][0]).toEqual(false);
+    });
   });
 });
 

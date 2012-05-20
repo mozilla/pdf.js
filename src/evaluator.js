@@ -112,7 +112,15 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
 
     // (reserved partial commands for the lexer)
     BM: null,
-    BD: null
+    BD: null,
+    'true': null,
+    fa: null,
+    fal: null,
+    fals: null,
+    'false': null,
+    nu: null,
+    nul: null,
+    'null': null
   };
 
   PartialEvaluator.prototype = {
