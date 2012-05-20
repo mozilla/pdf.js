@@ -1366,7 +1366,7 @@ window.addEventListener('load', function webViewerLoad(evt) {
 
   if (PDFJS.isFirefoxExtension || !window.File || !window.FileReader ||
       !window.FileList || !window.Blob) {
-    document.getElementById('fileInput').setAttribute('hidden', 'true');
+    document.getElementById('openFile').setAttribute('hidden', 'true');
   } else {
     document.getElementById('fileInput').value = null;
   }

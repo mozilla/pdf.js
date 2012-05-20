@@ -501,6 +501,11 @@ html[dir='rtl'] .toolbarButton.pageDown::before {
   content: url(images/toolbarButton-print.png);
 }
 
+.toolbarButton.openFile::before {
+  display: inline-block;
+  content: url(images/toolbarButton-openFile.png);
+}
+
 .toolbarButton.download::before {
   display: inline-block;
   content: url(images/toolbarButton-download.png);
@@ -933,7 +938,7 @@ canvas {
 }
 
 @media all and (max-width: 770px) {
-  #scaleSelectContainer, #fileInput, #pageNumberLabel {
+  #scaleSelectContainer, #pageNumberLabel {
     display: none;
   }
 
