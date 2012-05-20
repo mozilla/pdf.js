@@ -78,6 +78,36 @@ describe('evaluator', function() {
       expect(result.fnArray[1]).toEqual('save');
       expect(result.fnArray[2]).toEqual('save');
     });
+
+    it('should handle three glued operations #2', function() {
+      var evaluator = new PartialEvaluator(new XrefMock(), new HandlerMock(),
+                                           'prefix');
+      var resources = new ResourcesMock();
+      resources.Res1 = {};
+      var stream = new StringStream('B*BBMC');
+      var result = evaluator.getOperatorList(stream, resources, []);
+
+      expect(!!result.fnArray && !!result.argsArray).toEqual(true);
+      expect(result.fnArray.length).toEqual(3);
+      expect(result.fnArray[0]).toEqual('eoFillStroke');
+      expect(result.fnArray[1]).toEqual('fillStroke');
+      expect(result.fnArray[2]).toEqual('beginMarkedContent');
+    });
+
+    it('should handle glued operations and operands', function() {
+      var evaluator = new PartialEvaluator(new XrefMock(), new HandlerMock(),
+                                           'prefix');
+      var stream = new StringStream('q5 Ts');
+      var result = evaluator.getOperatorList(stream, new ResourcesMock(), []);
+
+      expect(!!result.fnArray && !!result.argsArray).toEqual(true);
+      expect(result.fnArray.length).toEqual(2);
+      expect(result.fnArray[0]).toEqual('save');
+      expect(result.fnArray[1]).toEqual('setTextRise');
+      expect(result.argsArray.length).toEqual(2);
+      expect(result.argsArray[1].length).toEqual(1);
+      expect(result.argsArray[1][0]).toEqual(5);
+    });
   });
 });
 

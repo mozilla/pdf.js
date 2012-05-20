@@ -264,8 +264,9 @@ var Parser = (function ParserClosure() {
 })();
 
 var Lexer = (function LexerClosure() {
-  function Lexer(stream) {
+  function Lexer(stream, knownCommands) {
     this.stream = stream;
+    this.knownCommands = knownCommands;
   }
 
   Lexer.isSpace = function Lexer_isSpace(ch) {
@@ -529,12 +530,18 @@ var Lexer = (function LexerClosure() {
 
       // command
       var str = ch;
+      var knownCommands = this.knownCommands;
+      var knownCommandFound = knownCommands && (str in knownCommands);
       while (!!(ch = stream.lookChar()) && !specialChars[ch.charCodeAt(0)]) {
+        // stop if known command is found and next character does not make
+        // the str a command
+        if (knownCommandFound && !((str + ch) in knownCommands))
+          break;
         stream.skip();
         if (str.length == 128)
           error('Command token too long: ' + str.length);
-
         str += ch;
+        knownCommandFound = knownCommands && (str in knownCommands);
       }
       if (str == 'true')
         return true;
