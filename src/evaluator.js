@@ -108,38 +108,20 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
 
     // Compatibility
     BX: 'beginCompat',
-    EX: 'endCompat'
+    EX: 'endCompat',
+
+    // (reserved partial commands for the lexer)
+    BM: null,
+    BD: null,
+    'true': null,
+    fa: null,
+    fal: null,
+    fals: null,
+    'false': null,
+    nu: null,
+    nul: null,
+    'null': null
   };
-
-  function splitCombinedOperations(operations) {
-    // Two or more operations can be combined together, trying to find which
-    // operations were concatenated.
-    var result = [];
-    var opIndex = 0;
-
-    if (!operations) {
-      return null;
-    }
-
-    while (opIndex < operations.length) {
-      var currentOp = '';
-      for (var op in OP_MAP) {
-        if (op == operations.substr(opIndex, op.length) &&
-            op.length > currentOp.length) {
-          currentOp = op;
-        }
-      }
-
-      if (currentOp.length > 0) {
-        result.push(operations.substr(opIndex, currentOp.length));
-        opIndex += currentOp.length;
-      } else {
-        return null;
-      }
-    }
-
-    return result;
-  }
 
   PartialEvaluator.prototype = {
     getOperatorList: function PartialEvaluator_getOperatorList(stream,
@@ -284,39 +266,19 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       resources = resources || new Dict();
       var xobjs = resources.get('XObject') || new Dict();
       var patterns = resources.get('Pattern') || new Dict();
-      var parser = new Parser(new Lexer(stream), false, xref);
+      var parser = new Parser(new Lexer(stream, OP_MAP), false, xref);
       var res = resources;
-      var hasNextObj = false, nextObjs;
       var args = [], obj;
       var TILING_PATTERN = 1, SHADING_PATTERN = 2;
 
       while (true) {
-        if (hasNextObj) {
-          obj = nextObjs.pop();
-          hasNextObj = (nextObjs.length > 0);
-        } else {
-          obj = parser.getObj();
-          if (isEOF(obj))
-            break;
-        }
+        obj = parser.getObj();
+        if (isEOF(obj))
+          break;
 
         if (isCmd(obj)) {
           var cmd = obj.cmd;
           var fn = OP_MAP[cmd];
-          if (!fn) {
-            // invalid content command, trying to recover
-            var cmds = splitCombinedOperations(cmd);
-            if (cmds) {
-              cmd = cmds[0];
-              fn = OP_MAP[cmd];
-              // feeding other command on the next iteration
-              hasNextObj = true;
-              nextObjs = [];
-              for (var idx = 1; idx < cmds.length; idx++) {
-                 nextObjs.push(Cmd.get(cmds[idx]));
-              }
-            }
-          }
           assertWellFormed(fn, 'Unknown command "' + cmd + '"');
           // TODO figure out how to type-check vararg functions
 
