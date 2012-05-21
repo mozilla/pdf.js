@@ -4221,9 +4221,9 @@ var CFFPrivateDict = (function CFFPrivateDictClosure() {
     [[12, 17], 'LanguageGroup', 'num', 0],
     [[12, 18], 'ExpansionFactor', 'num', 0.06],
     [[12, 19], 'initialRandomSeed', 'num', 0],
-    [19, 'Subrs', 'offset', null],
     [20, 'defaultWidthX', 'num', 0],
-    [21, 'nominalWidthX', 'num', 0]
+    [21, 'nominalWidthX', 'num', 0],
+    [19, 'Subrs', 'offset', null]
   ];
   var tables = null;
   function CFFPrivateDict(strings) {
