@@ -266,6 +266,13 @@ var Parser = (function ParserClosure() {
 var Lexer = (function LexerClosure() {
   function Lexer(stream, knownCommands) {
     this.stream = stream;
+    // The PDFs might have "glued" commands with other commands, operands or
+    // literals, e.g. "q1". The knownCommands is a dictionary of the valid
+    // commands and their prefixes. The prefixes are built the following way:
+    // if there a command that is a prefix of the other valid command or
+    // literal (e.g. 'f' and 'false') the following prefixes must be included,
+    // 'fa', 'fal', 'fals'. The prefixes are not needed, if the command has no
+    // other commands or literals as a prefix. The knowCommands is optional.
     this.knownCommands = knownCommands;
   }
 
