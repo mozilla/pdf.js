@@ -298,7 +298,7 @@ var Catalog = (function CatalogClosure() {
 })();
 
 var XRef = (function XRefClosure() {
-  function XRef(stream, startXRef, mainXRefEntriesOffset) {
+  function XRef(stream, startXRef, mainXRefEntriesOffset, password) {
     this.stream = stream;
     this.entries = [];
     this.xrefstms = {};
@@ -311,8 +311,7 @@ var XRef = (function XRefClosure() {
     var encrypt = trailerDict.get('Encrypt');
     if (encrypt) {
       var fileId = trailerDict.get('ID');
-      this.encrypt = new CipherTransformFactory(encrypt,
-                                                fileId[0] /*, password */);
+      this.encrypt = new CipherTransformFactory(encrypt, fileId[0], password);
     }
 
     // get the root dictionary (catalog) object
