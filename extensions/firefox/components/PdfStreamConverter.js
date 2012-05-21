@@ -161,6 +161,9 @@ ChromeActions.prototype = {
   },
   pdfBugEnabled: function() {
     return getBoolPref(EXT_PREFIX + '.pdfBugEnabled', false);
+  },
+  searchEnabled: function() {
+    return getBoolPref(EXT_PREFIX + '.searchEnabled', false);
   }
 };
 

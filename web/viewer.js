@@ -733,7 +733,7 @@ var PDFView = {
     var thumbsView = document.getElementById('thumbnailView');
     var outlineView = document.getElementById('outlineView');
     var searchView = document.getElementById('searchView');
-    
+
     var thumbsButton = document.getElementById('viewThumbnail');
     var outlineButton = document.getElementById('viewOutline');
     var searchButton = document.getElementById('viewSearch');
@@ -1488,6 +1488,11 @@ window.addEventListener('load', function webViewerLoad(evt) {
     var enabled = pdfBug.split(',');
     PDFBug.enable(enabled);
     PDFBug.init();
+  }
+
+  if (!PDFJS.isFirefoxExtension ||
+    (PDFJS.isFirefoxExtension && FirefoxCom.request('searchEnabled'))) {
+    document.querySelector('#viewSearch').classList.remove('hidden');
   }
 
   var thumbsView = document.getElementById('thumbnailView');
