@@ -611,8 +611,9 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
             }
           } else if (octet == 0x3E) {
             if (token.length) {
-              // XXX guessing chars size by checking number size in the CMap
-              if (token.length <= 2 && properties.composite)
+              // Heuristic: guessing chars size by checking numbers sizes
+              // in the CMap entries.
+              if (token.length == 2 && properties.composite)
                 properties.wideChars = false;
 
               if (token.length <= 4) {
