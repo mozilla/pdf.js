@@ -394,8 +394,7 @@ target.mozcentral = function() {
       DEFAULT_LOCALE_FILES =
         [LOCALE_SRC_DIR + 'en-US/viewer.properties'],
       FIREFOX_MC_EXTENSION_FILES =
-        ['bootstrap.js',
-         'icon.png',
+        ['icon.png',
          'icon64.png',
          'chrome.manifest',
          'components',
