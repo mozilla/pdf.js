@@ -377,9 +377,10 @@ target.mozcentral = function() {
   echo('### Building mozilla-central extension');
 
   var MOZCENTRAL_DIR = BUILD_DIR + 'mozcentral/',
-      MOZCENTRAL_EXTENSION_DIR = MOZCENTRAL_DIR + 'browser/app/profile/extensions/uriloader@pdf.js/',
+      MOZCENTRAL_EXTENSION_DIR = MOZCENTRAL_DIR + 'browser/extensions/pdfjs/',
       MOZCENTRAL_CONTENT_DIR = MOZCENTRAL_EXTENSION_DIR + 'content/',
       MOZCENTRAL_L10N_DIR = MOZCENTRAL_DIR + 'browser/locales/en-US/pdfviewer/',
+      MOZCENTRAL_TEST_DIR = MOZCENTRAL_EXTENSION_DIR + 'test/',
       FIREFOX_CONTENT_DIR = EXTENSION_SRC_DIR + '/firefox/content/',
       FIREFOX_EXTENSION_FILES_TO_COPY =
         ['*.js',
@@ -415,6 +416,8 @@ target.mozcentral = function() {
   // Copy extension files
   cd('extensions/firefox');
   cp('-R', FIREFOX_EXTENSION_FILES_TO_COPY, ROOT_DIR + MOZCENTRAL_EXTENSION_DIR);
+  mv('-f', ROOT_DIR + MOZCENTRAL_EXTENSION_DIR + '/chrome-mozcentral.manifest',
+           ROOT_DIR + MOZCENTRAL_EXTENSION_DIR + '/chrome.manifest')
   cd(ROOT_DIR);
 
   // Copy a standalone version of pdf.js inside the content directory
@@ -457,6 +460,11 @@ target.mozcentral = function() {
       extensionFiles += file+'\n';
   });
   extensionFiles.to('extension-files');
+  cd(ROOT_DIR);
+
+  // Copy test files
+  mkdir('-p', MOZCENTRAL_TEST_DIR);
+  cp('-Rf', 'test/mozcentral/*', MOZCENTRAL_TEST_DIR);
 };
 
 //
