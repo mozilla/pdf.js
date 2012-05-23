@@ -1,0 +1,3 @@
+resource pdf.js content/
+component {6457a96b-2d68-439a-bcfa-44465fbcdbb1} components/PdfStreamConverter.js
+contract @mozilla.org/streamconv;1?from=application/pdf&to=*/* {6457a96b-2d68-439a-bcfa-44465fbcdbb1}
