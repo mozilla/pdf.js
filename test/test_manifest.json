@@ -402,6 +402,14 @@
       "link": true,
       "type": "eq"
     },
+    {  "id": "issue1709",
+      "file": "pdfs/issue1709.pdf",
+      "md5": "84497bd23b7c82d03d2681a1cb1d9ed0",
+      "rounds": 1,
+      "pageLimit": 10,
+      "link": true,
+      "type": "eq"
+    },
     {  "id": "issue1015",
       "file": "pdfs/issue1015.pdf",
       "md5": "b61503d1b445742b665212866afb60e2",
