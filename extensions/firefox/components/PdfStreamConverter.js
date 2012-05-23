@@ -100,7 +100,8 @@ function getLocalizedString(strings, id) {
 }
 
 // All the priviledged actions.
-function ChromeActions() {
+function ChromeActions(domWindow) {
+  this.domWindow = domWindow;
 }
 
 ChromeActions.prototype = {
@@ -170,11 +171,15 @@ ChromeActions.prototype = {
     return getBoolPref(EXT_PREFIX + '.pdfBugEnabled', false);
   },
   fallback: function(url) {
-    var strings = getLocalizedStrings('chrome.properties');
     var self = this;
+    var domWindow = this.domWindow;
+    var strings = getLocalizedStrings('chrome.properties');
     var message = getLocalizedString(strings, 'unsupported_feature');
+
     var win = Services.wm.getMostRecentWindow('navigator:browser');
-    var notificationBox = win.gBrowser.getNotificationBox();
+    var browser = win.gBrowser.getBrowserForDocument(domWindow.top.document);
+    var notificationBox = win.gBrowser.getNotificationBox(browser);
+
     var buttons = [{
       label: getLocalizedString(strings, 'open_with_different_viewer'),
       accessKey: null,
@@ -290,7 +295,8 @@ PdfStreamConverter.prototype = {
         var domWindow = getDOMWindow(channel);
         // Double check the url is still the correct one.
         if (domWindow.document.documentURIObject.equals(aRequest.URI)) {
-          let requestListener = new RequestListener(new ChromeActions);
+          let requestListener = new RequestListener(
+                                      new ChromeActions(domWindow));
           domWindow.addEventListener(PDFJS_EVENT_ID, function(event) {
             requestListener.receive(event);
           }, false, true);
