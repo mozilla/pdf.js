@@ -176,19 +176,10 @@ ChromeActions.prototype = {
     var win = Services.wm.getMostRecentWindow('navigator:browser');
     var notificationBox = win.gBrowser.getNotificationBox();
     var buttons = [{
-      label: getLocalizedString(strings, 'download_document'),
+      label: getLocalizedString(strings, 'open_with_different_viewer'),
       accessKey: null,
       callback: function() {
         self.download(url);
-      }
-    }, {
-      label: getLocalizedString(strings, 'disable_viewer'),
-      accessKey: null,
-      callback: function() {
-        AddonManager.getAddonByID(EXT_ID, function(aAddon) {
-          aAddon.userDisabled = true;
-          win.gBrowser.contentWindow.location.reload();
-        });
       }
     }];
     notificationBox.appendNotification(message, 'pdfjs-fallback', null,
