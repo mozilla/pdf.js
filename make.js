@@ -9,7 +9,11 @@ var ROOT_DIR = __dirname + '/', // absolute path to project's root
     LOCALE_SRC_DIR = 'l10n/',
     GH_PAGES_DIR = BUILD_DIR + 'gh-pages/',
     REPO = 'git@github.com:mozilla/pdf.js.git',
-    PYTHON_BIN = 'python2.7';
+    PYTHON_BIN = 'python2.7',
+    MOZCENTRAL_PREF_PREFIX = 'pdfjs',
+    FIREFOX_PREF_PREFIX = 'extensions.uriloader@pdf.js',
+    MOZCENTRAL_STREAM_CONVERTER_ID = 'd0c5195d-e798-49d4-b1d3-9324328b2291',
+    FIREFOX_STREAM_CONVERTER_ID = '6457a96b-2d68-439a-bcfa-44465fbcdbb1';
 
 //
 // make all
@@ -352,6 +356,9 @@ target.firefox = function() {
   sed('-i', /PDFJSSCRIPT_VERSION/, EXTENSION_VERSION, FIREFOX_BUILD_DIR + '/install.rdf');
   sed('-i', /PDFJSSCRIPT_VERSION/, EXTENSION_VERSION, FIREFOX_BUILD_DIR + '/update.rdf');
 
+  sed('-i', /PDFJSSCRIPT_STREAM_CONVERTER_ID/, FIREFOX_STREAM_CONVERTER_ID, FIREFOX_BUILD_DIR + 'components/PdfStreamConverter.js');
+  sed('-i', /PDFJSSCRIPT_PREF_PREFIX/, FIREFOX_PREF_PREFIX, FIREFOX_BUILD_DIR + 'components/PdfStreamConverter.js');
+
   // Update localized metadata
   var localizedMetadata = cat(EXTENSION_SRC_DIR + '/firefox/metadata.inc');
   sed('-i', /.*PDFJS_LOCALIZED_METADATA.*\n/, localizedMetadata, FIREFOX_BUILD_DIR + '/install.rdf');
@@ -381,16 +388,16 @@ target.mozcentral = function() {
   echo('### Building mozilla-central extension');
 
   var MOZCENTRAL_DIR = BUILD_DIR + 'mozcentral/',
-      MOZCENTRAL_EXTENSION_DIR = MOZCENTRAL_DIR + 'browser/app/profile/extensions/uriloader@pdf.js/',
+      MOZCENTRAL_EXTENSION_DIR = MOZCENTRAL_DIR + 'browser/extensions/pdfjs/',
       MOZCENTRAL_CONTENT_DIR = MOZCENTRAL_EXTENSION_DIR + 'content/',
       MOZCENTRAL_L10N_DIR = MOZCENTRAL_DIR + 'browser/locales/en-US/pdfviewer/',
+      MOZCENTRAL_TEST_DIR = MOZCENTRAL_EXTENSION_DIR + 'test/',
       FIREFOX_CONTENT_DIR = EXTENSION_SRC_DIR + '/firefox/content/',
       FIREFOX_EXTENSION_FILES_TO_COPY =
-        ['*.js',
+        ['components/*.js',
          '*.svg',
          '*.png',
          '*.manifest',
-         'install.rdf.in',
          'README.mozilla',
          'components',
          '../../LICENSE'],
@@ -398,10 +405,7 @@ target.mozcentral = function() {
         [LOCALE_SRC_DIR + 'en-US/viewer.properties',
          LOCALE_SRC_DIR + 'en-US/chrome.properties'],
       FIREFOX_MC_EXTENSION_FILES =
-        ['bootstrap.js',
-         'icon.png',
-         'icon64.png',
-         'chrome.manifest',
+        ['chrome.manifest',
          'components',
          'content',
          'LICENSE'];
@@ -420,6 +424,8 @@ target.mozcentral = function() {
   // Copy extension files
   cd('extensions/firefox');
   cp('-R', FIREFOX_EXTENSION_FILES_TO_COPY, ROOT_DIR + MOZCENTRAL_EXTENSION_DIR);
+  mv('-f', ROOT_DIR + MOZCENTRAL_EXTENSION_DIR + '/chrome-mozcentral.manifest',
+           ROOT_DIR + MOZCENTRAL_EXTENSION_DIR + '/chrome.manifest')
   cd(ROOT_DIR);
 
   // Copy a standalone version of pdf.js inside the content directory
@@ -451,8 +457,10 @@ target.mozcentral = function() {
   cp(DEFAULT_LOCALE_FILES, MOZCENTRAL_L10N_DIR);
 
   // Update the build version number
-  sed('-i', /PDFJSSCRIPT_VERSION/, EXTENSION_VERSION, MOZCENTRAL_EXTENSION_DIR + 'install.rdf.in');
   sed('-i', /PDFJSSCRIPT_VERSION/, EXTENSION_VERSION, MOZCENTRAL_EXTENSION_DIR + 'README.mozilla');
+
+  sed('-i', /PDFJSSCRIPT_STREAM_CONVERTER_ID/, MOZCENTRAL_STREAM_CONVERTER_ID, MOZCENTRAL_EXTENSION_DIR + 'components/PdfStreamConverter.js');
+  sed('-i', /PDFJSSCRIPT_PREF_PREFIX/, MOZCENTRAL_PREF_PREFIX, MOZCENTRAL_EXTENSION_DIR + 'components/PdfStreamConverter.js');
 
   // List all files for mozilla-central
   cd(MOZCENTRAL_EXTENSION_DIR);
@@ -462,6 +470,11 @@ target.mozcentral = function() {
       extensionFiles += file+'\n';
   });
   extensionFiles.to('extension-files');
+  cd(ROOT_DIR);
+
+  // Copy test files
+  mkdir('-p', MOZCENTRAL_TEST_DIR);
+  cp('-Rf', 'test/mozcentral/*', MOZCENTRAL_TEST_DIR);
 };
 
 //

@@ -11,8 +11,7 @@ const Cr = Components.results;
 const Cu = Components.utils;
 const PDFJS_EVENT_ID = 'pdf.js.message';
 const PDF_CONTENT_TYPE = 'application/pdf';
-const EXT_ID = 'uriloader@pdf.js';
-const EXT_PREFIX = 'extensions.' + EXT_ID;
+const PREF_PREFIX = 'PDFJSSCRIPT_PREF_PREFIX';
 const MAX_DATABASE_LENGTH = 4096;
 const FIREFOX_ID = '{ec8030f7-c20a-464f-9b0e-13a3a9e97384}';
 const SEAMONKEY_ID = '{92650c4d-4b8e-4d2a-b7eb-24ecf4f6b63a}';
@@ -59,7 +58,7 @@ function getStringPref(pref, def) {
 }
 
 function log(aMsg) {
-  if (!getBoolPref(EXT_PREFIX + '.pdfBugEnabled', false))
+  if (!getBoolPref(PREF_PREFIX + '.pdfBugEnabled', false))
     return;
   let msg = 'PdfStreamConverter.js: ' + (aMsg.join ? aMsg.join('') : aMsg);
   Services.console.logStringMessage(msg);
@@ -144,12 +143,12 @@ ChromeActions.prototype = {
     // Protect against something sending tons of data to setDatabase.
     if (data.length > MAX_DATABASE_LENGTH)
       return;
-    setStringPref(EXT_PREFIX + '.database', data);
+    setStringPref(PREF_PREFIX + '.database', data);
   },
   getDatabase: function() {
     if (inPrivateBrowsing)
       return '{}';
-    return getStringPref(EXT_PREFIX + '.database', '{}');
+    return getStringPref(PREF_PREFIX + '.database', '{}');
   },
   getLocale: function() {
     return getStringPref('general.useragent.locale', 'en-US');
@@ -168,7 +167,7 @@ ChromeActions.prototype = {
     }
   },
   pdfBugEnabled: function() {
-    return getBoolPref(EXT_PREFIX + '.pdfBugEnabled', false);
+    return getBoolPref(PREF_PREFIX + '.pdfBugEnabled', false);
   },
   fallback: function(url) {
     var self = this;
@@ -218,7 +217,7 @@ function PdfStreamConverter() {
 PdfStreamConverter.prototype = {
 
   // properties required for XPCOM registration:
-  classID: Components.ID('{6457a96b-2d68-439a-bcfa-44465fbcdbb1}'),
+  classID: Components.ID('{PDFJSSCRIPT_STREAM_CONVERTER_ID}'),
   classDescription: 'pdf.js Component',
   contractID: '@mozilla.org/streamconv;1?from=application/pdf&to=*/*',
 

@@ -419,13 +419,14 @@ var CipherTransform = (function CipherTransformClosure() {
 })();
 
 var CipherTransformFactory = (function CipherTransformFactoryClosure() {
+  var defaultPasswordBytes = new Uint8Array([
+    0x28, 0xBF, 0x4E, 0x5E, 0x4E, 0x75, 0x8A, 0x41,
+    0x64, 0x00, 0x4E, 0x56, 0xFF, 0xFA, 0x01, 0x08,
+    0x2E, 0x2E, 0x00, 0xB6, 0xD0, 0x68, 0x3E, 0x80,
+    0x2F, 0x0C, 0xA9, 0xFE, 0x64, 0x53, 0x69, 0x7A]);
+
   function prepareKeyData(fileId, password, ownerPassword, userPassword,
                           flags, revision, keyLength, encryptMetadata) {
-    var defaultPasswordBytes = new Uint8Array([
-      0x28, 0xBF, 0x4E, 0x5E, 0x4E, 0x75, 0x8A, 0x41,
-      0x64, 0x00, 0x4E, 0x56, 0xFF, 0xFA, 0x01, 0x08,
-      0x2E, 0x2E, 0x00, 0xB6, 0xD0, 0x68, 0x3E, 0x80,
-      0x2F, 0x0C, 0xA9, 0xFE, 0x64, 0x53, 0x69, 0x7A]);
     var hashData = new Uint8Array(100), i = 0, j, n;
     if (password) {
       n = Math.min(32, password.length);
@@ -462,9 +463,8 @@ var CipherTransformFactory = (function CipherTransformFactoryClosure() {
     var cipher, checkData;
 
     if (revision >= 3) {
-      // padded password in hashData, we can use this array for user
-      // password check
-      i = 32;
+      for (i = 0; i < 32; ++i)
+        hashData[i] = defaultPasswordBytes[i];
       for (j = 0, n = fileId.length; j < n; ++j)
         hashData[i++] = fileId[j];
       cipher = new ARCFourCipher(encryptionKey);
@@ -477,15 +477,52 @@ var CipherTransformFactory = (function CipherTransformFactoryClosure() {
         cipher = new ARCFourCipher(derivedKey);
         checkData = cipher.encryptBlock(checkData);
       }
+      for (j = 0, n = checkData.length; j < n; ++j) {
+        if (userPassword[j] != checkData[j])
+          return null;
+      }
     } else {
       cipher = new ARCFourCipher(encryptionKey);
-      checkData = cipher.encryptBlock(hashData.subarray(0, 32));
-    }
-    for (j = 0, n = checkData.length; j < n; ++j) {
-      if (userPassword[j] != checkData[j])
-        error('incorrect password');
+      checkData = cipher.encryptBlock(defaultPasswordBytes);
+      for (j = 0, n = checkData.length; j < n; ++j) {
+        if (userPassword[j] != checkData[j])
+          return null;
+      }
     }
     return encryptionKey;
+  }
+  function decodeUserPassword(password, ownerPassword, revision, keyLength) {
+    var hashData = new Uint8Array(32), i = 0, j, n;
+    n = Math.min(32, password.length);
+    for (; i < n; ++i)
+      hashData[i] = password[i];
+    j = 0;
+    while (i < 32) {
+      hashData[i++] = defaultPasswordBytes[j++];
+    }
+    var hash = calculateMD5(hashData, 0, i);
+    var keyLengthInBytes = keyLength >> 3;
+    if (revision >= 3) {
+      for (j = 0; j < 50; ++j) {
+         hash = calculateMD5(hash, 0, hash.length);
+      }
+    }
+
+    var cipher, userPassword;
+    if (revision >= 3) {
+      userPassword = ownerPassword;
+      var derivedKey = new Uint8Array(keyLengthInBytes), k;
+      for (j = 19; j >= 0; j--) {
+        for (k = 0; k < keyLengthInBytes; ++k)
+          derivedKey[k] = hash[k] ^ j;
+        cipher = new ARCFourCipher(derivedKey);
+        userPassword = cipher.encryptBlock(userPassword);
+      }
+    } else {
+      cipher = new ARCFourCipher(hash.subarray(0, keyLengthInBytes));
+      userPassword = cipher.encryptBlock(ownerPassword);
+    }
+    return userPassword;
   }
 
   var identityName = new Name('Identity');
@@ -516,10 +553,25 @@ var CipherTransformFactory = (function CipherTransformFactoryClosure() {
     if (password)
       passwordBytes = stringToBytes(password);
 
-    this.encryptionKey = prepareKeyData(fileIdBytes, passwordBytes,
-                                        ownerPassword, userPassword,
-                                        flags, revision,
-                                        keyLength, encryptMetadata);
+    var encryptionKey = prepareKeyData(fileIdBytes, passwordBytes,
+                                       ownerPassword, userPassword, flags,
+                                       revision, keyLength, encryptMetadata);
+    if (!encryptionKey && !password) {
+      throw new PasswordException('No password given', 'needpassword');
+    } else if (!encryptionKey && password) {
+      // Attempting use the password as an owner password
+      var decodedPassword = decodeUserPassword(passwordBytes, ownerPassword,
+                                               revision, keyLength);
+      encryptionKey = prepareKeyData(fileIdBytes, decodedPassword,
+                                     ownerPassword, userPassword, flags,
+                                     revision, keyLength, encryptMetadata);
+    }
+
+    if (!encryptionKey)
+      throw new PasswordException('Incorrect Password', 'incorrectpassword');
+
+    this.encryptionKey = encryptionKey;
+
     if (algorithm == 4) {
       this.cf = dict.get('CF');
       this.stmf = dict.get('StmF') || identityName;
