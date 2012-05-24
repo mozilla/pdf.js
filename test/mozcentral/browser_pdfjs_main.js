@@ -32,7 +32,7 @@ function test() {
     ok(outerContainer.classList.contains('sidebarOpen'), 'sidebar opens on click');
 
     // Thumbnails are created asynchronously - wait for them
-    waitForElement(document, 'canvas#thumbnail2', function(error) {
+    waitForElement(document, 'canvas#thumbnail2', function(error, thumbnail) {
       if (error)
         finish();
 
@@ -42,7 +42,6 @@ function test() {
       var pageNumber = document.querySelector('input#pageNumber');
       is(parseInt(pageNumber.value), 1, 'initial page is 1');
 
-      var thumbnail = document.querySelector('canvas#thumbnail2');
       ok(thumbnail, 'thumbnail2 is available');
       if (thumbnail) {
         thumbnail.click();
@@ -73,25 +72,7 @@ function test() {
       var viewBookmark = document.querySelector('a#viewBookmark');
       viewBookmark.click();
       ok(viewBookmark.href.length > 0, 'viewBookmark button has href');
-
-      //
-      // Zoom in/out
-      //
-      var zoomOut = document.querySelector('button.zoomOut'),
-          zoomIn = document.querySelector('button.zoomIn');
-
-      // Zoom in
-      var oldWidth = document.querySelector('canvas#page1').width;
-      zoomIn.click();
-      var newWidth = document.querySelector('canvas#page1').width;
-      ok(oldWidth < newWidth, 'zooming in increases page width (old: '+oldWidth+', new: '+newWidth+')');
-
-      // Zoom out
-      var oldWidth = document.querySelector('canvas#page1').width;
-      zoomOut.click();
-      var newWidth = document.querySelector('canvas#page1').width;
-      ok(oldWidth > newWidth, 'zooming out decreases page width (old: '+oldWidth+', new: '+newWidth+')');
-
+    
       finish();
     });
   }, true, true);
