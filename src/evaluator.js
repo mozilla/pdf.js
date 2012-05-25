@@ -444,6 +444,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                     case 'SA':
                     case 'AIS':
                     case 'TK':
+                      // TODO implement these operators.
                       info('graphic state operator ' + key);
                       break;
                     default:
