@@ -391,7 +391,9 @@ var PDFView = {
     }
   },
 
-  fallback: function pdfViewDownload() {
+  fallback: function pdfViewFallback() {
+    if (!PDFJS.isFirefoxExtension)
+      return;
     // Only trigger the fallback once so we don't spam the user with messages
     // for one PDF.
     if (this.fellback)
