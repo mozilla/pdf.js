@@ -932,6 +932,9 @@ var PageView = function pageView(container, pdfPage, id, scale,
             if (comment)
               div.appendChild(comment);
             break;
+          case 'Widget':
+            TODO('support forms');
+            break;
         }
       }
     });
