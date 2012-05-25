@@ -12,7 +12,6 @@ include $(DEPTH)/config/autoconf.mk
 include $(topsrcdir)/config/rules.mk
 
 _BROWSER_TEST_FILES = \
-  head.js \
   browser_pdfjs_main.js \
   file_pdfjs_test.pdf \
   $(NULL)

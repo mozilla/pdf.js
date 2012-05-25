@@ -21,11 +21,13 @@ function test() {
     var document = newTabBrowser.contentDocument,
         window = newTabBrowser.contentWindow;
 
-    waitForElement(document, 'canvas#page1', function(err, page1) {
+    // Runs tests after all 'load' event handlers have fired off
+    setTimeout(function() {
       runTests(document, window);
-    });
+    }, 0);
   }, true);
 }
+
 
 function runTests(document, window) {
   //
@@ -43,48 +45,27 @@ function runTests(document, window) {
   sidebar.click();
   ok(outerContainer.classList.contains('sidebarOpen'), 'sidebar opens on click');
 
-  // Thumbnails are created asynchronously - wait for them
-  waitForElement(document, 'canvas#thumbnail2', function(error, thumbnail) {
-    if (error)
-      finish();
+  //
+  // Sidebar: close
+  //
+  sidebar.click();
+  ok(!outerContainer.classList.contains('sidebarOpen'), 'sidebar closes on click');
 
-    //
-    // Page change from thumbnail click
-    //
-    var pageNumber = document.querySelector('input#pageNumber');
-    is(parseInt(pageNumber.value), 1, 'initial page is 1');
+  //
+  // Page change from prev/next buttons
+  //
+  var prevPage = document.querySelector('button#previous'),
+      nextPage = document.querySelector('button#next');
 
-    ok(thumbnail, 'thumbnail2 is available');
-    if (thumbnail) {
-      thumbnail.click();
-      is(parseInt(pageNumber.value), 2, 'clicking on thumbnail changes page');
-    }
+  var pageNumber = document.querySelector('input#pageNumber');
+  is(parseInt(pageNumber.value), 1, 'initial page is 1');
 
-    //
-    // Sidebar: close
-    //
-    sidebar.click();
-    ok(!outerContainer.classList.contains('sidebarOpen'), 'sidebar closes on click');
+  //
+  // Bookmark button
+  //
+  var viewBookmark = document.querySelector('a#viewBookmark');
+  viewBookmark.click();
+  ok(viewBookmark.href.length > 0, 'viewBookmark button has href');
 
-    //
-    // Page change from prev/next buttons
-    //
-    var prevPage = document.querySelector('button#previous'),
-        nextPage = document.querySelector('button#next');
-
-    nextPage.click();
-    is(parseInt(pageNumber.value), 2, 'page increases after clicking on next');
-
-    prevPage.click();
-    is(parseInt(pageNumber.value), 1, 'page decreases after clicking on previous');
-
-    //
-    // Bookmark button
-    //
-    var viewBookmark = document.querySelector('a#viewBookmark');
-    viewBookmark.click();
-    ok(viewBookmark.href.length > 0, 'viewBookmark button has href');
-  
-    finish();
-  });
+  finish();
 }
