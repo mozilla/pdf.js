@@ -937,6 +937,30 @@ canvas {
   font-size: 10px;
 }
 
+@media print {
+  #sidebarContainer, .toolbar, #loadingBox, #errorWrapper, .textLayer {
+    display: none;
+  }
+
+  #mainContainer, #viewerContainer, .page, .page canvas {
+    position: static;
+    padding: 0;
+    margin: 0;
+  }
+
+  .page {
+    float: left;
+    display: none;
+    box-shadow: none;
+    -moz-box-shadow: none;
+    -webkit-box-shadow: none;
+  }
+
+  .page[data-loaded] {
+    display: block;
+  }
+}
+
 @media all and (max-width: 950px) {
   html[dir='ltr'] #outerContainer.sidebarMoving .outerCenter,
   html[dir='ltr'] #outerContainer.sidebarOpen .outerCenter {
