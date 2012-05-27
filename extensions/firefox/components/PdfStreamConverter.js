@@ -97,11 +97,18 @@ function ChromeActions() {
 }
 
 ChromeActions.prototype = {
-  download: function(data) {
+  download: function(data, sendResponse) {
+    var originalUrl = data.originalUrl;
+    // The data may not be downloaded so we need just retry getting the pdf with
+    // the original url.
+    var blobUrl = data.blobUrl || originalUrl;
+
+    var originalUri = NetUtil.newURI(originalUrl);
+    var blobUri = NetUtil.newURI(blobUrl);
+
     let mimeService = Cc['@mozilla.org/mime;1'].getService(Ci.nsIMIMEService);
     var handlerInfo = mimeService.
                         getFromTypeAndExtension('application/pdf', 'pdf');
-    var uri = NetUtil.newURI(data);
 
     var extHelperAppSvc =
           Cc['@mozilla.org/uriloader/external-helper-app-service;1'].
@@ -109,26 +116,46 @@ ChromeActions.prototype = {
     var frontWindow = Cc['@mozilla.org/embedcomp/window-watcher;1'].
                         getService(Ci.nsIWindowWatcher).activeWindow;
     var ioService = Services.io;
-    var channel = ioService.newChannel(data, null, null);
-    var listener = {
-      extListener: null,
-      onStartRequest: function(aRequest, aContext) {
-        this.extListener = extHelperAppSvc.doContent('application/pdf',
-                              aRequest, frontWindow, false);
-        this.extListener.onStartRequest(aRequest, aContext);
-      },
-      onStopRequest: function(aRequest, aContext, aStatusCode) {
-        if (this.extListener)
-          this.extListener.onStopRequest(aRequest, aContext, aStatusCode);
-      },
-      onDataAvailable: function(aRequest, aContext, aInputStream, aOffset,
-                                aCount) {
-        this.extListener.onDataAvailable(aRequest, aContext, aInputStream,
-                                         aOffset, aCount);
-      }
-    };
+    var channel = ioService.newChannel(originalUrl, null, null);
 
-    channel.asyncOpen(listener, null);
+
+    NetUtil.asyncFetch(blobUri, function(aInputStream, aResult) {
+      if (!Components.isSuccessCode(aResult)) {
+        if (sendResponse)
+          sendResponse(true);
+        return;
+      }
+      // Create a nsIInputStreamChannel so we can set the url on the channel
+      // so the filename will be correct.
+      let channel = Cc['@mozilla.org/network/input-stream-channel;1'].
+                      createInstance(Ci.nsIInputStreamChannel);
+      channel.setURI(originalUri);
+      channel.contentStream = aInputStream;
+      channel.QueryInterface(Ci.nsIChannel);
+
+      var listener = {
+        extListener: null,
+        onStartRequest: function(aRequest, aContext) {
+          this.extListener = extHelperAppSvc.doContent('application/pdf',
+                                aRequest, frontWindow, false);
+          this.extListener.onStartRequest(aRequest, aContext);
+        },
+        onStopRequest: function(aRequest, aContext, aStatusCode) {
+          if (this.extListener)
+            this.extListener.onStopRequest(aRequest, aContext, aStatusCode);
+          // Notify the content code we're done downloading.
+          if (sendResponse)
+            sendResponse(false);
+        },
+        onDataAvailable: function(aRequest, aContext, aInputStream, aOffset,
+                                  aCount) {
+          this.extListener.onDataAvailable(aRequest, aContext, aInputStream,
+                                           aOffset, aCount);
+        }
+      };
+
+      channel.asyncOpen(listener, null);
+    });
   },
   setDatabase: function(data) {
     if (inPrivateBrowsing)
@@ -169,20 +196,38 @@ ChromeActions.prototype = {
 function RequestListener(actions) {
   this.actions = actions;
 }
-// Receive an event and synchronously responds.
+// Receive an event and synchronously or asynchronously responds.
 RequestListener.prototype.receive = function(event) {
   var message = event.target;
+  var doc = message.ownerDocument;
   var action = message.getUserData('action');
   var data = message.getUserData('data');
+  var sync = message.getUserData('sync');
   var actions = this.actions;
   if (!(action in actions)) {
     log('Unknown action: ' + action);
     return;
   }
-  var response = actions[action].call(this.actions, data);
-  message.setUserData('response', response, null);
-};
+  if (sync) {
+    var response = actions[action].call(this.actions, data);
+    message.setUserData('response', response, null);
+  } else {
+    var response;
+    if (!message.getUserData('callback')) {
+      doc.documentElement.removeChild(message);
+      response = null;
+    } else {
+      response = function sendResponse(response) {
+        message.setUserData('response', response, null);
 
+        var listener = doc.createEvent('HTMLEvents');
+        listener.initEvent('pdf.js.response', true, false);
+        return message.dispatchEvent(listener);
+      }
+    }
+    actions[action].call(this.actions, data, response);
+  }
+};
 
 function PdfStreamConverter() {
 }

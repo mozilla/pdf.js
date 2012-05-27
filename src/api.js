@@ -151,6 +151,15 @@ var PDFDocumentProxy = (function PDFDocumentProxyClosure() {
       promise.resolve(this.pdfInfo.encrypted);
       return promise;
     },
+    /**
+     * @return {Promise} A promise that is resolved with a TypedArray that has
+     * the raw data from the PDF.
+     */
+    getData: function PDFDocumentProxy_getData() {
+      var promise = new PDFJS.Promise();
+      this.transport.getData(promise);
+      return promise;
+    },
     destroy: function PDFDocumentProxy_destroy() {
       this.transport.destroy();
     }
@@ -608,6 +617,12 @@ var WorkerTransport = (function WorkerTransportClosure() {
 
     sendData: function WorkerTransport_sendData(data, params) {
       this.messageHandler.send('GetDocRequest', {data: data, params: params});
+    },
+
+    getData: function WorkerTransport_sendData(promise) {
+      this.messageHandler.send('GetData', null, function(data) {
+        promise.resolve(data);
+      });
     },
 
     getPage: function WorkerTransport_getPage(pageNumber, promise) {
