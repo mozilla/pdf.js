@@ -136,6 +136,10 @@ var WorkerMessageHandler = {
       handler.send('GetPage', {pageInfo: page});
     });
 
+    handler.on('GetData', function wphSetupGetData(data, promise) {
+      promise.resolve(pdfModel.stream.bytes);
+    });
+
     handler.on('GetAnnotationsRequest', function wphSetupGetAnnotations(data) {
       var pdfPage = pdfModel.getPage(data.pageIndex + 1);
       handler.send('GetAnnotations', {
