@@ -132,7 +132,14 @@ var Catalog = (function CatalogClosure() {
 
   Catalog.prototype = {
     get metadata() {
-      var stream = this.catDict.get('Metadata');
+      var streamRef = this.catDict.getRaw('Metadata');
+      if (!isRef(streamRef))
+        return shadow(this, 'metadata', null);
+
+      var encryptMetadata = !this.xref.encrypt ? false :
+        this.xref.encrypt.encryptMetadata;
+
+      var stream = this.xref.fetch(streamRef, !encryptMetadata);
       var metadata;
       if (stream && isDict(stream.dict)) {
         var type = stream.dict.get('Type');

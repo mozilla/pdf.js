@@ -546,8 +546,10 @@ var CipherTransformFactory = (function CipherTransformFactoryClosure() {
     var userPassword = stringToBytes(dict.get('U'));
     var flags = dict.get('P');
     var revision = dict.get('R');
-    var encryptMetadata =
+    var encryptMetadata = algorithm == 4 &&  // meaningful when V is 4
       dict.get('EncryptMetadata') !== false; // makes true as default value
+    this.encryptMetadata = encryptMetadata;
+
     var fileIdBytes = stringToBytes(fileId);
     var passwordBytes;
     if (password)
