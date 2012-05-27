@@ -1094,6 +1094,40 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
           }
         }
       }
+      function rescaleImage(pixels, widthScale, heightScale) {
+        var scaledWidth = Math.ceil(width / widthScale);
+        var scaledHeight = Math.ceil(height / heightScale);
+
+        var itemsSum = new Uint32Array(scaledWidth * scaledHeight * 4);
+        var itemsCount = new Uint32Array(scaledWidth * scaledHeight);
+        for (var i = 0, position = 0; i < height; i++) {
+          var lineOffset = (0 | (i / heightScale)) * scaledWidth;
+          for (var j = 0; j < width; j++) {
+            var countOffset = lineOffset + (0 | (j / widthScale));
+            var sumOffset = countOffset << 2;
+            itemsSum[sumOffset] += pixels[position];
+            itemsSum[sumOffset + 1] += pixels[position + 1];
+            itemsSum[sumOffset + 2] += pixels[position + 2];
+            itemsSum[sumOffset + 3] += pixels[position + 3];
+            itemsCount[countOffset]++;
+            position += 4;
+          }
+        }
+        var tmpCanvas = createScratchCanvas(scaledWidth, scaledHeight);
+        var tmpCtx = tmpCanvas.getContext('2d');
+        var imgData = tmpCtx.getImageData(0, 0, scaledWidth, scaledHeight);
+        pixels = imgData.data;
+        for (var i = 0, j = 0, ii = scaledWidth * scaledHeight; i < ii; i++) {
+          var count = itemsCount[i];
+          pixels[j] = itemsSum[j] / count;
+          pixels[j + 1] = itemsSum[j + 1] / count;
+          pixels[j + 2] = itemsSum[j + 2] / count;
+          pixels[j + 3] = itemsSum[j + 3] / count;
+          j += 4;
+        }
+        tmpCtx.putImageData(imgData, 0, 0);
+        return tmpCanvas;
+      }
 
       this.save();
 
@@ -1117,7 +1151,17 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       applyStencilMask(pixels, inverseDecode);
 
       tmpCtx.putImageData(imgData, 0, 0);
-      ctx.drawImage(tmpCanvas, 0, -h);
+      var currentTransform = ctx.mozCurrentTransformInverse;
+      var widthScale = Math.max(Math.abs(currentTransform[0]), 1);
+      var heightScale = Math.max(Math.abs(currentTransform[3]), 1);
+      if (widthScale >= 2 || heightScale >= 2) {
+        // canvas does not resize large images to small -- using simple
+        // algorithm to perform pre-scaling
+        tmpCanvas = rescaleImage(imgData.data, widthScale, heightScale);
+        ctx.scale(widthScale, heightScale);
+        ctx.drawImage(tmpCanvas, 0, -h / heightScale);
+      } else
+        ctx.drawImage(tmpCanvas, 0, -h);
       this.restore();
     },
 
