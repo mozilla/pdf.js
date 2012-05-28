@@ -1150,17 +1150,17 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
 
       applyStencilMask(pixels, inverseDecode);
 
-      tmpCtx.putImageData(imgData, 0, 0);
       var currentTransform = ctx.mozCurrentTransformInverse;
       var widthScale = Math.max(Math.abs(currentTransform[0]), 1);
       var heightScale = Math.max(Math.abs(currentTransform[3]), 1);
       if (widthScale >= 2 || heightScale >= 2) {
-        // canvas does not resize large images to small -- using simple
+        // canvas does not resize well large images to small -- using simple
         // algorithm to perform pre-scaling
         tmpCanvas = rescaleImage(imgData.data, widthScale, heightScale);
         ctx.scale(widthScale, heightScale);
         ctx.drawImage(tmpCanvas, 0, -h / heightScale);
       } else
+        tmpCtx.putImageData(imgData, 0, 0);
         ctx.drawImage(tmpCanvas, 0, -h);
       this.restore();
     },
