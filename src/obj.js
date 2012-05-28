@@ -152,7 +152,11 @@ var Catalog = (function CatalogClosure() {
           // arbitrary charsets, let's just hope that the author of the PDF
           // was reasonable enough to stick with the XML default charset,
           // which is UTF-8.
-          metadata = stringToUTF8String(bytesToString(stream.getBytes()));
+          try {
+            metadata = stringToUTF8String(bytesToString(stream.getBytes()));
+          } catch (e) {
+            log('Skipping invalid metadata.');
+          }
         }
       }
 
