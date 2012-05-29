@@ -451,12 +451,12 @@ var LabCS = (function LabCSClosure() {
       error('Invalid WhitePoint components, no fallback available');
 
     if (this.XB < 0 || this.YB < 0 || this.ZB < 0) {
-      warn('Invalid BlackPoint, falling back to default');
+      info('Invalid BlackPoint, falling back to default');
       this.XB = this.YB = this.ZB = 0;
     }
 
     if (this.amin > this.amax || this.bmin > this.bmax) {
-      warn('Invalid Range, falling back to defaults');
+      info('Invalid Range, falling back to defaults');
       this.amin = -100;
       this.amax = 100;
       this.bmin = -100;

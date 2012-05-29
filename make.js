@@ -110,6 +110,10 @@ target.locale = function() {
       cp(path + '/viewer.properties', EXTENSION_LOCALE_OUTPUT + '/' + locale);
     }
 
+    if (test('-f', path + '/chrome.properties')) {
+      cp(path + '/chrome.properties', EXTENSION_LOCALE_OUTPUT + '/' + locale);
+    }
+
     if (test('-f', path + '/metadata.inc')) {
       var metadata = cat(path + '/metadata.inc');
       metadataContent += metadata;
@@ -398,7 +402,8 @@ target.mozcentral = function() {
          'components',
          '../../LICENSE'],
       DEFAULT_LOCALE_FILES =
-        [LOCALE_SRC_DIR + 'en-US/viewer.properties'],
+        [LOCALE_SRC_DIR + 'en-US/viewer.properties',
+         LOCALE_SRC_DIR + 'en-US/chrome.properties'],
       FIREFOX_MC_EXTENSION_FILES =
         ['chrome.manifest',
          'components',

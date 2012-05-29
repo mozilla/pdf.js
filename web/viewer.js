@@ -221,6 +221,7 @@ var PDFView = {
   initialBookmark: document.location.hash.substring(1),
   container: null,
   initialized: false,
+  fellback: false,
   // called once when the document is loaded
   initialize: function pdfViewInitialize() {
     this.container = document.getElementById('viewerContainer');
@@ -390,6 +391,18 @@ var PDFView = {
     }
   },
 
+  fallback: function pdfViewFallback() {
+    if (!PDFJS.isFirefoxExtension)
+      return;
+    // Only trigger the fallback once so we don't spam the user with messages
+    // for one PDF.
+    if (this.fellback)
+      return;
+    this.fellback = true;
+    var url = this.url.split('#')[0];
+    FirefoxCom.request('fallback', url);
+  },
+
   navigateTo: function pdfViewNavigateTo(dest) {
     if (typeof dest === 'string')
       dest = this.destinations[dest];
@@ -452,6 +465,34 @@ var PDFView = {
    *                            and optionally a 'stack' property.
    */
   error: function pdfViewError(message, moreInfo) {
+    var moreInfoText = mozL10n.get('error_build', {build: PDFJS.build},
+      'PDF.JS Build: {{build}}') + '\n';
+    if (moreInfo) {
+      moreInfoText +=
+        mozL10n.get('error_message', {message: moreInfo.message},
+        'Message: {{message}}');
+      if (moreInfo.stack) {
+        moreInfoText += '\n' +
+          mozL10n.get('error_stack', {stack: moreInfo.stack},
+          'Stack: {{stack}}');
+      } else {
+        if (moreInfo.filename) {
+          moreInfoText += '\n' +
+            mozL10n.get('error_file', {file: moreInfo.filename},
+            'File: {{file}}');
+        }
+        if (moreInfo.lineNumber) {
+          moreInfoText += '\n' +
+            mozL10n.get('error_line', {line: moreInfo.lineNumber},
+            'Line: {{line}}');
+        }
+      }
+    }
+    if (PDFJS.isFirefoxExtension) {
+      console.error(message + '\n' + moreInfoText);
+      this.fallback();
+      return;
+    }
     var errorWrapper = document.getElementById('errorWrapper');
     errorWrapper.removeAttribute('hidden');
 
@@ -478,32 +519,9 @@ var PDFView = {
     };
     moreInfoButton.removeAttribute('hidden');
     lessInfoButton.setAttribute('hidden', 'true');
-    errorMoreInfo.value =
-      mozL10n.get('error_build', {build: PDFJS.build},
-      'PDF.JS Build: {{build}}') + '\n';
+    errorMoreInfo.value = moreInfoText;
 
-    if (moreInfo) {
-      errorMoreInfo.value +=
-        mozL10n.get('error_message', {message: moreInfo.message},
-        'Message: {{message}}');
-      if (moreInfo.stack) {
-        errorMoreInfo.value += '\n' +
-          mozL10n.get('error_stack', {stack: moreInfo.stack},
-          'Stack: {{stack}}');
-      } else {
-        if (moreInfo.filename) {
-          errorMoreInfo.value += '\n' +
-            mozL10n.get('error_file', {file: moreInfo.filename},
-            'File: {{file}}');
-        }
-        if (moreInfo.lineNumber) {
-          errorMoreInfo.value += '\n' +
-            mozL10n.get('error_line', {line: moreInfo.lineNumber},
-            'Line: {{line}}');
-        }
-      }
-    }
-    errorMoreInfo.rows = errorMoreInfo.value.split('\n').length - 1;
+    errorMoreInfo.rows = moreInfoText.split('\n').length - 1;
   },
 
   progress: function pdfViewProgress(level) {
@@ -915,6 +933,9 @@ var PageView = function pageView(container, pdfPage, id, scale,
             var comment = createCommentAnnotation(item.name, item);
             if (comment)
               div.appendChild(comment);
+            break;
+          case 'Widget':
+            TODO('support forms');
             break;
         }
       }
@@ -1396,6 +1417,14 @@ window.addEventListener('load', function webViewerLoad(evt) {
     PDFBug.enable(enabled);
     PDFBug.init();
   }
+
+  // Listen for warnings to trigger the fallback UI.  Errors should be caught
+  // and call PDFView.error() so we don't need to listen for those.
+  PDFJS.LogManager.addLogger({
+    warn: function() {
+      PDFView.fallback();
+    }
+  });
 
   var thumbsView = document.getElementById('thumbnailView');
   thumbsView.addEventListener('scroll', updateThumbViewArea, true);
