@@ -147,7 +147,6 @@ var WorkerMessageHandler = {
     handler.on('RenderPageRequest', function wphSetupRenderPage(data) {
       var pageNum = data.pageIndex + 1;
 
-
       // The following code does quite the same as
       // Page.prototype.startRendering, but stops at one point and sends the
       // result back to the main thread.
@@ -207,6 +206,24 @@ var WorkerMessageHandler = {
         depFonts: Object.keys(fonts)
       });
     }, this);
+
+    handler.on('GetTextContent', function wphExtractText(data, promise) {
+      var pageNum = data.pageIndex + 1;
+      var start = Date.now();
+
+      var textContent = '';
+      try {
+        var page = pdfModel.getPage(pageNum);
+        textContent = page.extractTextContent();
+        promise.resolve(textContent);
+      } catch (e) {
+        // Skip errored pages
+        promise.reject(e);
+      }
+
+      console.log('text indexing: page=%d - time=%dms',
+                      pageNum, Date.now() - start);
+    });
   }
 };
 

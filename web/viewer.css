@@ -238,6 +238,10 @@ html[dir='rtl'] .splitToolbarButton > .toolbarButton {
   opacity: .5;
 }
 
+.toolbarButton.group {
+  margin-right:0;
+}
+
 .splitToolbarButton:hover > .toolbarButton,
 .splitToolbarButton:focus > .toolbarButton,
 .splitToolbarButton.toggled > .toolbarButton {
@@ -533,6 +537,12 @@ html[dir='rtl'] .toolbarButton.pageDown::before {
   content: url(images/toolbarButton-viewOutline.png);
 }
 
+#viewSearch.toolbarButton::before {
+  display: inline-block;
+  content: url(images/toolbarButton-search.png);
+}
+
+
 .toolbarField {
   min-width: 16px;
   width: 32px;
@@ -695,6 +705,53 @@ a:focus > .thumbnail > .thumbnailSelectionRing,
               0 0 1px hsla(0,0%,100%,.2) inset,
               0 0 1px hsla(0,0%,0%,.2);
   color: hsla(0,0%,100%,.9);
+}
+
+#searchScrollView {
+  position: absolute;
+  top: 10px;
+  bottom: 10px;
+  left: 10px;
+  width: 280px;
+}
+
+#searchToolbar {
+  padding-left: 0px;
+  right: 0px;
+  padding-top: 0px;
+  padding-bottom: 5px;
+}
+
+#searchToolbar > input {
+  margin-left: 8px;
+  width: 130px;
+}
+
+#searchResults {
+  overflow: auto;
+  background-color: #fff;
+  position: absolute;
+  top: 30px;
+  bottom: 0px;
+  left: 0px;
+  right: 0;
+  font-size: smaller;
+  opacity: 0.7;
+}
+
+#searchResults a {
+  display: block;
+  white-space: pre;
+  text-decoration: none;
+  color: black;
+}
+
+#sidebarControls {
+  position:absolute;
+  width: 180px;
+  height: 32px;
+  left: 15px;
+  bottom: 35px;
 }
 
 .outlineItem.selected {

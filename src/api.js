@@ -361,12 +361,18 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
       next();
     },
     /**
-     * Stub for future feature.
+     * @return {Promise} That is resolved with the a {string} that is the text
+     * content from the page.
      */
     getTextContent: function PDFPageProxy_getTextContent() {
       var promise = new PDFJS.Promise();
-      var textContent = 'page text'; // not implemented
-      promise.resolve(textContent);
+      this.transport.messageHandler.send('GetTextContent', {
+          pageIndex: this.pageNumber - 1
+        },
+        function textContentCallback(textContent) {
+          promise.resolve(textContent);
+        }
+      );
       return promise;
     },
     /**
