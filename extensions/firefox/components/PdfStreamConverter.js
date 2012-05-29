@@ -167,10 +167,10 @@ ChromeActions.prototype = {
     }
   },
   pdfBugEnabled: function() {
-    return getBoolPref(EXT_PREFIX + '.pdfBugEnabled', false);
+    return getBoolPref(PREF_PREFIX + '.pdfBugEnabled', false);
   },
   searchEnabled: function() {
-    return getBoolPref(EXT_PREFIX + '.searchEnabled', false);
+    return getBoolPref(PREF_PREFIX + '.searchEnabled', false);
   },
   fallback: function(url) {
     var self = this;
