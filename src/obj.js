@@ -140,7 +140,12 @@ var Catalog = (function CatalogClosure() {
 
         if (isName(type) && isName(subtype) &&
             type.name === 'Metadata' && subtype.name === 'XML') {
-          metadata = stringToPDFString(bytesToString(stream.getBytes()));
+          // XXX: This should examine the charset the XML document defines,
+          // however since there are currently no real means to decode
+          // arbitrary charsets, let's just hope that the author of the PDF
+          // was reasonable enough to stick with the XML default charset,
+          // which is UTF-8.
+          metadata = stringToUTF8String(bytesToString(stream.getBytes()));
         }
       }
 
