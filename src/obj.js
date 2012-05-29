@@ -132,7 +132,14 @@ var Catalog = (function CatalogClosure() {
 
   Catalog.prototype = {
     get metadata() {
-      var stream = this.catDict.get('Metadata');
+      var streamRef = this.catDict.getRaw('Metadata');
+      if (!isRef(streamRef))
+        return shadow(this, 'metadata', null);
+
+      var encryptMetadata = !this.xref.encrypt ? false :
+        this.xref.encrypt.encryptMetadata;
+
+      var stream = this.xref.fetch(streamRef, !encryptMetadata);
       var metadata;
       if (stream && isDict(stream.dict)) {
         var type = stream.dict.get('Type');
@@ -140,7 +147,16 @@ var Catalog = (function CatalogClosure() {
 
         if (isName(type) && isName(subtype) &&
             type.name === 'Metadata' && subtype.name === 'XML') {
-          metadata = stringToPDFString(bytesToString(stream.getBytes()));
+          // XXX: This should examine the charset the XML document defines,
+          // however since there are currently no real means to decode
+          // arbitrary charsets, let's just hope that the author of the PDF
+          // was reasonable enough to stick with the XML default charset,
+          // which is UTF-8.
+          try {
+            metadata = stringToUTF8String(bytesToString(stream.getBytes()));
+          } catch (e) {
+            info('Skipping invalid metadata.');
+          }
         }
       }
 
