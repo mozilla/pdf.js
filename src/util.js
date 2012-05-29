@@ -332,6 +332,10 @@ function stringToPDFString(str) {
   return str2;
 }
 
+function stringToUTF8String(str) {
+  return decodeURIComponent(escape(str));
+}
+
 function isBool(v) {
   return typeof v == 'boolean';
 }
