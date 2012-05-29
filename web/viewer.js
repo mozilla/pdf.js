@@ -219,6 +219,8 @@ var PDFView = {
   currentScale: kUnknownScale,
   currentScaleValue: null,
   initialBookmark: document.location.hash.substring(1),
+  startedTextExtraction: false,
+  pageText: [],
   container: null,
   initialized: false,
   fellback: false,
@@ -579,6 +581,8 @@ var PDFView = {
     }
 
     var pages = this.pages = [];
+    this.pageText = [];
+    this.startedTextExtraction = false;
     var pagesRefMap = {};
     var thumbnails = this.thumbnails = [];
     var pagePromises = [];
@@ -659,6 +663,67 @@ var PDFView = {
     }
   },
 
+  search: function pdfViewStartSearch() {
+    // Limit this function to run every <SEARCH_TIMEOUT>ms.
+    var SEARCH_TIMEOUT = 250;
+    var lastSeach = this.lastSearch;
+    var now = Date.now();
+    if (lastSeach && (now - lastSeach) < SEARCH_TIMEOUT) {
+      if (!this.searchTimer) {
+        this.searchTimer = setTimeout(function resumeSearch() {
+            PDFView.search();
+          },
+          SEARCH_TIMEOUT - (now - lastSeach)
+        );
+      }
+      return;
+    }
+    this.searchTimer = null;
+    this.lastSearch = now;
+
+    function bindLink(link, pageNumber) {
+      link.href = '#' + pageNumber;
+      link.onclick = function searchBindLink() {
+        PDFView.page = pageNumber;
+        return false;
+      };
+    }
+
+    var searchResults = document.getElementById('searchResults');
+
+    var searchTermsInput = document.getElementById('searchTermsInput');
+    searchResults.removeAttribute('hidden');
+    searchResults.textContent = '';
+
+    var terms = searchTermsInput.value;
+
+    if (!terms)
+      return;
+
+    // simple search: removing spaces and hyphens, then scanning every
+    terms = terms.replace(/\s-/g, '').toLowerCase();
+    var index = PDFView.pageText;
+    var pageFound = false;
+    for (var i = 0, ii = index.length; i < ii; i++) {
+      var pageText = index[i].replace(/\s-/g, '').toLowerCase();
+      var j = pageText.indexOf(terms);
+      if (j < 0)
+        continue;
+
+      var pageNumber = i + 1;
+      var textSample = index[i].substr(j, 50);
+      var link = document.createElement('a');
+      bindLink(link, pageNumber);
+      link.textContent = 'Page ' + pageNumber + ': ' + textSample;
+      searchResults.appendChild(link);
+
+      pageFound = true;
+    }
+    if (!pageFound) {
+      searchResults.textContent = '(Not found)';
+    }
+  },
+
   setHash: function pdfViewSetHash(hash) {
     if (!hash)
       return;
@@ -701,24 +766,68 @@ var PDFView = {
   switchSidebarView: function pdfViewSwitchSidebarView(view) {
     var thumbsView = document.getElementById('thumbnailView');
     var outlineView = document.getElementById('outlineView');
-    var thumbsSwitchButton = document.getElementById('viewThumbnail');
-    var outlineSwitchButton = document.getElementById('viewOutline');
+    var searchView = document.getElementById('searchView');
 
-    if (outlineSwitchButton.getAttribute('disabled'))
-      return;
-
-    thumbsView.classList.toggle('hidden');
-    outlineView.classList.toggle('hidden');
-    document.getElementById('viewThumbnail').classList.toggle('toggled');
-    document.getElementById('viewOutline').classList.toggle('toggled');
+    var thumbsButton = document.getElementById('viewThumbnail');
+    var outlineButton = document.getElementById('viewOutline');
+    var searchButton = document.getElementById('viewSearch');
 
     switch (view) {
       case 'thumbs':
+        thumbsButton.classList.add('toggled');
+        outlineButton.classList.remove('toggled');
+        searchButton.classList.remove('toggled');
+        thumbsView.classList.remove('hidden');
+        outlineView.classList.add('hidden');
+        searchView.classList.add('hidden');
+
         updateThumbViewArea();
         break;
+
       case 'outline':
+        thumbsButton.classList.remove('toggled');
+        outlineButton.classList.add('toggled');
+        searchButton.classList.remove('toggled');
+        thumbsView.classList.add('hidden');
+        outlineView.classList.remove('hidden');
+        searchView.classList.add('hidden');
+
+        if (outlineButton.getAttribute('disabled'))
+          return;
+        break;
+
+      case 'search':
+        thumbsButton.classList.remove('toggled');
+        outlineButton.classList.remove('toggled');
+        searchButton.classList.add('toggled');
+        thumbsView.classList.add('hidden');
+        outlineView.classList.add('hidden');
+        searchView.classList.remove('hidden');
+
+        var searchTermsInput = document.getElementById('searchTermsInput');
+        searchTermsInput.focus();
+        // Start text extraction as soon as the search gets displayed.
+        this.extractText();
         break;
     }
+  },
+
+  extractText: function() {
+    if (this.startedTextExtraction)
+      return;
+    this.startedTextExtraction = true;
+    var self = this;
+    function extractPageText(pageIndex) {
+      self.pages[pageIndex].pdfPage.getTextContent().then(
+        function textContentResolved(textContent) {
+          self.pageText[pageIndex] = textContent;
+          self.search();
+          if ((pageIndex + 1) < self.pages.length)
+            extractPageText(pageIndex + 1);
+        }
+      );
+    };
+    extractPageText(0);
   },
 
   getVisiblePages: function pdfViewGetVisiblePages() {
@@ -1416,6 +1525,11 @@ window.addEventListener('load', function webViewerLoad(evt) {
     var enabled = pdfBug.split(',');
     PDFBug.enable(enabled);
     PDFBug.init();
+  }
+
+  if (!PDFJS.isFirefoxExtension ||
+    (PDFJS.isFirefoxExtension && FirefoxCom.request('searchEnabled'))) {
+    document.querySelector('#viewSearch').classList.remove('hidden');
   }
 
   // Listen for warnings to trigger the fallback UI.  Errors should be caught

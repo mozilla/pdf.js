@@ -169,6 +169,9 @@ ChromeActions.prototype = {
   pdfBugEnabled: function() {
     return getBoolPref(PREF_PREFIX + '.pdfBugEnabled', false);
   },
+  searchEnabled: function() {
+    return getBoolPref(PREF_PREFIX + '.searchEnabled', false);
+  },
   fallback: function(url) {
     var self = this;
     var domWindow = this.domWindow;
