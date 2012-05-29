@@ -155,7 +155,7 @@ var Catalog = (function CatalogClosure() {
           try {
             metadata = stringToUTF8String(bytesToString(stream.getBytes()));
           } catch (e) {
-            log('Skipping invalid metadata.');
+            info('Skipping invalid metadata.');
           }
         }
       }
