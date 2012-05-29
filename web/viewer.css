@@ -539,8 +539,7 @@ html[dir='rtl'] .toolbarButton.pageDown::before {
 
 #viewSearch.toolbarButton::before {
   display: inline-block;
-  font-size: 18px;
-  content: 'S';
+  content: url(images/toolbarButton-search.png);
 }
 
 
