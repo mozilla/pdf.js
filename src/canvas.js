@@ -343,10 +343,13 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       this.ctx.webkitLineDashOffset = dashPhase;
     },
     setRenderingIntent: function CanvasGraphics_setRenderingIntent(intent) {
-      TODO('set rendering intent: ' + intent);
+      // Maybe if we one day fully support color spaces this will be important
+      // for now we can ignore.
+      // TODO set rendering intent?
     },
     setFlatness: function CanvasGraphics_setFlatness(flatness) {
-      TODO('set flatness: ' + flatness);
+      // There's no way to control this with canvas, but we can safely ignore.
+      // TODO set flatness?
     },
     setGState: function CanvasGraphics_setGState(states) {
       for (var i = 0, ii = states.length; i < ii; i++) {
@@ -841,7 +844,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
             text.length += shownText.length;
           }
         } else {
-          malformed('TJ array element ' + e + ' is not string or num');
+          error('TJ array element ' + e + ' is not string or num');
         }
       }
 

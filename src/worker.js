@@ -11,10 +11,13 @@ function MessageHandler(name, comObj) {
   var ah = this.actionHandler = {};
 
   ah['console_log'] = [function ahConsoleLog(data) {
-      console.log.apply(console, data);
+    console.log.apply(console, data);
   }];
   ah['console_error'] = [function ahConsoleError(data) {
-      console.error.apply(console, data);
+    console.error.apply(console, data);
+  }];
+  ah['_warn'] = [function ah_Warn(data) {
+    warn(data);
   }];
 
   comObj.onmessage = function messageHandlerComObjOnMessage(event) {
@@ -243,6 +246,17 @@ var workerConsole = {
 // Worker thread?
 if (typeof window === 'undefined') {
   globalScope.console = workerConsole;
+
+  // Add a logger so we can pass warnings on to the main thread, errors will
+  // throw an exception which will be forwarded on automatically.
+  PDFJS.LogManager.addLogger({
+    warn: function(msg) {
+      postMessage({
+        action: '_warn',
+        data: msg
+      });
+    }
+  });
 
   var handler = new MessageHandler('worker_processor', this);
   WorkerMessageHandler.setup(handler);

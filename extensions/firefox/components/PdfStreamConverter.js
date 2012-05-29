@@ -19,6 +19,7 @@ const SEAMONKEY_ID = '{92650c4d-4b8e-4d2a-b7eb-24ecf4f6b63a}';
 Cu.import('resource://gre/modules/XPCOMUtils.jsm');
 Cu.import('resource://gre/modules/Services.jsm');
 Cu.import('resource://gre/modules/NetUtil.jsm');
+Cu.import('resource://gre/modules/AddonManager.jsm');
 
 let appInfo = Cc['@mozilla.org/xre/app-info;1']
                   .getService(Ci.nsIXULAppInfo);
@@ -91,9 +92,15 @@ function getLocalizedStrings(path) {
   }
   return map;
 }
+function getLocalizedString(strings, id) {
+  if (id in strings)
+    return strings[id]['textContent'];
+  return id;
+}
 
 // All the priviledged actions.
-function ChromeActions() {
+function ChromeActions(domWindow) {
+  this.domWindow = domWindow;
 }
 
 ChromeActions.prototype = {
@@ -161,9 +168,29 @@ ChromeActions.prototype = {
   },
   pdfBugEnabled: function() {
     return getBoolPref(PREF_PREFIX + '.pdfBugEnabled', false);
+  },
+  fallback: function(url) {
+    var self = this;
+    var domWindow = this.domWindow;
+    var strings = getLocalizedStrings('chrome.properties');
+    var message = getLocalizedString(strings, 'unsupported_feature');
+
+    var win = Services.wm.getMostRecentWindow('navigator:browser');
+    var browser = win.gBrowser.getBrowserForDocument(domWindow.top.document);
+    var notificationBox = win.gBrowser.getNotificationBox(browser);
+
+    var buttons = [{
+      label: getLocalizedString(strings, 'open_with_different_viewer'),
+      accessKey: null,
+      callback: function() {
+        self.download(url);
+      }
+    }];
+    notificationBox.appendNotification(message, 'pdfjs-fallback', null,
+                                       notificationBox.PRIORITY_WARNING_LOW,
+                                       buttons);
   }
 };
-
 
 // Event listener to trigger chrome privedged code.
 function RequestListener(actions) {
@@ -267,7 +294,8 @@ PdfStreamConverter.prototype = {
         var domWindow = getDOMWindow(channel);
         // Double check the url is still the correct one.
         if (domWindow.document.documentURIObject.equals(aRequest.URI)) {
-          let requestListener = new RequestListener(new ChromeActions);
+          let requestListener = new RequestListener(
+                                      new ChromeActions(domWindow));
           domWindow.addEventListener(PDFJS_EVENT_ID, function(event) {
             requestListener.receive(event);
           }, false, true);

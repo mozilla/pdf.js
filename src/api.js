@@ -452,7 +452,7 @@ var WorkerTransport = (function WorkerTransportClosure() {
         messageHandler.send('test', testObj);
         return;
       } catch (e) {
-        warn('The worker has been disabled.');
+        info('The worker has been disabled.');
       }
     }
     // Either workers are disabled, not supported or have thrown an exception.

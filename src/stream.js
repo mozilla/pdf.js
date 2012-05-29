@@ -1687,7 +1687,7 @@ var CCITTFaxStream = (function CCITTFaxStreamClosure() {
 
     if (a1 > codingLine[codingPos]) {
       if (a1 > this.columns) {
-        warn('row is wrong length');
+        info('row is wrong length');
         this.err = true;
         a1 = this.columns;
       }
@@ -1707,7 +1707,7 @@ var CCITTFaxStream = (function CCITTFaxStreamClosure() {
 
     if (a1 > codingLine[codingPos]) {
       if (a1 > this.columns) {
-        warn('row is wrong length');
+        info('row is wrong length');
         this.err = true;
         a1 = this.columns;
       }
@@ -1717,7 +1717,7 @@ var CCITTFaxStream = (function CCITTFaxStreamClosure() {
       codingLine[codingPos] = a1;
     } else if (a1 < codingLine[codingPos]) {
       if (a1 < 0) {
-        warn('invalid code');
+        info('invalid code');
         this.err = true;
         a1 = 0;
       }
@@ -1879,7 +1879,7 @@ var CCITTFaxStream = (function CCITTFaxStreamClosure() {
               this.eof = true;
               break;
             default:
-              warn('bad 2d code');
+              info('bad 2d code');
               this.addPixels(columns, 0);
               this.err = true;
           }
@@ -1942,7 +1942,7 @@ var CCITTFaxStream = (function CCITTFaxStreamClosure() {
             for (var i = 0; i < 4; ++i) {
               code1 = this.lookBits(12);
               if (code1 != 1)
-                warn('bad rtc code: ' + code1);
+                info('bad rtc code: ' + code1);
               this.eatBits(12);
               if (this.encoding > 0) {
                 this.lookBits(1);
@@ -2065,7 +2065,7 @@ var CCITTFaxStream = (function CCITTFaxStreamClosure() {
       if (result[0] && result[2])
         return result[1];
     }
-    warn('Bad two dim code');
+    info('Bad two dim code');
     return EOF;
   };
 
@@ -2098,7 +2098,7 @@ var CCITTFaxStream = (function CCITTFaxStreamClosure() {
       if (result[0])
         return result[1];
     }
-    warn('bad white code');
+    info('bad white code');
     this.eatBits(1);
     return 1;
   };
@@ -2135,7 +2135,7 @@ var CCITTFaxStream = (function CCITTFaxStreamClosure() {
       if (result[0])
         return result[1];
     }
-    warn('bad black code');
+    info('bad black code');
     this.eatBits(1);
     return 1;
   };

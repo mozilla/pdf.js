@@ -3648,7 +3648,7 @@ var CFFParser = (function CFFParserClosure() {
         ++offset;
 
       if (offset != 0) {
-        warn('cff data is shifted');
+        info('cff data is shifted');
         bytes = bytes.subarray(offset);
         this.bytes = bytes;
       }
