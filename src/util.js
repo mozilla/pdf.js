@@ -3,6 +3,8 @@
 
 'use strict';
 
+// Use only for debugging purposes. This should not be used in any code that is
+// in mozilla master.
 function log(msg) {
   if (console && console.log)
     console.log(msg);
@@ -10,9 +12,36 @@ function log(msg) {
     print(msg);
 }
 
+// A notice for devs that will not trigger the fallback UI.  These are good
+// for things that are helpful to devs, such as warning that Workers were
+// disabled, which is important to devs but not end users.
+function info(msg) {
+  if (verbosity >= INFOS) {
+    log('Info: ' + msg);
+    PDFJS.LogManager.notify('info', msg);
+  }
+}
+
+// Non-fatal warnings that should trigger the fallback UI.
 function warn(msg) {
-  if (verbosity >= WARNINGS)
+  if (verbosity >= WARNINGS) {
     log('Warning: ' + msg);
+    PDFJS.LogManager.notify('warn', msg);
+  }
+}
+
+// Fatal errors that should trigger the fallback UI and halt execution by
+// throwing an exception.
+function error(msg) {
+  log('Error: ' + msg);
+  log(backtrace());
+  PDFJS.LogManager.notify('error', msg);
+  throw new Error(msg);
+}
+
+// Missing features that should trigger the fallback UI.
+function TODO(what) {
+  warn('TODO: ' + what);
 }
 
 function backtrace() {
@@ -21,21 +50,6 @@ function backtrace() {
   } catch (e) {
     return e.stack ? e.stack.split('\n').slice(2).join('\n') : '';
   }
-}
-
-function error(msg) {
-  log('Error: ' + msg);
-  log(backtrace());
-  throw new Error(msg);
-}
-
-function TODO(what) {
-  if (verbosity >= TODOS)
-    log('TODO: ' + what);
-}
-
-function malformed(msg) {
-  error('Malformed PDF: ' + msg);
 }
 
 function assert(cond, msg) {
@@ -47,8 +61,24 @@ function assert(cond, msg) {
 // behavior is undefined.
 function assertWellFormed(cond, msg) {
   if (!cond)
-    malformed(msg);
+    error(msg);
 }
+
+var LogManager = PDFJS.LogManager = (function LogManagerClosure() {
+  var loggers = [];
+  return {
+    addLogger: function logManager_addLogger(logger) {
+      loggers.push(logger);
+    },
+    notify: function(type, message) {
+      for (var i = 0, ii = loggers.length; i < ii; i++) {
+        var logger = loggers[i];
+        if (logger[type])
+          logger[type](message);
+      }
+    }
+  };
+})();
 
 function shadow(obj, prop, value) {
   Object.defineProperty(obj, prop, { value: value,
@@ -57,6 +87,19 @@ function shadow(obj, prop, value) {
                                      writable: false });
   return value;
 }
+
+var PasswordException = (function PasswordExceptionClosure() {
+  function PasswordException(msg, code) {
+    this.name = 'PasswordException';
+    this.message = msg;
+    this.code = code;
+  }
+
+  PasswordException.prototype = new Error();
+  PasswordException.constructor = PasswordException;
+
+  return PasswordException;
+})();
 
 function bytesToString(bytes) {
   var str = '';
@@ -456,7 +499,7 @@ var Promise = PDFJS.Promise = (function PromiseClosure() {
       }
 
       this.isResolved = true;
-      this.data = data || null;
+      this.data = (typeof data !== 'undefined') ? data : null;
       var callbacks = this.callbacks;
 
       for (var i = 0, ii = callbacks.length; i < ii; i++) {
@@ -471,7 +514,7 @@ var Promise = PDFJS.Promise = (function PromiseClosure() {
       }
     },
 
-    reject: function Promise_reject(reason) {
+    reject: function Promise_reject(reason, exception) {
       if (this.isRejected) {
         error('A Promise can be rejected only once ' + this.name);
       }
@@ -484,7 +527,7 @@ var Promise = PDFJS.Promise = (function PromiseClosure() {
       var errbacks = this.errbacks;
 
       for (var i = 0, ii = errbacks.length; i < ii; i++) {
-        errbacks[i].call(null, reason);
+        errbacks[i].call(null, reason, exception);
       }
     },
 

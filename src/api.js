@@ -7,20 +7,46 @@
  * is used, which means it must follow the same origin rules that any XHR does
  * e.g. No cross domain requests without CORS.
  *
- * @param {string|TypedAray} source Either a url to a PDF is located or a
- * typed array (Uint8Array) already populated with data.
- * @param {Object} headers An object containing the http headers like this:
- * { Authorization: "BASIC XXX" }.
+ * @param {string|TypedAray|object} source Can be an url to where a PDF is
+ * located, a typed array (Uint8Array) already populated with data or
+ * and parameter object with the following possible fields:
+ *  - url   - The URL of the PDF.
+ *  - data  - A typed array with PDF data.
+ *  - httpHeaders - Basic authentication headers.
+ *  - password - For decrypting password-protected PDFs.
+ *
  * @return {Promise} A promise that is resolved with {PDFDocumentProxy} object.
  */
-PDFJS.getDocument = function getDocument(source, headers) {
+PDFJS.getDocument = function getDocument(source) {
+  var url, data, headers, password, parameters = {};
+  if (typeof source === 'string') {
+    url = source;
+  } else if (isArrayBuffer(source)) {
+    data = source;
+  } else if (typeof source === 'object') {
+    url = source.url;
+    data = source.data;
+    headers = source.httpHeaders;
+    password = source.password;
+    parameters.password = password || null;
+
+    if (!url && !data)
+      error('Invalid parameter array, need either .data or .url');
+  } else {
+    error('Invalid parameter in getDocument, need either Uint8Array, ' +
+          'string or a parameter object');
+  }
+
   var promise = new PDFJS.Promise();
   var transport = new WorkerTransport(promise);
-  if (typeof source === 'string') {
+  if (data) {
+    // assuming the data is array, instantiating directly from it
+    transport.sendData(data, parameters);
+  } else if (url) {
     // fetch url
     PDFJS.getPdf(
       {
-        url: source,
+        url: url,
         progress: function getPDFProgress(evt) {
           if (evt.lengthComputable)
             promise.progress({
@@ -35,12 +61,10 @@ PDFJS.getDocument = function getDocument(source, headers) {
         headers: headers
       },
       function getPDFLoad(data) {
-        transport.sendData(data);
+        transport.sendData(data, parameters);
       });
-  } else {
-    // assuming the source is array, instantiating directly from it
-    transport.sendData(source);
   }
+
   return promise;
 };
 
@@ -120,6 +144,11 @@ var PDFDocumentProxy = (function PDFDocumentProxyClosure() {
         info: info,
         metadata: metadata ? new PDFJS.Metadata(metadata) : null
       });
+      return promise;
+    },
+    isEncrypted: function PDFDocumentProxy_isEncrypted() {
+      var promise = new PDFJS.Promise();
+      promise.resolve(this.pdfInfo.encrypted);
       return promise;
     },
     destroy: function PDFDocumentProxy_destroy() {
@@ -429,7 +458,7 @@ var WorkerTransport = (function WorkerTransportClosure() {
         messageHandler.send('test', testObj);
         return;
       } catch (e) {
-        warn('The worker has been disabled.');
+        info('The worker has been disabled.');
       }
     }
     // Either workers are disabled, not supported or have thrown an exception.
@@ -471,6 +500,14 @@ var WorkerTransport = (function WorkerTransportClosure() {
         var pdfDocument = new PDFDocumentProxy(pdfInfo, this);
         this.pdfDocument = pdfDocument;
         this.workerReadyPromise.resolve(pdfDocument);
+      }, this);
+
+      messageHandler.on('NeedPassword', function transportPassword(data) {
+        this.workerReadyPromise.reject(data.exception.message, data.exception);
+      }, this);
+
+      messageHandler.on('IncorrectPassword', function transportBadPass(data) {
+        this.workerReadyPromise.reject(data.exception.message, data.exception);
       }, this);
 
       messageHandler.on('GetPage', function transportPage(data) {
@@ -575,8 +612,8 @@ var WorkerTransport = (function WorkerTransportClosure() {
       });
     },
 
-    sendData: function WorkerTransport_sendData(data) {
-      this.messageHandler.send('GetDocRequest', data);
+    sendData: function WorkerTransport_sendData(data, params) {
+      this.messageHandler.send('GetDocRequest', {data: data, params: params});
     },
 
     getPage: function WorkerTransport_getPage(pageNumber, promise) {

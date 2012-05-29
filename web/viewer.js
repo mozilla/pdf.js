@@ -223,6 +223,7 @@ var PDFView = {
   pageText: [],
   container: null,
   initialized: false,
+  fellback: false,
   // called once when the document is loaded
   initialize: function pdfViewInitialize() {
     this.container = document.getElementById('viewerContainer');
@@ -333,10 +334,15 @@ var PDFView = {
     return currentPageNumber;
   },
 
-  open: function pdfViewOpen(url, scale) {
-    this.url = url;
-
-    document.title = decodeURIComponent(getFileName(url)) || url;
+  open: function pdfViewOpen(url, scale, password) {
+    var parameters = {password: password};
+    if (typeof url === 'string') { // URL
+      this.url = url;
+      document.title = decodeURIComponent(getFileName(url)) || url;
+      parameters.url = url;
+    } else if (url && 'byteLength' in url) { // ArrayBuffer
+      parameters.data = url;
+    }
 
     if (!PDFView.loadingBar) {
       PDFView.loadingBar = new ProgressBar('#loadingBar', {});
@@ -344,12 +350,23 @@ var PDFView = {
 
     var self = this;
     self.loading = true;
-    PDFJS.getDocument(url).then(
+    PDFJS.getDocument(parameters).then(
       function getDocumentCallback(pdfDocument) {
         self.load(pdfDocument, scale);
         self.loading = false;
       },
       function getDocumentError(message, exception) {
+        if (exception.name === 'PasswordException') {
+          if (exception.code === 'needpassword') {
+            var promptString = mozL10n.get('request_password', null,
+                                      'PDF is protected by a password:');
+            password = prompt(promptString);
+            if (password && password.length > 0) {
+              return PDFView.open(url, scale, password);
+            }
+          }
+        }
+
         var loadingIndicator = document.getElementById('loading');
         loadingIndicator.textContent = mozL10n.get('loading_error_indicator',
           null, 'Error');
@@ -374,6 +391,18 @@ var PDFView = {
       url += '#pdfjs.action=download', '_parent';
       window.open(url, '_parent');
     }
+  },
+
+  fallback: function pdfViewFallback() {
+    if (!PDFJS.isFirefoxExtension)
+      return;
+    // Only trigger the fallback once so we don't spam the user with messages
+    // for one PDF.
+    if (this.fellback)
+      return;
+    this.fellback = true;
+    var url = this.url.split('#')[0];
+    FirefoxCom.request('fallback', url);
   },
 
   navigateTo: function pdfViewNavigateTo(dest) {
@@ -438,6 +467,34 @@ var PDFView = {
    *                            and optionally a 'stack' property.
    */
   error: function pdfViewError(message, moreInfo) {
+    var moreInfoText = mozL10n.get('error_build', {build: PDFJS.build},
+      'PDF.JS Build: {{build}}') + '\n';
+    if (moreInfo) {
+      moreInfoText +=
+        mozL10n.get('error_message', {message: moreInfo.message},
+        'Message: {{message}}');
+      if (moreInfo.stack) {
+        moreInfoText += '\n' +
+          mozL10n.get('error_stack', {stack: moreInfo.stack},
+          'Stack: {{stack}}');
+      } else {
+        if (moreInfo.filename) {
+          moreInfoText += '\n' +
+            mozL10n.get('error_file', {file: moreInfo.filename},
+            'File: {{file}}');
+        }
+        if (moreInfo.lineNumber) {
+          moreInfoText += '\n' +
+            mozL10n.get('error_line', {line: moreInfo.lineNumber},
+            'Line: {{line}}');
+        }
+      }
+    }
+    if (PDFJS.isFirefoxExtension) {
+      console.error(message + '\n' + moreInfoText);
+      this.fallback();
+      return;
+    }
     var errorWrapper = document.getElementById('errorWrapper');
     errorWrapper.removeAttribute('hidden');
 
@@ -464,32 +521,9 @@ var PDFView = {
     };
     moreInfoButton.removeAttribute('hidden');
     lessInfoButton.setAttribute('hidden', 'true');
-    errorMoreInfo.value =
-      mozL10n.get('error_build', {build: PDFJS.build},
-      'PDF.JS Build: {{build}}') + '\n';
+    errorMoreInfo.value = moreInfoText;
 
-    if (moreInfo) {
-      errorMoreInfo.value +=
-        mozL10n.get('error_message', {message: moreInfo.message},
-        'Message: {{message}}');
-      if (moreInfo.stack) {
-        errorMoreInfo.value += '\n' +
-          mozL10n.get('error_stack', {stack: moreInfo.stack},
-          'Stack: {{stack}}');
-      } else {
-        if (moreInfo.filename) {
-          errorMoreInfo.value += '\n' +
-            mozL10n.get('error_file', {file: moreInfo.filename},
-            'File: {{file}}');
-        }
-        if (moreInfo.lineNumber) {
-          errorMoreInfo.value += '\n' +
-            mozL10n.get('error_line', {line: moreInfo.lineNumber},
-            'Line: {{line}}');
-        }
-      }
-    }
-    errorMoreInfo.rows = errorMoreInfo.value.split('\n').length - 1;
+    errorMoreInfo.rows = moreInfoText.split('\n').length - 1;
   },
 
   progress: function pdfViewProgress(level) {
@@ -1009,6 +1043,9 @@ var PageView = function pageView(container, pdfPage, id, scale,
             if (comment)
               div.appendChild(comment);
             break;
+          case 'Widget':
+            TODO('support forms');
+            break;
         }
       }
     });
@@ -1459,7 +1496,7 @@ window.addEventListener('load', function webViewerLoad(evt) {
 
   if (PDFJS.isFirefoxExtension || !window.File || !window.FileReader ||
       !window.FileList || !window.Blob) {
-    document.getElementById('fileInput').setAttribute('hidden', 'true');
+    document.getElementById('openFile').setAttribute('hidden', 'true');
   } else {
     document.getElementById('fileInput').value = null;
   }
@@ -1494,6 +1531,14 @@ window.addEventListener('load', function webViewerLoad(evt) {
     (PDFJS.isFirefoxExtension && FirefoxCom.request('searchEnabled'))) {
     document.querySelector('#viewSearch').classList.remove('hidden');
   }
+
+  // Listen for warnings to trigger the fallback UI.  Errors should be caught
+  // and call PDFView.error() so we don't need to listen for those.
+  PDFJS.LogManager.addLogger({
+    warn: function() {
+      PDFView.fallback();
+    }
+  });
 
   var thumbsView = document.getElementById('thumbnailView');
   thumbsView.addEventListener('scroll', updateThumbViewArea, true);
@@ -1645,10 +1690,7 @@ window.addEventListener('change', function webViewerChange(evt) {
     for (var i = 0; i < data.length; i++)
       uint8Array[i] = data.charCodeAt(i);
 
-    // TODO using blob instead?
-    PDFJS.getDocument(uint8Array).then(function(pdfDocument) {
-      PDFView.load(pdfDocument);
-    });
+    PDFView.open(uint8Array, 0);
   };
 
   // Read as a binary string since "readAsArrayBuffer" is not yet

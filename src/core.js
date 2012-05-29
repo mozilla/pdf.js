@@ -7,7 +7,7 @@ var globalScope = (typeof window === 'undefined') ? this : window;
 
 var isWorker = (typeof window == 'undefined');
 
-var ERRORS = 0, WARNINGS = 1, TODOS = 5;
+var ERRORS = 0, WARNINGS = 1, INFOS = 5;
 var verbosity = WARNINGS;
 
 // The global PDFJS object exposes the API
@@ -362,19 +362,19 @@ var Page = (function PageClosure() {
  * `PDFDocument` objects on the main thread created.
  */
 var PDFDocument = (function PDFDocumentClosure() {
-  function PDFDocument(arg, callback) {
+  function PDFDocument(arg, password) {
     if (isStream(arg))
-      init.call(this, arg);
+      init.call(this, arg, password);
     else if (isArrayBuffer(arg))
-      init.call(this, new Stream(arg));
+      init.call(this, new Stream(arg), password);
     else
       error('PDFDocument: Unknown argument type');
   }
 
-  function init(stream) {
+  function init(stream, password) {
     assertWellFormed(stream.length > 0, 'stream must have data');
     this.stream = stream;
-    this.setup();
+    this.setup(password);
     this.acroForm = this.catalog.catDict.get('AcroForm');
   }
 
@@ -465,11 +465,12 @@ var PDFDocument = (function PDFDocumentClosure() {
       }
       // May not be a PDF file, continue anyway.
     },
-    setup: function PDFDocument_setup(ownerPassword, userPassword) {
+    setup: function PDFDocument_setup(password) {
       this.checkHeader();
       var xref = new XRef(this.stream,
                           this.startXRef,
-                          this.mainXRefEntriesOffset);
+                          this.mainXRefEntriesOffset,
+                          password);
       this.xref = xref;
       this.catalog = new Catalog(xref);
     },

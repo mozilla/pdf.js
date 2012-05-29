@@ -11,10 +11,13 @@ function MessageHandler(name, comObj) {
   var ah = this.actionHandler = {};
 
   ah['console_log'] = [function ahConsoleLog(data) {
-      console.log.apply(console, data);
+    console.log.apply(console, data);
   }];
   ah['console_error'] = [function ahConsoleError(data) {
-      console.error.apply(console, data);
+    console.error.apply(console, data);
+  }];
+  ah['_warn'] = [function ah_Warn(data) {
+    warn(data);
   }];
 
   comObj.onmessage = function messageHandlerComObjOnMessage(event) {
@@ -88,14 +91,35 @@ var WorkerMessageHandler = {
     handler.on('GetDocRequest', function wphSetupDoc(data) {
       // Create only the model of the PDFDoc, which is enough for
       // processing the content of the pdf.
-      pdfModel = new PDFDocument(new Stream(data));
+      var pdfData = data.data;
+      var pdfPassword = data.params.password;
+      try {
+        pdfModel = new PDFDocument(new Stream(pdfData), pdfPassword);
+      } catch (e) {
+        if (e instanceof PasswordException) {
+          if (e.code === 'needpassword') {
+            handler.send('NeedPassword', {
+              exception: e
+            });
+          } else if (e.code === 'incorrectpassword') {
+            handler.send('IncorrectPassword', {
+              exception: e
+            });
+          }
+
+          return;
+        } else {
+          throw e;
+        }
+      }
       var doc = {
         numPages: pdfModel.numPages,
         fingerprint: pdfModel.getFingerprint(),
         destinations: pdfModel.catalog.destinations,
         outline: pdfModel.catalog.documentOutline,
         info: pdfModel.getDocumentInfo(),
-        metadata: pdfModel.catalog.metadata
+        metadata: pdfModel.catalog.metadata,
+        encrypted: !!pdfModel.xref.encrypt
       };
       handler.send('GetDoc', {pdfInfo: doc});
     });
@@ -239,6 +263,17 @@ var workerConsole = {
 // Worker thread?
 if (typeof window === 'undefined') {
   globalScope.console = workerConsole;
+
+  // Add a logger so we can pass warnings on to the main thread, errors will
+  // throw an exception which will be forwarded on automatically.
+  PDFJS.LogManager.addLogger({
+    warn: function(msg) {
+      postMessage({
+        action: '_warn',
+        data: msg
+      });
+    }
+  });
 
   var handler = new MessageHandler('worker_processor', this);
   WorkerMessageHandler.setup(handler);

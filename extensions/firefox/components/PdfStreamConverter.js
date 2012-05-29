@@ -11,7 +11,7 @@ const Cr = Components.results;
 const Cu = Components.utils;
 const PDFJS_EVENT_ID = 'pdf.js.message';
 const PDF_CONTENT_TYPE = 'application/pdf';
-const EXT_PREFIX = 'extensions.uriloader@pdf.js';
+const PREF_PREFIX = 'PDFJSSCRIPT_PREF_PREFIX';
 const MAX_DATABASE_LENGTH = 4096;
 const FIREFOX_ID = '{ec8030f7-c20a-464f-9b0e-13a3a9e97384}';
 const SEAMONKEY_ID = '{92650c4d-4b8e-4d2a-b7eb-24ecf4f6b63a}';
@@ -19,6 +19,7 @@ const SEAMONKEY_ID = '{92650c4d-4b8e-4d2a-b7eb-24ecf4f6b63a}';
 Cu.import('resource://gre/modules/XPCOMUtils.jsm');
 Cu.import('resource://gre/modules/Services.jsm');
 Cu.import('resource://gre/modules/NetUtil.jsm');
+Cu.import('resource://gre/modules/AddonManager.jsm');
 
 let appInfo = Cc['@mozilla.org/xre/app-info;1']
                   .getService(Ci.nsIXULAppInfo);
@@ -57,7 +58,7 @@ function getStringPref(pref, def) {
 }
 
 function log(aMsg) {
-  if (!getBoolPref(EXT_PREFIX + '.pdfBugEnabled', false))
+  if (!getBoolPref(PREF_PREFIX + '.pdfBugEnabled', false))
     return;
   let msg = 'PdfStreamConverter.js: ' + (aMsg.join ? aMsg.join('') : aMsg);
   Services.console.logStringMessage(msg);
@@ -91,9 +92,15 @@ function getLocalizedStrings(path) {
   }
   return map;
 }
+function getLocalizedString(strings, id) {
+  if (id in strings)
+    return strings[id]['textContent'];
+  return id;
+}
 
 // All the priviledged actions.
-function ChromeActions() {
+function ChromeActions(domWindow) {
+  this.domWindow = domWindow;
 }
 
 ChromeActions.prototype = {
@@ -136,12 +143,12 @@ ChromeActions.prototype = {
     // Protect against something sending tons of data to setDatabase.
     if (data.length > MAX_DATABASE_LENGTH)
       return;
-    setStringPref(EXT_PREFIX + '.database', data);
+    setStringPref(PREF_PREFIX + '.database', data);
   },
   getDatabase: function() {
     if (inPrivateBrowsing)
       return '{}';
-    return getStringPref(EXT_PREFIX + '.database', '{}');
+    return getStringPref(PREF_PREFIX + '.database', '{}');
   },
   getLocale: function() {
     return getStringPref('general.useragent.locale', 'en-US');
@@ -164,9 +171,29 @@ ChromeActions.prototype = {
   },
   searchEnabled: function() {
     return getBoolPref(EXT_PREFIX + '.searchEnabled', false);
+  },
+  fallback: function(url) {
+    var self = this;
+    var domWindow = this.domWindow;
+    var strings = getLocalizedStrings('chrome.properties');
+    var message = getLocalizedString(strings, 'unsupported_feature');
+
+    var win = Services.wm.getMostRecentWindow('navigator:browser');
+    var browser = win.gBrowser.getBrowserForDocument(domWindow.top.document);
+    var notificationBox = win.gBrowser.getNotificationBox(browser);
+
+    var buttons = [{
+      label: getLocalizedString(strings, 'open_with_different_viewer'),
+      accessKey: null,
+      callback: function() {
+        self.download(url);
+      }
+    }];
+    notificationBox.appendNotification(message, 'pdfjs-fallback', null,
+                                       notificationBox.PRIORITY_WARNING_LOW,
+                                       buttons);
   }
 };
-
 
 // Event listener to trigger chrome privedged code.
 function RequestListener(actions) {
@@ -193,7 +220,7 @@ function PdfStreamConverter() {
 PdfStreamConverter.prototype = {
 
   // properties required for XPCOM registration:
-  classID: Components.ID('{6457a96b-2d68-439a-bcfa-44465fbcdbb1}'),
+  classID: Components.ID('{PDFJSSCRIPT_STREAM_CONVERTER_ID}'),
   classDescription: 'pdf.js Component',
   contractID: '@mozilla.org/streamconv;1?from=application/pdf&to=*/*',
 
@@ -270,7 +297,8 @@ PdfStreamConverter.prototype = {
         var domWindow = getDOMWindow(channel);
         // Double check the url is still the correct one.
         if (domWindow.document.documentURIObject.equals(aRequest.URI)) {
-          let requestListener = new RequestListener(new ChromeActions);
+          let requestListener = new RequestListener(
+                                      new ChromeActions(domWindow));
           domWindow.addEventListener(PDFJS_EVENT_ID, function(event) {
             requestListener.receive(event);
           }, false, true);
