@@ -2377,6 +2377,7 @@ var Font = (function FontClosure() {
       var styleElement = document.getElementById('PDFJS_FONT_STYLE_TAG');
       if (!styleElement) {
           styleElement = document.createElement('style');
+          styleElement.id = 'PDFJS_FONT_STYLE_TAG';
           document.documentElement.getElementsByTagName('head')[0].appendChild(
             styleElement);   
       }
