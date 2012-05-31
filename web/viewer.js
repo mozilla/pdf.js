@@ -720,7 +720,8 @@ var PDFView = {
       pageFound = true;
     }
     if (!pageFound) {
-      searchResults.textContent = '(Not found)';
+      searchResults.textContent = mozL10n.get('search_terms_not_found', null,
+                                              '(Not found)');
     }
   },
 
