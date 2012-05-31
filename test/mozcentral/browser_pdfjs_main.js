@@ -6,7 +6,17 @@ const RELATIVE_DIR = "browser/extensions/pdfjs/test/";
 const TESTROOT = "http://example.com/browser/" + RELATIVE_DIR;
 
 function test() {
-  var tab;
+  var tab, oldAction;
+
+  oldAction = changeMimeHandler();
+
+    const Cc = Components.classes;
+  const Ci = Components.interfaces;
+  let handlerService = Cc["@mozilla.org/uriloader/handler-service;1"].getService(Ci.nsIHandlerService);
+  let mimeService = Cc["@mozilla.org/mime;1"].getService(Ci.nsIMIMEService);
+  let handlerInfo = mimeService.getFromTypeAndExtension('application/pdf', 'pdf');
+
+  info('Pref action: ' + handlerInfo.preferredAction);
 
   waitForExplicitFinish();
   registerCleanupFunction(function() {
@@ -23,13 +33,62 @@ function test() {
 
     // Runs tests after all 'load' event handlers have fired off
     setTimeout(function() {
-      runTests(document, window);
+      runTests(document, window, function() {
+        revertMimeHandler(oldAction);
+        finish();
+      });
     }, 0);
   }, true);
 }
 
 
-function runTests(document, window) {
+function changeMimeHandler() {
+  let oldAction;
+
+  const Cc = Components.classes;
+  const Ci = Components.interfaces;
+  let handlerService = Cc["@mozilla.org/uriloader/handler-service;1"].getService(Ci.nsIHandlerService);
+  let mimeService = Cc["@mozilla.org/mime;1"].getService(Ci.nsIMIMEService);
+  let handlerInfo = mimeService.getFromTypeAndExtension('application/pdf', 'pdf');
+
+  oldAction = handlerInfo.preferredAction;
+
+  // Change and save mime handler settings
+  handlerInfo.alwaysAskBeforeHandling = false;
+  handlerInfo.preferredAction = Ci.nsIHandlerInfo.handleInternally;
+  handlerService.store(handlerInfo);
+
+  Services.obs.notifyObservers(null, 'pdfjs:handlerChanged', null);
+
+  // Refresh data
+  mimeService = Cc["@mozilla.org/mime;1"].getService(Ci.nsIMIMEService);
+  handlerInfo = mimeService.getFromTypeAndExtension('application/pdf', 'pdf');
+
+  //
+  // Test: Mime handler was updated
+  //
+  is(handlerInfo.alwaysAskBeforeHandling, false, 'always-ask prompt change successful');
+  is(handlerInfo.preferredAction, Ci.nsIHandlerInfo.handleInternally, 'mime handler change successful');
+
+  return oldAction;
+}
+
+function revertMimeHandler(oldAction) {
+  const Cc = Components.classes;
+  const Ci = Components.interfaces;
+  let handlerService = Cc["@mozilla.org/uriloader/handler-service;1"].getService(Ci.nsIHandlerService);
+  let mimeService = Cc["@mozilla.org/mime;1"].getService(Ci.nsIMIMEService);
+  let handlerInfo = mimeService.getFromTypeAndExtension('application/pdf', 'pdf');
+
+  // Change and save mime handler settings
+  handlerInfo.alwaysAskBeforeHandling = true;
+  handlerInfo.preferredAction = oldAction;
+  handlerService.store(handlerInfo);
+}
+
+
+function runTests(document, window, callback) {
+
   //
   // Overall sanity tests
   //
@@ -67,5 +126,5 @@ function runTests(document, window) {
   viewBookmark.click();
   ok(viewBookmark.href.length > 0, 'viewBookmark button has href');
 
-  finish();
+  callback();
 }
