@@ -1044,7 +1044,8 @@ var PageView = function pageView(container, pdfPage, id, scale,
               div.appendChild(comment);
             break;
           case 'Widget':
-            TODO('support forms');
+            // TODO: support forms
+            PDFView.fallback();
             break;
         }
       }
