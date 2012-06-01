@@ -8,6 +8,18 @@ const TESTROOT = "http://example.com/browser/" + RELATIVE_DIR;
 function test() {
   var tab;
 
+  const Cc = Components.classes;
+  const Ci = Components.interfaces;
+  let handlerService = Cc["@mozilla.org/uriloader/handler-service;1"].getService(Ci.nsIHandlerService);
+  let mimeService = Cc["@mozilla.org/mime;1"].getService(Ci.nsIMIMEService);
+  let handlerInfo = mimeService.getFromTypeAndExtension('application/pdf', 'pdf');
+
+  // Make sure pdf.js is the default handler.
+  is(handlerInfo.alwaysAskBeforeHandling, false, 'pdf handler defaults to always-ask is false');
+  is(handlerInfo.preferredAction, Ci.nsIHandlerInfo.handleInternally, 'pdf handler defaults to internal');
+
+  info('Pref action: ' + handlerInfo.preferredAction);
+
   waitForExplicitFinish();
   registerCleanupFunction(function() {
     gBrowser.removeTab(tab);
@@ -23,13 +35,16 @@ function test() {
 
     // Runs tests after all 'load' event handlers have fired off
     setTimeout(function() {
-      runTests(document, window);
+      runTests(document, window, function() {
+        finish();
+      });
     }, 0);
   }, true);
 }
 
 
-function runTests(document, window) {
+function runTests(document, window, callback) {
+
   //
   // Overall sanity tests
   //
@@ -67,5 +82,5 @@ function runTests(document, window) {
   viewBookmark.click();
   ok(viewBookmark.href.length > 0, 'viewBookmark button has href');
 
-  finish();
+  callback();
 }

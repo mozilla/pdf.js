@@ -358,6 +358,7 @@ target.firefox = function() {
 
   sed('-i', /PDFJSSCRIPT_STREAM_CONVERTER_ID/, FIREFOX_STREAM_CONVERTER_ID, FIREFOX_BUILD_DIR + 'components/PdfStreamConverter.js');
   sed('-i', /PDFJSSCRIPT_PREF_PREFIX/, FIREFOX_PREF_PREFIX, FIREFOX_BUILD_DIR + 'components/PdfStreamConverter.js');
+  sed('-i', /PDFJSSCRIPT_MOZ_CENTRAL/, 'false', FIREFOX_BUILD_DIR + 'components/PdfStreamConverter.js');
 
   // Update localized metadata
   var localizedMetadata = cat(EXTENSION_SRC_DIR + '/firefox/metadata.inc');
@@ -421,6 +422,8 @@ target.mozcentral = function() {
   mkdir('-p', MOZCENTRAL_CONTENT_DIR + BUILD_DIR);
   mkdir('-p', MOZCENTRAL_CONTENT_DIR + '/web');
 
+  cp(FIREFOX_CONTENT_DIR + 'PdfJs.jsm', MOZCENTRAL_CONTENT_DIR)
+
   // Copy extension files
   cd('extensions/firefox');
   cp('-R', FIREFOX_EXTENSION_FILES_TO_COPY, ROOT_DIR + MOZCENTRAL_EXTENSION_DIR);
@@ -461,6 +464,7 @@ target.mozcentral = function() {
 
   sed('-i', /PDFJSSCRIPT_STREAM_CONVERTER_ID/, MOZCENTRAL_STREAM_CONVERTER_ID, MOZCENTRAL_EXTENSION_DIR + 'components/PdfStreamConverter.js');
   sed('-i', /PDFJSSCRIPT_PREF_PREFIX/, MOZCENTRAL_PREF_PREFIX, MOZCENTRAL_EXTENSION_DIR + 'components/PdfStreamConverter.js');
+  sed('-i', /PDFJSSCRIPT_MOZ_CENTRAL/, 'true', MOZCENTRAL_EXTENSION_DIR + 'components/PdfStreamConverter.js');
 
   // List all files for mozilla-central
   cd(MOZCENTRAL_EXTENSION_DIR);

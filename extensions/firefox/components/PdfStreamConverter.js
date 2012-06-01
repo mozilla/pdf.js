@@ -9,6 +9,7 @@ const Cc = Components.classes;
 const Ci = Components.interfaces;
 const Cr = Components.results;
 const Cu = Components.utils;
+const MOZ_CENTRAL = PDFJSSCRIPT_MOZ_CENTRAL;
 const PDFJS_EVENT_ID = 'pdf.js.message';
 const PDF_CONTENT_TYPE = 'application/pdf';
 const PREF_PREFIX = 'PDFJSSCRIPT_PREF_PREFIX';
@@ -19,11 +20,12 @@ const SEAMONKEY_ID = '{92650c4d-4b8e-4d2a-b7eb-24ecf4f6b63a}';
 Cu.import('resource://gre/modules/XPCOMUtils.jsm');
 Cu.import('resource://gre/modules/Services.jsm');
 Cu.import('resource://gre/modules/NetUtil.jsm');
-Cu.import('resource://gre/modules/AddonManager.jsm');
 
 let appInfo = Cc['@mozilla.org/xre/app-info;1']
                   .getService(Ci.nsIXULAppInfo);
 let privateBrowsing, inPrivateBrowsing;
+let mimeService = Cc['@mozilla.org/mime;1']
+                    .getService(Ci.nsIMIMEService);
 
 if (appInfo.ID === FIREFOX_ID) {
   privateBrowsing = Cc['@mozilla.org/privatebrowsing;1']
@@ -69,6 +71,23 @@ function getDOMWindow(aChannel) {
   var requestor = aChannel.notificationCallbacks;
   var win = requestor.getInterface(Components.interfaces.nsIDOMWindow);
   return win;
+}
+
+function isEnabled() {
+  if (MOZ_CENTRAL) {
+    var enabled = getBoolPref(PREF_PREFIX + '.enabled', false);
+    if (!enabled)
+      return false;
+    // To also be considered enabled the "Preview in Firefox" option must be
+    // selected in the Application preferences.
+    var handlerInfo = mimeService.
+                        getFromTypeAndExtension('application/pdf', 'pdf');
+    return handlerInfo && (handlerInfo.alwaysAskBeforeHandling == false &&
+           handlerInfo.preferredAction == Ci.nsIHandlerInfo.handleInternally);
+  }
+  // Always returns true for the extension since enabling/disabling is handled
+  // by the add-on manager.
+  return true;
 }
 
 function getLocalizedStrings(path) {
@@ -293,6 +312,8 @@ PdfStreamConverter.prototype = {
 
   // nsIStreamConverter::asyncConvertData
   asyncConvertData: function(aFromType, aToType, aListener, aCtxt) {
+    if (!isEnabled())
+      throw Cr.NS_ERROR_NOT_IMPLEMENTED;
     // Ignoring HTTP POST requests -- pdf.js has to repeat the request.
     var skipConversion = false;
     try {
