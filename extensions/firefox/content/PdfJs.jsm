@@ -8,6 +8,9 @@ const Cu = Components.utils;
 
 const PREF_PREFIX = 'pdfjs';
 const PREF_ENABLED = PREF_PREFIX + '.enabled';
+const PREF_FIRST_RUN = PREF_PREFIX + '.firstRun';
+const PREF_PREVIOUS_ACTION = PREF_PREFIX + '.previousAction';
+const PREF_PREVIOUS_ASK = PREF_PREFIX + '.previousAsk';
 const PDFJS_HANDLER_CHANGED = 'pdfjs:handlerChanged';
 
 Cu.import('resource://gre/modules/Services.jsm');
@@ -30,7 +33,6 @@ let Factory = {
   aClass: null,
   register: function(aClass) {
     if (this.aClass) {
-      dump('Cannot register more than one class');
       return;
     }
     this.registrar = Cm.QueryInterface(Ci.nsIComponentRegistrar);
@@ -41,7 +43,6 @@ let Factory = {
   },
   unregister: function() {
     if (!this.aClass) {
-      dump('Class was never registered.');
       return;
     }
     var proto = this.aClass.prototype;
@@ -59,6 +60,25 @@ let Factory = {
 let PdfJs = {
   _registered: false,
   init: function() {
+    // On first run make pdf.js the default handler.
+    if (getBoolPref(PREF_ENABLED, false) && getBoolPref(PREF_FIRST_RUN, false)) {
+      Services.prefs.setBoolPref(PREF_FIRST_RUN, false);
+
+      let handlerService = Cc['@mozilla.org/uriloader/handler-service;1'].
+                            getService(Ci.nsIHandlerService);
+      let handlerInfo = mimeService.getFromTypeAndExtension('application/pdf', 'pdf');
+
+      // Store the previous settings of preferredAction and
+      // alwaysAskBeforeHandling in case we need to fall back to it.
+      Services.prefs.setIntPref(PREF_PREVIOUS_ACTION, handlerInfo.preferredAction);
+      Services.prefs.setBoolPref(PREF_PREVIOUS_ASK, handlerInfo.alwaysAskBeforeHandling);
+
+      // Change and save mime handler settings.
+      handlerInfo.alwaysAskBeforeHandling = false;
+      handlerInfo.preferredAction = Ci.nsIHandlerInfo.handleInternally;
+      handlerService.store(handlerInfo);
+    }
+
     if (this.enabled)
       this._register();
     else
@@ -79,7 +99,7 @@ let PdfJs = {
       this._unregister();
   },
   // pdf.js is only enabled if we're both selected as the pdf viewer and if the 
-  // global switch enabling us is true.
+  // global switch enabling it is true.
   get enabled() {
     var handlerInfo = mimeService.
                         getFromTypeAndExtension('application/pdf', 'pdf');
