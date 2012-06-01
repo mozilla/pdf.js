@@ -1,3 +1,2 @@
 resource pdf.js content/
-component {d0c5195d-e798-49d4-b1d3-9324328b2291} components/PdfStreamConverter.js
-contract @mozilla.org/streamconv;1?from=application/pdf&to=*/* {d0c5195d-e798-49d4-b1d3-9324328b2291}
+resource pdf.js.components components/
