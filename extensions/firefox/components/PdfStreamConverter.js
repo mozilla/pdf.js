@@ -77,18 +77,22 @@ function getLocalizedStrings(path) {
       createBundle('chrome://pdf.js/locale/' + path);
 
   var map = {};
-  var enumerator = stringBundle.getSimpleEnumeration();
-  while (enumerator.hasMoreElements()) {
-    var string = enumerator.getNext().QueryInterface(Ci.nsIPropertyElement);
-    var key = string.key, property = 'textContent';
-    var i = key.lastIndexOf('.');
-    if (i >= 0) {
-      property = key.substring(i + 1);
-      key = key.substring(0, i);
+  try {
+    var enumerator = stringBundle.getSimpleEnumeration();
+    while (enumerator.hasMoreElements()) {
+      var string = enumerator.getNext().QueryInterface(Ci.nsIPropertyElement);
+      var key = string.key, property = 'textContent';
+      var i = key.lastIndexOf('.');
+      if (i >= 0) {
+        property = key.substring(i + 1);
+        key = key.substring(0, i);
+      }
+      if (!(key in map))
+        map[key] = {};
+      map[key][property] = string.value;
     }
-    if (!(key in map))
-      map[key] = {};
-    map[key][property] = string.value;
+  } catch (e) {
+    log('Localized strings are not available: ' + e);
   }
   return map;
 }
