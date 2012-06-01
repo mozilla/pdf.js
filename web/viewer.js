@@ -1597,7 +1597,7 @@ window.addEventListener('load', function webViewerLoad(evt) {
   }
 
   if (!PDFJS.isFirefoxExtension ||
-    (PDFJS.isFirefoxExtension && FirefoxCom.request('searchEnabled'))) {
+    (PDFJS.isFirefoxExtension && FirefoxCom.requestSync('searchEnabled'))) {
     document.querySelector('#viewSearch').classList.remove('hidden');
   }
 
