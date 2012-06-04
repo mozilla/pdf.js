@@ -9,6 +9,7 @@ const Cc = Components.classes;
 const Ci = Components.interfaces;
 const Cr = Components.results;
 const Cu = Components.utils;
+// True only if this is the version of pdf.js that is included with firefox.
 const MOZ_CENTRAL = PDFJSSCRIPT_MOZ_CENTRAL;
 const PDFJS_EVENT_ID = 'pdf.js.message';
 const PDF_CONTENT_TYPE = 'application/pdf';
@@ -21,11 +22,14 @@ Cu.import('resource://gre/modules/XPCOMUtils.jsm');
 Cu.import('resource://gre/modules/Services.jsm');
 Cu.import('resource://gre/modules/NetUtil.jsm');
 
+
 let appInfo = Cc['@mozilla.org/xre/app-info;1']
                   .getService(Ci.nsIXULAppInfo);
 let privateBrowsing, inPrivateBrowsing;
-let mimeService = Cc['@mozilla.org/mime;1']
-                    .getService(Ci.nsIMIMEService);
+let Svc = {};
+XPCOMUtils.defineLazyServiceGetter(Svc, 'mime',
+                                   '@mozilla.org/mime;1',
+                                   'nsIMIMEService');
 
 if (appInfo.ID === FIREFOX_ID) {
   privateBrowsing = Cc['@mozilla.org/privatebrowsing;1']
@@ -75,15 +79,15 @@ function getDOMWindow(aChannel) {
 
 function isEnabled() {
   if (MOZ_CENTRAL) {
-    var enabled = getBoolPref(PREF_PREFIX + '.enabled', false);
-    if (!enabled)
+    var disabled = getBoolPref(PREF_PREFIX + '.disabled', false);
+    if (disabled)
       return false;
     // To also be considered enabled the "Preview in Firefox" option must be
     // selected in the Application preferences.
-    var handlerInfo = mimeService.
-                        getFromTypeAndExtension('application/pdf', 'pdf');
-    return handlerInfo && (handlerInfo.alwaysAskBeforeHandling == false &&
-           handlerInfo.preferredAction == Ci.nsIHandlerInfo.handleInternally);
+    var handlerInfo = Svc.mime
+                         .getFromTypeAndExtension('application/pdf', 'pdf');
+    return handlerInfo.alwaysAskBeforeHandling == false &&
+           handlerInfo.preferredAction == Ci.nsIHandlerInfo.handleInternally;
   }
   // Always returns true for the extension since enabling/disabling is handled
   // by the add-on manager.
@@ -111,9 +115,10 @@ function getLocalizedStrings(path) {
   }
   return map;
 }
-function getLocalizedString(strings, id) {
+function getLocalizedString(strings, id, property) {
+  property = property || 'textContent';
   if (id in strings)
-    return strings[id]['textContent'];
+    return strings[id][property];
   return id;
 }
 
@@ -124,9 +129,8 @@ function ChromeActions(domWindow) {
 
 ChromeActions.prototype = {
   download: function(data) {
-    let mimeService = Cc['@mozilla.org/mime;1'].getService(Ci.nsIMIMEService);
-    var handlerInfo = mimeService.
-                        getFromTypeAndExtension('application/pdf', 'pdf');
+    var handlerInfo = Svc.mime
+                         .getFromTypeAndExtension('application/pdf', 'pdf');
     var uri = NetUtil.newURI(data);
 
     var extHelperAppSvc =
@@ -200,10 +204,10 @@ ChromeActions.prototype = {
     var win = Services.wm.getMostRecentWindow('navigator:browser');
     var browser = win.gBrowser.getBrowserForDocument(domWindow.top.document);
     var notificationBox = win.gBrowser.getNotificationBox(browser);
-
     var buttons = [{
       label: getLocalizedString(strings, 'open_with_different_viewer'),
-      accessKey: null,
+      accessKey: getLocalizedString(strings, 'open_with_different_viewer',
+                                    'accessKey'),
       callback: function() {
         self.download(url);
       }

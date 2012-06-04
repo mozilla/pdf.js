@@ -1,6 +1,5 @@
 /* Any copyright is dedicated to the Public Domain.
- * http://creativecommons.org/publicdomain/zero/1.0/
- */
+ * http://creativecommons.org/publicdomain/zero/1.0/ */
 
 const RELATIVE_DIR = "browser/extensions/pdfjs/test/";
 const TESTROOT = "http://example.com/browser/" + RELATIVE_DIR;
@@ -8,8 +7,6 @@ const TESTROOT = "http://example.com/browser/" + RELATIVE_DIR;
 function test() {
   var tab;
 
-  const Cc = Components.classes;
-  const Ci = Components.interfaces;
   let handlerService = Cc["@mozilla.org/uriloader/handler-service;1"].getService(Ci.nsIHandlerService);
   let mimeService = Cc["@mozilla.org/mime;1"].getService(Ci.nsIMIMEService);
   let handlerInfo = mimeService.getFromTypeAndExtension('application/pdf', 'pdf');
@@ -35,9 +32,7 @@ function test() {
 
     // Runs tests after all 'load' event handlers have fired off
     setTimeout(function() {
-      runTests(document, window, function() {
-        finish();
-      });
+      runTests(document, window, finish);
     }, 0);
   }, true);
 }
