@@ -1,17 +1,12 @@
 /* Any copyright is dedicated to the Public Domain.
- * http://creativecommons.org/publicdomain/zero/1.0/
- */
+ * http://creativecommons.org/publicdomain/zero/1.0/ */
 
 const RELATIVE_DIR = "browser/extensions/pdfjs/test/";
 const TESTROOT = "http://example.com/browser/" + RELATIVE_DIR;
 
 function test() {
-  const Cc = Components.classes;
-  const Ci = Components.interfaces;
-  var tab;
-
   var oldAction = changeMimeHandler(Ci.nsIHandlerInfo.useSystemDefault, true);
-
+  var tab = gBrowser.addTab(TESTROOT + "file_pdfjs_test.pdf");
   //
   // Test: "Open with" dialog comes up when pdf.js is not selected as the default
   // handler.
@@ -23,14 +18,9 @@ function test() {
     changeMimeHandler(oldAction[0], oldAction[1]);
     gBrowser.removeTab(tab);
   });
-
-  tab = gBrowser.addTab(TESTROOT + "file_pdfjs_test.pdf");
-  var newTabBrowser = gBrowser.getBrowserForTab(tab);
 }
 
 function changeMimeHandler(preferredAction, alwaysAskBeforeHandling) {
-  const Cc = Components.classes;
-  const Ci = Components.interfaces;
   let handlerService = Cc["@mozilla.org/uriloader/handler-service;1"].getService(Ci.nsIHandlerService);
   let mimeService = Cc["@mozilla.org/mime;1"].getService(Ci.nsIMIMEService);
   let handlerInfo = mimeService.getFromTypeAndExtension('application/pdf', 'pdf');
@@ -44,7 +34,6 @@ function changeMimeHandler(preferredAction, alwaysAskBeforeHandling) {
   Services.obs.notifyObservers(null, 'pdfjs:handlerChanged', null);
 
   // Refresh data
-  mimeService = Cc["@mozilla.org/mime;1"].getService(Ci.nsIMIMEService);
   handlerInfo = mimeService.getFromTypeAndExtension('application/pdf', 'pdf');
 
   //
@@ -57,8 +46,6 @@ function changeMimeHandler(preferredAction, alwaysAskBeforeHandling) {
 }
 
 function addWindowListener(aURL, aCallback) {
-  const Cc = Components.classes;
-  const Ci = Components.interfaces;
   Services.wm.addListener({
     onOpenWindow: function(aXULWindow) {
       info("window opened, waiting for focus");
