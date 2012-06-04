@@ -63,7 +63,7 @@ let Factory = {
   },
 
   // nsIFactory
-  lockFactory: function lockFactory(lock) { 
+  lockFactory: function lockFactory(lock) {
     // No longer used as of gecko 1.7.
     throw Cr.NS_ERROR_NOT_IMPLEMENTED;
   }
