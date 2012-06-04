@@ -9,7 +9,7 @@
 
   // fetch an l10n objects
   function getL10nData(key) {
-    var response = FirefoxCom.request('getStrings', key);
+    var response = FirefoxCom.requestSync('getStrings', key);
     var data = JSON.parse(response);
     if (!data)
       console.warn('[l10n] #' + key + ' missing for [' + gLanguage + ']');
@@ -78,7 +78,7 @@
   }
 
   window.addEventListener('DOMContentLoaded', function() {
-    gLanguage = FirefoxCom.request('getLocale', null);
+    gLanguage = FirefoxCom.requestSync('getLocale', null);
 
     translateFragment();
 
