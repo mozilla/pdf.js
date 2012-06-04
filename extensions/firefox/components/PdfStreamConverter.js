@@ -9,6 +9,7 @@ const Cc = Components.classes;
 const Ci = Components.interfaces;
 const Cr = Components.results;
 const Cu = Components.utils;
+// True only if this is the version of pdf.js that is included with firefox.
 const MOZ_CENTRAL = PDFJSSCRIPT_MOZ_CENTRAL;
 const PDFJS_EVENT_ID = 'pdf.js.message';
 const PDF_CONTENT_TYPE = 'application/pdf';
@@ -21,11 +22,14 @@ Cu.import('resource://gre/modules/XPCOMUtils.jsm');
 Cu.import('resource://gre/modules/Services.jsm');
 Cu.import('resource://gre/modules/NetUtil.jsm');
 
+
 let appInfo = Cc['@mozilla.org/xre/app-info;1']
                   .getService(Ci.nsIXULAppInfo);
 let privateBrowsing, inPrivateBrowsing;
-let mimeService = Cc['@mozilla.org/mime;1']
-                    .getService(Ci.nsIMIMEService);
+let Svc = {};
+XPCOMUtils.defineLazyServiceGetter(Svc, 'mime',
+                                   '@mozilla.org/mime;1',
+                                   'nsIMIMEService');
 
 if (appInfo.ID === FIREFOX_ID) {
   privateBrowsing = Cc['@mozilla.org/privatebrowsing;1']
@@ -75,15 +79,15 @@ function getDOMWindow(aChannel) {
 
 function isEnabled() {
   if (MOZ_CENTRAL) {
-    var enabled = getBoolPref(PREF_PREFIX + '.enabled', false);
-    if (!enabled)
+    var disabled = getBoolPref(PREF_PREFIX + '.disabled', false);
+    if (disabled)
       return false;
     // To also be considered enabled the "Preview in Firefox" option must be
     // selected in the Application preferences.
-    var handlerInfo = mimeService.
-                        getFromTypeAndExtension('application/pdf', 'pdf');
-    return handlerInfo && (handlerInfo.alwaysAskBeforeHandling == false &&
-           handlerInfo.preferredAction == Ci.nsIHandlerInfo.handleInternally);
+    var handlerInfo = Svc.mime
+                         .getFromTypeAndExtension('application/pdf', 'pdf');
+    return handlerInfo.alwaysAskBeforeHandling == false &&
+           handlerInfo.preferredAction == Ci.nsIHandlerInfo.handleInternally;
   }
   // Always returns true for the extension since enabling/disabling is handled
   // by the add-on manager.
@@ -111,9 +115,10 @@ function getLocalizedStrings(path) {
   }
   return map;
 }
-function getLocalizedString(strings, id) {
+function getLocalizedString(strings, id, property) {
+  property = property || 'textContent';
   if (id in strings)
-    return strings[id]['textContent'];
+    return strings[id][property];
   return id;
 }
 
@@ -128,22 +133,15 @@ ChromeActions.prototype = {
     // The data may not be downloaded so we need just retry getting the pdf with
     // the original url.
     var blobUrl = data.blobUrl || originalUrl;
-
     var originalUri = NetUtil.newURI(originalUrl);
     var blobUri = NetUtil.newURI(blobUrl);
-
-    let mimeService = Cc['@mozilla.org/mime;1'].getService(Ci.nsIMIMEService);
-    var handlerInfo = mimeService.
-                        getFromTypeAndExtension('application/pdf', 'pdf');
-
     var extHelperAppSvc =
           Cc['@mozilla.org/uriloader/external-helper-app-service;1'].
-            getService(Ci.nsIExternalHelperAppService);
+             getService(Ci.nsIExternalHelperAppService);
     var frontWindow = Cc['@mozilla.org/embedcomp/window-watcher;1'].
-                        getService(Ci.nsIWindowWatcher).activeWindow;
+                         getService(Ci.nsIWindowWatcher).activeWindow;
     var ioService = Services.io;
     var channel = ioService.newChannel(originalUrl, null, null);
-
 
     NetUtil.asyncFetch(blobUri, function(aInputStream, aResult) {
       if (!Components.isSuccessCode(aResult)) {
@@ -154,7 +152,7 @@ ChromeActions.prototype = {
       // Create a nsIInputStreamChannel so we can set the url on the channel
       // so the filename will be correct.
       let channel = Cc['@mozilla.org/network/input-stream-channel;1'].
-                      createInstance(Ci.nsIInputStreamChannel);
+                       createInstance(Ci.nsIInputStreamChannel);
       channel.setURI(originalUri);
       channel.contentStream = aInputStream;
       channel.QueryInterface(Ci.nsIChannel);
@@ -227,10 +225,10 @@ ChromeActions.prototype = {
     var win = Services.wm.getMostRecentWindow('navigator:browser');
     var browser = win.gBrowser.getBrowserForDocument(domWindow.top.document);
     var notificationBox = win.gBrowser.getNotificationBox(browser);
-
     var buttons = [{
       label: getLocalizedString(strings, 'open_with_different_viewer'),
-      accessKey: null,
+      accessKey: getLocalizedString(strings, 'open_with_different_viewer',
+                                    'accessKey'),
       callback: function() {
         self.download(url);
       }
