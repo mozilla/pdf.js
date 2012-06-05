@@ -468,7 +468,11 @@ var PDFView = {
       return;
     this.fellback = true;
     var url = this.url.split('#')[0];
-    FirefoxCom.request('fallback', url);
+    FirefoxCom.request('fallback', url, function response(download) {
+      if (!download)
+        return;
+      PDFView.download();
+    });
   },
 
   navigateTo: function pdfViewNavigateTo(dest) {
