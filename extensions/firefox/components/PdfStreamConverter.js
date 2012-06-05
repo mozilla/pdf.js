@@ -216,7 +216,7 @@ ChromeActions.prototype = {
   searchEnabled: function() {
     return getBoolPref(PREF_PREFIX + '.searchEnabled', false);
   },
-  fallback: function(url) {
+  fallback: function(url, sendResponse) {
     var self = this;
     var domWindow = this.domWindow;
     var strings = getLocalizedStrings('chrome.properties');
@@ -225,17 +225,32 @@ ChromeActions.prototype = {
     var win = Services.wm.getMostRecentWindow('navigator:browser');
     var browser = win.gBrowser.getBrowserForDocument(domWindow.top.document);
     var notificationBox = win.gBrowser.getNotificationBox(browser);
+    // Flag so we don't call the response callback twice, since if the user
+    // clicks open with different viewer both the button callback and
+    // eventCallback will be called.
+    var sentResponse = false;
     var buttons = [{
       label: getLocalizedString(strings, 'open_with_different_viewer'),
       accessKey: getLocalizedString(strings, 'open_with_different_viewer',
                                     'accessKey'),
       callback: function() {
-        self.download(url);
+        sentResponse = true;
+        sendResponse(true);
       }
     }];
     notificationBox.appendNotification(message, 'pdfjs-fallback', null,
                                        notificationBox.PRIORITY_WARNING_LOW,
-                                       buttons);
+                                       buttons,
+                                       function eventsCallback(eventType) {
+      // Currently there is only one event "removed" but if there are any other
+      // added in the future we still only care about removed at the moment.
+      if (eventType !== 'removed')
+        return;
+      // Don't send a response again if we already responded when the button was
+      // clicked.
+      if (!sentResponse)
+        sendResponse(false);
+    });
   }
 };
 
