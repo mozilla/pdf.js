@@ -1159,9 +1159,10 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
         tmpCanvas = rescaleImage(imgData.data, widthScale, heightScale);
         ctx.scale(widthScale, heightScale);
         ctx.drawImage(tmpCanvas, 0, -h / heightScale);
-      } else
+      } else {
         tmpCtx.putImageData(imgData, 0, 0);
         ctx.drawImage(tmpCanvas, 0, -h);
+      }
       this.restore();
     },
 
