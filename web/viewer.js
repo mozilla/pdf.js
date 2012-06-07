@@ -1846,12 +1846,12 @@ window.addEventListener('pagechange', function pagechange(evt) {
 
 // Firefox specific event, so that we can prevent browser from zooming
 window.addEventListener('DOMMouseScroll', function(evt) {
-  if(evt.ctrlKey) {
+  if (evt.ctrlKey) {
     evt.preventDefault();
 
     var ticks = evt.detail;
     var direction = (ticks > 0) ? 'zoomOut' : 'zoomIn';
-    for(var i = 0, length = Math.abs(ticks); i < length; i++)
+    for (var i = 0, length = Math.abs(ticks); i < length; i++)
       PDFView[direction]();
   }
 }, false);
