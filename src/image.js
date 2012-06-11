@@ -126,6 +126,7 @@ var PDFImage = (function PDFImageClosure() {
 
     if (smask) {
       handleImageData(handler, xref, res, smask, smaskPromise);
+      maskPromise.resolve(null);
     } else {
       smaskPromise.resolve(null);
       if (mask && isStream(mask)) {
