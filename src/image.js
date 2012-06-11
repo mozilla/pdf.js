@@ -94,7 +94,6 @@ var PDFImage = (function PDFImageClosure() {
       }
     }
 
-   
     if (smask) {
       this.smask = new PDFImage(xref, res, smask, false);
     } else if (mask) {
@@ -115,7 +114,7 @@ var PDFImage = (function PDFImageClosure() {
     Promise.all([imageDataPromise, smaskPromise, maskPromise]).then(
         function(results) {
       var imageData = results[0], smaskData = results[1], maskData = results[2];
-      var image = new PDFImage(xref, res, imageData, inline, smaskData, 
+      var image = new PDFImage(xref, res, imageData, inline, smaskData,
                                maskData);
       callback(image);
     });
@@ -132,7 +131,7 @@ var PDFImage = (function PDFImageClosure() {
       if (mask && isStream(mask)) {
         handleImageData(handler, xref, res, mask, maskPromise);
       } else if (mask) {
-        TODO('handle color key masking')
+        TODO('handle color key masking');
         maskPromise.resolve(null);
       } else {
         maskPromise.resolve(null);
@@ -302,7 +301,7 @@ var PDFImage = (function PDFImageClosure() {
 
         // Need to invert values in buffer
         for (var i = 0, ii = sw * sh; i < ii; ++i)
-          buf[i] = 255 - buf[i]
+          buf[i] = 255 - buf[i];
 
         if (sw != width || sh != height)
           buf = PDFImage.resize(buf, mask.bpc, 1, sw, sh, width, height);
