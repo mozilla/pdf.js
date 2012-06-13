@@ -11,7 +11,12 @@ body {
   height: 100%;
   background-color: #404040;
   background-image: url(images/texture.png);
-  font-family: Segoe UI, Verdana, sans-serif;
+}
+
+body,
+input,
+select {
+  font-family: message-box;
 }
 
 .hidden {
