@@ -15,6 +15,7 @@ body {
 
 body,
 input,
+button,
 select {
   font-family: message-box;
 }
