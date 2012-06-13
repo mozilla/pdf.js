@@ -17,7 +17,7 @@ body,
 input,
 button,
 select {
-  font-family: message-box;
+  font: message-box;
 }
 
 .hidden {
