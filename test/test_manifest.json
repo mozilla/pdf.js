@@ -608,5 +608,13 @@
       "md5": "cbc1988e4803f647fa83467a85f0e231",
       "rounds": 1,
       "type": "eq"
+    },
+    {  "id": "issue1796",
+      "file": "pdfs/issue1796.pdf",
+      "md5": "9b9b60dc2a4cc3ea05932785d71304fe",
+      "rounds": 1,
+      "pageLimit": 2,
+      "link": true,
+      "type": "eq"
     }
 ]
