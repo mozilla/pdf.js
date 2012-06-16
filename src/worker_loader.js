@@ -24,6 +24,7 @@ var files = [
   'stream.js',
   'worker.js',
   'jpx.js',
+  'jbig2.js',
   'bidi.js',
   '../external/jpgjs/jpg.js'
 ];

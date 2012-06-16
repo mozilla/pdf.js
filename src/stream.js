@@ -979,6 +979,43 @@ var JpxStream = (function JpxStreamClosure() {
   return JpxStream;
 })();
 
+/**
+ * For JBIG2's we use a library to decode these images and
+ * the stream behaves like all the other DecodeStreams.
+ */
+var Jbig2Stream = (function Jbig2StreamClosure() {
+  function Jbig2Stream(bytes, dict) {
+    this.dict = dict;
+    this.bytes = bytes;
+
+    DecodeStream.call(this);
+  }
+
+  Jbig2Stream.prototype = Object.create(DecodeStream.prototype);
+
+  Jbig2Stream.prototype.ensureBuffer = function Jbig2Stream_ensureBuffer(req) {
+    if (this.bufferLength)
+      return;
+
+    var jbig2Image = new Jbig2Image();
+
+    var data = jbig2Image.parseChunk(this.bytes, 0, this.bytes.length);
+    var dataLength = data.length;
+
+    // JBIG2 had black as 1 and white as 0, inverting the colors
+    for (var i = 0; i < dataLength; i++)
+      data[i] ^= 0xFF;
+
+    this.buffer = data;
+    this.bufferLength = dataLength;
+  };
+  Jbig2Stream.prototype.getChar = function Jbig2Stream_getChar() {
+    error('internal error: getChar is not valid on Jbig2Stream');
+  };
+
+  return Jbig2Stream;
+})();
+
 var DecryptStream = (function DecryptStreamClosure() {
   function DecryptStream(str, decrypt) {
     this.str = str;
