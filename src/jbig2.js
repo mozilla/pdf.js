@@ -5,6 +5,7 @@
 
 var Jbig2Image = (function Jbig2ImageClosure() {
 
+  // Annex E. Arithmetic Coding
   var ArithmeticDecoder = (function ArithmeticDecoderClosure() {
     var QeTable = [
       {qe: 0x5601, nmps: 1, nlps: 1, switchFlag: 1},
@@ -167,6 +168,128 @@ var Jbig2Image = (function Jbig2ImageClosure() {
     return ArithmeticDecoder;
   })();
 
+  // Annex A. Arithmetic Integer Decoding Procedure
+  // A.2 Procedure for decoding values
+  function decodeInteger(contextCache, procedure, decoder) {
+    var contexts;
+    if (procedure in contextCache)
+      contexts = contextCache[procedure];
+    else
+      contextCache[procedure] = contexts = [];
+
+    var prev = 1;
+    var state = 1, v = 0, s;
+    var toRead = 32, offset = 4436; // defaults for state 7
+    while (state) {
+      var cx = contexts[prev];
+      if (!cx)
+        contexts[prev] = cx = {index: 0, mps: 0};
+      var bit = decoder.readBit(cx);
+      prev = prev < 256 ? (prev << 1) | bit :
+        (((prev << 1) | bit) & 511) | 256;
+      switch (state) {
+        case 1:
+          s = !!bit;
+          break;
+        case 2:
+          if (bit) break;
+          state = 7;
+          toRead = 2;
+          offset = 0;
+          break;
+        case 3:
+          if (bit) break;
+          state = 7;
+          toRead = 4;
+          offset = 4;
+          break;
+        case 4:
+          if (bit) break;
+          state = 7;
+          toRead = 6;
+          offset = 20;
+          break;
+        case 5:
+          if (bit) break;
+          state = 7;
+          toRead = 8;
+          offset = 84;
+          break;
+        case 6:
+          if (bit) break;
+          state = 7;
+          toRead = 12;
+          offset = 340;
+          break;
+        default:
+          v = v * 2 + bit;
+          if (--toRead == 0)
+            state = 0;
+          continue;
+      }
+      state++;
+    }
+    v += offset;
+    return !s ? v : v > 0 ? -v : null;
+  }
+  // A.3 The IAID decoding procedure
+  function decodeIAID(contextCache, decoder, codeLength) {
+    var contexts;
+    if ('IAID' in contextCache)
+      contexts = contextCache['IAID'];
+    else
+      contextCache['IAID'] = contexts = [];
+
+    var prev = 1;
+    for (var i = 0; i < codeLength; i++) {
+      var cx = contexts[prev];
+      if (!cx)
+        contexts[prev] = cx = {index: 0, mps: 0};
+      var bit = decoder.readBit(cx);
+      prev = (prev * 2) + bit;
+    }
+    if (codeLength < 31)
+      return prev & ((1 << codeLength) - 1);
+    else
+      return prev - Math.pow(2, codeLength);
+  }
+
+  // Annex B. Huffman Table Decoding Procedure
+  // B.5 Standard Huffman tables
+  function TableB1(reader) {
+    if (!reader.readBit())
+      return reader.readBits(4); // 0 + VAL
+    if (!reader.readBit())
+      return reader.readBits(8) + 16; // 10 + (VAL - 16)
+    if (!reader.readBit())
+      return reader.readBits(16) + 272; // 110 + (VAL - 272)
+    if (!reader.readBit())
+      return reader.readBits(32) + 65808; // 1110 + (VAL - 65808)
+  }
+
+  function TableB2(reader) {
+    if (!reader.readBit())
+      return 0; // 0
+    if (!reader.readBit())
+      return 1; // 10
+    if (!reader.readBit())
+      return 2; // 110
+    if (!reader.readBit())
+      return reader.readBits(3) + 3; // 1110 + (VAL - 3)
+    if (!reader.readBit())
+      return reader.readBits(6) + 11; // 11110 + (VAL - 11)
+    if (!reader.readBit())
+      return reader.readBits(32) + 75; // 111110 + (VAL - 75)
+    return null; // OOB
+  }
+
+  function TableB3(reader) {}
+
+  function TableB4(reader) {}
+
+  function TableB5(reader) {}
+
+  // 7.3 Segment types
   var SegmentTypes = [
     'SymbolDictionary', null, null, null, 'IntermediateTextRegion', null,
     'ImmediateTextRegion', 'ImmediateLosslessTextRegion', null, null, null,
@@ -203,6 +326,15 @@ var Jbig2Image = (function Jbig2ImageClosure() {
     0x018B  // '011000101' + '1'
   ];
 
+  function log2(x) {
+    var n = 1, i = 0;
+    while (x > n) {
+      n <<= 1;
+      i++;
+    }
+    return i;
+  }
+
   function readInt32(data, start) {
     return (data[start] << 24) | (data[start + 1] << 16) |
            (data[start + 2] << 8) | data[start + 3];
@@ -221,6 +353,7 @@ var Jbig2Image = (function Jbig2ImageClosure() {
     return (data[start] << 24) >> 24;
   }
 
+  // 6.2
   function decodeBitmap(mmr, width, height, templateIndex, prediction, skip, at,
                         data, start, end) {
     if (mmr)
@@ -237,8 +370,18 @@ var Jbig2Image = (function Jbig2ImageClosure() {
     }
     var pseudoPixelContext = ReusedContexts[template];
     var bitmap = [];
-    var decoder = new ArithmeticDecoder(data, start, end);
-    var contexts = [], cx;
+    var decoder, contexts, cx;
+    if (data instanceof ArithmeticDecoder) {
+      decoder = data;
+      var contextCache = start;
+      if ('GB' in contextCache)
+        contexts = contextCache['GB'];
+      else
+        contextCache['GB'] = contexts = [];
+    } else {
+      decoder = new ArithmeticDecoder(data, start, end);
+      contexts = [];
+    }
     var ltp = 0;
     for (var i = 0; i < height; i++) {
       if (prediction) {
@@ -277,6 +420,126 @@ var Jbig2Image = (function Jbig2ImageClosure() {
     return bitmap;
   }
 
+  // 6.5.5 Decoding the symbol dictionary
+  function decodeSymbolDictionary(huffman, refinement, symbols,
+                                  numberOfNewSymbols, numberOfExportedSymbols,
+                                  huffmanTables, templateIndex, at,
+                                  refinementTemplateIndex, refinementAt,
+                                  data, start, end) {
+    if (huffman)
+      throw 'huffman is not supported';
+    if (refinement)
+      throw 'refinement is not supported';
+
+    var newSymbols = [];
+    var currentHeight = 0;
+    var contextCache = {};
+    var decoder = new ArithmeticDecoder(data, start, end);
+    while (newSymbols.length < numberOfNewSymbols) {
+      var deltaHeight = decodeInteger(contextCache, 'IADH', decoder); // 6.5.6
+      currentHeight += deltaHeight;
+      var currentWidth = 0;
+      var totalWidth = 0;
+      while (true) {
+        var deltaWidth = decodeInteger(contextCache, 'IADW', decoder); // 6.5.7
+        if (deltaWidth == null)
+          break; // OOB
+        currentWidth += deltaWidth;
+        totalWidth += currentWidth;
+        // 6.5.8.1 Direct-coded symbol bitmap
+        var bitmap = decodeBitmap(false, currentWidth, currentHeight,
+          templateIndex, false, null, at, decoder, contextCache);
+        newSymbols.push(bitmap);
+      }
+    }
+    // 6.5.10 Exported symbols
+    var exportedSymbols = [];
+    var flags = [], currentFlag = false;
+    while (flags.length < symbols.length + numberOfNewSymbols) {
+      var runLength = decodeInteger(contextCache, 'IAEX', decoder);
+      while (runLength--)
+        flags.push(currentFlag);
+      currentFlag = !currentFlag;
+    }
+    for (var i = 0; i < symbols.length; i++)
+      if (flags[i]) exportedSymbols.push(symbols[i]);
+    for (var j = 0; j < numberOfNewSymbols; i++, j++)
+      if (flags[i]) exportedSymbols.push(newSymbols[j]);
+    return exportedSymbols;
+  }
+
+  function decodeTextRegion(huffman, refinement, width, height,
+                            defaultPixelValue, numberOfSymbolInstances,
+                            stripSize, inputSymbols, symbolCodeLength,
+                            transposed, dsOffset, referenceCorner,
+                            combinationOperator, huffmanTables,
+                            refinementTemplate, refinementAt,
+                            data, start, end) {
+    if (huffman)
+      throw 'huffman is not supported';
+    if (refinement)
+      throw 'refinement is not supported';
+
+    // Prepare bitmap
+    var bitmap = [];
+    for (var i = 0; i < height; i++) {
+      var row = new Uint8Array(width);
+      if (defaultPixelValue) {
+        for (var j = 0; j < width; j++)
+          row[j] = defaultPixelValue;
+      }
+      bitmap.push(row);
+    }
+
+    var contextCache = {};
+    var decoder = new ArithmeticDecoder(data, start, end);
+
+    if (transposed)
+      throw 'transposed!=0 is not supported';
+    if (combinationOperator != 0)
+      throw 'combinationOperator==' + combinationOperator + ' is not supported';
+
+    var stripT = -decodeInteger(contextCache, 'IADT', decoder); // 6.4.6
+    var firstS = 0;
+    var i = 0;
+    while (i < numberOfSymbolInstances) {
+      var deltaT = decodeInteger(contextCache, 'IADT', decoder); // 6.4.6
+      stripT += deltaT;
+
+      var deltaFirstS = decodeInteger(contextCache, 'IAFS', decoder); // 6.4.7
+      firstS += deltaFirstS;
+      var currentS = firstS;
+      do {
+        var currentT = stripSize == 1 ? 0 :
+          decodeInteger(contextCache, 'IAIT', decoder); // 6.4.9
+        var t = stripT + currentT;
+        var symbolId = decodeIAID(contextCache, decoder, symbolCodeLength);
+
+        var symbolBitmap = inputSymbols[symbolId];
+        var symbolWidth = symbolBitmap[0].length;
+        var symbolHeight = symbolBitmap.length;
+        var offsetT = t - ((referenceCorner & 1) ? 0 : symbolHeight);
+        var offsetS = currentS - ((referenceCorner & 2) ? symbolWidth : 0);
+        for (var t2 = 0; t2 < symbolHeight; t2++) {
+          var row = bitmap[offsetT + t2];
+          if (!row) continue;
+          var symbolRow = symbolBitmap[t2];
+          for (var s2 = 0; s2 < symbolWidth; s2++)
+            row[offsetS + s2] |= symbolRow[s2];
+        }
+
+        currentS += symbolWidth - 1;
+        i++;
+
+        var deltaS = decodeInteger(contextCache, 'IADS', decoder); // 6.4.8
+        if (deltaS == null)
+          break; // OOB
+        currentS += deltaS + dsOffset;
+      } while (true);
+    }
+    return bitmap;
+  }
+
   function readSegmentHeader(data, start) {
     var segmentHeader = {};
     segmentHeader.number = readUint32(data, start);
@@ -302,7 +565,6 @@ var Jbig2Image = (function Jbig2ImageClosure() {
       }
     } else if (referredFlags == 5 || referredFlags == 6)
       throw 'Invalid referred-to flags';
-    segmentHeader.referredToCount = referredToCount;
     segmentHeader.retainBits = retainBits;
     var referredToSegmentNumberSize = segmentHeader.number <= 256 ? 1 :
       segmentHeader.number <= 65536 ? 2 : 4;
@@ -358,6 +620,7 @@ var Jbig2Image = (function Jbig2ImageClosure() {
     return segments;
   }
 
+  // 7.4.1 Region segment information field
   function readRegionSegmentInformation(data, start) {
     return {
       width: readUint32(data, start),
@@ -374,8 +637,100 @@ var Jbig2Image = (function Jbig2ImageClosure() {
     if (!(header.typeName in visitor))
       return;
 
-    var data = segment.data, position = segment.start, args;
+    var data = segment.data, position = segment.start, end = segment.end;
+    var args;
     switch (header.type) {
+      case 0: // SymbolDictionary
+        // 7.4.2 Symbol dictionary segment syntax
+        var dictionary = {};
+        var dictionaryFlags = readUint16(data, position); // 7.4.2.1.1
+        dictionary.huffman = !!(dictionaryFlags & 1);
+        dictionary.refinement = !!(dictionaryFlags & 2);
+        dictionary.huffmanDHSelector = (dictionaryFlags >> 2) & 3;
+        dictionary.huffmanDWSelector = (dictionaryFlags >> 4) & 3;
+        dictionary.bitmapSizeSelector = (dictionaryFlags >> 6) & 1;
+        dictionary.aggregationInstancesSelector = (dictionaryFlags >> 7) & 1;
+        dictionary.bitmapCodingContextUsed = !!(dictionaryFlags & 256);
+        dictionary.bitmapCodingContextRetained = !!(dictionaryFlags & 512);
+        dictionary.template = (dictionaryFlags >> 10) & 3;
+        dictionary.refinementTemplate = (dictionaryFlags >> 12) & 1;
+        position += 2;
+        if (!dictionary.huffman) {
+          var atLength = dictionary.template == 0 ? 4 : 1;
+          var at = [];
+          for (var i = 0; i < atLength; i++) {
+            at.push({
+              x: readInt8(data, position),
+              y: readInt8(data, position + 1)
+            });
+            position += 2;
+          }
+          dictionary.at = at;
+        }
+        if (dictionary.refinement && !dictionary.refinementTemplate) {
+          var at = [];
+          for (var i = 0; i < 2; i++) {
+            at.push({
+              x: readInt8(data, position),
+              y: readInt8(data, position + 1)
+            });
+            position += 2;
+          }
+          dictionary.refinementAt = at;
+        }
+        dictionary.numberOfExportedSymbols = readUint32(data, position);
+        position += 4;
+        dictionary.numberOfNewSymbols = readUint32(data, position);
+        position += 4;
+        args = [dictionary, header.number, header.referredTo,
+                data, position, end];
+        break;
+      case 6: // ImmediateTextRegion
+        var textRegion = {};
+        textRegion.info = readRegionSegmentInformation(data, position);
+        position += RegionSegmentInformationFieldLength;
+        var textRegionSegmentFlags = readUint16(data, position);
+        position += 2;
+        textRegion.huffman = !!(textRegionSegmentFlags & 1);
+        textRegion.refinement = !!(textRegionSegmentFlags & 2);
+        textRegion.stripSize = 1 << ((textRegionSegmentFlags >> 2) & 3);
+        textRegion.referenceCorner = (textRegionSegmentFlags >> 4) & 3;
+        textRegion.transposed = !!(textRegionSegmentFlags & 64);
+        textRegion.combinationOperator = (textRegionSegmentFlags >> 7) & 3;
+        textRegion.defaultPixelValue = (textRegionSegmentFlags >> 9) & 1;
+        textRegion.dsOffset = (textRegionSegmentFlags >> 10) & 31;
+        textRegion.refinementTemplate = (textRegionSegmentFlags >> 15) & 1;
+        if (textRegion.huffman) {
+          var textRegionHuffmanFlags = readUint16(data, position);
+          position += 2;
+          textRegion.huffmanFS = (textRegionHuffmanFlags) & 3;
+          textRegion.huffmanDS = (textRegionHuffmanFlags >> 2) & 3;
+          textRegion.huffmanDT = (textRegionHuffmanFlags >> 4) & 3;
+          textRegion.huffmanRefinementDW = (textRegionHuffmanFlags >> 6) & 3;
+          textRegion.huffmanRefinementDH = (textRegionHuffmanFlags >> 8) & 3;
+          textRegion.huffmanRefinementDX = (textRegionHuffmanFlags >> 10) & 3;
+          textRegion.huffmanRefinementDY = (textRegionHuffmanFlags >> 12) & 3;
+          textRegion.huffmanRefinementSizeSelector =
+            !!(textRegionHuffmanFlags & 14);
+        }
+        if (textRegion.refinement && !textRegion.refinementTemplate) {
+          var at = [];
+          for (var i = 0; i < 2; i++) {
+            at.push({
+              x: readInt8(data, position),
+              y: readInt8(data, position + 1)
+            });
+            position += 2;
+          }
+          dictionary.refinementAt = at;
+        }
+        textRegion.numberOfSymbolInstances = readUint32(data, position);
+        position += 4;
+        // TODO 7.4.3.1.7 Symbol ID Huffman table decoding
+        if (textRegion.huffman)
+          throw 'huffman is not supported';
+        args = [textRegion, header.referredTo, data, position, end];
+        break;
       case 38: // ImmediateGenericRegion
         var genericRegion = {};
         genericRegion.info = readRegionSegmentInformation(data, position);
@@ -396,7 +751,7 @@ var Jbig2Image = (function Jbig2ImageClosure() {
           }
           genericRegion.at = at;
         }
-        args = [genericRegion, data, position, segment.end];
+        args = [genericRegion, data, position, end];
         break;
       case 48: // PageInformation
         var pageInfo = {
@@ -450,15 +805,20 @@ var Jbig2Image = (function Jbig2ImageClosure() {
     // processSegments(segments, new SimpleSegmentVisitor());
   }
 
-  function parseJbig2Chunk(data, start, end) {
-    var segments = readSegments({}, data, start, end);
+  function parseJbig2Chunks(chunks) {
     var visitor = new SimpleSegmentVisitor();
-    processSegments(segments, visitor);
+    for (var i = 0; i < chunks.length; i++) {
+      var chunk = chunks[i];
+      var segments = readSegments({}, chunk.data, chunk.start, chunk.end);
+      processSegments(segments, visitor);
+    }
     return visitor.buffer;
   }
 
-  function SimpleSegmentVisitor() {
-    this.PageInformation = function(info) {
+  function SimpleSegmentVisitor() {}
+
+  SimpleSegmentVisitor.prototype = {
+    PageInformation: function SimpleSegmentVisitor_PageInformation(info) {
       this.currentPageInfo = info;
       var rowSize = (info.width + 7) >> 3;
       var buffer = new Uint8Array(rowSize * info.height);
@@ -466,12 +826,9 @@ var Jbig2Image = (function Jbig2ImageClosure() {
       for (var i = 0; i < buffer.length; i++)
         buffer[i] = fill;
       this.buffer = buffer;
-    };
-    this.ImmediateGenericRegion = function(region, data, start, end) {
-      var regionInfo = region.info, pageInfo = this.currentPageInfo;
-      var bitmap = decodeBitmap(region.mmr, regionInfo.width, regionInfo.height,
-                                region.template, region.prediction, null,
-                                region.at, data, start, end);
+    },
+    drawBitmap: function SimpleSegmentVisitor_drawBitmap(regionInfo, bitmap) {
+      var pageInfo = this.currentPageInfo;
       var width = regionInfo.width, height = regionInfo.height;
       var rowSize = (pageInfo.width + 7) >> 3;
       var operator = pageInfo.combinationOperatorOverride ?
@@ -505,14 +862,78 @@ var Jbig2Image = (function Jbig2ImageClosure() {
             throw 'Unimplemented operator: ' + operator;
         }
       }
-    };
-  }
+    },
+    ImmediateGenericRegion:
+      function SimpleSegmentVisitor_ImmediateGenericRegion(region, data,
+                                                           start, end) {
+      var regionInfo = region.info;
+      var bitmap = decodeBitmap(region.mmr, regionInfo.width, regionInfo.height,
+                                region.template, region.prediction, null,
+                                region.at, data, start, end);
+      this.drawBitmap(regionInfo, bitmap);
+    },
+    SymbolDictionary:
+      function SimpleSegmentVisitor_SymbolDictionary(dictionary, currentSegment,
+                                                     referredSegments,
+                                                     data, start, end) {
+      var symbols = this.symbols;
+      var huffmanTables;
+      if (dictionary.huffman) {
+        huffmanTables = {};
+        huffmanTables.DeltaHeights = dictionary.huffmanDHSelector == 0 ?
+          TableB4 : dictionary.huffmanDHSelector == 1 ? TableB5 :
+          this.userTable;
+        huffmanTables.DeltaWidths = dictionary.huffmanDHSelector == 0 ?
+          TableB2 : dictionary.huffmanDHSelector == 2 ? TableB3 :
+          this.userTable;
+        huffmanTables.BitmapSize = dictionary.huffmanBitmapSizeSelector == 0 ?
+          TableB1 : this.userTable;
+        huffmanTables.AggregationInstances =
+          dictionary.aggregationInstancesSelector == 0 ? TableB1 :
+          this.userTable;
+      }
+      // Combines exported symbols from all referred segments
+      var inputSymbols = [];
+      for (var i = 0; i < referredSegments.length; i++)
+        inputSymbols = inputSymbols.concat(symbols[referredSegments[i]]);
+
+      if (!symbols)
+        this.symbols = symbols = {};
+      symbols[currentSegment] = decodeSymbolDictionary(dictionary.huffman,
+        dictionary.refinement, inputSymbols, dictionary.numberOfNewSymbols,
+        dictionary.numberOfExportedSymbols, huffmanTables,
+        dictionary.template, dictionary.at,
+        dictionary.refinementTemplate, dictionary.refinementAt,
+        data, start, end);
+    },
+    ImmediateTextRegion:
+      function SimpleSegmentVisitor_ImmediateTextRegion(region,
+                                                        referredSegments,
+                                                        data, start, end) {
+      var regionInfo = region.info;
+      var symbols = this.symbols;
+      var huffmanTables;
+      // Combines exported symbols from all referred segments
+      var inputSymbols = [];
+      for (var i = 0; i < referredSegments.length; i++)
+        inputSymbols = inputSymbols.concat(symbols[referredSegments[i]]);
+      var symbolCodeLength = log2(inputSymbols.length);
+
+      var bitmap = decodeTextRegion(region.huffman, region.refinement,
+        regionInfo.width, regionInfo.height, region.defaultPixelValue,
+        region.numberOfSymbolInstances, region.stripSize, inputSymbols,
+        symbolCodeLength, region.transposed, region.dsOffset,
+        region.referenceCorner, region.combinationOperator, huffmanTables,
+        region.refinementTemplate, region.refinementAt, data, start, end);
+      this.drawBitmap(regionInfo, bitmap);
+    }
+  };
 
   function Jbig2Image() {}
 
   Jbig2Image.prototype = {
-    parseChunk: function Jbig2Image_parseChunk(data, start, end) {
-      return parseJbig2Chunk(data, start, end);
+    parseChunks: function Jbig2Image_parseChunks(chunks) {
+      return parseJbig2Chunks(chunks);
     }
   };
 

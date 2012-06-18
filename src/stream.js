@@ -999,7 +999,14 @@ var Jbig2Stream = (function Jbig2StreamClosure() {
 
     var jbig2Image = new Jbig2Image();
 
-    var data = jbig2Image.parseChunk(this.bytes, 0, this.bytes.length);
+    var chunks = [], decodeParams = this.dict.get('DecodeParms');
+    if (decodeParams && decodeParams.has('JBIG2Globals')) {
+      var globalsStream = decodeParams.get('JBIG2Globals');
+      var globals = globalsStream.getBytes();
+      chunks.push({data: globals, start: 0, end: globals.length});
+    }
+    chunks.push({data: this.bytes, start: 0, end: this.bytes.length});
+    var data = jbig2Image.parseChunks(chunks);
     var dataLength = data.length;
 
     // JBIG2 had black as 1 and white as 0, inverting the colors
