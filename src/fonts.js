@@ -2379,7 +2379,7 @@ var Font = (function FontClosure() {
           styleElement = document.createElement('style');
           styleElement.id = 'PDFJS_FONT_STYLE_TAG';
           document.documentElement.getElementsByTagName('head')[0].appendChild(
-            styleElement);   
+            styleElement);
       }
 
       var styleSheet = styleElement.sheet;
