@@ -532,7 +532,7 @@ var FontLoader = {
 
       // XXX we should have a time-out here too, and maybe fire
       // pdfjsFontLoadFailed?
-      var src = '<!DOCTYPE HTML><html><head>';
+      var src = '<!DOCTYPE HTML><html><head><meta charset="utf-8">';
       src += '<style type="text/css">';
       for (var i = 0, ii = rules.length; i < ii; ++i) {
         src += rules[i];
