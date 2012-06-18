@@ -275,7 +275,7 @@ var PDFView = {
     }, true);
   },
 
-  setScale: function pdfViewSetScale(val, resetAutoSettings) {
+  setScale: function pdfViewSetScale(val, resetAutoSettings, noScroll) {
     if (val == this.currentScale)
       return;
 
@@ -283,7 +283,7 @@ var PDFView = {
     for (var i = 0; i < pages.length; i++)
       pages[i].update(val * kCssUnits);
 
-    if (this.currentScale != val)
+    if (!noScroll && this.currentScale != val)
       this.pages[this.page - 1].scrollIntoView();
     this.currentScale = val;
 
@@ -294,14 +294,14 @@ var PDFView = {
     window.dispatchEvent(event);
   },
 
-  parseScale: function pdfViewParseScale(value, resetAutoSettings) {
+  parseScale: function pdfViewParseScale(value, resetAutoSettings, noScroll) {
     if ('custom' == value)
       return;
 
     var scale = parseFloat(value);
     this.currentScaleValue = value;
     if (scale) {
-      this.setScale(scale, true);
+      this.setScale(scale, true, noScroll);
       return;
     }
 
@@ -313,22 +313,22 @@ var PDFView = {
                            currentPage.height * currentPage.scale / kCssUnits;
     switch (value) {
       case 'page-actual':
-        this.setScale(1, resetAutoSettings);
+        scale = 1;
         break;
       case 'page-width':
-        this.setScale(pageWidthScale, resetAutoSettings);
+        scale = pageWidthScale;
         break;
       case 'page-height':
-        this.setScale(pageHeightScale, resetAutoSettings);
+        scale = pageHeightScale;
         break;
       case 'page-fit':
-        this.setScale(
-            Math.min(pageWidthScale, pageHeightScale), resetAutoSettings);
+        scale = Math.min(pageWidthScale, pageHeightScale);
         break;
       case 'auto':
-        this.setScale(Math.min(1.0, pageWidthScale), resetAutoSettings);
+        scale = Math.min(1.0, pageWidthScale);
         break;
     }
+    this.setScale(scale, resetAutoSettings, noScroll);
 
     selectScaleOption(value);
   },
@@ -1245,9 +1245,9 @@ var PageView = function pageView(container, pdfPage, id, scale,
       }
 
       if (scale && scale !== PDFView.currentScale)
-        PDFView.parseScale(scale, true);
+        PDFView.parseScale(scale, true, true);
       else if (PDFView.currentScale === kUnknownScale)
-        PDFView.parseScale(kDefaultScale, true);
+        PDFView.parseScale(kDefaultScale, true, true);
 
       var boundingRect = [
         this.viewport.convertToViewportPoint(x, y),
