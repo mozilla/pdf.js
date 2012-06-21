@@ -394,7 +394,7 @@ var PDFView = {
         self.loading = false;
       },
       function getDocumentError(message, exception) {
-        if (exception.name === 'PasswordException') {
+        if (exception && exception.name === 'PasswordException') {
           if (exception.code === 'needpassword') {
             var promptString = mozL10n.get('request_password', null,
                                       'PDF is protected by a password:');
@@ -598,10 +598,6 @@ var PDFView = {
 
   progress: function pdfViewProgress(level) {
     var percent = Math.round(level * 100);
-    var loadingIndicator = document.getElementById('loading');
-    loadingIndicator.textContent = mozL10n.get('loading', {percent: percent},
-      'Loading... {{percent}}%');
-
     PDFView.loadingBar.percent = percent;
   },
 
@@ -621,6 +617,8 @@ var PDFView = {
 
     var loadingBox = document.getElementById('loadingBox');
     loadingBox.setAttribute('hidden', 'true');
+    var loadingIndicator = document.getElementById('loading');
+    loadingIndicator.textContent = '';
 
     var thumbsView = document.getElementById('thumbnailView');
     thumbsView.parentNode.scrollTop = 0;
@@ -792,8 +790,12 @@ var PDFView = {
       pageFound = true;
     }
     if (!pageFound) {
-      searchResults.textContent = mozL10n.get('search_terms_not_found', null,
+      searchResults.textContent = '';
+      var noResults = document.createElement('div');
+      noResults.classList.add('noResults');
+      noResults.textContent = mozL10n.get('search_terms_not_found', null,
                                               '(Not found)');
+      searchResults.appendChild(noResults);
     }
   },
 
