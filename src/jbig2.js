@@ -319,11 +319,29 @@ var Jbig2Image = (function Jbig2ImageClosure() {
      {x: 1, y: -1}, {x: -4, y: 0}, {x: -3, y: 0}, {x: -2, y: 0}, {x: -1, y: 0}]
   ];
 
+  var RefinementTemplates = [
+    {
+      coding: [{x: 0, y: -1}, {x: 1, y: -1}, {x: -1, y: 0}],
+      reference: [{x: 0, y: -1}, {x: 1, y: -1}, {x: -1, y: 0}, {x: 0, y: 0},
+                  {x: 1, y: 0}, {x: -1, y: 1}, {x: 0, y: 1}, {x: 1, y: 1}]
+    },
+    {
+      coding: [{x: -1, y: -1}, {x: 0, y: -1}, {x: 1, y: -1}, {x: -1, y: 0}],
+      reference: [{x: 0, y: -1}, {x: -1, y: 0}, {x: 0, y: 0}, {x: 1, y: 0},
+                  {x: 0, y: 1}, {x: 1, y: 1}]
+    }
+  ];
+
   var ReusedContexts = [
     0x1CD3, // '00111001101' (template) + '0011' (at),
     0x079A, // '001111001101' + '0',
     0x00E3, // '001110001' + '1',
     0x018B  // '011000101' + '1'
+  ];
+
+  var RefinementReusedContexts = [
+    0x0020, // '000' + '0' (coding) + '00010000' + '0' (reference)
+    0x0008  // '0000' + '001000'
   ];
 
   function log2(x) {
@@ -353,7 +371,7 @@ var Jbig2Image = (function Jbig2ImageClosure() {
     return (data[start] << 24) >> 24;
   }
 
-  // 6.2
+  // 6.2 Generic Region Decoding Procedure
   function decodeBitmap(mmr, width, height, templateIndex, prediction, skip, at,
                         data, start, end) {
     if (mmr)
@@ -368,7 +386,8 @@ var Jbig2Image = (function Jbig2ImageClosure() {
       templateX[k] = template[k].x;
       templateY[k] = template[k].y;
     }
-    var pseudoPixelContext = ReusedContexts[template];
+
+    var pseudoPixelContext = ReusedContexts[templateIndex];
     var bitmap = [];
     var decoder, contexts, cx;
     if (data instanceof ArithmeticDecoder) {
@@ -382,6 +401,7 @@ var Jbig2Image = (function Jbig2ImageClosure() {
       decoder = new ArithmeticDecoder(data, start, end);
       contexts = [];
     }
+
     var ltp = 0;
     for (var i = 0; i < height; i++) {
       if (prediction) {
@@ -420,6 +440,90 @@ var Jbig2Image = (function Jbig2ImageClosure() {
     return bitmap;
   }
 
+  // 6.3.2 Generic Refinement Region Decoding Procedure
+  function decodeRefinement(width, height, templateIndex, referenceBitmap,
+                            offsetX, offsetY, prediction, at,
+                            data, start, end) {
+    var codingTemplate = RefinementTemplates[templateIndex].coding;
+    if (templateIndex == 0)
+      codingTemplate = codingTemplate.concat([at[0]]);
+    var codingTemplateLength = codingTemplate.length;
+    var codingTemplateX = new Int32Array(codingTemplateLength);
+    var codingTemplateY = new Int32Array(codingTemplateLength);
+    for (var k = 0; k < codingTemplateLength; k++) {
+      codingTemplateX[k] = codingTemplate[k].x;
+      codingTemplateY[k] = codingTemplate[k].y;
+    }
+    var referenceTemplate = RefinementTemplates[templateIndex].reference;
+    if (templateIndex == 0)
+      referenceTemplate = referenceTemplate.concat([at[1]]);
+    var referenceTemplateLength = referenceTemplate.length;
+    var referenceTemplateX = new Int32Array(referenceTemplateLength);
+    var referenceTemplateY = new Int32Array(referenceTemplateLength);
+    for (var k = 0; k < referenceTemplateLength; k++) {
+      referenceTemplateX[k] = referenceTemplate[k].x;
+      referenceTemplateY[k] = referenceTemplate[k].y;
+    }
+    var referenceWidth = referenceBitmap[0].length;
+    var referenceHeight = referenceBitmap.length;
+
+    var pseudoPixelContext = RefinementReusedContexts[templateIndex];
+    var bitmap = [];
+    var decoder, contexts, cx;
+    if (data instanceof ArithmeticDecoder) {
+      decoder = data;
+      var contextCache = start;
+      if ('GR' in contextCache)
+        contexts = contextCache['GR'];
+      else
+        contextCache['GR'] = contexts = [];
+    } else {
+      decoder = new ArithmeticDecoder(data, start, end);
+      contexts = [];
+    }
+
+    var ltp = 0;
+    for (var i = 0; i < height; i++) {
+      if (prediction) {
+        cx = contexts[pseudoPixelContext];
+        if (!cx)
+          contexts[pseudoPixelContext] = cx = {index: 0, mps: 0};
+        var sltp = decoder.readBit(cx);
+        ltp ^= sltp;
+      }
+      var row = new Uint8Array(width);
+      bitmap.push(row);
+      for (var j = 0; j < width; j++) {
+        if (ltp)
+          throw 'prediction is not supported';
+
+        var contextLabel = 0;
+        for (var k = 0; k < codingTemplateLength; k++) {
+          var i0 = i + codingTemplateY[k], j0 = j + codingTemplateX[k];
+          if (i0 < 0 || j0 < 0 || j0 >= width)
+            contextLabel <<= 1; // out of bound pixel
+          else
+            contextLabel = (contextLabel << 1) | bitmap[i0][j0];
+        }
+        for (var k = 0; k < referenceTemplateLength; k++) {
+          var i0 = i + referenceTemplateY[k] + offsetY;
+          var j0 = j + referenceTemplateX[k] + offsetX;
+          if (i0 < 0 || i0 >= referenceHeight || j0 < 0 || j0 >= referenceWidth)
+            contextLabel <<= 1; // out of bound pixel
+          else
+            contextLabel = (contextLabel << 1) | referenceBitmap[i0][j0];
+        }
+        cx = contexts[contextLabel];
+        if (!cx)
+          contexts[contextLabel] = cx = {index: 0, mps: 0};
+        var pixel = decoder.readBit(cx);
+        row[j] = pixel;
+      }
+    }
+
+    return bitmap;
+  }
+
   // 6.5.5 Decoding the symbol dictionary
   function decodeSymbolDictionary(huffman, refinement, symbols,
                                   numberOfNewSymbols, numberOfExportedSymbols,
@@ -428,12 +532,11 @@ var Jbig2Image = (function Jbig2ImageClosure() {
                                   data, start, end) {
     if (huffman)
       throw 'huffman is not supported';
-    if (refinement)
-      throw 'refinement is not supported';
 
     var newSymbols = [];
     var currentHeight = 0;
     var contextCache = {};
+    var symbolCodeLength = log2(symbols.length + numberOfNewSymbols);
     var decoder = new ArithmeticDecoder(data, start, end);
     while (newSymbols.length < numberOfNewSymbols) {
       var deltaHeight = decodeInteger(contextCache, 'IADH', decoder); // 6.5.6
@@ -446,9 +549,25 @@ var Jbig2Image = (function Jbig2ImageClosure() {
           break; // OOB
         currentWidth += deltaWidth;
         totalWidth += currentWidth;
-        // 6.5.8.1 Direct-coded symbol bitmap
-        var bitmap = decodeBitmap(false, currentWidth, currentHeight,
-          templateIndex, false, null, at, decoder, contextCache);
+        var bitmap;
+        if (refinement) {
+          // 6.5.8.2 Refinement/aggregate-coded symbol bitmap
+          var numberOfInstances = decodeInteger(contextCache, 'IAAI', decoder);
+          if (numberOfInstances > 1)
+            throw 'number of instances > 1 is not supported';
+          var symbolId = decodeIAID(contextCache, decoder, symbolCodeLength);
+          var rdx = decodeInteger(contextCache, 'IARDX', decoder); // 6.4.11.3
+          var rdy = decodeInteger(contextCache, 'IARDY', decoder); // 6.4.11.4
+          var symbol = symbolId < symbols.length ? symbols[symbolId] :
+            newSymbols[symbolId - symbols.length];
+          bitmap = decodeRefinement(currentWidth, currentHeight,
+            refinementTemplateIndex, symbol, rdx, rdy, false, refinementAt,
+            decoder, contextCache);
+        } else {
+          // 6.5.8.1 Direct-coded symbol bitmap
+          bitmap = decodeBitmap(false, currentWidth, currentHeight,
+            templateIndex, false, null, at, decoder, contextCache);
+        }
         newSymbols.push(bitmap);
       }
     }
@@ -473,12 +592,10 @@ var Jbig2Image = (function Jbig2ImageClosure() {
                             stripSize, inputSymbols, symbolCodeLength,
                             transposed, dsOffset, referenceCorner,
                             combinationOperator, huffmanTables,
-                            refinementTemplate, refinementAt,
+                            refinementTemplateIndex, refinementAt,
                             data, start, end) {
     if (huffman)
       throw 'huffman is not supported';
-    if (refinement)
-      throw 'refinement is not supported';
 
     // Prepare bitmap
     var bitmap = [];
@@ -496,7 +613,7 @@ var Jbig2Image = (function Jbig2ImageClosure() {
 
     if (transposed)
       throw 'transposed!=0 is not supported';
-    if (combinationOperator != 0)
+    if (combinationOperator != 0 && combinationOperator != 2)
       throw 'combinationOperator==' + combinationOperator + ' is not supported';
 
     var stripT = -decodeInteger(contextCache, 'IADT', decoder); // 6.4.6
@@ -512,20 +629,41 @@ var Jbig2Image = (function Jbig2ImageClosure() {
       do {
         var currentT = stripSize == 1 ? 0 :
           decodeInteger(contextCache, 'IAIT', decoder); // 6.4.9
-        var t = stripT + currentT;
+        var t = stripSize * stripT + currentT;
         var symbolId = decodeIAID(contextCache, decoder, symbolCodeLength);
-
+        var applyRefinement = refinement &&
+          decodeInteger(contextCache, 'IARI', decoder);
         var symbolBitmap = inputSymbols[symbolId];
         var symbolWidth = symbolBitmap[0].length;
         var symbolHeight = symbolBitmap.length;
+        if (applyRefinement) {
+          var rdw = decodeInteger(contextCache, 'IARDW', decoder); // 6.4.11.1
+          var rdh = decodeInteger(contextCache, 'IARDH', decoder); // 6.4.11.2
+          var rdx = decodeInteger(contextCache, 'IARDX', decoder); // 6.4.11.3
+          var rdy = decodeInteger(contextCache, 'IARDY', decoder); // 6.4.11.4
+          symbolWidth += rdw;
+          symbolHeight += rdh;
+          symbolBitmap = decodeRefinement(symbolWidth, symbolHeight,
+            refinementTemplateIndex, symbolBitmap, (rdw >> 1) + rdx,
+            (rdh >> 1) + rdy, false, refinementAt,
+            decoder, contextCache);
+        }
         var offsetT = t - ((referenceCorner & 1) ? 0 : symbolHeight);
         var offsetS = currentS - ((referenceCorner & 2) ? symbolWidth : 0);
         for (var t2 = 0; t2 < symbolHeight; t2++) {
           var row = bitmap[offsetT + t2];
           if (!row) continue;
           var symbolRow = symbolBitmap[t2];
-          for (var s2 = 0; s2 < symbolWidth; s2++)
-            row[offsetS + s2] |= symbolRow[s2];
+          switch (combinationOperator) {
+            case 0: // OR
+              for (var s2 = 0; s2 < symbolWidth; s2++)
+                row[offsetS + s2] |= symbolRow[s2];
+              break;
+            case 2: // XOR
+              for (var s2 = 0; s2 < symbolWidth; s2++)
+                row[offsetS + s2] ^= symbolRow[s2];
+              break;
+          }
         }
 
         currentS += symbolWidth - 1;
@@ -722,7 +860,7 @@ var Jbig2Image = (function Jbig2ImageClosure() {
             });
             position += 2;
           }
-          dictionary.refinementAt = at;
+          textRegion.refinementAt = at;
         }
         textRegion.numberOfSymbolInstances = readUint32(data, position);
         position += 4;
