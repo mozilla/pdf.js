@@ -168,14 +168,50 @@ var Jbig2Image = (function Jbig2ImageClosure() {
     return ArithmeticDecoder;
   })();
 
+  // Utility data structures
+  function ContextCache() {}
+
+  ContextCache.prototype = {
+    getContexts: function(id) {
+      if (id in this)
+        return this[id];
+      return (this[id] = []);
+    }
+  };
+
+  function DecodingContext(data, start, end) {
+    this.data = data;
+    this.start = start;
+    this.end = end;
+  }
+
+  DecodingContext.prototype = {
+    get decoder() {
+      var decoder = new ArithmeticDecoder(this.data, this.start, this.end);
+      Object.defineProperty(this, 'decoder', {
+        value: decoder,
+        writable: false,
+        configurable: true,
+        enumerable: true
+      });
+      return decoder;
+    },
+    get contextCache() {
+      var cache = new ContextCache();
+      Object.defineProperty(this, 'contextCache', {
+        value: cache,
+        writable: false,
+        configurable: true,
+        enumerable: true
+      });
+      return cache;
+    }
+  };
+
   // Annex A. Arithmetic Integer Decoding Procedure
   // A.2 Procedure for decoding values
   function decodeInteger(contextCache, procedure, decoder) {
-    var contexts;
-    if (procedure in contextCache)
-      contexts = contextCache[procedure];
-    else
-      contextCache[procedure] = contexts = [];
+    var contexts = contextCache.getContexts(procedure);
 
     var prev = 1;
     var state = 1, v = 0, s;
@@ -232,13 +268,10 @@ var Jbig2Image = (function Jbig2ImageClosure() {
     v += offset;
     return !s ? v : v > 0 ? -v : null;
   }
+
   // A.3 The IAID decoding procedure
   function decodeIAID(contextCache, decoder, codeLength) {
-    var contexts;
-    if ('IAID' in contextCache)
-      contexts = contextCache['IAID'];
-    else
-      contextCache['IAID'] = contexts = [];
+    var contexts = contextCache.getContexts('IAID');
 
     var prev = 1;
     for (var i = 0; i < codeLength; i++) {
@@ -253,41 +286,6 @@ var Jbig2Image = (function Jbig2ImageClosure() {
     else
       return prev - Math.pow(2, codeLength);
   }
-
-  // Annex B. Huffman Table Decoding Procedure
-  // B.5 Standard Huffman tables
-  function TableB1(reader) {
-    if (!reader.readBit())
-      return reader.readBits(4); // 0 + VAL
-    if (!reader.readBit())
-      return reader.readBits(8) + 16; // 10 + (VAL - 16)
-    if (!reader.readBit())
-      return reader.readBits(16) + 272; // 110 + (VAL - 272)
-    if (!reader.readBit())
-      return reader.readBits(32) + 65808; // 1110 + (VAL - 65808)
-  }
-
-  function TableB2(reader) {
-    if (!reader.readBit())
-      return 0; // 0
-    if (!reader.readBit())
-      return 1; // 10
-    if (!reader.readBit())
-      return 2; // 110
-    if (!reader.readBit())
-      return reader.readBits(3) + 3; // 1110 + (VAL - 3)
-    if (!reader.readBit())
-      return reader.readBits(6) + 11; // 11110 + (VAL - 11)
-    if (!reader.readBit())
-      return reader.readBits(32) + 75; // 111110 + (VAL - 75)
-    return null; // OOB
-  }
-
-  function TableB3(reader) {}
-
-  function TableB4(reader) {}
-
-  function TableB5(reader) {}
 
   // 7.3 Segment types
   var SegmentTypes = [
@@ -374,7 +372,7 @@ var Jbig2Image = (function Jbig2ImageClosure() {
 
   // 6.2 Generic Region Decoding Procedure
   function decodeBitmap(mmr, width, height, templateIndex, prediction, skip, at,
-                        data, start, end) {
+                        decodingContext) {
     if (mmr)
       throw 'MMR encoding is not supported';
 
@@ -390,23 +388,14 @@ var Jbig2Image = (function Jbig2ImageClosure() {
 
     var pseudoPixelContext = ReusedContexts[templateIndex];
     var bitmap = [];
-    var decoder, contexts, cx;
-    if (data instanceof ArithmeticDecoder) {
-      decoder = data;
-      var contextCache = start;
-      if ('GB' in contextCache)
-        contexts = contextCache['GB'];
-      else
-        contextCache['GB'] = contexts = [];
-    } else {
-      decoder = new ArithmeticDecoder(data, start, end);
-      contexts = [];
-    }
+
+    var decoder = decodingContext.decoder;
+    var contexts = decodingContext.contextCache.getContexts('GB');
 
     var ltp = 0;
     for (var i = 0; i < height; i++) {
       if (prediction) {
-        cx = contexts[pseudoPixelContext];
+        var cx = contexts[pseudoPixelContext];
         if (!cx)
           contexts[pseudoPixelContext] = cx = {index: 0, mps: 0};
         var sltp = decoder.readBit(cx);
@@ -431,7 +420,7 @@ var Jbig2Image = (function Jbig2ImageClosure() {
           else
             contextLabel = (contextLabel << 1) | bitmap[i0][j0];
         }
-        cx = contexts[contextLabel];
+        var cx = contexts[contextLabel];
         if (!cx)
           contexts[contextLabel] = cx = {index: 0, mps: 0};
         var pixel = decoder.readBit(cx);
@@ -444,7 +433,7 @@ var Jbig2Image = (function Jbig2ImageClosure() {
   // 6.3.2 Generic Refinement Region Decoding Procedure
   function decodeRefinement(width, height, templateIndex, referenceBitmap,
                             offsetX, offsetY, prediction, at,
-                            data, start, end) {
+                            decodingContext) {
     var codingTemplate = RefinementTemplates[templateIndex].coding;
     if (templateIndex == 0)
       codingTemplate = codingTemplate.concat([at[0]]);
@@ -470,23 +459,14 @@ var Jbig2Image = (function Jbig2ImageClosure() {
 
     var pseudoPixelContext = RefinementReusedContexts[templateIndex];
     var bitmap = [];
-    var decoder, contexts, cx;
-    if (data instanceof ArithmeticDecoder) {
-      decoder = data;
-      var contextCache = start;
-      if ('GR' in contextCache)
-        contexts = contextCache['GR'];
-      else
-        contextCache['GR'] = contexts = [];
-    } else {
-      decoder = new ArithmeticDecoder(data, start, end);
-      contexts = [];
-    }
+
+    var decoder = decodingContext.decoder;
+    var contexts = decodingContext.contextCache.getContexts('GR');
 
     var ltp = 0;
     for (var i = 0; i < height; i++) {
       if (prediction) {
-        cx = contexts[pseudoPixelContext];
+        var cx = contexts[pseudoPixelContext];
         if (!cx)
           contexts[pseudoPixelContext] = cx = {index: 0, mps: 0};
         var sltp = decoder.readBit(cx);
@@ -514,7 +494,7 @@ var Jbig2Image = (function Jbig2ImageClosure() {
           else
             contextLabel = (contextLabel << 1) | referenceBitmap[i0][j0];
         }
-        cx = contexts[contextLabel];
+        var cx = contexts[contextLabel];
         if (!cx)
           contexts[contextLabel] = cx = {index: 0, mps: 0};
         var pixel = decoder.readBit(cx);
@@ -530,15 +510,17 @@ var Jbig2Image = (function Jbig2ImageClosure() {
                                   numberOfNewSymbols, numberOfExportedSymbols,
                                   huffmanTables, templateIndex, at,
                                   refinementTemplateIndex, refinementAt,
-                                  data, start, end) {
+                                  decodingContext) {
     if (huffman)
       throw 'huffman is not supported';
 
     var newSymbols = [];
     var currentHeight = 0;
-    var contextCache = {};
     var symbolCodeLength = log2(symbols.length + numberOfNewSymbols);
-    var decoder = new ArithmeticDecoder(data, start, end);
+
+    var decoder = decodingContext.decoder;
+    var contextCache = decodingContext.contextCache;
+
     while (newSymbols.length < numberOfNewSymbols) {
       var deltaHeight = decodeInteger(contextCache, 'IADH', decoder); // 6.5.6
       currentHeight += deltaHeight;
@@ -563,11 +545,11 @@ var Jbig2Image = (function Jbig2ImageClosure() {
             newSymbols[symbolId - symbols.length];
           bitmap = decodeRefinement(currentWidth, currentHeight,
             refinementTemplateIndex, symbol, rdx, rdy, false, refinementAt,
-            decoder, contextCache);
+            decodingContext);
         } else {
           // 6.5.8.1 Direct-coded symbol bitmap
           bitmap = decodeBitmap(false, currentWidth, currentHeight,
-            templateIndex, false, null, at, decoder, contextCache);
+            templateIndex, false, null, at, decodingContext);
         }
         newSymbols.push(bitmap);
       }
@@ -594,7 +576,7 @@ var Jbig2Image = (function Jbig2ImageClosure() {
                             transposed, dsOffset, referenceCorner,
                             combinationOperator, huffmanTables,
                             refinementTemplateIndex, refinementAt,
-                            data, start, end) {
+                            decodingContext) {
     if (huffman)
       throw 'huffman is not supported';
 
@@ -609,8 +591,8 @@ var Jbig2Image = (function Jbig2ImageClosure() {
       bitmap.push(row);
     }
 
-    var contextCache = {};
-    var decoder = new ArithmeticDecoder(data, start, end);
+    var decoder = decodingContext.decoder;
+    var contextCache = decodingContext.contextCache;
 
     if (transposed)
       throw 'transposed!=0 is not supported';
@@ -647,7 +629,7 @@ var Jbig2Image = (function Jbig2ImageClosure() {
           symbolBitmap = decodeRefinement(symbolWidth, symbolHeight,
             refinementTemplateIndex, symbolBitmap, (rdw >> 1) + rdx,
             (rdh >> 1) + rdy, false, refinementAt,
-            decoder, contextCache);
+            decodingContext);
         }
         var offsetT = t - ((referenceCorner & 1) ? 0 : symbolHeight);
         var offsetS = currentS - ((referenceCorner & 2) ? symbolWidth : 0);
@@ -1007,64 +989,58 @@ var Jbig2Image = (function Jbig2ImageClosure() {
       function SimpleSegmentVisitor_ImmediateGenericRegion(region, data,
                                                            start, end) {
       var regionInfo = region.info;
+      var decodingContext = new DecodingContext(data, start, end);
       var bitmap = decodeBitmap(region.mmr, regionInfo.width, regionInfo.height,
                                 region.template, region.prediction, null,
-                                region.at, data, start, end);
+                                region.at, decodingContext);
       this.drawBitmap(regionInfo, bitmap);
     },
     SymbolDictionary:
       function SimpleSegmentVisitor_SymbolDictionary(dictionary, currentSegment,
                                                      referredSegments,
                                                      data, start, end) {
-      var symbols = this.symbols;
       var huffmanTables;
-      if (dictionary.huffman) {
-        huffmanTables = {};
-        huffmanTables.DeltaHeights = dictionary.huffmanDHSelector == 0 ?
-          TableB4 : dictionary.huffmanDHSelector == 1 ? TableB5 :
-          this.userTable;
-        huffmanTables.DeltaWidths = dictionary.huffmanDHSelector == 0 ?
-          TableB2 : dictionary.huffmanDHSelector == 2 ? TableB3 :
-          this.userTable;
-        huffmanTables.BitmapSize = dictionary.huffmanBitmapSizeSelector == 0 ?
-          TableB1 : this.userTable;
-        huffmanTables.AggregationInstances =
-          dictionary.aggregationInstancesSelector == 0 ? TableB1 :
-          this.userTable;
-      }
+      if (dictionary.huffman)
+        throw 'huffman is not supported';
+
       // Combines exported symbols from all referred segments
+      var symbols = this.symbols;
+      if (!symbols)
+        this.symbols = symbols = {};
+
       var inputSymbols = [];
       for (var i = 0; i < referredSegments.length; i++)
         inputSymbols = inputSymbols.concat(symbols[referredSegments[i]]);
 
-      if (!symbols)
-        this.symbols = symbols = {};
+      var decodingContext = new DecodingContext(data, start, end);
       symbols[currentSegment] = decodeSymbolDictionary(dictionary.huffman,
         dictionary.refinement, inputSymbols, dictionary.numberOfNewSymbols,
         dictionary.numberOfExportedSymbols, huffmanTables,
         dictionary.template, dictionary.at,
         dictionary.refinementTemplate, dictionary.refinementAt,
-        data, start, end);
+        decodingContext);
     },
     ImmediateTextRegion:
       function SimpleSegmentVisitor_ImmediateTextRegion(region,
                                                         referredSegments,
                                                         data, start, end) {
       var regionInfo = region.info;
-      var symbols = this.symbols;
       var huffmanTables;
+
       // Combines exported symbols from all referred segments
+      var symbols = this.symbols;
       var inputSymbols = [];
       for (var i = 0; i < referredSegments.length; i++)
         inputSymbols = inputSymbols.concat(symbols[referredSegments[i]]);
       var symbolCodeLength = log2(inputSymbols.length);
 
+      var decodingContext = new DecodingContext(data, start, end);
       var bitmap = decodeTextRegion(region.huffman, region.refinement,
         regionInfo.width, regionInfo.height, region.defaultPixelValue,
         region.numberOfSymbolInstances, region.stripSize, inputSymbols,
         symbolCodeLength, region.transposed, region.dsOffset,
         region.referenceCorner, region.combinationOperator, huffmanTables,
-        region.refinementTemplate, region.refinementAt, data, start, end);
+        region.refinementTemplate, region.refinementAt, decodingContext);
       this.drawBitmap(regionInfo, bitmap);
     }
   };
