@@ -313,8 +313,9 @@ var Jbig2Image = (function Jbig2ImageClosure() {
     [{x: -1, y: -2}, {x: 0, y: -2}, {x: 1, y: -2}, {x: -2, y: -1},
      {x: -1, y: -1}, {x: 0, y: -1}, {x: 1, y: -1}, {x: 2, y: -1},
      {x: -3, y: 0}, {x: -2, y: 0}, {x: -1, y: 0}],
-    [{x: -1, y: -2}, {x: 0, y: -2}, {x: 1, y: -2}, {x: -1, y: -1},
-     {x: 0, y: -1}, {x: 1, y: -1}, {x: -2, y: 0}, {x: -1, y: 0}],
+    [{x: -1, y: -2}, {x: 0, y: -2}, {x: 1, y: -2}, {x: -2, y: -1},
+     {x: -1, y: -1}, {x: 0, y: -1}, {x: 1, y: -1}, {x: -2, y: 0},
+     {x: -1, y: 0}],
     [{x: -3, y: -1}, {x: -2, y: -1}, {x: -1, y: -1}, {x: 0, y: -1},
      {x: 1, y: -1}, {x: -4, y: 0}, {x: -3, y: 0}, {x: -2, y: 0}, {x: -1, y: 0}]
   ];
@@ -772,8 +773,6 @@ var Jbig2Image = (function Jbig2ImageClosure() {
 
   function processSegment(segment, visitor) {
     var header = segment.header;
-    if (!(header.typeName in visitor))
-      return;
 
     var data = segment.data, position = segment.start, end = segment.end;
     var args;
@@ -910,13 +909,16 @@ var Jbig2Image = (function Jbig2ImageClosure() {
         pageInfo.combinationOperatorOverride = !!(pageSegmentFlags & 64);
         args = [pageInfo];
         break;
+      case 50: // EndOfStripe
+        break;
       case 51: // EndOfFile
         break;
       default:
         throw 'Segment type is not implemented: ' +
               header.type + '/' + header.typeName;
     }
-    visitor[header.typeName].apply(visitor, args);
+    if (header.typeName in visitor)
+      visitor[header.typeName].apply(visitor, args);
   }
 
   function processSegments(segments, visitor) {
