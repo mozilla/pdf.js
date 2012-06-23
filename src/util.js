@@ -57,6 +57,8 @@ function assert(cond, msg) {
     error(msg);
 }
 
+// Combines two URLs. The baseUrl shall be absolute URL. If the url is an
+// absolute URL, it will be returned as is.
 function combineUrl(baseUrl, url) {
   if (url.indexOf(':') >= 0)
     return url;
@@ -67,10 +69,13 @@ function combineUrl(baseUrl, url) {
     return baseUrl.substring(0, i) + url;
   } else {
     // relative path
-    var i = baseUrl.lastIndexOf('#');
-    i = baseUrl.lastIndexOf('?', i < 0 ? baseUrl.length : i);
-    i = baseUrl.lastIndexOf('/', i < 0 ? baseUrl.length : i);
-    return baseUrl.substring(0, i + 1) + url;
+    var pathLength = baseUrl.length, i;
+    i = baseUrl.lastIndexOf('#');
+    pathLength = i >= 0 ? i : pathLength;
+    i = baseUrl.lastIndexOf('?', pathLength);
+    pathLength = i >= 0 ? i : pathLength;
+    var prefixLength = baseUrl.lastIndexOf('/', pathLength);
+    return baseUrl.substring(0, prefixLength + 1) + url;
   }
 }
 PDFJS.combineUrl = combineUrl;
