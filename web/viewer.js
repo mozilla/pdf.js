@@ -26,6 +26,10 @@ function getFileName(url) {
   return url.substring(url.lastIndexOf('/', end) + 1, end);
 }
 
+function expandUrl(url) {
+  return PDFJS.combineUrl(window.location.href, url);
+}
+
 var Cache = function cacheCache(size) {
   var data = [];
   this.push = function cachePush(view) {
@@ -376,7 +380,7 @@ var PDFView = {
     if (typeof url === 'string') { // URL
       this.url = url;
       document.title = decodeURIComponent(getFileName(url)) || url;
-      parameters.url = url;
+      parameters.url = expandUrl(url);
     } else if (url && 'byteLength' in url) { // ArrayBuffer
       parameters.data = url;
     }

@@ -57,6 +57,24 @@ function assert(cond, msg) {
     error(msg);
 }
 
+function combineUrl(baseUrl, url) {
+  if (url.indexOf(':') >= 0)
+    return url;
+  if (url.charAt(0) == '/') {
+    // absolute path
+    var i = baseUrl.indexOf('://');
+    i = baseUrl.indexOf('/', i + 3);
+    return baseUrl.substring(0, i) + url;
+  } else {
+    // relative path
+    var i = baseUrl.lastIndexOf('#');
+    i = baseUrl.lastIndexOf('?', i < 0 ? baseUrl.length : i);
+    i = baseUrl.lastIndexOf('/', i < 0 ? baseUrl.length : i);
+    return baseUrl.substring(0, i + 1) + url;
+  }
+}
+PDFJS.combineUrl = combineUrl;
+
 // In a well-formed PDF, |cond| holds.  If it doesn't, subsequent
 // behavior is undefined.
 function assertWellFormed(cond, msg) {

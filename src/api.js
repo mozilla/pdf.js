@@ -18,52 +18,21 @@
  * @return {Promise} A promise that is resolved with {PDFDocumentProxy} object.
  */
 PDFJS.getDocument = function getDocument(source) {
-  var url, data, headers, password, parameters = {};
   if (typeof source === 'string') {
-    url = source;
+    source = { url: source };
   } else if (isArrayBuffer(source)) {
-    data = source;
-  } else if (typeof source === 'object') {
-    url = source.url;
-    data = source.data;
-    headers = source.httpHeaders;
-    password = source.password;
-    parameters.password = password || null;
-
-    if (!url && !data)
-      error('Invalid parameter array, need either .data or .url');
-  } else {
+    source = { data: source };
+  } else if (typeof source !== 'object') {
     error('Invalid parameter in getDocument, need either Uint8Array, ' +
           'string or a parameter object');
   }
 
+  if (!source.url && !source.data)
+    error('Invalid parameter array, need either .data or .url');
+
   var promise = new PDFJS.Promise();
   var transport = new WorkerTransport(promise);
-  if (data) {
-    // assuming the data is array, instantiating directly from it
-    transport.sendData(data, parameters);
-  } else if (url) {
-    // fetch url
-    PDFJS.getPdf(
-      {
-        url: url,
-        progress: function getPDFProgress(evt) {
-          if (evt.lengthComputable)
-            promise.progress({
-              loaded: evt.loaded,
-              total: evt.total
-            });
-        },
-        error: function getPDFError(e) {
-          promise.reject('Unexpected server response of ' +
-            e.target.status + '.');
-        },
-        headers: headers
-      },
-      function getPDFLoad(data) {
-        transport.sendData(data, parameters);
-      });
-  }
+  transport.fetchDocument(source);
 
   return promise;
 };
@@ -511,6 +480,34 @@ var WorkerTransport = (function WorkerTransportClosure() {
         this.workerReadyPromise.resolve(pdfDocument);
       }, this);
 
+      messageHandler.on('FetchDoc', function transportFetchDoc(data) {
+        var url = data.url;
+        var headers = data.httpHeaders;
+        var password = data.password;
+
+        var promise = this.workerReadyPromise;
+        var transport = this;
+        PDFJS.getPdf(
+          {
+            url: url,
+            progress: function getPDFProgress(evt) {
+              if (evt.lengthComputable)
+                promise.progress({
+                  loaded: evt.loaded,
+                  total: evt.total
+                });
+            },
+            error: function getPDFError(e) {
+              promise.reject('Unexpected server response of ' +
+                e.target.status + '.');
+            },
+            headers: headers
+          },
+          function getPDFLoad(data) {
+            transport.sendData(data);
+          });
+      }, this);
+
       messageHandler.on('NeedPassword', function transportPassword(data) {
         this.workerReadyPromise.reject(data.exception.message, data.exception);
       }, this);
@@ -577,6 +574,17 @@ var WorkerTransport = (function WorkerTransportClosure() {
         }
       }, this);
 
+      messageHandler.on('DocProgress', function transportDocProgress(data) {
+        this.workerReadyPromise.progress({
+          loaded: data.loaded,
+          total: data.total
+        });
+      }, this);
+
+      messageHandler.on('DocError', function transportDocError(data) {
+        this.workerReadyPromise.reject(data.message);
+      }, this);
+
       messageHandler.on('PageError', function transportError(data) {
         var page = this.pageCache[data.pageNum - 1];
         if (page.displayReadyPromise)
@@ -621,11 +629,15 @@ var WorkerTransport = (function WorkerTransportClosure() {
       });
     },
 
-    sendData: function WorkerTransport_sendData(data, params) {
-      this.messageHandler.send('GetDocRequest', {data: data, params: params});
+    sendData: function WorkerTransport_sendData(data) {
+      this.messageHandler.send('GetDocRequest', {data: data});
     },
 
-    getData: function WorkerTransport_sendData(promise) {
+    fetchDocument: function WorkerTransport_fetchDocument(source) {
+      this.messageHandler.send('FetchDocRequest', {source: source});
+    },
+
+    getData: function WorkerTransport_getData(promise) {
       this.messageHandler.send('GetData', null, function(data) {
         promise.resolve(data);
       });

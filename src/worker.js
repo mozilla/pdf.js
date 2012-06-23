@@ -3,6 +3,8 @@
 
 'use strict';
 
+var useMainThreadToDownload = false;
+
 function MessageHandler(name, comObj) {
   this.name = name;
   this.comObj = comObj;
@@ -83,16 +85,12 @@ MessageHandler.prototype = {
 var WorkerMessageHandler = {
   setup: function wphSetup(handler) {
     var pdfModel = null;
+    var pdfModelSource = null;
 
-    handler.on('test', function wphSetupTest(data) {
-      handler.send('test', data instanceof Uint8Array);
-    });
-
-    handler.on('GetDocRequest', function wphSetupDoc(data) {
+    function loadDocument(pdfData) {
       // Create only the model of the PDFDoc, which is enough for
       // processing the content of the pdf.
-      var pdfData = data.data;
-      var pdfPassword = data.params.password;
+      var pdfPassword = pdfModelSource.password;
       try {
         pdfModel = new PDFDocument(new Stream(pdfData), pdfPassword);
       } catch (e) {
@@ -122,6 +120,55 @@ var WorkerMessageHandler = {
         encrypted: !!pdfModel.xref.encrypt
       };
       handler.send('GetDoc', {pdfInfo: doc});
+    }
+
+    handler.on('test', function wphSetupTest(data) {
+      handler.send('test', data instanceof Uint8Array);
+    });
+
+    handler.on('GetDocRequest', function wphSetupDoc(data) {
+      var pdfData = data.data;
+      loadDocument(pdfData);
+    });
+
+    handler.on('FetchDocRequest', function wphSetupFetchDoc(data) {
+      var source = data.source;
+      pdfModelSource = source;
+
+      if (source.data) {
+        // the data is array, instantiating directly from it
+        loadDocument(source.data);
+        return;
+      }
+
+      if (useMainThreadToDownload) {
+        // fallback to main thread to download PDF
+        handler.send('FetchDoc', {
+          url: source.url,
+          httpHeaders: source.httpHeaders
+        });
+      }
+
+      PDFJS.getPdf(
+        {
+          url: source.url,
+          progress: function getPDFProgress(evt) {
+            if (evt.lengthComputable) {
+              handler.send('DocProgress', {
+                loaded: evt.loaded,
+                total: evt.total
+              });
+            }
+          },
+          error: function getPDFError(e) {
+            handler.send('DocError', 'Unexpected server response of ' +
+                         e.target.status + '.');
+          },
+          headers: source.httpHeaders
+        },
+        function getPDFLoad(data) {
+          loadDocument(data);
+        });
     });
 
     handler.on('GetPageRequest', function wphSetupGetPage(data) {

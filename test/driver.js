@@ -86,6 +86,10 @@ function exceptionToString(e) {
   return e.message + ('stack' in e ? ' at ' + e.stack.split('\n')[0] : '');
 }
 
+function expandUrl(url) {
+  return combineUrl(window.location.href, url);
+}
+
 function nextTask() {
   cleanup();
 
@@ -98,7 +102,7 @@ function nextTask() {
 
   log('Loading file "' + task.file + '"\n');
 
-  getPdf(task.file, function nextTaskGetPdf(data) {
+  getPdf(expandUrl(task.file), function nextTaskGetPdf(data) {
     var failure;
     function continuation() {
       task.pageNum = task.firstPage || 1;
