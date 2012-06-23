@@ -480,34 +480,6 @@ var WorkerTransport = (function WorkerTransportClosure() {
         this.workerReadyPromise.resolve(pdfDocument);
       }, this);
 
-      messageHandler.on('FetchDoc', function transportFetchDoc(data) {
-        var url = data.url;
-        var headers = data.httpHeaders;
-        var password = data.password;
-
-        var promise = this.workerReadyPromise;
-        var transport = this;
-        PDFJS.getPdf(
-          {
-            url: url,
-            progress: function getPDFProgress(evt) {
-              if (evt.lengthComputable)
-                promise.progress({
-                  loaded: evt.loaded,
-                  total: evt.total
-                });
-            },
-            error: function getPDFError(e) {
-              promise.reject('Unexpected server response of ' +
-                e.target.status + '.');
-            },
-            headers: headers
-          },
-          function getPDFLoad(data) {
-            transport.sendData(data);
-          });
-      }, this);
-
       messageHandler.on('NeedPassword', function transportPassword(data) {
         this.workerReadyPromise.reject(data.exception.message, data.exception);
       }, this);
@@ -629,12 +601,8 @@ var WorkerTransport = (function WorkerTransportClosure() {
       });
     },
 
-    sendData: function WorkerTransport_sendData(data) {
-      this.messageHandler.send('GetDocRequest', {data: data});
-    },
-
     fetchDocument: function WorkerTransport_fetchDocument(source) {
-      this.messageHandler.send('FetchDocRequest', {source: source});
+      this.messageHandler.send('GetDocRequest', {source: source});
     },
 
     getData: function WorkerTransport_getData(promise) {

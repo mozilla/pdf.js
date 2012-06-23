@@ -3,8 +3,6 @@
 
 'use strict';
 
-var useMainThreadToDownload = false;
-
 function MessageHandler(name, comObj) {
   this.name = name;
   this.comObj = comObj;
@@ -85,9 +83,8 @@ MessageHandler.prototype = {
 var WorkerMessageHandler = {
   setup: function wphSetup(handler) {
     var pdfModel = null;
-    var pdfModelSource = null;
 
-    function loadDocument(pdfData) {
+    function loadDocument(pdfData, pdfModelSource) {
       // Create only the model of the PDFDoc, which is enough for
       // processing the content of the pdf.
       var pdfPassword = pdfModelSource.password;
@@ -127,26 +124,11 @@ var WorkerMessageHandler = {
     });
 
     handler.on('GetDocRequest', function wphSetupDoc(data) {
-      var pdfData = data.data;
-      loadDocument(pdfData);
-    });
-
-    handler.on('FetchDocRequest', function wphSetupFetchDoc(data) {
       var source = data.source;
-      pdfModelSource = source;
-
       if (source.data) {
         // the data is array, instantiating directly from it
-        loadDocument(source.data);
+        loadDocument(source.data, source);
         return;
-      }
-
-      if (useMainThreadToDownload) {
-        // fallback to main thread to download PDF
-        handler.send('FetchDoc', {
-          url: source.url,
-          httpHeaders: source.httpHeaders
-        });
       }
 
       PDFJS.getPdf(
@@ -167,7 +149,7 @@ var WorkerMessageHandler = {
           headers: source.httpHeaders
         },
         function getPDFLoad(data) {
-          loadDocument(data);
+          loadDocument(data, source);
         });
     });
 
