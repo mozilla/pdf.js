@@ -20,6 +20,10 @@ function MessageHandler(name, comObj) {
     warn(data);
   }];
 
+  comObj.onerror = function(event){
+    throw new Error(event.message + " (" + event.filename + ":" + event.lineno + ")");
+  };
+
   comObj.onmessage = function messageHandlerComObjOnMessage(event) {
     var data = event.data;
     if (data.isReply) {
