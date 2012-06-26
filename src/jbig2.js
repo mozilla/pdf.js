@@ -545,13 +545,14 @@ var Jbig2Image = (function Jbig2ImageClosure() {
     // 6.5.10 Exported symbols
     var exportedSymbols = [];
     var flags = [], currentFlag = false;
-    while (flags.length < symbols.length + numberOfNewSymbols) {
+    var totalSymbolsLength = symbols.length + numberOfNewSymbols;
+    while (flags.length < totalSymbolsLength) {
       var runLength = decodeInteger(contextCache, 'IAEX', decoder);
       while (runLength--)
         flags.push(currentFlag);
       currentFlag = !currentFlag;
     }
-    for (var i = 0; i < symbols.length; i++)
+    for (var i = 0, ii = symbols.length; i < ii; i++)
       if (flags[i]) exportedSymbols.push(symbols[i]);
     for (var j = 0; j < numberOfNewSymbols; i++, j++)
       if (flags[i]) exportedSymbols.push(newSymbols[j]);
@@ -721,7 +722,7 @@ var Jbig2Image = (function Jbig2ImageClosure() {
         break; // end of file is found
     }
     if (header.randomAccess) {
-      for (var i = 0; i < segments.length; i++) {
+      for (var i = 0, ii = segments.length; i < ii; i++) {
         segments[i].start = position;
         position += segments[i].header.length;
         segments[i].end = position;
@@ -888,12 +889,13 @@ var Jbig2Image = (function Jbig2ImageClosure() {
         error('JBIG2 error: segment type ' + header.typeName + '(' +
               header.type + ') is not implemented');
     }
-    if (header.typeName in visitor)
-      visitor[header.typeName].apply(visitor, args);
+    var callbackName = 'on' + header.typeName;
+    if (callbackName in visitor)
+      visitor[callbackName].apply(visitor, args);
   }
 
   function processSegments(segments, visitor) {
-    for (var i = 0; i < segments.length; i++)
+    for (var i = 0, ii = segments.length; i < ii; i++)
       processSegment(segments[i], visitor);
   }
 
@@ -919,7 +921,7 @@ var Jbig2Image = (function Jbig2ImageClosure() {
 
   function parseJbig2Chunks(chunks) {
     var visitor = new SimpleSegmentVisitor();
-    for (var i = 0; i < chunks.length; i++) {
+    for (var i = 0, ii = chunks.length; i < ii; i++) {
       var chunk = chunks[i];
       var segments = readSegments({}, chunk.data, chunk.start, chunk.end);
       processSegments(segments, visitor);
@@ -930,12 +932,12 @@ var Jbig2Image = (function Jbig2ImageClosure() {
   function SimpleSegmentVisitor() {}
 
   SimpleSegmentVisitor.prototype = {
-    PageInformation: function SimpleSegmentVisitor_PageInformation(info) {
+    onPageInformation: function SimpleSegmentVisitor_onPageInformation(info) {
       this.currentPageInfo = info;
       var rowSize = (info.width + 7) >> 3;
       var buffer = new Uint8Array(rowSize * info.height);
       var fill = info.defaultPixelValue ? 0xFF : 0;
-      for (var i = 0; i < buffer.length; i++)
+      for (var i = 0, ii = buffer.length; i < ii; i++)
         buffer[i] = fill;
       this.buffer = buffer;
     },
@@ -976,9 +978,9 @@ var Jbig2Image = (function Jbig2ImageClosure() {
         }
       }
     },
-    ImmediateGenericRegion:
-      function SimpleSegmentVisitor_ImmediateGenericRegion(region, data,
-                                                           start, end) {
+    onImmediateGenericRegion:
+      function SimpleSegmentVisitor_onImmediateGenericRegion(region, data,
+                                                             start, end) {
       var regionInfo = region.info;
       var decodingContext = new DecodingContext(data, start, end);
       var bitmap = decodeBitmap(region.mmr, regionInfo.width, regionInfo.height,
@@ -986,10 +988,11 @@ var Jbig2Image = (function Jbig2ImageClosure() {
                                 region.at, decodingContext);
       this.drawBitmap(regionInfo, bitmap);
     },
-    SymbolDictionary:
-      function SimpleSegmentVisitor_SymbolDictionary(dictionary, currentSegment,
-                                                     referredSegments,
-                                                     data, start, end) {
+    onSymbolDictionary:
+      function SimpleSegmentVisitor_onSymbolDictionary(dictionary,
+                                                       currentSegment,
+                                                       referredSegments,
+                                                       data, start, end) {
       var huffmanTables;
       if (dictionary.huffman)
         error('JBIG2 error: huffman is not supported');
@@ -1000,7 +1003,7 @@ var Jbig2Image = (function Jbig2ImageClosure() {
         this.symbols = symbols = {};
 
       var inputSymbols = [];
-      for (var i = 0; i < referredSegments.length; i++)
+      for (var i = 0, ii = referredSegments.length; i < ii; i++)
         inputSymbols = inputSymbols.concat(symbols[referredSegments[i]]);
 
       var decodingContext = new DecodingContext(data, start, end);
@@ -1011,17 +1014,17 @@ var Jbig2Image = (function Jbig2ImageClosure() {
         dictionary.refinementTemplate, dictionary.refinementAt,
         decodingContext);
     },
-    ImmediateTextRegion:
-      function SimpleSegmentVisitor_ImmediateTextRegion(region,
-                                                        referredSegments,
-                                                        data, start, end) {
+    onImmediateTextRegion:
+      function SimpleSegmentVisitor_onImmediateTextRegion(region,
+                                                          referredSegments,
+                                                          data, start, end) {
       var regionInfo = region.info;
       var huffmanTables;
 
       // Combines exported symbols from all referred segments
       var symbols = this.symbols;
       var inputSymbols = [];
-      for (var i = 0; i < referredSegments.length; i++)
+      for (var i = 0, ii = referredSegments.length; i < ii; i++)
         inputSymbols = inputSymbols.concat(symbols[referredSegments[i]]);
       var symbolCodeLength = log2(inputSymbols.length);
 
