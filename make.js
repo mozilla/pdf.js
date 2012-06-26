@@ -166,6 +166,7 @@ target.bundle = function() {
         'worker.js',
         '../external/jpgjs/jpg.js',
         'jpx.js',
+        'jbig2.js',
         'bidi.js',
         'metadata.js'];
 
