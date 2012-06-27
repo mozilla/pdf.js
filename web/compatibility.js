@@ -6,6 +6,16 @@
 // Checking if the typed arrays are supported
 (function checkTypedArrayCompatibility() {
   if (typeof Uint8Array !== 'undefined') {
+    // some mobile versions do not support subarray (e.g. safari 5 / iPhone / iPad)
+    if (typeof Uint8Array.prototype.subarray === 'undefined') {
+        Uint8Array.prototype.subarray = function subarray(start, end) {
+          return new Uint8Array(this.slice(start, end));
+        }
+        Float32Array.prototype.subarray = function subarray(start, end) {
+            return new Float32Array(this.slice(start, end));
+        }
+    }
+
     // some mobile version might not support Float64Array
     if (typeof Float64Array === 'undefined')
       window.Float64Array = Float32Array;
@@ -69,7 +79,8 @@
 
 // Object.defineProperty() ?
 (function checkObjectDefinePropertyCompatibility() {
-  if (typeof Object.defineProperty !== 'undefined')
+  // safari 5 cannot use this on DOM objects and thus is unusable, see http://kangax.github.com/es5-compat-table/
+  if ((typeof Object.defineProperty !== 'undefined') && /Safari\/5/.test(navigator.userAgent))
     return;
 
   Object.defineProperty = function objectDefineProperty(obj, name, def) {
