@@ -10,10 +10,10 @@
     if (typeof Uint8Array.prototype.subarray === 'undefined') {
         Uint8Array.prototype.subarray = function subarray(start, end) {
           return new Uint8Array(this.slice(start, end));
-        }
+        };
         Float32Array.prototype.subarray = function subarray(start, end) {
             return new Float32Array(this.slice(start, end));
-        }
+        };
     }
 
     // some mobile version might not support Float64Array
@@ -79,9 +79,17 @@
 
 // Object.defineProperty() ?
 (function checkObjectDefinePropertyCompatibility() {
-  // safari 5 and 6 cannot use this on DOM objects and thus it's unusable,
-  if ((typeof Object.defineProperty !== 'undefined') &&
-    !/Safari/.test(navigator.userAgent)) return;
+  if (typeof Object.defineProperty !== 'undefined') {
+    // some browsers (e.g. safari) cannot use defineProperty() on DOM objects
+    // and thus the native version is not sufficient
+    var definePropertyPossible = true;
+    try {
+      Object.defineProperty(new Image(), 'id', { value: 'test' });
+    } catch (e) {
+      definePropertyPossible = false;
+    }
+    if (definePropertyPossible) return;
+  }
 
   Object.defineProperty = function objectDefineProperty(obj, name, def) {
     delete obj[name];
