@@ -79,9 +79,16 @@
 
 // Object.defineProperty() ?
 (function checkObjectDefinePropertyCompatibility() {
-  // safari 5 and 6 cannot use this on DOM objects and thus it's unusable,
-  if ((typeof Object.defineProperty !== 'undefined') &&
-    !/Safari/.test(navigator.userAgent)) return;
+  if (typeof Object.defineProperty !== 'undefined') {
+    // Some browsers (e.g. safari) cannot use this on DOM objects
+    var definePropertyPossible = true;
+    try {
+      Object.defineProperty(new Image(), 'id', { value: 'test' });
+    } catch (e) {
+      definePropertyPossible = false;
+    }
+    if (definePropertyPossible) return true;
+  }
 
   Object.defineProperty = function objectDefineProperty(obj, name, def) {
     delete obj[name];
