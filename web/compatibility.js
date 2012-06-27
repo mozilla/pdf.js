@@ -79,10 +79,9 @@
 
 // Object.defineProperty() ?
 (function checkObjectDefinePropertyCompatibility() {
-  // safari 5 cannot use this on DOM objects and thus is unusable,
-  // see http://kangax.github.com/es5-compat-table/
+  // safari 5 and 6 cannot use this on DOM objects and thus it's unusable,
   if ((typeof Object.defineProperty !== 'undefined') &&
-    /Safari\/5/.test(navigator.userAgent)) return;
+    !/Safari/.test(navigator.userAgent)) return;
 
   Object.defineProperty = function objectDefineProperty(obj, name, def) {
     delete obj[name];
