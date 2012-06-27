@@ -18,7 +18,9 @@
  * @return {Promise} A promise that is resolved with {PDFDocumentProxy} object.
  */
 PDFJS.getDocument = function getDocument(source) {
-  var url, data, headers, password, parameters = {}, workerInitializedPromise, workerReadyPromise, transport;
+  var url, data, headers, password, parameters = {}, workerInitializedPromise,
+    workerReadyPromise, transport;
+
   if (typeof source === 'string') {
     url = source;
   } else if (isArrayBuffer(source)) {
@@ -49,23 +51,27 @@ PDFJS.getDocument = function getDocument(source) {
       {
         url: url,
         progress: function getPDFProgress(evt) {
-          if (evt.lengthComputable)
-			  workerReadyPromise.progress({
+          if (evt.lengthComputable) {
+            workerReadyPromise.progress({
               loaded: evt.loaded,
               total: evt.total
             });
+          }
         },
         error: function getPDFError(e) {
-			workerReadyPromise.reject('Unexpected server response of ' +
+          workerReadyPromise.reject('Unexpected server response of ' +
             e.target.status + '.');
         },
         headers: headers
       },
       function getPDFLoad(data) {
-		//we have to wait for the WorkerTransport to finalize worker-support detection! This may take a while...
-		workerInitializedPromise.then(function () {
-        	transport.sendData(data, parameters);
-		});
+        // sometimes the pdf has finished downloading before the web worker-test
+        // has finished. In that case the rendering of the final pdf would cause
+        // errors. We have to wait for the WorkerTransport to finalize worker-
+        // support detection
+        workerInitializedPromise.then(function workerInitialized() {
+          transport.sendData(data, parameters);
+        });
       });
   }
 
@@ -479,7 +485,7 @@ var WorkerTransport = (function WorkerTransportClosure() {
     // Thus, we fallback to a faked worker.
     globalScope.PDFJS.disableWorker = true;
     this.setupFakeWorker();
-	workerInitializedPromise.resolve();
+    workerInitializedPromise.resolve();
   }
   WorkerTransport.prototype = {
     destroy: function WorkerTransport_destroy() {

@@ -6,7 +6,7 @@
 // Checking if the typed arrays are supported
 (function checkTypedArrayCompatibility() {
   if (typeof Uint8Array !== 'undefined') {
-    // some mobile versions do not support subarray (e.g. safari 5 / iPhone / iPad)
+    // some mobile versions do not support subarray (e.g. safari 5 / iOS)
     if (typeof Uint8Array.prototype.subarray === 'undefined') {
         Uint8Array.prototype.subarray = function subarray(start, end) {
           return new Uint8Array(this.slice(start, end));
@@ -79,9 +79,10 @@
 
 // Object.defineProperty() ?
 (function checkObjectDefinePropertyCompatibility() {
-  // safari 5 cannot use this on DOM objects and thus is unusable, see http://kangax.github.com/es5-compat-table/
-  if ((typeof Object.defineProperty !== 'undefined') && /Safari\/5/.test(navigator.userAgent))
-    return;
+  // safari 5 cannot use this on DOM objects and thus is unusable,
+  // see http://kangax.github.com/es5-compat-table/
+  if ((typeof Object.defineProperty !== 'undefined') &&
+    /Safari\/5/.test(navigator.userAgent)) return;
 
   Object.defineProperty = function objectDefineProperty(obj, name, def) {
     delete obj[name];
