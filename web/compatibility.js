@@ -12,7 +12,7 @@
           return new Uint8Array(this.slice(start, end));
         };
         Float32Array.prototype.subarray = function subarray(start, end) {
-            return new Float32Array(this.slice(start, end));
+          return new Float32Array(this.slice(start, end));
         };
     }
 
