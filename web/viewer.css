@@ -1113,27 +1113,25 @@ canvas {
   font-size: 10px;
 }
 
+@page {
+  margin: 0;
+} 
+
+#printContainer {
+  display: none;
+}
+
 @media print {
-  #sidebarContainer, .toolbar, #loadingBox, #errorWrapper, .textLayer {
+  #outerContainer {
     display: none;
   }
-
-  #mainContainer, #viewerContainer, .page, .page canvas {
-    position: static;
-    padding: 0;
-    margin: 0;
-  }
-
-  .page {
-    float: left;
-    display: none;
-    -webkit-box-shadow: none;
-    -moz-box-shadow: none;
-    box-shadow: none;
-  }
-
-  .page[data-loaded] {
+  #printContainer {
     display: block;
+  }
+  canvas {
+    position: relative;
+    top: 0;
+    left: 0;
   }
 }
 
