@@ -4363,8 +4363,10 @@ var CFFParser = (function CFFParserClosure() {
 
       // DirectWrite does not like CID fonts data. Trying to convert/flatten
       // the font data and remove CID properties.
-      if (cff.fdArray.length !== 1)
-        error('Unable to normalize CID font in CFF data');
+      if (cff.fdArray.length !== 1) {
+        warn('Unable to normalize CID font in CFF data -- using font as is');
+        return cff;
+      }
 
       var fontDict = cff.fdArray[0];
       fontDict.setByKey(17, topDict.getByName('CharStrings'));
