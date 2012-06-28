@@ -20,6 +20,15 @@
 PDFJS.getDocument = function getDocument(source) {
   var workerInitializedPromise, workerReadyPromise, transport;
 
+  if (typeof source === 'string') {
+    source = { url: source };
+  } else if (isArrayBuffer(source)) {
+    source = { data: source };
+  } else if (typeof source !== 'object') {
+    error('Invalid parameter in getDocument, need either Uint8Array, ' +
+          'string or a parameter object');
+  }
+
   if (!source.url && !source.data)
     error('Invalid parameter array, need either .data or .url');
 
