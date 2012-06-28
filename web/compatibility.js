@@ -6,6 +6,16 @@
 // Checking if the typed arrays are supported
 (function checkTypedArrayCompatibility() {
   if (typeof Uint8Array !== 'undefined') {
+    // some mobile versions do not support subarray (e.g. safari 5 / iOS)
+    if (typeof Uint8Array.prototype.subarray === 'undefined') {
+        Uint8Array.prototype.subarray = function subarray(start, end) {
+          return new Uint8Array(this.slice(start, end));
+        };
+        Float32Array.prototype.subarray = function subarray(start, end) {
+          return new Float32Array(this.slice(start, end));
+        };
+    }
+
     // some mobile version might not support Float64Array
     if (typeof Float64Array === 'undefined')
       window.Float64Array = Float32Array;
@@ -69,8 +79,17 @@
 
 // Object.defineProperty() ?
 (function checkObjectDefinePropertyCompatibility() {
-  if (typeof Object.defineProperty !== 'undefined')
-    return;
+  if (typeof Object.defineProperty !== 'undefined') {
+    // some browsers (e.g. safari) cannot use defineProperty() on DOM objects
+    // and thus the native version is not sufficient
+    var definePropertyPossible = true;
+    try {
+      Object.defineProperty(new Image(), 'id', { value: 'test' });
+    } catch (e) {
+      definePropertyPossible = false;
+    }
+    if (definePropertyPossible) return;
+  }
 
   Object.defineProperty = function objectDefineProperty(obj, name, def) {
     delete obj[name];
