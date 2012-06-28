@@ -14,6 +14,13 @@ var kMinScale = 0.25;
 var kMaxScale = 4.0;
 var kImageDirectory = './images/';
 var kSettingsMemory = 20;
+var RenderingStates = {
+  INITIAL: 0,
+  RUNNING: 1,
+  PAUSED: 2,
+  FINISHED: 3
+};
+
 
 var mozL10n = document.mozL10n || document.webL10n;
 
@@ -81,36 +88,6 @@ var ProgressBar = (function ProgressBarClosure() {
   };
 
   return ProgressBar;
-})();
-
-var RenderingQueue = (function RenderingQueueClosure() {
-  function RenderingQueue() {
-    this.items = [];
-  }
-
-  RenderingQueue.prototype = {
-    enqueueDraw: function RenderingQueueEnqueueDraw(item) {
-      if (!item.drawingRequired())
-        return; // as no redraw required, no need for queueing.
-
-      this.items.push(item);
-      if (this.items.length > 1)
-        return; // not first item
-
-      item.draw(this.continueExecution.bind(this));
-    },
-    continueExecution: function RenderingQueueContinueExecution() {
-      var item = this.items.shift();
-
-      if (this.items.length == 0)
-        return; // queue is empty
-
-      item = this.items[0];
-      item.draw(this.continueExecution.bind(this));
-    }
-  };
-
-  return RenderingQueue;
 })();
 
 var FirefoxCom = (function FirefoxComClosure() {
@@ -246,7 +223,6 @@ var Settings = (function SettingsClosure() {
 })();
 
 var cache = new Cache(kCacheSize);
-var renderingQueue = new RenderingQueue();
 var currentPageNumber = 1;
 
 var PDFView = {
@@ -258,16 +234,48 @@ var PDFView = {
   startedTextExtraction: false,
   pageText: [],
   container: null,
+  thumbnailContainer: null,
   initialized: false,
   fellback: false,
   pdfDocument: null,
+  sidebarOpen: false,
+  pageViewScroll: null,
+  thumbnailViewScroll: null,
+
   // called once when the document is loaded
   initialize: function pdfViewInitialize() {
-    this.container = document.getElementById('viewerContainer');
+    var container = this.container = document.getElementById('viewerContainer');
+    this.pageViewScroll = {};
+    this.watchScroll(container, this.pageViewScroll, updateViewarea);
+
+    var thumbnailContainer = this.thumbnailContainer =
+                             document.getElementById('thumbnailView');
+    this.thumbnailViewScroll = {};
+    this.watchScroll(thumbnailContainer, this.thumbnailViewScroll,
+                     this.renderHighestPriority.bind(this));
+
     this.initialized = true;
   },
 
-  setScale: function pdfViewSetScale(val, resetAutoSettings) {
+  // Helper function to keep track whether a div was scrolled up or down and
+  // then call a callback.
+  watchScroll: function pdfViewWatchScroll(viewAreaElement, state, callback) {
+    state.down = true;
+    state.lastY = viewAreaElement.scrollTop;
+    viewAreaElement.addEventListener('scroll', function webViewerScroll(evt) {
+      var currentY = viewAreaElement.scrollTop;
+      var lastY = state.lastY;
+      if (currentY > lastY)
+        state.down = true;
+      else if (currentY < lastY)
+        state.down = false;
+      // else do nothing and use previous value
+      state.lastY = currentY;
+      callback();
+    }, true);
+  },
+
+  setScale: function pdfViewSetScale(val, resetAutoSettings, noScroll) {
     if (val == this.currentScale)
       return;
 
@@ -275,7 +283,7 @@ var PDFView = {
     for (var i = 0; i < pages.length; i++)
       pages[i].update(val * kCssUnits);
 
-    if (this.currentScale != val)
+    if (!noScroll && this.currentScale != val)
       this.pages[this.page - 1].scrollIntoView();
     this.currentScale = val;
 
@@ -286,14 +294,14 @@ var PDFView = {
     window.dispatchEvent(event);
   },
 
-  parseScale: function pdfViewParseScale(value, resetAutoSettings) {
+  parseScale: function pdfViewParseScale(value, resetAutoSettings, noScroll) {
     if ('custom' == value)
       return;
 
     var scale = parseFloat(value);
     this.currentScaleValue = value;
     if (scale) {
-      this.setScale(scale, true);
+      this.setScale(scale, true, noScroll);
       return;
     }
 
@@ -305,22 +313,22 @@ var PDFView = {
                            currentPage.height * currentPage.scale / kCssUnits;
     switch (value) {
       case 'page-actual':
-        this.setScale(1, resetAutoSettings);
+        scale = 1;
         break;
       case 'page-width':
-        this.setScale(pageWidthScale, resetAutoSettings);
+        scale = pageWidthScale;
         break;
       case 'page-height':
-        this.setScale(pageHeightScale, resetAutoSettings);
+        scale = pageHeightScale;
         break;
       case 'page-fit':
-        this.setScale(
-            Math.min(pageWidthScale, pageHeightScale), resetAutoSettings);
+        scale = Math.min(pageWidthScale, pageHeightScale);
         break;
       case 'auto':
-        this.setScale(Math.min(1.0, pageWidthScale), resetAutoSettings);
+        scale = Math.min(1.0, pageWidthScale);
         break;
     }
+    this.setScale(scale, resetAutoSettings, noScroll);
 
     selectScaleOption(value);
   },
@@ -606,7 +614,6 @@ var PDFView = {
       // when page is painted, using the image as thumbnail base
       pageView.onAfterDraw = function pdfViewLoadOnAfterDraw() {
         thumbnailView.setImage(pageView.canvas);
-        preDraw();
       };
     }
 
@@ -733,6 +740,88 @@ var PDFView = {
     }
   },
 
+  renderHighestPriority: function pdfViewRenderHighestPriority() {
+    // Pages have a higher priority than thumbnails, so check them first.
+    var visiblePages = this.getVisiblePages();
+    var pageView = this.getHighestPriority(visiblePages, this.pages,
+                                           this.pageViewScroll.down);
+    if (pageView) {
+      this.renderView(pageView, 'page');
+      return;
+    }
+    // No pages needed rendering so check thumbnails.
+    if (this.sidebarOpen) {
+      var visibleThumbs = this.getVisibleThumbs();
+      var thumbView = this.getHighestPriority(visibleThumbs,
+                                              this.thumbnails,
+                                              this.thumbnailViewScroll.down);
+      if (thumbView)
+        this.renderView(thumbView, 'thumbnail');
+    }
+  },
+
+  getHighestPriority: function pdfViewGetHighestPriority(visibleViews, views,
+                                                         scrolledDown) {
+    // The state has changed figure out which page has the highest priority to
+    // render next (if any).
+    // Priority:
+    // 1 visible pages
+    // 2 if last scrolled down page after the visible pages
+    // 2 if last scrolled up page before the visible pages
+    var numVisible = visibleViews.length;
+    if (numVisible === 0) {
+      info('No visible views.');
+      return false;
+    }
+    for (var i = 0; i < numVisible; ++i) {
+      var view = visibleViews[i].view;
+      if (!this.isViewFinshed(view))
+        return view;
+    }
+
+    // All the visible views have rendered, try to render next/previous pages.
+    if (scrolledDown) {
+      var lastVisible = visibleViews[visibleViews.length - 1];
+      var nextPageIndex = lastVisible.id;
+      // ID's start at 1 so no need to add 1.
+      if (views[nextPageIndex] && !this.isViewFinshed(views[nextPageIndex]))
+        return views[nextPageIndex];
+    } else {
+      var previousPageIndex = visibleViews[0].id - 2;
+      if (views[previousPageIndex] &&
+          !this.isViewFinshed(views[previousPageIndex]))
+        return views[previousPageIndex];
+    }
+    // Everything that needs to be rendered has been.
+    return false;
+  },
+
+  isViewFinshed: function pdfViewNeedsRendering(view) {
+    return view.renderingState === RenderingStates.FINISHED;
+  },
+
+  // Render a page or thumbnail view. This calls the appropriate function based
+  // on the views state. If the view is already rendered it will return false.
+  renderView: function pdfViewRender(view, type) {
+    var state = view.renderingState;
+    switch (state) {
+      case RenderingStates.FINISHED:
+        return false;
+      case RenderingStates.PAUSED:
+        PDFView.highestPriorityPage = type + view.id;
+        view.resume();
+        break;
+      case RenderingStates.RUNNING:
+        PDFView.highestPriorityPage = type + view.id;
+        break;
+      case RenderingStates.INITIAL:
+        PDFView.highestPriorityPage = type + view.id;
+        view.draw(this.renderHighestPriority.bind(this));
+        break;
+    }
+    return true;
+  },
+
   search: function pdfViewStartSearch() {
     // Limit this function to run every <SEARCH_TIMEOUT>ms.
     var SEARCH_TIMEOUT = 250;
@@ -856,7 +945,7 @@ var PDFView = {
         outlineView.classList.add('hidden');
         searchView.classList.add('hidden');
 
-        updateThumbViewArea();
+        PDFView.renderHighestPriority();
         break;
 
       case 'outline':
@@ -906,63 +995,39 @@ var PDFView = {
   },
 
   getVisiblePages: function pdfViewGetVisiblePages() {
-    var pages = this.pages;
-    var kBottomMargin = 10;
-    var kTopPadding = 30;
-    var visiblePages = [];
-
-    var currentHeight = kTopPadding + kBottomMargin;
-    var container = this.container;
-    // Add 1px to the scrolltop to give a little wiggle room if the math is off,
-    // this won't be needed if we calc current page number based off the middle
-    // of the screen instead of the top.
-    var containerTop = container.scrollTop + 1;
-    for (var i = 1; i <= pages.length; ++i) {
-      var page = pages[i - 1];
-      var pageHeight = page.height + kBottomMargin;
-      if (currentHeight + pageHeight > containerTop)
-        break;
-
-      currentHeight += pageHeight;
-    }
-
-    var containerBottom = containerTop + container.clientHeight;
-    for (; i <= pages.length && currentHeight < containerBottom; ++i) {
-      var singlePage = pages[i - 1];
-      visiblePages.push({ id: singlePage.id, y: currentHeight,
-                          view: singlePage });
-      currentHeight += page.height + kBottomMargin;
-    }
-    return visiblePages;
+    return this.getVisibleElements(this.container,
+                                   this.pages);
   },
 
   getVisibleThumbs: function pdfViewGetVisibleThumbs() {
-    var thumbs = this.thumbnails;
-    var kBottomMargin = 15;
-    var visibleThumbs = [];
+    return this.getVisibleElements(this.thumbnailContainer,
+                                   this.thumbnails);
+  },
 
-    var view = document.getElementById('thumbnailView');
-    var currentHeight = kBottomMargin;
+  // Generic helper to find out what elements are visible within a scroll pane.
+  getVisibleElements: function pdfViewGetVisibleElements(scrollEl, views) {
+    var currentHeight = 0, view;
+    var top = scrollEl.scrollTop;
 
-    var top = view.scrollTop;
-    for (var i = 1; i <= thumbs.length; ++i) {
-      var thumb = thumbs[i - 1];
-      var thumbHeight = thumb.height * thumb.scaleY + kBottomMargin;
-      if (currentHeight + thumbHeight > top)
+    for (var i = 1; i <= views.length; ++i) {
+      view = views[i - 1];
+      currentHeight = view.el.offsetTop;
+      if (currentHeight + view.el.clientHeight > top)
         break;
-
-      currentHeight += thumbHeight;
+      currentHeight += view.el.clientHeight;
     }
 
-    var bottom = top + view.clientHeight;
-    for (; i <= thumbs.length && currentHeight < bottom; ++i) {
-      var singleThumb = thumbs[i - 1];
-      visibleThumbs.push({ id: singleThumb.id, y: currentHeight,
-                          view: singleThumb });
-      currentHeight += singleThumb.height * singleThumb.scaleY + kBottomMargin;
+    var visible = [];
+    var bottom = top + scrollEl.clientHeight;
+    for (; i <= views.length && currentHeight < bottom; ++i) {
+      view = views[i - 1];
+      currentHeight = view.el.offsetTop;
+      visible.push({ id: view.id, y: currentHeight,
+                     view: view });
+      currentHeight += view.el.clientHeight;
     }
 
-    return visibleThumbs;
+    return visible;
   },
 
   // Helper function to parse query string (e.g. ?param1=value&parm2=...).
@@ -987,10 +1052,13 @@ var PageView = function pageView(container, pdfPage, id, scale,
   this.scale = scale || 1.0;
   this.viewport = this.pdfPage.getViewport(this.scale);
 
+  this.renderingState = RenderingStates.INITIAL;
+  this.resume = null;
+
   var anchor = document.createElement('a');
   anchor.name = '' + this.id;
 
-  var div = document.createElement('div');
+  var div = this.el = document.createElement('div');
   div.id = 'pageContainer' + this.id;
   div.className = 'page';
 
@@ -1003,6 +1071,9 @@ var PageView = function pageView(container, pdfPage, id, scale,
   };
 
   this.update = function pageViewUpdate(scale) {
+    this.renderingState = RenderingStates.INITIAL;
+    this.resume = null;
+
     this.scale = scale || this.scale;
     var viewport = this.pdfPage.getViewport(this.scale);
 
@@ -1176,9 +1247,9 @@ var PageView = function pageView(container, pdfPage, id, scale,
       }
 
       if (scale && scale !== PDFView.currentScale)
-        PDFView.parseScale(scale, true);
+        PDFView.parseScale(scale, true, true);
       else if (PDFView.currentScale === kUnknownScale)
-        PDFView.parseScale(kDefaultScale, true);
+        PDFView.parseScale(kDefaultScale, true, true);
 
       var boundingRect = [
         this.viewport.convertToViewportPoint(x, y),
@@ -1205,16 +1276,11 @@ var PageView = function pageView(container, pdfPage, id, scale,
       }, 0);
   };
 
-  this.drawingRequired = function() {
-    return !div.querySelector('canvas');
-  };
-
   this.draw = function pageviewDraw(callback) {
-    if (!this.drawingRequired()) {
-      this.updateStats();
-      callback();
-      return;
-    }
+    if (this.renderingState !== RenderingStates.INITIAL)
+      error('Must be in new state before drawing');
+
+    this.renderingState = RenderingStates.RUNNING;
 
     var canvas = document.createElement('canvas');
     canvas.id = 'page' + this.id;
@@ -1244,6 +1310,8 @@ var PageView = function pageView(container, pdfPage, id, scale,
 
     var self = this;
     function pageViewDrawCallback(error) {
+      self.renderingState = RenderingStates.FINISHED;
+
       if (self.loadingIconDiv) {
         div.removeChild(self.loadingIconDiv);
         delete self.loadingIconDiv;
@@ -1266,7 +1334,18 @@ var PageView = function pageView(container, pdfPage, id, scale,
     var renderContext = {
       canvasContext: ctx,
       viewport: this.viewport,
-      textLayer: textLayer
+      textLayer: textLayer,
+      continueCallback: function pdfViewcContinueCallback(cont) {
+        if (PDFView.highestPriorityPage !== 'page' + self.id) {
+          self.renderingState = RenderingStates.PAUSED;
+          self.resume = function resumeCallback() {
+            self.renderingState = RenderingStates.RUNNING;
+            cont();
+          };
+          return;
+        }
+        cont();
+      }
     };
     this.pdfPage.render(renderContext).then(
       function pdfPageRenderCallback() {
@@ -1309,7 +1388,7 @@ var ThumbnailView = function thumbnailView(container, pdfPage, id) {
   var scaleX = this.scaleX = (canvasWidth / pageWidth);
   var scaleY = this.scaleY = (canvasHeight / pageHeight);
 
-  var div = document.createElement('div');
+  var div = this.el = document.createElement('div');
   div.id = 'thumbnailContainer' + id;
   div.className = 'thumbnail';
 
@@ -1317,6 +1396,7 @@ var ThumbnailView = function thumbnailView(container, pdfPage, id) {
   container.appendChild(anchor);
 
   this.hasImage = false;
+  this.renderingState = RenderingStates.INITIAL;
 
   function getPageDrawContext() {
     var canvas = document.createElement('canvas');
@@ -1349,22 +1429,40 @@ var ThumbnailView = function thumbnailView(container, pdfPage, id) {
   };
 
   this.draw = function thumbnailViewDraw(callback) {
+    if (this.renderingState !== RenderingStates.INITIAL)
+      error('Must be in new state before drawing');
+
+    this.renderingState = RenderingStates.RUNNING;
     if (this.hasImage) {
       callback();
       return;
     }
 
+    var self = this;
     var ctx = getPageDrawContext();
     var drawViewport = pdfPage.getViewport(scaleX);
     var renderContext = {
       canvasContext: ctx,
-      viewport: drawViewport
+      viewport: drawViewport,
+      continueCallback: function(cont) {
+        if (PDFView.highestPriorityPage !== 'thumbnail' + self.id) {
+          self.renderingState = RenderingStates.PAUSED;
+          self.resume = function() {
+            self.renderingState = RenderingStates.RUNNING;
+            cont();
+          };
+          return;
+        }
+        cont();
+      }
     };
     pdfPage.render(renderContext).then(
       function pdfPageRenderCallback() {
+        self.renderingState = RenderingStates.FINISHED;
         callback();
       },
       function pdfPageRenderError(error) {
+        self.renderingState = RenderingStates.FINISHED;
         callback();
       }
     );
@@ -1374,7 +1472,7 @@ var ThumbnailView = function thumbnailView(container, pdfPage, id) {
   this.setImage = function thumbnailViewSetImage(img) {
     if (this.hasImage || !img)
       return;
-
+    this.renderingState = RenderingStates.FINISHED;
     var ctx = getPageDrawContext();
     ctx.drawImage(img, 0, 0, img.width, img.height,
                   0, 0, ctx.canvas.width, ctx.canvas.height);
@@ -1616,9 +1714,6 @@ window.addEventListener('load', function webViewerLoad(evt) {
     }
   });
 
-  var thumbsView = document.getElementById('thumbnailView');
-  thumbsView.addEventListener('scroll', updateThumbViewArea, true);
-
   var mainContainer = document.getElementById('mainContainer');
   var outerContainer = document.getElementById('outerContainer');
   mainContainer.addEventListener('transitionend', function(e) {
@@ -1635,56 +1730,19 @@ window.addEventListener('load', function webViewerLoad(evt) {
       this.classList.toggle('toggled');
       outerContainer.classList.add('sidebarMoving');
       outerContainer.classList.toggle('sidebarOpen');
-      updateThumbViewArea();
+      PDFView.sidebarOpen = outerContainer.classList.contains('sidebarOpen');
+      PDFView.renderHighestPriority();
     });
 
   PDFView.open(file, 0);
 }, true);
 
-/**
- * Render the next not yet visible page already such that it is
- * hopefully ready once the user scrolls to it.
- */
-function preDraw() {
-  var pages = PDFView.pages;
-  var visible = PDFView.getVisiblePages();
-  var last = visible[visible.length - 1];
-  // PageView.id is the actual page number, which is + 1 compared
-  // to the index in `pages`. That means, pages[last.id] is the next
-  // PageView instance.
-  if (pages[last.id] && pages[last.id].drawingRequired()) {
-    renderingQueue.enqueueDraw(pages[last.id]);
-    return;
-  }
-  // If there is nothing to draw on the next page, maybe the user
-  // is scrolling up, so, let's try to render the next page *before*
-  // the first visible page
-  if (pages[visible[0].id - 2]) {
-    renderingQueue.enqueueDraw(pages[visible[0].id - 2]);
-  }
-}
-
 function updateViewarea() {
   if (!PDFView.initialized)
     return;
   var visiblePages = PDFView.getVisiblePages();
-  var pageToDraw;
-  for (var i = 0; i < visiblePages.length; i++) {
-    var page = visiblePages[i];
-    var pageObj = PDFView.pages[page.id - 1];
 
-    pageToDraw |= pageObj.drawingRequired();
-    renderingQueue.enqueueDraw(pageObj);
-  }
-
-  if (!visiblePages.length)
-    return;
-
-  // If there is no need to draw a page that is currenlty visible, preDraw the
-  // next page the user might scroll to.
-  if (!pageToDraw) {
-    preDraw();
-  }
+  PDFView.renderHighestPriority();
 
   updateViewarea.inProgress = true; // used in "set page"
   var currentId = PDFView.page;
@@ -1713,29 +1771,6 @@ function updateViewarea() {
   store.set('scrollTop', Math.round(topLeft[1]));
   var href = PDFView.getAnchorUrl(pdfOpenParams);
   document.getElementById('viewBookmark').href = href;
-}
-
-window.addEventListener('scroll', function webViewerScroll(evt) {
-  updateViewarea();
-}, true);
-
-var thumbnailTimer;
-
-function updateThumbViewArea() {
-  // Only render thumbs after pausing scrolling for this amount of time
-  // (makes UI more responsive)
-  var delay = 50; // in ms
-
-  if (thumbnailTimer)
-    clearTimeout(thumbnailTimer);
-
-  thumbnailTimer = setTimeout(function() {
-    var visibleThumbs = PDFView.getVisibleThumbs();
-    for (var i = 0; i < visibleThumbs.length; i++) {
-      var thumb = visibleThumbs[i];
-      renderingQueue.enqueueDraw(PDFView.thumbnails[thumb.id - 1]);
-    }
-  }, delay);
 }
 
 window.addEventListener('resize', function webViewerResize(evt) {
