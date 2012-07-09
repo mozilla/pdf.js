@@ -1050,7 +1050,9 @@ var PDFView = {
 
   beforePrint: function pdfViewSetupBeforePrint() {
     if (!this.supportsPrinting) {
-      alert('Printing is not supported by this browser.');
+      var printMessage = mozL10n.get('printing_not_supported', null,
+                         'Warning: Printing is not supported by this browser.');
+      alert(printMessage);
       return;
     }
     for (var i = 0, ii = this.pages.length; i < ii; ++i) {
@@ -1759,6 +1761,10 @@ window.addEventListener('load', function webViewerLoad(evt) {
   if (!PDFJS.isFirefoxExtension ||
     (PDFJS.isFirefoxExtension && FirefoxCom.requestSync('searchEnabled'))) {
     document.querySelector('#viewSearch').classList.remove('hidden');
+  }
+
+  if (!PDFView.supportsPrinting) {
+    document.getElementById('print').classList.add('hidden');
   }
 
   // Listen for warnings to trigger the fallback UI.  Errors should be caught
