@@ -532,7 +532,7 @@ var FontLoader = {
 
       // XXX we should have a time-out here too, and maybe fire
       // pdfjsFontLoadFailed?
-      var src = '<!DOCTYPE HTML><html><head>';
+      var src = '<!DOCTYPE HTML><html><head><meta charset="utf-8">';
       src += '<style type="text/css">';
       for (var i = 0, ii = rules.length; i < ii; ++i) {
         src += rules[i];
@@ -4363,8 +4363,10 @@ var CFFParser = (function CFFParserClosure() {
 
       // DirectWrite does not like CID fonts data. Trying to convert/flatten
       // the font data and remove CID properties.
-      if (cff.fdArray.length !== 1)
-        error('Unable to normalize CID font in CFF data');
+      if (cff.fdArray.length !== 1) {
+        warn('Unable to normalize CID font in CFF data -- using font as is');
+        return cff;
+      }
 
       var fontDict = cff.fdArray[0];
       fontDict.setByKey(17, topDict.getByName('CharStrings'));
