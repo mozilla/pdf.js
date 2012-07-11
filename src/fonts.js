@@ -2773,14 +2773,16 @@ var Font = (function FontClosure() {
             }
           }
           for (var index in newGlyphUnicodes) {
-            var unicode = newGlyphUnicodes[index];
-            if (reverseMap[unicode]) {
-              // avoiding assigning to the same unicode
-              glyphs[index].unicode = unusedUnicode++;
-              continue;
+            if (newGlyphUnicodes.hasOwnProperty(index)) {
+              var unicode = newGlyphUnicodes[index];
+              if (reverseMap[unicode]) {
+                // avoiding assigning to the same unicode
+                glyphs[index].unicode = unusedUnicode++;
+                continue;
+              }
+              glyphs[index].unicode = unicode;
+              reverseMap[unicode] = index;
             }
-            glyphs[index].unicode = unicode;
-            reverseMap[unicode] = index;
           }
           this.useToFontChar = true;
         }
