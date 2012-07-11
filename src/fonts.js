@@ -3391,8 +3391,8 @@ var Type1Parser = function type1Parser() {
       '1': 'vstem',
       '2': 'hstem',
 
+      '6': 'endchar', // seac
       // Type1 only command with command not (yet) built-in ,throw an error
-      '6': -1, // seac
       '7': -1, // sbw
 
       '11': 'sub',
@@ -3464,6 +3464,10 @@ var Type1Parser = function type1Parser() {
             // pop or setcurrentpoint commands can be ignored
             // since we are not doing callothersubr
             continue;
+          } else if (escape == 6) {
+            // seac is like type 2's special endchar but it doesn't use the
+            // first argument asb, so remove it.
+            charstring.splice(charstring.length - 5, 1);
           } else if (!kHintingEnabled && (escape == 1 || escape == 2)) {
             charstring.push('drop', 'drop', 'drop', 'drop', 'drop', 'drop');
             continue;
