@@ -1122,13 +1122,37 @@ canvas {
 }
 
 @media print {
-  #outerContainer {
+  /* Rules for browsers that don't support mozPrintCallback. */
+  #sidebarContainer, .toolbar, #loadingBox, #errorWrapper, .textLayer {
     display: none;
   }
-  #printContainer {
+
+  #mainContainer, #viewerContainer, .page, .page canvas {
+    position: static;
+    padding: 0;
+    margin: 0;
+  }
+
+  .page {
+    float: left;
+    display: none;
+    -webkit-box-shadow: none;
+    -moz-box-shadow: none;
+    box-shadow: none;
+  }
+
+  .page[data-loaded] {
     display: block;
   }
-  canvas {
+
+  /* Rules for browsers that support mozPrintCallback */
+  body[data-mozPrintCallback] #outerContainer {
+    display: none;
+  }
+  body[data-mozPrintCallback] #printContainer {
+    display: block;
+  }
+  #printContainer canvas {
     position: relative;
     top: 0;
     left: 0;

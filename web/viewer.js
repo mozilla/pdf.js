@@ -381,7 +381,13 @@ var PDFView = {
 
   get supportsPrinting() {
     var canvas = document.createElement('canvas');
-    return 'mozPrintCallback' in canvas;
+    var value = 'mozPrintCallback' in canvas;
+    // shadow
+    Object.defineProperty(this, 'supportsPrinting', { value: value,
+                                                      enumerable: true,
+                                                      configurable: true,
+                                                      writable: false });
+    return value;
   },
 
   open: function pdfViewOpen(url, scale, password) {
@@ -1051,10 +1057,12 @@ var PDFView = {
   beforePrint: function pdfViewSetupBeforePrint() {
     if (!this.supportsPrinting) {
       var printMessage = mozL10n.get('printing_not_supported', null,
-                         'Warning: Printing is not supported by this browser.');
+          'Warning: Printing is not fully supported by this browser.');
       alert(printMessage);
       return;
     }
+    var body = document.querySelector('body');
+    body.setAttribute('data-mozPrintCallback', true);
     for (var i = 0, ii = this.pages.length; i < ii; ++i) {
       this.pages[i].beforePrint();
     }
@@ -1412,7 +1420,11 @@ var PageView = function pageView(container, pdfPage, id, scale,
         console.error(error);
         // Tell the printEngine that rendering this canvas/page has failed.
         // This will make the print proces stop.
-        obj.abort();
+        if ('abort' in object)
+          obj.abort();
+        else
+          obj.done();
+        self.pdfPage.destroy();
       });
     };
   };
