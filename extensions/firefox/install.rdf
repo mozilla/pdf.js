@@ -26,6 +26,16 @@
        <em:maxVersion>2.12a1</em:maxVersion>
      </Description>
     </em:targetApplication>
+
+    <!-- Android -->
+    <em:targetApplication>
+      <Description>
+       <em:id>{aa3c5121-dab2-40e2-81ca-7ea25febc110}</em:id>
+       <em:minVersion>11.0</em:minVersion>
+       <em:maxVersion>16.0a1</em:maxVersion>
+     </Description>
+    </em:targetApplication>
+
     <em:bootstrap>true</em:bootstrap>
     <em:creator>Mozilla</em:creator>
     <em:description>Uses HTML5 to display PDF files directly in Firefox.</em:description>

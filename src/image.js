@@ -33,7 +33,7 @@ var PDFImage = (function PDFImageClosure() {
     // Clamp the value to the range
     return value < 0 ? 0 : value > max ? max : value;
   }
-  function PDFImage(xref, res, image, inline, smask) {
+  function PDFImage(xref, res, image, inline, smask, mask) {
     this.image = image;
     if (image.getParams) {
       // JPX/JPEG2000 streams directly contain bits per component
@@ -94,12 +94,10 @@ var PDFImage = (function PDFImageClosure() {
       }
     }
 
-    var mask = dict.get('Mask');
-
-    if (mask) {
-      TODO('masked images');
-    } else if (smask) {
+    if (smask) {
       this.smask = new PDFImage(xref, res, smask, false);
+    } else if (mask) {
+      this.mask = new PDFImage(xref, res, mask, false);
     }
   }
   /**
@@ -110,21 +108,36 @@ var PDFImage = (function PDFImageClosure() {
                                                      res, image, inline) {
     var imageDataPromise = new Promise();
     var smaskPromise = new Promise();
+    var maskPromise = new Promise();
     // The image data and smask data may not be ready yet, wait till both are
     // resolved.
-    Promise.all([imageDataPromise, smaskPromise]).then(function(results) {
-      var imageData = results[0], smaskData = results[1];
-      var image = new PDFImage(xref, res, imageData, inline, smaskData);
+    Promise.all([imageDataPromise, smaskPromise, maskPromise]).then(
+        function(results) {
+      var imageData = results[0], smaskData = results[1], maskData = results[2];
+      var image = new PDFImage(xref, res, imageData, inline, smaskData,
+                               maskData);
       callback(image);
     });
 
     handleImageData(handler, xref, res, image, imageDataPromise);
 
     var smask = image.dict.get('SMask');
-    if (smask)
+    var mask = image.dict.get('Mask');
+
+    if (smask) {
       handleImageData(handler, xref, res, smask, smaskPromise);
-    else
+      maskPromise.resolve(null);
+    } else {
       smaskPromise.resolve(null);
+      if (mask && isStream(mask)) {
+        handleImageData(handler, xref, res, mask, maskPromise);
+      } else if (mask) {
+        TODO('handle color key masking');
+        maskPromise.resolve(null);
+      } else {
+        maskPromise.resolve(null);
+      }
+    }
   };
 
   /**
@@ -268,6 +281,7 @@ var PDFImage = (function PDFImageClosure() {
     },
     getOpacity: function PDFImage_getOpacity(width, height) {
       var smask = this.smask;
+      var mask = this.mask;
       var originalWidth = this.width;
       var originalHeight = this.height;
       var buf;
@@ -278,7 +292,20 @@ var PDFImage = (function PDFImageClosure() {
         buf = new Uint8Array(sw * sh);
         smask.fillGrayBuffer(buf);
         if (sw != width || sh != height)
-          buf = PDFImage.resize(buf, smask.bps, 1, sw, sh, width, height);
+          buf = PDFImage.resize(buf, smask.bpc, 1, sw, sh, width, height);
+      } else if (mask) {
+        var sw = mask.width;
+        var sh = mask.height;
+        buf = new Uint8Array(sw * sh);
+        mask.numComps = 1;
+        mask.fillGrayBuffer(buf);
+
+        // Need to invert values in buffer
+        for (var i = 0, ii = sw * sh; i < ii; ++i)
+          buf[i] = 255 - buf[i];
+
+        if (sw != width || sh != height)
+          buf = PDFImage.resize(buf, mask.bpc, 1, sw, sh, width, height);
       } else {
         buf = new Uint8Array(width * height);
         for (var i = 0, ii = width * height; i < ii; ++i)

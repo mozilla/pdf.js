@@ -589,6 +589,14 @@
       "link": true,
       "type": "eq"
     },
+    {  "id": "issue1810",
+      "file": "pdfs/issue1810.pdf",
+      "md5": "b173a9dfb7bf00e1a298c6e8cb95c03e",
+      "rounds": 1,
+      "pageLimit": 3,
+      "link": true,
+      "type": "eq"
+    },
     {  "id": "issue1597",
       "file": "pdfs/issue1597.pdf",
       "md5": "a5ebef467fd6e2fc0aeb56c9eb725ae3",
@@ -607,6 +615,14 @@
       "file": "pdfs/gradientfill.pdf",
       "md5": "cbc1988e4803f647fa83467a85f0e231",
       "rounds": 1,
+      "type": "eq"
+    },
+    {  "id": "issue1796",
+      "file": "pdfs/issue1796.pdf",
+      "md5": "9b9b60dc2a4cc3ea05932785d71304fe",
+      "rounds": 1,
+      "pageLimit": 2,
+      "link": true,
       "type": "eq"
     }
 ]
