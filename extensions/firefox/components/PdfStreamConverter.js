@@ -132,16 +132,13 @@ ChromeActions.prototype = {
     var originalUrl = data.originalUrl;
     // The data may not be downloaded so we need just retry getting the pdf with
     // the original url.
-    var blobUrl = data.blobUrl || originalUrl;
-    var originalUri = NetUtil.newURI(originalUrl);
-    var blobUri = NetUtil.newURI(blobUrl);
+    var originalUri = NetUtil.newURI(data.originalUrl);
+    var blobUri = data.blobUrl ? NetUtil.newURI(data.blobUrl) : originalUri;
     var extHelperAppSvc =
           Cc['@mozilla.org/uriloader/external-helper-app-service;1'].
              getService(Ci.nsIExternalHelperAppService);
     var frontWindow = Cc['@mozilla.org/embedcomp/window-watcher;1'].
                          getService(Ci.nsIWindowWatcher).activeWindow;
-    var ioService = Services.io;
-    var channel = ioService.newChannel(originalUrl, null, null);
 
     NetUtil.asyncFetch(blobUri, function(aInputStream, aResult) {
       if (!Components.isSuccessCode(aResult)) {
