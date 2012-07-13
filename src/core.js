@@ -404,9 +404,8 @@ var PDFDocument = (function PDFDocumentClosure() {
           if (linearization.length != length)
             linearization = false;
         } catch (err) {
-          warn('since pdf is broken pdf.js is trying to recover it ' +
-               'by indexing the object; ' +
-               'the error in firebug shall have a different origin');
+          warn('The linearization data is not available ' +
+               'or unreadable pdf data is found');
         }
       }
       // shadow the prototype getter with a data property
