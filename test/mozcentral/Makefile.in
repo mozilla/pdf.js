@@ -9,13 +9,11 @@ VPATH     = @srcdir@
 relativesrcdir  = browser/extensions/pdfjs/test
 
 include $(DEPTH)/config/autoconf.mk
-include $(topsrcdir)/config/rules.mk
 
-_BROWSER_TEST_FILES = \
+MOCHITEST_BROWSER_FILES = \
   browser_pdfjs_main.js \
   browser_pdfjs_savedialog.js \
   file_pdfjs_test.pdf \
   $(NULL)
 
-libs:: $(_BROWSER_TEST_FILES)
-	$(INSTALL) $(foreach f,$^,"$f") $(DEPTH)/_tests/testing/mochitest/browser/$(relativesrcdir) 
+include $(topsrcdir)/config/rules.mk
