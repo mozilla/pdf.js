@@ -1015,6 +1015,43 @@ var PDFView = {
                                    this.thumbnails);
   },
 
+  getPageInTheMiddleAdaptive: function pdfViewGetPageInTheMiddleAdaptive() {
+    var scrollEl = this.container;
+    var views = this.pages;
+
+    var top = scrollEl.scrollTop;
+
+    // this could use the page height compared to the viewer area height to find the ideal range
+    // TODO: move config somewhere static ?
+    var adaptiveMin = 0.4; // when the scroll is at the top
+    var adaptiveMax = 0.6; // when the scroll is at the bottom
+
+    var totalHeight = scrollEl.scrollHeight;
+    var screenHeight = scrollEl.clientHeight; // ?
+
+    var targetMin = screenHeight * adaptiveMin + top;
+    var targetMax = screenHeight * adaptiveMax + top;
+
+    var adaptiveProgress =
+      totalHeight > screenHeight ?
+      Math.max(0, Math.min(1, (top - screenHeight) / (totalHeight - screenHeight))) :
+      0.5;
+
+    var target = targetMin + adaptiveProgress * (targetMax-targetMin);
+
+    var currentHeight = 0, view;
+    for (var i = 0; i < views.length; ++i) {
+      view = views[i];
+      currentHeight = view.el.offsetTop;
+      if (currentHeight + view.el.clientHeight > target)
+        return { id: view.id, y: currentHeight, view: view};
+      currentHeight += view.el.clientHeight;
+    }
+
+    // return last
+    return { id: view.id, y: currentHeight, view: view};
+  },
+
   // Generic helper to find out what elements are visible within a scroll pane.
   getVisibleElements: function pdfViewGetVisibleElements(scrollEl, views) {
     var currentHeight = 0, view;
@@ -1813,13 +1850,12 @@ window.addEventListener('load', function webViewerLoad(evt) {
 function updateViewarea() {
   if (!PDFView.initialized)
     return;
-  var visiblePages = PDFView.getVisiblePages();
 
   PDFView.renderHighestPriority();
 
   updateViewarea.inProgress = true; // used in "set page"
   var currentId = PDFView.page;
-  var firstPage = visiblePages[0];
+  var firstPage = PDFView.getPageInTheMiddleAdaptive();
   PDFView.page = firstPage.id;
   updateViewarea.inProgress = false;
 
