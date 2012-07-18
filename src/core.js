@@ -54,9 +54,12 @@ function getPdf(arg, callback) {
 
   var calledErrorBack = false;
 
-  if ('error' in params && !calledErrorBack) {
-    calledErrorBack = true;
-    xhr.onerror = params.error || undefined;
+  if ('error' in params) {
+    xhr.onerror = function errorBack() {
+      if (!calledErrorBack) {
+        calledErrorBack = true;
+        params.error();
+      }
   }
 
   xhr.onreadystatechange = function getPdfOnreadystatechange(e) {
