@@ -3422,6 +3422,27 @@ var Type1Parser = function type1Parser() {
 
   var kEscapeCommand = 12;
 
+  // The initial stack can have numbers expressed with the div command which
+  // need to be calculated before conversion. Looking at the spec it doesn't
+  // appear div should even be allowed as a first command but there have been
+  // a number of fonts that have this.
+  function evaluateStack(stack) {
+    var newStack = [];
+    for (var i = 0, ii = stack.length; i < ii; i++) {
+      var token = stack[i];
+      if (token === 'div') {
+        var b = newStack.pop();
+        var a = newStack.pop();
+        newStack.push(a / b);
+      } else if (isInt(token)) {
+        newStack.push(token);
+      } else {
+        warn('Unsupported initial stack ' + stack);
+      }
+    }
+    return newStack;
+  }
+
   function decodeCharString(array) {
     var charstring = [];
     var lsb = 0;
@@ -3471,24 +3492,13 @@ var Type1Parser = function type1Parser() {
 
           command = charStringDictionary['12'][escape];
         } else {
-          // TODO Clean this code
           if (value == 13) { // hsbw
-            if (charstring.length == 2) {
-              lsb = charstring[0];
-              width = charstring[1];
-              charstring.splice(0, 1);
-            } else if (charstring.length == 4 && charstring[3] == 'div') {
-              lsb = charstring[0];
-              width = charstring[1] / charstring[2];
-              charstring.splice(0, 1);
-            } else if (charstring.length == 4 && charstring[2] == 'div') {
-              lsb = charstring[0] / charstring[1];
-              width = charstring[3];
-              charstring.splice(0, 3);
-            } else {
-              error('Unsupported hsbw format: ' + charstring);
-            }
-
+            charstring = evaluateStack(charstring);
+            if (charstring.length !== 2)
+              warn('Unsupported hsbw format.');
+            lsb = charstring[0];
+            width = charstring[1];
+            charstring.splice(0, 1);
             charstring.push(lsb, 'hmoveto');
             continue;
           } else if (value == 10) { // callsubr
