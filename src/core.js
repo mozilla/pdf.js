@@ -52,8 +52,12 @@ function getPdf(arg, callback) {
   if ('progress' in params)
     xhr.onprogress = params.progress || undefined;
 
-  if ('error' in params)
+  var calledErrorBack = false;
+
+  if ('error' in params && !calledErrorBack) {
+    calledErrorBack = true;
     xhr.onerror = params.error || undefined;
+  }
 
   xhr.onreadystatechange = function getPdfOnreadystatechange(e) {
     if (xhr.readyState === 4) {
@@ -61,7 +65,8 @@ function getPdf(arg, callback) {
         var data = (xhr.mozResponseArrayBuffer || xhr.mozResponse ||
                     xhr.responseArrayBuffer || xhr.response);
         callback(data);
-      } else if (params.error) {
+      } else if (params.error && !calledErrorBack) {
+        calledErrorBack = true;
         params.error(e);
       }
     }
