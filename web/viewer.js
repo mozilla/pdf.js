@@ -912,7 +912,6 @@ var PDFView = {
       }
       if ('page' in params) {
         var pageNumber = (params.page | 0) || 1;
-        this.page = pageNumber;
         if ('zoom' in params) {
           var zoomArgs = params.zoom.split(','); // scale,left,top
           // building destination array
@@ -928,8 +927,9 @@ var PDFView = {
             (zoomArgs[2] | 0), zoomArg];
           var currentPage = this.pages[pageNumber - 1];
           currentPage.scrollIntoView(dest);
-        } else
+        } else {
           this.page = params.page; // simple page
+        }
         return;
       }
     } else if (/^\d+$/.test(hash)) // page number
