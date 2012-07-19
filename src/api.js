@@ -572,7 +572,7 @@ var WorkerTransport = (function WorkerTransportClosure() {
       }, this);
 
       messageHandler.on('DocError', function transportDocError(data) {
-        this.workerReadyPromise.reject(data.message);
+        this.workerReadyPromise.reject(data);
       }, this);
 
       messageHandler.on('PageError', function transportError(data) {
