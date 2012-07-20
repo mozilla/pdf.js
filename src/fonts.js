@@ -3433,7 +3433,8 @@ var Type1Parser = function type1Parser() {
         warn('Malformed charstring stack: not enough values on stack.');
         continue;
       }
-      if (stack[index] === 'div') {
+      var token = stack[index];
+      if (token === 'div') {
         var a = stack[index - 2];
         var b = stack[index - 1];
         if (!isInt(a) || !isInt(b)) {
@@ -3444,10 +3445,12 @@ var Type1Parser = function type1Parser() {
         args.unshift({ arg: [a, b, 'div'],
                        value: a / b });
         index -= 3;
-      } else {
+      } else if (isInt(token)) {
         args.unshift({ arg: stack.slice(index, index + 1),
-                       value: stack[index] });
+                       value: token });
         index--;
+      } else {
+        warn('Malformed charsting stack: found bad token ' + token + '.');
       }
     }
     return args;
@@ -3504,12 +3507,14 @@ var Type1Parser = function type1Parser() {
         } else {
           if (value == 13) { // hsbw
             var args = breakUpArgs(charstring, 2);
-            lsb = args[0]['value'];
-            width = args[1]['value'];
+            var arg0 = args[0];
+            var arg1 = args[1];
+            lsb = arg0.value;
+            width = arg1.value;
             // To convert to type2 we have to move the width value to the first
             // part of the charstring and then use hmoveto with lsb.
-            charstring = args[1]['arg'];
-            charstring = charstring.concat(args[0]['arg']);
+            charstring = arg1.arg;
+            charstring = charstring.concat(arg0.arg);
             charstring.push('hmoveto');
             continue;
           } else if (value == 10) { // callsubr
