@@ -1665,6 +1665,9 @@ var TextLayerBuilder = function textLayerBuilder(textLayerDiv) {
     var renderInterval = 0;
     var resumeInterval = 500; // in ms
 
+    var canvas = document.createElement('canvas');
+    var ctx = canvas.getContext('2d');
+
     // Render the text layer, one div at a time
     function renderTextLayer() {
       if (textDivs.length === 0) {
@@ -1678,9 +1681,12 @@ var TextLayerBuilder = function textLayerBuilder(textLayerDiv) {
 
         if (textDiv.dataset.textLength > 1) { // avoid div by zero
           // Adjust div width to match canvas text
-          // Due to the .offsetWidth calls, this is slow
-          // This needs to come after appending to the DOM
-          var textScale = textDiv.dataset.canvasWidth / textDiv.offsetWidth;
+
+          ctx.font = textDiv.style.fontSize + ' sans-serif';
+          var width = ctx.measureText(textDiv.textContent).width;
+
+          var textScale = textDiv.dataset.canvasWidth / width;
+
           CustomStyle.setProp('transform' , textDiv,
             'scale(' + textScale + ', 1)');
           CustomStyle.setProp('transformOrigin' , textDiv, '0% 0%');
