@@ -3422,6 +3422,40 @@ var Type1Parser = function type1Parser() {
 
   var kEscapeCommand = 12;
 
+  // Breaks up the stack by arguments and also calculates the value.
+  function breakUpArgs(stack, numArgs) {
+    var args = [];
+    var index = stack.length - 1;
+    for (var i = 0; i < numArgs; i++) {
+      if (index < 0) {
+        args.unshift({ arg: [0],
+                       value: 0 });
+        warn('Malformed charstring stack: not enough values on stack.');
+        continue;
+      }
+      var token = stack[index];
+      if (token === 'div') {
+        var a = stack[index - 2];
+        var b = stack[index - 1];
+        if (!isInt(a) || !isInt(b)) {
+          warn('Malformed charsting stack: expected ints on stack for div.');
+          a = 0;
+          b = 1;
+        }
+        args.unshift({ arg: [a, b, 'div'],
+                       value: a / b });
+        index -= 3;
+      } else if (isInt(token)) {
+        args.unshift({ arg: stack.slice(index, index + 1),
+                       value: token });
+        index--;
+      } else {
+        warn('Malformed charsting stack: found bad token ' + token + '.');
+      }
+    }
+    return args;
+  }
+
   function decodeCharString(array) {
     var charstring = [];
     var lsb = 0;
@@ -3471,25 +3505,17 @@ var Type1Parser = function type1Parser() {
 
           command = charStringDictionary['12'][escape];
         } else {
-          // TODO Clean this code
           if (value == 13) { // hsbw
-            if (charstring.length == 2) {
-              lsb = charstring[0];
-              width = charstring[1];
-              charstring.splice(0, 1);
-            } else if (charstring.length == 4 && charstring[3] == 'div') {
-              lsb = charstring[0];
-              width = charstring[1] / charstring[2];
-              charstring.splice(0, 1);
-            } else if (charstring.length == 4 && charstring[2] == 'div') {
-              lsb = charstring[0] / charstring[1];
-              width = charstring[3];
-              charstring.splice(0, 3);
-            } else {
-              error('Unsupported hsbw format: ' + charstring);
-            }
-
-            charstring.push(lsb, 'hmoveto');
+            var args = breakUpArgs(charstring, 2);
+            var arg0 = args[0];
+            var arg1 = args[1];
+            lsb = arg0.value;
+            width = arg1.value;
+            // To convert to type2 we have to move the width value to the first
+            // part of the charstring and then use hmoveto with lsb.
+            charstring = arg1.arg;
+            charstring = charstring.concat(arg0.arg);
+            charstring.push('hmoveto');
             continue;
           } else if (value == 10) { // callsubr
             if (charstring[charstring.length - 1] < 3) { // subr #0..2
