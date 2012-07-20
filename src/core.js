@@ -60,6 +60,7 @@ function getPdf(arg, callback) {
         calledErrorBack = true;
         params.error();
       }
+    }
   }
 
   xhr.onreadystatechange = function getPdfOnreadystatechange(e) {
