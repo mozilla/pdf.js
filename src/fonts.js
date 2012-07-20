@@ -3391,8 +3391,8 @@ var Type1Parser = function type1Parser() {
       '1': 'vstem',
       '2': 'hstem',
 
+      '6': 'endchar', // seac
       // Type1 only command with command not (yet) built-in ,throw an error
-      '6': -1, // seac
       '7': -1, // sbw
 
       '11': 'sub',
@@ -3429,7 +3429,8 @@ var Type1Parser = function type1Parser() {
     for (var i = 0; i < numArgs; i++) {
       if (index < 0) {
         args.unshift({ arg: [0],
-                       value: 0 });
+                       value: 0,
+                       offset: 0 });
         warn('Malformed charstring stack: not enough values on stack.');
         continue;
       }
@@ -3443,11 +3444,13 @@ var Type1Parser = function type1Parser() {
           b = 1;
         }
         args.unshift({ arg: [a, b, 'div'],
-                       value: a / b });
+                       value: a / b,
+                       offset: index - 2 });
         index -= 3;
       } else if (isInt(token)) {
         args.unshift({ arg: stack.slice(index, index + 1),
-                       value: token });
+                       value: token,
+                       offset: index });
         index--;
       } else {
         warn('Malformed charsting stack: found bad token ' + token + '.');
@@ -3498,6 +3501,12 @@ var Type1Parser = function type1Parser() {
             // pop or setcurrentpoint commands can be ignored
             // since we are not doing callothersubr
             continue;
+          } else if (escape == 6) {
+            // seac is like type 2's special endchar but it doesn't use the
+            // first argument asb, so remove it.
+            var args = breakUpArgs(charstring, 5);
+            var arg0 = args[0];
+            charstring.splice(arg0.offset, arg0.arg.length);
           } else if (!kHintingEnabled && (escape == 1 || escape == 2)) {
             charstring.push('drop', 'drop', 'drop', 'drop', 'drop', 'drop');
             continue;
