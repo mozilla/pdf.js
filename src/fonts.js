@@ -418,7 +418,10 @@ var FontLoader = {
       document.documentElement.removeEventListener(
         'pdfjsFontLoad', checkFontsLoaded, false);
 
-      callback();
+      if (PDFJS && PDFJS.fontLoadDelay)
+        setTimeout(callback, PDFJS.fontLoadDelay);
+      else
+        callback();
       return true;
     }
 
