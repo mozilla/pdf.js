@@ -1196,20 +1196,20 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
     // Marked content
 
     markPoint: function CanvasGraphics_markPoint(tag) {
-      TODO('Marked content');
+      // TODO Marked content.
     },
     markPointProps: function CanvasGraphics_markPointProps(tag, properties) {
-      TODO('Marked content');
+      // TODO Marked content.
     },
     beginMarkedContent: function CanvasGraphics_beginMarkedContent(tag) {
-      TODO('Marked content');
+      // TODO Marked content.
     },
     beginMarkedContentProps: function CanvasGraphics_beginMarkedContentProps(
                                         tag, properties) {
-      TODO('Marked content');
+      // TODO Marked content.
     },
     endMarkedContent: function CanvasGraphics_endMarkedContent() {
-      TODO('Marked content');
+      // TODO Marked content.
     },
 
     // Compatibility

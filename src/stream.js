@@ -852,7 +852,7 @@ var JpegStream = (function JpegStreamClosure() {
    */
   JpegStream.prototype.isNativelySupported =
     function JpegStream_isNativelySupported(xref, res) {
-    var cs = ColorSpace.parse(this.dict.get('ColorSpace'), xref, res);
+    var cs = ColorSpace.parse(this.dict.get('ColorSpace', 'CS'), xref, res);
     // when bug 674619 lands, let's check if browser can do
     // normal cmyk and then we won't need to decode in JS
     if (cs.name === 'DeviceGray' || cs.name === 'DeviceRGB')
@@ -867,7 +867,7 @@ var JpegStream = (function JpegStreamClosure() {
    */
   JpegStream.prototype.isNativelyDecodable =
     function JpegStream_isNativelyDecodable(xref, res) {
-    var cs = ColorSpace.parse(this.dict.get('ColorSpace'), xref, res);
+    var cs = ColorSpace.parse(this.dict.get('ColorSpace', 'CS'), xref, res);
     var numComps = cs.numComps;
     if (numComps == 1 || numComps == 3)
       return true;

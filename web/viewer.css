@@ -1113,7 +1113,16 @@ canvas {
   font-size: 10px;
 }
 
+@page {
+  margin: 0;
+} 
+
+#printContainer {
+  display: none;
+}
+
 @media print {
+  /* Rules for browsers that don't support mozPrintCallback. */
   #sidebarContainer, .toolbar, #loadingBox, #errorWrapper, .textLayer {
     display: none;
   }
@@ -1134,6 +1143,19 @@ canvas {
 
   .page[data-loaded] {
     display: block;
+  }
+
+  /* Rules for browsers that support mozPrintCallback */
+  body[data-mozPrintCallback] #outerContainer {
+    display: none;
+  }
+  body[data-mozPrintCallback] #printContainer {
+    display: block;
+  }
+  #printContainer canvas {
+    position: relative;
+    top: 0;
+    left: 0;
   }
 }
 
