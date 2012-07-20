@@ -3422,25 +3422,35 @@ var Type1Parser = function type1Parser() {
 
   var kEscapeCommand = 12;
 
-  // The initial stack can have numbers expressed with the div command which
-  // need to be calculated before conversion. Looking at the spec it doesn't
-  // appear div should even be allowed as a first command but there have been
-  // a number of fonts that have this.
-  function evaluateStack(stack) {
-    var newStack = [];
-    for (var i = 0, ii = stack.length; i < ii; i++) {
-      var token = stack[i];
-      if (token === 'div') {
-        var b = newStack.pop();
-        var a = newStack.pop();
-        newStack.push(a / b);
-      } else if (isInt(token)) {
-        newStack.push(token);
+  // Breaks up the stack by arguments and also calculates the value.
+  function breakUpArgs(stack, numArgs) {
+    var args = [];
+    var index = stack.length - 1;
+    for (var i = 0; i < numArgs; i++) {
+      if (index < 0) {
+        args.unshift({ arg: [0],
+                       value: 0 });
+        warn('Malformed charstring stack: not enough values on stack.');
+        continue;
+      }
+      if (stack[index] === 'div') {
+        var a = stack[index - 2];
+        var b = stack[index - 1];
+        if (!isInt(a) || !isInt(b)) {
+          warn('Malformed charsting stack: expected ints on stack for div.');
+          a = 0;
+          b = 1;
+        }
+        args.unshift({ arg: [a, b, 'div'],
+                       value: a / b });
+        index -= 3;
       } else {
-        warn('Unsupported initial stack ' + stack);
+        args.unshift({ arg: stack.slice(index, index + 1),
+                       value: stack[index] });
+        index--;
       }
     }
-    return newStack;
+    return args;
   }
 
   function decodeCharString(array) {
@@ -3493,13 +3503,14 @@ var Type1Parser = function type1Parser() {
           command = charStringDictionary['12'][escape];
         } else {
           if (value == 13) { // hsbw
-            charstring = evaluateStack(charstring);
-            if (charstring.length !== 2)
-              warn('Unsupported hsbw format.');
-            lsb = charstring[0];
-            width = charstring[1];
-            charstring.splice(0, 1);
-            charstring.push(lsb, 'hmoveto');
+            var args = breakUpArgs(charstring, 2);
+            lsb = args[0]['value'];
+            width = args[1]['value'];
+            // To convert to type2 we have to move the width value to the first
+            // part of the charstring and then use hmoveto with lsb.
+            charstring = args[1]['arg'];
+            charstring = charstring.concat(args[0]['arg']);
+            charstring.push('hmoveto');
             continue;
           } else if (value == 10) { // callsubr
             if (charstring[charstring.length - 1] < 3) { // subr #0..2
