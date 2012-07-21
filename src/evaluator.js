@@ -507,6 +507,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         if (isCmd(obj)) {
           var cmd = obj.cmd;
           switch (cmd) {
+            // TODO: Add support for SAVE/RESTORE and XFORM here.
             case 'Tf':
               font = handleSetFont(args[0].name);
               break;
@@ -516,9 +517,12 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                 if (typeof items[j] === 'string') {
                   chunk += items[j];
                 } else if (items[j] < 0) {
-                  // making all negative offsets a space - better to have
-                  // a space in incorrect place than not have them at all
                   chunk += ' ';
+                } else if (items[j] < 0 && font.spacedWidth > 0) {
+                  var numFakeSpaces = Math.round(-e / font.spacedWidth);
+                  if (numFakeSpaces > 0) {
+                    chunk += ' ';
+                  }
                 }
               }
               break;
