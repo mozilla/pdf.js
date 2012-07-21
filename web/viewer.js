@@ -1691,32 +1691,50 @@ var TextLayer = (function TextLayerClosure() {
 
     this.pageIdx = pageNum - 1;
 
+    this.highlightedIdx = -1;
+
     this.onScroll = this.onScroll.bind(this);
     this.renderTextLayer = this.renderTextLayer.bind(this);
     this.setupRenderTimer = this.setupRenderTimer.bind(this);
   }
 
   TextLayer.prototype = {
-    highlight: function textLayerHighlight(matchIdx) {
-      // XXX For now, highlighting only works after rendering is done.
-      if (!this.renderingDone) {
-        return;
+    setHighlightIdx: function(idx) {
+      var hlIdx = this.highlightedIdx;
+      var textDivs = this.textDivs;
+
+      function secureClassList(i, opp) {
+        var div = textDivs[i];
+        if (div) {
+          if (opp == "add") {
+            div.scrollIntoView();
+            div.classList.add('highlight');
+          } else {
+            div.classList.remove('highlight');
+          }
+        }
       }
 
+      secureClassList(hlIdx, 'remove');
+      secureClassList(idx, 'add');
+
+      this.highlightedIdx = idx;
+    },
+
+    highlight: function textLayerHighlight(matchIdx) {
       var mapping = PDFView.pageText[this.pageIdx].mapping;
       
       // Find the div where the match starts
       // XXX Convert the linear search to a binary one.
       var i = 0;
-      while (i !== mapping.length -1 && matchIdx > mapping[i+1]) {
+      while (i !== mapping.length -1 && matchIdx >= mapping[i+1]) {
         i++;
         if (i == mapping.length) {
           console.error("Could not find matching mapping");
         }
       }
-
-      // Highlight the correspondig div.
-      this.textDivs[i].classList.add('highlight');
+ 
+      this.setHighlightIdx(i);
     },
 
     beginLayout: function textLayerBuilderBeginLayout() {
@@ -1798,7 +1816,11 @@ var TextLayer = (function TextLayerClosure() {
       textDiv.textContent = PDFJS.bidi(text, -1);
       textDiv.dir = text.direction;
       textDiv.dataset.textLength = text.length;
-      this.textDivs.push(textDiv);
+      var len = this.textDivs.push(textDiv);
+
+      if (len - 1 == this.highlightedIdx) {
+        this.setHighlightIdx(this.highlightedIdx);
+      }
     }
   }
 
