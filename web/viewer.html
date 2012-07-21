@@ -12,6 +12,23 @@
     <script type="text/javascript" src="compatibility.js"></script> <!-- PDFJSSCRIPT_REMOVE_FIREFOX_EXTENSION -->
     <script type="text/javascript" src="../external/webL10n/l10n.js"></script><!-- PDFJSSCRIPT_REMOVE_CORE -->
 
+    <script>
+      setTimeout(function() {
+        var outerContainer = document.getElementById('outerContainer');
+        var sidebarToggle = document.getElementById('sidebarToggle');
+        sidebarToggle.classList.toggle('toggled');
+        outerContainer.classList.add('sidebarMoving');
+        outerContainer.classList.toggle('sidebarOpen');
+        PDFView.sidebarOpen = outerContainer.classList.contains('sidebarOpen');
+        PDFView.renderHighestPriority();
+
+        PDFView.switchSidebarView('search');
+        document.getElementById('searchTermsInput').value = "Trace";
+        PDFView.search();
+        PDFView.pages[0].textLayer.highlight(0);
+      }, 1000);
+    </script>
+
     <!-- PDFJSSCRIPT_INCLUDE_BUILD -->
     <script type="text/javascript" src="../src/core.js"></script> <!-- PDFJSSCRIPT_REMOVE_CORE -->
     <script type="text/javascript" src="../src/util.js"></script>  <!-- PDFJSSCRIPT_REMOVE_CORE -->
