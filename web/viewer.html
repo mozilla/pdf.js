@@ -14,6 +14,8 @@
 
     <script>
       setTimeout(function() {
+        // PDFView.setScale(0.7);
+        
         var outerContainer = document.getElementById('outerContainer');
         var sidebarToggle = document.getElementById('sidebarToggle');
         sidebarToggle.classList.toggle('toggled');
@@ -23,10 +25,18 @@
         PDFView.renderHighestPriority();
 
         PDFView.switchSidebarView('search');
-        document.getElementById('searchTermsInput').value = "Trace";
-        PDFView.search();
-        PDFView.pages[0].textLayer.highlight(0);
-      }, 1000);
+        setTimeout(function() {
+          document.getElementById('searchTermsInput').value = "Trace";
+          PDFView.search();
+          var tl = PDFView.pages[0].textLayer;
+          tl.highlight(0);
+
+          assert(PDFView.pageText[0].mapping.length === tl.textDivs.length, 'Mapping and textLayer.textDivs need to match');
+
+          var tl = PDFView.pages[1].textLayer;
+          assert(PDFView.pageText[1].mapping.length === tl.textDivs.length, 'Mapping and textLayer.textDivs need to match');
+        }, 100);
+      }, 500);
     </script>
 
     <!-- PDFJSSCRIPT_INCLUDE_BUILD -->
