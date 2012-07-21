@@ -233,6 +233,7 @@ var PDFView = {
   initialBookmark: document.location.hash.substring(1),
   startedTextExtraction: false,
   pageText: [],
+  searchTerms: '',
   container: null,
   thumbnailContainer: null,
   initialized: false,
@@ -877,6 +878,8 @@ var PDFView = {
 
     var terms = searchTermsInput.value;
     var termsLen = terms.length;
+
+    PDFView.searchTerms = terms;
 
     if (!terms)
       return;
@@ -1692,6 +1695,7 @@ var TextLayer = (function TextLayerClosure() {
     this.pageIdx = pageNum - 1;
 
     this.highlightedIdx = -1;
+    this.highlightedOffset = 0;
 
     this.onScroll = this.onScroll.bind(this);
     this.renderTextLayer = this.renderTextLayer.bind(this);
@@ -1700,18 +1704,41 @@ var TextLayer = (function TextLayerClosure() {
 
   TextLayer.prototype = {
     setHighlightIdx: function(idx) {
+      var self = this;
       var hlIdx = this.highlightedIdx;
       var textDivs = this.textDivs;
 
       function secureClassList(i, opp) {
         var div = textDivs[i];
-        if (div) {
-          if (opp == "add") {
-            div.scrollIntoView();
-            div.classList.add('highlight');
-          } else {
-            div.classList.remove('highlight');
-          }
+        if (!div)
+          return;
+
+        if (opp == "add") {
+          div.scrollIntoView();
+          
+          var text = div.textContent;
+          var offset = self.highlightedOffset;
+          var endIdx = offset + PDFView.searchTerms.length;
+
+          var pre  = text.substring(0, offset);
+          var high = text.substring(offset, endIdx);
+          var post = text.substring(endIdx);
+
+          var preDom  = document.createTextNode(pre);
+          var highDom = document.createElement('span');
+          var postDom = document.createTextNode(post);
+
+          highDom.textContent = high;
+
+          // XXX Better do proper removal?
+          div.innerHTML = '';
+          div.appendChild(preDom);
+          div.appendChild(highDom);
+          div.appendChild(postDom);
+        } else {
+          // Remove all highlight spans
+          // XXX This is hacky - better idea?
+          div.textContent = div.textContent;
         }
       }
 
@@ -1734,6 +1761,7 @@ var TextLayer = (function TextLayerClosure() {
         }
       }
  
+      this.highlightedOffset = matchIdx - mapping[i];
       this.setHighlightIdx(i);
     },
 
