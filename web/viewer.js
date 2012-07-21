@@ -880,10 +880,11 @@ var PDFView = {
       var pageNumber = i + 1;
 
       var pageText = index[i].text;
+      var pageTextLower = index[i].textLower;
 
       var matchIdx = -termsLen;
       while (true) {
-        matchIdx = pageText.indexOf(terms, matchIdx + termsLen);
+        matchIdx = pageTextLower.indexOf(terms, matchIdx + termsLen);
         if (matchIdx === -1) {
           break;
         }
@@ -1004,10 +1005,7 @@ var PDFView = {
     function extractPageText(pageIndex) {
       self.pages[pageIndex].pdfPage.getTextContent().then(
         function textContentResolved(data) {
-          // The search is case insensitive for now. Therefore, perform the
-          // `toLowerCase` operation on the string once here.
-          // Once the search has a case-sensitive option, redo this.
-          data.text = data.text.toLowerCase();
+          data.textLower = data.text.toLowerCase();
           self.pageText[pageIndex] = data;
           self.search();
           if ((pageIndex + 1) < self.pages.length)
