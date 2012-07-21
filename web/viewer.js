@@ -866,28 +866,35 @@ var PDFView = {
     searchResults.textContent = '';
 
     var terms = searchTermsInput.value;
+    var termsLen = terms.length;
 
     if (!terms)
       return;
 
-    // simple search: removing spaces and hyphens, then scanning every
-    terms = terms.replace(/\s-/g, '').toLowerCase();
+    terms = terms.toLowerCase();
+
     var index = PDFView.pageText;
     var pageFound = false;
     for (var i = 0, ii = index.length; i < ii; i++) {
-      var pageText = index[i].replace(/\s-/g, '').toLowerCase();
-      var j = pageText.indexOf(terms);
-      if (j < 0)
-        continue;
-
       var pageNumber = i + 1;
-      var textSample = index[i].substr(j, 50);
-      var link = document.createElement('a');
-      bindLink(link, pageNumber);
-      link.textContent = 'Page ' + pageNumber + ': ' + textSample;
-      searchResults.appendChild(link);
 
-      pageFound = true;
+      var pageText = index[i];
+
+      var matchIdx = -termsLen;
+      while (true) {
+        matchIdx = pageText.indexOf(terms, matchIdx + termsLen);
+        if (matchIdx === -1) {
+          break;
+        }
+
+        var textSample = index[i].substr(matchIdx, 50);
+        var link = document.createElement('a');
+        bindLink(link, pageNumber);
+        link.textContent = 'Page ' + pageNumber + ': ' + textSample;
+        searchResults.appendChild(link);
+
+        pageFound = true;
+      }
     }
     if (!pageFound) {
       searchResults.textContent = '';
@@ -995,7 +1002,10 @@ var PDFView = {
     function extractPageText(pageIndex) {
       self.pages[pageIndex].pdfPage.getTextContent().then(
         function textContentResolved(textContent) {
-          self.pageText[pageIndex] = textContent;
+          // The search is case insensitive for now. Therefore, perform the
+          // `toLowerCase` operation on the string once here.
+          // Once the search has a case-sensitive option, redo this.
+          self.pageText[pageIndex] = textContent.toLowerCase();
           self.search();
           if ((pageIndex + 1) < self.pages.length)
             extractPageText(pageIndex + 1);
