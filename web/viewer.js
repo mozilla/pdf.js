@@ -855,10 +855,15 @@ var PDFView = {
     this.searchTimer = null;
     this.lastSearch = now;
 
-    function bindLink(link, pageNumber) {
+    function bindLink(link, pageNumber, matchIdx) {
       link.href = '#' + pageNumber;
       link.onclick = function searchBindLink() {
         PDFView.page = pageNumber;
+
+        var textLayer = PDFView.pageObj.textLayer;
+        if (textLayer) {
+          textLayer.highlight(matchIdx);
+        }
 
         return false;
       };
@@ -1339,7 +1344,7 @@ var PageView = function pageView(container, pdfPage, id, scale,
       textLayerDiv = document.createElement('div');
       textLayerDiv.className = 'textLayer';
       div.appendChild(textLayerDiv);
-      this.textLayer = new TextLayer(this.id, textLayerDiv, this.pageText);
+      this.textLayer = new TextLayer(this.id, textLayerDiv);
     }
 
     var scale = this.scale, viewport = this.viewport;
@@ -1676,17 +1681,13 @@ var TextLayer = (function TextLayerClosure() {
   // Timespan to continue rendering after the last scrolling on the page.
   var scrollRenderTimout = 500; // in ms
 
-  function TextLayer(pageNum, textLayerDiv, pageText) {
+  function TextLayer(pageNum, textLayerDiv) {
     this.textLayerDiv = textLayerDiv;
     this.textDivs = [];
     this.renderIdx = 0;
     this.renderTimer = null;
     this.resumeRenderTimer = null;
     this.renderingDone = false;
-
-    // Reference to the pageText object used for during the highlight function
-    // ??? Not sure if this kind of reference is the right thing.
-    this.pageText = pageText;
 
     this.pageIdx = pageNum - 1;
 
@@ -1702,12 +1703,12 @@ var TextLayer = (function TextLayerClosure() {
         return;
       }
 
-      var mapping = this.pageText[this.pageIdx].mapping;
+      var mapping = PDFView.pageText[this.pageIdx].mapping;
       
       // Find the div where the match starts
       // XXX Convert the linear search to a binary one.
       var i = 0;
-      while (matchIdx < mapping[i]) {
+      while (i !== mapping.length -1 && matchIdx > mapping[i+1]) {
         i++;
         if (i == mapping.length) {
           console.error("Could not find matching mapping");

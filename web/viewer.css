@@ -992,6 +992,11 @@ canvas {
   line-height:1.3;
 }
 
+.textLayer > div.highlight {
+  border: 1px solid red;
+  background-color: rgba(255, 255, 0, 0.1);
+}
+
 /* TODO: file FF bug to support ::-moz-selection:window-inactive
    so we can override the opaque grey background when the window is inactive;
    see https://bugzilla.mozilla.org/show_bug.cgi?id=706209 */
