@@ -1343,11 +1343,13 @@ var PageView = function pageView(container, pdfPage, id, scale,
     this.canvas = canvas;
 
     var textLayerDiv = null;
-    if (!PDFJS.disableTextLayer && !this.textLayer) {
-      textLayerDiv = document.createElement('div');
-      textLayerDiv.className = 'textLayer';
-      div.appendChild(textLayerDiv);
-      this.textLayer = new TextLayer(this.id, textLayerDiv);
+    if (!PDFJS.disableTextLayer) {
+      if (!this.textLayer) {
+        textLayerDiv = document.createElement('div');
+        textLayerDiv.className = 'textLayer';
+        this.textLayer = new TextLayer(this.id, textLayerDiv);
+      }
+      div.appendChild(this.textLayer.textLayerDiv);
     }
 
     var scale = this.scale, viewport = this.viewport;
@@ -1766,7 +1768,15 @@ var TextLayer = (function TextLayerClosure() {
     },
 
     beginLayout: function textLayerBuilderBeginLayout() {
-      // The textLayer object is reused. 
+      var textDivs = this.textDivs;
+      var textLayerDiv = this.textLayerDiv;
+      // Rest current highlighting and remove available divs.
+      this.setHighlightIdx(-1);
+      for (var i = 0; i < textDivs.length; i++) {
+        textLayerDiv.removeChild(textDivs[i]);
+      }
+
+      // Reset the variables.
       this.textDivs = [];
       this.renderIdx = 0;
       this.renderingDone = false;
