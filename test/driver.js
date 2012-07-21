@@ -13,7 +13,7 @@
 // PDFJS.disableWorker = true;
 
 // Delay the font loading slightly so we don't get intermittent font failures.
-PDFJS.fontLoadDelay = 100; // ms
+PDFJS.fontLoadDelay = 1000; // ms
 
 var appPath, browser, canvas, currentTaskIdx, manifest, stdout;
 var inFlightRequests = 0;
