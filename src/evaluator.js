@@ -502,6 +502,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
 
       var text = '';
       var chunk = '';
+      var commandOffset = [];
       var font = null;
       while (!isEOF(obj = parser.getObj())) {
         if (isCmd(obj)) {
@@ -537,6 +538,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
               break;
           } // switch
           if (chunk !== '') {
+            commandOffset.push(text.length);
             text += fontCharsToUnicode(chunk, font.translated.properties);
             chunk = '';
           }
@@ -548,7 +550,10 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         }
       }
 
-      return text;
+      return {
+        text: text,
+        mapping: commandOffset
+      };
     },
 
     extractDataStructures: function

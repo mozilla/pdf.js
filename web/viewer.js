@@ -855,6 +855,7 @@ var PDFView = {
       link.href = '#' + pageNumber;
       link.onclick = function searchBindLink() {
         PDFView.page = pageNumber;
+
         return false;
       };
     }
@@ -878,7 +879,7 @@ var PDFView = {
     for (var i = 0, ii = index.length; i < ii; i++) {
       var pageNumber = i + 1;
 
-      var pageText = index[i];
+      var pageText = index[i].text;
 
       var matchIdx = -termsLen;
       while (true) {
@@ -887,10 +888,11 @@ var PDFView = {
           break;
         }
 
-        var textSample = index[i].substr(matchIdx, 50);
+        var textSample = pageText.substr(matchIdx, 50);
         var link = document.createElement('a');
-        bindLink(link, pageNumber);
+        bindLink(link, pageNumber, matchIdx);
         link.textContent = 'Page ' + pageNumber + ': ' + textSample;
+        link.setAttribute('data-matchIdx', matchIdx);
         searchResults.appendChild(link);
 
         pageFound = true;
@@ -1001,11 +1003,12 @@ var PDFView = {
     var self = this;
     function extractPageText(pageIndex) {
       self.pages[pageIndex].pdfPage.getTextContent().then(
-        function textContentResolved(textContent) {
+        function textContentResolved(data) {
           // The search is case insensitive for now. Therefore, perform the
           // `toLowerCase` operation on the string once here.
           // Once the search has a case-sensitive option, redo this.
-          self.pageText[pageIndex] = textContent.toLowerCase();
+          data.text = data.text.toLowerCase();
+          self.pageText[pageIndex] = data;
           self.search();
           if ((pageIndex + 1) < self.pages.length)
             extractPageText(pageIndex + 1);
