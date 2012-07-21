@@ -633,5 +633,13 @@
       "pageLimit": 2,
       "link": true,
       "type": "eq"
+    },
+    {  "id": "issue818",
+      "file": "pdfs/issue818.pdf",
+      "md5": "dd2f8a5bd65164ad74da2b45a6ca90cc",
+      "rounds": 1,
+      "pageLimit": 1,
+      "link": true,
+      "type": "eq"
     }
 ]
