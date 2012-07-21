@@ -1336,7 +1336,7 @@ var PageView = function pageView(container, pdfPage, id, scale,
       textLayerDiv.className = 'textLayer';
       div.appendChild(textLayerDiv);
     }
-    var textLayer = textLayerDiv ? new TextLayerBuilder(textLayerDiv) : null;
+    var textLayer = textLayerDiv ? new TextLayer(textLayerDiv) : null;
 
     var scale = this.scale, viewport = this.viewport;
     canvas.width = viewport.width;
@@ -1659,42 +1659,53 @@ var CustomStyle = (function CustomStyleClosure() {
   return CustomStyle;
 })();
 
-var TextLayerBuilder = function textLayerBuilder(textLayerDiv) {
-  this.textLayerDiv = textLayerDiv;
+var TextLayer = (function TextLayerClosure() {
+  var measureCanvas = document.createElement('canvas');
+  var measureCtx = canvas.getContext('2d');
 
-  this.beginLayout = function textLayerBuilderBeginLayout() {
+  // Timeout value for rendering one div after the other.
+  var renderInterval = 0;
+  // Timespan to continue rendering after the last scrolling on the page.
+  var scrollRenderTimout = 500; // in ms
+
+  function TextLayer(textLayerDiv) {
+    this.textLayerDiv = textLayerDiv;
     this.textDivs = [];
-    this.textLayerQueue = [];
-  };
+    this.renderTimer = null;
+    this.resumeRenderTimer = null;
+    this.renderingDone = false;
 
-  this.endLayout = function textLayerBuilderEndLayout() {
-    var self = this;
-    var textDivs = this.textDivs;
-    var textLayerDiv = this.textLayerDiv;
-    var renderTimer = null;
-    var renderingDone = false;
-    var renderInterval = 0;
-    var resumeInterval = 500; // in ms
+    this.onScroll = this.onScroll.bind(this);
+    this.renderTextLayer = this.renderTextLayer.bind(this);
+    this.setupRenderTimer = this.setupRenderTimer.bind(this);
+  }
 
-    var canvas = document.createElement('canvas');
-    var ctx = canvas.getContext('2d');
+  TextLayer.prototype = {
+    beginLayout: function textLayerBuilderBeginLayout() {
+      // The textLayer object is reused. 
+      this.textDivs = [];
+      this.renderingDone = false;
+    },
 
     // Render the text layer, one div at a time
-    function renderTextLayer() {
-      if (textDivs.length === 0) {
-        clearInterval(renderTimer);
-        renderingDone = true;
+    renderTextLayer: function textLayerRenderTextLayer() { 
+      var textDivs = this.textDivs;
+      if (textDivs.length === 0) { 
+        clearInterval(this.renderTimer); 
+        this.renderingDone = true;
+        window.removeEventListener('scroll', this.textLayerOnScroll, false);
         return;
       }
       var textDiv = textDivs.shift();
+
       if (textDiv.dataset.textLength > 0) {
-        textLayerDiv.appendChild(textDiv);
+        this.textLayerDiv.appendChild(textDiv);
 
         if (textDiv.dataset.textLength > 1) { // avoid div by zero
           // Adjust div width to match canvas text
 
-          ctx.font = textDiv.style.fontSize + ' sans-serif';
-          var width = ctx.measureText(textDiv.textContent).width;
+          measureCtx.font = textDiv.style.fontSize + ' sans-serif';
+          var width = measureCtx.measureText(textDiv.textContent).width;
 
           var textScale = textDiv.dataset.canvasWidth / width;
 
@@ -1703,49 +1714,57 @@ var TextLayerBuilder = function textLayerBuilder(textLayerDiv) {
           CustomStyle.setProp('transformOrigin' , textDiv, '0% 0%');
         }
       } // textLength > 0
-    }
-    renderTimer = setInterval(renderTextLayer, renderInterval);
+    },
+
+    setupRenderTimer: function textLayerSetupRenderTimer() {
+      this.renderTimer = setInterval(this.renderTextLayer, renderInterval);
+    },
 
     // Stop rendering when user scrolls. Resume after XXX milliseconds
     // of no scroll events
-    var scrollTimer = null;
-    function textLayerOnScroll() {
-      if (renderingDone) {
-        window.removeEventListener('scroll', textLayerOnScroll, false);
-        return;
-      }
-
+    onScroll: function textLayerOnScroll() {
       // Immediately pause rendering
-      clearInterval(renderTimer);
+      clearInterval(this.renderTimer);
 
-      clearTimeout(scrollTimer);
-      scrollTimer = setTimeout(function textLayerScrollTimer() {
-        // Resume rendering
-        renderTimer = setInterval(renderTextLayer, renderInterval);
-      }, resumeInterval);
-    }; // textLayerOnScroll
+      clearTimeout(this.resumeRenderTimer);
 
-    window.addEventListener('scroll', textLayerOnScroll, false);
-  }; // endLayout
+      // Resume rendering after some timeout.
+      this.resumeRenderTimer = setTimeout(
+        this.setupRenderTimer, 
+        scrollRenderTimout
+      );
+    },
 
-  this.appendText = function textLayerBuilderAppendText(text,
-                                                        fontName, fontSize) {
-    var textDiv = document.createElement('div');
+    endLayout: function textLayerBuilderEndLayout() {
+      var textDivs = this.textDivs;
+      var textLayerDiv = this.textLayerDiv;
 
-    // vScale and hScale already contain the scaling to pixel units
-    var fontHeight = fontSize * text.geom.vScale;
-    textDiv.dataset.canvasWidth = text.canvasWidth * text.geom.hScale;
-    textDiv.dataset.fontName = fontName;
+      this.setupRenderTimer();
+      window.addEventListener('scroll', this.onScroll, false);
+    },
 
-    textDiv.style.fontSize = fontHeight + 'px';
-    textDiv.style.left = text.geom.x + 'px';
-    textDiv.style.top = (text.geom.y - fontHeight) + 'px';
-    textDiv.textContent = PDFJS.bidi(text, -1);
-    textDiv.dir = text.direction;
-    textDiv.dataset.textLength = text.length;
-    this.textDivs.push(textDiv);
-  };
-};
+    appendText: function textLayerBuilderAppendText(text, fontName, fontSize) {
+      var textDiv = document.createElement('div');
+
+      // vScale and hScale already contain the scaling to pixel units
+      var fontHeight = fontSize * text.geom.vScale;
+      textDiv.dataset.canvasWidth = text.canvasWidth * text.geom.hScale;
+      textDiv.dataset.fontName = fontName;
+
+      textDiv.style.fontSize = fontHeight + 'px';
+      textDiv.style.left = text.geom.x + 'px';
+      textDiv.style.top = (text.geom.y - fontHeight) + 'px';
+      textDiv.textContent = PDFJS.bidi(text, -1);
+      textDiv.dir = text.direction;
+      textDiv.dataset.textLength = text.length;
+      this.textDivs.push(textDiv);
+    }
+  }
+
+  // 
+
+  return TextLayer;
+})();
 
 window.addEventListener('load', function webViewerLoad(evt) {
   PDFView.initialize();
