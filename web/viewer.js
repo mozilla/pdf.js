@@ -1684,7 +1684,7 @@ var CustomStyle = (function CustomStyleClosure() {
 
 var TextLayer = (function TextLayerClosure() {
   var measureCanvas = document.createElement('canvas');
-  var measureCtx = canvas.getContext('2d');
+  var measureCtx = measureCanvas.getContext('2d');
 
   // Timeout value for rendering one div after the other.
   var renderInterval = 0;

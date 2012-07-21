@@ -12,33 +12,6 @@
     <script type="text/javascript" src="compatibility.js"></script> <!-- PDFJSSCRIPT_REMOVE_FIREFOX_EXTENSION -->
     <script type="text/javascript" src="../external/webL10n/l10n.js"></script><!-- PDFJSSCRIPT_REMOVE_CORE -->
 
-    <script>
-      setTimeout(function() {
-        // PDFView.setScale(0.7);
-        
-        var outerContainer = document.getElementById('outerContainer');
-        var sidebarToggle = document.getElementById('sidebarToggle');
-        sidebarToggle.classList.toggle('toggled');
-        outerContainer.classList.add('sidebarMoving');
-        outerContainer.classList.toggle('sidebarOpen');
-        PDFView.sidebarOpen = outerContainer.classList.contains('sidebarOpen');
-        PDFView.renderHighestPriority();
-
-        PDFView.switchSidebarView('search');
-        setTimeout(function() {
-          document.getElementById('searchTermsInput').value = "Mozilla";
-          PDFView.search();
-          // var tl = PDFView.pages[0].textLayer;
-          // tl.highlight(0);
-
-          // assert(PDFView.pageText[0].mapping.length === tl.textDivs.length, 'Mapping and textLayer.textDivs need to match');
-
-          // var tl = PDFView.pages[1].textLayer;
-          // assert(PDFView.pageText[1].mapping.length === tl.textDivs.length, 'Mapping and textLayer.textDivs need to match');
-        }, 1000);
-      }, 1000);
-    </script>
-
     <!-- PDFJSSCRIPT_INCLUDE_BUILD -->
     <script type="text/javascript" src="../src/core.js"></script> <!-- PDFJSSCRIPT_REMOVE_CORE -->
     <script type="text/javascript" src="../src/util.js"></script>  <!-- PDFJSSCRIPT_REMOVE_CORE -->
