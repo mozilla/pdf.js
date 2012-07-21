@@ -379,6 +379,10 @@ var PDFView = {
     return currentPageNumber;
   },
 
+  get pageObj() {
+    return this.pages[this.page - 1];
+  },
+
   get supportsPrinting() {
     var canvas = document.createElement('canvas');
     var value = 'mozPrintCallback' in canvas;
@@ -1331,12 +1335,12 @@ var PageView = function pageView(container, pdfPage, id, scale,
     this.canvas = canvas;
 
     var textLayerDiv = null;
-    if (!PDFJS.disableTextLayer) {
+    if (!PDFJS.disableTextLayer && !this.textLayer) {
       textLayerDiv = document.createElement('div');
       textLayerDiv.className = 'textLayer';
       div.appendChild(textLayerDiv);
+      this.textLayer = new TextLayer(this.id, textLayerDiv, this.pageText);
     }
-    var textLayer = textLayerDiv ? new TextLayer(textLayerDiv) : null;
 
     var scale = this.scale, viewport = this.viewport;
     canvas.width = viewport.width;
@@ -1376,7 +1380,7 @@ var PageView = function pageView(container, pdfPage, id, scale,
     var renderContext = {
       canvasContext: ctx,
       viewport: this.viewport,
-      textLayer: textLayer,
+      textLayer: this.textLayer,
       continueCallback: function pdfViewcContinueCallback(cont) {
         if (PDFView.highestPriorityPage !== 'page' + self.id) {
           self.renderingState = RenderingStates.PAUSED;
@@ -1566,10 +1570,14 @@ var DocumentOutlineView = function documentOutlineView(outline) {
   while (outlineView.firstChild)
     outlineView.removeChild(outlineView.firstChild);
 
-  function bindItemLink(domObj, item) {
+  function bindItemLink(domObj, item, matchIdx) {
     domObj.href = PDFView.getDestinationHash(item.dest);
     domObj.onclick = function documentOutlineViewOnclick(e) {
       PDFView.navigateTo(item.dest);
+      var textLayer = PDFView.pageObj.textLayer;
+      if (textLayer) {
+        textLayer.highlight(matchIdx);
+      }
       return false;
     };
   }
@@ -1668,12 +1676,19 @@ var TextLayer = (function TextLayerClosure() {
   // Timespan to continue rendering after the last scrolling on the page.
   var scrollRenderTimout = 500; // in ms
 
-  function TextLayer(textLayerDiv) {
+  function TextLayer(pageNum, textLayerDiv, pageText) {
     this.textLayerDiv = textLayerDiv;
     this.textDivs = [];
+    this.renderIdx = 0;
     this.renderTimer = null;
     this.resumeRenderTimer = null;
     this.renderingDone = false;
+
+    // Reference to the pageText object used for during the highlight function
+    // ??? Not sure if this kind of reference is the right thing.
+    this.pageText = pageText;
+
+    this.pageIdx = pageNum - 1;
 
     this.onScroll = this.onScroll.bind(this);
     this.renderTextLayer = this.renderTextLayer.bind(this);
@@ -1681,22 +1696,47 @@ var TextLayer = (function TextLayerClosure() {
   }
 
   TextLayer.prototype = {
+    highlight: function textLayerHighlight(matchIdx) {
+      // XXX For now, highlighting only works after rendering is done.
+      if (!this.renderingDone) {
+        return;
+      }
+
+      var mapping = this.pageText[this.pageIdx].mapping;
+      
+      // Find the div where the match starts
+      // XXX Convert the linear search to a binary one.
+      var i = 0;
+      while (matchIdx < mapping[i]) {
+        i++;
+        if (i == mapping.length) {
+          console.error("Could not find matching mapping");
+        }
+      }
+
+      // Highlight the correspondig div.
+      this.textDivs[i].classList.add('highlight');
+    },
+
     beginLayout: function textLayerBuilderBeginLayout() {
       // The textLayer object is reused. 
       this.textDivs = [];
+      this.renderIdx = 0;
       this.renderingDone = false;
     },
 
     // Render the text layer, one div at a time
     renderTextLayer: function textLayerRenderTextLayer() { 
       var textDivs = this.textDivs;
-      if (textDivs.length === 0) { 
+      if (this.renderIdx == textDivs.length) { 
         clearInterval(this.renderTimer); 
         this.renderingDone = true;
         window.removeEventListener('scroll', this.textLayerOnScroll, false);
         return;
       }
-      var textDiv = textDivs.shift();
+
+      var textDiv = textDivs[this.renderIdx];
+      this.renderIdx += 1;
 
       if (textDiv.dataset.textLength > 0) {
         this.textLayerDiv.appendChild(textDiv);
