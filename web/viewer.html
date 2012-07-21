@@ -26,15 +26,15 @@
 
         PDFView.switchSidebarView('search');
         setTimeout(function() {
-          document.getElementById('searchTermsInput').value = "Trace";
+          document.getElementById('searchTermsInput').value = "Mozilla";
           PDFView.search();
-          var tl = PDFView.pages[0].textLayer;
-          tl.highlight(0);
+          // var tl = PDFView.pages[0].textLayer;
+          // tl.highlight(0);
 
-          assert(PDFView.pageText[0].mapping.length === tl.textDivs.length, 'Mapping and textLayer.textDivs need to match');
+          // assert(PDFView.pageText[0].mapping.length === tl.textDivs.length, 'Mapping and textLayer.textDivs need to match');
 
-          var tl = PDFView.pages[1].textLayer;
-          assert(PDFView.pageText[1].mapping.length === tl.textDivs.length, 'Mapping and textLayer.textDivs need to match');
+          // var tl = PDFView.pages[1].textLayer;
+          // assert(PDFView.pageText[1].mapping.length === tl.textDivs.length, 'Mapping and textLayer.textDivs need to match');
         }, 1000);
       }, 1000);
     </script>

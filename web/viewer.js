@@ -234,6 +234,7 @@ var PDFView = {
   startedTextExtraction: false,
   pageText: [],
   searchTerms: '',
+  highlightedPageIdx: -1,
   container: null,
   thumbnailContainer: null,
   initialized: false,
@@ -863,7 +864,11 @@ var PDFView = {
 
         var textLayer = PDFView.pageObj.textLayer;
         if (textLayer) {
+          if (PDFView.highlightedPageIdx !== -1)
+            PDFView.pages[PDFView.highlightedPageIdx].textLayer.highlight(-1);
+
           textLayer.highlight(matchIdx);
+          PDFView.highlightedPageIdx = pageNumber - 1;
         }
 
         return false;
@@ -1751,6 +1756,10 @@ var TextLayer = (function TextLayerClosure() {
     },
 
     highlight: function textLayerHighlight(matchIdx) {
+      if (matchIdx === -1) {
+        this.highlightedOffset = -1;
+        this.setHighlightIdx(-1);
+      }
       var mapping = PDFView.pageText[this.pageIdx].mapping;
       
       // Find the div where the match starts
@@ -1770,8 +1779,7 @@ var TextLayer = (function TextLayerClosure() {
     beginLayout: function textLayerBuilderBeginLayout() {
       var textDivs = this.textDivs;
       var textLayerDiv = this.textLayerDiv;
-      // Rest current highlighting and remove available divs.
-      this.setHighlightIdx(-1);
+      // Remove available divs.
       for (var i = 0; i < textDivs.length; i++) {
         textLayerDiv.removeChild(textDivs[i]);
       }
