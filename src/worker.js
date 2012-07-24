@@ -83,6 +83,7 @@ MessageHandler.prototype = {
 var WorkerMessageHandler = {
   setup: function wphSetup(handler) {
     var pdfModel = null;
+    var usingRangeRequest = false;
 
     function loadDocument(pdfData, pdfModelSource) {
       // Create only the model of the PDFDoc, which is enough for
@@ -92,15 +93,32 @@ var WorkerMessageHandler = {
         var stream;
         if ('chunk' in pdfData) {
           var context = pdfData.context;
+          var reportProgress =
+            (function reportProgressClosure(total, progressCallback) {
+            var loaded = 0;
+            return (function reportProgress(delta) {
+              loaded += delta;
+              if (!progressCallback)
+                return;
+              progressCallback({
+                lengthComputable: true,
+                total: total,
+                loaded: loaded
+              });
+            });
+          })(pdfData.length, context.progress);
           stream = new ChunkedStream(pdfData.length, REQUEST_BLOCK_SIZE,
                                      function moreDataCallback(start, end) {
             context.sync = true;
             context.range = [start, end];
             getPdf(context, function(data) {
               stream.set(start, data);
+              reportProgress(data.byteLength);
             });
           });
           stream.set(0, pdfData.chunk);
+          reportProgress(pdfData.chunk.byteLength);
+          usingRangeRequest = true;
         } else
           stream = new Stream(pdfData);
         pdfModel = new PDFDocument(stream, pdfPassword);
@@ -128,7 +146,8 @@ var WorkerMessageHandler = {
         outline: pdfModel.catalog.documentOutline,
         info: pdfModel.getDocumentInfo(),
         metadata: pdfModel.catalog.metadata,
-        encrypted: !!pdfModel.xref.encrypt
+        encrypted: !!pdfModel.xref.encrypt,
+        usingRangeRequest: usingRangeRequest
       };
       handler.send('GetDoc', {pdfInfo: doc});
     }

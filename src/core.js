@@ -55,6 +55,8 @@ function getPdf(arg, callback) {
   var protocol = params.url.substring(0, params.url.indexOf(':') + 1);
   var isHttpProtocol = (protocol === 'http:' || protocol === 'https:');
   xhr.expected = isHttpProtocol ? 200 : 0;
+  var isRangeEnabled = isHttpProtocol && !globalScope.PDFJS.disableRange;
+
 
   var rangeState = 0;
   if ('range' in params) {
@@ -62,14 +64,11 @@ function getPdf(arg, callback) {
     rangeState = 2;
     xhr.altExpected = 206;
     xhr.setRequestHeader('Range', 'bytes=' + range[0] + '-' + (range[1] - 1));
-  } else if (!params.disableRange && isHttpProtocol) {
+  } else if (isRangeEnabled) {
     rangeState = 1;
     xhr.altExpected = 206;
     xhr.setRequestHeader('Range', 'bytes=0-' + (INITIAL_REQUEST_SIZE - 1));
   }
-
-  if ('progress' in params)
-    xhr.onprogress = params.progress || undefined;
 
   var calledErrorBack = false;
 
@@ -104,10 +103,15 @@ function getPdf(arg, callback) {
         var data = xhr.getArrayBuffer();
         var rangeHeader = xhr.getResponseHeader('Content-Range');
         var totalLength = parseInt(rangeHeader.split('/')[1], 10);
-        callback({chunk: data, context: arg, length: totalLength});
+        callback({chunk: data, context: params, length: totalLength});
       } else if (params.error && !calledErrorBack) {
         calledErrorBack = true;
         params.error(e);
+      }
+    } else if (xhr.readyState === 2) {
+      if (xhr.status === xhr.expected && rangeState !== 2) {
+        if ('progress' in params)
+          xhr.onprogress = params.progress || undefined;
       }
     }
   };

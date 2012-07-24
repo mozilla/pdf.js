@@ -631,11 +631,6 @@ var PDFView = {
     var errorWrapper = document.getElementById('errorWrapper');
     errorWrapper.setAttribute('hidden', 'true');
 
-    var loadingBox = document.getElementById('loadingBox');
-    loadingBox.setAttribute('hidden', 'true');
-    var loadingIndicator = document.getElementById('loading');
-    loadingIndicator.textContent = '';
-
     var thumbsView = document.getElementById('thumbnailView');
     thumbsView.parentNode.scrollTop = 0;
 
@@ -696,6 +691,11 @@ var PDFView = {
 
     // outline and initial view depends on destinations and pagesRefMap
     PDFJS.Promise.all([pagesPromise, destinationsPromise]).then(function() {
+      var loadingBox = document.getElementById('loadingBox');
+      loadingBox.setAttribute('hidden', 'true');
+      var loadingIndicator = document.getElementById('loading');
+      loadingIndicator.textContent = '';
+
       pdfDocument.getOutline().then(function(outline) {
         self.outline = new DocumentOutlineView(outline);
       });
@@ -1750,6 +1750,8 @@ window.addEventListener('load', function webViewerLoad(evt) {
 
   if ('disableWorker' in hashParams)
     PDFJS.disableWorker = (hashParams['disableWorker'] === 'true');
+  if ('disableRange' in hashParams)
+    PDFJS.disableWorker = (hashParams['disableRange'] === 'true');
 
   if (!PDFJS.isFirefoxExtension) {
     var locale = navigator.language;
