@@ -89,7 +89,10 @@ var WorkerMessageHandler = {
       // processing the content of the pdf.
       var pdfPassword = pdfModelSource.password;
       try {
-        pdfModel = new PDFDocument(new Stream(pdfData), pdfPassword);
+        if ('chunk' in pdfData)
+          throw 'Chunked loading is not supported yet';
+        var stream = new Stream(pdfData);
+        pdfModel = new PDFDocument(stream, pdfPassword);
       } catch (e) {
         if (e instanceof PasswordException) {
           if (e.code === 'needpassword') {
