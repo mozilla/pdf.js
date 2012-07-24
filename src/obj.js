@@ -232,15 +232,15 @@ var Catalog = (function CatalogClosure() {
       return shadow(this, 'num', obj);
     },
     get pageCache() {
-      var pageCache = [];
-      this.traverseKids(this.toplevelPagesDict, pageCache);
+      var pageCache = this.traverseKids(this.toplevelPagesDict);
       return shadow(this, 'pageCache', pageCache);
     },
     get pagesRefMap() {
       var map = {};
       var pageCache = this.pageCache;
       for (var i = 0; i < pageCache.length; i++) {
-        var pageRef = pageCache[i].ref;
+        var page = pageCache[i];
+        var pageRef = isRef(page) ? page : page.ref;
         map[pageRef.toString()] = i;
       }
       return shadow(this, 'pagesRefMap', map);
@@ -256,25 +256,50 @@ var Catalog = (function CatalogClosure() {
       var pageNum = this.pagesRefMap[destRef.toString()];
       return [pageNum].concat(dest.slice(1));
     },
-    traverseKids: function Catalog_traverseKids(pagesDict, pageCache) {
+    traverseKids: function Catalog_traverseKids(pagesDict) {
+      function isPage(obj) {
+        return isDict(obj, 'Page') || (isDict(obj) && !obj.has('Kids'));
+      }
       var kids = pagesDict.get('Kids');
+      var count = pagesDict.get('Count');
       assertWellFormed(isArray(kids),
                        'page dictionary kids object is not an array');
-      for (var i = 0, ii = kids.length; i < ii; ++i) {
-        var kid = kids[i];
+      // fast track: checking if kids items number equal to the page count.
+      var obj = this.xref.fetch(kids[0]);
+      if (kids.length === count) {
+        return kids.slice(0);
+      }
+
+      var pageCache = [];
+      var stack = kids.slice(0);
+      var processed = new RefSet();
+      while (stack.length > 0) {
+        var kid = stack.shift();
+        assertWellFormed(!processed.has(kid),
+                         'cycle reference in page tree nodes');
+        processed.put(kid);
         assertWellFormed(isRef(kid),
-                        'page dictionary kid is not a reference');
+                         'page dictionary kid is not a reference');
         var obj = this.xref.fetch(kid);
-        if (isDict(obj, 'Page') || (isDict(obj) && !obj.has('Kids'))) {
+        if (isPage(obj)) {
           pageCache.push(new Page(this, pageCache.length, obj, kid));
         } else { // must be a child page dictionary
           assertWellFormed(
             isDict(obj),
             'page dictionary kid reference points to wrong type of object'
           );
-          this.traverseKids(obj, pageCache);
+          kids = obj.get('Kids');
+          var expectedCount = obj.get('Count');
+          assertWellFormed(
+            isArray(kids),
+            'kids object is not an array');
+          if (expectedCount === kids.length)
+            pageCache = pageCache.concat(kids);
+          else
+            stack = kids.concat(stack);
         }
       }
+      return pageCache;
     },
     get destinations() {
       var xref = this.xref;
@@ -325,7 +350,12 @@ var Catalog = (function CatalogClosure() {
       return shadow(this, 'destinations', dests);
     },
     getPage: function Catalog_getPage(n) {
-      return this.pageCache[n - 1];
+      var page = this.pageCache[n - 1];
+      if (!isRef(page))
+        return page;
+      var obj = this.xref.fetch(page);
+      page = new Page(this, n - 1, obj, page);
+      return (this.pageCache[n - 1] = page);
     }
   };
 
