@@ -98,7 +98,8 @@ function nextTask() {
 
   log('Loading file "' + task.file + '"\n');
 
-  getPdf(task.file, function nextTaskGetPdf(data) {
+  var absoluteUrl = combineUrl(window.location.href, task.file);
+  getPdf(absoluteUrl, function nextTaskGetPdf(data) {
     var failure;
     function continuation() {
       task.pageNum = task.firstPage || 1;

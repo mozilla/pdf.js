@@ -395,7 +395,7 @@ var PDFView = {
     if (typeof url === 'string') { // URL
       this.url = url;
       document.title = decodeURIComponent(getFileName(url)) || url;
-      parameters.url = url;
+      parameters.url = PDFJS.combineUrl(window.location.href, url);
     } else if (url && 'byteLength' in url) { // ArrayBuffer
       parameters.data = url;
     }
