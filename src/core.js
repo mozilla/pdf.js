@@ -10,8 +10,8 @@ var isWorker = (typeof window == 'undefined');
 var ERRORS = 0, WARNINGS = 1, INFOS = 5;
 var verbosity = WARNINGS;
 
-var REQUEST_BLOCK_SIZE = 1000;
-var INITIAL_REQUEST_SIZE = REQUEST_BLOCK_SIZE * 3;
+var REQUEST_BLOCK_SIZE = 2000;
+var INITIAL_REQUEST_SIZE = REQUEST_BLOCK_SIZE;
 
 // The global PDFJS object exposes the API
 // In production, it will be declared outside a global wrapper
@@ -93,6 +93,9 @@ function getPdf(arg, callback) {
     return buffer.buffer;
   };
 
+  if (rangeState !== 2 && 'progress' in params)
+      xhr.onprogress = params.progress || undefined;
+
   xhr.onreadystatechange = function getPdfOnreadystatechange(e) {
     if (xhr.readyState === 4) {
       if ((xhr.status === xhr.expected && rangeState !== 2) ||
@@ -107,11 +110,6 @@ function getPdf(arg, callback) {
       } else if (params.error && !calledErrorBack) {
         calledErrorBack = true;
         params.error(e);
-      }
-    } else if (xhr.readyState === 2) {
-      if (xhr.status === xhr.expected && rangeState !== 2) {
-        if ('progress' in params)
-          xhr.onprogress = params.progress || undefined;
       }
     }
   };
