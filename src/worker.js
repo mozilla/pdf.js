@@ -89,9 +89,20 @@ var WorkerMessageHandler = {
       // processing the content of the pdf.
       var pdfPassword = pdfModelSource.password;
       try {
-        if ('chunk' in pdfData)
-          throw 'Chunked loading is not supported yet';
-        var stream = new Stream(pdfData);
+        var stream;
+        if ('chunk' in pdfData) {
+          var context = pdfData.context;
+          stream = new ChunkedStream(pdfData.length, REQUEST_BLOCK_SIZE,
+                                     function moreDataCallback(start, end) {
+            context.sync = true;
+            context.range = [start, end];
+            getPdf(context, function(data) {
+              stream.set(start, data);
+            });
+          });
+          stream.set(0, pdfData.chunk);
+        } else
+          stream = new Stream(pdfData);
         pdfModel = new PDFDocument(stream, pdfPassword);
       } catch (e) {
         if (e instanceof PasswordException) {

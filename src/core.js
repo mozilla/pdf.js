@@ -104,7 +104,7 @@ function getPdf(arg, callback) {
         var data = xhr.getArrayBuffer();
         var rangeHeader = xhr.getResponseHeader('Content-Range');
         var totalLength = parseInt(rangeHeader.split('/')[1], 10);
-        callback({chunk: data, request: arg, length: totalLength});
+        callback({chunk: data, context: arg, length: totalLength});
       } else if (params.error && !calledErrorBack) {
         calledErrorBack = true;
         params.error(e);
