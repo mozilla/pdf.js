@@ -10,7 +10,7 @@ var isWorker = (typeof window == 'undefined');
 var ERRORS = 0, WARNINGS = 1, INFOS = 5;
 var verbosity = WARNINGS;
 
-var REQUEST_BLOCK_SIZE = 2000;
+var REQUEST_BLOCK_SIZE = 4000;
 var INITIAL_REQUEST_SIZE = REQUEST_BLOCK_SIZE;
 
 // The global PDFJS object exposes the API
