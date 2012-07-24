@@ -55,8 +55,8 @@ function getPdf(arg, callback) {
   var protocol = params.url.substring(0, params.url.indexOf(':') + 1);
   var isHttpProtocol = (protocol === 'http:' || protocol === 'https:');
   xhr.expected = isHttpProtocol ? 200 : 0;
-  var isRangeEnabled = isHttpProtocol && !globalScope.PDFJS.disableRange;
-
+  var isRangeEnabled = isHttpProtocol && isWorker &&
+                       !globalScope.PDFJS.disableRange;
 
   var rangeState = 0;
   if ('range' in params) {
