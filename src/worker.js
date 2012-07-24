@@ -173,7 +173,6 @@ var WorkerMessageHandler = {
       var page = {
         pageIndex: data.pageIndex,
         rotate: pdfPage.rotate,
-        ref: pdfPage.ref,
         view: pdfPage.view
       };
       handler.send('GetPage', {pageInfo: page});

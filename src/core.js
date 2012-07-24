@@ -117,10 +117,11 @@ globalScope.PDFJS.getPdf = getPdf;
 globalScope.PDFJS.pdfBug = false;
 
 var Page = (function PageClosure() {
-  function Page(xref, pageNumber, pageDict, ref) {
+  function Page(catalog, pageNumber, pageDict, ref) {
     this.pageNumber = pageNumber;
     this.pageDict = pageDict;
-    this.xref = xref;
+    this.catalog = catalog;
+    this.xref = catalog.xref;
     this.ref = ref;
 
     this.displayReadyPromise = null;
@@ -324,7 +325,7 @@ var Page = (function PageClosure() {
                   item.url = url;
                   break;
                 case 'GoTo':
-                  item.dest = a.get('D');
+                  item.dest = this.resolveDestination(a.get('D'));
                   break;
                 default:
                   TODO('other link types');
@@ -332,7 +333,7 @@ var Page = (function PageClosure() {
             } else if (annotation.has('Dest')) {
               // simple destination link
               var dest = annotation.get('Dest');
-              item.dest = isName(dest) ? dest.name : dest;
+              item.dest = this.resolveDestination(dest);
             }
             break;
           case 'Widget':
@@ -393,6 +394,9 @@ var Page = (function PageClosure() {
         items.push(item);
       }
       return items;
+    },
+    resolveDestination: function Page_resolveDestination(dest) {
+      return this.catalog.resolveDestination(dest);
     }
   };
 

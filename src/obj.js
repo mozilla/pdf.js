@@ -97,7 +97,11 @@ var Ref = (function RefClosure() {
     this.gen = gen;
   }
 
-  Ref.prototype = {};
+  Ref.prototype = {
+    toString: function Ref_toString() {
+      return this.num + ' ' + this.gen + ' R';
+    }
+  };
 
   return Ref;
 })();
@@ -111,11 +115,11 @@ var RefSet = (function RefSetClosure() {
 
   RefSet.prototype = {
     has: function RefSet_has(ref) {
-      return !!this.dict['R' + ref.num + '.' + ref.gen];
+      return !!this.dict[ref.toString()];
     },
 
     put: function RefSet_put(ref) {
-      this.dict['R' + ref.num + '.' + ref.gen] = ref;
+      this.dict[ref.toString()] = ref;
     }
   };
 
@@ -188,16 +192,12 @@ var Catalog = (function CatalogClosure() {
             if (!outlineDict.has('Title'))
               error('Invalid outline item');
             var dest = outlineDict.get('A');
-            if (dest)
-              dest = dest.get('D');
-            else if (outlineDict.has('Dest')) {
+            if (!dest && outlineDict.has('Dest'))
               dest = outlineDict.getRaw('Dest');
-              if (isName(dest))
-                dest = dest.name;
-            }
+
             var title = outlineDict.get('Title');
             var outlineItem = {
-              dest: dest,
+              dest: this.resolveDestination(dest),
               title: stringToPDFString(title),
               color: outlineDict.get('C') || [0, 0, 0],
               count: outlineDict.get('Count'),
@@ -231,8 +231,32 @@ var Catalog = (function CatalogClosure() {
       // shadow the prototype getter
       return shadow(this, 'num', obj);
     },
-    traverseKids: function Catalog_traverseKids(pagesDict) {
+    get pageCache() {
+      var pageCache = [];
+      this.traverseKids(this.toplevelPagesDict, pageCache);
+      return shadow(this, 'pageCache', pageCache);
+    },
+    get pagesRefMap() {
+      var map = {};
       var pageCache = this.pageCache;
+      for (var i = 0; i < pageCache.length; i++) {
+        var pageRef = pageCache[i].ref;
+        map[pageRef.toString()] = i;
+      }
+      return shadow(this, 'pagesRefMap', map);
+    },
+    resolveDestination: function Catalog_resolveDestination(dest) {
+      if (isDict(dest))
+        dest = dest.get('D');
+      if (isName(dest))
+        dest = dest.name;
+      if (!(dest instanceof Array) || !(dest[0] instanceof Ref))
+        return dest;
+      var destRef = dest[0];
+      var pageNum = this.pagesRefMap[destRef.toString()];
+      return [pageNum].concat(dest.slice(1));
+    },
+    traverseKids: function Catalog_traverseKids(pagesDict, pageCache) {
       var kids = pagesDict.get('Kids');
       assertWellFormed(isArray(kids),
                        'page dictionary kids object is not an array');
@@ -242,21 +266,17 @@ var Catalog = (function CatalogClosure() {
                         'page dictionary kid is not a reference');
         var obj = this.xref.fetch(kid);
         if (isDict(obj, 'Page') || (isDict(obj) && !obj.has('Kids'))) {
-          pageCache.push(new Page(this.xref, pageCache.length, obj, kid));
+          pageCache.push(new Page(this, pageCache.length, obj, kid));
         } else { // must be a child page dictionary
           assertWellFormed(
             isDict(obj),
             'page dictionary kid reference points to wrong type of object'
           );
-          this.traverseKids(obj);
+          this.traverseKids(obj, pageCache);
         }
       }
     },
     get destinations() {
-      function fetchDestination(dest) {
-        return isDict(dest) ? dest.get('D') : dest;
-      }
-
       var xref = this.xref;
       var dests = {}, nameTreeRef, nameDictionaryRef;
       var obj = this.catDict.get('Names');
@@ -270,7 +290,7 @@ var Catalog = (function CatalogClosure() {
         obj = nameDictionaryRef;
         obj.forEach(function catalogForEach(key, value) {
           if (!value) return;
-          dests[key] = fetchDestination(value);
+          dests[key] = value;
         });
       }
       if (nameTreeRef) {
@@ -294,18 +314,17 @@ var Catalog = (function CatalogClosure() {
           }
           var names = obj.get('Names');
           for (i = 0, n = names.length; i < n; i += 2) {
-            dests[names[i]] = fetchDestination(xref.fetchIfRef(names[i + 1]));
+            dests[names[i]] = xref.fetchIfRef(names[i + 1]);
           }
         }
+      }
+      for (var name in dests) {
+        if (dests.hasOwnProperty(name))
+          dests[name] = this.resolveDestination(dests[name]);
       }
       return shadow(this, 'destinations', dests);
     },
     getPage: function Catalog_getPage(n) {
-      var pageCache = this.pageCache;
-      if (!pageCache) {
-        pageCache = this.pageCache = [];
-        this.traverseKids(this.toplevelPagesDict);
-      }
       return this.pageCache[n - 1];
     }
   };

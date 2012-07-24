@@ -499,10 +499,8 @@ var PDFView = {
       dest = this.destinations[dest];
     if (!(dest instanceof Array))
       return; // invalid destination
-    // dest array looks like that: <page-ref> </XYZ|FitXXX> <args..>
-    var destRef = dest[0];
-    var pageNumber = destRef instanceof Object ?
-      this.pagesRefMap[destRef.num + ' ' + destRef.gen + ' R'] : (destRef + 1);
+    // dest array looks like that: <page-index> </XYZ|FitXXX> <args..>
+    var pageNumber = (dest[0] + 1);
     if (pageNumber > this.pages.length)
       pageNumber = this.pages.length;
     if (pageNumber) {
@@ -671,7 +669,7 @@ var PDFView = {
     var pages = this.pages = [];
     this.pageText = [];
     this.startedTextExtraction = false;
-    var pagesRefMap = {};
+
     var thumbnails = this.thumbnails = [];
     var pagePromises = [];
     for (var i = 1; i <= pagesCount; i++)
@@ -688,11 +686,7 @@ var PDFView = {
 
         pages.push(pageView);
         thumbnails.push(thumbnailView);
-        var pageRef = page.ref;
-        pagesRefMap[pageRef.num + ' ' + pageRef.gen + ' R'] = i;
       }
-
-      self.pagesRefMap = pagesRefMap;
     });
 
     var destinationsPromise = pdfDocument.getDestinations();
