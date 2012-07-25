@@ -93,8 +93,13 @@ function getPdf(arg, callback) {
     return buffer.buffer;
   };
 
-  if (rangeState !== 2 && 'progress' in params)
-      xhr.onprogress = params.progress || undefined;
+  if (rangeState !== 2 && params.progress) {
+    xhr.onprogress = function xhrProgress(e) {
+      if (xhr.status == xhr.altExpected)
+        return;
+      params.progress(e);
+    };
+  }
 
   xhr.onreadystatechange = function getPdfOnreadystatechange(e) {
     if (xhr.readyState === 4) {
