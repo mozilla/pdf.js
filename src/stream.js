@@ -140,6 +140,10 @@ var ChunkedStream = (function ChunkedStreamClosure() {
       this.start = this.pos;
     },
     makeSubStream: function ChunkedStream_makeSubStream(start, length, dict) {
+      if (length) {
+        this.ensureRange(start, start + length);
+        return new Stream(this.bytes.buffer, start, length, dict);
+      }
       function ChunkedStreamSubstream() {}
       ChunkedStreamSubstream.prototype = Object.create(this);
       var subStream = new ChunkedStreamSubstream();
