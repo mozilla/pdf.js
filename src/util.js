@@ -78,7 +78,6 @@ function combineUrl(baseUrl, url) {
     return baseUrl.substring(0, prefixLength + 1) + url;
   }
 }
-PDFJS.combineUrl = combineUrl;
 
 // In a well-formed PDF, |cond| holds.  If it doesn't, subsequent
 // behavior is undefined.
