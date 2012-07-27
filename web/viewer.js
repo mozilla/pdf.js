@@ -1034,18 +1034,18 @@ var PDFView = {
       view = views[i - 1];
       currentHeight = view.el.offsetTop;
       nextHeight = currentHeight + view.el.clientHeight;
-      hidden = Math.max(0, top - currentHeight)
-             + Math.max(0, nextHeight - bottom);
-      percent = Math.floor((view.el.clientHeight - hidden) * 100.0
-              / view.el.clientHeight);
+      hidden = Math.max(0, top - currentHeight) +
+               Math.max(0, nextHeight - bottom);
+      percent = Math.floor((view.el.clientHeight - hidden) * 100.0 /
+                view.el.clientHeight);
       visible.push({ id: view.id, y: currentHeight,
                      view: view, percent: percent, index: i });
       currentHeight = nextHeight;
     }
 
-    visible.sort(function(a,b) {
+    visible.sort(function(a, b) {
       var pc = a.percent - b.percent;
-      if(Math.abs(pc) > 0.001)
+      if (Math.abs(pc) > 0.001)
         return -pc;
 
       return a.index - b.index; // ensure stability
@@ -1824,7 +1824,7 @@ window.addEventListener('load', function webViewerLoad(evt) {
 }, true);
 
 function updateViewarea() {
-  var i, f,page;
+  var i, stillFullyVisible, page;
 
   if (!PDFView.initialized)
     return;
@@ -1834,13 +1834,13 @@ function updateViewarea() {
   updateViewarea.inProgress = true; // used in "set page"
   var currentId = PDFView.page;
   var visible = PDFView.getVisiblePages();
-  for(i=1,f=false;i<=visible.length;++i) {
-    page = visible[i-1];
-    if(page.id === PDFView.page && page.percent === 100) {
-      f=true;
+  for (i = 1, stillFullyVisible = false; i <= visible.length; ++i) {
+    page = visible[i - 1];
+    if (page.id === PDFView.page && page.percent === 100) {
+      stillFullyVisible = true;
     }
   }
-  if(!f)
+  if (!stillFullyVisible)
     PDFView.page = visible[0].id;
 
   updateViewarea.inProgress = false;
