@@ -32,11 +32,21 @@ PDFJS.getDocument = function getDocument(source) {
   if (!source.url && !source.data)
     error('Invalid parameter array, need either .data or .url');
 
+  // copy/use all keys as is except 'url' -- full path is required
+  var params = {};
+  for (var key in source) {
+    if (key === 'url' && typeof window !== 'undefined') {
+      params[key] = combineUrl(window.location.href, source[key]);
+      continue;
+    }
+    params[key] = source[key];
+  }
+
   workerInitializedPromise = new PDFJS.Promise();
   workerReadyPromise = new PDFJS.Promise();
   transport = new WorkerTransport(workerInitializedPromise, workerReadyPromise);
   workerInitializedPromise.then(function transportInitialized() {
-    transport.fetchDocument(source);
+    transport.fetchDocument(params);
   });
   return workerReadyPromise;
 };
