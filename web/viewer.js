@@ -1048,7 +1048,7 @@ var PDFView = {
       if(Math.abs(pc) > 0.001)
         return -pc;
 
-      return b.index - a.index; // ensure stability
+      return a.index - b.index; // ensure stability
     });
 
     return visible;
