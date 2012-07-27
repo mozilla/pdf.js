@@ -1039,16 +1039,16 @@ var PDFView = {
       percent = Math.floor((view.el.clientHeight - hidden) * 100.0
               / view.el.clientHeight);
       visible.push({ id: view.id, y: currentHeight,
-                     view: view, percent: percent, index: i, element: view });
+                     view: view, percent: percent, index: i });
       currentHeight = nextHeight;
     }
 
     visible.sort(function(a,b) {
       var pc = a.percent - b.percent;
       if(Math.abs(pc) > 0.001)
-        return pc;
+        return -pc;
 
-      return a.index - b.index; // ensure stability
+      return b.index - a.index; // ensure stability
     });
 
     return visible;
@@ -1840,11 +1840,9 @@ function updateViewarea() {
       f=true;
     }
   }
-  if(!f) {
+  if(!f)
     PDFView.page = visible[0].id;
-    document.querySelector('.pageCurrent').classList.remove('pageCurrent');
-    visible[0].element.classList.add('pageCurrent');
-  }
+
   updateViewarea.inProgress = false;
 
   var currentScale = PDFView.currentScale;
