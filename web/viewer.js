@@ -1880,8 +1880,9 @@ window.addEventListener('load', function webViewerLoad(evt) {
       PDFView.sidebarOpen = outerContainer.classList.contains('sidebarOpen');
       PDFView.renderHighestPriority();
     });
-
+//#if !B2G
   PDFView.open(file, 0);
+//#endif
 }, true);
 
 function updateViewarea() {
@@ -2140,3 +2141,21 @@ window.addEventListener('afterprint', function afterPrint(evt) {
   window.addEventListener('mozfullscreenchange', fullscreenChange, false);
   window.addEventListener('webkitfullscreenchange', fullscreenChange, false);
 })();
+
+//#if B2G
+// window.navigator.mozSetMessageHandler('activity', function(activity) {
+//   var url = activity.source.data.url;
+//   // Temporarily get the data here since the cross domain xhr is broken in
+//   // the worker currently, see bug 761227.
+//   var params = {
+//     url: url,
+//     error: function(e) {
+//       PDFView.error(mozL10n.get('loading_error', null,
+//                     'An error occurred while loading the PDF.'), e);
+//     }
+//   };
+//   PDFJS.getPdf(params, function successCallback(data) {
+//     PDFView.open(data, 0);
+//   });
+// });
+//#endif

@@ -1,5 +1,7 @@
 #!/usr/bin/env node
 require('./external/shelljs/make');
+var fs = require('fs');
+var vm = require('vm');
 
 var ROOT_DIR = __dirname + '/', // absolute path to project's root
     BUILD_DIR = 'build/',
@@ -14,6 +16,49 @@ var ROOT_DIR = __dirname + '/', // absolute path to project's root
     FIREFOX_PREF_PREFIX = 'extensions.uriloader@pdf.js',
     MOZCENTRAL_STREAM_CONVERTER_ID = 'd0c5195d-e798-49d4-b1d3-9324328b2291',
     FIREFOX_STREAM_CONVERTER_ID = '6457a96b-2d68-439a-bcfa-44465fbcdbb1';
+
+function preprocess(inFilename, outFilename, flags) {
+  // TODO make this really read line by line.
+  var lines = fs.readFileSync(inFilename).toString().split("\n");
+  var totalLines = lines.length;
+  var out = '';
+  var i = 0;
+  function readLine() {
+    if (i < totalLines) {
+      return lines[i++];
+    }
+    return null;
+  }
+  function writeLine(line) {
+    out += line + '\n';
+  }
+
+  var s, state = 0, stack = [];
+  while ((s = readLine()) !== null) {
+    var m = new RegExp(/^\/\/\s*#(if|else|endif)\b(?:\s+(.*))?/).exec(s);
+    if (m) {
+      if (m[1] === "if") {
+        stack.push(state);
+        state = vm.runInNewContext(m[2], flags) ? 3 : 1;
+      } else if (m[1] === "else") {
+        state = state === 1 ? 3 : 2;
+      } else {
+        state = stack.pop();
+      }
+    } else {
+      if (state === 0) {
+        writeLine(s);
+      } else if(state === 3) {
+        writeLine(s.replace(/^\/\//g, "  "));
+      }
+    }
+  }
+  fs.writeFileSync(outFilename, out);
+}
+
+target.pre = function() {
+  preprocess('in.txt', 'out.txt', {B2G: true});
+}
 
 //
 // make all
@@ -480,6 +525,49 @@ target.mozcentral = function() {
   // Copy test files
   mkdir('-p', MOZCENTRAL_TEST_DIR);
   cp('-Rf', 'test/mozcentral/*', MOZCENTRAL_TEST_DIR);
+};
+
+target.b2g = function() {
+  echo();
+  echo('### Building B2G (Firefox OS App)');
+  var B2G_BUILD_DIR = BUILD_DIR + '/b2g/',
+      B2G_BUILD_CONTENT_DIR = B2G_BUILD_DIR + '/content/';
+  target.production();
+  target.buildnumber();
+  
+    // Clear out everything in the b2g build directory
+  cd(ROOT_DIR);
+  rm('-Rf', B2G_BUILD_DIR);
+  mkdir('-p', B2G_BUILD_CONTENT_DIR);
+  mkdir('-p', B2G_BUILD_CONTENT_DIR + BUILD_DIR);
+  mkdir('-p', B2G_BUILD_CONTENT_DIR + '/web');
+
+  // Copy a standalone version of pdf.js inside the content directory
+  cp(BUILD_TARGET, B2G_BUILD_CONTENT_DIR + BUILD_DIR);
+  cp('-R', EXTENSION_WEB_FILES, B2G_BUILD_CONTENT_DIR + '/web');
+  cp('web/viewer-snippet-b2g.html', B2G_BUILD_CONTENT_DIR + '/web/');
+  // Replacing the l10n.js file with regular gh-pages one
+  rm(B2G_BUILD_CONTENT_DIR + '/web/l10n.js');
+  cp('external/webL10n/l10n.js', B2G_BUILD_CONTENT_DIR + '/web');
+  cp('web/locale.properties', B2G_BUILD_CONTENT_DIR + '/web');
+
+  mv('-f', B2G_BUILD_CONTENT_DIR + '/web/viewer-production.html',
+     B2G_BUILD_CONTENT_DIR + '/web/viewer.html');
+  cd(B2G_BUILD_CONTENT_DIR + '/web');
+  sed('-i', /.*PDFJSSCRIPT_INCLUDE_B2G.*\n/, cat('viewer-snippet-b2g.html'),  'viewer.html');
+  rm('viewer-snippet-b2g.html');
+  cd(ROOT_DIR);
+
+  var flags = {
+    B2G: true
+  };
+  var prep = [
+    B2G_BUILD_CONTENT_DIR + '/web/viewer.js',
+    B2G_BUILD_CONTENT_DIR + '/build/pdf.js'
+  ];
+  for (var i in prep) {
+    preprocess(prep[i], prep[i], flags);
+  }
 };
 
 //
