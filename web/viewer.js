@@ -1836,8 +1836,12 @@ function updateViewarea() {
   var visible = PDFView.getVisiblePages();
   for (i = 1, stillFullyVisible = false; i <= visible.length; ++i) {
     page = visible[i - 1];
-    if (page.id === PDFView.page && page.percent === 100) {
+    if (page.percent < 100) {
+      break;
+    }
+    if (page.id === PDFView.page) {
       stillFullyVisible = true;
+      break;
     }
   }
   if (!stillFullyVisible)
