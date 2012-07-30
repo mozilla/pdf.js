@@ -59,6 +59,10 @@ select {
   overflow: hidden;
 }
 
+:-moz-full-screen .page:last-child {
+  margin-bottom: 40px;
+}
+
 #viewerContainer:full-screen {
   top: 0px;
   background-color: #404040;
