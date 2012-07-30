@@ -100,21 +100,23 @@
                 <input id="fileInput" class="fileInput" type="file" oncontextmenu="return false;" style="visibility: hidden; position: fixed; right: 0; top: 0" />
 
 
-                <button id="fullscreen" class="toolbarButton fullscreen" title="Fullscreen" tabindex="11" data-l10n-id="fullscreen" onclick="PDFView.fullscreen();">Fullscreen</button>
+                <button id="fullscreen" class="toolbarButton fullscreen" title="Fullscreen" tabindex="11" data-l10n-id="fullscreen" onclick="PDFView.fullscreen();">
+                  <span data-l10n-id="fullscreen_label">Fullscreen</span>
+                </button>
 
-                <button id="openFile" class="toolbarButton openFile" title="Open File" tabindex="11" data-l10n-id="open_file" onclick="document.getElementById('fileInput').click()">
+                <button id="openFile" class="toolbarButton openFile" title="Open File" tabindex="12" data-l10n-id="open_file" onclick="document.getElementById('fileInput').click()">
                    <span data-l10n-id="open_file_label">Open</span>
                 </button>
 
-                <button id="print" class="toolbarButton print" title="Print" tabindex="11" data-l10n-id="print" onclick="window.print()">
+                <button id="print" class="toolbarButton print" title="Print" tabindex="13" data-l10n-id="print" onclick="window.print()">
                   <span data-l10n-id="print_label">Print</span>
                 </button>
 
-                <button id="download" class="toolbarButton download" title="Download" onclick="PDFView.download();" tabindex="12" data-l10n-id="download">
+                <button id="download" class="toolbarButton download" title="Download" onclick="PDFView.download();" tabindex="14" data-l10n-id="download">
                   <span data-l10n-id="download_label">Download</span>
                 </button>
                 <!-- <div class="toolbarButtonSpacer"></div> -->
-                <a href="#" id="viewBookmark" class="toolbarButton bookmark" title="Current view (copy or open in new window)" tabindex="13" data-l10n-id="bookmark"><span data-l10n-id="bookmark_label">Current View</span></a>
+                <a href="#" id="viewBookmark" class="toolbarButton bookmark" title="Current view (copy or open in new window)" tabindex="15" data-l10n-id="bookmark"><span data-l10n-id="bookmark_label">Current View</span></a>
               </div>
               <div class="outerCenter">
                 <div class="innerCenter" id="toolbarViewerMiddle">
