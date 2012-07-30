@@ -27,7 +27,7 @@ select {
   display: none !important;
 }
 
-:-webkit-full-screen #viewerContainer {
+#viewerContainer:-webkit-full-screen {
   top: 0px;
   padding-top: 6px;
   padding-bottom: 24px;
@@ -51,11 +51,7 @@ select {
   margin-bottom: 10px;
 }
 
-:-moz-full-screen .page {
-  margin: 10px auto;
-}
-
-:-moz-full-screen #viewerContainer {
+#viewerContainer:-moz-full-screen {
   background-color: #404040;
   background-image: url(images/texture.png);
   width: 100%;
