@@ -17,7 +17,7 @@ BROWSERLOG_FILE = 'browser.log'
 REFDIR = 'ref'
 TMPDIR = 'tmp'
 VERBOSE = False
-BROWSER_TIMEOUT = 240
+BROWSER_TIMEOUT = 60
 
 SERVER_HOST = "localhost"
 
