@@ -928,7 +928,7 @@ var PDFView = {
           var currentPage = this.pages[pageNumber - 1];
           currentPage.scrollIntoView(dest);
         } else {
-          this.page = params.page; // simple page
+          this.page = pageNumber; // simple page
         }
         return;
       }
