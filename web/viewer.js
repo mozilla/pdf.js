@@ -390,11 +390,37 @@ var PDFView = {
     return value;
   },
 
+  initPassiveLoading: function pdfViewInitPassiveLoading() {
+    if (!PDFView.loadingBar) {
+      PDFView.loadingBar = new ProgressBar('#loadingBar', {});
+    }
+
+    window.addEventListener('message', function window_message(e) {
+      var args = e.data;
+
+      if (!('pdfjsLoadAction' in args))
+        return;
+      switch (args.pdfjsLoadAction) {
+        case 'progress':
+          PDFView.progress(args.loaded / args.total);
+          break;
+        case 'complete':
+          PDFView.open(args.data, 0);
+          break;
+      }
+    });
+    FirefoxCom.requestSync('initPassiveLoading', null);
+  },
+
+  setTitleUsingUrl: function pdfViewSetTitleUsingUrl(url) {
+    this.url = url;
+    document.title = decodeURIComponent(getFileName(url)) || url;
+  },
+
   open: function pdfViewOpen(url, scale, password) {
     var parameters = {password: password};
     if (typeof url === 'string') { // URL
-      this.url = url;
-      document.title = decodeURIComponent(getFileName(url)) || url;
+      this.setTitleUsingUrl(url);
       parameters.url = url;
     } else if (url && 'byteLength' in url) { // ArrayBuffer
       parameters.data = url;
@@ -1736,7 +1762,7 @@ var TextLayerBuilder = function textLayerBuilder(textLayerDiv) {
   };
 };
 
-window.addEventListener('load', function webViewerLoad(evt) {
+document.addEventListener('DOMContentLoaded', function webViewerLoad(evt) {
   PDFView.initialize();
   var params = PDFView.parseQueryString(document.location.search.substring(1));
 
@@ -1813,7 +1839,12 @@ window.addEventListener('load', function webViewerLoad(evt) {
       PDFView.renderHighestPriority();
     });
 
-  PDFView.open(file, 0);
+  if (PDFJS.isFirefoxExtension &&
+      FirefoxCom.requestSync('getLoadingType') == 'passive') {
+    PDFView.setTitleUsingUrl(file);
+    PDFView.initPassiveLoading();
+  } else
+    PDFView.open(file, 0);
 }, true);
 
 function updateViewarea() {
@@ -1887,7 +1918,7 @@ window.addEventListener('change', function webViewerChange(evt) {
   // implemented in Firefox.
   var file = files[0];
   fileReader.readAsBinaryString(file);
-  document.title = file.name;
+  PDFView.setTitleUsingUrl(file.name);
 
   // URL does not reflect proper document location - hiding some icons.
   document.getElementById('viewBookmark').setAttribute('hidden', 'true');
