@@ -235,6 +235,7 @@ ChromeActions.prototype = {
     var domWindow = this.domWindow;
     this.dataListener.onprogress =
       function ChromeActions_dataListenerProgress(loaded, total) {
+
       domWindow.postMessage({
         pdfjsLoadAction: 'progress',
         loaded: loaded,
@@ -478,7 +479,10 @@ PdfStreamConverter.prototype = {
       var securityManager = Cc['@mozilla.org/scriptsecuritymanager;1']
                             .getService(Ci.nsIScriptSecurityManager);
       var uri = ioService.newURI(PDF_VIEWER_WEB_PAGE, null, null);
-      var resourcePrincipal = securityManager.getCodebasePrincipal(uri);
+      // FF16 and below had getCodebasePrincipal (bug 774585)
+      var resourcePrincipal = 'getSimpleCodebasePrincipal' in securityManager ?
+                              securityManager.getSimpleCodebasePrincipal(uri) :
+                              securityManager.getCodebasePrincipal(uri);
       channel.owner = resourcePrincipal;
     }
   },
