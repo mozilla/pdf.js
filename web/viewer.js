@@ -241,6 +241,8 @@ var PDFView = {
   sidebarOpen: false,
   pageViewScroll: null,
   thumbnailViewScroll: null,
+  isFullscreen: false,
+  previousScale: null,
 
   // called once when the document is loaded
   initialize: function pdfViewInitialize() {
@@ -307,6 +309,7 @@ var PDFView = {
 
     var container = this.container;
     var currentPage = this.pages[this.page - 1];
+
     var pageWidthScale = (container.clientWidth - kScrollbarPadding) /
                           currentPage.width * currentPage.scale / kCssUnits;
     var pageHeightScale = (container.clientHeight - kScrollbarPadding) /
@@ -388,6 +391,17 @@ var PDFView = {
                                                       configurable: true,
                                                       writable: false });
     return value;
+  },
+
+  get supportsFullscreen() {
+    var doc = document.documentElement;
+    var support = doc.requestFullScreen || doc.mozRequestFullScreen ||
+                  doc.webkitRequestFullScreen;
+    Object.defineProperty(this, 'supportsFullScreen', { value: support,
+                                                        enumerable: true,
+                                                        configurable: true,
+                                                        writable: false });
+    return support;
   },
 
   open: function pdfViewOpen(url, scale, password) {
@@ -786,7 +800,7 @@ var PDFView = {
     }
     for (var i = 0; i < numVisible; ++i) {
       var view = visibleViews[i].view;
-      if (!this.isViewFinshed(view))
+      if (!this.isViewFinished(view))
         return view;
     }
 
@@ -795,19 +809,19 @@ var PDFView = {
       var lastVisible = visibleViews[visibleViews.length - 1];
       var nextPageIndex = lastVisible.id;
       // ID's start at 1 so no need to add 1.
-      if (views[nextPageIndex] && !this.isViewFinshed(views[nextPageIndex]))
+      if (views[nextPageIndex] && !this.isViewFinished(views[nextPageIndex]))
         return views[nextPageIndex];
     } else {
       var previousPageIndex = visibleViews[0].id - 2;
       if (views[previousPageIndex] &&
-          !this.isViewFinshed(views[previousPageIndex]))
+          !this.isViewFinished(views[previousPageIndex]))
         return views[previousPageIndex];
     }
     // Everything that needs to be rendered has been.
     return false;
   },
 
-  isViewFinshed: function pdfViewNeedsRendering(view) {
+  isViewFinished: function pdfViewNeedsRendering(view) {
     return view.renderingState === RenderingStates.FINISHED;
   },
 
@@ -1029,6 +1043,18 @@ var PDFView = {
     }
 
     var visible = [];
+
+    // Algorithm broken in fullscreen mode
+    if (this.isFullscreen) {
+      var currentPage = this.pages[this.page - 1];
+      visible.push({
+        id: currentPage.id,
+        view: currentPage
+      });
+
+      return visible;
+    }
+
     var bottom = top + scrollEl.clientHeight, nextHeight, hidden, percent;
     for (; i <= views.length && currentHeight < bottom; ++i) {
       view = views[i - 1];
@@ -1085,6 +1111,44 @@ var PDFView = {
     var div = document.getElementById('printContainer');
     while (div.hasChildNodes())
       div.removeChild(div.lastChild);
+  },
+
+  fullscreen: function pdfViewFullscreen() {
+    var isFullscreen = document.fullscreen || document.mozFullScreen ||
+        document.webkitIsFullScreen;
+
+    if (isFullscreen) {
+      return false;
+    }
+
+    var wrapper = document.getElementById('viewerContainer');
+    if (document.documentElement.requestFullScreen) {
+      wrapper.requestFullScreen();
+    } else if (document.documentElement.mozRequestFullScreen) {
+      wrapper.mozRequestFullScreen();
+    } else if (document.documentElement.webkitRequestFullScreen) {
+      wrapper.webkitRequestFullScreen(Element.ALLOW_KEYBOARD_INPUT);
+    } else {
+      return false;
+    }
+
+    this.isFullscreen = true;
+    var currentPage = this.pages[this.page - 1];
+    this.previousScale = this.currentScaleValue;
+    this.parseScale('page-fit', true);
+
+    // Wait for fullscreen to take effect
+    setTimeout(function() {
+      currentPage.scrollIntoView();
+    }, 0);
+
+    return true;
+  },
+
+  exitFullscreen: function pdfViewExitFullscreen() {
+    this.isFullscreen = false;
+    this.parseScale(this.previousScale);
+    this.page = this.page;
   }
 };
 
@@ -1678,6 +1742,9 @@ var TextLayerBuilder = function textLayerBuilder(textLayerDiv) {
     var renderInterval = 0;
     var resumeInterval = 500; // in ms
 
+    var canvas = document.createElement('canvas');
+    var ctx = canvas.getContext('2d');
+
     // Render the text layer, one div at a time
     function renderTextLayer() {
       if (textDivs.length === 0) {
@@ -1691,9 +1758,12 @@ var TextLayerBuilder = function textLayerBuilder(textLayerDiv) {
 
         if (textDiv.dataset.textLength > 1) { // avoid div by zero
           // Adjust div width to match canvas text
-          // Due to the .offsetWidth calls, this is slow
-          // This needs to come after appending to the DOM
-          var textScale = textDiv.dataset.canvasWidth / textDiv.offsetWidth;
+
+          ctx.font = textDiv.style.fontSize + ' sans-serif';
+          var width = ctx.measureText(textDiv.textContent).width;
+
+          var textScale = textDiv.dataset.canvasWidth / width;
+
           CustomStyle.setProp('transform' , textDiv,
             'scale(' + textScale + ', 1)');
           CustomStyle.setProp('transformOrigin' , textDiv, '0% 0%');
@@ -1792,6 +1862,10 @@ window.addEventListener('load', function webViewerLoad(evt) {
     document.getElementById('print').classList.add('hidden');
   }
 
+  if (!PDFView.supportsFullscreen) {
+    document.getElementById('fullscreen').classList.add('hidden');
+  }
+
   // Listen for warnings to trigger the fallback UI.  Errors should be caught
   // and call PDFView.error() so we don't need to listen for those.
   PDFJS.LogManager.addLogger({
@@ -1831,23 +1905,26 @@ function updateViewarea() {
 
   PDFView.renderHighestPriority();
 
-  updateViewarea.inProgress = true; // used in "set page"
   var currentId = PDFView.page;
-  var visible = PDFView.getVisiblePages();
-  for (i = 1, stillFullyVisible = false; i <= visible.length; ++i) {
-    page = visible[i - 1];
-    if (page.percent < 100) {
-      break;
-    }
-    if (page.id === PDFView.page) {
-      stillFullyVisible = true;
-      break;
-    }
-  }
-  if (!stillFullyVisible)
-    PDFView.page = visible[0].id;
 
-  updateViewarea.inProgress = false;
+  if (!PDFView.isFullscreen) {
+    var visible = PDFView.getVisiblePages();
+    for (i = 1, stillFullyVisible = false; i <= visible.length; ++i) {
+      page = visible[i - 1];
+      
+      if (page.percent < 100)
+        break;
+        
+      if (page.id === PDFView.page) {
+        stillFullyVisible = true;
+        break;
+      }
+    }
+    if (!stillFullyVisible)
+      PDFView.page = visible[0].id;
+
+    updateViewarea.inProgress = false;
+  }
 
   var currentScale = PDFView.currentScale;
   var currentScaleValue = PDFView.currentScaleValue;
@@ -2033,7 +2110,7 @@ window.addEventListener('keydown', function keydown(evt) {
     return;
   var controlsElement = document.getElementById('controls');
   while (curElement) {
-    if (curElement === controlsElement)
+    if (curElement === controlsElement && !PDFView.isFullscreen)
       return; // ignoring if the 'controls' element is focused
     curElement = curElement.parentNode;
   }
@@ -2052,6 +2129,13 @@ window.addEventListener('keydown', function keydown(evt) {
         PDFView.page++;
         handled = true;
         break;
+
+      case 32: // spacebar
+        if (PDFView.isFullscreen) {
+          PDFView.page++;
+          handled = true;
+        }
+        break;
     }
   }
 
@@ -2067,3 +2151,18 @@ window.addEventListener('beforeprint', function beforePrint(evt) {
 window.addEventListener('afterprint', function afterPrint(evt) {
   PDFView.afterPrint();
 });
+
+(function fullscreenClosure() {
+  function fullscreenChange(e) {
+    var isFullscreen = document.fullscreen || document.mozFullScreen ||
+        document.webkitIsFullScreen;
+
+    if (!isFullscreen) {
+      PDFView.exitFullscreen();
+    }
+  }
+
+  window.addEventListener('fullscreenchange', fullscreenChange, false);
+  window.addEventListener('mozfullscreenchange', fullscreenChange, false);
+  window.addEventListener('webkitfullscreenchange', fullscreenChange, false);
+})();
