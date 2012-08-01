@@ -363,6 +363,14 @@
       "link": true,
       "type": "eq"
     },
+    {  "id": "issue1944",
+      "file": "pdfs/issue1944.pdf",
+      "md5": "a4ef22c380b55747fb3d4a1c276b0950",
+      "rounds": 1,
+      "pageLimit": 2,
+      "link": true,
+      "type": "eq"
+    },
     {  "id": "issue1586",
       "file": "pdfs/pdfjsbad1586.pdf",
       "md5": "793d0870f0b0c613799b0677d64daca4",
