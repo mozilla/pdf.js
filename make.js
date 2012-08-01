@@ -1,8 +1,6 @@
 #!/usr/bin/env node
 require('./external/shelljs/make');
-var fs = require('fs');
-var path = require('path');
-var vm = require('vm');
+var builder = require('./external/builder/builder.js');
 
 var ROOT_DIR = __dirname + '/', // absolute path to project's root
     BUILD_DIR = 'build/',
@@ -27,138 +25,6 @@ var DEFINES = {
   MOZCENTRAL: false,
   B2G: false,
   CHROME: false
-};
-
-function extendDefines(obj) {
-  var ret = {};
-  for (var key in DEFINES)
-    ret[key] = DEFINES[key];
-  for (key in obj)
-    ret[key] = obj[key];
-  return ret;
-}
-
-var BuildHelper = {
-  /**
-   * A simple preprocessor that is based on the firefox preprocessor
-   * see (https://developer.mozilla.org/en/Build/Text_Preprocessor).  The main
-   * difference is that this supports a subset of the commands and it supports
-   * preproccesor commands in html style comments.
-   * Currently Supported commands:
-   * - if
-   * - else
-   * - endif
-   * - include
-   * - expand
-   */
-  preprocess: function preprocess(inFilename, outFilename, defines) {
-    // TODO make this really read line by line.
-    var lines = fs.readFileSync(inFilename).toString().split('\n');
-    var totalLines = lines.length;
-    var out = '';
-    var i = 0;
-    function readLine() {
-      if (i < totalLines) {
-        return lines[i++];
-      }
-      return null;
-    }
-    var writeLine = typeof outFilename === 'function' ? outFilename : function(line) {
-      out += line + '\n';
-    }
-    function include(file) {
-      var realPath = fs.realpathSync(inFilename);
-      var dir = path.dirname(realPath);
-      preprocess(path.join(dir, file), writeLine, defines);
-    }
-    function expand(line) {
-      line = line.replace(/__[\w]+__/g, function(variable) {
-        variable = variable.substring(2, variable.length - 2);
-        if (variable in defines) {
-          return defines[variable];
-        }
-        return '';
-      });
-      writeLine(line);
-    }
-
-    var s, state = 0, stack = [];
-    var control = /^(?:\/\/|<!--)\s*#(if|else|endif|expand|include)(?:\s+(.*?)(?:-->)?$)?/;
-    var lineNumber = 0;
-    while ((s = readLine()) !== null) {
-      ++lineNumber;
-      var m = control.exec(s);
-      if (m) {
-        switch (m[1]) {
-          case 'if':
-            stack.push(state);
-            try {
-              state = vm.runInNewContext(m[2], defines) ? 3 : 1;
-            } catch (e) {
-              console.error('Could not evalute line \'' + m[2] + '\' at ' +
-                            fs.realpathSync(inFilename) + ':' + lineNumber);
-              throw e;
-            }
-            break;
-          case 'else':
-            state = state === 1 ? 3 : 2;
-            break;
-          case 'endif':
-            state = stack.pop();
-            break;
-          case 'expand':
-            if (state === 0 || state === 3)
-              expand(m[2]);
-            break;
-          case 'include':
-            if (state === 0 || state === 3)
-              include(m[2]);
-            break;
-        }
-      } else {
-        if (state === 0) {
-          writeLine(s);
-        } else if(state === 3) {
-          writeLine(s.replace(/^\/\/|^<!--|-->/g, "  "));
-        }
-      }
-    }
-    if (state !== 0 || stack.length !== 0)
-      throw new Error('Missing endif in preprocessor.');
-    if (typeof outFilename !== 'function')
-      fs.writeFileSync(outFilename, out);
-  },
-  /**
-   * Simplifies common build steps.
-   * @param setup
-   *        .defines defines for preprocessors
-   *        .copy array of arrays of source and destination pairs of files to copy
-   *        .preprocess array of arrays of source and destination pairs of files
-   *                    run through preprocessor
-   */
-  build: function build(setup) {
-    var defines = setup.defines;
-
-    setup.copy.forEach(function(option) {
-      var source = option[0];
-      var destination = option[1];
-      cp('-R', source, destination);
-    });
-
-    setup.preprocess.forEach(function(option) {
-      var sources = option[0];
-      var destination = option[1];
-
-      sources = ls('-R', sources);
-      sources.forEach(function(source) {
-        // ??? Warn if the source is wildcard and dest is file?
-        var destWithFolder = destination;
-        if (test('-d', destination))
-          destWithFolder += '/' + path.basename(source);
-        BuildHelper.preprocess(source, destWithFolder, defines);
-      });
-    });
-  }
 };
 
 //
@@ -204,7 +70,7 @@ target.generic = function() {
   mkdir('-p', GENERIC_DIR + BUILD_DIR);
   mkdir('-p', GENERIC_DIR + '/web');
 
-  var defines = extendDefines({GENERIC: true});
+  var defines = builder.merge(DEFINES, {GENERIC: true});
 
   var setup = {
     defines: defines,
@@ -220,7 +86,7 @@ target.generic = function() {
       [COMMON_WEB_FILES_PREPROCESS, GENERIC_DIR + '/web']
     ]
   };
-  BuildHelper.build(setup);
+  builder.build(setup);
 };
 
 //
@@ -354,7 +220,7 @@ target.bundle = function() {
 
   // This just preprocesses the empty pdf.js file, we don't actually want to
   // preprocess everything yet since other build targets use this file.
-  BuildHelper.preprocess('pdf.js', ROOT_DIR + BUILD_TARGET,
+  builder.preprocess('pdf.js', ROOT_DIR + BUILD_TARGET,
                          {BUNDLE: bundle, BUNDLE_VERSION: bundleVersion});
 };
 
@@ -435,7 +301,7 @@ target.firefox = function() {
   cd(ROOT_DIR);
   echo();
   echo('### Building Firefox extension');
-  var defines = extendDefines({FIREFOX: true});
+  var defines = builder.merge(DEFINES, {FIREFOX: true});
 
   var FIREFOX_BUILD_CONTENT_DIR = FIREFOX_BUILD_DIR + '/content/',
       FIREFOX_EXTENSION_DIR = 'extensions/firefox/',
@@ -488,7 +354,7 @@ target.firefox = function() {
       [COMMON_WEB_FILES_PREPROCESS, FIREFOX_BUILD_CONTENT_DIR + '/web']
     ]
   };
-  BuildHelper.build(setup);
+  builder.build(setup);
 
   // Remove '.DS_Store' and other hidden files
   find(FIREFOX_BUILD_DIR).forEach(function(file) {
@@ -531,7 +397,7 @@ target.mozcentral = function() {
   cd(ROOT_DIR);
   echo();
   echo('### Building mozilla-central extension');
-  var defines = extendDefines({MOZCENTRAL: true});
+  var defines = builder.merge(DEFINES, {MOZCENTRAL: true});
 
   var MOZCENTRAL_DIR = BUILD_DIR + 'mozcentral/',
       MOZCENTRAL_EXTENSION_DIR = MOZCENTRAL_DIR + 'browser/extensions/pdfjs/',
@@ -586,7 +452,7 @@ target.mozcentral = function() {
       [COMMON_WEB_FILES_PREPROCESS, MOZCENTRAL_CONTENT_DIR + '/web']
     ]
   };
-  BuildHelper.build(setup);
+  builder.build(setup);
 
   // Remove '.DS_Store' and other hidden files
   find(MOZCENTRAL_DIR).forEach(function(file) {
@@ -624,9 +490,9 @@ target.b2g = function() {
   echo('### Building B2G (Firefox OS App)');
   var B2G_BUILD_DIR = BUILD_DIR + '/b2g/',
       B2G_BUILD_CONTENT_DIR = B2G_BUILD_DIR + '/content/';
-  var defines = extendDefines({ B2G: true });
+  var defines = builder.merge(DEFINES, { B2G: true });
   target.bundle();
-  
+
   // Clear out everything in the b2g build directory
   cd(ROOT_DIR);
   rm('-Rf', B2G_BUILD_DIR);
@@ -646,7 +512,7 @@ target.b2g = function() {
       [BUILD_TARGET, B2G_BUILD_CONTENT_DIR + BUILD_TARGET]
     ]
   };
-  BuildHelper.build(setup);
+  builder.build(setup);
 };
 
 //
@@ -656,7 +522,7 @@ target.chrome = function() {
   cd(ROOT_DIR);
   echo();
   echo('### Building Chrome extension');
-  var defines = extendDefines({CHROME: true});
+  var defines = builder.merge(DEFINES, {CHROME: true});
 
   var CHROME_BUILD_DIR = BUILD_DIR + '/chrome/',
       CHROME_BUILD_CONTENT_DIR = CHROME_BUILD_DIR + '/content/';
@@ -684,7 +550,7 @@ target.chrome = function() {
       ['web/locale.properties', CHROME_BUILD_CONTENT_DIR + '/web']
     ]
   };
-  BuildHelper.build(setup);
+  builder.build(setup);
 };
 
 
