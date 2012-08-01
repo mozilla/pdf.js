@@ -1109,14 +1109,20 @@ var PDFView = {
     }
 
     var wrapper = document.getElementById('viewerContainer');
-    if (document.documentElement.requestFullScreen) {
-      wrapper.requestFullScreen();
-    } else if (document.documentElement.mozRequestFullScreen) {
-      wrapper.mozRequestFullScreen();
-    } else if (document.documentElement.webkitRequestFullScreen) {
-      wrapper.webkitRequestFullScreen(Element.ALLOW_KEYBOARD_INPUT);
+    if (PDFJS.isFirefoxExtension) {
+      // Extension specific method provided to let the users
+      // be let of granting fullscreen privileges to every site they visit
+      FirefoxCom.requestSync('fullscreen', wrapper);
     } else {
-      return false;
+      if (document.documentElement.requestFullScreen) {
+        wrapper.requestFullScreen();
+      } else if (document.documentElement.mozRequestFullScreen) {
+        wrapper.mozRequestFullScreen();
+      } else if (document.documentElement.webkitRequestFullScreen) {
+        wrapper.webkitRequestFullScreen(Element.ALLOW_KEYBOARD_INPUT);
+      } else {
+        return false;
+      }
     }
 
     this.isFullscreen = true;

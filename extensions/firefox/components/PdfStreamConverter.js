@@ -248,6 +248,24 @@ ChromeActions.prototype = {
       if (!sentResponse)
         sendResponse(false);
     });
+  },
+
+  fullscreen: function(element) {
+    var domWin = this.domWindow,
+        url = this.domWindow.document.location.toString();
+
+    // Add permission so there's no need to ask the user
+    Services.perms.add(Services.io.newURI(url, null, null), 'fullscreen',
+      Services.perms.ALLOW_ACTION, Services.perms.EXPIRE_SESSION);
+
+    element.mozRequestFullScreen();
+
+    // Remove the permission again, when there isn't any use for it
+    domWin.addEventListener('mozfullscreenchange', function() {
+      if(!domWin.document.mozFullScreen) {
+        Services.perms.remove(domWin.document.location.host, 'fullscreen');
+      }
+    }, false);
   }
 };
 
