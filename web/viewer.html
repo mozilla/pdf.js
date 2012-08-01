@@ -4,41 +4,60 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
     <title>PDF.js viewer</title>
-    <!-- PDFJSSCRIPT_INCLUDE_FIREFOX_EXTENSION -->
+
+<!--#if FIREFOX-->
+<!--#include viewer-snippet-firefox-extension.html-->
+<!--#endif-->
 
     <link rel="stylesheet" href="viewer.css"/>
-    <link rel="resource" type="application/l10n" href="locale.properties"/><!-- PDFJSSCRIPT_REMOVE_CORE -->
+<!--#if !PRODUCTION-->
+    <link rel="resource" type="application/l10n" href="locale.properties"/>
+<!--#endif-->
 
-    <script type="text/javascript" src="compatibility.js"></script> <!-- PDFJSSCRIPT_REMOVE_FIREFOX_EXTENSION -->
-    <script type="text/javascript" src="../external/webL10n/l10n.js"></script><!-- PDFJSSCRIPT_REMOVE_CORE -->
+<!--#if !FIREFOX -->
+    <script type="text/javascript" src="compatibility.js"></script>
+<!--#endif-->
 
-    <!-- PDFJSSCRIPT_INCLUDE_BUILD -->
-    <script type="text/javascript" src="../src/core.js"></script> <!-- PDFJSSCRIPT_REMOVE_CORE -->
-    <script type="text/javascript" src="../src/util.js"></script>  <!-- PDFJSSCRIPT_REMOVE_CORE -->
-    <script type="text/javascript" src="../src/api.js"></script>  <!-- PDFJSSCRIPT_REMOVE_CORE -->
-    <script type="text/javascript" src="../src/metadata.js"></script>  <!-- PDFJSSCRIPT_REMOVE_CORE -->
-    <script type="text/javascript" src="../src/canvas.js"></script>  <!-- PDFJSSCRIPT_REMOVE_CORE -->
-    <script type="text/javascript" src="../src/obj.js"></script>  <!-- PDFJSSCRIPT_REMOVE_CORE -->
-    <script type="text/javascript" src="../src/function.js"></script> <!-- PDFJSSCRIPT_REMOVE_CORE -->
-    <script type="text/javascript" src="../src/charsets.js"></script>  <!-- PDFJSSCRIPT_REMOVE_CORE -->
-    <script type="text/javascript" src="../src/cidmaps.js"></script>  <!-- PDFJSSCRIPT_REMOVE_CORE -->
-    <script type="text/javascript" src="../src/colorspace.js"></script>  <!-- PDFJSSCRIPT_REMOVE_CORE -->
-    <script type="text/javascript" src="../src/crypto.js"></script>  <!-- PDFJSSCRIPT_REMOVE_CORE -->
-    <script type="text/javascript" src="../src/evaluator.js"></script>  <!-- PDFJSSCRIPT_REMOVE_CORE -->
-    <script type="text/javascript" src="../src/fonts.js"></script>  <!-- PDFJSSCRIPT_REMOVE_CORE -->
-    <script type="text/javascript" src="../src/glyphlist.js"></script>  <!-- PDFJSSCRIPT_REMOVE_CORE -->
-    <script type="text/javascript" src="../src/image.js"></script>  <!-- PDFJSSCRIPT_REMOVE_CORE -->
-    <script type="text/javascript" src="../src/metrics.js"></script>  <!-- PDFJSSCRIPT_REMOVE_CORE -->
-    <script type="text/javascript" src="../src/parser.js"></script>  <!-- PDFJSSCRIPT_REMOVE_CORE -->
-    <script type="text/javascript" src="../src/pattern.js"></script>  <!-- PDFJSSCRIPT_REMOVE_CORE -->
-    <script type="text/javascript" src="../src/stream.js"></script>  <!-- PDFJSSCRIPT_REMOVE_CORE -->
-    <script type="text/javascript" src="../src/worker.js"></script>  <!-- PDFJSSCRIPT_REMOVE_CORE -->
-    <script type="text/javascript" src="../external/jpgjs/jpg.js"></script>  <!-- PDFJSSCRIPT_REMOVE_CORE -->
-    <script type="text/javascript" src="../src/jpx.js"></script>  <!-- PDFJSSCRIPT_REMOVE_CORE -->
-    <script type="text/javascript" src="../src/jbig2.js"></script>  <!-- PDFJSSCRIPT_REMOVE_CORE -->
-    <script type="text/javascript" src="../src/bidi.js"></script>  <!-- PDFJSSCRIPT_REMOVE_CORE -->
-    <script type="text/javascript">PDFJS.workerSrc = '../src/worker_loader.js';</script> <!-- PDFJSSCRIPT_REMOVE_CORE -->
-    <!-- PDFJSSCRIPT_INCLUDE_B2G -->
+<!--#if !PRODUCTION-->
+    <script type="text/javascript" src="../external/webL10n/l10n.js"></script>
+<!--#endif-->
+
+<!--#if !PRODUCTION-->
+    <script type="text/javascript" src="../src/core.js"></script>
+    <script type="text/javascript" src="../src/util.js"></script>
+    <script type="text/javascript" src="../src/api.js"></script>
+    <script type="text/javascript" src="../src/metadata.js"></script>
+    <script type="text/javascript" src="../src/canvas.js"></script>
+    <script type="text/javascript" src="../src/obj.js"></script>
+    <script type="text/javascript" src="../src/function.js"></script>
+    <script type="text/javascript" src="../src/charsets.js"></script>
+    <script type="text/javascript" src="../src/cidmaps.js"></script>
+    <script type="text/javascript" src="../src/colorspace.js"></script>
+    <script type="text/javascript" src="../src/crypto.js"></script>
+    <script type="text/javascript" src="../src/evaluator.js"></script>
+    <script type="text/javascript" src="../src/fonts.js"></script>
+    <script type="text/javascript" src="../src/glyphlist.js"></script>
+    <script type="text/javascript" src="../src/image.js"></script>
+    <script type="text/javascript" src="../src/metrics.js"></script>
+    <script type="text/javascript" src="../src/parser.js"></script>
+    <script type="text/javascript" src="../src/pattern.js"></script>
+    <script type="text/javascript" src="../src/stream.js"></script>
+    <script type="text/javascript" src="../src/worker.js"></script>
+    <script type="text/javascript" src="../external/jpgjs/jpg.js"></script>
+    <script type="text/javascript" src="../src/jpx.js"></script>
+    <script type="text/javascript" src="../src/jbig2.js"></script>
+    <script type="text/javascript" src="../src/bidi.js"></script>
+    <script type="text/javascript">PDFJS.workerSrc = '../src/worker_loader.js';</script>
+<!--#endif-->
+
+<!--#if GENERIC || CHROME-->
+<!--#include viewer-snippet.html-->
+<!--#endif-->
+
+<!--#if B2G-->
+<!--#include viewer-snippet-b2g.html-->
+<!--#endif-->
+
     <script type="text/javascript" src="debugger.js"></script>
     <script type="text/javascript" src="viewer.js"></script>
   </head>

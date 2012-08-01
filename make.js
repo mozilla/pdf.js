@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 require('./external/shelljs/make');
 var fs = require('fs');
+var path = require('path');
 var vm = require('vm');
 
 var ROOT_DIR = __dirname + '/', // absolute path to project's root
@@ -10,6 +11,7 @@ var ROOT_DIR = __dirname + '/', // absolute path to project's root
     EXTENSION_SRC_DIR = 'extensions/',
     LOCALE_SRC_DIR = 'l10n/',
     GH_PAGES_DIR = BUILD_DIR + 'gh-pages/',
+    GENERIC_DIR = BUILD_DIR + 'generic/',
     REPO = 'git@github.com:mozilla/pdf.js.git',
     PYTHON_BIN = 'python2.7',
     MOZCENTRAL_PREF_PREFIX = 'pdfjs',
@@ -17,48 +19,147 @@ var ROOT_DIR = __dirname + '/', // absolute path to project's root
     MOZCENTRAL_STREAM_CONVERTER_ID = 'd0c5195d-e798-49d4-b1d3-9324328b2291',
     FIREFOX_STREAM_CONVERTER_ID = '6457a96b-2d68-439a-bcfa-44465fbcdbb1';
 
-function preprocess(inFilename, outFilename, flags) {
-  // TODO make this really read line by line.
-  var lines = fs.readFileSync(inFilename).toString().split("\n");
-  var totalLines = lines.length;
-  var out = '';
-  var i = 0;
-  function readLine() {
-    if (i < totalLines) {
-      return lines[i++];
-    }
-    return null;
-  }
-  function writeLine(line) {
-    out += line + '\n';
-  }
+var DEFINES = {
+  PRODUCTION: true,
+  // The main build targets:
+  GENERIC: false,
+  FIREFOX: false,
+  MOZCENTRAL: false,
+  B2G: false,
+  CHROME: false
+};
 
-  var s, state = 0, stack = [];
-  while ((s = readLine()) !== null) {
-    var m = new RegExp(/^\/\/\s*#(if|else|endif)\b(?:\s+(.*))?/).exec(s);
-    if (m) {
-      if (m[1] === "if") {
-        stack.push(state);
-        state = vm.runInNewContext(m[2], flags) ? 3 : 1;
-      } else if (m[1] === "else") {
-        state = state === 1 ? 3 : 2;
+function extendDefines(obj) {
+  var ret = {};
+  for (var key in DEFINES)
+    ret[key] = DEFINES[key];
+  for (key in obj)
+    ret[key] = obj[key];
+  return ret;
+}
+
+var BuildHelper = {
+  /**
+   * A simple preprocessor that is based on the firefox preprocessor
+   * see (https://developer.mozilla.org/en/Build/Text_Preprocessor).  The main
+   * difference is that this supports a subset of the commands and it supports
+   * preproccesor commands in html style comments.
+   * Currently Supported commands:
+   * - if
+   * - else
+   * - endif
+   * - include
+   * - expand
+   */
+  preprocess: function preprocess(inFilename, outFilename, defines) {
+    // TODO make this really read line by line.
+    var lines = fs.readFileSync(inFilename).toString().split('\n');
+    var totalLines = lines.length;
+    var out = '';
+    var i = 0;
+    function readLine() {
+      if (i < totalLines) {
+        return lines[i++];
+      }
+      return null;
+    }
+    var writeLine = typeof outFilename === 'function' ? outFilename : function(line) {
+      out += line + '\n';
+    }
+    function include(file) {
+      var realPath = fs.realpathSync(inFilename);
+      var dir = path.dirname(realPath);
+      preprocess(path.join(dir, file), writeLine, defines);
+    }
+    function expand(line) {
+      line = line.replace(/__[\w]+__/g, function(variable) {
+        variable = variable.substring(2, variable.length - 2);
+        if (variable in defines) {
+          return defines[variable];
+        }
+        return '';
+      });
+      writeLine(line);
+    }
+
+    var s, state = 0, stack = [];
+    var control = /^(?:\/\/|<!--)\s*#(if|else|endif|expand|include)(?:\s+(.*?)(?:-->)?$)?/;
+    var lineNumber = 0;
+    while ((s = readLine()) !== null) {
+      ++lineNumber;
+      var m = control.exec(s);
+      if (m) {
+        switch (m[1]) {
+          case 'if':
+            stack.push(state);
+            try {
+              state = vm.runInNewContext(m[2], defines) ? 3 : 1;
+            } catch (e) {
+              console.error('Could not evalute line \'' + m[2] + '\' at ' +
+                            fs.realpathSync(inFilename) + ':' + lineNumber);
+              throw e;
+            }
+            break;
+          case 'else':
+            state = state === 1 ? 3 : 2;
+            break;
+          case 'endif':
+            state = stack.pop();
+            break;
+          case 'expand':
+            if (state === 0 || state === 3)
+              expand(m[2]);
+            break;
+          case 'include':
+            if (state === 0 || state === 3)
+              include(m[2]);
+            break;
+        }
       } else {
-        state = stack.pop();
-      }
-    } else {
-      if (state === 0) {
-        writeLine(s);
-      } else if(state === 3) {
-        writeLine(s.replace(/^\/\//g, "  "));
+        if (state === 0) {
+          writeLine(s);
+        } else if(state === 3) {
+          writeLine(s.replace(/^\/\/|^<!--|-->/g, "  "));
+        }
       }
     }
-  }
-  fs.writeFileSync(outFilename, out);
-}
+    if (state !== 0 || stack.length !== 0)
+      throw new Error('Missing endif in preprocessor.');
+    if (typeof outFilename !== 'function')
+      fs.writeFileSync(outFilename, out);
+  },
+  /**
+   * Simplifies common build steps.
+   * @param setup
+   *        .defines defines for preprocessors
+   *        .copy array of arrays of source and destination pairs of files to copy
+   *        .preprocess array of arrays of source and destination pairs of files
+   *                    run through preprocessor
+   */
+  build: function build(setup) {
+    var defines = setup.defines;
 
-target.pre = function() {
-  preprocess('in.txt', 'out.txt', {B2G: true});
-}
+    setup.copy.forEach(function(option) {
+      var source = option[0];
+      var destination = option[1];
+      cp('-R', source, destination);
+    });
+
+    setup.preprocess.forEach(function(option) {
+      var sources = option[0];
+      var destination = option[1];
+
+      sources = ls('-R', sources);
+      sources.forEach(function(source) {
+        // ??? Warn if the source is wildcard and dest is file?
+        var destWithFolder = destination;
+        if (test('-d', destination))
+          destWithFolder += '/' + path.basename(source);
+        BuildHelper.preprocess(source, destWithFolder, defines);
+      });
+    });
+  }
+};
 
 //
 // make all
@@ -76,14 +177,59 @@ target.all = function() {
 // Production stuff
 //
 
+// Files that need to be included in every build.
+var COMMON_WEB_FILES = 
+      ['web/viewer.css',
+       'web/images',
+       'web/debugger.js'],
+    COMMON_WEB_FILES_PREPROCESS =
+      ['web/viewer.js',
+       'web/viewer.html'];
+
+//
+// make generic
+// Builds the generic production viewer that should be compatible with most
+// modern HTML5 browsers.
+//
+target.generic = function() {
+  target.bundle();
+  target.locale();
+
+  cd(ROOT_DIR);
+  echo();
+  echo('### Creating generic viewer');
+
+  rm('-rf', GENERIC_DIR);
+  mkdir('-p', GENERIC_DIR);
+  mkdir('-p', GENERIC_DIR + BUILD_DIR);
+  mkdir('-p', GENERIC_DIR + '/web');
+
+  var defines = extendDefines({GENERIC: true});
+
+  var setup = {
+    defines: defines,
+    copy: [
+      [COMMON_WEB_FILES, GENERIC_DIR + '/web'],
+      ['external/webL10n/l10n.js', GENERIC_DIR + '/web'],
+      ['web/compatibility.js', GENERIC_DIR + '/web'],
+      ['web/compressed.tracemonkey-pldi-09.pdf', GENERIC_DIR + '/web'],
+      ['web/locale.properties', GENERIC_DIR + '/web']
+    ],
+    preprocess: [
+      [BUILD_TARGET, GENERIC_DIR + BUILD_TARGET],
+      [COMMON_WEB_FILES_PREPROCESS, GENERIC_DIR + '/web']
+    ]
+  };
+  BuildHelper.build(setup);
+};
+
 //
 // make web
 // Generates the website for the project, by checking out the gh-pages branch underneath
 // the build directory, and then moving the various viewer files into place.
 //
 target.web = function() {
-  target.production();
-  target.locale();
+  target.generic();
   target.extension();
   target.pagesrepo();
 
@@ -91,25 +237,18 @@ target.web = function() {
   echo();
   echo('### Creating web site');
 
-  var GH_PAGES_SRC_FILES = [
-    'web/*',
-    'external/webL10n/l10n.js'
-  ];
-
-  cp(BUILD_TARGET, GH_PAGES_DIR + BUILD_TARGET);
-  cp('-R', GH_PAGES_SRC_FILES, GH_PAGES_DIR + '/web');
+  cp('-R', GENERIC_DIR + '/*', GH_PAGES_DIR);
   cp(FIREFOX_BUILD_DIR + '/*.xpi', FIREFOX_BUILD_DIR + '/*.rdf',
-    GH_PAGES_DIR + EXTENSION_SRC_DIR + 'firefox/');
-  cp(GH_PAGES_DIR + '/web/index.html.template', GH_PAGES_DIR + '/index.html');
-  mv('-f', GH_PAGES_DIR + '/web/viewer-production.html',
-    GH_PAGES_DIR + '/web/viewer.html');
+     GH_PAGES_DIR + EXTENSION_SRC_DIR + 'firefox/');
+  cp('web/index.html.template', GH_PAGES_DIR + '/index.html');
+
   cd(GH_PAGES_DIR);
   exec('git add -A');
 
   echo();
   echo("Website built in " + GH_PAGES_DIR);
   echo("Don't forget to cd into " + GH_PAGES_DIR +
-    " and issue 'git commit' to push changes.");
+       " and issue 'git commit' to push changes.");
 };
 
 //
@@ -170,19 +309,9 @@ target.locale = function() {
 };
 
 //
-// make production
-// Creates production output (pdf.js, and corresponding changes to web/ files)
-//
-target.production = function() {
-  target.bundle();
-  target.viewer();
-};
-
-//
 // make bundle
 // Bundles all source files into one wrapper 'pdf.js' file, in the given order.
 //
-
 target.bundle = function() {
   cd(ROOT_DIR);
   echo();
@@ -223,29 +352,12 @@ target.bundle = function() {
       bundleVersion = exec('git log --format="%h" -n 1',
         {silent: true}).output.replace('\n', '');
 
-  sed(/.*PDFJSSCRIPT_INCLUDE_ALL.*\n/, bundle, 'pdf.js')
-    .to(ROOT_DIR + BUILD_TARGET);
-  sed('-i', 'PDFJSSCRIPT_BUNDLE_VER', bundleVersion, ROOT_DIR + BUILD_TARGET);
+  // This just preprocesses the empty pdf.js file, we don't actually want to
+  // preprocess everything yet since other build targets use this file.
+  BuildHelper.preprocess('pdf.js', ROOT_DIR + BUILD_TARGET,
+                         {BUNDLE: bundle, BUNDLE_VERSION: bundleVersion});
 };
 
-//
-// make viewer
-// Changes development <script> tags in our web viewer to use only 'pdf.js'.
-// Produces 'viewer-production.html'
-//
-target.viewer = function() {
-  cd(ROOT_DIR);
-  echo();
-  echo('### Generating production-level viewer');
-
-  cd('web');
-  // Remove development lines
-  sed(/.*PDFJSSCRIPT_REMOVE_CORE.*\n/g, '', 'viewer.html')
-    .to('viewer-production.html');
-  // Introduce snippet
-  sed('-i', /.*PDFJSSCRIPT_INCLUDE_BUILD.*\n/g, cat('viewer-snippet.html'),
-    'viewer-production.html');
-};
 
 //
 // make pagesrepo
@@ -283,15 +395,7 @@ target.pagesrepo = function() {
 // Extension stuff
 //
 
-var EXTENSION_WEB_FILES =
-      ['web/debugger.js',
-       'web/images',
-       'web/viewer.css',
-       'web/viewer.js',
-       'web/viewer.html',
-       'extensions/firefox/tools/l10n.js',
-       'web/viewer-production.html'],
-    EXTENSION_BASE_VERSION = 'f0f0418a9c6637981fe1182b9212c2d592774c7d',
+var EXTENSION_BASE_VERSION = 'f0f0418a9c6637981fe1182b9212c2d592774c7d',
     EXTENSION_VERSION_PREFIX = '0.3.',
     EXTENSION_BUILD_NUMBER,
     EXTENSION_VERSION;
@@ -305,7 +409,6 @@ target.extension = function() {
   echo('### Building extensions');
 
   target.locale();
-  target.production();
   target.firefox();
   target.chrome();
 };
@@ -332,8 +435,10 @@ target.firefox = function() {
   cd(ROOT_DIR);
   echo();
   echo('### Building Firefox extension');
+  var defines = extendDefines({FIREFOX: true});
 
   var FIREFOX_BUILD_CONTENT_DIR = FIREFOX_BUILD_DIR + '/content/',
+      FIREFOX_EXTENSION_DIR = 'extensions/firefox/',
       FIREFOX_CONTENT_DIR = EXTENSION_SRC_DIR + '/firefox/content/',
       FIREFOX_EXTENSION_FILES_TO_COPY =
         ['*.js',
@@ -358,7 +463,7 @@ target.firefox = function() {
       FIREFOX_AMO_EXTENSION_NAME = 'pdf.js.amo.xpi';
 
   target.locale();
-  target.production();
+  target.bundle();
   target.buildnumber();
   cd(ROOT_DIR);
 
@@ -373,25 +478,18 @@ target.firefox = function() {
   cp('-R', FIREFOX_EXTENSION_FILES_TO_COPY, ROOT_DIR + FIREFOX_BUILD_DIR);
   cd(ROOT_DIR);
 
-  // Copy a standalone version of pdf.js inside the content directory
-  cp(BUILD_TARGET, FIREFOX_BUILD_CONTENT_DIR + BUILD_DIR);
-  cp('-R', EXTENSION_WEB_FILES, FIREFOX_BUILD_CONTENT_DIR + '/web');
-  rm(FIREFOX_BUILD_CONTENT_DIR + '/web/viewer-production.html');
+  var setup = {
+    defines: defines,
+    copy: [
+      [COMMON_WEB_FILES, FIREFOX_BUILD_CONTENT_DIR + '/web'],
+      ['extensions/firefox/tools/l10n.js', FIREFOX_BUILD_CONTENT_DIR + '/web']
+    ],
+    preprocess: [
+      [COMMON_WEB_FILES_PREPROCESS, FIREFOX_BUILD_CONTENT_DIR + '/web']
+    ]
+  };
+  BuildHelper.build(setup);
 
-  // Copy over the firefox extension snippet so we can inline pdf.js in it
-  cp('web/viewer-snippet-firefox-extension.html', FIREFOX_BUILD_CONTENT_DIR + '/web');
-
-  // Modify the viewer so it does all the extension-only stuff.
-  cd(FIREFOX_BUILD_CONTENT_DIR + '/web');
-  sed('-i', /.*PDFJSSCRIPT_INCLUDE_BUNDLE.*\n/, cat(ROOT_DIR + BUILD_TARGET), 'viewer-snippet-firefox-extension.html');
-  sed('-i', /.*PDFJSSCRIPT_REMOVE_CORE.*\n/g, '', 'viewer.html');
-  sed('-i', /.*PDFJSSCRIPT_REMOVE_FIREFOX_EXTENSION.*\n/g, '', 'viewer.html');
-  sed('-i', /.*PDFJSSCRIPT_INCLUDE_FIREFOX_EXTENSION.*\n/, cat('viewer-snippet-firefox-extension.html'), 'viewer.html');
-  cd(ROOT_DIR);
-
-  // We don't need pdf.js anymore since its inlined
-  rm('-Rf', FIREFOX_BUILD_CONTENT_DIR + BUILD_DIR);
-  rm(FIREFOX_BUILD_CONTENT_DIR + '/web/viewer-snippet-firefox-extension.html');
   // Remove '.DS_Store' and other hidden files
   find(FIREFOX_BUILD_DIR).forEach(function(file) {
     if (file.match(/^\./))
@@ -433,6 +531,7 @@ target.mozcentral = function() {
   cd(ROOT_DIR);
   echo();
   echo('### Building mozilla-central extension');
+  var defines = extendDefines({MOZCENTRAL: true});
 
   var MOZCENTRAL_DIR = BUILD_DIR + 'mozcentral/',
       MOZCENTRAL_EXTENSION_DIR = MOZCENTRAL_DIR + 'browser/extensions/pdfjs/',
@@ -457,7 +556,7 @@ target.mozcentral = function() {
          'content',
          'LICENSE'];
 
-  target.production();
+  target.bundle();
   target.buildnumber();
   cd(ROOT_DIR);
 
@@ -477,25 +576,18 @@ target.mozcentral = function() {
            ROOT_DIR + MOZCENTRAL_EXTENSION_DIR + '/chrome.manifest')
   cd(ROOT_DIR);
 
-  // Copy a standalone version of pdf.js inside the content directory
-  cp(BUILD_TARGET, MOZCENTRAL_CONTENT_DIR + BUILD_DIR);
-  cp('-R', EXTENSION_WEB_FILES, MOZCENTRAL_CONTENT_DIR + '/web');
-  rm(MOZCENTRAL_CONTENT_DIR + '/web/viewer-production.html');
+  var setup = {
+    defines: defines,
+    copy: [
+      [COMMON_WEB_FILES, MOZCENTRAL_CONTENT_DIR + '/web'],
+      ['extensions/firefox/tools/l10n.js', MOZCENTRAL_CONTENT_DIR + '/web']
+    ],
+    preprocess: [
+      [COMMON_WEB_FILES_PREPROCESS, MOZCENTRAL_CONTENT_DIR + '/web']
+    ]
+  };
+  BuildHelper.build(setup);
 
-  // Copy over the firefox extension snippet so we can inline pdf.js in it
-  cp('web/viewer-snippet-firefox-extension.html', MOZCENTRAL_CONTENT_DIR + '/web');
-
-  // Modify the viewer so it does all the extension-only stuff.
-  cd(MOZCENTRAL_CONTENT_DIR + '/web');
-  sed('-i', /.*PDFJSSCRIPT_INCLUDE_BUNDLE.*\n/, cat(ROOT_DIR + BUILD_TARGET), 'viewer-snippet-firefox-extension.html');
-  sed('-i', /.*PDFJSSCRIPT_REMOVE_CORE.*\n/g, '', 'viewer.html');
-  sed('-i', /.*PDFJSSCRIPT_REMOVE_FIREFOX_EXTENSION.*\n/g, '', 'viewer.html');
-  sed('-i', /.*PDFJSSCRIPT_INCLUDE_FIREFOX_EXTENSION.*\n/, cat('viewer-snippet-firefox-extension.html'), 'viewer.html');
-  cd(ROOT_DIR);
-
-  // We don't need pdf.js anymore since its inlined
-  rm('-Rf', MOZCENTRAL_CONTENT_DIR + BUILD_DIR);
-  rm(MOZCENTRAL_CONTENT_DIR + '/web/viewer-snippet-firefox-extension.html');
   // Remove '.DS_Store' and other hidden files
   find(MOZCENTRAL_DIR).forEach(function(file) {
     if (file.match(/^\./))
@@ -532,42 +624,29 @@ target.b2g = function() {
   echo('### Building B2G (Firefox OS App)');
   var B2G_BUILD_DIR = BUILD_DIR + '/b2g/',
       B2G_BUILD_CONTENT_DIR = B2G_BUILD_DIR + '/content/';
-  target.production();
-  target.buildnumber();
+  var defines = extendDefines({ B2G: true });
+  target.bundle();
   
-    // Clear out everything in the b2g build directory
+  // Clear out everything in the b2g build directory
   cd(ROOT_DIR);
   rm('-Rf', B2G_BUILD_DIR);
   mkdir('-p', B2G_BUILD_CONTENT_DIR);
   mkdir('-p', B2G_BUILD_CONTENT_DIR + BUILD_DIR);
   mkdir('-p', B2G_BUILD_CONTENT_DIR + '/web');
 
-  // Copy a standalone version of pdf.js inside the content directory
-  cp(BUILD_TARGET, B2G_BUILD_CONTENT_DIR + BUILD_DIR);
-  cp('-R', EXTENSION_WEB_FILES, B2G_BUILD_CONTENT_DIR + '/web');
-  cp('web/viewer-snippet-b2g.html', B2G_BUILD_CONTENT_DIR + '/web/');
-  // Replacing the l10n.js file with regular gh-pages one
-  rm(B2G_BUILD_CONTENT_DIR + '/web/l10n.js');
-  cp('external/webL10n/l10n.js', B2G_BUILD_CONTENT_DIR + '/web');
-  cp('web/locale.properties', B2G_BUILD_CONTENT_DIR + '/web');
-
-  mv('-f', B2G_BUILD_CONTENT_DIR + '/web/viewer-production.html',
-     B2G_BUILD_CONTENT_DIR + '/web/viewer.html');
-  cd(B2G_BUILD_CONTENT_DIR + '/web');
-  sed('-i', /.*PDFJSSCRIPT_INCLUDE_B2G.*\n/, cat('viewer-snippet-b2g.html'),  'viewer.html');
-  rm('viewer-snippet-b2g.html');
-  cd(ROOT_DIR);
-
-  var flags = {
-    B2G: true
+  var setup = {
+    defines: defines,
+    copy: [
+      [COMMON_WEB_FILES, B2G_BUILD_CONTENT_DIR + '/web'],
+      ['web/locale.properties', B2G_BUILD_CONTENT_DIR + '/web'],
+      ['external/webL10n/l10n.js', B2G_BUILD_CONTENT_DIR + '/web']
+    ],
+    preprocess: [
+      [COMMON_WEB_FILES_PREPROCESS, B2G_BUILD_CONTENT_DIR + '/web'],
+      [BUILD_TARGET, B2G_BUILD_CONTENT_DIR + BUILD_TARGET]
+    ]
   };
-  var prep = [
-    B2G_BUILD_CONTENT_DIR + '/web/viewer.js',
-    B2G_BUILD_CONTENT_DIR + '/build/pdf.js'
-  ];
-  for (var i in prep) {
-    preprocess(prep[i], prep[i], flags);
-  }
+  BuildHelper.build(setup);
 };
 
 //
@@ -577,15 +656,12 @@ target.chrome = function() {
   cd(ROOT_DIR);
   echo();
   echo('### Building Chrome extension');
+  var defines = extendDefines({CHROME: true});
 
   var CHROME_BUILD_DIR = BUILD_DIR + '/chrome/',
-      CHROME_CONTENT_DIR = EXTENSION_SRC_DIR + '/chrome/content/',
-      CHROME_BUILD_CONTENT_DIR = CHROME_BUILD_DIR + '/content/',
-      CHROME_EXTENSION_FILES =
-        ['extensions/chrome/*.json',
-         'extensions/chrome/*.html'];
+      CHROME_BUILD_CONTENT_DIR = CHROME_BUILD_DIR + '/content/';
 
-  target.production();
+  target.bundle();
   target.buildnumber();
   cd(ROOT_DIR);
 
@@ -595,18 +671,20 @@ target.chrome = function() {
   mkdir('-p', CHROME_BUILD_CONTENT_DIR + BUILD_DIR);
   mkdir('-p', CHROME_BUILD_CONTENT_DIR + '/web');
 
-  // Copy extension files
-  cp('-R', CHROME_EXTENSION_FILES, CHROME_BUILD_DIR);
-
-  // Copy a standalone version of pdf.js inside the content directory
-  cp(BUILD_TARGET, CHROME_BUILD_CONTENT_DIR + BUILD_DIR);
-  cp('-R', EXTENSION_WEB_FILES, CHROME_BUILD_CONTENT_DIR + '/web');
-  // Replacing the l10n.js file with regular gh-pages one
-  rm(CHROME_BUILD_CONTENT_DIR + '/web/l10n.js');
-  cp('external/webL10n/l10n.js', CHROME_BUILD_CONTENT_DIR + '/web');
-  cp('web/locale.properties', CHROME_BUILD_CONTENT_DIR + '/web');
-  mv('-f', CHROME_BUILD_CONTENT_DIR + '/web/viewer-production.html',
-    CHROME_BUILD_CONTENT_DIR + '/web/viewer.html');
+  var setup = {
+    defines: defines,
+    copy: [
+      [COMMON_WEB_FILES, CHROME_BUILD_CONTENT_DIR + '/web'],
+      [['extensions/chrome/*.json', 'extensions/chrome/*.html'], CHROME_BUILD_DIR],
+      [BUILD_TARGET, CHROME_BUILD_CONTENT_DIR + BUILD_TARGET],
+      ['external/webL10n/l10n.js', CHROME_BUILD_CONTENT_DIR + '/web']
+    ],
+    preprocess: [
+      [COMMON_WEB_FILES_PREPROCESS, CHROME_BUILD_CONTENT_DIR + '/web'],
+      ['web/locale.properties', CHROME_BUILD_CONTENT_DIR + '/web']
+    ]
+  };
+  BuildHelper.build(setup);
 };
 
 
