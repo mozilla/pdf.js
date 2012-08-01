@@ -367,7 +367,7 @@
       "file": "pdfs/issue1944.pdf",
       "md5": "a4ef22c380b55747fb3d4a1c276b0950",
       "rounds": 1,
-      "pageLimit": 2,
+      "pageLimit": 1,
       "link": true,
       "type": "eq"
     },
