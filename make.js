@@ -178,7 +178,7 @@ target.all = function() {
 //
 
 // Files that need to be included in every build.
-var COMMON_WEB_FILES = 
+var COMMON_WEB_FILES =
       ['web/viewer.css',
        'web/images',
        'web/debugger.js'],
