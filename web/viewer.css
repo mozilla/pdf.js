@@ -27,6 +27,50 @@ select {
   display: none !important;
 }
 
+#viewerContainer:-webkit-full-screen {
+  top: 0px;
+  padding-top: 6px;
+  padding-bottom: 24px;
+  background-color: #404040;
+  background-image: url(images/texture.png);
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+}
+
+:-webkit-full-screen #viewer {
+  margin: 0pt;
+  padding: 0pt;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
+:-webkit-full-screen .page {
+  margin: 0px auto;
+  margin-bottom: 10px;
+}
+
+#viewerContainer:-moz-full-screen {
+  background-color: #404040;
+  background-image: url(images/texture.png);
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+:-moz-full-screen .page:last-child {
+  margin-bottom: 40px;
+}
+
+#viewerContainer:full-screen {
+  top: 0px;
+  background-color: #404040;
+  background-image: url(images/texture.png);
+  width: 100%;
+  height: 100%;
+}
+
 /* outer/inner center provides horizontal center */
 html[dir='ltr'] .outerCenter {
   float: right;
@@ -607,6 +651,11 @@ html[dir='rtl'] .toolbarButton.pageDown::before {
 .toolbarButton.zoomIn::before {
   display: inline-block;
   content: url(images/toolbarButton-zoomIn.png);
+}
+
+.toolbarButton.fullscreen::before {
+  display: inline-block;
+  content: url(images/toolbarButton-fullscreen.png);
 }
 
 .toolbarButton.print::before {
