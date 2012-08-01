@@ -578,7 +578,7 @@ html[dir='rtl'] .dropdownToolbarButton {
   margin:0;
   padding:0;
   border:none;
-  background: transparent;
+  background: rgba(0,0,0,0); /* Opera does not support 'transparent' <select> background */
 }
 
 .dropdownToolbarButton > select > option {
