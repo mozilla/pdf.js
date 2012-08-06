@@ -334,14 +334,6 @@
        "skipPages": [1],
        "type": "eq"
     },
-    {  "id": "lista_preliminar",
-       "file": "pdfs/lista_preliminar.pdf",
-       "md5": "4eff251319eeb660ba8a7a5cfac7787d",
-       "rounds": 1,
-       "link": true,
-       "pageLimit": 3,
-       "type": "eq"
-    },
     {  "id": "issue919",
        "file": "pdfs/issue919.pdf",
        "md5": "3a1716a512aca4d7a8d6106bd4885d14",
@@ -355,13 +347,6 @@
        "md5": "d582cc0f2592ae82936589ced2a47e55",
        "rounds": 1,
        "type": "eq"
-    },
-    {  "id": "issue1001",
-      "file": "pdfs/issue1001.pdf",
-      "md5": "0f1496e80a82a923e91d9e74c55ad94e",
-      "rounds": 1,
-      "link": true,
-      "type": "eq"
     },
     {  "id": "issue1586",
       "file": "pdfs/pdfjsbad1586.pdf",
@@ -421,7 +406,7 @@
       "file": "pdfs/issue1096.pdf",
       "md5": "7f75d2b4b93c78d401ff39e8c1b00612",
       "rounds": 1,
-      "pageLimit": 10,
+      "pageLimit": 9,
       "link": true,
       "type": "eq"
     },
