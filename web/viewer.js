@@ -1061,7 +1061,7 @@ var PDFView = {
       view = views[i - 1];
       viewHeight = view.el.clientHeight;
       currentHeight = view.el.offsetTop;
-      nextHeight = currentHeight + view.el.clientHeight;
+      nextHeight = currentHeight + viewHeight;
       hidden = Math.max(0, top - currentHeight) +
                Math.max(0, nextHeight - bottom);
       percent = Math.floor((viewHeight - hidden) * 100.0 / viewHeight);
