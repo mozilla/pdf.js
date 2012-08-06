@@ -403,7 +403,7 @@ var PDFDocument = (function PDFDocumentClosure() {
     return true; /* found */
   }
 
-  var DOCUMENT_INFO = {
+  var DocumentInfoValidators = {
     get entries() {
       // Lazily build this since all the validation functions below are not
       // defined until after this file loads.
@@ -518,7 +518,7 @@ var PDFDocument = (function PDFDocumentClosure() {
         var infoDict = this.xref.trailer.get('Info');
 
         docInfo = {};
-        var validEntries = DOCUMENT_INFO.entries;
+        var validEntries = DocumentInfoValidators.entries;
         // Only fill the document info with valid entries from the spec.
         for (var key in validEntries) {
           if (infoDict.has(key)) {
