@@ -127,20 +127,23 @@
 // No XMLHttpRequest.response ?
 (function checkXMLHttpRequestResponseCompatibility() {
   var xhrPrototype = XMLHttpRequest.prototype;
+  if (!('overrideMimeType' in xhrPrototype)) {
+    // IE10 might have response, but not overrideMimeType
+    Object.defineProperty(xhrPrototype, 'overrideMimeType', {
+      value: function xmlHttpRequestOverrideMimeType(mimeType) {}
+    });
+  }
   if ('response' in xhrPrototype ||
       'mozResponseArrayBuffer' in xhrPrototype ||
       'mozResponse' in xhrPrototype ||
       'responseArrayBuffer' in xhrPrototype)
     return;
-  // IE ?
+  // IE9 ?
   if (typeof VBArray !== 'undefined') {
     Object.defineProperty(xhrPrototype, 'response', {
       get: function xmlHttpRequestResponseGet() {
         return new Uint8Array(new VBArray(this.responseBody).toArray());
       }
-    });
-    Object.defineProperty(xhrPrototype, 'overrideMimeType', {
-      value: function xmlHttpRequestOverrideMimeType(mimeType) {}
     });
     return;
   }
