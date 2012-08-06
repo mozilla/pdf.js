@@ -1903,27 +1903,31 @@ function updateViewarea() {
 
   if (!PDFView.initialized)
     return;
+  var visiblePages = PDFView.getVisiblePages();
 
   PDFView.renderHighestPriority();
 
-  var pageNumber = PDFView.page;
+  var currentId = PDFView.page;
+
+  for (i = 1, stillFullyVisible = false; i <= visiblePages.length; ++i) {
+    page = visiblePages[i - 1];
+
+    if (page.percent < 100)
+      break;
+
+    if (page.id === PDFView.page) {
+      stillFullyVisible = true;
+      break;
+    }
+  }
+
+  if (!stillFullyVisible) {
+    currentId = visiblePages[0].id;
+  }
+
   if (!PDFView.isFullscreen) {
-    var visible = PDFView.getVisiblePages();
-    for (i = 1, stillFullyVisible = false; i <= visible.length; ++i) {
-      page = visible[i - 1];
-
-      if (page.percent < 100)
-        break;
-
-      if (page.id === PDFView.page) {
-        stillFullyVisible = true;
-        break;
-      }
-    }
-    if (!stillFullyVisible) {
-      pageNumber = PDFView.page = visible[0].id;
-    }
-
+    updateViewarea.inProgress = true; // used in "set page"
+    PDFView.page = currentId;
     updateViewarea.inProgress = false;
   }
 
@@ -1932,6 +1936,7 @@ function updateViewarea() {
   var normalizedScaleValue = currentScaleValue == currentScale ?
     currentScale * 100 : currentScaleValue;
 
+  var pageNumber = currentId;
   var pdfOpenParams = '#page=' + pageNumber;
   pdfOpenParams += '&zoom=' + normalizedScaleValue;
   var currentPage = PDFView.pages[pageNumber - 1];
