@@ -1944,20 +1944,13 @@ window.addEventListener('change', function webViewerChange(evt) {
   // Read the local file into a Uint8Array.
   var fileReader = new FileReader();
   fileReader.onload = function webViewerChangeFileReaderOnload(evt) {
-    var data = evt.target.result;
-    var buffer = new ArrayBuffer(data.length);
+    var buffer = evt.target.result;
     var uint8Array = new Uint8Array(buffer);
-
-    for (var i = 0; i < data.length; i++)
-      uint8Array[i] = data.charCodeAt(i);
-
     PDFView.open(uint8Array, 0);
   };
 
-  // Read as a binary string since "readAsArrayBuffer" is not yet
-  // implemented in Firefox.
   var file = files[0];
-  fileReader.readAsBinaryString(file);
+  fileReader.readAsArrayBuffer(file);
   document.title = file.name;
 
   // URL does not reflect proper document location - hiding some icons.
