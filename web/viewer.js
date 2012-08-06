@@ -785,7 +785,7 @@ var PDFView = {
     }
   },
 
-  getHighestPriority: function pdfViewGetHighestPriority(visibleViews, views,
+  getHighestPriority: function pdfViewGetHighestPriority(visible, views,
                                                          scrolledDown) {
     // The state has changed figure out which page has the highest priority to
     // render next (if any).
@@ -793,29 +793,27 @@ var PDFView = {
     // 1 visible pages
     // 2 if last scrolled down page after the visible pages
     // 2 if last scrolled up page before the visible pages
+    var visibleViews = visible.views;
+
     var numVisible = visibleViews.length;
     if (numVisible === 0) {
       info('No visible views.');
       return false;
     }
-
-    var minId = views.length, maxId = 0;
     for (var i = 0; i < numVisible; ++i) {
       var view = visibleViews[i].view;
       if (!this.isViewFinished(view))
         return view;
-      minId = Math.min(minId, visibleViews[i].id);
-      maxId = Math.max(maxId, visibleViews[i].id);
     }
 
     // All the visible views have rendered, try to render next/previous pages.
     if (scrolledDown) {
-      var nextPageIndex = maxId;
+      var nextPageIndex = visible.last;
       // ID's start at 1 so no need to add 1.
       if (views[nextPageIndex] && !this.isViewFinished(views[nextPageIndex]))
         return views[nextPageIndex];
     } else {
-      var previousPageIndex = minId - 2;
+      var previousPageIndex = visible.first - 2;
       if (views[previousPageIndex] &&
           !this.isViewFinished(views[previousPageIndex]))
         return views[previousPageIndex];
@@ -1024,7 +1022,7 @@ var PDFView = {
 
   getVisiblePages: function pdfViewGetVisiblePages() {
     return this.getVisibleElements(this.container,
-                                   this.pages);
+                                   this.pages, true);
   },
 
   getVisibleThumbs: function pdfViewGetVisibleThumbs() {
@@ -1033,7 +1031,8 @@ var PDFView = {
   },
 
   // Generic helper to find out what elements are visible within a scroll pane.
-  getVisibleElements: function pdfViewGetVisibleElements(scrollEl, views) {
+  getVisibleElements: function pdfViewGetVisibleElements(
+      scrollEl, views, sortByVisibility) {
     var currentHeight = 0, view;
     var top = scrollEl.scrollTop;
 
@@ -1073,15 +1072,20 @@ var PDFView = {
       currentHeight = nextHeight;
     }
 
-    visible.sort(function(a, b) {
-      var pc = a.percent - b.percent;
-      if (Math.abs(pc) > 0.001)
-        return -pc;
+    var first = visible[0];
+    var last = visible[visible.length - 1];
 
-      return a.id - b.id; // ensure stability
-    });
+    if (sortByVisibility) {
+      visible.sort(function(a, b) {
+        var pc = a.percent - b.percent;
+        if (Math.abs(pc) > 0.001)
+          return -pc;
 
-    return visible;
+        return a.id - b.id; // ensure stability
+      });
+    }
+
+    return {first: first, last: last, views: visible};
   },
 
   // Helper function to parse query string (e.g. ?param1=value&parm2=...).
@@ -1906,11 +1910,13 @@ function updateViewarea() {
 
   if (!PDFView.initialized)
     return;
-  var visiblePages = PDFView.getVisiblePages();
+  var visible = PDFView.getVisiblePages();
+  var visiblePages = visible.views;
 
   PDFView.renderHighestPriority();
 
   var currentId = PDFView.page;
+  var firstPage = visible.first;
 
   for (i = 1, stillFullyVisible = false; i <= visiblePages.length; ++i) {
     page = visiblePages[i - 1];
@@ -1939,12 +1945,12 @@ function updateViewarea() {
   var normalizedScaleValue = currentScaleValue == currentScale ?
     currentScale * 100 : currentScaleValue;
 
-  var pageNumber = currentId;
+  var pageNumber = firstPage.id;
   var pdfOpenParams = '#page=' + pageNumber;
   pdfOpenParams += '&zoom=' + normalizedScaleValue;
   var currentPage = PDFView.pages[pageNumber - 1];
   var topLeft = currentPage.getPagePoint(PDFView.container.scrollLeft,
-    (PDFView.container.scrollTop - currentPage.y));
+    (PDFView.container.scrollTop - firstPage.y));
   pdfOpenParams += ',' + Math.round(topLeft[0]) + ',' + Math.round(topLeft[1]);
 
   var store = PDFView.store;
@@ -2052,10 +2058,10 @@ window.addEventListener('pagechange', function pagechange(evt) {
     var numVisibleThumbs = visibleThumbs.length;
     // If the thumbnail isn't currently visible scroll it into view.
     if (numVisibleThumbs > 0) {
-      var first = visibleThumbs[0].id;
+      var first = visibleThumbs.first.id;
       // Account for only one thumbnail being visible.
       var last = numVisibleThumbs > 1 ?
-                  visibleThumbs[numVisibleThumbs - 1].id : first;
+                  visibleThumbs.last.id : first;
       if (page <= first || page >= last)
         thumbnail.scrollIntoView();
     }
