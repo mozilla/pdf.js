@@ -1069,7 +1069,7 @@ var PDFView = {
                Math.max(0, nextHeight - bottom);
       percent = Math.floor((viewHeight - hidden) * 100.0 / viewHeight);
       visible.push({ id: view.id, y: currentHeight,
-                     view: view, percent: percent, index: i });
+                     view: view, percent: percent });
       currentHeight = nextHeight;
     }
 
@@ -1078,7 +1078,7 @@ var PDFView = {
       if (Math.abs(pc) > 0.001)
         return -pc;
 
-      return a.index - b.index; // ensure stability
+      return a.id - b.id; // ensure stability
     });
 
     return visible;
