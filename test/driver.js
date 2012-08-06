@@ -12,6 +12,7 @@
 //   "firefox-bin: Fatal IO error 12 (Cannot allocate memory) on X server :1."
 // PDFJS.disableWorker = true;
 
+
 var appPath, browser, canvas, currentTaskIdx, manifest, stdout;
 var inFlightRequests = 0;
 
