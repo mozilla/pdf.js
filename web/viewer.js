@@ -798,21 +798,24 @@ var PDFView = {
       info('No visible views.');
       return false;
     }
+
+    var minId = views.length, maxId = 0;
     for (var i = 0; i < numVisible; ++i) {
       var view = visibleViews[i].view;
       if (!this.isViewFinished(view))
         return view;
+      minId = Math.min(minId, visibleViews[i].id);
+      maxId = Math.max(maxId, visibleViews[i].id);
     }
 
     // All the visible views have rendered, try to render next/previous pages.
     if (scrolledDown) {
-      var lastVisible = visibleViews[visibleViews.length - 1];
-      var nextPageIndex = lastVisible.id;
+      var nextPageIndex = maxId;
       // ID's start at 1 so no need to add 1.
       if (views[nextPageIndex] && !this.isViewFinished(views[nextPageIndex]))
         return views[nextPageIndex];
     } else {
-      var previousPageIndex = visibleViews[0].id - 2;
+      var previousPageIndex = minId - 2;
       if (views[previousPageIndex] &&
           !this.isViewFinished(views[previousPageIndex]))
         return views[previousPageIndex];
