@@ -1055,15 +1055,16 @@ var PDFView = {
       return visible;
     }
 
-    var bottom = top + scrollEl.clientHeight, nextHeight, hidden, percent;
+    var bottom = top + scrollEl.clientHeight;
+    var nextHeight, hidden, percent, viewHeight;
     for (; i <= views.length && currentHeight < bottom; ++i) {
       view = views[i - 1];
+      viewHeight = view.el.clientHeight;
       currentHeight = view.el.offsetTop;
       nextHeight = currentHeight + view.el.clientHeight;
       hidden = Math.max(0, top - currentHeight) +
                Math.max(0, nextHeight - bottom);
-      percent = Math.floor((view.el.clientHeight - hidden) * 100.0 /
-                view.el.clientHeight);
+      percent = Math.floor((viewHeight - hidden) * 100.0 / viewHeight);
       visible.push({ id: view.id, y: currentHeight,
                      view: view, percent: percent, index: i });
       currentHeight = nextHeight;
@@ -1905,23 +1906,23 @@ function updateViewarea() {
 
   PDFView.renderHighestPriority();
 
-  var currentId = PDFView.page;
-
+  var pageNumber = PDFView.page;
   if (!PDFView.isFullscreen) {
     var visible = PDFView.getVisiblePages();
     for (i = 1, stillFullyVisible = false; i <= visible.length; ++i) {
       page = visible[i - 1];
-      
+
       if (page.percent < 100)
         break;
-        
+
       if (page.id === PDFView.page) {
         stillFullyVisible = true;
         break;
       }
     }
-    if (!stillFullyVisible)
-      PDFView.page = visible[0].id;
+    if (!stillFullyVisible) {
+      pageNumber = PDFView.page = visible[0].id;
+    }
 
     updateViewarea.inProgress = false;
   }
@@ -1931,12 +1932,11 @@ function updateViewarea() {
   var normalizedScaleValue = currentScaleValue == currentScale ?
     currentScale * 100 : currentScaleValue;
 
-  var pageNumber = firstPage.id;
   var pdfOpenParams = '#page=' + pageNumber;
   pdfOpenParams += '&zoom=' + normalizedScaleValue;
   var currentPage = PDFView.pages[pageNumber - 1];
   var topLeft = currentPage.getPagePoint(PDFView.container.scrollLeft,
-    (PDFView.container.scrollTop - firstPage.y));
+    (PDFView.container.scrollTop - currentPage.y));
   pdfOpenParams += ',' + Math.round(topLeft[0]) + ',' + Math.round(topLeft[1]);
 
   var store = PDFView.store;
