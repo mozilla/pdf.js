@@ -1036,7 +1036,7 @@ var PDFView = {
     var currentHeight = 0, view;
     var top = scrollEl.scrollTop;
 
-    for (var i = 1; i <= views.length; ++i) {
+    for (var i = 1, ii = views.length; i <= ii; ++i) {
       view = views[i - 1];
       currentHeight = view.el.offsetTop;
       if (currentHeight + view.el.clientHeight > top)
@@ -1059,7 +1059,7 @@ var PDFView = {
 
     var bottom = top + scrollEl.clientHeight;
     var nextHeight, hidden, percent, viewHeight;
-    for (; i <= views.length && currentHeight < bottom; ++i) {
+    for (; i <= ii && currentHeight < bottom; ++i) {
       view = views[i - 1];
       viewHeight = view.el.clientHeight;
       currentHeight = view.el.offsetTop;
@@ -1906,7 +1906,6 @@ window.addEventListener('load', function webViewerLoad(evt) {
 }, true);
 
 function updateViewarea() {
-  var i, stillFullyVisible, page;
 
   if (!PDFView.initialized)
     return;
@@ -1918,8 +1917,9 @@ function updateViewarea() {
   var currentId = PDFView.page;
   var firstPage = visible.first;
 
-  for (i = 1, stillFullyVisible = false; i <= visiblePages.length; ++i) {
-    page = visiblePages[i - 1];
+  for (var i = 0, ii = visiblePages.length, stillFullyVisible = false;
+       i < ii; ++i) {
+    var page = visiblePages[i];
 
     if (page.percent < 100)
       break;
