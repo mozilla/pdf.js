@@ -418,7 +418,8 @@ var FontLoader = {
       document.documentElement.removeEventListener(
         'pdfjsFontLoad', checkFontsLoaded, false);
 
-      callback();
+      // Use timeout to fix chrome intermittent failures on font loading.
+      setTimeout(callback, 0);callback();
       return true;
     }
 
