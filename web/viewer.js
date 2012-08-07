@@ -808,12 +808,12 @@ var PDFView = {
 
     // All the visible views have rendered, try to render next/previous pages.
     if (scrolledDown) {
-      var nextPageIndex = visible.last;
+      var nextPageIndex = visible.last.id;
       // ID's start at 1 so no need to add 1.
       if (views[nextPageIndex] && !this.isViewFinished(views[nextPageIndex]))
         return views[nextPageIndex];
     } else {
-      var previousPageIndex = visible.first - 2;
+      var previousPageIndex = visible.first.id - 2;
       if (views[previousPageIndex] &&
           !this.isViewFinished(views[previousPageIndex]))
         return views[previousPageIndex];
