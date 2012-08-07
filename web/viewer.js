@@ -1054,7 +1054,7 @@ var PDFView = {
         view: currentPage
       });
 
-      return visible;
+      return { first: currentPage, last: currentPage, views: visible};
     }
 
     var bottom = top + scrollEl.clientHeight;
