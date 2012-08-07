@@ -2055,7 +2055,7 @@ window.addEventListener('pagechange', function pagechange(evt) {
     var thumbnail = document.getElementById('thumbnailContainer' + page);
     thumbnail.classList.add('selected');
     var visibleThumbs = PDFView.getVisibleThumbs();
-    var numVisibleThumbs = visibleThumbs.length;
+    var numVisibleThumbs = visibleThumbs.views.length;
     // If the thumbnail isn't currently visible scroll it into view.
     if (numVisibleThumbs > 0) {
       var first = visibleThumbs.first.id;
