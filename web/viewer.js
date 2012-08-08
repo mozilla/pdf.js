@@ -1704,6 +1704,7 @@ var TextLayerBuilder = function textLayerBuilder(textLayerDiv) {
       if (textDivs.length === 0) {
         clearInterval(renderTimer);
         renderingDone = true;
+        self.textLayerDiv = textLayerDiv = canvas = ctx = null;
         return;
       }
       var textDiv = textDivs.shift();

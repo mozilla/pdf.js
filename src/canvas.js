@@ -1258,7 +1258,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
   return CanvasGraphics;
 })();
 
-if (!isWorker) {
+function checkPutBinaryImageDataCompatibility() {
   // Feature detection if the browser can use an Uint8Array directly as imgData.
   var canvas = document.createElement('canvas');
   canvas.width = 1;
@@ -1292,4 +1292,7 @@ if (!isWorker) {
         ctx.putImageData(tmpImgData, 0, 0);
       };
   }
+}
+if (!isWorker) {
+  checkPutBinaryImageDataCompatibility();
 }
