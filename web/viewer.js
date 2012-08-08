@@ -178,6 +178,8 @@ var PDFView = {
   initialBookmark: document.location.hash.substring(1),
   startedTextExtraction: false,
   pageText: [],
+  searchTerms: '',
+  highlightedPageIdx: -1,
   container: null,
   thumbnailContainer: null,
   initialized: false,
@@ -325,6 +327,10 @@ var PDFView = {
 
   get page() {
     return currentPageNumber;
+  },
+
+  get pageObj() {
+    return this.pages[this.page - 1];
   },
 
   get supportsPrinting() {
@@ -815,10 +821,20 @@ var PDFView = {
     this.searchTimer = null;
     this.lastSearch = now;
 
-    function bindLink(link, pageNumber) {
+    function bindLink(link, pageNumber, matchIdx) {
       link.href = '#' + pageNumber;
       link.onclick = function searchBindLink() {
         PDFView.page = pageNumber;
+
+        var textLayer = PDFView.pageObj.textLayer;
+        if (textLayer) {
+          if (PDFView.highlightedPageIdx !== -1)
+            PDFView.pages[PDFView.highlightedPageIdx].textLayer.highlight(-1);
+
+          textLayer.highlight(matchIdx);
+          PDFView.highlightedPageIdx = pageNumber - 1;
+        }
+
         return false;
       };
     }
@@ -830,28 +846,39 @@ var PDFView = {
     searchResults.textContent = '';
 
     var terms = searchTermsInput.value;
+    var termsLen = terms.length;
+
+    PDFView.searchTerms = terms;
 
     if (!terms)
       return;
 
-    // simple search: removing spaces and hyphens, then scanning every
-    terms = terms.replace(/\s-/g, '').toLowerCase();
+    terms = terms.toLowerCase();
+
     var index = PDFView.pageText;
     var pageFound = false;
     for (var i = 0, ii = index.length; i < ii; i++) {
-      var pageText = index[i].replace(/\s-/g, '').toLowerCase();
-      var j = pageText.indexOf(terms);
-      if (j < 0)
-        continue;
-
       var pageNumber = i + 1;
-      var textSample = index[i].substr(j, 50);
-      var link = document.createElement('a');
-      bindLink(link, pageNumber);
-      link.textContent = 'Page ' + pageNumber + ': ' + textSample;
-      searchResults.appendChild(link);
 
-      pageFound = true;
+      var pageText = index[i].text;
+      var pageTextLower = index[i].textLower;
+
+      var matchIdx = -termsLen;
+      while (true) {
+        matchIdx = pageTextLower.indexOf(terms, matchIdx + termsLen);
+        if (matchIdx === -1) {
+          break;
+        }
+
+        var textSample = pageText.substr(matchIdx, 50);
+        var link = document.createElement('a');
+        bindLink(link, pageNumber, matchIdx);
+        link.textContent = 'Page ' + pageNumber + ': ' + textSample;
+        link.setAttribute('data-matchIdx', matchIdx);
+        searchResults.appendChild(link);
+
+        pageFound = true;
+      }
     }
     if (!pageFound) {
       searchResults.textContent = '';
@@ -958,8 +985,9 @@ var PDFView = {
     var self = this;
     function extractPageText(pageIndex) {
       self.pages[pageIndex].pdfPage.getTextContent().then(
-        function textContentResolved(textContent) {
-          self.pageText[pageIndex] = textContent;
+        function textContentResolved(data) {
+          data.textLower = data.text.toLowerCase();
+          self.pageText[pageIndex] = data;
           self.search();
           if ((pageIndex + 1) < self.pages.length)
             extractPageText(pageIndex + 1);
@@ -1355,11 +1383,13 @@ var PageView = function pageView(container, pdfPage, id, scale,
 
     var textLayerDiv = null;
     if (!PDFJS.disableTextLayer) {
-      textLayerDiv = document.createElement('div');
-      textLayerDiv.className = 'textLayer';
-      div.appendChild(textLayerDiv);
+      if (!this.textLayer) {
+        textLayerDiv = document.createElement('div');
+        textLayerDiv.className = 'textLayer';
+        this.textLayer = new TextLayer(this.id, textLayerDiv);
+      }
+      div.appendChild(this.textLayer.textLayerDiv);
     }
-    var textLayer = textLayerDiv ? new TextLayerBuilder(textLayerDiv) : null;
 
     var scale = this.scale, viewport = this.viewport;
     canvas.width = viewport.width;
@@ -1399,7 +1429,7 @@ var PageView = function pageView(container, pdfPage, id, scale,
     var renderContext = {
       canvasContext: ctx,
       viewport: this.viewport,
-      textLayer: textLayer,
+      textLayer: this.textLayer,
       continueCallback: function pdfViewcContinueCallback(cont) {
         if (PDFView.highestPriorityPage !== 'page' + self.id) {
           self.renderingState = RenderingStates.PAUSED;
@@ -1589,10 +1619,14 @@ var DocumentOutlineView = function documentOutlineView(outline) {
   while (outlineView.firstChild)
     outlineView.removeChild(outlineView.firstChild);
 
-  function bindItemLink(domObj, item) {
+  function bindItemLink(domObj, item, matchIdx) {
     domObj.href = PDFView.getDestinationHash(item.dest);
     domObj.onclick = function documentOutlineViewOnclick(e) {
       PDFView.navigateTo(item.dest);
+      var textLayer = PDFView.pageObj.textLayer;
+      if (textLayer) {
+        textLayer.highlight(matchIdx);
+      }
       return false;
     };
   }
@@ -1682,42 +1716,135 @@ var CustomStyle = (function CustomStyleClosure() {
   return CustomStyle;
 })();
 
-var TextLayerBuilder = function textLayerBuilder(textLayerDiv) {
-  this.textLayerDiv = textLayerDiv;
+var TextLayer = (function TextLayerClosure() {
+  var measureCanvas = document.createElement('canvas');
+  var measureCtx = measureCanvas.getContext('2d');
 
-  this.beginLayout = function textLayerBuilderBeginLayout() {
+  // Timeout value for rendering one div after the other.
+  var renderInterval = 0;
+  // Timespan to continue rendering after the last scrolling on the page.
+  var scrollRenderTimout = 500; // in ms
+
+  function TextLayer(pageNum, textLayerDiv) {
+    this.textLayerDiv = textLayerDiv;
     this.textDivs = [];
-    this.textLayerQueue = [];
-  };
+    this.renderIdx = 0;
+    this.renderTimer = null;
+    this.resumeRenderTimer = null;
+    this.renderingDone = false;
 
-  this.endLayout = function textLayerBuilderEndLayout() {
-    var self = this;
-    var textDivs = this.textDivs;
-    var textLayerDiv = this.textLayerDiv;
-    var renderTimer = null;
-    var renderingDone = false;
-    var renderInterval = 0;
-    var resumeInterval = 500; // in ms
+    this.pageIdx = pageNum - 1;
 
-    var canvas = document.createElement('canvas');
-    var ctx = canvas.getContext('2d');
+    this.highlightedIdx = -1;
+    this.highlightedOffset = 0;
+
+    this.onScroll = this.onScroll.bind(this);
+    this.renderTextLayer = this.renderTextLayer.bind(this);
+    this.setupRenderTimer = this.setupRenderTimer.bind(this);
+  }
+
+  TextLayer.prototype = {
+    setHighlightIdx: function(idx) {
+      var self = this;
+      var hlIdx = this.highlightedIdx;
+      var textDivs = this.textDivs;
+
+      function secureClassList(i, opp) {
+        var div = textDivs[i];
+        if (!div)
+          return;
+
+        if (opp == "add") {
+          div.scrollIntoView();
+          
+          var text = div.textContent;
+          var offset = self.highlightedOffset;
+          var endIdx = offset + PDFView.searchTerms.length;
+
+          var pre  = text.substring(0, offset);
+          var high = text.substring(offset, endIdx);
+          var post = text.substring(endIdx);
+
+          var preDom  = document.createTextNode(pre);
+          var highDom = document.createElement('span');
+          var postDom = document.createTextNode(post);
+
+          highDom.textContent = high;
+
+          // XXX Better do proper removal?
+          div.innerHTML = '';
+          div.appendChild(preDom);
+          div.appendChild(highDom);
+          div.appendChild(postDom);
+        } else {
+          // Remove all highlight spans
+          // XXX This is hacky - better idea?
+          div.textContent = div.textContent;
+        }
+      }
+
+      secureClassList(hlIdx, 'remove');
+      secureClassList(idx, 'add');
+
+      this.highlightedIdx = idx;
+    },
+
+    highlight: function textLayerHighlight(matchIdx) {
+      if (matchIdx === -1) {
+        this.highlightedOffset = -1;
+        this.setHighlightIdx(-1);
+      }
+      var mapping = PDFView.pageText[this.pageIdx].mapping;
+      
+      // Find the div where the match starts
+      // XXX Convert the linear search to a binary one.
+      var i = 0;
+      while (i !== mapping.length -1 && matchIdx >= mapping[i+1]) {
+        i++;
+        if (i == mapping.length) {
+          console.error("Could not find matching mapping");
+        }
+      }
+ 
+      this.highlightedOffset = matchIdx - mapping[i];
+      this.setHighlightIdx(i);
+    },
+
+    beginLayout: function textLayerBuilderBeginLayout() {
+      var textDivs = this.textDivs;
+      var textLayerDiv = this.textLayerDiv;
+      // Remove available divs.
+      for (var i = 0; i < textDivs.length; i++) {
+        textLayerDiv.removeChild(textDivs[i]);
+      }
+
+      // Reset the variables.
+      this.textDivs = [];
+      this.renderIdx = 0;
+      this.renderingDone = false;
+    },
 
     // Render the text layer, one div at a time
-    function renderTextLayer() {
-      if (textDivs.length === 0) {
-        clearInterval(renderTimer);
-        renderingDone = true;
+    renderTextLayer: function textLayerRenderTextLayer() { 
+      var textDivs = this.textDivs;
+      if (this.renderIdx == textDivs.length) { 
+        clearInterval(this.renderTimer); 
+        this.renderingDone = true;
+        window.removeEventListener('scroll', this.textLayerOnScroll, false);
         return;
       }
-      var textDiv = textDivs.shift();
+
+      var textDiv = textDivs[this.renderIdx];
+      this.renderIdx += 1;
+
       if (textDiv.dataset.textLength > 0) {
-        textLayerDiv.appendChild(textDiv);
+        this.textLayerDiv.appendChild(textDiv);
 
         if (textDiv.dataset.textLength > 1) { // avoid div by zero
           // Adjust div width to match canvas text
 
-          ctx.font = textDiv.style.fontSize + ' sans-serif';
-          var width = ctx.measureText(textDiv.textContent).width;
+          measureCtx.font = textDiv.style.fontSize + ' sans-serif';
+          var width = measureCtx.measureText(textDiv.textContent).width;
 
           var textScale = textDiv.dataset.canvasWidth / width;
 
@@ -1726,49 +1853,61 @@ var TextLayerBuilder = function textLayerBuilder(textLayerDiv) {
           CustomStyle.setProp('transformOrigin' , textDiv, '0% 0%');
         }
       } // textLength > 0
-    }
-    renderTimer = setInterval(renderTextLayer, renderInterval);
+    },
+
+    setupRenderTimer: function textLayerSetupRenderTimer() {
+      this.renderTimer = setInterval(this.renderTextLayer, renderInterval);
+    },
 
     // Stop rendering when user scrolls. Resume after XXX milliseconds
     // of no scroll events
-    var scrollTimer = null;
-    function textLayerOnScroll() {
-      if (renderingDone) {
-        window.removeEventListener('scroll', textLayerOnScroll, false);
-        return;
-      }
-
+    onScroll: function textLayerOnScroll() {
       // Immediately pause rendering
-      clearInterval(renderTimer);
+      clearInterval(this.renderTimer);
 
-      clearTimeout(scrollTimer);
-      scrollTimer = setTimeout(function textLayerScrollTimer() {
-        // Resume rendering
-        renderTimer = setInterval(renderTextLayer, renderInterval);
-      }, resumeInterval);
-    }; // textLayerOnScroll
+      clearTimeout(this.resumeRenderTimer);
 
-    window.addEventListener('scroll', textLayerOnScroll, false);
-  }; // endLayout
+      // Resume rendering after some timeout.
+      this.resumeRenderTimer = setTimeout(
+        this.setupRenderTimer, 
+        scrollRenderTimout
+      );
+    },
 
-  this.appendText = function textLayerBuilderAppendText(text,
-                                                        fontName, fontSize) {
-    var textDiv = document.createElement('div');
+    endLayout: function textLayerBuilderEndLayout() {
+      var textDivs = this.textDivs;
+      var textLayerDiv = this.textLayerDiv;
 
-    // vScale and hScale already contain the scaling to pixel units
-    var fontHeight = fontSize * text.geom.vScale;
-    textDiv.dataset.canvasWidth = text.canvasWidth * text.geom.hScale;
-    textDiv.dataset.fontName = fontName;
+      this.setupRenderTimer();
+      window.addEventListener('scroll', this.onScroll, false);
+    },
 
-    textDiv.style.fontSize = fontHeight + 'px';
-    textDiv.style.left = text.geom.x + 'px';
-    textDiv.style.top = (text.geom.y - fontHeight) + 'px';
-    textDiv.textContent = PDFJS.bidi(text, -1);
-    textDiv.dir = text.direction;
-    textDiv.dataset.textLength = text.length;
-    this.textDivs.push(textDiv);
-  };
-};
+    appendText: function textLayerBuilderAppendText(text, fontName, fontSize) {
+      var textDiv = document.createElement('div');
+
+      // vScale and hScale already contain the scaling to pixel units
+      var fontHeight = fontSize * text.geom.vScale;
+      textDiv.dataset.canvasWidth = text.canvasWidth * text.geom.hScale;
+      textDiv.dataset.fontName = fontName;
+
+      textDiv.style.fontSize = fontHeight + 'px';
+      textDiv.style.left = text.geom.x + 'px';
+      textDiv.style.top = (text.geom.y - fontHeight) + 'px';
+      textDiv.textContent = PDFJS.bidi(text, -1);
+      textDiv.dir = text.direction;
+      textDiv.dataset.textLength = text.length;
+      var len = this.textDivs.push(textDiv);
+
+      if (len - 1 == this.highlightedIdx) {
+        this.setHighlightIdx(this.highlightedIdx);
+      }
+    }
+  }
+
+  // 
+
+  return TextLayer;
+})();
 
 window.addEventListener('load', function webViewerLoad(evt) {
   PDFView.initialize();
