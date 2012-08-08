@@ -90,66 +90,9 @@ var ProgressBar = (function ProgressBarClosure() {
   return ProgressBar;
 })();
 
-var FirefoxCom = (function FirefoxComClosure() {
-  return {
-    /**
-     * Creates an event that the extension is listening for and will
-     * synchronously respond to.
-     * NOTE: It is reccomended to use request() instead since one day we may not
-     * be able to synchronously reply.
-     * @param {String} action The action to trigger.
-     * @param {String} data Optional data to send.
-     * @return {*} The response.
-     */
-    requestSync: function(action, data) {
-      var request = document.createTextNode('');
-      request.setUserData('action', action, null);
-      request.setUserData('data', data, null);
-      request.setUserData('sync', true, null);
-      document.documentElement.appendChild(request);
-
-      var sender = document.createEvent('Events');
-      sender.initEvent('pdf.js.message', true, false);
-      request.dispatchEvent(sender);
-      var response = request.getUserData('response');
-      document.documentElement.removeChild(request);
-      return response;
-    },
-    /**
-     * Creates an event that the extension is listening for and will
-     * asynchronously respond by calling the callback.
-     * @param {String} action The action to trigger.
-     * @param {String} data Optional data to send.
-     * @param {Function} callback Optional response callback that will be called
-     * with one data argument.
-     */
-    request: function(action, data, callback) {
-      var request = document.createTextNode('');
-      request.setUserData('action', action, null);
-      request.setUserData('data', data, null);
-      request.setUserData('sync', false, null);
-      if (callback) {
-        request.setUserData('callback', callback, null);
-
-        document.addEventListener('pdf.js.response', function listener(event) {
-          var node = event.target,
-              callback = node.getUserData('callback'),
-              response = node.getUserData('response');
-
-          document.documentElement.removeChild(node);
-
-          document.removeEventListener('pdf.js.response', listener, false);
-          return callback(response);
-        }, false);
-      }
-      document.documentElement.appendChild(request);
-
-      var sender = document.createEvent('HTMLEvents');
-      sender.initEvent('pdf.js.message', true, false);
-      return request.dispatchEvent(sender);
-    }
-  };
-})();
+//#if FIREFOX || MOZCENTRAL
+//#include firefoxcom.js
+//#endif
 
 // Settings Manager - This is a utility for saving settings
 // First we see if localStorage is available
@@ -167,17 +110,17 @@ var Settings = (function SettingsClosure() {
     }
   })();
 
-  var isFirefoxExtension = PDFJS.isFirefoxExtension;
-
   function Settings(fingerprint) {
     var database = null;
     var index;
-    if (isFirefoxExtension)
-      database = FirefoxCom.requestSync('getDatabase', null) || '{}';
-    else if (isLocalStorageEnabled)
+//#if !(FIREFOX || MOZCENTRAL)
+    if (isLocalStorageEnabled)
       database = localStorage.getItem('database') || '{}';
     else
       return false;
+//#else
+//  database = FirefoxCom.requestSync('getDatabase', null) || '{}';
+//#endif
 
     database = JSON.parse(database);
     if (!('files' in database))
@@ -205,10 +148,12 @@ var Settings = (function SettingsClosure() {
       var file = this.file;
       file[name] = val;
       var database = JSON.stringify(this.database);
-      if (isFirefoxExtension)
-        FirefoxCom.requestSync('setDatabase', database);
-      else if (isLocalStorageEnabled)
+//#if !(FIREFOX || MOZCENTRAL)
+      if (isLocalStorageEnabled)
         localStorage.setItem('database', database);
+//#else
+//    FirefoxCom.requestSync('setDatabase', database);
+//#endif
     },
 
     get: function settingsGet(name, defaultValue) {
@@ -460,52 +405,54 @@ var PDFView = {
     }
 
     var url = this.url.split('#')[0];
-    if (PDFJS.isFirefoxExtension) {
-      // Document isn't ready just try to download with the url.
-      if (!this.pdfDocument) {
-        noData();
-        return;
-      }
-      this.pdfDocument.getData().then(
-        function getDataSuccess(data) {
-          var bb = new MozBlobBuilder();
-          bb.append(data.buffer);
-          var blobUrl = window.URL.createObjectURL(
-                          bb.getBlob('application/pdf'));
-
-          FirefoxCom.request('download', { blobUrl: blobUrl, originalUrl: url },
-            function response(err) {
-              if (err) {
-                // This error won't really be helpful because it's likely the
-                // fallback won't work either (or is already open).
-                PDFView.error('PDF failed to download.');
-              }
-              window.URL.revokeObjectURL(blobUrl);
-            }
-          );
-        },
-        noData // Error ocurred try downloading with just the url.
-      );
-    } else {
-      url += '#pdfjs.action=download', '_parent';
-      window.open(url, '_parent');
-    }
+//#if !(FIREFOX || MOZCENTRAL)
+    url += '#pdfjs.action=download', '_parent';
+    window.open(url, '_parent');
+//#else
+//  // Document isn't ready just try to download with the url.
+//  if (!this.pdfDocument) {
+//    noData();
+//    return;
+//  }
+//  this.pdfDocument.getData().then(
+//    function getDataSuccess(data) {
+//      var bb = new MozBlobBuilder();
+//      bb.append(data.buffer);
+//      var blobUrl = window.URL.createObjectURL(
+//                      bb.getBlob('application/pdf'));
+//
+//      FirefoxCom.request('download', { blobUrl: blobUrl, originalUrl: url },
+//        function response(err) {
+//          if (err) {
+//            // This error won't really be helpful because it's likely the
+//            // fallback won't work either (or is already open).
+//            PDFView.error('PDF failed to download.');
+//          }
+//          window.URL.revokeObjectURL(blobUrl);
+//        }
+//      );
+//    },
+//    noData // Error ocurred try downloading with just the url.
+//  );
+//#endif
   },
 
   fallback: function pdfViewFallback() {
-    if (!PDFJS.isFirefoxExtension)
+//#if !(FIREFOX || MOZCENTRAL)
       return;
-    // Only trigger the fallback once so we don't spam the user with messages
-    // for one PDF.
-    if (this.fellback)
-      return;
-    this.fellback = true;
-    var url = this.url.split('#')[0];
-    FirefoxCom.request('fallback', url, function response(download) {
-      if (!download)
-        return;
-      PDFView.download();
-    });
+//#else
+//  // Only trigger the fallback once so we don't spam the user with messages
+//  // for one PDF.
+//  if (this.fellback)
+//    return;
+//  this.fellback = true;
+//  var url = this.url.split('#')[0];
+//  FirefoxCom.request('fallback', url, function response(download) {
+//    if (!download)
+//      return;
+//    PDFView.download();
+//  });
+//#endif
   },
 
   navigateTo: function pdfViewNavigateTo(dest) {
@@ -557,9 +504,11 @@ var PDFView = {
    * @param {String} anchor The anchor hash include the #.
    */
   getAnchorUrl: function getAnchorUrl(anchor) {
-    if (PDFJS.isFirefoxExtension)
-      return this.url.split('#')[0] + anchor;
+//#if !(FIREFOX || MOZCENTRAL)
     return anchor;
+//#else
+//  return this.url.split('#')[0] + anchor;
+//#endif
   },
 
   /**
@@ -593,11 +542,7 @@ var PDFView = {
         }
       }
     }
-    if (PDFJS.isFirefoxExtension) {
-      console.error(message + '\n' + moreInfoText);
-      this.fallback();
-      return;
-    }
+//#if !(FIREFOX || MOZCENTRAL)
     var errorWrapper = document.getElementById('errorWrapper');
     errorWrapper.removeAttribute('hidden');
 
@@ -627,6 +572,10 @@ var PDFView = {
     errorMoreInfo.value = moreInfoText;
 
     errorMoreInfo.rows = moreInfoText.split('\n').length - 1;
+//#else
+//  console.error(message + '\n' + moreInfoText);
+//  this.fallback();
+//#endif
   },
 
   progress: function pdfViewProgress(level) {
@@ -1825,15 +1774,21 @@ window.addEventListener('load', function webViewerLoad(evt) {
   PDFView.initialize();
   var params = PDFView.parseQueryString(document.location.search.substring(1));
 
-  var file = PDFJS.isFirefoxExtension ?
-              window.location.toString() : params.file || kDefaultURL;
+//#if !(FIREFOX || MOZCENTRAL)
+  var file = params.file || kDefaultURL;
+//#else
+//var file = window.location.toString()
+//#endif
 
-  if (PDFJS.isFirefoxExtension || !window.File || !window.FileReader ||
-      !window.FileList || !window.Blob) {
+//#if !(FIREFOX || MOZCENTRAL)
+  if (!window.File || !window.FileReader || !window.FileList || !window.Blob) {
     document.getElementById('openFile').setAttribute('hidden', 'true');
   } else {
     document.getElementById('fileInput').value = null;
   }
+//#else
+//document.getElementById('openFile').setAttribute('hidden', 'true');
+//#endif
 
   // Special debugging flags in the hash section of the URL.
   var hash = document.location.hash.substring(1);
@@ -1842,18 +1797,21 @@ window.addEventListener('load', function webViewerLoad(evt) {
   if ('disableWorker' in hashParams)
     PDFJS.disableWorker = (hashParams['disableWorker'] === 'true');
 
-  if (!PDFJS.isFirefoxExtension) {
-    var locale = navigator.language;
-    if ('locale' in hashParams)
-      locale = hashParams['locale'];
-    mozL10n.language.code = locale;
-  }
+//#if !(FIREFOX || MOZCENTRAL)
+  var locale = navigator.language;
+  if ('locale' in hashParams)
+    locale = hashParams['locale'];
+  mozL10n.language.code = locale;
+//#endif
 
   if ('disableTextLayer' in hashParams)
     PDFJS.disableTextLayer = (hashParams['disableTextLayer'] === 'true');
 
-  if ('pdfBug' in hashParams &&
-      (!PDFJS.isFirefoxExtension || FirefoxCom.requestSync('pdfBugEnabled'))) {
+//#if !(FIREFOX || MOZCENTRAL)
+  if ('pdfBug' in hashParams) {
+//#else
+//if ('pdfBug' in hashParams && FirefoxCom.requestSync('pdfBugEnabled')) {
+//#endif
     PDFJS.pdfBug = true;
     var pdfBug = hashParams['pdfBug'];
     var enabled = pdfBug.split(',');
@@ -1861,10 +1819,12 @@ window.addEventListener('load', function webViewerLoad(evt) {
     PDFBug.init();
   }
 
-  if (!PDFJS.isFirefoxExtension ||
-    (PDFJS.isFirefoxExtension && FirefoxCom.requestSync('searchEnabled'))) {
-    document.querySelector('#viewSearch').classList.remove('hidden');
-  }
+//#if !(FIREFOX || MOZCENTRAL)
+//#else
+//if (FirefoxCom.requestSync('searchEnabled')) {
+//  document.querySelector('#viewSearch').classList.remove('hidden');
+//}
+//#endif
 
   if (!PDFView.supportsPrinting) {
     document.getElementById('print').classList.add('hidden');
@@ -1901,8 +1861,9 @@ window.addEventListener('load', function webViewerLoad(evt) {
       PDFView.sidebarOpen = outerContainer.classList.contains('sidebarOpen');
       PDFView.renderHighestPriority();
     });
-
+//#if !B2G
   PDFView.open(file, 0);
+//#endif
 }, true);
 
 function updateViewarea() {
@@ -2180,3 +2141,21 @@ window.addEventListener('afterprint', function afterPrint(evt) {
   window.addEventListener('mozfullscreenchange', fullscreenChange, false);
   window.addEventListener('webkitfullscreenchange', fullscreenChange, false);
 })();
+
+//#if B2G
+//window.navigator.mozSetMessageHandler('activity', function(activity) {
+//  var url = activity.source.data.url;
+//  // Temporarily get the data here since the cross domain xhr is broken in
+//  // the worker currently, see bug 761227.
+//  var params = {
+//    url: url,
+//    error: function(e) {
+//      PDFView.error(mozL10n.get('loading_error', null,
+//                    'An error occurred while loading the PDF.'), e);
+//    }
+//  };
+//  PDFJS.getPdf(params, function successCallback(data) {
+//    PDFView.open(data, 0);
+//  });
+//});
+//#endif
