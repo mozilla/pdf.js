@@ -431,7 +431,7 @@ var PDFView = {
 //        }
 //      );
 //    },
-//    noData // Error ocurred try downloading with just the url.
+//    noData // Error occurred try downloading with just the url.
 //  );
 //#endif
   },
@@ -798,14 +798,14 @@ var PDFView = {
   search: function pdfViewStartSearch() {
     // Limit this function to run every <SEARCH_TIMEOUT>ms.
     var SEARCH_TIMEOUT = 250;
-    var lastSeach = this.lastSearch;
+    var lastSearch = this.lastSearch;
     var now = Date.now();
-    if (lastSeach && (now - lastSeach) < SEARCH_TIMEOUT) {
+    if (lastSearch && (now - lastSearch) < SEARCH_TIMEOUT) {
       if (!this.searchTimer) {
         this.searchTimer = setTimeout(function resumeSearch() {
             PDFView.search();
           },
-          SEARCH_TIMEOUT - (now - lastSeach)
+          SEARCH_TIMEOUT - (now - lastSearch)
         );
       }
       return;
