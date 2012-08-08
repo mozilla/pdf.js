@@ -10,6 +10,9 @@ var isWorker = (typeof window == 'undefined');
 var ERRORS = 0, WARNINGS = 1, INFOS = 5;
 var verbosity = WARNINGS;
 
+var REQUEST_BLOCK_SIZE = 4000;
+var INITIAL_REQUEST_SIZE = REQUEST_BLOCK_SIZE;
+
 // The global PDFJS object exposes the API
 // In production, it will be declared outside a global wrapper
 // In development, it will be declared here
@@ -32,8 +35,8 @@ function getPdf(arg, callback) {
 
   var xhr = new XMLHttpRequest();
 
-  xhr.open('GET', params.url);
-
+  var async = !params.sync;
+  xhr.open('GET', params.url, async);
   var headers = params.headers;
   if (headers) {
     for (var property in headers) {
@@ -44,13 +47,28 @@ function getPdf(arg, callback) {
     }
   }
 
-  xhr.mozResponseType = xhr.responseType = 'arraybuffer';
+  if (async)
+    xhr.mozResponseType = xhr.responseType = 'arraybuffer';
+  else
+    xhr.overrideMimeType('text/plain; charset=x-user-defined');
 
   var protocol = params.url.substring(0, params.url.indexOf(':') + 1);
-  xhr.expected = (protocol === 'http:' || protocol === 'https:') ? 200 : 0;
+  var isHttpProtocol = (protocol === 'http:' || protocol === 'https:');
+  xhr.expected = isHttpProtocol ? 200 : 0;
+  var isRangeEnabled = isHttpProtocol && isWorker &&
+                       !globalScope.PDFJS.disableRange;
 
-  if ('progress' in params)
-    xhr.onprogress = params.progress || undefined;
+  var rangeState = 0;
+  if ('range' in params) {
+    var range = params.range;
+    rangeState = 2;
+    xhr.altExpected = 206;
+    xhr.setRequestHeader('Range', 'bytes=' + range[0] + '-' + (range[1] - 1));
+  } else if (isRangeEnabled) {
+    rangeState = 1;
+    xhr.altExpected = 206;
+    xhr.setRequestHeader('Range', 'bytes=0-' + (INITIAL_REQUEST_SIZE - 1));
+  }
 
   var calledErrorBack = false;
 
@@ -63,12 +81,37 @@ function getPdf(arg, callback) {
     }
   }
 
+  xhr.getArrayBuffer = function getPdfGetArrayBuffer() {
+    var data = (xhr.mozResponseArrayBuffer || xhr.mozResponse ||
+                xhr.responseArrayBuffer || xhr.response);
+    if (typeof data !== 'string')
+      return data;
+    var length = data.length;
+    var buffer = new Uint8Array(length);
+    for (var i = 0; i < length; i++)
+      buffer[i] = data.charCodeAt(i) & 0xFF;
+    return buffer.buffer;
+  };
+
+  if (rangeState !== 2 && params.progress) {
+    xhr.onprogress = function xhrProgress(e) {
+      if (xhr.status == xhr.altExpected)
+        return;
+      params.progress(e);
+    };
+  }
+
   xhr.onreadystatechange = function getPdfOnreadystatechange(e) {
     if (xhr.readyState === 4) {
-      if (xhr.status === xhr.expected) {
-        var data = (xhr.mozResponseArrayBuffer || xhr.mozResponse ||
-                    xhr.responseArrayBuffer || xhr.response);
+      if ((xhr.status === xhr.expected && rangeState !== 2) ||
+          (xhr.status === xhr.altExpected && rangeState === 2)) {
+        var data = xhr.getArrayBuffer();
         callback(data);
+      } else if (xhr.status === xhr.altExpected && rangeState === 1) {
+        var data = xhr.getArrayBuffer();
+        var rangeHeader = xhr.getResponseHeader('Content-Range');
+        var totalLength = parseInt(rangeHeader.split('/')[1], 10);
+        callback({chunk: data, context: params, length: totalLength});
       } else if (params.error && !calledErrorBack) {
         calledErrorBack = true;
         params.error(e);
@@ -81,10 +124,11 @@ globalScope.PDFJS.getPdf = getPdf;
 globalScope.PDFJS.pdfBug = false;
 
 var Page = (function PageClosure() {
-  function Page(xref, pageNumber, pageDict, ref) {
+  function Page(catalog, pageNumber, pageDict, ref) {
     this.pageNumber = pageNumber;
     this.pageDict = pageDict;
-    this.xref = xref;
+    this.catalog = catalog;
+    this.xref = catalog.xref;
     this.ref = ref;
 
     this.displayReadyPromise = null;
@@ -288,7 +332,7 @@ var Page = (function PageClosure() {
                   item.url = url;
                   break;
                 case 'GoTo':
-                  item.dest = a.get('D');
+                  item.dest = this.resolveDestination(a.get('D'));
                   break;
                 default:
                   TODO('other link types');
@@ -296,7 +340,7 @@ var Page = (function PageClosure() {
             } else if (annotation.has('Dest')) {
               // simple destination link
               var dest = annotation.get('Dest');
-              item.dest = isName(dest) ? dest.name : dest;
+              item.dest = this.resolveDestination(dest);
             }
             break;
           case 'Widget':
@@ -357,6 +401,9 @@ var Page = (function PageClosure() {
         items.push(item);
       }
       return items;
+    },
+    resolveDestination: function Page_resolveDestination(dest) {
+      return this.catalog.resolveDestination(dest);
     }
   };
 

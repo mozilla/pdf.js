@@ -97,7 +97,11 @@ var Ref = (function RefClosure() {
     this.gen = gen;
   }
 
-  Ref.prototype = {};
+  Ref.prototype = {
+    toString: function Ref_toString() {
+      return this.num + ' ' + this.gen + ' R';
+    }
+  };
 
   return Ref;
 })();
@@ -111,11 +115,11 @@ var RefSet = (function RefSetClosure() {
 
   RefSet.prototype = {
     has: function RefSet_has(ref) {
-      return !!this.dict['R' + ref.num + '.' + ref.gen];
+      return !!this.dict[ref.toString()];
     },
 
     put: function RefSet_put(ref) {
-      this.dict['R' + ref.num + '.' + ref.gen] = ref;
+      this.dict[ref.toString()] = ref;
     }
   };
 
@@ -188,16 +192,12 @@ var Catalog = (function CatalogClosure() {
             if (!outlineDict.has('Title'))
               error('Invalid outline item');
             var dest = outlineDict.get('A');
-            if (dest)
-              dest = dest.get('D');
-            else if (outlineDict.has('Dest')) {
+            if (!dest && outlineDict.has('Dest'))
               dest = outlineDict.getRaw('Dest');
-              if (isName(dest))
-                dest = dest.name;
-            }
+
             var title = outlineDict.get('Title');
             var outlineItem = {
-              dest: dest,
+              dest: this.resolveDestination(dest),
               title: stringToPDFString(title),
               color: outlineDict.get('C') || [0, 0, 0],
               count: outlineDict.get('Count'),
@@ -231,32 +231,77 @@ var Catalog = (function CatalogClosure() {
       // shadow the prototype getter
       return shadow(this, 'num', obj);
     },
-    traverseKids: function Catalog_traverseKids(pagesDict) {
+    get pageCache() {
+      var pageCache = this.traverseKids(this.toplevelPagesDict);
+      return shadow(this, 'pageCache', pageCache);
+    },
+    get pagesRefMap() {
+      var map = {};
       var pageCache = this.pageCache;
+      for (var i = 0; i < pageCache.length; i++) {
+        var page = pageCache[i];
+        var pageRef = isRef(page) ? page : page.ref;
+        map[pageRef.toString()] = i;
+      }
+      return shadow(this, 'pagesRefMap', map);
+    },
+    resolveDestination: function Catalog_resolveDestination(dest) {
+      if (isDict(dest))
+        dest = dest.get('D');
+      if (isName(dest))
+        dest = dest.name;
+      if (!(dest instanceof Array) || !(dest[0] instanceof Ref))
+        return dest;
+      var destRef = dest[0];
+      var pageNum = this.pagesRefMap[destRef.toString()];
+      return [pageNum].concat(dest.slice(1));
+    },
+    traverseKids: function Catalog_traverseKids(pagesDict) {
+      function isPage(obj) {
+        return isDict(obj, 'Page') || (isDict(obj) && !obj.has('Kids'));
+      }
       var kids = pagesDict.get('Kids');
+      var count = pagesDict.get('Count');
       assertWellFormed(isArray(kids),
                        'page dictionary kids object is not an array');
-      for (var i = 0, ii = kids.length; i < ii; ++i) {
-        var kid = kids[i];
+      // fast track: checking if kids items number equal to the page count.
+      var obj = this.xref.fetch(kids[0]);
+      if (kids.length === count) {
+        return kids.slice(0);
+      }
+
+      var pageCache = [];
+      var stack = kids.slice(0);
+      var processed = new RefSet();
+      while (stack.length > 0) {
+        var kid = stack.shift();
+        assertWellFormed(!processed.has(kid),
+                         'cycle reference in page tree nodes');
+        processed.put(kid);
         assertWellFormed(isRef(kid),
-                        'page dictionary kid is not a reference');
+                         'page dictionary kid is not a reference');
         var obj = this.xref.fetch(kid);
-        if (isDict(obj, 'Page') || (isDict(obj) && !obj.has('Kids'))) {
-          pageCache.push(new Page(this.xref, pageCache.length, obj, kid));
+        if (isPage(obj)) {
+          pageCache.push(new Page(this, pageCache.length, obj, kid));
         } else { // must be a child page dictionary
           assertWellFormed(
             isDict(obj),
             'page dictionary kid reference points to wrong type of object'
           );
-          this.traverseKids(obj);
+          kids = obj.get('Kids');
+          var expectedCount = obj.get('Count');
+          assertWellFormed(
+            isArray(kids),
+            'kids object is not an array');
+          if (expectedCount === kids.length)
+            pageCache = pageCache.concat(kids);
+          else
+            stack = kids.concat(stack);
         }
       }
+      return pageCache;
     },
     get destinations() {
-      function fetchDestination(dest) {
-        return isDict(dest) ? dest.get('D') : dest;
-      }
-
       var xref = this.xref;
       var dests = {}, nameTreeRef, nameDictionaryRef;
       var obj = this.catDict.get('Names');
@@ -270,7 +315,7 @@ var Catalog = (function CatalogClosure() {
         obj = nameDictionaryRef;
         obj.forEach(function catalogForEach(key, value) {
           if (!value) return;
-          dests[key] = fetchDestination(value);
+          dests[key] = value;
         });
       }
       if (nameTreeRef) {
@@ -294,19 +339,23 @@ var Catalog = (function CatalogClosure() {
           }
           var names = obj.get('Names');
           for (i = 0, n = names.length; i < n; i += 2) {
-            dests[names[i]] = fetchDestination(xref.fetchIfRef(names[i + 1]));
+            dests[names[i]] = xref.fetchIfRef(names[i + 1]);
           }
         }
+      }
+      for (var name in dests) {
+        if (dests.hasOwnProperty(name))
+          dests[name] = this.resolveDestination(dests[name]);
       }
       return shadow(this, 'destinations', dests);
     },
     getPage: function Catalog_getPage(n) {
-      var pageCache = this.pageCache;
-      if (!pageCache) {
-        pageCache = this.pageCache = [];
-        this.traverseKids(this.toplevelPagesDict);
-      }
-      return this.pageCache[n - 1];
+      var page = this.pageCache[n - 1];
+      if (!isRef(page))
+        return page;
+      var obj = this.xref.fetch(page);
+      page = new Page(this, n - 1, obj, page);
+      return (this.pageCache[n - 1] = page);
     }
   };
 

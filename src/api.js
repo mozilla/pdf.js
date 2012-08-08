@@ -173,13 +173,6 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
       return this.pageInfo.rotate;
     },
     /**
-     * @return {object} The reference that points to this page. It has 'num' and
-     * 'gen' properties.
-     */
-    get ref() {
-      return this.pageInfo.ref;
-    },
-    /**
      * @return {array} An array of the visible portion of the PDF page in the
      * user space units - [x1, y1, x2, y2].
      */
