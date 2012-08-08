@@ -141,7 +141,7 @@
         var buffer = new ArrayBuffer(data.length);
         var uint8Array = new Uint8Array(buffer);
 
-        for (var i = 0; i < data.length; i++)
+        for (var i = 0, ii = data.length; i < ii; i++)
           uint8Array[i] = data.charCodeAt(i);
 
         Object.defineProperty(originalReader, 'result', {
