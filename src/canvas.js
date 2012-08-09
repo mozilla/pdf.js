@@ -1279,7 +1279,8 @@ function checkPutBinaryImageDataCompatibility() {
   } catch (e) {
     CanvasGraphics.prototype.putBinaryImageData =
       function CanvasGraphicsPutBinaryImageDataShim(ctx, imgData, w, h) {
-        var tmpImgData = ctx.getImageData(0, 0, w, h);
+        var tmpImgData = 'createImageData' in ctx ? ctx.createImageData(w, h) :
+          ctx.getImageData(0, 0, w, h);
 
         var tmpImgDataPixels = tmpImgData.data;
         var data = imgData.data;
