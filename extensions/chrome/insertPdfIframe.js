@@ -19,8 +19,9 @@ function tryInsertIframe() {
     iframe.style.height = '100%';
     iframe.style.border = 0;
     embed.parentNode.replaceChild(iframe, embed);
+    iframe.focus();
   } else {
-    window.requestAnimationFrame(tryInsertIframe);
+    window.webkitRequestAnimationFrame(tryInsertIframe);
   }
 }
 window.webkitRequestAnimationFrame(tryInsertIframe);
