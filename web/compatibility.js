@@ -124,23 +124,62 @@
   };
 })();
 
+// No readAsArrayBuffer ?
+(function checkFileReaderReadAsArrayBuffer() {
+  if (typeof FileReader === 'undefined')
+    return; // FileReader is not implemented
+  var frPrototype = FileReader.prototype;
+  // Older versions of Firefox might not have readAsArrayBuffer
+  if ('readAsArrayBuffer' in frPrototype)
+    return; // readAsArrayBuffer is implemented
+  Object.defineProperty(frPrototype, 'readAsArrayBuffer', {
+    value: function fileReaderReadAsArrayBuffer(blob) {
+      var fileReader = new FileReader();
+      var originalReader = this;
+      fileReader.onload = function fileReaderOnload(evt) {
+        var data = evt.target.result;
+        var buffer = new ArrayBuffer(data.length);
+        var uint8Array = new Uint8Array(buffer);
+
+        for (var i = 0, ii = data.length; i < ii; i++)
+          uint8Array[i] = data.charCodeAt(i);
+
+        Object.defineProperty(originalReader, 'result', {
+          value: buffer,
+          enumerable: true,
+          writable: false,
+          configurable: true
+        });
+
+        var event = document.createEvent('HTMLEvents');
+        event.initEvent('load', false, false);
+        originalReader.dispatchEvent(event);
+      };
+      fileReader.readAsBinaryString(blob);
+    }
+  });
+})();
+
 // No XMLHttpRequest.response ?
 (function checkXMLHttpRequestResponseCompatibility() {
   var xhrPrototype = XMLHttpRequest.prototype;
+  if (!('overrideMimeType' in xhrPrototype)) {
+    // IE10 might have response, but not overrideMimeType
+    Object.defineProperty(xhrPrototype, 'overrideMimeType', {
+      value: function xmlHttpRequestOverrideMimeType(mimeType) {}
+    });
+  }
   if ('response' in xhrPrototype ||
       'mozResponseArrayBuffer' in xhrPrototype ||
       'mozResponse' in xhrPrototype ||
       'responseArrayBuffer' in xhrPrototype)
     return;
-  // IE ?
+  // IE9 ?
   if (typeof VBArray !== 'undefined') {
     Object.defineProperty(xhrPrototype, 'response', {
       get: function xmlHttpRequestResponseGet() {
         return new Uint8Array(new VBArray(this.responseBody).toArray());
       }
-    });
-    Object.defineProperty(xhrPrototype, 'overrideMimeType', {
-      value: function xmlHttpRequestOverrideMimeType(mimeType) {}
     });
     return;
   }
