@@ -26,4 +26,4 @@ function tryInsertIframe() {
 }
 window.webkitRequestAnimationFrame(tryInsertIframe);
 
-// TODO: Synchronize title, focus iframe.
+// TODO: Synchronize title.
