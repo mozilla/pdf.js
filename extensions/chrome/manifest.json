@@ -13,7 +13,8 @@
         "http://*/*.pdf",
         "file:///*/*.pdf"
       ],
-      "js": ["insertPdfIframe.js"]
+      "js": ["insertPdfIframe.js"],
+      "run_at": "document_start"
     }
   ]
 }
