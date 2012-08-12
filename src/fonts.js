@@ -3735,6 +3735,10 @@ var Type1Parser = function type1Parser() {
             case '/OtherBlues':
             case '/FamilyBlues':
             case '/FamilyOtherBlues':
+              var blueArray = readNumberArray(eexecStr, i + 1);
+              if (blueArray.length > 0 && (blueArray.length % 2) == 0)
+                program.properties.privateData[token.substring(1)] = blueArray;
+              break;
             case '/StemSnapH':
             case '/StemSnapV':
               program.properties.privateData[token.substring(1)] =
