@@ -519,6 +519,7 @@
       "file": "pdfs/issue1655.pdf",
       "md5": "696ef6de6f4f71643771419ef04fc968",
       "rounds": 1,
+      "skipPages": [1, 2, 3, 4, 5, 6, 7, 8],
       "pageLimit": 9,
       "link": true,
       "type": "eq"
