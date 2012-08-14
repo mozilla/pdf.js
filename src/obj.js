@@ -624,7 +624,7 @@ var XRef = (function XRefClosure() {
       var e = this.entries[i];
       if (e === null)
         return null;
-      return e.free ? null : e; // returns null is the entry is free
+      return e.free || !e.offset ? null : e; // returns null if entry is free
     },
     fetchIfRef: function XRef_fetchIfRef(obj) {
       if (!isRef(obj))
