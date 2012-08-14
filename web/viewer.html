@@ -178,6 +178,19 @@
           <div id="loading"></div>
           <div id="loadingBar"><div class="progress"></div></div>
         </div>
+        
+        <script>
+          var byeprogress = new XMLHttpRequest();
+          if (byeprogress.onprogress === undefined)
+          {
+            document.getElementById('loadingBox').innerHTML += '<span style="color: #EEEEEE; font-size: 11px;">Loading file...</span>';
+          }
+          else
+          {
+            document.getElementById('loadingBar').style.display = 'inline-block';
+            document.getElementById('loadingBar').style.visibility = 'visible';
+          }
+        </script>
 
         <div id="errorWrapper" hidden='true'>
           <div id="errorMessageLeft">
