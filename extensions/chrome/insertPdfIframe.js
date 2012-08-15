@@ -14,7 +14,7 @@ function tryInsertIframe() {
   var embed = document.querySelector('embed');
   if (embed) {
     var iframe = document.createElement('iframe');
-    iframe.src = url;
+    iframe.src = url + document.location.hash;
     iframe.style.width = '100%';
     iframe.style.height = '100%';
     iframe.style.border = 0;
