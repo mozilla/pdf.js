@@ -541,7 +541,7 @@ target.chrome = function() {
     defines: defines,
     copy: [
       [COMMON_WEB_FILES, CHROME_BUILD_CONTENT_DIR + '/web'],
-      [['extensions/chrome/*.json', 'extensions/chrome/*.html'], CHROME_BUILD_DIR],
+      [['extensions/chrome/*.json', 'extensions/chrome/*.js'], CHROME_BUILD_DIR],
       [BUILD_TARGET, CHROME_BUILD_CONTENT_DIR + BUILD_TARGET],
       ['external/webL10n/l10n.js', CHROME_BUILD_CONTENT_DIR + '/web']
     ],

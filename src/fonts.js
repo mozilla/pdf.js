@@ -518,7 +518,8 @@ var FontLoader = {
         window.addEventListener(
           'message',
           function fontLoaderMessage(e) {
-            var fontNames = JSON.parse(e.data);
+            if (e.data !== 'fontsloaded')
+              return;
             for (var i = 0, ii = fonts.length; i < ii; ++i) {
               var font = fonts[i];
               font.loading = false;
@@ -546,7 +547,7 @@ var FontLoader = {
       }
       src += '  var fontNames=[' + fontNamesArray + '];\n';
       src += '  window.onload = function fontLoaderOnload() {\n';
-      src += '    parent.postMessage(JSON.stringify(fontNames), "*");\n';
+      src += '    parent.postMessage("fontsloaded", "*");\n';
       src += '  }';
       // Hack so the end script tag isn't counted if this is inline JS.
       src += '</scr' + 'ipt></head><body>';

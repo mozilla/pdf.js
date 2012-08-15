@@ -503,7 +503,7 @@ var PDFView = {
    * @param {String} anchor The anchor hash include the #.
    */
   getAnchorUrl: function getAnchorUrl(anchor) {
-//#if !(FIREFOX || MOZCENTRAL)
+//#if !(CHROME || FIREFOX || MOZCENTRAL)
     return anchor;
 //#else
 //  return this.url.split('#')[0] + anchor;
@@ -1778,7 +1778,7 @@ window.addEventListener('load', function webViewerLoad(evt) {
 //var file = window.location.toString()
 //#endif
 
-//#if !(FIREFOX || MOZCENTRAL)
+//#if !(CHROME || FIREFOX || MOZCENTRAL)
   if (!window.File || !window.FileReader || !window.FileList || !window.Blob) {
     document.getElementById('openFile').setAttribute('hidden', 'true');
   } else {
@@ -2132,6 +2132,17 @@ window.addEventListener('afterprint', function afterPrint(evt) {
   window.addEventListener('mozfullscreenchange', fullscreenChange, false);
   window.addEventListener('webkitfullscreenchange', fullscreenChange, false);
 })();
+
+//#if CHROME
+//window.addEventListener("message", function (evt) {
+//  var match = PDFView.url.match(/^[^\/]+\/\/[^\/]*/);
+//  if (match !== null && evt.origin === match[0]) {
+//    if (evt.data.indexOf("hashchange:") === 0) {
+//      document.location.hash = evt.data.substr("hashchange:".length);
+//    }
+//  }
+//});
+//#endif
 
 //#if B2G
 //window.navigator.mozSetMessageHandler('activity', function(activity) {
