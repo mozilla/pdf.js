@@ -29,9 +29,11 @@ function getPdf(arg, callback) {
   var params = arg;
   if (typeof arg === 'string')
     params = { url: arg };
-
+//#if !B2G
   var xhr = new XMLHttpRequest();
-
+//#else
+//var xhr = new XMLHttpRequest({mozSystem: true});
+//#endif
   xhr.open('GET', params.url);
 
   var headers = params.headers;
@@ -403,6 +405,24 @@ var PDFDocument = (function PDFDocumentClosure() {
     return true; /* found */
   }
 
+  var DocumentInfoValidators = {
+    get entries() {
+      // Lazily build this since all the validation functions below are not
+      // defined until after this file loads.
+      return shadow(this, 'entries', {
+        Title: isString,
+        Author: isString,
+        Subject: isString,
+        Keywords: isString,
+        Creator: isString,
+        Producer: isString,
+        CreationDate: isString,
+        ModDate: isString,
+        Trapped: isName
+      });
+    }
+  };
+
   PDFDocument.prototype = {
     get linearization() {
       var length = this.stream.length;
@@ -495,18 +515,27 @@ var PDFDocument = (function PDFDocumentClosure() {
       return shadow(this, 'numPages', num);
     },
     getDocumentInfo: function PDFDocument_getDocumentInfo() {
-      var info;
+      var docInfo;
       if (this.xref.trailer.has('Info')) {
         var infoDict = this.xref.trailer.get('Info');
 
-        info = {};
-        infoDict.forEach(function(key, value) {
-          info[key] = typeof value !== 'string' ? value :
-            stringToPDFString(value);
-        });
+        docInfo = {};
+        var validEntries = DocumentInfoValidators.entries;
+        // Only fill the document info with valid entries from the spec.
+        for (var key in validEntries) {
+          if (infoDict.has(key)) {
+            var value = infoDict.get(key);
+            // Make sure the value conforms to the spec.
+            if (validEntries[key](value)) {
+              docInfo[key] = typeof value !== 'string' ? value :
+                             stringToPDFString(value);
+            } else {
+              info('Bad value in document info for "' + key + '"');
+            }
+          }
+        }
       }
-
-      return shadow(this, 'getDocumentInfo', info);
+      return shadow(this, 'getDocumentInfo', docInfo);
     },
     getFingerprint: function PDFDocument_getFingerprint() {
       var xref = this.xref, fileID;

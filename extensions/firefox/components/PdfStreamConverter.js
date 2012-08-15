@@ -281,9 +281,26 @@ ChromeActions.prototype = {
     var strings = getLocalizedStrings('chrome.properties');
     var message = getLocalizedString(strings, 'unsupported_feature');
 
-    var win = Services.wm.getMostRecentWindow('navigator:browser');
-    var browser = win.gBrowser.getBrowserForDocument(domWindow.top.document);
-    var notificationBox = win.gBrowser.getNotificationBox(browser);
+    var notificationBox = null;
+    // Multiple browser windows can be opened, finding one for notification box
+    var windowsEnum = Services.wm
+                      .getZOrderDOMWindowEnumerator('navigator:browser', true);
+    while (windowsEnum.hasMoreElements()) {
+      var win = windowsEnum.getNext();
+      if (win.closed)
+        continue;
+      var browser = win.gBrowser.getBrowserForDocument(domWindow.top.document);
+      if (browser) {
+        // right window/browser is found, getting the notification box
+        notificationBox = win.gBrowser.getNotificationBox(browser);
+        break;
+      }
+    }
+    if (!notificationBox) {
+      log('Unable to get a notification box for the fallback message');
+      return;
+    }
+
     // Flag so we don't call the response callback twice, since if the user
     // clicks open with different viewer both the button callback and
     // eventCallback will be called.

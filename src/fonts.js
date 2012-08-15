@@ -418,7 +418,8 @@ var FontLoader = {
       document.documentElement.removeEventListener(
         'pdfjsFontLoad', checkFontsLoaded, false);
 
-      callback();
+      // Use timeout to fix chrome intermittent failures on font loading.
+      setTimeout(callback, 0);
       return true;
     }
 
@@ -3292,6 +3293,14 @@ var Font = (function FontClosure() {
   return Font;
 })();
 
+var CallothersubrCmd = (function CallothersubrCmdClosure() {
+  function CallothersubrCmd(index) {
+    this.index = index;
+  }
+
+  return CallothersubrCmd;
+})();
+
 /*
  * Type1Parser encapsulate the needed code for parsing a Type1 font
  * program. Some of its logic depends on the Type2 charstrings
@@ -3497,6 +3506,10 @@ var Type1Parser = function type1Parser() {
               i++;
               continue;
             }
+
+            assert(argc == 0, 'callothersubr with arguments is not supported');
+            charstring.push(new CallothersubrCmd(index));
+            continue;
           } else if (escape == 17 || escape == 33) {
             // pop or setcurrentpoint commands can be ignored
             // since we are not doing callothersubr
@@ -4016,23 +4029,23 @@ Type1Font.prototype = {
   },
 
   getType2Charstrings: function Type1Font_getType2Charstrings(
-                                  type1Charstrings) {
+                                  type1Subrs) {
     var type2Charstrings = [];
-    var count = type1Charstrings.length;
-    for (var i = 0; i < count; i++) {
-      var charstring = type1Charstrings[i].charstring;
-      type2Charstrings.push(this.flattenCharstring(charstring.slice(),
-                                                   this.commandsMap));
-    }
+    var count = type1Subrs.length;
+    var type1Charstrings = [];
+    for (var i = 0; i < count; i++)
+      type1Charstrings.push(type1Subrs[i].charstring.slice());
+    for (var i = 0; i < count; i++)
+      type2Charstrings.push(this.flattenCharstring(type1Charstrings, i));
     return type2Charstrings;
   },
 
   getType2Subrs: function Type1Font_getType2Subrs(type1Subrs) {
     var bias = 0;
     var count = type1Subrs.length;
-    if (count < 1240)
+    if (count < 1133)
       bias = 107;
-    else if (count < 33900)
+    else if (count < 33769)
       bias = 1131;
     else
       bias = 32768;
@@ -4043,11 +4056,7 @@ Type1Font.prototype = {
       type2Subrs.push([0x0B]);
 
     for (var i = 0; i < count; i++) {
-      var subr = type1Subrs[i];
-      if (!subr)
-        subr = [0x0B];
-
-      type2Subrs.push(this.flattenCharstring(subr, this.commandsMap));
+      type2Subrs.push(this.flattenCharstring(type1Subrs, i));
     }
 
     return type2Subrs;
@@ -4079,7 +4088,11 @@ Type1Font.prototype = {
     'hvcurveto': 31
   },
 
-  flattenCharstring: function Type1Font_flattenCharstring(charstring, map) {
+  flattenCharstring: function Type1Font_flattenCharstring(charstrings, index) {
+    var charstring = charstrings[index];
+    if (!charstring)
+      return [0x0B];
+    var map = this.commandsMap;
     // charstring changes size - can't cache .length in loop
     for (var i = 0; i < charstring.length; i++) {
       var command = charstring[i];
@@ -4091,6 +4104,17 @@ Type1Font.prototype = {
           charstring.splice(i++, 1, cmd[0], cmd[1]);
         else
           charstring[i] = cmd;
+      } else if (command instanceof CallothersubrCmd) {
+        var otherSubrCharstring = charstrings[command.index];
+        if (otherSubrCharstring) {
+          var lastCommand = otherSubrCharstring.indexOf('return');
+          if (lastCommand >= 0)
+            otherSubrCharstring = otherSubrCharstring.slice(0, lastCommand);
+          charstring.splice.apply(charstring,
+                                  [i, 1].concat(otherSubrCharstring));
+        } else
+          charstring.splice(i, 1); // ignoring empty subr call
+        i--;
       } else {
         // Type1 charstring use a division for number above 32000
         if (command > 32000) {

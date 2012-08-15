@@ -61,13 +61,13 @@ You can also view all the test pdf files on the right side serving
 
 + http://localhost:8888/test/pdfs/?frame
 
-### Building pdf.js
+### Building pdf.js.
 
-In order to bundle all `src/` files into a final `pdf.js`, issue:
+In order to bundle all `src/` files into a final `pdf.js` and build the generic viewer, issue:
 
-    $ node make bundle
+    $ node make generic
 
-This will generate the file `build/pdf.js` that can be included in your final project. (WARNING: That's a large file! Consider minifying it).
+This will generate the file `build/generic/build/pdf.js` that can be included in your final project. The pdf.js file is large and should be minified for production. Also, if you would like to support more browsers than firefox you'll also need to include `compatibility.js` from `build/generic/web/`.
 
 
 # Learning
