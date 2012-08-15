@@ -356,7 +356,7 @@ var PDFView = {
     window.addEventListener('message', function window_message(e) {
       var args = e.data;
 
-      if (!('pdfjsLoadAction' in args))
+      if (typeof args !== 'object' || !('pdfjsLoadAction' in args))
         return;
       switch (args.pdfjsLoadAction) {
         case 'progress':
