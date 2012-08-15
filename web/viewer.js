@@ -2133,6 +2133,17 @@ window.addEventListener('afterprint', function afterPrint(evt) {
   window.addEventListener('webkitfullscreenchange', fullscreenChange, false);
 })();
 
+//#if CHROME
+//window.addEventListener("message", function (evt) {
+//  var match = PDFView.url.match(/^[^\/]+\/\/[^\/]*/);
+//  if (match !== null && evt.origin === match[0]) {
+//    if (evt.data.indexOf("hashchange:") === 0) {
+//      document.location.hash = evt.data.substr("hashchange:".length);
+//    }
+//  }
+//});
+//#endif
+
 //#if B2G
 //window.navigator.mozSetMessageHandler('activity', function(activity) {
 //  var url = activity.source.data.url;

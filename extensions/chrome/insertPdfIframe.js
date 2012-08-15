@@ -20,6 +20,15 @@ function tryInsertIframe() {
     iframe.style.border = 0;
     embed.parentNode.replaceChild(iframe, embed);
     iframe.focus();
+
+    window.addEventListener('hashchange', function () { 
+      // chrome doesn't give us access to the iframe's window, so
+      // we work around it http://crbug.com/20773
+      var script = document.createElement('script');
+      script.text = "frames[0].postMessage('hashchange:' + document.location.hash, '" + chrome.extension.getURL('') + "');";
+      document.body.appendChild(script);
+      script.parentNode.removeChild(script);
+    });
   } else {
     window.webkitRequestAnimationFrame(tryInsertIframe);
   }
