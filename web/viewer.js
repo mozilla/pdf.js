@@ -1778,7 +1778,7 @@ window.addEventListener('load', function webViewerLoad(evt) {
 //var file = window.location.toString()
 //#endif
 
-//#if !(FIREFOX || MOZCENTRAL)
+//#if !(CHROME || FIREFOX || MOZCENTRAL)
   if (!window.File || !window.FileReader || !window.FileList || !window.Blob) {
     document.getElementById('openFile').setAttribute('hidden', 'true');
   } else {
