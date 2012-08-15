@@ -503,7 +503,7 @@ var PDFView = {
    * @param {String} anchor The anchor hash include the #.
    */
   getAnchorUrl: function getAnchorUrl(anchor) {
-//#if !(FIREFOX || MOZCENTRAL)
+//#if !(CHROME || FIREFOX || MOZCENTRAL)
     return anchor;
 //#else
 //  return this.url.split('#')[0] + anchor;
