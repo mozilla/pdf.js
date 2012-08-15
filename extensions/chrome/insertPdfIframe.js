@@ -12,7 +12,7 @@ var url = chrome.extension.getURL(viewerPage) +
 
 function tryInsertIframe() {
   var embed = document.querySelector('embed');
-  if(embed) {
+  if (embed) {
     var iframe = document.createElement('iframe');
     iframe.src = url;
     iframe.style.width = '100%';
