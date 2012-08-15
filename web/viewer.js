@@ -1890,6 +1890,7 @@ document.addEventListener('DOMContentLoaded', function webViewerLoad(evt) {
 //if (FirefoxCom.requestSync('getLoadingType') == 'passive') {
 //  PDFView.setTitleUsingUrl(file);
 //  PDFView.initPassiveLoading();
+//  return;
 //}
 //#endif
 
