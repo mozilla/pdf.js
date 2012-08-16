@@ -244,9 +244,10 @@
   };
 })();
 
-// IE9 text/html data URI
-(function checkDocumentDocumentModeCompatibility() {
-  if (!('documentMode' in document) || document.documentMode !== 9)
+// IE9/10 text/html data URI
+(function checkDataURICompatibility() {
+  if (!('documentMode' in document) ||
+      document.documentMode !== 9 && document.documentMode !== 10)
     return;
   // overriding the src property
   var originalSrcDescriptor = Object.getOwnPropertyDescriptor(
