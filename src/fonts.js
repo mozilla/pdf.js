@@ -501,6 +501,16 @@ var FontLoader = {
       // The postMessage() hackery was added to work around chrome bug
       // 82402.
 
+      var requestId = request.id;
+      // Validate the requestId parameter -- the value used to construct HTML.
+      if (!/^[\w\-]+$/.test(requestId)) {
+        error('Invalid request id: ' + requestId);
+
+        // Normally the error-function throws. But if a malicious code
+        // intercepts the function call then the return is needed.
+        return;
+      }
+
       var names = [];
       for (var i = 0, ii = fonts.length; i < ii; i++)
         names.push(fonts[i].loadedName);
@@ -526,7 +536,6 @@ var FontLoader = {
       div.innerHTML = html;
       document.body.appendChild(div);
 
-      var requestId = request.id;
       window.addEventListener(
         'message',
         function fontLoaderMessage(e) {
