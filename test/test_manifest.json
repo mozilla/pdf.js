@@ -451,6 +451,14 @@
       "link": true,
       "type": "eq"
     },
+    {  "id": "issue1685",
+      "file": "pdfs/issue1685.pdf",
+      "md5": "b22c3741e6bd0e613d3eb3325ad31f7d",
+      "rounds": 1,
+      "pageLimit": 2,
+      "link": true,
+      "type": "eq"
+    },
     {  "id": "issue1169",
       "file": "pdfs/issue1169.pdf",
       "md5": "3df3ed21fd43ac7fdb21e2015c8a7809",
@@ -649,6 +657,12 @@
       "rounds": 1,
       "pageLimit": 1,
       "link": true,
+      "type": "load"
+    },
+    {  "id": "issue1985",
+      "file": "pdfs/issue1985.pdf",
+      "md5": "2ac7c68e26a8ef797aead15e4875cc6d",
+      "rounds": 1,
       "type": "load"
     }
 ]
