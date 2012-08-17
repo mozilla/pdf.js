@@ -566,6 +566,9 @@ var FontLoader = {
             font.loading = false;
           }
           request.complete();
+          // cleanup
+          document.body.removeChild(frame);
+          window.removeEventListener('message', fontLoaderMessage, false);
         },
         false);
 
