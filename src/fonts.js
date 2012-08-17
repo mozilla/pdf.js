@@ -456,7 +456,7 @@ var FontLoader = {
         // it's simple completion for one request
         context.pending = 0;
         context.requests.pop();
-        callback();
+        setTimeout(callback, 0);
         return;
       }
 
