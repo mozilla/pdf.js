@@ -404,28 +404,16 @@ function mapPrivateUseChars(code) {
 }
 
 var FontLoader = {
-  listeningForFontLoad: false,
+  loadingContext: {
+    pending: 0,
+    requests: [],
+    nextRequestId: 0
+  },
 
   bind: function fontLoaderBind(fonts, callback) {
-    function checkFontsLoaded() {
-      for (var i = 0, ii = fonts.length; i < ii; i++) {
-        var fontObj = fonts[i];
-        if (fontObj.loading) {
-          return false;
-        }
-      }
+    assert(!isWorker, 'bind() shall be called from main thread');
 
-      document.documentElement.removeEventListener(
-        'pdfjsFontLoad', checkFontsLoaded, false);
-
-      // Use timeout to fix chrome intermittent failures on font loading.
-      setTimeout(callback, 0);
-      return true;
-    }
-
-    var rules = [], names = [], fontsToLoad = [];
-    var fontCreateTimer = 0;
-
+    var rules = [], fontsToLoad = [];
     for (var i = 0, ii = fonts.length; i < ii; i++) {
       var font = fonts[i];
 
@@ -435,8 +423,6 @@ var FontLoader = {
         continue;
       }
       font.attached = true;
-
-      fontsToLoad.push(font);
 
       var str = '';
       var data = font.data;
@@ -448,28 +434,79 @@ var FontLoader = {
         var rule = font.bindDOM(str);
         if (rule) {
           rules.push(rule);
-          names.push(font.loadedName);
+          fontsToLoad.push(font);
         }
       }
     }
 
-    this.listeningForFontLoad = false;
-    if (!isWorker && rules.length) {
-      FontLoader.prepareFontLoadEvent(rules, names, fontsToLoad);
-    }
-
-    if (!checkFontsLoaded()) {
-      document.documentElement.addEventListener(
-        'pdfjsFontLoad', checkFontsLoaded, false);
+    var request = FontLoader.queueLoadingCallback(callback);
+    if (rules.length > 0) {
+      FontLoader.prepareFontLoadEvent(rules, fontsToLoad, request);
+    } else {
+      request.complete();
     }
   },
+
+  queueLoadingCallback: function FontLoader_queueLoadingCallback(callback) {
+    function LoadLoader_completeRequest() {
+      assert(!request.end, 'completeRequest() cannot be called twice');
+      request.end = Date.now();
+
+      if (context.pending <= 1) {
+        // it's simple completion for one request
+        context.pending = 0;
+        context.requests.pop();
+        callback();
+        return;
+      }
+
+      // calculating the load delay for all fonts and checking if all loaded
+      var totalTime = 0;
+      for (var i = 0, ii = context.requests.length; i < ii; i++) {
+        var otherRequest = context.requests[i];
+        if (!otherRequest.end)
+          return; // one more font to load, cancel the completion
+        totalTime += otherRequest.end - otherRequest.start;
+      }
+      var now = Date.now();
+      var startTime = context.requests[0].start;
+      var leftToWait = Math.max(totalTime - (now - startTime), 0);
+      context.timeout = setTimeout(function completeAllRequests() {
+        for (var i = 0, ii = context.requests.length; i < ii; i++) {
+          context.requests[i].callback();
+        }
+        context.pending = 0;
+        context.requests = [];
+        delete context.timeout;
+      }, leftToWait);
+    }
+
+    var context = FontLoader.loadingContext;
+    var requestId = 'pdfjs-font-loading-' + (context.nextRequestId++);
+    context.pending++;
+    var request = {
+      id: requestId,
+      complete: LoadLoader_completeRequest,
+      callback: callback,
+      started: Date.now()
+    };
+    context.requests.push(request);
+    if (context.timeout) {
+      // timeout for callbacks was set, removing that
+      clearTimeout(context.timeout);
+      delete context.timeout;
+    }
+    return request;
+  },
+
   // Set things up so that at least one pdfjsFontLoad event is
-  // dispatched when all the @font-face |rules| for |names| have been
+  // dispatched when all the @font-face |rules| for |fonts| have been
   // loaded in a subdocument.  It's expected that the load of |rules|
   // has already started in this (outer) document, so that they should
   // be ordered before the load in the subdocument.
-  prepareFontLoadEvent: function fontLoaderPrepareFontLoadEvent(rules, names,
-                                                                fonts) {
+  prepareFontLoadEvent: function fontLoaderPrepareFontLoadEvent(rules,
+                                                                fonts,
+                                                                request) {
       /** Hack begin */
       // There's no event when a font has finished downloading so the
       // following code is a dirty hack to 'guess' when a font is
@@ -493,6 +530,10 @@ var FontLoader = {
       // The postMessage() hackery was added to work around chrome bug
       // 82402.
 
+      var names = [];
+      for (var i = 0, ii = fonts.length; i < ii; i++)
+        names.push(fonts[i].loadedName);
+
       // Validate the names parameter -- the values can used to construct HTML.
       if (!/^\w+$/.test(names.join(''))) {
         error('Invalid font name(s): ' + names.join());
@@ -514,22 +555,19 @@ var FontLoader = {
       div.innerHTML = html;
       document.body.appendChild(div);
 
-      if (!this.listeningForFontLoad) {
-        window.addEventListener(
-          'message',
-          function fontLoaderMessage(e) {
-            var fontNames = JSON.parse(e.data);
-            for (var i = 0, ii = fonts.length; i < ii; ++i) {
-              var font = fonts[i];
-              font.loading = false;
-            }
-            var evt = document.createEvent('Events');
-            evt.initEvent('pdfjsFontLoad', true, false);
-            document.documentElement.dispatchEvent(evt);
-          },
-          false);
-        this.listeningForFontLoad = true;
-      }
+      var requestId = request.id;
+      window.addEventListener(
+        'message',
+        function fontLoaderMessage(e) {
+          if (e.data !== requestId)
+            return;
+          for (var i = 0, ii = fonts.length; i < ii; ++i) {
+            var font = fonts[i];
+            font.loading = false;
+          }
+          request.complete();
+        },
+        false);
 
       // XXX we should have a time-out here too, and maybe fire
       // pdfjsFontLoadFailed?
@@ -540,13 +578,8 @@ var FontLoader = {
       }
       src += '</style>';
       src += '<script type="application/javascript">';
-      var fontNamesArray = '';
-      for (var i = 0, ii = names.length; i < ii; ++i) {
-        fontNamesArray += '"' + names[i] + '", ';
-      }
-      src += '  var fontNames=[' + fontNamesArray + '];\n';
       src += '  window.onload = function fontLoaderOnload() {\n';
-      src += '    parent.postMessage(JSON.stringify(fontNames), "*");\n';
+      src += '    parent.postMessage("' + requestId + '", "*");\n';
       src += '  }';
       // Hack so the end script tag isn't counted if this is inline JS.
       src += '</scr' + 'ipt></head><body>';
