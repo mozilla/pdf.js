@@ -405,7 +405,6 @@ function mapPrivateUseChars(code) {
 
 var FontLoader = {
   loadingContext: {
-    pending: 0,
     requests: [],
     nextRequestId: 0
   },
@@ -452,38 +451,15 @@ var FontLoader = {
       assert(!request.end, 'completeRequest() cannot be called twice');
       request.end = Date.now();
 
-      if (context.pending <= 1) {
-        // it's simple completion for one request
-        context.pending = 0;
-        context.requests.pop();
-        setTimeout(callback, 0);
-        return;
+      // sending all completed requests in order how they were queued
+      while (context.requests.length > 0 && context.requests[0].end) {
+        var otherRequest = context.requests.shift();
+        setTimeout(otherRequest.callback, 0);
       }
-
-      // calculating the load delay for all fonts and checking if all loaded
-      var totalTime = 0;
-      for (var i = 0, ii = context.requests.length; i < ii; i++) {
-        var otherRequest = context.requests[i];
-        if (!otherRequest.end)
-          return; // one more font to load, cancel the completion
-        totalTime += otherRequest.end - otherRequest.start;
-      }
-      var now = Date.now();
-      var startTime = context.requests[0].start;
-      var leftToWait = Math.max(totalTime - (now - startTime), 0);
-      context.timeout = setTimeout(function completeAllRequests() {
-        for (var i = 0, ii = context.requests.length; i < ii; i++) {
-          context.requests[i].callback();
-        }
-        context.pending = 0;
-        context.requests = [];
-        delete context.timeout;
-      }, leftToWait);
     }
 
     var context = FontLoader.loadingContext;
     var requestId = 'pdfjs-font-loading-' + (context.nextRequestId++);
-    context.pending++;
     var request = {
       id: requestId,
       complete: LoadLoader_completeRequest,
@@ -491,11 +467,6 @@ var FontLoader = {
       started: Date.now()
     };
     context.requests.push(request);
-    if (context.timeout) {
-      // timeout for callbacks was set, removing that
-      clearTimeout(context.timeout);
-      delete context.timeout;
-    }
     return request;
   },
 
