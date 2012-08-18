@@ -28,6 +28,16 @@ var DEFINES = {
 };
 
 //
+// Helper functions
+//
+function throwIfCarriageReturnIsPresent(string) {
+  if (string.match(/.*\r.*/)) {
+    throw('Carriage Return\'s should not be present. Please remove them.\n' +
+          'Also check your setting for: git config core.autocrlf');
+  }
+}
+
+//
 // make all
 //
 target.all = function() {
@@ -217,6 +227,9 @@ target.bundle = function() {
   var bundle = cat(SRC_FILES),
       bundleVersion = exec('git log --format="%h" -n 1',
         {silent: true}).output.replace('\n', '');
+
+  // Handle only src/*.js for now.
+  throwIfCarriageReturnIsPresent(cat('*.js'));
 
   // This just preprocesses the empty pdf.js file, we don't actually want to
   // preprocess everything yet since other build targets use this file.
@@ -671,15 +684,18 @@ target.lint = function() {
   echo();
   echo('### Linting JS files (this can take a while!)');
 
-  var LINT_FILES = 'src/*.js \
-                    web/*.js \
-                    test/*.js \
-                    test/unit/*.js \
-                    extensions/firefox/*.js \
-                    extensions/firefox/components/*.js \
-                    extensions/chrome/*.js';
+  var LINT_FILES = ['src/*.js',
+                    'web/*.js',
+                    'test/*.js',
+                    'test/unit/*.js',
+                    'extensions/firefox/*.js',
+                    'extensions/firefox/components/*.js',
+                    'extensions/chrome/*.js'];
 
-  exec('gjslint --nojsdoc ' + LINT_FILES);
+  // Handle only src/*.js for now.
+  throwIfCarriageReturnIsPresent(cat('src/*.js'));
+
+  exec('gjslint --nojsdoc ' + LINT_FILES.join(' '));
 };
 
 //
@@ -692,3 +708,4 @@ target.clean = function() {
 
   rm('-rf', BUILD_DIR);
 };
+
