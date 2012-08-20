@@ -125,29 +125,56 @@ function getLocalizedString(strings, id, property) {
 
 // PDF data storage
 function PdfDataListener(length) {
-  this.length = length;
-  this.data = new Uint8Array(length);
+  this.length = length; // less than 0, if length is unknown
+  this.data = new Uint8Array(length >= 0 ? length : 0x10000);
 }
 
 PdfDataListener.prototype = {
   set: function PdfDataListener_set(chunk, offset) {
-    this.data.set(chunk, offset);
     var loaded = offset + chunk.length;
-    this.onprogress(loaded, this.length);
+    if (this.length < 0 && this.data.length < loaded) {
+      // data length is unknown and new chunk will not fit in the existing
+      // buffer, resizing the buffer by doubling the last its length
+      var newLength = this.data.length;
+      for (; newLength < loaded; newLength *= 2) {}
+      var newData = new Uint8Array(newLength);
+      newData.set(this.data);
+      this.data = newData;
+    }
+
+    this.data.set(chunk, offset);
+    this.loaded = loaded;
+
+    // not reporting the progress if data length is unknown
+    if (this.length >= 0)
+      this.onprogress(loaded, this.length);
+  },
+  getData: function PdfDataListener_getData() {
+    var data = this.length >= 0 ? this.data :
+                                  this.data.subarray(0, this.loaded);
+    delete this.data; // releasing temporary storage
+    return data;
   },
   finish: function PdfDataListener_finish() {
     this.isDataReady = true;
     if (this.oncompleteCallback) {
-      this.oncompleteCallback(this.data);
-      delete this.data;
+      this.oncompleteCallback(this.getData());
+    }
+  },
+  error: function PdfDataListener_error(errorCode) {
+    this.errorCode = errorCode;
+    if (this.oncompleteCallback) {
+      this.oncompleteCallback(null, errorCode);
     }
   },
   onprogress: function() {},
   set oncomplete(value) {
     this.oncompleteCallback = value;
     if (this.isDataReady) {
-      value(this.data);
-      delete this.data; // releasing temporary storage
+      value(this.getData());
+    }
+    if (this.errorCode) {
+      value(null, this.errorCode);
     }
   }
 };
@@ -244,11 +271,12 @@ ChromeActions.prototype = {
     };
 
     this.dataListener.oncomplete =
-      function ChromeActions_dataListenerComplete(data) {
+      function ChromeActions_dataListenerComplete(data, errorCode) {
 
       domWindow.postMessage({
         pdfjsLoadAction: 'complete',
-        data: data
+        data: data,
+        errorCode: errorCode
       }, '*');
 
       delete this.dataListener;
@@ -445,9 +473,6 @@ PdfStreamConverter.prototype = {
     if (useFetchByChrome) {
       // Creating storage for PDF data
       var contentLength = aRequest.contentLength;
-      if (contentLength < 0)
-        throw new 'Unknown length is not supported';
-
       dataListener = new PdfDataListener(contentLength);
       this.dataListener = dataListener;
       this.binaryStream = Cc['@mozilla.org/binaryinputstream;1']
@@ -511,7 +536,10 @@ PdfStreamConverter.prototype = {
       return;
     }
 
-    this.dataListener.finish();
+    if (Components.isSuccessCode(aStatusCode))
+      this.dataListener.finish();
+    else
+      this.dataListener.error(aStatusCode);
     delete this.dataListener;
     delete this.binaryStream;
   }

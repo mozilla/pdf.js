@@ -363,6 +363,11 @@ var PDFView = {
           PDFView.progress(args.loaded / args.total);
           break;
         case 'complete':
+          if (!args.data) {
+            PDFView.error(mozL10n.get('loading_error', null,
+                          'An error occurred while loading the PDF.'), e);
+            break;
+          }
           PDFView.open(args.data, 0);
           break;
       }
