@@ -127,27 +127,29 @@ function getLocalizedString(strings, id, property) {
 function PdfDataListener(length) {
   this.length = length; // less than 0, if length is unknown
   this.data = new Uint8Array(length >= 0 ? length : 0x10000);
+  this.loaded = 0;
 }
 
 PdfDataListener.prototype = {
   set: function PdfDataListener_set(chunk, offset) {
-    var loaded = offset + chunk.length;
-    if (this.length < 0 && this.data.length < loaded) {
+    if (this.length < 0) {
+      var willBeLoaded = this.loaded + chunk.length;
       // data length is unknown and new chunk will not fit in the existing
-      // buffer, resizing the buffer by doubling the last its length
-      var newLength = this.data.length;
-      for (; newLength < loaded; newLength *= 2) {}
-      var newData = new Uint8Array(newLength);
-      newData.set(this.data);
-      this.data = newData;
+      // buffer, resizing the buffer by doubling the its last length
+      if (this.data.length < willBeLoaded) {
+        var newLength = this.data.length;
+        for (; newLength < willBeLoaded; newLength *= 2) {}
+        var newData = new Uint8Array(newLength);
+        newData.set(this.data);
+        this.data = newData;
+      }
+      this.data.set(chunk, this.loaded);
+      this.loaded = willBeLoaded;
+    } else {
+      this.data.set(chunk, offset);
+      this.loaded = offset + chunk.length;
+      this.onprogress(this.loaded, this.length);
     }
-
-    this.data.set(chunk, offset);
-    this.loaded = loaded;
-
-    // not reporting the progress if data length is unknown
-    if (this.length >= 0)
-      this.onprogress(loaded, this.length);
   },
   getData: function PdfDataListener_getData() {
     var data = this.length >= 0 ? this.data :
