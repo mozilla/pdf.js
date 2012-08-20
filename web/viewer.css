@@ -1162,6 +1162,17 @@ canvas {
   font-size: 10px;
 }
 
+#viewer.textLayer-visible .textLayer > div,
+#viewer.textLayer-hover .textLayer > div:hover {
+  background-color: white;
+  color: black;
+}
+
+#viewer.textLayer-shadow .textLayer > div {
+  background-color: rgba(255,255,255, .6);
+  color: black;
+}
+
 @page {
   margin: 0;
 } 
