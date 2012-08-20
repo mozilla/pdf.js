@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 require('./external/shelljs/make');
 var builder = require('./external/builder/builder.js');
+var crlfchecker = require('./external/crlfchecker/crlfchecker.js');
 
 var ROOT_DIR = __dirname + '/', // absolute path to project's root
     BUILD_DIR = 'build/',
@@ -26,32 +27,6 @@ var DEFINES = {
   B2G: false,
   CHROME: false
 };
-
-//
-// Helper functions
-//
-function checkIfCarriageReturnsArePresent(string, throwOnError) {
-  if (string.match(/.*\r.*/)) {
-    var errorMessage =
-      'Carriage Return\'s should not be present. Please remove them.\n' +
-      'Also check your setting for: git config core.autocrlf.';
-
-    if (throwOnError) {
-      throw(errorMessage);
-    } else {
-      echo();
-      echo(errorMessage);
-    }
-  }
-}
-
-function throwIfCarriageReturnsArePresent(string) {
-  checkIfCarriageReturnsArePresent(string, true);
-}
-
-function warnIfCarriageReturnsArePresent(string) {
-  checkIfCarriageReturnsArePresent(string, false);
-}
 
 //
 // make all
@@ -245,7 +220,7 @@ target.bundle = function() {
         {silent: true}).output.replace('\n', '');
 
   // Handle only src/*.js for now.
-  throwIfCarriageReturnsArePresent(cat('*.js'));
+  crlfchecker.checkIfCrlfIsPresent(['*.js']);
 
   // This just preprocesses the empty pdf.js file, we don't actually want to
   // preprocess everything yet since other build targets use this file.
@@ -711,7 +686,7 @@ target.lint = function() {
   exec('gjslint --nojsdoc ' + LINT_FILES.join(' '));
 
   // Handle only src/*.js for now.
-  warnIfCarriageReturnsArePresent(cat('src/*.js'));
+  crlfchecker.checkIfCrlfIsPresent(['src/*.js']);
 };
 
 //
