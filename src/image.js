@@ -347,6 +347,10 @@ var PDFImage = (function PDFImageClosure() {
       var rowBytes = (originalWidth * numComps * bpc + 7) >> 3;
       var imgArray = this.getImageBytes(originalHeight * rowBytes);
 
+      // imgArray can be incomplete (e.g. after CCITT fax encoding)
+      var actualHeight = 0 | (imgArray.length / rowBytes *
+                         height / originalHeight);
+
       var comps = this.colorSpace.getRgbBuffer(
         this.getComponents(imgArray), bpc);
       if (originalWidth != width || originalHeight != height)
@@ -355,7 +359,7 @@ var PDFImage = (function PDFImageClosure() {
       var compsPos = 0;
       var opacity = this.getOpacity(width, height);
       var opacityPos = 0;
-      var length = width * height * 4;
+      var length = width * actualHeight * 4;
 
       for (var i = 0; i < length; i += 4) {
         buffer[i] = comps[compsPos++];
