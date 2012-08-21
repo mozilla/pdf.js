@@ -395,9 +395,9 @@ var FlateStream = (function FlateStreamClosure() {
     var codeBuf = this.codeBuf;
     var bytes = this.bytes;
     var bytesPos = this.bytesPos;
-  
+
     var b;
-    while (codeSize < maxLen) {    
+    while (codeSize < maxLen) {
       if (typeof (b = bytes[bytesPos++]) == 'undefined')
         error('Bad encoding in flate stream');
       codeBuf |= (b << codeSize);
