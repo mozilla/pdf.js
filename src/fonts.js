@@ -4100,7 +4100,7 @@ Type1Font.prototype = {
     // charstring changes size - can't cache .length in loop
     for (var i = 0; i < charstring.length; i++) {
       var command = charstring[i];
-      if (command.charAt) {
+      if (typeof command === 'string') {
         var cmd = map[command];
         assert(cmd, 'Unknow command: ' + command);
 
