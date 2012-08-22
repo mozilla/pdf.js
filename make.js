@@ -219,8 +219,7 @@ target.bundle = function() {
       bundleVersion = exec('git log --format="%h" -n 1',
         {silent: true}).output.replace('\n', '');
 
-  // Handle only src/*.js for now.
-  crlfchecker.checkIfCrlfIsPresent(['*.js']);
+  crlfchecker.checkIfCrlfIsPresent(SRC_FILES);
 
   // This just preprocesses the empty pdf.js file, we don't actually want to
   // preprocess everything yet since other build targets use this file.
@@ -685,8 +684,7 @@ target.lint = function() {
 
   exec('gjslint --nojsdoc ' + LINT_FILES.join(' '));
 
-  // Handle only src/*.js for now.
-  crlfchecker.checkIfCrlfIsPresent(['src/*.js']);
+  crlfchecker.checkIfCrlfIsPresent(LINT_FILES);
 };
 
 //
