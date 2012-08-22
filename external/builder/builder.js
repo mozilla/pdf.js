@@ -27,7 +27,8 @@ function preprocess(inFilename, outFilename, defines) {
     }
     return null;
   }
-  var writeLine = typeof outFilename === 'function' ? outFilename : function(line) {
+  var writeLine = typeof outFilename === 'function' ? outFilename :
+                                                      function(line) {
     out += line + '\n';
   }
   function include(file) {
@@ -47,7 +48,8 @@ function preprocess(inFilename, outFilename, defines) {
   }
 
   var s, state = 0, stack = [];
-  var control = /^(?:\/\/|<!--)\s*#(if|else|endif|expand|include)(?:\s+(.*?)(?:-->)?$)?/;
+  var control =
+    /^(?:\/\/|<!--)\s*#(if|else|endif|expand|include)(?:\s+(.*?)(?:-->)?$)?/;
   var lineNumber = 0;
   while ((s = readLine()) !== null) {
     ++lineNumber;
@@ -82,8 +84,8 @@ function preprocess(inFilename, outFilename, defines) {
     } else {
       if (state === 0) {
         writeLine(s);
-      } else if(state === 3) {
-        writeLine(s.replace(/^\/\/|^<!--|-->/g, "  "));
+      } else if (state === 3) {
+        writeLine(s.replace(/^\/\/|^<!--|-->/g, '  '));
       }
     }
   }
@@ -96,11 +98,11 @@ exports.preprocess = preprocess;
 
 /**
  * Simplifies common build steps.
- * @param setup
+ * @param {object} setup
  *        .defines defines for preprocessors
  *        .copy array of arrays of source and destination pairs of files to copy
  *        .preprocess array of arrays of source and destination pairs of files
- *                    run through preprocessor
+ *                    run through preprocessor.
  */
 function build(setup) {
   var defines = setup.defines;
