@@ -339,6 +339,8 @@ target.firefox = function() {
   mkdir('-p', FIREFOX_BUILD_CONTENT_DIR + BUILD_DIR);
   mkdir('-p', FIREFOX_BUILD_CONTENT_DIR + '/web');
 
+  cp(FIREFOX_CONTENT_DIR + 'PdfJs-stub.jsm', FIREFOX_BUILD_CONTENT_DIR + 'PdfJs.jsm');
+
   // Copy extension files
   cd('extensions/firefox');
   cp('-R', FIREFOX_EXTENSION_FILES_TO_COPY, ROOT_DIR + FIREFOX_BUILD_DIR);
