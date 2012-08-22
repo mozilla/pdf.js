@@ -131,7 +131,7 @@ function PdfDataListener(length) {
 }
 
 PdfDataListener.prototype = {
-  set: function PdfDataListener_set(chunk, offset) {
+  append: function PdfDataListener_append(chunk) {
     var willBeLoaded = this.loaded + chunk.length;
     if (this.length >= 0 && this.length < willBeLoaded) {
       this.length = -1; // reset the length, server is giving incorrect one
@@ -462,7 +462,7 @@ PdfStreamConverter.prototype = {
 
     var binaryStream = this.binaryStream;
     binaryStream.setInputStream(aInputStream);
-    this.dataListener.set(binaryStream.readByteArray(aCount), aOffset);
+    this.dataListener.append(binaryStream.readByteArray(aCount));
   },
 
   // nsIRequestObserver::onStartRequest
