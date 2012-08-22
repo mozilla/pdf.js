@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 require('./external/shelljs/make');
 var builder = require('./external/builder/builder.js');
+var crlfchecker = require('./external/crlfchecker/crlfchecker.js');
 
 var ROOT_DIR = __dirname + '/', // absolute path to project's root
     BUILD_DIR = 'build/',
@@ -217,6 +218,8 @@ target.bundle = function() {
   var bundle = cat(SRC_FILES),
       bundleVersion = exec('git log --format="%h" -n 1',
         {silent: true}).output.replace('\n', '');
+
+  crlfchecker.checkIfCrlfIsPresent(SRC_FILES);
 
   // This just preprocesses the empty pdf.js file, we don't actually want to
   // preprocess everything yet since other build targets use this file.
@@ -673,15 +676,17 @@ target.lint = function() {
   echo();
   echo('### Linting JS files (this can take a while!)');
 
-  var LINT_FILES = 'src/*.js \
-                    web/*.js \
-                    test/*.js \
-                    test/unit/*.js \
-                    extensions/firefox/*.js \
-                    extensions/firefox/components/*.js \
-                    extensions/chrome/*.js';
+  var LINT_FILES = ['src/*.js',
+                    'web/*.js',
+                    'test/*.js',
+                    'test/unit/*.js',
+                    'extensions/firefox/*.js',
+                    'extensions/firefox/components/*.js',
+                    'extensions/chrome/*.js'];
 
-  exec('gjslint --nojsdoc ' + LINT_FILES);
+  exec('gjslint --nojsdoc ' + LINT_FILES.join(' '));
+
+  crlfchecker.checkIfCrlfIsPresent(LINT_FILES);
 };
 
 //
@@ -694,3 +699,4 @@ target.clean = function() {
 
   rm('-rf', BUILD_DIR);
 };
+
