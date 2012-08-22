@@ -145,6 +145,7 @@ PdfDataListener.prototype = {
       }
       this.data.set(chunk, this.loaded);
       this.loaded = willBeLoaded;
+      this.onprogress(this.loaded);
     } else {
       this.data.set(chunk, offset);
       this.loaded = offset + chunk.length;
