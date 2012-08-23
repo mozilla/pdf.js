@@ -697,7 +697,10 @@ target.lint = function() {
   echo();
   echo('### Linting JS files (this can take a while!)');
 
-  var LINT_FILES = ['src/*.js',
+  var LINT_FILES = ['make.js',
+                    'external/builder/*.js',
+                    'external/crlfchecker/*.js',
+                    'src/*.js',
                     'web/*.js',
                     'test/*.js',
                     'test/unit/*.js',
