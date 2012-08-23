@@ -131,29 +131,29 @@ function PdfDataListener(length) {
 }
 
 PdfDataListener.prototype = {
-  set: function PdfDataListener_set(chunk, offset) {
-    if (this.length < 0) {
-      var willBeLoaded = this.loaded + chunk.length;
+  append: function PdfDataListener_append(chunk) {
+    var willBeLoaded = this.loaded + chunk.length;
+    if (this.length >= 0 && this.length < willBeLoaded) {
+      this.length = -1; // reset the length, server is giving incorrect one
+    }
+    if (this.length < 0 && this.data.length < willBeLoaded) {
       // data length is unknown and new chunk will not fit in the existing
       // buffer, resizing the buffer by doubling the its last length
-      if (this.data.length < willBeLoaded) {
-        var newLength = this.data.length;
-        for (; newLength < willBeLoaded; newLength *= 2) {}
-        var newData = new Uint8Array(newLength);
-        newData.set(this.data);
-        this.data = newData;
-      }
-      this.data.set(chunk, this.loaded);
-      this.loaded = willBeLoaded;
-    } else {
-      this.data.set(chunk, offset);
-      this.loaded = offset + chunk.length;
-      this.onprogress(this.loaded, this.length);
+      var newLength = this.data.length;
+      for (; newLength < willBeLoaded; newLength *= 2) {}
+      var newData = new Uint8Array(newLength);
+      newData.set(this.data);
+      this.data = newData;
     }
+    this.data.set(chunk, this.loaded);
+    this.loaded = willBeLoaded;
+    if (this.length >= 0)
+      this.onprogress(this.loaded, this.length);
   },
   getData: function PdfDataListener_getData() {
-    var data = this.length >= 0 ? this.data :
-                                  this.data.subarray(0, this.loaded);
+    var data = this.data;
+    if (this.loaded != data.length)
+      data = data.subarray(0, this.loaded);
     delete this.data; // releasing temporary storage
     return data;
   },
@@ -462,7 +462,7 @@ PdfStreamConverter.prototype = {
 
     var binaryStream = this.binaryStream;
     binaryStream.setInputStream(aInputStream);
-    this.dataListener.set(binaryStream.readByteArray(aCount), aOffset);
+    this.dataListener.append(binaryStream.readByteArray(aCount));
   },
 
   // nsIRequestObserver::onStartRequest
