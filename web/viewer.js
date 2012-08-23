@@ -60,7 +60,6 @@ var ProgressBar = (function ProgressBarClosure() {
     this.height = opts.height || 100;
     this.width = opts.width || 100;
     this.units = opts.units || '%';
-    this.percent = opts.percent || 0;
 
     // Initialize heights
     this.div.style.height = this.height + this.units;
@@ -69,10 +68,18 @@ var ProgressBar = (function ProgressBarClosure() {
   ProgressBar.prototype = {
 
     updateBar: function ProgressBar_updateBar() {
+      if (this._indeterminate) {
+        this.div.classList.add('indeterminate');
+        return;
+      }
+
       var progressSize = this.width * this._percent / 100;
 
       if (this._percent > 95)
         this.div.classList.add('full');
+      else
+        this.div.classList.remove('full');
+      this.div.classList.remove('indeterminate');
 
       this.div.style.width = progressSize + this.units;
     },
@@ -82,6 +89,7 @@ var ProgressBar = (function ProgressBarClosure() {
     },
 
     set percent(val) {
+      this._indeterminate = isNaN(val);
       this._percent = clamp(val, 0, 100);
       this.updateBar();
     }
@@ -572,6 +580,10 @@ var PDFView = {
         }
       }
     }
+
+    var loadingBox = document.getElementById('loadingBox');
+    loadingBox.setAttribute('hidden', 'true');
+
 //#if !(FIREFOX || MOZCENTRAL)
     var errorWrapper = document.getElementById('errorWrapper');
     errorWrapper.removeAttribute('hidden');
