@@ -7,9 +7,13 @@ var PDFJS = {};
   // Use strict in our context only - users might not want it
   'use strict';
 
-  PDFJS.build = 'PDFJSSCRIPT_BUNDLE_VER';
+  PDFJS.build =
+//#if !BUNDLE_VERSION
+  'PDFJSSCRIPT_BUNDLE_VER';
+//#else
+//#expand '__BUNDLE_VERSION__';
+//#endif
 
-  // Files are inserted below - see Makefile
-  /* PDFJSSCRIPT_INCLUDE_ALL */
+//#expand __BUNDLE__
 
 }).call((typeof window === 'undefined') ? this : window);
