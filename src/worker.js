@@ -135,12 +135,10 @@ var WorkerMessageHandler = {
         {
           url: source.url,
           progress: function getPDFProgress(evt) {
-            if (evt.lengthComputable) {
-              handler.send('DocProgress', {
-                loaded: evt.loaded,
-                total: evt.total
-              });
-            }
+            handler.send('DocProgress', {
+              loaded: evt.loaded,
+              total: evt.lengthComputable ? evt.total : void(0)
+            });
           },
           error: function getPDFError(e) {
             handler.send('DocError', 'Unexpected server response of ' +

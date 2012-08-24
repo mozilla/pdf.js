@@ -1025,6 +1025,28 @@ canvas {
   border-bottom-right-radius: 2px;
 }
 
+#loadingBar .progress.indeterminate {
+  width: 100%;
+  height: 25px;
+  background-image: -moz-linear-gradient( 30deg, #404040, #404040 15%, #898989, #404040 85%, #404040);
+  background-image: -webkit-linear-gradient( 30deg, #404040, #404040 15%, #898989, #404040 85%, #404040);
+  background-image: -ms-linear-gradient( 30deg, #404040, #404040 15%, #898989, #404040 85%, #404040);
+  background-image: -o-linear-gradient( 30deg, #404040, #404040 15%, #898989, #404040 85%, #404040);
+  background-size: 75px 25px;
+  -moz-animation: progressIndeterminate 1s linear infinite;
+  -webkit-animation: progressIndeterminate 1s linear infinite;
+}
+
+@-moz-keyframes progressIndeterminate {
+  from { background-position: 0px 0px; }
+  to { background-position: 75px 0px; }
+}
+
+@-webkit-keyframes progressIndeterminate {
+  from { background-position: 0px 0px; }
+  to { background-position: 75px 0px; }
+}
+
 .textLayer {
   position: absolute;
   left: 0;
