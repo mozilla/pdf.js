@@ -1918,9 +1918,6 @@ var TextLayer = (function TextLayerClosure() {
     },
 
     endLayout: function textLayerBuilderEndLayout() {
-      var textDivs = this.textDivs;
-      var textLayerDiv = this.textLayerDiv;
-
       this.setupRenderTimer();
       window.addEventListener('scroll', this.onScroll, false);
     },
