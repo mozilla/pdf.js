@@ -147,8 +147,7 @@ PdfDataListener.prototype = {
     }
     this.data.set(chunk, this.loaded);
     this.loaded = willBeLoaded;
-    if (this.length >= 0)
-      this.onprogress(this.loaded, this.length);
+    this.onprogress(this.loaded, this.length >= 0 ? this.length : void(0));
   },
   getData: function PdfDataListener_getData() {
     var data = this.data;
