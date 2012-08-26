@@ -352,7 +352,12 @@ var PDFView = {
     var parameters = {password: password};
     if (typeof url === 'string') { // URL
       this.url = url;
-      document.title = decodeURIComponent(getFileName(url)) || url;
+      try {
+        document.title = decodeURIComponent(getFileName(url)) || url;
+      } catch (Exception) {
+        console.log('WARNING: Unable to decode: ' + getFileName(url));
+        document.title = url;
+      }
       parameters.url = url;
     } else if (url && 'byteLength' in url) { // ArrayBuffer
       parameters.data = url;
