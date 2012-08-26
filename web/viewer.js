@@ -385,7 +385,12 @@ var PDFView = {
 
   setTitleUsingUrl: function pdfViewSetTitleUsingUrl(url) {
     this.url = url;
-    document.title = decodeURIComponent(getFileName(url)) || url;
+    try {
+      document.title = decodeURIComponent(getFileName(url)) || url;
+    } catch (Exception) {
+      console.log('WARNING: Unable to decode: ' + getFileName(url));
+      document.title = url;
+    }
   },
 
   open: function pdfViewOpen(url, scale, password) {
