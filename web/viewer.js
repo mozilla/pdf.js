@@ -33,6 +33,17 @@ function getFileName(url) {
   return url.substring(url.lastIndexOf('/', end) + 1, end);
 }
 
+function scrollIntoView(element, spot) {
+  var parent = element.offsetParent, offsetY = element.offsetTop;
+  while (parent.clientHeight == parent.scrollHeight) {
+    offsetY += parent.offsetTop;
+    parent = parent.offsetParent;
+  }
+  if (spot)
+    offsetY += spot.top;
+  parent.scrollTop = offsetY;
+}
+
 var Cache = function cacheCache(size) {
   var data = [];
   this.push = function cachePush(view) {
@@ -1315,7 +1326,7 @@ var PageView = function pageView(container, pdfPage, id, scale,
 
   this.scrollIntoView = function pageViewScrollIntoView(dest) {
       if (!dest) {
-        div.scrollIntoView(true);
+        scrollIntoView(div);
         return;
       }
 
@@ -1374,16 +1385,7 @@ var PageView = function pageView(container, pdfPage, id, scale,
         var width = Math.abs(boundingRect[0][0] - boundingRect[1][0]);
         var height = Math.abs(boundingRect[0][1] - boundingRect[1][1]);
 
-        // using temporary div to scroll it into view
-        var tempDiv = document.createElement('div');
-        tempDiv.style.position = 'absolute';
-        tempDiv.style.left = Math.floor(x) + 'px';
-        tempDiv.style.top = Math.floor(y) + 'px';
-        tempDiv.style.width = Math.ceil(width) + 'px';
-        tempDiv.style.height = Math.ceil(height) + 'px';
-        div.appendChild(tempDiv);
-        tempDiv.scrollIntoView(true);
-        div.removeChild(tempDiv);
+        scrollIntoView(div, {left: x, top: y, width: width, height: height});
       }, 0);
   };
 
@@ -2084,7 +2086,7 @@ window.addEventListener('pagechange', function pagechange(evt) {
       var last = numVisibleThumbs > 1 ?
                   visibleThumbs.last.id : first;
       if (page <= first || page >= last)
-        thumbnail.scrollIntoView();
+        scrollIntoView(thumbnail);
     }
 
   }
