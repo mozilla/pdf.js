@@ -385,11 +385,22 @@ var PDFView = {
 
   setTitleUsingUrl: function pdfViewSetTitleUsingUrl(url) {
     this.url = url;
-    try {
-      document.title = decodeURIComponent(getFileName(url)) || url;
-    } catch (e) {
-      // decodeURIComponent may throw URIError,
-      // fall back to using the unprocessed url in that case
+
+    var filename = getFileName(url);
+    if (filename) {
+      try {
+        document.title = decodeURIComponent(filename);
+      } catch (e) {
+        // decodeURIComponent() may throw URIError, try unescape() first,
+        // before giving up completely
+        try {
+          document.title = unescape(filename);
+        } catch (e) {
+          // fall back to using the unprocessed url if nothing works
+          document.title = filename;
+        }
+      }
+    } else {
       document.title = url;
     }
   },
