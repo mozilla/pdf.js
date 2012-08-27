@@ -625,7 +625,7 @@ target.chrome = function() {
 
   // If we're on a Darwin (Mac) OS, then let's check for an .app path
   if (process.platform === 'darwin' && executable.indexOf('.app') !== -1) {
-    executable = executable + '/Contents/MacOS/Google Chrome');
+    executable = executable + '/Contents/MacOS/Google Chrome';
   }
 
   // If the chrome executable doesn't exist
