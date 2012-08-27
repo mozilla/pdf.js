@@ -6,6 +6,7 @@ var ROOT_DIR = __dirname + '/', // absolute path to project's root
     BUILD_DIR = 'build/',
     BUILD_TARGET = BUILD_DIR + 'pdf.js',
     FIREFOX_BUILD_DIR = BUILD_DIR + '/firefox/',
+    CHROME_BUILD_DIR = BUILD_DIR + '/chrome/',
     EXTENSION_SRC_DIR = 'extensions/',
     LOCALE_SRC_DIR = 'l10n/',
     GH_PAGES_DIR = BUILD_DIR + 'gh-pages/',
@@ -107,6 +108,8 @@ target.web = function() {
   cp('-R', GENERIC_DIR + '/*', GH_PAGES_DIR);
   cp(FIREFOX_BUILD_DIR + '/*.xpi', FIREFOX_BUILD_DIR + '/*.rdf',
      GH_PAGES_DIR + EXTENSION_SRC_DIR + 'firefox/');
+  cp(CHROME_BUILD_DIR + '/*.crx', FIREFOX_BUILD_DIR + '/*.rdf',
+     GH_PAGES_DIR + EXTENSION_SRC_DIR + 'chrome/');
   cp('web/index.html.template', GH_PAGES_DIR + '/index.html');
 
   cd(GH_PAGES_DIR);
@@ -258,6 +261,7 @@ target.pagesrepo = function() {
   mkdir('-p', GH_PAGES_DIR + '/web/images');
   mkdir('-p', GH_PAGES_DIR + BUILD_DIR);
   mkdir('-p', GH_PAGES_DIR + EXTENSION_SRC_DIR + '/firefox');
+  mkdir('-p', GH_PAGES_DIR + EXTENSION_SRC_DIR + '/chrome');
 };
 
 
@@ -574,6 +578,70 @@ target.chrome = function() {
     ]
   };
   builder.build(setup);
+
+  // Bundle the files to a Chrome extension file .crx if path to key is set
+  var pem = env['PDFJS_CHROME_KEY'];
+  if (!pem) {
+    return;
+  }
+
+  echo();
+  echo('### Bundling .crx extension into ' + CHROME_BUILD_DIR);
+
+  if (!test('-f', pem)) {
+    echo('Incorrect PDFJS_CHROME_KEY path');
+    exit(1);
+  }
+
+  var browserManifest = env['PDF_BROWSERS'] ||
+      'test/resources/browser_manifests/browser_manifest.json';
+
+  if (!test('-f', browserManifest)) {
+    echo('Browser manifest file ' + browserManifest + ' does not exist.');
+    echo('Try copying one of the examples in test/resources/browser_manifests');
+    exit(1);
+  }
+
+  try {
+    var manifest = JSON.parse(cat(browserManifest));
+  } catch (e) {
+    echo('Malformed browser manifest file');
+    echo(e.message);
+    exit(1);
+  }
+
+  var executable;
+  manifest.forEach(function(browser) {
+    if (browser.name === 'chrome') {
+      executable = browser.path;
+    }
+  });
+
+  // If there was no chrome entry in the browser manifest, exit
+  if(!executable) {
+    echo('There was no \'chrome\' entry in the browser manifest');
+    exit(1);
+  }
+
+  // If we're on a Darwin (Mac) OS, then let's check for an .app path
+  if (process.platform === 'darwin' && executable.indexOf('.app') !== -1) {
+    executable = executable + '/Contents/MacOS/Google Chrome');
+  }
+
+  // If the chrome executable doesn't exist
+  if(!test('-f', executable)) {
+    echo('Incorrect executable path to chrome');
+    exit(1);
+  }
+
+  // Let chrome pack the extension for us
+  exec('"' + executable + '"' +
+    ' --no-message-box' +
+    ' "--pack-extension=' + ROOT_DIR + CHROME_BUILD_DIR + '"' +
+    ' "--pack-extension-key=' + pem + '"');
+
+  // Rename to pdf.js.crx
+  mv(BUILD_DIR + 'chrome.crx', CHROME_BUILD_DIR + 'pdf.js.crx');
 };
 
 
