@@ -385,9 +385,9 @@ var PDFView = {
 
   setTitleUsingUrl: function pdfViewSetTitleUsingUrl(url) {
     this.url = url;
-    
+
     var filename = getFileName(url);
-    if(filename) {
+    if (filename) {
       try {
         document.title = decodeURIComponent(filename);
       } catch (e) {
