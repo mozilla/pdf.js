@@ -387,8 +387,9 @@ var PDFView = {
     this.url = url;
     try {
       document.title = decodeURIComponent(getFileName(url)) || url;
-    } catch (Exception) {
-      console.log('WARNING: Unable to decode: ' + getFileName(url));
+    } catch (e) {
+      // decodeURIComponent may throw URIError,
+      // fall back to using the unprocessed url in that case
       document.title = url;
     }
   },
