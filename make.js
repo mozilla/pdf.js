@@ -618,7 +618,7 @@ target.chrome = function() {
   });
 
   // If there was no chrome entry in the browser manifest, exit
-  if(!executable) {
+  if (!executable) {
     echo('There was no \'chrome\' entry in the browser manifest');
     exit(1);
   }
@@ -629,7 +629,7 @@ target.chrome = function() {
   }
 
   // If the chrome executable doesn't exist
-  if(!test('-f', executable)) {
+  if (!test('-f', executable)) {
     echo('Incorrect executable path to chrome');
     exit(1);
   }
