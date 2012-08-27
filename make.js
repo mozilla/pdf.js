@@ -789,3 +789,13 @@ target.clean = function() {
   rm('-rf', BUILD_DIR);
 };
 
+//
+// make makefile
+//
+target.makefile = function() {
+  var makefileContent = 'help:\n\tnode make\n\n';
+  for (var i in target) {
+    makefileContent += i + ':\n\tnode make ' + i + '\n\n';
+  }
+  makefileContent.to('Makefile');
+};
