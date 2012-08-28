@@ -207,6 +207,7 @@ var PDFView = {
   thumbnailViewScroll: null,
   isFullscreen: false,
   previousScale: null,
+  pageRotation: 0,
 
   // called once when the document is loaded
   initialize: function pdfViewInitialize() {
@@ -1163,6 +1164,18 @@ var PDFView = {
     this.isFullscreen = false;
     this.parseScale(this.previousScale);
     this.page = this.page;
+  },
+
+  rotatePages: function pdfViewPageRotation(deltaQuarters) {
+
+    this.pageRotation = (this.pageRotation + 4 + deltaQuarters) % 4;
+
+    for (var i = 0, l = this.pages.length; i < l; i++) {
+      var page = this.pages[i];
+      page.update(page.scale, this.pageRotation * 90);
+    }
+
+    this.renderHighestPriority();
   }
 };
 
@@ -1171,8 +1184,9 @@ var PageView = function pageView(container, pdfPage, id, scale,
   this.id = id;
   this.pdfPage = pdfPage;
 
+  this.rotation = 0;
   this.scale = scale || 1.0;
-  this.viewport = this.pdfPage.getViewport(this.scale);
+  this.viewport = this.pdfPage.getViewport(this.scale, this.rotation);
 
   this.renderingState = RenderingStates.INITIAL;
   this.resume = null;
@@ -1192,12 +1206,16 @@ var PageView = function pageView(container, pdfPage, id, scale,
     this.pdfPage.destroy();
   };
 
-  this.update = function pageViewUpdate(scale) {
+  this.update = function pageViewUpdate(scale, rotation) {
     this.renderingState = RenderingStates.INITIAL;
     this.resume = null;
 
+    if (typeof rotation !== 'undefined') {
+      this.rotation = rotation;
+    }
+
     this.scale = scale || this.scale;
-    var viewport = this.pdfPage.getViewport(this.scale);
+    var viewport = this.pdfPage.getViewport(this.scale, this.rotation);
 
     this.viewport = viewport;
     div.style.width = viewport.width + 'px';
@@ -2172,6 +2190,18 @@ window.addEventListener('keydown', function keydown(evt) {
           PDFView.page++;
           handled = true;
         }
+        break;
+
+      case 82: // 'r'
+        PDFView.rotatePages(1);
+        break;
+    }
+  }
+
+  if (cmd == 4) { // shift-key
+    switch (evt.keyCode) {
+      case 82: // 'r'
+        PDFView.rotatePages(-1);
         break;
     }
   }
