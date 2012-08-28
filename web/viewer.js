@@ -1175,6 +1175,17 @@ var PDFView = {
       page.update(page.scale, this.pageRotation * 90);
     }
 
+    if(this.isFullscreen) {
+      this.parseScale('page-fit', true);
+
+      var currentPage = this.pages[this.page - 1];
+
+      // Wait for fullscreen to take effect
+      setTimeout(function() {
+        currentPage.scrollIntoView();
+      }, 0);
+    }
+
     this.renderHighestPriority();
   }
 };
@@ -1215,7 +1226,9 @@ var PageView = function pageView(container, pdfPage, id, scale,
     }
 
     this.scale = scale || this.scale;
-    var viewport = this.pdfPage.getViewport(this.scale, this.rotation);
+
+    var totalRotation = this.rotation + this.pdfPage.rotate;
+    var viewport = this.pdfPage.getViewport(this.scale, totalRotation);
 
     this.viewport = viewport;
     div.style.width = viewport.width + 'px';
