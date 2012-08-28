@@ -1227,7 +1227,7 @@ var PageView = function pageView(container, pdfPage, id, scale,
 
     this.scale = scale || this.scale;
 
-    var totalRotation = this.rotation + this.pdfPage.rotate;
+    var totalRotation = (this.rotation + this.pdfPage.rotate) % 360;
     var viewport = this.pdfPage.getViewport(this.scale, totalRotation);
 
     this.viewport = viewport;
