@@ -116,24 +116,6 @@
                 </input>
                 <span id="numPages" class="toolbarLabel"></span>
                 <div class="toolbarButtonSpacer"></div>
-                <div class="splitToolbarButton">
-                  <button class="toolbarButton rotateCcw"
-                          title="Rotate Counter-clockwise"
-                          onclick="PDFView.rotatePages(-90)"
-                          id="rotateCcw" tabindex="7" data-l10n-id="rotateCcw">
-                    &#x21ba;
-                    <!--<span data-l10n-id="previous_label">Rotate Counter-clockwise</span>-->
-                  </button>
-                  <div class="splitToolbarButtonSeparator"></div>
-                  <button class="toolbarButton rotateCw"
-                          title="Rotate Clockwise"
-                          onclick="PDFView.rotatePages(90)" id="rotateCw"
-                          tabindex="8" data-
-                          l10n-id="rotateCw">
-                    &#x21bb;
-                    <!--<span data-l10n-id="next_label">Rotate clockwise</span>-->
-                  </button>
-                </div>
               </div>
               <div id="toolbarViewerRight">
                 <input id="fileInput" class="fileInput" type="file" oncontextmenu="return false;" style="visibility: hidden; position: fixed; right: 0; top: 0" />
@@ -183,6 +165,24 @@
                       <option value="2">200%</option>
                     </select>
                   </span>
+                  <div class="splitToolbarButton">
+                    <button class="toolbarButton rotateCcw"
+                            title="Rotate Counter-clockwise"
+                            onclick="PDFView.rotatePages(-90)"
+                            id="rotateCcw" tabindex="7" data-l10n-id="rotateCcw">
+                      &#x21ba;
+                      <!--<span data-l10n-id="previous_label">Rotate Counter-clockwise</span>-->
+                    </button>
+                    <div class="splitToolbarButtonSeparator"></div>
+                    <button class="toolbarButton rotateCw"
+                            title="Rotate Clockwise"
+                            onclick="PDFView.rotatePages(90)" id="rotateCw"
+                            tabindex="8" data-
+                            l10n-id="rotateCw">
+                      &#x21bb;
+                      <!--<span data-l10n-id="next_label">Rotate clockwise</span>-->
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
