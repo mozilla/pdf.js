@@ -618,18 +618,18 @@ target.chrome = function() {
   });
 
   // If there was no chrome entry in the browser manifest, exit
-  if(!executable) {
+  if (!executable) {
     echo('There was no \'chrome\' entry in the browser manifest');
     exit(1);
   }
 
   // If we're on a Darwin (Mac) OS, then let's check for an .app path
   if (process.platform === 'darwin' && executable.indexOf('.app') !== -1) {
-    executable = executable + '/Contents/MacOS/Google Chrome');
+    executable = executable + '/Contents/MacOS/Google Chrome';
   }
 
   // If the chrome executable doesn't exist
-  if(!test('-f', executable)) {
+  if (!test('-f', executable)) {
     echo('Incorrect executable path to chrome');
     exit(1);
   }
@@ -765,7 +765,10 @@ target.lint = function() {
   echo();
   echo('### Linting JS files (this can take a while!)');
 
-  var LINT_FILES = ['src/*.js',
+  var LINT_FILES = ['make.js',
+                    'external/builder/*.js',
+                    'external/crlfchecker/*.js',
+                    'src/*.js',
                     'web/*.js',
                     'test/*.js',
                     'test/unit/*.js',

@@ -29,34 +29,26 @@ select {
 
 #viewerContainer:-webkit-full-screen {
   top: 0px;
-  padding-top: 6px;
-  padding-bottom: 24px;
+  border-top: 5px solid transparent;
   background-color: #404040;
   background-image: url(images/texture.png);
   width: 100%;
   height: 100%;
-  overflow: auto;
-}
-
-:-webkit-full-screen #viewer {
-  margin: 0pt;
-  padding: 0pt;
-  height: 100%;
-  width: 100%;
   overflow: hidden;
-}
-
-:-webkit-full-screen .page {
-  margin: 0px auto;
-  margin-bottom: 10px;
 }
 
 #viewerContainer:-moz-full-screen {
+  top: 0px;
+  border-top: 5px solid transparent;
   background-color: #404040;
   background-image: url(images/texture.png);
   width: 100%;
   height: 100%;
   overflow: hidden;
+}
+
+:-webkit-full-screen .page:last-child {
+  margin-bottom: 40px;
 }
 
 :-moz-full-screen .page:last-child {
