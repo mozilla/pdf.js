@@ -1175,18 +1175,18 @@ var PDFView = {
       page.update(page.scale, this.pageRotation);
     }
 
+    var currentPage = this.pages[this.page - 1];
+
     if (this.isFullscreen) {
       this.parseScale('page-fit', true);
-
-      var currentPage = this.pages[this.page - 1];
-
-      // Wait for fullscreen to take effect
-      setTimeout(function() {
-        currentPage.scrollIntoView();
-      }, 0);
     }
 
     this.renderHighestPriority();
+
+    // Wait for fullscreen to take effect
+    setTimeout(function() {
+      currentPage.scrollIntoView();
+    }, 0);
   }
 };
 
