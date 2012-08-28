@@ -1166,16 +1166,16 @@ var PDFView = {
     this.page = this.page;
   },
 
-  rotatePages: function pdfViewPageRotation(deltaQuarters) {
+  rotatePages: function pdfViewPageRotation(delta) {
 
-    this.pageRotation = (this.pageRotation + 4 + deltaQuarters) % 4;
+    this.pageRotation = (this.pageRotation + 360 + delta) % 360;
 
     for (var i = 0, l = this.pages.length; i < l; i++) {
       var page = this.pages[i];
-      page.update(page.scale, this.pageRotation * 90);
+      page.update(page.scale, this.pageRotation);
     }
 
-    if(this.isFullscreen) {
+    if (this.isFullscreen) {
       this.parseScale('page-fit', true);
 
       var currentPage = this.pages[this.page - 1];
@@ -2206,7 +2206,7 @@ window.addEventListener('keydown', function keydown(evt) {
         break;
 
       case 82: // 'r'
-        PDFView.rotatePages(1);
+        PDFView.rotatePages(90);
         break;
     }
   }
@@ -2214,7 +2214,7 @@ window.addEventListener('keydown', function keydown(evt) {
   if (cmd == 4) { // shift-key
     switch (evt.keyCode) {
       case 82: // 'r'
-        PDFView.rotatePages(-1);
+        PDFView.rotatePages(-90);
         break;
     }
   }
