@@ -4420,6 +4420,13 @@ var CFFParser = (function CFFParserClosure() {
         properties.unitsPerEm = 1 / fontMatrix[0];
       }
 
+      var fontBBox = topDict.getByName('FontBBox');
+      if (fontBBox) {
+        // adjusting ascent/descent
+        properties.ascent = fontBBox[3];
+        properties.descent = fontBBox[1];
+      }
+
       var charset, encoding;
       if (cff.isCIDFont) {
         var fdArrayIndex = this.parseIndex(topDict.getByName('FDArray')).obj;
