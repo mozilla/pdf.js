@@ -38,6 +38,8 @@ function scrollIntoView(element, spot) {
   while (parent.clientHeight == parent.scrollHeight) {
     offsetY += parent.offsetTop;
     parent = parent.offsetParent;
+    if (!parent)
+      return; // no need to scroll
   }
   if (spot)
     offsetY += spot.top;
