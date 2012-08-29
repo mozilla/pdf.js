@@ -339,8 +339,8 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
       var length = this.operatorList.fnArray.length;
       var operatorList = this.operatorList;
       var stepper = null;
-      if (PDFJS.pdfBug && StepperManager.enabled) {
-        stepper = StepperManager.create(this.pageNumber - 1);
+      if (PDFJS.pdfBug && "StepperManager" in globalScope && globalScope["StepperManager"].enabled) {
+        stepper = globalScope["StepperManager"].create(this.pageNumber - 1);
         stepper.init(operatorList);
         stepper.nextBreakPoint = stepper.getNextBreakPoint();
       }
