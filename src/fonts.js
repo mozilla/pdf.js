@@ -1577,13 +1577,19 @@ var Font = (function FontClosure() {
       return;
     }
 
+    // Some fonts might use wrong font types for Type1C or CIDFontType0C
+    var subtype = properties.subtype;
+    if (subtype == 'Type1C' && (type != 'Type1' && type != 'MMType1'))
+      type = 'Type1';
+    if (subtype == 'CIDFontType0C' && type != 'CIDFontType0')
+      type = 'CIDFontType0';
+
     var data;
     switch (type) {
       case 'Type1':
       case 'CIDFontType0':
         this.mimetype = 'font/opentype';
 
-        var subtype = properties.subtype;
         var cff = (subtype == 'Type1C' || subtype == 'CIDFontType0C') ?
           new CFFFont(file, properties) : new Type1Font(name, file, properties);
 
@@ -3308,6 +3314,20 @@ var Font = (function FontClosure() {
   };
 
   return Font;
+})();
+
+var ErrorFont = (function ErrorFontClosure() {
+  function ErrorFont(error) {
+    this.error = error;
+  }
+
+  ErrorFont.prototype = {
+    charsToGlyphs: function ErrorFont_charsToGlyphs() {
+      return [];
+    }
+  };
+
+  return ErrorFont;
 })();
 
 var CallothersubrCmd = (function CallothersubrCmdClosure() {
