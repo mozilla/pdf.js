@@ -320,11 +320,14 @@ var PDFImage = (function PDFImageClosure() {
           // Color key mask: if any of the compontents are outside the range
           // then they should be painted.
           buf = new Uint8Array(width * height);
+          var numComps = this.numComps;
           for (var i = 0, ii = width * height; i < ii; ++i) {
             var opacity = 0;
-            for (var j = 0; j < this.numComps; ++j) {
-              var color = image[i * this.numComps + j];
-              if (color < mask[j * 2] || color > mask[j * 2 + 1]) {
+            var imageOffset = i * numComps;
+            for (var j = 0; j < numComps; ++j) {
+              var color = image[imageOffset + j];
+              var maskOffset = j * 2;
+              if (color < mask[maskOffset] || color > mask[maskOffset + 1]) {
                 opacity = 255;
                 break;
               }
