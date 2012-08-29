@@ -2938,6 +2938,7 @@ var Font = (function FontClosure() {
         }
         this.toFontChar = toFontChar;
       }
+      var unitsPerEm = properties.unitsPerEm || 1000; // defaulting to 1000
 
       var fields = {
         // PostScript Font Program
@@ -2958,7 +2959,7 @@ var Font = (function FontClosure() {
               '\x00\x00\x00\x00' + // checksumAdjustement
               '\x5F\x0F\x3C\xF5' + // magicNumber
               '\x00\x00' + // Flags
-              '\x03\xE8' + // unitsPerEM (defaulting to 1000)
+              safeString16(unitsPerEm) + // unitsPerEM
               '\x00\x00\x00\x00\x9e\x0b\x7e\x27' + // creation date
               '\x00\x00\x00\x00\x9e\x0b\x7e\x27' + // modifification date
               '\x00\x00' + // xMin
@@ -4413,6 +4414,19 @@ var CFFParser = (function CFFParserClosure() {
       var charStringOffset = topDict.getByName('CharStrings');
       cff.charStrings = this.parseCharStrings(charStringOffset);
 
+      var fontMatrix = topDict.getByName('FontMatrix');
+      if (fontMatrix) {
+        // estimating unitsPerEM for the font
+        properties.unitsPerEm = 1 / fontMatrix[0];
+      }
+
+      var fontBBox = topDict.getByName('FontBBox');
+      if (fontBBox) {
+        // adjusting ascent/descent
+        properties.ascent = fontBBox[3];
+        properties.descent = fontBBox[1];
+      }
+
       var charset, encoding;
       if (cff.isCIDFont) {
         var fdArrayIndex = this.parseIndex(topDict.getByName('FDArray')).obj;
@@ -4486,7 +4500,7 @@ var CFFParser = (function CFFParserClosure() {
           return parseFloatOperand(pos);
         } else if (value === 28) {
           value = dict[pos++];
-          value = (value << 8) | dict[pos++];
+          value = ((value << 24) | (dict[pos++] << 16)) >> 16;
           return value;
         } else if (value === 29) {
           value = dict[pos++];
