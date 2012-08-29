@@ -5,12 +5,16 @@
 
 // Use only for debugging purposes. This should not be used in any code that is
 // in mozilla master.
-function log(msg) {
-  if ("console" in globalScope && "log" in globalScope["console"])
-    globalScope["console"]["log"](msg);
-  else if ("print" in globalScope)
-    globalScope["print"](msg);
-}
+var log = (function() {
+  if ("console" in globalScope && "log" in globalScope["console"]) {
+    return globalScope["console"]["log"].bind(globalScope["console"]);
+  } else if ("print" in globalScope) {
+    return globalScope["print"].bind(globalScope);
+  } else {
+    return function nop() {
+    };
+  }
+})();
 
 // A notice for devs that will not trigger the fallback UI.  These are good
 // for things that are helpful to devs, such as warning that Workers were
