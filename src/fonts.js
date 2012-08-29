@@ -4500,7 +4500,7 @@ var CFFParser = (function CFFParserClosure() {
           return parseFloatOperand(pos);
         } else if (value === 28) {
           value = dict[pos++];
-          value = (value << 8) | dict[pos++];
+          value = ((value << 24) | (dict[pos++] << 16)) >> 16;
           return value;
         } else if (value === 29) {
           value = dict[pos++];
