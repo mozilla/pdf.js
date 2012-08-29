@@ -11,10 +11,10 @@ function MessageHandler(name, comObj) {
   var ah = this.actionHandler = {};
 
   ah['console_log'] = [function ahConsoleLog(data) {
-    console.log.apply(console, data);
+    log.apply(null, data);
   }];
   ah['console_error'] = [function ahConsoleError(data) {
-    console.error.apply(console, data);
+    error.apply(null, data);
   }];
   ah['_warn'] = [function ah_Warn(data) {
     warn(data);
@@ -220,7 +220,7 @@ var WorkerMessageHandler = {
         return;
       }
 
-      console.log('page=%d - getOperatorList: time=%dms, len=%d', pageNum,
+      log('page=%d - getOperatorList: time=%dms, len=%d', pageNum,
                               Date.now() - start, operatorList.fnArray.length);
 
       // Filter the dependecies for fonts.
@@ -252,7 +252,7 @@ var WorkerMessageHandler = {
         promise.reject(e);
       }
 
-      console.log('text indexing: page=%d - time=%dms',
+      log('text indexing: page=%d - time=%dms',
                       pageNum, Date.now() - start);
     });
   }
