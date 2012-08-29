@@ -37,7 +37,16 @@ function warn(msg) {
 // Fatal errors that should trigger the fallback UI and halt execution by
 // throwing an exception.
 function error(msg) {
-  log('Error: ' + msg);
+  // If multiple arguments were passed, pass them all to the log function.
+  if (arguments.length > 1) {
+    var logArguments = ["Error:"];
+    logArguments.push.apply(logArguments, arguments);
+    log.apply(null, logArguments);
+    // Join the arguments into a single string for the lines below.
+    msg = [].join.call(arguments, " ");
+  } else {
+    log('Error: ' + msg);
+  }
   log(backtrace());
   PDFJS.LogManager.notify('error', msg);
   throw new Error(msg);
