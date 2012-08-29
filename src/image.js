@@ -97,7 +97,12 @@ var PDFImage = (function PDFImageClosure() {
     if (smask) {
       this.smask = new PDFImage(xref, res, smask, false);
     } else if (mask) {
-      this.mask = new PDFImage(xref, res, mask, false);
+      if (isStream(mask)) {
+        this.mask = new PDFImage(xref, res, mask, false);
+      } else {
+        // Color key mask (just an array).
+        this.mask = mask;
+      }
     }
   }
   /**
@@ -129,11 +134,15 @@ var PDFImage = (function PDFImageClosure() {
       maskPromise.resolve(null);
     } else {
       smaskPromise.resolve(null);
-      if (mask && isStream(mask)) {
-        handleImageData(handler, xref, res, mask, maskPromise);
-      } else if (mask) {
-        TODO('handle color key masking');
-        maskPromise.resolve(null);
+      if (mask) {
+        if (isStream(mask)) {
+          handleImageData(handler, xref, res, mask, maskPromise);
+        } else if (isArray(mask)) {
+          maskPromise.resolve(mask);
+        } else {
+          warn('Unsupported mask format.');
+          maskPromise.resolve(null);
+        }
       } else {
         maskPromise.resolve(null);
       }
@@ -279,7 +288,7 @@ var PDFImage = (function PDFImageClosure() {
       }
       return output;
     },
-    getOpacity: function PDFImage_getOpacity(width, height) {
+    getOpacity: function PDFImage_getOpacity(width, height, image) {
       var smask = this.smask;
       var mask = this.mask;
       var originalWidth = this.width;
@@ -294,18 +303,37 @@ var PDFImage = (function PDFImageClosure() {
         if (sw != width || sh != height)
           buf = PDFImage.resize(buf, smask.bpc, 1, sw, sh, width, height);
       } else if (mask) {
-        var sw = mask.width;
-        var sh = mask.height;
-        buf = new Uint8Array(sw * sh);
-        mask.numComps = 1;
-        mask.fillGrayBuffer(buf);
+        if (mask instanceof PDFImage) {
+          var sw = mask.width;
+          var sh = mask.height;
+          buf = new Uint8Array(sw * sh);
+          mask.numComps = 1;
+          mask.fillGrayBuffer(buf);
 
-        // Need to invert values in buffer
-        for (var i = 0, ii = sw * sh; i < ii; ++i)
-          buf[i] = 255 - buf[i];
+          // Need to invert values in buffer
+          for (var i = 0, ii = sw * sh; i < ii; ++i)
+            buf[i] = 255 - buf[i];
 
-        if (sw != width || sh != height)
-          buf = PDFImage.resize(buf, mask.bpc, 1, sw, sh, width, height);
+          if (sw != width || sh != height)
+            buf = PDFImage.resize(buf, mask.bpc, 1, sw, sh, width, height);
+        } else if (isArray(mask)) {
+          // Color key mask: if any of the compontents are outside the range
+          // then they should be painted.
+          buf = new Uint8Array(width * height);
+          for (var i = 0, ii = width * height; i < ii; ++i) {
+            var opacity = 0;
+            for (var j = 0; j < this.numComps; ++j) {
+              var color = image[i * this.numComps + j];
+              if (color < mask[j * 2] || color > mask[j * 2 + 1]) {
+                opacity = 255;
+                break;
+              }
+            }
+            buf[i] = opacity;
+          }
+        } else {
+          error('Unknown mask format.');
+        }
       } else {
         buf = new Uint8Array(width * height);
         for (var i = 0, ii = width * height; i < ii; ++i)
@@ -357,7 +385,7 @@ var PDFImage = (function PDFImageClosure() {
         comps = PDFImage.resize(comps, this.bpc, 3, originalWidth,
                                 originalHeight, width, height);
       var compsPos = 0;
-      var opacity = this.getOpacity(width, height);
+      var opacity = this.getOpacity(width, height, imgArray);
       var opacityPos = 0;
       var length = width * actualHeight * 4;
 
