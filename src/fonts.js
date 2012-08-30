@@ -3141,8 +3141,9 @@ var Font = (function FontClosure() {
       var styleSheet = styleElement.sheet;
       styleSheet.insertRule(rule, styleSheet.cssRules.length);
 
-      if (PDFJS.pdfBug && "FontInspector" in globalScope && globalScope["FontInspector"].enabled)
-        globalScope["FontInspector"].fontAdded(this, url);
+      if (PDFJS.pdfBug && 'FontInspector' in globalScope
+          && globalScope['FontInspector'].enabled)
+        globalScope['FontInspector'].fontAdded(this, url);
 
       return rule;
     },

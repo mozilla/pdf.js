@@ -6,10 +6,10 @@
 // Use only for debugging purposes. This should not be used in any code that is
 // in mozilla master.
 var log = (function() {
-  if ("console" in globalScope && "log" in globalScope["console"]) {
-    return globalScope["console"]["log"].bind(globalScope["console"]);
-  } else if ("print" in globalScope) {
-    return globalScope["print"].bind(globalScope);
+  if ('console' in globalScope && 'log' in globalScope['console']) {
+    return globalScope['console']['log'].bind(globalScope['console']);
+  } else if ('print' in globalScope) {
+    return globalScope['print'].bind(globalScope);
   } else {
     return function nop() {
     };
@@ -39,11 +39,11 @@ function warn(msg) {
 function error(msg) {
   // If multiple arguments were passed, pass them all to the log function.
   if (arguments.length > 1) {
-    var logArguments = ["Error:"];
+    var logArguments = ['Error:'];
     logArguments.push.apply(logArguments, arguments);
     log.apply(null, logArguments);
     // Join the arguments into a single string for the lines below.
-    msg = [].join.call(arguments, " ");
+    msg = [].join.call(arguments, ' ');
   } else {
     log('Error: ' + msg);
   }
