@@ -563,6 +563,8 @@ var FontLoader = {
       src += '<script type="application/javascript">';
       src += '  window.onload = function fontLoaderOnload() {\n';
       src += '    parent.postMessage("' + requestId + '", "*");\n';
+      // Chrome stuck on loading (see chrome issue 145227) - resetting url
+      src += '    window.location = "about:blank";\n';
       src += '  }';
       // Hack so the end script tag isn't counted if this is inline JS.
       src += '</scr' + 'ipt></head><body>';
