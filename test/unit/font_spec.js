@@ -42,7 +42,7 @@ describe('font', function() {
   }
 
   describe('CFFParser', function() {
-    var parser = new CFFParser(fontData);
+    var parser = new CFFParser(fontData, {});
     var cff = parser.parse();
 
     it('parses header', function() {
