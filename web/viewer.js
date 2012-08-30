@@ -867,14 +867,18 @@ var PDFView = {
       link.onclick = function searchBindLink() {
         PDFView.page = pageNumber;
 
-        var textLayer = PDFView.pageObj.textLayer;
-        if (textLayer) {
-          if (PDFView.highlightedPageIdx !== -1)
-            PDFView.pages[PDFView.highlightedPageIdx].textLayer.highlight(-1);
+        // Remove previous highlight if any
+        if (PDFView.highlightedPageIdx !== -1)
+          PDFView.pages[PDFView.highlightedPageIdx].textLayer.highlight(-1);
 
+        var textLayer = PDFView.pageObj.textLayer;
+        if (textLayer)
           textLayer.highlight(matchIdx);
-          PDFView.highlightedPageIdx = pageNumber - 1;
-        }
+        else
+          PDFView.pendingHighlight = matchIdx;
+
+        // Remember page highlighted
+        PDFView.highlightedPageIdx = pageNumber - 1;
 
         return false;
       };
@@ -1870,9 +1874,11 @@ var TextLayer = (function TextLayerClosure() {
     renderTextLayer: function textLayerRenderTextLayer() { 
       var textDivs = this.textDivs;
 
+      // All done?
       if (textDivs.length === 0 || this.renderIdx == textDivs.length) { 
         clearInterval(this.renderTimer); 
         this.renderingDone = true;
+        this.postLayout();
         window.removeEventListener('scroll', this.textLayerOnScroll, false);
         return;
       }
@@ -1920,6 +1926,15 @@ var TextLayer = (function TextLayerClosure() {
     endLayout: function textLayerBuilderEndLayout() {
       this.setupRenderTimer();
       window.addEventListener('scroll', this.onScroll, false);
+    },
+
+    // To be run after all divs are inserted
+    // (NOT the same as endLayout(), which is called before the divs are all ready)
+    postLayout: function textLayerBuilderPostLayout() {
+      if (PDFView.pendingHighlight) {
+        this.highlight(PDFView.pendingHighlight);
+        delete PDFView.pendingHighlight;
+      }
     },
 
     appendText: function textLayerBuilderAppendText(text, fontName, fontSize) {
