@@ -673,5 +673,11 @@
       "md5": "2ac7c68e26a8ef797aead15e4875cc6d",
       "rounds": 1,
       "type": "load"
+    },
+    {  "id": "colorkeymask",
+      "file": "pdfs/colorkeymask.pdf",
+      "md5": "9f11e815b485f7f0e1fa5c116c636cf9",
+      "rounds": 1,
+      "type": "eq"
     }
 ]
