@@ -13,9 +13,15 @@ function MessageHandler(name, comObj) {
   ah['console_log'] = [function ahConsoleLog(data) {
     log.apply(null, data);
   }];
-  ah['console_error'] = [function ahConsoleError(data) {
-    error.apply(null, data);
-  }];
+  // If there's no console available, console_error in the action handler will do nothing.
+  if ('console' in globalScope) {
+    ah['console_error'] = [function ahConsoleError(data) {
+      globalScope['console'].error.apply(null, data);
+    }];
+  } else {
+    ah['console_error'] = [function ahConsoleError(data) {
+    }];
+  }
   ah['_warn'] = [function ah_Warn(data) {
     warn(data);
   }];
