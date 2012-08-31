@@ -404,28 +404,15 @@ function mapPrivateUseChars(code) {
 }
 
 var FontLoader = {
-  listeningForFontLoad: false,
+  loadingContext: {
+    requests: [],
+    nextRequestId: 0
+  },
 
   bind: function fontLoaderBind(fonts, callback) {
-    function checkFontsLoaded() {
-      for (var i = 0, ii = fonts.length; i < ii; i++) {
-        var fontObj = fonts[i];
-        if (fontObj.loading) {
-          return false;
-        }
-      }
+    assert(!isWorker, 'bind() shall be called from main thread');
 
-      document.documentElement.removeEventListener(
-        'pdfjsFontLoad', checkFontsLoaded, false);
-
-      // Use timeout to fix chrome intermittent failures on font loading.
-      setTimeout(callback, 0);
-      return true;
-    }
-
-    var rules = [], names = [], fontsToLoad = [];
-    var fontCreateTimer = 0;
-
+    var rules = [], fontsToLoad = [];
     for (var i = 0, ii = fonts.length; i < ii; i++) {
       var font = fonts[i];
 
@@ -435,8 +422,6 @@ var FontLoader = {
         continue;
       }
       font.attached = true;
-
-      fontsToLoad.push(font);
 
       var str = '';
       var data = font.data;
@@ -448,28 +433,51 @@ var FontLoader = {
         var rule = font.bindDOM(str);
         if (rule) {
           rules.push(rule);
-          names.push(font.loadedName);
+          fontsToLoad.push(font);
         }
       }
     }
 
-    this.listeningForFontLoad = false;
-    if (!isWorker && rules.length) {
-      FontLoader.prepareFontLoadEvent(rules, names, fontsToLoad);
-    }
-
-    if (!checkFontsLoaded()) {
-      document.documentElement.addEventListener(
-        'pdfjsFontLoad', checkFontsLoaded, false);
+    var request = FontLoader.queueLoadingCallback(callback);
+    if (rules.length > 0) {
+      FontLoader.prepareFontLoadEvent(rules, fontsToLoad, request);
+    } else {
+      request.complete();
     }
   },
+
+  queueLoadingCallback: function FontLoader_queueLoadingCallback(callback) {
+    function LoadLoader_completeRequest() {
+      assert(!request.end, 'completeRequest() cannot be called twice');
+      request.end = Date.now();
+
+      // sending all completed requests in order how they were queued
+      while (context.requests.length > 0 && context.requests[0].end) {
+        var otherRequest = context.requests.shift();
+        setTimeout(otherRequest.callback, 0);
+      }
+    }
+
+    var context = FontLoader.loadingContext;
+    var requestId = 'pdfjs-font-loading-' + (context.nextRequestId++);
+    var request = {
+      id: requestId,
+      complete: LoadLoader_completeRequest,
+      callback: callback,
+      started: Date.now()
+    };
+    context.requests.push(request);
+    return request;
+  },
+
   // Set things up so that at least one pdfjsFontLoad event is
-  // dispatched when all the @font-face |rules| for |names| have been
+  // dispatched when all the @font-face |rules| for |fonts| have been
   // loaded in a subdocument.  It's expected that the load of |rules|
   // has already started in this (outer) document, so that they should
   // be ordered before the load in the subdocument.
-  prepareFontLoadEvent: function fontLoaderPrepareFontLoadEvent(rules, names,
-                                                                fonts) {
+  prepareFontLoadEvent: function fontLoaderPrepareFontLoadEvent(rules,
+                                                                fonts,
+                                                                request) {
       /** Hack begin */
       // There's no event when a font has finished downloading so the
       // following code is a dirty hack to 'guess' when a font is
@@ -493,6 +501,20 @@ var FontLoader = {
       // The postMessage() hackery was added to work around chrome bug
       // 82402.
 
+      var requestId = request.id;
+      // Validate the requestId parameter -- the value used to construct HTML.
+      if (!/^[\w\-]+$/.test(requestId)) {
+        error('Invalid request id: ' + requestId);
+
+        // Normally the error-function throws. But if a malicious code
+        // intercepts the function call then the return is needed.
+        return;
+      }
+
+      var names = [];
+      for (var i = 0, ii = fonts.length; i < ii; i++)
+        names.push(fonts[i].loadedName);
+
       // Validate the names parameter -- the values can used to construct HTML.
       if (!/^\w+$/.test(names.join(''))) {
         error('Invalid font name(s): ' + names.join());
@@ -514,22 +536,21 @@ var FontLoader = {
       div.innerHTML = html;
       document.body.appendChild(div);
 
-      if (!this.listeningForFontLoad) {
-        window.addEventListener(
-          'message',
-          function fontLoaderMessage(e) {
-            var fontNames = JSON.parse(e.data);
-            for (var i = 0, ii = fonts.length; i < ii; ++i) {
-              var font = fonts[i];
-              font.loading = false;
-            }
-            var evt = document.createEvent('Events');
-            evt.initEvent('pdfjsFontLoad', true, false);
-            document.documentElement.dispatchEvent(evt);
-          },
-          false);
-        this.listeningForFontLoad = true;
-      }
+      window.addEventListener(
+        'message',
+        function fontLoaderMessage(e) {
+          if (e.data !== requestId)
+            return;
+          for (var i = 0, ii = fonts.length; i < ii; ++i) {
+            var font = fonts[i];
+            font.loading = false;
+          }
+          request.complete();
+          // cleanup
+          document.body.removeChild(frame);
+          window.removeEventListener('message', fontLoaderMessage, false);
+        },
+        false);
 
       // XXX we should have a time-out here too, and maybe fire
       // pdfjsFontLoadFailed?
@@ -540,13 +561,8 @@ var FontLoader = {
       }
       src += '</style>';
       src += '<script type="application/javascript">';
-      var fontNamesArray = '';
-      for (var i = 0, ii = names.length; i < ii; ++i) {
-        fontNamesArray += '"' + names[i] + '", ';
-      }
-      src += '  var fontNames=[' + fontNamesArray + '];\n';
       src += '  window.onload = function fontLoaderOnload() {\n';
-      src += '    parent.postMessage(JSON.stringify(fontNames), "*");\n';
+      src += '    parent.postMessage("' + requestId + '", "*");\n';
       src += '  }';
       // Hack so the end script tag isn't counted if this is inline JS.
       src += '</scr' + 'ipt></head><body>';
@@ -1561,13 +1577,19 @@ var Font = (function FontClosure() {
       return;
     }
 
+    // Some fonts might use wrong font types for Type1C or CIDFontType0C
+    var subtype = properties.subtype;
+    if (subtype == 'Type1C' && (type != 'Type1' && type != 'MMType1'))
+      type = 'Type1';
+    if (subtype == 'CIDFontType0C' && type != 'CIDFontType0')
+      type = 'CIDFontType0';
+
     var data;
     switch (type) {
       case 'Type1':
       case 'CIDFontType0':
         this.mimetype = 'font/opentype';
 
-        var subtype = properties.subtype;
         var cff = (subtype == 'Type1C' || subtype == 'CIDFontType0C') ?
           new CFFFont(file, properties) : new Type1Font(name, file, properties);
 
@@ -2922,6 +2944,7 @@ var Font = (function FontClosure() {
         }
         this.toFontChar = toFontChar;
       }
+      var unitsPerEm = properties.unitsPerEm || 1000; // defaulting to 1000
 
       var fields = {
         // PostScript Font Program
@@ -2942,7 +2965,7 @@ var Font = (function FontClosure() {
               '\x00\x00\x00\x00' + // checksumAdjustement
               '\x5F\x0F\x3C\xF5' + // magicNumber
               '\x00\x00' + // Flags
-              '\x03\xE8' + // unitsPerEM (defaulting to 1000)
+              safeString16(unitsPerEm) + // unitsPerEM
               '\x00\x00\x00\x00\x9e\x0b\x7e\x27' + // creation date
               '\x00\x00\x00\x00\x9e\x0b\x7e\x27' + // modifification date
               '\x00\x00' + // xMin
@@ -3291,6 +3314,20 @@ var Font = (function FontClosure() {
   };
 
   return Font;
+})();
+
+var ErrorFont = (function ErrorFontClosure() {
+  function ErrorFont(error) {
+    this.error = error;
+  }
+
+  ErrorFont.prototype = {
+    charsToGlyphs: function ErrorFont_charsToGlyphs() {
+      return [];
+    }
+  };
+
+  return ErrorFont;
 })();
 
 var CallothersubrCmd = (function CallothersubrCmdClosure() {
@@ -4100,7 +4137,7 @@ Type1Font.prototype = {
     // charstring changes size - can't cache .length in loop
     for (var i = 0; i < charstring.length; i++) {
       var command = charstring[i];
-      if (command.charAt) {
+      if (typeof command === 'string') {
         var cmd = map[command];
         assert(cmd, 'Unknow command: ' + command);
 
@@ -4397,6 +4434,19 @@ var CFFParser = (function CFFParserClosure() {
       var charStringOffset = topDict.getByName('CharStrings');
       cff.charStrings = this.parseCharStrings(charStringOffset);
 
+      var fontMatrix = topDict.getByName('FontMatrix');
+      if (fontMatrix) {
+        // estimating unitsPerEM for the font
+        properties.unitsPerEm = 1 / fontMatrix[0];
+      }
+
+      var fontBBox = topDict.getByName('FontBBox');
+      if (fontBBox) {
+        // adjusting ascent/descent
+        properties.ascent = fontBBox[3];
+        properties.descent = fontBBox[1];
+      }
+
       var charset, encoding;
       if (cff.isCIDFont) {
         var fdArrayIndex = this.parseIndex(topDict.getByName('FDArray')).obj;
@@ -4470,7 +4520,7 @@ var CFFParser = (function CFFParserClosure() {
           return parseFloatOperand(pos);
         } else if (value === 28) {
           value = dict[pos++];
-          value = (value << 8) | dict[pos++];
+          value = ((value << 24) | (dict[pos++] << 16)) >> 16;
           return value;
         } else if (value === 29) {
           value = dict[pos++];

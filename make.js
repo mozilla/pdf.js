@@ -1,11 +1,12 @@
-#!/usr/bin/env node
 require('./external/shelljs/make');
 var builder = require('./external/builder/builder.js');
+var crlfchecker = require('./external/crlfchecker/crlfchecker.js');
 
 var ROOT_DIR = __dirname + '/', // absolute path to project's root
     BUILD_DIR = 'build/',
     BUILD_TARGET = BUILD_DIR + 'pdf.js',
     FIREFOX_BUILD_DIR = BUILD_DIR + '/firefox/',
+    CHROME_BUILD_DIR = BUILD_DIR + '/chrome/',
     EXTENSION_SRC_DIR = 'extensions/',
     LOCALE_SRC_DIR = 'l10n/',
     GH_PAGES_DIR = BUILD_DIR + 'gh-pages/',
@@ -91,8 +92,9 @@ target.generic = function() {
 
 //
 // make web
-// Generates the website for the project, by checking out the gh-pages branch underneath
-// the build directory, and then moving the various viewer files into place.
+// Generates the website for the project, by checking out the gh-pages branch
+// underneath the build directory, and then moving the various viewer files
+// into place.
 //
 target.web = function() {
   target.generic();
@@ -106,15 +108,17 @@ target.web = function() {
   cp('-R', GENERIC_DIR + '/*', GH_PAGES_DIR);
   cp(FIREFOX_BUILD_DIR + '/*.xpi', FIREFOX_BUILD_DIR + '/*.rdf',
      GH_PAGES_DIR + EXTENSION_SRC_DIR + 'firefox/');
+  cp(CHROME_BUILD_DIR + '/*.crx', FIREFOX_BUILD_DIR + '/*.rdf',
+     GH_PAGES_DIR + EXTENSION_SRC_DIR + 'chrome/');
   cp('web/index.html.template', GH_PAGES_DIR + '/index.html');
 
   cd(GH_PAGES_DIR);
   exec('git add -A');
 
   echo();
-  echo("Website built in " + GH_PAGES_DIR);
-  echo("Don't forget to cd into " + GH_PAGES_DIR +
-       " and issue 'git commit' to push changes.");
+  echo('Website built in ' + GH_PAGES_DIR);
+  echo('Don\'t forget to cd into ' + GH_PAGES_DIR +
+       ' and issue \'git commit\' to push changes.');
 };
 
 //
@@ -152,7 +156,8 @@ target.locale = function() {
     }
 
     mkdir('-p', EXTENSION_LOCALE_OUTPUT + '/' + locale);
-    chromeManifestContent += 'locale  pdf.js  ' + locale + '  locale/' + locale + '/\n';
+    chromeManifestContent += 'locale  pdf.js  ' + locale + '  locale/' +
+                             locale + '/\n';
 
     if (test('-f', path + '/viewer.properties')) {
       var properties = cat(path + '/viewer.properties');
@@ -218,6 +223,8 @@ target.bundle = function() {
       bundleVersion = exec('git log --format="%h" -n 1',
         {silent: true}).output.replace('\n', '');
 
+  crlfchecker.checkIfCrlfIsPresent(SRC_FILES);
+
   // This just preprocesses the empty pdf.js file, we don't actually want to
   // preprocess everything yet since other build targets use this file.
   builder.preprocess('pdf.js', ROOT_DIR + BUILD_TARGET,
@@ -228,9 +235,10 @@ target.bundle = function() {
 //
 // make pagesrepo
 //
-// This target clones the gh-pages repo into the build directory. It deletes the current contents
-// of the repo, since we overwrite everything with data from the master repo. The 'make web' target
-// then uses 'git add -A' to track additions, modifications, moves, and deletions.
+// This target clones the gh-pages repo into the build directory. It deletes
+// the current contents of the repo, since we overwrite everything with data
+// from the master repo. The 'make web' target then uses 'git add -A' to track
+// additions, modifications, moves, and deletions.
 target.pagesrepo = function() {
   cd(ROOT_DIR);
   echo();
@@ -253,6 +261,7 @@ target.pagesrepo = function() {
   mkdir('-p', GH_PAGES_DIR + '/web/images');
   mkdir('-p', GH_PAGES_DIR + BUILD_DIR);
   mkdir('-p', GH_PAGES_DIR + EXTENSION_SRC_DIR + '/firefox');
+  mkdir('-p', GH_PAGES_DIR + EXTENSION_SRC_DIR + '/chrome');
 };
 
 
@@ -261,8 +270,8 @@ target.pagesrepo = function() {
 // Extension stuff
 //
 
-var EXTENSION_BASE_VERSION = 'f0f0418a9c6637981fe1182b9212c2d592774c7d',
-    EXTENSION_VERSION_PREFIX = '0.3.',
+var EXTENSION_BASE_VERSION = 'fad38f8286acc0a23b10cc95dda800530adaf160',
+    EXTENSION_VERSION_PREFIX = '0.4.',
     EXTENSION_BUILD_NUMBER,
     EXTENSION_VERSION;
 
@@ -339,7 +348,8 @@ target.firefox = function() {
   mkdir('-p', FIREFOX_BUILD_CONTENT_DIR + BUILD_DIR);
   mkdir('-p', FIREFOX_BUILD_CONTENT_DIR + '/web');
 
-  cp(FIREFOX_CONTENT_DIR + 'PdfJs-stub.jsm', FIREFOX_BUILD_CONTENT_DIR + 'PdfJs.jsm');
+  cp(FIREFOX_CONTENT_DIR + 'PdfJs-stub.jsm',
+     FIREFOX_BUILD_CONTENT_DIR + 'PdfJs.jsm');
 
   // Copy extension files
   cd('extensions/firefox');
@@ -365,29 +375,38 @@ target.firefox = function() {
   });
 
   // Update the build version number
-  sed('-i', /PDFJSSCRIPT_VERSION/, EXTENSION_VERSION, FIREFOX_BUILD_DIR + '/install.rdf');
-  sed('-i', /PDFJSSCRIPT_VERSION/, EXTENSION_VERSION, FIREFOX_BUILD_DIR + '/update.rdf');
+  sed('-i', /PDFJSSCRIPT_VERSION/, EXTENSION_VERSION,
+      FIREFOX_BUILD_DIR + '/install.rdf');
+  sed('-i', /PDFJSSCRIPT_VERSION/, EXTENSION_VERSION,
+      FIREFOX_BUILD_DIR + '/update.rdf');
 
-  sed('-i', /PDFJSSCRIPT_STREAM_CONVERTER_ID/, FIREFOX_STREAM_CONVERTER_ID, FIREFOX_BUILD_DIR + 'components/PdfStreamConverter.js');
-  sed('-i', /PDFJSSCRIPT_PREF_PREFIX/, FIREFOX_PREF_PREFIX, FIREFOX_BUILD_DIR + 'components/PdfStreamConverter.js');
-  sed('-i', /PDFJSSCRIPT_MOZ_CENTRAL/, 'false', FIREFOX_BUILD_DIR + 'components/PdfStreamConverter.js');
+  sed('-i', /PDFJSSCRIPT_STREAM_CONVERTER_ID/, FIREFOX_STREAM_CONVERTER_ID,
+      FIREFOX_BUILD_DIR + 'components/PdfStreamConverter.js');
+  sed('-i', /PDFJSSCRIPT_PREF_PREFIX/, FIREFOX_PREF_PREFIX,
+      FIREFOX_BUILD_DIR + 'components/PdfStreamConverter.js');
+  sed('-i', /PDFJSSCRIPT_MOZ_CENTRAL/, 'false',
+      FIREFOX_BUILD_DIR + 'components/PdfStreamConverter.js');
 
   // Update localized metadata
   var localizedMetadata = cat(EXTENSION_SRC_DIR + '/firefox/metadata.inc');
-  sed('-i', /.*PDFJS_LOCALIZED_METADATA.*\n/, localizedMetadata, FIREFOX_BUILD_DIR + '/install.rdf');
+  sed('-i', /.*PDFJS_LOCALIZED_METADATA.*\n/, localizedMetadata,
+      FIREFOX_BUILD_DIR + '/install.rdf');
   var chromeManifest = cat(EXTENSION_SRC_DIR + '/firefox/chrome.manifest.inc');
-  sed('-i', /.*PDFJS_SUPPORTED_LOCALES.*\n/, chromeManifest, FIREFOX_BUILD_DIR + '/chrome.manifest');
+  sed('-i', /.*PDFJS_SUPPORTED_LOCALES.*\n/, chromeManifest,
+      FIREFOX_BUILD_DIR + '/chrome.manifest');
 
   // Create the xpi
   cd(FIREFOX_BUILD_DIR);
-  exec('zip -r ' + FIREFOX_EXTENSION_NAME + ' ' + FIREFOX_EXTENSION_FILES.join(' '));
+  exec('zip -r ' + FIREFOX_EXTENSION_NAME + ' ' +
+       FIREFOX_EXTENSION_FILES.join(' '));
   echo('extension created: ' + FIREFOX_EXTENSION_NAME);
   cd(ROOT_DIR);
 
   // Build the amo extension too (remove the updateUrl)
   cd(FIREFOX_BUILD_DIR);
   sed('-i', /.*updateURL.*\n/, '', 'install.rdf');
-  exec('zip -r ' + FIREFOX_AMO_EXTENSION_NAME + ' ' + FIREFOX_EXTENSION_FILES.join(' '));
+  exec('zip -r ' + FIREFOX_AMO_EXTENSION_NAME + ' ' +
+       FIREFOX_EXTENSION_FILES.join(' '));
   echo('AMO extension created: ' + FIREFOX_AMO_EXTENSION_NAME);
   cd(ROOT_DIR);
 };
@@ -435,13 +454,14 @@ target.mozcentral = function() {
   mkdir('-p', MOZCENTRAL_CONTENT_DIR + BUILD_DIR);
   mkdir('-p', MOZCENTRAL_CONTENT_DIR + '/web');
 
-  cp(FIREFOX_CONTENT_DIR + 'PdfJs.jsm', MOZCENTRAL_CONTENT_DIR)
+  cp(FIREFOX_CONTENT_DIR + 'PdfJs.jsm', MOZCENTRAL_CONTENT_DIR);
 
   // Copy extension files
   cd('extensions/firefox');
-  cp('-R', FIREFOX_EXTENSION_FILES_TO_COPY, ROOT_DIR + MOZCENTRAL_EXTENSION_DIR);
+  cp('-R', FIREFOX_EXTENSION_FILES_TO_COPY,
+     ROOT_DIR + MOZCENTRAL_EXTENSION_DIR);
   mv('-f', ROOT_DIR + MOZCENTRAL_EXTENSION_DIR + '/chrome-mozcentral.manifest',
-           ROOT_DIR + MOZCENTRAL_EXTENSION_DIR + '/chrome.manifest')
+           ROOT_DIR + MOZCENTRAL_EXTENSION_DIR + '/chrome.manifest');
   cd(ROOT_DIR);
 
   var setup = {
@@ -466,18 +486,22 @@ target.mozcentral = function() {
   cp(DEFAULT_LOCALE_FILES, MOZCENTRAL_L10N_DIR);
 
   // Update the build version number
-  sed('-i', /PDFJSSCRIPT_VERSION/, EXTENSION_VERSION, MOZCENTRAL_EXTENSION_DIR + 'README.mozilla');
+  sed('-i', /PDFJSSCRIPT_VERSION/, EXTENSION_VERSION,
+      MOZCENTRAL_EXTENSION_DIR + 'README.mozilla');
 
-  sed('-i', /PDFJSSCRIPT_STREAM_CONVERTER_ID/, MOZCENTRAL_STREAM_CONVERTER_ID, MOZCENTRAL_EXTENSION_DIR + 'components/PdfStreamConverter.js');
-  sed('-i', /PDFJSSCRIPT_PREF_PREFIX/, MOZCENTRAL_PREF_PREFIX, MOZCENTRAL_EXTENSION_DIR + 'components/PdfStreamConverter.js');
-  sed('-i', /PDFJSSCRIPT_MOZ_CENTRAL/, 'true', MOZCENTRAL_EXTENSION_DIR + 'components/PdfStreamConverter.js');
+  sed('-i', /PDFJSSCRIPT_STREAM_CONVERTER_ID/, MOZCENTRAL_STREAM_CONVERTER_ID,
+      MOZCENTRAL_EXTENSION_DIR + 'components/PdfStreamConverter.js');
+  sed('-i', /PDFJSSCRIPT_PREF_PREFIX/, MOZCENTRAL_PREF_PREFIX,
+      MOZCENTRAL_EXTENSION_DIR + 'components/PdfStreamConverter.js');
+  sed('-i', /PDFJSSCRIPT_MOZ_CENTRAL/, 'true',
+      MOZCENTRAL_EXTENSION_DIR + 'components/PdfStreamConverter.js');
 
   // List all files for mozilla-central
   cd(MOZCENTRAL_EXTENSION_DIR);
   var extensionFiles = '';
-  find(FIREFOX_MC_EXTENSION_FILES).forEach(function(file){
+  find(FIREFOX_MC_EXTENSION_FILES).forEach(function(file) {
     if (test('-f', file))
-      extensionFiles += file+'\n';
+      extensionFiles += file + '\n';
   });
   extensionFiles.to('extension-files');
   cd(ROOT_DIR);
@@ -543,7 +567,8 @@ target.chrome = function() {
     defines: defines,
     copy: [
       [COMMON_WEB_FILES, CHROME_BUILD_CONTENT_DIR + '/web'],
-      [['extensions/chrome/*.json', 'extensions/chrome/*.html'], CHROME_BUILD_DIR],
+      [['extensions/chrome/*.json', 'extensions/chrome/*.html'],
+       CHROME_BUILD_DIR],
       [BUILD_TARGET, CHROME_BUILD_CONTENT_DIR + BUILD_TARGET],
       ['external/webL10n/l10n.js', CHROME_BUILD_CONTENT_DIR + '/web']
     ],
@@ -553,6 +578,70 @@ target.chrome = function() {
     ]
   };
   builder.build(setup);
+
+  // Bundle the files to a Chrome extension file .crx if path to key is set
+  var pem = env['PDFJS_CHROME_KEY'];
+  if (!pem) {
+    return;
+  }
+
+  echo();
+  echo('### Bundling .crx extension into ' + CHROME_BUILD_DIR);
+
+  if (!test('-f', pem)) {
+    echo('Incorrect PDFJS_CHROME_KEY path');
+    exit(1);
+  }
+
+  var browserManifest = env['PDF_BROWSERS'] ||
+      'test/resources/browser_manifests/browser_manifest.json';
+
+  if (!test('-f', browserManifest)) {
+    echo('Browser manifest file ' + browserManifest + ' does not exist.');
+    echo('Try copying one of the examples in test/resources/browser_manifests');
+    exit(1);
+  }
+
+  try {
+    var manifest = JSON.parse(cat(browserManifest));
+  } catch (e) {
+    echo('Malformed browser manifest file');
+    echo(e.message);
+    exit(1);
+  }
+
+  var executable;
+  manifest.forEach(function(browser) {
+    if (browser.name === 'chrome') {
+      executable = browser.path;
+    }
+  });
+
+  // If there was no chrome entry in the browser manifest, exit
+  if (!executable) {
+    echo('There was no \'chrome\' entry in the browser manifest');
+    exit(1);
+  }
+
+  // If we're on a Darwin (Mac) OS, then let's check for an .app path
+  if (process.platform === 'darwin' && executable.indexOf('.app') !== -1) {
+    executable = executable + '/Contents/MacOS/Google Chrome';
+  }
+
+  // If the chrome executable doesn't exist
+  if (!test('-f', executable)) {
+    echo('Incorrect executable path to chrome');
+    exit(1);
+  }
+
+  // Let chrome pack the extension for us
+  exec('"' + executable + '"' +
+    ' --no-message-box' +
+    ' "--pack-extension=' + ROOT_DIR + CHROME_BUILD_DIR + '"' +
+    ' "--pack-extension-key=' + pem + '"');
+
+  // Rename to pdf.js.crx
+  mv(BUILD_DIR + 'chrome.crx', CHROME_BUILD_DIR + 'pdf.js.crx');
 };
 
 
@@ -589,19 +678,20 @@ target.browsertest = function(options) {
   echo('### Running browser tests');
 
   var PDF_TEST = env['PDF_TEST'] || 'test_manifest.json',
-      PDF_BROWSERS = env['PDF_BROWSERS'] || 'resources/browser_manifests/browser_manifest.json';
+      PDF_BROWSERS = env['PDF_BROWSERS'] ||
+                     'resources/browser_manifests/browser_manifest.json';
 
   if (!test('-f', 'test/' + PDF_BROWSERS)) {
     echo('Browser manifest file test/' + PDF_BROWSERS + ' does not exist.');
-    echo('Try copying one of the examples in test/resources/browser_manifests/');
+    echo('Copy one of the examples in test/resources/browser_manifests/');
     exit(1);
   }
 
   var reftest = (options && options.noreftest) ? '' : '--reftest';
 
   cd('test');
-  exec(PYTHON_BIN + ' -u test.py '+reftest+' --browserManifestFile=' + PDF_BROWSERS +
-    ' --manifestFile=' + PDF_TEST, {async: true});
+  exec(PYTHON_BIN + ' -u test.py ' + reftest + ' --browserManifestFile=' +
+       PDF_BROWSERS + ' --manifestFile=' + PDF_TEST, {async: true});
 };
 
 //
@@ -612,17 +702,18 @@ target.unittest = function(options, callback) {
   echo();
   echo('### Running unit tests');
 
-  var PDF_BROWSERS = env['PDF_BROWSERS'] || 'resources/browser_manifests/browser_manifest.json';
+  var PDF_BROWSERS = env['PDF_BROWSERS'] ||
+                     'resources/browser_manifests/browser_manifest.json';
 
   if (!test('-f', 'test/' + PDF_BROWSERS)) {
     echo('Browser manifest file test/' + PDF_BROWSERS + ' does not exist.');
-    echo('Try copying one of the examples in test/resources/browser_manifests/');
+    echo('Copy one of the examples in test/resources/browser_manifests/');
     exit(1);
   }
   callback = callback || function() {};
   cd('test');
-  exec(PYTHON_BIN + ' -u test.py --unitTest --browserManifestFile=' + PDF_BROWSERS,
-    {async: true}, callback);
+  exec(PYTHON_BIN + ' -u test.py --unitTest --browserManifestFile=' +
+       PDF_BROWSERS, {async: true}, callback);
 };
 
 //
@@ -634,17 +725,18 @@ target.botmakeref = function() {
   echo('### Creating reference images');
 
   var PDF_TEST = env['PDF_TEST'] || 'test_manifest.json',
-      PDF_BROWSERS = env['PDF_BROWSERS'] || 'resources/browser_manifests/browser_manifest.json';
+      PDF_BROWSERS = env['PDF_BROWSERS'] ||
+                     'resources/browser_manifests/browser_manifest.json';
 
   if (!test('-f', 'test/' + PDF_BROWSERS)) {
     echo('Browser manifest file test/' + PDF_BROWSERS + ' does not exist.');
-    echo('Try copying one of the examples in test/resources/browser_manifests/');
+    echo('Copy one of the examples in test/resources/browser_manifests/');
     exit(1);
   }
 
   cd('test');
-  exec(PYTHON_BIN + ' -u test.py --masterMode --noPrompts --browserManifestFile=' + PDF_BROWSERS,
-    {async: true});
+  exec(PYTHON_BIN + ' -u test.py --masterMode --noPrompts ' +
+       '--browserManifestFile=' + PDF_BROWSERS, {async: true});
 };
 
 
@@ -673,15 +765,20 @@ target.lint = function() {
   echo();
   echo('### Linting JS files (this can take a while!)');
 
-  var LINT_FILES = 'src/*.js \
-                    web/*.js \
-                    test/*.js \
-                    test/unit/*.js \
-                    extensions/firefox/*.js \
-                    extensions/firefox/components/*.js \
-                    extensions/chrome/*.js';
+  var LINT_FILES = ['make.js',
+                    'external/builder/*.js',
+                    'external/crlfchecker/*.js',
+                    'src/*.js',
+                    'web/*.js',
+                    'test/*.js',
+                    'test/unit/*.js',
+                    'extensions/firefox/*.js',
+                    'extensions/firefox/components/*.js',
+                    'extensions/chrome/*.js'];
 
-  exec('gjslint --nojsdoc ' + LINT_FILES);
+  exec('gjslint --nojsdoc ' + LINT_FILES.join(' '));
+
+  crlfchecker.checkIfCrlfIsPresent(LINT_FILES);
 };
 
 //
@@ -694,3 +791,4 @@ target.clean = function() {
 
   rm('-rf', BUILD_DIR);
 };
+
