@@ -263,7 +263,7 @@ var consoleTimer = {};
 var workerConsole = {
   log: function log() {
     var args = Array.prototype.slice.call(arguments);
-    postMessage({
+    globalScope.postMessage({
       action: 'console_log',
       data: args
     });
@@ -271,7 +271,7 @@ var workerConsole = {
 
   error: function error() {
     var args = Array.prototype.slice.call(arguments);
-    postMessage({
+    globalScope.postMessage({
       action: 'console_error',
       data: args
     });
@@ -299,7 +299,7 @@ if (typeof window === 'undefined') {
   // throw an exception which will be forwarded on automatically.
   PDFJS.LogManager.addLogger({
     warn: function(msg) {
-      postMessage({
+      globalScope.postMessage({
         action: '_warn',
         data: msg
       });
