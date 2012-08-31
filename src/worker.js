@@ -11,11 +11,17 @@ function MessageHandler(name, comObj) {
   var ah = this.actionHandler = {};
 
   ah['console_log'] = [function ahConsoleLog(data) {
-    console.log.apply(console, data);
+    log.apply(null, data);
   }];
-  ah['console_error'] = [function ahConsoleError(data) {
-    console.error.apply(console, data);
-  }];
+  // If there's no console available, console_error in the action handler will do nothing.
+  if ('console' in globalScope) {
+    ah['console_error'] = [function ahConsoleError(data) {
+      globalScope['console'].error.apply(null, data);
+    }];
+  } else {
+    ah['console_error'] = [function ahConsoleError(data) {
+    }];
+  }
   ah['_warn'] = [function ah_Warn(data) {
     warn(data);
   }];
@@ -220,7 +226,7 @@ var WorkerMessageHandler = {
         return;
       }
 
-      console.log('page=%d - getOperatorList: time=%dms, len=%d', pageNum,
+      log('page=%d - getOperatorList: time=%dms, len=%d', pageNum,
                               Date.now() - start, operatorList.fnArray.length);
 
       // Filter the dependecies for fonts.
@@ -252,7 +258,7 @@ var WorkerMessageHandler = {
         promise.reject(e);
       }
 
-      console.log('text indexing: page=%d - time=%dms',
+      log('text indexing: page=%d - time=%dms',
                       pageNum, Date.now() - start);
     });
   }
@@ -263,7 +269,7 @@ var consoleTimer = {};
 var workerConsole = {
   log: function log() {
     var args = Array.prototype.slice.call(arguments);
-    postMessage({
+    globalScope.postMessage({
       action: 'console_log',
       data: args
     });
@@ -271,7 +277,7 @@ var workerConsole = {
 
   error: function error() {
     var args = Array.prototype.slice.call(arguments);
-    postMessage({
+    globalScope.postMessage({
       action: 'console_error',
       data: args
     });
@@ -299,7 +305,7 @@ if (typeof window === 'undefined') {
   // throw an exception which will be forwarded on automatically.
   PDFJS.LogManager.addLogger({
     warn: function(msg) {
-      postMessage({
+      globalScope.postMessage({
         action: '_warn',
         data: msg
       });
