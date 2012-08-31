@@ -255,7 +255,7 @@ var JpxImage = (function JpxImageClosure() {
                   cod.resetContextProbabilities ||
                   cod.terminationOnEachCodingPass ||
                   cod.verticalyStripe || cod.predictableTermination)
-                throw 'Unsupported COD options: ' + uneval(cod);
+                throw 'Unsupported COD options: ' + globalScope.JSON.stringify(cod);
 
               if (context.mainHeader)
                 context.COD = cod;
