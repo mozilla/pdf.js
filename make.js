@@ -135,7 +135,6 @@ target.locale = function() {
   var CHROME_MANIFEST_OUTPUT = 'extensions/firefox/chrome.manifest.inc';
   var EXTENSION_LOCALE_OUTPUT = 'extensions/firefox/locale';
   var VIEWER_OUTPUT = 'web/locale.properties';
-  var DEFAULT_LOCALE = 'en-US';
 
   cd(ROOT_DIR);
   echo();
@@ -357,7 +356,7 @@ target.firefox = function() {
      FIREFOX_BUILD_CONTENT_DIR + 'PdfJs.jsm');
 
   // Copy extension files
-  cd('extensions/firefox');
+  cd(FIREFOX_EXTENSION_DIR);
   cp('-R', FIREFOX_EXTENSION_FILES_TO_COPY, ROOT_DIR + FIREFOX_BUILD_DIR);
   cd(ROOT_DIR);
 
@@ -365,7 +364,8 @@ target.firefox = function() {
     defines: defines,
     copy: [
       [COMMON_WEB_FILES, FIREFOX_BUILD_CONTENT_DIR + '/web'],
-      ['extensions/firefox/tools/l10n.js', FIREFOX_BUILD_CONTENT_DIR + '/web']
+      [FIREFOX_EXTENSION_DIR + 'tools/l10n.js',
+       FIREFOX_BUILD_CONTENT_DIR + '/web']
     ],
     preprocess: [
       [COMMON_WEB_FILES_PREPROCESS, FIREFOX_BUILD_CONTENT_DIR + '/web']
