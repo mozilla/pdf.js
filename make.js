@@ -213,11 +213,13 @@ target.bundle = function() {
         'pattern.js',
         'stream.js',
         'worker.js',
-        '../external/jpgjs/jpg.js',
         'jpx.js',
         'jbig2.js',
         'bidi.js',
         'metadata.js'];
+
+  var EXT_SRC_FILES = [
+        '../external/jpgjs/jpg.js'];
 
   if (!test('-d', BUILD_DIR))
     mkdir(BUILD_DIR);
@@ -228,6 +230,13 @@ target.bundle = function() {
         {silent: true}).output.replace('\n', '');
 
   crlfchecker.checkIfCrlfIsPresent(SRC_FILES);
+
+  // Strip out all the vim/license headers.
+  var reg = /\n\/\* -\*- Mode(.|\n)*?Mozilla Foundation(.|\n)*?'use strict';/g;
+  bundle = bundle.replace(reg, '');
+
+  // Append external files last since we don't want to modify them.
+  bundle += cat(EXT_SRC_FILES);
 
   // This just preprocesses the empty pdf.js file, we don't actually want to
   // preprocess everything yet since other build targets use this file.
@@ -274,8 +283,8 @@ target.pagesrepo = function() {
 // Extension stuff
 //
 
-var EXTENSION_BASE_VERSION = 'fad38f8286acc0a23b10cc95dda800530adaf160',
-    EXTENSION_VERSION_PREFIX = '0.4.',
+var EXTENSION_BASE_VERSION = '11a341b1277be3a882274cb9f94295af310c6b62',
+    EXTENSION_VERSION_PREFIX = '0.5.',
     EXTENSION_BUILD_NUMBER,
     EXTENSION_VERSION;
 
@@ -297,10 +306,10 @@ target.buildnumber = function() {
   echo();
   echo('### Getting extension build number');
 
+  var lines = exec('git log --format=oneline ' +
+                   EXTENSION_BASE_VERSION + '..', {silent: true}).output;
   // Build number is the number of commits since base version
-  EXTENSION_BUILD_NUMBER = exec('git log --format=oneline ' +
-    EXTENSION_BASE_VERSION + '..', {silent: true})
-    .output.match(/\n/g).length; // get # of lines in git output
+  EXTENSION_BUILD_NUMBER = lines ? lines.match(/\n/g).length : 0;
 
   echo('Extension build number: ' + EXTENSION_BUILD_NUMBER);
 
