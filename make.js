@@ -213,11 +213,13 @@ target.bundle = function() {
         'pattern.js',
         'stream.js',
         'worker.js',
-        '../external/jpgjs/jpg.js',
         'jpx.js',
         'jbig2.js',
         'bidi.js',
         'metadata.js'];
+
+  var EXT_SRC_FILES = [
+        '../external/jpgjs/jpg.js'];
 
   if (!test('-d', BUILD_DIR))
     mkdir(BUILD_DIR);
@@ -228,6 +230,13 @@ target.bundle = function() {
         {silent: true}).output.replace('\n', '');
 
   crlfchecker.checkIfCrlfIsPresent(SRC_FILES);
+
+  // Strip out all the vim/license headers.
+  var reg = /\n\/\* -\*- Mode(.|\n)*?Mozilla Foundation(.|\n)*?'use strict';/g;
+  bundle = bundle.replace(reg, '');
+
+  // Append external files last since we don't want to modify them.
+  bundle += cat(EXT_SRC_FILES);
 
   // This just preprocesses the empty pdf.js file, we don't actually want to
   // preprocess everything yet since other build targets use this file.
