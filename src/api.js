@@ -15,6 +15,8 @@
  * limitations under the License.
  */
 
+ 'use strict';
+
 /**
  * This is the main entry point for loading a PDF and interacting with it.
  * NOTE: If a URL is used to fetch the PDF data a standard XMLHttpRequest(XHR)
