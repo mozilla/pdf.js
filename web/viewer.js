@@ -1936,6 +1936,12 @@ document.addEventListener('DOMContentLoaded', function webViewerLoad(evt) {
       outerContainer.classList.toggle('sidebarOpen');
       PDFView.sidebarOpen = outerContainer.classList.contains('sidebarOpen');
       PDFView.renderHighestPriority();
+
+	  if (PDFView.sidebarOpen) {
+		document.getElementById('sidebarContainer').classList.remove('hidden');
+	  } else {
+		document.getElementById('sidebarContainer').classList.add('hidden');
+	  }
     });
 
 //#if (FIREFOX || MOZCENTRAL)
