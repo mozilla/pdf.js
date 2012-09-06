@@ -29,7 +29,7 @@ limitations under the License.
     <link rel="resource" type="application/l10n" href="locale.properties"/>
 <!--#endif-->
 
-<!--#if !(FIREFOX || MOZCENTRAL)-->
+<!--#if !(FIREFOX || MOZCENTRAL || CHROME)-->
     <script type="text/javascript" src="compatibility.js"></script>
 <!--#endif-->
 
@@ -82,13 +82,13 @@ limitations under the License.
 
       <div id="sidebarContainer">
         <div id="toolbarSidebar" class="splitToolbarButton toggled">
-          <button id="viewThumbnail" class="toolbarButton group toggled" title="Show Thumbnails" onclick="PDFView.switchSidebarView('thumbs')" tabindex="1" data-l10n-id="thumbs">
+          <button id="viewThumbnail" class="toolbarButton group toggled" title="Show Thumbnails" tabindex="1" data-l10n-id="thumbs">
              <span data-l10n-id="thumbs_label">Thumbnails</span>
           </button>
-          <button id="viewOutline" class="toolbarButton group" title="Show Document Outline" onclick="PDFView.switchSidebarView('outline')" tabindex="2" data-l10n-id="outline">
+          <button id="viewOutline" class="toolbarButton group" title="Show Document Outline" tabindex="2" data-l10n-id="outline">
              <span data-l10n-id="outline_label">Document Outline</span>
           </button>
-          <button id="viewSearch" class="toolbarButton group hidden" title="Search Document" onclick="PDFView.switchSidebarView('search')" tabindex="3" data-l10n-id="search_panel">
+          <button id="viewSearch" class="toolbarButton group hidden" title="Search Document" tabindex="3" data-l10n-id="search_panel">
              <span data-l10n-id="search_panel_label">Search Document</span>
           </button>
         </div>
@@ -99,8 +99,8 @@ limitations under the License.
           </div>
           <div id="searchView" class="hidden">
             <div id="searchToolbar">
-              <input id="searchTermsInput" class="toolbarField" onkeydown='if (event.keyCode == 13) PDFView.search()'>
-              <button id="searchButton" class="textButton toolbarButton" onclick='PDFView.search()' data-l10n-id="search">Find</button>
+              <input id="searchTermsInput" class="toolbarField">
+              <button id="searchButton" class="textButton toolbarButton" data-l10n-id="search">Find</button>
             </div>
             <div id="searchResults"></div>
           </div>
@@ -118,16 +118,16 @@ limitations under the License.
                 </button>
                 <div class="toolbarButtonSpacer"></div>
                 <div class="splitToolbarButton">
-                  <button class="toolbarButton pageUp" title="Previous Page" onclick="PDFView.page--" id="previous" tabindex="5" data-l10n-id="previous">
+                  <button class="toolbarButton pageUp" title="Previous Page" id="previous" tabindex="5" data-l10n-id="previous">
                     <span data-l10n-id="previous_label">Previous</span>
                   </button>
                   <div class="splitToolbarButtonSeparator"></div>
-                  <button class="toolbarButton pageDown" title="Next Page" onclick="PDFView.page++" id="next" tabindex="6" data-l10n-id="next">
+                  <button class="toolbarButton pageDown" title="Next Page" id="next" tabindex="6" data-l10n-id="next">
                     <span data-l10n-id="next_label">Next</span>
                   </button>
                 </div>
                 <label id="pageNumberLabel" class="toolbarLabel" for="pageNumber" data-l10n-id="page_label">Page: </label>
-                <input type="number" id="pageNumber" class="toolbarField pageNumber" onchange="PDFView.page = this.value;" value="1" size="4" min="1" tabindex="7">
+                <input type="number" id="pageNumber" class="toolbarField pageNumber" value="1" size="4" min="1" tabindex="7">
                 </input>
                 <span id="numPages" class="toolbarLabel"></span>
               </div>
@@ -135,19 +135,19 @@ limitations under the License.
                 <input id="fileInput" class="fileInput" type="file" oncontextmenu="return false;" style="visibility: hidden; position: fixed; right: 0; top: 0" />
 
 
-                <button id="fullscreen" class="toolbarButton fullscreen" title="Fullscreen" tabindex="11" data-l10n-id="fullscreen" onclick="PDFView.fullscreen();">
+                <button id="fullscreen" class="toolbarButton fullscreen" title="Fullscreen" tabindex="11" data-l10n-id="fullscreen">
                   <span data-l10n-id="fullscreen_label">Fullscreen</span>
                 </button>
 
-                <button id="openFile" class="toolbarButton openFile" title="Open File" tabindex="12" data-l10n-id="open_file" onclick="document.getElementById('fileInput').click()">
+                <button id="openFile" class="toolbarButton openFile" title="Open File" tabindex="12" data-l10n-id="open_file">
                    <span data-l10n-id="open_file_label">Open</span>
                 </button>
 
-                <button id="print" class="toolbarButton print" title="Print" tabindex="13" data-l10n-id="print" onclick="window.print()">
+                <button id="print" class="toolbarButton print" title="Print" tabindex="13" data-l10n-id="print">
                   <span data-l10n-id="print_label">Print</span>
                 </button>
 
-                <button id="download" class="toolbarButton download" title="Download" onclick="PDFView.download();" tabindex="14" data-l10n-id="download">
+                <button id="download" class="toolbarButton download" title="Download" tabindex="14" data-l10n-id="download">
                   <span data-l10n-id="download_label">Download</span>
                 </button>
                 <!-- <div class="toolbarButtonSpacer"></div> -->
@@ -156,16 +156,16 @@ limitations under the License.
               <div class="outerCenter">
                 <div class="innerCenter" id="toolbarViewerMiddle">
                   <div class="splitToolbarButton">
-                    <button class="toolbarButton zoomOut" title="Zoom Out" onclick="PDFView.zoomOut();" tabindex="8" data-l10n-id="zoom_out">
+                    <button class="toolbarButton zoomOut" title="Zoom Out" tabindex="8" data-l10n-id="zoom_out">
                       <span data-l10n-id="zoom_out_label">Zoom Out</span>
                     </button>
                     <div class="splitToolbarButtonSeparator"></div>
-                    <button class="toolbarButton zoomIn" title="Zoom In" onclick="PDFView.zoomIn();" tabindex="9" data-l10n-id="zoom_in">
+                    <button class="toolbarButton zoomIn" title="Zoom In" tabindex="9" data-l10n-id="zoom_in">
                       <span data-l10n-id="zoom_in_label">Zoom In</span>
                      </button>
                   </div>
                   <span id="scaleSelectContainer" class="dropdownToolbarButton">
-                     <select id="scaleSelect" onchange="PDFView.parseScale(this.value);" title="Zoom" oncontextmenu="return false;" tabindex="10" data-l10n-id="zoom">
+                     <select id="scaleSelect" title="Zoom" oncontextmenu="return false;" tabindex="10" data-l10n-id="zoom">
                       <option id="pageAutoOption" value="auto" selected="selected" data-l10n-id="page_scale_auto">Automatic Zoom</option>
                       <option id="pageActualOption" value="page-actual" data-l10n-id="page_scale_actual">Actual Size</option>
                       <option id="pageFitOption" value="page-fit" data-l10n-id="page_scale_fit">Fit Page</option>

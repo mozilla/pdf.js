@@ -35,6 +35,7 @@ var RenderingStates = {
   FINISHED: 3
 };
 
+PDFJS.workerSrc = '../build/pdf.js';
 
 var mozL10n = document.mozL10n || document.webL10n;
 
@@ -1937,6 +1938,84 @@ document.addEventListener('DOMContentLoaded', function webViewerLoad(evt) {
       PDFView.sidebarOpen = outerContainer.classList.contains('sidebarOpen');
       PDFView.renderHighestPriority();
     });
+
+  document.getElementById('viewThumbnail').addEventListener('click',
+    function() {
+      PDFView.switchSidebarView('thumbs');
+    });
+
+  document.getElementById('viewOutline').addEventListener('click',
+    function() {
+      PDFView.switchSidebarView('outline');
+    });
+
+  document.getElementById('viewSearch').addEventListener('click',
+    function() {
+      PDFView.switchSidebarView('search');
+    });
+
+  document.getElementById('searchButton').addEventListener('click',
+    function() {
+      PDFView.search();
+    });
+
+  document.getElementById('previous').addEventListener('click',
+    function() {
+      PDFView.page--;
+    });
+
+  document.getElementById('next').addEventListener('click',
+    function() {
+      PDFView.page++;
+    });
+
+  document.querySelector('.zoomIn').addEventListener('click',
+    function() {
+      PDFView.zoomIn();
+    });
+
+  document.querySelector('.zoomOut').addEventListener('click',
+    function() {
+      PDFView.zoomOut();
+    });
+
+  document.getElementById('fullscreen').addEventListener('click',
+    function() {
+      PDFView.fullscreen();
+    });
+
+  document.getElementById('openFile').addEventListener('click',
+    function() {
+      document.getElementById('fileInput').click();
+    });
+
+  document.getElementById('print').addEventListener('click',
+    function() {
+      window.print();
+    });
+
+  document.getElementById('download').addEventListener('click',
+    function() {
+      PDFView.download();
+    });
+
+  document.getElementById('searchTermsInput').addEventListener('keydown',
+    function() {
+      if (event.keyCode == 13) {
+        PDFView.search();
+      }
+    });
+
+  document.getElementById('pageNumber').addEventListener('change',
+    function() {
+      PDFView.page = this.value;
+    });
+
+  document.getElementById('scaleSelect').addEventListener('change',
+    function() {
+      PDFView.parseScale(this.value);
+    });
+
 
 //#if (FIREFOX || MOZCENTRAL)
 //if (FirefoxCom.requestSync('getLoadingType') == 'passive') {

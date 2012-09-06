@@ -581,7 +581,9 @@ target.chrome = function() {
     defines: defines,
     copy: [
       [COMMON_WEB_FILES, CHROME_BUILD_CONTENT_DIR + '/web'],
-      [['extensions/chrome/*.json', 'extensions/chrome/*.html'],
+      [['extensions/chrome/*.json',
+        'extensions/chrome/*.html',
+        'extensions/chrome/*.js'],
        CHROME_BUILD_DIR],
       [BUILD_TARGET, CHROME_BUILD_CONTENT_DIR + BUILD_TARGET],
       ['external/webL10n/l10n.js', CHROME_BUILD_CONTENT_DIR + '/web']
@@ -592,6 +594,10 @@ target.chrome = function() {
     ]
   };
   builder.build(setup);
+
+  // Update the build version number
+  sed('-i', /PDFJSSCRIPT_VERSION/, EXTENSION_VERSION,
+      CHROME_BUILD_DIR + '/manifest.json');
 
   // Bundle the files to a Chrome extension file .crx if path to key is set
   var pem = env['PDFJS_CHROME_KEY'];
