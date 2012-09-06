@@ -1,0 +1,1 @@
+  PDFJS.workerSrc = "../build/pdf.js";

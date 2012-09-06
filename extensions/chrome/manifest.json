@@ -1,11 +1,14 @@
 {
+  "manifest_version": 2,
   "name": "uriloader@pdf.js",
   "version": "0.1",
   "description": "Read PDF Document",
   "permissions": [
     "webRequest", "webRequestBlocking",
-    "http://*/*.pdf",
+    "http://*/*.pdf", "https://*/*.pdf",
     "file:///*/*.pdf"
   ],
-  "background_page": "pdfHandler.html"
+  "background": {
+    "page": "pdfHandler.html"
+  }
 }

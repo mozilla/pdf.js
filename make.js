@@ -52,6 +52,7 @@ target.all = function() {
 // Files that need to be included in every build.
 var COMMON_WEB_FILES =
       ['web/viewer.css',
+       'web/inline.js',
        'web/images',
        'web/debugger.js'],
     COMMON_WEB_FILES_PREPROCESS =
@@ -581,7 +582,7 @@ target.chrome = function() {
     defines: defines,
     copy: [
       [COMMON_WEB_FILES, CHROME_BUILD_CONTENT_DIR + '/web'],
-      [['extensions/chrome/*.json', 'extensions/chrome/*.html'],
+      [['extensions/chrome/*.json', 'extensions/chrome/*.html', 'extensions/chrome/*.js'],
        CHROME_BUILD_DIR],
       [BUILD_TARGET, CHROME_BUILD_CONTENT_DIR + BUILD_TARGET],
       ['external/webL10n/l10n.js', CHROME_BUILD_CONTENT_DIR + '/web']
