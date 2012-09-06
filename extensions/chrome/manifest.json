@@ -1,11 +1,12 @@
 {
   "manifest_version": 2,
-  "name": "uriloader@pdf.js",
-  "version": "0.1",
-  "description": "Read PDF Document",
+  "name": "PDF Viewer",
+  "version": "PDFJSSCRIPT_VERSION",
+  "description": "Uses HTML5 to display PDF files directly in Chrome.",
   "permissions": [
     "webRequest", "webRequestBlocking",
-    "http://*/*.pdf", "https://*/*.pdf",
+    "http://*/*.pdf",
+    "https://*/*.pdf",
     "file:///*/*.pdf"
   ],
   "background": {

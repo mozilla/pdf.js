@@ -30,9 +30,10 @@ chrome.webRequest.onBeforeRequest.addListener(
   },
   {
     urls: [
-      "http://*/*.pdf", "https://*/*.pdf",
-      "file://*/*.pdf"
+      'http://*/*.pdf',
+      'https://*/*.pdf',
+      'file://*/*.pdf'
     ],
-    types: [ "main_frame" ]
+    types: ['main_frame']
   },
-  ["blocking"]);
+  ['blocking']);
