@@ -222,6 +222,7 @@ var PDFView = {
   pageViewScroll: null,
   thumbnailViewScroll: null,
   isFullscreen: false,
+  textRenderingDone: [],
   previousScale: null,
 
   // called once when the document is loaded
@@ -1423,7 +1424,7 @@ var PageView = function pageView(container, pdfPage, id, scale,
       textLayerDiv.className = 'textLayer';
       div.appendChild(textLayerDiv);
     }
-    var textLayer = textLayerDiv ? new TextLayerBuilder(textLayerDiv) : null;
+    var textLayer = textLayerDiv ? new TextLayerBuilder(textLayerDiv, this.id) : null;
 
     var scale = this.scale, viewport = this.viewport;
     canvas.width = viewport.width;
@@ -1746,10 +1747,11 @@ var CustomStyle = (function CustomStyleClosure() {
   return CustomStyle;
 })();
 
-var TextLayerBuilder = function textLayerBuilder(textLayerDiv) {
+var TextLayerBuilder = function textLayerBuilder(textLayerDiv, id) {
   this.textLayerDiv = textLayerDiv;
 
   this.beginLayout = function textLayerBuilderBeginLayout() {
+    PDFView.textRenderingDone[id] = false;
     this.textDivs = [];
     this.textLayerQueue = [];
   };
@@ -1771,6 +1773,7 @@ var TextLayerBuilder = function textLayerBuilder(textLayerDiv) {
       if (textDivs.length === 0) {
         clearInterval(renderTimer);
         renderingDone = true;
+        PDFView.textRenderingDone[id] = true;
         self.textLayerDiv = textLayerDiv = canvas = ctx = null;
         return;
       }
