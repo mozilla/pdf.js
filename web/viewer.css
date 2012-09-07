@@ -778,8 +778,6 @@ html[dir='rtl'] .toolbarButton.pageDown::before {
 .thumbnail {
   margin-bottom: 15px;
   float: left;
-  width: 114px;
-  height: 142px;
 }
 
 .thumbnail:not([data-loaded]) {
