@@ -224,6 +224,7 @@ var PDFView = {
   thumbnailViewScroll: null,
   isFullscreen: false,
   previousScale: null,
+  pageRotation: 0,
 
   // called once when the document is loaded
   initialize: function pdfViewInitialize() {
@@ -707,6 +708,8 @@ var PDFView = {
       storedHash = 'page=' + page + '&zoom=' + zoom + ',' + left + ',' + top;
     }
 
+    this.pageRotation = 0;
+
     var pages = this.pages = [];
     this.pageText = [];
     this.startedTextExtraction = false;
@@ -1180,6 +1183,34 @@ var PDFView = {
     this.isFullscreen = false;
     this.parseScale(this.previousScale);
     this.page = this.page;
+  },
+
+  rotatePages: function pdfViewPageRotation(delta) {
+
+    this.pageRotation = (this.pageRotation + 360 + delta) % 360;
+
+    for (var i = 0, l = this.pages.length; i < l; i++) {
+      var page = this.pages[i];
+      page.update(page.scale, this.pageRotation);
+    }
+
+    for (var i = 0, l = this.thumbnails.length; i < l; i++) {
+      var thumb = this.thumbnails[i];
+      thumb.updateRotation(this.pageRotation);
+    }
+
+    var currentPage = this.pages[this.page - 1];
+
+    if (this.isFullscreen) {
+      this.parseScale('page-fit', true);
+    }
+
+    this.renderHighestPriority();
+
+    // Wait for fullscreen to take effect
+    setTimeout(function() {
+      currentPage.scrollIntoView();
+    }, 0);
   }
 };
 
@@ -1188,8 +1219,9 @@ var PageView = function pageView(container, pdfPage, id, scale,
   this.id = id;
   this.pdfPage = pdfPage;
 
+  this.rotation = 0;
   this.scale = scale || 1.0;
-  this.viewport = this.pdfPage.getViewport(this.scale);
+  this.viewport = this.pdfPage.getViewport(this.scale, this.pdfPage.rotate);
 
   this.renderingState = RenderingStates.INITIAL;
   this.resume = null;
@@ -1200,6 +1232,8 @@ var PageView = function pageView(container, pdfPage, id, scale,
   var div = this.el = document.createElement('div');
   div.id = 'pageContainer' + this.id;
   div.className = 'page';
+  div.style.width = this.viewport.width + 'px';
+  div.style.height = this.viewport.height + 'px';
 
   container.appendChild(anchor);
   container.appendChild(div);
@@ -1209,12 +1243,18 @@ var PageView = function pageView(container, pdfPage, id, scale,
     this.pdfPage.destroy();
   };
 
-  this.update = function pageViewUpdate(scale) {
+  this.update = function pageViewUpdate(scale, rotation) {
     this.renderingState = RenderingStates.INITIAL;
     this.resume = null;
 
+    if (typeof rotation !== 'undefined') {
+      this.rotation = rotation;
+    }
+
     this.scale = scale || this.scale;
-    var viewport = this.pdfPage.getViewport(this.scale);
+
+    var totalRotation = (this.rotation + this.pdfPage.rotate) % 360;
+    var viewport = this.pdfPage.getViewport(this.scale, totalRotation);
 
     this.viewport = viewport;
     div.style.width = viewport.width + 'px';
@@ -1545,7 +1585,9 @@ var ThumbnailView = function thumbnailView(container, pdfPage, id) {
     return false;
   };
 
-  var viewport = pdfPage.getViewport(1);
+  var rotation = 0;
+  var totalRotation = (rotation + pdfPage.rotate) % 360;
+  var viewport = pdfPage.getViewport(1, totalRotation);
   var pageWidth = this.width = viewport.width;
   var pageHeight = this.height = viewport.height;
   var pageRatio = pageWidth / pageHeight;
@@ -1560,11 +1602,40 @@ var ThumbnailView = function thumbnailView(container, pdfPage, id) {
   div.id = 'thumbnailContainer' + id;
   div.className = 'thumbnail';
 
+  var ring = document.createElement('div');
+  ring.className = 'thumbnailSelectionRing';
+  ring.style.width = canvasWidth + 'px';
+  ring.style.height = canvasHeight + 'px';
+
+  div.appendChild(ring);
   anchor.appendChild(div);
   container.appendChild(anchor);
 
   this.hasImage = false;
   this.renderingState = RenderingStates.INITIAL;
+
+  this.updateRotation = function(rot) {
+
+    rotation = rot;
+    totalRotation = (rotation + pdfPage.rotate) % 360;
+    viewport = pdfPage.getViewport(1, totalRotation);
+    pageWidth = this.width = viewport.width;
+    pageHeight = this.height = viewport.height;
+    pageRatio = pageWidth / pageHeight;
+
+    canvasHeight = canvasWidth / this.width * this.height;
+    scaleX = this.scaleX = (canvasWidth / pageWidth);
+    scaleY = this.scaleY = (canvasHeight / pageHeight);
+
+    div.removeAttribute('data-loaded');
+    ring.textContent = '';
+    ring.style.width = canvasWidth + 'px';
+    ring.style.height = canvasHeight + 'px';
+
+    this.hasImage = false;
+    this.renderingState = RenderingStates.INITIAL;
+    this.resume = null;
+  }
 
   function getPageDrawContext() {
     var canvas = document.createElement('canvas');
@@ -1579,10 +1650,7 @@ var ThumbnailView = function thumbnailView(container, pdfPage, id) {
 
     div.setAttribute('data-loaded', true);
 
-    var ring = document.createElement('div');
-    ring.className = 'thumbnailSelectionRing';
     ring.appendChild(canvas);
-    div.appendChild(ring);
 
     var ctx = canvas.getContext('2d');
     ctx.save();
@@ -1608,7 +1676,7 @@ var ThumbnailView = function thumbnailView(container, pdfPage, id) {
 
     var self = this;
     var ctx = getPageDrawContext();
-    var drawViewport = pdfPage.getViewport(scaleX);
+    var drawViewport = pdfPage.getViewport(scaleX, totalRotation);
     var renderContext = {
       canvasContext: ctx,
       viewport: drawViewport,
@@ -2016,6 +2084,15 @@ document.addEventListener('DOMContentLoaded', function webViewerLoad(evt) {
       PDFView.parseScale(this.value);
     });
 
+  document.getElementById('page_rotate_ccw').addEventListener('click',
+      function() {
+        PDFView.rotatePages(-90);
+      });
+
+  document.getElementById('page_rotate_cw').addEventListener('click',
+      function() {
+        PDFView.rotatePages(90);
+      });
 
 //#if (FIREFOX || MOZCENTRAL)
 //if (FirefoxCom.requestSync('getLoadingType') == 'passive') {
@@ -2267,6 +2344,18 @@ window.addEventListener('keydown', function keydown(evt) {
           PDFView.page++;
           handled = true;
         }
+        break;
+
+      case 82: // 'r'
+        PDFView.rotatePages(90);
+        break;
+    }
+  }
+
+  if (cmd == 4) { // shift-key
+    switch (evt.keyCode) {
+      case 82: // 'r'
+        PDFView.rotatePages(-90);
         break;
     }
   }
