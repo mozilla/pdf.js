@@ -1747,10 +1747,6 @@ var CustomStyle = (function CustomStyleClosure() {
 })();
 
 var TextLayerBuilder = function textLayerBuilder(textLayerDiv, id) {
-  var event = document.createEvent('UIEvents');
-  event.initUIEvent('textrender', false, false, window, 0);
-  event.renderingDone = id;
-  
   this.textLayerDiv = textLayerDiv;
 
   this.beginLayout = function textLayerBuilderBeginLayout() {
@@ -1775,6 +1771,9 @@ var TextLayerBuilder = function textLayerBuilder(textLayerDiv, id) {
       if (textDivs.length === 0) {
         clearInterval(renderTimer);
         renderingDone = true;
+        var event = document.createEvent('UIEvents');
+        event.initUIEvent('textrender', false, false, window, 0);
+        event.renderingDone = id;
         window.dispatchEvent(event);
         self.textLayerDiv = textLayerDiv = canvas = ctx = null;
         return;
