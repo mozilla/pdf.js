@@ -219,8 +219,9 @@ var TilingPattern = (function TilingPatternClosure() {
     var xstep = IR[5];
     var ystep = IR[6];
     var paintType = IR[7];
+    var tilingType = IR[8];
 
-    TODO('TilingType');
+    TODO('TilingType: ' + tilingType);
 
     this.curMatrix = ctx.mozCurrentTransform;
     this.invMatrix = ctx.mozCurrentTransformInverse;
@@ -293,9 +294,11 @@ var TilingPattern = (function TilingPatternClosure() {
     var xstep = dict.get('XStep');
     var ystep = dict.get('YStep');
     var paintType = dict.get('PaintType');
+    var tilingType = dict.get('TilingType');
 
     return [
-      'TilingPattern', args, operatorList, matrix, bbox, xstep, ystep, paintType
+      'TilingPattern', args, operatorList, matrix, bbox, xstep, ystep,
+      paintType, tilingType
     ];
   };
 
