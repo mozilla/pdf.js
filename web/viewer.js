@@ -2295,6 +2295,7 @@ window.addEventListener('keydown', function keydown(evt) {
         PDFView.zoomIn();
         handled = true;
         break;
+      case 173: // FF/Mac '-'
       case 109: // FF '-'
       case 189: // Chrome '-'
         PDFView.zoomOut();
