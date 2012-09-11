@@ -1847,6 +1847,8 @@ var TextLayerBuilder = function textLayerBuilder(textLayerDiv) {
     this.textLayerQueue = [];
   };
 
+  this.endLayout = function textLayerBuilderEndLayout() { };
+
   this.renderLayer = function textLayerBuilderRenderLayer() {
     var self = this;
     var textDivs = this.textDivs;
@@ -1878,7 +1880,7 @@ var TextLayerBuilder = function textLayerBuilder(textLayerDiv) {
     textLayerDiv.appendChild(textLayerFrag);
   };
 
-  this.endLayout = function textLayerBuilderEndLayout() {
+  this.setupRenderLayoutTimer = function textLayerSetupRenderLayoutTimer() {
     // Schedule renderLayout() if user has been scrolling, otherwise
     // run it right away
     var kRenderDelay = 200; // in ms
@@ -1891,10 +1893,10 @@ var TextLayerBuilder = function textLayerBuilder(textLayerDiv) {
       if (this.renderTimer)
         clearTimeout(this.renderTimer);
       this.renderTimer = setTimeout(function() {
-        self.endLayout();
+        self.setupRenderLayoutTimer();
       }, kRenderDelay);
     }
-  }; // endLayout
+  };
 
   this.appendText = function textLayerBuilderAppendText(text,
                                                         fontName, fontSize) {
@@ -1917,6 +1919,14 @@ var TextLayerBuilder = function textLayerBuilder(textLayerDiv) {
 
   this.setTextContent = function textLayerBuilderSetTextContent(textContent) {
     // When calling this function, we assume rendering the textDivs has finished
+
+    var textDivs = this.textDivs;
+
+    for (var i = 0; i < textContent.length; i++) {
+      textDivs[i].textContent = textContent[i];
+    }
+
+    this.setupRenderLayoutTimer();
   };
 };
 
