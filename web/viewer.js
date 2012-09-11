@@ -1043,7 +1043,7 @@ var PDFView = {
     function extractPageText(pageIndex) {
       self.pages[pageIndex].pdfPage.getTextContent().then(
         function textContentResolved(textContent) {
-          self.pageText[pageIndex] = textContent.text;
+          self.pageText[pageIndex] = textContent.join('');
           self.search();
           if ((pageIndex + 1) < self.pages.length)
             extractPageText(pageIndex + 1);
