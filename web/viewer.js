@@ -1911,9 +1911,8 @@ var TextLayerBuilder = function textLayerBuilder(textLayerDiv) {
     textDiv.style.left = text.geom.x + 'px';
     textDiv.style.top = (text.geom.y - fontHeight) + 'px';
 
-    // The `text.direction` is added inside the PDFJS.bidi function.
-    // textDiv.textContent = PDFJS.bidi(text, -1);
-    // textDiv.dir = text.direction;
+    // The content of the div is set in the `setTextContent` function.
+
     this.textDivs.push(textDiv);
   };
 
@@ -1923,7 +1922,11 @@ var TextLayerBuilder = function textLayerBuilder(textLayerDiv) {
     var textDivs = this.textDivs;
 
     for (var i = 0; i < textContent.length; i++) {
-      textDivs[i].textContent = textContent[i];
+      var textDiv = textDivs[i];
+      var bidiText = PDFJS.bidi(textContent[i], -1);
+
+      textDiv.textContent = bidiText.content;
+      textDiv.dir = bidiText.direction;
     }
 
     this.setupRenderLayoutTimer();
