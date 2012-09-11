@@ -208,6 +208,67 @@ var Settings = (function SettingsClosure() {
 var cache = new Cache(kCacheSize);
 var currentPageNumber = 1;
 
+var PDFSearchBar = {
+  opened: false,
+
+  searchButton: null,
+  searchBar: null,
+
+  initialize: function() {
+    this.searchButton = document.getElementById('viewSearch');
+    this.searchBar = document.getElementById('searchbar'); 
+
+    this.searchButton.addEventListener('click',
+    function() {
+      PDFSearchBar.toggle();
+    });
+
+    document.getElementById('searchPrevious').addEventListener('click', 
+    function() {
+
+    });
+
+    document.getElementById('searchNext').addEventListener('click', 
+    function() {
+
+    });
+
+    document.getElementById('searchHighlightAll').addEventListener('click', 
+    function() {
+
+    });
+    
+    document.getElementById('searchMatchCase').addEventListener('click', 
+    function() {
+
+    });
+  },
+
+  open: function() {
+    if (this.opened) return;
+
+    this.opened = true;
+    this.searchButton.classList.add('toggled');
+    this.searchBar.classList.remove('hidden');
+  },
+
+  close: function() {
+    if (!this.opened) return;
+
+    this.opened = false;
+    this.searchButton.classList.remove('toggled');
+    this.searchBar.classList.add('hidden');
+  },
+
+  toggle: function() {
+    if (this.opened) {
+      this.close();
+    } else {
+      this.open();
+    }
+  }
+};
+
 var PDFView = {
   pages: [],
   thumbnails: [],
