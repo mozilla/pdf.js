@@ -255,21 +255,19 @@ target.bundle = function() {
 target.pagesrepo = function() {
   cd(ROOT_DIR);
   echo();
-  echo('### Creating fresh clone of gh-pages');
+  echo('### Creating a fresh git repo for gh-pages');
 
-  if (!test('-d', BUILD_DIR))
-    mkdir(BUILD_DIR);
+  if (test('-d', GH_PAGES_DIR))
+    rm('-rf', GH_PAGES_DIR);
 
-  if (!test('-d', GH_PAGES_DIR)) {
-    echo();
-    echo('Cloning project repo...');
-    echo('(This operation can take a while, depending on network conditions)');
-    exec('git clone -b gh-pages --depth=1 ' + REPO + ' ' + GH_PAGES_DIR,
-      {silent: true});
-    echo('Done.');
-  }
+  mkdir('-p', GH_PAGES_DIR);
+  var oldDir = pwd();
+  cd(GH_PAGES_DIR);
+  exec('git init');
+  exec('git remote add origin ' + REPO);
+  exec('git checkout --orphan gh-pages');
+  cd(oldDir);
 
-  rm('-rf', GH_PAGES_DIR + '/*');
   mkdir('-p', GH_PAGES_DIR + '/web');
   mkdir('-p', GH_PAGES_DIR + '/web/images');
   mkdir('-p', GH_PAGES_DIR + BUILD_DIR);
