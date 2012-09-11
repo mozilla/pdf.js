@@ -108,9 +108,20 @@ limitations under the License.
       </div>  <!-- sidebarContainer -->
 
       <div id="mainContainer">
+        <div class="findbar hidden" id="findbar">
+          <label for="findInput">Find: </label>
+          <input id="findInput" type="search">
+          <button id="findPrevious">&lt;</button>
+          <button id="findNext">&gt;</button>
+          <input type="checkbox" id="findHighlightAll">
+          <label for="findHighlightAll">Highlight all</label>
+          <input type="checkbox" id="findMatchCase">
+          <label for="findMatchCase">Match case</label>
+          <span id="findMsgWrap" class="hidden">Reached end of page, continued from top</span>
+          <span id="findMsgNotFound" class="hidden">Phrase not found</span>
+        </div>
         <div class="toolbar">
           <div id="toolbarContainer">
-
             <div id="toolbarViewer">
               <div id="toolbarViewerLeft">
                 <button id="sidebarToggle" class="toolbarButton" title="Toggle Sidebar" tabindex="4" data-l10n-id="toggle_slider">
