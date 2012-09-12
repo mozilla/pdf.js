@@ -211,53 +211,69 @@ var currentPageNumber = 1;
 var PDFSearchBar = {
   opened: false,
 
-  searchButton: null,
-  searchBar: null,
+  bar: null,
+  toggleButton: null,
+  findField: null,
 
   initialize: function() {
-    this.searchButton = document.getElementById('viewSearch');
-    this.searchBar = document.getElementById('searchbar'); 
+    this.bar = document.getElementById('searchbar');
+    this.toggleButton = document.getElementById('viewSearch');
+    this.findField = document.getElementById('searchInput');
+    this.highlightAll = document.getElementById('searchHighlightAll');
+    this.caseSensitive = document.getElementById('searchMatchCase');
 
-    this.searchButton.addEventListener('click',
+    this.toggleButton.addEventListener('click',
     function() {
       PDFSearchBar.toggle();
     });
 
-    document.getElementById('searchPrevious').addEventListener('click', 
+    var self = this;
+    document.getElementById('searchPrevious').addEventListener('click',
     function() {
-
+      self.displatchEvent('again', true);
     });
 
-    document.getElementById('searchNext').addEventListener('click', 
+    document.getElementById('searchNext').addEventListener('click',
     function() {
-
+      self.displatchEvent('again', false);
     });
 
-    document.getElementById('searchHighlightAll').addEventListener('click', 
+    this.highlightAll.addEventListener('click',
     function() {
-
+      self.displatchEvent('highlightallchange');
     });
-    
-    document.getElementById('searchMatchCase').addEventListener('click', 
+
+    this.caseSensitive.addEventListener('click',
     function() {
-
+      self.displatchEvent('casesensitivitychange');
     });
+  },
+
+  displatchEvent: function(aType, aFindPrevious) {
+    var event = document.createEvent("CustomEvent");
+    event.initCustomEvent("find" + aType, true, true, {
+      query: this.findField.value,
+      caseSensitive: this.caseSensitive.checked,
+      highlightAll:  this.highlightAll.checked,
+      findPrevious: aFindPrevious
+    });
+    return window.dispatchEvent(event);
   },
 
   open: function() {
     if (this.opened) return;
 
     this.opened = true;
-    this.searchButton.classList.add('toggled');
-    this.searchBar.classList.remove('hidden');
+    this.toggleButton.classList.add('toggled');
+    this.bar.classList.remove('hidden');
   },
 
   close: function() {
     if (!this.opened) return;
 
     this.opened = false;
-    this.searchButton.classList.remove('toggled');
-    this.searchBar.classList.add('hidden');
+    this.toggleButton.classList.remove('toggled');
+    this.bar.classList.add('hidden');
   },
 
   toggle: function() {
