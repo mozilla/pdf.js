@@ -1867,9 +1867,9 @@ var TextLayerBuilder = function textLayerBuilder(textLayerDiv) {
   this.endLayout = function textLayerBuilderEndLayout() {
     // Schedule renderLayout() if user has been scrolling, otherwise
     // run it right away
-    var renderDelay = 200; // in ms
+    var kRenderDelay = 200; // in ms
     var self = this;
-    if (Date.now() - PDFView.lastScroll > renderDelay) {
+    if (Date.now() - PDFView.lastScroll > kRenderDelay) {
       // Render right away
       this.renderLayer();
     } else {
@@ -1878,7 +1878,7 @@ var TextLayerBuilder = function textLayerBuilder(textLayerDiv) {
         clearTimeout(this.renderTimer);
       this.renderTimer = setTimeout(function() {
         self.endLayout();
-      }, renderDelay);
+      }, kRenderDelay);
     }
   }; // endLayout
 
