@@ -11,6 +11,12 @@
        "rounds": 2,
        "type": "fbf"
     },
+    {  "id": "tracemonkey-text",
+       "file": "pdfs/tracemonkey.pdf",
+       "md5": "9a192d8b1a7dc652a19835f6f08098bd",
+       "rounds": 1,
+       "type": "text"
+    },
     {  "id": "html5-canvas-cheat-sheet-load",
        "file": "pdfs/canvas.pdf",
        "md5": "59510028561daf62e00bf9f6f066b033",
@@ -88,6 +94,12 @@
        "md5": "b7e18bf7a3d6a9c82aefa12d721072fc",
        "rounds": 1,
        "type": "eq"
+    },
+    {  "id": "thuluthfont-text",
+       "file": "pdfs/ThuluthFeatures.pdf",
+       "md5": "b7e18bf7a3d6a9c82aefa12d721072fc",
+       "rounds": 1,
+       "type": "text"
     },
     {  "id": "freeculture",
        "file": "pdfs/freeculture.pdf",
