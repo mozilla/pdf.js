@@ -1926,15 +1926,17 @@ var TextLayerBuilder = function textLayerBuilder(textLayerDiv) {
 
     var textDivs = this.textDivs;
 
+    console.log(textContent);
+
     for (var i = 0; i < textContent.length; i++) {
       var textDiv = textDivs[i];
       var bidiText = PDFJS.bidi(textContent[i], -1);
 
-      console.log("divL #%d: text=%s, bidi=%s, dir=%s", i, textContent[i], textDiv.textContent, textDiv.dir);
+      // console.log("divL #%d: text=%s, bidi=%s, dir=%s", i, textContent[i], textDiv.textContent, textDiv.dir);
 
       textDiv.textContent = bidiText.content;
       textDiv.dir = bidiText.direction;
-      console.log("divC #%d: text=%s, bidi=%s, dir=%s", i, textContent[i], bidiText.content, bidiText.direction);
+      // console.log("divC #%d: text=%s, bidi=%s, dir=%s", i, textContent[i], bidiText.content, bidiText.direction);
     }
 
     this.setupRenderLayoutTimer();
