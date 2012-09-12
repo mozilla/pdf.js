@@ -444,7 +444,7 @@ var bidi = PDFJS.bidi = (function bidiClosure() {
         result += ch;
     }
 
-    return new bidiResult(str, direction);
+    return new bidiResult(result, direction);
   }
 
   return bidi;
