@@ -541,12 +541,17 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                 if (typeof items[j] === 'string') {
                   chunk += fontCharsToUnicode(items[j], font);
                 } else if (items[j] < 0) {
+                  // making all negative offsets a space - better to have
+                  // a space in incorrect place than not have them at all
                   chunk += ' ';
-                } else if (items[j] < 0 && font.spacedWidth > 0) {
-                  var numFakeSpaces = Math.round(-e / font.spacedWidth);
-                  if (numFakeSpaces > 0) {
-                    chunk += ' ';
-                  }
+                // This is a better way to detect spacing in the future.
+                // However, for now let's keep it simple (also, font.spacedWidth)
+                // is not available.
+                // } else if (items[j] < 0 && font.spacedWidth > 0) {
+                //  var numFakeSpaces = Math.round(-e / font.spacedWidth);
+                //  if (numFakeSpaces > 0) {
+                //    chunk += ' ';
+                //  }
                 }
               }
               break;
