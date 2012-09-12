@@ -1912,8 +1912,13 @@ var TextLayerBuilder = function textLayerBuilder(textLayerDiv) {
     textDiv.style.top = (text.geom.y - fontHeight) + 'px';
 
     // The content of the div is set in the `setTextContent` function.
+    // For debug reasons, do the bidi thing here to compare it later once the
+    // text from the getTextContent function comes in.
+    var bidiText = PDFJS.bidi(text.str, -1);
+    textDiv.textContent = bidiText.content;
+    textDiv.dir = bidiText.direction;
 
-    this.textDivs.push(textDiv);
+    var idx = this.textDivs.push(textDiv) - 1;
   };
 
   this.setTextContent = function textLayerBuilderSetTextContent(textContent) {
@@ -1925,8 +1930,11 @@ var TextLayerBuilder = function textLayerBuilder(textLayerDiv) {
       var textDiv = textDivs[i];
       var bidiText = PDFJS.bidi(textContent[i], -1);
 
+      console.log("divL #%d: text=%s, bidi=%s, dir=%s", i, textContent[i], textDiv.textContent, textDiv.dir);
+
       textDiv.textContent = bidiText.content;
       textDiv.dir = bidiText.direction;
+      console.log("divC #%d: text=%s, bidi=%s, dir=%s", i, textContent[i], bidiText.content, bidiText.direction);
     }
 
     this.setupRenderLayoutTimer();
