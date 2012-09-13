@@ -104,11 +104,18 @@ target.generic = function() {
 target.web = function() {
   target.generic();
   target.extension();
-  target.pagesrepo();
 
-  cd(ROOT_DIR);
   echo();
   echo('### Creating web site');
+
+  if (test('-d', GH_PAGES_DIR))
+    rm('-rf', GH_PAGES_DIR);
+
+  mkdir('-p', GH_PAGES_DIR + '/web');
+  mkdir('-p', GH_PAGES_DIR + '/web/images');
+  mkdir('-p', GH_PAGES_DIR + BUILD_DIR);
+  mkdir('-p', GH_PAGES_DIR + EXTENSION_SRC_DIR + '/firefox');
+  mkdir('-p', GH_PAGES_DIR + EXTENSION_SRC_DIR + '/chrome');
 
   cp('-R', GENERIC_DIR + '/*', GH_PAGES_DIR);
   cp(FIREFOX_BUILD_DIR + '/*.xpi', FIREFOX_BUILD_DIR + '/*.rdf',
@@ -118,12 +125,14 @@ target.web = function() {
   cp('web/index.html.template', GH_PAGES_DIR + '/index.html');
 
   cd(GH_PAGES_DIR);
+  exec('git init');
+  exec('git remote add origin ' + REPO);
   exec('git add -A');
+  exec('git commit -am "gh-pages site created via make.js script"');
+  exec('git branch -m gh-pages');
 
   echo();
   echo('Website built in ' + GH_PAGES_DIR);
-  echo('Don\'t forget to cd into ' + GH_PAGES_DIR +
-       ' and issue \'git commit\' to push changes.');
 };
 
 //
@@ -244,38 +253,6 @@ target.bundle = function() {
                          {BUNDLE: bundle, BUNDLE_VERSION: bundleVersion});
 };
 
-
-//
-// make pagesrepo
-//
-// This target clones the gh-pages repo into the build directory. It deletes
-// the current contents of the repo, since we overwrite everything with data
-// from the master repo. The 'make web' target then uses 'git add -A' to track
-// additions, modifications, moves, and deletions.
-target.pagesrepo = function() {
-  cd(ROOT_DIR);
-  echo();
-  echo('### Creating fresh clone of gh-pages');
-
-  if (!test('-d', BUILD_DIR))
-    mkdir(BUILD_DIR);
-
-  if (!test('-d', GH_PAGES_DIR)) {
-    echo();
-    echo('Cloning project repo...');
-    echo('(This operation can take a while, depending on network conditions)');
-    exec('git clone -b gh-pages --depth=1 ' + REPO + ' ' + GH_PAGES_DIR,
-      {silent: true});
-    echo('Done.');
-  }
-
-  rm('-rf', GH_PAGES_DIR + '/*');
-  mkdir('-p', GH_PAGES_DIR + '/web');
-  mkdir('-p', GH_PAGES_DIR + '/web/images');
-  mkdir('-p', GH_PAGES_DIR + BUILD_DIR);
-  mkdir('-p', GH_PAGES_DIR + EXTENSION_SRC_DIR + '/firefox');
-  mkdir('-p', GH_PAGES_DIR + EXTENSION_SRC_DIR + '/chrome');
-};
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////

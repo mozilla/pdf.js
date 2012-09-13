@@ -171,31 +171,30 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
 
         ++self.objIdCounter;
         if (!font.loadedName) {
-          font.translated = self.translateFont(font, xref, resources,
-                                               dependency);
-          if (font.translated) {
+          var translated = self.translateFont(font, xref, resources,
+                                              dependency);
+          if (translated) {
             // keep track of each font we translated so the caller can
             // load them asynchronously before calling display on a page
             loadedName = 'font_' + uniquePrefix + self.objIdCounter;
-            font.translated.properties.loadedName = loadedName;
+            translated.properties.loadedName = loadedName;
             font.loadedName = loadedName;
+            font.translated = translated;
 
-            var translated = font.translated;
-            // Convert the file to an ArrayBuffer which will be turned back into
-            // a Stream in the main thread.
-            if (translated.file)
-              translated.file = translated.file.getBytes();
-            if (translated.properties.file) {
-              translated.properties.file =
-                  translated.properties.file.getBytes();
+            var data;
+            try {
+              var fontObj = new Font(translated.name,
+                                     translated.file,
+                                     translated.properties);
+              data = fontObj.export();
+            } catch (e) {
+              data = { error: e };
             }
 
             handler.send('obj', [
                 loadedName,
                 'Font',
-                translated.name,
-                translated.file,
-                translated.properties
+                data
             ]);
           }
         }
