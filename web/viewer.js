@@ -1938,6 +1938,9 @@ document.addEventListener('DOMContentLoaded', function webViewerLoad(evt) {
   mozL10n.language.code = locale;
 //#endif
 
+  if (isTouchScreen())
+    PDFJS.disableTextLayer = true;
+
   if ('textLayer' in hashParams) {
     switch (hashParams['textLayer']) {
       case 'off':
@@ -1946,6 +1949,7 @@ document.addEventListener('DOMContentLoaded', function webViewerLoad(evt) {
       case 'visible':
       case 'shadow':
       case 'hover':
+        PDFJS.disableTextLayer = false;
         var viewer = document.getElementById('viewer');
         viewer.classList.add('textLayer-' + hashParams['textLayer']);
         break;
