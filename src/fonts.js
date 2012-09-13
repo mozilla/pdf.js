@@ -1526,6 +1526,15 @@ function fontCharsToUnicode(charCodes, fontProperties) {
  */
 var Font = (function FontClosure() {
   function Font(name, file, properties) {
+    if (arguments.length === 1) {
+      // importing translated data
+      var data = arguments[0];
+      for (var i in data) {
+        this[i] = data[i];
+      }
+      return;
+    }
+
     this.name = name;
     this.coded = properties.coded;
     this.charProcOperatorList = properties.charProcOperatorList;
@@ -2035,6 +2044,15 @@ var Font = (function FontClosure() {
     font: null,
     mimetype: null,
     encoding: null,
+
+    export: function Font_export() {
+      var data = {};
+      for (var i in this) {
+        if (this.hasOwnProperty(i))
+          data[i] = this[i];
+      }
+      return data;
+    },
 
     checkAndRepair: function Font_checkAndRepair(name, font, properties) {
       function readTableEntry(file) {

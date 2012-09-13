@@ -575,24 +575,15 @@ var WorkerTransport = (function WorkerTransportClosure() {
             this.objs.resolve(id, imageData);
             break;
           case 'Font':
-            var name = data[2];
-            var file = data[3];
-            var properties = data[4];
-
-            if (file) {
-              // Rewrap the ArrayBuffer in a stream.
-              var fontFileDict = new Dict();
-              file = new Stream(file, 0, file.length, fontFileDict);
-            }
+            var exportedData = data[2];
 
             // At this point, only the font object is created but the font is
             // not yet attached to the DOM. This is done in `FontLoader.bind`.
             var font;
-            try {
-              font = new Font(name, file, properties);
-            } catch (e) {
-              font = new ErrorFont(e);
-            }
+            if ('error' in exportedData)
+              font = new ErrorFont(exportedData.error);
+            else
+              font = new Font(exportedData);
             this.objs.resolve(id, font);
             break;
           default:
