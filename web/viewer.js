@@ -243,6 +243,9 @@ var PDFFindController = {
     var query = this.state.query;
     var queryLen = query.length;
 
+    if (queryLen === 0)
+      return [];
+
     var matches = [];
 
     var matchIdx = -queryLen;
