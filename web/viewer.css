@@ -245,7 +245,7 @@ html[dir='rtl'] #sidebarContent {
               0 1px 1px hsla(0,0%,0%,.1);
 }
 
-#toolbarViewer {
+#toolbarViewer, .findbar {
   position: relative;
   height: 32px;
   background-image: url(images/texture.png),
@@ -266,7 +266,7 @@ html[dir='rtl'] #sidebarContent {
               0 1px 1px hsla(0,0%,0%,.1);
 }
 
-.searchbar {
+.findbar {
   top: 40px;
   left: 40px;
   position: absolute;

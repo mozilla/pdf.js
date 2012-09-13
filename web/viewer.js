@@ -216,13 +216,13 @@ var PDFFindBar = {
   FIND_WRAPPED: 2,  // Successful find, but wrapped around
 
   initialize: function() {
-    this.bar = document.getElementById('searchbar');
+    this.bar = document.getElementById('findbar');
     this.toggleButton = document.getElementById('viewSearch');
-    this.findField = document.getElementById('searchInput');
-    this.highlightAll = document.getElementById('searchHighlightAll');
-    this.caseSensitive = document.getElementById('searchMatchCase');
-    this.searchMsgWrap = document.getElementById('searchMsgWrap');
-    this.searchMsgNotFound = document.getElementById('searchMsgNotFound');
+    this.findField = document.getElementById('findInput');
+    this.highlightAll = document.getElementById('findHighlightAll');
+    this.caseSensitive = document.getElementById('findMatchCase');
+    this.findMsgWrap = document.getElementById('findMsgWrap');
+    this.findMsgNotFound = document.getElementById('findMsgNotFound');
 
     var self = this;
     this.toggleButton.addEventListener('click',
@@ -234,12 +234,12 @@ var PDFFindBar = {
       self.dispatchEvent('');
     });
 
-    document.getElementById('searchPrevious').addEventListener('click',
+    document.getElementById('findPrevious').addEventListener('click',
     function() {
       self.dispatchEvent('again', true);
     });
 
-    document.getElementById('searchNext').addEventListener('click',
+    document.getElementById('findNext').addEventListener('click',
     function() {
       self.dispatchEvent('again', false);
     });
@@ -285,16 +285,16 @@ var PDFFindBar = {
 
     if (notFound) {
       this.findField.classList.add('notFound');
-      this.searchMsgNotFound.classList.remove('hidden');
+      this.findMsgNotFound.classList.remove('hidden');
     } else {
       this.findField.classList.remove('notFound');
-      this.searchMsgNotFound.classList.add('hidden');
+      this.findMsgNotFound.classList.add('hidden');
     }
 
     if (wrapped) {
-      this.searchMsgWrap.classList.remove('hidden');
+      this.findMsgWrap.classList.remove('hidden');
     } else {
-      this.searchMsgWrap.classList.add('hidden');
+      this.findMsgWrap.classList.add('hidden');
     }
   },
 
