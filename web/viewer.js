@@ -75,6 +75,13 @@ var Cache = function cacheCache(size) {
   };
 };
 
+// Detects if browser supports touch events, which can be a proxy for mobile
+function isTouchScreen() {
+  if (('ontouchstart' in window) || window.DocumentTouch && document instanceof DocumentTouch)
+    return true;
+  return false;
+}
+
 var ProgressBar = (function ProgressBarClosure() {
 
   function clamp(v, min, max) {
