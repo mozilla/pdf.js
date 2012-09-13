@@ -222,34 +222,38 @@ var PDFSearchBar = {
     this.highlightAll = document.getElementById('searchHighlightAll');
     this.caseSensitive = document.getElementById('searchMatchCase');
 
+    var self = this;
     this.toggleButton.addEventListener('click',
     function() {
-      PDFSearchBar.toggle();
+      self.toggle();
     });
 
-    var self = this;
+    this.findField.addEventListener('input', function() {
+      self.dispatchEvent('');
+    });
+
     document.getElementById('searchPrevious').addEventListener('click',
     function() {
-      self.displatchEvent('again', true);
+      self.dispatchEvent('again', true);
     });
 
     document.getElementById('searchNext').addEventListener('click',
     function() {
-      self.displatchEvent('again', false);
+      self.dispatchEvent('again', false);
     });
 
     this.highlightAll.addEventListener('click',
     function() {
-      self.displatchEvent('highlightallchange');
+      self.dispatchEvent('highlightallchange');
     });
 
     this.caseSensitive.addEventListener('click',
     function() {
-      self.displatchEvent('casesensitivitychange');
+      self.dispatchEvent('casesensitivitychange');
     });
   },
 
-  displatchEvent: function(aType, aFindPrevious) {
+  dispatchEvent: function(aType, aFindPrevious) {
     var event = document.createEvent("CustomEvent");
     event.initCustomEvent("find" + aType, true, true, {
       query: this.findField.value,
