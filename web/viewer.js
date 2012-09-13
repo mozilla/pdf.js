@@ -1945,7 +1945,7 @@ document.addEventListener('DOMContentLoaded', function webViewerLoad(evt) {
   mozL10n.language.code = locale;
 //#endif
 
-  if (isTouchScreen())
+  if (isTouchScreen() && window.screen.width < 800)
     PDFJS.disableTextLayer = true;
 
   if ('textLayer' in hashParams) {
