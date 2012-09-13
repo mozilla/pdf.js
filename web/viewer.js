@@ -241,13 +241,13 @@ var PDFFindController = {
     // TODO: Handle the other search options here as well.
 
     var query = this.state.query;
-    var pageContentLower = pageContent.toLowerCase();
+    var queryLen = query.length;
 
     var matches = [];
 
-    var matchIdx = -query;
+    var matchIdx = -queryLen;
     while (true) {
-      matchIdx = pageContentLower.indexOf(query, matchIdx + termsLen);
+      matchIdx = pageContent.indexOf(query, matchIdx + queryLen);
       if (matchIdx === -1) {
         break;
       }
@@ -270,7 +270,7 @@ var PDFFindController = {
           // Ensure there is a empty array of matches.
           self.pageMatches.push([]);
 
-          if ((pageIndex + 1) < self.pages.length)
+          if ((pageIndex + 1) < PDFView.pages.length)
             extractPageText(pageIndex + 1);
         }
       )
@@ -279,7 +279,7 @@ var PDFFindController = {
   },
 
   handelEvent: function(e) {
-    this.state = e.details;
+    this.state = e.detail;
 
     // Only trigger the find action after 250ms of silence.
     clearTimeout(this.findTimeout);
@@ -293,7 +293,7 @@ var PDFFindController = {
 
     var pages = PDFView.pages;
     var pageContents = this.pageContents;
-    var pageMatches = this.pageMachtes;
+    var pageMatches = this.pageMatches;
 
     for (var i = 0; i < pageContents.length; i++) {
       pageMatches[i] = this.calcFindMatch(pageContents[i]);
@@ -2183,15 +2183,19 @@ var TextLayerBuilder = function textLayerBuilder(textLayerDiv, pageIdx) {
     var ret = [];
 
     // Loop over all the matches.
-    for (var m = 0; m < matches.lenght; m++) {
+    for (var m = 0; m < matches.length; m++) {
       var matchIdx = matches[m];
       // Loop over the divs.
-      while (i !== end && matchIdx >= (iIndex += textContent[i].lenght)) {
+      while (i !== end && matchIdx >= (iIndex + textContent[i].length)) {
+        iIndex += textContent[i].length;
         i++;
-        if (i == mapping.length) {
-          console.error("Could not find matching mapping");
-        }
       }
+
+      // TODO: Do proper handling here if something goes wrong.
+      if (i == textContent.length) {
+        console.error("Could not find matching mapping");
+      }
+
       ret.push({
         divIdx: i,
         offset: matchIdx - iIndex
@@ -2209,9 +2213,10 @@ var TextLayerBuilder = function textLayerBuilder(textLayerDiv, pageIdx) {
     // div.scrollIntoView();
     // document.querySelector('div#viewerContainer').scrollTop -= 30;
 
+    var div = textDivs[match.divIdx];
     var text = div.textContent;
-    var offset = self.highlightedOffset;
-    var endIdx = offset + PDFView.searchTerms.length;
+    var offset = match.offset;
+    var endIdx = offset + PDFFindController.state.query.length;
 
     var pre = text.substring(0, offset);
     var high = text.substring(offset, endIdx);
@@ -2249,7 +2254,7 @@ var TextLayerBuilder = function textLayerBuilder(textLayerDiv, pageIdx) {
     // Convert the matches on the page controller into the match format used
     // for the textLayer.
     this.matches = matches =
-      this.convertMatches(PDFFindController.pageMatches[this.pageIdx]);
+      this.convertMatches(PDFFindController.pageMatches[this.pageIdx] || []);
 
     // TODO: Make highlighting over two divs possible
     // TODO: Make highlighting inside of the same div possible
