@@ -227,6 +227,8 @@ var PDFView = {
   isFullscreen: false,
   previousScale: null,
   pageRotation: 0,
+  mouseScrollTimeStamp: 0,
+  mouseScrollDelta: 0,
   lastScroll: 0,
 
   // called once when the document is loaded
@@ -1187,6 +1189,7 @@ var PDFView = {
     this.isFullscreen = false;
     this.parseScale(this.previousScale);
     this.page = this.page;
+    this.clearMouseScrollState();
   },
 
   rotatePages: function pdfViewPageRotation(delta) {
@@ -1213,6 +1216,71 @@ var PDFView = {
     setTimeout(function() {
       currentPage.scrollIntoView();
     }, 0);
+  },
+
+  /**
+   * This function flips the page in presentation mode if the user scrolls up
+   * or down with large enough motion and prevents page flipping too often.
+   *
+   * @this {PDFView}
+   * @param {number} mouseScrollDelta The delta value from the mouse event.
+   */
+  mouseScroll: function pdfViewMouseScroll(mouseScrollDelta) {
+    var MOUSE_SCROLL_COOLDOWN_TIME = 50;
+
+    var currentTime = (new Date()).getTime();
+    var storedTime = this.mouseScrollTimeStamp;
+
+    // In case one page has already been flipped there is a cooldown time
+    // which has to expire before next page can be scrolled on to.
+    if (currentTime > storedTime &&
+        currentTime - storedTime < MOUSE_SCROLL_COOLDOWN_TIME)
+      return;
+
+    // In case the user decides to scroll to the opposite direction than before
+    // clear the accumulated delta.
+    if ((this.mouseScrollDelta > 0 && mouseScrollDelta < 0) ||
+        (this.mouseScrollDelta < 0 && mouseScrollDelta > 0))
+      this.clearMouseScrollState();
+
+    this.mouseScrollDelta += mouseScrollDelta;
+
+    var PAGE_FLIP_THRESHOLD = 120;
+    if (Math.abs(this.mouseScrollDelta) >= PAGE_FLIP_THRESHOLD) {
+
+      var PageFlipDirection = {
+        UP: -1,
+        DOWN: 1
+      };
+
+      // In fullscreen mode scroll one page at a time.
+      var pageFlipDirection = (this.mouseScrollDelta > 0) ?
+                                PageFlipDirection.UP :
+                                PageFlipDirection.DOWN;
+      this.clearMouseScrollState();
+      var currentPage = this.page;
+
+      // In case we are already on the first or the last page there is no need
+      // to do anything.
+      if ((currentPage == 1 && pageFlipDirection == PageFlipDirection.UP) ||
+          (currentPage == this.pages.length &&
+           pageFlipDirection == PageFlipDirection.DOWN))
+        return;
+
+      this.page += pageFlipDirection;
+      this.mouseScrollTimeStamp = currentTime;
+    }
+  },
+
+  /**
+   * This function clears the member attributes used with mouse scrolling in
+   * presentation mode.
+   *
+   * @this {PDFView}
+   */
+  clearMouseScrollState: function pdfViewClearMouseScrollState() {
+    this.mouseScrollTimeStamp = 0;
+    this.mouseScrollDelta = 0;
   }
 };
 
@@ -2317,6 +2385,9 @@ window.addEventListener('DOMMouseScroll', function(evt) {
     var direction = (ticks > 0) ? 'zoomOut' : 'zoomIn';
     for (var i = 0, length = Math.abs(ticks); i < length; i++)
       PDFView[direction]();
+  } else if (PDFView.isFullscreen) {
+    var FIREFOX_DELTA_FACTOR = -40;
+    PDFView.mouseScroll(evt.detail * FIREFOX_DELTA_FACTOR);
   }
 }, false);
 
@@ -2407,6 +2478,7 @@ window.addEventListener('keydown', function keydown(evt) {
 
   if (handled) {
     evt.preventDefault();
+    PDFView.clearMouseScrollState();
   }
 });
 
