@@ -208,6 +208,27 @@ var Settings = (function SettingsClosure() {
 var cache = new Cache(kCacheSize);
 var currentPageNumber = 1;
 
+var PDFFindController = {
+  initialize: function() {
+    var events = [
+      'find',
+      'findagain',
+      'findhighlightallchange',
+      'findcasesensitivitychange'
+    ];
+
+    this.handelEvent = this.handelEvent.bind(this);
+
+    for (var i = 0; i < events.length; i++) {
+      window.addEventListener(events[i], this.handelEvent);
+    }
+  },
+
+  handelEvent: function(e) {
+    debugger;
+  }
+}
+
 var PDFFindBar = {
   opened: false,
 
@@ -358,6 +379,7 @@ var PDFView = {
                      this.renderHighestPriority.bind(this));
 
     PDFFindBar.initialize();
+    PDFFindController.initialize();
 
     this.initialized = true;
     container.addEventListener('scroll', function() {
@@ -2174,16 +2196,6 @@ document.addEventListener('DOMContentLoaded', function webViewerLoad(evt) {
   document.getElementById('viewOutline').addEventListener('click',
     function() {
       PDFView.switchSidebarView('outline');
-    });
-
-  document.getElementById('viewSearch').addEventListener('click',
-    function() {
-      PDFView.switchSidebarView('search');
-    });
-
-  document.getElementById('searchButton').addEventListener('click',
-    function() {
-      PDFView.search();
     });
 
   document.getElementById('previous').addEventListener('click',
