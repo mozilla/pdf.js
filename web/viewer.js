@@ -1464,7 +1464,7 @@ var PageView = function pageView(container, pdfPage, id, scale,
       textLayerDiv.className = 'textLayer';
       div.appendChild(textLayerDiv);
     }
-    var textLayer = textLayerDiv ? new TextLayerBuilder(textLayerDiv) : null;
+    var textLayer = textLayerDiv ? new TextLayerBuilder(textLayerDiv, this.id) : null;
 
     var scale = this.scale, viewport = this.viewport;
     canvas.width = viewport.width;
@@ -1815,8 +1815,9 @@ var CustomStyle = (function CustomStyleClosure() {
   return CustomStyle;
 })();
 
-var TextLayerBuilder = function textLayerBuilder(textLayerDiv) {
+var TextLayerBuilder = function textLayerBuilder(textLayerDiv, pageId) {
   this.textLayerDiv = textLayerDiv;
+  this.pageId = pageId;
 
   this.beginLayout = function textLayerBuilderBeginLayout() {
     this.textDivs = [];
@@ -1827,6 +1828,7 @@ var TextLayerBuilder = function textLayerBuilder(textLayerDiv) {
     var self = this;
     var textDivs = this.textDivs;
     var textLayerDiv = this.textLayerDiv;
+    var pageId = this.pageId;
     var renderTimer = null;
     var renderingDone = false;
     var renderInterval = 0;
@@ -1840,7 +1842,11 @@ var TextLayerBuilder = function textLayerBuilder(textLayerDiv) {
       if (textDivs.length === 0) {
         clearInterval(renderTimer);
         renderingDone = true;
-        self.textLayerDiv = textLayerDiv = canvas = ctx = null;
+        var event = document.createEvent('UIEvents');
+        event.initUIEvent('textrender', false, false, window, 0);
+        event.renderingDone = pageId;
+        window.dispatchEvent(event);
+        self.textLayerDiv = textLayerDiv = self.pageId = pageId = canvas = ctx = null;
         return;
       }
       var textDiv = textDivs.shift();
