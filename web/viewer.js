@@ -211,9 +211,9 @@ var currentPageNumber = 1;
 var PDFFindBar = {
   opened: false,
 
-  bar: null,
-  toggleButton: null,
-  findField: null,
+  FIND_FOUND: 0,    // Successful find
+  FIND_NOTFOUND: 1, // Unsuccessful find
+  FIND_WRAPPED: 2,  // Successful find, but wrapped around
 
   initialize: function() {
     this.bar = document.getElementById('searchbar');
@@ -221,6 +221,7 @@ var PDFFindBar = {
     this.findField = document.getElementById('searchInput');
     this.highlightAll = document.getElementById('searchHighlightAll');
     this.caseSensitive = document.getElementById('searchMatchCase');
+    this.messageLabel = document.getElementById('searchMessage');
 
     var self = this;
     this.toggleButton.addEventListener('click',
@@ -262,6 +263,33 @@ var PDFFindBar = {
       findPrevious: aFindPrevious
     });
     return window.dispatchEvent(event);
+  },
+
+  updateUIState: function(aState) {
+    var message = '';
+    var notFound = false;
+
+    switch (aState) {
+      case this.FIND_FOUND:
+        break;
+
+      case this.FIND_NOTFOUND:
+        message = 'Phrase not found';
+        notFound = true;
+        break;
+
+      case this.FIND_WRAPPED:
+        message = 'Reached end of page, continued from top';
+        break;
+    }
+
+    if (notFound) {
+      this.findField.classList.add('notFound');
+    } else {
+      this.findField.classList.remove('notFound');
+    }
+
+    this.messageLabel.textContent = message;
   },
 
   open: function() {
