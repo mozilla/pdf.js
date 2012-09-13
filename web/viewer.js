@@ -406,6 +406,8 @@ var PDFFindBar = {
     this.opened = true;
     this.toggleButton.classList.add('toggled');
     this.bar.classList.remove('hidden');
+    this.findField.select();
+    this.findField.focus();
   },
 
   close: function() {
@@ -2642,6 +2644,12 @@ window.addEventListener('keydown', function keydown(evt) {
   // control is selected or not.
   if (cmd == 1 || cmd == 8) { // either CTRL or META key.
     switch (evt.keyCode) {
+//#if !(FIREFOX || MOZCENTRAL)
+      case 70:
+        PDFFindBar.toggle();
+        handled = true;
+        break;
+//#endif
       case 61: // FF/Mac '='
       case 107: // FF '+' and '='
       case 187: // Chrome '+'
