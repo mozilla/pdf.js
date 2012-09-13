@@ -265,6 +265,32 @@ html[dir='rtl'] #sidebarContent {
               0 1px 0 hsla(0,0%,0%,.15),
               0 1px 1px hsla(0,0%,0%,.1);
 }
+
+.searchbar {
+  top: 40px;
+  left: 40px;
+  position: absolute;
+  z-index: 100;
+  height: 20px;
+
+  min-width: 16px;
+  padding: 3px 6px 3px 6px;
+  margin: 4px 2px 4px 0;
+  border: 1px solid transparent;
+  border-radius: 2px;
+  color: hsl(0,0%,85%);
+  font-size: 12px;
+  line-height: 14px;
+  text-align: left;
+  -webkit-user-select:none;
+  -moz-user-select:none;
+  cursor: default;
+}
+
+.notFound {
+  background-color: rgb(255, 137, 153);
+}
+
 html[dir='ltr'] #toolbarViewerLeft {
   margin-left: -1px;
 }

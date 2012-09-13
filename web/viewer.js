@@ -221,7 +221,8 @@ var PDFFindBar = {
     this.findField = document.getElementById('searchInput');
     this.highlightAll = document.getElementById('searchHighlightAll');
     this.caseSensitive = document.getElementById('searchMatchCase');
-    this.messageLabel = document.getElementById('searchMessage');
+    this.searchMsgWrap = document.getElementById('searchMsgWrap');
+    this.searchMsgNotFound = document.getElementById('searchMsgNotFound');
 
     var self = this;
     this.toggleButton.addEventListener('click',
@@ -266,30 +267,35 @@ var PDFFindBar = {
   },
 
   updateUIState: function(aState) {
-    var message = '';
     var notFound = false;
+    var wrapped = false;
 
     switch (aState) {
       case this.FIND_FOUND:
         break;
 
       case this.FIND_NOTFOUND:
-        message = 'Phrase not found';
         notFound = true;
         break;
 
       case this.FIND_WRAPPED:
-        message = 'Reached end of page, continued from top';
+        wrapped = true;
         break;
     }
 
     if (notFound) {
       this.findField.classList.add('notFound');
+      this.searchMsgNotFound.classList.remove('hidden');
     } else {
       this.findField.classList.remove('notFound');
+      this.searchMsgNotFound.classList.add('hidden');
     }
 
-    this.messageLabel.textContent = message;
+    if (wrapped) {
+      this.searchMsgWrap.classList.remove('hidden');
+    } else {
+      this.searchMsgWrap.classList.add('hidden');
+    }
   },
 
   open: function() {
