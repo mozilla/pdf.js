@@ -1453,6 +1453,13 @@ var PageView = function pageView(container, pdfPage, id, scale,
       }, 0);
   };
 
+  this.getTextContent = function pageviewGetTextContent() {
+    if (!this.textContent) {
+      this.textContent = this.pdfPage.getTextContent();
+    }
+    return this.textContent;
+  };
+
   this.draw = function pageviewDraw(callback) {
     if (this.renderingState !== RenderingStates.INITIAL)
       error('Must be in new state before drawing');
@@ -1487,22 +1494,6 @@ var PageView = function pageView(container, pdfPage, id, scale,
 
     var self = this;
     function pageViewDrawCallback(error) {
-      var visiblePages = PDFView.getVisiblePages();
-      var pageView = PDFView.getHighestPriority(visiblePages, PDFView.pages,
-                                             PDFView.pageViewScroll.down);
-
-      if (pageView === self) {
-        if (!self.textContent) {
-          self.textContent = {};
-          self.pdfPage.getTextContent().then(
-            function textContentResolved(textContent) {
-              self.textContent = textContent;
-              textLayer.setTextContent(textContent);
-            }
-          );
-        }
-      }
-
       self.renderingState = RenderingStates.FINISHED;
 
       if (self.loadingIconDiv) {
@@ -1548,6 +1539,14 @@ var PageView = function pageView(container, pdfPage, id, scale,
         pageViewDrawCallback(error);
       }
     );
+
+    if (textLayer) {
+      this.getTextContent().then(
+        function textContentResolved(textContent) {
+          textLayer.setTextContent(textContent);
+        }
+      );
+    }
 
     setupAnnotations(this.pdfPage, this.viewport);
     div.setAttribute('data-loaded', true);
@@ -1841,13 +1840,18 @@ var CustomStyle = (function CustomStyleClosure() {
 var TextLayerBuilder = function textLayerBuilder(textLayerDiv) {
   var textLayerFrag = document.createDocumentFragment();
   this.textLayerDiv = textLayerDiv;
+  this.layoutDone = false;
+  this.divContentDone = false;
 
   this.beginLayout = function textLayerBuilderBeginLayout() {
     this.textDivs = [];
     this.textLayerQueue = [];
   };
 
-  this.endLayout = function textLayerBuilderEndLayout() { };
+  this.endLayout = function textLayerBuilderEndLayout() {
+    this.layoutDone = true;
+    this.insertDivContent();
+  },
 
   this.renderLayer = function textLayerBuilderRenderLayer() {
     var self = this;
@@ -1916,9 +1920,16 @@ var TextLayerBuilder = function textLayerBuilder(textLayerDiv) {
     this.textDivs.push(textDiv);
   };
 
-  this.setTextContent = function textLayerBuilderSetTextContent(textContent) {
-    // When calling this function, we assume rendering the textDivs has finished
+  this.insertDivContent = function textLayerUpdateTextContent() {
+    // Only set the content of the divs once layout has finished, the content
+    // for the divs is available and content is not yet set on the divs.
+    if (!this.layoutDone || this.divContentDone || !this.textContent)
+      return;
+
+    this.divContentDone = true;
+
     var textDivs = this.textDivs;
+    var textContent = this.textContent;
 
     for (var i = 0; i < textContent.length; i++) {
       var textDiv = textDivs[i];
@@ -1929,6 +1940,11 @@ var TextLayerBuilder = function textLayerBuilder(textLayerDiv) {
     }
 
     this.setupRenderLayoutTimer();
+  };
+
+  this.setTextContent = function textLayerBuilderSetTextContent(textContent) {
+    this.textContent = textContent;
+    this.insertDivContent();
   };
 };
 
