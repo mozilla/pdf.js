@@ -528,13 +528,13 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           var cmd = obj.cmd;
           switch (cmd) {
             case 'Tf':
-              font = handleSetFont(args[0].name);
+              font = handleSetFont(args[0].name).translated;
               break;
             case 'TJ':
               var items = args[0];
               for (var j = 0, jj = items.length; j < jj; j++) {
                 if (typeof items[j] === 'string') {
-                  chunk += items[j];
+                  chunk += fontCharsToUnicode(items[j], font);
                 } else if (items[j] < 0) {
                   // making all negative offsets a space - better to have
                   // a space in incorrect place than not have them at all
@@ -543,17 +543,17 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
               }
               break;
             case 'Tj':
-              chunk += args[0];
+              chunk += fontCharsToUnicode(args[0], font);
               break;
             case "'":
-              chunk += args[0] + ' ';
+              chunk += fontCharsToUnicode(args[0], font) + ' ';
               break;
             case '"':
-              chunk += args[2] + ' ';
+              chunk += fontCharsToUnicode(args[2], font) + ' ';
               break;
           } // switch
           if (chunk !== '') {
-            text += fontCharsToUnicode(chunk, font.translated);
+            text += chunk;
             chunk = '';
           }
 
