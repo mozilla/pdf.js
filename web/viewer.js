@@ -209,10 +209,6 @@ var cache = new Cache(kCacheSize);
 var currentPageNumber = 1;
 
 var PDFFindController = {
-
-  matchPageIdx: -1,
-  matchOffset: -1,
-
   startedTextExtraction: false,
 
   // Stores the text for each page.
@@ -224,6 +220,8 @@ var PDFFindController = {
     pageIdx: 0,
     matchIdx: 0
   },
+
+  dirtyMatch: false,
 
   findTimeout: null,
 
@@ -288,27 +286,123 @@ var PDFFindController = {
 
   handelEvent: function(e) {
     this.state = e.detail;
+    if (e.detail.findPrevious === undefined) {
+      this.dirtyMatch = true;
+    }
 
-    // Only trigger the find action after 250ms of silence.
     clearTimeout(this.findTimeout);
-    this.findTimeout = setTimeout(this.performFind.bind(this), 250);
+    if (e.type === 'find') {
+      // Only trigger the find action after 250ms of silence.
+      this.findTimeout = setTimeout(this.performFind.bind(this), 250);
+    } else {
+      this.performFind();
+    }
+  },
+
+  updatePage: function(idx) {
+    var pages = PDFView.pages;
+
+    if (pages[idx].textLayer) {
+      pages[idx].textLayer.updateMatches();
+    }
   },
 
   performFind: function() {
     // Recalculate all the matches.
-    // TODO: Make this way more lasily (aka. efficient).
     // TODO: Make one match show up as the current match
 
     var pages = PDFView.pages;
     var pageContents = this.pageContents;
     var pageMatches = this.pageMatches;
 
-    for (var i = 0; i < pageContents.length; i++) {
-      pageMatches[i] = this.calcFindMatch(pageContents[i]);
-      if (pages[i].textLayer) {
-        pages[i].textLayer.updateMatches();
+    if (this.dirtyMatch) {
+      // Need to recalculate the matches.
+      this.dirtyMatch = false;
+
+      this.selected = {
+        pageIdx: -1,
+        matchIdx: -1
+      };
+
+      // TODO: Make this way more lasily (aka. efficient) - e.g. calculate only
+      // the matches for the current visible pages.
+      var firstMatch = true;
+      for (var i = 0; i < pageContents.length; i++) {
+        var matches = pageMatches[i] = this.calcFindMatch(pageContents[i]);
+        if (firstMatch && matches.length !== 0) {
+          firstMatch = false;
+          this.selected = {
+            pageIdx: i,
+            matchIdx: 0
+          };
+        }
+        this.updatePage(i);
+      }
+    } else {
+      // If there is NO selection, then there is no match at all -> no sense to
+      // handel previous/next action.
+      if (this.selected.pageIdx === -1)
+        return;
+
+      // Handle findAgain case.
+      var previous = this.state.findPrevious;
+      var sPageIdx = this.selected.pageIdx;
+      var sMatchIdx = this.selected.matchIdx;
+
+      if (previous) {
+        // Select previous match.
+
+        if (sMatchIdx !== 0) {
+          this.selected.matchIdx -= 1;
+        } else {
+          var len = pageMatches.length;
+          for (var i = sPageIdx - 1; i != sPageIdx; i--) {
+            if (i < 0)
+              i += len;
+
+            if (pageMatches[i].length !== 0) {
+              this.selected = {
+                pageIdx: i,
+                matchIdx: pageMatches[i].length - 1
+              };
+              break;
+            }
+          }
+          // If pageIdx stayed the same, select last match on the page.
+          if (this.selected.pageIdx === sPageIdx) {
+            this.selected.matchIdx = pageMatches[sPageIdx].length - 1;
+          }
+        }
+      } else {
+        // Select next match.
+
+        if (pageMatches[sPageIdx].length !== sMatchIdx + 1) {
+          this.selected.matchIdx += 1;
+        } else {
+          var len = pageMatches.length;
+          for (var i = sPageIdx + 1; i < len + sPageIdx; i++) {
+            if (pageMatches[i % len].length !== 0) {
+              this.selected = {
+                pageIdx: i % len,
+                matchIdx: 0
+              };
+              break;
+            }
+          }
+          // If pageIdx stayed the same, select last match on the page.
+          if (this.selected.pageIdx === sPageIdx) {
+            this.selected.matchIdx = 0;
+          }
+        }
+      }
+
+      this.updatePage(sPageIdx);
+      if (sPageIdx !== this.selected.pageIdx) {
+        this.updatePage(this.selected.pageIdx);
       }
     }
+
+
   }
 }
 
