@@ -300,10 +300,15 @@ var PDFFindController = {
   },
 
   updatePage: function(idx) {
-    var pages = PDFView.pages;
+    var page = PDFView.pages[idx];
 
-    if (pages[idx].textLayer) {
-      pages[idx].textLayer.updateMatches();
+    if (page.textLayer) {
+      page.textLayer.updateMatches();
+    } else if (this.selected.pageIdx === idx) {
+      // If the page is selected, scroll the page into view, which triggers
+      // rendering the page, which adds the textLayer. Once the textLayer is
+      // build, it will scroll onto the selected match.
+      page.scrollIntoView();
     }
   },
 
@@ -336,7 +341,7 @@ var PDFFindController = {
             matchIdx: 0
           };
         }
-        this.updatePage(i);
+        this.updatePage(i, true);
       }
     } else {
       // If there is NO selection, then there is no match at all -> no sense to
@@ -396,9 +401,9 @@ var PDFFindController = {
         }
       }
 
-      this.updatePage(sPageIdx);
+      this.updatePage(sPageIdx, sPageIdx === this.selected.pageIdx);
       if (sPageIdx !== this.selected.pageIdx) {
-        this.updatePage(this.selected.pageIdx);
+        this.updatePage(this.selected.pageIdx, true);
       }
     }
 
@@ -2336,6 +2341,9 @@ var TextLayerBuilder = function textLayerBuilder(textLayerDiv, pageIdx) {
 
     highDom.textContent = high;
     highDom.className = isSelected ? 'highlight selected' : 'highlight';
+    if (isSelected) {
+      scrollIntoView(div, {top: -50});
+    }
 
     // XXX Better do proper removal?
     div.innerHTML = '';
