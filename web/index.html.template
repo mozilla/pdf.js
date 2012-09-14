@@ -8,7 +8,8 @@
   <style type="text/css">
     body {
       margin-top: 1.0em;
-      background-color: #482a30;
+      background-color: rgb(64, 64, 64);
+      background-image: url(images/texture.png);
       font-family: Helvetica, Arial, FreeSans, san-serif;
       color: #ffffff;
     }
@@ -50,20 +51,28 @@
     </div>
 
     <h2>Try it out!</h2>
-    <p>Live <a href="web/viewer.html">demo</a> lives here.</p>
+    <p>Live <a href="web/viewer.html">demo</a> or firefox <a href="https://addons.mozilla.org/en-US/firefox/addon/pdfjs/">extension</a>.</p>
 
     <h2>Authors</h2>
-<p>Vivien Nicolas (21@vingtetun.org)
-<br/>Andreas Gal (andreas.gal@gmail.com)
-<br/>Soumya Deb (debloper@gmail.com)
-<br/>Chris Jones (jones.chris.g@gmail.com)
-<br/>Justin D'Arcangelo (justindarc@gmail.com)
-<br/>sbarman (sbarman@eecs.berkeley.edu)
-<br/>
-<br/> </p>
-<h2>Contact</h2>
-<p> (andreas.gal@gmail.com)
-<br/> </p>
+    Andreas Gal (gal@mozilla.com)<br/>
+    Chris G Jones (cjones@mozilla.com)<br/>
+    Shaon Barman (shaon.barman@gmail.com)<br/>
+    Vivien Nicolas (21@vingtetun.org)<br/>
+    Justin D'Arcangelo (justindarc@gmail.com)<br/>
+    Yury Delendik (ydelendik@mozilla.com)<br/>
+    Kalervo Kujala<br/>
+    Adil Allawi (@ironymark)<br/>
+    Jakob Miland (saebekassebil@gmail.com)<br/>
+    Artur Adib (aadib@mozilla.com)<br/>
+    Brendan Dahl (bdahl@mozilla.com)<br/>
+    David Quintana (gigaherz@gmail.com)<br/>
+    Julian Viereck (julian.viereck@gmail.com)<br/>
+    <a href="https://github.com/mozilla/pdf.js/graphs/contributors">...</a>
+    </p>
+
+    <h2>Contact</h2>
+    <p> (dev-pdf-js@lists.mozilla.org)
+    <br/> </p>
 
 
     <h2>Download</h2>
