@@ -2291,13 +2291,19 @@ var TextLayerBuilder = function textLayerBuilder(textLayerDiv, pageIdx) {
     var iIndex = 0;
     var textContent = this.textContent;
     var end = textContent.length - 1;
+    var queryLen = PDFFindController.state.query.length;
+
+    var lastDivIdx = -1;
+    var pos;
 
     var ret = [];
 
     // Loop over all the matches.
     for (var m = 0; m < matches.length; m++) {
       var matchIdx = matches[m];
-      // Loop over the divs.
+      // # Calculate the begin position.
+
+      // Loop over the divIdxs.
       while (i !== end && matchIdx >= (iIndex + textContent[i].length)) {
         iIndex += textContent[i].length;
         i++;
@@ -2308,9 +2314,44 @@ var TextLayerBuilder = function textLayerBuilder(textLayerDiv, pageIdx) {
         console.error("Could not find matching mapping");
       }
 
-      ret.push({
-        divIdx: i,
+      // If insides another div as last time.
+      if (lastDivIdx !== i) {
+        lastDivIdx = i;
+        pos = [];
+        ret.push({
+          divIdx: i,
+          pos: pos
+        });
+      }
+      // Insert the beginning position.
+      pos.push({
         offset: matchIdx - iIndex
+        end: false
+      });
+
+      // # Calculate the end position.
+      matchIdx += queryLen;
+
+      // Somewhat same array as above, but use a > instead of >= to get the end
+      // position right.
+      while (i !== end && matchIdx > (iIndex + textContent[i].length)) {
+        iIndex += textContent[i].length;
+        i++;
+      }
+
+      if (lastDivIdx !== i) {
+       lastDivIdx = i;
+        pos = [];
+        ret.push({
+          divIdx: i,
+          pos: pos
+        });
+      }
+
+      // Insert the end position.
+      pos.push({
+        offset: matchIdx - iIndex
+        end: false
       });
     }
 
