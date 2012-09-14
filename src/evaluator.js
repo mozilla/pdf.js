@@ -533,36 +533,29 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           switch (cmd) {
             // TODO: Add support for SAVE/RESTORE and XFORM here.
             case 'Tf':
-              font = handleSetFont(args[0].name).translated;
+              font = handleSetFont(args[0].name);
               break;
             case 'TJ':
               var items = args[0];
               for (var j = 0, jj = items.length; j < jj; j++) {
                 if (typeof items[j] === 'string') {
-                  chunk += fontCharsToUnicode(items[j], font);
-                } else if (items[j] < 0) {
-                  // making all negative offsets a space - better to have
-                  // a space in incorrect place than not have them at all
-                  chunk += ' ';
-                // This is a better way to detect spacing in the future.
-                // However, for now let's keep it simple (also, font.spacedWidth)
-                // is not available.
-                // } else if (items[j] < 0 && font.spacedWidth > 0) {
-                //  var numFakeSpaces = Math.round(-e / font.spacedWidth);
-                //  if (numFakeSpaces > 0) {
-                //    chunk += ' ';
-                //  }
+                  chunk += fontCharsToUnicode(items[j], font.translated);
+                } else if (items[j] < 0 && font.spacedWidth > 0) {
+                  var numFakeSpaces = Math.round(-e / font.spacedWidth);
+                  if (numFakeSpaces > 0) {
+                    chunk += ' ';
+                  }
                 }
               }
               break;
             case 'Tj':
-              chunk += fontCharsToUnicode(args[0], font);
+              chunk += fontCharsToUnicode(args[0], font.translated);
               break;
             case "'":
-              chunk += fontCharsToUnicode(args[0], font) + ' ';
+              chunk += fontCharsToUnicode(args[0], font.translated) + ' ';
               break;
             case '"':
-              chunk += fontCharsToUnicode(args[2], font) + ' ';
+              chunk += fontCharsToUnicode(args[2], font.translated) + ' ';
               break;
             case 'Do':
               // Set the chunk such that the following if won't add something
