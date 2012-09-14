@@ -1935,8 +1935,8 @@ var TextLayerBuilder = function textLayerBuilder(textLayerDiv) {
       var textDiv = textDivs[i];
       var bidiText = PDFJS.bidi(textContent[i], -1);
 
-      textDiv.textContent = bidiText.content;
-      textDiv.dir = bidiText.direction;
+      textDiv.textContent = bidiText.str;
+      textDiv.dir = bidiText.ltr ? 'ltr' : 'rtl';
     }
 
     this.setupRenderLayoutTimer();
