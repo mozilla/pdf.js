@@ -1844,22 +1844,18 @@ var TextLayerBuilder = function textLayerBuilder(textLayerDiv) {
         return;
       }
       var textDiv = textDivs.shift();
-      if (textDiv.dataset.textLength > 0) {
-        textLayerDiv.appendChild(textDiv);
+      textLayerDiv.appendChild(textDiv);
 
-        if (textDiv.dataset.textLength > 1) { // avoid div by zero
-          // Adjust div width to match canvas text
+      ctx.font = textDiv.style.fontSize + ' sans-serif';
+      var width = ctx.measureText(textDiv.textContent).width;
 
-          ctx.font = textDiv.style.fontSize + ' sans-serif';
-          var width = ctx.measureText(textDiv.textContent).width;
+      if (width > 0) {
+        var textScale = textDiv.dataset.canvasWidth / width;
 
-          var textScale = textDiv.dataset.canvasWidth / width;
-
-          CustomStyle.setProp('transform' , textDiv,
-            'scale(' + textScale + ', 1)');
-          CustomStyle.setProp('transformOrigin' , textDiv, '0% 0%');
-        }
-      } // textLength > 0
+        CustomStyle.setProp('transform' , textDiv,
+          'scale(' + textScale + ', 1)');
+        CustomStyle.setProp('transformOrigin' , textDiv, '0% 0%');
+      }
     }
     renderTimer = setInterval(renderTextLayer, renderInterval);
 
@@ -1899,7 +1895,6 @@ var TextLayerBuilder = function textLayerBuilder(textLayerDiv) {
     textDiv.style.top = (text.geom.y - fontHeight) + 'px';
     textDiv.textContent = PDFJS.bidi(text, -1);
     textDiv.dir = text.direction;
-    textDiv.dataset.textLength = text.length;
     this.textDivs.push(textDiv);
   };
 };
@@ -2068,7 +2063,7 @@ document.addEventListener('DOMContentLoaded', function webViewerLoad(evt) {
     });
 
   document.getElementById('searchTermsInput').addEventListener('keydown',
-    function() {
+    function(event) {
       if (event.keyCode == 13) {
         PDFView.search();
       }
@@ -2295,6 +2290,7 @@ window.addEventListener('keydown', function keydown(evt) {
         PDFView.zoomIn();
         handled = true;
         break;
+      case 173: // FF/Mac '-'
       case 109: // FF '-'
       case 189: // Chrome '-'
         PDFView.zoomOut();

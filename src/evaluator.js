@@ -26,6 +26,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
     this.handler = handler;
     this.uniquePrefix = uniquePrefix;
     this.objIdCounter = 0;
+    this.fontIdCounter = 0;
   }
 
   var OP_MAP = {
@@ -138,6 +139,35 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
   };
 
   PartialEvaluator.prototype = {
+    loadFont: function PartialEvaluator_loadFont(fontName, font, xref,
+                                                 resources, dependency) {
+      var fontRes = resources.get('Font');
+
+      assert(fontRes, 'fontRes not available');
+
+      font = xref.fetchIfRef(font) || fontRes.get(fontName);
+      assertWellFormed(isDict(font));
+
+      ++this.fontIdCounter;
+      var loadedName = font.loadedName;
+      if (!loadedName) {
+        // keep track of each font we translated so the caller can
+        // load them asynchronously before calling display on a page
+        loadedName = 'font_' + this.uniquePrefix + this.fontIdCounter;
+        font.loadedName = loadedName;
+
+        var translated;
+        try {
+          translated = this.translateFont(font, xref, resources,
+                                          dependency);
+        } catch (e) {
+          translated = { error: e };
+        }
+        font.translated = translated;
+      }
+      return font;
+    },
+
     getOperatorList: function PartialEvaluator_getOperatorList(stream,
                                                                resources,
                                                                dependency,
@@ -160,45 +190,35 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       }
 
       function handleSetFont(fontName, font) {
-        var loadedName = null;
+        font = self.loadFont(fontName, font, xref, resources, dependency);
 
-        var fontRes = resources.get('Font');
+        var loadedName = font.loadedName;
+        if (!font.sent) {
+          var data = font.translated;
+          if (data.loadCharProcs) {
+            delete data.loadCharProcs;
 
-        assert(fontRes, 'fontRes not available');
-
-        font = xref.fetchIfRef(font) || fontRes.get(fontName);
-        assertWellFormed(isDict(font));
-
-        ++self.objIdCounter;
-        if (!font.loadedName) {
-          var translated = self.translateFont(font, xref, resources,
-                                              dependency);
-          if (translated) {
-            // keep track of each font we translated so the caller can
-            // load them asynchronously before calling display on a page
-            loadedName = 'font_' + uniquePrefix + self.objIdCounter;
-            translated.properties.loadedName = loadedName;
-            font.loadedName = loadedName;
-            font.translated = translated;
-
-            var data;
-            try {
-              var fontObj = new Font(translated.name,
-                                     translated.file,
-                                     translated.properties);
-              data = fontObj.export();
-            } catch (e) {
-              data = { error: e };
+            var charProcs = font.get('CharProcs').getAll();
+            var fontResources = font.get('Resources') || resources;
+            var charProcOperatorList = {};
+            for (var key in charProcs) {
+              var glyphStream = charProcs[key];
+              charProcOperatorList[key] =
+                self.getOperatorList(glyphStream, fontResources, dependency);
             }
-
-            handler.send('obj', [
-                loadedName,
-                'Font',
-                data
-            ]);
+            data.charProcOperatorList = charProcOperatorList;
           }
+
+          if (data instanceof Font)
+            data = data.export();
+
+          handler.send('obj', [
+              loadedName,
+              'Font',
+              data
+          ]);
+          font.sent = true;
         }
-        loadedName = loadedName || font.loadedName;
 
         // Ensure the font is ready before the font is set
         // and later on used for drawing.
@@ -491,20 +511,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       var xref = this.xref;
 
       function handleSetFont(fontName, fontRef) {
-        var fontRes = resources.get('Font');
-
-        // TODO: TOASK: Is it possible to get here? If so, what does
-        // args[0].name should be like???
-        assert(fontRes, 'fontRes not available');
-
-        fontRes = xref.fetchIfRef(fontRes);
-        fontRef = fontRef || fontRes.get(fontName);
-        var font = xref.fetchIfRef(fontRef), tra;
-        assertWellFormed(isDict(font));
-        if (!font.translated) {
-          font.translated = self.translateFont(font, xref, resources);
-        }
-        return font;
+        return self.loadFont(fontName, fontRef, xref, resources, null);
       }
 
       resources = xref.fetchIfRef(resources) || new Dict();
@@ -546,7 +553,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
               break;
           } // switch
           if (chunk !== '') {
-            text += fontCharsToUnicode(chunk, font.translated.properties);
+            text += fontCharsToUnicode(chunk, font.translated);
             chunk = '';
           }
 
@@ -853,7 +860,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         //  - get the FontDescriptor from the descendant font
         var df = dict.get('DescendantFonts');
         if (!df)
-          return null;
+          error('Descendant fonts are not specified');
 
         dict = isArray(df) ? xref.fetchIfRef(df[0]) : df;
 
@@ -876,7 +883,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           // This case is here for compatibility.
           var baseFontName = dict.get('BaseFont');
           if (!isName(baseFontName))
-            return null;
+            error('Base font is not specified');
 
           // Using base font name as a font name.
           baseFontName = baseFontName.name.replace(/[,_]/g, '-');
@@ -899,11 +906,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           };
           this.extractDataStructures(dict, dict, xref, properties);
 
-          return {
-            name: baseFontName,
-            dict: baseDict,
-            properties: properties
-          };
+          return new Font(baseFontName, null, properties);
         }
       }
 
@@ -939,6 +942,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         file: fontFile,
         length1: length1,
         length2: length2,
+        loadedName: baseDict.loadedName,
         composite: composite,
         wideChars: composite,
         fixedPitch: false,
@@ -959,22 +963,9 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
 
       if (type.name === 'Type3') {
         properties.coded = true;
-        var charProcs = dict.get('CharProcs').getAll();
-        var fontResources = dict.get('Resources') || resources;
-        properties.charProcOperatorList = {};
-        for (var key in charProcs) {
-          var glyphStream = charProcs[key];
-          properties.charProcOperatorList[key] =
-            this.getOperatorList(glyphStream, fontResources, dependency);
-        }
       }
 
-      return {
-        name: fontName.name,
-        dict: baseDict,
-        file: fontFile,
-        properties: properties
-      };
+      return new Font(fontName.name, fontFile, properties);
     }
   };
 
