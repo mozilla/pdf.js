@@ -533,15 +533,15 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           switch (cmd) {
             // TODO: Add support for SAVE/RESTORE and XFORM here.
             case 'Tf':
-              font = handleSetFont(args[0].name);
+              font = handleSetFont(args[0].name).translated;
               break;
             case 'TJ':
               var items = args[0];
               for (var j = 0, jj = items.length; j < jj; j++) {
                 if (typeof items[j] === 'string') {
-                  chunk += fontCharsToUnicode(items[j], font.translated);
-                } else if (items[j] < 0 && font.spacedWidth > 0) {
-                  var numFakeSpaces = Math.round(-e / font.spacedWidth);
+                  chunk += fontCharsToUnicode(items[j], font);
+                } else if (items[j] < 0 && font.spaceWidth > 0) {
+                  var numFakeSpaces = Math.round(-items[j] / font.spaceWidth);
                   if (numFakeSpaces > 0) {
                     chunk += ' ';
                   }
@@ -549,13 +549,13 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
               }
               break;
             case 'Tj':
-              chunk += fontCharsToUnicode(args[0], font.translated);
+              chunk += fontCharsToUnicode(args[0], font);
               break;
             case "'":
-              chunk += fontCharsToUnicode(args[0], font.translated) + ' ';
+              chunk += fontCharsToUnicode(args[0], font) + ' ';
               break;
             case '"':
-              chunk += fontCharsToUnicode(args[2], font.translated) + ' ';
+              chunk += fontCharsToUnicode(args[2], font) + ' ';
               break;
             case 'Do':
               // Set the chunk such that the following if won't add something
