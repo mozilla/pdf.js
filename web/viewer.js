@@ -440,6 +440,9 @@ var PDFFindBar = {
       self.dispatchEvent('');
     });
 
+    // TODO: Add keybindings like enter, shift-enter, CMD-G etc. to go to prev/
+    // next match when the findField is selected.
+
     document.getElementById('findPrevious').addEventListener('click',
     function() {
       self.dispatchEvent('again', true);
