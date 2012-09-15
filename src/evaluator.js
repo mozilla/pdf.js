@@ -557,10 +557,14 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
               chunk += fontCharsToUnicode(args[0], font);
               break;
             case "'":
-              chunk += fontCharsToUnicode(args[0], font) + ' ';
+              // For search, adding a extra white space for line breaks would be
+              // better here, but that causes too much spaces in the
+              // text-selection divs.
+              chunk += fontCharsToUnicode(args[0], font);
               break;
             case '"':
-              chunk += fontCharsToUnicode(args[2], font) + ' ';
+              // Note comment in "'"
+              chunk += fontCharsToUnicode(args[2], font);
               break;
             case 'Do':
               // Set the chunk such that the following if won't add something
