@@ -1930,13 +1930,14 @@ var TextLayerBuilder = function textLayerBuilder(textLayerDiv) {
 
     var textDivs = this.textDivs;
     var textContent = this.textContent;
+    var text = textContent.text;
+    var dirs = textContent.dirs;
 
-    for (var i = 0; i < textContent.length; i++) {
+    for (var i = 0; i < text.length; i++) {
       var textDiv = textDivs[i];
-      var bidiText = PDFJS.bidi(textContent[i], -1);
 
-      textDiv.textContent = bidiText.str;
-      textDiv.dir = bidiText.ltr ? 'ltr' : 'rtl';
+      textDiv.textContent = text[i];
+      textDiv.dir = dirs[i] ? 'ltr' : 'rtl';
     }
 
     this.setupRenderLayoutTimer();

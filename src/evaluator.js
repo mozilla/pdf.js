@@ -507,7 +507,12 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
 
     getTextContent: function partialEvaluatorGetIRQueue(stream, resources, state) {
       if (!state) {
-        state = [];
+        var text = [];
+        var dirs = [];
+        state = {
+          text: text,
+          dirs: dirs
+        };
       }
 
       var self = this;
@@ -585,9 +590,6 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
               if ('Form' !== type.name)
                 break;
 
-              // Add some spacing between the text here and the text of the
-              // xForm.
-
               state = this.getTextContent(
                 xobj,
                 xobj.dict.get('Resources') || resources,
@@ -596,7 +598,10 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
               break;
           } // switch
           if (chunk !== '') {
-            state.push(chunk);
+            var bidiText = PDFJS.bidi(chunk, -1);
+            text.push(bidiText.str);
+            dirs.push(bidiText.ltr);
+
             chunk = '';
           }
 
