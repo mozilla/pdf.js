@@ -505,7 +505,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       return queue;
     },
 
-    getTextContent: function partialEvaluatorGetIRQueue(stream, resources, state) {
+    getTextContent: function partialEvaluatorGetIRQueue(
+                                                    stream, resources, state) {
       if (!state) {
         var text = [];
         var dirs = [];
