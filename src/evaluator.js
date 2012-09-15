@@ -596,7 +596,23 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                 state
               );
               break;
+            case 'gs':
+              var dictName = args[0];
+              var extGState = resources.get('ExtGState');
+
+              if (!isDict(extGState) || !extGState.has(dictName.name))
+                break;
+
+              var gsState = extGState.get(dictName.name);
+
+              for (var i = 0; i < gsState.length; i++) {
+                if (gsState[i] === 'Font') {
+                  font = handleSetFont(args[0].name).translated;
+                }
+              }
+              break;
           } // switch
+
           if (chunk !== '') {
             var bidiText = PDFJS.bidi(chunk, -1);
             text.push(bidiText.str);
@@ -610,7 +626,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           assertWellFormed(args.length <= 33, 'Too many arguments');
           args.push(obj);
         }
-      }
+      } // while
 
       return state;
     },
