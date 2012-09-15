@@ -66,23 +66,19 @@ var Metadata = PDFJS.Metadata = (function MetadataClosure() {
       if (!rdf || nodeName !== 'rdf:rdf' || !rdf.hasChildNodes())
         return;
 
-      var childNodes = rdf.childNodes, desc, namespace, entries, entry;
+      var children = rdf.childNodes, desc, entry, name, i, ii, length, iLength;
 
-      for (var i = 0, length = childNodes.length; i < length; i++) {
-        desc = childNodes[i];
+      for (i = 0, length = children.length; i < length; i++) {
+        desc = children[i];
         if (desc.nodeName.toLowerCase() !== 'rdf:description')
           continue;
 
-        entries = [];
-        for (var ii = 0, iLength = desc.childNodes.length; ii < iLength; ii++) {
-          if (desc.childNodes[ii].nodeName.toLowerCase() !== '#text')
-            entries.push(desc.childNodes[ii]);
-        }
-
-        for (ii = 0, iLength = entries.length; ii < iLength; ii++) {
-          var entry = entries[ii];
-          var name = entry.nodeName.toLowerCase();
-          this.metadata[name] = entry.textContent.trim();
+        for (ii = 0, iLength = desc.childNodes.length; ii < iLength; ii++) {
+          if (desc.childNodes[ii].nodeName.toLowerCase() !== '#text') {
+            entry = desc.childNodes[ii];
+            name = entry.nodeName.toLowerCase();
+            this.metadata[name] = entry.textContent.trim();
+          }
         }
       }
     },
