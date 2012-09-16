@@ -211,6 +211,9 @@ var currentPageNumber = 1;
 var PDFFindController = {
   startedTextExtraction: false,
 
+  // If active, search resulsts will be highlighted.
+  active: false,
+
   // Stores the text for each page.
   pageContents: [],
 
@@ -319,6 +322,8 @@ var PDFFindController = {
     var pages = PDFView.pages;
     var pageContents = this.pageContents;
     var pageMatches = this.pageMatches;
+
+    this.active = true;
 
     if (this.dirtyMatch) {
       // Need to recalculate the matches.
@@ -523,6 +528,8 @@ var PDFFindBar = {
     this.opened = false;
     this.toggleButton.classList.remove('toggled');
     this.bar.classList.add('hidden');
+
+    PDFFindController.active = false;
   },
 
   toggle: function() {
@@ -2186,7 +2193,7 @@ var TextLayerBuilder = function textLayerBuilder(textLayerDiv, pageIdx) {
   this.endLayout = function textLayerBuilderEndLayout() {
     this.layoutDone = true;
     this.insertDivContent();
-  },
+  };
 
   this.renderLayer = function textLayerBuilderRenderLayer() {
     var self = this;
@@ -2213,6 +2220,8 @@ var TextLayerBuilder = function textLayerBuilder(textLayerDiv, pageIdx) {
         CustomStyle.setProp('transform' , textDiv,
           'scale(' + textScale + ', 1)');
         CustomStyle.setProp('transformOrigin' , textDiv, '0% 0%');
+
+        textLayerDiv.appendChild(textDiv);
       }
     }
  
@@ -2325,7 +2334,7 @@ var TextLayerBuilder = function textLayerBuilder(textLayerDiv, pageIdx) {
       }
       // Insert the beginning position.
       pos.push({
-        offset: matchIdx - iIndex
+        offset: matchIdx - iIndex,
         end: false
       });
 
@@ -2350,7 +2359,7 @@ var TextLayerBuilder = function textLayerBuilder(textLayerDiv, pageIdx) {
 
       // Insert the end position.
       pos.push({
-        offset: matchIdx - iIndex
+        offset: matchIdx - iIndex,
         end: false
       });
     }
@@ -2410,6 +2419,9 @@ var TextLayerBuilder = function textLayerBuilder(textLayerDiv, pageIdx) {
       var divIdx = matches[i].divIdx;
       textDivs[divIdx].textContent = textDivs[divIdx].textContent;
     }
+
+    if (!PDFFindController.active)
+      return;
 
     // Convert the matches on the page controller into the match format used
     // for the textLayer.
