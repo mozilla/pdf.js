@@ -159,6 +159,7 @@ NullTextLayerBuilder.prototype = {
 function SimpleTextLayerBuilder(ctx, viewport) {
   this.ctx = ctx;
   this.viewport = viewport;
+  this.textCounter = 0;
 }
 SimpleTextLayerBuilder.prototype = {
   beginLayout: function SimpleTextLayerBuilder_BeginLayout() {
@@ -180,13 +181,17 @@ SimpleTextLayerBuilder.prototype = {
     ctx.stroke();
     ctx.fill();
 
-    var textContent = bidi(text, -1);
+    var textContent = this.textContent.text[this.textCounter];
     ctx.font = fontHeight + 'px ' + fontName;
     ctx.fillStyle = 'black';
     ctx.fillText(textContent, text.geom.x, text.geom.y);
+
+    this.textCounter ++;
+  },
+  setTextContent: function SimpleTextLayerBuilder_SetTextContent(textContent) {
+    this.textContent = textContent;
   }
 };
-
 
 function nextPage(task, loadError) {
   var failure = loadError || '';
@@ -245,6 +250,10 @@ function nextPage(task, loadError) {
           drawContext = dummyCanvas.getContext('2d');
           // ... text builder will draw its content on the test canvas
           textLayerBuilder = new SimpleTextLayerBuilder(ctx, viewport);
+
+          page.getTextContent().then(function(textContent) {
+            textLayerBuilder.setTextContent(textContent);
+          });
         } else {
           drawContext = ctx;
           textLayerBuilder = new NullTextLayerBuilder();
