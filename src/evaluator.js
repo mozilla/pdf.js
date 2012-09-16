@@ -164,6 +164,21 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           translated = { error: e };
         }
         font.translated = translated;
+
+        var data = translated;
+        if (data.loadCharProcs) {
+          delete data.loadCharProcs;
+
+          var charProcs = font.get('CharProcs').getAll();
+          var fontResources = font.get('Resources') || resources;
+          var charProcOperatorList = {};
+          for (var key in charProcs) {
+            var glyphStream = charProcs[key];
+            charProcOperatorList[key] =
+              this.getOperatorList(glyphStream, fontResources, dependency);
+          }
+          data.charProcOperatorList = charProcOperatorList;
+        }
       }
       return font;
     },
@@ -195,19 +210,6 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         var loadedName = font.loadedName;
         if (!font.sent) {
           var data = font.translated;
-          if (data.loadCharProcs) {
-            delete data.loadCharProcs;
-
-            var charProcs = font.get('CharProcs').getAll();
-            var fontResources = font.get('Resources') || resources;
-            var charProcOperatorList = {};
-            for (var key in charProcs) {
-              var glyphStream = charProcs[key];
-              charProcOperatorList[key] =
-                self.getOperatorList(glyphStream, fontResources, dependency);
-            }
-            data.charProcOperatorList = charProcOperatorList;
-          }
 
           if (data instanceof Font)
             data = data.export();
