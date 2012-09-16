@@ -825,21 +825,41 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         }
       }
 
+      // Heuristic: detection of monospace font by checking all non-zero widths
+      var isMonospace = true, firstWidth = defaultWidth;
+      for (var glyph in glyphsWidths) {
+        var glyphWidth = glyphsWidths[glyph];
+        if (!glyphWidth)
+          continue;
+        if (!firstWidth) {
+          firstWidth = glyphWidth;
+          continue;
+        }
+        if (firstWidth != glyphWidth) {
+          isMonospace = false;
+          break;
+        }
+      }
+      if (isMonospace)
+        properties.flags |= FontFlags.FixedPitch;
+
       properties.defaultWidth = defaultWidth;
       properties.widths = glyphsWidths;
     },
 
     getBaseFontMetrics: function PartialEvaluator_getBaseFontMetrics(name) {
-      var defaultWidth = 0, widths = [];
+      var defaultWidth = 0, widths = [], monospace = false;
       var glyphWidths = Metrics[stdFontMap[name] || name];
       if (isNum(glyphWidths)) {
         defaultWidth = glyphWidths;
+        monospace = true;
       } else {
         widths = glyphWidths;
       }
 
       return {
         defaultWidth: defaultWidth,
+        monospace: monospace,
         widths: widths
       };
     },
@@ -893,6 +913,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           var fontNameWoStyle = baseFontName.split('-')[0];
           var flags = (serifFonts[fontNameWoStyle] ||
             (fontNameWoStyle.search(/serif/gi) != -1) ? FontFlags.Serif : 0) |
+            (metrics.monospace ? FontFlags.FixedPitch : 0) |
             (symbolsFonts[fontNameWoStyle] ? FontFlags.Symbolic :
             FontFlags.Nonsymbolic);
 
