@@ -3181,6 +3181,10 @@ var Font = (function FontClosure() {
     },
 
     get spaceWidth() {
+      if (this._shadowWidth !== undefined) {
+        return this._shadowWidth;
+      }
+
       // trying to estimate space character width
       var possibleSpaceReplacements = ['space', 'minus', 'one', 'i'];
       var width;
@@ -3208,7 +3212,8 @@ var Font = (function FontClosure() {
           break; // the non-zero width found
       }
       width = (width || this.defaultWidth) * this.widthMultiplier;
-      return shadow(this, 'spaceWidth', width);
+      this._shadowWidth = width;
+      return width;
     },
 
     charToGlyph: function Font_charToGlyph(charcode) {
