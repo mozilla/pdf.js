@@ -507,13 +507,19 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
 
     getTextContent: function partialEvaluatorGetIRQueue(
                                                     stream, resources, state) {
+      var text;
+      var dirs;
+
       if (!state) {
-        var text = [];
-        var dirs = [];
+        text = [];
+        dirs = [];
         state = {
           text: text,
           dirs: dirs
         };
+      } else {
+        text = state.text;
+        dirs = state.dirs;
       }
 
       var self = this;
