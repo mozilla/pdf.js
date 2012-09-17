@@ -596,8 +596,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
                                  (fontObj.bold ? 'bold' : 'normal');
 
       var italic = fontObj.italic ? 'italic' : 'normal';
-      var serif = fontObj.isSerifFont ? 'serif' : 'sans-serif';
-      var typeface = '"' + name + '", ' + serif;
+      var typeface = '"' + name + '", ' + fontObj.fallbackName;
 
       // Some font backends cannot handle fonts below certain size.
       // Keeping the font at minimal size and using the fontSizeScale to change
@@ -792,7 +791,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       }
 
       if (textSelection)
-        this.textLayer.appendText(text, font.loadedName, fontSize);
+        this.textLayer.appendText(text, font.fallbackName, fontSize);
 
       return text;
     },
@@ -856,7 +855,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       }
 
       if (textSelection)
-        this.textLayer.appendText(text, font.loadedName, fontSize);
+        this.textLayer.appendText(text, font.fallbackName, fontSize);
     },
     nextLineShowText: function CanvasGraphics_nextLineShowText(text) {
       this.nextLine();
