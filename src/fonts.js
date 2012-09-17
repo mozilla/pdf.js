@@ -1522,17 +1522,13 @@ var Font = (function FontClosure() {
     names = names.split(/[-,_]/g)[0];
     this.isSerifFont = !!(properties.flags & FontFlags.Serif);
     this.isSymbolicFont = !!(properties.flags & FontFlags.Symbolic);
+    this.isMonospace = !!(properties.flags & FontFlags.FixedPitch);
 
     var type = properties.type;
     this.type = type;
 
-    // If the font is to be ignored, register it like an already loaded font
-    // to avoid the cost of waiting for it be be loaded by the platform.
-    if (properties.ignore) {
-      this.loadedName = this.isSerifFont ? 'serif' : 'sans-serif';
-      this.loading = false;
-      return;
-    }
+    this.fallbackName = this.isMonospace ? 'monospace' :
+                        this.isSerifFont ? 'serif' : 'sans-serif';
 
     this.differences = properties.differences;
     this.widths = properties.widths;

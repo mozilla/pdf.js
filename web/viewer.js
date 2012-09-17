@@ -1846,7 +1846,7 @@ var TextLayerBuilder = function textLayerBuilder(textLayerDiv) {
       var textDiv = textDivs.shift();
       textLayerDiv.appendChild(textDiv);
 
-      ctx.font = textDiv.style.fontSize + ' sans-serif';
+      ctx.font = textDiv.style.fontSize + ' ' + textDiv.style.fontFamily;
       var width = ctx.measureText(textDiv.textContent).width;
 
       if (width > 0) {
@@ -1888,9 +1888,9 @@ var TextLayerBuilder = function textLayerBuilder(textLayerDiv) {
     // vScale and hScale already contain the scaling to pixel units
     var fontHeight = fontSize * text.geom.vScale;
     textDiv.dataset.canvasWidth = text.canvasWidth * text.geom.hScale;
-    textDiv.dataset.fontName = fontName;
 
     textDiv.style.fontSize = fontHeight + 'px';
+    textDiv.style.fontFamily = fontName;
     textDiv.style.left = text.geom.x + 'px';
     textDiv.style.top = (text.geom.y - fontHeight) + 'px';
     textDiv.textContent = PDFJS.bidi(text, -1);
