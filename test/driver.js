@@ -186,7 +186,7 @@ SimpleTextLayerBuilder.prototype = {
     ctx.fillStyle = 'black';
     ctx.fillText(textContent, text.geom.x, text.geom.y);
 
-    this.textCounter ++;
+    this.textCounter++;
   },
   setTextContent: function SimpleTextLayerBuilder_SetTextContent(textContent) {
     this.textContent = textContent;
