@@ -282,7 +282,7 @@ var PDFFindController = {
           if ((pageIndex + 1) < PDFView.pages.length)
             extractPageText(pageIndex + 1);
         }
-      )
+      );
     }
     extractPageText(0);
   },
@@ -414,7 +414,7 @@ var PDFFindController = {
 
 
   }
-}
+};
 
 var PDFFindBar = {
   // TODO: Enable the FindBar *AFTER* the pagesPromise in the load function
@@ -470,11 +470,11 @@ var PDFFindBar = {
   },
 
   dispatchEvent: function(aType, aFindPrevious) {
-    var event = document.createEvent("CustomEvent");
-    event.initCustomEvent("find" + aType, true, true, {
+    var event = document.createEvent('CustomEvent');
+    event.initCustomEvent('find' + aType, true, true, {
       query: this.findField.value,
       caseSensitive: this.caseSensitive.checked,
-      highlightAll:  this.highlightAll.checked,
+      highlightAll: this.highlightAll.checked,
       findPrevious: aFindPrevious
     });
     return window.dispatchEvent(event);
@@ -2320,7 +2320,7 @@ var TextLayerBuilder = function textLayerBuilder(textLayerDiv, pageIdx) {
 
       // TODO: Do proper handling here if something goes wrong.
       if (i == textContent.length) {
-        console.error("Could not find matching mapping");
+        console.error('Could not find matching mapping');
       }
 
       var match = {
@@ -2328,7 +2328,7 @@ var TextLayerBuilder = function textLayerBuilder(textLayerDiv, pageIdx) {
           divIdx: i,
           offset: matchIdx - iIndex
         }
-      }
+      };
 
       // # Calculate the end position.
       matchIdx += queryLen;
@@ -2343,7 +2343,7 @@ var TextLayerBuilder = function textLayerBuilder(textLayerDiv, pageIdx) {
       match.end = {
         divIdx: i,
         offset: matchIdx - iIndex
-      }
+      };
       ret.push(match);
     }
 
