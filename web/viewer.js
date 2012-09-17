@@ -2323,20 +2323,12 @@ var TextLayerBuilder = function textLayerBuilder(textLayerDiv, pageIdx) {
         console.error("Could not find matching mapping");
       }
 
-      // If insides another div as last time.
-      if (lastDivIdx !== i) {
-        lastDivIdx = i;
-        pos = [];
-        ret.push({
+      var match = {
+        begin: {
           divIdx: i,
-          pos: pos
-        });
+          offset: matchIdx - iIndex
+        }
       }
-      // Insert the beginning position.
-      pos.push({
-        offset: matchIdx - iIndex,
-        end: false
-      });
 
       // # Calculate the end position.
       matchIdx += queryLen;
@@ -2348,68 +2340,105 @@ var TextLayerBuilder = function textLayerBuilder(textLayerDiv, pageIdx) {
         i++;
       }
 
-      if (lastDivIdx !== i) {
-       lastDivIdx = i;
-        pos = [];
-        ret.push({
-          divIdx: i,
-          pos: pos
-        });
+      match.end = {
+        divIdx: i,
+        offset: matchIdx - iIndex
       }
-
-      // Insert the end position.
-      pos.push({
-        offset: matchIdx - iIndex,
-        end: false
-      });
+      ret.push(match);
     }
 
     return ret;
   };
 
-  this.renderMatch = function textLayerBuilder_RenderMatch(match) {
+  this.renderMatches = function textLayerBuilder_renderMatches(matches) {
+    var text = this.textContent.text;
     var textDivs = this.textDivs;
-    var div = textDivs[match.divIdx];
+    var prevEnd = null;
+    var isSelectedPage = this.pageIdx === PDFFindController.selected.pageIdx;
+    var selectedMatchIdx = PDFFindController.selected.matchIdx;
 
-    // match started in a different div.
-    if (match[0].end) {
+    var infty = {
+      divIdx: -1,
+      offset: undefined
+    };
 
+    function beginText(begin, className) {
+      var divIdx = begin.divIdx;
+      var div = textDivs[divIdx];
+      div.innerHTML = '';
+
+      var content = text[divIdx].substring(0, begin.offset);
+      var node = document.createTextNode(content);
+      if (className) {
+        var isSelected = isSelectedPage &&
+                          divIdx === selectedMatchIdx;
+        var span = document.createElement('span');
+        span.className = className + (isSelected ? ' selected' : '');
+        span.appendChild(node);
+        div.appendChild(span);
+        return;
+      }
+      div.appendChild(node);
     }
 
-    var hlIdx = this.highlightedIdx;
+    function appendText(from, to, className) {
+      var divIdx = from.divIdx;
+      var div = textDivs[divIdx];
 
-    var selected = PDFFindController.selected;
-    var isSelected = selected.pageIdx === this.pageIdx &&
-                      matchIdx === selected.matchIdx;
-
-    // div.scrollIntoView();
-    // document.querySelector('div#viewerContainer').scrollTop -= 30;
-
-    var div = textDivs[match.divIdx];
-    var text = div.textContent;
-    var offset = match.offset;
-    var endIdx = offset + PDFFindController.state.query.length;
-
-    var pre = text.substring(0, offset);
-    var high = text.substring(offset, endIdx);
-    var post = text.substring(endIdx);
-
-    var preDom = document.createTextNode(pre);
-    var highDom = document.createElement('span');
-    var postDom = document.createTextNode(post);
-
-    highDom.textContent = high;
-    highDom.className = isSelected ? 'highlight selected' : 'highlight';
-    if (isSelected) {
-      scrollIntoView(div, {top: -50});
+      var content = text[divIdx].substring(from.offset, to.offset);
+      var node = document.createTextNode(content);
+      if (className) {
+        var span = document.createElement('span');
+        span.className = className;
+        span.appendChild(node);
+        div.appendChild(span);
+        return;
+      }
+      div.appendChild(node);
     }
 
-    // XXX Better do proper removal?
-    div.innerHTML = '';
-    div.appendChild(preDom);
-    div.appendChild(highDom);
-    div.appendChild(postDom);
-  },
+    function highlightDiv(divIdx, className) {
+      textDivs[divIdx].className = className;
+    }
+
+    for (var i = 0; i < matches.length; i++) {
+      var match = matches[i];
+      var begin = match.begin;
+      var end = match.end;
+
+      var isSelected = isSelectedPage && i === selectedMatchIdx;
+      var highlightSuffix = (isSelected ? ' selected' : '');
+      if (isSelected)
+        scrollIntoView(textDivs[begin.divIdx], {top: -50});
+
+      // Match inside new div.
+      if (!prevEnd || begin.divIdx !== prevEnd.divIdx) {
+        // If there was a previous div, then add the text at the end
+        if (prevEnd !== null) {
+          appendText(prevEnd, infty);
+        }
+        // clears the divs and set the content until the begin point.
+        beginText(begin);
+      } else {
+        appendText(prevEnd, begin);
+      }
+
+      if (begin.divIdx === end.divIdx) {
+        appendText(begin, end, 'highlight' + highlightSuffix);
+      } else {
+        appendText(begin, infty, 'highlight begin' + highlightSuffix);
+        for (var n = begin.divIdx + 1; n < end.divIdx; n++) {
+          highlightDiv(n, 'highlight middle' + highlightSuffix);
+        }
+        beginText(end, 'highlight end' + highlightSuffix);
+      }
+      prevEnd = end;
+    }
+
+    if (prevEnd) {
+      appendText(prevEnd, infty);
+    }
+  };
 
   this.updateMatches = function textLayerUpdateMatches() {
     // Only show matches, once all rendering is done.
@@ -2420,10 +2449,17 @@ var TextLayerBuilder = function textLayerBuilder(textLayerDiv, pageIdx) {
     var matches = this.matches;
     var textDivs = this.textDivs;
     var textContent = this.textContent;
+    var clearedUntilDivIdx = -1;
 
     for (var i = 0; i < matches.length; i++) {
-      var divIdx = matches[i].divIdx;
-      textDivs[divIdx].textContent = textDivs[divIdx].textContent;
+      var match = matches[i];
+      var begin = Math.max(clearedUntilDivIdx, match.begin.divIdx);
+      for (var n = begin; n <= match.end.divIdx; n++) {
+        var div = textDivs[n];
+        div.textContent = div.textContent;
+        div.className = '';
+      }
+      clearedUntilDivIdx = match.end.divIdx + 1;
     }
 
     if (!PDFFindController.active)
@@ -2434,10 +2470,7 @@ var TextLayerBuilder = function textLayerBuilder(textLayerDiv, pageIdx) {
     this.matches = matches =
       this.convertMatches(PDFFindController.pageMatches[this.pageIdx] || []);
 
-    // Render the matches
-    for (var i = 0; i < matches.lenght; i++) {
-      this.renderMatch(match[i]);
-    }
+    this.renderMatches(this.matches);
   };
 };
 

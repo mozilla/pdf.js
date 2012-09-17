@@ -1103,6 +1103,18 @@ canvas {
   border-radius: 4px;
 }
 
+.textLayer .highlight.begin {
+  border-radius: 4px 0px 0px 4px;
+}
+
+.textLayer .highlight.end {
+  border-radius: 0px 4px 4px 0px;
+}
+
+.textLayer .highlight.middle {
+  border-radius: 0px;
+}
+
 .textLayer .highlight.selected {
   background-color: rgba(255, 0, 0, 0.2);
 }
