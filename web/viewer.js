@@ -275,7 +275,7 @@ var PDFFindController = {
       PDFView.pages[pageIndex].getTextContent().then(
         function textContentResolved(data) {
           // Store the pageContent as a string.
-          self.pageContents.push(data.join(''));
+          self.pageContents.push(data.text.join(''));
           // Ensure there is a empty array of matches.
           self.pageMatches.push([]);
 
@@ -2298,7 +2298,7 @@ var TextLayerBuilder = function textLayerBuilder(textLayerDiv, pageIdx) {
   this.convertMatches = function textLayerBuilderConvertMatches(matches) {
     var i = 0;
     var iIndex = 0;
-    var textContent = this.textContent;
+    var textContent = this.textContent.text;
     var end = textContent.length - 1;
     var queryLen = PDFFindController.state.query.length;
 
@@ -2367,11 +2367,17 @@ var TextLayerBuilder = function textLayerBuilder(textLayerDiv, pageIdx) {
     return ret;
   };
 
-  this.highlightMatch = function textLayerBuilderHighlightMatch(matchIdx) {
-    var match = this.matches[matchIdx];
-    var self = this;
-    var hlIdx = this.highlightedIdx;
+  this.renderMatch = function textLayerBuilder_RenderMatch(match) {
     var textDivs = this.textDivs;
+    var div = textDivs[match.divIdx];
+
+    // match started in a different div.
+    if (match[0].end) {
+
+    }
+
+    var hlIdx = this.highlightedIdx;
+
     var selected = PDFFindController.selected;
     var isSelected = selected.pageIdx === this.pageIdx &&
                       matchIdx === selected.matchIdx;
@@ -2428,10 +2434,9 @@ var TextLayerBuilder = function textLayerBuilder(textLayerDiv, pageIdx) {
     this.matches = matches =
       this.convertMatches(PDFFindController.pageMatches[this.pageIdx] || []);
 
-    // TODO: Make highlighting over two divs possible
-    // TODO: Make highlighting inside of the same div possible
-    for (var i = 0; i < matches.length; i++) {
-      this.highlightMatch(i);
+    // Render the matches
+    for (var i = 0; i < matches.lenght; i++) {
+      this.renderMatch(match[i]);
     }
   };
 };
