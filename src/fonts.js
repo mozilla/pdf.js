@@ -418,10 +418,25 @@ function mapPrivateUseChars(code) {
 }
 
 var FontLoader = {
+//#if !(MOZCENTRAL)
   loadingContext: {
     requests: [],
     nextRequestId: 0
   },
+
+  isSyncFontLoadingSupported: (function detectSyncFontLoadingSupport() {
+    if (isWorker)
+      return false;
+
+    // User agent string sniffing is bad, but there is no reliable way to tell
+    // if font is fully loaded and ready to be used with canvas.
+    var userAgent = window.navigator.userAgent;
+    var m = /Mozilla\/5.0.*?rv:(\d+).*? Gecko/.exec(userAgent);
+    if (m && m[1] >= 14)
+      return true;
+    // TODO other browsers
+    return false;
+  })(),
 
   bind: function fontLoaderBind(fonts, callback) {
     assert(!isWorker, 'bind() shall be called from main thread');
@@ -437,23 +452,15 @@ var FontLoader = {
       }
       font.attached = true;
 
-      var str = '';
-      var data = font.data;
-      if (data) {
-        var length = data.length;
-        for (var j = 0; j < length; j++)
-          str += String.fromCharCode(data[j]);
-
-        var rule = font.bindDOM(str);
-        if (rule) {
-          rules.push(rule);
-          fontsToLoad.push(font);
-        }
+      var rule = font.bindDOM();
+      if (rule) {
+        rules.push(rule);
+        fontsToLoad.push(font);
       }
     }
 
     var request = FontLoader.queueLoadingCallback(callback);
-    if (rules.length > 0) {
+    if (rules.length > 0 && !this.isSyncFontLoadingSupported) {
       FontLoader.prepareFontLoadEvent(rules, fontsToLoad, request);
     } else {
       request.complete();
@@ -595,6 +602,22 @@ var FontLoader = {
       document.body.appendChild(frame);
       /** Hack end */
   }
+//#else
+//bind: function fontLoaderBind(fonts, callback) {
+//  assert(!isWorker, 'bind() shall be called from main thread');
+//
+//  for (var i = 0, ii = fonts.length; i < ii; i++) {
+//    var font = fonts[i];
+//    if (font.attached)
+//      continue;
+//
+//    font.attached = true;
+//    font.bindDOM()
+//  }
+//
+//  setTimeout(callback);
+//}
+//#endif
 };
 
 var UnicodeRanges = [
@@ -3128,7 +3151,11 @@ var Font = (function FontClosure() {
       }
     },
 
-    bindDOM: function Font_bindDOM(data) {
+    bindDOM: function Font_bindDOM() {
+      if (!this.data)
+        return null;
+
+      var data = bytesToString(this.data);
       var fontName = this.loadedName;
 
       // Add the font-face rule to the document
