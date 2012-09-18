@@ -227,9 +227,11 @@ var PDFView = {
   isFullscreen: false,
   previousScale: null,
   pageRotation: 0,
+  lastScroll: 0,
 
   // called once when the document is loaded
   initialize: function pdfViewInitialize() {
+    var self = this;
     var container = this.container = document.getElementById('viewerContainer');
     this.pageViewScroll = {};
     this.watchScroll(container, this.pageViewScroll, updateViewarea);
@@ -241,6 +243,9 @@ var PDFView = {
                      this.renderHighestPriority.bind(this));
 
     this.initialized = true;
+    container.addEventListener('scroll', function() {
+      self.lastScroll = Date.now();
+    }, false);
   },
 
   // Helper function to keep track whether a div was scrolled up or down and
@@ -1816,6 +1821,7 @@ var CustomStyle = (function CustomStyleClosure() {
 })();
 
 var TextLayerBuilder = function textLayerBuilder(textLayerDiv) {
+  var textLayerFrag = document.createDocumentFragment();
   this.textLayerDiv = textLayerDiv;
 
   this.beginLayout = function textLayerBuilderBeginLayout() {
@@ -1823,28 +1829,21 @@ var TextLayerBuilder = function textLayerBuilder(textLayerDiv) {
     this.textLayerQueue = [];
   };
 
-  this.endLayout = function textLayerBuilderEndLayout() {
+  this.renderLayer = function textLayerBuilderRenderLayer() {
     var self = this;
     var textDivs = this.textDivs;
     var textLayerDiv = this.textLayerDiv;
-    var renderTimer = null;
-    var renderingDone = false;
-    var renderInterval = 0;
-    var resumeInterval = 500; // in ms
-
     var canvas = document.createElement('canvas');
     var ctx = canvas.getContext('2d');
 
-    // Render the text layer, one div at a time
-    function renderTextLayer() {
-      if (textDivs.length === 0) {
-        clearInterval(renderTimer);
-        renderingDone = true;
-        self.textLayerDiv = textLayerDiv = canvas = ctx = null;
-        return;
-      }
+    // No point in rendering so many divs as it'd make the browser unusable
+    // even after the divs are rendered
+    if (textDivs.length > 100000)
+      return;
+
+    while (textDivs.length > 0) {
       var textDiv = textDivs.shift();
-      textLayerDiv.appendChild(textDiv);
+      textLayerFrag.appendChild(textDiv);
 
       ctx.font = textDiv.style.fontSize + ' ' + textDiv.style.fontFamily;
       var width = ctx.measureText(textDiv.textContent).width;
@@ -1857,28 +1856,26 @@ var TextLayerBuilder = function textLayerBuilder(textLayerDiv) {
         CustomStyle.setProp('transformOrigin' , textDiv, '0% 0%');
       }
     }
-    renderTimer = setInterval(renderTextLayer, renderInterval);
 
-    // Stop rendering when user scrolls. Resume after XXX milliseconds
-    // of no scroll events
-    var scrollTimer = null;
-    function textLayerOnScroll() {
-      if (renderingDone) {
-        window.removeEventListener('scroll', textLayerOnScroll, false);
-        return;
-      }
+    textLayerDiv.appendChild(textLayerFrag);
+  };
 
-      // Immediately pause rendering
-      clearInterval(renderTimer);
-
-      clearTimeout(scrollTimer);
-      scrollTimer = setTimeout(function textLayerScrollTimer() {
-        // Resume rendering
-        renderTimer = setInterval(renderTextLayer, renderInterval);
-      }, resumeInterval);
-    } // textLayerOnScroll
-
-    window.addEventListener('scroll', textLayerOnScroll, false);
+  this.endLayout = function textLayerBuilderEndLayout() {
+    // Schedule renderLayout() if user has been scrolling, otherwise
+    // run it right away
+    var kRenderDelay = 200; // in ms
+    var self = this;
+    if (Date.now() - PDFView.lastScroll > kRenderDelay) {
+      // Render right away
+      this.renderLayer();
+    } else {
+      // Schedule
+      if (this.renderTimer)
+        clearTimeout(this.renderTimer);
+      this.renderTimer = setTimeout(function() {
+        self.endLayout();
+      }, kRenderDelay);
+    }
   }; // endLayout
 
   this.appendText = function textLayerBuilderAppendText(text,
