@@ -418,10 +418,25 @@ function mapPrivateUseChars(code) {
 }
 
 var FontLoader = {
+//#if !(MOZCENTRAL)
   loadingContext: {
     requests: [],
     nextRequestId: 0
   },
+
+  isSyncFontLoadingSupported: (function detectSyncFontLoadingSupport() {
+    if (isWorker)
+      return false;
+
+    // User agent string sniffing is bad, but there is no reliable way to tell
+    // if font is fully loaded and ready to be used with canvas.
+    var userAgent = window.navigator.userAgent;
+    var m = /Mozilla\/5.0.*?rv:(\d+).*? Gecko/.exec(userAgent);
+    if (m && m[1] >= 14)
+      return true;
+    // TODO other browsers
+    return false;
+  })(),
 
   bind: function fontLoaderBind(fonts, callback) {
     assert(!isWorker, 'bind() shall be called from main thread');
@@ -437,23 +452,15 @@ var FontLoader = {
       }
       font.attached = true;
 
-      var str = '';
-      var data = font.data;
-      if (data) {
-        var length = data.length;
-        for (var j = 0; j < length; j++)
-          str += String.fromCharCode(data[j]);
-
-        var rule = font.bindDOM(str);
-        if (rule) {
-          rules.push(rule);
-          fontsToLoad.push(font);
-        }
+      var rule = font.bindDOM();
+      if (rule) {
+        rules.push(rule);
+        fontsToLoad.push(font);
       }
     }
 
     var request = FontLoader.queueLoadingCallback(callback);
-    if (rules.length > 0) {
+    if (rules.length > 0 && !this.isSyncFontLoadingSupported) {
       FontLoader.prepareFontLoadEvent(rules, fontsToLoad, request);
     } else {
       request.complete();
@@ -595,6 +602,22 @@ var FontLoader = {
       document.body.appendChild(frame);
       /** Hack end */
   }
+//#else
+//bind: function fontLoaderBind(fonts, callback) {
+//  assert(!isWorker, 'bind() shall be called from main thread');
+//
+//  for (var i = 0, ii = fonts.length; i < ii; i++) {
+//    var font = fonts[i];
+//    if (font.attached)
+//      continue;
+//
+//    font.attached = true;
+//    font.bindDOM()
+//  }
+//
+//  setTimeout(callback);
+//}
+//#endif
 };
 
 var UnicodeRanges = [
@@ -1464,54 +1487,30 @@ var NormalizedUnicodes = {
   '\uFE4F': '\u005F'
 };
 
-function fontCharsToUnicode(charCodes, fontProperties) {
-  var toUnicode = fontProperties.toUnicode;
-  var composite = fontProperties.composite;
-  var encoding, differences, cidToUnicode;
-  var result = '';
-  if (composite) {
-    cidToUnicode = fontProperties.cidToUnicode;
-    for (var i = 0, ii = charCodes.length; i < ii; i += 2) {
-      var charCode = (charCodes.charCodeAt(i) << 8) |
-        charCodes.charCodeAt(i + 1);
-      if (toUnicode && charCode in toUnicode) {
-        var unicode = toUnicode[charCode];
-        result += typeof unicode !== 'number' ? unicode :
-          String.fromCharCode(unicode);
-        continue;
-      }
-      result += String.fromCharCode(!cidToUnicode ? charCode :
-        cidToUnicode[charCode] || charCode);
-    }
-  } else {
-    differences = fontProperties.differences;
-    encoding = fontProperties.baseEncoding;
-    for (var i = 0, ii = charCodes.length; i < ii; i++) {
-      var charCode = charCodes.charCodeAt(i);
-      var unicode;
-      if (toUnicode && charCode in toUnicode) {
-        var unicode = toUnicode[charCode];
-        result += typeof unicode !== 'number' ? unicode :
-          String.fromCharCode(unicode);
-        continue;
-      }
+function reverseIfRtl(chars) {
+  var charsLength = chars.length;
+  //reverse an arabic ligature
+  if (charsLength <= 1 || !isRTLRangeFor(chars.charCodeAt(0)))
+    return chars;
 
-      var glyphName = charCode in differences ? differences[charCode] :
-        encoding[charCode];
-      if (glyphName in GlyphsUnicode) {
-        result += String.fromCharCode(GlyphsUnicode[glyphName]);
-        continue;
-      }
-      result += String.fromCharCode(charCode);
-    }
-  }
-  // normalizing the unicode characters
-  for (var i = 0, ii = result.length; i < ii; i++) {
-    if (!(result[i] in NormalizedUnicodes))
+  var s = '';
+  for (var ii = charsLength - 1; ii >= 0; ii--)
+    s += chars[ii];
+  return s;
+}
+
+function fontCharsToUnicode(charCodes, font) {
+  var glyphs = font.charsToGlyphs(charCodes);
+  var result = '';
+  for (var i = 0, ii = glyphs.length; i < ii; i++) {
+    var glyph = glyphs[i];
+    if (!glyph)
       continue;
-    result = result.substring(0, i) + NormalizedUnicodes[result[i]] +
-      result.substring(i + 1);
-    ii = result.length;
+
+    var glyphUnicode = glyph.unicode;
+    if (glyphUnicode in NormalizedUnicodes)
+      glyphUnicode = NormalizedUnicodes[glyphUnicode];
+    result += reverseIfRtl(glyphUnicode);
   }
   return result;
 }
@@ -1526,9 +1525,19 @@ function fontCharsToUnicode(charCodes, fontProperties) {
  */
 var Font = (function FontClosure() {
   function Font(name, file, properties) {
+    if (arguments.length === 1) {
+      // importing translated data
+      var data = arguments[0];
+      for (var i in data) {
+        this[i] = data[i];
+      }
+      return;
+    }
+
     this.name = name;
+    this.loadedName = properties.loadedName;
     this.coded = properties.coded;
-    this.charProcOperatorList = properties.charProcOperatorList;
+    this.loadCharProcs = properties.coded;
     this.sizes = [];
 
     var names = name.split('+');
@@ -1536,17 +1545,13 @@ var Font = (function FontClosure() {
     names = names.split(/[-,_]/g)[0];
     this.isSerifFont = !!(properties.flags & FontFlags.Serif);
     this.isSymbolicFont = !!(properties.flags & FontFlags.Symbolic);
+    this.isMonospace = !!(properties.flags & FontFlags.FixedPitch);
 
     var type = properties.type;
     this.type = type;
 
-    // If the font is to be ignored, register it like an already loaded font
-    // to avoid the cost of waiting for it be be loaded by the platform.
-    if (properties.ignore) {
-      this.loadedName = this.isSerifFont ? 'serif' : 'sans-serif';
-      this.loading = false;
-      return;
-    }
+    this.fallbackName = this.isMonospace ? 'monospace' :
+                        this.isSerifFont ? 'serif' : 'sans-serif';
 
     this.differences = properties.differences;
     this.widths = properties.widths;
@@ -1632,7 +1637,6 @@ var Font = (function FontClosure() {
     this.widthMultiplier = !properties.fontMatrix ? 1.0 :
       1.0 / properties.fontMatrix[0];
     this.encoding = properties.baseEncoding;
-    this.loadedName = properties.loadedName;
     this.loading = true;
   };
 
@@ -2035,6 +2039,15 @@ var Font = (function FontClosure() {
     font: null,
     mimetype: null,
     encoding: null,
+
+    export: function Font_export() {
+      var data = {};
+      for (var i in this) {
+        if (this.hasOwnProperty(i))
+          data[i] = this[i];
+      }
+      return data;
+    },
 
     checkAndRepair: function Font_checkAndRepair(name, font, properties) {
       function readTableEntry(file) {
@@ -3138,7 +3151,11 @@ var Font = (function FontClosure() {
       }
     },
 
-    bindDOM: function Font_bindDOM(data) {
+    bindDOM: function Font_bindDOM() {
+      if (!this.data)
+        return null;
+
+      var data = bytesToString(this.data);
       var fontName = this.loadedName;
 
       // Add the font-face rule to the document

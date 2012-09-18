@@ -11,6 +11,12 @@
        "rounds": 2,
        "type": "fbf"
     },
+    {  "id": "tracemonkey-text",
+       "file": "pdfs/tracemonkey.pdf",
+       "md5": "9a192d8b1a7dc652a19835f6f08098bd",
+       "rounds": 1,
+       "type": "text"
+    },
     {  "id": "html5-canvas-cheat-sheet-load",
        "file": "pdfs/canvas.pdf",
        "md5": "59510028561daf62e00bf9f6f066b033",
@@ -77,6 +83,12 @@
        "rounds": 1,
        "type": "load"
     },
+    {  "id": "arabiccidtruetype-text",
+       "file": "pdfs/ArabicCIDTrueType.pdf",
+       "md5": "d66dbd18bdb572d3ac8b88b32de2ece6",
+       "rounds": 1,
+       "type": "text"
+    },
     {  "id": "complexttffont-pdf",
        "file": "pdfs/complex_ttf_font.pdf",
        "md5": "76de93f9116b01b693bf8583b3e76d91",
@@ -88,6 +100,12 @@
        "md5": "b7e18bf7a3d6a9c82aefa12d721072fc",
        "rounds": 1,
        "type": "eq"
+    },
+    {  "id": "thuluthfont-text",
+       "file": "pdfs/ThuluthFeatures.pdf",
+       "md5": "b7e18bf7a3d6a9c82aefa12d721072fc",
+       "rounds": 1,
+       "type": "text"
     },
     {  "id": "freeculture",
        "file": "pdfs/freeculture.pdf",
@@ -262,6 +280,13 @@
        "link": false,
        "rounds": 1,
        "type": "eq"
+    },
+    {  "id": "simpletype3font-text",
+       "file": "pdfs/simpletype3font.pdf",
+       "md5": "b374c7543920840c61999e9e86939f99",
+       "link": false,
+       "rounds": 1,
+       "type": "text"
     },
     {  "id": "close-path-bug",
        "file": "pdfs/close-path-bug.pdf",

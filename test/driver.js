@@ -26,7 +26,7 @@
 //   "firefox-bin: Fatal IO error 12 (Cannot allocate memory) on X server :1."
 // PDFJS.disableWorker = true;
 
-var appPath, browser, canvas, currentTaskIdx, manifest, stdout;
+var appPath, browser, canvas, dummyCanvas, currentTaskIdx, manifest, stdout;
 var inFlightRequests = 0;
 
 function queryParams() {
@@ -148,6 +148,46 @@ function canvasToDataURL() {
   return canvas.toDataURL('image/png');
 }
 
+function NullTextLayerBuilder() {
+}
+NullTextLayerBuilder.prototype = {
+  beginLayout: function NullTextLayerBuilder_BeginLayout() {},
+  endLayout: function NullTextLayerBuilder_EndLayout() {},
+  appendText: function NullTextLayerBuilder_AppendText() {}
+};
+
+function SimpleTextLayerBuilder(ctx, viewport) {
+  this.ctx = ctx;
+  this.viewport = viewport;
+}
+SimpleTextLayerBuilder.prototype = {
+  beginLayout: function SimpleTextLayerBuilder_BeginLayout() {
+    this.ctx.save();
+  },
+  endLayout: function SimpleTextLayerBuilder_EndLayout() {
+    this.ctx.restore();
+  },
+  appendText: function SimpleTextLayerBuilder_AppendText(text, fontName,
+                                                         fontSize) {
+    var ctx = this.ctx, viewport = this.viewport;
+    // vScale and hScale already contain the scaling to pixel units
+    var fontHeight = fontSize * text.geom.vScale;
+    ctx.beginPath();
+    ctx.strokeStyle = 'red';
+    ctx.fillStyle = 'yellow';
+    ctx.rect(text.geom.x, text.geom.y - fontHeight,
+             text.canvasWidth * text.geom.hScale, fontHeight);
+    ctx.stroke();
+    ctx.fill();
+
+    var textContent = bidi(text, -1);
+    ctx.font = fontHeight + 'px ' + fontName;
+    ctx.fillStyle = 'black';
+    ctx.fillText(textContent, text.geom.x, text.geom.y);
+  }
+};
+
+
 function nextPage(task, loadError) {
   var failure = loadError || '';
 
@@ -196,16 +236,21 @@ function nextPage(task, loadError) {
         canvas.height = viewport.height;
         clear(ctx);
 
-        // using the text layer builder that does nothing to test
-        // text layer creation operations
-        var textLayerBuilder = {
-          beginLayout: function nullTextLayerBuilderBeginLayout() {},
-          endLayout: function nullTextLayerBuilderEndLayout() {},
-          appendText: function nullTextLayerBuilderAppendText(text, fontName,
-                                                              fontSize) {}
-        };
+        var drawContext, textLayerBuilder;
+        if (task.type == 'text') {
+          // using dummy canvas for pdf context drawing operations
+          if (!dummyCanvas) {
+            dummyCanvas = document.createElement('canvas');
+          }
+          drawContext = dummyCanvas.getContext('2d');
+          // ... text builder will draw its content on the test canvas
+          textLayerBuilder = new SimpleTextLayerBuilder(ctx, viewport);
+        } else {
+          drawContext = ctx;
+          textLayerBuilder = new NullTextLayerBuilder();
+        }
         var renderContext = {
-          canvasContext: ctx,
+          canvasContext: drawContext,
           textLayer: textLayerBuilder,
           viewport: viewport
         };

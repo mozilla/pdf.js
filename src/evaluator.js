@@ -26,6 +26,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
     this.handler = handler;
     this.uniquePrefix = uniquePrefix;
     this.objIdCounter = 0;
+    this.fontIdCounter = 0;
   }
 
   var OP_MAP = {
@@ -138,6 +139,35 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
   };
 
   PartialEvaluator.prototype = {
+    loadFont: function PartialEvaluator_loadFont(fontName, font, xref,
+                                                 resources, dependency) {
+      var fontRes = resources.get('Font');
+
+      assert(fontRes, 'fontRes not available');
+
+      font = xref.fetchIfRef(font) || fontRes.get(fontName);
+      assertWellFormed(isDict(font));
+
+      ++this.fontIdCounter;
+      var loadedName = font.loadedName;
+      if (!loadedName) {
+        // keep track of each font we translated so the caller can
+        // load them asynchronously before calling display on a page
+        loadedName = 'font_' + this.uniquePrefix + this.fontIdCounter;
+        font.loadedName = loadedName;
+
+        var translated;
+        try {
+          translated = this.translateFont(font, xref, resources,
+                                          dependency);
+        } catch (e) {
+          translated = { error: e };
+        }
+        font.translated = translated;
+      }
+      return font;
+    },
+
     getOperatorList: function PartialEvaluator_getOperatorList(stream,
                                                                resources,
                                                                dependency,
@@ -160,46 +190,35 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       }
 
       function handleSetFont(fontName, font) {
-        var loadedName = null;
+        font = self.loadFont(fontName, font, xref, resources, dependency);
 
-        var fontRes = resources.get('Font');
+        var loadedName = font.loadedName;
+        if (!font.sent) {
+          var data = font.translated;
+          if (data.loadCharProcs) {
+            delete data.loadCharProcs;
 
-        assert(fontRes, 'fontRes not available');
-
-        font = xref.fetchIfRef(font) || fontRes.get(fontName);
-        assertWellFormed(isDict(font));
-
-        ++self.objIdCounter;
-        if (!font.loadedName) {
-          font.translated = self.translateFont(font, xref, resources,
-                                               dependency);
-          if (font.translated) {
-            // keep track of each font we translated so the caller can
-            // load them asynchronously before calling display on a page
-            loadedName = 'font_' + uniquePrefix + self.objIdCounter;
-            font.translated.properties.loadedName = loadedName;
-            font.loadedName = loadedName;
-
-            var translated = font.translated;
-            // Convert the file to an ArrayBuffer which will be turned back into
-            // a Stream in the main thread.
-            if (translated.file)
-              translated.file = translated.file.getBytes();
-            if (translated.properties.file) {
-              translated.properties.file =
-                  translated.properties.file.getBytes();
+            var charProcs = font.get('CharProcs').getAll();
+            var fontResources = font.get('Resources') || resources;
+            var charProcOperatorList = {};
+            for (var key in charProcs) {
+              var glyphStream = charProcs[key];
+              charProcOperatorList[key] =
+                self.getOperatorList(glyphStream, fontResources, dependency);
             }
-
-            handler.send('obj', [
-                loadedName,
-                'Font',
-                translated.name,
-                translated.file,
-                translated.properties
-            ]);
+            data.charProcOperatorList = charProcOperatorList;
           }
+
+          if (data instanceof Font)
+            data = data.export();
+
+          handler.send('obj', [
+              loadedName,
+              'Font',
+              data
+          ]);
+          font.sent = true;
         }
-        loadedName = loadedName || font.loadedName;
 
         // Ensure the font is ready before the font is set
         // and later on used for drawing.
@@ -492,20 +511,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       var xref = this.xref;
 
       function handleSetFont(fontName, fontRef) {
-        var fontRes = resources.get('Font');
-
-        // TODO: TOASK: Is it possible to get here? If so, what does
-        // args[0].name should be like???
-        assert(fontRes, 'fontRes not available');
-
-        fontRes = xref.fetchIfRef(fontRes);
-        fontRef = fontRef || fontRes.get(fontName);
-        var font = xref.fetchIfRef(fontRef), tra;
-        assertWellFormed(isDict(font));
-        if (!font.translated) {
-          font.translated = self.translateFont(font, xref, resources);
-        }
-        return font;
+        return self.loadFont(fontName, fontRef, xref, resources, null);
       }
 
       resources = xref.fetchIfRef(resources) || new Dict();
@@ -522,13 +528,13 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           var cmd = obj.cmd;
           switch (cmd) {
             case 'Tf':
-              font = handleSetFont(args[0].name);
+              font = handleSetFont(args[0].name).translated;
               break;
             case 'TJ':
               var items = args[0];
               for (var j = 0, jj = items.length; j < jj; j++) {
                 if (typeof items[j] === 'string') {
-                  chunk += items[j];
+                  chunk += fontCharsToUnicode(items[j], font);
                 } else if (items[j] < 0) {
                   // making all negative offsets a space - better to have
                   // a space in incorrect place than not have them at all
@@ -537,17 +543,17 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
               }
               break;
             case 'Tj':
-              chunk += args[0];
+              chunk += fontCharsToUnicode(args[0], font);
               break;
             case "'":
-              chunk += args[0] + ' ';
+              chunk += fontCharsToUnicode(args[0], font) + ' ';
               break;
             case '"':
-              chunk += args[2] + ' ';
+              chunk += fontCharsToUnicode(args[2], font) + ' ';
               break;
           } // switch
           if (chunk !== '') {
-            text += fontCharsToUnicode(chunk, font.translated.properties);
+            text += chunk;
             chunk = '';
           }
 
@@ -819,21 +825,41 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         }
       }
 
+      // Heuristic: detection of monospace font by checking all non-zero widths
+      var isMonospace = true, firstWidth = defaultWidth;
+      for (var glyph in glyphsWidths) {
+        var glyphWidth = glyphsWidths[glyph];
+        if (!glyphWidth)
+          continue;
+        if (!firstWidth) {
+          firstWidth = glyphWidth;
+          continue;
+        }
+        if (firstWidth != glyphWidth) {
+          isMonospace = false;
+          break;
+        }
+      }
+      if (isMonospace)
+        properties.flags |= FontFlags.FixedPitch;
+
       properties.defaultWidth = defaultWidth;
       properties.widths = glyphsWidths;
     },
 
     getBaseFontMetrics: function PartialEvaluator_getBaseFontMetrics(name) {
-      var defaultWidth = 0, widths = [];
+      var defaultWidth = 0, widths = [], monospace = false;
       var glyphWidths = Metrics[stdFontMap[name] || name];
       if (isNum(glyphWidths)) {
         defaultWidth = glyphWidths;
+        monospace = true;
       } else {
         widths = glyphWidths;
       }
 
       return {
         defaultWidth: defaultWidth,
+        monospace: monospace,
         widths: widths
       };
     },
@@ -854,7 +880,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         //  - get the FontDescriptor from the descendant font
         var df = dict.get('DescendantFonts');
         if (!df)
-          return null;
+          error('Descendant fonts are not specified');
 
         dict = isArray(df) ? xref.fetchIfRef(df[0]) : df;
 
@@ -877,7 +903,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           // This case is here for compatibility.
           var baseFontName = dict.get('BaseFont');
           if (!isName(baseFontName))
-            return null;
+            error('Base font is not specified');
 
           // Using base font name as a font name.
           baseFontName = baseFontName.name.replace(/[,_]/g, '-');
@@ -887,6 +913,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           var fontNameWoStyle = baseFontName.split('-')[0];
           var flags = (serifFonts[fontNameWoStyle] ||
             (fontNameWoStyle.search(/serif/gi) != -1) ? FontFlags.Serif : 0) |
+            (metrics.monospace ? FontFlags.FixedPitch : 0) |
             (symbolsFonts[fontNameWoStyle] ? FontFlags.Symbolic :
             FontFlags.Nonsymbolic);
 
@@ -900,11 +927,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           };
           this.extractDataStructures(dict, dict, xref, properties);
 
-          return {
-            name: baseFontName,
-            dict: baseDict,
-            properties: properties
-          };
+          return new Font(baseFontName, null, properties);
         }
       }
 
@@ -940,6 +963,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         file: fontFile,
         length1: length1,
         length2: length2,
+        loadedName: baseDict.loadedName,
         composite: composite,
         wideChars: composite,
         fixedPitch: false,
@@ -960,22 +984,9 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
 
       if (type.name === 'Type3') {
         properties.coded = true;
-        var charProcs = dict.get('CharProcs').getAll();
-        var fontResources = dict.get('Resources') || resources;
-        properties.charProcOperatorList = {};
-        for (var key in charProcs) {
-          var glyphStream = charProcs[key];
-          properties.charProcOperatorList[key] =
-            this.getOperatorList(glyphStream, fontResources, dependency);
-        }
       }
 
-      return {
-        name: fontName.name,
-        dict: baseDict,
-        file: fontFile,
-        properties: properties
-      };
+      return new Font(fontName.name, fontFile, properties);
     }
   };
 
