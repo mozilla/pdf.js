@@ -701,6 +701,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
           if (glyph === null) {
             // word break
             this.ctx.translate(wordSpacing, 0);
+            current.x += wordSpacing * textHScale;
             continue;
           }
 
