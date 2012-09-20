@@ -793,7 +793,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       if (textSelection) {
         geom.canvasWidth = canvasWidth;
         this.textLayer.appendText(font.fallbackName, fontSize, geom);
-      }`
+      }
 
       return canvasWidth;
     },
