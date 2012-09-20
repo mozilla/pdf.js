@@ -193,7 +193,7 @@ var ColorSpace = (function ColorSpaceClosure() {
       return true;
 
     if (n * 2 !== decode.length) {
-      warning('The decode map is not the correct length');
+      warn('The decode map is not the correct length');
       return true;
     }
     for (var i = 0, ii = decode.length; i < ii; i += 2) {

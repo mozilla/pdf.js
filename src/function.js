@@ -167,7 +167,7 @@ var PDFFunction = (function PDFFunctionClosure() {
         var range = IR[9];
 
         if (m != args.length)
-          error('Incorrect number of arguments: ' + inputSize + ' != ' +
+          error('Incorrect number of arguments: ' + m + ' != ' +
                 args.length);
 
         var x = args;
