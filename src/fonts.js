@@ -2040,7 +2040,7 @@ var Font = (function FontClosure() {
     mimetype: null,
     encoding: null,
 
-    export: function Font_export() {
+    exportData: function Font_exportData() {
       var data = {};
       for (var i in this) {
         if (this.hasOwnProperty(i))
