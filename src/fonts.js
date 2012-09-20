@@ -3174,8 +3174,9 @@ var Font = (function FontClosure() {
       var styleSheet = styleElement.sheet;
       styleSheet.insertRule(rule, styleSheet.cssRules.length);
 
-      if (PDFJS.pdfBug && FontInspector.enabled)
-        FontInspector.fontAdded(this, url);
+      if (PDFJS.pdfBug && 'FontInspector' in globalScope &&
+          globalScope['FontInspector'].enabled)
+        globalScope['FontInspector'].fontAdded(this, url);
 
       return rule;
     },
@@ -4704,7 +4705,7 @@ var CFFParser = (function CFFParserClosure() {
 
         var data = charstring;
         var length = data.length;
-        for (var j = 0; j <= length; j) {
+        for (var j = 0; j <= length;) {
           var value = data[j++];
           if (value == 12 && data[j++] == 0) {
               data[j - 2] = 139;

@@ -236,7 +236,7 @@ var Page = (function PageClosure() {
     },
     getLinks: function Page_getLinks() {
       var links = [];
-      var annotations = pageGetAnnotations();
+      var annotations = this.getAnnotations();
       var i, n = annotations.length;
       for (i = 0; i < n; ++i) {
         if (annotations[i].type != 'Link')

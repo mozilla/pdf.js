@@ -516,6 +516,10 @@ var JpegImage = (function jpegImage() {
     return lines;
   }
 
+  function clampTo8bit(a) {
+    return a < 0 ? 0 : a > 255 ? 255 : a;
+  }
+
   constructor.prototype = {
     load: function load(path) {
       var xhr = new XMLHttpRequest();
@@ -766,9 +770,6 @@ var JpegImage = (function jpegImage() {
       }
     },
     getData: function getData(width, height) {
-      function clampTo8bit(a) {
-        return a < 0 ? 0 : a > 255 ? 255 : a;
-      }
       var scaleX = this.width / width, scaleY = this.height / height;
 
       var component1, component2, component3, component4;
