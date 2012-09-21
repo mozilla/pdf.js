@@ -181,7 +181,7 @@ target.locale = function() {
     if (test('-f', path + '/chrome.properties')) {
       cp(path + '/chrome.properties', EXTENSION_LOCALE_OUTPUT + '/' + locale);
     }
-	
+
     if (test('-f', path + '/settings.dtd')) {
       cp(path + '/settings.dtd', EXTENSION_LOCALE_OUTPUT + '/' + locale);
     }
