@@ -182,7 +182,7 @@ target.locale = function() {
       cp(path + '/chrome.properties', EXTENSION_LOCALE_OUTPUT + '/' + locale);
     }
 	
-	if (test('-f', path + '/settings.dtd')) {
+    if (test('-f', path + '/settings.dtd')) {
       cp(path + '/settings.dtd', EXTENSION_LOCALE_OUTPUT + '/' + locale);
     }
 
@@ -314,7 +314,7 @@ target.firefox = function() {
          '*.rdf',
          '*.svg',
          '*.png',
-		 'options.xul',
+         'options.xul',
          '*.manifest',
          'components',
          'locale',
@@ -322,7 +322,7 @@ target.firefox = function() {
       FIREFOX_EXTENSION_FILES =
         ['bootstrap.js',
          'install.rdf',
-		 'options.xul',
+         'options.xul',
          'chrome.manifest',
          'icon.png',
          'icon64.png',
