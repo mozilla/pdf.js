@@ -210,7 +210,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           }
 
           if (data instanceof Font)
-            data = data.export();
+            data = data.exportData();
 
           handler.send('obj', [
               loadedName,
