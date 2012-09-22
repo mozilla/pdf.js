@@ -483,7 +483,6 @@ var PDFView = {
     function noData() {
       FirefoxCom.request('download', { originalUrl: url });
     }
-
     var url = this.url.split('#')[0];
 //#if !(FIREFOX || MOZCENTRAL)
     url += '#pdfjs.action=download';
@@ -496,10 +495,8 @@ var PDFView = {
 //  }
 //  this.pdfDocument.getData().then(
 //    function getDataSuccess(data) {
-//      var bb = new MozBlobBuilder();
-//      bb.append(data.buffer);
-//      var blobUrl = window.URL.createObjectURL(
-//                      bb.getBlob('application/pdf'));
+//      var blob = PDFJS.createBlob(data.buffer, 'application/pdf');
+//      var blobUrl = window.URL.createObjectURL(blob);
 //
 //      FirefoxCom.request('download', { blobUrl: blobUrl, originalUrl: url },
 //        function response(err) {
