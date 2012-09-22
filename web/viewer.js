@@ -1930,15 +1930,14 @@ var TextLayerBuilder = function textLayerBuilder(textLayerDiv) {
     this.divContentDone = true;
 
     var textDivs = this.textDivs;
-    var textContent = this.textContent;
-    var text = textContent.text;
-    var dirs = textContent.dirs;
+    var bidiTexts = this.textContent.bidiTexts;
 
-    for (var i = 0; i < text.length; i++) {
+    for (var i = 0; i < bidiTexts.length; i++) {
+      var bidiText = bidiTexts[i];
       var textDiv = textDivs[i];
 
-      textDiv.textContent = text[i];
-      textDiv.dir = dirs[i] ? 'ltr' : 'rtl';
+      textDiv.textContent = bidiText.str;
+      textDiv.dir = bidiText.ltr ? 'ltr' : 'rtl';
     }
 
     this.setupRenderLayoutTimer();

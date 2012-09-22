@@ -3181,7 +3181,7 @@ var Font = (function FontClosure() {
     },
 
     get spaceWidth() {
-      if (this._shadowWidth !== undefined) {
+      if ('_shadowWidth' in this) {
         return this._shadowWidth;
       }
 
@@ -3212,6 +3212,8 @@ var Font = (function FontClosure() {
           break; // the non-zero width found
       }
       width = (width || this.defaultWidth) * this.widthMultiplier;
+      // Do not shadow the property here. See discussion:
+      // https://github.com/mozilla/pdf.js/pull/2127#discussion_r1662280
       this._shadowWidth = width;
       return width;
     },

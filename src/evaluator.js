@@ -509,19 +509,15 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
 
     getTextContent: function partialEvaluatorGetIRQueue(
                                                     stream, resources, state) {
-      var text;
-      var dirs;
+      var bidiTexts;
 
       if (!state) {
-        text = [];
-        dirs = [];
+        bidiTexts = [];
         state = {
-          text: text,
-          dirs: dirs
+          bidiTexts: bidiTexts
         };
       } else {
-        text = state.text;
-        dirs = state.dirs;
+        bidiTexts = state.bidiTexts;
       }
 
       var self = this;
@@ -627,9 +623,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           } // switch
 
           if (chunk !== '') {
-            var bidiText = PDFJS.bidi(chunk, -1);
-            text.push(bidiText.str);
-            dirs.push(bidiText.ltr);
+            bidiTexts.push(PDFJS.bidi(chunk, -1));
 
             chunk = '';
           }

@@ -181,7 +181,7 @@ SimpleTextLayerBuilder.prototype = {
     ctx.stroke();
     ctx.fill();
 
-    var textContent = this.textContent.text[this.textCounter];
+    var textContent = this.textContent.bidiTexts[this.textCounter].str;
     ctx.font = fontHeight + 'px ' + fontName;
     ctx.fillStyle = 'black';
     ctx.fillText(textContent, geom.x, geom.y);
