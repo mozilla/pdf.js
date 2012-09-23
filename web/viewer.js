@@ -1155,8 +1155,8 @@ var PDFView = {
   },
 
   fullscreen: function pdfViewFullscreen() {
-    var isFullscreen = document.fullscreenElement && document.fullscreenElement !== null || 
-        document.mozFullScreen || document.webkitIsFullScreen;
+    var isFullscreen = document.fullscreenElement || document.mozFullScreen ||
+    document.webkitIsFullScreen;
 
     if (isFullscreen) {
       return false;
@@ -2368,8 +2368,8 @@ window.addEventListener('afterprint', function afterPrint(evt) {
 
 (function fullscreenClosure() {
   function fullscreenChange(e) {
-    var isFullscreen = document.fullscreenElement && document.fullscreenElement !== null || 
-        document.mozFullScreen || document.webkitIsFullScreen;
+    var isFullscreen = document.fullscreenElement || document.mozFullScreen ||
+    document.webkitIsFullScreen;
 
     if (!isFullscreen) {
       PDFView.exitFullscreen();
