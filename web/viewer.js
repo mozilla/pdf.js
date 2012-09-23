@@ -383,7 +383,7 @@ var PDFView = {
 
   get supportsFullscreen() {
     var doc = document.documentElement;
-    var support = doc.requestFullScreen || doc.mozRequestFullScreen ||
+    var support = doc.requestFullscreen || doc.mozRequestFullScreen ||
                   doc.webkitRequestFullScreen;
     Object.defineProperty(this, 'supportsFullScreen', { value: support,
                                                         enumerable: true,
@@ -1155,7 +1155,7 @@ var PDFView = {
   },
 
   fullscreen: function pdfViewFullscreen() {
-    var isFullscreen = document.fullscreen || document.mozFullScreen ||
+    var isFullscreen = document.fullscreenElement || document.mozFullScreen ||
         document.webkitIsFullScreen;
 
     if (isFullscreen) {
@@ -1163,8 +1163,8 @@ var PDFView = {
     }
 
     var wrapper = document.getElementById('viewerContainer');
-    if (document.documentElement.requestFullScreen) {
-      wrapper.requestFullScreen();
+    if (document.documentElement.requestFullscreen) {
+      wrapper.requestFullscreen();
     } else if (document.documentElement.mozRequestFullScreen) {
       wrapper.mozRequestFullScreen();
     } else if (document.documentElement.webkitRequestFullScreen) {
@@ -2368,7 +2368,7 @@ window.addEventListener('afterprint', function afterPrint(evt) {
 
 (function fullscreenClosure() {
   function fullscreenChange(e) {
-    var isFullscreen = document.fullscreen || document.mozFullScreen ||
+    var isFullscreen = document.fullscreenElement || document.mozFullScreen ||
         document.webkitIsFullScreen;
 
     if (!isFullscreen) {
