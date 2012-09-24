@@ -460,9 +460,9 @@ var WorkerTransport = (function WorkerTransportClosure() {
 //#else
 //      // The firefox extension can't load the worker from the resource://
 //      // url so we have to inline the script and then use the blob loader.
-//      var bb = new MozBlobBuilder();
-//      bb.append(document.querySelector('#PDFJS_SCRIPT_TAG').textContent);
-//      var blobUrl = window.URL.createObjectURL(bb.getBlob());
+//      var script = document.querySelector('#PDFJS_SCRIPT_TAG');
+//      var blob = PDFJS.createBlob(script.textContent, script.type);
+//      var blobUrl = window.URL.createObjectURL(blob);
 //      worker = new Worker(blobUrl);
 //#endif
         var messageHandler = new MessageHandler('main', worker);
@@ -503,6 +503,7 @@ var WorkerTransport = (function WorkerTransportClosure() {
       this.pagePromises = [];
     },
     setupFakeWorker: function WorkerTransport_setupFakeWorker() {
+      warn('Setting up fake worker.');
       // If we don't use a worker, just post/sendMessage to the main thread.
       var fakeWorker = {
         postMessage: function WorkerTransport_postMessage(obj) {
