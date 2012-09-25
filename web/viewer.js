@@ -274,8 +274,16 @@ var PDFFindController = {
     function extractPageText(pageIndex) {
       PDFView.pages[pageIndex].getTextContent().then(
         function textContentResolved(data) {
+          // Bulid the search string.
+          var bidiTexts = data.bidiTexts;
+          var str = '';
+
+          for (var i = 0; i < bidiTexts.length; i++) {
+            str += bidiTexts[i].str;
+          }
+
           // Store the pageContent as a string.
-          self.pageContents.push(data.text.join(''));
+          self.pageContents.push(str);
           // Ensure there is a empty array of matches.
           self.pageMatches.push([]);
 
@@ -411,8 +419,6 @@ var PDFFindController = {
         this.updatePage(this.selected.pageIdx, true);
       }
     }
-
-
   }
 };
 
@@ -2207,8 +2213,11 @@ var TextLayerBuilder = function textLayerBuilder(textLayerDiv, pageIdx) {
     if (textDivs.length > 100000)
       return;
 
-    while (textDivs.length > 0) {
-      var textDiv = textDivs.shift();
+    var i = textDivs.length;
+
+    while (i !== 0) {
+      i--;
+      var textDiv = textDivs[i];
       textLayerFrag.appendChild(textDiv);
 
       ctx.font = textDiv.style.fontSize + ' ' + textDiv.style.fontFamily;
@@ -2224,7 +2233,7 @@ var TextLayerBuilder = function textLayerBuilder(textLayerDiv, pageIdx) {
         textLayerDiv.appendChild(textDiv);
       }
     }
- 
+
     this.renderingDone = true;
     this.updateMatches();
 
@@ -2298,8 +2307,8 @@ var TextLayerBuilder = function textLayerBuilder(textLayerDiv, pageIdx) {
   this.convertMatches = function textLayerBuilderConvertMatches(matches) {
     var i = 0;
     var iIndex = 0;
-    var textContent = this.textContent.text;
-    var end = textContent.length - 1;
+    var bidiTexts = this.textContent.bidiTexts;
+    var end = bidiTexts.length - 1;
     var queryLen = PDFFindController.state.query.length;
 
     var lastDivIdx = -1;
@@ -2313,13 +2322,13 @@ var TextLayerBuilder = function textLayerBuilder(textLayerDiv, pageIdx) {
       // # Calculate the begin position.
 
       // Loop over the divIdxs.
-      while (i !== end && matchIdx >= (iIndex + textContent[i].length)) {
-        iIndex += textContent[i].length;
+      while (i !== end && matchIdx >= (iIndex + bidiTexts[i].str.length)) {
+        iIndex += bidiTexts[i].str.length;
         i++;
       }
 
       // TODO: Do proper handling here if something goes wrong.
-      if (i == textContent.length) {
+      if (i == bidiTexts.length) {
         console.error('Could not find matching mapping');
       }
 
@@ -2335,8 +2344,8 @@ var TextLayerBuilder = function textLayerBuilder(textLayerDiv, pageIdx) {
 
       // Somewhat same array as above, but use a > instead of >= to get the end
       // position right.
-      while (i !== end && matchIdx > (iIndex + textContent[i].length)) {
-        iIndex += textContent[i].length;
+      while (i !== end && matchIdx > (iIndex + bidiTexts[i].str.length)) {
+        iIndex += bidiTexts[i].str.length;
         i++;
       }
 
@@ -2351,7 +2360,7 @@ var TextLayerBuilder = function textLayerBuilder(textLayerDiv, pageIdx) {
   };
 
   this.renderMatches = function textLayerBuilder_renderMatches(matches) {
-    var text = this.textContent.text;
+    var bidiTexts = this.textContent.bidiTexts;
     var textDivs = this.textDivs;
     var prevEnd = null;
     var isSelectedPage = this.pageIdx === PDFFindController.selected.pageIdx;
@@ -2367,7 +2376,7 @@ var TextLayerBuilder = function textLayerBuilder(textLayerDiv, pageIdx) {
       var div = textDivs[divIdx];
       div.innerHTML = '';
 
-      var content = text[divIdx].substring(0, begin.offset);
+      var content = bidiTexts[divIdx].str.substring(0, begin.offset);
       var node = document.createTextNode(content);
       if (className) {
         var isSelected = isSelectedPage &&
@@ -2385,7 +2394,7 @@ var TextLayerBuilder = function textLayerBuilder(textLayerDiv, pageIdx) {
       var divIdx = from.divIdx;
       var div = textDivs[divIdx];
 
-      var content = text[divIdx].substring(from.offset, to.offset);
+      var content = bidiTexts[divIdx].str.substring(from.offset, to.offset);
       var node = document.createTextNode(content);
       if (className) {
         var span = document.createElement('span');
@@ -2448,14 +2457,14 @@ var TextLayerBuilder = function textLayerBuilder(textLayerDiv, pageIdx) {
     // Clear out all matches.
     var matches = this.matches;
     var textDivs = this.textDivs;
-    var textContent = this.textContent;
+    var bidiTexts = this.textContent.bidiTexts;
     var clearedUntilDivIdx = -1;
 
     for (var i = 0; i < matches.length; i++) {
       var match = matches[i];
       var begin = Math.max(clearedUntilDivIdx, match.begin.divIdx);
       for (var n = begin; n <= match.end.divIdx; n++) {
-        var div = textDivs[n];
+        var div = bidiTexts[n].str;
         div.textContent = div.textContent;
         div.className = '';
       }
