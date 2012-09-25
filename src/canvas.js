@@ -677,9 +677,10 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       var textHScale2 = textHScale * fontMatrix[0];
       var glyphsLength = glyphs.length;
       var textLayer = this.textLayer;
-      var text = {str: '', length: 0, canvasWidth: 0, geom: {}};
+      var geom;
       var textSelection = textLayer && !skipTextSelection ? true : false;
       var textRenderingMode = current.textRenderingMode;
+      var canvasWidth = 0.0;
 
       // Type3 fonts - each glyph is a "mini-PDF"
       if (font.coded) {
@@ -692,7 +693,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
         if (textSelection) {
           this.save();
           ctx.scale(1, -1);
-          text.geom = this.getTextGeometry();
+          geom = this.getTextGeometry();
           this.restore();
         }
         for (var i = 0; i < glyphsLength; ++i) {
@@ -718,9 +719,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
           ctx.translate(width, 0);
           current.x += width * textHScale;
 
-          text.str += glyph.unicode;
-          text.length++;
-          text.canvasWidth += width;
+          canvasWidth += width;
         }
         ctx.restore();
       } else {
@@ -735,7 +734,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
           lineWidth /= scale;
 
         if (textSelection)
-          text.geom = this.getTextGeometry();
+          geom = this.getTextGeometry();
 
         if (fontSizeScale != 1.0) {
           ctx.scale(fontSizeScale, fontSizeScale);
@@ -784,17 +783,19 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
           var glyphUnicode = glyph.unicode === ' ' ? '\u00A0' : glyph.unicode;
           if (glyphUnicode in NormalizedUnicodes)
             glyphUnicode = NormalizedUnicodes[glyphUnicode];
-          text.str += reverseIfRtl(glyphUnicode);
-          text.canvasWidth += charWidth;
+
+          canvasWidth += charWidth;
         }
         current.x += x * textHScale2;
         ctx.restore();
       }
 
-      if (textSelection)
-        this.textLayer.appendText(text, font.fallbackName, fontSize);
+      if (textSelection) {
+        geom.canvasWidth = canvasWidth;
+        this.textLayer.appendText(font.fallbackName, fontSize, geom);
+      }
 
-      return text;
+      return canvasWidth;
     },
     showSpacedText: function CanvasGraphics_showSpacedText(arr) {
       var ctx = this.ctx;
@@ -806,7 +807,8 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
         textHScale *= (current.fontMatrix || IDENTITY_MATRIX)[0];
       var arrLength = arr.length;
       var textLayer = this.textLayer;
-      var text = {str: '', length: 0, canvasWidth: 0, geom: {}};
+      var geom;
+      var canvasWidth = 0.0;
       var textSelection = textLayer ? true : false;
 
       if (textSelection) {
@@ -819,7 +821,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
           ctx.scale(textHScale, 1);
         } else
           this.applyTextTransforms();
-        text.geom = this.getTextGeometry();
+        geom = this.getTextGeometry();
         ctx.restore();
       }
 
@@ -829,34 +831,22 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
           var spacingLength = -e * 0.001 * fontSize * textHScale;
           current.x += spacingLength;
 
-          if (textSelection) {
-            // Emulate precise spacing via HTML spaces
-            text.canvasWidth += spacingLength;
-            if (e < 0 && text.geom.spaceWidth > 0) { // avoid div by zero
-              var numFakeSpaces = Math.round(-e / text.geom.spaceWidth);
-              if (numFakeSpaces > 0) {
-                text.str += '\u00A0';
-              }
-            }
-          }
+          if (textSelection)
+            canvasWidth += spacingLength;
         } else if (isString(e)) {
-          var shownText = this.showText(e, true);
+          var shownCanvasWidth = this.showText(e, true);
 
-          if (textSelection) {
-            if (shownText.str === ' ') {
-              text.str += '\u00A0';
-            } else {
-              text.str += shownText.str;
-            }
-            text.canvasWidth += shownText.canvasWidth;
-          }
+          if (textSelection)
+            canvasWidth += shownCanvasWidth;
         } else {
           error('TJ array element ' + e + ' is not string or num');
         }
       }
 
-      if (textSelection)
-        this.textLayer.appendText(text, font.fallbackName, fontSize);
+      if (textSelection) {
+        geom.canvasWidth = canvasWidth;
+        this.textLayer.appendText(font.fallbackName, fontSize, geom);
+      }
     },
     nextLineShowText: function CanvasGraphics_nextLineShowText(text) {
       this.nextLine();

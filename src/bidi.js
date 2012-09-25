@@ -138,11 +138,16 @@ var bidi = PDFJS.bidi = (function bidiClosure() {
     }
   }
 
-  function bidi(text, startLevel) {
-    var str = text.str;
+  function BidiResult(str, isLTR) {
+    this.str = str;
+    this.ltr = isLTR;
+  }
+
+  function bidi(str, startLevel) {
+    var isLTR = true;
     var strLength = str.length;
     if (strLength == 0)
-      return str;
+      return new BidiResult(str, ltr);
 
     // get types, fill arrays
 
@@ -176,16 +181,16 @@ var bidi = PDFJS.bidi = (function bidiClosure() {
     //  if less than 30% chars are rtl then string is primarily ltr
     //  if more than 30% chars are rtl then string is primarily rtl
     if (numBidi == 0) {
-      text.direction = 'ltr';
-      return str;
+      isLTR = true;
+      return new BidiResult(str, isLTR);
     }
 
     if (startLevel == -1) {
       if ((strLength / numBidi) < 0.3) {
-        text.direction = 'ltr';
+        isLTR = true;
         startLevel = 0;
       } else {
-        text.direction = 'rtl';
+        isLTR = false;
         startLevel = 1;
       }
     }
@@ -438,7 +443,8 @@ var bidi = PDFJS.bidi = (function bidiClosure() {
       if (ch != '<' && ch != '>')
         result += ch;
     }
-    return result;
+
+    return new BidiResult(result, isLTR);
   }
 
   return bidi;

@@ -164,6 +164,21 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           translated = { error: e };
         }
         font.translated = translated;
+
+        var data = translated;
+        if (data.loadCharProcs) {
+          delete data.loadCharProcs;
+
+          var charProcs = font.get('CharProcs').getAll();
+          var fontResources = font.get('Resources') || resources;
+          var charProcOperatorList = {};
+          for (var key in charProcs) {
+            var glyphStream = charProcs[key];
+            charProcOperatorList[key] =
+              this.getOperatorList(glyphStream, fontResources, dependency);
+          }
+          data.charProcOperatorList = charProcOperatorList;
+        }
       }
       return font;
     },
@@ -195,19 +210,6 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         var loadedName = font.loadedName;
         if (!font.sent) {
           var data = font.translated;
-          if (data.loadCharProcs) {
-            delete data.loadCharProcs;
-
-            var charProcs = font.get('CharProcs').getAll();
-            var fontResources = font.get('Resources') || resources;
-            var charProcOperatorList = {};
-            for (var key in charProcs) {
-              var glyphStream = charProcs[key];
-              charProcOperatorList[key] =
-                self.getOperatorList(glyphStream, fontResources, dependency);
-            }
-            data.charProcOperatorList = charProcOperatorList;
-          }
 
           if (data instanceof Font)
             data = data.exportData();
@@ -505,7 +507,18 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       return queue;
     },
 
-    getTextContent: function partialEvaluatorGetIRQueue(stream, resources) {
+    getTextContent: function partialEvaluatorGetIRQueue(
+                                                    stream, resources, state) {
+      var bidiTexts;
+
+      if (!state) {
+        bidiTexts = [];
+        state = {
+          bidiTexts: bidiTexts
+        };
+      } else {
+        bidiTexts = state.bidiTexts;
+      }
 
       var self = this;
       var xref = this.xref;
@@ -515,18 +528,20 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       }
 
       resources = xref.fetchIfRef(resources) || new Dict();
+      // The xobj is parsed iff it's needed, e.g. if there is a `DO` cmd.
+      var xobjs = null;
 
       var parser = new Parser(new Lexer(stream), false);
       var res = resources;
       var args = [], obj;
 
-      var text = '';
       var chunk = '';
       var font = null;
       while (!isEOF(obj = parser.getObj())) {
         if (isCmd(obj)) {
           var cmd = obj.cmd;
           switch (cmd) {
+            // TODO: Add support for SAVE/RESTORE and XFORM here.
             case 'Tf':
               font = handleSetFont(args[0].name).translated;
               break;
@@ -535,10 +550,11 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
               for (var j = 0, jj = items.length; j < jj; j++) {
                 if (typeof items[j] === 'string') {
                   chunk += fontCharsToUnicode(items[j], font);
-                } else if (items[j] < 0) {
-                  // making all negative offsets a space - better to have
-                  // a space in incorrect place than not have them at all
-                  chunk += ' ';
+                } else if (items[j] < 0 && font.spaceWidth > 0) {
+                  var numFakeSpaces = Math.round(-items[j] / font.spaceWidth);
+                  if (numFakeSpaces > 0) {
+                    chunk += ' ';
+                  }
                 }
               }
               break;
@@ -546,14 +562,69 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
               chunk += fontCharsToUnicode(args[0], font);
               break;
             case "'":
-              chunk += fontCharsToUnicode(args[0], font) + ' ';
+              // For search, adding a extra white space for line breaks would be
+              // better here, but that causes too much spaces in the
+              // text-selection divs.
+              chunk += fontCharsToUnicode(args[0], font);
               break;
             case '"':
-              chunk += fontCharsToUnicode(args[2], font) + ' ';
+              // Note comment in "'"
+              chunk += fontCharsToUnicode(args[2], font);
+              break;
+            case 'Do':
+              // Set the chunk such that the following if won't add something
+              // to the state.
+              chunk = '';
+
+              if (args[0].code) {
+                break;
+              }
+
+              if (!xobjs) {
+                xobjs = resources.get('XObject') || new Dict();
+              }
+
+              var name = args[0].name;
+              var xobj = xobjs.get(name);
+              if (!xobj)
+                break;
+              assertWellFormed(isStream(xobj), 'XObject should be a stream');
+
+              var type = xobj.dict.get('Subtype');
+              assertWellFormed(
+                isName(type),
+                'XObject should have a Name subtype'
+              );
+
+              if ('Form' !== type.name)
+                break;
+
+              state = this.getTextContent(
+                xobj,
+                xobj.dict.get('Resources') || resources,
+                state
+              );
+              break;
+            case 'gs':
+              var dictName = args[0];
+              var extGState = resources.get('ExtGState');
+
+              if (!isDict(extGState) || !extGState.has(dictName.name))
+                break;
+
+              var gsState = extGState.get(dictName.name);
+
+              for (var i = 0; i < gsState.length; i++) {
+                if (gsState[i] === 'Font') {
+                  font = handleSetFont(args[0].name).translated;
+                }
+              }
               break;
           } // switch
+
           if (chunk !== '') {
-            text += chunk;
+            bidiTexts.push(PDFJS.bidi(chunk, -1));
+
             chunk = '';
           }
 
@@ -562,9 +633,9 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           assertWellFormed(args.length <= 33, 'Too many arguments');
           args.push(obj);
         }
-      }
+      } // while
 
-      return text;
+      return state;
     },
 
     extractDataStructures: function
