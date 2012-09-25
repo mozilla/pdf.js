@@ -236,10 +236,10 @@ var PDFFindController = {
       'findcasesensitivitychange'
     ];
 
-    this.handelEvent = this.handelEvent.bind(this);
+    this.handleEvent = this.handleEvent.bind(this);
 
     for (var i = 0; i < events.length; i++) {
-      window.addEventListener(events[i], this.handelEvent);
+      window.addEventListener(events[i], this.handleEvent);
     }
   },
 
@@ -295,7 +295,7 @@ var PDFFindController = {
     extractPageText(0);
   },
 
-  handelEvent: function(e) {
+  handleEvent: function(e) {
     this.state = e.detail;
     if (e.detail.findPrevious === undefined) {
       this.dirtyMatch = true;
@@ -358,7 +358,7 @@ var PDFFindController = {
       }
     } else {
       // If there is NO selection, then there is no match at all -> no sense to
-      // handel previous/next action.
+      // handle previous/next action.
       if (this.selected.pageIdx === -1)
         return;
 
