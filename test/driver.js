@@ -159,6 +159,7 @@ NullTextLayerBuilder.prototype = {
 function SimpleTextLayerBuilder(ctx, viewport) {
   this.ctx = ctx;
   this.viewport = viewport;
+  this.textCounter = 0;
 }
 SimpleTextLayerBuilder.prototype = {
   beginLayout: function SimpleTextLayerBuilder_BeginLayout() {
@@ -167,26 +168,30 @@ SimpleTextLayerBuilder.prototype = {
   endLayout: function SimpleTextLayerBuilder_EndLayout() {
     this.ctx.restore();
   },
-  appendText: function SimpleTextLayerBuilder_AppendText(text, fontName,
-                                                         fontSize) {
+  appendText: function SimpleTextLayerBuilder_AppendText(fontName, fontSize,
+                                                          geom) {
     var ctx = this.ctx, viewport = this.viewport;
     // vScale and hScale already contain the scaling to pixel units
-    var fontHeight = fontSize * text.geom.vScale;
+    var fontHeight = fontSize * geom.vScale;
     ctx.beginPath();
     ctx.strokeStyle = 'red';
     ctx.fillStyle = 'yellow';
-    ctx.rect(text.geom.x, text.geom.y - fontHeight,
-             text.canvasWidth * text.geom.hScale, fontHeight);
+    ctx.rect(geom.x, geom.y - fontHeight,
+             geom.canvasWidth * geom.hScale, fontHeight);
     ctx.stroke();
     ctx.fill();
 
-    var textContent = bidi(text, -1);
+    var textContent = this.textContent.bidiTexts[this.textCounter].str;
     ctx.font = fontHeight + 'px ' + fontName;
     ctx.fillStyle = 'black';
-    ctx.fillText(textContent, text.geom.x, text.geom.y);
+    ctx.fillText(textContent, geom.x, geom.y);
+
+    this.textCounter++;
+  },
+  setTextContent: function SimpleTextLayerBuilder_SetTextContent(textContent) {
+    this.textContent = textContent;
   }
 };
-
 
 function nextPage(task, loadError) {
   var failure = loadError || '';
@@ -245,6 +250,10 @@ function nextPage(task, loadError) {
           drawContext = dummyCanvas.getContext('2d');
           // ... text builder will draw its content on the test canvas
           textLayerBuilder = new SimpleTextLayerBuilder(ctx, viewport);
+
+          page.getTextContent().then(function(textContent) {
+            textLayerBuilder.setTextContent(textContent);
+          });
         } else {
           drawContext = ctx;
           textLayerBuilder = new NullTextLayerBuilder();

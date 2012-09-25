@@ -3886,6 +3886,10 @@ var Font = (function FontClosure() {
     },
 
     get spaceWidth() {
+      if ('_shadowWidth' in this) {
+        return this._shadowWidth;
+      }
+
       // trying to estimate space character width
       var possibleSpaceReplacements = ['space', 'minus', 'one', 'i'];
       var width;
@@ -3913,7 +3917,10 @@ var Font = (function FontClosure() {
           break; // the non-zero width found
       }
       width = (width || this.defaultWidth) * this.widthMultiplier;
-      return shadow(this, 'spaceWidth', width);
+      // Do not shadow the property here. See discussion:
+      // https://github.com/mozilla/pdf.js/pull/2127#discussion_r1662280
+      this._shadowWidth = width;
+      return width;
     },
 
     charToGlyph: function Font_charToGlyph(charcode) {

@@ -1040,7 +1040,7 @@ var PDFView = {
     function extractPageText(pageIndex) {
       self.pages[pageIndex].pdfPage.getTextContent().then(
         function textContentResolved(textContent) {
-          self.pageText[pageIndex] = textContent;
+          self.pageText[pageIndex] = textContent.join('');
           self.search();
           if ((pageIndex + 1) < self.pages.length)
             extractPageText(pageIndex + 1);
@@ -1227,6 +1227,8 @@ var PageView = function pageView(container, pdfPage, id, scale,
 
   this.renderingState = RenderingStates.INITIAL;
   this.resume = null;
+
+  this.textContent = null;
 
   var anchor = document.createElement('a');
   anchor.name = '' + this.id;
@@ -1448,6 +1450,13 @@ var PageView = function pageView(container, pdfPage, id, scale,
       }, 0);
   };
 
+  this.getTextContent = function pageviewGetTextContent() {
+    if (!this.textContent) {
+      this.textContent = this.pdfPage.getTextContent();
+    }
+    return this.textContent;
+  };
+
   this.draw = function pageviewDraw(callback) {
     if (this.renderingState !== RenderingStates.INITIAL)
       error('Must be in new state before drawing');
@@ -1527,6 +1536,14 @@ var PageView = function pageView(container, pdfPage, id, scale,
         pageViewDrawCallback(error);
       }
     );
+
+    if (textLayer) {
+      this.getTextContent().then(
+        function textContentResolved(textContent) {
+          textLayer.setTextContent(textContent);
+        }
+      );
+    }
 
     setupAnnotations(this.pdfPage, this.viewport);
     div.setAttribute('data-loaded', true);
@@ -1820,11 +1837,18 @@ var CustomStyle = (function CustomStyleClosure() {
 var TextLayerBuilder = function textLayerBuilder(textLayerDiv) {
   var textLayerFrag = document.createDocumentFragment();
   this.textLayerDiv = textLayerDiv;
+  this.layoutDone = false;
+  this.divContentDone = false;
 
   this.beginLayout = function textLayerBuilderBeginLayout() {
     this.textDivs = [];
     this.textLayerQueue = [];
   };
+
+  this.endLayout = function textLayerBuilderEndLayout() {
+    this.layoutDone = true;
+    this.insertDivContent();
+  },
 
   this.renderLayer = function textLayerBuilderRenderLayer() {
     var self = this;
@@ -1857,7 +1881,7 @@ var TextLayerBuilder = function textLayerBuilder(textLayerDiv) {
     textLayerDiv.appendChild(textLayerFrag);
   };
 
-  this.endLayout = function textLayerBuilderEndLayout() {
+  this.setupRenderLayoutTimer = function textLayerSetupRenderLayoutTimer() {
     // Schedule renderLayout() if user has been scrolling, otherwise
     // run it right away
     var kRenderDelay = 200; // in ms
@@ -1870,26 +1894,55 @@ var TextLayerBuilder = function textLayerBuilder(textLayerDiv) {
       if (this.renderTimer)
         clearTimeout(this.renderTimer);
       this.renderTimer = setTimeout(function() {
-        self.endLayout();
+        self.setupRenderLayoutTimer();
       }, kRenderDelay);
     }
-  }; // endLayout
+  };
 
-  this.appendText = function textLayerBuilderAppendText(text,
-                                                        fontName, fontSize) {
+  this.appendText = function textLayerBuilderAppendText(fontName, fontSize,
+                                                        geom) {
     var textDiv = document.createElement('div');
 
     // vScale and hScale already contain the scaling to pixel units
-    var fontHeight = fontSize * text.geom.vScale;
-    textDiv.dataset.canvasWidth = text.canvasWidth * text.geom.hScale;
+    var fontHeight = fontSize * geom.vScale;
+    textDiv.dataset.canvasWidth = geom.canvasWidth * geom.hScale;
+    textDiv.dataset.fontName = fontName;
 
     textDiv.style.fontSize = fontHeight + 'px';
     textDiv.style.fontFamily = fontName;
-    textDiv.style.left = text.geom.x + 'px';
-    textDiv.style.top = (text.geom.y - fontHeight) + 'px';
-    textDiv.textContent = PDFJS.bidi(text, -1);
-    textDiv.dir = text.direction;
+    textDiv.style.left = geom.x + 'px';
+    textDiv.style.top = (geom.y - fontHeight) + 'px';
+
+    // The content of the div is set in the `setTextContent` function.
+
     this.textDivs.push(textDiv);
+  };
+
+  this.insertDivContent = function textLayerUpdateTextContent() {
+    // Only set the content of the divs once layout has finished, the content
+    // for the divs is available and content is not yet set on the divs.
+    if (!this.layoutDone || this.divContentDone || !this.textContent)
+      return;
+
+    this.divContentDone = true;
+
+    var textDivs = this.textDivs;
+    var bidiTexts = this.textContent.bidiTexts;
+
+    for (var i = 0; i < bidiTexts.length; i++) {
+      var bidiText = bidiTexts[i];
+      var textDiv = textDivs[i];
+
+      textDiv.textContent = bidiText.str;
+      textDiv.dir = bidiText.ltr ? 'ltr' : 'rtl';
+    }
+
+    this.setupRenderLayoutTimer();
+  };
+
+  this.setTextContent = function textLayerBuilderSetTextContent(textContent) {
+    this.textContent = textContent;
+    this.insertDivContent();
   };
 };
 
