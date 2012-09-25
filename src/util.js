@@ -662,3 +662,12 @@ var StatTimer = (function StatTimerClosure() {
   };
   return StatTimer;
 })();
+
+PDFJS.createBlob = function createBlob(data, contentType) {
+  if (typeof Blob === 'function')
+    return new Blob([data], { type: contentType });
+  // Blob builder is deprecated in FF14 and removed in FF18.
+  var bb = new MozBlobBuilder();
+  bb.append(data);
+  return bb.getBlob(contentType);
+};
