@@ -551,8 +551,13 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                 if (typeof items[j] === 'string') {
                   chunk += fontCharsToUnicode(items[j], font);
                 } else if (items[j] < 0 && font.spaceWidth > 0) {
-                  var numFakeSpaces = Math.round(-items[j] / font.spaceWidth);
-                  if (numFakeSpaces > 0) {
+                  var fakeSpaces = -items[j] / font.spaceWidth;
+                  if (fakeSpaces > 1.5) {
+                    fakeSpaces = Math.round(fakeSpaces);
+                    while (fakeSpaces--) {
+                      chunk += ' ';
+                    }
+                  } else if (-items[j] / font.spaceWidth > 0.35) {
                     chunk += ' ';
                   }
                 }
