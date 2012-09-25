@@ -728,7 +728,7 @@ html[dir='rtl'] .toolbarButton.pageDown::before {
   content: url(images/toolbarButton-viewOutline.png);
 }
 
-#viewSearch.toolbarButton::before {
+#viewFind.toolbarButton::before {
   display: inline-block;
   content: url(images/toolbarButton-search.png);
 }
@@ -871,7 +871,7 @@ a:focus > .thumbnail > .thumbnailSelectionRing,
 }
 
 .outlineItem > a,
-#searchResults > a {
+#findResults > a {
   text-decoration: none;
   display: inline-block;
   min-width: 95%;
@@ -888,7 +888,7 @@ a:focus > .thumbnail > .thumbnailSelectionRing,
 }
 
 .outlineItem > a:hover,
-#searchResults > a:hover {
+#findResults > a:hover {
   background-color: hsla(0,0%,100%,.02);
   background-image: -moz-linear-gradient(hsla(0,0%,100%,.05), hsla(0,0%,100%,0));
   background-clip: padding-box;
@@ -915,7 +915,7 @@ a:focus > .thumbnail > .thumbnailSelectionRing,
   font-style: italic;
 }
 
-#searchScrollView {
+#findScrollView {
   position: absolute;
   top: 10px;
   bottom: 10px;
@@ -923,26 +923,26 @@ a:focus > .thumbnail > .thumbnailSelectionRing,
   width: 280px;
 }
 
-#searchToolbar {
+#findToolbar {
   padding-left: 0px;
   right: 0px;
   padding-top: 0px;
   padding-bottom: 5px;
 }
 
-#searchToolbar > input {
+#findToolbar > input {
   margin-left: 4px;
   width: 124px;
 }
 
-#searchToolbar button {
+#findToolbar button {
   width: auto;
   margin: 0;
   padding: 0 6px;
   height: 22px;
 }
 
-#searchResults {
+#findResults {
   overflow: auto;
   position: absolute;
   top: 30px;

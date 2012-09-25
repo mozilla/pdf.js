@@ -317,8 +317,8 @@ ChromeActions.prototype = {
   pdfBugEnabled: function() {
     return getBoolPref(PREF_PREFIX + '.pdfBugEnabled', false);
   },
-  searchEnabled: function() {
-    return getBoolPref(PREF_PREFIX + '.searchEnabled', false);
+  findEnabled: function() {
+    return getBoolPref(PREF_PREFIX + '.findEnabled', false);
   },
   fallback: function(url, sendResponse) {
     var self = this;

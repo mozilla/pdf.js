@@ -211,7 +211,7 @@ var currentPageNumber = 1;
 var PDFFindController = {
   startedTextExtraction: false,
 
-  // If active, search resulsts will be highlighted.
+  // If active, find results will be highlighted.
   active: false,
 
   // Stores the text for each page.
@@ -244,7 +244,7 @@ var PDFFindController = {
   },
 
   calcFindMatch: function(pageContent) {
-    // TODO: Handle the other search options here as well.
+    // TODO: Handle the other find options here as well.
 
     var query = this.state.query;
     var queryLen = query.length;
@@ -274,7 +274,7 @@ var PDFFindController = {
     function extractPageText(pageIndex) {
       PDFView.pages[pageIndex].getTextContent().then(
         function textContentResolved(data) {
-          // Bulid the search string.
+          // Build the find string.
           var bidiTexts = data.bidiTexts;
           var str = '';
 
@@ -434,7 +434,7 @@ var PDFFindBar = {
 
   initialize: function() {
     this.bar = document.getElementById('findbar');
-    this.toggleButton = document.getElementById('viewSearch');
+    this.toggleButton = document.getElementById('viewFind');
     this.findField = document.getElementById('findInput');
     this.highlightAll = document.getElementById('findHighlightAll');
     this.caseSensitive = document.getElementById('findMatchCase');
@@ -1224,39 +1224,39 @@ var PDFView = {
     return true;
   },
 
-  search: function pdfViewStartSearch() {
-    // Limit this function to run every <SEARCH_TIMEOUT>ms.
-    var SEARCH_TIMEOUT = 250;
-    var lastSearch = this.lastSearch;
+  find: function pdfViewStartFind() {
+    // Limit this function to run every <FIND_TIMEOUT>ms.
+    var FIND_TIMEOUT = 250;
+    var lastFind = this.lastFind;
     var now = Date.now();
-    if (lastSearch && (now - lastSearch) < SEARCH_TIMEOUT) {
-      if (!this.searchTimer) {
-        this.searchTimer = setTimeout(function resumeSearch() {
-            PDFView.search();
+    if (lastFind && (now - lastFind) < FIND_TIMEOUT) {
+      if (!this.findTimer) {
+        this.findTimer = setTimeout(function resumeFind() {
+            PDFView.find();
           },
-          SEARCH_TIMEOUT - (now - lastSearch)
+          FIND_TIMEOUT - (now - lastFind)
         );
       }
       return;
     }
-    this.searchTimer = null;
-    this.lastSearch = now;
+    this.FindTimer = null;
+    this.lastFind = now;
 
     function bindLink(link, pageNumber) {
       link.href = '#' + pageNumber;
-      link.onclick = function searchBindLink() {
+      link.onclick = function findBindLink() {
         PDFView.page = pageNumber;
         return false;
       };
     }
 
-    var searchResults = document.getElementById('searchResults');
+    var findResults = document.getElementById('findResults');
 
-    var searchTermsInput = document.getElementById('searchTermsInput');
-    searchResults.removeAttribute('hidden');
-    searchResults.textContent = '';
+    var findTermsInput = document.getElementById('findTermsInput');
+    findResults.removeAttribute('hidden');
+    findResults.textContent = '';
 
-    var terms = searchTermsInput.value;
+    var terms = findTermsInput.value;
 
     if (!terms)
       return;
@@ -1276,17 +1276,17 @@ var PDFView = {
       var link = document.createElement('a');
       bindLink(link, pageNumber);
       link.textContent = 'Page ' + pageNumber + ': ' + textSample;
-      searchResults.appendChild(link);
+      findResults.appendChild(link);
 
       pageFound = true;
     }
     if (!pageFound) {
-      searchResults.textContent = '';
+      findResults.textContent = '';
       var noResults = document.createElement('div');
       noResults.classList.add('noResults');
-      noResults.textContent = mozL10n.get('search_terms_not_found', null,
+      noResults.textContent = mozL10n.get('find_terms_not_found', null,
                                               '(Not found)');
-      searchResults.appendChild(noResults);
+      findResults.appendChild(noResults);
     }
   },
 
@@ -1331,20 +1331,20 @@ var PDFView = {
   switchSidebarView: function pdfViewSwitchSidebarView(view) {
     var thumbsView = document.getElementById('thumbnailView');
     var outlineView = document.getElementById('outlineView');
-    var searchView = document.getElementById('searchView');
+    var findView = document.getElementById('findView');
 
     var thumbsButton = document.getElementById('viewThumbnail');
     var outlineButton = document.getElementById('viewOutline');
-    var searchButton = document.getElementById('viewSearch');
+    var findButton = document.getElementById('viewFind');
 
     switch (view) {
       case 'thumbs':
         thumbsButton.classList.add('toggled');
         outlineButton.classList.remove('toggled');
-        searchButton.classList.remove('toggled');
+        findButton.classList.remove('toggled');
         thumbsView.classList.remove('hidden');
         outlineView.classList.add('hidden');
-        searchView.classList.add('hidden');
+        findView.classList.add('hidden');
 
         PDFView.renderHighestPriority();
         break;
@@ -1352,25 +1352,25 @@ var PDFView = {
       case 'outline':
         thumbsButton.classList.remove('toggled');
         outlineButton.classList.add('toggled');
-        searchButton.classList.remove('toggled');
+        findButton.classList.remove('toggled');
         thumbsView.classList.add('hidden');
         outlineView.classList.remove('hidden');
-        searchView.classList.add('hidden');
+        findView.classList.add('hidden');
 
         if (outlineButton.getAttribute('disabled'))
           return;
         break;
 
-      case 'search':
+      case 'find':
         thumbsButton.classList.remove('toggled');
         outlineButton.classList.remove('toggled');
-        searchButton.classList.add('toggled');
+        findButton.classList.add('toggled');
         thumbsView.classList.add('hidden');
         outlineView.classList.add('hidden');
-        searchView.classList.remove('hidden');
+        findView.classList.remove('hidden');
 
-        var searchTermsInput = document.getElementById('searchTermsInput');
-        searchTermsInput.focus();
+        var findTermsInput = document.getElementById('findTermsInput');
+        findTermsInput.focus();
         // Start text extraction as soon as the search gets displayed.
         this.extractText();
         break;
@@ -1386,7 +1386,7 @@ var PDFView = {
       self.pages[pageIndex].pdfPage.getTextContent().then(
         function textContentResolved(textContent) {
           self.pageText[pageIndex] = textContent.join('');
-          self.search();
+          self.find();
           if ((pageIndex + 1) < self.pages.length)
             extractPageText(pageIndex + 1);
         }
@@ -2545,8 +2545,8 @@ document.addEventListener('DOMContentLoaded', function webViewerLoad(evt) {
 
 //#if !(FIREFOX || MOZCENTRAL)
 //#else
-//if (FirefoxCom.requestSync('searchEnabled')) {
-//  document.querySelector('#viewSearch').classList.remove('hidden');
+//if (FirefoxCom.requestSync('findEnabled')) {
+//  document.querySelector('#viewFind').classList.remove('hidden');
 //}
 //#endif
 
@@ -2636,10 +2636,10 @@ document.addEventListener('DOMContentLoaded', function webViewerLoad(evt) {
       PDFView.download();
     });
 
-  document.getElementById('searchTermsInput').addEventListener('keydown',
+  document.getElementById('findTermsInput').addEventListener('keydown',
     function(event) {
       if (event.keyCode == 13) {
-        PDFView.search();
+        PDFView.find();
       }
     });
 
