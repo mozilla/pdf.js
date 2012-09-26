@@ -100,7 +100,7 @@
       // and thus the native version is not sufficient
       Object.defineProperty(new Image(), 'id', { value: 'test' });
       // ... another test for android gb browser for non-DOM objects
-      function Test() {}
+      var Test = function Test() {};
       Test.prototype = { get id() { } };
       Object.defineProperty(new Test(), 'id',
         { value: '', configurable: true, enumerable: true, writable: false });
