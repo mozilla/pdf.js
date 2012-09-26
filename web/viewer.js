@@ -446,8 +446,7 @@ var PDFFindBar = {
     this.findMsgNotFound = document.getElementById('findMsgNotFound');
 
     var self = this;
-    this.toggleButton.addEventListener('click',
-    function() {
+    this.toggleButton.addEventListener('click', function() {
       self.toggle();
     });
 
