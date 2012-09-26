@@ -2365,12 +2365,26 @@ var TextLayerBuilder = function textLayerBuilder(textLayerDiv, pageIdx) {
     return ret;
   };
 
+  this.clearMatches = function textLayerBuilder_clearMatches() {
+    var textDivs = this.textDivs;
+
+    // Clear all previous highlights
+    textDivs.forEach(function(div) {
+      var spans = div.querySelectorAll('span');
+      for (var i = 0, ii = spans.length; i < ii; i++) {
+        spans[i].className = '';
+      }
+    });
+  }
+
   this.renderMatches = function textLayerBuilder_renderMatches(matches) {
     var bidiTexts = this.textContent.bidiTexts;
     var textDivs = this.textDivs;
     var prevEnd = null;
     var isSelectedPage = this.pageIdx === PDFFindController.selected.pageIdx;
     var selectedMatchIdx = PDFFindController.selected.matchIdx;
+
+    this.clearMatches();
 
     var infty = {
       divIdx: -1,
