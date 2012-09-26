@@ -510,6 +510,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
     getTextContent: function partialEvaluatorGetIRQueue(
                                                     stream, resources, state) {
       var bidiTexts;
+      var kSpaceFactor = 0.35;
+      var kMultipleSpaceFactor = 1.5;
 
       if (!state) {
         bidiTexts = [];
@@ -552,12 +554,12 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                   chunk += fontCharsToUnicode(items[j], font);
                 } else if (items[j] < 0 && font.spaceWidth > 0) {
                   var fakeSpaces = -items[j] / font.spaceWidth;
-                  if (fakeSpaces > 1.5) {
+                  if (fakeSpaces > kMultipleSpaceFactor) {
                     fakeSpaces = Math.round(fakeSpaces);
                     while (fakeSpaces--) {
                       chunk += ' ';
                     }
-                  } else if (-items[j] / font.spaceWidth > 0.35) {
+                  } else if (fakeSpaces > kSpaceFactor) {
                     chunk += ' ';
                   }
                 }
