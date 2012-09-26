@@ -247,10 +247,16 @@ var PDFFindController = {
     // TODO: Handle the other find options here as well.
 
     var query = this.state.query;
+    var caseSensitive = this.state.caseSensitive;
     var queryLen = query.length;
 
     if (queryLen === 0)
       return [];
+
+    if (!caseSensitive) {
+      pageContent = pageContent.toLowerCase();
+      query = query.toLowerCase();
+    }
 
     var matches = [];
 
