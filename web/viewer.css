@@ -870,8 +870,7 @@ a:focus > .thumbnail > .thumbnailSelectionRing,
   margin-left: 20px;
 }
 
-.outlineItem > a,
-#findResults > a {
+.outlineItem > a {
   text-decoration: none;
   display: inline-block;
   min-width: 95%;
@@ -887,8 +886,7 @@ a:focus > .thumbnail > .thumbnailSelectionRing,
   white-space: nowrap;
 }
 
-.outlineItem > a:hover,
-#findResults > a:hover {
+.outlineItem > a:hover {
   background-color: hsla(0,0%,100%,.02);
   background-image: -moz-linear-gradient(hsla(0,0%,100%,.05), hsla(0,0%,100%,0));
   background-clip: padding-box;
@@ -921,36 +919,6 @@ a:focus > .thumbnail > .thumbnailSelectionRing,
   bottom: 10px;
   left: 10px;
   width: 280px;
-}
-
-#findToolbar {
-  padding-left: 0px;
-  right: 0px;
-  padding-top: 0px;
-  padding-bottom: 5px;
-}
-
-#findToolbar > input {
-  margin-left: 4px;
-  width: 124px;
-}
-
-#findToolbar button {
-  width: auto;
-  margin: 0;
-  padding: 0 6px;
-  height: 22px;
-}
-
-#findResults {
-  overflow: auto;
-  position: absolute;
-  top: 30px;
-  bottom: 0px;
-  left: 0px;
-  right: 0;
-  padding: 4px 4px 0;
-  font-size: smaller;
 }
 
 #sidebarControls {
