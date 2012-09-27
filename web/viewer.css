@@ -1067,7 +1067,7 @@ canvas {
   margin: -1px;
   padding: 1px;
 
-  background-color: rgba(0, 137, 26, 0.2);
+  background-color: rgba(180, 0, 170, 0.2);
   border-radius: 4px;
 }
 
@@ -1084,7 +1084,7 @@ canvas {
 }
 
 .textLayer .highlight.selected {
-  background-color: rgba(255, 0, 0, 0.2);
+  background-color: rgba(0, 100, 0, 0.2);
 }
 
 /* TODO: file FF bug to support ::-moz-selection:window-inactive

@@ -458,22 +458,18 @@ var PDFFindBar = {
     // next match when the findField is selected.
 
     document.getElementById('findPrevious').addEventListener('click',
-    function() {
-      self.dispatchEvent('again', true);
-    });
+      function() { self.dispatchEvent('again', true); }
+    );
 
-    document.getElementById('findNext').addEventListener('click',
-    function() {
+    document.getElementById('findNext').addEventListener('click', function() {
       self.dispatchEvent('again', false);
     });
 
-    this.highlightAll.addEventListener('click',
-    function() {
+    this.highlightAll.addEventListener('click', function() {
       self.dispatchEvent('highlightallchange');
     });
 
-    this.caseSensitive.addEventListener('click',
-    function() {
+    this.caseSensitive.addEventListener('click', function() {
       self.dispatchEvent('casesensitivitychange');
     });
   },
@@ -2276,6 +2272,7 @@ var TextLayerBuilder = function textLayerBuilder(textLayerDiv, pageIdx) {
     var prevEnd = null;
     var isSelectedPage = this.pageIdx === PDFFindController.selected.pageIdx;
     var selectedMatchIdx = PDFFindController.selected.matchIdx;
+    var highlightAll = PDFFindController.state.highlightAll;
 
     this.clearMatches();
 
@@ -2323,7 +2320,14 @@ var TextLayerBuilder = function textLayerBuilder(textLayerDiv, pageIdx) {
       textDivs[divIdx].className = className;
     }
 
-    for (var i = 0; i < matches.length; i++) {
+    var i0 = selectedMatchIdx, i1 = i0 + 1, i;
+
+    if (highlightAll) {
+      i0 = 0;
+      i1 = matches.length;
+    }
+
+    for (i = i0; i < i1; i++) {
       var match = matches[i];
       var begin = match.begin;
       var end = match.end;
