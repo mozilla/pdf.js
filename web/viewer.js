@@ -2316,6 +2316,9 @@ var TextLayerBuilder = function textLayerBuilder(textLayerDiv, pageIdx) {
     if (highlightAll) {
       i0 = 0;
       i1 = matches.length;
+    } else if(!isSelectedPage) {
+      // Not highlighting all and this isn't the selected page, so do nothing.
+      return;
     }
 
     for (i = i0; i < i1; i++) {
