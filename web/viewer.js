@@ -34,6 +34,12 @@ var RenderingStates = {
   PAUSED: 2,
   FINISHED: 3
 };
+var FindStates = {
+  FIND_FOUND: 0,
+  FIND_NOTFOUND: 1,
+  FIND_WRAPPED: 2,
+  FIND_PENDING: 3
+};
 
 //#if (GENERIC || CHROME)
 //PDFJS.workerSrc = '../build/pdf.js';
@@ -337,6 +343,12 @@ var PDFFindController = {
 
     this.active = true;
 
+    if (!this.state.query) {
+      this.updateUIState(FindStates.FIND_FOUND);
+      return;
+    }
+    this.updateUIState(FindStates.FIND_PENDING);
+
     if (this.dirtyMatch) {
       // Need to recalculate the matches.
       this.dirtyMatch = false;
@@ -360,16 +372,24 @@ var PDFFindController = {
         }
         this.updatePage(i, true);
       }
+      if (!firstMatch) {
+        this.updateUIState(FindStates.FIND_FOUND);
+      } else {
+        this.updateUIState(FindStates.FIND_NOTFOUND);
+      }
     } else {
       // If there is NO selection, then there is no match at all -> no sense to
       // handle previous/next action.
-      if (this.selected.pageIdx === -1)
+      if (this.selected.pageIdx === -1) {
+        this.updateUIState(FindStates.FIND_NOTFOUND);
         return;
+      }
 
       // Handle findAgain case.
       var previous = this.state.findPrevious;
       var sPageIdx = this.selected.pageIdx;
       var sMatchIdx = this.selected.matchIdx;
+      var findState = FindStates.FIND_FOUND;
 
       if (previous) {
         // Select previous match.
@@ -393,6 +413,9 @@ var PDFFindController = {
           // If pageIdx stayed the same, select last match on the page.
           if (this.selected.pageIdx === sPageIdx) {
             this.selected.matchIdx = pageMatches[sPageIdx].length - 1;
+            findState = FindStates.FIND_WRAPPED;
+          } else if (this.selected.pageIdx > sPageIdx) {
+            findState = FindStates.FIND_WRAPPED;
           }
         }
       } else {
@@ -411,18 +434,28 @@ var PDFFindController = {
               break;
             }
           }
-          // If pageIdx stayed the same, select last match on the page.
+
+          // If pageIdx stayed the same, select first match on the page.
           if (this.selected.pageIdx === sPageIdx) {
             this.selected.matchIdx = 0;
+            findState = FindStates.FIND_WRAPPED;
+          } else if (this.selected.pageIdx < sPageIdx) {
+            findState = FindStates.FIND_WRAPPED;
           }
         }
       }
 
+      this.updateUIState(findState, previous);
       this.updatePage(sPageIdx, sPageIdx === this.selected.pageIdx);
       if (sPageIdx !== this.selected.pageIdx) {
         this.updatePage(this.selected.pageIdx, true);
       }
     }
+  },
+
+  updateUIState: function(state, previous) {
+    // TODO: Update the firefox find bar or update the html findbar.
+    PDFFindBar.updateUIState(state, previous);
   }
 };
 
@@ -432,18 +465,13 @@ var PDFFindBar = {
 
   opened: false,
 
-  FIND_FOUND: 0,    // Successful find
-  FIND_NOTFOUND: 1, // Unsuccessful find
-  FIND_WRAPPED: 2,  // Successful find, but wrapped around
-
   initialize: function() {
     this.bar = document.getElementById('findbar');
     this.toggleButton = document.getElementById('viewFind');
     this.findField = document.getElementById('findInput');
     this.highlightAll = document.getElementById('findHighlightAll');
     this.caseSensitive = document.getElementById('findMatchCase');
-    this.findMsgWrap = document.getElementById('findMsgWrap');
-    this.findMsgNotFound = document.getElementById('findMsgNotFound');
+    this.findMsg = document.getElementById('findMsg');
 
     var self = this;
     this.toggleButton.addEventListener('click', function() {
@@ -485,36 +513,38 @@ var PDFFindBar = {
     return window.dispatchEvent(event);
   },
 
-  updateUIState: function(aState) {
+  updateUIState: function(state, previous) {
     var notFound = false;
-    var wrapped = false;
+    var findMsg = '';
+    var status = 'pending';
 
-    switch (aState) {
-      case this.FIND_FOUND:
+    switch (state) {
+      case FindStates.FIND_FOUND:
         break;
 
-      case this.FIND_NOTFOUND:
+      case FindStates.FIND_NOTFOUND:
+        findMsg = mozL10n.get('find_not_found', null, 'Phrase not found');
         notFound = true;
         break;
 
-      case this.FIND_WRAPPED:
-        wrapped = true;
+      case FindStates.FIND_WRAPPED:
+        if (previous) {
+          findMsg = mozL10n.get('find_wrapped_to_bottom', null,
+                                'Reached end of page, continued from bottom');
+        } else {
+          findMsg = mozL10n.get('find_wrapped_to_top', null,
+                                'Reached end of page, continued from top');
+        }
         break;
     }
 
     if (notFound) {
       this.findField.classList.add('notFound');
-      this.findMsgNotFound.classList.remove('hidden');
     } else {
       this.findField.classList.remove('notFound');
-      this.findMsgNotFound.classList.add('hidden');
     }
 
-    if (wrapped) {
-      this.findMsgWrap.classList.remove('hidden');
-    } else {
-      this.findMsgWrap.classList.add('hidden');
-    }
+    this.findMsg.textContent = findMsg;
   },
 
   open: function() {
@@ -2316,7 +2346,7 @@ var TextLayerBuilder = function textLayerBuilder(textLayerDiv, pageIdx) {
     if (highlightAll) {
       i0 = 0;
       i1 = matches.length;
-    } else if(!isSelectedPage) {
+    } else if (!isSelectedPage) {
       // Not highlighting all and this isn't the selected page, so do nothing.
       return;
     }

@@ -282,9 +282,17 @@ html[dir='rtl'] #sidebarContent {
   font-size: 12px;
   line-height: 14px;
   text-align: left;
+  cursor: default;
+}
+
+.findbar label {
   -webkit-user-select:none;
   -moz-user-select:none;
-  cursor: default;
+}
+
+#findMsg {
+  font-style: italic;
+  color: #A6B7D0;
 }
 
 .notFound {
