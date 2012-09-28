@@ -2254,27 +2254,18 @@ var TextLayerBuilder = function textLayerBuilder(textLayerDiv, pageIdx) {
     return ret;
   };
 
-  this.clearMatches = function textLayerBuilder_clearMatches() {
-    var textDivs = this.textDivs;
-
-    // Clear all previous highlights
-    textDivs.forEach(function(div) {
-      var spans = div.querySelectorAll('span');
-      for (var i = 0, ii = spans.length; i < ii; i++) {
-        spans[i].className = '';
-      }
-    });
-  }
-
   this.renderMatches = function textLayerBuilder_renderMatches(matches) {
+    // Early exit if there is nothing to render.
+    if (matches.length === 0) {
+      return;
+    }
+
     var bidiTexts = this.textContent.bidiTexts;
     var textDivs = this.textDivs;
     var prevEnd = null;
     var isSelectedPage = this.pageIdx === PDFFindController.selected.pageIdx;
     var selectedMatchIdx = PDFFindController.selected.matchIdx;
     var highlightAll = PDFFindController.state.highlightAll;
-
-    this.clearMatches();
 
     var infty = {
       divIdx: -1,
@@ -2377,12 +2368,13 @@ var TextLayerBuilder = function textLayerBuilder(textLayerDiv, pageIdx) {
     var bidiTexts = this.textContent.bidiTexts;
     var clearedUntilDivIdx = -1;
 
+    // Clear out all current matches.
     for (var i = 0; i < matches.length; i++) {
       var match = matches[i];
       var begin = Math.max(clearedUntilDivIdx, match.begin.divIdx);
       for (var n = begin; n <= match.end.divIdx; n++) {
-        var div = bidiTexts[n].str;
-        div.textContent = div.textContent;
+        var div = textDivs[n];
+        div.textContent = bidiTexts[n].str;
         div.className = '';
       }
       clearedUntilDivIdx = match.end.divIdx + 1;
