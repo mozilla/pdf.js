@@ -88,11 +88,6 @@ limitations under the License.
           <button id="viewOutline" class="toolbarButton group" title="Show Document Outline" tabindex="2" data-l10n-id="outline">
              <span data-l10n-id="outline_label">Document Outline</span>
           </button>
-<!--#if !MOZCENTRAL-->
-          <button id="viewFind" class="toolbarButton group" title="Find in Document" tabindex="3" data-l10n-id="find_panel">
-             <span data-l10n-id="find_panel_label">Find in Document</span>
-          </button>
-<!--#endif-->
         </div>
         <div id="sidebarContent">
           <div id="thumbnailView">
@@ -103,7 +98,7 @@ limitations under the License.
       </div>  <!-- sidebarContainer -->
 
       <div id="mainContainer">
-        <div class="findbar hidden" id="findbar">
+        <div class="findbar hidden doorHanger" id="findbar">
           <label for="findInput">Find: </label>
           <input id="findInput" type="search">
           <button id="findPrevious">&lt;</button>
@@ -118,10 +113,15 @@ limitations under the License.
           <div id="toolbarContainer">
             <div id="toolbarViewer">
               <div id="toolbarViewerLeft">
-                <button id="sidebarToggle" class="toolbarButton" title="Toggle Sidebar" tabindex="4" data-l10n-id="toggle_slider">
+                <button id="sidebarToggle" class="toolbarButton" title="Toggle Sidebar" tabindex="3" data-l10n-id="toggle_slider">
                   <span data-l10n-id="toggle_slider_label">Toggle Sidebar</span>
                 </button>
                 <div class="toolbarButtonSpacer"></div>
+<!--#if !MOZCENTRAL-->
+                <button id="viewFind" class="toolbarButton group" title="Find in Document" tabindex="4" data-l10n-id="find_panel">
+                   <span data-l10n-id="find_panel_label">Find in Document</span>
+                </button>
+<!--#endif-->
                 <div class="splitToolbarButton">
                   <button class="toolbarButton pageUp" title="Previous Page" id="previous" tabindex="5" data-l10n-id="previous">
                     <span data-l10n-id="previous_label">Previous</span>

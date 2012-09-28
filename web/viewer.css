@@ -267,17 +267,15 @@ html[dir='rtl'] #sidebarContent {
 }
 
 .findbar {
-  top: 40px;
-  left: 40px;
+  top: 32px;
+  left: 68px;
   position: absolute;
-  z-index: 100;
+  z-index: 10000;
   height: 20px;
 
   min-width: 16px;
   padding: 3px 6px 3px 6px;
   margin: 4px 2px 4px 0;
-  border: 1px solid transparent;
-  border-radius: 2px;
   color: hsl(0,0%,85%);
   font-size: 12px;
   line-height: 14px;
@@ -288,6 +286,33 @@ html[dir='rtl'] #sidebarContent {
 .findbar label {
   -webkit-user-select:none;
   -moz-user-select:none;
+}
+
+.doorHanger {
+  border: 1px solid hsla(0,0%,0%,.5);
+  border-radius: 2px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+}
+.doorHanger:after, .doorHanger:before {
+  bottom: 100%;
+  border: solid transparent;
+  content: " ";
+  height: 0;
+  width: 0;
+  position: absolute;
+  pointer-events: none;
+}
+.doorHanger:after {
+  border-bottom-color: hsla(0,0%,32%,.99);
+  border-width: 8px;
+  left: 16px;
+  margin-left: -8px;
+}
+.doorHanger:before {
+  border-bottom-color: hsla(0,0%,0%,.5);
+  border-width: 9px;
+  left: 16px;
+  margin-left: -9px;
 }
 
 #findMsg {
@@ -1317,7 +1342,7 @@ canvas {
 }
 
 @media all and (max-width: 600px) {
-  #toolbarViewerRight {
+  #toolbarViewerRight, #findbar, #viewFind {
     display: none;
   }
 }
