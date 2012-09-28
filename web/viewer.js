@@ -343,10 +343,6 @@ var PDFFindController = {
 
     this.active = true;
 
-    if (!this.state.query) {
-      this.updateUIState(FindStates.FIND_FOUND);
-      return;
-    }
     this.updateUIState(FindStates.FIND_PENDING);
 
     if (this.dirtyMatch) {
@@ -372,7 +368,7 @@ var PDFFindController = {
         }
         this.updatePage(i, true);
       }
-      if (!firstMatch) {
+      if (!firstMatch || !this.state.query) {
         this.updateUIState(FindStates.FIND_FOUND);
       } else {
         this.updateUIState(FindStates.FIND_NOTFOUND);
