@@ -41,20 +41,20 @@ Cu.import('resource://gre/modules/NetUtil.jsm');
 
 let appInfo = Cc['@mozilla.org/xre/app-info;1']
                   .getService(Ci.nsIXULAppInfo);
-let privateBrowsing, inPrivateBrowsing;
 let Svc = {};
 XPCOMUtils.defineLazyServiceGetter(Svc, 'mime',
                                    '@mozilla.org/mime;1',
                                    'nsIMIMEService');
 
+let isInPrivateBrowsing;
 if (appInfo.ID === FIREFOX_ID) {
-  privateBrowsing = Cc['@mozilla.org/privatebrowsing;1']
-                          .getService(Ci.nsIPrivateBrowsingService);
-  inPrivateBrowsing = privateBrowsing.privateBrowsingEnabled;
-} else if (appInfo.ID === SEAMONKEY_ID ||
-           appInfo.ID === METRO_ID) {
-  privateBrowsing = null;
-  inPrivateBrowsing = false;
+  let privateBrowsing = Cc['@mozilla.org/privatebrowsing;1']
+                            .getService(Ci.nsIPrivateBrowsingService);
+  isInPrivateBrowsing = function getInPrivateBrowsing() {
+    return privateBrowsing.privateBrowsingEnabled;
+  };
+} else {
+  isInPrivateBrowsing = function() { return false; };
 }
 
 function getBoolPref(pref, def) {
@@ -254,7 +254,7 @@ ChromeActions.prototype = {
     });
   },
   setDatabase: function(data) {
-    if (inPrivateBrowsing)
+    if (isInPrivateBrowsing())
       return;
     // Protect against something sending tons of data to setDatabase.
     if (data.length > MAX_DATABASE_LENGTH)
@@ -262,7 +262,7 @@ ChromeActions.prototype = {
     setStringPref(PREF_PREFIX + '.database', data);
   },
   getDatabase: function() {
-    if (inPrivateBrowsing)
+    if (isInPrivateBrowsing())
       return '{}';
     return getStringPref(PREF_PREFIX + '.database', '{}');
   },
