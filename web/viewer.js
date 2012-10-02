@@ -480,8 +480,16 @@ var PDFFindBar = {
       self.dispatchEvent('');
     });
 
-    // TODO: Add keybindings like enter, shift-enter, CMD-G etc. to go to prev/
+    // TODO: Add keybindings CMD-G etc. to go to prev/
     // next match when the findField is selected.
+
+    this.findField.addEventListener('keydown', function(evt) {
+      switch (evt.keyCode) {
+        case 13: // Enter
+          self.dispatchEvent('again', evt.shiftKey);
+          break;
+      }
+    });
 
     document.getElementById('findPrevious').addEventListener('click',
       function() { self.dispatchEvent('again', true); }
