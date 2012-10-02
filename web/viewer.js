@@ -75,6 +75,13 @@ var Cache = function cacheCache(size) {
   };
 };
 
+// Detects if browser supports touch events, which can be a proxy for mobile
+function isTouchScreen() {
+  if (('ontouchstart' in window) || window.DocumentTouch && document instanceof DocumentTouch)
+    return true;
+  return false;
+}
+
 var ProgressBar = (function ProgressBarClosure() {
 
   function clamp(v, min, max) {
@@ -1980,6 +1987,9 @@ document.addEventListener('DOMContentLoaded', function webViewerLoad(evt) {
   mozL10n.language.code = locale;
 //#endif
 
+  if (isTouchScreen() && window.screen.width < 800)
+    PDFJS.disableTextLayer = true;
+
   if ('textLayer' in hashParams) {
     switch (hashParams['textLayer']) {
       case 'off':
@@ -1988,6 +1998,7 @@ document.addEventListener('DOMContentLoaded', function webViewerLoad(evt) {
       case 'visible':
       case 'shadow':
       case 'hover':
+        PDFJS.disableTextLayer = false;
         var viewer = document.getElementById('viewer');
         viewer.classList.add('textLayer-' + hashParams['textLayer']);
         break;
