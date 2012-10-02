@@ -51,7 +51,7 @@
     </div>
 
     <h2>Try it out!</h2>
-    <p>Live <a href="web/viewer.html">demo</a> or firefox <a href="https://addons.mozilla.org/en-US/firefox/addon/pdfjs/">extension</a>.</p>
+    <p>Live <a href="web/viewer.html">demo</a> or firefox <a href="https://addons.mozilla.org/firefox/addon/pdfjs/">extension</a>.</p>
 
     <h2>Authors</h2>
     Andreas Gal (gal@mozilla.com)<br/>
