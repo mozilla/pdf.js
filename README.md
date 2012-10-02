@@ -28,7 +28,7 @@ using the pdf.js API.
 
 A Firefox extension is availble in two places:
 
-+ Stable Version: https://addons.mozilla.org/en-US/firefox/addon/pdfjs
++ Stable Version: https://addons.mozilla.org/firefox/addon/pdfjs
 + Development Version: http://mozilla.github.com/pdf.js/extensions/firefox/pdf.js.xpi
 
 The development extension should be quite stable but still might break from time to time.
