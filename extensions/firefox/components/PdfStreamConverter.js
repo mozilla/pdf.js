@@ -31,8 +31,6 @@ const PREF_PREFIX = 'PDFJSSCRIPT_PREF_PREFIX';
 const PDF_VIEWER_WEB_PAGE = 'resource://pdf.js/web/viewer.html';
 const MAX_DATABASE_LENGTH = 4096;
 const FIREFOX_ID = '{ec8030f7-c20a-464f-9b0e-13a3a9e97384}';
-const SEAMONKEY_ID = '{92650c4d-4b8e-4d2a-b7eb-24ecf4f6b63a}';
-const METRO_ID = '{99bceaaa-e3c6-48c1-b981-ef9b46b67d60}';
 
 Cu.import('resource://gre/modules/XPCOMUtils.jsm');
 Cu.import('resource://gre/modules/Services.jsm');
@@ -41,20 +39,20 @@ Cu.import('resource://gre/modules/NetUtil.jsm');
 
 let appInfo = Cc['@mozilla.org/xre/app-info;1']
                   .getService(Ci.nsIXULAppInfo);
-let privateBrowsing, inPrivateBrowsing;
 let Svc = {};
 XPCOMUtils.defineLazyServiceGetter(Svc, 'mime',
                                    '@mozilla.org/mime;1',
                                    'nsIMIMEService');
 
+let isInPrivateBrowsing;
 if (appInfo.ID === FIREFOX_ID) {
-  privateBrowsing = Cc['@mozilla.org/privatebrowsing;1']
-                          .getService(Ci.nsIPrivateBrowsingService);
-  inPrivateBrowsing = privateBrowsing.privateBrowsingEnabled;
-} else if (appInfo.ID === SEAMONKEY_ID ||
-           appInfo.ID === METRO_ID) {
-  privateBrowsing = null;
-  inPrivateBrowsing = false;
+  let privateBrowsing = Cc['@mozilla.org/privatebrowsing;1']
+                            .getService(Ci.nsIPrivateBrowsingService);
+  isInPrivateBrowsing = function getInPrivateBrowsing() {
+    return privateBrowsing.privateBrowsingEnabled;
+  };
+} else {
+  isInPrivateBrowsing = function() { return false; };
 }
 
 function getBoolPref(pref, def) {
@@ -254,7 +252,7 @@ ChromeActions.prototype = {
     });
   },
   setDatabase: function(data) {
-    if (inPrivateBrowsing)
+    if (isInPrivateBrowsing())
       return;
     // Protect against something sending tons of data to setDatabase.
     if (data.length > MAX_DATABASE_LENGTH)
@@ -262,7 +260,7 @@ ChromeActions.prototype = {
     setStringPref(PREF_PREFIX + '.database', data);
   },
   getDatabase: function() {
-    if (inPrivateBrowsing)
+    if (isInPrivateBrowsing())
       return '{}';
     return getStringPref(PREF_PREFIX + '.database', '{}');
   },
