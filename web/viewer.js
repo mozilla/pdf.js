@@ -2358,12 +2358,14 @@ window.addEventListener('keydown', function keydown(evt) {
   // Some shortcuts should not get handled if a control/input element
   // is selected.
   var curElement = document.activeElement;
-  if (curElement && curElement.tagName == 'INPUT')
+  if (curElement && (curElement.tagName == 'INPUT' ||
+                     curElement.tagName == 'SELECT')) {
     return;
-  var controlsElement = document.getElementById('controls');
+  }
+  var controlsElement = document.getElementById('toolbar');
   while (curElement) {
     if (curElement === controlsElement && !PDFView.isFullscreen)
-      return; // ignoring if the 'controls' element is focused
+      return; // ignoring if the 'toolbar' element is focused
     curElement = curElement.parentNode;
   }
 
