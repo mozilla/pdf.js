@@ -323,13 +323,15 @@ var PDFFindController = {
   updatePage: function(idx) {
     var page = PDFView.pages[idx];
 
-    if (page.textLayer) {
-      page.textLayer.updateMatches();
-    } else if (this.selected.pageIdx === idx) {
+    if (this.selected.pageIdx === idx) {
       // If the page is selected, scroll the page into view, which triggers
       // rendering the page, which adds the textLayer. Once the textLayer is
       // build, it will scroll onto the selected match.
       page.scrollIntoView();
+    }
+
+    if (page.textLayer) {
+      page.textLayer.updateMatches();
     }
   },
 
