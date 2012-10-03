@@ -1475,7 +1475,8 @@ var PageView = function pageView(container, pdfPage, id, scale,
       textLayerDiv.className = 'textLayer';
       div.appendChild(textLayerDiv);
     }
-    var textLayer = textLayerDiv ? new TextLayerBuilder(textLayerDiv, this.id) : null;
+    var textLayer = textLayerDiv ? 
+      new TextLayerBuilder(textLayerDiv, this.id) : null;
 
     var scale = this.scale, viewport = this.viewport;
     canvas.width = viewport.width;
