@@ -538,9 +538,10 @@ PdfStreamConverter.prototype = {
       var securityManager = Cc['@mozilla.org/scriptsecuritymanager;1']
                             .getService(Ci.nsIScriptSecurityManager);
       var uri = ioService.newURI(PDF_VIEWER_WEB_PAGE, null, null);
-      // FF16 and below had getCodebasePrincipal (bug 774585)
-      var resourcePrincipal = 'getSimpleCodebasePrincipal' in securityManager ?
-                              securityManager.getSimpleCodebasePrincipal(uri) :
+      // FF16 and below had getCodebasePrincipal, it was replaced by
+      // getNoAppCodebasePrincipal (bug 758258).
+      var resourcePrincipal = 'getNoAppCodebasePrincipal' in securityManager ?
+                              securityManager.getNoAppCodebasePrincipal(uri) :
                               securityManager.getCodebasePrincipal(uri);
       channel.owner = resourcePrincipal;
     }
