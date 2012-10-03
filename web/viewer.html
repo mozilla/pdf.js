@@ -99,14 +99,14 @@ limitations under the License.
 
       <div id="mainContainer">
         <div class="findbar hidden doorHanger" id="findbar">
-          <label for="findInput">Find: </label>
+          <label for="findInput" data-l10n-id="find_label">Find</label>:
           <input id="findInput" type="search">
-          <button id="findPrevious">&lt;</button>
-          <button id="findNext">&gt;</button>
+          <button id="findPrevious" data-l10n-id="find_previous" title="">&lt;</button>
+          <button id="findNext" data-l10n-id="find_next">&gt;</button>
           <input type="checkbox" id="findHighlightAll">
-          <label for="findHighlightAll">Highlight all</label>
+          <label for="findHighlightAll" data-l10n-id="find_highlight">Highlight all</label>
           <input type="checkbox" id="findMatchCase">
-          <label for="findMatchCase">Match case</label>
+          <label for="findMatchCase" data-l10n-id="find_match_case_label">Match case</label>
           <span id="findMsg"></span>
         </div>
         <div class="toolbar">
@@ -118,8 +118,8 @@ limitations under the License.
                 </button>
                 <div class="toolbarButtonSpacer"></div>
 <!--#if !MOZCENTRAL-->
-                <button id="viewFind" class="toolbarButton group" title="Find in Document" tabindex="4" data-l10n-id="find_panel">
-                   <span data-l10n-id="find_panel_label">Find in Document</span>
+                <button id="viewFind" class="toolbarButton group" title="Find in Document" tabindex="4" data-l10n-id="find">
+                   <span data-l10n-id="find_label">Find</span>
                 </button>
 <!--#endif-->
                 <div class="splitToolbarButton">
