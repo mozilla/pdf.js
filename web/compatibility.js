@@ -381,7 +381,18 @@
 // Check console compatability
 (function checkConsoleCompatibility() {
   if (typeof console == 'undefined') {
-    console = {log: function() {}};
+    console = {
+      log: function() {},
+      error: function() {}
+    };
+  } else if (!('bind' in console.log)) {
+    // native functions in IE9 might not have bind
+    console.log = (function(fn) {
+      return function(msg) { return fn(msg); }
+    })(console.log);
+    console.error = (function(fn) {
+      return function(msg) { return fn(msg); }
+    })(console.error);
   }
 })();
 
