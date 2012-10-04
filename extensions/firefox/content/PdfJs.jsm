@@ -23,10 +23,12 @@ const Cu = Components.utils;
 
 const PREF_PREFIX = 'pdfjs';
 const PREF_DISABLED = PREF_PREFIX + '.disabled';
-const PREF_FIRST_RUN = PREF_PREFIX + '.firstRun';
+const PREF_MIGRATION_VERSION = PREF_PREFIX + '.migrationVersion';
 const PREF_PREVIOUS_ACTION = PREF_PREFIX + '.previousHandler.preferredAction';
 const PREF_PREVIOUS_ASK = PREF_PREFIX + '.previousHandler.alwaysAskBeforeHandling';
+const PREF_DISABLED_PLUGIN_TYPES = 'plugin.disable_full_page_plugin_for_types';
 const TOPIC_PDFJS_HANDLER_CHANGED = 'pdfjs:handlerChanged';
+const PDF_CONTENT_TYPE = 'application/pdf';
 
 Cu.import('resource://gre/modules/XPCOMUtils.jsm');
 Cu.import('resource://gre/modules/Services.jsm');
@@ -40,6 +42,14 @@ XPCOMUtils.defineLazyServiceGetter(Svc, 'mime',
 function getBoolPref(aPref, aDefaultValue) {
   try {
     return Services.prefs.getBoolPref(aPref);
+  } catch (ex) {
+    return aDefaultValue;
+  }
+}
+
+function getIntPref(aPref, aDefaultValue) {
+  try {
+    return Services.prefs.getIntPref(aPref);
   } catch (ex) {
     return aDefaultValue;
   }
@@ -84,24 +94,8 @@ let PdfJs = {
   _registered: false,
 
   init: function init() {
-    // On first run make pdf.js the default handler.
-    if (!getBoolPref(PREF_DISABLED, true) && getBoolPref(PREF_FIRST_RUN, false)) {
-      Services.prefs.setBoolPref(PREF_FIRST_RUN, false);
-
-      let handlerInfo = Svc.mime.getFromTypeAndExtension('application/pdf', 'pdf');
-      // Store the previous settings of preferredAction and
-      // alwaysAskBeforeHandling in case we need to revert them in a hotfix that
-      // would turn pdf.js off.
-      Services.prefs.setIntPref(PREF_PREVIOUS_ACTION, handlerInfo.preferredAction);
-      Services.prefs.setBoolPref(PREF_PREVIOUS_ASK, handlerInfo.alwaysAskBeforeHandling);
-
-      let handlerService = Cc['@mozilla.org/uriloader/handler-service;1'].
-                           getService(Ci.nsIHandlerService);
-
-      // Change and save mime handler settings.
-      handlerInfo.alwaysAskBeforeHandling = false;
-      handlerInfo.preferredAction = Ci.nsIHandlerInfo.handleInternally;
-      handlerService.store(handlerInfo);
+    if (!getBoolPref(PREF_DISABLED, true)) {
+      this._migrate();
     }
 
     if (this.enabled)
@@ -113,6 +107,55 @@ let PdfJs = {
     // is chosen.
     Services.prefs.addObserver(PREF_DISABLED, this, false);
     Services.obs.addObserver(this, TOPIC_PDFJS_HANDLER_CHANGED, false);
+  },
+
+  _migrate: function migrate() {
+    const VERSION = 1;
+    var currentVersion = getIntPref(PREF_MIGRATION_VERSION, 0);
+    if (currentVersion >= VERSION) {
+      return;
+    }
+    // Make pdf.js the default pdf viewer on the first migration.
+    if (currentVersion < 2) {
+      this._becomeHandler();
+    }
+    Services.prefs.setIntPref(PREF_MIGRATION_VERSION, VERSION);
+  },
+
+  _becomeHandler: function _becomeHandler() {
+    let handlerInfo = Svc.mime.getFromTypeAndExtension(PDF_CONTENT_TYPE, 'pdf');
+    let prefs = Services.prefs;
+    if (handlerInfo.preferredAction !== Ci.nsIHandlerInfo.handleInternally &&
+        handlerInfo.preferredAction !== false) {
+      // Store the previous settings of preferredAction and
+      // alwaysAskBeforeHandling in case we need to revert them in a hotfix that
+      // would turn pdf.js off.
+      prefs.setIntPref(PREF_PREVIOUS_ACTION, handlerInfo.preferredAction);
+      prefs.setBoolPref(PREF_PREVIOUS_ASK, handlerInfo.alwaysAskBeforeHandling);
+    }
+
+    let handlerService = Cc['@mozilla.org/uriloader/handler-service;1'].
+                         getService(Ci.nsIHandlerService);
+
+    // Change and save mime handler settings.
+    handlerInfo.alwaysAskBeforeHandling = false;
+    handlerInfo.preferredAction = Ci.nsIHandlerInfo.handleInternally;
+    handlerService.store(handlerInfo);
+
+    // Also disable any plugins for pdfs.
+    var stringTypes = '';
+    var types = [];
+    if (prefs.prefHasUserValue(PREF_DISABLED_PLUGIN_TYPES)) {
+      stringTypes = prefs.getCharPref(PREF_DISABLED_PLUGIN_TYPES);
+    }
+    if (stringTypes !== '') {
+      types = stringTypes.split(',');
+    }
+
+    if (types.indexOf(PDF_CONTENT_TYPE) === -1) {
+      types.push(PDF_CONTENT_TYPE);
+    }
+    prefs.setCharPref(PREF_DISABLED_PLUGIN_TYPES, types.join(','));
   },
 
   // nsIObserver
