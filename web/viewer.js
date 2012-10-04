@@ -2799,7 +2799,7 @@ window.addEventListener('keydown', function keydown(evt) {
   // control is selected or not.
   if (cmd == 1 || cmd == 8) { // either CTRL or META key.
     switch (evt.keyCode) {
-//#if !(FIREFOX || MOZCENTRAL)
+//#if !MOZCENTRAL
       case 70:
         PDFFindBar.toggle();
         handled = true;
