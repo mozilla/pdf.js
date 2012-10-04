@@ -34,6 +34,12 @@ var RenderingStates = {
   PAUSED: 2,
   FINISHED: 3
 };
+var FindStates = {
+  FIND_FOUND: 0,
+  FIND_NOTFOUND: 1,
+  FIND_WRAPPED: 2,
+  FIND_PENDING: 3
+};
 
 //#if (GENERIC || CHROME)
 //PDFJS.workerSrc = '../build/pdf.js';
@@ -222,6 +228,374 @@ var Settings = (function SettingsClosure() {
 var cache = new Cache(kCacheSize);
 var currentPageNumber = 1;
 
+var PDFFindController = {
+  startedTextExtraction: false,
+
+  // If active, find results will be highlighted.
+  active: false,
+
+  // Stores the text for each page.
+  pageContents: [],
+
+  pageMatches: [],
+
+  selected: {
+    pageIdx: 0,
+    matchIdx: 0
+  },
+
+  dirtyMatch: false,
+
+  findTimeout: null,
+
+  initialize: function() {
+    var events = [
+      'find',
+      'findagain',
+      'findhighlightallchange',
+      'findcasesensitivitychange'
+    ];
+
+    this.handleEvent = this.handleEvent.bind(this);
+
+    for (var i = 0; i < events.length; i++) {
+      window.addEventListener(events[i], this.handleEvent);
+    }
+  },
+
+  calcFindMatch: function(pageContent) {
+    var query = this.state.query;
+    var caseSensitive = this.state.caseSensitive;
+    var queryLen = query.length;
+
+    if (queryLen === 0)
+      return [];
+
+    if (!caseSensitive) {
+      pageContent = pageContent.toLowerCase();
+      query = query.toLowerCase();
+    }
+
+    var matches = [];
+
+    var matchIdx = -queryLen;
+    while (true) {
+      matchIdx = pageContent.indexOf(query, matchIdx + queryLen);
+      if (matchIdx === -1) {
+        break;
+      }
+
+      matches.push(matchIdx);
+    }
+    return matches;
+  },
+
+  extractText: function() {
+    if (this.startedTextExtraction)
+      return;
+    this.startedTextExtraction = true;
+    var self = this;
+    function extractPageText(pageIndex) {
+      PDFView.pages[pageIndex].getTextContent().then(
+        function textContentResolved(data) {
+          // Build the find string.
+          var bidiTexts = data.bidiTexts;
+          var str = '';
+
+          for (var i = 0; i < bidiTexts.length; i++) {
+            str += bidiTexts[i].str;
+          }
+
+          // Store the pageContent as a string.
+          self.pageContents.push(str);
+          // Ensure there is a empty array of matches.
+          self.pageMatches.push([]);
+
+          if ((pageIndex + 1) < PDFView.pages.length)
+            extractPageText(pageIndex + 1);
+        }
+      );
+    }
+    extractPageText(0);
+  },
+
+  handleEvent: function(e) {
+    this.state = e.detail;
+    if (e.detail.findPrevious === undefined) {
+      this.dirtyMatch = true;
+    }
+
+    clearTimeout(this.findTimeout);
+    if (e.type === 'find') {
+      // Only trigger the find action after 250ms of silence.
+      this.findTimeout = setTimeout(this.performFind.bind(this), 250);
+    } else {
+      this.performFind();
+    }
+  },
+
+  updatePage: function(idx) {
+    var page = PDFView.pages[idx];
+
+    if (this.selected.pageIdx === idx) {
+      // If the page is selected, scroll the page into view, which triggers
+      // rendering the page, which adds the textLayer. Once the textLayer is
+      // build, it will scroll onto the selected match.
+      page.scrollIntoView();
+    }
+
+    if (page.textLayer) {
+      page.textLayer.updateMatches();
+    }
+  },
+
+  performFind: function() {
+    // Recalculate all the matches.
+    // TODO: Make one match show up as the current match
+
+    var pages = PDFView.pages;
+    var pageContents = this.pageContents;
+    var pageMatches = this.pageMatches;
+
+    this.active = true;
+
+    this.updateUIState(FindStates.FIND_PENDING);
+
+    if (this.dirtyMatch) {
+      // Need to recalculate the matches.
+      this.dirtyMatch = false;
+
+      this.selected = {
+        pageIdx: -1,
+        matchIdx: -1
+      };
+
+      // TODO: Make this way more lasily (aka. efficient) - e.g. calculate only
+      // the matches for the current visible pages.
+      var firstMatch = true;
+      for (var i = 0; i < pageContents.length; i++) {
+        var matches = pageMatches[i] = this.calcFindMatch(pageContents[i]);
+        if (firstMatch && matches.length !== 0) {
+          firstMatch = false;
+          this.selected = {
+            pageIdx: i,
+            matchIdx: 0
+          };
+        }
+        this.updatePage(i, true);
+      }
+      if (!firstMatch || !this.state.query) {
+        this.updateUIState(FindStates.FIND_FOUND);
+      } else {
+        this.updateUIState(FindStates.FIND_NOTFOUND);
+      }
+    } else {
+      // If there is NO selection, then there is no match at all -> no sense to
+      // handle previous/next action.
+      if (this.selected.pageIdx === -1) {
+        this.updateUIState(FindStates.FIND_NOTFOUND);
+        return;
+      }
+
+      // Handle findAgain case.
+      var previous = this.state.findPrevious;
+      var sPageIdx = this.selected.pageIdx;
+      var sMatchIdx = this.selected.matchIdx;
+      var findState = FindStates.FIND_FOUND;
+
+      if (previous) {
+        // Select previous match.
+
+        if (sMatchIdx !== 0) {
+          this.selected.matchIdx -= 1;
+        } else {
+          var len = pageMatches.length;
+          for (var i = sPageIdx - 1; i != sPageIdx; i--) {
+            if (i < 0)
+              i += len;
+
+            if (pageMatches[i].length !== 0) {
+              this.selected = {
+                pageIdx: i,
+                matchIdx: pageMatches[i].length - 1
+              };
+              break;
+            }
+          }
+          // If pageIdx stayed the same, select last match on the page.
+          if (this.selected.pageIdx === sPageIdx) {
+            this.selected.matchIdx = pageMatches[sPageIdx].length - 1;
+            findState = FindStates.FIND_WRAPPED;
+          } else if (this.selected.pageIdx > sPageIdx) {
+            findState = FindStates.FIND_WRAPPED;
+          }
+        }
+      } else {
+        // Select next match.
+
+        if (pageMatches[sPageIdx].length !== sMatchIdx + 1) {
+          this.selected.matchIdx += 1;
+        } else {
+          var len = pageMatches.length;
+          for (var i = sPageIdx + 1; i < len + sPageIdx; i++) {
+            if (pageMatches[i % len].length !== 0) {
+              this.selected = {
+                pageIdx: i % len,
+                matchIdx: 0
+              };
+              break;
+            }
+          }
+
+          // If pageIdx stayed the same, select first match on the page.
+          if (this.selected.pageIdx === sPageIdx) {
+            this.selected.matchIdx = 0;
+            findState = FindStates.FIND_WRAPPED;
+          } else if (this.selected.pageIdx < sPageIdx) {
+            findState = FindStates.FIND_WRAPPED;
+          }
+        }
+      }
+
+      this.updateUIState(findState, previous);
+      this.updatePage(sPageIdx, sPageIdx === this.selected.pageIdx);
+      if (sPageIdx !== this.selected.pageIdx) {
+        this.updatePage(this.selected.pageIdx, true);
+      }
+    }
+  },
+
+  updateUIState: function(state, previous) {
+    // TODO: Update the firefox find bar or update the html findbar.
+    PDFFindBar.updateUIState(state, previous);
+  }
+};
+
+var PDFFindBar = {
+  // TODO: Enable the FindBar *AFTER* the pagesPromise in the load function
+  // got resolved
+
+  opened: false,
+
+  initialize: function() {
+    this.bar = document.getElementById('findbar');
+    this.toggleButton = document.getElementById('viewFind');
+    this.findField = document.getElementById('findInput');
+    this.highlightAll = document.getElementById('findHighlightAll');
+    this.caseSensitive = document.getElementById('findMatchCase');
+    this.findMsg = document.getElementById('findMsg');
+
+    var self = this;
+    this.toggleButton.addEventListener('click', function() {
+      self.toggle();
+    });
+
+    this.findField.addEventListener('input', function() {
+      self.dispatchEvent('');
+    });
+
+    // TODO: Add keybindings CMD-G etc. to go to prev/
+    // next match when the findField is selected.
+
+    this.findField.addEventListener('keydown', function(evt) {
+      switch (evt.keyCode) {
+        case 13: // Enter
+          self.dispatchEvent('again', evt.shiftKey);
+          break;
+      }
+    });
+
+    document.getElementById('findPrevious').addEventListener('click',
+      function() { self.dispatchEvent('again', true); }
+    );
+
+    document.getElementById('findNext').addEventListener('click', function() {
+      self.dispatchEvent('again', false);
+    });
+
+    this.highlightAll.addEventListener('click', function() {
+      self.dispatchEvent('highlightallchange');
+    });
+
+    this.caseSensitive.addEventListener('click', function() {
+      self.dispatchEvent('casesensitivitychange');
+    });
+  },
+
+  dispatchEvent: function(aType, aFindPrevious) {
+    var event = document.createEvent('CustomEvent');
+    event.initCustomEvent('find' + aType, true, true, {
+      query: this.findField.value,
+      caseSensitive: this.caseSensitive.checked,
+      highlightAll: this.highlightAll.checked,
+      findPrevious: aFindPrevious
+    });
+    return window.dispatchEvent(event);
+  },
+
+  updateUIState: function(state, previous) {
+    var notFound = false;
+    var findMsg = '';
+    var status = 'pending';
+
+    switch (state) {
+      case FindStates.FIND_FOUND:
+        break;
+
+      case FindStates.FIND_NOTFOUND:
+        findMsg = mozL10n.get('find_not_found', null, 'Phrase not found');
+        notFound = true;
+        break;
+
+      case FindStates.FIND_WRAPPED:
+        if (previous) {
+          findMsg = mozL10n.get('find_wrapped_to_bottom', null,
+                                'Reached end of page, continued from bottom');
+        } else {
+          findMsg = mozL10n.get('find_wrapped_to_top', null,
+                                'Reached end of page, continued from top');
+        }
+        break;
+    }
+
+    if (notFound) {
+      this.findField.classList.add('notFound');
+    } else {
+      this.findField.classList.remove('notFound');
+    }
+
+    this.findMsg.textContent = findMsg;
+  },
+
+  open: function() {
+    if (this.opened) return;
+
+    this.opened = true;
+    this.toggleButton.classList.add('toggled');
+    this.bar.classList.remove('hidden');
+    this.findField.select();
+    this.findField.focus();
+  },
+
+  close: function() {
+    if (!this.opened) return;
+
+    this.opened = false;
+    this.toggleButton.classList.remove('toggled');
+    this.bar.classList.add('hidden');
+
+    PDFFindController.active = false;
+  },
+
+  toggle: function() {
+    if (this.opened) {
+      this.close();
+    } else {
+      this.open();
+    }
+  }
+};
+
 var PDFView = {
   pages: [],
   thumbnails: [],
@@ -255,6 +629,9 @@ var PDFView = {
     this.thumbnailViewScroll = {};
     this.watchScroll(thumbnailContainer, this.thumbnailViewScroll,
                      this.renderHighestPriority.bind(this));
+
+    PDFFindBar.initialize();
+    PDFFindController.initialize();
 
     this.initialized = true;
     container.addEventListener('scroll', function() {
@@ -742,6 +1119,9 @@ var PDFView = {
         thumbnails.push(thumbnailView);
         var pageRef = page.ref;
         pagesRefMap[pageRef.num + ' ' + pageRef.gen + ' R'] = i;
+
+        // Trigger text extraction. TODO: Make this happen lasyliy if needed.
+        PDFFindController.extractText();
       }
 
       self.pagesRefMap = pagesRefMap;
@@ -896,72 +1276,6 @@ var PDFView = {
     return true;
   },
 
-  search: function pdfViewStartSearch() {
-    // Limit this function to run every <SEARCH_TIMEOUT>ms.
-    var SEARCH_TIMEOUT = 250;
-    var lastSearch = this.lastSearch;
-    var now = Date.now();
-    if (lastSearch && (now - lastSearch) < SEARCH_TIMEOUT) {
-      if (!this.searchTimer) {
-        this.searchTimer = setTimeout(function resumeSearch() {
-            PDFView.search();
-          },
-          SEARCH_TIMEOUT - (now - lastSearch)
-        );
-      }
-      return;
-    }
-    this.searchTimer = null;
-    this.lastSearch = now;
-
-    function bindLink(link, pageNumber) {
-      link.href = '#' + pageNumber;
-      link.onclick = function searchBindLink() {
-        PDFView.page = pageNumber;
-        return false;
-      };
-    }
-
-    var searchResults = document.getElementById('searchResults');
-
-    var searchTermsInput = document.getElementById('searchTermsInput');
-    searchResults.removeAttribute('hidden');
-    searchResults.textContent = '';
-
-    var terms = searchTermsInput.value;
-
-    if (!terms)
-      return;
-
-    // simple search: removing spaces and hyphens, then scanning every
-    terms = terms.replace(/\s-/g, '').toLowerCase();
-    var index = PDFView.pageText;
-    var pageFound = false;
-    for (var i = 0, ii = index.length; i < ii; i++) {
-      var pageText = index[i].replace(/\s-/g, '').toLowerCase();
-      var j = pageText.indexOf(terms);
-      if (j < 0)
-        continue;
-
-      var pageNumber = i + 1;
-      var textSample = index[i].substr(j, 50);
-      var link = document.createElement('a');
-      bindLink(link, pageNumber);
-      link.textContent = 'Page ' + pageNumber + ': ' + textSample;
-      searchResults.appendChild(link);
-
-      pageFound = true;
-    }
-    if (!pageFound) {
-      searchResults.textContent = '';
-      var noResults = document.createElement('div');
-      noResults.classList.add('noResults');
-      noResults.textContent = mozL10n.get('search_terms_not_found', null,
-                                              '(Not found)');
-      searchResults.appendChild(noResults);
-    }
-  },
-
   setHash: function pdfViewSetHash(hash) {
     if (!hash)
       return;
@@ -1003,20 +1317,16 @@ var PDFView = {
   switchSidebarView: function pdfViewSwitchSidebarView(view) {
     var thumbsView = document.getElementById('thumbnailView');
     var outlineView = document.getElementById('outlineView');
-    var searchView = document.getElementById('searchView');
 
     var thumbsButton = document.getElementById('viewThumbnail');
     var outlineButton = document.getElementById('viewOutline');
-    var searchButton = document.getElementById('viewSearch');
 
     switch (view) {
       case 'thumbs':
         thumbsButton.classList.add('toggled');
         outlineButton.classList.remove('toggled');
-        searchButton.classList.remove('toggled');
         thumbsView.classList.remove('hidden');
         outlineView.classList.add('hidden');
-        searchView.classList.add('hidden');
 
         PDFView.renderHighestPriority();
         break;
@@ -1024,47 +1334,13 @@ var PDFView = {
       case 'outline':
         thumbsButton.classList.remove('toggled');
         outlineButton.classList.add('toggled');
-        searchButton.classList.remove('toggled');
         thumbsView.classList.add('hidden');
         outlineView.classList.remove('hidden');
-        searchView.classList.add('hidden');
 
         if (outlineButton.getAttribute('disabled'))
           return;
         break;
-
-      case 'search':
-        thumbsButton.classList.remove('toggled');
-        outlineButton.classList.remove('toggled');
-        searchButton.classList.add('toggled');
-        thumbsView.classList.add('hidden');
-        outlineView.classList.add('hidden');
-        searchView.classList.remove('hidden');
-
-        var searchTermsInput = document.getElementById('searchTermsInput');
-        searchTermsInput.focus();
-        // Start text extraction as soon as the search gets displayed.
-        this.extractText();
-        break;
     }
-  },
-
-  extractText: function() {
-    if (this.startedTextExtraction)
-      return;
-    this.startedTextExtraction = true;
-    var self = this;
-    function extractPageText(pageIndex) {
-      self.pages[pageIndex].pdfPage.getTextContent().then(
-        function textContentResolved(textContent) {
-          self.pageText[pageIndex] = textContent.join('');
-          self.search();
-          if ((pageIndex + 1) < self.pages.length)
-            extractPageText(pageIndex + 1);
-        }
-      );
-    }
-    extractPageText(0);
   },
 
   getVisiblePages: function pdfViewGetVisiblePages() {
@@ -1246,6 +1522,7 @@ var PageView = function pageView(container, pdfPage, id, scale,
   this.resume = null;
 
   this.textContent = null;
+  this.textLayer = null;
 
   var anchor = document.createElement('a');
   anchor.name = '' + this.id;
@@ -1492,7 +1769,8 @@ var PageView = function pageView(container, pdfPage, id, scale,
       textLayerDiv.className = 'textLayer';
       div.appendChild(textLayerDiv);
     }
-    var textLayer = textLayerDiv ? new TextLayerBuilder(textLayerDiv) : null;
+    var textLayer = this.textLayer =
+          textLayerDiv ? new TextLayerBuilder(textLayerDiv, this.id - 1) : null;
 
     var scale = this.scale, viewport = this.viewport;
     canvas.width = viewport.width;
@@ -1851,21 +2129,25 @@ var CustomStyle = (function CustomStyleClosure() {
   return CustomStyle;
 })();
 
-var TextLayerBuilder = function textLayerBuilder(textLayerDiv) {
+var TextLayerBuilder = function textLayerBuilder(textLayerDiv, pageIdx) {
   var textLayerFrag = document.createDocumentFragment();
+
   this.textLayerDiv = textLayerDiv;
   this.layoutDone = false;
   this.divContentDone = false;
+  this.pageIdx = pageIdx;
+  this.matches = [];
 
   this.beginLayout = function textLayerBuilderBeginLayout() {
     this.textDivs = [];
     this.textLayerQueue = [];
+    this.renderingDone = false;
   };
 
   this.endLayout = function textLayerBuilderEndLayout() {
     this.layoutDone = true;
     this.insertDivContent();
-  },
+  };
 
   this.renderLayer = function textLayerBuilderRenderLayer() {
     var self = this;
@@ -1879,8 +2161,11 @@ var TextLayerBuilder = function textLayerBuilder(textLayerDiv) {
     if (textDivs.length > 100000)
       return;
 
-    while (textDivs.length > 0) {
-      var textDiv = textDivs.shift();
+    var i = textDivs.length;
+
+    while (i !== 0) {
+      i--;
+      var textDiv = textDivs[i];
       textLayerFrag.appendChild(textDiv);
 
       ctx.font = textDiv.style.fontSize + ' ' + textDiv.style.fontFamily;
@@ -1892,8 +2177,13 @@ var TextLayerBuilder = function textLayerBuilder(textLayerDiv) {
         CustomStyle.setProp('transform' , textDiv,
           'scale(' + textScale + ', 1)');
         CustomStyle.setProp('transformOrigin' , textDiv, '0% 0%');
+
+        textLayerDiv.appendChild(textDiv);
       }
     }
+
+    this.renderingDone = true;
+    this.updateMatches();
 
     textLayerDiv.appendChild(textLayerFrag);
   };
@@ -1961,6 +2251,201 @@ var TextLayerBuilder = function textLayerBuilder(textLayerDiv) {
     this.textContent = textContent;
     this.insertDivContent();
   };
+
+  this.convertMatches = function textLayerBuilderConvertMatches(matches) {
+    var i = 0;
+    var iIndex = 0;
+    var bidiTexts = this.textContent.bidiTexts;
+    var end = bidiTexts.length - 1;
+    var queryLen = PDFFindController.state.query.length;
+
+    var lastDivIdx = -1;
+    var pos;
+
+    var ret = [];
+
+    // Loop over all the matches.
+    for (var m = 0; m < matches.length; m++) {
+      var matchIdx = matches[m];
+      // # Calculate the begin position.
+
+      // Loop over the divIdxs.
+      while (i !== end && matchIdx >= (iIndex + bidiTexts[i].str.length)) {
+        iIndex += bidiTexts[i].str.length;
+        i++;
+      }
+
+      // TODO: Do proper handling here if something goes wrong.
+      if (i == bidiTexts.length) {
+        console.error('Could not find matching mapping');
+      }
+
+      var match = {
+        begin: {
+          divIdx: i,
+          offset: matchIdx - iIndex
+        }
+      };
+
+      // # Calculate the end position.
+      matchIdx += queryLen;
+
+      // Somewhat same array as above, but use a > instead of >= to get the end
+      // position right.
+      while (i !== end && matchIdx > (iIndex + bidiTexts[i].str.length)) {
+        iIndex += bidiTexts[i].str.length;
+        i++;
+      }
+
+      match.end = {
+        divIdx: i,
+        offset: matchIdx - iIndex
+      };
+      ret.push(match);
+    }
+
+    return ret;
+  };
+
+  this.renderMatches = function textLayerBuilder_renderMatches(matches) {
+    // Early exit if there is nothing to render.
+    if (matches.length === 0) {
+      return;
+    }
+
+    var bidiTexts = this.textContent.bidiTexts;
+    var textDivs = this.textDivs;
+    var prevEnd = null;
+    var isSelectedPage = this.pageIdx === PDFFindController.selected.pageIdx;
+    var selectedMatchIdx = PDFFindController.selected.matchIdx;
+    var highlightAll = PDFFindController.state.highlightAll;
+
+    var infty = {
+      divIdx: -1,
+      offset: undefined
+    };
+
+    function beginText(begin, className) {
+      var divIdx = begin.divIdx;
+      var div = textDivs[divIdx];
+      div.innerHTML = '';
+
+      var content = bidiTexts[divIdx].str.substring(0, begin.offset);
+      var node = document.createTextNode(content);
+      if (className) {
+        var isSelected = isSelectedPage &&
+                          divIdx === selectedMatchIdx;
+        var span = document.createElement('span');
+        span.className = className + (isSelected ? ' selected' : '');
+        span.appendChild(node);
+        div.appendChild(span);
+        return;
+      }
+      div.appendChild(node);
+    }
+
+    function appendText(from, to, className) {
+      var divIdx = from.divIdx;
+      var div = textDivs[divIdx];
+
+      var content = bidiTexts[divIdx].str.substring(from.offset, to.offset);
+      var node = document.createTextNode(content);
+      if (className) {
+        var span = document.createElement('span');
+        span.className = className;
+        span.appendChild(node);
+        div.appendChild(span);
+        return;
+      }
+      div.appendChild(node);
+    }
+
+    function highlightDiv(divIdx, className) {
+      textDivs[divIdx].className = className;
+    }
+
+    var i0 = selectedMatchIdx, i1 = i0 + 1, i;
+
+    if (highlightAll) {
+      i0 = 0;
+      i1 = matches.length;
+    } else if (!isSelectedPage) {
+      // Not highlighting all and this isn't the selected page, so do nothing.
+      return;
+    }
+
+    for (i = i0; i < i1; i++) {
+      var match = matches[i];
+      var begin = match.begin;
+      var end = match.end;
+
+      var isSelected = isSelectedPage && i === selectedMatchIdx;
+      var highlightSuffix = (isSelected ? ' selected' : '');
+      if (isSelected)
+        scrollIntoView(textDivs[begin.divIdx], {top: -50});
+
+      // Match inside new div.
+      if (!prevEnd || begin.divIdx !== prevEnd.divIdx) {
+        // If there was a previous div, then add the text at the end
+        if (prevEnd !== null) {
+          appendText(prevEnd, infty);
+        }
+        // clears the divs and set the content until the begin point.
+        beginText(begin);
+      } else {
+        appendText(prevEnd, begin);
+      }
+
+      if (begin.divIdx === end.divIdx) {
+        appendText(begin, end, 'highlight' + highlightSuffix);
+      } else {
+        appendText(begin, infty, 'highlight begin' + highlightSuffix);
+        for (var n = begin.divIdx + 1; n < end.divIdx; n++) {
+          highlightDiv(n, 'highlight middle' + highlightSuffix);
+        }
+        beginText(end, 'highlight end' + highlightSuffix);
+      }
+      prevEnd = end;
+    }
+
+    if (prevEnd) {
+      appendText(prevEnd, infty);
+    }
+  };
+
+  this.updateMatches = function textLayerUpdateMatches() {
+    // Only show matches, once all rendering is done.
+    if (!this.renderingDone)
+      return;
+
+    // Clear out all matches.
+    var matches = this.matches;
+    var textDivs = this.textDivs;
+    var bidiTexts = this.textContent.bidiTexts;
+    var clearedUntilDivIdx = -1;
+
+    // Clear out all current matches.
+    for (var i = 0; i < matches.length; i++) {
+      var match = matches[i];
+      var begin = Math.max(clearedUntilDivIdx, match.begin.divIdx);
+      for (var n = begin; n <= match.end.divIdx; n++) {
+        var div = textDivs[n];
+        div.textContent = bidiTexts[n].str;
+        div.className = '';
+      }
+      clearedUntilDivIdx = match.end.divIdx + 1;
+    }
+
+    if (!PDFFindController.active)
+      return;
+
+    // Convert the matches on the page controller into the match format used
+    // for the textLayer.
+    this.matches = matches =
+      this.convertMatches(PDFFindController.pageMatches[this.pageIdx] || []);
+
+    this.renderMatches(this.matches);
+  };
 };
 
 document.addEventListener('DOMContentLoaded', function webViewerLoad(evt) {
@@ -2025,8 +2510,8 @@ document.addEventListener('DOMContentLoaded', function webViewerLoad(evt) {
 
 //#if !(FIREFOX || MOZCENTRAL)
 //#else
-//if (FirefoxCom.requestSync('searchEnabled')) {
-//  document.querySelector('#viewSearch').classList.remove('hidden');
+//if (FirefoxCom.requestSync('findEnabled')) {
+//  document.querySelector('#viewFind').classList.remove('hidden');
 //}
 //#endif
 
@@ -2076,16 +2561,6 @@ document.addEventListener('DOMContentLoaded', function webViewerLoad(evt) {
       PDFView.switchSidebarView('outline');
     });
 
-  document.getElementById('viewSearch').addEventListener('click',
-    function() {
-      PDFView.switchSidebarView('search');
-    });
-
-  document.getElementById('searchButton').addEventListener('click',
-    function() {
-      PDFView.search();
-    });
-
   document.getElementById('previous').addEventListener('click',
     function() {
       PDFView.page--;
@@ -2124,13 +2599,6 @@ document.addEventListener('DOMContentLoaded', function webViewerLoad(evt) {
   document.getElementById('download').addEventListener('click',
     function() {
       PDFView.download();
-    });
-
-  document.getElementById('searchTermsInput').addEventListener('keydown',
-    function(event) {
-      if (event.keyCode == 13) {
-        PDFView.search();
-      }
     });
 
   document.getElementById('pageNumber').addEventListener('change',
@@ -2350,6 +2818,12 @@ window.addEventListener('keydown', function keydown(evt) {
   // control is selected or not.
   if (cmd == 1 || cmd == 8) { // either CTRL or META key.
     switch (evt.keyCode) {
+//#if !MOZCENTRAL
+      case 70:
+        PDFFindBar.toggle();
+        handled = true;
+        break;
+//#endif
       case 61: // FF/Mac '='
       case 107: // FF '+' and '='
       case 187: // Chrome '+'
