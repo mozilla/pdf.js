@@ -115,6 +115,7 @@ let PdfJs = {
     if (currentVersion >= VERSION) {
       return;
     }
+    // Make pdf.js the default pdf viewer on the first migration.
     if (currentVersion < 2) {
       this._becomeHandler();
     }
