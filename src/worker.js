@@ -35,6 +35,7 @@ function MessageHandler(name, comObj) {
     }];
   } else {
     ah['console_error'] = [function ahConsoleError(data) {
+      log.apply(null, data);
     }];
   }
   ah['_warn'] = [function ah_Warn(data) {

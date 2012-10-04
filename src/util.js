@@ -22,8 +22,6 @@
 var log = (function() {
   if ('console' in globalScope && 'log' in globalScope['console']) {
     return globalScope['console']['log'].bind(globalScope['console']);
-  } else if ('print' in globalScope) {
-    return globalScope['print'].bind(globalScope);
   } else {
     return function nop() {
     };
