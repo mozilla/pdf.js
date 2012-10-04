@@ -1492,7 +1492,8 @@ var PageView = function pageView(container, pdfPage, id, scale,
       textLayerDiv.className = 'textLayer';
       div.appendChild(textLayerDiv);
     }
-    var textLayer = textLayerDiv ? new TextLayerBuilder(textLayerDiv) : null;
+    var textLayer = textLayerDiv ? 
+      new TextLayerBuilder(textLayerDiv, this.id) : null;
 
     var scale = this.scale, viewport = this.viewport;
     canvas.width = viewport.width;
@@ -1851,9 +1852,10 @@ var CustomStyle = (function CustomStyleClosure() {
   return CustomStyle;
 })();
 
-var TextLayerBuilder = function textLayerBuilder(textLayerDiv) {
+var TextLayerBuilder = function textLayerBuilder(textLayerDiv, pageId) {
   var textLayerFrag = document.createDocumentFragment();
   this.textLayerDiv = textLayerDiv;
+  this.pageId = pageId;
   this.layoutDone = false;
   this.divContentDone = false;
 
@@ -1865,6 +1867,13 @@ var TextLayerBuilder = function textLayerBuilder(textLayerDiv) {
   this.endLayout = function textLayerBuilderEndLayout() {
     this.layoutDone = true;
     this.insertDivContent();
+  },
+
+  this.sendEvent = function textLayerCompleteDispatchEvent() {
+    var event = document.createEvent('UIEvents');
+    event.initUIEvent('textrender', false, false, window, 0);
+    event.renderingDone = this.pageId;
+    window.dispatchEvent(event);
   },
 
   this.renderLayer = function textLayerBuilderRenderLayer() {
@@ -1896,6 +1905,7 @@ var TextLayerBuilder = function textLayerBuilder(textLayerDiv) {
     }
 
     textLayerDiv.appendChild(textLayerFrag);
+    this.sendEvent();
   };
 
   this.setupRenderLayoutTimer = function textLayerSetupRenderLayoutTimer() {
