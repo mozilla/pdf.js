@@ -245,7 +245,7 @@ html[dir='rtl'] #sidebarContent {
               0 1px 1px hsla(0,0%,0%,.1);
 }
 
-#toolbarViewer {
+#toolbarViewer, .findbar {
   position: relative;
   height: 32px;
   background-image: url(images/texture.png),
@@ -265,6 +265,65 @@ html[dir='rtl'] #sidebarContent {
               0 1px 0 hsla(0,0%,0%,.15),
               0 1px 1px hsla(0,0%,0%,.1);
 }
+
+.findbar {
+  top: 32px;
+  left: 68px;
+  position: absolute;
+  z-index: 10000;
+  height: 20px;
+
+  min-width: 16px;
+  padding: 3px 6px 3px 6px;
+  margin: 4px 2px 4px 0;
+  color: hsl(0,0%,85%);
+  font-size: 12px;
+  line-height: 14px;
+  text-align: left;
+  cursor: default;
+}
+
+.findbar label {
+  -webkit-user-select:none;
+  -moz-user-select:none;
+}
+
+.doorHanger {
+  border: 1px solid hsla(0,0%,0%,.5);
+  border-radius: 2px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+}
+.doorHanger:after, .doorHanger:before {
+  bottom: 100%;
+  border: solid transparent;
+  content: " ";
+  height: 0;
+  width: 0;
+  position: absolute;
+  pointer-events: none;
+}
+.doorHanger:after {
+  border-bottom-color: hsla(0,0%,32%,.99);
+  border-width: 8px;
+  left: 16px;
+  margin-left: -8px;
+}
+.doorHanger:before {
+  border-bottom-color: hsla(0,0%,0%,.5);
+  border-width: 9px;
+  left: 16px;
+  margin-left: -9px;
+}
+
+#findMsg {
+  font-style: italic;
+  color: #A6B7D0;
+}
+
+.notFound {
+  background-color: rgb(255, 137, 153);
+}
+
 html[dir='ltr'] #toolbarViewerLeft {
   margin-left: -1px;
 }
@@ -702,7 +761,7 @@ html[dir='rtl'] .toolbarButton.pageDown::before {
   content: url(images/toolbarButton-viewOutline.png);
 }
 
-#viewSearch.toolbarButton::before {
+#viewFind.toolbarButton::before {
   display: inline-block;
   content: url(images/toolbarButton-search.png);
 }
@@ -844,8 +903,7 @@ a:focus > .thumbnail > .thumbnailSelectionRing,
   margin-left: 20px;
 }
 
-.outlineItem > a,
-#searchResults > a {
+.outlineItem > a {
   text-decoration: none;
   display: inline-block;
   min-width: 95%;
@@ -861,8 +919,7 @@ a:focus > .thumbnail > .thumbnailSelectionRing,
   white-space: nowrap;
 }
 
-.outlineItem > a:hover,
-#searchResults > a:hover {
+.outlineItem > a:hover {
   background-color: hsla(0,0%,100%,.02);
   background-image: -moz-linear-gradient(hsla(0,0%,100%,.05), hsla(0,0%,100%,0));
   background-clip: padding-box;
@@ -889,42 +946,12 @@ a:focus > .thumbnail > .thumbnailSelectionRing,
   font-style: italic;
 }
 
-#searchScrollView {
+#findScrollView {
   position: absolute;
   top: 10px;
   bottom: 10px;
   left: 10px;
   width: 280px;
-}
-
-#searchToolbar {
-  padding-left: 0px;
-  right: 0px;
-  padding-top: 0px;
-  padding-bottom: 5px;
-}
-
-#searchToolbar > input {
-  margin-left: 4px;
-  width: 124px;
-}
-
-#searchToolbar button {
-  width: auto;
-  margin: 0;
-  padding: 0 6px;
-  height: 22px;
-}
-
-#searchResults {
-  overflow: auto;
-  position: absolute;
-  top: 30px;
-  bottom: 0px;
-  left: 0px;
-  right: 0;
-  padding: 4px 4px 0;
-  font-size: smaller;
 }
 
 #sidebarControls {
@@ -1067,6 +1094,30 @@ canvas {
   position: absolute;
   line-height:1.3;
   white-space:pre;
+}
+
+.textLayer .highlight {
+  margin: -1px;
+  padding: 1px;
+
+  background-color: rgba(180, 0, 170, 0.2);
+  border-radius: 4px;
+}
+
+.textLayer .highlight.begin {
+  border-radius: 4px 0px 0px 4px;
+}
+
+.textLayer .highlight.end {
+  border-radius: 0px 4px 4px 0px;
+}
+
+.textLayer .highlight.middle {
+  border-radius: 0px;
+}
+
+.textLayer .highlight.selected {
+  background-color: rgba(0, 100, 0, 0.2);
 }
 
 /* TODO: file FF bug to support ::-moz-selection:window-inactive
@@ -1291,7 +1342,7 @@ canvas {
 }
 
 @media all and (max-width: 600px) {
-  #toolbarViewerRight {
+  #toolbarViewerRight, #findbar, #viewFind {
     display: none;
   }
 }
