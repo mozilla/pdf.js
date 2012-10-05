@@ -55,6 +55,14 @@ if (appInfo.ID === FIREFOX_ID) {
   isInPrivateBrowsing = function() { return false; };
 }
 
+function getChromeWindow(domWindow) {
+  var containingBrowser = domWindow.QueryInterface(Ci.nsIInterfaceRequestor)
+                                   .getInterface(Ci.nsIWebNavigation)
+                                   .QueryInterface(Ci.nsIDocShell)
+                                   .chromeEventHandler;
+  return containingBrowser.ownerDocument.defaultView;
+}
+
 function getBoolPref(pref, def) {
   try {
     return Services.prefs.getBoolPref(pref);
@@ -334,8 +342,8 @@ ChromeActions.prototype = {
   pdfBugEnabled: function() {
     return getBoolPref(PREF_PREFIX + '.pdfBugEnabled', false);
   },
-  findEnabled: function() {
-    return getBoolPref(PREF_PREFIX + '.findEnabled', false);
+  supportsIntegratedFind: function() {
+    return 'updateControlState' in getChromeWindow(this.domWindow).gFindBar;
   },
   fallback: function(url, sendResponse) {
     var self = this;
@@ -389,6 +397,20 @@ ChromeActions.prototype = {
       if (!sentResponse)
         sendResponse(false);
     });
+  },
+  updateFindControlState: function(data) {
+    if (!this.supportsIntegratedFind())
+      return;
+    // Verify what we're sending to the findbar.
+    var result = data.result;
+    var findPrevious = data.findPrevious;
+    var findPreviousType = typeof findPrevious;
+    if ((typeof result !== 'number' || result < 0 || result > 3) ||
+        (findPreviousType !== 'undefined' && findPreviousType !== 'boolean')) {
+      return;
+    }
+    getChromeWindow(this.domWindow).gFindBar
+                                   .updateControlState(result, findPrevious);
   }
 };
 
@@ -426,6 +448,56 @@ RequestListener.prototype.receive = function(event) {
       }
     }
     actions[action].call(this.actions, data, response);
+  }
+};
+
+// Forwards events from the eventElement to the contentWindow only if the
+// content window matches the currently selected browser window.
+function FindEventManager(eventElement, contentWindow, chromeWindow) {
+  this.types = ['find',
+                'findagain',
+                'findhighlightallchange',
+                'findcasesensitivitychange'];
+  this.chromeWindow = chromeWindow;
+  this.contentWindow = contentWindow;
+  this.eventElement = eventElement;
+}
+
+FindEventManager.prototype.bind = function() {
+  this.contentWindow.addEventListener('unload', function unload(e) {
+    this.unbind();
+    this.contentWindow.removeEventListener(e.type, unload);
+  }.bind(this));
+
+  for (var i = 0, ii = this.types.length; i < ii; ++i) {
+    var type = this.types[i];
+    this.eventElement.addEventListener(type, this, true);
+  }
+};
+
+FindEventManager.prototype.handleEvent = function(e) {
+  var chromeWindow = this.chromeWindow;
+  var contentWindow = this.contentWindow;
+  // Only forward the events if they are for our dom window.
+  if (chromeWindow.gBrowser.selectedBrowser.contentWindow === contentWindow) {
+    var detail = e.detail;
+    detail.__exposedProps__ = {
+      query: 'r',
+      caseSensitive: 'r',
+      highlightAll: 'r',
+      findPrevious: 'r'
+    };
+    var forward = contentWindow.document.createEvent('CustomEvent');
+    forward.initCustomEvent(e.type, true, true, detail);
+    contentWindow.dispatchEvent(forward);
+    e.preventDefault();
+  }
+};
+
+FindEventManager.prototype.unbind = function() {
+  for (var i = 0, ii = this.types.length; i < ii; ++i) {
+    var type = this.types[i];
+    this.eventElement.removeEventListener(type, this, true);
   }
 };
 
@@ -541,6 +613,11 @@ PdfStreamConverter.prototype = {
           domWindow.addEventListener(PDFJS_EVENT_ID, function(event) {
             requestListener.receive(event);
           }, false, true);
+          var chromeWindow = getChromeWindow(domWindow);
+          var findEventManager = new FindEventManager(chromeWindow.gFindBar,
+                                                      domWindow,
+                                                      chromeWindow);
+          findEventManager.bind();
         }
         listener.onStopRequest.apply(listener, arguments);
       }
