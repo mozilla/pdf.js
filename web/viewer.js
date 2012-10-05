@@ -2867,6 +2867,18 @@ window.addEventListener('keydown', function keydown(evt) {
     }
   }
 
+  // CTRL or META with or without SHIFT.
+  if (cmd == 1 || cmd == 8 || cmd == 5 || cmd == 12) {
+    switch (evt.keyCode) {
+      case 71: // g
+        if (!PDFView.supportsIntegratedFind) {
+          PDFFindBar.dispatchEvent('again', cmd == 5 || cmd == 12);
+          handled = true;
+        }
+        break;
+    }
+  }
+
   if (handled) {
     evt.preventDefault();
     return;
