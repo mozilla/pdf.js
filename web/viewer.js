@@ -466,7 +466,11 @@ var PDFFindController = {
   },
 
   updateUIState: function(state, previous) {
-    // TODO: Update the firefox find bar or update the html findbar.
+    if (PDFView.supportsIntegratedFind) {
+      FirefoxCom.request('updateFindControlState',
+                         {result: state, findPrevious: previous});
+      return;
+    }
     PDFFindBar.updateUIState(state, previous);
   }
 };
@@ -780,6 +784,19 @@ var PDFView = {
                                                         enumerable: true,
                                                         configurable: true,
                                                         writable: false });
+    return support;
+  },
+
+  get supportsIntegratedFind() {
+    var support = false;
+//#if !(FIREFOX || MOZCENTRAL)
+//#else
+//  support = FirefoxCom.requestSync('supportsIntegratedFind');
+//#endif
+    Object.defineProperty(this, 'supportsIntegratedFind', { value: support,
+                                                            enumerable: true,
+                                                            configurable: true,
+                                                            writable: false });
     return support;
   },
 
@@ -2508,19 +2525,16 @@ document.addEventListener('DOMContentLoaded', function webViewerLoad(evt) {
     PDFBug.init();
   }
 
-//#if !(FIREFOX || MOZCENTRAL)
-//#else
-//if (FirefoxCom.requestSync('findEnabled')) {
-//  document.querySelector('#viewFind').classList.remove('hidden');
-//}
-//#endif
-
   if (!PDFView.supportsPrinting) {
     document.getElementById('print').classList.add('hidden');
   }
 
   if (!PDFView.supportsFullscreen) {
     document.getElementById('fullscreen').classList.add('hidden');
+  }
+
+  if (PDFView.supportsIntegratedFind) {
+    document.querySelector('#viewFind').classList.add('hidden');
   }
 
   // Listen for warnings to trigger the fallback UI.  Errors should be caught
@@ -2818,12 +2832,12 @@ window.addEventListener('keydown', function keydown(evt) {
   // control is selected or not.
   if (cmd == 1 || cmd == 8) { // either CTRL or META key.
     switch (evt.keyCode) {
-//#if !MOZCENTRAL
       case 70:
-        PDFFindBar.toggle();
-        handled = true;
+        if (!PDFView.supportsIntegratedFind) {
+          PDFFindBar.toggle();
+          handled = true;
+        }
         break;
-//#endif
       case 61: // FF/Mac '='
       case 107: // FF '+' and '='
       case 187: // Chrome '+'
