@@ -794,8 +794,11 @@ target.clean = function() {
 //
 target.makefile = function() {
   var makefileContent = 'help:\n\tnode make\n\n';
+  var targetsNames = [];
   for (var i in target) {
     makefileContent += i + ':\n\tnode make ' + i + '\n\n';
+    targetsNames.push(i);
   }
+  makefileContent += '.PHONY: ' + targetsNames.join(' ') + '\n';
   makefileContent.to('Makefile');
 };
