@@ -1091,9 +1091,15 @@ var PDFView = {
     document.getElementById('numPages').textContent =
       mozL10n.get('page_of', {pageCount: pagesCount}, 'of {{pageCount}}');
     document.getElementById('pageNumber').max = pagesCount;
-    document.getElementById('last_page').onclick = function() {
+
+    document.getElementById('first_page').addEventListener('click', function() {
+      PDFView.page = 1;
+    }, true);
+
+    document.getElementById('last_page').addEventListener('click', function() {
       PDFView.page = pagesCount;
-    };
+    }, true);
+
     PDFView.documentFingerprint = id;
     var store = PDFView.store = new Settings(id);
     var storePromise = store.initializedPromise;
