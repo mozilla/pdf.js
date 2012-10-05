@@ -271,7 +271,7 @@ html[dir='rtl'] #sidebarContent {
   left: 68px;
   position: absolute;
   z-index: 10000;
-  height: 20px;
+  height: 24px;
 
   min-width: 16px;
   padding: 3px 6px 3px 6px;
@@ -280,6 +280,7 @@ html[dir='rtl'] #sidebarContent {
   font-size: 12px;
   line-height: 14px;
   text-align: left;
+  white-space: nowrap;
   cursor: default;
 }
 
