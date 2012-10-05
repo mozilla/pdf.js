@@ -229,7 +229,7 @@ var cache = new Cache(kCacheSize);
 var currentPageNumber = 1;
 
 var PDFFindController = {
-  startedTextExtraction: false,
+  extractTextPromise: null,
 
   // If active, find results will be highlighted.
   active: false,
@@ -243,6 +243,8 @@ var PDFFindController = {
     pageIdx: 0,
     matchIdx: 0
   },
+
+  state: null,
 
   dirtyMatch: false,
 
@@ -291,9 +293,11 @@ var PDFFindController = {
   },
 
   extractText: function() {
-    if (this.startedTextExtraction)
-      return;
-    this.startedTextExtraction = true;
+    if (this.extractTextPromise) {
+      return this.extractTextPromise;
+    }
+    this.extractTextPromise = new PDFJS.Promise();
+
     var self = this;
     function extractPageText(pageIndex) {
       PDFView.pages[pageIndex].getTextContent().then(
@@ -313,24 +317,32 @@ var PDFFindController = {
 
           if ((pageIndex + 1) < PDFView.pages.length)
             extractPageText(pageIndex + 1);
+          else
+            self.extractTextPromise.resolve();
         }
       );
     }
     extractPageText(0);
+    return this.extractTextPromise;
   },
 
   handleEvent: function(e) {
-    this.state = e.detail;
-    if (e.detail.findPrevious === undefined) {
+    if (this.state === null || e.type !== 'findagain') {
       this.dirtyMatch = true;
     }
+    this.state = e.detail;
+    this.updateUIState(FindStates.FIND_PENDING);
+
+    var promise = this.extractText();
 
     clearTimeout(this.findTimeout);
     if (e.type === 'find') {
       // Only trigger the find action after 250ms of silence.
-      this.findTimeout = setTimeout(this.performFind.bind(this), 250);
+      this.findTimeout = setTimeout(function() {
+        promise.then(this.performFind.bind(this));
+      }.bind(this), 250);
     } else {
-      this.performFind();
+      promise.then(this.performFind.bind(this));
     }
   },
 
@@ -358,8 +370,6 @@ var PDFFindController = {
     var pageMatches = this.pageMatches;
 
     this.active = true;
-
-    this.updateUIState(FindStates.FIND_PENDING);
 
     if (this.dirtyMatch) {
       // Need to recalculate the matches.
