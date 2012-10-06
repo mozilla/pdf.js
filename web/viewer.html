@@ -121,16 +121,25 @@ limitations under the License.
                    <span data-l10n-id="find_label">Find</span>
                 </button>
                 <div class="splitToolbarButton">
-                  <button class="toolbarButton pageUp" title="Previous Page" id="previous" tabindex="5" data-l10n-id="previous">
+                  <button class="toolbarButton firstPage" title="First Page" id="first_page" tabindex="5" data-l10n-id="first_page">
+                    <span data-l10n-id="first_page_label">First</span>
+                  </button>
+                  <div class="splitToolbarButtonSeparator"></div>
+                  <button class="toolbarButton lastPage" title="Last Page" id="last_page" tabindex="6" data-l10n-id="last_page">
+                    <span data-l10n-id="last_page_label">Last</span>
+                  </button>
+                </div>
+                <div class="splitToolbarButton">
+                  <button class="toolbarButton pageUp" title="Previous Page" id="previous" tabindex="7" data-l10n-id="previous">
                     <span data-l10n-id="previous_label">Previous</span>
                   </button>
                   <div class="splitToolbarButtonSeparator"></div>
-                  <button class="toolbarButton pageDown" title="Next Page" id="next" tabindex="6" data-l10n-id="next">
+                  <button class="toolbarButton pageDown" title="Next Page" id="next" tabindex="8" data-l10n-id="next">
                     <span data-l10n-id="next_label">Next</span>
                   </button>
                 </div>
                 <label id="pageNumberLabel" class="toolbarLabel" for="pageNumber" data-l10n-id="page_label">Page: </label>
-                <input type="number" id="pageNumber" class="toolbarField pageNumber" value="1" size="4" min="1" tabindex="7">
+                <input type="number" id="pageNumber" class="toolbarField pageNumber" value="1" size="4" min="1" tabindex="9">
                 </input>
                 <span id="numPages" class="toolbarLabel"></span>
               </div>

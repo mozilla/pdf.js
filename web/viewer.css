@@ -690,6 +690,16 @@ html[dir='rtl'] .toolbarButton:first-child {
   content: url(images/toolbarButton-sidebarToggle.png);
 }
 
+html[dir='ltr'] .toolbarButton.firstPage::before {
+  display: inline-block;
+  content: url(images/toolbarButton-firstPage.png);
+}
+
+html[dir='rtl'] .toolbarButton.firstPage::before {
+  display: inline-block;
+  content: url(images/toolbarButton-firstPage.png);
+}
+
 html[dir='ltr'] .toolbarButton.pageUp::before {
   display: inline-block;
   content: url(images/toolbarButton-pageUp.png);
@@ -708,6 +718,16 @@ html[dir='ltr'] .toolbarButton.pageDown::before {
 html[dir='rtl'] .toolbarButton.pageDown::before {
   display: inline-block;
   content: url(images/toolbarButton-pageDown-rtl.png);
+}
+
+html[dir='ltr'] .toolbarButton.lastPage::before {
+  display: inline-block;
+  content: url(images/toolbarButton-lastPage.png);
+}
+
+html[dir='rtl'] .toolbarButton.lastPage::before {
+  display: inline-block;
+  content: url(images/toolbarButton-lastPage.png);
 }
 
 .toolbarButton.zoomOut::before {
