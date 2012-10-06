@@ -2831,6 +2831,15 @@ window.addEventListener('DOMMouseScroll', function(evt) {
   }
 }, false);
 
+window.addEventListener('mousedown', function mousedown(evt) {
+  if (PDFView.isFullscreen && evt.button === 0) {
+    // Mouse click in fullmode advances a page
+    evt.preventDefault();
+
+    PDFView.page++;
+  }
+}, false);
+
 window.addEventListener('keydown', function keydown(evt) {
   var handled = false;
   var cmd = (evt.ctrlKey ? 1 : 0) |
@@ -2900,12 +2909,26 @@ window.addEventListener('keydown', function keydown(evt) {
 
   if (cmd == 0) { // no control key pressed at all.
     switch (evt.keyCode) {
+      case 38: // up arrow
+      case 33: // pg up
+      case 8: // backspace
+        if (!PDFView.isFullscreen) {
+          break;
+        }
+        //  in fullscreen mode falls throw here
       case 37: // left arrow
       case 75: // 'k'
       case 80: // 'p'
         PDFView.page--;
         handled = true;
         break;
+      case 40: // down arrow
+      case 34: // pg down
+      case 32: // spacebar
+        if (!PDFView.isFullscreen) {
+          break;
+        }
+        //  in fullscreen mode falls throw here
       case 39: // right arrow
       case 74: // 'j'
       case 78: // 'n'
@@ -2913,9 +2936,15 @@ window.addEventListener('keydown', function keydown(evt) {
         handled = true;
         break;
 
-      case 32: // spacebar
+      case 36: // home
         if (PDFView.isFullscreen) {
-          PDFView.page++;
+          PDFView.page = 1;
+          handled = true;
+        }
+        break;
+      case 35: // end
+        if (PDFView.isFullscreen) {
+          PDFView.page = PDFView.pdfDocument.numPages;
           handled = true;
         }
         break;
