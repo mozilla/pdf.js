@@ -99,15 +99,22 @@ limitations under the License.
 
       <div id="mainContainer">
         <div class="findbar hidden doorHanger" id="findbar">
-          <label for="findInput" data-l10n-id="find_label">Find</label>
-          <input id="findInput" type="search">
-          <button id="findPrevious" data-l10n-id="find_previous" title="">&lt;</button>
-          <button id="findNext" data-l10n-id="find_next">&gt;</button>
-          <input type="checkbox" id="findHighlightAll">
-          <label for="findHighlightAll" data-l10n-id="find_highlight">Highlight all</label>
-          <input type="checkbox" id="findMatchCase">
-          <label for="findMatchCase" data-l10n-id="find_match_case_label">Match case</label>
-          <span id="findMsg"></span>
+          <label for="findInput" class="toolbarLabel" data-l10n-id="find_label">Find:</label>
+          <input id="findInput" type="search" class="toolbarField">
+          <div class="splitToolbarButton">
+            <button class="toolbarButton findPrevious" title="" id="findPrevious" data-l10n-id="find_previous">
+              <span data-l10n-id="find_previous_label">Previous</span>
+            </button>
+            <div class="splitToolbarButtonSeparator"></div>
+            <button class="toolbarButton findNext" title="" id="findNext" data-l10n-id="find_next">
+              <span data-l10n-id="find_next_label">Next</span>
+            </button>
+          </div>
+          <input type="checkbox" id="findHighlightAll" class="toolbarField">
+          <label for="findHighlightAll" class="toolbarLabel" data-l10n-id="find_highlight">Highlight all</label>
+          <input type="checkbox" id="findMatchCase" class="toolbarField">
+          <label for="findMatchCase" class="toolbarLabel" data-l10n-id="find_match_case_label">Match case</label>
+          <span id="findMsg" class="toolbarLabel"></span>
         </div>
         <div class="toolbar">
           <div id="toolbarContainer">
@@ -117,8 +124,8 @@ limitations under the License.
                   <span data-l10n-id="toggle_slider_label">Toggle Sidebar</span>
                 </button>
                 <div class="toolbarButtonSpacer"></div>
-                <button id="viewFind" class="toolbarButton group" title="Find in Document" tabindex="4" data-l10n-id="find">
-                   <span data-l10n-id="find_label">Find</span>
+                <button id="viewFind" class="toolbarButton group" title="Find in Document" tabindex="4" data-l10n-id="findbar">
+                   <span data-l10n-id="findbar_label">Find</span>
                 </button>
                 <div class="splitToolbarButton">
                   <button class="toolbarButton pageUp" title="Previous Page" id="previous" tabindex="5" data-l10n-id="previous">
