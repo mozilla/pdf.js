@@ -1186,8 +1186,22 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       this.restore();
     },
 
-    putBinaryImageData: function CanvasGraphics_putBinaryImageData() {
-      //
+    putBinaryImageData: function CanvasGraphics_putBinaryImageData(ctx, imgData,
+                                                                   w, h) {
+      var tmpImgData = 'createImageData' in ctx ? ctx.createImageData(w, h) :
+        ctx.getImageData(0, 0, w, h);
+
+      var tmpImgDataPixels = tmpImgData.data;
+      var data = imgData.data;
+      if ('set' in tmpImgDataPixels)
+        tmpImgDataPixels.set(data);
+      else {
+        // Copy over the imageData pixel by pixel.
+        for (var i = 0, ii = tmpImgDataPixels.length; i < ii; i++)
+          tmpImgDataPixels[i] = data[i];
+      }
+
+      ctx.putImageData(tmpImgData, 0, 0);
     },
 
     // Marked content
@@ -1254,44 +1268,3 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
   return CanvasGraphics;
 })();
 
-function checkPutBinaryImageDataCompatibility() {
-  // Feature detection if the browser can use an Uint8Array directly as imgData.
-  var canvas = document.createElement('canvas');
-  canvas.width = 1;
-  canvas.height = 1;
-  var ctx = canvas.getContext('2d');
-
-  try {
-    ctx.putImageData({
-      width: 1,
-      height: 1,
-      data: new Uint8Array(4)
-    }, 0, 0);
-
-    CanvasGraphics.prototype.putBinaryImageData =
-      function CanvasGraphicsPutBinaryImageDataNative(ctx, imgData) {
-        ctx.putImageData(imgData, 0, 0);
-      };
-  } catch (e) {
-    CanvasGraphics.prototype.putBinaryImageData =
-      function CanvasGraphicsPutBinaryImageDataShim(ctx, imgData, w, h) {
-        var tmpImgData = 'createImageData' in ctx ? ctx.createImageData(w, h) :
-          ctx.getImageData(0, 0, w, h);
-
-        var tmpImgDataPixels = tmpImgData.data;
-        var data = imgData.data;
-        if ('set' in tmpImgDataPixels)
-          tmpImgDataPixels.set(data);
-        else {
-          // Copy over the imageData pixel by pixel.
-          for (var i = 0, ii = tmpImgDataPixels.length; i < ii; i++)
-            tmpImgDataPixels[i] = data[i];
-        }
-
-        ctx.putImageData(tmpImgData, 0, 0);
-      };
-  }
-}
-if (!isWorker) {
-  checkPutBinaryImageDataCompatibility();
-}
