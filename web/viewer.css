@@ -268,20 +268,26 @@ html[dir='rtl'] #sidebarContent {
 
 .findbar {
   top: 32px;
-  left: 68px;
   position: absolute;
   z-index: 10000;
-  height: 24px;
+  height: 32px;
 
   min-width: 16px;
-  padding: 3px 6px 3px 6px;
-  margin: 4px 2px 4px 0;
+  padding: 0px 6px 0px 6px;
+  margin: 4px 2px 4px 2px;
   color: hsl(0,0%,85%);
   font-size: 12px;
   line-height: 14px;
   text-align: left;
-  white-space: nowrap;
   cursor: default;
+}
+
+html[dir='ltr'] .findbar {
+  left: 68px;
+}
+
+html[dir='rtl'] .findbar {
+  right: 68px;
 }
 
 .findbar label {
@@ -306,14 +312,30 @@ html[dir='rtl'] #sidebarContent {
 .doorHanger:after {
   border-bottom-color: hsla(0,0%,32%,.99);
   border-width: 8px;
-  left: 16px;
-  margin-left: -8px;
 }
 .doorHanger:before {
   border-bottom-color: hsla(0,0%,0%,.5);
   border-width: 9px;
+}
+
+html[dir='ltr'] .doorHanger:after {
+  left: 16px;
+  margin-left: -8px;
+}
+
+html[dir='ltr'] .doorHanger:before {
   left: 16px;
   margin-left: -9px;
+}
+
+html[dir='rtl'] .doorHanger:after {
+  right: 16px;
+  margin-right: -8px;
+}
+
+html[dir='rtl'] .doorHanger:before {
+  right: 16px;
+  margin-right: -9px;
 }
 
 #findMsg {
@@ -347,12 +369,14 @@ html[dir='rtl'] #toolbarViewerLeft {
 }
 html[dir='ltr'] #toolbarViewerLeft > *,
 html[dir='ltr'] #toolbarViewerMiddle > *,
-html[dir='ltr'] #toolbarViewerRight > * {
+html[dir='ltr'] #toolbarViewerRight > *,
+html[dir='ltr'] .findbar > * {
   float: left;
 }
 html[dir='rtl'] #toolbarViewerLeft > *,
 html[dir='rtl'] #toolbarViewerMiddle > *,
-html[dir='rtl'] #toolbarViewerRight > * {
+html[dir='rtl'] #toolbarViewerRight > *,
+html[dir='rtl'] .findbar > * {
   float: right;
 }
 
@@ -690,6 +714,26 @@ html[dir='rtl'] .toolbarButton:first-child {
   content: url(images/toolbarButton-sidebarToggle.png);
 }
 
+html[dir='ltr'] .toolbarButton.findPrevious::before {
+  display: inline-block;
+  content: url(images/findbarButton-previous.png);
+}
+
+html[dir='rtl'] .toolbarButton.findPrevious::before {
+  display: inline-block;
+  content: url(images/findbarButton-previous-rtl.png);
+}
+
+html[dir='ltr'] .toolbarButton.findNext::before {
+  display: inline-block;
+  content: url(images/findbarButton-next.png);
+}
+
+html[dir='rtl'] .toolbarButton.findNext::before {
+  display: inline-block;
+  content: url(images/findbarButton-next-rtl.png);
+}
+
 html[dir='ltr'] .toolbarButton.pageUp::before {
   display: inline-block;
   content: url(images/toolbarButton-pageUp.png);
@@ -787,6 +831,11 @@ html[dir='rtl'] .toolbarButton.pageDown::before {
   -moz-transition-property: background-color, border-color, box-shadow;
   -moz-transition-duration: 150ms;
   -moz-transition-timing-function: ease;
+}
+
+.toolbarField[type=checkbox] {
+  display: inline-block;
+  margin: 8px 0px;
 }
 
 .toolbarField.pageNumber {
