@@ -2303,17 +2303,16 @@ var TextLayerBuilder = function textLayerBuilder(textLayerDiv, pageIdx) {
     }
   };
 
-  this.appendText = function textLayerBuilderAppendText(fontName, fontSize,
-                                                        geom) {
+  this.appendText = function textLayerBuilderAppendText(geom) {
     var textDiv = document.createElement('div');
 
     // vScale and hScale already contain the scaling to pixel units
-    var fontHeight = fontSize * geom.vScale;
+    var fontHeight = geom.fontSize * geom.vScale;
     textDiv.dataset.canvasWidth = geom.canvasWidth * geom.hScale;
-    textDiv.dataset.fontName = fontName;
+    textDiv.dataset.fontName = geom.fontName;
 
     textDiv.style.fontSize = fontHeight + 'px';
-    textDiv.style.fontFamily = fontName;
+    textDiv.style.fontFamily = geom.fontFamily;
     textDiv.style.left = geom.x + 'px';
     textDiv.style.top = (geom.y - fontHeight) + 'px';
 
