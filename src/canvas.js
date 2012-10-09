@@ -646,7 +646,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       ctx.transform.apply(ctx, fontMatrix);
       ctx.scale(textHScale, 1);
     },
-    getTextGeometry: function CanvasGraphics_getTextGeometry() {
+    createTextGeometry: function CanvasGraphics_createTextGeometry() {
       var geometry = {};
       var ctx = this.ctx;
       var font = this.current.font;
@@ -660,6 +660,9 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
         geometry.vScale = tr[1] - bl[1];
       }
       geometry.spaceWidth = font.spaceWidth;
+      geometry.fontName = font.loadedName;
+      geometry.fontFamily = font.fallbackName;
+      geometry.fontSize = this.current.fontSize;
       return geometry;
     },
 
@@ -693,7 +696,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
         if (textSelection) {
           this.save();
           ctx.scale(1, -1);
-          geom = this.getTextGeometry();
+          geom = this.createTextGeometry();
           this.restore();
         }
         for (var i = 0; i < glyphsLength; ++i) {
@@ -734,7 +737,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
           lineWidth /= scale;
 
         if (textSelection)
-          geom = this.getTextGeometry();
+          geom = this.createTextGeometry();
 
         if (fontSizeScale != 1.0) {
           ctx.scale(fontSizeScale, fontSizeScale);
@@ -792,7 +795,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
 
       if (textSelection) {
         geom.canvasWidth = canvasWidth;
-        this.textLayer.appendText(font.fallbackName, fontSize, geom);
+        this.textLayer.appendText(geom);
       }
 
       return canvasWidth;
@@ -821,7 +824,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
           ctx.scale(textHScale, 1);
         } else
           this.applyTextTransforms();
-        geom = this.getTextGeometry();
+        geom = this.createTextGeometry();
         ctx.restore();
       }
 
@@ -845,7 +848,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
 
       if (textSelection) {
         geom.canvasWidth = canvasWidth;
-        this.textLayer.appendText(font.fallbackName, fontSize, geom);
+        this.textLayer.appendText(geom);
       }
     },
     nextLineShowText: function CanvasGraphics_nextLineShowText(text) {
