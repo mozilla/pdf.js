@@ -168,11 +168,10 @@ SimpleTextLayerBuilder.prototype = {
   endLayout: function SimpleTextLayerBuilder_EndLayout() {
     this.ctx.restore();
   },
-  appendText: function SimpleTextLayerBuilder_AppendText(fontName, fontSize,
-                                                          geom) {
+  appendText: function SimpleTextLayerBuilder_AppendText(geom) {
     var ctx = this.ctx, viewport = this.viewport;
     // vScale and hScale already contain the scaling to pixel units
-    var fontHeight = fontSize * geom.vScale;
+    var fontHeight = geom.fontSize * geom.vScale;
     ctx.beginPath();
     ctx.strokeStyle = 'red';
     ctx.fillStyle = 'yellow';
@@ -182,7 +181,7 @@ SimpleTextLayerBuilder.prototype = {
     ctx.fill();
 
     var textContent = this.textContent.bidiTexts[this.textCounter].str;
-    ctx.font = fontHeight + 'px ' + fontName;
+    ctx.font = fontHeight + 'px ' + geom.fontFamily;
     ctx.fillStyle = 'black';
     ctx.fillText(textContent, geom.x, geom.y);
 
