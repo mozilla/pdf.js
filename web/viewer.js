@@ -1091,6 +1091,7 @@ var PDFView = {
     document.getElementById('numPages').textContent =
       mozL10n.get('page_of', {pageCount: pagesCount}, 'of {{pageCount}}');
     document.getElementById('pageNumber').max = pagesCount;
+
     PDFView.documentFingerprint = id;
     var store = PDFView.store = new Settings(id);
     var storePromise = store.initializedPromise;
@@ -2611,15 +2612,25 @@ document.addEventListener('DOMContentLoaded', function webViewerLoad(evt) {
       PDFView.parseScale(this.value);
     });
 
+  document.getElementById('first_page').addEventListener('click',
+    function() {
+      PDFView.page = 1;
+    });
+
+  document.getElementById('last_page').addEventListener('click',
+    function() {
+      PDFView.page = PDFView.pdfDocument.numPages;
+    });
+
   document.getElementById('page_rotate_ccw').addEventListener('click',
-      function() {
-        PDFView.rotatePages(-90);
-      });
+    function() {
+      PDFView.rotatePages(-90);
+    });
 
   document.getElementById('page_rotate_cw').addEventListener('click',
-      function() {
-        PDFView.rotatePages(90);
-      });
+    function() {
+      PDFView.rotatePages(90);
+    });
 
 //#if (FIREFOX || MOZCENTRAL)
 //if (FirefoxCom.requestSync('getLoadingType') == 'passive') {
