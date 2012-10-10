@@ -585,7 +585,7 @@ var PDFFindBar = {
       this.findField.classList.remove('notFound');
     }
 
-    this.findField.setAttribute('status', status);
+    this.findField.setAttribute('data-status', status);
     this.findMsg.textContent = findMsg;
   },
 

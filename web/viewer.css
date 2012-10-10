@@ -295,7 +295,7 @@ html[dir='rtl'] .findbar {
   -moz-user-select:none;
 }
 
-#findInput[status="pending"] {
+#findInput[data-status="pending"] {
   background-image: url(images/loading-small.png);
   background-repeat: no-repeat;
   background-position: right;
