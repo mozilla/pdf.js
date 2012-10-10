@@ -284,7 +284,7 @@ var PageViewport = PDFJS.PageViewport = (function PageViewportClosure() {
     var centerX = (viewBox[2] + viewBox[0]) / 2;
     var centerY = (viewBox[3] + viewBox[1]) / 2;
     var rotateA, rotateB, rotateC, rotateD;
-    switch (rotate) {
+    switch (rotate % 360) {
       case -180:
       case 180:
         rotateA = -1; rotateB = 0; rotateC = 0; rotateD = 1;
