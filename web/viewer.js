@@ -2255,13 +2255,11 @@ var TextLayerBuilder = function textLayerBuilder(textLayerDiv, pageIdx) {
 
     // No point in rendering so many divs as it'd make the browser unusable
     // even after the divs are rendered
-    if (textDivs.length > 100000)
+    var MAX_TEXT_DIVS_TO_RENDER = 100000;
+    if (textDivs.length > MAX_TEXT_DIVS_TO_RENDER)
       return;
 
-    var i = textDivs.length;
-
-    while (i !== 0) {
-      i--;
+    for (var i = 0, ii = textDivs.length; i < ii; i++) {
       var textDiv = textDivs[i];
       textLayerFrag.appendChild(textDiv);
 
