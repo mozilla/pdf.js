@@ -498,6 +498,7 @@ var PDFFindBar = {
     this.highlightAll = document.getElementById('findHighlightAll');
     this.caseSensitive = document.getElementById('findMatchCase');
     this.findMsg = document.getElementById('findMsg');
+    this.findStatusIcon = document.getElementById('findStatusIcon');
 
     var self = this;
     this.toggleButton.addEventListener('click', function() {
@@ -552,10 +553,14 @@ var PDFFindBar = {
   updateUIState: function(state, previous) {
     var notFound = false;
     var findMsg = '';
-    var status = 'pending';
+    var status = '';
 
     switch (state) {
       case FindStates.FIND_FOUND:
+        break;
+
+      case FindStates.FIND_PENDING:
+        status = 'pending';
         break;
 
       case FindStates.FIND_NOTFOUND:
@@ -580,6 +585,7 @@ var PDFFindBar = {
       this.findField.classList.remove('notFound');
     }
 
+    this.findField.setAttribute('data-status', status);
     this.findMsg.textContent = findMsg;
   },
 
@@ -1151,9 +1157,6 @@ var PDFView = {
         thumbnails.push(thumbnailView);
         var pageRef = page.ref;
         pagesRefMap[pageRef.num + ' ' + pageRef.gen + ' R'] = i;
-
-        // Trigger text extraction. TODO: Make this happen lasyliy if needed.
-        PDFFindController.extractText();
       }
 
       self.pagesRefMap = pagesRefMap;

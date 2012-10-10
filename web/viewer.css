@@ -295,6 +295,12 @@ html[dir='rtl'] .findbar {
   -moz-user-select:none;
 }
 
+#findInput[data-status="pending"] {
+  background-image: url(images/loading-small.png);
+  background-repeat: no-repeat;
+  background-position: right;
+}
+
 .doorHanger {
   border: 1px solid hsla(0,0%,0%,.5);
   border-radius: 2px;
