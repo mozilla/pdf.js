@@ -1627,8 +1627,8 @@ var PageView = function pageView(container, pdfPage, id, scale,
   var div = this.el = document.createElement('div');
   div.id = 'pageContainer' + this.id;
   div.className = 'page';
-  div.style.width = this.viewport.width + 'px';
-  div.style.height = this.viewport.height + 'px';
+  div.style.width = Math.floor(this.viewport.width) + 'px';
+  div.style.height = Math.floor(this.viewport.height) + 'px';
 
   container.appendChild(anchor);
   container.appendChild(div);
@@ -1652,8 +1652,8 @@ var PageView = function pageView(container, pdfPage, id, scale,
     var viewport = this.pdfPage.getViewport(this.scale, totalRotation);
 
     this.viewport = viewport;
-    div.style.width = viewport.width + 'px';
-    div.style.height = viewport.height + 'px';
+    div.style.width = Math.floor(viewport.width) + 'px';
+    div.style.height = Math.floor(viewport.height) + 'px';
 
     while (div.hasChildNodes())
       div.removeChild(div.lastChild);
@@ -1870,8 +1870,8 @@ var PageView = function pageView(container, pdfPage, id, scale,
           textLayerDiv ? new TextLayerBuilder(textLayerDiv, this.id - 1) : null;
 
     var scale = this.scale, viewport = this.viewport;
-    canvas.width = viewport.width;
-    canvas.height = viewport.height;
+    canvas.width = Math.floor(viewport.width);
+    canvas.height = Math.floor(viewport.height);
 
     var ctx = canvas.getContext('2d');
     ctx.save();
