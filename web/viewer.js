@@ -24,6 +24,7 @@ var kUnknownScale = 0;
 var kCacheSize = 20;
 var kCssUnits = 96.0 / 72.0;
 var kScrollbarPadding = 40;
+var kVerticalPadding = 5;
 var kMinScale = 0.25;
 var kMaxScale = 4.0;
 var kImageDirectory = './images/';
@@ -716,7 +717,7 @@ var PDFView = {
 
     var pageWidthScale = (container.clientWidth - kScrollbarPadding) /
                           currentPage.width * currentPage.scale / kCssUnits;
-    var pageHeightScale = (container.clientHeight - kScrollbarPadding) /
+    var pageHeightScale = (container.clientHeight - kVerticalPadding) /
                            currentPage.height * currentPage.scale / kCssUnits;
     switch (value) {
       case 'page-actual':

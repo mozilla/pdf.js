@@ -64,15 +64,7 @@ select {
   cursor: none;
 }
 
-:-webkit-full-screen .page:last-child {
-  margin-bottom: 40px;
-}
-
-:-moz-full-screen .page:last-child {
-  margin-bottom: 40px;
-}
-
-#viewerContainer:full-screen {
+#viewerContainer:fullscreen {
   top: 0px;
   border-top: 5px solid transparent;
   background-color: #404040;
@@ -81,6 +73,19 @@ select {
   height: 100%;
   overflow: hidden;
   cursor: none;
+}
+
+
+:-webkit-full-screen .page {
+  margin-bottom: 100%;
+}
+
+:-moz-full-screen .page {
+  margin-bottom: 100%;
+}
+
+:fullscreen .page {
+  margin-bottom: 100%;
 }
 
 #viewerContainer.presentationControls {
@@ -213,7 +218,6 @@ html[dir='rtl'] #sidebarContent {
 #viewerContainer {
   overflow: auto;
   box-shadow: inset 1px 0 0 hsla(0,0%,100%,.05);
-  padding-top: 30px;
   position: absolute;
   top: 32px;
   right: 0;
