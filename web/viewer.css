@@ -50,6 +50,7 @@ select {
   width: 100%;
   height: 100%;
   overflow: hidden;
+  cursor: none;
 }
 
 #viewerContainer:-moz-full-screen {
@@ -60,6 +61,7 @@ select {
   width: 100%;
   height: 100%;
   overflow: hidden;
+  cursor: none;
 }
 
 :-webkit-full-screen .page:last-child {
@@ -72,10 +74,17 @@ select {
 
 #viewerContainer:full-screen {
   top: 0px;
+  border-top: 5px solid transparent;
   background-color: #404040;
   background-image: url(images/texture.png);
   width: 100%;
   height: 100%;
+  overflow: hidden;
+  cursor: none;
+}
+
+#viewerContainer.presentationControls {
+  cursor: default;
 }
 
 /* outer/inner center provides horizontal center */

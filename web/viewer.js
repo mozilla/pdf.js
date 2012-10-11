@@ -1508,6 +1508,7 @@ var PDFView = {
       currentPage.scrollIntoView();
     }, 0);
 
+    this.showPresentationControls();
     return true;
   },
 
@@ -1516,6 +1517,32 @@ var PDFView = {
     this.parseScale(this.previousScale);
     this.page = this.page;
     this.clearMouseScrollState();
+    this.hidePresentationControls();
+  },
+
+  showPresentationControls: function pdfViewShowPresentationControls() {
+    var DELAY_BEFORE_HIDING_CONTROLS = 3000;
+    var wrapper = document.getElementById('viewerContainer');
+    if (this.presentationControlsTimeout) {
+      clearTimeout(this.presentationControlsTimeout);
+    } else {
+      wrapper.classList.add('presentationControls');
+    }
+    this.presentationControlsTimeout = setTimeout(function hideControls() {
+      wrapper.classList.remove('presentationControls');
+      delete PDFView.presentationControlsTimeout;
+    }, DELAY_BEFORE_HIDING_CONTROLS);
+  },
+
+  hidePresentationControls: function pdfViewShowPresentationControls() {
+    if (!this.presentationControlsTimeout) {
+      return;
+    }
+    clearTimeout(this.presentationControlsTimeout);
+    delete this.presentationControlsTimeout;
+
+    var wrapper = document.getElementById('viewerContainer');
+    wrapper.classList.remove('presentationControls');
   },
 
   rotatePages: function pdfViewPageRotation(delta) {
@@ -2912,6 +2939,12 @@ window.addEventListener('DOMMouseScroll', function(evt) {
   } else if (PDFView.isFullscreen) {
     var FIREFOX_DELTA_FACTOR = -40;
     PDFView.mouseScroll(evt.detail * FIREFOX_DELTA_FACTOR);
+  }
+}, false);
+
+window.addEventListener('mousemove', function keydown(evt) {
+  if (PDFView.isFullscreen) {
+    PDFView.showPresentationControls();
   }
 }, false);
 
