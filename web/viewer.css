@@ -44,7 +44,7 @@ select {
 
 #viewerContainer:-webkit-full-screen {
   top: 0px;
-  border-top: 5px solid transparent;
+  border-top: 2px solid transparent;
   background-color: #404040;
   background-image: url(images/texture.png);
   width: 100%;
@@ -55,7 +55,7 @@ select {
 
 #viewerContainer:-moz-full-screen {
   top: 0px;
-  border-top: 5px solid transparent;
+  border-top: 2px solid transparent;
   background-color: #404040;
   background-image: url(images/texture.png);
   width: 100%;
@@ -66,7 +66,7 @@ select {
 
 #viewerContainer:fullscreen {
   top: 0px;
-  border-top: 5px solid transparent;
+  border-top: 2px solid transparent;
   background-color: #404040;
   background-image: url(images/texture.png);
   width: 100%;
