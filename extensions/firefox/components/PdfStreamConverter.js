@@ -343,7 +343,10 @@ ChromeActions.prototype = {
     return getBoolPref(PREF_PREFIX + '.pdfBugEnabled', false);
   },
   supportsIntegratedFind: function() {
-    return 'updateControlState' in getChromeWindow(this.domWindow).gFindBar;
+    // Integrated find is only supported when we're not in a frame and when the
+    // new find events code exists.
+    return this.domWindow.frameElement === null &&
+           'updateControlState' in getChromeWindow(this.domWindow).gFindBar;
   },
   fallback: function(url, sendResponse) {
     var self = this;
