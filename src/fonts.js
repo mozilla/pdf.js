@@ -2498,7 +2498,8 @@ var Font = (function FontClosure() {
                '\x00\x01' + // encodingID
                string32(4 + numTables * 8); // start of the table record
 
-    var segCount = ranges.length + 1;
+    var trailingRangesCount = ranges[ranges.length - 1][1] < 0xFFFF ? 1 : 0;
+    var segCount = ranges.length + trailingRangesCount;
     var segCount2 = segCount * 2;
     var searchRange = getMaxPower2(segCount) * 2;
     var searchEntry = Math.log(segCount) / Math.log(2);
@@ -2513,7 +2514,7 @@ var Font = (function FontClosure() {
     var bias = 0;
 
     if (deltas) {
-      for (var i = 0; i < segCount - 1; i++) {
+      for (var i = 0, ii = ranges.length; i < ii; i++) {
         var range = ranges[i];
         var start = range[0];
         var end = range[1];
@@ -2530,7 +2531,7 @@ var Font = (function FontClosure() {
           glyphsIds += string16(deltas[codes[j]]);
       }
     } else {
-      for (var i = 0; i < segCount - 1; i++) {
+      for (var i = 0, ii = ranges.length; i < ii; i++) {
         var range = ranges[i];
         var start = range[0];
         var end = range[1];
@@ -2543,10 +2544,12 @@ var Font = (function FontClosure() {
       }
     }
 
-    endCount += '\xFF\xFF';
-    startCount += '\xFF\xFF';
-    idDeltas += '\x00\x01';
-    idRangeOffsets += '\x00\x00';
+    if (trailingRangesCount > 0) {
+      endCount += '\xFF\xFF';
+      startCount += '\xFF\xFF';
+      idDeltas += '\x00\x01';
+      idRangeOffsets += '\x00\x00';
+    }
 
     var format314 = '\x00\x00' + // language
                     string16(segCount2) +
