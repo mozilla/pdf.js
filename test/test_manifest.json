@@ -656,6 +656,13 @@
       "link": true,
       "type": "eq"
     },
+    {  "id": "issue1912",
+      "file": "pdfs/issue1912.pdf",
+      "md5": "15305b7c2cba971e7423de3f6ad38fef",
+      "rounds": 1,
+      "link": true,
+      "type": "eq"
+    },
     {  "id": "gradientfill",
       "file": "pdfs/gradientfill.pdf",
       "md5": "cbc1988e4803f647fa83467a85f0e231",
