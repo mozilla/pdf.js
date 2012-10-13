@@ -3227,6 +3227,9 @@ var Font = (function FontClosure() {
       var requiredTables = ['OS/2', 'cmap', 'head', 'hhea',
                              'hmtx', 'maxp', 'name', 'post'];
 
+      var optionalTables = ['cvt ', 'fpgm', 'glyf', 'loca', 'prep',
+                            'CFF ', 'VORG', 'vhea', 'vmtx'];
+
       var header = readOpenTypeHeader(font);
       var numTables = header.numTables;
 
@@ -3252,6 +3255,9 @@ var Font = (function FontClosure() {
             os2 = table;
 
           requiredTables.splice(index, 1);
+        } else if (optionalTables.indexOf(table.tag) < 0) {
+          // skipping table if it's not a required or optional table
+          continue;
         } else {
           if (table.tag == 'vmtx')
             vmtx = table;
