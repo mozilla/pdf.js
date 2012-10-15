@@ -3557,6 +3557,10 @@ var Font = (function FontClosure() {
         this.glyphNameMap = properties.glyphNameMap;
       }
 
+      if (ids.length === 0) {
+        error('Valid glyph data is not found');
+      }
+
       // Converting glyphs and ids into font's cmap table
       cmap.data = createCMapTable(glyphs, ids);
       var unicodeIsEnabled = [];
