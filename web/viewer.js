@@ -713,6 +713,9 @@ var PDFView = {
 
     var container = this.container;
     var currentPage = this.pages[this.page - 1];
+    if (!currentPage) {
+      return;
+    }
 
     var pageWidthScale = (container.clientWidth - kScrollbarPadding) /
                           currentPage.width * currentPage.scale / kCssUnits;
