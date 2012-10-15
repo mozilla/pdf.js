@@ -161,7 +161,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           translated = this.translateFont(font, xref, resources,
                                           dependency);
         } catch (e) {
-          translated = { error: e };
+          translated = { error: e instanceof Error ? e.message : e };
         }
         font.translated = translated;
 
