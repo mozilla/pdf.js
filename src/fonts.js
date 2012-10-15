@@ -4075,6 +4075,9 @@ var ErrorFont = (function ErrorFontClosure() {
   ErrorFont.prototype = {
     charsToGlyphs: function ErrorFont_charsToGlyphs() {
       return [];
+    },
+    exportData: function ErrorFont_exportData() {
+      return {error: this.error};
     }
   };
 
