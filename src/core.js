@@ -307,7 +307,7 @@ var Page = (function PageClosure() {
                   item.dest = a.get('D');
                   break;
                 default:
-                  TODO('other link types');
+                  TODO('unrecognized link type: ' + a.get('S').name);
               }
             } else if (annotation.has('Dest')) {
               // simple destination link
