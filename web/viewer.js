@@ -2772,6 +2772,9 @@ function updateViewarea() {
     return;
   var visible = PDFView.getVisiblePages();
   var visiblePages = visible.views;
+  if (visiblePages.length === 0) {
+    return;
+  }
 
   PDFView.renderHighestPriority();
 
