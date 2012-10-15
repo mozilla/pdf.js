@@ -5145,6 +5145,81 @@ var CFFFont = (function CFFFontClosure() {
 })();
 
 var CFFParser = (function CFFParserClosure() {
+  var CharstringValidationData = [
+    null,
+    { id: 'hstem', min: 2, resetStack: true },
+    null,
+    { id: 'vstem', min: 2, resetStack: true },
+    { id: 'vmoveto', min: 1, resetStack: true },
+    { id: 'rlineto', min: 2, resetStack: true },
+    { id: 'hlineto', min: 1, resetStack: true },
+    { id: 'vlineto', min: 1, resetStack: true },
+    { id: 'rrcurveto', min: 6, resetStack: true },
+    null,
+    { id: 'callsubr', min: 1, undefStack: true },
+    { id: 'return', min: 0, resetStack: true },
+    null, // 12
+    null,
+    null, // endchar
+    null,
+    null,
+    null,
+    { id: 'hstemhm', min: 2, resetStack: true },
+    null, // hintmask
+    null, // cntrmask
+    { id: 'rmoveto', min: 2, resetStack: true },
+    { id: 'hmoveto', min: 1, resetStack: true },
+    { id: 'vstemhm', min: 2, resetStack: true },
+    { id: 'rcurveline', min: 8, resetStack: true },
+    { id: 'rlinecurve', min: 8, resetStack: true },
+    { id: 'vvcurveto', min: 4, resetStack: true },
+    { id: 'hhcurveto', min: 4, resetStack: true },
+    null, // shortint
+    { id: 'callgsubr', min: 1, undefStack: true },
+    { id: 'vhcurveto', min: 4, resetStack: true },
+    { id: 'hvcurveto', min: 4, resetStack: true }
+  ];
+  var CharstringValidationData12 = [
+    null,
+    null,
+    null,
+    { id: 'and', min: 2, stackDelta: -1 },
+    { id: 'or', min: 2, stackDelta: -1 },
+    { id: 'not', min: 2, stackDelta: -1 },
+    null,
+    null,
+    null,
+    { id: 'abs', min: 1, stackDelta: 0 },
+    { id: 'add', min: 2, stackDelta: -1 },
+    { id: 'sub', min: 2, stackDelta: -1 },
+    { id: 'div', min: 2, stackDelta: -1 },
+    null,
+    { id: 'neg', min: 1, stackDelta: 0 },
+    { id: 'eq', min: 2, stackDelta: -1 },
+    null,
+    null,
+    { id: 'drop', min: 1, stackDelta: -1 },
+    null,
+    { id: 'put', min: 2, stackDelta: -2 },
+    { id: 'get', min: 1, stackDelta: 0 },
+    { id: 'ifelse', min: 4, stackDelta: -3 },
+    { id: 'random', min: 0, stackDelta: 1 },
+    { id: 'mul', min: 2, stackDelta: -1 },
+    null,
+    { id: 'sqrt', min: 1, stackDelta: 0 },
+    { id: 'dup', min: 1, stackDelta: 1 },
+    { id: 'exch', min: 2, stackDelta: 0 },
+    { id: 'index', min: 2, stackDelta: 0 },
+    { id: 'roll', min: 3, stackDelta: -2 },
+    null,
+    null,
+    null,
+    { id: 'hflex', min: 7, resetStack: true },
+    { id: 'flex', min: 13, resetStack: true },
+    { id: 'hflex1', min: 9, resetStack: true },
+    { id: 'flex1', min: 11, resetStack: true }
+  ];
+
   function CFFParser(file, properties) {
     this.bytes = file.getBytes();
     this.properties = properties;
@@ -5405,29 +5480,83 @@ var CFFParser = (function CFFParserClosure() {
     },
     parseCharStrings: function CFFParser_parseCharStrings(charStringOffset) {
       var charStrings = this.parseIndex(charStringOffset).obj;
-      // The CFF specification state that the 'dotsection' command
-      // (12, 0) is deprecated and treated as a no-op, but all Type2
-      // charstrings processors should support them. Unfortunately
-      // the font sanitizer don't. As a workaround the sequence (12, 0)
-      // is replaced by a useless (0, hmoveto).
       var count = charStrings.count;
       for (var i = 0; i < count; i++) {
         var charstring = charStrings.get(i);
 
+        var stackSize = 0;
+        var undefStack = true;
+        var hints = 0;
+        var valid = true;
         var data = charstring;
         var length = data.length;
-        for (var j = 0; j <= length;) {
+        for (var j = 0; j < length;) {
           var value = data[j++];
-          if (value == 12 && data[j++] == 0) {
+          var validationCommand = null;
+          if (value == 12) {
+            var q = data[j++];
+            if (q == 0) {
+              // The CFF specification state that the 'dotsection' command
+              // (12, 0) is deprecated and treated as a no-op, but all Type2
+              // charstrings processors should support them. Unfortunately
+              // the font sanitizer don't. As a workaround the sequence (12, 0)
+              // is replaced by a useless (0, hmoveto).
               data[j - 2] = 139;
               data[j - 1] = 22;
-          } else if (value === 28) {
+              stackSize = 0;
+            } else {
+              validationCommand = CharstringValidationData12[q];
+            }
+          } else if (value === 28) { // number (16 bit)
             j += 2;
-          } else if (value >= 247 && value <= 254) {
+            stackSize++;
+          } else if (value == 14) {
+            if (stackSize >= 4) {
+              // TODO fix deprecated endchar construct for Windows
+              stackSize -= 4;
+            }
+          } else if (value >= 32 && value <= 246) {  // number
+            stackSize++;
+          } else if (value >= 247 && value <= 254) {  // number (+1 bytes)
             j++;
-          } else if (value == 255) {
+            stackSize++;
+          } else if (value == 255) {  // number (32 bit)
             j += 4;
+            stackSize++;
+          } else if (value == 18 || value == 23) {
+            hints += stackSize >> 1;
+            validationCommand = CharstringValidationData[value];
+          } else if (value == 19 || value == 20) {
+            hints += stackSize >> 1;
+            j += (hints + 7) >> 3; // skipping right amount of hints flag data
+            stackSize = 0;
+          } else {
+            validationCommand = CharstringValidationData[value];
           }
+          if (validationCommand) {
+            if ('min' in validationCommand) {
+              if (!undefStack && stackSize < validationCommand.min) {
+                warn('Not enough parameters for ' + validationCommand.id +
+                     '; actual: ' + stackSize +
+                     ', expected: ' + validationCommand.min);
+                valid = false;
+                break;
+              }
+            }
+            if ('stackDelta' in validationCommand) {
+              stackSize += validationCommand.stackDelta;
+            } else if (validationCommand.resetStack) {
+              stackSize = 0;
+              undefStack = false;
+            } else if (validationCommand.undefStack) {
+              stackSize = 0;
+              undefStack = true;
+            }
+          }
+        }
+        if (!valid) {
+          // resetting invalid charstring to single 'endchar'
+          charStrings.set(i, new Uint8Array([14]));
         }
       }
       return charStrings;
@@ -5692,6 +5821,10 @@ var CFFIndex = (function CFFIndexClosure() {
     add: function CFFIndex_add(data) {
       this.length += data.length;
       this.objects.push(data);
+    },
+    set: function CFFIndex_set(index, data) {
+      this.length += data.length - this.objects[index].length;
+      this.objects[index] = data;
     },
     get: function CFFIndex_get(index) {
       return this.objects[index];
