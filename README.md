@@ -79,7 +79,7 @@ You can play with the PDF.js API directly from your browser through the live dem
 
 The repo contains a hello world example that you can run locally:
 
-+ [examples/helloworld/hello.js](https://github.com/mozilla/pdf.js/blob/master/examples/helloworld/hello.js)
++ [examples/helloworld/](https://github.com/mozilla/pdf.js/blob/master/examples/helloworld/)
 
 For an introduction to the PDF.js code, check out the presentation by our contributor Julian Viereck:
 
