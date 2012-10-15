@@ -145,10 +145,16 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
 
       assert(fontRes, 'fontRes not available');
 
-      font = xref.fetchIfRef(font) || fontRes.get(fontName);
-      assertWellFormed(isDict(font));
-
       ++this.fontIdCounter;
+
+      font = xref.fetchIfRef(font) || fontRes.get(fontName);
+      if (!isDict(font)) {
+        return {
+          translated: new ErrorFont('Font ' + fontName + ' is not available'),
+          loadedName: 'font_' + this.uniquePrefix + this.fontIdCounter
+        };
+      }
+
       var loadedName = font.loadedName;
       if (!loadedName) {
         // keep track of each font we translated so the caller can
@@ -161,7 +167,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           translated = this.translateFont(font, xref, resources,
                                           dependency);
         } catch (e) {
-          translated = { error: e instanceof Error ? e.message : e };
+          translated = new ErrorFont(e instanceof Error ? e.message : e);
         }
         font.translated = translated;
 
@@ -209,10 +215,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
 
         var loadedName = font.loadedName;
         if (!font.sent) {
-          var data = font.translated;
-
-          if (data instanceof Font)
-            data = data.exportData();
+          var data = font.translated.exportData();
 
           handler.send('obj', [
               loadedName,
