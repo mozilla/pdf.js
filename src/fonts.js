@@ -4298,6 +4298,21 @@ var Type1Parser = function type1Parser() {
             assert(argc == 0, 'callothersubr with arguments is not supported');
             charstring.push(new CallothersubrCmd(index));
             continue;
+          } else if (escape == 7) { // sbw
+            var args = breakUpArgs(charstring, 4);
+            var arg0 = args[0];
+            var arg1 = args[1];
+            var arg2 = args[2];
+            lsb = arg0.value;
+            width = arg2.value;
+            // To convert to type2 we have to move the width value to the first
+            // part of the charstring and then use rmoveto with (dx, dy).
+            // The height argument will not be used for vmtx and vhea tables
+            // reconstruction -- ignoring it.
+            charstring = arg2.arg;
+            charstring = charstring.concat(arg0.arg, arg1.arg);
+            charstring.push('rmoveto');
+            continue;
           } else if (escape == 17 || escape == 33) {
             // pop or setcurrentpoint commands can be ignored
             // since we are not doing callothersubr
