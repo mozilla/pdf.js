@@ -28,7 +28,8 @@ var TextRenderingMode = {
   FILL_ADD_TO_PATH: 4,
   STROKE_ADD_TO_PATH: 5,
   FILL_STROKE_ADD_TO_PATH: 6,
-  ADD_TO_PATH: 7
+  ADD_TO_PATH: 7,
+  ADD_TO_PATH_FLAG: 4
 };
 
 // Minimal font size that would be used during canvas fillText operations.
@@ -414,6 +415,10 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       this.current = old.clone();
     },
     restore: function CanvasGraphics_restore() {
+      if ('textClipLayers' in this) {
+        this.completeTextClipping();
+      }
+
       var prev = this.stateStack.pop();
       if (prev) {
         this.current = prev;
@@ -543,6 +548,64 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       this.current.y = this.current.lineY = 0;
     },
     endText: function CanvasGraphics_endText() {
+      if ('textClipLayers' in this) {
+        this.swapImageForTextClipping();
+      }
+    },
+    getCurrentTextClipping: function CanvasGraphics_getCurrentTextClipping() {
+      var ctx = this.ctx;
+      var transform = ctx.mozCurrentTransform;
+      if ('textClipLayers' in this) {
+        // we need to reset only font and transform
+        var maskCtx = this.textClipLayers.maskCtx;
+        maskCtx.setTransform.apply(maskCtx, transform);
+        maskCtx.font = ctx.font;
+        return maskCtx;
+      }
+
+      var canvasWidth = ctx.canvas.width;
+      var canvasHeight = ctx.canvas.height;
+      // keeping track of the text clipping of the separate canvas
+      var maskCanvas = createScratchCanvas(canvasWidth, canvasHeight);
+      var maskCtx = maskCanvas.getContext('2d');
+      maskCtx.setTransform.apply(maskCtx, transform);
+      maskCtx.font = ctx.font;
+      var textClipLayers = {
+        maskCanvas: maskCanvas,
+        maskCtx: maskCtx
+      };
+      this.textClipLayers = textClipLayers;
+      return maskCtx;
+    },
+    swapImageForTextClipping:
+      function CanvasGraphics_swapImageForTextClipping() {
+      var ctx = this.ctx;
+      var canvasWidth = ctx.canvas.width;
+      var canvasHeight = ctx.canvas.height;
+      // saving current image content and clearing whole canvas
+      ctx.save();
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      var data = ctx.getImageData(0, 0, canvasWidth, canvasHeight);
+      this.textClipLayers.imageData = data;
+      ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+      ctx.restore();
+    },
+    completeTextClipping: function CanvasGraphics_completeTextClipping() {
+      var ctx = this.ctx;
+      // applying mask to the image (result is saved in maskCanvas)
+      var maskCtx = this.textClipLayers.maskCtx;
+      maskCtx.setTransform(1, 0, 0, 1, 0, 0);
+      maskCtx.globalCompositeOperation = 'source-in';
+      maskCtx.drawImage(ctx.canvas, 0, 0);
+
+      // restoring image data and applying the result of masked drawing
+      ctx.save();
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.putImageData(this.textClipLayers.imageData, 0, 0);
+      ctx.drawImage(this.textClipLayers.maskCanvas, 0, 0);
+      ctx.restore();
+
+      delete this.textClipLayers;
     },
     setCharSpacing: function CanvasGraphics_setCharSpacing(spacing) {
       this.current.charSpacing = spacing;
@@ -610,8 +673,6 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       this.ctx.font = rule;
     },
     setTextRenderingMode: function CanvasGraphics_setTextRenderingMode(mode) {
-      if (mode >= TextRenderingMode.FILL_ADD_TO_PATH)
-        TODO('unsupported text rendering mode: ' + mode);
       this.current.textRenderingMode = mode;
     },
     setTextRise: function CanvasGraphics_setTextRise(rise) {
@@ -777,7 +838,12 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
                 ctx.strokeText(character, scaledX, 0);
                 break;
               case TextRenderingMode.INVISIBLE:
+              case TextRenderingMode.ADD_TO_PATH:
                 break;
+            }
+            if (textRenderingMode & TextRenderingMode.ADD_TO_PATH_FLAG) {
+              var clipCtx = this.getCurrentTextClipping();
+              clipCtx.fillText(character, scaledX, 0);
             }
           }
 
