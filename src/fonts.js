@@ -3557,6 +3557,12 @@ var Font = (function FontClosure() {
         this.glyphNameMap = properties.glyphNameMap;
       }
 
+      if (glyphs.length === 0) {
+        // defines at least one glyph
+        glyphs.push({ unicode: 0xF000, code: 0xF000, glyph: '.notdef' });
+        ids.push(0);
+      }
+
       // Converting glyphs and ids into font's cmap table
       cmap.data = createCMapTable(glyphs, ids);
       var unicodeIsEnabled = [];
