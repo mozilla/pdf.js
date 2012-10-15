@@ -467,12 +467,13 @@ function FindEventManager(eventElement, contentWindow, chromeWindow) {
 }
 
 FindEventManager.prototype.bind = function() {
-  this.contentWindow.addEventListener('unload', function unload(e) {
+  var unload = function(e) {
     this.unbind();
     this.contentWindow.removeEventListener(e.type, unload);
-  }.bind(this));
+  }.bind(this);
+  this.contentWindow.addEventListener('unload', unload);
 
-  for (var i = 0, ii = this.types.length; i < ii; ++i) {
+  for (var i = 0; i < this.types.length; i++) {
     var type = this.types[i];
     this.eventElement.addEventListener(type, this, true);
   }
@@ -498,7 +499,7 @@ FindEventManager.prototype.handleEvent = function(e) {
 };
 
 FindEventManager.prototype.unbind = function() {
-  for (var i = 0, ii = this.types.length; i < ii; ++i) {
+  for (var i = 0; i < this.types.length; i++) {
     var type = this.types[i];
     this.eventElement.removeEventListener(type, this, true);
   }
@@ -616,11 +617,13 @@ PdfStreamConverter.prototype = {
           domWindow.addEventListener(PDFJS_EVENT_ID, function(event) {
             requestListener.receive(event);
           }, false, true);
-          var chromeWindow = getChromeWindow(domWindow);
-          var findEventManager = new FindEventManager(chromeWindow.gFindBar,
-                                                      domWindow,
-                                                      chromeWindow);
-          findEventManager.bind();
+          if (actions.supportsIntegratedFind()) {
+            var chromeWindow = getChromeWindow(domWindow);
+            var findEventManager = new FindEventManager(chromeWindow.gFindBar,
+                                                        domWindow,
+                                                        chromeWindow);
+            findEventManager.bind();
+          }
         }
         listener.onStopRequest.apply(listener, arguments);
       }
