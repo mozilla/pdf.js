@@ -539,6 +539,14 @@ var WorkerTransport = (function WorkerTransportClosure() {
         this.workerReadyPromise.reject(data.exception.message, data.exception);
       }, this);
 
+      messageHandler.on('InvalidPDF', function transportInvalidPDF(data) {
+        this.workerReadyPromise.reject(data.exception.name, data.exception);
+      }, this);
+
+      messageHandler.on('UnknownError', function transportUnknownError(data) {
+        this.workerReadyPromise.reject(data.exception.message, data.exception);
+      }, this);
+
       messageHandler.on('GetPage', function transportPage(data) {
         var pageInfo = data.pageInfo;
         var page = new PDFPageProxy(pageInfo, this);

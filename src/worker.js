@@ -125,8 +125,18 @@ var WorkerMessageHandler = {
           }
 
           return;
+        } else if (e instanceof InvalidPDFException) {
+          handler.send('InvalidPDF', {
+            exception: e
+          });
+
+          return;
         } else {
-          throw e;
+          handler.send('UnknownError', {
+            exception: new UnknownErrorException(e.message, e.toString())
+          });
+
+          return;
         }
       }
       var doc = {
@@ -331,4 +341,3 @@ if (typeof window === 'undefined') {
   var handler = new MessageHandler('worker_processor', this);
   WorkerMessageHandler.setup(handler);
 }
-
