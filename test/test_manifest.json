@@ -609,6 +609,14 @@
       "link": true,
       "type": "eq"
     },
+    {  "id": "issue1233",
+      "file": "pdfs/issue1233.pdf",
+      "md5": "2d3565b0a286e29955796c37c66326c1",
+      "rounds": 1,
+      "pageLimit": 1,
+      "link": true,
+      "type": "eq"
+    },
     {  "id": "issue1243",
       "file": "pdfs/issue1243.pdf",
       "md5": "130c849b83513d5ac5e03c6421fc7489",
