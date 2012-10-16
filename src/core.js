@@ -306,6 +306,15 @@ var Page = (function PageClosure() {
                 case 'GoTo':
                   item.dest = a.get('D');
                   break;
+                case 'GoToR':
+                  var url = a.get('F');
+                  // TODO: pdf reference says that GoToR
+                  // can also have 'NewWindow' attribute
+                  if (!isValidUrl(url))
+                    url = '';
+                  item.url = url;
+                  item.dest = a.get('D');
+                  break;
                 default:
                   TODO('unrecognized link type: ' + a.get('S').name);
               }
