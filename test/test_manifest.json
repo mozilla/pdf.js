@@ -25,7 +25,7 @@
     },
     {  "id": "intelisa-eq",
        "file": "pdfs/intelisa.pdf",
-       "md5": "c1444b7ccd935c0577d094297e1a6448",
+       "md5": "cdbcf14d0d260c0b313c566a61b07d9f",
        "link": true,
        "pageLimit": 100,
        "rounds": 1,
@@ -41,7 +41,7 @@
     },
     {  "id": "shavian-load",
        "file": "pdfs/shavian.pdf",
-       "md5": "79253352f48b55b7fa28a2586875d8b7",
+       "md5": "40ef97a120250b149c4ded383ca328ec",
        "link": true,
        "rounds": 1,
        "type": "load"
@@ -199,7 +199,7 @@
     },
     {  "id": "fips197",
        "file": "pdfs/fips197.pdf",
-       "md5": "374800cf78ce4b4abd02cd10a856b57f",
+       "md5": "4742c3f470cd8c4686a0dbb3da808b71",
        "link": true,
        "rounds": 1,
        "type": "eq"

@@ -55,6 +55,10 @@ class TestOptions(OptionParser):
                         help="The port the HTTP server should listen on.", default=8080)
         self.add_option("--unitTest", action="store_true", dest="unitTest",
                         help="Run the unit tests.", default=False)
+        self.add_option("--noDownload", action="store_true", dest="noDownload",
+                        help="Skips test PDFs downloading.", default=False)
+        self.add_option("--ignoreDownloadErrors", action="store_true", dest="ignoreDownloadErrors",
+                        help="Ignores errors during test PDFs downloading.", default=False)
         self.set_usage(USAGE_EXAMPLE)
 
     def verifyOptions(self, options):
@@ -380,22 +384,32 @@ def makeBrowserCommands(browserManifestFile):
         browsers = [makeBrowserCommand(browser) for browser in json.load(bmf)]
     return browsers
 
-def downloadLinkedPDFs(manifestList):
+def downloadLinkedPDF(f):
+    linkFile = open(f +'.link')
+    link = linkFile.read()
+    linkFile.close()
+
+    sys.stdout.write('Downloading '+ link +' to '+ f +' ...')
+    sys.stdout.flush()
+    response = urllib2.urlopen(link)
+
+    with open(f, 'wb') as out:
+        out.write(response.read())
+
+    print 'done'
+
+def downloadLinkedPDFs(manifestList, ignoreDownloadErrors):
     for item in manifestList:
         f, isLink = item['file'], item.get('link', False)
         if isLink and not os.access(f, os.R_OK):
-            linkFile = open(f +'.link')
-            link = linkFile.read()
-            linkFile.close()
-
-            sys.stdout.write('Downloading '+ link +' to '+ f +' ...')
-            sys.stdout.flush()
-            response = urllib2.urlopen(link)
-
-            with open(f, 'wb') as out:
-                out.write(response.read())
-
-            print 'done'
+            try:
+                downloadLinkedPDF(f)
+            except:
+                print 'ERROR: Unable to download file "' + f + '".'
+                if ignoreDownloadErrors:
+                    open(f, 'wb').close()
+                else:
+                    raise
 
 def verifyPDFs(manifestList):
     error = False
@@ -447,11 +461,12 @@ def setUp(options):
     with open(options.manifestFile) as mf:
         manifestList = json.load(mf)
 
-    downloadLinkedPDFs(manifestList)
+    if not options.noDownload:
+        downloadLinkedPDFs(manifestList, options.ignoreDownloadErrors)
 
-    if not verifyPDFs(manifestList):
-      print 'Unable to verify the checksum for the files that are used for testing.'
-      print 'Please re-download the files, or adjust the MD5 checksum in the manifest for the files listed above.\n'
+        if not verifyPDFs(manifestList):
+          print 'Unable to verify the checksum for the files that are used for testing.'
+          print 'Please re-download the files, or adjust the MD5 checksum in the manifest for the files listed above.\n'
 
     for b in testBrowsers:
         State.taskResults[b.name] = { }
