@@ -751,7 +751,7 @@ target.server = function() {
   echo('### Starting local server');
 
   cd('test');
-  exec(PYTHON_BIN + ' -u test.py --port=8888', {async: true});
+  exec(PYTHON_BIN + ' -u test.py --port=8888 --noDownload', {async: true});
 };
 
 //
