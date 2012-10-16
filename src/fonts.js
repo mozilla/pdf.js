@@ -5132,10 +5132,9 @@ var CFFFont = (function CFFFontClosure() {
           inverseEncoding[encoding[charcode]] = charcode | 0;
       else
         inverseEncoding = charsets;
-      for (var i = 0, ii = charsets.length; i < ii; i++) {
+      var i = charsets[0] == '.notdef' ? 1 : 0;
+      for (var ii = charsets.length; i < ii; i++) {
         var glyph = charsets[i];
-        if (glyph == '.notdef')
-          continue;
 
         var code = inverseEncoding[i];
         if (!code || isSpecialUnicode(code)) {
