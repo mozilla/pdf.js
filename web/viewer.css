@@ -42,28 +42,8 @@ select {
   display: none !important;
 }
 
-#viewerContainer:-webkit-full-screen {
-  top: 0px;
-  border-top: 2px solid transparent;
-  background-color: #404040;
-  background-image: url(images/texture.png);
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
-  cursor: none;
-}
-
-#viewerContainer:-moz-full-screen {
-  top: 0px;
-  border-top: 2px solid transparent;
-  background-color: #404040;
-  background-image: url(images/texture.png);
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
-  cursor: none;
-}
-
+#viewerContainer:-webkit-full-screen,
+#viewerContainer:-moz-full-screen,
 #viewerContainer:fullscreen {
   top: 0px;
   border-top: 2px solid transparent;
@@ -75,15 +55,8 @@ select {
   cursor: none;
 }
 
-
-:-webkit-full-screen .page {
-  margin-bottom: 100%;
-}
-
-:-moz-full-screen .page {
-  margin-bottom: 100%;
-}
-
+:-webkit-full-screen .page,
+:-moz-full-screen .page,
 :fullscreen .page {
   margin-bottom: 100%;
 }
@@ -366,10 +339,8 @@ html[dir='rtl'] .doorHanger:before {
   background-color: rgb(255, 137, 153);
 }
 
-html[dir='ltr'] #toolbarViewerLeft {
-  margin-left: -1px;
-}
-html[dir='rtl'] #toolbarViewerRight {
+html[dir='ltr'] #toolbarViewerLeft,
+html[dir='rtl'] #toolbarViewerRight  {
   margin-left: -1px;
 }
 
