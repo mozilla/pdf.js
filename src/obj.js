@@ -574,7 +574,10 @@ var XRef = (function XRefClosure() {
       if (dict)
         return dict;
       // nothing helps
-      error('Invalid PDF structure');
+      // error('Invalid PDF Structure');  // this would reject with
+                                          // Unknown Error
+      throw new InvalidPDFException('Invalid PDF structure', 
+                                    'invalidpdfstructure');
     },
     readXRef: function XRef_readXRef(startXRef, recoveryMode) {
       var stream = this.stream;

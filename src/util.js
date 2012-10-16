@@ -148,6 +148,19 @@ var PasswordException = (function PasswordExceptionClosure() {
   return PasswordException;
 })();
 
+var InvalidPDFException = (function InvalidPDFExceptionClosure() {
+  function InvalidPDFException(msg, code) {
+    this.name = 'InvalidPDFException';
+    this.message = msg;
+    this.code = code;
+  }
+
+  InvalidPDFException.prototype = new Error();
+  InvalidPDFException.constructor = InvalidPDFException;
+
+  return InvalidPDFException;
+})();
+
 function bytesToString(bytes) {
   var str = '';
   var length = bytes.length;

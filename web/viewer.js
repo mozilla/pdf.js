@@ -895,6 +895,14 @@ var PDFView = {
           }
         }
 
+        if (exception && 
+            exception.name === 'InvalidPDFException'
+            && exception.code === 'invalidpdfstructure') {
+          var err_message = 'Invalid PDF structure';
+          window.alert(mozL10n.get('invalid_pdf_structure', null, err_message));
+          return window.close();
+        }
+
         var loadingIndicator = document.getElementById('loading');
         loadingIndicator.textContent = mozL10n.get('loading_error_indicator',
           null, 'Error');

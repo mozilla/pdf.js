@@ -125,8 +125,17 @@ var WorkerMessageHandler = {
           }
 
           return;
+        } else if (e.code === 'invalidpdfstructure') {
+          handler.send('InvalidPDF', {
+            exception: e
+          });
+          return
         } else {
-          throw e;
+          // reject the promise instead of throwing 
+          handler.send('UnknownError', {
+            exception: e
+          });
+          return
         }
       }
       var doc = {
