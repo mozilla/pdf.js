@@ -149,10 +149,9 @@ var PasswordException = (function PasswordExceptionClosure() {
 })();
 
 var InvalidPDFException = (function InvalidPDFExceptionClosure() {
-  function InvalidPDFException(msg, code) {
+  function InvalidPDFException(msg) {
     this.name = 'InvalidPDFException';
     this.message = msg;
-    this.code = code;
   }
 
   InvalidPDFException.prototype = new Error();

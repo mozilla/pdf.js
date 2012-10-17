@@ -125,17 +125,21 @@ var WorkerMessageHandler = {
           }
 
           return;
-        } else if (e.code === 'invalidpdfstructure') {
+        } else if (e instanceof InvalidPDFException) {
           handler.send('InvalidPDF', {
             exception: e
           });
           return
         } else {
+//#if !B2G
+          throw e;
+//#else
           // reject the promise instead of throwing 
           handler.send('UnknownError', {
             exception: e
           });
           return
+//#endif
         }
       }
       var doc = {

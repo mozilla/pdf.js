@@ -895,12 +895,17 @@ var PDFView = {
           }
         }
 
-        if (exception && 
-            exception.name === 'InvalidPDFException'
-            && exception.code === 'invalidpdfstructure') {
-          var err_message = 'Invalid PDF structure';
-          window.alert(mozL10n.get('invalid_pdf_structure', null, err_message));
+        var loading_error_message = mozL10n.get('loading_error', null,
+          'An error occurred while loading the PDF.');
+
+        if (exception && exception.name === 'InvalidPDFException') {
+          // change error message also for other builds
+          var loading_error_message = mozL10n.get('invalid_file_error', null, 
+                                        exception.message);
+//#if B2G
+          window.alert(err_message);
           return window.close();
+//#endif
         }
 
         var loadingIndicator = document.getElementById('loading');
@@ -909,8 +914,7 @@ var PDFView = {
         var moreInfo = {
           message: message
         };
-        self.error(mozL10n.get('loading_error', null,
-          'An error occurred while loading the PDF.'), moreInfo);
+        self.error(loading_error_message, moreInfo);
         self.loading = false;
       },
       function getDocumentProgress(progressData) {
