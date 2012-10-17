@@ -129,7 +129,8 @@ var WorkerMessageHandler = {
           handler.send('InvalidPDF', {
             exception: e
           });
-          return
+          
+          return;
         } else {
 //#if !B2G
           throw e;
@@ -138,7 +139,8 @@ var WorkerMessageHandler = {
           handler.send('UnknownError', {
             exception: e
           });
-          return
+
+          return;
 //#endif
         }
       }
