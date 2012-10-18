@@ -131,17 +131,14 @@ var WorkerMessageHandler = {
           });
           
           return;
-        } else {
-//#if !B2G
-          throw e;
-//#else
-          // reject the promise instead of throwing 
+        } else if (e instanceof UnknownErrorException) {
           handler.send('UnknownError', {
             exception: e
           });
 
           return;
-//#endif
+        } else {
+          throw e;
         }
       }
       var doc = {
