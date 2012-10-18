@@ -32,7 +32,10 @@ chrome.webRequest.onBeforeRequest.addListener(
     urls: [
       'http://*/*.pdf',
       'https://*/*.pdf',
-      'file://*/*.pdf'
+      'file://*/*.pdf',
+      'http://*/*.PDF',
+      'https://*/*.PDF',
+      'file://*/*.PDF'
     ],
     types: ['main_frame']
   },
