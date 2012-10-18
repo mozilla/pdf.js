@@ -7,7 +7,10 @@
     "webRequest", "webRequestBlocking",
     "http://*/*.pdf",
     "https://*/*.pdf",
-    "file:///*/*.pdf"
+    "file:///*/*.pdf",
+    "http://*/*.PDF",
+    "https://*/*.PDF",
+    "file://*/*.PDF"
   ],
   "background": {
     "page": "pdfHandler.html"
