@@ -230,7 +230,9 @@ var cache = new Cache(kCacheSize);
 var currentPageNumber = 1;
 
 var PDFFindController = {
-  extractTextPromise: null,
+  startedTextExtraction: false,
+
+  extractTextPromises: [],
 
   // If active, find results will be highlighted.
   active: false,
@@ -240,10 +242,21 @@ var PDFFindController = {
 
   pageMatches: [],
 
+  // Currently selected match.
   selected: {
-    pageIdx: 0,
-    matchIdx: 0
+    pageIdx: -1,
+    matchIdx: -1
   },
+
+  // Where find algorithm currently is in the document.
+  offset: {
+    pageIdx: null,
+    matchIdx: null
+  },
+
+  resumePageIdx: null,
+
+  resumeCallback: null,
 
   state: null,
 
@@ -266,13 +279,16 @@ var PDFFindController = {
     }
   },
 
-  calcFindMatch: function(pageContent) {
+  calcFindMatch: function(pageIndex) {
+    var pageContent = this.pageContents[pageIndex];
     var query = this.state.query;
     var caseSensitive = this.state.caseSensitive;
     var queryLen = query.length;
 
-    if (queryLen === 0)
-      return [];
+    if (queryLen === 0) {
+      // Do nothing the matches should be wiped out already.
+      return;
+    }
 
     if (!caseSensitive) {
       pageContent = pageContent.toLowerCase();
@@ -290,14 +306,26 @@ var PDFFindController = {
 
       matches.push(matchIdx);
     }
-    return matches;
+    this.pageMatches[pageIndex] = matches;
+    this.updatePage(pageIndex);
+    if (this.resumePageIdx === pageIndex) {
+      var callback = this.resumeCallback;
+      this.resumePageIdx = null;
+      this.resumeCallback = null;
+      callback();
+    }
   },
 
   extractText: function() {
-    if (this.extractTextPromise) {
-      return this.extractTextPromise;
+    if (this.startedTextExtraction) {
+      return;
     }
-    this.extractTextPromise = new PDFJS.Promise();
+    this.startedTextExtraction = true;
+
+    this.pageContents = [];
+    for (var i = 0, ii = PDFView.pdfDocument.numPages; i < ii; i++) {
+      this.extractTextPromises.push(new PDFJS.Promise());
+    }
 
     var self = this;
     function extractPageText(pageIndex) {
@@ -313,13 +341,10 @@ var PDFFindController = {
 
           // Store the pageContent as a string.
           self.pageContents.push(str);
-          // Ensure there is a empty array of matches.
-          self.pageMatches.push([]);
 
+          self.extractTextPromises[pageIndex].resolve(pageIndex);
           if ((pageIndex + 1) < PDFView.pages.length)
             extractPageText(pageIndex + 1);
-          else
-            self.extractTextPromise.resolve();
         }
       );
     }
@@ -334,16 +359,14 @@ var PDFFindController = {
     this.state = e.detail;
     this.updateUIState(FindStates.FIND_PENDING);
 
-    var promise = this.extractText();
+    this.extractText();
 
     clearTimeout(this.findTimeout);
     if (e.type === 'find') {
       // Only trigger the find action after 250ms of silence.
-      this.findTimeout = setTimeout(function() {
-        promise.then(this.performFind.bind(this));
-      }.bind(this), 250);
+      this.findTimeout = setTimeout(this.nextMatch.bind(this), 250);
     } else {
-      promise.then(this.performFind.bind(this));
+      this.nextMatch();
     }
   },
 
@@ -362,117 +385,146 @@ var PDFFindController = {
     }
   },
 
-  performFind: function() {
-    // Recalculate all the matches.
-    // TODO: Make one match show up as the current match
-
+  nextMatch: function() {
     var pages = PDFView.pages;
-    var pageContents = this.pageContents;
-    var pageMatches = this.pageMatches;
+    var previous = this.state.findPrevious;
+    var numPages = PDFView.pages.length;
 
     this.active = true;
 
     if (this.dirtyMatch) {
-      // Need to recalculate the matches.
+      // Need to recalculate the matches, reset everything.
       this.dirtyMatch = false;
+      this.selected.pageIdx = this.selected.matchIdx = -1;
+      this.offset.pageIdx = previous ? numPages - 1 : 0;
+      this.offset.matchIdx = null;
+      this.hadMatch = false;
+      this.resumeCallback = null;
+      this.resumePageIdx = null;
+      this.pageMatches = [];
+      var self = this;
 
-      this.selected = {
-        pageIdx: -1,
-        matchIdx: -1
-      };
+      for (var i = 0; i < numPages; i++) {
+        // Wipe out any previous highlighted matches.
+        this.updatePage(i);
 
-      // TODO: Make this way more lasily (aka. efficient) - e.g. calculate only
-      // the matches for the current visible pages.
-      var firstMatch = true;
-      for (var i = 0; i < pageContents.length; i++) {
-        var matches = pageMatches[i] = this.calcFindMatch(pageContents[i]);
-        if (firstMatch && matches.length !== 0) {
-          firstMatch = false;
-          this.selected = {
-            pageIdx: i,
-            matchIdx: 0
-          };
-        }
-        this.updatePage(i, true);
+        // As soon as the text is extracted start finding the matches.
+        this.extractTextPromises[i].onData(function(pageIdx) {
+          // Use a timeout since all the pages may already be extracted and we
+          // want to start highlighting before finding all the matches.
+          setTimeout(function() {
+            self.calcFindMatch(pageIdx);
+          });
+        });
       }
-      if (!firstMatch || !this.state.query) {
-        this.updateUIState(FindStates.FIND_FOUND);
-      } else {
-        this.updateUIState(FindStates.FIND_NOTFOUND);
-      }
-    } else {
-      // If there is NO selection, then there is no match at all -> no sense to
-      // handle previous/next action.
-      if (this.selected.pageIdx === -1) {
-        this.updateUIState(FindStates.FIND_NOTFOUND);
+    }
+
+    // If there's no query there's no point in searching.
+    if (this.state.query === '') {
+      this.updateUIState(FindStates.FIND_FOUND);
+      return;
+    }
+
+    // If we're waiting on a page, we return since we can't do anything else.
+    if (this.resumeCallback) {
+      return;
+    }
+
+    var offset = this.offset;
+    // If there's already a matchIdx that means we are iterating through a
+    // page's matches.
+    if (offset.matchIdx !== null) {
+      var numPageMatches = this.pageMatches[offset.pageIdx].length;
+      if ((!previous && offset.matchIdx + 1 < numPageMatches) ||
+          (previous && offset.matchIdx > 0)) {
+        // The simple case, we just have advance the matchIdx to select the next
+        // match on the page.
+        this.hadMatch = true;
+        offset.matchIdx = previous ? offset.matchIdx - 1 : offset.matchIdx + 1;
+        this.updateMatch(true);
         return;
       }
+      // We went beyond the current page's matches, so we advance to the next
+      // page.
+      this.advanceOffsetPage(previous);
+    }
+    // Start searching through the page.
+    this.nextPageMatch();
+  },
 
-      // Handle findAgain case.
+  nextPageMatch: function() {
+    if (this.resumePageIdx !== null)
+      console.error('There can only be one pending page.');
+
+    var matchesReady = function(matches) {
+      var offset = this.offset;
+      var numMatches = matches.length;
       var previous = this.state.findPrevious;
-      var sPageIdx = this.selected.pageIdx;
-      var sMatchIdx = this.selected.matchIdx;
-      var findState = FindStates.FIND_FOUND;
-
-      if (previous) {
-        // Select previous match.
-
-        if (sMatchIdx !== 0) {
-          this.selected.matchIdx -= 1;
-        } else {
-          var len = pageMatches.length;
-          for (var i = sPageIdx - 1; i != sPageIdx; i--) {
-            if (i < 0)
-              i += len;
-
-            if (pageMatches[i].length !== 0) {
-              this.selected = {
-                pageIdx: i,
-                matchIdx: pageMatches[i].length - 1
-              };
-              break;
-            }
-          }
-          // If pageIdx stayed the same, select last match on the page.
-          if (this.selected.pageIdx === sPageIdx) {
-            this.selected.matchIdx = pageMatches[sPageIdx].length - 1;
-            findState = FindStates.FIND_WRAPPED;
-          } else if (this.selected.pageIdx > sPageIdx) {
-            findState = FindStates.FIND_WRAPPED;
-          }
-        }
+      if (numMatches) {
+        // There were matches for the page, so initialize the matchIdx.
+        this.hadMatch = true;
+        offset.matchIdx = previous ? numMatches - 1 : 0;
+        this.updateMatch(true);
       } else {
-        // Select next match.
-
-        if (pageMatches[sPageIdx].length !== sMatchIdx + 1) {
-          this.selected.matchIdx += 1;
-        } else {
-          var len = pageMatches.length;
-          for (var i = sPageIdx + 1; i < len + sPageIdx; i++) {
-            if (pageMatches[i % len].length !== 0) {
-              this.selected = {
-                pageIdx: i % len,
-                matchIdx: 0
-              };
-              break;
-            }
-          }
-
-          // If pageIdx stayed the same, select first match on the page.
-          if (this.selected.pageIdx === sPageIdx) {
-            this.selected.matchIdx = 0;
-            findState = FindStates.FIND_WRAPPED;
-          } else if (this.selected.pageIdx < sPageIdx) {
-            findState = FindStates.FIND_WRAPPED;
+        // No matches attempt to search the next page.
+        this.advanceOffsetPage(previous);
+        if (offset.wrapped) {
+          offset.matchIdx = null;
+          if (!this.hadMatch) {
+            // No point in wrapping there were no matches.
+            this.updateMatch(false);
+            return;
           }
         }
+        // Search the next page.
+        this.nextPageMatch();
       }
+    }.bind(this);
 
-      this.updateUIState(findState, previous);
-      this.updatePage(sPageIdx, sPageIdx === this.selected.pageIdx);
-      if (sPageIdx !== this.selected.pageIdx) {
-        this.updatePage(this.selected.pageIdx, true);
+    var pageIdx = this.offset.pageIdx;
+    var pageMatches = this.pageMatches;
+    if (!pageMatches[pageIdx]) {
+      // The matches aren't ready setup a callback so we can be notified,
+      // when they are ready.
+      this.resumeCallback = function() {
+        matchesReady(pageMatches[pageIdx]);
+      };
+      this.resumePageIdx = pageIdx;
+      return;
+    }
+    // The matches are finished already.
+    matchesReady(pageMatches[pageIdx]);
+  },
+
+  advanceOffsetPage: function(previous) {
+    var offset = this.offset;
+    var numPages = this.extractTextPromises.length;
+    offset.pageIdx = previous ? offset.pageIdx - 1 : offset.pageIdx + 1;
+    offset.matchIdx = null;
+    if (offset.pageIdx >= numPages || offset.pageIdx < 0) {
+      offset.pageIdx = previous ? numPages - 1 : 0;
+      offset.wrapped = true;
+      return;
+    }
+  },
+
+  updateMatch: function(found) {
+    var state = FindStates.FIND_NOTFOUND;
+    var wrapped = this.offset.wrapped;
+    this.offset.wrapped = false;
+    if (found) {
+      var previousPage = this.selected.pageIdx;
+      this.selected.pageIdx = this.offset.pageIdx;
+      this.selected.matchIdx = this.offset.matchIdx;
+      state = wrapped ? FindStates.FIND_WRAPPED : FindStates.FIND_FOUND;
+      // Update the currently selected page to wipe out any selected matches.
+      if (previousPage !== -1 && previousPage !== this.selected.pageIdx) {
+        this.updatePage(previousPage);
       }
+    }
+    this.updateUIState(state, this.state.findPrevious);
+    if (this.selected.pageIdx !== -1) {
+      this.updatePage(this.selected.pageIdx, true);
     }
   },
 
