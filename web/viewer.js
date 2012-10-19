@@ -1021,6 +1021,21 @@ var PDFView = {
   },
 
   /**
+   * Returns scale factor for the canvas. It makes sense for the HiDPI displays.
+   * @return {Object} The object with horizontal (sx) and vertical (sy)
+                      scales. The scaled property is set to false if scaling is
+                      not required, true otherwise.
+   */
+  getOutputScale: function pdfViewGetOutputDPI() {
+    var pixelRatio = 'devicePixelRatio' in window ? window.devicePixelRatio : 1;
+    return {
+      sx: pixelRatio,
+      sy: pixelRatio,
+      scaled: pixelRatio != 1
+    };
+  },
+
+  /**
    * Show the error box.
    * @param {String} message A message that is human readable.
    * @param {Object} moreInfo (optional) Further information about the error
@@ -1905,14 +1920,29 @@ var PageView = function pageView(container, pdfPage, id, scale,
           textLayerDiv ? new TextLayerBuilder(textLayerDiv, this.id - 1) : null;
 
     var scale = this.scale, viewport = this.viewport;
-    canvas.width = Math.floor(viewport.width);
-    canvas.height = Math.floor(viewport.height);
+    var outputScale = PDFView.getOutputScale();
+    canvas.width = Math.floor(viewport.width) * outputScale.sx;
+    canvas.height = Math.floor(viewport.height) * outputScale.sy;
+
+    if (outputScale.scaled) {
+      var cssScale = 'scale(' + (1 / outputScale.sx) + ', ' +
+                                (1 / outputScale.sy) + ')';
+      CustomStyle.setProp('transform' , canvas, cssScale);
+      CustomStyle.setProp('transformOrigin' , canvas, '0% 0%');
+      if (textLayerDiv) {
+        CustomStyle.setProp('transform' , textLayerDiv, cssScale);
+        CustomStyle.setProp('transformOrigin' , textLayerDiv, '0% 0%');
+      }
+    }
 
     var ctx = canvas.getContext('2d');
     ctx.save();
     ctx.fillStyle = 'rgb(255, 255, 255)';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     ctx.restore();
+    if (outputScale.scaled) {
+      ctx.scale(outputScale.sx, outputScale.sy);
+    }
 
     // Rendering area
 
