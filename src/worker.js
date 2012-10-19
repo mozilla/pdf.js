@@ -131,14 +131,12 @@ var WorkerMessageHandler = {
           });
           
           return;
-        } else if (e instanceof UnknownErrorException) {
+        } else {
           handler.send('UnknownError', {
-            exception: e
+            exception: new UnknownErrorException(e.message, e.toString())
           });
 
           return;
-        } else {
-          throw e;
         }
       }
       var doc = {
