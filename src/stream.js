@@ -2350,3 +2350,12 @@ var LZWStream = (function LZWStreamClosure() {
   return LZWStream;
 })();
 
+var NullStream = (function NullStreamClosure() {
+  function NullStream() {
+    Stream.call(this, new Uint8Array(0));
+  }
+
+  NullStream.prototype = Stream.prototype;
+
+  return NullStream;
+})();
