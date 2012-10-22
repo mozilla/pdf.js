@@ -42,6 +42,8 @@ var FindStates = {
   FIND_PENDING: 3
 };
 
+var ANNOT_MIN_SIZE = 10;
+
 //#if (GENERIC || CHROME)
 //PDFJS.workerSrc = '../build/pdf.js';
 //#endif
@@ -1776,9 +1778,11 @@ var PageView = function pageView(container, pdfPage, id, scale,
         return false;
       };
     }
-    function createElementWithStyle(tagName, item) {
-      var rect = viewport.convertToViewportRectangle(item.rect);
-      rect = PDFJS.Util.normalizeRect(rect);
+    function createElementWithStyle(tagName, item, rect) {
+      if (!rect) {
+        rect = viewport.convertToViewportRectangle(item.rect);
+        rect = PDFJS.Util.normalizeRect(rect);
+      }
       var element = document.createElement(tagName);
       element.style.left = Math.floor(rect[0]) + 'px';
       element.style.top = Math.floor(rect[1]) + 'px';
@@ -1786,16 +1790,24 @@ var PageView = function pageView(container, pdfPage, id, scale,
       element.style.height = Math.ceil(rect[3] - rect[1]) + 'px';
       return element;
     }
-    function createCommentAnnotation(type, item) {
+    function createTextAnnotation(item) {
       var container = document.createElement('section');
-      container.className = 'annotComment';
+      container.className = 'annotText';
 
-      var image = createElementWithStyle('img', item);
-      var type = item.type;
       var rect = viewport.convertToViewportRectangle(item.rect);
       rect = PDFJS.Util.normalizeRect(rect);
-      image.src = kImageDirectory + 'annotation-' + type.toLowerCase() + '.svg';
-      image.alt = mozL10n.get('text_annotation_type', {type: type},
+      // sanity check because of OOo-generated PDFs
+      if ((rect[3] - rect[1]) < ANNOT_MIN_SIZE) {
+        rect[3] = rect[1] + ANNOT_MIN_SIZE;
+      }
+      if ((rect[2] - rect[0]) < ANNOT_MIN_SIZE) {
+        rect[2] = rect[0] + (rect[3] - rect[1]); // make it square
+      }
+      var image = createElementWithStyle('img', item, rect);
+      var iconName = item.name;
+      image.src = kImageDirectory + 'annotation-' +
+        iconName.toLowerCase() + '.svg';
+      image.alt = mozL10n.get('text_annotation_type', {type: iconName},
         '[{{type}} Annotation]');
       var content = document.createElement('div');
       content.setAttribute('hidden', true);
@@ -1809,7 +1821,7 @@ var PageView = function pageView(container, pdfPage, id, scale,
         content.setAttribute('hidden', true);
       } else {
         var e = document.createElement('span');
-        var lines = item.content.split('\n');
+        var lines = item.content.split(/(?:\r\n?|\n)/);
         for (var i = 0, ii = lines.length; i < ii; ++i) {
           var line = lines[i];
           e.appendChild(document.createTextNode(line));
@@ -1846,9 +1858,9 @@ var PageView = function pageView(container, pdfPage, id, scale,
             div.appendChild(link);
             break;
           case 'Text':
-            var comment = createCommentAnnotation(item.name, item);
-            if (comment)
-              div.appendChild(comment);
+            var textAnnotation = createTextAnnotation(item);
+            if (textAnnotation)
+              div.appendChild(textAnnotation);
             break;
           case 'Widget':
             // TODO: support forms

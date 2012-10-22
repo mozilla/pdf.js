@@ -1195,31 +1195,30 @@ canvas {
 ::selection { background:rgba(0,0,255,0.3); }
 ::-moz-selection { background:rgba(0,0,255,0.3); }
 
-.annotComment > div {
+.annotText > div {
   z-index: 200;
   position: absolute;
-}
-
-.annotComment > img {
-  position: absolute;
-}
-
-.annotComment > img:hover {
-  cursor: pointer;
-  opacity: 0.7;
-}
-
-.annotComment > div {
-  padding: 0.2em;
+  padding: 0.6em;
   max-width: 20em;
-  background-color: #F1E47B;
+  background-color: #FFFF99;
   -webkit-box-shadow: 0px 2px 10px #333;
   -moz-box-shadow: 0px 2px 10px #333;
   box-shadow: 0px 2px 10px #333;
+  border-radius: 7px;
+  -moz-border-radius: 7px;
 }
 
-.annotComment > div > h1 {
-  font-weight: normal;
+.annotText > img {
+  position: absolute;
+  opacity: 0.6;
+}
+
+.annotText > img:hover {
+  cursor: pointer;
+  opacity: 1;
+}
+
+.annotText > div > h1 {
   font-size: 1.2em;
   border-bottom: 1px solid #000000;
   margin: 0px;
