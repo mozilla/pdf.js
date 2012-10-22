@@ -1042,7 +1042,7 @@ canvas {
   height: 1056px;
   margin: 10px auto;
   position: relative;
-  overflow: hidden;
+  overflow: visible;
   -webkit-box-shadow: 0px 4px 10px #000;
   -moz-box-shadow: 0px 4px 10px #000;
   box-shadow: 0px 4px 10px #000;
@@ -1196,6 +1196,7 @@ canvas {
 ::-moz-selection { background:rgba(0,0,255,0.3); }
 
 .annotComment > div {
+  z-index: 200;
   position: absolute;
 }
 
