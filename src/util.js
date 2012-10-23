@@ -61,7 +61,11 @@ function error(msg) {
   }
   log(backtrace());
   PDFJS.LogManager.notify('error', msg);
+//#if !B2G
   throw new Error(msg);
+//#else
+//throw new UnknownErrorException(msg);
+//#endif
 }
 
 // Missing features that should trigger the fallback UI.
@@ -146,6 +150,30 @@ var PasswordException = (function PasswordExceptionClosure() {
   PasswordException.constructor = PasswordException;
 
   return PasswordException;
+})();
+
+var UnknownErrorException = (function UnknownErrorExceptionClosure() {
+  function UnknownErrorException(msg) {
+    this.name = 'UnknownErrorException';
+    this.message = msg;
+  }
+
+  UnknownErrorException.prototype = new Error();
+  UnknownErrorException.constructor = UnknownErrorException;
+
+  return UnknownErrorException;
+})();
+
+var InvalidPDFException = (function InvalidPDFExceptionClosure() {
+  function InvalidPDFException(msg) {
+    this.name = 'InvalidPDFException';
+    this.message = msg;
+  }
+
+  InvalidPDFException.prototype = new Error();
+  InvalidPDFException.constructor = InvalidPDFException;
+
+  return InvalidPDFException;
 })();
 
 function bytesToString(bytes) {
