@@ -849,10 +849,6 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
 
           x += charWidth;
 
-          var glyphUnicode = glyph.unicode === ' ' ? '\u00A0' : glyph.unicode;
-          if (glyphUnicode in NormalizedUnicodes)
-            glyphUnicode = NormalizedUnicodes[glyphUnicode];
-
           canvasWidth += charWidth;
         }
         current.x += x * textHScale2;
