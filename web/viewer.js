@@ -2551,7 +2551,7 @@ var TextLayerBuilder = function textLayerBuilder(textLayerDiv, pageIdx) {
     function beginText(begin, className) {
       var divIdx = begin.divIdx;
       var div = textDivs[divIdx];
-      div.innerHTML = '';
+      div.textContent = '';
 
       var content = bidiTexts[divIdx].str.substring(0, begin.offset);
       var node = document.createTextNode(content);
