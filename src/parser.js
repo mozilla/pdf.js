@@ -333,8 +333,7 @@ var Lexer = (function LexerClosure() {
       var floating = false;
       var str = ch;
       var stream = this.stream;
-      for (;;) {
-        ch = stream.lookChar();
+      while ((ch = stream.lookChar())) {
         if (ch == '.' && !floating) {
           str += ch;
           floating = true;
