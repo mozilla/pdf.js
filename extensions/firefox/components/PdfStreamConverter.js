@@ -653,7 +653,7 @@ PdfStreamConverter.prototype = {
       var resourcePrincipal = 'getNoAppCodebasePrincipal' in securityManager ?
                               securityManager.getNoAppCodebasePrincipal(uri) :
                               securityManager.getCodebasePrincipal(uri);
-      channel.owner = resourcePrincipal;
+      aRequest.owner = resourcePrincipal;
     }
     channel.asyncOpen(proxy, aContext);
   },
