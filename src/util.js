@@ -148,6 +148,31 @@ var PasswordException = (function PasswordExceptionClosure() {
   return PasswordException;
 })();
 
+var UnknownErrorException = (function UnknownErrorExceptionClosure() {
+  function UnknownErrorException(msg, details) {
+    this.name = 'UnknownErrorException';
+    this.message = msg;
+    this.details = details;
+  }
+
+  UnknownErrorException.prototype = new Error();
+  UnknownErrorException.constructor = UnknownErrorException;
+
+  return UnknownErrorException;
+})();
+
+var InvalidPDFException = (function InvalidPDFExceptionClosure() {
+  function InvalidPDFException(msg) {
+    this.name = 'InvalidPDFException';
+    this.message = msg;
+  }
+
+  InvalidPDFException.prototype = new Error();
+  InvalidPDFException.constructor = InvalidPDFException;
+
+  return InvalidPDFException;
+})();
+
 function bytesToString(bytes) {
   var str = '';
   var length = bytes.length;
