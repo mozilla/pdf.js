@@ -458,6 +458,7 @@ var PDFDocument = (function PDFDocumentClosure() {
         } catch (err) {
           warn('The linearization data is not available ' +
                'or unreadable pdf data is found');
+          linearization = false;
         }
       }
       // shadow the prototype getter with a data property
