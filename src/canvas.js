@@ -208,13 +208,14 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
   // before it stops and shedules a continue of execution.
   var kExecutionTime = 15;
 
-  function CanvasGraphics(canvasCtx, objs, textLayer) {
+  function CanvasGraphics(canvasCtx, commonObjs, objs, textLayer) {
     this.ctx = canvasCtx;
     this.current = new CanvasExtraState();
     this.stateStack = [];
     this.pendingClip = null;
     this.res = null;
     this.xobjs = null;
+    this.commonObjs = commonObjs;
     this.objs = objs;
     this.textLayer = textLayer;
     if (canvasCtx) {
@@ -283,6 +284,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       var executionEndIdx;
       var endTime = Date.now() + kExecutionTime;
 
+      var commonObjs = this.commonObjs;
       var objs = this.objs;
       var fnName;
       var slowCommands = this.slowCommands;
@@ -301,11 +303,16 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
           var deps = argsArray[i];
           for (var n = 0, nn = deps.length; n < nn; n++) {
             var depObjId = deps[n];
+            var common = depObjId.substring(0, 2) == 'g_';
 
             // If the promise isn't resolved yet, add the continueCallback
             // to the promise and bail out.
-            if (!objs.isResolved(depObjId)) {
+            if (!common && !objs.isResolved(depObjId)) {
               objs.get(depObjId, continueCallback);
+              return i;
+            }
+            if (common && !commonObjs.isResolved(depObjId)) {
+              commonObjs.get(depObjId, continueCallback);
               return i;
             }
           }
@@ -620,7 +627,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       this.current.leading = -leading;
     },
     setFont: function CanvasGraphics_setFont(fontRefName, size) {
-      var fontObj = this.objs.get(fontRefName);
+      var fontObj = this.commonObjs.get(fontRefName);
       var current = this.current;
 
       if (!fontObj)
