@@ -27,7 +27,7 @@ function setupForm(div, content, viewport) {
   }
   function createElementWithStyle(tagName, item) {
     var element = document.createElement(tagName);
-    var rect = Util.normalizeRect(
+    var rect = PDFJS.Util.normalizeRect(
       viewport.convertToViewportRectangle(item.rect));
     element.style.left = Math.floor(rect[0]) + 'px';
     element.style.top = Math.floor(rect[1]) + 'px';
