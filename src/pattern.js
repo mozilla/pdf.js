@@ -286,7 +286,7 @@ var TilingPattern = (function TilingPatternClosure() {
 
     // set the new canvas element context as the graphics context
     var tmpCtx = tmpCanvas.getContext('2d');
-    var graphics = new CanvasGraphics(tmpCtx, objs);
+    var graphics = new CanvasGraphics(tmpCtx, null, objs);
 
     switch (paintType) {
       case PaintType.COLORED:
