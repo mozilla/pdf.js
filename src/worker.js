@@ -259,7 +259,7 @@ var WorkerMessageHandler = {
       var fonts = {};
       for (var i = 0, ii = dependency.length; i < ii; i++) {
         var dep = dependency[i];
-        if (dep.indexOf('font_') == 0) {
+        if (dep.indexOf('g_font_') == 0) {
           fonts[dep] = true;
         }
       }
