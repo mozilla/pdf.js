@@ -626,7 +626,7 @@ var PDFFindBar = {
       case FindStates.FIND_WRAPPED:
         if (previous) {
           findMsg = mozL10n.get('find_wrapped_to_bottom', null,
-                                'Reached end of page, continued from bottom');
+                                'Reached top of page, continued from bottom');
         } else {
           findMsg = mozL10n.get('find_wrapped_to_top', null,
                                 'Reached end of page, continued from top');
