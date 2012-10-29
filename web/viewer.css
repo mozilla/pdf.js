@@ -240,7 +240,7 @@ html[dir='rtl'] #sidebarContent {
 
 #toolbarSidebar {
   width: 200px;
-  height: 29px;
+  height: 32px;
   background-image: url(images/texture.png),
                     -webkit-linear-gradient(hsla(0,0%,30%,.99), hsla(0,0%,25%,.95));
   background-image: url(images/texture.png),
@@ -251,11 +251,11 @@ html[dir='rtl'] #sidebarContent {
                     -o-linear-gradient(hsla(0,0%,30%,.99), hsla(0,0%,25%,.95));
   background-image: url(images/texture.png),
                     linear-gradient(hsla(0,0%,30%,.99), hsla(0,0%,25%,.95));
-  box-shadow: inset -2px 0 0 hsla(0,0%,100%,.08),
-              inset 0 1px 1px hsla(0,0%,0%,.15),
+  box-shadow: inset -1px 0 0 rgba(0, 0, 0, 0.25),
+              
               inset 0 -1px 0 hsla(0,0%,100%,.05),
               0 1px 0 hsla(0,0%,0%,.15),
-              0 1px 1px hsla(0,0%,0%,.1);
+              0 0 1px hsla(0,0%,0%,.1);
 }
 
 #toolbarViewer, .findbar {
@@ -271,7 +271,6 @@ html[dir='rtl'] #sidebarContent {
                     -o-linear-gradient(hsla(0,0%,32%,.99), hsla(0,0%,27%,.95));
   background-image: url(images/texture.png),
                     linear-gradient(hsla(0,0%,32%,.99), hsla(0,0%,27%,.95));
-  border-left: 1px solid hsla(0,0%,0%,.5);
   box-shadow: inset 1px 0 0 hsla(0,0%,100%,.08),
               inset 0 1px 1px hsla(0,0%,0%,.15),
               inset 0 -1px 0 hsla(0,0%,100%,.05),
@@ -1388,9 +1387,6 @@ canvas {
   #sidebarContent {
     top: 32px;
     background-color: hsla(0,0%,0%,.7);
-  }
-  #thumbnailView, #outlineView {
-    top: 66px;
   }
 
   html[dir='ltr'] #outerContainer.sidebarOpen > #mainContainer {
