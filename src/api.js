@@ -456,19 +456,9 @@ var WorkerTransport = (function WorkerTransportClosure() {
       }
 
       try {
-        var worker;
-//#if !(FIREFOX || MOZCENTRAL)
         // Some versions of FF can't create a worker on localhost, see:
         // https://bugzilla.mozilla.org/show_bug.cgi?id=683280
-        worker = new Worker(workerSrc);
-//#else
-//      // The firefox extension can't load the worker from the resource://
-//      // url so we have to inline the script and then use the blob loader.
-//      var script = document.querySelector('#PDFJS_SCRIPT_TAG');
-//      var blob = PDFJS.createBlob(script.textContent, script.type);
-//      var blobUrl = window.URL.createObjectURL(blob);
-//      worker = new Worker(blobUrl);
-//#endif
+        var worker = new Worker(workerSrc);
         var messageHandler = new MessageHandler('main', worker);
         this.messageHandler = messageHandler;
 

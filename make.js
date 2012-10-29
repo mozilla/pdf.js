@@ -354,7 +354,8 @@ target.firefox = function() {
        FIREFOX_BUILD_CONTENT_DIR + '/web']
     ],
     preprocess: [
-      [COMMON_WEB_FILES_PREPROCESS, FIREFOX_BUILD_CONTENT_DIR + '/web']
+      [COMMON_WEB_FILES_PREPROCESS, FIREFOX_BUILD_CONTENT_DIR + '/web'],
+      [BUILD_TARGET, FIREFOX_BUILD_CONTENT_DIR + BUILD_TARGET]
     ]
   };
   builder.build(setup);
@@ -462,7 +463,8 @@ target.mozcentral = function() {
       ['extensions/firefox/tools/l10n.js', MOZCENTRAL_CONTENT_DIR + '/web']
     ],
     preprocess: [
-      [COMMON_WEB_FILES_PREPROCESS, MOZCENTRAL_CONTENT_DIR + '/web']
+      [COMMON_WEB_FILES_PREPROCESS, MOZCENTRAL_CONTENT_DIR + '/web'],
+      [BUILD_TARGET, MOZCENTRAL_CONTENT_DIR + BUILD_TARGET]
     ]
   };
   builder.build(setup);
