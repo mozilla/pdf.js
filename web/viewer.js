@@ -44,7 +44,7 @@ var FindStates = {
 
 var ANNOT_MIN_SIZE = 10;
 
-//#if (GENERIC || CHROME)
+//#if (FIREFOX || MOZCENTRAL || B2G || GENERIC || CHROME)
 //PDFJS.workerSrc = '../build/pdf.js';
 //#endif
 

@@ -544,21 +544,6 @@ PdfStreamConverter.prototype = {
     if (!isEnabled())
       throw Cr.NS_ERROR_NOT_IMPLEMENTED;
 
-    var useFetchByChrome = getBoolPref(PREF_PREFIX + '.fetchByChrome', true);
-    if (!useFetchByChrome) {
-      // Ignoring HTTP POST requests -- pdf.js has to repeat the request.
-      var skipConversion = false;
-      try {
-        var request = aCtxt;
-        request.QueryInterface(Ci.nsIHttpChannel);
-        skipConversion = (request.requestMethod !== 'GET');
-      } catch (e) {
-        // Non-HTTP request... continue normally.
-      }
-      if (skipConversion)
-        throw Cr.NS_ERROR_NOT_IMPLEMENTED;
-    }
-
     // Store the listener passed to us
     this.listener = aListener;
   },
@@ -577,22 +562,15 @@ PdfStreamConverter.prototype = {
 
   // nsIRequestObserver::onStartRequest
   onStartRequest: function(aRequest, aContext) {
-
     // Setup the request so we can use it below.
     aRequest.QueryInterface(Ci.nsIChannel);
-    var useFetchByChrome = getBoolPref(PREF_PREFIX + '.fetchByChrome', true);
-    var dataListener;
-    if (useFetchByChrome) {
-      // Creating storage for PDF data
-      var contentLength = aRequest.contentLength;
-      dataListener = new PdfDataListener(contentLength);
-      this.dataListener = dataListener;
-      this.binaryStream = Cc['@mozilla.org/binaryinputstream;1']
-                          .createInstance(Ci.nsIBinaryInputStream);
-    } else {
-      // Cancel the request so the viewer can handle it.
-      aRequest.cancel(Cr.NS_BINDING_ABORTED);
-    }
+    // Creating storage for PDF data
+    var contentLength = aRequest.contentLength;
+    var dataListener = new PdfDataListener(contentLength);
+    this.dataListener = dataListener;
+    this.binaryStream = Cc['@mozilla.org/binaryinputstream;1']
+                        .createInstance(Ci.nsIBinaryInputStream);
+
     // Change the content type so we don't get stuck in a loop.
     aRequest.contentType = 'text/html';
 
@@ -642,19 +620,17 @@ PdfStreamConverter.prototype = {
     channel.originalURI = aRequest.URI;
     channel.loadGroup = aRequest.loadGroup;
 
-    if (useFetchByChrome) {
-      // We can use resource principal when data is fetched by the chrome
-      // e.g. useful for NoScript
-      var securityManager = Cc['@mozilla.org/scriptsecuritymanager;1']
-                            .getService(Ci.nsIScriptSecurityManager);
-      var uri = ioService.newURI(PDF_VIEWER_WEB_PAGE, null, null);
-      // FF16 and below had getCodebasePrincipal, it was replaced by
-      // getNoAppCodebasePrincipal (bug 758258).
-      var resourcePrincipal = 'getNoAppCodebasePrincipal' in securityManager ?
-                              securityManager.getNoAppCodebasePrincipal(uri) :
-                              securityManager.getCodebasePrincipal(uri);
-      aRequest.owner = resourcePrincipal;
-    }
+    // We can use resource principal when data is fetched by the chrome
+    // e.g. useful for NoScript
+    var securityManager = Cc['@mozilla.org/scriptsecuritymanager;1']
+                          .getService(Ci.nsIScriptSecurityManager);
+    var uri = ioService.newURI(PDF_VIEWER_WEB_PAGE, null, null);
+    // FF16 and below had getCodebasePrincipal, it was replaced by
+    // getNoAppCodebasePrincipal (bug 758258).
+    var resourcePrincipal = 'getNoAppCodebasePrincipal' in securityManager ?
+                            securityManager.getNoAppCodebasePrincipal(uri) :
+                            securityManager.getCodebasePrincipal(uri);
+    aRequest.owner = resourcePrincipal;
     channel.asyncOpen(proxy, aContext);
   },
 
