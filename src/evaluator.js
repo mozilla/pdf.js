@@ -512,7 +512,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       return queue;
     },
 
-    getTextContent: function partialEvaluatorGetIRQueue(
+    getTextContent: function PartialEvaluator_getTextContent(
                                                     stream, resources, state) {
       var bidiTexts;
       var kSpaceFactor = 0.35;
