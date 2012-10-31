@@ -702,8 +702,8 @@ var PostScriptParser = (function PostScriptParserClosure() {
   function PostScriptParser(lexer) {
     this.lexer = lexer;
     this.operators = [];
-    this.token;
-    this.prev;
+    this.token = null;
+    this.prev = null;
   }
   PostScriptParser.prototype = {
     nextToken: function PostScriptParser_nextToken() {
