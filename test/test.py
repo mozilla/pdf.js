@@ -12,7 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import json, platform, os, shutil, sys, subprocess, tempfile, threading, time, urllib, urllib2, hashlib
+import json, platform, os, shutil, sys, subprocess, tempfile, threading
+import time, urllib, urllib2, hashlib, re, base64, uuid, socket, errno
 from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
 import SocketServer
 from optparse import OptionParser
@@ -55,6 +56,8 @@ class TestOptions(OptionParser):
                         help="The port the HTTP server should listen on.", default=8080)
         self.add_option("--unitTest", action="store_true", dest="unitTest",
                         help="Run the unit tests.", default=False)
+        self.add_option("--fontTest", action="store_true", dest="fontTest",
+                        help="Run the font tests.", default=False)
         self.add_option("--noDownload", action="store_true", dest="noDownload",
                         help="Skips test PDFs downloading.", default=False)
         self.add_option("--ignoreDownloadErrors", action="store_true", dest="ignoreDownloadErrors",
@@ -62,8 +65,8 @@ class TestOptions(OptionParser):
         self.set_usage(USAGE_EXAMPLE)
 
     def verifyOptions(self, options):
-        if options.reftest and options.unitTest:
-            self.error("--reftest and --unitTest must not be specified at the same time.")
+        if options.reftest and (options.unitTest or options.fontTest):
+            self.error("--reftest and --unitTest/--fontTest must not be specified at the same time.")
         if options.masterMode and options.manifestFile:
             self.error("--masterMode and --manifestFile must not be specified at the same time.")
         if not options.manifestFile:
@@ -132,6 +135,14 @@ class TestHandlerBase(BaseHTTPRequestHandler):
         if VERBOSE:
             BaseHTTPRequestHandler.log_request(code, size)
 
+    def handle_one_request(self):
+        try:
+            BaseHTTPRequestHandler.handle_one_request(self)
+        except socket.error, v:
+            # Ignoring connection reset by peer exceptions
+            if v[0] != errno.ECONNRESET:
+                raise
+
     def sendFile(self, path, ext):
         self.send_response(200)
         self.send_header("Content-Type", MIMEs[ext])
@@ -142,6 +153,7 @@ class TestHandlerBase(BaseHTTPRequestHandler):
 
     def do_GET(self):
         url = urlparse(self.path)
+
         # Ignore query string
         path, _ = urllib.unquote_plus(url.path), url.query
         path = os.path.abspath(os.path.realpath(DOC_ROOT + os.sep + path))
@@ -157,7 +169,7 @@ class TestHandlerBase(BaseHTTPRequestHandler):
             return
 
         if not (prefix == DOC_ROOT
-                and os.path.isfile(path) 
+                and os.path.isfile(path)
                 and ext in MIMEs):
             print path
             self.send_error(404)
@@ -173,15 +185,70 @@ class TestHandlerBase(BaseHTTPRequestHandler):
 class UnitTestHandler(TestHandlerBase):
     def sendIndex(self, path, query):
         print "send index"
+
+    def translateFont(self, base64Data):
+        self.send_response(200)
+        self.send_header("Content-Type", "text/xml")
+        self.end_headers()
+
+        data = base64.b64decode(base64Data)
+        taskId = str(uuid.uuid4())
+        fontPath = 'ttx/' + taskId + '.otf'
+        resultPath = 'ttx/' + taskId + '.ttx'
+        with open(fontPath, "wb") as f:
+            f.write(data)
+
+        # When fontTools used directly, we need to snif ttx file
+        # to check what version of python is used
+        ttxPath = ''
+        for path in os.environ["PATH"].split(os.pathsep):
+            if os.path.isfile(path + os.sep + "ttx"):
+                ttxPath = path + os.sep + "ttx"
+                break
+        if ttxPath == '':
+            self.wfile.write("<error>TTX was not found</error>")
+            return
+
+        ttxRunner = ''
+        with open(ttxPath, "r") as f:
+            firstLine = f.readline()
+            if firstLine[:2] == '#!' and firstLine.find('python') > -1:
+              ttxRunner = firstLine[2:].strip()
+
+        with open(os.devnull, "w") as fnull:
+            if ttxRunner != '':
+                result = subprocess.call([ttxRunner, ttxPath, fontPath], stdout = fnull)
+            else:
+                result = subprocess.call([ttxPath, fontPath], stdout = fnull)
+
+        os.remove(fontPath)
+
+        if not os.path.isfile(resultPath):
+            self.wfile.write("<error>Output was not generated</error>")
+            return
+
+        with open(resultPath, "rb") as f:
+            self.wfile.write(f.read())
+
+        os.remove(resultPath)
+
+        return
+
     def do_POST(self):
+        url = urlparse(self.path)
         numBytes = int(self.headers['Content-Length'])
+        content = self.rfile.read(numBytes)
+
+        # Process special utility requests
+        if url.path == '/ttx':
+            self.translateFont(content)
+            return
 
         self.send_response(200)
         self.send_header('Content-Type', 'text/plain')
         self.end_headers()
 
-        url = urlparse(self.path)
-        result = json.loads(self.rfile.read(numBytes))
+        result = json.loads(content)
         browser = result['browser']
         UnitTestState.lastPost[browser] = int(time.time())
         if url.path == "/tellMeToQuit":
@@ -563,7 +630,7 @@ def checkEq(task, results, browser, masterMode):
 
             eq = (ref == snapshot)
             if not eq:
-                print 'TEST-UNEXPECTED-FAIL | ', taskType, taskId, '| in', browser, '| rendering of page', page + 1, '!= reference rendering'
+                print 'TEST-UNEXPECTED-FAIL |', taskType, taskId, '| in', browser, '| rendering of page', page + 1, '!= reference rendering'
 
                 if not State.eqLog:
                     State.eqLog = open(EQLOG_FILE, 'w')
@@ -592,7 +659,7 @@ def checkEq(task, results, browser, masterMode):
             of.close()
 
     if passed:
-        print 'TEST-PASS | ', taskType, ' test', task['id'], '| in', browser
+        print 'TEST-PASS |', taskType, 'test', task['id'], '| in', browser
 
 def checkFBF(task, results, browser):
     round0, round1 = results[0], results[1]
@@ -693,10 +760,10 @@ def runTests(options, browsers):
         print "\nStarting reftest harness to examine %d eq test failures." % State.numEqFailures
         startReftest(browsers[0], options)
 
-def runUnitTests(options, browsers):
+def runUnitTests(options, browsers, url, name):
     t1 = time.time()
     try:
-        startBrowsers(browsers, options, '/test/unit/unit_test.html')
+        startBrowsers(browsers, options, url)
         while UnitTestState.browsersRunning > 0:
             for b in UnitTestState.lastPost:
                 if UnitTestState.lastPost[b] != None and int(time.time()) - UnitTestState.lastPost[b] > BROWSER_TIMEOUT:
@@ -708,14 +775,14 @@ def runUnitTests(options, browsers):
         print ''
         print 'Ran', UnitTestState.numRun, 'tests'
         if UnitTestState.numErrors > 0:
-            print 'OHNOES!  Some tests failed!'
+            print 'OHNOES!  Some', name, 'tests failed!'
             print '  ', UnitTestState.numErrors, 'of', UnitTestState.numRun, 'failed'
         else:
-            print 'All unit tests passed.'
+            print 'All', name, 'tests passed.'
     finally:
         teardownBrowsers(browsers)
     t2 = time.time()
-    print "Unit test Runtime was", int(t2 - t1), "seconds"
+    print '', name, 'tests runtime was', int(t2 - t1), 'seconds'
 
 def main():
     optionParser = TestOptions()
@@ -724,7 +791,7 @@ def main():
     if options == None:
         sys.exit(1)
 
-    if options.unitTest:
+    if options.unitTest or options.fontTest:
         httpd = TestServer((SERVER_HOST, options.port), UnitTestHandler)
         httpd_thread = threading.Thread(target=httpd.serve_forever)
         httpd_thread.setDaemon(True)
@@ -732,7 +799,10 @@ def main():
 
         browsers = setUpUnitTests(options)
         if len(browsers) > 0:
-            runUnitTests(options, browsers)
+            if options.unitTest:
+              runUnitTests(options, browsers, '/test/unit/unit_test.html', 'unit')
+            if options.fontTest:
+              runUnitTests(options, browsers, '/test/font/font_test.html', 'font')
     else:
         httpd = TestServer((SERVER_HOST, options.port), PDFTestHandler)
         httpd.masterMode = options.masterMode

@@ -664,7 +664,9 @@ target.test = function() {
 //
 target.bottest = function() {
   target.unittest({}, function() {
-    target.browsertest({noreftest: true});
+    target.fonttest({}, function() {
+      target.browsertest({noreftest: true});
+    });
   });
 };
 
@@ -712,6 +714,28 @@ target.unittest = function(options, callback) {
   callback = callback || function() {};
   cd('test');
   exec(PYTHON_BIN + ' -u test.py --unitTest --browserManifestFile=' +
+       PDF_BROWSERS, {async: true}, callback);
+};
+
+//
+// make fonttest
+//
+target.fonttest = function(options, callback) {
+  cd(ROOT_DIR);
+  echo();
+  echo('### Running font tests');
+
+  var PDF_BROWSERS = env['PDF_BROWSERS'] ||
+                     'resources/browser_manifests/browser_manifest.json';
+
+  if (!test('-f', 'test/' + PDF_BROWSERS)) {
+    echo('Browser manifest file test/' + PDF_BROWSERS + ' does not exist.');
+    echo('Copy one of the examples in test/resources/browser_manifests/');
+    exit(1);
+  }
+  callback = callback || function() {};
+  cd('test');
+  exec(PYTHON_BIN + ' -u test.py --fontTest --browserManifestFile=' +
        PDF_BROWSERS, {async: true}, callback);
 };
 
