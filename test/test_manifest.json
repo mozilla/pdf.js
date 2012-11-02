@@ -727,6 +727,14 @@
       "rounds": 1,
       "type": "load"
     },
+    {  "id": "issue2337",
+      "file": "pdfs/issue2337.pdf",
+      "md5": "ea10f4131202b9b8f2a6cb7770d3f185",
+      "rounds": 1,
+      "pageLimit": 1,
+      "link": true,
+      "type": "load"
+    },
     {  "id": "issue2074",
       "file": "pdfs/issue2074.pdf",
       "md5": "5e4ba2241fc35d20e44eb52289a569ab",
