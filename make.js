@@ -419,8 +419,7 @@ target.mozcentral = function() {
       MOZCENTRAL_TEST_DIR = MOZCENTRAL_EXTENSION_DIR + 'test/',
       FIREFOX_CONTENT_DIR = EXTENSION_SRC_DIR + '/firefox/content/',
       FIREFOX_EXTENSION_FILES_TO_COPY =
-        ['components/*.js',
-         '*.svg',
+        ['*.svg',
          '*.png',
          '*.manifest',
          'README.mozilla',
@@ -736,6 +735,163 @@ target.botmakeref = function() {
   cd('test');
   exec(PYTHON_BIN + ' -u test.py --masterMode --noPrompts ' +
        '--browserManifestFile=' + PDF_BROWSERS, {async: true});
+};
+
+////////////////////////////////////////////////////////////////////////////////
+//
+// Baseline operation
+//
+target.baseline = function() {
+  cd(ROOT_DIR);
+
+  echo();
+  echo('### Creating baseline environment');
+
+  var baselineCommit = env['BASELINE'];
+  if (!baselineCommit) {
+    echo('Baseline commit is not provided. Please specify BASELINE variable');
+    exit(1);
+  }
+
+  if (!test('-d', BUILD_DIR))
+    mkdir(BUILD_DIR);
+
+  var BASELINE_DIR = BUILD_DIR + 'baseline';
+  if (test('-d', BASELINE_DIR)) {
+    cd(BASELINE_DIR);
+    exec('git fetch origin');
+  } else {
+    cd(BUILD_DIR);
+    exec('git clone .. baseline');
+    cd(ROOT_DIR + BASELINE_DIR);
+  }
+  exec('git checkout ' + baselineCommit);
+};
+
+target.mozcentralbaseline = function() {
+  target.baseline();
+
+  cd(ROOT_DIR);
+
+  echo();
+  echo('### Creating mozcentral baseline environment');
+
+  var BASELINE_DIR = BUILD_DIR + 'baseline';
+  var MOZCENTRAL_BASELINE_DIR = BUILD_DIR + 'mozcentral.baseline';
+  if (test('-d', MOZCENTRAL_BASELINE_DIR))
+    rm('-rf', MOZCENTRAL_BASELINE_DIR);
+
+  cd(BASELINE_DIR);
+  if (test('-d', 'build'))
+    rm('-rf', 'build');
+  exec('node make mozcentral');
+
+  cd(ROOT_DIR);
+  mkdir(MOZCENTRAL_BASELINE_DIR);
+  cp('-Rf', BASELINE_DIR + '/build/mozcentral/*', MOZCENTRAL_BASELINE_DIR);
+  // fixing baseline
+  if (test('-f', MOZCENTRAL_BASELINE_DIR +
+                 '/browser/extensions/pdfjs/PdfStreamConverter.js')) {
+    rm(MOZCENTRAL_BASELINE_DIR +
+       '/browser/extensions/pdfjs/PdfStreamConverter.js');
+  }
+
+  cd(MOZCENTRAL_BASELINE_DIR);
+  exec('git init');
+  exec('git add .');
+  exec('git commit -m "mozcentral baseline"');
+};
+
+target.mozcentraldiff = function() {
+  target.mozcentral();
+
+  cd(ROOT_DIR);
+
+  echo();
+  echo('### Creating mozcentral diff');
+
+  var MOZCENTRAL_DIFF = BUILD_DIR + 'mozcentral.diff';
+  if (test('-f', MOZCENTRAL_DIFF))
+    rm(MOZCENTRAL_DIFF);
+
+  var MOZCENTRAL_BASELINE_DIR = BUILD_DIR + 'mozcentral.baseline';
+  if (!test('-d', MOZCENTRAL_BASELINE_DIR)) {
+    echo('mozcentral baseline was not found');
+    echo('Please build one using "node make mozcentralbaseline"');
+    exit(1);
+  }
+  cd(MOZCENTRAL_BASELINE_DIR);
+  exec('git reset --hard');
+  cd(ROOT_DIR); rm('-rf', MOZCENTRAL_BASELINE_DIR + '/*'); // trying to be safe
+  cd(MOZCENTRAL_BASELINE_DIR);
+  cp('-Rf', '../mozcentral/*', '.');
+  exec('git add -A');
+  exec('git diff --binary --cached --unified=8', {silent: true}).output.
+    to('../mozcentral.diff');
+
+  echo('Result diff can be found at ' + MOZCENTRAL_DIFF);
+};
+
+target.mozcentralcheck = function() {
+  cd(ROOT_DIR);
+
+  echo();
+  echo('### Checking mozcentral changes');
+
+  var mcPath = env['MC_PATH'];
+  if (!mcPath) {
+    echo('mozilla-central path is not provided.');
+    echo('Please specify MC_PATH variable');
+    exit(1);
+  }
+  if ((mcPath[0] != '/' && mcPath[0] != '~' && mcPath[1] != ':') ||
+      !test('-d', mcPath)) {
+    echo('mozilla-central path is not in absolute form or does not exist.');
+    exit(1);
+  }
+
+  var MOZCENTRAL_DIFF = BUILD_DIR + 'mozcentral_changes.diff';
+  if (test('-f', MOZCENTRAL_DIFF)) {
+    rm(MOZCENTRAL_DIFF);
+  }
+
+  var MOZCENTRAL_BASELINE_DIR = BUILD_DIR + 'mozcentral.baseline';
+  if (!test('-d', MOZCENTRAL_BASELINE_DIR)) {
+    echo('mozcentral baseline was not found');
+    echo('Please build one using "node make mozcentralbaseline"');
+    exit(1);
+  }
+  cd(MOZCENTRAL_BASELINE_DIR);
+  exec('git reset --hard');
+  cd(ROOT_DIR); rm('-rf', MOZCENTRAL_BASELINE_DIR + '/*'); // trying to be safe
+  cd(MOZCENTRAL_BASELINE_DIR);
+  mkdir('browser');
+  cd('browser');
+  mkdir('-p', 'extensions/pdfjs');
+  cp('-Rf', mcPath + '/browser/extensions/pdfjs/*', 'extensions/pdfjs');
+  mkdir('-p', 'locales/en-US/pdfviewer');
+  cp('-Rf', mcPath + '/browser/locales/en-US/pdfviewer/*',
+     'locales/en-US/pdfviewer');
+  // Remove '.DS_Store' and other hidden files
+  find('.').forEach(function(file) {
+    if (file.match(/^\.\w|~$/)) {
+      rm('-f', file);
+    }
+  });
+
+  cd('..');
+  exec('git add -A');
+  var diff = exec('git diff --binary --cached --unified=8',
+                  {silent: true}).output;
+
+  if (diff) {
+    echo('There were changes found at mozilla-central.');
+    diff.to('../mozcentral_changes.diff');
+    echo('Result diff can be found at ' + MOZCENTRAL_DIFF);
+    exit(1);
+  }
+
+  echo('Success: there are no changes at mozilla-central');
 };
 
 
