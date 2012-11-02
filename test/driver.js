@@ -206,7 +206,7 @@ function nextPage(task, loadError) {
   if (isLastPage(task)) {
     if (++task.round < task.rounds) {
       log(' Round ' + (1 + task.round) + '\n');
-      task.pageNum = 1;
+      task.pageNum = task.firstPage || 1;
     } else {
       ++currentTaskIdx;
       nextTask();
