@@ -13,6 +13,10 @@
     "file://*/*.PDF"
   ],
 
+  "background": {
+    "page": "pdfHandler.html"
+  },
+
   "web_accessible_resources": [
     "content/web/viewer.html"
   ],
