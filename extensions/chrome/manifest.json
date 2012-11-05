@@ -12,6 +12,11 @@
     "https://*/*.PDF",
     "file://*/*.PDF"
   ],
+
+  "web_accessible_resources": [
+    "content/web/viewer.html"
+  ],
+
   "content_scripts": [
     {
       "matches": [
