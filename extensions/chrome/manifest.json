@@ -12,7 +12,23 @@
     "https://*/*.PDF",
     "file://*/*.PDF"
   ],
-  "background": {
-    "page": "pdfHandler.html"
-  }
+
+  "web_accessible_resources": [
+    "content/web/viewer.html"
+  ],
+
+  "content_scripts": [
+    {
+      "matches": [
+        "http://*/*.pdf",
+        "https://*/*.pdf",
+        "file:///*/*.pdf",
+        "http://*/*.PDF",
+        "https://*/*.PDF",
+        "file:///*/*.PDF"
+      ],
+      "js": ["insertPdfIframe.js"],
+      "run_at": "document_start"
+    }
+  ]
 }

@@ -43,6 +43,11 @@ var FindStates = {
 };
 
 var ANNOT_MIN_SIZE = 10;
+//#if CHROME
+//var OPEN_LINK_TARGET = '_parent';
+//#else
+var OPEN_LINK_TARGET = '';
+//#endif
 
 //#if (FIREFOX || MOZCENTRAL || B2G || GENERIC || CHROME)
 //PDFJS.workerSrc = '../build/pdf.js';
@@ -1079,7 +1084,7 @@ var PDFView = {
    * @param {String} anchor The anchor hash include the #.
    */
   getAnchorUrl: function getAnchorUrl(anchor) {
-//#if !(FIREFOX || MOZCENTRAL)
+//#if !(CHROME || FIREFOX || MOZCENTRAL)
     return anchor;
 //#else
 //  return this.url.split('#')[0] + anchor;
@@ -1802,7 +1807,10 @@ var PageView = function pageView(container, pdfPage, id, scale,
       link.onclick = function pageViewSetupLinksOnclick() {
         if (dest)
           PDFView.navigateTo(dest);
+
+//#if !CHROME
         return false;
+//#endif
       };
     }
     function createElementWithStyle(tagName, item, rect) {
@@ -1882,6 +1890,8 @@ var PageView = function pageView(container, pdfPage, id, scale,
             link.href = item.url || '';
             if (!item.url)
               bindLink(link, ('dest' in item) ? item.dest : null);
+
+            link.setAttribute('target', OPEN_LINK_TARGET);
             div.appendChild(link);
             break;
           case 'Text':
@@ -2693,7 +2703,7 @@ document.addEventListener('DOMContentLoaded', function webViewerLoad(evt) {
 //var file = window.location.toString()
 //#endif
 
-//#if !(FIREFOX || MOZCENTRAL)
+//#if !(CHROME || FIREFOX || MOZCENTRAL)
   if (!window.File || !window.FileReader || !window.FileList || !window.Blob) {
     document.getElementById('openFile').setAttribute('hidden', 'true');
   } else {
@@ -2870,6 +2880,9 @@ document.addEventListener('DOMContentLoaded', function webViewerLoad(evt) {
 //  return;
 //}
 //#endif
+
+  document.getElementById('viewBookmark')
+    .setAttribute('target', OPEN_LINK_TARGET);
 
 //#if !B2G
   PDFView.open(file, 0);
@@ -3221,6 +3234,17 @@ window.addEventListener('afterprint', function afterPrint(evt) {
   window.addEventListener('mozfullscreenchange', fullscreenChange, false);
   window.addEventListener('webkitfullscreenchange', fullscreenChange, false);
 })();
+
+//#if CHROME
+//window.addEventListener("message", function (evt) {
+//  var match = PDFView.url.match(/^[^\/]+\/\/[^\/]*/);
+//  if (match !== null && evt.origin === match[0]) {
+//    if (evt.data.indexOf("hashchange:") === 0) {
+//      document.location.hash = evt.data.substr("hashchange:".length);
+//    }
+//  }
+//});
+//#endif
 
 //#if B2G
 //window.navigator.mozSetMessageHandler('activity', function(activity) {
