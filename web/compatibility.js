@@ -1,5 +1,19 @@
 /* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 /* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
+/* Copyright 2012 Mozilla Foundation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 'use strict';
 
@@ -80,11 +94,16 @@
 // Object.defineProperty() ?
 (function checkObjectDefinePropertyCompatibility() {
   if (typeof Object.defineProperty !== 'undefined') {
-    // some browsers (e.g. safari) cannot use defineProperty() on DOM objects
-    // and thus the native version is not sufficient
     var definePropertyPossible = true;
     try {
+      // some browsers (e.g. safari) cannot use defineProperty() on DOM objects
+      // and thus the native version is not sufficient
       Object.defineProperty(new Image(), 'id', { value: 'test' });
+      // ... another test for android gb browser for non-DOM objects
+      var Test = function Test() {};
+      Test.prototype = { get id() { } };
+      Object.defineProperty(new Test(), 'id',
+        { value: '', configurable: true, enumerable: true, writable: false });
     } catch (e) {
       definePropertyPossible = false;
     }
@@ -244,9 +263,10 @@
   };
 })();
 
-// IE9 text/html data URI
-(function checkDocumentDocumentModeCompatibility() {
-  if (!('documentMode' in document) || document.documentMode !== 9)
+// IE9/10 text/html data URI
+(function checkDataURICompatibility() {
+  if (!('documentMode' in document) ||
+      document.documentMode !== 9 && document.documentMode !== 10)
     return;
   // overriding the src property
   var originalSrcDescriptor = Object.getOwnPropertyDescriptor(
@@ -361,7 +381,18 @@
 // Check console compatability
 (function checkConsoleCompatibility() {
   if (typeof console == 'undefined') {
-    console = {log: function() {}};
+    console = {
+      log: function() {},
+      error: function() {}
+    };
+  } else if (!('bind' in console.log)) {
+    // native functions in IE9 might not have bind
+    console.log = (function(fn) {
+      return function(msg) { return fn(msg); }
+    })(console.log);
+    console.error = (function(fn) {
+      return function(msg) { return fn(msg); }
+    })(console.error);
   }
 })();
 

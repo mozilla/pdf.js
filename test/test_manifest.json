@@ -11,6 +11,12 @@
        "rounds": 2,
        "type": "fbf"
     },
+    {  "id": "tracemonkey-text",
+       "file": "pdfs/tracemonkey.pdf",
+       "md5": "9a192d8b1a7dc652a19835f6f08098bd",
+       "rounds": 1,
+       "type": "text"
+    },
     {  "id": "html5-canvas-cheat-sheet-load",
        "file": "pdfs/canvas.pdf",
        "md5": "59510028561daf62e00bf9f6f066b033",
@@ -19,7 +25,7 @@
     },
     {  "id": "intelisa-eq",
        "file": "pdfs/intelisa.pdf",
-       "md5": "c1444b7ccd935c0577d094297e1a6448",
+       "md5": "cdbcf14d0d260c0b313c566a61b07d9f",
        "link": true,
        "pageLimit": 100,
        "rounds": 1,
@@ -35,7 +41,7 @@
     },
     {  "id": "shavian-load",
        "file": "pdfs/shavian.pdf",
-       "md5": "79253352f48b55b7fa28a2586875d8b7",
+       "md5": "40ef97a120250b149c4ded383ca328ec",
        "link": true,
        "rounds": 1,
        "type": "load"
@@ -77,6 +83,12 @@
        "rounds": 1,
        "type": "load"
     },
+    {  "id": "arabiccidtruetype-text",
+       "file": "pdfs/ArabicCIDTrueType.pdf",
+       "md5": "d66dbd18bdb572d3ac8b88b32de2ece6",
+       "rounds": 1,
+       "type": "text"
+    },
     {  "id": "complexttffont-pdf",
        "file": "pdfs/complex_ttf_font.pdf",
        "md5": "76de93f9116b01b693bf8583b3e76d91",
@@ -88,6 +100,12 @@
        "md5": "b7e18bf7a3d6a9c82aefa12d721072fc",
        "rounds": 1,
        "type": "eq"
+    },
+    {  "id": "thuluthfont-text",
+       "file": "pdfs/ThuluthFeatures.pdf",
+       "md5": "b7e18bf7a3d6a9c82aefa12d721072fc",
+       "rounds": 1,
+       "type": "text"
     },
     {  "id": "freeculture",
        "file": "pdfs/freeculture.pdf",
@@ -181,7 +199,7 @@
     },
     {  "id": "fips197",
        "file": "pdfs/fips197.pdf",
-       "md5": "374800cf78ce4b4abd02cd10a856b57f",
+       "md5": "4742c3f470cd8c4686a0dbb3da808b71",
        "link": true,
        "rounds": 1,
        "type": "eq"
@@ -263,6 +281,13 @@
        "rounds": 1,
        "type": "eq"
     },
+    {  "id": "simpletype3font-text",
+       "file": "pdfs/simpletype3font.pdf",
+       "md5": "b374c7543920840c61999e9e86939f99",
+       "link": false,
+       "rounds": 1,
+       "type": "text"
+    },
     {  "id": "close-path-bug",
        "file": "pdfs/close-path-bug.pdf",
        "md5": "48dd17ef58393857d2d038d33699cac5",
@@ -340,6 +365,12 @@
        "rounds": 1,
        "link": true,
        "pageLimit": 3,
+       "type": "eq"
+    },
+    {  "id": "issue1905",
+       "file": "pdfs/issue1905.pdf",
+       "md5": "b1bbd72ca6522ae1502aa26320f81994",
+       "rounds": 1,
        "type": "eq"
     },
     {  "id": "issue918",
@@ -451,6 +482,14 @@
       "link": true,
       "type": "eq"
     },
+    {  "id": "issue1685",
+      "file": "pdfs/issue1685.pdf",
+      "md5": "b22c3741e6bd0e613d3eb3325ad31f7d",
+      "rounds": 1,
+      "pageLimit": 2,
+      "link": true,
+      "type": "eq"
+    },
     {  "id": "issue1169",
       "file": "pdfs/issue1169.pdf",
       "md5": "3df3ed21fd43ac7fdb21e2015c8a7809",
@@ -515,10 +554,35 @@
       "link": true,
       "type": "eq"
     },
+    {  "id": "issue1655",
+      "file": "pdfs/issue1655.pdf",
+      "md5": "696ef6de6f4f71643771419ef04fc968",
+      "rounds": 1,
+      "skipPages": [1, 2, 3, 4, 5, 6, 7, 8],
+      "pageLimit": 9,
+      "link": true,
+      "type": "eq"
+    },
+    {  "id": "issue1687",
+      "file": "pdfs/issue1687.pdf",
+      "md5": "ea79d83821d1dd0663414b037080add5",
+      "rounds": 1,
+      "link": true,
+      "type": "eq"
+    },
     {  "id": "issue1133",
       "file": "pdfs/issue1133.pdf",
       "md5": "d1b61580cb100e3df93d33703af1773a",
       "rounds": 1,
+      "link": true,
+      "type": "eq"
+    },
+    {  "id": "issue1658",
+      "file": "pdfs/issue1658.pdf",
+      "md5": "b71a0f641e83ad427b8bcfc180899a05",
+      "rounds": 1,
+      "skipPages": [1, 2, 3, 4, 5, 6, 7, 8, 9],
+      "pageLimit": 10,
       "link": true,
       "type": "eq"
     },
@@ -548,6 +612,14 @@
       "md5": "b47177f9e5197a76ec498733ecab60e6",
       "rounds": 1,
       "pageLimit": 2,
+      "link": true,
+      "type": "eq"
+    },
+    {  "id": "issue1233",
+      "file": "pdfs/issue1233.pdf",
+      "md5": "2d3565b0a286e29955796c37c66326c1",
+      "rounds": 1,
+      "pageLimit": 1,
       "link": true,
       "type": "eq"
     },
@@ -605,6 +677,13 @@
       "link": true,
       "type": "eq"
     },
+    {  "id": "issue1912",
+      "file": "pdfs/issue1912.pdf",
+      "md5": "15305b7c2cba971e7423de3f6ad38fef",
+      "rounds": 1,
+      "link": true,
+      "type": "eq"
+    },
     {  "id": "gradientfill",
       "file": "pdfs/gradientfill.pdf",
       "md5": "cbc1988e4803f647fa83467a85f0e231",
@@ -616,6 +695,13 @@
       "md5": "9b9b60dc2a4cc3ea05932785d71304fe",
       "rounds": 1,
       "pageLimit": 2,
+      "link": true,
+      "type": "eq"
+    },
+    {  "id": "issue845",
+      "file": "pdfs/issue845.pdf",
+      "md5": "89ddf9e63cac4fa2dedcfe32a62e5407",
+      "rounds": 1,
       "link": true,
       "type": "eq"
     },
@@ -634,5 +720,31 @@
       "pageLimit": 1,
       "link": true,
       "type": "load"
+    },
+    {  "id": "issue1985",
+      "file": "pdfs/issue1985.pdf",
+      "md5": "2ac7c68e26a8ef797aead15e4875cc6d",
+      "rounds": 1,
+      "type": "load"
+    },
+    {  "id": "issue2337",
+      "file": "pdfs/issue2337.pdf",
+      "md5": "ea10f4131202b9b8f2a6cb7770d3f185",
+      "rounds": 1,
+      "pageLimit": 1,
+      "link": true,
+      "type": "load"
+    },
+    {  "id": "issue2074",
+      "file": "pdfs/issue2074.pdf",
+      "md5": "5e4ba2241fc35d20e44eb52289a569ab",
+      "rounds": 1,
+      "type": "eq"
+    },
+    {  "id": "colorkeymask",
+      "file": "pdfs/colorkeymask.pdf",
+      "md5": "9f11e815b485f7f0e1fa5c116c636cf9",
+      "rounds": 1,
+      "type": "eq"
     }
 ]

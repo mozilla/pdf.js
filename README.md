@@ -28,7 +28,7 @@ using the pdf.js API.
 
 A Firefox extension is availble in two places:
 
-+ Stable Version: https://addons.mozilla.org/en-US/firefox/addon/pdfjs
++ Stable Version: https://addons.mozilla.org/firefox/addon/pdfjs
 + Development Version: http://mozilla.github.com/pdf.js/extensions/firefox/pdf.js.xpi
 
 The development extension should be quite stable but still might break from time to time.
@@ -79,13 +79,15 @@ You can play with the PDF.js API directly from your browser through the live dem
 
 The repo contains a hello world example that you can run locally:
 
-+ [examples/helloworld/hello.js](https://github.com/mozilla/pdf.js/blob/master/examples/helloworld/hello.js)
++ [examples/helloworld/](https://github.com/mozilla/pdf.js/blob/master/examples/helloworld/)
 
 For an introduction to the PDF.js code, check out the presentation by our contributor Julian Viereck:
 
 + http://www.youtube.com/watch?v=Iv15UY-4Fg8
 
+Additional learning resources can be found at:
 
++ https://github.com/mozilla/pdf.js/wiki/Additional-Learning-Resources
 
 
 # Contributing
@@ -113,6 +115,7 @@ any breakage in rendering.
 Our Github contributors so far:
 
 + https://github.com/mozilla/pdf.js/contributors
++ https://github.com/mozilla/pdf.js/blob/master/LICENSE
 
 You can add your name to it! :)
 
@@ -137,6 +140,7 @@ You can read more about pdf.js here:
 
 + http://andreasgal.com/2011/06/15/pdf-js/
 + http://blog.mozilla.com/cjones/2011/06/15/overview-of-pdf-js-guts/
++ https://github.com/mozilla/pdf.js/wiki/Additional-Learning-Resources
 
 Talk to us on IRC:
 
@@ -154,23 +158,4 @@ Subscribe either using lists.mozilla.org or Google Groups:
 Follow us on twitter: @pdfjs
 
 + http://twitter.com/#!/pdfjs
-  
-  
-  
-### PDF-related resources
 
-A really basic overview of PDF is described here:
-
-+ http://partners.adobe.com/public/developer/en/livecycle/lc_pdf_overview_format.pdf
-
-A more detailed file example:
-
-+ http://gnupdf.org/Introduction_to_PDF
-  
-The PDF specification itself is an ISO and not freely available. However, there is
-a "PDF Reference" from Adobe:
-
-+ http://wwwimages.adobe.com/www.adobe.com/content/dam/Adobe/en/devnet/pdf/pdfs/pdf_reference_1-7.pdf
-
-Recommended chapters to read: "2. Overview", "3.4 File Structure", 
-"4.1 Graphics Objects" that lists the PDF commands.

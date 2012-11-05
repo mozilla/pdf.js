@@ -1,17 +1,26 @@
 {
-  "name": "uriloader@pdf.js",
-  "version": "0.1",
-  "description": "Read PDF Document",
+  "manifest_version": 2,
+  "name": "PDF Viewer",
+  "version": "PDFJSSCRIPT_VERSION",
+  "description": "Uses HTML5 to display PDF files directly in Chrome.",
   "permissions": [
     "webRequest", "webRequestBlocking",
     "http://*/*.pdf",
-    "file:///*/*.pdf"
+    "https://*/*.pdf",
+    "file:///*/*.pdf",
+    "http://*/*.PDF",
+    "https://*/*.PDF",
+    "file://*/*.PDF"
   ],
   "content_scripts": [
     {
       "matches": [
         "http://*/*.pdf",
-        "file:///*/*.pdf"
+        "https://*/*.pdf",
+        "file:///*/*.pdf",
+        "http://*/*.PDF",
+        "https://*/*.PDF",
+        "file:///*/*.PDF"
       ],
       "js": ["insertPdfIframe.js"],
       "run_at": "document_start"

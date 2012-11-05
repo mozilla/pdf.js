@@ -1,18 +1,32 @@
 /* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 /* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
+/* Copyright 2012 Mozilla Foundation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+'use strict';
 
 /*
  * A Test Driver for PDF.js
  */
-
-'use strict';
 
 // Disable worker support for running test as
 //   https://github.com/mozilla/pdf.js/pull/764#issuecomment-2638944
 //   "firefox-bin: Fatal IO error 12 (Cannot allocate memory) on X server :1."
 // PDFJS.disableWorker = true;
 
-var appPath, browser, canvas, currentTaskIdx, manifest, stdout;
+var appPath, browser, canvas, dummyCanvas, currentTaskIdx, manifest, stdout;
 var inFlightRequests = 0;
 
 function queryParams() {
@@ -134,6 +148,50 @@ function canvasToDataURL() {
   return canvas.toDataURL('image/png');
 }
 
+function NullTextLayerBuilder() {
+}
+NullTextLayerBuilder.prototype = {
+  beginLayout: function NullTextLayerBuilder_BeginLayout() {},
+  endLayout: function NullTextLayerBuilder_EndLayout() {},
+  appendText: function NullTextLayerBuilder_AppendText() {}
+};
+
+function SimpleTextLayerBuilder(ctx, viewport) {
+  this.ctx = ctx;
+  this.viewport = viewport;
+  this.textCounter = 0;
+}
+SimpleTextLayerBuilder.prototype = {
+  beginLayout: function SimpleTextLayerBuilder_BeginLayout() {
+    this.ctx.save();
+  },
+  endLayout: function SimpleTextLayerBuilder_EndLayout() {
+    this.ctx.restore();
+  },
+  appendText: function SimpleTextLayerBuilder_AppendText(geom) {
+    var ctx = this.ctx, viewport = this.viewport;
+    // vScale and hScale already contain the scaling to pixel units
+    var fontHeight = geom.fontSize * geom.vScale;
+    ctx.beginPath();
+    ctx.strokeStyle = 'red';
+    ctx.fillStyle = 'yellow';
+    ctx.rect(geom.x, geom.y - fontHeight,
+             geom.canvasWidth * geom.hScale, fontHeight);
+    ctx.stroke();
+    ctx.fill();
+
+    var textContent = this.textContent.bidiTexts[this.textCounter].str;
+    ctx.font = fontHeight + 'px ' + geom.fontFamily;
+    ctx.fillStyle = 'black';
+    ctx.fillText(textContent, geom.x, geom.y);
+
+    this.textCounter++;
+  },
+  setTextContent: function SimpleTextLayerBuilder_SetTextContent(textContent) {
+    this.textContent = textContent;
+  }
+};
+
 function nextPage(task, loadError) {
   var failure = loadError || '';
 
@@ -148,7 +206,7 @@ function nextPage(task, loadError) {
   if (isLastPage(task)) {
     if (++task.round < task.rounds) {
       log(' Round ' + (1 + task.round) + '\n');
-      task.pageNum = 1;
+      task.pageNum = task.firstPage || 1;
     } else {
       ++currentTaskIdx;
       nextTask();
@@ -182,16 +240,25 @@ function nextPage(task, loadError) {
         canvas.height = viewport.height;
         clear(ctx);
 
-        // using the text layer builder that does nothing to test
-        // text layer creation operations
-        var textLayerBuilder = {
-          beginLayout: function nullTextLayerBuilderBeginLayout() {},
-          endLayout: function nullTextLayerBuilderEndLayout() {},
-          appendText: function nullTextLayerBuilderAppendText(text, fontName,
-                                                              fontSize) {}
-        };
+        var drawContext, textLayerBuilder;
+        if (task.type == 'text') {
+          // using dummy canvas for pdf context drawing operations
+          if (!dummyCanvas) {
+            dummyCanvas = document.createElement('canvas');
+          }
+          drawContext = dummyCanvas.getContext('2d');
+          // ... text builder will draw its content on the test canvas
+          textLayerBuilder = new SimpleTextLayerBuilder(ctx, viewport);
+
+          page.getTextContent().then(function(textContent) {
+            textLayerBuilder.setTextContent(textContent);
+          });
+        } else {
+          drawContext = ctx;
+          textLayerBuilder = new NullTextLayerBuilder();
+        }
         var renderContext = {
-          canvasContext: ctx,
+          canvasContext: drawContext,
           textLayer: textLayerBuilder,
           viewport: viewport
         };

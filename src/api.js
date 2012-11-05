@@ -1,5 +1,21 @@
 /* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 /* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
+/* Copyright 2012 Mozilla Foundation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+ 'use strict';
 
 /**
  * This is the main entry point for loading a PDF and interacting with it.
@@ -156,8 +172,10 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
     this.transport = transport;
     this.stats = new StatTimer();
     this.stats.enabled = !!globalScope.PDFJS.enableStats;
-    this.objs = transport.objs;
+    this.commonObjs = transport.commonObjs;
+    this.objs = new PDFObjects();
     this.renderInProgress = false;
+    this.cleanupAfterRender = false;
   }
   PDFPageProxy.prototype = {
     /**
@@ -247,9 +265,10 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
       var self = this;
       function complete(error) {
         self.renderInProgress = false;
-        if (self.destroyed) {
-          delete self.operatorList;
+        if (self.destroyed || self.cleanupAfterRender) {
           delete self.displayReadyPromise;
+          delete self.operatorList;
+          self.objs.clear();
         }
 
         if (error)
@@ -267,7 +286,7 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
             return;
           }
 
-          var gfx = new CanvasGraphics(params.canvasContext,
+          var gfx = new CanvasGraphics(params.canvasContext, this.commonObjs,
             this.objs, params.textLayer);
           try {
             this.display(gfx, params.viewport, complete, continueCallback);
@@ -311,13 +330,19 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
     ensureFonts: function PDFPageProxy_ensureFonts(fonts, callback) {
       this.stats.time('Font Loading');
       // Convert the font names to the corresponding font obj.
+      var fontObjs = [];
       for (var i = 0, ii = fonts.length; i < ii; i++) {
-        fonts[i] = this.objs.objs[fonts[i]].data;
+        var obj = this.commonObjs.getData(fonts[i]);
+        if (obj.error) {
+          warn('Error during font loading: ' + obj.error);
+          continue;
+        }
+        fontObjs.push(obj);
       }
 
       // Load all the fonts
       FontLoader.bind(
-        fonts,
+        fontObjs,
         function pageEnsureFontsFontObjs(fontObjs) {
           this.stats.timeEnd('Font Loading');
 
@@ -339,8 +364,9 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
       var length = this.operatorList.fnArray.length;
       var operatorList = this.operatorList;
       var stepper = null;
-      if (PDFJS.pdfBug && StepperManager.enabled) {
-        stepper = StepperManager.create(this.pageNumber - 1);
+      if (PDFJS.pdfBug && 'StepperManager' in globalScope &&
+          globalScope['StepperManager'].enabled) {
+        stepper = globalScope['StepperManager'].create(this.pageNumber - 1);
         stepper.init(operatorList);
         stepper.nextBreakPoint = stepper.getNextBreakPoint();
       }
@@ -400,6 +426,7 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
       if (!this.renderInProgress) {
         delete this.operatorList;
         delete this.displayReadyPromise;
+        this.objs.clear();
       }
     }
   };
@@ -411,7 +438,7 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
 var WorkerTransport = (function WorkerTransportClosure() {
   function WorkerTransport(workerInitializedPromise, workerReadyPromise) {
     this.workerReadyPromise = workerReadyPromise;
-    this.objs = new PDFObjects();
+    this.commonObjs = new PDFObjects();
 
     this.pageCache = [];
     this.pagePromises = [];
@@ -429,19 +456,9 @@ var WorkerTransport = (function WorkerTransportClosure() {
       }
 
       try {
-        var worker;
-//#if !(FIREFOX || MOZCENTRAL)
         // Some versions of FF can't create a worker on localhost, see:
         // https://bugzilla.mozilla.org/show_bug.cgi?id=683280
-        worker = new Worker(workerSrc);
-//#else
-//      // The firefox extension can't load the worker from the resource://
-//      // url so we have to inline the script and then use the blob loader.
-//      var bb = new MozBlobBuilder();
-//      bb.append(document.querySelector('#PDFJS_SCRIPT_TAG').textContent);
-//      var blobUrl = window.URL.createObjectURL(bb.getBlob());
-//      worker = new Worker(blobUrl);
-//#endif
+        var worker = new Worker(workerSrc);
         var messageHandler = new MessageHandler('main', worker);
         this.messageHandler = messageHandler;
 
@@ -480,6 +497,7 @@ var WorkerTransport = (function WorkerTransportClosure() {
       this.pagePromises = [];
     },
     setupFakeWorker: function WorkerTransport_setupFakeWorker() {
+      warn('Setting up fake worker.');
       // If we don't use a worker, just post/sendMessage to the main thread.
       var fakeWorker = {
         postMessage: function WorkerTransport_postMessage(obj) {
@@ -515,6 +533,14 @@ var WorkerTransport = (function WorkerTransportClosure() {
         this.workerReadyPromise.reject(data.exception.message, data.exception);
       }, this);
 
+      messageHandler.on('InvalidPDF', function transportInvalidPDF(data) {
+        this.workerReadyPromise.reject(data.exception.name, data.exception);
+      }, this);
+
+      messageHandler.on('UnknownError', function transportUnknownError(data) {
+        this.workerReadyPromise.reject(data.exception.message, data.exception);
+      }, this);
+
       messageHandler.on('GetPage', function transportPage(data) {
         var pageInfo = data.pageInfo;
         var page = new PDFPageProxy(pageInfo, this);
@@ -537,39 +563,56 @@ var WorkerTransport = (function WorkerTransportClosure() {
         page.startRenderingFromOperatorList(data.operatorList, depFonts);
       }, this);
 
-      messageHandler.on('obj', function transportObj(data) {
+      messageHandler.on('commonobj', function transportObj(data) {
         var id = data[0];
         var type = data[1];
-        if (this.objs.hasData(id))
+        if (this.commonObjs.hasData(id))
+          return;
+
+        switch (type) {
+          case 'Font':
+            var exportedData = data[2];
+
+            // At this point, only the font object is created but the font is
+            // not yet attached to the DOM. This is done in `FontLoader.bind`.
+            var font;
+            if ('error' in exportedData)
+              font = new ErrorFont(exportedData.error);
+            else
+              font = new Font(exportedData);
+            this.commonObjs.resolve(id, font);
+            break;
+          default:
+            error('Got unknown common object type ' + type);
+        }
+      }, this);
+
+      messageHandler.on('obj', function transportObj(data) {
+        var id = data[0];
+        var pageIndex = data[1];
+        var type = data[2];
+        var pageProxy = this.pageCache[pageIndex];
+        if (pageProxy.objs.hasData(id))
           return;
 
         switch (type) {
           case 'JpegStream':
-            var imageData = data[2];
-            loadJpegStream(id, imageData, this.objs);
+            var imageData = data[3];
+            loadJpegStream(id, imageData, pageProxy.objs);
             break;
           case 'Image':
-            var imageData = data[2];
-            this.objs.resolve(id, imageData);
-            break;
-          case 'Font':
-            var name = data[2];
-            var file = data[3];
-            var properties = data[4];
+            var imageData = data[3];
+            pageProxy.objs.resolve(id, imageData);
 
-            if (file) {
-              // Rewrap the ArrayBuffer in a stream.
-              var fontFileDict = new Dict();
-              file = new Stream(file, 0, file.length, fontFileDict);
+            // heuristics that will allow not to store large data
+            var MAX_IMAGE_SIZE_TO_STORE = 8000000;
+            if ('data' in imageData &&
+                imageData.data.length > MAX_IMAGE_SIZE_TO_STORE) {
+              pageProxy.cleanupAfterRender = true;
             }
-
-            // At this point, only the font object is created but the font is
-            // not yet attached to the DOM. This is done in `FontLoader.bind`.
-            var font = new Font(name, file, properties);
-            this.objs.resolve(id, font);
             break;
           default:
-            error('Got unkown object type ' + type);
+            error('Got unknown object type ' + type);
         }
       }, this);
 

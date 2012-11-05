@@ -17,12 +17,14 @@
 !devicen.pdf
 !cmykjpeg.pdf
 !issue840.pdf
+!issue2074.pdf
 !scan-bad.pdf
 !pdfjsbad1586.pdf
 !freeculture.pdf
 !pdfkit_compressed.pdf
 !TAMReview.pdf
 !issue918.pdf
+!issue1905.pdf
 !issue1249.pdf
 !smaskdim.pdf
 !type4psfunc.pdf
@@ -34,3 +36,4 @@
 !gradientfill.pdf
 !basicapi.pdf
 !mixedfonts.pdf
+!shading_extend.pdf
