@@ -727,6 +727,13 @@
       "rounds": 1,
       "type": "load"
     },
+    {  "id": "issue1878",
+      "file": "pdfs/issue1878.pdf",
+      "md5": "b4fb0ce7c19368e7104dce3d0d34bcb3",
+      "rounds": 1,
+      "link": true,
+      "type": "load"
+    },
     {  "id": "issue2337",
       "file": "pdfs/issue2337.pdf",
       "md5": "ea10f4131202b9b8f2a6cb7770d3f185",
