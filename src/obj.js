@@ -701,7 +701,8 @@ var XRef = (function XRefClosure() {
       }
 
       // compressed entry
-      stream = this.fetch(new Ref(e.offset, 0));
+      var tableOffset = e.offset;
+      stream = this.fetch(new Ref(tableOffset, 0));
       if (!isStream(stream))
         error('bad ObjStm stream');
       var first = stream.parameters.get('First');
@@ -727,7 +728,11 @@ var XRef = (function XRefClosure() {
       // read stream objects for cache
       for (i = 0; i < n; ++i) {
         entries.push(parser.getObj());
-        this.cache[nums[i]] = entries[i];
+        num = nums[i];
+        var entry = this.entries[num];
+        if (entry && entry.offset === tableOffset && entry.gen === i) {
+          this.cache[num] = entries[i];
+        }
       }
       e = entries[e.gen];
       if (!e) {
