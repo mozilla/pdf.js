@@ -3014,17 +3014,10 @@ var Font = (function FontClosure() {
       };
 
       function sanitizeMetrics(font, header, metrics, numGlyphs) {
-        if (!header && !metrics)
-          return;
-
-        // The vhea/vmtx tables are not required, so it happens that
-        // some fonts embed a vmtx table without a vhea table. In this
-        // situation the sanitizer assume numOfLongVerMetrics = 1. As
-        // a result it tries to read numGlyphs - 1 SHORT from the vmtx
-        // table, and if it is not possible, the font is rejected.
-        // So remove the vmtx table if there is no vhea table.
-        if (!header && metrics) {
-          metrics.data = null;
+        if (!header) {
+          if (metrics) {
+            metrics.data = null;
+          }
           return;
         }
 
@@ -3256,17 +3249,148 @@ var Font = (function FontClosure() {
         return true;
       }
 
+      var TTOpsStackDeltas = [
+        0, 0, 0, 0, 0, 0, 0, 0, -2, -2, -2, -2, 0, 0, -2, -5,
+        -1, -1, -1, -1, -1, -1, -1, -1, 0, 0, -1, 0, -1, -1, -1, -1,
+        1, -1, -999, 0, 1, 0, 0, -2, 0, -1, -2, -1, -999, -999, -1, -1,
+        0, 0, -999, -999, -1, -1, -1, -1, -2, -999, -2, -2, -2, 0, -2, -2,
+        0, 0, -2, 0, -2, 0, 0, 0, -2, -1, -1, 1, 1, 0, 0, -1,
+        -1, -1, -1, -1, -1, -1, 0, 0, -1, 0, -1, -1, 0, -999, -1, -1,
+        -1, -1, -1, -1, 0, 0, 0, 0, -1, -1, 0, 0, 0, 0, 0, 0,
+        -2, -999, -999, -999, -999, -999, -1, -1, -2, -2, 0, 0, 0, 0, -1, -1,
+        -999, -2, -2, 0, 0, -1, -2, -2, 0, -999, 0, 0, 0, -1, -2];
+        // 0xC0-DF == -1 and 0xE0-FF == -2
+
+      function sanitizeTTProgram(table, ttContext) {
+        var data = table.data;
+        var i = 0, n, lastEndf = 0, lastDeff = 0;
+        var stack = [];
+        var tooComplexToFollowFunctions =
+          ttContext.tooComplexToFollowFunctions;
+        for (var ii = data.length; i < ii;) {
+          var op = data[i++];
+          // The TrueType instruction set docs can be found at
+          // https://developer.apple.com/fonts/TTRefMan/RM05/Chap5.html
+          if (op === 0x40) { // NPUSHB - pushes n bytes
+            n = data[i++];
+            for (var j = 0; j < n; j++) {
+              stack.push(data[i++]);
+            }
+          } else if (op === 0x41) { // NPUSHW - pushes n words
+            n = data[i++];
+            for (var j = 0; j < n; j++) {
+              var b = data[i++];
+              stack.push((b << 8) | data[i++]);
+            }
+          } else if ((op & 0xF8) === 0xB0) { // PUSHB - pushes bytes
+            n = op - 0xB0 + 1;
+            for (var j = 0; j < n; j++) {
+              stack.push(data[i++]);
+            }
+          } else if ((op & 0xF8) === 0xB8) { // PUSHW - pushes words
+            n = op - 0xB8 + 1;
+            for (var j = 0; j < n; j++) {
+              var b = data[i++];
+              stack.push((b << 8) | data[i++]);
+            }
+          } else if (op === 0x2B && !tooComplexToFollowFunctions) { // CALL
+            // collecting inforamtion about which functions are used
+            var funcId = stack[stack.length - 1];
+            ttContext.functionsUsed[funcId] = true;
+            if (i >= 2 && data[i - 2] === 0x2B) {
+              // all data in stack, calls are performed in sequence
+              tooComplexToFollowFunctions = true;
+            }
+          } else if (op === 0x2C && !tooComplexToFollowFunctions) { // FDEF
+            // collecting inforamtion about which functions are defined
+            lastDeff = i;
+            var funcId = stack[stack.length - 1];
+            ttContext.functionsDefined[funcId] = true;
+            if (i >= 2 && data[i - 2] === 0x2D) {
+              // all function ids in stack, FDEF/ENDF perfomed in sequence
+              tooComplexToFollowFunctions = true;
+            }
+          } else if (op === 0x2D) { // ENDF - end of function
+            lastEndf = i;
+          } else if (op === 0x89) { // IDEF - instruction definition
+            // recording it as a function to track ENDF
+            lastDeff = i;
+          }
+          // Adjusting stack not extactly, but just enough to get function id
+          var stackDelta = op <= 0x8E ? TTOpsStackDeltas[op] :
+            op >= 0xC0 && op <= 0xDF ? -1 : op >= 0xE0 ? -2 : 0;
+          while (stackDelta < 0 && stack.length > 0) {
+            stack.pop();
+            stackDelta++;
+          }
+          while (stackDelta > 0) {
+            stack.push(NaN); // pushing any number into stack
+            stackDelta--;
+          }
+        }
+        ttContext.tooComplexToFollowFunctions = tooComplexToFollowFunctions;
+        var content = [data];
+        if (i > data.length) {
+          content.push(new Uint8Array(i - data.length));
+        }
+        if (lastDeff > lastEndf) {
+          // new function definition started, but not finished
+          // complete function by [CLEAR, ENDF]
+          content.push(new Uint8Array([0x22, 0x2D]));
+        }
+        if (ttContext.defineMissingFunctions && !tooComplexToFollowFunctions) {
+          for (var j = 0, jj = ttContext.functionsUsed.length; j < jj; j++) {
+            if (!ttContext.functionsUsed[j] || ttContext.functionsDefined[j]) {
+              continue;
+            }
+            // function is used, but not defined
+            // creating empty one [PUSHB, function-id, FDEF, ENDF]
+            content.push(new Uint8Array([0xB0, j, 0x2C, 0x2D]));
+          }
+        }
+        if (content.length > 1) {
+          // concatenating the content items
+          var newLength = 0;
+          for (var j = 0, jj = content.length; j < jj; j++) {
+            newLength += content[j].length;
+          }
+          newLength = (newLength + 3) & ~3;
+          var result = new Uint8Array(newLength);
+          var pos = 0;
+          for (var j = 0, jj = content.length; j < jj; j++) {
+            result.set(content[j], pos);
+            pos += content[j].length;
+          }
+          table.data = result;
+          table.length = newLength;
+        }
+      }
+
+      function sanitizeTTPrograms(fpgm, prep) {
+        var ttContext = {
+          functionsDefined: [],
+          functionsUsed: [],
+          tooComplexToFollowFunctions: false
+        };
+        if (prep) {
+          // collecting prep functions info first
+          sanitizeTTProgram(prep, ttContext);
+        }
+        if (fpgm) {
+          ttContext.defineMissingFunctions = true;
+          sanitizeTTProgram(fpgm, ttContext);
+        }
+      }
+
       // Check that required tables are present
       var requiredTables = ['OS/2', 'cmap', 'head', 'hhea',
                              'hmtx', 'maxp', 'name', 'post'];
 
-      var optionalTables = ['cvt ', 'fpgm', 'glyf', 'loca', 'prep',
-                            'CFF ', 'VORG', 'vhea', 'vmtx'];
-
       var header = readOpenTypeHeader(font);
       var numTables = header.numTables;
 
-      var cmap, post, maxp, hhea, hmtx, vhea, vmtx, head, loca, glyf, os2;
+      var cmap, post, maxp, hhea, hmtx, head, os2;
+      var glyf, fpgm, loca, prep, cvt;
       var tables = [];
       for (var i = 0; i < numTables; i++) {
         var table = readTableEntry(font);
@@ -3288,18 +3412,19 @@ var Font = (function FontClosure() {
             os2 = table;
 
           requiredTables.splice(index, 1);
-        } else if (optionalTables.indexOf(table.tag) < 0) {
-          // skipping table if it's not a required or optional table
-          continue;
         } else {
-          if (table.tag == 'vmtx')
-            vmtx = table;
-          else if (table.tag == 'vhea')
-            vhea = table;
-          else if (table.tag == 'loca')
+          if (table.tag == 'loca')
             loca = table;
           else if (table.tag == 'glyf')
             glyf = table;
+          else if (table.tag == 'fpgm')
+            fpgm = table;
+          else if (table.tag == 'prep')
+            prep = table;
+          else if (table.tag == 'cvt ')
+            cvt = table;
+          else // skipping table if it's not a required or optional table
+            continue;
         }
         tables.push(table);
       }
@@ -3324,14 +3449,15 @@ var Font = (function FontClosure() {
         os2 = null;
       }
 
-      // Ensure the [h/v]mtx tables contains the advance width and
+      // Ensure the hmtx table contains the advance width and
       // sidebearings information for numGlyphs in the maxp table
       font.pos = (font.start || 0) + maxp.offset;
       var version = int16(font.getBytes(4));
       var numGlyphs = int16(font.getBytes(2));
 
       sanitizeMetrics(font, hhea, hmtx, numGlyphs);
-      sanitizeMetrics(font, vhea, vmtx, numGlyphs);
+
+      sanitizeTTPrograms(fpgm, prep);
 
       var isGlyphLocationsLong = int16([head.data[50], head.data[51]]);
       if (head && loca && glyf) {
