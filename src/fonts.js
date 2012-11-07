@@ -3170,7 +3170,7 @@ var Font = (function FontClosure() {
         }
       }
 
-      function readGlyphNameMap(post, properties) {
+      function readPostScriptTable(post, properties) {
         var start = (font.start ? font.start : 0) + post.offset;
         font.pos = start;
 
@@ -3180,6 +3180,7 @@ var Font = (function FontClosure() {
         font.getBytes(28);
 
         var glyphNames;
+        var valid = true;
         switch (version) {
           case 0x00010000:
             glyphNames = MacStandardGlyphOrdering;
@@ -3187,8 +3188,17 @@ var Font = (function FontClosure() {
           case 0x00020000:
             var numGlyphs = int16(font.getBytes(2));
             var glyphNameIndexes = [];
-            for (var i = 0; i < numGlyphs; ++i)
-              glyphNameIndexes.push(int16(font.getBytes(2)));
+            for (var i = 0; i < numGlyphs; ++i) {
+              var index = int16(font.getBytes(2));
+              if (index >= 32768) {
+                valid = false;
+                break;
+              }
+              glyphNameIndexes.push(index);
+            }
+            if (!valid) {
+              break;
+            }
             var customNames = [];
             while (font.pos < end) {
               var stringLength = font.getByte();
@@ -3211,9 +3221,11 @@ var Font = (function FontClosure() {
             break;
           default:
             warn('Unknown/unsupported post table version ' + version);
+            valid = false;
             break;
         }
         properties.glyphNames = glyphNames;
+        return valid;
       }
 
       function isOS2Valid(os2Table) {
@@ -3321,7 +3333,11 @@ var Font = (function FontClosure() {
 
       // The 'post' table has glyphs names.
       if (post) {
-        readGlyphNameMap(post, properties);
+        var valid = readPostScriptTable(post, properties);
+        if (!valid) {
+          tables.splice(tables.indexOf(post), 1);
+          post = null;
+        }
       }
 
       var glyphs, ids;
@@ -3598,7 +3614,7 @@ var Font = (function FontClosure() {
       }
 
       // Rewrite the 'post' table if needed
-      if (requiredTables.indexOf('post') != -1) {
+      if (!post) {
         tables.push({
           tag: 'post',
           data: stringToArray(createPostTable(properties))
