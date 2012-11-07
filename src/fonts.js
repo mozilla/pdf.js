@@ -2565,6 +2565,24 @@ var Font = (function FontClosure() {
                          format314);
   };
 
+  function validateOS2Table(os2) {
+    var stream = new Stream(os2.data);
+    var version = int16(stream.getBytes(2));
+    // TODO verify all OS/2 tables fields, but currently we validate only those
+    // that give us issues
+    stream.getBytes(60); // skipping type, misc sizes, panose, unicode ranges
+    var selection = int16(stream.getBytes(2));
+    if (version < 4 && (selection & 0x0300)) {
+      return false;
+    }
+    var firstChar = int16(stream.getBytes(2));
+    var lastChar = int16(stream.getBytes(2));
+    if (firstChar > lastChar) {
+      return false;
+    }
+    return true;
+  }
+
   function createOS2Table(properties, charstrings, override) {
     override = override || {
       unitsPerEm: 0,
@@ -3595,6 +3613,11 @@ var Font = (function FontClosure() {
         unicodeIsEnabled[glyphs[i].unicode] = true;
       }
       this.unicodeIsEnabled = unicodeIsEnabled;
+
+      if (os2 && !validateOS2Table(os2)) {
+        tables.splice(tables.indexOf(os2), 1);
+        os2 = null;
+      }
 
       if (!os2) {
         // extract some more font properties from the OpenType head and
