@@ -2700,25 +2700,29 @@ var Font = (function FontClosure() {
            '\x00\x00\x00\x00';  // maxMemType1
   };
 
-  function createNameTable(name) {
+  function createNameTable(name, proto) {
+    if (!proto) {
+      proto = [[], []]; // no strings and unicode strings
+    }
+
     var strings = [
-      'Original licence',  // 0.Copyright
-      name,                // 1.Font family
-      'Unknown',           // 2.Font subfamily (font weight)
-      'uniqueID',          // 3.Unique ID
-      name,                // 4.Full font name
-      'Version 0.11',      // 5.Version
-      '',                  // 6.Postscript name
-      'Unknown',           // 7.Trademark
-      'Unknown',           // 8.Manufacturer
-      'Unknown'            // 9.Designer
+      proto[0][0] || 'Original licence',  // 0.Copyright
+      proto[0][1] || name,                // 1.Font family
+      proto[0][2] || 'Unknown',           // 2.Font subfamily (font weight)
+      proto[0][3] || 'uniqueID',          // 3.Unique ID
+      proto[0][4] || name,                // 4.Full font name
+      proto[0][5] || 'Version 0.11',      // 5.Version
+      proto[0][6] || '',                  // 6.Postscript name
+      proto[0][7] || 'Unknown',           // 7.Trademark
+      proto[0][8] || 'Unknown',           // 8.Manufacturer
+      proto[0][9] || 'Unknown'            // 9.Designer
     ];
 
     // Mac want 1-byte per character strings while Windows want
     // 2-bytes per character, so duplicate the names table
     var stringsUnicode = [];
     for (var i = 0, ii = strings.length; i < ii; i++) {
-      var str = strings[i];
+      var str = proto[1][i] || strings[i];
 
       var strUnicode = '';
       for (var j = 0, jj = str.length; j < jj; j++)
@@ -3246,6 +3250,61 @@ var Font = (function FontClosure() {
         return valid;
       }
 
+      function readNameTable(nameTable) {
+        var start = (font.start ? font.start : 0) + nameTable.offset;
+        font.pos = start;
+
+        var names = [[], []];
+        var length = nameTable.length, end = start + length;
+        var format = int16(font.getBytes(2));
+        var FORMAT_0_HEADER_LENGTH = 6;
+        if (format !== 0 || length < FORMAT_0_HEADER_LENGTH) {
+          // unsupported name table format or table "too" small
+          return names;
+        }
+        var numRecords = int16(font.getBytes(2));
+        var stringsStart = int16(font.getBytes(2));
+        var records = [];
+        var NAME_RECORD_LENGTH = 12;
+        for (var i = 0; i < numRecords &&
+                        font.pos + NAME_RECORD_LENGTH <= end; i++) {
+          var r = {
+            platform: int16(font.getBytes(2)),
+            encoding: int16(font.getBytes(2)),
+            language: int16(font.getBytes(2)),
+            name: int16(font.getBytes(2)),
+            length: int16(font.getBytes(2)),
+            offset: int16(font.getBytes(2))
+          };
+          // using only Macintosh and Windows platform/encoding names
+          if ((r.platform == 1 && r.encoding == 0 && r.language == 0) ||
+              (r.platform == 3 && r.encoding == 1 && r.language == 0x409)) {
+            records.push(r);
+          }
+        }
+        for (var i = 0, ii = records.length; i < ii; i++) {
+          var record = records[i];
+          var pos = start + stringsStart + record.offset;
+          if (pos + record.length > end) {
+            continue; // outside of name table, ignoring
+          }
+          font.pos = pos;
+          var nameIndex = record.name;
+          var encoding = record.encoding ? 1 : 0;
+          if (record.encoding) {
+            // unicode
+            var str = '';
+            for (var j = 0, jj = record.length; j < jj; j += 2) {
+              str += String.fromCharCode(int16(font.getBytes(2)));
+            }
+            names[1][nameIndex] = str;
+          } else {
+            names[0][nameIndex] = bytesToString(font.getBytes(record.length));
+          }
+        }
+        return names;
+      }
+
       function isOS2Valid(os2Table) {
         var data = os2Table.data;
         // usWinAscent == 0 makes font unreadable by windows
@@ -3644,12 +3703,22 @@ var Font = (function FontClosure() {
         });
       }
 
-      // Rewrite the 'name' table if needed
+      // Re-creating 'name' table
       if (requiredTables.indexOf('name') != -1) {
         tables.push({
           tag: 'name',
           data: stringToArray(createNameTable(this.name))
         });
+      } else {
+        // ... using existing 'name' table as prototype
+        for (var i = 0, ii = tables.length; i < ii; i++) {
+          var table = tables[i];
+          if (table.tag === 'name') {
+            var namePrototype = readNameTable(table);
+            table.data = stringToArray(createNameTable(name, namePrototype));
+            break;
+          }
+        }
       }
 
       // Tables needs to be written by ascendant alphabetic order
