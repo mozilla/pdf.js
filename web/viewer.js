@@ -1437,16 +1437,20 @@ var PDFView = {
   switchSidebarView: function pdfViewSwitchSidebarView(view) {
     var thumbsView = document.getElementById('thumbnailView');
     var outlineView = document.getElementById('outlineView');
+    var annotsView = document.getElementById('annotsView');
 
     var thumbsButton = document.getElementById('viewThumbnail');
     var outlineButton = document.getElementById('viewOutline');
+    var annotsButton = document.getElementById('viewAnnots');
 
     switch (view) {
       case 'thumbs':
         thumbsButton.classList.add('toggled');
         outlineButton.classList.remove('toggled');
+        annotsButton.classList.remove('toggled');
         thumbsView.classList.remove('hidden');
         outlineView.classList.add('hidden');
+        annotsView.classList.add('hidden');
 
         PDFView.renderHighestPriority();
         break;
@@ -1454,11 +1458,23 @@ var PDFView = {
       case 'outline':
         thumbsButton.classList.remove('toggled');
         outlineButton.classList.add('toggled');
+        annotsButton.classList.remove('toggled');
         thumbsView.classList.add('hidden');
         outlineView.classList.remove('hidden');
+        annotsView.classList.add('hidden');
 
         if (outlineButton.getAttribute('disabled'))
           return;
+        break;
+
+      case 'annots':
+        thumbsButton.classList.remove('toggled');
+        outlineButton.classList.remove('toggled');
+        annotsButton.classList.add('toggled');
+        thumbsView.classList.add('hidden');
+        outlineView.classList.add('hidden');
+        annotsView.classList.remove('hidden');
+
         break;
     }
   },
@@ -1872,6 +1888,21 @@ var PageView = function pageView(container, pdfPage, id, scale,
 
       return container;
     }
+    function createAnnotLink(imgsrc, title, page, id) {
+      var a = document.createElement('a'),
+         tit = document.createElement('span'),
+         img = document.createElement('img');
+      img.src = imgsrc;
+      img.alt = ' ';
+      a.classList.add('annotListItem');
+      tit.innerHTML = ' ' + mozL10n.get('annot_item',
+         {title: title, page: page}, '{{title}}; page {{page}}');
+      a.appendChild(img);
+      a.appendChild(tit);
+      a.appendChild(document.createElement('br'));
+      document.getElementById('annotsView').appendChild(a);
+      bindLink(a, id); // FIXME: does not work
+    }
 
     pdfPage.getAnnotations().then(function(items) {
       for (var i = 0; i < items.length; i++) {
@@ -1886,8 +1917,14 @@ var PageView = function pageView(container, pdfPage, id, scale,
             break;
           case 'Text':
             var textAnnotation = createTextAnnotation(item);
-            if (textAnnotation)
+            if (textAnnotation) {
+              // FIXME: how to get the page number?
+              textAnnotation.id = 'p' + 1 + '_annot' + i;
               div.appendChild(textAnnotation);
+              createAnnotLink(kImageDirectory + 'annotation-' +
+                item.name.toLowerCase() + '.svg',
+                item.title, 1, textAnnotation.id);
+            }
             break;
           case 'Widget':
             // TODO: support forms
@@ -2791,6 +2828,11 @@ document.addEventListener('DOMContentLoaded', function webViewerLoad(evt) {
   document.getElementById('viewOutline').addEventListener('click',
     function() {
       PDFView.switchSidebarView('outline');
+    });
+
+  document.getElementById('viewAnnots').addEventListener('click',
+    function() {
+      PDFView.switchSidebarView('annots');
     });
 
   document.getElementById('previous').addEventListener('click',

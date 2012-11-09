@@ -824,6 +824,11 @@ html[dir='rtl'] .toolbarButton.pageDown::before {
   content: url(images/toolbarButton-viewOutline.png);
 }
 
+#viewAnnots.toolbarButton::before {
+  display: inline-block;
+  content: url(images/toolbarButton-viewAnnots.png);
+}
+
 #viewFind.toolbarButton::before {
   display: inline-block;
   content: url(images/toolbarButton-search.png);
@@ -1221,6 +1226,34 @@ canvas {
   font-size: 1.2em;
   border-bottom: 1px solid #000000;
   margin: 0px;
+}
+
+a.annotListItem {
+  text-decoration: none;
+  display: inline-block;
+  min-width: 90%;
+  height: 22px;
+  padding: 2px 0 0 10px;
+  margin: 3px 0 1px 3px;
+  border-radius: 2px;
+  color: hsla(0,0%,100%,.8);
+  font-size: 13px;
+  -moz-user-select:none;
+  white-space: nowrap;
+}
+
+a.annotListItem:hover {
+  background-color: hsla(0,0%,100%,.02);
+  background-image: -moz-linear-gradient(hsla(0,0%,100%,.05), hsla(0,0%,100%,0));
+  background-clip: padding-box;
+  box-shadow: 0 1px 0 hsla(0,0%,100%,.05) inset,
+              0 0 1px hsla(0,0%,100%,.2) inset,
+              0 0 1px hsla(0,0%,0%,.2);
+  color: hsla(0,0%,100%,.9);
+}
+
+a.annotListItem img {
+  height: 16px;
 }
 
 #errorWrapper {
