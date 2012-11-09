@@ -17,18 +17,19 @@
 
 'use strict';
 
-var kDefaultURL = 'compressed.tracemonkey-pldi-09.pdf';
-var kDefaultScale = 'auto';
-var kDefaultScaleDelta = 1.1;
-var kUnknownScale = 0;
-var kCacheSize = 20;
-var kCssUnits = 96.0 / 72.0;
-var kScrollbarPadding = 40;
-var kVerticalPadding = 5;
-var kMinScale = 0.25;
-var kMaxScale = 4.0;
-var kImageDirectory = './images/';
-var kSettingsMemory = 20;
+var DEFAULT_URL = 'compressed.tracemonkey-pldi-09.pdf';
+var DEFAULT_SCALE = 'auto';
+var DEFAULT_SCALE_DELTA = 1.1;
+var UNKNOWN_SCALE = 0;
+var CACHE_SIZE = 20;
+var CSS_UNITS = 96.0 / 72.0;
+var SCROLLBAR_PADDING = 40;
+var VERTICAL_PADDING = 5;
+var MIN_SCALE = 0.25;
+var MAX_SCALE = 4.0;
+var IMAGE_DIR = './images/';
+var SETTINGS_MEMORY = 20;
+var ANNOT_MIN_SIZE = 10;
 var RenderingStates = {
   INITIAL: 0,
   RUNNING: 1,
@@ -41,8 +42,6 @@ var FindStates = {
   FIND_WRAPPED: 2,
   FIND_PENDING: 3
 };
-
-var ANNOT_MIN_SIZE = 10;
 
 //#if (FIREFOX || MOZCENTRAL || B2G || GENERIC || CHROME)
 //PDFJS.workerSrc = '../build/pdf.js';
@@ -186,7 +185,7 @@ var Settings = (function SettingsClosure() {
       database = JSON.parse(database);
       if (!('files' in database))
         database.files = [];
-      if (database.files.length >= kSettingsMemory)
+      if (database.files.length >= SETTINGS_MEMORY)
         database.files.shift();
       var index;
       for (var i = 0, length = database.files.length; i < length; i++) {
@@ -228,7 +227,7 @@ var Settings = (function SettingsClosure() {
   return Settings;
 })();
 
-var cache = new Cache(kCacheSize);
+var cache = new Cache(CACHE_SIZE);
 var currentPageNumber = 1;
 
 var PDFFindController = {
@@ -676,7 +675,7 @@ var PDFFindBar = {
 var PDFView = {
   pages: [],
   thumbnails: [],
-  currentScale: kUnknownScale,
+  currentScale: UNKNOWN_SCALE,
   currentScaleValue: null,
   initialBookmark: document.location.hash.substring(1),
   startedTextExtraction: false,
@@ -742,7 +741,7 @@ var PDFView = {
 
     var pages = this.pages;
     for (var i = 0; i < pages.length; i++)
-      pages[i].update(val * kCssUnits);
+      pages[i].update(val * CSS_UNITS);
 
     if (!noScroll && this.currentScale != val)
       this.pages[this.page - 1].scrollIntoView();
@@ -772,10 +771,10 @@ var PDFView = {
       return;
     }
 
-    var pageWidthScale = (container.clientWidth - kScrollbarPadding) /
-                          currentPage.width * currentPage.scale / kCssUnits;
-    var pageHeightScale = (container.clientHeight - kVerticalPadding) /
-                           currentPage.height * currentPage.scale / kCssUnits;
+    var pageWidthScale = (container.clientWidth - SCROLLBAR_PADDING) /
+                          currentPage.width * currentPage.scale / CSS_UNITS;
+    var pageHeightScale = (container.clientHeight - VERTICAL_PADDING) /
+                           currentPage.height * currentPage.scale / CSS_UNITS;
     switch (value) {
       case 'page-actual':
         scale = 1;
@@ -799,14 +798,14 @@ var PDFView = {
   },
 
   zoomIn: function pdfViewZoomIn() {
-    var newScale = (this.currentScale * kDefaultScaleDelta).toFixed(2);
-    newScale = Math.min(kMaxScale, newScale);
+    var newScale = (this.currentScale * DEFAULT_SCALE_DELTA).toFixed(2);
+    newScale = Math.min(MAX_SCALE, newScale);
     this.parseScale(newScale, true);
   },
 
   zoomOut: function pdfViewZoomOut() {
-    var newScale = (this.currentScale / kDefaultScaleDelta).toFixed(2);
-    newScale = Math.max(kMinScale, newScale);
+    var newScale = (this.currentScale / DEFAULT_SCALE_DELTA).toFixed(2);
+    newScale = Math.max(MIN_SCALE, newScale);
     this.parseScale(newScale, true);
   },
 
@@ -1307,10 +1306,10 @@ var PDFView = {
       this.page = 1;
     }
 
-    if (PDFView.currentScale === kUnknownScale) {
+    if (PDFView.currentScale === UNKNOWN_SCALE) {
       // Scale was not initialized: invalid bookmark or scale was not specified.
       // Setting the default one.
-      this.parseScale(kDefaultScale, true);
+      this.parseScale(DEFAULT_SCALE, true);
     }
   },
 
@@ -1832,7 +1831,7 @@ var PageView = function pageView(container, pdfPage, id, scale,
       }
       var image = createElementWithStyle('img', item, rect);
       var iconName = item.name;
-      image.src = kImageDirectory + 'annotation-' +
+      image.src = IMAGE_DIR + 'annotation-' +
         iconName.toLowerCase() + '.svg';
       image.alt = mozL10n.get('text_annotation_type', {type: iconName},
         '[{{type}} Annotation]');
@@ -1936,10 +1935,10 @@ var PageView = function pageView(container, pdfPage, id, scale,
           y = dest[3];
           width = dest[4] - x;
           height = dest[5] - y;
-          widthScale = (this.container.clientWidth - kScrollbarPadding) /
-            width / kCssUnits;
-          heightScale = (this.container.clientHeight - kScrollbarPadding) /
-            height / kCssUnits;
+          widthScale = (this.container.clientWidth - SCROLLBAR_PADDING) /
+            width / CSS_UNITS;
+          heightScale = (this.container.clientHeight - SCROLLBAR_PADDING) /
+            height / CSS_UNITS;
           scale = Math.min(widthScale, heightScale);
           break;
         default:
@@ -1948,8 +1947,8 @@ var PageView = function pageView(container, pdfPage, id, scale,
 
       if (scale && scale !== PDFView.currentScale)
         PDFView.parseScale(scale, true, true);
-      else if (PDFView.currentScale === kUnknownScale)
-        PDFView.parseScale(kDefaultScale, true, true);
+      else if (PDFView.currentScale === UNKNOWN_SCALE)
+        PDFView.parseScale(DEFAULT_SCALE, true, true);
 
       var boundingRect = [
         this.viewport.convertToViewportPoint(x, y),
@@ -2427,9 +2426,9 @@ var TextLayerBuilder = function textLayerBuilder(textLayerDiv, pageIdx) {
   this.setupRenderLayoutTimer = function textLayerSetupRenderLayoutTimer() {
     // Schedule renderLayout() if user has been scrolling, otherwise
     // run it right away
-    var kRenderDelay = 200; // in ms
+    var RENDER_DELAY = 200; // in ms
     var self = this;
-    if (Date.now() - PDFView.lastScroll > kRenderDelay) {
+    if (Date.now() - PDFView.lastScroll > RENDER_DELAY) {
       // Render right away
       this.renderLayer();
     } else {
@@ -2438,7 +2437,7 @@ var TextLayerBuilder = function textLayerBuilder(textLayerDiv, pageIdx) {
         clearTimeout(this.renderTimer);
       this.renderTimer = setTimeout(function() {
         self.setupRenderLayoutTimer();
-      }, kRenderDelay);
+      }, RENDER_DELAY);
     }
   };
 
@@ -2688,7 +2687,7 @@ document.addEventListener('DOMContentLoaded', function webViewerLoad(evt) {
   var params = PDFView.parseQueryString(document.location.search.substring(1));
 
 //#if !(FIREFOX || MOZCENTRAL)
-  var file = params.file || kDefaultURL;
+  var file = params.file || DEFAULT_URL;
 //#else
 //var file = window.location.toString()
 //#endif
@@ -3100,7 +3099,7 @@ window.addEventListener('keydown', function keydown(evt) {
         handled = true;
         break;
       case 48: // '0'
-        PDFView.parseScale(kDefaultScale, true);
+        PDFView.parseScale(DEFAULT_SCALE, true);
         handled = true;
         break;
     }

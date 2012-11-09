@@ -17,22 +17,17 @@
 
 'use strict';
 
-/**
- * Maximum time to wait for a font to be loaded by font-face rules.
- */
-var kMaxWaitForFontFace = 1000;
-
 // Unicode Private Use Area
-var kCmapGlyphOffset = 0xE000;
-var kSizeOfGlyphArea = 0x1900;
-var kSymbolicFontGlyphOffset = 0xF000;
+var CMAP_GLYPH_OFFSET = 0xE000;
+var GLYPH_AREA_SIZE = 0x1900;
+var SYMBOLIC_FONT_GLYPH_OFFSET = 0xF000;
 
 // PDF Glyph Space Units are one Thousandth of a TextSpace Unit
 // except for Type 3 fonts
-var kPDFGlyphSpaceUnits = 1000;
+var PDF_GLYPH_SPACE_UNITS = 1000;
 
 // Until hinting is fully supported this constant can be used
-var kHintingEnabled = false;
+var HINTING_ENABLED = false;
 
 var FontFlags = {
   FixedPitch: 1,
@@ -804,9 +799,9 @@ function isRTLRangeFor(value) {
 }
 
 function isSpecialUnicode(unicode) {
-  return (unicode <= 0x1F || (unicode >= 127 && unicode < kSizeOfGlyphArea)) ||
-    (unicode >= kCmapGlyphOffset &&
-    unicode < kCmapGlyphOffset + kSizeOfGlyphArea);
+  return (unicode <= 0x1F || (unicode >= 127 && unicode < GLYPH_AREA_SIZE)) ||
+    (unicode >= CMAP_GLYPH_OFFSET &&
+    unicode < CMAP_GLYPH_OFFSET + GLYPH_AREA_SIZE);
 }
 
 // The normalization table is obtained by filtering the Unicode characters
@@ -2627,7 +2622,7 @@ var Font = (function FontClosure() {
       lastCharIndex = 255;
     }
 
-    var unitsPerEm = override.unitsPerEm || kPDFGlyphSpaceUnits;
+    var unitsPerEm = override.unitsPerEm || PDF_GLYPH_SPACE_UNITS;
     var typoAscent = override.ascent || properties.ascent;
     var typoDescent = override.descent || properties.descent;
     var winAscent = override.yMax || typoAscent;
@@ -2635,12 +2630,13 @@ var Font = (function FontClosure() {
 
     // if there is a units per em value but no other override
     // then scale the calculated ascent
-    if (unitsPerEm != kPDFGlyphSpaceUnits &&
+    if (unitsPerEm != PDF_GLYPH_SPACE_UNITS &&
         'undefined' == typeof(override.ascent)) {
       // if the font units differ to the PDF glyph space units
       // then scale up the values
-      typoAscent = Math.round(typoAscent * unitsPerEm / kPDFGlyphSpaceUnits);
-      typoDescent = Math.round(typoDescent * unitsPerEm / kPDFGlyphSpaceUnits);
+      typoAscent = Math.round(typoAscent * unitsPerEm / PDF_GLYPH_SPACE_UNITS);
+      typoDescent = Math.round(typoDescent * unitsPerEm /
+        PDF_GLYPH_SPACE_UNITS);
       winAscent = typoAscent;
       winDescent = -typoDescent;
     }
@@ -3411,13 +3407,13 @@ var Font = (function FontClosure() {
         }
         // trying to fit as many unassigned symbols as we can
         // in the range allocated for the user defined symbols
-        var unusedUnicode = kCmapGlyphOffset;
+        var unusedUnicode = CMAP_GLYPH_OFFSET;
         for (var j = 0, jj = unassignedUnicodeItems.length; j < jj; j++) {
           var i = unassignedUnicodeItems[j];
           var cid = gidToCidMap[i] || i;
           while (unusedUnicode in usedUnicodes)
             unusedUnicode++;
-          if (unusedUnicode >= kCmapGlyphOffset + kSizeOfGlyphArea)
+          if (unusedUnicode >= CMAP_GLYPH_OFFSET + GLYPH_AREA_SIZE)
             break;
           var unicode = unusedUnicode++;
           this.toFontChar[cid] = unicode;
@@ -3441,7 +3437,7 @@ var Font = (function FontClosure() {
             ids[i] = i;
         }
 
-        var unusedUnicode = kCmapGlyphOffset;
+        var unusedUnicode = CMAP_GLYPH_OFFSET;
         var glyphNames = properties.glyphNames || [];
         var encoding = properties.baseEncoding;
         var differences = properties.differences;
@@ -3522,7 +3518,7 @@ var Font = (function FontClosure() {
           for (var i = 0, ii = glyphs.length; i < ii; i++) {
             var code = glyphs[i].unicode;
             var gid = ids[i];
-            glyphs[i].unicode += kCmapGlyphOffset;
+            glyphs[i].unicode += CMAP_GLYPH_OFFSET;
             toFontChar[code] = glyphs[i].unicode;
 
             var glyphName = glyphNames[gid] || encoding[code];
@@ -3590,7 +3586,7 @@ var Font = (function FontClosure() {
         if (this.isSymbolicFont) {
           for (var i = 0, ii = glyphs.length; i < ii; i++) {
             var code = glyphs[i].unicode & 0xFF;
-            var fontCharCode = kSymbolicFontGlyphOffset | code;
+            var fontCharCode = SYMBOLIC_FONT_GLYPH_OFFSET | code;
             glyphs[i].unicode = toFontChar[code] = fontCharCode;
           }
           this.useToFontChar = true;
@@ -3695,7 +3691,7 @@ var Font = (function FontClosure() {
       // to write the table entry information about a table and another offset
       // representing the offset where to draw the actual data of a particular
       // table
-      var kRequiredTablesCount = 9;
+      var REQ_TABLES_CNT = 9;
 
       var otf = {
         file: '',
@@ -3827,7 +3823,7 @@ var Font = (function FontClosure() {
 
     buildToFontChar: function Font_buildToFontChar(toUnicode) {
       var result = [];
-      var unusedUnicode = kCmapGlyphOffset;
+      var unusedUnicode = CMAP_GLYPH_OFFSET;
       for (var i = 0, ii = toUnicode.length; i < ii; i++) {
         var unicode = toUnicode[i];
         var fontCharCode = typeof unicode === 'object' ? unusedUnicode++ :
@@ -4151,8 +4147,8 @@ var Type1Parser = function type1Parser() {
    * of Plaintext Bytes. The function took a key as a parameter which can be
    * for decrypting the eexec block of for decoding charStrings.
    */
-  var kEexecEncryptionKey = 55665;
-  var kCharStringsEncryptionKey = 4330;
+  var EEXEC_ENCRYPT_KEY = 55665;
+  var CHAR_STRS_ENCRYPT_KEY = 4330;
 
   function decrypt(stream, key, discardNumber) {
     var r = key, c1 = 52845, c2 = 22719;
@@ -4268,7 +4264,7 @@ var Type1Parser = function type1Parser() {
     '31': 'hvcurveto'
   };
 
-  var kEscapeCommand = 12;
+  var ESCAPE_CMD = 12;
 
   // Breaks up the stack by arguments and also calculates the value.
   function breakUpArgs(stack, numArgs) {
@@ -4320,7 +4316,7 @@ var Type1Parser = function type1Parser() {
 
       if (value < 32) {
         var command = null;
-        if (value == kEscapeCommand) {
+        if (value == ESCAPE_CMD) {
           var escape = array[++i];
 
           // TODO Clean this code
@@ -4374,7 +4370,7 @@ var Type1Parser = function type1Parser() {
             var args = breakUpArgs(charstring, 5);
             var arg0 = args[0];
             charstring.splice(arg0.offset, arg0.arg.length);
-          } else if (!kHintingEnabled && (escape == 1 || escape == 2)) {
+          } else if (!HINTING_ENABLED && (escape == 1 || escape == 2)) {
             charstring.push('drop', 'drop', 'drop', 'drop', 'drop', 'drop');
             continue;
           }
@@ -4416,7 +4412,7 @@ var Type1Parser = function type1Parser() {
             if (flexState > 1)
               continue; // ignoring rmoveto
             value = 5; // first segment replacing with rlineto
-          } else if (!kHintingEnabled && (value == 1 || value == 3)) {
+          } else if (!HINTING_ENABLED && (value == 1 || value == 3)) {
             charstring.push('drop', 'drop');
             continue;
           }
@@ -4508,7 +4504,7 @@ var Type1Parser = function type1Parser() {
   }
 
   this.extractFontProgram = function Type1Parser_extractFontProgram(stream) {
-    var eexec = decrypt(stream, kEexecEncryptionKey, 4);
+    var eexec = decrypt(stream, EEXEC_ENCRYPT_KEY, 4);
     var eexecStr = '';
     for (var i = 0, ii = eexec.length; i < ii; i++)
       eexecStr += String.fromCharCode(eexec[i]);
@@ -4548,7 +4544,7 @@ var Type1Parser = function type1Parser() {
         i++;
         var data = eexec.slice(i, i + length);
         var lenIV = program.properties.privateData['lenIV'];
-        var encoded = decrypt(data, kCharStringsEncryptionKey, lenIV);
+        var encoded = decrypt(data, CHAR_STRS_ENCRYPT_KEY, lenIV);
         var str = decodeCharString(encoded);
 
         if (glyphsSection) {
@@ -4588,7 +4584,7 @@ var Type1Parser = function type1Parser() {
                 getToken(); // read in 'RD'
                 var data = eexec.slice(i + 1, i + 1 + length);
                 var lenIV = program.properties.privateData['lenIV'];
-                var encoded = decrypt(data, kCharStringsEncryptionKey, lenIV);
+                var encoded = decrypt(data, CHAR_STRS_ENCRYPT_KEY, lenIV);
                 var str = decodeCharString(encoded);
                 i = i + 1 + length;
                 t = getToken(); // read in 'NP'
@@ -4864,7 +4860,7 @@ Type1Font.prototype = {
                                                             properties) {
     var charstrings = [];
     var i, length, glyphName;
-    var unusedUnicode = kCmapGlyphOffset;
+    var unusedUnicode = CMAP_GLYPH_OFFSET;
     for (i = 0, length = glyphs.length; i < length; i++) {
       var item = glyphs[i];
       var glyphName = item.glyph;
@@ -5189,7 +5185,7 @@ var CFFFont = (function CFFFontClosure() {
         unicodeUsed[code] = true;
       }
 
-      var nextUnusedUnicode = kCmapGlyphOffset;
+      var nextUnusedUnicode = CMAP_GLYPH_OFFSET;
       for (var j = 0, jj = unassignedUnicodeItems.length; j < jj; ++j) {
         var i = unassignedUnicodeItems[j];
         // giving unicode value anyway
