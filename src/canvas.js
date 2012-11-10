@@ -207,7 +207,7 @@ var CanvasExtraState = (function CanvasExtraStateClosure() {
 var CanvasGraphics = (function CanvasGraphicsClosure() {
   // Defines the time the executeOperatorList is going to be executing
   // before it stops and shedules a continue of execution.
-  var kExecutionTime = 15;
+  var EXECUTION_TIME = 15;
 
   function CanvasGraphics(canvasCtx, commonObjs, objs, textLayer) {
     this.ctx = canvasCtx;
@@ -283,7 +283,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       }
 
       var executionEndIdx;
-      var endTime = Date.now() + kExecutionTime;
+      var endTime = Date.now() + EXECUTION_TIME;
 
       var commonObjs = this.commonObjs;
       var objs = this.objs;
