@@ -1925,7 +1925,7 @@ var PageView = function pageView(container, pdfPage, id, scale,
               // FIXME: how to get the page number?
               textAnnotation.id = 'p' + 1 + '_annot' + i;
               div.appendChild(textAnnotation);
-              createAnnotLink(kImageDirectory + 'annotation-' +
+              createAnnotLink(IMAGE_DIR + 'annotation-' +
                 item.name.toLowerCase() + '.svg',
                 item.title, 1, textAnnotation.id);
             }
