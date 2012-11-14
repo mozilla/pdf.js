@@ -3181,7 +3181,7 @@ var Font = (function FontClosure() {
         }
       }
 
-      function readPostScriptTable(post, properties) {
+      function readPostScriptTable(post, properties, maxpNumGlyphs) {
         var start = (font.start ? font.start : 0) + post.offset;
         font.pos = start;
 
@@ -3198,6 +3198,10 @@ var Font = (function FontClosure() {
             break;
           case 0x00020000:
             var numGlyphs = int16(font.getBytes(2));
+            if (numGlyphs != maxpNumGlyphs) {
+              valid = false;
+              break;
+            }
             var glyphNameIndexes = [];
             for (var i = 0; i < numGlyphs; ++i) {
               var index = int16(font.getBytes(2));
@@ -3532,7 +3536,7 @@ var Font = (function FontClosure() {
 
       // The 'post' table has glyphs names.
       if (post) {
-        var valid = readPostScriptTable(post, properties);
+        var valid = readPostScriptTable(post, properties, numGlyphs);
         if (!valid) {
           tables.splice(tables.indexOf(post), 1);
           post = null;
