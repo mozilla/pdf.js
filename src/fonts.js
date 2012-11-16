@@ -4755,7 +4755,9 @@ var Type1Parser = function type1Parser() {
         i += length;
         token = '';
       } else if (isSeparator(c)) {
-        length = parseInt(token, 10);
+        // Use '| 0' to prevent setting a double into length such as the double
+        // does not flow into the loop variable.
+        length = parseInt(token, 10) | 0;
         token = '';
       } else {
         token += c;
