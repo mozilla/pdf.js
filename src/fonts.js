@@ -6694,3 +6694,11 @@ var CFFCompiler = (function CFFCompilerClosure() {
   return CFFCompiler;
 })();
 
+// Workaround for Private Use Area characters in Chrome on Windows
+// http://code.google.com/p/chromium/issues/detail?id=122465
+// https://github.com/mozilla/pdf.js/issues/1689
+(function checkChromeWindows() {
+  if (/Windows.*Chrome/.test(navigator.userAgent)) {
+    SYMBOLIC_FONT_GLYPH_OFFSET = 0xF100;
+  }
+})();
