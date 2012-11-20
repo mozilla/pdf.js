@@ -30,6 +30,8 @@ var MAX_SCALE = 4.0;
 var IMAGE_DIR = './images/';
 var SETTINGS_MEMORY = 20;
 var ANNOT_MIN_SIZE = 10;
+var TWO_UP_VIEW = false;
+var SCALE_BASE = 0;
 var RenderingStates = {
   INITIAL: 0,
   RUNNING: 1,
@@ -677,6 +679,7 @@ var PDFView = {
   thumbnails: [],
   currentScale: UNKNOWN_SCALE,
   currentScaleValue: null,
+  twoUpView: TWO_UP_VIEW,
   initialBookmark: document.location.hash.substring(1),
   startedTextExtraction: false,
   pageText: [],
@@ -735,7 +738,7 @@ var PDFView = {
     }, true);
   },
 
-  setScale: function pdfViewSetScale(val, resetAutoSettings, noScroll) {
+  setScale: function pdfViewSetScale(val, resetAutoSettings, noScroll, internal) {
     if (val == this.currentScale)
       return;
 
@@ -751,16 +754,18 @@ var PDFView = {
     event.initUIEvent('scalechange', false, false, window, 0);
     event.scale = val;
     event.resetAutoSettings = resetAutoSettings;
+    event.internal = internal;
     window.dispatchEvent(event);
   },
 
-  parseScale: function pdfViewParseScale(value, resetAutoSettings, noScroll) {
+  parseScale: function pdfViewParseScale(value, resetAutoSettings, noScroll, internall) {
     if ('custom' == value)
       return;
 
     var scale = parseFloat(value);
     this.currentScaleValue = value;
     if (scale) {
+      var isInternal = internal == undefined ? false : internal;
       this.setScale(scale, true, noScroll);
       return;
     }
@@ -775,6 +780,8 @@ var PDFView = {
                           currentPage.width * currentPage.scale / CSS_UNITS;
     var pageHeightScale = (container.clientHeight - VERTICAL_PADDING) /
                            currentPage.height * currentPage.scale / CSS_UNITS;
+    if (PDFView.twoUpView) 
+      pageWidthScale /= 2.5;  // HACK just make sure fits in portrait
     switch (value) {
       case 'page-actual':
         scale = 1;
@@ -794,19 +801,50 @@ var PDFView = {
     }
     this.setScale(scale, resetAutoSettings, noScroll);
 
+    if (PDFView.twoUpView && SCALE_BASE == 0) {
+       SCALE_BASE = 1 / Math.min(pageWidthScale, pageHeightScale)
+    }
+
     selectScaleOption(value);
   },
 
   zoomIn: function pdfViewZoomIn() {
     var newScale = (this.currentScale * DEFAULT_SCALE_DELTA).toFixed(2);
     newScale = Math.min(MAX_SCALE, newScale);
-    this.parseScale(newScale, true);
+    this.parseScale(newScale, true, false, true);
   },
 
   zoomOut: function pdfViewZoomOut() {
     var newScale = (this.currentScale / DEFAULT_SCALE_DELTA).toFixed(2);
     newScale = Math.max(MIN_SCALE, newScale);
-    this.parseScale(newScale, true);
+    this.parseScale(newScale, true, false, true);
+  },
+
+  twoUp: function pdfViewTwoUpView(value) {
+    this.twoUpView = value;
+    var pages = this.pages;
+    for (var i = 0; i < pages.length; i++)
+      pages[i].update(this.currentScale * CSS_UNITS);
+  },
+
+  nextPage: function pdfViewNextPage() {
+    var pageNo = PDFView.page;
+    if (PDFView.twoUpView) {
+      pageNo = (pageNo % 2 != 0 ? pageNo += 2 : pageNo += 1);
+    } else {
+      pageNo++;
+    }
+    PDFView.page = pageNo;
+  },
+
+  prevPage: function pdfViewPrevPage() {
+    var pageNo = PDFView.page;
+    if (PDFView.twoUpView) {
+      pageNo = (pageNo % 2 != 0 ? pageNo -= 2 : pageNo -= 1);
+    } else {
+      pageNo--;
+    }
+    PDFView.page = pageNo;
   },
 
   set page(val) {
@@ -1488,7 +1526,11 @@ var PDFView = {
       currentHeight = view.el.offsetTop;
       if (currentHeight + view.el.clientHeight > top)
         break;
-      currentHeight += view.el.clientHeight;
+        if (!PDFView.twoUpView && i % 2 != 0) {
+          currentHeight += view.el.clientHeight; 
+        } else {
+          currentHeight += view.el.clientHeight;
+        }
     }
 
     var visible = [];
@@ -1774,6 +1816,20 @@ var PageView = function pageView(container, pdfPage, id, scale,
     this.viewport = viewport;
     div.style.width = Math.floor(viewport.width) + 'px';
     div.style.height = Math.floor(viewport.height) + 'px';
+
+    div.style.margin = '10px auto';
+
+    if (PDFView.twoUpView) {
+      div.style.display = 'inline-block';
+
+      if (this.id % 2 == 0) {
+        div.style.margin = '0';
+      } else {
+        var pageMarginLeft = (outerWidth - parseInt(this.width * 2)) / 2;
+        div.style.margin = '10px 0 0 ' + pageMarginLeft + 'px';
+      }
+
+    }
 
     while (div.hasChildNodes())
       div.removeChild(div.lastChild);
@@ -2734,6 +2790,9 @@ document.addEventListener('DOMContentLoaded', function webViewerLoad(evt) {
   mozL10n.language.code = locale;
 //#endif
 
+  if ('twoup' in hashParams)
+      PDFView.twoUp(hashParams['twoup'] === 'true');
+
   if ('textLayer' in hashParams) {
     switch (hashParams['textLayer']) {
       case 'off':
@@ -2812,12 +2871,12 @@ document.addEventListener('DOMContentLoaded', function webViewerLoad(evt) {
 
   document.getElementById('previous').addEventListener('click',
     function() {
-      PDFView.page--;
+      PDFView.prevPage();
     });
 
   document.getElementById('next').addEventListener('click',
     function() {
-      PDFView.page++;
+      PDFView.nextPage();
     });
 
   document.querySelector('.zoomIn').addEventListener('click',
@@ -2991,9 +3050,22 @@ window.addEventListener('change', function webViewerChange(evt) {
   document.getElementById('download').setAttribute('hidden', 'true');
 }, true);
 
-function selectScaleOption(value) {
+function selectScaleOption(value, internal) {
   var options = document.getElementById('scaleSelect').options;
   var predefinedValueFound = false;
+
+  if (SCALE_BASE > 0 && !isNaN(value)) { 
+    // want to display a value based on original scaling
+    // rather than the *actual* value
+    if (internal) {
+      // The zoomIn/ Out buttons used
+      value = parseInt(value * SCALE_BASE) * DEFAULT_SCALE_DELTA; 
+    } else {
+      // used the select
+      value = value * SCALE_BASE;
+    }
+  } 
+
   for (var i = 0; i < options.length; i++) {
     var option = options[i];
     if (option.value != value) {
@@ -3166,7 +3238,7 @@ window.addEventListener('keydown', function keydown(evt) {
       case 37: // left arrow
       case 75: // 'k'
       case 80: // 'p'
-        PDFView.page--;
+        PDFView.prevPage();
         handled = true;
         break;
       case 40: // down arrow
@@ -3179,7 +3251,7 @@ window.addEventListener('keydown', function keydown(evt) {
       case 39: // right arrow
       case 74: // 'j'
       case 78: // 'n'
-        PDFView.page++;
+        PDFView.nextPage();
         handled = true;
         break;
 
