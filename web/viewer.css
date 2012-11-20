@@ -420,6 +420,7 @@ html[dir='rtl'] .splitToolbarButton > .toolbarButton {
   background-color: rgba(0, 0, 0, 0);
   width: 32px;
   height: 25px;
+  cursor:pointer !important;
 }
 
 .toolbarButton > span {
@@ -665,8 +666,8 @@ html[dir='rtl'] .dropdownToolbarButton {
 }
 
 .dropdownToolbarButton {
-  min-width: 120px;
-  max-width: 120px;
+  min-width: 145px;
+  max-width: 145px;
   padding: 3px 2px 2px;
   overflow: hidden;
   background: url(images/toolbarButton-menuArrows.png) no-repeat;
@@ -681,7 +682,7 @@ html[dir='rtl'] .dropdownToolbarButton {
 .dropdownToolbarButton > select {
   -webkit-appearance: none;
   -moz-appearance: none; /* in the future this might matter, see bugzilla bug #649849 */
-  min-width: 140px;
+  min-width: 165px;
   font-size: 12px;
   color: hsl(0,0%,95%);
   margin:0;
@@ -1417,4 +1418,3 @@ canvas {
     display: none;
   }
 }
-
