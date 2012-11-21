@@ -166,18 +166,18 @@ var Settings = (function SettingsClosure() {
       this.initializedPromise.resolve();
     }).bind(this);
 
-    //#if B2G
-    //  asyncStorage.getItem('database', resolvePromise);
-    //#endif
+//#if B2G
+//  asyncStorage.getItem('database', resolvePromise);
+//#endif
 
-    //#if FIREFOX || MOZCENTRAL
-    //  resolvePromise(FirefoxCom.requestSync('getDatabase', null));
-    //#endif
+//#if FIREFOX || MOZCENTRAL
+//  resolvePromise(FirefoxCom.requestSync('getDatabase', null));
+//#endif
 
-    //#if !(FIREFOX || MOZCENTRAL || B2G)
+//#if !(FIREFOX || MOZCENTRAL || B2G)
     if (isLocalStorageEnabled)
       resolvePromise(localStorage.getItem('database'));
-    //#endif
+//#endif
   }
 
   Settings.prototype = {
@@ -936,10 +936,10 @@ var PDFView = {
 
   get supportsIntegratedFind() {
     var support = false;
-    //#if !(FIREFOX || MOZCENTRAL)
-    //#else
-    //  support = FirefoxCom.requestSync('supportsIntegratedFind');
-    //#endif
+//#if !(FIREFOX || MOZCENTRAL)
+//#else
+//  support = FirefoxCom.requestSync('supportsIntegratedFind');
+//#endif
     Object.defineProperty(this, 'supportsIntegratedFind', {
       value: support,
       enumerable: true,
@@ -1027,10 +1027,10 @@ var PDFView = {
           // change error message also for other builds
           var loadingErrorMessage = mozL10n.get('invalid_file_error', null,
                                         'Invalid or corrupted PDF file.');
-          //#if B2G
-          //        window.alert(loadingErrorMessage);
-          //        return window.close();
-          //#endif
+//#if B2G
+//        window.alert(loadingErrorMessage);
+//        return window.close();
+//#endif
         }
 
         var loadingIndicator = document.getElementById('loading');
@@ -1053,52 +1053,52 @@ var PDFView = {
       FirefoxCom.request('download', { originalUrl: url });
     }
     var url = this.url.split('#')[0];
-    //#if !(FIREFOX || MOZCENTRAL)
+//#if !(FIREFOX || MOZCENTRAL)
     url += '#pdfjs.action=download';
     window.open(url, '_parent');
-    //#else
-    //  // Document isn't ready just try to download with the url.
-    //  if (!this.pdfDocument) {
-    //    noData();
-    //    return;
-    //  }
-    //  this.pdfDocument.getData().then(
-    //    function getDataSuccess(data) {
-    //      var blob = PDFJS.createBlob(data.buffer, 'application/pdf');
-    //      var blobUrl = window.URL.createObjectURL(blob);
-    //
-    //      FirefoxCom.request('download', { blobUrl: blobUrl, originalUrl: url },
-    //        function response(err) {
-    //          if (err) {
-    //            // This error won't really be helpful because it's likely the
-    //            // fallback won't work either (or is already open).
-    //            PDFView.error('PDF failed to download.');
-    //          }
-    //          window.URL.revokeObjectURL(blobUrl);
-    //        }
-    //      );
-    //    },
-    //    noData // Error occurred try downloading with just the url.
-    //  );
-    //#endif
+//#else
+//  // Document isn't ready just try to download with the url.
+//  if (!this.pdfDocument) {
+//    noData();
+//    return;
+//  }
+//  this.pdfDocument.getData().then(
+//    function getDataSuccess(data) {
+//      var blob = PDFJS.createBlob(data.buffer, 'application/pdf');
+//      var blobUrl = window.URL.createObjectURL(blob);
+//
+//      FirefoxCom.request('download', { blobUrl: blobUrl, originalUrl: url },
+//        function response(err) {
+//          if (err) {
+//            // This error won't really be helpful because it's likely the
+//            // fallback won't work either (or is already open).
+//            PDFView.error('PDF failed to download.');
+//          }
+//          window.URL.revokeObjectURL(blobUrl);
+//        }
+//      );
+//    },
+//    noData // Error occurred try downloading with just the url.
+//  );
+//#endif
   },
 
   fallback: function pdfViewFallback() {
-    //#if !(FIREFOX || MOZCENTRAL)
-    //  return;
-    //#else
-    //  // Only trigger the fallback once so we don't spam the user with messages
-    //  // for one PDF.
-    //  if (this.fellback)
-    //    return;
-    //  this.fellback = true;
-    //  var url = this.url.split('#')[0];
-    //  FirefoxCom.request('fallback', url, function response(download) {
-    //    if (!download)
-    //      return;
-    //    PDFView.download();
-    //  });
-    //#endif
+//#if !(FIREFOX || MOZCENTRAL)
+//  return;
+//#else
+//  // Only trigger the fallback once so we don't spam the user with messages
+//  // for one PDF.
+//  if (this.fellback)
+//    return;
+//  this.fellback = true;
+//  var url = this.url.split('#')[0];
+//  FirefoxCom.request('fallback', url, function response(download) {
+//    if (!download)
+//      return;
+//    PDFView.download();
+//  });
+//#endif
   },
 
   navigateTo: function pdfViewNavigateTo(dest) {
@@ -1150,11 +1150,11 @@ var PDFView = {
    * @param {String} anchor The anchor hash include the #.
    */
   getAnchorUrl: function getAnchorUrl(anchor) {
-    //#if !(FIREFOX || MOZCENTRAL)
+//#if !(FIREFOX || MOZCENTRAL)
     return anchor;
-    //#else
-    //  return this.url.split('#')[0] + anchor;
-    //#endif
+//#else
+//  return this.url.split('#')[0] + anchor;
+//#endif
   },
 
   /**
@@ -1207,7 +1207,7 @@ var PDFView = {
     var loadingBox = document.getElementById('loadingBox');
     loadingBox.setAttribute('hidden', 'true');
 
-    //#if !(FIREFOX || MOZCENTRAL)
+//#if !(FIREFOX || MOZCENTRAL)
     var errorWrapper = document.getElementById('errorWrapper');
     errorWrapper.removeAttribute('hidden');
 
@@ -1237,10 +1237,10 @@ var PDFView = {
     errorMoreInfo.value = moreInfoText;
 
     errorMoreInfo.rows = moreInfoText.split('\n').length - 1;
-    //#else
-    //  console.error(message + '\n' + moreInfoText);
-    //  this.fallback();
-    //#endif
+//#else
+//  console.error(message + '\n' + moreInfoText);
+//  this.fallback();
+//#endif
   },
 
   progress: function pdfViewProgress(level) {
@@ -2805,21 +2805,21 @@ document.addEventListener('DOMContentLoaded', function webViewerLoad(evt) {
   PDFView.initialize();
   var params = PDFView.parseQueryString(document.location.search.substring(1));
 
-  //#if !(FIREFOX || MOZCENTRAL)
+//#if !(FIREFOX || MOZCENTRAL)
   var file = params.file || DEFAULT_URL;
-  //#else
-  //var file = window.location.toString()
-  //#endif
+//#else
+//var file = window.location.toString()
+//#endif
 
-  //#if !(FIREFOX || MOZCENTRAL)
+//#if !(FIREFOX || MOZCENTRAL)
   if (!window.File || !window.FileReader || !window.FileList || !window.Blob) {
     document.getElementById('openFile').setAttribute('hidden', 'true');
   } else {
     document.getElementById('fileInput').value = null;
   }
-  //#else
-  //document.getElementById('openFile').setAttribute('hidden', 'true');
-  //#endif
+//#else
+//document.getElementById('openFile').setAttribute('hidden', 'true');
+//#endif
 
   // Special debugging flags in the hash section of the URL.
   var hash = document.location.hash.substring(1);
@@ -2828,12 +2828,12 @@ document.addEventListener('DOMContentLoaded', function webViewerLoad(evt) {
   if ('disableWorker' in hashParams)
     PDFJS.disableWorker = (hashParams['disableWorker'] === 'true');
 
-  //#if !(FIREFOX || MOZCENTRAL)
+//#if !(FIREFOX || MOZCENTRAL)
   var locale = navigator.language;
   if ('locale' in hashParams)
     locale = hashParams['locale'];
   mozL10n.language.code = locale;
-  //#endif
+//#endif
 
   if ('twoup' in hashParams)
     PDFView.twoUp(hashParams['twoup'] === 'true');
@@ -2855,11 +2855,11 @@ document.addEventListener('DOMContentLoaded', function webViewerLoad(evt) {
     }
   }
 
-  //#if !(FIREFOX || MOZCENTRAL)
+//#if !(FIREFOX || MOZCENTRAL)
   if ('pdfBug' in hashParams) {
-    //#else
-    //if ('pdfBug' in hashParams && FirefoxCom.requestSync('pdfBugEnabled')) {
-    //#endif
+//#else
+//if ('pdfBug' in hashParams && FirefoxCom.requestSync('pdfBugEnabled')) {
+//#endif
     PDFJS.pdfBug = true;
     var pdfBug = hashParams['pdfBug'];
     var enabled = pdfBug.split(',');
@@ -3006,17 +3006,17 @@ document.addEventListener('DOMContentLoaded', function webViewerLoad(evt) {
     });
 
 
-  //#if (FIREFOX || MOZCENTRAL)
-  //if (FirefoxCom.requestSync('getLoadingType') == 'passive') {
-  //  PDFView.setTitleUsingUrl(file);
-  //  PDFView.initPassiveLoading();
-  //  return;
-  //}
-  //#endif
+//#if (FIREFOX || MOZCENTRAL)
+//if (FirefoxCom.requestSync('getLoadingType') == 'passive') {
+//  PDFView.setTitleUsingUrl(file);
+//  PDFView.initPassiveLoading();
+//  return;
+//}
+//#endif
 
-  //#if !B2G
+//#if !B2G
   PDFView.open(file, 0);
-  //#endif
+//#endif
 }, true);
 
 function updateViewarea() {
