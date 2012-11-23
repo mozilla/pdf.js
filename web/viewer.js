@@ -954,7 +954,7 @@ var PDFView = {
         }
 
         var loadingErrorMessage = mozL10n.get('loading_error', null,
-          'An error occurred while loading the PDF.');
+          '404 Not Found - The requested URL was not found on this server.');
 
         if (exception && exception.name === 'InvalidPDFException') {
           // change error message also for other builds
