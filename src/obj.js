@@ -307,8 +307,10 @@ var Catalog = (function CatalogClosure() {
             continue;
           }
           var names = obj.get('Names');
-          for (i = 0, n = names.length; i < n; i += 2) {
-            dests[names[i]] = fetchDestination(xref.fetchIfRef(names[i + 1]));
+          if (names) {
+            for (i = 0, n = names.length; i < n; i += 2) {
+              dests[names[i]] = fetchDestination(xref.fetchIfRef(names[i + 1]));
+            }
           }
         }
       }
