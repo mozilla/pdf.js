@@ -837,6 +837,7 @@ var PDFView = {
       twoUpMenuItem.removeAttribute("checked");
     }
 
+    this.parseScale(this.currentScaleValue, true);
     var pages = this.pages;
     for (var i = 0; i < pages.length; i++)
       pages[i].update(this.currentScale * CSS_UNITS);
