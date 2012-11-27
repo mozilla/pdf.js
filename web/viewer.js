@@ -759,6 +759,15 @@ var PDFView = {
   },
 
   parseScale: function pdfViewParseScale(value, resetAutoSettings, noScroll) {
+    // remove any br elements added in 'Two Up View'
+    var node;
+    var nodes = document.getElementById('viewer').childNodes;
+    for (var i = 0; i < nodes.length; i++) {
+      node = nodes[i];
+      if (node.nodeName.toLowerCase() == "br")
+        node.parentNode.removeChild(node);
+    }
+
     if ('custom' == value)
       return;
 
@@ -825,7 +834,7 @@ var PDFView = {
   twoUp: function pdfViewTwoUpView(value) {
     this.twoUpView = value;
 
-    // toggle context menuitem icons
+    // toggle context menuitem state
     var oneUpMenuItem = document.getElementById('one_page_view');
     var twoUpMenuItem = document.getElementById('two_page_view');
 
@@ -846,7 +855,7 @@ var PDFView = {
   showCover: function pdfViewShowCover(value) {
     this.showCoverPage = value;
 
-    // toggle context menuitem icons
+    // toggle context menuitem state
     var showCoverMenuItem = document.getElementById('show_cover_page');
     if (value) {
       showCoverMenuItem.setAttribute("checked", value);
@@ -854,6 +863,7 @@ var PDFView = {
       showCoverMenuItem.removeAttribute("checked");
     }
 
+    this.parseScale(this.currentScaleValue, true);
     var pages = this.pages;
     for (var i = 0; i < pages.length; i++)
       pages[i].update(this.currentScale * CSS_UNITS);
@@ -1826,18 +1836,6 @@ var PageView = function pageView(container, pdfPage, id, scale,
 
   container.appendChild(anchor);
   container.appendChild(div);
-  if (PDFView.twoUpView) {
-    var br = document.createElement('br');
-    if (PDFView.showCoverPage) {
-      if (this.id % 2 == 1) {
-        container.appendChild(br);
-      }
-    } else {
-      if (this.id % 2 == 0) {
-        container.appendChild(br);
-      }
-    }
-  }
 
   this.destroy = function pageViewDestroy() {
     this.update();
@@ -1866,25 +1864,30 @@ var PageView = function pageView(container, pdfPage, id, scale,
       var pageMarginLeft, pageMarginRight;
       if (PDFView.showCoverPage) {
         if (this.id == 1) {
+          // cover page
           pageMarginLeft = (outerWidth - this.width) / 2;
           div.style.margin = '10px 0 0 ' + pageMarginLeft + 'px';
         } else if (this.id > 2 && this.id % 2 == 1) {
-          div.style.margin = '0';
+          // right hand side page
+          div.style.margin = '10px -' + viewport.width * this.scale + 'px 0 0';
         } else {
+          // left hand side page
           pageMarginLeft = (outerWidth - this.width * 2) / 2;
           div.style.margin = '10px 0 0 ' + pageMarginLeft + 'px';
         }
       } else if (this.id % 2 == 0) {
         if (PDFView.currentScale != 0) {
+          // right hand side page
           div.style.margin = '10px -' + viewport.width * this.scale + 'px 0 0';
         } else {
+          // right hand side page
           div.style.margin = '10px auto 0 0';
         }
       } else {
+        // left hand side page
         pageMarginLeft = (outerWidth - this.width * 2) / 2;
         div.style.margin = '10px 0 0 ' + pageMarginLeft + 'px';
       }
-
     } else {
       div.style.margin = '10px auto';
       div.style.display = '';
@@ -1892,6 +1895,21 @@ var PageView = function pageView(container, pdfPage, id, scale,
 
     while (div.hasChildNodes())
       div.removeChild(div.lastChild);
+
+    if (PDFView.twoUpView) {
+      // insert br element
+      var br = document.createElement('br');
+      if (PDFView.showCoverPage) {
+        if (this.id % 2 == 1 && this.el.nextSibling != null &&
+            this.el.nextSibling.nodeName.toLowerCase() != "br")
+          this.el.parentNode.insertBefore(br, this.el.nextSibling);
+      } else {
+        if (this.id % 2 == 0 && this.el.nextSibling != null &&
+            this.el.nextSibling.nodeName.toLowerCase() != "br")
+          this.el.parentNode.insertBefore(br, this.el.nextSibling);
+      }
+    }
+
     div.removeAttribute('data-loaded');
 
     delete this.canvas;
