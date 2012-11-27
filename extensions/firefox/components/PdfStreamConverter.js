@@ -348,6 +348,7 @@ ChromeActions.prototype = {
     // Integrated find is only supported when we're not in a frame and when the
     // new find events code exists.
     return this.domWindow.frameElement === null &&
+           getChromeWindow(this.domWindow).gFindBar &&
            'updateControlState' in getChromeWindow(this.domWindow).gFindBar;
   },
   fallback: function(url, sendResponse) {
