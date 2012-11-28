@@ -1,0 +1,8 @@
+html {
+  /* Font size is needed to make the activity bar the corect size. */
+  font-size: 10px;
+}
+
+#outerContainer {
+  position: relative;
+}
