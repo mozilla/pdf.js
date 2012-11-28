@@ -912,12 +912,19 @@ var PDFView = {
   setTitleUsingUrl: function pdfViewSetTitleUsingUrl(url) {
     this.url = url;
     try {
-      document.title = decodeURIComponent(getFileName(url)) || url;
+      this.setTitle(decodeURIComponent(getFileName(url)) || url);
     } catch (e) {
       // decodeURIComponent may throw URIError,
       // fall back to using the unprocessed url in that case
-      document.title = url;
+      this.setTitle(url);
     }
+  },
+
+  setTitle: function pdfViewSetTitle(title) {
+    document.title = title;
+//#if B2G
+//  document.getElementById('activityTitle').textContent = title;
+//#endif
   },
 
   open: function pdfViewOpen(url, scale, password) {
@@ -1291,7 +1298,7 @@ var PDFView = {
         pdfTitle = info['Title'];
 
       if (pdfTitle)
-        document.title = pdfTitle + ' - ' + document.title;
+        self.setTitle(pdfTitle + ' - ' + document.title);
     });
   },
 
@@ -3242,17 +3249,10 @@ window.addEventListener('afterprint', function afterPrint(evt) {
 //#if B2G
 //window.navigator.mozSetMessageHandler('activity', function(activity) {
 //  var url = activity.source.data.url;
-//  // Temporarily get the data here since the cross domain xhr is broken in
-//  // the worker currently, see bug 761227.
-//  var params = {
-//    url: url,
-//    error: function(e) {
-//      PDFView.error(mozL10n.get('loading_error', null,
-//                    'An error occurred while loading the PDF.'), e);
-//    }
-//  };
-//  PDFJS.getPdf(params, function successCallback(data) {
-//    PDFView.open(data, 0);
+//  PDFView.open(url);
+//  var cancelButton = document.getElementById('activityClose');
+//  cancelButton.addEventListener('click', function() {
+//    activity.postResult('close');
 //  });
 //});
 //#endif

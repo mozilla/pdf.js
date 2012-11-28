@@ -522,6 +522,7 @@ target.b2g = function() {
     defines: defines,
     copy: [
       [COMMON_WEB_FILES, B2G_BUILD_CONTENT_DIR + '/web'],
+      ['web/viewer-b2g.css', B2G_BUILD_CONTENT_DIR + '/web'],
       ['web/locale.properties', B2G_BUILD_CONTENT_DIR + '/web'],
       ['external/webL10n/l10n.js', B2G_BUILD_CONTENT_DIR + '/web']
     ],
