@@ -85,7 +85,7 @@ target.generic = function() {
       ['external/webL10n/l10n.js', GENERIC_DIR + '/web'],
       ['web/compatibility.js', GENERIC_DIR + '/web'],
       ['web/compressed.tracemonkey-pldi-09.pdf', GENERIC_DIR + '/web'],
-      ['web/locale.properties', GENERIC_DIR + '/web']
+      ['web/locale', GENERIC_DIR + '/web']
     ],
     preprocess: [
       [BUILD_TARGET, GENERIC_DIR + BUILD_TARGET],
@@ -143,7 +143,7 @@ target.locale = function() {
   var METADATA_OUTPUT = 'extensions/firefox/metadata.inc';
   var CHROME_MANIFEST_OUTPUT = 'extensions/firefox/chrome.manifest.inc';
   var EXTENSION_LOCALE_OUTPUT = 'extensions/firefox/locale';
-  var VIEWER_OUTPUT = 'web/locale.properties';
+  var VIEWER_LOCALE_OUTPUT = 'web/locale/';
 
   cd(ROOT_DIR);
   echo();
@@ -151,6 +151,8 @@ target.locale = function() {
 
   rm('-rf', EXTENSION_LOCALE_OUTPUT);
   mkdir('-p', EXTENSION_LOCALE_OUTPUT);
+  rm('-rf', VIEWER_LOCALE_OUTPUT);
+  mkdir('-p', VIEWER_LOCALE_OUTPUT);
 
   var subfolders = ls(LOCALE_SRC_DIR);
   subfolders.sort();
@@ -169,13 +171,15 @@ target.locale = function() {
     }
 
     mkdir('-p', EXTENSION_LOCALE_OUTPUT + '/' + locale);
+    mkdir('-p', VIEWER_LOCALE_OUTPUT + '/' + locale);
     chromeManifestContent += 'locale  pdf.js  ' + locale + '  locale/' +
                              locale + '/\n';
 
     if (test('-f', path + '/viewer.properties')) {
-      var properties = cat(path + '/viewer.properties');
-      viewerOutput += '[' + locale + ']\n' + properties + '\n';
+      viewerOutput += '[' + locale + ']\n' +
+                      '@import url(' + locale + '/viewer.properties)\n\n';
       cp(path + '/viewer.properties', EXTENSION_LOCALE_OUTPUT + '/' + locale);
+      cp(path + '/viewer.properties', VIEWER_LOCALE_OUTPUT + '/' + locale);
     }
 
     if (test('-f', path + '/chrome.properties')) {
@@ -187,7 +191,7 @@ target.locale = function() {
       metadataContent += metadata;
     }
   }
-  viewerOutput.to(VIEWER_OUTPUT);
+  viewerOutput.to(VIEWER_LOCALE_OUTPUT + 'locale.properties');
   metadataContent.to(METADATA_OUTPUT);
   chromeManifestContent.to(CHROME_MANIFEST_OUTPUT);
 };
@@ -523,7 +527,7 @@ target.b2g = function() {
     copy: [
       [COMMON_WEB_FILES, B2G_BUILD_CONTENT_DIR + '/web'],
       ['web/viewer-b2g.css', B2G_BUILD_CONTENT_DIR + '/web'],
-      ['web/locale.properties', B2G_BUILD_CONTENT_DIR + '/web'],
+      ['web/locale', B2G_BUILD_CONTENT_DIR + '/web'],
       ['external/webL10n/l10n.js', B2G_BUILD_CONTENT_DIR + '/web']
     ],
     preprocess: [
@@ -565,11 +569,11 @@ target.chrome = function() {
         'extensions/chrome/*.js'],
        CHROME_BUILD_DIR],
       [BUILD_TARGET, CHROME_BUILD_CONTENT_DIR + BUILD_TARGET],
-      ['external/webL10n/l10n.js', CHROME_BUILD_CONTENT_DIR + '/web']
+      ['external/webL10n/l10n.js', CHROME_BUILD_CONTENT_DIR + '/web'],
+      ['web/locale', CHROME_BUILD_CONTENT_DIR + '/web']
     ],
     preprocess: [
-      [COMMON_WEB_FILES_PREPROCESS, CHROME_BUILD_CONTENT_DIR + '/web'],
-      ['web/locale.properties', CHROME_BUILD_CONTENT_DIR + '/web']
+      [COMMON_WEB_FILES_PREPROCESS, CHROME_BUILD_CONTENT_DIR + '/web']
     ]
   };
   builder.build(setup);
