@@ -397,7 +397,7 @@ var PDFImage = (function PDFImageClosure() {
                          height / originalHeight);
 
       var comps = this.colorSpace.createRgbBuffer(this.getComponents(imgArray),
-        0, originalWidth * actualHeight, bpc);
+        0, originalWidth * originalHeight, bpc);
       if (originalWidth != width || originalHeight != height)
         comps = PDFImage.resize(comps, this.bpc, 3, originalWidth,
                                 originalHeight, width, height);
