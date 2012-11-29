@@ -713,6 +713,14 @@
       "link": true,
       "type": "eq"
     },
+    {  "id": "issue2006",
+      "file": "pdfs/issue2006.pdf",
+      "md5": "71ec73831ece9b508ad20efa6ff28642",
+      "rounds": 1,
+      "pageLimit": 1,
+      "link": true,
+      "type": "eq"
+    },
     {  "id": "issue1729",
       "file": "pdfs/issue1729.pdf",
       "md5": "29b0eddc3e1dcb23a44384037032d470",
