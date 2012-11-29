@@ -1288,6 +1288,11 @@ var PDFView = {
       self.documentInfo = info;
       self.metadata = metadata;
 
+      // Provides some basic debug information
+      console.log('PDF ' + pdfDocument.fingerprint + ' [' +
+                  info.PDFFormatVersion + ' ' + (info.Producer || '-') +
+                  ' / ' + (info.Creator || '-') + ']');
+
       var pdfTitle;
       if (metadata) {
         if (metadata.has('dc:title'))
