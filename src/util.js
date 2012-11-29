@@ -196,15 +196,17 @@ var IDENTITY_MATRIX = [1, 0, 0, 1, 0, 0];
 var Util = PDFJS.Util = (function UtilClosure() {
   function Util() {}
 
-  Util.makeCssRgb = function Util_makeCssRgb(r, g, b) {
-    var ri = (255 * r) | 0, gi = (255 * g) | 0, bi = (255 * b) | 0;
-    return 'rgb(' + ri + ',' + gi + ',' + bi + ')';
+  Util.makeCssRgb = function Util_makeCssRgb(rgb) {
+    return 'rgb(' + rgb[0] + ',' + rgb[1] + ',' + rgb[2] + ')';
   };
 
-  Util.makeCssCmyk = function Util_makeCssCmyk(c, m, y, k) {
-    c = (new DeviceCmykCS()).getRgb([c, m, y, k]);
-    var ri = (255 * c[0]) | 0, gi = (255 * c[1]) | 0, bi = (255 * c[2]) | 0;
-    return 'rgb(' + ri + ',' + gi + ',' + bi + ')';
+  Util.makeCssCmyk = function Util_makeCssCmyk(cmyk) {
+    var cs = new DeviceCmykCS();
+    Util.makeCssCmyk = function makeCssCmyk(cmyk) {
+      var rgb = cs.getRgb(cmyk, 0);
+      return Util.makeCssRgb(rgb);
+    };
+    return Util.makeCssCmyk(cmyk);
   };
 
   // For 2d affine transforms
