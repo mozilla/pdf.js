@@ -156,15 +156,15 @@ Shadings.RadialAxial = (function RadialAxialClosure() {
     }
 
     for (var i = t0; i <= t1; i += step) {
-      var rgbColor = cs.getRgb(fn([i]));
-      var cssColor = Util.makeCssRgb(rgbColor[0], rgbColor[1], rgbColor[2]);
+      var rgbColor = cs.getRgb(fn([i]), 0);
+      var cssColor = Util.makeCssRgb(rgbColor);
       colorStops.push([(i - t0) / diff, cssColor]);
     }
 
     var background = 'transparent';
     if (dict.has('Background')) {
-      var rgbColor = cs.getRgb(dict.get('Background'));
-      background = Util.makeCssRgb(rgbColor[0], rgbColor[1], rgbColor[2]);
+      var rgbColor = cs.getRgb(dict.get('Background'), 0);
+      background = Util.makeCssRgb(rgbColor);
     }
 
     if (!extendStart) {
@@ -312,7 +312,8 @@ var TilingPattern = (function TilingPatternClosure() {
         tmpCtx.strokeStyle = ctx.strokeStyle;
         break;
       case PaintType.UNCOLORED:
-        var cssColor = Util.makeCssRgb(this, color[0], color[1], color[2]);
+        var rgbColor = new DeviceRgbCS().getRgb(color, 0);
+        var cssColor = Util.makeCssRgb(rgbColor);
         tmpCtx.fillStyle = cssColor;
         tmpCtx.strokeStyle = cssColor;
         break;
