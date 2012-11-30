@@ -344,11 +344,11 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
           warn('Error during font loading: ' + obj.error);
           continue;
         }
+        if (!obj.coded) {
+          this.transport.embeddedFontsUsed = true;
+        }
         fontObjs.push(obj);
       }
-
-      this.transport.embeddedFontsUsed = this.transport.embeddedFontsUsed ||
-                                         fontObjs.length > 0;
 
       // Load all the fonts
       FontLoader.bind(
@@ -452,7 +452,6 @@ var WorkerTransport = (function WorkerTransportClosure() {
 
     this.pageCache = [];
     this.pagePromises = [];
-    this.fontsLoading = {};
     this.embeddedFontsUsed = false;
 
     // If worker support isn't disabled explicit and the browser has worker
