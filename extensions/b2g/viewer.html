@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<!--
+Copyright 2012 Mozilla Foundation
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+-->
+<html dir="ltr">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <title>PDF.js viewer</title>
+
+
+    <link rel="stylesheet" href="viewer.css"/>
+    <link rel="resource" type="application/l10n" href="locale.properties"/>
+    <link rel="stylesheet" href="/shared/style/headers.css" type="text/css" />
+    <link rel="stylesheet" href="viewer-b2g.css" type="text/css" />
+    <script type="text/javascript" src="l10n.js"></script>
+    <script type="text/javascript" src="../build/pdf.js"></script>
+    <script type="text/javascript" src="/shared/js/async_storage.js"></script>
+    <script type="text/javascript">
+      // This specifies the location of the pdf.js file.
+      PDFJS.workerSrc = "../build/pdf.js";
+      PDFJS.disableTextLayer = true;
+    </script>
+
+    <script type="text/javascript" src="viewer.js"></script>
+  </head>
+
+
+  <body>
+    <section role="region" id="activityHeader" class="skin-organic">
+      <header>
+        <button id="activityClose"><span class="icon icon-close"></span></button>
+        <h1 id="activityTitle"></h1>
+      </header>
+
+      <footer id="open-toolbar">
+        <button class="toolbarButton pageUp" title="Previous Page" id="previous" data-l10n-id="previous"></button>
+        <button class="toolbarButton pageDown" title="Next Page" id="next" data-l10n-id="next"></button>
+
+        <input type="number" id="pageNumber" class="toolbarField pageNumber" value="1" size="4" min="1">
+
+        <button class="toolbarButton zoomOut" title="Zoom Out" data-l10n-id="zoom_out"></button>
+        <button class="toolbarButton zoomIn" title="Zoom In" data-l10n-id="zoom_in"></button>
+      </footer>
+    </section>
+
+    <div id="viewerContainer">
+      <div id="viewer"></div>
+    </div>
+
+    <div id="loadingBox">
+      <div id="loading"></div>
+      <div id="loadingBar"><div class="progress"></div></div>
+    </div>
+
+    <div id="errorWrapper" hidden='true'>
+      <div id="errorMessageLeft">
+        <span id="errorMessage"></span>
+        <button id="errorShowMore" onclick="" oncontextmenu="return false;" data-l10n-id="error_more_info">
+          More Information
+        </button>
+        <button id="errorShowLess" onclick="" oncontextmenu="return false;" data-l10n-id="error_less_info" hidden='true'>
+          Less Information
+        </button>
+      </div>
+      <div id="errorMessageRight">
+        <button id="errorClose" oncontextmenu="return false;" data-l10n-id="error_close">
+          Close
+        </button>
+      </div>
+      <div class="clearBoth"></div>
+      <textarea id="errorMoreInfo" hidden='true' readonly="readonly"></textarea>
+    </div>
+
+    <!-- BEGIN STUBS -->
+    <!--
+      Nothing below here is visible, the elements are just here
+      to prevent the viewer from breaking until we refactor it.
+    -->
+    <div id="stubs" style="display: none;">
+      <div id="outerContainer"></div>
+      <div id="sidebarContainer">
+        <div id="toolbarSidebar">
+          <button id="viewThumbnail"></button>
+          <button id="viewOutline"></button>
+        </div>
+        <div id="sidebarContent">
+          <div id="thumbnailView"></div>
+          <div id="outlineView"></div>
+        </div>
+      </div>  <!-- sidebarContainer -->
+
+      <div id="mainContainer">
+        <div id="findbar">
+          <input id="findInput">
+          <button id="findPrevious"></button>
+          <button id="findNext"></button>
+          <input type="checkbox" id="findHighlightAll">
+          <input type="checkbox" id="findMatchCase">
+          <span id="findMsg"></span>
+        </div>
+        <div id="toolbarContainer">
+          <div id="toolbarViewer">
+            <div id="toolbarViewerLeft">
+              <button id="sidebarToggle"></button>
+              <button id="viewFind"></button>
+              <span id="numPages"></span>
+            </div>
+            <div id="toolbarViewerRight">
+              <input id="fileInput" type="file" />
+              <button id="fullscreen"></button>
+              <button id="openFile"></button>
+              <button id="print"></button>
+              <button id="download"></button>
+              <!-- <div class="toolbarButtonSpacer"></div> -->
+              <a href="#" id="viewBookmark"></a>
+            </div>
+            <div id="toolbarViewerMiddle">
+              <span id="scaleSelectContainer">
+                 <select id="scaleSelect">
+                  <option id="pageAutoOption" value="auto" selected="selected">Automatic Zoom</option>
+                  <option id="pageActualOption" value="page-actual">Actual Size</option>
+                  <option id="pageFitOption" value="page-fit">Fit Page</option>
+                  <option id="pageWidthOption" value="page-width">Full Width</option>
+                  <option id="customScaleOption" value="custom"></option>
+                  <option value="0.5">50%</option>
+                  <option value="0.75">75%</option>
+                  <option value="1">100%</option>
+                  <option value="1.25">125%</option>
+                  <option value="1.5">150%</option>
+                  <option value="2">200%</option>
+                </select>
+              </span>
+            </div>
+          </div>
+        </div>
+        <menu type="context" id="viewerContextMenu">
+          <menuitem id="first_page"></menuitem>
+          <menuitem id="last_page"></menuitem>
+          <menuitem id="page_rotate_ccw"></menuitem>
+          <menuitem id="page_rotate_cw"></menuitem>
+        </menu>
+
+      </div> <!-- mainContainer -->
+      <div id="printContainer"></div>
+    </div>
+    <!-- END STUBS -->
+  </body>
+</html>
+

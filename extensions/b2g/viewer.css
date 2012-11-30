@@ -1,0 +1,282 @@
+/* Copyright 2012 Mozilla Foundation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+* { -moz-box-sizing: border-box; }
+
+* {
+  padding: 0;
+  margin: 0;
+}
+
+html {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  font-size: 10px;
+}
+
+body {
+  background: url(images/document_bg.png);
+  color: #fff;
+  font-family: "MozTT", sans-serif;
+  font-size: 10px;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  padding-bottom: 50px;
+}
+
+section {
+  overflow: hidden;
+  font-size: 10px;
+  position: absolute;
+  top: 0px;
+  left: 0px;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  font-size: 20px;
+}
+
+footer {
+  background-image: url(images/toolbar_background.png);
+  height: 40px;
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 1;
+  box-shadow: 0px -2px 5px rgba(50, 50, 50, 0.75);
+}
+
+
+.toolbarButton {
+  display: block;
+  padding: 0;
+  margin: 0;
+  border-width: 0;
+  background-position: center center;
+  background-repeat: no-repeat;
+  background-color: transparent;
+}
+
+.toolbarButton.pageUp {
+  position: absolute;
+  width: 18%;
+  height: 100%;
+  left: 0;
+  background-image: url(images/icon_previous_page.png);
+}
+
+.toolbarButton.pageDown {
+  position: absolute;
+  width: 18%;
+  height: 100%;
+  left: 18%;
+  background-image: url(images/icon_next_page.png);
+}
+
+#pageNumber {
+  position: absolute;
+  width: 28%;
+  height: 100%;
+  left: 36%;
+  text-align: center;
+  border: 0;
+  background-color: transparent;
+  font-size: 9pt;
+  color: #FFF;
+  background-image: url(images/div_line_left.png), url(images/div_line_right.png);
+  background-repeat: no-repeat;
+  background-position: left, right;
+}
+
+.toolbarButton.zoomOut {
+  position: absolute;
+  width: 18%;
+  height: 100%;
+  left: 64%;
+  background-image: url(images/icon_zoom_out.png);
+}
+
+.toolbarButton.zoomIn {
+  position: absolute;
+  width: 18%;
+  height: 100%;
+  left: 82%;
+  background-image: url(images/icon_zoom_in.png);
+}
+
+.toolbarButton[disabled] {
+  opacity: .3;
+}
+
+.hidden {
+  display: none;
+}
+[hidden] {
+  display: none !important;
+}
+
+#viewerContainer {
+  position: absolute;
+  overflow: auto;
+  width: 100%;
+  top: 50px;
+  bottom: 40px;
+  left: 0;
+  right: 0;
+}
+
+canvas {
+  margin: auto;
+  display: block;
+}
+
+.page {
+  direction: ltr;
+  width: 816px;
+  height: 1056px;
+  margin: 10px auto;
+  position: relative;
+  overflow: hidden;
+  background-color: white;
+}
+
+.page > a {
+  display: block;
+  position: absolute;
+}
+
+.loadingIcon {
+  width: 2.9rem;
+  height: 2.9rem;
+  background: url("images/spinner.png") no-repeat scroll left top transparent;
+  border: medium none;
+  animation: 1s steps(10, end) 0s normal none infinite moveDefault;
+  display: block;
+  position: absolute;
+  top: calc((100% - 2.9rem) / 2);
+  left: calc((100% - 2.9rem) / 2);
+}
+
+@keyframes moveDefault {
+  from {
+    background-position: 0 top;
+  }
+
+  to {
+    background-position: -390px top;
+  }
+}
+
+#loadingBox {
+  position: absolute;
+  top: 50%;
+  margin-top: -25px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  color: #ddd;
+  font-size: 14px;
+}
+
+#loadingBar {
+  display: inline-block;
+  clear: both;
+  margin: 0px;
+  margin-top: 5px;
+  line-height: 0;
+  border-radius: 2px;
+  width: 200px;
+  height: 25px;
+
+  background-color: hsla(0,0%,0%,.3);
+  background-image: -moz-linear-gradient(hsla(0,0%,100%,.05), hsla(0,0%,100%,0));
+  background-image: -webkit-linear-gradient(hsla(0,0%,100%,.05), hsla(0,0%,100%,0));
+  border: 1px solid #000;
+  box-shadow: 0 1px 1px hsla(0,0%,0%,.1) inset,
+              0 0 1px hsla(0,0%,0%,.2) inset,
+              0 0 1px 1px rgba(255, 255, 255, 0.1);
+}
+
+#loadingBar .progress {
+  display: inline-block;
+  float: left;
+
+  background: #666;
+  background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,#b2b2b2), color-stop(100%,#898989));
+  background: -webkit-linear-gradient(top, #b2b2b2 0%,#898989 100%);
+  background: -moz-linear-gradient(top, #b2b2b2 0%,#898989 100%);
+  background: -ms-linear-gradient(top, #b2b2b2 0%,#898989 100%);
+  background: -o-linear-gradient(top, #b2b2b2 0%,#898989 100%);
+  background: linear-gradient(top, #b2b2b2 0%,#898989 100%);
+
+  border-top-left-radius: 2px;
+  border-bottom-left-radius: 2px;
+
+  width: 0%;
+  height: 100%;
+}
+
+#loadingBar .progress.full {
+  border-top-right-radius: 2px;
+  border-bottom-right-radius: 2px;
+}
+
+#loadingBar .progress.indeterminate {
+  width: 100%;
+  height: 25px;
+  background-image: -moz-linear-gradient( 30deg, #404040, #404040 15%, #898989, #404040 85%, #404040);
+  background-image: -webkit-linear-gradient( 30deg, #404040, #404040 15%, #898989, #404040 85%, #404040);
+  background-image: -ms-linear-gradient( 30deg, #404040, #404040 15%, #898989, #404040 85%, #404040);
+  background-image: -o-linear-gradient( 30deg, #404040, #404040 15%, #898989, #404040 85%, #404040);
+  background-size: 75px 25px;
+  -moz-animation: progressIndeterminate 1s linear infinite;
+  -webkit-animation: progressIndeterminate 1s linear infinite;
+}
+
+@-moz-keyframes progressIndeterminate {
+  from { background-position: 0px 0px; }
+  to { background-position: 75px 0px; }
+}
+
+#errorWrapper {
+  background: none repeat scroll 0 0 #FF5555;
+  color: white;
+  left: 0;
+  position: absolute;
+  right: 0;
+  top: 32px;
+  z-index: 1000;
+  padding: 3px;
+  font-size: 0.8em;
+}
+
+#errorMessageLeft {
+  float: left;
+}
+
+#errorMessageRight {
+  float: right;
+}
+
+#errorMoreInfo {
+  background-color: #FFFFFF;
+  color: black;
+  padding: 3px;
+  margin: 3px;
+  width: 98%;
+}
