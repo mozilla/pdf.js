@@ -25,19 +25,26 @@ var ColorSpace = (function ColorSpaceClosure() {
 
   ColorSpace.prototype = {
     /**
-     * Converts src array items representing color components values starting
-     * from srcOffset to RGB color. Returns the array of the rgb components
-     * items, each value ranging from [0,255].
+     * Converts the color value to the RGB color. The color components are
+     * located in the src array starting from the srcOffset. Returns the array
+     * of the rgb components, each value ranging from [0,255].
      */
     getRgb: function ColorSpace_getRgb(src, srcOffset) {
       error('Should not call ColorSpace.getRgb');
     },
     /**
-     * Converts src array items representing color components values starting
-     * from srcOffset to RGB colors. The src is Uint8Array with the items that
-     * represent color components values, each value scaled to [0, 2^bits).
-     * Only count amount of values with be converted and placed into dest array
-     * starting from destOffset offset, each value scaled to [0,255].
+     * Converts the color value to the RGB color, similar to the getRgb method.
+     * The result placed into the dest array starting from the destOffset.
+     */
+    getRgbItem: function ColorSpace_getRgb(src, srcOffset, dest, destOffset) {
+      error('Should not call ColorSpace.getRgbItem');
+    },
+    /**
+     * Converts the specified number of the color values to the RGB colors.
+     * The colors are located in the src array starting from the srcOffset.
+     * The result is placed into the dest array starting from the destOffset.
+     * The src array items shall be in [0,2^bits) range, the dest array items
+     * will be in [0,255] range.
      */
     getRgbBuffer: function ColorSpace_getRgbBuffer(src, srcOffset, count,
                                                    dest, destOffset, bits) {
@@ -57,9 +64,8 @@ var ColorSpace = (function ColorSpaceClosure() {
       return false;
     },
     /**
-     * Converts src array items representing color components values starting
-     * from srcOffset to RGB colors similar to the getRgbBuffer. Returns
-     * the created buffer.
+     * Creates the output buffer and converts the specified number of the color
+     * values to the RGB colors, similar to the getRgbBuffer.
      */
     createRgbBuffer: function ColorSpace_createRgbBuffer(src, srcOffset,
                                                          count, bits) {
@@ -263,12 +269,18 @@ var AlternateCS = (function AlternateCSClosure() {
 
   AlternateCS.prototype = {
     getRgb: function AlternateCS_getRgb(src, srcOffset) {
+      var rgb = new Uint8Array(3);
+      this.getRgbItem(src, srcOffset, rgb, 0);
+      return rgb;
+    },
+    getRgbItem: function AlternateCS_getRgbItem(src, srcOffset,
+                                                dest, destOffset) {
       var baseNumComps = this.base.numComps;
       var input = 'subarray' in src ?
         src.subarray(srcOffset, srcOffset + this.numComps) :
         Array.prototype.slice.call(src, srcOffset, srcOffset + this.numComps);
       var tinted = this.tintFn(input);
-      return this.base.getRgb(tinted, 0);
+      this.base.getRgbItem(tinted, 0, dest, destOffset);
     },
     getRgbBuffer: function AlternateCS_getRgbBuffer(src, srcOffset, count,
                                                     dest, destOffset, bits) {
@@ -276,7 +288,8 @@ var AlternateCS = (function AlternateCSClosure() {
       var base = this.base;
       var scale = 1 / ((1 << bits) - 1);
       var baseNumComps = base.numComps;
-      var isPassthrough = base.isPassthrough(8);
+      var isGetRgbBufferSupported = 'getRgbBuffer' in base;
+      var isPassthrough = base.isPassthrough(8) || !isGetRgbBufferSupported;
       var pos = isPassthrough ? destOffset : 0;
       var baseBuf = isPassthrough ? dest : new Uint8Array(baseNumComps * count);
       var numComps = this.numComps;
@@ -287,8 +300,13 @@ var AlternateCS = (function AlternateCSClosure() {
           scaled[j] = src[srcOffset++] * scale;
         }
         var tinted = tintFn(scaled);
-        for (var j = 0; j < baseNumComps; j++) {
-          baseBuf[pos++] = tinted[j] * 255;
+        if (isGetRgbBufferSupported) {
+          for (var j = 0; j < baseNumComps; j++) {
+            baseBuf[pos++] = tinted[j] * 255;
+          }
+        } else {
+          base.getRgbItem(tinted, 0, baseBuf, pos);
+          pos += baseNumComps;
         }
       }
       if (!isPassthrough) {
@@ -353,6 +371,12 @@ var IndexedCS = (function IndexedCSClosure() {
       var start = src[srcOffset] * numComps;
       return this.base.getRgb(this.lookup, start);
     },
+    getRgbItem: function IndexedCS_getRgbItem(src, srcOffset,
+                                              dest, destOffset) {
+      var numComps = this.base.numComps;
+      var start = src[srcOffset] * numComps;
+      this.base.getRgbItem(this.lookup, start, dest, destOffset);
+    },
     getRgbBuffer: function IndexedCS_getRgbBuffer(src, srcOffset, count,
                                                   dest, destOffset) {
       var base = this.base;
@@ -388,9 +412,15 @@ var DeviceGrayCS = (function DeviceGrayCSClosure() {
 
   DeviceGrayCS.prototype = {
     getRgb: function DeviceGrayCS_getRgb(src, srcOffset) {
+      var rgb = new Uint8Array(3);
+      this.getRgbItem(src, srcOffset, rgb, 0);
+      return rgb;
+    },
+    getRgbItem: function DeviceGrayCS_getRgbItem(src, srcOffset,
+                                                 dest, destOffset) {
       var c = (src[srcOffset] * 255) | 0;
       c = c < 0 ? 0 : c > 255 ? 255 : c;
-      return new Uint8Array([c, c, c]);
+      dest[destOffset] = dest[destOffset + 1] = dest[destOffset + 2] = c;
     },
     getRgbBuffer: function DeviceGrayCS_getRgbBuffer(src, srcOffset, count,
                                                      dest, destOffset, bits) {
@@ -423,14 +453,18 @@ var DeviceRgbCS = (function DeviceRgbCSClosure() {
   }
   DeviceRgbCS.prototype = {
     getRgb: function DeviceRgbCS_getRgb(src, srcOffset) {
+      var rgb = new Uint8Array(3);
+      this.getRgbItem(src, srcOffset, rgb, 0);
+      return rgb;
+    },
+    getRgbItem: function DeviceRgbCS_getRgbItem(src, srcOffset,
+                                                dest, destOffset) {
       var r = src[srcOffset] * 255;
       var g = src[srcOffset + 1] * 255;
       var b = src[srcOffset + 2] * 255;
-      var rgb = new Uint8Array(3);
-      rgb[0] = r < 0 ? 0 : r > 255 ? 255 : r;
-      rgb[1] = g < 0 ? 0 : g > 255 ? 255 : g;
-      rgb[2] = b < 0 ? 0 : b > 255 ? 255 : b;
-      return rgb;
+      dest[destOffset] = r < 0 ? 0 : r > 255 ? 255 : r;
+      dest[destOffset + 1] = g < 0 ? 0 : g > 255 ? 255 : g;
+      dest[destOffset + 2] = b < 0 ? 0 : b > 255 ? 255 : b;
     },
     getRgbBuffer: function DeviceRgbCS_getRgbBuffer(src, srcOffset, count,
                                                     dest, destOffset, bits) {
@@ -1183,6 +1217,10 @@ var DeviceCmykCS = (function DeviceCmykCSClosure() {
       convertToRgb(src, srcOffset, 1, rgb, 0);
       return rgb;
     },
+    getRgbItem: function DeviceCmykCS_getRgbItem(src, srcOffset,
+                                                 dest, destOffset) {
+      convertToRgb(src, srcOffset, 1, dest, destOffset);
+    },
     getRgbBuffer: function DeviceCmykCS_getRgbBuffer(src, srcOffset, count,
                                                      dest, destOffset, bits) {
       var scale = 1 / ((1 << bits) - 1);
@@ -1253,7 +1291,7 @@ var LabCS = (function LabCSClosure() {
   };
 
   // Function g(x) from spec
-  function g(x) {
+  function fn_g(x) {
     if (x >= 6 / 29)
       return x * x * x;
     else
@@ -1267,31 +1305,37 @@ var LabCS = (function LabCSClosure() {
     var bs = src[srcOffset + 2];
 
     // Adjust limits of 'as' and 'bs'
-    as = as > cs.amax ? cs.amax : as;
-    as = as < cs.amin ? cs.amin : as;
-    bs = bs > cs.bmax ? cs.bmax : bs;
-    bs = bs < cs.bmin ? cs.bmin : bs;
+    as = as > cs.amax ? cs.amax : as < cs.amin ? cs.amin : as;
+    bs = bs > cs.bmax ? cs.bmax : bs < cs.bmin ? cs.bmin : bs;
 
     // Computes intermediate variables X,Y,Z as per spec
     var M = (Ls + 16) / 116;
     var L = M + (as / 500);
     var N = M - (bs / 200);
-    var X = cs.XW * g(L);
-    var Y = cs.YW * g(M);
-    var Z = cs.ZW * g(N);
 
-    // XYZ to RGB 3x3 matrix, from:
-    // http://www.poynton.com/notes/colour_and_gamma/ColorFAQ.html#RTFToC18
-    var XYZtoRGB = [3.240479, -1.537150, -0.498535,
-                    -0.969256, 1.875992, 0.041556,
-                    0.055648, -0.204043, 1.057311];
+    var X = cs.XW * fn_g(L);
+    var Y = cs.YW * fn_g(M);
+    var Z = cs.ZW * fn_g(N);
 
-    var rgb = Util.apply3dTransform(XYZtoRGB, [X, Y, Z]);
+    var r, g, b;
+    // Using different conversions for D50 and D65 white points,
+    // per http://www.color.org/srgb.pdf
+    if (cs.ZW < 1) {
+      // Assuming D50 (X=0.9642, Y=1.00, Z=0.8249)
+      r = X * 3.1339 + Y * -1.6170 + Z * -0.4906;
+      g = X * -0.9785 + Y * 1.9160 + Z * 0.0333;
+      b = X * 0.0720 + Y * -0.2290 + Z * 1.4057;
+    } else {
+      // Assuming D65 (X=0.9505, Y=1.00, Z=1.0888)
+      r = X * 3.2406 + Y * -1.5372 + Z * -0.4986;
+      g = X * -0.9689 + Y * 1.8758 + Z * 0.0415;
+      b = X * 0.0557 + Y * -0.2040 + Z * 1.0570;
+    }
 
     // clamp color values to [0,255] range
-    dest[destOffset] = rgb[0] < 0 ? 0 : rgb[0] > 1 ? 255 : rgb[0] * 255;
-    dest[destOffset + 1] = rgb[1] < 0 ? 0 : rgb[1] > 1 ? 255 : rgb[1] * 255;
-    dest[destOffset + 2] = rgb[2] < 0 ? 0 : rgb[2] > 1 ? 255 : rgb[2] * 255;
+    dest[destOffset] = r < 0 ? 0 : r > 1 ? 255 : r * 255;
+    dest[destOffset + 1] = g < 0 ? 0 : g > 1 ? 255 : g * 255;
+    dest[destOffset + 2] = b < 0 ? 0 : b > 1 ? 255 : b * 255;
   }
 
   LabCS.prototype = {
@@ -1300,21 +1344,13 @@ var LabCS = (function LabCSClosure() {
       convertToRgb(this, src, srcOffset, rgb, 0);
       return rgb;
     },
-    getRgbBuffer: function LabCS_getRgbBuffer(src, srcOffset, count,
-                                              dest, destOffset) {
-      for (var i = 0; i < count; ++i) {
-        convertToRgb(this, src, srcOffset, dest, destOffset);
-        srcOffset += 3;
-        destOffset += 3;
-      }
-
-      return rgbBuf;
+    getRgbItem: function LabCS_getRgbItem(src, srcOffset, dest, destOffset) {
+      convertToRgb(this, src, srcOffset, dest, destOffset);
     },
     getOutputLength: function LabCS_getOutputLength(inputLength) {
       return inputLength;
     },
     isPassthrough: ColorSpace.prototype.isPassthrough,
-    createRgbBuffer: ColorSpace.prototype.createRgbBuffer,
     isDefaultDecode: function LabCS_isDefaultDecode(decodeMap) {
       // From Table 90 in Adobe's:
       // "Document management - Portable document format", 1st ed, 2008
