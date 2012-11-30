@@ -91,6 +91,13 @@ var PDFDocumentProxy = (function PDFDocumentProxyClosure() {
       return this.pdfInfo.fingerprint;
     },
     /**
+     * @return {boolean} true if embedded document fonts are in use. Will be
+     * set during rendering of the pages.
+     */
+    get embeddedFontsUsed() {
+      return this.transport.embeddedFontsUsed;
+    },
+    /**
      * @param {number} The page number to get. The first page is 1.
      * @return {Promise} A promise that is resolved with a {PDFPageProxy}
      * object.
@@ -340,6 +347,9 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
         fontObjs.push(obj);
       }
 
+      this.transport.embeddedFontsUsed = this.transport.embeddedFontsUsed ||
+                                         fontObjs.length > 0;
+
       // Load all the fonts
       FontLoader.bind(
         fontObjs,
@@ -443,6 +453,7 @@ var WorkerTransport = (function WorkerTransportClosure() {
     this.pageCache = [];
     this.pagePromises = [];
     this.fontsLoading = {};
+    this.embeddedFontsUsed = false;
 
     // If worker support isn't disabled explicit and the browser has worker
     // support, create a new web worker and test if it/the browser fullfills
