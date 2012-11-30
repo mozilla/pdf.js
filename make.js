@@ -508,6 +508,8 @@ target.mozcentral = function() {
 };
 
 target.b2g = function() {
+  target.locale();
+  target.bundle();
   echo();
   echo('### Building B2G (Firefox OS App)');
   var B2G_BUILD_DIR = BUILD_DIR + '/b2g/',
@@ -525,13 +527,14 @@ target.b2g = function() {
   var setup = {
     defines: defines,
     copy: [
-      [COMMON_WEB_FILES, B2G_BUILD_CONTENT_DIR + '/web'],
-      ['web/viewer-b2g.css', B2G_BUILD_CONTENT_DIR + '/web'],
+      ['extensions/b2g/images', B2G_BUILD_CONTENT_DIR + '/web'],
+      ['extensions/b2g/viewer.html', B2G_BUILD_CONTENT_DIR + '/web'],
+      ['extensions/b2g/viewer.css', B2G_BUILD_CONTENT_DIR + '/web'],
       ['web/locale', B2G_BUILD_CONTENT_DIR + '/web'],
       ['external/webL10n/l10n.js', B2G_BUILD_CONTENT_DIR + '/web']
     ],
     preprocess: [
-      [COMMON_WEB_FILES_PREPROCESS, B2G_BUILD_CONTENT_DIR + '/web'],
+      ['web/viewer.js', B2G_BUILD_CONTENT_DIR + '/web'],
       [BUILD_TARGET, B2G_BUILD_CONTENT_DIR + BUILD_TARGET]
     ]
   };
