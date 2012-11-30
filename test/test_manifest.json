@@ -735,6 +735,14 @@
       "rounds": 1,
       "type": "load"
     },
+    {  "id": "issue1998",
+      "file": "pdfs/issue1998.pdf",
+      "md5": "586e0213be2f461360ec26770b5a4e48",
+      "rounds": 1,
+      "pageLimit": 2,
+      "link": true,
+      "type": "load"
+    },
     {  "id": "issue1878",
       "file": "pdfs/issue1878.pdf",
       "md5": "b4fb0ce7c19368e7104dce3d0d34bcb3",
