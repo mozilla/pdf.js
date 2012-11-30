@@ -713,10 +713,9 @@ def maybeUpdateRefImages(options, browser):
             if options.noPrompts or prompt('Would you like to update the master copy in ref/?'):
                 sys.stdout.write('  Updating ref/ ... ')
 
-                # XXX unclear what to do on errors here ...
-                # NB: do *NOT* pass --delete to rsync.  That breaks this
-                # entire scheme.
-                subprocess.check_call(( 'rsync', '-arvq', 'tmp/', 'ref/' ))
+                if not os.path.exists('ref'):
+                    subprocess.check_call('mkdir ref', shell = True)
+                subprocess.check_call('cp -Rf tmp/* ref/', shell = True)
 
                 print 'done'
             else:
