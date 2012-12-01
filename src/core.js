@@ -526,13 +526,12 @@ var PDFDocument = (function PDFDocumentClosure() {
       return shadow(this, 'numPages', num);
     },
     getDocumentInfo: function PDFDocument_getDocumentInfo() {
-      var docInfo;
+      var docInfo = {
+        PDFFormatVersion: this.pdfFormatVersion
+      };
       if (this.xref.trailer.has('Info')) {
         var infoDict = this.xref.trailer.get('Info');
 
-        docInfo = {
-          PDFFormatVersion: this.pdfFormatVersion
-        };
         var validEntries = DocumentInfoValidators.entries;
         // Only fill the document info with valid entries from the spec.
         for (var key in validEntries) {
