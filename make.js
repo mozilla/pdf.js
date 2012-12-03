@@ -123,6 +123,7 @@ target.web = function() {
   cp(CHROME_BUILD_DIR + '/*.crx', FIREFOX_BUILD_DIR + '/*.rdf',
      GH_PAGES_DIR + EXTENSION_SRC_DIR + 'chrome/');
   cp('web/index.html.template', GH_PAGES_DIR + '/index.html');
+  cp('-R', 'test/features', GH_PAGES_DIR);
 
   cd(GH_PAGES_DIR);
   exec('git init');
