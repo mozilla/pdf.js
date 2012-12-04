@@ -381,7 +381,7 @@ var tests = [
   },
   {
     id: 'dash-array',
-    name: 'dashed lined is supported',
+    name: 'dashed line style is supported',
     run: function () {
       if (!isCanvasSupported)
         return { output: 'Skipped', emulated: '' };
@@ -429,7 +429,7 @@ var tests = [
   },
   {
     id: 'font-face-sync',
-    name: '@font-face data urls are loaded synchronously',
+    name: '@font-face loading completion detection',
     run: function () {
       if (!isCanvasSupported)
         return { output: 'Skipped', emulated: '' };
@@ -441,14 +441,18 @@ var tests = [
       var styleSheet = styleElement.sheet;
       styleSheet.insertRule(rule, styleSheet.cssRules.length);
 
+      // checking if data urls are loaded synchronously
       if (checkCanvas('plus-loaded'))
         return { output: 'Success', emulated: '' };
+
+      // TODO checking if data urls are loaded asynchronously
 
       var usageElement = document.createElement('div');
       usageElement.setAttribute('style', 'font-family: plus-loaded; visibility: hidden;');
       usageElement.textContent = '`';
       document.body.appendChild(usageElement);
 
+      // verify is font is loaded
       var promise = new Promise();
       setTimeout(function() {
         if (checkCanvas('plus-loaded'))
