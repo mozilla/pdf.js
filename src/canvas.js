@@ -224,6 +224,60 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
     }
   }
 
+  function rescaleImage(pixels, width, height, widthScale, heightScale) {
+    var scaledWidth = Math.ceil(width / widthScale);
+    var scaledHeight = Math.ceil(height / heightScale);
+
+    var itemsSum = new Float32Array(scaledWidth * scaledHeight * 3);
+    var itemsCount = new Float32Array(scaledWidth * scaledHeight);
+    var maxAlphas = new Uint8Array(scaledWidth * scaledHeight);
+    for (var i = 0, position = 0; i < height; i++) {
+      var lineOffset = (0 | (i / heightScale)) * scaledWidth;
+      for (var j = 0; j < width; j++) {
+        var countOffset = lineOffset + (0 | (j / widthScale));
+        var sumOffset = countOffset * 3;
+        var maxAlpha = maxAlphas[countOffset];
+        var currentAlpha = pixels[position + 3];
+        if (maxAlpha < currentAlpha) {
+          // lowering total alpha
+          var scale = 1 - (currentAlpha - maxAlpha) / 255;
+          itemsSum[sumOffset] *= scale;
+          itemsSum[sumOffset + 1] *= scale;
+          itemsSum[sumOffset + 2] *= scale;
+          maxAlphas[countOffset] = maxAlpha = currentAlpha;
+        }
+        if (maxAlpha > currentAlpha) {
+          var scale = 1 - (maxAlpha - currentAlpha) / 255;
+          itemsSum[sumOffset] += pixels[position] * scale;
+          itemsSum[sumOffset + 1] += pixels[position + 1] * scale;
+          itemsSum[sumOffset + 2] += pixels[position + 2] * scale;
+          itemsCount[countOffset] += scale;
+        } else {
+          itemsSum[sumOffset] += pixels[position];
+          itemsSum[sumOffset + 1] += pixels[position + 1];
+          itemsSum[sumOffset + 2] += pixels[position + 2];
+          itemsCount[countOffset]++;
+        }
+        position += 4;
+      }
+    }
+    var tmpCanvas = createScratchCanvas(scaledWidth, scaledHeight);
+    var tmpCtx = tmpCanvas.getContext('2d');
+    var imgData = tmpCtx.getImageData(0, 0, scaledWidth, scaledHeight);
+    pixels = imgData.data;
+    var j = 0, q = 0;
+    for (var i = 0, ii = scaledWidth * scaledHeight; i < ii; i++) {
+      var count = itemsCount[i];
+      pixels[j] = itemsSum[q++] / count;
+      pixels[j + 1] = itemsSum[q++] / count;
+      pixels[j + 2] = itemsSum[q++] / count;
+      pixels[j + 3] = maxAlphas[i];
+      j += 4;
+    }
+    tmpCtx.putImageData(imgData, 0, 0);
+    return tmpCanvas;
+  }
+
   var LINE_CAP_STYLES = ['butt', 'round', 'square'];
   var LINE_JOIN_STYLES = ['miter', 'round', 'bevel'];
   var NORMAL_CLIP = {};
@@ -1175,47 +1229,8 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
           }
         }
       }
-      function rescaleImage(pixels, widthScale, heightScale) {
-        var scaledWidth = Math.ceil(width / widthScale);
-        var scaledHeight = Math.ceil(height / heightScale);
 
-        var itemsSum = new Uint32Array(scaledWidth * scaledHeight * 4);
-        var itemsCount = new Uint32Array(scaledWidth * scaledHeight);
-        for (var i = 0, position = 0; i < height; i++) {
-          var lineOffset = (0 | (i / heightScale)) * scaledWidth;
-          for (var j = 0; j < width; j++) {
-            var countOffset = lineOffset + (0 | (j / widthScale));
-            var sumOffset = countOffset << 2;
-            itemsSum[sumOffset] += pixels[position];
-            itemsSum[sumOffset + 1] += pixels[position + 1];
-            itemsSum[sumOffset + 2] += pixels[position + 2];
-            itemsSum[sumOffset + 3] += pixels[position + 3];
-            itemsCount[countOffset]++;
-            position += 4;
-          }
-        }
-        var tmpCanvas = createScratchCanvas(scaledWidth, scaledHeight);
-        var tmpCtx = tmpCanvas.getContext('2d');
-        var imgData = tmpCtx.getImageData(0, 0, scaledWidth, scaledHeight);
-        pixels = imgData.data;
-        for (var i = 0, j = 0, ii = scaledWidth * scaledHeight; i < ii; i++) {
-          var count = itemsCount[i];
-          pixels[j] = itemsSum[j] / count;
-          pixels[j + 1] = itemsSum[j + 1] / count;
-          pixels[j + 2] = itemsSum[j + 2] / count;
-          pixels[j + 3] = itemsSum[j + 3] / count;
-          j += 4;
-        }
-        tmpCtx.putImageData(imgData, 0, 0);
-        return tmpCanvas;
-      }
-
-      this.save();
-
-      var ctx = this.ctx;
       var w = width, h = height;
-      // scale the image to the unit square
-      ctx.scale(1 / w, -1 / h);
 
       var tmpCanvas = createScratchCanvas(w, h);
       var tmpCtx = tmpCanvas.getContext('2d');
@@ -1231,20 +1246,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
 
       applyStencilMask(pixels, inverseDecode);
 
-      var currentTransform = ctx.mozCurrentTransformInverse;
-      var widthScale = Math.max(Math.abs(currentTransform[0]), 1);
-      var heightScale = Math.max(Math.abs(currentTransform[3]), 1);
-      if (widthScale >= 2 || heightScale >= 2) {
-        // canvas does not resize well large images to small -- using simple
-        // algorithm to perform pre-scaling
-        tmpCanvas = rescaleImage(imgData.data, widthScale, heightScale);
-        ctx.scale(widthScale, heightScale);
-        ctx.drawImage(tmpCanvas, 0, -h / heightScale);
-      } else {
-        tmpCtx.putImageData(imgData, 0, 0);
-        ctx.drawImage(tmpCanvas, 0, -h);
-      }
-      this.restore();
+      this.paintImage(imgData);
     },
 
     paintImageXObject: function CanvasGraphics_paintImageXObject(objId) {
@@ -1252,23 +1254,45 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       if (!imgData)
         error('Dependent image isn\'t ready yet');
 
-      this.save();
+      this.paintImage(imgData);
+    },
+
+    paintImage: function CanvasGraphics_paintImage(imgData) {
+      var width = imgData.width;
+      var height = imgData.height;
       var ctx = this.ctx;
-      var w = imgData.width;
-      var h = imgData.height;
+      this.save();
       // scale the image to the unit square
-      ctx.scale(1 / w, -1 / h);
+      ctx.scale(1 / width, -1 / height);
 
-      var tmpCanvas = createScratchCanvas(w, h);
+      var currentTransform = ctx.mozCurrentTransformInverse;
+      var widthScale = Math.max(Math.abs(currentTransform[0]), 1);
+      var heightScale = Math.max(Math.abs(currentTransform[3]), 1);
+      var tmpCanvas = createScratchCanvas(width, height);
       var tmpCtx = tmpCanvas.getContext('2d');
-      this.putBinaryImageData(tmpCtx, imgData, w, h);
 
-      ctx.drawImage(tmpCanvas, 0, -h);
+      if (widthScale >= 2 || heightScale >= 2) {
+        // canvas does not resize well large images to small -- using simple
+        // algorithm to perform pre-scaling
+        tmpCanvas = rescaleImage(imgData.data,
+                                 width, height,
+                                 widthScale, heightScale);
+        ctx.scale(widthScale, heightScale);
+        ctx.drawImage(tmpCanvas, 0, -height / heightScale);
+      } else {
+        if (typeof ImageData !== 'undefined' && imgData instanceof ImageData) {
+          tmpCtx.putImageData(imgData, 0, 0);
+        } else {
+          this.putBinaryImageData(tmpCtx, imgData);
+        }
+        ctx.drawImage(tmpCanvas, 0, -height);
+      }
       this.restore();
     },
 
-    putBinaryImageData: function CanvasGraphics_putBinaryImageData(ctx, imgData,
-                                                                   w, h) {
+    putBinaryImageData: function CanvasGraphics_putBinaryImageData(ctx,
+                                                                   imgData) {
+      var w = imgData.width, h = imgData.height;
       var tmpImgData = 'createImageData' in ctx ? ctx.createImageData(w, h) :
         ctx.getImageData(0, 0, w, h);
 
