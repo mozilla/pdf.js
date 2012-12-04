@@ -391,10 +391,14 @@ var tests = [
       ctx.moveTo(0,5);
       ctx.lineTo(50, 5);
       ctx.lineWidth = 10;
-      ctx.mozDash = [10, 10];
-      ctx.mozDashOffset = 0;
-      ctx.webkitLineDash = [10, 10];
-      ctx.webkitLineDashOffset = 0;
+
+      if ('setLineDash' in ctx) {
+        ctx.setLineDash([10, 10]);
+        ctx.lineDashOffset = 0;
+      } else {
+        ctx.mozDash = [10, 10];
+        ctx.mozDashOffset = 0;
+      }
       ctx.stroke();
 
       var data = ctx.getImageData(0, 0, 50, 50).data;
