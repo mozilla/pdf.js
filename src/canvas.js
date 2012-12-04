@@ -415,10 +415,14 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       this.ctx.miterLimit = limit;
     },
     setDash: function CanvasGraphics_setDash(dashArray, dashPhase) {
-      this.ctx.mozDash = dashArray;
-      this.ctx.mozDashOffset = dashPhase;
-      this.ctx.webkitLineDash = dashArray;
-      this.ctx.webkitLineDashOffset = dashPhase;
+      var ctx = this.ctx;
+      if ('setLineDash' in ctx) {
+        ctx.setLineDash(dashArray);
+        ctx.lineDashOffset = dashPhase;
+      } else {
+        ctx.mozDash = dashArray;
+        ctx.mozDashOffset = dashPhase;
+      }
     },
     setRenderingIntent: function CanvasGraphics_setRenderingIntent(intent) {
       // Maybe if we one day fully support color spaces this will be important
