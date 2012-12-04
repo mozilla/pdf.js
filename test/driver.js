@@ -50,6 +50,7 @@ function load() {
   canvas.mozOpaque = true;
   stdout = document.getElementById('stdout');
 
+  info('User Agent: ' + navigator.userAgent);
   log('load...\n');
 
   log('Harness thinks this browser is "' + browser + '" with path "' +
@@ -343,20 +344,34 @@ function sendTaskResult(snapshot, task, failure, result) {
     });
   }
 
+  send('/submit_task_results', result);
+}
+
+function send(url, message) {
   var r = new XMLHttpRequest();
   // (The POST URI is ignored atm.)
-  r.open('POST', '/submit_task_results', true);
+  r.open('POST', url, true);
   r.setRequestHeader('Content-Type', 'application/json');
   r.onreadystatechange = function sendTaskResultOnreadystatechange(e) {
     if (r.readyState == 4) {
       inFlightRequests--;
       // Retry until successful
-      if (r.status !== 200)
-        sendTaskResult(null, null, null, result);
+      if (r.status !== 200) {
+        setTimeout(function() {
+          send(url, message);
+        });
+      }
     }
   };
   document.getElementById('inFlightCount').innerHTML = inFlightRequests++;
-  r.send(result);
+  r.send(message);
+}
+
+function info(message) {
+  send('/info', JSON.stringify({
+    browser: browser,
+    message: message
+  }));
 }
 
 function clear(ctx) {

@@ -314,8 +314,13 @@ class PDFTestHandler(TestHandlerBase):
             return
 
         result = json.loads(self.rfile.read(numBytes))
-        browser, id, failure, round, page, snapshot = result['browser'], result['id'], result['failure'], result['round'], result['page'], result['snapshot']
+        browser = result['browser']
         State.lastPost[browser] = int(time.time())
+        if url.path == "/info":
+            print result['message']
+            return
+
+        id, failure, round, page, snapshot = result['id'], result['failure'], result['round'], result['page'], result['snapshot']
         taskResults = State.taskResults[browser][id]
         taskResults[round].append(Result(snapshot, failure, page))
 
