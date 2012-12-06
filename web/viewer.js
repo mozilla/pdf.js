@@ -882,6 +882,19 @@ var PDFView = {
     return support;
   },
 
+  get supportsDocumentFonts() {
+    var support = true;
+//#if !(FIREFOX || MOZCENTRAL)
+//#else
+//  support = FirefoxCom.requestSync('supportsDocumentFonts');
+//#endif
+    Object.defineProperty(this, 'supportsDocumentFonts', { value: support,
+                                                           enumerable: true,
+                                                           configurable: true,
+                                                           writable: false });
+    return support;
+  },
+
   initPassiveLoading: function pdfViewInitPassiveLoading() {
     if (!PDFView.loadingBar) {
       PDFView.loadingBar = new ProgressBar('#loadingBar', {});
@@ -2035,6 +2048,10 @@ var PageView = function pageView(container, pdfPage, id, scale,
     if (outputScale.scaled) {
       ctx.scale(outputScale.sx, outputScale.sy);
     }
+//#if (FIREFOX || MOZCENTRAL)
+//  // Checking if document fonts are used only once
+//  var checkIfDocumentFontsUsed = !PDFView.pdfDocument.embeddedFontsUsed;
+//#endif
 
     // Rendering area
 
@@ -2047,6 +2064,14 @@ var PageView = function pageView(container, pdfPage, id, scale,
         delete self.loadingIconDiv;
       }
 
+//#if (FIREFOX || MOZCENTRAL)
+//    if (checkIfDocumentFontsUsed && PDFView.pdfDocument.embeddedFontsUsed &&
+//        !PDFView.supportsDocumentFonts) {
+//      console.error(mozL10n.get('web_fonts_disabled', null,
+//        'Web fonts are disabled: unable to use embedded PDF fonts.'));
+//      PDFView.fallback();
+//    }
+//#endif
       if (error) {
         PDFView.error(mozL10n.get('rendering_error', null,
           'An error occurred while rendering the page.'), error);

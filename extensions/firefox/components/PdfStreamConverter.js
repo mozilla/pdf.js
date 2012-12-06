@@ -71,6 +71,14 @@ function getBoolPref(pref, def) {
   }
 }
 
+function getIntPref(pref, def) {
+  try {
+    return Services.prefs.getIntPref(pref);
+  } catch (ex) {
+    return def;
+  }
+}
+
 function setStringPref(pref, value) {
   let str = Cc['@mozilla.org/supports-string;1']
               .createInstance(Ci.nsISupportsString);
@@ -350,6 +358,10 @@ ChromeActions.prototype = {
     return this.domWindow.frameElement === null &&
            getChromeWindow(this.domWindow).gFindBar &&
            'updateControlState' in getChromeWindow(this.domWindow).gFindBar;
+  },
+  supportsDocumentFonts: function() {
+    var pref = getIntPref('browser.display.use_document_fonts', 1);
+    return !!pref;
   },
   fallback: function(url, sendResponse) {
     var self = this;
