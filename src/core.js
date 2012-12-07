@@ -193,7 +193,9 @@ var Page = (function PageClosure() {
                                 xref, handler, this.pageIndex,
                                 'p' + this.pageIndex + '_');
 
-      return pe.getOperatorList(contentStream, resources, dependency);
+      var list = pe.getOperatorList(contentStream, resources, dependency);
+      pe.optimizeQueue(list);
+      return list;
     },
     extractTextContent: function Page_extractTextContent() {
       var handler = {

@@ -298,116 +298,6 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           }, handler, xref, resources, image, inline);
       }
 
-      function optimizeQueue() {
-        // grouping paintInlineImageXObject's into paintInlineImageXObjectGroup
-        // searching for (save, transform, paintInlineImageXObject, restore)+
-        var MIN_IMAGES_COUNT = 10;
-        var MAX_WIDTH = 1000;
-        var IMAGE_PADDING = 1;
-        for (var i = 0, ii = fnArray.length; i < ii; i++) {
-          if (fnArray[i] === 'paintInlineImageXObject' &&
-              fnArray[i - 2] === 'save' && fnArray[i - 1] === 'transform' &&
-              fnArray[i + 1] === 'restore') {
-            var j = i - 2;
-            for (i += 2; i < ii && fnArray[i - 4] === fnArray[i]; i++) {
-            }
-            var count = (i - j) >> 2;
-            if (count < MIN_IMAGES_COUNT) {
-              continue;
-            }
-            // assuming that heights of those image is too small (~1 pixel)
-            // packing as much as possible by lines
-            var maxX = 0;
-            var map = [], maxLineHeight = 0;
-            var currentX = IMAGE_PADDING, currentY = IMAGE_PADDING;
-            for (var q = 0; q < count; q++) {
-              var transform = argsArray[j + (q << 2) + 1];
-              var img = argsArray[j + (q << 2) + 2][0];
-              if (currentX + img.width > MAX_WIDTH) {
-                // starting new line
-                maxX = Math.max(maxX, currentX);
-                currentY += maxLineHeight + 2 * IMAGE_PADDING;
-                currentX = 0;
-                maxLineHeight = 0;
-              }
-              map.push({
-                transform: transform,
-                x: currentX, y: currentY,
-                w: img.width, h: img.height
-              });
-              currentX += img.width + 2 * IMAGE_PADDING;
-              maxLineHeight = Math.max(maxLineHeight, img.height);
-            }
-            var imgWidth = Math.max(maxX, currentX) + IMAGE_PADDING;
-            var imgHeight = currentY + maxLineHeight + IMAGE_PADDING;
-            var imgData = new Uint8Array(imgWidth * imgHeight * 4);
-            var imgRowSize = imgWidth << 2;
-            for (var q = 0; q < count; q++) {
-              var data = argsArray[j + (q << 2) + 2][0].data;
-              // copy image by lines and extends pixels into padding
-              var rowSize = map[q].w << 2;
-              var dataOffset = 0;
-              var offset = (map[q].x + map[q].y * imgWidth) << 2;
-              imgData.set(
-                data.subarray(0, rowSize), offset - imgRowSize);
-              for (var k = 0, kk = map[q].h; k < kk; k++) {
-                imgData.set(
-                  data.subarray(dataOffset, dataOffset + rowSize), offset);
-                dataOffset += rowSize;
-                offset += imgRowSize;
-              }
-              imgData.set(
-                data.subarray(dataOffset - rowSize, dataOffset), offset);
-              while (offset >= 0) {
-                data[offset - 4] = data[offset];
-                data[offset - 3] = data[offset + 1];
-                data[offset - 2] = data[offset + 2];
-                data[offset - 1] = data[offset + 3];
-                data[offset + rowSize] = data[offset + rowSize - 4];
-                data[offset + rowSize + 1] = data[offset + rowSize - 3];
-                data[offset + rowSize + 2] = data[offset + rowSize - 2];
-                data[offset + rowSize + 3] = data[offset + rowSize - 1];
-                offset -= imgRowSize;
-              }
-            }
-            // replacing queue items
-            fnArray.splice(j, count * 4, ['paintInlineImageXObjectGroup']);
-            argsArray.splice(j, count * 4,
-              [{width: imgWidth, height: imgHeight, data: imgData}, map]);
-            i = j;
-            ii = fnArray.length;
-          }
-        }
-        // grouping paintImageMaskXObject's into paintImageMaskXObjectGroup
-        // searching for (save, transform, paintImageMaskXObject, restore)+
-        for (var i = 0, ii = fnArray.length; i < ii; i++) {
-          if (fnArray[i] === 'paintImageMaskXObject' &&
-              fnArray[i - 2] === 'save' && fnArray[i - 1] === 'transform' &&
-              fnArray[i + 1] === 'restore') {
-            var j = i - 2;
-            for (i += 2; i < ii && fnArray[i - 4] === fnArray[i]; i++) {
-            }
-            var count = (i - j) >> 2;
-            if (count < MIN_IMAGES_COUNT) {
-              continue;
-            }
-            var images = [];
-            for (var q = 0; q < count; q++) {
-              var transform = argsArray[j + (q << 2) + 1];
-              var maskParams = argsArray[j + (q << 2) + 2];
-              images.push({data: maskParams[0], width: maskParams[2],
-                height: maskParams[3], transform: transform,
-                inverseDecode: maskParams[1]});
-            }
-            // replacing queue items
-            fnArray.splice(j, count * 4, ['paintImageMaskXObjectGroup']);
-            argsArray.splice(j, count * 4, [images]);
-            i = j;
-            ii = fnArray.length;
-          }
-        }
-      }
-
       if (!queue)
         queue = {};
 
@@ -624,9 +514,123 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         }
       }
 
-      optimizeQueue();
-
       return queue;
+    },
+
+    optimizeQueue: function PartialEvaluator_optimizeQueue(queue) {
+      var fnArray = queue.fnArray, argsArray = queue.argsArray;
+      // grouping paintInlineImageXObject's into paintInlineImageXObjectGroup
+      // searching for (save, transform, paintInlineImageXObject, restore)+
+      var MIN_IMAGES_IN_INLINE_IMAGES_BLOCK = 10;
+      var MAX_IMAGES_IN_INLINE_IMAGES_BLOCK = 200;
+      var MAX_WIDTH = 1000;
+      var IMAGE_PADDING = 1;
+      for (var i = 0, ii = fnArray.length; i < ii; i++) {
+        if (fnArray[i] === 'paintInlineImageXObject' &&
+            fnArray[i - 2] === 'save' && fnArray[i - 1] === 'transform' &&
+            fnArray[i + 1] === 'restore') {
+          var j = i - 2;
+          for (i += 2; i < ii && fnArray[i - 4] === fnArray[i]; i++) {
+          }
+          var count = Math.min((i - j) >> 2,
+                               MAX_IMAGES_IN_INLINE_IMAGES_BLOCK);
+          if (count < MIN_IMAGES_IN_INLINE_IMAGES_BLOCK) {
+            continue;
+          }
+          // assuming that heights of those image is too small (~1 pixel)
+          // packing as much as possible by lines
+          var maxX = 0;
+          var map = [], maxLineHeight = 0;
+          var currentX = IMAGE_PADDING, currentY = IMAGE_PADDING;
+          for (var q = 0; q < count; q++) {
+            var transform = argsArray[j + (q << 2) + 1];
+            var img = argsArray[j + (q << 2) + 2][0];
+            if (currentX + img.width > MAX_WIDTH) {
+              // starting new line
+              maxX = Math.max(maxX, currentX);
+              currentY += maxLineHeight + 2 * IMAGE_PADDING;
+              currentX = 0;
+              maxLineHeight = 0;
+            }
+            map.push({
+              transform: transform,
+              x: currentX, y: currentY,
+              w: img.width, h: img.height
+            });
+            currentX += img.width + 2 * IMAGE_PADDING;
+            maxLineHeight = Math.max(maxLineHeight, img.height);
+          }
+          var imgWidth = Math.max(maxX, currentX) + IMAGE_PADDING;
+          var imgHeight = currentY + maxLineHeight + IMAGE_PADDING;
+          var imgData = new Uint8Array(imgWidth * imgHeight * 4);
+          var imgRowSize = imgWidth << 2;
+          for (var q = 0; q < count; q++) {
+            var data = argsArray[j + (q << 2) + 2][0].data;
+            // copy image by lines and extends pixels into padding
+            var rowSize = map[q].w << 2;
+            var dataOffset = 0;
+            var offset = (map[q].x + map[q].y * imgWidth) << 2;
+            imgData.set(
+              data.subarray(0, rowSize), offset - imgRowSize);
+            for (var k = 0, kk = map[q].h; k < kk; k++) {
+              imgData.set(
+                data.subarray(dataOffset, dataOffset + rowSize), offset);
+              dataOffset += rowSize;
+              offset += imgRowSize;
+            }
+            imgData.set(
+              data.subarray(dataOffset - rowSize, dataOffset), offset);
+            while (offset >= 0) {
+              data[offset - 4] = data[offset];
+              data[offset - 3] = data[offset + 1];
+              data[offset - 2] = data[offset + 2];
+              data[offset - 1] = data[offset + 3];
+              data[offset + rowSize] = data[offset + rowSize - 4];
+              data[offset + rowSize + 1] = data[offset + rowSize - 3];
+              data[offset + rowSize + 2] = data[offset + rowSize - 2];
+              data[offset + rowSize + 3] = data[offset + rowSize - 1];
+              offset -= imgRowSize;
+            }
+          }
+          // replacing queue items
+          fnArray.splice(j, count * 4, ['paintInlineImageXObjectGroup']);
+          argsArray.splice(j, count * 4,
+            [{width: imgWidth, height: imgHeight, data: imgData}, map]);
+          i = j;
+          ii = fnArray.length;
+        }
+      }
+      // grouping paintImageMaskXObject's into paintImageMaskXObjectGroup
+      // searching for (save, transform, paintImageMaskXObject, restore)+
+      var MIN_IMAGES_IN_MASKS_BLOCK = 10;
+      var MAX_IMAGES_IN_MASKS_BLOCK = 100;
+      for (var i = 0, ii = fnArray.length; i < ii; i++) {
+        if (fnArray[i] === 'paintImageMaskXObject' &&
+            fnArray[i - 2] === 'save' && fnArray[i - 1] === 'transform' &&
+            fnArray[i + 1] === 'restore') {
+          var j = i - 2;
+          for (i += 2; i < ii && fnArray[i - 4] === fnArray[i]; i++) {
+          }
+          var count = Math.min((i - j) >> 2,
+                               MAX_IMAGES_IN_MASKS_BLOCK);
+          if (count < MIN_IMAGES_IN_MASKS_BLOCK) {
+            continue;
+          }
+          var images = [];
+          for (var q = 0; q < count; q++) {
+            var transform = argsArray[j + (q << 2) + 1];
+            var maskParams = argsArray[j + (q << 2) + 2];
+            images.push({data: maskParams[0], width: maskParams[2],
+              height: maskParams[3], transform: transform,
+              inverseDecode: maskParams[1]});
+          }
+          // replacing queue items
+          fnArray.splice(j, count * 4, ['paintImageMaskXObjectGroup']);
+          argsArray.splice(j, count * 4, [images]);
+          i = j;
+          ii = fnArray.length;
+        }
+      }
     },
 
     getTextContent: function PartialEvaluator_getTextContent(
