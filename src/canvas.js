@@ -224,6 +224,27 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
     }
   }
 
+  function applyStencilMask(imgArray, width, height, inverseDecode, buffer) {
+    var imgArrayPos = 0;
+    var i, j, mask, buf;
+    // removing making non-masked pixels transparent
+    var bufferPos = 3; // alpha component offset
+    for (i = 0; i < height; i++) {
+      mask = 0;
+      for (j = 0; j < width; j++) {
+        if (!mask) {
+          buf = imgArray[imgArrayPos++];
+          mask = 128;
+        }
+        if (!(buf & mask) == inverseDecode) {
+          buffer[bufferPos] = 0;
+        }
+        bufferPos += 4;
+        mask >>= 1;
+      }
+    }
+  }
+
   function rescaleImage(pixels, width, height, widthScale, heightScale) {
     var scaledWidth = Math.ceil(width / widthScale);
     var scaledHeight = Math.ceil(height / heightScale);
@@ -1213,44 +1234,58 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
 
     paintImageMaskXObject: function CanvasGraphics_paintImageMaskXObject(
                              imgArray, inverseDecode, width, height) {
-      function applyStencilMask(buffer, inverseDecode) {
-        var imgArrayPos = 0;
-        var i, j, mask, buf;
-        // removing making non-masked pixels transparent
-        var bufferPos = 3; // alpha component offset
-        for (i = 0; i < height; i++) {
-          mask = 0;
-          for (j = 0; j < width; j++) {
-            if (!mask) {
-              buf = imgArray[imgArrayPos++];
-              mask = 128;
-            }
-            if (!(buf & mask) == inverseDecode) {
-              buffer[bufferPos] = 0;
-            }
-            bufferPos += 4;
-            mask >>= 1;
-          }
-        }
-      }
-
-      var w = width, h = height;
-
-      var tmpCanvas = createScratchCanvas(w, h);
+      var ctx = this.ctx;
+      var tmpCanvas = createScratchCanvas(width, height);
       var tmpCtx = tmpCanvas.getContext('2d');
 
       var fillColor = this.current.fillColor;
       tmpCtx.fillStyle = (fillColor && fillColor.hasOwnProperty('type') &&
                           fillColor.type === 'Pattern') ?
                           fillColor.getPattern(tmpCtx) : fillColor;
-      tmpCtx.fillRect(0, 0, w, h);
+      tmpCtx.fillRect(0, 0, width, height);
 
-      var imgData = tmpCtx.getImageData(0, 0, w, h);
+      var imgData = tmpCtx.getImageData(0, 0, width, height);
       var pixels = imgData.data;
 
-      applyStencilMask(pixels, inverseDecode);
+      applyStencilMask(imgArray, width, height, inverseDecode, pixels);
 
-      this.paintImage(imgData);
+      this.paintInlineImageXObject(imgData);
+    },
+
+    paintImageMaskXObjectGroup:
+      function CanvasGraphics_paintImageMaskXObjectGroup(images) {
+      var ctx = this.ctx;
+      var tmpCanvasWidth = 0, tmpCanvasHeight = 0, tmpCanvas, tmpCtx;
+      for (var i = 0, ii = images.length; i < ii; i++) {
+        var image = images[i];
+        var w = image.width, h = image.height;
+        if (w > tmpCanvasWidth || h > tmpCanvasHeight) {
+          tmpCanvasWidth = Math.max(w, tmpCanvasWidth);
+          tmpCanvasHeight = Math.max(h, tmpCanvasHeight);
+          tmpCanvas = createScratchCanvas(tmpCanvasWidth, tmpCanvasHeight);
+          tmpCtx = tmpCanvas.getContext('2d');
+
+          var fillColor = this.current.fillColor;
+          tmpCtx.fillStyle = (fillColor && fillColor.hasOwnProperty('type') &&
+                              fillColor.type === 'Pattern') ?
+                              fillColor.getPattern(tmpCtx) : fillColor;
+        }
+        tmpCtx.fillRect(0, 0, w, h);
+
+        var imgData = tmpCtx.getImageData(0, 0, w, h);
+        var pixels = imgData.data;
+
+        applyStencilMask(image.data, w, h, image.inverseDecode, pixels);
+
+        tmpCtx.putImageData(imgData, 0, 0);
+
+        ctx.save();
+        ctx.transform.apply(ctx, image.transform);
+        ctx.scale(1, -1);
+        ctx.drawImage(tmpCanvas, 0, 0, w, h,
+                      0, -1, 1, 1);
+        ctx.restore();
+      }
     },
 
     paintImageXObject: function CanvasGraphics_paintImageXObject(objId) {
@@ -1258,10 +1293,11 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       if (!imgData)
         error('Dependent image isn\'t ready yet');
 
-      this.paintImage(imgData);
+      this.paintInlineImageXObject(imgData);
     },
 
-    paintImage: function CanvasGraphics_paintImage(imgData) {
+    paintInlineImageXObject:
+      function CanvasGraphics_paintInlineImageXObject(imgData) {
       var width = imgData.width;
       var height = imgData.height;
       var ctx = this.ctx;
@@ -1292,6 +1328,27 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
         ctx.drawImage(tmpCanvas, 0, -height);
       }
       this.restore();
+    },
+
+    paintInlineImageXObjectGroup:
+      function CanvasGraphics_paintInlineImageXObjectGroup(imgData, map) {
+      var ctx = this.ctx;
+      var w = imgData.width;
+      var h = imgData.height;
+
+      var tmpCanvas = createScratchCanvas(w, h);
+      var tmpCtx = tmpCanvas.getContext('2d');
+      this.putBinaryImageData(tmpCtx, imgData);
+
+      for (var i = 0, ii = map.length; i < ii; i++) {
+        var entry = map[i];
+        ctx.save();
+        ctx.transform.apply(ctx, entry.transform);
+        ctx.scale(1, -1);
+        ctx.drawImage(tmpCanvas, entry.x, entry.y, entry.w, entry.h,
+                      0, -1, 1, 1);
+        ctx.restore();
+      }
     },
 
     putBinaryImageData: function CanvasGraphics_putBinaryImageData(ctx,
