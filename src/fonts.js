@@ -5780,7 +5780,6 @@ var CFFParser = (function CFFParserClosure() {
             stackSize++;
           } else if (value == 14) {
             if (stackSize >= 4) {
-              // TODO fix deprecated endchar construct for Windows
               stackSize -= 4;
             }
           } else if (value >= 32 && value <= 246) {  // number
