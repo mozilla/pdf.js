@@ -28,7 +28,6 @@ var Parser = (function ParserClosure() {
     this.lexer = lexer;
     this.allowStreams = allowStreams;
     this.xref = xref;
-    this.inlineImg = 0;
     this.refill();
   }
 
@@ -151,15 +150,6 @@ var Parser = (function ParserClosure() {
             state = 0;
             break;
         }
-      }
-
-      // TODO improve the small images performance to remove the limit
-      var inlineImgLimit = 500;
-      if (++this.inlineImg >= inlineImgLimit) {
-        if (this.inlineImg === inlineImgLimit)
-          warn('Too many inline images');
-        this.shift();
-        return null;
       }
 
       var length = (stream.pos - 4) - startPos;
