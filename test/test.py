@@ -62,6 +62,10 @@ class TestOptions(OptionParser):
                         help="Skips test PDFs downloading.", default=False)
         self.add_option("--ignoreDownloadErrors", action="store_true", dest="ignoreDownloadErrors",
                         help="Ignores errors during test PDFs downloading.", default=False)
+        self.add_option("--statsFile", action="store", dest="statsFile", type="string",
+                        help="The file where to store stats.", default=None)
+        self.add_option("--statsDelay", action="store", dest="statsDelay", type="int",
+                        help="The amount of time in milliseconds the browser should wait before starting stats.", default=10000)
         self.set_usage(USAGE_EXAMPLE)
 
     def verifyOptions(self, options):
@@ -75,6 +79,8 @@ class TestOptions(OptionParser):
             print "Warning: ignoring browser argument since manifest file was also supplied"
         if not options.browser and not options.browserManifestFile:
             print "Starting server on port %s." % options.port
+        if not options.statsFile:
+            options.statsDelay = 0
 
         return options
         
@@ -111,6 +117,8 @@ class State:
     numFBFFailures = 0
     numLoadFailures = 0
     eqLog = None
+    saveStats = False
+    stats = [ ]
     lastPost = { }
 
 class UnitTestState:
@@ -323,6 +331,15 @@ class PDFTestHandler(TestHandlerBase):
         id, failure, round, page, snapshot = result['id'], result['failure'], result['round'], result['page'], result['snapshot']
         taskResults = State.taskResults[browser][id]
         taskResults[round].append(Result(snapshot, failure, page))
+        if State.saveStats:
+            stat = {
+                'browser': browser,
+                'pdf': id,
+                'page': page,
+                'round': round,
+                'stats': result['stats']
+            }
+            State.stats.append(stat)
 
         def isTaskDone():
             numPages = result["numPages"]
@@ -552,6 +569,8 @@ def setUp(options):
                 taskResults.append([ ])
             State.taskResults[b.name][id] = taskResults
 
+    if options.statsFile != None:
+        State.saveStats = True
     return testBrowsers
 
 def setUpUnitTests(options):
@@ -572,6 +591,7 @@ def startBrowsers(browsers, options, path):
         host = 'http://%s:%s' % (SERVER_HOST, options.port) 
         qs = '?browser='+ urllib.quote(b.name) +'&manifestFile='+ urllib.quote(options.manifestFile)
         qs += '&path=' + b.path
+        qs += '&delay=' + str(options.statsDelay)
         b.start(host + path + qs)
 
 def teardownBrowsers(browsers):
@@ -689,7 +709,7 @@ def checkLoad(task, results, browser):
     print 'TEST-PASS | load test', task['id'], '| in', browser
 
 
-def processResults():
+def processResults(options):
     print ''
     numFatalFailures = (State.numErrors + State.numFBFFailures)
     if 0 == State.numEqFailures and 0 == numFatalFailures:
@@ -702,6 +722,10 @@ def processResults():
             print '  different ref/snapshot:', State.numEqFailures
         if 0 < State.numFBFFailures:
             print '  different first/second rendering:', State.numFBFFailures
+    if options.statsFile != None:
+        with open(options.statsFile, 'w') as sf:
+            sf.write(json.dumps(State.stats, sort_keys=True, indent=4))
+        print 'Wrote stats file: ' + options.statsFile
 
 
 def maybeUpdateRefImages(options, browser):
@@ -752,7 +776,7 @@ def runTests(options, browsers):
                     State.remaining[b] = 0
                     checkIfDone()
             time.sleep(1)
-        processResults()
+        processResults(options)
     finally:
         teardownBrowsers(browsers)
     t2 = time.time()

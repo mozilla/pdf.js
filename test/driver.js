@@ -25,6 +25,7 @@
 //   https://github.com/mozilla/pdf.js/pull/764#issuecomment-2638944
 //   "firefox-bin: Fatal IO error 12 (Cannot allocate memory) on X server :1."
 // PDFJS.disableWorker = true;
+PDFJS.enableStats = true;
 
 var appPath, browser, canvas, dummyCanvas, currentTaskIdx, manifest, stdout;
 var inFlightRequests = 0;
@@ -45,6 +46,7 @@ function load() {
   browser = params.browser;
   var manifestFile = params.manifestFile;
   appPath = params.path;
+  var delay = params.delay || 0;
 
   canvas = document.createElement('canvas');
   canvas.mozOpaque = true;
@@ -67,7 +69,14 @@ function load() {
       nextTask();
     }
   };
-  r.send(null);
+  if (delay) {
+    log('\nDelaying for ' + delay + 'ms...\n');
+  }
+  // When gathering the stats the numbers seem to be more reliable if the
+  // browser is given more time to startup.
+  setTimeout(function() {
+    r.send(null);
+  }, delay);
 }
 
 function cleanup() {
@@ -110,6 +119,7 @@ function nextTask() {
   }
   var task = manifest[currentTaskIdx];
   task.round = 0;
+  task.stats = {times: []};
 
   log('Loading file "' + task.file + '"\n');
 
@@ -265,6 +275,8 @@ function nextPage(task, loadError) {
         };
         var completeRender = (function(error) {
           page.destroy();
+          task.stats = page.stats;
+          page.stats = new StatTimer();
           snapshotCurrentPage(task, error);
         });
         page.render(renderContext).then(function() {
@@ -340,7 +352,8 @@ function sendTaskResult(snapshot, task, failure, result) {
       file: task.file,
       round: task.round,
       page: task.pageNum,
-      snapshot: snapshot
+      snapshot: snapshot,
+      stats: task.stats.times
     });
   }
 
