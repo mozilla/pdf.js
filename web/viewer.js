@@ -3155,6 +3155,7 @@ window.addEventListener('keydown', function keydown(evt) {
         handled = true;
         break;
       case 48: // '0'
+      case 96: // '0' on Numpad of Swedish keyboard
         PDFView.parseScale(DEFAULT_SCALE, true);
         handled = true;
         break;
