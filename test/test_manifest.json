@@ -750,6 +750,14 @@
       "link": true,
       "type": "load"
     },
+    {  "id": "issue2386",
+      "file": "pdfs/issue2386.pdf",
+      "md5": "7dc787639aa6765214e9ff5494d231ed",
+      "rounds": 1,
+      "pageLimit": 2,
+      "link": true,
+      "type": "eq"
+    },
     {  "id": "issue2337",
       "file": "pdfs/issue2337.pdf",
       "md5": "ea10f4131202b9b8f2a6cb7770d3f185",

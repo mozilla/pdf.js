@@ -5946,13 +5946,13 @@ var CFFParser = (function CFFParserClosure() {
       if (pos == 0 || pos == 1) {
         predefined = true;
         format = pos;
-        var gid = 1;
         var baseEncoding = pos ? Encodings.ExpertEncoding :
                                  Encodings.StandardEncoding;
         for (var i = 0, ii = charset.length; i < ii; i++) {
           var index = baseEncoding.indexOf(charset[i]);
-          if (index != -1)
-            encoding[index] = gid++;
+          if (index != -1) {
+            encoding[index] = i;
+          }
         }
       } else {
         var dataStart = pos;
