@@ -895,6 +895,11 @@ var PDFView = {
     return support;
   },
 
+  get isHorizontalScrollbarEnabled() {
+    var div = document.getElementById('viewerContainer');
+    return div.scrollWidth > div.clientWidth;
+  },
+
   initPassiveLoading: function pdfViewInitPassiveLoading() {
     if (!PDFView.loadingBar) {
       PDFView.loadingBar = new ProgressBar('#loadingBar', {});
@@ -3203,6 +3208,10 @@ window.addEventListener('keydown', function keydown(evt) {
         }
         //  in fullscreen mode falls throw here
       case 37: // left arrow
+        // horizontal scrolling using arrow keys
+        if (PDFView.isHorizontalScrollbarEnabled) {
+          break;
+        }
       case 75: // 'k'
       case 80: // 'p'
         PDFView.page--;
@@ -3216,6 +3225,10 @@ window.addEventListener('keydown', function keydown(evt) {
         }
         //  in fullscreen mode falls throw here
       case 39: // right arrow
+        // horizontal scrolling using arrow keys
+        if (PDFView.isHorizontalScrollbarEnabled) {
+          break;
+        }
       case 74: // 'j'
       case 78: // 'n'
         PDFView.page++;
