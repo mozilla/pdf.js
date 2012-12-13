@@ -5577,7 +5577,14 @@ var CFFParser = (function CFFParserClosure() {
       }
 
       var fontDict = cff.fdArray[0];
+      // Make the sanitizer happy and remove anything that is only for CID
+      // fonts.
       fontDict.setByKey(17, topDict.getByName('CharStrings'));
+      fontDict.removeByName('CIDFontVersion');
+      fontDict.removeByName('CIDFontRevision');
+      fontDict.removeByName('CIDFontType');
+      fontDict.removeByName('CIDCount');
+      fontDict.removeByName('UIDBase');
       cff.topDict = fontDict;
       cff.isCIDFont = false;
       delete cff.fdArray;
