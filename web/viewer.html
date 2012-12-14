@@ -26,7 +26,7 @@ limitations under the License.
 
     <link rel="stylesheet" href="viewer.css"/>
 <!--#if !PRODUCTION-->
-    <link rel="resource" type="application/l10n" href="locale.properties"/>
+    <link rel="resource" type="application/l10n" href="locale/locale.properties"/>
 <!--#endif-->
 
 <!--#if !(FIREFOX || MOZCENTRAL || CHROME)-->
@@ -67,10 +67,6 @@ limitations under the License.
 
 <!--#if GENERIC || CHROME-->
 <!--#include viewer-snippet.html-->
-<!--#endif-->
-
-<!--#if B2G-->
-<!--#include viewer-snippet-b2g.html-->
 <!--#endif-->
 
     <script type="text/javascript" src="debugger.js"></script>
