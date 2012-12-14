@@ -521,7 +521,7 @@ html[dir='rtl'] .splitToolbarButtonSeparator {
 .splitToolbarButton:hover > .splitToolbarButtonSeparator,
 .splitToolbarButton.toggled > .splitToolbarButtonSeparator {
   padding: 12px 0;
-  margin: 0;
+  margin: 1px 0;
   box-shadow: 0 0 0 1px hsla(0,0%,100%,.03);
   -webkit-transition-property: padding;
   -webkit-transition-duration: 10ms;
