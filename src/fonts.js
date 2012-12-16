@@ -5290,7 +5290,7 @@ Type1Font.prototype = {
           BlueFuzz: '\x0c\x0b',
           BlueScale: '\x0c\x09',
           LanguageGroup: '\x0c\x11',
-          ExpansionFactor: '\x0c\x18'
+          ExpansionFactor: '\x0c\x12'
         };
         for (var field in fieldMap) {
           if (!properties.privateData.hasOwnProperty(field))
