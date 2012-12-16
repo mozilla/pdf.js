@@ -286,6 +286,12 @@ var Page = (function PageClosure() {
                   break;
                 case 'GoToR':
                   var url = a.get('F');
+                  if (isDict(url)) {
+                    // We assume that the 'url' is a Filspec dictionary
+                    // and fetch the url without checking any further
+                    url = url.get('F') || '';
+                  }
+
                   // TODO: pdf reference says that GoToR
                   // can also have 'NewWindow' attribute
                   if (!isValidUrl(url))
