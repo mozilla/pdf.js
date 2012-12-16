@@ -735,6 +735,12 @@
       "rounds": 1,
       "type": "load"
     },
+    {  "id": "issue2176",
+      "file": "pdfs/issue2176.pdf",
+      "md5": "ca5cbbc7e2b717997f0b24ffa485eac6",
+      "rounds": 1,
+      "type": "eq"
+    },
     {  "id": "issue1998",
       "file": "pdfs/issue1998.pdf",
       "md5": "586e0213be2f461360ec26770b5a4e48",
