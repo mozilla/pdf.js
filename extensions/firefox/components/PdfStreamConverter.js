@@ -46,11 +46,17 @@ XPCOMUtils.defineLazyServiceGetter(Svc, 'mime',
 
 let isInPrivateBrowsing;
 if (appInfo.ID === FIREFOX_ID) {
-  let privateBrowsing = Cc['@mozilla.org/privatebrowsing;1']
-                            .getService(Ci.nsIPrivateBrowsingService);
-  isInPrivateBrowsing = function getInPrivateBrowsing() {
-    return privateBrowsing.privateBrowsingEnabled;
-  };
+  try {
+    let privateBrowsing = Cc['@mozilla.org/privatebrowsing;1']
+                              .getService(Ci.nsIPrivateBrowsingService);
+    isInPrivateBrowsing = function getInPrivateBrowsing() {
+      return privateBrowsing.privateBrowsingEnabled;
+    };
+  } catch (e) {
+    // If the global Private Browsing service is not available, we're in a
+    // version of Firefox which supports per-window PB.
+    isInPrivateBrowsing = function() { return false; };
+  }
 } else {
   isInPrivateBrowsing = function() { return false; };
 }
