@@ -2039,10 +2039,6 @@ var PageView = function pageView(container, pdfPage, id, scale,
                                 (1 / outputScale.sy) + ')';
       CustomStyle.setProp('transform' , canvas, cssScale);
       CustomStyle.setProp('transformOrigin' , canvas, '0% 0%');
-      if (textLayerDiv) {
-        CustomStyle.setProp('transform' , textLayerDiv, cssScale);
-        CustomStyle.setProp('transformOrigin' , textLayerDiv, '0% 0%');
-      }
     }
 
     var ctx = canvas.getContext('2d');
