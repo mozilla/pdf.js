@@ -5209,6 +5209,16 @@ Type1Font.prototype = {
   },
 
   wrap: function Type1Font_wrap(name, glyphs, charstrings, subrs, properties) {
+    var comp = new CFFCompiler();
+    function betterEncode(num) {
+      var val = comp.encodeNumber(num);
+      var ret = '';
+      for (var i = 0; i < val.length; i++) {
+        ret += String.fromCharCode(val[i]);
+      }
+      return ret;
+    }
+
     var fields = {
       // major version, minor version, header size, offset size
       'header': '\x01\x00\x04\x04',
@@ -5316,11 +5326,14 @@ Type1Font.prototype = {
           var value = properties.privateData[field];
 
           if (isArray(value)) {
-            data += self.encodeNumber(value[0]);
-            for (var i = 1, ii = value.length; i < ii; i++)
-              data += self.encodeNumber(value[i] - value[i - 1]);
+            for (var i = 0, ii = value.length; i < ii; i++)
+              data += betterEncode(value[i]);
           } else {
-            data += self.encodeNumber(value);
+            if (field === 'ExpansionFactor') {
+              //debugger;
+              //value = 0.06;
+            }
+            data += betterEncode(value);
           }
           data += fieldMap[field];
         }
