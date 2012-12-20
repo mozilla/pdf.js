@@ -156,6 +156,13 @@ let PdfJs = {
       types.push(PDF_CONTENT_TYPE);
     }
     prefs.setCharPref(PREF_DISABLED_PLUGIN_TYPES, types.join(','));
+
+    // Update the category manager in case the plugins are already loaded.
+    let categoryManager = Cc["@mozilla.org/categorymanager;1"];
+    categoryManager.getService(Ci.nsICategoryManager).
+                    deleteCategoryEntry("Gecko-Content-Viewers",
+                                        PDF_CONTENT_TYPE,
+                                        false);
   },
 
   // nsIObserver
