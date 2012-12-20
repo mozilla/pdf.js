@@ -4595,6 +4595,11 @@ var Type1Parser = function type1Parser() {
             continue;
           } else if (value == 10) { // callsubr
             if (charstring[charstring.length - 1] < 3) { // subr #0..2
+              // XXX: According to the spec if flex or hinting is not used then
+              // subroutines 0-3 can actually be anything defined by the font,
+              // so we really shouldn't be doing flex here but when
+              // callothersubr 0-2 is used. There hasn't been a real world
+              // example of this yet so we'll keep doing it here.
               var subrNumber = charstring.pop();
               switch (subrNumber) {
                 case 1:
@@ -4612,10 +4617,23 @@ var Type1Parser = function type1Parser() {
               }
               continue;
             }
-          } else if (value == 21 && flexState > 0) {
+          } else if (value == 21 && flexState > 0) { // rmoveto
             if (flexState > 1)
               continue; // ignoring rmoveto
             value = 5; // first segment replacing with rlineto
+          } else if (value == 22 && flexState > 0) { // hmoveto
+            if (flexState > 1) {
+              charstring.push(0);
+              continue; // ignoring hmoveto
+            }
+            value = 6; // first segment replacing with hlineto
+          } else if (value == 4 && flexState > 0) { // vmoveto
+            if (flexState > 1) {
+              charstring.push(0);
+              charstring.push('exch');
+              continue; // ignoring vmoveto
+            }
+            value = 7; // first segment replacing with vlineto
           } else if (!HINTING_ENABLED && (value == 1 || value == 3)) {
             charstring.push('drop', 'drop');
             continue;
@@ -5191,6 +5209,16 @@ Type1Font.prototype = {
   },
 
   wrap: function Type1Font_wrap(name, glyphs, charstrings, subrs, properties) {
+    var comp = new CFFCompiler();
+    function betterEncode(num) {
+      var val = comp.encodeNumber(num);
+      var ret = '';
+      for (var i = 0; i < val.length; i++) {
+        ret += String.fromCharCode(val[i]);
+      }
+      return ret;
+    }
+
     var fields = {
       // major version, minor version, header size, offset size
       'header': '\x01\x00\x04\x04',
@@ -5298,11 +5326,14 @@ Type1Font.prototype = {
           var value = properties.privateData[field];
 
           if (isArray(value)) {
-            data += self.encodeNumber(value[0]);
-            for (var i = 1, ii = value.length; i < ii; i++)
-              data += self.encodeNumber(value[i] - value[i - 1]);
+            for (var i = 0, ii = value.length; i < ii; i++)
+              data += betterEncode(value[i]);
           } else {
-            data += self.encodeNumber(value);
+            if (field === 'ExpansionFactor') {
+              //debugger;
+              //value = 0.06;
+            }
+            data += betterEncode(value);
           }
           data += fieldMap[field];
         }
