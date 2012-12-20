@@ -4507,11 +4507,21 @@ var Type1Parser = function type1Parser() {
     return args;
   }
 
+  // Remove the same number of args from the stack that are in the args
+  // parameter. Args should be built from breakUpArgs().
+  function popArgs(stack, args) {
+    for (var i = 0, ii = args.length; i < ii; i++) {
+      for (var j = 0, jj = args[i].arg.length; j < jj; j++) {
+        stack.pop();
+      }
+    }
+  }
+
   function decodeCharString(array) {
     var charstring = [];
     var lsb = 0;
     var width = 0;
-    var flexState = 0;
+    var flexing = false;
 
     var value = '';
     var count = array.length;
@@ -4595,27 +4605,60 @@ var Type1Parser = function type1Parser() {
             continue;
           } else if (value == 10) { // callsubr
             if (charstring[charstring.length - 1] < 3) { // subr #0..2
+              // XXX: According to the spec if flex or hinting is not used then
+              // subroutines 0-3 can actually be anything defined by the font,
+              // so we really shouldn't be doing flex here but when
+              // callothersubr 0-2 is used. There hasn't been a real world
+              // example of this yet so we'll keep doing it here.
               var subrNumber = charstring.pop();
               switch (subrNumber) {
                 case 1:
-                  flexState = 1; // prepare for flex coordinates
-                  break;
-                case 2:
-                  flexState = 2; // flex in progress
+                  flexing = true; // prepare for flex coordinates
                   break;
                 case 0:
-                  // type2 flex command does not need final coords
-                  charstring.push('exch', 'drop', 'exch', 'drop');
-                  charstring.push('flex');
-                  flexState = 0;
+                  var flexArgs = breakUpArgs(charstring, 17);
+                  popArgs(charstring, flexArgs);
+
+                  charstring.push(
+                    flexArgs[2].value + flexArgs[0].value, // bcp1x + rpx
+                    flexArgs[3].value + flexArgs[1].value, // bcp1y + rpy
+                    flexArgs[4].value, // bcp2x
+                    flexArgs[5].value, // bcp2y
+                    flexArgs[6].value, // p2x
+                    flexArgs[7].value, // p2y
+                    flexArgs[8].value, // bcp3x
+                    flexArgs[9].value, // bcp3y
+                    flexArgs[10].value, // bcp4x
+                    flexArgs[11].value, // bcp4y
+                    flexArgs[12].value, // p3x
+                    flexArgs[13].value, // p3y
+                    flexArgs[14].value, // flexDepth
+                    // 15 = finalx unused by flex
+                    // 16 = finaly unused by flex
+                    'flex'
+                  );
+
+                  flexing = false;
                   break;
               }
               continue;
             }
-          } else if (value == 21 && flexState > 0) {
-            if (flexState > 1)
-              continue; // ignoring rmoveto
-            value = 5; // first segment replacing with rlineto
+          } else if (value == 21 && flexing) { // rmoveto
+            continue; // ignoring rmoveto
+          } else if (value == 22 && flexing) { // hmoveto
+            // Add the dy for flex.
+            charstring.push(0);
+            continue; // ignoring hmoveto
+          } else if (value == 4 && flexing) { // vmoveto
+            // Add the dx for flex and but also swap the values so they are the
+            // right order.
+            var vArgs = breakUpArgs(charstring, 1);
+            popArgs(charstring, vArgs);
+            charstring.push(0);
+            for (var t = 0, tt = vArgs[0].arg.length; t < tt; t++) {
+              charstring.push(vArgs[0].arg[t]);
+            }
+            continue; // ignoring vmoveto
           } else if (!HINTING_ENABLED && (value == 1 || value == 3)) {
             charstring.push('drop', 'drop');
             continue;
@@ -5191,6 +5234,17 @@ Type1Font.prototype = {
   },
 
   wrap: function Type1Font_wrap(name, glyphs, charstrings, subrs, properties) {
+    var comp = new CFFCompiler();
+    // TODO: remove this function after refactoring wrap to use the CFFCompiler.
+    function encodeNumber(num) {
+      var val = comp.encodeNumber(num);
+      var ret = '';
+      for (var i = 0; i < val.length; i++) {
+        ret += String.fromCharCode(val[i]);
+      }
+      return ret;
+    }
+
     var fields = {
       // major version, minor version, header size, offset size
       'header': '\x01\x00\x04\x04',
@@ -5210,7 +5264,7 @@ Type1Font.prototype = {
 
           var boundingBox = properties.bbox;
           for (var i = 0, ii = boundingBox.length; i < ii; i++)
-            dict += self.encodeNumber(boundingBox[i]);
+            dict += encodeNumber(boundingBox[i]);
           dict += '\x05'; // FontBBox;
 
           var offset = fields.header.length +
@@ -5298,11 +5352,10 @@ Type1Font.prototype = {
           var value = properties.privateData[field];
 
           if (isArray(value)) {
-            data += self.encodeNumber(value[0]);
-            for (var i = 1, ii = value.length; i < ii; i++)
-              data += self.encodeNumber(value[i] - value[i - 1]);
+            for (var i = 0, ii = value.length; i < ii; i++)
+              data += encodeNumber(value[i]);
           } else {
-            data += self.encodeNumber(value);
+            data += encodeNumber(value);
           }
           data += fieldMap[field];
         }
