@@ -5050,61 +5050,6 @@ var Type1Font = function Type1Font(name, file, properties) {
 };
 
 Type1Font.prototype = {
-  createCFFIndexHeader: function Type1Font_createCFFIndexHeader(objects,
-                                                                isByte) {
-    // First 2 bytes contains the number of objects contained into this index
-    var count = objects.length;
-
-    // If there is no object, just create an array saying that with another
-    // offset byte.
-    if (count == 0)
-      return '\x00\x00\x00';
-
-    var data = String.fromCharCode((count >> 8) & 0xFF, count & 0xff);
-
-    // Next byte contains the offset size use to reference object in the file
-    // Actually we're using 0x04 to be sure to be able to store everything
-    // without thinking of it while coding.
-    data += '\x04';
-
-    // Add another offset after this one because we need a new offset
-    var relativeOffset = 1;
-    for (var i = 0; i < count + 1; i++) {
-      data += String.fromCharCode((relativeOffset >>> 24) & 0xFF,
-                                  (relativeOffset >> 16) & 0xFF,
-                                  (relativeOffset >> 8) & 0xFF,
-                                  relativeOffset & 0xFF);
-
-      if (objects[i])
-        relativeOffset += objects[i].length;
-    }
-
-    for (var i = 0; i < count; i++) {
-      for (var j = 0, jj = objects[i].length; j < jj; j++)
-        data += isByte ? String.fromCharCode(objects[i][j] & 0xFF) :
-                objects[i][j];
-    }
-    return data;
-  },
-
-  encodeNumber: function Type1Font_encodeNumber(value) {
-    // some of the fonts has ouf-of-range values
-    // they are just arithmetic overflows
-    // make sanitizer happy
-    value |= 0;
-    if (value >= -32768 && value <= 32767) {
-      return '\x1c' +
-             String.fromCharCode((value >> 8) & 0xFF) +
-             String.fromCharCode(value & 0xFF);
-    } else {
-      return '\x1d' +
-             String.fromCharCode((value >> 24) & 0xFF) +
-             String.fromCharCode((value >> 16) & 0xFF) +
-             String.fromCharCode((value >> 8) & 0xFF) +
-             String.fromCharCode(value & 0xFF);
-    }
-  },
-
   getOrderedCharStrings: function Type1Font_getOrderedCharStrings(glyphs,
                                                             properties) {
     var charstrings = [];
@@ -5223,9 +5168,9 @@ Type1Font.prototype = {
         if (command > 32000) {
           var divisor = charstring[i + 1];
           command /= divisor;
-          charstring.splice(i, 3, 28, command >> 8, command & 0xff);
+          charstring.splice(i, 3, 28, (command >> 8) & 0xff, command & 0xff);
         } else {
-          charstring.splice(i, 1, 28, command >> 8, command & 0xff);
+          charstring.splice(i, 1, 28, (command >> 8) & 0xff, command & 0xff);
         }
         i += 2;
       }
@@ -5234,150 +5179,88 @@ Type1Font.prototype = {
   },
 
   wrap: function Type1Font_wrap(name, glyphs, charstrings, subrs, properties) {
-    var comp = new CFFCompiler();
-    // TODO: remove this function after refactoring wrap to use the CFFCompiler.
-    function encodeNumber(num) {
-      var val = comp.encodeNumber(num);
-      var ret = '';
-      for (var i = 0; i < val.length; i++) {
-        ret += String.fromCharCode(val[i]);
-      }
-      return ret;
+    var cff = new CFF();
+    cff.header = new CFFHeader(1, 0, 4, 4);
+
+    cff.names = [name];
+
+    var topDict = new CFFTopDict();
+    topDict.setByName('version', 0);
+    topDict.setByName('Notice', 1);
+    topDict.setByName('FullName', 2);
+    topDict.setByName('FamilyName', 3);
+    topDict.setByName('Weight', 4);
+    topDict.setByName('Encoding', null); // placeholder
+    topDict.setByName('FontBBox', properties.bbox);
+    topDict.setByName('charset', null); // placeholder
+    topDict.setByName('CharStrings', null); // placeholder
+    topDict.setByName('Private', null); // placeholder
+    cff.topDict = topDict;
+
+    var strings = new CFFStrings();
+    strings.add('Version 0.11'); // Version
+    strings.add('See original notice'); // Notice
+    strings.add(name); // FullName
+    strings.add(name); // FamilyName
+    strings.add('Medium'); // Weight
+    cff.strings = strings;
+
+    cff.globalSubrIndex = new CFFIndex();
+
+    var count = glyphs.length;
+    var charsetArray = [0];
+    for (var i = 0; i < count; i++) {
+      var index = CFFStandardStrings.indexOf(charstrings[i].glyph);
+      // Some characters like asterikmath && circlecopyrt are
+      // missing from the original strings, for the moment let's
+      // map them to .notdef and see later if it cause any
+      // problems
+      if (index == -1)
+        index = 0;
+
+      charsetArray.push((index >> 8) & 0xff, index & 0xff);
     }
+    cff.charset = new CFFCharset(false, 0, [], charsetArray);
 
-    var fields = {
-      // major version, minor version, header size, offset size
-      'header': '\x01\x00\x04\x04',
-
-      'names': this.createCFFIndexHeader([name]),
-
-      'topDict': (function topDict(self) {
-        return function cffWrapTopDict() {
-          var header = '\x00\x01\x01\x01';
-          var dict =
-              '\xf8\x1b\x00' + // version
-              '\xf8\x1c\x01' + // Notice
-              '\xf8\x1d\x02' + // FullName
-              '\xf8\x1e\x03' + // FamilyName
-              '\xf8\x1f\x04' +  // Weight
-              '\x1c\x00\x00\x10'; // Encoding
-
-          var boundingBox = properties.bbox;
-          for (var i = 0, ii = boundingBox.length; i < ii; i++)
-            dict += encodeNumber(boundingBox[i]);
-          dict += '\x05'; // FontBBox;
-
-          var offset = fields.header.length +
-                       fields.names.length +
-                       (header.length + 1) +
-                       (dict.length + (4 + 4)) +
-                       fields.strings.length +
-                       fields.globalSubrs.length;
-
-          // If the offset if over 32767, encodeNumber is going to return
-          // 5 bytes to encode the position instead of 3.
-          if ((offset + fields.charstrings.length) > 32767) {
-            offset += 9;
-          } else {
-            offset += 7;
-          }
-
-          dict += self.encodeNumber(offset) + '\x0f'; // Charset
-
-          offset = offset + (glyphs.length * 2) + 1;
-          dict += self.encodeNumber(offset) + '\x11'; // Charstrings
-
-          offset = offset + fields.charstrings.length;
-          dict += self.encodeNumber(fields.privateData.length);
-          dict += self.encodeNumber(offset) + '\x12'; // Private
-
-          return header + String.fromCharCode(dict.length + 1) + dict;
-        };
-      })(this),
-
-      'strings': (function strings(self) {
-        var strings = [
-          'Version 0.11',         // Version
-          'See original notice',  // Notice
-          name,                   // FullName
-          name,                   // FamilyName
-          'Medium'                // Weight
-        ];
-        return self.createCFFIndexHeader(strings);
-      })(this),
-
-      'globalSubrs': this.createCFFIndexHeader([]),
-
-      'charset': (function charset(self) {
-        var charsetString = '\x00'; // Encoding
-
-        var count = glyphs.length;
-        for (var i = 0; i < count; i++) {
-          var index = CFFStandardStrings.indexOf(charstrings[i].glyph);
-          // Some characters like asterikmath && circlecopyrt are
-          // missing from the original strings, for the moment let's
-          // map them to .notdef and see later if it cause any
-          // problems
-          if (index == -1)
-            index = 0;
-
-          charsetString += String.fromCharCode(index >> 8, index & 0xff);
-        }
-        return charsetString;
-      })(this),
-
-      'charstrings': this.createCFFIndexHeader([[0x8B, 0x0E]].concat(glyphs),
-                                               true),
-
-      'privateData': (function cffWrapPrivate(self) {
-        var data =
-            '\x8b\x14' + // defaultWidth
-            '\x8b\x15';  // nominalWidth
-        var fieldMap = {
-          BlueValues: '\x06',
-          OtherBlues: '\x07',
-          FamilyBlues: '\x08',
-          FamilyOtherBlues: '\x09',
-          StemSnapH: '\x0c\x0c',
-          StemSnapV: '\x0c\x0d',
-          BlueShift: '\x0c\x0a',
-          BlueFuzz: '\x0c\x0b',
-          BlueScale: '\x0c\x09',
-          LanguageGroup: '\x0c\x11',
-          ExpansionFactor: '\x0c\x12'
-        };
-        for (var field in fieldMap) {
-          if (!properties.privateData.hasOwnProperty(field))
-            continue;
-          var value = properties.privateData[field];
-
-          if (isArray(value)) {
-            for (var i = 0, ii = value.length; i < ii; i++)
-              data += encodeNumber(value[i]);
-          } else {
-            data += encodeNumber(value);
-          }
-          data += fieldMap[field];
-        }
-
-        data += self.encodeNumber(data.length + 4) + '\x13'; // Subrs offset
-
-        return data;
-      })(this),
-
-      'localSubrs': this.createCFFIndexHeader(subrs, true)
-    };
-    fields.topDict = fields.topDict();
-
-
-    var cff = [];
-    for (var index in fields) {
-      var field = fields[index];
-      for (var i = 0, ii = field.length; i < ii; i++)
-        cff.push(field.charCodeAt(i));
+    var charStringsIndex = new CFFIndex();
+    charStringsIndex.add([0x8B, 0x0E]); // .notdef
+    for (var i = 0; i < count; i++) {
+      charStringsIndex.add(glyphs[i]);
     }
+    cff.charStrings = charStringsIndex;
 
-    return cff;
+    var privateDict = new CFFPrivateDict();
+    privateDict.setByName('Subrs', null); // placeholder
+    var fields = [
+      // TODO: missing StdHW, StdVW, ForceBold
+      'BlueValues',
+      'OtherBlues',
+      'FamilyBlues',
+      'FamilyOtherBlues',
+      'StemSnapH',
+      'StemSnapV',
+      'BlueShift',
+      'BlueFuzz',
+      'BlueScale',
+      'LanguageGroup',
+      'ExpansionFactor'
+    ];
+    for (var i = 0, ii = fields.length; i < ii; i++) {
+      var field = fields[i];
+      if (!properties.privateData.hasOwnProperty(field))
+        continue;
+      privateDict.setByName(field, properties.privateData[field]);
+    }
+    cff.topDict.privateDict = privateDict;
+
+    var subrIndex = new CFFIndex();
+    for (var i = 0, ii = subrs.length; i < ii; i++) {
+      subrIndex.add(subrs[i]);
+    }
+    privateDict.subrsIndex = subrIndex;
+
+    var compiler = new CFFCompiler(cff);
+    return compiler.compile();
   }
 };
 
@@ -6186,6 +6069,12 @@ var CFFDict = (function CFFDictClosure() {
         value = value[0];
       this.values[key] = value;
       return true;
+    },
+    setByName: function CFFDict_setByName(name, value) {
+      if (!(name in this.nameToKeyMap)) {
+        error('Invalid dictionary name "' + name + '"');
+      }
+      this.values[this.nameToKeyMap[name]] = value;
     },
     hasName: function CFFDict_hasName(name) {
       return this.nameToKeyMap[name] in this.values;
