@@ -4836,8 +4836,22 @@ var Type1Parser = function type1Parser() {
       subrs: [],
       charstrings: [],
       properties: {
-        'privateData': {
-          'lenIV': 4
+        privateData: {
+          lenIV: 4,
+          BlueValues: null,
+          OtherBlues: null,
+          FamilyBlues: null,
+          FamilyOtherBlues: null,
+          StemSnapH: null,
+          StemSnapV: null,
+          StdHW: null,
+          StdVW: null,
+          BlueShift: null,
+          BlueFuzz: null,
+          BlueScale: null,
+          LanguageGroup: null,
+          ExpansionFactor: null,
+          ForceBold: null
         }
       }
     };
@@ -5270,7 +5284,7 @@ Type1Font.prototype = {
     ];
     for (var i = 0, ii = fields.length; i < ii; i++) {
       var field = fields[i];
-      if (!properties.privateData.hasOwnProperty(field))
+      if (properties.privateData[field] === null)
         continue;
       privateDict.setByName(field, properties.privateData[field]);
     }
