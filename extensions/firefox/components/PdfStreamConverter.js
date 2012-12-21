@@ -30,30 +30,18 @@ const PDF_CONTENT_TYPE = 'application/pdf';
 const PREF_PREFIX = 'PDFJSSCRIPT_PREF_PREFIX';
 const PDF_VIEWER_WEB_PAGE = 'resource://pdf.js/web/viewer.html';
 const MAX_DATABASE_LENGTH = 4096;
-const FIREFOX_ID = '{ec8030f7-c20a-464f-9b0e-13a3a9e97384}';
 
 Cu.import('resource://gre/modules/XPCOMUtils.jsm');
 Cu.import('resource://gre/modules/Services.jsm');
 Cu.import('resource://gre/modules/NetUtil.jsm');
 
+XPCOMUtils.defineLazyModuleGetter(this, 'PrivateBrowsingUtils',
+  'resource://gre/modules/PrivateBrowsingUtils.jsm');
 
-let appInfo = Cc['@mozilla.org/xre/app-info;1']
-                  .getService(Ci.nsIXULAppInfo);
 let Svc = {};
 XPCOMUtils.defineLazyServiceGetter(Svc, 'mime',
                                    '@mozilla.org/mime;1',
                                    'nsIMIMEService');
-
-let isInPrivateBrowsing;
-if (appInfo.ID === FIREFOX_ID) {
-  let privateBrowsing = Cc['@mozilla.org/privatebrowsing;1']
-                            .getService(Ci.nsIPrivateBrowsingService);
-  isInPrivateBrowsing = function getInPrivateBrowsing() {
-    return privateBrowsing.privateBrowsingEnabled;
-  };
-} else {
-  isInPrivateBrowsing = function() { return false; };
-}
 
 function getChromeWindow(domWindow) {
   var containingBrowser = domWindow.QueryInterface(Ci.nsIInterfaceRequestor)
@@ -219,6 +207,30 @@ function ChromeActions(domWindow, dataListener) {
 }
 
 ChromeActions.prototype = {
+  isInPrivateBrowsing: function() {
+    let docIsPrivate;
+    try {
+      docIsPrivate = PrivateBrowsingUtils.isWindowPrivate(this.domWindow);
+    } catch (x) {
+      // unable to use PrivateBrowsingUtils, e.g. FF15
+    }
+    if (typeof docIsPrivate === 'undefined') {
+      // per-window Private Browsing is not supported, trying global service
+      try {
+        let privateBrowsing = Cc['@mozilla.org/privatebrowsing;1']
+                                  .getService(Ci.nsIPrivateBrowsingService);
+        docIsPrivate = privateBrowsing.privateBrowsingEnabled;
+      } catch (x) {
+        // unable to get nsIPrivateBrowsingService (e.g. not Firefox)
+        docIsPrivate = false;
+      }
+    }
+    // caching the result
+    this.isInPrivateBrowsing = function isInPrivateBrowsingCached() {
+      return docIsPrivate;
+    };
+    return docIsPrivate;
+  },
   download: function(data, sendResponse) {
     var originalUrl = data.originalUrl;
     // The data may not be downloaded so we need just retry getting the pdf with
@@ -231,16 +243,7 @@ ChromeActions.prototype = {
     var frontWindow = Cc['@mozilla.org/embedcomp/window-watcher;1'].
                          getService(Ci.nsIWindowWatcher).activeWindow;
 
-    let docIsPrivate = false;
-    try {
-      docIsPrivate = this.domWindow
-                         .QueryInterface(Ci.nsIInterfaceRequestor)
-                         .getInterface(Ci.nsIWebNavigation)
-                         .QueryInterface(Ci.nsILoadContext)
-                         .usePrivateBrowsing;
-    } catch (x) {
-    }
-
+    let docIsPrivate = this.isInPrivateBrowsing();
     let netChannel = NetUtil.newChannel(blobUri);
     if ('nsIPrivateBrowsingChannel' in Ci &&
         netChannel instanceof Ci.nsIPrivateBrowsingChannel) {
@@ -289,7 +292,7 @@ ChromeActions.prototype = {
     });
   },
   setDatabase: function(data) {
-    if (isInPrivateBrowsing())
+    if (this.isInPrivateBrowsing())
       return;
     // Protect against something sending tons of data to setDatabase.
     if (data.length > MAX_DATABASE_LENGTH)
@@ -297,7 +300,7 @@ ChromeActions.prototype = {
     setStringPref(PREF_PREFIX + '.database', data);
   },
   getDatabase: function() {
-    if (isInPrivateBrowsing())
+    if (this.isInPrivateBrowsing())
       return '{}';
     return getStringPref(PREF_PREFIX + '.database', '{}');
   },
