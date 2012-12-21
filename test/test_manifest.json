@@ -741,6 +741,18 @@
       "rounds": 1,
       "type": "eq"
     },
+    {  "id": "issue1453",
+      "file": "pdfs/issue1453.pdf",
+      "md5": "cee0ee8ea3a0643cbd716d57fd44f628",
+      "rounds": 1,
+      "type": "eq"
+    },
+    {  "id": "issue2462",
+      "file": "pdfs/issue2462.pdf",
+      "md5": "d4e3dddfdd35464c71cf0310bff29b42",
+      "rounds": 1,
+      "type": "eq"
+    },
     {  "id": "issue1998",
       "file": "pdfs/issue1998.pdf",
       "md5": "586e0213be2f461360ec26770b5a4e48",
