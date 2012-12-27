@@ -195,6 +195,35 @@ var Page = (function PageClosure() {
 
       var list = pe.getOperatorList(contentStream, resources, dependency);
       pe.optimizeQueue(list);
+
+      {  // deal with annotations
+        var annotations = this.getAnnotations();
+        var i, n = annotations.length;
+        var items = [];
+        for (i = 0; i < n; ++i) {
+          var annotation = annotations[i];
+          
+          if(!annotation)
+            continue;
+          if(!annotation.annotationFlags)
+            continue;
+          if(!annotation.rect)
+            continue;
+          if(annotation.flags & 0x0002) // Hidden
+            continue;
+          if(annotation.flags & 0x0020) // NoView
+            continue;
+                   
+          var ape = new PartialEvaluator(
+              xref, handler, 'p' + this.pageNumber + '_annotation' + i);
+          
+          ape.fillPreAnnotationOperatorList(list, annotation);
+          if(annotation.bbox)
+            ape.fillAnnotationOperatorList(list, annotation, dependency);
+          ape.fillPostAnnotationOperatorList(list);
+        }
+      }
+
       return list;
     },
     extractTextContent: function Page_extractTextContent() {
@@ -263,11 +292,39 @@ var Page = (function PageClosure() {
         var subtype = annotation.get('Subtype');
         if (!isName(subtype))
           continue;
-        var rect = annotation.get('Rect');
 
         var item = {};
-        item.type = subtype.name;
+
+        var rect = annotation.get('Rect');
+        if(rect[0] > rect[2]) { 
+          var swap = rect[0]; rect[0] = rect[2]; rect[2] = swap; 
+        }
+        if(rect[1] > rect[3]) { 
+          var swap = rect[1]; rect[1] = rect[3]; rect[3] = swap; 
+        }
         item.rect = rect;
+        
+        item.annotationFlags = annotation.get('F');
+
+        item.borderType = '';
+        item.borderWidth = 1;
+        var border = annotation.get('BS');
+        if(isDict(border)) {
+          item.borderType = border.get('S');
+          item.borderWidth = border.get('W');
+        }
+        
+        item.borderRGB = annotation.get('C') || [0, 0, 1];
+        
+        var appearanceState = annotation.get('AP');
+        if(isDict(appearanceState))
+        {
+          item.appearance = appearanceState.get('N');
+          var dict = isDict(item.appearance) ? item.appearance : item.appearance.dict;
+          item.resources = dict.get('Resources');
+          item.bbox = dict.get('BBox') || [0,0,1,1];
+        }
+
         switch (subtype.name) {
           case 'Link':
             var a = annotation.get('A');
