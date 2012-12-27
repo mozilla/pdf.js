@@ -245,57 +245,109 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
     }
   }
 
-  function rescaleImage(pixels, width, height, widthScale, heightScale) {
-    var scaledWidth = Math.ceil(width / widthScale);
-    var scaledHeight = Math.ceil(height / heightScale);
+  function putBinaryImageData(ctx, data, w, h) {
+    var tmpImgData = 'createImageData' in ctx ? ctx.createImageData(w, h) :
+      ctx.getImageData(0, 0, w, h);
 
-    var itemsSum = new Float32Array(scaledWidth * scaledHeight * 3);
-    var itemsCount = new Float32Array(scaledWidth * scaledHeight);
-    var maxAlphas = new Uint8Array(scaledWidth * scaledHeight);
-    for (var i = 0, position = 0; i < height; i++) {
-      var lineOffset = (0 | (i / heightScale)) * scaledWidth;
-      for (var j = 0; j < width; j++) {
-        var countOffset = lineOffset + (0 | (j / widthScale));
-        var sumOffset = countOffset * 3;
-        var maxAlpha = maxAlphas[countOffset];
-        var currentAlpha = pixels[position + 3];
-        if (maxAlpha < currentAlpha) {
-          // lowering total alpha
-          var scale = 1 - (currentAlpha - maxAlpha) / 255;
-          itemsSum[sumOffset] *= scale;
-          itemsSum[sumOffset + 1] *= scale;
-          itemsSum[sumOffset + 2] *= scale;
-          maxAlphas[countOffset] = maxAlpha = currentAlpha;
+    var tmpImgDataPixels = tmpImgData.data;
+    if ('set' in tmpImgDataPixels)
+      tmpImgDataPixels.set(data);
+    else {
+      // Copy over the imageData pixel by pixel.
+      for (var i = 0, ii = tmpImgDataPixels.length; i < ii; i++)
+        tmpImgDataPixels[i] = data[i];
+    }
+
+    ctx.putImageData(tmpImgData, 0, 0);
+  }
+
+  function prescaleImage(pixels, width, height, widthScale, heightScale) {
+    pixels = new Uint8Array(pixels); // creating a copy
+    while (widthScale > 2 || heightScale > 2) {
+      if (heightScale > 2) {
+        // scaling image twice vertically
+        var rowSize = width * 4;
+        var k = 0, l = 0;
+        for (var i = 0; i < height - 1; i += 2) {
+          for (var j = 0; j < width; j++) {
+            var alpha1 = pixels[k + 3], alpha2 = pixels[k + 3 + rowSize];
+            if (alpha1 === alpha2) {
+              pixels[l] = (pixels[k] + pixels[k + rowSize]) >> 1;
+              pixels[l + 1] = (pixels[k + 1] + pixels[k + 1 + rowSize]) >> 1;
+              pixels[l + 2] = (pixels[k + 2] + pixels[k + 2 + rowSize]) >> 1;
+              pixels[l + 3] = alpha1;
+            } else if (alpha1 < alpha2) {
+              var d = 256 - alpha2 + alpha1;
+              pixels[l] = (pixels[k] * d + (pixels[k + rowSize] << 8)) >> 9;
+              pixels[l + 1] = (pixels[k + 1] * d +
+                              (pixels[k + 1 + rowSize] << 8)) >> 9;
+              pixels[l + 2] = (pixels[k + 2] * d +
+                              (pixels[k + 2 + rowSize] << 8)) >> 9;
+              pixels[l + 3] = alpha2;
+            } else {
+              var d = 256 - alpha1 + alpha2;
+              pixels[l] = ((pixels[k] << 8) + pixels[k + rowSize] * d) >> 9;
+              pixels[l + 1] = ((pixels[k + 1] << 8) +
+                              pixels[k + 1 + rowSize] * d) >> 9;
+              pixels[l + 2] = ((pixels[k + 2] << 8) +
+                              pixels[k + 2 + rowSize] * d) >> 9;
+              pixels[l + 3] = alpha1;
+            }
+            k += 4; l += 4;
+          }
+          k += rowSize;
         }
-        if (maxAlpha > currentAlpha) {
-          var scale = 1 - (maxAlpha - currentAlpha) / 255;
-          itemsSum[sumOffset] += pixels[position] * scale;
-          itemsSum[sumOffset + 1] += pixels[position + 1] * scale;
-          itemsSum[sumOffset + 2] += pixels[position + 2] * scale;
-          itemsCount[countOffset] += scale;
-        } else {
-          itemsSum[sumOffset] += pixels[position];
-          itemsSum[sumOffset + 1] += pixels[position + 1];
-          itemsSum[sumOffset + 2] += pixels[position + 2];
-          itemsCount[countOffset]++;
+        if (height & 1) {
+          for (var i = 0; i < rowSize; i++) {
+            pixels[l++] = pixels[k++];
+          }
         }
-        position += 4;
+        height = (height + 1) >> 1;
+        heightScale /= 2;
+      }
+      if (widthScale > 2) {
+        // scaling image twice horizontally
+        var k = 0, l = 0;
+        for (var i = 0; i < height; i++) {
+          for (var j = 0; j < width - 1; j += 2) {
+            var alpha1 = pixels[k + 3], alpha2 = pixels[k + 7];
+            if (alpha1 === alpha2) {
+              pixels[l] = (pixels[k] + pixels[k + 4]) >> 1;
+              pixels[l + 1] = (pixels[k + 1] + pixels[k + 5]) >> 1;
+              pixels[l + 2] = (pixels[k + 2] + pixels[k + 6]) >> 1;
+              pixels[l + 3] = alpha1;
+            } else if (alpha1 < alpha2) {
+              var d = 256 - alpha2 + alpha1;
+              pixels[l] = (pixels[k] * d + (pixels[k + 4] << 8)) >> 9;
+              pixels[l + 1] = (pixels[k + 1] * d + (pixels[k + 5] << 8)) >> 9;
+              pixels[l + 2] = (pixels[k + 2] * d + (pixels[k + 6] << 8)) >> 9;
+              pixels[l + 3] = alpha2;
+            } else {
+              var d = 256 - alpha1 + alpha2;
+              pixels[l] = ((pixels[k] << 8) + pixels[k + 4] * d) >> 9;
+              pixels[l + 1] = ((pixels[k + 1] << 8) + pixels[k + 5] * d) >> 9;
+              pixels[l + 2] = ((pixels[k + 2] << 8) + pixels[k + 6] * d) >> 9;
+              pixels[l + 3] = alpha1;
+            }
+            k += 8; l += 4;
+          }
+          if (width & 1) {
+            pixels[l++] = pixels[k++];
+            pixels[l++] = pixels[k++];
+            pixels[l++] = pixels[k++];
+            pixels[l++] = pixels[k++];
+          }
+        }
+        width = (width + 1) >> 1;
+        widthScale /= 2;
       }
     }
-    var tmpCanvas = createScratchCanvas(scaledWidth, scaledHeight);
+
+    var tmpCanvas = createScratchCanvas(width, height);
     var tmpCtx = tmpCanvas.getContext('2d');
-    var imgData = tmpCtx.getImageData(0, 0, scaledWidth, scaledHeight);
-    pixels = imgData.data;
-    var j = 0, q = 0;
-    for (var i = 0, ii = scaledWidth * scaledHeight; i < ii; i++) {
-      var count = itemsCount[i];
-      pixels[j] = itemsSum[q++] / count;
-      pixels[j + 1] = itemsSum[q++] / count;
-      pixels[j + 2] = itemsSum[q++] / count;
-      pixels[j + 3] = maxAlphas[i];
-      j += 4;
-    }
-    tmpCtx.putImageData(imgData, 0, 0);
+    putBinaryImageData(tmpCtx, pixels.subarray(0, width * height * 4),
+                               width, height);
+
     return tmpCanvas;
   }
 
@@ -1314,19 +1366,19 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       var tmpCanvas = createScratchCanvas(width, height);
       var tmpCtx = tmpCanvas.getContext('2d');
 
-      if (widthScale >= 2 || heightScale >= 2) {
+      if (widthScale > 2 || heightScale > 2) {
         // canvas does not resize well large images to small -- using simple
         // algorithm to perform pre-scaling
-        tmpCanvas = rescaleImage(imgData.data,
+        tmpCanvas = prescaleImage(imgData.data,
                                  width, height,
                                  widthScale, heightScale);
-        ctx.scale(widthScale, heightScale);
-        ctx.drawImage(tmpCanvas, 0, -height / heightScale);
+        ctx.drawImage(tmpCanvas, 0, 0, tmpCanvas.width, tmpCanvas.height,
+                                 0, -height, width, height);
       } else {
         if (typeof ImageData !== 'undefined' && imgData instanceof ImageData) {
           tmpCtx.putImageData(imgData, 0, 0);
         } else {
-          this.putBinaryImageData(tmpCtx, imgData);
+          putBinaryImageData(tmpCtx, imgData.data, width, height);
         }
         ctx.drawImage(tmpCanvas, 0, -height);
       }
@@ -1341,7 +1393,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
 
       var tmpCanvas = createScratchCanvas(w, h);
       var tmpCtx = tmpCanvas.getContext('2d');
-      this.putBinaryImageData(tmpCtx, imgData);
+      putBinaryImageData(tmpCtx, imgData.data, w, h);
 
       for (var i = 0, ii = map.length; i < ii; i++) {
         var entry = map[i];
@@ -1352,25 +1404,6 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
                       0, -1, 1, 1);
         ctx.restore();
       }
-    },
-
-    putBinaryImageData: function CanvasGraphics_putBinaryImageData(ctx,
-                                                                   imgData) {
-      var w = imgData.width, h = imgData.height;
-      var tmpImgData = 'createImageData' in ctx ? ctx.createImageData(w, h) :
-        ctx.getImageData(0, 0, w, h);
-
-      var tmpImgDataPixels = tmpImgData.data;
-      var data = imgData.data;
-      if ('set' in tmpImgDataPixels)
-        tmpImgDataPixels.set(data);
-      else {
-        // Copy over the imageData pixel by pixel.
-        for (var i = 0, ii = tmpImgDataPixels.length; i < ii; i++)
-          tmpImgDataPixels[i] = data[i];
-      }
-
-      ctx.putImageData(tmpImgData, 0, 0);
     },
 
     // Marked content
