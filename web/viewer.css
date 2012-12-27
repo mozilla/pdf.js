@@ -975,8 +975,8 @@ a:focus > .thumbnail > .thumbnailSelectionRing,
   text-decoration: none;
   display: inline-block;
   min-width: 95%;
-  height: 20px;
-  padding: 2px 0 0 10px;
+  height: auto;
+  padding: 2px 0 5px 10px;
   margin-bottom: 1px;
   border-radius: 2px;
   color: hsla(0,0%,100%,.8);
@@ -984,7 +984,7 @@ a:focus > .thumbnail > .thumbnailSelectionRing,
   line-height: 15px;
   -moz-user-select:none;
   cursor: default;
-  white-space: nowrap;
+  white-space: normal;
 }
 
 .outlineItem > a:hover {
