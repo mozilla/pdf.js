@@ -517,6 +517,84 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       return queue;
     },
 
+    fillPreAnnotationOperatorList: function PartialEvaluator_fillPreAnnotationOperatorList(
+                                                    queue, annotation) {
+      queue.fnArray.push('save'); 
+      queue.argsArray.push([]);
+
+      if(annotation.borderType == '')
+        return;
+
+      queue.fnArray.push('save'); 
+      queue.argsArray.push([]);
+
+      queue.fnArray.push('setStrokeRGBColor'); 
+      queue.argsArray.push(annotation.borderRGB);
+
+      queue.fnArray.push('setLineWidth'); 
+      queue.argsArray.push([annotation.borderWidth]);
+      
+      queue.fnArray.push('setLineCap'); 
+      queue.argsArray.push([0]);
+      
+      queue.fnArray.push('setLineJoin'); 
+      queue.argsArray.push([1]);
+      
+      queue.fnArray.push('moveTo'); 
+      queue.argsArray.push([annotation.rect[0],annotation.rect[1]]);
+      
+      queue.fnArray.push('lineTo'); 
+      queue.argsArray.push([annotation.rect[2],annotation.rect[1]]);
+      
+      queue.fnArray.push('lineTo'); 
+      queue.argsArray.push([annotation.rect[2],annotation.rect[3]]);
+      
+      queue.fnArray.push('lineTo'); 
+      queue.argsArray.push([annotation.rect[0],annotation.rect[3]]);
+      
+      queue.fnArray.push('lineTo'); 
+      queue.argsArray.push([annotation.rect[0],annotation.rect[1]]);
+      
+      queue.fnArray.push('closePath'); 
+      queue.argsArray.push([]);
+      
+      queue.fnArray.push('stroke'); 
+      queue.argsArray.push([]);
+
+      queue.fnArray.push('restore'); 
+      queue.argsArray.push([]);
+    },
+    
+    fillAnnotationOperatorList: function PartialEvaluator_fillAnnotationOperatorList(
+                                                    queue, annotation, dependency) {
+      queue.fnArray.push('transform'); 
+      queue.argsArray.push([ annotation.rect[2]-annotation.rect[0],
+                             0,
+                             0,
+                             annotation.rect[3]-annotation.rect[1],
+                             annotation.rect[0],
+                             annotation.rect[1]]);
+                             
+      queue.fnArray.push('transform');
+      queue.argsArray.push([1/(annotation.bbox[2]-annotation.bbox[0]),
+                            0,
+                            0,
+                            1/(annotation.bbox[3]-annotation.bbox[1]),
+                            annotation.bbox[0],
+                            annotation.bbox[1]]);
+
+      var annList = this.getOperatorList(annotation.appearance, annotation.resources, dependency);
+          
+      queue.fnArray = queue.fnArray.concat(annList.fnArray);
+      queue.argsArray = queue.argsArray.concat(annList.argsArray);
+    },
+    
+    fillPostAnnotationOperatorList: function PartialEvaluator_fillPostAnnotationOperatorList(
+                                                    queue) {
+      queue.fnArray.push('restore'); 
+      queue.argsArray.push([]);
+    },
+
     optimizeQueue: function PartialEvaluator_optimizeQueue(queue) {
       var fnArray = queue.fnArray, argsArray = queue.argsArray;
       // grouping paintInlineImageXObject's into paintInlineImageXObjectGroup
