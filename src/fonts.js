@@ -4443,6 +4443,7 @@ var Type1Parser = function type1Parser() {
       // Type1 only command with command not (yet) built-in ,throw an error
       '7': -1, // sbw
 
+      '10': 'add',
       '11': 'sub',
       '12': 'div',
 
@@ -4505,16 +4506,6 @@ var Type1Parser = function type1Parser() {
       }
     }
     return args;
-  }
-
-  // Remove the same number of args from the stack that are in the args
-  // parameter. Args should be built from breakUpArgs().
-  function popArgs(stack, args) {
-    for (var i = 0, ii = args.length; i < ii; i++) {
-      for (var j = 0, jj = args[i].arg.length; j < jj; j++) {
-        stack.pop();
-      }
-    }
   }
 
   function decodeCharString(array) {
@@ -4617,25 +4608,32 @@ var Type1Parser = function type1Parser() {
                   break;
                 case 0:
                   var flexArgs = breakUpArgs(charstring, 17);
-                  popArgs(charstring, flexArgs);
 
-                  charstring.push(
-                    flexArgs[2].value + flexArgs[0].value, // bcp1x + rpx
-                    flexArgs[3].value + flexArgs[1].value, // bcp1y + rpy
-                    flexArgs[4].value, // bcp2x
-                    flexArgs[5].value, // bcp2y
-                    flexArgs[6].value, // p2x
-                    flexArgs[7].value, // p2y
-                    flexArgs[8].value, // bcp3x
-                    flexArgs[9].value, // bcp3y
-                    flexArgs[10].value, // bcp4x
-                    flexArgs[11].value, // bcp4y
-                    flexArgs[12].value, // p3x
-                    flexArgs[13].value, // p3y
-                    flexArgs[14].value, // flexDepth
+                  // removing all flex arguments from the stack
+                  charstring.splice(flexArgs[0].offset,
+                                    charstring.length - flexArgs[0].offset);
+
+                  charstring = charstring.concat(
+                    flexArgs[0].arg, // bcp1x +
+                    flexArgs[2].arg, // rpx
+                    ['add'],
+                    flexArgs[1].arg, // bcp1y +
+                    flexArgs[3].arg, // rpy
+                    ['add'],
+                    flexArgs[4].arg, // bcp2x
+                    flexArgs[5].arg, // bcp2y
+                    flexArgs[6].arg, // p2x
+                    flexArgs[7].arg, // p2y
+                    flexArgs[8].arg, // bcp3x
+                    flexArgs[9].arg, // bcp3y
+                    flexArgs[10].arg, // bcp4x
+                    flexArgs[11].arg, // bcp4y
+                    flexArgs[12].arg, // p3x
+                    flexArgs[13].arg, // p3y
+                    flexArgs[14].arg, // flexDepth
                     // 15 = finalx unused by flex
                     // 16 = finaly unused by flex
-                    'flex'
+                    ['flex']
                   );
 
                   flexing = false;
@@ -4650,14 +4648,9 @@ var Type1Parser = function type1Parser() {
             charstring.push(0);
             continue; // ignoring hmoveto
           } else if (value == 4 && flexing) { // vmoveto
-            // Add the dx for flex and but also swap the values so they are the
-            // right order.
-            var vArgs = breakUpArgs(charstring, 1);
-            popArgs(charstring, vArgs);
-            charstring.push(0);
-            for (var t = 0, tt = vArgs[0].arg.length; t < tt; t++) {
-              charstring.push(vArgs[0].arg[t]);
-            }
+            // Insert the dx for flex before dy.
+            var flexArgs = breakUpArgs(charstring, 1);
+            charstring.splice(flexArgs[0].offset, 0, 0);
             continue; // ignoring vmoveto
           } else if (!HINTING_ENABLED && (value == 1 || value == 3)) {
             charstring.push('drop', 'drop');
@@ -5124,6 +5117,7 @@ Type1Font.prototype = {
     'rrcurveto': 8,
     'callsubr': 10,
     'return': 11,
+    'add': [12, 10],
     'sub': [12, 11],
     'div': [12, 12],
     'exch': [12, 28],
@@ -6384,37 +6378,26 @@ var CFFCompiler = (function CFFCompilerClosure() {
       else
         return this.encodeFloat(value);
     },
-    encodeFloat: function CFFCompiler_encodeFloat(value) {
-      value = value.toString();
-      // Strip off the any leading zeros.
-      if (value.substr(0, 2) === '0.')
-        value = value.substr(1);
-      else if (value.substr(0, 3) === '-0.')
-        value = '-' + value.substr(2);
-      var nibbles = [];
+    encodeFloat: function CFFCompiler_encodeFloat(num) {
+      var value = num.toString();
+      var nibbles = '';
       for (var i = 0, ii = value.length; i < ii; ++i) {
-        var a = value.charAt(i), b = value.charAt(i + 1);
-        var nibble;
-        if (a === 'e' && b === '-') {
-          nibble = 0xc;
-          ++i;
+        var a = value[i];
+        if (a === 'e') {
+          nibbles += value[++i] === '-' ? 'c' : 'b';
         } else if (a === '.') {
-          nibble = 0xa;
-        } else if (a === 'E') {
-          nibble = 0xb;
+          nibbles += 'a';
         } else if (a === '-') {
-          nibble = 0xe;
+          nibbles += 'e';
         } else {
-          nibble = a;
+          nibbles += a;
         }
-        nibbles.push(nibble);
       }
-      nibbles.push(0xf);
-      if (nibbles.length % 2)
-        nibbles.push(0xf);
+      nibbles += (nibbles.length & 1) ? 'f' : 'ff';
       var out = [30];
-      for (var i = 0, ii = nibbles.length; i < ii; i += 2)
-        out.push(nibbles[i] << 4 | nibbles[i + 1]);
+      for (var i = 0, ii = nibbles.length; i < ii; i += 2) {
+        out.push(parseInt(nibbles.substr(i, 2), 16));
+      }
       return out;
     },
     encodeInteger: function CFFCompiler_encodeInteger(value) {
