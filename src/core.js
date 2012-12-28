@@ -194,36 +194,32 @@ var Page = (function PageClosure() {
                                 'p' + this.pageIndex + '_');
 
       var list = pe.getOperatorList(contentStream, resources, dependency);
-      pe.optimizeQueue(list);
 
-      {  // deal with annotations
-        var annotations = this.getAnnotations();
-        var i, n = annotations.length;
-        var items = [];
-        for (i = 0; i < n; ++i) {
-          var annotation = annotations[i];
-          
-          if(!annotation)
-            continue;
-          if(!annotation.annotationFlags)
-            continue;
-          if(!annotation.rect)
-            continue;
-          if(annotation.flags & 0x0002) // Hidden
-            continue;
-          if(annotation.flags & 0x0020) // NoView
-            continue;
+      // deal with annotations
+      var annotations = this.getAnnotations();
+      var i, n = annotations.length;
+      var items = [];
+      for (i = 0; i < n; ++i) {
+        var annotation = annotations[i];
+        
+        // check whether we can visualize annotation
+        if (!annotation ||
+            !annotation.annotationFlags || 
+            (annotation.annotationFlags & 0x0002) ||  // Hidden
+            (annotation.annotationFlags & 0x0020) ||  // NoView
+            !annotation.rect ||                       // rectangle is nessessary
+            !annotation.appearance )                  // appearance is nessessary
+          continue;
                    
-          var ape = new PartialEvaluator(
-              xref, handler, 'p' + this.pageNumber + '_annotation' + i);
+        var ape = new PartialEvaluator(
+            xref, handler, this.pageIndex, 'p' + this.pageIndex + '_annotation' + i);
           
-          ape.fillPreAnnotationOperatorList(list, annotation);
-          if(annotation.bbox)
-            ape.fillAnnotationOperatorList(list, annotation, dependency);
-          ape.fillPostAnnotationOperatorList(list);
-        }
+        ape.fillPreAnnotationOperatorList(list, annotation);
+        ape.fillAnnotationOperatorList(list, annotation, dependency);
+        ape.fillPostAnnotationOperatorList(list);
       }
 
+      pe.optimizeQueue(list);
       return list;
     },
     extractTextContent: function Page_extractTextContent() {

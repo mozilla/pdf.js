@@ -525,44 +525,27 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       if(annotation.borderType == '')
         return;
 
-      queue.fnArray.push('save'); 
-      queue.argsArray.push([]);
+      var ops = [
+        [ 'save', []], 
+        [ 'setStrokeRGBColor', annotation.borderRGB ],
+        [ 'setLineWidth', [annotation.borderWidth] ],
+        [ 'setLineCap', [0] ],
+        [ 'setLineJoin', [1] ],
+        [ 'moveTo', [annotation.rect[0],annotation.rect[1]] ],
+        [ 'lineTo', [annotation.rect[2],annotation.rect[1]] ],
+        [ 'lineTo', [annotation.rect[2],annotation.rect[3]] ],
+        [ 'lineTo', [annotation.rect[0],annotation.rect[3]] ],
+        [ 'lineTo', [annotation.rect[0],annotation.rect[1]] ],
+        [ 'closePath', [] ],
+        [ 'stroke', [] ],
+        [ 'restore', [] ]
+      ];
 
-      queue.fnArray.push('setStrokeRGBColor'); 
-      queue.argsArray.push(annotation.borderRGB);
-
-      queue.fnArray.push('setLineWidth'); 
-      queue.argsArray.push([annotation.borderWidth]);
-      
-      queue.fnArray.push('setLineCap'); 
-      queue.argsArray.push([0]);
-      
-      queue.fnArray.push('setLineJoin'); 
-      queue.argsArray.push([1]);
-      
-      queue.fnArray.push('moveTo'); 
-      queue.argsArray.push([annotation.rect[0],annotation.rect[1]]);
-      
-      queue.fnArray.push('lineTo'); 
-      queue.argsArray.push([annotation.rect[2],annotation.rect[1]]);
-      
-      queue.fnArray.push('lineTo'); 
-      queue.argsArray.push([annotation.rect[2],annotation.rect[3]]);
-      
-      queue.fnArray.push('lineTo'); 
-      queue.argsArray.push([annotation.rect[0],annotation.rect[3]]);
-      
-      queue.fnArray.push('lineTo'); 
-      queue.argsArray.push([annotation.rect[0],annotation.rect[1]]);
-      
-      queue.fnArray.push('closePath'); 
-      queue.argsArray.push([]);
-      
-      queue.fnArray.push('stroke'); 
-      queue.argsArray.push([]);
-
-      queue.fnArray.push('restore'); 
-      queue.argsArray.push([]);
+      var i;
+      for(i = 0; i < ops.length; i++) {
+        queue.fnArray.push(ops[i][0]);
+        queue.argsArray.push(ops[i][1]);
+      }
     },
     
     fillAnnotationOperatorList: function PartialEvaluator_fillAnnotationOperatorList(
