@@ -1024,6 +1024,9 @@ var PDFView = {
 //    function getDataSuccess(data) {
 //      var blob = PDFJS.createBlob(data.buffer, 'application/pdf');
 //      var blobUrl = window.URL.createObjectURL(blob);
+//      // Append .pdf to the filename if it isn't already there
+//      url += (url.toLowerCase().indexOf('.pdf', url.length - 4) !== -1)
+//        ? '.pdf' : '';
 //
 //      FirefoxCom.request('download', { blobUrl: blobUrl, originalUrl: url },
 //        function response(err) {
