@@ -30,6 +30,7 @@ var MAX_SCALE = 4.0;
 var IMAGE_DIR = './images/';
 var SETTINGS_MEMORY = 20;
 var ANNOT_MIN_SIZE = 10;
+var ZOOM_UPDATE_VIEWAREA_TIMEOUT = 250;
 var RenderingStates = {
   INITIAL: 0,
   RUNNING: 1,
@@ -694,6 +695,7 @@ var PDFView = {
   mouseScrollTimeStamp: 0,
   mouseScrollDelta: 0,
   lastScroll: 0,
+  updateViewareaTimeout: null,
 
   // called once when the document is loaded
   initialize: function pdfViewInitialize() {
@@ -800,13 +802,26 @@ var PDFView = {
   zoomIn: function pdfViewZoomIn() {
     var newScale = (this.currentScale * DEFAULT_SCALE_DELTA).toFixed(2);
     newScale = Math.min(MAX_SCALE, newScale);
+    this.setupUpdateViewareTimeout();
     this.parseScale(newScale, true);
   },
 
   zoomOut: function pdfViewZoomOut() {
     var newScale = (this.currentScale / DEFAULT_SCALE_DELTA).toFixed(2);
     newScale = Math.max(MIN_SCALE, newScale);
+    this.setupUpdateViewareTimeout();
     this.parseScale(newScale, true);
+  },
+
+  setupUpdateViewareTimeout: function() {
+    if (this.updateViewareaTimeout) {
+      clearTimeout(this.updateViewareaTimeout);
+    }
+    var self = this;
+    this.updateViewareaTimeout = setTimeout(function() {
+      self.updateViewareaTimeout = null;
+      updateViewarea();
+    }, ZOOM_UPDATE_VIEWAREA_TIMEOUT);
   },
 
   set page(val) {
@@ -2936,6 +2951,9 @@ document.addEventListener('DOMContentLoaded', function webViewerLoad(evt) {
 }, true);
 
 function updateViewarea() {
+  if (PDFView.updateViewareaTimeout) {
+    return;
+  }
 
   if (!PDFView.initialized)
     return;
