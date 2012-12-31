@@ -214,9 +214,7 @@ var Page = (function PageClosure() {
         var ape = new PartialEvaluator(
             xref, handler, this.pageIndex, 'p' + this.pageIndex + '_annotation' + i);
           
-        ape.fillPreAnnotationOperatorList(list, annotation);
-        ape.fillAnnotationOperatorList(list, annotation, dependency);
-        ape.fillPostAnnotationOperatorList(list);
+        ape.appendAnnotationOperatorList(list, annotation, dependency);
       }
 
       pe.optimizeQueue(list);

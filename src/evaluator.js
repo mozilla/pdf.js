@@ -517,63 +517,60 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       return queue;
     },
 
-    fillPreAnnotationOperatorList: function PartialEvaluator_fillPreAnnotationOperatorList(
-                                                    queue, annotation) {
-      queue.fnArray.push('save'); 
-      queue.argsArray.push([]);
-
-      if(annotation.borderType == '')
-        return;
-
-      var ops = [
-        [ 'save', []], 
-        [ 'setStrokeRGBColor', annotation.borderRGB ],
-        [ 'setLineWidth', [annotation.borderWidth] ],
-        [ 'setLineCap', [0] ],
-        [ 'setLineJoin', [1] ],
-        [ 'moveTo', [annotation.rect[0],annotation.rect[1]] ],
-        [ 'lineTo', [annotation.rect[2],annotation.rect[1]] ],
-        [ 'lineTo', [annotation.rect[2],annotation.rect[3]] ],
-        [ 'lineTo', [annotation.rect[0],annotation.rect[3]] ],
-        [ 'lineTo', [annotation.rect[0],annotation.rect[1]] ],
-        [ 'closePath', [] ],
-        [ 'stroke', [] ],
-        [ 'restore', [] ]
-      ];
-
-      var i;
-      for(i = 0; i < ops.length; i++) {
-        queue.fnArray.push(ops[i][0]);
-        queue.argsArray.push(ops[i][1]);
-      }
-    },
-    
-    fillAnnotationOperatorList: function PartialEvaluator_fillAnnotationOperatorList(
+    appendAnnotationOperatorList: function PartialEvaluator_fillAnnotationOperatorList(
                                                     queue, annotation, dependency) {
-      queue.fnArray.push('transform'); 
-      queue.argsArray.push([ annotation.rect[2]-annotation.rect[0],
+      var fnArray = queue.fnArray, argsArray = queue.argsArray;
+      fnArray.push('save'); 
+      argsArray.push([]);
+
+      // draw border
+      if(annotation.borderType != '') {
+        var ops = [
+          [ 'save', []], 
+          [ 'setStrokeRGBColor', annotation.borderRGB ],
+          [ 'setLineWidth', [annotation.borderWidth] ],
+          [ 'setLineCap', [0] ],
+          [ 'setLineJoin', [1] ],
+          [ 'moveTo', [annotation.rect[0],annotation.rect[1]] ],
+          [ 'lineTo', [annotation.rect[2],annotation.rect[1]] ],
+          [ 'lineTo', [annotation.rect[2],annotation.rect[3]] ],
+          [ 'lineTo', [annotation.rect[0],annotation.rect[3]] ],
+          [ 'lineTo', [annotation.rect[0],annotation.rect[1]] ],
+          [ 'closePath', [] ],
+          [ 'stroke', [] ],
+          [ 'restore', [] ]
+        ];
+
+        var i;
+        for(i = 0; i < ops.length; i++) {
+          fnArray.push(ops[i][0]);
+          argsArray.push(ops[i][1]);
+        }
+      }
+  
+      // apply rectangle
+      fnArray.push('transform'); 
+      argsArray.push([ annotation.rect[2]-annotation.rect[0],
                              0,
                              0,
                              annotation.rect[3]-annotation.rect[1],
                              annotation.rect[0],
                              annotation.rect[1]]);
-                             
-      queue.fnArray.push('transform');
-      queue.argsArray.push([1/(annotation.bbox[2]-annotation.bbox[0]),
+      // apply bbox                       
+      fnArray.push('transform');
+      argsArray.push([1/(annotation.bbox[2]-annotation.bbox[0]),
                             0,
                             0,
                             1/(annotation.bbox[3]-annotation.bbox[1]),
                             annotation.bbox[0],
                             annotation.bbox[1]]);
 
+      // build operator list for appearance
       var annList = this.getOperatorList(annotation.appearance, annotation.resources, dependency);
-          
-      queue.fnArray = queue.fnArray.concat(annList.fnArray);
-      queue.argsArray = queue.argsArray.concat(annList.argsArray);
-    },
-    
-    fillPostAnnotationOperatorList: function PartialEvaluator_fillPostAnnotationOperatorList(
-                                                    queue) {
+      
+      // merge lists
+      queue.fnArray = fnArray.concat(annList.fnArray);
+      queue.argsArray = argsArray.concat(annList.argsArray);
       queue.fnArray.push('restore'); 
       queue.argsArray.push([]);
     },
