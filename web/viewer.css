@@ -967,8 +967,12 @@ a:focus > .thumbnail > .thumbnailSelectionRing,
   -moz-user-select:none;
 }
 
-.outlineItem > .outlineItems {
+html[dir='ltr'] .outlineItem > .outlineItems {
   margin-left: 20px;
+}
+
+html[dir='rtl'] .outlineItem > .outlineItems {
+  margin-right: 20px;
 }
 
 .outlineItem > a {
@@ -976,7 +980,6 @@ a:focus > .thumbnail > .thumbnailSelectionRing,
   display: inline-block;
   min-width: 95%;
   height: auto;
-  padding: 2px 0 5px 10px;
   margin-bottom: 1px;
   border-radius: 2px;
   color: hsla(0,0%,100%,.8);
@@ -985,6 +988,14 @@ a:focus > .thumbnail > .thumbnailSelectionRing,
   -moz-user-select:none;
   cursor: default;
   white-space: normal;
+}
+
+html[dir='ltr'] .outlineItem > a {
+  padding: 2px 0 5px 10px;
+}
+
+html[dir='rtl'] .outlineItem > a {
+  padding: 2px 10px 5px 0;
 }
 
 .outlineItem > a:hover {
