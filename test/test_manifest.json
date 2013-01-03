@@ -795,5 +795,11 @@
       "md5": "9f11e815b485f7f0e1fa5c116c636cf9",
       "rounds": 1,
       "type": "eq"
+    },
+    {  "id": "cid_cff",
+      "file": "pdfs/cid_cff.pdf",
+      "md5": "a19a18eaa626262cc45e0760004d6de9",
+      "rounds": 1,
+      "type": "eq"
     }
 ]
