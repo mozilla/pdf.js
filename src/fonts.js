@@ -4847,8 +4847,12 @@ var Type1Parser = function type1Parser() {
             case '/FamilyBlues':
             case '/FamilyOtherBlues':
               var blueArray = readNumberArray(eexecStr, i + 1);
-              if (blueArray.length > 0 && (blueArray.length % 2) == 0)
+              // *Blue* values may contain invalid data: disables reading of
+              // those values when hinting is disabled.
+              if (blueArray.length > 0 && (blueArray.length % 2) == 0 &&
+                  HINTING_ENABLED) {
                 program.properties.privateData[token.substring(1)] = blueArray;
+              }
               break;
             case '/StemSnapH':
             case '/StemSnapV':
