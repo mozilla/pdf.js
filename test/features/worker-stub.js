@@ -17,7 +17,16 @@
 
 onmessage = function (e) {
   var data = e.data;
-  postMessage({action: 'test', result: data.action == 'test' &&
-                                       data.data instanceof Uint8Array});
+  switch (data.action) {
+  case 'test':
+    postMessage({action: 'test', result: data.data instanceof Uint8Array});
+    break;
+  case 'xhr':
+    var xhr = new XMLHttpRequest();
+    var responseExists = 'response' in xhr || 'mozResponse' in xhr ||
+        'responseArrayBuffer' in xhr || 'mozResponseArrayBuffer' in xhr;
+    postMessage({action: 'xhr', result: responseExists});
+    break;
+  }
 };
 
