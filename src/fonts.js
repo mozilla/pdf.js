@@ -29,6 +29,8 @@ var PDF_GLYPH_SPACE_UNITS = 1000;
 // Until hinting is fully supported this constant can be used
 var HINTING_ENABLED = false;
 
+var FONT_IDENTITY_MATRIX = [0.001, 0, 0, 0.001, 0, 0];
+
 var FontFlags = {
   FixedPitch: 1,
   Serif: 2,
@@ -2214,6 +2216,19 @@ function fontCharsToUnicode(charCodes, font) {
   return result;
 }
 
+function adjustWidths(properties) {
+  if (properties.fontMatrix[0] === FONT_IDENTITY_MATRIX[0]) {
+    return;
+  }
+  // adjusting width to fontMatrix scale
+  var scale = 0.001 / properties.fontMatrix[0];
+  var glyphsWidths = properties.widths;
+  for (var glyph in glyphsWidths) {
+    glyphsWidths[glyph] *= scale;
+  }
+  properties.defaultWidth *= scale;
+}
+
 /**
  * 'Font' is the class the outside world should use, it encapsulate all the font
  * decoding logics whatever type it is (assuming the font type is supported).
@@ -2260,7 +2275,6 @@ var Font = (function FontClosure() {
     this.hasEncoding = properties.hasEncoding;
 
     this.fontMatrix = properties.fontMatrix;
-    this.widthMultiplier = 1.0;
     if (properties.type == 'Type3') {
       this.encoding = properties.baseEncoding;
       return;
@@ -2318,6 +2332,8 @@ var Font = (function FontClosure() {
         var cff = (subtype == 'Type1C' || subtype == 'CIDFontType0C') ?
           new CFFFont(file, properties) : new Type1Font(name, file, properties);
 
+        adjustWidths(properties);
+
         // Wrap the CFF data inside an OTF font file
         data = this.convert(name, cff, properties);
         break;
@@ -2337,10 +2353,13 @@ var Font = (function FontClosure() {
     }
 
     this.data = data;
+
+    // Transfer some properties again that could change during font conversion
     this.fontMatrix = properties.fontMatrix;
-    this.widthMultiplier = !properties.fontMatrix ? 1.0 :
-      1.0 / properties.fontMatrix[0];
+    this.widths = properties.widths;
+    this.defaultWidth = properties.defaultWidth;
     this.encoding = properties.baseEncoding;
+
     this.loading = true;
   };
 
@@ -3931,7 +3950,7 @@ var Font = (function FontClosure() {
         }
         this.toFontChar = toFontChar;
       }
-      var unitsPerEm = properties.unitsPerEm || 1000; // defaulting to 1000
+      var unitsPerEm = 1 / (properties.fontMatrix || FONT_IDENTITY_MATRIX)[0];
 
       var fields = {
         // PostScript Font Program
@@ -4170,7 +4189,7 @@ var Font = (function FontClosure() {
         if (width)
           break; // the non-zero width found
       }
-      width = (width || this.defaultWidth) * this.widthMultiplier;
+      width = width || this.defaultWidth;
       // Do not shadow the property here. See discussion:
       // https://github.com/mozilla/pdf.js/pull/2127#discussion_r1662280
       this._shadowWidth = width;
@@ -4251,7 +4270,7 @@ var Font = (function FontClosure() {
       if (typeof unicodeChars === 'number')
         unicodeChars = String.fromCharCode(unicodeChars);
 
-      width = (isNum(width) ? width : this.defaultWidth) * this.widthMultiplier;
+      width = isNum(width) ? width : this.defaultWidth;
       disabled = this.unicodeIsEnabled ?
         !this.unicodeIsEnabled[fontCharCode] : false;
 
@@ -4443,6 +4462,7 @@ var Type1Parser = function type1Parser() {
       // Type1 only command with command not (yet) built-in ,throw an error
       '7': -1, // sbw
 
+      '10': 'add',
       '11': 'sub',
       '12': 'div',
 
@@ -4505,16 +4525,6 @@ var Type1Parser = function type1Parser() {
       }
     }
     return args;
-  }
-
-  // Remove the same number of args from the stack that are in the args
-  // parameter. Args should be built from breakUpArgs().
-  function popArgs(stack, args) {
-    for (var i = 0, ii = args.length; i < ii; i++) {
-      for (var j = 0, jj = args[i].arg.length; j < jj; j++) {
-        stack.pop();
-      }
-    }
   }
 
   function decodeCharString(array) {
@@ -4617,25 +4627,32 @@ var Type1Parser = function type1Parser() {
                   break;
                 case 0:
                   var flexArgs = breakUpArgs(charstring, 17);
-                  popArgs(charstring, flexArgs);
 
-                  charstring.push(
-                    flexArgs[2].value + flexArgs[0].value, // bcp1x + rpx
-                    flexArgs[3].value + flexArgs[1].value, // bcp1y + rpy
-                    flexArgs[4].value, // bcp2x
-                    flexArgs[5].value, // bcp2y
-                    flexArgs[6].value, // p2x
-                    flexArgs[7].value, // p2y
-                    flexArgs[8].value, // bcp3x
-                    flexArgs[9].value, // bcp3y
-                    flexArgs[10].value, // bcp4x
-                    flexArgs[11].value, // bcp4y
-                    flexArgs[12].value, // p3x
-                    flexArgs[13].value, // p3y
-                    flexArgs[14].value, // flexDepth
+                  // removing all flex arguments from the stack
+                  charstring.splice(flexArgs[0].offset,
+                                    charstring.length - flexArgs[0].offset);
+
+                  charstring = charstring.concat(
+                    flexArgs[0].arg, // bcp1x +
+                    flexArgs[2].arg, // rpx
+                    ['add'],
+                    flexArgs[1].arg, // bcp1y +
+                    flexArgs[3].arg, // rpy
+                    ['add'],
+                    flexArgs[4].arg, // bcp2x
+                    flexArgs[5].arg, // bcp2y
+                    flexArgs[6].arg, // p2x
+                    flexArgs[7].arg, // p2y
+                    flexArgs[8].arg, // bcp3x
+                    flexArgs[9].arg, // bcp3y
+                    flexArgs[10].arg, // bcp4x
+                    flexArgs[11].arg, // bcp4y
+                    flexArgs[12].arg, // p3x
+                    flexArgs[13].arg, // p3y
+                    flexArgs[14].arg, // flexDepth
                     // 15 = finalx unused by flex
                     // 16 = finaly unused by flex
-                    'flex'
+                    ['flex']
                   );
 
                   flexing = false;
@@ -4650,14 +4667,9 @@ var Type1Parser = function type1Parser() {
             charstring.push(0);
             continue; // ignoring hmoveto
           } else if (value == 4 && flexing) { // vmoveto
-            // Add the dx for flex and but also swap the values so they are the
-            // right order.
-            var vArgs = breakUpArgs(charstring, 1);
-            popArgs(charstring, vArgs);
-            charstring.push(0);
-            for (var t = 0, tt = vArgs[0].arg.length; t < tt; t++) {
-              charstring.push(vArgs[0].arg[t]);
-            }
+            // Insert the dx for flex before dy.
+            var flexArgs = breakUpArgs(charstring, 1);
+            charstring.splice(flexArgs[0].offset, 0, 0);
             continue; // ignoring vmoveto
           } else if (!HINTING_ENABLED && (value == 1 || value == 3)) {
             charstring.push('drop', 'drop');
@@ -4909,14 +4921,6 @@ var Type1Parser = function type1Parser() {
         switch (token) {
           case '/FontMatrix':
             var matrix = readNumberArray(headerString, i + 1);
-
-            // The FontMatrix is in unitPerEm, so make it pixels
-            for (var j = 0, jj = matrix.length; j < jj; j++)
-              matrix[j] *= 1000;
-
-            // Make the angle into the right direction
-            matrix[2] *= -1;
-
             properties.fontMatrix = matrix;
             break;
           case '/Encoding':
@@ -5124,6 +5128,7 @@ Type1Font.prototype = {
     'rrcurveto': 8,
     'callsubr': 10,
     'return': 11,
+    'add': [12, 10],
     'sub': [12, 11],
     'div': [12, 12],
     'exch': [12, 28],
@@ -5191,6 +5196,7 @@ Type1Font.prototype = {
     topDict.setByName('FamilyName', 3);
     topDict.setByName('Weight', 4);
     topDict.setByName('Encoding', null); // placeholder
+    topDict.setByName('FontMatrix', properties.fontMatrix);
     topDict.setByName('FontBBox', properties.bbox);
     topDict.setByName('charset', null); // placeholder
     topDict.setByName('CharStrings', null); // placeholder
@@ -5465,8 +5471,7 @@ var CFFParser = (function CFFParserClosure() {
 
       var fontMatrix = topDict.getByName('FontMatrix');
       if (fontMatrix) {
-        // estimating unitsPerEM for the font
-        properties.unitsPerEm = 1 / fontMatrix[0];
+        properties.fontMatrix = fontMatrix;
       }
 
       var fontBBox = topDict.getByName('FontBBox');
@@ -6391,37 +6396,26 @@ var CFFCompiler = (function CFFCompilerClosure() {
       else
         return this.encodeFloat(value);
     },
-    encodeFloat: function CFFCompiler_encodeFloat(value) {
-      value = value.toString();
-      // Strip off the any leading zeros.
-      if (value.substr(0, 2) === '0.')
-        value = value.substr(1);
-      else if (value.substr(0, 3) === '-0.')
-        value = '-' + value.substr(2);
-      var nibbles = [];
+    encodeFloat: function CFFCompiler_encodeFloat(num) {
+      var value = num.toString();
+      var nibbles = '';
       for (var i = 0, ii = value.length; i < ii; ++i) {
-        var a = value.charAt(i), b = value.charAt(i + 1);
-        var nibble;
-        if (a === 'e' && b === '-') {
-          nibble = 0xc;
-          ++i;
+        var a = value[i];
+        if (a === 'e') {
+          nibbles += value[++i] === '-' ? 'c' : 'b';
         } else if (a === '.') {
-          nibble = 0xa;
-        } else if (a === 'E') {
-          nibble = 0xb;
+          nibbles += 'a';
         } else if (a === '-') {
-          nibble = 0xe;
+          nibbles += 'e';
         } else {
-          nibble = a;
+          nibbles += a;
         }
-        nibbles.push(nibble);
       }
-      nibbles.push(0xf);
-      if (nibbles.length % 2)
-        nibbles.push(0xf);
+      nibbles += (nibbles.length & 1) ? 'f' : 'ff';
       var out = [30];
-      for (var i = 0, ii = nibbles.length; i < ii; i += 2)
-        out.push(nibbles[i] << 4 | nibbles[i + 1]);
+      for (var i = 0, ii = nibbles.length; i < ii; i += 2) {
+        out.push(parseInt(nibbles.substr(i, 2), 16));
+      }
       return out;
     },
     encodeInteger: function CFFCompiler_encodeInteger(value) {

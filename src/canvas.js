@@ -159,7 +159,7 @@ var CanvasExtraState = (function CanvasExtraStateClosure() {
     this.fontSize = 0;
     this.fontSizeScale = 1;
     this.textMatrix = IDENTITY_MATRIX;
-    this.fontMatrix = IDENTITY_MATRIX;
+    this.fontMatrix = FONT_IDENTITY_MATRIX;
     this.leading = 0;
     // Current point (in user coordinates)
     this.x = 0;
@@ -768,11 +768,8 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       if (!fontObj)
         error('Can\'t find font for ' + fontRefName);
 
-      // Slice-clone matrix so we can manipulate it without affecting original
-      if (fontObj.fontMatrix)
-        current.fontMatrix = fontObj.fontMatrix.slice(0);
-      else
-        current.fontMatrix = IDENTITY_MATRIX.slice(0);
+      current.fontMatrix = fontObj.fontMatrix ? fontObj.fontMatrix :
+                                                FONT_IDENTITY_MATRIX;
 
       // A valid matrix needs all main diagonal elements to be non-zero
       // This also ensures we bypass FF bugzilla bug #719844.
@@ -783,11 +780,11 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
 
       // The spec for Tf (setFont) says that 'size' specifies the font 'scale',
       // and in some docs this can be negative (inverted x-y axes).
-      // We implement this condition with fontMatrix.
       if (size < 0) {
         size = -size;
-        current.fontMatrix[0] *= -1;
-        current.fontMatrix[3] *= -1;
+        current.fontDirection = -1;
+      } else {
+        current.fontDirection = 1;
       }
 
       this.current.font = fontObj;
@@ -840,14 +837,13 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
     applyTextTransforms: function CanvasGraphics_applyTextTransforms() {
       var ctx = this.ctx;
       var current = this.current;
-      var textHScale = current.textHScale;
-      var fontMatrix = current.fontMatrix || IDENTITY_MATRIX;
-
       ctx.transform.apply(ctx, current.textMatrix);
-      ctx.scale(1, -1);
-      ctx.translate(current.x, -current.y - current.textRise);
-      ctx.transform.apply(ctx, fontMatrix);
-      ctx.scale(textHScale, 1);
+      ctx.translate(current.x, current.y + current.textRise);
+      if (current.fontDirection > 0) {
+        ctx.scale(current.textHScale, -1);
+      } else {
+        ctx.scale(-current.textHScale, 1);
+      }
     },
     createTextGeometry: function CanvasGraphics_createTextGeometry() {
       var geometry = {};
@@ -878,9 +874,8 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       var fontSizeScale = current.fontSizeScale;
       var charSpacing = current.charSpacing;
       var wordSpacing = current.wordSpacing;
-      var textHScale = current.textHScale;
-      var fontMatrix = current.fontMatrix || IDENTITY_MATRIX;
-      var textHScale2 = textHScale * fontMatrix[0];
+      var textHScale = current.textHScale * current.fontDirection;
+      var fontMatrix = current.fontMatrix || FONT_IDENTITY_MATRIX;
       var glyphsLength = glyphs.length;
       var textLayer = this.textLayer;
       var geom;
@@ -919,8 +914,8 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
           this.restore();
 
           var transformed = Util.applyTransform([glyph.width, 0], fontMatrix);
-          var width = transformed[0] * fontSize +
-              Util.sign(current.fontMatrix[0]) * charSpacing;
+          var width = (transformed[0] * fontSize + charSpacing) *
+                      current.fontDirection;
 
           ctx.translate(width, 0);
           current.x += width * textHScale;
@@ -934,8 +929,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
 
         var lineWidth = current.lineWidth;
         var a1 = current.textMatrix[0], b1 = current.textMatrix[1];
-        var a2 = fontMatrix[0], b2 = fontMatrix[1];
-        var scale = Math.sqrt((a1 * a1 + b1 * b1) * (a2 * a2 + b2 * b2));
+        var scale = Math.sqrt(a1 * a1 + b1 * b1);
         if (scale == 0 || lineWidth == 0)
           lineWidth = this.getSinglePixelWidth();
         else
@@ -956,13 +950,13 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
           var glyph = glyphs[i];
           if (glyph === null) {
             // word break
-            x += Util.sign(current.fontMatrix[0]) * wordSpacing;
+            x += current.fontDirection * wordSpacing;
             continue;
           }
 
           var character = glyph.fontChar;
-          var charWidth = glyph.width * fontSize * 0.001 +
-              Util.sign(current.fontMatrix[0]) * charSpacing;
+          var charWidth = glyph.width * fontSize * current.fontMatrix[0] +
+                          charSpacing * current.fontDirection;
 
           if (!glyph.disabled) {
             var scaledX = x / fontSizeScale;
@@ -995,7 +989,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
 
           canvasWidth += charWidth;
         }
-        current.x += x * textHScale2;
+        current.x += x * textHScale;
         ctx.restore();
       }
 
@@ -1011,9 +1005,9 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       var current = this.current;
       var font = current.font;
       var fontSize = current.fontSize;
-      var textHScale = current.textHScale;
-      if (!font.coded)
-        textHScale *= (current.fontMatrix || IDENTITY_MATRIX)[0];
+      var textHScale = current.textHScale * (current.fontMatrix && !font.coded ?
+        current.fontMatrix[0] : FONT_IDENTITY_MATRIX[0]) *
+        current.fontDirection;
       var arrLength = arr.length;
       var textLayer = this.textLayer;
       var geom;
@@ -1022,14 +1016,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
 
       if (textSelection) {
         ctx.save();
-        // Type3 fonts - each glyph is a "mini-PDF" (see also showText)
-        if (font.coded) {
-          ctx.transform.apply(ctx, current.textMatrix);
-          ctx.scale(1, -1);
-          ctx.translate(current.x, -1 * current.y);
-          ctx.scale(textHScale, 1);
-        } else
-          this.applyTextTransforms();
+        this.applyTextTransforms();
         geom = this.createTextGeometry();
         ctx.restore();
       }
@@ -1037,7 +1024,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       for (var i = 0; i < arrLength; ++i) {
         var e = arr[i];
         if (isNum(e)) {
-          var spacingLength = -e * 0.001 * fontSize * textHScale;
+          var spacingLength = -e * fontSize * textHScale;
           current.x += spacingLength;
 
           if (textSelection)
