@@ -152,7 +152,19 @@ var WorkerMessageHandler = {
     }
 
     handler.on('test', function wphSetupTest(data) {
-      handler.send('test', data instanceof Uint8Array);
+      // check if Uint8Array can be sent to worker
+      if (!(data instanceof Uint8Array)) {
+        handler.send('test', false);
+        return;
+      }
+      // check if the response property is supported by xhr
+      var xhr = new XMLHttpRequest();
+      if (!('response' in xhr || 'mozResponse' in xhr ||
+          'responseArrayBuffer' in xhr || 'mozResponseArrayBuffer' in xhr)) {
+        handler.send('test', false);
+        return;
+      }
+      handler.send('test', true);
     });
 
     handler.on('GetDocRequest', function wphSetupDoc(data) {

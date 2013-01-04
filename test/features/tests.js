@@ -512,6 +512,37 @@ var tests = [
     },
     impact: 'Important',
     area: 'Core'
+  },
+  {
+    id: 'Worker-xhr-response',
+    name: 'XMLHttpRequest supports the reponse property in web workers',
+    run: function () {
+      if (typeof Worker == 'undefined')
+        return { output: 'Skipped', emulated: '' };
+
+     try {
+        var worker = new Worker('worker-stub.js');
+
+        var promise = new Promise();
+        var timeout = setTimeout(function () {
+          promise.resolve({ output: 'Failed', emulated: '?' });
+        }, 5000);
+
+        worker.addEventListener('message', function (e) {
+          var data = e.data;
+          if (data.action == 'xhr' && data.result)
+            promise.resolve({ output: 'Success', emulated: '' });
+          else
+            promise.resolve({ output: 'Failed', emulated: 'Yes' });
+        });
+        worker.postMessage({action: 'xhr'});
+        return promise;
+      } catch (e) {
+        return { output: 'Failed', emulated: 'Yes' };
+      }
+    },
+    impact: 'Important',
+    area: 'Core'
   }
 ];
 
