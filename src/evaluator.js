@@ -1171,7 +1171,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         composite: composite,
         wideChars: composite,
         fixedPitch: false,
-        fontMatrix: dict.get('FontMatrix') || IDENTITY_MATRIX,
+        fontMatrix: dict.get('FontMatrix') || FONT_IDENTITY_MATRIX,
         firstChar: firstChar || 0,
         lastChar: lastChar || maxCharIndex,
         bbox: descriptor.get('FontBBox'),
