@@ -202,6 +202,8 @@ target.locale = function() {
 // Bundles all source files into one wrapper 'pdf.js' file, in the given order.
 //
 target.bundle = function() {
+  target.buildnumber();
+
   cd(ROOT_DIR);
   echo();
   echo('### Bundling files into ' + BUILD_TARGET);
@@ -240,7 +242,8 @@ target.bundle = function() {
 
   cd('src');
   var bundle = cat(SRC_FILES),
-      bundleVersion = exec('git log --format="%h" -n 1',
+      bundleVersion = EXTENSION_VERSION,
+      bundleBuild = exec('git log --format="%h" -n 1',
         {silent: true}).output.replace('\n', '');
 
   crlfchecker.checkIfCrlfIsPresent(SRC_FILES);
@@ -255,7 +258,9 @@ target.bundle = function() {
   // This just preprocesses the empty pdf.js file, we don't actually want to
   // preprocess everything yet since other build targets use this file.
   builder.preprocess('pdf.js', ROOT_DIR + BUILD_TARGET,
-                         {BUNDLE: bundle, BUNDLE_VERSION: bundleVersion});
+                         {BUNDLE: bundle,
+                          BUNDLE_VERSION: bundleVersion,
+                          BUNDLE_BUILD: bundleBuild});
 };
 
 
@@ -334,7 +339,6 @@ target.firefox = function() {
 
   target.locale();
   target.bundle();
-  target.buildnumber();
   cd(ROOT_DIR);
 
   // Clear out everything in the firefox extension build directory
@@ -440,7 +444,6 @@ target.mozcentral = function() {
          'LICENSE'];
 
   target.bundle();
-  target.buildnumber();
   cd(ROOT_DIR);
 
   // Clear out everything in the firefox extension build directory
@@ -510,7 +513,7 @@ target.mozcentral = function() {
 
 target.b2g = function() {
   target.locale();
-  target.bundle();
+
   echo();
   echo('### Building B2G (Firefox OS App)');
   var B2G_BUILD_DIR = BUILD_DIR + '/b2g/',
@@ -555,7 +558,6 @@ target.chrome = function() {
       CHROME_BUILD_CONTENT_DIR = CHROME_BUILD_DIR + '/content/';
 
   target.bundle();
-  target.buildnumber();
   cd(ROOT_DIR);
 
   // Clear out everything in the chrome extension build directory
