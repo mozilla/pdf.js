@@ -645,10 +645,23 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       if (consumePath)
         this.consumePath();
     },
-    eoFill: function CanvasGraphics_eoFill() {
-      var savedFillRule = this.setEOFillRule();
-      this.fill();
-      this.restoreFillRule(savedFillRule);
+    
+    eoFill: function CanvasGraphics_eoFill(consumePath) {
+      consumePath = typeof consumePath !== 'undefined' ? consumePath : true;
+      var ctx = this.ctx;
+      var fillColor = this.current.fillColor;
+
+      if (fillColor && fillColor.hasOwnProperty('type') &&
+          fillColor.type === 'Pattern') {
+        ctx.save();
+        ctx.fillStyle = fillColor.getPattern(ctx);
+        ctx.eoFill();
+        ctx.restore();
+      } else {
+        ctx.eoFill();
+      }
+      if (consumePath)
+        this.consumePath();
     },
     fillStroke: function CanvasGraphics_fillStroke() {
       this.fill(false);
@@ -657,19 +670,18 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       this.consumePath();
     },
     eoFillStroke: function CanvasGraphics_eoFillStroke() {
-      var savedFillRule = this.setEOFillRule();
-      this.fillStroke();
-      this.restoreFillRule(savedFillRule);
+      this.eoFill(false);
+      this.stroke(false);
+
+      this.consumePath();
     },
     closeFillStroke: function CanvasGraphics_closeFillStroke() {
       this.closePath();
       this.fillStroke();
     },
     closeEOFillStroke: function CanvasGraphics_closeEOFillStroke() {
-      var savedFillRule = this.setEOFillRule();
       this.closePath();
-      this.fillStroke();
-      this.restoreFillRule(savedFillRule);
+      this.eoFillStroke();
     },
     endPath: function CanvasGraphics_endPath() {
       this.consumePath();
@@ -1427,26 +1439,15 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       if (this.pendingClip) {
         var savedFillRule = null;
         if (this.pendingClip == EO_CLIP)
-          savedFillRule = this.setEOFillRule();
-
-        this.ctx.clip();
+            this.ctx.eoClip();
+        else
+            this.ctx.clip();
 
         this.pendingClip = null;
         if (savedFillRule !== null)
           this.restoreFillRule(savedFillRule);
       }
       this.ctx.beginPath();
-    },
-    // We generally keep the canvas context set for
-    // nonzero-winding, and just set evenodd for the operations
-    // that need them.
-    setEOFillRule: function CanvasGraphics_setEOFillRule() {
-      var savedFillRule = this.ctx.mozFillRule;
-      this.ctx.mozFillRule = 'evenodd';
-      return savedFillRule;
-    },
-    restoreFillRule: function CanvasGraphics_restoreFillRule(rule) {
-      this.ctx.mozFillRule = rule;
     },
     getSinglePixelWidth: function CanvasGraphics_getSinglePixelWidth(scale) {
       var inverse = this.ctx.mozCurrentTransformInverse;
