@@ -628,8 +628,9 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       this.closePath();
       this.stroke();
     },
-    fill: function CanvasGraphics_fill(consumePath) {
+    fill: function CanvasGraphics_fill(consumePath, isEvenOdd) {
       consumePath = typeof consumePath !== 'undefined' ? consumePath : true;
+      isEvenOdd = typeof isEvenOdd !== 'undefined' ? isEvenOdd : false;
       var ctx = this.ctx;
       var fillColor = this.current.fillColor;
 
@@ -637,8 +638,13 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
           fillColor.type === 'Pattern') {
         ctx.save();
         ctx.fillStyle = fillColor.getPattern(ctx);
-        ctx.fill();
+        if(isEvenOdd)
+            ctx.eoFill();
+        else
+            ctx.fill();
         ctx.restore();
+      } else if(isEvenOdd) {
+        ctx.eoFill();
       } else {
         ctx.fill();
       }
@@ -647,21 +653,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
     },
     
     eoFill: function CanvasGraphics_eoFill(consumePath) {
-      consumePath = typeof consumePath !== 'undefined' ? consumePath : true;
-      var ctx = this.ctx;
-      var fillColor = this.current.fillColor;
-
-      if (fillColor && fillColor.hasOwnProperty('type') &&
-          fillColor.type === 'Pattern') {
-        ctx.save();
-        ctx.fillStyle = fillColor.getPattern(ctx);
-        ctx.eoFill();
-        ctx.restore();
-      } else {
-        ctx.eoFill();
-      }
-      if (consumePath)
-        this.consumePath();
+      this.fill(consumePath, true);
     },
     fillStroke: function CanvasGraphics_fillStroke() {
       this.fill(false);
@@ -1437,15 +1429,12 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
 
     consumePath: function CanvasGraphics_consumePath() {
       if (this.pendingClip) {
-        var savedFillRule = null;
         if (this.pendingClip == EO_CLIP)
             this.ctx.eoClip();
         else
             this.ctx.clip();
 
         this.pendingClip = null;
-        if (savedFillRule !== null)
-          this.restoreFillRule(savedFillRule);
       }
       this.ctx.beginPath();
     },
