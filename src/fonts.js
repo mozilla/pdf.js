@@ -4758,6 +4758,23 @@ var Type1Parser = function type1Parser() {
     return parseFloat(str.substr(start, count) || 0);
   }
 
+  function readBoolean(str, index) {
+    while (str[index] == ' ')
+      index++;
+
+    var start = index;
+
+    var count = 0;
+    var length = str.length;
+    while (index < length && str[index++] != ' ') {
+      count++;
+    }
+
+    // Use 1 and 0 since that's what type2 charstrings use.
+    return str.substr(start, count) === 'true' ? 1 : 0;
+  }
+
+
   function isSeparator(c) {
     return c == ' ' || c == '\n' || c == '\x0d';
   }
@@ -4874,7 +4891,7 @@ var Type1Parser = function type1Parser() {
             case '/StdHW':
             case '/StdVW':
               program.properties.privateData[token.substring(1)] =
-                readNumberArray(eexecStr, i + 2)[0];
+                readNumberArray(eexecStr, i + 1)[0];
               break;
             case '/BlueShift':
             case '/lenIV':
@@ -4884,6 +4901,10 @@ var Type1Parser = function type1Parser() {
             case '/ExpansionFactor':
               program.properties.privateData[token.substring(1)] =
                 readNumber(eexecStr, i + 1);
+              break;
+            case '/ForceBold':
+              program.properties.privateData[token.substring(1)] =
+                readBoolean(eexecStr, i + 1);
               break;
           }
         } else if (c == '/') {
@@ -5242,7 +5263,6 @@ Type1Font.prototype = {
     var privateDict = new CFFPrivateDict();
     privateDict.setByName('Subrs', null); // placeholder
     var fields = [
-      // TODO: missing StdHW, StdVW, ForceBold
       'BlueValues',
       'OtherBlues',
       'FamilyBlues',
@@ -5253,7 +5273,10 @@ Type1Font.prototype = {
       'BlueFuzz',
       'BlueScale',
       'LanguageGroup',
-      'ExpansionFactor'
+      'ExpansionFactor',
+      'ForceBold',
+      'StdHW',
+      'StdVW'
     ];
     for (var i = 0, ii = fields.length; i < ii; i++) {
       var field = fields[i];
