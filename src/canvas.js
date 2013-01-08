@@ -547,6 +547,9 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
             this.current.fillAlpha = state[1];
             this.ctx.globalAlpha = state[1];
             break;
+          case 'BM':
+            this.ctx.globalCompositeOperation = String(value.name).toLowerCase();
+            break;
         }
       }
     },

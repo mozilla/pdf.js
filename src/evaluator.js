@@ -457,6 +457,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                     case 'FL':
                     case 'CA':
                     case 'ca':
+                    case 'BM':
                       gsStateObj.push([key, value]);
                       break;
                     case 'Font':
@@ -465,11 +466,6 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                         handleSetFont(null, value[0]),
                         value[1]
                       ]);
-                      break;
-                    case 'BM':
-                      // We support the default so don't trigger the TODO.
-                      if (!isName(value) || value.name != 'Normal')
-                        TODO('graphic state operator ' + key);
                       break;
                     case 'SMask':
                       // We support the default so don't trigger the TODO.
