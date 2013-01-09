@@ -1441,11 +1441,13 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
     // nonzero-winding, and just set evenodd for the operations
     // that need them.
     setEOFillRule: function CanvasGraphics_setEOFillRule() {
-      var savedFillRule = this.ctx.mozFillRule;
+      var savedFillRule = this.ctx.fillRule || this.ctx.mozFillRule;
+      this.ctx.fillRule = 'evenodd';
       this.ctx.mozFillRule = 'evenodd';
       return savedFillRule;
     },
     restoreFillRule: function CanvasGraphics_restoreFillRule(rule) {
+      this.ctx.fillRule = rule;
       this.ctx.mozFillRule = rule;
     },
     getSinglePixelWidth: function CanvasGraphics_getSinglePixelWidth(scale) {

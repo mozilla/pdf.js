@@ -362,7 +362,7 @@ var tests = [
       var ctx = canvas.getContext('2d');
       ctx.rect(1, 1, 50, 50);
       ctx.rect(5, 5, 41, 41);
-      ['fillRule', 'mozFillRule', 'webkitFillRule'].forEach(function (name) {
+      ['fillRule', 'mozFillRule'].forEach(function (name) {
         if (name in ctx) ctx[name] = 'evenodd';
       });
       ctx.fill();
