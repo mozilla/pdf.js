@@ -694,6 +694,7 @@ var PDFView = {
   mouseScrollTimeStamp: 0,
   mouseScrollDelta: 0,
   lastScroll: 0,
+  previousPageNumber: 1,
 
   // called once when the document is loaded
   initialize: function pdfViewInitialize() {
@@ -816,12 +817,14 @@ var PDFView = {
     event.initUIEvent('pagechange', false, false, window, 0);
 
     if (!(0 < val && val <= pages.length)) {
+      this.previousPageNumber = val;
       event.pageNumber = this.page;
       window.dispatchEvent(event);
       return;
     }
 
     pages[val - 1].updateStats();
+    this.previousPageNumber = currentPageNumber;
     currentPageNumber = val;
     event.pageNumber = val;
     window.dispatchEvent(event);
@@ -1479,12 +1482,21 @@ var PDFView = {
 
     switch (view) {
       case 'thumbs':
+        var wasOutlineViewVisible = thumbsView.classList.contains('hidden');
+
         thumbsButton.classList.add('toggled');
         outlineButton.classList.remove('toggled');
         thumbsView.classList.remove('hidden');
         outlineView.classList.add('hidden');
 
         PDFView.renderHighestPriority();
+
+        if (wasOutlineViewVisible) {
+          // Ensure that the thumbnail of the current page is visible
+          // when switching from the outline view.
+          scrollIntoView(document.getElementById('thumbnailContainer' +
+                                                 this.page));
+        }
         break;
 
       case 'outline':
@@ -2214,6 +2226,12 @@ var ThumbnailView = function thumbnailView(container, pdfPage, id) {
   var div = this.el = document.createElement('div');
   div.id = 'thumbnailContainer' + id;
   div.className = 'thumbnail';
+
+  if (id === 1) {
+    // Highlight the thumbnail of the first page when no page number is
+    // specified (or exists in cache) when the document is loaded.
+    div.classList.add('selected');
+  }
 
   var ring = document.createElement('div');
   ring.className = 'thumbnailSelectionRing';
@@ -3077,7 +3095,7 @@ window.addEventListener('scalechange', function scalechange(evt) {
 
 window.addEventListener('pagechange', function pagechange(evt) {
   var page = evt.pageNumber;
-  if (document.getElementById('pageNumber').value != page) {
+  if (PDFView.previousPageNumber !== page) {
     document.getElementById('pageNumber').value = page;
     var selected = document.querySelector('.thumbnail.selected');
     if (selected)
