@@ -63,5 +63,18 @@ describe('util', function() {
     });
   });
 
+  describe('isDict', function() {
+    it('handles empty dictionaries with type check', function() {
+      var dict = new Dict();
+      expect(isDict(dict, 'Page')).toEqual(false);
+    });
+
+    it('handles dictionaries with type check', function() {
+      var dict = new Dict();
+      dict.set('Type', new Name('Page'));
+      expect(isDict(dict, 'Page')).toEqual(true);
+    });
+  });
+
 });
 
