@@ -791,6 +791,9 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           };
         }
 
+        var cidEncoding = baseDict.get('Encoding');
+        properties.cidEncoding = cidEncoding && cidEncoding.name;
+
         var cidToGidMap = dict.get('CIDToGIDMap');
         if (isStream(cidToGidMap))
           properties.cidToGidMap = this.readCidToGidMap(cidToGidMap);

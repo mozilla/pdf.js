@@ -4126,6 +4126,12 @@ var Font = (function FontClosure() {
         } else
           cid++;
       }
+
+      var cidEncoding = properties.cidEncoding;
+      if (cidEncoding && cidEncoding.substring(0, 3) == 'Uni') {
+        // input is already Unicode for Uni* CMap encodings
+        this.cidToUnicode = [];
+      }
     },
 
     bindDOM: function Font_bindDOM() {
