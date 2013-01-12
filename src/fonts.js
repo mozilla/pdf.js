@@ -4126,6 +4126,15 @@ var Font = (function FontClosure() {
         } else
           cid++;
       }
+
+      var cidEncoding = properties.cidEncoding;
+      if (cidEncoding && cidEncoding.indexOf('Uni') === 0) {
+        // input is already Unicode for Uni* CMap encodings.
+        // However, Unicode-to-CID conversion is needed
+        // regardless of the CMap encoding. So we can't reset
+        // unicodeToCID.
+        this.cidToUnicode = [];
+      }
     },
 
     bindDOM: function Font_bindDOM() {
@@ -4205,16 +4214,12 @@ var Font = (function FontClosure() {
         case 'CIDFontType0':
           if (this.noUnicodeAdaptation) {
             width = this.widths[this.unicodeToCID[charcode] || charcode];
-            fontCharCode = mapPrivateUseChars(charcode);
-            break;
           }
           fontCharCode = this.toFontChar[charcode] || charcode;
           break;
         case 'CIDFontType2':
           if (this.noUnicodeAdaptation) {
             width = this.widths[this.unicodeToCID[charcode] || charcode];
-            fontCharCode = mapPrivateUseChars(charcode);
-            break;
           }
           fontCharCode = this.toFontChar[charcode] || charcode;
           break;
