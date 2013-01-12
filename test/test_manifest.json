@@ -795,5 +795,11 @@
       "md5": "9f11e815b485f7f0e1fa5c116c636cf9",
       "rounds": 1,
       "type": "eq"
+    },
+    {  "id": "noembed-identity",
+      "file": "pdfs/noembed-identity.pdf",
+      "md5": "05d3803b6c22451e18cb60d8d8c75c0c",
+      "rounds": 1,
+      "type": "eq"
     }
 ]
