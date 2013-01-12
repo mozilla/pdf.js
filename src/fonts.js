@@ -4128,7 +4128,7 @@ var Font = (function FontClosure() {
       }
 
       var cidEncoding = properties.cidEncoding;
-      if (cidEncoding && cidEncoding.substring(0, 3) == 'Uni') {
+      if (cidEncoding && cidEncoding.indexOf('Uni') === 0) {
         // input is already Unicode for Uni* CMap encodings
         this.cidToUnicode = [];
       }
