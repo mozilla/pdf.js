@@ -1146,10 +1146,26 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       // a variant.
       var firstChar = dict.get('FirstChar') || 0;
       var lastChar = dict.get('LastChar') || maxCharIndex;
+
       var fontName = descriptor.get('FontName');
+      var baseFont = baseDict.get('BaseFont');
       // Some bad pdf's have a string as the font name.
-      if (isString(fontName))
+      if (isString(fontName)) {
         fontName = new Name(fontName);
+      }
+      if (isString(baseFont)) {
+        baseFont = new Name(baseFont);
+      }
+
+      var fontNameStr = fontName && fontName.name;
+      var baseFontStr = baseFont && baseFont.name;
+      if (fontNameStr !== baseFontStr) {
+        warn('The FontDescriptor\'s FontName is "' + fontNameStr +
+            '" but should be the same as the Font\'s BaseFont "' +
+            baseFontStr + '"');
+      }
+      fontName = fontName || baseFont;
+
       assertWellFormed(isName(fontName), 'invalid font name');
 
       var fontFile = descriptor.get('FontFile', 'FontFile2', 'FontFile3');
