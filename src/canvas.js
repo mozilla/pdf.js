@@ -638,15 +638,10 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
           fillColor.type === 'Pattern') {
         ctx.save();
         ctx.fillStyle = fillColor.getPattern(ctx);
-        if(isEvenOdd)
-            ctx.eoFill();
-        else
-            ctx.fill();
+        ctx.fill(isEvenOdd ? 'evenodd' : 'nonzero');
         ctx.restore();
-      } else if(isEvenOdd) {
-        ctx.eoFill();
       } else {
-        ctx.fill();
+        ctx.fill(isEvenOdd ? 'evenodd' : 'nonzero');
       }
       if (consumePath)
         this.consumePath();
