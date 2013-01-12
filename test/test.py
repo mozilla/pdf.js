@@ -18,6 +18,7 @@ from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
 import SocketServer
 from optparse import OptionParser
 from urlparse import urlparse, parse_qs
+from selenium import webdriver
 
 USAGE_EXAMPLE = "%prog"
 
@@ -260,7 +261,6 @@ class UnitTestHandler(TestHandlerBase):
         browser = result['browser']
         UnitTestState.lastPost[browser] = int(time.time())
         if url.path == "/tellMeToQuit":
-            tellAppToQuit(url.path, url.query)
             UnitTestState.browsersRunning -= 1
             UnitTestState.lastPost[browser] = None
             return
@@ -318,7 +318,6 @@ class PDFTestHandler(TestHandlerBase):
 
         url = urlparse(self.path)
         if url.path == "/tellMeToQuit":
-            tellAppToQuit(url.path, url.query)
             return
 
         result = json.loads(self.rfile.read(numBytes))
@@ -368,25 +367,10 @@ def checkIfDone():
             State.done = False
             return
 
-# Applescript hack to quit Chrome on Mac
-def tellAppToQuit(path, query):
-    if platform.system() != "Darwin":
-        return
-    d = parse_qs(query)
-    path = d['path'][0]
-    cmd = """osascript<<END
-tell application "%s"
-quit
-end tell
-END""" % path
-    os.system(cmd)
-
 class BaseBrowserCommand(object):
     def __init__(self, browserRecord):
         self.name = browserRecord["name"]
         self.path = browserRecord["path"]
-        self.tempDir = None
-        self.process = None
 
         if platform.system() == "Darwin" and (self.path.endswith(".app") or self.path.endswith(".app/")):
             self._fixupMacPath()
@@ -395,58 +379,31 @@ class BaseBrowserCommand(object):
             raise Exception("Path to browser '%s' does not exist." % self.path)
 
     def setup(self):
-        self.tempDir = tempfile.mkdtemp()
-        self.profileDir = os.path.join(self.tempDir, "profile")
-        self.browserLog = open(BROWSERLOG_FILE, "w")
+        """Create a WebDriver instance at self.driver"""
+        raise NotImplementedError("Cannot setup BaseBrowserCommand")
 
     def teardown(self):
-        self.process.terminate()
-
-        # If the browser is still running, wait up to ten seconds for it to quit
-        if self.process and self.process.poll() is None:
-            checks = 0
-            while self.process.poll() is None and checks < 20:
-                checks += 1
-                time.sleep(.5)
-            # If it's still not dead, try to kill it
-            if self.process.poll() is None:
-                print "Process %s is still running. Killing." % self.name
-                self.process.kill()
-                self.process.wait()
-            
-        if self.tempDir is not None and os.path.exists(self.tempDir):
-            shutil.rmtree(self.tempDir)
-
-        self.browserLog.close()
+        self.driver.quit()
 
     def start(self, url):
-        raise Exception("Can't start BaseBrowserCommand")
+        self.driver.get(url)
 
 class FirefoxBrowserCommand(BaseBrowserCommand):
     def _fixupMacPath(self):
         self.path = os.path.join(self.path, "Contents", "MacOS", "firefox-bin")
 
     def setup(self):
-        super(FirefoxBrowserCommand, self).setup()
-        shutil.copytree(os.path.join(DOC_ROOT, "test", "resources", "firefox"),
-                        self.profileDir)
-
-    def start(self, url):
-        cmds = [self.path]
-        if platform.system() == "Darwin":
-            cmds.append("-foreground")
-        cmds.extend(["-no-remote", "-profile", self.profileDir, url])
-        self.process = subprocess.Popen(cmds, stdout = self.browserLog, stderr = self.browserLog)
+        binary = webdriver.firefox.firefox_binary.FirefoxBinary(self.path)
+        self.driver = webdriver.Firefox(firefox_binary=binary)
 
 class ChromeBrowserCommand(BaseBrowserCommand):
     def _fixupMacPath(self):
         self.path = os.path.join(self.path, "Contents", "MacOS", "Google Chrome")
 
-    def start(self, url):
-        cmds = [self.path]
-        cmds.extend(["--user-data-dir=%s" % self.profileDir,
-                     "--no-first-run", "--disable-sync", url])
-        self.process = subprocess.Popen(cmds, stdout = self.browserLog, stderr = self.browserLog)
+    def setup(self):
+        options = webdriver.ChromeOptions()
+        options.binary_location = self.path
+        self.driver = webdriver.Chrome(chrome_options=options)
 
 def makeBrowserCommand(browser):
     path = browser["path"].lower()
