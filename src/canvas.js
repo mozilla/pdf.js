@@ -548,7 +548,8 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
             this.ctx.globalAlpha = state[1];
             break;
           case 'BM':
-            this.ctx.globalCompositeOperation = String(value.name).replace(/([A-Z])/g, function($1){return "-"+$1.toLowerCase();}).substring(1);
+            if(value && value.name)
+              this.ctx.globalCompositeOperation = String(value.name).replace(/([A-Z])/g, function($1){return "-"+$1.toLowerCase();}).substring(1);
             break;
         }
       }
