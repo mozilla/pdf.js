@@ -17,6 +17,13 @@
        "rounds": 1,
        "type": "text"
     },
+    {  "id": "issue2391-1",
+      "file": "pdfs/issue2391-1.pdf",
+      "md5": "25ae9cb959612e7b343b55da63af2716",
+      "rounds": 1,
+      "pageLimit": 1,
+      "type": "load"
+    },
     {  "id": "html5-canvas-cheat-sheet-load",
        "file": "pdfs/canvas.pdf",
        "md5": "59510028561daf62e00bf9f6f066b033",
