@@ -801,5 +801,11 @@
       "md5": "05d3803b6c22451e18cb60d8d8c75c0c",
       "rounds": 1,
       "type": "eq"
+    },
+    {  "id": "issue2099-1",
+      "file": "pdfs/issue2099-1.pdf",
+      "md5": "c7eca682d70a976dfc4b7e64d3e9f1ce",
+      "rounds": 1,
+      "type": "eq"
     }
 ]
