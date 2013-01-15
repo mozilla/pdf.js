@@ -39,6 +39,14 @@
        "rounds": 1,
        "type": "load"
     },
+    {  "id": "issue2129",
+       "file": "pdfs/issue2129.pdf",
+       "md5": "b082dd2cb3648f979fd668f498af14d6",
+       "link": true,
+       "pageLimit": 1,
+       "rounds": 1,
+       "type": "load"
+    },
     {  "id": "shavian-load",
        "file": "pdfs/shavian.pdf",
        "md5": "40ef97a120250b149c4ded383ca328ec",
