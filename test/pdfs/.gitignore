@@ -1,6 +1,7 @@
 *.pdf
 
 !tracemonkey.pdf
+!issue2391-1.pdf
 !ArabicCIDTrueType.pdf
 !ThuluthFeatures.pdf
 !arial_unicode_ab_cidfont.pdf
@@ -38,3 +39,4 @@
 !mixedfonts.pdf
 !shading_extend.pdf
 !noembed-identity.pdf
+!issue2099-1.pdf
