@@ -809,6 +809,24 @@
       "rounds": 1,
       "type": "eq"
     },
+    {  "id": "noembed-jis7",
+      "file": "pdfs/noembed-jis7.pdf",
+      "md5": "a0f6cf5a830f23d0c35994a6aaf92b3d",
+      "rounds": 1,
+      "type": "eq"
+    },
+    {  "id": "noembed-eucjp",
+      "file": "pdfs/noembed-eucjp.pdf",
+      "md5": "d270f2d46db99b70235b4d37cbc313ad",
+      "rounds": 1,
+      "type": "eq"
+    },
+    {  "id": "noembed-sjis",
+      "file": "pdfs/noembed-sjis.pdf",
+      "md5": "51f9d150bf4afe498019b3029d451072",
+      "rounds": 1,
+      "type": "eq"
+    },
     {  "id": "issue2099-1",
       "file": "pdfs/issue2099-1.pdf",
       "md5": "c7eca682d70a976dfc4b7e64d3e9f1ce",
