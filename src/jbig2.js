@@ -897,6 +897,8 @@ var Jbig2Image = (function Jbig2ImageClosure() {
         pageInfo.combinationOperatorOverride = !!(pageSegmentFlags & 64);
         args = [pageInfo];
         break;
+      case 49: // EndOfPage
+        break;
       case 50: // EndOfStripe
         break;
       case 51: // EndOfFile
