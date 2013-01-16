@@ -3205,7 +3205,7 @@ window.addEventListener('keydown', function keydown(evt) {
       case 38: // up arrow
       case 33: // pg up
       case 8: // backspace
-        if (!PDFView.isFullscreen) {
+        if (!PDFView.isFullscreen && PDFView.currentScaleValue !== 'page-fit') {
           break;
         }
         //  in fullscreen mode falls throw here
@@ -3222,7 +3222,7 @@ window.addEventListener('keydown', function keydown(evt) {
       case 40: // down arrow
       case 34: // pg down
       case 32: // spacebar
-        if (!PDFView.isFullscreen) {
+        if (!PDFView.isFullscreen && PDFView.currentScaleValue !== 'page-fit') {
           break;
         }
         //  in fullscreen mode falls throw here
