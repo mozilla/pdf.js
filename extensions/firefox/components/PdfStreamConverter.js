@@ -232,10 +232,26 @@ ChromeActions.prototype = {
     return docIsPrivate;
   },
   download: function(data, sendResponse) {
-    var originalUrl = data.originalUrl;
+    var url = data.originalUrl;
+    var ios = Services.io;
+    var ch = ios.newChannel(data.originalUrl, null, null);
+    var header = ch.getResponseHeader('Content-Disposition').split(';');
+    var fileName = null;
+    for (var i = 0; i < header.length; i++) {
+      if (header[i].trim().indexOf('filename') === 0) {
+        fileName = header[i].substr(header[i].indexOf('=') + 1);
+      }
+    }
+    if (fileName != null) {
+      url = fileName;
+    } else {
+      // Append .pdf to the filename if it isn't already there
+      url += (url.toLowerCase().indexOf('.pdf', url.length - 4) !== -1) ?
+        '.pdf' : '';
+    }
     // The data may not be downloaded so we need just retry getting the pdf with
     // the original url.
-    var originalUri = NetUtil.newURI(data.originalUrl);
+    var originalUri = NetUtil.newURI(url);
     var blobUri = data.blobUrl ? NetUtil.newURI(data.blobUrl) : originalUri;
     var extHelperAppSvc =
           Cc['@mozilla.org/uriloader/external-helper-app-service;1'].
