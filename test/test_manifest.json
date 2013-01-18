@@ -24,6 +24,12 @@
       "pageLimit": 1,
       "type": "load"
     },
+    {  "id": "issue2391-2",
+      "file": "pdfs/issue2391-2.pdf",
+      "md5": "7e68756d11021a087383eaac95ba45dd",
+      "rounds": 1,
+      "type": "eq"
+    },
     {  "id": "html5-canvas-cheat-sheet-load",
        "file": "pdfs/canvas.pdf",
        "md5": "59510028561daf62e00bf9f6f066b033",
