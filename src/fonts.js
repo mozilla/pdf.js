@@ -5302,7 +5302,7 @@ var CFFFont = (function CFFFontClosure() {
     this.properties = properties;
 
     var parser = new CFFParser(file, properties);
-    var cff = parser.parse(true);
+    var cff = parser.parse();
     var compiler = new CFFCompiler(cff);
     this.readExtra(cff);
     try {
@@ -5467,7 +5467,7 @@ var CFFParser = (function CFFParserClosure() {
     this.properties = properties;
   }
   CFFParser.prototype = {
-    parse: function CFFParser_parse(normalizeCIDData) {
+    parse: function CFFParser_parse() {
       var properties = this.properties;
       var cff = new CFF();
       this.cff = cff;
@@ -5534,30 +5534,6 @@ var CFFParser = (function CFFParserClosure() {
       }
       cff.charset = charset;
       cff.encoding = encoding;
-
-      if (!cff.isCIDFont || !normalizeCIDData)
-        return cff;
-
-      // DirectWrite does not like CID fonts data. Trying to convert/flatten
-      // the font data and remove CID properties.
-      if (cff.fdArray.length !== 1) {
-        warn('Unable to normalize CID font in CFF data -- using font as is');
-        return cff;
-      }
-
-      var fontDict = cff.fdArray[0];
-      // Make the sanitizer happy and remove anything that is only for CID
-      // fonts.
-      fontDict.setByKey(17, topDict.getByName('CharStrings'));
-      fontDict.removeByName('CIDFontVersion');
-      fontDict.removeByName('CIDFontRevision');
-      fontDict.removeByName('CIDFontType');
-      fontDict.removeByName('CIDCount');
-      fontDict.removeByName('UIDBase');
-      cff.topDict = fontDict;
-      cff.isCIDFont = false;
-      delete cff.fdArray;
-      delete cff.fdSelect;
 
       return cff;
     },
@@ -6189,9 +6165,12 @@ var CFFTopDict = (function CFFTopDictClosure() {
     [[12, 33], 'CIDFontType', 'num', 0],
     [[12, 34], 'CIDCount', 'num', 8720],
     [[12, 35], 'UIDBase', 'num', null],
-    [[12, 36], 'FDArray', 'offset', null],
+    // XXX: CID Fonts on DirectWrite 6.1 only seem to work if FDSelect comes
+    // before FDArray.
     [[12, 37], 'FDSelect', 'offset', null],
-    [[12, 38], 'FontName', 'sid', null]];
+    [[12, 36], 'FDArray', 'offset', null],
+    [[12, 38], 'FontName', 'sid', null]
+  ];
   var tables = null;
   function CFFTopDict(strings) {
     if (tables === null)
@@ -6362,7 +6341,9 @@ var CFFCompiler = (function CFFCompilerClosure() {
       var nameIndex = this.compileNameIndex(cff.names);
       output.add(nameIndex);
 
-      var compiled = this.compileTopDicts([cff.topDict], output.length);
+      var compiled = this.compileTopDicts([cff.topDict],
+                                          output.length,
+                                          cff.isCIDFont);
       output.add(compiled.output);
       var topDictTracker = compiled.trackers[0];
 
@@ -6405,8 +6386,9 @@ var CFFCompiler = (function CFFCompilerClosure() {
         topDictTracker.setEntryLocation('FDSelect', [output.length], output);
         var fdSelect = this.compileFDSelect(cff.fdSelect.raw);
         output.add(fdSelect);
-
-        var compiled = this.compileTopDicts(cff.fdArray, output.length);
+        // It is unclear if the sub font dictionary can have CID related
+        // dictionary keys, but the sanitizer doesn't like them so remove them.
+        var compiled = this.compileTopDicts(cff.fdArray, output.length, true);
         topDictTracker.setEntryLocation('FDArray', [output.length], output);
         output.add(compiled.output);
         var fontDictTrackers = compiled.trackers;
@@ -6481,11 +6463,20 @@ var CFFCompiler = (function CFFCompilerClosure() {
         nameIndex.add(stringToArray(names[i]));
       return this.compileIndex(nameIndex);
     },
-    compileTopDicts: function CFFCompiler_compileTopDicts(dicts, length) {
+    compileTopDicts: function CFFCompiler_compileTopDicts(dicts,
+                                                          length,
+                                                          removeCidKeys) {
       var fontDictTrackers = [];
       var fdArrayIndex = new CFFIndex();
       for (var i = 0, ii = dicts.length; i < ii; ++i) {
         var fontDict = dicts[i];
+        if (removeCidKeys) {
+          fontDict.removeByName('CIDFontVersion');
+          fontDict.removeByName('CIDFontRevision');
+          fontDict.removeByName('CIDFontType');
+          fontDict.removeByName('CIDCount');
+          fontDict.removeByName('UIDBase');
+        }
         var fontDictTracker = new CFFOffsetTracker();
         var fontDictData = this.compileDict(fontDict, fontDictTracker);
         fontDictTrackers.push(fontDictTracker);
