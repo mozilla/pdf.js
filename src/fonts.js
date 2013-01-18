@@ -3254,6 +3254,21 @@ var Font = (function FontClosure() {
         return glyf.length;
       }
 
+      function sanitizeHead(head) {
+        var data = head.data;
+
+        // Validate version:
+        // Should always be 0x00010000
+        var version = int32([data[0], data[1], data[2], data[3]]);
+        if (version >> 16 !== 1) {
+          info('Invalid version in data type: ' + version);
+          data[0] = 0;
+          data[1] = 1;
+          data[2] = 0;
+          data[3] = 0;
+        }
+      }
+
       function sanitizeGlyphLocations(loca, glyf, numGlyphs,
                                       isGlyphLocationsLong) {
         var itemSize, itemDecode, itemEncode;
@@ -3677,6 +3692,10 @@ var Font = (function FontClosure() {
       sanitizeMetrics(font, hhea, hmtx, numGlyphs);
 
       sanitizeTTPrograms(fpgm, prep);
+
+      if (head) {
+        sanitizeHead(head);
+      }
 
       var isGlyphLocationsLong = int16([head.data[50], head.data[51]]);
       if (head && loca && glyf) {
