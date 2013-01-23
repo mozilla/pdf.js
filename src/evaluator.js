@@ -1213,6 +1213,13 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       }
 
       var fontNameStr = fontName && fontName.name;
+      // 9.7.6.1
+      if (type.name == 'CIDFontType0') {
+        var cidEncoding = baseDict.get('Encoding');
+        if (isName(cidEncoding)) {
+          fontNameStr = fontNameStr + '-' + cidEncoding.name;
+        }
+      }
       var baseFontStr = baseFont && baseFont.name;
       if (fontNameStr !== baseFontStr) {
         warn('The FontDescriptor\'s FontName is "' + fontNameStr +
