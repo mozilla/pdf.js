@@ -60,7 +60,7 @@ limitations under the License.
     for (var i = 0; i < tests.length; i++) {
       var test = tests[i];
       var row = document.createElement('tr');
-      row.id = test.id;
+      row.id = 'test-results-' + test.id;
       var nameTd = document.createElement('td');
       nameTd.className = 'name';
       nameTd.innerHTML = test.name;
