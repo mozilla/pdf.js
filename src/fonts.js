@@ -4171,12 +4171,16 @@ var Font = (function FontClosure() {
       }
 
       var cidEncoding = properties.cidEncoding;
-      if (cidEncoding && cidEncoding.indexOf('Identity-') !== 0) {
+      if (!cidEncoding) {
+        return;
+      }
+      if (cidEncoding.indexOf('Identity-') !== 0) {
         // input is already Unicode for non-Identity CMap encodings.
-        // However, Unicode-to-CID conversion is needed
-        // regardless of the CMap encoding. So we can't reset
-        // unicodeToCID.
         this.cidToUnicode = [];
+      } else {
+        // We don't have to do reverse conversions if the string is
+        // already CID.
+        this.unicodeToCID = [];
       }
     },
 
