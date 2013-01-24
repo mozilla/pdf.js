@@ -823,6 +823,12 @@
       "rounds": 1,
       "type": "eq"
     },
+    {  "id": "noembed-identity-2",
+      "file": "pdfs/noembed-identity-2.pdf",
+      "md5": "5549571a910814a9c53a1761b27fd028",
+      "rounds": 1,
+      "type": "eq"
+    },
     {  "id": "noembed-jis7",
       "file": "pdfs/noembed-jis7.pdf",
       "md5": "a0f6cf5a830f23d0c35994a6aaf92b3d",
