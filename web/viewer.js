@@ -2912,9 +2912,19 @@ document.addEventListener('DOMContentLoaded', function webViewerLoad(evt) {
       PDFView.download();
     });
 
+  document.getElementById('pageNumber').addEventListener('click',
+    function() {
+      this.select();
+    });
+
   document.getElementById('pageNumber').addEventListener('change',
     function() {
-      PDFView.page = this.value;
+      // Handle the user inputting a floating point number.
+      PDFView.page = (this.value | 0);
+
+      if (this.value !== (this.value | 0).toString()) {
+        this.value = PDFView.page;
+      }
     });
 
   document.getElementById('scaleSelect').addEventListener('change',
