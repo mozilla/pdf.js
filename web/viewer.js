@@ -59,7 +59,13 @@ function getFileName(url) {
 }
 
 function scrollIntoView(element, spot) {
+  // Assuming offsetParent is available (it's not available when viewer is in
+  // hidden iframe or object). We have to scroll: if the offsetParent is not set
+  // producing the error. See also animationStartedClosure.
   var parent = element.offsetParent, offsetY = element.offsetTop;
+  if (!parent) {
+    error('offsetParent is not set -- cannot scroll');
+  }
   while (parent.clientHeight == parent.scrollHeight) {
     offsetY += parent.offsetTop;
     parent = parent.offsetParent;
@@ -1286,7 +1292,8 @@ var PDFView = {
     });
 
     // outline and initial view depends on destinations and pagesRefMap
-    var promises = [pagesPromise, destinationsPromise, storePromise];
+    var promises = [pagesPromise, destinationsPromise, storePromise,
+                    PDFView.animationStartedPromise];
     PDFJS.Promise.all(promises).then(function() {
       pdfDocument.getOutline().then(function(outline) {
         self.outline = new DocumentOutlineView(outline);
@@ -3309,6 +3316,21 @@ window.addEventListener('afterprint', function afterPrint(evt) {
   window.addEventListener('fullscreenchange', fullscreenChange, false);
   window.addEventListener('mozfullscreenchange', fullscreenChange, false);
   window.addEventListener('webkitfullscreenchange', fullscreenChange, false);
+})();
+
+(function animationStartedClosure() {
+  // The offsetParent is not set until the pdf.js iframe or object is visible.
+  // Waiting for first animation.
+  var requestAnimationFrame = window.requestAnimationFrame ||
+                              window.mozRequestAnimationFrame ||
+                              window.webkitRequestAnimationFrame ||
+                              window.oRequestAnimationFrame ||
+                              window.msRequestAnimationFrame ||
+                              function startAtOnce(callback) { callback(); };
+  PDFView.animationStartedPromise = new PDFJS.Promise();
+  requestAnimationFrame(function onAnimationFrame() {
+    PDFView.animationStartedPromise.resolve();
+  });
 })();
 
 //#if B2G
