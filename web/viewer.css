@@ -665,7 +665,6 @@ html[dir='rtl'] .dropdownToolbarButton {
 }
 
 .dropdownToolbarButton {
-  min-width: 120px;
   max-width: 120px;
   padding: 3px 2px 2px;
   overflow: hidden;
