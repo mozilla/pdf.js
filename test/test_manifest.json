@@ -797,6 +797,14 @@
       "link": true,
       "type": "eq"
     },
+    {  "id": "issue1936",
+      "file": "pdfs/issue1936.pdf",
+      "md5": "7302eb9b6a626308e2a933aaed9e1756",
+      "rounds": 1,
+      "pageLimit": 1,
+      "link": true,
+      "type": "eq"
+    },
     {  "id": "issue2337",
       "file": "pdfs/issue2337.pdf",
       "md5": "ea10f4131202b9b8f2a6cb7770d3f185",
