@@ -96,6 +96,28 @@ describe('font', function() {
       expect(topDict.getByName('Private')).toEqual([45, 102]);
     });
 
+    it('parses a CharString having cntrmask', function() {
+      var bytes = new Uint8Array([0, 1, // count
+                                  1,  // offsetSize
+                                  0,  // offset[0]
+                                  38, // end
+                                  149, 149, 149, 149, 149, 149, 149, 149,
+                                  149, 149, 149, 149, 149, 149, 149, 149,
+                                  1,  // hstem
+                                  149, 149, 149, 149, 149, 149, 149, 149,
+                                  149, 149, 149, 149, 149, 149, 149, 149,
+                                  3,  // vstem
+                                  20, // cntrmask
+                                  22, 22, // fail if misparsed as hmoveto
+                                  14  // endchar
+                                ]);
+      parser.bytes = bytes;
+      var charStrings = parser.parseCharStrings(0);
+      expect(charStrings.count).toEqual(1);
+      // shoudn't be sanitized
+      expect(charStrings.get(0).length).toEqual(38);
+    });
+
     it('parses predefined charsets', function() {
       var charset = parser.parseCharsets(0, 0, null, true);
       expect(charset.predefined).toEqual(true);
