@@ -30,7 +30,7 @@ function preprocess(inFilename, outFilename, defines) {
   var writeLine = typeof outFilename === 'function' ? outFilename :
                                                       function(line) {
     out += line + '\n';
-  }
+  };
   function include(file) {
     var realPath = fs.realpathSync(inFilename);
     var dir = path.dirname(realPath);

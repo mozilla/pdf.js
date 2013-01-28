@@ -466,7 +466,7 @@ RequestListener.prototype.receive = function(event) {
         var listener = doc.createEvent('HTMLEvents');
         listener.initEvent('pdf.js.response', true, false);
         return message.dispatchEvent(listener);
-      }
+      };
     }
     actions[action].call(this.actions, data, response);
   }
@@ -488,7 +488,7 @@ FindEventManager.prototype.bind = function() {
   var unload = function(e) {
     this.unbind();
     this.contentWindow.removeEventListener(e.type, unload);
-  }.bind(this);
+  };.bind(this);
   this.contentWindow.addEventListener('unload', unload);
 
   for (var i = 0; i < this.types.length; i++) {
