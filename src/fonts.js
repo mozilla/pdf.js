@@ -2963,6 +2963,7 @@ var Font = (function FontClosure() {
             cmap.data[i] = data.charCodeAt(i);
         }
 
+        var cmapTable;
         for (var i = 0; i < numRecords; i++) {
           var table = tables[i];
           font.pos = start + table.offset;
@@ -2985,7 +2986,7 @@ var Font = (function FontClosure() {
                 ids.push(index);
               }
             }
-            return {
+            cmapTable = {
               glyphs: glyphs,
               ids: ids,
               hasShortCmap: true
@@ -3072,11 +3073,14 @@ var Font = (function FontClosure() {
               ids.push(glyphCode);
             }
 
-            return {
+            cmapTable = {
               glyphs: glyphs,
               ids: ids
             };
           }
+        }
+        if (cmapTable) {
+          return cmapTable;
         }
         error('Unsupported cmap table format');
       };
