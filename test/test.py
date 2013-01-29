@@ -15,9 +15,10 @@
 import json, platform, os, shutil, sys, subprocess, tempfile, threading
 import time, urllib, urllib2, hashlib, re, base64, uuid, socket, errno
 from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
-import SocketServer
+from SocketServer import ThreadingMixIn
 from optparse import OptionParser
 from urlparse import urlparse, parse_qs
+from threading import Lock
 
 USAGE_EXAMPLE = "%prog"
 
@@ -34,6 +35,8 @@ VERBOSE = False
 BROWSER_TIMEOUT = 60
 
 SERVER_HOST = "localhost"
+
+lock = Lock()
 
 class TestOptions(OptionParser):
     def __init__(self, **kwargs):
@@ -134,8 +137,8 @@ class Result:
         self.failure = failure
         self.page = page
 
-class TestServer(SocketServer.TCPServer):
-    allow_reuse_address = True
+class TestServer(ThreadingMixIn, HTTPServer):
+    pass
 
 class TestHandlerBase(BaseHTTPRequestHandler):
     # Disable annoying noise by default
@@ -243,40 +246,41 @@ class UnitTestHandler(TestHandlerBase):
         return
 
     def do_POST(self):
-        url = urlparse(self.path)
-        numBytes = int(self.headers['Content-Length'])
-        content = self.rfile.read(numBytes)
+        with lock:
+            url = urlparse(self.path)
+            numBytes = int(self.headers['Content-Length'])
+            content = self.rfile.read(numBytes)
 
-        # Process special utility requests
-        if url.path == '/ttx':
-            self.translateFont(content)
-            return
+            # Process special utility requests
+            if url.path == '/ttx':
+                self.translateFont(content)
+                return
 
-        self.send_response(200)
-        self.send_header('Content-Type', 'text/plain')
-        self.end_headers()
+            self.send_response(200)
+            self.send_header('Content-Type', 'text/plain')
+            self.end_headers()
 
-        result = json.loads(content)
-        browser = result['browser']
-        UnitTestState.lastPost[browser] = int(time.time())
-        if url.path == "/tellMeToQuit":
-            tellAppToQuit(url.path, url.query)
-            UnitTestState.browsersRunning -= 1
-            UnitTestState.lastPost[browser] = None
-            return
-        elif url.path == '/info':
-            print result['message']
-        elif url.path == '/submit_task_results':
-            status, description = result['status'], result['description']
-            UnitTestState.numRun += 1
-            if status == 'TEST-UNEXPECTED-FAIL':
-                UnitTestState.numErrors += 1
-            message = status + ' | ' + description + ' | in ' + browser
-            if 'error' in result:
-                message += ' | ' + result['error']
-            print message
-        else:
-            print 'Error: uknown action' + url.path
+            result = json.loads(content)
+            browser = result['browser']
+            UnitTestState.lastPost[browser] = int(time.time())
+            if url.path == "/tellMeToQuit":
+                tellAppToQuit(url.path, url.query)
+                UnitTestState.browsersRunning -= 1
+                UnitTestState.lastPost[browser] = None
+                return
+            elif url.path == '/info':
+                print result['message']
+            elif url.path == '/submit_task_results':
+                status, description = result['status'], result['description']
+                UnitTestState.numRun += 1
+                if status == 'TEST-UNEXPECTED-FAIL':
+                    UnitTestState.numErrors += 1
+                message = status + ' | ' + description + ' | in ' + browser
+                if 'error' in result:
+                    message += ' | ' + result['error']
+                print message
+            else:
+                print 'Error: uknown action' + url.path
 
 class PDFTestHandler(TestHandlerBase):
 
@@ -310,36 +314,37 @@ class PDFTestHandler(TestHandlerBase):
 
 
     def do_POST(self):
-        numBytes = int(self.headers['Content-Length'])
+        with lock:
+            numBytes = int(self.headers['Content-Length'])
 
-        self.send_response(200)
-        self.send_header('Content-Type', 'text/plain')
-        self.end_headers()
+            self.send_response(200)
+            self.send_header('Content-Type', 'text/plain')
+            self.end_headers()
 
-        url = urlparse(self.path)
-        if url.path == "/tellMeToQuit":
-            tellAppToQuit(url.path, url.query)
-            return
+            url = urlparse(self.path)
+            if url.path == "/tellMeToQuit":
+                tellAppToQuit(url.path, url.query)
+                return
 
-        result = json.loads(self.rfile.read(numBytes))
-        browser = result['browser']
-        State.lastPost[browser] = int(time.time())
-        if url.path == "/info":
-            print result['message']
-            return
+            result = json.loads(self.rfile.read(numBytes))
+            browser = result['browser']
+            State.lastPost[browser] = int(time.time())
+            if url.path == "/info":
+                print result['message']
+                return
 
-        id, failure, round, page, snapshot = result['id'], result['failure'], result['round'], result['page'], result['snapshot']
-        taskResults = State.taskResults[browser][id]
-        taskResults[round].append(Result(snapshot, failure, page))
-        if State.saveStats:
-            stat = {
-                'browser': browser,
-                'pdf': id,
-                'page': page,
-                'round': round,
-                'stats': result['stats']
-            }
-            State.stats.append(stat)
+            id, failure, round, page, snapshot = result['id'], result['failure'], result['round'], result['page'], result['snapshot']
+            taskResults = State.taskResults[browser][id]
+            taskResults[round].append(Result(snapshot, failure, page))
+            if State.saveStats:
+                stat = {
+                    'browser': browser,
+                    'pdf': id,
+                    'page': page,
+                    'round': round,
+                    'stats': result['stats']
+                }
+                State.stats.append(stat)
 
         def isTaskDone():
             numPages = result["numPages"]
