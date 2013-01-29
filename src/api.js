@@ -547,6 +547,10 @@ var WorkerTransport = (function WorkerTransportClosure() {
         this.workerReadyPromise.reject(data.exception.name, data.exception);
       }, this);
 
+      messageHandler.on('MissingPDF', function transportMissingPDF(data) {
+        this.workerReadyPromise.reject(data.exception.message, data.exception);
+      }, this);
+
       messageHandler.on('UnknownError', function transportUnknownError(data) {
         this.workerReadyPromise.reject(data.exception.message, data.exception);
       }, this);
