@@ -131,6 +131,12 @@ var WorkerMessageHandler = {
           });
 
           return;
+        } else if (e instanceof MissingPDFException) {
+          handler.send('MissingPDF', {
+            exception: e
+          });
+
+          return;
         } else {
           handler.send('UnknownError', {
             exception: new UnknownErrorException(e.message, e.toString())
@@ -185,8 +191,15 @@ var WorkerMessageHandler = {
             });
           },
           error: function getPDFError(e) {
-            handler.send('DocError', 'Unexpected server response of ' +
-                         e.target.status + '.');
+            if (e.target.status == 404) {
+              handler.send('MissingPDF', {
+                exception: new MissingPDFException(
+                  'Missing PDF \"' + source.url + '\".')});
+            } else {
+              handler.send('DocError', 'Unexpected server response (' +
+                            e.target.status + ') while retrieving PDF \"' +
+                            source.url + '\".');
+            }
           },
           headers: source.httpHeaders
         },

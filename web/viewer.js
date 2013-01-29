@@ -1000,6 +1000,17 @@ var PDFView = {
 //#endif
         }
 
+        if (exception && exception.name === 'MissingPDFException') {
+          // special message for missing PDF's
+          var loadingErrorMessage = mozL10n.get('missing_file_error', null,
+                                        'Missing PDF file.');
+
+//#if B2G
+//        window.alert(loadingErrorMessage);
+//        return window.close();
+//#endif
+        }
+
         var loadingIndicator = document.getElementById('loading');
         loadingIndicator.textContent = mozL10n.get('loading_error_indicator',
           null, 'Error');
