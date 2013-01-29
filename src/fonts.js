@@ -410,11 +410,14 @@ var CMapConverterList = {
   '90ms-RKSJ-H': sjisToUnicode,
   '90ms-RKSJ-V': sjisToUnicode,
   '90msp-RKSJ-H': sjisToUnicode,
-  '90msp-RKSJ-V': sjisToUnicode
+  '90msp-RKSJ-V': sjisToUnicode,
+  'GBK-EUC-H': gbkToUnicode
 };
 
 var decodeBytes;
 if (typeof TextDecoder !== 'undefined') {
+  // The encodings supported by TextDecoder can be found at:
+  // http://encoding.spec.whatwg.org/#concept-encoding-get
   decodeBytes = function(bytes, encoding) {
     return new TextDecoder(encoding).decode(bytes);
   };
@@ -442,6 +445,10 @@ function eucjpToUnicode(str) {
 
 function sjisToUnicode(str) {
   return decodeBytes(stringToBytes(str), 'shift_jis');
+}
+
+function gbkToUnicode(str) {
+  return decodeBytes(stringToBytes(str), 'gbk');
 }
 
 // Some characters, e.g. copyrightserif, mapped to the private use area and
