@@ -5260,11 +5260,13 @@ Type1Font.prototype = {
     cff.names = [name];
 
     var topDict = new CFFTopDict();
-    topDict.setByName('version', 0);
-    topDict.setByName('Notice', 1);
-    topDict.setByName('FullName', 2);
-    topDict.setByName('FamilyName', 3);
-    topDict.setByName('Weight', 4);
+    // CFF strings IDs 0...390 are predefined names, so refering
+    // to entries in our own String INDEX starts at SID 391.
+    topDict.setByName('version', 391);
+    topDict.setByName('Notice', 392);
+    topDict.setByName('FullName', 393);
+    topDict.setByName('FamilyName', 394);
+    topDict.setByName('Weight', 395);
     topDict.setByName('Encoding', null); // placeholder
     topDict.setByName('FontMatrix', properties.fontMatrix);
     topDict.setByName('FontBBox', properties.bbox);
