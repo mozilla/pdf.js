@@ -44,6 +44,14 @@
        "rounds": 1,
        "type": "eq"
     },
+    {  "id": "issue2128",
+       "file": "pdfs/issue2128.pdf",
+       "md5": "b3f4d9ed3c41e1f1768264a3f8b93aad",
+       "link": true,
+       "pageLimit": 2,
+       "rounds": 1,
+       "type": "eq"
+    },
     {  "id": "pdfspec-load",
        "file": "pdfs/pdf.pdf",
        "md5": "dbdb23c939d2be09b43126c3c56060c7",
