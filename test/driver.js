@@ -147,12 +147,16 @@ function nextTask() {
   });
 }
 
-function isLastPage(task) {
-  var limit = task.pageLimit || 0;
-  if (!limit || limit > task.pdfDoc.numPages)
-   limit = task.pdfDoc.numPages;
+function getLastPageNum(task) {
+  var lastPageNum = task.lastPage || 0;
+  if (!lastPageNum || lastPageNum > task.pdfDoc.numPages) {
+    lastPageNum = task.pdfDoc.numPages;
+  }
+  return lastPageNum;
+}
 
-  return task.pageNum > limit;
+function isLastPage(task) {
+  return task.pageNum > getLastPageNum(task);
 }
 
 function canvasToDataURL() {
@@ -347,7 +351,8 @@ function sendTaskResult(snapshot, task, failure, result) {
       browser: browser,
       id: task.id,
       numPages: task.pdfDoc ?
-               (task.pageLimit || task.pdfDoc.numPages) : 0,
+               (task.lastPage || task.pdfDoc.numPages) : 0,
+      lastPageNum: getLastPageNum(task),
       failure: failure,
       file: task.file,
       round: task.round,

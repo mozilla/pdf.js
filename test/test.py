@@ -333,7 +333,12 @@ class PDFTestHandler(TestHandlerBase):
                 print result['message']
                 return
 
-            id, failure, round, page, snapshot = result['id'], result['failure'], result['round'], result['page'], result['snapshot']
+            id = result['id']
+            failure = result['failure']
+            round = result['round']
+            page = result['page']
+            snapshot = result['snapshot']
+
             taskResults = State.taskResults[browser][id]
             taskResults[round].append(Result(snapshot, failure, page))
             if State.saveStats:
@@ -347,10 +352,13 @@ class PDFTestHandler(TestHandlerBase):
                 State.stats.append(stat)
 
         def isTaskDone():
-            numPages = result["numPages"]
-            rounds = State.manifest[id]["rounds"]
+            last_page_num = result['lastPageNum']
+            rounds = State.manifest[id]['rounds']
             for round in range(0,rounds):
-                if len(taskResults[round]) < numPages:
+                if not taskResults[round]:
+                    return False
+                latest_page = taskResults[round][-1]
+                if not latest_page.page == last_page_num:
                     return False
             return True
 
@@ -643,12 +651,13 @@ def checkEq(task, results, browser, masterMode):
     taskType = task['type']
 
     passed = True
-    for page in xrange(len(results)):
-        snapshot = results[page].snapshot
+    for result in results:
+        page = result.page
+        snapshot = result.snapshot
         ref = None
         eq = True
 
-        path = os.path.join(pfx, str(page + 1))
+        path = os.path.join(pfx, str(page))
         if not os.access(path, os.R_OK):
             State.numEqNoSnapshot += 1
             if not masterMode:
@@ -660,7 +669,7 @@ def checkEq(task, results, browser, masterMode):
 
             eq = (ref == snapshot)
             if not eq:
-                print 'TEST-UNEXPECTED-FAIL |', taskType, taskId, '| in', browser, '| rendering of page', page + 1, '!= reference rendering'
+                print 'TEST-UNEXPECTED-FAIL |', taskType, taskId, '| in', browser, '| rendering of page', page, '!= reference rendering'
 
                 if not State.eqLog:
                     State.eqLog = open(EQLOG_FILE, 'w')
@@ -669,7 +678,7 @@ def checkEq(task, results, browser, masterMode):
                 # NB: this follows the format of Mozilla reftest
                 # output so that we can reuse its reftest-analyzer
                 # script
-                eqLog.write('REFTEST TEST-UNEXPECTED-FAIL | ' + browser +'-'+ taskId +'-page'+ str(page + 1) + ' | image comparison (==)\n')
+                eqLog.write('REFTEST TEST-UNEXPECTED-FAIL | ' + browser +'-'+ taskId +'-page'+ str(page) + ' | image comparison (==)\n')
                 eqLog.write('REFTEST   IMAGE 1 (TEST): ' + snapshot + '\n')
                 eqLog.write('REFTEST   IMAGE 2 (REFERENCE): ' + ref + '\n')
 
@@ -683,8 +692,8 @@ def checkEq(task, results, browser, masterMode):
             except OSError, e:
                 if e.errno != 17: # file exists
                     print >>sys.stderr, 'Creating', tmpTaskDir, 'failed!'
-        
-            of = open(os.path.join(tmpTaskDir, str(page + 1)), 'w')
+
+            of = open(os.path.join(tmpTaskDir, str(page)), 'w')
             of.write(snapshot)
             of.close()
 
