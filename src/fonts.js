@@ -2571,7 +2571,7 @@ var Font = (function FontClosure() {
     return ranges;
   };
 
-  function createCMapTable(glyphs, deltas) {
+  function createCmapTable(glyphs, deltas) {
     var ranges = getRanges(glyphs);
 
     var numTables = 1;
@@ -2847,6 +2847,37 @@ var Font = (function FontClosure() {
     return nameTable;
   }
 
+  // Normalize the charcodes in the cmap table into unicode values
+  // that will work with the (3, 1) cmap table we will write out.
+  function cmapCharcodeToUnicode(charcode, symbolic, platformId, encodingId) {
+    var unicode;
+    if (symbolic) {
+      // These codes will be shifted into the range
+      // SYMBOLIC_FONT_GLYPH_OFFSET to (SYMBOLIC_FONT_GLYPH_OFFSET + 0xFF)
+      // so that they are not in the control character range that could
+      // be displayed as spaces by browsers.
+      if (platformId === 3 && encodingId === 0 ||
+          platformId === 1 && encodingId === 0) {
+        unicode = SYMBOLIC_FONT_GLYPH_OFFSET | (charcode & 0xFF);
+      }
+    } else {
+      if (platformId === 3 && encodingId === 1) {
+        // A (3, 1) table is alredy unicode (Microsoft Unicode format)
+        unicode = charcode;
+      } else if (platformId === 1 && encodingId === 0) {
+        // TODO(mack): Should apply the changes to convert the
+        // MacRomanEncoding to Mac OS Roman encoding in 9.6.6.4
+        // table 115 of the pdf spec
+        var glyphName = Encodings.MacRomanEncoding[charcode];
+        if (glyphName) {
+          unicode = GlyphsUnicode[glyphName];
+        }
+      }
+    }
+    return unicode;
+  }
+
+
   Font.prototype = {
     name: null,
     font: null,
@@ -2929,176 +2960,217 @@ var Font = (function FontClosure() {
           properties.baseEncoding = encoding;
       }
 
-      function readCMapTable(cmap, font) {
+      /**
+       * Read the appropriate subtable from the cmap according to 9.6.6.4 from
+       * PDF spec
+       */
+      function readCmapTable(cmap, font, hasEncoding, isSymbolicFont) {
         var start = (font.start ? font.start : 0) + cmap.offset;
         font.pos = start;
 
         var version = int16(font.getBytes(2));
-        var numRecords = int16(font.getBytes(2));
+        var numTables = int16(font.getBytes(2));
 
-        var records = [];
-        for (var i = 0; i < numRecords; i++) {
-          records.push({
-            platformID: int16(font.getBytes(2)),
-            encodingID: int16(font.getBytes(2)),
-            offset: int32(font.getBytes(4))
-          });
-        }
+        var potentialTable;
+        var foundPreferredTable;
+        // There's an order of preference in terms of which cmap subtable we
+        // want to use. So scan through them to find our preferred table.
+        for (var i = 0; i < numTables; i++) {
+          var platformId = int16(font.getBytes(2));
+          var encodingId = int16(font.getBytes(2));
+          var offset = int32(font.getBytes(4));
+          var useTable = false;
+          var canBreak = false;
 
-        // Check that table are sorted by platformID then encodingID,
-        records.sort(function fontReadCMapTableSort(a, b) {
-          return ((a.platformID << 16) + a.encodingID) -
-                 ((b.platformID << 16) + b.encodingID);
-        });
-
-        var tables = [records[0]];
-        for (var i = 1; i < numRecords; i++) {
-          // The sanitizer will drop the font if 2 tables have the same
-          // platformID and the same encodingID, this will be correct for
-          // most cases but if the font has been made for Mac it could
-          // exist a few platformID: 1, encodingID: 0 but with a different
-          // language field and that's correct. But the sanitizer does not
-          // seem to support this case.
-          var current = records[i];
-          var previous = records[i - 1];
-          if (((current.platformID << 16) + current.encodingID) <=
-             ((previous.platformID << 16) + previous.encodingID))
-                continue;
-          tables.push(current);
-        }
-
-        var missing = numRecords - tables.length;
-        if (missing) {
-          numRecords = tables.length;
-          var data = string16(version) + string16(numRecords);
-
-          for (var i = 0; i < numRecords; i++) {
-            var table = tables[i];
-            data += string16(table.platformID) +
-                    string16(table.encodingID) +
-                    string32(table.offset);
+          // The following block implements the following from the spec:
+          //
+          //   When the font has no Encoding entry, or the font descriptor’s
+          //   Symbolic flag is set (in which case the Encoding entry
+          //   is ignored), this shall occur:
+          //      - If the font contains a (3, 0) subtable, the range of
+          //      - Otherwise, the (1, 0) subtable will be used.
+          //   Otherwise, if the font does have an encoding:
+          //      - Use the (3, 1) cmap subtable
+          //      - Otherwise, use the (1, 0) subtable if present
+          //
+          // The following diverges slightly from the above spec in order
+          // to handle the case that hasEncoding and isSymbolicFont are both
+          // true. In this, based on the ordering of the rules in the spec,
+          // my interpretation is that we should be acting as if the font is
+          // symbolic.
+          //
+          // However, in this case, the test pdf 'preistabelle.pdf'
+          // is interpreting this case as a non-symbolic font. In this case
+          // though, 'presitabelle.pdf' does contain a (3, 1) table and does
+          // not contain a (3, 0) table which indicates it is non-symbolic.
+          //
+          // Thus, I am using this heurisitic of looking at which table is
+          // found to truly determine whether or not the font is symbolic.
+          // That is, if the specific symbolic/non-symbolic font specific
+          // tables (3, 0) or (3, 1) is found, that information is used for
+          // deciding if the font is symbolic or not.
+          //
+          // TODO(mack): This section needs some more thought on whether the
+          // heuristic is good enough. For now, it passes all the regression
+          // tests.
+          if (isSymbolicFont && platformId === 3 && encodingId === 0) {
+            useTable = true;
+            canBreak = true;
+            foundPreferredTable = true;
+          } else if (hasEncoding && platformId === 3 && encodingId === 1) {
+            useTable = true;
+            canBreak = true;
+            foundPreferredTable = true;
+            // Update the isSymbolicFont based on this heuristic
+            isSymbolicFont = false;
+          } else if (platformId === 1 && encodingId === 0 &&
+              !foundPreferredTable) {
+            useTable = true;
+            foundPreferredTable = true;
+          } else if (!potentialTable) {
+            // We will use an arbitrary table if we cannot find a preferred
+            // table
+            useTable = true;
           }
 
-          for (var i = 0, ii = data.length; i < ii; i++)
-            cmap.data[i] = data.charCodeAt(i);
+          if (useTable) {
+            potentialTable = {
+              platformId: platformId,
+              encodingId: encodingId,
+              offset: offset,
+              isSymbolicFont: isSymbolicFont
+            };
+          }
+          if (canBreak) {
+            break;
+          }
         }
 
-        for (var i = 0; i < numRecords; i++) {
-          var table = tables[i];
-          font.pos = start + table.offset;
+        if (!potentialTable) {
+          error('Could not find a cmap table');
+          return;
+        }
 
-          var format = int16(font.getBytes(2));
-          var length = int16(font.getBytes(2));
-          var language = int16(font.getBytes(2));
+        if (!foundPreferredTable) {
+          warn('Did not find a cmap of suitable format. Interpreting (' +
+               potentialTable.platformId + ', ' + potentialTable.encodingId +
+               ') as (3, 1) table');
+          potentialTable.platformId = 3;
+          potentialTable.encodingId = 1;
+        }
 
-          if (format == 0) {
-            // Characters below 0x20 are controls characters that are hardcoded
-            // into the platform so if some characters in the font are assigned
-            // under this limit they will not be displayed so let's rewrite the
-            // CMap.
-            var glyphs = [];
-            var ids = [];
-            for (var j = 0; j < 256; j++) {
-              var index = font.getByte();
-              if (index) {
-                glyphs.push({ unicode: j, code: j });
-                ids.push(index);
-              }
+        font.pos = start + potentialTable.offset;
+        var format = int16(font.getBytes(2));
+        var length = int16(font.getBytes(2));
+        var language = int16(font.getBytes(2));
+
+        var hasShortCmap = false;
+        var mappings = [];
+
+        // TODO(mack): refactor this cmap subtable reading logic out
+        if (format === 0) {
+          for (var j = 0; j < 256; j++) {
+            var index = font.getByte();
+            if (!index) {
+              continue;
             }
-            return {
-              glyphs: glyphs,
-              ids: ids,
-              hasShortCmap: true
-            };
-          } else if (format == 4) {
-            // re-creating the table in format 4 since the encoding
-            // might be changed
-            var segCount = (int16(font.getBytes(2)) >> 1);
-            font.getBytes(6); // skipping range fields
-            var segIndex, segments = [];
-            for (segIndex = 0; segIndex < segCount; segIndex++) {
-              segments.push({ end: int16(font.getBytes(2)) });
-            }
-            font.getBytes(2);
-            for (segIndex = 0; segIndex < segCount; segIndex++) {
-              segments[segIndex].start = int16(font.getBytes(2));
+            mappings.push({
+              charcode: j,
+              glyphId: index
+            });
+          }
+          hasShortCmap = true;
+        } else if (format === 4) {
+          // re-creating the table in format 4 since the encoding
+          // might be changed
+          var segCount = (int16(font.getBytes(2)) >> 1);
+          font.getBytes(6); // skipping range fields
+          var segIndex, segments = [];
+          for (segIndex = 0; segIndex < segCount; segIndex++) {
+            segments.push({ end: int16(font.getBytes(2)) });
+          }
+          font.getBytes(2);
+          for (segIndex = 0; segIndex < segCount; segIndex++) {
+            segments[segIndex].start = int16(font.getBytes(2));
+          }
+
+          for (segIndex = 0; segIndex < segCount; segIndex++) {
+            segments[segIndex].delta = int16(font.getBytes(2));
+          }
+
+          var offsetsCount = 0;
+          for (segIndex = 0; segIndex < segCount; segIndex++) {
+            var segment = segments[segIndex];
+            var rangeOffset = int16(font.getBytes(2));
+            if (!rangeOffset) {
+              segment.offsetIndex = -1;
+              continue;
             }
 
-            for (segIndex = 0; segIndex < segCount; segIndex++) {
-              segments[segIndex].delta = int16(font.getBytes(2));
-            }
+            var offsetIndex = (rangeOffset >> 1) - (segCount - segIndex);
+            segment.offsetIndex = offsetIndex;
+            offsetsCount = Math.max(offsetsCount, offsetIndex +
+              segment.end - segment.start + 1);
+          }
 
-            var offsetsCount = 0;
-            for (segIndex = 0; segIndex < segCount; segIndex++) {
-              var segment = segments[segIndex];
-              var rangeOffset = int16(font.getBytes(2));
-              if (!rangeOffset) {
-                segment.offsetIndex = -1;
+          var offsets = [];
+          for (var j = 0; j < offsetsCount; j++) {
+            offsets.push(int16(font.getBytes(2)));
+          }
+
+          for (segIndex = 0; segIndex < segCount; segIndex++) {
+            var segment = segments[segIndex];
+            var start = segment.start, end = segment.end;
+            var delta = segment.delta, offsetIndex = segment.offsetIndex;
+
+            for (var j = start; j <= end; j++) {
+              if (j == 0xFFFF) {
                 continue;
               }
 
-              var offsetIndex = (rangeOffset >> 1) - (segCount - segIndex);
-              segment.offsetIndex = offsetIndex;
-              offsetsCount = Math.max(offsetsCount, offsetIndex +
-                segment.end - segment.start + 1);
-            }
-
-            var offsets = [];
-            for (var j = 0; j < offsetsCount; j++)
-              offsets.push(int16(font.getBytes(2)));
-
-            var glyphs = [], ids = [];
-
-            for (segIndex = 0; segIndex < segCount; segIndex++) {
-              var segment = segments[segIndex];
-              var start = segment.start, end = segment.end;
-              var delta = segment.delta, offsetIndex = segment.offsetIndex;
-
-              for (var j = start; j <= end; j++) {
-                if (j == 0xFFFF)
-                  continue;
-
-                var glyphCode = offsetIndex < 0 ? j :
-                  offsets[offsetIndex + j - start];
-                glyphCode = (glyphCode + delta) & 0xFFFF;
-                if (glyphCode == 0)
-                  continue;
-
-                glyphs.push({ unicode: j, code: j });
-                ids.push(glyphCode);
+              var glyphId = offsetIndex < 0 ? j :
+                offsets[offsetIndex + j - start];
+              glyphId = (glyphId + delta) & 0xFFFF;
+              if (glyphId === 0) {
+                continue;
               }
+              mappings.push({
+                charcode: j,
+                glyphId: glyphId
+              });
             }
-
-            return {
-              glyphs: glyphs,
-              ids: ids
-            };
-          } else if (format == 6) {
-            // Format 6 is a 2-bytes dense mapping, which means the font data
-            // lives glue together even if they are pretty far in the unicode
-            // table. (This looks weird, so I can have missed something), this
-            // works on Linux but seems to fails on Mac so let's rewrite the
-            // cmap table to a 3-1-4 style
-            var firstCode = int16(font.getBytes(2));
-            var entryCount = int16(font.getBytes(2));
-
-            var glyphs = [];
-            var ids = [];
-            for (var j = 0; j < entryCount; j++) {
-              var glyphCode = int16(font.getBytes(2));
-              var code = firstCode + j;
-
-              glyphs.push({ unicode: code, code: code });
-              ids.push(glyphCode);
-            }
-
-            return {
-              glyphs: glyphs,
-              ids: ids
-            };
           }
+        } else if (format == 6) {
+          // Format 6 is a 2-bytes dense mapping, which means the font data
+          // lives glue together even if they are pretty far in the unicode
+          // table. (This looks weird, so I can have missed something), this
+          // works on Linux but seems to fails on Mac so let's rewrite the
+          // cmap table to a 3-1-4 style
+          var firstCode = int16(font.getBytes(2));
+          var entryCount = int16(font.getBytes(2));
+
+          var glyphs = [];
+          var ids = [];
+          for (var j = 0; j < entryCount; j++) {
+            var glyphId = int16(font.getBytes(2));
+            var charcode = firstCode + j;
+
+            mappings.push({
+              charcode: charcode,
+              glyphId: glyphId
+            });
+          }
+        } else {
+          error('cmap table has unsupported format: ' + format);
         }
-        error('Unsupported cmap table format');
+
+        return {
+          platformId: potentialTable.platformId,
+          encodingId: potentialTable.encodingId,
+          isSymbolicFont: potentialTable.isSymbolicFont,
+          mappings: mappings,
+          hasShortCmap: hasShortCmap
+        };
       };
 
       function sanitizeMetrics(font, header, metrics, numGlyphs) {
@@ -3699,175 +3771,131 @@ var Font = (function FontClosure() {
           ids.push(i);
         }
       } else {
-        var cmapTable = readCMapTable(cmap, font);
+        this.useToFontChar = true;
+        // Most of the following logic in this code branch is based on the
+        // 9.6.6.4 of the PDF spec.
 
-        glyphs = cmapTable.glyphs;
-        ids = cmapTable.ids;
+        // TODO(mack):
+        // We are using this.hasEncoding to mean that the encoding is either
+        // MacRomanEncoding or WinAnsiEncoding (following spec in 9.6.6.4),
+        // but this.hasEncoding is currently true for any encodings on the
+        // Encodings object (e.g. MacExpertEncoding). So should consider using
+        // better check for this.
+        var cmapTable = readCmapTable(cmap, font, this.hasEncoding,
+            this.isSymbolicFont);
 
-        var hasShortCmap = !!cmapTable.hasShortCmap;
+        // TODO(mack): If the (3, 0) cmap table used, then the font is
+        // symbolic. The range of charcodes in the cmap table should be
+        // one of the following:
+        //   -> 0x0000 - 0x00FF
+        //   -> 0xF000 - 0xF0FF
+        //   -> 0xF100 - 0xF1FF
+        //   -> 0xF200 - 0xF2FF
+        // If it is not, we should change not consider this a symbolic font
+        this.isSymbolicFont = cmapTable.isSymbolicFont;
+
+        var cmapPlatformId = cmapTable.platformId;
+        var cmapEncodingId = cmapTable.encodingId;
+        var cmapMappings = cmapTable.mappings;
+        var cmapMappingsLength = cmapMappings.length;
+        var glyphs = [];
+        var ids = [];
+        for (var i = 0; i < cmapMappingsLength; ++i) {
+          var cmapMapping = cmapMappings[i];
+          var charcode = cmapMapping.charcode;
+          var unicode = cmapCharcodeToUnicode(charcode, this.isSymbolicFont,
+              cmapPlatformId, cmapEncodingId);
+
+          if (!unicode) {
+            // TODO(mack): gotta check if skipping mappings where we cannot find
+            // a unicode is the correct behaviour
+            continue;
+          }
+          glyphs.push({
+            code: charcode,
+            unicode: unicode
+          });
+          ids.push(cmapMapping.glyphId);
+        }
+
+        var hasShortCmap = cmapTable.hasShortCmap;
         var toFontChar = this.toFontChar;
 
         if (hasShortCmap && ids.length == numGlyphs) {
           // Fixes the short cmap tables -- some generators use incorrect
           // glyph id.
-          for (var i = 0, ii = ids.length; i < ii; i++)
+          for (var i = 0, ii = ids.length; i < ii; i++) {
             ids[i] = i;
-        }
-
-        var unusedUnicode = CMAP_GLYPH_OFFSET;
-        var glyphNames = properties.glyphNames || [];
-        var encoding = properties.baseEncoding;
-        var differences = properties.differences;
-        if (toFontChar && toFontChar.length > 0) {
-          // checking if cmap is just identity map
-          var isIdentity = true;
-          for (var i = 0, ii = glyphs.length; i < ii; i++) {
-            if (glyphs[i].unicode != i + 1) {
-              isIdentity = false;
-              break;
-            }
-          }
-          // if it is, replacing with meaningful toUnicode values
-          if (isIdentity && !this.isSymbolicFont) {
-            var usedUnicodes = [], unassignedUnicodeItems = [];
-            for (var i = 0, ii = glyphs.length; i < ii; i++) {
-              var unicode = toFontChar[i + 1];
-              if (!unicode || typeof unicode !== 'number' ||
-                  unicode in usedUnicodes) {
-                unassignedUnicodeItems.push(i);
-                continue;
-              }
-              glyphs[i].unicode = unicode;
-              usedUnicodes[unicode] = true;
-            }
-            for (var j = 0, jj = unassignedUnicodeItems.length; j < jj; j++) {
-              var i = unassignedUnicodeItems[j];
-              while (unusedUnicode in usedUnicodes)
-                unusedUnicode++;
-              var cid = i + 1;
-              // override only if unicode mapping is not specified
-              if (!(cid in toFontChar))
-                toFontChar[cid] = unusedUnicode;
-              glyphs[i].unicode = unusedUnicode++;
-            }
-            this.useToFontChar = true;
           }
         }
 
-        // remove glyph references outside range of avaialable glyphs or empty
-        var glyphsRemoved = 0;
-        for (var i = ids.length - 1; i >= 0; i--) {
-          if (ids[i] < numGlyphs &&
-              (!emptyGlyphIds[ids[i]] || this.isSymbolicFont))
-            continue;
-          ids.splice(i, 1);
-          glyphs.splice(i, 1);
-          glyphsRemoved++;
-        }
-
-        // checking if it's a "true" symbolic font
+        // Rewrite the whole toFontChar dictionary with a new one using the
+        // information from the mappings in the cmap table.
+        var newToFontChar = [];
         if (this.isSymbolicFont) {
-          var minUnicode = 0xFFFF, maxUnicode = 0;
           for (var i = 0, ii = glyphs.length; i < ii; i++) {
-            var unicode = glyphs[i].unicode;
-            minUnicode = Math.min(minUnicode, unicode);
-            maxUnicode = Math.max(maxUnicode, unicode);
+            var glyph = glyphs[i];
+            // For (3, 0) cmap tables:
+            // The charcode key being stored in toFontChar is the lower byte
+            // of the two-byte charcodes of the cmap table since according to
+            // the spec: 'each byte from the string shall be prepended with the
+            // high byte of the range [of charcodes in the cmap table], to form
+            // a two-byte character, which shall be used to select the
+            // associated glyph description from the subtable'.
+            //
+            // For (1, 0) cmap tables:
+            // 'single bytes from the string shall be used to look up the
+            // associated glyph descriptions from the subtable'. This means
+            // charcodes in the cmap will be single bytes, so no-op since
+            // glyph.code & 0xFF === glyph.code
+            newToFontChar[glyph.code & 0xFF] = glyph.unicode;
           }
-          // high byte must be the same for min and max unicodes
-          if ((maxUnicode & 0xFF00) != (minUnicode & 0xFF00))
-            this.isSymbolicFont = false;
-        }
+        } else {
 
-        // heuristics: if removed more than 5 glyphs encoding WinAnsiEncoding
-        // does not set properly (broken PDFs have about 100 removed glyphs)
-        if (glyphsRemoved > 5) {
-          warn('Switching TrueType encoding to MacRomanEncoding for ' +
-               this.name + ' font');
-          encoding = Encodings.MacRomanEncoding;
-        }
+          var encoding = properties.baseEncoding;
+          var differences = properties.differences;
 
-        if (hasShortCmap && this.hasEncoding && !this.isSymbolicFont) {
-          // Re-encode short map encoding to unicode -- that simplifies the
-          // resolution of MacRoman encoded glyphs logic for TrueType fonts:
-          // copying all characters to private use area, all mapping all known
-          // glyphs to the unicodes. The glyphs and ids arrays will grow.
-          var usedUnicodes = [];
-          for (var i = 0, ii = glyphs.length; i < ii; i++) {
-            var code = glyphs[i].unicode;
-            var gid = ids[i];
-            glyphs[i].unicode += CMAP_GLYPH_OFFSET;
-            toFontChar[code] = glyphs[i].unicode;
+          // TODO(mack): check if it is necessary to shift control characters
+          // for non-symbolic fonts so that browsers dont't render them using
+          // space characters
 
-            var glyphName = glyphNames[gid] || encoding[code];
-            if (glyphName in GlyphsUnicode) {
-              var unicode = GlyphsUnicode[glyphName];
-              if (unicode in usedUnicodes)
-                continue;
-
-              usedUnicodes[unicode] = true;
-              glyphs.push({
-                unicode: unicode,
-                code: glyphs[i].code
-              });
-              ids.push(gid);
-              toFontChar[code] = unicode;
+          var glyphCodeMapping = cmapTable.glyphCodeMapping;
+          for (var charcode = 0; charcode < encoding.length; ++charcode) {
+            if (!encoding.hasOwnProperty(charcode)) {
+              continue;
             }
-          }
-          this.useToFontChar = true;
-        } else if (!this.isSymbolicFont && (this.hasEncoding ||
-                    properties.glyphNames || differences.length > 0)) {
-          // Re-encode cmap encoding to unicode, based on the 'post' table data
-          // diffrence array or base encoding
-          var reverseMap = [];
-          for (var i = 0, ii = glyphs.length; i < ii; i++)
-            reverseMap[glyphs[i].unicode] = i;
 
-          var newGlyphUnicodes = [];
-          for (var i = 0, ii = glyphs.length; i < ii; i++) {
-            var code = glyphs[i].unicode;
-            var changeCode = false;
-            var gid = ids[i];
+            // Since the cmap table that we will be writing out is a (3, 1)
+            // unicode table, in this section we will rewrites the charcodes
+            // in the pdf into unicodes
 
-            var glyphName = glyphNames[gid];
+            var glyphName = encoding[charcode];
+            // A nonsymbolic font should not have a Differences array, but
+            // if it does have one, we should still use it
+            if (charcode in differences) {
+              glyphName = differences[charcode];
+            }
+
+            // Finally, any undefined entries in the table shall be filled
+            // using StandardEncoding
             if (!glyphName) {
-              glyphName = differences[code] || encoding[code];
-              changeCode = true;
+              glyphName = Encodings.StandardEncoding[charcode];
             }
-            if (glyphName in GlyphsUnicode) {
-              var unicode = GlyphsUnicode[glyphName];
-              if (!unicode || reverseMap[unicode] === i)
-                continue; // unknown glyph name or in its own place
 
-              newGlyphUnicodes[i] = unicode;
-              if (changeCode)
-                toFontChar[code] = unicode;
-              delete reverseMap[code];
-            }
-          }
-          for (var index in newGlyphUnicodes) {
-            if (newGlyphUnicodes.hasOwnProperty(index)) {
-              var unicode = newGlyphUnicodes[index];
-              if (reverseMap[unicode]) {
-                // avoiding assigning to the same unicode
-                glyphs[index].unicode = unusedUnicode++;
-                continue;
-              }
-              glyphs[index].unicode = unicode;
-              reverseMap[unicode] = index;
-            }
-          }
-          this.useToFontChar = true;
-        }
+            // TODO(mack): Handle the case that the glyph name cannot be
+            // mapped as specified, in which case the glyph name shall be
+            // looked up in the font program's 'post' table (if one is
+            // present) and the associated glyph id shall be used.
+            //
+            // For now, we're just using the '.notdef' glyph name in this
+            // case.
+            glyphName = glyphName || '.notdef';
 
-        // Moving all symbolic font glyphs into 0xF000 - 0xF0FF range.
-        if (this.isSymbolicFont) {
-          for (var i = 0, ii = glyphs.length; i < ii; i++) {
-            var code = glyphs[i].unicode & 0xFF;
-            var fontCharCode = SYMBOLIC_FONT_GLYPH_OFFSET | code;
-            glyphs[i].unicode = toFontChar[code] = fontCharCode;
+            var unicode = GlyphsUnicode[glyphName];
+            newToFontChar[charcode] = unicode;
           }
-          this.useToFontChar = true;
         }
+        this.toFontChar = toFontChar = newToFontChar;
 
         createGlyphNameMap(glyphs, ids, properties);
         this.glyphNameMap = properties.glyphNameMap;
@@ -3880,7 +3908,7 @@ var Font = (function FontClosure() {
       }
 
       // Converting glyphs and ids into font's cmap table
-      cmap.data = createCMapTable(glyphs, ids);
+      cmap.data = createCmapTable(glyphs, ids);
       var unicodeIsEnabled = [];
       for (var i = 0, ii = glyphs.length; i < ii; i++) {
         unicodeIsEnabled[glyphs[i].unicode] = true;
@@ -4024,7 +4052,7 @@ var Font = (function FontClosure() {
         'OS/2': stringToArray(createOS2Table(properties, charstrings)),
 
         // Character to glyphs mapping
-        'cmap': createCMapTable(charstrings.slice(),
+        'cmap': createCmapTable(charstrings.slice(),
                                 ('glyphIds' in font) ? font.glyphIds : null),
 
         // Font header

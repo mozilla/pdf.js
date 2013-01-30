@@ -52,6 +52,22 @@
        "rounds": 1,
        "type": "eq"
     },
+    {  "id": "german-umlaut",
+       "file": "pdfs/german-umlaut.pdf",
+       "md5": "331de67c1397702315970a871d8a369b",
+       "link": true,
+       "pageLimit": 1,
+       "rounds": 1,
+       "type": "eq"
+    },
+    {  "id": "issue1512",
+       "file": "pdfs/issue1512.pdf",
+       "md5": "41a19fe03d522346ee3baa732403fca4",
+       "link": true,
+       "pageLimit": 1,
+       "rounds": 1,
+       "type": "eq"
+    },
     {  "id": "pdfspec-load",
        "file": "pdfs/pdf.pdf",
        "md5": "dbdb23c939d2be09b43126c3c56060c7",
