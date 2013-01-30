@@ -10,7 +10,8 @@ describe('font_post', function() {
       var font = new Font("font", new Stream(font2154), {
         loadedName: 'font',
         type: 'TrueType',
-        differences: []
+        differences: [],
+        baseEncoding: []
       });
       ttx(font.data, function(result) { output = result; });
       runs(function() {
