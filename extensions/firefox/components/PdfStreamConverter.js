@@ -262,6 +262,7 @@ ChromeActions.prototype = {
       channel.setURI(originalUri);
       channel.contentStream = aInputStream;
       channel.QueryInterface(Ci.nsIChannel);
+      channel.contentDisposition = Ci.nsIChannel.DISPOSITION_ATTACHMENT;
       if ('nsIPrivateBrowsingChannel' in Ci &&
           channel instanceof Ci.nsIPrivateBrowsingChannel) {
         channel.setPrivate(docIsPrivate);
