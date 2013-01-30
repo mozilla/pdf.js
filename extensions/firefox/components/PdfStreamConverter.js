@@ -201,9 +201,10 @@ PdfDataListener.prototype = {
 };
 
 // All the priviledged actions.
-function ChromeActions(domWindow, dataListener) {
+function ChromeActions(domWindow, dataListener, contentDispositionFilename) {
   this.domWindow = domWindow;
   this.dataListener = dataListener;
+  this.contentDispositionFilename = contentDispositionFilename;
 }
 
 ChromeActions.prototype = {
@@ -232,6 +233,7 @@ ChromeActions.prototype = {
     return docIsPrivate;
   },
   download: function(data, sendResponse) {
+    var self = this;
     var originalUrl = data.originalUrl;
     // The data may not be downloaded so we need just retry getting the pdf with
     // the original url.
@@ -259,9 +261,13 @@ ChromeActions.prototype = {
       // so the filename will be correct.
       let channel = Cc['@mozilla.org/network/input-stream-channel;1'].
                        createInstance(Ci.nsIInputStreamChannel);
+      channel.QueryInterface(Ci.nsIChannel);
+      channel.contentDisposition = Ci.nsIChannel.DISPOSITION_ATTACHMENT;
+      if (self.contentDispositionFilename) {
+        channel.contentDispositionFilename = self.contentDispositionFilename;
+      }
       channel.setURI(originalUri);
       channel.contentStream = aInputStream;
-      channel.QueryInterface(Ci.nsIChannel);
       if ('nsIPrivateBrowsingChannel' in Ci &&
           channel instanceof Ci.nsIPrivateBrowsingChannel) {
         channel.setPrivate(docIsPrivate);
@@ -583,6 +589,10 @@ PdfStreamConverter.prototype = {
     // Creating storage for PDF data
     var contentLength = aRequest.contentLength;
     var dataListener = new PdfDataListener(contentLength);
+    var contentDispositionFilename;
+    try {
+      contentDispositionFilename = aRequest.contentDispositionFilename;
+    } catch (e) {}
     this.dataListener = dataListener;
     this.binaryStream = Cc['@mozilla.org/binaryinputstream;1']
                         .createInstance(Ci.nsIBinaryInputStream);
@@ -613,7 +623,8 @@ PdfStreamConverter.prototype = {
         var domWindow = getDOMWindow(channel);
         // Double check the url is still the correct one.
         if (domWindow.document.documentURIObject.equals(aRequest.URI)) {
-          let actions = new ChromeActions(domWindow, dataListener);
+          let actions = new ChromeActions(domWindow, dataListener,
+                                          contentDispositionFilename);
           let requestListener = new RequestListener(actions);
           domWindow.addEventListener(PDFJS_EVENT_ID, function(event) {
             requestListener.receive(event);
