@@ -351,28 +351,28 @@ class PDFTestHandler(TestHandlerBase):
                 }
                 State.stats.append(stat)
 
-        def isTaskDone():
-            last_page_num = result['lastPageNum']
-            rounds = State.manifest[id]['rounds']
-            for round in range(0,rounds):
-                if not taskResults[round]:
-                    return False
-                latest_page = taskResults[round][-1]
-                if not latest_page.page == last_page_num:
-                    return False
-            return True
+            def isTaskDone():
+                last_page_num = result['lastPageNum']
+                rounds = State.manifest[id]['rounds']
+                for round in range(0,rounds):
+                    if not taskResults[round]:
+                        return False
+                    latest_page = taskResults[round][-1]
+                    if not latest_page.page == last_page_num:
+                        return False
+                return True
 
-        if isTaskDone():
-            # sort the results since they sometimes come in out of order
-            for results in taskResults:
-                results.sort(key=lambda result: result.page)
-            check(State.manifest[id], taskResults, browser,
-                  self.server.masterMode)
-            # Please oh please GC this ...
-            del State.taskResults[browser][id]
-            State.remaining[browser] -= 1
+            if isTaskDone():
+                # sort the results since they sometimes come in out of order
+                for results in taskResults:
+                    results.sort(key=lambda result: result.page)
+                check(State.manifest[id], taskResults, browser,
+                    self.server.masterMode)
+                # Please oh please GC this ...
+                del State.taskResults[browser][id]
+                State.remaining[browser] -= 1
 
-            checkIfDone()
+                checkIfDone()
 
 def checkIfDone():
     State.done = True
