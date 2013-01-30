@@ -486,7 +486,7 @@ var PDFFindController = {
         // Search the next page.
         this.nextPageMatch();
       }
-    }.bind(this);
+    };.bind(this);
 
     var pageIdx = this.offset.pageIdx;
     var pageMatches = this.pageMatches;
@@ -2284,7 +2284,7 @@ var ThumbnailView = function thumbnailView(container, pdfPage, id) {
     this.hasImage = false;
     this.renderingState = RenderingStates.INITIAL;
     this.resume = null;
-  }
+  };
 
   function getPageDrawContext() {
     var canvas = document.createElement('canvas');
