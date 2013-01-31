@@ -984,7 +984,7 @@ target.jshint = function() {
 
   var LINT_FILES = ['make.js',
                     'external/builder/',
-                    //'external/crlfchecker/*.js',
+                    'external/crlfchecker/',
                     'src/',
                     //'web/*.js',
                     //'test/*.js',
