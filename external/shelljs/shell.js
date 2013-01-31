@@ -1312,7 +1312,7 @@ function execSync(cmd, opts) {
   if (fs.existsSync(codeFile)) _unlinkSync(codeFile);
 
   fs.writeFileSync(scriptFile, script);
-  child.exec('node '+scriptFile, { 
+  child.exec(process.argv[0] + " " + scriptFile, { 
     env: process.env,
     cwd: exports.pwd()
   });
