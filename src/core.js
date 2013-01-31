@@ -535,7 +535,8 @@ var PDFDocument = (function PDFDocumentClosure() {
     },
     getDocumentInfo: function PDFDocument_getDocumentInfo() {
       var docInfo = {
-        PDFFormatVersion: this.pdfFormatVersion
+        PDFFormatVersion: this.pdfFormatVersion,
+        IsAcroFormPresent: !!this.acroForm
       };
       if (this.xref.trailer.has('Info')) {
         var infoDict = this.xref.trailer.get('Info');
