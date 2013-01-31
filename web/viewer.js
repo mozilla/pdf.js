@@ -2078,6 +2078,9 @@ var PageView = function pageView(container, pdfPage, id, scale,
     }
 
     var ctx = canvas.getContext('2d');
+    // TODO(mack): use data attributes to store these
+    ctx._scaleX = outputScale.sx;
+    ctx._scaleY = outputScale.sy;
     ctx.save();
     ctx.fillStyle = 'rgb(255, 255, 255)';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
