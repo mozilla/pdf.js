@@ -1,5 +1,7 @@
 /* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 /* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
+/* jshint node:true */
+/* globals cat, cd, cp, echo, env, exec, exit, find, ls, mkdir, mv, process, rm, sed, target, test */
 
 'use strict';
 
@@ -39,7 +41,7 @@ var DEFINES = {
 target.all = function() {
   // Don't do anything by default
   echo('Please specify a target. Available targets:');
-  for (t in target)
+  for (var t in target)
     if (t !== 'all') echo('  ' + t);
 };
 
@@ -611,8 +613,9 @@ target.chrome = function() {
     exit(1);
   }
 
+  var manifest;
   try {
-    var manifest = JSON.parse(cat(browserManifest));
+    manifest = JSON.parse(cat(browserManifest));
   } catch (e) {
     echo('Malformed browser manifest file');
     echo(e.message);
@@ -979,7 +982,7 @@ target.jshint = function() {
   echo();
   echo('### Linting JS files (this can take a while!)');
 
-  var LINT_FILES = [//'make.js',
+  var LINT_FILES = ['make.js',
                     //'external/builder/*.js',
                     //'external/crlfchecker/*.js',
                     'src/',
