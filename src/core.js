@@ -1,5 +1,6 @@
 /* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 /* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
+/* globals assertWellFormed, calculateMD5, Catalog, error, info, isArray, isArrayBuffer, isDict, isName, isStream, isString, Lexer, Linearization, NullStream, PartialEvaluator, shadow, Stream, StreamsSequenceStream, stringToPDFString, TODO, Util, warn, XRef */
 /* Copyright 2012 Mozilla Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -76,7 +77,7 @@ function getPdf(arg, callback) {
         calledErrorBack = true;
         params.error();
       }
-    }
+    };
   }
 
   xhr.onreadystatechange = function getPdfOnreadystatechange(e) {
@@ -156,7 +157,7 @@ var Page = (function PageClosure() {
     get rotate() {
       var rotate = this.inheritPageProp('Rotate') || 0;
       // Normalize rotation so it's a multiple of 90 and between 0 and 270
-      if (rotate % 90 != 0) {
+      if (rotate % 90 !== 0) {
         rotate = 0;
       } else if (rotate >= 360) {
         rotate = rotate % 360;
