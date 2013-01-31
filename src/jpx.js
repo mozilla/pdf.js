@@ -1,5 +1,6 @@
 /* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 /* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
+/* globals error, globalScope, warn */
 /* Copyright 2012 Mozilla Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -43,7 +44,7 @@ var JpxImage = (function JpxImageClosure() {
       xhr.send(null);
     },
     parse: function JpxImage_parse(data) {
-      function ReadUint(data, offset, bytes) {
+      function readUint(data, offset, bytes) {
         var n = 0;
         for (var i = 0; i < bytes; i++)
           n = n * 256 + (data[offset + i] & 0xFF);
@@ -52,15 +53,15 @@ var JpxImage = (function JpxImageClosure() {
       var position = 0, length = data.length;
       while (position < length) {
         var headerSize = 8;
-        var lbox = ReadUint(data, position, 4);
-        var tbox = ReadUint(data, position + 4, 4);
+        var lbox = readUint(data, position, 4);
+        var tbox = readUint(data, position + 4, 4);
         position += headerSize;
         if (lbox == 1) {
-          lbox = ReadUint(data, position, 8);
+          lbox = readUint(data, position, 8);
           position += 8;
           headerSize += 8;
         }
-        if (lbox == 0)
+        if (lbox === 0)
           lbox = length - position + headerSize;
         if (lbox < headerSize)
           error('JPX error: Invalid box field size');
@@ -289,7 +290,7 @@ var JpxImage = (function JpxImageClosure() {
               tile.partsCount = data[position + 9];
 
               context.mainHeader = false;
-              if (tile.partIndex == 0) {
+              if (tile.partIndex === 0) {
                 // reset component specific settings
                 tile.COD = context.COD;
                 tile.COC = context.COC.slice(0); // clone of the global COC
@@ -300,7 +301,7 @@ var JpxImage = (function JpxImageClosure() {
               break;
             case 0xFF93: // Start of data (SOD)
               var tile = context.currentTile;
-              if (tile.partIndex == 0) {
+              if (tile.partIndex === 0) {
                 initializeTile(context, tile.index);
                 buildPackets(context);
               }
@@ -631,7 +632,7 @@ var JpxImage = (function JpxImageClosure() {
         resolutions.push(resolution);
 
         var subband;
-        if (r == 0) {
+        if (r === 0) {
           // one sub-band (LL) with last decomposition
           subband = {};
           subband.type = 'LL';
@@ -733,7 +734,7 @@ var JpxImage = (function JpxImageClosure() {
     }
     function readCodingpasses() {
       var value = readBits(1);
-      if (value == 0)
+      if (value === 0)
         return 1;
       value = (value << 1) | readBits(1);
       if (value == 0x02)
@@ -853,7 +854,7 @@ var JpxImage = (function JpxImageClosure() {
       var codeblock = codeblocks[i];
       var blockWidth = codeblock.tbx1_ - codeblock.tbx0_;
       var blockHeight = codeblock.tby1_ - codeblock.tby0_;
-      if (blockWidth == 0 || blockHeight == 0)
+      if (blockWidth === 0 || blockHeight === 0)
         continue;
       if (!('data' in codeblock))
         continue;
@@ -905,7 +906,7 @@ var JpxImage = (function JpxImageClosure() {
           var n = (bitModel.coefficentsSign[position] ? -1 : 1) *
             bitModel.coefficentsMagnitude[position];
           var nb = bitModel.bitsDecoded[position], correction;
-          if (transformation == 0 || mb > nb) {
+          if (transformation === 0 || mb > nb) {
             // use r only if transformation is irreversible or
             // not all bitplanes were decoded for reversible transformation
             n += n < 0 ? n - r : n > 0 ? n + r : 0;
@@ -974,7 +975,7 @@ var JpxImage = (function JpxImageClosure() {
     }
 
     var transformation = codingStyleParameters.transformation;
-    var transform = transformation == 0 ? new IrreversibleTransform() :
+    var transform = transformation === 0 ? new IrreversibleTransform() :
       new ReversibleTransform();
     var result = transform.calculate(subbandCoefficients,
       component.tcx0, component.tcy0);
@@ -1304,7 +1305,7 @@ var JpxImage = (function JpxImageClosure() {
           return d;
         } else {
           this.chigh -= qeIcx;
-          if ((this.a & 0x8000) == 0) {
+          if ((this.a & 0x8000) === 0) {
             var d = this.exchangeMps(cx);
             this.renormD();
             return d;
@@ -1315,14 +1316,14 @@ var JpxImage = (function JpxImageClosure() {
       },
       renormD: function ArithmeticDecoder_renormD() {
         do {
-          if (this.ct == 0)
+          if (this.ct === 0)
             this.byteIn();
 
           this.a <<= 1;
           this.chigh = ((this.chigh << 1) & 0xFFFF) | ((this.clow >> 15) & 1);
           this.clow = (this.clow << 1) & 0xFFFF;
           this.ct--;
-        } while ((this.a & 0x8000) == 0);
+        } while ((this.a & 0x8000) === 0);
       },
       exchangeMps: function ArithmeticDecoder_exchangeMps(cx) {
         var d;
@@ -1558,12 +1559,12 @@ var JpxImage = (function JpxImageClosure() {
 
               // significant but not those that have just become
               if (!coefficentsMagnitude[index] ||
-                (processingFlags[index] & processedMask) != 0)
+                (processingFlags[index] & processedMask) !== 0)
                 continue;
 
               var contextLabel = 16;
               if ((processingFlags[index] &
-                firstMagnitudeBitMask) != 0) {
+                firstMagnitudeBitMask) !== 0) {
                 processingFlags[i * width + j] ^= firstMagnitudeBitMask;
                 // first refinement
                 var significance = neighborsSignificance[index];
@@ -1604,14 +1605,14 @@ var JpxImage = (function JpxImageClosure() {
             // using the property: labels[neighborsSignificance[index]] == 0
             // when neighborsSignificance[index] == 0
             var allEmpty = i0 + 3 < height &&
-              processingFlags[index0] == 0 &&
-              processingFlags[index0 + oneRowDown] == 0 &&
-              processingFlags[index0 + twoRowsDown] == 0 &&
-              processingFlags[index0 + threeRowsDown] == 0 &&
-              neighborsSignificance[index0] == 0 &&
-              neighborsSignificance[index0 + oneRowDown] == 0 &&
-              neighborsSignificance[index0 + twoRowsDown] == 0 &&
-              neighborsSignificance[index0 + threeRowsDown] == 0;
+              processingFlags[index0] === 0 &&
+              processingFlags[index0 + oneRowDown] === 0 &&
+              processingFlags[index0 + twoRowsDown] === 0 &&
+              processingFlags[index0 + threeRowsDown] === 0 &&
+              neighborsSignificance[index0] === 0 &&
+              neighborsSignificance[index0 + oneRowDown] === 0 &&
+              neighborsSignificance[index0 + twoRowsDown] === 0 &&
+              neighborsSignificance[index0 + threeRowsDown] === 0;
             var i1 = 0, index = index0;
             var cx, i;
             if (allEmpty) {
@@ -1647,7 +1648,7 @@ var JpxImage = (function JpxImageClosure() {
                 break;
 
               if (coefficentsMagnitude[index] ||
-                (processingFlags[index] & processedMask) != 0)
+                (processingFlags[index] & processedMask) !== 0)
                 continue;
 
               var contextLabel = labels[neighborsSignificance[index]];
@@ -1733,7 +1734,7 @@ var JpxImage = (function JpxImageClosure() {
       for (var v = 0; v < height; v++) {
         if (width == 1) {
           // if width = 1, when u0 even keep items as is, when odd divide by 2
-          if ((u0 % 1) != 0) {
+          if ((u0 % 1) !== 0) {
             items[v * width] /= 2;
           }
           continue;
@@ -1768,7 +1769,7 @@ var JpxImage = (function JpxImageClosure() {
       for (var u = 0; u < width; u++) {
         if (height == 1) {
           // if height = 1, when v0 even keep items as is, when odd divide by 2
-          if ((v0 % 1) != 0) {
+          if ((v0 % 1) !== 0) {
             items[u] /= 2;
           }
           continue;
