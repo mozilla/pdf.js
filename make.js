@@ -983,7 +983,7 @@ target.jshint = function() {
   echo('### Linting JS files (this can take a while!)');
 
   var LINT_FILES = ['make.js',
-                    //'external/builder/*.js',
+                    'external/builder/',
                     //'external/crlfchecker/*.js',
                     'src/',
                     //'web/*.js',
