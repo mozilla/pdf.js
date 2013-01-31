@@ -972,6 +972,29 @@ target.lint = function() {
 };
 
 //
+// make jshint
+//
+target.jshint = function() {
+  cd(ROOT_DIR);
+  echo();
+  echo('### Linting JS files (this can take a while!)');
+
+  var LINT_FILES = [//'make.js',
+                    //'external/builder/*.js',
+                    //'external/crlfchecker/*.js',
+                    'src/',
+                    //'web/*.js',
+                    //'test/*.js',
+                    //'test/unit/*.js',
+                    //'extensions/firefox/*.js',
+                    //'extensions/firefox/components/*.js',
+                    //'extensions/chrome/*.js'
+                    ];
+
+  exec('jshint --reporter test/reporter.js ' + LINT_FILES.join(' '));
+};
+
+//
 // make clean
 //
 target.clean = function() {

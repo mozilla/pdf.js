@@ -1,0 +1,19 @@
+{
+  // Environments
+  "browser": true,
+  "devel": true,
+  "es5": true,
+  "worker": true,
+
+  // Enforcing
+
+  // Relaxing
+  "boss": true,
+  "funcscope": true,
+  "globalstrict": true,
+  "loopfunc": true,
+  "maxerr": 1000,
+  "nonstandard": true,
+  "sub": true,
+  "validthis": true
+}
