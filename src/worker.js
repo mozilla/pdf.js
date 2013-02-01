@@ -212,11 +212,13 @@ var WorkerMessageHandler = {
     handler.on('GetPageRequest', function wphSetupGetPage(data) {
       var pageNumber = data.pageIndex + 1;
       var pdfPage = pdfModel.getPage(pageNumber);
+      var encrypt = pdfModel.xref.encrypt;
       var page = {
         pageIndex: data.pageIndex,
         rotate: pdfPage.rotate,
         ref: pdfPage.ref,
-        view: pdfPage.view
+        view: pdfPage.view,
+        disableTextLayer: encrypt ? encrypt.disableTextLayer : false
       };
       handler.send('GetPage', {pageInfo: page});
     });
