@@ -1,5 +1,6 @@
 /* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 /* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
+/* globals assert, assertWellFormed, ColorSpace, Dict, Encodings, error, ErrorFont, Font, FONT_IDENTITY_MATRIX, fontCharsToUnicode, FontFlags, IDENTITY_MATRIX, info, isArray, isCmd, isDict, isEOF, isName, isNum, isStream, isString, JpegStream, Lexer, Metrics, Name, Parser, Pattern, PDFImage, PDFJS, serifFonts, stdFontMap, symbolsFonts, TilingPattern, TODO, warn */
 /* Copyright 2012 Mozilla Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -542,7 +543,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           fnArray.push(fn);
           argsArray.push(args);
           args = [];
-        } else if (obj != null) {
+        } else if (obj !== null && obj !== undefined) {
           args.push(obj instanceof Dict ? obj.getAll() : obj);
           assertWellFormed(args.length <= 33, 'Too many arguments');
         }
@@ -796,7 +797,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           }
 
           args = [];
-        } else if (obj != null) {
+        } else if (obj !== null && obj !== undefined) {
           assertWellFormed(args.length <= 33, 'Too many arguments');
           args.push(obj);
         }
@@ -1010,7 +1011,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       var result = [];
       for (var j = 0, jj = glyphsData.length; j < jj; j++) {
         var glyphID = (glyphsData[j++] << 8) | glyphsData[j];
-        if (glyphID == 0)
+        if (glyphID === 0)
           continue;
 
         var code = j >> 1;
