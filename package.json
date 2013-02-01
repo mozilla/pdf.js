@@ -1,0 +1,14 @@
+{
+  "name": "pdf.js",
+  "version": "0.7.169",
+  "dependencies": {
+    "jshint": "git://github.com/jshint/jshint.git#42ace75a"
+  },
+  "scripts": {
+    "test": "node make jshint"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/mozilla/pdf.js.git"
+  }
+}
