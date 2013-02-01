@@ -1,5 +1,6 @@
 /* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 /* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
+/* globals EOF, error, isArray, isBool, Lexer, TODO */
 /* Copyright 2012 Mozilla Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -80,7 +81,7 @@ var PDFFunction = (function PDFFunctionClosure() {
           return this.constructInterpolatedFromIR(IR);
         case CONSTRUCT_STICHED:
           return this.constructStichedFromIR(IR);
-        case CONSTRUCT_POSTSCRIPT:
+        //case CONSTRUCT_POSTSCRIPT:
         default:
           return this.constructPostScriptFromIR(IR);
       }
@@ -233,7 +234,7 @@ var PDFFunction = (function PDFFunctionClosure() {
         }
 
         return y;
-      }
+      };
     },
 
     constructInterpolated: function PDFFunction_constructInterpolated(str,
@@ -270,7 +271,7 @@ var PDFFunction = (function PDFFunctionClosure() {
 
         return out;
 
-      }
+      };
     },
 
     constructStiched: function PDFFunction_constructStiched(fn, dict, xref) {

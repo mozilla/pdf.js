@@ -1,5 +1,6 @@
 /* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 /* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
+/* globals Ascii85Stream, AsciiHexStream, CCITTFaxStream, Cmd, Dict, error, FlateStream, isArray, isCmd, isDict, isInt, isName, isNum, isRef, isString, Jbig2Stream, JpegStream, JpxStream, LZWStream, Name, NullStream, PredictorStream, Ref, RunLengthStream, warn */
 /* Copyright 2012 Mozilla Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -133,7 +134,7 @@ var Parser = (function ParserClosure() {
 
       // searching for the /EI\s/
       var state = 0, ch;
-      while (state != 4 && (ch = stream.getByte()) != null) {
+      while (state != 4 && (ch = stream.getByte()) !== null && ch !== undefined) {
         switch (ch) {
           case 0x20:
           case 0x0D:
@@ -364,7 +365,7 @@ var Lexer = (function LexerClosure() {
             str += ch;
             break;
           case ')':
-            if (--numParen == 0) {
+            if (--numParen === 0) {
               done = true;
             } else {
               str += ch;
@@ -540,6 +541,7 @@ var Lexer = (function LexerClosure() {
             stream.skip();
             return Cmd.get('>>');
           }
+          return Cmd.get(ch);
         case '{':
         case '}':
           return Cmd.get(ch);

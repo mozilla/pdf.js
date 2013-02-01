@@ -1,5 +1,6 @@
 /* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 /* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
+/* globals bytesToString, DecryptStream, error, isInt, isName, Name, PasswordException, stringToBytes */
 /* Copyright 2012 Mozilla Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -373,7 +374,7 @@ var AES128Cipher = (function AES128CipherClosure() {
     this.buffer = buffer;
     this.bufferLength = bufferLength;
     this.iv = iv;
-    if (result.length == 0)
+    if (result.length === 0)
       return new Uint8Array([]);
     if (result.length == 1)
       return result[0];
@@ -553,7 +554,7 @@ var CipherTransformFactory = (function CipherTransformFactoryClosure() {
     this.algorithm = algorithm;
     var keyLength = dict.get('Length') || 40;
     if (!isInt(keyLength) ||
-      keyLength < 40 || (keyLength % 8) != 0)
+      keyLength < 40 || (keyLength % 8) !== 0)
       error('invalid key length');
     // prepare keys
     var ownerPassword = stringToBytes(dict.get('O'));
@@ -618,7 +619,7 @@ var CipherTransformFactory = (function CipherTransformFactoryClosure() {
   function buildCipherConstructor(cf, name, num, gen, key) {
     var cryptFilter = cf.get(name.name);
     var cfm;
-    if (cryptFilter != null)
+    if (cryptFilter !== null && cryptFilter !== undefined)
       cfm = cryptFilter.get('CFM');
     if (!cfm || cfm.name == 'None') {
       return function cipherTransformFactoryBuildCipherConstructorNone() {

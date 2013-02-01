@@ -1,5 +1,6 @@
 /* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 /* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
+/* globals bytesToString, ColorSpace, Dict, EOF, error, info, Jbig2Image, JpegImage, JpxImage, Lexer */
 /* Copyright 2012 Mozilla Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -247,7 +248,7 @@ var StreamsSequenceStream = (function StreamsSequenceStreamClosure() {
     function streamSequenceStreamReadBlock() {
 
     var streams = this.streams;
-    if (streams.length == 0) {
+    if (streams.length === 0) {
       this.eof = true;
       return;
     }
@@ -367,7 +368,7 @@ var FlateStream = (function FlateStreamClosure() {
       error('Invalid header in flate stream: ' + cmf + ', ' + flg);
     if ((cmf & 0x0f) != 0x08)
       error('Unknown compression method in flate stream: ' + cmf + ', ' + flg);
-    if ((((cmf << 8) + flg) % 31) != 0)
+    if ((((cmf << 8) + flg) % 31) !== 0)
       error('Bad FCHECK in flate stream: ' + cmf + ', ' + flg);
     if (flg & 0x20)
       error('FDICT bit set in flate stream: ' + cmf + ', ' + flg);
@@ -421,7 +422,7 @@ var FlateStream = (function FlateStreamClosure() {
     var code = codes[codeBuf & ((1 << maxLen) - 1)];
     var codeLen = code >> 16;
     var codeVal = code & 0xffff;
-    if (codeSize == 0 || codeSize < codeLen || codeLen == 0)
+    if (codeSize === 0 || codeSize < codeLen || codeLen === 0)
       error('Bad encoding in flate stream');
     this.codeBuf = (codeBuf >> codeLen);
     this.codeSize = (codeSize - codeLen);
@@ -475,7 +476,7 @@ var FlateStream = (function FlateStreamClosure() {
       this.eof = true;
     hdr >>= 1;
 
-    if (hdr == 0) { // uncompressed block
+    if (hdr === 0) { // uncompressed block
       var bytes = this.bytes;
       var bytesPos = this.bytesPos;
       var b;
@@ -708,7 +709,7 @@ var PredictorStream = (function PredictorStreamClosure() {
     var buffer = this.ensureBuffer(bufferLength + rowBytes);
 
     var prevRow = buffer.subarray(bufferLength - rowBytes, bufferLength);
-    if (prevRow.length == 0)
+    if (prevRow.length === 0)
       prevRow = new Uint8Array(rowBytes);
 
     var j = bufferLength;
@@ -793,10 +794,10 @@ var JpegStream = (function JpegStreamClosure() {
     // Looking for APP14, 'Adobe'
     for (var i = 0; i < maxBytesScanned; ++i) {
       if (bytes[i] == 0xFF && bytes[i + 1] == 0xEE &&
-          bytes[i + 2] == 0x00 && bytes[i + 3] == 0x0E &&
+          bytes[i + 2] === 0x00 && bytes[i + 3] == 0x0E &&
           bytes[i + 4] == 0x41 && bytes[i + 5] == 0x64 &&
           bytes[i + 6] == 0x6F && bytes[i + 7] == 0x62 &&
-          bytes[i + 8] == 0x65 && bytes[i + 9] == 0x00)
+          bytes[i + 8] == 0x65 && bytes[i + 9] === 0x00)
           return true;
       // scanning until frame tag
       if (bytes[i] == 0xFF && bytes[i + 1] == 0xC0)
@@ -1053,7 +1054,7 @@ var DecryptStream = (function DecryptStreamClosure() {
 
   DecryptStream.prototype.readBlock = function DecryptStream_readBlock() {
     var chunk = this.str.getBytes(chunkSize);
-    if (!chunk || chunk.length == 0) {
+    if (!chunk || chunk.length === 0) {
       this.eof = true;
       return;
     }
@@ -1695,7 +1696,7 @@ var CCITTFaxStream = (function CCITTFaxStreamClosure() {
     this.columns = params.get('Columns') || 1728;
     this.rows = params.get('Rows') || 0;
     var eoblock = params.get('EndOfBlock');
-    if (eoblock == null)
+    if (eoblock === null || eoblock === undefined)
       eoblock = true;
     this.eoblock = eoblock;
     this.black = params.get('BlackIs1') || false;
@@ -1714,7 +1715,7 @@ var CCITTFaxStream = (function CCITTFaxStreamClosure() {
     this.buf = EOF;
 
     var code1;
-    while ((code1 = this.lookBits(12)) == 0) {
+    while ((code1 = this.lookBits(12)) === 0) {
       this.eatBits(1);
     }
     if (code1 == 1) {
@@ -1798,7 +1799,7 @@ var CCITTFaxStream = (function CCITTFaxStreamClosure() {
 
     var refPos, blackPixels, bits;
 
-    if (this.outputBits == 0) {
+    if (this.outputBits === 0) {
       if (this.eof)
         return null;
 
@@ -1972,7 +1973,7 @@ var CCITTFaxStream = (function CCITTFaxStreamClosure() {
         this.eof = true;
       } else {
         code1 = this.lookBits(12);
-        while (code1 == 0) {
+        while (code1 === 0) {
           this.eatBits(1);
           code1 = this.lookBits(12);
         }
@@ -2040,7 +2041,7 @@ var CCITTFaxStream = (function CCITTFaxStreamClosure() {
     if (this.outputBits >= 8) {
       this.buf = (this.codingPos & 1) ? 0 : 0xFF;
       this.outputBits -= 8;
-      if (this.outputBits == 0 && codingLine[this.codingPos] < columns) {
+      if (this.outputBits === 0 && codingLine[this.codingPos] < columns) {
         this.codingPos++;
         this.outputBits = (codingLine[this.codingPos] -
                            codingLine[this.codingPos - 1]);
@@ -2139,7 +2140,7 @@ var CCITTFaxStream = (function CCITTFaxStreamClosure() {
       if (code == EOF)
         return 1;
 
-      if ((code >> 5) == 0)
+      if ((code >> 5) === 0)
         p = whiteTable1[code];
       else
         p = whiteTable2[code >> 3];
@@ -2170,9 +2171,9 @@ var CCITTFaxStream = (function CCITTFaxStreamClosure() {
       code = this.lookBits(13);
       if (code == EOF)
         return 1;
-      if ((code >> 7) == 0)
+      if ((code >> 7) === 0)
         p = blackTable1[code];
-      else if ((code >> 9) == 0 && (code >> 7) != 0)
+      else if ((code >> 9) === 0 && (code >> 7) !== 0)
         p = blackTable2[(code >> 1) - 64];
       else
         p = blackTable3[code >> 7];
@@ -2202,8 +2203,8 @@ var CCITTFaxStream = (function CCITTFaxStreamClosure() {
   CCITTFaxStream.prototype.lookBits = function CCITTFaxStream_lookBits(n) {
     var c;
     while (this.inputBits < n) {
-      if ((c = this.str.getByte()) == null) {
-        if (this.inputBits == 0)
+      if ((c = this.str.getByte()) === null || c === undefined) {
+        if (this.inputBits === 0)
           return EOF;
         return ((this.inputBuf << (n - this.inputBits)) &
                 (0xFFFF >> (16 - n)));
@@ -2256,7 +2257,7 @@ var LZWStream = (function LZWStreamClosure() {
     var cachedData = this.cachedData;
     while (bitsCached < n) {
       var c = this.str.getByte();
-      if (c == null) {
+      if (c === null || c === undefined) {
         this.eof = true;
         return null;
       }

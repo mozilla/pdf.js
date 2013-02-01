@@ -1,5 +1,6 @@
 /* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 /* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
+/* globals ColorSpace, error, isArray, isStream, JpegStream, Name, Promise, Stream, TODO, warn */
 /* Copyright 2012 Mozilla Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -260,7 +261,7 @@ var PDFImage = (function PDFImageClosure() {
         var buf = 0;
 
         for (var i = 0, ii = length; i < ii; ++i) {
-          if (i % rowComps == 0) {
+          if (i % rowComps === 0) {
             mask = 0;
             buf = 0;
           } else {
@@ -278,7 +279,7 @@ var PDFImage = (function PDFImageClosure() {
         // The general case that handles all other bpc values.
         var bits = 0, buf = 0;
         for (var i = 0, ii = length; i < ii; ++i) {
-          if (i % rowComps == 0) {
+          if (i % rowComps === 0) {
             buf = 0;
             bits = 0;
           }
@@ -374,7 +375,7 @@ var PDFImage = (function PDFImageClosure() {
             buf = imgArray[imgArrayPos++];
             mask = 128;
           }
-          if (!(buf & mask) == inverseDecode) {
+          if (!(buf & mask) === inverseDecode) {
             buffer[bufferPos] = 0;
           }
           bufferPos += 4;

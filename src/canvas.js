@@ -1,5 +1,6 @@
 /* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 /* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
+/* globals ColorSpace, DeviceCmykCS, DeviceGrayCS, DeviceRgbCS, error, FONT_IDENTITY_MATRIX, IDENTITY_MATRIX, ImageData, isArray, isNum, isString, Pattern, TilingPattern, TODO, Util, warn */
 /* Copyright 2012 Mozilla Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -238,7 +239,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
           buf = imgArray[imgArrayPos++];
           mask = 128;
         }
-        if (!(buf & mask) == inverseDecode) {
+        if (!(buf & mask) === inverseDecode) {
           buffer[bufferPos] = 0;
         }
         bufferPos += 4;
@@ -932,7 +933,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
         var lineWidth = current.lineWidth;
         var a1 = current.textMatrix[0], b1 = current.textMatrix[1];
         var scale = Math.sqrt(a1 * a1 + b1 * b1);
-        if (scale == 0 || lineWidth == 0)
+        if (scale === 0 || lineWidth === 0)
           lineWidth = this.getSinglePixelWidth();
         else
           lineWidth /= scale;

@@ -1,5 +1,7 @@
 /* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 /* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
+/* jshint node:true */
+/* globals cat, cd, cp, echo, env, exec, exit, find, ls, mkdir, mv, process, rm, sed, target, test */
 
 'use strict';
 
@@ -39,7 +41,7 @@ var DEFINES = {
 target.all = function() {
   // Don't do anything by default
   echo('Please specify a target. Available targets:');
-  for (t in target)
+  for (var t in target)
     if (t !== 'all') echo('  ' + t);
 };
 
@@ -611,8 +613,9 @@ target.chrome = function() {
     exit(1);
   }
 
+  var manifest;
   try {
-    var manifest = JSON.parse(cat(browserManifest));
+    manifest = JSON.parse(cat(browserManifest));
   } catch (e) {
     echo('Malformed browser manifest file');
     echo(e.message);
@@ -969,6 +972,29 @@ target.lint = function() {
   exec('gjslint --nojsdoc ' + LINT_FILES.join(' '));
 
   crlfchecker.checkIfCrlfIsPresent(LINT_FILES);
+};
+
+//
+// make jshint
+//
+target.jshint = function() {
+  cd(ROOT_DIR);
+  echo();
+  echo('### Linting JS files (this can take a while!)');
+
+  var LINT_FILES = ['make.js',
+                    'external/builder/',
+                    'external/crlfchecker/',
+                    'src/',
+                    //'web/*.js',
+                    //'test/*.js',
+                    //'test/unit/*.js',
+                    //'extensions/firefox/*.js',
+                    //'extensions/firefox/components/*.js',
+                    //'extensions/chrome/*.js'
+                    ];
+
+  exec('jshint --reporter test/reporter.js ' + LINT_FILES.join(' '));
 };
 
 //

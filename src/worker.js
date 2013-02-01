@@ -1,5 +1,6 @@
 /* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 /* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
+/* globals CanvasGraphics, error, globalScope, InvalidPDFException, log, MissingPDFException, PasswordException, PDFDocument, PDFJS, Promise, Stream, UnknownErrorException, warn */
 /* Copyright 2012 Mozilla Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -252,19 +253,21 @@ var WorkerMessageHandler = {
         var minimumStackMessage =
             'worker.js: while trying to getPage() and getOperatorList()';
 
+        var wrappedException;
+
         // Turn the error into an obj that can be serialized
         if (typeof e === 'string') {
-          e = {
+          wrappedException = {
             message: e,
             stack: minimumStackMessage
           };
         } else if (typeof e === 'object') {
-          e = {
+          wrappedException = {
             message: e.message || e.toString(),
             stack: e.stack || minimumStackMessage
           };
         } else {
-          e = {
+          wrappedException = {
             message: 'Unknown exception type: ' + (typeof e),
             stack: minimumStackMessage
           };
@@ -272,7 +275,7 @@ var WorkerMessageHandler = {
 
         handler.send('PageError', {
           pageNum: pageNum,
-          error: e
+          error: wrappedException
         });
         return;
       }
@@ -284,7 +287,7 @@ var WorkerMessageHandler = {
       var fonts = {};
       for (var i = 0, ii = dependency.length; i < ii; i++) {
         var dep = dependency[i];
-        if (dep.indexOf('g_font_') == 0) {
+        if (dep.indexOf('g_font_') === 0) {
           fonts[dep] = true;
         }
       }
@@ -341,7 +344,7 @@ var workerConsole = {
 
   timeEnd: function timeEnd(name) {
     var time = consoleTimer[name];
-    if (time == null) {
+    if (!time) {
       error('Unkown timer name ' + name);
     }
     this.log('Timer:', name, Date.now() - time);
