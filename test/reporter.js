@@ -23,6 +23,9 @@ module.exports = {
     if (str) {
       process.stdout.write(str + "\n" + len + " error" +
         ((len === 1) ? "" : "s") + "\n");
+      process.exit(2);
+    } else {
+      process.exit(0);
     }
   }
 };
