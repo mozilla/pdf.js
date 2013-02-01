@@ -994,7 +994,7 @@ target.jshint = function() {
                     //'extensions/chrome/*.js'
                     ];
 
-  exec('jshint --reporter test/reporter.js ' + LINT_FILES.join(' '));
+  exit(exec('./node_modules/.bin/jshint --reporter test/reporter.js ' + LINT_FILES.join(' ')).code);
 };
 
 //
