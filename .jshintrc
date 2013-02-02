@@ -6,6 +6,7 @@
   "worker": true,
 
   // Enforcing
+  "maxlen": 80,
 
   // Relaxing
   "boss": true,
