@@ -6,6 +6,8 @@
   "worker": true,
 
   // Enforcing
+  "maxlen": 80,
+  "quotmark": "single",
 
   // Relaxing
   "boss": true,

@@ -1,6 +1,5 @@
 /* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 /* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
-/* globals assert, assertWellFormed, ColorSpace, Dict, Encodings, error, ErrorFont, Font, FONT_IDENTITY_MATRIX, fontCharsToUnicode, FontFlags, IDENTITY_MATRIX, info, isArray, isCmd, isDict, isEOF, isName, isNum, isStream, isString, JpegStream, Lexer, Metrics, Name, Parser, Pattern, PDFImage, PDFJS, serifFonts, stdFontMap, symbolsFonts, TilingPattern, TODO, warn */
 /* Copyright 2012 Mozilla Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,6 +14,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/* globals assert, assertWellFormed, ColorSpace, Dict, Encodings, error,
+           ErrorFont, Font, FONT_IDENTITY_MATRIX, fontCharsToUnicode, FontFlags,
+           IDENTITY_MATRIX, info, isArray, isCmd, isDict, isEOF, isName, isNum,
+           isStream, isString, JpegStream, Lexer, Metrics, Name, Parser,
+           Pattern, PDFImage, PDFJS, serifFonts, stdFontMap, symbolsFonts,
+           TilingPattern, TODO, warn */
 
 'use strict';
 
@@ -729,7 +734,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
             case 'Tj':
               chunk += fontCharsToUnicode(args[0], font);
               break;
-            case "'":
+            case '\'':
               // For search, adding a extra white space for line breaks would be
               // better here, but that causes too much spaces in the
               // text-selection divs.

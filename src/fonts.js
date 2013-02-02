@@ -1,6 +1,5 @@
 /* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 /* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
-/* globals assert, bytesToString, CIDToUnicodeMaps, error, ExpertCharset, ExpertSubsetCharset, FileReaderSync, globalScope, GlyphsUnicode, info, isArray, isNum, ISOAdobeCharset, isWorker, PDFJS, Stream, stringToBytes, TextDecoder, warn */
 /* Copyright 2012 Mozilla Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,6 +14,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/* globals assert, bytesToString, CIDToUnicodeMaps, error, ExpertCharset,
+           ExpertSubsetCharset, FileReaderSync, globalScope, GlyphsUnicode,
+           info, isArray, isNum, ISOAdobeCharset, isWorker, PDFJS, Stream,
+           stringToBytes, TextDecoder, warn */
 
 'use strict';
 
@@ -4309,7 +4312,7 @@ var Font = (function FontClosure() {
       // Add the font-face rule to the document
       var url = ('url(data:' + this.mimetype + ';base64,' +
                  window.btoa(data) + ');');
-      var rule = "@font-face { font-family:'" + fontName + "';src:" + url + '}';
+      var rule = '@font-face { font-family:"' + fontName + '";src:' + url + '}';
 
       var styleElement = document.getElementById('PDFJS_FONT_STYLE_TAG');
       if (!styleElement) {
