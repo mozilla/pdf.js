@@ -971,6 +971,9 @@ target.lint = function() {
 
   exec('gjslint --nojsdoc ' + LINT_FILES.join(' '));
 
+  echo('Discarding the results by printing \"files checked, no errors found\"');
+  echo('Use \"node make jshint\"');
+
   crlfchecker.checkIfCrlfIsPresent(LINT_FILES);
 };
 
