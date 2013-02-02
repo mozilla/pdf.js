@@ -1,6 +1,5 @@
 /* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 /* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
-/* globals Ascii85Stream, AsciiHexStream, CCITTFaxStream, Cmd, Dict, error, FlateStream, isArray, isCmd, isDict, isInt, isName, isNum, isRef, isString, Jbig2Stream, JpegStream, JpxStream, LZWStream, Name, NullStream, PredictorStream, Ref, RunLengthStream, warn */
 /* Copyright 2012 Mozilla Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,6 +14,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/* globals Ascii85Stream, AsciiHexStream, CCITTFaxStream, Cmd, Dict, error,
+           FlateStream, isArray, isCmd, isDict, isInt, isName, isNum, isRef,
+           isString, Jbig2Stream, JpegStream, JpxStream, LZWStream, Name,
+           NullStream, PredictorStream, Ref, RunLengthStream, warn */
 
 'use strict';
 
@@ -134,7 +137,8 @@ var Parser = (function ParserClosure() {
 
       // searching for the /EI\s/
       var state = 0, ch;
-      while (state != 4 && (ch = stream.getByte()) !== null && ch !== undefined) {
+      while (state != 4 &&
+             (ch = stream.getByte()) !== null && ch !== undefined) {
         switch (ch) {
           case 0x20:
           case 0x0D:
@@ -477,13 +481,13 @@ var Lexer = (function LexerClosure() {
           if (isFirstHex) {
             firstDigit = toHexDigit(ch);
             if (firstDigit === -1) {
-              warn("Ignoring invalid character '" + ch + "' in hex string");
+              warn('Ignoring invalid character "' + ch + '" in hex string');
               continue;
             }
           } else {
             secondDigit = toHexDigit(ch);
             if (secondDigit === -1) {
-              warn("Ignoring invalid character '" + ch + "' in hex string");
+              warn('Ignoring invalid character "' + ch + '" in hex string');
               continue;
             }
             str += String.fromCharCode((firstDigit << 4) | secondDigit);
