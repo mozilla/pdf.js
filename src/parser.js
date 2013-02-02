@@ -481,13 +481,13 @@ var Lexer = (function LexerClosure() {
           if (isFirstHex) {
             firstDigit = toHexDigit(ch);
             if (firstDigit === -1) {
-              warn("Ignoring invalid character '" + ch + "' in hex string");
+              warn('Ignoring invalid character "' + ch + '" in hex string');
               continue;
             }
           } else {
             secondDigit = toHexDigit(ch);
             if (secondDigit === -1) {
-              warn("Ignoring invalid character '" + ch + "' in hex string");
+              warn('Ignoring invalid character "' + ch + '" in hex string');
               continue;
             }
             str += String.fromCharCode((firstDigit << 4) | secondDigit);

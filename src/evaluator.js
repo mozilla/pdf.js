@@ -734,7 +734,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
             case 'Tj':
               chunk += fontCharsToUnicode(args[0], font);
               break;
-            case "'":
+            case '\'':
               // For search, adding a extra white space for line breaks would be
               // better here, but that causes too much spaces in the
               // text-selection divs.
