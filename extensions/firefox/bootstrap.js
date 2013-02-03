@@ -14,16 +14,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/* jshint esnext:true */
+/* globals Components, Services, dump, XPCOMUtils, PdfStreamConverter,
+           APP_SHUTDOWN */
 
 'use strict';
 
 const RESOURCE_NAME = 'pdf.js';
 const EXT_PREFIX = 'extensions.uriloader@pdf.js';
 
-let Cc = Components.classes;
-let Ci = Components.interfaces;
-let Cm = Components.manager;
-let Cu = Components.utils;
+const Cc = Components.classes;
+const Ci = Components.interfaces;
+const Cm = Components.manager;
+const Cu = Components.utils;
+const Cr = Components.results;
 
 Cu.import('resource://gre/modules/XPCOMUtils.jsm');
 Cu.import('resource://gre/modules/Services.jsm');
@@ -37,7 +41,7 @@ function getBoolPref(pref, def) {
 }
 
 function setStringPref(pref, value) {
-  let str = Cc['@mozilla.org/supports-string;1']
+  var str = Cc['@mozilla.org/supports-string;1']
               .createInstance(Ci.nsISupportsString);
   str.data = value;
   Services.prefs.setComplexValue(pref, Ci.nsISupportsString, str);
@@ -50,7 +54,7 @@ function log(str) {
 }
 
 // Register/unregister a constructor as a component.
-let Factory = {
+var Factory = {
   QueryInterface: XPCOMUtils.generateQI([Ci.nsIFactory]),
   _targetConstructor: null,
 
@@ -73,7 +77,7 @@ let Factory = {
   createInstance: function createInstance(aOuter, iid) {
     if (aOuter !== null)
       throw Cr.NS_ERROR_NO_AGGREGATION;
-    return (new (this._targetConstructor)).QueryInterface(iid);
+    return (new (this._targetConstructor)()).QueryInterface(iid);
   },
 
   // nsIFactory
@@ -83,7 +87,7 @@ let Factory = {
   }
 };
 
-let pdfStreamConverterUrl = null;
+var pdfStreamConverterUrl = null;
 
 // As of Firefox 13 bootstrapped add-ons don't support automatic registering and
 // unregistering of resource urls and components/contracts. Until then we do
