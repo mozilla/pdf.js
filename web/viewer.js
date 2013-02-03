@@ -1350,6 +1350,14 @@ var PDFView = {
         // AcroForm/XFA was found
         PDFView.fallback();
       }
+
+      if (info.IsTextCopyDisabled) {
+        document.getElementById('viewerContainer').classList
+          .add('copy-protection');
+      } else {
+        document.getElementById('viewerContainer').classList
+          .remove('copy-protection');
+      }
     });
   },
 
