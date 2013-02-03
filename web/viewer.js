@@ -2985,6 +2985,20 @@ document.addEventListener('DOMContentLoaded', function webViewerLoad(evt) {
       PDFView.rotatePages(90);
     });
 
+  document.addEventListener('copy',
+    function(e) {
+      if (PDFView.documentInfo.IsTextCopyDisabled) {
+        e.preventDefault();
+      }
+    });
+
+  document.addEventListener('cut',
+    function(e) {
+      if (PDFView.documentInfo.IsTextCopyDisabled) {
+        e.preventDefault();
+      }
+    });
+
 //#if (FIREFOX || MOZCENTRAL)
 //if (FirefoxCom.requestSync('getLoadingType') == 'passive') {
 //  PDFView.setTitleUsingUrl(file);
