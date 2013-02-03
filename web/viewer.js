@@ -2487,6 +2487,7 @@ var TextLayerBuilder = function textLayerBuilder(textLayerDiv, pageIdx) {
   this.divContentDone = false;
   this.pageIdx = pageIdx;
   this.matches = [];
+  this.selectable = true;
 
   this.beginLayout = function textLayerBuilderBeginLayout() {
     this.textDivs = [];
@@ -2501,6 +2502,7 @@ var TextLayerBuilder = function textLayerBuilder(textLayerDiv, pageIdx) {
 
   this.renderLayer = function textLayerBuilderRenderLayer() {
     var self = this;
+    var bidiTexts = this.textContent.bidiTexts;
     var textDivs = this.textDivs;
     var textLayerDiv = this.textLayerDiv;
     var canvas = document.createElement('canvas');
@@ -2517,7 +2519,7 @@ var TextLayerBuilder = function textLayerBuilder(textLayerDiv, pageIdx) {
       textLayerFrag.appendChild(textDiv);
 
       ctx.font = textDiv.style.fontSize + ' ' + textDiv.style.fontFamily;
-      var width = ctx.measureText(textDiv.textContent).width;
+      var width = ctx.measureText(bidiTexts[i].str).width;
 
       if (width > 0) {
         var textScale = textDiv.dataset.canvasWidth / width;
@@ -2587,7 +2589,9 @@ var TextLayerBuilder = function textLayerBuilder(textLayerDiv, pageIdx) {
       var bidiText = bidiTexts[i];
       var textDiv = textDivs[i];
 
-      textDiv.textContent = bidiText.str;
+      if (this.selectable) {
+        textDiv.textContent = bidiText.str;
+      }
       textDiv.dir = bidiText.ltr ? 'ltr' : 'rtl';
     }
 
@@ -2672,39 +2676,46 @@ var TextLayerBuilder = function textLayerBuilder(textLayerDiv, pageIdx) {
       offset: undefined
     };
 
+    var canvas = document.createElement('canvas');
+    var ctx = canvas.getContext('2d');
+
     function beginText(begin, className) {
       var divIdx = begin.divIdx;
       var div = textDivs[divIdx];
-      div.textContent = '';
+      ctx.font = div.style.fontStyle + ' ' + div.style.fontSize + ' ' +
+                 div.style.fontFamily;
 
       var content = bidiTexts[divIdx].str.substring(0, begin.offset);
-      var node = document.createTextNode(content);
+      var width = ctx.measureText(content).width;
       if (className) {
         var isSelected = isSelectedPage &&
                           divIdx === selectedMatchIdx;
         var span = document.createElement('span');
         span.className = className + (isSelected ? ' selected' : '');
-        span.appendChild(node);
+        CustomStyle.setProp('width', span, width + 'px');
         div.appendChild(span);
         return;
       }
-      div.appendChild(node);
     }
 
     function appendText(from, to, className) {
       var divIdx = from.divIdx;
       var div = textDivs[divIdx];
+      ctx.font = div.style.fontStyle + ' ' + div.style.fontSize + ' ' +
+                 div.style.fontFamily;
 
+      var preText = bidiTexts[divIdx].str.substring(0, from.offset);
+      var left = ctx.measureText(preText).width;
       var content = bidiTexts[divIdx].str.substring(from.offset, to.offset);
-      var node = document.createTextNode(content);
+      var width = ctx.measureText(content).width;
       if (className) {
         var span = document.createElement('span');
         span.className = className;
-        span.appendChild(node);
+        CustomStyle.setProp('left', span, left + 'px');
+        CustomStyle.setProp('width', span, width + 'px');
         div.appendChild(span);
         return;
       }
-      div.appendChild(node);
     }
 
     function highlightDiv(divIdx, className) {

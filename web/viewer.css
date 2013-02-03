@@ -1177,6 +1177,11 @@ canvas {
 .textLayer .highlight {
   margin: -1px;
   padding: 1px;
+  position: absolute;
+  left: 0;
+  top: 0.1em;
+  height: 1.1em;
+  pointer-events: none;
 
   background-color: rgba(180, 0, 170, 0.2);
   border-radius: 4px;
