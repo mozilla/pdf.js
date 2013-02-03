@@ -220,7 +220,7 @@ var WorkerMessageHandler = {
         rotate: pdfPage.rotate,
         ref: pdfPage.ref,
         view: pdfPage.view,
-        disableTextLayer: encrypt ? encrypt.disableTextLayer : false
+        disableSelect: encrypt ? encrypt.disableSelect : false
       };
       handler.send('GetPage', {pageInfo: page});
     });

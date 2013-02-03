@@ -297,8 +297,9 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
             return;
           }
 
+          params.textLayer.selectable = !this.pageInfo.disableSelect;
           var gfx = new CanvasGraphics(params.canvasContext, this.commonObjs,
-            this.objs, !this.pageInfo.disableTextLayer && params.textLayer);
+            this.objs, params.textLayer);
           try {
             this.display(gfx, params.viewport, complete, continueCallback);
           } catch (e) {
