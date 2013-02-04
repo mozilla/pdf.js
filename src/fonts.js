@@ -632,7 +632,9 @@ var FontLoader = {
           }
           request.complete();
           // cleanup
-          document.body.removeChild(frame);
+          if (frame) {
+            document.body.removeChild(frame);
+          }
           window.removeEventListener('message', fontLoaderMessage, false);
         },
         false);
@@ -657,6 +659,17 @@ var FontLoader = {
         src += '<p style="font-family:\'' + names[i] + '\'">Hi</p>';
       }
       src += '</body></html>';
+
+      var MAX_IFRAME_SRC_LENGTH = 1000000, IFRAME_TIMEOUT = 2000;
+      // Chrome fails for long src attributes (see issue 174023)
+      if (src.length > MAX_IFRAME_SRC_LENGTH) {
+        // ... waiting for some fixed period of time instead
+        window.setTimeout(function() {
+          window.postMessage(requestId, '*');
+        }, IFRAME_TIMEOUT);
+        return;
+      }
+
       var frame = document.createElement('iframe');
       frame.src = 'data:text/html,' + src;
       frame.setAttribute('style',
