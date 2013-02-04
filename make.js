@@ -1,5 +1,22 @@
 /* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 /* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
+/* Copyright 2012 Mozilla Foundation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+/* jshint node:true */
+/* globals cat, cd, cp, echo, env, exec, exit, find, ls, mkdir, mv, process, rm,
+           sed, target, test */
 
 'use strict';
 
@@ -39,12 +56,12 @@ var DEFINES = {
 target.all = function() {
   // Don't do anything by default
   echo('Please specify a target. Available targets:');
-  for (t in target)
+  for (var t in target)
     if (t !== 'all') echo('  ' + t);
 };
 
 
-///////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 //
 // Production stuff
 //
@@ -85,7 +102,7 @@ target.generic = function() {
       ['external/webL10n/l10n.js', GENERIC_DIR + '/web'],
       ['web/compatibility.js', GENERIC_DIR + '/web'],
       ['web/compressed.tracemonkey-pldi-09.pdf', GENERIC_DIR + '/web'],
-      ['web/locale.properties', GENERIC_DIR + '/web']
+      ['web/locale', GENERIC_DIR + '/web']
     ],
     preprocess: [
       [BUILD_TARGET, GENERIC_DIR + BUILD_TARGET],
@@ -123,6 +140,7 @@ target.web = function() {
   cp(CHROME_BUILD_DIR + '/*.crx', FIREFOX_BUILD_DIR + '/*.rdf',
      GH_PAGES_DIR + EXTENSION_SRC_DIR + 'chrome/');
   cp('web/index.html.template', GH_PAGES_DIR + '/index.html');
+  cp('-R', 'test/features', GH_PAGES_DIR);
 
   cd(GH_PAGES_DIR);
   exec('git init');
@@ -143,7 +161,7 @@ target.locale = function() {
   var METADATA_OUTPUT = 'extensions/firefox/metadata.inc';
   var CHROME_MANIFEST_OUTPUT = 'extensions/firefox/chrome.manifest.inc';
   var EXTENSION_LOCALE_OUTPUT = 'extensions/firefox/locale';
-  var VIEWER_OUTPUT = 'web/locale.properties';
+  var VIEWER_LOCALE_OUTPUT = 'web/locale/';
 
   cd(ROOT_DIR);
   echo();
@@ -151,6 +169,8 @@ target.locale = function() {
 
   rm('-rf', EXTENSION_LOCALE_OUTPUT);
   mkdir('-p', EXTENSION_LOCALE_OUTPUT);
+  rm('-rf', VIEWER_LOCALE_OUTPUT);
+  mkdir('-p', VIEWER_LOCALE_OUTPUT);
 
   var subfolders = ls(LOCALE_SRC_DIR);
   subfolders.sort();
@@ -169,13 +189,15 @@ target.locale = function() {
     }
 
     mkdir('-p', EXTENSION_LOCALE_OUTPUT + '/' + locale);
+    mkdir('-p', VIEWER_LOCALE_OUTPUT + '/' + locale);
     chromeManifestContent += 'locale  pdf.js  ' + locale + '  locale/' +
                              locale + '/\n';
 
     if (test('-f', path + '/viewer.properties')) {
-      var properties = cat(path + '/viewer.properties');
-      viewerOutput += '[' + locale + ']\n' + properties + '\n';
+      viewerOutput += '[' + locale + ']\n' +
+                      '@import url(' + locale + '/viewer.properties)\n\n';
       cp(path + '/viewer.properties', EXTENSION_LOCALE_OUTPUT + '/' + locale);
+      cp(path + '/viewer.properties', VIEWER_LOCALE_OUTPUT + '/' + locale);
     }
 
     if (test('-f', path + '/chrome.properties')) {
@@ -187,7 +209,7 @@ target.locale = function() {
       metadataContent += metadata;
     }
   }
-  viewerOutput.to(VIEWER_OUTPUT);
+  viewerOutput.to(VIEWER_LOCALE_OUTPUT + 'locale.properties');
   metadataContent.to(METADATA_OUTPUT);
   chromeManifestContent.to(CHROME_MANIFEST_OUTPUT);
 };
@@ -197,6 +219,8 @@ target.locale = function() {
 // Bundles all source files into one wrapper 'pdf.js' file, in the given order.
 //
 target.bundle = function() {
+  target.buildnumber();
+
   cd(ROOT_DIR);
   echo();
   echo('### Bundling files into ' + BUILD_TARGET);
@@ -235,7 +259,8 @@ target.bundle = function() {
 
   cd('src');
   var bundle = cat(SRC_FILES),
-      bundleVersion = exec('git log --format="%h" -n 1',
+      bundleVersion = EXTENSION_VERSION,
+      bundleBuild = exec('git log --format="%h" -n 1',
         {silent: true}).output.replace('\n', '');
 
   crlfchecker.checkIfCrlfIsPresent(SRC_FILES);
@@ -250,18 +275,20 @@ target.bundle = function() {
   // This just preprocesses the empty pdf.js file, we don't actually want to
   // preprocess everything yet since other build targets use this file.
   builder.preprocess('pdf.js', ROOT_DIR + BUILD_TARGET,
-                         {BUNDLE: bundle, BUNDLE_VERSION: bundleVersion});
+                         {BUNDLE: bundle,
+                          BUNDLE_VERSION: bundleVersion,
+                          BUNDLE_BUILD: bundleBuild});
 };
 
 
 
-///////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 //
 // Extension stuff
 //
 
-var EXTENSION_BASE_VERSION = '15f0e58b4f01f77dec2afc7b1d15fcda8a5d1d38',
-    EXTENSION_VERSION_PREFIX = '0.6.',
+var EXTENSION_BASE_VERSION = '9583cb710808f6c9746c4723de0c0a816bc006e1',
+    EXTENSION_VERSION_PREFIX = '0.7.',
     EXTENSION_BUILD_NUMBER,
     EXTENSION_VERSION;
 
@@ -329,7 +356,6 @@ target.firefox = function() {
 
   target.locale();
   target.bundle();
-  target.buildnumber();
   cd(ROOT_DIR);
 
   // Clear out everything in the firefox extension build directory
@@ -435,7 +461,6 @@ target.mozcentral = function() {
          'LICENSE'];
 
   target.bundle();
-  target.buildnumber();
   cd(ROOT_DIR);
 
   // Clear out everything in the firefox extension build directory
@@ -504,6 +529,8 @@ target.mozcentral = function() {
 };
 
 target.b2g = function() {
+  target.locale();
+
   echo();
   echo('### Building B2G (Firefox OS App)');
   var B2G_BUILD_DIR = BUILD_DIR + '/b2g/',
@@ -521,12 +548,14 @@ target.b2g = function() {
   var setup = {
     defines: defines,
     copy: [
-      [COMMON_WEB_FILES, B2G_BUILD_CONTENT_DIR + '/web'],
-      ['web/locale.properties', B2G_BUILD_CONTENT_DIR + '/web'],
+      ['extensions/b2g/images', B2G_BUILD_CONTENT_DIR + '/web'],
+      ['extensions/b2g/viewer.html', B2G_BUILD_CONTENT_DIR + '/web'],
+      ['extensions/b2g/viewer.css', B2G_BUILD_CONTENT_DIR + '/web'],
+      ['web/locale', B2G_BUILD_CONTENT_DIR + '/web'],
       ['external/webL10n/l10n.js', B2G_BUILD_CONTENT_DIR + '/web']
     ],
     preprocess: [
-      [COMMON_WEB_FILES_PREPROCESS, B2G_BUILD_CONTENT_DIR + '/web'],
+      ['web/viewer.js', B2G_BUILD_CONTENT_DIR + '/web'],
       [BUILD_TARGET, B2G_BUILD_CONTENT_DIR + BUILD_TARGET]
     ]
   };
@@ -546,7 +575,6 @@ target.chrome = function() {
       CHROME_BUILD_CONTENT_DIR = CHROME_BUILD_DIR + '/content/';
 
   target.bundle();
-  target.buildnumber();
   cd(ROOT_DIR);
 
   // Clear out everything in the chrome extension build directory
@@ -564,11 +592,11 @@ target.chrome = function() {
         'extensions/chrome/*.js'],
        CHROME_BUILD_DIR],
       [BUILD_TARGET, CHROME_BUILD_CONTENT_DIR + BUILD_TARGET],
-      ['external/webL10n/l10n.js', CHROME_BUILD_CONTENT_DIR + '/web']
+      ['external/webL10n/l10n.js', CHROME_BUILD_CONTENT_DIR + '/web'],
+      ['web/locale', CHROME_BUILD_CONTENT_DIR + '/web']
     ],
     preprocess: [
-      [COMMON_WEB_FILES_PREPROCESS, CHROME_BUILD_CONTENT_DIR + '/web'],
-      ['web/locale.properties', CHROME_BUILD_CONTENT_DIR + '/web']
+      [COMMON_WEB_FILES_PREPROCESS, CHROME_BUILD_CONTENT_DIR + '/web']
     ]
   };
   builder.build(setup);
@@ -600,8 +628,9 @@ target.chrome = function() {
     exit(1);
   }
 
+  var manifest;
   try {
-    var manifest = JSON.parse(cat(browserManifest));
+    manifest = JSON.parse(cat(browserManifest));
   } catch (e) {
     echo('Malformed browser manifest file');
     echo(e.message);
@@ -643,7 +672,7 @@ target.chrome = function() {
 };
 
 
-///////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 //
 // Test stuff
 //
@@ -919,7 +948,7 @@ target.mozcentralcheck = function() {
 };
 
 
-///////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 //
 // Other
 //
@@ -957,7 +986,34 @@ target.lint = function() {
 
   exec('gjslint --nojsdoc ' + LINT_FILES.join(' '));
 
+  echo('Discarding the results by printing \"files checked, no errors found\"');
+  echo('Use \"node make jshint\"');
+
   crlfchecker.checkIfCrlfIsPresent(LINT_FILES);
+};
+
+//
+// make jshint
+//
+target.jshint = function() {
+  cd(ROOT_DIR);
+  echo();
+  echo('### Linting JS files (this can take a while!)');
+
+  var LINT_FILES = ['make.js',
+                    'external/builder/',
+                    'external/crlfchecker/',
+                    'src/',
+                    //'web/*.js',
+                    //'test/*.js',
+                    //'test/unit/*.js',
+                    //'extensions/firefox/*.js',
+                    //'extensions/firefox/components/*.js',
+                    //'extensions/chrome/*.js'
+                    ];
+
+  exit(exec('./node_modules/.bin/jshint --reporter test/reporter.js ' +
+            LINT_FILES.join(' ')).code);
 };
 
 //

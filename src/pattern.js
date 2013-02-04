@@ -14,6 +14,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/* globals CanvasGraphics, ColorSpace, createScratchCanvas, DeviceRgbCS, error,
+           info, isArray, isPDFFunction, isStream, PDFFunction, TODO, Util,
+           warn */
 
 'use strict';
 
@@ -115,11 +118,29 @@ Shadings.RadialAxial = (function RadialAxialClosure() {
     this.extendEnd = extendEnd;
 
     var fnObj = dict.get('Function');
-    if (isArray(fnObj))
-      error('No support for array of functions');
-    if (!isPDFFunction(fnObj))
-      error('Invalid function');
-    var fn = PDFFunction.parse(xref, fnObj);
+    var fn;
+    if (isArray(fnObj)) {
+      var fnArray = [];
+      for (var j = 0, jj = fnObj.length; j < jj; j++) {
+        var obj = xref.fetchIfRef(fnObj[j]);
+        if (!isPDFFunction(obj)) {
+          error('Invalid function');
+        }
+        fnArray.push(PDFFunction.parse(xref, obj));
+      }
+      fn = function radialAxialColorFunction(arg) {
+        var out = [];
+        for (var i = 0, ii = fnArray.length; i < ii; i++) {
+          out.push(fnArray[i](arg)[0]);
+        }
+        return out;
+      };
+    } else {
+      if (!isPDFFunction(fnObj)) {
+        error('Invalid function');
+      }
+      fn = PDFFunction.parse(xref, fnObj);
+    }
 
     // 10 samples seems good enough for now, but probably won't work
     // if there are sharp color changes. Ideally, we would implement
@@ -138,15 +159,15 @@ Shadings.RadialAxial = (function RadialAxialClosure() {
     }
 
     for (var i = t0; i <= t1; i += step) {
-      var rgbColor = cs.getRgb(fn([i]));
-      var cssColor = Util.makeCssRgb(rgbColor[0], rgbColor[1], rgbColor[2]);
+      var rgbColor = cs.getRgb(fn([i]), 0);
+      var cssColor = Util.makeCssRgb(rgbColor);
       colorStops.push([(i - t0) / diff, cssColor]);
     }
 
     var background = 'transparent';
     if (dict.has('Background')) {
-      var rgbColor = cs.getRgb(dict.get('Background'));
-      background = Util.makeCssRgb(rgbColor[0], rgbColor[1], rgbColor[2]);
+      var rgbColor = cs.getRgb(dict.get('Background'), 0);
+      background = Util.makeCssRgb(rgbColor);
     }
 
     if (!extendStart) {
@@ -294,7 +315,8 @@ var TilingPattern = (function TilingPatternClosure() {
         tmpCtx.strokeStyle = ctx.strokeStyle;
         break;
       case PaintType.UNCOLORED:
-        var cssColor = Util.makeCssRgb(this, color[0], color[1], color[2]);
+        var rgbColor = new DeviceRgbCS().getRgb(color, 0);
+        var cssColor = Util.makeCssRgb(rgbColor);
         tmpCtx.fillStyle = cssColor;
         tmpCtx.strokeStyle = cssColor;
         break;

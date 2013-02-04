@@ -14,6 +14,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/* globals assertWellFormed, bytesToString, CipherTransformFactory, error, info,
+           InvalidPDFException, isArray, isCmd, isDict, isInt, isName, isRef,
+           isStream, JpegStream, Lexer, log, Page, Parser, Promise, shadow,
+           stringToPDFString, stringToUTF8String, warn */
 
 'use strict';
 
@@ -100,7 +104,7 @@ var Dict = (function DictClosure() {
         callback(key, this.get(key));
       }
     };
-  };
+  }
 
   return Dict;
 })();
@@ -307,8 +311,10 @@ var Catalog = (function CatalogClosure() {
             continue;
           }
           var names = obj.get('Names');
-          for (i = 0, n = names.length; i < n; i += 2) {
-            dests[names[i]] = fetchDestination(xref.fetchIfRef(names[i + 1]));
+          if (names) {
+            for (i = 0, n = names.length; i < n; i += 2) {
+              dests[names[i]] = fetchDestination(xref.fetchIfRef(names[i + 1]));
+            }
           }
         }
       }
@@ -340,8 +346,9 @@ var XRef = (function XRefClosure() {
 
     var encrypt = trailerDict.get('Encrypt');
     if (encrypt) {
-      var fileId = trailerDict.get('ID');
-      this.encrypt = new CipherTransformFactory(encrypt, fileId[0], password);
+      var ids = trailerDict.get('ID');
+      var fileId = (ids && ids.length) ? ids[0] : '';
+      this.encrypt = new CipherTransformFactory(encrypt, fileId, password);
     }
 
     // get the root dictionary (catalog) object
@@ -439,7 +446,7 @@ var XRef = (function XRefClosure() {
           for (j = 0; j < typeFieldWidth; ++j)
             type = (type << 8) | stream.getByte();
           // if type field is absent, its default value = 1
-          if (typeFieldWidth == 0)
+          if (typeFieldWidth === 0)
             type = 1;
           for (j = 0; j < offsetFieldWidth; ++j)
             offset = (offset << 8) | stream.getByte();
@@ -675,7 +682,7 @@ var XRef = (function XRefClosure() {
         }
         if (!isCmd(obj3, 'obj')) {
           // some bad pdfs use "obj1234" and really mean 1234
-          if (obj3.cmd.indexOf('obj') == 0) {
+          if (obj3.cmd.indexOf('obj') === 0) {
             num = parseInt(obj3.cmd.substring(3), 10);
             if (!isNaN(num))
               return num;

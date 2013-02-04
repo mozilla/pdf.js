@@ -14,6 +14,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/* globals Cmd, DeviceCmykCS, Dict, globalScope, INFOS, MozBlobBuilder, Name,
+           PDFJS, Ref, WARNINGS, verbosity */
 
 'use strict';
 
@@ -85,6 +87,8 @@ function assert(cond, msg) {
 // Combines two URLs. The baseUrl shall be absolute URL. If the url is an
 // absolute URL, it will be returned as is.
 function combineUrl(baseUrl, url) {
+  if (!url)
+    return baseUrl;
   if (url.indexOf(':') >= 0)
     return url;
   if (url.charAt(0) == '/') {
@@ -173,6 +177,18 @@ var InvalidPDFException = (function InvalidPDFExceptionClosure() {
   return InvalidPDFException;
 })();
 
+var MissingPDFException = (function MissingPDFExceptionClosure() {
+  function MissingPDFException(msg) {
+    this.name = 'MissingPDFException';
+    this.message = msg;
+  }
+
+  MissingPDFException.prototype = new Error();
+  MissingPDFException.constructor = MissingPDFException;
+
+  return MissingPDFException;
+})();
+
 function bytesToString(bytes) {
   var str = '';
   var length = bytes.length;
@@ -194,15 +210,17 @@ var IDENTITY_MATRIX = [1, 0, 0, 1, 0, 0];
 var Util = PDFJS.Util = (function UtilClosure() {
   function Util() {}
 
-  Util.makeCssRgb = function Util_makeCssRgb(r, g, b) {
-    var ri = (255 * r) | 0, gi = (255 * g) | 0, bi = (255 * b) | 0;
-    return 'rgb(' + ri + ',' + gi + ',' + bi + ')';
+  Util.makeCssRgb = function Util_makeCssRgb(rgb) {
+    return 'rgb(' + rgb[0] + ',' + rgb[1] + ',' + rgb[2] + ')';
   };
 
-  Util.makeCssCmyk = function Util_makeCssCmyk(c, m, y, k) {
-    c = (new DeviceCmykCS()).getRgb([c, m, y, k]);
-    var ri = (255 * c[0]) | 0, gi = (255 * c[1]) | 0, bi = (255 * c[2]) | 0;
-    return 'rgb(' + ri + ',' + gi + ',' + bi + ')';
+  Util.makeCssCmyk = function Util_makeCssCmyk(cmyk) {
+    var cs = new DeviceCmykCS();
+    Util.makeCssCmyk = function makeCssCmyk(cmyk) {
+      var rgb = cs.getRgb(cmyk, 0);
+      return Util.makeCssRgb(rgb);
+    };
+    return Util.makeCssCmyk(cmyk);
   };
 
   // For 2d affine transforms
@@ -237,7 +255,7 @@ var Util = PDFJS.Util = (function UtilClosure() {
       m[3] * v[0] + m[4] * v[1] + m[5] * v[2],
       m[6] * v[0] + m[7] * v[1] + m[8] * v[2]
     ];
-  }
+  };
 
   // Normalize rectangle rect=[x1, y1, x2, y2] so that (x1,y1) < (x2,y2)
   // For coordinate systems whose origin lies in the bottom-left, this
@@ -254,7 +272,7 @@ var Util = PDFJS.Util = (function UtilClosure() {
       r[3] = rect[1];
     }
     return r;
-  }
+  };
 
   // Returns a rectangle [x1, y1, x2, y2] corresponding to the
   // intersection of rect1 and rect2. If no intersection, returns 'false'
@@ -262,7 +280,7 @@ var Util = PDFJS.Util = (function UtilClosure() {
   Util.intersect = function Util_intersect(rect1, rect2) {
     function compare(a, b) {
       return a - b;
-    };
+    }
 
     // Order points along the axes
     var orderedX = [rect1[0], rect1[2], rect2[0], rect2[2]].sort(compare),
@@ -322,15 +340,15 @@ var PageViewport = PDFJS.PageViewport = (function PageViewportClosure() {
       case 270:
         rotateA = 0; rotateB = -1; rotateC = -1; rotateD = 0;
         break;
-      case 360:
-      case 0:
+      //case 360:
+      //case 0:
       default:
         rotateA = 1; rotateB = 0; rotateC = 0; rotateD = -1;
         break;
     }
     var offsetCanvasX, offsetCanvasY;
     var width, height;
-    if (rotateA == 0) {
+    if (rotateA === 0) {
       offsetCanvasX = Math.abs(centerY - viewBox[1]) * scale + offsetX;
       offsetCanvasY = Math.abs(centerX - viewBox[0]) * scale + offsetY;
       width = Math.abs(viewBox[3] - viewBox[1]) * scale;
@@ -437,7 +455,14 @@ function isCmd(v, cmd) {
 }
 
 function isDict(v, type) {
-  return v instanceof Dict && (!type || v.get('Type').name == type);
+  if (!(v instanceof Dict)) {
+    return false;
+  }
+  if (!type) {
+    return true;
+  }
+  var dictType = v.get('Type');
+  return isName(dictType) && dictType.name == type;
 }
 
 function isArray(v) {
@@ -445,11 +470,13 @@ function isArray(v) {
 }
 
 function isStream(v) {
-  return typeof v == 'object' && v != null && ('getChar' in v);
+  return typeof v == 'object' && v !== null && v !== undefined &&
+         ('getChar' in v);
 }
 
 function isArrayBuffer(v) {
-  return typeof v == 'object' && v != null && ('byteLength' in v);
+  return typeof v == 'object' && v !== null && v !== undefined &&
+         ('byteLength' in v);
 }
 
 function isRef(v) {
@@ -492,8 +519,9 @@ var Promise = PDFJS.Promise = (function PromiseClosure() {
     this.name = name;
     this.isRejected = false;
     this.error = null;
+    this.exception = null;
     // If you build a promise and pass in some data it's already resolved.
-    if (data != null) {
+    if (data !== null && data !== undefined) {
       this.isResolved = true;
       this._data = data;
       this.hasData = true;
@@ -504,7 +532,7 @@ var Promise = PDFJS.Promise = (function PromiseClosure() {
     this.callbacks = [];
     this.errbacks = [];
     this.progressbacks = [];
-  };
+  }
   /**
    * Builds a promise that is resolved when all the passed in promises are
    * resolved.
@@ -600,6 +628,7 @@ var Promise = PDFJS.Promise = (function PromiseClosure() {
 
       this.isRejected = true;
       this.error = reason || null;
+      this.exception = exception || null;
       var errbacks = this.errbacks;
 
       for (var i = 0, ii = errbacks.length; i < ii; i++) {
@@ -618,7 +647,8 @@ var Promise = PDFJS.Promise = (function PromiseClosure() {
         callback.call(null, data);
       } else if (this.isRejected && errback) {
         var error = this.error;
-        errback.call(null, error);
+        var exception = this.exception;
+        errback.call(null, error, exception);
       } else {
         this.callbacks.push(callback);
         if (errback)

@@ -14,6 +14,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/* globals CanvasGraphics, combineUrl, createScratchCanvas, error, ErrorFont,
+           Font, FontLoader, globalScope, info, isArrayBuffer, loadJpegStream,
+           MessageHandler, PDFJS, PDFObjects, Promise, StatTimer, warn,
+           WorkerMessageHandler */
 
  'use strict';
 
@@ -89,6 +93,13 @@ var PDFDocumentProxy = (function PDFDocumentProxyClosure() {
      */
     get fingerprint() {
       return this.pdfInfo.fingerprint;
+    },
+    /**
+     * @return {boolean} true if embedded document fonts are in use. Will be
+     * set during rendering of the pages.
+     */
+    get embeddedFontsUsed() {
+      return this.transport.embeddedFontsUsed;
     },
     /**
      * @param {number} The page number to get. The first page is 1.
@@ -275,7 +286,7 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
           promise.reject(error);
         else
           promise.resolve();
-      };
+      }
       var continueCallback = params.continueCallback;
 
       // Once the operatorList and fonts are loaded, do the actual rendering.
@@ -287,7 +298,7 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
           }
 
           var gfx = new CanvasGraphics(params.canvasContext, this.commonObjs,
-            this.objs, params.textLayer);
+            this.objs, !this.pageInfo.disableTextLayer && params.textLayer);
           try {
             this.display(gfx, params.viewport, complete, continueCallback);
           } catch (e) {
@@ -337,6 +348,9 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
           warn('Error during font loading: ' + obj.error);
           continue;
         }
+        if (!obj.coded) {
+          this.transport.embeddedFontsUsed = true;
+        }
         fontObjs.push(obj);
       }
 
@@ -373,7 +387,7 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
 
       var continueWrapper;
       if (continueCallback)
-        continueWrapper = function() { continueCallback(next); }
+        continueWrapper = function() { continueCallback(next); };
       else
         continueWrapper = next;
 
@@ -442,7 +456,7 @@ var WorkerTransport = (function WorkerTransportClosure() {
 
     this.pageCache = [];
     this.pagePromises = [];
-    this.fontsLoading = {};
+    this.embeddedFontsUsed = false;
 
     // If worker support isn't disabled explicit and the browser has worker
     // support, create a new web worker and test if it/the browser fullfills
@@ -535,6 +549,10 @@ var WorkerTransport = (function WorkerTransportClosure() {
 
       messageHandler.on('InvalidPDF', function transportInvalidPDF(data) {
         this.workerReadyPromise.reject(data.exception.name, data.exception);
+      }, this);
+
+      messageHandler.on('MissingPDF', function transportMissingPDF(data) {
+        this.workerReadyPromise.reject(data.exception.message, data.exception);
       }, this);
 
       messageHandler.on('UnknownError', function transportUnknownError(data) {

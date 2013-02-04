@@ -45,6 +45,35 @@ describe('util', function() {
       var expected = 'http://server/test2.html';
       expect(result).toEqual(expected);
     });
+
+    it('returns base url when url is empty', function() {
+      var baseUrl = 'http://server/index.html';
+      var url = '';
+      var result = combineUrl(baseUrl, url);
+      var expected = 'http://server/index.html';
+      expect(result).toEqual(expected);
+    });
+
+    it('returns base url when url is undefined', function() {
+      var baseUrl = 'http://server/index.html';
+      var url;
+      var result = combineUrl(baseUrl, url);
+      var expected = 'http://server/index.html';
+      expect(result).toEqual(expected);
+    });
+  });
+
+  describe('isDict', function() {
+    it('handles empty dictionaries with type check', function() {
+      var dict = new Dict();
+      expect(isDict(dict, 'Page')).toEqual(false);
+    });
+
+    it('handles dictionaries with type check', function() {
+      var dict = new Dict();
+      dict.set('Type', new Name('Page'));
+      expect(isDict(dict, 'Page')).toEqual(true);
+    });
   });
 
 });

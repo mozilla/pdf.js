@@ -1,5 +1,6 @@
 /* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 /* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
+/* globals PDFJS */
 /* Copyright 2012 Mozilla Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -68,11 +69,11 @@ var bidi = PDFJS.bidi = (function bidiClosure() {
   ];
 
   function isOdd(i) {
-    return (i & 1) != 0;
+    return (i & 1) !== 0;
   }
 
   function isEven(i) {
-    return (i & 1) == 0;
+    return (i & 1) === 0;
   }
 
   function findUnequal(arr, start, value) {
@@ -146,8 +147,8 @@ var bidi = PDFJS.bidi = (function bidiClosure() {
   function bidi(str, startLevel) {
     var isLTR = true;
     var strLength = str.length;
-    if (strLength == 0)
-      return new BidiResult(str, ltr);
+    if (strLength === 0)
+      return new BidiResult(str, isLTR);
 
     // get types, fill arrays
 
@@ -180,7 +181,7 @@ var bidi = PDFJS.bidi = (function bidiClosure() {
     //  if there are no rtl characters then no bidi needed
     //  if less than 30% chars are rtl then string is primarily ltr
     //  if more than 30% chars are rtl then string is primarily rtl
-    if (numBidi == 0) {
+    if (numBidi === 0) {
       isLTR = true;
       return new BidiResult(str, isLTR);
     }

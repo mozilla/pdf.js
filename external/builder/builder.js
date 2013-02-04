@@ -1,3 +1,8 @@
+/* jshint node:true */
+/* globals cp, ls, test */
+
+'use strict';
+
 require('../shelljs/make');
 var fs = require('fs'),
     path = require('path'),
@@ -30,7 +35,7 @@ function preprocess(inFilename, outFilename, defines) {
   var writeLine = typeof outFilename === 'function' ? outFilename :
                                                       function(line) {
     out += line + '\n';
-  }
+  };
   function include(file) {
     var realPath = fs.realpathSync(inFilename);
     var dir = path.dirname(realPath);

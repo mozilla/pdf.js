@@ -15,9 +15,10 @@
 import json, platform, os, shutil, sys, subprocess, tempfile, threading
 import time, urllib, urllib2, hashlib, re, base64, uuid, socket, errno
 from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
-import SocketServer
+from SocketServer import ThreadingMixIn
 from optparse import OptionParser
 from urlparse import urlparse, parse_qs
+from threading import Lock
 
 USAGE_EXAMPLE = "%prog"
 
@@ -34,6 +35,8 @@ VERBOSE = False
 BROWSER_TIMEOUT = 60
 
 SERVER_HOST = "localhost"
+
+lock = Lock()
 
 class TestOptions(OptionParser):
     def __init__(self, **kwargs):
@@ -62,6 +65,10 @@ class TestOptions(OptionParser):
                         help="Skips test PDFs downloading.", default=False)
         self.add_option("--ignoreDownloadErrors", action="store_true", dest="ignoreDownloadErrors",
                         help="Ignores errors during test PDFs downloading.", default=False)
+        self.add_option("--statsFile", action="store", dest="statsFile", type="string",
+                        help="The file where to store stats.", default=None)
+        self.add_option("--statsDelay", action="store", dest="statsDelay", type="int",
+                        help="The amount of time in milliseconds the browser should wait before starting stats.", default=10000)
         self.set_usage(USAGE_EXAMPLE)
 
     def verifyOptions(self, options):
@@ -75,6 +82,8 @@ class TestOptions(OptionParser):
             print "Warning: ignoring browser argument since manifest file was also supplied"
         if not options.browser and not options.browserManifestFile:
             print "Starting server on port %s." % options.port
+        if not options.statsFile:
+            options.statsDelay = 0
 
         return options
         
@@ -111,6 +120,8 @@ class State:
     numFBFFailures = 0
     numLoadFailures = 0
     eqLog = None
+    saveStats = False
+    stats = [ ]
     lastPost = { }
 
 class UnitTestState:
@@ -126,8 +137,8 @@ class Result:
         self.failure = failure
         self.page = page
 
-class TestServer(SocketServer.TCPServer):
-    allow_reuse_address = True
+class TestServer(ThreadingMixIn, HTTPServer):
+    pass
 
 class TestHandlerBase(BaseHTTPRequestHandler):
     # Disable annoying noise by default
@@ -235,40 +246,41 @@ class UnitTestHandler(TestHandlerBase):
         return
 
     def do_POST(self):
-        url = urlparse(self.path)
-        numBytes = int(self.headers['Content-Length'])
-        content = self.rfile.read(numBytes)
+        with lock:
+            url = urlparse(self.path)
+            numBytes = int(self.headers['Content-Length'])
+            content = self.rfile.read(numBytes)
 
-        # Process special utility requests
-        if url.path == '/ttx':
-            self.translateFont(content)
-            return
+            # Process special utility requests
+            if url.path == '/ttx':
+                self.translateFont(content)
+                return
 
-        self.send_response(200)
-        self.send_header('Content-Type', 'text/plain')
-        self.end_headers()
+            self.send_response(200)
+            self.send_header('Content-Type', 'text/plain')
+            self.end_headers()
 
-        result = json.loads(content)
-        browser = result['browser']
-        UnitTestState.lastPost[browser] = int(time.time())
-        if url.path == "/tellMeToQuit":
-            tellAppToQuit(url.path, url.query)
-            UnitTestState.browsersRunning -= 1
-            UnitTestState.lastPost[browser] = None
-            return
-        elif url.path == '/info':
-            print result['message']
-        elif url.path == '/submit_task_results':
-            status, description = result['status'], result['description']
-            UnitTestState.numRun += 1
-            if status == 'TEST-UNEXPECTED-FAIL':
-                UnitTestState.numErrors += 1
-            message = status + ' | ' + description + ' | in ' + browser
-            if 'error' in result:
-                message += ' | ' + result['error']
-            print message
-        else:
-            print 'Error: uknown action' + url.path
+            result = json.loads(content)
+            browser = result['browser']
+            UnitTestState.lastPost[browser] = int(time.time())
+            if url.path == "/tellMeToQuit":
+                tellAppToQuit(url.path, url.query)
+                UnitTestState.browsersRunning -= 1
+                UnitTestState.lastPost[browser] = None
+                return
+            elif url.path == '/info':
+                print result['message']
+            elif url.path == '/submit_task_results':
+                status, description = result['status'], result['description']
+                UnitTestState.numRun += 1
+                if status == 'TEST-UNEXPECTED-FAIL':
+                    UnitTestState.numErrors += 1
+                message = status + ' | ' + description + ' | in ' + browser
+                if 'error' in result:
+                    message += ' | ' + result['error']
+                print message
+            else:
+                print 'Error: uknown action' + url.path
 
 class PDFTestHandler(TestHandlerBase):
 
@@ -302,42 +314,65 @@ class PDFTestHandler(TestHandlerBase):
 
 
     def do_POST(self):
-        numBytes = int(self.headers['Content-Length'])
+        with lock:
+            numBytes = int(self.headers['Content-Length'])
 
-        self.send_response(200)
-        self.send_header('Content-Type', 'text/plain')
-        self.end_headers()
+            self.send_response(200)
+            self.send_header('Content-Type', 'text/plain')
+            self.end_headers()
 
-        url = urlparse(self.path)
-        if url.path == "/tellMeToQuit":
-            tellAppToQuit(url.path, url.query)
-            return
+            url = urlparse(self.path)
+            if url.path == "/tellMeToQuit":
+                tellAppToQuit(url.path, url.query)
+                return
 
-        result = json.loads(self.rfile.read(numBytes))
-        browser, id, failure, round, page, snapshot = result['browser'], result['id'], result['failure'], result['round'], result['page'], result['snapshot']
-        State.lastPost[browser] = int(time.time())
-        taskResults = State.taskResults[browser][id]
-        taskResults[round].append(Result(snapshot, failure, page))
+            result = json.loads(self.rfile.read(numBytes))
+            browser = result['browser']
+            State.lastPost[browser] = int(time.time())
+            if url.path == "/info":
+                print result['message']
+                return
 
-        def isTaskDone():
-            numPages = result["numPages"]
-            rounds = State.manifest[id]["rounds"]
-            for round in range(0,rounds):
-                if len(taskResults[round]) < numPages:
-                    return False
-            return True
+            id = result['id']
+            failure = result['failure']
+            round = result['round']
+            page = result['page']
+            snapshot = result['snapshot']
 
-        if isTaskDone():
-            # sort the results since they sometimes come in out of order
-            for results in taskResults:
-                results.sort(key=lambda result: result.page)
-            check(State.manifest[id], taskResults, browser,
-                  self.server.masterMode)
-            # Please oh please GC this ...
-            del State.taskResults[browser][id]
-            State.remaining[browser] -= 1
+            taskResults = State.taskResults[browser][id]
+            taskResults[round].append(Result(snapshot, failure, page))
+            if State.saveStats:
+                stat = {
+                    'browser': browser,
+                    'pdf': id,
+                    'page': page,
+                    'round': round,
+                    'stats': result['stats']
+                }
+                State.stats.append(stat)
 
-            checkIfDone()
+            def isTaskDone():
+                last_page_num = result['lastPageNum']
+                rounds = State.manifest[id]['rounds']
+                for round in range(0,rounds):
+                    if not taskResults[round]:
+                        return False
+                    latest_page = taskResults[round][-1]
+                    if not latest_page.page == last_page_num:
+                        return False
+                return True
+
+            if isTaskDone():
+                # sort the results since they sometimes come in out of order
+                for results in taskResults:
+                    results.sort(key=lambda result: result.page)
+                check(State.manifest[id], taskResults, browser,
+                    self.server.masterMode)
+                # Please oh please GC this ...
+                del State.taskResults[browser][id]
+                State.remaining[browser] -= 1
+
+                checkIfDone()
 
 def checkIfDone():
     State.done = True
@@ -547,6 +582,8 @@ def setUp(options):
                 taskResults.append([ ])
             State.taskResults[b.name][id] = taskResults
 
+    if options.statsFile != None:
+        State.saveStats = True
     return testBrowsers
 
 def setUpUnitTests(options):
@@ -567,6 +604,7 @@ def startBrowsers(browsers, options, path):
         host = 'http://%s:%s' % (SERVER_HOST, options.port) 
         qs = '?browser='+ urllib.quote(b.name) +'&manifestFile='+ urllib.quote(options.manifestFile)
         qs += '&path=' + b.path
+        qs += '&delay=' + str(options.statsDelay)
         b.start(host + path + qs)
 
 def teardownBrowsers(browsers):
@@ -613,12 +651,13 @@ def checkEq(task, results, browser, masterMode):
     taskType = task['type']
 
     passed = True
-    for page in xrange(len(results)):
-        snapshot = results[page].snapshot
+    for result in results:
+        page = result.page
+        snapshot = result.snapshot
         ref = None
         eq = True
 
-        path = os.path.join(pfx, str(page + 1))
+        path = os.path.join(pfx, str(page))
         if not os.access(path, os.R_OK):
             State.numEqNoSnapshot += 1
             if not masterMode:
@@ -630,7 +669,7 @@ def checkEq(task, results, browser, masterMode):
 
             eq = (ref == snapshot)
             if not eq:
-                print 'TEST-UNEXPECTED-FAIL |', taskType, taskId, '| in', browser, '| rendering of page', page + 1, '!= reference rendering'
+                print 'TEST-UNEXPECTED-FAIL |', taskType, taskId, '| in', browser, '| rendering of page', page, '!= reference rendering'
 
                 if not State.eqLog:
                     State.eqLog = open(EQLOG_FILE, 'w')
@@ -639,7 +678,7 @@ def checkEq(task, results, browser, masterMode):
                 # NB: this follows the format of Mozilla reftest
                 # output so that we can reuse its reftest-analyzer
                 # script
-                eqLog.write('REFTEST TEST-UNEXPECTED-FAIL | ' + browser +'-'+ taskId +'-page'+ str(page + 1) + ' | image comparison (==)\n')
+                eqLog.write('REFTEST TEST-UNEXPECTED-FAIL | ' + browser +'-'+ taskId +'-page'+ str(page) + ' | image comparison (==)\n')
                 eqLog.write('REFTEST   IMAGE 1 (TEST): ' + snapshot + '\n')
                 eqLog.write('REFTEST   IMAGE 2 (REFERENCE): ' + ref + '\n')
 
@@ -653,8 +692,8 @@ def checkEq(task, results, browser, masterMode):
             except OSError, e:
                 if e.errno != 17: # file exists
                     print >>sys.stderr, 'Creating', tmpTaskDir, 'failed!'
-        
-            of = open(os.path.join(tmpTaskDir, str(page + 1)), 'w')
+
+            of = open(os.path.join(tmpTaskDir, str(page)), 'w')
             of.write(snapshot)
             of.close()
 
@@ -684,7 +723,7 @@ def checkLoad(task, results, browser):
     print 'TEST-PASS | load test', task['id'], '| in', browser
 
 
-def processResults():
+def processResults(options):
     print ''
     numFatalFailures = (State.numErrors + State.numFBFFailures)
     if 0 == State.numEqFailures and 0 == numFatalFailures:
@@ -697,6 +736,10 @@ def processResults():
             print '  different ref/snapshot:', State.numEqFailures
         if 0 < State.numFBFFailures:
             print '  different first/second rendering:', State.numFBFFailures
+    if options.statsFile != None:
+        with open(options.statsFile, 'w') as sf:
+            sf.write(json.dumps(State.stats, sort_keys=True, indent=4))
+        print 'Wrote stats file: ' + options.statsFile
 
 
 def maybeUpdateRefImages(options, browser):
@@ -713,10 +756,9 @@ def maybeUpdateRefImages(options, browser):
             if options.noPrompts or prompt('Would you like to update the master copy in ref/?'):
                 sys.stdout.write('  Updating ref/ ... ')
 
-                # XXX unclear what to do on errors here ...
-                # NB: do *NOT* pass --delete to rsync.  That breaks this
-                # entire scheme.
-                subprocess.check_call(( 'rsync', '-arvq', 'tmp/', 'ref/' ))
+                if not os.path.exists('ref'):
+                    subprocess.check_call('mkdir ref', shell = True)
+                subprocess.check_call('cp -Rf tmp/* ref/', shell = True)
 
                 print 'done'
             else:
@@ -747,7 +789,7 @@ def runTests(options, browsers):
                     State.remaining[b] = 0
                     checkIfDone()
             time.sleep(1)
-        processResults()
+        processResults(options)
     finally:
         teardownBrowsers(browsers)
     t2 = time.time()

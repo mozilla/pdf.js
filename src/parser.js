@@ -14,6 +14,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/* globals Ascii85Stream, AsciiHexStream, CCITTFaxStream, Cmd, Dict, error,
+           FlateStream, isArray, isCmd, isDict, isInt, isName, isNum, isRef,
+           isString, Jbig2Stream, JpegStream, JpxStream, LZWStream, Name,
+           NullStream, PredictorStream, Ref, RunLengthStream, warn */
 
 'use strict';
 
@@ -28,7 +32,6 @@ var Parser = (function ParserClosure() {
     this.lexer = lexer;
     this.allowStreams = allowStreams;
     this.xref = xref;
-    this.inlineImg = 0;
     this.refill();
   }
 
@@ -134,7 +137,8 @@ var Parser = (function ParserClosure() {
 
       // searching for the /EI\s/
       var state = 0, ch;
-      while (state != 4 && (ch = stream.getByte()) != null) {
+      while (state != 4 &&
+             (ch = stream.getByte()) !== null && ch !== undefined) {
         switch (ch) {
           case 0x20:
           case 0x0D:
@@ -151,15 +155,6 @@ var Parser = (function ParserClosure() {
             state = 0;
             break;
         }
-      }
-
-      // TODO improve the small images performance to remove the limit
-      var inlineImgLimit = 500;
-      if (++this.inlineImg >= inlineImgLimit) {
-        if (this.inlineImg === inlineImgLimit)
-          warn('Too many inline images');
-        this.shift();
-        return null;
       }
 
       var length = (stream.pos - 4) - startPos;
@@ -374,7 +369,7 @@ var Lexer = (function LexerClosure() {
             str += ch;
             break;
           case ')':
-            if (--numParen == 0) {
+            if (--numParen === 0) {
               done = true;
             } else {
               str += ch;
@@ -470,28 +465,34 @@ var Lexer = (function LexerClosure() {
     getHexString: function Lexer_getHexString(ch) {
       var str = '';
       var stream = this.stream;
-      for (;;) {
+      var isFirstHex = true;
+      var firstDigit;
+      var secondDigit;
+      while (true) {
         ch = stream.getChar();
-        if (ch == '>') {
-          break;
-        }
         if (!ch) {
           warn('Unterminated hex string');
           break;
-        }
-        if (specialChars[ch.charCodeAt(0)] != 1) {
-          var x, x2;
-          if ((x = toHexDigit(ch)) == -1)
-            error('Illegal character in hex string: ' + ch);
-
-          ch = stream.getChar();
-          while (specialChars[ch.charCodeAt(0)] == 1)
-            ch = stream.getChar();
-
-          if ((x2 = toHexDigit(ch)) == -1)
-            error('Illegal character in hex string: ' + ch);
-
-          str += String.fromCharCode((x << 4) | x2);
+        } else if (ch === '>') {
+          break;
+        } else if (specialChars[ch.charCodeAt(0)] === 1) {
+          continue;
+        } else {
+          if (isFirstHex) {
+            firstDigit = toHexDigit(ch);
+            if (firstDigit === -1) {
+              warn('Ignoring invalid character "' + ch + '" in hex string');
+              continue;
+            }
+          } else {
+            secondDigit = toHexDigit(ch);
+            if (secondDigit === -1) {
+              warn('Ignoring invalid character "' + ch + '" in hex string');
+              continue;
+            }
+            str += String.fromCharCode((firstDigit << 4) | secondDigit);
+          }
+          isFirstHex = !isFirstHex;
         }
       }
       return str;
@@ -544,6 +545,7 @@ var Lexer = (function LexerClosure() {
             stream.skip();
             return Cmd.get('>>');
           }
+          return Cmd.get(ch);
         case '{':
         case '}':
           return Cmd.get(ch);

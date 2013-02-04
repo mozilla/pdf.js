@@ -14,7 +14,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 -->
-<html dir="ltr">
+<html dir="ltr" mozdisallowselectionprint>
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
@@ -26,7 +26,7 @@ limitations under the License.
 
     <link rel="stylesheet" href="viewer.css"/>
 <!--#if !PRODUCTION-->
-    <link rel="resource" type="application/l10n" href="locale.properties"/>
+    <link rel="resource" type="application/l10n" href="locale/locale.properties"/>
 <!--#endif-->
 
 <!--#if !(FIREFOX || MOZCENTRAL || CHROME)-->
@@ -67,10 +67,6 @@ limitations under the License.
 
 <!--#if GENERIC || CHROME-->
 <!--#include viewer-snippet.html-->
-<!--#endif-->
-
-<!--#if B2G-->
-<!--#include viewer-snippet-b2g.html-->
 <!--#endif-->
 
     <script type="text/javascript" src="debugger.js"></script>
@@ -122,8 +118,8 @@ limitations under the License.
           <div id="toolbarContainer">
             <div id="toolbarViewer">
               <div id="toolbarViewerLeft">
-                <button id="sidebarToggle" class="toolbarButton" title="Toggle Sidebar" tabindex="3" data-l10n-id="toggle_slider">
-                  <span data-l10n-id="toggle_slider_label">Toggle Sidebar</span>
+                <button id="sidebarToggle" class="toolbarButton" title="Toggle Sidebar" tabindex="3" data-l10n-id="toggle_sidebar">
+                  <span data-l10n-id="toggle_sidebar_label">Toggle Sidebar</span>
                 </button>
                 <div class="toolbarButtonSpacer"></div>
                 <button id="viewFind" class="toolbarButton group" title="Find in Document" tabindex="4" data-l10n-id="findbar">

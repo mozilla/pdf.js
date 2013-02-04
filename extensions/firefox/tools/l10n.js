@@ -94,20 +94,15 @@
     // get a localized string
     get: translateString,
 
-    // get|set the document language and direction
-    get language() {
-      return {
-        // get|set the document language (ISO-639-1)
-        get code() { return gLanguage; },
+    // get the document language
+    getLanguage: function() { return gLanguage; },
 
-        // get the direction (ltr|rtl) of the current language
-        get direction() {
-          // http://www.w3.org/International/questions/qa-scripts
-          // Arabic, Hebrew, Farsi, Pashto, Urdu
-          var rtlList = ['ar', 'he', 'fa', 'ps', 'ur'];
-          return (rtlList.indexOf(gLanguage) >= 0) ? 'rtl' : 'ltr';
-        }
-      };
+    // get the direction (ltr|rtl) of the current language
+    getDirection: function() {
+      // http://www.w3.org/International/questions/qa-scripts
+      // Arabic, Hebrew, Farsi, Pashto, Urdu
+      var rtlList = ['ar', 'he', 'fa', 'ps', 'ur'];
+      return (rtlList.indexOf(gLanguage) >= 0) ? 'rtl' : 'ltr';
     }
   };
 })(this);

@@ -16,17 +16,16 @@
  */
 
 var PDFJS = {};
+//#if BUNDLE_VERSION
+//#expand PDFJS.version = '__BUNDLE_VERSION__';
+//#endif
+//#if BUNDLE_BUILD
+//#expand PDFJS.build = '__BUNDLE_BUILD__';
+//#endif
 
 (function pdfjsWrapper() {
   // Use strict in our context only - users might not want it
   'use strict';
-
-  PDFJS.build =
-//#if !BUNDLE_VERSION
-  'PDFJSSCRIPT_BUNDLE_VER';
-//#else
-//#expand '__BUNDLE_VERSION__';
-//#endif
 
 //#expand __BUNDLE__
 

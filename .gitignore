@@ -4,3 +4,4 @@ build/
 tags
 .DS_Store
 Makefile
+node_modules/

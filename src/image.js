@@ -14,6 +14,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/* globals ColorSpace, error, isArray, isStream, JpegStream, Name, Promise,
+           Stream, TODO, warn */
 
 'use strict';
 
@@ -260,7 +262,7 @@ var PDFImage = (function PDFImageClosure() {
         var buf = 0;
 
         for (var i = 0, ii = length; i < ii; ++i) {
-          if (i % rowComps == 0) {
+          if (i % rowComps === 0) {
             mask = 0;
             buf = 0;
           } else {
@@ -278,7 +280,7 @@ var PDFImage = (function PDFImageClosure() {
         // The general case that handles all other bpc values.
         var bits = 0, buf = 0;
         for (var i = 0, ii = length; i < ii; ++i) {
-          if (i % rowComps == 0) {
+          if (i % rowComps === 0) {
             buf = 0;
             bits = 0;
           }
@@ -374,7 +376,7 @@ var PDFImage = (function PDFImageClosure() {
             buf = imgArray[imgArrayPos++];
             mask = 128;
           }
-          if (!(buf & mask) == inverseDecode) {
+          if (!(buf & mask) === inverseDecode) {
             buffer[bufferPos] = 0;
           }
           bufferPos += 4;
@@ -396,8 +398,8 @@ var PDFImage = (function PDFImageClosure() {
       var actualHeight = 0 | (imgArray.length / rowBytes *
                          height / originalHeight);
 
-      var comps = this.colorSpace.getRgbBuffer(
-        this.getComponents(imgArray), bpc);
+      var comps = this.colorSpace.createRgbBuffer(this.getComponents(imgArray),
+        0, originalWidth * originalHeight, bpc);
       if (originalWidth != width || originalHeight != height)
         comps = PDFImage.resize(comps, this.bpc, 3, originalWidth,
                                 originalHeight, width, height);
@@ -432,6 +434,18 @@ var PDFImage = (function PDFImageClosure() {
       var scale = 255 / ((1 << bpc) - 1);
       for (var i = 0; i < length; ++i)
         buffer[i] = (scale * comps[i]) | 0;
+    },
+    getImageData: function PDFImage_getImageData() {
+      var drawWidth = this.drawWidth;
+      var drawHeight = this.drawHeight;
+      var imgData = {
+        width: drawWidth,
+        height: drawHeight,
+        data: new Uint8Array(drawWidth * drawHeight * 4)
+      };
+      var pixels = imgData.data;
+      this.fillRgbaBuffer(pixels, drawWidth, drawHeight);
+      return imgData;
     },
     getImageBytes: function PDFImage_getImageBytes(length) {
       this.image.reset();
