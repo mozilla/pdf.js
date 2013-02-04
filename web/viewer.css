@@ -223,6 +223,8 @@ html[dir='rtl'] #sidebarContent {
   right: 0;
   bottom: 0;
   left: 0;
+  text-align: center;
+  white-space: nowrap;
 }
 
 .toolbar {
@@ -1049,13 +1051,14 @@ canvas {
   direction: ltr;
   width: 816px;
   height: 1056px;
-  margin: 10px auto;
+  margin: 3px 2px;
   position: relative;
   overflow: visible;
   -webkit-box-shadow: 0px 4px 10px #000;
   -moz-box-shadow: 0px 4px 10px #000;
   box-shadow: 0px 4px 10px #000;
   background-color: white;
+  display: inline-block;
 }
 
 .page > a {
@@ -1069,6 +1072,16 @@ canvas {
   -webkit-box-shadow: 0px 2px 10px #ff0;
   -moz-box-shadow: 0px 2px 10px #ff0;
   box-shadow: 0px 2px 10px #ff0;
+}
+
+#pageContainer1 {
+  margin-top: 10px;
+}
+
+#viewer.twoUp.noCover > br.first,
+#viewer.twoUp.showCover > br.two,
+#viewer.twoUp.noCover > br.one {
+  display: none;
 }
 
 .loadingIcon {
