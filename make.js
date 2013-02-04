@@ -1007,9 +1007,9 @@ target.jshint = function() {
                     //'web/*.js',
                     //'test/*.js',
                     //'test/unit/*.js',
-                    //'extensions/firefox/*.js',
-                    //'extensions/firefox/components/*.js',
-                    //'extensions/chrome/*.js'
+                    'extensions/firefox/*.js',
+                    'extensions/firefox/components/*.js',
+                    'extensions/chrome/*.js'
                     ];
 
   exit(exec('./node_modules/.bin/jshint --reporter test/reporter.js ' +
