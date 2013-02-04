@@ -14,6 +14,8 @@
  */
 
 var FirefoxCom = (function FirefoxComClosure() {
+  'use strict';
+
   return {
     /**
      * Creates an event that the extension is listening for and will

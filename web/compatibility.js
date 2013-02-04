@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/* globals VBArray */
 
 'use strict';
 
@@ -85,9 +86,9 @@
     return;
 
   Object.create = function objectCreate(proto) {
-    var constructor = function objectCreateConstructor() {};
-    constructor.prototype = proto;
-    return new constructor();
+    function Constructor() {}
+    Constructor.prototype = proto;
+    return new Constructor();
   };
 })();
 
@@ -334,7 +335,7 @@
   function changeList(element, itemName, add, remove) {
     var s = element.className || '';
     var list = s.split(/\s+/g);
-    if (list[0] == '') list.shift();
+    if (list[0] === '') list.shift();
     var index = list.indexOf(itemName);
     if (index < 0 && add)
       list.push(itemName);
@@ -380,18 +381,18 @@
 
 // Check console compatability
 (function checkConsoleCompatibility() {
-  if (typeof console == 'undefined') {
-    console = {
+  if (!('console' in window)) {
+    window.console = {
       log: function() {},
       error: function() {}
     };
   } else if (!('bind' in console.log)) {
     // native functions in IE9 might not have bind
     console.log = (function(fn) {
-      return function(msg) { return fn(msg); }
+      return function(msg) { return fn(msg); };
     })(console.log);
     console.error = (function(fn) {
-      return function(msg) { return fn(msg); }
+      return function(msg) { return fn(msg); };
     })(console.error);
   }
 })();

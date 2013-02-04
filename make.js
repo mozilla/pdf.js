@@ -1004,9 +1004,9 @@ target.jshint = function() {
                     'external/builder/',
                     'external/crlfchecker/',
                     'src/',
-                    //'web/*.js',
-                    //'test/*.js',
-                    //'test/unit/*.js',
+                    'web/*.js',
+                    'test/*.js',
+                    'test/unit/*.js',
                     'extensions/firefox/*.js',
                     'extensions/firefox/components/*.js',
                     'extensions/chrome/*.js'

@@ -2,6 +2,8 @@
 /* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
 
 var TestReporter = function(browser, appPath) {
+  'use strict';
+
   function send(action, json) {
     var r = new XMLHttpRequest();
     // (The POST URI is ignored atm.)

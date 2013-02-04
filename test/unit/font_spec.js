@@ -1,5 +1,6 @@
 /* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 /* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
+/* globals expect, it, describe, CFFCompiler, CFFParser, CFFIndex, CFFStrings */
 
 'use strict';
 
@@ -32,7 +33,7 @@ describe('font', function() {
     fontData.push(parseInt(hex, 16));
   }
   var bytes = new Uint8Array(fontData);
-  fontData = {getBytes: function() { return bytes}};
+  fontData = {getBytes: function() { return bytes; }};
 
   function bytesToString(bytesArray) {
     var str = '';
