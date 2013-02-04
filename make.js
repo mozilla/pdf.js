@@ -23,6 +23,7 @@
 require('./external/shelljs/make');
 var builder = require('./external/builder/builder.js');
 var crlfchecker = require('./external/crlfchecker/crlfchecker.js');
+var path = require('path');
 
 var ROOT_DIR = __dirname + '/', // absolute path to project's root
     BUILD_DIR = 'build/',
@@ -971,49 +972,30 @@ target.server = function() {
 target.lint = function() {
   cd(ROOT_DIR);
   echo();
-  echo('### Linting JS files (this can take a while!)');
-
-  var LINT_FILES = ['make.js',
-                    'external/builder/*.js',
-                    'external/crlfchecker/*.js',
-                    'src/*.js',
-                    'web/*.js',
-                    'test/*.js',
-                    'test/unit/*.js',
-                    'extensions/firefox/*.js',
-                    'extensions/firefox/components/*.js',
-                    'extensions/chrome/*.js'];
-
-  exec('gjslint --nojsdoc ' + LINT_FILES.join(' '));
-
-  echo('Discarding the results by printing \"files checked, no errors found\"');
-  echo('Use \"node make jshint\"');
-
-  crlfchecker.checkIfCrlfIsPresent(LINT_FILES);
-};
-
-//
-// make jshint
-//
-target.jshint = function() {
-  cd(ROOT_DIR);
-  echo();
-  echo('### Linting JS files (this can take a while!)');
+  echo('### Linting JS files');
 
   var LINT_FILES = ['make.js',
                     'external/builder/',
                     'external/crlfchecker/',
                     'src/',
-                    'web/*.js',
-                    'test/*.js',
-                    'test/unit/*.js',
-                    'extensions/firefox/*.js',
-                    'extensions/firefox/components/*.js',
-                    'extensions/chrome/*.js'
+                    'web/',
+                    'test/driver.js',
+                    'test/reporter.js',
+                    'test/unit/',
+                    'extensions/firefox/',
+                    'extensions/chrome/'
                     ];
 
-  exit(exec('./node_modules/.bin/jshint --reporter test/reporter.js ' +
+  var jshintPath = path.normalize('./node_modules/.bin/jshint');
+  if (!test('-f', jshintPath)) {
+    echo('jshint is not installed -- installing...');
+    exec('npm install jshint');
+  }
+
+  exit(exec('"' + jshintPath + '" --reporter test/reporter.js ' +
             LINT_FILES.join(' ')).code);
+
+  crlfchecker.checkIfCrlfIsPresent(LINT_FILES);
 };
 
 //
