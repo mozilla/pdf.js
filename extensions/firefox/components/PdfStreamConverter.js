@@ -467,7 +467,13 @@ RequestListener.prototype.receive = function(event) {
       response = null;
     } else {
       response = function sendResponse(response) {
-        message.setUserData('response', response, null);
+        try {
+          message.setUserData('response', response, null);
+        } catch (e) {
+          // message is no longer accessible because the sender is already
+          // gone. the unloaded sender cannot receive the response anyway.
+          return false;
+        }
 
         var listener = doc.createEvent('HTMLEvents');
         listener.initEvent('pdf.js.response', true, false);
