@@ -43,6 +43,7 @@ module.exports = {
         ((len === 1) ? '' : 's') + '\n');
       process.exit(2);
     } else {
+      process.stdout.write('files checked, no errors found\n');
       process.exit(0);
     }
   }

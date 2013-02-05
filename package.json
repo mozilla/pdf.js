@@ -5,7 +5,7 @@
     "jshint": "git://github.com/jshint/jshint.git#42ace75a"
   },
   "scripts": {
-    "test": "node make jshint"
+    "test": "node make lint"
   },
   "repository": {
     "type": "git",
