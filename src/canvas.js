@@ -1420,10 +1420,10 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
     // Compatibility
 
     beginCompat: function CanvasGraphics_beginCompat() {
-      TODO('ignore undefined operators (should we do that anyway?)');
+      // TODO ignore undefined operators (should we do that anyway?)
     },
     endCompat: function CanvasGraphics_endCompat() {
-      TODO('stop ignoring undefined operators');
+      // TODO stop ignoring undefined operators
     },
 
     // Helper functions
