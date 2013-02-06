@@ -1492,6 +1492,32 @@ var PDFView = {
           this.page = pageNumber; // simple page
         }
       }
+      if ('search' in params) {
+        // pdf.js currently implements this as a phrase search,
+        // i.e. specifying the URL parameter as: #search="word1 word2"
+        // will perform a search for the whole string "word1 word2".
+
+        var phrase = params.search.replace(/[\"]/g, '');
+        if (!PDFView.supportsIntegratedFind) {
+          var fBar = PDFFindBar;
+          fBar.findField.value = phrase;
+          fBar.caseSensitive.checked = false;
+          if (phrase) {
+            fBar.highlightAll.checked = true;
+            fBar.dispatchEvent('');
+            fBar.findField.blur();
+          } else {
+            fBar.highlightAll.checked = false;
+            fBar.dispatchEvent('highlightallchange');
+          }
+          fBar.open();
+          fBar.findField.select();
+        } else {
+          // searchWithIntegratedFindBar(phrase {String},
+          //                             highlightAll {Boolean})
+          FirefoxCom.request('searchWithIntegratedFindBar', phrase, true);
+        }
+      }
     } else if (/^\d+$/.test(hash)) // page number
       this.page = hash;
     else // named destination
