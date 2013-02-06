@@ -455,9 +455,9 @@ function RequestListener(actions) {
 RequestListener.prototype.receive = function(event) {
   var message = event.target;
   var doc = message.ownerDocument;
-  var action = message.getUserData('action');
-  var data = message.getUserData('data');
-  var sync = message.getUserData('sync');
+  var action = event.detail.action;
+  var data = event.detail.data;
+  var sync = event.detail.sync;
   var actions = this.actions;
   if (!(action in actions)) {
     log('Unknown action: ' + action);
@@ -465,25 +465,27 @@ RequestListener.prototype.receive = function(event) {
   }
   if (sync) {
     var response = actions[action].call(this.actions, data);
-    message.setUserData('response', response, null);
+    var detail = event.detail;
+    detail.__exposedProps__ = {response: 'r'};
+    detail.response = response;
   } else {
     var response;
-    if (!message.getUserData('callback')) {
+    if (!event.detail.callback) {
       doc.documentElement.removeChild(message);
       response = null;
     } else {
       response = function sendResponse(response) {
         try {
-          message.setUserData('response', response, null);
+          var listener = doc.createEvent('CustomEvent');
+          listener.initCustomEvent('pdf.js.response', true, false,
+                                   {response: response,
+                                    __exposedProps__: {response: 'r'}});
+          return message.dispatchEvent(listener);
         } catch (e) {
-          // message is no longer accessible because the sender is already
-          // gone. the unloaded sender cannot receive the response anyway.
+          // doc is no longer accessible because the requestor is already
+          // gone. unloaded content cannot receive the response anyway.
           return false;
         }
-
-        var listener = doc.createEvent('HTMLEvents');
-        listener.initEvent('pdf.js.response', true, false);
-        return message.dispatchEvent(listener);
       };
     }
     actions[action].call(this.actions, data, response);
