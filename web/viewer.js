@@ -1492,6 +1492,18 @@ var PDFView = {
           this.page = pageNumber; // simple page
         }
       }
+      if ('pagemode' in params) {
+        var toggle = document.getElementById('sidebarToggle');
+        if (params.pagemode === 'thumbs' || params.pagemode === 'bookmarks') {
+          if (!this.sidebarOpen) {
+            toggle.click();
+          }
+          this.switchSidebarView(params.pagemode === 'thumbs' ?
+                                 'thumbs' : 'outline');
+        } else if (params.pagemode === 'none' && this.sidebarOpen) {
+          toggle.click();
+        }
+      }
     } else if (/^\d+$/.test(hash)) // page number
       this.page = hash;
     else // named destination
