@@ -19,7 +19,7 @@
            IDENTITY_MATRIX, info, isArray, isCmd, isDict, isEOF, isName, isNum,
            isStream, isString, JpegStream, Lexer, Metrics, Name, Parser,
            Pattern, PDFImage, PDFJS, serifFonts, stdFontMap, symbolsFonts,
-           TilingPattern, TODO, warn, Util */
+           TilingPattern, TODO, warn, Util, MissingDataException */
 
 'use strict';
 
@@ -155,10 +155,9 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
 
       assert(fontRes, 'fontRes not available');
 
-      ++this.fontIdCounter;
-
       font = xref.fetchIfRef(font) || fontRes.get(fontName);
       if (!isDict(font)) {
+        ++this.fontIdCounter;
         return {
           translated: new ErrorFont('Font ' + fontName + ' is not available'),
           loadedName: 'g_font_' + this.uniquePrefix + this.fontIdCounter
@@ -169,7 +168,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       if (!loadedName) {
         // keep track of each font we translated so the caller can
         // load them asynchronously before calling display on a page
-        loadedName = 'g_font_' + this.uniquePrefix + this.fontIdCounter;
+        loadedName = 'g_font_' + this.uniquePrefix + (this.fontIdCounter + 1);
         font.loadedName = loadedName;
 
         var translated;
@@ -177,6 +176,10 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           translated = this.translateFont(font, xref, resources,
                                           dependency);
         } catch (e) {
+          if (e instanceof MissingDataException) {
+            font.loadedName = undefined;
+            throw e;
+          }
           translated = new ErrorFont(e instanceof Error ? e.message : e);
         }
         font.translated = translated;
@@ -196,6 +199,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           data.charProcOperatorList = charProcOperatorList;
         }
       }
+      ++this.fontIdCounter;
       return font;
     },
 

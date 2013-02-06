@@ -28,7 +28,8 @@
 // PDFJS.disableWorker = true;
 PDFJS.enableStats = true;
 
-var appPath, browser, canvas, dummyCanvas, currentTaskIdx, manifest, stdout;
+var appPath, masterMode, browser, canvas, dummyCanvas, currentTaskIdx,
+    manifest, stdout;
 var inFlightRequests = 0;
 
 function queryParams() {
@@ -47,6 +48,7 @@ function load() {
   browser = params.browser;
   var manifestFile = params.manifestFile;
   appPath = params.path;
+  masterMode = params.masterMode === 'True';
   var delay = params.delay || 0;
 
   canvas = document.createElement('canvas');
@@ -124,27 +126,28 @@ function nextTask() {
   log('Loading file "' + task.file + '"\n');
 
   var absoluteUrl = combineUrl(window.location.href, task.file);
-  getPdf(absoluteUrl, function nextTaskGetPdf(data) {
-    var failure;
-    function continuation() {
-      task.pageNum = task.firstPage || 1;
-      nextPage(task, failure);
-    }
-    try {
-      var promise = PDFJS.getDocument(data);
-      promise.then(function(doc) {
-        task.pdfDoc = doc;
-        continuation();
-      }, function(e) {
-        failure = 'load PDF doc : ' + e;
-        continuation();
-      });
-      return;
-    } catch (e) {
-      failure = 'load PDF doc : ' + exceptionToString(e);
-    }
-    continuation();
-  });
+  var failure;
+  function continuation() {
+    task.pageNum = task.firstPage || 1;
+    nextPage(task, failure);
+  }
+
+  // When generating reference images in masterMode, disable range requests
+  PDFJS.disableRange = !task.rangeRequest || masterMode;
+  try {
+    var promise = PDFJS.getDocument(absoluteUrl);
+    promise.then(function(doc) {
+      task.pdfDoc = doc;
+      continuation();
+    }, function(e) {
+      failure = 'load PDF doc : ' + e;
+      continuation();
+    });
+    return;
+  } catch (e) {
+    failure = 'load PDF doc : ' + exceptionToString(e);
+  }
+  continuation();
 }
 
 function getLastPageNum(task) {

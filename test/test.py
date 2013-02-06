@@ -88,6 +88,7 @@ class TestOptions(OptionParser):
 
         return options
         
+
 def prompt(question):
     '''Return True iff the user answered "yes" to |question|.'''
     inp = raw_input(question +' [yes/no] > ')
@@ -157,11 +158,31 @@ class TestHandlerBase(BaseHTTPRequestHandler):
 
     def sendFile(self, path, ext):
         self.send_response(200)
+        self.send_header("Accept-Ranges", "bytes")
         self.send_header("Content-Type", MIMEs[ext])
         self.send_header("Content-Length", os.path.getsize(path))
         self.end_headers()
         with open(path, "rb") as f:
             self.wfile.write(f.read())
+
+    def sendFileRange(self, path, ext, start, end):
+        file_len = os.path.getsize(path)
+        if (end is None) or (file_len < end):
+          end = file_len
+        if (file_len < start) or (end <= start):
+          self.send_error(416)
+          return
+        chunk_len = end - start
+        self.send_response(206)
+        self.send_header("Accept-Ranges", "bytes")
+        self.send_header("Content-Type", MIMEs[ext])
+        self.send_header("Content-Length", chunk_len)
+        self.send_header("Content-Range", 'bytes ' + str(start) + '-' + str(end - 1) + '/' + str(file_len))
+        self.end_headers()
+        time.sleep(chunk_len / 500000.0)
+        with open(path, "rb") as f:
+            f.seek(start)
+            self.wfile.write(f.read(chunk_len))
 
     def do_GET(self):
         url = urlparse(self.path)
@@ -188,8 +209,18 @@ class TestHandlerBase(BaseHTTPRequestHandler):
             return
 
         if 'Range' in self.headers:
-            # TODO for fetch-as-you-go
-            self.send_error(501)
+            range_re = re.compile(r"^bytes=(\d+)\-(\d+)?")
+            parsed_range = range_re.search(self.headers.getheader("Range"))
+            if parsed_range is None:
+              self.send_error(501)
+              return
+            print 'Range requested ' + parsed_range.group(1) + '-' + parsed_range.group(2)
+            start = int(parsed_range.group(1))
+            if parsed_range.group(2) is None:
+              self.sendFileRange(path, ext, start, None)
+            else:
+              end = int(parsed_range.group(2)) + 1
+              self.sendFileRange(path, ext, start, end)
             return
 
         self.sendFile(path, ext)
@@ -606,6 +637,7 @@ def startBrowsers(browsers, options, path):
         qs = '?browser='+ urllib.quote(b.name) +'&manifestFile='+ urllib.quote(options.manifestFile)
         qs += '&path=' + b.path
         qs += '&delay=' + str(options.statsDelay)
+        qs += '&masterMode=' + str(options.masterMode)
         b.start(host + path + qs)
 
 def teardownBrowsers(browsers):

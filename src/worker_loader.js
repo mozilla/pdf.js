@@ -19,6 +19,9 @@
 
 // List of files to include;
 var files = [
+  'network.js',
+  'chunked_stream.js',
+  'pdf_manager.js',
   'core.js',
   'util.js',
   'canvas.js',

@@ -117,17 +117,12 @@ var ProgressBar = (function ProgressBarClosure() {
     updateBar: function ProgressBar_updateBar() {
       if (this._indeterminate) {
         this.div.classList.add('indeterminate');
+        this.div.style.width = this.width + this.units;
         return;
       }
 
-      var progressSize = this.width * this._percent / 100;
-
-      if (this._percent > 95)
-        this.div.classList.add('full');
-      else
-        this.div.classList.remove('full');
       this.div.classList.remove('indeterminate');
-
+      var progressSize = this.width * this._percent / 100;
       this.div.style.width = progressSize + this.units;
     },
 
@@ -945,12 +940,39 @@ var PDFView = {
       PDFView.loadingBar = new ProgressBar('#loadingBar', {});
     }
 
-    window.addEventListener('message', function window_message(e) {
+    var pdfDataRangeTransport = {
+      listeners: [],
+
+      addListener: function PdfDataRangeTransport_addListener(listener) {
+        this.listeners.push(listener);
+      },
+
+      onDataRange: function PdfDataRangeTransport_onDataRange(begin, chunk) {
+        for (var i = 0, n = this.listeners.length; i < n; ++i) {
+          this.listeners[i](begin, chunk);
+        }
+      },
+
+      requestDataRange: function PdfDataRangeTransport_requestDataRange(
+                                  begin, end) {
+        FirefoxCom.request('requestDataRange', { begin: begin, end: end });
+      }
+    };
+
+    window.addEventListener('message', function windowMessage(e) {
       var args = e.data;
 
       if (typeof args !== 'object' || !('pdfjsLoadAction' in args))
         return;
       switch (args.pdfjsLoadAction) {
+        case 'supportsRangedLoading':
+          PDFView.open(args.pdfUrl, 0, undefined, pdfDataRangeTransport, {
+            length: args.length
+          });
+          break;
+        case 'range':
+          pdfDataRangeTransport.onDataRange(args.begin, args.chunk);
+          break;
         case 'progress':
           PDFView.progress(args.loaded / args.total);
           break;
@@ -985,13 +1007,20 @@ var PDFView = {
 //#endif
   },
 
-  open: function pdfViewOpen(url, scale, password) {
+  // TODO(mack): This function signature should really be pdfViewOpen(url, args)
+  open: function pdfViewOpen(url, scale, password,
+                             pdfDataRangeTransport, args) {
     var parameters = {password: password};
     if (typeof url === 'string') { // URL
       this.setTitleUsingUrl(url);
       parameters.url = url;
     } else if (url && 'byteLength' in url) { // ArrayBuffer
       parameters.data = url;
+    }
+    if (args) {
+      for (var prop in args) {
+        parameters[prop] = args[prop];
+      }
     }
 
     if (!PDFView.loadingBar) {
@@ -1001,7 +1030,7 @@ var PDFView = {
     this.pdfDocument = null;
     var self = this;
     self.loading = true;
-    PDFJS.getDocument(parameters).then(
+    PDFJS.getDocument(parameters, pdfDataRangeTransport).then(
       function getDocumentCallback(pdfDocument) {
         self.load(pdfDocument, scale);
         self.loading = false;
@@ -1042,9 +1071,6 @@ var PDFView = {
 //#endif
         }
 
-        var loadingIndicator = document.getElementById('loading');
-        loadingIndicator.textContent = mozL10n.get('loading_error_indicator',
-          null, 'Error');
         var moreInfo = {
           message: message
         };
@@ -1251,9 +1277,6 @@ var PDFView = {
       }
     }
 
-    var loadingBox = document.getElementById('loadingBox');
-    loadingBox.setAttribute('hidden', 'true');
-
 //#if !(FIREFOX || MOZCENTRAL)
     var errorWrapper = document.getElementById('errorWrapper');
     errorWrapper.removeAttribute('hidden');
@@ -1308,10 +1331,12 @@ var PDFView = {
     var errorWrapper = document.getElementById('errorWrapper');
     errorWrapper.setAttribute('hidden', 'true');
 
-    var loadingBox = document.getElementById('loadingBox');
-    loadingBox.setAttribute('hidden', 'true');
-    var loadingIndicator = document.getElementById('loading');
-    loadingIndicator.textContent = '';
+    pdfDocument.dataLoaded().then(function() {
+      var loadingBar = document.getElementById('loadingBar');
+      loadingBar.classList.add('hidden');
+      var outerContainer = document.getElementById('outerContainer');
+      outerContainer.classList.remove('loadingInProgress');
+    });
 
     var thumbsView = document.getElementById('thumbnailView');
     thumbsView.parentNode.scrollTop = 0;
@@ -3070,8 +3095,13 @@ document.addEventListener('DOMContentLoaded', function webViewerLoad(evt) {
   var hash = document.location.hash.substring(1);
   var hashParams = PDFView.parseQueryString(hash);
 
-  if ('disableWorker' in hashParams)
+  if ('disableWorker' in hashParams) {
     PDFJS.disableWorker = (hashParams['disableWorker'] === 'true');
+  }
+
+  if ('disableRange' in hashParams) {
+    PDFJS.disableRange = (hashParams['disableRange'] === 'true');
+  }
 
 //#if !(FIREFOX || MOZCENTRAL)
   var locale = navigator.language;
@@ -3237,11 +3267,9 @@ document.addEventListener('DOMContentLoaded', function webViewerLoad(evt) {
     });
 
 //#if (FIREFOX || MOZCENTRAL)
-//if (FirefoxCom.requestSync('getLoadingType') == 'passive') {
-//  PDFView.setTitleUsingUrl(file);
-//  PDFView.initPassiveLoading();
-//  return;
-//}
+//PDFView.setTitleUsingUrl(file);
+//PDFView.initPassiveLoading();
+//return;
 //#endif
 
 //#if !B2G

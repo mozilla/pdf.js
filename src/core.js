@@ -17,7 +17,8 @@
 /* globals assertWellFormed, calculateMD5, Catalog, error, info, isArray,
            isArrayBuffer, isDict, isName, isStream, isString, Lexer,
            Linearization, NullStream, PartialEvaluator, shadow, Stream,
-           StreamsSequenceStream, stringToPDFString, TODO, Util, warn, XRef */
+           StreamsSequenceStream, stringToPDFString, TODO, Util, warn, XRef,
+           MissingDataException */
 
 'use strict';
 
@@ -35,69 +36,6 @@ if (!globalScope.PDFJS) {
   globalScope.PDFJS = {};
 }
 
-// getPdf()
-// Convenience function to perform binary Ajax GET
-// Usage: getPdf('http://...', callback)
-//        getPdf({
-//                 url:String ,
-//                 [,progress:Function, error:Function]
-//               },
-//               callback)
-function getPdf(arg, callback) {
-  var params = arg;
-  if (typeof arg === 'string')
-    params = { url: arg };
-//#if !B2G
-  var xhr = new XMLHttpRequest();
-//#else
-//var xhr = new XMLHttpRequest({mozSystem: true});
-//#endif
-  xhr.open('GET', params.url);
-
-  var headers = params.headers;
-  if (headers) {
-    for (var property in headers) {
-      if (typeof headers[property] === 'undefined')
-        continue;
-
-      xhr.setRequestHeader(property, params.headers[property]);
-    }
-  }
-
-  xhr.mozResponseType = xhr.responseType = 'arraybuffer';
-
-  var protocol = params.url.substring(0, params.url.indexOf(':') + 1);
-  xhr.expected = (protocol === 'http:' || protocol === 'https:') ? 200 : 0;
-
-  if ('progress' in params)
-    xhr.onprogress = params.progress || undefined;
-
-  var calledErrorBack = false;
-
-  if ('error' in params) {
-    xhr.onerror = function errorBack() {
-      if (!calledErrorBack) {
-        calledErrorBack = true;
-        params.error();
-      }
-    };
-  }
-
-  xhr.onreadystatechange = function getPdfOnreadystatechange(e) {
-    if (xhr.readyState === 4) {
-      if (xhr.status === xhr.expected) {
-        var data = (xhr.mozResponseArrayBuffer || xhr.mozResponse ||
-                    xhr.responseArrayBuffer || xhr.response);
-        callback(data);
-      } else if (params.error && !calledErrorBack) {
-        calledErrorBack = true;
-        params.error(e);
-      }
-    }
-  };
-  xhr.send(null);
-}
-globalScope.PDFJS.getPdf = getPdf;
 globalScope.PDFJS.pdfBug = false;
 
 
@@ -496,8 +434,8 @@ var PDFDocument = (function PDFDocumentClosure() {
   function init(stream, password) {
     assertWellFormed(stream.length > 0, 'stream must have data');
     this.stream = stream;
-    this.setup(password);
-    this.acroForm = this.catalog.catDict.get('AcroForm');
+    var xref = new XRef(this.stream, password);
+    this.xref = xref;
   }
 
   function find(stream, needle, limit, backwards) {
@@ -535,15 +473,25 @@ var PDFDocument = (function PDFDocumentClosure() {
   };
 
   PDFDocument.prototype = {
+    parse: function PDFDocument_parse(recoveryMode) {
+      this.setup(recoveryMode);
+      this.acroForm = this.catalog.catDict.get('AcroForm');
+    },
+
     get linearization() {
       var length = this.stream.length;
       var linearization = false;
       if (length) {
         try {
           linearization = new Linearization(this.stream);
-          if (linearization.length != length)
+          if (linearization.length != length) {
             linearization = false;
+          }
         } catch (err) {
+          if (err instanceof MissingDataException) {
+            throw err;
+          }
+
           warn('The linearization data is not available ' +
                'or unreadable pdf data is found');
           linearization = false;
@@ -622,14 +570,13 @@ var PDFDocument = (function PDFDocumentClosure() {
       }
       // May not be a PDF file, continue anyway.
     },
-    setup: function PDFDocument_setup(password) {
-      this.checkHeader();
-      var xref = new XRef(this.stream,
-                          this.startXRef,
-                          this.mainXRefEntriesOffset,
-                          password);
-      this.xref = xref;
-      this.catalog = new Catalog(xref);
+    parseStartXRef: function PDFDocument_parseStartXRef() {
+      var startXRef = this.startXRef;
+      this.xref.setStartXRef(startXRef);
+    },
+    setup: function PDFDocument_setup(recoveryMode) {
+      this.xref.parse(recoveryMode);
+      this.catalog = new Catalog(this.xref);
     },
     get numPages() {
       var linearization = this.linearization;
@@ -637,7 +584,7 @@ var PDFDocument = (function PDFDocumentClosure() {
       // shadow the prototype getter
       return shadow(this, 'numPages', num);
     },
-    getDocumentInfo: function PDFDocument_getDocumentInfo() {
+    get documentInfo() {
       var docInfo = {
         PDFFormatVersion: this.pdfFormatVersion,
         IsAcroFormPresent: !!this.acroForm
@@ -660,9 +607,9 @@ var PDFDocument = (function PDFDocumentClosure() {
           }
         }
       }
-      return shadow(this, 'getDocumentInfo', docInfo);
+      return shadow(this, 'documentInfo', docInfo);
     },
-    getFingerprint: function PDFDocument_getFingerprint() {
+    get fingerprint() {
       var xref = this.xref, fileID;
       if (xref.trailer.has('ID')) {
         fileID = '';
@@ -681,10 +628,15 @@ var PDFDocument = (function PDFDocumentClosure() {
         }
       }
 
-      return shadow(this, 'getFingerprint', fileID);
+      return shadow(this, 'fingerprint', fileID);
     },
-    getPage: function PDFDocument_getPage(n) {
-      return this.catalog.getPage(n);
+
+    traversePages: function PDFDocument_traversePages() {
+      this.catalog.traversePages();
+    },
+
+    getPage: function PDFDocument_getPage(pageIndex) {
+      return this.catalog.getPage(pageIndex);
     }
   };
 
