@@ -16,7 +16,7 @@
  */
 /* jshint esnext:true */
 /* globals Components, Services, XPCOMUtils, NetUtil, PrivateBrowsingUtils,
-           dump */
+           dump, NetworkManager */
 
 'use strict';
 
@@ -37,6 +37,7 @@ const MAX_DATABASE_LENGTH = 4096;
 Cu.import('resource://gre/modules/XPCOMUtils.jsm');
 Cu.import('resource://gre/modules/Services.jsm');
 Cu.import('resource://gre/modules/NetUtil.jsm');
+Cu.import('resource://pdf.js/network.js');
 
 XPCOMUtils.defineLazyModuleGetter(this, 'PrivateBrowsingUtils',
   'resource://gre/modules/PrivateBrowsingUtils.jsm');
@@ -190,9 +191,8 @@ PdfDataListener.prototype = {
 };
 
 // All the priviledged actions.
-function ChromeActions(domWindow, dataListener, contentDispositionFilename) {
+function ChromeActions(domWindow, contentDispositionFilename) {
   this.domWindow = domWindow;
-  this.dataListener = dataListener;
   this.contentDispositionFilename = contentDispositionFilename;
 }
 
@@ -306,37 +306,7 @@ ChromeActions.prototype = {
     return getStringPref('general.useragent.locale', 'en-US');
   },
   getLoadingType: function() {
-    return this.dataListener ? 'passive' : 'active';
-  },
-  initPassiveLoading: function() {
-    if (!this.dataListener)
-      return false;
-
-    var domWindow = this.domWindow;
-    this.dataListener.onprogress =
-      function ChromeActions_dataListenerProgress(loaded, total) {
-
-      domWindow.postMessage({
-        pdfjsLoadAction: 'progress',
-        loaded: loaded,
-        total: total
-      }, '*');
-    };
-
-    var self = this;
-    this.dataListener.oncomplete =
-      function ChromeActions_dataListenerComplete(data, errorCode) {
-
-      domWindow.postMessage({
-        pdfjsLoadAction: 'complete',
-        data: data,
-        errorCode: errorCode
-      }, '*');
-
-      delete self.dataListener;
-    };
-
-    return true;
+    return 'passive';
   },
   getStrings: function(data) {
     try {
@@ -435,6 +405,140 @@ ChromeActions.prototype = {
                                    .updateControlState(result, findPrevious);
   }
 };
+
+var RangedChromeActions = (function RangedChromeActionsClosure() {
+  /**
+   * This is for range requests
+   */
+  function RangedChromeActions(
+              domWindow, contentDispositionFilename, originalRequest) {
+
+    ChromeActions.call(this, domWindow, contentDispositionFilename);
+
+    this.pdfUrl = originalRequest.URI.resolve('');
+    this.contentLength = originalRequest.contentLength;
+
+    // Pass all the headers from the original request through
+    var httpHeaderVisitor = {
+      headers: {},
+      visitHeader: function(aHeader, aValue) {
+        if (aHeader === 'Range') {
+          // When loading the PDF from cache, firefox seems to set the Range
+          // request header to fetch only the unfetched portions of the file
+          // (e.g. 'Range: bytes=1024-'). However, we want to set this header
+          // manually to fetch the PDF in chunks.
+          return;
+        }
+        this.headers[aHeader] = aValue;
+      }
+    };
+    originalRequest.visitRequestHeaders(httpHeaderVisitor);
+
+    var getXhr = function getXhr() {
+      const XMLHttpRequest = Components.Constructor(
+          '@mozilla.org/xmlextras/xmlhttprequest;1');
+      return new XMLHttpRequest();
+    };
+
+    this.networkManager = new NetworkManager(this.pdfUrl, {
+      httpHeaders: httpHeaderVisitor.headers,
+      getXhr: getXhr
+    });
+
+    var self = this;
+    // If we are in range request mode, this means we manually issued xhr
+    // requests, which we need to abort when we leave the page
+    domWindow.addEventListener('unload', function unload(e) {
+      self.networkManager.abortAllRequests();
+      domWindow.removeEventListener(e.type, unload);
+    });
+  }
+
+  RangedChromeActions.prototype = Object.create(ChromeActions.prototype);
+  var proto = RangedChromeActions.prototype;
+  proto.constructor = RangedChromeActions;
+
+  proto.initPassiveLoading = function RangedChromeActions_initPassiveLoading() {
+    this.domWindow.postMessage({
+      pdfjsLoadAction: 'supportsRangedLoading',
+      pdfUrl: this.pdfUrl,
+      length: this.contentLength
+    }, '*');
+
+    return true;
+  };
+
+  proto.requestDataRange = function RangedChromeActions_requestDataRange(args) {
+    var begin = args.begin;
+    var end = args.end;
+    var domWindow = this.domWindow;
+    // TODO(mack): Support error handler. We're not currently not handling
+    // errors from chrome code for non-range requests, so this doesn't
+    // seem high-pri
+    this.networkManager.requestRange(begin, end, {
+      onDone: function RangedChromeActions_onDone(args) {
+        domWindow.postMessage({
+          pdfjsLoadAction: 'range',
+          begin: args.begin,
+          chunk: args.chunk
+        }, '*');
+      }
+    });
+  };
+
+  return RangedChromeActions;
+})();
+
+var StandardChromeActions = (function StandardChromeActionsClosure() {
+
+  /**
+   * This is for a single network stream
+   */
+  function StandardChromeActions(domWindow, contentDispositionFilename,
+                                 dataListener) {
+
+    ChromeActions.call(this, domWindow, contentDispositionFilename);
+    this.dataListener = dataListener;
+  }
+
+  StandardChromeActions.prototype = Object.create(ChromeActions.prototype);
+  var proto = StandardChromeActions.prototype;
+  proto.constructor = StandardChromeActions;
+
+  proto.initPassiveLoading =
+      function StandardChromeActions_initPassiveLoading() {
+
+    if (!this.dataListener) {
+      return false;
+    }
+
+    var self = this;
+
+    this.dataListener.onprogress = function ChromeActions_dataListenerProgress(
+                                      loaded, total) {
+      self.domWindow.postMessage({
+        pdfjsLoadAction: 'progress',
+        loaded: loaded,
+        total: total
+      }, '*');
+    };
+
+    this.dataListener.oncomplete = function ChromeActions_dataListenerComplete(
+                                      data, errorCode) {
+      self.domWindow.postMessage({
+        pdfjsLoadAction: 'complete',
+        data: data,
+        errorCode: errorCode
+      }, '*');
+
+      delete self.dataListener;
+    };
+
+    return true;
+  };
+
+  return StandardChromeActions;
+})();
 
 // Event listener to trigger chrome privedged code.
 function RequestListener(actions) {
@@ -552,11 +656,17 @@ PdfStreamConverter.prototype = {
   /*
    * This component works as such:
    * 1. asyncConvertData stores the listener
-   * 2. onStartRequest creates a new channel, streams the viewer and cancels
-   *    the request so pdf.js can do the request
-   * Since the request is cancelled onDataAvailable should not be called. The
-   * onStopRequest does nothing. The convert function just returns the stream,
-   * it's just the synchronous version of asyncConvertData.
+   * 2. onStartRequest creates a new channel, streams the viewer
+   * 3. If range requests are supported:
+   *      3.1. Suspends and cancels the request so we can issue range
+   *          requests instead.
+   *
+   *    If range rquests are not supported:
+   *      3.1. Read the stream as it's loaded in onDataAvailable to send
+   *           to the viewer
+   *
+   * The convert function just returns the stream, it's just the synchronous
+   * version of asyncConvertData.
    */
 
   // nsIStreamConverter::convert
@@ -573,40 +683,57 @@ PdfStreamConverter.prototype = {
   // nsIStreamListener::onDataAvailable
   onDataAvailable: function(aRequest, aContext, aInputStream, aOffset, aCount) {
     if (!this.dataListener) {
-      // Do nothing since all the data loading is handled by the viewer.
       return;
     }
 
     var binaryStream = this.binaryStream;
     binaryStream.setInputStream(aInputStream);
-    this.dataListener.append(binaryStream.readByteArray(aCount));
+    var chunk = binaryStream.readByteArray(aCount);
+    this.dataListener.append(chunk);
   },
 
   // nsIRequestObserver::onStartRequest
   onStartRequest: function(aRequest, aContext) {
     // Setup the request so we can use it below.
+    var acceptRanges = false;
+    try {
+      aRequest.QueryInterface(Ci.nsIHttpChannel);
+      if (aRequest.getResponseHeader('Accept-Ranges') === 'bytes') {
+        var hash = aRequest.URI.ref;
+        acceptRanges = hash.indexOf('disableRange=true') < 0;
+      }
+    } catch (e) {}
     aRequest.QueryInterface(Ci.nsIChannel);
+
     aRequest.QueryInterface(Ci.nsIWritablePropertyBag);
-    // Creating storage for PDF data
-    var contentLength = aRequest.contentLength;
-    var dataListener = new PdfDataListener(contentLength);
     var contentDispositionFilename;
     try {
       contentDispositionFilename = aRequest.contentDispositionFilename;
     } catch (e) {}
-    this.dataListener = dataListener;
-    this.binaryStream = Cc['@mozilla.org/binaryinputstream;1']
-                        .createInstance(Ci.nsIBinaryInputStream);
 
     // Change the content type so we don't get stuck in a loop.
     aRequest.setProperty('contentType', aRequest.contentType);
     aRequest.contentType = 'text/html';
+
+    if (!acceptRanges) {
+      // Creating storage for PDF data
+      var contentLength = aRequest.contentLength;
+      this.dataListener = new PdfDataListener(contentLength);
+      this.binaryStream = Cc['@mozilla.org/binaryinputstream;1']
+                          .createInstance(Ci.nsIBinaryInputStream);
+    } else {
+      // Suspend the request so we're not consuming any of the stream,
+      // but we can't cancel the request yet. Otherwise, the original
+      // listener will think we do not want to go the new PDF url
+      aRequest.suspend();
+    }
 
     // Create a new channel that is viewer loaded as a resource.
     var ioService = Services.io;
     var channel = ioService.newChannel(
                     PDF_VIEWER_WEB_PAGE, null, null);
 
+    var self = this;
     var listener = this.listener;
     // Proxy all the request observer calls, when it gets to onStopRequest
     // we can get the dom window.  We also intentionally pass on the original
@@ -625,8 +752,18 @@ PdfStreamConverter.prototype = {
         var domWindow = getDOMWindow(channel);
         // Double check the url is still the correct one.
         if (domWindow.document.documentURIObject.equals(aRequest.URI)) {
-          var actions = new ChromeActions(domWindow, dataListener,
-                                          contentDispositionFilename);
+          var actions;
+          if (acceptRanges) {
+            // We are going to be issuing range requests, so cancel the
+            // original request
+            aRequest.resume();
+            aRequest.cancel(Cr.NS_BINDING_ABORTED);
+            actions = new RangedChromeActions(domWindow,
+                contentDispositionFilename, aRequest);
+          } else {
+            actions = new StandardChromeActions(
+                domWindow, contentDispositionFilename, self.dataListener);
+          }
           var requestListener = new RequestListener(actions);
           domWindow.addEventListener(PDFJS_EVENT_ID, function(event) {
             requestListener.receive(event);

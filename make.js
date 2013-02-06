@@ -27,6 +27,7 @@ var path = require('path');
 
 var ROOT_DIR = __dirname + '/', // absolute path to project's root
     BUILD_DIR = 'build/',
+    SRC_DIR = 'src/',
     BUILD_TARGET = BUILD_DIR + 'pdf.js',
     FIREFOX_BUILD_DIR = BUILD_DIR + '/firefox/',
     CHROME_BUILD_DIR = BUILD_DIR + '/chrome/',
@@ -219,16 +220,21 @@ target.locale = function() {
 // make bundle
 // Bundles all source files into one wrapper 'pdf.js' file, in the given order.
 //
-target.bundle = function() {
+target.bundle = function(args) {
+  args = args || {};
+  var excludes = args.excludes || [];
+
   target.buildnumber();
 
   cd(ROOT_DIR);
   echo();
   echo('### Bundling files into ' + BUILD_TARGET);
 
-  // File order matters
   var SRC_FILES =
-       ['core.js',
+       ['network.js',
+        'chunked_stream.js',
+        'pdf_manager.js',
+        'core.js',
         'util.js',
         'api.js',
         'canvas.js',
@@ -252,13 +258,21 @@ target.bundle = function() {
         'bidi.js',
         'metadata.js'];
 
+  for (var i = 0, length = excludes.length; i < length; ++i) {
+    var exclude = excludes[i];
+    var index = SRC_FILES.indexOf(exclude);
+    if (index >= 0) {
+      SRC_FILES.splice(index, 1);
+    }
+  }
+
   var EXT_SRC_FILES = [
         '../external/jpgjs/jpg.js'];
 
   if (!test('-d', BUILD_DIR))
     mkdir(BUILD_DIR);
 
-  cd('src');
+  cd(SRC_DIR);
   var bundle = cat(SRC_FILES),
       bundleVersion = EXTENSION_VERSION,
       bundleBuild = exec('git log --format="%h" -n 1',
@@ -356,7 +370,7 @@ target.firefox = function() {
       FIREFOX_AMO_EXTENSION_NAME = 'pdf.js.amo.xpi';
 
   target.locale();
-  target.bundle();
+  target.bundle({ excludes: ['network.js'] });
   cd(ROOT_DIR);
 
   // Clear out everything in the firefox extension build directory
@@ -382,7 +396,8 @@ target.firefox = function() {
     ],
     preprocess: [
       [COMMON_WEB_FILES_PREPROCESS, FIREFOX_BUILD_CONTENT_DIR + '/web'],
-      [BUILD_TARGET, FIREFOX_BUILD_CONTENT_DIR + BUILD_TARGET]
+      [BUILD_TARGET, FIREFOX_BUILD_CONTENT_DIR + BUILD_TARGET],
+      [SRC_DIR + 'network.js', FIREFOX_BUILD_CONTENT_DIR]
     ]
   };
   builder.build(setup);
@@ -461,7 +476,7 @@ target.mozcentral = function() {
          'content',
          'LICENSE'];
 
-  target.bundle();
+  target.bundle({ excludes: ['network.js'] });
   cd(ROOT_DIR);
 
   // Clear out everything in the firefox extension build directory
@@ -489,7 +504,8 @@ target.mozcentral = function() {
     ],
     preprocess: [
       [COMMON_WEB_FILES_PREPROCESS, MOZCENTRAL_CONTENT_DIR + '/web'],
-      [BUILD_TARGET, MOZCENTRAL_CONTENT_DIR + BUILD_TARGET]
+      [BUILD_TARGET, MOZCENTRAL_CONTENT_DIR + BUILD_TARGET],
+      [SRC_DIR + 'network.js', MOZCENTRAL_CONTENT_DIR]
     ]
   };
   builder.build(setup);

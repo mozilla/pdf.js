@@ -189,6 +189,45 @@ var MissingPDFException = (function MissingPDFExceptionClosure() {
   return MissingPDFException;
 })();
 
+var NotImplementedException = (function NotImplementedExceptionClosure() {
+  function NotImplementedException(msg) {
+    this.message = msg;
+  }
+
+  NotImplementedException.prototype = new Error();
+  NotImplementedException.prototype.name = 'NotImplementedException';
+  NotImplementedException.constructor = NotImplementedException;
+
+  return NotImplementedException;
+})();
+
+var MissingDataException = (function MissingDataExceptionClosure() {
+  function MissingDataException(begin, end) {
+    this.begin = begin;
+    this.end = end;
+    this.message = 'Missing data [begin, end)';
+  }
+
+  MissingDataException.prototype = new Error();
+  MissingDataException.prototype.name = 'MissingDataException';
+  MissingDataException.constructor = MissingDataException;
+
+  return MissingDataException;
+})();
+
+var XRefParseException = (function XRefParseExceptionClosure() {
+  function XRefParseException(msg) {
+    this.message = msg;
+  }
+
+  XRefParseException.prototype = new Error();
+  XRefParseException.prototype.name = 'XRefParseException';
+  XRefParseException.constructor = XRefParseException;
+
+  return XRefParseException;
+})();
+
+
 function bytesToString(bytes) {
   var str = '';
   var length = bytes.length;
@@ -480,6 +519,13 @@ function stringToPDFString(str) {
 
 function stringToUTF8String(str) {
   return decodeURIComponent(escape(str));
+}
+
+function isEmptyObj(obj) {
+  for (var key in obj) {
+    return false;
+  }
+  return true;
 }
 
 function isBool(v) {

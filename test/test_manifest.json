@@ -1,4 +1,11 @@
 [
+    {  "id": "filled-background-range",
+      "file": "pdfs/filled-background.pdf",
+      "md5": "2e3120255d9c3e79b96d2543b12d2589",
+      "rounds": 1,
+      "rangeRequest": true,
+      "type": "eq"
+    },
     {  "id": "tracemonkey-eq",
        "file": "pdfs/tracemonkey.pdf",
        "md5": "9a192d8b1a7dc652a19835f6f08098bd",
