@@ -1205,7 +1205,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       var lastChar = dict.get('LastChar') || maxCharIndex;
 
       var fontName = descriptor.get('FontName');
-      var baseFont = baseDict.get('BaseFont');
+      var baseFont = dict.get('BaseFont');
       // Some bad pdf's have a string as the font name.
       if (isString(fontName)) {
         fontName = new Name(fontName);
@@ -1215,13 +1215,6 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       }
 
       var fontNameStr = fontName && fontName.name;
-      // 9.7.6.1
-      if (type.name == 'CIDFontType0') {
-        var cidEncoding = baseDict.get('Encoding');
-        if (isName(cidEncoding)) {
-          fontNameStr = fontNameStr + '-' + cidEncoding.name;
-        }
-      }
       var baseFontStr = baseFont && baseFont.name;
       if (fontNameStr !== baseFontStr) {
         warn('The FontDescriptor\'s FontName is "' + fontNameStr +
