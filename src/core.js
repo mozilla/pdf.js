@@ -542,6 +542,7 @@ var PDFDocument = (function PDFDocumentClosure() {
       var docInfo = {
         PDFFormatVersion: this.pdfFormatVersion,
         IsTextCopyDisabled: encrypt ? encrypt.disableTextCopy : false,
+        IsPrintDisabled: encrypt ? encrypt.disablePrint : false,
         IsAcroFormPresent: !!this.acroForm
       };
       if (this.xref.trailer.has('Info')) {

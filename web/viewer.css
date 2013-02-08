@@ -1358,6 +1358,10 @@ canvas {
     margin: 0;
   }
 
+  #viewerContainer.print-protection {
+    display: none;
+  }
+
   .page {
     float: left;
     display: none;
