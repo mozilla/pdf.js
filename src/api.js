@@ -298,7 +298,7 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
           }
 
           var gfx = new CanvasGraphics(params.canvasContext, this.commonObjs,
-            this.objs, !this.pageInfo.disableTextLayer && params.textLayer);
+            this.objs, params.textLayer);
           try {
             this.display(gfx, params.viewport, complete, continueCallback);
           } catch (e) {
