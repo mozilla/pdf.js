@@ -538,8 +538,10 @@ var PDFDocument = (function PDFDocumentClosure() {
       return shadow(this, 'numPages', num);
     },
     getDocumentInfo: function PDFDocument_getDocumentInfo() {
+      var encrypt = this.xref.encrypt;
       var docInfo = {
         PDFFormatVersion: this.pdfFormatVersion,
+        IsTextCopyDisabled: encrypt ? encrypt.disableTextCopy : false,
         IsAcroFormPresent: !!this.acroForm
       };
       if (this.xref.trailer.has('Info')) {
