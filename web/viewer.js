@@ -1360,6 +1360,20 @@ var PDFView = {
         document.getElementById('viewerContainer').classList
           .remove('copy-protection');
       }
+
+      if (info.IsPrintDisabled) {
+        if (PDFView.supportsPrinting) {
+          document.getElementById('print').classList.add('hidden');
+        }
+        document.getElementById('viewerContainer').classList
+          .add('print-protection');
+      } else {
+        if (PDFView.supportsPrinting) {
+          document.getElementById('print').classList.remove('hidden');
+        }
+        document.getElementById('viewerContainer').classList
+          .remove('print-protection');
+      }
     });
   },
 
@@ -1626,6 +1640,9 @@ var PDFView = {
   },
 
   beforePrint: function pdfViewSetupBeforePrint() {
+    if (this.documentInfo.IsPrintDisabled) {
+      return;
+    }
     if (!this.supportsPrinting) {
       var printMessage = mozL10n.get('printing_not_supported', null,
           'Warning: Printing is not fully supported by this browser.');
