@@ -561,8 +561,6 @@ var CipherTransformFactory = (function CipherTransformFactoryClosure() {
     var ownerPassword = stringToBytes(dict.get('O'));
     var userPassword = stringToBytes(dict.get('U'));
     var flags = dict.get('P');
-    this.disableTextCopy = !(flags & 16);
-    this.disablePrint = !(flags & 4);
     var revision = dict.get('R');
     var encryptMetadata = algorithm == 4 &&  // meaningful when V is 4
       dict.get('EncryptMetadata') !== false; // makes true as default value
