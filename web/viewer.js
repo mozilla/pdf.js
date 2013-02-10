@@ -3146,6 +3146,9 @@ window.addEventListener('scalechange', function scalechange(evt) {
     customScaleOption.textContent = Math.round(evt.scale * 10000) / 100 + '%';
     customScaleOption.selected = true;
   }
+  
+  document.getElementById('zoom_out').disabled = (evt.scale === MIN_SCALE);
+  document.getElementById('zoom_in').disabled = (evt.scale === MAX_SCALE);
 
   updateViewarea();
 }, true);
