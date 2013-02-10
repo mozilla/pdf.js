@@ -153,6 +153,7 @@ var ProgressBar = (function ProgressBarClosure() {
 // If not, we use FUEL in FF
 // Use asyncStorage for B2G
 var Settings = (function SettingsClosure() {
+//#if !(FIREFOX || MOZCENTRAL || B2G)
   var isLocalStorageEnabled = (function localStorageEnabledTest() {
     // Feature test as per http://diveintohtml5.info/storage.html
     // The additional localStorage call is to get around a FF quirk, see
@@ -164,6 +165,7 @@ var Settings = (function SettingsClosure() {
       return false;
     }
   })();
+//#endif
 
   function Settings(fingerprint) {
     this.fingerprint = fingerprint;
