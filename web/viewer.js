@@ -3296,6 +3296,12 @@ window.addEventListener('keydown', function keydown(evt) {
         PDFView.page--;
         handled = true;
         break;
+      case 27: // esc key
+        if (!PDFView.supportsIntegratedFind && PDFFindBar.opened) {
+          PDFFindBar.close();
+          handled = true;
+        }
+        break;
       case 40: // down arrow
       case 34: // pg down
       case 32: // spacebar
