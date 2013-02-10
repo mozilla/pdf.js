@@ -740,6 +740,19 @@ var PDFView = {
         state.down = false;
       // else do nothing and use previous value
       state.lastY = currentY;
+
+      // Only scroll whole pages when zoom is set to 'page-fit'.
+      if (PDFView.currentScaleValue === 'page-fit' &&
+          viewAreaElement === PDFView.container && !PDFView.isFullscreen) {
+        var pageContainerOffsetTop =
+          document.getElementById('pageContainer' + PDFView.page).offsetTop;
+
+        if (state.down && state.lastY > pageContainerOffsetTop) {
+          PDFView.page++;
+        } else if (!state.down && state.lastY < pageContainerOffsetTop) {
+          PDFView.page--;
+        }
+      }
       callback();
     }, true);
   },
@@ -1095,7 +1108,9 @@ var PDFView = {
     if (pageNumber) {
       this.page = pageNumber;
       var currentPage = this.pages[pageNumber - 1];
-      currentPage.scrollIntoView(dest);
+      if (this.currentScaleValue !== 'page-fit') {
+        currentPage.scrollIntoView(dest);
+      }
     }
   },
 
@@ -1484,10 +1499,15 @@ var PDFView = {
           if (zoomArgNumber)
             zoomArg = zoomArgNumber / 100;
 
-          var dest = [null, {name: 'XYZ'}, (zoomArgs[1] | 0),
-            (zoomArgs[2] | 0), zoomArg];
-          var currentPage = this.pages[pageNumber - 1];
-          currentPage.scrollIntoView(dest);
+          if (zoomArg !== 'page-fit') {
+            var dest = [null, {name: 'XYZ'}, (zoomArgs[1] | 0),
+                        (zoomArgs[2] | 0), zoomArg];
+            var currentPage = this.pages[pageNumber - 1];
+            currentPage.scrollIntoView(dest);
+          } else {
+            this.page = pageNumber;
+            this.parseScale(zoomArg, true);
+          }
         } else {
           this.page = pageNumber; // simple page
         }
@@ -2909,6 +2929,17 @@ document.addEventListener('DOMContentLoaded', function webViewerLoad(evt) {
       PDFView.switchSidebarView('outline');
     });
 
+  document.getElementById('viewerContainer').addEventListener('DOMMouseScroll',
+    function(evt) {
+      // This event listener can't be attached to the window, since that would
+      // break sidebar scrolling when zoom is set to 'page-fit'.
+      if (PDFView.currentScaleValue === 'page-fit') {
+        var FIREFOX_DELTA_FACTOR = -40;
+        PDFView.mouseScroll(evt.detail * FIREFOX_DELTA_FACTOR);
+        evt.preventDefault();
+      }
+    });
+
   document.getElementById('previous').addEventListener('click',
     function() {
       PDFView.page--;
@@ -3319,13 +3350,13 @@ window.addEventListener('keydown', function keydown(evt) {
         break;
 
       case 36: // home
-        if (PDFView.isFullscreen) {
+        if (PDFView.isFullscreen || PDFView.currentScaleValue === 'page-fit') {
           PDFView.page = 1;
           handled = true;
         }
         break;
       case 35: // end
-        if (PDFView.isFullscreen) {
+        if (PDFView.isFullscreen || PDFView.currentScaleValue === 'page-fit') {
           PDFView.page = PDFView.pdfDocument.numPages;
           handled = true;
         }
