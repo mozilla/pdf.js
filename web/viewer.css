@@ -1165,6 +1165,7 @@ canvas {
   bottom: 0;
   color: #000;
   font-family: sans-serif;
+  overflow: hidden;
 }
 
 .textLayer > div {
