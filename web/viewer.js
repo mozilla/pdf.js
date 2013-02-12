@@ -218,11 +218,18 @@ var Settings = (function SettingsClosure() {
       var file = this.file;
       file[name] = val;
       var database = JSON.stringify(this.database);
-//#if !(FIREFOX || MOZCENTRAL)
+
+//#if B2G
+//    asyncStorage.setItem('database', database);
+//#endif
+
+//#if FIREFOX || MOZCENTRAL
+//    FirefoxCom.requestSync('setDatabase', database);
+//#endif
+
+//#if !(FIREFOX || MOZCENTRAL || B2G)
       if (isLocalStorageEnabled)
         localStorage.setItem('database', database);
-//#else
-//    FirefoxCom.requestSync('setDatabase', database);
 //#endif
     },
 
