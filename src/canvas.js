@@ -1286,15 +1286,13 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
                     0, -h, w, h);
       if (this.imageLayer) {
         var currentTransform = ctx.mozCurrentTransformInverse;
-        var widthScale = Math.max(Math.abs(currentTransform[0]), 1);
-        var heightScale = Math.max(Math.abs(currentTransform[3]), 1);
         var position = this.getCanvasPosition(0, 0);
         this.imageLayer.appendImage({
           objId: objId,
           left: position[0],
           top: position[1],
-          width: w / widthScale,
-          height: h / heightScale
+          width: w / currentTransform[0],
+          height: h / currentTransform[3]
         });
       }
       this.restore();
@@ -1402,8 +1400,8 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
           imgData: imgData,
           left: position[0],
           top: position[1],
-          width: width / widthScale,
-          height: height / heightScale
+          width: width / currentTransform[0],
+          height: height / currentTransform[3]
         });
       }
       this.restore();
