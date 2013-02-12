@@ -444,6 +444,18 @@ ChromeActions.prototype = {
     }
     getChromeWindow(this.domWindow).gFindBar
                                    .updateControlState(result, findPrevious);
+  },
+  searchWithIntegratedFindBar: function(phrase, highlightAll) {
+    if (!this.supportsIntegratedFind()) {
+      return;
+    }
+    var fBar = getChromeWindow(this.domWindow).gFindBar;
+    fBar._findField.value = phrase;
+    fBar._setCaseSensitivity(false);
+    if (phrase && highlightAll) {
+      fBar.getElement('highlight').click();
+    }
+    fBar.onFindCommand();
   }
 };
 
