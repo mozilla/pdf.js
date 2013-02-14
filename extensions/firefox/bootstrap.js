@@ -16,7 +16,7 @@
  */
 /* jshint esnext:true */
 /* globals Components, Services, dump, XPCOMUtils, PdfStreamConverter,
-           APP_SHUTDOWN */
+           PdfRedirector, APP_SHUTDOWN */
 
 'use strict';
 
@@ -31,6 +31,9 @@ const Cr = Components.results;
 
 Cu.import('resource://gre/modules/XPCOMUtils.jsm');
 Cu.import('resource://gre/modules/Services.jsm');
+
+var Ph = Cc['@mozilla.org/plugin/host;1'].getService(Ci.nsIPluginHost);
+var registerOverlayPreview = 'getPlayPreviewInfo' in Ph;
 
 function getBoolPref(pref, def) {
   try {
@@ -53,8 +56,10 @@ function log(str) {
   dump(str + '\n');
 }
 
-// Register/unregister a constructor as a component.
-var Factory = {
+// Factory that registers/unregisters a constructor as a component.
+function Factory() {}
+
+Factory.prototype = {
   QueryInterface: XPCOMUtils.generateQI([Ci.nsIFactory]),
   _targetConstructor: null,
 
@@ -88,6 +93,9 @@ var Factory = {
 };
 
 var pdfStreamConverterUrl = null;
+var pdfStreamConverterFactory = new Factory();
+var pdfRedirectorUrl = null;
+var pdfRedirectorFactory = new Factory();
 
 // As of Firefox 13 bootstrapped add-ons don't support automatic registering and
 // unregistering of resource urls and components/contracts. Until then we do
@@ -105,7 +113,17 @@ function startup(aData, aReason) {
   pdfStreamConverterUrl = aData.resourceURI.spec +
                           'components/PdfStreamConverter.js';
   Cu.import(pdfStreamConverterUrl);
-  Factory.register(PdfStreamConverter);
+  pdfStreamConverterFactory.register(PdfStreamConverter);
+
+  if (registerOverlayPreview) {
+    pdfRedirectorUrl = aData.resourceURI.spec +
+                       'components/PdfRedirector.js';
+    Cu.import(pdfRedirectorUrl);
+    pdfRedirectorFactory.register(PdfRedirector);
+
+    Ph.registerPlayPreviewMimeType('application/pdf', true,
+      'data:application/x-moz-playpreview-pdfjs;,');
+  }
 }
 
 function shutdown(aData, aReason) {
@@ -117,10 +135,18 @@ function shutdown(aData, aReason) {
   // Remove the resource url.
   resProt.setSubstitution(RESOURCE_NAME, null);
   // Remove the contract/component.
-  Factory.unregister();
+  pdfStreamConverterFactory.unregister();
   // Unload the converter
   Cu.unload(pdfStreamConverterUrl);
   pdfStreamConverterUrl = null;
+
+  if (registerOverlayPreview) {
+    pdfRedirectorFactory.unregister();
+    Cu.unload(pdfRedirectorUrl);
+    pdfRedirectorUrl = null;
+
+    Ph.unregisterPlayPreviewMimeType('application/pdf');
+  }
 }
 
 function install(aData, aReason) {
