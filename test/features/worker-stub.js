@@ -27,6 +27,11 @@ onmessage = function (e) {
         'responseArrayBuffer' in xhr || 'mozResponseArrayBuffer' in xhr;
     postMessage({action: 'xhr', result: responseExists});
     break;
+  case 'TextDecoder':
+    postMessage({action: 'TextDecoder',
+                 result: typeof TextDecoder !== 'undefined',
+                 emulated: typeof FileReaderSync !== 'undefined'});
+    break;
   }
 };
 
