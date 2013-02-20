@@ -157,4 +157,3 @@ Subscribe either using lists.mozilla.org or Google Groups:
 Follow us on twitter: @pdfjs
 
 + http://twitter.com/#!/pdfjs
-
