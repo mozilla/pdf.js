@@ -514,7 +514,7 @@ var tests = [
             promise.resolve({ output: 'Success', emulated: '' });
           else
             promise.resolve({ output: 'Failed', emulated: 'Yes' });
-        });
+        }, false);
         worker.postMessage({action: 'test',
                             data: new Uint8Array(60000000)}); // 60MB
         return promise;
@@ -546,7 +546,7 @@ var tests = [
             promise.resolve({ output: 'Success', emulated: '' });
           else
             promise.resolve({ output: 'Failed', emulated: 'Yes' });
-        });
+        }, false);
         worker.postMessage({action: 'xhr'});
         return promise;
       } catch (e) {
@@ -586,7 +586,7 @@ var tests = [
             promise.resolve({ output: 'Failed',
                               emulated: emulatable ? 'Yes' : 'No' });
           }
-        });
+        }, false);
         worker.postMessage({action: 'TextDecoder'});
         return promise;
       } catch (e) {
