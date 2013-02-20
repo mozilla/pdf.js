@@ -8,8 +8,7 @@ assistance.
 pdf.js is community-driven and supported by Mozilla Labs. Our goal is to 
 create a general-purpose, web standards-based platform for parsing and 
 rendering PDFs, and eventually release a PDF reader extension powered by 
-pdf.js. Integration with Firefox is a possibility if the experiment proves 
-successful.
+pdf.js.
 
  
 
