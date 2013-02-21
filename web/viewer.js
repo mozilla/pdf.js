@@ -817,12 +817,14 @@ var PDFView = {
 
   zoomIn: function pdfViewZoomIn() {
     var newScale = (this.currentScale * DEFAULT_SCALE_DELTA).toFixed(2);
+    newScale = Math.ceil(newScale * 10) / 10;
     newScale = Math.min(MAX_SCALE, newScale);
     this.parseScale(newScale, true);
   },
 
   zoomOut: function pdfViewZoomOut() {
     var newScale = (this.currentScale / DEFAULT_SCALE_DELTA).toFixed(2);
+    newScale = Math.floor(newScale * 10) / 10;
     newScale = Math.max(MIN_SCALE, newScale);
     this.parseScale(newScale, true);
   },
