@@ -2529,6 +2529,9 @@ var TextLayerBuilder = function textLayerBuilder(textLayerDiv, pageIdx) {
 
     for (var i = 0, ii = textDivs.length; i < ii; i++) {
       var textDiv = textDivs[i];
+      if ('isWhitespace' in textDiv.dataset) {
+        continue;
+      }
       textLayerFrag.appendChild(textDiv);
 
       ctx.font = textDiv.style.fontSize + ' ' + textDiv.style.fontFamily;
@@ -2601,6 +2604,10 @@ var TextLayerBuilder = function textLayerBuilder(textLayerDiv, pageIdx) {
     for (var i = 0; i < bidiTexts.length; i++) {
       var bidiText = bidiTexts[i];
       var textDiv = textDivs[i];
+      if (!/\S/.test(bidiText.str)) {
+        textDiv.dataset.isWhitespace = true;
+        continue;
+      }
 
       textDiv.textContent = bidiText.str;
       textDiv.dir = bidiText.ltr ? 'ltr' : 'rtl';
