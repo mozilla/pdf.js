@@ -261,6 +261,7 @@ html[dir='rtl'] #sidebarContent {
 #toolbarViewer, .findbar {
   position: relative;
   height: 32px;
+  background-color: #474747; /* IE9 */
   background-image: url(images/texture.png),
                     -webkit-linear-gradient(hsla(0,0%,32%,.99), hsla(0,0%,27%,.95));
   background-image: url(images/texture.png),
@@ -337,22 +338,22 @@ html[dir='rtl'] .findbar {
 }
 
 html[dir='ltr'] .doorHanger:after {
-  left: 16px;
+  left: 13px;
   margin-left: -8px;
 }
 
 html[dir='ltr'] .doorHanger:before {
-  left: 16px;
+  left: 13px;
   margin-left: -9px;
 }
 
 html[dir='rtl'] .doorHanger:after {
-  right: 16px;
+  right: 13px;
   margin-right: -8px;
 }
 
 html[dir='rtl'] .doorHanger:before {
-  right: 16px;
+  right: 13px;
   margin-right: -9px;
 }
 
@@ -729,6 +730,20 @@ html[dir='rtl'] .toolbarButton:first-child {
 .toolbarButton#sidebarToggle::before {
   display: inline-block;
   content: url(images/toolbarButton-sidebarToggle.png);
+}
+
+html[dir='ltr'] #findPrevious {
+  margin-left: 3px;
+}
+html[dir='ltr'] #findNext {
+  margin-right: 3px;
+}
+
+html[dir='rtl'] #findPrevious {
+  margin-right: 3px;
+}
+html[dir='rtl'] #findNext {
+  margin-left: 3px;
 }
 
 html[dir='ltr'] .toolbarButton.findPrevious::before {
