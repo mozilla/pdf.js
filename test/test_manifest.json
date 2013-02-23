@@ -474,6 +474,13 @@
       "link": true,
       "type": "load"
     },
+    {  "id": "issue2139",
+      "file": "pdfs/issue2139.pdf",
+      "md5": "ee4072992e7c5ffd5063181916a2fcae",
+      "rounds": 1,
+      "link": true,
+      "type": "eq"
+    },
     {  "id": "issue1010",
       "file": "pdfs/issue1010.pdf",
       "md5": "f991ef093484a107fe9f59dff18fc155",
