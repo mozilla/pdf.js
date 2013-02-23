@@ -876,6 +876,15 @@
       "rounds": 1,
       "type": "eq"
     },
+    {  "id": "jst2007-5",
+      "file": "pdfs/JST2007-5.pdf",
+      "md5": "9efa6c37fc771b36a60535036d1910bb",
+      "rounds": 1,
+      "link": true,
+      "firstPage": 2,
+      "lastPage": 2,
+      "type": "eq"
+    },
     {  "id": "noembed-identity",
       "file": "pdfs/noembed-identity.pdf",
       "md5": "05d3803b6c22451e18cb60d8d8c75c0c",
