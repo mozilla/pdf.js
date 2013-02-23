@@ -823,7 +823,7 @@ var Jbig2Image = (function Jbig2ImageClosure() {
         textRegion.transposed = !!(textRegionSegmentFlags & 64);
         textRegion.combinationOperator = (textRegionSegmentFlags >> 7) & 3;
         textRegion.defaultPixelValue = (textRegionSegmentFlags >> 9) & 1;
-        textRegion.dsOffset = (textRegionSegmentFlags >> 10) & 31;
+        textRegion.dsOffset = (textRegionSegmentFlags << 17) >> 27;
         textRegion.refinementTemplate = (textRegionSegmentFlags >> 15) & 1;
         if (textRegion.huffman) {
           var textRegionHuffmanFlags = readUint16(data, position);
