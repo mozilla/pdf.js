@@ -367,6 +367,15 @@ ChromeActions.prototype = {
   pdfBugEnabled: function() {
     return getBoolPref(PREF_PREFIX + '.pdfBugEnabled', false);
   },
+  ifAvailableShowOutlineOnLoad: function() {
+    var prefName = PREF_PREFIX + '.ifAvailableShowOutlineOnLoad';
+    try {
+      return Services.prefs.getBoolPref(prefName);
+    } catch (ex) {
+      Services.prefs.setBoolPref(prefName, false);
+      return false;
+    }
+  },
   supportsIntegratedFind: function() {
     // Integrated find is only supported when we're not in a frame and when the
     // new find events code exists.

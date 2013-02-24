@@ -712,6 +712,7 @@ var PDFView = {
   mouseScrollDelta: 0,
   lastScroll: 0,
   previousPageNumber: 1,
+  containsOutline: false,
 
   // called once when the document is loaded
   initialize: function pdfViewInitialize() {
@@ -1334,6 +1335,18 @@ var PDFView = {
       }
 
       self.setInitialView(storedHash, scale);
+
+//#if (FIREFOX || MOZCENTRAL)
+//    // If the document contains an outline, and the preference is set to true,
+//    // display the outline automatically on document load.
+//    if (PDFView.containsOutline &&
+//        FirefoxCom.requestSync('ifAvailableShowOutlineOnLoad')) {
+//      if (!PDFView.sidebarOpen) {
+//        document.getElementById('sidebarToggle').click();
+//      }
+//      PDFView.switchSidebarView('outline');
+//    }
+//#endif
     });
 
     pdfDocument.getMetadata().then(function(data) {
@@ -2453,6 +2466,7 @@ var DocumentOutlineView = function documentOutlineView(outline) {
       levelData.parent.appendChild(div);
     }
   }
+  PDFView.containsOutline = true;
 };
 
 // optimised CSS custom property getter/setter
