@@ -31,6 +31,7 @@ var MAX_SCALE = 4.0;
 var IMAGE_DIR = './images/';
 var SETTINGS_MEMORY = 20;
 var ANNOT_MIN_SIZE = 10;
+var HISTORY_SIZE = 25;
 var RenderingStates = {
   INITIAL: 0,
   RUNNING: 1,
@@ -142,6 +143,109 @@ var ProgressBar = (function ProgressBarClosure() {
   };
 
   return ProgressBar;
+})();
+
+var PageHistory = (function PageHistoryClosure() {
+
+  function PageHistory(params) {
+    if (!HISTORY_SIZE) {
+      return;
+    }
+    this.previous = [];
+    this.current = params;
+    this.next = [];
+
+    this.sameAsPreviousPage = false;
+    this.historyUnlocked = true;
+    this.pushUnlocked = true;
+  }
+
+  PageHistory.prototype = {
+
+    push: function PageHistory_push(params) {
+      if (!this.historyUnlocked) {
+        return;
+      }
+      if (params.dest) {
+        if (this.current.dest) {
+          if (params.dest !== this.current.dest) {
+            this.previous.push(this.current);
+            this.current = params;
+            this.next = [];
+          }
+        } else {
+          if (this.sameAsPreviousPage) {
+            this.previous.push(this.current);
+            this.sameAsPreviousPage = false;
+          }
+          this.current = params;
+          this.next = [];
+        }
+        this.pushUnlocked = false;
+      } else if (this.pushUnlocked && params.page !== this.current.page) {
+        this.previous.push(this.current);
+        if (this.current.page !== PDFView.previousPageNumber) {
+          this.previous.push({ page: PDFView.previousPageNumber });
+        }
+        this.current = params;
+        this.next = [];
+      } else {
+        this.pushUnlocked = true;
+      }
+      var previousLength = this.previous.length;
+      while (previousLength > HISTORY_SIZE) {
+        this.previous.shift();
+        previousLength--;
+      }
+    },
+
+    back: function PageHistory_back() {
+      if (!this.historyUnlocked) {
+        return;
+      }
+      this.historyUnlocked = false;
+      if (this.next.length === 0 && this.current.dest) {
+        var visiblePages = PDFView.getVisiblePages();
+        var firstId = visiblePages.first.id;
+        var currentId = visiblePages.views[0].id;
+
+        if (this.current.page !== firstId && currentId === firstId) {
+          this.previous.push(this.current);
+          this.current = { page: firstId };
+        }
+      }
+      if (this.previous.length !== 0) {
+        this.next.push(this.current);
+        this.current = this.previous.pop();
+        this.goTo();
+      }
+      this.historyUnlocked = true;
+    },
+
+    forward: function PageHistory_forward() {
+      if (!this.historyUnlocked) {
+        return;
+      }
+      this.historyUnlocked = false;
+      if (this.next.length !== 0) {
+        this.previous.push(this.current);
+        this.current = this.next.pop();
+        this.goTo();
+      }
+      this.historyUnlocked = true;
+    },
+
+    goTo: function PageHistory_goTo() {
+      if (this.current.dest) {
+        this.pushUnlocked = false;
+        PDFView.navigateTo(this.current.dest);
+      } else {
+        PDFView.page = this.current.page;
+      }
+    }
+  };
+
+  return PageHistory;
 })();
 
 //#if FIREFOX || MOZCENTRAL
@@ -858,6 +962,11 @@ var PDFView = {
       return;
 
     pages[val - 1].scrollIntoView();
+
+    if (this.previousPageNumber === currentPageNumber) {
+      // Make links work properly in the browsing history
+      PDFView.history.sameAsPreviousPage = true;
+    }
   },
 
   get page() {
@@ -1093,8 +1202,10 @@ var PDFView = {
   },
 
   navigateTo: function pdfViewNavigateTo(dest) {
-    if (typeof dest === 'string')
+    if (typeof dest === 'string') {
+      var destString = dest;
       dest = this.destinations[dest];
+    }
     if (!(dest instanceof Array))
       return; // invalid destination
     // dest array looks like that: <page-ref> </XYZ|FitXXX> <args..>
@@ -1107,6 +1218,9 @@ var PDFView = {
       this.page = pageNumber;
       var currentPage = this.pages[pageNumber - 1];
       currentPage.scrollIntoView(dest);
+
+      // Update the browsing history
+      PDFView.history.push({ dest: destString, page: pageNumber });
     }
   },
 
@@ -1332,6 +1446,9 @@ var PDFView = {
 
         storedHash = 'page=' + page + '&zoom=' + zoom + ',' + left + ',' + top;
       }
+
+      // Initialize the browsing history
+      PDFView.history = new PageHistory({ page: page });
 
       self.setInitialView(storedHash, scale);
 
@@ -3003,6 +3120,16 @@ document.addEventListener('DOMContentLoaded', function webViewerLoad(evt) {
       PDFView.page = 1;
     });
 
+  document.getElementById('previous_view').addEventListener('click',
+    function() {
+      PDFView.history.back();
+    });
+
+  document.getElementById('next_view').addEventListener('click',
+    function() {
+      PDFView.history.forward();
+    });
+
   document.getElementById('last_page').addEventListener('click',
     function() {
       PDFView.page = PDFView.pdfDocument.numPages;
@@ -3197,12 +3324,13 @@ window.addEventListener('pagechange', function pagechange(evt) {
     if (numVisibleThumbs > 0) {
       var first = visibleThumbs.first.id;
       // Account for only one thumbnail being visible.
-      var last = numVisibleThumbs > 1 ?
-                  visibleThumbs.last.id : first;
+      var last = numVisibleThumbs > 1 ? visibleThumbs.last.id : first;
       if (page <= first || page >= last)
         scrollIntoView(thumbnail);
     }
 
+    // Update the browsing history
+    PDFView.history.push({ page: page });
   }
   document.getElementById('previous').disabled = (page <= 1);
   document.getElementById('next').disabled = (page >= PDFView.pages.length);
@@ -3284,6 +3412,21 @@ window.addEventListener('keydown', function keydown(evt) {
           PDFFindBar.dispatchEvent('again', cmd == 5 || cmd == 12);
           handled = true;
         }
+        break;
+    }
+  }
+
+  // ALT key
+  if (cmd === 2) {
+    switch (evt.keyCode) {
+      // Handle back/forward functionality
+      case 37: // left arrow
+        document.getElementById('previous_view').click();
+        handled = true;
+        break;
+      case 39: // right arrow
+        document.getElementById('next_view').click();
+        handled = true;
         break;
     }
   }
