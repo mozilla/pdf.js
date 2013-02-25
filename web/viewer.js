@@ -2535,6 +2535,7 @@ var TextLayerBuilder = function textLayerBuilder(textLayerDiv, pageIdx) {
   this.renderLayer = function textLayerBuilderRenderLayer() {
     var self = this;
     var textDivs = this.textDivs;
+    var bidiTexts = this.textContent.bidiTexts;
     var textLayerDiv = this.textLayerDiv;
     var canvas = document.createElement('canvas');
     var ctx = canvas.getContext('2d');
@@ -2555,8 +2556,11 @@ var TextLayerBuilder = function textLayerBuilder(textLayerDiv, pageIdx) {
       if (width > 0) {
         var textScale = textDiv.dataset.canvasWidth / width;
 
-        CustomStyle.setProp('transform' , textDiv,
-          'scale(' + textScale + ', 1)');
+        var transform = 'scale(' + textScale + ', 1)';
+        if (bidiTexts[i].dir === 'ttb') {
+          transform = 'rotate(90deg) ' + transform;
+        }
+        CustomStyle.setProp('transform' , textDiv, transform);
         CustomStyle.setProp('transformOrigin' , textDiv, '0% 0%');
 
         textLayerDiv.appendChild(textDiv);
@@ -2621,7 +2625,8 @@ var TextLayerBuilder = function textLayerBuilder(textLayerDiv, pageIdx) {
       var textDiv = textDivs[i];
 
       textDiv.textContent = bidiText.str;
-      textDiv.dir = bidiText.ltr ? 'ltr' : 'rtl';
+      // bidiText.dir may be 'ttb' for vertical texts.
+      textDiv.dir = bidiText.dir === 'rtl' ? 'rtl' : 'ltr';
     }
 
     this.setupRenderLayoutTimer();

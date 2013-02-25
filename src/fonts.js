@@ -2363,6 +2363,11 @@ var Font = (function FontClosure() {
     // Trying to fix encoding using glyph CIDSystemInfo.
     this.loadCidToUnicode(properties);
     this.cidEncoding = properties.cidEncoding;
+    this.vertical = properties.vertical;
+    if (this.vertical) {
+      this.vmetrics = properties.vmetrics;
+      this.defaultVMetrics = properties.defaultVMetrics;
+    }
 
     if (properties.toUnicode)
       this.toUnicode = properties.toUnicode;
@@ -4449,17 +4454,15 @@ var Font = (function FontClosure() {
       var fontCharCode, width, operatorList, disabled;
 
       var width = this.widths[charcode];
+      var vmetric = this.vmetrics && this.vmetrics[charcode];
 
       switch (this.type) {
         case 'CIDFontType0':
-          if (this.noUnicodeAdaptation) {
-            width = this.widths[this.unicodeToCID[charcode] || charcode];
-          }
-          fontCharCode = this.toFontChar[charcode] || charcode;
-          break;
         case 'CIDFontType2':
+          var cid = this.unicodeToCID[charcode] || charcode;
           if (this.noUnicodeAdaptation) {
-            width = this.widths[this.unicodeToCID[charcode] || charcode];
+            width = this.widths[cid];
+            vmetric = this.vmetrics && this.vmetrics[cid];
           }
           fontCharCode = this.toFontChar[charcode] || charcode;
           break;
@@ -4523,6 +4526,7 @@ var Font = (function FontClosure() {
         fontChar: String.fromCharCode(fontCharCode),
         unicode: unicodeChars,
         width: width,
+        vmetric: vmetric,
         disabled: disabled,
         operatorList: operatorList
       };
