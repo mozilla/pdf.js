@@ -139,16 +139,16 @@ var bidi = PDFJS.bidi = (function bidiClosure() {
     }
   }
 
-  function BidiResult(str, isLTR) {
+  function BidiResult(str, isLTR, vertical) {
     this.str = str;
-    this.ltr = isLTR;
+    this.dir = vertical ? 'ttb' : isLTR ? 'ltr' : 'rtl';
   }
 
-  function bidi(str, startLevel) {
+  function bidi(str, startLevel, vertical) {
     var isLTR = true;
     var strLength = str.length;
-    if (strLength === 0)
-      return new BidiResult(str, isLTR);
+    if (strLength === 0 || vertical)
+      return new BidiResult(str, isLTR, vertical);
 
     // get types, fill arrays
 
