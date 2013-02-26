@@ -923,6 +923,15 @@
       "rounds": 1,
       "type": "eq"
     },
+    {  "id": "sfaa_japanese",
+      "file": "pdfs/SFAA_Japanese.pdf",
+      "md5": "b961bbc0d05bdd6d91041bca60ec8e8b",
+      "rounds": 1,
+      "link": true,
+      "firstPage": 1,
+      "lastPage": 1,
+      "type": "eq"
+    },
     {  "id": "vertical",
       "file": "pdfs/vertical.pdf",
       "md5": "8a74d33504701edcefeef2afd022765e",
