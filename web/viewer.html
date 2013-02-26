@@ -96,7 +96,7 @@ limitations under the License.
       </div>  <!-- sidebarContainer -->
 
       <div id="mainContainer">
-        <div class="findbar hidden doorHanger" id="findbar">
+        <div class="findbar hidden doorHanger hiddenSmallView" id="findbar">
           <label for="findInput" class="toolbarLabel" data-l10n-id="find_label">Find:</label>
           <input id="findInput" class="toolbarField" tabindex="21">
           <div class="splitToolbarButton">
@@ -122,7 +122,7 @@ limitations under the License.
                   <span data-l10n-id="toggle_sidebar_label">Toggle Sidebar</span>
                 </button>
                 <div class="toolbarButtonSpacer"></div>
-                <button id="viewFind" class="toolbarButton group" title="Find in Document" tabindex="5" data-l10n-id="findbar">
+                <button id="viewFind" class="toolbarButton group hiddenSmallView" title="Find in Document" tabindex="5" data-l10n-id="findbar">
                    <span data-l10n-id="findbar_label">Find</span>
                 </button>
                 <div class="splitToolbarButton">
@@ -142,12 +142,11 @@ limitations under the License.
               <div id="toolbarViewerRight">
                 <input id="fileInput" class="fileInput" type="file" oncontextmenu="return false;" style="visibility: hidden; position: fixed; right: 0; top: 0" />
 
-
-                <button id="fullscreen" class="toolbarButton fullscreen" title="Switch to Presentation Mode" tabindex="12" data-l10n-id="presentation_mode">
+                <button id="fullscreen" class="toolbarButton fullscreen hiddenSmallView" title="Switch to Presentation Mode" tabindex="12" data-l10n-id="presentation_mode">
                   <span data-l10n-id="presentation_mode_label">Presentation Mode</span>
                 </button>
 
-                <button id="openFile" class="toolbarButton openFile" title="Open File" tabindex="13" data-l10n-id="open_file">
+                <button id="openFile" class="toolbarButton openFile hiddenSmallView" title="Open File" tabindex="13" data-l10n-id="open_file">
                    <span data-l10n-id="open_file_label">Open</span>
                 </button>
 
@@ -159,7 +158,7 @@ limitations under the License.
                   <span data-l10n-id="download_label">Download</span>
                 </button>
                 <!-- <div class="toolbarButtonSpacer"></div> -->
-                <a href="#" id="viewBookmark" class="toolbarButton bookmark" title="Current view (copy or open in new window)" tabindex="16" data-l10n-id="bookmark"><span data-l10n-id="bookmark_label">Current View</span></a>
+                <a href="#" id="viewBookmark" class="toolbarButton bookmark hiddenSmallView" title="Current view (copy or open in new window)" tabindex="16" data-l10n-id="bookmark"><span data-l10n-id="bookmark_label">Current View</span></a>
               </div>
               <div class="outerCenter">
                 <div class="innerCenter" id="toolbarViewerMiddle">
