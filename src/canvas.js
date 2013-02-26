@@ -979,29 +979,45 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
           var width = vmetric ? -vmetric[0] : glyph.width;
           var charWidth = width * fontSize * current.fontMatrix[0] +
                           charSpacing * current.fontDirection;
+          var accent = glyph.accent;
 
+          var scaledX, scaledY, scaledAccentX, scaledAccentY;
           if (!glyph.disabled) {
             if (vertical) {
-              var scaledX = vx / fontSizeScale;
-              var scaledY = (x + vy) / fontSizeScale;
+              scaledX = vx / fontSizeScale;
+              scaledY = (x + vy) / fontSizeScale;
             } else {
-              var scaledX = x / fontSizeScale;
-              var scaledY = 0;
+              scaledX = x / fontSizeScale;
+              scaledY = 0;
+            }
+            if (accent) {
+              scaledAccentX = scaledX + accent.offset.x / fontSizeScale;
+              scaledAccentY = scaledY - accent.offset.y / fontSizeScale;
             }
             switch (textRenderingMode) {
               default: // other unsupported rendering modes
               case TextRenderingMode.FILL:
               case TextRenderingMode.FILL_ADD_TO_PATH:
                 ctx.fillText(character, scaledX, scaledY);
+                if (accent) {
+                  ctx.fillText(accent.fontChar, scaledAccentX, scaledAccentY);
+                }
                 break;
               case TextRenderingMode.STROKE:
               case TextRenderingMode.STROKE_ADD_TO_PATH:
                 ctx.strokeText(character, scaledX, scaledY);
+                if (accent) {
+                  ctx.strokeText(accent.fontChar, scaledAccentX, scaledAccentY);
+                }
                 break;
               case TextRenderingMode.FILL_STROKE:
               case TextRenderingMode.FILL_STROKE_ADD_TO_PATH:
                 ctx.fillText(character, scaledX, scaledY);
                 ctx.strokeText(character, scaledX, scaledY);
+                if (accent) {
+                  ctx.fillText(accent.fontChar, scaledAccentX, scaledAccentY);
+                  ctx.strokeText(accent.fontChar, scaledAccentX, scaledAccentY);
+                }
                 break;
               case TextRenderingMode.INVISIBLE:
               case TextRenderingMode.ADD_TO_PATH:
@@ -1010,6 +1026,9 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
             if (textRenderingMode & TextRenderingMode.ADD_TO_PATH_FLAG) {
               var clipCtx = this.getCurrentTextClipping();
               clipCtx.fillText(character, scaledX, scaledY);
+              if (accent) {
+                clipCtx.fillText(accent.fontChar, scaledAccentX, scaledAccentY);
+              }
             }
           }
 
