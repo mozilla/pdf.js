@@ -170,6 +170,7 @@ html[dir='rtl'] #outerContainer.sidebarOpen > #sidebarContainer {
   right: 0;
   bottom: 0;
   left: 0;
+  min-width: 320px;
   -webkit-transition-duration: 200ms;
   -webkit-transition-timing-function: ease;
   -moz-transition-duration: 200ms;
@@ -1433,8 +1434,17 @@ canvas {
 }
 
 @media all and (max-width: 600px) {
-  #toolbarViewerRight, #findbar, #viewFind {
+  .hiddenSmallView {
     display: none;
+  }
+  html[dir='ltr'] .outerCenter {
+    left: 156px;
+  }
+  html[dir='rtr'] .outerCenter {
+    right: 156px;
+  }
+  .toolbarButtonSpacer {
+    width: 0;
   }
 }
 
