@@ -849,10 +849,16 @@ var PDFView = {
     }
 
     this.parseScale(this.currentScaleValue, true);
-    var pages = this.pages;
-    for (var i = 0; i < pages.length; i++)
+    var pages = this.pages, numPages = pages.length;
+    for (var i = 0; i < numPages; i++) {
       pages[i].update(this.currentScale * CSS_UNITS);
+    }
 
+    // Fix fullscreen mode when toggling twoUp mode.
+    if (this.isFullscreen) {
+      var lastPage = this.lastPageNumber;
+      this.page = (this.page > lastPage) ? lastPage : this.page;
+    }
     updateViewarea();
   },
 
@@ -875,40 +881,39 @@ var PDFView = {
       showCoverMenuItem.removeAttribute('checked');
     }
 
-    this.parseScale(this.currentScaleValue, true);
-    var pages = this.pages;
-    for (var i = 0; i < pages.length; i++)
-      pages[i].update(this.currentScale * CSS_UNITS);
-
-    updateViewarea();
+    if (this.twoUpView) {
+      // Fix fullscreen mode when toggling showCover.
+      if (this.isFullscreen) {
+        var lastPage = this.lastPageNumber;
+        this.page = (this.page > lastPage) ? lastPage : this.page;
+      }
+      updateViewarea();
+    }
   },
 
   nextPage: function pdfViewNextPage() {
-    var pageNo = PDFView.page;
-    if (PDFView.twoUpView) {
-      var isOnLeft = (PDFView.showCoverPage ? 
+    var pageNo = this.page, lastPage = this.pages.length;
+    if (this.twoUpView) {
+      var isOnLeft = (this.showCoverPage ?
         (pageNo % 2 === 0) : (pageNo % 2 !== 0));
       if (isOnLeft) {
         pageNo += 2;
       } else {
         pageNo += 1;
       }
-      if (pageNo > this.pages.length) {
-        pageNo = this.pages.length;
-      }
-      if (pageNo + 1 == this.pages.length) {
-        pageNo = this.pages.length;
+      if (pageNo > lastPage) {
+        pageNo = lastPage;
       }
     } else {
       pageNo++;
     }
-    PDFView.page = pageNo;
+    this.page = pageNo;
   },
 
   prevPage: function pdfViewPrevPage() {
-    var pageNo = PDFView.page;
-    if (PDFView.twoUpView) {
-      var isOnLeft = (PDFView.showCoverPage ? 
+    var pageNo = this.page;
+    if (this.twoUpView) {
+      var isOnLeft = (this.showCoverPage ?
         (pageNo % 2 === 0) : (pageNo % 2 !== 0));
       if (isOnLeft) {
         pageNo -= 2;
@@ -921,7 +926,20 @@ var PDFView = {
     } else {
       pageNo--;
     }
-    PDFView.page = pageNo;
+    this.page = pageNo;
+  },
+
+  get lastPageNumber() {
+    var lastPage = this.pages.length;
+    if (!this.twoUpView) {
+      return lastPage;
+    }
+    if ((lastPage % 2) === 0) {
+      lastPage = this.showCoverPage ? lastPage : (lastPage - 1);
+    } else {
+      lastPage = this.showCoverPage ? (lastPage - 1) : lastPage;
+    }
+    return lastPage;
   },
 
   set page(val) {
@@ -1520,6 +1538,10 @@ var PDFView = {
     // 1 visible pages
     // 2 if last scrolled down page after the visible pages
     // 2 if last scrolled up page before the visible pages
+    //
+    // When twoUp mode is enabled:
+    // 3 if last scrolled down right-hand page after the visible pages
+    // 3 if last scrolled up right-hand page after the visible pages
     var visibleViews = visible.views;
 
     var numVisible = visibleViews.length;
@@ -1528,21 +1550,40 @@ var PDFView = {
     }
     for (var i = 0; i < numVisible; ++i) {
       var view = visibleViews[i].view;
-      if (!this.isViewFinished(view))
+      if (!this.isViewFinished(view)) {
         return view;
+      }
     }
 
     // All the visible views have rendered, try to render next/previous pages.
     if (scrolledDown) {
       var nextPageIndex = visible.last.id;
       // ID's start at 1 so no need to add 1.
-      if (views[nextPageIndex] && !this.isViewFinished(views[nextPageIndex]))
+      if (views[nextPageIndex] && !this.isViewFinished(views[nextPageIndex])) {
         return views[nextPageIndex];
+      }
+      // Render the right-hand pages in twoUp mode.
+      if (this.twoUpView) {
+        nextPageIndex++;
+        if (views[nextPageIndex] &&
+            !this.isViewFinished(views[nextPageIndex])) {
+          return views[nextPageIndex];
+        }
+      }
     } else {
       var previousPageIndex = visible.first.id - 2;
       if (views[previousPageIndex] &&
-          !this.isViewFinished(views[previousPageIndex]))
+          !this.isViewFinished(views[previousPageIndex])) {
         return views[previousPageIndex];
+      }
+      // Render the right-hand pages in twoUp mode.
+      if (this.twoUpView) {
+        previousPageIndex--;
+        if (views[previousPageIndex] &&
+            !this.isViewFinished(views[previousPageIndex])) {
+          return views[previousPageIndex];
+        }
+      }
     }
     // Everything that needs to be rendered has been.
     return false;
@@ -1686,13 +1727,22 @@ var PDFView = {
 
     // Algorithm broken in fullscreen mode
     if (this.isFullscreen) {
-      var currentPage = this.pages[this.page - 1];
+      var page = this.page, currentPage = this.pages[page - 1];
       visible.push({
         id: currentPage.id,
         view: currentPage
       });
 
-      return { first: currentPage, last: currentPage, views: visible};
+      // Adapt the algorithm to work in twoUp mode.
+      var nextPage = currentPage;
+      if (this.twoUpView && page < ii && !(page === 1 && this.showCoverPage)) {
+        nextPage = this.pages[page];
+        visible.push({
+          id: nextPage.id,
+          view: nextPage
+        });
+      }
+      return { first: currentPage, last: nextPage, views: visible};
     }
 
     var bottom = top + scrollEl.clientHeight;
@@ -1707,7 +1757,12 @@ var PDFView = {
       percent = Math.floor((viewHeight - hidden) * 100.0 / viewHeight);
       visible.push({ id: view.id, y: currentHeight,
                      view: view, percent: percent });
-      currentHeight = nextHeight;
+
+      // Adapt the algorithm to work in twoUp mode.
+      if (!this.twoUpView ||
+          (i < ii && views[i].el.offsetTop > currentHeight)) {
+        currentHeight = nextHeight;
+      }
     }
 
     var first = visible[0];
@@ -1778,6 +1833,11 @@ var PDFView = {
       return false;
     }
 
+    // Fix switching to fullscreen when twoUp mode is enabled.
+    if (this.twoUpView) {
+      var lastPage = this.lastPageNumber;
+      this.page = (this.page > lastPage) ? lastPage : this.page;
+    }
     this.isFullscreen = true;
     var currentPage = this.pages[this.page - 1];
     this.previousScale = this.currentScaleValue;
@@ -3343,8 +3403,8 @@ window.addEventListener('pagechange', function pagechange(evt) {
     }
 
   }
-  document.getElementById('previous').disabled = (page <= 1);
-  document.getElementById('next').disabled = (page >= PDFView.pages.length);
+  document.getElementById('previous').disabled = (page <= 1);  
+  document.getElementById('next').disabled = (page >= PDFView.lastPageNumber);
 }, true);
 
 // Firefox specific event, so that we can prevent browser from zooming
@@ -3491,7 +3551,7 @@ window.addEventListener('keydown', function keydown(evt) {
         break;
       case 35: // end
         if (PDFView.isFullscreen) {
-          PDFView.page = PDFView.pdfDocument.numPages;
+          PDFView.page = PDFView.lastPageNumber;
           handled = true;
         }
         break;
