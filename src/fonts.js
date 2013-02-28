@@ -415,7 +415,9 @@ var CMapConverterList = {
   '90ms-RKSJ-V': sjisToUnicode,
   '90msp-RKSJ-H': sjisToUnicode,
   '90msp-RKSJ-V': sjisToUnicode,
-  'GBK-EUC-H': gbkToUnicode
+  'GBK-EUC-H': gbkToUnicode,
+  'ETenms-B5-H': big5ToUnicode,
+  'ETenms-B5-V': big5ToUnicode,
 };
 
 // CMaps using Hankaku (Halfwidth) Latin glyphs instead of proportional one.
@@ -466,6 +468,10 @@ function sjisToUnicode(str) {
 
 function gbkToUnicode(str) {
   return decodeBytes(stringToBytes(str), 'gbk');
+}
+
+function big5ToUnicode(str) {
+  return decodeBytes(stringToBytes(str), 'big5');
 }
 
 // Some characters, e.g. copyrightserif, mapped to the private use area and
