@@ -1044,9 +1044,8 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       var current = this.current;
       var font = current.font;
       var fontSize = current.fontSize;
-      var textHScale = current.textHScale * (current.fontMatrix && !font.coded ?
-        current.fontMatrix[0] : FONT_IDENTITY_MATRIX[0]) *
-        current.fontDirection;
+      // TJ array's number is independent from fontMatrix
+      var textHScale = current.textHScale * 0.001 * current.fontDirection;
       var arrLength = arr.length;
       var textLayer = this.textLayer;
       var geom;
