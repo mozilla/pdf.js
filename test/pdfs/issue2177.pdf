@@ -1,0 +1,132 @@
+%PDF-1.7
+
+1 0 obj % entry point
+<<
+  /Type /Catalog
+  /Pages 2 0 R
+>>
+endobj
+
+2 0 obj
+<< /Type /Pages
+   /MediaBox [ 0 0 900 900 ]
+   /Count 1
+   /Kids [ 3 0 R ]
+>>
+endobj
+
+3 0 obj % Page object
+<< /Type /Page
+   /Parent 2 0 R
+   /Resources 4 0 R
+   /Contents 7 0 R
+   /CropBox [ 0 0 225 225 ]
+>>
+endobj
+
+4 0 obj % Resource dictionary for page
+<< /Pattern << /P1 5 0 R >>
+>>
+endobj
+
+5 0 obj % Pattern definition
+<< /Type /Pattern
+   /PatternType 1 % Tiling pattern
+   /PaintType 1 % Colored
+   /TilingType 2
+   /BBox [ 0 0 100 100 ]
+   /XStep   20
+   /YStep   20
+   /Resources 6 0 R
+  /Matrix [ 1.4 1.0 -0.5 0.7 0.0 0.0 ]
+   /Length 931
+>>
+stream
+1.0 0.0 0.0 RG % Set stroking color to red
+1 4.75 m % Construct lower-left circle
+1 6.81919 2.68081 8.5 4.75 8.5 c
+6.81919 8.5 8.5 6.81919 8.5 4.75 c
+8.5 2.68081 6.81919 1 4.75 1 c
+2.68081 1 1 2.68081 1 4.75 c
+S
+0.0 1.0 0.0 RG % Set stroking color to green
+12.25 4.75 m % Construct lower-right circle
+12.25 6.81919 13.93081 8.5 16 8.5 c
+18.06919 8.5 19.75 6.81919 19.75 4.75 c
+19.75 2.68081 18.06919 1 16 1 c
+13.93081 1 12.25 2.68081 12.25 4.75 c
+S
+0.0 0.0 1.0 RG % Set stroking color to blue
+1 16 m % Construct upper-left circle
+1 18.06919 2.68081 19.75 4.75 19.75 c
+6.81919 19.75 8.5 18.06919 8.5 16 c
+8.5 13.93081 6.81919 12.25 4.75 12.25 c
+2.68081 12.25 1 13.93081 1 16 c
+S
+0.0 0.0 0.0 RG % Set stroking color to black
+12.25 16 m % Construct upper-right circle
+12.25 18.06919 13.93081 19.75 16 19.75 c
+18.06919 19.75 19.75 18.06919 19.75 16 c
+19.75 13.93081 18.06919 12.25 16 12.25 c
+13.93081 12.25 12.25 13.93081 12.25 16 c
+s
+endstream
+endobj
+
+6 0 obj % Resource dictionary for pattern
+<<
+>>
+endobj
+
+7 0 obj % Contents of page
+<< /Length 1082 >>
+stream
+0.0 G % Set stroking color to black
+1.0 1.0 0.0 rg % Set nonstroking color to yellow
+25 175 175 -150 re % Construct rectangular path
+f % Fill path
+/Pattern cs % Set pattern color space
+/P1 scn % Set pattern as nonstroking color
+99.92 49.92 m % Start new path
+99.92 77.52 77.52 99.92 49.92 99.92 c % Construct lower-left circle
+22.32 99.92 -0.08 77.52 -0.08 49.92 c
+-0.08 22.32 22.32 -0.08 49.92 -0.08 c
+77.52 -0.08 99.92 22.32 99.92 49.92 c
+B % Fill and stroke path
+224.96 49.92 m % Start new path
+224.96 77.52 202.56 99.92 174.96 99.92 c % Construct lower-right circle
+147.36 99.92 124.96 77.52 124.96 49.92 c
+124.96 22.32 147.36 -0.08 174.96 -0.08 c
+202.56 -0.08 224.96 22.32 224.96 49.92 c
+B % Fill and stroke path
+87.56 201.70 m % Start new path
+63.66 187.90 55.46 157.32 69.26 133.40 c % Construct upper circle
+83.06 109.50 113.66 101.30 137.56 115.10 c
+161.46 128.90 169.66 159.50 155.86 183.40 c
+142.06 207.30 111.46 215.50 87.56 201.70 c
+B % Fill and stroke path
+50 50 m % Start new path
+175 50 l % Construct triangular path
+112.5 158.253 l
+b % Close, fill, and stroke path
+endstream
+endobj
+
+xref
+0 8
+0000000000 65535 f 
+0000000010 00000 n 
+0000000078 00000 n 
+0000000173 00000 n 
+0000000305 00000 n 
+0000000383 00000 n 
+0000001594 00000 n 
+0000001650 00000 n 
+trailer
+<<
+   /Size 8
+   /Root 1 0 R
+>>
+startxref
+2803
+%%EOF
