@@ -16,7 +16,7 @@
  */
 /* jshint esnext:true */
 /* globals Components, Services, XPCOMUtils, NetUtil, PrivateBrowsingUtils,
-           dump */
+           dump, PDFJSSaveAs */
 
 'use strict';
 
@@ -37,6 +37,11 @@ const MAX_DATABASE_LENGTH = 4096;
 Cu.import('resource://gre/modules/XPCOMUtils.jsm');
 Cu.import('resource://gre/modules/Services.jsm');
 Cu.import('resource://gre/modules/NetUtil.jsm');
+var supportsSaveOverride = false;
+try {
+  Cu.import('resource://gre/modules/PDFJSSaveAs.jsm');
+  supportsSaveOverride = true;
+} catch(e) {}
 
 XPCOMUtils.defineLazyModuleGetter(this, 'PrivateBrowsingUtils',
   'resource://gre/modules/PrivateBrowsingUtils.jsm');
@@ -144,6 +149,19 @@ function getLocalizedString(strings, id, property) {
   if (id in strings)
     return strings[id][property];
   return id;
+}
+
+var watchedDoms = new WeakMap();
+if (supportsSaveOverride) {
+  PDFJSSaveAs.callback = function (chromeWindow, document) {
+    if (watchedDoms.has(document)) {
+      document.defaultView.postMessage({
+        pdfjsAction: 'saveAs'
+      }, '*');
+      return true;
+    }
+    return false;
+  };
 }
 
 // PDF data storage
@@ -283,7 +301,7 @@ ChromeActions.prototype = {
         extListener: null,
         onStartRequest: function(aRequest, aContext) {
           this.extListener = extHelperAppSvc.doContent('application/pdf',
-                                aRequest, frontWindow, false);
+                                aRequest, frontWindow, data.saveAs);
           this.extListener.onStartRequest(aRequest, aContext);
         },
         onStopRequest: function(aRequest, aContext, aStatusCode) {
@@ -649,6 +667,9 @@ PdfStreamConverter.prototype = {
                                                         domWindow,
                                                         chromeWindow);
             findEventManager.bind();
+          }
+          if (supportsSaveOverride) {
+            watchedDoms.set(domWindow.document, actions);
           }
         } else {
           log('Dom window url did not match request url.');
