@@ -17,7 +17,7 @@
 /* globals assert, bytesToString, CIDToUnicodeMaps, error, ExpertCharset,
            ExpertSubsetCharset, FileReaderSync, globalScope, GlyphsUnicode,
            info, isArray, isNum, ISOAdobeCharset, isWorker, PDFJS, Stream,
-           stringToBytes, TextDecoder, warn */
+           stringToBytes, TextDecoder, TODO, warn */
 
 'use strict';
 
@@ -411,6 +411,7 @@ var CMapConverterList = {
   'V': jis7ToUnicode,
   'EUC-H': eucjpToUnicode,
   'EUC-V': eucjpToUnicode,
+  '83pv-RKSJ-H': sjis83pvToUnicode,
   '90ms-RKSJ-H': sjisToUnicode,
   '90ms-RKSJ-V': sjisToUnicode,
   '90msp-RKSJ-H': sjisToUnicode,
@@ -437,8 +438,8 @@ var decodeBytes;
 if (typeof TextDecoder !== 'undefined') {
   // The encodings supported by TextDecoder can be found at:
   // http://encoding.spec.whatwg.org/#concept-encoding-get
-  decodeBytes = function(bytes, encoding) {
-    return new TextDecoder(encoding).decode(bytes);
+  decodeBytes = function(bytes, encoding, fatal) {
+    return new TextDecoder(encoding, {fatal: !!fatal}).decode(bytes);
   };
 } else if (typeof FileReaderSync !== 'undefined') {
   decodeBytes = function(bytes, encoding) {
@@ -464,6 +465,18 @@ function eucjpToUnicode(str) {
 
 function sjisToUnicode(str) {
   return decodeBytes(stringToBytes(str), 'shift_jis');
+}
+
+function sjis83pvToUnicode(str) {
+  var bytes = stringToBytes(str);
+  try {
+    // TODO: 83pv has incompatible mappings in ed40..ee9c range.
+    return decodeBytes(bytes, 'shift_jis', true);
+  } catch (e) {
+    TODO('Unsupported 83pv character found');
+    // Just retry without checking errors for now.
+    return decodeBytes(bytes, 'shift_jis');
+  }
 }
 
 function gbkToUnicode(str) {
@@ -4464,9 +4477,21 @@ var Font = (function FontClosure() {
 
       switch (this.type) {
         case 'CIDFontType0':
-        case 'CIDFontType2':
           var cid = this.unicodeToCID[charcode] || charcode;
+          if (this.unicodeToCID.length > 0) {
+            width = this.widths[cid];
+            vmetric = this.vmetrics && this.vmetrics[cid];
+          }
           if (this.noUnicodeAdaptation) {
+            fontCharCode = this.toFontChar[charcode] || charcode;
+            break;
+          }
+          // CIDFontType0 is not encoded in Unicode.
+          fontCharCode = this.toFontChar[cid] || cid;
+          break;
+        case 'CIDFontType2':
+          if (this.unicodeToCID.length > 0) {
+            var cid = this.unicodeToCID[charcode] || charcode;
             width = this.widths[cid];
             vmetric = this.vmetrics && this.vmetrics[cid];
           }
