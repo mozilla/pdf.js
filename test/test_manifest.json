@@ -957,5 +957,11 @@
       "link": true,
       "rounds": 1,
       "type": "eq"
+    },
+    {  "id": "issue2177-eq",
+      "file": "pdfs/issue2177.pdf",
+      "md5": "48a808278bf31de8414c4e03ecd0900a",
+      "rounds": 1,
+      "type": "eq"
     }
 ]
