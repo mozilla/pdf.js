@@ -1106,7 +1106,9 @@ var PDFView = {
     if (pageNumber) {
       this.page = pageNumber;
       var currentPage = this.pages[pageNumber - 1];
-      currentPage.scrollIntoView(dest);
+      if (!this.isFullscreen) { // Avoid breaking fullscreen mode.
+        currentPage.scrollIntoView(dest);
+      }
     }
   },
 
@@ -3235,7 +3237,7 @@ window.addEventListener('DOMMouseScroll', function(evt) {
   }
 }, false);
 
-window.addEventListener('mousemove', function keydown(evt) {
+window.addEventListener('mousemove', function mousemove(evt) {
   if (PDFView.isFullscreen) {
     PDFView.showPresentationControls();
   }
@@ -3243,10 +3245,24 @@ window.addEventListener('mousemove', function keydown(evt) {
 
 window.addEventListener('mousedown', function mousedown(evt) {
   if (PDFView.isFullscreen && evt.button === 0) {
-    // Mouse click in fullmode advances a page
-    evt.preventDefault();
+    // Enable clicking of links in fullscreen mode.
+    // Note: Only links that point to the currently loaded PDF document works.
+    var targetHref = evt.target.href;
+    var internalLink = targetHref && (targetHref.replace(/#.*$/, '') ===
+                                      window.location.href.replace(/#.*$/, ''));
+    if (!internalLink) {
+      // Unless an internal link was clicked, advance a page in fullscreen mode.
+      evt.preventDefault();
+      PDFView.page++;
+    }
+  }
+}, false);
 
-    PDFView.page++;
+window.addEventListener('click', function click(evt) {
+  if (PDFView.isFullscreen && evt.button === 0) {
+    // Necessary since preventDefault() in 'mousedown' won't stop
+    // the event propagation in all circumstances.
+    evt.preventDefault();
   }
 }, false);
 
