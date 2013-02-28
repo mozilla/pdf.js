@@ -120,6 +120,16 @@ var PDFDocumentProxy = (function PDFDocumentProxyClosure() {
       return promise;
     },
     /**
+     * @return {Promise} A promise that is resolved with an array of all the
+     * JavaScript strings in the name tree.
+     */
+    getJavaScript: function PDFDocumentProxy_getDestinations() {
+      var promise = new PDFJS.Promise();
+      var js = this.pdfInfo.javaScript;
+      promise.resolve(js);
+      return promise;
+    },
+    /**
      * @return {Promise} A promise that is resolved with an {array} that is a
      * tree outline (if it has one) of the PDF. The tree is in the format of:
      * [
