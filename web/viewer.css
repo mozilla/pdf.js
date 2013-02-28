@@ -253,7 +253,7 @@ html[dir='rtl'] #sidebarContent {
   background-image: url(images/texture.png),
                     linear-gradient(hsla(0,0%,30%,.99), hsla(0,0%,25%,.95));
   box-shadow: inset -1px 0 0 rgba(0, 0, 0, 0.25),
-              
+
               inset 0 -1px 0 hsla(0,0%,100%,.05),
               0 1px 0 hsla(0,0%,0%,.15),
               0 0 1px hsla(0,0%,0%,.1);
@@ -305,8 +305,8 @@ html[dir='rtl'] .findbar {
 }
 
 .findbar label {
-  -webkit-user-select:none;
-  -moz-user-select:none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
 }
 
 #findInput[data-status="pending"] {
@@ -436,7 +436,7 @@ html[dir='rtl'] .splitToolbarButton > .toolbarButton {
 }
 
 .toolbarButton.group {
-  margin-right:0;
+  margin-right: 0;
 }
 
 .splitToolbarButton.toggled .toolbarButton {
@@ -515,10 +515,10 @@ html[dir='rtl'] .splitToolbarButton > .toolbarButton:first-child {
   margin: 5px 0;
 }
 html[dir='ltr'] .splitToolbarButtonSeparator {
-  float:left;
+  float: left;
 }
 html[dir='rtl'] .splitToolbarButtonSeparator {
-  float:right;
+  float: right;
 }
 .splitToolbarButton:hover > .splitToolbarButtonSeparator,
 .splitToolbarButton.toggled > .splitToolbarButtonSeparator {
@@ -551,9 +551,9 @@ html[dir='rtl'] .splitToolbarButtonSeparator {
   color: hsl(0,0%,95%);
   font-size: 12px;
   line-height: 14px;
-  -webkit-user-select:none;
-  -moz-user-select:none;
-  -ms-user-select:none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
   /* Opera does not support user-select, use <... unselectable="on"> instead */
   cursor: default;
   -webkit-transition-property: background-color, border-color, box-shadow;
@@ -685,9 +685,9 @@ html[dir='rtl'] .dropdownToolbarButton {
   min-width: 140px;
   font-size: 12px;
   color: hsl(0,0%,95%);
-  margin:0;
-  padding:0;
-  border:none;
+  margin: 0;
+  padding: 0;
+  border: none;
   background: rgba(0,0,0,0); /* Opera does not support 'transparent' <select> background */
 }
 
@@ -903,8 +903,8 @@ html[dir='rtl'] .toolbarButton.pageDown::before {
   font-size: 12px;
   line-height: 14px;
   text-align: left;
-  -webkit-user-select:none;
-  -moz-user-select:none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
   cursor: default;
 }
 
@@ -978,8 +978,8 @@ a:focus > .thumbnail > .thumbnailSelectionRing,
   bottom: 0;
   padding: 4px 4px 0;
   overflow: auto;
-  -webkit-user-select:none;
-  -moz-user-select:none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
 }
 
 html[dir='ltr'] .outlineItem > .outlineItems {
@@ -1000,7 +1000,7 @@ html[dir='rtl'] .outlineItem > .outlineItems {
   color: hsla(0,0%,100%,.8);
   font-size: 13px;
   line-height: 15px;
-  -moz-user-select:none;
+  -moz-user-select: none;
   cursor: default;
   white-space: normal;
 }
@@ -1187,8 +1187,8 @@ canvas {
 .textLayer > div {
   color: transparent;
   position: absolute;
-  line-height:1;
-  white-space:pre;
+  line-height: 1;
+  white-space: pre;
   cursor: text;
 }
 
