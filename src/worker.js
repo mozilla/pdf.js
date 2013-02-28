@@ -152,6 +152,7 @@ var WorkerMessageHandler = {
         numPages: pdfModel.numPages,
         fingerprint: pdfModel.getFingerprint(),
         destinations: pdfModel.catalog.destinations,
+        javaScript: pdfModel.catalog.javaScript,
         outline: pdfModel.catalog.documentOutline,
         info: pdfModel.getDocumentInfo(),
         metadata: pdfModel.catalog.metadata,

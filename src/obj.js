@@ -17,7 +17,7 @@
 /* globals assertWellFormed, bytesToString, CipherTransformFactory, error, info,
            InvalidPDFException, isArray, isCmd, isDict, isInt, isName, isRef,
            isStream, JpegStream, Lexer, log, Page, Parser, Promise, shadow,
-           stringToPDFString, stringToUTF8String, warn */
+           stringToPDFString, stringToUTF8String, warn, isString */
 
 'use strict';
 
@@ -292,33 +292,50 @@ var Catalog = (function CatalogClosure() {
         });
       }
       if (nameTreeRef) {
-        // reading name tree
-        var processed = new RefSet();
-        processed.put(nameTreeRef);
-        var queue = [nameTreeRef];
-        while (queue.length > 0) {
-          var i, n;
-          obj = xref.fetch(queue.shift());
-          if (obj.has('Kids')) {
-            var kids = obj.get('Kids');
-            for (i = 0, n = kids.length; i < n; i++) {
-              var kid = kids[i];
-              if (processed.has(kid))
-                error('invalid destinations');
-              queue.push(kid);
-              processed.put(kid);
-            }
+        var nameTree = new NameTree(nameTreeRef, xref);
+        var names = nameTree.getAll();
+        for (var name in names) {
+          if (!names.hasOwnProperty(name)) {
             continue;
           }
-          var names = obj.get('Names');
-          if (names) {
-            for (i = 0, n = names.length; i < n; i += 2) {
-              dests[names[i]] = fetchDestination(xref.fetchIfRef(names[i + 1]));
-            }
-          }
+          dests[name] = fetchDestination(names[name]);
         }
       }
       return shadow(this, 'destinations', dests);
+    },
+    get javaScript() {
+      var xref = this.xref;
+      var obj = this.catDict.get('Names');
+
+      var javaScript = [];
+      if (obj && obj.has('JavaScript')) {
+        var nameTree = new NameTree(obj.getRaw('JavaScript'), xref);
+        var names = nameTree.getAll();
+        for (var name in names) {
+          if (!names.hasOwnProperty(name)) {
+            continue;
+          }
+          // We don't really use the JavaScript right now so this code is
+          // defensive so we don't cause errors on document load.
+          var jsDict = names[name];
+          if (!isDict(jsDict)) {
+            continue;
+          }
+          var type = jsDict.get('S');
+          if (!isName(type) || type.name !== 'JavaScript') {
+            continue;
+          }
+          var js = jsDict.get('JS');
+          if (!isString(js) && !isStream(js)) {
+            continue;
+          }
+          if (isStream(js)) {
+            js = bytesToString(js.getBytes());
+          }
+          javaScript.push(js);
+        }
+      }
+      return shadow(this, 'javaScript', javaScript);
     },
     getPage: function Catalog_getPage(n) {
       var pageCache = this.pageCache;
@@ -753,6 +770,55 @@ var XRef = (function XRefClosure() {
   };
 
   return XRef;
+})();
+
+/**
+ * A NameTree is like a Dict but has some adventagous properties, see the spec
+ * (7.9.6) for more details.
+ * TODO: implement all the Dict functions and make this more efficent.
+ */
+var NameTree = (function NameTreeClosure() {
+  function NameTree(root, xref) {
+    this.root = root;
+    this.xref = xref;
+  }
+
+  NameTree.prototype = {
+    getAll: function NameTree_getAll() {
+      var dict = {};
+      if (!this.root) {
+        return dict;
+      }
+      var xref = this.xref;
+      // reading name tree
+      var processed = new RefSet();
+      processed.put(this.root);
+      var queue = [this.root];
+      while (queue.length > 0) {
+        var i, n;
+        var obj = xref.fetch(queue.shift());
+        if (obj.has('Kids')) {
+          var kids = obj.get('Kids');
+          for (i = 0, n = kids.length; i < n; i++) {
+            var kid = kids[i];
+            if (processed.has(kid))
+              error('invalid destinations');
+            queue.push(kid);
+            processed.put(kid);
+          }
+          continue;
+        }
+        var names = obj.get('Names');
+        if (names) {
+          for (i = 0, n = names.length; i < n; i += 2) {
+            dict[names[i]] = xref.fetchIfRef(names[i + 1]);
+          }
+        }
+      }
+      return dict;
+    }
+  };
+  return NameTree;
 })();
 
 /**
