@@ -919,12 +919,12 @@ html[dir='rtl'] .toolbarButton.pageDown::before {
 }
 
 .thumbnail {
-  margin-bottom: 15px;
   float: left;
 }
 
 .thumbnail:not([data-loaded]) {
   border: 1px dashed rgba(255, 255, 255, 0.5);
+  margin-bottom: 10px;
 }
 
 .thumbnailImage {
@@ -1002,7 +1002,6 @@ html[dir='rtl'] .outlineItem > .outlineItems {
   font-size: 13px;
   line-height: 15px;
   -moz-user-select: none;
-  cursor: default;
   white-space: normal;
 }
 
@@ -1039,6 +1038,7 @@ html[dir='rtl'] .outlineItem > a {
   font-size: 12px;
   color: hsla(0,0%,100%,.8);
   font-style: italic;
+  cursor: default;
 }
 
 #findScrollView {
