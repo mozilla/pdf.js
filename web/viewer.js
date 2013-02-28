@@ -3162,14 +3162,16 @@ window.addEventListener('localized', function localized(evt) {
   document.getElementsByTagName('html')[0].dir = mozL10n.getDirection();
 
   // Adjust the width of the zoom box to fit the content.
-  var container = document.getElementById('scaleSelectContainer');
-  var select = document.getElementById('scaleSelect');
-
-  select.setAttribute('style', 'min-width: inherit;');
-  var width = select.clientWidth + 8;
-  container.setAttribute('style', 'min-width: ' + width + 'px; ' +
-                                  'max-width: ' + width + 'px;');
-  select.setAttribute('style', 'min-width: ' + (width + 20) + 'px;');
+  PDFView.animationStartedPromise.then(
+    function() {
+      var container = document.getElementById('scaleSelectContainer');
+      var select = document.getElementById('scaleSelect');
+      select.setAttribute('style', 'min-width: inherit;');
+      var width = select.clientWidth + 8;
+      select.setAttribute('style', 'min-width: ' + (width + 20) + 'px;');
+      container.setAttribute('style', 'min-width: ' + width + 'px; ' +
+                                      'max-width: ' + width + 'px;');
+  });
 }, true);
 
 window.addEventListener('scalechange', function scalechange(evt) {
