@@ -198,6 +198,29 @@ var Page = (function PageClosure() {
                                 'p' + this.pageIndex + '_');
 
       var list = pe.getOperatorList(contentStream, resources, dependency);
+
+      // deal with annotations
+      var annotations = this.getAnnotations();
+      var i, n = annotations.length;
+      var items = [];
+      for (i = 0; i < n; ++i) {
+        var annotation = annotations[i];
+        
+        // check whether we can visualize annotation
+        if (!annotation ||
+            !annotation.annotationFlags || 
+            (annotation.annotationFlags & 0x0002) ||  // Hidden
+            (annotation.annotationFlags & 0x0020) ||  // NoView
+            !annotation.rect ||                       // rectangle is nessessary
+            !annotation.appearance )                  // appearance is nessessary
+          continue;
+                   
+        var ape = new PartialEvaluator(
+            xref, handler, this.pageIndex, 'p' + this.pageIndex + '_annotation' + i);
+          
+        ape.appendAnnotationOperatorList(list, annotation, dependency);
+      }
+
       pe.optimizeQueue(list);
       return list;
     },
@@ -267,11 +290,39 @@ var Page = (function PageClosure() {
         var subtype = annotation.get('Subtype');
         if (!isName(subtype))
           continue;
-        var rect = annotation.get('Rect');
 
         var item = {};
         item.type = subtype.name;
+        var rect = annotation.get('Rect');
+        if(rect[0] > rect[2]) { 
+          var swap = rect[0]; rect[0] = rect[2]; rect[2] = swap; 
+        }
+        if(rect[1] > rect[3]) { 
+          var swap = rect[1]; rect[1] = rect[3]; rect[3] = swap; 
+        }
         item.rect = rect;
+        
+        item.annotationFlags = annotation.get('F');
+
+        item.borderType = '';
+        item.borderWidth = 1;
+        var border = annotation.get('BS');
+        if(isDict(border)) {
+          item.borderType = border.get('S');
+          item.borderWidth = border.get('W');
+        }
+        
+        item.borderRGB = annotation.get('C') || [0, 0, 1];
+        
+        var appearanceState = annotation.get('AP');
+        if(isDict(appearanceState))
+        {
+          item.appearance = appearanceState.get('N');
+          var dict = isDict(item.appearance) ? item.appearance : item.appearance.dict;
+          item.resources = dict.get('Resources');
+          item.bbox = dict.get('BBox') || [0,0,1,1];
+        }
+
         switch (subtype.name) {
           case 'Link':
             var a = annotation.get('A');
