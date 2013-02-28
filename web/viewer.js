@@ -1310,6 +1310,26 @@ var PDFView = {
       }
 
       self.pagesRefMap = pagesRefMap;
+
+      // Wait to do this here so all the canvases are setup.
+      if (PDFView.supportsPrinting) {
+        pdfDocument.getJavaScript().then(function(javaScript) {
+          if (javaScript.length) {
+            PDFView.fallback();
+          }
+          // Hack to support auto printing.
+          var regex = /\bprint\s*\(/g;
+          for (var i = 0, ii = javaScript.length; i < ii; i++) {
+            var js = javaScript[i];
+            if (js && regex.test(js)) {
+              setTimeout(function() {
+                window.print();
+              });
+              return;
+            }
+          }
+        });
+      }
     });
 
     var destinationsPromise = pdfDocument.getDestinations();
