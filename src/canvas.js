@@ -1053,6 +1053,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       var canvasWidth = 0.0;
       var textSelection = textLayer ? true : false;
       var vertical = font.vertical;
+      var spacingAccumulator = 0;
 
       if (textSelection) {
         ctx.save();
@@ -1072,12 +1073,14 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
           }
 
           if (textSelection)
-            canvasWidth += spacingLength;
+            spacingAccumulator += spacingLength;
         } else if (isString(e)) {
           var shownCanvasWidth = this.showText(e, true);
 
-          if (textSelection)
-            canvasWidth += shownCanvasWidth;
+          if (textSelection) {
+            canvasWidth += spacingAccumulator + shownCanvasWidth;
+            spacingAccumulator = 0;
+          }
         } else {
           error('TJ array element ' + e + ' is not string or num');
         }
