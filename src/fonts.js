@@ -32,7 +32,7 @@ var PDF_GLYPH_SPACE_UNITS = 1000;
 
 // Hinting is currently disabled due to unknown problems on windows
 // in tracemonkey and various other pdfs with type1 fonts.
-var HINTING_ENABLED = false;
+var HINTING_ENABLED = true;
 
 var FONT_IDENTITY_MATRIX = [0.001, 0, 0, 0.001, 0, 0];
 
@@ -4683,8 +4683,6 @@ var ErrorFont = (function ErrorFontClosure() {
  */
 var Type1CharString = (function Type1CharStringClosure() {
   var COMMAND_MAP = {
-    'hstem': [1],
-    'vstem': [3],
     'vmoveto': [4],
     'rlineto': [5],
     'hlineto': [6],
@@ -4694,8 +4692,11 @@ var Type1CharString = (function Type1CharStringClosure() {
     'flex': [12, 35],
     'drop' : [12, 18],
     'endchar': [14],
+    'hstemhm': [18],
+    'hintmask': [19],
     'rmoveto': [21],
     'hmoveto': [22],
+    'vstemhm': [23],
     'vhcurveto': [30],
     'hvcurveto': [31]
   };
@@ -4706,12 +4707,17 @@ var Type1CharString = (function Type1CharStringClosure() {
     this.flexing = false;
     this.output = [];
     this.stack = [];
+    this.stems = [];
+    this.stemGroupsStarts = [0];
+    this.stemGroupsOffsets = [0];
+    this.counterSpaceGroups = [];
   }
 
   Type1CharString.prototype = {
     convert: function Type1CharString_convert(encoded, subrs) {
       var count = encoded.length;
       var error = false;
+      var counterSpaceData = null;
       for (var i = 0; i < count; i++) {
         var value = encoded[i];
         if (value < 32) {
@@ -4720,18 +4726,18 @@ var Type1CharString = (function Type1CharStringClosure() {
           }
           switch (value) {
             case 1: // hstem
-              if (!HINTING_ENABLED) {
-                this.stack = [];
-                break;
+              if (HINTING_ENABLED) {
+                this.stems.push({y: this.stack[this.stack.length - 2],
+                                 dy: this.stack[this.stack.length - 1]});
               }
-              error = this.executeCommand(2, COMMAND_MAP.hstem);
+              this.stack = [];
               break;
             case 3: // vstem
-              if (!HINTING_ENABLED) {
-                this.stack = [];
-                break;
+              if (HINTING_ENABLED) {
+                this.stems.push({x: this.stack[this.stack.length - 2],
+                                 dx: this.stack[this.stack.length - 1]});
               }
-              error = this.executeCommand(2, COMMAND_MAP.vstem);
+              this.stack = [];
               break;
             case 4: // vmoveto
               if (this.flexing) {
@@ -4818,22 +4824,26 @@ var Type1CharString = (function Type1CharStringClosure() {
               this.stack = [];
               break;
             case (12 << 8) + 1: // vstem3
-              if (!HINTING_ENABLED) {
-                this.stack = [];
-                break;
+              if (HINTING_ENABLED) {
+                this.stems.push({x: this.stack[this.stack.length - 6],
+                                 dx: this.stack[this.stack.length - 5]});
+                this.stems.push({x: this.stack[this.stack.length - 4],
+                                 dx: this.stack[this.stack.length - 3]});
+                this.stems.push({x: this.stack[this.stack.length - 2],
+                                 dx: this.stack[this.stack.length - 1]});
               }
-              // [vh]stem3 are Type1 only and Type2 supports [vh]stem with
-              // multiple parameters, so instead of returning [vh]stem3 take a
-              // shortcut and return [vhstem] instead.
-              error = this.executeCommand(2, COMMAND_MAP.vstem);
+              this.stack = [];
               break;
             case (12 << 8) + 2: // hstem3
-              if (!HINTING_ENABLED) {
-                 this.stack = [];
-                break;
+              if (HINTING_ENABLED) {
+                this.stems.push({y: this.stack[this.stack.length - 6],
+                                 dy: this.stack[this.stack.length - 5]});
+                this.stems.push({y: this.stack[this.stack.length - 4],
+                                 dy: this.stack[this.stack.length - 3]});
+                this.stems.push({y: this.stack[this.stack.length - 2],
+                                 dy: this.stack[this.stack.length - 1]});
               }
-              // See vstem3.
-              error = this.executeCommand(2, COMMAND_MAP.hstem);
+              this.stack = [];
               break;
             case (12 << 8) + 6: // seac
               // seac is like type 2's special endchar but it doesn't use the
@@ -4898,6 +4908,23 @@ var Type1CharString = (function Type1CharStringClosure() {
                 this.stack.push(flexArgs[15], flexArgs[16]);
               } else if (subrNumber === 1 && numArgs === 0) {
                 this.flexing = true;
+              } else if (subrNumber === 3 && numArgs === 1) {
+                if (HINTING_ENABLED) {
+                  // stem state will be updated after callsubr
+                  this.stemGroupsStarts.push(this.stems.length);
+                  this.stemGroupsOffsets.push(this.output.length);
+                } else {
+                  this.stack[this.stack - 1] = 3;
+                }
+              } else if (HINTING_ENABLED &&
+                         subrNumber === 12 && subrNumber === 13) {
+                // collecting counter space data
+                counterSpaceData = (counterSpaceData || []).concat(
+                  this.stack.slice(-numArgs, numArgs));
+                if (subrNumber == 13) {
+                  this.counterSpaceGroups.push(counterSpaceData);
+                  counterSpaceData = null;
+                }
               }
               break;
             case (12 << 8) + 17: // pop
@@ -4930,6 +4957,139 @@ var Type1CharString = (function Type1CharStringClosure() {
       return error;
     },
 
+    convertHints: function Type1CharString_convertHints(lsb) {
+      // TODO match counter space data with the existing stems and
+      // implement cntrmask
+      var stems = this.stems;
+      if (stems.length === 0) {
+        return;
+      }
+
+      var stemGroupsStarts = this.stemGroupsStarts;
+      var groups = stemGroupsStarts.length;
+      stemGroupsStarts.push(stems.length);
+
+      var stemsDescriptions = [];
+      var i, ii, j;
+      // using group bit mask, we will use hintmask later
+      var groupMask = 1;
+      for (i = 0, ii = stems.length, j = 1; i < ii; i++) {
+        if (stemGroupsStarts[j] === i) {
+          j++;
+          groupMask <<= 1;
+        }
+        stemsDescriptions.push({
+          stem: stems[i],
+          groups: groupMask
+        });
+      }
+      // sorting all hints in order: horizonal by y, then vertical by x
+      stemsDescriptions.sort(function (a, b) {
+        if ('y' in a.stem) {
+          if ('y' in b.stem) {
+            return a.stem.y !== b.stem.y ? a.stem.y - b.stem.y :
+                                           a.stem.dy - b.stem.dy;
+          } else {
+            return -1;
+          }
+        } else {
+          if ('x' in b.stem) {
+            return a.stem.x !== b.stem.x ? a.stem.x - b.stem.x :
+                                           a.stem.dx - b.stem.dx;
+          } else {
+            return 1;
+          }
+        }
+      });
+      // merging duplicates
+      var prev = stemsDescriptions[0];
+      for (i = 1; i < stemsDescriptions.length;) {
+        var next = stemsDescriptions[i];
+        if ('x' in next.stem ?
+            prev.stem.x !== next.stem.x || prev.stem.dx !== next.stem.dx :
+            prev.stem.y !== next.stem.y || prev.stem.dy !== next.stem.dy) {
+          prev = next;
+          ++i;
+        } else {
+          // duplicate merging groups
+          prev.groups |= next.groups;
+          stemsDescriptions.splice(i, 1);
+        }
+      }
+
+      var hints = [], i = 0;
+      // generating hstemhm and vstemhm commands
+      if ('y' in stemsDescriptions[0].stem) {
+        prev = stemsDescriptions[i++];
+        this.encodeNumber(hints, prev.stem.y);
+        this.encodeNumber(hints, prev.stem.dy);
+        while (i < stemsDescriptions.length &&
+               'y' in stemsDescriptions[i].stem) {
+          var next = stemsDescriptions[i++];
+          this.encodeNumber(hints, next.stem.y - prev.stem.y - prev.stem.dy);
+          this.encodeNumber(hints, next.stem.dy);
+          prev = next;
+        }
+        hints = hints.concat(COMMAND_MAP.hstemhm);
+      }
+      if (i < stemsDescriptions.length &&
+          'x' in stemsDescriptions[i].stem) {
+        prev = stemsDescriptions[i++];
+        this.encodeNumber(hints, prev.stem.x + lsb); // add left sidebearing
+        this.encodeNumber(hints, prev.stem.dx);
+        while (i < stemsDescriptions.length) {
+          var next = stemsDescriptions[i++];
+          this.encodeNumber(hints, next.stem.x - prev.stem.x - prev.stem.dx);
+          this.encodeNumber(hints, next.stem.dx);
+          prev = next;
+        }
+        // we can skip vstemhm just before hintmask
+        if (groups > 1 && stemGroupsStarts[1] === 0) {
+          hints = hints.concat(COMMAND_MAP.vstemhm);
+        }
+      }
+      // adding hints information at the beginning of the charstring
+      this.output = hints.concat(this.output);
+
+      // generating hintmask commands and inserting them where hint stems state
+      // was modified in the charstring (see stemGroupsOffsets usage)
+      var offsetCorrection = hints.length;
+      for (j = 0, groupMask = 1; j < groups; j++, groupMask <<= 1) {
+        hints = COMMAND_MAP.hintmask.slice(0);
+        var bitMask = 0x80, b = 0;
+        for (i = 0, ii = stemsDescriptions.length; i < ii; i++) {
+          if ((stemsDescriptions[i].groups & groupMask) !== 0) {
+            b |= bitMask;
+          }
+          bitMask >>= 1;
+          if (!bitMask) {
+            hints.push(b);
+            b = 0;
+            bitMask = 0x80;
+          }
+        }
+        if (bitMask !== 0x80) {
+          hints.push(b);
+        }
+        this.output.splice.apply(this.output,
+          [this.stemGroupsOffsets[j] + offsetCorrection, 0].concat(hints));
+        offsetCorrection += hints.length;
+      }
+    },
+
+    encodeNumber: function(output, value) {
+      if (value === (value | 0)) { // int
+        output.push(28, (value >> 8) & 0xff, value & 0xff);
+      } else { // fixed point
+        value = (65536 * value) | 0;
+        output.push(255,
+                    (value >> 24) & 0xFF,
+                    (value >> 16) & 0xFF,
+                    (value >> 8) & 0xFF,
+                    value & 0xFF);
+      }
+    },
+
     executeCommand: function(howManyArgs, command, keepStack) {
       var stackLength = this.stack.length;
       if (howManyArgs > stackLength) {
@@ -4937,17 +5097,7 @@ var Type1CharString = (function Type1CharStringClosure() {
       }
       var start = stackLength - howManyArgs;
       for (var i = start; i < stackLength; i++) {
-        var value = this.stack[i];
-        if (value === (value | 0)) { // int
-          this.output.push(28, (value >> 8) & 0xff, value & 0xff);
-        } else { // fixed point
-          value = (65536 * value) | 0;
-          this.output.push(255,
-                           (value >> 24) & 0xFF,
-                           (value >> 16) & 0xFF,
-                           (value >> 8) & 0xFF,
-                           value & 0xFF);
-        }
+        this.encodeNumber(this.output, this.stack[i]);
       }
       this.output.push.apply(this.output, command);
       if (keepStack) {
@@ -5188,6 +5338,9 @@ var Type1Parser = function type1Parser() {
       var encoded = charstrings[i].encoded;
       var charString = new Type1CharString();
       var error = charString.convert(encoded, subrs);
+      if (HINTING_ENABLED && !error) {
+        charString.convertHints(charString.lsb);
+      }
       var output = charString.output;
       if (error) {
         // It seems when FreeType encounters an error while evaluating a glyph
@@ -5500,7 +5653,14 @@ Type1Font.prototype = {
       var field = fields[i];
       if (!properties.privateData.hasOwnProperty(field))
         continue;
-      privateDict.setByName(field, properties.privateData[field]);
+      var value = properties.privateData[field];
+      if (isArray(value)) {
+        // the array data item in CFF stored as "delta-encoded" numbers
+        for (var j = value.length - 1; j > 0; j--) {
+          value[j] -= value[j - 1]; // ... as difference from previous value
+        }
+      }
+      privateDict.setByName(field, value);
     }
     cff.topDict.privateDict = privateDict;
 
