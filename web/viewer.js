@@ -1039,9 +1039,9 @@ var PDFView = {
     );
   },
 
-  download: function pdfViewDownload() {
+  download: function pdfViewDownload(saveAs) {
     function noData() {
-      FirefoxCom.request('download', { originalUrl: url });
+      FirefoxCom.request('download', { originalUrl: url, saveAs: saveAs });
     }
     var url = this.url.split('#')[0];
 //#if !(FIREFOX || MOZCENTRAL)
@@ -1058,7 +1058,8 @@ var PDFView = {
 //      var blob = PDFJS.createBlob(data.buffer, 'application/pdf');
 //      var blobUrl = window.URL.createObjectURL(blob);
 //
-//      FirefoxCom.request('download', { blobUrl: blobUrl, originalUrl: url },
+//      FirefoxCom.request('download', { blobUrl: blobUrl, originalUrl: url,
+//                                       saveAs: saveAs},
 //        function response(err) {
 //          if (err) {
 //            // This error won't really be helpful because it's likely the
@@ -3053,6 +3054,17 @@ document.addEventListener('DOMContentLoaded', function webViewerLoad(evt) {
     });
 
 //#if (FIREFOX || MOZCENTRAL)
+//window.addEventListener('message', function window_message(e) {
+//  var args = e.data;
+//  if (typeof args !== 'object' || !('pdfjsAction' in args))
+//    return;
+//  switch (args.pdfjsAction) {
+//    case 'saveAs':
+//      PDFView.download(true);
+//      break;
+//  }
+//});
+//
 //if (FirefoxCom.requestSync('getLoadingType') == 'passive') {
 //  PDFView.setTitleUsingUrl(file);
 //  PDFView.initPassiveLoading();
