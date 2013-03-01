@@ -865,9 +865,9 @@ html[dir='rtl'] .toolbarButton.pageDown::before {
   content: url(images/toolbarButton-zoomIn.png);
 }
 
-.toolbarButton.fullscreen::before {
+.toolbarButton.presentationMode::before {
   display: inline-block;
-  content: url(images/toolbarButton-fullscreen.png);
+  content: url(images/toolbarButton-presentationMode.png);
 }
 
 .toolbarButton.print::before {
