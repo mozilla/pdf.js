@@ -600,6 +600,7 @@ PdfStreamConverter.prototype = {
   onStartRequest: function(aRequest, aContext) {
     // Setup the request so we can use it below.
     aRequest.QueryInterface(Ci.nsIChannel);
+    aRequest.QueryInterface(Ci.nsIWritablePropertyBag);
     // Creating storage for PDF data
     var contentLength = aRequest.contentLength;
     var dataListener = new PdfDataListener(contentLength);
@@ -612,6 +613,7 @@ PdfStreamConverter.prototype = {
                         .createInstance(Ci.nsIBinaryInputStream);
 
     // Change the content type so we don't get stuck in a loop.
+    aRequest.setProperty('contentType', aRequest.contentType);
     aRequest.contentType = 'text/html';
 
     // Create a new channel that is viewer loaded as a resource.
