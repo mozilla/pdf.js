@@ -60,7 +60,7 @@ var Parser = (function ParserClosure() {
         this.shift();
         var array = [];
         while (!isCmd(this.buf1, ']') && !isEOF(this.buf1))
-          array.push(this.getObj());
+          array.push(this.getObj(cipherTransform));
         if (isEOF(this.buf1))
           error('End of file inside array');
         this.shift();
