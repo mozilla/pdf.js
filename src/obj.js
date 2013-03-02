@@ -796,7 +796,7 @@ var NameTree = (function NameTreeClosure() {
       var queue = [this.root];
       while (queue.length > 0) {
         var i, n;
-        var obj = xref.fetch(queue.shift());
+        var obj = xref.fetchIfRef(queue.shift());
         if (obj.has('Kids')) {
           var kids = obj.get('Kids');
           for (i = 0, n = kids.length; i < n; i++) {
