@@ -930,6 +930,13 @@
       "rounds": 1,
       "type": "eq"
     },
+    {  "id": "ohkubo-ss04",
+      "file": "pdfs/ohkubo-SS04.pdf",
+      "md5": "b8c334073ff5be74fac1f36130943ea5",
+      "rounds": 1,
+      "link": true,
+      "type": "eq"
+    },
     {  "id": "sfaa_japanese",
       "file": "pdfs/SFAA_Japanese.pdf",
       "md5": "b961bbc0d05bdd6d91041bca60ec8e8b",
