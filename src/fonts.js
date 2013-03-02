@@ -412,6 +412,7 @@ var CMapConverterList = {
   'EUC-H': eucjpToUnicode,
   'EUC-V': eucjpToUnicode,
   '83pv-RKSJ-H': sjis83pvToUnicode,
+  '90pv-RKSJ-H': sjis90pvToUnicode,
   '90ms-RKSJ-H': sjisToUnicode,
   '90ms-RKSJ-V': sjisToUnicode,
   '90msp-RKSJ-H': sjisToUnicode,
@@ -474,6 +475,18 @@ function sjis83pvToUnicode(str) {
     return decodeBytes(bytes, 'shift_jis', true);
   } catch (e) {
     TODO('Unsupported 83pv character found');
+    // Just retry without checking errors for now.
+    return decodeBytes(bytes, 'shift_jis');
+  }
+}
+
+function sjis90pvToUnicode(str) {
+  var bytes = stringToBytes(str);
+  try {
+    // TODO: 90pv has incompatible mappings in 8740..879c and eb41..ee9c.
+    return decodeBytes(bytes, 'shift_jis', true);
+  } catch (e) {
+    TODO('Unsupported 90pv character found');
     // Just retry without checking errors for now.
     return decodeBytes(bytes, 'shift_jis');
   }
