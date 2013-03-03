@@ -30,8 +30,6 @@ var SYMBOLIC_FONT_GLYPH_OFFSET = 0xF000;
 // except for Type 3 fonts
 var PDF_GLYPH_SPACE_UNITS = 1000;
 
-// Hinting is currently disabled due to unknown problems on windows
-// in tracemonkey and various other pdfs with type1 fonts.
 var HINTING_ENABLED = true;
 
 var FONT_IDENTITY_MATRIX = [0.001, 0, 0, 0.001, 0, 0];
@@ -4985,21 +4983,11 @@ var Type1CharString = (function Type1CharStringClosure() {
       }
       // sorting all hints in order: horizonal by y, then vertical by x
       stemsDescriptions.sort(function (a, b) {
-        if ('y' in a.stem) {
-          if ('y' in b.stem) {
-            return a.stem.y !== b.stem.y ? a.stem.y - b.stem.y :
-                                           a.stem.dy - b.stem.dy;
-          } else {
-            return -1;
-          }
-        } else {
-          if ('x' in b.stem) {
-            return a.stem.x !== b.stem.x ? a.stem.x - b.stem.x :
-                                           a.stem.dx - b.stem.dx;
-          } else {
-            return 1;
-          }
-        }
+        return 'y' in a.stem ?
+          ('x' in b.stem ? -1 :
+          a.stem.y !== b.stem.y ? a.stem.y - b.stem.y : a.stem.dy - b.stem.dy) :
+          ('y' in b.stem ? 1 :
+          a.stem.x !== b.stem.x ? a.stem.x - b.stem.x : a.stem.dx - b.stem.dx);
       });
       // merging duplicates
       var prev = stemsDescriptions[0];
