@@ -270,7 +270,7 @@ var TilingPattern = (function TilingPatternClosure() {
   };
   var MAX_PATTERN_SIZE = 4096;
 
-  function TilingPattern(IR, color, ctx, objs) {
+  function TilingPattern(IR, color, ctx, objs, commonObjs) {
     var operatorList = IR[2];
     this.matrix = IR[3] || [1, 0, 0, 1, 0, 0];
     var bbox = IR[4];
@@ -314,7 +314,7 @@ var TilingPattern = (function TilingPatternClosure() {
 
     // set the new canvas element context as the graphics context
     var tmpCtx = tmpCanvas.getContext('2d');
-    var graphics = new CanvasGraphics(tmpCtx, null, objs);
+    var graphics = new CanvasGraphics(tmpCtx, commonObjs, objs);
 
     this.setFillAndStrokeStyleToContext(tmpCtx, paintType, color);
 
