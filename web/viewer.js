@@ -1523,8 +1523,10 @@ var PDFView = {
           if (zoomArgNumber)
             zoomArg = zoomArgNumber / 100;
 
-          var dest = [null, {name: 'XYZ'}, (zoomArgs[1] | 0),
-            (zoomArgs[2] | 0), zoomArg];
+          var dest = [null, {name: 'XYZ'},
+                      zoomArgs.length > 1 ? (zoomArgs[1] | 0) : null,
+                      zoomArgs.length > 2 ? (zoomArgs[2] | 0) : null,
+                      zoomArg];
           var currentPage = this.pages[pageNumber - 1];
           currentPage.scrollIntoView(dest);
         } else {
@@ -2036,6 +2038,12 @@ var PageView = function pageView(container, pdfPage, id, scale,
           x = dest[2];
           y = dest[3];
           scale = dest[4];
+          // If x and/or y coordinates are not supplied, default to
+          // _top_ left of the page (not the obvious bottom left,
+          // since aligning the bottom of the intended page with the
+          // top of the window is rarely helpful).
+          x = x !== null ? x : 0;
+          y = y !== null ? y : this.height / this.scale;
           break;
         case 'Fit':
         case 'FitB':
