@@ -1235,12 +1235,14 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         baseFont = new Name(baseFont);
       }
 
-      var fontNameStr = fontName && fontName.name;
-      var baseFontStr = baseFont && baseFont.name;
-      if (fontNameStr !== baseFontStr) {
-        warn('The FontDescriptor\'s FontName is "' + fontNameStr +
-            '" but should be the same as the Font\'s BaseFont "' +
-            baseFontStr + '"');
+      if (type.name !== 'Type3') {
+        var fontNameStr = fontName && fontName.name;
+        var baseFontStr = baseFont && baseFont.name;
+        if (fontNameStr !== baseFontStr) {
+          warn('The FontDescriptor\'s FontName is "' + fontNameStr +
+               '" but should be the same as the Font\'s BaseFont "' +
+               baseFontStr + '"');
+        }
       }
       fontName = fontName || baseFont;
 
