@@ -3321,7 +3321,7 @@ window.addEventListener('keydown', function keydown(evt) {
       case 48: // '0'
       case 96: // '0' on Numpad of Swedish keyboard
         PDFView.parseScale(DEFAULT_SCALE, true);
-        handled = true;
+        handled = false; // keeping it unhandled (to restore page zoom to 100%)
         break;
     }
   }
