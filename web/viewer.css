@@ -1066,12 +1066,12 @@ canvas {
   direction: ltr;
   width: 816px;
   height: 1056px;
-  margin: 10px auto;
+  margin: 1px auto -8px auto;
   position: relative;
   overflow: visible;
-  -webkit-box-shadow: 0px 4px 10px #000;
-  -moz-box-shadow: 0px 4px 10px #000;
-  box-shadow: 0px 4px 10px #000;
+  border: 9px solid transparent;
+  background-clip: content-box;
+  border-image: url(images/shadow.png) 9 9 repeat;
   background-color: white;
 }
 
@@ -1083,8 +1083,6 @@ canvas {
 .page > a:hover {
   opacity: 0.2;
   background: #ff0;
-  -webkit-box-shadow: 0px 2px 10px #ff0;
-  -moz-box-shadow: 0px 2px 10px #ff0;
   box-shadow: 0px 2px 10px #ff0;
 }
 
@@ -1229,11 +1227,8 @@ canvas {
   padding: 0.6em;
   max-width: 20em;
   background-color: #FFFF99;
-  -webkit-box-shadow: 0px 2px 10px #333;
-  -moz-box-shadow: 0px 2px 10px #333;
   box-shadow: 0px 2px 10px #333;
   border-radius: 7px;
-  -moz-border-radius: 7px;
 }
 
 .annotText > img {
@@ -1372,8 +1367,6 @@ canvas {
   .page {
     float: left;
     display: none;
-    -webkit-box-shadow: none;
-    -moz-box-shadow: none;
     box-shadow: none;
   }
 
