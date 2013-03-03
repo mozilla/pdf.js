@@ -4967,7 +4967,7 @@ var Type1CharString = (function Type1CharStringClosure() {
       var groups = stemGroupsStarts.length;
       stemGroupsStarts.push(stems.length);
 
-      var stemsDescriptions = [];
+      var hstemsDescriptions = [], vstemsDescriptions = [];
       var i, ii, j;
       // using group bit mask, we will use hintmask later
       var groupMask = 1;
@@ -4976,59 +4976,67 @@ var Type1CharString = (function Type1CharStringClosure() {
           j++;
           groupMask <<= 1;
         }
-        stemsDescriptions.push({
-          stem: stems[i],
-          groups: groupMask
-        });
+        var stem = stems[i];
+        if ('y' in stem) {
+          hstemsDescriptions.push({y: stem.y, dy: stem.dy, groups: groupMask});
+        } else {
+          vstemsDescriptions.push({x: stem.x, dx: stem.dx, groups: groupMask});
+        }
       }
-      // sorting all hints in order: horizonal by y, then vertical by x
-      stemsDescriptions.sort(function (a, b) {
-        return 'y' in a.stem ?
-          ('x' in b.stem ? -1 :
-          a.stem.y !== b.stem.y ? a.stem.y - b.stem.y : a.stem.dy - b.stem.dy) :
-          ('y' in b.stem ? 1 :
-          a.stem.x !== b.stem.x ? a.stem.x - b.stem.x : a.stem.dx - b.stem.dx);
+      // sorting all hints in order: horizonal by y,vertical by x
+      hstemsDescriptions.sort(function (a, b) {
+        return a.y !== b.y ? a.y - b.y : a.dy - b.dy;
       });
+      vstemsDescriptions.sort(function (a, b) {
+        return a.x !== b.x ? a.x - b.x : a.dx - b.dx;
+      });
+
       // merging duplicates
-      var prev = stemsDescriptions[0];
-      for (i = 1; i < stemsDescriptions.length;) {
-        var next = stemsDescriptions[i];
-        if ('x' in next.stem ?
-            prev.stem.x !== next.stem.x || prev.stem.dx !== next.stem.dx :
-            prev.stem.y !== next.stem.y || prev.stem.dy !== next.stem.dy) {
+      var prev = hstemsDescriptions[0], next;
+      for (i = 1; i < hstemsDescriptions.length;) {
+        next = hstemsDescriptions[i];
+        if (prev.y !== next.y || prev.dy !== next.dy) {
           prev = next;
           ++i;
         } else {
-          // duplicate merging groups
+          // duplicate -- merging groups
           prev.groups |= next.groups;
-          stemsDescriptions.splice(i, 1);
+          hstemsDescriptions.splice(i, 1);
         }
       }
-
-      var hints = [], i = 0;
+      prev = vstemsDescriptions[0];
+      for (i = 1; i < vstemsDescriptions.length;) {
+        next = vstemsDescriptions[i];
+        if (prev.x !== next.x || prev.dx !== next.dx) {
+          prev = next;
+          ++i;
+        } else {
+          prev.groups |= next.groups;
+          vstemsDescriptions.splice(i, 1);
+        }
+      }
+      var hints = [];
       // generating hstemhm and vstemhm commands
-      if ('y' in stemsDescriptions[0].stem) {
-        prev = stemsDescriptions[i++];
-        this.encodeNumber(hints, prev.stem.y);
-        this.encodeNumber(hints, prev.stem.dy);
-        while (i < stemsDescriptions.length &&
-               'y' in stemsDescriptions[i].stem) {
-          var next = stemsDescriptions[i++];
-          this.encodeNumber(hints, next.stem.y - prev.stem.y - prev.stem.dy);
-          this.encodeNumber(hints, next.stem.dy);
+      if (hstemsDescriptions.length > 0) {
+        prev = hstemsDescriptions[0];
+        this.encodeNumber(hints, prev.y);
+        this.encodeNumber(hints, prev.dy);
+        for (i = 1, ii = hstemsDescriptions.length; i < ii; i++) {
+          next = hstemsDescriptions[i];
+          this.encodeNumber(hints, next.y - prev.y - prev.dy);
+          this.encodeNumber(hints, next.dy);
           prev = next;
         }
         hints = hints.concat(COMMAND_MAP.hstemhm);
       }
-      if (i < stemsDescriptions.length &&
-          'x' in stemsDescriptions[i].stem) {
-        prev = stemsDescriptions[i++];
-        this.encodeNumber(hints, prev.stem.x + lsb); // add left sidebearing
-        this.encodeNumber(hints, prev.stem.dx);
-        while (i < stemsDescriptions.length) {
-          var next = stemsDescriptions[i++];
-          this.encodeNumber(hints, next.stem.x - prev.stem.x - prev.stem.dx);
-          this.encodeNumber(hints, next.stem.dx);
+      if (vstemsDescriptions.length > 0) {
+        prev = vstemsDescriptions[0];
+        this.encodeNumber(hints, prev.x + lsb); // add left sidebearing
+        this.encodeNumber(hints, prev.dx);
+        for (i = 1, ii = vstemsDescriptions.length; i < ii; i++) {
+          next = vstemsDescriptions[i];
+          this.encodeNumber(hints, next.x - prev.x - prev.dx);
+          this.encodeNumber(hints, next.dx);
           prev = next;
         }
         // we can skip vstemhm just before hintmask
@@ -5038,6 +5046,7 @@ var Type1CharString = (function Type1CharStringClosure() {
       }
       // adding hints information at the beginning of the charstring
       this.output = hints.concat(this.output);
+      var stemsDescriptions = hstemsDescriptions.concat(vstemsDescriptions);
 
       // generating hintmask commands and inserting them where hint stems state
       // was modified in the charstring (see stemGroupsOffsets usage)
