@@ -461,6 +461,12 @@
       "rounds": 1,
       "type": "eq"
     },
+    {  "id": "endchar",
+      "file": "pdfs/endchar.pdf",
+      "md5": "90a59acdd62252fdb4fefa482e12d6b3",
+      "rounds": 1,
+      "type": "eq"
+    },
     {  "id": "type4psfunc",
       "file": "pdfs/type4psfunc.pdf",
       "md5": "7e6027a02ff78577f74dccdf84e37189",
