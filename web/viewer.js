@@ -1546,6 +1546,16 @@ var PDFView = {
           toggle.click();
         }
       }
+      if ('toolbar' in params) {
+        var toolbar = document.getElementById('toolbar');
+        if (params.toolbar === '0') {
+          toolbar.classList.add('hidden');
+          this.container.setAttribute('style', 'top: 0px;');
+        } else {
+          toolbar.classList.remove('hidden');
+          this.container.removeAttribute('style');
+        }
+      }
     } else if (/^\d+$/.test(hash)) // page number
       this.page = hash;
     else // named destination
