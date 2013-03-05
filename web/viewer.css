@@ -1068,7 +1068,7 @@ canvas {
   direction: ltr;
   width: 816px;
   height: 1056px;
-  margin: -5px -7px;
+  margin: -5px -7px -6px -7px;
   position: relative;
   overflow: visible;
   border: 9px solid transparent;
@@ -1089,8 +1089,8 @@ canvas {
   box-shadow: 0px 2px 10px #ff0;
 }
 
-#pageContainer1 {
-  margin-top: 10px;
+.page:nth-child(2) {
+  margin-top: 1px;
 }
 
 #viewer.twoUp.noCover > br.first,
