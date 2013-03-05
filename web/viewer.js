@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/* globals PDFJS, PDFBug, FirefoxCom, Stats */
 
 'use strict';
 
@@ -62,9 +63,11 @@ function scrollIntoView(element, spot) {
   // Assuming offsetParent is available (it's not available when viewer is in
   // hidden iframe or object). We have to scroll: if the offsetParent is not set
   // producing the error. See also animationStartedClosure.
-  var parent = element.offsetParent, offsetY = element.offsetTop;
+  var parent = element.offsetParent;
+  var offsetY = element.offsetTop + element.clientTop;
   if (!parent) {
-    error('offsetParent is not set -- cannot scroll');
+    console.error('offsetParent is not set -- cannot scroll');
+    return;
   }
   while (parent.clientHeight == parent.scrollHeight) {
     offsetY += parent.offsetTop;
@@ -151,6 +154,7 @@ var ProgressBar = (function ProgressBarClosure() {
 // If not, we use FUEL in FF
 // Use asyncStorage for B2G
 var Settings = (function SettingsClosure() {
+//#if !(FIREFOX || MOZCENTRAL || B2G)
   var isLocalStorageEnabled = (function localStorageEnabledTest() {
     // Feature test as per http://diveintohtml5.info/storage.html
     // The additional localStorage call is to get around a FF quirk, see
@@ -162,6 +166,7 @@ var Settings = (function SettingsClosure() {
       return false;
     }
   })();
+//#endif
 
   function Settings(fingerprint) {
     this.fingerprint = fingerprint;
@@ -214,11 +219,18 @@ var Settings = (function SettingsClosure() {
       var file = this.file;
       file[name] = val;
       var database = JSON.stringify(this.database);
-//#if !(FIREFOX || MOZCENTRAL)
+
+//#if B2G
+//    asyncStorage.setItem('database', database);
+//#endif
+
+//#if FIREFOX || MOZCENTRAL
+//    FirefoxCom.requestSync('setDatabase', database);
+//#endif
+
+//#if !(FIREFOX || MOZCENTRAL || B2G)
       if (isLocalStorageEnabled)
         localStorage.setItem('database', database);
-//#else
-//    FirefoxCom.requestSync('setDatabase', database);
 //#endif
     },
 
@@ -818,12 +830,14 @@ var PDFView = {
 
   zoomIn: function pdfViewZoomIn() {
     var newScale = (this.currentScale * DEFAULT_SCALE_DELTA).toFixed(2);
+    newScale = Math.ceil(newScale * 10) / 10;
     newScale = Math.min(MAX_SCALE, newScale);
     this.parseScale(newScale, true, false);
   },
 
   zoomOut: function pdfViewZoomOut() {
     var newScale = (this.currentScale / DEFAULT_SCALE_DELTA).toFixed(2);
+    newScale = Math.floor(newScale * 10) / 10;
     newScale = Math.max(MIN_SCALE, newScale);
     this.parseScale(newScale, true, false);
   },
@@ -1219,7 +1233,9 @@ var PDFView = {
     if (pageNumber) {
       this.page = pageNumber;
       var currentPage = this.pages[pageNumber - 1];
-      currentPage.scrollIntoView(dest);
+      if (!this.isFullscreen) { // Avoid breaking fullscreen mode.
+        currentPage.scrollIntoView(dest);
+      }
     }
   },
 
@@ -1421,6 +1437,26 @@ var PDFView = {
       }
 
       self.pagesRefMap = pagesRefMap;
+
+      // Wait to do this here so all the canvases are setup.
+      if (PDFView.supportsPrinting) {
+        pdfDocument.getJavaScript().then(function(javaScript) {
+          if (javaScript.length) {
+            PDFView.fallback();
+          }
+          // Hack to support auto printing.
+          var regex = /\bprint\s*\(/g;
+          for (var i = 0, ii = javaScript.length; i < ii; i++) {
+            var js = javaScript[i];
+            if (js && regex.test(js)) {
+              setTimeout(function() {
+                window.print();
+              });
+              return;
+            }
+          }
+        });
+      }
     });
 
     var destinationsPromise = pdfDocument.getDestinations();
@@ -1455,6 +1491,12 @@ var PDFView = {
       }
 
       self.setInitialView(storedHash, scale);
+
+      // Make all navigation keys work on document load,
+      // unless the viewer is embedded in another page.
+      if (window.parent.location === window.location) {
+        PDFView.container.focus();
+      }
     });
 
     pdfDocument.getMetadata().then(function(data) {
@@ -1647,12 +1689,26 @@ var PDFView = {
           if (zoomArgNumber)
             zoomArg = zoomArgNumber / 100;
 
-          var dest = [null, {name: 'XYZ'}, (zoomArgs[1] | 0),
-            (zoomArgs[2] | 0), zoomArg];
+          var dest = [null, {name: 'XYZ'},
+                      zoomArgs.length > 1 ? (zoomArgs[1] | 0) : null,
+                      zoomArgs.length > 2 ? (zoomArgs[2] | 0) : null,
+                      zoomArg];
           var currentPage = this.pages[pageNumber - 1];
           currentPage.scrollIntoView(dest);
         } else {
           this.page = pageNumber; // simple page
+        }
+      }
+      if ('pagemode' in params) {
+        var toggle = document.getElementById('sidebarToggle');
+        if (params.pagemode === 'thumbs' || params.pagemode === 'bookmarks') {
+          if (!this.sidebarOpen) {
+            toggle.click();
+          }
+          this.switchSidebarView(params.pagemode === 'thumbs' ?
+                                 'thumbs' : 'outline');
+        } else if (params.pagemode === 'none' && this.sidebarOpen) {
+          toggle.click();
         }
       }
     } else if (/^\d+$/.test(hash)) // page number
@@ -2175,6 +2231,12 @@ var PageView = function pageView(container, pdfPage, id, scale,
           x = dest[2];
           y = dest[3];
           scale = dest[4];
+          // If x and/or y coordinates are not supplied, default to
+          // _top_ left of the page (not the obvious bottom left,
+          // since aligning the bottom of the intended page with the
+          // top of the window is rarely helpful).
+          x = x !== null ? x : 0;
+          y = y !== null ? y : this.height / this.scale;
           break;
         case 'Fit':
         case 'FitB':
@@ -2234,8 +2296,9 @@ var PageView = function pageView(container, pdfPage, id, scale,
   };
 
   this.draw = function pageviewDraw(callback) {
-    if (this.renderingState !== RenderingStates.INITIAL)
-      error('Must be in new state before drawing');
+    if (this.renderingState !== RenderingStates.INITIAL) {
+      console.error('Must be in new state before drawing');
+    }
 
     this.renderingState = RenderingStates.RUNNING;
 
@@ -2409,7 +2472,7 @@ var PageView = function pageView(container, pdfPage, id, scale,
         console.error(error);
         // Tell the printEngine that rendering this canvas/page has failed.
         // This will make the print proces stop.
-        if ('abort' in object)
+        if ('abort' in obj)
           obj.abort();
         else
           obj.done();
@@ -2491,7 +2554,7 @@ var ThumbnailView = function thumbnailView(container, pdfPage, id) {
     this.hasImage = false;
     this.renderingState = RenderingStates.INITIAL;
     this.resume = null;
-  }
+  };
 
   function getPageDrawContext() {
     var canvas = document.createElement('canvas');
@@ -2521,8 +2584,9 @@ var ThumbnailView = function thumbnailView(container, pdfPage, id) {
   };
 
   this.draw = function thumbnailViewDraw(callback) {
-    if (this.renderingState !== RenderingStates.INITIAL)
-      error('Must be in new state before drawing');
+    if (this.renderingState !== RenderingStates.INITIAL) {
+      console.error('Must be in new state before drawing');
+    }
 
     this.renderingState = RenderingStates.RUNNING;
     if (this.hasImage) {
@@ -2694,6 +2758,7 @@ var TextLayerBuilder = function textLayerBuilder(textLayerDiv, pageIdx) {
   this.renderLayer = function textLayerBuilderRenderLayer() {
     var self = this;
     var textDivs = this.textDivs;
+    var bidiTexts = this.textContent.bidiTexts;
     var textLayerDiv = this.textLayerDiv;
     var canvas = document.createElement('canvas');
     var ctx = canvas.getContext('2d');
@@ -2706,6 +2771,9 @@ var TextLayerBuilder = function textLayerBuilder(textLayerDiv, pageIdx) {
 
     for (var i = 0, ii = textDivs.length; i < ii; i++) {
       var textDiv = textDivs[i];
+      if ('isWhitespace' in textDiv.dataset) {
+        continue;
+      }
       textLayerFrag.appendChild(textDiv);
 
       ctx.font = textDiv.style.fontSize + ' ' + textDiv.style.fontFamily;
@@ -2714,8 +2782,11 @@ var TextLayerBuilder = function textLayerBuilder(textLayerDiv, pageIdx) {
       if (width > 0) {
         var textScale = textDiv.dataset.canvasWidth / width;
 
-        CustomStyle.setProp('transform' , textDiv,
-          'scale(' + textScale + ', 1)');
+        var transform = 'scale(' + textScale + ', 1)';
+        if (bidiTexts[i].dir === 'ttb') {
+          transform = 'rotate(90deg) ' + transform;
+        }
+        CustomStyle.setProp('transform' , textDiv, transform);
         CustomStyle.setProp('transformOrigin' , textDiv, '0% 0%');
 
         textLayerDiv.appendChild(textDiv);
@@ -2778,9 +2849,14 @@ var TextLayerBuilder = function textLayerBuilder(textLayerDiv, pageIdx) {
     for (var i = 0; i < bidiTexts.length; i++) {
       var bidiText = bidiTexts[i];
       var textDiv = textDivs[i];
+      if (!/\S/.test(bidiText.str)) {
+        textDiv.dataset.isWhitespace = true;
+        continue;
+      }
 
       textDiv.textContent = bidiText.str;
-      textDiv.dir = bidiText.ltr ? 'ltr' : 'rtl';
+      // bidiText.dir may be 'ttb' for vertical texts.
+      textDiv.dir = bidiText.dir === 'rtl' ? 'rtl' : 'ltr';
     }
 
     this.setupRenderLayoutTimer();
@@ -3304,7 +3380,7 @@ window.addEventListener('hashchange', function webViewerHashchange(evt) {
 
 window.addEventListener('change', function webViewerChange(evt) {
   var files = evt.target.files;
-  if (!files || files.length == 0)
+  if (!files || files.length === 0)
     return;
 
   // Read the local file into a Uint8Array.
@@ -3350,14 +3426,16 @@ window.addEventListener('localized', function localized(evt) {
   document.getElementsByTagName('html')[0].dir = mozL10n.getDirection();
 
   // Adjust the width of the zoom box to fit the content.
-  var container = document.getElementById('scaleSelectContainer');
-  var select = document.getElementById('scaleSelect');
-
-  select.setAttribute('style', 'min-width: inherit;');
-  var width = select.clientWidth + 8;
-  container.setAttribute('style', 'min-width: ' + width + 'px; ' +
-                                  'max-width: ' + width + 'px;');
-  select.setAttribute('style', 'min-width: ' + (width + 20) + 'px;');
+  PDFView.animationStartedPromise.then(
+    function() {
+      var container = document.getElementById('scaleSelectContainer');
+      var select = document.getElementById('scaleSelect');
+      select.setAttribute('style', 'min-width: inherit;');
+      var width = select.clientWidth + 8;
+      select.setAttribute('style', 'min-width: ' + (width + 20) + 'px;');
+      container.setAttribute('style', 'min-width: ' + width + 'px; ' +
+                                      'max-width: ' + width + 'px;');
+  });
 }, true);
 
 window.addEventListener('scalechange', function scalechange(evt) {
@@ -3377,6 +3455,9 @@ window.addEventListener('scalechange', function scalechange(evt) {
     customScaleOption.textContent = Math.round(evt.scale * 10000) / 100 + '%';
     customScaleOption.selected = true;
   }
+  
+  document.getElementById('zoom_out').disabled = (evt.scale === MIN_SCALE);
+  document.getElementById('zoom_in').disabled = (evt.scale === MAX_SCALE);
 
   updateViewarea();
 }, true);
@@ -3422,7 +3503,7 @@ window.addEventListener('DOMMouseScroll', function(evt) {
   }
 }, false);
 
-window.addEventListener('mousemove', function keydown(evt) {
+window.addEventListener('mousemove', function mousemove(evt) {
   if (PDFView.isFullscreen) {
     PDFView.showPresentationControls();
   }
@@ -3430,10 +3511,24 @@ window.addEventListener('mousemove', function keydown(evt) {
 
 window.addEventListener('mousedown', function mousedown(evt) {
   if (PDFView.isFullscreen && evt.button === 0) {
-    // Mouse click in fullmode advances a page
-    evt.preventDefault();
+    // Enable clicking of links in fullscreen mode.
+    // Note: Only links that point to the currently loaded PDF document works.
+    var targetHref = evt.target.href;
+    var internalLink = targetHref && (targetHref.replace(/#.*$/, '') ===
+                                      window.location.href.replace(/#.*$/, ''));
+    if (!internalLink) {
+      // Unless an internal link was clicked, advance a page in fullscreen mode.
+      evt.preventDefault();
+      PDFView.page++;
+    }
+  }
+}, false);
 
-    PDFView.page++;
+window.addEventListener('click', function click(evt) {
+  if (PDFView.isFullscreen && evt.button === 0) {
+    // Necessary since preventDefault() in 'mousedown' won't stop
+    // the event propagation in all circumstances.
+    evt.preventDefault();
   }
 }, false);
 
@@ -3470,7 +3565,7 @@ window.addEventListener('keydown', function keydown(evt) {
       case 48: // '0'
       case 96: // '0' on Numpad of Swedish keyboard
         PDFView.parseScale(DEFAULT_SCALE, true);
-        handled = true;
+        handled = false; // keeping it unhandled (to restore page zoom to 100%)
         break;
     }
   }
@@ -3506,7 +3601,7 @@ window.addEventListener('keydown', function keydown(evt) {
     curElement = curElement.parentNode;
   }
 
-  if (cmd == 0) { // no control key pressed at all.
+  if (cmd === 0) { // no control key pressed at all.
     switch (evt.keyCode) {
       case 38: // up arrow
       case 33: // pg up
@@ -3514,16 +3609,24 @@ window.addEventListener('keydown', function keydown(evt) {
         if (!PDFView.isFullscreen && PDFView.currentScaleValue !== 'page-fit') {
           break;
         }
-        //  in fullscreen mode falls throw here
+        /* in fullscreen mode */
+        /* falls through */
       case 37: // left arrow
         // horizontal scrolling using arrow keys
         if (PDFView.isHorizontalScrollbarEnabled) {
           break;
         }
+        /* falls through */
       case 75: // 'k'
       case 80: // 'p'
         PDFView.prevPage();
         handled = true;
+        break;
+      case 27: // esc key
+        if (!PDFView.supportsIntegratedFind && PDFFindBar.opened) {
+          PDFFindBar.close();
+          handled = true;
+        }
         break;
       case 40: // down arrow
       case 34: // pg down
@@ -3531,12 +3634,13 @@ window.addEventListener('keydown', function keydown(evt) {
         if (!PDFView.isFullscreen && PDFView.currentScaleValue !== 'page-fit') {
           break;
         }
-        //  in fullscreen mode falls throw here
+        /* falls through */
       case 39: // right arrow
         // horizontal scrolling using arrow keys
         if (PDFView.isHorizontalScrollbarEnabled) {
           break;
         }
+        /* falls through */
       case 74: // 'j'
       case 78: // 'n'
         PDFView.nextPage();

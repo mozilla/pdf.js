@@ -3,6 +3,11 @@
   "name": "PDF Viewer",
   "version": "PDFJSSCRIPT_VERSION",
   "description": "Uses HTML5 to display PDF files directly in Chrome.",
+  "icons": {
+    "128": "icon128.png",
+    "48": "icon48.png",
+    "16": "icon16.png"
+  },
   "permissions": [
     "webRequest", "webRequestBlocking",
     "http://*/*.pdf",

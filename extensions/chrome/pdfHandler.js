@@ -1,3 +1,5 @@
+/* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
 /*
 Copyright 2012 Mozilla Foundation
 
@@ -13,6 +15,9 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
+/* globals chrome */
+
+'use strict';
 
 function isPdfDownloadable(details) {
   return details.url.indexOf('pdfjs.action=download') >= 0;

@@ -23,9 +23,19 @@ onmessage = function (e) {
     break;
   case 'xhr':
     var xhr = new XMLHttpRequest();
-    var responseExists = 'response' in xhr || 'mozResponse' in xhr ||
-        'responseArrayBuffer' in xhr || 'mozResponseArrayBuffer' in xhr;
+    var responseExists = 'response' in xhr;
+    // check if the property is actually implemented
+    try {
+      var dummy = xhr.responseType;
+    } catch (e) {
+      responseExists = false;
+    }
     postMessage({action: 'xhr', result: responseExists});
+    break;
+  case 'TextDecoder':
+    postMessage({action: 'TextDecoder',
+                 result: typeof TextDecoder !== 'undefined',
+                 emulated: typeof FileReaderSync !== 'undefined'});
     break;
   }
 };

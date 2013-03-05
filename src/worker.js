@@ -152,6 +152,7 @@ var WorkerMessageHandler = {
         numPages: pdfModel.numPages,
         fingerprint: pdfModel.getFingerprint(),
         destinations: pdfModel.catalog.destinations,
+        javaScript: pdfModel.catalog.javaScript,
         outline: pdfModel.catalog.documentOutline,
         info: pdfModel.getDocumentInfo(),
         metadata: pdfModel.catalog.metadata,
@@ -168,8 +169,14 @@ var WorkerMessageHandler = {
       }
       // check if the response property is supported by xhr
       var xhr = new XMLHttpRequest();
-      if (!('response' in xhr || 'mozResponse' in xhr ||
-          'responseArrayBuffer' in xhr || 'mozResponseArrayBuffer' in xhr)) {
+      var responseExists = 'response' in xhr;
+      // check if the property is actually implemented
+      try {
+        var dummy = xhr.responseType;
+      } catch (e) {
+        responseExists = false;
+      }
+      if (!responseExists) {
         handler.send('test', false);
         return;
       }
@@ -214,13 +221,11 @@ var WorkerMessageHandler = {
     handler.on('GetPageRequest', function wphSetupGetPage(data) {
       var pageNumber = data.pageIndex + 1;
       var pdfPage = pdfModel.getPage(pageNumber);
-      var encrypt = pdfModel.xref.encrypt;
       var page = {
         pageIndex: data.pageIndex,
         rotate: pdfPage.rotate,
         ref: pdfPage.ref,
-        view: pdfPage.view,
-        disableTextLayer: encrypt ? encrypt.disableTextLayer : false
+        view: pdfPage.view
       };
       handler.send('GetPage', {pageInfo: page});
     });

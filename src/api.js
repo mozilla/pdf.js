@@ -120,6 +120,16 @@ var PDFDocumentProxy = (function PDFDocumentProxyClosure() {
       return promise;
     },
     /**
+     * @return {Promise} A promise that is resolved with an array of all the
+     * JavaScript strings in the name tree.
+     */
+    getJavaScript: function PDFDocumentProxy_getDestinations() {
+      var promise = new PDFJS.Promise();
+      var js = this.pdfInfo.javaScript;
+      promise.resolve(js);
+      return promise;
+    },
+    /**
      * @return {Promise} A promise that is resolved with an {array} that is a
      * tree outline (if it has one) of the PDF. The tree is in the format of:
      * [
@@ -247,6 +257,8 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
      *   canvasContext(required): A 2D context of a DOM Canvas object.,
      *   textLayer(optional): An object that has beginLayout, endLayout, and
      *                        appendText functions.,
+     *   imageLayer(optional): An object that has beginLayout, endLayout and
+     *                         appendImage functions.,
      *   continueCallback(optional): A function that will be called each time
      *                               the rendering is paused.  To continue
      *                               rendering call the function that is the
@@ -298,7 +310,7 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
           }
 
           var gfx = new CanvasGraphics(params.canvasContext, this.commonObjs,
-            this.objs, !this.pageInfo.disableTextLayer && params.textLayer);
+            this.objs, params.textLayer, params.imageLayer);
           try {
             this.display(gfx, params.viewport, complete, continueCallback);
           } catch (e) {

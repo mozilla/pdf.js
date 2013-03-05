@@ -14,6 +14,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/* jshint esnext:true */
+/* globals Components, Services, XPCOMUtils, NetUtil, PrivateBrowsingUtils,
+           dump */
 
 'use strict';
 
@@ -24,7 +27,7 @@ const Ci = Components.interfaces;
 const Cr = Components.results;
 const Cu = Components.utils;
 // True only if this is the version of pdf.js that is included with firefox.
-const MOZ_CENTRAL = PDFJSSCRIPT_MOZ_CENTRAL;
+const MOZ_CENTRAL = JSON.parse('PDFJSSCRIPT_MOZ_CENTRAL');
 const PDFJS_EVENT_ID = 'pdf.js.message';
 const PDF_CONTENT_TYPE = 'application/pdf';
 const PREF_PREFIX = 'PDFJSSCRIPT_PREF_PREFIX';
@@ -38,7 +41,7 @@ Cu.import('resource://gre/modules/NetUtil.jsm');
 XPCOMUtils.defineLazyModuleGetter(this, 'PrivateBrowsingUtils',
   'resource://gre/modules/PrivateBrowsingUtils.jsm');
 
-let Svc = {};
+var Svc = {};
 XPCOMUtils.defineLazyServiceGetter(Svc, 'mime',
                                    '@mozilla.org/mime;1',
                                    'nsIMIMEService');
@@ -68,7 +71,7 @@ function getIntPref(pref, def) {
 }
 
 function setStringPref(pref, value) {
-  let str = Cc['@mozilla.org/supports-string;1']
+  var str = Cc['@mozilla.org/supports-string;1']
               .createInstance(Ci.nsISupportsString);
   str.data = value;
   Services.prefs.setComplexValue(pref, Ci.nsISupportsString, str);
@@ -85,7 +88,7 @@ function getStringPref(pref, def) {
 function log(aMsg) {
   if (!getBoolPref(PREF_PREFIX + '.pdfBugEnabled', false))
     return;
-  let msg = 'PdfStreamConverter.js: ' + (aMsg.join ? aMsg.join('') : aMsg);
+  var msg = 'PdfStreamConverter.js: ' + (aMsg.join ? aMsg.join('') : aMsg);
   Services.console.logStringMessage(msg);
   dump(msg + '\n');
 }
@@ -107,7 +110,7 @@ function isEnabled() {
     // selected in the Application preferences.
     var handlerInfo = Svc.mime
                          .getFromTypeAndExtension('application/pdf', 'pdf');
-    return handlerInfo.alwaysAskBeforeHandling == false &&
+    return !handlerInfo.alwaysAskBeforeHandling &&
            handlerInfo.preferredAction == Ci.nsIHandlerInfo.handleInternally;
   }
   // Always returns true for the extension since enabling/disabling is handled
@@ -189,6 +192,9 @@ PdfDataListener.prototype = {
     }
   },
   onprogress: function() {},
+  get oncomplete() {
+    return this.oncompleteCallback;
+  },
   set oncomplete(value) {
     this.oncompleteCallback = value;
     if (this.isDataReady) {
@@ -209,7 +215,7 @@ function ChromeActions(domWindow, dataListener, contentDispositionFilename) {
 
 ChromeActions.prototype = {
   isInPrivateBrowsing: function() {
-    let docIsPrivate;
+    var docIsPrivate, privateBrowsing;
     try {
       docIsPrivate = PrivateBrowsingUtils.isWindowPrivate(this.domWindow);
     } catch (x) {
@@ -218,8 +224,8 @@ ChromeActions.prototype = {
     if (typeof docIsPrivate === 'undefined') {
       // per-window Private Browsing is not supported, trying global service
       try {
-        let privateBrowsing = Cc['@mozilla.org/privatebrowsing;1']
-                                  .getService(Ci.nsIPrivateBrowsingService);
+        privateBrowsing = Cc['@mozilla.org/privatebrowsing;1']
+                            .getService(Ci.nsIPrivateBrowsingService);
         docIsPrivate = privateBrowsing.privateBrowsingEnabled;
       } catch (x) {
         // unable to get nsIPrivateBrowsingService (e.g. not Firefox)
@@ -245,8 +251,8 @@ ChromeActions.prototype = {
     var frontWindow = Cc['@mozilla.org/embedcomp/window-watcher;1'].
                          getService(Ci.nsIWindowWatcher).activeWindow;
 
-    let docIsPrivate = this.isInPrivateBrowsing();
-    let netChannel = NetUtil.newChannel(blobUri);
+    var docIsPrivate = this.isInPrivateBrowsing();
+    var netChannel = NetUtil.newChannel(blobUri);
     if ('nsIPrivateBrowsingChannel' in Ci &&
         netChannel instanceof Ci.nsIPrivateBrowsingChannel) {
       netChannel.setPrivate(docIsPrivate);
@@ -259,7 +265,7 @@ ChromeActions.prototype = {
       }
       // Create a nsIInputStreamChannel so we can set the url on the channel
       // so the filename will be correct.
-      let channel = Cc['@mozilla.org/network/input-stream-channel;1'].
+      var channel = Cc['@mozilla.org/network/input-stream-channel;1'].
                        createInstance(Ci.nsIInputStreamChannel);
       channel.QueryInterface(Ci.nsIChannel);
       channel.contentDisposition = Ci.nsIChannel.DISPOSITION_ATTACHMENT;
@@ -449,9 +455,9 @@ function RequestListener(actions) {
 RequestListener.prototype.receive = function(event) {
   var message = event.target;
   var doc = message.ownerDocument;
-  var action = message.getUserData('action');
-  var data = message.getUserData('data');
-  var sync = message.getUserData('sync');
+  var action = event.detail.action;
+  var data = event.detail.data;
+  var sync = event.detail.sync;
   var actions = this.actions;
   if (!(action in actions)) {
     log('Unknown action: ' + action);
@@ -459,20 +465,28 @@ RequestListener.prototype.receive = function(event) {
   }
   if (sync) {
     var response = actions[action].call(this.actions, data);
-    message.setUserData('response', response, null);
+    var detail = event.detail;
+    detail.__exposedProps__ = {response: 'r'};
+    detail.response = response;
   } else {
     var response;
-    if (!message.getUserData('callback')) {
+    if (!event.detail.callback) {
       doc.documentElement.removeChild(message);
       response = null;
     } else {
       response = function sendResponse(response) {
-        message.setUserData('response', response, null);
-
-        var listener = doc.createEvent('HTMLEvents');
-        listener.initEvent('pdf.js.response', true, false);
-        return message.dispatchEvent(listener);
-      }
+        try {
+          var listener = doc.createEvent('CustomEvent');
+          listener.initCustomEvent('pdf.js.response', true, false,
+                                   {response: response,
+                                    __exposedProps__: {response: 'r'}});
+          return message.dispatchEvent(listener);
+        } catch (e) {
+          // doc is no longer accessible because the requestor is already
+          // gone. unloaded content cannot receive the response anyway.
+          return false;
+        }
+      };
     }
     actions[action].call(this.actions, data, response);
   }
@@ -586,6 +600,7 @@ PdfStreamConverter.prototype = {
   onStartRequest: function(aRequest, aContext) {
     // Setup the request so we can use it below.
     aRequest.QueryInterface(Ci.nsIChannel);
+    aRequest.QueryInterface(Ci.nsIWritablePropertyBag);
     // Creating storage for PDF data
     var contentLength = aRequest.contentLength;
     var dataListener = new PdfDataListener(contentLength);
@@ -598,6 +613,7 @@ PdfStreamConverter.prototype = {
                         .createInstance(Ci.nsIBinaryInputStream);
 
     // Change the content type so we don't get stuck in a loop.
+    aRequest.setProperty('contentType', aRequest.contentType);
     aRequest.contentType = 'text/html';
 
     // Create a new channel that is viewer loaded as a resource.
@@ -623,9 +639,9 @@ PdfStreamConverter.prototype = {
         var domWindow = getDOMWindow(channel);
         // Double check the url is still the correct one.
         if (domWindow.document.documentURIObject.equals(aRequest.URI)) {
-          let actions = new ChromeActions(domWindow, dataListener,
+          var actions = new ChromeActions(domWindow, dataListener,
                                           contentDispositionFilename);
-          let requestListener = new RequestListener(actions);
+          var requestListener = new RequestListener(actions);
           domWindow.addEventListener(PDFJS_EVENT_ID, function(event) {
             requestListener.receive(event);
           }, false, true);

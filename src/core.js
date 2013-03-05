@@ -261,7 +261,7 @@ var Page = (function PageClosure() {
       var items = [];
       for (i = 0; i < n; ++i) {
         var annotationRef = annotations[i];
-        var annotation = xref.fetch(annotationRef);
+        var annotation = xref.fetchIfRef(annotationRef);
         if (!isDict(annotation))
           continue;
         var subtype = annotation.get('Subtype');

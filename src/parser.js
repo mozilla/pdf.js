@@ -60,7 +60,7 @@ var Parser = (function ParserClosure() {
         this.shift();
         var array = [];
         while (!isCmd(this.buf1, ']') && !isEOF(this.buf1))
-          array.push(this.getObj());
+          array.push(this.getObj(cipherTransform));
         if (isEOF(this.buf1))
           error('End of file inside array');
         this.shift();
@@ -360,6 +360,7 @@ var Lexer = (function LexerClosure() {
       do {
         ch = stream.getChar();
         switch (ch) {
+          case null:
           case undefined:
             warn('Unterminated string');
             done = true;
@@ -378,6 +379,7 @@ var Lexer = (function LexerClosure() {
           case '\\':
             ch = stream.getChar();
             switch (ch) {
+              case null:
               case undefined:
                 warn('Unterminated string');
                 done = true;
@@ -427,10 +429,12 @@ var Lexer = (function LexerClosure() {
                 break;
               default:
                 str += ch;
+                break;
             }
             break;
           default:
             str += ch;
+            break;
         }
       } while (!done);
       return str;
