@@ -34,6 +34,10 @@ var PDF_GLYPH_SPACE_UNITS = 1000;
 // in tracemonkey and various other pdfs with type1 fonts.
 var HINTING_ENABLED = false;
 
+// Accented charactars are not displayed properly on windows, using this flag
+// to control analysis of seac charstrings.
+var SEAC_ANALYSIS_ENABLED = false;
+
 var FONT_IDENTITY_MATRIX = [0.001, 0, 0, 0.001, 0, 0];
 
 var FontFlags = {
@@ -2477,6 +2481,7 @@ var Font = (function FontClosure() {
     this.widths = properties.widths;
     this.defaultWidth = properties.defaultWidth;
     this.encoding = properties.baseEncoding;
+    this.seacMap = properties.seacMap;
 
     this.loading = true;
   }
@@ -4204,6 +4209,36 @@ var Font = (function FontClosure() {
       }
       this.glyphNameMap = glyphNameMap;
 
+      var seacs = font.seacs;
+      if (SEAC_ANALYSIS_ENABLED && seacs) {
+        var seacMap = [];
+        var matrix = properties.fontMatrix || FONT_IDENTITY_MATRIX;
+        for (var i = 0; i < charstrings.length; ++i) {
+          var charstring = charstrings[i];
+          var seac = seacs[charstring.gid];
+          if (!seac) {
+            continue;
+          }
+          var baseGlyphName = Encodings.StandardEncoding[seac[2]];
+          var baseUnicode = glyphNameMap[baseGlyphName];
+          var accentGlyphName = Encodings.StandardEncoding[seac[3]];
+          var accentUnicode = glyphNameMap[accentGlyphName];
+          if (!baseUnicode || !accentUnicode) {
+            continue;
+          }
+          var accentOffset = {
+            x: seac[0] * matrix[0] + seac[1] * matrix[2] + matrix[4],
+            y: seac[0] * matrix[1] + seac[1] * matrix[3] + matrix[5]
+          };
+          seacMap[charstring.unicode] = {
+            baseUnicode: baseUnicode,
+            accentUnicode: accentUnicode,
+            accentOffset: accentOffset
+          };
+        }
+        properties.seacMap = seacMap;
+      }
+
       if (!properties.hasEncoding && (properties.subtype == 'Type1C' ||
           properties.subtype == 'CIDFontType0C')) {
         var encoding = [];
@@ -4578,16 +4613,28 @@ var Font = (function FontClosure() {
 
       var unicodeChars = !('toUnicode' in this) ? charcode :
         this.toUnicode[charcode] || charcode;
-      if (typeof unicodeChars === 'number')
+      if (typeof unicodeChars === 'number') {
         unicodeChars = String.fromCharCode(unicodeChars);
+      }
 
       width = isNum(width) ? width : this.defaultWidth;
       disabled = this.unicodeIsEnabled ?
         !this.unicodeIsEnabled[fontCharCode] : false;
 
+      var accent = null;
+      if (this.seacMap && this.seacMap[fontCharCode]) {
+        var seac = this.seacMap[fontCharCode];
+        fontCharCode = seac.baseUnicode;
+        accent = {
+          fontChar: String.fromCharCode(seac.accentUnicode),
+          offset: seac.accentOffset
+        };
+      }
+
       return {
         fontChar: String.fromCharCode(fontCharCode),
         unicode: unicodeChars,
+        accent: accent,
         width: width,
         vmetric: vmetric,
         disabled: disabled,
@@ -4870,7 +4917,12 @@ var Type1CharString = (function Type1CharStringClosure() {
             case (12 << 8) + 6: // seac
               // seac is like type 2's special endchar but it doesn't use the
               // first argument asb, so remove it.
-              error = this.executeCommand(4, COMMAND_MAP.endchar);
+              if (SEAC_ANALYSIS_ENABLED) {
+                this.seac = this.stack.splice(-4, 4);
+                error = this.executeCommand(0, COMMAND_MAP.endchar);
+              } else {
+                error = this.executeCommand(4, COMMAND_MAP.endchar);
+              }
               break;
             case (12 << 8) + 7: // sbw
               if (this.stack.length < 4) {
@@ -5230,6 +5282,7 @@ var Type1Parser = function type1Parser() {
       program.charstrings.push({
         glyph: glyph,
         data: output,
+        seac: charString.seac,
         lsb: charString.lsb,
         width: charString.width
       });
@@ -5396,6 +5449,7 @@ var Type1Font = function Type1Font(name, file, properties) {
   this.charstrings = charstrings;
   this.data = this.wrap(name, type2Charstrings, this.charstrings,
                         subrs, properties);
+  this.seacs = this.getSeacs(data.charstrings);
 };
 
 Type1Font.prototype = {
@@ -5423,6 +5477,18 @@ Type1Font.prototype = {
       return a.unicode - b.unicode;
     });
     return charstrings;
+  },
+
+  getSeacs: function Type1Font_getSeacs(charstrings) {
+    var i, ii;
+    var seacMap = [];
+    for (i = 0, ii = charstrings.length; i < ii; i++) {
+      var charstring = charstrings[i];
+      if (charstring.seac) {
+        seacMap[i] = charstring.seac;
+      }
+    }
+    return seacMap;
   },
 
   getType2Charstrings: function Type1Font_getType2Charstrings(
@@ -5580,6 +5646,7 @@ var CFFFont = (function CFFFontClosure() {
 
       this.charstrings = charstrings;
       this.glyphIds = glyphIds;
+      this.seacs = cff.seacs;
     },
     getCharStrings: function CFFFont_getCharStrings(charsets, encoding) {
       var charstrings = [];
@@ -5682,11 +5749,27 @@ var CFFParser = (function CFFParserClosure() {
     null,
     null,
     { id: 'abs', min: 1, stackDelta: 0 },
-    { id: 'add', min: 2, stackDelta: -1 },
-    { id: 'sub', min: 2, stackDelta: -1 },
-    { id: 'div', min: 2, stackDelta: -1 },
+    { id: 'add', min: 2, stackDelta: -1,
+      stackFn: function stack_div(stack, index) {
+        stack[index - 2] = stack[index - 2] + stack[index - 1];
+      }
+    },
+    { id: 'sub', min: 2, stackDelta: -1,
+      stackFn: function stack_div(stack, index) {
+        stack[index - 2] = stack[index - 2] - stack[index - 1];
+      }
+    },
+    { id: 'div', min: 2, stackDelta: -1,
+      stackFn: function stack_div(stack, index) {
+        stack[index - 2] = stack[index - 2] / stack[index - 1];
+      }
+    },
     null,
-    { id: 'neg', min: 1, stackDelta: 0 },
+    { id: 'neg', min: 1, stackDelta: 0,
+      stackFn: function stack_div(stack, index) {
+        stack[index - 1] = -stack[index - 1];
+      }
+    },
     { id: 'eq', min: 2, stackDelta: -1 },
     null,
     null,
@@ -5696,7 +5779,11 @@ var CFFParser = (function CFFParserClosure() {
     { id: 'get', min: 1, stackDelta: 0 },
     { id: 'ifelse', min: 4, stackDelta: -3 },
     { id: 'random', min: 0, stackDelta: 1 },
-    { id: 'mul', min: 2, stackDelta: -1 },
+    { id: 'mul', min: 2, stackDelta: -1,
+      stackFn: function stack_div(stack, index) {
+        stack[index - 2] = stack[index - 2] * stack[index - 1];
+      }
+    },
     null,
     { id: 'sqrt', min: 1, stackDelta: 0 },
     { id: 'dup', min: 1, stackDelta: 1 },
@@ -5744,7 +5831,9 @@ var CFFParser = (function CFFParserClosure() {
       cff.isCIDFont = topDict.hasName('ROS');
 
       var charStringOffset = topDict.getByName('CharStrings');
-      cff.charStrings = this.parseCharStrings(charStringOffset);
+      var charStringsAndSeacs = this.parseCharStrings(charStringOffset);
+      cff.charStrings = charStringsAndSeacs.charStrings;
+      cff.seacs = charStringsAndSeacs.seacs;
 
       var fontMatrix = topDict.getByName('FontMatrix');
       if (fontMatrix) {
@@ -5955,11 +6044,13 @@ var CFFParser = (function CFFParserClosure() {
     },
     parseCharStrings: function CFFParser_parseCharStrings(charStringOffset) {
       var charStrings = this.parseIndex(charStringOffset).obj;
+      var seacs = [];
       var count = charStrings.count;
       for (var i = 0; i < count; i++) {
         var charstring = charStrings.get(i);
 
         var stackSize = 0;
+        var stack = [];
         var undefStack = true;
         var hints = 0;
         var valid = true;
@@ -5983,18 +6074,29 @@ var CFFParser = (function CFFParserClosure() {
               validationCommand = CharstringValidationData12[q];
             }
           } else if (value === 28) { // number (16 bit)
+            stack[stackSize] = ((data[j] << 24) | (data[j + 1] << 16)) >> 16;
             j += 2;
             stackSize++;
           } else if (value == 14) {
             if (stackSize >= 4) {
               stackSize -= 4;
+              if (SEAC_ANALYSIS_ENABLED) {
+                seacs[i] = stack.slice(stackSize, stackSize + 4);
+                valid = false;
+              }
             }
           } else if (value >= 32 && value <= 246) {  // number
+            stack[stackSize] = value - 139;
             stackSize++;
           } else if (value >= 247 && value <= 254) {  // number (+1 bytes)
+            stack[stackSize] = value < 251 ?
+              ((value - 247) << 8) + data[j] + 108 :
+              -((value - 251) << 8) - data[j] - 108;
             j++;
             stackSize++;
           } else if (value == 255) {  // number (32 bit)
+            stack[stackSize] = ((data[j] << 24) | (data[j + 1] << 16) |
+              (data[j + 2] << 8) | data[j + 3]) / 65536;
             j += 4;
             stackSize++;
           } else if (value == 19 || value == 20) {
@@ -6018,6 +6120,9 @@ var CFFParser = (function CFFParserClosure() {
               }
             }
             if ('stackDelta' in validationCommand) {
+              if ('stackFn' in validationCommand) {
+                validationCommand.stackFn(stack, stackSize);
+              }
               stackSize += validationCommand.stackDelta;
             } else if (validationCommand.resetStack) {
               stackSize = 0;
@@ -6033,7 +6138,7 @@ var CFFParser = (function CFFParserClosure() {
           charStrings.set(i, new Uint8Array([14]));
         }
       }
-      return charStrings;
+      return { charStrings: charStrings, seacs: seacs };
     },
     parsePrivateDict: function CFFParser_parsePrivateDict(parentDict) {
       // no private dict, do nothing
@@ -6912,6 +7017,13 @@ var CFFCompiler = (function CFFCompilerClosure() {
     }
   };
   return CFFCompiler;
+})();
+
+// Workaround for seac on Windows.
+(function checkSeacSupport() {
+  if (/Windows/.test(navigator.userAgent)) {
+    SEAC_ANALYSIS_ENABLED = true;
+  }
 })();
 
 // Workaround for Private Use Area characters in Chrome on Windows
