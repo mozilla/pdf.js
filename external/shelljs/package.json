@@ -1,6 +1,6 @@
 {
   "name": "shelljs",
-  "version": "0.0.5pre4",
+  "version": "0.1.2",
   "author": "Artur Adib <aadib@mozilla.com>",
   "description": "Portable Unix shell commands for Node.js",
   "keywords": [
@@ -19,6 +19,9 @@
   "main": "./shell.js",
   "scripts": {
     "test": "node scripts/run-tests"
+  },
+  "bin": {
+    "shjs": "./bin/shjs"
   },
   "dependencies": {},
   "devDependencies": {},
