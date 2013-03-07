@@ -1,3 +1,3 @@
 var shell = require('./shell.js');
-for (cmd in shell)
+for (var cmd in shell)
   global[cmd] = shell[cmd];
