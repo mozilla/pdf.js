@@ -1608,7 +1608,7 @@ var PDFView = {
 
     for (var i = 1, ii = views.length; i <= ii; ++i) {
       view = views[i - 1];
-      currentHeight = view.el.offsetTop;
+      currentHeight = view.el.offsetTop + view.el.clientTop;
       if (currentHeight + view.el.clientHeight > top)
         break;
       currentHeight += view.el.clientHeight;
@@ -1632,7 +1632,7 @@ var PDFView = {
     for (; i <= ii && currentHeight < bottom; ++i) {
       view = views[i - 1];
       viewHeight = view.el.clientHeight;
-      currentHeight = view.el.offsetTop;
+      currentHeight = view.el.offsetTop + view.el.clientTop;
       nextHeight = currentHeight + viewHeight;
       hidden = Math.max(0, top - currentHeight) +
                Math.max(0, nextHeight - bottom);
