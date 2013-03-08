@@ -461,9 +461,9 @@ var DeviceRgbCS = (function DeviceRgbCSClosure() {
     },
     getRgbItem: function DeviceRgbCS_getRgbItem(src, srcOffset,
                                                 dest, destOffset) {
-      var r = src[srcOffset] * 255;
-      var g = src[srcOffset + 1] * 255;
-      var b = src[srcOffset + 2] * 255;
+      var r = (src[srcOffset] * 255) | 0;
+      var g = (src[srcOffset + 1] * 255) | 0;
+      var b = (src[srcOffset + 2] * 255) | 0;
       dest[destOffset] = r < 0 ? 0 : r > 255 ? 255 : r;
       dest[destOffset + 1] = g < 0 ? 0 : g > 255 ? 255 : g;
       dest[destOffset + 2] = b < 0 ? 0 : b > 255 ? 255 : b;
