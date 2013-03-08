@@ -6140,10 +6140,19 @@ var CFFParser = (function CFFParserClosure() {
       }
       return { charStrings: charStrings, seacs: seacs };
     },
+    emptyPrivateDictionary:
+      function CFFParser_emptyPrivateDictionary(parentDict) {
+      var privateDict = this.createDict(CFFPrivateDict, [],
+                                        parentDict.strings);
+      parentDict.setByKey(18, [0, 0]);
+      parentDict.privateDict = privateDict;
+    },
     parsePrivateDict: function CFFParser_parsePrivateDict(parentDict) {
       // no private dict, do nothing
-      if (!parentDict.hasName('Private'))
+      if (!parentDict.hasName('Private')) {
+        this.emptyPrivateDictionary(parentDict);
         return;
+      }
       var privateOffset = parentDict.getByName('Private');
       // make sure the params are formatted correctly
       if (!isArray(privateOffset) || privateOffset.length !== 2) {
@@ -6154,7 +6163,7 @@ var CFFParser = (function CFFParserClosure() {
       var offset = privateOffset[1];
       // remove empty dicts or ones that refer to invalid location
       if (size === 0 || offset >= this.bytes.length) {
-        parentDict.removeByName('Private');
+        this.emptyPrivateDictionary(parentDict);
         return;
       }
 
@@ -6172,7 +6181,7 @@ var CFFParser = (function CFFParserClosure() {
       var relativeOffset = offset + subrsOffset;
       // Validate the offset.
       if (subrsOffset === 0 || relativeOffset >= this.bytes.length) {
-        privateDict.removeByName('Subrs');
+        this.emptyPrivateDictionary(parentDict);
         return;
       }
       var subrsIndex = this.parseIndex(relativeOffset);
@@ -6853,15 +6862,23 @@ var CFFCompiler = (function CFFCompilerClosure() {
                                                                   output) {
       for (var i = 0, ii = dicts.length; i < ii; ++i) {
         var fontDict = dicts[i];
-        if (!fontDict.privateDict || !fontDict.hasName('Private'))
-          continue;
+        assert(fontDict.privateDict && fontDict.hasName('Private'),
+               'There must be an private dictionary.');
         var privateDict = fontDict.privateDict;
         var privateDictTracker = new CFFOffsetTracker();
         var privateDictData = this.compileDict(privateDict, privateDictTracker);
 
-        privateDictTracker.offset(output.length);
+        var outputLength = output.length;
+        privateDictTracker.offset(outputLength);
+        if (!privateDictData.length) {
+          // The private dictionary was empty, set the output length to zero to
+          // ensure the offset length isn't out of bounds in the eyes of the
+          // sanitizer.
+          outputLength = 0;
+        }
+
         trackers[i].setEntryLocation('Private',
-                                     [privateDictData.length, output.length],
+                                     [privateDictData.length, outputLength],
                                      output);
         output.add(privateDictData);
 
