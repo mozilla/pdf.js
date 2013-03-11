@@ -838,6 +838,13 @@
       "rounds": 1,
       "type": "eq"
     },
+    {  "id": "blendmode",
+      "file": "pdfs/blendmode.pdf",
+      "md5": "374800cf78ce4b4abd02cd10a856b57f",
+      "rounds": 1,
+      "type": "eq",
+      "about": "Every blend mode that PDF supports."
+    },
     {  "id": "issue2462",
       "file": "pdfs/issue2462.pdf",
       "md5": "d4e3dddfdd35464c71cf0310bff29b42",

@@ -561,6 +561,22 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
             this.current.fillAlpha = state[1];
             this.ctx.globalAlpha = state[1];
             break;
+          case 'BM':
+            if (value && value.name && (value.name !== 'Normal')) {
+              var mode = value.name.replace(/([A-Z])/g,
+                function(c) {
+                  return '-' + c.toLowerCase();
+                }
+              ).substring(1);
+              this.ctx.globalCompositeOperation = mode;
+              if (this.ctx.globalCompositeOperation !== mode) {
+                warn('globalCompositeOperation "' + mode +
+                     '" is not supported');
+              }
+            } else {
+              this.ctx.globalCompositeOperation = 'source-over';
+            }
+            break;
         }
       }
     },
