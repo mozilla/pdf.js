@@ -2784,6 +2784,14 @@ var Font = (function FontClosure() {
     if (firstChar > lastChar) {
       return false;
     }
+    stream.getBytes(6); // skipping sTypoAscender/Descender/LineGap
+    var usWinAscent = int16(stream.getBytes(2));
+    if (usWinAscent === 0) { // makes font unreadable by windows
+      return false;
+    }
+
+    // OS/2 appears to be valid, resetting some fields
+    os2.data[8] = os2.data[9] = 0; // IE rejects fonts if fsType != 0
     return true;
   }
 
@@ -3633,16 +3641,6 @@ var Font = (function FontClosure() {
         return names;
       }
 
-      function isOS2Valid(os2Table) {
-        var data = os2Table.data;
-        // usWinAscent == 0 makes font unreadable by windows
-        var usWinAscent = (data[74] << 8) | data[75];
-        if (usWinAscent === 0)
-          return false;
-
-        return true;
-      }
-
       var TTOpsStackDeltas = [
         0, 0, 0, 0, 0, 0, 0, 0, -2, -2, -2, -2, 0, 0, -2, -5,
         -1, -1, -1, -1, -1, -1, -1, -1, 0, 0, -1, 0, -1, -1, -1, -1,
@@ -3836,12 +3834,6 @@ var Font = (function FontClosure() {
       // The new numbers of tables will be the last one plus the num
       // of missing tables
       createOpenTypeHeader(header.version, ttf, numTables);
-
-      // Invalid OS/2 can break the font for the Windows
-      if (os2 && !isOS2Valid(os2)) {
-        tables.splice(tables.indexOf(os2), 1);
-        os2 = null;
-      }
 
       // Ensure the hmtx table contains the advance width and
       // sidebearings information for numGlyphs in the maxp table
