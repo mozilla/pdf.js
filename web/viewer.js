@@ -1730,6 +1730,10 @@ var PDFView = {
     this.page = this.page;
     this.clearMouseScrollState();
     this.hidePresentationControls();
+
+    // Ensure that the thumbnail of the current page is visible
+    // when exiting fullscreen mode.
+    scrollIntoView(document.getElementById('thumbnailContainer' + this.page));
   },
 
   showPresentationControls: function pdfViewShowPresentationControls() {
