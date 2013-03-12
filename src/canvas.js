@@ -989,7 +989,8 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
           var character = glyph.fontChar;
           var vmetric = glyph.vmetric || defaultVMetrics;
           if (vertical) {
-            var vx = vmetric[1] * fontSize * current.fontMatrix[0];
+            var vx = glyph.vmetric ? vmetric[1] : glyph.width * 0.5;
+            vx = -vx * fontSize * current.fontMatrix[0];
             var vy = vmetric[2] * fontSize * current.fontMatrix[0];
           }
           var width = vmetric ? -vmetric[0] : glyph.width;
@@ -1064,7 +1065,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
         geom.canvasWidth = canvasWidth;
         if (vertical) {
           var vmetric = font.defaultVMetrics;
-          geom.x -= vmetric[1] * fontSize * current.fontMatrix[0] /
+          geom.x += vmetric[1] * fontSize * current.fontMatrix[0] /
                     fontSizeScale * geom.hScale;
           geom.y += vmetric[2] * fontSize * current.fontMatrix[0] /
                     fontSizeScale * geom.vScale;
@@ -1125,7 +1126,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
         if (vertical) {
           var fontSizeScale = current.fontSizeScale;
           var vmetric = font.defaultVMetrics;
-          geom.x -= vmetric[1] * fontSize * current.fontMatrix[0] /
+          geom.x += vmetric[1] * fontSize * current.fontMatrix[0] /
                     fontSizeScale * geom.hScale;
           geom.y += vmetric[2] * fontSize * current.fontMatrix[0] /
                     fontSizeScale * geom.vScale;

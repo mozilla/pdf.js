@@ -1047,7 +1047,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
 
         if (properties.vertical) {
           var vmetrics = dict.get('DW2') || [880, -1000];
-          defaultVMetrics = [vmetrics[1], vmetrics[1] / 2, vmetrics[0]];
+          defaultVMetrics = [vmetrics[1], defaultWidth * 0.5, vmetrics[0]];
           vmetrics = dict.get('W2');
           if (vmetrics) {
             for (var i = 0, ii = vmetrics.length; i < ii; i++) {
