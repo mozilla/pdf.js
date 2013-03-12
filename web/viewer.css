@@ -224,6 +224,8 @@ html[dir='rtl'] #sidebarContent {
   right: 0;
   bottom: 0;
   left: 0;
+  text-align: center;
+  white-space: nowrap;
 }
 
 .toolbar {
@@ -1066,13 +1068,14 @@ canvas {
   direction: ltr;
   width: 816px;
   height: 1056px;
-  margin: 1px auto -8px auto;
+  margin: -5px -7px -6px -7px;
   position: relative;
   overflow: visible;
   border: 9px solid transparent;
   background-clip: content-box;
   border-image: url(images/shadow.png) 9 9 repeat;
   background-color: white;
+  display: inline-block;
 }
 
 .page > a {
@@ -1084,6 +1087,16 @@ canvas {
   opacity: 0.2;
   background: #ff0;
   box-shadow: 0px 2px 10px #ff0;
+}
+
+.page:nth-child(2) {
+  margin-top: 1px;
+}
+
+#viewer.twoUp.noCover > br.first,
+#viewer.twoUp.showCover > br.two,
+#viewer.twoUp.noCover > br.one {
+  display: none;
 }
 
 .loadingIcon {
