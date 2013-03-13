@@ -337,6 +337,7 @@ ChromeActions.prototype = {
       }, '*');
     };
 
+    var self = this;
     this.dataListener.oncomplete =
       function ChromeActions_dataListenerComplete(data, errorCode) {
 
@@ -346,7 +347,7 @@ ChromeActions.prototype = {
         errorCode: errorCode
       }, '*');
 
-      delete this.dataListener;
+      delete self.dataListener;
     };
 
     return true;
