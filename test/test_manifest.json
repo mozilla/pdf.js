@@ -845,6 +845,13 @@
       "type": "eq",
       "about": "Every blend mode that PDF supports."
     },
+    { "id": "transparency_group",
+      "file": "pdfs/transparency_group.pdf",
+      "md5": "10391f76434128e5da70cff5fc485ff0",
+      "rounds": 1,
+      "type": "eq",
+      "about": "Rotated transparency group with blend mode."
+    },
     {  "id": "issue2462",
       "file": "pdfs/issue2462.pdf",
       "md5": "d4e3dddfdd35464c71cf0310bff29b42",
