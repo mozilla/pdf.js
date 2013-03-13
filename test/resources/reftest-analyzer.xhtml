@@ -110,6 +110,7 @@ var gMagZoom = 16;         // size of the zoomed in pixels
 var gImage1Data;           // ImageData object for the reference image
 var gImage2Data;           // ImageData object for the test output image
 var gFlashingPixels = [];  // array of <path> objects that should be flashed due to pixel color mismatch
+var gPath = '';            // path taken from #web= and prepended to ref/snp urls
 
 function ID(id) {
   if (!(id in gIDCache))
@@ -190,6 +191,11 @@ function show_phase(phaseid) {
 }
 
 function loadFromWeb(url) {
+  var lastSlash = url.lastIndexOf('/');
+  if (lastSlash) {
+    gPath = url.substring(0, lastSlash + 1);
+  }
+
   var r = new XMLHttpRequest();
   r.open("GET", url);
   r.onreadystatechange = function() {
@@ -344,7 +350,7 @@ function get_image_data(src, whenReady) {
 
     whenReady(ctx.getImageData(0, 0, 800, 1000));
   };
-  img.src = src;
+  img.src = gPath + src;
 }
 
 function show_images(i) {
@@ -356,17 +362,17 @@ function show_images(i) {
   ID("diffrect").style.display = "none";
   ID("imgcontrols").reset();
 
-  ID("image1").setAttributeNS(XLINK_NS, "xlink:href", item.images[0]);
+  ID("image1").setAttributeNS(XLINK_NS, "xlink:href", gPath + item.images[0]);
   // Making the href be #image1 doesn't seem to work
-  ID("feimage1").setAttributeNS(XLINK_NS, "xlink:href", item.images[0]);
+  ID("feimage1").setAttributeNS(XLINK_NS, "xlink:href", gPath + item.images[0]);
   if (item.images.length == 1) {
     ID("imgcontrols").style.display = "none";
   } else {
     ID("imgcontrols").style.display = "";
 
-    ID("image2").setAttributeNS(XLINK_NS, "xlink:href", item.images[1]);
+    ID("image2").setAttributeNS(XLINK_NS, "xlink:href", gPath + item.images[1]);
     // Making the href be #image2 doesn't seem to work
-    ID("feimage2").setAttributeNS(XLINK_NS, "xlink:href", item.images[1]);
+    ID("feimage2").setAttributeNS(XLINK_NS, "xlink:href", gPath + item.images[1]);
   }
 
   cell.style.display = "";
