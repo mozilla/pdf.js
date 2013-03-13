@@ -694,12 +694,17 @@ def checkEq(task, results, browser, masterMode):
                 handle.write(snapshot)
                 handle.close()
 
+                refSnapshotPath = os.path.join(testSnapshotDir, str(page) + '_ref.png')
+                handle = open(refSnapshotPath, 'wb')
+                handle.write(ref)
+                handle.close()
+
                 # NB: this follows the format of Mozilla reftest
                 # output so that we can reuse its reftest-analyzer
                 # script
                 eqLog.write('REFTEST TEST-UNEXPECTED-FAIL | ' + browser +'-'+ taskId +'-page'+ str(page) + ' | image comparison (==)\n')
-                eqLog.write('REFTEST   IMAGE 1 (TEST): ' + '/test/' + testSnapshotPath + '\n')
-                eqLog.write('REFTEST   IMAGE 2 (REFERENCE): ' + '/test/' + path + '\n')
+                eqLog.write('REFTEST   IMAGE 1 (TEST): ' + testSnapshotPath + '\n')
+                eqLog.write('REFTEST   IMAGE 2 (REFERENCE): ' + refSnapshotPath + '\n')
 
                 passed = False
                 State.numEqFailures += 1
@@ -793,6 +798,11 @@ def startReftest(browser, options):
     print "Completed reftest usage."
 
 def runTests(options, browsers):
+    try:
+        shutil.rmtree(TEST_SNAPSHOTS);
+    except OSError, e:
+        if e.errno != 2: # folder doesn't exist
+            print >>sys.stderr, 'Deleting', dir, 'failed!'
     t1 = time.time()
     try:
         startBrowsers(browsers, options, '/test/test_slave.html')
