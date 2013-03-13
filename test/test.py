@@ -30,6 +30,7 @@ DEFAULT_MANIFEST_FILE = 'test_manifest.json'
 EQLOG_FILE = 'eq.log'
 BROWSERLOG_FILE = 'browser.log'
 REFDIR = 'ref'
+TEST_SNAPSHOTS = 'test_snapshots'
 TMPDIR = 'tmp'
 VERBOSE = False
 BROWSER_TIMEOUT = 60
@@ -643,9 +644,21 @@ def check(task, results, browser, masterMode):
     else:
         assert 0 and 'Unknown test type'
 
+def createDir(dir):
+    try:
+        os.makedirs(dir)
+    except OSError, e:
+        if e.errno != 17: # file exists
+            print >>sys.stderr, 'Creating', dir, 'failed!'
+
+
+def readDataUri(data):
+    metadata, encoded = data.rsplit(",", 1)
+    return base64.b64decode(encoded)
 
 def checkEq(task, results, browser, masterMode):
     pfx = os.path.join(REFDIR, sys.platform, browser, task['id'])
+    testSnapshotDir = os.path.join(TEST_SNAPSHOTS, sys.platform, browser, task['id'])
     results = results[0]
     taskId = task['id']
     taskType = task['type']
@@ -653,17 +666,17 @@ def checkEq(task, results, browser, masterMode):
     passed = True
     for result in results:
         page = result.page
-        snapshot = result.snapshot
+        snapshot = readDataUri(result.snapshot)
         ref = None
         eq = True
 
-        path = os.path.join(pfx, str(page))
+        path = os.path.join(pfx, str(page) + '.png')
         if not os.access(path, os.R_OK):
             State.numEqNoSnapshot += 1
             if not masterMode:
                 print 'WARNING: no reference snapshot', path
         else:
-            f = open(path)
+            f = open(path, 'rb')
             ref = f.read()
             f.close()
 
@@ -675,27 +688,29 @@ def checkEq(task, results, browser, masterMode):
                     State.eqLog = open(EQLOG_FILE, 'w')
                 eqLog = State.eqLog
 
+                createDir(testSnapshotDir)
+                testSnapshotPath = os.path.join(testSnapshotDir, str(page) + '.png')
+                handle = open(testSnapshotPath, 'wb')
+                handle.write(snapshot)
+                handle.close()
+
                 # NB: this follows the format of Mozilla reftest
                 # output so that we can reuse its reftest-analyzer
                 # script
                 eqLog.write('REFTEST TEST-UNEXPECTED-FAIL | ' + browser +'-'+ taskId +'-page'+ str(page) + ' | image comparison (==)\n')
-                eqLog.write('REFTEST   IMAGE 1 (TEST): ' + snapshot + '\n')
-                eqLog.write('REFTEST   IMAGE 2 (REFERENCE): ' + ref + '\n')
+                eqLog.write('REFTEST   IMAGE 1 (TEST): ' + '/test/' + testSnapshotPath + '\n')
+                eqLog.write('REFTEST   IMAGE 2 (REFERENCE): ' + '/test/' + path + '\n')
 
                 passed = False
                 State.numEqFailures += 1
 
         if masterMode and (ref is None or not eq):
             tmpTaskDir = os.path.join(TMPDIR, sys.platform, browser, task['id'])
-            try:
-                os.makedirs(tmpTaskDir)
-            except OSError, e:
-                if e.errno != 17: # file exists
-                    print >>sys.stderr, 'Creating', tmpTaskDir, 'failed!'
+            createDir(tmpTaskDir)
 
-            of = open(os.path.join(tmpTaskDir, str(page)), 'w')
-            of.write(snapshot)
-            of.close()
+            handle = open(os.path.join(tmpTaskDir, str(page)) + '.png', 'wb')
+            handle.write(snapshot)
+            handle.close()
 
     if passed:
         print 'TEST-PASS |', taskType, 'test', task['id'], '| in', browser
