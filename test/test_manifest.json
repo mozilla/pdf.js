@@ -934,6 +934,15 @@
       "lastPage": 2,
       "type": "eq"
     },
+    {  "id": "mao",
+      "file": "pdfs/mao.pdf",
+      "md5": "797093d67c4d4d4231ac6e1fb66bf6c3",
+      "rounds": 1,
+      "link": true,
+      "firstPage": 1,
+      "lastPage": 1,
+      "type": "eq"
+    },
     {  "id": "noembed-identity",
       "file": "pdfs/noembed-identity.pdf",
       "md5": "05d3803b6c22451e18cb60d8d8c75c0c",
