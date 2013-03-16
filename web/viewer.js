@@ -2633,7 +2633,7 @@ var TextLayerBuilder = function textLayerBuilder(textLayerDiv, pageIdx) {
     var textDiv = document.createElement('div');
 
     // vScale and hScale already contain the scaling to pixel units
-    var fontHeight = geom.fontSize * geom.vScale;
+    var fontHeight = geom.fontSize * Math.abs(geom.vScale);
     textDiv.dataset.canvasWidth = geom.canvasWidth * geom.hScale;
     textDiv.dataset.fontName = geom.fontName;
 
