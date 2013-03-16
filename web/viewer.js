@@ -1316,6 +1316,7 @@ var PDFView = {
       if (PDFView.supportsPrinting) {
         pdfDocument.getJavaScript().then(function(javaScript) {
           if (javaScript.length) {
+            console.warn('Warning: JavaScript is not supported');
             PDFView.fallback();
           }
           // Hack to support auto printing.
@@ -1389,7 +1390,7 @@ var PDFView = {
         self.setTitle(pdfTitle + ' - ' + document.title);
 
       if (info.IsAcroFormPresent) {
-        // AcroForm/XFA was found
+        console.warn('Warning: AcroForm/XFA is not supported');
         PDFView.fallback();
       }
     });
