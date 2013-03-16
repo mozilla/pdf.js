@@ -422,6 +422,7 @@ var CMapConverterList = {
   '90msp-RKSJ-H': sjisToUnicode,
   '90msp-RKSJ-V': sjisToUnicode,
   'GBK-EUC-H': gbkToUnicode,
+  'B5pc-H': big5ToUnicode,
   'ETenms-B5-H': big5ToUnicode,
   'ETenms-B5-V': big5ToUnicode,
 };
