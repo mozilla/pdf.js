@@ -2647,8 +2647,8 @@ var Font = (function FontClosure() {
     }
     var bmpLength = i + 1;
 
-    var trailingRangesCount = ranges[bmpLength - 1][1] < 0xFFFF ? 1 : 0;
-    var segCount = bmpLength + trailingRangesCount;
+    if (ranges[i][1] === 0xFFFF) { ranges[i][1] = 0xFFFE; }
+    var segCount = bmpLength + 1;
     var segCount2 = segCount * 2;
     var searchRange = getMaxPower2(segCount) * 2;
     var searchEntry = Math.log(segCount) / Math.log(2);
@@ -2693,12 +2693,10 @@ var Font = (function FontClosure() {
       }
     }
 
-    if (trailingRangesCount > 0) {
-      endCount += '\xFF\xFF';
-      startCount += '\xFF\xFF';
-      idDeltas += '\x00\x01';
-      idRangeOffsets += '\x00\x00';
-    }
+    endCount += '\xFF\xFF';
+    startCount += '\xFF\xFF';
+    idDeltas += '\x00\x01';
+    idRangeOffsets += '\x00\x00';
 
     var format314 = '\x00\x00' + // language
                     string16(segCount2) +
