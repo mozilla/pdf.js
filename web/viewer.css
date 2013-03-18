@@ -826,6 +826,11 @@ html[dir='rtl'] .toolbarButton.pageDown::before {
   padding-top: 4px;
 }
 
+#viewBookmark[href='#'] {
+  opacity: .5;
+  pointer-events: none;
+}
+
 .toolbarButton.bookmark::before {
   content: url(images/toolbarButton-bookmark.png);
 }
