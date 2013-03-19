@@ -332,7 +332,7 @@ var Catalog = (function CatalogClosure() {
           if (isStream(js)) {
             js = bytesToString(js.getBytes());
           }
-          javaScript.push(js);
+          javaScript.push(stringToPDFString(js));
         }
       }
       return shadow(this, 'javaScript', javaScript);
