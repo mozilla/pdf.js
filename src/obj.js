@@ -332,7 +332,7 @@ var Catalog = (function CatalogClosure() {
           if (isStream(js)) {
             js = bytesToString(js.getBytes());
           }
-          javaScript.push(js);
+          javaScript.push(stringToPDFString(js));
         }
       }
       return shadow(this, 'javaScript', javaScript);
@@ -797,6 +797,9 @@ var NameTree = (function NameTreeClosure() {
       while (queue.length > 0) {
         var i, n;
         var obj = xref.fetchIfRef(queue.shift());
+        if (!isDict(obj)) {
+          continue;
+        }
         if (obj.has('Kids')) {
           var kids = obj.get('Kids');
           for (i = 0, n = kids.length; i < n; i++) {
