@@ -385,12 +385,16 @@ var IndexedCS = (function IndexedCSClosure() {
       var numComps = base.numComps;
       var outputDelta = base.getOutputLength(numComps);
       var lookup = this.lookup;
-
+      // Copy all the values into a temporary array so we can convert the whole
+      // thing at once.
+      var temp = new Uint8Array(numComps * count);
       for (var i = 0; i < count; ++i) {
         var lookupPos = src[srcOffset++] * numComps;
-        base.getRgbBuffer(lookup, lookupPos, 1, dest, destOffset, 8);
-        destOffset += outputDelta;
+        for (var j = 0; j < numComps; ++j) {
+          temp[i * numComps + j] = lookup[lookupPos + j];
+        }
       }
+      base.getRgbBuffer(temp, 0, count, dest, destOffset, 8);
     },
     getOutputLength: function IndexedCS_getOutputLength(inputLength) {
       return this.base.getOutputLength(inputLength * this.base.numComps);
