@@ -1592,55 +1592,52 @@ var PDFView = {
   },
 
   getVisiblePages: function pdfViewGetVisiblePages() {
-    return this.getVisibleElements(this.container,
-                                   this.pages, true);
+    if (!this.isFullscreen) {
+      return this.getVisibleElements(this.container, this.pages, true);
+    } else {
+      // The algorithm in getVisibleElements is broken in fullscreen mode.
+      var visible = [], page = this.page;
+      var currentPage = this.pages[page - 1];
+      visible.push({ id: currentPage.id, view: currentPage });
+
+      return { first: currentPage, last: currentPage, views: visible};
+    }
   },
 
   getVisibleThumbs: function pdfViewGetVisibleThumbs() {
-    return this.getVisibleElements(this.thumbnailContainer,
-                                   this.thumbnails);
+    return this.getVisibleElements(this.thumbnailContainer, this.thumbnails);
   },
 
   // Generic helper to find out what elements are visible within a scroll pane.
   getVisibleElements: function pdfViewGetVisibleElements(
       scrollEl, views, sortByVisibility) {
-    var currentHeight = 0, view;
-    var top = scrollEl.scrollTop;
+    var top = scrollEl.scrollTop, bottom = top + scrollEl.clientHeight;
+    var left = scrollEl.scrollLeft, right = left + scrollEl.clientWidth;
 
-    for (var i = 1, ii = views.length; i <= ii; ++i) {
-      view = views[i - 1];
+    var visible = [], view;
+    var currentHeight, viewHeight, hiddenHeight, percentHeight;
+    var currentWidth, viewWidth;
+    for (var i = 0, ii = views.length; i < ii; ++i) {
+      view = views[i];
       currentHeight = view.el.offsetTop + view.el.clientTop;
-      if (currentHeight + view.el.clientHeight > top)
-        break;
-      currentHeight += view.el.clientHeight;
-    }
-
-    var visible = [];
-
-    // Algorithm broken in fullscreen mode
-    if (this.isFullscreen) {
-      var currentPage = this.pages[this.page - 1];
-      visible.push({
-        id: currentPage.id,
-        view: currentPage
-      });
-
-      return { first: currentPage, last: currentPage, views: visible};
-    }
-
-    var bottom = top + scrollEl.clientHeight;
-    var nextHeight, hidden, percent, viewHeight;
-    for (; i <= ii && currentHeight < bottom; ++i) {
-      view = views[i - 1];
       viewHeight = view.el.clientHeight;
-      currentHeight = view.el.offsetTop + view.el.clientTop;
-      nextHeight = currentHeight + viewHeight;
-      hidden = Math.max(0, top - currentHeight) +
-               Math.max(0, nextHeight - bottom);
-      percent = Math.floor((viewHeight - hidden) * 100.0 / viewHeight);
+      if ((currentHeight + viewHeight) < top) {
+        continue;
+      }
+      if (currentHeight > bottom) {
+        break;
+      }
+      currentWidth = view.el.offsetLeft + view.el.clientLeft;
+      viewWidth = view.el.clientWidth;
+      if ((currentWidth + viewWidth) < left || currentWidth > right) {
+        continue;
+      }
+      hiddenHeight = Math.max(0, top - currentHeight) +
+                     Math.max(0, currentHeight + viewHeight - bottom);
+      percentHeight = ((viewHeight - hiddenHeight) * 100 / viewHeight) | 0;
+
       visible.push({ id: view.id, y: currentHeight,
-                     view: view, percent: percent });
-      currentHeight = nextHeight;
+                     view: view, percent: percentHeight });
     }
 
     var first = visible[0];
@@ -1649,13 +1646,12 @@ var PDFView = {
     if (sortByVisibility) {
       visible.sort(function(a, b) {
         var pc = a.percent - b.percent;
-        if (Math.abs(pc) > 0.001)
+        if (Math.abs(pc) > 0.001) {
           return -pc;
-
+        }
         return a.id - b.id; // ensure stability
       });
     }
-
     return {first: first, last: last, views: visible};
   },
 
