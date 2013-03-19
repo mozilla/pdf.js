@@ -390,7 +390,8 @@
   if (!('console' in window)) {
     window.console = {
       log: function() {},
-      error: function() {}
+      error: function() {},
+      warn: function() {}
     };
   } else if (!('bind' in console.log)) {
     // native functions in IE9 might not have bind
@@ -400,6 +401,9 @@
     console.error = (function(fn) {
       return function(msg) { return fn(msg); };
     })(console.error);
+    console.warn = (function(fn) {
+      return function(msg) { return fn(msg); };
+    })(console.warn);
   }
 })();
 
