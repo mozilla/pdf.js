@@ -2622,7 +2622,7 @@ var Font = (function FontClosure() {
     file.virtualOffset += data.length;
   }
 
-  function getRanges(glyphs) {
+  function getRanges(glyphs, deltas) {
     // Array.sort() sorts by characters, not numerically, so convert to an
     // array of characters.
     var codes = [];
@@ -2637,14 +2637,14 @@ var Font = (function FontClosure() {
     var ranges = [];
     for (var n = 0; n < length; ) {
       var start = codes[n].unicode;
-      var codeIndices = [codes[n].code];
+      var codeIndices = [deltas ? deltas[codes[n].code] : codes[n].code + 1];
       ++n;
       var end = start;
       while (n < length && end + 1 == codes[n].unicode) {
-        codeIndices.push(codes[n].code);
+        codeIndices.push(deltas ? deltas[codes[n].code] : codes[n].code + 1);
         ++end;
         ++n;
-        if (end === 0x10000) { break; }
+        if (end === 0xFFFF) { break; }
       }
       ranges.push([start, end, codeIndices]);
     }
@@ -2653,7 +2653,7 @@ var Font = (function FontClosure() {
   }
 
   function createCmapTable(glyphs, deltas) {
-    var ranges = getRanges(glyphs);
+    var ranges = getRanges(glyphs, deltas);
 
     var numTables = ranges[ranges.length - 1][1] > 0xFFFF ? 2 : 1;
     var cmap = '\x00\x00' + // version
@@ -2667,8 +2667,11 @@ var Font = (function FontClosure() {
     }
     var bmpLength = i + 1;
 
-    if (ranges[i][1] === 0xFFFF) { ranges[i][1] = 0xFFFE; }
-    var segCount = bmpLength + 1;
+    if (ranges[i][0] < 0xFFFF && ranges[i][1] === 0xFFFF) {
+      ranges[i][1] = 0xFFFE;
+    }
+    var trailingRangesCount = ranges[i][1] < 0xFFFF ? 1 : 0; 
+    var segCount = bmpLength + trailingRangesCount;
     var segCount2 = segCount * 2;
     var searchRange = getMaxPower2(segCount) * 2;
     var searchEntry = Math.log(segCount) / Math.log(2);
@@ -2682,41 +2685,44 @@ var Font = (function FontClosure() {
     var glyphsIds = '';
     var bias = 0;
 
-    if (deltas) {
-      for (var i = 0, ii = bmpLength; i < ii; i++) {
-        var range = ranges[i];
-        var start = range[0];
-        var end = range[1];
+    for (var i = 0, ii = bmpLength; i < ii; i++) {
+      var range = ranges[i];
+      var start = range[0];
+      var end = range[1];
+      startCount += string16(start);
+      endCount += string16(end);
+      var codes = range[2];
+      var contiguous = true;
+      for (var j = 1, jj = codes.length; j < jj; ++j) {
+        if (codes[j] !== codes[j - 1] + 1) {
+          contiguous = false;
+          break;
+        }
+      }
+      if (!contiguous) {
         var offset = (segCount - i) * 2 + bias * 2;
         bias += (end - start + 1);
 
-        startCount += string16(start);
-        endCount += string16(end);
         idDeltas += string16(0);
         idRangeOffsets += string16(offset);
 
-        var codes = range[2];
-        for (var j = 0, jj = codes.length; j < jj; ++j)
-          glyphsIds += string16(deltas[codes[j]]);
-      }
-    } else {
-      for (var i = 0, ii = bmpLength; i < ii; i++) {
-        var range = ranges[i];
-        var start = range[0];
-        var end = range[1];
-        var startCode = range[2][0];
+        for (var j = 0, jj = codes.length; j < jj; ++j) {
+          glyphsIds += string16(codes[j]);
+        }
+      } else {
+        var startCode = codes[0];
 
-        startCount += string16(start);
-        endCount += string16(end);
-        idDeltas += string16((startCode - start + 1) & 0xFFFF);
+        idDeltas += string16((startCode - start) & 0xFFFF);
         idRangeOffsets += string16(0);
       }
     }
 
-    endCount += '\xFF\xFF';
-    startCount += '\xFF\xFF';
-    idDeltas += '\x00\x01';
-    idRangeOffsets += '\x00\x00';
+    if (trailingRangesCount > 0) {
+      endCount += '\xFF\xFF';
+      startCount += '\xFF\xFF';
+      idDeltas += '\x00\x01';
+      idRangeOffsets += '\x00\x00';
+    }
 
     var format314 = '\x00\x00' + // language
                     string16(segCount2) +
@@ -2734,46 +2740,24 @@ var Font = (function FontClosure() {
               string32(4 + numTables * 8 +
                        4 + format314.length); // start of the table record
       format31012 = '';
-      if (deltas) {
-        for (var i = 0, ii = ranges.length; i < ii; i++) {
-          var range = ranges[i];
-          var start = range[0];
-          var codes = range[2];
-          var code = deltas[codes[0]];
-          for (var j = 1, jj = codes.length; j < jj; ++j) {
-            if (deltas[codes[j]] !== deltas[codes[j - 1]] + 1) {
-              var end = range[0] + j - 1;
-              format31012 += string32(start) + // startCharCode
-                             string32(end) + // endCharCode
-                             string32(code); // startGlyphID
-              start = end + 1;
-              code = deltas[codes[j]];
-            }
+      for (var i = 0, ii = ranges.length; i < ii; i++) {
+        var range = ranges[i];
+        var start = range[0];
+        var codes = range[2];
+        var code = codes[0];
+        for (var j = 1, jj = codes.length; j < jj; ++j) {
+          if (codes[j] !== codes[j - 1] + 1) {
+            var end = range[0] + j - 1;
+            format31012 += string32(start) + // startCharCode
+                           string32(end) + // endCharCode
+                           string32(code); // startGlyphID
+            start = end + 1;
+            code = codes[j];
           }
-          format31012 += string32(start) + // startCharCode
-                         string32(range[1]) + // endCharCode
-                         string32(code); // startGlyphID
         }
-      } else {
-        for (var i = 0, ii = ranges.length; i < ii; i++) {
-          var range = ranges[i];
-          var start = range[0];
-          var codes = range[2];
-          var code = codes[0];
-          for (var j = 1, jj = codes.length; j < jj; ++j) {
-            if (codes[j] !== codes[j - 1] + 1) {
-              var end = range[0] + j - 1;
-              format31012 += string32(start) + // startCharCode
-                             string32(end) + // endCharCode
-                             string32(code); // startGlyphID
-              start = end + 1;
-              code = codes[j];
-            }
-          }
-          format31012 += string32(start) + // startCharCode
-                         string32(range[1]) + // endCharCode
-                         string32(code); // startGlyphID
-        }
+        format31012 += string32(start) + // startCharCode
+                       string32(range[1]) + // endCharCode
+                       string32(code); // startGlyphID
       }
       header31012 = '\x00\x0C' + // format
                     '\x00\x00' + // reserved
