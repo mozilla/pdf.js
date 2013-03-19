@@ -593,11 +593,11 @@ target.chrome = function() {
         'extensions/chrome/*.js',
         'extensions/chrome/icon*.png',],
        CHROME_BUILD_DIR],
-      [BUILD_TARGET, CHROME_BUILD_CONTENT_DIR + BUILD_TARGET],
       ['external/webL10n/l10n.js', CHROME_BUILD_CONTENT_DIR + '/web'],
       ['web/locale', CHROME_BUILD_CONTENT_DIR + '/web']
     ],
     preprocess: [
+      [BUILD_TARGET, CHROME_BUILD_CONTENT_DIR + BUILD_TARGET],
       [COMMON_WEB_FILES_PREPROCESS, CHROME_BUILD_CONTENT_DIR + '/web']
     ]
   };
