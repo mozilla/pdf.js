@@ -132,8 +132,21 @@ function nextTask() {
       nextPage(task, failure);
     }
     try {
+      var docStats = new StatTimer();
+      docStats.time('GetDoc Request');
+
       var promise = PDFJS.getDocument(data);
       promise.then(function(doc) {
+
+        docStats.timeEnd('GetDoc Request');
+        var message = JSON.stringify({
+          browser: browser,
+          id: task.id,
+          round: task.round,
+          stats: docStats.times
+        });
+        send('/sendDocStats', message);
+
         task.pdfDoc = doc;
         continuation();
       }, function(e) {

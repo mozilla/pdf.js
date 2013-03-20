@@ -3,6 +3,10 @@ from scipy import stats
 import json, locale
 from optparse import OptionParser
 
+# Raise an exception rather than just issuing a warning if an error
+# occurs during a numpy calculation
+seterr('raise')
+
 VALID_GROUP_BYS = ['browser', 'pdf', 'page', 'round', 'stat']
 USAGE_EXAMPLE = "%prog BASELINE CURRENT"
 class TestOptions(OptionParser):
@@ -159,7 +163,14 @@ def stat(baseline, current, groupBy):
     currentGroup = group(current, groupBy)
     rows = []
     for key in baselineGroup:
-        t, p = stats.ttest_ind(baselineGroup[key], currentGroup[key], equal_var = False)
+        baselineVals = baselineGroup[key]
+        currentVals = currentGroup[key]
+        if len(baselineVals) == 1:
+            # The T-test will only work if both samples has >= 2 values and
+            # the values are different
+            baselineVals.append(baselineVals[0] + 1)
+            currentVals.append(currentVals[0] + 1)
+        t, p = stats.ttest_ind(baselineVals, currentVals, equal_var = False)
         baseline = mean(baselineGroup[key])
         current = mean(currentGroup[key])
         speed = ''

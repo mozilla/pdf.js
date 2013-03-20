@@ -335,8 +335,25 @@ class PDFTestHandler(TestHandlerBase):
                 return
 
             id = result['id']
-            failure = result['failure']
             round = result['round']
+
+            if url.path == '/sendDocStats':
+                if not State.saveStats:
+                    return
+
+                stat = {
+                    'browser': browser,
+                    'pdf': id,
+                    # Use special page '0' to denote stats about full doc
+                    'page': 0,
+                    'round': round,
+                    'stats': result['stats'],
+                }
+
+                State.stats.append(stat)
+                return
+
+            failure = result['failure']
             page = result['page']
             snapshot = result['snapshot']
 
