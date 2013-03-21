@@ -504,10 +504,11 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       var promise = new Promise();
 
       var fontRes = resources.get('Font');
+      if (!fontRes) {
+        warn('fontRes not available');
+      }
 
-      assert(fontRes, 'fontRes not available');
-
-      font = xref.fetchIfRef(font) || fontRes.get(fontName);
+      font = xref.fetchIfRef(font) || (fontRes && fontRes.get(fontName));
       if (!isDict(font)) {
         ++this.idCounters.font;
         promise.resolve({
@@ -824,93 +825,6 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       }
       parser.saveState();
       parseCommands();
-
-      return promise;
-    },
-
-    getAnnotationsOperatorList:
-        function PartialEvaluator_getAnnotationsOperatorList(annotations,
-                                                             dependency) {
-      var promise = new Promise();
-
-      // 12.5.5: Algorithm: Appearance streams
-      function getTransformMatrix(rect, bbox, matrix) {
-        var bounds = Util.getAxialAlignedBoundingBox(bbox, matrix);
-        var minX = bounds[0];
-        var minY = bounds[1];
-        var maxX = bounds[2];
-        var maxY = bounds[3];
-        var width = rect[2] - rect[0];
-        var height = rect[3] - rect[1];
-        var xRatio = width / (maxX - minX);
-        var yRatio = height / (maxY - minY);
-        return [
-          xRatio,
-          0,
-          0,
-          yRatio,
-          rect[0] - minX * xRatio,
-          rect[1] - minY * yRatio
-        ];
-      }
-
-      var opListPromises = [];
-      var includedAnnotations = [];
-
-      // deal with annotations
-      for (var i = 0, length = annotations.length; i < length; ++i) {
-        var annotation = annotations[i];
-
-        // check whether we can visualize annotation
-        if (!annotation ||
-            !annotation.annotationFlags ||
-            (annotation.annotationFlags & 0x0022) || // Hidden or NoView
-            !annotation.rect ||                      // rectangle is nessessary
-            !annotation.appearance) {                // appearance is nessessary
-          continue;
-        }
-
-        includedAnnotations.push(annotation);
-
-        if (annotation.appearance) {
-          var opListPromise = this.getOperatorList(annotation.appearance,
-            annotation.resources);
-          opListPromises.push(opListPromise);
-        } else {
-          var opListPromise = new Promise();
-          opListPromise.resolve(createOperatorList());
-          opListPromises.push(opListPromise);
-        }
-      }
-
-      Promise.all(opListPromises).then(function(datas) {
-        var fnArray = [];
-        var argsArray = [];
-        var dependencies = {};
-        for (var i = 0, n = datas.length; i < n; ++i) {
-          var annotation = includedAnnotations[i];
-          var data = datas[i];
-
-          // apply rectangle
-          var rect = annotation.rect;
-          var bbox = annotation.bbox;
-          var matrix = annotation.matrix;
-          var transform = getTransformMatrix(rect, bbox, matrix);
-          var border = annotation.border;
-
-          fnArray.push('beginAnnotation');
-          argsArray.push([rect, transform, matrix, border]);
-
-          Util.concatenateToArray(fnArray, data.queue.fnArray);
-          Util.concatenateToArray(argsArray, data.queue.argsArray);
-          Util.extendObj(dependencies, data.dependencies);
-
-          fnArray.push('endAnnotation');
-          argsArray.push([]);
-        }
-
-        promise.resolve(createOperatorList(fnArray, argsArray, dependencies));
-      });
 
       return promise;
     },

@@ -350,11 +350,11 @@ var WorkerMessageHandler = {
 
     handler.on('GetAnnotationsRequest', function wphSetupGetAnnotations(data) {
       pdfManager.getPage(data.pageIndex).then(function(page) {
-        pdfManager.ensure(page, 'getAnnotations',[]).then(
-          function(annotations) {
+        pdfManager.ensure(page, 'getAnnotationsData', []).then(
+          function(annotationsData) {
             handler.send('GetAnnotations', {
               pageIndex: data.pageIndex,
-              annotations: annotations
+              annotations: annotationsData
             });
           }
         );
