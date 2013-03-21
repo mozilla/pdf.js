@@ -153,15 +153,18 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                                                  resources, dependency) {
       var fontRes = resources.get('Font');
 
-      assert(fontRes, 'fontRes not available');
-
       ++this.fontIdCounter;
+      var defaultLoadedName ='g_font_' + this.uniquePrefix + this.fontIdCounter;
 
-      font = xref.fetchIfRef(font) || fontRes.get(fontName);
+      if (!fontRes) {
+        warn('fontRes not available');
+      }
+
+      font = xref.fetchIfRef(font) || (fontRes && fontRes.get(fontName));
       if (!isDict(font)) {
         return {
           translated: new ErrorFont('Font ' + fontName + ' is not available'),
-          loadedName: 'g_font_' + this.uniquePrefix + this.fontIdCounter
+          loadedName: defaultLoadedName
         };
       }
 
@@ -170,7 +173,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         // keep track of each font we translated so the caller can
         // load them asynchronously before calling display on a page
         loadedName = 'g_font_' + this.uniquePrefix + this.fontIdCounter;
-        font.loadedName = loadedName;
+        font.loadedName = defaultLoadedName;
 
         var translated;
         try {
@@ -594,73 +597,6 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       }
 
       return queue;
-    },
-
-    getAnnotationsOperatorList:
-        function PartialEvaluator_getAnnotationsOperatorList(annotations,
-                                                             dependency) {
-      // 12.5.5: Algorithm: Appearance streams
-      function getTransformMatrix(rect, bbox, matrix) {
-        var bounds = Util.getAxialAlignedBoundingBox(bbox, matrix);
-        var minX = bounds[0];
-        var minY = bounds[1];
-        var maxX = bounds[2];
-        var maxY = bounds[3];
-        var width = rect[2] - rect[0];
-        var height = rect[3] - rect[1];
-        var xRatio = width / (maxX - minX);
-        var yRatio = height / (maxY - minY);
-        return [
-          xRatio,
-          0,
-          0,
-          yRatio,
-          rect[0] - minX * xRatio,
-          rect[1] - minY * yRatio
-        ];
-      }
-
-      var fnArray = [];
-      var argsArray = [];
-      // deal with annotations
-      for (var i = 0, length = annotations.length; i < length; ++i) {
-        var annotation = annotations[i];
-
-        // check whether we can visualize annotation
-        if (!annotation ||
-            !annotation.annotationFlags ||
-            (annotation.annotationFlags & 0x0022) || // Hidden or NoView
-            !annotation.rect ||                      // rectangle is nessessary
-            !annotation.appearance) {                // appearance is nessessary
-          continue;
-        }
-
-        // apply rectangle
-        var rect = annotation.rect;
-        var bbox = annotation.bbox;
-        var matrix = annotation.matrix;
-        var transform = getTransformMatrix(rect, bbox, matrix);
-        var border = annotation.border;
-
-        fnArray.push('beginAnnotation');
-        argsArray.push([rect, transform, matrix, border]);
-
-        if (annotation.appearance) {
-          var list = this.getOperatorList(annotation.appearance,
-            annotation.resources, dependency);
-
-          Util.concatenateToArray(fnArray, list.fnArray);
-          Util.concatenateToArray(argsArray, list.argsArray);
-        }
-
-        fnArray.push('endAnnotation');
-        argsArray.push([]);
-      }
-
-      return {
-        fnArray: fnArray,
-        argsArray: argsArray
-      };
     },
 
     optimizeQueue: function PartialEvaluator_optimizeQueue(queue) {

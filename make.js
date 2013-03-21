@@ -233,6 +233,7 @@ target.bundle = function() {
         'api.js',
         'canvas.js',
         'obj.js',
+        'annotation.js',
         'function.js',
         'charsets.js',
         'cidmaps.js',
