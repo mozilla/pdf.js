@@ -238,7 +238,7 @@ var WorkerMessageHandler = {
       var pdfPage = pdfModel.getPage(data.pageIndex + 1);
       handler.send('GetAnnotations', {
         pageIndex: data.pageIndex,
-        annotations: pdfPage.getAnnotations()
+        annotations: pdfPage.getAnnotationsData()
       });
     });
 
