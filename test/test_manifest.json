@@ -941,6 +941,15 @@
       "lastPage": 2,
       "type": "eq"
     },
+    {  "id": "kdchart",
+      "file": "pdfs/kdchart.pdf",
+      "md5": "2556a1d197d7cbe1f5edfc5c3557582b",
+      "rounds": 1,
+      "link": true,
+      "firstPage": 1,
+      "lastPage": 1,
+      "type": "eq"
+    },
     {  "id": "mao",
       "file": "pdfs/mao.pdf",
       "md5": "797093d67c4d4d4231ac6e1fb66bf6c3",
