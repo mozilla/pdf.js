@@ -478,7 +478,7 @@ var DeviceRgbCS = (function DeviceRgbCSClosure() {
       var scale = 255 / ((1 << bits) - 1);
       var j = srcOffset, q = destOffset;
       for (var i = 0; i < length; ++i) {
-        dest[q++] = (scale * input[j++]) | 0;
+        dest[q++] = (scale * src[j++]) | 0;
       }
     },
     getOutputLength: function DeviceRgbCS_getOutputLength(inputLength) {
