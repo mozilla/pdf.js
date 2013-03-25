@@ -1932,6 +1932,7 @@ var PageView = function pageView(container, pdfPage, id, scale,
           PDFView.navigateTo(dest);
         return false;
       };
+      link.className = 'internalLink';
     }
     function createElementWithStyle(tagName, item, rect) {
       if (!rect) {
