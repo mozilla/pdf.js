@@ -189,7 +189,11 @@ var Annotation = (function AnnotationClosure() {
         return;
       }
 
-      return WidgetAnnotation;
+      if (fieldType === 'Tx') {
+        return TextWidgetAnnotation;
+      } else {
+        return WidgetAnnotation;
+      }
     } else {
       return Annotation;
     }
@@ -311,6 +315,128 @@ var WidgetAnnotation = (function WidgetAnnotationClosure() {
   });
 
   return WidgetAnnotation;
+})();
+
+var TextWidgetAnnotation = (function TextWidgetAnnotationClosure() {
+  function TextWidgetAnnotation(params) {
+    WidgetAnnotation.call(this, params);
+
+    if (params.data) {
+      return;
+    }
+
+    this.data.textAlignment = Util.getInheritableProperty(params.dict, 'Q');
+  }
+
+  // TODO(mack): This dupes some of the logic in CanvasGraphics.setFont()
+  function setTextStyles(element, item, fontObj) {
+
+    var style = element.style;
+    style.fontSize = item.fontSize + 'px';
+    style.direction = item.fontDirection < 0 ? 'rtl': 'ltr';
+
+    if (!fontObj) {
+      return;
+    }
+
+    style.fontWeight = fontObj.black ?
+                            (fontObj.bold ? 'bolder' : 'bold') :
+                            (fontObj.bold ? 'bold' : 'normal');
+    style.fontStyle = fontObj.italic ? 'italic' : 'normal';
+
+    var fontName = fontObj.loadedName;
+    var fontFamily = fontName ? '"' + fontName + '", ' : '';
+    // Use a reasonable default font if the font doesn't specify a fallback
+    var fallbackName = fontObj.fallbackName || 'Helvetica, sans-serif';
+    style.fontFamily = fontFamily + fallbackName;
+  }
+
+
+  var parent = WidgetAnnotation.prototype;
+  Util.inherit(TextWidgetAnnotation, WidgetAnnotation, {
+    hasHtml: function TextWidgetAnnotation_hasHtml() {
+      return !!this.data.fieldValue;
+    },
+
+    getHtmlElement: function TextWidgetAnnotation_getHtmlElement(commonObjs) {
+      assert(!isWorker, 'getHtmlElement() shall be called from main thread');
+
+      var item = this.data;
+
+      var element = this.getEmptyContainer('div');
+      element.style.display = 'table';
+
+      var content = document.createElement('div');
+      content.textContent = item.fieldValue;
+      var textAlignment = item.textAlignment;
+      content.style.textAlign = ['left', 'center', 'right'][textAlignment];
+      content.style.verticalAlign = 'middle';
+      content.style.display = 'table-cell';
+
+      var fontObj = item.fontRefName ?
+                    commonObjs.getData(item.fontRefName) : null;
+      var cssRules = setTextStyles(content, item, fontObj);
+
+      element.appendChild(content);
+
+      return element;
+    },
+
+    appendToOperatorList: function TextWidgetAnnotation_appendToOperatorList(
+                              operatorList, dependencies, evaluator) {
+
+      // Even if there is an appearance stream, ignore it. This is the
+      // behaviour used by Adobe Reader.
+
+      var defaultAppearance = this.data.defaultAppearance;
+      if (!defaultAppearance) {
+        return;
+      }
+
+      // Include any font resources found in the default appearance
+
+      var stream = new Stream(stringToBytes(defaultAppearance));
+      var list = evaluator.getOperatorList(stream, this.fieldResources,
+                                           dependencies);
+
+      var fnArray = operatorList.fnArray;
+      var argsArray = operatorList.argsArray;
+      var appearanceFnArray = list.fnArray;
+      var appearanceArgsArray = list.argsArray;
+
+      // TODO(mack): Add support for stroke color
+      this.data.rgb = [0, 0, 0];
+      for (var i = 0, n = fnArray.length; i < n; ++i) {
+        var fnName = appearanceFnArray[i];
+        var args = appearanceArgsArray[i];
+        if (fnName === 'dependency') {
+          var dependency = args[i];
+          if (dependency.indexOf('g_font_') === 0) {
+            this.data.fontRefName = dependency;
+          }
+          fnArray.push(fnName);
+          argsArray.push(args);
+        } else if (fnName === 'setFont') {
+          this.data.fontRefName = args[0];
+          var size = args[1];
+          if (size < 0) {
+            this.data.fontDirection = -1;
+            this.data.fontSize = -size;
+          } else {
+            this.data.fontDirection = 1;
+            this.data.fontSize = size;
+          }
+        } else if (fnName === 'setFillRGBColor') {
+          this.data.rgb = args;
+        } else if (fnName === 'setFillGray') {
+          var rgbValue = args[0] * 255;
+          this.data.rgb = [rgbValue, rgbValue, rgbValue];
+        }
+      }
+    }
+  });
+
+  return TextWidgetAnnotation;
 })();
 
 var TextAnnotation = (function TextAnnotationClosure() {
