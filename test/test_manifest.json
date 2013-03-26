@@ -729,6 +729,14 @@
       "link": true,
       "type": "eq"
     },
+    {  "id": "link-annotation-border",
+      "file": "pdfs/link-annotation-border.pdf",
+      "md5": "a1d07bc17482e32111c27a57283e07b8",
+      "rounds": 1,
+      "lastPage": 1,
+      "link": true,
+      "type": "eq"
+    },
     {  "id": "issue1002",
       "file": "pdfs/issue1002.pdf",
       "md5": "af62d6cd95079322d4af18edd960d15c",
