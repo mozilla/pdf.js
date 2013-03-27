@@ -74,8 +74,35 @@ var ColorSpace = (function ColorSpaceClosure() {
       if (this.isPassthrough(bits)) {
         return src.subarray(srcOffset);
       }
-      var destLength = this.getOutputLength(count * this.numComps);
-      var dest = new Uint8Array(destLength);
+      var dest = new Uint8Array(count * 3);
+      var numComponentColors = 1 << bits;
+      // Optimization: create a color map when there is just one component and
+      // we are converting more colors than the size of the color map. We
+      // don't build the map if the colorspace is gray or rgb since those
+      // methods are faster than building a map. This mainly offers big speed
+      // ups for indexed and alternate colorspaces.
+      if (this.numComps === 1 && count > numComponentColors &&
+          this.name !== 'DeviceGray' && this.name !== 'DeviceRGB') {
+        // TODO it may be worth while to cache the color map. While running
+        // testing I never hit a cache so I will leave that out for now (perhaps
+        // we are reparsing colorspaces too much?).
+        var allColors = bits <= 8 ? new Uint8Array(numComponentColors) :
+                                    new Uint16Array(numComponentColors);
+        for (var i = 0; i < numComponentColors; i++) {
+          allColors[i] = i;
+        }
+        var colorMap = new Uint8Array(numComponentColors * 3);
+        this.getRgbBuffer(allColors, 0, numComponentColors, colorMap, 0, bits);
+
+        var destOffset = 0;
+        for (var i = 0; i < count; ++i) {
+          var key = src[srcOffset++] * 3;
+          dest[destOffset++] = colorMap[key];
+          dest[destOffset++] = colorMap[key + 1];
+          dest[destOffset++] = colorMap[key + 2];
+        }
+        return dest;
+      }
       this.getRgbBuffer(src, srcOffset, count, dest, 0, bits);
       return dest;
     }
