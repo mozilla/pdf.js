@@ -17,7 +17,8 @@
 /* globals assertWellFormed, calculateMD5, Catalog, error, info, isArray,
            isArrayBuffer, isDict, isName, isStream, isString, Lexer,
            Linearization, NullStream, PartialEvaluator, shadow, Stream,
-           StreamsSequenceStream, stringToPDFString, TODO, Util, warn, XRef */
+           StreamsSequenceStream, stringToPDFString, TODO, Util, warn, XRef,
+           Annotation */
 
 'use strict';
 
@@ -100,7 +101,9 @@ function getPdf(arg, callback) {
 globalScope.PDFJS.getPdf = getPdf;
 globalScope.PDFJS.pdfBug = false;
 
+
 var Page = (function PageClosure() {
+
   function Page(xref, pageIndex, pageDict, ref) {
     this.pageIndex = pageIndex;
     this.pageDict = pageDict;
@@ -154,8 +157,8 @@ var Page = (function PageClosure() {
 
       return shadow(this, 'view', cropBox);
     },
-    get annotations() {
-      return shadow(this, 'annotations', this.inheritPageProp('Annots'));
+    get annotationRefs() {
+      return shadow(this, 'annotationRefs', this.inheritPageProp('Annots'));
     },
     get rotate() {
       var rotate = this.inheritPageProp('Rotate') || 0;
@@ -198,9 +201,24 @@ var Page = (function PageClosure() {
                                 'p' + this.pageIndex + '_');
 
       var list = pe.getOperatorList(contentStream, resources, dependency);
+      this.appendAnnotationsOperatorList(list, dependency, handler);
       pe.optimizeQueue(list);
       return list;
     },
+
+    appendAnnotationsOperatorList: function Page_appendAnnotationsOperatorList(
+                                       operatorList, dependency, handler) {
+
+      var evaluator = new PartialEvaluator(this.xref, handler, this.pageIndex,
+        'p' + this.pageIndex + '_annotation');
+
+      var annotations = this.annotations;
+      for (var i = 0, n = annotations.length; i < n; ++i) {
+        annotations[i].appendToOperatorList(
+          operatorList, dependency, evaluator);
+      }
+    },
+
     extractTextContent: function Page_extractTextContent() {
       var handler = {
         on: function nullHandlerOn() {},
@@ -216,160 +234,27 @@ var Page = (function PageClosure() {
                      'p' + this.pageIndex + '_');
       return pe.getTextContent(contentStream, resources);
     },
-    getLinks: function Page_getLinks() {
-      var links = [];
-      var annotations = this.getAnnotations();
-      var i, n = annotations.length;
-      for (i = 0; i < n; ++i) {
-        if (annotations[i].type != 'Link')
-          continue;
-        links.push(annotations[i]);
+
+    getAnnotationsData: function Page_getAnnotationsData() {
+      var annotations = this.annotations;
+      var annotationsData = [];
+      for (var i = 0, n = annotations.length; i < n; ++i) {
+        annotationsData.push(annotations[i].getData());
       }
-      return links;
+      return annotationsData;
     },
-    getAnnotations: function Page_getAnnotations() {
-      var xref = this.xref;
-      function getInheritableProperty(annotation, name) {
-        var item = annotation;
-        while (item && !item.has(name)) {
-          item = item.get('Parent');
-        }
-        if (!item)
-          return null;
-        return item.get(name);
-      }
-      function isValidUrl(url) {
-        if (!url)
-          return false;
-        var colon = url.indexOf(':');
-        if (colon < 0)
-          return false;
-        var protocol = url.substr(0, colon);
-        switch (protocol) {
-          case 'http':
-          case 'https':
-          case 'ftp':
-          case 'mailto':
-            return true;
-          default:
-            return false;
+
+    get annotations() {
+      var annotations = [];
+      var annotationRefs = this.annotationRefs || [];
+      for (var i = 0, n = annotationRefs.length; i < n; ++i) {
+        var annotationRef = annotationRefs[i];
+        var annotation = Annotation.fromRef(this.xref, annotationRef);
+        if (annotation) {
+          annotations.push(annotation);
         }
       }
-
-      var annotations = this.annotations || [];
-      var i, n = annotations.length;
-      var items = [];
-      for (i = 0; i < n; ++i) {
-        var annotationRef = annotations[i];
-        var annotation = xref.fetchIfRef(annotationRef);
-        if (!isDict(annotation))
-          continue;
-        var subtype = annotation.get('Subtype');
-        if (!isName(subtype))
-          continue;
-        var rect = annotation.get('Rect');
-
-        var item = {};
-        item.type = subtype.name;
-        item.rect = rect;
-        switch (subtype.name) {
-          case 'Link':
-            var a = annotation.get('A');
-            if (a) {
-              switch (a.get('S').name) {
-                case 'URI':
-                  var url = a.get('URI');
-                  // TODO: pdf spec mentions urls can be relative to a Base
-                  // entry in the dictionary.
-                  if (!isValidUrl(url))
-                    url = '';
-                  item.url = url;
-                  break;
-                case 'GoTo':
-                  item.dest = a.get('D');
-                  break;
-                case 'GoToR':
-                  var url = a.get('F');
-                  if (isDict(url)) {
-                    // We assume that the 'url' is a Filspec dictionary
-                    // and fetch the url without checking any further
-                    url = url.get('F') || '';
-                  }
-
-                  // TODO: pdf reference says that GoToR
-                  // can also have 'NewWindow' attribute
-                  if (!isValidUrl(url))
-                    url = '';
-                  item.url = url;
-                  item.dest = a.get('D');
-                  break;
-                default:
-                  TODO('unrecognized link type: ' + a.get('S').name);
-              }
-            } else if (annotation.has('Dest')) {
-              // simple destination link
-              var dest = annotation.get('Dest');
-              item.dest = isName(dest) ? dest.name : dest;
-            }
-            break;
-          case 'Widget':
-            var fieldType = getInheritableProperty(annotation, 'FT');
-            if (!isName(fieldType))
-              break;
-            item.fieldType = fieldType.name;
-            // Building the full field name by collecting the field and
-            // its ancestors 'T' properties and joining them using '.'.
-            var fieldName = [];
-            var namedItem = annotation, ref = annotationRef;
-            while (namedItem) {
-              var parent = namedItem.get('Parent');
-              var parentRef = namedItem.getRaw('Parent');
-              var name = namedItem.get('T');
-              if (name) {
-                fieldName.unshift(stringToPDFString(name));
-              } else {
-                // The field name is absent, that means more than one field
-                // with the same name may exist. Replacing the empty name
-                // with the '`' plus index in the parent's 'Kids' array.
-                // This is not in the PDF spec but necessary to id the
-                // the input controls.
-                var kids = parent.get('Kids');
-                var j, jj;
-                for (j = 0, jj = kids.length; j < jj; j++) {
-                  var kidRef = kids[j];
-                  if (kidRef.num == ref.num && kidRef.gen == ref.gen)
-                    break;
-                }
-                fieldName.unshift('`' + j);
-              }
-              namedItem = parent;
-              ref = parentRef;
-            }
-            item.fullName = fieldName.join('.');
-            var alternativeText = stringToPDFString(annotation.get('TU') || '');
-            item.alternativeText = alternativeText;
-            var da = getInheritableProperty(annotation, 'DA') || '';
-            var m = /([\d\.]+)\sTf/.exec(da);
-            if (m)
-              item.fontSize = parseFloat(m[1]);
-            item.textAlignment = getInheritableProperty(annotation, 'Q');
-            item.flags = getInheritableProperty(annotation, 'Ff') || 0;
-            break;
-          case 'Text':
-            var content = annotation.get('Contents');
-            var title = annotation.get('T');
-            item.content = stringToPDFString(content || '');
-            item.title = stringToPDFString(title || '');
-            item.name = !annotation.has('Name') ? 'Note' :
-              annotation.get('Name').name;
-            break;
-          default:
-            TODO('unimplemented annotation type: ' + subtype.name);
-            break;
-        }
-        items.push(item);
-      }
-      return items;
+      return shadow(this, 'annotations', annotations);
     }
   };
 
