@@ -595,6 +595,34 @@ var tests = [
     },
     impact: 'Important',
     area: 'Core'
+  },
+  {
+    id: 'Canvas Blend Mode',
+    name: 'Canvas supports extended blend modes',
+    run: function () {
+      var fail = { output: 'Failed', emulated: 'No' };
+      var ctx = document.createElement('canvas').getContext('2d');
+      ctx.canvas.width = 1;
+      ctx.canvas.height = 1;
+      var mode = 'difference';
+      ctx.globalCompositeOperation = mode;
+      if (ctx.globalCompositeOperation !== mode) {
+        return fail;
+      }
+      // Chrome supports setting the value, but it may not actually be
+      // implemented, so we have to actually test the blend mode.
+      ctx.fillStyle = 'red';
+      ctx.fillRect(0, 0, 1, 1);
+      ctx.fillStyle = 'blue';
+      ctx.fillRect(0, 0, 1, 1);
+      var pix = ctx.getImageData(0, 0, 1, 1).data;
+      if (pix[0] !== 255 || pix[1] !== 0 || pix[2] !== 255) {
+        return fail;
+      }
+      return { output: 'Success', emulated: '' };
+    },
+    impact: 'Important',
+    area: 'Core'
   }
 ];
 
