@@ -10,5 +10,11 @@
   "repository": {
     "type": "git",
     "url": "git://github.com/mozilla/pdf.js.git"
-  }
+  },
+  "licenses": [
+    {
+      "type": "Apache v2",
+      "url": "https://github.com/mozilla/pdf.js/blob/master/LICENSE"
+    }
+  ]
 }
