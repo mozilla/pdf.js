@@ -2484,6 +2484,10 @@ var Font = (function FontClosure() {
         // Repair the TrueType file. It is can be damaged in the point of
         // view of the sanitizer
         data = this.checkAndRepair(name, file, properties);
+        if (!data) {
+          // TrueType data is not found, e.g. when the font is an OpenType font
+          warn('Font is not a TrueType font');
+        }
         break;
 
       default:
@@ -3830,6 +3834,8 @@ var Font = (function FontClosure() {
             prep = table;
           else if (table.tag == 'cvt ')
             cvt = table;
+          else if (table.tag == 'CFF ')
+            return null; // XXX: OpenType font is found, stopping
           else // skipping table if it's not a required or optional table
             continue;
         }
@@ -5463,6 +5469,7 @@ Type1Font.prototype = {
   getOrderedCharStrings: function Type1Font_getOrderedCharStrings(glyphs,
                                                             properties) {
     var charstrings = [];
+    var usedUnicodes = [];
     var i, length, glyphName;
     var unusedUnicode = CMAP_GLYPH_OFFSET;
     for (i = 0, length = glyphs.length; i < length; i++) {
@@ -5470,6 +5477,10 @@ Type1Font.prototype = {
       var glyphName = item.glyph;
       var unicode = glyphName in GlyphsUnicode ?
         GlyphsUnicode[glyphName] : unusedUnicode++;
+      while (usedUnicodes[unicode]) {
+        unicode = unusedUnicode++;
+      }
+      usedUnicodes[unicode] = true;
       charstrings.push({
         glyph: glyphName,
         unicode: unicode,
