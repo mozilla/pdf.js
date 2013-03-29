@@ -50,7 +50,6 @@ function load() {
   var delay = params.delay || 0;
 
   canvas = document.createElement('canvas');
-  canvas.mozOpaque = true;
   stdout = document.getElementById('stdout');
 
   info('User Agent: ' + navigator.userAgent);
