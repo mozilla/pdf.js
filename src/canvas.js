@@ -426,6 +426,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       if (transparency) {
         this.ctx.clearRect(0, 0, width, height);
       } else {
+        this.ctx.mozOpaque = true;
         this.ctx.save();
         this.ctx.fillStyle = 'rgb(255, 255, 255)';
         this.ctx.fillRect(0, 0, width, height);
