@@ -394,10 +394,7 @@ function info(message) {
 }
 
 function clear(ctx) {
-  ctx.save();
-  ctx.fillStyle = 'rgb(255, 255, 255)';
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-  ctx.restore();
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
 }
 
 /* Auto-scroll if the scrollbar is near the bottom, otherwise do nothing. */
