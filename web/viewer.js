@@ -2200,19 +2200,21 @@ var PageView = function pageView(container, id, scale,
     div.appendChild(canvas);
     this.canvas = canvas;
 
-    var textLayerDiv = null;
-    if (!PDFJS.disableTextLayer) {
-      textLayerDiv = document.createElement('div');
-      textLayerDiv.className = 'textLayer';
-      div.appendChild(textLayerDiv);
-    }
-    var textLayer = this.textLayer =
-          textLayerDiv ? new TextLayerBuilder(textLayerDiv, this.id - 1) : null;
-
     var scale = this.scale, viewport = this.viewport;
     var outputScale = PDFView.getOutputScale();
     canvas.width = Math.floor(viewport.width) * outputScale.sx;
     canvas.height = Math.floor(viewport.height) * outputScale.sy;
+
+    var textLayerDiv = null;
+    if (!PDFJS.disableTextLayer) {
+      textLayerDiv = document.createElement('div');
+      textLayerDiv.className = 'textLayer';
+      textLayerDiv.style.width = canvas.width + 'px';
+      textLayerDiv.style.height = canvas.height + 'px';
+      div.appendChild(textLayerDiv);
+    }
+    var textLayer = this.textLayer =
+          textLayerDiv ? new TextLayerBuilder(textLayerDiv, this.id - 1) : null;
 
     if (outputScale.scaled) {
       var cssScale = 'scale(' + (1 / outputScale.sx) + ', ' +
