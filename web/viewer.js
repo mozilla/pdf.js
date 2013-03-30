@@ -3494,9 +3494,9 @@ window.addEventListener('keydown', function keydown(evt) {
 
   // Some shortcuts should not get handled if a control/input element
   // is selected.
-  var curElement = document.activeElement;
-  if (curElement && (curElement.tagName == 'INPUT' ||
-                     curElement.tagName == 'SELECT')) {
+  var curElement = document.activeElement || document.querySelector(':focus');
+  if (curElement && (curElement.tagName.toUpperCase() === 'INPUT' ||
+                     curElement.tagName.toUpperCase() === 'SELECT')) {
     return;
   }
   var controlsElement = document.getElementById('toolbar');
