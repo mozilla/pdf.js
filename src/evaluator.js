@@ -361,8 +361,11 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           }, handler, xref, resources, image, inline);
       }
 
-      if (!queue)
-        queue = {};
+      if (!queue) {
+        queue = {
+          transparency: false
+        };
+      }
 
       if (!queue.argsArray) {
         queue.argsArray = [];
@@ -532,7 +535,6 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                     case 'FL':
                     case 'CA':
                     case 'ca':
-                    case 'BM':
                       gsStateObj.push([key, value]);
                       break;
                     case 'Font':
@@ -541,6 +543,12 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                         handleSetFont(null, value[0]),
                         value[1]
                       ]);
+                      break;
+                    case 'BM':
+                      if (!isName(value) || value.name !== 'Normal') {
+                        queue.transparency = true;
+                      }
+                      gsStateObj.push([key, value]);
                       break;
                     case 'SMask':
                       // We support the default so don't trigger the TODO.
