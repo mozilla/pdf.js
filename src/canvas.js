@@ -415,7 +415,24 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       'shadingFill': true
     },
 
-    beginDrawing: function CanvasGraphics_beginDrawing(viewport) {
+    beginDrawing: function CanvasGraphics_beginDrawing(viewport, transparency) {
+      // For pdfs that use blend modes we have to clear the canvas else certain
+      // blend modes can look wrong since we'd be blending with a white
+      // backdrop. The problem with a transparent backdrop though is we then
+      // don't get sub pixel anti aliasing on text, so we fill with white if
+      // we can.
+      var width = this.ctx.canvas.width;
+      var height = this.ctx.canvas.height;
+      if (transparency) {
+        this.ctx.clearRect(0, 0, width, height);
+      } else {
+        this.ctx.mozOpaque = true;
+        this.ctx.save();
+        this.ctx.fillStyle = 'rgb(255, 255, 255)';
+        this.ctx.fillRect(0, 0, width, height);
+        this.ctx.restore();
+      }
+
       var transform = viewport.transform;
       this.ctx.save();
       this.ctx.transform.apply(this.ctx, transform);

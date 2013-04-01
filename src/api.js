@@ -384,11 +384,11 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
       var stats = this.stats;
       stats.time('Rendering');
 
-      gfx.beginDrawing(viewport);
+      var operatorList = this.operatorList;
+      gfx.beginDrawing(viewport, operatorList.transparency);
 
       var startIdx = 0;
-      var length = this.operatorList.fnArray.length;
-      var operatorList = this.operatorList;
+      var length = operatorList.fnArray.length;
       var stepper = null;
       if (PDFJS.pdfBug && 'StepperManager' in globalScope &&
           globalScope['StepperManager'].enabled) {

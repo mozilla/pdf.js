@@ -50,7 +50,6 @@ function load() {
   var delay = params.delay || 0;
 
   canvas = document.createElement('canvas');
-  canvas.mozOpaque = true;
   stdout = document.getElementById('stdout');
 
   info('User Agent: ' + navigator.userAgent);
@@ -394,10 +393,7 @@ function info(message) {
 }
 
 function clear(ctx) {
-  ctx.save();
-  ctx.fillStyle = 'rgb(255, 255, 255)';
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-  ctx.restore();
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
 }
 
 /* Auto-scroll if the scrollbar is near the bottom, otherwise do nothing. */
