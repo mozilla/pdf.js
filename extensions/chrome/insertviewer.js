@@ -60,9 +60,17 @@ function replaceDocumentWithViewer(url) {
 
     // Remove all <script> elements (added back later).
     // I assumed that no inline script tags exist.
-    var scripts = [];
+    var scripts = [], script;
+
+    // new Worker('chrome-extension://..../pdf.js') fails, despite having
+    // the correct permissions. Fix it:
+    script = document.createElement('script');
+    script.onload = loadNextScript;
+    script.src = chrome.extension.getURL('patch-worker.js');
+    scripts.push(script);
+
     while (x.response.scripts.length) {
-      var script = x.response.scripts[0];
+      script = x.response.scripts[0];
       var newScript = document.createElement('script');
       newScript.onload = loadNextScript;
       newScript.src = script.src;

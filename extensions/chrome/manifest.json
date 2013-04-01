@@ -24,6 +24,7 @@
     "page": "pdfHandler.html"
   },
   "web_accessible_resources": [
+    "patch-worker.js",
     "content/*"
   ]
 }
