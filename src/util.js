@@ -358,6 +358,10 @@ var Util = PDFJS.Util = (function UtilClosure() {
     return num < 0 ? -1 : 1;
   };
 
+  Util.concatenateToArray = function concatenateToArray(arr1, arr2) {
+    return Array.prototype.push.apply(arr1, arr2);
+  };
+
   return Util;
 })();
 
