@@ -17,7 +17,7 @@
 /* globals assert, bytesToString, CIDToUnicodeMaps, error, ExpertCharset,
            ExpertSubsetCharset, FileReaderSync, globalScope, GlyphsUnicode,
            info, isArray, isNum, ISOAdobeCharset, isWorker, PDFJS, Stream,
-           stringToBytes, TextDecoder, TODO, warn */
+           stringToBytes, TextDecoder, TODO, warn, Lexer */
 
 'use strict';
 
@@ -5063,8 +5063,11 @@ var Type1CharString = (function Type1CharStringClosure() {
  * Type1Parser encapsulate the needed code for parsing a Type1 font
  * program. Some of its logic depends on the Type2 charstrings
  * structure.
+ * Note: this doesn't really parse the font since that would require evaluation
+ * of PostScript, but it is possible in most cases to extract what we need
+ * without a full parse.
  */
-var Type1Parser = function type1Parser() {
+var Type1Parser = (function Type1ParserClosure() {
   /*
    * Decrypt a Sequence of Ciphertext Bytes to Produce the Original Sequence
    * of Plaintext Bytes. The function took a key as a parameter which can be
@@ -5087,271 +5090,258 @@ var Type1Parser = function type1Parser() {
     return decryptedString.slice(discardNumber);
   }
 
-  /*
-   * Returns an object containing a Subrs array and a CharStrings
-   * array extracted from and eexec encrypted block of data
-   */
-  function readNumberArray(str, index) {
-    var start = index;
-    while (str[index++] != '[')
-      start++;
-    start++;
-
-    var count = 0;
-    while (str[index++] != ']')
-      count++;
-
-    str = str.substr(start, count);
-
-    str = str.trim();
-    // Remove adjacent spaces
-    str = str.replace(/\s+/g, ' ');
-
-    var array = str.split(' ');
-    for (var i = 0, ii = array.length; i < ii; i++)
-      array[i] = parseFloat(array[i] || 0);
-    return array;
+  function isSpecial(c) {
+    return c === '/' ||
+           c === '[' || c === ']' ||
+           c === '{' || c === '}' ||
+           c === '(' || c === ')';
   }
 
-  function readNumber(str, index) {
-    while (str[index] == ' ')
-      index++;
-
-    var start = index;
-
-    var count = 0;
-    while (str[index++] != ' ')
-      count++;
-
-    return parseFloat(str.substr(start, count) || 0);
-  }
-
-  function readBoolean(str, index) {
-    while (str[index] == ' ')
-      index++;
-
-    var start = index;
-
-    var count = 0;
-    var length = str.length;
-    while (index < length && str[index++] != ' ') {
-      count++;
+  function Type1Parser(stream, encrypted) {
+    if (encrypted) {
+      stream = new Stream(decrypt(stream.getBytes(), EEXEC_ENCRYPT_KEY, 4));
     }
-
-    // Use 1 and 0 since that's what type2 charstrings use.
-    return str.substr(start, count) === 'true' ? 1 : 0;
+    this.stream = stream;
   }
 
-
-  function isSeparator(c) {
-    return c == ' ' || c == '\n' || c == '\x0d';
-  }
-
-  this.extractFontProgram = function Type1Parser_extractFontProgram(stream) {
-    var eexec = decrypt(stream, EEXEC_ENCRYPT_KEY, 4);
-    var eexecStr = '';
-    for (var i = 0, ii = eexec.length; i < ii; i++)
-      eexecStr += String.fromCharCode(eexec[i]);
-
-    var glyphsSection = false, subrsSection = false;
-    var subrs = [], charstrings = [];
-    var program = {
-      subrs: [],
-      charstrings: [],
-      properties: {
-        'privateData': {
-          'lenIV': 4
+  Type1Parser.prototype = {
+    readNumberArray: function Type1Parser_readNumberArray() {
+      this.getToken(); // read '[' or '{' (arrays can start with either)
+      var array = [];
+      while (true) {
+        var token = this.getToken();
+        if (token === null || token === ']' || token === '}') {
+          break;
         }
+        array.push(parseFloat(token || 0));
       }
-    };
+      return array;
+    },
 
-    var glyph = '';
-    var token = '';
-    var length = 0;
+    readNumber: function Type1Parser_readNumber() {
+      var token = this.getToken();
+      return parseFloat(token || 0);
+    },
 
-    var c = '';
-    var count = eexecStr.length;
-    for (var i = 0; i < count; i++) {
-      var getToken = function getToken() {
-        while (i < count && isSeparator(eexecStr[i]))
-          ++i;
+    readInt: function Type1Parser_readInt() {
+      // Use '| 0' to prevent setting a double into length such as the double
+      // does not flow into the loop variable.
+      var token = this.getToken();
+      return parseInt(token || 0, 10) | 0;
+    },
 
-        var token = '';
-        while (i < count && !isSeparator(eexecStr[i]))
-          token += eexecStr[i++];
+    readBoolean: function Type1Parser_readBoolean() {
+      var token = this.getToken();
 
-        return token;
-      };
-      var c = eexecStr[i];
+      // Use 1 and 0 since that's what type2 charstrings use.
+      return token === 'true' ? 1 : 0;
+    },
 
-      if ((glyphsSection || subrsSection) &&
-          (token == 'RD' || token == '-|')) {
-        i++;
-        var data = eexec.slice(i, i + length);
-        var lenIV = program.properties.privateData['lenIV'];
-        var encoded = decrypt(data, CHAR_STRS_ENCRYPT_KEY, lenIV);
+    getToken: function Type1Parser_getToken() {
+      // Eat whitespace and comments.
+      var comment = false;
+      var ch;
+      var stream = this.stream;
+      while (true) {
+        if ((ch = stream.lookChar()) === null)
+          return null;
 
-        if (glyphsSection) {
-          charstrings.push({
-            glyph: glyph,
-            encoded: encoded
-          });
-        } else {
-          subrs.push(encoded);
-        }
-        i += length;
-        token = '';
-      } else if (isSeparator(c)) {
-        // Use '| 0' to prevent setting a double into length such as the double
-        // does not flow into the loop variable.
-        length = parseInt(token, 10) | 0;
-        token = '';
-      } else {
-        token += c;
-        if (!glyphsSection) {
-          switch (token) {
-            case '/CharString':
-              glyphsSection = true;
-              break;
-            case '/Subrs':
-              ++i;
-              var num = parseInt(getToken(), 10);
-              getToken(); // read in 'array'
-              for (var j = 0; j < num; ++j) {
-                var t = getToken(); // read in 'dup'
-                if (t == 'ND' || t == '|-' || t == 'noaccess')
-                  break;
-                var index = parseInt(getToken(), 10);
-                if (index > j)
-                  j = index;
-                var length = parseInt(getToken(), 10);
-                getToken(); // read in 'RD'
-                var data = eexec.slice(i + 1, i + 1 + length);
-                var lenIV = program.properties.privateData['lenIV'];
-                var encoded = decrypt(data, CHAR_STRS_ENCRYPT_KEY, lenIV);
-                i = i + 1 + length;
-                t = getToken(); // read in 'NP'
-                if (t == 'noaccess')
-                  getToken(); // read in 'put'
-                subrs[index] = encoded;
-              }
-              break;
-            case '/BlueValues':
-            case '/OtherBlues':
-            case '/FamilyBlues':
-            case '/FamilyOtherBlues':
-              var blueArray = readNumberArray(eexecStr, i + 1);
-              // *Blue* values may contain invalid data: disables reading of
-              // those values when hinting is disabled.
-              if (blueArray.length > 0 && (blueArray.length % 2) === 0 &&
-                  HINTING_ENABLED) {
-                program.properties.privateData[token.substring(1)] = blueArray;
-              }
-              break;
-            case '/StemSnapH':
-            case '/StemSnapV':
-              program.properties.privateData[token.substring(1)] =
-                readNumberArray(eexecStr, i + 1);
-              break;
-            case '/StdHW':
-            case '/StdVW':
-              program.properties.privateData[token.substring(1)] =
-                readNumberArray(eexecStr, i + 1)[0];
-              break;
-            case '/BlueShift':
-            case '/lenIV':
-            case '/BlueFuzz':
-            case '/BlueScale':
-            case '/LanguageGroup':
-            case '/ExpansionFactor':
-              program.properties.privateData[token.substring(1)] =
-                readNumber(eexecStr, i + 1);
-              break;
-            case '/ForceBold':
-              program.properties.privateData[token.substring(1)] =
-                readBoolean(eexecStr, i + 1);
-              break;
+        if (comment) {
+          if (ch === '\x0a' || ch === '\x0d') {
+            comment = false;
           }
-        } else if (c == '/') {
-          token = glyph = '';
-          while ((c = eexecStr[++i]) != ' ')
-            glyph += c;
+        } else if (ch === '%') {
+          comment = true;
+        } else if (!Lexer.isSpace(ch)) {
+          break;
         }
+        stream.skip();
       }
-    }
-
-    for (var i = 0; i < charstrings.length; i++) {
-      var glyph = charstrings[i].glyph;
-      var encoded = charstrings[i].encoded;
-      var charString = new Type1CharString();
-      var error = charString.convert(encoded, subrs);
-      var output = charString.output;
-      if (error) {
-        // It seems when FreeType encounters an error while evaluating a glyph
-        // that it completely ignores the glyph so we'll mimic that behaviour
-        // here and put an endchar to make the validator happy.
-        output = [14];
+      if (isSpecial(ch)) {
+        stream.skip();
+        return ch;
       }
-      program.charstrings.push({
-        glyph: glyph,
-        data: output,
-        seac: charString.seac,
-        lsb: charString.lsb,
-        width: charString.width
-      });
-    }
+      var token = '';
+      do {
+        token += ch;
+        stream.skip();
+        ch = stream.lookChar();
+      } while (ch !== null && !Lexer.isSpace(ch) && !isSpecial(ch));
+      return token;
+    },
 
-    return program;
-  };
+    /*
+     * Returns an object containing a Subrs array and a CharStrings
+     * array extracted from and eexec encrypted block of data
+     */
+    extractFontProgram: function Type1Parser_extractFontProgram() {
+      var stream = this.stream;
 
-  this.extractFontHeader = function Type1Parser_extractFontHeader(stream,
-                                                                  properties) {
-    var headerString = '';
-    for (var i = 0, ii = stream.length; i < ii; i++)
-      headerString += String.fromCharCode(stream[i]);
-
-    var token = '';
-    var count = headerString.length;
-    for (var i = 0; i < count; i++) {
-      var getToken = function getToken() {
-        var character = headerString[i];
-        while (i < count && (isSeparator(character) || character == '/'))
-          character = headerString[++i];
-
-        var token = '';
-        while (i < count && !(isSeparator(character) || character == '/')) {
-          token += character;
-          character = headerString[++i];
+      var subrs = [], charstrings = [];
+      var program = {
+        subrs: [],
+        charstrings: [],
+        properties: {
+          'privateData': {
+            'lenIV': 4
+          }
         }
-
-        return token;
       };
-
-      var c = headerString[i];
-      if (isSeparator(c)) {
+      var token;
+      while ((token = this.getToken()) !== null) {
+        if (token !== '/') {
+          continue;
+        }
+        token = this.getToken();
         switch (token) {
-          case '/FontMatrix':
-            var matrix = readNumberArray(headerString, i + 1);
+          case 'CharStrings':
+            // The number immediately following CharStrings must be greater or
+            // equal to the number of CharStrings.
+            this.getToken();
+            this.getToken(); // read in 'dict'
+            this.getToken(); // read in 'dup'
+            this.getToken(); // read in 'begin'
+            while(true) {
+              token = this.getToken();
+              if (token === null || token === 'end') {
+                break;
+              }
+
+              if (token !== '/') {
+                continue;
+              }
+              var glyph = this.getToken();
+              var length = this.readInt();
+              this.getToken(); // read in 'RD' or '-|'
+              var data = stream.makeSubStream(stream.pos + 1, length);
+              var lenIV = program.properties.privateData['lenIV'];
+              var encoded = decrypt(data.getBytes(), CHAR_STRS_ENCRYPT_KEY,
+                                    lenIV);
+              // Skip past the required space and binary data.
+              stream.skip(1 + length);
+              token = this.getToken(); // read in 'ND' or '|-'
+              if (token === 'noaccess') {
+                this.getToken(); // read in 'def'
+              }
+              charstrings.push({
+                glyph: glyph,
+                encoded: encoded
+              });
+            }
+            break;
+          case 'Subrs':
+            var num = this.readInt();
+            this.getToken(); // read in 'array'
+            for (var j = 0; j < num; ++j) {
+              token = this.getToken(); // read in 'dup'
+              var index = this.readInt();
+              if (index > j)
+                j = index;
+              var length = this.readInt();
+              this.getToken(); // read in 'RD' or '-|'
+              var data = stream.makeSubStream(stream.pos + 1, length);
+              var lenIV = program.properties.privateData['lenIV'];
+              var encoded = decrypt(data.getBytes(), CHAR_STRS_ENCRYPT_KEY,
+                                    lenIV);
+              // Skip past the required space and binary data.
+              stream.skip(1 + length);
+              token = this.getToken(); // read in 'NP' or '|'
+              if (token === 'noaccess') {
+                this.getToken(); // read in 'put'
+              }
+              subrs[index] = encoded;
+            }
+            break;
+          case 'BlueValues':
+          case 'OtherBlues':
+          case 'FamilyBlues':
+          case 'FamilyOtherBlues':
+            var blueArray = this.readNumberArray();
+            // *Blue* values may contain invalid data: disables reading of
+            // those values when hinting is disabled.
+            if (blueArray.length > 0 && (blueArray.length % 2) === 0 &&
+                HINTING_ENABLED) {
+              program.properties.privateData[token] = blueArray;
+            }
+            break;
+          case 'StemSnapH':
+          case 'StemSnapV':
+            program.properties.privateData[token] = this.readNumberArray();
+            break;
+          case 'StdHW':
+          case 'StdVW':
+            program.properties.privateData[token] =
+              this.readNumberArray()[0];
+            break;
+          case 'BlueShift':
+          case 'lenIV':
+          case 'BlueFuzz':
+          case 'BlueScale':
+          case 'LanguageGroup':
+          case 'ExpansionFactor':
+            program.properties.privateData[token] = this.readNumber();
+            break;
+          case 'ForceBold':
+            program.properties.privateData[token] = this.readBoolean();
+            break;
+        }
+      }
+
+      for (var i = 0; i < charstrings.length; i++) {
+        var glyph = charstrings[i].glyph;
+        var encoded = charstrings[i].encoded;
+        var charString = new Type1CharString();
+        var error = charString.convert(encoded, subrs);
+        var output = charString.output;
+        if (error) {
+          // It seems when FreeType encounters an error while evaluating a glyph
+          // that it completely ignores the glyph so we'll mimic that behaviour
+          // here and put an endchar to make the validator happy.
+          output = [14];
+        }
+        program.charstrings.push({
+          glyph: glyph,
+          data: output,
+          seac: charString.seac,
+          lsb: charString.lsb,
+          width: charString.width
+        });
+      }
+
+      return program;
+    },
+
+    extractFontHeader: function Type1Parser_extractFontHeader(properties) {
+      var token;
+      while ((token = this.getToken()) !== null) {
+        if (token !== '/') {
+          continue;
+        }
+        token = this.getToken();
+        switch (token) {
+          case 'FontMatrix':
+            var matrix = this.readNumberArray();
             properties.fontMatrix = matrix;
             break;
-          case '/Encoding':
-            var encodingArg = getToken();
+          case 'Encoding':
+            var encodingArg = this.getToken();
             var encoding;
             if (!/^\d+$/.test(encodingArg)) {
               // encoding name is specified
               encoding = Encodings[encodingArg];
             } else {
               encoding = [];
-              var size = parseInt(encodingArg, 10);
-              getToken(); // read in 'array'
+              var size = parseInt(encodingArg, 10) | 0;
+              this.getToken(); // read in 'array'
 
               for (var j = 0; j < size; j++) {
-                var token = getToken();
-                if (token == 'dup') {
-                  var index = parseInt(getToken(), 10);
-                  var glyph = getToken();
+                var token = this.getToken();
+                if (token === 'dup') {
+                  var index = this.readInt();
+                  this.getToken(); // read in '/'
+                  var glyph = this.getToken();
                   encoding[index] = glyph;
-                  getToken(); // read the in 'put'
+                  this.getToken(); // read the in 'put'
                 }
               }
             }
@@ -5361,13 +5351,12 @@ var Type1Parser = function type1Parser() {
             }
             break;
         }
-        token = '';
-      } else {
-        token += c;
       }
     }
   };
-};
+
+  return Type1Parser;
+})();
 
 /**
  * The CFF class takes a Type1 file and wrap it into a
@@ -5441,17 +5430,17 @@ var CFFStandardStrings = [
   'Black', 'Bold', 'Book', 'Light', 'Medium', 'Regular', 'Roman', 'Semibold'
 ];
 
-var type1Parser = new Type1Parser();
-
 // Type1Font is also a CIDFontType0.
 var Type1Font = function Type1Font(name, file, properties) {
   // Get the data block containing glyphs and subrs informations
-  var headerBlock = file.getBytes(properties.length1);
-  type1Parser.extractFontHeader(headerBlock, properties);
+  var headerBlock = new Stream(file.getBytes(properties.length1));
+  var headerBlockParser = new Type1Parser(headerBlock);
+  headerBlockParser.extractFontHeader(properties);
 
   // Decrypt the data blocks and retrieve it's content
-  var eexecBlock = file.getBytes(properties.length2);
-  var data = type1Parser.extractFontProgram(eexecBlock);
+  var eexecBlock = new Stream(file.getBytes(properties.length2));
+  var eexecBlockParser = new Type1Parser(eexecBlock, true);
+  var data = eexecBlockParser.extractFontProgram();
   for (var info in data.properties)
     properties[info] = data.properties[info];
 
