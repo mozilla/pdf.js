@@ -886,7 +886,7 @@ var PDFView = {
                   doc.webkitRequestFullScreen;
 
     // Disable fullscreen button if we're in an iframe
-    if (!!window.frameElement)
+    if (window.parent !== window)
       support = false;
 
     Object.defineProperty(this, 'supportsFullScreen', { value: support,
