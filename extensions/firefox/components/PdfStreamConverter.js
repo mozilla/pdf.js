@@ -268,10 +268,13 @@ ChromeActions.prototype = {
       var channel = Cc['@mozilla.org/network/input-stream-channel;1'].
                        createInstance(Ci.nsIInputStreamChannel);
       channel.QueryInterface(Ci.nsIChannel);
-      channel.contentDisposition = Ci.nsIChannel.DISPOSITION_ATTACHMENT;
-      if (self.contentDispositionFilename) {
-        channel.contentDispositionFilename = self.contentDispositionFilename;
-      }
+      try {
+        // contentDisposition/contentDispositionFilename is readonly before FF18
+        channel.contentDisposition = Ci.nsIChannel.DISPOSITION_ATTACHMENT;
+        if (self.contentDispositionFilename) {
+           channel.contentDispositionFilename = self.contentDispositionFilename;
+        }
+      } catch (e) {}
       channel.setURI(originalUri);
       channel.contentStream = aInputStream;
       if ('nsIPrivateBrowsingChannel' in Ci &&
