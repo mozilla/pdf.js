@@ -88,6 +88,18 @@ select {
   margin-bottom: 100%;
 }
 
+:-webkit-full-screen a:not(.internalLink) {
+  display: none;
+}
+
+:-moz-full-screen a:not(.internalLink) {
+  display: none;
+}
+
+:fullscreen a:not(.internalLink) {
+  display: none;
+}
+
 #viewerContainer.presentationControls {
   cursor: default;
 }
