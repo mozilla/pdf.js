@@ -52,59 +52,68 @@ var Cmd = (function CmdClosure() {
 })();
 
 var Dict = (function DictClosure() {
+  var nonSerializable = function nonSerializableClosure() {
+    return nonSerializable; // creating closure on some variable
+  };
+
   // xref is optional
   function Dict(xref) {
     // Map should only be used internally, use functions below to access.
-    var map = Object.create(null);
+    this.map = Object.create(null);
+    this.xref = xref;
+    this.__nonSerializable__ = nonSerializable; // disable cloning of the Dict
+  }
 
-    this.assignXref = function Dict_assignXref(newXref) {
-      xref = newXref;
-    };
+  Dict.prototype = {
+    assignXref: function Dict_assingXref(newXref) {
+      this.xref = newXref;
+    },
 
     // automatically dereferences Ref objects
-    this.get = function Dict_get(key1, key2, key3) {
+    get: function Dict_get(key1, key2, key3) {
       var value;
-      if (typeof (value = map[key1]) != 'undefined' || key1 in map ||
+      var xref = this.xref;
+      if (typeof (value = this.map[key1]) != 'undefined' || key1 in this.map ||
           typeof key2 == 'undefined') {
         return xref ? xref.fetchIfRef(value) : value;
       }
-      if (typeof (value = map[key2]) != 'undefined' || key2 in map ||
+      if (typeof (value = this.map[key2]) != 'undefined' || key2 in this.map ||
           typeof key3 == 'undefined') {
         return xref ? xref.fetchIfRef(value) : value;
       }
-      value = map[key3] || null;
+      value = this.map[key3] || null;
       return xref ? xref.fetchIfRef(value) : value;
-    };
+    },
 
     // no dereferencing
-    this.getRaw = function Dict_getRaw(key) {
-      return map[key];
-    };
+    getRaw: function Dict_getRaw(key) {
+      return this.map[key];
+    },
 
     // creates new map and dereferences all Refs
-    this.getAll = function Dict_getAll() {
+    getAll: function Dict_getAll() {
       var all = {};
-      for (var key in map) {
+      for (var key in this.map) {
         var obj = this.get(key);
         all[key] = obj instanceof Dict ? obj.getAll() : obj;
       }
       return all;
-    };
+    },
 
-    this.set = function Dict_set(key, value) {
-      map[key] = value;
-    };
+    set: function Dict_set(key, value) {
+      this.map[key] = value;
+    },
 
-    this.has = function Dict_has(key) {
-      return key in map;
-    };
+    has: function Dict_has(key) {
+      return key in this.map;
+    },
 
-    this.forEach = function Dict_forEach(callback) {
-      for (var key in map) {
+    forEach: function Dict_forEach(callback) {
+      for (var key in this.map) {
         callback(key, this.get(key));
       }
-    };
-  }
+    }
+  };
 
   return Dict;
 })();
