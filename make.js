@@ -591,6 +591,7 @@ target.chrome = function() {
       [['extensions/chrome/*.json',
         'extensions/chrome/*.html',
         'extensions/chrome/*.js',
+        'extensions/chrome/*.css',
         'extensions/chrome/icon*.png',],
        CHROME_BUILD_DIR],
       ['external/webL10n/l10n.js', CHROME_BUILD_CONTENT_DIR + '/web'],
@@ -605,6 +606,22 @@ target.chrome = function() {
 
   // Update the build version number
   sed('-i', /PDFJSSCRIPT_VERSION/, EXTENSION_VERSION,
+      CHROME_BUILD_DIR + '/manifest.json');
+
+  // Allow PDF.js resources to be loaded by adding the files to
+  // the "web_accessible_resources" section.
+  var file_list = ls('-RA', CHROME_BUILD_CONTENT_DIR);
+  var public_chrome_files = file_list.reduce(function(war, file) {
+    // Exclude directories (naive: Exclude paths without dot)
+    if (file.indexOf('.') !== -1) {
+        // Only add a comma after the first file
+        if (war)
+          war += ',\n';
+        war += JSON.stringify('content/' + file);
+    }
+    return war;
+  }, '');
+  sed('-i', /"content\/\*"/, public_chrome_files,
       CHROME_BUILD_DIR + '/manifest.json');
 
   // Bundle the files to a Chrome extension file .crx if path to key is set

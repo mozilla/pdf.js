@@ -10,14 +10,20 @@
   },
   "permissions": [
     "webRequest", "webRequestBlocking",
-    "http://*/*.pdf",
-    "https://*/*.pdf",
-    "file:///*/*.pdf",
-    "http://*/*.PDF",
-    "https://*/*.PDF",
-    "file://*/*.PDF"
+    "<all_urls>",
+    "tabs"
   ],
+  "content_scripts": [{
+      "matches": [
+          "*://*/*.pdf*",
+          "*://*/*.PDF*"
+       ],
+       "css": ["hide-xhtml-error.css"]
+  }],
   "background": {
     "page": "pdfHandler.html"
-  }
+  },
+  "web_accessible_resources": [
+    "content/*"
+  ]
 }
