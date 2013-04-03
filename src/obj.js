@@ -65,7 +65,7 @@ var Dict = (function DictClosure() {
   }
 
   Dict.prototype = {
-    assignXref: function Dict_assingXref(newXref) {
+    assignXref: function Dict_assignXref(newXref) {
       this.xref = newXref;
     },
 
