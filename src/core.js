@@ -212,11 +212,8 @@ var Page = (function PageClosure() {
       var evaluator = new PartialEvaluator(this.xref, handler, this.pageIndex,
         'p' + this.pageIndex + '_annotation');
 
-      var annotations = this.annotations;
-      for (var i = 0, n = annotations.length; i < n; ++i) {
-        annotations[i].appendToOperatorList(
-          operatorList, dependency, evaluator);
-      }
+      Annotation.appendToOperatorList(
+        this.annotations, operatorList, dependency, evaluator);
     },
 
     extractTextContent: function Page_extractTextContent() {

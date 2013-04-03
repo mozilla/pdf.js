@@ -229,6 +229,20 @@ var Annotation = (function AnnotationClosure() {
     }
   };
 
+  Annotation.appendToOperatorList = function Annotation_appendToOperatorList(
+      annotations, operatorList, dependency, evaluator) {
+
+    var fnArray = operatorList.fnArray;
+    var argsArray = operatorList.argsArray;
+    fnArray.push('beginAnnotations');
+    argsArray.push([]);
+    for (var i = 0, n = annotations.length; i < n; ++i) {
+      annotations[i].appendToOperatorList(operatorList, dependency, evaluator);
+    }
+    fnArray.push('endAnnotations');
+    argsArray.push([]);
+  }
+
   return Annotation;
 })();
 PDFJS.Annotation = Annotation;

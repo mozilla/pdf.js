@@ -1467,6 +1467,15 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       this.restore();
     },
 
+    beginAnnotations: function CanvasGraphics_beginAnnotations() {
+      this.save();
+      this.current = new CanvasExtraState();
+    },
+
+    endAnnotations: function CanvasGraphics_endAnnotations() {
+      this.restore();
+    },
+
     beginAnnotation: function CanvasGraphics_beginAnnotation(rect, transform,
                                                              matrix) {
       this.save();
