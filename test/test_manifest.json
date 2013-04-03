@@ -872,7 +872,7 @@
       "rounds": 1,
       "lastPage": 2,
       "link": true,
-      "type": "load"
+      "type": "eq"
     },
     {  "id": "issue2627",
       "file": "pdfs/issue2627.pdf",
@@ -1036,6 +1036,13 @@
       "md5": "8a74d33504701edcefeef2afd022765e",
       "rounds": 1,
       "type": "eq"
+    },
+    {  "id": "issue2761",
+      "file": "pdfs/issue2761.pdf",
+      "md5": "35df0b8cff4afec0c08f08c6a5bc9857",
+      "rounds": 1,
+      "type": "eq",
+      "about": "Image with indexed colorspace that has a base lab colorspace."
     },
     {  "id": "yo01",
       "file": "pdfs/yo01.pdf",
