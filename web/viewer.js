@@ -922,6 +922,19 @@ var PDFView = {
     return support;
   },
 
+  get supportsDocumentColors() {
+    var support = true;
+//#if !(FIREFOX || MOZCENTRAL)
+//#else
+//  support = FirefoxCom.requestSync('supportsDocumentColors');
+//#endif
+    Object.defineProperty(this, 'supportsDocumentColors', { value: support,
+                                                            enumerable: true,
+                                                            configurable: true,
+                                                            writable: false });
+    return support;
+  },
+
   get isHorizontalScrollbarEnabled() {
     var div = document.getElementById('viewerContainer');
     return div.scrollWidth > div.clientWidth;
@@ -2261,6 +2274,12 @@ var PageView = function pageView(container, id, scale,
 //        !PDFView.supportsDocumentFonts) {
 //      console.error(mozL10n.get('web_fonts_disabled', null,
 //        'Web fonts are disabled: unable to use embedded PDF fonts.'));
+//      PDFView.fallback();
+//    }
+//    if (self.textLayer && self.textLayer.textDivs.length &&
+//        !PDFView.supportsDocumentColors) {
+//      console.error(mozL10n.get('web_colors_disabled', null,
+//        'Web colors are disabled.'));
 //      PDFView.fallback();
 //    }
 //#endif
