@@ -357,8 +357,9 @@ var TextAnnotation = (function TextAnnotationClosure() {
       var iconName = item.name;
       image.src = IMAGE_DIR + 'annotation-' +
         iconName.toLowerCase() + '.svg';
-      image.alt = PDFJS.mozL10n.get('text_annotation_type', {type: iconName},
-        '[{{type}} Annotation]');
+      image.alt = '[{{type}} Annotation]';
+      image.dataset.l10nId = 'text_annotation_type';
+      image.dataset.l10nArgs = JSON.stringify({type: iconName});
       var content = document.createElement('div');
       content.setAttribute('hidden', true);
       var title = document.createElement('h1');

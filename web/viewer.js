@@ -46,7 +46,7 @@ var FindStates = {
 //PDFJS.workerSrc = '../build/pdf.js';
 //#endif
 
-var mozL10n = PDFJS.mozL10n = document.mozL10n || document.webL10n;
+var mozL10n = document.mozL10n || document.webL10n;
 
 function getFileName(url) {
   var anchor = url.indexOf('#');
@@ -2030,8 +2030,9 @@ var PageView = function pageView(container, id, scale,
         }
 
         var element = annotation.getHtmlElement(pdfPage.commonObjs);
-        data = annotation.getData();
+        mozL10n.translate(element);
 
+        data = annotation.getData();
         var rect = data.rect;
         var view = pdfPage.view;
         rect = PDFJS.Util.normalizeRect([
