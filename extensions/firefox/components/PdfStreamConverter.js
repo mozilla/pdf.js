@@ -383,6 +383,9 @@ ChromeActions.prototype = {
     var prefGfx = getBoolPref('gfx.downloadable_fonts.enabled', true);
     return (!!prefBrowser && prefGfx);
   },
+  supportsDocumentColors: function() {
+    return getBoolPref('browser.display.use_document_colors', true);
+  },
   fallback: function(url, sendResponse) {
     var self = this;
     var domWindow = this.domWindow;
