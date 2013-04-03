@@ -105,7 +105,13 @@ var ColorSpace = (function ColorSpaceClosure() {
       }
       this.getRgbBuffer(src, srcOffset, count, dest, 0, bits);
       return dest;
-    }
+    },
+    /**
+     * True if the colorspace has components in the default range of [0, 1].
+     * This should be true for all colorspaces except for lab color spaces
+     * which are [0,100], [-128, 127], [-128, 127].
+     */
+    usesZeroToOneRange: true
   };
 
   ColorSpace.parse = function ColorSpace_parse(cs, xref, res) {
@@ -317,8 +323,8 @@ var AlternateCS = (function AlternateCSClosure() {
       var base = this.base;
       var scale = 1 / ((1 << bits) - 1);
       var baseNumComps = base.numComps;
-      var isGetRgbBufferSupported = 'getRgbBuffer' in base;
-      var isPassthrough = base.isPassthrough(8) || !isGetRgbBufferSupported;
+      var usesZeroToOneRange = base.usesZeroToOneRange;
+      var isPassthrough = base.isPassthrough(8) || !usesZeroToOneRange;
       var pos = isPassthrough ? destOffset : 0;
       var baseBuf = isPassthrough ? dest : new Uint8Array(baseNumComps * count);
       var numComps = this.numComps;
@@ -329,7 +335,7 @@ var AlternateCS = (function AlternateCSClosure() {
           scaled[j] = src[srcOffset++] * scale;
         }
         var tinted = tintFn(scaled);
-        if (isGetRgbBufferSupported) {
+        if (usesZeroToOneRange) {
           for (var j = 0; j < baseNumComps; j++) {
             baseBuf[pos++] = tinted[j] * 255;
           }
@@ -350,7 +356,8 @@ var AlternateCS = (function AlternateCSClosure() {
     createRgbBuffer: ColorSpace.prototype.createRgbBuffer,
     isDefaultDecode: function AlternateCS_isDefaultDecode(decodeMap) {
       return ColorSpace.isDefaultDecode(decodeMap, this.numComps);
-    }
+    },
+    usesZeroToOneRange: true
   };
 
   return AlternateCS;
@@ -427,7 +434,8 @@ var IndexedCS = (function IndexedCSClosure() {
     isDefaultDecode: function IndexedCS_isDefaultDecode(decodeMap) {
       // indexed color maps shouldn't be changed
       return true;
-    }
+    },
+    usesZeroToOneRange: true
   };
   return IndexedCS;
 })();
@@ -469,7 +477,8 @@ var DeviceGrayCS = (function DeviceGrayCSClosure() {
     createRgbBuffer: ColorSpace.prototype.createRgbBuffer,
     isDefaultDecode: function DeviceGrayCS_isDefaultDecode(decodeMap) {
       return ColorSpace.isDefaultDecode(decodeMap, this.numComps);
-    }
+    },
+    usesZeroToOneRange: true
   };
   return DeviceGrayCS;
 })();
@@ -517,7 +526,8 @@ var DeviceRgbCS = (function DeviceRgbCSClosure() {
     createRgbBuffer: ColorSpace.prototype.createRgbBuffer,
     isDefaultDecode: function DeviceRgbCS_isDefaultDecode(decodeMap) {
       return ColorSpace.isDefaultDecode(decodeMap, this.numComps);
-    }
+    },
+    usesZeroToOneRange: true
   };
   return DeviceRgbCS;
 })();
@@ -1266,7 +1276,8 @@ var DeviceCmykCS = (function DeviceCmykCSClosure() {
     createRgbBuffer: ColorSpace.prototype.createRgbBuffer,
     isDefaultDecode: function DeviceCmykCS_isDefaultDecode(decodeMap) {
       return ColorSpace.isDefaultDecode(decodeMap, this.numComps);
-    }
+    },
+    usesZeroToOneRange: true
   };
 
   return DeviceCmykCS;
@@ -1327,11 +1338,26 @@ var LabCS = (function LabCSClosure() {
       return (108 / 841) * (x - 4 / 29);
   }
 
-  function convertToRgb(cs, src, srcOffset, dest, destOffset) {
+  function decode(value, high1, low2, high2) {
+    return low2 + (value) * (high2 - low2) / (high1);
+  }
+
+  // If decoding is needed maxVal should be 2^bits per component - 1.
+  function convertToRgb(cs, src, srcOffset, maxVal, dest, destOffset) {
+    // XXX: Lab input is in the range of [0, 100], [amin, amax], [bmin, bmax]
+    // not the usual [0, 1]. If a command like setFillColor is used the src
+    // values will already be within the correct range. However, if we are
+    // converting an image we have to map the values to the correct range given
+    // above.
     // Ls,as,bs <---> L*,a*,b* in the spec
     var Ls = src[srcOffset];
     var as = src[srcOffset + 1];
     var bs = src[srcOffset + 2];
+    if (maxVal !== false) {
+      Ls = decode(Ls, maxVal, 0, 100);
+      as = decode(as, maxVal, cs.amin, cs.amax);
+      bs = decode(bs, maxVal, cs.bmin, cs.bmax);
+    }
 
     // Adjust limits of 'as' and 'bs'
     as = as > cs.amax ? cs.amax : as < cs.amin ? cs.amin : as;
@@ -1360,36 +1386,40 @@ var LabCS = (function LabCSClosure() {
       g = X * -0.9689 + Y * 1.8758 + Z * 0.0415;
       b = X * 0.0557 + Y * -0.2040 + Z * 1.0570;
     }
-
-    // clamp color values to [0,255] range
-    dest[destOffset] = r < 0 ? 0 : r > 1 ? 255 : r * 255;
-    dest[destOffset + 1] = g < 0 ? 0 : g > 1 ? 255 : g * 255;
-    dest[destOffset + 2] = b < 0 ? 0 : b > 1 ? 255 : b * 255;
+    // clamp color values to [0,1] range then convert to [0,255] range.
+    dest[destOffset] = Math.sqrt(r < 0 ? 0 : r > 1 ? 1 : r) * 255;
+    dest[destOffset + 1] = Math.sqrt(g < 0 ? 0 : g > 1 ? 1 : g) * 255;
+    dest[destOffset + 2] = Math.sqrt(b < 0 ? 0 : b > 1 ? 1 : b) * 255;
   }
 
   LabCS.prototype = {
     getRgb: function LabCS_getRgb(src, srcOffset) {
       var rgb = new Uint8Array(3);
-      convertToRgb(this, src, srcOffset, rgb, 0);
+      convertToRgb(this, src, srcOffset, false, rgb, 0);
       return rgb;
     },
     getRgbItem: function LabCS_getRgbItem(src, srcOffset, dest, destOffset) {
-      convertToRgb(this, src, srcOffset, dest, destOffset);
+      convertToRgb(this, src, srcOffset, false, dest, destOffset);
+    },
+    getRgbBuffer: function LabCS_getRgbBuffer(src, srcOffset, count,
+                                              dest, destOffset, bits) {
+      var maxVal = (1 << bits) - 1;
+      for (var i = 0; i < count; i++) {
+        convertToRgb(this, src, srcOffset, maxVal, dest, destOffset);
+        srcOffset += 3;
+        destOffset += 3;
+      }
     },
     getOutputLength: function LabCS_getOutputLength(inputLength) {
       return inputLength;
     },
     isPassthrough: ColorSpace.prototype.isPassthrough,
     isDefaultDecode: function LabCS_isDefaultDecode(decodeMap) {
-      // From Table 90 in Adobe's:
-      // "Document management - Portable document format", 1st ed, 2008
-      if (decodeMap[0] === 0 && decodeMap[1] === 100 &&
-          decodeMap[2] === this.amin && decodeMap[3] === this.amax &&
-          decodeMap[4] === this.bmin && decodeMap[5] === this.bmax)
-        return true;
-      else
-        return false;
-    }
+      // XXX: Decoding is handled with the lab conversion because of the strange
+      // ranges that are used.
+      return true;
+    },
+    usesZeroToOneRange: false
   };
   return LabCS;
 })();
