@@ -28,6 +28,8 @@ const PREF_PREVIOUS_ACTION = PREF_PREFIX + '.previousHandler.preferredAction';
 const PREF_PREVIOUS_ASK = PREF_PREFIX + '.previousHandler.alwaysAskBeforeHandling';
 const PREF_DISABLED_PLUGIN_TYPES = 'plugin.disable_full_page_plugin_for_types';
 const TOPIC_PDFJS_HANDLER_CHANGED = 'pdfjs:handlerChanged';
+const TOPIC_PLUGINS_LIST_UPDATED = "plugins-list-updated";
+const TOPIC_PLUGIN_INFO_UPDATED = "plugin-info-updated";
 const PDF_CONTENT_TYPE = 'application/pdf';
 
 Cu.import('resource://gre/modules/XPCOMUtils.jsm');
@@ -112,7 +114,10 @@ let PdfJs = {
     // Listen for when pdf.js is completely disabled or a different pdf handler
     // is chosen.
     Services.prefs.addObserver(PREF_DISABLED, this, false);
+    Services.prefs.addObserver(PREF_DISABLED_PLUGIN_TYPES, this, false);
     Services.obs.addObserver(this, TOPIC_PDFJS_HANDLER_CHANGED, false);
+    Services.obs.addObserver(this, TOPIC_PLUGINS_LIST_UPDATED, false);
+    Services.obs.addObserver(this, TOPIC_PLUGIN_INFO_UPDATED, false);
   },
 
   _migrate: function migrate() {
@@ -186,14 +191,39 @@ let PdfJs = {
    */
   get enabled() {
     var disabled = getBoolPref(PREF_DISABLED, true);
-    if (disabled)
+    if (disabled) {
       return false;
+    }
 
-    var handlerInfo = Svc.mime.
-                        getFromTypeAndExtension('application/pdf', 'pdf');
-    return handlerInfo.alwaysAskBeforeHandling == false &&
-           handlerInfo.plugin == null &&
-           handlerInfo.preferredAction == Ci.nsIHandlerInfo.handleInternally;
+    // the 'application/pdf' handler is selected as internal?
+    var handlerInfo = Svc.mime
+                         .getFromTypeAndExtension(PDF_CONTENT_TYPE, 'pdf');
+    if (handlerInfo.alwaysAskBeforeHandling ||
+        handlerInfo.preferredAction !== Ci.nsIHandlerInfo.handleInternally) {
+      return false;
+    }
+
+    // we also need to check if pdf plugin is not present or disabled...
+    let tags = Cc["@mozilla.org/plugin/host;1"].
+                  getService(Ci.nsIPluginHost).
+                  getPluginTags();
+    let enabledPluginFound = tags.some(function(tag) {
+      if (tag.disabled) {
+        return false;
+      }
+      let mimeTypes = tag.getMimeTypes();
+      return mimeTypes.some(function(mimeType) {
+        return mimeType.type === PDF_CONTENT_TYPE;
+      });
+    });
+    if (!enabledPluginFound) {
+      return true; // no plugins for this type, it's good
+    }
+    // ... and full page plugins list must have 'application/pdf' type,
+    // in case when enabled pdf plugin exists.
+    return Services.prefs.prefHasUserValue(PREF_DISABLED_PLUGIN_TYPES) ?
+      (Services.prefs.getCharPref(PREF_DISABLED_PLUGIN_TYPES).split(',').
+      indexOf(PDF_CONTENT_TYPE) >= 0) : false;
   },
 
   _ensureRegistered: function _ensureRegistered() {
@@ -205,7 +235,7 @@ let PdfJs = {
 
     this._pdfRedirectorFactory = new Factory();
     this._pdfRedirectorFactory.register(PdfRedirector);
-    Svc.pluginHost.registerPlayPreviewMimeType('application/pdf', true,
+    Svc.pluginHost.registerPlayPreviewMimeType(PDF_CONTENT_TYPE, true,
       'data:application/x-moz-playpreview-pdfjs;,');
 
     this._registered = true;
@@ -220,7 +250,7 @@ let PdfJs = {
 
     this._pdfRedirectorFactory.unregister;
     delete this._pdfRedirectorFactory;
-    Svc.pluginHost.unregisterPlayPreviewMimeType('application/pdf');
+    Svc.pluginHost.unregisterPlayPreviewMimeType(PDF_CONTENT_TYPE);
 
     this._registered = false;
   }
