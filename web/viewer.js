@@ -2311,7 +2311,8 @@ var PageView = function pageView(container, id, scale,
 //        'Web fonts are disabled: unable to use embedded PDF fonts.'));
 //      PDFView.fallback();
 //    }
-//    if (self.textLayer && self.textLayer.textDivs.length &&
+//    if (self.textLayer && self.textLayer.textDivs &&
+//        self.textLayer.textDivs.length > 0 &&
 //        !PDFView.supportsDocumentColors) {
 //      console.error(mozL10n.get('web_colors_disabled', null,
 //        'Web colors are disabled.'));
@@ -2728,7 +2729,6 @@ var TextLayerBuilder = function textLayerBuilder(textLayerDiv, pageIdx) {
 
   this.beginLayout = function textLayerBuilderBeginLayout() {
     this.textDivs = [];
-    this.textLayerQueue = [];
     this.renderingDone = false;
   };
 
