@@ -127,8 +127,6 @@ var Page = (function PageClosure() {
     this.pageDict = pageDict;
     this.xref = xref;
     this.ref = ref;
-
-    this.displayReadyPromise = null;
   }
 
   Page.prototype = {
