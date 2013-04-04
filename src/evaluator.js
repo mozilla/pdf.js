@@ -281,10 +281,6 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
             xobj.dict.get('Resources') || resources,
             dependencyArray, queue);
 
-        self.getOperatorList(xobj,
-                             xobj.dict.get('Resources') || resources,
-                             dependencyArray, queue);
-
         // Add the dependencies that are required to execute the
         // operatorList.
         insertDependency(dependencyArray.slice(depIdx));
