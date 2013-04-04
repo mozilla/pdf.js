@@ -1467,25 +1467,22 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       this.restore();
     },
 
+    beginAnnotations: function CanvasGraphics_beginAnnotations() {
+      this.save();
+      this.current = new CanvasExtraState();
+    },
+
+    endAnnotations: function CanvasGraphics_endAnnotations() {
+      this.restore();
+    },
+
     beginAnnotation: function CanvasGraphics_beginAnnotation(rect, transform,
-                                                             matrix, border) {
+                                                             matrix) {
       this.save();
 
       if (rect && isArray(rect) && 4 == rect.length) {
         var width = rect[2] - rect[0];
         var height = rect[3] - rect[1];
-
-        if (border) {
-          // TODO(mack): Support different border styles
-          this.save();
-          var rgb = border.rgb;
-          this.setStrokeRGBColor(rgb[0], rgb[1], rgb[2]);
-          this.setLineWidth(border.width);
-          this.rectangle(rect[0], rect[1], width, height);
-          this.stroke();
-          this.restore();
-        }
-
         this.rectangle(rect[0], rect[1], width, height);
         this.clip();
         this.endPath();
