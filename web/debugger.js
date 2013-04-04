@@ -46,7 +46,7 @@ var FontInspector = (function FontInspectorClosure() {
     }
   }
   function textLayerClick(e) {
-    if (!e.target.dataset.fontName || e.target.tagName != 'DIV')
+    if (!e.target.dataset.fontName || e.target.tagName.toUpperCase() !== 'DIV')
       return;
     var fontName = e.target.dataset.fontName;
     var selects = document.getElementsByTagName('input');
