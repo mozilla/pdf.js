@@ -623,8 +623,10 @@ PdfStreamConverter.prototype = {
         // We get the DOM window here instead of before the request since it
         // may have changed during a redirect.
         var domWindow = getDOMWindow(channel);
+        var documentURI = domWindow.document.documentURIObject;
         // Double check the url is still the correct one.
-        if (domWindow.document.documentURIObject.equals(aRequest.URI)) {
+        if (documentURI.equals(aRequest.URI) ||
+            documentURI.equals(aRequest.originalURI)) {
           var actions = new ChromeActions(domWindow, dataListener,
                                           contentDispositionFilename);
           var requestListener = new RequestListener(actions);
