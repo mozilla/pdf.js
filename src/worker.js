@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals CanvasGraphics, error, globalScope, InvalidPDFException, log,
+/* globals error, globalScope, InvalidPDFException, log,
            MissingPDFException, PasswordException, PDFDocument, PDFJS, Promise,
            Stream, UnknownErrorException, warn */
 
@@ -244,11 +244,6 @@ var WorkerMessageHandler = {
 
     handler.on('RenderPageRequest', function wphSetupRenderPage(data) {
       var pageNum = data.pageIndex + 1;
-
-      // The following code does quite the same as
-      // Page.prototype.startRendering, but stops at one point and sends the
-      // result back to the main thread.
-      var gfx = new CanvasGraphics(null);
 
       var start = Date.now();
 
