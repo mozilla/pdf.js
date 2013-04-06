@@ -1444,6 +1444,7 @@ var PDFView = {
     PDFJS.Promise.all(promises).then(function() {
       pdfDocument.getOutline().then(function(outline) {
         self.outline = new DocumentOutlineView(outline);
+        document.getElementById('viewOutline').disabled = !outline;
       });
 
       // Make all navigation keys work on document load,
@@ -2622,8 +2623,16 @@ var ThumbnailView = function thumbnailView(container, id, defaultViewport) {
 
 var DocumentOutlineView = function documentOutlineView(outline) {
   var outlineView = document.getElementById('outlineView');
+  var outlineButton = document.getElementById('viewOutline');
   while (outlineView.firstChild)
     outlineView.removeChild(outlineView.firstChild);
+
+  if (!outline) {
+    if (!outlineView.classList.contains('hidden'))
+      PDFView.switchSidebarView('thumbs');
+
+    return;
+  }
 
   function bindItemLink(domObj, item) {
     domObj.href = PDFView.getDestinationHash(item.dest);
@@ -2633,14 +2642,6 @@ var DocumentOutlineView = function documentOutlineView(outline) {
     };
   }
 
-  if (!outline) {
-    var noOutline = document.createElement('div');
-    noOutline.classList.add('noOutline');
-    noOutline.textContent = mozL10n.get('no_outline', null,
-      'No Outline Available');
-    outlineView.appendChild(noOutline);
-    return;
-  }
 
   var queue = [{parent: outlineView, items: outline}];
   while (queue.length > 0) {
