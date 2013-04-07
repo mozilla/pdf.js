@@ -1008,9 +1008,16 @@ var PDFView = {
       },
       function getDocumentError(message, exception) {
         if (exception && exception.name === 'PasswordException') {
-          if (exception.code === 'needpassword') {
+          if (exception.code === 'needpassword' ||
+              exception.code === 'incorrectpassword') {
             var promptString = mozL10n.get('request_password', null,
                                       'PDF is protected by a password:');
+
+            if (exception.code === 'incorrectpassword') {
+              promptString += '\n' + mozL10n.get('invalid_password', null,
+                                      'Invalid Password.');
+            }
+
             password = prompt(promptString);
             if (password && password.length > 0) {
               return PDFView.open(url, scale, password);
