@@ -283,6 +283,7 @@ var WorkerMessageHandler = {
       };
 
       getPdfManager(data).then(function() {
+        globalScope.pdfManager = pdfManager;
         loadDocument(false).then(onSuccess, function(ex) {
           // Try again with recoveryMode == true
           if (!(ex instanceof XRefParseException)) {
@@ -357,8 +358,7 @@ var WorkerMessageHandler = {
         var start = Date.now();
         var dependency = [];
         // Pre compile the pdf page and fetch the fonts/images.
-        pdfManager.ensure(page, 'getOperatorList', handler,
-            dependency).then(function(operatorList) {
+        page.getOperatorList(handler, dependency).then(function(operatorList) {
 
           // The following code does quite the same as
           // Page.prototype.startRendering, but stops at one point and sends the

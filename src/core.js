@@ -149,27 +149,36 @@ var Page = (function PageClosure() {
       return content;
     },
     getOperatorList: function Page_getOperatorList(handler, dependency) {
+      var promise = new PDFJS.Promise();
       var xref = this.xref;
-      var contentStream = this.getContentStream();
-      var resources = this.resources;
-      var pe = this.pe = new PartialEvaluator(
-                                xref, handler, this.pageIndex,
-                                'p' + this.pageIndex + '_');
+      // FIXME(mack): Remove globalScope;
+      var pdfManager = globalScope.pdfManager;
+      var contentStreamPromise = pdfManager.ensure(this, 'getContentStream');
+      contentStreamPromise.then(function(contentStream) {
+        var resources = this.resources;
+        var pe = this.pe = new PartialEvaluator(
+                                  xref, handler, this.pageIndex,
+                                  'p' + this.pageIndex + '_');
 
-      var list = pe.getOperatorList(contentStream, resources, dependency);
+        pe.getOperatorList(contentStream, resources, dependency).then(
+          function(list) {
+            pe.optimizeQueue(list);
+            promise.resolve(list);
+          }
+        );
+      }.bind(this));
 
-      var annotations = this.getAnnotationsForDraw();
-      var annotationEvaluator = new PartialEvaluator(
-        xref, handler, this.pageIndex,
-        'p' + this.pageIndex + '_annotation');
-      var annotationsList = annotationEvaluator.getAnnotationsOperatorList(
-          annotations, dependency);
+      return promise;
 
-      Util.concatenateToArray(list.fnArray, annotationsList.fnArray);
-      Util.concatenateToArray(list.argsArray, annotationsList.argsArray);
+      //var annotations = this.getAnnotationsForDraw();
+      //var annotationEvaluator = new PartialEvaluator(
+      //  xref, handler, this.pageIndex,
+      //  'p' + this.pageIndex + '_annotation');
+      //var annotationsList = annotationEvaluator.getAnnotationsOperatorList(
+      //    annotations, dependency);
 
-      pe.optimizeQueue(list);
-      return list;
+      //Util.concatenateToArray(list.fnArray, annotationsList.fnArray);
+      //Util.concatenateToArray(list.argsArray, annotationsList.argsArray);
     },
     extractTextContent: function Page_extractTextContent() {
       var handler = {
