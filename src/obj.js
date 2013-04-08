@@ -18,7 +18,7 @@
            InvalidPDFException, isArray, isCmd, isDict, isInt, isName, isRef,
            isStream, JpegStream, Lexer, log, Page, Parser, Promise, shadow,
            stringToPDFString, stringToUTF8String, warn, isString, assert, PDFJS,
-           MissingDataException, XRefParseException */
+           MissingDataException, XRefParseException, Stream */
 
 'use strict';
 
@@ -832,10 +832,16 @@ var XRef = (function XRefClosure() {
     fetch: function XRef_fetch(ref, suppressEncryption) {
       assertWellFormed(isRef(ref), 'ref object is not a reference');
       var num = ref.num;
-      if (num in this.cache)
-        return this.cache[num];
+      var e;
+      if (num in this.cache) {
+        e = this.cache[num];
+        if (e instanceof Stream) {
+          return e.makeSubStream(e.start, e.length, e.dict);
+        }
+        return e;
+      }
 
-      var e = this.getEntry(num);
+      e = this.getEntry(num);
 
       // the referenced entry can be free
       if (e === null)
@@ -877,9 +883,16 @@ var XRef = (function XRefClosure() {
         } else {
           e = parser.getObj();
         }
-        // Don't cache streams since they are mutable (except images).
-        if (!isStream(e) || e instanceof JpegStream)
+        if (!isStream(e) || e instanceof JpegStream) {
           this.cache[num] = e;
+        } else if (e instanceof Stream) {
+          e = e.makeSubStream(e.start, e.length, e.dict);
+          this.cache[num] = e;
+        } else if ('readBlock' in e) {
+          e.getBytes();
+          e = e.makeSubStream(0, e.bufferLength, e.dict);
+          this.cache[num] = e;
+        }
         return e;
       }
 

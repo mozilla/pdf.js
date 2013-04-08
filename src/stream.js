@@ -26,7 +26,7 @@ var Stream = (function StreamClosure() {
     this.start = start || 0;
     this.pos = this.start;
     this.end = (start + length) || this.bytes.length;
-    this.dict = dict;
+    this.parameters = this.dict = dict;
   }
 
   // required methods for a stream. if a particular stream does not
@@ -645,6 +645,10 @@ var PredictorStream = (function PredictorStreamClosure() {
     var colors = this.colors;
 
     var rawBytes = this.stream.getBytes(rowBytes);
+    this.eof = !rawBytes.length;
+    if (this.eof) {
+      return;
+    }
 
     var inbuf = 0, outbuf = 0;
     var inbits = 0, outbits = 0;
@@ -705,6 +709,10 @@ var PredictorStream = (function PredictorStreamClosure() {
 
     var predictor = this.stream.getByte();
     var rawBytes = this.stream.getBytes(rowBytes);
+    this.eof = !rawBytes.length;
+    if (this.eof) {
+      return;
+    }
 
     var bufferLength = this.bufferLength;
     var buffer = this.ensureBuffer(bufferLength + rowBytes);
@@ -853,6 +861,7 @@ var JpegStream = (function JpegStreamClosure() {
       var data = jpegImage.getData(width, height);
       this.buffer = data;
       this.bufferLength = data.length;
+      this.eof = true;
     } catch (e) {
       error('JPEG error: ' + e);
     }
@@ -988,6 +997,7 @@ var JpxStream = (function JpxStreamClosure() {
 
     this.buffer = data;
     this.bufferLength = data.length;
+    this.eof = true;
   };
   JpxStream.prototype.getChar = function JpxStream_getChar() {
     error('internal error: getChar is not valid on JpxStream');
@@ -1032,6 +1042,7 @@ var Jbig2Stream = (function Jbig2StreamClosure() {
 
     this.buffer = data;
     this.bufferLength = dataLength;
+    this.eof = true;
   };
   Jbig2Stream.prototype.getChar = function Jbig2Stream_getChar() {
     error('internal error: getChar is not valid on Jbig2Stream');

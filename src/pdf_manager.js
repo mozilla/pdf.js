@@ -130,6 +130,7 @@ var NetworkPdfManager = (function NetworkPdfManagerClosure() {
   NetworkPdfManager.prototype = Object.create(BasePdfManager.prototype);
   NetworkPdfManager.prototype.constructor = NetworkPdfManager;
 
+  // FIXME(mack): Make ensure() use array for all arguments
   NetworkPdfManager.prototype.ensure =
       function NetworkPdfManager_ensure(obj, prop) {
     var promise = new PDFJS.Promise();
