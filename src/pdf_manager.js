@@ -67,7 +67,7 @@ var BasePdfManager = (function BasePdfManagerClosure() {
 var LocalPdfManager = (function LocalPdfManagerClosure() {
   function LocalPdfManager(data, password) {
     var stream = new Stream(data);
-    this.pdfModel = new PDFDocument(stream, password);
+    this.pdfModel = new PDFDocument(this, stream, password);
     this.loadedStream = new PDFJS.Promise();
     this.loadedStream.resolve(stream);
   }
@@ -124,13 +124,14 @@ var NetworkPdfManager = (function NetworkPdfManagerClosure() {
     this.streamManager = new ChunkedStreamManager(args.length, CHUNK_SIZE,
                                                   args.url, params);
 
-    this.pdfModel = new PDFDocument(this.streamManager.getStream(),
+    this.pdfModel = new PDFDocument(this, this.streamManager.getStream(),
                                     args.password);
   }
 
   NetworkPdfManager.prototype = Object.create(BasePdfManager.prototype);
   NetworkPdfManager.prototype.constructor = NetworkPdfManager;
 
+  // FIXME(mack): Make ensure() use array for all arguments
   NetworkPdfManager.prototype.ensure =
       function NetworkPdfManager_ensure(obj, prop) {
     var promise = new PDFJS.Promise();

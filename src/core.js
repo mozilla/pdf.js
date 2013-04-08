@@ -18,7 +18,7 @@
            isArrayBuffer, isDict, isName, isStream, isString, Lexer,
            Linearization, NullStream, PartialEvaluator, shadow, Stream,
            StreamsSequenceStream, stringToPDFString, TODO, Util, warn, XRef,
-           MissingDataException */
+           MissingDataException, PDFJS */
 
 'use strict';
 
@@ -60,7 +60,8 @@ var Page = (function PageClosure() {
     return appearance;
   }
 
-  function Page(xref, pageIndex, pageDict, ref) {
+  function Page(pdfManager, xref, pageIndex, pageDict, ref) {
+    this.pdfManager = pdfManager;
     this.pageIndex = pageIndex;
     this.pageDict = pageDict;
     this.xref = xref;
@@ -146,28 +147,71 @@ var Page = (function PageClosure() {
       }
       return content;
     },
-    getOperatorList: function Page_getOperatorList(handler, dependency) {
-      var xref = this.xref;
-      var contentStream = this.getContentStream();
-      var resources = this.resources;
-      var pe = this.pe = new PartialEvaluator(
-                                xref, handler, this.pageIndex,
-                                'p' + this.pageIndex + '_');
+    getOperatorList: function Page_getOperatorList(handler) {
+      var self = this;
+      var promise = new PDFJS.Promise();
 
-      var list = pe.getOperatorList(contentStream, resources, dependency);
+      var pageListPromise = new PDFJS.Promise();
+      var annotationListPromise = new PDFJS.Promise();
 
-      var annotations = this.getAnnotationsForDraw();
-      var annotationEvaluator = new PartialEvaluator(
-        xref, handler, this.pageIndex,
-        'p' + this.pageIndex + '_annotation');
-      var annotationsList = annotationEvaluator.getAnnotationsOperatorList(
-          annotations, dependency);
+      var pdfManager = this.pdfManager;
+      var contentStreamPromise = pdfManager.ensure(this, 'getContentStream',
+                                                   []);
+      var resourcesPromise = pdfManager.ensure(this, 'resources');
+      var dataPromises = PDFJS.Promise.all(
+          [contentStreamPromise, resourcesPromise]);
+      dataPromises.then(function(data) {
+        var contentStream = data[0];
+        var resources = data[1];
+        var pe = self.pe = new PartialEvaluator(
+                                  self.xref, handler, self.pageIndex,
+                                  'p' + self.pageIndex + '_');
 
-      Util.concatenateToArray(list.fnArray, annotationsList.fnArray);
-      Util.concatenateToArray(list.argsArray, annotationsList.argsArray);
+        pdfManager.ensure(pe, 'getOperatorList',
+                          [contentStream, resources]).then(
+          function(opListPromise) {
+            opListPromise.then(function(data) {
+              pageListPromise.resolve(data);
+            });
+          }
+        );
+      });
 
-      pe.optimizeQueue(list);
-      return list;
+      pdfManager.ensure(this, 'getAnnotationsForDraw', []).then(
+        function(annotations) {
+          var annotationEvaluator = new PartialEvaluator(
+            self.xref, handler, self.pageIndex,
+            'p' + self.pageIndex + '_annotation');
+
+          pdfManager.ensure(annotationEvaluator, 'getAnnotationsOperatorList',
+                            [annotations]).then(
+            function(opListPromise) {
+              opListPromise.then(function(data) {
+                annotationListPromise.resolve(data);
+              });
+            }
+          );
+        }
+      );
+
+      PDFJS.Promise.all([pageListPromise, annotationListPromise]).then(
+        function(datas) {
+          var pageData = datas[0];
+          var pageQueue = pageData.queue;
+          var annotationData = datas[1];
+          var annotationQueue = annotationData.queue;
+          Util.concatenateToArray(pageQueue.fnArray, annotationQueue.fnArray);
+          Util.concatenateToArray(pageQueue.argsArray,
+                                  annotationQueue.argsArray);
+          PartialEvaluator.optimizeQueue(pageQueue);
+          Util.extendObj(pageData.dependencies, annotationData.dependencies);
+
+          promise.resolve(pageData);
+        }
+      );
+
+      return promise;
+
     },
     extractTextContent: function Page_extractTextContent() {
       var handler = {
@@ -175,14 +219,39 @@ var Page = (function PageClosure() {
         send: function nullHandlerSend() {}
       };
 
-      var xref = this.xref;
-      var contentStream = this.getContentStream();
-      var resources = xref.fetchIfRef(this.resources);
+      var self = this;
 
-      var pe = new PartialEvaluator(
-                     xref, handler, this.pageIndex,
-                     'p' + this.pageIndex + '_');
-      return pe.getTextContent(contentStream, resources);
+      var textContentPromise = new PDFJS.Promise();
+
+      var pdfManager = this.pdfManager;
+      var contentStreamPromise = pdfManager.ensure(this, 'getContentStream',
+                                                   []);
+      var resourcesPromise = new PDFJS.Promise();
+      pdfManager.ensure(this, 'resources').then(function(resources) {
+        pdfManager.ensure(self.xref, 'fetchIfRef', [resources]).then(
+          function(resources) {
+            resourcesPromise.resolve(resources);
+          }
+        );
+      });
+
+      var dataPromises = PDFJS.Promise.all([contentStreamPromise,
+                                            resourcesPromise]);
+      dataPromises.then(function(data) {
+        var contentStream = data[0];
+        var resources = data[1];
+        var pe = new PartialEvaluator(
+                       self.xref, handler, self.pageIndex,
+                       'p' + self.pageIndex + '_');
+
+        pe.getTextContent(contentStream, resources).then(function(bidiTexts) {
+          textContentPromise.resolve({
+            bidiTexts: bidiTexts
+          });
+        });
+      });
+
+      return textContentPromise;
     },
     getLinks: function Page_getLinks() {
       var links = [];
@@ -422,17 +491,18 @@ var Page = (function PageClosure() {
  * `PDFDocument` objects on the main thread created.
  */
 var PDFDocument = (function PDFDocumentClosure() {
-  function PDFDocument(arg, password) {
+  function PDFDocument(pdfManager, arg, password) {
     if (isStream(arg))
-      init.call(this, arg, password);
+      init.call(this, pdfManager, arg, password);
     else if (isArrayBuffer(arg))
-      init.call(this, new Stream(arg), password);
+      init.call(this, pdfManager, new Stream(arg), password);
     else
       error('PDFDocument: Unknown argument type');
   }
 
-  function init(stream, password) {
+  function init(pdfManager, stream, password) {
     assertWellFormed(stream.length > 0, 'stream must have data');
+    this.pdfManager = pdfManager;
     this.stream = stream;
     var xref = new XRef(this.stream, password);
     this.xref = xref;
@@ -576,7 +646,7 @@ var PDFDocument = (function PDFDocumentClosure() {
     },
     setup: function PDFDocument_setup(recoveryMode) {
       this.xref.parse(recoveryMode);
-      this.catalog = new Catalog(this.xref);
+      this.catalog = new Catalog(this.pdfManager, this.xref);
     },
     get numPages() {
       var linearization = this.linearization;

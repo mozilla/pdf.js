@@ -158,7 +158,6 @@ class TestHandlerBase(BaseHTTPRequestHandler):
             elif v[0] == errno.EPIPE:
                 print 'Detected remote peer disconnected'
             elif v[0] == 10053:
-                # FIXME(mack): Address this issue
                 print 'An established connection was aborted by the' \
                     ' software in your host machine'
             else:

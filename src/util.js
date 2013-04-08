@@ -397,8 +397,19 @@ var Util = PDFJS.Util = (function UtilClosure() {
     return num < 0 ? -1 : 1;
   };
 
+  // TODO(mack): Rename appendToArray
   Util.concatenateToArray = function concatenateToArray(arr1, arr2) {
-    return Array.prototype.push.apply(arr1, arr2);
+    Array.prototype.push.apply(arr1, arr2);
+  };
+
+  Util.prependToArray = function concatenateToArray(arr1, arr2) {
+    Array.prototype.unshift.apply(arr1, arr2);
+  };
+
+  Util.extendObj = function extendObj(obj1, obj2) {
+    for (var key in obj2) {
+      obj1[key] = obj2[key];
+    }
   };
 
   return Util;

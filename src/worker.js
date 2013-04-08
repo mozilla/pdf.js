@@ -285,6 +285,7 @@ var WorkerMessageHandler = {
       };
 
       getPdfManager(data).then(function() {
+        globalScope.pdfManager = pdfManager;
         loadDocument(false).then(onSuccess, function(ex) {
           // Try again with recoveryMode == true
           if (!(ex instanceof XRefParseException)) {
@@ -358,10 +359,11 @@ var WorkerMessageHandler = {
 
         var pageNum = data.pageIndex + 1;
         var start = Date.now();
-        var dependency = [];
         // Pre compile the pdf page and fetch the fonts/images.
-        pdfManager.ensure(page, 'getOperatorList', handler,
-            dependency).then(function(operatorList) {
+        page.getOperatorList(handler).then(function(opListData) {
+
+          var operatorList = opListData.queue;
+          var dependency = Object.keys(opListData.dependencies);
 
           // The following code does quite the same as
           // Page.prototype.startRendering, but stops at one point and sends the
@@ -420,8 +422,7 @@ var WorkerMessageHandler = {
       pdfManager.getPage(data.pageIndex).then(function(page) {
         var pageNum = data.pageIndex + 1;
         var start = Date.now();
-        pdfManager.ensure(page,
-            'extractTextContent').then(function(textContent) {
+        page.extractTextContent().then(function(textContent) {
           promise.resolve(textContent);
           log('text indexing: page=%d - time=%dms', pageNum,
               Date.now() - start);
