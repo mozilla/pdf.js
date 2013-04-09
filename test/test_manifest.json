@@ -933,6 +933,14 @@
       "link": true,
       "type": "eq"
     },
+    {  "id": "gesamt",
+      "file": "pdfs/gesamt.pdf",
+      "md5": "f9148b71aad9a7856f70f303d7e78703",
+      "rounds": 1,
+      "link": true,
+      "lastPage": 1,
+      "type": "eq"
+    },
     {  "id": "javauninstall-7",
       "file": "pdfs/javauninstall-7.pdf",
       "md5": "c9eb59503923c9125b9660e348618675",
