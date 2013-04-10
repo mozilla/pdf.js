@@ -939,27 +939,41 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           properties.cidToGidMap = this.readCidToGidMap(cidToGidMap);
       }
 
+      // Based on 9.6.6 of the spec the encoding can come from multiple places
+      // but should be prioritized in the following order:
+      // 1. Encoding dictionary
+      // 2. Encoding within font file (Type1 or Type1C)
+      // 3. Default (depends on font type)
+      // Differences applied to the above.
+      // Note: we don't fill in the encoding from the font file(2) here but use
+      // the flag overridableEncoding to signal that the font can override the
+      // encoding if it has one built in.
+      var overridableEncoding = true;
+      var hasEncoding = false;
       var flags = properties.flags;
       var differences = [];
-      var baseEncoding = Encodings.StandardEncoding;
+      var baseEncoding = properties.type === 'TrueType' ?
+                          Encodings.WinAnsiEncoding :
+                          Encodings.StandardEncoding;
       // The Symbolic attribute can be misused for regular fonts
       // Heuristic: we have to check if the font is a standard one also
       if (!!(flags & FontFlags.Symbolic)) {
         baseEncoding = !properties.file ? Encodings.symbolsEncoding :
                                           Encodings.MacRomanEncoding;
       }
-      var hasEncoding = dict.has('Encoding');
-      if (hasEncoding) {
+      if (dict.has('Encoding')) {
         var encoding = dict.get('Encoding');
         if (isDict(encoding)) {
           var baseName = encoding.get('BaseEncoding');
-          if (baseName)
+          if (baseName) {
+            overridableEncoding = false;
+            hasEncoding = true;
             baseEncoding = Encodings[baseName.name];
-          else
-            hasEncoding = false; // base encoding was not provided
+          }
 
           // Load the differences between the base and original
           if (encoding.has('Differences')) {
+            hasEncoding = true;
             var diffEncoding = encoding.get('Differences');
             var index = 0;
             for (var j = 0, jj = diffEncoding.length; j < jj; j++) {
@@ -971,6 +985,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
             }
           }
         } else if (isName(encoding)) {
+          overridableEncoding = false;
+          hasEncoding = true;
           baseEncoding = Encodings[encoding.name];
         } else {
           error('Encoding is not a Name nor a Dict');
@@ -980,6 +996,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       properties.differences = differences;
       properties.baseEncoding = baseEncoding;
       properties.hasEncoding = hasEncoding;
+      properties.overridableEncoding = overridableEncoding;
     },
 
     readToUnicode: function PartialEvaluator_readToUnicode(toUnicode, xref,
