@@ -1061,7 +1061,6 @@ html[dir='rtl'] .outlineItem > a {
   color: hsla(0,0%,100%,1);
 }
 
-.noOutline,
 .noResults {
   font-size: 12px;
   color: hsla(0,0%,100%,.8);
