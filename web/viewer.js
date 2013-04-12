@@ -3103,6 +3103,10 @@ document.addEventListener('DOMContentLoaded', function webViewerLoad(evt) {
     PDFJS.disableRange = (hashParams['disableRange'] === 'true');
   }
 
+  if ('disableAutoFetch' in hashParams) {
+    PDFJS.disableAutoFetch = (hashParams['disableAutoFetch'] === 'true');
+  }
+
 //#if !(FIREFOX || MOZCENTRAL)
   var locale = navigator.language;
   if ('locale' in hashParams)

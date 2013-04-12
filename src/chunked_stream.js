@@ -198,6 +198,7 @@ var ChunkedStreamManager = (function ChunkedStreamManagerClosure() {
     this.length = length;
     this.chunkSize = chunkSize;
     this.url = url;
+    this.disableAutoFetch = args.disableAutoFetch;
     var msgHandler = this.msgHandler = args.msgHandler;
 
     if (args.chunkedViewerLoading) {
@@ -382,7 +383,7 @@ var ChunkedStreamManager = (function ChunkedStreamManagerClosure() {
 
       // If there are no pending requests, automatically fetch the next
       // unfetched chunk of the PDF
-      if (isEmptyObj(this.requestsByChunk)) {
+      if (!this.disableAutoFetch && isEmptyObj(this.requestsByChunk)) {
         var nextEmptyChunk;
         if (this.stream.numChunksLoaded === 1) {
           // This is a special optimization so that after fetching the first

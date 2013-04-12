@@ -152,9 +152,27 @@ class TestHandlerBase(BaseHTTPRequestHandler):
         try:
             BaseHTTPRequestHandler.handle_one_request(self)
         except socket.error, v:
-            # Ignoring connection reset by peer exceptions
-            if v[0] != errno.ECONNRESET:
+            if v[0] == errno.ECONNRESET:
+                # Ignoring connection reset by peer exceptions
+                print 'Detected connection reset'
+            elif v[0] == errno.EPIPE:
+                print 'Detected remote peer disconnected'
+            elif v[0] == 10053:
+                # FIXME(mack): Address this issue
+                print 'An established connection was aborted by the' \
+                    ' software in your host machine'
+            else:
                 raise
+
+    def finish(self,*args,**kw):
+        # From http://stackoverflow.com/a/14355079/1834797
+        try:
+            if not self.wfile.closed:
+                self.wfile.flush()
+                self.wfile.close()
+        except socket.error:
+            pass
+        self.rfile.close()
 
     def sendFile(self, path, ext):
         self.send_response(200)
@@ -173,13 +191,13 @@ class TestHandlerBase(BaseHTTPRequestHandler):
           self.send_error(416)
           return
         chunk_len = end - start
+        time.sleep(chunk_len / 1000000.0)
         self.send_response(206)
         self.send_header("Accept-Ranges", "bytes")
         self.send_header("Content-Type", MIMEs[ext])
         self.send_header("Content-Length", chunk_len)
         self.send_header("Content-Range", 'bytes ' + str(start) + '-' + str(end - 1) + '/' + str(file_len))
         self.end_headers()
-        time.sleep(chunk_len / 500000.0)
         with open(path, "rb") as f:
             f.seek(start)
             self.wfile.write(f.read(chunk_len))
@@ -212,15 +230,17 @@ class TestHandlerBase(BaseHTTPRequestHandler):
             range_re = re.compile(r"^bytes=(\d+)\-(\d+)?")
             parsed_range = range_re.search(self.headers.getheader("Range"))
             if parsed_range is None:
-              self.send_error(501)
-              return
-            print 'Range requested ' + parsed_range.group(1) + '-' + parsed_range.group(2)
+                self.send_error(501)
+                return
+            if VERBOSE:
+                print 'Range requested %s - %s: %s' % (
+                    parsed_range.group(1), parsed_range.group(2))
             start = int(parsed_range.group(1))
             if parsed_range.group(2) is None:
-              self.sendFileRange(path, ext, start, None)
+                self.sendFileRange(path, ext, start, None)
             else:
-              end = int(parsed_range.group(2)) + 1
-              self.sendFileRange(path, ext, start, end)
+                end = int(parsed_range.group(2)) + 1
+                self.sendFileRange(path, ext, start, end)
             return
 
         self.sendFile(path, ext)

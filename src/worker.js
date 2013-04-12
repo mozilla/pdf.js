@@ -292,6 +292,7 @@ var WorkerMessageHandler = {
             return;
           }
 
+          pdfManager.requestLoadedStream();
           pdfManager.onLoadedStream().then(function() {
             loadDocument(true).then(onSuccess, onFailure);
           });
@@ -429,6 +430,11 @@ var WorkerMessageHandler = {
           promise.reject(e);
         });
       });
+    });
+
+    handler.on('Terminate', function wphTerminate(data, promise) {
+      pdfManager.streamManager.networkManager.abortAllRequests();
+      promise.resolve();
     });
   }
 };

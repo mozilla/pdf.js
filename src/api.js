@@ -528,11 +528,14 @@ var WorkerTransport = (function WorkerTransportClosure() {
   }
   WorkerTransport.prototype = {
     destroy: function WorkerTransport_destroy() {
-      if (this.worker)
-        this.worker.terminate();
-
       this.pageCache = [];
       this.pagePromises = [];
+      var self = this;
+      this.messageHandler.send('Terminate', null, function () {
+        if (self.worker) {
+          self.worker.terminate();
+        }
+      });
     },
     setupFakeWorker: function WorkerTransport_setupFakeWorker() {
       warn('Setting up fake worker.');
@@ -733,6 +736,7 @@ var WorkerTransport = (function WorkerTransportClosure() {
     },
 
     fetchDocument: function WorkerTransport_fetchDocument(source) {
+      source.disableAutoFetch = PDFJS.disableAutoFetch;
       source.chunkedViewerLoading = !!this.pdfDataRangeTransport;
       this.messageHandler.send('GetDocRequest', {
         source: source,
