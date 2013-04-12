@@ -3,7 +3,6 @@
       "file": "pdfs/filled-background.pdf",
       "md5": "2e3120255d9c3e79b96d2543b12d2589",
       "rounds": 1,
-      "rangeRequest": true,
       "type": "eq"
     },
     {  "id": "tracemonkey-eq",
