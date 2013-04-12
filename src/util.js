@@ -555,8 +555,8 @@ function isPDFFunction(v) {
 /**
  * 'Promise' object.
  * Each object that is stored in PDFObjects is based on a Promise object that
- * contains the status of the object and the data. There migth be situations,
- * where a function want to use the value of an object, but it isn't ready at
+ * contains the status of the object and the data. There might be situations
+ * where a function wants to use the value of an object, but it isn't ready at
  * that time. To get a notification, once the object is ready to be used, s.o.
  * can add a callback using the `then` method on the promise that then calls
  * the callback once the object gets resolved.
