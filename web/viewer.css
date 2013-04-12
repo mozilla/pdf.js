@@ -1476,3 +1476,30 @@ canvas {
   }
 }
 
+/* Chrome scrollbar handles */
+::-webkit-scrollbar {
+    width: 14px;
+}
+
+::-webkit-scrollbar-track {
+  background-color: hsla(0,0%,0%,.4); /* IE9 */
+  background-image: url(images/texture.png);
+  box-shadow: inset 1px 0 0 hsla(0,0%,100%,.08),
+              inset 0 1px 1px hsla(0,0%,0%,.15),
+              inset 0 -1px 0 hsla(0,0%,100%,.05),
+              0 1px 0 hsla(0,0%,0%,.15),
+              0 1px 1px hsla(0,0%,0%,.1);
+}
+
+::-webkit-scrollbar-thumb {
+  width: 12px;
+  background-image: url(images/texture.png), -webkit-linear-gradient(hsla(0,0%,32%,.99), hsla(0,0%,27%,.95));
+  background-image: url(images/texture.png), linear-gradient(hsla(0,0%,32%,.99), hsla(0,0%,27%,.95));
+  border-radius: 2px;
+  border: 1px solid hsla(0,0%,0%,.35);
+  border-color: hsla(0,0%,0%,.32) hsla(0,0%,0%,.38) hsla(0,0%,0%,.42);
+  box-shadow: 0 1px 0 hsla(0,0%,100%,.05) inset,
+              0 0 1px hsla(0,0%,100%,.15) inset,
+              0 1px 0 hsla(0,0%,100%,.05);
+}
+
