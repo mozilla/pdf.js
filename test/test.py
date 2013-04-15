@@ -32,7 +32,7 @@ BROWSERLOG_FILE = 'browser.log'
 REFDIR = 'ref'
 TEST_SNAPSHOTS = 'test_snapshots'
 TMPDIR = 'tmp'
-VERBOSE = False
+VERBOSE = True
 BROWSER_TIMEOUT = 60
 
 SERVER_HOST = "localhost"
