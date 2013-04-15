@@ -883,6 +883,13 @@
       "lastPage": 4,
       "type": "load"
     },
+    {  "id": "issue3061",
+      "file": "pdfs/issue3061.pdf",
+      "md5": "696a7cb1b194d095ca3f7861779a606b",
+      "rounds": 1,
+      "type": "eq",
+      "about": "CFF CID font with font matrices in main top dict and sub top dict."
+    },
     {  "id": "issue1878",
       "file": "pdfs/issue1878.pdf",
       "md5": "b4fb0ce7c19368e7104dce3d0d34bcb3",
