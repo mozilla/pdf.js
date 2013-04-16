@@ -16,7 +16,7 @@
  */
 /* globals ColorSpace, DeviceCmykCS, DeviceGrayCS, DeviceRgbCS, error,
            FONT_IDENTITY_MATRIX, IDENTITY_MATRIX, ImageData, isArray, isNum,
-           isString, Pattern, TilingPattern, TODO, Util, warn, assert */
+           isString, Pattern, TilingPattern, TODO, Util, warn, assert, info */
 
 'use strict';
 
@@ -1401,7 +1401,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       // - remove background color:
       // colorNew = color - alphaNew *colorBackdrop /(1 - alphaNew)
       if (!group.isolated) {
-        TODO('Support non-isolated groups.');
+        info('TODO: Support non-isolated groups.');
       }
 
       // TODO knockout - supposedly possible with the clever use of compositing
