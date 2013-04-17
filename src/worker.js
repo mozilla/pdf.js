@@ -431,6 +431,11 @@ var WorkerMessageHandler = {
         });
       });
     });
+
+    handler.on('DestroyWorker', function (data, promise) {
+      pdfManager.streamManager.networkManager.abortAllRequests();
+      promise.resolve();
+    });
   }
 };
 

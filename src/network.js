@@ -103,6 +103,8 @@ var NetworkManager = (function NetworkManagerClosure() {
         var rangeStr = args.begin + '-' + (args.end - 1);
         xhr.setRequestHeader('Range', 'bytes=' + rangeStr);
         pendingRequest.expectedStatus = 206;
+        pendingRequest.begin = args.begin;
+        pendingRequest.end = args.end;
       } else {
         pendingRequest.expectedStatus = 200;
       }
@@ -112,11 +114,12 @@ var NetworkManager = (function NetworkManagerClosure() {
       if (args.onProgress) {
         xhr.onprogress = args.onProgress;
       }
-      if (args.onError) {
-        xhr.onerror = function(evt) {
+      xhr.onerror = function(evt) {
+        console.log('Onerror:' + pendingRequest.begin + ' ' + pendingRequest.end + '\n');
+        if (args.onError) {
           args.onError(xhr.status);
-        };
-      }
+        }
+      };
       xhr.onreadystatechange = this.onStateChange.bind(this, xhrId);
 
       pendingRequest.onHeadersReceived = args.onHeadersReceived;
@@ -131,9 +134,12 @@ var NetworkManager = (function NetworkManagerClosure() {
     onStateChange: function NetworkManager_onStateChange(xhrId, evt) {
       var pendingRequest = this.pendingRequests[xhrId];
       if (!pendingRequest) {
+        console.log('NO PENDING\n');
         // Maybe abortRequest was called...
         return;
       }
+
+      console.log('Pending: ' + pendingRequest.begin + ' ' +  pendingRequest.end + '\n');
 
       var xhr = pendingRequest.xhr;
       if (xhr.readyState >= 2 && pendingRequest.onHeadersReceived) {
@@ -208,6 +214,7 @@ var NetworkManager = (function NetworkManagerClosure() {
 
     abortAllRequests: function NetworkManager_abortAllRequests() {
       for (var xhrId in this.pendingRequests) {
+        console.log('ABORTED: ' + xhrId + '\n')
         this.abortRequest(xhrId | 0);
       }
     },

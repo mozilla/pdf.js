@@ -528,9 +528,14 @@ var WorkerTransport = (function WorkerTransportClosure() {
   }
   WorkerTransport.prototype = {
     destroy: function WorkerTransport_destroy() {
-      if (this.worker)
-        this.worker.terminate();
-
+      console.log('HERE');
+      var self = this;
+      this.messageHandler.send('DestroyWorker', null, function () {
+        if (self.worker) {
+          console.log('destroyed');
+          self.worker.terminate();
+        }
+      });
       this.pageCache = [];
       this.pagePromises = [];
     },

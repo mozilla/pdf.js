@@ -1058,13 +1058,6 @@
       "type": "eq",
       "about": "Image with indexed colorspace that has a base lab colorspace."
     },
-    {  "id": "yo01",
-      "file": "pdfs/yo01.pdf",
-      "md5": "7d42435c20fe0d32de4ea3d7e4727ac1",
-      "rounds": 1,
-      "link": true,
-      "type": "eq"
-    },
     {  "id": "20130226130259",
       "file": "pdfs/20130226130259.pdf",
       "md5": "c33e90a1b369c508573023d2434b950f",

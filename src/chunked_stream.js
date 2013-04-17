@@ -278,6 +278,13 @@ var ChunkedStreamManager = (function ChunkedStreamManagerClosure() {
       var endChunk = this.getEndChunk(end);
 
       var requestId = this.currRequestId++;
+      var oldCallback = callback;
+      callback = function() {
+        console.log('Received: ' + requestId + '\n');
+        oldCallback();
+      };
+      console.log('Range: ' + requestId + ' ' + begin + '-' + end + '\n');
+      //console.log('Time: ' + Date.now() + '\n');
 
       var chunksNeeded;
       this.chunksNeededByRequest[requestId] = chunksNeeded = {};
@@ -314,6 +321,7 @@ var ChunkedStreamManager = (function ChunkedStreamManagerClosure() {
         var groupedChunk = groupedChunksToRequest[i];
         var begin = groupedChunk.beginChunk * this.chunkSize;
         var end = groupedChunk.endChunk * this.chunkSize;
+        console.log('Requesting: ' + requestId + ' ' + begin + '-' + end + '\n');
         this.sendRequest(begin, end);
       }
     },
@@ -350,6 +358,7 @@ var ChunkedStreamManager = (function ChunkedStreamManagerClosure() {
       var chunk = args.chunk;
       var begin = args.begin;
       var end = begin + chunk.byteLength;
+      console.log('onReceiveData: ' + begin + '-' + end + '\n');
 
       var beginChunk = this.getBeginChunk(begin);
       var endChunk = this.getEndChunk(end);
