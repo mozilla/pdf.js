@@ -293,6 +293,7 @@ var WorkerMessageHandler = {
             return;
           }
 
+          pdfManager.requestLoadedStream();
           pdfManager.onLoadedStream().then(function() {
             loadDocument(true).then(onSuccess, onFailure);
           });

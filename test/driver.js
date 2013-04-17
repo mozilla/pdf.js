@@ -134,6 +134,7 @@ function nextTask() {
 
   // When generating reference images in masterMode, disable range requests
   PDFJS.disableRange = task.disableRange || masterMode;
+  PDFJS.disableAutoFetch = !task.enableAutoFetch || masterMode;
   try {
     var promise = PDFJS.getDocument(absoluteUrl);
     promise.then(function(doc) {

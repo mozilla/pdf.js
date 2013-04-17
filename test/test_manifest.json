@@ -310,6 +310,14 @@
        "rounds": 1,
        "type": "eq"
     },
+    {  "id": "usmanm-bad-auto-fetch",
+       "file": "pdfs/usmanm-bad.pdf",
+       "md5": "38afb822433aaf07fc8f54807cd4f61a",
+       "link": true,
+       "rounds": 1,
+       "type": "eq",
+       "enableAutoFetch": true
+    },
     {  "id": "vesta-bad",
        "file": "pdfs/vesta.pdf",
        "md5": "0afebc109b7c17b95619ea3fab5eafe6",
