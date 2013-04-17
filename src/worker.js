@@ -432,7 +432,7 @@ var WorkerMessageHandler = {
       });
     });
 
-    handler.on('DestroyWorker', function (data, promise) {
+    handler.on('Terminate', function wphTerminate(data, promise) {
       pdfManager.streamManager.networkManager.abortAllRequests();
       promise.resolve();
     });

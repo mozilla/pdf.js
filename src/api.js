@@ -528,16 +528,14 @@ var WorkerTransport = (function WorkerTransportClosure() {
   }
   WorkerTransport.prototype = {
     destroy: function WorkerTransport_destroy() {
-      console.log('HERE');
+      this.pageCache = [];
+      this.pagePromises = [];
       var self = this;
-      this.messageHandler.send('DestroyWorker', null, function () {
+      this.messageHandler.send('Terminate', null, function () {
         if (self.worker) {
-          console.log('destroyed');
           self.worker.terminate();
         }
       });
-      this.pageCache = [];
-      this.pagePromises = [];
     },
     setupFakeWorker: function WorkerTransport_setupFakeWorker() {
       warn('Setting up fake worker.');

@@ -33,12 +33,11 @@ REFDIR = 'ref'
 TEST_SNAPSHOTS = 'test_snapshots'
 TMPDIR = 'tmp'
 VERBOSE = False
-BROWSER_TIMEOUT = 3600
+BROWSER_TIMEOUT = 60
 
 SERVER_HOST = "localhost"
 
 lock = Lock()
-lock2 = Lock()
 
 class TestOptions(OptionParser):
     def __init__(self, **kwargs):
@@ -150,21 +149,20 @@ class TestHandlerBase(BaseHTTPRequestHandler):
             BaseHTTPRequestHandler.log_request(code, size)
 
     def handle_one_request(self):
-        with lock2:
-            try:
-                BaseHTTPRequestHandler.handle_one_request(self)
-            except socket.error, v:
-                if v[0] == errno.ECONNRESET:
-                    # Ignoring connection reset by peer exceptions
-                    print 'Detected connection reset'
-                elif v[0] == errno.EPIPE:
-                    print 'Detected remote peer disconnected'
-                elif v[0] == 10053:
-                    # FIXME(mack): Address this issue
-                    print 'An established connection was aborted by the' \
-                        ' software in your host machine'
-                else:
-                    raise
+        try:
+            BaseHTTPRequestHandler.handle_one_request(self)
+        except socket.error, v:
+            if v[0] == errno.ECONNRESET:
+                # Ignoring connection reset by peer exceptions
+                print 'Detected connection reset'
+            elif v[0] == errno.EPIPE:
+                print 'Detected remote peer disconnected'
+            elif v[0] == 10053:
+                # FIXME(mack): Address this issue
+                print 'An established connection was aborted by the' \
+                    ' software in your host machine'
+            else:
+                raise
 
     def finish(self,*args,**kw):
         # From http://stackoverflow.com/a/14355079/1834797
@@ -194,7 +192,6 @@ class TestHandlerBase(BaseHTTPRequestHandler):
           return
         chunk_len = end - start
         time.sleep(chunk_len / 1000000.0)
-        #print 'sendChunkLen: %s - %s' % (start, end)
         self.send_response(206)
         self.send_header("Accept-Ranges", "bytes")
         self.send_header("Content-Type", MIMEs[ext])
@@ -204,51 +201,49 @@ class TestHandlerBase(BaseHTTPRequestHandler):
         with open(path, "rb") as f:
             f.seek(start)
             self.wfile.write(f.read(chunk_len))
-        #print 'SENT: %s - %s' % (start, end)
 
     def do_GET(self):
-        with lock:
-            url = urlparse(self.path)
+        url = urlparse(self.path)
 
-            # Ignore query string
-            path, _ = urllib.unquote_plus(url.path), url.query
-            path = os.path.abspath(os.path.realpath(DOC_ROOT + os.sep + path))
-            prefix = os.path.commonprefix(( path, DOC_ROOT ))
-            _, ext = os.path.splitext(path.lower())
+        # Ignore query string
+        path, _ = urllib.unquote_plus(url.path), url.query
+        path = os.path.abspath(os.path.realpath(DOC_ROOT + os.sep + path))
+        prefix = os.path.commonprefix(( path, DOC_ROOT ))
+        _, ext = os.path.splitext(path.lower())
 
-            if url.path == "/favicon.ico":
-                self.sendFile(os.path.join(DOC_ROOT, "test", "resources", "favicon.ico"), ext)
+        if url.path == "/favicon.ico":
+            self.sendFile(os.path.join(DOC_ROOT, "test", "resources", "favicon.ico"), ext)
+            return
+
+        if os.path.isdir(path):
+            self.sendIndex(url.path, url.query)
+            return
+
+        if not (prefix == DOC_ROOT
+                and os.path.isfile(path)
+                and ext in MIMEs):
+            print path
+            self.send_error(404)
+            return
+
+        if 'Range' in self.headers:
+            range_re = re.compile(r"^bytes=(\d+)\-(\d+)?")
+            parsed_range = range_re.search(self.headers.getheader("Range"))
+            if parsed_range is None:
+                self.send_error(501)
                 return
+            if VERBOSE:
+                print 'Range requested %s - %s: %s' % (
+                    parsed_range.group(1), parsed_range.group(2))
+            start = int(parsed_range.group(1))
+            if parsed_range.group(2) is None:
+                self.sendFileRange(path, ext, start, None)
+            else:
+                end = int(parsed_range.group(2)) + 1
+                self.sendFileRange(path, ext, start, end)
+            return
 
-            if os.path.isdir(path):
-                self.sendIndex(url.path, url.query)
-                return
-
-            if not (prefix == DOC_ROOT
-                    and os.path.isfile(path)
-                    and ext in MIMEs):
-                print path
-                self.send_error(404)
-                return
-
-            if 'Range' in self.headers:
-                range_re = re.compile(r"^bytes=(\d+)\-(\d+)?")
-                parsed_range = range_re.search(self.headers.getheader("Range"))
-                if parsed_range is None:
-                    self.send_error(501)
-                    return
-                #file_name = re.sub(r'^.*\/(.*\.pdf)', r'\1', path)
-                #print 'Range requested %s - %s: %s' % (
-                #    parsed_range.group(1), parsed_range.group(2), file_name)
-                start = int(parsed_range.group(1))
-                if parsed_range.group(2) is None:
-                    self.sendFileRange(path, ext, start, None)
-                else:
-                    end = int(parsed_range.group(2)) + 1
-                    self.sendFileRange(path, ext, start, end)
-                return
-
-            self.sendFile(path, ext)
+        self.sendFile(path, ext)
 
 class UnitTestHandler(TestHandlerBase):
     def sendIndex(self, path, query):
