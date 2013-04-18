@@ -11,7 +11,7 @@ describe('api', function() {
   function waitsForPromise(promise) {
     waitsFor(function() {
       return promise.isResolved || promise.isRejected;
-    }, 4000);
+    }, 10000);
   }
   function expectAfterPromise(promise, successCallback) {
     waitsForPromise(promise);

@@ -19,15 +19,17 @@
            IDENTITY_MATRIX, info, isArray, isCmd, isDict, isEOF, isName, isNum,
            isStream, isString, JpegStream, Lexer, Metrics, Name, Parser,
            Pattern, PDFImage, PDFJS, serifFonts, stdFontMap, symbolsFonts,
-           TilingPattern, TODO, warn, Util */
+           TilingPattern, TODO, warn, Util, MissingDataException, Promise */
 
 'use strict';
 
 var PartialEvaluator = (function PartialEvaluatorClosure() {
-  function PartialEvaluator(xref, handler, pageIndex, uniquePrefix) {
+  function PartialEvaluator(pdfManager, xref, handler, pageIndex,
+                            uniquePrefix) {
     this.state = new EvalState();
     this.stateStack = [];
 
+    this.pdfManager = pdfManager;
     this.xref = xref;
     this.handler = handler;
     this.pageIndex = pageIndex;
@@ -148,90 +150,201 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
     'null': null
   };
 
+  var TILING_PATTERN = 1, SHADING_PATTERN = 2;
+
+  function createOperatorList(fnArray, argsArray, dependencies) {
+    return {
+      queue: {
+        fnArray: fnArray || [],
+        argsArray: argsArray || []
+      },
+      dependencies: dependencies || {}
+    };
+  }
+
   PartialEvaluator.prototype = {
-    loadFont: function PartialEvaluator_loadFont(fontName, font, xref,
-                                                 resources, dependency) {
-      var fontRes = resources.get('Font');
 
-      assert(fontRes, 'fontRes not available');
+    buildFormXObject: function PartialEvaluator_buildFormXObject(resources,
+                                                                 xobj, smask) {
+      var self = this;
+      var promise = new Promise();
+      var fnArray = [];
+      var argsArray = [];
 
-      ++this.fontIdCounter;
-
-      font = xref.fetchIfRef(font) || fontRes.get(fontName);
-      if (!isDict(font)) {
-        return {
-          translated: new ErrorFont('Font ' + fontName + ' is not available'),
-          loadedName: 'g_font_' + this.uniquePrefix + this.fontIdCounter
+      var matrix = xobj.dict.get('Matrix');
+      var bbox = xobj.dict.get('BBox');
+      var group = xobj.dict.get('Group');
+      if (group) {
+        var groupOptions = {
+          matrix: matrix,
+          bbox: bbox,
+          smask: !!smask,
+          isolated: false,
+          knockout: false
         };
+
+        var groupSubtype = group.get('S');
+        if (isName(groupSubtype) && groupSubtype.name === 'Transparency') {
+          groupOptions.isolated = group.get('I') || false;
+          groupOptions.knockout = group.get('K') || false;
+          // There is also a group colorspace, but since we put everything in
+          // RGB I'm not sure we need it.
+        }
+        fnArray.push('beginGroup');
+        argsArray.push([groupOptions]);
       }
 
-      var loadedName = font.loadedName;
-      if (!loadedName) {
-        // keep track of each font we translated so the caller can
-        // load them asynchronously before calling display on a page
-        loadedName = 'g_font_' + this.uniquePrefix + this.fontIdCounter;
-        font.loadedName = loadedName;
+      fnArray.push('paintFormXObjectBegin');
+      argsArray.push([matrix, bbox]);
 
-        var translated;
-        try {
-          translated = this.translateFont(font, xref, resources,
-                                          dependency);
-        } catch (e) {
-          translated = new ErrorFont(e instanceof Error ? e.message : e);
+      // Pass in the current `queue` object. That means the `fnArray`
+      // and the `argsArray` in this scope is reused and new commands
+      // are added to them.
+      var opListPromise = this.getOperatorList(xobj,
+          xobj.dict.get('Resources') || resources);
+      opListPromise.then(function(data) {
+        var queue = data.queue;
+        var dependencies = data.dependencies;
+        Util.prependToArray(queue.fnArray, fnArray);
+        Util.prependToArray(queue.argsArray, argsArray);
+        self.insertDependencies(queue, dependencies);
+
+        queue.fnArray.push('paintFormXObjectEnd');
+        queue.argsArray.push([]);
+
+        if (group) {
+          queue.fnArray.push('endGroup');
+          queue.argsArray.push([groupOptions]);
         }
-        font.translated = translated;
 
-        var data = translated;
-        if (data.loadCharProcs) {
-          delete data.loadCharProcs;
+        promise.resolve({
+          queue: queue,
+          dependencies: dependencies
+        });
+      });
 
-          var charProcs = font.get('CharProcs').getAll();
-          var fontResources = font.get('Resources') || resources;
-          var charProcOperatorList = {};
-          for (var key in charProcs) {
-            var glyphStream = charProcs[key];
-            charProcOperatorList[key] =
-              this.getOperatorList(glyphStream, fontResources, dependency);
-          }
-          data.charProcOperatorList = charProcOperatorList;
-        }
-      }
-      return font;
+      return promise;
     },
 
-    getOperatorList: function PartialEvaluator_getOperatorList(stream,
-                                                               resources,
-                                                               dependency,
-                                                               queue) {
-
+    buildPaintImageXObject: function PartialEvaluator_buildPaintImageXObject(
+                                resources, image, inline) {
       var self = this;
-      var xref = this.xref;
-      var handler = this.handler;
-      var pageIndex = this.pageIndex;
-      var uniquePrefix = this.uniquePrefix || '';
+      var dict = image.dict;
+      var w = dict.get('Width', 'W');
+      var h = dict.get('Height', 'H');
 
-      function insertDependency(depList) {
-        fnArray.push('dependency');
-        argsArray.push(depList);
-        for (var i = 0, ii = depList.length; i < ii; i++) {
-          var dep = depList[i];
-          if (dependency.indexOf(dep) == -1) {
-            dependency.push(depList[i]);
-          }
-        }
+      var dependencies = {};
+      var retData = {
+        dependencies: dependencies
+      };
+
+      var imageMask = dict.get('ImageMask', 'IM') || false;
+      if (imageMask) {
+        // This depends on a tmpCanvas beeing filled with the
+        // current fillStyle, such that processing the pixel
+        // data can't be done here. Instead of creating a
+        // complete PDFImage, only read the information needed
+        // for later.
+
+        var width = dict.get('Width', 'W');
+        var height = dict.get('Height', 'H');
+        var bitStrideLength = (width + 7) >> 3;
+        var imgArray = image.getBytes(bitStrideLength * height);
+        var decode = dict.get('Decode', 'D');
+        var inverseDecode = !!decode && decode[0] > 0;
+
+        retData.fn = 'paintImageMaskXObject';
+        retData.args = [imgArray, inverseDecode, width, height];
+        return retData;
       }
 
-      function handleSetFont(fontName, font) {
-        font = self.loadFont(fontName, font, xref, resources, dependency);
+      var softMask = dict.get('SMask', 'SM') || false;
+      var mask = dict.get('Mask') || false;
 
+      var SMALL_IMAGE_DIMENSIONS = 200;
+      // Inlining small images into the queue as RGB data
+      if (inline && !softMask && !mask &&
+          !(image instanceof JpegStream) &&
+          (w + h) < SMALL_IMAGE_DIMENSIONS) {
+        var imageObj = new PDFImage(this.xref, resources, image,
+                                    inline, null, null);
+        var imgData = imageObj.getImageData();
+        retData.fn = 'paintInlineImageXObject';
+        retData.args = [imgData];
+        return retData;
+      }
+
+      // If there is no imageMask, create the PDFImage and a lot
+      // of image processing can be done here.
+      var uniquePrefix = this.uniquePrefix || '';
+      var objId = 'img_' + uniquePrefix + (++this.objIdCounter);
+      dependencies[objId] = true;
+      retData.args = [objId, w, h];
+
+      if (!softMask && !mask && image instanceof JpegStream &&
+          image.isNativelySupported(this.xref, resources)) {
+        // These JPEGs don't need any more processing so we can just send it.
+        retData.fn = 'paintJpegXObject';
+        this.handler.send(
+            'obj', [objId, this.pageIndex, 'JpegStream', image.getIR()]);
+        return retData;
+      }
+
+      retData.fn = 'paintImageXObject';
+
+      PDFImage.buildImage(function(imageObj) {
+          var imgData = imageObj.getImageData();
+          self.handler.send('obj', [objId, self.pageIndex, 'Image', imgData]);
+        }, self.handler, self.xref, resources, image, inline);
+
+      return retData;
+    },
+
+    handleTilingType: function PartialEvaluator_handleTilingType(
+                          fn, args, resources, pattern, patternDict) {
+      var self = this;
+      // Create an IR of the pattern code.
+      var promise = new Promise();
+      var opListPromise = this.getOperatorList(pattern,
+          patternDict.get('Resources') || resources);
+      opListPromise.then(function(data) {
+        var opListData = createOperatorList([], [], data.dependencies);
+        var queue = opListData.queue;
+
+        // Add the dependencies that are required to execute the
+        // operatorList.
+        self.insertDependencies(queue, data.dependencies);
+        queue.fnArray.push(fn);
+        queue.argsArray.push(
+          TilingPattern.getIR(data.queue, patternDict, args));
+        promise.resolve(opListData);
+      });
+
+      return promise;
+    },
+
+    handleSetFont: function PartialEvaluator_handleSetFont(
+                      resources, fontArgs, font) {
+
+      var promise = new Promise();
+      // TODO(mack): Not needed?
+      var fontName;
+      if (fontArgs) {
+        fontArgs = fontArgs.slice();
+        fontName = fontArgs[0].name;
+      }
+      var self = this;
+      var fontPromise = this.loadFont(fontName, font, this.xref, resources);
+      fontPromise.then(function(data) {
+        var font = data.font;
         var loadedName = font.loadedName;
         if (!font.sent) {
-          var data = font.translated.exportData();
+          var fontData = font.translated.exportData();
 
-          handler.send('commonobj', [
-              loadedName,
-              'Font',
-              data
+          self.handler.send('commonobj', [
+            loadedName,
+            'Font',
+            fontData
           ]);
           font.sent = true;
         }
@@ -240,138 +353,253 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         // and later on used for drawing.
         // OPTIMIZE: This should get insert to the operatorList only once per
         // page.
-        insertDependency([loadedName]);
-        return loadedName;
-      }
-
-      function buildFormXObject(xobj, smask) {
-        var matrix = xobj.dict.get('Matrix');
-        var bbox = xobj.dict.get('BBox');
-        var group = xobj.dict.get('Group');
-        if (group) {
-          var groupOptions = {
-            matrix: matrix,
-            bbox: bbox,
-            smask: !!smask,
-            isolated: false,
-            knockout: false
-          };
-
-          var groupSubtype = group.get('S');
-          if (isName(groupSubtype) && groupSubtype.name === 'Transparency') {
-            groupOptions.isolated = group.get('I') || false;
-            groupOptions.knockout = group.get('K') || false;
-            // There is also a group colorspace, but since we put everything in
-            // RGB I'm not sure we need it.
-          }
-          fnArray.push('beginGroup');
-          argsArray.push([groupOptions]);
-        }
-
-        fnArray.push('paintFormXObjectBegin');
-        argsArray.push([matrix, bbox]);
-
-        // This adds the operatorList of the xObj to the current queue.
-        var depIdx = dependencyArray.length;
-
-        // Pass in the current `queue` object. That means the `fnArray`
-        // and the `argsArray` in this scope is reused and new commands
-        // are added to them.
-        self.getOperatorList(xobj,
-            xobj.dict.get('Resources') || resources,
-            dependencyArray, queue);
-
-        // Add the dependencies that are required to execute the
-        // operatorList.
-        insertDependency(dependencyArray.slice(depIdx));
-
-        fnArray.push('paintFormXObjectEnd');
-        argsArray.push([]);
-
-        if (group) {
-          fnArray.push('endGroup');
-          argsArray.push([groupOptions]);
-        }
-      }
-
-      function buildPaintImageXObject(image, inline) {
-        var dict = image.dict;
-        var w = dict.get('Width', 'W');
-        var h = dict.get('Height', 'H');
-
-        var imageMask = dict.get('ImageMask', 'IM') || false;
-        if (imageMask) {
-          // This depends on a tmpCanvas beeing filled with the
-          // current fillStyle, such that processing the pixel
-          // data can't be done here. Instead of creating a
-          // complete PDFImage, only read the information needed
-          // for later.
-
-          var width = dict.get('Width', 'W');
-          var height = dict.get('Height', 'H');
-          var bitStrideLength = (width + 7) >> 3;
-          var imgArray = image.getBytes(bitStrideLength * height);
-          var decode = dict.get('Decode', 'D');
-          var inverseDecode = !!decode && decode[0] > 0;
-
-          fn = 'paintImageMaskXObject';
-          args = [imgArray, inverseDecode, width, height];
-          return;
-        }
-
-        var softMask = dict.get('SMask', 'SM') || false;
-        var mask = dict.get('Mask') || false;
-
-        var SMALL_IMAGE_DIMENSIONS = 200;
-        // Inlining small images into the queue as RGB data
-        if (inline && !softMask && !mask &&
-            !(image instanceof JpegStream) &&
-            (w + h) < SMALL_IMAGE_DIMENSIONS) {
-          var imageObj = new PDFImage(xref, resources, image,
-                                      inline, null, null);
-          var imgData = imageObj.getImageData();
-          fn = 'paintInlineImageXObject';
-          args = [imgData];
-          return;
-        }
-
-        // If there is no imageMask, create the PDFImage and a lot
-        // of image processing can be done here.
-        var objId = 'img_' + uniquePrefix + (++self.objIdCounter);
-        insertDependency([objId]);
-        args = [objId, w, h];
-
-        if (!softMask && !mask && image instanceof JpegStream &&
-            image.isNativelySupported(xref, resources)) {
-          // These JPEGs don't need any more processing so we can just send it.
-          fn = 'paintJpegXObject';
-          handler.send('obj', [objId, pageIndex, 'JpegStream', image.getIR()]);
-          return;
-        }
-
-        fn = 'paintImageXObject';
-
-        PDFImage.buildImage(function(imageObj) {
-            var imgData = imageObj.getImageData();
-            handler.send('obj', [objId, pageIndex, 'Image', imgData]);
-          }, handler, xref, resources, image, inline);
-      }
-
-      if (!queue) {
-        queue = {
-          transparency: false
+        var fnArray = [];
+        var argsArray = [];
+        var queue = {
+          fnArray: fnArray,
+          argsArray: argsArray
         };
+        var dependencies = data.dependencies;
+        dependencies[loadedName] = true;
+        self.insertDependencies(queue, dependencies);
+        if (fontArgs) {
+          fontArgs[0] = loadedName;
+          fnArray.push('setFont');
+          argsArray.push(fontArgs);
+        }
+        promise.resolve({
+          loadedName: loadedName,
+          queue: queue,
+          dependencies: dependencies
+        });
+      });
+      return promise;
+    },
+
+    insertDependencies: function PartialEvaluator_insertDependencies(
+                            queue, dependencies) {
+
+      var fnArray = queue.fnArray;
+      var argsArray = queue.argsArray;
+      var depList = Object.keys(dependencies);
+      if (depList.length) {
+        fnArray.push('dependency');
+        argsArray.push(depList);
+      }
+    },
+
+    setGState: function PartialEvaluator_setGState(resources, gState) {
+
+      var self = this;
+      var opListData = createOperatorList();
+      var queue = opListData.queue;
+      var fnArray = queue.fnArray;
+      var argsArray = queue.argsArray;
+      var dependencies = opListData.dependencies;
+
+      // TODO(mack): This should be rewritten so that this function returns
+      // what should be added to the queue during each iteration
+      function setGStateForKey(gStateObj, key, value) {
+        switch (key) {
+          case 'Type':
+            break;
+          case 'LW':
+          case 'LC':
+          case 'LJ':
+          case 'ML':
+          case 'D':
+          case 'RI':
+          case 'FL':
+          case 'CA':
+          case 'ca':
+            gStateObj.push([key, value]);
+            break;
+          case 'Font':
+            var promise = new Promise();
+            self.handleSetFont(resources, null, value[0]).then(function(data) {
+              var gState = ['Font', data.loadedName, value[1]];
+              promise.resolve({
+                gState: gState,
+                queue: data.queue,
+                dependencies: data.dependencies
+              });
+            });
+            gStateObj.push(['promise', promise]);
+            break;
+          case 'BM':
+            if (!isName(value) || value.name !== 'Normal') {
+              queue.transparency = true;
+            }
+            gStateObj.push([key, value]);
+            break;
+          case 'SMask':
+            // We support the default so don't trigger the TODO.
+            if (!isName(value) || value.name != 'None')
+              TODO('graphic state operator ' + key);
+            break;
+          // Only generate info log messages for the following since
+          // they are unlikey to have a big impact on the rendering.
+          case 'OP':
+          case 'op':
+          case 'OPM':
+          case 'BG':
+          case 'BG2':
+          case 'UCR':
+          case 'UCR2':
+          case 'TR':
+          case 'TR2':
+          case 'HT':
+          case 'SM':
+          case 'SA':
+          case 'AIS':
+          case 'TK':
+            // TODO implement these operators.
+            info('graphic state operator ' + key);
+            break;
+          default:
+            info('Unknown graphic state operator ' + key);
+            break;
+        }
       }
 
-      if (!queue.argsArray) {
-        queue.argsArray = [];
-      }
-      if (!queue.fnArray) {
-        queue.fnArray = [];
+      // This array holds the converted/processed state data.
+      var gStateObj = [];
+      var gStateMap = gState.map;
+      for (var key in gStateMap) {
+        var value = gStateMap[key];
+        setGStateForKey(gStateObj, key, value);
       }
 
-      var fnArray = queue.fnArray, argsArray = queue.argsArray;
-      var dependencyArray = dependency || [];
+      var promises = [];
+      var indices = [];
+      for (var i = 0, n = gStateObj.length; i < n; ++i) {
+        var value = gStateObj[i];
+        if (value[0] === 'promise') {
+          promises.push(value[1]);
+          indices.push(i);
+        }
+      }
+
+      var promise = new Promise();
+      Promise.all(promises).then(function(datas) {
+        for (var i = 0, n = datas.length; i < n; ++i) {
+          var data = datas[i];
+          var index = indices[i];
+          gStateObj[index] = data.gState;
+          var subQueue = data.queue;
+          Util.concatenateToArray(fnArray, subQueue.fnArray);
+          Util.concatenateToArray(argsArray, subQueue.argsArray);
+          queue.transparency = subQueue.transparency || queue.transparency;
+          Util.extendObj(dependencies, data.dependencies);
+        }
+        fnArray.push('setGState');
+        argsArray.push([gStateObj]);
+        promise.resolve(opListData);
+      });
+
+      return promise;
+    },
+
+    loadFont: function PartialEvaluator_loadFont(fontName, font, xref,
+                                                 resources) {
+      var promise = new Promise();
+
+      var fontRes = resources.get('Font');
+
+      assert(fontRes, 'fontRes not available');
+
+      font = xref.fetchIfRef(font) || fontRes.get(fontName);
+      if (!isDict(font)) {
+        ++this.fontIdCounter;
+        promise.resolve({
+          font: {
+            translated: new ErrorFont('Font ' + fontName + ' is not available'),
+            loadedName: 'g_font_' + this.uniquePrefix + this.fontIdCounter
+          },
+          dependencies: {}
+        });
+        return promise;
+      }
+
+      var loadedName = font.loadedName;
+      if (!loadedName) {
+        // keep track of each font we translated so the caller can
+        // load them asynchronously before calling display on a page
+        loadedName = 'g_font_' + this.uniquePrefix + (this.fontIdCounter + 1);
+        font.loadedName = loadedName;
+
+        var translated;
+        try {
+          translated = this.translateFont(font, xref);
+        } catch (e) {
+          if (e instanceof MissingDataException) {
+            font.loadedName = null;
+            throw e;
+          }
+          translated = new ErrorFont(e instanceof Error ? e.message : e);
+        }
+        font.translated = translated;
+
+        if (translated.loadCharProcs) {
+          delete translated.loadCharProcs;
+
+          var charProcs = font.get('CharProcs').getAll();
+          var fontResources = font.get('Resources') || resources;
+          var opListPromises = [];
+          var charProcKeys = Object.keys(charProcs);
+          for (var i = 0, n = charProcKeys.length; i < n; ++i) {
+            var key = charProcKeys[i];
+            var glyphStream = charProcs[key];
+            opListPromises.push(
+              this.getOperatorList(glyphStream, fontResources));
+          }
+          Promise.all(opListPromises).then(function(datas) {
+            var charProcOperatorList = {};
+            var dependencies = {};
+            for (var i = 0, n = charProcKeys.length; i < n; ++i) {
+              var key = charProcKeys[i];
+              var data = datas[i];
+              charProcOperatorList[key] = data.queue;
+              Util.extendObj(dependencies, data.dependencies);
+            }
+            translated.charProcOperatorList = charProcOperatorList;
+            promise.resolve({
+              font: font,
+              dependencies: dependencies
+            });
+          });
+        } else {
+          promise.resolve({
+            font: font,
+            dependencies: {}
+          });
+        }
+
+        ++this.fontIdCounter;
+      } else {
+        promise.resolve({
+          font: font,
+          dependencies: {}
+        });
+      }
+      return promise;
+    },
+
+    getOperatorList: function PartialEvaluator_getOperatorList(stream,
+                                                               resources) {
+
+      var self = this;
+      var xref = this.xref;
+      var handler = this.handler;
+
+      var fnArray = [];
+      var argsArray = [];
+      var queue = {
+        transparency: false,
+        fnArray: fnArray,
+        argsArray: argsArray
+      };
+      var dependencies = {};
 
       resources = resources || new Dict();
       var xobjs = resources.get('XObject') || new Dict();
@@ -379,222 +607,232 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       // TODO(mduan): pass array of knownCommands rather than OP_MAP
       // dictionary
       var parser = new Parser(new Lexer(stream, OP_MAP), false, xref);
-      var res = resources;
-      var args = [], obj;
-      var TILING_PATTERN = 1, SHADING_PATTERN = 2;
 
-      while (true) {
-        obj = parser.getObj();
-        if (isEOF(obj)) {
-          break;
-        }
+      var promise = new Promise();
+      function parseCommands() {
+        try {
+          parser.restoreState();
+          var args = [];
+          while (true) {
 
-        if (isCmd(obj)) {
-          var cmd = obj.cmd;
+            var obj = parser.getObj();
 
-          // Check that the command is valid
-          var opSpec = OP_MAP[cmd];
-          if (!opSpec) {
-            warn('Unknown command "' + cmd + '"');
-            continue;
-          }
-
-          var fn = opSpec.fnName;
-
-          // Validate the number of arguments for the command
-          if (opSpec.variableArgs) {
-            if (args.length > opSpec.numArgs) {
-              info('Command ' + fn + ': expected [0,' + opSpec.numArgs +
-                  '] args, but received ' + args.length + ' args');
+            if (isEOF(obj)) {
+              break;
             }
-          } else {
-            if (args.length < opSpec.numArgs) {
-              // If we receive too few args, it's not possible to possible
-              // to execute the command, so skip the command
-              info('Command ' + fn + ': because expected ' + opSpec.numArgs +
-                  ' args, but received ' + args.length + ' args; skipping');
-              args = [];
-              continue;
-            } else if (args.length > opSpec.numArgs) {
-              info('Command ' + fn + ': expected ' + opSpec.numArgs +
-                  ' args, but received ' + args.length + ' args');
-            }
-          }
 
-          // TODO figure out how to type-check vararg functions
+            if (isCmd(obj)) {
+              var cmd = obj.cmd;
 
-          if ((cmd == 'SCN' || cmd == 'scn') && !args[args.length - 1].code) {
-            // compile tiling patterns
-            var patternName = args[args.length - 1];
-            // SCN/scn applies patterns along with normal colors
-            if (isName(patternName)) {
-              var pattern = patterns.get(patternName.name);
-              if (pattern) {
-                var dict = isStream(pattern) ? pattern.dict : pattern;
-                var typeNum = dict.get('PatternType');
-
-                if (typeNum == TILING_PATTERN) {
-                  // Create an IR of the pattern code.
-                  var depIdx = dependencyArray.length;
-                  var operatorList = this.getOperatorList(pattern,
-                      dict.get('Resources') || resources, dependencyArray);
-
-                  // Add the dependencies that are required to execute the
-                  // operatorList.
-                  insertDependency(dependencyArray.slice(depIdx));
-
-                  args = TilingPattern.getIR(operatorList, dict, args);
-                }
-                else if (typeNum == SHADING_PATTERN) {
-                  var shading = dict.get('Shading');
-                  var matrix = dict.get('Matrix');
-                  var pattern = Pattern.parseShading(shading, matrix, xref,
-                                                     res);
-                  args = pattern.getIR();
-                } else {
-                  error('Unkown PatternType ' + typeNum);
-                }
-              }
-            }
-          } else if (cmd == 'Do' && !args[0].code) {
-            // eagerly compile XForm objects
-            var name = args[0].name;
-            var xobj = xobjs.get(name);
-            if (xobj) {
-              assertWellFormed(isStream(xobj), 'XObject should be a stream');
-
-              var type = xobj.dict.get('Subtype');
-              assertWellFormed(
-                isName(type),
-                'XObject should have a Name subtype'
-              );
-
-              if ('Form' == type.name) {
-                buildFormXObject(xobj);
-                args = [];
+              // Check that the command is valid
+              var opSpec = OP_MAP[cmd];
+              if (!opSpec) {
+                warn('Unknown command "' + cmd + '"');
                 continue;
-              } else if ('Image' == type.name) {
-                buildPaintImageXObject(xobj, false);
-              } else {
-                error('Unhandled XObject subtype ' + type.name);
               }
-            }
-          } else if (cmd == 'Tf') { // eagerly collect all fonts
-            args[0] = handleSetFont(args[0].name);
-          } else if (cmd == 'EI') {
-            buildPaintImageXObject(args[0], true);
-          }
 
-          switch (fn) {
-            // Parse the ColorSpace data to a raw format.
-            case 'setFillColorSpace':
-            case 'setStrokeColorSpace':
-              args = [ColorSpace.parseToIR(args[0], xref, resources)];
-              break;
-            case 'shadingFill':
-              var shadingRes = res.get('Shading');
-              if (!shadingRes)
-                error('No shading resource found');
+              var fn = opSpec.fnName;
 
-              var shading = shadingRes.get(args[0].name);
-              if (!shading)
-                error('No shading object found');
+              // Validate the number of arguments for the command
+              if (opSpec.variableArgs) {
+                if (args.length > opSpec.numArgs) {
+                  info('Command ' + fn + ': expected [0,' + opSpec.numArgs +
+                      '] args, but received ' + args.length + ' args');
+                }
+              } else {
+                if (args.length < opSpec.numArgs) {
+                  // If we receive too few args, it's not possible to possible
+                  // to execute the command, so skip the command
+                  info('Command ' + fn + ': because expected ' +
+                       opSpec.numArgs + ' args, but received ' + args.length +
+                       ' args; skipping');
+                  args = [];
+                  continue;
+                } else if (args.length > opSpec.numArgs) {
+                  info('Command ' + fn + ': expected ' + opSpec.numArgs +
+                      ' args, but received ' + args.length + ' args');
+                }
+              }
 
-              var shadingFill = Pattern.parseShading(shading, null, xref, res);
-              var patternIR = shadingFill.getIR();
-              args = [patternIR];
-              fn = 'shadingFill';
-              break;
-            case 'setGState':
-              var dictName = args[0];
-              var extGState = resources.get('ExtGState');
+              // TODO figure out how to type-check vararg functions
 
-              if (!isDict(extGState) || !extGState.has(dictName.name))
-                break;
+              if ((cmd == 'SCN' || cmd == 'scn') &&
+                   !args[args.length - 1].code) {
+                // compile tiling patterns
+                var patternName = args[args.length - 1];
+                // SCN/scn applies patterns along with normal colors
+                var pattern;
+                if (isName(patternName) &&
+                    (pattern = patterns.get(patternName.name))) {
 
-              var gsState = extGState.get(dictName.name);
+                  var dict = isStream(pattern) ? pattern.dict : pattern;
+                  var typeNum = dict.get('PatternType');
 
-              // This array holds the converted/processed state data.
-              var gsStateObj = [];
-
-              gsState.forEach(
-                function canvasGraphicsSetGStateForEach(key, value) {
-                  switch (key) {
-                    case 'Type':
-                      break;
-                    case 'LW':
-                    case 'LC':
-                    case 'LJ':
-                    case 'ML':
-                    case 'D':
-                    case 'RI':
-                    case 'FL':
-                    case 'CA':
-                    case 'ca':
-                      gsStateObj.push([key, value]);
-                      break;
-                    case 'Font':
-                      gsStateObj.push([
-                        'Font',
-                        handleSetFont(null, value[0]),
-                        value[1]
-                      ]);
-                      break;
-                    case 'BM':
-                      if (!isName(value) || value.name !== 'Normal') {
-                        queue.transparency = true;
-                      }
-                      gsStateObj.push([key, value]);
-                      break;
-                    case 'SMask':
-                      // We support the default so don't trigger the TODO.
-                      if (!isName(value) || value.name != 'None')
-                        TODO('graphic state operator ' + key);
-                      break;
-                    // Only generate info log messages for the following since
-                    // they are unlikey to have a big impact on the rendering.
-                    case 'OP':
-                    case 'op':
-                    case 'OPM':
-                    case 'BG':
-                    case 'BG2':
-                    case 'UCR':
-                    case 'UCR2':
-                    case 'TR':
-                    case 'TR2':
-                    case 'HT':
-                    case 'SM':
-                    case 'SA':
-                    case 'AIS':
-                    case 'TK':
-                      // TODO implement these operators.
-                      info('graphic state operator ' + key);
-                      break;
-                    default:
-                      info('Unknown graphic state operator ' + key);
-                      break;
+                  if (typeNum == TILING_PATTERN) {
+                    var patternPromise = self.handleTilingType(
+                        fn, args, resources, pattern, dict);
+                    fn = 'promise';
+                    args = [patternPromise];
+                  } else if (typeNum == SHADING_PATTERN) {
+                    var shading = dict.get('Shading');
+                    var matrix = dict.get('Matrix');
+                    var pattern = Pattern.parseShading(shading, matrix, xref,
+                                                        resources);
+                    args = pattern.getIR();
+                  } else {
+                    error('Unkown PatternType ' + typeNum);
                   }
                 }
-              );
-              args = [gsStateObj];
-              break;
-          } // switch
+              } else if (cmd == 'Do' && !args[0].code) {
+                // eagerly compile XForm objects
+                var name = args[0].name;
+                var xobj = xobjs.get(name);
+                if (xobj) {
+                  assertWellFormed(
+                      isStream(xobj), 'XObject should be a stream');
 
-          fnArray.push(fn);
-          argsArray.push(args);
-          args = [];
-        } else if (obj !== null && obj !== undefined) {
-          args.push(obj instanceof Dict ? obj.getAll() : obj);
-          assertWellFormed(args.length <= 33, 'Too many arguments');
+                  var type = xobj.dict.get('Subtype');
+                  assertWellFormed(
+                    isName(type),
+                    'XObject should have a Name subtype'
+                  );
+
+                  if ('Form' == type.name) {
+                    fn = 'promise';
+                    args = [self.buildFormXObject(resources, xobj)];
+                  } else if ('Image' == type.name) {
+                    var data = self.buildPaintImageXObject(
+                        resources, xobj, false);
+                    Util.extendObj(dependencies, data.dependencies);
+                    self.insertDependencies(queue, data.dependencies);
+                    fn = data.fn;
+                    args = data.args;
+                  } else {
+                    error('Unhandled XObject subtype ' + type.name);
+                  }
+                }
+              } else if (cmd == 'Tf') { // eagerly collect all fonts
+                fn = 'promise';
+                args = [self.handleSetFont(resources, args)];
+              } else if (cmd == 'EI') {
+                var data = self.buildPaintImageXObject(
+                    resources, args[0], true);
+                Util.extendObj(dependencies, data.dependencies);
+                self.insertDependencies(queue, data.dependencies);
+                fn = data.fn;
+                args = data.args;
+              }
+
+              switch (fn) {
+                // Parse the ColorSpace data to a raw format.
+                case 'setFillColorSpace':
+                case 'setStrokeColorSpace':
+                  args = [ColorSpace.parseToIR(args[0], xref, resources)];
+                  break;
+                case 'shadingFill':
+                  var shadingRes = resources.get('Shading');
+                  if (!shadingRes)
+                    error('No shading resource found');
+
+                  var shading = shadingRes.get(args[0].name);
+                  if (!shading)
+                    error('No shading object found');
+
+                  var shadingFill = Pattern.parseShading(
+                      shading, null, xref, resources);
+                  var patternIR = shadingFill.getIR();
+                  args = [patternIR];
+                  fn = 'shadingFill';
+                  break;
+                case 'setGState':
+                  var dictName = args[0];
+                  var extGState = resources.get('ExtGState');
+
+                  if (!isDict(extGState) || !extGState.has(dictName.name))
+                    break;
+
+                  var gState = extGState.get(dictName.name);
+                  fn = 'promise';
+                  args = [self.setGState(resources, gState)];
+              } // switch
+
+              fnArray.push(fn);
+              argsArray.push(args);
+              args = [];
+              parser.saveState();
+            } else if (obj !== null && obj !== undefined) {
+              args.push(obj instanceof Dict ? obj.getAll() : obj);
+              assertWellFormed(args.length <= 33, 'Too many arguments');
+            }
+          }
+
+          var subQueuePromises = [];
+          for (var i = 0; i < fnArray.length; ++i) {
+            if (fnArray[i] === 'promise') {
+              subQueuePromises.push(argsArray[i][0]);
+            }
+          }
+          Promise.all(subQueuePromises).then(function(datas) {
+            // TODO(mack): Optimize by using repositioning elements
+            // in original queue rather than creating new queue
+
+            for (var i = 0, n = datas.length; i < n; ++i) {
+              var data = datas[i];
+              var subQueue = data.queue;
+              queue.transparency = subQueue.transparency || queue.transparency;
+              Util.extendObj(dependencies, data.dependencies);
+            }
+
+            var newFnArray = [];
+            var newArgsArray = [];
+            var currOffset = 0;
+            var subQueueIdx = 0;
+            for (var i = 0, n = fnArray.length; i < n; ++i) {
+              var offset = i + currOffset;
+              if (fnArray[i] === 'promise') {
+                var data = datas[subQueueIdx++];
+                var subQueue = data.queue;
+                var subQueueFnArray = subQueue.fnArray;
+                var subQueueArgsArray = subQueue.argsArray;
+                for (var j = 0, nn = subQueueFnArray.length; j < nn; ++j) {
+                  newFnArray[offset + j] = subQueueFnArray[j];
+                  newArgsArray[offset + j] = subQueueArgsArray[j];
+                }
+                currOffset += subQueueFnArray.length - 1;
+              } else {
+                newFnArray[offset] = fnArray[i];
+                newArgsArray[offset] = argsArray[i];
+              }
+            }
+
+            promise.resolve({
+              queue: {
+                fnArray: newFnArray,
+                argsArray: newArgsArray,
+                transparency: queue.transparency
+              },
+              dependencies: dependencies
+            });
+          });
+        } catch (e) {
+          if (!(e instanceof MissingDataException)) {
+            throw e;
+          }
+
+          self.pdfManager.requestRange(e.begin, e.end).then(parseCommands);
         }
       }
+      parser.saveState();
+      parseCommands();
 
-      return queue;
+      return promise;
     },
 
     getAnnotationsOperatorList:
         function PartialEvaluator_getAnnotationsOperatorList(annotations,
                                                              dependency) {
+      var promise = new Promise();
+
       // 12.5.5: Algorithm: Appearance streams
       function getTransformMatrix(rect, bbox, matrix) {
         var bounds = Util.getAxialAlignedBoundingBox(bbox, matrix);
@@ -616,8 +854,9 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         ];
       }
 
-      var fnArray = [];
-      var argsArray = [];
+      var opListPromises = [];
+      var includedAnnotations = [];
+
       // deal with annotations
       for (var i = 0, length = annotations.length; i < length; ++i) {
         var annotation = annotations[i];
@@ -631,287 +870,242 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           continue;
         }
 
-        // apply rectangle
-        var rect = annotation.rect;
-        var bbox = annotation.bbox;
-        var matrix = annotation.matrix;
-        var transform = getTransformMatrix(rect, bbox, matrix);
-        var border = annotation.border;
-
-        fnArray.push('beginAnnotation');
-        argsArray.push([rect, transform, matrix, border]);
+        includedAnnotations.push(annotation);
 
         if (annotation.appearance) {
-          var list = this.getOperatorList(annotation.appearance,
-            annotation.resources, dependency);
-
-          Util.concatenateToArray(fnArray, list.fnArray);
-          Util.concatenateToArray(argsArray, list.argsArray);
-        }
-
-        fnArray.push('endAnnotation');
-        argsArray.push([]);
-      }
-
-      return {
-        fnArray: fnArray,
-        argsArray: argsArray
-      };
-    },
-
-    optimizeQueue: function PartialEvaluator_optimizeQueue(queue) {
-      var fnArray = queue.fnArray, argsArray = queue.argsArray;
-      // grouping paintInlineImageXObject's into paintInlineImageXObjectGroup
-      // searching for (save, transform, paintInlineImageXObject, restore)+
-      var MIN_IMAGES_IN_INLINE_IMAGES_BLOCK = 10;
-      var MAX_IMAGES_IN_INLINE_IMAGES_BLOCK = 200;
-      var MAX_WIDTH = 1000;
-      var IMAGE_PADDING = 1;
-      for (var i = 0, ii = fnArray.length; i < ii; i++) {
-        if (fnArray[i] === 'paintInlineImageXObject' &&
-            fnArray[i - 2] === 'save' && fnArray[i - 1] === 'transform' &&
-            fnArray[i + 1] === 'restore') {
-          var j = i - 2;
-          for (i += 2; i < ii && fnArray[i - 4] === fnArray[i]; i++) {
-          }
-          var count = Math.min((i - j) >> 2,
-                               MAX_IMAGES_IN_INLINE_IMAGES_BLOCK);
-          if (count < MIN_IMAGES_IN_INLINE_IMAGES_BLOCK) {
-            continue;
-          }
-          // assuming that heights of those image is too small (~1 pixel)
-          // packing as much as possible by lines
-          var maxX = 0;
-          var map = [], maxLineHeight = 0;
-          var currentX = IMAGE_PADDING, currentY = IMAGE_PADDING;
-          for (var q = 0; q < count; q++) {
-            var transform = argsArray[j + (q << 2) + 1];
-            var img = argsArray[j + (q << 2) + 2][0];
-            if (currentX + img.width > MAX_WIDTH) {
-              // starting new line
-              maxX = Math.max(maxX, currentX);
-              currentY += maxLineHeight + 2 * IMAGE_PADDING;
-              currentX = 0;
-              maxLineHeight = 0;
-            }
-            map.push({
-              transform: transform,
-              x: currentX, y: currentY,
-              w: img.width, h: img.height
-            });
-            currentX += img.width + 2 * IMAGE_PADDING;
-            maxLineHeight = Math.max(maxLineHeight, img.height);
-          }
-          var imgWidth = Math.max(maxX, currentX) + IMAGE_PADDING;
-          var imgHeight = currentY + maxLineHeight + IMAGE_PADDING;
-          var imgData = new Uint8Array(imgWidth * imgHeight * 4);
-          var imgRowSize = imgWidth << 2;
-          for (var q = 0; q < count; q++) {
-            var data = argsArray[j + (q << 2) + 2][0].data;
-            // copy image by lines and extends pixels into padding
-            var rowSize = map[q].w << 2;
-            var dataOffset = 0;
-            var offset = (map[q].x + map[q].y * imgWidth) << 2;
-            imgData.set(
-              data.subarray(0, rowSize), offset - imgRowSize);
-            for (var k = 0, kk = map[q].h; k < kk; k++) {
-              imgData.set(
-                data.subarray(dataOffset, dataOffset + rowSize), offset);
-              dataOffset += rowSize;
-              offset += imgRowSize;
-            }
-            imgData.set(
-              data.subarray(dataOffset - rowSize, dataOffset), offset);
-            while (offset >= 0) {
-              data[offset - 4] = data[offset];
-              data[offset - 3] = data[offset + 1];
-              data[offset - 2] = data[offset + 2];
-              data[offset - 1] = data[offset + 3];
-              data[offset + rowSize] = data[offset + rowSize - 4];
-              data[offset + rowSize + 1] = data[offset + rowSize - 3];
-              data[offset + rowSize + 2] = data[offset + rowSize - 2];
-              data[offset + rowSize + 3] = data[offset + rowSize - 1];
-              offset -= imgRowSize;
-            }
-          }
-          // replacing queue items
-          fnArray.splice(j, count * 4, ['paintInlineImageXObjectGroup']);
-          argsArray.splice(j, count * 4,
-            [{width: imgWidth, height: imgHeight, data: imgData}, map]);
-          i = j;
-          ii = fnArray.length;
+          var opListPromise = this.getOperatorList(annotation.appearance,
+            annotation.resources);
+          opListPromises.push(opListPromise);
+        } else {
+          var opListPromise = new Promise();
+          opListPromise.resolve(createOperatorList());
+          opListPromises.push(opListPromise);
         }
       }
-      // grouping paintImageMaskXObject's into paintImageMaskXObjectGroup
-      // searching for (save, transform, paintImageMaskXObject, restore)+
-      var MIN_IMAGES_IN_MASKS_BLOCK = 10;
-      var MAX_IMAGES_IN_MASKS_BLOCK = 100;
-      for (var i = 0, ii = fnArray.length; i < ii; i++) {
-        if (fnArray[i] === 'paintImageMaskXObject' &&
-            fnArray[i - 2] === 'save' && fnArray[i - 1] === 'transform' &&
-            fnArray[i + 1] === 'restore') {
-          var j = i - 2;
-          for (i += 2; i < ii && fnArray[i - 4] === fnArray[i]; i++) {
-          }
-          var count = Math.min((i - j) >> 2,
-                               MAX_IMAGES_IN_MASKS_BLOCK);
-          if (count < MIN_IMAGES_IN_MASKS_BLOCK) {
-            continue;
-          }
-          var images = [];
-          for (var q = 0; q < count; q++) {
-            var transform = argsArray[j + (q << 2) + 1];
-            var maskParams = argsArray[j + (q << 2) + 2];
-            images.push({data: maskParams[0], width: maskParams[2],
-              height: maskParams[3], transform: transform,
-              inverseDecode: maskParams[1]});
-          }
-          // replacing queue items
-          fnArray.splice(j, count * 4, ['paintImageMaskXObjectGroup']);
-          argsArray.splice(j, count * 4, [images]);
-          i = j;
-          ii = fnArray.length;
+
+      Promise.all(opListPromises).then(function(datas) {
+        var fnArray = [];
+        var argsArray = [];
+        var dependencies = {};
+        for (var i = 0, n = datas.length; i < n; ++i) {
+          var annotation = includedAnnotations[i];
+          var data = datas[i];
+
+          // apply rectangle
+          var rect = annotation.rect;
+          var bbox = annotation.bbox;
+          var matrix = annotation.matrix;
+          var transform = getTransformMatrix(rect, bbox, matrix);
+          var border = annotation.border;
+
+          fnArray.push('beginAnnotation');
+          argsArray.push([rect, transform, matrix, border]);
+
+          Util.concatenateToArray(fnArray, data.queue.fnArray);
+          Util.concatenateToArray(argsArray, data.queue.argsArray);
+          Util.extendObj(dependencies, data.dependencies);
+
+          fnArray.push('endAnnotation');
+          argsArray.push([]);
         }
-      }
+
+        promise.resolve(createOperatorList(fnArray, argsArray, dependencies));
+      });
+
+      return promise;
     },
 
     getTextContent: function PartialEvaluator_getTextContent(
-                                                    stream, resources, state) {
-      var bidiTexts;
+                                                    stream, resources) {
+
       var SPACE_FACTOR = 0.35;
       var MULTI_SPACE_FACTOR = 1.5;
-
-      if (!state) {
-        bidiTexts = [];
-        state = {
-          bidiTexts: bidiTexts
-        };
-      } else {
-        bidiTexts = state.bidiTexts;
-      }
-
       var self = this;
-      var xref = this.xref;
 
-      function handleSetFont(fontName, fontRef) {
-        return self.loadFont(fontName, fontRef, xref, resources, null);
+      var statePromise = new Promise();
+
+      function handleSetFont(fontName, fontRef, resources) {
+        var promise = new Promise();
+        self.loadFont(fontName, fontRef, self.xref, resources).then(
+          function(data) {
+            promise.resolve(data.font.translated);
+          }
+        );
+        return promise;
       }
 
-      resources = xref.fetchIfRef(resources) || new Dict();
+      function getBidiText(str, startLevel, vertical) {
+        if (str) {
+          return PDFJS.bidi(str, -1, vertical);
+        }
+      }
+
+      resources = this.xref.fetchIfRef(resources) || new Dict();
       // The xobj is parsed iff it's needed, e.g. if there is a `DO` cmd.
       var xobjs = null;
 
       var parser = new Parser(new Lexer(stream), false);
-      var res = resources;
-      var args = [], obj;
 
-      var chunk = '';
-      var font = null;
-      while (!isEOF(obj = parser.getObj())) {
-        if (isCmd(obj)) {
-          var cmd = obj.cmd;
-          switch (cmd) {
-            // TODO: Add support for SAVE/RESTORE and XFORM here.
-            case 'Tf':
-              font = handleSetFont(args[0].name).translated;
+      var chunkPromises = [];
+      var fontPromise;
+      function parseCommands() {
+        try {
+          parser.restoreState();
+          var args = [];
+
+          while (true) {
+            var obj = parser.getObj();
+            if (isEOF(obj)) {
               break;
-            case 'TJ':
-              var items = args[0];
-              for (var j = 0, jj = items.length; j < jj; j++) {
-                if (typeof items[j] === 'string') {
-                  chunk += fontCharsToUnicode(items[j], font);
-                } else if (items[j] < 0 && font.spaceWidth > 0) {
-                  var fakeSpaces = -items[j] / font.spaceWidth;
-                  if (fakeSpaces > MULTI_SPACE_FACTOR) {
-                    fakeSpaces = Math.round(fakeSpaces);
-                    while (fakeSpaces--) {
-                      chunk += ' ';
+            }
+
+            if (isCmd(obj)) {
+              var cmd = obj.cmd;
+              switch (cmd) {
+                // TODO: Add support for SAVE/RESTORE and XFORM here.
+                case 'Tf':
+                  fontPromise = handleSetFont(args[0].name, null, resources);
+                  //.translated;
+                  break;
+                case 'TJ':
+                  var chunkPromise = new Promise();
+                  chunkPromises.push(chunkPromise);
+                  fontPromise.then(function(items, font) {
+                    var chunk = '';
+                    for (var j = 0, jj = items.length; j < jj; j++) {
+                      if (typeof items[j] === 'string') {
+                        chunk += fontCharsToUnicode(items[j], font);
+                      } else if (items[j] < 0 && font.spaceWidth > 0) {
+                        var fakeSpaces = -items[j] / font.spaceWidth;
+                        if (fakeSpaces > MULTI_SPACE_FACTOR) {
+                          fakeSpaces = Math.round(fakeSpaces);
+                          while (fakeSpaces--) {
+                            chunk += ' ';
+                          }
+                        } else if (fakeSpaces > SPACE_FACTOR) {
+                          chunk += ' ';
+                        }
+                      }
                     }
-                  } else if (fakeSpaces > SPACE_FACTOR) {
-                    chunk += ' ';
+
+                    chunkPromise.resolve(
+                        getBidiText(chunk, -1, font.vertical));
+                  }.bind(null, args[0]));
+                  break;
+                case 'Tj':
+                  var chunkPromise = new Promise();
+                  chunkPromises.push(chunkPromise);
+                  fontPromise.then(function(charCodes, font) {
+                    var chunk = fontCharsToUnicode(charCodes, font);
+                    chunkPromise.resolve(
+                        getBidiText(chunk, -1, font.vertical));
+                  }.bind(null, args[0]));
+                  break;
+                case '\'':
+                  // For search, adding a extra white space for line breaks
+                  // would be better here, but that causes too much spaces in
+                  // the text-selection divs.
+                  var chunkPromise = new Promise();
+                  chunkPromises.push(chunkPromise);
+                  fontPromise.then(function(charCodes, font) {
+                    var chunk = fontCharsToUnicode(charCodes, font);
+                    chunkPromise.resolve(
+                        getBidiText(chunk, -1, font.vertical));
+                  }.bind(null, args[0]));
+                  break;
+                case '"':
+                  // Note comment in "'"
+                  var chunkPromise = new Promise();
+                  chunkPromises.push(chunkPromise);
+                  fontPromise.then(function(charCodes, font) {
+                    var chunk = fontCharsToUnicode(charCodes, font);
+                    chunkPromise.resolve(
+                        getBidiText(chunk, -1, font.vertical));
+                  }.bind(null, args[2]));
+                  break;
+                case 'Do':
+                  if (args[0].code) {
+                    break;
                   }
-                }
+
+                  if (!xobjs) {
+                    xobjs = resources.get('XObject') || new Dict();
+                  }
+
+                  var name = args[0].name;
+                  var xobj = xobjs.get(name);
+                  if (!xobj)
+                    break;
+                  assertWellFormed(isStream(xobj),
+                                   'XObject should be a stream');
+
+                  var type = xobj.dict.get('Subtype');
+                  assertWellFormed(
+                    isName(type),
+                    'XObject should have a Name subtype'
+                  );
+
+                  if ('Form' !== type.name)
+                    break;
+
+                  var chunkPromise = self.getTextContent(
+                    xobj,
+                    xobj.dict.get('Resources') || resources
+                  );
+                  chunkPromises.push(chunkPromise);
+                  break;
+                case 'gs':
+                  var dictName = args[0];
+                  var extGState = resources.get('ExtGState');
+
+                  if (!isDict(extGState) || !extGState.has(dictName.name))
+                    break;
+
+                  var gsState = extGState.get(dictName.name);
+
+                  for (var i = 0; i < gsState.length; i++) {
+                    if (gsState[i] === 'Font') {
+                      fontPromise = handleSetFont(
+                          args[0].name, null, resources);
+                    }
+                  }
+                  break;
+              } // switch
+
+              args = [];
+              parser.saveState();
+            } else if (obj !== null && obj !== undefined) {
+              assertWellFormed(args.length <= 33, 'Too many arguments');
+              args.push(obj);
+            }
+          } // while
+
+          Promise.all(chunkPromises).then(function(datas) {
+            var bidiTexts = [];
+            for (var i = 0, n = datas.length; i < n; ++i) {
+              var bidiText = datas[i];
+              if (!bidiText) {
+                continue;
+              } else if (isArray(bidiText)) {
+                Util.concatenateToArray(bidiTexts, bidiText);
+              } else {
+                bidiTexts.push(bidiText);
               }
-              break;
-            case 'Tj':
-              chunk += fontCharsToUnicode(args[0], font);
-              break;
-            case '\'':
-              // For search, adding a extra white space for line breaks would be
-              // better here, but that causes too much spaces in the
-              // text-selection divs.
-              chunk += fontCharsToUnicode(args[0], font);
-              break;
-            case '"':
-              // Note comment in "'"
-              chunk += fontCharsToUnicode(args[2], font);
-              break;
-            case 'Do':
-              // Set the chunk such that the following if won't add something
-              // to the state.
-              chunk = '';
-
-              if (args[0].code) {
-                break;
-              }
-
-              if (!xobjs) {
-                xobjs = resources.get('XObject') || new Dict();
-              }
-
-              var name = args[0].name;
-              var xobj = xobjs.get(name);
-              if (!xobj)
-                break;
-              assertWellFormed(isStream(xobj), 'XObject should be a stream');
-
-              var type = xobj.dict.get('Subtype');
-              assertWellFormed(
-                isName(type),
-                'XObject should have a Name subtype'
-              );
-
-              if ('Form' !== type.name)
-                break;
-
-              state = this.getTextContent(
-                xobj,
-                xobj.dict.get('Resources') || resources,
-                state
-              );
-              break;
-            case 'gs':
-              var dictName = args[0];
-              var extGState = resources.get('ExtGState');
-
-              if (!isDict(extGState) || !extGState.has(dictName.name))
-                break;
-
-              var gsState = extGState.get(dictName.name);
-
-              for (var i = 0; i < gsState.length; i++) {
-                if (gsState[i] === 'Font') {
-                  font = handleSetFont(args[0].name).translated;
-                }
-              }
-              break;
-          } // switch
-
-          if (chunk !== '') {
-            var bidiText = PDFJS.bidi(chunk, -1, font.vertical);
-            bidiTexts.push(bidiText);
-
-            chunk = '';
+            }
+            statePromise.resolve(bidiTexts);
+          });
+        } catch (e) {
+          if (!(e instanceof MissingDataException)) {
+            throw e;
           }
 
-          args = [];
-        } else if (obj !== null && obj !== undefined) {
-          assertWellFormed(args.length <= 33, 'Too many arguments');
-          args.push(obj);
+          self.pdfManager.requestRange(e.begin, e.end).then(parseCommands);
         }
-      } // while
+      }
+      parser.saveState();
+      parseCommands();
 
-      return state;
+      return statePromise;
     },
 
     extractDataStructures: function
@@ -1253,9 +1447,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
     },
 
     translateFont: function PartialEvaluator_translateFont(dict,
-                                                           xref,
-                                                           resources,
-                                                           dependency) {
+                                                           xref) {
       var baseDict = dict;
       var type = dict.get('Subtype');
       assertWellFormed(isName(type), 'invalid font Subtype');
@@ -1403,6 +1595,125 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       return new Font(fontName.name, fontFile, properties);
     }
   };
+
+  PartialEvaluator.optimizeQueue =
+      function PartialEvaluator_optimizeQueue(queue) {
+
+    var fnArray = queue.fnArray, argsArray = queue.argsArray;
+    // grouping paintInlineImageXObject's into paintInlineImageXObjectGroup
+    // searching for (save, transform, paintInlineImageXObject, restore)+
+    var MIN_IMAGES_IN_INLINE_IMAGES_BLOCK = 10;
+    var MAX_IMAGES_IN_INLINE_IMAGES_BLOCK = 200;
+    var MAX_WIDTH = 1000;
+    var IMAGE_PADDING = 1;
+    for (var i = 0, ii = fnArray.length; i < ii; i++) {
+      if (fnArray[i] === 'paintInlineImageXObject' &&
+          fnArray[i - 2] === 'save' && fnArray[i - 1] === 'transform' &&
+          fnArray[i + 1] === 'restore') {
+        var j = i - 2;
+        for (i += 2; i < ii && fnArray[i - 4] === fnArray[i]; i++) {
+        }
+        var count = Math.min((i - j) >> 2,
+                             MAX_IMAGES_IN_INLINE_IMAGES_BLOCK);
+        if (count < MIN_IMAGES_IN_INLINE_IMAGES_BLOCK) {
+          continue;
+        }
+        // assuming that heights of those image is too small (~1 pixel)
+        // packing as much as possible by lines
+        var maxX = 0;
+        var map = [], maxLineHeight = 0;
+        var currentX = IMAGE_PADDING, currentY = IMAGE_PADDING;
+        for (var q = 0; q < count; q++) {
+          var transform = argsArray[j + (q << 2) + 1];
+          var img = argsArray[j + (q << 2) + 2][0];
+          if (currentX + img.width > MAX_WIDTH) {
+            // starting new line
+            maxX = Math.max(maxX, currentX);
+            currentY += maxLineHeight + 2 * IMAGE_PADDING;
+            currentX = 0;
+            maxLineHeight = 0;
+          }
+          map.push({
+            transform: transform,
+            x: currentX, y: currentY,
+            w: img.width, h: img.height
+          });
+          currentX += img.width + 2 * IMAGE_PADDING;
+          maxLineHeight = Math.max(maxLineHeight, img.height);
+        }
+        var imgWidth = Math.max(maxX, currentX) + IMAGE_PADDING;
+        var imgHeight = currentY + maxLineHeight + IMAGE_PADDING;
+        var imgData = new Uint8Array(imgWidth * imgHeight * 4);
+        var imgRowSize = imgWidth << 2;
+        for (var q = 0; q < count; q++) {
+          var data = argsArray[j + (q << 2) + 2][0].data;
+          // copy image by lines and extends pixels into padding
+          var rowSize = map[q].w << 2;
+          var dataOffset = 0;
+          var offset = (map[q].x + map[q].y * imgWidth) << 2;
+          imgData.set(
+            data.subarray(0, rowSize), offset - imgRowSize);
+          for (var k = 0, kk = map[q].h; k < kk; k++) {
+            imgData.set(
+              data.subarray(dataOffset, dataOffset + rowSize), offset);
+            dataOffset += rowSize;
+            offset += imgRowSize;
+          }
+          imgData.set(
+            data.subarray(dataOffset - rowSize, dataOffset), offset);
+          while (offset >= 0) {
+            data[offset - 4] = data[offset];
+            data[offset - 3] = data[offset + 1];
+            data[offset - 2] = data[offset + 2];
+            data[offset - 1] = data[offset + 3];
+            data[offset + rowSize] = data[offset + rowSize - 4];
+            data[offset + rowSize + 1] = data[offset + rowSize - 3];
+            data[offset + rowSize + 2] = data[offset + rowSize - 2];
+            data[offset + rowSize + 3] = data[offset + rowSize - 1];
+            offset -= imgRowSize;
+          }
+        }
+        // replacing queue items
+        fnArray.splice(j, count * 4, ['paintInlineImageXObjectGroup']);
+        argsArray.splice(j, count * 4,
+          [{width: imgWidth, height: imgHeight, data: imgData}, map]);
+        i = j;
+        ii = fnArray.length;
+      }
+    }
+    // grouping paintImageMaskXObject's into paintImageMaskXObjectGroup
+    // searching for (save, transform, paintImageMaskXObject, restore)+
+    var MIN_IMAGES_IN_MASKS_BLOCK = 10;
+    var MAX_IMAGES_IN_MASKS_BLOCK = 100;
+    for (var i = 0, ii = fnArray.length; i < ii; i++) {
+      if (fnArray[i] === 'paintImageMaskXObject' &&
+          fnArray[i - 2] === 'save' && fnArray[i - 1] === 'transform' &&
+          fnArray[i + 1] === 'restore') {
+        var j = i - 2;
+        for (i += 2; i < ii && fnArray[i - 4] === fnArray[i]; i++) {
+        }
+        var count = Math.min((i - j) >> 2,
+                             MAX_IMAGES_IN_MASKS_BLOCK);
+        if (count < MIN_IMAGES_IN_MASKS_BLOCK) {
+          continue;
+        }
+        var images = [];
+        for (var q = 0; q < count; q++) {
+          var transform = argsArray[j + (q << 2) + 1];
+          var maskParams = argsArray[j + (q << 2) + 2];
+          images.push({data: maskParams[0], width: maskParams[2],
+            height: maskParams[3], transform: transform,
+            inverseDecode: maskParams[1]});
+        }
+        // replacing queue items
+        fnArray.splice(j, count * 4, ['paintImageMaskXObjectGroup']);
+        argsArray.splice(j, count * 4, [images]);
+        i = j;
+        ii = fnArray.length;
+      }
+    }
+  };
+
 
   return PartialEvaluator;
 })();
