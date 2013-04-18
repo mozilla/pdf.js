@@ -305,9 +305,6 @@ ChromeActions.prototype = {
   getLocale: function() {
     return getStringPref('general.useragent.locale', 'en-US');
   },
-  getLoadingType: function() {
-    return 'passive';
-  },
   getStrings: function(data) {
     try {
       // Lazy initialization of localizedStrings

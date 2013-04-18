@@ -30,29 +30,23 @@ var BasePdfManager = (function BasePdfManagerClosure() {
       throw new NotImplementedException();
     },
 
-    ensureModel: function BasePdfManager_ensureModel(prop) {
-      var args = [].slice.call(arguments);
-      args.unshift(this.pdfModel);
-      return this.ensure.apply(this, args);
+    ensureModel: function BasePdfManager_ensureModel(prop, args) {
+      return this.ensure(this.pdfModel, prop, args);
     },
 
-    ensureXRef: function BasePdfManager_ensureXRef(prop) {
-      var args = [].slice.call(arguments);
-      args.unshift(this.pdfModel.xref);
-      return this.ensure.apply(this, args);
+    ensureXRef: function BasePdfManager_ensureXRef(prop, args) {
+      return this.ensure(this.pdfModel.xref, prop, args);
     },
 
-    ensureCatalog: function BasePdfManager_ensureCatalog(prop) {
-      var args = [].slice.call(arguments);
-      args.unshift(this.pdfModel.catalog);
-      return this.ensure.apply(this, args);
+    ensureCatalog: function BasePdfManager_ensureCatalog(prop, args) {
+      return this.ensure(this.pdfModel.catalog, prop, args);
     },
 
     getPage: function BasePdfManager_pagePage(pageIndex) {
       return this.pdfModel.getPage(pageIndex);
     },
 
-    ensure: function BasePdfManager_ensure(obj, prop) {
+    ensure: function BasePdfManager_ensure(obj, prop, args) {
       return new NotImplementedException();
     },
 
@@ -76,13 +70,12 @@ var LocalPdfManager = (function LocalPdfManagerClosure() {
   LocalPdfManager.prototype.constructor = LocalPdfManager;
 
   LocalPdfManager.prototype.ensure =
-      function LocalPdfManager_ensure(obj, prop) {
+      function LocalPdfManager_ensure(obj, prop, args) {
     var promise = new PDFJS.Promise();
-    var result;
-    var value = obj[prop];
     try {
+      var value = obj[prop];
+      var result;
       if (typeof(value) === 'function') {
-        var args = [].slice.call(arguments, 2);
         result = value.apply(obj, args);
       } else {
         result = value;
@@ -109,7 +102,7 @@ var LocalPdfManager = (function LocalPdfManagerClosure() {
 
 var NetworkPdfManager = (function NetworkPdfManagerClosure() {
 
-  var CHUNK_SIZE = 64000;
+  var CHUNK_SIZE = 65536;
 
   function NetworkPdfManager(args, msgHandler) {
 
@@ -131,23 +124,19 @@ var NetworkPdfManager = (function NetworkPdfManagerClosure() {
   NetworkPdfManager.prototype = Object.create(BasePdfManager.prototype);
   NetworkPdfManager.prototype.constructor = NetworkPdfManager;
 
-  // FIXME(mack): Make ensure() use array for all arguments
   NetworkPdfManager.prototype.ensure =
-      function NetworkPdfManager_ensure(obj, prop) {
+      function NetworkPdfManager_ensure(obj, prop, args) {
     var promise = new PDFJS.Promise();
-    var args = [].slice.call(arguments);
-    args.unshift(promise);
-    this.ensureHelper.apply(this, args);
+    this.ensureHelper(promise, obj, prop, args);
     return promise;
   };
 
   NetworkPdfManager.prototype.ensureHelper =
-      function NetworkPdfManager_ensureHelper(promise, obj, prop) {
+      function NetworkPdfManager_ensureHelper(promise, obj, prop, args) {
     try {
       var result;
       var value = obj[prop];
       if (typeof(value) === 'function') {
-        var args = [].slice.call(arguments, 3);
         result = value.apply(obj, args);
       } else {
         result = value;
@@ -160,9 +149,8 @@ var NetworkPdfManager = (function NetworkPdfManagerClosure() {
         return;
       }
 
-      var allArgs = Array.prototype.slice.call(arguments);
       this.streamManager.requestRange(e.begin, e.end, function() {
-        this.ensureHelper.apply(this, allArgs);
+        this.ensureHelper(promise, obj, prop, args);
       }.bind(this));
     }
   };

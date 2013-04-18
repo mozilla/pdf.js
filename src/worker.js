@@ -144,9 +144,9 @@ var WorkerMessageHandler = {
         loadDocumentPromise.reject(e);
       };
 
-    pdfManager.ensureModel('checkHeader').then(function() {
-      pdfManager.ensureModel('parseStartXRef').then(function() {
-        pdfManager.ensureModel('parse', recoveryMode).then(
+    pdfManager.ensureModel('checkHeader', []).then(function() {
+      pdfManager.ensureModel('parseStartXRef', []).then(function() {
+        pdfManager.ensureModel('parse', [recoveryMode]).then(
             parseSuccess, parseFailure);
       });
     });
@@ -255,7 +255,7 @@ var WorkerMessageHandler = {
 
       var onSuccess = function(doc) {
         handler.send('GetDoc', { pdfInfo: doc });
-        pdfManager.ensureModel('traversePages');
+        pdfManager.ensureModel('traversePages', []);
       };
 
       var onFailure = function(e) {
@@ -345,12 +345,14 @@ var WorkerMessageHandler = {
 
     handler.on('GetAnnotationsRequest', function wphSetupGetAnnotations(data) {
       pdfManager.getPage(data.pageIndex).then(function(page) {
-        pdfManager.ensure(page, 'getAnnotations').then(function(annotations) {
-          handler.send('GetAnnotations', {
-            pageIndex: data.pageIndex,
-            annotations: annotations
-          });
-        });
+        pdfManager.ensure(page, 'getAnnotations',[]).then(
+          function(annotations) {
+            handler.send('GetAnnotations', {
+              pageIndex: data.pageIndex,
+              annotations: annotations
+            });
+          }
+        );
       });
     });
 
