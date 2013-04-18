@@ -19,15 +19,17 @@
            IDENTITY_MATRIX, info, isArray, isCmd, isDict, isEOF, isName, isNum,
            isStream, isString, JpegStream, Lexer, Metrics, Name, Parser,
            Pattern, PDFImage, PDFJS, serifFonts, stdFontMap, symbolsFonts,
-           TilingPattern, TODO, warn, Util, MissingDataException, globalScope */
+           TilingPattern, TODO, warn, Util, MissingDataException, Promise */
 
 'use strict';
 
 var PartialEvaluator = (function PartialEvaluatorClosure() {
-  function PartialEvaluator(xref, handler, pageIndex, uniquePrefix) {
+  function PartialEvaluator(pdfManager, xref, handler, pageIndex,
+                            uniquePrefix) {
     this.state = new EvalState();
     this.stateStack = [];
 
+    this.pdfManager = pdfManager;
     this.xref = xref;
     this.handler = handler;
     this.pageIndex = pageIndex;
@@ -165,7 +167,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
     buildFormXObject: function PartialEvaluator_buildFormXObject(resources,
                                                                  xobj, smask) {
       var self = this;
-      var promise = new PDFJS.Promise();
+      var promise = new Promise();
       var fnArray = [];
       var argsArray = [];
 
@@ -302,7 +304,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                           fn, args, resources, pattern, patternDict) {
       var self = this;
       // Create an IR of the pattern code.
-      var promise = new PDFJS.Promise();
+      var promise = new Promise();
       var opListPromise = this.getOperatorList(pattern,
           patternDict.get('Resources') || resources);
       opListPromise.then(function(data) {
@@ -324,7 +326,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
     handleSetFont: function PartialEvaluator_handleSetFont(
                       resources, fontArgs, font) {
 
-      var promise = new PDFJS.Promise();
+      var promise = new Promise();
       // TODO(mack): Not needed?
       var fontName;
       if (fontArgs) {
@@ -413,7 +415,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
             gStateObj.push([key, value]);
             break;
           case 'Font':
-            var promise = new PDFJS.Promise();
+            var promise = new Promise();
             self.handleSetFont(resources, null, value[0]).then(function(data) {
               var gState = ['Font', data.loadedName, value[1]];
               promise.resolve({
@@ -478,8 +480,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         }
       }
 
-      var promise = new PDFJS.Promise();
-      PDFJS.Promise.all(promises).then(function(datas) {
+      var promise = new Promise();
+      Promise.all(promises).then(function(datas) {
         for (var i = 0, n = datas.length; i < n; ++i) {
           var data = datas[i];
           var index = indices[i];
@@ -500,7 +502,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
 
     loadFont: function PartialEvaluator_loadFont(fontName, font, xref,
                                                  resources) {
-      var promise = new PDFJS.Promise();
+      var promise = new Promise();
 
       var fontRes = resources.get('Font');
 
@@ -551,7 +553,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
             opListPromises.push(
               this.getOperatorList(glyphStream, fontResources));
           }
-          PDFJS.Promise.all(opListPromises).then(function(datas) {
+          Promise.all(opListPromises).then(function(datas) {
             var charProcOperatorList = {};
             var dependencies = {};
             for (var i = 0, n = charProcKeys.length; i < n; ++i) {
@@ -606,7 +608,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       // dictionary
       var parser = new Parser(new Lexer(stream, OP_MAP), false, xref);
 
-      var promise = new PDFJS.Promise();
+      var promise = new Promise();
       function parseCommands() {
         try {
           parser.restoreState();
@@ -770,7 +772,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
               subQueuePromises.push(argsArray[i][0]);
             }
           }
-          PDFJS.Promise.all(subQueuePromises).then(function(datas) {
+          Promise.all(subQueuePromises).then(function(datas) {
             // TODO(mack): Optimize by using repositioning elements
             // in original queue rather than creating new queue
 
@@ -817,10 +819,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
             throw e;
           }
 
-          var streamManager = globalScope.pdfManager.streamManager;
-          streamManager.requestRange(e.begin, e.end, function() {
-            parseCommands();
-          });
+          self.pdfManager.requestRange(e.begin, e.end).then(parseCommands);
         }
       }
       parser.saveState();
@@ -832,7 +831,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
     getAnnotationsOperatorList:
         function PartialEvaluator_getAnnotationsOperatorList(annotations,
                                                              dependency) {
-      var promise = new PDFJS.Promise();
+      var promise = new Promise();
 
       // 12.5.5: Algorithm: Appearance streams
       function getTransformMatrix(rect, bbox, matrix) {
@@ -878,13 +877,13 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
             annotation.resources);
           opListPromises.push(opListPromise);
         } else {
-          var opListPromise = new PDFJS.Promise();
+          var opListPromise = new Promise();
           opListPromise.resolve(createOperatorList());
           opListPromises.push(opListPromise);
         }
       }
 
-      PDFJS.Promise.all(opListPromises).then(function(datas) {
+      Promise.all(opListPromises).then(function(datas) {
         var fnArray = [];
         var argsArray = [];
         var dependencies = {};
@@ -923,10 +922,10 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       var MULTI_SPACE_FACTOR = 1.5;
       var self = this;
 
-      var statePromise = new PDFJS.Promise();
+      var statePromise = new Promise();
 
       function handleSetFont(fontName, fontRef, resources) {
-        var promise = new PDFJS.Promise();
+        var promise = new Promise();
         self.loadFont(fontName, fontRef, self.xref, resources).then(
           function(data) {
             promise.resolve(data.font.translated);
@@ -969,7 +968,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                   //.translated;
                   break;
                 case 'TJ':
-                  var chunkPromise = new PDFJS.Promise();
+                  var chunkPromise = new Promise();
                   chunkPromises.push(chunkPromise);
                   fontPromise.then(function(items, font) {
                     var chunk = '';
@@ -994,7 +993,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                   }.bind(null, args[0]));
                   break;
                 case 'Tj':
-                  var chunkPromise = new PDFJS.Promise();
+                  var chunkPromise = new Promise();
                   chunkPromises.push(chunkPromise);
                   fontPromise.then(function(charCodes, font) {
                     var chunk = fontCharsToUnicode(charCodes, font);
@@ -1006,7 +1005,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                   // For search, adding a extra white space for line breaks
                   // would be better here, but that causes too much spaces in
                   // the text-selection divs.
-                  var chunkPromise = new PDFJS.Promise();
+                  var chunkPromise = new Promise();
                   chunkPromises.push(chunkPromise);
                   fontPromise.then(function(charCodes, font) {
                     var chunk = fontCharsToUnicode(charCodes, font);
@@ -1016,7 +1015,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                   break;
                 case '"':
                   // Note comment in "'"
-                  var chunkPromise = new PDFJS.Promise();
+                  var chunkPromise = new Promise();
                   chunkPromises.push(chunkPromise);
                   fontPromise.then(function(charCodes, font) {
                     var chunk = fontCharsToUnicode(charCodes, font);
@@ -1081,7 +1080,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
             }
           } // while
 
-          PDFJS.Promise.all(chunkPromises).then(function(datas) {
+          Promise.all(chunkPromises).then(function(datas) {
             var bidiTexts = [];
             for (var i = 0, n = datas.length; i < n; ++i) {
               var bidiText = datas[i];
@@ -1100,10 +1099,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
             throw e;
           }
 
-          var streamManager = globalScope.pdfManager.streamManager;
-          streamManager.requestRange(e.begin, e.end, function() {
-            parseCommands();
-          });
+          self.pdfManager.requestRange(e.begin, e.end).then(parseCommands);
         }
       }
       parser.saveState();

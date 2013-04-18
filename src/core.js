@@ -18,7 +18,7 @@
            isArrayBuffer, isDict, isName, isStream, isString, Lexer,
            Linearization, NullStream, PartialEvaluator, shadow, Stream,
            StreamsSequenceStream, stringToPDFString, TODO, Util, warn, XRef,
-           MissingDataException, PDFJS */
+           MissingDataException, Promise */
 
 'use strict';
 
@@ -149,21 +149,22 @@ var Page = (function PageClosure() {
     },
     getOperatorList: function Page_getOperatorList(handler) {
       var self = this;
-      var promise = new PDFJS.Promise();
+      var promise = new Promise();
 
-      var pageListPromise = new PDFJS.Promise();
-      var annotationListPromise = new PDFJS.Promise();
+      var pageListPromise = new Promise();
+      var annotationListPromise = new Promise();
 
       var pdfManager = this.pdfManager;
       var contentStreamPromise = pdfManager.ensure(this, 'getContentStream',
                                                    []);
       var resourcesPromise = pdfManager.ensure(this, 'resources');
-      var dataPromises = PDFJS.Promise.all(
+      var dataPromises = Promise.all(
           [contentStreamPromise, resourcesPromise]);
       dataPromises.then(function(data) {
         var contentStream = data[0];
         var resources = data[1];
         var pe = self.pe = new PartialEvaluator(
+                                  pdfManager,
                                   self.xref, handler, self.pageIndex,
                                   'p' + self.pageIndex + '_');
 
@@ -180,7 +181,7 @@ var Page = (function PageClosure() {
       pdfManager.ensure(this, 'getAnnotationsForDraw', []).then(
         function(annotations) {
           var annotationEvaluator = new PartialEvaluator(
-            self.xref, handler, self.pageIndex,
+            pdfManager, self.xref, handler, self.pageIndex,
             'p' + self.pageIndex + '_annotation');
 
           pdfManager.ensure(annotationEvaluator, 'getAnnotationsOperatorList',
@@ -194,7 +195,7 @@ var Page = (function PageClosure() {
         }
       );
 
-      PDFJS.Promise.all([pageListPromise, annotationListPromise]).then(
+      Promise.all([pageListPromise, annotationListPromise]).then(
         function(datas) {
           var pageData = datas[0];
           var pageQueue = pageData.queue;
@@ -221,12 +222,12 @@ var Page = (function PageClosure() {
 
       var self = this;
 
-      var textContentPromise = new PDFJS.Promise();
+      var textContentPromise = new Promise();
 
       var pdfManager = this.pdfManager;
       var contentStreamPromise = pdfManager.ensure(this, 'getContentStream',
                                                    []);
-      var resourcesPromise = new PDFJS.Promise();
+      var resourcesPromise = new Promise();
       pdfManager.ensure(this, 'resources').then(function(resources) {
         pdfManager.ensure(self.xref, 'fetchIfRef', [resources]).then(
           function(resources) {
@@ -235,12 +236,13 @@ var Page = (function PageClosure() {
         );
       });
 
-      var dataPromises = PDFJS.Promise.all([contentStreamPromise,
-                                            resourcesPromise]);
+      var dataPromises = Promise.all([contentStreamPromise,
+                                      resourcesPromise]);
       dataPromises.then(function(data) {
         var contentStream = data[0];
         var resources = data[1];
         var pe = new PartialEvaluator(
+                       pdfManager,
                        self.xref, handler, self.pageIndex,
                        'p' + self.pageIndex + '_');
 

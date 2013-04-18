@@ -28,9 +28,12 @@ describe('evaluator', function() {
     }
   };
 
+  function PdfManagerMock() { }
+
   describe('splitCombinedOperations', function() {
     it('should reject unknown operations', function() {
-      var evaluator = new PartialEvaluator(new XrefMock(), new HandlerMock(),
+      var evaluator = new PartialEvaluator(new PdfManagerMock(),
+                                           new XrefMock(), new HandlerMock(),
                                            'prefix');
       var stream = new StringStream('qTT');
       var promise = evaluator.getOperatorList(stream, new ResourcesMock());
@@ -44,7 +47,8 @@ describe('evaluator', function() {
     });
 
     it('should handle one operations', function() {
-      var evaluator = new PartialEvaluator(new XrefMock(), new HandlerMock(),
+      var evaluator = new PartialEvaluator(new PdfManagerMock(),
+                                           new XrefMock(), new HandlerMock(),
                                            'prefix');
       var stream = new StringStream('Q');
       var promise = evaluator.getOperatorList(stream, new ResourcesMock());
@@ -57,7 +61,8 @@ describe('evaluator', function() {
     });
 
     it('should handle two glued operations', function() {
-      var evaluator = new PartialEvaluator(new XrefMock(), new HandlerMock(),
+      var evaluator = new PartialEvaluator(new PdfManagerMock(),
+                                           new XrefMock(), new HandlerMock(),
                                            'prefix');
       var resources = new ResourcesMock();
       resources.Res1 = {};
@@ -73,7 +78,8 @@ describe('evaluator', function() {
     });
 
     it('should handle tree glued operations', function() {
-      var evaluator = new PartialEvaluator(new XrefMock(), new HandlerMock(),
+      var evaluator = new PartialEvaluator(new PdfManagerMock(),
+                                           new XrefMock(), new HandlerMock(),
                                            'prefix');
       var stream = new StringStream('qqq');
       var promise = evaluator.getOperatorList(stream, new ResourcesMock());
@@ -88,7 +94,8 @@ describe('evaluator', function() {
     });
 
     it('should handle three glued operations #2', function() {
-      var evaluator = new PartialEvaluator(new XrefMock(), new HandlerMock(),
+      var evaluator = new PartialEvaluator(new PdfManagerMock(),
+                                           new XrefMock(), new HandlerMock(),
                                            'prefix');
       var resources = new ResourcesMock();
       resources.Res1 = {};
@@ -105,7 +112,8 @@ describe('evaluator', function() {
     });
 
     it('should handle glued operations and operands', function() {
-      var evaluator = new PartialEvaluator(new XrefMock(), new HandlerMock(),
+      var evaluator = new PartialEvaluator(new PdfManagerMock(),
+                                           new XrefMock(), new HandlerMock(),
                                            'prefix');
       var stream = new StringStream('q5 Ts');
       var promise  = evaluator.getOperatorList(stream, new ResourcesMock());
@@ -122,7 +130,8 @@ describe('evaluator', function() {
     });
 
     it('should handle glued operations and literals', function() {
-      var evaluator = new PartialEvaluator(new XrefMock(), new HandlerMock(),
+      var evaluator = new PartialEvaluator(new PdfManagerMock(),
+                                           new XrefMock(), new HandlerMock(),
                                            'prefix');
       var stream = new StringStream('trueifalserinullq');
       var promise = evaluator.getOperatorList(stream, new ResourcesMock());
@@ -145,7 +154,8 @@ describe('evaluator', function() {
 
   describe('validateNumberOfArgs', function() {
     it('should execute if correct number of arguments', function() {
-      var evaluator = new PartialEvaluator(new XrefMock(), new HandlerMock(),
+      var evaluator = new PartialEvaluator(new PdfManagerMock(),
+                                           new XrefMock(), new HandlerMock(),
                                            'prefix');
       var stream = new StringStream('5 1 d0');
       console.log('here!');
@@ -158,7 +168,8 @@ describe('evaluator', function() {
       });
     });
     it('should execute if too many arguments', function() {
-      var evaluator = new PartialEvaluator(new XrefMock(), new HandlerMock(),
+      var evaluator = new PartialEvaluator(new PdfManagerMock(),
+                                           new XrefMock(), new HandlerMock(),
                                            'prefix');
       var stream = new StringStream('5 1 4 d0');
       var promise = evaluator.getOperatorList(stream, new ResourcesMock());
@@ -171,7 +182,8 @@ describe('evaluator', function() {
       });
     });
     it('should skip if too few arguments', function() {
-      var evaluator = new PartialEvaluator(new XrefMock(), new HandlerMock(),
+      var evaluator = new PartialEvaluator(new PdfManagerMock(),
+                                           new XrefMock(), new HandlerMock(),
                                            'prefix');
       var stream = new StringStream('5 d0');
       var promise = evaluator.getOperatorList(stream, new ResourcesMock());

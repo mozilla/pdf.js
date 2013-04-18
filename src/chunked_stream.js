@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals assert, MissingDataException, isInt, NetworkManager, PDFJS,
+/* globals assert, MissingDataException, isInt, NetworkManager, Promise,
            isEmptyObj */
 
 'use strict';
@@ -233,7 +233,7 @@ var ChunkedStreamManager = (function ChunkedStreamManagerClosure() {
     this.requestsByChunk = {};
     this.callbacksByRequest = {};
 
-    this.loadedStream = new PDFJS.Promise();
+    this.loadedStream = new Promise();
   }
 
   ChunkedStreamManager.prototype = {

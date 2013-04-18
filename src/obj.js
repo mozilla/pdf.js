@@ -17,8 +17,8 @@
 /* globals assertWellFormed, bytesToString, CipherTransformFactory, error, info,
            InvalidPDFException, isArray, isCmd, isDict, isInt, isName, isRef,
            isStream, JpegStream, Lexer, log, Page, Parser, Promise, shadow,
-           stringToPDFString, stringToUTF8String, warn, isString, assert, PDFJS,
-           MissingDataException, XRefParseException, Stream */
+           stringToPDFString, stringToUTF8String, warn, isString, assert,
+           Promise, MissingDataException, XRefParseException, Stream */
 
 'use strict';
 
@@ -339,7 +339,7 @@ var Catalog = (function CatalogClosure() {
 
     getPage: function Catalog_getPage(pageIndex) {
       if (!(pageIndex in this.pagePromises)) {
-        this.pagePromises[pageIndex] = new PDFJS.Promise();
+        this.pagePromises[pageIndex] = new Promise();
       }
       return this.pagePromises[pageIndex];
     },
@@ -367,7 +367,7 @@ var Catalog = (function CatalogClosure() {
           var page = new Page(this.pdfManager, this.xref, pageIndex, kid,
                               kidRef);
           if (!(pageIndex in this.pagePromises)) {
-            this.pagePromises[pageIndex] = new PDFJS.Promise();
+            this.pagePromises[pageIndex] = new Promise();
           }
           this.pagePromises[pageIndex].resolve(page);
 

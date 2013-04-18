@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals NotImplementedException, MissingDataException, PDFJS, Stream,
+/* globals NotImplementedException, MissingDataException, Promise, Stream,
            PDFDocument, ChunkedStream, ChunkedStreamManager */
 
 'use strict';
@@ -50,6 +50,10 @@ var BasePdfManager = (function BasePdfManagerClosure() {
       return new NotImplementedException();
     },
 
+    requestRange: function BasePdfManager_ensure(begin, end) {
+      return new NotImplementedException();
+    },
+
     requestLoadedStream: function BasePdfManager_requestLoadedStream() {
       return new NotImplementedException();
     }
@@ -62,7 +66,7 @@ var LocalPdfManager = (function LocalPdfManagerClosure() {
   function LocalPdfManager(data, password) {
     var stream = new Stream(data);
     this.pdfModel = new PDFDocument(this, stream, password);
-    this.loadedStream = new PDFJS.Promise();
+    this.loadedStream = new Promise();
     this.loadedStream.resolve(stream);
   }
 
@@ -71,7 +75,7 @@ var LocalPdfManager = (function LocalPdfManagerClosure() {
 
   LocalPdfManager.prototype.ensure =
       function LocalPdfManager_ensure(obj, prop, args) {
-    var promise = new PDFJS.Promise();
+    var promise = new Promise();
     try {
       var value = obj[prop];
       var result;
@@ -85,6 +89,13 @@ var LocalPdfManager = (function LocalPdfManagerClosure() {
       console.log(e.stack);
       promise.reject(e);
     }
+    return promise;
+  };
+
+  LocalPdfManager.prototype.requestRange =
+      function LocalPdfManager_requestRange(begin, end) {
+    var promise = new Promise();
+    promise.resolve();
     return promise;
   };
 
@@ -126,7 +137,7 @@ var NetworkPdfManager = (function NetworkPdfManagerClosure() {
 
   NetworkPdfManager.prototype.ensure =
       function NetworkPdfManager_ensure(obj, prop, args) {
-    var promise = new PDFJS.Promise();
+    var promise = new Promise();
     this.ensureHelper(promise, obj, prop, args);
     return promise;
   };
@@ -153,6 +164,15 @@ var NetworkPdfManager = (function NetworkPdfManagerClosure() {
         this.ensureHelper(promise, obj, prop, args);
       }.bind(this));
     }
+  };
+
+  NetworkPdfManager.prototype.requestRange =
+      function NetworkPdfManager_requestRange(begin, end) {
+    var promise = new Promise();
+    this.streamManager.requestRange(begin, end, function() {
+      promise.resolve();
+    });
+    return promise;
   };
 
   NetworkPdfManager.prototype.requestLoadedStream =

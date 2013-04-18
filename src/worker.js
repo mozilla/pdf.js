@@ -112,7 +112,7 @@ var WorkerMessageHandler = {
     var pdfManager;
 
     function loadDocument(recoveryMode) {
-      var loadDocumentPromise = new PDFJS.Promise();
+      var loadDocumentPromise = new Promise();
 
       var parseSuccess = function parseSuccess() {
         var numPagesPromise = pdfManager.ensureModel('numPages');
@@ -122,7 +122,7 @@ var WorkerMessageHandler = {
         var metadataPromise = pdfManager.ensureCatalog('metadata');
         var encryptedPromise = pdfManager.ensureXRef('encrypt');
         var javaScriptPromise = pdfManager.ensureCatalog('javaScript');
-        PDFJS.Promise.all([numPagesPromise, fingerprintPromise, outlinePromise,
+        Promise.all([numPagesPromise, fingerprintPromise, outlinePromise,
           infoPromise, metadataPromise, encryptedPromise,
           javaScriptPromise]).then(
             function onDocReady(results) {
@@ -155,7 +155,7 @@ var WorkerMessageHandler = {
     }
 
     function getPdfManager(data) {
-      var pdfManagerPromise = new PDFJS.Promise();
+      var pdfManagerPromise = new Promise();
 
       var source = data.source;
       var disableRange = data.disableRange;
@@ -285,7 +285,6 @@ var WorkerMessageHandler = {
       };
 
       getPdfManager(data).then(function() {
-        globalScope.pdfManager = pdfManager;
         loadDocument(false).then(onSuccess, function(ex) {
           // Try again with recoveryMode == true
           if (!(ex instanceof XRefParseException)) {
@@ -308,7 +307,7 @@ var WorkerMessageHandler = {
         var refPromise = pdfManager.ensure(page, 'ref');
         var viewPromise = pdfManager.ensure(page, 'view');
 
-        PDFJS.Promise.all([rotatePromise, refPromise, viewPromise]).then(
+        Promise.all([rotatePromise, refPromise, viewPromise]).then(
             function(results) {
           var page = {
             pageIndex: data.pageIndex,
