@@ -38,6 +38,9 @@ limitations under the License.
 <!--#endif-->
 
 <!--#if !PRODUCTION-->
+    <script type="text/javascript" src="../src/network.js"></script>
+    <script type="text/javascript" src="../src/chunked_stream.js"></script>
+    <script type="text/javascript" src="../src/pdf_manager.js"></script>
     <script type="text/javascript" src="../src/core.js"></script>
     <script type="text/javascript" src="../src/util.js"></script>
     <script type="text/javascript" src="../src/api.js"></script>
@@ -74,7 +77,7 @@ limitations under the License.
   </head>
 
   <body>
-    <div id="outerContainer">
+    <div id="outerContainer" class="loadingInProgress">
 
       <div id="sidebarContainer">
         <div id="toolbarSidebar">
@@ -189,6 +192,12 @@ limitations under the License.
                 </div>
               </div>
             </div>
+            <div id="loadingBar">
+              <div class="progress">
+                <div class="glimmer">
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -205,11 +214,6 @@ limitations under the License.
 
         <div id="viewerContainer" tabindex="1">
           <div id="viewer" contextmenu="viewerContextMenu"></div>
-        </div>
-
-        <div id="loadingBox">
-          <div id="loading"></div>
-          <div id="loadingBar"><div class="progress"></div></div>
         </div>
 
         <div id="errorWrapper" hidden='true'>

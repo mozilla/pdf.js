@@ -35,9 +35,13 @@
  *  - httpHeaders - Basic authentication headers.
  *  - password - For decrypting password-protected PDFs.
  *
+ * @param {object} pdfDataRangeTransport is optional. It is used if you want
+ * to manually serve range requests for data in the PDF. See viewer.js for
+ * an example of pdfDataRangeTransport's interface.
+ *
  * @return {Promise} A promise that is resolved with {PDFDocumentProxy} object.
  */
-PDFJS.getDocument = function getDocument(source) {
+PDFJS.getDocument = function getDocument(source, pdfDataRangeTransport) {
   var workerInitializedPromise, workerReadyPromise, transport;
 
   if (typeof source === 'string') {
@@ -64,7 +68,8 @@ PDFJS.getDocument = function getDocument(source) {
 
   workerInitializedPromise = new PDFJS.Promise();
   workerReadyPromise = new PDFJS.Promise();
-  transport = new WorkerTransport(workerInitializedPromise, workerReadyPromise);
+  transport = new WorkerTransport(workerInitializedPromise,
+      workerReadyPromise, pdfDataRangeTransport);
   workerInitializedPromise.then(function transportInitialized() {
     transport.fetchDocument(params);
   });
@@ -114,10 +119,7 @@ var PDFDocumentProxy = (function PDFDocumentProxyClosure() {
      * mapping named destinations to reference numbers.
      */
     getDestinations: function PDFDocumentProxy_getDestinations() {
-      var promise = new PDFJS.Promise();
-      var destinations = this.pdfInfo.destinations;
-      promise.resolve(destinations);
-      return promise;
+      return this.transport.getDestinations();
     },
     /**
      * @return {Promise} A promise that is resolved with an array of all the
@@ -179,6 +181,13 @@ var PDFDocumentProxy = (function PDFDocumentProxyClosure() {
       var promise = new PDFJS.Promise();
       this.transport.getData(promise);
       return promise;
+    },
+    /**
+     * @return {Promise} A promise that is resolved when the document's data
+     * is loaded
+     */
+    dataLoaded: function PDFDocumentProxy_dataLoaded() {
+      return this.transport.dataLoaded();
     },
     destroy: function PDFDocumentProxy_destroy() {
       this.transport.destroy();
@@ -462,7 +471,10 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
  * For internal use only.
  */
 var WorkerTransport = (function WorkerTransportClosure() {
-  function WorkerTransport(workerInitializedPromise, workerReadyPromise) {
+  function WorkerTransport(workerInitializedPromise, workerReadyPromise,
+      pdfDataRangeTransport) {
+    this.pdfDataRangeTransport = pdfDataRangeTransport;
+
     this.workerReadyPromise = workerReadyPromise;
     this.commonObjs = new PDFObjects();
 
@@ -516,11 +528,14 @@ var WorkerTransport = (function WorkerTransportClosure() {
   }
   WorkerTransport.prototype = {
     destroy: function WorkerTransport_destroy() {
-      if (this.worker)
-        this.worker.terminate();
-
       this.pageCache = [];
       this.pagePromises = [];
+      var self = this;
+      this.messageHandler.send('Terminate', null, function () {
+        if (self.worker) {
+          self.worker.terminate();
+        }
+      });
     },
     setupFakeWorker: function WorkerTransport_setupFakeWorker() {
       warn('Setting up fake worker.');
@@ -543,6 +558,21 @@ var WorkerTransport = (function WorkerTransportClosure() {
     setupMessageHandler:
       function WorkerTransport_setupMessageHandler(messageHandler) {
       this.messageHandler = messageHandler;
+
+      var pdfDataRangeTransport = this.pdfDataRangeTransport;
+      if (pdfDataRangeTransport) {
+        pdfDataRangeTransport.addListener(function(begin, chunk) {
+          messageHandler.send('OnDataRange', {
+            begin: begin,
+            chunk: chunk
+          });
+        });
+
+        messageHandler.on('RequestDataRange',
+          function transportDataRange(data) {
+            pdfDataRangeTransport.requestDataRange(data.begin, data.end);
+          }, this);
+      }
 
       messageHandler.on('GetDoc', function transportDoc(data) {
         var pdfInfo = data.pdfInfo;
@@ -647,6 +677,10 @@ var WorkerTransport = (function WorkerTransportClosure() {
       }, this);
 
       messageHandler.on('DocProgress', function transportDocProgress(data) {
+        // TODO(mack): The progress event should be resolved on a different
+        // promise that tracks progress of whole file, since workerReadyPromise
+        // is for file being ready to render, not for when file is fully
+        // downloaded
         this.workerReadyPromise.progress({
           loaded: data.loaded,
           total: data.total
@@ -702,13 +736,26 @@ var WorkerTransport = (function WorkerTransportClosure() {
     },
 
     fetchDocument: function WorkerTransport_fetchDocument(source) {
-      this.messageHandler.send('GetDocRequest', {source: source});
+      source.disableAutoFetch = PDFJS.disableAutoFetch;
+      source.chunkedViewerLoading = !!this.pdfDataRangeTransport;
+      this.messageHandler.send('GetDocRequest', {
+        source: source,
+        disableRange: PDFJS.disableRange
+      });
     },
 
     getData: function WorkerTransport_getData(promise) {
       this.messageHandler.send('GetData', null, function(data) {
         promise.resolve(data);
       });
+    },
+
+    dataLoaded: function WorkerTransport_dataLoaded() {
+      var promise = new PDFJS.Promise();
+      this.messageHandler.send('DataLoaded', null, function(args) {
+        promise.resolve(args);
+      });
+      return promise;
     },
 
     getPage: function WorkerTransport_getPage(pageNumber, promise) {
@@ -724,6 +771,16 @@ var WorkerTransport = (function WorkerTransportClosure() {
     getAnnotations: function WorkerTransport_getAnnotations(pageIndex) {
       this.messageHandler.send('GetAnnotationsRequest',
         { pageIndex: pageIndex });
+    },
+
+    getDestinations: function WorkerTransport_getDestinations() {
+      var promise = new PDFJS.Promise();
+      this.messageHandler.send('GetDestinations', null,
+        function transportDestinations(destinations) {
+          promise.resolve(destinations);
+        }
+      );
+      return promise;
     }
   };
   return WorkerTransport;
