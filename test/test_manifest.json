@@ -1,4 +1,10 @@
 [
+    {  "id": "filled-background-range",
+      "file": "pdfs/filled-background.pdf",
+      "md5": "2e3120255d9c3e79b96d2543b12d2589",
+      "rounds": 1,
+      "type": "eq"
+    },
     {  "id": "tracemonkey-eq",
        "file": "pdfs/tracemonkey.pdf",
        "md5": "9a192d8b1a7dc652a19835f6f08098bd",
@@ -303,6 +309,14 @@
        "link": true,
        "rounds": 1,
        "type": "eq"
+    },
+    {  "id": "usmanm-bad-auto-fetch",
+       "file": "pdfs/usmanm-bad.pdf",
+       "md5": "38afb822433aaf07fc8f54807cd4f61a",
+       "link": true,
+       "rounds": 1,
+       "type": "eq",
+       "enableAutoFetch": true
     },
     {  "id": "vesta-bad",
        "file": "pdfs/vesta.pdf",
@@ -1051,13 +1065,6 @@
       "rounds": 1,
       "type": "eq",
       "about": "Image with indexed colorspace that has a base lab colorspace."
-    },
-    {  "id": "yo01",
-      "file": "pdfs/yo01.pdf",
-      "md5": "7d42435c20fe0d32de4ea3d7e4727ac1",
-      "rounds": 1,
-      "link": true,
-      "type": "eq"
     },
     {  "id": "20130226130259",
       "file": "pdfs/20130226130259.pdf",

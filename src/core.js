@@ -17,7 +17,8 @@
 /* globals assertWellFormed, calculateMD5, Catalog, error, info, isArray,
            isArrayBuffer, isDict, isName, isStream, isString, Lexer,
            Linearization, NullStream, PartialEvaluator, shadow, Stream,
-           StreamsSequenceStream, stringToPDFString, TODO, Util, warn, XRef */
+           StreamsSequenceStream, stringToPDFString, TODO, Util, warn, XRef,
+           MissingDataException, Promise */
 
 'use strict';
 
@@ -35,69 +36,6 @@ if (!globalScope.PDFJS) {
   globalScope.PDFJS = {};
 }
 
-// getPdf()
-// Convenience function to perform binary Ajax GET
-// Usage: getPdf('http://...', callback)
-//        getPdf({
-//                 url:String ,
-//                 [,progress:Function, error:Function]
-//               },
-//               callback)
-function getPdf(arg, callback) {
-  var params = arg;
-  if (typeof arg === 'string')
-    params = { url: arg };
-//#if !B2G
-  var xhr = new XMLHttpRequest();
-//#else
-//var xhr = new XMLHttpRequest({mozSystem: true});
-//#endif
-  xhr.open('GET', params.url);
-
-  var headers = params.headers;
-  if (headers) {
-    for (var property in headers) {
-      if (typeof headers[property] === 'undefined')
-        continue;
-
-      xhr.setRequestHeader(property, params.headers[property]);
-    }
-  }
-
-  xhr.mozResponseType = xhr.responseType = 'arraybuffer';
-
-  var protocol = params.url.substring(0, params.url.indexOf(':') + 1);
-  xhr.expected = (protocol === 'http:' || protocol === 'https:') ? 200 : 0;
-
-  if ('progress' in params)
-    xhr.onprogress = params.progress || undefined;
-
-  var calledErrorBack = false;
-
-  if ('error' in params) {
-    xhr.onerror = function errorBack() {
-      if (!calledErrorBack) {
-        calledErrorBack = true;
-        params.error();
-      }
-    };
-  }
-
-  xhr.onreadystatechange = function getPdfOnreadystatechange(e) {
-    if (xhr.readyState === 4) {
-      if (xhr.status === xhr.expected) {
-        var data = (xhr.mozResponseArrayBuffer || xhr.mozResponse ||
-                    xhr.responseArrayBuffer || xhr.response);
-        callback(data);
-      } else if (params.error && !calledErrorBack) {
-        calledErrorBack = true;
-        params.error(e);
-      }
-    }
-  };
-  xhr.send(null);
-}
-globalScope.PDFJS.getPdf = getPdf;
 globalScope.PDFJS.pdfBug = false;
 
 
@@ -122,7 +60,8 @@ var Page = (function PageClosure() {
     return appearance;
   }
 
-  function Page(xref, pageIndex, pageDict, ref) {
+  function Page(pdfManager, xref, pageIndex, pageDict, ref) {
+    this.pdfManager = pdfManager;
     this.pageIndex = pageIndex;
     this.pageDict = pageDict;
     this.xref = xref;
@@ -208,28 +147,72 @@ var Page = (function PageClosure() {
       }
       return content;
     },
-    getOperatorList: function Page_getOperatorList(handler, dependency) {
-      var xref = this.xref;
-      var contentStream = this.getContentStream();
-      var resources = this.resources;
-      var pe = this.pe = new PartialEvaluator(
-                                xref, handler, this.pageIndex,
-                                'p' + this.pageIndex + '_');
+    getOperatorList: function Page_getOperatorList(handler) {
+      var self = this;
+      var promise = new Promise();
 
-      var list = pe.getOperatorList(contentStream, resources, dependency);
+      var pageListPromise = new Promise();
+      var annotationListPromise = new Promise();
 
-      var annotations = this.getAnnotationsForDraw();
-      var annotationEvaluator = new PartialEvaluator(
-        xref, handler, this.pageIndex,
-        'p' + this.pageIndex + '_annotation');
-      var annotationsList = annotationEvaluator.getAnnotationsOperatorList(
-          annotations, dependency);
+      var pdfManager = this.pdfManager;
+      var contentStreamPromise = pdfManager.ensure(this, 'getContentStream',
+                                                   []);
+      var resourcesPromise = pdfManager.ensure(this, 'resources');
+      var dataPromises = Promise.all(
+          [contentStreamPromise, resourcesPromise]);
+      dataPromises.then(function(data) {
+        var contentStream = data[0];
+        var resources = data[1];
+        var pe = self.pe = new PartialEvaluator(
+                                  pdfManager,
+                                  self.xref, handler, self.pageIndex,
+                                  'p' + self.pageIndex + '_');
 
-      Util.concatenateToArray(list.fnArray, annotationsList.fnArray);
-      Util.concatenateToArray(list.argsArray, annotationsList.argsArray);
+        pdfManager.ensure(pe, 'getOperatorList',
+                          [contentStream, resources]).then(
+          function(opListPromise) {
+            opListPromise.then(function(data) {
+              pageListPromise.resolve(data);
+            });
+          }
+        );
+      });
 
-      pe.optimizeQueue(list);
-      return list;
+      pdfManager.ensure(this, 'getAnnotationsForDraw', []).then(
+        function(annotations) {
+          var annotationEvaluator = new PartialEvaluator(
+            pdfManager, self.xref, handler, self.pageIndex,
+            'p' + self.pageIndex + '_annotation');
+
+          pdfManager.ensure(annotationEvaluator, 'getAnnotationsOperatorList',
+                            [annotations]).then(
+            function(opListPromise) {
+              opListPromise.then(function(data) {
+                annotationListPromise.resolve(data);
+              });
+            }
+          );
+        }
+      );
+
+      Promise.all([pageListPromise, annotationListPromise]).then(
+        function(datas) {
+          var pageData = datas[0];
+          var pageQueue = pageData.queue;
+          var annotationData = datas[1];
+          var annotationQueue = annotationData.queue;
+          Util.concatenateToArray(pageQueue.fnArray, annotationQueue.fnArray);
+          Util.concatenateToArray(pageQueue.argsArray,
+                                  annotationQueue.argsArray);
+          PartialEvaluator.optimizeQueue(pageQueue);
+          Util.extendObj(pageData.dependencies, annotationData.dependencies);
+
+          promise.resolve(pageData);
+        }
+      );
+
+      return promise;
+
     },
     extractTextContent: function Page_extractTextContent() {
       var handler = {
@@ -237,14 +220,40 @@ var Page = (function PageClosure() {
         send: function nullHandlerSend() {}
       };
 
-      var xref = this.xref;
-      var contentStream = this.getContentStream();
-      var resources = xref.fetchIfRef(this.resources);
+      var self = this;
 
-      var pe = new PartialEvaluator(
-                     xref, handler, this.pageIndex,
-                     'p' + this.pageIndex + '_');
-      return pe.getTextContent(contentStream, resources);
+      var textContentPromise = new Promise();
+
+      var pdfManager = this.pdfManager;
+      var contentStreamPromise = pdfManager.ensure(this, 'getContentStream',
+                                                   []);
+      var resourcesPromise = new Promise();
+      pdfManager.ensure(this, 'resources').then(function(resources) {
+        pdfManager.ensure(self.xref, 'fetchIfRef', [resources]).then(
+          function(resources) {
+            resourcesPromise.resolve(resources);
+          }
+        );
+      });
+
+      var dataPromises = Promise.all([contentStreamPromise,
+                                      resourcesPromise]);
+      dataPromises.then(function(data) {
+        var contentStream = data[0];
+        var resources = data[1];
+        var pe = new PartialEvaluator(
+                       pdfManager,
+                       self.xref, handler, self.pageIndex,
+                       'p' + self.pageIndex + '_');
+
+        pe.getTextContent(contentStream, resources).then(function(bidiTexts) {
+          textContentPromise.resolve({
+            bidiTexts: bidiTexts
+          });
+        });
+      });
+
+      return textContentPromise;
     },
     getLinks: function Page_getLinks() {
       var links = [];
@@ -484,20 +493,21 @@ var Page = (function PageClosure() {
  * `PDFDocument` objects on the main thread created.
  */
 var PDFDocument = (function PDFDocumentClosure() {
-  function PDFDocument(arg, password) {
+  function PDFDocument(pdfManager, arg, password) {
     if (isStream(arg))
-      init.call(this, arg, password);
+      init.call(this, pdfManager, arg, password);
     else if (isArrayBuffer(arg))
-      init.call(this, new Stream(arg), password);
+      init.call(this, pdfManager, new Stream(arg), password);
     else
       error('PDFDocument: Unknown argument type');
   }
 
-  function init(stream, password) {
+  function init(pdfManager, stream, password) {
     assertWellFormed(stream.length > 0, 'stream must have data');
+    this.pdfManager = pdfManager;
     this.stream = stream;
-    this.setup(password);
-    this.acroForm = this.catalog.catDict.get('AcroForm');
+    var xref = new XRef(this.stream, password);
+    this.xref = xref;
   }
 
   function find(stream, needle, limit, backwards) {
@@ -535,15 +545,25 @@ var PDFDocument = (function PDFDocumentClosure() {
   };
 
   PDFDocument.prototype = {
+    parse: function PDFDocument_parse(recoveryMode) {
+      this.setup(recoveryMode);
+      this.acroForm = this.catalog.catDict.get('AcroForm');
+    },
+
     get linearization() {
       var length = this.stream.length;
       var linearization = false;
       if (length) {
         try {
           linearization = new Linearization(this.stream);
-          if (linearization.length != length)
+          if (linearization.length != length) {
             linearization = false;
+          }
         } catch (err) {
+          if (err instanceof MissingDataException) {
+            throw err;
+          }
+
           warn('The linearization data is not available ' +
                'or unreadable pdf data is found');
           linearization = false;
@@ -622,14 +642,13 @@ var PDFDocument = (function PDFDocumentClosure() {
       }
       // May not be a PDF file, continue anyway.
     },
-    setup: function PDFDocument_setup(password) {
-      this.checkHeader();
-      var xref = new XRef(this.stream,
-                          this.startXRef,
-                          this.mainXRefEntriesOffset,
-                          password);
-      this.xref = xref;
-      this.catalog = new Catalog(xref);
+    parseStartXRef: function PDFDocument_parseStartXRef() {
+      var startXRef = this.startXRef;
+      this.xref.setStartXRef(startXRef);
+    },
+    setup: function PDFDocument_setup(recoveryMode) {
+      this.xref.parse(recoveryMode);
+      this.catalog = new Catalog(this.pdfManager, this.xref);
     },
     get numPages() {
       var linearization = this.linearization;
@@ -637,7 +656,7 @@ var PDFDocument = (function PDFDocumentClosure() {
       // shadow the prototype getter
       return shadow(this, 'numPages', num);
     },
-    getDocumentInfo: function PDFDocument_getDocumentInfo() {
+    get documentInfo() {
       var docInfo = {
         PDFFormatVersion: this.pdfFormatVersion,
         IsAcroFormPresent: !!this.acroForm
@@ -660,9 +679,9 @@ var PDFDocument = (function PDFDocumentClosure() {
           }
         }
       }
-      return shadow(this, 'getDocumentInfo', docInfo);
+      return shadow(this, 'documentInfo', docInfo);
     },
-    getFingerprint: function PDFDocument_getFingerprint() {
+    get fingerprint() {
       var xref = this.xref, fileID;
       if (xref.trailer.has('ID')) {
         fileID = '';
@@ -681,10 +700,15 @@ var PDFDocument = (function PDFDocumentClosure() {
         }
       }
 
-      return shadow(this, 'getFingerprint', fileID);
+      return shadow(this, 'fingerprint', fileID);
     },
-    getPage: function PDFDocument_getPage(n) {
-      return this.catalog.getPage(n);
+
+    traversePages: function PDFDocument_traversePages() {
+      this.catalog.traversePages();
+    },
+
+    getPage: function PDFDocument_getPage(pageIndex) {
+      return this.catalog.getPage(pageIndex);
     }
   };
 
