@@ -194,6 +194,7 @@ var ChunkedStream = (function ChunkedStreamClosure() {
 var ChunkedStreamManager = (function ChunkedStreamManagerClosure() {
 
   function ChunkedStreamManager(length, chunkSize, url, args) {
+    var self = this;
     this.stream = new ChunkedStream(length, chunkSize);
     this.length = length;
     this.chunkSize = chunkSize;
@@ -203,6 +204,7 @@ var ChunkedStreamManager = (function ChunkedStreamManagerClosure() {
 
     if (args.chunkedViewerLoading) {
       msgHandler.on('OnDataRange', this.onReceiveData.bind(this));
+      msgHandler.on('OnDataProgress', this.onProgress.bind(this));
       this.sendRequest = function ChunkedStreamManager_sendRequest(begin, end) {
         msgHandler.send('RequestDataRange', { begin: begin, end: end });
       };
@@ -219,10 +221,10 @@ var ChunkedStreamManager = (function ChunkedStreamManagerClosure() {
         getXhr: getXhr,
         httpHeaders: args.httpHeaders
       });
-      var self = this;
       this.sendRequest = function ChunkedStreamManager_sendRequest(begin, end) {
         this.networkManager.requestRange(begin, end, {
           onDone: this.onReceiveData.bind(this),
+          onProgress: this.onProgress.bind(this)
         });
       };
     }
@@ -345,6 +347,15 @@ var ChunkedStreamManager = (function ChunkedStreamManagerClosure() {
         prevChunk = chunk;
       }
       return groupedChunks;
+    },
+
+    onProgress: function ChunkedStreamManager_onProgress(args) {
+      var bytesLoaded = this.stream.numChunksLoaded * this.chunkSize +
+                        args.loaded;
+      this.msgHandler.send('DocProgress', {
+        loaded: bytesLoaded,
+        total: this.length
+      });
     },
 
     onReceiveData: function ChunkedStreamManager_onReceiveData(args) {

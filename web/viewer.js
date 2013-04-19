@@ -941,15 +941,30 @@ var PDFView = {
     }
 
     var pdfDataRangeTransport = {
-      listeners: [],
+      rangeListeners: [],
+      progressListeners: [],
 
-      addListener: function PdfDataRangeTransport_addListener(listener) {
-        this.listeners.push(listener);
+      addRangeListener: function PdfDataRangeTransport_addRangeListener(
+                                   listener) {
+        this.rangeListeners.push(listener);
+      },
+
+      addProgressListener: function PdfDataRangeTransport_addProgressListener(
+                                      listener) {
+        this.progressListeners.push(listener);
       },
 
       onDataRange: function PdfDataRangeTransport_onDataRange(begin, chunk) {
-        for (var i = 0, n = this.listeners.length; i < n; ++i) {
-          this.listeners[i](begin, chunk);
+        var listeners = this.rangeListeners;
+        for (var i = 0, n = listeners.length; i < n; ++i) {
+          listeners[i](begin, chunk);
+        }
+      },
+
+      onDataProgress: function PdfDataRangeTransport_onDataProgress(loaded) {
+        var listeners = this.progressListeners;
+        for (var i = 0, n = listeners.length; i < n; ++i) {
+          listeners[i](loaded);
         }
       },
 
@@ -972,6 +987,9 @@ var PDFView = {
           break;
         case 'range':
           pdfDataRangeTransport.onDataRange(args.begin, args.chunk);
+          break;
+        case 'rangeProgress':
+          pdfDataRangeTransport.onDataProgress(args.loaded);
           break;
         case 'progress':
           PDFView.progress(args.loaded / args.total);
