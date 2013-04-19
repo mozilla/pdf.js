@@ -170,6 +170,15 @@
        "rounds": 1,
        "type": "eq"
     },
+    {
+      "id": "issue3115",
+      "file": "pdfs/issue3115.pdf",
+      "md5": "ea10f4131202b9b8f2a6cb7770d3f185",
+      "rounds": 1,
+      "type": "eq",
+      "link": true,
+      "lastPage": 1
+    },
     {  "id": "thuluthfont-text",
        "file": "pdfs/ThuluthFeatures.pdf",
        "md5": "b7e18bf7a3d6a9c82aefa12d721072fc",
