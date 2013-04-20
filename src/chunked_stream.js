@@ -258,7 +258,7 @@ var ChunkedStreamManager = (function ChunkedStreamManagerClosure() {
       for (var i = 0, n = groupedChunks.length; i < n; ++i) {
         var groupedChunk = groupedChunks[i];
         var begin = groupedChunk.beginChunk * this.chunkSize;
-        var end = groupedChunk.endChunk * this.chunkSize;
+        var end = Math.min(groupedChunk.endChunk * this.chunkSize, this.length);
         this.sendRequest(begin, end);
       }
 
@@ -314,7 +314,7 @@ var ChunkedStreamManager = (function ChunkedStreamManagerClosure() {
       for (var i = 0; i < groupedChunksToRequest.length; ++i) {
         var groupedChunk = groupedChunksToRequest[i];
         var begin = groupedChunk.beginChunk * this.chunkSize;
-        var end = groupedChunk.endChunk * this.chunkSize;
+        var end = Math.min(groupedChunk.endChunk * this.chunkSize, this.length);
         this.sendRequest(begin, end);
       }
     },
