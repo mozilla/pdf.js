@@ -84,7 +84,7 @@ var Page = (function PageClosure() {
       return obj;
     },
     get content() {
-      return shadow(this, 'content', this.getPageProp('Contents'));
+      return this.getPageProp('Contents');
     },
     get resources() {
       return shadow(this, 'resources', this.inheritPageProp('Resources'));
@@ -131,6 +131,7 @@ var Page = (function PageClosure() {
     },
     getContentStream: function Page_getContentStream() {
       var content = this.content;
+      var stream;
       if (isArray(content)) {
         // fetching items
         var xref = this.xref;
@@ -138,14 +139,14 @@ var Page = (function PageClosure() {
         var streams = [];
         for (i = 0; i < n; ++i)
           streams.push(xref.fetchIfRef(content[i]));
-        content = new StreamsSequenceStream(streams);
+        stream = new StreamsSequenceStream(streams);
       } else if (isStream(content)) {
-        content.reset();
-      } else if (!content) {
+        stream = content;
+      } else {
         // replacing non-existent page content with empty one
-        content = new NullStream();
+        stream = new NullStream();
       }
-      return content;
+      return stream;
     },
     getOperatorList: function Page_getOperatorList(handler) {
       var self = this;
