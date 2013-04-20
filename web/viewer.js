@@ -1776,7 +1776,7 @@ var PDFView = {
       var param = parts[i].split('=');
       var key = param[0];
       var value = param.length > 1 ? param[1] : null;
-      params[unescape(key)] = unescape(value);
+      params[decodeURIComponent(key)] = decodeURIComponent(value);
     }
     return params;
   },
