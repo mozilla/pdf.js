@@ -730,8 +730,8 @@ PdfStreamConverter.prototype = {
     var channel = ioService.newChannel(
                     PDF_VIEWER_WEB_PAGE, null, null);
 
-    var self = this;
     var listener = this.listener;
+    var dataListener = this.dataListener;
     // Proxy all the request observer calls, when it gets to onStopRequest
     // we can get the dom window.  We also intentionally pass on the original
     // request(aRequest) below so we don't overwrite the original channel and
@@ -759,7 +759,7 @@ PdfStreamConverter.prototype = {
                 contentDispositionFilename, aRequest);
           } else {
             actions = new StandardChromeActions(
-                domWindow, contentDispositionFilename, self.dataListener);
+                domWindow, contentDispositionFilename, dataListener);
           }
           var requestListener = new RequestListener(actions);
           domWindow.addEventListener(PDFJS_EVENT_ID, function(event) {
