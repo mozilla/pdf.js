@@ -66,6 +66,10 @@ var Page = (function PageClosure() {
     this.pageDict = pageDict;
     this.xref = xref;
     this.ref = ref;
+    this.idCounters = {
+      font: 0,
+      obj: 0
+    };
   }
 
   Page.prototype = {
@@ -159,17 +163,19 @@ var Page = (function PageClosure() {
       var contentStreamPromise = pdfManager.ensure(this, 'getContentStream',
                                                    []);
       var resourcesPromise = pdfManager.ensure(this, 'resources');
+
+      var partialEvaluator = new PartialEvaluator(
+            pdfManager, this.xref, handler,
+            this.pageIndex, 'p' + this.pageIndex + '_',
+            this.idCounters);
+
       var dataPromises = Promise.all(
           [contentStreamPromise, resourcesPromise]);
       dataPromises.then(function(data) {
         var contentStream = data[0];
         var resources = data[1];
-        var pe = self.pe = new PartialEvaluator(
-                                  pdfManager,
-                                  self.xref, handler, self.pageIndex,
-                                  'p' + self.pageIndex + '_');
 
-        pdfManager.ensure(pe, 'getOperatorList',
+        pdfManager.ensure(partialEvaluator, 'getOperatorList',
                           [contentStream, resources]).then(
           function(opListPromise) {
             opListPromise.then(function(data) {
@@ -181,11 +187,7 @@ var Page = (function PageClosure() {
 
       pdfManager.ensure(this, 'getAnnotationsForDraw', []).then(
         function(annotations) {
-          var annotationEvaluator = new PartialEvaluator(
-            pdfManager, self.xref, handler, self.pageIndex,
-            'p' + self.pageIndex + '_annotation');
-
-          pdfManager.ensure(annotationEvaluator, 'getAnnotationsOperatorList',
+          pdfManager.ensure(partialEvaluator, 'getAnnotationsOperatorList',
                             [annotations]).then(
             function(opListPromise) {
               opListPromise.then(function(data) {
@@ -242,12 +244,13 @@ var Page = (function PageClosure() {
       dataPromises.then(function(data) {
         var contentStream = data[0];
         var resources = data[1];
-        var pe = new PartialEvaluator(
-                       pdfManager,
-                       self.xref, handler, self.pageIndex,
-                       'p' + self.pageIndex + '_');
+        var partialEvaluator = new PartialEvaluator(
+              pdfManager, self.xref, handler,
+              self.pageIndex, 'p' + self.pageIndex + '_',
+              self.idCounters);
 
-        pe.getTextContent(contentStream, resources).then(function(bidiTexts) {
+        partialEvaluator.getTextContent(
+            contentStream, resources).then(function(bidiTexts) {
           textContentPromise.resolve({
             bidiTexts: bidiTexts
           });
