@@ -183,6 +183,12 @@ var WorkerMessageHandler = {
             return;
           }
 
+          var contentEncoding =
+            fullRequestXhr.getResponseHeader('Content-Encoding') || 'identity';
+          if (contentEncoding !== 'identity') {
+            return;
+          }
+
           var length = fullRequestXhr.getResponseHeader('Content-Length');
           length = parseInt(length, 10);
           if (!isInt(length)) {
