@@ -713,6 +713,7 @@ PdfStreamConverter.prototype = {
       var hash = aRequest.URI.ref;
       rangeRequest = contentEncoding === 'identity' &&
                      acceptRanges === 'bytes' &&
+                     aRequest.contentLength >= 0 &&
                      hash.indexOf('disableRange=true') < 0;
     }
 
