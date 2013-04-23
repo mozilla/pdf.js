@@ -1172,23 +1172,31 @@ var PDFView = {
   },
 
   navigateTo: function pdfViewNavigateTo(dest) {
-    if (typeof dest === 'string')
-      dest = this.destinations[dest];
-    if (!(dest instanceof Array))
-      return; // invalid destination
-    // dest array looks like that: <page-ref> </XYZ|FitXXX> <args..>
-    var destRef = dest[0];
-    var pageNumber = destRef instanceof Object ?
-      this.pagesRefMap[destRef.num + ' ' + destRef.gen + ' R'] : (destRef + 1);
-    if (pageNumber > this.pages.length)
-      pageNumber = this.pages.length;
-    if (pageNumber) {
-      this.page = pageNumber;
-      var currentPage = this.pages[pageNumber - 1];
-      if (!this.isFullscreen) { // Avoid breaking fullscreen mode.
-        currentPage.scrollIntoView(dest);
+    var self = this;
+    PDFJS.Promise.all([this.pagesPromise,
+                       this.destinationsPromise]).then(function() {
+      if (typeof dest === 'string') {
+        dest = self.destinations[dest];
       }
-    }
+      if (!(dest instanceof Array)) {
+        return; // invalid destination
+      }
+      // dest array looks like that: <page-ref> </XYZ|FitXXX> <args..>
+      var destRef = dest[0];
+      var pageNumber = destRef instanceof Object ?
+        self.pagesRefMap[destRef.num + ' ' + destRef.gen + ' R'] :
+        (destRef + 1);
+      if (pageNumber) {
+        if (pageNumber > self.pages.length) {
+          pageNumber = self.pages.length;
+        }
+        self.page = pageNumber;
+        if (!self.isFullscreen) { // Avoid breaking fullscreen mode.
+          var currentPage = self.pages[pageNumber - 1];
+          currentPage.scrollIntoView(dest);
+        }
+      }
+    });
   },
 
   getDestinationHash: function pdfViewGetDestinationHash(dest) {
@@ -1368,7 +1376,7 @@ var PDFView = {
     var pagesRefMap = this.pagesRefMap = {};
     var thumbnails = this.thumbnails = [];
 
-    var pagesPromise = new PDFJS.Promise();
+    var pagesPromise = this.pagesPromise = new PDFJS.Promise();
     var self = this;
 
     var firstPagePromise = pdfDocument.getPage(1);
@@ -1458,7 +1466,8 @@ var PDFView = {
       }
     });
 
-    var destinationsPromise = pdfDocument.getDestinations();
+    var destinationsPromise =
+      this.destinationsPromise = pdfDocument.getDestinations();
     destinationsPromise.then(function(destinations) {
       self.destinations = destinations;
     });
