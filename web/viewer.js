@@ -110,6 +110,7 @@ var ProgressBar = (function ProgressBarClosure() {
 
     // Initialize heights
     this.div.style.height = this.height + this.units;
+    this.percent = 0;
   }
 
   ProgressBar.prototype = {
@@ -1333,7 +1334,13 @@ var PDFView = {
 
   progress: function pdfViewProgress(level) {
     var percent = Math.round(level * 100);
-    PDFView.loadingBar.percent = percent;
+    // When we transition from full request to range requests, it's possible
+    // that we discard some of the loaded data. This can cause the loading
+    // bar to move backwards. So prevent this by only updating the bar if it
+    // increases.
+    if (percent > PDFView.loadingBar.percent) {
+      PDFView.loadingBar.percent = percent;
+    }
   },
 
   load: function pdfViewLoad(pdfDocument, scale) {
