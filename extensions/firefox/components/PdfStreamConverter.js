@@ -765,33 +765,28 @@ PdfStreamConverter.prototype = {
         // We get the DOM window here instead of before the request since it
         // may have changed during a redirect.
         var domWindow = getDOMWindow(channel);
-        // Double check the url is still the correct one.
-        if (domWindow.document.documentURIObject.equals(aRequest.URI)) {
-          var actions;
-          if (rangeRequest) {
-            // We are going to be issuing range requests, so cancel the
-            // original request
-            aRequest.resume();
-            aRequest.cancel(Cr.NS_BINDING_ABORTED);
-            actions = new RangedChromeActions(domWindow,
-                contentDispositionFilename, aRequest);
-          } else {
-            actions = new StandardChromeActions(
-                domWindow, contentDispositionFilename, dataListener);
-          }
-          var requestListener = new RequestListener(actions);
-          domWindow.addEventListener(PDFJS_EVENT_ID, function(event) {
-            requestListener.receive(event);
-          }, false, true);
-          if (actions.supportsIntegratedFind()) {
-            var chromeWindow = getChromeWindow(domWindow);
-            var findEventManager = new FindEventManager(chromeWindow.gFindBar,
-                                                        domWindow,
-                                                        chromeWindow);
-            findEventManager.bind();
-          }
+        var actions;
+        if (rangeRequest) {
+          // We are going to be issuing range requests, so cancel the
+          // original request
+          aRequest.resume();
+          aRequest.cancel(Cr.NS_BINDING_ABORTED);
+          actions = new RangedChromeActions(domWindow,
+              contentDispositionFilename, aRequest);
         } else {
-          log('Dom window url did not match request url.');
+          actions = new StandardChromeActions(
+              domWindow, contentDispositionFilename, dataListener);
+        }
+        var requestListener = new RequestListener(actions);
+        domWindow.addEventListener(PDFJS_EVENT_ID, function(event) {
+          requestListener.receive(event);
+        }, false, true);
+        if (actions.supportsIntegratedFind()) {
+          var chromeWindow = getChromeWindow(domWindow);
+          var findEventManager = new FindEventManager(chromeWindow.gFindBar,
+                                                      domWindow,
+                                                      chromeWindow);
+          findEventManager.bind();
         }
         listener.onStopRequest(aRequest, context, statusCode);
       }
