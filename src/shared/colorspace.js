@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 /* globals error, info, isArray, isDict, isName, isStream, isString,
-           PDFFunction, warn, shadow */
+           PDFFunction, warn, shadow, TODO */
 
 'use strict';
 
@@ -132,6 +132,11 @@ var ColorSpace = (function ColorSpaceClosure() {
         return this.singletons.rgb;
       case 'DeviceCmykCS':
         return this.singletons.cmyk;
+      case 'CalGrayCS':
+        var whitePoint = IR[1].WhitePoint;
+        var blackPoint = IR[1].BlackPoint;
+        var gamma = IR[1].Gamma;
+        return new CalGrayCS(whitePoint, blackPoint, gamma);
       case 'PatternCS':
         var basePatternCS = IR[1];
         if (basePatternCS)
@@ -207,7 +212,8 @@ var ColorSpace = (function ColorSpaceClosure() {
         case 'CMYK':
           return 'DeviceCmykCS';
         case 'CalGray':
-          return 'DeviceGrayCS';
+          var params = cs[1].getAll();
+          return ['CalGrayCS', params];
         case 'CalRGB':
           return 'DeviceRgbCS';
         case 'ICCBased':
@@ -628,6 +634,113 @@ var DeviceCmykCS = (function DeviceCmykCSClosure() {
 })();
 
 //
+// CalGrayCS: Based on "PDF Reference, Sixth Ed", p.245
+//
+var CalGrayCS = (function CalGrayCSClosure() {
+  function CalGrayCS(whitePoint, blackPoint, gamma) {
+    this.name = 'CalGray';
+    this.numComps = 3;
+    this.defaultColor = new Float32Array([0, 0, 0]);
+
+    if (!whitePoint) {
+      error('WhitePoint missing - required for color space CalGray');
+    }
+    blackPoint = blackPoint || [0, 0, 0];
+    gamma = gamma || 1;
+
+    // Translate arguments to spec variables.
+    this.XW = whitePoint[0];
+    this.YW = whitePoint[1];
+    this.ZW = whitePoint[2];
+
+    this.XB = blackPoint[0];
+    this.YB = blackPoint[1];
+    this.ZB = blackPoint[2];
+
+    this.G = gamma;
+
+    // Validate variables as per spec.
+    if (this.XW < 0 || this.ZW < 0 || this.YW !== 1) {
+      error('Invalid WhitePoint components for ' + this.name +
+            ', no fallback available');
+    }
+
+    if (this.XB < 0 || this.YB < 0 || this.ZB < 0) {
+      info('Invalid BlackPoint for ' + this.name + ', falling back to default');
+      this.XB = this.YB = this.ZB = 0;
+    }
+
+    if (this.XB !== 0 || this.YB !== 0 || this.ZB !== 0) {
+      TODO(this.name + ', BlackPoint: XB: ' + this.XB + ', YB: ' + this.YB +
+           ', ZB: ' + this.ZB + ', only default values are supported.');
+    }
+
+    if (this.G < 1) {
+      info('Invalid Gamma: ' + this.G + ' for ' + this.name +
+           ', falling back to default');
+      this.G = 1;
+    }
+  }
+
+  CalGrayCS.prototype = {
+    getRgb: function CalGrayCS_getRgb(src, srcOffset) {
+      var rgb = new Uint8Array(3);
+      this.getRgbItem(src, srcOffset, rgb, 0);
+      return rgb;
+    },
+    getRgbItem: function CalGrayCS_getRgbItem(src, srcOffset,
+                                              dest, destOffset) {
+      // A represents a gray component of a calibrated gray space.
+      // A <---> AG in the spec
+      var A = src[srcOffset];
+      var AG = Math.pow(A, this.G);
+
+      // Computes intermediate variables M, L, N as per spec.
+      // Except if other than default BlackPoint values are used.
+      var M = this.XW * AG;
+      var L = this.YW * AG;
+      var N = this.ZW * AG;
+
+      // Decode XYZ, as per spec.
+      var X = M;
+      var Y = L;
+      var Z = N;
+
+      // http://www.poynton.com/notes/colour_and_gamma/ColorFAQ.html, Ch 4.
+      // This yields values in range [0, 100].
+      var Lstar = Math.max(116 * Math.pow(Y, 1 / 3) - 16, 0);
+
+      // Convert values to rgb range [0, 255].
+      dest[destOffset] = Lstar * 255 / 100;
+      dest[destOffset + 1] = Lstar * 255 / 100;
+      dest[destOffset + 2] = Lstar * 255 / 100;
+    },
+    getRgbBuffer: function CalGrayCS_getRgbBuffer(src, srcOffset, count,
+                                                  dest, destOffset, bits) {
+      // TODO: This part is copied from DeviceGray. Make this utility function.
+      var scale = 255 / ((1 << bits) - 1);
+      var j = srcOffset, q = destOffset;
+      for (var i = 0; i < count; ++i) {
+        var c = (scale * src[j++]) | 0;
+        dest[q++] = c;
+        dest[q++] = c;
+        dest[q++] = c;
+      }
+    },
+    getOutputLength: function CalGrayCS_getOutputLength(inputLength) {
+      return inputLength * 3;
+    },
+    isPassthrough: ColorSpace.prototype.isPassthrough,
+    createRgbBuffer: ColorSpace.prototype.createRgbBuffer,
+    isDefaultDecode: function CalGrayCS_isDefaultDecode(decodeMap) {
+      return ColorSpace.isDefaultDecode(decodeMap, this.numComps);
+    },
+    usesZeroToOneRange: true
+  };
+  return CalGrayCS;
+})();
+
+//
 // LabCS: Based on "PDF Reference, Sixth Ed", p.250
 //
 var LabCS = (function LabCSClosure() {
@@ -767,3 +880,4 @@ var LabCS = (function LabCSClosure() {
   };
   return LabCS;
 })();
+

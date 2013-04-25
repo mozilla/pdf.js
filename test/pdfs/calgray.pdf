@@ -1,0 +1,553 @@
+%PDF-1.7
+% filler                              %
+% filler                                        %
+
+1 0 obj % entry point                           %
+<<                                              %
+  /Type /Catalog                                %
+  /Pages 2 0 R                                  %
+>>                                              %
+% filler                                %
+endobj
+
+2 0 obj                                         %
+<< /Type /Pages                                 %
+   /MediaBox [ 0 0 850 1100 ]                   %
+   /Count 3                                     %
+   /Kids [  3 0 R                               %
+            8 0 R                               %
+           12 0 R                               %
+         ]                                      %
+>>                                              %
+% filler                                %
+endobj
+
+3 0 obj % Page object                           %
+<< /Type /Page                                  %
+   /Parent 2 0 R                                %
+   /Resources 4 0 R                             %
+   /Contents 7 0 R                              %
+   /CropBox [ 0 0 850 1100 ]                    %
+>>                                              %
+% filler                                %
+endobj
+
+4 0 obj % Resource dictionary for page          %
+<<                                              %
+   /ColorSpace << /Cs5 5 0 R >>                 %
+   /Font << /F1 6 0 R >>                        %
+>>                                              %
+% filler                                %
+endobj
+
+5 0 obj % Colorspace definition                 %
+[ /CalGray                                      %
+<< /WhitePoint [ 1.00000 1.0 1.00000 ]          %
+   /BlackPoint [ 0.0 0.0 0.0 ]                  %
+   /Gamma  1.0                                  %
+>>                                              %
+]                                               %
+% filler                                %
+endobj
+
+6 0 obj % Font definition                       %
+<< /Type /Font                                  %
+   /Subtype /Type1                              %
+   /BaseFont /Times-Roman                       %
+>>                                              %
+% filler                                %
+endobj
+
+7 0 obj % Contents of page                      %
+<< /Length 3300 >>
+stream
+
+ /Cs5 cs               %
+  0.00 sc              %
+   25   25  200  200 re%
+ f                     %
+ /Cs5 cs               %
+  0.01 sc              %
+  225   25  200  200 re%
+ f                     %
+ /Cs5 cs               %
+  0.05 sc              %
+  425   25  200  200 re%
+ f                     %
+ /Cs5 cs               %
+  0.10 sc              %
+  625   25  200  200 re%
+ f                     %
+ /Cs5 cs               %
+  0.15 sc              %
+   25  225  200  200 re%
+ f                     %
+ /Cs5 cs               %
+  0.20 sc              %
+  225  225  200  200 re%
+ f                     %
+ /Cs5 cs               %
+  0.25 sc              %
+  425  225  200  200 re%
+ f                     %
+ /Cs5 cs               %
+  0.30 sc              %
+  625  225  200  200 re%
+ f                     %
+ /Cs5 cs               %
+  0.35 sc              %
+   25  425  200  200 re%
+ f                     %
+ /Cs5 cs               %
+  0.40 sc              %
+  225  425  200  200 re%
+ f                     %
+ /Cs5 cs               %
+  0.45 sc              %
+  425  425  200  200 re%
+ f                     %
+ /Cs5 cs               %
+  0.50 sc              %
+  625  425  200  200 re%
+ f                     %
+ /Cs5 cs               %
+  0.55 sc              %
+   25  625  200  200 re%
+ f                     %
+ /Cs5 cs               %
+  0.60 sc              %
+  225  625  200  200 re%
+ f                     %
+ /Cs5 cs               %
+  0.65 sc              %
+  425  625  200  200 re%
+ f                     %
+ /Cs5 cs               %
+  0.70 sc              %
+  625  625  200  200 re%
+ f                     %
+ /Cs5 cs               %
+  0.75 sc              %
+   25  825  200  200 re%
+ f                     %
+ /Cs5 cs               %
+  0.80 sc              %
+  225  825  200  200 re%
+ f                     %
+ /Cs5 cs               %
+  0.90 sc              %
+  425  825  200  200 re%
+ f                     %
+ /Cs5 cs               %
+  1.00 sc              %
+  625  825  200  200 re%
+ f                     %
+ BT                    %
+ /F1 16 Tf             %
+   50   50  Td         %
+ (A = 0.00) Tj         %
+  200    0  Td         %
+ (A = 0.01) Tj         %
+  200    0  Td         %
+ (A = 0.05) Tj         %
+  200    0  Td         %
+ (A = 0.10) Tj         %
+ -600  200  Td         %
+ (A = 0.15) Tj         %
+  200    0  Td         %
+ (A = 0.20) Tj         %
+  200    0  Td         %
+ (A = 0.25) Tj         %
+  200    0  Td         %
+ (A = 0.30) Tj         %
+ -600  200  Td         %
+ (A = 0.35) Tj         %
+  200    0  Td         %
+ (A = 0.40) Tj         %
+  200    0  Td         %
+ (A = 0.45) Tj         %
+  200    0  Td         %
+ (A = 0.50) Tj         %
+ -600  200  Td         %
+ (A = 0.55) Tj         %
+  200    0  Td         %
+ (A = 0.60) Tj         %
+  200    0  Td         %
+ (A = 0.65) Tj         %
+  200    0  Td         %
+ (A = 0.70) Tj         %
+ -600  200  Td  0.0 g  %
+ (A = 0.75) Tj         %
+  200    0  Td         %
+ (A = 0.80) Tj         %
+  200    0  Td         %
+ (A = 0.90) Tj         %
+  200    0  Td         %
+ (A = 1.00) Tj         %
+ -600  200  Td         %
+ (WhitePoint [ 1.0 1.0 1.0 ]) Tj                %
+  200    0  Td         %
+ (BlackPoint [ 0.0 0.0 0.0 ]) Tj                %
+  200    0  Td         %
+ (Gamma  1.0) Tj                                %
+ ET                    %
+endstream
+%  %
+endobj
+
+8 0 obj % Page object                           %
+<< /Type /Page                                  %
+   /Parent 2 0 R                                %
+   /Resources 9 0 R                             %
+   /Contents 11 0 R                             %
+   /CropBox [ 0 0 850 1100 ]                    %
+>>                                              %
+% filler                                %
+endobj
+
+9 0 obj % Resource dictionary for page          %
+<<                                              %
+   /ColorSpace << /Cs10 10 0 R >>               %
+   /Font << /F1 6 0 R >>                        %
+>>                                              %
+% filler                                %
+endobj
+
+10 0 obj % Colorspace definition                %
+[ /CalGray                                      %
+<< /WhitePoint [ 1.00000 1.0 1.00000 ]          %
+   /BlackPoint [ 0.0 0.0 0.0 ]                  %
+   /Gamma  5.0                                  %
+>>                                              %
+]                                               %
+% filler                                %
+endobj
+
+11 0 obj % Contents of page                     %
+<< /Length 3300 >>
+stream
+
+ /Cs10 cs              %
+  0.0  sc              %
+   25   25  200  200 re%
+ f                     %
+ /Cs10 cs              %
+  0.01 sc              %
+  225   25  200  200 re%
+ f                     %
+ /Cs10 cs              %
+  0.05 sc              %
+  425   25  200  200 re%
+ f                     %
+ /Cs10 cs              %
+  0.1  sc              %
+  625   25  200  200 re%
+ f                     %
+ /Cs10 cs              %
+  0.15 sc              %
+   25  225  200  200 re%
+ f                     %
+ /Cs10 cs              %
+  0.2  sc              %
+  225  225  200  200 re%
+ f                     %
+ /Cs10 cs              %
+  0.25 sc              %
+  425  225  200  200 re%
+ f                     %
+ /Cs10 cs              %
+  0.3  sc              %
+  625  225  200  200 re%
+ f                     %
+ /Cs10 cs              %
+  0.35 sc              %
+   25  425  200  200 re%
+ f                     %
+ /Cs10 cs              %
+  0.4  sc              %
+  225  425  200  200 re%
+ f                     %
+ /Cs10 cs              %
+  0.45 sc              %
+  425  425  200  200 re%
+ f                     %
+ /Cs10 cs              %
+  0.5  sc              %
+  625  425  200  200 re%
+ f                     %
+ /Cs10 cs              %
+  0.55 sc              %
+   25  625  200  200 re%
+ f                     %
+ /Cs10 cs              %
+  0.6  sc              %
+  225  625  200  200 re%
+ f                     %
+ /Cs10 cs              %
+  0.65 sc              %
+  425  625  200  200 re%
+ f                     %
+ /Cs10 cs              %
+  0.7  sc              %
+  625  625  200  200 re%
+ f                     %
+ /Cs10 cs              %
+  0.75 sc              %
+   25  825  200  200 re%
+ f                     %
+ /Cs10 cs              %
+  0.8  sc              %
+  225  825  200  200 re%
+ f                     %
+ /Cs10 cs              %
+  0.9  sc              %
+  425  825  200  200 re%
+ f                     %
+ /Cs10 cs              %
+  1.0  sc              %
+  625  825  200  200 re%
+ f                     %
+ BT                    %
+ /F1 16 Tf             %
+   50   50  Td         %
+ (A = 0.00) Tj         %
+  200    0  Td         %
+ (A = 0.01) Tj         %
+  200    0  Td         %
+ (A = 0.05) Tj         %
+  200    0  Td         %
+ (A = 0.10) Tj         %
+ -600  200  Td         %
+ (A = 0.15) Tj         %
+  200    0  Td         %
+ (A = 0.20) Tj         %
+  200    0  Td         %
+ (A = 0.25) Tj         %
+  200    0  Td         %
+ (A = 0.30) Tj         %
+ -600  200  Td         %
+ (A = 0.35) Tj         %
+  200    0  Td         %
+ (A = 0.40) Tj         %
+  200    0  Td         %
+ (A = 0.45) Tj         %
+  200    0  Td         %
+ (A = 0.50) Tj         %
+ -600  200  Td         %
+ (A = 0.55) Tj         %
+  200    0  Td         %
+ (A = 0.60) Tj         %
+  200    0  Td         %
+ (A = 0.65) Tj         %
+  200    0  Td         %
+ (A = 0.70) Tj         %
+ -600  200  Td  0.0 g  %
+ (A = 0.75) Tj         %
+  200    0  Td         %
+ (A = 0.80) Tj         %
+  200    0  Td         %
+ (A = 0.90) Tj         %
+  200    0  Td         %
+ (A = 1.00) Tj         %
+ -600  200  Td         %
+ (WhitePoint [ 1.0 1.0 1.0 ]) Tj                %
+  200    0  Td         %
+ (BlackPoint [ 0.0 0.0 0.0 ]) Tj                %
+  200    0  Td         %
+ (Gamma  5.0) Tj                                %
+ ET                    %
+endstream
+%  %
+endobj
+
+12 0 obj % Page object                          %
+<< /Type /Page                                  %
+   /Parent 2 0 R                                %
+   /Resources 13 0 R                            %
+   /Contents 15 0 R                             %
+   /CropBox [ 0 0 850 1100 ]                    %
+>>                                              %
+% filler                                %
+endobj
+
+13 0 obj % Resource dictionary for page         %
+<<                                              %
+   /ColorSpace << /Cs14 14 0 R >>               %
+   /Font << /F1 6 0 R >>                        %
+>>                                              %
+% filler                                %
+endobj
+
+14 0 obj % Colorspace definition                %
+[ /CalGray                                      %
+<< /WhitePoint [ 1.00000 1.0 1.00000 ]          %
+   /BlackPoint [ 0.7 0.7 0.7 ]                  %
+   /Gamma  1.0                                  %
+>>                                              %
+]                                               %
+% filler                                %
+endobj
+
+15 0 obj % Contents of page                     %
+<< /Length 3300 >>
+stream
+
+ /Cs14 cs              %
+  0.0  sc              %
+   25   25  200  200 re%
+ f                     %
+ /Cs14 cs              %
+  0.01 sc              %
+  225   25  200  200 re%
+ f                     %
+ /Cs14 cs              %
+  0.05 sc              %
+  425   25  200  200 re%
+ f                     %
+ /Cs14 cs              %
+  0.1  sc              %
+  625   25  200  200 re%
+ f                     %
+ /Cs14 cs              %
+  0.15 sc              %
+   25  225  200  200 re%
+ f                     %
+ /Cs14 cs              %
+  0.2  sc              %
+  225  225  200  200 re%
+ f                     %
+ /Cs14 cs              %
+  0.25 sc              %
+  425  225  200  200 re%
+ f                     %
+ /Cs14 cs              %
+  0.3  sc              %
+  625  225  200  200 re%
+ f                     %
+ /Cs14 cs              %
+  0.35 sc              %
+   25  425  200  200 re%
+ f                     %
+ /Cs14 cs              %
+  0.4  sc              %
+  225  425  200  200 re%
+ f                     %
+ /Cs14 cs              %
+  0.45 sc              %
+  425  425  200  200 re%
+ f                     %
+ /Cs14 cs              %
+  0.5  sc              %
+  625  425  200  200 re%
+ f                     %
+ /Cs14 cs              %
+  0.55 sc              %
+   25  625  200  200 re%
+ f                     %
+ /Cs14 cs              %
+  0.6  sc              %
+  225  625  200  200 re%
+ f                     %
+ /Cs14 cs              %
+  0.65 sc              %
+  425  625  200  200 re%
+ f                     %
+ /Cs14 cs              %
+  0.7  sc              %
+  625  625  200  200 re%
+ f                     %
+ /Cs14 cs              %
+  0.75 sc              %
+   25  825  200  200 re%
+ f                     %
+ /Cs14 cs              %
+  0.8  sc              %
+  225  825  200  200 re%
+ f                     %
+ /Cs14 cs              %
+  0.9  sc              %
+  425  825  200  200 re%
+ f                     %
+ /Cs14 cs              %
+  1.0  sc              %
+  625  825  200  200 re%
+ f                     %
+ BT                    %
+ /F1 16 Tf             %
+   50   50  Td         %
+ (A = 0.00) Tj         %
+  200    0  Td         %
+ (A = 0.01) Tj         %
+  200    0  Td         %
+ (A = 0.05) Tj         %
+  200    0  Td         %
+ (A = 0.10) Tj         %
+ -600  200  Td         %
+ (A = 0.15) Tj         %
+  200    0  Td         %
+ (A = 0.20) Tj         %
+  200    0  Td         %
+ (A = 0.25) Tj         %
+  200    0  Td         %
+ (A = 0.30) Tj         %
+ -600  200  Td         %
+ (A = 0.35) Tj         %
+  200    0  Td         %
+ (A = 0.40) Tj         %
+  200    0  Td         %
+ (A = 0.45) Tj         %
+  200    0  Td         %
+ (A = 0.50) Tj         %
+ -600  200  Td         %
+ (A = 0.55) Tj         %
+  200    0  Td         %
+ (A = 0.60) Tj         %
+  200    0  Td         %
+ (A = 0.65) Tj         %
+  200    0  Td         %
+ (A = 0.70) Tj         %
+ -600  200  Td  0.0 g  %
+ (A = 0.75) Tj         %
+  200    0  Td         %
+ (A = 0.80) Tj         %
+  200    0  Td         %
+ (A = 0.90) Tj         %
+  200    0  Td         %
+ (A = 1.00) Tj         %
+ -600  200  Td         %
+ (WhitePoint [ 1.0 1.0 1.0 ]) Tj                %
+  200    0  Td         %
+ (BlackPoint [ 0.7 0.7 0.7 ]) Tj                %
+  200    0  Td         %
+ (Gamma  1.0) Tj                                %
+ ET                    %
+endstream
+%  %
+endobj
+
+xref
+0 16
+0000000000 65535 f 
+0000000100 00000 n 
+0000000400 00000 n 
+0000000900 00000 n 
+0000001300 00000 n 
+0000001600 00000 n 
+0000002000 00000 n 
+0000002300 00000 n 
+0000005700 00000 n 
+0000006100 00000 n 
+0000006400 00000 n 
+0000006800 00000 n 
+0000010200 00000 n 
+0000010600 00000 n 
+0000010900 00000 n 
+0000011300 00000 n 
+trailer
+<<
+   /Size 16
+   /Root 1 0 R
+>>
+startxref
+14700
+%%EOF
