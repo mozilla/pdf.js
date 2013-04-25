@@ -268,7 +268,8 @@ var TilingPattern = (function TilingPatternClosure() {
     COLORED: 1,
     UNCOLORED: 2
   };
-  var MAX_PATTERN_SIZE = 4096;
+
+  var MAX_PATTERN_SIZE = 512;
 
   function TilingPattern(IR, color, ctx, objs, commonObjs) {
     var operatorList = IR[2];
