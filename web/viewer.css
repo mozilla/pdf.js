@@ -1348,6 +1348,11 @@ canvas {
 }
 
 @media print {
+  /* General rules for printing. */
+  body {
+    background: transparent none;
+  }
+
   /* Rules for browsers that don't support mozPrintCallback. */
   #sidebarContainer, .toolbar, #loadingBox, #errorWrapper, .textLayer {
     display: none;
