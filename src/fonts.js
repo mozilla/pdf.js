@@ -17,7 +17,7 @@
 /* globals assert, bytesToString, CIDToUnicodeMaps, error, ExpertCharset,
            ExpertSubsetCharset, FileReaderSync, globalScope, GlyphsUnicode,
            info, isArray, isNum, ISOAdobeCharset, isWorker, PDFJS, Stream,
-           stringToBytes, TextDecoder, TODO, warn, Lexer */
+           stringToBytes, TextDecoder, TODO, warn, Lexer, Util */
 
 'use strict';
 
@@ -6790,6 +6790,33 @@ var CFFCompiler = (function CFFCompilerClosure() {
 
       var nameIndex = this.compileNameIndex(cff.names);
       output.add(nameIndex);
+
+      if (cff.isCIDFont) {
+        // The spec is unclear on how font matrices should relate to each other
+        // when there is one in the main top dict and the sub top dicts.
+        // Windows handles this differently than linux and osx so we have to
+        // normalize to work on all.
+        // Rules based off of some mailing list discussions:
+        // - If main font has a matrix and subfont doesn't, use the main matrix.
+        // - If no main font matrix and there is a subfont matrix, use the
+        //   subfont matrix.
+        // - If both have matrices, concat together.
+        // - If neither have matrices, use default.
+        // To make this work on all platforms we move the top matrix into each
+        // sub top dict and concat if necessary.
+        if (cff.topDict.hasName('FontMatrix')) {
+          var base = cff.topDict.getByName('FontMatrix');
+          cff.topDict.removeByName('FontMatrix');
+          for (var i = 0, ii = cff.fdArray.length; i < ii; i++) {
+            var subDict = cff.fdArray[i];
+            var matrix = base.slice(0);
+            if (subDict.hasName('FontMatrix')) {
+              matrix = Util.transform(matrix, subDict.getByName('FontMatrix'));
+            }
+            subDict.setByName('FontMatrix', matrix);
+          }
+        }
+      }
 
       var compiled = this.compileTopDicts([cff.topDict],
                                           output.length,
