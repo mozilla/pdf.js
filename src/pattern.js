@@ -20,6 +20,10 @@
 
 'use strict';
 
+// This global variable is used to minimize the memory usage when patterns are
+// used.
+var temporaryPatternCanvas = null;
+
 var PatternType = {
   AXIAL: 2,
   RADIAL: 3
@@ -268,68 +272,24 @@ var TilingPattern = (function TilingPatternClosure() {
     COLORED: 1,
     UNCOLORED: 2
   };
-  var MAX_PATTERN_SIZE = 4096;
+
+  var MAX_PATTERN_SIZE = 8192;
 
   function TilingPattern(IR, color, ctx, objs, commonObjs) {
-    var operatorList = IR[2];
+    this.name = IR[1][0].name;
+    this.operatorList = IR[2];
     this.matrix = IR[3] || [1, 0, 0, 1, 0, 0];
-    var bbox = IR[4];
-    var xstep = IR[5];
-    var ystep = IR[6];
-    var paintType = IR[7];
-    var tilingType = IR[8];
-
-    TODO('TilingType: ' + tilingType);
-
+    this.bbox = IR[4];
+    this.xstep = IR[5];
+    this.ystep = IR[6];
+    this.paintType = IR[7];
+    this.tilingType = IR[8];
+    this.color = color;
+    this.objs = objs;
+    this.commonObjs = commonObjs;
     this.curMatrix = ctx.mozCurrentTransform;
-    this.ctx = ctx;
     this.type = 'Pattern';
-
-    var x0 = bbox[0], y0 = bbox[1], x1 = bbox[2], y1 = bbox[3];
-
-    var topLeft = [x0, y0];
-    // we want the canvas to be as large as the step size
-    var botRight = [x0 + xstep, y0 + ystep];
-
-    var width = botRight[0] - topLeft[0];
-    var height = botRight[1] - topLeft[1];
-
-    // Obtain scale from matrix and current transformation matrix.
-    var matrixScale = Util.singularValueDecompose2dScale(this.matrix);
-    var curMatrixScale = Util.singularValueDecompose2dScale(this.curMatrix);
-    var combinedScale = [matrixScale[0] * curMatrixScale[0],
-                         matrixScale[1] * curMatrixScale[1]];
-
-    // MAX_PATTERN_SIZE is used to avoid OOM situation.
-    // Use width and height values that are as close as possible to the end
-    // result when the pattern is used. Too low value makes the pattern look
-    // blurry. Too large value makes it look too crispy.
-    width = Math.min(Math.ceil(Math.abs(width * combinedScale[0])),
-                     MAX_PATTERN_SIZE);
-
-    height = Math.min(Math.ceil(Math.abs(height * combinedScale[1])),
-                      MAX_PATTERN_SIZE);
-
-    var tmpCanvas = createScratchCanvas(width, height);
-
-    // set the new canvas element context as the graphics context
-    var tmpCtx = tmpCanvas.getContext('2d');
-    var graphics = new CanvasGraphics(tmpCtx, commonObjs, objs);
-
-    this.setFillAndStrokeStyleToContext(tmpCtx, paintType, color);
-
-    this.setScale(width, height, xstep, ystep);
-    this.transformToScale(graphics);
-
-    // transform coordinates to pattern space
-    var tmpTranslate = [1, 0, 0, 1, -topLeft[0], -topLeft[1]];
-    graphics.transform.apply(graphics, tmpTranslate);
-
-    this.clipBbox(graphics, bbox, x0, y0, x1, y1);
-
-    graphics.executeOperatorList(operatorList);
-
-    this.canvas = tmpCanvas;
+    this.ctx = ctx;
   }
 
   TilingPattern.getIR = function TilingPattern_getIR(operatorList, dict, args) {
@@ -347,6 +307,69 @@ var TilingPattern = (function TilingPatternClosure() {
   };
 
   TilingPattern.prototype = {
+    createPatternCanvas: function TilinPattern_createPatternCanvas(tmpCanvas) {
+      var operatorList = this.operatorList;
+      var bbox = this.bbox;
+      var xstep = this.xstep;
+      var ystep = this.ystep;
+      var paintType = this.paintType;
+      var tilingType = this.tilingType;
+      var color = this.color;
+      var objs = this.objs;
+      var commonObjs = this.commonObjs;
+      var ctx = this.ctx;
+
+      TODO('TilingType: ' + tilingType);
+
+      var x0 = bbox[0], y0 = bbox[1], x1 = bbox[2], y1 = bbox[3];
+
+      var topLeft = [x0, y0];
+      // we want the canvas to be as large as the step size
+      var botRight = [x0 + xstep, y0 + ystep];
+
+      var width = botRight[0] - topLeft[0];
+      var height = botRight[1] - topLeft[1];
+
+      // Obtain scale from matrix and current transformation matrix.
+      var matrixScale = Util.singularValueDecompose2dScale(this.matrix);
+      var curMatrixScale = Util.singularValueDecompose2dScale(this.curMatrix);
+      var combinedScale = [matrixScale[0] * curMatrixScale[0],
+                           matrixScale[1] * curMatrixScale[1]];
+
+      // MAX_PATTERN_SIZE is used to avoid OOM situation.
+      // Use width and height values that are as close as possible to the end
+      // result when the pattern is used. Too low value makes the pattern look
+      // blurry. Too large value makes it look too crispy.
+      width = Math.min(Math.ceil(Math.abs(width * combinedScale[0])),
+                       MAX_PATTERN_SIZE);
+
+      height = Math.min(Math.ceil(Math.abs(height * combinedScale[1])),
+                        MAX_PATTERN_SIZE);
+
+      tmpCanvas.width = width;
+      tmpCanvas.height = height;
+
+      // set the new canvas element context as the graphics context
+      var tmpCtx = tmpCanvas.getContext('2d');
+      // for simulated mozCurrentTransform canvas (normaly setting width/height
+      // will reset the matrix)
+      tmpCtx.setTransform(1, 0, 0, 1, 0, 0);
+      var graphics = new CanvasGraphics(tmpCtx, commonObjs, objs);
+
+      this.setFillAndStrokeStyleToContext(tmpCtx, paintType, color);
+
+      this.setScale(width, height, xstep, ystep);
+      this.transformToScale(graphics);
+
+      // transform coordinates to pattern space
+      var tmpTranslate = [1, 0, 0, 1, -topLeft[0], -topLeft[1]];
+      graphics.transform.apply(graphics, tmpTranslate);
+
+      this.clipBbox(graphics, bbox, x0, y0, x1, y1);
+
+      graphics.executeOperatorList(operatorList);
+    },
+
     setScale: function TilingPattern_setScale(width, height, xstep, ystep) {
       this.scale = [width / xstep, height / ystep];
     },
@@ -392,15 +415,19 @@ var TilingPattern = (function TilingPatternClosure() {
     },
 
     getPattern: function TilingPattern_getPattern() {
-      var matrix = this.matrix;
-      var curMatrix = this.curMatrix;
-      var ctx = this.ctx;
+      // The temporary canvas is created only because the memory is released
+      // more quickly than creating multiple temporary canvases.
+      if (temporaryPatternCanvas === null) {
+        temporaryPatternCanvas = createScratchCanvas(1, 1);
+      }
+      this.createPatternCanvas(temporaryPatternCanvas);
 
-      ctx.setTransform.apply(ctx, curMatrix);
-      ctx.transform.apply(ctx, matrix);
+      var ctx = this.ctx;
+      ctx.setTransform.apply(ctx, this.curMatrix);
+      ctx.transform.apply(ctx, this.matrix);
       this.scaleToContext();
 
-      return ctx.createPattern(this.canvas, 'repeat');
+      return ctx.createPattern(temporaryPatternCanvas, 'repeat');
     }
   };
 
