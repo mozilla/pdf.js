@@ -1051,6 +1051,14 @@
       "type": "eq",
       "about": "Has a 4 bit per component image with mask and decode."
     },
+    {  "id": "issue3064",
+      "file": "pdfs/issue3064.pdf",
+      "md5": "0307415b7d69b13acaf8bd4285d9544b",
+      "rounds": 1,
+      "link": true,
+      "type": "eq",
+      "about": "True type font with encoding dict with no base encoding but with differences."
+    },
     {  "id": "p020121130574743273239",
       "file": "pdfs/P020121130574743273239.pdf",
       "md5": "271b65885d42d174cbc597ca89becb1a",

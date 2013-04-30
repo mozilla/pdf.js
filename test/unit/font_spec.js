@@ -383,7 +383,7 @@ describe('font', function() {
         'dup 33 /arrowright put\n' +
         'readonly def\n');
       var parser = new Type1Parser(stream);
-      var props = {};
+      var props = { overridableEncoding: true };
       var program = parser.extractFontHeader(props);
       expect(props.baseEncoding[33]).toEqual('arrowright');
     });
