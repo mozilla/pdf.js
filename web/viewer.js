@@ -1442,6 +1442,13 @@ var PDFView = {
                     left + ',' + top;
       }
       self.setInitialView(storedHash, scale);
+
+      // Make all navigation keys work on document load,
+      // unless the viewer is embedded in another page.
+      if (window.parent === window) {
+        PDFView.container.focus();
+        PDFView.container.blur();
+      }
     });
 
     pagesPromise.then(function() {
@@ -1480,12 +1487,6 @@ var PDFView = {
         self.outline = new DocumentOutlineView(outline);
         document.getElementById('viewOutline').disabled = !outline;
       });
-
-      // Make all navigation keys work on document load,
-      // unless the viewer is embedded in another page.
-      if (window.parent.location === window.location) {
-        PDFView.container.focus();
-      }
     });
 
     pdfDocument.getMetadata().then(function(data) {
