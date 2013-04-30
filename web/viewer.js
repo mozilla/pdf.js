@@ -3159,7 +3159,7 @@ document.addEventListener('DOMContentLoaded', function webViewerLoad(evt) {
   }
 
   if (PDFView.supportsIntegratedFind) {
-    document.querySelector('#viewFind').classList.add('hidden');
+    document.getElementById('viewFind').classList.add('hidden');
   }
 
   // Listen for warnings to trigger the fallback UI.  Errors should be caught
@@ -3210,12 +3210,12 @@ document.addEventListener('DOMContentLoaded', function webViewerLoad(evt) {
       PDFView.page++;
     });
 
-  document.querySelector('.zoomIn').addEventListener('click',
+  document.getElementById('zoomIn').addEventListener('click',
     function() {
       PDFView.zoomIn();
     });
 
-  document.querySelector('.zoomOut').addEventListener('click',
+  document.getElementById('zoomOut').addEventListener('click',
     function() {
       PDFView.zoomOut();
     });
@@ -3260,22 +3260,22 @@ document.addEventListener('DOMContentLoaded', function webViewerLoad(evt) {
       PDFView.parseScale(this.value);
     });
 
-  document.getElementById('first_page').addEventListener('click',
+  document.getElementById('firstPage').addEventListener('click',
     function() {
       PDFView.page = 1;
     });
 
-  document.getElementById('last_page').addEventListener('click',
+  document.getElementById('lastPage').addEventListener('click',
     function() {
       PDFView.page = PDFView.pdfDocument.numPages;
     });
 
-  document.getElementById('page_rotate_ccw').addEventListener('click',
+  document.getElementById('pageRotateCcw').addEventListener('click',
     function() {
       PDFView.rotatePages(-90);
     });
 
-  document.getElementById('page_rotate_cw').addEventListener('click',
+  document.getElementById('pageRotateCw').addEventListener('click',
     function() {
       PDFView.rotatePages(90);
     });
@@ -3421,6 +3421,9 @@ window.addEventListener('localized', function localized(evt) {
 }, true);
 
 window.addEventListener('scalechange', function scalechange(evt) {
+  document.getElementById('zoomOut').disabled = (evt.scale === MIN_SCALE);
+  document.getElementById('zoomIn').disabled = (evt.scale === MAX_SCALE);
+
   var customScaleOption = document.getElementById('customScaleOption');
   customScaleOption.selected = false;
 
@@ -3437,10 +3440,6 @@ window.addEventListener('scalechange', function scalechange(evt) {
     customScaleOption.textContent = Math.round(evt.scale * 10000) / 100 + '%';
     customScaleOption.selected = true;
   }
-  
-  document.getElementById('zoom_out').disabled = (evt.scale === MIN_SCALE);
-  document.getElementById('zoom_in').disabled = (evt.scale === MAX_SCALE);
-
   updateViewarea();
 }, true);
 
