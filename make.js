@@ -83,7 +83,7 @@ var COMMON_WEB_FILES =
 // modern HTML5 browsers.
 //
 target.generic = function() {
-  target.bundle();
+  target.bundle({});
   target.locale();
 
   cd(ROOT_DIR);
@@ -553,7 +553,7 @@ target.b2g = function() {
   var B2G_BUILD_DIR = BUILD_DIR + '/b2g/',
       B2G_BUILD_CONTENT_DIR = B2G_BUILD_DIR + '/content/';
   var defines = builder.merge(DEFINES, { B2G: true });
-  target.bundle();
+  target.bundle({});
 
   // Clear out everything in the b2g build directory
   cd(ROOT_DIR);
@@ -591,7 +591,7 @@ target.chrome = function() {
   var CHROME_BUILD_DIR = BUILD_DIR + '/chrome/',
       CHROME_BUILD_CONTENT_DIR = CHROME_BUILD_DIR + '/content/';
 
-  target.bundle();
+  target.bundle({});
   cd(ROOT_DIR);
 
   // Clear out everything in the chrome extension build directory
