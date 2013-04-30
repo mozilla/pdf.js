@@ -5684,7 +5684,15 @@ Type1Font.prototype = {
       var field = fields[i];
       if (!properties.privateData.hasOwnProperty(field))
         continue;
-      privateDict.setByName(field, properties.privateData[field]);
+      var value = properties.privateData[field];
+      if (isArray(value)) {
+        // All of the private dictionary array data in CFF must be stored as
+        // "delta-encoded" numbers.
+        for (var j = value.length - 1; j > 0; j--) {
+          value[j] -= value[j - 1]; // ... difference from previous value
+        }
+      }
+      privateDict.setByName(field, value);
     }
     cff.topDict.privateDict = privateDict;
 
