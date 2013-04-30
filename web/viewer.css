@@ -344,7 +344,7 @@ html[dir='rtl'] #sidebarContent {
   height: 100%;
   width: 50px;
 
-  background-image: linear-gradient(left, #999 0%, #fff 50%, #999 100%);
+  background-image: linear-gradient(to right, #999 0%, #fff 50%, #999 100%);
   background-size: 100% 100% no-repeat;
 
   -moz-animation: progressIndeterminate 2s linear infinite;
