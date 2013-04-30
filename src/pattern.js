@@ -351,6 +351,9 @@ var TilingPattern = (function TilingPatternClosure() {
 
       // set the new canvas element context as the graphics context
       var tmpCtx = tmpCanvas.getContext('2d');
+      // for simulated mozCurrentTransform canvas (normaly setting width/height
+      // will reset the matrix)
+      tmpCtx.setTransform(1, 0, 0, 1, 0, 0);
       var graphics = new CanvasGraphics(tmpCtx, commonObjs, objs);
 
       this.setFillAndStrokeStyleToContext(tmpCtx, paintType, color);
@@ -415,7 +418,7 @@ var TilingPattern = (function TilingPatternClosure() {
       // The temporary canvas is created only because the memory is released
       // more quickly than creating multiple temporary canvases.
       if (temporaryPatternCanvas === null) {
-        temporaryPatternCanvas = createScratchCanvas(0, 0);
+        temporaryPatternCanvas = createScratchCanvas(1, 1);
       }
       this.createPatternCanvas(temporaryPatternCanvas);
 

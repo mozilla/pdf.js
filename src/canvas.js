@@ -57,6 +57,7 @@ function addContextCurrentTransform(ctx) {
     ctx._originalScale = ctx.scale;
     ctx._originalTranslate = ctx.translate;
     ctx._originalTransform = ctx.transform;
+    ctx._originalSetTransform = ctx.setTransform;
 
     ctx._transformMatrix = [ctx._scaleX, 0, 0, ctx._scaleY, 0, 0];
     ctx._transformStack = [];
@@ -136,6 +137,12 @@ function addContextCurrentTransform(ctx) {
       ];
 
       ctx._originalTransform(a, b, c, d, e, f);
+    };
+
+    ctx.setTransform = function ctxSetTransform(a, b, c, d, e, f) {
+      this._transformMatrix = [a, b, c, d, e, f];
+
+      ctx._originalSetTransform(a, b, c, d, e, f);
     };
 
     ctx.rotate = function ctxRotate(angle) {
