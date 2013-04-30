@@ -33,10 +33,6 @@
 //  // TODO(mack): dump() doesn't seem to work here...
 //  dump(msg + '\n');
 //}
-//#else
-function log(aMsg) {
-  console.log(aMsg);
-}
 //#endif
 
 var NetworkManager = (function NetworkManagerClosure() {

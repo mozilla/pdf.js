@@ -16,7 +16,7 @@
  */
 /* globals ColorSpace, DeviceCmykCS, DeviceGrayCS, DeviceRgbCS, error,
            FONT_IDENTITY_MATRIX, IDENTITY_MATRIX, ImageData, isArray, isNum,
-           isString, Pattern, TilingPattern, TODO, Util, warn, assert */
+           isString, Pattern, TilingPattern, TODO, Util, warn, assert, info */
 
 'use strict';
 
@@ -1401,7 +1401,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       // - remove background color:
       // colorNew = color - alphaNew *colorBackdrop /(1 - alphaNew)
       if (!group.isolated) {
-        TODO('Support non-isolated groups.');
+        info('TODO: Support non-isolated groups.');
       }
 
       // TODO knockout - supposedly possible with the clever use of compositing
@@ -1422,9 +1422,10 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
                     group.bbox,
                     currentCtx.mozCurrentTransform);
       // Use ceil in case we're between sizes so we don't create canvas that is
-      // too small.
-      var drawnWidth = Math.ceil(bounds[2] - bounds[0]);
-      var drawnHeight = Math.ceil(bounds[3] - bounds[1]);
+      // too small and make the canvas at least 1x1 pixels.
+      var drawnWidth = Math.max(Math.ceil(bounds[2] - bounds[0]), 1);
+      var drawnHeight = Math.max(Math.ceil(bounds[3] - bounds[1]), 1);
+
       var scratchCanvas = createScratchCanvas(drawnWidth, drawnHeight);
       var groupCtx = scratchCanvas.getContext('2d');
       addContextCurrentTransform(groupCtx);
