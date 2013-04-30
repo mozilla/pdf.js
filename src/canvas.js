@@ -36,7 +36,7 @@ var TextRenderingMode = {
 };
 
 // Minimal font size that would be used during canvas fillText operations.
-var MIN_FONT_SIZE = 1;
+var MIN_FONT_SIZE = 16;
 
 function createScratchCanvas(width, height) {
   var canvas = document.createElement('canvas');
