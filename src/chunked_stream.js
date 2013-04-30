@@ -363,7 +363,8 @@ var ChunkedStreamManager = (function ChunkedStreamManagerClosure() {
       var loadedRequests = [];
       for (var chunk = beginChunk; chunk < endChunk; ++chunk) {
 
-        var requestIds = this.requestsByChunk[chunk];
+        // The server might return more chunks than requested
+        var requestIds = this.requestsByChunk[chunk] || [];
         delete this.requestsByChunk[chunk];
 
         for (var i = 0; i < requestIds.length; ++i) {
