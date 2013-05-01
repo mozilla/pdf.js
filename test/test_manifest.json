@@ -1012,6 +1012,13 @@
       "rounds": 1,
       "type": "eq"
     },
+    {  "id": "bug816075",
+      "file": "pdfs/bug816075.pdf",
+      "md5": "7ec87c115c1f9ec41234cc7002555e82",
+      "rounds": 1,
+      "type": "eq",
+      "about": "A CIDFontType0 font with a CFF font that isn't actually CID."
+    },
     {  "id": "noembed-identity-2",
       "file": "pdfs/noembed-identity-2.pdf",
       "md5": "13b7d9ab9579d45c10bc8d499d087f21",

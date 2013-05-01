@@ -5712,9 +5712,9 @@ var CFFFont = (function CFFFontClosure() {
     this.properties = properties;
 
     var parser = new CFFParser(file, properties);
-    var cff = parser.parse();
-    var compiler = new CFFCompiler(cff);
-    this.readExtra(cff);
+    this.cff = parser.parse();
+    var compiler = new CFFCompiler(this.cff);
+    this.readExtra();
     try {
       this.data = compiler.compile();
     } catch (e) {
@@ -5726,12 +5726,10 @@ var CFFFont = (function CFFFontClosure() {
   }
 
   CFFFont.prototype = {
-    readExtra: function CFFFont_readExtra(cff) {
+    readExtra: function CFFFont_readExtra() {
       // charstrings contains info about glyphs (one element per glyph
       // containing mappings for {unicode, width})
-      var charset = cff.charset.charset;
-      var encoding = cff.encoding ? cff.encoding.encoding : null;
-      var charstrings = this.getCharStrings(charset, encoding);
+      var charstrings = this.getCharStrings();
 
       // create the mapping between charstring and glyph id
       var glyphIds = [];
@@ -5740,21 +5738,39 @@ var CFFFont = (function CFFFontClosure() {
 
       this.charstrings = charstrings;
       this.glyphIds = glyphIds;
-      this.seacs = cff.seacs;
+      this.seacs = this.cff.seacs;
     },
-    getCharStrings: function CFFFont_getCharStrings(charsets, encoding) {
+    getCharStrings: function CFFFont_getCharStrings() {
+      var cff = this.cff;
+      var charsets = cff.charset.charset;
+      var encoding = cff.encoding ? cff.encoding.encoding : null;
       var charstrings = [];
       var unicodeUsed = [];
       var unassignedUnicodeItems = [];
       var inverseEncoding = [];
-      // CID fonts don't have an encoding.
-      if (encoding !== null)
+      var gidStart = 0;
+      // Even though the CFF font may not actually be a CID font is could have
+      // CID information in the font descriptor.
+      if (this.properties.cidSystemInfo) {
+        // According to section 9.7.4.2 if the font is actually a CID font then
+        // we should use the charset to map CIDs to GIDs. If it is not actually
+        // a CID font then CIDs can be mapped directly to GIDs.
+        if (this.cff.isCIDFont) {
+          inverseEncoding = charsets;
+        } else {
+          for (var i = 0, ii = charsets.length; i < charsets.length; i++) {
+            inverseEncoding.push(i);
+          }
+        }
+      } else {
         for (var charcode in encoding)
           inverseEncoding[encoding[charcode]] = charcode | 0;
-      else
-        inverseEncoding = charsets;
-      var i = charsets[0] == '.notdef' ? 1 : 0;
-      for (var ii = charsets.length; i < ii; i++) {
+        if (charsets[0] === '.notedef') {
+          gidStart = 1;
+        }
+      }
+
+      for (var i = gidStart, ii = charsets.length; i < ii; i++) {
         var glyph = charsets[i];
 
         var code = inverseEncoding[i];
