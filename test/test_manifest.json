@@ -467,6 +467,13 @@
        "rounds": 1,
        "type": "eq"
     },
+    {  "id": "issue3188",
+      "file": "pdfs/issue3188.pdf",
+      "md5": "161b72604d86f40ab2f765ddd3b61227",
+      "rounds": 1,
+      "lastPage": 1,
+      "type": "eq"
+    },
     {  "id": "issue1586",
       "file": "pdfs/pdfjsbad1586.pdf",
       "md5": "793d0870f0b0c613799b0677d64daca4",
