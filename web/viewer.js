@@ -110,6 +110,7 @@ var ProgressBar = (function ProgressBarClosure() {
 
     // Initialize heights
     this.div.style.height = this.height + this.units;
+    this.percent = 0;
   }
 
   ProgressBar.prototype = {
@@ -942,15 +943,30 @@ var PDFView = {
     }
 
     var pdfDataRangeTransport = {
-      listeners: [],
+      rangeListeners: [],
+      progressListeners: [],
 
-      addListener: function PdfDataRangeTransport_addListener(listener) {
-        this.listeners.push(listener);
+      addRangeListener: function PdfDataRangeTransport_addRangeListener(
+                                   listener) {
+        this.rangeListeners.push(listener);
+      },
+
+      addProgressListener: function PdfDataRangeTransport_addProgressListener(
+                                      listener) {
+        this.progressListeners.push(listener);
       },
 
       onDataRange: function PdfDataRangeTransport_onDataRange(begin, chunk) {
-        for (var i = 0, n = this.listeners.length; i < n; ++i) {
-          this.listeners[i](begin, chunk);
+        var listeners = this.rangeListeners;
+        for (var i = 0, n = listeners.length; i < n; ++i) {
+          listeners[i](begin, chunk);
+        }
+      },
+
+      onDataProgress: function PdfDataRangeTransport_onDataProgress(loaded) {
+        var listeners = this.progressListeners;
+        for (var i = 0, n = listeners.length; i < n; ++i) {
+          listeners[i](loaded);
         }
       },
 
@@ -973,6 +989,9 @@ var PDFView = {
           break;
         case 'range':
           pdfDataRangeTransport.onDataRange(args.begin, args.chunk);
+          break;
+        case 'rangeProgress':
+          pdfDataRangeTransport.onDataProgress(args.loaded);
           break;
         case 'progress':
           PDFView.progress(args.loaded / args.total);
@@ -1324,7 +1343,13 @@ var PDFView = {
 
   progress: function pdfViewProgress(level) {
     var percent = Math.round(level * 100);
-    PDFView.loadingBar.percent = percent;
+    // When we transition from full request to range requests, it's possible
+    // that we discard some of the loaded data. This can cause the loading
+    // bar to move backwards. So prevent this by only updating the bar if it
+    // increases.
+    if (percent > PDFView.loadingBar.percent) {
+      PDFView.loadingBar.percent = percent;
+    }
   },
 
   load: function pdfViewLoad(pdfDocument, scale) {
