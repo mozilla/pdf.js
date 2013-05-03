@@ -19,7 +19,8 @@
            IDENTITY_MATRIX, info, isArray, isCmd, isDict, isEOF, isName, isNum,
            isStream, isString, JpegStream, Lexer, Metrics, Name, Parser,
            Pattern, PDFImage, PDFJS, serifFonts, stdFontMap, symbolsFonts,
-           TilingPattern, TODO, warn, Util, MissingDataException, Promise */
+           TilingPattern, TODO, warn, Util, MissingDataException, Promise,
+           isInt */
 
 'use strict';
 
@@ -586,8 +587,12 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
     },
 
     getOperatorList: function PartialEvaluator_getOperatorList(stream,
-                                                               resources) {
+                                                               resources,
+                                                               chunkSize) {
 
+      if (isInt(chunkSize)) {
+        this.chunkId = 0;
+      }
       var self = this;
       var xref = this.xref;
       var handler = this.handler;
@@ -608,11 +613,51 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       // dictionary
       var parser = new Parser(new Lexer(stream, OP_MAP), false, xref);
 
+      function sendRenderPageChunk(
+          handler, operatorList, dependencies, chunkId, isLastChunk) {
+        // Filter the dependecies for fonts.
+        var fonts = {};
+        for (var dep in dependencies) {
+          if (dep.indexOf('g_font_') === 0) {
+            fonts[dep] = true;
+          }
+        }
+
+        PartialEvaluator.optimizeQueue(operatorList);
+
+        handler.send('RenderPageChunk', {
+          pageIndex: self.pageIndex,
+          operatorList: operatorList,
+          chunkId: chunkId,
+          isLastChunk: isLastChunk,
+          depFonts: Object.keys(fonts)
+        });
+      }
+
       var promise = new Promise();
       function parseCommands() {
+        function afterParseSubOperatorList(data) {
+          // The reason we are only sending chunks at top level is because
+          // nested operator lists might have stuff added before and after
+          // them
+
+          var subQueue = data.queue;
+          Util.concatenateToArray(fnArray, subQueue.fnArray);
+          Util.concatenateToArray(argsArray, subQueue.argsArray);
+          queue.transparency = subQueue.transparency || queue.transparency;
+          Util.extendObj(dependencies, data.dependencies);
+
+          parser.saveState();
+          args = [];
+
+          // Continue parsing at next tick to prevent stack overflow
+          handler.send('nextTick', null, parseCommands);
+        }
+
+        var args = [];
+        parser.restoreState();
+
         try {
-          parser.restoreState();
-          var args = [];
           while (true) {
 
             var obj = parser.getObj();
@@ -669,10 +714,10 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                   var typeNum = dict.get('PatternType');
 
                   if (typeNum == TILING_PATTERN) {
-                    var patternPromise = self.handleTilingType(
-                        fn, args, resources, pattern, dict);
-                    fn = 'promise';
-                    args = [patternPromise];
+                    //fn = 'promise';
+                    self.handleTilingType(fn, args, resources, pattern,
+                        dict).then(afterParseSubOperatorList);
+                    return;
                   } else if (typeNum == SHADING_PATTERN) {
                     var shading = dict.get('Shading');
                     var matrix = dict.get('Matrix');
@@ -698,8 +743,11 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                   );
 
                   if ('Form' == type.name) {
-                    fn = 'promise';
-                    args = [self.buildFormXObject(resources, xobj)];
+                    //fn = 'promise';
+                    //args = [self.buildFormXObject(resources, xobj)];
+                    self.buildFormXObject(resources, xobj).then(
+                        afterParseSubOperatorList);
+                    return;
                   } else if ('Image' == type.name) {
                     var data = self.buildPaintImageXObject(
                         resources, xobj, false);
@@ -712,8 +760,10 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                   }
                 }
               } else if (cmd == 'Tf') { // eagerly collect all fonts
-                fn = 'promise';
-                args = [self.handleSetFont(resources, args)];
+                //fn = 'promise';
+                self.handleSetFont(resources, args).then(
+                    afterParseSubOperatorList);
+                return;
               } else if (cmd == 'EI') {
                 var data = self.buildPaintImageXObject(
                     resources, args[0], true);
@@ -752,13 +802,25 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                     break;
 
                   var gState = extGState.get(dictName.name);
-                  fn = 'promise';
-                  args = [self.setGState(resources, gState)];
+                  //fn = 'promise';
+                  self.setGState(resources, gState).then(
+                      afterParseSubOperatorList);
+                  return;
               } // switch
 
               fnArray.push(fn);
               argsArray.push(args);
               args = [];
+
+              if (isInt(chunkSize) && fnArray.length >= chunkSize) {
+                sendRenderPageChunk(handler, {
+                  fnArray: fnArray,
+                  argsArray: argsArray
+                }, dependencies, self.chunkId++, false);
+                queue.fnArray = fnArray = [];
+                queue.argsArray = argsArray = [];
+                dependencies = {};
+              }
               parser.saveState();
             } else if (obj !== null && obj !== undefined) {
               args.push(obj instanceof Dict ? obj.getAll() : obj);
@@ -766,54 +828,71 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
             }
           }
 
-          var subQueuePromises = [];
-          for (var i = 0; i < fnArray.length; ++i) {
-            if (fnArray[i] === 'promise') {
-              subQueuePromises.push(argsArray[i][0]);
-            }
-          }
-          Promise.all(subQueuePromises).then(function(datas) {
-            // TODO(mack): Optimize by using repositioning elements
-            // in original queue rather than creating new queue
+          //var subQueuePromises = [];
+          //for (var i = 0; i < fnArray.length; ++i) {
+          //  if (fnArray[i] === 'promise') {
+          //    subQueuePromises.push(argsArray[i][0]);
+          //  }
+          //}
+          //Promise.all(subQueuePromises).then(function(datas) {
+          //  // TODO(mack): Optimize by using repositioning elements
+          //  // in original queue rather than creating new queue
 
-            for (var i = 0, n = datas.length; i < n; ++i) {
-              var data = datas[i];
-              var subQueue = data.queue;
-              queue.transparency = subQueue.transparency || queue.transparency;
-              Util.extendObj(dependencies, data.dependencies);
-            }
+          //  for (var i = 0, n = datas.length; i < n; ++i) {
+          //    var data = datas[i];
+          //    var subQueue = data.queue;
+          //    queue.transparency = subQueue.transparency || queue.transparency;
+          //    Util.extendObj(dependencies, data.dependencies);
+          //  }
 
-            var newFnArray = [];
-            var newArgsArray = [];
-            var currOffset = 0;
-            var subQueueIdx = 0;
-            for (var i = 0, n = fnArray.length; i < n; ++i) {
-              var offset = i + currOffset;
-              if (fnArray[i] === 'promise') {
-                var data = datas[subQueueIdx++];
-                var subQueue = data.queue;
-                var subQueueFnArray = subQueue.fnArray;
-                var subQueueArgsArray = subQueue.argsArray;
-                for (var j = 0, nn = subQueueFnArray.length; j < nn; ++j) {
-                  newFnArray[offset + j] = subQueueFnArray[j];
-                  newArgsArray[offset + j] = subQueueArgsArray[j];
-                }
-                currOffset += subQueueFnArray.length - 1;
-              } else {
-                newFnArray[offset] = fnArray[i];
-                newArgsArray[offset] = argsArray[i];
-              }
-            }
+          //  var newFnArray = [];
+          //  var newArgsArray = [];
+          //  var currOffset = 0;
+          //  var subQueueIdx = 0;
+          //  for (var i = 0, n = fnArray.length; i < n; ++i) {
+          //    var offset = i + currOffset;
+          //    if (fnArray[i] === 'promise') {
+          //      var data = datas[subQueueIdx++];
+          //      var subQueue = data.queue;
+          //      var subQueueFnArray = subQueue.fnArray;
+          //      var subQueueArgsArray = subQueue.argsArray;
+          //      for (var j = 0, nn = subQueueFnArray.length; j < nn; ++j) {
+          //        newFnArray[offset + j] = subQueueFnArray[j];
+          //        newArgsArray[offset + j] = subQueueArgsArray[j];
+          //      }
+          //      currOffset += subQueueFnArray.length - 1;
+          //    } else {
+          //      newFnArray[offset] = fnArray[i];
+          //      newArgsArray[offset] = argsArray[i];
+          //    }
+          //  }
 
+          //  promise.resolve({
+          //    queue: {
+          //      fnArray: newFnArray,
+          //      argsArray: newArgsArray,
+          //      transparency: queue.transparency
+          //    },
+          //    dependencies: dependencies
+          //  });
+          //});
+          if (!isInt(chunkSize)) {
             promise.resolve({
               queue: {
-                fnArray: newFnArray,
-                argsArray: newArgsArray,
+                fnArray: fnArray,
+                argsArray: argsArray,
                 transparency: queue.transparency
               },
               dependencies: dependencies
             });
-          });
+          } else {
+            sendRenderPageChunk(handler, {
+              fnArray: fnArray,
+              argsArray: argsArray
+            }, dependencies, self.chunkId++, true);
+
+            promise.resolve();
+          }
         } catch (e) {
           if (!(e instanceof MissingDataException)) {
             throw e;

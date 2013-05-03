@@ -282,26 +282,24 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
       var promise = new Promise();
       var stats = this.stats;
       stats.time('Overall');
-      // If there is no displayReadyPromise yet, then the operatorList was never
-      // requested before. Make the request and create the promise.
-      if (!this.displayReadyPromise) {
-        this.displayReadyPromise = new Promise();
+      // If there is no displayChunkPromises yet, then the operatorList was
+      // never requested before. Make the request and create the promise.
+      if (!this.displayChunkPromises) {
+        this.displayChunkPromises = new Promise();
         this.destroyed = false;
 
-        this.stats.time('Page Request');
-        this.transport.messageHandler.send('RenderPageRequest', {
-          pageIndex: this.pageNumber - 1
-        });
+        //this.stats.time('Page Request');
       }
 
       var self = this;
       function complete(error) {
         self.renderInProgress = false;
         if (self.destroyed || self.cleanupAfterRender) {
-          delete self.displayReadyPromise;
+          delete self.displayChunkPromises;
           delete self.operatorList;
           self.objs.clear();
         }
+        self.currDisplayChunk = 0;
 
         if (error)
           promise.reject(error);
@@ -310,26 +308,63 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
       }
       var continueCallback = params.continueCallback;
 
-      // Once the operatorList and fonts are loaded, do the actual rendering.
-      this.displayReadyPromise.then(
-        function pageDisplayReadyPromise() {
+      this.transport.messageHandler.send('RenderPageRequest', {
+        pageIndex: this.pageNumber - 1
+      });
+
+      var gfx = new CanvasGraphics(params.canvasContext, this.commonObjs,
+        this.objs, params.textLayer, params.imageLayer);
+      function displayChunk(currChunkId) {
+        if (!(currChunkId in self.displayChunkPromises)) {
+          self.displayChunkPromises[currChunkId] = new PDFJS.Promise();
+        }
+
+        function displayCurrChunk(data) {
+          var operatorList = data.operatorList;
+          if (!operatorList) {
+            debugger;
+          }
+
+          var isLastChunk = data.isLastChunk;
           if (self.destroyed) {
             complete();
             return;
           }
 
-          var gfx = new CanvasGraphics(params.canvasContext, this.commonObjs,
-            this.objs, params.textLayer, params.imageLayer);
+          if (currChunkId === 0) {
+            gfx.beginDrawing(params.viewport);
+          }
+
           try {
-            this.display(gfx, params.viewport, complete, continueCallback);
+            if (isLastChunk) {
+              self.display(gfx, params.viewport, function() {
+                gfx.endDrawing(params.viewport);
+                complete();
+              }, continueCallback, operatorList);
+            } else {
+              self.display(gfx, params.viewport, function() {
+                displayChunk(currChunkId + 1);
+              }, continueCallback, operatorList);
+            }
           } catch (e) {
             complete(e);
           }
-        }.bind(this),
-        function pageDisplayReadPromiseError(reason) {
-          complete(reason);
         }
-      );
+        var displayChunkPromise = self.displayChunkPromises[currChunkId];
+        displayChunkPromise.then(
+          function(data) {
+            if ((currChunkId + 1) % 250 === 0) {
+              window.setTimeout(displayCurrChunk.bind(undefined, data), 0);
+            } else {
+              displayCurrChunk(data);
+            }
+          },
+          function(reason) {
+            complete(reason);
+          }
+        );
+      }
+      displayChunk(0);
 
       return promise;
     },
@@ -338,7 +373,8 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
      */
     startRenderingFromOperatorList:
       function PDFPageProxy_startRenderingFromOperatorList(operatorList,
-                                                           fonts) {
+                                                           fonts, chunkId,
+                                                           isLastChunk) {
       var self = this;
       this.operatorList = operatorList;
 
@@ -346,7 +382,13 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
         // Always defer call to display() to work around bug in
         // Firefox error reporting from XHR callbacks.
         setTimeout(function pageSetTimeout() {
-          self.displayReadyPromise.resolve();
+          if (!(chunkId in self.displayChunkPromises)) {
+            self.displayChunkPromises[chunkId] = new PDFJS.Promise();
+          }
+          self.displayChunkPromises[chunkId].resolve({
+            operatorList: operatorList,
+            isLastChunk: isLastChunk
+          });
         });
       };
 
@@ -389,12 +431,11 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
      * For internal use only.
      */
     display: function PDFPageProxy_display(gfx, viewport, callback,
-                                           continueCallback) {
+                                           continueCallback, operatorList) {
       var stats = this.stats;
       stats.time('Rendering');
 
-      var operatorList = this.operatorList;
-      gfx.beginDrawing(viewport, operatorList.transparency);
+      //gfx.beginDrawing(viewport, operatorList.transparency);
 
       var startIdx = 0;
       var length = operatorList.fnArray.length;
@@ -417,9 +458,9 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
         startIdx = gfx.executeOperatorList(operatorList, startIdx,
                                            continueWrapper, stepper);
         if (startIdx == length) {
-          gfx.endDrawing();
-          stats.timeEnd('Rendering');
-          stats.timeEnd('Overall');
+          //gfx.endDrawing();
+          //stats.timeEnd('Rendering');
+          //stats.timeEnd('Overall');
           if (callback) callback();
         }
       }
@@ -459,8 +500,9 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
       this.destroyed = true;
 
       if (!this.renderInProgress) {
-        delete this.operatorList;
-        delete this.displayReadyPromise;
+        //delete this.operatorList;
+        //delete this.displayReadyPromise;
+        delete this.displayChunkPromises;
         this.objs.clear();
       }
     }
@@ -574,6 +616,10 @@ var WorkerTransport = (function WorkerTransportClosure() {
           }, this);
       }
 
+      messageHandler.on('nextTick', function(data, promise) {
+        promise.resolve();
+      });
+
       messageHandler.on('GetDoc', function transportDoc(data) {
         var pdfInfo = data.pdfInfo;
         var pdfDocument = new PDFDocumentProxy(pdfInfo, this);
@@ -615,12 +661,14 @@ var WorkerTransport = (function WorkerTransportClosure() {
         promise.resolve(annotations);
       }, this);
 
-      messageHandler.on('RenderPage', function transportRender(data) {
+      messageHandler.on('RenderPageChunk', function transportRender(data) {
         var page = this.pageCache[data.pageIndex];
         var depFonts = data.depFonts;
+        var chunkId = data.chunkId;
 
-        page.stats.timeEnd('Page Request');
-        page.startRenderingFromOperatorList(data.operatorList, depFonts);
+        //page.stats.timeEnd('Page Request');
+        page.startRenderingFromOperatorList(
+          data.operatorList, depFonts, chunkId, data.isLastChunk);
       }, this);
 
       messageHandler.on('commonobj', function transportObj(data) {
@@ -693,10 +741,10 @@ var WorkerTransport = (function WorkerTransportClosure() {
 
       messageHandler.on('PageError', function transportError(data) {
         var page = this.pageCache[data.pageNum - 1];
-        if (page.displayReadyPromise)
-          page.displayReadyPromise.reject(data.error);
-        else
-          error(data.error);
+        //if (page.displayReadyPromise)
+        //  page.displayReadyPromise.reject(data.error);
+        //else
+        error(data.error);
       }, this);
 
       messageHandler.on('JpegDecode', function(data, promise) {

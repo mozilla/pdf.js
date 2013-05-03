@@ -176,41 +176,42 @@ var Page = (function PageClosure() {
         var resources = data[1];
 
         pdfManager.ensure(partialEvaluator, 'getOperatorList',
-                          [contentStream, resources]).then(
+                          [contentStream, resources, 1000]).then(
           function(opListPromise) {
-            opListPromise.then(function(data) {
-              pageListPromise.resolve(data);
+            opListPromise.then(function() {
+              pageListPromise.resolve();
             });
           }
         );
       });
 
-      pdfManager.ensure(this, 'getAnnotationsForDraw', []).then(
-        function(annotations) {
-          pdfManager.ensure(partialEvaluator, 'getAnnotationsOperatorList',
-                            [annotations]).then(
-            function(opListPromise) {
-              opListPromise.then(function(data) {
-                annotationListPromise.resolve(data);
-              });
-            }
-          );
-        }
-      );
+      //pdfManager.ensure(this, 'getAnnotationsForDraw', []).then(
+      //  function(annotations) {
+      //    pdfManager.ensure(partialEvaluator, 'getAnnotationsOperatorList',
+      //                      [annotations]).then(
+      //      function(opListPromise) {
+      //        opListPromise.then(function(data) {
+      //          annotationListPromise.resolve(data);
+      //        });
+      //      }
+      //    );
+      //  }
+      //);
 
-      Promise.all([pageListPromise, annotationListPromise]).then(
-        function(datas) {
-          var pageData = datas[0];
-          var pageQueue = pageData.queue;
-          var annotationData = datas[1];
-          var annotationQueue = annotationData.queue;
-          Util.concatenateToArray(pageQueue.fnArray, annotationQueue.fnArray);
-          Util.concatenateToArray(pageQueue.argsArray,
-                                  annotationQueue.argsArray);
-          PartialEvaluator.optimizeQueue(pageQueue);
-          Util.extendObj(pageData.dependencies, annotationData.dependencies);
+      Promise.all([pageListPromise/*, annotationListPromise*/]).then(
+        function(/*datas*/) {
+          //var pageData = datas[0];
+          //var pageQueue = pageData.queue;
+          //var annotationData = datas[1];
+          //var annotationQueue = annotationData.queue;
+          //Util.concatenateToArray(pageQueue.fnArray, annotationQueue.fnArray);
+          //Util.concatenateToArray(pageQueue.argsArray,
+          //                        annotationQueue.argsArray);
+          //PartialEvaluator.optimizeQueue(pageQueue);
+          //Util.extendObj(pageData.dependencies, annotationData.dependencies);
 
-          promise.resolve(pageData);
+          //promise.resolve(pageData);
+          promise.resolve();
         }
       );
 
