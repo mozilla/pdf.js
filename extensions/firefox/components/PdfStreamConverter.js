@@ -479,6 +479,12 @@ var RangedChromeActions = (function RangedChromeActionsClosure() {
           begin: args.begin,
           chunk: args.chunk
         }, '*');
+      },
+      onProgress: function RangedChromeActions_onProgress(evt) {
+        domWindow.postMessage({
+          pdfjsLoadAction: 'rangeProgress',
+          loaded: evt.loaded,
+        }, '*');
       }
     });
   };

@@ -561,10 +561,16 @@ var WorkerTransport = (function WorkerTransportClosure() {
 
       var pdfDataRangeTransport = this.pdfDataRangeTransport;
       if (pdfDataRangeTransport) {
-        pdfDataRangeTransport.addListener(function(begin, chunk) {
+        pdfDataRangeTransport.addRangeListener(function(begin, chunk) {
           messageHandler.send('OnDataRange', {
             begin: begin,
             chunk: chunk
+          });
+        });
+
+        pdfDataRangeTransport.addProgressListener(function(loaded) {
+          messageHandler.send('OnDataProgress', {
+            loaded: loaded
           });
         });
 
