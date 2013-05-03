@@ -520,62 +520,63 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         return promise;
       }
 
-      var loadedName = font.loadedName;
-      if (!loadedName) {
-        // keep track of each font we translated so the caller can
-        // load them asynchronously before calling display on a page
-        loadedName = 'g_font_' + this.uniquePrefix + (this.idCounters.font + 1);
-        font.loadedName = loadedName;
+      if (font.loaded) {
+        promise.resolve({
+          font: font,
+          dependencies: {}
+        });
+        return promise;
+      }
 
+      // keep track of each font we translated so the caller can
+      // load them asynchronously before calling display on a page
+      font.loadedName = 'g_font_' + this.uniquePrefix +
+                        (this.idCounters.font + 1);
+
+      if (!font.translated) {
         var translated;
         try {
           translated = this.translateFont(font, xref);
         } catch (e) {
           if (e instanceof MissingDataException) {
-            font.loadedName = null;
             throw e;
           }
           translated = new ErrorFont(e instanceof Error ? e.message : e);
         }
         font.translated = translated;
+      }
 
-        if (translated.loadCharProcs) {
-          delete translated.loadCharProcs;
-
-          var charProcs = font.get('CharProcs').getAll();
-          var fontResources = font.get('Resources') || resources;
-          var opListPromises = [];
-          var charProcKeys = Object.keys(charProcs);
+      if (font.translated.loadCharProcs) {
+        var charProcs = font.get('CharProcs').getAll();
+        var fontResources = font.get('Resources') || resources;
+        var opListPromises = [];
+        var charProcKeys = Object.keys(charProcs);
+        for (var i = 0, n = charProcKeys.length; i < n; ++i) {
+          var key = charProcKeys[i];
+          var glyphStream = charProcs[key];
+          opListPromises.push(
+            this.getOperatorList(glyphStream, fontResources));
+        }
+        Promise.all(opListPromises).then(function(datas) {
+          var charProcOperatorList = {};
+          var dependencies = {};
           for (var i = 0, n = charProcKeys.length; i < n; ++i) {
             var key = charProcKeys[i];
-            var glyphStream = charProcs[key];
-            opListPromises.push(
-              this.getOperatorList(glyphStream, fontResources));
+            var data = datas[i];
+            charProcOperatorList[key] = data.queue;
+            Util.extendObj(dependencies, data.dependencies);
           }
-          Promise.all(opListPromises).then(function(datas) {
-            var charProcOperatorList = {};
-            var dependencies = {};
-            for (var i = 0, n = charProcKeys.length; i < n; ++i) {
-              var key = charProcKeys[i];
-              var data = datas[i];
-              charProcOperatorList[key] = data.queue;
-              Util.extendObj(dependencies, data.dependencies);
-            }
-            translated.charProcOperatorList = charProcOperatorList;
-            promise.resolve({
-              font: font,
-              dependencies: dependencies
-            });
-          });
-        } else {
+          font.translated.charProcOperatorList = charProcOperatorList;
+          font.loaded = true;
+          ++this.idCounters.font;
           promise.resolve({
             font: font,
-            dependencies: {}
+            dependencies: dependencies
           });
-        }
-
-        ++this.idCounters.font;
+        }.bind(this));
       } else {
+        ++this.idCounters.font;
+        font.loaded = true;
         promise.resolve({
           font: font,
           dependencies: {}
