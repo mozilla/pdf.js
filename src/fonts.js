@@ -6897,6 +6897,14 @@ var CFFCompiler = (function CFFCompilerClosure() {
     },
     encodeFloat: function CFFCompiler_encodeFloat(num) {
       var value = num.toString();
+
+      // rounding inaccurate doubles
+      var m = /\.(\d*?)(?:9{5,20}|0{5,20})\d{0,2}(?:e(.+)|$)/.exec(value);
+      if (m) {
+        var epsilon = parseFloat('1e' + ((m[2] ? +m[2] : 0) + m[1].length));
+        value = (Math.round(num * epsilon) / epsilon).toString();
+      }
+
       var nibbles = '';
       for (var i = 0, ii = value.length; i < ii; ++i) {
         var a = value[i];
