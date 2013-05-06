@@ -2377,8 +2377,10 @@ var PageView = function pageView(container, id, scale,
 //    if (self.textLayer && self.textLayer.textDivs &&
 //        self.textLayer.textDivs.length > 0 &&
 //        !PDFView.supportsDocumentColors) {
-//      console.error(mozL10n.get('web_colors_disabled', null,
-//        'Web colors are disabled.'));
+//      console.error(mozL10n.get('document_colors_disabled', null,
+//        'PDF documents are not allowed to use their own colors: ' +
+//        '\'Allow pages to choose their own colors\' ' +
+//        'is deactivated in the browser.'));
 //      PDFView.fallback();
 //    }
 //#endif
