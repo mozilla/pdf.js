@@ -2261,10 +2261,16 @@ var PageView = function pageView(container, id, scale,
           return;
       }
 
-      if (scale && scale !== PDFView.currentScale)
+      if (scale && scale !== PDFView.currentScale) {
         PDFView.parseScale(scale, true, true);
-      else if (PDFView.currentScale === UNKNOWN_SCALE)
+      } else if (PDFView.currentScale === UNKNOWN_SCALE) {
         PDFView.parseScale(DEFAULT_SCALE, true, true);
+      }
+
+      if (scale === 'page-fit' && !dest[4]) {
+        scrollIntoView(div);
+        return;
+      }
 
       var boundingRect = [
         this.viewport.convertToViewportPoint(x, y),
