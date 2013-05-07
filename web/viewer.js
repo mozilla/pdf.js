@@ -754,6 +754,11 @@ var PDFView = {
     }, true);
   },
 
+  getPageTop: function pdfViewGetPageTop(currentId) {
+    var currentPage = this.pages[(currentId || this.page) - 1];
+    return (currentPage.el.offsetTop + currentPage.el.clientTop);
+  },
+
   setScale: function pdfViewSetScale(val, resetAutoSettings, noScroll) {
     if (val == this.currentScale)
       return;
@@ -1360,6 +1365,7 @@ var PDFView = {
       };
     }
 
+    var self = this;
     this.pdfDocument = pdfDocument;
 
     var errorWrapper = document.getElementById('errorWrapper');
@@ -1370,6 +1376,11 @@ var PDFView = {
       loadingBar.classList.add('hidden');
       var outerContainer = document.getElementById('outerContainer');
       outerContainer.classList.remove('loadingInProgress');
+
+      if (self.currentScaleValue === 'page-fit') {
+        var noScroll = (self.pageViewScroll.lastY !== self.getPageTop());
+        self.parseScale(self.currentScaleValue, true, noScroll);
+      }
     });
 
     var thumbsView = document.getElementById('thumbnailView');
@@ -1403,7 +1414,6 @@ var PDFView = {
     var thumbnails = this.thumbnails = [];
 
     var pagesPromise = this.pagesPromise = new PDFJS.Promise();
-    var self = this;
 
     var firstPagePromise = pdfDocument.getPage(1);
 
