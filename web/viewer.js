@@ -1057,9 +1057,16 @@ var PDFView = {
       },
       function getDocumentError(message, exception) {
         if (exception && exception.name === 'PasswordException') {
-          if (exception.code === 'needpassword') {
+          if (exception.code === 'needpassword' ||
+              exception.code === 'incorrectpassword') {
             var promptString = mozL10n.get('request_password', null,
                                       'PDF is protected by a password:');
+
+            if (exception.code === 'incorrectpassword') {
+              promptString += '\n' + mozL10n.get('invalid_password', null,
+                                      'Invalid Password.');
+            }
+
             password = prompt(promptString);
             if (password && password.length > 0) {
               return PDFView.open(url, scale, password);
@@ -2261,10 +2268,16 @@ var PageView = function pageView(container, id, scale,
           return;
       }
 
-      if (scale && scale !== PDFView.currentScale)
+      if (scale && scale !== PDFView.currentScale) {
         PDFView.parseScale(scale, true, true);
-      else if (PDFView.currentScale === UNKNOWN_SCALE)
+      } else if (PDFView.currentScale === UNKNOWN_SCALE) {
         PDFView.parseScale(DEFAULT_SCALE, true, true);
+      }
+
+      if (scale === 'page-fit' && !dest[4]) {
+        scrollIntoView(div);
+        return;
+      }
 
       var boundingRect = [
         this.viewport.convertToViewportPoint(x, y),
