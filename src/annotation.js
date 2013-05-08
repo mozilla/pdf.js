@@ -336,9 +336,16 @@ var TextAnnotation = (function TextAnnotationClosure() {
 
   Util.inherit(TextAnnotation, Annotation, {
 
-    appendToOperatorList: function TextAnnotation_appendToOperatorList(
-                              operatorList, dependencies, evaluator) {
-      return;
+    getOperatorList: function TextAnnotation_getOperatorList(evaluator) {
+      var promise = new Promise();
+      promise.resolve({
+        queue: {
+          fnArray: [],
+          argsArray: []
+        },
+        dependency: {}
+      });
+      return promise;
     },
 
     hasHtml: function TextAnnotation_hasHtml() {
