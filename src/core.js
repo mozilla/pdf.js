@@ -156,6 +156,10 @@ var Page = (function PageClosure() {
       var self = this;
       var promise = new Promise();
 
+      function reject(e) {
+        promise.reject(e);
+      }
+
       var pageListPromise = new Promise();
       var annotationListPromise = new Promise();
 
@@ -170,7 +174,7 @@ var Page = (function PageClosure() {
             this.idCounters);
 
       var dataPromises = Promise.all(
-          [contentStreamPromise, resourcesPromise]);
+          [contentStreamPromise, resourcesPromise], reject);
       dataPromises.then(function(data) {
         var contentStream = data[0];
         var resources = data[1];
@@ -181,7 +185,8 @@ var Page = (function PageClosure() {
             opListPromise.then(function(data) {
               pageListPromise.resolve(data);
             });
-          }
+          },
+          reject
         );
       });
 
@@ -195,7 +200,8 @@ var Page = (function PageClosure() {
               });
             }
           );
-        }
+        },
+        reject
       );
 
       Promise.all([pageListPromise, annotationListPromise]).then(
@@ -211,7 +217,8 @@ var Page = (function PageClosure() {
           Util.extendObj(pageData.dependencies, annotationData.dependencies);
 
           promise.resolve(pageData);
-        }
+        },
+        reject
       );
 
       return promise;

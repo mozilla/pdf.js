@@ -672,16 +672,26 @@ var Promise = PDFJS.Promise = (function PromiseClosure() {
       deferred.resolve(results);
       return deferred;
     }
+    function reject(reason) {
+      if (deferred.isRejected) {
+        return;
+      }
+      results = [];
+      deferred.reject(reason);
+    }
     for (var i = 0, ii = promises.length; i < ii; ++i) {
       var promise = promises[i];
       promise.then((function(i) {
         return function(value) {
+          if (deferred.isRejected) {
+            return;
+          }
           results[i] = value;
           unresolved--;
           if (unresolved === 0)
             deferred.resolve(results);
         };
-      })(i));
+      })(i), reject);
     }
     return deferred;
   };
@@ -762,12 +772,8 @@ var Promise = PDFJS.Promise = (function PromiseClosure() {
     },
 
     then: function Promise_then(callback, errback, progressback) {
-      if (!callback) {
-        error('Requiring callback' + this.name);
-      }
-
       // If the promise is already resolved, call the callback directly.
-      if (this.isResolved) {
+      if (this.isResolved && callback) {
         var data = this.data;
         callback.call(null, data);
       } else if (this.isRejected && errback) {
@@ -775,9 +781,12 @@ var Promise = PDFJS.Promise = (function PromiseClosure() {
         var exception = this.exception;
         errback.call(null, error, exception);
       } else {
-        this.callbacks.push(callback);
-        if (errback)
+        if (callback) {
+          this.callbacks.push(callback);
+        }
+        if (errback) {
           this.errbacks.push(errback);
+        }
       }
 
       if (progressback)
