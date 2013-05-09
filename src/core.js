@@ -137,6 +137,10 @@ var Page = (function PageClosure() {
       var self = this;
       var promise = new Promise();
 
+      function reject(e) {
+        promise.reject(e);
+      }
+
       var pageListPromise = new Promise();
 
       var pdfManager = this.pdfManager;
@@ -150,7 +154,7 @@ var Page = (function PageClosure() {
             this.idCounters);
 
       var dataPromises = Promise.all(
-          [contentStreamPromise, resourcesPromise]);
+          [contentStreamPromise, resourcesPromise], reject);
       dataPromises.then(function(data) {
         var contentStream = data[0];
         var resources = data[1];
@@ -161,7 +165,8 @@ var Page = (function PageClosure() {
             opListPromise.then(function(data) {
               pageListPromise.resolve(data);
             });
-          }
+          },
+          reject
         );
       });
 
@@ -195,9 +200,9 @@ var Page = (function PageClosure() {
             PartialEvaluator.optimizeQueue(pageQueue);
 
             promise.resolve(pageData);
-          });
-        });
-      });
+          }, reject);
+        }, reject);
+      }, reject);
 
       return promise;
     },

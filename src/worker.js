@@ -137,7 +137,8 @@ var WorkerMessageHandler = {
             javaScript: results[6]
           };
           loadDocumentPromise.resolve(doc);
-        });
+        },
+        parseFailure);
       };
 
       var parseFailure = function parseFailure(e) {
@@ -261,7 +262,7 @@ var WorkerMessageHandler = {
 
       var onSuccess = function(doc) {
         handler.send('GetDoc', { pdfInfo: doc });
-        pdfManager.ensureModel('traversePages', []);
+        pdfManager.ensureModel('traversePages', []).then(null, onFailure);
       };
 
       var onFailure = function(e) {
