@@ -28,9 +28,7 @@ var SCROLLBAR_PADDING = 40;
 var VERTICAL_PADDING = 5;
 var MIN_SCALE = 0.25;
 var MAX_SCALE = 4.0;
-var IMAGE_DIR = './images/';
 var SETTINGS_MEMORY = 20;
-var ANNOT_MIN_SIZE = 10;
 var RenderingStates = {
   INITIAL: 0,
   RUNNING: 1,
@@ -2115,7 +2113,8 @@ var PageView = function pageView(container, id, scale,
     enumerable: true
   });
 
-  function setupAnnotations(pdfPage, viewport) {
+  function setupAnnotations(annotationsDiv, pdfPage, viewport) {
+
     function bindLink(link, dest) {
       link.href = PDFView.getDestinationHash(dest);
       link.onclick = function pageViewSetupLinksOnclick() {
@@ -2125,91 +2124,43 @@ var PageView = function pageView(container, id, scale,
       };
       link.className = 'internalLink';
     }
-    function createElementWithStyle(tagName, item, rect) {
-      if (!rect) {
-        rect = viewport.convertToViewportRectangle(item.rect);
-        rect = PDFJS.Util.normalizeRect(rect);
-      }
-      var element = document.createElement(tagName);
-      element.style.left = Math.floor(rect[0]) + 'px';
-      element.style.top = Math.floor(rect[1]) + 'px';
-      element.style.width = Math.ceil(rect[2] - rect[0]) + 'px';
-      element.style.height = Math.ceil(rect[3] - rect[1]) + 'px';
-      return element;
-    }
-    function createTextAnnotation(item) {
-      var container = document.createElement('section');
-      container.className = 'annotText';
 
-      var rect = viewport.convertToViewportRectangle(item.rect);
-      rect = PDFJS.Util.normalizeRect(rect);
-      // sanity check because of OOo-generated PDFs
-      if ((rect[3] - rect[1]) < ANNOT_MIN_SIZE) {
-        rect[3] = rect[1] + ANNOT_MIN_SIZE;
-      }
-      if ((rect[2] - rect[0]) < ANNOT_MIN_SIZE) {
-        rect[2] = rect[0] + (rect[3] - rect[1]); // make it square
-      }
-      var image = createElementWithStyle('img', item, rect);
-      var iconName = item.name;
-      image.src = IMAGE_DIR + 'annotation-' +
-        iconName.toLowerCase() + '.svg';
-      image.alt = mozL10n.get('text_annotation_type', {type: iconName},
-        '[{{type}} Annotation]');
-      var content = document.createElement('div');
-      content.setAttribute('hidden', true);
-      var title = document.createElement('h1');
-      var text = document.createElement('p');
-      content.style.left = Math.floor(rect[2]) + 'px';
-      content.style.top = Math.floor(rect[1]) + 'px';
-      title.textContent = item.title;
-
-      if (!item.content && !item.title) {
-        content.setAttribute('hidden', true);
-      } else {
-        var e = document.createElement('span');
-        var lines = item.content.split(/(?:\r\n?|\n)/);
-        for (var i = 0, ii = lines.length; i < ii; ++i) {
-          var line = lines[i];
-          e.appendChild(document.createTextNode(line));
-          if (i < (ii - 1))
-            e.appendChild(document.createElement('br'));
+    pdfPage.getAnnotations().then(function(annotationsData) {
+      viewport = viewport.clone({ dontFlip: true });
+      for (var i = 0; i < annotationsData.length; i++) {
+        var data = annotationsData[i];
+        var annotation = PDFJS.Annotation.fromData(data);
+        if (!annotation || !annotation.hasHtml()) {
+          continue;
         }
-        text.appendChild(e);
-        image.addEventListener('mouseover', function annotationImageOver() {
-           content.removeAttribute('hidden');
-        }, false);
 
-        image.addEventListener('mouseout', function annotationImageOut() {
-           content.setAttribute('hidden', true);
-        }, false);
-      }
+        var element = annotation.getHtmlElement(pdfPage.commonObjs);
+        mozL10n.translate(element);
 
-      content.appendChild(title);
-      content.appendChild(text);
-      container.appendChild(image);
-      container.appendChild(content);
+        data = annotation.getData();
+        var rect = data.rect;
+        var view = pdfPage.view;
+        rect = PDFJS.Util.normalizeRect([
+          rect[0],
+          view[3] - rect[1] + view[1],
+          rect[2],
+          view[3] - rect[3] + view[1]
+        ]);
+        element.style.left = rect[0] + 'px';
+        element.style.top = rect[1] + 'px';
+        element.style.position = 'absolute';
 
-      return container;
-    }
+        var transform = viewport.transform;
+        var transformStr = 'matrix(' + transform.join(',') + ')';
+        CustomStyle.setProp('transform', element, transformStr);
+        var transformOriginStr = -rect[0] + 'px ' + -rect[1] + 'px';
+        CustomStyle.setProp('transformOrigin', element, transformOriginStr);
 
-    pdfPage.getAnnotations().then(function(items) {
-      for (var i = 0; i < items.length; i++) {
-        var item = items[i];
-        switch (item.type) {
-          case 'Link':
-            var link = createElementWithStyle('a', item);
-            link.href = item.url || '';
-            if (!item.url)
-              bindLink(link, ('dest' in item) ? item.dest : null);
-            div.appendChild(link);
-            break;
-          case 'Text':
-            var textAnnotation = createTextAnnotation(item);
-            if (textAnnotation)
-              div.appendChild(textAnnotation);
-            break;
+        if (data.subtype === 'Link' && !data.url) {
+          bindLink(element, ('dest' in data) ? data.dest : null);
         }
+
+        annotationsDiv.appendChild(element);
       }
     });
   }
@@ -2457,7 +2408,7 @@ var PageView = function pageView(container, id, scale,
       );
     }
 
-    setupAnnotations(this.pdfPage, this.viewport);
+    setupAnnotations(div, pdfPage, this.viewport);
     div.setAttribute('data-loaded', true);
   };
 
