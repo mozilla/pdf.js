@@ -145,12 +145,12 @@ var WorkerMessageHandler = {
         loadDocumentPromise.reject(e);
       };
 
-    pdfManager.ensureModel('checkHeader', []).then(function() {
-      pdfManager.ensureModel('parseStartXRef', []).then(function() {
-        pdfManager.ensureModel('parse', [recoveryMode]).then(
-            parseSuccess, parseFailure);
-      });
-    });
+      pdfManager.ensureModel('checkHeader', []).then(function() {
+        pdfManager.ensureModel('parseStartXRef', []).then(function() {
+          pdfManager.ensureModel('parse', [recoveryMode]).then(
+              parseSuccess, parseFailure);
+        }, parseFailure);
+      }, parseFailure);
 
       return loadDocumentPromise;
     }
