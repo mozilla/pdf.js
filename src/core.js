@@ -18,7 +18,7 @@
            isArrayBuffer, isDict, isName, isStream, isString, Lexer,
            Linearization, NullStream, PartialEvaluator, shadow, Stream,
            StreamsSequenceStream, stringToPDFString, TODO, Util, warn, XRef,
-           MissingDataException, Promise */
+           MissingDataException, Promise, Annotation */
 
 'use strict';
 
@@ -40,25 +40,6 @@ globalScope.PDFJS.pdfBug = false;
 
 
 var Page = (function PageClosure() {
-
-  function getDefaultAnnotationAppearance(annotationDict) {
-    var appearanceState = annotationDict.get('AP');
-    if (!isDict(appearanceState)) {
-      return;
-    }
-
-    var appearance;
-    var appearances = appearanceState.get('N');
-    if (isDict(appearances)) {
-      var as = annotationDict.get('AS');
-      if (as && appearances.has(as.name)) {
-        appearance = appearances.get(as.name);
-      }
-    } else {
-      appearance = appearances;
-    }
-    return appearance;
-  }
 
   function Page(pdfManager, xref, pageIndex, pageDict, ref) {
     this.pdfManager = pdfManager;
@@ -116,8 +97,8 @@ var Page = (function PageClosure() {
 
       return shadow(this, 'view', cropBox);
     },
-    get annotations() {
-      return shadow(this, 'annotations', this.inheritPageProp('Annots'));
+    get annotationRefs() {
+      return shadow(this, 'annotationRefs', this.inheritPageProp('Annots'));
     },
     get rotate() {
       var rotate = this.inheritPageProp('Rotate') || 0;
@@ -157,7 +138,6 @@ var Page = (function PageClosure() {
       var promise = new Promise();
 
       var pageListPromise = new Promise();
-      var annotationListPromise = new Promise();
 
       var pdfManager = this.pdfManager;
       var contentStreamPromise = pdfManager.ensure(this, 'getContentStream',
@@ -185,37 +165,41 @@ var Page = (function PageClosure() {
         );
       });
 
-      pdfManager.ensure(this, 'getAnnotationsForDraw', []).then(
-        function(annotations) {
-          pdfManager.ensure(partialEvaluator, 'getAnnotationsOperatorList',
-                            [annotations]).then(
-            function(opListPromise) {
-              opListPromise.then(function(data) {
-                annotationListPromise.resolve(data);
-              });
+      var annotationsPromise = pdfManager.ensure(this, 'annotations');
+      Promise.all([pageListPromise, annotationsPromise]).then(function(datas) {
+        var pageData = datas[0];
+        var pageQueue = pageData.queue;
+        var annotations = datas[1];
+
+        var ensurePromises = [];
+        for (var i = 0, n = annotations.length; i < n; ++i) {
+          var ensurePromise = pdfManager.ensure(annotations[i],
+                                                'getOperatorList',
+                                                [partialEvaluator]);
+          ensurePromises.push(ensurePromise);
+        }
+
+        Promise.all(ensurePromises).then(function(listPromises) {
+          Promise.all(listPromises).then(function(datas) {
+            for (var i = 0, n = datas.length; i < n; ++i) {
+              var annotationData = datas[i];
+              var annotationQueue = annotationData.queue;
+              Util.concatenateToArray(pageQueue.fnArray,
+                                      annotationQueue.fnArray);
+              Util.concatenateToArray(pageQueue.argsArray,
+                                      annotationQueue.argsArray);
+              Util.extendObj(pageData.dependencies,
+                             annotationData.dependencies);
             }
-          );
-        }
-      );
 
-      Promise.all([pageListPromise, annotationListPromise]).then(
-        function(datas) {
-          var pageData = datas[0];
-          var pageQueue = pageData.queue;
-          var annotationData = datas[1];
-          var annotationQueue = annotationData.queue;
-          Util.concatenateToArray(pageQueue.fnArray, annotationQueue.fnArray);
-          Util.concatenateToArray(pageQueue.argsArray,
-                                  annotationQueue.argsArray);
-          PartialEvaluator.optimizeQueue(pageQueue);
-          Util.extendObj(pageData.dependencies, annotationData.dependencies);
+            PartialEvaluator.optimizeQueue(pageQueue);
 
-          promise.resolve(pageData);
-        }
-      );
+            promise.resolve(pageData);
+          });
+        });
+      });
 
       return promise;
-
     },
     extractTextContent: function Page_extractTextContent() {
       var handler = {
@@ -259,230 +243,27 @@ var Page = (function PageClosure() {
 
       return textContentPromise;
     },
-    getLinks: function Page_getLinks() {
-      var links = [];
-      var annotations = this.getAnnotations();
-      var i, n = annotations.length;
-      for (i = 0; i < n; ++i) {
-        if (annotations[i].type != 'Link')
-          continue;
-        links.push(annotations[i]);
+
+    getAnnotationsData: function Page_getAnnotationsData() {
+      var annotations = this.annotations;
+      var annotationsData = [];
+      for (var i = 0, n = annotations.length; i < n; ++i) {
+        annotationsData.push(annotations[i].getData());
       }
-      return links;
+      return annotationsData;
     },
 
-    getAnnotations: function Page_getAnnotations() {
-      var annotations = this.getAnnotationsBase();
-      var items = [];
-      for (var i = 0, length = annotations.length; i < length; ++i) {
-        items.push(annotations[i].item);
-      }
-      return items;
-    },
-
-    getAnnotationsForDraw: function Page_getAnnotationsForDraw() {
-      var annotations = this.getAnnotationsBase();
-      var items = [];
-      for (var i = 0, length = annotations.length; i < length; ++i) {
-        var item = annotations[i].item;
-        var annotationDict = annotations[i].dict;
-
-        item.annotationFlags = annotationDict.get('F');
-
-        var appearance = getDefaultAnnotationAppearance(annotationDict);
-        if (appearance &&
-            // TODO(mack): The proper implementation requires that the
-            // appearance stream overrides Name, but we're currently
-            // doing it the other way around for 'Text' annotations since we
-            // have special rendering for it
-            item.type !== 'Text') {
-
-          item.appearance = appearance;
-          var appearanceDict = appearance.dict;
-          item.resources = appearanceDict.get('Resources');
-          item.bbox = appearanceDict.get('BBox') || [0, 0, 1, 1];
-          item.matrix = appearanceDict.get('Matrix') || [1, 0, 0, 1, 0 ,0];
-        }
-
-        var border = annotationDict.get('BS');
-        if (isDict(border) && !item.appearance) {
-          var borderWidth = border.has('W') ? border.get('W') : 1;
-          if (borderWidth !== 0) {
-            item.border = {
-              width: borderWidth,
-              type: border.get('S') || 'S',
-              rgb: annotationDict.get('C') || [0, 0, 1]
-            };
-          }
-        }
-
-        items.push(item);
-      }
-
-      return items;
-    },
-
-    getAnnotationsBase: function Page_getAnnotationsBase() {
-      var xref = this.xref;
-      function getInheritableProperty(annotation, name) {
-        var item = annotation;
-        while (item && !item.has(name)) {
-          item = item.get('Parent');
-        }
-        if (!item)
-          return null;
-        return item.get(name);
-      }
-      function isValidUrl(url) {
-        if (!url)
-          return false;
-        var colon = url.indexOf(':');
-        if (colon < 0)
-          return false;
-        var protocol = url.substr(0, colon);
-        switch (protocol) {
-          case 'http':
-          case 'https':
-          case 'ftp':
-          case 'mailto':
-            return true;
-          default:
-            return false;
+    get annotations() {
+      var annotations = [];
+      var annotationRefs = this.annotationRefs || [];
+      for (var i = 0, n = annotationRefs.length; i < n; ++i) {
+        var annotationRef = annotationRefs[i];
+        var annotation = Annotation.fromRef(this.xref, annotationRef);
+        if (annotation) {
+          annotations.push(annotation);
         }
       }
-
-      var annotations = this.annotations || [];
-      var i, n = annotations.length;
-      var items = [];
-      for (i = 0; i < n; ++i) {
-        var annotationRef = annotations[i];
-        var annotation = xref.fetchIfRef(annotationRef);
-        if (!isDict(annotation))
-          continue;
-        var subtype = annotation.get('Subtype');
-        if (!isName(subtype))
-          continue;
-
-        var item = {};
-        item.type = subtype.name;
-        var rect = annotation.get('Rect');
-        item.rect = Util.normalizeRect(rect);
-
-        var includeAnnotation = true;
-        switch (subtype.name) {
-          case 'Link':
-            var a = annotation.get('A');
-            if (a) {
-              switch (a.get('S').name) {
-                case 'URI':
-                  var url = a.get('URI');
-                  // TODO: pdf spec mentions urls can be relative to a Base
-                  // entry in the dictionary.
-                  if (!isValidUrl(url))
-                    url = '';
-                  item.url = url;
-                  break;
-                case 'GoTo':
-                  item.dest = a.get('D');
-                  break;
-                case 'GoToR':
-                  var url = a.get('F');
-                  if (isDict(url)) {
-                    // We assume that the 'url' is a Filspec dictionary
-                    // and fetch the url without checking any further
-                    url = url.get('F') || '';
-                  }
-
-                  // TODO: pdf reference says that GoToR
-                  // can also have 'NewWindow' attribute
-                  if (!isValidUrl(url))
-                    url = '';
-                  item.url = url;
-                  item.dest = a.get('D');
-                  break;
-                default:
-                  TODO('unrecognized link type: ' + a.get('S').name);
-              }
-            } else if (annotation.has('Dest')) {
-              // simple destination link
-              var dest = annotation.get('Dest');
-              item.dest = isName(dest) ? dest.name : dest;
-            }
-            break;
-          case 'Widget':
-            var fieldType = getInheritableProperty(annotation, 'FT');
-            if (!isName(fieldType))
-              break;
-
-            // Do not display digital signatures since we do not currently
-            // validate them.
-            if (fieldType.name === 'Sig') {
-              includeAnnotation = false;
-              break;
-            }
-
-            item.fieldType = fieldType.name;
-            // Building the full field name by collecting the field and
-            // its ancestors 'T' properties and joining them using '.'.
-            var fieldName = [];
-            var namedItem = annotation, ref = annotationRef;
-            while (namedItem) {
-              var parent = namedItem.get('Parent');
-              var parentRef = namedItem.getRaw('Parent');
-              var name = namedItem.get('T');
-              if (name) {
-                fieldName.unshift(stringToPDFString(name));
-              } else {
-                // The field name is absent, that means more than one field
-                // with the same name may exist. Replacing the empty name
-                // with the '`' plus index in the parent's 'Kids' array.
-                // This is not in the PDF spec but necessary to id the
-                // the input controls.
-                var kids = parent.get('Kids');
-                var j, jj;
-                for (j = 0, jj = kids.length; j < jj; j++) {
-                  var kidRef = kids[j];
-                  if (kidRef.num == ref.num && kidRef.gen == ref.gen)
-                    break;
-                }
-                fieldName.unshift('`' + j);
-              }
-              namedItem = parent;
-              ref = parentRef;
-            }
-            item.fullName = fieldName.join('.');
-            var alternativeText = stringToPDFString(annotation.get('TU') || '');
-            item.alternativeText = alternativeText;
-            var da = getInheritableProperty(annotation, 'DA') || '';
-            var m = /([\d\.]+)\sTf/.exec(da);
-            if (m)
-              item.fontSize = parseFloat(m[1]);
-            item.textAlignment = getInheritableProperty(annotation, 'Q');
-            item.flags = getInheritableProperty(annotation, 'Ff') || 0;
-            break;
-          case 'Text':
-            var content = annotation.get('Contents');
-            var title = annotation.get('T');
-            item.content = stringToPDFString(content || '');
-            item.title = stringToPDFString(title || '');
-            item.name = !annotation.has('Name') ? 'Note' :
-              annotation.get('Name').name;
-            break;
-          default:
-            var appearance = getDefaultAnnotationAppearance(annotation);
-            if (!appearance) {
-              TODO('unimplemented annotation type: ' + subtype.name);
-            }
-            break;
-        }
-        if (includeAnnotation) {
-          items.push({
-            item: item,
-            dict: annotation
-          });
-        }
-      }
-      return items;
+      return shadow(this, 'annotations', annotations);
     }
   };
 

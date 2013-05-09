@@ -105,7 +105,10 @@
       // Arabic, Hebrew, Farsi, Pashto, Urdu
       var rtlList = ['ar', 'he', 'fa', 'ps', 'ur'];
       return (rtlList.indexOf(gLanguage) >= 0) ? 'rtl' : 'ltr';
-    }
+    },
+
+    // translate an element or document fragment
+    translate: translateFragment
   };
 })(this);
 
