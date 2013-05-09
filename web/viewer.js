@@ -1048,30 +1048,27 @@ var PDFView = {
     this.pdfDocument = null;
     var self = this;
     self.loading = true;
-    PDFJS.getDocument(parameters, pdfDataRangeTransport).then(
+    var passwordNeeded = function passwordNeeded(updatePassword, reason) {
+      var promptString = mozL10n.get('request_password', null,
+                                'PDF is protected by a password:');
+
+      if (reason === PDFJS.PasswordResponses.INCORRECT_PASSWORD) {
+        promptString += '\n' + mozL10n.get('invalid_password', null,
+                                'Invalid Password.');
+      }
+
+      password = prompt(promptString);
+      if (password && password.length > 0) {
+        return updatePassword(password);
+      }
+    };
+
+    PDFJS.getDocument(parameters, pdfDataRangeTransport, passwordNeeded).then(
       function getDocumentCallback(pdfDocument) {
         self.load(pdfDocument, scale);
         self.loading = false;
       },
       function getDocumentError(message, exception) {
-        if (exception && exception.name === 'PasswordException') {
-          if (exception.code === 'needpassword' ||
-              exception.code === 'incorrectpassword') {
-            var promptString = mozL10n.get('request_password', null,
-                                      'PDF is protected by a password:');
-
-            if (exception.code === 'incorrectpassword') {
-              promptString += '\n' + mozL10n.get('invalid_password', null,
-                                      'Invalid Password.');
-            }
-
-            password = prompt(promptString);
-            if (password && password.length > 0) {
-              return PDFView.open(url, scale, password);
-            }
-          }
-        }
-
         var loadingErrorMessage = mozL10n.get('loading_error', null,
           'An error occurred while loading the PDF.');
 

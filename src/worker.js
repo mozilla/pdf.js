@@ -18,7 +18,7 @@
            MissingPDFException, PasswordException, PDFDocument, PDFJS, Promise,
            Stream, UnknownErrorException, warn, NetworkManager, LocalPdfManager,
            NetworkPdfManager, XRefParseException, NotImplementedException,
-           isInt */
+           isInt, PasswordResponses */
 
 'use strict';
 
@@ -267,11 +267,11 @@ var WorkerMessageHandler = {
 
       var onFailure = function(e) {
         if (e instanceof PasswordException) {
-          if (e.code === 'needpassword') {
+          if (e.code === PasswordResponses.NEED_PASSWORD) {
             handler.send('NeedPassword', {
               exception: e
             });
-          } else if (e.code === 'incorrectpassword') {
+          } else if (e.code === PasswordResponses.INCORRECT_PASSWORD) {
             handler.send('IncorrectPassword', {
               exception: e
             });
@@ -291,10 +291,17 @@ var WorkerMessageHandler = {
         }
       };
 
-      getPdfManager(data).then(function() {
-        loadDocument(false).then(onSuccess, function(ex) {
+      getPdfManager(data).then(function pdfManagerReady() {
+        loadDocument(false).then(onSuccess, function loadFailure(ex) {
           // Try again with recoveryMode == true
           if (!(ex instanceof XRefParseException)) {
+            if (ex instanceof PasswordException) {
+              // after password exception prepare to receive a new password
+              // to repeat loading
+              pdfManager.passwordChangedPromise = new Promise();
+              pdfManager.passwordChangedPromise.then(pdfManagerReady);
+            }
+
             onFailure(ex);
             return;
           }
@@ -347,6 +354,10 @@ var WorkerMessageHandler = {
       pdfManager.onLoadedStream().then(function(stream) {
         promise.resolve({ length: stream.bytes.byteLength });
       });
+    });
+
+    handler.on('UpdatePassword', function wphSetupUpdatePassword(data) {
+      pdfManager.updatePassword(data);
     });
 
     handler.on('GetAnnotationsRequest', function wphSetupGetAnnotations(data) {
