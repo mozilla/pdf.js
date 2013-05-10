@@ -500,7 +500,12 @@ class FirefoxBrowserCommand(BaseBrowserCommand):
         if platform.system() == "Darwin":
             cmds.append("-foreground")
         cmds.extend(["-no-remote", "-profile", self.profileDir, url])
-        self.process = subprocess.Popen(cmds, stdout = self.browserLog, stderr = self.browserLog)
+        si = None
+        if platform.system() == "Windows":
+            si = subprocess.STARTUPINFO()
+            si.dwFlags = subprocess.STARTF_USESHOWWINDOW
+            si.wShowWindow = 3
+        self.process = subprocess.Popen(cmds, stdout = self.browserLog, stderr = self.browserLog, startupinfo=si)
 
 class ChromeBrowserCommand(BaseBrowserCommand):
     def _fixupMacPath(self):
