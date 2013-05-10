@@ -56,6 +56,13 @@ var BasePdfManager = (function BasePdfManagerClosure() {
 
     requestLoadedStream: function BasePdfManager_requestLoadedStream() {
       return new NotImplementedException();
+    },
+
+    updatePassword: function BasePdfManager_updatePassword(password) {
+      this.pdfModel.xref.password = this.password = password;
+      if (this.passwordChangedPromise) {
+        this.passwordChangedPromise.resolve();
+      }
     }
   };
 

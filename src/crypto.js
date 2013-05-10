@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 /* globals bytesToString, DecryptStream, error, isInt, isName, Name,
-           PasswordException, stringToBytes */
+           PasswordException, PasswordResponses, stringToBytes */
 
 'use strict';
 
@@ -575,7 +575,8 @@ var CipherTransformFactory = (function CipherTransformFactoryClosure() {
                                        ownerPassword, userPassword, flags,
                                        revision, keyLength, encryptMetadata);
     if (!encryptionKey && !password) {
-      throw new PasswordException('No password given', 'needpassword');
+      throw new PasswordException('No password given',
+                                  PasswordResponses.NEED_PASSWORD);
     } else if (!encryptionKey && password) {
       // Attempting use the password as an owner password
       var decodedPassword = decodeUserPassword(passwordBytes, ownerPassword,
@@ -586,7 +587,8 @@ var CipherTransformFactory = (function CipherTransformFactoryClosure() {
     }
 
     if (!encryptionKey)
-      throw new PasswordException('Incorrect Password', 'incorrectpassword');
+      throw new PasswordException('Incorrect Password',
+                                  PasswordResponses.INCORRECT_PASSWORD);
 
     this.encryptionKey = encryptionKey;
 
