@@ -550,7 +550,7 @@ var XRef = (function XRefClosure() {
       if (!('streamState' in this)) {
         // Stores state of the stream as we process it so we can resume
         // from middle of stream in case of missing data error
-        var streamParameters = stream.parameters;
+        var streamParameters = stream.dict;
         var byteWidths = streamParameters.get('W');
         var range = streamParameters.get('Index');
         if (!range) {
@@ -567,7 +567,7 @@ var XRef = (function XRefClosure() {
       this.readXRefStream(stream);
       delete this.streamState;
 
-      return stream.parameters;
+      return stream.dict;
     },
 
     readXRefStream: function XRef_readXRefStream(stream) {
@@ -903,8 +903,8 @@ var XRef = (function XRefClosure() {
       stream = this.fetch(new Ref(tableOffset, 0));
       if (!isStream(stream))
         error('bad ObjStm stream');
-      var first = stream.parameters.get('First');
-      var n = stream.parameters.get('N');
+      var first = stream.dict.get('First');
+      var n = stream.dict.get('N');
       if (!isInt(first) || !isInt(n)) {
         error('invalid first and n parameters for ObjStm stream');
       }
