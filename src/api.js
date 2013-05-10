@@ -17,7 +17,7 @@
 /* globals CanvasGraphics, combineUrl, createScratchCanvas, error, ErrorFont,
            Font, FontLoader, globalScope, info, isArrayBuffer, loadJpegStream,
            MessageHandler, PDFJS, PDFObjects, Promise, StatTimer, warn,
-           WorkerMessageHandler */
+           WorkerMessageHandler, PasswordResponses */
 
  'use strict';
 
@@ -39,9 +39,16 @@
  * to manually serve range requests for data in the PDF. See viewer.js for
  * an example of pdfDataRangeTransport's interface.
  *
+ * @param {function} passwordCallback is optional. It is used to request a
+ * password if wrong or no password was provided. The callback receives two
+ * parameters: function that needs to be called with new password and reason
+ * (see {PasswordResponses}).
+ *
  * @return {Promise} A promise that is resolved with {PDFDocumentProxy} object.
  */
-PDFJS.getDocument = function getDocument(source, pdfDataRangeTransport) {
+PDFJS.getDocument = function getDocument(source,
+                                         pdfDataRangeTransport,
+                                         passwordCallback) {
   var workerInitializedPromise, workerReadyPromise, transport;
 
   if (typeof source === 'string') {
@@ -71,6 +78,7 @@ PDFJS.getDocument = function getDocument(source, pdfDataRangeTransport) {
   transport = new WorkerTransport(workerInitializedPromise,
       workerReadyPromise, pdfDataRangeTransport);
   workerInitializedPromise.then(function transportInitialized() {
+    transport.passwordCallback = passwordCallback;
     transport.fetchDocument(params);
   });
   return workerReadyPromise;
@@ -482,6 +490,8 @@ var WorkerTransport = (function WorkerTransportClosure() {
     this.pagePromises = [];
     this.embeddedFontsUsed = false;
 
+    this.passwordCallback = null;
+
     // If worker support isn't disabled explicit and the browser has worker
     // support, create a new web worker and test if it/the browser fullfills
     // all requirements to run parts of pdf.js in a web worker.
@@ -559,6 +569,10 @@ var WorkerTransport = (function WorkerTransportClosure() {
       function WorkerTransport_setupMessageHandler(messageHandler) {
       this.messageHandler = messageHandler;
 
+      function updatePassword(password) {
+        messageHandler.send('UpdatePassword', password);
+      }
+
       var pdfDataRangeTransport = this.pdfDataRangeTransport;
       if (pdfDataRangeTransport) {
         pdfDataRangeTransport.addRangeListener(function(begin, chunk) {
@@ -588,10 +602,18 @@ var WorkerTransport = (function WorkerTransportClosure() {
       }, this);
 
       messageHandler.on('NeedPassword', function transportPassword(data) {
+        if (this.passwordCallback) {
+          return this.passwordCallback(updatePassword,
+                                       PasswordResponses.NEED_PASSWORD);
+        }
         this.workerReadyPromise.reject(data.exception.message, data.exception);
       }, this);
 
       messageHandler.on('IncorrectPassword', function transportBadPass(data) {
+        if (this.passwordCallback) {
+          return this.passwordCallback(updatePassword,
+                                       PasswordResponses.INCORRECT_PASSWORD);
+        }
         this.workerReadyPromise.reject(data.exception.message, data.exception);
       }, this);
 
