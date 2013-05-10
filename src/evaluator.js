@@ -884,7 +884,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                 case 'TJ':
                   var chunkPromise = new Promise();
                   chunkPromises.push(chunkPromise);
-                  fontPromise.then(function(items, font) {
+                  fontPromise.then(function(items, chunkPromise, font) {
                     var chunk = '';
                     for (var j = 0, jj = items.length; j < jj; j++) {
                       if (typeof items[j] === 'string') {
@@ -901,19 +901,18 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                         }
                       }
                     }
-
                     chunkPromise.resolve(
                         getBidiText(chunk, -1, font.vertical));
-                  }.bind(null, args[0]));
+                  }.bind(null, args[0], chunkPromise));
                   break;
                 case 'Tj':
                   var chunkPromise = new Promise();
                   chunkPromises.push(chunkPromise);
-                  fontPromise.then(function(charCodes, font) {
+                  fontPromise.then(function(charCodes, chunkPromise, font) {
                     var chunk = fontCharsToUnicode(charCodes, font);
                     chunkPromise.resolve(
                         getBidiText(chunk, -1, font.vertical));
-                  }.bind(null, args[0]));
+                  }.bind(null, args[0], chunkPromise));
                   break;
                 case '\'':
                   // For search, adding a extra white space for line breaks
@@ -921,21 +920,21 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                   // the text-selection divs.
                   var chunkPromise = new Promise();
                   chunkPromises.push(chunkPromise);
-                  fontPromise.then(function(charCodes, font) {
+                  fontPromise.then(function(charCodes, chunkPromise, font) {
                     var chunk = fontCharsToUnicode(charCodes, font);
                     chunkPromise.resolve(
                         getBidiText(chunk, -1, font.vertical));
-                  }.bind(null, args[0]));
+                  }.bind(null, args[0], chunkPromise));
                   break;
                 case '"':
                   // Note comment in "'"
                   var chunkPromise = new Promise();
                   chunkPromises.push(chunkPromise);
-                  fontPromise.then(function(charCodes, font) {
+                  fontPromise.then(function(charCodes, chunkPromise, font) {
                     var chunk = fontCharsToUnicode(charCodes, font);
                     chunkPromise.resolve(
                         getBidiText(chunk, -1, font.vertical));
-                  }.bind(null, args[2]));
+                  }.bind(null, args[2], chunkPromise));
                   break;
                 case 'Do':
                   if (args[0].code) {
