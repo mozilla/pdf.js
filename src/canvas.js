@@ -32,6 +32,7 @@ var TextRenderingMode = {
   STROKE_ADD_TO_PATH: 5,
   FILL_STROKE_ADD_TO_PATH: 6,
   ADD_TO_PATH: 7,
+  FILL_STROKE_MASK: 3,
   ADD_TO_PATH_FLAG: 4
 };
 
@@ -632,10 +633,6 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       this.current = old.clone();
     },
     restore: function CanvasGraphics_restore() {
-      if ('textClipLayers' in this) {
-        this.completeTextClipping();
-      }
-
       var prev = this.stateStack.pop();
       if (prev) {
         this.current = prev;
@@ -783,64 +780,25 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       this.current.y = this.current.lineY = 0;
     },
     endText: function CanvasGraphics_endText() {
-      if ('textClipLayers' in this) {
-        this.swapImageForTextClipping();
+      if (!('pendingTextPaths' in this)) {
+        this.ctx.beginPath();
+        return;
       }
-    },
-    getCurrentTextClipping: function CanvasGraphics_getCurrentTextClipping() {
+      var paths = this.pendingTextPaths;
       var ctx = this.ctx;
-      var transform = ctx.mozCurrentTransform;
-      if ('textClipLayers' in this) {
-        // we need to reset only font and transform
-        var maskCtx = this.textClipLayers.maskCtx;
-        maskCtx.setTransform.apply(maskCtx, transform);
-        maskCtx.font = ctx.font;
-        return maskCtx;
+
+      ctx.save();
+      ctx.beginPath();
+      for (var i = 0; i < paths.length; i++) {
+        var path = paths[i];
+        ctx.setTransform.apply(ctx, path.transform);
+        ctx.translate(path.x, path.y);
+        path.addToPath(ctx, path.fontSize);
       }
-
-      var canvasWidth = ctx.canvas.width;
-      var canvasHeight = ctx.canvas.height;
-      // keeping track of the text clipping of the separate canvas
-      var maskCanvas = createScratchCanvas(canvasWidth, canvasHeight);
-      var maskCtx = maskCanvas.getContext('2d');
-      maskCtx.setTransform.apply(maskCtx, transform);
-      maskCtx.font = ctx.font;
-      var textClipLayers = {
-        maskCanvas: maskCanvas,
-        maskCtx: maskCtx
-      };
-      this.textClipLayers = textClipLayers;
-      return maskCtx;
-    },
-    swapImageForTextClipping:
-      function CanvasGraphics_swapImageForTextClipping() {
-      var ctx = this.ctx;
-      var canvasWidth = ctx.canvas.width;
-      var canvasHeight = ctx.canvas.height;
-      // saving current image content and clearing whole canvas
-      ctx.save();
-      ctx.setTransform(1, 0, 0, 1, 0, 0);
-      var data = ctx.getImageData(0, 0, canvasWidth, canvasHeight);
-      this.textClipLayers.imageData = data;
-      ctx.clearRect(0, 0, canvasWidth, canvasHeight);
       ctx.restore();
-    },
-    completeTextClipping: function CanvasGraphics_completeTextClipping() {
-      var ctx = this.ctx;
-      // applying mask to the image (result is saved in maskCanvas)
-      var maskCtx = this.textClipLayers.maskCtx;
-      maskCtx.setTransform(1, 0, 0, 1, 0, 0);
-      maskCtx.globalCompositeOperation = 'source-in';
-      maskCtx.drawImage(ctx.canvas, 0, 0);
-
-      // restoring image data and applying the result of masked drawing
-      ctx.save();
-      ctx.setTransform(1, 0, 0, 1, 0, 0);
-      ctx.putImageData(this.textClipLayers.imageData, 0, 0);
-      ctx.drawImage(this.textClipLayers.maskCanvas, 0, 0);
-      ctx.restore();
-
-      delete this.textClipLayers;
+      ctx.clip();
+      ctx.beginPath();
+      delete this.pendingTextPaths;
     },
     setCharSpacing: function CanvasGraphics_setCharSpacing(spacing) {
       this.current.charSpacing = spacing;
@@ -958,6 +916,59 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       return geometry;
     },
 
+    paintChar: function (character, x, y) {
+      var ctx = this.ctx;
+      var current = this.current;
+      var font = current.font;
+      var fontSize = current.fontSize / current.fontSizeScale;
+      var textRenderingMode = current.textRenderingMode;
+      var fillStrokeMode = textRenderingMode &
+        TextRenderingMode.FILL_STROKE_MASK;
+      var isAddToPathSet = !!(textRenderingMode &
+        TextRenderingMode.ADD_TO_PATH_FLAG);
+
+      var addToPath;
+      if (font.disableFontFace || isAddToPathSet) {
+        addToPath = font.renderer.getPathGenerator(character);
+      }
+
+      if (font.disableFontFace) {
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.beginPath();
+        addToPath(ctx, fontSize);
+        if (fillStrokeMode === TextRenderingMode.FILL ||
+            fillStrokeMode === TextRenderingMode.FILL_STROKE) {
+          ctx.fill();
+        }
+        if (fillStrokeMode === TextRenderingMode.STROKE ||
+            fillStrokeMode === TextRenderingMode.FILL_STROKE) {
+          ctx.stroke();
+        }
+        ctx.restore();
+      } else {
+        if (fillStrokeMode === TextRenderingMode.FILL ||
+            fillStrokeMode === TextRenderingMode.FILL_STROKE) {
+          ctx.fillText(character, x, y);
+        }
+        if (fillStrokeMode === TextRenderingMode.STROKE ||
+            fillStrokeMode === TextRenderingMode.FILL_STROKE) {
+          ctx.strokeText(character, x, y);
+        }
+      }
+
+      if (isAddToPathSet) {
+        var paths = this.pendingTextPaths || (this.pendingTextPaths = []);
+        paths.push({
+          transform: ctx.mozCurrentTransform,
+          x: x,
+          y: y,
+          fontSize: fontSize,
+          addToPath: addToPath
+        });
+      }
+    },
+
     showText: function CanvasGraphics_showText(str, skipTextSelection) {
       var ctx = this.ctx;
       var current = this.current;
@@ -973,7 +984,6 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       var textLayer = this.textLayer;
       var geom;
       var textSelection = textLayer && !skipTextSelection ? true : false;
-      var textRenderingMode = current.textRenderingMode;
       var canvasWidth = 0.0;
       var vertical = font.vertical;
       var defaultVMetrics = font.defaultVMetrics;
@@ -1071,10 +1081,6 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
               scaledX = x / fontSizeScale;
               scaledY = 0;
             }
-            if (accent) {
-              scaledAccentX = scaledX + accent.offset.x / fontSizeScale;
-              scaledAccentY = scaledY - accent.offset.y / fontSizeScale;
-            }
 
             if (font.remeasure && width > 0) {
               // some standard fonts may not have the exact width, trying to
@@ -1091,41 +1097,11 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
               }
             }
 
-            switch (textRenderingMode) {
-              default: // other unsupported rendering modes
-              case TextRenderingMode.FILL:
-              case TextRenderingMode.FILL_ADD_TO_PATH:
-                ctx.fillText(character, scaledX, scaledY);
-                if (accent) {
-                  ctx.fillText(accent.fontChar, scaledAccentX, scaledAccentY);
-                }
-                break;
-              case TextRenderingMode.STROKE:
-              case TextRenderingMode.STROKE_ADD_TO_PATH:
-                ctx.strokeText(character, scaledX, scaledY);
-                if (accent) {
-                  ctx.strokeText(accent.fontChar, scaledAccentX, scaledAccentY);
-                }
-                break;
-              case TextRenderingMode.FILL_STROKE:
-              case TextRenderingMode.FILL_STROKE_ADD_TO_PATH:
-                ctx.fillText(character, scaledX, scaledY);
-                ctx.strokeText(character, scaledX, scaledY);
-                if (accent) {
-                  ctx.fillText(accent.fontChar, scaledAccentX, scaledAccentY);
-                  ctx.strokeText(accent.fontChar, scaledAccentX, scaledAccentY);
-                }
-                break;
-              case TextRenderingMode.INVISIBLE:
-              case TextRenderingMode.ADD_TO_PATH:
-                break;
-            }
-            if (textRenderingMode & TextRenderingMode.ADD_TO_PATH_FLAG) {
-              var clipCtx = this.getCurrentTextClipping();
-              clipCtx.fillText(character, scaledX, scaledY);
-              if (accent) {
-                clipCtx.fillText(accent.fontChar, scaledAccentX, scaledAccentY);
-              }
+            this.paintChar(character, scaledX, scaledY);
+            if (accent) {
+              scaledAccentX = scaledX + accent.offset.x / fontSizeScale;
+              scaledAccentY = scaledY - accent.offset.y / fontSizeScale;
+              this.paintChar(accent.fontChar, scaledAccentX, scaledAccentY);
             }
           }
 

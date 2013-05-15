@@ -2330,7 +2330,7 @@ var PageView = function pageView(container, id, scale,
 
 //#if (FIREFOX || MOZCENTRAL)
 //    if (checkIfDocumentFontsUsed && PDFView.pdfDocument.embeddedFontsUsed &&
-//        !PDFView.supportsDocumentFonts) {
+//        PDFJS.disableFontFace) {
 //      console.error(mozL10n.get('web_fonts_disabled', null,
 //        'Web fonts are disabled: unable to use embedded PDF fonts.'));
 //      PDFView.fallback();
@@ -3107,11 +3107,20 @@ document.addEventListener('DOMContentLoaded', function webViewerLoad(evt) {
     PDFJS.disableAutoFetch = (hashParams['disableAutoFetch'] === 'true');
   }
 
+  if ('disableFontFace' in hashParams) {
+    PDFJS.disableFontFace = (hashParams['disableFontFace'] === 'true');
+  }
+
 //#if !(FIREFOX || MOZCENTRAL)
   var locale = navigator.language;
   if ('locale' in hashParams)
     locale = hashParams['locale'];
   mozL10n.setLanguage(locale);
+//#endif
+//#if (FIREFOX || MOZCENTRAL)
+//if (!PDFView.supportsDocumentFonts) {
+//  PDFJS.disableFontFace = true;
+//}
 //#endif
 
   if ('textLayer' in hashParams) {
