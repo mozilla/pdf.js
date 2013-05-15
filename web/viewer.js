@@ -684,6 +684,219 @@ var PDFFindBar = {
   }
 };
 
+var PDFHistory = {
+  initialized: false,
+  allowHashChange: true,
+  initialDestination: null,
+
+  initialize: function pdfHistoryInitialize(params, fingerprint) {
+    if (window.parent !== window) {
+      // The browsing history is only enabled when the viewer is standalone,
+      // i.e. not when it is embedded in a page.
+      return;
+    }
+    this.initialized = true;
+    this.reInitialized = false;
+    this.historyUnlocked = true;
+
+    this.fingerprint = fingerprint;
+    this.currentUid = this.uid = 0;
+    this.currentPage = 1;
+    this.previousHash = '';
+    this.current = {};
+
+    var state = window.history.state;
+    if (this._isStateObjectDefined(state)) {
+      // This case corresponds to navigating back to the document
+      // from another page in the browser history.
+      if (state.target.dest) {
+        this.initialDestination = state.target.dest;
+      } else {
+        PDFView.initialBookmark = state.target.hash;
+      }
+      this.currentUid = state.uid;
+      this.uid = state.uid + 1;
+      this.current = state.target;
+    } else {
+      // This case corresponds to the loading of a new document.
+      if (state && state.fingerprint &&
+          this.fingerprint !== state.fingerprint) {
+        // Reinitialize the browsing history when a new document
+        // is opened in the web viewer.
+        this.reInitialized = true;
+      }
+      this._pushToHistory(params, false, true);
+    }
+
+    var self = this;
+    window.addEventListener('popstate', function pdfHistoryPopstate(evt) {
+      evt.preventDefault();
+      evt.stopPropagation();
+
+      if (evt.state) {
+        self._goTo(evt.state);
+      } else {
+        self.previousHash = window.location.hash.substring(1);
+        self._pushToHistory({ hash: self.previousHash },
+                            false, true, !!self.previousHash);
+      }
+    }, false);
+
+    window.addEventListener('beforeunload',
+                            function pdfHistoryBeforeunload(evt) {
+      if (self.current.page && self.current.page !== self.currentPage) {
+        self._pushToHistory({ page: self.currentPage }, false);
+      }
+      if (PDFView.isPresentationMode) {
+        // Prevent the user from accidentally navigating away from
+        // the document when presentation mode is active.
+        evt.preventDefault();
+      }
+    }, false);
+  },
+
+  _isStateObjectDefined: function pdfHistory_isStateObjectDefined(state) {
+    return (state && state.uid >= 0 &&
+            state.fingerprint && this.fingerprint === state.fingerprint &&
+            state.target && state.target.hash) ? true : false;
+  },
+
+  get isHashChangeUnlocked() {
+    // If the current hash changes when moving back/forward in the history,
+    // this will trigger a 'popstate' event *as well* as a 'hashchange' event.
+    // Since the hash generally won't correspond to the exact the position
+    // stored in the history's state object, triggering the 'hashchange' event
+    // would corrupt the browser history.
+    //
+    // When the hash changes during a 'popstate' event, we *only* prevent the
+    // first 'hashchange' event and immediately reset allowHashChange.
+    // If it is not reset, the user would not be able to change the hash.
+
+    var temp = this.allowHashChange;
+    this.allowHashChange = true;
+    return temp;
+  },
+
+  updateCurrentPageNumber: function pdfHistoryUpdateCurrentPageNumber(page) {
+    if (this.initialized) {
+      this.currentPage = page | 0;
+    }
+  },
+
+  push: function pdfHistoryPush(params) {
+    if (!(this.initialized && this.historyUnlocked)) {
+      return;
+    }
+
+    if (params.dest && !params.hash) {
+      params.hash = (this.current.dest === params.dest && this.current.hash) ?
+        this.current.hash :
+        PDFView.getDestinationHash(params.dest).split('#')[1];
+    }
+    if (params.page) {
+      params.page |= 0;
+    }
+
+    if (params.hash) {
+      if (this.current.hash) {
+        if (this.current.hash !== params.hash) {
+          this._pushToHistory(params, true);
+        } else if (!this.current.page && params.page) {
+          this._pushToHistory(params, false, true, true);
+        }
+      } else {
+        this._pushToHistory(params, true);
+      }
+    } else if (this.current.page && this.current.page !== params.page) {
+      this._pushToHistory(params, true);
+    }
+  },
+
+  _stateObj: function PDFHistory_stateObj(target) {
+    return { fingerprint: this.fingerprint, uid: this.uid, target: target };
+  },
+
+  _pushToHistory: function pdfHistory_pushToHistory(params, addPrevious,
+                                                    overwrite, addUrl) {
+    if (!this.initialized) {
+      return;
+    }
+
+    if (!params.hash && params.page) {
+      params.hash = ('page=' + params.page);
+    }
+    var hash = addUrl ? ('#' + this.previousHash) : '';
+
+    if (overwrite) {
+      window.history.replaceState(this._stateObj(params), '', hash);
+    } else {
+      if (addPrevious &&
+          this.current.page && this.current.page !== this.currentPage) {
+        this._pushToHistory({ page: this.currentPage }, false);
+      }
+      window.history.pushState(this._stateObj(params), '', hash);
+    }
+    this.currentUid = this.uid++;
+    this.current = params;
+  },
+
+  _goTo: function pdfHistory_goTo(state) {
+    if (!(this.initialized && this.historyUnlocked &&
+          this._isStateObjectDefined(state))) {
+      return;
+    }
+
+    if (!this.reInitialized && state.uid < this.currentUid &&
+        this.current.page && this.current.page !== this.currentPage) {
+      this._pushToHistory(this.current, false, false, !!this.previousHash);
+      this._pushToHistory({ page: this.currentPage }, false);
+
+      window.history.back();
+      return;
+    }
+
+    this.historyUnlocked = false;
+
+    if (state.target.dest) {
+      PDFView.navigateTo(state.target.dest);
+    } else {
+      PDFView.setHash(state.target.hash);
+    }
+    this.currentUid = state.uid;
+    if (state.uid > this.uid) {
+      this.uid = state.uid;
+    }
+    this.current = state.target;
+
+    var currentHash = window.location.hash.substring(1);
+    if (this.previousHash !== currentHash) {
+      this.allowHashChange = false;
+    }
+    this.previousHash = currentHash;
+
+    this.historyUnlocked = true;
+  },
+
+  back: function pdfHistoryBack() {
+    this.go(-1);
+  },
+
+  forward: function pdfHistoryForward() {
+    this.go(1);
+  },
+
+  go: function pdfHistoryGo(direction) {
+    if (this.initialized && this.historyUnlocked) {
+      var state = window.history.state;
+      if (direction === -1 && state && state.uid > 0) {
+        window.history.back();
+      } else if (direction === 1 && state && state.uid < (this.uid - 1)) {
+        window.history.forward();
+      }
+    }
+  }
+};
+
 var PDFView = {
   pages: [],
   thumbnails: [],
@@ -1197,7 +1410,9 @@ var PDFView = {
     var self = this;
     PDFJS.Promise.all([this.pagesPromise,
                        this.destinationsPromise]).then(function() {
+      var destString = '';
       if (typeof dest === 'string') {
+        destString = dest;
         dest = self.destinations[dest];
       }
       if (!(dest instanceof Array)) {
@@ -1212,11 +1427,11 @@ var PDFView = {
         if (pageNumber > self.pages.length) {
           pageNumber = self.pages.length;
         }
-        self.page = pageNumber;
-        if (!self.isPresentationMode) { // Avoid breaking presentation mode.
-          var currentPage = self.pages[pageNumber - 1];
-          currentPage.scrollIntoView(dest);
-        }
+        var currentPage = self.pages[pageNumber - 1];
+        currentPage.scrollIntoView(dest);
+
+        // Update the browsing history.
+        PDFHistory.push({ dest: dest, hash: destString, page: pageNumber });
       }
     });
   },
@@ -1234,8 +1449,12 @@ var PDFView = {
         var destKind = dest[1];
         if (typeof destKind === 'object' && 'name' in destKind &&
             destKind.name == 'XYZ') {
-          var scale = (dest[4] || this.currentScale);
-          pdfOpenParams += '&zoom=' + (scale * 100);
+          var scale = (dest[4] || this.currentScaleValue);
+          var scaleNumber = parseFloat(scale);
+          if (scaleNumber) {
+            scale = scaleNumber * 100;
+          }
+          pdfOpenParams += '&zoom=' + scale;
           if (dest[2] || dest[3]) {
             pdfOpenParams += ',' + (dest[2] || 0) + ',' + (dest[3] || 0);
           }
@@ -1459,16 +1678,20 @@ var PDFView = {
 
     var storePromise = store.initializedPromise;
     PDFJS.Promise.all([firstPagePromise, storePromise]).then(function() {
-      var storedHash = null;
+      var storedHash = null, pageNum;
       if (store.get('exists', false)) {
-        var pageNum = store.get('page', '1');
+        pageNum = store.get('page', '1');
         var zoom = store.get('zoom', PDFView.currentScale);
         var left = store.get('scrollLeft', '0');
         var top = store.get('scrollTop', '0');
 
         storedHash = 'page=' + pageNum + '&zoom=' + zoom + ',' +
-                    left + ',' + top;
+                     left + ',' + top;
       }
+      // Initialize the browsing history.
+      PDFHistory.initialize({ hash: storedHash, page: (pageNum || 1) },
+                            PDFView.documentFingerprint);
+
       self.setInitialView(storedHash, scale);
 
       // Make all navigation keys work on document load,
@@ -1552,13 +1775,15 @@ var PDFView = {
     // updated if the zoom level stayed the same.
     this.currentScale = 0;
     this.currentScaleValue = null;
-    if (this.initialBookmark) {
+    if (PDFHistory.initialDestination) {
+      this.navigateTo(PDFHistory.initialDestination);
+      PDFHistory.initialDestination = null;
+    } else if (this.initialBookmark) {
       this.setHash(this.initialBookmark);
       this.initialBookmark = null;
-    }
-    else if (storedHash)
+    } else if (storedHash) {
       this.setHash(storedHash);
-    else if (scale) {
+    } else if (scale) {
       this.parseScale(scale, true);
       this.page = 1;
     }
@@ -1656,6 +1881,7 @@ var PDFView = {
     if (!hash)
       return;
 
+    var pageNumber;
     if (hash.indexOf('=') >= 0) {
       var params = PDFView.parseQueryString(hash);
       // borrowing syntax from "Parameters for Opening PDF Files"
@@ -1664,7 +1890,7 @@ var PDFView = {
         return;
       }
       if ('page' in params) {
-        var pageNumber = (params.page | 0) || 1;
+        pageNumber = (params.page | 0) || 1;
         if ('zoom' in params) {
           var zoomArgs = params.zoom.split(','); // scale,left,top
           // building destination array
@@ -1698,10 +1924,13 @@ var PDFView = {
           toggle.click();
         }
       }
-    } else if (/^\d+$/.test(hash)) // page number
-      this.page = hash;
-    else // named destination
+    } else if (/^\d+$/.test(hash)) { // page number
+      this.page = pageNumber = hash;
+    } else // named destination
       PDFView.navigateTo(unescape(hash));
+
+    // Update the browsing history.
+    PDFHistory.push({ hash: hash, page: pageNumber });
   },
 
   switchSidebarView: function pdfViewSwitchSidebarView(view) {
@@ -2169,6 +2398,10 @@ var PageView = function pageView(container, id, scale,
   this.scrollIntoView = function pageViewScrollIntoView(dest) {
       if (!dest) {
         scrollIntoView(div);
+        return;
+      }
+      if (PDFView.isPresentationMode) { // Avoid breaking presentation mode.
+        PDFView.page = id;
         return;
       }
 
@@ -3342,6 +3575,9 @@ function updateViewarea() {
   });
   var href = PDFView.getAnchorUrl(pdfOpenParams);
   document.getElementById('viewBookmark').href = href;
+
+  // Update the current page number in the browsing history.
+  PDFHistory.updateCurrentPageNumber(pageNumber);
 }
 
 window.addEventListener('resize', function webViewerResize(evt) {
@@ -3354,7 +3590,9 @@ window.addEventListener('resize', function webViewerResize(evt) {
 });
 
 window.addEventListener('hashchange', function webViewerHashchange(evt) {
-  PDFView.setHash(document.location.hash.substring(1));
+  if (PDFHistory.isHashChangeUnlocked) {
+    PDFView.setHash(document.location.hash.substring(1));
+  }
 });
 
 window.addEventListener('change', function webViewerChange(evt) {
@@ -3641,10 +3879,27 @@ window.addEventListener('keydown', function keydown(evt) {
     }
   }
 
-  if (cmd == 4) { // shift-key
+  if (cmd === 4) { // shift-key
     switch (evt.keyCode) {
       case 82: // 'r'
         PDFView.rotatePages(-90);
+        break;
+    }
+  }
+
+  if (cmd === 2) { // alt-key
+    switch (evt.keyCode) {
+      case 37: // left arrow
+        if (PDFView.isPresentationMode) {
+          PDFHistory.back();
+          handled = true;
+        }
+        break;
+      case 39: // right arrow
+        if (PDFView.isPresentationMode) {
+          PDFHistory.forward();
+          handled = true;
+        }
         break;
     }
   }
