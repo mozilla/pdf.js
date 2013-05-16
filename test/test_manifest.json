@@ -1135,6 +1135,15 @@
       "rounds": 1,
       "type": "eq"
     },
+    {  "id": "issue3207",
+      "file": "pdfs/issue3207.pdf",
+      "md5": "667248adae0462c7f5acc7757d97b720",
+      "link": true,
+      "firstPage": 1,
+      "lastPage": 1,
+      "rounds": 1,
+      "type": "eq"
+    },
     {  "id": "issue2829",
       "file": "pdfs/issue2829.pdf",
       "md5": "f32b28cf8792f6ccc470446bfbb38584",

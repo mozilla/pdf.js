@@ -5315,11 +5315,8 @@ var Type1Parser = (function Type1ParserClosure() {
           case 'Subrs':
             var num = this.readInt();
             this.getToken(); // read in 'array'
-            for (var j = 0; j < num; ++j) {
-              token = this.getToken(); // read in 'dup'
+            while ((token = this.getToken()) === 'dup') {
               var index = this.readInt();
-              if (index > j)
-                j = index;
               var length = this.readInt();
               this.getToken(); // read in 'RD' or '-|'
               var data = stream.makeSubStream(stream.pos + 1, length);
