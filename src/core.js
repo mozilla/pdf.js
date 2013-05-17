@@ -355,7 +355,7 @@ var PDFDocument = (function PDFDocumentClosure() {
           }
 
           info('The linearization data is not available ' +
-               'or unreadable pdf data is found');
+               'or unreadable PDF data is found');
           linearization = false;
         }
       }
