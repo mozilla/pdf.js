@@ -354,7 +354,7 @@ var PDFDocument = (function PDFDocumentClosure() {
             throw err;
           }
 
-          warn('The linearization data is not available ' +
+          info('The linearization data is not available ' +
                'or unreadable pdf data is found');
           linearization = false;
         }
