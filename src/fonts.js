@@ -17,7 +17,8 @@
 /* globals assert, bytesToString, CIDToUnicodeMaps, error, ExpertCharset,
            ExpertSubsetCharset, FileReaderSync, globalScope, GlyphsUnicode,
            info, isArray, isNum, ISOAdobeCharset, isWorker, PDFJS, Stream,
-           stringToBytes, TextDecoder, TODO, warn, Lexer, Util */
+           stringToBytes, TextDecoder, TODO, warn, Lexer, Util, shadow,
+           FontRendererFactory */
 
 'use strict';
 
@@ -39,6 +40,8 @@ var HINTING_ENABLED = false;
 var SEAC_ANALYSIS_ENABLED = false;
 
 var FONT_IDENTITY_MATRIX = [0.001, 0, 0, 0.001, 0, 0];
+
+PDFJS.disableFontFace = false;
 
 var FontFlags = {
   FixedPitch: 1,
@@ -3019,6 +3022,11 @@ var Font = (function FontClosure() {
     mimetype: null,
     encoding: null,
 
+    get renderer() {
+      var renderer = FontRendererFactory.create(this);
+      return shadow(this, 'renderer', renderer);
+    },
+
     exportData: function Font_exportData() {
       var data = {};
       for (var i in this) {
@@ -4567,6 +4575,11 @@ var Font = (function FontClosure() {
     bindDOM: function Font_bindDOM() {
       if (!this.data)
         return null;
+
+      if (PDFJS.disableFontFace) {
+        this.disableFontFace = true;
+        return null;
+      }
 
       var data = bytesToString(this.data);
       var fontName = this.loadedName;

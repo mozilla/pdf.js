@@ -247,6 +247,7 @@ target.bundle = function(args) {
         'crypto.js',
         'evaluator.js',
         'fonts.js',
+        'font_renderer.js',
         'glyphlist.js',
         'image.js',
         'metrics.js',
