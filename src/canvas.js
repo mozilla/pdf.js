@@ -38,6 +38,8 @@ var TextRenderingMode = {
 // Minimal font size that would be used during canvas fillText operations.
 var MIN_FONT_SIZE = 16;
 
+var COMPILE_TYPE3_GLYPHS = true;
+
 function createScratchCanvas(width, height) {
   var canvas = document.createElement('canvas');
   canvas.width = width;
@@ -164,6 +166,157 @@ function addContextCurrentTransform(ctx) {
   }
 }
 
+function compileType3Glyph(imgData) {
+  var POINT_TO_PROCESS_LIMIT = 1000;
+
+  var width = imgData.width, height = imgData.height;
+  var i, j;
+  // we need sparse arrays
+  var points = [];
+  for (i = 0; i <= height; i++) {
+    points.push([]);
+  }
+
+  // finding iteresting points: every point is located between mask pixels,
+  // so there will be points of the (width + 1)x(height + 1) grid. Every point
+  // will have flags assigned based on neighboring mask pixels:
+  //   4 | 8
+  //   --P--
+  //   2 | 1
+  // We are interested only in points with the flags:
+  //   - outside corners: 1, 2, 4, 8;
+  //   - inside corners: 7, 11, 13, 14;
+  //   - and, intersections: 5, 10.
+  var pos = 3, data = imgData.data, lineSize = width * 4, count = 0;
+  if (data[3] !== 0) {
+    points[0][0] = 1;
+    ++count;
+  }
+  for (j = 1; j < width; j++) {
+    if (data[pos] !== data[pos + 4]) {
+      points[0][j] = data[pos] ? 2 : 1;
+      ++count;
+    }
+    pos += 4;
+  }
+  if (data[pos] !== 0) {
+    points[0][j] = 2;
+    ++count;
+  }
+  pos += 4;
+  for (i = 1; i < height; i++) {
+    if (data[pos - lineSize] !== data[pos]) {
+      points[i][0] = data[pos] ? 1 : 8;
+      ++count;
+    }
+    for (j = 1; j < width; j++) {
+      var f1 = data[pos + 4] ? 1 : 0;
+      var f2 = data[pos] ? 1 : 0;
+      var f4 = data[pos - lineSize] ? 1 : 0;
+      var f8 = data[pos - lineSize + 4] ? 1 : 0;
+      var fSum = f1 + f2 + f4 + f8;
+      if (fSum === 1 || fSum === 3 || (fSum === 2 && f1 === f4)) {
+        points[i][j] = f1 | (f2 << 1) | (f4 << 2) | (f8 << 3);
+        ++count;
+      }
+      pos += 4;
+    }
+    if (data[pos - lineSize] !== data[pos]) {
+      points[i][j] = data[pos] ? 2 : 4;
+      ++count;
+    }
+    pos += 4;
+
+    if (count > POINT_TO_PROCESS_LIMIT) {
+      return null;
+    }
+  }
+  pos -= lineSize;
+  if (data[pos] !== 0) {
+    points[i][0] = 8;
+    ++count;
+  }
+  for (j = 1; j < width; j++) {
+    if (data[pos] !== data[pos + 4]) {
+      points[i][j] = data[pos] ? 4 : 8;
+      ++count;
+    }
+    pos += 4;
+  }
+  if (data[pos] !== 0) {
+    points[i][j] = 4;
+    ++count;
+  }
+  if (count > POINT_TO_PROCESS_LIMIT) {
+    return null;
+  }
+
+  // building outlines
+  var outline = [];
+  outline.push('c.save();');
+  // the path shall be painted in [0..1]x[0..1] space
+  outline.push('c.scale(' + (1 / width) + ',' +  (-1 / height) + ');');
+  outline.push('c.translate(0,-' + height + ');');
+  outline.push('c.beginPath();');
+  for (i = 0; i <= height; i++) {
+    if (points[i].length === 0) {
+      continue;
+    }
+    var js = null;
+    for (js in points[i]) {
+      break;
+    }
+    if (js === null) {
+      continue;
+    }
+    var i0 = i, j0 = (j = +js);
+
+    outline.push('c.moveTo(' + j + ',' + i + ');');
+    var type = points[i][j], d = 0;
+    do {
+      if (type === 5 || type === 10) {
+        // line crossed: following dirrection we followed
+        points[i0][j0] = type | (15 ^ d); // changing direction for "future hit"
+        type |= d;
+      }
+
+      switch (type) {
+      case 1:
+      case 13:
+        do { i0++; } while (!points[i0][j0]);
+        d = 9;
+        break;
+      case 4:
+      case 7:
+        do { i0--; } while (!points[i0][j0]);
+        d = 6;
+        break;
+      case 8:
+      case 14:
+        do { j0++; } while (!points[i0][j0]);
+        d = 12;
+        break;
+      case 2:
+      case 11:
+        do { j0--; } while (!points[i0][j0]);
+        d = 3;
+        break;
+      }
+      outline.push('c.lineTo(' + j0 + ',' + i0 + ');');
+
+      type = points[i0][j0];
+      delete points[i0][j0];
+    } while (j0 !== j || i0 !== i);
+    --i;
+  }
+  outline.push('c.fill();');
+  outline.push('c.beginPath();');
+  outline.push('c.restore();');
+
+  /*jshint -W054 */
+  return new Function('c', outline.join('\n'));
+}
+
 var CanvasExtraState = (function CanvasExtraStateClosure() {
   function CanvasExtraState(old) {
     // Are soft masks and alpha values shapes or opacities?
@@ -234,6 +387,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
     this.textLayer = textLayer;
     this.imageLayer = imageLayer;
     this.groupStack = [];
+    this.processingType3 = null;
     if (canvasCtx) {
       addContextCurrentTransform(canvasCtx);
     }
@@ -1002,6 +1156,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
             continue;
           }
 
+          this.processingType3 = glyph;
           this.save();
           ctx.scale(fontSize, fontSize);
           ctx.transform.apply(ctx, fontMatrix);
@@ -1018,6 +1173,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
           canvasWidth += width;
         }
         ctx.restore();
+        this.processingType3 = null;
       } else {
         ctx.save();
         this.applyTextTransforms();
@@ -1566,6 +1722,29 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
     paintImageMaskXObject: function CanvasGraphics_paintImageMaskXObject(
                              imgArray, inverseDecode, width, height) {
       var ctx = this.ctx;
+      var glyph = this.processingType3;
+
+      if (COMPILE_TYPE3_GLYPHS && glyph && !('compiled' in glyph)) {
+        var MAX_SIZE_TO_COMPILE = 1000;
+        if (width <= MAX_SIZE_TO_COMPILE && height <= MAX_SIZE_TO_COMPILE) {
+          var pixels = new Uint8Array(width * height * 4);
+          for (var i = 3, ii = pixels.length; i < ii; i += 4) {
+            pixels[i] = 255;
+          }
+          applyStencilMask(imgArray, width, height, inverseDecode, pixels);
+          glyph.compiled =
+            compileType3Glyph({data: pixels, width: width, height: height});
+        } else {
+          glyph.compiled = null;
+        }
+      }
+
+      if (glyph && glyph.compiled) {
+        glyph.compiled(ctx);
+        return;
+      }
+
+
       var tmpCanvas = createScratchCanvas(width, height);
       var tmpCtx = tmpCanvas.getContext('2d');
 
