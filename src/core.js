@@ -175,32 +175,18 @@ var Page = (function PageClosure() {
         var pageData = datas[0];
         var pageQueue = pageData.queue;
         var annotations = datas[1];
-
-        var ensurePromises = [];
-        for (var i = 0, n = annotations.length; i < n; ++i) {
-          var ensurePromise = pdfManager.ensure(annotations[i],
-                                                'getOperatorList',
-                                                [partialEvaluator]);
-          ensurePromises.push(ensurePromise);
+        if (annotations.length === 0) {
+          PartialEvaluator.optimizeQueue(pageQueue);
+          promise.resolve(pageData);
+          return;
         }
 
-        Promise.all(ensurePromises).then(function(listPromises) {
-          Promise.all(listPromises).then(function(datas) {
-            for (var i = 0, n = datas.length; i < n; ++i) {
-              var annotationData = datas[i];
-              var annotationQueue = annotationData.queue;
-              Util.concatenateToArray(pageQueue.fnArray,
-                                      annotationQueue.fnArray);
-              Util.concatenateToArray(pageQueue.argsArray,
-                                      annotationQueue.argsArray);
-              Util.extendObj(pageData.dependencies,
-                             annotationData.dependencies);
-            }
-
-            PartialEvaluator.optimizeQueue(pageQueue);
-
-            promise.resolve(pageData);
-          }, reject);
+        var dependencies = pageData.dependencies;
+        var annotationsReadyPromise = Annotation.appendToOperatorList(
+          annotations, pageQueue, pdfManager, dependencies, partialEvaluator);
+        annotationsReadyPromise.then(function () {
+          PartialEvaluator.optimizeQueue(pageQueue);
+          promise.resolve(pageData);
         }, reject);
       }, reject);
 

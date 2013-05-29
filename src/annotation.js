@@ -240,6 +240,46 @@ var Annotation = (function AnnotationClosure() {
     }
   };
 
+  Annotation.appendToOperatorList = function Annotation_appendToOperatorList(
+      annotations, pageQueue, pdfManager, dependencies, partialEvaluator) {
+
+    function reject(e) {
+      annotationsReadyPromise.reject(e);
+    }
+
+    var annotationsReadyPromise = new Promise();
+
+    var ensurePromises = [];
+    for (var i = 0, n = annotations.length; i < n; ++i) {
+      var ensurePromise = pdfManager.ensure(annotations[i],
+                                            'getOperatorList',
+                                            [partialEvaluator]);
+      ensurePromises.push(ensurePromise);
+    }
+
+    Promise.all(ensurePromises).then(function(listPromises) {
+      Promise.all(listPromises).then(function(datas) {
+        var fnArray = pageQueue.fnArray;
+        var argsArray = pageQueue.argsArray;
+        fnArray.push('beginAnnotations');
+        argsArray.push([]);
+        for (var i = 0, n = datas.length; i < n; ++i) {
+          var annotationData = datas[i];
+          var annotationQueue = annotationData.queue;
+          Util.concatenateToArray(fnArray, annotationQueue.fnArray);
+          Util.concatenateToArray(argsArray, annotationQueue.argsArray);
+          Util.extendObj(dependencies, annotationData.dependencies);
+        }
+        fnArray.push('endAnnotations');
+        argsArray.push([]);
+
+        annotationsReadyPromise.resolve();
+      }, reject);
+    }, reject);
+
+    return annotationsReadyPromise;
+  };
+
   return Annotation;
 })();
 PDFJS.Annotation = Annotation;
