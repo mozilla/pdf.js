@@ -129,7 +129,7 @@ var Annotation = (function AnnotationClosure() {
       );
     },
 
-    getOperatorList: function Annotation_appendToOperatorList(evaluator) {
+    getOperatorList: function Annotation_getToOperatorList(evaluator) {
 
       var promise = new Promise();
 
@@ -382,57 +382,77 @@ var TextWidgetAnnotation = (function TextWidgetAnnotationClosure() {
       return element;
     },
 
-    appendToOperatorList: function TextWidgetAnnotation_appendToOperatorList(
-                              operatorList, dependencies, evaluator) {
+    getOperatorList: function TextWidgetAnnotation_getOperatorList(evaluator) {
+
+
+      var promise = new Promise();
+      var data = this.data;
 
       // Even if there is an appearance stream, ignore it. This is the
       // behaviour used by Adobe Reader.
 
-      var defaultAppearance = this.data.defaultAppearance;
+      var defaultAppearance = data.defaultAppearance;
       if (!defaultAppearance) {
-        return;
+        promise.resolve({
+          queue: {
+            fnArray: [],
+            argsArray: []
+          },
+          dependency: {}
+        });
+        return promise;
       }
 
       // Include any font resources found in the default appearance
 
       var stream = new Stream(stringToBytes(defaultAppearance));
-      var list = evaluator.getOperatorList(stream, this.fieldResources,
-                                           dependencies);
+      var listPromise = evaluator.getOperatorList(stream, this.fieldResources);
+      listPromise.then(function(appearanceStreamData) {
+        var appearanceFnArray = appearanceStreamData.queue.fnArray;
+        var appearanceArgsArray = appearanceStreamData.queue.argsArray;
+        var fnArray = [];
+        var argsArray = [];
 
-      var fnArray = operatorList.fnArray;
-      var argsArray = operatorList.argsArray;
-      var appearanceFnArray = list.fnArray;
-      var appearanceArgsArray = list.argsArray;
-
-      // TODO(mack): Add support for stroke color
-      this.data.rgb = [0, 0, 0];
-      for (var i = 0, n = fnArray.length; i < n; ++i) {
-        var fnName = appearanceFnArray[i];
-        var args = appearanceArgsArray[i];
-        if (fnName === 'dependency') {
-          var dependency = args[i];
-          if (dependency.indexOf('g_font_') === 0) {
-            this.data.fontRefName = dependency;
+        // TODO(mack): Add support for stroke color
+        data.rgb = [0, 0, 0];
+        for (var i = 0, n = fnArray.length; i < n; ++i) {
+          var fnName = appearanceFnArray[i];
+          var args = appearanceArgsArray[i];
+          if (fnName === 'dependency') {
+            var dependency = args[i];
+            if (dependency.indexOf('g_font_') === 0) {
+              data.fontRefName = dependency;
+            }
+            fnArray.push(fnName);
+            argsArray.push(args);
+          } else if (fnName === 'setFont') {
+            data.fontRefName = args[0];
+            var size = args[1];
+            if (size < 0) {
+              data.fontDirection = -1;
+              data.fontSize = -size;
+            } else {
+              data.fontDirection = 1;
+              data.fontSize = size;
+            }
+          } else if (fnName === 'setFillRGBColor') {
+            data.rgb = args;
+          } else if (fnName === 'setFillGray') {
+            var rgbValue = args[0] * 255;
+            data.rgb = [rgbValue, rgbValue, rgbValue];
           }
-          fnArray.push(fnName);
-          argsArray.push(args);
-        } else if (fnName === 'setFont') {
-          this.data.fontRefName = args[0];
-          var size = args[1];
-          if (size < 0) {
-            this.data.fontDirection = -1;
-            this.data.fontSize = -size;
-          } else {
-            this.data.fontDirection = 1;
-            this.data.fontSize = size;
-          }
-        } else if (fnName === 'setFillRGBColor') {
-          this.data.rgb = args;
-        } else if (fnName === 'setFillGray') {
-          var rgbValue = args[0] * 255;
-          this.data.rgb = [rgbValue, rgbValue, rgbValue];
         }
-      }
+        promise.resolve({
+          queue: {
+            fnArray: fnArray,
+            argsArray: argsArray
+          },
+          dependency: {}
+        });
+
+      });
+
+      return promise;
     }
   });
 
