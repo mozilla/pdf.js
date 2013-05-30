@@ -198,28 +198,7 @@ function ChromeActions(domWindow, contentDispositionFilename) {
 
 ChromeActions.prototype = {
   isInPrivateBrowsing: function() {
-    var docIsPrivate, privateBrowsing;
-    try {
-      docIsPrivate = PrivateBrowsingUtils.isWindowPrivate(this.domWindow);
-    } catch (x) {
-      // unable to use PrivateBrowsingUtils, e.g. FF15
-    }
-    if (typeof docIsPrivate === 'undefined') {
-      // per-window Private Browsing is not supported, trying global service
-      try {
-        privateBrowsing = Cc['@mozilla.org/privatebrowsing;1']
-                            .getService(Ci.nsIPrivateBrowsingService);
-        docIsPrivate = privateBrowsing.privateBrowsingEnabled;
-      } catch (x) {
-        // unable to get nsIPrivateBrowsingService (e.g. not Firefox)
-        docIsPrivate = false;
-      }
-    }
-    // caching the result
-    this.isInPrivateBrowsing = function isInPrivateBrowsingCached() {
-      return docIsPrivate;
-    };
-    return docIsPrivate;
+    return PrivateBrowsingUtils.isWindowPrivate(this.domWindow);
   },
   download: function(data, sendResponse) {
     var self = this;
