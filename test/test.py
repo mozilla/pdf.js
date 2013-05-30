@@ -154,12 +154,15 @@ class TestHandlerBase(BaseHTTPRequestHandler):
         except socket.error, v:
             if v[0] == errno.ECONNRESET:
                 # Ignoring connection reset by peer exceptions
-                print 'Detected connection reset'
+                if VERBOSE:
+                    print 'Detected connection reset'
             elif v[0] == errno.EPIPE:
-                print 'Detected remote peer disconnected'
+                if VERBOSE:
+                    print 'Detected remote peer disconnected'
             elif v[0] == 10053:
-                print 'An established connection was aborted by the' \
-                    ' software in your host machine'
+                if VERBOSE:
+                    print 'An established connection was aborted by the' \
+                          ' software in your host machine'
             else:
                 raise
 
