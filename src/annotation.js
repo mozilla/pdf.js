@@ -16,7 +16,7 @@
  */
 /* globals Util, isDict, isName, stringToPDFString, TODO, Dict, Stream,
            stringToBytes, PDFJS, isWorker, assert, NotImplementedException,
-           Promise */
+           Promise, isArray */
 
 'use strict';
 
@@ -80,14 +80,23 @@ var Annotation = (function AnnotationClosure() {
     data.rect = Util.normalizeRect(rect);
     data.annotationFlags = dict.get('F');
 
-    var border = dict.get('BS');
-    if (isDict(border)) {
-      var borderWidth = border.has('W') ? border.get('W') : 1;
-      data.border = {
-        width: borderWidth,
-        type: border.get('S') || 'S',
-        rgb: dict.get('C') || [0, 0, 1]
-      };
+    var color = dict.get('C');
+    if (isArray(color) && color.length === 3) {
+      // TODO(mack): currently only supporting rgb; need support different
+      // colorspaces
+      data.color = color;
+    } else {
+      data.color = [0, 0, 0];
+    }
+
+    // Some types of annotations have border style dict which has more
+    // info than the border array
+    if (dict.has('BS')) {
+      var borderStyle = dict.get('BS');
+      data.borderWidth = borderStyle.has('W') ? borderStyle.get('W') : 1;
+    } else {
+      var borderArray = dict.get('Border') || [0, 0, 1];
+      data.borderWidth = borderArray[2];
     }
 
     this.appearance = getDefaultAppearance(dict);
@@ -108,7 +117,8 @@ var Annotation = (function AnnotationClosure() {
         'getHtmlElement() should be implemented in subclass');
     },
 
-    getEmptyContainer: function Annotaiton_getEmptyContainer(tagName, rect) {
+    // TODO(mack): Remove this, it's not really that helpful.
+    getEmptyContainer: function Annotation_getEmptyContainer(tagName, rect) {
       assert(!isWorker,
         'getEmptyContainer() should be called from main thread');
 
@@ -538,7 +548,24 @@ var LinkAnnotation = (function LinkAnnotationClosure() {
     },
 
     getHtmlElement: function LinkAnnotation_getHtmlElement(commonObjs) {
-      var element = this.getEmptyContainer('a');
+      var rect = this.data.rect;
+      var element = document.createElement('a');
+      var borderWidth = this.data.borderWidth;
+
+      element.style.borderWidth = borderWidth + 'px';
+      var color = this.data.color;
+      var rgb = [];
+      for (var i = 0; i < 3; ++i) {
+        rgb[i] = Math.round(color[i] * 255);
+      }
+      element.style.borderColor = Util.makeCssRgb(rgb);
+      element.style.borderStyle = 'solid';
+
+      var width = rect[2] - rect[0] - 2 * borderWidth;
+      var height = rect[3] - rect[1] - 2 * borderWidth;
+      element.style.width = width + 'px';
+      element.style.height = height + 'px';
+
       element.href = this.data.url || '';
       return element;
     }
