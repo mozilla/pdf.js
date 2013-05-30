@@ -161,12 +161,20 @@ var WorkerMessageHandler = {
       var source = data.source;
       var disableRange = data.disableRange;
       if (source.data) {
-        pdfManager = new LocalPdfManager(source.data, source.password);
-        pdfManagerPromise.resolve();
+        try {
+          pdfManager = new LocalPdfManager(source.data, source.password);
+          pdfManagerPromise.resolve();
+        } catch (ex) {
+          pdfManagerPromise.reject(ex);
+        }
         return pdfManagerPromise;
       } else if (source.chunkedViewerLoading) {
-        pdfManager = new NetworkPdfManager(source, handler);
-        pdfManagerPromise.resolve();
+        try {
+          pdfManager = new NetworkPdfManager(source, handler);
+          pdfManagerPromise.resolve();
+        } catch (ex) {
+          pdfManagerPromise.reject(ex);
+        }
         return pdfManagerPromise;
       }
 
@@ -203,14 +211,22 @@ var WorkerMessageHandler = {
           networkManager.abortRequest(fullRequestXhrId);
 
           source.length = length;
-          pdfManager = new NetworkPdfManager(source, handler);
-          pdfManagerPromise.resolve(pdfManager);
+          try {
+            pdfManager = new NetworkPdfManager(source, handler);
+            pdfManagerPromise.resolve(pdfManager);
+          } catch (ex) {
+            pdfManagerPromise.reject(ex);
+          }
         },
 
         onDone: function onDone(args) {
           // the data is array, instantiating directly from it
-          pdfManager = new LocalPdfManager(args.chunk, source.password);
-          pdfManagerPromise.resolve();
+          try {
+            pdfManager = new LocalPdfManager(args.chunk, source.password);
+            pdfManagerPromise.resolve();
+          } catch (ex) {
+            pdfManagerPromise.reject(ex);
+          }
         },
 
         onError: function onError(status) {
@@ -310,8 +326,8 @@ var WorkerMessageHandler = {
           pdfManager.onLoadedStream().then(function() {
             loadDocument(true).then(onSuccess, onFailure);
           });
-        });
-      });
+        }, onFailure);
+      }, onFailure);
     });
 
     handler.on('GetPageRequest', function wphSetupGetPage(data) {

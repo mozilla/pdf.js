@@ -1,4 +1,5 @@
 *.pdf
+*.error
 
 !tracemonkey.pdf
 !issue2391-1.pdf
