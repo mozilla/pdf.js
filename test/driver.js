@@ -153,6 +153,9 @@ function nextTask() {
 }
 
 function getLastPageNum(task) {
+  if (!task.pdfDoc) {
+    return task.firstPage || 1;
+  }
   var lastPageNum = task.lastPage || 0;
   if (!lastPageNum || lastPageNum > task.pdfDoc.numPages) {
     lastPageNum = task.pdfDoc.numPages;

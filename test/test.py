@@ -14,6 +14,7 @@
 
 import json, platform, os, shutil, sys, subprocess, tempfile, threading
 import time, urllib, urllib2, hashlib, re, base64, uuid, socket, errno
+import traceback
 from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
 from SocketServer import ThreadingMixIn
 from optparse import OptionParser
@@ -64,8 +65,6 @@ class TestOptions(OptionParser):
                         help="Run the font tests.", default=False)
         self.add_option("--noDownload", action="store_true", dest="noDownload",
                         help="Skips test PDFs downloading.", default=False)
-        self.add_option("--ignoreDownloadErrors", action="store_true", dest="ignoreDownloadErrors",
-                        help="Ignores errors during test PDFs downloading.", default=False)
         self.add_option("--statsFile", action="store", dest="statsFile", type="string",
                         help="The file where to store stats.", default=None)
         self.add_option("--statsDelay", action="store", dest="statsDelay", type="int",
@@ -554,24 +553,29 @@ def downloadLinkedPDF(f):
 
     print 'done'
 
-def downloadLinkedPDFs(manifestList, ignoreDownloadErrors):
+def downloadLinkedPDFs(manifestList):
     for item in manifestList:
         f, isLink = item['file'], item.get('link', False)
         if isLink and not os.access(f, os.R_OK):
             try:
                 downloadLinkedPDF(f)
             except:
+                exc_type, exc_value, exc_traceback = sys.exc_info()
                 print 'ERROR: Unable to download file "' + f + '".'
-                if ignoreDownloadErrors:
-                    open(f, 'wb').close()
-                else:
-                    raise
+                open(f, 'wb').close()
+                with open(f + '.error', 'w') as out:
+                  out.write('\n'.join(traceback.format_exception(exc_type,
+                                                                 exc_value,
+                                                                 exc_traceback)))
 
 def verifyPDFs(manifestList):
     error = False
     for item in manifestList:
         f = item['file']
-        if os.access(f, os.R_OK):
+        if os.path.isfile(f + '.error'):
+            print 'WARNING: File was not downloaded. See "' + f + '.error" file.'
+            error = True
+        elif os.access(f, os.R_OK):
             fileMd5 = hashlib.md5(open(f, 'rb').read()).hexdigest()
             if 'md5' not in item:
                 print 'WARNING: Missing md5 for file "' + f + '".',
@@ -618,7 +622,7 @@ def setUp(options):
         manifestList = json.load(mf)
 
     if not options.noDownload:
-        downloadLinkedPDFs(manifestList, options.ignoreDownloadErrors)
+        downloadLinkedPDFs(manifestList)
 
         if not verifyPDFs(manifestList):
           print 'Unable to verify the checksum for the files that are used for testing.'
@@ -682,8 +686,11 @@ def check(task, results, browser, masterMode):
             failure = pageResult.failure
             if failure:
                 failed = True
-                State.numErrors += 1
-                print 'TEST-UNEXPECTED-FAIL | test failed', task['id'], '| in', browser, '| page', p + 1, 'round', r, '|', failure
+                if os.path.isfile(task['file'] + '.error'):
+                  print 'TEST-SKIPPED | PDF was not downloaded', task['id'], '| in', browser, '| page', p + 1, 'round', r, '|', failure
+                else:
+                  State.numErrors += 1
+                  print 'TEST-UNEXPECTED-FAIL | test failed', task['id'], '| in', browser, '| page', p + 1, 'round', r, '|', failure
 
     if failed:
         return
