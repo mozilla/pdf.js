@@ -970,6 +970,13 @@
       "link": true,
       "type": "eq"
     },
+    {  "id": "annotation-tx",
+      "file": "pdfs/annotation-tx.pdf",
+      "md5": "56321ea830be9c4f8437ca17ac535b2d",
+      "rounds": 1,
+      "type": "eq",
+      "about": "Text widget annotation witout appearance streams."
+    },
     {  "id": "gesamt",
       "file": "pdfs/gesamt.pdf",
       "md5": "f9148b71aad9a7856f70f303d7e78703",
