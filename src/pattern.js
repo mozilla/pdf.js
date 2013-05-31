@@ -16,13 +16,9 @@
  */
 /* globals CanvasGraphics, ColorSpace, createScratchCanvas, DeviceRgbCS, error,
            info, isArray, isPDFFunction, isStream, PDFFunction, TODO, Util,
-           warn */
+           warn, CachedCanvases */
 
 'use strict';
-
-// This global variable is used to minimize the memory usage when patterns are
-// used.
-var temporaryPatternCanvas = null;
 
 var PatternType = {
   AXIAL: 2,
@@ -351,9 +347,6 @@ var TilingPattern = (function TilingPatternClosure() {
 
       // set the new canvas element context as the graphics context
       var tmpCtx = tmpCanvas.getContext('2d');
-      // for simulated mozCurrentTransform canvas (normaly setting width/height
-      // will reset the matrix)
-      tmpCtx.setTransform(1, 0, 0, 1, 0, 0);
       var graphics = new CanvasGraphics(tmpCtx, commonObjs, objs);
 
       this.setFillAndStrokeStyleToContext(tmpCtx, paintType, color);
@@ -415,11 +408,7 @@ var TilingPattern = (function TilingPatternClosure() {
     },
 
     getPattern: function TilingPattern_getPattern() {
-      // The temporary canvas is created only because the memory is released
-      // more quickly than creating multiple temporary canvases.
-      if (temporaryPatternCanvas === null) {
-        temporaryPatternCanvas = createScratchCanvas(1, 1);
-      }
+      var temporaryPatternCanvas = CachedCanvases.getCanvas('pattern');
       this.createPatternCanvas(temporaryPatternCanvas);
 
       var ctx = this.ctx;
