@@ -1129,6 +1129,10 @@ html[dir='rtl'] .outlineItem > a {
   bottom: 35px;
 }
 
+.canvasWrapper {
+  overflow: hidden;
+}
+
 canvas {
   margin: auto;
   display: block;

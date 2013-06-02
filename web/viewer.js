@@ -2576,12 +2576,21 @@ var PageView = function pageView(container, id, scale,
 
     this.renderingState = RenderingStates.RUNNING;
 
+    var viewport = this.viewport;
+    // Wrap the canvas so if it has a css transform for highdpi the overflow
+    // will be hidden in FF.
+    var canvasWrapper = document.createElement('div');
+    canvasWrapper.style.width = div.style.width;
+    canvasWrapper.style.height = div.style.height;
+    canvasWrapper.classList.add('canvasWrapper');
+
     var canvas = document.createElement('canvas');
     canvas.id = 'page' + this.id;
-    div.appendChild(canvas);
+    canvasWrapper.appendChild(canvas);
+    div.appendChild(canvasWrapper);
     this.canvas = canvas;
 
-    var scale = this.scale, viewport = this.viewport;
+    var scale = this.scale;
     var outputScale = PDFView.getOutputScale();
     canvas.width = Math.floor(viewport.width) * outputScale.sx;
     canvas.height = Math.floor(viewport.height) * outputScale.sy;
