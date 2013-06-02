@@ -34,6 +34,10 @@ const PREF_PREFIX = 'PDFJSSCRIPT_PREF_PREFIX';
 const PDF_VIEWER_WEB_PAGE = 'resource://pdf.js/web/viewer.html';
 const MAX_DATABASE_LENGTH = 4096;
 
+const DEFAULT_PREFS = { showPreviousViewOnLoad: true,
+                        defaultZoomValue: '',
+                        ifAvailableShowOutlineOnLoad: false };
+
 Cu.import('resource://gre/modules/XPCOMUtils.jsm');
 Cu.import('resource://gre/modules/Services.jsm');
 Cu.import('resource://gre/modules/NetUtil.jsm');
@@ -55,12 +59,20 @@ function getChromeWindow(domWindow) {
   return containingBrowser.ownerDocument.defaultView;
 }
 
+function setBoolPref(pref, value) {
+  Services.prefs.setBoolPref(pref, value);
+}
+
 function getBoolPref(pref, def) {
   try {
     return Services.prefs.getBoolPref(pref);
   } catch (ex) {
     return def;
   }
+}
+
+function setIntPref(pref, value) {
+  Services.prefs.setBoolPref(pref, value);
 }
 
 function getIntPref(pref, def) {
@@ -277,8 +289,9 @@ ChromeActions.prototype = {
     setStringPref(PREF_PREFIX + '.database', data);
   },
   getDatabase: function() {
-    if (this.isInPrivateBrowsing())
+    if (this.isInPrivateBrowsing() || !this.showPreviousViewOnLoad()) {
       return '{}';
+    }
     return getStringPref(PREF_PREFIX + '.database', '{}');
   },
   getLocale: function() {
@@ -296,6 +309,10 @@ ChromeActions.prototype = {
       log('Unable to retrive localized strings: ' + e);
       return 'null';
     }
+  },
+  showPreviousViewOnLoad: function() {
+    var key = 'showPreviousViewOnLoad';
+    return getBoolPref((PREF_PREFIX + '.' + key), DEFAULT_PREFS[key]);
   },
   pdfBugEnabled: function() {
     return getBoolPref(PREF_PREFIX + '.pdfBugEnabled', false);
@@ -379,6 +396,66 @@ ChromeActions.prototype = {
     }
     getChromeWindow(this.domWindow).gFindBar
                                    .updateControlState(result, findPrevious);
+  },
+  setUserPrefs: function(prefString) {
+    var prefs = JSON.parse(prefString), currentPrefs = {};
+    for (var key in DEFAULT_PREFS) {
+      var newValue = null, defaultValue = DEFAULT_PREFS[key];
+      if (prefs.hasOwnProperty(key)) {
+        var defaultValueType = typeof defaultValue;
+        if (defaultValueType === typeof prefs[key]) {
+          newValue = prefs[key];
+        } else if (defaultValueType === 'string') {
+          newValue = prefs[key].toString();
+        }
+      }
+      if (newValue !== null) {
+        var pref = (PREF_PREFIX + '.' + key);
+        if (newValue === defaultValue) {
+          Services.prefs.clearUserPref(pref);
+        } else {
+          switch (typeof newValue) {
+            case 'boolean':
+              setBoolPref(pref, newValue);
+              break;
+            case 'number':
+              setIntPref(pref, newValue);
+              break;
+            case 'string':
+              setStringPref(pref, newValue);
+              break;
+          }
+        }
+        currentPrefs[key] = newValue;
+      } else {
+        currentPrefs[key] = defaultValue;
+      }
+    }
+    return JSON.stringify(currentPrefs);
+  },
+  getUserPrefs: function() {
+    var currentPrefs = {};
+    for (var key in DEFAULT_PREFS) {
+      var pref = (PREF_PREFIX + '.' + key), defaultValue = DEFAULT_PREFS[key];
+      switch (typeof defaultValue) {
+        case 'boolean':
+          currentPrefs[key] = getBoolPref(pref, defaultValue);
+          break;
+        case 'number':
+          currentPrefs[key] = getIntPref(pref, defaultValue);
+          break;
+        case 'string':
+          currentPrefs[key] = getStringPref(pref, defaultValue);
+          break;
+      }
+    }
+    return JSON.stringify(currentPrefs);
+  },
+  resetUserPrefs: function() {
+    for (var key in DEFAULT_PREFS) {
+      Services.prefs.clearUserPref(PREF_PREFIX + '.' + key);
+    }
+    return JSON.stringify(DEFAULT_PREFS);
   }
 };
 
