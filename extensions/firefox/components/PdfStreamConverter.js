@@ -391,7 +391,7 @@ var RangedChromeActions = (function RangedChromeActionsClosure() {
 
     ChromeActions.call(this, domWindow, contentDispositionFilename);
 
-    this.pdfUrl = originalRequest.URI.resolve('');
+    this.pdfUrl = originalRequest.URI.spec;
     this.contentLength = originalRequest.contentLength;
 
     // Pass all the headers from the original request through
