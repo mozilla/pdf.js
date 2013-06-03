@@ -30,6 +30,8 @@ var MIN_SCALE = 0.25;
 var MAX_SCALE = 4.0;
 var SETTINGS_MEMORY = 20;
 var HISTORY_DISABLED = false;
+var SCALE_SELECT_CONTAINER_PADDING = 8;
+var SCALE_SELECT_PADDING = 22;
 var RenderingStates = {
   INITIAL: 0,
   RUNNING: 1,
@@ -3729,15 +3731,19 @@ window.addEventListener('localized', function localized(evt) {
   document.getElementsByTagName('html')[0].dir = mozL10n.getDirection();
 
   // Adjust the width of the zoom box to fit the content.
-  PDFView.animationStartedPromise.then(
-    function() {
-      var container = document.getElementById('scaleSelectContainer');
+  // Note: This is only done if the zoom box is actually visible,
+  // since otherwise element.clientWidth will return 0.
+  PDFView.animationStartedPromise.then(function() {
+    var container = document.getElementById('scaleSelectContainer');
+    if (container.clientWidth > 0) {
       var select = document.getElementById('scaleSelect');
       select.setAttribute('style', 'min-width: inherit;');
-      var width = select.clientWidth + 8;
-      select.setAttribute('style', 'min-width: ' + (width + 20) + 'px;');
+      var width = select.clientWidth + SCALE_SELECT_CONTAINER_PADDING;
+      select.setAttribute('style', 'min-width: ' +
+                                   (width + SCALE_SELECT_PADDING) + 'px;');
       container.setAttribute('style', 'min-width: ' + width + 'px; ' +
                                       'max-width: ' + width + 'px;');
+    }
   });
 }, true);
 
