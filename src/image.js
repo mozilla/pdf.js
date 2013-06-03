@@ -206,6 +206,30 @@ var PDFImage = (function PDFImageClosure() {
     return temp;
   };
 
+  PDFImage.createMask = function PDFImage_createMask(imgArray, width, height,
+                                                     inverseDecode) {
+    var buffer = new Uint8Array(width * height * 4);
+    var imgArrayPos = 0;
+    var i, j, mask, buf;
+    // removing making non-masked pixels transparent
+    var bufferPos = 3; // alpha component offset
+    for (i = 0; i < height; i++) {
+      mask = 0;
+      for (j = 0; j < width; j++) {
+        if (!mask) {
+          buf = imgArray[imgArrayPos++];
+          mask = 128;
+        }
+        if (!(buf & mask) !== inverseDecode) {
+          buffer[bufferPos] = 255;
+        }
+        bufferPos += 4;
+        mask >>= 1;
+      }
+    }
+    return {data: buffer, width: width, height: height};
+  };
+
   PDFImage.prototype = {
     get drawWidth() {
       if (!this.smask)
@@ -361,30 +385,6 @@ var PDFImage = (function PDFImageClosure() {
           buf[i] = 255;
       }
       return buf;
-    },
-    applyStencilMask: function PDFImage_applyStencilMask(buffer,
-                                                         inverseDecode) {
-      var width = this.width, height = this.height;
-      var bitStrideLength = (width + 7) >> 3;
-      var imgArray = this.getImageBytes(bitStrideLength * height);
-      var imgArrayPos = 0;
-      var i, j, mask, buf;
-      // removing making non-masked pixels transparent
-      var bufferPos = 3; // alpha component offset
-      for (i = 0; i < height; i++) {
-        mask = 0;
-        for (j = 0; j < width; j++) {
-          if (!mask) {
-            buf = imgArray[imgArrayPos++];
-            mask = 128;
-          }
-          if (!(buf & mask) === inverseDecode) {
-            buffer[bufferPos] = 0;
-          }
-          bufferPos += 4;
-          mask >>= 1;
-        }
-      }
     },
     fillRgbaBuffer: function PDFImage_fillRgbaBuffer(buffer, width, height) {
       var numComps = this.numComps;
