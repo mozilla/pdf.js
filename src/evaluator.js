@@ -253,7 +253,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         var inverseDecode = !!decode && decode[0] > 0;
 
         retData.fn = 'paintImageMaskXObject';
-        retData.args = [imgArray, inverseDecode, width, height];
+        retData.args = [PDFImage.createMask(imgArray, width, height,
+                                            inverseDecode)];
         return retData;
       }
 
@@ -1631,9 +1632,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         for (var q = 0; q < count; q++) {
           var transform = argsArray[j + (q << 2) + 1];
           var maskParams = argsArray[j + (q << 2) + 2];
-          images.push({data: maskParams[0], width: maskParams[2],
-            height: maskParams[3], transform: transform,
-            inverseDecode: maskParams[1]});
+          images.push({data: maskParams.data, width: maskParams.width,
+            height: maskParams.height, transform: transform});
         }
         // replacing queue items
         fnArray.splice(j, count * 4, ['paintImageMaskXObjectGroup']);

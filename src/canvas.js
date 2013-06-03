@@ -167,6 +167,29 @@ function addContextCurrentTransform(ctx) {
   }
 }
 
+var CachedCanvases = (function CachedCanvasesClosure() {
+  var cache = {};
+  return {
+    getCanvas: function CachedCanvases_getCanvas(id, width, height) {
+      var canvas;
+      if (id in cache) {
+        canvas = cache[id];
+        canvas.width = width;
+        canvas.height = height;
+        // reset canvas transform for emulated mozCurrentTransform, if needed
+        canvas.getContext('2d').setTransform(1, 0, 0, 1, 0, 0);
+      } else {
+        canvas = createScratchCanvas(width, height);
+        cache[id] = canvas;
+      }
+      return canvas;
+    },
+    clear: function () {
+      cache = {};
+    }
+  };
+})();
+
 function compileType3Glyph(imgData) {
   var POINT_TO_PROCESS_LIMIT = 1000;
 
@@ -394,31 +417,15 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
     }
   }
 
-  function applyStencilMask(imgArray, width, height, inverseDecode, buffer) {
-    var imgArrayPos = 0;
-    var i, j, mask, buf;
-    // removing making non-masked pixels transparent
-    var bufferPos = 3; // alpha component offset
-    for (i = 0; i < height; i++) {
-      mask = 0;
-      for (j = 0; j < width; j++) {
-        if (!mask) {
-          buf = imgArray[imgArrayPos++];
-          mask = 128;
-        }
-        if (!(buf & mask) === inverseDecode) {
-          buffer[bufferPos] = 0;
-        }
-        bufferPos += 4;
-        mask >>= 1;
-      }
+  function putBinaryImageData(ctx, imgData) {
+    if (typeof ImageData !== 'undefined' && imgData instanceof ImageData) {
+      ctx.putImageData(imgData, 0, 0);
+      return;
     }
-  }
 
-  function putBinaryImageData(ctx, data, w, h) {
-    var tmpImgData = 'createImageData' in ctx ? ctx.createImageData(w, h) :
-      ctx.getImageData(0, 0, w, h);
+    var tmpImgData = ctx.createImageData(imgData.width, imgData.height);
 
+    var data = imgData.data;
     var tmpImgDataPixels = tmpImgData.data;
     if ('set' in tmpImgDataPixels)
       tmpImgDataPixels.set(data);
@@ -429,96 +436,6 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
     }
 
     ctx.putImageData(tmpImgData, 0, 0);
-  }
-
-  function prescaleImage(pixels, width, height, widthScale, heightScale) {
-    pixels = new Uint8Array(pixels); // creating a copy
-    while (widthScale > 2 || heightScale > 2) {
-      if (heightScale > 2) {
-        // scaling image twice vertically
-        var rowSize = width * 4;
-        var k = 0, l = 0;
-        for (var i = 0; i < height - 1; i += 2) {
-          for (var j = 0; j < width; j++) {
-            var alpha1 = pixels[k + 3], alpha2 = pixels[k + 3 + rowSize];
-            if (alpha1 === alpha2) {
-              pixels[l] = (pixels[k] + pixels[k + rowSize]) >> 1;
-              pixels[l + 1] = (pixels[k + 1] + pixels[k + 1 + rowSize]) >> 1;
-              pixels[l + 2] = (pixels[k + 2] + pixels[k + 2 + rowSize]) >> 1;
-              pixels[l + 3] = alpha1;
-            } else if (alpha1 < alpha2) {
-              var d = 256 - alpha2 + alpha1;
-              pixels[l] = (pixels[k] * d + (pixels[k + rowSize] << 8)) >> 9;
-              pixels[l + 1] = (pixels[k + 1] * d +
-                              (pixels[k + 1 + rowSize] << 8)) >> 9;
-              pixels[l + 2] = (pixels[k + 2] * d +
-                              (pixels[k + 2 + rowSize] << 8)) >> 9;
-              pixels[l + 3] = alpha2;
-            } else {
-              var d = 256 - alpha1 + alpha2;
-              pixels[l] = ((pixels[k] << 8) + pixels[k + rowSize] * d) >> 9;
-              pixels[l + 1] = ((pixels[k + 1] << 8) +
-                              pixels[k + 1 + rowSize] * d) >> 9;
-              pixels[l + 2] = ((pixels[k + 2] << 8) +
-                              pixels[k + 2 + rowSize] * d) >> 9;
-              pixels[l + 3] = alpha1;
-            }
-            k += 4; l += 4;
-          }
-          k += rowSize;
-        }
-        if (height & 1) {
-          for (var i = 0; i < rowSize; i++) {
-            pixels[l++] = pixels[k++];
-          }
-        }
-        height = (height + 1) >> 1;
-        heightScale /= 2;
-      }
-      if (widthScale > 2) {
-        // scaling image twice horizontally
-        var k = 0, l = 0;
-        for (var i = 0; i < height; i++) {
-          for (var j = 0; j < width - 1; j += 2) {
-            var alpha1 = pixels[k + 3], alpha2 = pixels[k + 7];
-            if (alpha1 === alpha2) {
-              pixels[l] = (pixels[k] + pixels[k + 4]) >> 1;
-              pixels[l + 1] = (pixels[k + 1] + pixels[k + 5]) >> 1;
-              pixels[l + 2] = (pixels[k + 2] + pixels[k + 6]) >> 1;
-              pixels[l + 3] = alpha1;
-            } else if (alpha1 < alpha2) {
-              var d = 256 - alpha2 + alpha1;
-              pixels[l] = (pixels[k] * d + (pixels[k + 4] << 8)) >> 9;
-              pixels[l + 1] = (pixels[k + 1] * d + (pixels[k + 5] << 8)) >> 9;
-              pixels[l + 2] = (pixels[k + 2] * d + (pixels[k + 6] << 8)) >> 9;
-              pixels[l + 3] = alpha2;
-            } else {
-              var d = 256 - alpha1 + alpha2;
-              pixels[l] = ((pixels[k] << 8) + pixels[k + 4] * d) >> 9;
-              pixels[l + 1] = ((pixels[k + 1] << 8) + pixels[k + 5] * d) >> 9;
-              pixels[l + 2] = ((pixels[k + 2] << 8) + pixels[k + 6] * d) >> 9;
-              pixels[l + 3] = alpha1;
-            }
-            k += 8; l += 4;
-          }
-          if (width & 1) {
-            pixels[l++] = pixels[k++];
-            pixels[l++] = pixels[k++];
-            pixels[l++] = pixels[k++];
-            pixels[l++] = pixels[k++];
-          }
-        }
-        width = (width + 1) >> 1;
-        widthScale /= 2;
-      }
-    }
-
-    var tmpCanvas = createScratchCanvas(width, height);
-    var tmpCtx = tmpCanvas.getContext('2d');
-    putBinaryImageData(tmpCtx, pixels.subarray(0, width * height * 4),
-                               width, height);
-
-    return tmpCanvas;
   }
 
   function copyCtxState(sourceCtx, destCtx) {
@@ -681,6 +598,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
 
     endDrawing: function CanvasGraphics_endDrawing() {
       this.ctx.restore();
+      CachedCanvases.clear();
 
       if (this.textLayer) {
         this.textLayer.endLayout();
@@ -1704,21 +1622,17 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       this.restore();
     },
 
-    paintImageMaskXObject: function CanvasGraphics_paintImageMaskXObject(
-                             imgArray, inverseDecode, width, height) {
+    paintImageMaskXObject: function CanvasGraphics_paintImageMaskXObject(img) {
       var ctx = this.ctx;
+      var width = img.width, height = img.height;
+
       var glyph = this.processingType3;
 
       if (COMPILE_TYPE3_GLYPHS && glyph && !('compiled' in glyph)) {
         var MAX_SIZE_TO_COMPILE = 1000;
         if (width <= MAX_SIZE_TO_COMPILE && height <= MAX_SIZE_TO_COMPILE) {
-          var pixels = new Uint8Array(width * height * 4);
-          for (var i = 3, ii = pixels.length; i < ii; i += 4) {
-            pixels[i] = 255;
-          }
-          applyStencilMask(imgArray, width, height, inverseDecode, pixels);
           glyph.compiled =
-            compileType3Glyph({data: pixels, width: width, height: height});
+            compileType3Glyph({data: img.data, width: width, height: height});
         } else {
           glyph.compiled = null;
         }
@@ -1729,55 +1643,53 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
         return;
       }
 
+      var maskCanvas = CachedCanvases.getCanvas('maskCanvas', width, height);
+      var maskCtx = maskCanvas.getContext('2d');
+      maskCtx.save();
 
-      var tmpCanvas = createScratchCanvas(width, height);
-      var tmpCtx = tmpCanvas.getContext('2d');
+      putBinaryImageData(maskCtx, img);
+
+      maskCtx.globalCompositeOperation = 'source-in';
 
       var fillColor = this.current.fillColor;
-      tmpCtx.fillStyle = (fillColor && fillColor.hasOwnProperty('type') &&
+      maskCtx.fillStyle = (fillColor && fillColor.hasOwnProperty('type') &&
                           fillColor.type === 'Pattern') ?
-                          fillColor.getPattern(tmpCtx) : fillColor;
-      tmpCtx.fillRect(0, 0, width, height);
+                          fillColor.getPattern(maskCtx) : fillColor;
+      maskCtx.fillRect(0, 0, width, height);
 
-      var imgData = tmpCtx.getImageData(0, 0, width, height);
-      var pixels = imgData.data;
+      maskCtx.restore();
 
-      applyStencilMask(imgArray, width, height, inverseDecode, pixels);
-
-      this.paintInlineImageXObject(imgData);
+      this.paintInlineImageXObject(maskCanvas);
     },
 
     paintImageMaskXObjectGroup:
       function CanvasGraphics_paintImageMaskXObjectGroup(images) {
       var ctx = this.ctx;
-      var tmpCanvasWidth = 0, tmpCanvasHeight = 0, tmpCanvas, tmpCtx;
+
       for (var i = 0, ii = images.length; i < ii; i++) {
         var image = images[i];
-        var w = image.width, h = image.height;
-        if (w > tmpCanvasWidth || h > tmpCanvasHeight) {
-          tmpCanvasWidth = Math.max(w, tmpCanvasWidth);
-          tmpCanvasHeight = Math.max(h, tmpCanvasHeight);
-          tmpCanvas = createScratchCanvas(tmpCanvasWidth, tmpCanvasHeight);
-          tmpCtx = tmpCanvas.getContext('2d');
+        var width = image.width, height = image.height;
 
-          var fillColor = this.current.fillColor;
-          tmpCtx.fillStyle = (fillColor && fillColor.hasOwnProperty('type') &&
-                              fillColor.type === 'Pattern') ?
-                              fillColor.getPattern(tmpCtx) : fillColor;
-        }
-        tmpCtx.fillRect(0, 0, w, h);
+        var maskCanvas = CachedCanvases.getCanvas('maskCanvas', width, height);
+        var maskCtx = maskCanvas.getContext('2d');
+        maskCtx.save();
 
-        var imgData = tmpCtx.getImageData(0, 0, w, h);
-        var pixels = imgData.data;
+        putBinaryImageData(maskCtx, image);
 
-        applyStencilMask(image.data, w, h, image.inverseDecode, pixels);
+        maskCtx.globalCompositeOperation = 'source-in';
 
-        tmpCtx.putImageData(imgData, 0, 0);
+        var fillColor = this.current.fillColor;
+        maskCtx.fillStyle = (fillColor && fillColor.hasOwnProperty('type') &&
+                            fillColor.type === 'Pattern') ?
+                            fillColor.getPattern(maskCtx) : fillColor;
+        maskCtx.fillRect(0, 0, width, height);
+
+        maskCtx.restore();
 
         ctx.save();
         ctx.transform.apply(ctx, image.transform);
         ctx.scale(1, -1);
-        ctx.drawImage(tmpCanvas, 0, 0, w, h,
+        ctx.drawImage(maskCanvas, 0, 0, width, height,
                       0, -1, 1, 1);
         ctx.restore();
       }
@@ -1796,32 +1708,56 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       var width = imgData.width;
       var height = imgData.height;
       var ctx = this.ctx;
+
       this.save();
       // scale the image to the unit square
       ctx.scale(1 / width, -1 / height);
 
       var currentTransform = ctx.mozCurrentTransformInverse;
-      var widthScale = Math.max(Math.abs(currentTransform[0]), 1);
-      var heightScale = Math.max(Math.abs(currentTransform[3]), 1);
-      var tmpCanvas = createScratchCanvas(width, height);
-      var tmpCtx = tmpCanvas.getContext('2d');
+      var a = currentTransform[0], b = currentTransform[1];
+      var widthScale = Math.max(Math.sqrt(a * a + b * b), 1);
+      var c = currentTransform[2], d = currentTransform[3];
+      var heightScale = Math.max(Math.sqrt(c * c + d * d), 1);
 
-      if (widthScale > 2 || heightScale > 2) {
-        // canvas does not resize well large images to small -- using simple
-        // algorithm to perform pre-scaling
-        tmpCanvas = prescaleImage(imgData.data,
-                                 width, height,
-                                 widthScale, heightScale);
-        ctx.drawImage(tmpCanvas, 0, 0, tmpCanvas.width, tmpCanvas.height,
-                                 0, -height, width, height);
+      var imgToPaint;
+      if (imgData instanceof HTMLElement) {
+        imgToPaint = imgData;
       } else {
-        if (typeof ImageData !== 'undefined' && imgData instanceof ImageData) {
-          tmpCtx.putImageData(imgData, 0, 0);
-        } else {
-          putBinaryImageData(tmpCtx, imgData.data, width, height);
-        }
-        ctx.drawImage(tmpCanvas, 0, -height);
+        var tmpCanvas = CachedCanvases.getCanvas('inlineImage', width, height);
+        var tmpCtx = tmpCanvas.getContext('2d');
+        putBinaryImageData(tmpCtx, imgData);
+        imgToPaint = tmpCanvas;
       }
+
+      var paintWidth = width, paintHeight = height;
+      var tmpCanvasId = 'prescale1';
+      // Vertial or horizontal scaling shall not be more than 2 to not loose the
+      // pixels during drawImage operation, painting on the temporary canvas(es)
+      // that are twice smaller in size
+      while ((widthScale > 2 && paintWidth > 1) ||
+             (heightScale > 2 && paintHeight > 1)) {
+        var newWidth = paintWidth, newHeight = paintHeight;
+        if (widthScale > 2 && paintWidth > 1) {
+          newWidth = Math.ceil(paintWidth / 2);
+          widthScale /= paintWidth / newWidth;
+        }
+        if (heightScale > 2 && paintHeight > 1) {
+          newHeight = Math.ceil(paintHeight / 2);
+          heightScale /= paintHeight / newHeight;
+        }
+        var tmpCanvas = CachedCanvases.getCanvas(tmpCanvasId,
+                                                 newWidth, newHeight);
+        tmpCtx = tmpCanvas.getContext('2d');
+        tmpCtx.clearRect(0, 0, newWidth, newHeight);
+        tmpCtx.drawImage(imgToPaint, 0, 0, paintWidth, paintHeight,
+                                     0, 0, newWidth, newHeight);
+        imgToPaint = tmpCanvas;
+        paintWidth = newWidth;
+        paintHeight = newHeight;
+        tmpCanvasId = tmpCanvasId === 'prescale1' ? 'prescale2' : 'prescale1';
+      }
+      ctx.drawImage(imgToPaint, 0, 0, paintWidth, paintHeight,
+                                0, -height, width, height);
 
       if (this.imageLayer) {
         var position = this.getCanvasPosition(0, -height);
@@ -1842,9 +1778,9 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       var w = imgData.width;
       var h = imgData.height;
 
-      var tmpCanvas = createScratchCanvas(w, h);
+      var tmpCanvas = CachedCanvases.getCanvas('inlineImage', w, h);
       var tmpCtx = tmpCanvas.getContext('2d');
-      putBinaryImageData(tmpCtx, imgData.data, w, h);
+      putBinaryImageData(tmpCtx, imgData);
 
       for (var i = 0, ii = map.length; i < ii; i++) {
         var entry = map[i];
