@@ -2608,8 +2608,9 @@ var PageView = function pageView(container, id, scale,
       textLayerDiv.style.height = canvas.height + 'px';
       div.appendChild(textLayerDiv);
     }
-    var textLayer = this.textLayer =
-          textLayerDiv ? new TextLayerBuilder(textLayerDiv, this.id - 1) : null;
+    var textLayer = this.textLayer = textLayerDiv ?
+      new TextLayerBuilder(textLayerDiv, this.id - 1, this.viewport.rotation) :
+      null;
 
     if (outputScale.scaled) {
       var cssScale = 'scale(' + (1 / outputScale.sx) + ', ' +
@@ -3066,13 +3067,16 @@ var CustomStyle = (function CustomStyleClosure() {
   return CustomStyle;
 })();
 
-var TextLayerBuilder = function textLayerBuilder(textLayerDiv, pageIdx) {
+var TextLayerBuilder = function textLayerBuilder(
+    textLayerDiv, pageIdx, rotation) {
+
   var textLayerFrag = document.createDocumentFragment();
 
   this.textLayerDiv = textLayerDiv;
   this.layoutDone = false;
   this.divContentDone = false;
   this.pageIdx = pageIdx;
+  this.rotation = rotation;
   this.matches = [];
 
   this.beginLayout = function textLayerBuilderBeginLayout() {
@@ -3111,13 +3115,16 @@ var TextLayerBuilder = function textLayerBuilder(textLayerDiv, pageIdx) {
 
       if (width > 0) {
         var textScale = textDiv.dataset.canvasWidth / width;
-
         var transform = 'scale(' + textScale + ', 1)';
+
+        var rotation = this.rotation;
         if (bidiTexts[i].dir === 'ttb') {
-          transform = 'rotate(90deg) ' + transform;
+          rotation += 90;
         }
+        transform += ' rotate(' + rotation + 'deg)';
+
         CustomStyle.setProp('transform' , textDiv, transform);
-        CustomStyle.setProp('transformOrigin' , textDiv, '0% 0%');
+        CustomStyle.setProp('transformOrigin' , textDiv, '0% 100%');
 
         textLayerDiv.appendChild(textDiv);
       }
@@ -3152,7 +3159,7 @@ var TextLayerBuilder = function textLayerBuilder(textLayerDiv, pageIdx) {
 
     // vScale and hScale already contain the scaling to pixel units
     var fontHeight = geom.fontSize * Math.abs(geom.vScale);
-    textDiv.dataset.canvasWidth = geom.canvasWidth * geom.hScale;
+    textDiv.dataset.canvasWidth = geom.canvasWidth * Math.abs(geom.hScale);
     textDiv.dataset.fontName = geom.fontName;
 
     textDiv.style.fontSize = fontHeight + 'px';
