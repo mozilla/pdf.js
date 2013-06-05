@@ -1170,8 +1170,9 @@ var PDFView = {
     var support = doc.requestFullscreen || doc.mozRequestFullScreen ||
                   doc.webkitRequestFullScreen;
 
-    // Disable presentation mode button if we're in an iframe
-    if (window.parent !== window) {
+    if (document.fullscreenEnabled === false ||
+        document.mozFullScreenEnabled === false ||
+        document.webkitFullscreenEnabled === false ) {
       support = false;
     }
 
@@ -2183,7 +2184,10 @@ var PDFView = {
     } else {
       return false;
     }
+    return true;
+  },
 
+  enterPresentationMode: function pdfViewEnterPresentationMode() {
     this.isPresentationMode = true;
     var currentPage = this.pages[this.page - 1];
     this.previousScale = this.currentScaleValue;
@@ -2195,7 +2199,6 @@ var PDFView = {
     }, 0);
 
     this.showPresentationControls();
-    return true;
   },
 
   exitPresentationMode: function pdfViewExitPresentationMode() {
@@ -4023,7 +4026,9 @@ window.addEventListener('afterprint', function afterPrint(evt) {
                              document.mozFullScreen ||
                              document.webkitIsFullScreen;
 
-    if (!isPresentationMode) {
+    if (isPresentationMode) {
+      PDFView.enterPresentationMode();
+    } else {
       PDFView.exitPresentationMode();
     }
   }
