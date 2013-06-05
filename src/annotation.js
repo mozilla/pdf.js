@@ -16,7 +16,7 @@
  */
 /* globals Util, isDict, isName, stringToPDFString, TODO, Dict, Stream,
            stringToBytes, PDFJS, isWorker, assert, NotImplementedException,
-           Promise, isArray */
+           Promise, isArray, ObjectLoader */
 
 'use strict';
 
@@ -139,6 +139,20 @@ var Annotation = (function AnnotationClosure() {
       );
     },
 
+    loadResources: function(keys) {
+      var promise = new Promise();
+      this.appearance.dict.getAsync('Resources').then(function(resources) {
+        var objectLoader = new ObjectLoader(resources.map,
+                                            keys,
+                                            resources.xref);
+        objectLoader.load().then(function() {
+          promise.resolve(resources);
+        });
+      }.bind(this));
+
+      return promise;
+    },
+
     getOperatorList: function Annotation_getToOperatorList(evaluator) {
 
       var promise = new Promise();
@@ -157,26 +171,37 @@ var Annotation = (function AnnotationClosure() {
       var data = this.data;
 
       var appearanceDict = this.appearance.dict;
-      var resources = appearanceDict.get('Resources');
+      var resourcesPromise = this.loadResources([
+        'ExtGState',
+        'ColorSpace',
+        'Pattern',
+        'Shading',
+        'XObject',
+        'Font'
+        // ProcSet
+        // Properties
+      ]);
       var bbox = appearanceDict.get('BBox') || [0, 0, 1, 1];
       var matrix = appearanceDict.get('Matrix') || [1, 0, 0, 1, 0 ,0];
       var transform = getTransformMatrix(data.rect, bbox, matrix);
 
       var border = data.border;
 
-      var listPromise = evaluator.getOperatorList(this.appearance, resources);
-      listPromise.then(function(appearanceStreamData) {
-        var fnArray = appearanceStreamData.queue.fnArray;
-        var argsArray = appearanceStreamData.queue.argsArray;
+      resourcesPromise.then(function(resources) {
+        var listPromise = evaluator.getOperatorList(this.appearance, resources);
+        listPromise.then(function(appearanceStreamData) {
+          var fnArray = appearanceStreamData.queue.fnArray;
+          var argsArray = appearanceStreamData.queue.argsArray;
 
-        fnArray.unshift('beginAnnotation');
-        argsArray.unshift([data.rect, transform, matrix]);
+          fnArray.unshift('beginAnnotation');
+          argsArray.unshift([data.rect, transform, matrix]);
 
-        fnArray.push('endAnnotation');
-        argsArray.push([]);
+          fnArray.push('endAnnotation');
+          argsArray.push([]);
 
-        promise.resolve(appearanceStreamData);
-      });
+          promise.resolve(appearanceStreamData);
+        });
+      }.bind(this));
 
       return promise;
     }
@@ -263,32 +288,27 @@ var Annotation = (function AnnotationClosure() {
 
     var annotationsReadyPromise = new Promise();
 
-    var ensurePromises = [];
+    var annotationPromises = [];
     for (var i = 0, n = annotations.length; i < n; ++i) {
-      var ensurePromise = pdfManager.ensure(annotations[i],
-                                            'getOperatorList',
-                                            [partialEvaluator]);
-      ensurePromises.push(ensurePromise);
+      annotationPromises.push(annotations[i].getOperatorList(partialEvaluator));
     }
 
-    Promise.all(ensurePromises).then(function(listPromises) {
-      Promise.all(listPromises).then(function(datas) {
-        var fnArray = pageQueue.fnArray;
-        var argsArray = pageQueue.argsArray;
-        fnArray.push('beginAnnotations');
-        argsArray.push([]);
-        for (var i = 0, n = datas.length; i < n; ++i) {
-          var annotationData = datas[i];
-          var annotationQueue = annotationData.queue;
-          Util.concatenateToArray(fnArray, annotationQueue.fnArray);
-          Util.concatenateToArray(argsArray, annotationQueue.argsArray);
-          Util.extendObj(dependencies, annotationData.dependencies);
-        }
-        fnArray.push('endAnnotations');
-        argsArray.push([]);
+    Promise.all(annotationPromises).then(function(datas) {
+      var fnArray = pageQueue.fnArray;
+      var argsArray = pageQueue.argsArray;
+      fnArray.push('beginAnnotations');
+      argsArray.push([]);
+      for (var i = 0, n = datas.length; i < n; ++i) {
+        var annotationData = datas[i];
+        var annotationQueue = annotationData.queue;
+        Util.concatenateToArray(fnArray, annotationQueue.fnArray);
+        Util.concatenateToArray(argsArray, annotationQueue.argsArray);
+        Util.extendObj(dependencies, annotationData.dependencies);
+      }
+      fnArray.push('endAnnotations');
+      argsArray.push([]);
 
-        annotationsReadyPromise.resolve();
-      }, reject);
+      annotationsReadyPromise.resolve();
     }, reject);
 
     return annotationsReadyPromise;
