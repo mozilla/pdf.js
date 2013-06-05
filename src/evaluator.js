@@ -540,9 +540,6 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         try {
           translated = this.translateFont(font, xref);
         } catch (e) {
-          if (e instanceof MissingDataException) {
-            throw e;
-          }
           translated = new ErrorFont(e instanceof Error ? e.message : e);
         }
         font.translated = translated;
@@ -611,221 +608,208 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       var parser = new Parser(new Lexer(stream, OP_MAP), false, xref);
 
       var promise = new Promise();
-      function parseCommands() {
-        try {
-          parser.restoreState();
-          var args = [];
-          while (true) {
+      var args = [];
+      while (true) {
 
-            var obj = parser.getObj();
+        var obj = parser.getObj();
 
-            if (isEOF(obj)) {
-              break;
+        if (isEOF(obj)) {
+          break;
+        }
+
+        if (isCmd(obj)) {
+          var cmd = obj.cmd;
+
+          // Check that the command is valid
+          var opSpec = OP_MAP[cmd];
+          if (!opSpec) {
+            warn('Unknown command "' + cmd + '"');
+            continue;
+          }
+
+          var fn = opSpec.fnName;
+
+          // Validate the number of arguments for the command
+          if (opSpec.variableArgs) {
+            if (args.length > opSpec.numArgs) {
+              info('Command ' + fn + ': expected [0,' + opSpec.numArgs +
+                  '] args, but received ' + args.length + ' args');
             }
+          } else {
+            if (args.length < opSpec.numArgs) {
+              // If we receive too few args, it's not possible to possible
+              // to execute the command, so skip the command
+              info('Command ' + fn + ': because expected ' +
+                   opSpec.numArgs + ' args, but received ' + args.length +
+                   ' args; skipping');
+              args = [];
+              continue;
+            } else if (args.length > opSpec.numArgs) {
+              info('Command ' + fn + ': expected ' + opSpec.numArgs +
+                  ' args, but received ' + args.length + ' args');
+            }
+          }
 
-            if (isCmd(obj)) {
-              var cmd = obj.cmd;
+          // TODO figure out how to type-check vararg functions
 
-              // Check that the command is valid
-              var opSpec = OP_MAP[cmd];
-              if (!opSpec) {
-                warn('Unknown command "' + cmd + '"');
-                continue;
-              }
+          if ((cmd == 'SCN' || cmd == 'scn') &&
+               !args[args.length - 1].code) {
+            // compile tiling patterns
+            var patternName = args[args.length - 1];
+            // SCN/scn applies patterns along with normal colors
+            var pattern;
+            if (isName(patternName) &&
+                (pattern = patterns.get(patternName.name))) {
 
-              var fn = opSpec.fnName;
+              var dict = isStream(pattern) ? pattern.dict : pattern;
+              var typeNum = dict.get('PatternType');
 
-              // Validate the number of arguments for the command
-              if (opSpec.variableArgs) {
-                if (args.length > opSpec.numArgs) {
-                  info('Command ' + fn + ': expected [0,' + opSpec.numArgs +
-                      '] args, but received ' + args.length + ' args');
-                }
-              } else {
-                if (args.length < opSpec.numArgs) {
-                  // If we receive too few args, it's not possible to possible
-                  // to execute the command, so skip the command
-                  info('Command ' + fn + ': because expected ' +
-                       opSpec.numArgs + ' args, but received ' + args.length +
-                       ' args; skipping');
-                  args = [];
-                  continue;
-                } else if (args.length > opSpec.numArgs) {
-                  info('Command ' + fn + ': expected ' + opSpec.numArgs +
-                      ' args, but received ' + args.length + ' args');
-                }
-              }
-
-              // TODO figure out how to type-check vararg functions
-
-              if ((cmd == 'SCN' || cmd == 'scn') &&
-                   !args[args.length - 1].code) {
-                // compile tiling patterns
-                var patternName = args[args.length - 1];
-                // SCN/scn applies patterns along with normal colors
-                var pattern;
-                if (isName(patternName) &&
-                    (pattern = patterns.get(patternName.name))) {
-
-                  var dict = isStream(pattern) ? pattern.dict : pattern;
-                  var typeNum = dict.get('PatternType');
-
-                  if (typeNum == TILING_PATTERN) {
-                    var patternPromise = self.handleTilingType(
-                        fn, args, resources, pattern, dict);
-                    fn = 'promise';
-                    args = [patternPromise];
-                  } else if (typeNum == SHADING_PATTERN) {
-                    var shading = dict.get('Shading');
-                    var matrix = dict.get('Matrix');
-                    var pattern = Pattern.parseShading(shading, matrix, xref,
-                                                        resources);
-                    args = pattern.getIR();
-                  } else {
-                    error('Unkown PatternType ' + typeNum);
-                  }
-                }
-              } else if (cmd == 'Do' && !args[0].code) {
-                // eagerly compile XForm objects
-                var name = args[0].name;
-                var xobj = xobjs.get(name);
-                if (xobj) {
-                  assertWellFormed(
-                      isStream(xobj), 'XObject should be a stream');
-
-                  var type = xobj.dict.get('Subtype');
-                  assertWellFormed(
-                    isName(type),
-                    'XObject should have a Name subtype'
-                  );
-
-                  if ('Form' == type.name) {
-                    fn = 'promise';
-                    args = [self.buildFormXObject(resources, xobj)];
-                  } else if ('Image' == type.name) {
-                    var data = self.buildPaintImageXObject(
-                        resources, xobj, false);
-                    Util.extendObj(dependencies, data.dependencies);
-                    self.insertDependencies(queue, data.dependencies);
-                    fn = data.fn;
-                    args = data.args;
-                  } else {
-                    error('Unhandled XObject subtype ' + type.name);
-                  }
-                }
-              } else if (cmd == 'Tf') { // eagerly collect all fonts
+              if (typeNum == TILING_PATTERN) {
+                var patternPromise = self.handleTilingType(
+                    fn, args, resources, pattern, dict);
                 fn = 'promise';
-                args = [self.handleSetFont(resources, args)];
-              } else if (cmd == 'EI') {
+                args = [patternPromise];
+              } else if (typeNum == SHADING_PATTERN) {
+                var shading = dict.get('Shading');
+                var matrix = dict.get('Matrix');
+                var pattern = Pattern.parseShading(shading, matrix, xref,
+                                                    resources);
+                args = pattern.getIR();
+              } else {
+                error('Unkown PatternType ' + typeNum);
+              }
+            }
+          } else if (cmd == 'Do' && !args[0].code) {
+            // eagerly compile XForm objects
+            var name = args[0].name;
+            var xobj = xobjs.get(name);
+            if (xobj) {
+              assertWellFormed(
+                  isStream(xobj), 'XObject should be a stream');
+
+              var type = xobj.dict.get('Subtype');
+              assertWellFormed(
+                isName(type),
+                'XObject should have a Name subtype'
+              );
+
+              if ('Form' == type.name) {
+                fn = 'promise';
+                args = [self.buildFormXObject(resources, xobj)];
+              } else if ('Image' == type.name) {
                 var data = self.buildPaintImageXObject(
-                    resources, args[0], true);
+                    resources, xobj, false);
                 Util.extendObj(dependencies, data.dependencies);
                 self.insertDependencies(queue, data.dependencies);
                 fn = data.fn;
                 args = data.args;
-              }
-
-              switch (fn) {
-                // Parse the ColorSpace data to a raw format.
-                case 'setFillColorSpace':
-                case 'setStrokeColorSpace':
-                  args = [ColorSpace.parseToIR(args[0], xref, resources)];
-                  break;
-                case 'shadingFill':
-                  var shadingRes = resources.get('Shading');
-                  if (!shadingRes)
-                    error('No shading resource found');
-
-                  var shading = shadingRes.get(args[0].name);
-                  if (!shading)
-                    error('No shading object found');
-
-                  var shadingFill = Pattern.parseShading(
-                      shading, null, xref, resources);
-                  var patternIR = shadingFill.getIR();
-                  args = [patternIR];
-                  fn = 'shadingFill';
-                  break;
-                case 'setGState':
-                  var dictName = args[0];
-                  var extGState = resources.get('ExtGState');
-
-                  if (!isDict(extGState) || !extGState.has(dictName.name))
-                    break;
-
-                  var gState = extGState.get(dictName.name);
-                  fn = 'promise';
-                  args = [self.setGState(resources, gState)];
-              } // switch
-
-              fnArray.push(fn);
-              argsArray.push(args);
-              args = [];
-              parser.saveState();
-            } else if (obj !== null && obj !== undefined) {
-              args.push(obj instanceof Dict ? obj.getAll() : obj);
-              assertWellFormed(args.length <= 33, 'Too many arguments');
-            }
-          }
-
-          var subQueuePromises = [];
-          for (var i = 0; i < fnArray.length; ++i) {
-            if (fnArray[i] === 'promise') {
-              subQueuePromises.push(argsArray[i][0]);
-            }
-          }
-          Promise.all(subQueuePromises).then(function(datas) {
-            // TODO(mack): Optimize by using repositioning elements
-            // in original queue rather than creating new queue
-
-            for (var i = 0, n = datas.length; i < n; ++i) {
-              var data = datas[i];
-              var subQueue = data.queue;
-              queue.transparency = subQueue.transparency || queue.transparency;
-              Util.extendObj(dependencies, data.dependencies);
-            }
-
-            var newFnArray = [];
-            var newArgsArray = [];
-            var currOffset = 0;
-            var subQueueIdx = 0;
-            for (var i = 0, n = fnArray.length; i < n; ++i) {
-              var offset = i + currOffset;
-              if (fnArray[i] === 'promise') {
-                var data = datas[subQueueIdx++];
-                var subQueue = data.queue;
-                var subQueueFnArray = subQueue.fnArray;
-                var subQueueArgsArray = subQueue.argsArray;
-                for (var j = 0, nn = subQueueFnArray.length; j < nn; ++j) {
-                  newFnArray[offset + j] = subQueueFnArray[j];
-                  newArgsArray[offset + j] = subQueueArgsArray[j];
-                }
-                currOffset += subQueueFnArray.length - 1;
               } else {
-                newFnArray[offset] = fnArray[i];
-                newArgsArray[offset] = argsArray[i];
+                error('Unhandled XObject subtype ' + type.name);
               }
             }
-
-            promise.resolve({
-              queue: {
-                fnArray: newFnArray,
-                argsArray: newArgsArray,
-                transparency: queue.transparency
-              },
-              dependencies: dependencies
-            });
-          });
-        } catch (e) {
-          if (!(e instanceof MissingDataException)) {
-            throw e;
+          } else if (cmd == 'Tf') { // eagerly collect all fonts
+            fn = 'promise';
+            args = [self.handleSetFont(resources, args)];
+          } else if (cmd == 'EI') {
+            var data = self.buildPaintImageXObject(
+                resources, args[0], true);
+            Util.extendObj(dependencies, data.dependencies);
+            self.insertDependencies(queue, data.dependencies);
+            fn = data.fn;
+            args = data.args;
           }
 
-          self.pdfManager.requestRange(e.begin, e.end).then(parseCommands);
+          switch (fn) {
+            // Parse the ColorSpace data to a raw format.
+            case 'setFillColorSpace':
+            case 'setStrokeColorSpace':
+              args = [ColorSpace.parseToIR(args[0], xref, resources)];
+              break;
+            case 'shadingFill':
+              var shadingRes = resources.get('Shading');
+              if (!shadingRes)
+                error('No shading resource found');
+
+              var shading = shadingRes.get(args[0].name);
+              if (!shading)
+                error('No shading object found');
+
+              var shadingFill = Pattern.parseShading(
+                  shading, null, xref, resources);
+              var patternIR = shadingFill.getIR();
+              args = [patternIR];
+              fn = 'shadingFill';
+              break;
+            case 'setGState':
+              var dictName = args[0];
+              var extGState = resources.get('ExtGState');
+
+              if (!isDict(extGState) || !extGState.has(dictName.name))
+                break;
+
+              var gState = extGState.get(dictName.name);
+              fn = 'promise';
+              args = [self.setGState(resources, gState)];
+          } // switch
+
+          fnArray.push(fn);
+          argsArray.push(args);
+          args = [];
+          parser.saveState();
+        } else if (obj !== null && obj !== undefined) {
+          args.push(obj instanceof Dict ? obj.getAll() : obj);
+          assertWellFormed(args.length <= 33, 'Too many arguments');
         }
       }
-      parser.saveState();
-      parseCommands();
+
+      var subQueuePromises = [];
+      for (var i = 0; i < fnArray.length; ++i) {
+        if (fnArray[i] === 'promise') {
+          subQueuePromises.push(argsArray[i][0]);
+        }
+      }
+      Promise.all(subQueuePromises).then(function(datas) {
+        // TODO(mack): Optimize by using repositioning elements
+        // in original queue rather than creating new queue
+
+        for (var i = 0, n = datas.length; i < n; ++i) {
+          var data = datas[i];
+          var subQueue = data.queue;
+          queue.transparency = subQueue.transparency || queue.transparency;
+          Util.extendObj(dependencies, data.dependencies);
+        }
+
+        var newFnArray = [];
+        var newArgsArray = [];
+        var currOffset = 0;
+        var subQueueIdx = 0;
+        for (var i = 0, n = fnArray.length; i < n; ++i) {
+          var offset = i + currOffset;
+          if (fnArray[i] === 'promise') {
+            var data = datas[subQueueIdx++];
+            var subQueue = data.queue;
+            var subQueueFnArray = subQueue.fnArray;
+            var subQueueArgsArray = subQueue.argsArray;
+            for (var j = 0, nn = subQueueFnArray.length; j < nn; ++j) {
+              newFnArray[offset + j] = subQueueFnArray[j];
+              newArgsArray[offset + j] = subQueueArgsArray[j];
+            }
+            currOffset += subQueueFnArray.length - 1;
+          } else {
+            newFnArray[offset] = fnArray[i];
+            newArgsArray[offset] = argsArray[i];
+          }
+        }
+
+        promise.resolve({
+          queue: {
+            fnArray: newFnArray,
+            argsArray: newArgsArray,
+            transparency: queue.transparency
+          },
+          dependencies: dependencies
+        });
+      });
 
       return promise;
     },
@@ -863,161 +847,148 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
 
       var chunkPromises = [];
       var fontPromise;
-      function parseCommands() {
-        try {
-          parser.restoreState();
-          var args = [];
+      var args = [];
 
-          while (true) {
-            var obj = parser.getObj();
-            if (isEOF(obj)) {
-              break;
-            }
-
-            if (isCmd(obj)) {
-              var cmd = obj.cmd;
-              switch (cmd) {
-                // TODO: Add support for SAVE/RESTORE and XFORM here.
-                case 'Tf':
-                  fontPromise = handleSetFont(args[0].name, null, resources);
-                  //.translated;
-                  break;
-                case 'TJ':
-                  var chunkPromise = new Promise();
-                  chunkPromises.push(chunkPromise);
-                  fontPromise.then(function(items, chunkPromise, font) {
-                    var chunk = '';
-                    for (var j = 0, jj = items.length; j < jj; j++) {
-                      if (typeof items[j] === 'string') {
-                        chunk += fontCharsToUnicode(items[j], font);
-                      } else if (items[j] < 0 && font.spaceWidth > 0) {
-                        var fakeSpaces = -items[j] / font.spaceWidth;
-                        if (fakeSpaces > MULTI_SPACE_FACTOR) {
-                          fakeSpaces = Math.round(fakeSpaces);
-                          while (fakeSpaces--) {
-                            chunk += ' ';
-                          }
-                        } else if (fakeSpaces > SPACE_FACTOR) {
-                          chunk += ' ';
-                        }
-                      }
-                    }
-                    chunkPromise.resolve(
-                        getBidiText(chunk, -1, font.vertical));
-                  }.bind(null, args[0], chunkPromise));
-                  break;
-                case 'Tj':
-                  var chunkPromise = new Promise();
-                  chunkPromises.push(chunkPromise);
-                  fontPromise.then(function(charCodes, chunkPromise, font) {
-                    var chunk = fontCharsToUnicode(charCodes, font);
-                    chunkPromise.resolve(
-                        getBidiText(chunk, -1, font.vertical));
-                  }.bind(null, args[0], chunkPromise));
-                  break;
-                case '\'':
-                  // For search, adding a extra white space for line breaks
-                  // would be better here, but that causes too much spaces in
-                  // the text-selection divs.
-                  var chunkPromise = new Promise();
-                  chunkPromises.push(chunkPromise);
-                  fontPromise.then(function(charCodes, chunkPromise, font) {
-                    var chunk = fontCharsToUnicode(charCodes, font);
-                    chunkPromise.resolve(
-                        getBidiText(chunk, -1, font.vertical));
-                  }.bind(null, args[0], chunkPromise));
-                  break;
-                case '"':
-                  // Note comment in "'"
-                  var chunkPromise = new Promise();
-                  chunkPromises.push(chunkPromise);
-                  fontPromise.then(function(charCodes, chunkPromise, font) {
-                    var chunk = fontCharsToUnicode(charCodes, font);
-                    chunkPromise.resolve(
-                        getBidiText(chunk, -1, font.vertical));
-                  }.bind(null, args[2], chunkPromise));
-                  break;
-                case 'Do':
-                  if (args[0].code) {
-                    break;
-                  }
-
-                  if (!xobjs) {
-                    xobjs = resources.get('XObject') || new Dict();
-                  }
-
-                  var name = args[0].name;
-                  var xobj = xobjs.get(name);
-                  if (!xobj)
-                    break;
-                  assertWellFormed(isStream(xobj),
-                                   'XObject should be a stream');
-
-                  var type = xobj.dict.get('Subtype');
-                  assertWellFormed(
-                    isName(type),
-                    'XObject should have a Name subtype'
-                  );
-
-                  if ('Form' !== type.name)
-                    break;
-
-                  var chunkPromise = self.getTextContent(
-                    xobj,
-                    xobj.dict.get('Resources') || resources
-                  );
-                  chunkPromises.push(chunkPromise);
-                  break;
-                case 'gs':
-                  var dictName = args[0];
-                  var extGState = resources.get('ExtGState');
-
-                  if (!isDict(extGState) || !extGState.has(dictName.name))
-                    break;
-
-                  var gsState = extGState.get(dictName.name);
-
-                  for (var i = 0; i < gsState.length; i++) {
-                    if (gsState[i] === 'Font') {
-                      fontPromise = handleSetFont(
-                          args[0].name, null, resources);
-                    }
-                  }
-                  break;
-              } // switch
-
-              args = [];
-              parser.saveState();
-            } else if (obj !== null && obj !== undefined) {
-              assertWellFormed(args.length <= 33, 'Too many arguments');
-              args.push(obj);
-            }
-          } // while
-
-          Promise.all(chunkPromises).then(function(datas) {
-            var bidiTexts = [];
-            for (var i = 0, n = datas.length; i < n; ++i) {
-              var bidiText = datas[i];
-              if (!bidiText) {
-                continue;
-              } else if (isArray(bidiText)) {
-                Util.concatenateToArray(bidiTexts, bidiText);
-              } else {
-                bidiTexts.push(bidiText);
-              }
-            }
-            statePromise.resolve(bidiTexts);
-          });
-        } catch (e) {
-          if (!(e instanceof MissingDataException)) {
-            throw e;
-          }
-
-          self.pdfManager.requestRange(e.begin, e.end).then(parseCommands);
+      while (true) {
+        var obj = parser.getObj();
+        if (isEOF(obj)) {
+          break;
         }
-      }
-      parser.saveState();
-      parseCommands();
+
+        if (isCmd(obj)) {
+          var cmd = obj.cmd;
+          switch (cmd) {
+            // TODO: Add support for SAVE/RESTORE and XFORM here.
+            case 'Tf':
+              fontPromise = handleSetFont(args[0].name, null, resources);
+              //.translated;
+              break;
+            case 'TJ':
+              var chunkPromise = new Promise();
+              chunkPromises.push(chunkPromise);
+              fontPromise.then(function(items, chunkPromise, font) {
+                var chunk = '';
+                for (var j = 0, jj = items.length; j < jj; j++) {
+                  if (typeof items[j] === 'string') {
+                    chunk += fontCharsToUnicode(items[j], font);
+                  } else if (items[j] < 0 && font.spaceWidth > 0) {
+                    var fakeSpaces = -items[j] / font.spaceWidth;
+                    if (fakeSpaces > MULTI_SPACE_FACTOR) {
+                      fakeSpaces = Math.round(fakeSpaces);
+                      while (fakeSpaces--) {
+                        chunk += ' ';
+                      }
+                    } else if (fakeSpaces > SPACE_FACTOR) {
+                      chunk += ' ';
+                    }
+                  }
+                }
+                chunkPromise.resolve(
+                    getBidiText(chunk, -1, font.vertical));
+              }.bind(null, args[0], chunkPromise));
+              break;
+            case 'Tj':
+              var chunkPromise = new Promise();
+              chunkPromises.push(chunkPromise);
+              fontPromise.then(function(charCodes, chunkPromise, font) {
+                var chunk = fontCharsToUnicode(charCodes, font);
+                chunkPromise.resolve(
+                    getBidiText(chunk, -1, font.vertical));
+              }.bind(null, args[0], chunkPromise));
+              break;
+            case '\'':
+              // For search, adding a extra white space for line breaks
+              // would be better here, but that causes too much spaces in
+              // the text-selection divs.
+              var chunkPromise = new Promise();
+              chunkPromises.push(chunkPromise);
+              fontPromise.then(function(charCodes, chunkPromise, font) {
+                var chunk = fontCharsToUnicode(charCodes, font);
+                chunkPromise.resolve(
+                    getBidiText(chunk, -1, font.vertical));
+              }.bind(null, args[0], chunkPromise));
+              break;
+            case '"':
+              // Note comment in "'"
+              var chunkPromise = new Promise();
+              chunkPromises.push(chunkPromise);
+              fontPromise.then(function(charCodes, chunkPromise, font) {
+                var chunk = fontCharsToUnicode(charCodes, font);
+                chunkPromise.resolve(
+                    getBidiText(chunk, -1, font.vertical));
+              }.bind(null, args[2], chunkPromise));
+              break;
+            case 'Do':
+              if (args[0].code) {
+                break;
+              }
+
+              if (!xobjs) {
+                xobjs = resources.get('XObject') || new Dict();
+              }
+
+              var name = args[0].name;
+              var xobj = xobjs.get(name);
+              if (!xobj)
+                break;
+              assertWellFormed(isStream(xobj),
+                               'XObject should be a stream');
+
+              var type = xobj.dict.get('Subtype');
+              assertWellFormed(
+                isName(type),
+                'XObject should have a Name subtype'
+              );
+
+              if ('Form' !== type.name)
+                break;
+
+              var chunkPromise = self.getTextContent(
+                xobj,
+                xobj.dict.get('Resources') || resources
+              );
+              chunkPromises.push(chunkPromise);
+              break;
+            case 'gs':
+              var dictName = args[0];
+              var extGState = resources.get('ExtGState');
+
+              if (!isDict(extGState) || !extGState.has(dictName.name))
+                break;
+
+              var gsState = extGState.get(dictName.name);
+
+              for (var i = 0; i < gsState.length; i++) {
+                if (gsState[i] === 'Font') {
+                  fontPromise = handleSetFont(
+                      args[0].name, null, resources);
+                }
+              }
+              break;
+          } // switch
+
+          args = [];
+          parser.saveState();
+        } else if (obj !== null && obj !== undefined) {
+          assertWellFormed(args.length <= 33, 'Too many arguments');
+          args.push(obj);
+        }
+      } // while
+
+      Promise.all(chunkPromises).then(function(datas) {
+        var bidiTexts = [];
+        for (var i = 0, n = datas.length; i < n; ++i) {
+          var bidiText = datas[i];
+          if (!bidiText) {
+            continue;
+          } else if (isArray(bidiText)) {
+            Util.concatenateToArray(bidiTexts, bidiText);
+          } else {
+            bidiTexts.push(bidiText);
+          }
+        }
+        statePromise.resolve(bidiTexts);
+      });
 
       return statePromise;
     },

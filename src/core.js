@@ -18,7 +18,7 @@
            isArrayBuffer, isDict, isName, isStream, isString, Lexer,
            Linearization, NullStream, PartialEvaluator, shadow, Stream,
            StreamsSequenceStream, stringToPDFString, TODO, Util, warn, XRef,
-           MissingDataException, Promise, Annotation */
+           MissingDataException, Promise, Annotation, ObjectLoader */
 
 'use strict';
 
@@ -51,6 +51,7 @@ var Page = (function PageClosure() {
       font: 0,
       obj: 0
     };
+    this.resourcesPromise = null;
   }
 
   Page.prototype = {
@@ -133,6 +134,22 @@ var Page = (function PageClosure() {
       }
       return stream;
     },
+    loadResources: function(keys) {
+      if (!this.resourcesPromise) {
+        // TODO: add async inheritPageProp and remove this.
+        this.resourcesPromise = this.pdfManager.ensure(this, 'resources');
+      }
+      var promise = new Promise();
+      this.resourcesPromise.then(function resourceSuccess() {
+        var objectLoader = new ObjectLoader(this.resources.map,
+                                            keys,
+                                            this.xref);
+        objectLoader.load().then(function objectLoaderSuccess() {
+          promise.resolve();
+        });
+      }.bind(this));
+      return promise;
+    },
     getOperatorList: function Page_getOperatorList(handler) {
       var self = this;
       var promise = new Promise();
@@ -146,7 +163,16 @@ var Page = (function PageClosure() {
       var pdfManager = this.pdfManager;
       var contentStreamPromise = pdfManager.ensure(this, 'getContentStream',
                                                    []);
-      var resourcesPromise = pdfManager.ensure(this, 'resources');
+      var resourcesPromise = this.loadResources([
+        'ExtGState',
+        'ColorSpace',
+        'Pattern',
+        'Shading',
+        'XObject',
+        'Font',
+        // ProcSet
+        // Properties
+      ]);
 
       var partialEvaluator = new PartialEvaluator(
             pdfManager, this.xref, handler,
@@ -157,14 +183,10 @@ var Page = (function PageClosure() {
           [contentStreamPromise, resourcesPromise], reject);
       dataPromises.then(function(data) {
         var contentStream = data[0];
-        var resources = data[1];
 
-        pdfManager.ensure(partialEvaluator, 'getOperatorList',
-                          [contentStream, resources]).then(
-          function(opListPromise) {
-            opListPromise.then(function(data) {
-              pageListPromise.resolve(data);
-            });
+        partialEvaluator.getOperatorList(contentStream, self.resources).then(
+          function(data) {
+            pageListPromise.resolve(data);
           },
           reject
         );
@@ -175,6 +197,7 @@ var Page = (function PageClosure() {
         var pageData = datas[0];
         var pageQueue = pageData.queue;
         var annotations = datas[1];
+
         if (annotations.length === 0) {
           PartialEvaluator.optimizeQueue(pageQueue);
           promise.resolve(pageData);
@@ -186,6 +209,7 @@ var Page = (function PageClosure() {
           annotations, pageQueue, pdfManager, dependencies, partialEvaluator);
         annotationsReadyPromise.then(function () {
           PartialEvaluator.optimizeQueue(pageQueue);
+
           promise.resolve(pageData);
         }, reject);
       }, reject);
@@ -205,27 +229,24 @@ var Page = (function PageClosure() {
       var pdfManager = this.pdfManager;
       var contentStreamPromise = pdfManager.ensure(this, 'getContentStream',
                                                    []);
-      var resourcesPromise = new Promise();
-      pdfManager.ensure(this, 'resources').then(function(resources) {
-        pdfManager.ensure(self.xref, 'fetchIfRef', [resources]).then(
-          function(resources) {
-            resourcesPromise.resolve(resources);
-          }
-        );
-      });
+
+      var resourcesPromise = this.loadResources([
+        'ExtGState',
+        'XObject',
+        'Font'
+      ]);
 
       var dataPromises = Promise.all([contentStreamPromise,
                                       resourcesPromise]);
       dataPromises.then(function(data) {
         var contentStream = data[0];
-        var resources = data[1];
         var partialEvaluator = new PartialEvaluator(
               pdfManager, self.xref, handler,
               self.pageIndex, 'p' + self.pageIndex + '_',
               self.idCounters);
 
         partialEvaluator.getTextContent(
-            contentStream, resources).then(function(bidiTexts) {
+            contentStream, self.resources).then(function(bidiTexts) {
           textContentPromise.resolve({
             bidiTexts: bidiTexts
           });
@@ -282,7 +303,7 @@ var PDFDocument = (function PDFDocumentClosure() {
     assertWellFormed(stream.length > 0, 'stream must have data');
     this.pdfManager = pdfManager;
     this.stream = stream;
-    var xref = new XRef(this.stream, password);
+    var xref = new XRef(this.stream, password, pdfManager);
     this.xref = xref;
   }
 

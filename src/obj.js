@@ -18,7 +18,8 @@
            InvalidPDFException, isArray, isCmd, isDict, isInt, isName, isRef,
            isStream, JpegStream, Lexer, log, Page, Parser, Promise, shadow,
            stringToPDFString, stringToUTF8String, warn, isString, assert,
-           Promise, MissingDataException, XRefParseException, Stream */
+           Promise, MissingDataException, XRefParseException, Stream,
+           ChunkedStream */
 
 'use strict';
 
@@ -86,6 +87,38 @@ var Dict = (function DictClosure() {
       return xref ? xref.fetchIfRef(value) : value;
     },
 
+    // Same as get(), but returns a promise and uses fetchIfRefAsync().
+    getAsync: function Dict_getAsync(key1, key2, key3) {
+      var value;
+      var promise;
+      var xref = this.xref;
+      if (typeof (value = this.map[key1]) !== undefined || key1 in this.map ||
+          typeof key2 === undefined) {
+        if (xref) {
+          return xref.fetchIfRefAsync(value);
+        }
+        promise = new Promise();
+        promise.resolve(value);
+        return promise;
+      }
+      if (typeof (value = this.map[key2]) !== undefined || key2 in this.map ||
+          typeof key3 === undefined) {
+        if (xref) {
+          return xref.fetchIfRefAsync(value);
+        }
+        promise = new Promise();
+        promise.resolve(value);
+        return promise;
+      }
+      value = this.map[key3] || null;
+      if (xref) {
+        return xref.fetchIfRefAsync(value);
+      }
+      promise = new Promise();
+      promise.resolve(value);
+      return promise;
+    },
+
     // no dereferencing
     getRaw: function Dict_getRaw(key) {
       return this.map[key];
@@ -139,11 +172,15 @@ var RefSet = (function RefSetClosure() {
 
   RefSet.prototype = {
     has: function RefSet_has(ref) {
-      return !!this.dict['R' + ref.num + '.' + ref.gen];
+      return ('R' + ref.num + '.' + ref.gen) in this.dict;
     },
 
     put: function RefSet_put(ref) {
-      this.dict['R' + ref.num + '.' + ref.gen] = ref;
+      this.dict['R' + ref.num + '.' + ref.gen] = true;
+    },
+
+    remove: function RefSet_remove(ref) {
+      delete this.dict['R' + ref.num + '.' + ref.gen];
     }
   };
 
@@ -811,7 +848,6 @@ var XRef = (function XRefClosure() {
         if (e instanceof MissingDataException) {
           throw e;
         }
-
         log('(while reading XRef): ' + e);
       }
 
@@ -937,6 +973,30 @@ var XRef = (function XRefClosure() {
         error('bad XRef entry for compressed object');
       }
       return e;
+    },
+    fetchIfRefAsync: function XRef_fetchIfRefAsync(obj) {
+      if (!isRef(obj)) {
+        var promise = new Promise();
+        promise.resolve(obj);
+        return promise;
+      }
+      return this.fetchAsync(obj);
+    },
+    fetchAsync: function XRef_fetchAsync(ref, suppressEncryption) {
+      var promise = new Promise();
+      var tryFetch = function (promise) {
+        try {
+          promise.resolve(this.fetch(ref, suppressEncryption));
+        } catch (e) {
+          if (e instanceof MissingDataException) {
+            this.stream.manager.requestRange(e.begin, e.end, tryFetch);
+            return;
+          }
+          promise.reject(e);
+        }
+      }.bind(this, promise);
+      tryFetch();
+      return promise;
     },
     getCatalogObj: function XRef_getCatalogObj() {
       return this.root;
@@ -1113,4 +1173,139 @@ var PDFObjects = (function PDFObjectsClosure() {
   };
   return PDFObjects;
 })();
+
+/**
+ * A helper for loading missing data in object graphs. It traverses the graph
+ * depth first and queues up any objects that have missing data. Once it has
+ * has traversed as many objects that are available it attempts to bundle the
+ * missing data requests and then resume from the nodes that weren't ready.
+ *
+ * NOTE: It provides protection from circular references by keeping track of
+ * of loaded references. However, you must be careful not to load any graphs
+ * that have references to the catalog or other pages since that will cause the
+ * entire PDF document object graph to be traversed.
+ */
+var ObjectLoader = (function() {
+
+  function mayHaveChildren(value) {
+    return isRef(value) || isDict(value) || isArray(value) || isStream(value);
+  }
+
+  function addChildren(node, nodesToVisit) {
+    if (isDict(node) || isStream(node)) {
+      var map;
+      if (isDict(node)) {
+        map = node.map;
+      } else {
+        map = node.dict.map;
+      }
+      for (var key in map) {
+        var value = map[key];
+        if (mayHaveChildren(value)) {
+          nodesToVisit.push(value);
+        }
+      }
+    } else if (isArray(node)) {
+      for (var i = 0, ii = node.length; i < ii; i++) {
+        var value = node[i];
+        if (mayHaveChildren(value)) {
+          nodesToVisit.push(value);
+        }
+      }
+    }
+  }
+
+  function ObjectLoader(obj, keys, xref) {
+    this.obj = obj;
+    this.keys = keys;
+    this.xref = xref;
+    this.refSet = null;
+  }
+
+  ObjectLoader.prototype = {
+
+    load: function ObjectLoader_load() {
+      var keys = this.keys;
+      this.promise = new Promise();
+      // Don't walk the graph if all the data is already loaded.
+      if (!(this.xref.stream instanceof ChunkedStream) ||
+          this.xref.stream.getMissingChunks().length === 0) {
+        this.promise.resolve();
+        return this.promise;
+      }
+
+      this.refSet = new RefSet();
+      // Setup the initial nodes to visit.
+      var nodesToVisit = [];
+      for (var i = 0; i < keys.length; i++) {
+        nodesToVisit.push(this.obj[keys[i]]);
+      }
+
+      this.walk(nodesToVisit);
+      return this.promise;
+    },
+
+    walk: function ObjectLoader_walk(nodesToVisit) {
+      var nodesToRevisit = [];
+      var pendingRequests = [];
+      // DFS walk of the object graph.
+      while (nodesToVisit.length) {
+        var currentNode = nodesToVisit.pop();
+
+        // Only references or chunked streams can cause missing data exceptions.
+        if (isRef(currentNode)) {
+          // Skip nodes that have already been visited.
+          if (this.refSet.has(currentNode)) {
+            continue;
+          }
+          try {
+            var ref = currentNode;
+            this.refSet.put(ref);
+            currentNode = this.xref.fetch(currentNode);
+          } catch (e) {
+            if (!(e instanceof MissingDataException)) {
+              throw e;
+            }
+            nodesToRevisit.push(currentNode);
+            pendingRequests.push({ begin: e.begin, end: e.end });
+          }
+        }
+        if (currentNode instanceof ChunkedStream &&
+            currentNode.getMissingChunks().length) {
+          nodesToRevisit.push(currentNode);
+          pendingRequests.push({
+            begin: currentNode.start,
+            end: currentNode.end
+          });
+        }
+
+        addChildren(currentNode, nodesToVisit);
+      }
+
+      if (pendingRequests.length) {
+        this.xref.stream.manager.requestRanges(pendingRequests,
+            function pendingRequestCallback() {
+          nodesToVisit = nodesToRevisit;
+          for (var i = 0; i < nodesToRevisit.length; i++) {
+            var node = nodesToRevisit[i];
+            // Remove any reference nodes from the currrent refset so they
+            // aren't skipped when we revist them.
+            if (isRef(node)) {
+              this.refSet.remove(node);
+            }
+          }
+          this.walk(nodesToVisit);
+        }.bind(this));
+        return;
+      }
+      // Everything is loaded.
+      this.refSet = null;
+      this.promise.resolve();
+    }
+
+  };
+
+  return ObjectLoader;
+})();
+
 
