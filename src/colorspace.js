@@ -393,7 +393,7 @@ var IndexedCS = (function IndexedCSClosure() {
       lookupArray = new Uint8Array(length);
       for (var i = 0; i < length; ++i)
         lookupArray[i] = lookup.charCodeAt(i);
-    } else if (lookup instanceof Uint8Array) {
+    } else if (lookup instanceof Uint8Array || lookup instanceof Array) {
       lookupArray = lookup;
     } else {
       error('Unrecognized lookup table: ' + lookup);
