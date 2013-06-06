@@ -533,7 +533,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       // keep track of each font we translated so the caller can
       // load them asynchronously before calling display on a page
       font.loadedName = 'g_font_' + this.uniquePrefix +
-                        (this.idCounters.font + 1);
+                        (++this.idCounters.font);
 
       if (!font.translated) {
         var translated;
@@ -567,14 +567,12 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           }
           font.translated.charProcOperatorList = charProcOperatorList;
           font.loaded = true;
-          ++this.idCounters.font;
           promise.resolve({
             font: font,
             dependencies: dependencies
           });
         }.bind(this));
       } else {
-        ++this.idCounters.font;
         font.loaded = true;
         promise.resolve({
           font: font,

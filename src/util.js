@@ -649,41 +649,121 @@ function isPDFFunction(v) {
 }
 
 /**
- * 'Promise' object.
- * Each object that is stored in PDFObjects is based on a Promise object that
- * contains the status of the object and the data. There might be situations
- * where a function wants to use the value of an object, but it isn't ready at
- * that time. To get a notification, once the object is ready to be used, s.o.
- * can add a callback using the `then` method on the promise that then calls
- * the callback once the object gets resolved.
- * A promise can get resolved only once and only once the data of the promise
- * can be set. If any of these happens twice or the data is required before
- * it was set, an exception is throw.
+ * The following promise implementation tries to generally implment the
+ * Promise/A+ spec. Some notable differences from other promise libaries are:
+ * - There currently isn't a seperate deferred and promise object.
+ * - Unhandled rejections eventually show an error if they aren't handled.
+ *
+ * Based off of the work in:
+ * https://bugzilla.mozilla.org/show_bug.cgi?id=810490
  */
 var Promise = PDFJS.Promise = (function PromiseClosure() {
-  var EMPTY_PROMISE = {};
+  var STATUS_PENDING = 0;
+  var STATUS_RESOLVED = 1;
+  var STATUS_REJECTED = 2;
 
-  /**
-   * If `data` is passed in this constructor, the promise is created resolved.
-   * If there isn't data, it isn't resolved at the beginning.
-   */
-  function Promise(name, data) {
-    this.name = name;
-    this.isRejected = false;
-    this.error = null;
-    this.exception = null;
-    // If you build a promise and pass in some data it's already resolved.
-    if (data !== null && data !== undefined) {
-      this.isResolved = true;
-      this._data = data;
-      this.hasData = true;
-    } else {
-      this.isResolved = false;
-      this._data = EMPTY_PROMISE;
+  // In an attempt to avoid silent exceptions, unhandled rejections are
+  // tracked and if they aren't handled in a certain amount of time an
+  // error is logged.
+  var REJECTION_TIMEOUT = 500;
+
+  var HandlerManager = {
+    handlers: [],
+    running: false,
+    unhandledRejections: [],
+    pendingRejectionCheck: false,
+
+    scheduleHandlers: function scheduleHandlers(promise) {
+      if (promise._status == STATUS_PENDING) {
+        return;
+      }
+
+      this.handlers = this.handlers.concat(promise._handlers);
+      promise._handlers = [];
+
+      if (this.running) {
+        return;
+      }
+      this.running = true;
+
+      setTimeout(this.runHandlers.bind(this), 0);
+    },
+
+    runHandlers: function runHandlers() {
+      while (this.handlers.length > 0) {
+        var handler = this.handlers.shift();
+
+        var nextStatus = handler.thisPromise._status;
+        var nextValue = handler.thisPromise._value;
+
+        try {
+          if (nextStatus === STATUS_RESOLVED) {
+            if (typeof(handler.onResolve) == 'function') {
+              nextValue = handler.onResolve(nextValue);
+            }
+          } else if (typeof(handler.onReject) === 'function') {
+              nextValue = handler.onReject(nextValue);
+              nextStatus = STATUS_RESOLVED;
+
+              if (handler.thisPromise._unhandledRejection) {
+                this.removeUnhandeledRejection(handler.thisPromise);
+              }
+          }
+        } catch (ex) {
+          nextStatus = STATUS_REJECTED;
+          nextValue = ex;
+        }
+
+        handler.nextPromise._updateStatus(nextStatus, nextValue);
+      }
+
+      this.running = false;
+    },
+
+    addUnhandledRejection: function addUnhandledRejection(promise) {
+      this.unhandledRejections.push({
+        promise: promise,
+        time: Date.now()
+      });
+      this.scheduleRejectionCheck();
+    },
+
+    removeUnhandeledRejection: function removeUnhandeledRejection(promise) {
+      promise._unhandledRejection = false;
+      for (var i = 0; i < this.unhandledRejections.length; i++) {
+        if (this.unhandledRejections[i].promise === promise) {
+          this.unhandledRejections.splice(i);
+          i--;
+        }
+      }
+    },
+
+    scheduleRejectionCheck: function scheduleRejectionCheck() {
+      if (this.pendingRejectionCheck) {
+        return;
+      }
+      this.pendingRejectionCheck = true;
+      setTimeout(function rejectionCheck() {
+        this.pendingRejectionCheck = false;
+        var now = Date.now();
+        for (var i = 0; i < this.unhandledRejections.length; i++) {
+          if (now - this.unhandledRejections[i].time > REJECTION_TIMEOUT) {
+            console.error('Unhandled rejection: ' +
+                          this.unhandledRejections[i].promise._value);
+            this.unhandledRejections.splice(i);
+            i--;
+          }
+        }
+        if (this.unhandledRejections.length) {
+          this.scheduleRejectionCheck();
+        }
+      }.bind(this), REJECTION_TIMEOUT);
     }
-    this.callbacks = [];
-    this.errbacks = [];
-    this.progressbacks = [];
+  };
+
+  function Promise() {
+    this._status = STATUS_PENDING;
+    this._handlers = [];
   }
   /**
    * Builds a promise that is resolved when all the passed in promises are
@@ -700,7 +780,7 @@ var Promise = PDFJS.Promise = (function PromiseClosure() {
       return deferred;
     }
     function reject(reason) {
-      if (deferred.isRejected) {
+      if (deferred._status === STATUS_REJECTED) {
         return;
       }
       results = [];
@@ -710,7 +790,7 @@ var Promise = PDFJS.Promise = (function PromiseClosure() {
       var promise = promises[i];
       promise.then((function(i) {
         return function(value) {
-          if (deferred.isRejected) {
+          if (deferred._status === STATUS_REJECTED) {
             return;
           }
           results[i] = value;
@@ -722,102 +802,63 @@ var Promise = PDFJS.Promise = (function PromiseClosure() {
     }
     return deferred;
   };
-  Promise.prototype = {
-    hasData: false,
 
-    set data(value) {
-      if (value === undefined) {
+  Promise.prototype = {
+    _status: null,
+    _value: null,
+    _handlers: null,
+    _unhandledRejection: null,
+
+    _updateStatus: function Promise__updateStatus(status, value) {
+      if (this._status === STATUS_RESOLVED ||
+          this._status === STATUS_REJECTED) {
         return;
       }
-      if (this._data !== EMPTY_PROMISE) {
-        error('Promise ' + this.name +
-              ': Cannot set the data of a promise twice');
-      }
-      this._data = value;
-      this.hasData = true;
 
-      if (this.onDataCallback) {
-        this.onDataCallback(value);
+      if (status == STATUS_RESOLVED &&
+          value && typeof(value.then) === 'function') {
+        value.then(this._updateStatus.bind(this, STATUS_RESOLVED),
+                   this._updateStatus.bind(this, STATUS_REJECTED));
+        return;
       }
+
+      this._status = status;
+      this._value = value;
+
+      if (status === STATUS_REJECTED && this._handlers.length === 0) {
+        this._unhandledRejection = true;
+        HandlerManager.addUnhandledRejection(this);
+      }
+
+      HandlerManager.scheduleHandlers(this);
     },
 
-    get data() {
-      if (this._data === EMPTY_PROMISE) {
-        error('Promise ' + this.name + ': Cannot get data that isn\'t set');
-      }
-      return this._data;
+    get isResolved() {
+      return this._status === STATUS_RESOLVED;
     },
 
-    onData: function Promise_onData(callback) {
-      if (this._data !== EMPTY_PROMISE) {
-        callback(this._data);
-      } else {
-        this.onDataCallback = callback;
-      }
+    get isRejected() {
+      return this._status === STATUS_REJECTED;
     },
 
-    resolve: function Promise_resolve(data) {
-      if (this.isResolved) {
-        error('A Promise can be resolved only once ' + this.name);
-      }
-      if (this.isRejected) {
-        error('The Promise was already rejected ' + this.name);
-      }
-
-      this.isResolved = true;
-      this.data = (typeof data !== 'undefined') ? data : null;
-      var callbacks = this.callbacks;
-
-      for (var i = 0, ii = callbacks.length; i < ii; i++) {
-        callbacks[i].call(null, data);
-      }
+    resolve: function Promise_resolve(value) {
+      this._updateStatus(STATUS_RESOLVED, value);
     },
 
-    progress: function Promise_progress(data) {
-      var callbacks = this.progressbacks;
-      for (var i = 0, ii = callbacks.length; i < ii; i++) {
-        callbacks[i].call(null, data);
-      }
+    reject: function Promise_reject(reason) {
+      this._updateStatus(STATUS_REJECTED, reason);
     },
 
-    reject: function Promise_reject(reason, exception) {
-      if (this.isRejected) {
-        error('A Promise can be rejected only once ' + this.name);
-      }
-      if (this.isResolved) {
-        error('The Promise was already resolved ' + this.name);
-      }
-
-      this.isRejected = true;
-      this.error = reason || null;
-      this.exception = exception || null;
-      var errbacks = this.errbacks;
-
-      for (var i = 0, ii = errbacks.length; i < ii; i++) {
-        errbacks[i].call(null, reason, exception);
-      }
-    },
-
-    then: function Promise_then(callback, errback, progressback) {
-      // If the promise is already resolved, call the callback directly.
-      if (this.isResolved && callback) {
-        var data = this.data;
-        callback.call(null, data);
-      } else if (this.isRejected && errback) {
-        var error = this.error;
-        var exception = this.exception;
-        errback.call(null, error, exception);
-      } else {
-        if (callback) {
-          this.callbacks.push(callback);
-        }
-        if (errback) {
-          this.errbacks.push(errback);
-        }
-      }
-
-      if (progressback)
-        this.progressbacks.push(progressback);
+    then: function Promise_then(onResolve, onReject) {
+      var nextPromise = new Promise();
+      this._handlers.push({
+        thisPromise: this,
+        onResolve: onResolve,
+        onReject: onReject,
+        nextPromise: nextPromise
+      });
+      HandlerManager.scheduleHandlers(this);
+      return nextPromise;
     }
   };
 
