@@ -653,7 +653,6 @@ function isPDFFunction(v) {
  * Promise/A+ spec. Some notable differences from other promise libaries are:
  * - There currently isn't a seperate deferred and promise object.
  * - Unhandled rejections eventually show an error if they aren't handled.
- * - Progress events are supported.
  *
  * Based off of the work in:
  * https://bugzilla.mozilla.org/show_bug.cgi?id=810490
@@ -662,7 +661,6 @@ var Promise = PDFJS.Promise = (function PromiseClosure() {
   var STATUS_PENDING = 0;
   var STATUS_RESOLVED = 1;
   var STATUS_REJECTED = 2;
-  var STATUS_PROGRESS = 3;
 
   // In an attempt to avoid silent exceptions, unhandled rejections are
   // tracked and if they aren't handled in a certain amount of time an
@@ -681,9 +679,7 @@ var Promise = PDFJS.Promise = (function PromiseClosure() {
       }
 
       this.handlers = this.handlers.concat(promise._handlers);
-      if (promise._status !== STATUS_PROGRESS) {
-        promise._handlers = [];
-      }
+      promise._handlers = [];
 
       if (this.running) {
         return;
@@ -704,10 +700,6 @@ var Promise = PDFJS.Promise = (function PromiseClosure() {
           if (nextStatus === STATUS_RESOLVED) {
             if (typeof(handler.onResolve) == 'function') {
               nextValue = handler.onResolve(nextValue);
-            }
-          } else if (nextStatus === STATUS_PROGRESS) {
-            if (typeof(handler.onProgress) === 'function') {
-              nextValue = handler.onProgress(nextValue);
             }
           } else if (typeof(handler.onReject) === 'function') {
               nextValue = handler.onReject(nextValue);
@@ -857,17 +849,12 @@ var Promise = PDFJS.Promise = (function PromiseClosure() {
       this._updateStatus(STATUS_REJECTED, reason);
     },
 
-    notify: function Promise_notify(update) {
-      this._updateStatus(STATUS_PROGRESS, update);
-    },
-
-    then: function Promise_then(onResolve, onReject, onProgress) {
+    then: function Promise_then(onResolve, onReject) {
       var nextPromise = new Promise();
       this._handlers.push({
         thisPromise: this,
         onResolve: onResolve,
         onReject: onReject,
-        onProgress: onProgress,
         nextPromise: nextPromise
       });
       HandlerManager.scheduleHandlers(this);
