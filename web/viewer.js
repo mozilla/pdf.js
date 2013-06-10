@@ -709,6 +709,7 @@ var PDFHistory = {
     this.currentPage = 0;
     this.updatePreviousBookmark = false;
     this.previousBookmark = '';
+    this.previousPage = 0;
     this.nextHashParam = '';
 
     this.fingerprint = fingerprint;
@@ -816,6 +817,7 @@ var PDFHistory = {
       this.currentPage = pageNum | 0;
       if (this.updatePreviousBookmark) {
         this.previousBookmark = this.currentBookmark;
+        this.previousPage = this.currentPage;
         this.updatePreviousBookmark = false;
       }
     }
@@ -877,8 +879,8 @@ var PDFHistory = {
       if (this.previousBookmark === this.currentBookmark) {
         return null;
       }
-    } else if (this.current.page) {
-      if (this.current.page === this.currentPage) {
+    } else if (this.current.page || onlyCheckPage) {
+      if (this.previousPage === this.currentPage) {
         return null;
       }
     } else {
