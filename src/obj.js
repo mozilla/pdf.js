@@ -1072,13 +1072,20 @@ var PDFObjects = (function PDFObjectsClosure() {
   PDFObjects.prototype = {
     /**
      * Internal function.
-     * Ensures there is an object defined for `objId`. Stores `data` on the
-     * object *if* it is created.
+     * Ensures there is an object defined for `objId`.
      */
-    ensureObj: function PDFObjects_ensureObj(objId, data) {
+    ensureObj: function PDFObjects_ensureObj(objId) {
       if (this.objs[objId])
         return this.objs[objId];
-      return this.objs[objId] = new Promise(objId, data);
+
+      var obj = {
+        promise: new Promise(objId),
+        data: null,
+        resolved: false
+      };
+      this.objs[objId] = obj;
+
+      return obj;
     },
 
     /**
@@ -1094,7 +1101,7 @@ var PDFObjects = (function PDFObjectsClosure() {
       // If there is a callback, then the get can be async and the object is
       // not required to be resolved right now
       if (callback) {
-        this.ensureObj(objId).then(callback);
+        this.ensureObj(objId).promise.then(callback);
         return null;
       }
 
@@ -1104,7 +1111,7 @@ var PDFObjects = (function PDFObjectsClosure() {
 
       // If there isn't an object yet or the object isn't resolved, then the
       // data isn't ready yet!
-      if (!obj || !obj.isResolved)
+      if (!obj || !obj.resolved)
         error('Requesting object that isn\'t resolved yet ' + objId);
 
       return obj.data;
@@ -1114,36 +1121,25 @@ var PDFObjects = (function PDFObjectsClosure() {
      * Resolves the object `objId` with optional `data`.
      */
     resolve: function PDFObjects_resolve(objId, data) {
-      var objs = this.objs;
+      var obj = this.ensureObj(objId);
 
-      // In case there is a promise already on this object, just resolve it.
-      if (objs[objId]) {
-        objs[objId].resolve(data);
-      } else {
-        this.ensureObj(objId, data);
-      }
-    },
-
-    onData: function PDFObjects_onData(objId, callback) {
-      this.ensureObj(objId).onData(callback);
+      obj.resolved = true;
+      obj.data = data;
+      obj.promise.resolve(data);
     },
 
     isResolved: function PDFObjects_isResolved(objId) {
       var objs = this.objs;
+
       if (!objs[objId]) {
         return false;
       } else {
-        return objs[objId].isResolved;
+        return objs[objId].resolved;
       }
     },
 
     hasData: function PDFObjects_hasData(objId) {
-      var objs = this.objs;
-      if (!objs[objId]) {
-        return false;
-      } else {
-        return objs[objId].hasData;
-      }
+      return this.isResolved(objId);
     },
 
     /**
@@ -1151,20 +1147,11 @@ var PDFObjects = (function PDFObjectsClosure() {
      */
     getData: function PDFObjects_getData(objId) {
       var objs = this.objs;
-      if (!objs[objId] || !objs[objId].hasData) {
+      if (!objs[objId] || !objs[objId].resolved) {
         return null;
       } else {
         return objs[objId].data;
       }
-    },
-
-    /**
-     * Sets the data of an object but *doesn't* resolve it.
-     */
-    setData: function PDFObjects_setData(objId, data) {
-      // Watchout! If you call `this.ensureObj(objId, data)` you're going to
-      // create a *resolved* promise which shouldn't be the case!
-      this.ensureObj(objId).data = data;
     },
 
     clear: function PDFObjects_clear() {

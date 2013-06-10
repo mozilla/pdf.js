@@ -250,6 +250,8 @@ var PDFFindController = {
 
   extractTextPromises: [],
 
+  pendingFindMatches: {},
+
   // If active, find results will be highlighted.
   active: false,
 
@@ -425,13 +427,13 @@ var PDFFindController = {
         this.updatePage(i);
 
         // As soon as the text is extracted start finding the matches.
-        this.extractTextPromises[i].onData(function(pageIdx) {
-          // Use a timeout since all the pages may already be extracted and we
-          // want to start highlighting before finding all the matches.
-          setTimeout(function() {
+        if (!(i in this.pendingFindMatches)) {
+          this.pendingFindMatches[i] = true;
+          this.extractTextPromises[i].then(function(pageIdx) {
+            delete self.pendingFindMatches[pageIdx];
             self.calcFindMatch(pageIdx);
           });
-        });
+        }
       }
     }
 
@@ -1355,7 +1357,12 @@ var PDFView = {
       }
     };
 
-    PDFJS.getDocument(parameters, pdfDataRangeTransport, passwordNeeded).then(
+    function getDocumentProgress(progressData) {
+      self.progress(progressData.loaded / progressData.total);
+    }
+
+    PDFJS.getDocument(parameters, pdfDataRangeTransport, passwordNeeded,
+                      getDocumentProgress).then(
       function getDocumentCallback(pdfDocument) {
         self.load(pdfDocument, scale);
         self.loading = false;
@@ -1390,9 +1397,6 @@ var PDFView = {
         };
         self.error(loadingErrorMessage, moreInfo);
         self.loading = false;
-      },
-      function getDocumentProgress(progressData) {
-        self.progress(progressData.loaded / progressData.total);
       }
     );
   },
