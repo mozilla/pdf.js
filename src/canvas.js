@@ -194,13 +194,10 @@ function compileType3Glyph(imgData) {
   var POINT_TO_PROCESS_LIMIT = 1000;
 
   var width = imgData.width, height = imgData.height;
-  var i, j;
-  // we need sparse arrays
-  var points = [];
-  for (i = 0; i <= height; i++) {
-    points.push([]);
-  }
-
+  var i, j, j0, width1 = width + 1;
+  var points = new Uint8Array(width1 * (height + 1));
+  var POINT_TYPES = 
+      new Uint8Array([0, 2, 4, 0, 1, 0, 5, 4, 8, 10, 0, 8, 0, 2, 1, 0]);
   // finding iteresting points: every point is located between mask pixels,
   // so there will be points of the (width + 1)x(height + 1) grid. Every point
   // will have flags assigned based on neighboring mask pixels:
@@ -213,40 +210,41 @@ function compileType3Glyph(imgData) {
   //   - and, intersections: 5, 10.
   var pos = 3, data = imgData.data, lineSize = width * 4, count = 0;
   if (data[3] !== 0) {
-    points[0][0] = 1;
+    points[0] = 1;
     ++count;
   }
   for (j = 1; j < width; j++) {
     if (data[pos] !== data[pos + 4]) {
-      points[0][j] = data[pos] ? 2 : 1;
+      points[j] = data[pos] ? 2 : 1;
       ++count;
     }
     pos += 4;
   }
   if (data[pos] !== 0) {
-    points[0][j] = 2;
+    points[j] = 2;
     ++count;
   }
   pos += 4;
   for (i = 1; i < height; i++) {
+    j0 = i * width1;
     if (data[pos - lineSize] !== data[pos]) {
-      points[i][0] = data[pos] ? 1 : 8;
+      points[j0] = data[pos] ? 1 : 8;
       ++count;
     }
+    // 'sum' is the position of the current pixel configuration in the 'TYPES'
+    // array (in order 8-1-2-4, so we can use '>>2' to shift the column).
+    var sum = (data[pos] ? 4 : 0) + (data[pos - lineSize] ? 8 : 0);
     for (j = 1; j < width; j++) {
-      var f1 = data[pos + 4] ? 1 : 0;
-      var f2 = data[pos] ? 1 : 0;
-      var f4 = data[pos - lineSize] ? 1 : 0;
-      var f8 = data[pos - lineSize + 4] ? 1 : 0;
-      var fSum = f1 + f2 + f4 + f8;
-      if (fSum === 1 || fSum === 3 || (fSum === 2 && f1 === f4)) {
-        points[i][j] = f1 | (f2 << 1) | (f4 << 2) | (f8 << 3);
+      sum = (sum >> 2) + (data[pos + 4] ? 4 : 0) +
+            (data[pos - lineSize + 4] ? 8 : 0);
+      if (POINT_TYPES[sum]) { 
+        points[j0 + j] = POINT_TYPES[sum];
         ++count;
       }
       pos += 4;
     }
     if (data[pos - lineSize] !== data[pos]) {
-      points[i][j] = data[pos] ? 2 : 4;
+      points[j0 + j] = data[pos] ? 2 : 4;
       ++count;
     }
     pos += 4;
@@ -255,20 +253,22 @@ function compileType3Glyph(imgData) {
       return null;
     }
   }
+
   pos -= lineSize;
+  j0 = i * width1;
   if (data[pos] !== 0) {
-    points[i][0] = 8;
+    points[j0] = 8;
     ++count;
   }
   for (j = 1; j < width; j++) {
     if (data[pos] !== data[pos + 4]) {
-      points[i][j] = data[pos] ? 4 : 8;
+      points[j0 + j] = data[pos] ? 4 : 8;
       ++count;
     }
     pos += 4;
   }
   if (data[pos] !== 0) {
-    points[i][j] = 4;
+    points[j0 + j] = 4;
     ++count;
   }
   if (count > POINT_TO_PROCESS_LIMIT) {
@@ -276,69 +276,64 @@ function compileType3Glyph(imgData) {
   }
 
   // building outlines
-  var outline = [];
-  outline.push('c.save();');
-  // the path shall be painted in [0..1]x[0..1] space
-  outline.push('c.scale(' + (1 / width) + ',' +  (-1 / height) + ');');
-  outline.push('c.translate(0,-' + height + ');');
-  outline.push('c.beginPath();');
-  for (i = 0; i <= height; i++) {
-    if (points[i].length === 0) {
+  var steps = new Int32Array([0, width1, -1, 0, -width1, 0, 0, 0, 1]);
+  var outlines = [];
+  for (i = 0; count && i <= height; i++) {
+    var p = i * width1;
+    var end = p + width;
+    while (p < end && !points[p]) {
+      p++;
+    }
+    if (p === end) {
       continue;
     }
-    var js = null;
-    for (js in points[i]) {
-      break;
-    }
-    if (js === null) {
-      continue;
-    }
-    var i0 = i, j0 = (j = +js);
+    var coords = [p % width1, i];
 
-    outline.push('c.moveTo(' + j + ',' + i + ');');
-    var type = points[i][j], d = 0;
+    var type = points[p], p0 = p, pp;
     do {
-      if (type === 5 || type === 10) {
-        // line crossed: following dirrection we followed
-        points[i0][j0] = type | (15 ^ d); // changing direction for "future hit"
-        type |= d;
+      var step = steps[type];
+      do { p += step; } while (!points[p]);
+      
+      pp = points[p];
+      if (pp !== 5 && pp !== 10) {
+        // set new direction
+        type = pp; 
+        // delete mark
+        points[p] = 0; 
+      } else { // type is 5 or 10, ie, a crossing
+        // set new direction
+        type = pp & ((0x33 * type) >> 4); 
+        // set new type for "future hit"
+        points[p] &= (type >> 2 | type << 2);
       }
 
-      switch (type) {
-      case 1:
-      case 13:
-        do { i0++; } while (!points[i0][j0]);
-        d = 9;
-        break;
-      case 4:
-      case 7:
-        do { i0--; } while (!points[i0][j0]);
-        d = 6;
-        break;
-      case 8:
-      case 14:
-        do { j0++; } while (!points[i0][j0]);
-        d = 12;
-        break;
-      case 2:
-      case 11:
-        do { j0--; } while (!points[i0][j0]);
-        d = 3;
-        break;
-      }
-      outline.push('c.lineTo(' + j0 + ',' + i0 + ');');
-
-      type = points[i0][j0];
-      delete points[i0][j0];
-    } while (j0 !== j || i0 !== i);
+      coords.push(p % width1);
+      coords.push((p / width1) | 0);
+      --count;
+    } while (p0 !== p);
+    outlines.push(coords);
     --i;
   }
-  outline.push('c.fill();');
-  outline.push('c.beginPath();');
-  outline.push('c.restore();');
 
-  /*jshint -W054 */
-  return new Function('c', outline.join('\n'));
+  var drawOutline = function(c) {
+    c.save();
+    // the path shall be painted in [0..1]x[0..1] space
+    c.scale(1 / width, -1 / height);
+    c.translate(0, -height);
+    c.beginPath();
+    for (var i = 0, ii = outlines.length; i < ii; i++) {
+      var o = outlines[i];
+      c.moveTo(o[0], o[1]);
+      for (var j = 2, jj = o.length; j < jj; j += 2) {
+        c.lineTo(o[j], o[j+1]);
+      }
+    }
+    c.fill();
+    c.beginPath();
+    c.restore();
+  };
+  
+  return drawOutline;
 }
 
 var CanvasExtraState = (function CanvasExtraStateClosure() {
