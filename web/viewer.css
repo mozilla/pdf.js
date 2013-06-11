@@ -456,6 +456,7 @@ html[dir='rtl'] #toolbarViewerRight {
 }
 html[dir='ltr'] #toolbarViewerRight,
 html[dir='rtl'] #toolbarViewerLeft {
+  min-width: 350px;
   position: absolute;
   top: 0;
   right: 0;
