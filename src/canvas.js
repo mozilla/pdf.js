@@ -191,13 +191,13 @@ var CachedCanvases = (function CachedCanvasesClosure() {
 })();
 
 function compileType3Glyph(imgData) {
-   var t1 = window.performance.now();
   var POINT_TO_PROCESS_LIMIT = 1000;
 
   var width = imgData.width, height = imgData.height;
-  var i, j, width1 = width+1;
-  var points = new Uint8Array(width1*(height+1));
-  var TYPES = [0, 2, 4, 0, 1, 0, 5, 4, 8, 10, 0, 8, 0, 2, 1, 0];
+  var i, j, j0, width1 = width + 1;
+  var points = new Uint8Array(width1 * (height + 1));
+  var POINT_TYPES = 
+      new Uint8Array([0, 2, 4, 0, 1, 0, 5, 4, 8, 10, 0, 8, 0, 2, 1, 0]);
   // finding iteresting points: every point is located between mask pixels,
   // so there will be points of the (width + 1)x(height + 1) grid. Every point
   // will have flags assigned based on neighboring mask pixels:
@@ -226,20 +226,19 @@ function compileType3Glyph(imgData) {
   }
   pos += 4;
   for (i = 1; i < height; i++) {
-    var j0 = i * width1;
+    j0 = i * width1;
     if (data[pos - lineSize] !== data[pos]) {
       points[j0] = data[pos] ? 1 : 8;
       ++count;
     }
-    
     // 'sum' is the position of the current pixel configuration in the 'TYPES'
     // array (in order 8-1-2-4, so we can use '>>2' to shift the column).
     var sum = (data[pos] ? 4 : 0) + (data[pos - lineSize] ? 8 : 0);
     for (j = 1; j < width; j++) {
       sum = (sum >> 2) + (data[pos + 4] ? 4 : 0) +
             (data[pos - lineSize + 4] ? 8 : 0);
-      if (TYPES[sum]) { 
-        points[j0 + j] = TYPES[sum];
+      if (POINT_TYPES[sum]) { 
+        points[j0 + j] = POINT_TYPES[sum];
         ++count;
       }
       pos += 4;
@@ -254,20 +253,22 @@ function compileType3Glyph(imgData) {
       return null;
     }
   }
+
   pos -= lineSize;
+  j0 = i * width1;
   if (data[pos] !== 0) {
-    points[i * width1] = 8;
+    points[j0] = 8;
     ++count;
   }
   for (j = 1; j < width; j++) {
     if (data[pos] !== data[pos + 4]) {
-      points[i * width1 + j] = data[pos] ? 4 : 8;
+      points[j0 + j] = data[pos] ? 4 : 8;
       ++count;
     }
     pos += 4;
   }
   if (data[pos] !== 0) {
-    points[i * width1 + j] = 4;
+    points[j0 + j] = 4;
     ++count;
   }
   if (count > POINT_TO_PROCESS_LIMIT) {
@@ -275,8 +276,8 @@ function compileType3Glyph(imgData) {
   }
 
   // building outlines
+  var steps = new Int32Array([0, width1, -1, 0, -width1, 0, 0, 0, 1]);
   var outlines = [];
-  var steps = [0, width1, -1, 0, -width1, 0, 0, 0, 1];
   for (i = 0; count && i <= height; i++) {
     var p = i * width1;
     var end = p + width;
@@ -286,31 +287,31 @@ function compileType3Glyph(imgData) {
     if (p === end) {
       continue;
     }
-    var from = [p % width1];
-    var to = [i];
+    var coords = [p % width1, i];
 
-    var type = points[p], p0 = p;
+    var type = points[p], p0 = p, pp;
     do {
       var step = steps[type];
       do { p += step; } while (!points[p]);
-
-      if (points[p] % 5) {
+      
+      pp = points[p];
+      if (pp !== 5 && pp !== 10) {
         // set new direction
-        type = points[p]; 
+        type = pp; 
         // delete mark
         points[p] = 0; 
       } else { // type is 5 or 10, ie, a crossing
         // set new direction
-        type = points[p] & ((0x33 * type) >> 4); 
+        type = pp & ((0x33 * type) >> 4); 
         // set new type for "future hit"
         points[p] &= (type >> 2 | type << 2);
       }
 
-      from.push(p % width1);
-      to.push((p / width1) | 0);
+      coords.push(p % width1);
+      coords.push((p / width1) | 0);
       --count;
     } while (p0 !== p);
-    outlines.push([from, to]);
+    outlines.push(coords);
     --i;
   }
 
@@ -320,12 +321,11 @@ function compileType3Glyph(imgData) {
     c.scale(1 / width, -1 / height);
     c.translate(0, -height);
     c.beginPath();
-    for (var i=0; i<outlines.length; i++) {
-      var f = outlines[i][0];
-      var t = outlines[i][1];
-      c.moveTo(f[0], t[0]);
-      for (var j=1; j<f.length; j++) {
-        c.lineTo(f[j], t[j]);
+    for (var i = 0, ii = outlines.length; i < ii; i++) {
+      var o = outlines[i];
+      c.moveTo(o[0], o[1]);
+      for (var j = 2, jj = o.length; j < jj; j += 2) {
+        c.lineTo(o[j], o[j+1]);
       }
     }
     c.fill();
