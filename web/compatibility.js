@@ -449,9 +449,7 @@
     return;
   }
   document.addEventListener('DOMContentLoaded', function (e) {
-    if (isSafari) {
-      console.warn('Range requests are disabled for safari.');
-      PDFJS.disableRange = true;
-    }
-  });
+    console.warn('Range requests are disabled for safari.');
+    PDFJS.disableRange = true;
+  }, true);
 })();
