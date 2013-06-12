@@ -18,6 +18,12 @@
 
 'use strict';
 
+// Initializing PDFJS global object here, it case if we need to change/disable
+// some PDF.js features, e.g. range requests
+if (typeof PDFJS === 'undefined') {
+  (typeof window !== 'undefined' ? window : this).PDFJS = {};
+}
+
 // Checking if the typed arrays are supported
 (function checkTypedArrayCompatibility() {
   if (typeof Uint8Array !== 'undefined') {
@@ -445,11 +451,7 @@
   // Last tested with version 6.0.4.
   var isSafari = Object.prototype.toString.call(
                   window.HTMLElement).indexOf('Constructor') > 0;
-  if (!isSafari) {
-    return;
-  }
-  document.addEventListener('DOMContentLoaded', function (e) {
-    console.warn('Range requests are disabled for safari.');
+  if (isSafari) {
     PDFJS.disableRange = true;
-  }, true);
+  }
 })();
