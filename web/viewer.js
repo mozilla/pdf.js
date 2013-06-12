@@ -996,7 +996,7 @@ var PDFView = {
   pageViewScroll: null,
   thumbnailViewScroll: null,
   isPresentationMode: false,
-  previousScale: null,
+  presentationModeArgs: null,
   pageRotation: 0,
   mouseScrollTimeStamp: 0,
   mouseScrollDelta: 0,
@@ -2190,29 +2190,29 @@ var PDFView = {
     } else {
       return false;
     }
+
+    this.presentationModeArgs = {
+      page: this.page,
+      previousScale: this.currentScaleValue
+    };
+
     return true;
   },
 
   enterPresentationMode: function pdfViewEnterPresentationMode() {
     this.isPresentationMode = true;
-    var currentPage = this.pages[this.page - 1];
-    this.previousScale = this.currentScaleValue;
+    this.page = this.presentationModeArgs.page;
     this.parseScale('page-fit', true);
-
-    // Wait for presentation mode to take effect
-    setTimeout(function() {
-      currentPage.scrollIntoView();
-    }, 0);
-
     this.showPresentationControls();
   },
 
   exitPresentationMode: function pdfViewExitPresentationMode() {
     this.isPresentationMode = false;
-    this.parseScale(this.previousScale);
+    this.parseScale(this.presentationModeArgs.previousScale);
     this.page = this.page;
     this.clearMouseScrollState();
     this.hidePresentationControls();
+    this.presentationModeArgs = null;
 
     // Ensure that the thumbnail of the current page is visible
     // when exiting presentation mode.
