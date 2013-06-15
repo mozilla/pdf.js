@@ -698,12 +698,14 @@ var WorkerTransport = (function WorkerTransportClosure() {
         }
       }, this);
 
-      messageHandler.on('DocProgress', function transportDocProgress(data) {
-        this.progressCallback({
-          loaded: data.loaded,
-          total: data.total
-        });
-      }, this);
+      if(this.progressCallback) {
+        messageHandler.on('DocProgress', function transportDocProgress(data) {
+          this.progressCallback({
+            loaded: data.loaded,
+            total: data.total
+          });
+        }, this);
+      }
 
       messageHandler.on('DocError', function transportDocError(data) {
         this.workerReadyPromise.reject(data);
