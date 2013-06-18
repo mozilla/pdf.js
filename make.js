@@ -112,6 +112,8 @@ target.generic = function() {
     ]
   };
   builder.build(setup);
+
+  cleanupJSSource(GENERIC_DIR + '/web/viewer.js');
 };
 
 //
@@ -297,7 +299,15 @@ target.bundle = function(args) {
                           BUNDLE_BUILD: bundleBuild});
 };
 
+function cleanupJSSource(file) {
+  var content = cat(file);
 
+  // Strip out all the vim/license headers.
+  var reg = /\n\/\* -\*- Mode(.|\n)*?Mozilla Foundation(.|\n)*?'use strict';/g;
+  content = content.replace(reg, '');
+
+  content.to(file);
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 //
@@ -403,6 +413,8 @@ target.firefox = function() {
     ]
   };
   builder.build(setup);
+
+  cleanupJSSource(FIREFOX_BUILD_CONTENT_DIR + '/web/viewer.js');
 
   // Remove '.DS_Store' and other hidden files
   find(FIREFOX_BUILD_DIR).forEach(function(file) {
@@ -512,6 +524,8 @@ target.mozcentral = function() {
   };
   builder.build(setup);
 
+  cleanupJSSource(MOZCENTRAL_CONTENT_DIR + '/web/viewer.js');
+
   // Remove '.DS_Store' and other hidden files
   find(MOZCENTRAL_DIR).forEach(function(file) {
     if (file.match(/^\./))
@@ -579,6 +593,8 @@ target.b2g = function() {
     ]
   };
   builder.build(setup);
+
+  cleanupJSSource(B2G_BUILD_CONTENT_DIR + '/web/viewer.js');
 };
 
 //
@@ -621,6 +637,8 @@ target.chrome = function() {
     ]
   };
   builder.build(setup);
+
+  cleanupJSSource(CHROME_BUILD_CONTENT_DIR + '/web/viewer.js');
 
   // Update the build version number
   sed('-i', /PDFJSSCRIPT_VERSION/, EXTENSION_VERSION,
