@@ -74,8 +74,16 @@ limitations under the License.
 <!--#include viewer-snippet.html-->
 <!--#endif-->
 
+<!--#if !PRODUCTION-->
+    <script type="text/javascript" src="ui_utils.js"></script>
+    <script type="text/javascript" src="text_layer_builder.js"></script>
+    <script type="text/javascript" src="pdf_find_bar.js"></script>
+    <script type="text/javascript" src="pdf_find_controller.js"></script>
+<!--#endif-->
+
     <script type="text/javascript" src="debugger.js"></script>
     <script type="text/javascript" src="viewer.js"></script>
+
   </head>
 
   <body tabindex="1">
