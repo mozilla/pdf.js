@@ -178,6 +178,20 @@
        "rounds": 1,
        "type": "eq"
     },
+    {  "id": "taro-text",
+       "file": "pdfs/TaroUTR50SortedList112.pdf",
+       "md5": "ce63eab622ff473a43f8a8de85ef8a46",
+       "link":true,
+       "rounds": 1,
+       "lastPage": 4,
+       "type": "text"
+    },
+    {  "id": "rotated-text",
+       "file": "pdfs/rotated.pdf",
+       "md5": "aed187f53e969ccdcbab0bb4c59f9e46",
+       "rounds": 1,
+       "type": "text"
+    },
     {
       "id": "issue3115",
       "file": "pdfs/issue3115.pdf",
