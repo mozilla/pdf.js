@@ -208,8 +208,9 @@ var Parser = (function ParserClosure() {
       stream.pos = pos + length;
       this.shift(); // '>>'
       this.shift(); // 'stream'
-      if (!isCmd(this.buf1, 'endstream'))
-        error('Missing endstream');
+      if (!isCmd(this.buf1, 'endstream')) {
+        warn('Missing endstream');
+      }
       this.shift();
 
       stream = stream.makeSubStream(pos, length, dict);
