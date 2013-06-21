@@ -678,6 +678,14 @@
       "link": true,
       "type": "eq"
     },
+    {  "id": "bug867484",
+      "file": "pdfs/bug867484.pdf",
+      "md5": "347af7b0ef7279b1a7f43b03bfda4548",
+      "rounds": 1,
+      "lastPage": 1,
+      "link": true,
+      "type": "load"
+    },
     {  "id": "issue1466",
       "file": "pdfs/issue1466.pdf",
       "md5": "8a8877432e5bb10cfd50d60488d947bb",
