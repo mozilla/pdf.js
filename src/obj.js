@@ -587,6 +587,12 @@ var XRef = (function XRefClosure() {
         delete tableState.entryCount;
       }
 
+      // Per issue 3248: hp scanners generate bad XRef
+      if (first === 1 && this.entries[1] && this.entries[1].free) {
+        // shifting the entries
+        this.entries.shift();
+      }
+
       // Sanity check: as per spec, first object must be free
       if (this.entries[0] && !this.entries[0].free)
         error('Invalid XRef table: unexpected first object');
