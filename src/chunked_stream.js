@@ -141,6 +141,12 @@ var ChunkedStream = (function ChunkedStreamClosure() {
       return bytes.subarray(pos, end);
     },
 
+    peekBytes: function ChunkedStream_peekBytes(length) {
+      var bytes = this.getBytes(length);
+      this.pos -= bytes.length;
+      return bytes;
+    },
+
     getByteRange: function ChunkedStream_getBytes(begin, end) {
       this.ensureRange(begin, end);
       return this.bytes.subarray(begin, end);

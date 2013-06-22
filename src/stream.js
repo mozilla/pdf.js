@@ -57,6 +57,11 @@ var Stream = (function StreamClosure() {
       this.pos = end;
       return bytes.subarray(pos, end);
     },
+    peekBytes: function Stream_peekBytes(length) {
+      var bytes = this.getBytes(length);
+      this.pos -= bytes.length;
+      return bytes;
+    },
     lookChar: function Stream_lookChar() {
       if (this.pos >= this.end)
         return null;
@@ -160,6 +165,11 @@ var DecodeStream = (function DecodeStreamClosure() {
 
       this.pos = end;
       return this.buffer.subarray(pos, end);
+    },
+    peekBytes: function DecodeStream_peekBytes(length) {
+      var bytes = this.getBytes(length);
+      this.pos -= bytes.length;
+      return bytes;
     },
     lookChar: function DecodeStream_lookChar() {
       var pos = this.pos;
