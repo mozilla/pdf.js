@@ -504,8 +504,11 @@ var FlateStream = (function FlateStreamClosure() {
       if (typeof (b = bytes[bytesPos++]) == 'undefined')
         error('Bad block header in flate stream');
       check |= (b << 8);
-      if (check != (~blockLen & 0xffff))
+      if (check != (~blockLen & 0xffff) &&
+          (blockLen !== 0 || check !== 0)) {
+        // Ignoring error for bad "empty" block (see issue 1277)
         error('Bad uncompressed block length in flate stream');
+      }
 
       this.codeBuf = 0;
       this.codeSize = 0;
