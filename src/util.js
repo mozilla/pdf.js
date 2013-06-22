@@ -748,8 +748,8 @@ var Promise = PDFJS.Promise = (function PromiseClosure() {
         var now = Date.now();
         for (var i = 0; i < this.unhandledRejections.length; i++) {
           if (now - this.unhandledRejections[i].time > REJECTION_TIMEOUT) {
-            console.error('Unhandled rejection: ' +
-                          this.unhandledRejections[i].promise._value);
+            warn('Unhandled rejection: ' +
+                 this.unhandledRejections[i].promise._value);
             this.unhandledRejections.splice(i);
             i--;
           }
