@@ -3352,7 +3352,8 @@ var Font = (function FontClosure() {
         }
       }
 
-      function sanitizeGlyph(source, sourceStart, sourceEnd, dest, destStart) {
+      function sanitizeGlyph(source, sourceStart, sourceEnd, dest, destStart,
+                             hintsValid) {
         if (sourceEnd - sourceStart <= 12) {
           // glyph with data less than 12 is invalid one
           return 0;
@@ -3372,8 +3373,10 @@ var Font = (function FontClosure() {
           j += 2;
         }
         // skipping instructions
+        var instructionsStart = j;
         var instructionsLength = (glyf[j] << 8) | glyf[j + 1];
         j += 2 + instructionsLength;
+        var instructionsEnd = j;
         // validating flags
         var coordinatesLength = 0;
         for (var i = 0; i < flagsCount; i++) {
@@ -3395,6 +3398,17 @@ var Font = (function FontClosure() {
         if (glyphDataLength > glyf.length) {
           // not enough data for coordinates
           return 0;
+        }
+        if (!hintsValid && instructionsLength > 0) {
+          dest.set(glyf.subarray(0, instructionsStart), destStart);
+          dest.set([0, 0], destStart + instructionsStart);
+          dest.set(glyf.subarray(instructionsEnd, glyphDataLength),
+                   destStart + instructionsStart + 2);
+          glyphDataLength -= instructionsLength;
+          if (glyf.length - glyphDataLength > 3) {
+            glyphDataLength = (glyphDataLength + 3) & ~3;
+          }
+          return glyphDataLength;
         }
         if (glyf.length - glyphDataLength > 3) {
           // truncating and aligning to 4 bytes the long glyph data
@@ -3452,7 +3466,7 @@ var Font = (function FontClosure() {
       }
 
       function sanitizeGlyphLocations(loca, glyf, numGlyphs,
-                                      isGlyphLocationsLong) {
+                                      isGlyphLocationsLong, hintsValid) {
         var itemSize, itemDecode, itemEncode;
         if (isGlyphLocationsLong) {
           itemSize = 4;
@@ -3494,7 +3508,7 @@ var Font = (function FontClosure() {
           }
 
           var newLength = sanitizeGlyph(oldGlyfData, startOffset, endOffset,
-                                        newGlyfData, writeOffset);
+                                        newGlyfData, writeOffset, hintsValid);
           writeOffset += newLength;
           itemEncode(locaData, j, writeOffset);
           startOffset = endOffset;
@@ -3659,7 +3673,7 @@ var Font = (function FontClosure() {
         0, 0, 0, 0, 0, 0, 0, 0, -2, -2, -2, -2, 0, 0, -2, -5,
         -1, -1, -1, -1, -1, -1, -1, -1, 0, 0, -1, 0, -1, -1, -1, -1,
         1, -1, -999, 0, 1, 0, -1, -2, 0, -1, -2, -1, -1, 0, -1, -1,
-        0, 0, -999, -999, -1, -1, -1, -1, -2, -999, -2, -2, -2, 0, -2, -2,
+        0, 0, -999, -999, -1, -1, -1, -1, -2, -999, -2, -2, -999, 0, -2, -2,
         0, 0, -2, 0, -2, 0, 0, 0, -2, -1, -1, 1, 1, 0, 0, -1,
         -1, -1, -1, -1, -1, -1, 0, 0, -1, 0, -1, -1, 0, -999, -1, -1,
         -1, -1, -1, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -3812,33 +3826,22 @@ var Font = (function FontClosure() {
         foldTTTable(table, content);
       }
 
-      function addTTDummyFunctions(table, ttContext, maxFunctionDefs) {
-        var content = [table.data];
-        if (!ttContext.tooComplexToFollowFunctions) {
-          var undefinedFunctions = [];
-          for (var j = 0, jj = ttContext.functionsUsed.length; j < jj; j++) {
-            if (!ttContext.functionsUsed[j] || ttContext.functionsDefined[j]) {
-              continue;
-            }
-            undefinedFunctions.push(j);
-            if (j >= maxFunctionDefs) {
-              continue;
-            }
-            // function is used, but not defined
-            if (j < 256) {
-              // creating empty one [PUSHB, function-id, FDEF, ENDF]
-              content.push(new Uint8Array([0xB0, j, 0x2C, 0x2D]));
-            } else {
-              // creating empty one [PUSHW, function-id, FDEF, ENDF]
-              content.push(
-                new Uint8Array([0xB8, j >> 8, j & 255, 0x2C, 0x2D]));
-            }
+      function checkInvalidFunctions(ttContext, maxFunctionDefs) {
+        if (ttContext.tooComplexToFollowFunctions) {
+          return;
+        }
+        for (var j = 0, jj = ttContext.functionsUsed.length; j < jj; j++) {
+          if (j > maxFunctionDefs) {
+            warn('TT: invalid function id: ' + j);
+            ttContext.hintsValid = false;
+            return;
           }
-          if (undefinedFunctions.length > 0) {
-            warn('TT: undefined functions: ' + undefinedFunctions);
+          if (ttContext.functionsUsed[j] && !ttContext.functionsDefined[j]) {
+            warn('TT: undefined function: ' + j);
+            ttContext.hintsValid = false;
+            return;
           }
         }
-        foldTTTable(table, content);
       }
 
       function foldTTTable(table, content) {
@@ -3865,7 +3868,8 @@ var Font = (function FontClosure() {
           functionsDefined: [],
           functionsUsed: [],
           functionsStackDeltas: [],
-          tooComplexToFollowFunctions: false
+          tooComplexToFollowFunctions: false,
+          hintsValid: true
         };
         if (fpgm) {
           sanitizeTTProgram(fpgm, ttContext);
@@ -3874,8 +3878,9 @@ var Font = (function FontClosure() {
           sanitizeTTProgram(prep, ttContext);
         }
         if (fpgm) {
-          addTTDummyFunctions(fpgm, ttContext, maxFunctionDefs);
+          checkInvalidFunctions(ttContext, maxFunctionDefs);
         }
+        return ttContext.hintsValid;
       }
 
       // The following steps modify the original font data, making copy
@@ -3930,6 +3935,25 @@ var Font = (function FontClosure() {
         tables.push(table);
       }
 
+      // Ensure the hmtx table contains the advance width and
+      // sidebearings information for numGlyphs in the maxp table
+      font.pos = (font.start || 0) + maxp.offset;
+      var version = int32(font.getBytes(4));
+      var numGlyphs = int16(font.getBytes(2));
+      var maxFunctionDefs = 0;
+      if (version >= 0x00010000 && maxp.length >= 22) {
+        font.pos += 14;
+        var maxFunctionDefs = int16(font.getBytes(2));
+      }
+
+      var hintsValid = sanitizeTTPrograms(fpgm, prep, maxFunctionDefs);
+      if (!hintsValid) {
+        tables.splice(tables.indexOf(fpgm), 1);
+        fpgm = null;
+        tables.splice(tables.indexOf(prep), 1);
+        prep = null;
+      }
+
       var numTables = tables.length + requiredTables.length;
 
       // header and new offsets. Table entry information is appended to the
@@ -3944,20 +3968,7 @@ var Font = (function FontClosure() {
       // of missing tables
       createOpenTypeHeader(header.version, ttf, numTables);
 
-      // Ensure the hmtx table contains the advance width and
-      // sidebearings information for numGlyphs in the maxp table
-      font.pos = (font.start || 0) + maxp.offset;
-      var version = int32(font.getBytes(4));
-      var numGlyphs = int16(font.getBytes(2));
-      var maxFunctionDefs = 0;
-      if (version >= 0x00010000 && maxp.length >= 22) {
-        font.pos += 14;
-        var maxFunctionDefs = int16(font.getBytes(2));
-      }
-
       sanitizeMetrics(font, hhea, hmtx, numGlyphs);
-
-      sanitizeTTPrograms(fpgm, prep, maxFunctionDefs);
 
       if (head) {
         sanitizeHead(head, numGlyphs, loca.length);
@@ -3965,7 +3976,8 @@ var Font = (function FontClosure() {
 
       var isGlyphLocationsLong = int16([head.data[50], head.data[51]]);
       if (head && loca && glyf) {
-        sanitizeGlyphLocations(loca, glyf, numGlyphs, isGlyphLocationsLong);
+        sanitizeGlyphLocations(loca, glyf, numGlyphs, isGlyphLocationsLong,
+                               hintsValid);
       }
 
       var emptyGlyphIds = [];
