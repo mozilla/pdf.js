@@ -264,6 +264,13 @@
        "rounds": 1,
        "type": "eq"
     },
+    {  "id": "issue3371",
+       "file": "pdfs/issue3371.pdf",
+       "password": "ELXRTQWS",
+       "md5": "db2fedbd36d6fa27d4e52f9bd2d96b8c",
+       "rounds": 1,
+       "type": "load"
+    },
     {  "id": "wdsg_fitc",
        "file": "pdfs/wdsg_fitc.pdf",
        "md5": "5bb1c2b83705d4cdfc43197ee74f07f9",
