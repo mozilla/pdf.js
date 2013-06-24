@@ -391,7 +391,7 @@ if (typeof PDFJS === 'undefined') {
   });
 })();
 
-// Check console compatability
+// Check console compatibility
 (function checkConsoleCompatibility() {
   if (!('console' in window)) {
     window.console = {
@@ -453,5 +453,12 @@ if (typeof PDFJS === 'undefined') {
                   window.HTMLElement).indexOf('Constructor') > 0;
   if (isSafari) {
     PDFJS.disableRange = true;
+  }
+})();
+
+// Check if the browser supports manipulation of the history.
+(function checkHistoryManipulation() {
+  if (!window.history.pushState) {
+    PDFJS.disableHistory = true;
   }
 })();
