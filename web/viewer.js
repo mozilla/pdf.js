@@ -2022,9 +2022,9 @@ var PageView = function pageView(container, id, scale,
           y = dest[3];
           width = dest[4] - x;
           height = dest[5] - y;
-          widthScale = (this.container.clientWidth - SCROLLBAR_PADDING) /
+          widthScale = (PDFView.container.clientWidth - SCROLLBAR_PADDING) /
             width / CSS_UNITS;
-          heightScale = (this.container.clientHeight - SCROLLBAR_PADDING) /
+          heightScale = (PDFView.container.clientHeight - SCROLLBAR_PADDING) /
             height / CSS_UNITS;
           scale = Math.min(widthScale, heightScale);
           break;
