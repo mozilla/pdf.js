@@ -1600,7 +1600,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         var images = [];
         for (var q = 0; q < count; q++) {
           var transform = argsArray[j + (q << 2) + 1];
-          var maskParams = argsArray[j + (q << 2) + 2];
+          var maskParams = argsArray[j + (q << 2) + 2][0];
           images.push({data: maskParams.data, width: maskParams.width,
             height: maskParams.height, transform: transform});
         }
