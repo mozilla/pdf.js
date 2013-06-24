@@ -2483,6 +2483,7 @@ var Font = (function FontClosure() {
         data = this.convert(name, cff, properties);
         break;
 
+      case 'OpenType':
       case 'TrueType':
       case 'CIDFontType2':
         this.mimetype = 'font/opentype';
@@ -2490,10 +2491,6 @@ var Font = (function FontClosure() {
         // Repair the TrueType file. It is can be damaged in the point of
         // view of the sanitizer
         data = this.checkAndRepair(name, file, properties);
-        if (!data) {
-          // TrueType data is not found, e.g. when the font is an OpenType font
-          warn('Font is not a TrueType font');
-        }
         break;
 
       default:
@@ -3881,17 +3878,27 @@ var Font = (function FontClosure() {
       var isTrueType = !tables['CFF '];
       if (!isTrueType) {
         // OpenType font
+        if (!tables.head || !tables.hhea || !tables.maxp || !tables.post) {
+          // no major tables: throwing everything at CFFFont
+          var cffFile = new Stream(tables['CFF '].data);
+          var cff = new CFFFont(cffFile, properties);
+
+          return this.convert(name, cff, properties);
+        }
+
         delete tables.glyf;
         delete tables.loca;
         delete tables.fpgm;
         delete tables.prep;
         delete tables['cvt '];
-
-        return; // TODO: implement OpenType support
       } else {
         if (!tables.glyf || !tables.loca) {
           error('Required "glyf" or "loca" tables are not found');
         }
+      }
+
+      if (!tables.maxp) {
+        error('Required "maxp" table is not found');
       }
 
       font.pos = (font.start || 0) + tables.maxp.offset;
@@ -3900,7 +3907,7 @@ var Font = (function FontClosure() {
       var maxFunctionDefs = 0;
       if (version >= 0x00010000 && tables.maxp.length >= 22) {
         font.pos += 14;
-        var maxFunctionDefs = int16(font.getBytes(2));
+        maxFunctionDefs = int16(font.getBytes(2));
       }
 
       var hintsValid = sanitizeTTPrograms(tables.fpgm, tables.prep,
@@ -3944,6 +3951,10 @@ var Font = (function FontClosure() {
 
         sanitizeGlyphLocations(tables.loca, tables.glyf, numGlyphs,
                                isGlyphLocationsLong, hintsValid);
+      }
+
+      if (!tables.hhea) {
+        error('Required "hhea" table is not found');
       }
 
       // Sanitizer reduces the glyph advanceWidth to the maxAdvanceWidth
@@ -4200,6 +4211,19 @@ var Font = (function FontClosure() {
           tag: 'post',
           data: stringToArray(createPostTable(properties))
         };
+      }
+
+      if (!isTrueType) {
+        try {
+          // Trying to repair CFF file
+          var cffFile = new Stream(tables['CFF '].data);
+          var parser = new CFFParser(cffFile, properties);
+          var cff = parser.parse();
+          var compiler = new CFFCompiler(cff);
+          tables['CFF '].data = compiler.compile();
+        } catch (e) {
+          warn('Failed to compile font ' + properties.loadedName);
+        }
       }
 
       // Re-creating 'name' table
