@@ -1137,6 +1137,13 @@
       "rounds": 1,
       "type": "eq"
     },
+    {  "id": "bug886717",
+      "file": "pdfs/bug886717.pdf",
+      "md5": "8ba614192797a1324765610231a1bc9d",
+      "rounds": 1,
+      "type": "load",
+      "about": "Annotation that has no resources."
+    },
     {  "id": "issue3263",
       "file": "pdfs/issue3263.pdf",
       "md5": "cee1cf0bd7ce6681cdb97c8e42697d81",
