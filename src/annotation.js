@@ -142,6 +142,10 @@ var Annotation = (function AnnotationClosure() {
     loadResources: function(keys) {
       var promise = new Promise();
       this.appearance.dict.getAsync('Resources').then(function(resources) {
+        if (!resources) {
+          promise.resolve();
+          return;
+        }
         var objectLoader = new ObjectLoader(resources.map,
                                             keys,
                                             resources.xref);
