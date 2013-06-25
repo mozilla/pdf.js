@@ -19,7 +19,8 @@
            IDENTITY_MATRIX, info, isArray, isCmd, isDict, isEOF, isName, isNum,
            isStream, isString, JpegStream, Lexer, Metrics, Name, Parser,
            Pattern, PDFImage, PDFJS, serifFonts, stdFontMap, symbolsFonts,
-           TilingPattern, TODO, warn, Util, MissingDataException, Promise */
+           TilingPattern, TODO, warn, Util, MissingDataException, Promise,
+           RefSetCache, isRef */
 
 'use strict';
 
@@ -35,6 +36,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
     this.pageIndex = pageIndex;
     this.uniquePrefix = uniquePrefix;
     this.idCounters = idCounters;
+    this.fontCache = new RefSetCache();
   }
 
   // Specifies properties for each command
@@ -502,38 +504,45 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
 
     loadFont: function PartialEvaluator_loadFont(fontName, font, xref,
                                                  resources) {
-      var promise = new Promise();
-
-      var fontRes = resources.get('Font');
-      if (!fontRes) {
-        warn('fontRes not available');
-      }
-
-      font = xref.fetchIfRef(font) || (fontRes && fontRes.get(fontName));
-      if (!isDict(font)) {
-        ++this.idCounters.font;
+      function errorFont(promise) {
         promise.resolve({
           font: {
             translated: new ErrorFont('Font ' + fontName + ' is not available'),
-            loadedName: 'g_font_' + this.uniquePrefix + this.idCounters.obj
+            loadedName: 'g_font_error'
           },
           dependencies: {}
         });
         return promise;
       }
 
-      if (font.loaded) {
-        promise.resolve({
-          font: font,
-          dependencies: {}
-        });
-        return promise;
+      var fontRef;
+      if (font) { // Loading by ref.
+        assert(isRef(font));
+        fontRef = font;
+      } else { // Loading by name.
+        var fontRes = resources.get('Font');
+        if (fontRes) {
+          fontRef = fontRes.getRaw(fontName);
+        } else {
+          warn('fontRes not available');
+          return errorFont(new Promise());
+        }
+      }
+      if (this.fontCache.has(fontRef)) {
+        return this.fontCache.get(fontRef);
+      }
+
+      var promise = new Promise();
+      this.fontCache.put(fontRef, promise);
+
+      font = xref.fetchIfRef(fontRef);
+      if (!isDict(font)) {
+        return errorFont(promise);
       }
 
       // keep track of each font we translated so the caller can
       // load them asynchronously before calling display on a page
-      font.loadedName = 'g_font_' + this.uniquePrefix +
-                        (++this.idCounters.font);
+      font.loadedName = 'g_font_' + fontRef.num + '_' + fontRef.gen;
 
       if (!font.translated) {
         var translated;

@@ -1088,6 +1088,15 @@
       "type": "eq",
       "about": "Has a 4 bit per component image with mask and decode."
     },
+    {  "id": "issue2984",
+      "file": "pdfs/issue2984.pdf",
+      "md5": "d41d8cd98f00b204e9800998ecf8427e",
+      "rounds": 1,
+      "link": true,
+      "type": "eq",
+      "lastPage": 1,
+      "about": "Type3 fonts with lots of switching between them."
+    },
     {  "id": "bug808084",
       "file": "pdfs/bug808084.pdf",
       "md5": "b1c400de699af29ea3f1983bb26870ab",
