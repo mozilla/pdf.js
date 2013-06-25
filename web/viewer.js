@@ -31,7 +31,6 @@ var VERTICAL_PADDING = 5;
 var MIN_SCALE = 0.25;
 var MAX_SCALE = 4.0;
 var SETTINGS_MEMORY = 20;
-var HISTORY_DISABLED = false;
 var SCALE_SELECT_CONTAINER_PADDING = 8;
 var SCALE_SELECT_PADDING = 22;
 var RenderingStates = {
@@ -190,7 +189,7 @@ var PDFHistory = {
   initialDestination: null,
 
   initialize: function pdfHistoryInitialize(fingerprint) {
-    if (HISTORY_DISABLED || window.parent !== window) {
+    if (PDFJS.disableHistory || window.parent !== window) {
       // The browsing history is only enabled when the viewer is standalone,
       // i.e. not when it is embedded in a page.
       return;
@@ -2562,6 +2561,10 @@ document.addEventListener('DOMContentLoaded', function webViewerLoad(evt) {
 
   if ('disableFontFace' in hashParams) {
     PDFJS.disableFontFace = (hashParams['disableFontFace'] === 'true');
+  }
+
+  if ('disableHistory' in hashParams) {
+    PDFJS.disableHistory = (hashParams['disableHistory'] === 'true');
   }
 
 //#if !(FIREFOX || MOZCENTRAL)
