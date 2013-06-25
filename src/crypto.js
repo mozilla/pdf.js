@@ -352,7 +352,7 @@ var AES128Cipher = (function AES128CipherClosure() {
     this.bufferPosition = 0;
   }
 
-  function decryptBlock2(data) {
+  function decryptBlock2(data, finalize) {
     var i, j, ii, sourceLength = data.length,
         buffer = this.buffer, bufferLength = this.bufferPosition,
         result = [], iv = this.iv;
@@ -375,19 +375,25 @@ var AES128Cipher = (function AES128CipherClosure() {
     this.buffer = buffer;
     this.bufferLength = bufferLength;
     this.iv = iv;
-    if (result.length === 0)
+    if (result.length === 0) {
       return new Uint8Array([]);
-    if (result.length == 1)
-      return result[0];
+    }
     // combining plain text blocks into one
-    var output = new Uint8Array(16 * result.length);
+    var outputLength = 16 * result.length;
+    if (finalize) {
+      // undo a padding that is described in RFC 2898
+      var lastBlock = result[result.length - 1];
+      outputLength -= lastBlock[15];
+      result[result.length - 1] = lastBlock.subarray(0, 16 - lastBlock[15]);
+    }
+    var output = new Uint8Array(outputLength);
     for (i = 0, j = 0, ii = result.length; i < ii; ++i, j += 16)
       output.set(result[i], j);
     return output;
   }
 
   AES128Cipher.prototype = {
-    decryptBlock: function AES128Cipher_decryptBlock(data) {
+    decryptBlock: function AES128Cipher_decryptBlock(data, finalize) {
       var i, sourceLength = data.length;
       var buffer = this.buffer, bufferLength = this.bufferPosition;
       // waiting for IV values -- they are at the start of the stream
@@ -403,7 +409,7 @@ var AES128Cipher = (function AES128CipherClosure() {
       this.bufferLength = 0;
       // starting decryption
       this.decryptBlock = decryptBlock2;
-      return this.decryptBlock(data.subarray(16));
+      return this.decryptBlock(data.subarray(16), finalize);
     }
   };
 
@@ -419,15 +425,15 @@ var CipherTransform = (function CipherTransformClosure() {
     createStream: function CipherTransform_createStream(stream) {
       var cipher = new this.streamCipherConstructor();
       return new DecryptStream(stream,
-        function cipherTransformDecryptStream(data) {
-          return cipher.decryptBlock(data);
+        function cipherTransformDecryptStream(data, finalize) {
+          return cipher.decryptBlock(data, finalize);
         }
       );
     },
     decryptString: function CipherTransform_decryptString(s) {
       var cipher = new this.stringCipherConstructor();
       var data = stringToBytes(s);
-      data = cipher.decryptBlock(data);
+      data = cipher.decryptBlock(data, true);
       return bytesToString(data);
     }
   };
