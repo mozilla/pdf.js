@@ -15,7 +15,11 @@
  * limitations under the License.
  */
 
-var PDFJS = {};
+// Initializing PDFJS global object (if still undefined)
+if (typeof PDFJS === 'undefined') {
+  (typeof window !== 'undefined' ? window : this).PDFJS = {};
+}
+
 //#if BUNDLE_VERSION
 //#expand PDFJS.version = '__BUNDLE_VERSION__';
 //#endif
