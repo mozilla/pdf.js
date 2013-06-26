@@ -5794,7 +5794,7 @@ var CFFFont = (function CFFFontClosure() {
       } else {
         for (var charcode in encoding)
           inverseEncoding[encoding[charcode]] = charcode | 0;
-        if (charsets[0] === '.notedef') {
+        if (charsets[0] === '.notdef') {
           gidStart = 1;
         }
       }
