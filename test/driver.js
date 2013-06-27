@@ -137,7 +137,10 @@ function nextTask() {
   PDFJS.disableRange = task.disableRange || masterMode;
   PDFJS.disableAutoFetch = !task.enableAutoFetch || masterMode;
   try {
-    var promise = PDFJS.getDocument(absoluteUrl);
+    var promise = PDFJS.getDocument({
+      url: absoluteUrl,
+      password: task.password
+    });
     promise.then(function(doc) {
       task.pdfDoc = doc;
       continuation();
