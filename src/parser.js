@@ -217,9 +217,47 @@ var Parser = (function ParserClosure() {
       stream.pos = pos + length;
       this.shift(); // '>>'
       this.shift(); // 'stream'
-      if (!isCmd(this.buf1, 'endstream'))
-        error('Missing endstream');
-      this.shift();
+      if (!isCmd(this.buf1, 'endstream')) {
+        // bad stream length, scanning for endstream
+        stream.pos = pos;
+        var SCAN_BLOCK_SIZE = 2048;
+        var ENDSTREAM_SIGNATURE_LENGTH = 9;
+        var ENDSTREAM_SIGNATURE = [0x65, 0x6E, 0x64, 0x73, 0x74, 0x72, 0x65,
+                                   0x61, 0x6D];
+        var skipped = 0, found = false;
+        while (stream.pos < stream.end) {
+          var scanBytes = stream.peekBytes(SCAN_BLOCK_SIZE);
+          var scanLength = scanBytes.length - ENDSTREAM_SIGNATURE_LENGTH;
+          var found = false, i, ii, j;
+          for (i = 0, j = 0; i < scanLength; i++) {
+            var b = scanBytes[i];
+            if (b !== ENDSTREAM_SIGNATURE[j]) {
+              i -= j;
+              j = 0;
+            } else {
+              j++;
+              if (j >= ENDSTREAM_SIGNATURE_LENGTH) {
+                found = true;
+                break;
+              }
+            }
+          }
+          if (found) {
+            skipped += i - ENDSTREAM_SIGNATURE_LENGTH;
+            stream.pos += i - ENDSTREAM_SIGNATURE_LENGTH;
+            break;
+          }
+          skipped += scanLength;
+          stream.pos += scanLength;
+        }
+        if (!found) {
+          error('Missing endstream');
+        }
+        length = skipped;
+        this.shift();
+        this.shift();
+      }
+      this.shift(); // 'endstream'
 
       stream = stream.makeSubStream(pos, length, dict);
       if (cipherTransform)
