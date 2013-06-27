@@ -34,7 +34,7 @@ REFDIR = 'ref'
 TEST_SNAPSHOTS = 'test_snapshots'
 TMPDIR = 'tmp'
 VERBOSE = False
-BROWSER_TIMEOUT = 60
+BROWSER_TIMEOUT = 120
 
 SERVER_HOST = "localhost"
 
