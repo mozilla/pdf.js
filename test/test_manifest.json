@@ -1201,6 +1201,13 @@
       "rounds": 1,
       "type": "eq"
     },
+    {  "id": "bug766138",
+      "file": "pdfs/bug766138.pdf",
+      "md5": "b171f5cf8d9834348112fba60ee54f8c",
+      "link": true,
+      "rounds": 1,
+      "type": "eq"
+    },
     {  "id": "issue2829",
       "file": "pdfs/issue2829.pdf",
       "md5": "f32b28cf8792f6ccc470446bfbb38584",
