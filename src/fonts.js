@@ -2494,7 +2494,7 @@ var Font = (function FontClosure() {
         break;
 
       default:
-        warn('Font ' + type + ' is not supported');
+        error('Font ' + type + ' is not supported');
         break;
     }
 
