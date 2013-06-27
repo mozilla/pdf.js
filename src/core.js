@@ -48,7 +48,6 @@ var Page = (function PageClosure() {
     this.xref = xref;
     this.ref = ref;
     this.idCounters = {
-      font: 0,
       obj: 0
     };
     this.resourcesPromise = null;
