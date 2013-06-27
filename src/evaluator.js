@@ -124,7 +124,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
     // Images
     BI: { fnName: 'beginInlineImage', numArgs: 0, variableArgs: false },
     ID: { fnName: 'beginImageData', numArgs: 0, variableArgs: false },
-    EI: { fnName: 'endInlineImage', numArgs: 0, variableArgs: false },
+    EI: { fnName: 'endInlineImage', numArgs: 1, variableArgs: false },
 
     // XObjects
     Do: { fnName: 'paintXObject', numArgs: 1, variableArgs: false },
