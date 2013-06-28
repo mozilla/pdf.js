@@ -70,12 +70,12 @@ target.all = function() {
 
 // Files that need to be included in every build.
 var COMMON_WEB_FILES =
-      ['web/viewer.css',
-       'web/images',
+      ['web/images',
        'web/debugger.js'],
     COMMON_WEB_FILES_PREPROCESS =
       ['web/viewer.js',
-       'web/viewer.html'];
+       'web/viewer.html',
+       'web/viewer.css'];
 
 //
 // make generic

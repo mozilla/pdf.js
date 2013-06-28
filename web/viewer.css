@@ -42,6 +42,7 @@ select {
   display: none !important;
 }
 
+/*#if !(FIREFOX || MOZCENTRAL || B2G) */
 #viewerContainer:-webkit-full-screen {
   top: 0px;
   border-top: 2px solid transparent;
@@ -52,6 +53,7 @@ select {
   overflow: hidden;
   cursor: none;
 }
+/*#endif */
 
 #viewerContainer:-moz-full-screen {
   top: 0px;
@@ -75,10 +77,11 @@ select {
   cursor: none;
 }
 
-
+/*#if !(FIREFOX || MOZCENTRAL || B2G) */
 :-webkit-full-screen .page {
   margin-bottom: 100%;
 }
+/*#endif */
 
 :-moz-full-screen .page {
   margin-bottom: 100%;
@@ -88,9 +91,11 @@ select {
   margin-bottom: 100%;
 }
 
+/*#if !(FIREFOX || MOZCENTRAL || B2G) */
 :-webkit-full-screen a:not(.internalLink) {
   display: none;
 }
+/*#endif */
 
 :-moz-full-screen a:not(.internalLink) {
   display: none;
@@ -137,30 +142,37 @@ html[dir='rtl'] .innerCenter {
   bottom: 0;
   width: 200px;
   visibility: hidden;
+/*#if !(FIREFOX || MOZCENTRAL || B2G) */
   -webkit-transition-duration: 200ms;
   -webkit-transition-timing-function: ease;
-  -moz-transition-duration: 200ms;
-  -moz-transition-timing-function: ease;
   -ms-transition-duration: 200ms;
   -ms-transition-timing-function: ease;
   -o-transition-duration: 200ms;
   -o-transition-timing-function: ease;
+/*#endif */
+  -moz-transition-duration: 200ms;
+  -moz-transition-timing-function: ease;
   transition-duration: 200ms;
   transition-timing-function: ease;
 
 }
 html[dir='ltr'] #sidebarContainer {
+/*#if !(FIREFOX || MOZCENTRAL || B2G) */
   -webkit-transition-property: left;
-  -moz-transition-property: left;
   -ms-transition-property: left;
   -o-transition-property: left;
+/*#endif */
+  -moz-transition-property: left;
   transition-property: left;
   left: -200px;
 }
 html[dir='rtl'] #sidebarContainer {
+/*#if !(FIREFOX || MOZCENTRAL || B2G) */
   -webkit-transition-property: right;
   -ms-transition-property: right;
   -o-transition-property: right;
+/*#endif */
+  -moz-transition-property: right;
   transition-property: right;
   right: -200px;
 }
@@ -183,30 +195,36 @@ html[dir='rtl'] #outerContainer.sidebarOpen > #sidebarContainer {
   bottom: 0;
   left: 0;
   min-width: 320px;
+/*#if !(FIREFOX || MOZCENTRAL || B2G) */
   -webkit-transition-duration: 200ms;
   -webkit-transition-timing-function: ease;
-  -moz-transition-duration: 200ms;
-  -moz-transition-timing-function: ease;
   -ms-transition-duration: 200ms;
   -ms-transition-timing-function: ease;
   -o-transition-duration: 200ms;
   -o-transition-timing-function: ease;
+/*#endif */
+  -moz-transition-duration: 200ms;
+  -moz-transition-timing-function: ease;
   transition-duration: 200ms;
   transition-timing-function: ease;
 }
 html[dir='ltr'] #outerContainer.sidebarOpen > #mainContainer {
+/*#if !(FIREFOX || MOZCENTRAL || B2G) */
   -webkit-transition-property: left;
-  -moz-transition-property: left;
   -ms-transition-property: left;
   -o-transition-property: left;
+/*#endif */
+  -moz-transition-property: left;
   transition-property: left;
   left: 200px;
 }
 html[dir='rtl'] #outerContainer.sidebarOpen > #mainContainer {
+/*#if !(FIREFOX || MOZCENTRAL || B2G) */
   -webkit-transition-property: right;
-  -moz-transition-property: right;
   -ms-transition-property: right;
   -o-transition-property: right;
+/*#endif */
+  -moz-transition-property: right;
   transition-property: right;
   right: 200px;
 }
@@ -299,18 +317,15 @@ html[dir='rtl'] #sidebarContent {
   height: 100%;
   background-color: #ddd;
   overflow: hidden;
-  -moz-transition: width 200ms;
+/*#if !(FIREFOX || MOZCENTRAL || B2G) */
   -ms-transition: width 200ms;
   -webkit-transition: width 200ms;
+/*#endif */
+  -moz-transition: width 200ms;
   transition: width 200ms;
 }
 
-@-moz-keyframes progressIndeterminate {
-  0% { left: 0%; }
-  50% { left: 100%; }
-  100% { left: 100%; }
-}
-
+/*#if !(FIREFOX || MOZCENTRAL || B2G) */
 @-ms-keyframes progressIndeterminate {
   0% { left: 0%; }
   50% { left: 100%; }
@@ -318,6 +333,13 @@ html[dir='rtl'] #sidebarContent {
 }
 
 @-webkit-keyframes progressIndeterminate {
+  0% { left: 0%; }
+  50% { left: 100%; }
+  100% { left: 100%; }
+}
+/*#endif */
+
+@-moz-keyframes progressIndeterminate {
   0% { left: 0%; }
   50% { left: 100%; }
   100% { left: 100%; }
@@ -331,9 +353,11 @@ html[dir='rtl'] #sidebarContent {
 
 #loadingBar .progress.indeterminate {
   background-color: #999;
-  -moz-transition: none;
+/*#if !(FIREFOX || MOZCENTRAL || B2G) */
   -ms-transition: none;
   -webkit-transition: none;
+/*#endif */
+  -moz-transition: none;
   transition: none;
 }
 
@@ -347,9 +371,11 @@ html[dir='rtl'] #sidebarContent {
   background-image: linear-gradient(to right, #999 0%, #fff 50%, #999 100%);
   background-size: 100% 100% no-repeat;
 
-  -moz-animation: progressIndeterminate 2s linear infinite;
+/*#if !(FIREFOX || MOZCENTRAL || B2G) */
   -ms-animation: progressIndeterminate 2s linear infinite;
   -webkit-animation: progressIndeterminate 2s linear infinite;
+/*#endif */
+  -moz-animation: progressIndeterminate 2s linear infinite;
   animation: progressIndeterminate 2s linear infinite;
 }
 
@@ -378,7 +404,9 @@ html[dir='rtl'] .findbar {
 }
 
 .findbar label {
+/*#if !(FIREFOX || MOZCENTRAL || B2G) */
   -webkit-user-select: none;
+/*#endif */
   -moz-user-select: none;
 }
 
@@ -530,18 +558,20 @@ html[dir='rtl'] .splitToolbarButton > .toolbarButton {
   box-shadow: 0 1px 0 hsla(0,0%,100%,.05) inset,
               0 0 1px hsla(0,0%,100%,.15) inset,
               0 1px 0 hsla(0,0%,100%,.05);
+/*#if !(FIREFOX || MOZCENTRAL || B2G) */
   -webkit-transition-property: background-color, border-color, box-shadow;
   -webkit-transition-duration: 150ms;
   -webkit-transition-timing-function: ease;
-  -moz-transition-property: background-color, border-color, box-shadow;
-  -moz-transition-duration: 150ms;
-  -moz-transition-timing-function: ease;
   -ms-transition-property: background-color, border-color, box-shadow;
   -ms-transition-duration: 150ms;
   -ms-transition-timing-function: ease;
   -o-transition-property: background-color, border-color, box-shadow;
   -o-transition-duration: 150ms;
   -o-transition-timing-function: ease;
+/*#endif */
+  -moz-transition-property: background-color, border-color, box-shadow;
+  -moz-transition-duration: 150ms;
+  -moz-transition-timing-function: ease;
   transition-property: background-color, border-color, box-shadow;
   transition-duration: 150ms;
   transition-timing-function: ease;
@@ -596,18 +626,20 @@ html[dir='rtl'] .splitToolbarButtonSeparator {
   padding: 12px 0;
   margin: 1px 0;
   box-shadow: 0 0 0 1px hsla(0,0%,100%,.03);
+/*#if !(FIREFOX || MOZCENTRAL || B2G) */
   -webkit-transition-property: padding;
   -webkit-transition-duration: 10ms;
   -webkit-transition-timing-function: ease;
-  -moz-transition-property: padding;
-  -moz-transition-duration: 10ms;
-  -moz-transition-timing-function: ease;
   -ms-transition-property: padding;
   -ms-transition-duration: 10ms;
   -ms-transition-timing-function: ease;
   -o-transition-property: padding;
   -o-transition-duration: 10ms;
   -o-transition-timing-function: ease;
+/*#endif */
+  -moz-transition-property: padding;
+  -moz-transition-duration: 10ms;
+  -moz-transition-timing-function: ease;
   transition-property: padding;
   transition-duration: 10ms;
   transition-timing-function: ease;
@@ -622,23 +654,27 @@ html[dir='rtl'] .splitToolbarButtonSeparator {
   color: hsl(0,0%,95%);
   font-size: 12px;
   line-height: 14px;
+/*#if !(FIREFOX || MOZCENTRAL || B2G) */
   -webkit-user-select: none;
-  -moz-user-select: none;
   -ms-user-select: none;
   /* Opera does not support user-select, use <... unselectable="on"> instead */
+/*#endif */
+  -moz-user-select: none;
   cursor: default;
+/*#if !(FIREFOX || MOZCENTRAL || B2G) */
   -webkit-transition-property: background-color, border-color, box-shadow;
   -webkit-transition-duration: 150ms;
   -webkit-transition-timing-function: ease;
-  -moz-transition-property: background-color, border-color, box-shadow;
-  -moz-transition-duration: 150ms;
-  -moz-transition-timing-function: ease;
   -ms-transition-property: background-color, border-color, box-shadow;
   -ms-transition-duration: 150ms;
   -ms-transition-timing-function: ease;
   -o-transition-property: background-color, border-color, box-shadow;
   -o-transition-duration: 150ms;
   -o-transition-timing-function: ease;
+/*#endif */
+  -moz-transition-property: background-color, border-color, box-shadow;
+  -moz-transition-duration: 150ms;
+  -moz-transition-timing-function: ease;
   transition-property: background-color, border-color, box-shadow;
   transition-duration: 150ms;
   transition-timing-function: ease;
@@ -674,18 +710,20 @@ html[dir='rtl'] .dropdownToolbarButton {
   box-shadow: 0 1px 1px hsla(0,0%,0%,.1) inset,
               0 0 1px hsla(0,0%,0%,.2) inset,
               0 1px 0 hsla(0,0%,100%,.05);
+/*#if !(FIREFOX || MOZCENTRAL || B2G) */
   -webkit-transition-property: background-color, border-color, box-shadow;
   -webkit-transition-duration: 10ms;
   -webkit-transition-timing-function: linear;
-  -moz-transition-property: background-color, border-color, box-shadow;
-  -moz-transition-duration: 10ms;
-  -moz-transition-timing-function: linear;
   -ms-transition-property: background-color, border-color, box-shadow;
   -ms-transition-duration: 10ms;
   -ms-transition-timing-function: linear;
   -o-transition-property: background-color, border-color, box-shadow;
   -o-transition-duration: 10ms;
   -o-transition-timing-function: linear;
+/*#endif */
+  -moz-transition-property: background-color, border-color, box-shadow;
+  -moz-transition-duration: 10ms;
+  -moz-transition-timing-function: linear;
   transition-property: background-color, border-color, box-shadow;
   transition-duration: 10ms;
   transition-timing-function: linear;
@@ -699,18 +737,20 @@ html[dir='rtl'] .dropdownToolbarButton {
   box-shadow: 0 1px 1px hsla(0,0%,0%,.1) inset,
               0 0 1px hsla(0,0%,0%,.2) inset,
               0 1px 0 hsla(0,0%,100%,.05);
+/*#if !(FIREFOX || MOZCENTRAL || B2G) */
   -webkit-transition-property: background-color, border-color, box-shadow;
   -webkit-transition-duration: 10ms;
   -webkit-transition-timing-function: linear;
-  -moz-transition-property: background-color, border-color, box-shadow;
-  -moz-transition-duration: 10ms;
-  -moz-transition-timing-function: linear;
   -ms-transition-property: background-color, border-color, box-shadow;
   -ms-transition-duration: 10ms;
   -ms-transition-timing-function: linear;
   -o-transition-property: background-color, border-color, box-shadow;
   -o-transition-duration: 10ms;
   -o-transition-timing-function: linear;
+/*#endif */
+  -moz-transition-property: background-color, border-color, box-shadow;
+  -moz-transition-duration: 10ms;
+  -moz-transition-timing-function: linear;
   transition-property: background-color, border-color, box-shadow;
   transition-duration: 10ms;
   transition-timing-function: linear;
@@ -740,7 +780,9 @@ html[dir='rtl'] .dropdownToolbarButton {
 }
 
 .dropdownToolbarButton > select {
+/*#if !(FIREFOX || MOZCENTRAL || B2G) */
   -webkit-appearance: none;
+/*#endif */
   -moz-appearance: none; /* in the future this might matter, see bugzilla bug #649849 */
   min-width: 140px;
   font-size: 12px;
@@ -783,7 +825,9 @@ html[dir='rtl'] .toolbarButton:first-child {
 }
 
 .toolbarButtonFlexibleSpacer {
+/*#if !(FIREFOX || MOZCENTRAL || B2G) */
   -webkit-box-flex: 1;
+/*#endif */
   -moz-box-flex: 1;
   min-width: 30px;
 }
@@ -887,7 +931,9 @@ html[dir='rtl'] .toolbarButton.pageDown::before {
 }
 
 .toolbarButton.bookmark {
+/*#if !(FIREFOX || MOZCENTRAL || B2G) */
   -webkit-box-sizing: border-box;
+/*#endif */
   -moz-box-sizing: border-box;
   box-sizing: border-box;
   margin-top: 3px;
@@ -918,7 +964,6 @@ html[dir='rtl'] .toolbarButton.pageDown::before {
   content: url(images/toolbarButton-search.png);
 }
 
-
 .toolbarField {
   padding: 3px 6px;
   margin: 4px 0 4px 0;
@@ -938,6 +983,9 @@ html[dir='rtl'] .toolbarButton.pageDown::before {
   -moz-transition-property: background-color, border-color, box-shadow;
   -moz-transition-duration: 150ms;
   -moz-transition-timing-function: ease;
+  transition-property: background-color, border-color, box-shadow;
+  transition-duration: 150ms;
+  transition-timing-function: ease;
 }
 
 .toolbarField[type=checkbox] {
@@ -951,11 +999,13 @@ html[dir='rtl'] .toolbarButton.pageDown::before {
   width: 40px;
 }
 
+/*#if !(FIREFOX || MOZCENTRAL || B2G) */
 .toolbarField.pageNumber::-webkit-inner-spin-button,
 .toolbarField.pageNumber::-webkit-outer-spin-button {
-    -webkit-appearance: none;
-    margin: 0;
+  -webkit-appearance: none;
+  margin: 0;
 }
+/*#endif */
 
 .toolbarField:hover {
   background-color: hsla(0,0%,100%,.11);
@@ -977,7 +1027,9 @@ html[dir='rtl'] .toolbarButton.pageDown::before {
   font-size: 12px;
   line-height: 14px;
   text-align: left;
+/*#if !(FIREFOX || MOZCENTRAL || B2G) */
   -webkit-user-select: none;
+/*#endif */
   -moz-user-select: none;
   cursor: default;
 }
@@ -1002,6 +1054,7 @@ html[dir='rtl'] .toolbarButton.pageDown::before {
 
 .thumbnailImage {
   -moz-transition-duration: 150ms;
+  transition-duration: 150ms;
   border: 1px solid transparent;
   box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.5), 0 2px 8px rgba(0, 0, 0, 0.3);
   opacity: 0.8;
@@ -1012,6 +1065,7 @@ html[dir='rtl'] .toolbarButton.pageDown::before {
   border-radius: 2px;
   padding: 7px;
   -moz-transition-duration: 150ms;
+  transition-duration: 150ms;
 }
 
 a:focus > .thumbnail > .thumbnailSelectionRing > .thumbnailImage,
@@ -1052,7 +1106,9 @@ a:focus > .thumbnail > .thumbnailSelectionRing,
   bottom: 0;
   padding: 4px 4px 0;
   overflow: auto;
+/*#if !(FIREFOX || MOZCENTRAL || B2G) */
   -webkit-user-select: none;
+/*#endif */
   -moz-user-select: none;
 }
 
