@@ -35,30 +35,30 @@ body {
   height: 100%;
   width: 100%;
   overflow: hidden;
-  padding-bottom: 50px;
+  padding-bottom: 5rem;
 }
 
 section {
   overflow: hidden;
-  font-size: 10px;
+  font-size: 1rem;
   position: absolute;
-  top: 0px;
-  left: 0px;
+  top: 0;
+  left: 0;
   width: 100%;
   height: 100%;
   overflow: hidden;
-  font-size: 20px;
+  font-size: 2rem;
 }
 
 footer {
   background-image: url(images/toolbar_background.png);
-  height: 40px;
+  height: 4rem;
   position: absolute;
   bottom: 0;
   left: 0;
   right: 0;
   z-index: 1;
-  box-shadow: 0px -2px 5px rgba(50, 50, 50, 0.75);
+  box-shadow: 0 -0.2rem 0.5rem rgba(50, 50, 50, 0.75);
 }
 
 
@@ -78,6 +78,7 @@ footer {
   height: 100%;
   left: 0;
   background-image: url(images/icon_previous_page.png);
+  background-size: 2rem;
 }
 
 .toolbarButton.pageDown {
@@ -86,6 +87,7 @@ footer {
   height: 100%;
   left: 18%;
   background-image: url(images/icon_next_page.png);
+  background-size: 2rem;
 }
 
 #pageNumber {
@@ -96,7 +98,7 @@ footer {
   text-align: center;
   border: 0;
   background-color: transparent;
-  font-size: 9pt;
+  font-size: 1.2rem;
   color: #FFF;
   background-image: url(images/div_line_left.png), url(images/div_line_right.png);
   background-repeat: no-repeat;
@@ -109,6 +111,7 @@ footer {
   height: 100%;
   left: 64%;
   background-image: url(images/icon_zoom_out.png);
+  background-size: 2.4rem;
 }
 
 .toolbarButton.zoomIn {
@@ -117,6 +120,7 @@ footer {
   height: 100%;
   left: 82%;
   background-image: url(images/icon_zoom_in.png);
+  background-size: 2.4rem;
 }
 
 .toolbarButton[disabled] {
@@ -134,8 +138,8 @@ footer {
   position: absolute;
   overflow: auto;
   width: 100%;
-  top: 50px;
-  bottom: 40px;
+  top: 5rem;
+  bottom: 4rem;
   left: 0;
   right: 0;
 }
@@ -147,9 +151,9 @@ canvas {
 
 .page {
   direction: ltr;
-  width: 816px;
-  height: 1056px;
-  margin: 10px auto;
+  width: 81.6rem;
+  height: 105.6rem;
+  margin: 1rem auto;
   position: relative;
   overflow: hidden;
   background-color: white;
@@ -163,7 +167,7 @@ canvas {
 .loadingIcon {
   width: 2.9rem;
   height: 2.9rem;
-  background: url("images/spinner.png") no-repeat scroll left top transparent;
+  background: url("images/spinner.png") no-repeat left top / 38rem ;
   border: medium none;
   animation: 1s steps(10, end) 0s normal none infinite moveDefault;
   display: block;
@@ -178,79 +182,75 @@ canvas {
   }
 
   to {
-    background-position: -390px top;
+    background-position: -39rem top;
   }
 }
 
-#loadingBox {
-  position: absolute;
-  top: 50%;
-  margin-top: -25px;
-  left: 0;
-  right: 0;
-  text-align: center;
-  color: #ddd;
-  font-size: 14px;
-}
-
 #loadingBar {
-  display: inline-block;
-  clear: both;
-  margin: 0px;
-  margin-top: 5px;
-  line-height: 0;
-  border-radius: 2px;
-  width: 200px;
-  height: 25px;
-
-  background-color: hsla(0,0%,0%,.3);
-  background-image: -moz-linear-gradient(hsla(0,0%,100%,.05), hsla(0,0%,100%,0));
-  background-image: -webkit-linear-gradient(hsla(0,0%,100%,.05), hsla(0,0%,100%,0));
-  border: 1px solid #000;
-  box-shadow: 0 1px 1px hsla(0,0%,0%,.1) inset,
-              0 0 1px hsla(0,0%,0%,.2) inset,
-              0 0 1px 1px rgba(255, 255, 255, 0.1);
+  position: relative;
+  height: .6rem;
+  background-color: #333;
+  border-bottom: 1px solid #333;
+  margin-top: 5rem;
 }
 
 #loadingBar .progress {
-  display: inline-block;
-  float: left;
-
-  background: #666;
-  background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,#b2b2b2), color-stop(100%,#898989));
-  background: -webkit-linear-gradient(top, #b2b2b2 0%,#898989 100%);
-  background: -moz-linear-gradient(top, #b2b2b2 0%,#898989 100%);
-  background: -ms-linear-gradient(top, #b2b2b2 0%,#898989 100%);
-  background: -o-linear-gradient(top, #b2b2b2 0%,#898989 100%);
-  background: linear-gradient(top, #b2b2b2 0%,#898989 100%);
-
-  border-top-left-radius: 2px;
-  border-bottom-left-radius: 2px;
-
+  position: absolute;
+  left: 0;
   width: 0%;
   height: 100%;
-}
-
-#loadingBar .progress.full {
-  border-top-right-radius: 2px;
-  border-bottom-right-radius: 2px;
-}
-
-#loadingBar .progress.indeterminate {
-  width: 100%;
-  height: 25px;
-  background-image: -moz-linear-gradient( 30deg, #404040, #404040 15%, #898989, #404040 85%, #404040);
-  background-image: -webkit-linear-gradient( 30deg, #404040, #404040 15%, #898989, #404040 85%, #404040);
-  background-image: -ms-linear-gradient( 30deg, #404040, #404040 15%, #898989, #404040 85%, #404040);
-  background-image: -o-linear-gradient( 30deg, #404040, #404040 15%, #898989, #404040 85%, #404040);
-  background-size: 75px 25px;
-  -moz-animation: progressIndeterminate 1s linear infinite;
-  -webkit-animation: progressIndeterminate 1s linear infinite;
+  background-color: #ddd;
+  overflow: hidden;
+  -moz-transition: width 200ms;
+  -ms-transition: width 200ms;
+  -webkit-transition: width 200ms;
+  transition: width 200ms;
 }
 
 @-moz-keyframes progressIndeterminate {
-  from { background-position: 0px 0px; }
-  to { background-position: 75px 0px; }
+  0% { left: 0%; }
+  50% { left: 100%; }
+  100% { left: 100%; }
+}
+@-ms-keyframes progressIndeterminate {
+  0% { left: 0%; }
+  50% { left: 100%; }
+  100% { left: 100%; }
+}
+
+@-webkit-keyframes progressIndeterminate {
+  0% { left: 0%; }
+  50% { left: 100%; }
+  100% { left: 100%; }
+}
+@keyframes progressIndeterminate {
+  0% { left: 0%; }
+  50% { left: 100%; }
+  100% { left: 100%; }
+}
+
+#loadingBar .progress.indeterminate {
+  background-color: #999;
+  -moz-transition: none;
+  -ms-transition: none;
+  -webkit-transition: none;
+  transition: none;
+}
+
+#loadingBar .indeterminate .glimmer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 5rem;
+
+  background-image: linear-gradient(to right, #999 0%, #fff 50%, #999 100%);
+  background-size: 100% 100% no-repeat;
+
+  -moz-animation: progressIndeterminate 2s linear infinite;
+  -ms-animation: progressIndeterminate 2s linear infinite;
+  -webkit-animation: progressIndeterminate 2s linear infinite;
+  animation: progressIndeterminate 2s linear infinite;
 }
 
 #errorWrapper {
@@ -259,9 +259,9 @@ canvas {
   left: 0;
   position: absolute;
   right: 0;
-  top: 32px;
+  top: 3.2rem;
   z-index: 1000;
-  padding: 3px;
+  padding: 0.3rem;
   font-size: 0.8em;
 }
 
@@ -276,7 +276,7 @@ canvas {
 #errorMoreInfo {
   background-color: #FFFFFF;
   color: black;
-  padding: 3px;
-  margin: 3px;
+  padding: 0.3rem;
+  margin: 0.3rem;
   width: 98%;
 }
