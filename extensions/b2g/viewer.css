@@ -187,15 +187,11 @@ canvas {
 }
 
 #loadingBar {
-  position: absolute;
-  top: 0;
-  margin-top: -2.5rem;
-  left: 0;
-  right: 0;
-  text-align: center;
-  color: #ddd;
-  font-size: 1.4rem;
-  height: 100%;
+  position: relative;
+  height: .6rem;
+  background-color: #333;
+  border-bottom: 1px solid #333;
+  margin-top: 5rem;
 }
 
 #loadingBar .progress {
@@ -233,6 +229,14 @@ canvas {
   100% { left: 100%; }
 }
 
+#loadingBar .progress.indeterminate {
+  background-color: #999;
+  -moz-transition: none;
+  -ms-transition: none;
+  -webkit-transition: none;
+  transition: none;
+}
+
 #loadingBar .indeterminate .glimmer {
   position: absolute;
   top: 0;
@@ -247,20 +251,6 @@ canvas {
   -ms-animation: progressIndeterminate 2s linear infinite;
   -webkit-animation: progressIndeterminate 2s linear infinite;
   animation: progressIndeterminate 2s linear infinite;
-}
-
-
- #loadingBar .progress.indeterminate {
-   background-color: #999;
-   -moz-transition: none;
-   -ms-transition: none;
-   -webkit-transition: none;
-   transition: none;
- }
-
-@-moz-keyframes progressIndeterminate {
-  from { background-position: 0 0; }
-  to { background-position: 7.5rem 0; }
 }
 
 #errorWrapper {
