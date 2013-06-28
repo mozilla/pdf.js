@@ -25,6 +25,7 @@ limitations under the License.
     <link rel="resource" type="application/l10n" href="locale.properties"/>
     <link rel="stylesheet" href="/shared/style/headers.css" type="text/css" />
     <link rel="stylesheet" href="viewer-b2g.css" type="text/css" />
+    <link rel="stylesheet" href="/shared/style/responsive.css" type="text/css" />
     <script type="text/javascript" src="l10n.js"></script>
     <script type="text/javascript" src="../build/pdf.js"></script>
     <script type="text/javascript" src="/shared/js/async_storage.js"></script>
@@ -51,8 +52,8 @@ limitations under the License.
 
         <input type="number" id="pageNumber" class="toolbarField pageNumber" value="1" size="4" min="1">
 
-        <button class="toolbarButton zoomOut" title="Zoom Out" id="zoom_out" data-l10n-id="zoom_out"></button>
-        <button class="toolbarButton zoomIn" title="Zoom In" id="zoom_in" data-l10n-id="zoom_in"></button>
+        <button class="toolbarButton zoomOut" title="Zoom Out" id="zoomOut" data-l10n-id="zoom_out"></button>
+        <button class="toolbarButton zoomIn" title="Zoom In" id="zoomIn" data-l10n-id="zoom_in"></button>
       </footer>
     </section>
 
@@ -60,9 +61,9 @@ limitations under the License.
       <div id="viewer"></div>
     </div>
 
-    <div id="loadingBox">
-      <div id="loading"></div>
-      <div id="loadingBar"><div class="progress"></div></div>
+    <div id="loadingBar">
+      <div class="progress"></div>
+      <div class="glimmer"></div>
     </div>
 
     <div id="errorWrapper" hidden='true'>
@@ -119,6 +120,7 @@ limitations under the License.
               <span id="numPages"></span>
             </div>
             <div id="toolbarViewerRight">
+              <button id="presentationMode"></button>
               <input id="fileInput" type="file" />
               <button id="fullscreen"></button>
               <button id="openFile"></button>
@@ -147,10 +149,10 @@ limitations under the License.
           </div>
         </div>
         <menu type="context" id="viewerContextMenu">
-          <menuitem id="first_page"></menuitem>
-          <menuitem id="last_page"></menuitem>
-          <menuitem id="page_rotate_ccw"></menuitem>
-          <menuitem id="page_rotate_cw"></menuitem>
+          <menuitem id="firstPage"></menuitem>
+          <menuitem id="lastPage"></menuitem>
+          <menuitem id="pageRotateCcw"></menuitem>
+          <menuitem id="pageRotateCw"></menuitem>
         </menu>
 
       </div> <!-- mainContainer -->
