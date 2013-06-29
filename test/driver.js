@@ -409,6 +409,7 @@ function info(message) {
 }
 
 function clear(ctx) {
+  ctx.beginPath();
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 }
 
