@@ -276,10 +276,9 @@ if (typeof PDFJS === 'undefined') {
   };
 })();
 
-// IE9/10 text/html data URI
+// IE9-11 text/html data URI
 (function checkDataURICompatibility() {
-  if (!('documentMode' in document) ||
-      document.documentMode !== 9 && document.documentMode !== 10)
+  if (!('documentMode' in document) || document.documentMode > 11)
     return;
   // overriding the src property
   var originalSrcDescriptor = Object.getOwnPropertyDescriptor(
