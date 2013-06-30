@@ -3589,8 +3589,9 @@ var Font = (function FontClosure() {
             while (font.pos < end) {
               var stringLength = font.getByte();
               var string = '';
-              for (var i = 0; i < stringLength; ++i)
-                string += font.getChar();
+              for (var i = 0; i < stringLength; ++i) {
+                string += String.fromCharCode(font.getByte());
+              }
               customNames.push(string);
             }
             glyphNames = [];
@@ -5202,10 +5203,10 @@ var Type1Parser = (function Type1ParserClosure() {
   }
 
   function isSpecial(c) {
-    return c === '/' ||
-           c === '[' || c === ']' ||
-           c === '{' || c === '}' ||
-           c === '(' || c === ')';
+    return c === 0x2F || // '/'
+           c === 0x5B || c === 0x5D || // '[', ']'
+           c === 0x7B || c === 0x7D || // '{', '}'
+           c === 0x28 || c === 0x29; // '(', ')'
   }
 
   function Type1Parser(stream, encrypted) {
@@ -5213,6 +5214,7 @@ var Type1Parser = (function Type1ParserClosure() {
       stream = new Stream(decrypt(stream.getBytes(), EEXEC_ENCRYPT_KEY, 4));
     }
     this.stream = stream;
+    this.nextChar();
   }
 
   Type1Parser.prototype = {
@@ -5248,36 +5250,39 @@ var Type1Parser = (function Type1ParserClosure() {
       return token === 'true' ? 1 : 0;
     },
 
+    nextChar : function Type1_nextChar() {
+      return (this.currentChar = this.stream.getByte());
+    },
+
     getToken: function Type1Parser_getToken() {
       // Eat whitespace and comments.
       var comment = false;
-      var ch;
-      var stream = this.stream;
+      var ch = this.currentChar;
       while (true) {
-        if ((ch = stream.lookChar()) === null)
+        if (ch === -1) {
           return null;
+        }
 
         if (comment) {
-          if (ch === '\x0a' || ch === '\x0d') {
+          if (ch === 0x0A || ch === 0x0D) {
             comment = false;
           }
-        } else if (ch === '%') {
+        } else if (ch === 0x25) { // '%'
           comment = true;
         } else if (!Lexer.isSpace(ch)) {
           break;
         }
-        stream.skip();
+        ch = this.nextChar();
       }
       if (isSpecial(ch)) {
-        stream.skip();
-        return ch;
+        this.nextChar();
+        return String.fromCharCode(ch);
       }
       var token = '';
       do {
-        token += ch;
-        stream.skip();
-        ch = stream.lookChar();
-      } while (ch !== null && !Lexer.isSpace(ch) && !isSpecial(ch));
+        token += String.fromCharCode(ch);
+        ch = this.nextChar();
+      } while (ch >= 0 && !Lexer.isSpace(ch) && !isSpecial(ch));
       return token;
     },
 
@@ -5324,12 +5329,13 @@ var Type1Parser = (function Type1ParserClosure() {
               var glyph = this.getToken();
               var length = this.readInt();
               this.getToken(); // read in 'RD' or '-|'
-              var data = stream.makeSubStream(stream.pos + 1, length);
+              var data = stream.makeSubStream(stream.pos, length);
               var lenIV = program.properties.privateData['lenIV'];
               var encoded = decrypt(data.getBytes(), CHAR_STRS_ENCRYPT_KEY,
                                     lenIV);
               // Skip past the required space and binary data.
-              stream.skip(1 + length);
+              stream.skip(length);
+              this.nextChar();
               token = this.getToken(); // read in 'ND' or '|-'
               if (token === 'noaccess') {
                 this.getToken(); // read in 'def'
@@ -5347,12 +5353,13 @@ var Type1Parser = (function Type1ParserClosure() {
               var index = this.readInt();
               var length = this.readInt();
               this.getToken(); // read in 'RD' or '-|'
-              var data = stream.makeSubStream(stream.pos + 1, length);
+              var data = stream.makeSubStream(stream.pos, length);
               var lenIV = program.properties.privateData['lenIV'];
               var encoded = decrypt(data.getBytes(), CHAR_STRS_ENCRYPT_KEY,
                                     lenIV);
               // Skip past the required space and binary data.
-              stream.skip(1 + length);
+              stream.skip(length);
+              this.nextChar();
               token = this.getToken(); // read in 'NP' or '|'
               if (token === 'noaccess') {
                 this.getToken(); // read in 'put'

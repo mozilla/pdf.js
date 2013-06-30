@@ -313,7 +313,7 @@ var PDFDocument = (function PDFDocumentClosure() {
     if (pos + limit > end)
       limit = end - pos;
     for (var n = 0; n < limit; ++n)
-      str += stream.getChar();
+      str += String.fromCharCode(stream.getByte());
     stream.pos = pos;
     var index = backwards ? str.lastIndexOf(needle) : str.indexOf(needle);
     if (index == -1)
@@ -392,12 +392,12 @@ var PDFDocument = (function PDFDocumentClosure() {
           stream.skip(9);
           var ch;
           do {
-            ch = stream.getChar();
+            ch = stream.getByte();
           } while (Lexer.isSpace(ch));
           var str = '';
-          while ((ch - '0') <= 9) {
-            str += ch;
-            ch = stream.getChar();
+          while (ch >= 0x20 && ch <= 0x39) { // < '9'
+            str += String.fromCharCode(ch);
+            ch = stream.getByte();
           }
           startXRef = parseInt(str, 10);
           if (isNaN(startXRef))
@@ -426,11 +426,11 @@ var PDFDocument = (function PDFDocumentClosure() {
         // Reading file format version
         var MAX_VERSION_LENGTH = 12;
         var version = '', ch;
-        while ((ch = stream.getChar()) > ' ') {
+        while ((ch = stream.getByte()) > 0x20) { // SPACE
           if (version.length >= MAX_VERSION_LENGTH) {
             break;
           }
-          version += ch;
+          version += String.fromCharCode(ch);
         }
         // removing "%PDF-"-prefix
         this.pdfFormatVersion = version.substring(5);

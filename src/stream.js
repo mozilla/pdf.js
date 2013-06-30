@@ -37,7 +37,7 @@ var Stream = (function StreamClosure() {
     },
     getByte: function Stream_getByte() {
       if (this.pos >= this.end)
-        return null;
+        return -1;
       return this.bytes[this.pos++];
     },
     // returns subarray of original buffer
@@ -61,16 +61,6 @@ var Stream = (function StreamClosure() {
       var bytes = this.getBytes(length);
       this.pos -= bytes.length;
       return bytes;
-    },
-    lookChar: function Stream_lookChar() {
-      if (this.pos >= this.end)
-        return null;
-      return String.fromCharCode(this.bytes[this.pos]);
-    },
-    getChar: function Stream_getChar() {
-      if (this.pos >= this.end)
-        return null;
-      return String.fromCharCode(this.bytes[this.pos++]);
     },
     skip: function Stream_skip(n) {
       if (!n)
@@ -133,7 +123,7 @@ var DecodeStream = (function DecodeStreamClosure() {
       var pos = this.pos;
       while (this.bufferLength <= pos) {
         if (this.eof)
-          return null;
+          return -1;
         this.readBlock();
       }
       return this.buffer[this.pos++];
@@ -171,31 +161,13 @@ var DecodeStream = (function DecodeStreamClosure() {
       this.pos -= bytes.length;
       return bytes;
     },
-    lookChar: function DecodeStream_lookChar() {
-      var pos = this.pos;
-      while (this.bufferLength <= pos) {
-        if (this.eof)
-          return null;
-        this.readBlock();
-      }
-      return String.fromCharCode(this.buffer[this.pos]);
-    },
-    getChar: function DecodeStream_getChar() {
-      var pos = this.pos;
-      while (this.bufferLength <= pos) {
-        if (this.eof)
-          return null;
-        this.readBlock();
-      }
-      return String.fromCharCode(this.buffer[this.pos++]);
-    },
     makeSubStream: function DecodeStream_makeSubStream(start, length, dict) {
       var end = start + length;
       while (this.bufferLength <= end && !this.eof)
         this.readBlock();
       return new Stream(this.buffer, start, length, dict);
     },
-    skip: function DecodeStream_skip(n) {
+    skip: function Stream_skip(n) {
       if (!n)
         n = 1;
       this.pos += n;
@@ -882,9 +854,6 @@ var JpegStream = (function JpegStreamClosure() {
   JpegStream.prototype.getIR = function JpegStream_getIR() {
     return bytesToString(this.bytes);
   };
-  JpegStream.prototype.getChar = function JpegStream_getChar() {
-    error('internal error: getChar is not valid on JpegStream');
-  };
   /**
    * Checks if the image can be decoded and displayed by the browser without any
    * further processing such as color space conversions.
@@ -1012,9 +981,6 @@ var JpxStream = (function JpxStreamClosure() {
     this.bufferLength = data.length;
     this.eof = true;
   };
-  JpxStream.prototype.getChar = function JpxStream_getChar() {
-    error('internal error: getChar is not valid on JpxStream');
-  };
 
   return JpxStream;
 })();
@@ -1056,9 +1022,6 @@ var Jbig2Stream = (function Jbig2StreamClosure() {
     this.buffer = data;
     this.bufferLength = dataLength;
     this.eof = true;
-  };
-  Jbig2Stream.prototype.getChar = function Jbig2Stream_getChar() {
-    error('internal error: getChar is not valid on Jbig2Stream');
   };
 
   return Jbig2Stream;
@@ -1120,15 +1083,18 @@ var Ascii85Stream = (function Ascii85StreamClosure() {
   Ascii85Stream.prototype = Object.create(DecodeStream.prototype);
 
   Ascii85Stream.prototype.readBlock = function Ascii85Stream_readBlock() {
-    var tildaCode = '~'.charCodeAt(0);
-    var zCode = 'z'.charCodeAt(0);
+    var TILDA_CHAR = 0x7E; // '~'
+    var Z_LOWER_CHAR = 0x7A; // 'z'
+    var EOF = -1;
+
     var str = this.str;
 
     var c = str.getByte();
-    while (Lexer.isSpace(String.fromCharCode(c)))
+    while (Lexer.isSpace(c)) {
       c = str.getByte();
+    }
 
-    if (!c || c === tildaCode) {
+    if (c === EOF || c === TILDA_CHAR) {
       this.eof = true;
       return;
     }
@@ -1136,7 +1102,7 @@ var Ascii85Stream = (function Ascii85StreamClosure() {
     var bufferLength = this.bufferLength, buffer;
 
     // special code for z
-    if (c == zCode) {
+    if (c == Z_LOWER_CHAR) {
       buffer = this.ensureBuffer(bufferLength + 4);
       for (var i = 0; i < 4; ++i)
         buffer[bufferLength + i] = 0;
@@ -1146,12 +1112,13 @@ var Ascii85Stream = (function Ascii85StreamClosure() {
       input[0] = c;
       for (var i = 1; i < 5; ++i) {
         c = str.getByte();
-        while (Lexer.isSpace(String.fromCharCode(c)))
+        while (Lexer.isSpace(c)) {
           c = str.getByte();
+        }
 
         input[i] = c;
 
-        if (!c || c == tildaCode)
+        if (c === EOF || c == TILDA_CHAR)
           break;
       }
       buffer = this.ensureBuffer(bufferLength + i - 1);
@@ -2239,7 +2206,7 @@ var CCITTFaxStream = (function CCITTFaxStreamClosure() {
   CCITTFaxStream.prototype.lookBits = function CCITTFaxStream_lookBits(n) {
     var c;
     while (this.inputBits < n) {
-      if ((c = this.str.getByte()) === null || c === undefined) {
+      if ((c = this.str.getByte()) === -1) {
         if (this.inputBits === 0)
           return EOF;
         return ((this.inputBuf << (n - this.inputBits)) &
@@ -2293,7 +2260,7 @@ var LZWStream = (function LZWStreamClosure() {
     var cachedData = this.cachedData;
     while (bitsCached < n) {
       var c = this.str.getByte();
-      if (c === null || c === undefined) {
+      if (c === -1) {
         this.eof = true;
         return null;
       }
