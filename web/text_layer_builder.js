@@ -81,11 +81,12 @@ var TextLayerBuilder = function textLayerBuilder(options) {
 
       if (width > 0) {
         var textScale = textDiv.dataset.canvasWidth / width;
-
+        var rotation = textDiv.dataset.angle;
         var transform = 'scale(' + textScale + ', 1)';
         if (bidiTexts[i].dir === 'ttb') {
-          transform = 'rotate(90deg) ' + transform;
+          rotation += 90;
         }
+        transform = 'rotate(' + rotation + 'deg) ' + transform;
         CustomStyle.setProp('transform' , textDiv, transform);
         CustomStyle.setProp('transformOrigin' , textDiv, '0% 0%');
 
@@ -125,13 +126,14 @@ var TextLayerBuilder = function textLayerBuilder(options) {
 
     // vScale and hScale already contain the scaling to pixel units
     var fontHeight = geom.fontSize * Math.abs(geom.vScale);
-    textDiv.dataset.canvasWidth = geom.canvasWidth * geom.hScale;
+    textDiv.dataset.canvasWidth = geom.canvasWidth * Math.abs(geom.hScale);
     textDiv.dataset.fontName = geom.fontName;
+    textDiv.dataset.angle = geom.angle * (180 / Math.PI);
 
     textDiv.style.fontSize = fontHeight + 'px';
     textDiv.style.fontFamily = geom.fontFamily;
-    textDiv.style.left = geom.x + 'px';
-    textDiv.style.top = (geom.y - fontHeight) + 'px';
+    textDiv.style.left = (geom.x + (fontHeight * Math.sin(geom.angle))) + 'px';
+    textDiv.style.top = (geom.y - (fontHeight * Math.cos(geom.angle))) + 'px';
 
     // The content of the div is set in the `setTextContent` function.
 

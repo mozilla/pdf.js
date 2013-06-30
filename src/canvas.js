@@ -968,14 +968,20 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       var ctx = this.ctx;
       var font = this.current.font;
       var ctxMatrix = ctx.mozCurrentTransform;
-      if (ctxMatrix) {
-        var bl = Util.applyTransform([0, 0], ctxMatrix);
-        var tr = Util.applyTransform([1, 1], ctxMatrix);
-        geometry.x = bl[0];
-        geometry.y = bl[1];
-        geometry.hScale = tr[0] - bl[0];
-        geometry.vScale = tr[1] - bl[1];
-      }
+      var a = ctxMatrix[0], b = ctxMatrix[1], c = ctxMatrix[2];
+      var d = ctxMatrix[3], e = ctxMatrix[4], f = ctxMatrix[5];
+      var sx = (a >= 0) ?
+          Math.sqrt((a * a) + (b * b)) : -Math.sqrt((a * a) + (b * b));
+      var sy = (d >= 0) ?
+          Math.sqrt((c * c) + (d * d)) : -Math.sqrt((c * c) + (d * d));
+      var angle = Math.atan2(b, a);
+      var x = e;
+      var y = f;
+      geometry.x = x;
+      geometry.y = y;
+      geometry.hScale = sx;
+      geometry.vScale = sy;
+      geometry.angle = angle;
       geometry.spaceWidth = font.spaceWidth;
       geometry.fontName = font.loadedName;
       geometry.fontFamily = font.fallbackName;

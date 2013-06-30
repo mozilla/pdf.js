@@ -197,15 +197,18 @@ SimpleTextLayerBuilder.prototype = {
   appendText: function SimpleTextLayerBuilder_AppendText(geom) {
     var ctx = this.ctx, viewport = this.viewport;
     // vScale and hScale already contain the scaling to pixel units
-    var fontHeight = geom.fontSize * geom.vScale;
+    var fontHeight = geom.fontSize * Math.abs(geom.vScale);
+    ctx.save();
     ctx.beginPath();
     ctx.strokeStyle = 'red';
     ctx.fillStyle = 'yellow';
-    ctx.rect(geom.x, geom.y - fontHeight,
-             geom.canvasWidth * geom.hScale, fontHeight);
+    ctx.translate(geom.x + (fontHeight * Math.sin(geom.angle)),
+                  geom.y - (fontHeight * Math.cos(geom.angle)));
+    ctx.rotate(geom.angle);
+    ctx.rect(0, 0, geom.canvasWidth * Math.abs(geom.hScale), fontHeight);
     ctx.stroke();
     ctx.fill();
-
+    ctx.restore();
     var textContent = this.textContent.bidiTexts[this.textCounter].str;
     ctx.font = fontHeight + 'px ' + geom.fontFamily;
     ctx.fillStyle = 'black';
@@ -409,6 +412,7 @@ function info(message) {
 }
 
 function clear(ctx) {
+  ctx.beginPath();
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 }
 
