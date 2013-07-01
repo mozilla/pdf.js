@@ -22,10 +22,18 @@ limitations under the License.
 /**
  * @param {Object} details First argument of the webRequest.onHeadersReceived
  *                         event. The property "url" is read.
- * @return {boolean} True if the PDF download was initiated by PDF.js
+ * @return {boolean} True if the PDF file should be downloaded.
  */
 function isPdfDownloadable(details) {
-  return details.url.indexOf('pdfjs.action=download') >= 0;
+  if (details.url.indexOf('pdfjs.action=download') >= 0)
+    return true;
+  // Display the PDF viewer regardless of the Content-Disposition header
+  // if the file is displayed in the main frame.
+  if (details.type == 'main_frame')
+    return false;
+  var cdHeader = getHeaderFromHeaders(details.responseHeaders,
+                                      'content-disposition');
+  return cdHeader && /^attachment/i.test(cdHeader.value);
 }
 
 /**
