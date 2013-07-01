@@ -30,7 +30,7 @@ function showViewer(url) {
   // Cancel page load and empty document.
   window.stop();
   document.body.textContent = '';
-  
+
   replaceDocumentWithViewer(url);
 }
 function makeLinksAbsolute(doc) {
