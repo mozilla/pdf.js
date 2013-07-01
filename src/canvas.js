@@ -196,7 +196,7 @@ function compileType3Glyph(imgData) {
   var width = imgData.width, height = imgData.height;
   var i, j, j0, width1 = width + 1;
   var points = new Uint8Array(width1 * (height + 1));
-  var POINT_TYPES = 
+  var POINT_TYPES =
       new Uint8Array([0, 2, 4, 0, 1, 0, 5, 4, 8, 10, 0, 8, 0, 2, 1, 0]);
   // finding iteresting points: every point is located between mask pixels,
   // so there will be points of the (width + 1)x(height + 1) grid. Every point
@@ -237,7 +237,7 @@ function compileType3Glyph(imgData) {
     for (j = 1; j < width; j++) {
       sum = (sum >> 2) + (data[pos + 4] ? 4 : 0) +
             (data[pos - lineSize + 4] ? 8 : 0);
-      if (POINT_TYPES[sum]) { 
+      if (POINT_TYPES[sum]) {
         points[j0 + j] = POINT_TYPES[sum];
         ++count;
       }
@@ -293,16 +293,16 @@ function compileType3Glyph(imgData) {
     do {
       var step = steps[type];
       do { p += step; } while (!points[p]);
-      
+
       pp = points[p];
       if (pp !== 5 && pp !== 10) {
         // set new direction
-        type = pp; 
+        type = pp;
         // delete mark
-        points[p] = 0; 
+        points[p] = 0;
       } else { // type is 5 or 10, ie, a crossing
         // set new direction
-        type = pp & ((0x33 * type) >> 4); 
+        type = pp & ((0x33 * type) >> 4);
         // set new type for "future hit"
         points[p] &= (type >> 2 | type << 2);
       }
@@ -332,7 +332,7 @@ function compileType3Glyph(imgData) {
     c.beginPath();
     c.restore();
   };
-  
+
   return drawOutline;
 }
 
