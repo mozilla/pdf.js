@@ -50,7 +50,7 @@ chrome.webRequest.onBeforeRequest.addListener(
   function(details) {
     if (isPdfDownloadable(details)) // Defined in pdfHandler.js
       return;
-    
+
     if (incognitoTabIds.indexOf(details.tabId) !== -1)
       return; // Doesn't work in incognito mode, so don't redirect.
 

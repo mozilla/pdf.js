@@ -8,6 +8,7 @@
   // Enforcing
   "maxlen": 80,
   "quotmark": "single",
+  "trailing": true,
 
   // Relaxing
   "boss": true,
