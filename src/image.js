@@ -70,6 +70,7 @@ var PDFImage = (function PDFImageClosure() {
 
     this.interpolate = dict.get('Interpolate', 'I') || false;
     this.imageMask = dict.get('ImageMask', 'IM') || false;
+    this.matte = dict.get('Matte') || false;
 
     var bitsPerComponent = image.bitsPerComponent;
     if (!bitsPerComponent) {
@@ -386,6 +387,34 @@ var PDFImage = (function PDFImageClosure() {
       }
       return buf;
     },
+    undoPreblend: function PDFImage_undoPreblend(buffer, width, height) {
+      var matte = this.smask && this.smask.matte;
+      if (!matte) {
+        return;
+      }
+
+      function clamp(value) {
+        return (value < 0 ? 0 : value > 255 ? 255 : value) | 0;
+      }
+
+      var matteRgb = this.colorSpace.getRgb(matte, 0);
+      var length = width * height * 4;
+      for (var i = 0; i < length; i += 4) {
+        var alpha = buffer[i + 3];
+        if (alpha === 0) {
+          // according formula we have to get Infinity in all components
+          // making it as white (tipical paper color) should be okay
+          buffer[i] = 255;
+          buffer[i + 1] = 255;
+          buffer[i + 2] = 255;
+          continue;
+        }
+        var k = 255 / alpha;
+        buffer[i] = clamp((buffer[i] - matteRgb[0]) * k + matteRgb[0]);
+        buffer[i + 1] = clamp((buffer[i + 1] - matteRgb[1]) * k + matteRgb[1]);
+        buffer[i + 2] = clamp((buffer[i + 2] - matteRgb[2]) * k + matteRgb[2]);
+      }
+    },
     fillRgbaBuffer: function PDFImage_fillRgbaBuffer(buffer, width, height) {
       var numComps = this.numComps;
       var originalWidth = this.width;
@@ -422,6 +451,8 @@ var PDFImage = (function PDFImageClosure() {
         buffer[i + 2] = rgbBuf[compsPos++];
         buffer[i + 3] = opacity[opacityPos++];
       }
+
+      this.undoPreblend(buffer, width, actualHeight);
     },
     fillGrayBuffer: function PDFImage_fillGrayBuffer(buffer) {
       var numComps = this.numComps;
