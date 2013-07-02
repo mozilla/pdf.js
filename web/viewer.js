@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/* globals URL*/
 /* globals PDFJS, PDFBug, FirefoxCom, Stats, Cache, PDFFindBar */
 /* globals PDFFindController, ProgressBar, getFileName, CustomStyle */
 /* globals getOutputScale, TextLayerBuilder */
@@ -975,8 +976,7 @@ var PDFView = {
 //      );
 //  }
 //#endif
-    var URL = window.URL || window.webkitURL;
-    // If the PDF is not ready yet, or if createObjectURL is not supported,
+    // If the PDF is not ready yet, or if URL.createObjectURL is not supported,
     // just try to download with the url.
     if (!this.pdfDocument || !URL) {
         noData();
