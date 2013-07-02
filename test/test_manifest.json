@@ -1071,6 +1071,14 @@
       "rounds": 1,
       "type": "eq"
     },
+    {  "id": "bug887152",
+      "file": "pdfs/bug887152.pdf",
+      "md5": "783a3e7b1de2cf40a47ffe1f36a41d4f",
+      "rounds": 1,
+      "lastPage": 1,
+      "link": true,
+      "type": "eq"
+    },
     {  "id": "bug816075",
       "file": "pdfs/bug816075.pdf",
       "md5": "7ec87c115c1f9ec41234cc7002555e82",

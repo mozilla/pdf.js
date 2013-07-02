@@ -811,49 +811,10 @@ var PredictorStream = (function PredictorStreamClosure() {
  * DecodeStreams.
  */
 var JpegStream = (function JpegStreamClosure() {
-  function isAdobeImage(bytes) {
-    var maxBytesScanned = Math.max(bytes.length - 16, 1024);
-    // Looking for APP14, 'Adobe'
-    for (var i = 0; i < maxBytesScanned; ++i) {
-      if (bytes[i] == 0xFF && bytes[i + 1] == 0xEE &&
-          bytes[i + 2] === 0x00 && bytes[i + 3] == 0x0E &&
-          bytes[i + 4] == 0x41 && bytes[i + 5] == 0x64 &&
-          bytes[i + 6] == 0x6F && bytes[i + 7] == 0x62 &&
-          bytes[i + 8] == 0x65 && bytes[i + 9] === 0x00)
-          return true;
-      // scanning until frame tag
-      if (bytes[i] == 0xFF && bytes[i + 1] == 0xC0)
-        break;
-    }
-    return false;
-  }
-
-  function fixAdobeImage(bytes) {
-    // Inserting 'EMBED' marker after JPEG signature
-    var embedMarker = new Uint8Array([0xFF, 0xEC, 0, 8, 0x45, 0x4D, 0x42, 0x45,
-                                      0x44, 0]);
-    var newBytes = new Uint8Array(bytes.length + embedMarker.length);
-    newBytes.set(bytes, embedMarker.length);
-    // copy JPEG header
-    newBytes[0] = bytes[0];
-    newBytes[1] = bytes[1];
-    newBytes.set(embedMarker, 2);
-    return newBytes;
-  }
-
   function JpegStream(bytes, dict, xref) {
     // TODO: per poppler, some images may have 'junk' before that
     // need to be removed
     this.dict = dict;
-
-    this.isAdobeImage = false;
-    this.colorTransform = dict.get('ColorTransform') || -1;
-
-    if (isAdobeImage(bytes)) {
-      this.isAdobeImage = true;
-      bytes = fixAdobeImage(bytes);
-    }
-
     this.bytes = bytes;
 
     DecodeStream.call(this);
@@ -892,14 +853,7 @@ var JpegStream = (function JpegStreamClosure() {
   JpegStream.prototype.isNativelySupported =
     function JpegStream_isNativelySupported(xref, res) {
     var cs = ColorSpace.parse(this.dict.get('ColorSpace', 'CS'), xref, res);
-    // when bug 674619 lands, let's check if browser can do
-    // normal cmyk and then we won't need to decode in JS
-    if (cs.name === 'DeviceGray' || cs.name === 'DeviceRGB')
-      return true;
-    if (cs.name === 'DeviceCMYK' && !this.isAdobeImage &&
-        this.colorTransform < 1)
-      return true;
-    return false;
+    return cs.name === 'DeviceGray' || cs.name === 'DeviceRGB';
   };
   /**
    * Checks if the image can be decoded by the browser.
@@ -908,10 +862,7 @@ var JpegStream = (function JpegStreamClosure() {
     function JpegStream_isNativelyDecodable(xref, res) {
     var cs = ColorSpace.parse(this.dict.get('ColorSpace', 'CS'), xref, res);
     var numComps = cs.numComps;
-    if (numComps == 1 || numComps == 3)
-      return true;
-
-    return false;
+    return numComps == 1 || numComps == 3;
   };
 
   return JpegStream;
