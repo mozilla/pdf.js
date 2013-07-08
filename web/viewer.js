@@ -213,7 +213,7 @@ var PDFHistory = {
 
     var state = window.history.state;
     if (this._isStateObjectDefined(state)) {
-      // This case corresponds to navigating back to the document
+      // This corresponds to navigating back to the document
       // from another page in the browser history.
       if (state.target.dest) {
         this.initialDestination = state.target.dest;
@@ -224,7 +224,7 @@ var PDFHistory = {
       this.uid = state.uid + 1;
       this.current = state.target;
     } else {
-      // This case corresponds to the loading of a new document.
+      // This corresponds to the loading of a new document.
       if (state && state.fingerprint &&
           this.fingerprint !== state.fingerprint) {
         // Reinitialize the browsing history when a new document
@@ -248,10 +248,14 @@ var PDFHistory = {
       } else {
         // Handle the user modifying the hash of a loaded document.
         self.previousHash = window.location.hash.substring(1);
+
+        // If the history is empty when the hash changes,
+        // update the previous entry in the browser history.
         if (self.uid === 0) {
           var previousParams = (self.previousHash && self.currentBookmark &&
                                 self.previousHash !== self.currentBookmark) ?
-            { hash: self.currentBookmark } : { page: 1 };
+            { hash: self.currentBookmark, page: self.currentPage } :
+            { page: 1 };
           self.historyUnlocked = false;
           self.allowHashChange = false;
           window.history.back();
@@ -260,23 +264,29 @@ var PDFHistory = {
           self.historyUnlocked = true;
         }
         self._pushToHistory({ hash: self.previousHash }, false, true);
-        if (self.currentBookmark) {
-          self.previousBookmark = self.currentBookmark;
-        }
+        self._updatePreviousBookmark();
       }
     }, false);
 
-    window.addEventListener('beforeunload',
-                            function pdfHistoryBeforeunload(evt) {
+    function pdfHistoryBeforeUnload() {
       var previousParams = self._getPreviousParams(null, true);
       if (previousParams) {
-        self._pushToHistory(previousParams, false);
+        var replacePrevious = (!self.current.dest &&
+                               self.current.hash !== self.previousHash);
+        self._pushToHistory(previousParams, false, replacePrevious);
+        self._updatePreviousBookmark();
       }
-      if (PDFView.isPresentationMode) {
-        // Prevent the user from accidentally navigating away from
-        // the document when presentation mode is active.
-        evt.preventDefault();
-      }
+      // Remove the event listener when navigating away from the document,
+      // since 'beforeunload' prevents Firefox from caching the document.
+      window.removeEventListener('beforeunload', pdfHistoryBeforeUnload, false);
+    }
+    window.addEventListener('beforeunload', pdfHistoryBeforeUnload, false);
+
+    window.addEventListener('pageshow', function pdfHistoryPageShow(evt) {
+      // If the entire viewer (including the PDF file) is cached in the browser,
+      // we need to reattach the 'beforeunload' event listener since
+      // the 'DOMContentLoaded' event is not fired on 'pageshow'.
+      window.addEventListener('beforeunload', pdfHistoryBeforeUnload, false);
     }, false);
   },
 
@@ -305,16 +315,21 @@ var PDFHistory = {
     return temp;
   },
 
+  _updatePreviousBookmark: function pdfHistory_updatePreviousBookmark() {
+    if (this.updatePreviousBookmark &&
+        this.currentBookmark && this.currentPage) {
+      this.previousBookmark = this.currentBookmark;
+      this.previousPage = this.currentPage;
+      this.updatePreviousBookmark = false;
+    }
+  },
+
   updateCurrentBookmark: function pdfHistoryUpdateCurrentBookmark(bookmark,
                                                                   pageNum) {
     if (this.initialized) {
       this.currentBookmark = bookmark.substring(1);
       this.currentPage = pageNum | 0;
-      if (this.updatePreviousBookmark) {
-        this.previousBookmark = this.currentBookmark;
-        this.previousPage = this.currentPage;
-        this.updatePreviousBookmark = false;
-      }
+      this._updatePreviousBookmark();
     }
   },
 
@@ -337,10 +352,20 @@ var PDFHistory = {
     if (params.page) {
       params.page |= 0;
     }
-    if (isInitialBookmark && this.uid === 0) {
-      this._pushToHistory(params, false);
-      this.previousHash = window.location.hash.substring(1);
+    if (isInitialBookmark) {
+      var target = window.history.state.target;
+      if (!target) {
+        // Invoked when the user specifies an initial bookmark,
+        // thus setting PDFView.initialBookmark, when the document is loaded.
+        this._pushToHistory(params, false);
+        this.previousHash = window.location.hash.substring(1);
+      }
       this.updatePreviousBookmark = this.nextHashParam ? false : true;
+      if (target) {
+        // If the current document is reloaded,
+        // avoid creating duplicate entries in the history.
+        this._updatePreviousBookmark();
+      }
       return;
     }
     if (this.nextHashParam && this.nextHashParam === params.hash) {
@@ -353,8 +378,11 @@ var PDFHistory = {
       if (this.current.hash) {
         if (this.current.hash !== params.hash) {
           this._pushToHistory(params, true);
-        } else if (!this.current.page && params.page) {
-          this._pushToHistory(params, false, true);
+        } else {
+          if (!this.current.page && params.page) {
+            this._pushToHistory(params, false, true);
+          }
+          this.updatePreviousBookmark = true;
         }
       } else {
         this._pushToHistory(params, true);
@@ -403,7 +431,8 @@ var PDFHistory = {
     if (addPrevious && !overwrite) {
       var previousParams = this._getPreviousParams();
       if (previousParams) {
-        this._pushToHistory(previousParams, false);
+        var replacePrevious = (this.current.hash !== this.previousHash);
+        this._pushToHistory(previousParams, false, replacePrevious);
       }
     }
     if (overwrite || this.uid === 0) {
