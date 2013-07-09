@@ -960,14 +960,7 @@ var XRef = (function XRefClosure() {
         } else {
           e = parser.getObj();
         }
-        if (!isStream(e) || e instanceof JpegStream) {
-          this.cache[num] = e;
-        } else if (e instanceof Stream) {
-          e = e.makeSubStream(e.start, e.length, e.dict);
-          this.cache[num] = e;
-        } else if ('readBlock' in e) {
-          e.getBytes();
-          e = e.makeSubStream(0, e.bufferLength, e.dict);
+        if (!isStream(e)) {
           this.cache[num] = e;
         }
         return e;
@@ -1296,13 +1289,22 @@ var ObjectLoader = (function() {
             pendingRequests.push({ begin: e.begin, end: e.end });
           }
         }
-        if (currentNode instanceof ChunkedStream &&
-            currentNode.getMissingChunks().length) {
-          nodesToRevisit.push(currentNode);
-          pendingRequests.push({
-            begin: currentNode.start,
-            end: currentNode.end
-          });
+        if (currentNode && currentNode.getBaseStreams) {
+          var baseStreams = currentNode.getBaseStreams();
+          var foundMissingData = false;
+          for (var i = 0; i < baseStreams.length; i++) {
+            var stream = baseStreams[i];
+            if (stream.getMissingChunks && stream.getMissingChunks().length) {
+              foundMissingData = true;
+              pendingRequests.push({
+                begin: stream.start,
+                end: stream.end
+              });
+            }
+          }
+          if (foundMissingData) {
+            nodesToRevisit.push(currentNode);
+          }
         }
 
         addChildren(currentNode, nodesToVisit);
