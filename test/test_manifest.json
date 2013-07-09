@@ -959,6 +959,22 @@
       "link": true,
       "type": "eq"
     },
+    {  "id": "issue3062",
+      "file": "pdfs/issue3062.pdf",
+      "md5": "206715f1258f0e117df4180d98dd4d68",
+      "rounds": 1,
+      "lastPage": 1,
+      "link": true,
+      "type": "eq"
+    },
+    {  "id": "issue2442",
+      "file": "pdfs/issue2442.pdf",
+      "md5": "4656e36c44f44c71a499f02ce6c781d3",
+      "rounds": 1,
+      "lastPage": 1,
+      "link": true,
+      "type": "eq"
+    },
     {  "id": "issue2337",
       "file": "pdfs/issue2337.pdf",
       "md5": "ea10f4131202b9b8f2a6cb7770d3f185",
