@@ -53,8 +53,9 @@ function preprocess(inFilename, outFilename, defines) {
   }
 
   var s, state = 0, stack = [];
-  var control =
-    /^(?:\/\/|<!--)\s*#(if|else|endif|expand|include)(?:\s+(.*?)(?:-->)?$)?/;
+  var control = new RegExp('^(?:\\/\\/|<!--|\\/\\*)\\s*' +
+                           '#(if|else|endif|expand|include)' +
+                           '(?:\\s+(.*?)(?:-->|\\*\\/)?$)?');
   var lineNumber = 0;
   while ((s = readLine()) !== null) {
     ++lineNumber;
