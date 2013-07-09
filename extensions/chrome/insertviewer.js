@@ -108,9 +108,9 @@ function renderPDF(url) {
   var script = document.createElement('script');
   script.textContent =
   '(function(args) {' +
+  '  PDFJS.imageResourcesPath = args.BASE_URL + PDFJS.imageResourcesPath;' +
   '  PDFJS.workerSrc = args.BASE_URL + PDFJS.workerSrc;' +
   '  window.DEFAULT_URL = args.pdf_url;' +
-  '  window.IMAGE_DIR = args.BASE_URL + window.IMAGE_DIR;' +
   '})(' + JSON.stringify(args) + ');';
   document.head.appendChild(script);
 
