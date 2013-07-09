@@ -235,6 +235,32 @@ ChromeActions.prototype = {
         channel.contentDisposition = Ci.nsIChannel.DISPOSITION_ATTACHMENT;
         if (self.contentDispositionFilename) {
            channel.contentDispositionFilename = self.contentDispositionFilename;
+        } else {
+          // split_uri: [0] = pathname, [1] = query string [2] = ref fragment
+          var split_uri = originalUri.path.match(/^([^?#]*)(\?[^#]*)?(#.*)?$/);
+          if (!/\.pdf$/i.test(split_uri[0])) {
+            // Pattern to get last matching NAME.pdf
+            var reFilename = /[^\/?#=]+\.pdf\b(?!.*\.pdf\b)/i;
+            var suggested_filename = reFilename.exec(split_uri[0]) ||
+                                     reFilename.exec(split_uri[1]) ||
+                                     reFilename.exec(split_uri[2]);
+            if (suggested_filename) {
+              suggested_filename = suggested_filename[0];
+              if (suggested_filename.indexOf('%') != -1) {
+                // URL-encoded %2Fpath%2Fto%2Ffile.pdf should be file.pdf
+                try {
+                  suggested_filename =
+                    reFilename.exec(decodeURIComponent(suggested_filename))[0];
+                } catch(e) { // Possible (extremely rare) errors:
+                  // URIError "Malformed URI", e.g. for "%AA.pdf"
+                  // TypeError "null has no properties", e.g. for "%2F.pdf"
+                }
+              }
+              channel.contentDispositionFilename = suggested_filename;
+            } else {
+              channel.contentDispositionFilename = 'document.pdf';
+            }
+          }
         }
       } catch (e) {}
       channel.setURI(originalUri);
