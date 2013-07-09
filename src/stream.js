@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 /* globals bytesToString, ColorSpace, Dict, EOF, error, info, Jbig2Image,
-           JpegImage, JpxImage, Lexer */
+           JpegImage, JpxImage, Lexer, Util */
 
 'use strict';
 
@@ -202,6 +202,12 @@ var DecodeStream = (function DecodeStreamClosure() {
     },
     reset: function DecodeStream_reset() {
       this.pos = 0;
+    },
+    getBaseStreams: function DecodeStream_getBaseStreams() {
+      if (this.str && this.str.getBaseStreams) {
+        return this.str.getBaseStreams();
+      }
+      return [];
     }
   };
 
@@ -270,6 +276,19 @@ var StreamsSequenceStream = (function StreamsSequenceStreamClosure() {
     var buffer = this.ensureBuffer(newLength);
     buffer.set(chunk, bufferLength);
     this.bufferLength = newLength;
+  };
+
+  StreamsSequenceStream.prototype.getBaseStreams =
+    function StreamsSequenceStream_getBaseStreams() {
+
+    var baseStreams = [];
+    for (var i = 0, ii = this.streams.length; i < ii; i++) {
+      var stream = this.streams[i];
+      if (stream.getBaseStreams) {
+        Util.concatenateToArray(baseStreams, stream.getBaseStreams());
+      }
+    }
+    return baseStreams;
   };
 
   return StreamsSequenceStream;
@@ -618,11 +637,11 @@ var FlateStream = (function FlateStreamClosure() {
 })();
 
 var PredictorStream = (function PredictorStreamClosure() {
-  function PredictorStream(stream, params) {
+  function PredictorStream(str, params) {
     var predictor = this.predictor = params.get('Predictor') || 1;
 
     if (predictor <= 1)
-      return stream; // no prediction
+      return str; // no prediction
     if (predictor !== 2 && (predictor < 10 || predictor > 15))
       error('Unsupported predictor: ' + predictor);
 
@@ -631,8 +650,8 @@ var PredictorStream = (function PredictorStreamClosure() {
     else
       this.readBlock = this.readBlockPng;
 
-    this.stream = stream;
-    this.dict = stream.dict;
+    this.str = str;
+    this.dict = str.dict;
 
     var colors = this.colors = params.get('Colors') || 1;
     var bits = this.bits = params.get('BitsPerComponent') || 8;
@@ -657,7 +676,7 @@ var PredictorStream = (function PredictorStreamClosure() {
     var bits = this.bits;
     var colors = this.colors;
 
-    var rawBytes = this.stream.getBytes(rowBytes);
+    var rawBytes = this.str.getBytes(rowBytes);
     this.eof = !rawBytes.length;
     if (this.eof) {
       return;
@@ -720,8 +739,8 @@ var PredictorStream = (function PredictorStreamClosure() {
     var rowBytes = this.rowBytes;
     var pixBytes = this.pixBytes;
 
-    var predictor = this.stream.getByte();
-    var rawBytes = this.stream.getBytes(rowBytes);
+    var predictor = this.str.getByte();
+    var rawBytes = this.str.getBytes(rowBytes);
     this.eof = !rawBytes.length;
     if (this.eof) {
       return;

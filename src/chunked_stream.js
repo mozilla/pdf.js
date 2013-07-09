@@ -46,6 +46,10 @@ var ChunkedStream = (function ChunkedStreamClosure() {
       return chunks;
     },
 
+    getBaseStreams: function ChunkedStream_getBaseStreams() {
+      return [this];
+    },
+
     allChunksLoaded: function ChunkedStream_allChunksLoaded() {
       return this.numChunksLoaded === this.numChunks;
     },
