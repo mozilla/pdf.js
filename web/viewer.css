@@ -236,6 +236,7 @@ html[dir='rtl'] #sidebarContent {
   right: 0;
   bottom: 0;
   left: 0;
+  outline: none;
 }
 .loadingInProgress #viewerContainer {
   top: 39px;
