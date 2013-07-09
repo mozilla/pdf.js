@@ -552,7 +552,6 @@ var TextAnnotation = (function TextAnnotationClosure() {
   }
 
   var ANNOT_MIN_SIZE = 10;
-  var IMAGE_DIR = './images/';
 
   Util.inherit(TextAnnotation, Annotation, {
 
@@ -593,7 +592,7 @@ var TextAnnotation = (function TextAnnotationClosure() {
       image.style.width = container.style.width;
       image.style.height = container.style.height;
       var iconName = item.name;
-      image.src = IMAGE_DIR + 'annotation-' +
+      image.src = PDFJS.imageResourcesPath + 'annotation-' +
         iconName.toLowerCase() + '.svg';
       image.alt = '[{{type}} Annotation]';
       image.dataset.l10nId = 'text_annotation_type';

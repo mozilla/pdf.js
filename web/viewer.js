@@ -46,6 +46,7 @@ var FindStates = {
   FIND_PENDING: 3
 };
 
+PDFJS.imageResourcesPath = './images/';
 //#if (FIREFOX || MOZCENTRAL || B2G || GENERIC || CHROME)
 //PDFJS.workerSrc = '../build/pdf.js';
 //#endif
