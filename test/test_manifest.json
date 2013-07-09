@@ -1031,6 +1031,13 @@
       "link": true,
       "type": "eq"
     },
+    {  "id": "bug888437",
+      "file": "pdfs/bug888437.pdf",
+      "md5": "93370cd589a08732a05601441c899bcb",
+      "rounds": 1,
+      "link": true,
+      "type": "eq"
+    },
     {  "id": "annotation-tx",
       "file": "pdfs/annotation-tx.pdf",
       "md5": "56321ea830be9c4f8437ca17ac535b2d",
