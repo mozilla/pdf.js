@@ -916,6 +916,30 @@ var PDFView = {
 
   download: function pdfViewDownload() {
     var url = this.url.split('#')[0];
+    function getPDFFileNameFromURL(url) {
+      var reURI = /^(?:([^:]+:)?\/\/[^\/]+)?([^?#]*)(\?[^#]*)?(#.*)?$/;
+      //            SCHEME      HOST         1.PATH  2.QUERY   3.REF
+      // Pattern to get last matching NAME.pdf
+      var reFilename = /[^\/?#=]+\.pdf\b(?!.*\.pdf\b)/i;
+      var splitURI = reURI.exec(url);
+      var suggestedFilename = reFilename.exec(splitURI[1]) ||
+                               reFilename.exec(splitURI[2]) ||
+                               reFilename.exec(splitURI[3]);
+      if (suggestedFilename) {
+        suggestedFilename = suggestedFilename[0];
+        if (suggestedFilename.indexOf('%') != -1) {
+          // URL-encoded %2Fpath%2Fto%2Ffile.pdf should be file.pdf
+          try {
+            suggestedFilename =
+              reFilename.exec(decodeURIComponent(suggestedFilename))[0];
+          } catch(e) { // Possible (extremely rare) errors:
+            // URIError "Malformed URI", e.g. for "%AA.pdf"
+            // TypeError "null has no properties", e.g. for "%2F.pdf"
+          }
+        }
+      }
+      return suggestedFilename || 'document.pdf';
+    }
 //#if !(FIREFOX || MOZCENTRAL)
     function noData() {
       triggerSaveAs(url + '#pdfjs.action=download');
@@ -940,8 +964,7 @@ var PDFView = {
         // Use a.download if available. This increases the likelihood that
         // the file is downloaded instead of opened by another PDF plugin.
         if ('download' in a) {
-          var filename = url.match(/([^\/?#=]+\.pdf\b)(?!.*\.pdf\b)/i);
-          a.download = filename ? filename[1] : 'document.pdf';
+          a.download = getPDFFileNameFromURL(url);
         }
         // <a> must be in the document for IE and recent Firefox versions.
         // (otherwise .click() is ignored)
@@ -961,10 +984,17 @@ var PDFView = {
     }
 //#else
 //  function noData() {
-//    FirefoxCom.request('download', { originalUrl: url });
+//    FirefoxCom.request('download', {
+//      originalUrl: url,
+//      filename: getPDFFileNameFromURL(url)
+//    });
 //  }
 //  function triggerSaveAs(url, blobUrl) {
-//      FirefoxCom.request('download', { blobUrl: blobUrl, originalUrl: url },
+//      FirefoxCom.request('download', {
+//        blobUrl: blobUrl,
+//        originalUrl: url,
+//        filename: getPDFFileNameFromURL(url)
+//      },
 //        function response(err) {
 //          if (err) {
 //            // This error won't really be helpful because it's likely the
