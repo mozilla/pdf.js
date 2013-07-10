@@ -1015,11 +1015,20 @@ var PDFView = {
     this.pdfDocument.getData().then(
       function getDataSuccess(data) {
         var blob = PDFJS.createBlob(data.buffer, 'application/pdf');
+//#if GENERIC
+        if (navigator.msSaveBlob) {
+          // IE10 / IE11
+          if (!navigator.msSaveBlob(blob, getPDFFileNameFromURL(url))) {
+            noData();
+          }
+          return;
+        }
+//#endif
         var blobUrl = URL.createObjectURL(blob);
         triggerSaveAs(url, blobUrl);
       },
       noData // Error occurred try downloading with just the url.
-    );
+    ).then(null, noData);
   },
 
   fallback: function pdfViewFallback() {
