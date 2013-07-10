@@ -206,6 +206,10 @@ ChromeActions.prototype = {
     // The data may not be downloaded so we need just retry getting the pdf with
     // the original url.
     var originalUri = NetUtil.newURI(data.originalUrl);
+    var filename = data.filename;
+    if (typeof filename !== 'string' || !/\.pdf$/i.test(filename)) {
+      filename = 'document.pdf';
+    }
     var blobUri = data.blobUrl ? NetUtil.newURI(data.blobUrl) : originalUri;
     var extHelperAppSvc =
           Cc['@mozilla.org/uriloader/external-helper-app-service;1'].
@@ -234,7 +238,9 @@ ChromeActions.prototype = {
         // contentDisposition/contentDispositionFilename is readonly before FF18
         channel.contentDisposition = Ci.nsIChannel.DISPOSITION_ATTACHMENT;
         if (self.contentDispositionFilename) {
-           channel.contentDispositionFilename = self.contentDispositionFilename;
+          channel.contentDispositionFilename = self.contentDispositionFilename;
+        } else {
+          channel.contentDispositionFilename = filename;
         }
       } catch (e) {}
       channel.setURI(originalUri);
