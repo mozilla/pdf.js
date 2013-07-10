@@ -92,6 +92,13 @@ if (typeof PDFJS === 'undefined') {
   window.Float64Array = TypedArray;
 })();
 
+// URL = URL || webkitURL
+(function normalizeURLObject() {
+  if (!window.URL && window.webkitURL) {
+    window.URL = window.webkitURL;
+  }
+})();
+
 // Object.create() ?
 (function checkObjectCreateCompatibility() {
   if (typeof Object.create !== 'undefined')
