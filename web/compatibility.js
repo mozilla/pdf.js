@@ -94,7 +94,7 @@ if (typeof PDFJS === 'undefined') {
 
 // URL = URL || webkitURL
 (function normalizeURLObject() {
-  if (!window.URL && window.webkitURL) {
+  if (!window.URL) {
     window.URL = window.webkitURL;
   }
 })();
