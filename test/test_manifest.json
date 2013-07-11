@@ -1252,6 +1252,14 @@
       "rounds": 1,
       "type": "eq"
     },
+    {  "id": "bug889327",
+      "file": "pdfs/bug889327.pdf",
+      "md5": "b45cd63419241c40731f98d0e1dac082",
+      "link": true,
+      "lastPage": 1,
+      "rounds": 1,
+      "type": "eq"
+    },
     {  "id": "issue2829",
       "file": "pdfs/issue2829.pdf",
       "md5": "f32b28cf8792f6ccc470446bfbb38584",
