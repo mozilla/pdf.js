@@ -816,53 +816,54 @@ var PostScriptToken = (function PostScriptTokenClosure() {
 var PostScriptLexer = (function PostScriptLexerClosure() {
   function PostScriptLexer(stream) {
     this.stream = stream;
+    this.nextChar();
   }
   PostScriptLexer.prototype = {
+    nextChar: function PostScriptLexer_nextChar() {
+      return (this.currentChar = this.stream.getByte());
+    },
     getToken: function PostScriptLexer_getToken() {
       var s = '';
-      var ch;
       var comment = false;
-      var stream = this.stream;
+      var ch = this.currentChar;
 
       // skip comments
       while (true) {
-        if (!(ch = stream.getChar()))
+        if (ch < 0) {
           return EOF;
+        }
 
         if (comment) {
-          if (ch == '\x0a' || ch == '\x0d')
+          if (ch === 0x0A || ch === 0x0D) {
             comment = false;
-        } else if (ch == '%') {
+          }
+        } else if (ch == 0x25) { // '%'
           comment = true;
         } else if (!Lexer.isSpace(ch)) {
           break;
         }
+        ch = this.nextChar();
       }
-      switch (ch) {
-        case '0': case '1': case '2': case '3': case '4':
-        case '5': case '6': case '7': case '8': case '9':
-        case '+': case '-': case '.':
+      switch (ch | 0) {
+        case 0x30: case 0x31: case 0x32: case 0x33: case 0x34: // '0'-'4'
+        case 0x35: case 0x36: case 0x37: case 0x38: case 0x39: // '5'-'9'
+        case 0x2B: case 0x2D: case 0x2E: // '+', '-', '.'
           return new PostScriptToken(PostScriptTokenTypes.NUMBER,
-                                      this.getNumber(ch));
-        case '{':
+                                      this.getNumber());
+        case 0x7B: // '{'
+          this.nextChar();
           return PostScriptToken.LBRACE;
-        case '}':
+        case 0x7D: // '}'
+          this.nextChar();
           return PostScriptToken.RBRACE;
       }
       // operator
-      var str = ch.toLowerCase();
-      while (true) {
-        ch = stream.lookChar();
-        if (ch === null)
-          break;
-        ch = ch.toLowerCase();
-        if (ch >= 'a' && ch <= 'z')
-          str += ch;
-        else
-          break;
-        stream.skip();
+      var str = String.fromCharCode(ch);
+      while ((ch = this.nextChar()) >= 0 && // and 'A'-'Z', 'a'-'z'
+             ((ch >= 0x41 && ch <= 0x5A) || (ch >= 0x61 && ch <= 0x7A))) {
+        str += String.fromCharCode(ch);
       }
-      switch (str) {
+      switch (str.toLowerCase()) {
         case 'if':
           return PostScriptToken.IF;
         case 'ifelse':
@@ -871,16 +872,16 @@ var PostScriptLexer = (function PostScriptLexerClosure() {
           return PostScriptToken.getOperator(str);
       }
     },
-    getNumber: function PostScriptLexer_getNumber(ch) {
-      var str = ch;
-      var stream = this.stream;
-      while (true) {
-        ch = stream.lookChar();
-        if ((ch >= '0' && ch <= '9') || ch == '-' || ch == '.')
-          str += ch;
-        else
+    getNumber: function PostScriptLexer_getNumber() {
+      var ch = this.currentChar;
+      var str = String.fromCharCode(ch);
+      while ((ch = this.nextChar()) >= 0) {
+        if ((ch >= 0x30 && ch <= 0x39) || // '0'-'9'
+             ch === 0x2D || ch === 0x2E) { // '-', '.'
+          str += String.fromCharCode(ch);
+        } else {
           break;
-        stream.skip();
+        }
       }
       var value = parseFloat(str);
       if (isNaN(value))

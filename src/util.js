@@ -623,7 +623,7 @@ function isArray(v) {
 
 function isStream(v) {
   return typeof v == 'object' && v !== null && v !== undefined &&
-         ('getChar' in v);
+         ('getBytes' in v);
 }
 
 function isArrayBuffer(v) {
