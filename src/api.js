@@ -22,6 +22,13 @@
  'use strict';
 
 /**
+ * The maximum allowed image size in total pixels e.g. width * height. Images
+ * above this value will not be drawn. Use -1 for no limit.
+ * @var {Number}
+ */
+PDFJS.maxImageSize = PDFJS.maxImageSize === undefined ? -1 : PDFJS.maxImageSize;
+
+/**
  * This is the main entry point for loading a PDF and interacting with it.
  * NOTE: If a URL is used to fetch the PDF data a standard XMLHttpRequest(XHR)
  * is used, which means it must follow the same origin rules that any XHR does
@@ -760,7 +767,8 @@ var WorkerTransport = (function WorkerTransportClosure() {
       source.chunkedViewerLoading = !!this.pdfDataRangeTransport;
       this.messageHandler.send('GetDocRequest', {
         source: source,
-        disableRange: PDFJS.disableRange
+        disableRange: PDFJS.disableRange,
+        maxImageSize: PDFJS.maxImageSize
       });
     },
 
