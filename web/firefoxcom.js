@@ -75,20 +75,20 @@ var DownloadManager = (function DownloadManagerClosure() {
   function DownloadManager() {}
 
   DownloadManager.prototype = {
-    downloadUrl: function DownloadManager_downloadUrl(url) {
+    downloadUrl: function DownloadManager_downloadUrl(url, filename) {
       FirefoxCom.request('download', {
         originalUrl: url,
-        filename: this.filename
+        filename: filename
       });
     },
 
-    download: function DownloadManager_download(blob, url) {
+    download: function DownloadManager_download(blob, url, filename) {
       var blobUrl = window.URL.createObjectURL(blob);
 
       FirefoxCom.request('download', {
         blobUrl: blobUrl,
         originalUrl: url,
-        filename: this.filename
+        filename: filename
       },
         function response(err) {
           if (err && this.onerror) {
