@@ -16,7 +16,7 @@
  */
 /* globals Util, isDict, isName, stringToPDFString, TODO, Dict, Stream,
            stringToBytes, PDFJS, isWorker, assert, NotImplementedException,
-           Promise, isArray, ObjectLoader */
+           Promise, isArray, ObjectLoader, isValidUrl */
 
 'use strict';
 
@@ -641,24 +641,6 @@ var TextAnnotation = (function TextAnnotationClosure() {
 })();
 
 var LinkAnnotation = (function LinkAnnotationClosure() {
-  function isValidUrl(url) {
-    if (!url)
-      return false;
-    var colon = url.indexOf(':');
-    if (colon < 0)
-      return false;
-    var protocol = url.substr(0, colon);
-    switch (protocol) {
-      case 'http':
-      case 'https':
-      case 'ftp':
-      case 'mailto':
-        return true;
-      default:
-        return false;
-    }
-  }
-
   function LinkAnnotation(params) {
     Annotation.call(this, params);
 
@@ -676,7 +658,7 @@ var LinkAnnotation = (function LinkAnnotationClosure() {
         var url = action.get('URI');
         // TODO: pdf spec mentions urls can be relative to a Base
         // entry in the dictionary.
-        if (!isValidUrl(url)) {
+        if (!isValidUrl(url, false)) {
           url = '';
         }
         data.url = url;
@@ -692,7 +674,7 @@ var LinkAnnotation = (function LinkAnnotationClosure() {
 
         // TODO: pdf reference says that GoToR
         // can also have 'NewWindow' attribute
-        if (!isValidUrl(url)) {
+        if (!isValidUrl(url, false)) {
           url = '';
         }
         data.url = url;

@@ -91,6 +91,61 @@ function getOutputScale() {
   };
 }
 
+/**
+ * Scrolls specified element into view of its parent.
+ * element {Object} The element to be visible.
+ * spot {Object} The object with the top property -- offset from the top edge.
+ */
+function scrollIntoView(element, spot) {
+  // Assuming offsetParent is available (it's not available when viewer is in
+  // hidden iframe or object). We have to scroll: if the offsetParent is not set
+  // producing the error. See also animationStartedClosure.
+  var parent = element.offsetParent;
+  var offsetY = element.offsetTop + element.clientTop;
+  if (!parent) {
+    console.error('offsetParent is not set -- cannot scroll');
+    return;
+  }
+  while (parent.clientHeight == parent.scrollHeight) {
+    offsetY += parent.offsetTop;
+    parent = parent.offsetParent;
+    if (!parent)
+      return; // no need to scroll
+  }
+  if (spot)
+    offsetY += spot.top;
+  parent.scrollTop = offsetY;
+}
+
+/**
+ * Returns the filename or guessed filename from the url (see issue 3455).
+ * url {String} The original PDF location.
+ * @return {String} Guessed PDF file name.
+ */
+function getPDFFileNameFromURL(url) {
+  var reURI = /^(?:([^:]+:)?\/\/[^\/]+)?([^?#]*)(\?[^#]*)?(#.*)?$/;
+  //            SCHEME      HOST         1.PATH  2.QUERY   3.REF
+  // Pattern to get last matching NAME.pdf
+  var reFilename = /[^\/?#=]+\.pdf\b(?!.*\.pdf\b)/i;
+  var splitURI = reURI.exec(url);
+  var suggestedFilename = reFilename.exec(splitURI[1]) ||
+                           reFilename.exec(splitURI[2]) ||
+                           reFilename.exec(splitURI[3]);
+  if (suggestedFilename) {
+    suggestedFilename = suggestedFilename[0];
+    if (suggestedFilename.indexOf('%') != -1) {
+      // URL-encoded %2Fpath%2Fto%2Ffile.pdf should be file.pdf
+      try {
+        suggestedFilename =
+          reFilename.exec(decodeURIComponent(suggestedFilename))[0];
+      } catch(e) { // Possible (extremely rare) errors:
+        // URIError "Malformed URI", e.g. for "%AA.pdf"
+        // TypeError "null has no properties", e.g. for "%2F.pdf"
+      }
+    }
+  }
+  return suggestedFilename || 'document.pdf';
+}
 
 var ProgressBar = (function ProgressBarClosure() {
 
