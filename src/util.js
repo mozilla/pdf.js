@@ -108,6 +108,28 @@ function combineUrl(baseUrl, url) {
   }
 }
 
+// Validates if URL is safe and allowed, e.g. to avoid XSS.
+function isValidUrl(url, allowRelative) {
+  if (!url) {
+    return false;
+  }
+  var colon = url.indexOf(':');
+  if (colon < 0) {
+    return allowRelative;
+  }
+  var protocol = url.substr(0, colon);
+  switch (protocol) {
+    case 'http':
+    case 'https':
+    case 'ftp':
+    case 'mailto':
+      return true;
+    default:
+      return false;
+  }
+}
+PDFJS.isValidUrl = isValidUrl;
+
 // In a well-formed PDF, |cond| holds.  If it doesn't, subsequent
 // behavior is undefined.
 function assertWellFormed(cond, msg) {

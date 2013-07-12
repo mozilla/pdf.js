@@ -14,10 +14,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals URL*/
-/* globals PDFJS, PDFBug, FirefoxCom, Stats, Cache, PDFFindBar */
-/* globals PDFFindController, ProgressBar, getFileName, CustomStyle */
-/* globals getOutputScale, TextLayerBuilder */
+/* globals PDFJS, PDFBug, FirefoxCom, Stats, Cache, PDFFindBar, CustomStyle,
+           PDFFindController, ProgressBar, TextLayerBuilder, DownloadManager,
+           getFileName, getOutputScale, scrollIntoView, getPDFFileNameFromURL */
 
 'use strict';
 
@@ -55,28 +54,9 @@ PDFJS.imageResourcesPath = './images/';
 var mozL10n = document.mozL10n || document.webL10n;
 
 //#include ui_utils.js
-
-function scrollIntoView(element, spot) {
-  // Assuming offsetParent is available (it's not available when viewer is in
-  // hidden iframe or object). We have to scroll: if the offsetParent is not set
-  // producing the error. See also animationStartedClosure.
-  var parent = element.offsetParent;
-  var offsetY = element.offsetTop + element.clientTop;
-  if (!parent) {
-    console.error('offsetParent is not set -- cannot scroll');
-    return;
-  }
-  while (parent.clientHeight == parent.scrollHeight) {
-    offsetY += parent.offsetTop;
-    parent = parent.offsetParent;
-    if (!parent)
-      return; // no need to scroll
-  }
-  if (spot)
-    offsetY += spot.top;
-  parent.scrollTop = offsetY;
-}
-
+//#if GENERIC || CHROME
+//#include download_manager.js
+//#endif
 
 //#if FIREFOX || MOZCENTRAL
 //#include firefoxcom.js
@@ -915,117 +895,28 @@ var PDFView = {
   },
 
   download: function pdfViewDownload() {
-    var url = this.url.split('#')[0];
-    function getPDFFileNameFromURL(url) {
-      var reURI = /^(?:([^:]+:)?\/\/[^\/]+)?([^?#]*)(\?[^#]*)?(#.*)?$/;
-      //            SCHEME      HOST         1.PATH  2.QUERY   3.REF
-      // Pattern to get last matching NAME.pdf
-      var reFilename = /[^\/?#=]+\.pdf\b(?!.*\.pdf\b)/i;
-      var splitURI = reURI.exec(url);
-      var suggestedFilename = reFilename.exec(splitURI[1]) ||
-                               reFilename.exec(splitURI[2]) ||
-                               reFilename.exec(splitURI[3]);
-      if (suggestedFilename) {
-        suggestedFilename = suggestedFilename[0];
-        if (suggestedFilename.indexOf('%') != -1) {
-          // URL-encoded %2Fpath%2Fto%2Ffile.pdf should be file.pdf
-          try {
-            suggestedFilename =
-              reFilename.exec(decodeURIComponent(suggestedFilename))[0];
-          } catch(e) { // Possible (extremely rare) errors:
-            // URIError "Malformed URI", e.g. for "%AA.pdf"
-            // TypeError "null has no properties", e.g. for "%2F.pdf"
-          }
-        }
-      }
-      return suggestedFilename || 'document.pdf';
-    }
-//#if !(FIREFOX || MOZCENTRAL)
     function noData() {
-      triggerSaveAs(url + '#pdfjs.action=download');
+      downloadManager.downloadUrl(url, filename);
     }
-    function triggerSaveAs(url, blobUrl) {
-      // If blobUrl is not specified, fall back to non-blob url.
-      if (!blobUrl) blobUrl = url;
 
-      var a = document.createElement('a');
-      if (a.click) {
-        // Use a.click() if available. Otherwise, Chrome might show
-        // "Unsafe JavaScript attempt to initiate a navigation change
-        //  for frame with URL" and not open the PDF at all.
-        // Supported by (not mentioned = untested):
-        // - Firefox 6 - 19 (4- does not support a.click, 5 ignores a.click)
-        // - Chrome 19 - 26 (18- does not support a.click)
-        // - Opera 9 - 12.15
-        // - Internet Explorer 6 - 10
-        // - Safari 6 (5.1- does not support a.click)
-        a.href = blobUrl;
-        a.target = '_parent';
-        // Use a.download if available. This increases the likelihood that
-        // the file is downloaded instead of opened by another PDF plugin.
-        if ('download' in a) {
-          a.download = getPDFFileNameFromURL(url);
-        }
-        // <a> must be in the document for IE and recent Firefox versions.
-        // (otherwise .click() is ignored)
-        (document.body || document.documentElement).appendChild(a);
-        a.click();
-        a.parentNode.removeChild(a);
-      } else {
-        if (window.top === window &&
-            blobUrl.split('#')[0] === window.location.href.split('#')[0]) {
-          // If _parent == self, then opening an identical URL with different
-          // location hash will only cause a navigation, not a download.
-          var padCharacter = blobUrl.indexOf('?') === -1 ? '?' : '&';
-          blobUrl = blobUrl.replace(/#|$/, padCharacter + '$&');
-        }
-        window.open(blobUrl, '_parent');
-      }
+    var url = this.url.split('#')[0];
+    var filename = getPDFFileNameFromURL(url);
+    var downloadManager = new DownloadManager();
+    downloadManager.onerror = function (err) {
+      // This error won't really be helpful because it's likely the
+      // fallback won't work either (or is already open).
+      PDFView.error('PDF failed to download.');
+    };
+
+    if (!this.pdfDocument) { // the PDF is not ready yet
+      noData();
+      return;
     }
-//#else
-//  function noData() {
-//    FirefoxCom.request('download', {
-//      originalUrl: url,
-//      filename: getPDFFileNameFromURL(url)
-//    });
-//  }
-//  function triggerSaveAs(url, blobUrl) {
-//      FirefoxCom.request('download', {
-//        blobUrl: blobUrl,
-//        originalUrl: url,
-//        filename: getPDFFileNameFromURL(url)
-//      },
-//        function response(err) {
-//          if (err) {
-//            // This error won't really be helpful because it's likely the
-//            // fallback won't work either (or is already open).
-//            PDFView.error('PDF failed to download.');
-//          }
-//          window.URL.revokeObjectURL(blobUrl);
-//        }
-//      );
-//  }
-//#endif
-    // If the PDF is not ready yet, or if URL.createObjectURL is not supported,
-    // just try to download with the url.
-    if (!this.pdfDocument || !URL) {
-        noData();
-        return;
-    }
+
     this.pdfDocument.getData().then(
       function getDataSuccess(data) {
         var blob = PDFJS.createBlob(data.buffer, 'application/pdf');
-//#if GENERIC
-        if (navigator.msSaveBlob) {
-          // IE10 / IE11
-          if (!navigator.msSaveBlob(blob, getPDFFileNameFromURL(url))) {
-            noData();
-          }
-          return;
-        }
-//#endif
-        var blobUrl = URL.createObjectURL(blob);
-        triggerSaveAs(url, blobUrl);
+        downloadManager.download(blob, url, filename);
       },
       noData // Error occurred try downloading with just the url.
     ).then(null, noData);
