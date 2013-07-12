@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals URL*/
+/* globals URL, PDFJS */
 
 'use strict';
 
@@ -59,6 +59,10 @@ var DownloadManager = (function DownloadManagerClosure() {
 
   DownloadManager.prototype = {
     downloadUrl: function DownloadManager_downloadUrl(url, filename) {
+      if (!PDFJS.isValidUrl(url, true)) {
+        return; // restricted/invalid URL
+      }
+
       download(url + '#pdfjs.action=download', filename);
     },
 
