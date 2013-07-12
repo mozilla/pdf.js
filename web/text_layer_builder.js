@@ -83,9 +83,9 @@ var TextLayerBuilder = function textLayerBuilder(options) {
         var textScale = textDiv.dataset.canvasWidth / width;
         var rotation = textDiv.dataset.angle;
         var transform = 'scale(' + textScale + ', 1)';
-        if (bidiTexts[i].dir === 'ttb') {
-          rotation += 90;
-        }
+        //if (bidiTexts[i].dir === 'ttb') {
+          //rotation += 90;
+        //}
         transform = 'rotate(' + rotation + 'deg) ' + transform;
         CustomStyle.setProp('transform' , textDiv, transform);
         CustomStyle.setProp('transformOrigin' , textDiv, '0% 0%');
