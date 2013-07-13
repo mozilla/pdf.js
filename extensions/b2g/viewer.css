@@ -103,6 +103,7 @@ footer {
   background-image: url(images/div_line_left.png), url(images/div_line_right.png);
   background-repeat: no-repeat;
   background-position: left, right;
+  background-size: 0.2rem, 0.2rem;
 }
 
 .toolbarButton.zoomOut {
