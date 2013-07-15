@@ -3095,13 +3095,30 @@ window.addEventListener('keydown', function keydown(evt) {
   }
 });
 
-window.addEventListener('beforeprint', function beforePrint(evt) {
-  PDFView.beforePrint();
-});
+if (PDFView.supportsPrinting) {
+  // Firefox 18+
+  window.addEventListener('beforeprint', function beforePrint(evt) {
+    PDFView.beforePrint();
+  });
 
-window.addEventListener('afterprint', function afterPrint(evt) {
-  PDFView.afterPrint();
-});
+  window.addEventListener('afterprint', function afterPrint(evt) {
+    PDFView.afterPrint();
+  });
+} else if ('onbeforeprint' in window) {
+  // Internet Explorer, Firefox 5-17
+  window.addEventListener('beforeprint', function beforePrint() {
+    window.removeEventListener('beforeprint', beforePrint);
+    // TODO: PDFView.renderAllPages();
+  });
+} else if (window.matchMedia) {
+  // Chrome 9+, Opera 15+, Safari 5.1+
+  window.matchMedia('print').addListener(function beforePrint(mql) {
+    if (mql.matches) {
+      mql.removeListener(beforePrint);
+      // TODO: PDFView.renderAllPages();
+    }
+  });
+}
 
 (function presentationModeClosure() {
   function presentationModeChange(e) {
