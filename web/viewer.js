@@ -941,19 +941,12 @@ var PDFView = {
   },
 
   navigateTo: function pdfViewNavigateTo(dest) {
+    var destString = '';
     var self = this;
-    PDFJS.Promise.all([this.pagesPromise,
-                       this.destinationsPromise]).then(function() {
-      var destString = '';
-      if (typeof dest === 'string') {
-        destString = dest;
-        dest = self.destinations[dest];
-      }
-      if (!(dest instanceof Array)) {
-        return; // invalid destination
-      }
+
+    var goToDestination = function(destRef) {
+      self.pendingRefStr = null;
       // dest array looks like that: <page-ref> </XYZ|FitXXX> <args..>
-      var destRef = dest[0];
       var pageNumber = destRef instanceof Object ?
         self.pagesRefMap[destRef.num + ' ' + destRef.gen + ' R'] :
         (destRef + 1);
@@ -966,7 +959,24 @@ var PDFView = {
 
         // Update the browsing history.
         PDFHistory.push({ dest: dest, hash: destString, page: pageNumber });
+      } else {
+        self.pendingRefStrLoaded = new PDFJS.Promise();
+        self.pendingRefStr = destRef.num + ' ' + destRef.gen + ' R';
+        self.pendingRefStrLoaded.then(function() {
+          goToDestination(destRef);
+        });
       }
+    };
+
+    this.destinationsPromise.then(function() {
+      if (typeof dest === 'string') {
+        destString = dest;
+        dest = self.destinations[dest];
+      }
+      if (!(dest instanceof Array)) {
+        return; // invalid destination
+      }
+      goToDestination(dest[0]);
     });
   },
 
@@ -1188,6 +1198,10 @@ var PDFView = {
           var pageRef = pdfPage.ref;
           var refStr = pageRef.num + ' ' + pageRef.gen + ' R';
           pagesRefMap[refStr] = pdfPage.pageNumber;
+
+          if (self.pendingRefStr && self.pendingRefStr === refStr) {
+            self.pendingRefStrLoaded.resolve();
+          }
         });
         pagePromises.push(pagePromise);
       }
