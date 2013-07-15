@@ -1332,6 +1332,9 @@ canvas {
   #sidebarContainer, .toolbar, #loadingBox, #errorWrapper, .textLayer {
     display: none;
   }
+  #viewerContainer {
+    overflow: visible;
+  }
 
   #mainContainer, #viewerContainer, .page, .page canvas {
     position: static;
@@ -1342,6 +1345,7 @@ canvas {
   .page {
     float: left;
     display: none;
+    border: none;
     box-shadow: none;
   }
 
