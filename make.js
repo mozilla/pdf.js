@@ -70,8 +70,7 @@ target.all = function() {
 
 // Files that need to be included in every build.
 var COMMON_WEB_FILES =
-      ['web/viewer.css',
-       'web/images',
+      ['web/images',
        'web/debugger.js'],
     COMMON_WEB_FILES_PREPROCESS =
       ['web/viewer.js',
@@ -102,6 +101,7 @@ target.generic = function() {
     copy: [
       [COMMON_WEB_FILES, GENERIC_DIR + '/web'],
       ['external/webL10n/l10n.js', GENERIC_DIR + '/web'],
+      ['web/viewer.css', GENERIC_DIR + '/web'],
       ['web/compatibility.js', GENERIC_DIR + '/web'],
       ['web/compressed.tracemonkey-pldi-09.pdf', GENERIC_DIR + '/web'],
       ['web/locale', GENERIC_DIR + '/web']
@@ -410,6 +410,10 @@ target.firefox = function() {
       [COMMON_WEB_FILES_PREPROCESS, FIREFOX_BUILD_CONTENT_DIR + '/web'],
       [BUILD_TARGET, FIREFOX_BUILD_CONTENT_DIR + BUILD_TARGET],
       [SRC_DIR + 'network.js', FIREFOX_BUILD_CONTENT_DIR]
+    ],
+    preprocessCSS: [
+      ['firefox', 'web/viewer.css',
+       FIREFOX_BUILD_CONTENT_DIR + '/web/viewer.css']
     ]
   };
   builder.build(setup);
@@ -520,6 +524,9 @@ target.mozcentral = function() {
       [COMMON_WEB_FILES_PREPROCESS, MOZCENTRAL_CONTENT_DIR + '/web'],
       [BUILD_TARGET, MOZCENTRAL_CONTENT_DIR + BUILD_TARGET],
       [SRC_DIR + 'network.js', MOZCENTRAL_CONTENT_DIR]
+    ],
+    preprocessCSS: [
+      ['firefox', 'web/viewer.css', MOZCENTRAL_CONTENT_DIR + '/web/viewer.css']
     ]
   };
   builder.build(setup);
@@ -629,6 +636,7 @@ target.chrome = function() {
         'extensions/chrome/icon*.png',],
        CHROME_BUILD_DIR],
       ['external/webL10n/l10n.js', CHROME_BUILD_CONTENT_DIR + '/web'],
+      ['web/viewer.css', CHROME_BUILD_CONTENT_DIR + '/web'],
       ['web/locale', CHROME_BUILD_CONTENT_DIR + '/web']
     ],
     preprocess: [
