@@ -1188,22 +1188,22 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
             ctx.restore();
           }
         }
-     //   if (vertical) {
-     //     current.y -= x * textHScale;
-     //   } else {
+        if (vertical) {
+          current.y -= x * textHScale;
+        } else {
           current.x += x * textHScale;
-   //     }
+        }
         ctx.restore();
       }
 
       if (textSelection) {
         geom.canvasWidth = canvasWidth;
-     /*   if (vertical) {
+        if (vertical) {
           var vmetric = font.defaultVMetrics;
-          geom.x += vmetric[1] * fontSize * current.fontMatrix[0] /
-                    fontSizeScale * geom.hScale;
-          geom.y += vmetric[2] * fontSize * current.fontMatrix[0] /
-                    fontSizeScale * geom.vScale;
+          geom.x += vmetric[1]; //* fontSize * current.fontMatrix[0] /
+                    //fontSizeScale * geom.hScale;
+          geom.y += vmetric[2];// * fontSize * current.fontMatrix[0] /
+                    //fontSizeScale * geom.vScale;
         }*/
         this.textLayer.appendText(geom);
       }
