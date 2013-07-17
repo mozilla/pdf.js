@@ -101,6 +101,66 @@ function preprocess(inFilename, outFilename, defines) {
 }
 exports.preprocess = preprocess;
 
+function preprocessCSS(mode, source, destination) {
+  function hasPrefixed(line) {
+    return (/(^|\W)-(ms|o|webkit)-\w/.test(line));
+  }
+
+  function removePrefixed(content) {
+    var lines = content.split(/\r?\n/g);
+    var i = 0;
+    while (i < lines.length) {
+      var line = lines[i];
+      if (!hasPrefixed(line)) {
+        i++;
+        continue;
+      }
+      if (/\{\s*$/.test(line)) {
+        var bracketLevel = 1;
+        var j = i + 1;
+        while (j < lines.length && bracketLevel > 0) {
+          var checkBracket = /([{}])\s*$/.exec(lines[j]);
+          if (checkBracket) {
+            if (checkBracket[1] === '{') {
+              bracketLevel++;
+            } else if (lines[j].indexOf('{') < 0) {
+              bracketLevel--;
+            }
+          }
+          j++;
+        }
+        lines.splice(i, j - i);
+      } else if (/[};]\s*$/.test(line)) {
+        lines.splice(i, 1);
+      } else {
+        // multiline? skipping until next directive or bracket
+        do {
+          lines.splice(i, 1);
+        } while (i < lines.length &&
+                 !/\}\s*$/.test(lines[i]) &&
+                 lines[i].indexOf(':') < 0);
+        if (i < lines.length && /\S\s*}\s*$/.test(lines[i])) {
+          lines[i] = lines[i].substr(lines[i].indexOf('}'));
+        }
+      }
+      // collapse whitespaces
+      while (lines[i] === '' && lines[i - 1] === '') {
+        lines.splice(i, 1);
+      }
+    }
+    return lines.join('\n');
+  }
+
+  if (mode !== 'firefox') {
+    throw new Error('Invalid CSS preprocessor mode');
+  }
+
+  var content = fs.readFileSync(source, 'utf8');
+  var out = removePrefixed(content);
+  fs.writeFileSync(destination, out);
+}
+exports.preprocessCSS = preprocessCSS;
+
 /**
  * Simplifies common build steps.
  * @param {object} setup
@@ -130,6 +190,13 @@ function build(setup) {
         destWithFolder += '/' + path.basename(source);
       preprocess(source, destWithFolder, defines);
     });
+  });
+
+  (setup.preprocessCSS || []).forEach(function(option) {
+    var mode = option[0];
+    var source = option[1];
+    var destination = option[2];
+    preprocessCSS(mode, source, destination);
   });
 }
 exports.build = build;
