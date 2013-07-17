@@ -1075,17 +1075,21 @@ var PDFView = {
       errorMoreInfo.removeAttribute('hidden');
       moreInfoButton.setAttribute('hidden', 'true');
       lessInfoButton.removeAttribute('hidden');
+      errorMoreInfo.style.height = errorMoreInfo.scrollHeight + 'px';
     };
     lessInfoButton.onclick = function() {
       errorMoreInfo.setAttribute('hidden', 'true');
       moreInfoButton.removeAttribute('hidden');
       lessInfoButton.setAttribute('hidden', 'true');
     };
+    moreInfoButton.oncontextmenu =
+    lessInfoButton.oncontextmenu =
+    closeButton.oncontextmenu = function(e) {
+      e.preventDefault();
+    };
     moreInfoButton.removeAttribute('hidden');
     lessInfoButton.setAttribute('hidden', 'true');
     errorMoreInfo.value = moreInfoText;
-
-    errorMoreInfo.rows = moreInfoText.split('\n').length - 1;
 //#else
 //  console.error(message + '\n' + moreInfoText);
 //  this.fallback();
