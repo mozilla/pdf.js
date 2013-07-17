@@ -1094,6 +1094,14 @@
       "rounds": 1,
       "type": "eq"
     },
+    {  "id": "bug887152",
+      "file": "pdfs/bug887152.pdf",
+      "md5": "783a3e7b1de2cf40a47ffe1f36a41d4f",
+      "rounds": 1,
+      "lastPage": 1,
+      "link": true,
+      "type": "eq"
+    },
     {  "id": "bug816075",
       "file": "pdfs/bug816075.pdf",
       "md5": "7ec87c115c1f9ec41234cc7002555e82",
@@ -1249,6 +1257,14 @@
       "file": "pdfs/bug766138.pdf",
       "md5": "b171f5cf8d9834348112fba60ee54f8c",
       "link": true,
+      "rounds": 1,
+      "type": "eq"
+    },
+    {  "id": "bug889327",
+      "file": "pdfs/bug889327.pdf",
+      "md5": "b45cd63419241c40731f98d0e1dac082",
+      "link": true,
+      "lastPage": 1,
       "rounds": 1,
       "type": "eq"
     },

@@ -847,8 +847,6 @@ var JpegImage = (function jpegImage() {
           }
           break;
         case 4:
-          if (!this.adobe)
-            throw 'Unsupported color mode (4 components)';
           // The default transform for four components is false
           colorTransform = false;
           // The adobe transform marker overrides any previous setting
