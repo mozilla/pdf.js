@@ -1204,7 +1204,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
                     //fontSizeScale * geom.hScale;
           geom.y += vmetric[2];// * fontSize * current.fontMatrix[0] /
                     //fontSizeScale * geom.vScale;
-        }*/
+        }
         this.textLayer.appendText(geom);
       }
 
