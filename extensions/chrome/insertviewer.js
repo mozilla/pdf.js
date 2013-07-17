@@ -27,6 +27,12 @@ function getViewerURL(pdf_url) {
 }
 
 function showViewer(url) {
+  if (document.documentElement === null) {
+    // If the root element hasn't been rendered yet, delay the next operation.
+    // Otherwise, document.readyState will get stuck in "interactive".
+    setTimeout(showViewer, 0, url);
+    return;
+  }
   // Cancel page load and empty document.
   window.stop();
   document.body.textContent = '';
