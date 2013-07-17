@@ -1149,13 +1149,13 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
 
           var scaledX, scaledY, scaledAccentX, scaledAccentY;
           if (!glyph.disabled) {
-           /* if (vertical) {
+            if (vertical) {
               scaledX = vx / fontSizeScale;
               scaledY = (x + vy) / fontSizeScale;
-            } else {*/
+            } else {
               scaledX = x / fontSizeScale;
               scaledY = 0;
-           // }
+            }
 
             if (font.remeasure && width > 0) {
               // some standard fonts may not have the exact width, trying to
