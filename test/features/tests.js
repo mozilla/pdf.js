@@ -276,6 +276,18 @@ var tests = [
     area: 'Core'
   },
   {
+    id: 'atob',
+    name: 'atob() is present',
+    run: function () {
+      if ('atob' in window)
+        return { output: 'Success', emulated: '' };
+      else
+        return { output: 'Failed', emulated: 'Yes' };
+    },
+    impact: 'Critical',
+    area: 'Core'
+  },
+  {
     id: 'Function-bind',
     name: 'Function.prototype.bind is present',
     run: function () {
