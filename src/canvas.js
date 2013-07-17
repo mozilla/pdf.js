@@ -1198,13 +1198,13 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
 
       if (textSelection) {
         geom.canvasWidth = canvasWidth;
-        if (vertical) {
+       /* if (vertical) {
           var vmetric = font.defaultVMetrics;
-          geom.x += vmetric[1]; //* fontSize * current.fontMatrix[0] /
-                    //fontSizeScale * geom.hScale;
-          geom.y += vmetric[2];// * fontSize * current.fontMatrix[0] /
-                    //fontSizeScale * geom.vScale;
-        }
+          geom.x += vmetric[1] * fontSize * current.fontMatrix[0] /
+                    fontSizeScale * geom.hScale;
+          geom.y += vmetric[2] * fontSize * current.fontMatrix[0] /
+                    fontSizeScale * geom.vScale;
+        }*/
         this.textLayer.appendText(geom);
       }
 
@@ -1258,14 +1258,14 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
 
       if (textSelection) {
         geom.canvasWidth = canvasWidth;
-        if (vertical) {
+       /* if (vertical) {
           var fontSizeScale = current.fontSizeScale;
           var vmetric = font.defaultVMetrics;
           geom.x += vmetric[1] * fontSize * current.fontMatrix[0] /
                     fontSizeScale * geom.hScale;
           geom.y += vmetric[2] * fontSize * current.fontMatrix[0] /
                     fontSizeScale * geom.vScale;
-        }
+        }*/
         this.textLayer.appendText(geom);
       }
     },
