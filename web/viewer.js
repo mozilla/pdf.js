@@ -2973,9 +2973,15 @@ window.addEventListener('keydown', function keydown(evt) {
   if (cmd === 1 || cmd === 8 || cmd === 5 || cmd === 12) {
     // either CTRL or META key with optional SHIFT.
     switch (evt.keyCode) {
-      case 70:
+      case 70: // f
         if (!PDFView.supportsIntegratedFind) {
           PDFFindBar.toggle();
+          handled = true;
+        }
+        break;
+      case 71: // g
+        if (!PDFView.supportsIntegratedFind) {
+          PDFFindBar.dispatchEvent('again', cmd === 5 || cmd === 12);
           handled = true;
         }
         break;
@@ -2996,18 +3002,6 @@ window.addEventListener('keydown', function keydown(evt) {
       case 96: // '0' on Numpad of Swedish keyboard
         PDFView.parseScale(DEFAULT_SCALE, true);
         handled = false; // keeping it unhandled (to restore page zoom to 100%)
-        break;
-    }
-  }
-
-  // CTRL or META with or without SHIFT.
-  if (cmd == 1 || cmd == 8 || cmd == 5 || cmd == 12) {
-    switch (evt.keyCode) {
-      case 71: // g
-        if (!PDFView.supportsIntegratedFind) {
-          PDFFindBar.dispatchEvent('again', cmd == 5 || cmd == 12);
-          handled = true;
-        }
         break;
     }
   }
