@@ -161,7 +161,7 @@ var TextLayerBuilder = function textLayerBuilder(options) {
 
       textDiv.textContent = bidiText.str;
       // bidiText.dir may be 'ttb' for vertical texts.
-      textDiv.dir = bidiText.dir ;//=== 'rtl' ? 'rtl' : 'ltr';
+      textDiv.dir = bidiText.dir ;
     }
 
     this.setupRenderLayoutTimer();
