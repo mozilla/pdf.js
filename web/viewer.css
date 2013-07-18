@@ -231,9 +231,6 @@ html[dir='rtl'] #sidebarContent {
   left: 0;
   outline: none;
 }
-.loadingInProgress #viewerContainer {
-  top: 39px;
-}
 
 .toolbar {
   position: relative;
