@@ -62,6 +62,28 @@ function insertPDFJSForTab(tabId, url) {
  * @param {string} url The URL of the pdf file.
  */
 function activatePDFJSForTab(tabId, url) {
+  if (!chrome.webNavigation) {
+    // Opera... does not support the webNavigation API.
+    activatePDFJSForTabFallbackForOpera(tabId, url);
+    return;
+  }
+  var listener = function webNavigationEventListener(details) {
+    if (details.tabId === tabId) {
+      insertPDFJSForTab(tabId, url);
+      chrome.webNavigation.onCommitted.removeListener(listener);
+    }
+  };
+  var urlFilter = {
+    url: [{ urlEquals: url }]
+  };
+  chrome.webNavigation.onCommitted.addListener(listener, urlFilter);
+}
+
+/**
+ * Fallback for Opera.
+ * @see activatePDFJSForTab
+ **/
+function activatePDFJSForTabFallbackForOpera(tabId, url) {
   chrome.tabs.onUpdated.addListener(function listener(_tabId) {
     if (tabId === _tabId) {
       insertPDFJSForTab(tabId, url);
