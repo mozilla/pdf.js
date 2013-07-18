@@ -11,7 +11,8 @@
   "permissions": [
     "webRequest", "webRequestBlocking",
     "<all_urls>",
-    "tabs"
+    "tabs",
+    "webNavigation"
   ],
   "content_scripts": [{
       "matches": [
