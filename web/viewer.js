@@ -3010,6 +3010,16 @@ window.addEventListener('keydown', function keydown(evt) {
     }
   }
 
+  // CTRL+ALT or Option+Command
+  if (cmd === 3 || cmd === 10) {
+    switch (evt.keyCode) {
+      case 80: // p
+        PDFView.presentationMode();
+        handled = true;
+        break;
+    }
+  }
+
   if (handled) {
     evt.preventDefault();
     return;
