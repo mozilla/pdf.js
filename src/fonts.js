@@ -538,7 +538,50 @@ function mapPrivateUseChars(code) {
 }
 
 var FontLoader = {
+  insertRule: function fontLoaderInsertRule(rule) {
+    var styleElement = document.getElementById('PDFJS_FONT_STYLE_TAG');
+    if (!styleElement) {
+        styleElement = document.createElement('style');
+        styleElement.id = 'PDFJS_FONT_STYLE_TAG';
+        document.documentElement.getElementsByTagName('head')[0].appendChild(
+          styleElement);
+    }
+
+    var styleSheet = styleElement.sheet;
+    styleSheet.insertRule(rule, styleSheet.cssRules.length);
+  },
 //#if !(MOZCENTRAL)
+  get loadTestFont() {
+    // This is a CFF font with 1 glyph for '.' that fills its entire width and
+    // height.
+    return shadow(this, 'loadTestFont', atob(
+      'T1RUTwALAIAAAwAwQ0ZGIDHtZg4AAAOYAAAAgUZGVE1lkzZwAAAEHAAAABxHREVGABQAFQ' +
+      'AABDgAAAAeT1MvMlYNYwkAAAEgAAAAYGNtYXABDQLUAAACNAAAAUJoZWFk/xVFDQAAALwA' +
+      'AAA2aGhlYQdkA+oAAAD0AAAAJGhtdHgD6AAAAAAEWAAAAAZtYXhwAAJQAAAAARgAAAAGbm' +
+      'FtZVjmdH4AAAGAAAAAsXBvc3T/hgAzAAADeAAAACAAAQAAAAEAALZRFsRfDzz1AAsD6AAA' +
+      'AADOBOTLAAAAAM4KHDwAAAAAA+gDIQAAAAgAAgAAAAAAAAABAAADIQAAAFoD6AAAAAAD6A' +
+      'ABAAAAAAAAAAAAAAAAAAAAAQAAUAAAAgAAAAQD6AH0AAUAAAKKArwAAACMAooCvAAAAeAA' +
+      'MQECAAACAAYJAAAAAAAAAAAAAQAAAAAAAAAAAAAAAFBmRWQAwAAuAC4DIP84AFoDIQAAAA' +
+      'AAAQAAAAAAAAAAACAAIAABAAAADgCuAAEAAAAAAAAAAQAAAAEAAAAAAAEAAQAAAAEAAAAA' +
+      'AAIAAQAAAAEAAAAAAAMAAQAAAAEAAAAAAAQAAQAAAAEAAAAAAAUAAQAAAAEAAAAAAAYAAQ' +
+      'AAAAMAAQQJAAAAAgABAAMAAQQJAAEAAgABAAMAAQQJAAIAAgABAAMAAQQJAAMAAgABAAMA' +
+      'AQQJAAQAAgABAAMAAQQJAAUAAgABAAMAAQQJAAYAAgABWABYAAAAAAAAAwAAAAMAAAAcAA' +
+      'EAAAAAADwAAwABAAAAHAAEACAAAAAEAAQAAQAAAC7//wAAAC7////TAAEAAAAAAAABBgAA' +
+      'AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEAAAAAAA' +
+      'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA' +
+      'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA' +
+      'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA' +
+      'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMAAA' +
+      'AAAAD/gwAyAAAAAQAAAAAAAAAAAAAAAAAAAAABAAQEAAEBAQJYAAEBASH4DwD4GwHEAvgc' +
+      'A/gXBIwMAYuL+nz5tQXkD5j3CBLnEQACAQEBIVhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWF' +
+      'hYWFhYWFhYAAABAQAADwACAQEEE/t3Dov6fAH6fAT+fPp8+nwHDosMCvm1Cvm1DAz6fBQA' +
+      'AAAAAAABAAAAAMmJbzEAAAAAzgTjFQAAAADOBOQpAAEAAAAAAAAADAAUAAQAAAABAAAAAg' +
+      'ABAAAAAAAAAAAD6AAAAAAAAA=='
+    ));
+  },
+
+  loadTestFontId: 0,
+
   loadingContext: {
     requests: [],
     nextRequestId: 0
@@ -611,128 +654,79 @@ var FontLoader = {
     return request;
   },
 
-  // Set things up so that at least one pdfjsFontLoad event is
-  // dispatched when all the @font-face |rules| for |fonts| have been
-  // loaded in a subdocument.  It's expected that the load of |rules|
-  // has already started in this (outer) document, so that they should
-  // be ordered before the load in the subdocument.
   prepareFontLoadEvent: function fontLoaderPrepareFontLoadEvent(rules,
                                                                 fonts,
                                                                 request) {
       /** Hack begin */
-      // There's no event when a font has finished downloading so the
+      // There's currently no event when a font has finished downloading so the
       // following code is a dirty hack to 'guess' when a font is
-      // ready.  This code will be obsoleted by Mozilla bug 471915.
-      //
-      // The only reliable way to know if a font is loaded in Gecko
-      // (at the moment) is document.onload in a document with
-      // a @font-face rule defined in a "static" stylesheet.  We use a
-      // subdocument in an <iframe>, set up properly, to know when
-      // our @font-face rule was loaded.  However, the subdocument and
-      // outer document can't share CSS rules, so the inner document
-      // is only part of the puzzle.  The second piece is an invisible
-      // div created in order to force loading of the @font-face in
-      // the *outer* document.  (The font still needs to be loaded for
-      // its metrics, for reflow).  We create the div first for the
-      // outer document, then create the iframe.  Unless something
-      // goes really wonkily, we expect the @font-face for the outer
-      // document to be processed before the inner.  That's still
-      // fragile, but seems to work in practice.
-      //
-      // The postMessage() hackery was added to work around chrome bug
-      // 82402.
+      // ready. It's assumed fonts are loaded in order, so add a known test
+      // font after the desired fonts and then test for the loading of that
+      // test font.
 
-      var requestId = request.id;
-      // Validate the requestId parameter -- the value used to construct HTML.
-      if (!/^[\w\-]+$/.test(requestId)) {
-        error('Invalid request id: ' + requestId);
+      var canvas = document.createElement('canvas');
+      canvas.width = 1;
+      canvas.height = 1;
+      var ctx = canvas.getContext('2d');
 
-        // Normally the error-function throws. But if a malicious code
-        // intercepts the function call then the return is needed.
-        return;
+      var called = 0;
+      function isFontReady(name, callback) {
+        called++;
+        // With setTimeout clamping this gives the font ~100ms to load.
+        if(called > 30) {
+          warn('Load test font never loaded.');
+          callback();
+          return;
+        }
+        ctx.font = '30px ' + name;
+        ctx.fillText('.', 0, 20);
+        var imageData = ctx.getImageData(0, 0, 1, 1);
+        if (imageData.data[3] > 0) {
+          callback();
+          return;
+        }
+        setTimeout(isFontReady.bind(null, name, callback));
       }
+
+      var loadTestFontId = 'lt' + Date.now() + this.loadTestFontId++;
+      // Chromium seems to cache fonts based on a hash of the actual font data,
+      // so the font must be modified for each load test else it will appear to
+      // be loaded already.
+      // TODO: This could maybe be made faster by avoiding the btoa of the full
+      // font by splitting it in chunks before hand and padding the font id.
+      var data = this.loadTestFont;
+      var COMMENT_OFFSET = 973;
+      var chunk1 = data.substr(0, COMMENT_OFFSET);
+      var chunk2 = data.substr(COMMENT_OFFSET + loadTestFontId.length);
+      data = chunk1 + loadTestFontId + chunk2;
+
+      var url = 'url(data:font/opentype;base64,' + btoa(data) + ');';
+      var rule = '@font-face { font-family:"' + loadTestFontId + '";src:' +
+                 url + '}';
+      FontLoader.insertRule(rule);
 
       var names = [];
       for (var i = 0, ii = fonts.length; i < ii; i++)
         names.push(fonts[i].loadedName);
-
-      // Validate the names parameter -- the values can used to construct HTML.
-      if (!/^\w+$/.test(names.join(''))) {
-        error('Invalid font name(s): ' + names.join());
-
-        // Normally the error-function throws. But if a malicious code
-        // intercepts the function call then the return is needed.
-        return;
-      }
+      names.push(loadTestFontId);
 
       var div = document.createElement('div');
       div.setAttribute('style',
                        'visibility: hidden;' +
                        'width: 10px; height: 10px;' +
                        'position: absolute; top: 0px; left: 0px;');
-      var html = '';
       for (var i = 0, ii = names.length; i < ii; ++i) {
-        html += '<span style="font-family:' + names[i] + '">Hi</span>';
+        var span = document.createElement('span');
+        span.textContent = 'Hi';
+        span.style.fontFamily = names[i];
+        div.appendChild(span);
       }
-      div.innerHTML = html;
       document.body.appendChild(div);
 
-      window.addEventListener(
-        'message',
-        function fontLoaderMessage(e) {
-          if (e.data !== requestId)
-            return;
-          for (var i = 0, ii = fonts.length; i < ii; ++i) {
-            var font = fonts[i];
-            font.loading = false;
-          }
-          request.complete();
-          // cleanup
-          if (frame) {
-            document.body.removeChild(frame);
-          }
-          window.removeEventListener('message', fontLoaderMessage, false);
-        },
-        false);
-
-      // XXX we should have a time-out here too, and maybe fire
-      // pdfjsFontLoadFailed?
-      var src = '<!DOCTYPE HTML><html><head><meta charset="utf-8">';
-      src += '<style type="text/css">';
-      for (var i = 0, ii = rules.length; i < ii; ++i) {
-        src += rules[i];
-      }
-      src += '</style>';
-      src += '<script type="application/javascript">';
-      src += '  window.onload = function fontLoaderOnload() {\n';
-      src += '    parent.postMessage("' + requestId + '", "*");\n';
-      // Chrome stuck on loading (see chrome issue 145227) - resetting url
-      src += '    window.location = "about:blank";\n';
-      src += '  }';
-      // Hack so the end script tag isn't counted if this is inline JS.
-      src += '</scr' + 'ipt></head><body>';
-      for (var i = 0, ii = names.length; i < ii; ++i) {
-        src += '<p style="font-family:\'' + names[i] + '\'">Hi</p>';
-      }
-      src += '</body></html>';
-
-      var MAX_IFRAME_SRC_LENGTH = 1000000, IFRAME_TIMEOUT = 2000;
-      // Chrome fails for long src attributes (see issue 174023)
-      if (src.length > MAX_IFRAME_SRC_LENGTH) {
-        // ... waiting for some fixed period of time instead
-        window.setTimeout(function() {
-          window.postMessage(requestId, '*');
-        }, IFRAME_TIMEOUT);
-        return;
-      }
-
-      var frame = document.createElement('iframe');
-      frame.src = 'data:text/html,' + src;
-      frame.setAttribute('style',
-                         'visibility: hidden;' +
-                         'width: 10px; height: 10px;' +
-                         'position: absolute; top: 0px; left: 0px;');
-      document.body.appendChild(frame);
+      isFontReady(loadTestFontId, function() {
+        document.body.removeChild(div);
+        request.complete();
+      });
       /** Hack end */
   }
 //#else
@@ -4570,16 +4564,7 @@ var Font = (function FontClosure() {
                  window.btoa(data) + ');');
       var rule = '@font-face { font-family:"' + fontName + '";src:' + url + '}';
 
-      var styleElement = document.getElementById('PDFJS_FONT_STYLE_TAG');
-      if (!styleElement) {
-          styleElement = document.createElement('style');
-          styleElement.id = 'PDFJS_FONT_STYLE_TAG';
-          document.documentElement.getElementsByTagName('head')[0].appendChild(
-            styleElement);
-      }
-
-      var styleSheet = styleElement.sheet;
-      styleSheet.insertRule(rule, styleSheet.cssRules.length);
+      FontLoader.insertRule(rule);
 
       if (PDFJS.pdfBug && 'FontInspector' in globalScope &&
           globalScope['FontInspector'].enabled)
