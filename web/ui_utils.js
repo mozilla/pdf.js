@@ -155,15 +155,18 @@ var ProgressBar = (function ProgressBarClosure() {
 
   function ProgressBar(id, opts) {
 
-    // Fetch the sub-elements for later
+    // Fetch the sub-elements for later.
     this.div = document.querySelector(id + ' .progress');
 
-    // Get options, with sensible defaults
+    // Get the loading bar element, so it can be resized to fit the viewer.
+    this.bar = this.div.parentNode;
+
+    // Get options, with sensible defaults.
     this.height = opts.height || 100;
     this.width = opts.width || 100;
     this.units = opts.units || '%';
 
-    // Initialize heights
+    // Initialize heights.
     this.div.style.height = this.height + this.units;
     this.percent = 0;
   }
@@ -190,6 +193,22 @@ var ProgressBar = (function ProgressBarClosure() {
       this._indeterminate = isNaN(val);
       this._percent = clamp(val, 0, 100);
       this.updateBar();
+    },
+
+    setWidth: function ProgressBar_setWidth(viewer) {
+      if (viewer) {
+        var container = viewer.parentNode;
+        var scrollbarWidth = container.offsetWidth - viewer.offsetWidth;
+        if (scrollbarWidth > 0) {
+          this.bar.setAttribute('style', 'width: calc(100% - ' +
+                                         scrollbarWidth + 'px);');
+        }
+      }
+    },
+
+    hide: function ProgressBar_hide() {
+      this.bar.classList.add('hidden');
+      this.bar.removeAttribute('style');
     }
   };
 
