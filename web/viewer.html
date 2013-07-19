@@ -227,7 +227,11 @@ limitations under the License.
                     data-l10n-id="page_rotate_cw" ></menuitem>
         </menu>
 
+<!--#if (FIREFOX || MOZCENTRAL) -->
+<!--    <div id="viewerContainer"> -->
+<!--#else -->
         <div id="viewerContainer" tabindex="0">
+<!--#endif -->
           <div id="viewer" contextmenu="viewerContextMenu"></div>
         </div>
 
