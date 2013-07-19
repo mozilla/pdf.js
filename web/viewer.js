@@ -950,7 +950,9 @@ var PDFView = {
       // unless the viewer is embedded in another page.
       if (window.parent === window) {
         PDFView.container.focus();
-        PDFView.container.blur();
+//#if (FIREFOX || MOZCENTRAL)
+//      PDFView.container.blur();
+//#endif
       }
     });
 
