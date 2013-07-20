@@ -83,9 +83,6 @@ var TextLayerBuilder = function textLayerBuilder(options) {
         var textScale = textDiv.dataset.canvasWidth / width;
         var rotation = textDiv.dataset.angle;
         var transform = 'scale(' + textScale + ', 1)';
-        if (bidiTexts[i].dir === 'ttb') {
-          rotation += 90;
-        }
         transform = 'rotate(' + rotation + 'deg) ' + transform;
         CustomStyle.setProp('transform' , textDiv, transform);
         CustomStyle.setProp('transformOrigin' , textDiv, '0% 0%');
@@ -161,7 +158,7 @@ var TextLayerBuilder = function textLayerBuilder(options) {
 
       textDiv.textContent = bidiText.str;
       // bidiText.dir may be 'ttb' for vertical texts.
-      textDiv.dir = bidiText.dir === 'rtl' ? 'rtl' : 'ltr';
+      textDiv.dir = bidiText.dir;
     }
 
     this.setupRenderLayoutTimer();
