@@ -231,9 +231,6 @@ html[dir='rtl'] #sidebarContent {
   left: 0;
   outline: none;
 }
-.loadingInProgress #viewerContainer {
-  top: 39px;
-}
 
 .toolbar {
   position: relative;
@@ -1332,6 +1329,9 @@ canvas {
   #sidebarContainer, .toolbar, #loadingBox, #errorWrapper, .textLayer {
     display: none;
   }
+  #viewerContainer {
+    overflow: visible;
+  }
 
   #mainContainer, #viewerContainer, .page, .page canvas {
     position: static;
@@ -1342,6 +1342,7 @@ canvas {
   .page {
     float: left;
     display: none;
+    border: none;
     box-shadow: none;
   }
 

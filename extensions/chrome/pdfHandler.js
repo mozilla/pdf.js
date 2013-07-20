@@ -19,10 +19,29 @@ limitations under the License.
 
 'use strict';
 
+/**
+ * @param {Object} details First argument of the webRequest.onHeadersReceived
+ *                         event. The property "url" is read.
+ * @return {boolean} True if the PDF file should be downloaded.
+ */
 function isPdfDownloadable(details) {
-  return details.url.indexOf('pdfjs.action=download') >= 0;
+  if (details.url.indexOf('pdfjs.action=download') >= 0)
+    return true;
+  // Display the PDF viewer regardless of the Content-Disposition header
+  // if the file is displayed in the main frame.
+  if (details.type == 'main_frame')
+    return false;
+  var cdHeader = getHeaderFromHeaders(details.responseHeaders,
+                                      'content-disposition');
+  return cdHeader && /^attachment/i.test(cdHeader.value);
 }
 
+/**
+ * Insert the content script in a tab which renders the PDF viewer.
+ * @param {number} tabId ID of the tab used by the Chrome APIs.
+ * @param {string} url URL of the PDF file. Used to detect whether the viewer
+ *                     should be activated in a specific (i)frame.
+ */
 function insertPDFJSForTab(tabId, url) {
   chrome.tabs.executeScript(tabId, {
     file: 'insertviewer.js',
@@ -35,7 +54,36 @@ function insertPDFJSForTab(tabId, url) {
     });
   });
 }
+
+/**
+ * Try to render the PDF viewer when (a frame within) a tab unloads.
+ * This indicates that a PDF file may be loading.
+ * @param {number} tabId ID of the tab used by the Chrome APIs.
+ * @param {string} url The URL of the pdf file.
+ */
 function activatePDFJSForTab(tabId, url) {
+  if (!chrome.webNavigation) {
+    // Opera... does not support the webNavigation API.
+    activatePDFJSForTabFallbackForOpera(tabId, url);
+    return;
+  }
+  var listener = function webNavigationEventListener(details) {
+    if (details.tabId === tabId) {
+      insertPDFJSForTab(tabId, url);
+      chrome.webNavigation.onCommitted.removeListener(listener);
+    }
+  };
+  var urlFilter = {
+    url: [{ urlEquals: url }]
+  };
+  chrome.webNavigation.onCommitted.addListener(listener, urlFilter);
+}
+
+/**
+ * Fallback for Opera.
+ * @see activatePDFJSForTab
+ **/
+function activatePDFJSForTabFallbackForOpera(tabId, url) {
   chrome.tabs.onUpdated.addListener(function listener(_tabId) {
     if (tabId === _tabId) {
       insertPDFJSForTab(tabId, url);
@@ -44,60 +92,78 @@ function activatePDFJSForTab(tabId, url) {
   });
 }
 
+/**
+ * Get the header from the list of headers for a given name.
+ * @param {Array} headers responseHeaders of webRequest.onHeadersReceived
+ * @return {undefined|{name: string, value: string}} The header, if found.
+ */
+function getHeaderFromHeaders(headers, headerName) {
+  for (var i=0; i<headers.length; ++i) {
+    var header = headers[i];
+    if (header.name.toLowerCase() === headerName) {
+      return header;
+    }
+  }
+}
+
+/**
+ * Check if the request is a PDF file.
+ * @param {Object} details First argument of the webRequest.onHeadersReceived
+ *                         event. The properties "responseHeaders" and "url"
+ *                         are read.
+ * @return {boolean} True if the resource is a PDF file.
+ */
+function isPdfFile(details) {
+  var header = getHeaderFromHeaders(details.responseHeaders, 'content-type');
+  if (header) {
+    var headerValue = header.value.toLowerCase().split(';',1)[0].trim();
+    return headerValue === 'application/pdf' ||
+      headerValue === 'application/octet-stream' &&
+      details.url.toLowerCase().indexOf('.pdf') > 0;
+  }
+}
+
+/**
+ * Takes a set of headers, and set "Content-Disposition: attachment".
+ * @param {Object} details First argument of the webRequest.onHeadersReceived
+ *                         event. The property "responseHeaders" is read and
+ *                         modified if needed.
+ * @return {Object|undefined} The return value for the onHeadersReceived event.
+ *                            Object with key "responseHeaders" if the headers
+ *                            have been modified, undefined otherwise.
+ */
+function getHeadersWithContentDispositionAttachment(details) {
+    var headers = details.responseHeaders;
+    var cdHeader = getHeaderFromHeaders(headers, 'content-disposition');
+    if (!cdHeader) {
+      cdHeader = {name: 'Content-Disposition'};
+      headers.push(cdHeader);
+    }
+    if (!/^attachment/i.test(cdHeader.value)) {
+      cdHeader.value = 'attachment' + cdHeader.value.replace(/^[^;]+/i, '');
+      return { responseHeaders: headers };
+    }
+}
+
 chrome.webRequest.onHeadersReceived.addListener(
   function(details) {
-    // Check if the response is a PDF file
-    var isPDF = false;
-    var headers = details.responseHeaders;
-    var header, i;
-    var cdHeader;
-    if (!headers)
-      return;
-    for (i=0; i<headers.length; ++i) {
-      header = headers[i];
-      if (header.name.toLowerCase() == 'content-type') {
-        var headerValue = header.value.toLowerCase().split(';',1)[0].trim();
-        isPDF = headerValue === 'application/pdf' ||
-                headerValue === 'application/octet-stream' &&
-                details.url.toLowerCase().indexOf('.pdf') > 0;
-        break;
-      }
-    }
-    if (!isPDF)
+    if (!isPdfFile(details))
       return;
 
     if (isPdfDownloadable(details)) {
       // Force download by ensuring that Content-Disposition: attachment is set
-      if (!cdHeader) {
-        for (; i<headers.length; ++i) {
-          header = headers[i];
-          if (header.name.toLowerCase() == 'content-disposition') {
-            cdHeader = header;
-            break;
-          }
-        }
-      }
-      if (!cdHeader) {
-        cdHeader = {name: 'Content-Disposition', value: ''};
-        headers.push(cdHeader);
-      }
-      if (cdHeader.value.toLowerCase().indexOf('attachment') === -1) {
-        cdHeader.value = 'attachment' + cdHeader.value.replace(/^[^;]+/i, '');
-        return {
-          responseHeaders: headers
-        };
-      }
-      return;
+      return getHeadersWithContentDispositionAttachment(details);
     }
 
-    // Replace frame's content with the PDF viewer
-    // This approach maintains the friendly URL in the 
-    // location bar
+    // Replace frame's content with the PDF viewer.
+    // This approach maintains the friendly URL in the location bar.
     activatePDFJSForTab(details.tabId, details.url);
 
     return {
       responseHeaders: [
         // Set Cache-Control header to avoid downloading a file twice
+        // NOTE: This does not behave as desired, Chrome's network stack is
+        // oblivious for Cache control header modifications.
         {name:'Cache-Control',value:'max-age=600'},
         // Temporary render response as XHTML.
         // Since PDFs are never valid XHTML, the garbage is not going to be

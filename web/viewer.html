@@ -18,6 +18,9 @@ limitations under the License.
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<!--#if GENERIC || CHROME-->
+    <meta name="google" content="notranslate">
+<!--#endif-->
     <title>PDF.js viewer</title>
 
 <!--#if FIREFOX || MOZCENTRAL-->
@@ -44,7 +47,6 @@ limitations under the License.
     <script type="text/javascript" src="../src/core.js"></script>
     <script type="text/javascript" src="../src/util.js"></script>
     <script type="text/javascript" src="../src/api.js"></script>
-    <script type="text/javascript" src="../src/metadata.js"></script>
     <script type="text/javascript" src="../src/canvas.js"></script>
     <script type="text/javascript" src="../src/obj.js"></script>
     <script type="text/javascript" src="../src/annotation.js"></script>
@@ -63,10 +65,11 @@ limitations under the License.
     <script type="text/javascript" src="../src/pattern.js"></script>
     <script type="text/javascript" src="../src/stream.js"></script>
     <script type="text/javascript" src="../src/worker.js"></script>
-    <script type="text/javascript" src="../external/jpgjs/jpg.js"></script>
     <script type="text/javascript" src="../src/jpx.js"></script>
     <script type="text/javascript" src="../src/jbig2.js"></script>
     <script type="text/javascript" src="../src/bidi.js"></script>
+    <script type="text/javascript" src="../src/metadata.js"></script>
+    <script type="text/javascript" src="../external/jpgjs/jpg.js"></script>
     <script type="text/javascript">PDFJS.workerSrc = '../src/worker_loader.js';</script>
 <!--#endif-->
 
@@ -76,9 +79,11 @@ limitations under the License.
 
 <!--#if !PRODUCTION-->
     <script type="text/javascript" src="ui_utils.js"></script>
+    <script type="text/javascript" src="download_manager.js"></script>
     <script type="text/javascript" src="text_layer_builder.js"></script>
     <script type="text/javascript" src="pdf_find_bar.js"></script>
     <script type="text/javascript" src="pdf_find_controller.js"></script>
+    <script type="text/javascript" src="pdf_history.js"></script>
 <!--#endif-->
 
     <script type="text/javascript" src="debugger.js"></script>
@@ -222,22 +227,26 @@ limitations under the License.
                     data-l10n-id="page_rotate_cw" ></menuitem>
         </menu>
 
+<!--#if (FIREFOX || MOZCENTRAL) -->
+<!--    <div id="viewerContainer"> -->
+<!--#else -->
         <div id="viewerContainer" tabindex="0">
+<!--#endif -->
           <div id="viewer" contextmenu="viewerContextMenu"></div>
         </div>
 
         <div id="errorWrapper" hidden='true'>
           <div id="errorMessageLeft">
             <span id="errorMessage"></span>
-            <button id="errorShowMore" onclick="" oncontextmenu="return false;" data-l10n-id="error_more_info">
+            <button id="errorShowMore" data-l10n-id="error_more_info">
               More Information
             </button>
-            <button id="errorShowLess" onclick="" oncontextmenu="return false;" data-l10n-id="error_less_info" hidden='true'>
+            <button id="errorShowLess" data-l10n-id="error_less_info" hidden='true'>
               Less Information
             </button>
           </div>
           <div id="errorMessageRight">
-            <button id="errorClose" oncontextmenu="return false;" data-l10n-id="error_close">
+            <button id="errorClose" data-l10n-id="error_close">
               Close
             </button>
           </div>

@@ -92,6 +92,13 @@ if (typeof PDFJS === 'undefined') {
   window.Float64Array = TypedArray;
 })();
 
+// URL = URL || webkitURL
+(function normalizeURLObject() {
+  if (!window.URL) {
+    window.URL = window.webkitURL;
+  }
+})();
+
 // Object.create() ?
 (function checkObjectCreateCompatibility() {
   if (typeof Object.create !== 'undefined')
@@ -261,6 +268,36 @@ if (typeof PDFJS === 'undefined') {
   };
 })();
 
+// window.atob (base64 encode function) ?
+(function checkWindowAtobCompatibility() {
+  if ('atob' in window)
+    return;
+
+  // https://github.com/davidchambers/Base64.js
+  var digits =
+    'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=';
+  window.atob = function (input) {
+    input = input.replace(/=+$/, '');
+    if (input.length % 4 == 1) throw new Error('bad atob input');
+    for (
+      // initialize result and counters
+      var bc = 0, bs, buffer, idx = 0, output = '';
+      // get next character
+      buffer = input.charAt(idx++);
+      // character found in table?
+      // initialize bit storage and add its ascii value
+      ~buffer && (bs = bc % 4 ? bs * 64 + buffer : buffer,
+        // and if not first of each 4 characters,
+        // convert the first 8 bits to one ascii character
+        bc++ % 4) ? output += String.fromCharCode(255 & bs >> (-2 * bc & 6)) : 0
+    ) {
+      // try to find character in table (0-63, not found => -1)
+      buffer = digits.indexOf(buffer);
+    }
+    return output;
+  };
+})();
+
 // Function.prototype.bind ?
 (function checkFunctionPrototypeBindCompatibility() {
   if (typeof Function.prototype.bind !== 'undefined')
@@ -274,35 +311,6 @@ if (typeof PDFJS === 'undefined') {
     };
     return bound;
   };
-})();
-
-// IE9-11 text/html data URI
-(function checkDataURICompatibility() {
-  if (!('documentMode' in document) || document.documentMode > 11)
-    return;
-  // overriding the src property
-  var originalSrcDescriptor = Object.getOwnPropertyDescriptor(
-    HTMLIFrameElement.prototype, 'src');
-  Object.defineProperty(HTMLIFrameElement.prototype, 'src', {
-    get: function htmlIFrameElementPrototypeSrcGet() { return this.$src; },
-    set: function htmlIFrameElementPrototypeSrcSet(src) {
-      this.$src = src;
-      if (src.substr(0, 14) != 'data:text/html') {
-        originalSrcDescriptor.set.call(this, src);
-        return;
-      }
-      // for text/html, using blank document and then
-      // document's open, write, and close operations
-      originalSrcDescriptor.set.call(this, 'about:blank');
-      setTimeout((function htmlIFrameElementPrototypeSrcOpenWriteClose() {
-        var doc = this.contentDocument;
-        doc.open('text/html');
-        doc.write(src.substr(src.indexOf(',') + 1));
-        doc.close();
-      }).bind(this), 0);
-    },
-    enumerable: true
-  });
 })();
 
 // HTMLElement dataset property
