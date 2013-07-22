@@ -407,6 +407,10 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
     this.imageLayer = imageLayer;
     this.groupStack = [];
     this.processingType3 = null;
+    // Patterns are painted relative to the initial page/form transform, see pdf
+    // spec 8.7.2 NOTE 1.
+    this.baseTransform = null;
+    this.baseTransformStack = [];
     if (canvasCtx) {
       addContextCurrentTransform(canvasCtx);
     }
@@ -509,6 +513,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       }
 
       var transform = viewport.transform;
+      this.baseTransform = transform.slice();
       this.ctx.save();
       this.ctx.transform.apply(this.ctx, transform);
 
@@ -1318,7 +1323,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
           color = base.getRgb(args, 0);
         }
         var pattern = new TilingPattern(IR, color, this.ctx, this.objs,
-                                        this.commonObjs);
+                                        this.commonObjs, this.baseTransform);
       } else if (IR[0] == 'RadialAxial' || IR[0] == 'Dummy') {
         var pattern = Pattern.shadingFromIR(IR);
       } else {
@@ -1453,9 +1458,12 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
                                                                         bbox) {
       this.save();
       this.current.paintFormXObjectDepth++;
+      this.baseTransformStack.push(this.baseTransform);
 
       if (matrix && isArray(matrix) && 6 == matrix.length)
         this.transform.apply(this, matrix);
+
+      this.baseTransform = this.ctx.mozCurrentTransform;
 
       if (bbox && isArray(bbox) && 4 == bbox.length) {
         var width = bbox[2] - bbox[0];
@@ -1473,6 +1481,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
         // some pdf don't close all restores inside object
         // closing those for them
       } while (this.current.paintFormXObjectDepth >= depth);
+      this.baseTransform = this.baseTransformStack.pop();
     },
 
     beginGroup: function CanvasGraphics_beginGroup(group) {
