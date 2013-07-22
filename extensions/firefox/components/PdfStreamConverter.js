@@ -359,7 +359,7 @@ ChromeActions.prototype = {
       }
     }];
     notificationBox.appendNotification(message, 'pdfjs-fallback', null,
-                                       notificationBox.PRIORITY_WARNING_LOW,
+                                       notificationBox.PRIORITY_INFO_LOW,
                                        buttons,
                                        function eventsCallback(eventType) {
       // Currently there is only one event "removed" but if there are any other
