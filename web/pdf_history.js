@@ -23,9 +23,9 @@ var PDFHistory = {
   initialDestination: null,
 
   initialize: function pdfHistoryInitialize(fingerprint) {
-    if (PDFJS.disableHistory || window.parent !== window) {
+    if (PDFJS.disableHistory || PDFView.isViewerEmbedded) {
       // The browsing history is only enabled when the viewer is standalone,
-      // i.e. not when it is embedded in a page.
+      // i.e. not when it is embedded in a web page.
       return;
     }
     this.initialized = true;

@@ -191,6 +191,7 @@ var PDFView = {
   mouseScrollDelta: 0,
   lastScroll: 0,
   previousPageNumber: 1,
+  isViewerEmbedded: (window.parent !== window),
 
   // called once when the document is loaded
   initialize: function pdfViewInitialize() {
@@ -947,11 +948,11 @@ var PDFView = {
       self.setInitialView(storedHash, scale);
 
       // Make all navigation keys work on document load,
-      // unless the viewer is embedded in another page.
-      if (window.parent === window) {
-        PDFView.container.focus();
+      // unless the viewer is embedded in a web page.
+      if (!self.isViewerEmbedded) {
+        self.container.focus();
 //#if (FIREFOX || MOZCENTRAL)
-//      PDFView.container.blur();
+//      self.container.blur();
 //#endif
       }
     });
