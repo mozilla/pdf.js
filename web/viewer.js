@@ -1405,10 +1405,15 @@ var PDFView = {
   exitPresentationMode: function pdfViewExitPresentationMode() {
     this.isPresentationMode = false;
     this.parseScale(this.presentationModeArgs.previousScale, false);
-    this.page = this.page;
     this.clearMouseScrollState();
     this.hidePresentationControls();
     this.presentationModeArgs = null;
+
+    // Wait for the browser window to exit fullscreen mode,
+    // to prevent the wrong page from being scrolled into view. 
+    setTimeout(function() {
+      this.page = this.page;
+    }.bind(this), 0);
 
     // Ensure that the thumbnail of the current page is visible
     // when exiting presentation mode.
