@@ -147,6 +147,10 @@ function getHeadersWithContentDispositionAttachment(details) {
 
 chrome.webRequest.onHeadersReceived.addListener(
   function(details) {
+    if (details.method !== 'GET') {
+      // Don't intercept POST requests until http://crbug.com/104058 is fixed.
+      return;
+    }
     if (!isPdfFile(details))
       return;
 
