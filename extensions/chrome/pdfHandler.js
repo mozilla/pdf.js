@@ -74,7 +74,7 @@ function activatePDFJSForTab(tabId, url) {
     }
   };
   var urlFilter = {
-    url: [{ urlEquals: url }]
+    url: [{ urlEquals: url.split('#', 1)[0] }]
   };
   chrome.webNavigation.onCommitted.addListener(listener, urlFilter);
 }
