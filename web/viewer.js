@@ -251,33 +251,53 @@ var PDFView = {
     }, true);
   },
 
-  setScale: function pdfViewSetScale(val, resetAutoSettings, noScroll) {
-    if (val == this.currentScale)
+  getPageTop: function pdfViewGetPageTop(id) {
+    return (this.pages[id - 1].el.offsetTop + this.pages[id - 1].el.clientTop);
+  },
+
+  setScale: function pdfViewSetScale(
+      value, keepScrollPosition, resetAutoSettings) {
+    if (this.currentScale === value) {
       return;
+    }
 
-    var pages = this.pages;
-    for (var i = 0; i < pages.length; i++)
-      pages[i].update(val * CSS_UNITS);
+    var pages = this.pages, page = this.page;
+    var currentPage = pages[page - 1], dest = null;
+    if (keepScrollPosition) {
+      // Obtain the current scroll position before resizing the pages.
+      var topLeft = currentPage.getPagePoint(this.container.scrollLeft,
+        (this.container.scrollTop - this.getPageTop(page)));
+      dest = [null, {name: 'XYZ'},  Math.round(topLeft[0]),
+              Math.round(topLeft[1]), null];
+    }
 
-    if (!noScroll && this.currentScale != val)
-      this.pages[this.page - 1].scrollIntoView();
-    this.currentScale = val;
+    for (var i = 0; i < pages.length; i++) {
+      pages[i].update(value * CSS_UNITS);
+    }
+    this.currentScale = value;
+
+    if (typeof keepScrollPosition !== 'undefined') {
+      currentPage.scrollIntoView(dest);
+    }
 
     var event = document.createEvent('UIEvents');
     event.initUIEvent('scalechange', false, false, window, 0);
-    event.scale = val;
-    event.resetAutoSettings = resetAutoSettings;
+    event.scale = value;
+    event.resetAutoSettings = (typeof resetAutoSettings !== 'undefined') ?
+      resetAutoSettings : true;
     window.dispatchEvent(event);
   },
 
-  parseScale: function pdfViewParseScale(value, resetAutoSettings, noScroll) {
-    if ('custom' == value)
+  parseScale: function pdfViewParseScale(
+      value, keepScrollPosition, resetAutoSettings) {
+    if ('custom' === value) {
       return;
+    }
 
     var scale = parseFloat(value);
     this.currentScaleValue = value;
     if (scale) {
-      this.setScale(scale, true, noScroll);
+      this.setScale(scale, keepScrollPosition, true);
       return;
     }
 
@@ -308,7 +328,7 @@ var PDFView = {
         scale = Math.min(1.0, pageWidthScale);
         break;
     }
-    this.setScale(scale, resetAutoSettings, noScroll);
+    this.setScale(scale, keepScrollPosition, resetAutoSettings);
 
     selectScaleOption(value);
   },
@@ -1040,14 +1060,14 @@ var PDFView = {
     } else if (storedHash) {
       this.setHash(storedHash);
     } else if (scale) {
-      this.parseScale(scale, true);
+      this.parseScale(scale, false);
       this.page = 1;
     }
 
     if (PDFView.currentScale === UNKNOWN_SCALE) {
       // Scale was not initialized: invalid bookmark or scale was not specified.
       // Setting the default one.
-      this.parseScale(DEFAULT_SCALE, true);
+      this.parseScale(DEFAULT_SCALE, false);
     }
   },
 
@@ -1372,18 +1392,29 @@ var PDFView = {
 
   enterPresentationMode: function pdfViewEnterPresentationMode() {
     this.isPresentationMode = true;
-    this.page = this.presentationModeArgs.page;
-    this.parseScale('page-fit', true);
+    this.parseScale('page-fit', false);
+
+    // Wait for presentation mode to take effect,
+    // otherwise the page may be scrolled partially out of view.
+    setTimeout(function() {
+      this.page = this.presentationModeArgs.page;
+    }.bind(this), 0);
+
     this.showPresentationControls();
   },
 
   exitPresentationMode: function pdfViewExitPresentationMode() {
     this.isPresentationMode = false;
-    this.parseScale(this.presentationModeArgs.previousScale);
-    this.page = this.page;
+    this.parseScale(this.presentationModeArgs.previousScale, false);
     this.clearMouseScrollState();
     this.hidePresentationControls();
     this.presentationModeArgs = null;
+
+    // Wait for the browser window to exit fullscreen mode,
+    // to prevent the wrong page from being scrolled into view. 
+    setTimeout(function() {
+      this.page = this.page;
+    }.bind(this), 0);
 
     // Ensure that the thumbnail of the current page is visible
     // when exiting presentation mode.
@@ -1429,19 +1460,14 @@ var PDFView = {
       thumb.update(this.pageRotation);
     }
 
-    this.parseScale(this.currentScaleValue, true);
+    this.parseScale(this.currentScaleValue, false);
 
     this.renderHighestPriority();
 
     var currentPage = this.pages[this.page - 1];
-    if (!currentPage) {
-      return;
-    }
-
-    // Wait for presentation mode to take effect
-    setTimeout(function() {
+    if (currentPage) {
       currentPage.scrollIntoView();
-    }, 0);
+    }
   },
 
   /**
@@ -1707,9 +1733,9 @@ var PageView = function pageView(container, id, scale,
       }
 
       if (scale && scale !== PDFView.currentScale) {
-        PDFView.parseScale(scale, true, true);
+        PDFView.parseScale(scale);
       } else if (PDFView.currentScale === UNKNOWN_SCALE) {
-        PDFView.parseScale(DEFAULT_SCALE, true, true);
+        PDFView.parseScale(DEFAULT_SCALE);
       }
 
       if (scale === 'page-fit' && !dest[4]) {
@@ -2387,7 +2413,7 @@ document.addEventListener('DOMContentLoaded', function webViewerLoad(evt) {
 
   document.getElementById('scaleSelect').addEventListener('change',
     function() {
-      PDFView.parseScale(this.value);
+      PDFView.parseScale(this.value, true, false);
     });
 
   document.getElementById('firstPage').addEventListener('click',
@@ -2490,10 +2516,13 @@ function updateViewarea() {
 window.addEventListener('resize', function webViewerResize(evt) {
   if (PDFView.initialized &&
       (document.getElementById('pageWidthOption').selected ||
-      document.getElementById('pageFitOption').selected ||
-      document.getElementById('pageAutoOption').selected))
-      PDFView.parseScale(document.getElementById('scaleSelect').value);
-  updateViewarea();
+       document.getElementById('pageFitOption').selected ||
+       document.getElementById('pageAutoOption').selected)) {
+    PDFView.parseScale(document.getElementById('scaleSelect').value,
+                       !PDFView.isPresentationMode, false);
+  } else {
+    updateViewarea();
+  }
 });
 
 window.addEventListener('hashchange', function webViewerHashchange(evt) {
@@ -2567,11 +2596,11 @@ window.addEventListener('scalechange', function scalechange(evt) {
   customScaleOption.selected = false;
 
   if (!evt.resetAutoSettings &&
-       (document.getElementById('pageWidthOption').selected ||
-        document.getElementById('pageFitOption').selected ||
-        document.getElementById('pageAutoOption').selected)) {
-      updateViewarea();
-      return;
+      (document.getElementById('pageWidthOption').selected ||
+       document.getElementById('pageFitOption').selected ||
+       document.getElementById('pageAutoOption').selected)) {
+    updateViewarea();
+    return;
   }
 
   var predefinedValueFound = selectScaleOption('' + evt.scale);
