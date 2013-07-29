@@ -3457,7 +3457,8 @@ var Font = (function FontClosure() {
       }
 
       function sanitizeGlyphLocations(loca, glyf, numGlyphs,
-                                      isGlyphLocationsLong, hintsValid) {
+                                      isGlyphLocationsLong, hintsValid,
+                                      dupFirstEntry) {
         var itemSize, itemDecode, itemEncode;
         if (isGlyphLocationsLong) {
           itemSize = 4;
@@ -3516,7 +3517,22 @@ var Font = (function FontClosure() {
           return;
         }
 
-        glyf.data = newGlyfData.subarray(0, writeOffset);
+        if (dupFirstEntry) {
+          var firstEntryLength = itemDecode(locaData, itemSize);
+          if (newGlyfData.length > firstEntryLength + writeOffset) {
+            glyf.data = newGlyfData.subarray(0, firstEntryLength + writeOffset);
+          } else {
+            glyf.data = new Uint8Array(firstEntryLength + writeOffset);
+            glyf.data.set(newGlyfData.subarray(0, writeOffset));
+          }
+          glyf.data.set(newGlyfData.subarray(0, firstEntryLength), writeOffset);
+          loca.data = new Uint8Array(locaData.length + itemSize);
+          loca.data.set(locaData);
+          itemEncode(loca.data, locaData.length,
+                     writeOffset + firstEntryLength);
+        } else {
+          glyf.data = newGlyfData.subarray(0, writeOffset);
+        }
       }
 
       function readPostScriptTable(post, properties, maxpNumGlyphs) {
@@ -3905,6 +3921,16 @@ var Font = (function FontClosure() {
         maxFunctionDefs = int16(font.getBytes(2));
       }
 
+      var dupFirstEntry = false;
+      if (properties.type == 'CIDFontType2' && properties.toUnicode &&
+          properties.toUnicode[0] > 0) {
+        // oracle's defect (see 3427), duplicating first entry
+        dupFirstEntry = true;
+        numGlyphs++;
+        tables.maxp.data[4] = numGlyphs >> 8;
+        tables.maxp.data[5] = numGlyphs & 255;
+      }
+
       var hintsValid = sanitizeTTPrograms(tables.fpgm, tables.prep,
                                           maxFunctionDefs);
       if (!hintsValid) {
@@ -3945,7 +3971,7 @@ var Font = (function FontClosure() {
                                           tables.head.data[51]]);
 
         sanitizeGlyphLocations(tables.loca, tables.glyf, numGlyphs,
-                               isGlyphLocationsLong, hintsValid);
+                               isGlyphLocationsLong, hintsValid, dupFirstEntry);
       }
 
       if (!tables.hhea) {
@@ -3998,6 +4024,13 @@ var Font = (function FontClosure() {
             if (!gidToCidMap[i])
               gidToCidMap[i] = nextCid++;
           }
+        } else {
+          for (var i = 1; i < numGlyphs; i++) {
+            gidToCidMap[i] = i;
+          }
+          if (dupFirstEntry) {
+            gidToCidMap[numGlyphs - 1] = 0;
+          }
         }
 
         glyphs = [];
@@ -4007,7 +4040,7 @@ var Font = (function FontClosure() {
         var unassignedUnicodeItems = [];
         var toFontChar = this.cidToFontChar || this.toFontChar;
         for (var i = 1; i < numGlyphs; i++) {
-          var cid = gidToCidMap[i] || i;
+          var cid = gidToCidMap[i];
           var unicode = toFontChar[cid];
           if (!unicode || typeof unicode !== 'number' ||
               isSpecialUnicode(unicode) || unicode in usedUnicodes) {
@@ -4018,6 +4051,7 @@ var Font = (function FontClosure() {
           glyphs.push({ unicode: unicode, code: cid });
           ids.push(i);
         }
+
         // unassigned codepoints will never be used for non-Identity CMap
         // because the input will be Unicode
         if (!this.cidToFontChar) {
@@ -4026,7 +4060,7 @@ var Font = (function FontClosure() {
           var unusedUnicode = CMAP_GLYPH_OFFSET;
           for (var j = 0, jj = unassignedUnicodeItems.length; j < jj; j++) {
             var i = unassignedUnicodeItems[j];
-            var cid = gidToCidMap[i] || i;
+            var cid = gidToCidMap[i];
             while (unusedUnicode in usedUnicodes)
               unusedUnicode++;
             if (unusedUnicode >= CMAP_GLYPH_OFFSET + GLYPH_AREA_SIZE)
