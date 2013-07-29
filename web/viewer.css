@@ -1225,6 +1225,9 @@ canvas {
   padding: 3px;
   font-size: 0.8em;
 }
+.loadingInProgress #errorWrapper {
+  top: 39px;
+}
 
 #errorMessageLeft {
   float: left;
