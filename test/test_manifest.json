@@ -439,6 +439,14 @@
        "rounds": 1,
        "type": "eq"
     },
+    {  "id": "issue3427",
+       "file": "pdfs/issue3427.pdf",
+       "md5": "61979ede77f4557c65d4eb3c1a6dceeb",
+       "link": true,
+       "lastPage": 1,
+       "rounds": 1,
+       "type": "eq"
+    },
     {  "id": "piperine",
        "file": "pdfs/piperine.pdf",
        "md5": "603ca43dc5732dbba1579f122958c0c2",
