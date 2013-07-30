@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals Cmd, DeviceCmykCS, Dict, globalScope, INFOS, MozBlobBuilder, Name,
+/* globals Cmd, ColorSpace, Dict, globalScope, INFOS, MozBlobBuilder, Name,
            PDFJS, Ref, WARNINGS, verbosity */
 
 'use strict';
@@ -281,12 +281,8 @@ var Util = PDFJS.Util = (function UtilClosure() {
   };
 
   Util.makeCssCmyk = function Util_makeCssCmyk(cmyk) {
-    var cs = new DeviceCmykCS();
-    Util.makeCssCmyk = function makeCssCmyk(cmyk) {
-      var rgb = cs.getRgb(cmyk, 0);
-      return Util.makeCssRgb(rgb);
-    };
-    return Util.makeCssCmyk(cmyk);
+    var rgb = ColorSpace.singletons.cmyk.getRgb(cmyk, 0);
+    return Util.makeCssRgb(rgb);
   };
 
   // Concatenates two transformation matrices together and returns the result.
