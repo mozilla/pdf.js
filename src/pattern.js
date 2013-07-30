@@ -271,7 +271,7 @@ var TilingPattern = (function TilingPatternClosure() {
 
   var MAX_PATTERN_SIZE = 8192;
 
-  function TilingPattern(IR, color, ctx, objs, commonObjs) {
+  function TilingPattern(IR, color, ctx, objs, commonObjs, baseTransform) {
     this.name = IR[1][0].name;
     this.operatorList = IR[2];
     this.matrix = IR[3] || [1, 0, 0, 1, 0, 0];
@@ -283,7 +283,7 @@ var TilingPattern = (function TilingPatternClosure() {
     this.color = color;
     this.objs = objs;
     this.commonObjs = commonObjs;
-    this.curMatrix = ctx.mozCurrentTransform;
+    this.baseTransform = baseTransform;
     this.type = 'Pattern';
     this.ctx = ctx;
   }
@@ -328,7 +328,8 @@ var TilingPattern = (function TilingPatternClosure() {
 
       // Obtain scale from matrix and current transformation matrix.
       var matrixScale = Util.singularValueDecompose2dScale(this.matrix);
-      var curMatrixScale = Util.singularValueDecompose2dScale(this.curMatrix);
+      var curMatrixScale = Util.singularValueDecompose2dScale(
+                             this.baseTransform);
       var combinedScale = [matrixScale[0] * curMatrixScale[0],
                            matrixScale[1] * curMatrixScale[1]];
 
@@ -412,7 +413,7 @@ var TilingPattern = (function TilingPatternClosure() {
       this.createPatternCanvas(temporaryPatternCanvas);
 
       var ctx = this.ctx;
-      ctx.setTransform.apply(ctx, this.curMatrix);
+      ctx.setTransform.apply(ctx, this.baseTransform);
       ctx.transform.apply(ctx, this.matrix);
       this.scaleToContext();
 
