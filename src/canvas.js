@@ -1047,11 +1047,10 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       }
     },
 
-    showText: function CanvasGraphics_showText(str, skipTextSelection) {
+    showText: function CanvasGraphics_showText(glyphs, skipTextSelection) {
       var ctx = this.ctx;
       var current = this.current;
       var font = current.font;
-      var glyphs = font.charsToGlyphs(str);
       var fontSize = current.fontSize;
       var fontSizeScale = current.fontSizeScale;
       var charSpacing = current.charSpacing;
@@ -1246,15 +1245,13 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
 
           if (textSelection)
             spacingAccumulator += spacingLength;
-        } else if (isString(e)) {
+        } else {
           var shownCanvasWidth = this.showText(e, true);
 
           if (textSelection) {
             canvasWidth += spacingAccumulator + shownCanvasWidth;
             spacingAccumulator = 0;
           }
-        } else {
-          error('TJ array element ' + e + ' is not string or num');
         }
       }
 

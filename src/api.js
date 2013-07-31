@@ -622,9 +622,9 @@ var WorkerTransport = (function WorkerTransportClosure() {
 
             var font;
             if ('error' in exportedData) {
-              font = new ErrorFont(exportedData.error);
-              warn('Error during font loading: ' + font.error);
-              this.commonObjs.resolve(id, font);
+              var error = exportedData.error;
+              warn('Error during font loading: ' + error);
+              this.commonObjs.resolve(id, error);
               break;
             } else {
               font = new Font(exportedData);
